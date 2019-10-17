@@ -16,6 +16,9 @@ namespace twister::comm {
     public:
         Buffer(int &size) {
             this->buff = new byte[size];
+            for (int i = 0; i < 100; i++) {
+                this->buff[i] = 0;
+            }
             this->limit = size;
         }
 
