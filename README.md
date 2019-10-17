@@ -6,6 +6,6 @@ Optimized dataflow operations
    - Update LD_LIBRARY_PATH to include lib directory containing MPI libraries
    - Create a directory `build`
    - `cd build`
-   - `cmake -DCMAKE_BUILD_TYPE=Debug ../
+   - `cmake -DCMAKE_BUILD_TYPE=Debug ../`
    - `make -j4`
    
