@@ -1,5 +1,6 @@
-SET(MPI_RUN_CMD mpirun-mpich-gcc8)
+SET(MPI_RUN_CMD mpirun)
 
+file(MAKE_DIRECTORY ${TEST_DATA_DIR})
 file(COPY ${TEST_DATA_DIR} DESTINATION ${CMAKE_BINARY_DIR})
 
 include_directories (${TWISTERX_SOURCE_DIR}/src)

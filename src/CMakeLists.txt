@@ -1,1 +1,5 @@
 add_executable(twisterx twisterx.cpp)
+if(MPI_FOUND)
+    include_directories(${MPI_INCLUDE_PATH})
+    target_link_libraries(twisterx ${MPI_LIBRARIES})
+endif()
