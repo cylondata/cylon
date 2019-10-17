@@ -2,7 +2,7 @@
 
 #include <map>
 
-namespace twister::config {
+namespace twisterx::config {
 
     std::string Config::get_string(const std::string &key) {
         return std::any_cast<std::string>(this->config[key]);

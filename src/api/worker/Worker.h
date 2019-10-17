@@ -4,9 +4,9 @@
 #include <mpi.h>
 #include "../config/Config.h"
 
-using namespace twister::config;
+using namespace twisterx::config;
 
-namespace twister::worker {
+namespace twisterx::worker {
     class Worker {
     protected:
         int worker_id{};

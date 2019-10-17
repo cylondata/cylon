@@ -1,7 +1,7 @@
 #include <array>
 #include "DataPacker.h"
 
-namespace twister::comm::packers {
+namespace twisterx::comm::packers {
     class IntegerPacker : public DataPacker<int> {
 
         void pack_to_buffer(int data, Buffer buffer, PackerStatus status) {

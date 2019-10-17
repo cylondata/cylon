@@ -4,7 +4,7 @@
 #include "../Buffer.h"
 #include "PackerStatus.h"
 
-namespace twister::comm::packers {
+namespace twisterx::comm::packers {
     template<class T>
     class DataPacker {
         void pack_to_buffer(T data, Buffer buffer, PackerStatus status);

@@ -3,13 +3,13 @@
 #include "api/comm/Buffer.h"
 
 
-class MyWorker : public twister::worker::Worker {
+class MyWorker : public twisterx::worker::Worker {
 
     void execute(Config config) override {
         std::cout << "Starting TwisterX program ..." << std::endl;
 
         int size = 10;
-        twister::comm::Buffer buffer(size);
+        twisterx::comm::Buffer buffer(size);
 
         buffer.put_int(size);
         buffer.put_int(size + 1);

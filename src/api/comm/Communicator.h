@@ -1,7 +1,7 @@
 #ifndef TWISTERX_COMMUNICATOR_H
 #define TWISTERX_COMMUNICATOR_H
 
-namespace twister::comm {
+namespace twisterx::comm {
     class Communicator {
         void send_message();
     };

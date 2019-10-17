@@ -6,7 +6,7 @@
 #include <any>
 
 
-namespace twister::config {
+namespace twisterx::config {
     class Config {
 
     private:

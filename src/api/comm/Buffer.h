@@ -3,7 +3,7 @@
 
 #include <cstring>
 
-namespace twister::comm {
+namespace twisterx::comm {
 
     typedef unsigned char byte;
 
@@ -16,7 +16,7 @@ namespace twister::comm {
     public:
         Buffer(int &size) {
             this->buff = new byte[size];
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < size; i++) {
                 this->buff[i] = 0;
             }
             this->limit = size;

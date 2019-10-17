@@ -5,7 +5,7 @@
 #ifndef TWISTERX_PACKERSTATUS_H
 #define TWISTERX_PACKERSTATUS_H
 
-namespace twister::comm::packers {
+namespace twisterx::comm::packers {
     class PackerStatus {
     private:
         int total;
