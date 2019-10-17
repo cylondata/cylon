@@ -31,6 +31,7 @@ namespace twister::comm {
         int get_int() {
             int val = 0;
             memcpy(&val, this->buff + index, 4);
+            index += 4;
             return val;
         }
 
