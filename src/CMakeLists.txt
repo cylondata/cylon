@@ -1,4 +1,4 @@
-add_executable(twisterx twisterx.cpp api/worker/Worker.h api/config/Config.h api/config/Config.cpp api/comm/Communicator.h api/comm/Types.h api/comm/Buffer.h)
+add_executable(twisterx twisterx.cpp api/worker/Worker.h api/config/Config.h api/config/Config.cpp api/comm/Communicator.h api/comm/Types.h api/comm/Buffer.h api/comm/packers/DataPacker.h api/comm/packers/IntegerPacker.cpp api/comm/packers/PackerStatus.h)
 if(MPI_FOUND)
     include_directories(${MPI_INCLUDE_PATH})
     target_link_libraries(twisterx ${MPI_LIBRARIES})

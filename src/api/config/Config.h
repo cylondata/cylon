@@ -5,22 +5,21 @@
 #import <string>
 #include <any>
 
-using namespace std;
 
 namespace twister::config {
     class Config {
 
     private:
-        map<string, any> config;
+        std::map<std::string, std::any> config;
 
     public:
-        string get_string(const string &key);
+        std::string get_string(const std::string &key);
 
-        void put_string(const string &key, const string &val);
+        void put_string(const std::string &key, const std::string &val);
 
-        int get_int(const string &key);
+        int get_int(const std::string &key);
 
-        void put_int(const string &key, const int &val);
+        void put_int(const std::string &key, const int &val);
     };
 }
 #endif //TWISTERX_CONFIG_H

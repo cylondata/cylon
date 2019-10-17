@@ -3,7 +3,7 @@
 
 namespace twister::comm {
     class Communicator {
-
+        void send_message();
     };
 }
 

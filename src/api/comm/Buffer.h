@@ -22,20 +22,28 @@ namespace twister::comm {
             this->limit = size;
         }
 
+        ~Buffer() {
+            this->clear();
+        }
+
         bool put_int(int val) {
-            if (index + 4 < this->limit) {
-                memcpy(this->buff + index, &val, 4);
-                index += 4;
+            if (index + sizeof(val) < this->limit) {
+                memcpy(this->buff + index, &val, sizeof(val));
+                index += sizeof(val);
                 return true;
             }
             return false;
         }
 
         int get_int() {
-            int val = 0;
-            memcpy(&val, this->buff + index, 4);
-            index += 4;
-            return val;
+            if (index + sizeof(int) < this->limit) {
+                int val = 0;
+                memcpy(&val, this->buff + index, sizeof(val));
+                index += sizeof(val);
+                return val;
+            } else {
+                throw std::runtime_error("Can't read an int from this buffer");
+            }
         }
 
         void flip() {
