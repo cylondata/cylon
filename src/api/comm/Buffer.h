@@ -2,6 +2,7 @@
 #define TWISTERX_BUFFER_H
 
 #include <cstring>
+#include <stdexcept>
 
 #define data_type(name, type)\
     bool put_##name(type val) { \
@@ -35,10 +36,6 @@ namespace twisterx::comm {
         int32_t limit;
         int32_t index = 0;
 
-        bool ensure_capacity(uint16_t size) {
-            return index + size < this->limit;
-        }
-
     public:
         explicit Buffer(int32_t &size) {
             this->buff = new byte[size];
@@ -52,6 +49,9 @@ namespace twisterx::comm {
             this->clear();
         }
 
+        bool ensure_capacity(size_t size) {
+            return index + size < this->limit;
+        }
 
         data_type(bool, bool)
 
@@ -77,5 +77,7 @@ namespace twisterx::comm {
         }
     };
 }
+
+#undef data_type
 
 #endif //TWISTERX_BUFFER_H

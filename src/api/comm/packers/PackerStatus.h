@@ -8,34 +8,34 @@
 namespace twisterx::comm::packers {
     class PackerStatus {
     private:
-        int total;
-        int progress;
-        bool completed = false;
+        int32_t total;
+        int32_t progress;
 
     public:
-        int get_total() const {
+        PackerStatus(int32_t total) {
+            this->total = total;
+        }
+
+        int32_t get_total() const {
             return total;
         }
 
-        void set_completed(bool completed) {
-            PackerStatus::completed = completed;
-        }
-
         bool is_completed() {
-            return PackerStatus::completed;
+            return total == progress;
         }
 
-        void set_total(int total) {
-            PackerStatus::total = total;
-        }
-
-        int get_progress() const {
+        int32_t get_progress() const {
             return progress;
         }
 
-        void set_progress(int progress) {
-            PackerStatus::progress = progress;
+        void add_to_progress(int32_t delta) {
+            progress += progress;
         }
+
+        int32_t left_to_process() {
+            return total - progress;
+        }
+
     };
 }
 
