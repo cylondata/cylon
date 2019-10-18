@@ -13,6 +13,10 @@ namespace twisterx::comm {
         int32_t limit;
         int32_t index = 0;
 
+        bool ensure_capacity(uint16_t size) {
+            return index + size < this->limit;
+        }
+
     public:
         Buffer(int32_t &size) {
             this->buff = new byte[size];
@@ -27,19 +31,19 @@ namespace twisterx::comm {
         }
 
         bool put_int32(int32_t val) {
-            if (index + sizeof(val) < this->limit) {
-                memcpy(this->buff + index, &val, sizeof(val));
-                index += sizeof(val);
+            if (ensure_capacity(sizeof(int32_t))) {
+                memcpy(this->buff + index, &val, sizeof(int32_t));
+                index += sizeof(int32_t);
                 return true;
             }
             return false;
         }
 
-        int get_int32() {
-            if (index + sizeof(int) < this->limit) {
-                int val = 0;
-                memcpy(&val, this->buff + index, sizeof(val));
-                index += sizeof(val);
+        int32_t get_int32() {
+            if (ensure_capacity(sizeof(int32_t))) {
+                int32_t val = 0;
+                memcpy(&val, this->buff + index, sizeof(int32_t));
+                index += sizeof(int32_t);
                 return val;
             } else {
                 throw std::runtime_error("Can't read an int from this buffer");
