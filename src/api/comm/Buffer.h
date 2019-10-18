@@ -10,11 +10,11 @@ namespace twisterx::comm {
     class Buffer {
     private:
         byte *buff;
-        int limit;
-        int index = 0;
+        int32_t limit;
+        int32_t index = 0;
 
     public:
-        Buffer(int &size) {
+        Buffer(int32_t &size) {
             this->buff = new byte[size];
             for (int i = 0; i < size; i++) {
                 this->buff[i] = 0;
@@ -26,7 +26,7 @@ namespace twisterx::comm {
             this->clear();
         }
 
-        bool put_int(int val) {
+        bool put_int32(int32_t val) {
             if (index + sizeof(val) < this->limit) {
                 memcpy(this->buff + index, &val, sizeof(val));
                 index += sizeof(val);
@@ -35,7 +35,7 @@ namespace twisterx::comm {
             return false;
         }
 
-        int get_int() {
+        int get_int32() {
             if (index + sizeof(int) < this->limit) {
                 int val = 0;
                 memcpy(&val, this->buff + index, sizeof(val));

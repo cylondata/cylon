@@ -5,7 +5,7 @@ namespace twisterx::comm::packers {
     class IntegerPacker : public DataPacker<int> {
 
         void pack_to_buffer(int data, Buffer buffer, PackerStatus status) {
-            bool completed = buffer.put_int(data);
+            bool completed = buffer.put_int32(data);
             if (completed) {
                 status.set_completed(true);
             }
