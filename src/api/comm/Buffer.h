@@ -3,6 +3,28 @@
 
 #include <cstring>
 
+#define data_type(name, type)\
+    bool put_##name(type val) { \
+        if (ensure_capacity(sizeof(type))) { \
+            memcpy(this->buff + index, &val, sizeof(type)); \
+            index += sizeof(type); \
+            return true; \
+        } \
+        return false; \
+    } \
+    \
+    type get_##name() { \
+        if (ensure_capacity(sizeof(type))) { \
+            type val = 0; \
+            memcpy(&val, this->buff + index, sizeof(type)); \
+            index += sizeof(type); \
+            return val; \
+        } else { \
+            throw std::runtime_error("Can't read an int from this buffer"); \
+        } \
+    }
+
+
 namespace twisterx::comm {
 
     typedef unsigned char byte;
@@ -30,25 +52,20 @@ namespace twisterx::comm {
             this->clear();
         }
 
-        bool put_int32(int32_t val) {
-            if (ensure_capacity(sizeof(int32_t))) {
-                memcpy(this->buff + index, &val, sizeof(int32_t));
-                index += sizeof(int32_t);
-                return true;
-            }
-            return false;
-        }
 
-        int32_t get_int32() {
-            if (ensure_capacity(sizeof(int32_t))) {
-                int32_t val = 0;
-                memcpy(&val, this->buff + index, sizeof(int32_t));
-                index += sizeof(int32_t);
-                return val;
-            } else {
-                throw std::runtime_error("Can't read an int from this buffer");
-            }
-        }
+        data_type(bool, bool)
+
+        data_type(char, char)
+
+        data_type(int8, int8_t);
+
+        data_type(int32, int32_t)
+
+        data_type(int64, int64_t)
+
+        data_type(float, float)
+
+        data_type(double, double)
 
         void flip() {
             this->index = 0;
