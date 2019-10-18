@@ -53,6 +53,14 @@ namespace twisterx::comm {
             return index + size < this->limit;
         }
 
+        int32_t remaining() {
+            return limit - index;
+        }
+
+        bool is_full() {
+            return this->remaining() == 0;
+        }
+
         data_type(bool, bool)
 
         data_type(char, char)
