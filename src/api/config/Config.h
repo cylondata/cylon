@@ -1,8 +1,8 @@
 #ifndef TWISTERX_CONFIG_H
 #define TWISTERX_CONFIG_H
 
-#import <map>
-#import <string>
+#include <map>
+#include <string>
 #include <any>
 
 using namespace std;

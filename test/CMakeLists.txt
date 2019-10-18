@@ -15,6 +15,7 @@ endmacro(tx_add_exe)
 function(tx_add_test TESTNAME no_mpi_proc)
   add_executable(${TESTNAME} ${TESTNAME}.cpp)
   target_link_libraries(${TESTNAME} Catch)
+  target_link_libraries(${TESTNAME} ${MPI_LIBRARIES})
   catch_discover_tests(${TESTNAME})
   # The important lines:
   set (test_parameters -np ${no_mpi_proc} "./${TESTNAME}")
