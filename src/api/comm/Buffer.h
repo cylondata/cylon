@@ -18,7 +18,7 @@ namespace twisterx::comm {
         }
 
     public:
-        Buffer(int32_t &size) {
+        explicit Buffer(int32_t &size) {
             this->buff = new byte[size];
             for (int i = 0; i < size; i++) {
                 this->buff[i] = 0;

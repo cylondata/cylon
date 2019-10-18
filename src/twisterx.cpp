@@ -29,6 +29,6 @@ class MyWorker : public twisterx::worker::Worker {
 
 int main() {
     MyWorker myWorker;
-    myWorker.init(NULL, NULL);
+    myWorker.init(0, NULL);
     myWorker.start();
 }
