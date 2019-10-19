@@ -13,6 +13,8 @@ namespace twister::comm {
         int limit;
         int index = 0;
 
+        Buffer() = delete;
+
     public:
         explicit Buffer(int &size) {
             this->buff = new byte[size];
