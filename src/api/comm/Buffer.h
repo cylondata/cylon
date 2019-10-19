@@ -21,6 +21,10 @@ namespace twister::comm {
             this->limit = size;
         }
 
+        ~Buffer() {
+            clear();
+        }
+
         bool put_int(int val) {
             if (index + 4 < this->limit) {
                 memcpy(this->buff + index, &val, 4);
@@ -42,7 +46,7 @@ namespace twister::comm {
         }
 
         void clear() {
-            delete this->buff;
+            delete [] this->buff;
             this->index = 0;
         }
     };
