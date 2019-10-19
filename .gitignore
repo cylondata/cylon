@@ -35,3 +35,7 @@
 *~
 *.swp
 *.swo
+
+# ignore these folders
+build/
+**/bin/
