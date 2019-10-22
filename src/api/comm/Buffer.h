@@ -13,6 +13,14 @@
         } \
         return false; \
     } \
+    bool put_##name(type* val, size_t bytes_top_copy) { \
+        if (ensure_capacity(bytes_top_copy)) { \
+            memcpy(this->buff + index, val, bytes_top_copy); \
+            index += size; \
+            return true; \
+        } \
+        return false; \
+    } \
     \
     type get_##name() { \
         if (ensure_capacity(sizeof(type))) { \
@@ -49,12 +57,18 @@ namespace twisterx::comm {
             this->clear();
         }
 
+        Buffer(const Buffer &) = delete;
+
         bool ensure_capacity(size_t size) {
             return index + size < this->limit;
         }
 
         int32_t remaining() {
             return limit - index;
+        }
+
+        int32_t size() {
+            return this->index;
         }
 
         bool is_full() {
@@ -82,6 +96,10 @@ namespace twisterx::comm {
         void clear() {
             delete this->buff;
             this->index = 0;
+        }
+
+        byte *get_buffer() {
+            return this->buff;
         }
     };
 }
