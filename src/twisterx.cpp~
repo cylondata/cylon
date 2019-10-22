@@ -1,7 +1,0 @@
-#include <iostream>
-
-int main() {
-
-  std::cout << "Starting TwisterX program ..." << std::endl;
-
-}
