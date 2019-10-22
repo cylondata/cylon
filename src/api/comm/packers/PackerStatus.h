@@ -1,22 +1,21 @@
-//
-// Created by chathura on 10/17/19.
-//
-
 #ifndef TWISTERX_PACKERSTATUS_H
 #define TWISTERX_PACKERSTATUS_H
 
 namespace twisterx::comm::packers {
+    template<class T>
     class PackerStatus {
     private:
         int32_t total;
         int32_t progress;
+        T *data;
 
     public:
-        PackerStatus(int32_t total) {
+        PackerStatus(int32_t total, T *data) {
             this->total = total;
+            this->data = data;
         }
 
-        int32_t get_total() const {
+        [[nodiscard]] int32_t get_total() const {
             return total;
         }
 
@@ -24,18 +23,25 @@ namespace twisterx::comm::packers {
             return total == progress;
         }
 
-        int32_t get_progress() const {
+        [[nodiscard]] int32_t get_progress() const {
             return progress;
         }
 
         void add_to_progress(int32_t delta) {
-            progress += progress;
+            progress += delta;
         }
 
         int32_t left_to_process() {
             return total - progress;
         }
 
+        T *get_data() const {
+            return data;
+        }
+
+        void set_data(T *new_data) {
+            this->data = new_data;
+        }
     };
 }
 
