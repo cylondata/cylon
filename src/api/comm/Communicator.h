@@ -10,6 +10,7 @@
 #include "messages/OutMessage.h"
 #include "Receiver.h"
 
+// TODO memory clearing
 namespace twisterx::comm {
     class PendingRequest {
     private:
@@ -46,7 +47,7 @@ namespace twisterx::comm {
         int32_t worker_id;
         int32_t world_size;
 
-        int32_t op_id;
+        int32_t op_id_counter;
 
         std::queue<Buffer *> sending_buffers;
         std::queue<Buffer *> receiving_buffers;
@@ -116,8 +117,14 @@ namespace twisterx::comm {
             }
         }
 
+        /**
+         * Generates the next operation id. Each op should obtain and operation id from Communicator during the
+         * op initialization. Ideally all workers should assign the same operation id for a given operation
+         *
+         * @return operation id
+         */
         int32_t next_op_id() {
-            return this->op_id++;
+            return this->op_id_counter++;
         }
 
         int32_t get_worker_id() {
@@ -128,6 +135,12 @@ namespace twisterx::comm {
             return this->world_size;
         }
 
+        /**
+         * Operations can register receivers through this function.
+         *
+         * @param op_id operation id
+         * @param receiver pointer to the receiver implementation
+         */
         void register_receiver(int32_t op_id, Receiver *receiver) {
             this->receivers.insert(std::pair<int32_t, Receiver *>(op_id, receiver));
         }
@@ -136,6 +149,7 @@ namespace twisterx::comm {
         bool send_message(T *data, size_t size, int32_t destination, int32_t op_id) {
             bool accepted = false;
             out_messages_lock.lock();
+            // if there is a message already pending for this destination, don't accept.
             if (!this->out_messages.count(destination)) {
                 this->out_messages.insert(std::pair<int32_t, twisterx::comm::messages::Message *>(
                         destination, new twisterx::comm::messages::OutMessage<T>(data, size, destination,
@@ -159,6 +173,12 @@ namespace twisterx::comm {
 
         void progress() {
             out_messages_lock.lock();
+            // if there are out messages pending, process them
+            // 1. Burrow a send buffer
+            // 2. Serialize message to the send buffer
+            // 3. If message fits to the current buffer, remove current message from the pending list
+            // 4. Do an iSend on current send buffer
+            // 5. Append iSend to the list of pending send requests
             std::unordered_map<int32_t, twisterx::comm::messages::Message *>::iterator it;
             for (it = this->out_messages.begin(); it != this->out_messages.end();) {
                 if (it->second != nullptr) {
@@ -216,12 +236,12 @@ namespace twisterx::comm {
             std::unordered_map<int32_t, PendingRequest *>::iterator recv_it;
             for (recv_it = this->receiving_requests.begin(); recv_it != this->receiving_requests.end(); recv_it++) {
                 if (recv_it->second->test()) {
-                    int32_t edge = recv_it->second->get_buffer()->get_int32();
-                    //std::cout << "Received for edge : " << edge << std::endl;
+                    int32_t op_id = recv_it->second->get_buffer()->get_int32();
+                    //std::cout << "Received for op_id : " << op_id << std::endl;
 
                     // call the receiver
-                    bool accepted = this->receivers[edge]->receive(recv_it->second->get_peer_id(),
-                                                                   recv_it->second->get_buffer());
+                    bool accepted = this->receivers[op_id]->receive(recv_it->second->get_peer_id(),
+                                                                    recv_it->second->get_buffer());
                     if (accepted) {
                         recv_it->second->get_buffer()->clear();
                         this->post_recv(recv_it->first, recv_it->second->get_buffer());

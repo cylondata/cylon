@@ -29,6 +29,8 @@ namespace twisterx::comm::messages {
         }
 
         bool offer_buffer(Buffer *buffer) {
+            // write op_id as the first thing for every buffer. So the receiver can determine, which
+            // operation should be notified when this buffer is received.
             buffer->put_int32(this->op_id);
             if (this->first_buffer) {
                 buffer->put_int32(this->packerStatus->get_total()); //total size
