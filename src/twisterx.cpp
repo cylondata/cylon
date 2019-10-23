@@ -40,7 +40,20 @@ class MyWorker : public twisterx::worker::Worker {
         twisterx::comm::Communicator communicator(config,
                                                   this->worker_id, this->world_size);
 
-        twisterx::comm::op::GatherTest<int32_t> gather(communicator, 0);
+        twisterx::comm::op::GatherTest<int32_t> gather(communicator, 0,
+                                                       [](std::vector<std::pair<int32_t, int32_t *>> gathered_data) {
+                                                           std::cout << "gather received, printing first few elements"
+                                                                     << std::endl;
+                                                           std::vector<std::pair<int32_t, int32_t *>>::iterator it;
+                                                           for (it = gathered_data.begin();
+                                                                it < gathered_data.end(); it++) {
+                                                               std::cout << it->first << " : ";
+                                                               for (int8_t i = 0; i < 3; i++) {
+                                                                   std::cout << it->second[i] << ",";
+                                                               }
+                                                               std::cout << "..." << std::endl;
+                                                           }
+                                                       });
 
         auto *arr = new int32_t[10000];
 
@@ -48,7 +61,6 @@ class MyWorker : public twisterx::worker::Worker {
             arr[i] = worker_id;
         }
 
-        gather.gather(arr, sizeof(int32_t) * 10000);
         gather.gather(arr, sizeof(int32_t) * 10000);
 
         while (true)gather.progress();

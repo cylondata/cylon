@@ -10,7 +10,7 @@
 namespace twisterx::comm {
     class Receiver {
     public:
-        virtual void receive(int32_t source, Buffer *buffer) = 0;
+        virtual bool receive(int32_t source, Buffer *buffer) = 0;
     };
 }
 

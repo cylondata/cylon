@@ -15,6 +15,12 @@ namespace twisterx::comm::packers {
             this->data = data;
         }
 
+        PackerStatus(size_t total, T *data, size_t progress) {
+            this->total = total;
+            this->data = data;
+            this->progress = progress;
+        }
+
         [[nodiscard]] size_t get_total() const {
             return total;
         }

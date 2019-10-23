@@ -44,6 +44,7 @@ namespace twisterx::comm {
 
     private:
         int32_t worker_id;
+        int32_t world_size;
 
         int32_t op_id;
 
@@ -97,6 +98,7 @@ namespace twisterx::comm {
     public:
         Communicator(twisterx::config::Config config, int32_t worker_id, int32_t world_size) {
             this->worker_id = worker_id;
+            this->world_size = world_size;
             size_t buffer_size = 1024; //todo read from config
             for (int32_t i = 0; i < world_size; i++) {
                 sending_buffers.push(new Buffer(buffer_size));
@@ -120,6 +122,10 @@ namespace twisterx::comm {
 
         int32_t get_worker_id() {
             return this->worker_id;
+        }
+
+        int32_t get_world_size() {
+            return this->world_size;
         }
 
         void register_receiver(int32_t op_id, Receiver *receiver) {
@@ -214,12 +220,12 @@ namespace twisterx::comm {
                     //std::cout << "Received for edge : " << edge << std::endl;
 
                     // call the receiver
-                    this->receivers[edge]->receive(recv_it->second->get_peer_id(), recv_it->second->get_buffer());
-
-                    recv_it->second->get_buffer()->clear();
-
-                    this->post_recv(recv_it->first, recv_it->second->get_buffer());
-
+                    bool accepted = this->receivers[edge]->receive(recv_it->second->get_peer_id(),
+                                                                   recv_it->second->get_buffer());
+                    if (accepted) {
+                        recv_it->second->get_buffer()->clear();
+                        this->post_recv(recv_it->first, recv_it->second->get_buffer());
+                    }
                     //this->receiving_requests.erase(recv_it++);
                 }
             }

@@ -32,6 +32,11 @@ namespace twisterx::comm::packers {
             buffer->get(data + already_copied, bytes_to_copy);
             status->add_to_progress(bytes_to_copy);
         }
+
+        T *get_new_data_holder(size_t size) {
+            auto *data_holder = new T[size];
+            return data_holder;
+        }
     };
 }
 
