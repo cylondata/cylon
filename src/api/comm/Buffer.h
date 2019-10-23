@@ -35,6 +35,8 @@ namespace twisterx::comm {
         size_t limit;
         size_t index = 0;
 
+        Buffer() = delete;
+
     public:
         explicit Buffer(size_t &size) {
             this->buff = new byte[size];
