@@ -7,7 +7,7 @@
 namespace twisterx::comm::packers {
     template<class T>
     class DataPacker {
-
+        //todo can be singleton for each data type
     public:
         void pack_to_buffer(PackerStatus<T> *status, Buffer *buffer) {
             int32_t bytes_to_copy = std::min(status->left_to_process(), buffer->remaining());

@@ -48,6 +48,7 @@ namespace twisterx::comm {
 
         ~Buffer() {
             this->clear();
+            delete[] this->buff;
         }
 
         Buffer(const Buffer &) = delete;

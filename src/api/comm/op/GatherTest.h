@@ -29,11 +29,11 @@ namespace twisterx::comm::op {
             this->communicator->progress();
         }
 
-        void gather(T *data, size_t size) {
+        bool gather(T *data, size_t size) {
             if (this->communicator->get_worker_id() == this->target) {
-                return;
+                return true;
             }
-            this->communicator->send_message(data, size, this->target, this->op_id);
+            return this->communicator->send_message(data, size, this->target, this->op_id);
         }
 
         void receive(int32_t source, Buffer *buffer) {

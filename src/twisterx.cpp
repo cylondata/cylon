@@ -42,13 +42,16 @@ class MyWorker : public twisterx::worker::Worker {
 
         twisterx::comm::op::GatherTest<int32_t> gather(communicator, 0);
 
-        int32_t arr[3] = {1, 2, 3};
+        auto *arr = new int32_t[10000];
 
-        gather.gather(arr, sizeof(int32_t) * 3);
-
-        while(true) {
-            gather.progress();
+        for (int i = 0; i < 10000; i++) {
+            arr[i] = worker_id;
         }
+
+        gather.gather(arr, sizeof(int32_t) * 10000);
+        gather.gather(arr, sizeof(int32_t) * 10000);
+
+        while (true)gather.progress();
 
 
         std::cout << "end of execute" << std::endl;
