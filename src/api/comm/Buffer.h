@@ -13,10 +13,16 @@ namespace twister::comm {
         int limit;
         int index = 0;
 
+        Buffer() = delete;
+
     public:
         explicit Buffer(int &size) {
             this->buff = new byte[size];
             this->limit = size;
+        }
+
+        ~Buffer() {
+            clear();
         }
 
         bool put_int(int val) {
@@ -40,7 +46,7 @@ namespace twister::comm {
         }
 
         void clear() {
-            delete this->buff;
+            delete [] this->buff;
             this->index = 0;
         }
     };

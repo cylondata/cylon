@@ -1,7 +1,7 @@
 #ifndef TWISTERX_CONFIG_H
 #define TWISTERX_CONFIG_H
 
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <any>
 
@@ -11,7 +11,7 @@ namespace twister::config {
     class Config {
 
     private:
-        map<string, any> config;
+        std::unordered_map<string, any> config;
 
     public:
         string get_string(const string &key);
@@ -23,4 +23,5 @@ namespace twister::config {
         void put_int(const string &key, const int &val);
     };
 }
+
 #endif //TWISTERX_CONFIG_H
