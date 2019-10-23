@@ -32,13 +32,13 @@ namespace twisterx::comm {
     class Buffer {
     private:
         byte *buff;
-        int32_t limit;
-        int32_t index = 0;
+        size_t limit;
+        size_t index = 0;
 
     public:
-        explicit Buffer(int32_t &size) {
+        explicit Buffer(size_t &size) {
             this->buff = new byte[size];
-            for (int i = 0; i < size; i++) {
+            for (size_t i = 0; i < size; i++) {
                 this->buff[i] = 0;
             }
             this->limit = size;
@@ -54,16 +54,20 @@ namespace twisterx::comm {
             return index + size <= this->limit;
         }
 
-        int32_t remaining() {
+        size_t remaining() {
             return limit - index;
         }
 
-        int32_t size() {
-            return this->index;
+        size_t size() {
+            return this->limit;
         }
 
         bool is_full() {
             return this->remaining() == 0;
+        }
+
+        size_t position() {
+            return this->index;
         }
 
         data_type(bool, bool)
@@ -103,7 +107,7 @@ namespace twisterx::comm {
         }
 
         void clear() {
-            delete this->buff;
+            // todo reset buffer??
             this->index = 0;
         }
 

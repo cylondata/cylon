@@ -5,17 +5,17 @@ namespace twisterx::comm::packers {
     template<class T>
     class PackerStatus {
     private:
-        int32_t total;
-        int32_t progress;
+        size_t total;
+        size_t progress = 0;
         T *data;
 
     public:
-        PackerStatus(int32_t total, T *data) {
+        PackerStatus(size_t total, T *data) {
             this->total = total;
             this->data = data;
         }
 
-        [[nodiscard]] int32_t get_total() const {
+        [[nodiscard]] size_t get_total() const {
             return total;
         }
 
@@ -23,15 +23,15 @@ namespace twisterx::comm::packers {
             return total == progress;
         }
 
-        [[nodiscard]] int32_t get_progress() const {
+        [[nodiscard]] size_t get_progress() const {
             return progress;
         }
 
-        void add_to_progress(int32_t delta) {
+        void add_to_progress(size_t delta) {
             progress += delta;
         }
 
-        int32_t left_to_process() {
+        size_t left_to_process() {
             return total - progress;
         }
 
@@ -42,6 +42,8 @@ namespace twisterx::comm::packers {
         void set_data(T *new_data) {
             this->data = new_data;
         }
+
+        PackerStatus(PackerStatus &) = delete;
     };
 }
 

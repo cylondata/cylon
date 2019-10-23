@@ -28,6 +28,7 @@ namespace twisterx::worker {
             // resolve configs
             Config config;
             this->execute(config);
+            std::cout << "Finalizing..." << std::endl;
             MPI_Finalize();
         }
 
