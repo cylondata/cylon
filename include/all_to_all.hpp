@@ -1,3 +1,5 @@
+#include<vector>
+#include<map>
 
 namespace twisterx {
   /**
@@ -11,7 +13,7 @@ namespace twisterx {
      * @param all_workers
      * @return
      */
-    AllTlAll(int worker_id, std::vector<int> all_workers);
+    AllToAll(int worker_id, std::vector<int> all_workers);
 
     /**
      * Insert a buffer to be sent, if the buffer is accepted return true
@@ -28,12 +30,11 @@ namespace twisterx {
      * @return true if the operation is complete
      */
     bool is_complete();
-
   private:
     int worker_id;                 // the worker id
     std::vector<int> all_workers;  // the list of all the workers
-    std::map<int, std::vector<void *buffer>> buffers;  // keep the buffers to send
-    std::map<int, int>             // buffer sizes to send
+    std::map<int, std::vector<void *>> buffers;  // keep the buffers to send
+    std::map<int, int>  message_sizes;           // buffer sizes to send
 
     int current_send_id;           // the current send id
     int current_receive_id;        // the current receive id

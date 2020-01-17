@@ -2,7 +2,7 @@
 
 namespace twisterx {
 
-  AllToAll::AllTlAll(int w_id, std::vector<int> workers) {
+  AllToAll::AllToAll(int w_id, std::vector<int> workers) {
     worker_id = w_id;
     all_workers = workers;
   }
