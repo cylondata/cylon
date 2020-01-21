@@ -35,6 +35,7 @@ namespace twisterx {
     int headerBuf[2] = {};
     int receiveId{};
     void * data{};
+    int length{};
     ReceiveStatus status = RECEIVE_INIT;
     MPI_Request  request{};
   };

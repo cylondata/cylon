@@ -43,6 +43,7 @@ namespace twisterx {
           int length = x.second->headerBuf[0];
           // malloc a buffer
           x.second->data = new char[length];
+          x.second->length = length;
           MPI_Irecv(x.second->data, length, MPI_BYTE, x.second->receiveId, edge, MPI_COMM_WORLD, &x.second->request);
           x.second->status = RECEIVE_POSTED;
         }
@@ -53,8 +54,9 @@ namespace twisterx {
           std::fill_n(x.second->headerBuf, 2, 0);
           // malloc a buffer
           MPI_Irecv(x.second->headerBuf, 2, MPI_INT, x.second->receiveId, edge, MPI_COMM_WORLD, &x.second->request);
-          x.second->status = RECEIVE_POSTED;
+          x.second->status = RECEIVE_LENGTH_POSTED;
           // call the back end
+          rcv_fn(x.first, x.second->data, x.second->length);
         }
       } else {
         // throw an exception and log
@@ -76,6 +78,9 @@ namespace twisterx {
           TxRequest * r = x.second->pendingData.front();
           MPI_Isend(r->buffer, r->length, MPI_BYTE, r->target, edge, MPI_COMM_WORLD, &x.second->request);
           x.second->status = SEND_POSTED;
+          x.second->pendingData.pop();
+          // we set to the current send and pop it
+          x.second->currentSend = r;
           x.second->pendingData.pop();
         }
       } else if (x.second->status == SEND_INIT) {
@@ -99,7 +104,7 @@ namespace twisterx {
             MPI_Isend(x.second->headerBuf, 2, MPI_INT, r->target, edge, MPI_COMM_WORLD, &x.second->request);
             x.second->status = SEND_LENGTH_POSTED;
             // we need to notify about the send completion
-
+            send_comp_fn(x.second->currentSend);
           } else {
             x.second->status = SEND_INIT;
           }
