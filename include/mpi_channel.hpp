@@ -51,7 +51,8 @@ namespace twisterx {
      *
      * @param receives receive from these ranks
      */
-    void init(int edge, const std::vector<int>& receives, const std::vector<int>& sendIds) override;
+    void init(int edge, const std::vector<int>& receives, const std::vector<int>& sendIds,
+        receive_fn rcv, sendComplete_fn send) override;
 
     /**
     * Send the message to the target.
@@ -76,5 +77,9 @@ namespace twisterx {
     std::unordered_map<int, PendingSend *> sends;
     // keep track of the posted receives
     std::unordered_map<int, PendingReceive *> pendingReceives;
+    // receive callback function
+    receive_fn rcv_fn;
+    // send complete callback function
+    sendComplete_fn send_comp_fn;
   };
 }

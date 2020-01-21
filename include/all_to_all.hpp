@@ -1,6 +1,8 @@
 #include<vector>
 #include<map>
 
+#include "channel.hpp"
+
 namespace twisterx {
   /**
    * The all to all communication. We insert values and wait until it completes
@@ -34,11 +36,10 @@ namespace twisterx {
     int worker_id;                 // the worker id
     std::vector<int> sources;  // the list of all the workers
     std::vector<int> targets;  // the list of all the workers
-    int edge;
+    int edge;                  // the edge id we are going to use
     std::map<int, std::vector<void *>> buffers;  // keep the buffers to send
     std::map<int, int>  message_sizes;           // buffer sizes to send
 
-    int current_send_id;           // the current send id
-    int current_receive_id;        // the current receive id
+    Channel * channel{};             // the underlying channel
   };
 }

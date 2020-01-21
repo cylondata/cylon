@@ -6,8 +6,11 @@
 
 namespace twisterx {
 
-  void MPIChannel::init(int ed, const std::vector<int>& receives, const std::vector<int>& sendIds) {
+  void MPIChannel::init(int ed, const std::vector<int>& receives, const std::vector<int>& sendIds,
+      receive_fn rcv, sendComplete_fn send_fn) {
     edge = ed;
+    rcv_fn = rcv;
+    send_comp_fn = send_fn;
     // we need to post the length buffers
     for (int source : receives) {
       auto * buf = new PendingReceive();
@@ -53,6 +56,8 @@ namespace twisterx {
           x.second->status = RECEIVE_POSTED;
           // call the back end
         }
+      } else {
+        // throw an exception and log
       }
     }
   }
@@ -99,6 +104,8 @@ namespace twisterx {
             x.second->status = SEND_INIT;
           }
         }
+      } else {
+        // throw an exception and log
       }
     }
   }
