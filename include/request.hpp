@@ -1,3 +1,6 @@
+#ifndef TWISTERX_REQUEST_H
+#define TWISTERX_REQUEST_H
+
 namespace twisterx {
   /**
    * When a buffer is inserted, we need to return a reference to that buffer
@@ -6,11 +9,14 @@ namespace twisterx {
     void * buffer;
     int length;
     int target;
-    int edge;
-    bool complete;
+
     /**
      * Channel specific holder
      */
     void * channel;
+
+    TxRequest(int target, void *buffer, int length);
   };
 }
+
+#endif

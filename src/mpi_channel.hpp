@@ -7,7 +7,7 @@
 namespace twisterx {
 
   void MPIChannel::init(int ed, const std::vector<int>& receives, const std::vector<int>& sendIds,
-      receive_fn rcv, sendComplete_fn send_fn) {
+                        ChannelReceiveCallback * rcv, ChannelSendCallback * send_fn) {
     edge = ed;
     rcv_fn = rcv;
     send_comp_fn = send_fn;
@@ -56,7 +56,7 @@ namespace twisterx {
           MPI_Irecv(x.second->headerBuf, 2, MPI_INT, x.second->receiveId, edge, MPI_COMM_WORLD, &x.second->request);
           x.second->status = RECEIVE_LENGTH_POSTED;
           // call the back end
-          rcv_fn(x.first, x.second->data, x.second->length);
+          rcv_fn->receiveComplete(x.first, x.second->data, x.second->length);
         }
       } else {
         // throw an exception and log
@@ -104,7 +104,7 @@ namespace twisterx {
             MPI_Isend(x.second->headerBuf, 2, MPI_INT, r->target, edge, MPI_COMM_WORLD, &x.second->request);
             x.second->status = SEND_LENGTH_POSTED;
             // we need to notify about the send completion
-            send_comp_fn(x.second->currentSend);
+            send_comp_fn->sendComplete(x.second->currentSend);
           } else {
             x.second->status = SEND_INIT;
           }

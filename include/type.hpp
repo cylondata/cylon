@@ -1,3 +1,6 @@
+#ifndef TWISTERX_TYPE_H
+#define TWISTERX_TYPE_H
+
 #include <vector>
 
 namespace twisterx {
@@ -14,3 +17,5 @@ namespace twisterx {
     virtual void * merge(std::vector<void *> buffers) = 0;
   };
 }
+
+#endif
