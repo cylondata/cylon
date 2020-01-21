@@ -1,3 +1,4 @@
+#include <vector>
 
 namespace twisterx {
   /**
@@ -10,6 +11,6 @@ namespace twisterx {
      * @param second
      * @return
      */
-    void * merge(std::vector<void *> buffers);
-  }
+    virtual void * merge(std::vector<void *> buffers) = 0;
+  };
 }

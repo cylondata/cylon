@@ -40,5 +40,5 @@ namespace twisterx {
 
     int current_send_id;           // the current send id
     int current_receive_id;        // the current receive id
-  }
+  };
 }

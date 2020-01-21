@@ -7,5 +7,10 @@ namespace twisterx {
     int length;
     int target;
     int edge;
+    bool complete;
+    /**
+     * Channel specific holder
+     */
+    void * channel;
   };
 }
