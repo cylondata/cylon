@@ -11,6 +11,11 @@ namespace twisterx {
     channel = new MPIChannel();
     channel->init(edge_id, srcs, tgts, this, this);
     callback = rcvCallback;
+
+    // initialize the sends
+    for (int t : tgts) {
+      sends[t] = new AllToAllSends();
+    }
   }
 
   int AllToAll::insert(void *buffer, int length, int target) {
@@ -19,27 +24,42 @@ namespace twisterx {
       return -1;
     }
 
+    AllToAllSends *s = sends[target];
     // first check the size of the current buffers
-    int new_length = message_sizes[target] + length;
+    int new_length = s->messageSizes + length;
     if (new_length > 10000) {
       return 0;
     }
 
-    std::queue<TxRequest *> v = buffers[target];
+    std::queue<TxRequest *> v = s->requestQueue;
     auto *request = new TxRequest(target, buffer, length);
     v.push(request);
-    message_sizes.insert(std::pair<int, int>(target, length));
+    s->messageSizes += length;
     return 1;
   }
 
   bool AllToAll::isComplete() {
+    bool allQueuesEmpty = true;
     // if this is a source, send until the operation is finished
-    for (auto w : buffers) {
-      if (!w.second.empty()) {
-        TxRequest * request = w.second.front();
+    for (auto w : sends) {
+      if (!w.second->requestQueue.empty()) {
+        TxRequest * request = w.second->requestQueue.front();
         // if the request is accepted to be set, pop
         if (channel->send(request)) {
-          w.second.pop();
+          w.second->requestQueue.pop();
+        }
+        // if all queue are not empty set here
+        if (!w.second->requestQueue.empty()) {
+          allQueuesEmpty = false;
+        }
+      } else {
+        if (finishFlag) {
+          if (w.second->sendStatus == SENDING) {
+            auto *request = new TxRequest(w.first);
+            if (channel->sendFin(request)) {
+              w.second->sendStatus = FINISH_SENT;
+            }
+          }
         }
       }
     }
@@ -47,8 +67,8 @@ namespace twisterx {
     channel->progressSends();
     // progress the receives
     channel->progressReceives();
-    // if this is a
-    return false;
+
+    return allQueuesEmpty && finishedTargets.size() == targets.size() && finishedSources.size() == sources.size();
   }
 
   void AllToAll::finish() {
@@ -62,7 +82,21 @@ namespace twisterx {
   }
 
   void AllToAll::sendComplete(TxRequest *request) {
+    AllToAllSends *s = sends[request->target];
+    // we sent this request so we need to reduce memory
+    s->messageSizes  = s->messageSizes - request->length;
     // we don't have much to do here, so we delete the request
     delete request;
+  }
+
+  void AllToAll::receivedFinish(int receiveId) {
+    finishedSources.insert(receiveId);
+  }
+
+  void AllToAll::sendFinishComplete(TxRequest *request) {
+    finishedTargets.insert(request->target);
+    delete request;
+    AllToAllSends *s = sends[request->target];
+    s->sendStatus = FINISHED;
   }
 }

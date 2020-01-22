@@ -2,13 +2,26 @@
 #define TWISTERX_ALL_TO_ALL_H
 
 #include<vector>
-#include<map>
+#include<unordered_map>
 #include<queue>
+#include<unordered_set>
 
 #include "channel.hpp"
 #include "callback.hpp"
 
 namespace twisterx {
+  enum AllToAllSendStatus {
+    SENDING,
+    FINISH_SENT,
+    FINISHED
+  };
+
+  struct AllToAllSends {
+    std::queue<TxRequest *> requestQueue;
+    int messageSizes{};
+    AllToAllSendStatus sendStatus = SENDING;
+  };
+
   /**
    * The all to all communication. We insert values and wait until it completes
    */
@@ -59,13 +72,19 @@ namespace twisterx {
      */
     void sendComplete(TxRequest *request) override;
 
+    void receivedFinish(int receiveId) override;
+
+  private:
+    void sendFinishComplete(TxRequest *request) override;
+
   private:
     int worker_id;                 // the worker id
     std::vector<int> sources;  // the list of all the workers
     std::vector<int> targets;  // the list of all the workers
     int edge;                  // the edge id we are going to use
-    std::map<int, std::queue<TxRequest *>> buffers;  // keep the buffers to send
-    std::map<int, int>  message_sizes;           // buffer sizes to send
+    std::unordered_map<int, AllToAllSends *>  sends; // keep track of the sends
+    std::unordered_set<int> finishedSources;  // keep track of  the finished sources
+    std::unordered_set<int> finishedTargets;  // keep track of  the finished targets
     bool finishFlag = false;
     Channel * channel;             // the underlying channel
     ReceiveCallback * callback;    // after we receive a buffer we will call this function
