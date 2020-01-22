@@ -8,8 +8,8 @@ namespace twisterx {
    * When a buffer is inserted, we need to return a reference to that buffer
    */
   struct TxRequest {
-    void * buffer;
-    int length;
+    void * buffer{};
+    int length{};
     int target;
 
     /**
@@ -21,6 +21,10 @@ namespace twisterx {
       target = tgt;
       buffer = buf;
       length = len;
+    }
+
+    TxRequest(int tgt) {
+      target = tgt;
     }
   };
 }

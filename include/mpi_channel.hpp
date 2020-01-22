@@ -12,13 +12,15 @@ namespace twisterx {
   enum SendStatus {
     SEND_INIT = 0,
     SEND_LENGTH_POSTED = 1,
-    SEND_POSTED = 2
+    SEND_POSTED = 2,
+    SEND_FINISH = 3
   };
 
   enum ReceiveStatus {
     RECEIVE_INIT = 0,
     RECEIVE_LENGTH_POSTED = 1,
-    RECEIVE_POSTED = 2
+    RECEIVE_POSTED = 2,
+    RECEIVED_FIN = 3
   };
 
   /**
@@ -67,6 +69,14 @@ namespace twisterx {
     int send(TxRequest *request) override;
 
     /**
+    * Send the message to the target.
+    *
+    * @param request the request
+    * @return true if accepted
+    */
+    int sendFin(TxRequest *request) override;
+
+    /**
      * This method, will send the messages, It will first send a message with length and then
      */
     void progressSends() override;
@@ -81,10 +91,24 @@ namespace twisterx {
     std::unordered_map<int, PendingSend *> sends;
     // keep track of the posted receives
     std::unordered_map<int, PendingReceive *> pendingReceives;
+    // we got finish requests
+    std::unordered_map<int, TxRequest *> finishRequests;
     // receive callback function
     ChannelReceiveCallback * rcv_fn;
     // send complete callback function
     ChannelSendCallback * send_comp_fn;
+
+    /**
+     * Send finish request
+     * @param x the target, pendingSend pair
+     */
+    void sendFinishRequest(const std::pair<const int, PendingSend *> &x) const;
+
+    /**
+     * Send the length
+     * @param x the target, pendingSend pair
+     */
+    void sendLength(const std::pair<const int, PendingSend *> &x) const;
   };
 }
 

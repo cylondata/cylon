@@ -14,6 +14,8 @@ namespace twisterx {
    class ChannelSendCallback {
    public:
      virtual void sendComplete(TxRequest *request) = 0;
+
+     virtual void sendFinishComplete(TxRequest * request) = 0;
    };
 
   /**
@@ -22,6 +24,8 @@ namespace twisterx {
    class ChannelReceiveCallback {
    public:
      virtual void receiveComplete(int receiveId, void *buffer, int length) = 0;
+
+     virtual void receivedFinish(int receiveId) = 0;
    };
 
   /**
@@ -43,6 +47,13 @@ namespace twisterx {
      * @return if the request is accepted to be sent
      */
     virtual int send(TxRequest *request) = 0;
+
+    /**
+     * Inform the finish to the target
+     * @param request the request
+     * @return -1 if not accepted, 1 if accepted
+     */
+    virtual int sendFin(TxRequest *request) = 0;
 
     /**
      * This method needs to be called to progress the send

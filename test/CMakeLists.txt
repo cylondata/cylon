@@ -24,4 +24,3 @@ endfunction(tx_add_test)
 
 #Add tests as follows ...
 # param 1 -- name of the test, param 2 -- number of processes
-tx_add_test(test_example 1)
