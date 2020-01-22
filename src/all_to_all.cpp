@@ -54,10 +54,10 @@ namespace twisterx {
         }
       } else {
         if (finishFlag) {
-          if (w.second->sendStatus == SENDING) {
+          if (w.second->sendStatus == ALL_TO_ALL_SENDING) {
             auto *request = new TxRequest(w.first);
             if (channel->sendFin(request)) {
-              w.second->sendStatus = FINISH_SENT;
+              w.second->sendStatus = ALL_TO_ALL_FINISH_SENT;
             }
           }
         }
@@ -97,6 +97,6 @@ namespace twisterx {
     finishedTargets.insert(request->target);
     delete request;
     AllToAllSends *s = sends[request->target];
-    s->sendStatus = FINISHED;
+    s->sendStatus = ALL_TO_ALL_FINISHED;
   }
 }

@@ -11,15 +11,15 @@
 
 namespace twisterx {
   enum AllToAllSendStatus {
-    SENDING,
-    FINISH_SENT,
-    FINISHED
+    ALL_TO_ALL_SENDING,
+    ALL_TO_ALL_FINISH_SENT,
+    ALL_TO_ALL_FINISHED
   };
 
   struct AllToAllSends {
     std::queue<TxRequest *> requestQueue;
     int messageSizes{};
-    AllToAllSendStatus sendStatus = SENDING;
+    AllToAllSendStatus sendStatus = ALL_TO_ALL_SENDING;
   };
 
   /**
