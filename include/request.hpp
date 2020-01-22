@@ -13,9 +13,13 @@ namespace twisterx {
     /**
      * Channel specific holder
      */
-    void * channel;
+    void * channel{};
 
-    TxRequest(int target, void *buffer, int length);
+    TxRequest(int tgt, void *buf, int len) {
+      target = tgt;
+      buffer = buf;
+      length = len;
+    }
   };
 }
 

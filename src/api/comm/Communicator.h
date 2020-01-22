@@ -1,7 +1,7 @@
 #ifndef TWISTERX_COMMUNICATOR_H
 #define TWISTERX_COMMUNICATOR_H
 
-#include "../config/Config.h"
+#include "../../config/Config.h"
 #include <queue>
 #include <unordered_map>
 #include <mutex>

@@ -5,7 +5,7 @@
 #ifndef TWISTERX_GATHERTEST_H
 #define TWISTERX_GATHERTEST_H
 
-#import <iostream>
+#include <iostream>
 #include <functional>
 #include <queue>
 #include "../Communicator.h"

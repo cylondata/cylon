@@ -2,7 +2,7 @@
 #define TWISTERX_WORKER_H
 
 #include <mpi.h>
-#include "../config/Config.h"
+#include "../../config/Config.h"
 
 using namespace twisterx::config;
 
