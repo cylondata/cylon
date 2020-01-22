@@ -13,18 +13,23 @@ namespace twisterx {
     callback = rcvCallback;
   }
 
-  bool AllToAll::insert(void *buffer, int length, int target) {
+  int AllToAll::insert(void *buffer, int length, int target) {
+    if (finishFlag) {
+      // we cannot accept further
+      return -1;
+    }
+
     // first check the size of the current buffers
     int new_length = message_sizes[target] + length;
     if (new_length > 10000) {
-      return false;
+      return 0;
     }
 
     std::queue<TxRequest *> v = buffers[target];
     auto *request = new TxRequest(target, buffer, length);
     v.push(request);
     message_sizes.insert(std::pair<int, int>(target, length));
-    return true;
+    return 1;
   }
 
   bool AllToAll::isComplete() {

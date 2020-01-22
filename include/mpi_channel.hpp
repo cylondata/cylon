@@ -64,7 +64,7 @@ namespace twisterx {
     * @param request the request
     * @return true if accepted
     */
-    bool send(TxRequest *request) override;
+    int send(TxRequest *request) override;
 
     /**
      * This method, will send the messages, It will first send a message with length and then

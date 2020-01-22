@@ -1,6 +1,8 @@
 #ifndef TWISTERX_REQUEST_H
 #define TWISTERX_REQUEST_H
 
+#define TWISTERX_MSG_FIN 1
+
 namespace twisterx {
   /**
    * When a buffer is inserted, we need to return a reference to that buffer

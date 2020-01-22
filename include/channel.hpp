@@ -42,7 +42,7 @@ namespace twisterx {
      * @param request the request containing buffer, destination etc
      * @return if the request is accepted to be sent
      */
-    virtual bool send(TxRequest *request) = 0;
+    virtual int send(TxRequest *request) = 0;
 
     /**
      * This method needs to be called to progress the send

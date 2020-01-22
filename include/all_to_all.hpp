@@ -31,7 +31,7 @@ namespace twisterx {
      * @param target the target to send the message
      * @return true if the buffer is accepted
      */
-    bool insert(void *buffer, int length, int target);
+    int insert(void *buffer, int length, int target);
 
     /**
      * Check weather the operation is complete, this method needs to be called until the operation is complete

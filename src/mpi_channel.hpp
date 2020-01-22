@@ -21,13 +21,13 @@ namespace twisterx {
     }
   }
 
-  bool MPIChannel::send(TxRequest * request) {
+  int MPIChannel::send(TxRequest * request) {
     PendingSend * ps = sends[request->target];
     if (ps->pendingData.size() > 1000) {
-      return false;
+      return -1;
     }
     ps->pendingData.push(request);
-    return true;
+    return 1;
   }
 
   void MPIChannel::progressReceives() {
