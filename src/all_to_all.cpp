@@ -18,6 +18,13 @@ namespace twisterx {
     }
   }
 
+  void AllToAll::close() {
+    for (int t : targets) {
+      delete sends[t];
+      sends.erase(t);
+    }
+  }
+
   int AllToAll::insert(void *buffer, int length, int target) {
     if (finishFlag) {
       // we cannot accept further

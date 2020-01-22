@@ -74,6 +74,10 @@ namespace twisterx {
 
     void receivedFinish(int receiveId) override;
 
+    /**
+     * Close the operation
+     */
+    void close();
   private:
     void sendFinishComplete(TxRequest *request) override;
 
