@@ -1,5 +1,5 @@
 #include "all_to_all.hpp"
-#include "mpi_channel.hpp"
+#include "../include/mpi_channel.hpp"
 
 namespace twisterx {
   AllToAll::AllToAll(int w_id, const std::vector<int>& srcs,
