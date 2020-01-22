@@ -3,13 +3,14 @@
 
 namespace twisterx {
   AllToAll::AllToAll(int w_id, const std::vector<int>& srcs,
-                     const std::vector<int>& tgts, int edge_id) {
+                     const std::vector<int>& tgts, int edge_id, ReceiveCallback * rcvCallback) {
     worker_id = w_id;
     sources = srcs;
     targets = tgts;
     edge = edge_id;
     channel = new MPIChannel();
     channel->init(edge_id, srcs, tgts, this, this);
+    callback = rcvCallback;
   }
 
   bool AllToAll::insert(void *buffer, int length, int target) {
@@ -52,6 +53,7 @@ namespace twisterx {
 
   void AllToAll::receiveComplete(int receiveId, void *buffer, int length) {
     // we just call the callback function of this
+    callback->onReceive(receiveId, buffer, length);
   }
 
   void AllToAll::sendComplete(TxRequest *request) {

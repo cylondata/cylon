@@ -6,6 +6,7 @@
 #include<queue>
 
 #include "channel.hpp"
+#include "callback.hpp"
 
 namespace twisterx {
   /**
@@ -19,7 +20,8 @@ namespace twisterx {
      * @param all_workers
      * @return
      */
-    AllToAll(int worker_id, const std::vector<int>& source, const std::vector<int>& targets, int edgeId);
+    AllToAll(int worker_id, const std::vector<int>& source, const std::vector<int>& targets, int edgeId,
+        ReceiveCallback * callback);
 
     /**
      * Insert a buffer to be sent, if the buffer is accepted return true
@@ -66,6 +68,7 @@ namespace twisterx {
     std::map<int, int>  message_sizes;           // buffer sizes to send
     bool finishFlag = false;
     Channel * channel;             // the underlying channel
+    ReceiveCallback * callback;    // after we receive a buffer we will call this function
   };
 }
 
