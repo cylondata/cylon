@@ -38,9 +38,8 @@ namespace twisterx {
       return 0;
     }
 
-    std::queue<TxRequest *> v = s->requestQueue;
     auto *request = new TxRequest(target, buffer, length);
-    v.push(request);
+    s->requestQueue.push(request);
     s->messageSizes += length;
     return 1;
   }

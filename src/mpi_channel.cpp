@@ -2,7 +2,7 @@
 
 #include <mpi.h>
 #include <vector>
-#include <queue>
+#include <iostream>
 
 namespace twisterx {
 
@@ -19,6 +19,11 @@ namespace twisterx {
       // set the flag to true so we can identify later which buffers are posted
       buf->status = RECEIVE_LENGTH_POSTED;
     }
+
+    for (int target : sendIds) {
+      sends[target] = new PendingSend();
+    }
+    std::cout << "Posted receive buffers and INIT" << std::endl;
   }
 
   int MPIChannel::send(TxRequest * request) {
@@ -95,6 +100,7 @@ namespace twisterx {
           x.second->request = {};
           // now post the actual send
           TxRequest * r = x.second->pendingData.front();
+          std::cout << "Sent message to " << r->target << std::endl;
           MPI_Isend(r->buffer, r->length, MPI_BYTE, r->target, edge, MPI_COMM_WORLD, &x.second->request);
           x.second->status = SEND_POSTED;
           x.second->pendingData.pop();
@@ -132,6 +138,7 @@ namespace twisterx {
       } else if (x.second->status == SEND_FINISH){
         MPI_Test(&x.second->request, &flag, &status);
         if (flag) {
+          std::cout << "FINISHED send " << x.first << std::endl;
           // we are going to send complete
           TxRequest * finReq = finishRequests[x.first];
           send_comp_fn->sendFinishComplete(finReq);
@@ -139,6 +146,7 @@ namespace twisterx {
         }
       } else {
         // throw an exception and log
+        std::cout << "ELSE " << std::endl;
       }
     }
   }
@@ -147,6 +155,7 @@ namespace twisterx {
     TxRequest *r = x.second->pendingData.front();
     // put the length to the buffer
     x.second->headerBuf[0] = r->length;
+    std::cout << "Sent length to " << r->target << std::endl;
     MPI_Isend(x.second->headerBuf, 2, MPI_INT, r->target, edge, MPI_COMM_WORLD, &x.second->request);
     x.second->status = SEND_LENGTH_POSTED;
   }
@@ -154,6 +163,7 @@ namespace twisterx {
   void MPIChannel::sendFinishRequest(const std::pair<const int, PendingSend *> &x) const {
     x.second->headerBuf[0] = 0;
     x.second->headerBuf[1] = TWISTERX_MSG_FIN;
+    std::cout << "Sent finish to " << x.first << std::endl;
     MPI_Isend(x.second->headerBuf, 2, MPI_INT, x.first, edge, MPI_COMM_WORLD, &x.second->request);
     x.second->status = SEND_FINISH;
   }
