@@ -155,16 +155,16 @@ namespace twisterx {
     TxRequest *r = x.second->pendingData.front();
     // put the length to the buffer
     x.second->headerBuf[0] = r->length;
-    std::cout << "Sent length to " << r->target << std::endl;
-    MPI_Isend(x.second->headerBuf, 2, MPI_INT, r->target, edge, MPI_COMM_WORLD, &x.second->request);
+    std::cout << "Sent length to " << r->target << " " << &(x.second->headerBuf) << std::endl;
+    MPI_Isend(&(x.second->headerBuf[0]), 2, MPI_INT, r->target, edge, MPI_COMM_WORLD, &x.second->request);
     x.second->status = SEND_LENGTH_POSTED;
   }
 
   void MPIChannel::sendFinishRequest(const std::pair<const int, PendingSend *> &x) const {
     x.second->headerBuf[0] = 0;
     x.second->headerBuf[1] = TWISTERX_MSG_FIN;
-    std::cout << "Sent finish to " << x.first << std::endl;
-    MPI_Isend(x.second->headerBuf, 2, MPI_INT, x.first, edge, MPI_COMM_WORLD, &x.second->request);
+    std::cout << "Sent finish to " << x.first << " " << &(x.second->headerBuf) << std::endl;
+    MPI_Isend(&(x.second->headerBuf), 2, MPI_INT, x.first, edge, MPI_COMM_WORLD, &x.second->request);
     x.second->status = SEND_FINISH;
   }
 }
