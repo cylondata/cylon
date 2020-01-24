@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "all_to_all.hpp"
 #include "../include/mpi_channel.hpp"
 
@@ -15,6 +16,15 @@ namespace twisterx {
     // initialize the sends
     for (int t : tgts) {
       sends[t] = new AllToAllSends();
+    }
+    thisNumTargets = 0;
+    thisNumSources = 0;
+    if (std::find(targets.begin(), targets.end(), w_id) != targets.end()) {
+      thisNumTargets = 1;
+    }
+
+    if (std::find(sources.begin(), sources.end(), w_id) != sources.end()) {
+      thisNumSources = 1;
     }
   }
 
@@ -74,7 +84,7 @@ namespace twisterx {
     // progress the receives
     channel->progressReceives();
 
-    return allQueuesEmpty && finishedTargets.size() == targets.size() && finishedSources.size() == sources.size();
+    return allQueuesEmpty && finishedTargets.size() == thisNumTargets && finishedSources.size() == thisNumTargets;
   }
 
   void AllToAll::finish() {

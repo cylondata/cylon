@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
   Clbk c;
   // ideally should use a buffer pool ...
   twisterx::AllToAll all(rank, sources, targets, 1, &c);
-  std::cout << "Starting the all receive - " << rank;
+  std::cout << "Starting the all receive - " << rank << std::endl;
   int buf[4] = {rank};
   for (int i = 0; i < size; i++) {
     all.insert(buf, 16, i);
@@ -38,6 +38,8 @@ int main(int argc, char *argv[]) {
 //
   while (!all.isComplete()) {
   }
+
+  all.close();
 //
   MPI_Finalize();
   return 0;

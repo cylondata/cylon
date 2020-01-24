@@ -36,7 +36,7 @@ namespace twisterx {
   }
 
   int MPIChannel::sendFin(twisterx::TxRequest *request) {
-    if (finishRequests.find(request->target) == finishRequests.end()) {
+    if (finishRequests.find(request->target) != finishRequests.end()) {
       return -1;
     }
 
@@ -75,7 +75,8 @@ namespace twisterx {
         MPI_Test(&x.second->request, &flag, &status);
         if (flag) {
           x.second->request = {};
-          std::fill_n(x.second->headerBuf, 2, 0);
+          x.second->headerBuf[0] = 0;
+          x.second->headerBuf[1] = 0;
           // malloc a buffer
           MPI_Irecv(x.second->headerBuf, 2, MPI_INT, x.second->receiveId, edge, MPI_COMM_WORLD, &x.second->request);
           x.second->status = RECEIVE_LENGTH_POSTED;
@@ -106,7 +107,6 @@ namespace twisterx {
           x.second->pendingData.pop();
           // we set to the current send and pop it
           x.second->currentSend = r;
-          x.second->pendingData.pop();
         }
       } else if (x.second->status == SEND_INIT) {
         x.second->request = {};
@@ -142,7 +142,7 @@ namespace twisterx {
           // we are going to send complete
           TxRequest * finReq = finishRequests[x.first];
           send_comp_fn->sendFinishComplete(finReq);
-          finishRequests.erase(x.first);
+//          finishRequests.erase(x.first);
         }
       } else {
         // throw an exception and log
