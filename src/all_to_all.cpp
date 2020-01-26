@@ -33,6 +33,9 @@ namespace twisterx {
       delete sends[t];
       sends.erase(t);
     }
+    // free the channel
+    channel->close();
+    delete  channel;
   }
 
   int AllToAll::insert(void *buffer, int length, int target) {
@@ -111,8 +114,8 @@ namespace twisterx {
 
   void AllToAll::sendFinishComplete(TxRequest *request) {
     finishedTargets.insert(request->target);
-    delete request;
     AllToAllSends *s = sends[request->target];
     s->sendStatus = ALL_TO_ALL_FINISHED;
+    delete request;
   }
 }

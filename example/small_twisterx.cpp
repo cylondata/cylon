@@ -7,6 +7,7 @@ class Clbk : public twisterx::ReceiveCallback {
 public:
   bool onReceive(int source, void *buffer, int length) override {
     std::cout << "Received value: " << source << " length " << length;
+    delete[] reinterpret_cast<char*>(buffer);
     return false;
   }
 };
@@ -40,7 +41,7 @@ int main(int argc, char *argv[]) {
   }
 
   all.close();
-//
+
   MPI_Finalize();
   return 0;
 }

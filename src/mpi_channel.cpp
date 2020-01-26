@@ -167,4 +167,16 @@ namespace twisterx {
     MPI_Isend(&(x.second->headerBuf), 2, MPI_INT, x.first, edge, MPI_COMM_WORLD, &x.second->request);
     x.second->status = SEND_FINISH;
   }
+
+  void MPIChannel::close() {
+    for (auto & pendingReceive : pendingReceives) {
+      delete (pendingReceive.second);
+    }
+    pendingReceives.clear();
+
+    for (auto & s : sends) {
+      delete (s.second);
+    }
+    sends.clear();
+  }
 }

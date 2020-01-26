@@ -85,6 +85,9 @@ namespace twisterx {
      * Progress the pending receivers
      */
     void progressReceives() override;
+
+    void close() override;
+
   private:
     int edge;
     // keep track of the length buffers for each receiver

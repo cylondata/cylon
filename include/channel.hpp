@@ -64,6 +64,13 @@ namespace twisterx {
      * This method needs to be called to progress the receives
      */
     virtual void progressReceives() = 0;
+
+    /**
+     * Close the channel and clear any allocated memory by the channel
+     */
+    virtual void close() = 0;
+
+    virtual ~Channel() = default;
   };
 }
 
