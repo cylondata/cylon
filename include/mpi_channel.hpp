@@ -13,7 +13,8 @@ namespace twisterx {
     SEND_INIT = 0,
     SEND_LENGTH_POSTED = 1,
     SEND_POSTED = 2,
-    SEND_FINISH = 3
+    SEND_FINISH = 3,
+    SEND_DONE
   };
 
   enum ReceiveStatus {
@@ -100,6 +101,8 @@ namespace twisterx {
     ChannelReceiveCallback * rcv_fn;
     // send complete callback function
     ChannelSendCallback * send_comp_fn;
+    // mpi rank
+    int rank;
 
     /**
      * Send finish request

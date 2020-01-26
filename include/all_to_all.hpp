@@ -92,7 +92,7 @@ namespace twisterx {
     bool finishFlag = false;
     Channel * channel;             // the underlying channel
     ReceiveCallback * callback;    // after we receive a buffer we will call this function
-    int thisNumTargets;            // number of targets in this process, 1 or 0
+    unsigned long thisNumTargets;            // number of targets in this process, 1 or 0
     int thisNumSources;            // number of sources in this process, 1 or 0
   };
 }

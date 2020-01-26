@@ -90,7 +90,7 @@ namespace twisterx {
     // progress the receives
     channel->progressReceives();
 
-    return allQueuesEmpty && finishedTargets.size() == thisNumTargets && finishedSources.size() == thisNumTargets;
+    return allQueuesEmpty && finishedTargets.size() == targets.size() && finishedSources.size() == sources.size();
   }
 
   void AllToAll::finish() {
@@ -113,6 +113,7 @@ namespace twisterx {
   }
 
   void AllToAll::receivedFinish(int receiveId) {
+    std::cout << worker_id << " Received finish " << receiveId << std::endl;
     finishedSources.insert(receiveId);
   }
 
