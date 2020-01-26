@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <iostream>
+
 #include "all_to_all.hpp"
 #include "../include/mpi_channel.hpp"
 
@@ -51,6 +53,7 @@ namespace twisterx {
       return 0;
     }
 
+    std::cout << "Allocating buffer " << length << std::endl;
     auto *request = new TxRequest(target, buffer, length);
     s->requestQueue.push(request);
     s->messageSizes += length;
@@ -105,6 +108,7 @@ namespace twisterx {
     // we sent this request so we need to reduce memory
     s->messageSizes  = s->messageSizes - request->length;
     // we don't have much to do here, so we delete the request
+    std::cout << "Free buffer " << request->length << std::endl;
     delete request;
   }
 
@@ -116,6 +120,7 @@ namespace twisterx {
     finishedTargets.insert(request->target);
     AllToAllSends *s = sends[request->target];
     s->sendStatus = ALL_TO_ALL_FINISHED;
+    std::cout << "Free fin buffer " << request->length << std::endl;
     delete request;
   }
 }

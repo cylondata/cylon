@@ -6,7 +6,7 @@
 class Clbk : public twisterx::ReceiveCallback {
 public:
   bool onReceive(int source, void *buffer, int length) override {
-    std::cout << "Received value: " << source << " length " << length;
+    std::cout << "Received value: " << source << " length " << length << std::endl;
     delete[] reinterpret_cast<char*>(buffer);
     return false;
   }

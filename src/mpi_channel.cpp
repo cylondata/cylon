@@ -101,7 +101,7 @@ namespace twisterx {
           x.second->request = {};
           // now post the actual send
           TxRequest * r = x.second->pendingData.front();
-          std::cout << "Sent message to " << r->target << std::endl;
+          std::cout << "Sent message to " << r->target << " length " << r->length << std::endl;
           MPI_Isend(r->buffer, r->length, MPI_BYTE, r->target, edge, MPI_COMM_WORLD, &x.second->request);
           x.second->status = SEND_POSTED;
           x.second->pendingData.pop();
@@ -127,6 +127,8 @@ namespace twisterx {
             // we need to notify about the send completion
             send_comp_fn->sendComplete(x.second->currentSend);
           } else {
+            // we need to notify about the send completion
+            send_comp_fn->sendComplete(x.second->currentSend);
             // now check weather finish request is there
             if (finishRequests.find(x.first) != finishRequests.end()) {
               sendFinishRequest(x);
@@ -142,7 +144,6 @@ namespace twisterx {
           // we are going to send complete
           TxRequest * finReq = finishRequests[x.first];
           send_comp_fn->sendFinishComplete(finReq);
-//          finishRequests.erase(x.first);
         }
       } else {
         // throw an exception and log
