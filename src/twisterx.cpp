@@ -5,7 +5,7 @@
 #include "api/comm/packers/PackerStatus.h"
 #include "api/comm/Communicator.h"
 #include "api/comm/op/GatherTest.h"
-
+#include <glog/logging.h>
 
 class MyWorker : public twisterx::worker::Worker {
 
@@ -71,8 +71,12 @@ class MyWorker : public twisterx::worker::Worker {
 
 };
 
-int main() {
-    MyWorker myWorker;
-    myWorker.init(0, NULL);
-    myWorker.start();
+int main(int argc, char* argv[]) {
+  // Initialize Google's logging library.
+  google::InitGoogleLogging(argv[0]);
+  LOG(INFO) << "Starting TwisterX::MyWorker ....";
+
+  MyWorker myWorker;
+  myWorker.init(0, NULL);
+  myWorker.start();
 }

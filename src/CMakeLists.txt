@@ -2,4 +2,5 @@ add_executable(twisterx twisterx.cpp api/worker/Worker.h api/config/Config.h api
 if(MPI_FOUND)
     include_directories(${MPI_INCLUDE_PATH})
     target_link_libraries(twisterx ${MPI_LIBRARIES})
+    target_link_libraries(twisterx glog::glog)
 endif()
