@@ -7,6 +7,7 @@ if(MPI_FOUND)
     include_directories(${MPI_INCLUDE_PATH})
     target_link_libraries(twisterx ${MPI_LIBRARIES})
     target_link_libraries(twisterxlib ${MPI_LIBRARIES})
+    target_link_libraries(twisterx glog::glog)
 endif()
 
 
