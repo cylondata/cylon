@@ -1,4 +1,4 @@
-#include "../include/mpi_channel.hpp"
+#include "mpi_channel.hpp"
 
 #include <mpi.h>
 #include <vector>
