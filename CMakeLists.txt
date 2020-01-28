@@ -39,7 +39,9 @@ SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
 
 #glog
-add_subdirectory(glog)
+option (WITH_GFLAGS "Use gflags" ON)
+SET(WITH_GFLAGS OFF)
+add_subdirectory(thirdparty/glog)
 
 # compiler
 #SET(CMAKE_CXX_COMPILER mpicxx)
