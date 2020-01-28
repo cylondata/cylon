@@ -1,18 +1,47 @@
 #include <mpi.h>
 #include <iostream>
 
-#include "small_twister.hpp"
+#include "all_to_all.hpp"
+
+class Clbk : public twisterx::ReceiveCallback {
+public:
+  bool onReceive(int source, void *buffer, int length) override {
+    std::cout << "Received value: " << source << " length " << length << std::endl;
+    delete[] reinterpret_cast<char*>(buffer);
+    return false;
+  }
+};
 
 int main(int argc, char *argv[]) {
-  MPI_Init(&argc, &argv);
-
+  std::cout << "First - ";
+  MPI_Init(NULL, NULL);
+//
+  int rank = 0;
+  int size = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  std::cout << "First - " << rank << " size " << size << std::endl;
+  std::vector<int> sources;
+  std::vector<int> targets;
+  for (int i = 0; i < size; i++) {
+    sources.push_back(i);
+    targets.push_back(i);
+  }
+  Clbk c;
   // ideally should use a buffer pool ...
-  unsigned char* buffer = new unsigned char[1000];
-  uint32_t start = 0;
-  record_t<uint32_t, uint64_t, const char*> r1(buffer, &start, 5, 6, "sdasd");
-  record_t<uint32_t, uint64_t, float, const char*> r2(buffer, &start, 7, 9, 1.03, "sddfsasd");
+  twisterx::AllToAll all(rank, sources, targets, 1, &c);
+  std::cout << "Starting the all receive - " << rank << std::endl;
+  int buf[4] = {rank};
+  for (int i = 0; i < size; i++) {
+    all.insert(buf, 16, i);
+  }
+  all.finish();
+//
+  while (!all.isComplete()) {
+  }
 
-  std::cout << "[INFO] Starting the program ..." << std::endl;
+  all.close();
 
   MPI_Finalize();
+  return 0;
 }
