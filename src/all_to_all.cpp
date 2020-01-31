@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 
 #include "all_to_all.hpp"
 #include "mpi_channel.hpp"
@@ -40,7 +41,27 @@ namespace twisterx {
     delete  channel;
   }
 
-  int AllToAll::insert(void *buffer, int length, int target, std::shared_ptr<int> header, int headerLength) {
+  int AllToAll::insert(void *buffer, int length, int target) {
+    if (finishFlag) {
+      // we cannot accept further
+      return -1;
+    }
+
+    AllToAllSends *s = sends[target];
+    // first check the size of the current buffers
+    int new_length = s->messageSizes + length;
+    if (new_length > 10000) {
+      return 0;
+    }
+
+    std::cout << "Allocating buffer " << length << std::endl;
+    auto *request = new TxRequest(target, buffer, length);
+    s->requestQueue.push(request);
+    s->messageSizes += length;
+    return 1;
+  }
+
+  int AllToAll::insert(void *buffer, int length, int target, int *header, int headerLength) {
     if (finishFlag) {
       // we cannot accept further
       return -1;
@@ -103,7 +124,7 @@ namespace twisterx {
     finishFlag = true;
   }
 
-  void AllToAll::receiveComplete(int receiveId, void *buffer, int length) {
+  void AllToAll::receivedData(int receiveId, void *buffer, int length) {
     // we just call the callback function of this
     callback->onReceive(receiveId, buffer, length);
   }
@@ -117,9 +138,22 @@ namespace twisterx {
     delete request;
   }
 
-  void AllToAll::receivedFinish(int receiveId, int *header, int headerLength) {
-    std::cout << worker_id << " Received finish " << receiveId << std::endl;
-    finishedSources.insert(receiveId);
+  void AllToAll::receivedHeader(int receiveId, int finished,
+                                int * header, int headerLength) {
+    if (finished) {
+      std::cout << worker_id << " Received finish " << receiveId << std::endl;
+      finishedSources.insert(receiveId);
+    } else {
+      if (headerLength > 0) {
+        std::cout << worker_id << " Received header " << receiveId << "Header length " << headerLength << std::endl;
+        for (int i = 0; i < headerLength; i++) {
+          std::cout << i << " ";
+        }
+        std::cout << std::endl;
+      } else {
+        std::cout << worker_id << " Received header " << receiveId << "Header length " << headerLength << std::endl;
+      }
+    }
   }
 
   void AllToAll::sendFinishComplete(TxRequest *request) {

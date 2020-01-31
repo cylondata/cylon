@@ -13,15 +13,16 @@ namespace twisterx {
     void * buffer{};
     int length{};
     int target;
-    std::shared_ptr<int> header;
+    int * header{};
     int headerLength{};
 
-    /**
-     * Channel specific holder
-     */
-    void * channel{};
+    TxRequest(int tgt, void *buf, int len) {
+      target = tgt;
+      buffer = buf;
+      length = len;
+    }
 
-    TxRequest(int tgt, void *buf, int len, std::shared_ptr<int> head, int hLength) {
+    TxRequest(int tgt, void *buf, int len, int * head, int hLength) {
       target = tgt;
       buffer = buf;
       length = len;
@@ -32,6 +33,8 @@ namespace twisterx {
     TxRequest(int tgt) {
       target = tgt;
     }
+
+    ~TxRequest() = default;
   };
 }
 

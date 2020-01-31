@@ -111,13 +111,13 @@ namespace twisterx {
      * Send finish request
      * @param x the target, pendingSend pair
      */
-    void sendFinishRequest(const std::pair<const int, PendingSend *> &x) const;
+    void sendFinishHeader(const std::pair<const int, PendingSend *> &x) const;
 
     /**
      * Send the length
      * @param x the target, pendingSend pair
      */
-    void sendLength(const std::pair<const int, PendingSend *> &x) const;
+    void sendHeader(const std::pair<const int, PendingSend *> &x) const;
   };
 }
 
