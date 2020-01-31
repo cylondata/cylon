@@ -44,7 +44,7 @@ namespace twisterx {
      * @param target the target to send the message
      * @return true if the buffer is accepted
      */
-    int insert(void *buffer, int length, int target);
+    int insert(void *buffer, int length, int target, std::shared_ptr<int> header, int headerLength);
 
     /**
      * Check weather the operation is complete, this method needs to be called until the operation is complete
@@ -72,7 +72,7 @@ namespace twisterx {
      */
     void sendComplete(TxRequest *request) override;
 
-    void receivedFinish(int receiveId) override;
+    void receivedFinish(int receiveId, int *header, int headerLength) override;
 
     /**
      * Close the operation

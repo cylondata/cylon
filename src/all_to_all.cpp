@@ -40,9 +40,14 @@ namespace twisterx {
     delete  channel;
   }
 
-  int AllToAll::insert(void *buffer, int length, int target) {
+  int AllToAll::insert(void *buffer, int length, int target, std::shared_ptr<int> header, int headerLength) {
     if (finishFlag) {
       // we cannot accept further
+      return -1;
+    }
+
+    // we cannot accept headers greater than 6
+    if (headerLength > 6) {
       return -1;
     }
 
@@ -54,7 +59,7 @@ namespace twisterx {
     }
 
     std::cout << "Allocating buffer " << length << std::endl;
-    auto *request = new TxRequest(target, buffer, length);
+    auto *request = new TxRequest(target, buffer, length, header, headerLength);
     s->requestQueue.push(request);
     s->messageSizes += length;
     return 1;
@@ -112,7 +117,7 @@ namespace twisterx {
     delete request;
   }
 
-  void AllToAll::receivedFinish(int receiveId) {
+  void AllToAll::receivedFinish(int receiveId, int *header, int headerLength) {
     std::cout << worker_id << " Received finish " << receiveId << std::endl;
     finishedSources.insert(receiveId);
   }

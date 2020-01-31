@@ -70,6 +70,10 @@ namespace twisterx {
           } else {
             // we are not expecting to receive any more
             x.second->status = RECEIVED_FIN;
+            int count = 0;
+            MPI_Get_count(&status, MPI_INT, &count);
+            // copy the count - 2 to the buffer
+
             // notify the receiver
             rcv_fn->receivedFinish(x.first);
           }
@@ -80,10 +84,10 @@ namespace twisterx {
           std::cout << rank << " ## received from " << x.first << " posted length receive to " << x.second->receiveId << std::endl;
 
           x.second->request = {};
-          x.second->headerBuf[0] = 0;
-          x.second->headerBuf[1] = 0;
+          // clear the array
+          std::fill_n(x.second->headerBuf, TWISTERX_CHANNEL_HEADER_SIZE, 0);
           // malloc a buffer
-          MPI_Irecv(x.second->headerBuf, 2, MPI_INT, x.second->receiveId, edge, MPI_COMM_WORLD, &x.second->request);
+          MPI_Irecv(x.second->headerBuf, TWISTERX_CHANNEL_HEADER_SIZE, MPI_INT, x.second->receiveId, edge, MPI_COMM_WORLD, &x.second->request);
           x.second->status = RECEIVE_LENGTH_POSTED;
           // call the back end
           rcv_fn->receiveComplete(x.first, x.second->data, x.second->length);

@@ -25,7 +25,7 @@ namespace twisterx {
    public:
      virtual void receiveComplete(int receiveId, void *buffer, int length) = 0;
 
-     virtual void receivedFinish(int receiveId) = 0;
+     virtual void receivedFinish(int receiveId, int *header, int headerLength) = 0;
    };
 
   /**
