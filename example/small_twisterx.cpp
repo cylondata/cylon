@@ -45,8 +45,8 @@ int main(int argc, char *argv[]) {
   while (!all.isComplete()) {
   }
 
+  delete [] header;
   all.close();
-
   MPI_Finalize();
   return 0;
 }

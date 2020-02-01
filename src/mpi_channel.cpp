@@ -74,8 +74,9 @@ namespace twisterx {
             int *header = nullptr;
             if (count > 2) {
               header = new int[count - 2];
-              memcpy(header, x.second->headerBuf + sizeof(int) * 2, count);
+              memcpy(header, &(x.second->headerBuf[2]), (count - 2) * sizeof(int));
             }
+            std::cout << rank << " Receive header 1 " << count - 2 << std::endl;
             // notify the receiver
             rcv_fn->receivedHeader(x.first, finFlag, header, count - 2);
           } else {
@@ -177,7 +178,7 @@ namespace twisterx {
 
     // copy the memory of the header
     if (r->headerLength > 0) {
-      memcpy(x.second->headerBuf + sizeof(int) * 2, r->header, r->headerLength * sizeof(int));
+      memcpy(&(x.second->headerBuf[2]), r->header, r->headerLength * sizeof(int));
     }
     std::cout << rank << " Sent length to " << r->target << std::endl;
     // we have to add 2 to the header length

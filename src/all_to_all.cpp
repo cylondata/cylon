@@ -150,6 +150,7 @@ namespace twisterx {
           std::cout << i << " ";
         }
         std::cout << std::endl;
+        delete [] header;
       } else {
         std::cout << worker_id << " Received header " << receiveId << "Header length " << headerLength << std::endl;
       }
