@@ -10,6 +10,11 @@ public:
     delete[] reinterpret_cast<char*>(buffer);
     return false;
   }
+
+  bool onReceiveHeader(int source, int *buffer, int length) override {
+    std::cout << "Received HEADER: " << source << " length " << length << std::endl;
+    return false;
+  }
 };
 
 int main(int argc, char *argv[]) {

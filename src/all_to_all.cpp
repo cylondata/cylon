@@ -2,6 +2,8 @@
 #include <iostream>
 #include <iterator>
 
+#include <glog/logging.h>
+
 #include "all_to_all.hpp"
 #include "mpi_channel.hpp"
 
@@ -150,8 +152,10 @@ namespace twisterx {
           std::cout << i << " ";
         }
         std::cout << std::endl;
+        callback->onReceiveHeader(receiveId, header, headerLength);
         delete [] header;
       } else {
+        callback->onReceiveHeader(receiveId, nullptr, 0);
         std::cout << worker_id << " Received header " << receiveId << "Header length " << headerLength << std::endl;
       }
     }

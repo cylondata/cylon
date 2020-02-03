@@ -1,7 +1,3 @@
-//
-// Created by skamburu on 1/29/20.
-//
-
 #ifndef TWISTERX_ARROW_H
 #define TWISTERX_ARROW_H
 
@@ -9,7 +5,35 @@
 #include "../all_to_all.hpp"
 
 namespace twisterx {
-  class ArrowAllToAll {
+  // lets define some integers to indicate the state of the data transfer using headers
+  enum ArrowHeader {
+    ARROW_HEADER_INIT = 0,
+    // wea are still sending the data about the column
+    ARROW_HEADER_COLUMN_CONTINUE = 1,
+    // this is the end of the column
+    ARROW_HEADER_COLUMN_END = 2
+  };
+
+  /**
+   * Keep track of the items to send for a target
+   */
+  struct PendingSendTable {
+    // the target
+    int target;
+    // pending tables to be sent
+    std::queue<std::shared_ptr<arrow::Table>> pending;
+    // keep the current table
+    std::shared_ptr<arrow::Table> currentTable;
+    // state of the send
+    ArrowHeader status = ARROW_HEADER_INIT;
+    // the current column we are sending
+    int columnIndex{};
+  };
+
+  /**
+   * We are going to take a table as input and send its columns one by one
+   */
+  class ArrowAllToAll : public ReceiveCallback {
   public:
     /**
      * Constructor
@@ -28,7 +52,7 @@ namespace twisterx {
      * @param target the target to send the message
      * @return true if the buffer is accepted
      */
-    int insert(arrow::Table *arrow, int length, int target);
+    int insert(const std::shared_ptr<arrow::Table>& arrow, int target);
 
     /**
      * Check weather the operation is complete, this method needs to be called until the operation is complete
@@ -42,35 +66,45 @@ namespace twisterx {
      */
     void finish();
 
-    /**
-     * We implement the receive complete callback from channel
-     * @param receiveId
-     * @param buffer
-     * @param length
-     */
-    void receiveComplete(int receiveId, void *buffer, int length);
-
-    /**
-     * We implement the send callback from channel
-     * @param request the original request, we can free it now
-     */
-    void sendComplete(TxRequest *request);
-
-
-    void receivedFinish(int receiveId);
-
-    /**
+    /*
      * Close the operation
      */
     void close();
 
-  private:
-    void sendFinishComplete(TxRequest *request);
+    /**
+     * We implement the receive complete callback from alltoall
+     * @param receiveId
+     * @param buffer
+     * @param length
+     */
+    bool onReceive(int source, void *buffer, int length) override;
 
     /**
-     * The inderlying alltoall communication
+     * We implement the receive callback
+     * @param request the original request, we can free it now
      */
-    AllToAll all;
+    bool onReceiveHeader(int source, int *buffer, int length) override;
+
+  private:
+    /**
+     * The targets
+     */
+    std::vector<int> targets_;
+
+    /**
+     * The sources
+     */
+    std::vector<int> srcs_;
+
+    /**
+     * The underlying alltoall communication
+     */
+    std::shared_ptr<AllToAll> all_;
+
+    /**
+     * Keep track of the inputs
+     */
+    std::unordered_map<int, PendingSendTable> inputs_;
   };
 }
 #endif //TWISTERX_ARROW_H
