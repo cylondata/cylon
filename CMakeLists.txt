@@ -77,6 +77,8 @@ if(NOT HAVE_EXCLUSIVE_SCAN)
     add_definitions(-DNEED_EXCLUSIVE_SCAN)
 endif()
 
+include_directories("${ARROW_INCLUDE_DIR}")
+
 #Off if you dont want to build tests -- ON default
 option(TWISTERX_BUILD_TESTS "Build tests." ON)
 

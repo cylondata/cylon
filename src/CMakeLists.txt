@@ -1,5 +1,5 @@
 add_executable(twisterx twisterx.cpp api/worker/Worker.h config/Config.h config/Config.cpp api/comm/Communicator.h api/comm/Types.h api/comm/Buffer.h api/comm/packers/DataPacker.h api/comm/packers/PackerStatus.h api/comm/messages/OutMessage.h api/comm/messages/Message.h api/comm/op/GatherTest.h api/comm/Receiver.h all_to_all.cpp all_to_all.hpp channel.hpp mpi_channel.hpp request.hpp type.hpp mpi_channel.cpp)
-add_library(twisterxlib twisterx.cpp api/worker/Worker.h config/Config.h config/Config.cpp api/comm/Communicator.h api/comm/Types.h api/comm/Buffer.h api/comm/packers/DataPacker.h api/comm/packers/PackerStatus.h api/comm/messages/OutMessage.h api/comm/messages/Message.h api/comm/op/GatherTest.h api/comm/Receiver.h all_to_all.cpp all_to_all.hpp channel.hpp mpi_channel.hpp request.hpp type.hpp mpi_channel.cpp)
+add_library(twisterxlib twisterx.cpp api/worker/Worker.h config/Config.h config/Config.cpp api/comm/Communicator.h api/comm/Types.h api/comm/Buffer.h api/comm/packers/DataPacker.h api/comm/packers/PackerStatus.h api/comm/messages/OutMessage.h api/comm/messages/Message.h api/comm/op/GatherTest.h api/comm/Receiver.h all_to_all.cpp all_to_all.hpp channel.hpp mpi_channel.hpp request.hpp type.hpp mpi_channel.cpp arrow/arrow_all_to_all.cpp arrow/arrow_all_to_all.hpp)
 
 if(MPI_FOUND)
     include_directories(${MPI_INCLUDE_PATH})
