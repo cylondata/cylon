@@ -34,7 +34,12 @@ namespace twisterx {
           t.second.pending.pop();
         }
       } else if (t.second.status == ARROW_HEADER_COLUMN_CONTINUE) {
-
+        const std::shared_ptr<arrow::ChunkedArray> &cArr = t.second.currentTable->column(t.second.columnIndex);
+        const std::shared_ptr<arrow::Array> &arr = cArr->chunk(t.second.arrayIndex);
+        const std::shared_ptr<arrow::ArrayData> &data = arr->data();
+        std::shared_ptr<arrow::Buffer> &buf = data->buffers[t.second.bufferIndex];
+        // lets send this buffer, we need to send the length at this point
+        all_->insert((void *)buf->data(), (int) buf->size(), t.first);
       } else if (t.second.status == ARROW_HEADER_COLUMN_END) {
 
       }

@@ -2,6 +2,8 @@
 #define TWISTERX_ARROW_H
 
 #include <arrow/api.h>
+#include <arrow/table.h>
+
 #include "../all_to_all.hpp"
 
 namespace twisterx {
@@ -19,15 +21,19 @@ namespace twisterx {
    */
   struct PendingSendTable {
     // the target
-    int target;
+    int target{};
     // pending tables to be sent
     std::queue<std::shared_ptr<arrow::Table>> pending;
     // keep the current table
-    std::shared_ptr<arrow::Table> currentTable;
+    std::shared_ptr<arrow::Table> currentTable{};
     // state of the send
     ArrowHeader status = ARROW_HEADER_INIT;
     // the current column we are sending
     int columnIndex{};
+    // the array we are sending of this column
+    int arrayIndex{};
+    // the current buffer inde
+    int bufferIndex{};
   };
 
   /**
