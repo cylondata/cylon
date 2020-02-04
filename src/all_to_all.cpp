@@ -92,7 +92,7 @@ namespace twisterx {
     bool allQueuesEmpty = true;
     // if this is a source, send until the operation is finished
     for (auto w : sends) {
-      if (!w.second->requestQueue.empty()) {
+      while (!w.second->requestQueue.empty()) {
         TxRequest * request = w.second->requestQueue.front();
         // if the request is accepted to be set, pop
         if (channel->send(request)) {
@@ -102,7 +102,9 @@ namespace twisterx {
         if (!w.second->requestQueue.empty()) {
           allQueuesEmpty = false;
         }
-      } else {
+      }
+
+      if (w.second->requestQueue.empty()) {
         if (finishFlag) {
           if (w.second->sendStatus == ALL_TO_ALL_SENDING) {
             auto *request = new TxRequest(w.first);

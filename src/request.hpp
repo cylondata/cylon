@@ -2,6 +2,7 @@
 #define TWISTERX_REQUEST_H
 
 #include <memory>
+#include <cstring>
 
 #define TWISTERX_MSG_FIN 1
 
@@ -13,7 +14,7 @@ namespace twisterx {
     void * buffer{};
     int length{};
     int target;
-    int * header{};
+    int header[6];
     int headerLength{};
 
     TxRequest(int tgt, void *buf, int len) {
@@ -26,7 +27,8 @@ namespace twisterx {
       target = tgt;
       buffer = buf;
       length = len;
-      header = head;
+      // we are copying the header
+      memcpy(&header[0], head, hLength * sizeof(int));
       headerLength = hLength;
     }
 

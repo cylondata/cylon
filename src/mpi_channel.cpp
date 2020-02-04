@@ -178,7 +178,7 @@ namespace twisterx {
 
     // copy the memory of the header
     if (r->headerLength > 0) {
-      memcpy(&(x.second->headerBuf[2]), r->header, r->headerLength * sizeof(int));
+      memcpy(&(x.second->headerBuf[2]), &(r->header[0]), r->headerLength * sizeof(int));
     }
     std::cout << rank << " Sent length to " << r->target << std::endl;
     // we have to add 2 to the header length

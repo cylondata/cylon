@@ -36,6 +36,34 @@ namespace twisterx {
     int bufferIndex{};
   };
 
+  struct PendingReceiveTable {
+    // the source from which we are receiving
+    int source{};
+    // the current data column index
+    int columnIndex{};
+    // the array we are sending of this column
+    int arrayIndex{};
+    // the current buffer inde
+    int bufferIndex{};
+    // number of buffers
+    int noBuffers{};
+    // the current table being built
+    std::shared_ptr<arrow::Table> currentTable{};
+  };
+
+  class ArrowCallback {
+  public:
+    /**
+     * This function is called when a data is received
+     * @param source the source
+     * @param buffer the buffer allocated by the system, we need to free this
+     * @param length the length of the buffer
+     * @return true if we accept this buffer
+     */
+    virtual bool onReceive(int source, std::shared_ptr<arrow::Table> table) = 0;
+  };
+
+
   /**
    * We are going to take a table as input and send its columns one by one
    */
@@ -48,7 +76,7 @@ namespace twisterx {
      * @return
      */
     ArrowAllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId,
-                  ReceiveCallback *callback);
+                  ArrowCallback *callback);
 
     /**
      * Insert a buffer to be sent, if the buffer is accepted return true
@@ -111,6 +139,16 @@ namespace twisterx {
      * Keep track of the inputs
      */
     std::unordered_map<int, PendingSendTable> inputs_;
+
+    /**
+     * Keep track of the receives
+     */
+     std::unordered_map<int, PendingReceiveTable> receives_;
+
+     /**
+      * Adding receive callback
+      */
+      ArrowCallback *recv_callback_;
   };
 }
 #endif //TWISTERX_ARROW_H
