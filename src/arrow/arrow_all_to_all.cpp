@@ -114,6 +114,8 @@ namespace twisterx {
       // okay we are done with this array
       std::shared_ptr<arrow::ArrayData> data = std::make_shared<arrow::ArrayData>(
           schema_->field(table.columnIndex)->type(), table.length, table.buffers);
+      // clears the buffers
+      table.buffers.clear();
       // create an array
       std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
       table.arrays.push_back(array);
@@ -122,11 +124,15 @@ namespace twisterx {
       if (table.arrays.size() == static_cast<size_t>(table.noArray)) {
         std::shared_ptr<arrow::ChunkedArray> chunkedArray = std::make_shared<arrow::ChunkedArray>(
             table.arrays, schema_->field(table.columnIndex)->type());
+        // clear the arrays
+        table.arrays.clear();
         table.currentArrays.push_back(chunkedArray);
 
         if (table.currentArrays.size() == static_cast<size_t>(schema_->num_fields())) {
           // now we can create the table
           std::shared_ptr<arrow::Table> tablePtr = arrow::Table::Make(schema_, table.currentArrays);
+          // clear the current array
+          table.currentArrays.clear();
           recv_callback_->onReceive(source, tablePtr);
         }
       }
