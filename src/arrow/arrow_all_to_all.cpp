@@ -115,7 +115,7 @@ namespace twisterx {
       std::shared_ptr<arrow::ArrayData> data = std::make_shared<arrow::ArrayData>(
           schema_->field(table.columnIndex)->type(), table.length, table.buffers);
       // create an array
-      std::shared_ptr<arrow::Array> array;
+      std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
       table.arrays.push_back(array);
 
       // we have received all the arrays of the chunk array
