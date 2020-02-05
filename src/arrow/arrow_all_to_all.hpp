@@ -47,8 +47,18 @@ namespace twisterx {
     int bufferIndex{};
     // number of buffers
     int noBuffers{};
+    // the number of arrays in a chunked array
+    int noArray{};
+    // the length of the current array data
+    int length{};
     // the current table being built
     std::shared_ptr<arrow::Table> currentTable{};
+    // keep the current columns
+    std::vector<std::shared_ptr<arrow::ChunkedArray>> currentArrays;
+    // keep the current buffers
+    std::vector<std::shared_ptr<arrow::Buffer>> buffers;
+    // keep the current arrays
+    std::vector<std::shared_ptr<arrow::Array>> arrays;
   };
 
   class ArrowCallback {
@@ -76,7 +86,7 @@ namespace twisterx {
      * @return
      */
     ArrowAllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId,
-                  ArrowCallback *callback);
+                  ArrowCallback *callback, std::shared_ptr<arrow::Schema> schema);
 
     /**
      * Insert a buffer to be sent, if the buffer is accepted return true
@@ -143,12 +153,17 @@ namespace twisterx {
     /**
      * Keep track of the receives
      */
-     std::unordered_map<int, PendingReceiveTable> receives_;
+    std::unordered_map<int, PendingReceiveTable> receives_;
 
-     /**
-      * Adding receive callback
-      */
-      ArrowCallback *recv_callback_;
+    /**
+     * Adding receive callback
+     */
+    ArrowCallback *recv_callback_;
+
+    /**
+     * The schema of the arrow
+     */
+    std::shared_ptr<arrow::Schema> schema_;
   };
 }
 #endif //TWISTERX_ARROW_H

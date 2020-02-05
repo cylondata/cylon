@@ -2,10 +2,11 @@
 
 namespace twisterx {
   ArrowAllToAll::ArrowAllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets,
-                               int edgeId, ArrowCallback *callback) {
+                               int edgeId, ArrowCallback *callback, std::shared_ptr<arrow::Schema> schema) {
     targets_ = targets;
     srcs_ = source;
     recv_callback_ = callback;
+    schema_ = schema;
     
     // we need to pass the correct arguments
     all_ = std::make_shared<AllToAll>(worker_id, source, targets, edgeId, this);
@@ -53,13 +54,15 @@ namespace twisterx {
             const std::shared_ptr<arrow::ArrayData> &data = arr->data();
             while (t.second.bufferIndex < data->buffers.size()) {
               std::shared_ptr<arrow::Buffer> &buf = data->buffers[t.second.bufferIndex];
-              int hdr[4];
+              int hdr[6];
               hdr[0] = t.second.columnIndex;
               hdr[1] = t.second.arrayIndex;
               hdr[2] = t.second.bufferIndex;
               hdr[3] = data->buffers.size();
+              hdr[4] = cArr->chunks().size();
+              hdr[5] = data->length;
               // lets send this buffer, we need to send the length at this point
-              bool accept = all_->insert((void *) buf->data(), (int) buf->size(), t.first, hdr, 4);
+              bool accept = all_->insert((void *) buf->data(), (int) buf->size(), t.first, hdr, 6);
               if (!accept) {
                 canContinue = false;
                 break;
@@ -103,6 +106,32 @@ namespace twisterx {
 
   bool ArrowAllToAll::onReceive(int source, void *buffer, int length) {
     PendingReceiveTable &table = receives_[source];
+    // create the buffer hosting the value
+    std::shared_ptr<arrow::Buffer>  buf = std::make_shared<arrow::Buffer>((uint8_t *)buffer, length);
+    table.buffers.push_back(buf);
+    // now check weather we have the expected number of buffers received
+    if (table.noBuffers == table.bufferIndex - 1) {
+      // okay we are done with this array
+      std::shared_ptr<arrow::ArrayData> data = std::make_shared<arrow::ArrayData>(
+          schema_->field(table.columnIndex)->type(), table.length, table.buffers);
+      // create an array
+      std::shared_ptr<arrow::Array> array;
+      table.arrays.push_back(array);
+
+      // we have received all the arrays of the chunk array
+      if (table.arrays.size() == static_cast<size_t>(table.noArray)) {
+        std::shared_ptr<arrow::ChunkedArray> chunkedArray = std::make_shared<arrow::ChunkedArray>(
+            table.arrays, schema_->field(table.columnIndex)->type());
+        table.currentArrays.push_back(chunkedArray);
+
+        if (table.currentArrays.size() == static_cast<size_t>(schema_->num_fields())) {
+          // now we can create the table
+          std::shared_ptr<arrow::Table> tablePtr = arrow::Table::Make(schema_, table.currentArrays);
+          recv_callback_->onReceive(source, tablePtr);
+        }
+      }
+    }
+
     return false;
   }
 
@@ -112,6 +141,8 @@ namespace twisterx {
     table.arrayIndex = buffer[1];
     table.bufferIndex = buffer[2];
     table.noBuffers = buffer[3];
+    table.noArray = buffer[4];
+    table.length = buffer[5];
     return true;
   }
 }
