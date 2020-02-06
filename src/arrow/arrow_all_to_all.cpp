@@ -1,5 +1,7 @@
 #include "arrow_all_to_all.hpp"
 
+#include <glog/logging.h>
+
 namespace twisterx {
   ArrowAllToAll::ArrowAllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets,
                                int edgeId, ArrowCallback *callback, std::shared_ptr<arrow::Schema> schema) {
@@ -38,6 +40,7 @@ namespace twisterx {
         if (!pend.empty()) {
           t.second.currentTable = t.second.pending.front();
           t.second.pending.pop();
+          t.second.status = ARROW_HEADER_COLUMN_CONTINUE;
         }
       }
 
@@ -48,21 +51,20 @@ namespace twisterx {
           const std::shared_ptr<arrow::ChunkedArray> &cArr = t.second.currentTable->column(t.second.columnIndex);
 
           unsigned long size = cArr->chunks().size();
-          while (t.second.arrayIndex < size && canContinue) {
+          while (static_cast<size_t>(t.second.arrayIndex) < size && canContinue) {
             const std::shared_ptr<arrow::Array> &arr = cArr->chunk(t.second.arrayIndex);
 
             const std::shared_ptr<arrow::ArrayData> &data = arr->data();
-            while (t.second.bufferIndex < data->buffers.size()) {
+            while (static_cast<size_t>(t.second.bufferIndex) < data->buffers.size()) {
               std::shared_ptr<arrow::Buffer> &buf = data->buffers[t.second.bufferIndex];
-              int hdr[6];
+              int hdr[5];
               hdr[0] = t.second.columnIndex;
-              hdr[1] = t.second.arrayIndex;
-              hdr[2] = t.second.bufferIndex;
-              hdr[3] = data->buffers.size();
-              hdr[4] = cArr->chunks().size();
-              hdr[5] = data->length;
+              hdr[1] = t.second.bufferIndex;
+              hdr[2] = data->buffers.size();
+              hdr[3] = cArr->chunks().size();
+              hdr[4] = data->length;
               // lets send this buffer, we need to send the length at this point
-              bool accept = all_->insert((void *) buf->data(), (int) buf->size(), t.first, hdr, 6);
+              bool accept = all_->insert((void *) buf->data(), (int) buf->size(), t.first, hdr, 5);
               if (!accept) {
                 canContinue = false;
                 break;
@@ -142,13 +144,17 @@ namespace twisterx {
   }
 
   bool ArrowAllToAll::onReceiveHeader(int source, int *buffer, int length) {
+    if (length != 5) {
+      LOG(FATAL) << "Incorrect length on header, expected 5 ints got " << length;
+      return false;
+    }
+
     PendingReceiveTable &table = receives_[source];
     table.columnIndex = buffer[0];
-    table.arrayIndex = buffer[1];
-    table.bufferIndex = buffer[2];
-    table.noBuffers = buffer[3];
-    table.noArray = buffer[4];
-    table.length = buffer[5];
+    table.bufferIndex = buffer[1];
+    table.noBuffers = buffer[2];
+    table.noArray = buffer[3];
+    table.length = buffer[4];
     return true;
   }
 }

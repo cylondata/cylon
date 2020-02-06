@@ -41,8 +41,6 @@ namespace twisterx {
     int source{};
     // the current data column index
     int columnIndex{};
-    // the array we are sending of this column
-    int arrayIndex{};
     // the current buffer inde
     int bufferIndex{};
     // number of buffers
@@ -51,8 +49,6 @@ namespace twisterx {
     int noArray{};
     // the length of the current array data
     int length{};
-    // the current table being built
-    std::shared_ptr<arrow::Table> currentTable{};
     // keep the current columns
     std::vector<std::shared_ptr<arrow::ChunkedArray>> currentArrays;
     // keep the current buffers
