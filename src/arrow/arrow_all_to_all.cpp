@@ -33,10 +33,11 @@ namespace twisterx {
   }
 
   bool ArrowAllToAll::isComplete() {
+    bool isAllEmpty = true;
     // we need to send the buffers
     for (auto t : inputs_) {
+      std::queue<std::shared_ptr<arrow::Table>> &pend = t.second.pending;
       if (t.second.status == ARROW_HEADER_INIT) {
-        std::queue<std::shared_ptr<arrow::Table>> &pend = t.second.pending;
         if (!pend.empty()) {
           t.second.currentTable = t.second.pending.front();
           t.second.pending.pop();
@@ -73,11 +74,13 @@ namespace twisterx {
             }
             // if we can continue, that means we are finished with this array
             if (canContinue) {
+              t.second.bufferIndex = 0;
               t.second.arrayIndex++;
             }
           }
           // if we can continue, that means we are finished with this column
           if (canContinue) {
+            t.second.arrayIndex = 0;
             t.second.columnIndex++;
           }
         }
@@ -91,12 +94,21 @@ namespace twisterx {
           t.second.status = ARROW_HEADER_INIT;
         }
       }
+
+      if (!pend.empty() || t.second.status == ARROW_HEADER_COLUMN_CONTINUE) {
+        isAllEmpty = false;
+      }
     }
+
+    if (isAllEmpty && finished) {
+      all_->finish();
+    }
+
     return all_->isComplete();
   }
 
   void ArrowAllToAll::finish() {
-    all_->finish();
+    finished = true;
   }
 
   void ArrowAllToAll::close() {
@@ -112,7 +124,7 @@ namespace twisterx {
     std::shared_ptr<arrow::Buffer>  buf = std::make_shared<arrow::Buffer>((uint8_t *)buffer, length);
     table.buffers.push_back(buf);
     // now check weather we have the expected number of buffers received
-    if (table.noBuffers == table.bufferIndex - 1) {
+    if (table.noBuffers == table.bufferIndex + 1) {
       // okay we are done with this array
       std::shared_ptr<arrow::ArrayData> data = std::make_shared<arrow::ArrayData>(
           schema_->field(table.columnIndex)->type(), table.length, table.buffers);
@@ -140,7 +152,7 @@ namespace twisterx {
       }
     }
 
-    return false;
+    return true;
   }
 
   bool ArrowAllToAll::onReceiveHeader(int source, int *buffer, int length) {

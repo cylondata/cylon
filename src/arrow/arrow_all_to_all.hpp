@@ -160,6 +160,11 @@ namespace twisterx {
      * The schema of the arrow
      */
     std::shared_ptr<arrow::Schema> schema_;
+
+    /**
+     * We have received the finish
+     */
+     bool finished = false;
   };
 }
 #endif //TWISTERX_ARROW_H

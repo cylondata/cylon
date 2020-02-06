@@ -47,7 +47,9 @@ include(ConfigureArrow)
 
 if(ARROW_FOUND)
     message(STATUS "Apache Arrow found in ${ARROW_INCLUDE_DIR}")
+    message(STATUS "******* Apache Arrow found in ${ARROW_LIBRARIES}")
 else()
+    message(STATUS "******* Apache Arrow NOT found in ${ARROW_LIBRARIES}")
     message(FATAL_ERROR "Apache Arrow not found, please check your settings.")
 endif(ARROW_FOUND)
 
