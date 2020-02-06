@@ -50,13 +50,7 @@ namespace twisterx {
     }
 
     AllToAllSends *s = sends[target];
-    // first check the size of the current buffers
-    int new_length = s->messageSizes + length;
-    if (new_length > 10000) {
-      return 0;
-    }
-
-    std::cout << "Allocating buffer " << length << std::endl;
+    LOG(INFO) << "Allocating buffer " << length;
     auto *request = new TxRequest(target, buffer, length);
     s->requestQueue.push(request);
     s->messageSizes += length;
@@ -75,13 +69,7 @@ namespace twisterx {
     }
 
     AllToAllSends *s = sends[target];
-    // first check the size of the current buffers
-    int new_length = s->messageSizes + length;
-    if (new_length > 10000) {
-      return 0;
-    }
-
-    std::cout << "Allocating buffer " << length << std::endl;
+    LOG(INFO) << "Allocating buffer " << length;
     auto *request = new TxRequest(target, buffer, length, header, headerLength);
     s->requestQueue.push(request);
     s->messageSizes += length;
@@ -138,14 +126,14 @@ namespace twisterx {
     // we sent this request so we need to reduce memory
     s->messageSizes  = s->messageSizes - request->length;
     // we don't have much to do here, so we delete the request
-    std::cout << "Free buffer " << request->length << std::endl;
+    LOG(INFO) << "Free buffer " << request->length;
     delete request;
   }
 
   void AllToAll::receivedHeader(int receiveId, int finished,
                                 int * header, int headerLength) {
     if (finished) {
-      std::cout << worker_id << " Received finish " << receiveId << std::endl;
+      LOG(INFO) << worker_id << " Received finish " << receiveId;
       finishedSources.insert(receiveId);
     } else {
       if (headerLength > 0) {
@@ -167,7 +155,7 @@ namespace twisterx {
     finishedTargets.insert(request->target);
     AllToAllSends *s = sends[request->target];
     s->sendStatus = ALL_TO_ALL_FINISHED;
-    std::cout << "Free fin buffer " << request->length << std::endl;
+    LOG(INFO) << "Free fin buffer " << request->length;
     delete request;
   }
 }

@@ -21,8 +21,9 @@ public:
     for (int64_t i = 0; i < table->num_rows(); i++) {
       int64_t id = ids->Value(i);
       double cost = costs->Value(i);
-
-      LOG(INFO) << "ID " << id << " cost " << cost;
+      if (i % 100000 == 0) {
+        LOG(INFO) << "ID " << id << " cost " << cost;
+      }
     }
     return true;
   }
@@ -48,13 +49,15 @@ int main(int argc, char *argv[]) {
   Int64Builder id_builder(pool);
   DoubleBuilder cost_builder(pool);
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 1000000; i++) {
     id_builder.Append(10 + i);
     cost_builder.Append(0.2 + i);
+    if (i % 100000 == 0) {
+      LOG(INFO) << "Appended " << i;
+    }
   }
 
   Clbk clbk;
-
   std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
       arrow::field("id", arrow::int64()), arrow::field("cost", arrow::float64())};
   auto schema = std::make_shared<arrow::Schema>(schema_vector);
@@ -66,7 +69,8 @@ int main(int argc, char *argv[]) {
   cost_builder.Finish(&cost_array);
 
   std::shared_ptr<arrow::Table> ptr = arrow::Table::Make(schema, {id_array, cost_array});
-  all.insert(ptr, rank);
+  LOG(INFO) << "Insert ";
+  all.insert(ptr, (rank + 1) % size);
 
   all.finish();
   while (!all.isComplete()) {
