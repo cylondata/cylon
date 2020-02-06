@@ -14,17 +14,11 @@ using arrow::Int64Builder;
 class Clbk : public twisterx::ArrowCallback {
 public:
   bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
-    LOG(INFO) << "Received 000000000000000000000000000000000000000";
-
     auto ids =
         std::static_pointer_cast<arrow::Int64Array>(table->column(0)->chunk(0));
     auto costs =
         std::static_pointer_cast<arrow::DoubleArray>(table->column(1)->chunk(0));
-
-
     for (int64_t i = 0; i < table->num_rows(); i++) {
-      // Another simplification in this example is that we assume that there are
-      // no null entries, e.g. each row is fill with valid values.
       int64_t id = ids->Value(i);
       double cost = costs->Value(i);
 
