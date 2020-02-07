@@ -14,7 +14,7 @@ project(TWISTERX)
 set(TWISTERX_VERSION 0.0)
 
 message (STATUS "value: ${TWISTERX_SOURCE_DIR}" )
-
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 # So we can find our custom modules
 list(APPEND CMAKE_MODULE_PATH ${TWISTERX_SOURCE_DIR}/CMake)
 
@@ -43,9 +43,15 @@ option (WITH_GFLAGS "Use gflags" ON)
 SET(WITH_GFLAGS OFF)
 add_subdirectory(thirdparty/glog)
 
-# compiler
-#SET(CMAKE_CXX_COMPILER mpicxx)
-#SET(CMAKE_C_COMPILER mpicc)
+include(ConfigureArrow)
+
+if(ARROW_FOUND)
+    message(STATUS "Apache Arrow found in ${ARROW_INCLUDE_DIR}")
+    message(STATUS "******* Apache Arrow found in ${ARROW_LIBRARIES}")
+else()
+    message(STATUS "******* Apache Arrow NOT found in ${ARROW_LIBRARIES}")
+    message(FATAL_ERROR "Apache Arrow not found, please check your settings.")
+endif(ARROW_FOUND)
 
 IF(NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEASE"))
     SET(CMAKE_BUILD_TYPE "Debug")
@@ -72,6 +78,8 @@ check_cxx_source_compiles(
 if(NOT HAVE_EXCLUSIVE_SCAN)
     add_definitions(-DNEED_EXCLUSIVE_SCAN)
 endif()
+
+include_directories("${ARROW_INCLUDE_DIR}")
 
 #Off if you dont want to build tests -- ON default
 option(TWISTERX_BUILD_TESTS "Build tests." ON)

@@ -8,6 +8,8 @@
 #include <queue>
 #include <mpi.h>
 
+#define TWISTERX_CHANNEL_HEADER_SIZE 8
+
 namespace twisterx {
   enum SendStatus {
     SEND_INIT = 0,
@@ -28,8 +30,8 @@ namespace twisterx {
    * Keep track about the length buffer to receive the length first
    */
   struct PendingSend {
-    //  for a given send we will use the length buffer or the request
-    int headerBuf[2];
+    //  we allow upto 8 ints for the header
+    int headerBuf[TWISTERX_CHANNEL_HEADER_SIZE];
     std::queue<TxRequest *> pendingData;
     SendStatus status = SEND_INIT;
     MPI_Request request{};
@@ -38,7 +40,8 @@ namespace twisterx {
   };
 
   struct PendingReceive {
-    int headerBuf[2];
+    // we allow upto 8 integer header
+    int headerBuf[TWISTERX_CHANNEL_HEADER_SIZE];
     int receiveId{};
     void * data{};
     int length{};
@@ -108,13 +111,13 @@ namespace twisterx {
      * Send finish request
      * @param x the target, pendingSend pair
      */
-    void sendFinishRequest(const std::pair<const int, PendingSend *> &x) const;
+    void sendFinishHeader(const std::pair<const int, PendingSend *> &x) const;
 
     /**
      * Send the length
      * @param x the target, pendingSend pair
      */
-    void sendLength(const std::pair<const int, PendingSend *> &x) const;
+    void sendHeader(const std::pair<const int, PendingSend *> &x) const;
   };
 }
 

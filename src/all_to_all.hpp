@@ -44,6 +44,17 @@ namespace twisterx {
      * @param target the target to send the message
      * @return true if the buffer is accepted
      */
+    int insert(void *buffer, int length, int target, int * header, int headerLength);
+
+
+    /**
+     * Insert a buffer to be sent, if the buffer is accepted return true
+     *
+     * @param buffer the buffer to send
+     * @param length the length of the message
+     * @param target the target to send the message
+     * @return true if the buffer is accepted
+     */
     int insert(void *buffer, int length, int target);
 
     /**
@@ -64,7 +75,7 @@ namespace twisterx {
      * @param buffer
      * @param length
      */
-    void receiveComplete(int receiveId, void *buffer, int length) override;
+    void receivedData(int receiveId, void *buffer, int length) override;
 
     /**
      * We implement the send callback from channel
@@ -72,7 +83,14 @@ namespace twisterx {
      */
     void sendComplete(TxRequest *request) override;
 
-    void receivedFinish(int receiveId) override;
+    /**
+     * Receive the header, this happens before a message is received
+     * @param receiveId the receive id
+     * @param finished weather this is the last header
+     * @param header the header as an set of integers
+     * @param headerLength length of the header
+     */
+    void receivedHeader(int receiveId, int finished, int * header, int headerLength) override;
 
     /**
      * Close the operation

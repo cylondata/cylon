@@ -23,9 +23,9 @@ namespace twisterx {
    */
    class ChannelReceiveCallback {
    public:
-     virtual void receiveComplete(int receiveId, void *buffer, int length) = 0;
+     virtual void receivedData(int receiveId, void *buffer, int length) = 0;
 
-     virtual void receivedFinish(int receiveId) = 0;
+     virtual void receivedHeader(int receiveId, int finished, int * header, int headerLength) = 0;
    };
 
   /**

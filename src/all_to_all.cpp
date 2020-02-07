@@ -1,5 +1,8 @@
 #include <algorithm>
 #include <iostream>
+#include <iterator>
+
+#include <glog/logging.h>
 
 #include "all_to_all.hpp"
 #include "mpi_channel.hpp"
@@ -47,14 +50,27 @@ namespace twisterx {
     }
 
     AllToAllSends *s = sends[target];
-    // first check the size of the current buffers
-    int new_length = s->messageSizes + length;
-    if (new_length > 10000) {
-      return 0;
+    LOG(INFO) << "Allocating buffer " << length;
+    auto *request = new TxRequest(target, buffer, length);
+    s->requestQueue.push(request);
+    s->messageSizes += length;
+    return 1;
+  }
+
+  int AllToAll::insert(void *buffer, int length, int target, int *header, int headerLength) {
+    if (finishFlag) {
+      // we cannot accept further
+      return -1;
     }
 
-    std::cout << "Allocating buffer " << length << std::endl;
-    auto *request = new TxRequest(target, buffer, length);
+    // we cannot accept headers greater than 6
+    if (headerLength > 6) {
+      return -1;
+    }
+
+    AllToAllSends *s = sends[target];
+    LOG(INFO) << "Allocating buffer " << length;
+    auto *request = new TxRequest(target, buffer, length, header, headerLength);
     s->requestQueue.push(request);
     s->messageSizes += length;
     return 1;
@@ -64,7 +80,7 @@ namespace twisterx {
     bool allQueuesEmpty = true;
     // if this is a source, send until the operation is finished
     for (auto w : sends) {
-      if (!w.second->requestQueue.empty()) {
+      while (!w.second->requestQueue.empty()) {
         TxRequest * request = w.second->requestQueue.front();
         // if the request is accepted to be set, pop
         if (channel->send(request)) {
@@ -74,7 +90,9 @@ namespace twisterx {
         if (!w.second->requestQueue.empty()) {
           allQueuesEmpty = false;
         }
-      } else {
+      }
+
+      if (w.second->requestQueue.empty()) {
         if (finishFlag) {
           if (w.second->sendStatus == ALL_TO_ALL_SENDING) {
             auto *request = new TxRequest(w.first);
@@ -98,7 +116,7 @@ namespace twisterx {
     finishFlag = true;
   }
 
-  void AllToAll::receiveComplete(int receiveId, void *buffer, int length) {
+  void AllToAll::receivedData(int receiveId, void *buffer, int length) {
     // we just call the callback function of this
     callback->onReceive(receiveId, buffer, length);
   }
@@ -108,20 +126,36 @@ namespace twisterx {
     // we sent this request so we need to reduce memory
     s->messageSizes  = s->messageSizes - request->length;
     // we don't have much to do here, so we delete the request
-    std::cout << "Free buffer " << request->length << std::endl;
+    LOG(INFO) << "Free buffer " << request->length;
     delete request;
   }
 
-  void AllToAll::receivedFinish(int receiveId) {
-    std::cout << worker_id << " Received finish " << receiveId << std::endl;
-    finishedSources.insert(receiveId);
+  void AllToAll::receivedHeader(int receiveId, int finished,
+                                int * header, int headerLength) {
+    if (finished) {
+      LOG(INFO) << worker_id << " Received finish " << receiveId;
+      finishedSources.insert(receiveId);
+    } else {
+      if (headerLength > 0) {
+        LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
+        for (int i = 0; i < headerLength; i++) {
+          std::cout << i << " ";
+        }
+        std::cout << std::endl;
+        callback->onReceiveHeader(receiveId, header, headerLength);
+        delete [] header;
+      } else {
+        callback->onReceiveHeader(receiveId, nullptr, 0);
+        LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
+      }
+    }
   }
 
   void AllToAll::sendFinishComplete(TxRequest *request) {
     finishedTargets.insert(request->target);
     AllToAllSends *s = sends[request->target];
     s->sendStatus = ALL_TO_ALL_FINISHED;
-    std::cout << "Free fin buffer " << request->length << std::endl;
+    LOG(INFO) << "Free fin buffer " << request->length;
     delete request;
   }
 }
