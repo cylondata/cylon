@@ -122,4 +122,5 @@ endif()
 
 add_subdirectory(cpp/src)
 add_subdirectory(cpp/example)
+add_subdirectory(java/src/main/native)
 
