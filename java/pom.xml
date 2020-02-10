@@ -78,7 +78,7 @@
                                 <mkdir dir="${native.build.path}"/>
                                 <exec dir="${native.build.path}" failonerror="true"
                                       executable="cmake">
-                                    <arg value="${basedir}/main/native"/>
+                                    <arg value="${basedir}/src/main/native"/>
                                 </exec>
                                 <exec dir="${native.build.path}"
                                       failonerror="true"
@@ -103,7 +103,7 @@
                     <javahClassNames>
                         <javahClassName>ai.twister2.AllToAll</javahClassName>
                     </javahClassNames>
-                    <javahOutputDirectory>${basedir}/main/native/include/</javahOutputDirectory>
+                    <javahOutputDirectory>${basedir}/src/main/native/include/</javahOutputDirectory>
                 </configuration>
             </plugin>
         </plugins>
