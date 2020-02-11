@@ -23,6 +23,12 @@ SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
 
+set(TWISTERX_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src"
+        "${PROJECT_SOURCE_DIR}/../../../../cpp/thirdparty/cub")
+find_library(TWISTERX_LIBRARY "twisterx" "../../../../cpp/build/lib")
+message(STATUS "TWISTERX_LIBRARY set to ${TWISTERX_LIBRARY}")
+add_library(twisterx SHARED IMPORTED ${TWISTERX_LIBRARY})
+set_target_properties(twisterx PROPERTIES IMPORTED_LOCATION ${TWISTERX_LIBRARY})
 
 set(SOURCE_FILES
         "src/AllToAll.cpp"
@@ -32,4 +38,5 @@ add_library(twisterxjni SHARED ${SOURCE_FILES})
 if(MPI_FOUND)
     include_directories(${MPI_INCLUDE_PATH})
     target_link_libraries(twisterxjni ${MPI_LIBRARIES})
+    target_link_libraries(twisterxjni twisterx)
 endif()

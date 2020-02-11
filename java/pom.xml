@@ -23,7 +23,6 @@
 
     <properties>
         <native.build.path>${basedir}/target/cmake-build</native.build.path>
-        <skipNativeCopy>false</skipNativeCopy>
     </properties>
 
     <dependencies>
@@ -85,13 +84,10 @@
                         <configuration>
                             <tasks>
                                 <mkdir dir="${native.build.path}"/>
-                                <exec dir="${native.build.path}" failonerror="true"
-                                      executable="cmake">
+                                <exec dir="${native.build.path}" failonerror="true" executable="cmake">
                                     <arg value="${basedir}/src/main/native"/>
                                 </exec>
-                                <exec dir="${native.build.path}"
-                                      failonerror="true"
-                                      executable="make">
+                                <exec dir="${native.build.path}" failonerror="true" executable="make">
                                     <arg value="-j"/>
                                 </exec>
                             </tasks>
@@ -126,13 +122,19 @@
                         </goals>
                         <configuration>
                             <overwrite>true</overwrite>
-                            <skip>${skipNativeCopy}</skip>
+                            <skip>false</skip>
                             <outputDirectory>${basedir}/target/native-deps/${os.arch}/${os.name}</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${native.build.path}/lib</directory>
                                     <includes>
                                         <include>libtwisterxjni.so</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>../cpp/build/lib</directory>
+                                    <includes>
+                                        <include>libtwisterx.so</include>
                                     </includes>
                                 </resource>
                             </resources>
