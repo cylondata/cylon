@@ -1,2 +1,2 @@
 # allow toolchain files to be tracked by git
-!*.cmake
+!linux-mingw-w64-gnuxx11.cmake
