@@ -24,7 +24,7 @@ option (BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option (PRINT_UNSYMBOLIZED_STACK_TRACES
   "Print raw pc values on symbolization failure" OFF)
 
-list (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+list (APPEND CMAKE_MODULE_PATH cmake)
 
 include (CheckCSourceCompiles)
 include (CheckCXXCompilerFlag)
@@ -432,23 +432,23 @@ set (GLOG_PUBLIC_H
   ${CMAKE_CURRENT_BINARY_DIR}/glog/raw_logging.h
   ${CMAKE_CURRENT_BINARY_DIR}/glog/stl_logging.h
   ${CMAKE_CURRENT_BINARY_DIR}/glog/vlog_is_on.h
-  src/glog/log_severity.h
+        src/glog/log_severity.h
 )
 
 set (GLOG_SRCS
   ${GLOG_PUBLIC_H}
-  src/base/commandlineflags.h
-  src/base/googleinit.h
-  src/base/mutex.h
-  src/demangle.cc
-  src/demangle.h
-  src/logging.cc
-  src/raw_logging.cc
-  src/symbolize.cc
-  src/symbolize.h
-  src/utilities.cc
-  src/utilities.h
-  src/vlog_is_on.cc
+        src/base/commandlineflags.h
+        src/base/googleinit.h
+        src/base/mutex.h
+        src/demangle.cc
+        src/demangle.h
+        src/logging.cc
+        src/raw_logging.cc
+        src/symbolize.cc
+        src/symbolize.h
+        src/utilities.cc
+        src/utilities.h
+        src/vlog_is_on.cc
 )
 
 if (HAVE_PTHREAD OR WIN32)
@@ -457,8 +457,8 @@ endif (HAVE_PTHREAD OR WIN32)
 
 if (WIN32)
   list (APPEND GLOG_SRCS
-    src/windows/port.cc
-    src/windows/port.h
+          src/windows/port.cc
+          src/windows/port.h
   )
 endif (WIN32)
 
@@ -516,12 +516,12 @@ target_include_directories (glog BEFORE PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
   "$<INSTALL_INTERFACE:${_glog_CMake_INCLUDE_DIR}>"
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+  PRIVATE src)
 
 if (WIN32)
   target_include_directories (glog PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/windows>"
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/windows)
+    PRIVATE src/windows)
 endif (WIN32)
 
 set_target_properties (glog PROPERTIES DEFINE_SYMBOL LIBGLOG_EXPORTS)
@@ -551,13 +551,13 @@ endif (NOT BUILD_SHARED_LIBS)
 
 if (BUILD_TESTING)
   add_executable (logging_unittest
-    src/logging_unittest.cc
+          src/logging_unittest.cc
   )
 
   target_link_libraries (logging_unittest PRIVATE glog)
 
   add_executable (stl_logging_unittest
-    src/stl_logging_unittest.cc
+          src/stl_logging_unittest.cc
   )
 
   target_link_libraries (stl_logging_unittest PRIVATE glog)
@@ -589,35 +589,35 @@ if (BUILD_TESTING)
 
   if (HAVE_SYMBOLIZE)
     add_executable (symbolize_unittest
-      src/symbolize_unittest.cc
+            src/symbolize_unittest.cc
     )
 
     target_link_libraries (symbolize_unittest PRIVATE glog)
   endif (HAVE_SYMBOLIZE)
 
   add_executable (demangle_unittest
-    src/demangle_unittest.cc
+          src/demangle_unittest.cc
   )
 
   target_link_libraries (demangle_unittest PRIVATE glog)
 
   if (HAVE_STACKTRACE)
     add_executable (stacktrace_unittest
-      src/stacktrace_unittest.cc
+            src/stacktrace_unittest.cc
     )
 
     target_link_libraries (stacktrace_unittest PRIVATE glog)
   endif (HAVE_STACKTRACE)
 
   add_executable (utilities_unittest
-    src/utilities_unittest.cc
+          src/utilities_unittest.cc
   )
 
   target_link_libraries (utilities_unittest PRIVATE glog)
 
   if (HAVE_STACKTRACE AND HAVE_SYMBOLIZE)
     add_executable (signalhandler_unittest
-      src/signalhandler_unittest.cc
+            src/signalhandler_unittest.cc
     )
 
     target_link_libraries (signalhandler_unittest PRIVATE glog)

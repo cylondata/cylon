@@ -13,7 +13,6 @@ project(TWISTERX)
 
 set(TWISTERX_VERSION 0.0)
 
-message (STATUS "value: ${TWISTERX_SOURCE_DIR}" )
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 # So we can find our custom modules
 list(APPEND CMAKE_MODULE_PATH ${TWISTERX_SOURCE_DIR}/CMake)
@@ -47,9 +46,7 @@ include(ConfigureArrow)
 
 if(ARROW_FOUND)
     message(STATUS "Apache Arrow found in ${ARROW_INCLUDE_DIR}")
-    message(STATUS "******* Apache Arrow found in ${ARROW_LIBRARIES}")
 else()
-    message(STATUS "******* Apache Arrow NOT found in ${ARROW_LIBRARIES}")
     message(FATAL_ERROR "Apache Arrow not found, please check your settings.")
 endif(ARROW_FOUND)
 
@@ -120,7 +117,6 @@ if(TWISTERX_BUILD_TESTS)
     add_subdirectory(test)
 endif()
 
-add_subdirectory(cpp/src)
-add_subdirectory(cpp/example)
-add_subdirectory(java/src/main/native)
+add_subdirectory(src)
+add_subdirectory(example)
 

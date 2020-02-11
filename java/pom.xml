@@ -66,6 +66,15 @@
             </resource>
         </resources>
 
+        <pluginManagement>
+            <plugins>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.6</version>
+            </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -101,10 +110,35 @@
 
                 <configuration>
                     <javahClassNames>
-                        <javahClassName>ai.twister2.AllToAll</javahClassName>
+                        <javahClassName>org.twister2.AllToAll</javahClassName>
                     </javahClassNames>
                     <javahOutputDirectory>${basedir}/src/main/native/include/</javahOutputDirectory>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-native-libs</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <overwrite>true</overwrite>
+                            <skip>${skipNativeCopy}</skip>
+                            <outputDirectory>${basedir}/target/native-deps/${os.arch}/${os.name}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${native.build.path}/lib</directory>
+                                    <includes>
+                                        <include>libtwisterxjni.so</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
