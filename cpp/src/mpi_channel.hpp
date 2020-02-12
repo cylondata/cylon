@@ -31,7 +31,7 @@ namespace twisterx {
    */
   struct PendingSend {
     //  we allow upto 8 ints for the header
-    int headerBuf[TWISTERX_CHANNEL_HEADER_SIZE];
+    int headerBuf[TWISTERX_CHANNEL_HEADER_SIZE]{};
     std::queue<TxRequest *> pendingData;
     SendStatus status = SEND_INIT;
     MPI_Request request{};
@@ -41,7 +41,7 @@ namespace twisterx {
 
   struct PendingReceive {
     // we allow upto 8 integer header
-    int headerBuf[TWISTERX_CHANNEL_HEADER_SIZE];
+    int headerBuf[TWISTERX_CHANNEL_HEADER_SIZE]{};
     int receiveId{};
     void * data{};
     int length{};
