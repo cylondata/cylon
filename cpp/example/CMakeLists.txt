@@ -19,6 +19,7 @@ target_link_libraries(arrow_twisterx twisterx)
 target_link_libraries(arrow_twisterx ${ARROW_LIB})
 
 target_link_libraries(arrow_test ${MPI_LIBRARIES})
-target_link_libraries(arrow_test twisterxlib)
+target_link_libraries(arrow_test twisterx)
 target_link_libraries(arrow_test ${ARROW_LIB})
+target_link_libraries(arrow_test glog::glog)
 
