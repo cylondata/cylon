@@ -30,13 +30,23 @@ message(STATUS "TWISTERX_LIBRARY set to ${TWISTERX_LIBRARY}")
 add_library(twisterx SHARED IMPORTED ${TWISTERX_LIBRARY})
 set_target_properties(twisterx PROPERTIES IMPORTED_LOCATION ${TWISTERX_LIBRARY})
 
+
+find_package(JNI REQUIRED)
+if(JNI_FOUND)
+    message(STATUS "JDK with JNI in ${JNI_INCLUDE_DIRS}")
+else()
+    message(FATAL_ERROR "JDK with JNI not found, please check your settings.")
+endif(JNI_FOUND)
+
+include_directories("include"
+                    "${JNI_INCLUDE_DIRS}")
+
 set(SOURCE_FILES
         "src/AllToAll.cpp"
         "src/AllToAll.h")
 add_library(twisterxjni SHARED ${SOURCE_FILES})
 
-if(MPI_FOUND)
-    include_directories(${MPI_INCLUDE_PATH})
-    target_link_libraries(twisterxjni ${MPI_LIBRARIES})
-    target_link_libraries(twisterxjni twisterx)
-endif()
+include_directories(${MPI_INCLUDE_PATH})
+target_link_libraries(twisterxjni ${MPI_LIBRARIES})
+target_link_libraries(twisterxjni twisterx)
+target_link_libraries(twisterxjni ${JNI_LIBRARIES})
