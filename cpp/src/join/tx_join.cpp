@@ -131,6 +131,40 @@ void join(std::shared_ptr<arrow::Table> left_tab, std::shared_ptr<arrow::Table> 
   t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "join only time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   LOG(INFO) << "done and produced : " << join_relations.size();
+}
 
+template<typename JOIN_COLUMN_ARRAY, typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
+void join(std::vector<std::shared_ptr<arrow::Table>> left_tabs,
+		  std::vector<std::shared_ptr<arrow::Table>> right_tabs,
+		  int64_t left_join_column_idx,
+		  int64_t right_join_column_idx,
+		  std::shared_ptr<std::unordered_map<int64_t, arrow::ArrayBuilder>> column_builders,
+		  std::shared_ptr<std::unordered_map<int64_t, arrow::ArrayBuilder>> right_builders,
+		  JoinType join_type,
+		  JoinAlgorithm join_algorithm,
+		  arrow::MemoryPool *memory_pool) {
+  std::shared_ptr<arrow::Table> left_tab = arrow::ConcatenateTables(left_tabs,
+																	arrow::ConcatenateTablesOptions::Defaults(),
+																	memory_pool).ValueOrDie();
+  std::shared_ptr<arrow::Table> right_tab = arrow::ConcatenateTables(right_tabs,
+																	 arrow::ConcatenateTablesOptions::Defaults(),
+																	 memory_pool).ValueOrDie();
+  std::shared_ptr<arrow::Table> left_tab_combined;
+  std::shared_ptr<arrow::Table> right_tab_combined;
+  arrow::Status left_combine_stat = left_tab->CombineChunks(memory_pool, &left_tab_combined);
+  arrow::Status right_combine_stat = right_tab->CombineChunks(memory_pool, &right_tab_combined);
+
+  if (left_combine_stat == arrow::Status::OK() && right_combine_stat == arrow::Status::OK()) {
+	twisterx::join::join<JOIN_COLUMN_ARRAY, ARROW_KEY_TYPE, CPP_KEY_TYPE>(left_tab_combined,
+																		  right_tab_combined,
+																		  left_join_column_idx,
+																		  right_join_column_idx,
+																		  column_builders,
+																		  right_builders,
+																		  join_type,
+																		  join_algorithm);
+  } else {
+	LOG(ERROR) << "Error in combining table chunks. Aborting join operation...";
+  }
 }
 }
