@@ -4,37 +4,36 @@
 #include <arrow/compute/kernel.h>
 
 namespace twisterx {
-
   class ArrowMergeKernel {
   public:
-    explicit ArrowMergeKernel(const std::shared_ptr<arrow::DataType>& type) : type_(type) {}
+    explicit ArrowMergeKernel() {}
 
-    /// \brief BinaryKernel interface
-    ///
-    /// delegates to subclasses via Filter()
-    virtual int Call(arrow::compute::FunctionContext* ctx, const arrow::compute::Datum& values, const arrow::compute::Datum& filter,
-                arrow::compute::Datum* out) = 0;
+    /**
+     * We partition the table and return the indexes as an array
+     * @param ctx
+     * @param values
+     * @param out
+     * @return
+     */
+    virtual int Partition(arrow::compute::FunctionContext* ctx, const arrow::Table& values,
+                arrow::Int32Array* out) = 0;
 
-    /// \brief output type of this kernel (identical to type of values filtered)
-    std::shared_ptr<arrow::DataType> out_type() const { return type_; }
 
-    /// \brief factory for FilterKernels
-    ///
-    /// \param[in] value_type constructed FilterKernel will support filtering
-    ///            values of this type
-    /// \param[out] out created kernel
-    static int Make(const std::shared_ptr<arrow::DataType>& value_type,
-                       std::unique_ptr<arrow::compute::BinaryKernel>* out) { return 0; }
-
-    /// \brief single-array implementation
+    /**
+     * Merge the values in the colum and return an array
+     * @param ctx
+     * @param values
+     * @param targets
+     * @param out_length
+     * @param out
+     * @return
+     */
     virtual int Merge(arrow::compute::FunctionContext* ctx, const arrow::Array& values,
-                          const arrow::BooleanArray& filter, int64_t out_length,
+                          const arrow::Int32Array& targets, int32_t columnIndex,
                           std::shared_ptr<arrow::Array>* out) = 0;
-
   protected:
     std::shared_ptr<arrow::DataType> type_;
   };
-
 }
 
 
