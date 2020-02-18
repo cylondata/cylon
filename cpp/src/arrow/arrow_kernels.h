@@ -89,6 +89,20 @@ namespace twisterx {
       }
     }
   };
+
+  using UInt8ArrayMerger = ArrowArrayNumericMergeKernel<arrow::UInt8Type>;
+  using UInt16ArrayMerger = ArrowArrayNumericMergeKernel<arrow::UInt16Type>;
+  using UInt32ArrayMerger = ArrowArrayNumericMergeKernel<arrow::UInt32Type>;
+  using UInt64ArrayMerger = ArrowArrayNumericMergeKernel<arrow::UInt64Type>;
+
+  using Int8ArrayMerger = ArrowArrayNumericMergeKernel<arrow::Int8Type>;
+  using Int16ArrayMerger = ArrowArrayNumericMergeKernel<arrow::Int16Type>;
+  using Int32ArrayMerger = ArrowArrayNumericMergeKernel<arrow::Int32Type>;
+  using Int64ArrayMerger = ArrowArrayNumericMergeKernel<arrow::Int64Type>;
+
+  using HalfFloatArrayMerger = ArrowArrayNumericMergeKernel<arrow::HalfFloatType>;
+  using FloatArrayMerger = ArrowArrayNumericMergeKernel<arrow::FloatType>;
+  using DoubleArrayMerger = ArrowArrayNumericMergeKernel<arrow::DoubleType>;
 }
 
 #endif //TWISTERX_ARROW_KERNELS_H
