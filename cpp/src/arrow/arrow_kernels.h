@@ -1,6 +1,7 @@
 #ifndef TWISTERX_ARROW_KERNELS_H
 #define TWISTERX_ARROW_KERNELS_H
 
+#include <arrow/api.h>
 #include <arrow/compute/kernel.h>
 
 namespace twisterx {
@@ -36,7 +37,7 @@ namespace twisterx {
 
   class ArrowArrayMergeKernel {
   public:
-    explicit ArrowArrayMergeKernel(const std::shared_ptr<arrow::DataType>& type,
+    explicit ArrowArrayMergeKernel(std::shared_ptr<arrow::DataType> type,
         arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) : type_(type), pool_(pool),
         targets_(targets) {}
 
@@ -49,7 +50,7 @@ namespace twisterx {
      * @param out
      * @return
      */
-    virtual int Merge(arrow::compute::FunctionContext* ctx, const arrow::Array& values,
+    virtual int Merge(arrow::compute::FunctionContext* ctx, std::shared_ptr<arrow::Array> values,
                       const arrow::Int32Array& targets, int32_t columnIndex,
                       std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) = 0;
   protected:
@@ -64,29 +65,35 @@ namespace twisterx {
     using TypeClass = TYPE;
     using value_type = typename TypeClass::c_type;
 
-    template <typename T1 = TYPE>
-    int Merge(arrow::compute::FunctionContext* ctx, const arrow::Array& values,
+    explicit ArrowArrayNumericMergeKernel(std::shared_ptr<arrow::DataType> type,
+                                   arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) :
+                                   ArrowArrayMergeKernel(type, pool, targets) {}
+
+    int Merge(arrow::compute::FunctionContext* ctx, std::shared_ptr<arrow::Array> values,
                       const arrow::Int32Array& targets, int32_t columnIndex,
-                      std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) {
+                      std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override {
       auto reader =
-          std::static_pointer_cast<arrow::NumericArray<T1>>(values);
-      std::unordered_map<int, arrow::NumericBuilder<T1>> builders;
+          std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
+      std::unordered_map<int, arrow::NumericBuilder<TYPE>> builders;
 
       for (std::vector<int>::iterator it = targets_.get()->begin() ; it != targets_.get()->end(); ++it) {
-        builders.insert(*it, arrow::NumericBuilder<T1>());
+        int i = *it;
+        builders.insert(std::pair<int, arrow::NumericBuilder<TYPE>>(0, arrow::NumericBuilder<TYPE>(type_, pool_)));
       }
 
       for (int64_t i = 0; i < targets.length(); i++) {
-        arrow::NumericBuilder<T1>& b = builders[i];
+        arrow::NumericBuilder<TYPE>& b = builders[i];
         builders.Append(reader.Value(i));
       }
 
       for (std::vector<int>::iterator it = targets_.get()->begin() ; it != targets_.get()->end(); ++it) {
-        arrow::NumericBuilder<T1>& b = builders[*it];
+        arrow::NumericBuilder<TYPE>& b = builders[*it];
         std::shared_ptr<arrow::Array> array;
         b.Finish(&array);
-        out.insert(std::pair<int, arrow::NumericBuilder<T1>>(*it, array));
+        out.insert(std::pair<int, arrow::NumericBuilder<TYPE>>(*it, array));
       }
+
+      return 0;
     }
   };
 
@@ -103,6 +110,9 @@ namespace twisterx {
   using HalfFloatArrayMerger = ArrowArrayNumericMergeKernel<arrow::HalfFloatType>;
   using FloatArrayMerger = ArrowArrayNumericMergeKernel<arrow::FloatType>;
   using DoubleArrayMerger = ArrowArrayNumericMergeKernel<arrow::DoubleType>;
+
+  int CreateNumericMerge(std::shared_ptr<arrow::DataType>& type,
+                         arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets);
 }
 
 #endif //TWISTERX_ARROW_KERNELS_H
