@@ -51,7 +51,7 @@ namespace twisterx {
      * @return
      */
     virtual int Merge(arrow::compute::FunctionContext* ctx, std::shared_ptr<arrow::Array> values,
-                      const arrow::Int32Array& targets, int32_t columnIndex,
+                      const arrow::Int32Array& targets,
                       std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) = 0;
   protected:
     std::shared_ptr<arrow::DataType> type_;
@@ -62,37 +62,34 @@ namespace twisterx {
   template <typename TYPE>
   class ArrowArrayNumericMergeKernel : public ArrowArrayMergeKernel {
   public:
-    using TypeClass = TYPE;
-    using value_type = typename TypeClass::c_type;
-
     explicit ArrowArrayNumericMergeKernel(std::shared_ptr<arrow::DataType> type,
                                    arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) :
                                    ArrowArrayMergeKernel(type, pool, targets) {}
 
     int Merge(arrow::compute::FunctionContext* ctx, std::shared_ptr<arrow::Array> values,
-                      const arrow::Int32Array& targets, int32_t columnIndex,
+                      const arrow::Int32Array& targets,
                       std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override {
       auto reader =
           std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-      std::unordered_map<int, arrow::NumericBuilder<TYPE>> builders;
+      std::unordered_map<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
 
-      for (std::vector<int>::iterator it = targets_.get()->begin() ; it != targets_.get()->end(); ++it) {
-        int i = *it;
-        builders.insert(std::pair<int, arrow::NumericBuilder<TYPE>>(0, arrow::NumericBuilder<TYPE>(type_, pool_)));
+      for (auto it = targets_.get()->begin() ; it != targets_.get()->end(); ++it) {
+        auto* a = new arrow::NumericBuilder<TYPE>(type_, pool_);
+        std::shared_ptr<arrow::NumericBuilder<TYPE>> b = std::make_shared<arrow::NumericBuilder<TYPE>>(type_, pool_);
+        builders.insert(std::pair<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>>(*it, b));
       }
 
       for (int64_t i = 0; i < targets.length(); i++) {
-        arrow::NumericBuilder<TYPE>& b = builders[i];
-        builders.Append(reader.Value(i));
+        std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[i];
+        b.get()->Append(reader.get()->Value(i));
       }
 
-      for (std::vector<int>::iterator it = targets_.get()->begin() ; it != targets_.get()->end(); ++it) {
-        arrow::NumericBuilder<TYPE>& b = builders[*it];
+      for (auto it = targets_.get()->begin() ; it != targets_.get()->end(); ++it) {
+        std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[*it];
         std::shared_ptr<arrow::Array> array;
-        b.Finish(&array);
-        out.insert(std::pair<int, arrow::NumericBuilder<TYPE>>(*it, array));
+        b.get()->Finish(&array);
+        out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(*it, array));
       }
-
       return 0;
     }
   };
