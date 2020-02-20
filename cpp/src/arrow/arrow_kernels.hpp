@@ -77,7 +77,6 @@ namespace twisterx {
       for (auto it = targets_.get()->begin() ; it != targets_.get()->end(); ++it) {
         std::shared_ptr<arrow::NumericBuilder<TYPE>> b = std::make_shared<arrow::NumericBuilder<TYPE>>(type_, pool_);
         builders.insert(std::pair<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>>(*it, b));
-        LOG(INFO) << "Inserted " << *it;
       }
 
       for (int64_t i = 0; i < partitions->length(); i++) {
