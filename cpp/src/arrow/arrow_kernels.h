@@ -81,13 +81,13 @@ namespace twisterx {
 
       for (int64_t i = 0; i < targets.length(); i++) {
         std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[i];
-        b.get()->Append(reader.get()->Value(i));
+        b->Append(reader->Value(i));
       }
 
       for (auto it = targets_.get()->begin() ; it != targets_.get()->end(); ++it) {
         std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[*it];
         std::shared_ptr<arrow::Array> array;
-        b.get()->Finish(&array);
+        b->Finish(&array);
         out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(*it, array));
       }
       return 0;
