@@ -1,5 +1,4 @@
-#include "arrow_kernels.h"
-#include <glog/logging.h>
+#include "arrow_kernels.hpp"
 
 namespace twisterx {
   int CreateNumericMerge(std::shared_ptr<arrow::DataType>& type,
