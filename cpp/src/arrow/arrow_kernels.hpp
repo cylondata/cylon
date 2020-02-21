@@ -94,6 +94,28 @@ namespace twisterx {
     }
   };
 
+  class FixedBinaryArrayMerger : public ArrowArrayMergeKernel {
+  public:
+    explicit FixedBinaryArrayMerger(std::shared_ptr<arrow::DataType> type,
+                                          arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) :
+        ArrowArrayMergeKernel(type, pool, targets) {}
+
+    int Merge(std::shared_ptr<arrow::Array> &values,
+              std::shared_ptr <arrow::Int32Array>& partitions,
+              std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override;
+  };
+
+  class BinaryArrayMerger : public ArrowArrayMergeKernel {
+  public:
+    explicit BinaryArrayMerger(std::shared_ptr<arrow::DataType> type,
+                                    arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) :
+        ArrowArrayMergeKernel(type, pool, targets) {}
+
+    int Merge(std::shared_ptr<arrow::Array> &values,
+              std::shared_ptr <arrow::Int32Array>& partitions,
+              std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override;
+  };
+
   using UInt8ArrayMerger = ArrowArrayNumericMergeKernel<arrow::UInt8Type>;
   using UInt16ArrayMerger = ArrowArrayNumericMergeKernel<arrow::UInt16Type>;
   using UInt32ArrayMerger = ArrowArrayNumericMergeKernel<arrow::UInt32Type>;
