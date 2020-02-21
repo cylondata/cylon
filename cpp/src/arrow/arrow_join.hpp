@@ -19,7 +19,7 @@ namespace twisterx {
 
   class AllToAllCallback : public ArrowCallback {
   public:
-    AllToAllCallback(std::vector<std::shared_ptr<arrow::Table>>& table);
+    AllToAllCallback(std::vector<std::shared_ptr<arrow::Table>>* table);
     /**
      * The receive callback with the arrow table
      * @param source source
@@ -28,7 +28,7 @@ namespace twisterx {
      */
     bool onReceive(int source, std::shared_ptr <arrow::Table> table);
   private:
-    std::vector<std::shared_ptr<arrow::Table>> tables_;
+    std::vector<std::shared_ptr<arrow::Table>>* tables_;
   };
 
 
