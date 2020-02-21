@@ -14,8 +14,12 @@ namespace twisterx {
     bool left = leftAllToAll_->isComplete();
     bool right = leftAllToAll_->isComplete();
 
+    std::shared_ptr<std::unordered_map<int64_t, arrow::ArrayBuilder>> column_builders;
+    std::shared_ptr<std::unordered_map<int64_t, arrow::ArrayBuilder>> right_builders;
     if (left && right) {
       LOG(INFO) << "Received everything to join";
+      join::join<arrow::Int64Array, arrow::Int64Type, int64_t>(leftTables_, rightTables_, (int64_t)0, (int64_t)0, column_builders, right_builders, join::JoinType::INNER, join::JoinAlgorithm::SORT,
+                 arrow::default_memory_pool());
       // join
       return true;
     }
