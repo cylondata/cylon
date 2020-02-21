@@ -2,6 +2,7 @@
 #define TWISTERX_ARROW_JOIN_H
 
 #include <vector>
+#include <glog/logging.h>
 
 #include "arrow_all_to_all.hpp"
 

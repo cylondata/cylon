@@ -15,6 +15,7 @@ namespace twisterx {
     bool right = leftAllToAll_->isComplete();
 
     if (left && right) {
+      LOG(INFO) << "Received everything to join";
       // join
       return true;
     }
