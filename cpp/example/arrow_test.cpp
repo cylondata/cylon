@@ -112,13 +112,13 @@ void util_test() {
 
   srand(std::time(NULL));
 
-  int count = 400;
+  int count = 10;
   int range = count * 10;
 
   for (int i = 0; i < count; i++) {
 	int l = rand() % range;
 	float f = l + 0.0001f;
-	//LOG(INFO) << "adding " << r << "and" << l;
+	LOG(INFO) << "adding " << l << " and " << f;
 	left_id_builder.Append(l);
 	cost_builder.Append(f);
   }
@@ -136,7 +136,14 @@ void util_test() {
 
   std::shared_ptr<arrow::Table> left_table = arrow::Table::Make(schema, {left_id_array, cost_array});
 
+  LOG(INFO) << "sorting...";
   std::shared_ptr<arrow::Table> sorted_table = twisterx::util::sort_table(left_table, 0, pool);
+
+  for (int i = 0; i < count; i++) {
+	auto key = std::static_pointer_cast<arrow::Int64Array>(sorted_table->column(0)->chunk(0));
+	auto val = std::static_pointer_cast<arrow::FloatArray>(sorted_table->column(1)->chunk(0));
+	LOG(INFO) << "reading " << key->Value(i) << " and " << val->Value(i);
+  }
 
 }
 
