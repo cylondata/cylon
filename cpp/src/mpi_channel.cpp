@@ -91,13 +91,15 @@ namespace twisterx {
       } else if (x.second->status == RECEIVE_POSTED) {
         MPI_Test(&x.second->request, &flag, &status);
         if (flag) {
-          LOG(INFO) << rank << " ## received from " << x.first << " posted length receive to " << x.second->receiveId << " length " << x.second->length;
+          LOG(INFO) << rank << " ## received from " << x.first
+            << " posted length receive to " << x.second->receiveId << " length " << x.second->length;
 
           x.second->request = {};
           // clear the array
           std::fill_n(x.second->headerBuf, TWISTERX_CHANNEL_HEADER_SIZE, 0);
           // malloc a buffer
-          MPI_Irecv(x.second->headerBuf, TWISTERX_CHANNEL_HEADER_SIZE, MPI_INT, x.second->receiveId, edge, MPI_COMM_WORLD, &x.second->request);
+          MPI_Irecv(x.second->headerBuf, TWISTERX_CHANNEL_HEADER_SIZE, MPI_INT,
+              x.second->receiveId, edge, MPI_COMM_WORLD, &x.second->request);
           x.second->status = RECEIVE_LENGTH_POSTED;
           // call the back end
           rcv_fn->receivedData(x.first, x.second->data, x.second->length);
