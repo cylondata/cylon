@@ -2,6 +2,7 @@
 #include "arrow/compute/api.h"
 #include <glog/logging.h>
 #include <chrono>
+#include <map>
 
 namespace twisterx::join {
 
@@ -26,6 +27,10 @@ void advance(std::vector<CPP_KEY_TYPE> *subset,
 	}
 	data_index = sorted_indices->Value(*current_index);
   }
+}
+
+void build_final_table() {
+
 }
 
 template<typename JOIN_COLUMN_ARRAY, typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
@@ -71,7 +76,7 @@ void join(std::shared_ptr<arrow::Table> left_tab, std::shared_ptr<arrow::Table> 
   int64_t left_current_index = 0;
   int64_t right_current_index = 0;
 
-  std::unordered_map<int64_t, std::vector<int64_t >> join_relations;
+  std::map<int64_t, std::vector<int64_t >> join_relations; // using map intentionally to keep elements ordered
 
   t1 = std::chrono::high_resolution_clock::now();
 
