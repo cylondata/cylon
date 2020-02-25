@@ -21,7 +21,7 @@ std::shared_ptr<arrow::Array> do_copy_numeric_array(const std::shared_ptr<std::v
 }
 
 std::shared_ptr<arrow::Array> copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> &indices,
-													std::shared_ptr<arrow::Array> data_array,
+													const std::shared_ptr<arrow::Array> &data_array,
 													arrow::MemoryPool *memory_pool) {
   switch (data_array->type()->id()) {
 	case arrow::Type::NA:break;

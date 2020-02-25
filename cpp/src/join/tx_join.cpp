@@ -7,15 +7,11 @@
 
 namespace twisterx::join {
 
-template<typename ARROW_TYPE>
-void do_copy_array(std::shared_ptr<std::vector<int64_t>> indices,
-				   std::shared_ptr<arrow::Array> data_array) {
-  auto casted_array = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(data_array);
-}
-
-void build_final_table(const std::shared_ptr<std::map<int64_t, std::vector<int64_t >>> &indices_map,
-					   const std::shared_ptr<arrow::Table> &left_tab,
-					   const std::shared_ptr<arrow::Table> &right_tab) {
+std::shared_ptr<arrow::Table> build_final_table(const std::shared_ptr<std::map<int64_t,
+																			   std::vector<int64_t >>> &indices_map,
+												const std::shared_ptr<arrow::Table> &left_tab,
+												const std::shared_ptr<arrow::Table> &right_tab,
+												arrow::MemoryPool *memory_pool) {
   std::vector<int64_t> left_indices;
   std::vector<int64_t> right_indices;
   auto it = indices_map->begin();
@@ -34,10 +30,27 @@ void build_final_table(const std::shared_ptr<std::map<int64_t, std::vector<int64
   fields.insert(fields.end(), right_tab->schema()->fields().begin(), right_tab->schema()->fields().end());
   auto schema = arrow::schema(fields);
 
+  std::vector<std::shared_ptr<arrow::Array>> data_arrays;
+
   // build arrays for left tab
   for (auto &column :left_tab->columns()) {
-
+	data_arrays.push_back(
+		twisterx::util::copy_array_by_indices(std::make_shared<std::vector<int64_t >>(left_indices),
+											  column->chunk(0),
+											  memory_pool)
+	);
   }
+
+  // build arrays for right tab
+  for (auto &column :left_tab->columns()) {
+	data_arrays.push_back(
+		twisterx::util::copy_array_by_indices(std::make_shared<std::vector<int64_t >>(right_indices),
+											  column->chunk(0),
+											  memory_pool)
+	);
+  }
+
+  return arrow::Table::Make(schema, data_arrays);
 }
 
 template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
@@ -67,7 +80,8 @@ template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
 std::shared_ptr<arrow::Table> do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab,
 												   const std::shared_ptr<arrow::Table> &right_tab,
 												   int64_t left_join_column_idx,
-												   int64_t right_join_column_idx) {
+												   int64_t right_join_column_idx,
+												   arrow::MemoryPool *memory_pool) {
   //sort columns
   auto left_join_column = left_tab->column(left_join_column_idx)->chunk(0);
   auto right_join_column = right_tab->column(right_join_column_idx)->chunk(0);
@@ -155,9 +169,19 @@ std::shared_ptr<arrow::Table> do_sorted_inner_join(const std::shared_ptr<arrow::
 											&right_key);
 	}
   }
+
+  // build final table
+  std::shared_ptr<arrow::Table>
+	  final_table = build_final_table(std::make_shared<std::map<int64_t, std::vector<int64_t >>>(join_relations),
+									  left_tab,
+									  right_tab,
+									  memory_pool);
+
   t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "join only time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   LOG(INFO) << "done and produced : " << join_relations.size();
+
+  return final_table;
 }
 
 template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
@@ -166,27 +190,27 @@ std::shared_ptr<arrow::Table> do_join(const std::shared_ptr<arrow::Table> &left_
 									  int64_t left_join_column_idx,
 									  int64_t right_join_column_idx,
 									  JoinType join_type,
-									  JoinAlgorithm join_algorithm) {
+									  JoinAlgorithm join_algorithm,
+									  arrow::MemoryPool *memory_pool) {
   if (join_type == JoinType::INNER) {
 	switch (join_algorithm) {
 	  case SORT:
 		return do_sorted_inner_join<ARROW_KEY_TYPE, CPP_KEY_TYPE>(left_tab,
 																  right_tab,
 																  left_join_column_idx,
-																  right_join_column_idx);
+																  right_join_column_idx, memory_pool);
 	  case HASH:break;
 	}
   }
 }
 
-template<typename JOIN_COLUMN_ARRAY, typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
-void join(std::vector<std::shared_ptr<arrow::Table>> left_tabs,
-		  std::vector<std::shared_ptr<arrow::Table>> right_tabs,
-		  int64_t left_join_column_idx,
-		  int64_t right_join_column_idx,
-		  JoinType join_type,
-		  JoinAlgorithm join_algorithm,
-		  arrow::MemoryPool *memory_pool) {
+std::shared_ptr<arrow::Table> join(std::vector<std::shared_ptr<arrow::Table>> left_tabs,
+								   std::vector<std::shared_ptr<arrow::Table>> right_tabs,
+								   int64_t left_join_column_idx,
+								   int64_t right_join_column_idx,
+								   JoinType join_type,
+								   JoinAlgorithm join_algorithm,
+								   arrow::MemoryPool *memory_pool) {
   std::shared_ptr<arrow::Table> left_tab = arrow::ConcatenateTables(left_tabs,
 																	arrow::ConcatenateTablesOptions::Defaults(),
 																	memory_pool).ValueOrDie();
@@ -199,12 +223,12 @@ void join(std::vector<std::shared_ptr<arrow::Table>> left_tabs,
   arrow::Status right_combine_stat = right_tab->CombineChunks(memory_pool, &right_tab_combined);
 
   if (left_combine_stat == arrow::Status::OK() && right_combine_stat == arrow::Status::OK()) {
-	twisterx::join::join<JOIN_COLUMN_ARRAY, ARROW_KEY_TYPE, CPP_KEY_TYPE>(left_tab_combined,
-																		  right_tab_combined,
-																		  left_join_column_idx,
-																		  right_join_column_idx,
-																		  join_type,
-																		  join_algorithm);
+	return twisterx::join::join(left_tab_combined,
+								right_tab_combined,
+								left_join_column_idx,
+								right_join_column_idx,
+								join_type,
+								join_algorithm, memory_pool);
   } else {
 	LOG(ERROR) << "Error in combining table chunks. Aborting join operation...";
   }
@@ -214,7 +238,8 @@ std::shared_ptr<arrow::Table> join(std::shared_ptr<arrow::Table> left_tab, std::
 								   int64_t left_join_column_idx,
 								   int64_t right_join_column_idx,
 								   JoinType join_type,
-								   JoinAlgorithm join_algorithm) {
+								   JoinAlgorithm join_algorithm,
+								   arrow::MemoryPool *memory_pool = arrow::default_memory_pool()) {
   auto left_type = left_tab->column(left_join_column_idx)->type()->id();
   auto right_type = right_tab->column(right_join_column_idx)->type()->id();
 
@@ -229,57 +254,57 @@ std::shared_ptr<arrow::Table> join(std::shared_ptr<arrow::Table> left_tab, std::
 	  return do_join<arrow::UInt8Type, int8_t>(left_tab,
 											   right_tab,
 											   left_join_column_idx,
-											   right_join_column_idx, join_type, join_algorithm);
+											   right_join_column_idx, join_type, join_algorithm, memory_pool);
 	case arrow::Type::INT8:
 	  return do_join<arrow::Int8Type, int8_t>(left_tab,
 											  right_tab,
 											  left_join_column_idx,
-											  right_join_column_idx, join_type, join_algorithm);
+											  right_join_column_idx, join_type, join_algorithm, memory_pool);
 	case arrow::Type::UINT16:
 	  return do_join<arrow::UInt16Type, uint16_t>(left_tab,
 												  right_tab,
 												  left_join_column_idx,
-												  right_join_column_idx, join_type, join_algorithm);
+												  right_join_column_idx, join_type, join_algorithm, memory_pool);
 	case arrow::Type::INT16:
 	  return do_join<arrow::Int16Type, int16_t>(left_tab,
 												right_tab,
 												left_join_column_idx,
-												right_join_column_idx, join_type, join_algorithm);
+												right_join_column_idx, join_type, join_algorithm, memory_pool);
 	case arrow::Type::UINT32:
 	  return do_join<arrow::UInt32Type, uint32_t>(left_tab,
 												  right_tab,
 												  left_join_column_idx,
-												  right_join_column_idx, join_type, join_algorithm);
+												  right_join_column_idx, join_type, join_algorithm, memory_pool);
 	case arrow::Type::INT32:
 	  return do_join<arrow::Int32Type, int32_t>(left_tab,
 												right_tab,
 												left_join_column_idx,
-												right_join_column_idx, join_type, join_algorithm);
+												right_join_column_idx, join_type, join_algorithm, memory_pool);
 	case arrow::Type::UINT64:
 	  return do_join<arrow::UInt64Type, uint64_t>(left_tab,
 												  right_tab,
 												  left_join_column_idx,
-												  right_join_column_idx, join_type, join_algorithm);
+												  right_join_column_idx, join_type, join_algorithm, memory_pool);
 	case arrow::Type::INT64:
 	  return do_join<arrow::Int64Type, int64_t>(left_tab,
 												right_tab,
 												left_join_column_idx,
-												right_join_column_idx, join_type, join_algorithm);;
+												right_join_column_idx, join_type, join_algorithm, memory_pool);;
 	case arrow::Type::HALF_FLOAT:
 	  return do_join<arrow::HalfFloatType, uint16_t>(left_tab,
 													 right_tab,
 													 left_join_column_idx,
-													 right_join_column_idx, join_type, join_algorithm);
+													 right_join_column_idx, join_type, join_algorithm, memory_pool);
 	case arrow::Type::FLOAT:
 	  return do_join<arrow::FloatType, float_t>(left_tab,
 												right_tab,
 												left_join_column_idx,
-												right_join_column_idx, join_type, join_algorithm);
+												right_join_column_idx, join_type, join_algorithm, memory_pool);
 	case arrow::Type::DOUBLE:
 	  return do_join<arrow::DoubleType, double_t>(left_tab,
 												  right_tab,
 												  left_join_column_idx,
-												  right_join_column_idx, join_type, join_algorithm);
+												  right_join_column_idx, join_type, join_algorithm, memory_pool);
 	case arrow::Type::STRING:break;
 	case arrow::Type::BINARY:break;
 	case arrow::Type::FIXED_SIZE_BINARY:break;
@@ -302,16 +327,5 @@ std::shared_ptr<arrow::Table> join(std::shared_ptr<arrow::Table> left_tab, std::
 	case arrow::Type::LARGE_BINARY:break;
 	case arrow::Type::LARGE_LIST:break;
   }
-}
-
-void join(std::shared_ptr<arrow::Table> left_tab, std::shared_ptr<arrow::Table> right_tab,
-		  int64_t left_join_column_idx,
-		  int64_t right_join_column_idx,
-		  JoinType join_type,
-		  JoinAlgorithm join_algorithm,
-		  arrow::MemoryPool *memory_pool) {
-  auto sorted_left_table = twisterx::util::sort_table(left_tab, left_join_column_idx, memory_pool);
-  auto sorted_right_table = twisterx::util::sort_table(right_tab, right_join_column_idx, memory_pool);
-
 }
 }
