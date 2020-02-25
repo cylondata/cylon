@@ -8,8 +8,8 @@
 #include <arrow/compute/api.h>
 #include <chrono>
 #include <ctime>
-#include <util/arrow_utils.h>
-#include "join/tx_join.cpp"
+#include <util/arrow_utils.hpp>
+#include "join/join.cpp"
 
 #include "arrow/arrow_kernels.hpp"
 
@@ -17,7 +17,7 @@ using arrow::DoubleBuilder;
 using arrow::Int64Builder;
 using arrow::FloatBuilder;
 
-void join_test() {
+void merge_test() {
   arrow::MemoryPool *pool = arrow::default_memory_pool();
 
   Int64Builder left_id_builder(pool);
@@ -58,13 +58,14 @@ void join_test() {
 
   LOG(INFO) << "Starting join";
   auto start = std::chrono::high_resolution_clock::now();
-  twisterx::join::join<arrow::Int64Array, arrow::Int64Type, int64_t>(
+  twisterx::join::join(
 	  left_table,
 	  right_table,
 	  0,
 	  0,
-	  NULLPTR,
-	  NULLPTR, twisterx::join::JoinType::INNER, twisterx::join::JoinAlgorithm::SORT
+	  twisterx::join::JoinType::INNER,
+	  twisterx::join::JoinAlgorithm::SORT,
+	  pool
   );
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -104,20 +105,17 @@ void join_test() {
   }
 }
 
-void util_test() {
-  arrow::MemoryPool *pool = arrow::default_memory_pool();
+std::shared_ptr<arrow::Table> make_table(int32_t id, int32_t rows, arrow::MemoryPool *memory_pool, int32_t seed) {
+  Int64Builder left_id_builder(memory_pool);
+  FloatBuilder cost_builder(memory_pool);
 
-  Int64Builder left_id_builder(pool);
-  FloatBuilder cost_builder(pool);
+  srand(seed);
 
-  srand(std::time(NULL));
+  int range = rows * 10;
 
-  int count = 10;
-  int range = count * 10;
-
-  for (int i = 0; i < count; i++) {
+  for (int i = 0; i < rows; i++) {
 	int l = rand() % range;
-	float f = l + 0.0001f;
+	float f = l + (0.1f * id);
 	LOG(INFO) << "adding " << l << " and " << f;
 	left_id_builder.Append(l);
 	cost_builder.Append(f);
@@ -134,7 +132,15 @@ void util_test() {
   std::shared_ptr<arrow::Array> cost_array;
   cost_builder.Finish(&cost_array);
 
-  std::shared_ptr<arrow::Table> left_table = arrow::Table::Make(schema, {left_id_array, cost_array});
+  return arrow::Table::Make(schema, {left_id_array, cost_array});
+}
+
+void sort_test() {
+  arrow::MemoryPool *pool = arrow::default_memory_pool();
+
+  int count = 10;
+
+  std::shared_ptr<arrow::Table> left_table = make_table(1, 10, pool, 0);
 
   LOG(INFO) << "sorting...";
   std::shared_ptr<arrow::Table> sorted_table = twisterx::util::sort_table(left_table, 0, pool);
@@ -144,10 +150,42 @@ void util_test() {
 	auto val = std::static_pointer_cast<arrow::FloatArray>(sorted_table->column(1)->chunk(0));
 	LOG(INFO) << "reading " << key->Value(i) << " and " << val->Value(i);
   }
+}
 
+void join_test() {
+  arrow::MemoryPool *pool = arrow::default_memory_pool();
+
+  int count = 10;
+
+  std::shared_ptr<arrow::Table> left_table = make_table(1, 10000, pool, 34);
+  std::shared_ptr<arrow::Table> right_table = make_table(2, 10000, pool, 5678);
+
+  LOG(INFO) << "sorting...";
+  std::shared_ptr<arrow::Table> joined_table = twisterx::join::join(
+	  left_table,
+	  right_table,
+	  0,
+	  0,
+	  twisterx::join::JoinType::INNER,
+	  twisterx::join::JoinAlgorithm::SORT,
+	  pool
+  );
+
+  count = joined_table->column(0)->length();
+
+  LOG(INFO) << "has produced " << count << " tuples";
+
+  for (int i = 0; i < count; i++) {
+	auto key1 = std::static_pointer_cast<arrow::Int64Array>(joined_table->column(0)->chunk(0));
+	auto val1 = std::static_pointer_cast<arrow::FloatArray>(joined_table->column(1)->chunk(0));
+	auto key2 = std::static_pointer_cast<arrow::Int64Array>(joined_table->column(2)->chunk(0));
+	auto val2 = std::static_pointer_cast<arrow::FloatArray>(joined_table->column(3)->chunk(0));
+	LOG(INFO) << "reading " << key1->Value(i) << ", " << key2->Value(i) << ", " << val1->Value(i) << ", "
+			  << val2->Value(i);
+  }
 }
 
 int main(int argc, char *argv[]) {
-  util_test();
+  join_test();
   return 0;
 }

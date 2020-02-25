@@ -1,5 +1,5 @@
-#ifndef TWISTERX_SRC_UTIL_ARROW_UTILS_H_
-#define TWISTERX_SRC_UTIL_ARROW_UTILS_H_
+#ifndef TWISTERX_SRC_UTIL_ARROW_UTILS_HPP_
+#define TWISTERX_SRC_UTIL_ARROW_UTILS_HPP_
 #include <arrow/table.h>
 
 namespace twisterx::util {
@@ -10,4 +10,4 @@ std::shared_ptr<arrow::Array> copy_array_by_indices(const std::shared_ptr<std::v
 													const std::shared_ptr<arrow::Array>& source_array,
 													arrow::MemoryPool *memory_pool = arrow::default_memory_pool());
 }
-#endif //TWISTERX_SRC_UTIL_ARROW_UTILS_H_
+#endif //TWISTERX_SRC_UTIL_ARROW_UTILS_HPP_

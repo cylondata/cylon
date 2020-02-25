@@ -1,7 +1,6 @@
 #include <arrow/compute/api.h>
 #include <arrow/api.h>
-#include <glog/logging.h>
-#include "arrow_utils.h"
+#include "arrow_utils.hpp"
 
 namespace twisterx::util {
 template<typename TYPE>
@@ -28,15 +27,15 @@ std::shared_ptr<arrow::Array> copy_array_by_indices(const std::shared_ptr<std::v
 	case arrow::Type::BOOL:break;
 	case arrow::Type::UINT8:return do_copy_numeric_array<arrow::UInt8Type>(indices, data_array, memory_pool);
 	case arrow::Type::INT8:return do_copy_numeric_array<arrow::Int8Type>(indices, data_array, memory_pool);
-	case arrow::Type::UINT16:do_copy_numeric_array<arrow::Int16Type>(indices, data_array, memory_pool);
-	case arrow::Type::INT16:do_copy_numeric_array<arrow::Int16Type>(indices, data_array, memory_pool);
-	case arrow::Type::UINT32:do_copy_numeric_array<arrow::UInt32Type>(indices, data_array, memory_pool);
-	case arrow::Type::INT32:do_copy_numeric_array<arrow::Int32Type>(indices, data_array, memory_pool);
-	case arrow::Type::UINT64:do_copy_numeric_array<arrow::UInt64Type>(indices, data_array, memory_pool);
-	case arrow::Type::INT64:do_copy_numeric_array<arrow::Int64Type>(indices, data_array, memory_pool);
-	case arrow::Type::HALF_FLOAT:do_copy_numeric_array<arrow::HalfFloatType>(indices, data_array, memory_pool);
-	case arrow::Type::FLOAT:do_copy_numeric_array<arrow::FloatType>(indices, data_array, memory_pool);
-	case arrow::Type::DOUBLE:do_copy_numeric_array<arrow::DoubleType>(indices, data_array, memory_pool);
+	case arrow::Type::UINT16:return do_copy_numeric_array<arrow::Int16Type>(indices, data_array, memory_pool);
+	case arrow::Type::INT16:return do_copy_numeric_array<arrow::Int16Type>(indices, data_array, memory_pool);
+	case arrow::Type::UINT32:return do_copy_numeric_array<arrow::UInt32Type>(indices, data_array, memory_pool);
+	case arrow::Type::INT32:return do_copy_numeric_array<arrow::Int32Type>(indices, data_array, memory_pool);
+	case arrow::Type::UINT64:return do_copy_numeric_array<arrow::UInt64Type>(indices, data_array, memory_pool);
+	case arrow::Type::INT64:return do_copy_numeric_array<arrow::Int64Type>(indices, data_array, memory_pool);
+	case arrow::Type::HALF_FLOAT:return do_copy_numeric_array<arrow::HalfFloatType>(indices, data_array, memory_pool);
+	case arrow::Type::FLOAT:return do_copy_numeric_array<arrow::FloatType>(indices, data_array, memory_pool);
+	case arrow::Type::DOUBLE:return do_copy_numeric_array<arrow::DoubleType>(indices, data_array, memory_pool);
 	case arrow::Type::STRING:break;
 	case arrow::Type::BINARY:break;
 	case arrow::Type::FIXED_SIZE_BINARY:break;

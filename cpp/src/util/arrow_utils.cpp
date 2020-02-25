@@ -1,7 +1,7 @@
 #include <arrow/compute/api.h>
 #include <arrow/api.h>
 #include <glog/logging.h>
-#include "arrow_utils.h"
+#include "arrow_utils.hpp"
 
 namespace twisterx::util {
 

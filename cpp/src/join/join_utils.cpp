@@ -1,5 +1,5 @@
-#include "join_utils.h"
-#include "../util/arrow_utils.h"
+#include "join_utils.hpp"
+#include "../util/arrow_utils.hpp"
 
 namespace twisterx::join::util {
 std::shared_ptr<arrow::Table> build_final_table(const std::shared_ptr<std::map<int64_t,
@@ -37,7 +37,7 @@ std::shared_ptr<arrow::Table> build_final_table(const std::shared_ptr<std::map<i
   }
 
 // build arrays for right tab
-  for (auto &column :left_tab->columns()) {
+  for (auto &column :right_tab->columns()) {
 	data_arrays.push_back(
 		twisterx::util::copy_array_by_indices(std::make_shared<std::vector<int64_t >>(right_indices),
 											  column->chunk(0),

@@ -1,62 +1,16 @@
-#include "tx_join.hpp"
+#include "join.hpp"
 #include "arrow/compute/api.h"
 #include <glog/logging.h>
 #include <chrono>
 #include <map>
-#include "../util/arrow_utils.h"
+#include "join_utils.hpp"
 
 namespace twisterx::join {
-
-std::shared_ptr<arrow::Table> build_final_table(const std::shared_ptr<std::map<int64_t,
-																			   std::vector<int64_t >>> &indices_map,
-												const std::shared_ptr<arrow::Table> &left_tab,
-												const std::shared_ptr<arrow::Table> &right_tab,
-												arrow::MemoryPool *memory_pool) {
-  std::vector<int64_t> left_indices;
-  std::vector<int64_t> right_indices;
-  auto it = indices_map->begin();
-  while (it != indices_map->end()) {
-	auto left_index = it->first;
-	for (int64_t &right_index : it->second) {
-	  left_indices.push_back(left_index);
-	  right_indices.push_back(right_index);
-	}
-	it++;
-  }
-
-  // creating joined schema
-  std::vector<std::shared_ptr<arrow::Field>> fields;
-  fields.insert(fields.end(), left_tab->schema()->fields().begin(), left_tab->schema()->fields().end());
-  fields.insert(fields.end(), right_tab->schema()->fields().begin(), right_tab->schema()->fields().end());
-  auto schema = arrow::schema(fields);
-
-  std::vector<std::shared_ptr<arrow::Array>> data_arrays;
-
-  // build arrays for left tab
-  for (auto &column :left_tab->columns()) {
-	data_arrays.push_back(
-		twisterx::util::copy_array_by_indices(std::make_shared<std::vector<int64_t >>(left_indices),
-											  column->chunk(0),
-											  memory_pool)
-	);
-  }
-
-  // build arrays for right tab
-  for (auto &column :left_tab->columns()) {
-	data_arrays.push_back(
-		twisterx::util::copy_array_by_indices(std::make_shared<std::vector<int64_t >>(right_indices),
-											  column->chunk(0),
-											  memory_pool)
-	);
-  }
-
-  return arrow::Table::Make(schema, data_arrays);
-}
 
 template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
 void advance(std::vector<CPP_KEY_TYPE> *subset,
 			 const std::shared_ptr<arrow::Int64Array> &sorted_indices, // this is always Int64Array
-			 int64_t *current_index, //always int32_t
+			 int64_t *current_index, //always int64_t
 			 std::shared_ptr<arrow::Array> data_column,
 			 CPP_KEY_TYPE *key) {
   subset->clear();
@@ -171,11 +125,12 @@ std::shared_ptr<arrow::Table> do_sorted_inner_join(const std::shared_ptr<arrow::
   }
 
   // build final table
-  std::shared_ptr<arrow::Table>
-	  final_table = build_final_table(std::make_shared<std::map<int64_t, std::vector<int64_t >>>(join_relations),
-									  left_tab,
-									  right_tab,
-									  memory_pool);
+  std::shared_ptr<arrow::Table> final_table = twisterx::join::util::build_final_table(
+	  std::make_shared<std::map<int64_t, std::vector<int64_t >>>(join_relations),
+	  left_tab,
+	  right_tab,
+	  memory_pool
+  );
 
   t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "join only time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -204,8 +159,8 @@ std::shared_ptr<arrow::Table> do_join(const std::shared_ptr<arrow::Table> &left_
   }
 }
 
-std::shared_ptr<arrow::Table> join(std::vector<std::shared_ptr<arrow::Table>> left_tabs,
-								   std::vector<std::shared_ptr<arrow::Table>> right_tabs,
+std::shared_ptr<arrow::Table> join(const std::vector<std::shared_ptr<arrow::Table>> &left_tabs,
+								   const std::vector<std::shared_ptr<arrow::Table>> &right_tabs,
 								   int64_t left_join_column_idx,
 								   int64_t right_join_column_idx,
 								   JoinType join_type,
@@ -234,12 +189,13 @@ std::shared_ptr<arrow::Table> join(std::vector<std::shared_ptr<arrow::Table>> le
   }
 }
 
-std::shared_ptr<arrow::Table> join(std::shared_ptr<arrow::Table> left_tab, std::shared_ptr<arrow::Table> right_tab,
+std::shared_ptr<arrow::Table> join(const std::shared_ptr<arrow::Table> &left_tab,
+								   const std::shared_ptr<arrow::Table> &right_tab,
 								   int64_t left_join_column_idx,
 								   int64_t right_join_column_idx,
 								   JoinType join_type,
 								   JoinAlgorithm join_algorithm,
-								   arrow::MemoryPool *memory_pool = arrow::default_memory_pool()) {
+								   arrow::MemoryPool *memory_pool) {
   auto left_type = left_tab->column(left_join_column_idx)->type()->id();
   auto right_type = right_tab->column(right_join_column_idx)->type()->id();
 
