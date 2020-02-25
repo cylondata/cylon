@@ -1,5 +1,5 @@
-#ifndef TWISTERX_SRC_JOIN_JOIN_UTILS_H_
-#define TWISTERX_SRC_JOIN_JOIN_UTILS_H_
+#ifndef TWISTERX_SRC_JOIN_JOIN_UTILS_HPP_
+#define TWISTERX_SRC_JOIN_JOIN_UTILS_HPP_
 
 #include <arrow/api.h>
 #include <map>
@@ -11,4 +11,4 @@ std::shared_ptr<arrow::Table> build_final_table(const std::shared_ptr<std::map<i
 												const std::shared_ptr<arrow::Table> &right_tab,
 												arrow::MemoryPool *memory_pool);
 }
-#endif //TWISTERX_SRC_JOIN_JOIN_UTILS_H_
+#endif //TWISTERX_SRC_JOIN_JOIN_UTILS_HPP_
