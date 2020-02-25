@@ -113,15 +113,17 @@ std::shared_ptr<arrow::Table> make_table(int32_t id, int32_t rows, arrow::Memory
 
   int range = rows * 10;
 
+  LOG(INFO) << "creating values for table " << id;
+
   for (int i = 0; i < rows; i++) {
 	int l = rand() % range;
 	float f = l + (0.1f * id);
-	LOG(INFO) << "adding " << l << " and " << f;
+	//LOG(INFO) << "adding " << l << " and " << f;
 	left_id_builder.Append(l);
 	cost_builder.Append(f);
   }
 
-  LOG(INFO) << "added";
+  LOG(INFO) << "created values for table " << id;
 
   std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
 	  arrow::field("id", arrow::int64()), arrow::field("cost", arrow::float16())};
@@ -152,15 +154,24 @@ void sort_test() {
   }
 }
 
-void join_test() {
+void join_test(bool sort, int count) {
   arrow::MemoryPool *pool = arrow::default_memory_pool();
 
-  int count = 10;
+  std::shared_ptr<arrow::Table> left_table = make_table(1, count, pool, 34);
+  std::shared_ptr<arrow::Table> right_table = make_table(2, count, pool, 5678);
 
-  std::shared_ptr<arrow::Table> left_table = make_table(1, 10000, pool, 34);
-  std::shared_ptr<arrow::Table> right_table = make_table(2, 10000, pool, 5678);
+  auto t1 = std::chrono::high_resolution_clock::now();
+  if (sort) {
+	left_table = twisterx::util::sort_table(left_table, 0, pool);
+	right_table = twisterx::util::sort_table(right_table, 0, pool);
+  }
+  auto t2 = std::chrono::high_resolution_clock::now();
 
-  LOG(INFO) << "sorting...";
+  LOG(INFO) << "Table sorting took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+			<< "milis";
+
+  LOG(INFO) << "joining...";
+  t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::Table> joined_table = twisterx::join::join(
 	  left_table,
 	  right_table,
@@ -170,22 +181,24 @@ void join_test() {
 	  twisterx::join::JoinAlgorithm::SORT,
 	  pool
   );
-
+  t2 = std::chrono::high_resolution_clock::now();
   count = joined_table->column(0)->length();
 
-  LOG(INFO) << "has produced " << count << " tuples";
+  LOG(INFO) << "Join produced " << count << " tuples  in "
+			<< std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "milis";
 
   for (int i = 0; i < count; i++) {
 	auto key1 = std::static_pointer_cast<arrow::Int64Array>(joined_table->column(0)->chunk(0));
 	auto val1 = std::static_pointer_cast<arrow::FloatArray>(joined_table->column(1)->chunk(0));
 	auto key2 = std::static_pointer_cast<arrow::Int64Array>(joined_table->column(2)->chunk(0));
 	auto val2 = std::static_pointer_cast<arrow::FloatArray>(joined_table->column(3)->chunk(0));
-	LOG(INFO) << "reading " << key1->Value(i) << ", " << key2->Value(i) << ", " << val1->Value(i) << ", "
-			  << val2->Value(i);
+//	LOG(INFO) << "reading " << key1->Value(i) << ", " << key2->Value(i) << ", " << val1->Value(i) << ", "
+//			  << val2->Value(i);
   }
 }
 
 int main(int argc, char *argv[]) {
-  join_test();
+  join_test(true, atoi(argv[1]));
+  join_test(false, atoi(argv[1]));
   return 0;
 }

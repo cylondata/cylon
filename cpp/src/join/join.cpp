@@ -124,6 +124,14 @@ std::shared_ptr<arrow::Table> do_sorted_inner_join(const std::shared_ptr<arrow::
 	}
   }
 
+  t2 = std::chrono::high_resolution_clock::now();
+
+  LOG(INFO) << "index join time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
+  LOG(INFO) << "building final table...'";
+
+  t1 = std::chrono::high_resolution_clock::now();
+
   // build final table
   std::shared_ptr<arrow::Table> final_table = twisterx::join::util::build_final_table(
 	  std::make_shared<std::map<int64_t, std::vector<int64_t >>>(join_relations),
@@ -133,7 +141,7 @@ std::shared_ptr<arrow::Table> do_sorted_inner_join(const std::shared_ptr<arrow::
   );
 
   t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "join only time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "built final table in : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   LOG(INFO) << "done and produced : " << join_relations.size();
 
   return final_table;
