@@ -7,9 +7,10 @@ namespace twisterx::util {
 
 template<typename TYPE>
 std::shared_ptr<arrow::Array> sort_numeric_column_type(const std::shared_ptr<arrow::Array> &data_column,
-													   const std::shared_ptr<arrow::Int64Array> &sorted_indices) {
+													   const std::shared_ptr<arrow::Int64Array> &sorted_indices,
+													   arrow::MemoryPool *memory_pool) {
   int64_t length = sorted_indices->length();
-  arrow::NumericBuilder<TYPE> array_builder;
+  arrow::NumericBuilder<TYPE> array_builder(memory_pool);
   arrow::Status reserveStatus = array_builder.Reserve(length);
   auto casted_data_array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(data_column);
   for (int64_t index = 0; index < length; ++index) {
@@ -22,22 +23,46 @@ std::shared_ptr<arrow::Array> sort_numeric_column_type(const std::shared_ptr<arr
 }
 
 std::shared_ptr<arrow::Array> sort_column(const std::shared_ptr<arrow::Array> &data_column,
-										  const std::shared_ptr<arrow::Int64Array> &sorted_indices) {
+										  const std::shared_ptr<arrow::Int64Array> &sorted_indices,
+										  arrow::MemoryPool *memory_pool) {
   // todo support non numeric types
   switch (data_column->type()->id()) {
-	case arrow::Type::UINT8: return sort_numeric_column_type<arrow::UInt8Type>(data_column, sorted_indices);
+	case arrow::Type::UINT8:
+	  return sort_numeric_column_type<arrow::UInt8Type>(data_column,
+														sorted_indices,
+														memory_pool);
 	case arrow::Type::NA:break;
-	case arrow::Type::BOOL:return sort_numeric_column_type<arrow::BooleanType>(data_column, sorted_indices);
-	case arrow::Type::INT8: return sort_numeric_column_type<arrow::Int8Type>(data_column, sorted_indices);
-	case arrow::Type::UINT16:return sort_numeric_column_type<arrow::UInt16Type>(data_column, sorted_indices);
-	case arrow::Type::INT16:return sort_numeric_column_type<arrow::Int16Type>(data_column, sorted_indices);
-	case arrow::Type::UINT32:return sort_numeric_column_type<arrow::UInt32Type>(data_column, sorted_indices);
-	case arrow::Type::INT32:return sort_numeric_column_type<arrow::Int32Type>(data_column, sorted_indices);
-	case arrow::Type::UINT64:return sort_numeric_column_type<arrow::UInt64Type>(data_column, sorted_indices);
-	case arrow::Type::INT64:return sort_numeric_column_type<arrow::Int64Type>(data_column, sorted_indices);
-	case arrow::Type::HALF_FLOAT:return sort_numeric_column_type<arrow::HalfFloatType>(data_column, sorted_indices);
-	case arrow::Type::FLOAT: return sort_numeric_column_type<arrow::FloatType>(data_column, sorted_indices);
-	case arrow::Type::DOUBLE:return sort_numeric_column_type<arrow::DoubleType>(data_column, sorted_indices);
+	case arrow::Type::BOOL:
+	  return sort_numeric_column_type<arrow::BooleanType>(data_column,
+														  sorted_indices,
+														  memory_pool);
+	case arrow::Type::INT8: return sort_numeric_column_type<arrow::Int8Type>(data_column, sorted_indices, memory_pool);
+	case arrow::Type::UINT16:
+	  return sort_numeric_column_type<arrow::UInt16Type>(data_column,
+														 sorted_indices,
+														 memory_pool);
+	case arrow::Type::INT16:return sort_numeric_column_type<arrow::Int16Type>(data_column, sorted_indices, memory_pool);
+	case arrow::Type::UINT32:
+	  return sort_numeric_column_type<arrow::UInt32Type>(data_column,
+														 sorted_indices, memory_pool);
+	case arrow::Type::INT32:return sort_numeric_column_type<arrow::Int32Type>(data_column, sorted_indices, memory_pool);
+	case arrow::Type::UINT64:
+	  return sort_numeric_column_type<arrow::UInt64Type>(data_column,
+														 sorted_indices,
+														 memory_pool);
+	case arrow::Type::INT64:return sort_numeric_column_type<arrow::Int64Type>(data_column, sorted_indices, memory_pool);
+	case arrow::Type::HALF_FLOAT:
+	  return sort_numeric_column_type<arrow::HalfFloatType>(data_column,
+															sorted_indices,
+															memory_pool);
+	case arrow::Type::FLOAT:
+	  return sort_numeric_column_type<arrow::FloatType>(data_column,
+														sorted_indices,
+														memory_pool);
+	case arrow::Type::DOUBLE:
+	  return sort_numeric_column_type<arrow::DoubleType>(data_column,
+														 sorted_indices,
+														 memory_pool);
 	case arrow::Type::STRING:break;
 	case arrow::Type::BINARY:break;
 	case arrow::Type::FIXED_SIZE_BINARY:break;
@@ -84,9 +109,13 @@ std::shared_ptr<arrow::Table> sort_table(std::shared_ptr<arrow::Table> tab, int6
   int64_t no_of_columns = tab_to_process->num_columns();
   for (int64_t col_index = 0; col_index < no_of_columns; ++col_index) {
 	std::shared_ptr<arrow::Array> sorted_array = sort_column(tab_to_process->column(col_index)->chunk(0),
-															 index_lookup);
+															 index_lookup, memory_pool);
 	sorted_columns.push_back(sorted_array);
   }
   return arrow::Table::Make(tab->schema(), sorted_columns);
+}
+
+std::shared_ptr<arrow::Table> sort_table(std::shared_ptr<arrow::Table> tab, int64_t sort_column_index) {
+  return sort_table(tab, sort_column_index, arrow::default_memory_pool());
 }
 }
