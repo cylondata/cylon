@@ -15,20 +15,19 @@ namespace twisterx {
 
     // add the trackers for sending
     for (auto t : targets) {
-      inputs_.insert(std::pair<int, PendingSendTable>(t, PendingSendTable()));
+      inputs_.insert(std::pair<int, std::shared_ptr<PendingSendTable>>(t, std::make_shared<PendingSendTable>()));
     }
     
     for (auto t : source) {
-      receives_.insert(std::pair<int, PendingReceiveTable>(t, PendingReceiveTable()));
+      receives_.insert(std::pair<int, std::shared_ptr<PendingReceiveTable>>(t, std::make_shared<PendingReceiveTable>()));
     }
   }
 
   int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table>& arrow, int target) {
     //todo: check weather we have enough memory
-
     // lets save the table into pending and move on
-    PendingSendTable &st = inputs_[target];
-    st.pending.push(arrow);
+    std::shared_ptr<PendingSendTable> st = inputs_[target];
+    st->pending.push(arrow);
     return 1;
   }
 
@@ -36,31 +35,30 @@ namespace twisterx {
     bool isAllEmpty = true;
     // we need to send the buffers
     for (auto t : inputs_) {
-      std::queue<std::shared_ptr<arrow::Table>> &pend = t.second.pending;
-      if (t.second.status == ARROW_HEADER_INIT) {
-        if (!pend.empty()) {
-          t.second.currentTable = t.second.pending.front();
-          t.second.pending.pop();
-          t.second.status = ARROW_HEADER_COLUMN_CONTINUE;
+      if (t.second->status == ARROW_HEADER_INIT) {
+        if (!t.second->pending.empty()) {
+          t.second->currentTable = t.second->pending.front();
+          t.second->pending.pop();
+          t.second->status = ARROW_HEADER_COLUMN_CONTINUE;
         }
       }
 
-      if (t.second.status == ARROW_HEADER_COLUMN_CONTINUE) {
-        int noOfColumns = t.second.currentTable->columns().size();
+      if (t.second->status == ARROW_HEADER_COLUMN_CONTINUE) {
+        int noOfColumns = t.second->currentTable->columns().size();
         bool canContinue = true;
-        while (t.second.columnIndex < noOfColumns && canContinue) {
-          const std::shared_ptr<arrow::ChunkedArray> &cArr = t.second.currentTable->column(t.second.columnIndex);
+        while (t.second->columnIndex < noOfColumns && canContinue) {
+          const std::shared_ptr<arrow::ChunkedArray> &cArr = t.second->currentTable->column(t.second->columnIndex);
 
           unsigned long size = cArr->chunks().size();
-          while (static_cast<size_t>(t.second.arrayIndex) < size && canContinue) {
-            const std::shared_ptr<arrow::Array> &arr = cArr->chunk(t.second.arrayIndex);
+          while (static_cast<size_t>(t.second->arrayIndex) < size && canContinue) {
+            const std::shared_ptr<arrow::Array> &arr = cArr->chunk(t.second->arrayIndex);
 
             const std::shared_ptr<arrow::ArrayData> &data = arr->data();
-            while (static_cast<size_t>(t.second.bufferIndex) < data->buffers.size()) {
-              std::shared_ptr<arrow::Buffer> &buf = data->buffers[t.second.bufferIndex];
+            while (static_cast<size_t>(t.second->bufferIndex) < data->buffers.size()) {
+              std::shared_ptr<arrow::Buffer> &buf = data->buffers[t.second->bufferIndex];
               int hdr[5];
-              hdr[0] = t.second.columnIndex;
-              hdr[1] = t.second.bufferIndex;
+              hdr[0] = t.second->columnIndex;
+              hdr[1] = t.second->bufferIndex;
               hdr[2] = data->buffers.size();
               hdr[3] = cArr->chunks().size();
               hdr[4] = data->length;
@@ -70,32 +68,32 @@ namespace twisterx {
                 canContinue = false;
                 break;
               }
-              t.second.bufferIndex++;
+              t.second->bufferIndex++;
             }
             // if we can continue, that means we are finished with this array
             if (canContinue) {
-              t.second.bufferIndex = 0;
-              t.second.arrayIndex++;
+              t.second->bufferIndex = 0;
+              t.second->arrayIndex++;
             }
           }
           // if we can continue, that means we are finished with this column
           if (canContinue) {
-            t.second.arrayIndex = 0;
-            t.second.columnIndex++;
+            t.second->arrayIndex = 0;
+            t.second->columnIndex++;
           }
         }
 
         // if we are at this stage, we have sent everything for this , so lets resets
         if (canContinue) {
-          t.second.columnIndex = 0;
-          t.second.arrayIndex = 0;
-          t.second.bufferIndex = 0;
+          t.second->columnIndex = 0;
+          t.second->arrayIndex = 0;
+          t.second->bufferIndex = 0;
           // we are done with this target, for this call
-          t.second.status = ARROW_HEADER_INIT;
+          t.second->status = ARROW_HEADER_INIT;
         }
       }
 
-      if (!pend.empty() || t.second.status == ARROW_HEADER_COLUMN_CONTINUE) {
+      if (!t.second->pending.empty() || t.second->status == ARROW_HEADER_COLUMN_CONTINUE) {
         isAllEmpty = false;
       }
     }
@@ -119,34 +117,34 @@ namespace twisterx {
   }
 
   bool ArrowAllToAll::onReceive(int source, void *buffer, int length) {
-    PendingReceiveTable &table = receives_[source];
+    std::shared_ptr<PendingReceiveTable> table = receives_[source];
     // create the buffer hosting the value
     std::shared_ptr<arrow::Buffer>  buf = std::make_shared<arrow::Buffer>((uint8_t *)buffer, length);
-    table.buffers.push_back(buf);
+    table->buffers.push_back(buf);
     // now check weather we have the expected number of buffers received
-    if (table.noBuffers == table.bufferIndex + 1) {
+    if (table->noBuffers == table->bufferIndex + 1) {
       // okay we are done with this array
       std::shared_ptr<arrow::ArrayData> data = std::make_shared<arrow::ArrayData>(
-          schema_->field(table.columnIndex)->type(), table.length, table.buffers);
+          schema_->field(table->columnIndex)->type(), table->length, table->buffers);
       // clears the buffers
-      table.buffers.clear();
+      table->buffers.clear();
       // create an array
       std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
-      table.arrays.push_back(array);
+      table->arrays.push_back(array);
 
       // we have received all the arrays of the chunk array
-      if (table.arrays.size() == static_cast<size_t>(table.noArray)) {
+      if (table->arrays.size() == static_cast<size_t>(table->noArray)) {
         std::shared_ptr<arrow::ChunkedArray> chunkedArray = std::make_shared<arrow::ChunkedArray>(
-            table.arrays, schema_->field(table.columnIndex)->type());
+            table->arrays, schema_->field(table->columnIndex)->type());
         // clear the arrays
-        table.arrays.clear();
-        table.currentArrays.push_back(chunkedArray);
+        table->arrays.clear();
+        table->currentArrays.push_back(chunkedArray);
 
-        if (table.currentArrays.size() == static_cast<size_t>(schema_->num_fields())) {
+        if (table->currentArrays.size() == static_cast<size_t>(schema_->num_fields())) {
           // now we can create the table
-          std::shared_ptr<arrow::Table> tablePtr = arrow::Table::Make(schema_, table.currentArrays);
+          std::shared_ptr<arrow::Table> tablePtr = arrow::Table::Make(schema_, table->currentArrays);
           // clear the current array
-          table.currentArrays.clear();
+          table->currentArrays.clear();
           recv_callback_->onReceive(source, tablePtr);
         }
       }
@@ -161,12 +159,12 @@ namespace twisterx {
       return false;
     }
 
-    PendingReceiveTable &table = receives_[source];
-    table.columnIndex = buffer[0];
-    table.bufferIndex = buffer[1];
-    table.noBuffers = buffer[2];
-    table.noArray = buffer[3];
-    table.length = buffer[4];
+    std::shared_ptr<PendingReceiveTable> table = receives_[source];
+    table->columnIndex = buffer[0];
+    table->bufferIndex = buffer[1];
+    table->noBuffers = buffer[2];
+    table->noArray = buffer[3];
+    table->length = buffer[4];
     return true;
   }
 }

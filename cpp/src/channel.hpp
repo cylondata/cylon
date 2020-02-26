@@ -13,9 +13,9 @@ namespace twisterx {
    */
    class ChannelSendCallback {
    public:
-     virtual void sendComplete(TxRequest *request) = 0;
+     virtual void sendComplete(std::shared_ptr<TxRequest> request) = 0;
 
-     virtual void sendFinishComplete(TxRequest * request) = 0;
+     virtual void sendFinishComplete(std::shared_ptr<TxRequest> request) = 0;
    };
 
   /**
@@ -46,14 +46,14 @@ namespace twisterx {
      * @param request the request containing buffer, destination etc
      * @return if the request is accepted to be sent
      */
-    virtual int send(TxRequest *request) = 0;
+    virtual int send(std::shared_ptr<TxRequest> request) = 0;
 
     /**
      * Inform the finish to the target
      * @param request the request
      * @return -1 if not accepted, 1 if accepted
      */
-    virtual int sendFin(TxRequest *request) = 0;
+    virtual int sendFin(std::shared_ptr<TxRequest> request) = 0;
 
     /**
      * This method needs to be called to progress the send

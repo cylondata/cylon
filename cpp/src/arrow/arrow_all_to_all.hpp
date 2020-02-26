@@ -144,12 +144,12 @@ namespace twisterx {
     /**
      * Keep track of the inputs
      */
-    std::unordered_map<int, PendingSendTable> inputs_;
+    std::unordered_map<int, std::shared_ptr<PendingSendTable>> inputs_;
 
     /**
      * Keep track of the receives
      */
-    std::unordered_map<int, PendingReceiveTable> receives_;
+    std::unordered_map<int, std::shared_ptr<PendingReceiveTable>> receives_;
 
     /**
      * Adding receive callback

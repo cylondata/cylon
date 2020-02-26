@@ -19,9 +19,13 @@ namespace twisterx {
     callback = rcvCallback;
 
     // initialize the sends
+    std::string s = "";
     for (int t : tgts) {
       sends[t] = new AllToAllSends();
+      s += std::to_string(t) + ", ";
     }
+    LOG(INFO) << worker_id << " Targets " << s;
+
     thisNumTargets = 0;
     thisNumSources = 0;
     if (std::find(targets.begin(), targets.end(), w_id) != targets.end()) {
@@ -34,6 +38,7 @@ namespace twisterx {
   }
 
   void AllToAll::close() {
+    LOG(INFO) << "CLOSE ****************** ";
     for (int t : targets) {
       delete sends[t];
       sends.erase(t);
@@ -51,7 +56,7 @@ namespace twisterx {
 
     AllToAllSends *s = sends[target];
     LOG(INFO) << "Allocating buffer " << length;
-    auto *request = new TxRequest(target, buffer, length);
+    std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(target, buffer, length);
     s->requestQueue.push(request);
     s->messageSizes += length;
     return 1;
@@ -70,7 +75,7 @@ namespace twisterx {
 
     AllToAllSends *s = sends[target];
     LOG(INFO) << "Allocating buffer " << length;
-    auto *request = new TxRequest(target, buffer, length, header, headerLength);
+    std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(target, buffer, length, header, headerLength);
     s->requestQueue.push(request);
     s->messageSizes += length;
     return 1;
@@ -81,26 +86,31 @@ namespace twisterx {
     // if this is a source, send until the operation is finished
     for (auto w : sends) {
       while (!w.second->requestQueue.empty()) {
-        TxRequest * request = w.second->requestQueue.front();
+        if (w.second->sendStatus == ALL_TO_ALL_FINISH_SENT || w.second->sendStatus == ALL_TO_ALL_FINISHED) {
+          LOG(FATAL) << "We cannot have items to send after finish sent";
+        }
+
+        std::shared_ptr<TxRequest> request = w.second->requestQueue.front();
         // if the request is accepted to be set, pop
         if (channel->send(request)) {
           w.second->requestQueue.pop();
-        }
-        // if all queue are not empty set here
-        if (!w.second->requestQueue.empty()) {
-          allQueuesEmpty = false;
+          // we add to the pending queue
+          w.second->pendingQueue.push(request);
         }
       }
 
-      if (w.second->requestQueue.empty()) {
+      if (w.second->requestQueue.empty() && w.second->pendingQueue.empty()) {
         if (finishFlag) {
           if (w.second->sendStatus == ALL_TO_ALL_SENDING) {
-            auto *request = new TxRequest(w.first);
+            std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(w.first);
             if (channel->sendFin(request)) {
+              LOG(INFO) << worker_id << " Sent FIN *** " << w.first;
               w.second->sendStatus = ALL_TO_ALL_FINISH_SENT;
             }
           }
         }
+      } else {
+        allQueuesEmpty = false;
       }
     }
     // progress the sends
@@ -121,13 +131,13 @@ namespace twisterx {
     callback->onReceive(receiveId, buffer, length);
   }
 
-  void AllToAll::sendComplete(TxRequest *request) {
+  void AllToAll::sendComplete(std::shared_ptr<TxRequest> request) {
     AllToAllSends *s = sends[request->target];
+    s->pendingQueue.pop();
     // we sent this request so we need to reduce memory
     s->messageSizes  = s->messageSizes - request->length;
     // we don't have much to do here, so we delete the request
-    LOG(INFO) << "Free buffer " << request->length;
-    delete request;
+    LOG(INFO) << worker_id << " Free buffer " << request->length;
   }
 
   void AllToAll::receivedHeader(int receiveId, int finished,
@@ -151,11 +161,10 @@ namespace twisterx {
     }
   }
 
-  void AllToAll::sendFinishComplete(TxRequest *request) {
+  void AllToAll::sendFinishComplete(std::shared_ptr<TxRequest> request) {
     finishedTargets.insert(request->target);
     AllToAllSends *s = sends[request->target];
     s->sendStatus = ALL_TO_ALL_FINISHED;
-    LOG(INFO) << "Free fin buffer " << request->length;
-    delete request;
+    LOG(INFO) << worker_id << " Free fin buffer " << request->length;
   }
 }
