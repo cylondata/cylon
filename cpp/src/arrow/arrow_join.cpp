@@ -1,5 +1,5 @@
 #include "arrow_join.hpp"
-#include "../join/tx_join.hpp";
+#include "../join/join.hpp"
 
 namespace twisterx {
   ArrowJoin::ArrowJoin(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int leftEdgeId,
@@ -18,7 +18,7 @@ namespace twisterx {
     std::shared_ptr<std::unordered_map<int64_t, arrow::ArrayBuilder>> right_builders;
     if (left && right) {
       LOG(INFO) << "Received everything to join";
-      join::join<arrow::Int64Array, arrow::Int64Type, int64_t>(leftTables_, rightTables_, (int64_t)0, (int64_t)0, column_builders, right_builders, join::JoinType::INNER, join::JoinAlgorithm::SORT,
+      join::join(leftTables_, rightTables_, (int64_t)0, (int64_t)0, join::JoinType::INNER, join::JoinAlgorithm::SORT,
                  arrow::default_memory_pool());
       // join
       return true;

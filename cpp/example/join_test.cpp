@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
   srand(std::time(NULL));
 
-  int count = 40000;
+  int count = 1000000;
   int range = count * 10;
 
   for (int i = 0; i < count; i++) {
