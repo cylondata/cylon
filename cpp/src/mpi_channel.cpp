@@ -32,7 +32,7 @@ namespace twisterx {
     std::cout << "Posted receive buffers and INIT" << std::endl;
   }
 
-  int MPIChannel::send(TxRequest * request) {
+  int MPIChannel::send(std::shared_ptr<TxRequest> request) {
     PendingSend * ps = sends[request->target];
     if (ps->pendingData.size() > 1000) {
       return -1;
@@ -41,12 +41,13 @@ namespace twisterx {
     return 1;
   }
 
-  int MPIChannel::sendFin(twisterx::TxRequest *request) {
+  int MPIChannel::sendFin(std::shared_ptr<TxRequest> request) {
     if (finishRequests.find(request->target) != finishRequests.end()) {
       return -1;
     }
 
-    finishRequests.insert(std::pair<int, TxRequest *>(request->target, request));
+    LOG(INFO) << rank << " Insert FIN " << request->target;
+    finishRequests.insert(std::pair<int, std::shared_ptr<TxRequest>>(request->target, request));
     return 1;
   }
 
@@ -70,7 +71,8 @@ namespace twisterx {
             // malloc a buffer
             x.second->data = new char[length];
             x.second->length = length;
-            MPI_Irecv(x.second->data, length, MPI_BYTE, x.second->receiveId, edge, MPI_COMM_WORLD, &x.second->request);
+            MPI_Irecv(x.second->data, length, MPI_BYTE, x.second->receiveId, edge, MPI_COMM_WORLD, &(x.second->request));
+            LOG(INFO) << rank << " ** POST RECEIVE " << length << " addr: " << x.second->data;
             x.second->status = RECEIVE_POSTED;
             // copy the count - 2 to the buffer
             int *header = nullptr;
@@ -99,7 +101,8 @@ namespace twisterx {
           std::fill_n(x.second->headerBuf, TWISTERX_CHANNEL_HEADER_SIZE, 0);
           // malloc a buffer
           MPI_Irecv(x.second->headerBuf, TWISTERX_CHANNEL_HEADER_SIZE, MPI_INT,
-              x.second->receiveId, edge, MPI_COMM_WORLD, &x.second->request);
+              x.second->receiveId, edge, MPI_COMM_WORLD, &(x.second->request));
+          LOG(INFO) << rank << " ** POST HEADER " << 8 << " addr: " << x.second->headerBuf;
           x.second->status = RECEIVE_LENGTH_POSTED;
           // call the back end
           rcv_fn->receivedData(x.first, x.second->data, x.second->length);
@@ -121,9 +124,9 @@ namespace twisterx {
         if (flag) {
           x.second->request = {};
           // now post the actual send
-          TxRequest * r = x.second->pendingData.front();
-          LOG(INFO) << rank << " Sent message to " << r->target << " length " << r->length;
-          MPI_Isend(r->buffer, r->length, MPI_BYTE, r->target, edge, MPI_COMM_WORLD, &x.second->request);
+          std::shared_ptr<TxRequest> r = x.second->pendingData.front();
+          LOG(INFO) << rank << " Sent message to " << r->target << " length " << r->length << " addr: " << r->buffer;
+          MPI_Isend(r->buffer, r->length, MPI_BYTE, r->target, edge, MPI_COMM_WORLD, &(x.second->request));
           x.second->status = SEND_POSTED;
           x.second->pendingData.pop();
           // we set to the current send and pop it
@@ -139,7 +142,7 @@ namespace twisterx {
           sendFinishHeader(x);
         }
       } else if (x.second->status == SEND_POSTED) {
-        MPI_Test(&x.second->request, &flag, &status);
+        MPI_Test(&(x.second->request), &flag, &status);
         if (flag) {
           x.second->request = {};
           // if there are more data to post, post the length buffer now
@@ -147,9 +150,11 @@ namespace twisterx {
             sendHeader(x);
             // we need to notify about the send completion
             send_comp_fn->sendComplete(x.second->currentSend);
+            x.second->currentSend = {};
           } else {
             // we need to notify about the send completion
             send_comp_fn->sendComplete(x.second->currentSend);
+            x.second->currentSend = {};
             // now check weather finish request is there
             if (finishRequests.find(x.first) != finishRequests.end()) {
               sendFinishHeader(x);
@@ -159,11 +164,11 @@ namespace twisterx {
           }
         }
       } else if (x.second->status == SEND_FINISH){
-        MPI_Test(&x.second->request, &flag, &status);
+        MPI_Test(&(x.second->request), &flag, &status);
         if (flag) {
           LOG(INFO) << rank << " FINISHED send " << x.first;
           // we are going to send complete
-          TxRequest * finReq = finishRequests[x.first];
+          std::shared_ptr<TxRequest> finReq = finishRequests[x.first];
           send_comp_fn->sendFinishComplete(finReq);
           x.second->status = SEND_DONE;
         }
@@ -175,7 +180,7 @@ namespace twisterx {
   }
 
   void MPIChannel::sendHeader(const std::pair<const int, PendingSend *> &x) const {
-    TxRequest *r = x.second->pendingData.front();
+    std::shared_ptr<TxRequest> r = x.second->pendingData.front();
     // put the length to the buffer
     x.second->headerBuf[0] = r->length;
     x.second->headerBuf[1] = 0;
@@ -184,7 +189,7 @@ namespace twisterx {
     if (r->headerLength > 0) {
       memcpy(&(x.second->headerBuf[2]), &(r->header[0]), r->headerLength * sizeof(int));
     }
-    LOG(INFO) << rank << " Sent length to " << r->target;
+    LOG(INFO) << rank << " Sent length to " << r->target << " addr: " << x.second->headerBuf << " len: " << r->headerLength + 2;
     // we have to add 2 to the header length
     MPI_Isend(&(x.second->headerBuf[0]), 2 + r->headerLength, MPI_INT,
         x.first, edge, MPI_COMM_WORLD, &(x.second->request));

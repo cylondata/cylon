@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <cstring>
+#include <glog/logging.h>
 
 #define TWISTERX_MSG_FIN 1
 
@@ -36,7 +37,10 @@ namespace twisterx {
       target = tgt;
     }
 
-    ~TxRequest() = default;
+    ~TxRequest() {
+      LOG(INFO) << "Delete the request with address" << buffer;
+      buffer = nullptr;
+    };
   };
 }
 

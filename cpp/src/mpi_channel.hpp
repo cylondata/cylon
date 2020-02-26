@@ -32,11 +32,11 @@ namespace twisterx {
   struct PendingSend {
     //  we allow upto 8 ints for the header
     int headerBuf[TWISTERX_CHANNEL_HEADER_SIZE]{};
-    std::queue<TxRequest *> pendingData;
+    std::queue<std::shared_ptr<TxRequest>> pendingData;
     SendStatus status = SEND_INIT;
     MPI_Request request{};
     // the current send, if it is a actual send
-    TxRequest * currentSend{};
+    std::shared_ptr<TxRequest> currentSend{};
   };
 
   struct PendingReceive {
@@ -46,7 +46,7 @@ namespace twisterx {
     void * data{};
     int length{};
     ReceiveStatus status = RECEIVE_INIT;
-    MPI_Request  request{};
+    MPI_Request request{};
   };
 
   /**
@@ -70,7 +70,7 @@ namespace twisterx {
     * @param request the request
     * @return true if accepted
     */
-    int send(TxRequest *request) override;
+    int send(std::shared_ptr<TxRequest> request) override;
 
     /**
     * Send the message to the target.
@@ -78,7 +78,7 @@ namespace twisterx {
     * @param request the request
     * @return true if accepted
     */
-    int sendFin(TxRequest *request) override;
+    int sendFin(std::shared_ptr<TxRequest> request) override;
 
     /**
      * This method, will send the messages, It will first send a message with length and then
@@ -99,7 +99,7 @@ namespace twisterx {
     // keep track of the posted receives
     std::unordered_map<int, PendingReceive *> pendingReceives;
     // we got finish requests
-    std::unordered_map<int, TxRequest *> finishRequests;
+    std::unordered_map<int, std::shared_ptr<TxRequest>> finishRequests;
     // receive callback function
     ChannelReceiveCallback * rcv_fn;
     // send complete callback function
