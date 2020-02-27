@@ -21,10 +21,14 @@ namespace twisterx {
 		if (left && right) {
 			LOG(INFO) << "Received everything to join";
 			std::shared_ptr<arrow::Table> joined_table;
-			join::join(leftTables_, rightTables_, (int64_t)0, (int64_t)0,
+			arrow::Status status = join::join(leftTables_, rightTables_, (int64_t)0, (int64_t)0,
 								 join::JoinType::INNER, join::JoinAlgorithm::SORT,
 								 &joined_table,
 								 arrow::default_memory_pool());
+			if (status != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed to join - error: " << status.CodeAsString();
+        return true;
+			}
 			// join
 			return true;
 		}
