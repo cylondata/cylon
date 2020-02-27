@@ -70,7 +70,7 @@ namespace twisterx {
 	  int64_t left_current_index = 0;
 	  int64_t right_current_index = 0;
 
-	  std::map<int64_t, std::vector<int64_t >> join_relations; // using map intentionally to keep elements ordered
+	  std::map<int64_t, std::shared_ptr<std::vector<int64_t >>> join_relations; // using map intentionally to keep elements ordered
 
 	  t1 = std::chrono::high_resolution_clock::now();
 
@@ -90,11 +90,11 @@ namespace twisterx {
 	  while (!left_subset.empty() && !right_subset.empty()) {
 		if (left_key == right_key) { // use a key comparator
 		  for (int64_t left_idx: left_subset) {
-			std::vector<int64_t> right_mappings;
+			std::shared_ptr<std::vector<int64_t>> right_mappings = std::make_shared<std::vector<int64_t>>();
 			for (int64_t right_idx: right_subset) {
-			  right_mappings.push_back(right_idx);
+			  right_mappings->push_back(right_idx);
 			}
-			join_relations.insert(std::pair<int64_t, std::vector<int64_t >>(left_idx, right_mappings));
+			join_relations.insert(std::pair<int64_t, std::shared_ptr<std::vector<int64_t >>>(left_idx, right_mappings));
 
 			//advance
 			advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&left_subset,
@@ -138,7 +138,7 @@ namespace twisterx {
 
 	  // build final table
 	  status = twisterx::join::util::build_final_table(
-		  std::make_shared<std::map<int64_t, std::vector<int64_t >>>(join_relations),
+		  std::make_shared<std::map<int64_t, std::shared_ptr<std::vector<int64_t >>>>(join_relations),
 		  left_tab,
 		  right_tab,
 		  joined_table,
@@ -197,7 +197,7 @@ namespace twisterx {
 	  }
 
 	  arrow::Status right_combine_stat = right_tab->CombineChunks(memory_pool, &right_tab_combined);
-	  if (right_tab_combined) {
+	  if (right_combine_stat != arrow::Status::OK()) {
 		LOG(FATAL) << "Error in combining table chunks of right table.";
 		return right_combine_stat;
 	  }
