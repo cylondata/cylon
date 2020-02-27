@@ -1,11 +1,45 @@
 #ifndef TWISTERX_CHANNEL_H
 #define TWISTERX_CHANNEL_H
 
-#include "request.hpp"
-
 #include <vector>
+#include <memory>
+#include <cstring>
 
 namespace twisterx {
+  /**
+ * When a buffer is inserted, we need to return a reference to that buffer
+ */
+  struct TxRequest {
+    void * buffer{};
+    int length{};
+    int target;
+    int header[6] = {};
+    int headerLength{};
+
+    TxRequest(int tgt, void *buf, int len) {
+      target = tgt;
+      buffer = buf;
+      length = len;
+    }
+
+    TxRequest(int tgt, void *buf, int len, int * head, int hLength) {
+      target = tgt;
+      buffer = buf;
+      length = len;
+      // we are copying the header
+      memcpy(&header[0], head, hLength * sizeof(int));
+      headerLength = hLength;
+    }
+
+    explicit TxRequest(int tgt) {
+      target = tgt;
+    }
+
+    ~TxRequest() {
+      // LOG(INFO) << "Delete the request with address" << buffer;
+      buffer = nullptr;
+    };
+  };
 
   /**
    * When a send is complete, this callback is called by the channel, it is the responsibility

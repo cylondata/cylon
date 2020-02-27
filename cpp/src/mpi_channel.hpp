@@ -9,6 +9,7 @@
 #include <mpi.h>
 
 #define TWISTERX_CHANNEL_HEADER_SIZE 8
+#define TWISTERX_MSG_FIN 1
 
 namespace twisterx {
   enum SendStatus {
