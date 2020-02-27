@@ -46,32 +46,12 @@ int main(int argc, char *argv[]) {
 
   srand(std::time(NULL));
 
-  int count = 1000000;
+  int count = std::atoi(argv[1]) / size;
+  LOG(INFO) << "No of tuples " << count;
   int range = count * 10;
-
-  for (int i = 0; i < count; i++) {
-    int l = rand() % range;
-    int r = rand() % range;
-
-    left_id_builder.Append(l);
-    right_id_builder.Append(r);
-    cost_builder.Append(i);
-  }
-
-  std::vector <std::shared_ptr<arrow::Field>> schema_vector = {
+  std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
       arrow::field("id", arrow::int64()), arrow::field("cost", arrow::int64())};
   auto schema = std::make_shared<arrow::Schema>(schema_vector);
-
-  std::shared_ptr <arrow::Array> left_id_array;
-  left_id_builder.Finish(&left_id_array);
-  std::shared_ptr <arrow::Array> right_id_array;
-  right_id_builder.Finish(&right_id_array);
-
-  std::shared_ptr <arrow::Array> cost_array;
-  cost_builder.Finish(&cost_array);
-
-  std::shared_ptr <arrow::Table> left_table = arrow::Table::Make(schema, {left_id_array, cost_array});
-  std::shared_ptr <arrow::Table> right_table = arrow::Table::Make(schema, {right_id_array, cost_array});
 
   std::vector<int> sources;
   std::vector<int> targets;
@@ -79,13 +59,34 @@ int main(int argc, char *argv[]) {
     sources.push_back(i);
     targets.push_back(i);
   }
-
-  auto start = std::chrono::high_resolution_clock::now();
   JC jc;
   twisterx::ArrowJoin join(rank, sources, targets, 0, 1, &jc, schema);
-  LOG(INFO) << "Start inserting ";
-  join.leftInsert(left_table, (rank + 1) % size);
-  join.rightInsert(right_table, (rank + 1) % size);
+  auto start = std::chrono::high_resolution_clock::now();
+  for (int j = 0; j < size; j++) {
+    for (int i = 0; i < count; i++) {
+      int l = rand() % range;
+      int r = rand() % range;
+
+      left_id_builder.Append(l);
+      right_id_builder.Append(r);
+      cost_builder.Append(i);
+    }
+
+    std::shared_ptr<arrow::Array> left_id_array;
+    left_id_builder.Finish(&left_id_array);
+    std::shared_ptr<arrow::Array> right_id_array;
+    right_id_builder.Finish(&right_id_array);
+
+    std::shared_ptr<arrow::Array> cost_array;
+    cost_builder.Finish(&cost_array);
+
+    std::shared_ptr<arrow::Table> left_table = arrow::Table::Make(schema, {left_id_array, cost_array});
+    std::shared_ptr<arrow::Table> right_table = arrow::Table::Make(schema, {right_id_array, cost_array});
+
+    LOG(INFO) << "Start inserting ";
+    join.leftInsert(left_table, (j + rank) % size);
+    join.rightInsert(right_table, (j + rank) % size);
+  }
 
   LOG(INFO) << "Calling finish ";
   join.finish();
@@ -97,7 +98,6 @@ int main(int argc, char *argv[]) {
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   LOG(INFO) << "Join done " + std::to_string(duration.count());
-
 
   MPI_Finalize();
   return 0;
