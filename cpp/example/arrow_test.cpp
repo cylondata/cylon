@@ -55,6 +55,7 @@ void merge_test() {
 
   std::shared_ptr<arrow::Table> left_table = arrow::Table::Make(schema, {left_id_array, cost_array});
   std::shared_ptr<arrow::Table> right_table = arrow::Table::Make(schema, {right_id_array, cost_array});
+  std::shared_ptr<arrow::Table> joined_table;
 
   LOG(INFO) << "Starting join";
   auto start = std::chrono::high_resolution_clock::now();
@@ -65,6 +66,7 @@ void merge_test() {
 	  0,
 	  twisterx::join::JoinType::INNER,
 	  twisterx::join::JoinAlgorithm::SORT,
+	  &joined_table,
 	  pool
   );
   auto end = std::chrono::high_resolution_clock::now();
@@ -145,7 +147,8 @@ void sort_test() {
   std::shared_ptr<arrow::Table> left_table = make_table(1, 10, pool, 0);
 
   LOG(INFO) << "sorting...";
-  std::shared_ptr<arrow::Table> sorted_table = twisterx::util::sort_table(left_table, 0, pool);
+  std::shared_ptr<arrow::Table> sorted_table;
+  twisterx::util::sort_table(left_table, 0, &sorted_table, pool);
 
   for (int i = 0; i < count; i++) {
 	auto key = std::static_pointer_cast<arrow::Int64Array>(sorted_table->column(0)->chunk(0));
@@ -156,14 +159,22 @@ void sort_test() {
 
 void join_test(bool sort, int count) {
   arrow::MemoryPool *pool = arrow::default_memory_pool();
-
+  LOG(INFO) << "Here";
   std::shared_ptr<arrow::Table> left_table = make_table(1, count, pool, 34);
   std::shared_ptr<arrow::Table> right_table = make_table(2, count, pool, 5678);
 
   auto t1 = std::chrono::high_resolution_clock::now();
+  arrow::Status status;
   if (sort) {
-	left_table = twisterx::util::sort_table(left_table, 0, pool);
-	right_table = twisterx::util::sort_table(right_table, 0, pool);
+	status = twisterx::util::sort_table(left_table, 0, &left_table, pool);
+	if (status != arrow::Status::OK()) {
+	  LOG(FATAL) << "Failed to sort left table. " << status.ToString();
+	}
+
+	status = twisterx::util::sort_table(right_table, 0, &right_table, pool);
+	if (status != arrow::Status::OK()) {
+	  LOG(FATAL) << "Failed to sort right table. " << status.ToString();
+	}
   }
   auto t2 = std::chrono::high_resolution_clock::now();
 
@@ -172,33 +183,39 @@ void join_test(bool sort, int count) {
 
   LOG(INFO) << "joining...";
   t1 = std::chrono::high_resolution_clock::now();
-  std::shared_ptr<arrow::Table> joined_table = twisterx::join::join(
+  std::shared_ptr<arrow::Table> joined_table;
+  status = twisterx::join::join(
 	  left_table,
 	  right_table,
 	  0,
 	  0,
 	  twisterx::join::JoinType::INNER,
 	  twisterx::join::JoinAlgorithm::SORT,
+	  &joined_table,
 	  pool
   );
   t2 = std::chrono::high_resolution_clock::now();
   count = joined_table->column(0)->length();
 
-  LOG(INFO) << "Join produced " << count << " tuples  in "
-			<< std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "milis";
+  if (status == arrow::Status::OK()) {
+	LOG(INFO) << "Join produced " << count << " tuples  in "
+			  << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "milis";
+  } else {
+	LOG(INFO) << "Join failed. " << status.ToString();
+  }
 
-  for (int i = 0; i < count; i++) {
-	auto key1 = std::static_pointer_cast<arrow::Int64Array>(joined_table->column(0)->chunk(0));
-	auto val1 = std::static_pointer_cast<arrow::FloatArray>(joined_table->column(1)->chunk(0));
-	auto key2 = std::static_pointer_cast<arrow::Int64Array>(joined_table->column(2)->chunk(0));
-	auto val2 = std::static_pointer_cast<arrow::FloatArray>(joined_table->column(3)->chunk(0));
+//  for (int i = 0; i < count; i++) {
+//	auto key1 = std::static_pointer_cast<arrow::Int64Array>(joined_table->column(0)->chunk(0));
+//	auto val1 = std::static_pointer_cast<arrow::FloatArray>(joined_table->column(1)->chunk(0));
+//	auto key2 = std::static_pointer_cast<arrow::Int64Array>(joined_table->column(2)->chunk(0));
+//	auto val2 = std::static_pointer_cast<arrow::FloatArray>(joined_table->column(3)->chunk(0));
 //	LOG(INFO) << "reading " << key1->Value(i) << ", " << key2->Value(i) << ", " << val1->Value(i) << ", "
 //			  << val2->Value(i);
-  }
+//  }
 }
 
 int main(int argc, char *argv[]) {
-  join_test(true, atoi(argv[1]));
-  join_test(false, atoi(argv[1]));
+  join_test(true, std::atoi(argv[1]));
+  join_test(false, std::atoi(argv[1]));
   return 0;
 }

@@ -13,7 +13,7 @@ namespace twisterx {
 	  arrow::NumericBuilder<TYPE> array_builder(memory_pool);
 	  arrow::Status status = array_builder.Reserve(indices->size());
 	  if (status != arrow::Status::OK()) {
-		LOG(FATAL) << "Failed to reserve memory when re arranging the array based on indices.";
+		LOG(FATAL) << "Failed to reserve memory when re arranging the array based on indices. " << status.ToString();
 		return status;
 	  }
 
@@ -21,7 +21,7 @@ namespace twisterx {
 	  for (auto &index : *indices) {
 		status = array_builder.Append(casted_array->Value(index));
 		if (status != arrow::Status::OK()) {
-		  LOG(FATAL) << "Failed to append rearranged data points to the array builder";
+		  LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
 		  return status;
 		}
 	  }

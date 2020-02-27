@@ -19,6 +19,7 @@ namespace twisterx {
 		int64_t current_index = sorted_indices->Value(index);
 		arrow::Status status = array_builder.Append(casted_data_array->Value(current_index));
 		if (status != arrow::Status::OK()) {
+		  LOG(FATAL) << "Failed to append new elements to the builder while sorting. " << status.ToString();
 		  return status;
 		}
 	  }
@@ -118,7 +119,7 @@ namespace twisterx {
 
 	arrow::Status sort_table(std::shared_ptr<arrow::Table> tab, int64_t sort_column_index,
 							 std::shared_ptr<arrow::Table> *sorted_table,
-							 arrow::MemoryPool *memory_pool = arrow::default_memory_pool()) {
+							 arrow::MemoryPool *memory_pool) {
 	  std::shared_ptr<arrow::Table> tab_to_process;
 	  // combine chunks if multiple chunks are available
 	  if (tab->column(sort_column_index)->num_chunks() > 1) {
@@ -134,6 +135,7 @@ namespace twisterx {
 	  arrow::Status status = arrow::compute::SortToIndices(&ctx, *column_to_sort, &sorted_column_index);
 
 	  if (status != arrow::Status::OK()) {
+		LOG(FATAL) << "Failed to sort column to indices" << status.ToString();
 		return status;
 	  }
 
@@ -147,6 +149,7 @@ namespace twisterx {
 		status = sort_column(tab_to_process->column(col_index)->chunk(0),
 							 index_lookup, &sorted_array, memory_pool);
 		if (status != arrow::Status::OK()) {
+		  LOG(FATAL) << "Failed to sort column based on indices. " << status.ToString();
 		  return status;
 		}
 		sorted_columns.push_back(sorted_array);
