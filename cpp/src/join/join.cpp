@@ -5,7 +5,7 @@
 #include <map>
 #include "join_utils.hpp"
 
-namespace twisterx::join {
+namespace twisterx { namespace join {
 
 template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
 void advance(std::vector<CPP_KEY_TYPE> *subset,
@@ -292,4 +292,4 @@ std::shared_ptr<arrow::Table> join(const std::shared_ptr<arrow::Table> &left_tab
 	case arrow::Type::LARGE_LIST:break;
   }
 }
-}
+} }

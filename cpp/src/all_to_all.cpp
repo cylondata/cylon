@@ -38,7 +38,6 @@ namespace twisterx {
   }
 
   void AllToAll::close() {
-    LOG(INFO) << "CLOSE ****************** ";
     for (int t : targets) {
       delete sends[t];
       sends.erase(t);
@@ -55,7 +54,7 @@ namespace twisterx {
     }
 
     AllToAllSends *s = sends[target];
-    LOG(INFO) << "Allocating buffer " << length;
+    // LOG(INFO) << "Allocating buffer " << length;
     std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(target, buffer, length);
     s->requestQueue.push(request);
     s->messageSizes += length;
@@ -74,7 +73,7 @@ namespace twisterx {
     }
 
     AllToAllSends *s = sends[target];
-    LOG(INFO) << "Allocating buffer " << length;
+    // LOG(INFO) << "Allocating buffer " << length;
     std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(target, buffer, length, header, headerLength);
     s->requestQueue.push(request);
     s->messageSizes += length;
@@ -104,7 +103,7 @@ namespace twisterx {
           if (w.second->sendStatus == ALL_TO_ALL_SENDING) {
             std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(w.first);
             if (channel->sendFin(request)) {
-              LOG(INFO) << worker_id << " Sent FIN *** " << w.first;
+              // LOG(INFO) << worker_id << " Sent FIN *** " << w.first;
               w.second->sendStatus = ALL_TO_ALL_FINISH_SENT;
             }
           }
@@ -137,26 +136,26 @@ namespace twisterx {
     // we sent this request so we need to reduce memory
     s->messageSizes  = s->messageSizes - request->length;
     // we don't have much to do here, so we delete the request
-    LOG(INFO) << worker_id << " Free buffer " << request->length;
+    // LOG(INFO) << worker_id << " Free buffer " << request->length;
   }
 
   void AllToAll::receivedHeader(int receiveId, int finished,
                                 int * header, int headerLength) {
     if (finished) {
-      LOG(INFO) << worker_id << " Received finish " << receiveId;
+      // LOG(INFO) << worker_id << " Received finish " << receiveId;
       finishedSources.insert(receiveId);
     } else {
       if (headerLength > 0) {
-        LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
-        for (int i = 0; i < headerLength; i++) {
-          std::cout << i << " ";
-        }
-        std::cout << std::endl;
+        // LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
+//        for (int i = 0; i < headerLength; i++) {
+//          std::cout << i << " ";
+//        }
+//        std::cout << std::endl;
         callback->onReceiveHeader(receiveId, header, headerLength);
         delete [] header;
       } else {
         callback->onReceiveHeader(receiveId, nullptr, 0);
-        LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
+        // LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
       }
     }
   }
@@ -165,6 +164,6 @@ namespace twisterx {
     finishedTargets.insert(request->target);
     AllToAllSends *s = sends[request->target];
     s->sendStatus = ALL_TO_ALL_FINISHED;
-    LOG(INFO) << worker_id << " Free fin buffer " << request->length;
+    // LOG(INFO) << worker_id << " Free fin buffer " << request->length;
   }
 }
