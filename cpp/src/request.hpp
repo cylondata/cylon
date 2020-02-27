@@ -38,7 +38,7 @@ namespace twisterx {
     }
 
     ~TxRequest() {
-      LOG(INFO) << "Delete the request with address" << buffer;
+      // LOG(INFO) << "Delete the request with address" << buffer;
       buffer = nullptr;
     };
   };
