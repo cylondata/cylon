@@ -90,7 +90,7 @@ std::shared_ptr<arrow::Table> do_sorted_inner_join(const std::shared_ptr<arrow::
 		for (int64_t right_idx: right_subset) {
 		  right_mappings.push_back(right_idx);
 		}
-		join_relations.insert(std::pair(left_idx, right_mappings));
+		join_relations.insert(std::pair<int64_t, std::vector<int64_t >>(left_idx, right_mappings));
 
 		//advance
 		advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&left_subset,

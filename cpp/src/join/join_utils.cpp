@@ -1,7 +1,9 @@
 #include "join_utils.hpp"
 #include "../util/arrow_utils.hpp"
 
-namespace twisterx::join::util {
+namespace twisterx {
+namespace join {
+namespace util {
 std::shared_ptr<arrow::Table> build_final_table(const std::shared_ptr<std::map<int64_t,
 																			   std::vector<int64_t >>> &joined_indices,
 												const std::shared_ptr<arrow::Table> &left_tab,
@@ -45,5 +47,7 @@ std::shared_ptr<arrow::Table> build_final_table(const std::shared_ptr<std::map<i
 	);
   }
   return arrow::Table::Make(schema, data_arrays);
+}
+}
 }
 }
