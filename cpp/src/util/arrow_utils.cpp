@@ -3,7 +3,8 @@
 #include <glog/logging.h>
 #include "arrow_utils.hpp"
 
-namespace twisterx::util {
+namespace twisterx {
+namespace util {
 
 template<typename TYPE>
 std::shared_ptr<arrow::Array> sort_numeric_column_type(const std::shared_ptr<arrow::Array> &data_column,
@@ -117,5 +118,6 @@ std::shared_ptr<arrow::Table> sort_table(std::shared_ptr<arrow::Table> tab, int6
 
 std::shared_ptr<arrow::Table> sort_table(std::shared_ptr<arrow::Table> tab, int64_t sort_column_index) {
   return sort_table(tab, sort_column_index, arrow::default_memory_pool());
+}
 }
 }

@@ -3,7 +3,7 @@
 
 #include <arrow/table.h>
 
-namespace twisterx::join {
+namespace twisterx { namespace join {
 
 enum JoinType {
   LEFT, RIGHT, INNER
@@ -28,5 +28,5 @@ std::shared_ptr<arrow::Table> join(const std::vector<std::shared_ptr<arrow::Tabl
 								   JoinType join_type,
 								   JoinAlgorithm join_algorithm,
 								   arrow::MemoryPool *memory_pool);
-}
+} }
 #endif //TWISTERX_TX_JOIN_H

@@ -2,7 +2,8 @@
 #include <arrow/api.h>
 #include "arrow_utils.hpp"
 
-namespace twisterx::util {
+namespace twisterx {
+namespace util {
 template<typename TYPE>
 std::shared_ptr<arrow::Array> do_copy_numeric_array(const std::shared_ptr<std::vector<int64_t>> &indices,
 													std::shared_ptr<arrow::Array> data_array,
@@ -58,5 +59,6 @@ std::shared_ptr<arrow::Array> copy_array_by_indices(const std::shared_ptr<std::v
 	case arrow::Type::LARGE_BINARY:break;
 	case arrow::Type::LARGE_LIST:break;
   }
+}
 }
 }
