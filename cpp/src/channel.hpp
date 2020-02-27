@@ -13,7 +13,7 @@ namespace twisterx {
     void * buffer{};
     int length{};
     int target;
-    int header[6];
+    int header[6] = {};
     int headerLength{};
 
     TxRequest(int tgt, void *buf, int len) {
@@ -31,7 +31,7 @@ namespace twisterx {
       headerLength = hLength;
     }
 
-    TxRequest(int tgt) {
+    explicit TxRequest(int tgt) {
       target = tgt;
     }
 
