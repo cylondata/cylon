@@ -64,13 +64,19 @@ namespace twisterx {
 
     for (int64_t i = 0; i < partitions->length(); i++) {
       std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders[partitions->Value(i)];
-      b->Append(reader->Value(i));
+      if (b->Append(reader->Value(i)) != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed to merge";
+        return -1;
+      }
     }
 
     for (int & it : *targets_) {
       std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders[it];
       std::shared_ptr<arrow::Array> array;
-      b->Finish(&array);
+      if (b->Finish(&array) != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed to merge";
+        return -1;
+      }
       out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(it, array));
     }
     return 0;
@@ -92,13 +98,19 @@ namespace twisterx {
       std::shared_ptr<arrow::BinaryBuilder> b = builders[partitions->Value(i)];
       int length = 0;
       const uint8_t *value = reader->GetValue(i, &length);
-      b->Append(value, length);
+      if (b->Append(value, length) != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed to merge";
+        return -1;
+      }
     }
 
     for (int & it : *targets_) {
       std::shared_ptr<arrow::BinaryBuilder> b = builders[it];
       std::shared_ptr<arrow::Array> array;
-      b->Finish(&array);
+      if (b->Finish(&array) != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed to merge";
+        return -1;
+      }
       out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(it, array));
     }
     return 0;
