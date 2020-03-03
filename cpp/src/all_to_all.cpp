@@ -144,6 +144,7 @@ namespace twisterx {
     if (finished) {
       // LOG(INFO) << worker_id << " Received finish " << receiveId;
       finishedSources.insert(receiveId);
+      callback->onReceiveHeader(receiveId, finished, header, headerLength);
     } else {
       if (headerLength > 0) {
         // LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
@@ -151,10 +152,10 @@ namespace twisterx {
 //          std::cout << i << " ";
 //        }
 //        std::cout << std::endl;
-        callback->onReceiveHeader(receiveId, header, headerLength);
+        callback->onReceiveHeader(receiveId, finished, header, headerLength);
         delete [] header;
       } else {
-        callback->onReceiveHeader(receiveId, nullptr, 0);
+        callback->onReceiveHeader(receiveId, finished, nullptr, 0);
         // LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
       }
     }
