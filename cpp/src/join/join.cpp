@@ -70,7 +70,8 @@ namespace twisterx {
 	  int64_t left_current_index = 0;
 	  int64_t right_current_index = 0;
 
-	  std::map<int64_t, std::shared_ptr<std::vector<int64_t >>> join_relations; // using map intentionally to keep elements ordered
+	  std::shared_ptr<std::map<int64_t, std::shared_ptr<std::vector<int64_t >>>> join_relations =
+	      std::make_shared<std::map<int64_t, std::shared_ptr<std::vector<int64_t >>>>(); // using map intentionally to keep elements ordered
 
 	  t1 = std::chrono::high_resolution_clock::now();
 
@@ -94,7 +95,7 @@ namespace twisterx {
 			for (int64_t right_idx: right_subset) {
 			  right_mappings->push_back(right_idx);
 			}
-			join_relations.insert(std::pair<int64_t, std::shared_ptr<std::vector<int64_t >>>(left_idx, right_mappings));
+			join_relations->insert(std::pair<int64_t, std::shared_ptr<std::vector<int64_t >>>(left_idx, right_mappings));
 
 			//advance
 			advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&left_subset,
@@ -138,7 +139,7 @@ namespace twisterx {
 
 	  // build final table
 	  status = twisterx::join::util::build_final_table(
-		  std::make_shared<std::map<int64_t, std::shared_ptr<std::vector<int64_t >>>>(join_relations),
+		  join_relations,
 		  left_tab,
 		  right_tab,
 		  joined_table,
@@ -147,7 +148,7 @@ namespace twisterx {
 
 	  t2 = std::chrono::high_resolution_clock::now();
 	  LOG(INFO) << "built final table in : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	  LOG(INFO) << "done and produced : " << join_relations.size();
+	  LOG(INFO) << "done and produced : " << join_relations->size();
 
 	  return status;
 	}
