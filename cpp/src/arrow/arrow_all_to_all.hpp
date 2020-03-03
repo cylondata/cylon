@@ -123,7 +123,7 @@ namespace twisterx {
      * We implement the receive callback
      * @param request the original request, we can free it now
      */
-    bool onReceiveHeader(int source, int *buffer, int length) override;
+    bool onReceiveHeader(int source, int finished, int *buffer, int length) override;
 
   private:
     /**
@@ -165,6 +165,11 @@ namespace twisterx {
      * We have received the finish
      */
      bool finished = false;
+
+     /**
+      * Finished sources
+      */
+      std::vector<int> finishedSources_;
   };
 }
 #endif //TWISTERX_ARROW_H

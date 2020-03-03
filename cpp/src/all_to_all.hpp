@@ -27,7 +27,7 @@ namespace twisterx {
      * @param length the length of the integer array
      * @return true if we accept the header
      */
-    virtual bool onReceiveHeader(int source, int * buffer, int length) = 0;
+    virtual bool onReceiveHeader(int source, int finished, int * buffer, int length) = 0;
   };
 
   enum AllToAllSendStatus {

@@ -102,7 +102,7 @@ namespace twisterx {
       all_->finish();
     }
 
-    return all_->isComplete();
+    return isAllEmpty && all_->isComplete() && finishedSources_.size() == srcs_.size();
   }
 
   void ArrowAllToAll::finish() {
@@ -153,18 +153,22 @@ namespace twisterx {
     return true;
   }
 
-  bool ArrowAllToAll::onReceiveHeader(int source, int *buffer, int length) {
-    if (length != 5) {
-      LOG(FATAL) << "Incorrect length on header, expected 5 ints got " << length;
-      return false;
-    }
+  bool ArrowAllToAll::onReceiveHeader(int source, int finished, int *buffer, int length) {
+    if (!finished) {
+      if (length != 5) {
+        LOG(FATAL) << "Incorrect length on header, expected 5 ints got " << length;
+        return false;
+      }
 
-    std::shared_ptr<PendingReceiveTable> table = receives_[source];
-    table->columnIndex = buffer[0];
-    table->bufferIndex = buffer[1];
-    table->noBuffers = buffer[2];
-    table->noArray = buffer[3];
-    table->length = buffer[4];
+      std::shared_ptr<PendingReceiveTable> table = receives_[source];
+      table->columnIndex = buffer[0];
+      table->bufferIndex = buffer[1];
+      table->noBuffers = buffer[2];
+      table->noArray = buffer[3];
+      table->length = buffer[4];
+    } else {
+      finishedSources_.push_back(source);
+    }
     return true;
   }
 }
