@@ -12,7 +12,7 @@ public:
     return false;
   }
 
-  bool onReceiveHeader(int source, int *buffer, int length) override {
+  bool onReceiveHeader(int source, int finished, int *buffer, int length) override {
     std::cout << "Received HEADER: " << source << " length " << length << std::endl;
     return false;
   }
