@@ -18,7 +18,7 @@ namespace twisterx {
 	  }
 
 	  auto casted_array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(data_array);
-	  if (indices.get() == nullptr) {
+	  if (indices == nullptr) {
 	    LOG(FATAL) << "Indices are null";
 	  }
 	  for (auto &index : *indices) {
