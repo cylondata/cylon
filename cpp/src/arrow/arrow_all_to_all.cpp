@@ -124,7 +124,7 @@ namespace twisterx {
     // now check weather we have the expected number of buffers received
     if (table->noBuffers == table->bufferIndex + 1) {
       // okay we are done with this array
-      std::shared_ptr<arrow::ArrayData> data = std::make_shared<arrow::ArrayData>(
+      std::shared_ptr<arrow::ArrayData> data = arrow::ArrayData::Make(
           schema_->field(table->columnIndex)->type(), table->length, table->buffers);
       // clears the buffers
       table->buffers.clear();
