@@ -172,6 +172,7 @@ namespace twisterx {
 		  case HASH:break;
 		}
 	  }
+    return arrow::Status::OK();
 	}
 
 	arrow::Status join(const std::vector<std::shared_ptr<arrow::Table>> &left_tabs,
@@ -351,6 +352,7 @@ namespace twisterx {
 		case arrow::Type::LARGE_BINARY:break;
 		case arrow::Type::LARGE_LIST:break;
 	  }
+    return arrow::Status::OK();
 	}
   }
 }

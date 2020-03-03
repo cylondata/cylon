@@ -9,7 +9,9 @@ namespace twisterx {
     srcs_ = source;
     recv_callback_ = callback;
     schema_ = schema;
-    
+    receivedBuffers_ = 0;
+    workerId_ = worker_id;
+
     // we need to pass the correct arguments
     all_ = std::make_shared<AllToAll>(worker_id, source, targets, edgeId, this);
 
@@ -118,6 +120,8 @@ namespace twisterx {
 
   bool ArrowAllToAll::onReceive(int source, void *buffer, int length) {
     std::shared_ptr<PendingReceiveTable> table = receives_[source];
+    receivedBuffers_++;
+    LOG(INFO) << workerId_ <<  " Received buffers " << receivedBuffers_;
     // create the buffer hosting the value
     std::shared_ptr<arrow::Buffer>  buf = std::make_shared<arrow::Buffer>((uint8_t *)buffer, length);
     table->buffers.push_back(buf);

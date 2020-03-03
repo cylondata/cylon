@@ -21,7 +21,7 @@ public:
   * @param length the length of the buffer
   * @return true if we accept this buffer
   */
-  bool onJoin(int source, std::shared_ptr <arrow::Table> table) override {
+  bool onJoin(std::shared_ptr <arrow::Table> table) override {
     LOG(INFO) << "Joined";
     return true;
   }

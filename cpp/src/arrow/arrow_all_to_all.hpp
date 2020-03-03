@@ -170,6 +170,16 @@ namespace twisterx {
       * Finished sources
       */
       std::vector<int> finishedSources_;
+
+      /**
+       * Keep a count of received buffers
+       */
+      int receivedBuffers_;
+
+      /**
+       * The worker id
+       */
+      int workerId_;
   };
 }
 #endif //TWISTERX_ARROW_H

@@ -8,6 +8,7 @@
 
 namespace twisterx {
   class JoinCallback {
+  public:
     /**
        * This function is called when a data is received
        * @param source the source
@@ -15,7 +16,7 @@ namespace twisterx {
        * @param length the length of the buffer
        * @return true if we accept this buffer
        */
-    virtual bool onJoin(int source, std::shared_ptr <arrow::Table> table) = 0;
+    virtual bool onJoin(std::shared_ptr <arrow::Table> table) = 0;
   };
 
   class AllToAllCallback : public ArrowCallback {
@@ -93,6 +94,7 @@ namespace twisterx {
     std::vector<std::shared_ptr<arrow::Table>> rightTables_;
     std::shared_ptr<AllToAllCallback> leftCallBack_;
     std::shared_ptr<AllToAllCallback> rightCallBack_;
+    twisterx::JoinCallback *joinCallBack_;
   };
 }
 

@@ -115,6 +115,7 @@ namespace twisterx {
 		case arrow::Type::LARGE_BINARY:break;
 		case arrow::Type::LARGE_LIST:break;
 	  }
+    return arrow::Status::OK();
 	}
 
 	arrow::Status sort_table(std::shared_ptr<arrow::Table> tab, int64_t sort_column_index,
