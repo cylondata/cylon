@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <queue>
 #include <mpi.h>
+#include <glog/logging.h>
 
 #define TWISTERX_CHANNEL_HEADER_SIZE 8
 #define TWISTERX_MSG_FIN 1

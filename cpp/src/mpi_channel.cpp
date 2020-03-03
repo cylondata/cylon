@@ -60,14 +60,17 @@ namespace twisterx {
         MPI_Test(&x.second->request, &flag, &status);
         if (flag) {
           x.second->request = {};
+          int count = 0;
+          MPI_Get_count(&status, MPI_INT, &count);
           // read the length from the header
           int length = x.second->headerBuf[0];
           int finFlag = x.second->headerBuf[1];
           // LOG(INFO) << rank << " ** received " << length << " flag " << finFlag;
           // check weather we are at the end
           if (finFlag != TWISTERX_MSG_FIN) {
-            int count = 0;
-            MPI_Get_count(&status, MPI_INT, &count);
+            if (count > 8) {
+              LOG(FATAL) << "Un-expected number of bytes expected: 8 or less " << " received: " << count;
+            }
             // malloc a buffer
             x.second->data = new char[length];
             x.second->length = length;
@@ -84,6 +87,9 @@ namespace twisterx {
             // notify the receiver
             rcv_fn->receivedHeader(x.first, finFlag, header, count - 2);
           } else {
+            if (count != 2) {
+              LOG(FATAL) << "Un-expected number of bytes expected: 2 " << " received: " << count;
+            }
             // we are not expecting to receive any more
             x.second->status = RECEIVED_FIN;
             // notify the receiver
@@ -93,6 +99,12 @@ namespace twisterx {
       } else if (x.second->status == RECEIVE_POSTED) {
         MPI_Test(&x.second->request, &flag, &status);
         if (flag) {
+          int count = 0;
+          MPI_Get_count(&status, MPI_BYTE, &count);
+          if (count != x.second->length) {
+            LOG(FATAL) << "Un-expected number of bytes expected:" <<  x.second->length << " received: " << count;
+          }
+
           //LOG(INFO) << rank << " ## received from " << x.first
           //  << " posted length receive to " << x.second->receiveId << " length " << x.second->length;
 
