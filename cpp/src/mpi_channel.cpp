@@ -52,10 +52,10 @@ namespace twisterx {
   }
 
   void MPIChannel::progressReceives() {
+    MPI_Status status;
     for (auto x : pendingReceives) {
       int flag = 0;
-      MPI_Status status;
-
+      status = {};
       if (x.second->status == RECEIVE_LENGTH_POSTED) {
         MPI_Test(&x.second->request, &flag, &status);
         if (flag) {

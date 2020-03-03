@@ -47,15 +47,15 @@ namespace twisterx {
         int noOfColumns = t.second->currentTable->columns().size();
         bool canContinue = true;
         while (t.second->columnIndex < noOfColumns && canContinue) {
-          const std::shared_ptr<arrow::ChunkedArray> &cArr = t.second->currentTable->column(t.second->columnIndex);
+          std::shared_ptr<arrow::ChunkedArray> cArr = t.second->currentTable->column(t.second->columnIndex);
 
           unsigned long size = cArr->chunks().size();
           while (static_cast<size_t>(t.second->arrayIndex) < size && canContinue) {
-            const std::shared_ptr<arrow::Array> &arr = cArr->chunk(t.second->arrayIndex);
+            std::shared_ptr<arrow::Array> arr = cArr->chunk(t.second->arrayIndex);
 
             const std::shared_ptr<arrow::ArrayData> &data = arr->data();
             while (static_cast<size_t>(t.second->bufferIndex) < data->buffers.size()) {
-              std::shared_ptr<arrow::Buffer> &buf = data->buffers[t.second->bufferIndex];
+              std::shared_ptr<arrow::Buffer> buf = data->buffers[t.second->bufferIndex];
               int hdr[5];
               hdr[0] = t.second->columnIndex;
               hdr[1] = t.second->bufferIndex;
