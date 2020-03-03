@@ -4,6 +4,7 @@
 namespace twisterx {
 	ArrowJoin::ArrowJoin(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int leftEdgeId,
 											 int rightEdgeId, twisterx::JoinCallback *callback, std::shared_ptr<arrow::Schema> schema) {
+	  joinCallBack_ = callback;
 		leftCallBack_ = std::make_shared<AllToAllCallback>(&leftTables_);
 		rightCallBack_ = std::make_shared<AllToAllCallback>(&rightTables_);
 		leftAllToAll_ =
@@ -29,6 +30,7 @@ namespace twisterx {
         LOG(FATAL) << "Failed to join - error: " << status.CodeAsString();
         return true;
 			}
+			joinCallBack_->onJoin(joined_table);
 			// join
 			return true;
 		}
@@ -41,6 +43,7 @@ namespace twisterx {
 
 	bool AllToAllCallback::onReceive(int source, std::shared_ptr<arrow::Table> table) {
 		tables_->push_back(table);
+    return true;
 	}
 }
 
