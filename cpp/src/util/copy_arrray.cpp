@@ -6,7 +6,7 @@
 namespace twisterx {
   namespace util {
 	template<typename TYPE>
-	arrow::Status do_copy_numeric_array(const std::shared_ptr<std::vector<int64_t>> &indices,
+	arrow::Status do_copy_numeric_array(std::shared_ptr<std::vector<int64_t>> indices,
 										std::shared_ptr<arrow::Array> data_array,
 										std::shared_ptr<arrow::Array> *copied_array,
 										arrow::MemoryPool *memory_pool) {
@@ -18,6 +18,9 @@ namespace twisterx {
 	  }
 
 	  auto casted_array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(data_array);
+	  if (indices.get() == nullptr) {
+	    LOG(FATAL) << "Indices are null";
+	  }
 	  for (auto &index : *indices) {
 		status = array_builder.Append(casted_array->Value(index));
 		if (status != arrow::Status::OK()) {
@@ -28,8 +31,8 @@ namespace twisterx {
 	  return array_builder.Finish(copied_array);
 	}
 
-	arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> &indices,
-										const std::shared_ptr<arrow::Array> &data_array,
+	arrow::Status copy_array_by_indices(std::shared_ptr<std::vector<int64_t>> indices,
+										std::shared_ptr<arrow::Array> data_array,
 										std::shared_ptr<arrow::Array> *copied_array,
 										arrow::MemoryPool *memory_pool) {
 	  switch (data_array->type()->id()) {
