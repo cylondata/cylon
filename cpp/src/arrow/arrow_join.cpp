@@ -8,17 +8,15 @@ namespace twisterx {
 		leftCallBack_ = std::make_shared<AllToAllCallback>(&leftTables_);
 		rightCallBack_ = std::make_shared<AllToAllCallback>(&rightTables_);
 		leftAllToAll_ =
-				std::make_shared<ArrowAllToAll>(worker_id, source, targets, leftEdgeId, leftCallBack_.get(), schema);
+				std::make_shared<ArrowAllToAll>(worker_id, source, targets, leftEdgeId, leftCallBack_, schema);
 		rightAllToAll_ =
-				std::make_shared<ArrowAllToAll>(worker_id, source, targets, rightEdgeId, rightCallBack_.get(), schema);
+				std::make_shared<ArrowAllToAll>(worker_id, source, targets, rightEdgeId, rightCallBack_, schema);
 	}
 
 	bool ArrowJoin::isComplete() {
 		bool left = leftAllToAll_->isComplete();
 		bool right = rightAllToAll_->isComplete();
 
-		std::shared_ptr<std::unordered_map<int64_t, arrow::ArrayBuilder>> column_builders;
-		std::shared_ptr<std::unordered_map<int64_t, arrow::ArrayBuilder>> right_builders;
 		if (left && right) {
 			LOG(INFO) << "Received everything to join";
 			std::shared_ptr<arrow::Table> joined_table;

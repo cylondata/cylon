@@ -57,11 +57,11 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  Clbk clbk;
+  std::shared_ptr<Clbk> clbk = std::make_shared<Clbk>();
   std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
       arrow::field("id", arrow::int64()), arrow::field("cost", arrow::float64())};
   auto schema = std::make_shared<arrow::Schema>(schema_vector);
-  twisterx::ArrowAllToAll all(rank, sources, targets, 0, &clbk, schema);
+  twisterx::ArrowAllToAll all(rank, sources, targets, 0, clbk, schema);
 
   std::shared_ptr<arrow::Array> id_array;
   id_builder.Finish(&id_array);

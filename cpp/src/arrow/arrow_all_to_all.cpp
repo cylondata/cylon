@@ -4,7 +4,7 @@
 
 namespace twisterx {
   ArrowAllToAll::ArrowAllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets,
-                               int edgeId, ArrowCallback *callback, std::shared_ptr<arrow::Schema> schema) {
+                               int edgeId, std::shared_ptr<ArrowCallback> callback, std::shared_ptr<arrow::Schema> schema) {
     targets_ = targets;
     srcs_ = source;
     recv_callback_ = callback;

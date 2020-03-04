@@ -82,7 +82,7 @@ namespace twisterx {
      * @return
      */
     ArrowAllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId,
-                  ArrowCallback *callback, std::shared_ptr<arrow::Schema> schema);
+                  std::shared_ptr<ArrowCallback> callback, std::shared_ptr<arrow::Schema> schema);
 
     /**
      * Insert a buffer to be sent, if the buffer is accepted return true
@@ -154,7 +154,7 @@ namespace twisterx {
     /**
      * Adding receive callback
      */
-    ArrowCallback *recv_callback_;
+    std::shared_ptr<ArrowCallback> recv_callback_;
 
     /**
      * The schema of the arrow

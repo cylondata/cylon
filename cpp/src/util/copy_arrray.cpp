@@ -10,25 +10,26 @@ namespace twisterx {
 										std::shared_ptr<arrow::Array> data_array,
 										std::shared_ptr<arrow::Array> *copied_array,
 										arrow::MemoryPool *memory_pool) {
-	  arrow::NumericBuilder<TYPE> array_builder(memory_pool);
-	  arrow::Status status = array_builder.Reserve(indices->size());
-	  if (status != arrow::Status::OK()) {
-		LOG(FATAL) << "Failed to reserve memory when re arranging the array based on indices. " << status.ToString();
-		return status;
-	  }
+    arrow::NumericBuilder<TYPE> array_builder(memory_pool);
+    /*arrow::Status status = array_builder.Reserve(indices->size());
+    if (status != arrow::Status::OK()) {
+          LOG(FATAL) << "Failed to reserve memory when re arranging the array based on indices. " << status.ToString();
+          return status;
+    }*/
 
-	  auto casted_array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(data_array);
-	  if (indices == nullptr) {
-	    LOG(FATAL) << "Indices are null";
-	  }
-	  for (auto &index : *indices) {
-		status = array_builder.Append(casted_array->Value(index));
-		if (status != arrow::Status::OK()) {
-		  LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
-		  return status;
-		}
-	  }
-	  return array_builder.Finish(copied_array);
+    auto casted_array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(data_array);
+    for (auto &index : *indices) {
+      double x = casted_array->Value(index) + 0;
+      if (casted_array->length() <= index) {
+        LOG(INFO) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
+      }
+      /** arrow::Status status = array_builder.Append(casted_array->Value(index));
+           if (status != arrow::Status::OK()) {
+             LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
+             return status;
+           }*/
+    }
+    return array_builder.Finish(copied_array);
 	}
 
 	arrow::Status copy_array_by_indices(std::shared_ptr<std::vector<int64_t>> indices,
