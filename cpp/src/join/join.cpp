@@ -131,7 +131,7 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
 
   LOG(INFO) << "index join time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
-  LOG(INFO) << "building final table...'";
+  LOG(INFO) << "building final table with number of tuples - '" << left_indices->size();
 
   t1 = std::chrono::high_resolution_clock::now();
 

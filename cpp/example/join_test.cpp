@@ -29,7 +29,7 @@ public:
 
 int main(int argc, char *argv[]) {
   MPI_Init(NULLPTR, NULLPTR);
-  arrow::MemoryPool *pool = arrow::default_memory_pool();
+  arrow::MemoryPool *pool = new arrow::LoggingMemoryPool(arrow::default_memory_pool());
 
 //  int* x = (int *)malloc(10 * sizeof(int));
 //  std::cout << "error: " << x << std::endl;
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   Int64Builder right_id_builder(pool);
   Int64Builder cost_builder(pool);
 
-  srand(std::time(NULL));
+  srand(std::time(NULL) + rank);
 
   int count = std::atoi(argv[1]) / size;
   LOG(INFO) << "No of tuples " << count;
