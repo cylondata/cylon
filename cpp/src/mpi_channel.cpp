@@ -29,7 +29,6 @@ void MPIChannel::init(int ed, const std::vector<int>& receives, const std::vecto
   }
   // get the rank
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  std::cout << "Posted receive buffers and INIT" << std::endl;
 }
 
 int MPIChannel::send(std::shared_ptr<TxRequest> request) {
