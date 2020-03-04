@@ -82,7 +82,8 @@ namespace twisterx {
      * @return
      */
     ArrowAllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId,
-                  ArrowCallback *callback, std::shared_ptr<arrow::Schema> schema);
+                  std::shared_ptr<ArrowCallback> callback, std::shared_ptr<arrow::Schema> schema,
+                  arrow::MemoryPool *pool);
 
     /**
      * Insert a buffer to be sent, if the buffer is accepted return true
@@ -125,6 +126,8 @@ namespace twisterx {
      */
     bool onReceiveHeader(int source, int finished, int *buffer, int length) override;
 
+    bool onSendComplete(int target, void *buffer, int length) override;
+
   private:
     /**
      * The targets
@@ -154,7 +157,7 @@ namespace twisterx {
     /**
      * Adding receive callback
      */
-    ArrowCallback *recv_callback_;
+    std::shared_ptr<ArrowCallback> recv_callback_;
 
     /**
      * The schema of the arrow
@@ -180,6 +183,11 @@ namespace twisterx {
        * The worker id
        */
       int workerId_;
+
+      /**
+       * The memory pool
+       */
+      arrow::MemoryPool *pool_;
   };
 }
 #endif //TWISTERX_ARROW_H

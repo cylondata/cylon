@@ -5,23 +5,12 @@
 namespace twisterx {
   namespace join {
 	namespace util {
-	  arrow::Status build_final_table(const std::shared_ptr<std::map<int64_t,
-																	 std::shared_ptr<std::vector<int64_t>>>> &joined_indices,
+	  arrow::Status build_final_table(std::shared_ptr<std::vector<int64_t>> left_indices,
+                                    std::shared_ptr<std::vector<int64_t>> right_indices,
 									  const std::shared_ptr<arrow::Table> &left_tab,
 									  const std::shared_ptr<arrow::Table> &right_tab,
 									  std::shared_ptr<arrow::Table> *final_table,
 									  arrow::MemoryPool *memory_pool) {
-		std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
-		std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>();
-		auto it = joined_indices->begin();
-		while (it != joined_indices->end()) {
-		  auto left_index = it->first;
-		  for (int64_t &right_index : *(it->second)) {
-			left_indices->push_back(left_index);
-			right_indices->push_back(right_index);
-		  }
-		  it++;
-		}
 
 		// creating joined schema
 		std::vector<std::shared_ptr<arrow::Field>> fields;

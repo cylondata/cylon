@@ -43,7 +43,7 @@ namespace twisterx {
        * @return
        */
     ArrowJoin(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int leftEdgeId, int rightEdgeId,
-              JoinCallback *callback, std::shared_ptr <arrow::Schema> schema);
+              JoinCallback *callback, std::shared_ptr <arrow::Schema> schema, arrow::MemoryPool *pool);
 
     /**
      * Insert a buffer to be sent, if the buffer is accepted return true
@@ -54,12 +54,10 @@ namespace twisterx {
      * @return true if the buffer is accepted
      */
     int leftInsert(const std::shared_ptr <arrow::Table> &table, int target) {
-      LOG(INFO) << "Left insert";
       return leftAllToAll_->insert(table, target);
     }
 
     int rightInsert(const std::shared_ptr <arrow::Table> &table, int target) {
-      LOG(INFO) << "Right insert";
       return rightAllToAll_->insert(table, target);
     }
 
@@ -74,7 +72,6 @@ namespace twisterx {
      * @return
      */
     void finish() {
-      LOG(INFO) << "Join finish called";
       leftAllToAll_->finish();
       rightAllToAll_->finish();
     }

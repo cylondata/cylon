@@ -57,7 +57,7 @@ namespace twisterx {
       int flag = 0;
       status = {};
       if (x.second->status == RECEIVE_LENGTH_POSTED) {
-        MPI_Test(&x.second->request, &flag, &status);
+        MPI_Test(&(x.second->request), &flag, &status);
         if (flag) {
           x.second->request = {};
           int count = 0;

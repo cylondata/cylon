@@ -29,7 +29,7 @@ public:
 
 int main(int argc, char *argv[]) {
   MPI_Init(NULLPTR, NULLPTR);
-  arrow::MemoryPool *pool = arrow::default_memory_pool();
+  arrow::MemoryPool *pool =arrow::default_memory_pool();
 
 //  int* x = (int *)malloc(10 * sizeof(int));
 //  std::cout << "error: " << x << std::endl;
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   Int64Builder right_id_builder(pool);
   Int64Builder cost_builder(pool);
 
-  srand(std::time(NULL));
+  srand(std::time(NULL) + rank);
 
   int count = std::atoi(argv[1]) / size;
   LOG(INFO) << "No of tuples " << count;
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     targets.push_back(i);
   }
   JC jc;
-  twisterx::ArrowJoin join(rank, sources, targets, 0, 1, &jc, schema);
+  twisterx::ArrowJoin join(rank, sources, targets, 0, 1, &jc, schema, pool);
   auto start = std::chrono::high_resolution_clock::now();
   for (int j = 0; j < size; j++) {
     for (int i = 0; i < count; i++) {
@@ -88,11 +88,9 @@ int main(int argc, char *argv[]) {
     join.rightInsert(right_table, (j + rank) % size);
   }
 
-  LOG(INFO) << "Calling finish ";
   join.finish();
   while (!join.isComplete()) {
   }
-  LOG(INFO) << "Calling close ";
   join.close();
 
   auto end = std::chrono::high_resolution_clock::now();

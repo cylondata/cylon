@@ -28,6 +28,15 @@ namespace twisterx {
      * @return true if we accept the header
      */
     virtual bool onReceiveHeader(int source, int finished, int * buffer, int length) = 0;
+
+    /**
+     * This method is called after we successfully send a buffer
+     * @param target
+     * @param buffer
+     * @param length
+     * @return
+     */
+    virtual bool onSendComplete(int target, void * buffer, int length) = 0;
   };
 
   enum AllToAllSendStatus {

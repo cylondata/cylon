@@ -135,6 +135,7 @@ namespace twisterx {
     s->pendingQueue.pop();
     // we sent this request so we need to reduce memory
     s->messageSizes  = s->messageSizes - request->length;
+    callback->onSendComplete(request->target, request->buffer, request->length);
     // we don't have much to do here, so we delete the request
     // LOG(INFO) << worker_id << " Free buffer " << request->length;
   }
