@@ -71,11 +71,10 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
   int64_t left_current_index = 0;
   int64_t right_current_index = 0;
 
-  std::shared_ptr<std::map<int64_t, std::shared_ptr<std::vector<int64_t >>>> join_relations =
-      std::make_shared<std::map<int64_t, std::shared_ptr<std::vector<int64_t >>>>(); // using map intentionally to keep elements ordered
-
   t1 = std::chrono::high_resolution_clock::now();
 
+  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
+  std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>();
   advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&left_subset,
                                         std::static_pointer_cast<arrow::Int64Array>(
                                             left_index_sorted_column),
@@ -92,11 +91,10 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
   while (!left_subset.empty() && !right_subset.empty()) {
     if (left_key == right_key) { // use a key comparator
       for (int64_t left_idx : left_subset) {
-        std::shared_ptr<std::vector<int64_t>> right_mappings = std::make_shared<std::vector<int64_t>>();
         for (int64_t right_idx: right_subset) {
-          right_mappings->push_back(right_idx);
+          left_indices->push_back(left_idx);
+          right_indices->push_back(right_idx);
         }
-        join_relations->insert(std::pair<int64_t, std::shared_ptr<std::vector<int64_t >>>(left_idx, right_mappings));
       }
       //advance
       advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&left_subset,
@@ -139,7 +137,7 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
 
   // build final table
   status = twisterx::join::util::build_final_table(
-      join_relations,
+      left_indices, right_indices,
       left_tab,
       right_tab,
       joined_table,
@@ -148,7 +146,7 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
 
   t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "built final table in : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "done and produced : " << join_relations->size();
+  LOG(INFO) << "done and produced : " << left_indices->size();
 
   return status;
 }

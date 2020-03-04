@@ -43,7 +43,7 @@ namespace twisterx {
        * @return
        */
     ArrowJoin(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int leftEdgeId, int rightEdgeId,
-              JoinCallback *callback, std::shared_ptr <arrow::Schema> schema);
+              JoinCallback *callback, std::shared_ptr <arrow::Schema> schema, arrow::MemoryPool *pool);
 
     /**
      * Insert a buffer to be sent, if the buffer is accepted return true

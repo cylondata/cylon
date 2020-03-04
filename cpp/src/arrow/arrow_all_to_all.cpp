@@ -4,13 +4,15 @@
 
 namespace twisterx {
   ArrowAllToAll::ArrowAllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets,
-                               int edgeId, std::shared_ptr<ArrowCallback> callback, std::shared_ptr<arrow::Schema> schema) {
+                               int edgeId, std::shared_ptr<ArrowCallback> callback, std::shared_ptr<arrow::Schema> schema,
+                               arrow::MemoryPool *pool) {
     targets_ = targets;
     srcs_ = source;
     recv_callback_ = callback;
     schema_ = schema;
     receivedBuffers_ = 0;
     workerId_ = worker_id;
+    pool_ = pool;
 
     // we need to pass the correct arguments
     all_ = std::make_shared<AllToAll>(worker_id, source, targets, edgeId, this);
@@ -65,7 +67,7 @@ namespace twisterx {
               hdr[3] = cArr->chunks().size();
               hdr[4] = data->length;
               // lets send this buffer, we need to send the length at this point
-              const uint8_t *b = buf->data();
+              // const uint8_t *b = buf->data();
               // LOG(INFO) << workerId_ <<  " Sent length " << (int) buf->size() << " last: " << (int) b[(int) buf->size() / 2 - 1];
               bool accept = all_->insert((void *) buf->data(), (int) buf->size(), t.first, hdr, 5);
               if (!accept) {
@@ -177,5 +179,10 @@ namespace twisterx {
       finishedSources_.push_back(source);
     }
     return true;
+  }
+
+  bool ArrowAllToAll::onSendComplete(int target, void *buffer, int length) {
+//    pool_->Free((uint8_t *)buffer, length);
+    return false;
   }
 }

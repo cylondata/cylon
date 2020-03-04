@@ -3,14 +3,15 @@
 
 namespace twisterx {
 	ArrowJoin::ArrowJoin(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int leftEdgeId,
-											 int rightEdgeId, twisterx::JoinCallback *callback, std::shared_ptr<arrow::Schema> schema) {
+											 int rightEdgeId, twisterx::JoinCallback *callback, std::shared_ptr<arrow::Schema> schema,
+											 arrow::MemoryPool *pool) {
 	  joinCallBack_ = callback;
 		leftCallBack_ = std::make_shared<AllToAllCallback>(&leftTables_);
 		rightCallBack_ = std::make_shared<AllToAllCallback>(&rightTables_);
 		leftAllToAll_ =
-				std::make_shared<ArrowAllToAll>(worker_id, source, targets, leftEdgeId, leftCallBack_, schema);
+				std::make_shared<ArrowAllToAll>(worker_id, source, targets, leftEdgeId, leftCallBack_, schema, pool);
 		rightAllToAll_ =
-				std::make_shared<ArrowAllToAll>(worker_id, source, targets, rightEdgeId, rightCallBack_, schema);
+				std::make_shared<ArrowAllToAll>(worker_id, source, targets, rightEdgeId, rightCallBack_, schema, pool);
 	}
 
 	bool ArrowJoin::isComplete() {

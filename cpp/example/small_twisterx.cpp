@@ -16,6 +16,10 @@ public:
     std::cout << "Received HEADER: " << source << " length " << length << std::endl;
     return false;
   }
+
+  bool onSendComplete(int target, void *buffer, int length) override {
+    return false;
+  }
 };
 
 int main(int argc, char *argv[]) {

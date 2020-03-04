@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     targets.push_back(i);
   }
   JC jc;
-  twisterx::ArrowJoin join(rank, sources, targets, 0, 1, &jc, schema);
+  twisterx::ArrowJoin join(rank, sources, targets, 0, 1, &jc, schema, pool);
   auto start = std::chrono::high_resolution_clock::now();
   for (int j = 0; j < size; j++) {
     for (int i = 0; i < count; i++) {
