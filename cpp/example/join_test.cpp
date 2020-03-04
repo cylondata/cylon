@@ -29,7 +29,7 @@ public:
 
 int main(int argc, char *argv[]) {
   MPI_Init(NULLPTR, NULLPTR);
-  arrow::MemoryPool *pool = new arrow::LoggingMemoryPool(arrow::default_memory_pool());
+  arrow::MemoryPool *pool =arrow::default_memory_pool();
 
 //  int* x = (int *)malloc(10 * sizeof(int));
 //  std::cout << "error: " << x << std::endl;
