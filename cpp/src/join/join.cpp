@@ -194,13 +194,13 @@ namespace twisterx {
 
 	  arrow::Status left_combine_stat = left_tab->CombineChunks(memory_pool, &left_tab_combined);
 	  if (left_combine_stat != arrow::Status::OK()) {
-		LOG(FATAL) << "Error in combining table chunks of left table.";
+		LOG(FATAL) << "Error in combining table chunks of left table." << left_combine_stat.ToString();
 		return left_combine_stat;
 	  }
 
 	  arrow::Status right_combine_stat = right_tab->CombineChunks(memory_pool, &right_tab_combined);
 	  if (right_combine_stat != arrow::Status::OK()) {
-		LOG(FATAL) << "Error in combining table chunks of right table.";
+		LOG(FATAL) << "Error in combining table chunks of right table." << left_combine_stat.ToString();
 		return right_combine_stat;
 	  }
 
