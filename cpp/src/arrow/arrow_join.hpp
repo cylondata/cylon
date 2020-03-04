@@ -54,12 +54,10 @@ namespace twisterx {
      * @return true if the buffer is accepted
      */
     int leftInsert(const std::shared_ptr <arrow::Table> &table, int target) {
-      LOG(INFO) << "Left insert";
       return leftAllToAll_->insert(table, target);
     }
 
     int rightInsert(const std::shared_ptr <arrow::Table> &table, int target) {
-      LOG(INFO) << "Right insert";
       return rightAllToAll_->insert(table, target);
     }
 
@@ -74,7 +72,6 @@ namespace twisterx {
      * @return
      */
     void finish() {
-      LOG(INFO) << "Join finish called";
       leftAllToAll_->finish();
       rightAllToAll_->finish();
     }

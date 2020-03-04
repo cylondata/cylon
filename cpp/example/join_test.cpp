@@ -88,11 +88,9 @@ int main(int argc, char *argv[]) {
     join.rightInsert(right_table, (j + rank) % size);
   }
 
-  LOG(INFO) << "Calling finish ";
   join.finish();
   while (!join.isComplete()) {
   }
-  LOG(INFO) << "Calling close ";
   join.close();
 
   auto end = std::chrono::high_resolution_clock::now();

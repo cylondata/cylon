@@ -66,7 +66,7 @@ namespace twisterx {
               hdr[4] = data->length;
               // lets send this buffer, we need to send the length at this point
               const uint8_t *b = buf->data();
-              LOG(INFO) << workerId_ <<  " Sent length " << (int) buf->size() << " last: " << (int) b[(int) buf->size() / 2 - 1];
+              // LOG(INFO) << workerId_ <<  " Sent length " << (int) buf->size() << " last: " << (int) b[(int) buf->size() / 2 - 1];
               bool accept = all_->insert((void *) buf->data(), (int) buf->size(), t.first, hdr, 5);
               if (!accept) {
                 canContinue = false;
@@ -124,7 +124,7 @@ namespace twisterx {
     std::shared_ptr<PendingReceiveTable> table = receives_[source];
     uint8_t *b = (uint8_t *) buffer;
     receivedBuffers_++;
-    LOG(INFO) << workerId_ <<  " Received buffers " << receivedBuffers_ << " length " << length << " last: " << (int) b[length / 2 - 1];
+    // LOG(INFO) << workerId_ <<  " Received buffers " << receivedBuffers_ << " length " << length << " last: " << (int) b[length / 2 - 1];
     // create the buffer hosting the value
     std::shared_ptr<arrow::Buffer>  buf = std::make_shared<arrow::Buffer>((uint8_t *)buffer, length);
     table->buffers.push_back(buf);
