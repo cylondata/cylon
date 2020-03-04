@@ -124,7 +124,6 @@ namespace twisterx {
 
   bool ArrowAllToAll::onReceive(int source, void *buffer, int length) {
     std::shared_ptr<PendingReceiveTable> table = receives_[source];
-    uint8_t *b = (uint8_t *) buffer;
     receivedBuffers_++;
     // LOG(INFO) << workerId_ <<  " Received buffers " << receivedBuffers_ << " length " << length << " last: " << (int) b[length / 2 - 1];
     // create the buffer hosting the value
