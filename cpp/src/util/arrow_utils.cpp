@@ -158,5 +158,22 @@ namespace twisterx {
 	  *sorted_table = arrow::Table::Make(tab->schema(), sorted_columns);
 	  return arrow::Status::OK();
 	}
+
+arrow::Status free_table(const std::shared_ptr<arrow::Table>& table) {
+  const int ncolumns = table->num_columns();
+  for (int i = 0; i < ncolumns; ++i) {
+    auto col = table->column(i);
+    int nChunks = col->num_chunks();
+    for (int c = 0; c < nChunks; c++) {
+      auto chunk = col->chunk(c);
+      std::shared_ptr<arrow::ArrayData> ptr = chunk->data();
+      for (const auto& t : ptr->buffers) {
+        delete t->data();
+      }
+    }
   }
+  return arrow::Status::OK();
+}
+
+}
 }

@@ -12,6 +12,12 @@ namespace twisterx {
 																				std::shared_ptr<arrow::Array> source_array,
 																				std::shared_ptr<arrow::Array> *copied_array,
 																				arrow::MemoryPool *memory_pool = arrow::default_memory_pool());
+		/**
+		 * Free the buffers of a arrow table, after this, the table is no-longer valid
+		 * @param table the table pointer
+		 * @return if success
+		 */
+		arrow::Status free_table(const std::shared_ptr<arrow::Table>& table);
 	}
 }
 #endif //TWISTERX_SRC_UTIL_ARROW_UTILS_HPP_

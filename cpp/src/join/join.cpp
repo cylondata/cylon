@@ -4,6 +4,7 @@
 #include <chrono>
 #include <map>
 #include "join_utils.hpp"
+#include "../util/arrow_utils.hpp"
 
 namespace twisterx {
 namespace join {
@@ -197,11 +198,26 @@ arrow::Status join(const std::vector<std::shared_ptr<arrow::Table>> &left_tabs,
     LOG(FATAL) << "Error in combining table chunks of left table." << left_combine_stat.ToString();
     return left_combine_stat;
   }
+  for (auto t : left_tabs) {
+    arrow::Status status = twisterx::util::free_table(t);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to free table" << status.ToString();
+      return status;
+    }
+  }
 
   arrow::Status right_combine_stat = right_tab->CombineChunks(memory_pool, &right_tab_combined);
   if (right_combine_stat != arrow::Status::OK()) {
     LOG(FATAL) << "Error in combining table chunks of right table." << left_combine_stat.ToString();
     return right_combine_stat;
+  }
+
+  for (auto t : right_tabs) {
+    arrow::Status status = twisterx::util::free_table(t);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to free table" << status.ToString();
+      return status;
+    }
   }
 
   return twisterx::join::join(left_tab_combined,
