@@ -190,7 +190,7 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table) {
       auto chunk = col->chunk(c);
       std::shared_ptr<arrow::ArrayData> ptr = chunk->data();
       for (const auto &t : ptr->buffers) {
-        delete t->data();
+        delete [] t->data();
       }
     }
   }
