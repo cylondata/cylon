@@ -23,11 +23,11 @@ arrow::Status do_copy_numeric_array(std::shared_ptr<std::vector<int64_t>> indice
     if (casted_array->length() <= index) {
       LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
     }
-    status = array_builder.Append(casted_array->Value(index));
-    if (status != arrow::Status::OK()) {
+    array_builder.UnsafeAppend(casted_array->Value(index));
+    /*if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
       return status;
-    }
+    }*/
   }
   return array_builder.Finish(copied_array);
 }
