@@ -59,6 +59,32 @@ int main(int argc, char *argv[]) {
     sources.push_back(i);
     targets.push_back(i);
   }
+
+  long* values = new long[count];
+  int* indices = new int[count];
+  for (int i = 0; i < count; i++) {
+    indices[i] = i;
+    int l = rand() % range;
+    values[i] = l;
+  }
+  auto start2 = std::chrono::high_resolution_clock::now();
+  std::sort(indices, indices + count, [values](uint64_t left, uint64_t right) {
+    return values[left] < values[right];
+  });
+
+  auto end2 = std::chrono::high_resolution_clock::now();
+  auto duration3 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
+  LOG(INFO) << "Sort done 1" + std::to_string(duration3.count());
+
+  auto start3 = std::chrono::high_resolution_clock::now();
+  std::sort(values, values + count);
+
+  auto end3 = std::chrono::high_resolution_clock::now();
+  auto duration4 = std::chrono::duration_cast<std::chrono::milliseconds>(end3 - start3);
+  LOG(INFO) << "Sort done 2" + std::to_string(duration4.count());
+  delete [] values;
+  delete [] indices;
+
   JC jc;
   twisterx::ArrowJoin join(rank, sources, targets, 0, 1, &jc, schema, pool);
   auto start = std::chrono::high_resolution_clock::now();
