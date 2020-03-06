@@ -171,25 +171,17 @@ public:
         std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     std::unordered_map<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
     const T* left_data = array->raw_values();
-    LOG(INFO) << "A " << array->length();
-
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
     AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
-    LOG(INFO) << "BUF " << buf_size;
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
     for (int64_t i = 0; i < values->length(); i++) {
       indices_begin[i] = i;
-//      LOG(INFO) << left_data[i] << " ind " << indices_begin[i] << " " << left_data;
     }
     int64_t *indices_end = indices_begin + values->length();
-    LOG(INFO) << "Length " << values->length() << " ind " << indices_begin << "nd " << indices_begin + values->length();
+    // LOG(INFO) << "Length " << values->length() << " ind " << indices_begin << "nd " << indices_begin + values->length();
     std::sort(indices_begin, indices_end);
     std::sort(indices_begin, indices_end, [left_data](uint64_t left, uint64_t right) {
-//      LOG(INFO) << "AAA";
-//      LOG(INFO) << "Left " << left << " Right " << right << " " << left_data[left];
-//      LOG(INFO) << "Left " << left << " Right " << right << " " << left_data[right];
-//      LOG(INFO) << "Comparison " << (left_data[left] < left_data[right]);
       return left_data[left] < left_data[right];
     });
     *offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
