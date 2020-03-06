@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 
   int count = std::atoi(argv[1]) / size;
   LOG(INFO) << "No of tuples " << count;
-  int range = count * 10;
+  int range = count * size;
   std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
       arrow::field("id", arrow::int64()), arrow::field("cost", arrow::int64())};
   auto schema = std::make_shared<arrow::Schema>(schema_vector);
@@ -83,11 +83,14 @@ int main(int argc, char *argv[]) {
     std::shared_ptr<arrow::Table> left_table = arrow::Table::Make(schema, {left_id_array, cost_array});
     std::shared_ptr<arrow::Table> right_table = arrow::Table::Make(schema, {right_id_array, cost_array});
 
-    LOG(INFO) << "Start inserting ";
     join.leftInsert(left_table, (j + rank) % size);
     join.rightInsert(right_table, (j + rank) % size);
+
+    // call this to progress comms
+    join.isComplete();
   }
 
+  auto start1 = std::chrono::high_resolution_clock::now();
   join.finish();
   while (!join.isComplete()) {
   }
@@ -95,7 +98,8 @@ int main(int argc, char *argv[]) {
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  LOG(INFO) << "Join done " + std::to_string(duration.count());
+  auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end - start1);
+  LOG(INFO) << "Join done " + std::to_string(duration.count()) << " comm: " << std::to_string(duration2.count());
 
   MPI_Finalize();
   return 0;
