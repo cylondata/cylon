@@ -173,7 +173,11 @@ public:
     const T* left_data = array->raw_values();
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
-    AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
+    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
+      return -1;
+    }
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
     for (int64_t i = 0; i < values->length(); i++) {
       indices_begin[i] = i;
