@@ -2,6 +2,7 @@
 #define TWISTERX_TX_JOIN_H
 
 #include <arrow/table.h>
+#include "../arrow/arrow_kernels.hpp"
 
 namespace twisterx {
 namespace join {

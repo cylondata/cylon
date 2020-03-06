@@ -46,7 +46,7 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
   auto t1 = std::chrono::high_resolution_clock::now();
   arrow::compute::FunctionContext ctx_left;
   std::shared_ptr<arrow::Array> left_index_sorted_column;
-  auto status = twisterx::util::SortToIndices(&ctx_left, *left_join_column, &left_index_sorted_column);
+  auto status = SortIndices(memory_pool, left_join_column, &left_index_sorted_column);
   if (status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed when sorting left table to indices. " << status.ToString();
     return status;
@@ -57,7 +57,7 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
   t1 = std::chrono::high_resolution_clock::now();
   arrow::compute::FunctionContext ctx;
   std::shared_ptr<arrow::Array> right_index_sorted_column;
-  status = twisterx::util::SortToIndices(&ctx, *right_join_column, &right_index_sorted_column);
+  status = SortIndices(memory_pool, right_join_column, &right_index_sorted_column);
   if (status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed when sorting right table to indices. " << status.ToString();
     return status;
@@ -196,11 +196,13 @@ arrow::Status join(const std::vector<std::shared_ptr<arrow::Table>> &left_tabs,
     LOG(FATAL) << "Error in combining table chunks of left table." << left_combine_stat.ToString();
     return left_combine_stat;
   }
-  for (auto t : left_tabs) {
-    arrow::Status status = twisterx::util::free_table(t);
-    if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to free table" << status.ToString();
-      return status;
+  if (left_tabs.size() > 1) {
+    for (auto t : left_tabs) {
+      arrow::Status status = twisterx::util::free_table(t);
+      if (status != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed to free table" << status.ToString();
+        return status;
+      }
     }
   }
 
@@ -210,11 +212,13 @@ arrow::Status join(const std::vector<std::shared_ptr<arrow::Table>> &left_tabs,
     return right_combine_stat;
   }
 
-  for (auto t : right_tabs) {
-    arrow::Status status = twisterx::util::free_table(t);
-    if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to free table" << status.ToString();
-      return status;
+  if (right_tabs.size() > 1) {
+    for (auto t : right_tabs) {
+      arrow::Status status = twisterx::util::free_table(t);
+      if (status != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed to free table" << status.ToString();
+        return status;
+      }
     }
   }
 
