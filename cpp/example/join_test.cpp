@@ -60,28 +60,29 @@ int main(int argc, char *argv[]) {
     targets.push_back(i);
   }
 
-  long* values = new long[count];
-  int* indices = new int[count];
-  for (int i = 0; i < count; i++) {
+  int actualCount = std::atoi(argv[1]);
+  long* values = new long[actualCount];
+  int* indices = new int[actualCount];
+  for (int i = 0; i < actualCount; i++) {
     indices[i] = i;
     int l = rand() % range;
     values[i] = l;
   }
   auto start2 = std::chrono::high_resolution_clock::now();
-  std::sort(indices, indices + count, [values](uint64_t left, uint64_t right) {
+  std::stable_sort(indices, indices + actualCount, [values](uint64_t left, uint64_t right) {
     return values[left] < values[right];
   });
 
   auto end2 = std::chrono::high_resolution_clock::now();
   auto duration3 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
-  LOG(INFO) << "Sort done 1" + std::to_string(duration3.count());
+  LOG(INFO) << "Sort done 1 " + std::to_string(duration3.count());
 
   auto start3 = std::chrono::high_resolution_clock::now();
-  std::sort(values, values + count);
+  std::stable_sort(values, values + actualCount);
 
   auto end3 = std::chrono::high_resolution_clock::now();
   auto duration4 = std::chrono::duration_cast<std::chrono::milliseconds>(end3 - start3);
-  LOG(INFO) << "Sort done 2" + std::to_string(duration4.count());
+  LOG(INFO) << "Sort done 2 " + std::to_string(duration4.count());
   delete [] values;
   delete [] indices;
 

@@ -71,13 +71,13 @@ public:
                                 [&values](uint64_t ind) { return !values.IsNull(ind); });
     }
     auto start3 = std::chrono::high_resolution_clock::now();
-    std::stable_sort(indices_begin, nulls_begin,
+    std::sort(indices_begin, nulls_begin,
               [&values, this](uint64_t left, uint64_t right) {
                 return compare_(values, left, right);
               });
     auto end3 = std::chrono::high_resolution_clock::now();
     auto duration4 = std::chrono::duration_cast<std::chrono::milliseconds>(end3 - start3);
-    LOG(INFO) << "Actual done 2" + std::to_string(duration4.count());
+    LOG(INFO) << "Arrow sorting time: " + std::to_string(duration4.count());
   }
 
 private:

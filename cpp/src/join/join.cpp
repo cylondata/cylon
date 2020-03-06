@@ -47,6 +47,7 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
   arrow::compute::FunctionContext ctx_left;
   std::shared_ptr<arrow::Array> left_index_sorted_column;
   auto status = SortIndices(memory_pool, left_join_column, &left_index_sorted_column);
+//  auto status = twisterx::util::SortToIndices(&ctx_left, *left_join_column, &left_index_sorted_column);
   if (status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed when sorting left table to indices. " << status.ToString();
     return status;
@@ -58,6 +59,7 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
   arrow::compute::FunctionContext ctx;
   std::shared_ptr<arrow::Array> right_index_sorted_column;
   status = SortIndices(memory_pool, right_join_column, &right_index_sorted_column);
+//  status = twisterx::util::SortToIndices(&ctx, *right_join_column, &right_index_sorted_column);
   if (status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed when sorting right table to indices. " << status.ToString();
     return status;
