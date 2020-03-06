@@ -1,5 +1,4 @@
 #build a binary
-cmake_minimum_required(VERSION 3.5)
 macro(tx_add_exe EXENAME)
   add_executable(${EXENAME} ${EXENAME}.cpp)
 endmacro(tx_add_exe)
