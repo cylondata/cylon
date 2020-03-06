@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.5)
 SET(MPI_RUN_CMD mpirun)
 
 file(MAKE_DIRECTORY ${TEST_DATA_DIR})
