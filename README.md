@@ -17,7 +17,7 @@ TwisterX provides Python APIs with Pybind11.
 
 ### Pre-requisites
 
-1. Install CMake 3.16.5
+#### Install CMake 3.16.5
 
 ```bash
 wget https://github.com/Kitware/CMake/releases/download/v3.16.5/cmake-3.16.5.tar.gz
@@ -27,21 +27,23 @@ make
 sudo make install
 ```
 
-2. Install Pybind11 
+#### Install Pybind11 
 
 ```bash
 pip3 install pybind11
 sudo apt-get install python-pybind11
 ```
 
-3. Install Python Library From Source
+## Set Up PyTwisterx
+
+### Install Python Library From Source
 
 ```bash
 cd cpp
 python3 setup.py install
 ```
 
-4. Test Python API
+### Test Python API
 
 ```bash
 python3 python/test/test_twister.py
