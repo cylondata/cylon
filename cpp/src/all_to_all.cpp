@@ -20,7 +20,8 @@ AllToAll::AllToAll(int w_id, const std::vector<int>& srcs,
 
   // initialize the sends
   for (int t : tgts) {
-    sends[t] = new AllToAllSends();
+    int tAdjusted = (t + w_id) % targets.size();
+    sends.push_back(new AllToAllSends(tAdjusted));
   }
 
   thisNumTargets = 0;
@@ -37,8 +38,8 @@ AllToAll::AllToAll(int w_id, const std::vector<int>& srcs,
 void AllToAll::close() {
   for (int t : targets) {
     delete sends[t];
-    sends.erase(t);
   }
+  sends.clear();
   // free the channel
   channel->close();
   delete  channel;
@@ -81,27 +82,27 @@ bool AllToAll::isComplete() {
   bool allQueuesEmpty = true;
   // if this is a source, send until the operation is finished
   for (auto w : sends) {
-    while (!w.second->requestQueue.empty()) {
-      if (w.second->sendStatus == ALL_TO_ALL_FINISH_SENT || w.second->sendStatus == ALL_TO_ALL_FINISHED) {
+    while (!w->requestQueue.empty()) {
+      if (w->sendStatus == ALL_TO_ALL_FINISH_SENT || w->sendStatus == ALL_TO_ALL_FINISHED) {
         LOG(FATAL) << "We cannot have items to send after finish sent";
       }
 
-      std::shared_ptr<TxRequest> request = w.second->requestQueue.front();
+      std::shared_ptr<TxRequest> request = w->requestQueue.front();
       // if the request is accepted to be set, pop
       if (channel->send(request)) {
-        w.second->requestQueue.pop();
+        w->requestQueue.pop();
         // we add to the pending queue
-        w.second->pendingQueue.push(request);
+        w->pendingQueue.push(request);
       }
     }
 
-    if (w.second->requestQueue.empty() && w.second->pendingQueue.empty()) {
+    if (w->requestQueue.empty() && w->pendingQueue.empty()) {
       if (finishFlag) {
-        if (w.second->sendStatus == ALL_TO_ALL_SENDING) {
-          std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(w.first);
+        if (w->sendStatus == ALL_TO_ALL_SENDING) {
+          std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(w->target);
           if (channel->sendFin(request)) {
             // LOG(INFO) << worker_id << " Sent FIN *** " << w.first;
-            w.second->sendStatus = ALL_TO_ALL_FINISH_SENT;
+            w->sendStatus = ALL_TO_ALL_FINISH_SENT;
           }
         }
       }

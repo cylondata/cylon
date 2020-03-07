@@ -46,10 +46,13 @@ enum AllToAllSendStatus {
 };
 
 struct AllToAllSends {
+  int target;
   std::queue<std::shared_ptr<TxRequest>> requestQueue;
   std::queue<std::shared_ptr<TxRequest>> pendingQueue;
   int messageSizes{};
   AllToAllSendStatus sendStatus = ALL_TO_ALL_SENDING;
+
+  AllToAllSends(int target) : target(target) {}
 };
 
 /**
@@ -134,7 +137,7 @@ private:
   std::vector<int> sources;  // the list of all the workers
   std::vector<int> targets;  // the list of all the workers
   int edge;                  // the edge id we are going to use
-  std::unordered_map<int, AllToAllSends *>  sends; // keep track of the sends
+  std::vector<AllToAllSends *>  sends; // keep track of the sends
   std::unordered_set<int> finishedSources;  // keep track of  the finished sources
   std::unordered_set<int> finishedTargets;  // keep track of  the finished targets
   bool finishFlag = false;
