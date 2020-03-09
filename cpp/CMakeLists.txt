@@ -27,6 +27,9 @@ SET(TEST_DATA_DIR ${TWISTERX_SOURCE_DIR}/data)
 find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
+# Find Pybind11
+find_package(pybind11 REQUIRED)
+
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "No build type selected, default to Debug")
     set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type (default Debug)" FORCE)
@@ -120,3 +123,5 @@ endif()
 add_subdirectory(src)
 add_subdirectory(example)
 
+## pybind11 python wrapper build
+pybind11_add_module(pytwisterx src/pybind/pytwisterx.cpp)
