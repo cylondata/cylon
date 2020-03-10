@@ -27,13 +27,13 @@ public class NativeLoader {
     try {
       String os = System.getProperty("os.name");
       String arch = System.getProperty("os.arch");
-      String prefix = arch + "/" + os;
+      String prefix = System.getProperty("prefix", "") + arch + "/" + os;
 
       String path = prefix + "/" + System.mapLibraryName(file);
       URL resource = NativeLoader.class.getClassLoader().getResource(path);
 
       if (resource == null) {
-        LOG.log(Level.SEVERE,"Cannot file the file - " + path);
+        LOG.log(Level.SEVERE, "Cannot file the file - " + path);
         loadSuccess = false;
       }
 

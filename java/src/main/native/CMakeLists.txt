@@ -43,7 +43,7 @@ include_directories("include"
 
 set(SOURCE_FILES
         "src/AllToAll.cpp"
-        "src/AllToAll.h")
+        "src/AllToAll.h" src/Join.cpp)
 add_library(twisterxjni SHARED ${SOURCE_FILES})
 
 include_directories(${MPI_INCLUDE_PATH})
