@@ -61,20 +61,32 @@
 
         <pluginManagement>
             <plugins>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>2.6</version>
-            </plugin>
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>2.6</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-h</arg>
+                        <arg>${basedir}/src/main/native/include</arg>
+                    </compilerArgs>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
+            <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>cmake</id>
-                        <phase>validate</phase>
+                        <phase>package</phase>
                         <configuration>
                             <tasks>
                                 <mkdir dir="${native.build.path}"/>
@@ -93,26 +105,11 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>native-maven-plugin</artifactId>
-                <version>1.0-alpha-11</version>
-                <extensions>true</extensions>
-
-                <configuration>
-                    <javahClassNames>
-                        <javahClassName>org.twister2.AllToAll</javahClassName>
-                    </javahClassNames>
-                    <!-- enable additional javah interface in dependencies list -->
-                    <javahSearchJNIFromDependencies>true</javahSearchJNIFromDependencies>
-                    <javahOutputDirectory>${basedir}/src/main/native/include</javahOutputDirectory>
-                </configuration>
-            </plugin>
-            <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>copy-native-libs</id>
-                        <phase>validate</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
@@ -137,14 +134,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>8</source>
-                    <target>8</target>
-                </configuration>
             </plugin>
         </plugins>
     </build>

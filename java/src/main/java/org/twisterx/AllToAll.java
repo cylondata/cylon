@@ -1,4 +1,4 @@
-package org.twister2;
+package org.twisterx;
 
 public class AllToAll {
   public native void WriteMessage();
