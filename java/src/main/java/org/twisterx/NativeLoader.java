@@ -1,4 +1,4 @@
-package org.twister2;
+package org.twisterx;
 
 import java.io.*;
 import java.net.URL;
