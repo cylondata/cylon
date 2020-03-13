@@ -50,6 +50,26 @@
             <version>2.25.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-memory</artifactId>
+            <version>0.16.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-vector</artifactId>
+            <version>0.16.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.twister2</groupId>
+            <artifactId>exceptions-java</artifactId>
+            <version>0.6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.8</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -115,7 +135,6 @@
                         </goals>
                         <configuration>
                             <overwrite>true</overwrite>
-                            <skip>false</skip>
                             <outputDirectory>${basedir}/target/native-deps/${os.arch}/${os.name}</outputDirectory>
                             <resources>
                                 <resource>
