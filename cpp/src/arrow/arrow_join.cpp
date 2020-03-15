@@ -1,11 +1,14 @@
 #include "arrow_join.hpp"
 #include "../join/join.hpp"
+#include <chrono>
+#include <ctime>
 
 namespace twisterx {
 ArrowJoin::ArrowJoin(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int leftEdgeId,
                      int rightEdgeId, twisterx::JoinCallback *callback, std::shared_ptr<arrow::Schema> schema,
                      arrow::MemoryPool *pool) {
   joinCallBack_ = callback;
+  workerId_ = worker_id;
   leftCallBack_ = std::make_shared<AllToAllCallback>(&leftTables_);
   rightCallBack_ = std::make_shared<AllToAllCallback>(&rightTables_);
   leftAllToAll_ =
@@ -20,6 +23,7 @@ bool ArrowJoin::isComplete() {
 
   if (left && right) {
     LOG(INFO) << "Received everything to join";
+    auto start = std::chrono::high_resolution_clock::now();
     std::shared_ptr<arrow::Table> joined_table;
     arrow::Status status = join::join(leftTables_, rightTables_, (int64_t)0, (int64_t)0,
                join::JoinType::INNER, join::JoinAlgorithm::SORT,
@@ -30,7 +34,9 @@ bool ArrowJoin::isComplete() {
       return true;
     }
     joinCallBack_->onJoin(joined_table);
-    // join
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    LOG(INFO) << workerId_ << "Total join time " + std::to_string(duration.count());
     return true;
   }
   return false;

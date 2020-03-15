@@ -28,7 +28,7 @@ find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
 # Find Pybind11
-find_package(pybind11 REQUIRED)
+# find_package(pybind11 REQUIRED)
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "No build type selected, default to Debug")
@@ -124,4 +124,4 @@ add_subdirectory(src)
 add_subdirectory(example)
 
 ## pybind11 python wrapper build
-pybind11_add_module(pytwisterx src/pybind/pytwisterx.cpp)
+# pybind11_add_module(pytwisterx src/pybind/pytwisterx.cpp)
