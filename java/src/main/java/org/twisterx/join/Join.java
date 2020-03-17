@@ -23,10 +23,12 @@ public class Join {
 
 
   public static void main(String[] args) {
-    System.setProperty("prefix", "/code/twisterx/java/target/native-deps/");
+    //System.setProperty("prefix", "~/Code/twisterx/java/target/native-deps/");
     //NativeLoader.load();
-    //System.load("/code/twisterx/java/target/native-deps/amd64/Linux/libtwisterx.so");
-    System.load("/code/twisterx/java/target/native-deps/amd64/Linux/libtwisterxjni.so");
+
+    System.load("/home/chathura/Code/twisterx/cpp/build/arrow/build/release/libarrow.so.16.0.0");
+    System.load("/home/chathura/Code/twisterx/java/target/native-deps/amd64/Linux/libtwisterx.so");
+    System.load("/home/chathura/Code/twisterx/java/target/native-deps/amd64/Linux/libtwisterxjni.so");
     Field intField = new Field("int", FieldType.nullable(new ArrowType.Int(32, true)), null);
     Schema schema = new Schema(Arrays.asList(intField));
 
