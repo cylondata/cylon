@@ -5,7 +5,7 @@
 namespace twisterx {
 namespace io {
 
-arrow::Status read_csv(const std::string &path, std::shared_ptr<arrow::Table> table);
+arrow::Result<std::shared_ptr<arrow::Table>> read_csv(const std::string &path);
 
 }
 }

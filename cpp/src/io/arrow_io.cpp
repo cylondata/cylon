@@ -5,10 +5,10 @@
 
 namespace twisterx {
 namespace io {
-arrow::Status read_csv(const std::string &path, std::shared_ptr<arrow::Table> table) {
+arrow::Result<std::shared_ptr<arrow::Table>> read_csv(const std::string &path) {
   arrow::Status st;
   arrow::MemoryPool *pool = arrow::default_memory_pool();
-  arrow::Result<std::shared_ptr<arrow::io::MemoryMappedFile>> mmap_result = arrow::io::MemoryMappedFile::Open("",
+  arrow::Result<std::shared_ptr<arrow::io::MemoryMappedFile>> mmap_result = arrow::io::MemoryMappedFile::Open(path,
                                                                                                               arrow::io::FileMode::READ);
   if (!mmap_result.status().ok()) {
     return mmap_result.status();
@@ -24,14 +24,11 @@ arrow::Status read_csv(const std::string &path, std::shared_ptr<arrow::Table> ta
                                      parse_options, convert_options,
                                      &reader);
   if (!st.ok()) {
-    return st;
+    return arrow::Result<std::shared_ptr<arrow::Table>>(st);
   }
 
   // Read table from CSV file
-  st = reader->Read(&table);
-  if (!st.ok()) {
-    return st;
-  }
+  return reader->Read();
 }
 }
 }
