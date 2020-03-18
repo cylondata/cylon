@@ -6,6 +6,11 @@
 namespace twisterx {
 namespace io {
 twisterx::io::Status read_csv(const std::string &path, const std::string &id);
+twisterx::io::Status join(const std::string &table_left,
+                          const std::string &table_right,
+                          int left_col_idx,
+                          int right_col_idx,
+                          const std::string &dest_id);
 int column_count(const std::string &id);
 int row_count(const std::string &id);
 }

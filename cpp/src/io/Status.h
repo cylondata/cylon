@@ -3,6 +3,27 @@
 #include <string>
 namespace twisterx {
 namespace io {
+enum Code {
+  OK = 0,
+  OutOfMemory = 1,
+  KeyError = 2,
+  TypeError = 3,
+  Invalid = 4,
+  IOError = 5,
+  CapacityError = 6,
+  IndexError = 7,
+  UnknownError = 9,
+  NotImplemented = 10,
+  SerializationError = 11,
+  RError = 13,
+  // Gandiva range of errors
+  CodeGenError = 40,
+  ExpressionValidationError = 41,
+  ExecutionError = 42,
+  // Continue generic codes.
+  AlreadyExists = 45
+};
+
 class Status {
  private:
   int code;
@@ -13,6 +34,12 @@ class Status {
     this->code = code;
     this->msg = msg;
   }
+
+  Status(Code code, const std::string &msg) {
+    this->code = code;
+    this->msg = msg;
+  }
+
   int get_code() {
     return this->code;
   }

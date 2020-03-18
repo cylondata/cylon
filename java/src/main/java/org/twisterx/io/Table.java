@@ -1,14 +1,12 @@
 package org.twisterx.io;
 
-import org.apache.arrow.vector.VectorSchemaRoot;
 import org.twisterx.NativeLoader;
 
 import java.io.IOException;
 import java.util.UUID;
 
 public class Table {
-
-  private VectorSchemaRoot vectorSchemaRoot;
+  
   private String tableId;
 
   private Table(String tableId) {
@@ -33,8 +31,23 @@ public class Table {
     return tableId;
   }
 
+  public Table join(Table rightTable, int leftIdx, int rightIdx) {
+    String uuid = UUID.randomUUID().toString();
+    Table.nativeJoin(this.tableId, rightTable.tableId, leftIdx, rightIdx, uuid);
+    return new Table(uuid);
+  }
+
   // native methods
-  public static native void join(String left, String right, int tab1Index, int tab2Index);
+
+  /**
+   * @param left        id of the left table
+   * @param right       id of the right table
+   * @param tab1Index   left join column index
+   * @param tab2Index   right join column index
+   * @param destination destination table id
+   */
+  public static native void nativeJoin(String left, String right, int tab1Index, int tab2Index,
+                                       String destination);
 
   private static native int nativeColumnCount(String tableId);
 
@@ -46,8 +59,11 @@ public class Table {
   public static void main(String[] args) throws IOException {
     NativeLoader.load();
 
-    Table table = Table.fromCSV("/tmp/csv.csv");
-    System.out.println(table.getColumnCount());
-    System.out.println(table.getColumnCount());
+    Table left = Table.fromCSV("/tmp/csv.csv");
+    Table right = Table.fromCSV("/tmp/csv.csv");
+    Table joined = left.join(right, 0, 0);
+
+    System.out.println(joined.getColumnCount());
+    System.out.println(joined.getRowCount());
   }
 }
