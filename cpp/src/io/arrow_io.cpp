@@ -3,12 +3,16 @@
 #include <arrow/csv/api.h>
 #include "arrow_io.h"
 
+namespace twisterx {
+namespace io {
 arrow::Status read_csv(const std::string &path, std::shared_ptr<arrow::Table> table) {
   arrow::Status st;
   arrow::MemoryPool *pool = arrow::default_memory_pool();
-  std::shared_ptr<arrow::io::InputStream> input;
-  auto input_readable = std::dynamic_pointer_cast<arrow::io::ReadableFile>(input);
-  arrow::Status status = arrow::io::ReadableFile::Open(path, pool, &input_readable);
+  arrow::Result<std::shared_ptr<arrow::io::MemoryMappedFile>> mmap_result = arrow::io::MemoryMappedFile::Open("",
+                                                                                                              arrow::io::FileMode::READ);
+  if (!mmap_result.status().ok()) {
+    return mmap_result.status();
+  }
 
   auto read_options = arrow::csv::ReadOptions::Defaults();
   auto parse_options = arrow::csv::ParseOptions::Defaults();
@@ -16,7 +20,7 @@ arrow::Status read_csv(const std::string &path, std::shared_ptr<arrow::Table> ta
 
   // Instantiate TableReader from input stream and options
   std::shared_ptr<arrow::csv::TableReader> reader;
-  st = arrow::csv::TableReader::Make(pool, input, read_options,
+  st = arrow::csv::TableReader::Make(pool, *mmap_result, read_options,
                                      parse_options, convert_options,
                                      &reader);
   if (!st.ok()) {
@@ -28,4 +32,6 @@ arrow::Status read_csv(const std::string &path, std::shared_ptr<arrow::Table> ta
   if (!st.ok()) {
     return st;
   }
+}
+}
 }

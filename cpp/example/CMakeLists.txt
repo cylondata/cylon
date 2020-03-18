@@ -1,6 +1,6 @@
 #build a binary
 macro(tx_add_exe EXENAME)
-  add_executable(${EXENAME} ${EXENAME}.cpp)
+    add_executable(${EXENAME} ${EXENAME}.cpp)
 endmacro(tx_add_exe)
 
 include_directories(../src)
@@ -9,6 +9,7 @@ tx_add_exe(small_twisterx)
 tx_add_exe(arrow_twisterx)
 tx_add_exe(arrow_test)
 tx_add_exe(join_test)
+tx_add_exe(table_api_test)
 
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(small_twisterx ${MPI_LIBRARIES})
@@ -28,4 +29,9 @@ target_link_libraries(join_test ${MPI_LIBRARIES})
 target_link_libraries(join_test twisterx)
 target_link_libraries(join_test ${ARROW_LIB})
 target_link_libraries(join_test glog::glog)
+
+target_link_libraries(table_api_test ${MPI_LIBRARIES})
+target_link_libraries(table_api_test twisterx)
+target_link_libraries(table_api_test ${ARROW_LIB})
+target_link_libraries(table_api_test glog::glog)
 

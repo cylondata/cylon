@@ -55,20 +55,24 @@ public class Table {
   }
 
   public int getColumnCount() {
-    return 0;
+    return Table.nativeColumnCount(this.tableId);
   }
 
   private String getTableId() {
     return tableId;
   }
 
-  public native void join(Table table, int tab1Index, int tab2Index);
+  // native methods
+  public static native void join(Table table, int tab1Index, int tab2Index);
+
+  private static native int nativeColumnCount(String tableId);
 
   public static native void nativeLoadCSV(String path, String id);
+  // end of native methods
 
   public static void main(String[] args) throws IOException {
     NativeLoader.load();
     Table table = Table.fromCSV("/tmp/csv.csv");
-    System.out.println();
+    System.out.println(table.getColumnCount());
   }
 }

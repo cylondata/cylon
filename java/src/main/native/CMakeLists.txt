@@ -13,7 +13,7 @@ include_directories(${MPI_CXX_INCLUDE_PATH})
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "No build type selected, default to Debug")
     set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type (default Debug)" FORCE)
-endif()
+endif ()
 
 SET(CMAKE_REQUIRED_FLAGS "-std=c++17")
 add_compile_options(-Wall -Wextra -W)
@@ -33,14 +33,14 @@ set_target_properties(twisterx PROPERTIES IMPORTED_LOCATION ${TWISTERX_LIBRARY})
 
 
 find_package(JNI REQUIRED)
-if(JNI_FOUND)
+if (JNI_FOUND)
     message(STATUS "JDK with JNI in ${JNI_INCLUDE_DIRS}")
-else()
+else ()
     message(FATAL_ERROR "JDK with JNI not found, please check your settings.")
-endif(JNI_FOUND)
+endif (JNI_FOUND)
 
 include_directories("include"
-                    "${JNI_INCLUDE_DIRS}")
+        "${JNI_INCLUDE_DIRS}" ${TWISTERX_INCLUDE})
 
 set(SOURCE_FILES
         "src/AllToAll.cpp"
