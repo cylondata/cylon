@@ -1,65 +1,74 @@
 package org.twisterx.io;
 
-import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.types.Types;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
-import org.twisterx.io.arrow.Fields;
-import org.twisterx.io.arrow.ValueSetter;
+import org.twisterx.NativeLoader;
 
-import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.UUID;
 
 public class Table {
 
   private VectorSchemaRoot vectorSchemaRoot;
+  private String tableId;
 
-  private Table() {
-
+  private Table(String tableId) {
+    this.tableId = tableId;
   }
 
-  public static Table fromCSV(Path path, boolean hasHeaders, Types.MinorType... types) throws IOException {
-    CSVParser parse;
-    if (hasHeaders) {
-      parse = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(new FileReader(path.toFile()));
-    } else {
-      parse = CSVFormat.DEFAULT.parse(new FileReader(path.toFile()));
-    }
+//  public static Table fromCSV(Path path, boolean hasHeaders, Types.MinorType... types) throws IOException {
+//    CSVParser parse;
+//    if (hasHeaders) {
+//      parse = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(new FileReader(path.toFile()));
+//    } else {
+//      parse = CSVFormat.DEFAULT.parse(new FileReader(path.toFile()));
+//    }
+//
+//    RootAllocator rootAllocator = new RootAllocator();
+//
+//    // create arrow fields
+//    List<FieldVector> vectors = new ArrayList<>();
+//    for (int i = 0; i < types.length; i++) {
+//      String fieldName = hasHeaders ? parse.getHeaderNames().get(i) : "column-" + i;
+//      FieldVector vector = types[i].getNewVector(
+//          Fields.createDefaultField(fieldName, types[i]),
+//          rootAllocator,
+//          null
+//      );
+//      vectors.add(vector);
+//      vector.allocateNew();
+//    }
+//    for (CSVRecord record : parse) {
+//      for (int i = 0; i < record.size(); i++) {
+//        ValueSetter.parseAndSet(i, record.get(i), types[i], vectors.get(i));
+//      }
+//    }
+//
+//    Table table = new Table();
+//    table.vectorSchemaRoot = new VectorSchemaRoot(vectors);
+//    return table;
+//  }
 
-    RootAllocator rootAllocator = new RootAllocator();
-
-    // create arrow fields
-    List<FieldVector> vectors = new ArrayList<>();
-    for (int i = 0; i < types.length; i++) {
-      String fieldName = hasHeaders ? parse.getHeaderNames().get(i) : "column-" + i;
-      FieldVector vector = types[i].getNewVector(
-              Fields.createDefaultField(fieldName, types[i]),
-              rootAllocator,
-              null
-      );
-      vectors.add(vector);
-      vector.allocateNew();
-    }
-    for (CSVRecord record : parse) {
-      for (int i = 0; i < record.size(); i++) {
-        ValueSetter.parseAndSet(i, record.get(i), types[i], vectors.get(i));
-      }
-    }
-
-    Table table = new Table();
-    table.vectorSchemaRoot = new VectorSchemaRoot(vectors);
-    return table;
+  public static Table fromCSV(String path) {
+    String uuid = UUID.randomUUID().toString();
+    Table.nativeLoadCSV(path, uuid);
+    return new Table(uuid);
   }
+
+  public int getColumnCount() {
+    return 0;
+  }
+
+  private String getTableId() {
+    return tableId;
+  }
+
+  public native void join(Table table, int tab1Index, int tab2Index);
+
+  public static native void nativeLoadCSV(String path, String id);
 
   public static void main(String[] args) throws IOException {
-    Table table = Table.fromCSV(Paths.get("/tmp/csv.csv"), true, Types.MinorType.INT, Types.MinorType.INT, Types.MinorType.INT);
+    NativeLoader.load();
+    Table table = Table.fromCSV("/tmp/csv.csv");
     System.out.println();
   }
 }
