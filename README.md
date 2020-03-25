@@ -13,7 +13,7 @@ Optimized dataflow operations
 
 ## Python Support
 
-TwisterX provides Python APIs with Pybind11. 
+TwisterX provides Python APIs with Cython. 
 
 ### Pre-requisites
 
