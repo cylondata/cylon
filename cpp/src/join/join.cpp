@@ -133,7 +133,7 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
 
   LOG(INFO) << "index join time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
-  LOG(INFO) << "building final table with number of tuples - '" << left_indices->size();
+  LOG(INFO) << "building final table with number of tuples - " << left_indices->size();
 
   t1 = std::chrono::high_resolution_clock::now();
 
@@ -169,8 +169,7 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
                                                                   right_tab,
                                                                   left_join_column_idx,
                                                                   right_join_column_idx, joined_table, memory_pool);
-      case HASH:
-        break;
+      case HASH:break;
     }
   }
   return arrow::Status::OK();
@@ -251,10 +250,8 @@ arrow::Status join(const std::shared_ptr<arrow::Table> &left_tab,
   }
 
   switch (left_type) {
-    case arrow::Type::NA:
-      break;
-    case arrow::Type::BOOL:
-      break;
+    case arrow::Type::NA:break;
+    case arrow::Type::BOOL:break;
     case arrow::Type::UINT8:
       return do_join<arrow::UInt8Type, int8_t>(left_tab,
                                                right_tab,
@@ -352,48 +349,27 @@ arrow::Status join(const std::shared_ptr<arrow::Table> &left_tab,
                                                   join_algorithm,
                                                   joined_table,
                                                   memory_pool);
-    case arrow::Type::STRING:
-      break;
-    case arrow::Type::BINARY:
-      break;
-    case arrow::Type::FIXED_SIZE_BINARY:
-      break;
-    case arrow::Type::DATE32:
-      break;
-    case arrow::Type::DATE64:
-      break;
-    case arrow::Type::TIMESTAMP:
-      break;
-    case arrow::Type::TIME32:
-      break;
-    case arrow::Type::TIME64:
-      break;
-    case arrow::Type::INTERVAL:
-      break;
-    case arrow::Type::DECIMAL:
-      break;
-    case arrow::Type::LIST:
-      break;
-    case arrow::Type::STRUCT:
-      break;
-    case arrow::Type::UNION:
-      break;
-    case arrow::Type::DICTIONARY:
-      break;
-    case arrow::Type::MAP:
-      break;
-    case arrow::Type::EXTENSION:
-      break;
-    case arrow::Type::FIXED_SIZE_LIST:
-      break;
-    case arrow::Type::DURATION:
-      break;
-    case arrow::Type::LARGE_STRING:
-      break;
-    case arrow::Type::LARGE_BINARY:
-      break;
-    case arrow::Type::LARGE_LIST:
-      break;
+    case arrow::Type::STRING:break;
+    case arrow::Type::BINARY:break;
+    case arrow::Type::FIXED_SIZE_BINARY:break;
+    case arrow::Type::DATE32:break;
+    case arrow::Type::DATE64:break;
+    case arrow::Type::TIMESTAMP:break;
+    case arrow::Type::TIME32:break;
+    case arrow::Type::TIME64:break;
+    case arrow::Type::INTERVAL:break;
+    case arrow::Type::DECIMAL:break;
+    case arrow::Type::LIST:break;
+    case arrow::Type::STRUCT:break;
+    case arrow::Type::UNION:break;
+    case arrow::Type::DICTIONARY:break;
+    case arrow::Type::MAP:break;
+    case arrow::Type::EXTENSION:break;
+    case arrow::Type::FIXED_SIZE_LIST:break;
+    case arrow::Type::DURATION:break;
+    case arrow::Type::LARGE_STRING:break;
+    case arrow::Type::LARGE_BINARY:break;
+    case arrow::Type::LARGE_LIST:break;
   }
   return arrow::Status::OK();
 }

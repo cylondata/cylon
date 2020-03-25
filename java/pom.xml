@@ -7,7 +7,7 @@
     <groupId>org.twister2</groupId>
     <artifactId>twisterx</artifactId>
     <version>0.1-SNAPSHOT</version>
-    <name>twusterxjni</name>
+    <name>twisterx jni</name>
 
     <description>
         Java binding for Twisterx

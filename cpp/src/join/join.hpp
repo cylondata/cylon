@@ -16,22 +16,22 @@ enum JoinAlgorithm {
 };
 
 arrow::Status join(const std::shared_ptr<arrow::Table> &left_tab,
-           const std::shared_ptr<arrow::Table> &right_tab,
-           int64_t left_join_column_idx,
-           int64_t right_join_column_idx,
-           JoinType join_type,
-           JoinAlgorithm join_algorithm,
-           std::shared_ptr<arrow::Table> *joined_table,
-           arrow::MemoryPool *memory_pool);
+                   const std::shared_ptr<arrow::Table> &right_tab,
+                   int64_t left_join_column_idx,
+                   int64_t right_join_column_idx,
+                   JoinType join_type,
+                   JoinAlgorithm join_algorithm,
+                   std::shared_ptr<arrow::Table> *joined_table,
+                   arrow::MemoryPool *memory_pool = arrow::default_memory_pool());
 
 arrow::Status join(const std::vector<std::shared_ptr<arrow::Table>> &left_tabs,
-           const std::vector<std::shared_ptr<arrow::Table>> &right_tabs,
-           int64_t left_join_column_idx,
-           int64_t right_join_column_idx,
-           JoinType join_type,
-           JoinAlgorithm join_algorithm,
-           std::shared_ptr<arrow::Table> *joined_table,
-           arrow::MemoryPool *memory_pool);
+                   const std::vector<std::shared_ptr<arrow::Table>> &right_tabs,
+                   int64_t left_join_column_idx,
+                   int64_t right_join_column_idx,
+                   JoinType join_type,
+                   JoinAlgorithm join_algorithm,
+                   std::shared_ptr<arrow::Table> *joined_table,
+                   arrow::MemoryPool *memory_pool = arrow::default_memory_pool());
 }
 }
 #endif //TWISTERX_TX_JOIN_H
