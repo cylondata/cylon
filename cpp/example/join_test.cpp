@@ -59,10 +59,39 @@ int main(int argc, char *argv[]) {
     sources.push_back(i);
     targets.push_back(i);
   }
+
+  int actualCount = std::atoi(argv[1]);
+  long* values = new long[actualCount];
+  int* indices = new int[actualCount];
+  for (int i = 0; i < actualCount; i++) {
+    indices[i] = i;
+    int l = rand() % range;
+    values[i] = l;
+  }
+  auto start2 = std::chrono::high_resolution_clock::now();
+  std::stable_sort(indices, indices + actualCount, [values](uint64_t left, uint64_t right) {
+    return values[left] < values[right];
+  });
+
+  auto end2 = std::chrono::high_resolution_clock::now();
+  auto duration3 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
+  LOG(INFO) << "Sort done 1 " + std::to_string(duration3.count());
+
+  auto start3 = std::chrono::high_resolution_clock::now();
+  std::stable_sort(values, values + actualCount);
+
+  auto end3 = std::chrono::high_resolution_clock::now();
+  auto duration4 = std::chrono::duration_cast<std::chrono::milliseconds>(end3 - start3);
+  LOG(INFO) << "Sort done 2 " + std::to_string(duration4.count());
+  delete [] values;
+  delete [] indices;
+
   JC jc;
   twisterx::ArrowJoin join(rank, sources, targets, 0, 1, &jc, schema, pool);
   auto start = std::chrono::high_resolution_clock::now();
+  long genTime = 0;
   for (int j = 0; j < size; j++) {
+    auto genTimeStart = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < count; i++) {
       int l = rand() % range;
       int r = rand() % range;
@@ -82,15 +111,16 @@ int main(int argc, char *argv[]) {
 
     std::shared_ptr<arrow::Table> left_table = arrow::Table::Make(schema, {left_id_array, cost_array});
     std::shared_ptr<arrow::Table> right_table = arrow::Table::Make(schema, {right_id_array, cost_array});
+    auto genTimeEnd = std::chrono::high_resolution_clock::now();
 
     join.leftInsert(left_table, (j + rank) % size);
     join.rightInsert(right_table, (j + rank) % size);
-
+    auto genDur = std::chrono::duration_cast<std::chrono::milliseconds>(genTimeEnd - genTimeStart);
+    genTime += genDur.count();
     // call this to progress comms
     join.isComplete();
   }
 
-  auto start1 = std::chrono::high_resolution_clock::now();
   join.finish();
   while (!join.isComplete()) {
   }
@@ -98,8 +128,7 @@ int main(int argc, char *argv[]) {
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end - start1);
-  LOG(INFO) << "Join done " + std::to_string(duration.count()) << " comm: " << std::to_string(duration2.count());
+  LOG(INFO) << "Total time " + std::to_string(duration.count()) << " genTime : " << std::to_string(genTime);
 
   MPI_Finalize();
   return 0;

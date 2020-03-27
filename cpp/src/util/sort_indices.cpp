@@ -2,6 +2,8 @@
 #include <arrow/compare.h>
 #include <arrow/visitor_inline.h>
 #include <numeric>
+#include <chrono>
+#include <glog/logging.h>
 
 /**
  * This class is direct copy from arrow to measure the difference between stable sort and sort
@@ -68,10 +70,14 @@ public:
           std::stable_partition(indices_begin, indices_end,
                                 [&values](uint64_t ind) { return !values.IsNull(ind); });
     }
-    std::stable_sort(indices_begin, nulls_begin,
+    auto start3 = std::chrono::high_resolution_clock::now();
+    std::sort(indices_begin, nulls_begin,
               [&values, this](uint64_t left, uint64_t right) {
                 return compare_(values, left, right);
               });
+    auto end3 = std::chrono::high_resolution_clock::now();
+    auto duration4 = std::chrono::duration_cast<std::chrono::milliseconds>(end3 - start3);
+    LOG(INFO) << "Arrow sorting time: " + std::to_string(duration4.count());
   }
 
 private:

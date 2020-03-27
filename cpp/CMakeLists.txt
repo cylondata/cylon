@@ -60,7 +60,7 @@ IF(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
 ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
 
 SET(CMAKE_REQUIRED_FLAGS "-std=c++17")
-add_compile_options(-Wall -Wextra -W -Warray-bounds=2)
+add_compile_options(-Wall -Wextra -W)
 
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles(
