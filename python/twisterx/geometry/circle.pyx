@@ -1,17 +1,4 @@
-cdef extern from "../../../cpp/src/lib/Circle.h" namespace "shapes":
-    cdef cppclass Circle:
-        Circle(int, int, int)
-        int x0, y0, radius
-        int getRadius()
-        int getCircumference()
-        int getArea()
-
-# cdef class Circle:
-#     cdef Circle *thisptr      # hold a C++ instance which we're wrapping
-#     cpdef getRadius(self)
-#     cpdef getCircumference(self)
-#     cpdef getArea(self)
-
+from twisterx.geometry.circle cimport Circle
 
 cdef class PyCircle:
 
