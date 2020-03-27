@@ -92,6 +92,7 @@ private:
   std::shared_ptr<AllToAllCallback> leftCallBack_;
   std::shared_ptr<AllToAllCallback> rightCallBack_;
   twisterx::JoinCallback *joinCallBack_;
+  int workerId_;
 };
 }
 

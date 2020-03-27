@@ -134,6 +134,84 @@ using DoubleArrayMerger = ArrowArrayNumericMergeKernel<arrow::DoubleType>;
 int CreateNumericMerge(std::shared_ptr<arrow::DataType>& type,
                        arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets,
                        std::unique_ptr<ArrowArrayMergeKernel>* out);
+
+class ArrowArraySortKernel {
+public:
+  explicit ArrowArraySortKernel(std::shared_ptr<arrow::DataType> type,
+                                 arrow::MemoryPool* pool) : type_(type), pool_(pool) {}
+
+  /**
+   * Sort the values in the column and return an array with the indices
+   * @param ctx
+   * @param values
+   * @param targets
+   * @param out_length
+   * @param out
+   * @return
+   */
+  virtual int Sort(std::shared_ptr<arrow::Array> values,
+                    std::shared_ptr<arrow::Array>* out) = 0;
+protected:
+  std::shared_ptr<arrow::DataType> type_;
+  arrow::MemoryPool* pool_;
+};
+
+template <typename TYPE>
+class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
+public:
+  using T = typename TYPE::c_type;
+
+  explicit ArrowArrayNumericSortKernel(std::shared_ptr<arrow::DataType> type,
+                                        arrow::MemoryPool* pool) :
+      ArrowArraySortKernel(type, pool) {}
+
+  int Sort(std::shared_ptr<arrow::Array> values,
+            std::shared_ptr<arrow::Array>* offsets) override {
+    auto array =
+        std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
+    std::unordered_map<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
+    const T* left_data = array->raw_values();
+    std::shared_ptr<arrow::Buffer> indices_buf;
+    int64_t buf_size = values->length() * sizeof(uint64_t);
+    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
+      return -1;
+    }
+    auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
+    for (int64_t i = 0; i < values->length(); i++) {
+      indices_begin[i] = i;
+    }
+    int64_t *indices_end = indices_begin + values->length();
+    // LOG(INFO) << "Length " << values->length() << " ind " << indices_begin << "nd " << indices_begin + values->length();
+    std::sort(indices_begin, indices_end);
+    std::sort(indices_begin, indices_end, [left_data](uint64_t left, uint64_t right) {
+      return left_data[left] < left_data[right];
+    });
+    *offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
+    return 0;
+  }
+};
+
+using UInt8ArraySorter = ArrowArrayNumericSortKernel<arrow::UInt8Type>;
+using UInt16ArraySorter = ArrowArrayNumericSortKernel<arrow::UInt16Type>;
+using UInt32ArraySorter = ArrowArrayNumericSortKernel<arrow::UInt32Type>;
+using UInt64ArraySorter = ArrowArrayNumericSortKernel<arrow::UInt64Type>;
+using Int8ArraySorter = ArrowArrayNumericSortKernel<arrow::Int8Type>;
+using Int16ArraySorter = ArrowArrayNumericSortKernel<arrow::Int16Type>;
+using Int32ArraySorter = ArrowArrayNumericSortKernel<arrow::Int32Type>;
+using Int64ArraySorter = ArrowArrayNumericSortKernel<arrow::Int64Type>;
+using HalfFloatArraySorter = ArrowArrayNumericSortKernel<arrow::HalfFloatType>;
+using FloatArraySorter = ArrowArrayNumericSortKernel<arrow::FloatType>;
+using DoubleArraySorter = ArrowArrayNumericSortKernel<arrow::DoubleType>;
+
+int CreateNumericSorter(std::shared_ptr<arrow::DataType> type,
+                       arrow::MemoryPool* pool,
+                       std::unique_ptr<ArrowArraySortKernel>* out);
+
+arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> values,
+                              std::shared_ptr<arrow::Array>* offsets);
+
 }
 
 #endif //TWISTERX_ARROW_KERNELS_H

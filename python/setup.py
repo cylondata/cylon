@@ -9,6 +9,7 @@ from setuptools import setup, find_packages, find_namespace_packages, Extension
 from Cython.Build import cythonize
 
 import numpy
+import pyarrow
 
 mpi_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 mpi_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
@@ -16,7 +17,7 @@ mpi_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
 ext_modules = [
     Extension("pytwisterx.geometry",
               sources=["../cpp/src/lib/Circle.cpp", "twisterx/geometry/circle.pyx"],
-              include_dirs=[numpy.get_include(), "../cpp/src/lib"],
+              include_dirs=[numpy.get_include(), "../cpp/src/lib", pyarrow.get_include()],
               language='c++',
               extra_compile_args=mpi_compile_args,
               extra_link_args=mpi_link_args,
@@ -34,7 +35,8 @@ setup(
     python_requires='>=3.7',
     install_requires=[
         'numpy',
-        'cython'
+        'cython',
+        'pyarrow'
     ],
 )
 
