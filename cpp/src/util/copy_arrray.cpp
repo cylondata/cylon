@@ -24,12 +24,50 @@ arrow::Status do_copy_numeric_array(std::shared_ptr<std::vector<int64_t>> indice
       LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
     }
     array_builder.UnsafeAppend(casted_array->Value(index));
-    /*if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
-      return status;
-    }*/
   }
   return array_builder.Finish(copied_array);
+}
+
+arrow::Status do_copy_binary_array(std::shared_ptr<std::vector<int64_t>> indices,
+                                    std::shared_ptr<arrow::Array> data_array,
+                                    std::shared_ptr<arrow::Array> *copied_array,
+                                    arrow::MemoryPool *memory_pool) {
+  arrow::BinaryBuilder binary_builder(memory_pool);
+  auto casted_array = std::static_pointer_cast<arrow::BinaryArray>(data_array);
+  for (auto &index : *indices) {
+    if (casted_array->length() <= index) {
+      LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
+    }
+    int32_t out;
+    const uint8_t * data = casted_array->GetValue(index, &out);
+    arrow::Status status = binary_builder.Reserve(out);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
+      return status;
+    }
+    binary_builder.UnsafeAppend(data, out);
+  }
+  return binary_builder.Finish(copied_array);
+}
+
+arrow::Status do_copy_fixed_binary_array(std::shared_ptr<std::vector<int64_t>> indices,
+                             std::shared_ptr<arrow::Array> data_array,
+                             std::shared_ptr<arrow::Array> *copied_array,
+                             arrow::MemoryPool *memory_pool) {
+  arrow::FixedSizeBinaryBuilder binary_builder(data_array->type(), memory_pool);
+  auto casted_array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(data_array);
+  for (auto &index : *indices) {
+    if (casted_array->length() <= index) {
+      LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
+    }
+    const uint8_t * data = casted_array->GetValue(index);
+    arrow::Status status = binary_builder.Append(data);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
+      return status;
+    }
+  }
+  return binary_builder.Finish(copied_array);
 }
 
 arrow::Status copy_array_by_indices(std::shared_ptr<std::vector<int64_t>> indices,
@@ -99,9 +137,9 @@ arrow::Status copy_array_by_indices(std::shared_ptr<std::vector<int64_t>> indice
     case arrow::Type::STRING:
       break;
     case arrow::Type::BINARY:
-      break;
+      return do_copy_binary_array(indices, data_array, copied_array, memory_pool);
     case arrow::Type::FIXED_SIZE_BINARY:
-      break;
+      return do_copy_fixed_binary_array(indices, data_array, copied_array, memory_pool);
     case arrow::Type::DATE32:
       break;
     case arrow::Type::DATE64:
