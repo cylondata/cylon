@@ -70,6 +70,26 @@ arrow::Status do_copy_fixed_binary_array(std::shared_ptr<std::vector<int64_t>> i
   return binary_builder.Finish(copied_array);
 }
 
+template<typename TYPE>
+arrow::Status do_copy_numeric_list(std::shared_ptr<std::vector<int64_t>> indices,
+                                         std::shared_ptr<arrow::Array> data_array,
+                                         std::shared_ptr<arrow::Array> *copied_array,
+                                         arrow::MemoryPool *memory_pool) {
+
+  arrow::ListBuilder list_builder(memory_pool, std::make_shared<arrow::NumericBuilder<TYPE>>(memory_pool));
+  arrow::NumericBuilder<TYPE>& value_builder =
+      *(static_cast<arrow::NumericBuilder<TYPE>*>(list_builder.value_builder()));
+  auto casted_array = std::static_pointer_cast<arrow::ListArray>(data_array);
+  for (auto &index : *indices) {
+    auto numericArray = std::static_pointer_cast<arrow::NumericArray<TYPE>>(casted_array->Slice(index));
+
+    for (int n = 0; n < numericArray->length(); n++) {
+      value_builder.Append(numericArray->Value(n));
+    }
+  }
+  return list_builder.Finish(copied_array);
+}
+
 arrow::Status copy_array_by_indices(std::shared_ptr<std::vector<int64_t>> indices,
                                     std::shared_ptr<arrow::Array> data_array,
                                     std::shared_ptr<arrow::Array> *copied_array,
@@ -154,8 +174,67 @@ arrow::Status copy_array_by_indices(std::shared_ptr<std::vector<int64_t>> indice
       break;
     case arrow::Type::DECIMAL:
       break;
-    case arrow::Type::LIST:
+    case arrow::Type::LIST: {
+      auto t_value = std::static_pointer_cast<arrow::ListType>(data_array->type());
+      switch (t_value->value_type()->id()) {
+        case arrow::Type::UINT8:
+          return do_copy_numeric_list<arrow::UInt8Type>(indices,
+                                                         data_array,
+                                                         copied_array,
+                                                         memory_pool);
+        case arrow::Type::INT8:
+          return do_copy_numeric_list<arrow::Int8Type>(indices,
+                                                        data_array,
+                                                        copied_array,
+                                                        memory_pool);
+        case arrow::Type::UINT16:
+          return do_copy_numeric_list<arrow::Int16Type>(indices,
+                                                         data_array,
+                                                         copied_array,
+                                                         memory_pool);
+        case arrow::Type::INT16:
+          return do_copy_numeric_list<arrow::Int16Type>(indices,
+                                                         data_array,
+                                                         copied_array,
+                                                         memory_pool);
+        case arrow::Type::UINT32:
+          return do_copy_numeric_list<arrow::UInt32Type>(indices,
+                                                          data_array,
+                                                          copied_array,
+                                                          memory_pool);
+        case arrow::Type::INT32:
+          return do_copy_numeric_list<arrow::Int32Type>(indices,
+                                                         data_array,
+                                                         copied_array,
+                                                         memory_pool);
+        case arrow::Type::UINT64:
+          return do_copy_numeric_list<arrow::UInt64Type>(indices,
+                                                          data_array,
+                                                          copied_array,
+                                                          memory_pool);
+        case arrow::Type::INT64:
+          return do_copy_numeric_list<arrow::Int64Type>(indices,
+                                                         data_array,
+                                                         copied_array,
+                                                         memory_pool);
+        case arrow::Type::HALF_FLOAT:
+          return do_copy_numeric_list<arrow::HalfFloatType>(indices,
+                                                             data_array,
+                                                             copied_array,
+                                                             memory_pool);
+        case arrow::Type::FLOAT:
+          return do_copy_numeric_list<arrow::FloatType>(indices,
+                                                         data_array,
+                                                         copied_array,
+                                                         memory_pool);
+        case arrow::Type::DOUBLE:
+          return do_copy_numeric_list<arrow::DoubleType>(indices,
+                                                          data_array,
+                                                          copied_array,
+                                                          memory_pool);
+      }
       break;
+    }
     case arrow::Type::STRUCT:
       break;
     case arrow::Type::UNION:
