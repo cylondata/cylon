@@ -81,10 +81,19 @@ arrow::Status do_copy_numeric_list(std::shared_ptr<std::vector<int64_t>> indices
       *(static_cast<arrow::NumericBuilder<TYPE>*>(list_builder.value_builder()));
   auto casted_array = std::static_pointer_cast<arrow::ListArray>(data_array);
   for (auto &index : *indices) {
+    arrow::Status status = list_builder.Append();
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
+      return status;
+    }
     auto numericArray = std::static_pointer_cast<arrow::NumericArray<TYPE>>(casted_array->Slice(index));
 
     for (int n = 0; n < numericArray->length(); n++) {
-      value_builder.Append(numericArray->Value(n));
+      status = value_builder.Append(numericArray->Value(n));
+      if (status != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
+        return status;
+      }
     }
   }
   return list_builder.Finish(copied_array);
