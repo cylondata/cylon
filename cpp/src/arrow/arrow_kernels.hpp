@@ -167,9 +167,7 @@ public:
 
   int Sort(std::shared_ptr<arrow::Array> values,
             std::shared_ptr<arrow::Array>* offsets) override {
-    auto array =
-        std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-    std::unordered_map<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
+    auto array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     const T* left_data = array->raw_values();
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
@@ -184,7 +182,6 @@ public:
     }
     int64_t *indices_end = indices_begin + values->length();
     // LOG(INFO) << "Length " << values->length() << " ind " << indices_begin << "nd " << indices_begin + values->length();
-    std::sort(indices_begin, indices_end);
     std::sort(indices_begin, indices_end, [left_data](uint64_t left, uint64_t right) {
       return left_data[left] < left_data[right];
     });
@@ -192,6 +189,8 @@ public:
     return 0;
   }
 };
+
+
 
 using UInt8ArraySorter = ArrowArrayNumericSortKernel<arrow::UInt8Type>;
 using UInt16ArraySorter = ArrowArrayNumericSortKernel<arrow::UInt16Type>;
@@ -204,10 +203,6 @@ using Int64ArraySorter = ArrowArrayNumericSortKernel<arrow::Int64Type>;
 using HalfFloatArraySorter = ArrowArrayNumericSortKernel<arrow::HalfFloatType>;
 using FloatArraySorter = ArrowArrayNumericSortKernel<arrow::FloatType>;
 using DoubleArraySorter = ArrowArrayNumericSortKernel<arrow::DoubleType>;
-
-int CreateNumericSorter(std::shared_ptr<arrow::DataType> type,
-                       arrow::MemoryPool* pool,
-                       std::unique_ptr<ArrowArraySortKernel>* out);
 
 arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> values,
                               std::shared_ptr<arrow::Array>* offsets);
