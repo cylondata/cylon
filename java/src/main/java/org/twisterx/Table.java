@@ -5,6 +5,7 @@ import org.twisterx.ops.Filter;
 import org.twisterx.ops.JoinConfig;
 import org.twisterx.ops.Mapper;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -184,6 +185,25 @@ public class Table extends DataRepresentation {
     throw unSupportedException();
   }
 
+  /**
+   * Prints the entire table to the console
+   */
+  public void print() {
+    print(this.getId(), 0, this.getRowCount(), 0, this.getColumnCount());
+  }
+
+  /**
+   * Prints a section of the table to the console
+   *
+   * @param row1 starting row index
+   * @param row2 ending row index
+   * @param col1 starting column index
+   * @param col2 ending column index
+   */
+  public void print(int row1, int row2, int col1, int col2) {
+    print(this.getId(), row1, row2, col1, col2);
+  }
+
   //----------------- NATIVE METHODS ---------------------//
 
   /**
@@ -202,16 +222,20 @@ public class Table extends DataRepresentation {
 
   private static native void nativeLoadCSV(String path, String id);
 
+  private static native void print(String tableId, int row1, int row2, int col1, int col2);
+
   //----------------- END OF METHODS ---------------------//
 
-//  public static void main(String[] args) throws IOException {
-//    NativeLoader.load();
-//
-//    Table left = Table.fromCSV("/tmp/csv.csv");
-//    Table right = Table.fromCSV("/tmp/csv.csv");
-//    Table joined = left.join(right, new JoinConfig(0, 0));
-//
-//    System.out.println(joined.getColumnCount());
-//    System.out.println(joined.getRowCount());
-//  }
+  public static void main(String[] args) throws IOException {
+    boolean loaded = NativeLoader.load();
+
+    Table left = Table.fromCSV("/tmp/csv.csv");
+    Table right = Table.fromCSV("/tmp/csv.csv");
+    Table joined = left.join(right, new JoinConfig(0, 0));
+
+    System.out.println(joined.getColumnCount());
+    System.out.println(joined.getRowCount());
+
+    joined.print();
+  }
 }

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../include/org_twisterx_io_Table.h"
+#include "../include/org_twisterx_Table.h"
 #include "io/table_api.h"
 
 std::string jstr_to_str(JNIEnv *env, jstring jstr) {
@@ -17,7 +17,7 @@ void throwIOException(JNIEnv *env, const std::string &msg) {
   throwException(env, "java/io/IOException", msg);
 }
 
-JNIEXPORT void JNICALL Java_org_twisterx_io_Table_nativeJoin
+JNIEXPORT void JNICALL Java_org_twisterx_Table_nativeJoin
     (JNIEnv *env, jclass thiz, jstring left_table, jstring right_table,
      jint left_join_col, jint right_join_col,
      jstring destination_table) {
@@ -30,7 +30,7 @@ JNIEXPORT void JNICALL Java_org_twisterx_io_Table_nativeJoin
   );
 }
 
-JNIEXPORT void JNICALL Java_org_twisterx_io_Table_nativeLoadCSV
+JNIEXPORT void JNICALL Java_org_twisterx_Table_nativeLoadCSV
     (JNIEnv *env, jclass thiz, jstring path, jstring uuid) {
   twisterx::io::Status status = twisterx::io::read_csv(jstr_to_str(env, path),
                                                        jstr_to_str(env, uuid));
@@ -39,12 +39,17 @@ JNIEXPORT void JNICALL Java_org_twisterx_io_Table_nativeLoadCSV
   }
 }
 
-JNIEXPORT jint JNICALL Java_org_twisterx_io_Table_nativeColumnCount
+JNIEXPORT jint JNICALL Java_org_twisterx_Table_nativeColumnCount
     (JNIEnv *env, jclass thiz, jstring uuid) {
   return twisterx::io::column_count(jstr_to_str(env, uuid));
 }
 
-JNIEXPORT jint JNICALL Java_org_twisterx_io_Table_nativeRowCount
+JNIEXPORT jint JNICALL Java_org_twisterx_Table_nativeRowCount
     (JNIEnv *env, jclass thiz, jstring uuid) {
   return twisterx::io::row_count(jstr_to_str(env, uuid));
+}
+
+JNIEXPORT void JNICALL Java_org_twisterx_Table_print
+    (JNIEnv *env, jclass thiz, jstring uuid, jint row1, jint row2, jint col1, jint col2) {
+  twisterx::io::print(jstr_to_str(env, uuid), col1, col2, row1, row2);
 }
