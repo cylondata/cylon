@@ -11,7 +11,7 @@ class Column {
   std::string id;
 
  public:
-  Column(std::string id) {
+  Column(const std::string& id) {
     this->id = id;
   }
 
