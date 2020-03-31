@@ -137,11 +137,9 @@ public:
       indices_begin[i] = i;
     }
     int64_t *indices_end = indices_begin + values->length();
-    // LOG(INFO) << "Length " << values->length() << " ind " << indices_begin << "nd " << indices_begin + values->length();
-//    std::sort(indices_begin, indices_end);
-//    std::sort(indices_begin, indices_end, [array](std::string left, std::string right) {
-//      return 0;
-//    });
+    std::sort(indices_begin, indices_end, [array](uint64_t left, uint64_t right) {
+      return array->GetView(left).compare(array->GetView(right));
+    });
     *offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
     return 0;
   }
