@@ -35,6 +35,14 @@ class Status {
     this->msg = msg;
   }
 
+  explicit Status(int code) {
+    this->code = code;
+  }
+
+  explicit Status(Code code) {
+    this->code = code;
+  }
+
   Status(Code code, const std::string &msg) {
     this->code = code;
     this->msg = msg;

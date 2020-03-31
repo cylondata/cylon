@@ -4,6 +4,8 @@
 #include <map>
 #include "arrow_io.h"
 #include "../join/join.hpp"
+#include  "../util/to_string.hpp"
+#include "iostream"
 
 namespace twisterx {
 namespace io {
@@ -31,6 +33,33 @@ twisterx::io::Status read_csv(const std::string &path, const std::string &id) {
     return twisterx::io::Status(Code::OK, result.status().message());
   }
   return twisterx::io::Status(Code::IOError, result.status().message());;
+}
+
+twisterx::io::Status print(const std::string &table_id, int col1, int col2, int row1, int row2) {
+  auto table = get_table(table_id);
+  if (table != NULLPTR) {
+    for (int row = row1; row < row2; row++) {
+      std::cout << "[";
+      for (int col = col1; col < col2; col++) {
+        auto column = table->column(col);
+        int rowCount = 0;
+        for (int chunk = 0; chunk < column->num_chunks(); chunk++) {
+          auto array = column->chunk(chunk);
+          if (rowCount <= row && rowCount + array->length() > row) {
+            // print this array
+            std::cout << twisterx::util::array_to_string(array, row - rowCount);
+            if (col != col2 - 1) {
+              std::cout << ",";
+            }
+            break;
+          }
+          rowCount += array->length();
+        }
+      }
+      std::cout << "]" << std::endl;
+    }
+  }
+  return twisterx::io::Status(Code::OK);
 }
 
 twisterx::io::Status join(const std::string &table_left,
