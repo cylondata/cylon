@@ -116,7 +116,38 @@ int BinaryArrayMerger::Merge(std::shared_ptr<arrow::Array> &values,
   return 0;
 }
 
-int CreateNumericSorter(std::shared_ptr<arrow::DataType> type,
+class ArrowStringSortKernel : public ArrowArraySortKernel {
+public:
+  explicit ArrowStringSortKernel(std::shared_ptr<arrow::DataType> type,
+                                 arrow::MemoryPool* pool) :
+      ArrowArraySortKernel(type, pool) {}
+
+  int Sort(std::shared_ptr<arrow::Array> values,
+           std::shared_ptr<arrow::Array>* offsets) override {
+    auto array = std::static_pointer_cast<arrow::StringArray>(values);
+    std::shared_ptr<arrow::Buffer> indices_buf;
+    int64_t buf_size = values->length() * sizeof(uint64_t);
+    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
+      return -1;
+    }
+    auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
+    for (int64_t i = 0; i < values->length(); i++) {
+      indices_begin[i] = i;
+    }
+    int64_t *indices_end = indices_begin + values->length();
+    // LOG(INFO) << "Length " << values->length() << " ind " << indices_begin << "nd " << indices_begin + values->length();
+//    std::sort(indices_begin, indices_end);
+//    std::sort(indices_begin, indices_end, [array](std::string left, std::string right) {
+//      return 0;
+//    });
+    *offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
+    return 0;
+  }
+};
+
+int CreateSorter(std::shared_ptr<arrow::DataType> type,
                        arrow::MemoryPool* pool,
                        std::unique_ptr<ArrowArraySortKernel>* out) {
   ArrowArraySortKernel* kernel;
@@ -151,6 +182,9 @@ int CreateNumericSorter(std::shared_ptr<arrow::DataType> type,
     case arrow::Type::DOUBLE:
       kernel = new DoubleArraySorter(type, pool);
       break;
+    case arrow::Type::STRING:
+      kernel = new ArrowStringSortKernel(type, pool);
+      break;
     default:
       LOG(FATAL) << "Un-known type";
       return -1;
@@ -162,7 +196,7 @@ int CreateNumericSorter(std::shared_ptr<arrow::DataType> type,
 arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> values,
                 std::shared_ptr<arrow::Array>* offsets) {
   std::unique_ptr<ArrowArraySortKernel> out;
-  CreateNumericSorter(values->type(), memory_pool, &out);
+  CreateSorter(values->type(), memory_pool, &out);
   out->Sort(values, offsets);
   return arrow::Status::OK();
 }
