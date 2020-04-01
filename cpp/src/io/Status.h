@@ -52,8 +52,12 @@ class Status {
     return this->code;
   }
 
-  bool ok() {
+  bool is_ok() {
     return this->get_code() == Code::OK;
+  }
+
+  static Status OK() {
+    return twisterx::io::Status(Code::OK);
   }
 
   std::string get_msg() {

@@ -9,7 +9,7 @@ namespace io {
 std::shared_ptr<Table> Table::from_csv(const std::string &path) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::io::Status status = twisterx::io::read_csv(path, uuid);
-  if (status.ok()) {
+  if (status.is_ok()) {
     return create(uuid);
   }
   throw status.get_msg();
@@ -38,7 +38,7 @@ std::shared_ptr<Table> Table::merge(std::vector<std::shared_ptr<twisterx::io::Ta
   }
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::io::Status status = twisterx::io::merge(table_ids, uuid);
-  if (status.ok()) {
+  if (status.is_ok()) {
     return Table::create(uuid);
   } else {
     throw status.get_msg();

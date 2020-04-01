@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include "../include/org_twisterx_Table.h"
 #include "io/table_api.h"
 
@@ -34,7 +35,7 @@ JNIEXPORT void JNICALL Java_org_twisterx_Table_nativeLoadCSV
     (JNIEnv *env, jclass thiz, jstring path, jstring uuid) {
   twisterx::io::Status status = twisterx::io::read_csv(jstr_to_str(env, path),
                                                        jstr_to_str(env, uuid));
-  if (status.get_code() != twisterx::io::Code::OK) {
+  if (!status.is_ok()) {
     throwIOException(env, status.get_msg());
   }
 }
@@ -52,4 +53,20 @@ JNIEXPORT jint JNICALL Java_org_twisterx_Table_nativeRowCount
 JNIEXPORT void JNICALL Java_org_twisterx_Table_print
     (JNIEnv *env, jclass thiz, jstring uuid, jint row1, jint row2, jint col1, jint col2) {
   twisterx::io::print(jstr_to_str(env, uuid), col1, col2, row1, row2);
+}
+
+JNIEXPORT void JNICALL Java_org_twisterx_Table_merge
+    (JNIEnv *env, jclass thiz, jobjectArray table_ids, jstring merge_tab_id) {
+  int table_count = env->GetArrayLength(table_ids);
+
+  std::vector<std::string> table_ids_vector;
+  for (int i = 0; i < table_count; i++) {
+    auto tab_id = (jstring) (env->GetObjectArrayElement(table_ids, i));
+    table_ids_vector.push_back(jstr_to_str(env, tab_id));
+  }
+  twisterx::io::Status status = twisterx::io::merge(table_ids_vector, jstr_to_str(env, merge_tab_id));
+  std::cout << status.get_code() << std::endl;
+  if (!status.is_ok()) {
+    throwIOException(env, status.get_msg());
+  }
 }
