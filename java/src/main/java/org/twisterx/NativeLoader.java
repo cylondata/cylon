@@ -35,6 +35,7 @@ public class NativeLoader {
       if (resource == null) {
         LOG.log(Level.SEVERE, "Cannot file the file - " + path);
         loadSuccess = false;
+        return;
       }
 
       InputStream instream = resource.openStream();

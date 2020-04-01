@@ -13,6 +13,7 @@ twisterx::io::Status join(const std::string &table_left,
                           const std::string &dest_id);
 int column_count(const std::string &id);
 int row_count(const std::string &id);
+twisterx::io::Status print(const std::string &table_id, int col1, int col2, int row1, int row2);
 }
 }
 #endif //TWISTERX_SRC_IO_TABLE_API_H_
