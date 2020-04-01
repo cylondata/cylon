@@ -106,5 +106,18 @@ int row_count(const std::string &id) {
   }
   return -1;
 }
+
+twisterx::io::Status merge(std::vector<std::string> table_ids, const std::string &merged_tab) {
+  std::vector<std::shared_ptr<arrow::Table>> tables;
+  for (auto it = table_ids.begin(); it < table_ids.end(); it++) {
+    tables.push_back(get_table(*it));
+  }
+  arrow::Result<std::shared_ptr<arrow::Table>> result = arrow::ConcatenateTables(tables);
+  if (result.status() == arrow::Status::OK()) {
+    put_table(merged_tab, result.ValueOrDie());
+  } else {
+    return twisterx::io::Status((int) result.status().code(), result.status().message());
+  }
+}
 }
 }

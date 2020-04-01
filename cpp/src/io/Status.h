@@ -52,6 +52,10 @@ class Status {
     return this->code;
   }
 
+  bool ok() {
+    return this->get_code() == Code::OK;
+  }
+
   std::string get_msg() {
     return this->msg;
   }

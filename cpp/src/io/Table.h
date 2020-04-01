@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Status.h"
+#include "../util/uuid.h"
 
 namespace twisterx {
 namespace io {
@@ -15,7 +16,7 @@ namespace io {
  */
 class Table {
 
-public:
+ public:
   /**
    * Create a table by reading a csv file
    * @param path file path
@@ -64,7 +65,7 @@ public:
    * @param tables
    * @return new merged table
    */
-  std::shared_ptr<Table> merge(std::vector<twisterx::io::Table> tables);
+  static std::shared_ptr<Table> merge(std::vector<std::shared_ptr<twisterx::io::Table>> tables);
 
   /**
    * Sort the table according to the given column
@@ -89,7 +90,7 @@ public:
     return this->id;
   }
 
-private:
+ private:
   /**
    * Every table should have an unique id
    */
@@ -107,9 +108,10 @@ private:
     return t;
   }
 
-  template<class T> struct A : std::allocator<T> {
-    void construct(void* p) { ::new(p) Table(); }
-    void destroy(Table* p) { p->~Table(); }
+  template<class T>
+  struct A : std::allocator<T> {
+    void construct(void *p) { ::new(p) Table(); }
+    void destroy(Table *p) { p->~Table(); }
   };
 };
 }
