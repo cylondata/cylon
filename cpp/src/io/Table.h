@@ -2,7 +2,8 @@
 #define TWISTERX_SRC_IO_TABLE_H_
 
 #include <memory>
-#include <arrow/util/string.h>
+#include <string>
+#include <vector>
 
 #include "Status.h"
 
