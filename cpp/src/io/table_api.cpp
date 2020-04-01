@@ -115,6 +115,7 @@ twisterx::io::Status merge(std::vector<std::string> table_ids, const std::string
   arrow::Result<std::shared_ptr<arrow::Table>> result = arrow::ConcatenateTables(tables);
   if (result.status() == arrow::Status::OK()) {
     put_table(merged_tab, result.ValueOrDie());
+    return twisterx::io::Status::OK();
   } else {
     return twisterx::io::Status((int) result.status().code(), result.status().message());
   }
