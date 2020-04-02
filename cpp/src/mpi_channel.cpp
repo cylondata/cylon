@@ -119,7 +119,7 @@ void MPIChannel::progressReceives() {
         rcv_fn->receivedData(x.first, x.second->data, x.second->length);
       }
     } else {
-      // we are at the end
+      LOG(FATAL) << "At an un-expected state " << x.second->status;
     }
   }
 }
@@ -185,7 +185,7 @@ void MPIChannel::progressSends() {
       }
     } else {
       // throw an exception and log
-//        std::cout << "ELSE " << std::endl;
+      LOG(FATAL) << "At an un-expected state " << x.second->status;
     }
   }
 }
