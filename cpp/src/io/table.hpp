@@ -5,8 +5,9 @@
 #include <string>
 #include <vector>
 
-#include "Status.h"
+#include "status.hpp"
 #include "../util/uuid.h"
+#include "column.hpp"
 
 namespace twisterx {
 namespace io {
@@ -30,6 +31,13 @@ class Table {
    * @return a pointer to the table
    */
   static std::shared_ptr<Table> from_parquet(const std::string &path);
+
+  /**
+   * Create a table from set of columns
+   * @param columns the columns
+   * @return the created table
+   */
+  static std::shared_ptr<Table> FromColumns(std::vector<std::shared_ptr<Column>> columns);
 
   /**
    * Write the table as a CSV

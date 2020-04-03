@@ -2,7 +2,7 @@
 #define TWISTERX_SRC_IO_TABLE_API_H_
 #include <string>
 #include <vector>
-#include "Status.h"
+#include "status.hpp"
 
 namespace twisterx {
 namespace io {
