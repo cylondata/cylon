@@ -3,6 +3,7 @@
 
 #include <string>
 #include <utility>
+#include <memory>
 #include "data_types.h"
 
 #include <arrow/api.h>
