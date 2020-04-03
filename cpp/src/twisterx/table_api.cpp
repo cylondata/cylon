@@ -1,4 +1,4 @@
-#include "table_api.h"
+#include "table_api.hpp"
 #include <memory>
 #include <arrow/api.h>
 #include <map>

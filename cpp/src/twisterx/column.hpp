@@ -4,7 +4,7 @@
 #include <string>
 #include <utility>
 #include <memory>
-#include "data_types.h"
+#include "data_types.hpp"
 
 #include <arrow/api.h>
 #include <arrow/table.h>
