@@ -59,15 +59,15 @@ void merge_test() {
 
   LOG(INFO) << "Starting join";
   auto start = std::chrono::high_resolution_clock::now();
-  twisterx::join::join(
-	  left_table,
-	  right_table,
-	  0,
-	  0,
-	  twisterx::join::JoinType::INNER,
-	  twisterx::join::JoinAlgorithm::SORT,
-	  &joined_table,
-	  pool
+  twisterx::join::joinTables(
+      left_table,
+      right_table,
+      0,
+      0,
+      twisterx::join::JoinType::INNER,
+      twisterx::join::JoinAlgorithm::SORT,
+      &joined_table,
+      pool
   );
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -184,15 +184,15 @@ void join_test(bool sort, int count) {
   LOG(INFO) << "joining...";
   t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::Table> joined_table;
-  status = twisterx::join::join(
-	  left_table,
-	  right_table,
-	  0,
-	  0,
-	  twisterx::join::JoinType::INNER,
-	  twisterx::join::JoinAlgorithm::SORT,
-	  &joined_table,
-	  pool
+  status = twisterx::join::joinTables(
+      left_table,
+      right_table,
+      0,
+      0,
+      twisterx::join::JoinType::INNER,
+      twisterx::join::JoinAlgorithm::SORT,
+      &joined_table,
+      pool
   );
   t2 = std::chrono::high_resolution_clock::now();
   count = joined_table->column(0)->length();

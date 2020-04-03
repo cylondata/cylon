@@ -5,7 +5,7 @@
 #include <arrow/array/builder_primitive.h>
 #include <glog/logging.h>
 
-#include "all_to_all.hpp"
+#include "net/all_to_all.hpp"
 #include "arrow/arrow_all_to_all.hpp"
 
 using arrow::DoubleBuilder;

@@ -1,7 +1,7 @@
 #include <mpi.h>
 #include <iostream>
 
-#include "all_to_all.hpp"
+#include "net/all_to_all.hpp"
 #include "arrow/arrow_all_to_all.hpp"
 
 class Clbk : public twisterx::ReceiveCallback {

@@ -1,8 +1,8 @@
 #ifndef TWISTERX_SRC_IO_STATUS_H_
 #define TWISTERX_SRC_IO_STATUS_H_
 #include <string>
+
 namespace twisterx {
-namespace io {
 enum Code {
   OK = 0,
   OutOfMemory = 1,
@@ -57,13 +57,12 @@ class Status {
   }
 
   static Status OK() {
-    return twisterx::io::Status(Code::OK);
+    return twisterx::Status(Code::OK);
   }
 
   std::string get_msg() {
     return this->msg;
   }
 };
-}
 }
 #endif //TWISTERX_SRC_IO_STATUS_H_

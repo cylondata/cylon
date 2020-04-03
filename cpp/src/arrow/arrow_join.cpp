@@ -25,10 +25,10 @@ bool ArrowJoin::isComplete() {
     LOG(INFO) << "Received everything to join";
     auto start = std::chrono::high_resolution_clock::now();
     std::shared_ptr<arrow::Table> joined_table;
-    arrow::Status status = join::join(leftTables_, rightTables_, (int64_t)0, (int64_t)0,
-               join::JoinType::INNER, join::JoinAlgorithm::SORT,
-               &joined_table,
-               arrow::default_memory_pool());
+    arrow::Status status = join::joinTables(leftTables_, rightTables_, (int64_t) 0, (int64_t) 0,
+                                            join::JoinType::INNER, join::JoinAlgorithm::SORT,
+                                            &joined_table,
+                                            arrow::default_memory_pool());
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to join - error: " << status.CodeAsString();
       return true;
