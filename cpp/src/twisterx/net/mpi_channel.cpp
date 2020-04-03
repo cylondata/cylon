@@ -118,7 +118,7 @@ void MPIChannel::progressReceives() {
         // call the back end
         rcv_fn->receivedData(x.first, x.second->data, x.second->length);
       }
-    } else {
+    } else if (x.second->status != RECEIVED_FIN){
       LOG(FATAL) << "At an un-expected state " << x.second->status;
     }
   }
@@ -183,7 +183,7 @@ void MPIChannel::progressSends() {
         send_comp_fn->sendFinishComplete(finReq);
         x.second->status = SEND_DONE;
       }
-    } else {
+    } else if (x.second->status != SEND_DONE){
       // throw an exception and log
       LOG(FATAL) << "At an un-expected state " << x.second->status;
     }

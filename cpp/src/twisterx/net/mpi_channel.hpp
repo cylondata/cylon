@@ -18,7 +18,7 @@ enum SendStatus {
   SEND_LENGTH_POSTED = 1,
   SEND_POSTED = 2,
   SEND_FINISH = 3,
-  SEND_DONE
+  SEND_DONE = 4
 };
 
 enum ReceiveStatus {

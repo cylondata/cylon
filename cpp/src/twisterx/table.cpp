@@ -1,6 +1,6 @@
 #include <arrow/table.h>
 #include "table.hpp"
-#include "table_api.h"
+#include "table_api.hpp"
 #include "util/uuid.h"
 
 namespace twisterx {
