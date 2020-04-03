@@ -2,9 +2,12 @@
 #define TWISTERX_SRC_IO_TABLE_H_
 
 #include <memory>
-#include <arrow/util/string.h>
+#include <string>
+#include <vector>
 
-#include "Status.h"
+#include "status.hpp"
+#include "../util/uuid.h"
+#include "column.hpp"
 
 namespace twisterx {
 namespace io {
@@ -14,7 +17,7 @@ namespace io {
  */
 class Table {
 
-public:
+ public:
   /**
    * Create a table by reading a csv file
    * @param path file path
@@ -28,6 +31,13 @@ public:
    * @return a pointer to the table
    */
   static std::shared_ptr<Table> from_parquet(const std::string &path);
+
+  /**
+   * Create a table from set of columns
+   * @param columns the columns
+   * @return the created table
+   */
+  static std::shared_ptr<Table> FromColumns(std::vector<std::shared_ptr<Column>> columns);
 
   /**
    * Write the table as a CSV
@@ -63,7 +73,7 @@ public:
    * @param tables
    * @return new merged table
    */
-  std::shared_ptr<Table> merge(std::vector<twisterx::io::Table> tables);
+  static std::shared_ptr<Table> merge(std::vector<std::shared_ptr<twisterx::io::Table>> tables);
 
   /**
    * Sort the table according to the given column
@@ -88,7 +98,7 @@ public:
     return this->id;
   }
 
-private:
+ private:
   /**
    * Every table should have an unique id
    */
@@ -106,9 +116,10 @@ private:
     return t;
   }
 
-  template<class T> struct A : std::allocator<T> {
-    void construct(void* p) { ::new(p) Table(); }
-    void destroy(Table* p) { p->~Table(); }
+  template<class T>
+  struct A : std::allocator<T> {
+    void construct(void *p) { ::new(p) Table(); }
+    void destroy(Table *p) { p->~Table(); }
   };
 };
 }

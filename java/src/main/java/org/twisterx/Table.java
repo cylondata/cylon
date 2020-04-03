@@ -151,7 +151,13 @@ public class Table extends DataRepresentation {
    * @return merged {@link Table}
    */
   public static Table merge(Table... tables) {
-    throw unSupportedException();
+    String[] tableIds = new String[tables.length];
+    for (int i = 0; i < tables.length; i++) {
+      tableIds[i] = tables[i].getId();
+    }
+    String uuid = UUID.randomUUID().toString();
+    merge(tableIds, uuid);
+    return new Table(uuid);
   }
 
   /**
@@ -224,6 +230,8 @@ public class Table extends DataRepresentation {
 
   private static native void print(String tableId, int row1, int row2, int col1, int col2);
 
+  private static native void merge(String[] tableIds, String mergedTableId);
+
   //----------------- END OF METHODS ---------------------//
 
   public static void main(String[] args) throws IOException {
@@ -237,5 +245,9 @@ public class Table extends DataRepresentation {
     System.out.println(joined.getRowCount());
 
     joined.print();
+
+    Table merged = Table.merge(left, right);
+    merged.print();
+
   }
 }

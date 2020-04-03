@@ -1,6 +1,7 @@
 #ifndef TWISTERX_SRC_IO_STATUS_H_
 #define TWISTERX_SRC_IO_STATUS_H_
 #include <string>
+
 namespace twisterx {
 namespace io {
 enum Code {
@@ -50,6 +51,14 @@ class Status {
 
   int get_code() {
     return this->code;
+  }
+
+  bool is_ok() {
+    return this->get_code() == Code::OK;
+  }
+
+  static Status OK() {
+    return twisterx::io::Status(Code::OK);
   }
 
   std::string get_msg() {
