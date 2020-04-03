@@ -2,7 +2,6 @@
 #define TWISTERX_SRC_IO_DATATYPES_H_
 
 namespace twisterx {
-namespace io {
 
 struct Type {
   enum type {
@@ -104,11 +103,10 @@ private:
 /**
  * The list type
  */
-class ListType {
+class ListType : DataType {
 
 };
 
-}
 }
 
 #endif //TWISTERX_SRC_IO_DATATYPES_H_

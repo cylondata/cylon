@@ -6,11 +6,10 @@
 #include <vector>
 
 #include "status.hpp"
-#include "../util/uuid.h"
+#include "util/uuid.h"
 #include "column.hpp"
 
 namespace twisterx {
-namespace io {
 
 /**
  * Table provides the main API for using TwisterX for data processing.
@@ -59,21 +58,21 @@ class Table {
    * @param no_of_partitions number partitions
    * @return new set of tables each with the new partition
    */
-  std::vector<twisterx::io::Table> hash_partition(std::vector<int> hash_columns, int no_of_partitions);
+  std::vector<twisterx::Table> hash_partition(std::vector<int> hash_columns, int no_of_partitions);
 
   /**
    * Partition round robin
    * @param no_of_partitions
    * @return
    */
-  std::vector<twisterx::io::Table> round_robin_partition(int no_of_partitions);
+  std::vector<twisterx::Table> round_robin_partition(int no_of_partitions);
 
   /**
    * Merge the set of tables to create a single table
    * @param tables
    * @return new merged table
    */
-  static std::shared_ptr<Table> merge(std::vector<std::shared_ptr<twisterx::io::Table>> tables);
+  static std::shared_ptr<Table> merge(std::vector<std::shared_ptr<twisterx::Table>> tables);
 
   /**
    * Sort the table according to the given column
@@ -122,7 +121,6 @@ class Table {
     void destroy(Table *p) { p->~Table(); }
   };
 };
-}
 }
 
 #endif //TWISTERX_SRC_IO_TABLE_H_

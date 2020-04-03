@@ -1,7 +1,7 @@
 #include <arrow/api.h>
 #include <arrow/io/api.h>
 #include <arrow/csv/api.h>
-#include "arrow_io.h"
+#include "arrow_io.hpp"
 
 namespace twisterx {
 namespace io {
