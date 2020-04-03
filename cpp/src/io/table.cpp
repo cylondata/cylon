@@ -1,5 +1,5 @@
 #include <arrow/table.h>
-#include "Table.h"
+#include "table.hpp"
 #include "table_api.h"
 #include "../util/uuid.h"
 
