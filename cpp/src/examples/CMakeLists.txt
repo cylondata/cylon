@@ -3,7 +3,7 @@ macro(tx_add_exe EXENAME)
     add_executable(${EXENAME} ${EXENAME}.cpp)
 endmacro(tx_add_exe)
 
-include_directories(../src)
+include_directories(../twisterx)
 
 tx_add_exe(small_twisterx)
 tx_add_exe(arrow_twisterx)
