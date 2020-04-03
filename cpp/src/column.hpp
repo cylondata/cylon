@@ -3,7 +3,7 @@
 
 #include <string>
 #include <utility>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "data_types.h"
 
 #include <arrow/api.h>
