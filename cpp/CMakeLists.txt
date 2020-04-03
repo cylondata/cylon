@@ -117,5 +117,5 @@ if(TWISTERX_BUILD_TESTS)
     add_subdirectory(test)
 endif()
 
-add_subdirectory(src)
-add_subdirectory(example)
+add_subdirectory(src/twisterx)
+add_subdirectory(src/examples)
