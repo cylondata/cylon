@@ -4,7 +4,7 @@
 #include <arrow/api.h>
 #include <arrow/table.h>
 
-#include "../all_to_all.hpp"
+#include "../net/all_to_all.hpp"
 
 namespace twisterx {
 // lets define some integers to indicate the state of the data transfer using headers
