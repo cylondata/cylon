@@ -24,10 +24,9 @@ ext_modules = [
               extra_link_args=mpi_link_args,
               extra_compile_args=["-std=c++17"],
               ),
-    Extension("pytwisterx.io",
-              sources=["../cpp/src/io/Column.cpp", "twisterx/io/column.pyx", "../cpp/src/util/uuid.cpp",
-                       "../cpp/src/io/table_api.cpp", "twisterx/io/table_api.pyx"],
-              include_dirs=[numpy.get_include(), "../cpp/src/io", pyarrow.get_include()],
+    Extension("pytwisterx.table",
+              sources=["../cpp/src/util/uuid.cpp", "../cpp/src/table_api.cpp", "twisterx/table/table_api.pyx"],
+              include_dirs=[numpy.get_include(), "../cpp/src", pyarrow.get_include()],
               language='c++',
               # extra_compile_args=mpi_compile_args,
               extra_link_args=mpi_link_args,
@@ -40,8 +39,8 @@ ext_modules = cythonize(ext_modules, compiler_directives=compiler_directives)
 
 setup(
     name="pytwisterx",
-    packages=['twisterx', 'twisterx.geometry', 'twisterx.io'],
-    version='0.0.1',
+    packages=['twisterx', 'twisterx.geometry', 'twisterx.table'],
+    version='0.0.2',
     ext_modules=ext_modules,
     python_requires='>=3.7',
     install_requires=[
