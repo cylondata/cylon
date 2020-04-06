@@ -43,7 +43,7 @@ int CreateNumericMerge(std::shared_ptr<arrow::DataType>& type,
       kernel = new BinaryArrayMerger(type, pool, targets);
       break;
     default:
-      LOG(FATAL) << "Un-known type";
+      //LOG(FATAL) << "Un-known type";
       return -1;
   }
   out->reset(kernel);
@@ -65,7 +65,7 @@ int FixedBinaryArrayMerger::Merge(std::shared_ptr<arrow::Array> &values,
   for (int64_t i = 0; i < partitions->length(); i++) {
     std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders[partitions->Value(i)];
     if (b->Append(reader->Value(i)) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
+      //LOG(FATAL) << "Failed to merge";
       return -1;
     }
   }
@@ -74,7 +74,7 @@ int FixedBinaryArrayMerger::Merge(std::shared_ptr<arrow::Array> &values,
     std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders[it];
     std::shared_ptr<arrow::Array> array;
     if (b->Finish(&array) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
+      //LOG(FATAL) << "Failed to merge";
       return -1;
     }
     out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(it, array));
@@ -99,7 +99,7 @@ int BinaryArrayMerger::Merge(std::shared_ptr<arrow::Array> &values,
     int length = 0;
     const uint8_t *value = reader->GetValue(i, &length);
     if (b->Append(value, length) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
+      //LOG(FATAL) << "Failed to merge";
       return -1;
     }
   }
@@ -108,7 +108,7 @@ int BinaryArrayMerger::Merge(std::shared_ptr<arrow::Array> &values,
     std::shared_ptr<arrow::BinaryBuilder> b = builders[it];
     std::shared_ptr<arrow::Array> array;
     if (b->Finish(&array) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
+      //LOG(FATAL) << "Failed to merge";
       return -1;
     }
     out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(it, array));
@@ -129,7 +129,7 @@ public:
     int64_t buf_size = values->length() * sizeof(uint64_t);
     arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
     if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
+      //LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
       return -1;
     }
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
@@ -158,7 +158,7 @@ public:
     int64_t buf_size = values->length() * sizeof(uint64_t);
     arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
     if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
+      //LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
       return -1;
     }
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
@@ -219,7 +219,7 @@ int CreateSorter(std::shared_ptr<arrow::DataType> type,
       kernel = new ArrowBinarySortKernel(type, pool);
       break;
     default:
-      LOG(FATAL) << "Un-known type";
+      //LOG(FATAL) << "Un-known type";
       return -1;
   }
   out->reset(kernel);

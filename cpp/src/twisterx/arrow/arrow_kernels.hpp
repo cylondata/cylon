@@ -3,7 +3,7 @@
 
 #include <arrow/api.h>
 #include <arrow/compute/kernel.h>
-#include <glog/logging.h>
+//#include <glog/logging.h>
 
 namespace twisterx {
 
@@ -173,7 +173,7 @@ public:
     int64_t buf_size = values->length() * sizeof(uint64_t);
     arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
     if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
+      //LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
       return -1;
     }
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
