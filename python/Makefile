@@ -12,3 +12,6 @@ develop:
 
 pytwisterx:
 	python3 test/test_pytwisterx.py
+
+clear:
+	make clean; make uninstall; make develop; make install;

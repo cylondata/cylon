@@ -16,8 +16,22 @@ mpi_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
 
 ext_modules = [
     Extension("pytwisterx.geometry",
-              sources=["../cpp/src/lib/Circle.cpp", "twisterx/geometry/circle.pyx"],
-              include_dirs=[numpy.get_include(), "../cpp/src/lib", pyarrow.get_include()],
+              sources=["../cpp/src/twisterx/lib/Circle.cpp", "twisterx/geometry/circle.pyx"],
+              include_dirs=[numpy.get_include(), "../cpp/src/twisterx/lib", pyarrow.get_include()],
+              language='c++',
+              extra_compile_args=mpi_compile_args,
+              extra_link_args=mpi_link_args,
+              ),
+    Extension("pytwisterx.tablebuilder",
+              sources=["../cpp/src/twisterx/data/table_builder.cpp", "twisterx/tablebuilder/table_builder.pyx"],
+              include_dirs=[numpy.get_include(), "../cpp/src/twisterx/data", pyarrow.get_include()],
+              language='c++',
+              extra_compile_args=mpi_compile_args,
+              extra_link_args=mpi_link_args,
+              ),
+    Extension("pytwisterx.common",
+              sources=["../cpp/src/twisterx/status.cpp", "twisterx/common/status.pyx"],
+              include_dirs=[numpy.get_include(), pyarrow.get_include()],
               language='c++',
               extra_compile_args=mpi_compile_args,
               extra_link_args=mpi_link_args,
@@ -29,7 +43,7 @@ ext_modules = cythonize(ext_modules, compiler_directives=compiler_directives)
 
 setup(
     name="pytwisterx",
-    packages=['twisterx', 'twisterx.geometry'],
+    packages=['twisterx', 'twisterx.geometry', 'twisterx.tablebuilder'],
     version='0.0.1',
     ext_modules=ext_modules,
     python_requires='>=3.7',
