@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "status.hpp"
+#include "status.cpp"
 #include "util/uuid.h"
 #include "column.hpp"
 
