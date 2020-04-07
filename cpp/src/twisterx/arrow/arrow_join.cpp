@@ -50,6 +50,29 @@ bool AllToAllCallback::onReceive(int source, std::shared_ptr<arrow::Table> table
   tables_->push_back(table);
   return true;
 }
+
+ArrowJoinWithPartition::ArrowJoinWithPartition(int worker_id, const std::vector<int> &source,
+                                               const std::vector<int> &targets, int leftEdgeId, int rightEdgeId,
+                                               JoinCallback *callback, std::shared_ptr<arrow::Schema> schema,
+                                               arrow::MemoryPool *pool) {
+  workerId_ = worker_id;
+  finished = false;
+  join_ = std::make_shared<ArrowJoin>(worker_id, source, targets, leftEdgeId, rightEdgeId, callback, schema, pool);
+}
+
+bool ArrowJoinWithPartition::isComplete() {
+  if (!leftUnPartitionedTables.empty()) {
+
+  }
+
+  if (rightUnPartitionedTables.empty()) {
+
+  }
+
+
+  return false;
+}
+
 }
 
 

@@ -7,40 +7,10 @@
 
 namespace twisterx {
 
-class ArrowPartitionKernel {
-  /**
-   * We partition the table and return the indexes as an array
-   * @param ctx
-   * @param values
-   * @param out
-   * @return
-   */
-  virtual int Partition(arrow::compute::FunctionContext* ctx, const arrow::Table& values,
-                        arrow::Int32Array* out) = 0;
-};
-
-class ArrowTableMergeKernel {
+class ArrowArraySplitKernel {
 public:
-  explicit ArrowTableMergeKernel() {}
-
-  /**
-   * Merge the values in the column and return an array
-   * @param ctx
-   * @param values
-   * @param targets
-   * @param out_length
-   * @param out
-   * @return
-   */
-  virtual int Merge(arrow::compute::FunctionContext* ctx, const arrow::Table& values,
-                        const arrow::Int32Array& partitions,
-                        std::unordered_map<int, std::shared_ptr<arrow::Table>>& out) = 0;
-};
-
-class ArrowArrayMergeKernel {
-public:
-  explicit ArrowArrayMergeKernel(std::shared_ptr<arrow::DataType> type,
-      arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) : type_(type), pool_(pool),
+  explicit ArrowArraySplitKernel(std::shared_ptr<arrow::DataType> type,
+                                 arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) : type_(type), pool_(pool),
       targets_(targets) {}
 
   /**
@@ -62,11 +32,11 @@ protected:
 };
 
 template <typename TYPE>
-class ArrowArrayNumericMergeKernel : public ArrowArrayMergeKernel {
+class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
 public:
-  explicit ArrowArrayNumericMergeKernel(std::shared_ptr<arrow::DataType> type,
-                                 arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) :
-                                 ArrowArrayMergeKernel(type, pool, targets) {}
+  explicit ArrowArrayNumericSplitKernel(std::shared_ptr<arrow::DataType> type,
+                                        arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) :
+      ArrowArraySplitKernel(type, pool, targets) {}
 
   int Merge(std::shared_ptr<arrow::Array> &values,
       std::shared_ptr <arrow::Int32Array>& partitions,
@@ -95,45 +65,45 @@ public:
   }
 };
 
-class FixedBinaryArrayMerger : public ArrowArrayMergeKernel {
+class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
 public:
-  explicit FixedBinaryArrayMerger(std::shared_ptr<arrow::DataType> type,
-                                        arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) :
-      ArrowArrayMergeKernel(type, pool, targets) {}
+  explicit FixedBinaryArraySplitKernel(std::shared_ptr<arrow::DataType> type,
+                                       arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) :
+      ArrowArraySplitKernel(type, pool, targets) {}
 
   int Merge(std::shared_ptr<arrow::Array> &values,
             std::shared_ptr <arrow::Int32Array>& partitions,
             std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override;
 };
 
-class BinaryArrayMerger : public ArrowArrayMergeKernel {
+class BinaryArraySplitKernel : public ArrowArraySplitKernel {
 public:
-  explicit BinaryArrayMerger(std::shared_ptr<arrow::DataType> type,
+  explicit BinaryArraySplitKernel(std::shared_ptr<arrow::DataType> type,
                                   arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) :
-      ArrowArrayMergeKernel(type, pool, targets) {}
+      ArrowArraySplitKernel(type, pool, targets) {}
 
   int Merge(std::shared_ptr<arrow::Array> &values,
             std::shared_ptr <arrow::Int32Array>& partitions,
             std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override;
 };
 
-using UInt8ArrayMerger = ArrowArrayNumericMergeKernel<arrow::UInt8Type>;
-using UInt16ArrayMerger = ArrowArrayNumericMergeKernel<arrow::UInt16Type>;
-using UInt32ArrayMerger = ArrowArrayNumericMergeKernel<arrow::UInt32Type>;
-using UInt64ArrayMerger = ArrowArrayNumericMergeKernel<arrow::UInt64Type>;
+using UInt8ArraySplitter = ArrowArrayNumericSplitKernel<arrow::UInt8Type>;
+using UInt16ArraySplitter = ArrowArrayNumericSplitKernel<arrow::UInt16Type>;
+using UInt32ArraySplitter = ArrowArrayNumericSplitKernel<arrow::UInt32Type>;
+using UInt64ArraySplitter = ArrowArrayNumericSplitKernel<arrow::UInt64Type>;
 
-using Int8ArrayMerger = ArrowArrayNumericMergeKernel<arrow::Int8Type>;
-using Int16ArrayMerger = ArrowArrayNumericMergeKernel<arrow::Int16Type>;
-using Int32ArrayMerger = ArrowArrayNumericMergeKernel<arrow::Int32Type>;
-using Int64ArrayMerger = ArrowArrayNumericMergeKernel<arrow::Int64Type>;
+using Int8ArraySplitter = ArrowArrayNumericSplitKernel<arrow::Int8Type>;
+using Int16ArraySplitter = ArrowArrayNumericSplitKernel<arrow::Int16Type>;
+using Int32ArraySplitter = ArrowArrayNumericSplitKernel<arrow::Int32Type>;
+using Int64ArraySplitter = ArrowArrayNumericSplitKernel<arrow::Int64Type>;
 
-using HalfFloatArrayMerger = ArrowArrayNumericMergeKernel<arrow::HalfFloatType>;
-using FloatArrayMerger = ArrowArrayNumericMergeKernel<arrow::FloatType>;
-using DoubleArrayMerger = ArrowArrayNumericMergeKernel<arrow::DoubleType>;
+using HalfFloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::HalfFloatType>;
+using FloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::FloatType>;
+using DoubleArraySplitter = ArrowArrayNumericSplitKernel<arrow::DoubleType>;
 
-int CreateNumericMerge(std::shared_ptr<arrow::DataType>& type,
-                       arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets,
-                       std::unique_ptr<ArrowArrayMergeKernel>* out);
+int CreateSplitter(std::shared_ptr<arrow::DataType>& type,
+                   arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets,
+                   std::unique_ptr<ArrowArraySplitKernel>* out);
 
 class ArrowArraySortKernel {
 public:

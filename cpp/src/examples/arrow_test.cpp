@@ -88,9 +88,9 @@ void merge_test() {
   std::shared_ptr<std::vector<int>> ivec = std::make_shared<std::vector<int>>(10);
   int i = 0;
   std::iota(ivec->begin(), ivec->end(), 0);
-  std::unique_ptr<twisterx::ArrowArrayMergeKernel> kernel;
+  std::unique_ptr<twisterx::ArrowArraySplitKernel> kernel;
   std::shared_ptr<arrow::DataType> type = std::make_shared<arrow::Int64Type>();
-  CreateNumericMerge(type, pool, ivec, &kernel);
+  CreateSplitter(type, pool, ivec, &kernel);
 
   std::unordered_map<int, std::shared_ptr<arrow::Array>> out;
   kernel->Merge(firstArray, targetArray, out);

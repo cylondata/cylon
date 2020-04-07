@@ -1,46 +1,46 @@
 #include "arrow_kernels.hpp"
 
 namespace twisterx {
-int CreateNumericMerge(std::shared_ptr<arrow::DataType>& type,
-                       arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets,
-                       std::unique_ptr<ArrowArrayMergeKernel>* out) {
-  ArrowArrayMergeKernel* kernel;
+int CreateSplitter(std::shared_ptr<arrow::DataType>& type,
+                   arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets,
+                   std::unique_ptr<ArrowArraySplitKernel>* out) {
+  ArrowArraySplitKernel* kernel;
   switch (type->id()) {
     case arrow::Type::UINT8:
-      kernel = new UInt8ArrayMerger(type, pool, targets);
+      kernel = new UInt8ArraySplitter(type, pool, targets);
       break;
     case arrow::Type::INT8:
-      kernel = new Int8ArrayMerger(type, pool, targets);
+      kernel = new Int8ArraySplitter(type, pool, targets);
       break;
     case arrow::Type::UINT16:
-      kernel = new UInt16ArrayMerger(type, pool, targets);
+      kernel = new UInt16ArraySplitter(type, pool, targets);
       break;
     case arrow::Type::INT16:
-      kernel = new Int16ArrayMerger(type, pool, targets);
+      kernel = new Int16ArraySplitter(type, pool, targets);
       break;
     case arrow::Type::UINT32:
-      kernel = new UInt32ArrayMerger(type, pool, targets);
+      kernel = new UInt32ArraySplitter(type, pool, targets);
       break;
     case arrow::Type::INT32:
-      kernel = new Int32ArrayMerger(type, pool, targets);
+      kernel = new Int32ArraySplitter(type, pool, targets);
       break;
     case arrow::Type::UINT64:
-      kernel = new UInt64ArrayMerger(type, pool, targets);
+      kernel = new UInt64ArraySplitter(type, pool, targets);
       break;
     case arrow::Type::INT64:
-      kernel = new Int64ArrayMerger(type, pool, targets);
+      kernel = new Int64ArraySplitter(type, pool, targets);
       break;
     case arrow::Type::FLOAT:
-      kernel = new FloatArrayMerger(type, pool, targets);
+      kernel = new FloatArraySplitter(type, pool, targets);
       break;
     case arrow::Type::DOUBLE:
-      kernel = new DoubleArrayMerger(type, pool, targets);
+      kernel = new DoubleArraySplitter(type, pool, targets);
       break;
     case arrow::Type::FIXED_SIZE_BINARY:
-      kernel = new FixedBinaryArrayMerger(type, pool, targets);
+      kernel = new FixedBinaryArraySplitKernel(type, pool, targets);
       break;
     case arrow::Type::BINARY:
-      kernel = new BinaryArrayMerger(type, pool, targets);
+      kernel = new BinaryArraySplitKernel(type, pool, targets);
       break;
     default:
       LOG(FATAL) << "Un-known type";
@@ -50,9 +50,9 @@ int CreateNumericMerge(std::shared_ptr<arrow::DataType>& type,
   return 0;
 }
 
-int FixedBinaryArrayMerger::Merge(std::shared_ptr<arrow::Array> &values,
-    std::shared_ptr<arrow::Int32Array> &partitions,
-    std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
+int FixedBinaryArraySplitKernel::Merge(std::shared_ptr<arrow::Array> &values,
+                                       std::shared_ptr<arrow::Int32Array> &partitions,
+                                       std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
   auto reader =
       std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
   std::unordered_map<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>> builders;
@@ -82,9 +82,9 @@ int FixedBinaryArrayMerger::Merge(std::shared_ptr<arrow::Array> &values,
   return 0;
 }
 
-int BinaryArrayMerger::Merge(std::shared_ptr<arrow::Array> &values,
-    std::shared_ptr<arrow::Int32Array> &partitions,
-    std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
+int BinaryArraySplitKernel::Merge(std::shared_ptr<arrow::Array> &values,
+                                  std::shared_ptr<arrow::Int32Array> &partitions,
+                                  std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
   auto reader =
       std::static_pointer_cast<arrow::BinaryArray>(values);
   std::unordered_map<int, std::shared_ptr<arrow::BinaryBuilder>> builders;

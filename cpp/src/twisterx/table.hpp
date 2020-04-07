@@ -29,14 +29,14 @@ class Table {
    * @param path file path
    * @return a pointer to the table
    */
-  static std::shared_ptr<Table> from_parquet(const std::string &path);
+  static Status from_parquet(const std::string &path, std::shared_ptr<Table> out);
 
   /**
    * Create a table from set of columns
    * @param columns the columns
    * @return the created table
    */
-  static std::shared_ptr<Table> FromColumns(std::vector<std::shared_ptr<Column>> columns);
+  static Status FromColumns(std::vector<std::shared_ptr<Column>> columns, std::shared_ptr<Table> out);
 
   /**
    * Write the table as a CSV
@@ -58,7 +58,7 @@ class Table {
    * @param no_of_partitions number partitions
    * @return new set of tables each with the new partition
    */
-  std::vector<twisterx::Table> hash_partition(std::vector<int> hash_columns, int no_of_partitions);
+  Status hash_partition(std::vector<int> hash_columns, int no_of_partitions, const std::vector<twisterx::Table> *out);
 
   /**
    * Partition round robin
@@ -80,6 +80,13 @@ class Table {
    * @return new table sorted according to the sort column
    */
   std::shared_ptr<Table> sort(int sort_column);
+
+  /**
+   *
+   * @param right
+   * @return
+   */
+  std::shared_ptr<Table> join(Table right);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
 

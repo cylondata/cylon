@@ -13,7 +13,7 @@ namespace twisterx {
 
 class Column {
  public:
-  Column(std::string  id, DataType type) : id(std::move(id)), type(type) {
+  Column(std::string  id, std::shared_ptr<DataType> type) : id(std::move(id)), type(std::move(type)) {
   }
 
   /**
@@ -22,15 +22,6 @@ class Column {
    * @return the column
    */
   std::shared_ptr<Column> FromArrow(std::shared_ptr<arrow::Array> array);
-
-  /**
-   * Create the column from the givem buffer and data type
-   * @param type the data type
-   * @param buf buffer
-   * @param length length of the buffer
-   * @return the column
-   */
-  std::shared_ptr<Column> FromBuffer(DataType type, uint8_t * buf, int64_t length);
 
   /**
    * Return the unique id of the array
@@ -49,7 +40,7 @@ private:
   /**
    * The datatype of the column
    */
-  DataType type;
+  std::shared_ptr<DataType> type;
 };
 
 }
