@@ -62,6 +62,7 @@ ArrowJoinWithPartition::ArrowJoinWithPartition(int worker_id, const std::vector<
 
 bool ArrowJoinWithPartition::isComplete() {
   if (!leftUnPartitionedTables.empty()) {
+    std::shared_ptr<arrow::Table> ptr = leftUnPartitionedTables.front();
 
   }
 

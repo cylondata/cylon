@@ -5,7 +5,7 @@ namespace twisterx {
 arrow::Status HashPartitionArray(std::shared_ptr<arrow::DataType>& type, arrow::MemoryPool *pool,
                                  std::shared_ptr<arrow::Array> values,
                                  std::shared_ptr<std::vector<int>> targets,
-                                 std::shared_ptr<arrow::Array>* outPartitions) {
+                                 std::shared_ptr<std::vector<int64_t>> outPartitions) {
   ArrowPartitionKernel* kernel;
   switch (type->id()) {
     case arrow::Type::UINT8:

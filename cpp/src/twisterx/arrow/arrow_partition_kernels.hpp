@@ -23,7 +23,7 @@ public:
    * @return
    */
   virtual int Partition(const std::shared_ptr <arrow::Array> &values,
-                        std::shared_ptr<arrow::Array>* partitions) = 0;
+                        std::shared_ptr<std::vector<int64_t>> partitions) = 0;
 protected:
   std::shared_ptr<arrow::DataType> type_;
   arrow::MemoryPool* pool_;
@@ -37,18 +37,11 @@ public:
       std::shared_ptr<std::vector<int>> targets) : ArrowPartitionKernel(type, pool, targets) {}
 
   int Partition(const std::shared_ptr <arrow::Array> &values,
-                std::shared_ptr<arrow::Array>* partitions) override {
+                std::shared_ptr<std::vector<int64_t>> partitions) override {
     auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
     std::shared_ptr<arrow::Buffer> indices_buf;
-    int64_t buf_size = values->length() * sizeof(uint64_t);
-    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
-    if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
-      return -1;
-    }
     int bitWidth = type->bit_width();
-    auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
     for (int64_t i = 0; i < reader->length(); i++) {
       auto lValue = reader->Value(i);
       void *val = (void *)&(lValue);
@@ -57,9 +50,8 @@ public:
       // do the hash as we know the bit width
       twisterx::util::MurmurHash3_x86_32(val, bitWidth, seed, &hash);
       // this is the hash
-      indices_begin[i] = targets_->at(hash % targets_->size());
+      partitions->push_back(targets_->at(hash % targets_->size()));
     }
-    *partitions = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
     // now build the
     return 0;
   }
@@ -77,8 +69,10 @@ using HalfFloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::HalfFloa
 using FloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::FloatType>;
 using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType>;
 
-arrow::Status HashPartitionArray(std::shared_ptr<arrow::DataType> type, arrow::MemoryPool *memory_pool,
-    std::shared_ptr<std::vector<int>> targets);
+arrow::Status HashPartitionArray(std::shared_ptr<arrow::DataType>& type, arrow::MemoryPool *pool,
+                                 std::shared_ptr<arrow::Array> values,
+                                 std::shared_ptr<std::vector<int>> targets,
+                                 std::shared_ptr<std::vector<int64_t>> outPartitions);
 
 }
 
