@@ -1,39 +1,54 @@
+from libcpp.string cimport string
+from libcpp cimport bool
+from twisterx.common.code cimport _Code
+
+
 cdef extern from "../../../cpp/src/twisterx/status.cpp" namespace "twisterx":
-
-    cdef enum _Code 'twisterx::Code':
-        _OK 'twisterx::Code::OK'
-        _OutOfMemory 'twisterx::Code::OutOfMemory'
-        _KeyError 'twisterx::Code::KeyError'
-        _TypeError 'twisterx::Code::TypeError'
-        _Invalid 'twisterx::Code::Invalid'
-        _IOError 'twisterx::Code::IOError'
-        _CapacityError 'twisterx::Code::CapacityError'
-        _IndexError 'twisterx::Code::IndexError'
-        _UnknownError 'twisterx::Code::UnknownError'
-        _NotImplemented 'twisterx::Code::NotImplemented'
-        _SerializationError 'twisterx::Code::SerializationError'
-        _RError 'twisterx::Code::RError'
-        _CodeGenError 'twisterx::Code::CodeGenError'
-        _ExpressionValidationError 'twisterx::Code::ExpressionValidationError'
-        _ExecutionError 'twisterx::Code::ExecutionError'
-        _AlreadyExists 'twisterx::Code::AlreadyExists'
+    cdef cppclass _Status "twisterx::Status":
+        _Status()
+        _Status(int, string)
+        _Status(int)
+        _Status(_Code)
+        _Status(_Code, string)
+        int get_code()
+        bool is_ok()
+        string get_msg()
 
 
-cpdef enum Code:
-    OK = _OK
-    OutOfMemory = _OutOfMemory
-    KeyError = _KeyError
-    TypeError = _TypeError
-    Invalid = _Invalid
-    IOError = _IOError
-    CapacityError = _CapacityError
-    IndexError = _IndexError
-    UnknownError = _UnknownError
-    NotImplemented = _NotImplemented
-    SerializationError = _SerializationError
-    RError = _RError
-    CodeGenError = _CodeGenError
-    ExpressionValidationError = _ExpressionValidationError
-    ExecutionError = _ExecutionError
-    AlreadyExists = _AlreadyExists
+cdef class Status:
+    cdef _Status *thisptr
+    cdef _Code _code
+    cdef string msg
+    cdef int code
 
+    def __cinit__(self, int code, string msg, _Code _code):
+        if _code != -1 and msg.size() == 0 and code == -1:
+            #print("Status(_Code)")
+            self.thisptr = new _Status(_code)
+            self._code = _code
+
+        if msg.size() != 0 and code != -1:
+            #print("Status(code, msg)")
+            self.thisptr = new _Status(code, msg)
+            self.msg = msg
+            self.code = code
+
+        if msg.size() == 0 and _code == -1 and code != -1:
+            #print("Status(code)")
+            self.thisptr = new _Status(code)
+            self.code = code
+
+        if msg.size() != 0 and _code != -1 and code == -1:
+            #print("Status(_Code, msg)")
+            self.thisptr = new _Status(_code, msg)
+            self._code = _code
+            self.msg = msg
+
+    def get_code(self):
+        return self.thisptr.get_code()
+
+    def is_ok(self):
+        return self.thisptr.is_ok()
+
+    def get_msg(self):
+        return self.thisptr.get_msg()
