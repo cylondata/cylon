@@ -1,3 +1,2 @@
-from pytwisterx import tablebuilder
+from pytwisterx.api.table import Simple
 
-print(tablebuilder.id(), tablebuilder.columns(), tablebuilder.rows())

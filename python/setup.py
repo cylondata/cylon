@@ -15,8 +15,10 @@ import pyarrow
 mpi_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 mpi_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
 
-twisterx_cpp_third_party_glog = "../cpp/thirdparty/glog/src/glog"
-_include_dirs = [numpy.get_include(), "../cpp/src/twisterx/lib", pyarrow.get_include()]
+twisterx_cpp_third_party_glog = "../cpp/build/thirdparty/glog/glog/"
+_include_dirs = [numpy.get_include(), "../cpp/src/twisterx/lib", pyarrow.get_include(), "../cpp/src/twisterx/",
+                 "../cpp/src/twisterx/data",
+                 twisterx_cpp_third_party_glog]
 
 ext_modules = [
     Extension("pytwisterx.geometry",
@@ -42,6 +44,20 @@ ext_modules = [
               ),
     Extension("pytwisterx.common.status",
               sources=["twisterx/common/status.pyx"],
+              include_dirs=_include_dirs,
+              language='c++',
+              extra_compile_args=["-std=c++17"],
+              extra_link_args=mpi_link_args,
+              ),
+    Extension("pytwisterx.api.table",
+              sources=["twisterx/api/table_api.pyx"],
+              include_dirs=_include_dirs,
+              language='c++',
+              extra_compile_args=["-std=c++17"],
+              extra_link_args=mpi_link_args,
+              ),
+    Extension("pytwisterx.tablebuilder",
+              sources=["twisterx/tablebuilder/table_builder.pyx", "../cpp/src/twisterx/data/table_builder.cpp"],
               include_dirs=_include_dirs,
               language='c++',
               extra_compile_args=["-std=c++17"],
@@ -74,11 +90,12 @@ ext_modules = [
 # ]
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
+
 ext_modules = cythonize(ext_modules, compiler_directives=compiler_directives)
 
 setup(
     name="pytwisterx",
-    packages=['twisterx', 'twisterx.geometry', 'twisterx.tablebuilder', 'twisterx.common'],
+    packages=['twisterx', 'twisterx.geometry', 'twisterx.tablebuilder', 'twisterx.common', 'twisterx.api'],
     version='0.0.1',
     setup_requires=["cython", "setuptools"],
     ext_modules=ext_modules,
