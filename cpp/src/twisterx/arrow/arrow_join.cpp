@@ -1,5 +1,7 @@
 #include "arrow_join.hpp"
 #include "../join/join.hpp"
+#include "arrow_partition_kernels.hpp"
+#include "arrow_kernels.hpp"
 #include <chrono>
 #include <ctime>
 
@@ -56,20 +58,39 @@ ArrowJoinWithPartition::ArrowJoinWithPartition(int worker_id, const std::vector<
                                                JoinCallback *callback, std::shared_ptr<arrow::Schema> schema,
                                                arrow::MemoryPool *pool) {
   workerId_ = worker_id;
-  finished = false;
+  finished_ = false;
+  targets_ = targets;
   join_ = std::make_shared<ArrowJoin>(worker_id, source, targets, leftEdgeId, rightEdgeId, callback, schema, pool);
 }
 
 bool ArrowJoinWithPartition::isComplete() {
-  if (!leftUnPartitionedTables.empty()) {
-    std::shared_ptr<arrow::Table> ptr = leftUnPartitionedTables.front();
+  if (!leftUnPartitionedTables_.empty()) {
+    std::shared_ptr<arrow::Table> left_tab = leftUnPartitionedTables_.front();
+    std::vector<int64_t> outPartitions;
+    for (auto &column : left_tab->columns()) {
+      std::shared_ptr<arrow::Array> array = column->chunk(0);
+      arrow::Status status = HashPartitionArray(pool_, array, targets_, &outPartitions);
+      if (status != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed to create the hash partition";
+        return true;
+      }
 
+      std::shared_ptr<arrow::DataType> type = array->type();
+      std::unique_ptr<ArrowArraySplitKernel> out;
+      status = CreateSplitter(type, pool_, &out);
+      if (status != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed to create the splitter";
+        return true;
+      }
+
+      std::unordered_map<int, std::shared_ptr<arrow::Array>> arrays;
+      out->Merge(array, outPartitions, targets_, arrays);
+
+
+    }
+
+    // now insert these array to
   }
-
-  if (rightUnPartitionedTables.empty()) {
-
-  }
-
 
   return false;
 }

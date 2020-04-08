@@ -1,76 +1,77 @@
 #include "arrow_kernels.hpp"
 
 namespace twisterx {
-int CreateSplitter(std::shared_ptr<arrow::DataType>& type,
-                   arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets,
+arrow::Status CreateSplitter(std::shared_ptr<arrow::DataType>& type,
+                   arrow::MemoryPool* pool,
                    std::unique_ptr<ArrowArraySplitKernel>* out) {
   ArrowArraySplitKernel* kernel;
   switch (type->id()) {
     case arrow::Type::UINT8:
-      kernel = new UInt8ArraySplitter(type, pool, targets);
+      kernel = new UInt8ArraySplitter(type, pool);
       break;
     case arrow::Type::INT8:
-      kernel = new Int8ArraySplitter(type, pool, targets);
+      kernel = new Int8ArraySplitter(type, pool);
       break;
     case arrow::Type::UINT16:
-      kernel = new UInt16ArraySplitter(type, pool, targets);
+      kernel = new UInt16ArraySplitter(type, pool);
       break;
     case arrow::Type::INT16:
-      kernel = new Int16ArraySplitter(type, pool, targets);
+      kernel = new Int16ArraySplitter(type, pool);
       break;
     case arrow::Type::UINT32:
-      kernel = new UInt32ArraySplitter(type, pool, targets);
+      kernel = new UInt32ArraySplitter(type, pool);
       break;
     case arrow::Type::INT32:
-      kernel = new Int32ArraySplitter(type, pool, targets);
+      kernel = new Int32ArraySplitter(type, pool);
       break;
     case arrow::Type::UINT64:
-      kernel = new UInt64ArraySplitter(type, pool, targets);
+      kernel = new UInt64ArraySplitter(type, pool);
       break;
     case arrow::Type::INT64:
-      kernel = new Int64ArraySplitter(type, pool, targets);
+      kernel = new Int64ArraySplitter(type, pool);
       break;
     case arrow::Type::FLOAT:
-      kernel = new FloatArraySplitter(type, pool, targets);
+      kernel = new FloatArraySplitter(type, pool);
       break;
     case arrow::Type::DOUBLE:
-      kernel = new DoubleArraySplitter(type, pool, targets);
+      kernel = new DoubleArraySplitter(type, pool);
       break;
     case arrow::Type::FIXED_SIZE_BINARY:
-      kernel = new FixedBinaryArraySplitKernel(type, pool, targets);
+      kernel = new FixedBinaryArraySplitKernel(type, pool);
       break;
     case arrow::Type::BINARY:
-      kernel = new BinaryArraySplitKernel(type, pool, targets);
+      kernel = new BinaryArraySplitKernel(type, pool);
       break;
     default:
       LOG(FATAL) << "Un-known type";
-      return -1;
+      return arrow::Status::NotImplemented("This type not implemented");
   }
   out->reset(kernel);
-  return 0;
+  return arrow::Status::OK();
 }
 
 int FixedBinaryArraySplitKernel::Merge(std::shared_ptr<arrow::Array> &values,
-                                       std::shared_ptr<arrow::Int32Array> &partitions,
+                                       const std::vector<int64_t>& partitions,
+                                       const std::vector<int32_t> &targets,
                                        std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
   auto reader =
       std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
   std::unordered_map<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>> builders;
 
-  for (int & it : *targets_) {
+  for (int it : targets) {
     std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = std::make_shared<arrow::FixedSizeBinaryBuilder>(type_, pool_);
     builders.insert(std::pair<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>>(it, b));
   }
 
-  for (int64_t i = 0; i < partitions->length(); i++) {
-    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders[partitions->Value(i)];
+  for (size_t i = 0; i < partitions.size(); i++) {
+    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders[partitions.at(i)];
     if (b->Append(reader->Value(i)) != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to merge";
       return -1;
     }
   }
 
-  for (int & it : *targets_) {
+  for (int it : targets) {
     std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders[it];
     std::shared_ptr<arrow::Array> array;
     if (b->Finish(&array) != arrow::Status::OK()) {
@@ -83,19 +84,20 @@ int FixedBinaryArraySplitKernel::Merge(std::shared_ptr<arrow::Array> &values,
 }
 
 int BinaryArraySplitKernel::Merge(std::shared_ptr<arrow::Array> &values,
-                                  std::shared_ptr<arrow::Int32Array> &partitions,
+                                  const std::vector<int64_t>& partitions,
+                                  const std::vector<int32_t> &targets,
                                   std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
   auto reader =
       std::static_pointer_cast<arrow::BinaryArray>(values);
   std::unordered_map<int, std::shared_ptr<arrow::BinaryBuilder>> builders;
 
-  for (int & it : *targets_) {
+  for (int it : targets) {
     std::shared_ptr<arrow::BinaryBuilder> b = std::make_shared<arrow::BinaryBuilder>(type_, pool_);
     builders.insert(std::pair<int, std::shared_ptr<arrow::BinaryBuilder>>(it, b));
   }
 
-  for (int64_t i = 0; i < partitions->length(); i++) {
-    std::shared_ptr<arrow::BinaryBuilder> b = builders[partitions->Value(i)];
+  for (int64_t i = 0; i < partitions.size(); i++) {
+    std::shared_ptr<arrow::BinaryBuilder> b = builders[partitions.at(i)];
     int length = 0;
     const uint8_t *value = reader->GetValue(i, &length);
     if (b->Append(value, length) != arrow::Status::OK()) {
@@ -104,7 +106,7 @@ int BinaryArraySplitKernel::Merge(std::shared_ptr<arrow::Array> &values,
     }
   }
 
-  for (int & it : *targets_) {
+  for (int  it : targets) {
     std::shared_ptr<arrow::BinaryBuilder> b = builders[it];
     std::shared_ptr<arrow::Array> array;
     if (b->Finish(&array) != arrow::Status::OK()) {

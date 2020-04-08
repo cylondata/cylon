@@ -12,8 +12,8 @@ namespace twisterx {
 
 class ArrowPartitionKernel {
 public:
-  explicit ArrowPartitionKernel(std::shared_ptr<arrow::DataType> type,
-    arrow::MemoryPool* pool, std::shared_ptr<std::vector<int>> targets) : type_(type), pool_(pool), targets_(targets) {}
+  explicit ArrowPartitionKernel(
+    arrow::MemoryPool* pool) : pool_(pool) {}
 
   /**
    * We partition the table and return the indexes as an array
@@ -22,22 +22,19 @@ public:
    * @param out
    * @return
    */
-  virtual int Partition(const std::shared_ptr <arrow::Array> &values,
-                        std::shared_ptr<std::vector<int64_t>> partitions) = 0;
+  virtual int Partition(const std::shared_ptr <arrow::Array> &values, const std::vector<int> &targets,
+                        std::vector<int64_t> *partitions) = 0;
 protected:
-  std::shared_ptr<arrow::DataType> type_;
   arrow::MemoryPool* pool_;
-  std::shared_ptr<std::vector<int>> targets_;
 };
 
 template <typename TYPE>
 class NumericHashPartitionKernel : public ArrowPartitionKernel {
 public:
-  explicit NumericHashPartitionKernel(std::shared_ptr<arrow::DataType> type, arrow::MemoryPool* pool,
-      std::shared_ptr<std::vector<int>> targets) : ArrowPartitionKernel(type, pool, targets) {}
+  explicit NumericHashPartitionKernel(arrow::MemoryPool* pool) : ArrowPartitionKernel(pool) {}
 
-  int Partition(const std::shared_ptr <arrow::Array> &values,
-                std::shared_ptr<std::vector<int64_t>> partitions) override {
+  int Partition(const std::shared_ptr <arrow::Array> &values, const std::vector<int> &targets,
+                std::vector<int64_t> *partitions) override {
     auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
     std::shared_ptr<arrow::Buffer> indices_buf;
@@ -50,7 +47,7 @@ public:
       // do the hash as we know the bit width
       twisterx::util::MurmurHash3_x86_32(val, bitWidth, seed, &hash);
       // this is the hash
-      partitions->push_back(targets_->at(hash % targets_->size()));
+      partitions->push_back(targets.at(hash % targets.size()));
     }
     // now build the
     return 0;
@@ -69,10 +66,10 @@ using HalfFloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::HalfFloa
 using FloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::FloatType>;
 using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType>;
 
-arrow::Status HashPartitionArray(std::shared_ptr<arrow::DataType>& type, arrow::MemoryPool *pool,
+arrow::Status HashPartitionArray(arrow::MemoryPool *pool,
                                  std::shared_ptr<arrow::Array> values,
-                                 std::shared_ptr<std::vector<int>> targets,
-                                 std::shared_ptr<std::vector<int64_t>> outPartitions);
+                                 const std::vector<int> &targets,
+                                 std::vector<int64_t> *outPartitions);
 
 }
 

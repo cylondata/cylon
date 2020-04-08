@@ -121,7 +121,7 @@ public:
    * @return true if the buffer is accepted
    */
   int leftInsert(const std::shared_ptr<arrow::Table> &table) {
-    leftUnPartitionedTables.push(table);
+    leftUnPartitionedTables_.push(table);
     return 1;
   }
 
@@ -132,7 +132,7 @@ public:
    * @return
    */
   int rightInsert(const std::shared_ptr <arrow::Table> &table) {
-    rightUnPartitionedTables.push(table);
+    rightUnPartitionedTables_.push(table);
   }
 
   /**
@@ -146,7 +146,7 @@ public:
    * @return
    */
   void finish() {
-    finished = true;
+    finished_ = true;
   }
 
   /*
@@ -157,15 +157,17 @@ public:
   }
 private:
   // keep track of the un partitioned tables
-  std::queue<std::shared_ptr<arrow::Table>> leftUnPartitionedTables;
-  std::queue<std::shared_ptr<arrow::Table>> rightUnPartitionedTables;
+  std::queue<std::shared_ptr<arrow::Table>> leftUnPartitionedTables_;
+  std::queue<std::shared_ptr<arrow::Table>> rightUnPartitionedTables_;
   std::shared_ptr<ArrowJoin> join_;
 
   // keep track of the partitioned tables
   std::queue<std::shared_ptr<arrow::Table>> leftTables_;
   std::queue<std::shared_ptr<arrow::Table>> rightTables_;
   int workerId_;
-  bool finished;
+  bool finished_;
+  arrow::MemoryPool *pool_;
+  std::vector<int32_t> targets_;
 };
 
 }

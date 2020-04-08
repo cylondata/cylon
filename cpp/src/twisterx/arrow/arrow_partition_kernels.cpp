@@ -2,47 +2,47 @@
 
 namespace twisterx {
 
-arrow::Status HashPartitionArray(std::shared_ptr<arrow::DataType>& type, arrow::MemoryPool *pool,
+arrow::Status HashPartitionArray(arrow::MemoryPool *pool,
                                  std::shared_ptr<arrow::Array> values,
-                                 std::shared_ptr<std::vector<int>> targets,
-                                 std::shared_ptr<std::vector<int64_t>> outPartitions) {
+                                 const std::vector<int> &targets,
+                                 std::vector<int64_t> *outPartitions) {
   ArrowPartitionKernel* kernel;
-  switch (type->id()) {
+  switch (values->type()->id()) {
     case arrow::Type::UINT8:
-      kernel = new UInt8ArrayHashPartitioner(type, pool, targets);
+      kernel = new UInt8ArrayHashPartitioner(pool);
       break;
     case arrow::Type::INT8:
-      kernel = new Int8ArrayHashPartitioner(type, pool, targets);
+      kernel = new Int8ArrayHashPartitioner(pool);
       break;
     case arrow::Type::UINT16:
-      kernel = new UInt16ArrayHashPartitioner(type, pool, targets);
+      kernel = new UInt16ArrayHashPartitioner(pool);
       break;
     case arrow::Type::INT16:
-      kernel = new Int16ArrayHashPartitioner(type, pool, targets);
+      kernel = new Int16ArrayHashPartitioner(pool);
       break;
     case arrow::Type::UINT32:
-      kernel = new UInt32ArrayHashPartitioner(type, pool, targets);
+      kernel = new UInt32ArrayHashPartitioner(pool);
       break;
     case arrow::Type::INT32:
-      kernel = new Int32ArrayHashPartitioner(type, pool, targets);
+      kernel = new Int32ArrayHashPartitioner(pool);
       break;
     case arrow::Type::UINT64:
-      kernel = new UInt64ArrayHashPartitioner(type, pool, targets);
+      kernel = new UInt64ArrayHashPartitioner(pool);
       break;
     case arrow::Type::INT64:
-      kernel = new Int64ArrayHashPartitioner(type, pool, targets);
+      kernel = new Int64ArrayHashPartitioner(pool);
       break;
     case arrow::Type::FLOAT:
-      kernel = new FloatArrayHashPartitioner(type, pool, targets);
+      kernel = new FloatArrayHashPartitioner(pool);
       break;
     case arrow::Type::DOUBLE:
-      kernel = new DoubleArrayHashPartitioner(type, pool, targets);
+      kernel = new DoubleArrayHashPartitioner(pool);
       break;
     default:
       LOG(FATAL) << "Un-known type";
       return arrow::Status::NotImplemented("Not implemented");
   }
-  kernel->Partition(values, outPartitions);
+  kernel->Partition(values, targets, outPartitions);
   return arrow::Status::OK();
 }
 
