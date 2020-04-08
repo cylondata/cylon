@@ -50,7 +50,7 @@ arrow::Status CreateSplitter(std::shared_ptr<arrow::DataType>& type,
   return arrow::Status::OK();
 }
 
-int FixedBinaryArraySplitKernel::Merge(std::shared_ptr<arrow::Array> &values,
+int FixedBinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,
                                        const std::vector<int64_t>& partitions,
                                        const std::vector<int32_t> &targets,
                                        std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
@@ -83,7 +83,7 @@ int FixedBinaryArraySplitKernel::Merge(std::shared_ptr<arrow::Array> &values,
   return 0;
 }
 
-int BinaryArraySplitKernel::Merge(std::shared_ptr<arrow::Array> &values,
+int BinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,
                                   const std::vector<int64_t>& partitions,
                                   const std::vector<int32_t> &targets,
                                   std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
@@ -96,7 +96,7 @@ int BinaryArraySplitKernel::Merge(std::shared_ptr<arrow::Array> &values,
     builders.insert(std::pair<int, std::shared_ptr<arrow::BinaryBuilder>>(it, b));
   }
 
-  for (int64_t i = 0; i < partitions.size(); i++) {
+  for (size_t i = 0; i < partitions.size(); i++) {
     std::shared_ptr<arrow::BinaryBuilder> b = builders[partitions.at(i)];
     int length = 0;
     const uint8_t *value = reader->GetValue(i, &length);

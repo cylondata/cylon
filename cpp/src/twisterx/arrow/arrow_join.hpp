@@ -110,7 +110,7 @@ public:
    * @return
    */
   ArrowJoinWithPartition(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int leftEdgeId, int rightEdgeId,
-            JoinCallback *callback, std::shared_ptr <arrow::Schema> schema, arrow::MemoryPool *pool);
+            JoinCallback *callback, std::shared_ptr <arrow::Schema> schema, arrow::MemoryPool *pool, int leftColumnIndex, int rightColumnIndex);
 
   /**
    * Insert a partitioned table, this table will be sent directly
@@ -161,13 +161,12 @@ private:
   std::queue<std::shared_ptr<arrow::Table>> rightUnPartitionedTables_;
   std::shared_ptr<ArrowJoin> join_;
 
-  // keep track of the partitioned tables
-  std::queue<std::shared_ptr<arrow::Table>> leftTables_;
-  std::queue<std::shared_ptr<arrow::Table>> rightTables_;
   int workerId_;
   bool finished_;
   arrow::MemoryPool *pool_;
   std::vector<int32_t> targets_;
+  int leftColumnIndex_;
+  int rightColumnIndex_;
 };
 
 }

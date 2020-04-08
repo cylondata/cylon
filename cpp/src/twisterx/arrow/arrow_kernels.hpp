@@ -21,7 +21,7 @@ public:
    * @param out
    * @return
    */
-  virtual int Merge(std::shared_ptr<arrow::Array> &values,
+  virtual int Split(std::shared_ptr<arrow::Array> &values,
                     const std::vector<int64_t>& partitions,
                     const std::vector<int32_t> &targets,
                     std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) = 0;
@@ -37,10 +37,10 @@ public:
                                         arrow::MemoryPool* pool) :
       ArrowArraySplitKernel(type, pool) {}
 
-  int Merge(std::shared_ptr<arrow::Array> &values,
-      const std::vector<int64_t>& partitions,
-                    const std::vector<int32_t> &targets,
-                    std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override {
+  int Split(std::shared_ptr<arrow::Array> &values,
+            const std::vector<int64_t>& partitions,
+            const std::vector<int32_t> &targets,
+            std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override {
     auto reader =
         std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     std::unordered_map<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
@@ -71,7 +71,7 @@ public:
                                        arrow::MemoryPool* pool) :
       ArrowArraySplitKernel(type, pool) {}
 
-  int Merge(std::shared_ptr<arrow::Array> &values,
+  int Split(std::shared_ptr<arrow::Array> &values,
             const std::vector<int64_t>& partitions,
             const std::vector<int32_t> &targets,
             std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override;
@@ -83,7 +83,7 @@ public:
                                   arrow::MemoryPool* pool) :
       ArrowArraySplitKernel(type, pool) {}
 
-  int Merge(std::shared_ptr<arrow::Array> &values,
+  int Split(std::shared_ptr<arrow::Array> &values,
             const std::vector<int64_t>& partitions,
             const std::vector<int32_t> &targets,
             std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override;
