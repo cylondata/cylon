@@ -2,9 +2,10 @@
 #include <memory>
 #include <arrow/api.h>
 #include <map>
-#include "io/arrow_io.hpp"
-#include "join/join.hpp"
-#include  "util/to_string.hpp"
+#include "../../io/arrow_io.hpp"
+#include "../../join/join.hpp"
+#include  "../../util/to_string.hpp"
+#include "../../status.cpp"
 #include "iostream"
 
 namespace twisterx {
@@ -23,6 +24,7 @@ namespace twisterx {
         std::pair<std::string, std::shared_ptr<arrow::Table>> pair(id, table);
         table_map.insert(pair);
     }
+
 
     twisterx::Status read_csv(const std::string &path, const std::string &id) {
         arrow::Result<std::shared_ptr<arrow::Table>> result = twisterx::io::read_csv(path);

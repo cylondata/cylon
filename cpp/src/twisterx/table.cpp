@@ -23,11 +23,11 @@ int Table::rows() {
 }
 
 void Table::print() {
-  twisterx::print(this->get_id(), 0, this->columns(), 0, this->rows());
+    twisterx::show(this->get_id(), 0, this->columns(), 0, this->rows());
 }
 
 void Table::print(int row1, int row2, int col1, int col2) {
-  twisterx::print(this->get_id(), col1, col2, row1, row2);
+    twisterx::show(this->get_id(), col1, col2, row1, row2);
 }
 
 std::shared_ptr<Table> Table::merge(std::vector<std::shared_ptr<twisterx::Table>> tables) {
