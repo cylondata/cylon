@@ -44,7 +44,6 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
   auto right_join_column = right_tab->column(right_join_column_idx)->chunk(0);
 
   auto t1 = std::chrono::high_resolution_clock::now();
-  arrow::compute::FunctionContext ctx_left;
   std::shared_ptr<arrow::Array> left_index_sorted_column;
   auto status = SortIndices(memory_pool, left_join_column, &left_index_sorted_column);
   if (status != arrow::Status::OK()) {
@@ -55,7 +54,6 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
   LOG(INFO) << "Left sorting time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   t1 = std::chrono::high_resolution_clock::now();
-  arrow::compute::FunctionContext ctx;
   std::shared_ptr<arrow::Array> right_index_sorted_column;
   status = SortIndices(memory_pool, right_join_column, &right_index_sorted_column);
   if (status != arrow::Status::OK()) {

@@ -6,6 +6,8 @@
 #include "join/join.hpp"
 #include  "util/to_string.hpp"
 #include "iostream"
+#include <glog/logging.h>
+#include "util/arrow_utils.hpp"
 
 namespace twisterx {
 
@@ -119,4 +121,39 @@ twisterx::Status merge(std::vector<std::string> table_ids, const std::string &me
     return twisterx::Status((int) result.status().code(), result.status().message());
   }
 }
+
+twisterx::Status sortTable(const std::string& id, const std::string& sortedTableId, int columnIndex) {
+  auto table = get_table(id);
+  if (table == NULLPTR) {
+    LOG(FATAL) << "Failed to retrieve table";
+    return Status(Code::KeyError, "Couldn't find the right table");
+  }
+  auto col = table->column(columnIndex)->chunk(0);
+  std::shared_ptr<arrow::Array> indexSorts;
+  arrow::Status status = SortIndices(arrow::default_memory_pool(), col, &indexSorts);
+
+  if (status != arrow::Status::OK()) {
+    LOG(FATAL) << "Failed when sorting table to indices. " << status.ToString();
+    return twisterx::Status((int)status.code(), status.message());
+  }
+
+  std::vector<std::shared_ptr<arrow::Array>> data_arrays;
+  for (auto &column : table->columns()) {
+    std::shared_ptr<arrow::Array> destination_col_array;
+    status = twisterx::util::copy_array_by_indices(nullptr,
+                                                       col,
+                                                       &destination_col_array,
+                                                       arrow::default_memory_pool());
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed while copying a column to the final table from left table. " << status.ToString();
+      return twisterx::Status((int)status.code(), status.message());
+    }
+    data_arrays.push_back(destination_col_array);
+  }
+  // we need to put this to a new place
+  std::shared_ptr<arrow::Table> sortedTable = arrow::Table::Make(table->schema(), data_arrays);
+  put_table(sortedTableId, sortedTable);
+  return Status::OK();
+}
+
 }

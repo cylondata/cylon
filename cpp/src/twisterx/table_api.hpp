@@ -17,5 +17,13 @@ int row_count(const std::string &id);
 twisterx::Status print(const std::string &table_id, int col1, int col2, int row1, int row2);
 twisterx::Status merge(std::vector<std::string> table_ids, const std::string& merged_tab);
 
+/**
+ * Sort the table with the given identifier
+ * @param id table id
+ * @param columnIndex the sorting column index
+ * @return the sorted table
+ */
+twisterx::Status sortTable(const std::string& tableId, const std::string& sortTableId, int columnIndex);
+
 }
 #endif //TWISTERX_SRC_IO_TABLE_API_H_

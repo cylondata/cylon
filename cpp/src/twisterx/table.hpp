@@ -72,10 +72,10 @@ class Table {
    * @param tables
    * @return new merged table
    */
-  static std::shared_ptr<Table> merge(std::vector<std::shared_ptr<twisterx::Table>> tables);
+  static std::shared_ptr<Table> merge(const std::vector<std::shared_ptr<twisterx::Table>>& tables);
 
   /**
-   * Sort the table according to the given column
+   * Sort the table according to the given column, this is a local sort
    * @param sort_column
    * @return new table sorted according to the sort column
    */
