@@ -9,6 +9,7 @@
 #include "status.hpp"
 #include "util/uuid.h"
 #include "column.hpp"
+#include "join/join_config.h"
 
 namespace twisterx {
 
@@ -73,14 +74,16 @@ class Table {
    * @param no_of_partitions number partitions
    * @return new set of tables each with the new partition
    */
-  Status HashPartition(const std::vector<int>& hash_columns, int no_of_partitions, std::vector<std::shared_ptr<twisterx::Table>> *out);
+  Status HashPartition(const std::vector<int> &hash_columns,
+                       int no_of_partitions,
+                       std::vector<std::shared_ptr<twisterx::Table>> *out);
 
   /**
    * Merge the set of tables to create a single table
    * @param tables
    * @return new merged table
    */
-  static Status Merge(const std::vector<std::shared_ptr<twisterx::Table>>& tables, std::unique_ptr<Table> *tableOut);
+  static Status Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables, std::unique_ptr<Table> *tableOut);
 
   /**
    * Sort the table according to the given column, this is a local sort
@@ -94,7 +97,7 @@ class Table {
    * @param right
    * @return
    */
-  std::shared_ptr<Table> join(Table right);
+  std::shared_ptr<Table> Join(std::shared_ptr<Table> right, twisterx::join::config::JoinConfig join_config);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
   int columns();
@@ -111,7 +114,7 @@ class Table {
     return this->id_;
   }
 
-private:
+ private:
   /**
    * Every table should have an unique id
    */
