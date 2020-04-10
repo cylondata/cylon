@@ -10,8 +10,26 @@
 #include "util/uuid.h"
 #include "column.hpp"
 #include "join/join_config.h"
+#include "arrow/arrow_join.hpp"
+#include "join/join.hpp"
 
 namespace twisterx {
+
+class JoinConfig {
+public:
+  JoinConfig(twisterx::join::JoinAlgorithm  algorithm) : algorithm_(algorithm) { };
+
+  static std::shared_ptr<JoinConfig> Make(twisterx::join::JoinAlgorithm  algorithm) {
+    return std::make_shared<JoinConfig>(algorithm);
+  }
+
+  join::JoinAlgorithm getAlgorithm() const {
+    return algorithm_;
+  }
+
+private:
+  twisterx::join::JoinAlgorithm  algorithm_;
+};
 
 /**
  * Table provides the main API for using TwisterX for data processing.
@@ -93,10 +111,20 @@ class Table {
   Status Sort(int sort_column, std::unique_ptr<Table> *tableOut);
 
   /**
-   *
-   * @param right
-   * @return
+   * Do the join with the right table
+   * @param right the right table
+   * @param joinConfig the join configurations
+   * @param out the final table
+   * @return success
    */
+  Status Join(std::shared_ptr<Table> right, JoinConfig joinConfig, std::unique_ptr<Table> *out);
+
+  /**
+   * Create a arrow table from this data structure
+   * @param out arrow table
+   * @return the status of the operation
+   */
+  Status ToArrowTable(std::shared_ptr<arrow::Table> *out);
   std::shared_ptr<Table> Join(std::shared_ptr<Table> right, twisterx::join::config::JoinConfig join_config);
 
   /*END OF TRANSFORMATION FUNCTIONS*/

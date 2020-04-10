@@ -80,4 +80,9 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
   return Status::OK();
 }
 
+Status Table::Join(std::shared_ptr<Table> right, JoinConfig joinConfig, std::unique_ptr<Table> *out) {
+
+  return Status::OK();
+}
+
 }
