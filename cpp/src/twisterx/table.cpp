@@ -41,7 +41,7 @@ void Table::print(int row1, int row2, int col1, int col2) {
 }
 
 Status Table::Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables, std::unique_ptr<Table> *tableOut) {
-  std::vector<std::string> table_ids;
+  std::vector<std::string> table_ids(tables.size());
   for (auto it = tables.begin(); it < tables.end(); it++) {
     table_ids.push_back((*it)->get_id());
   }
