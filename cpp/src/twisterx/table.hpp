@@ -18,18 +18,25 @@ class Table {
 
  public:
   /**
+   * Tables can only be created using the factory methods, so the constructor is private
+   */
+  Table(std::string id) {
+    id_ = id;
+  }
+
+  /**
    * Create a table by reading a csv file
    * @param path file path
    * @return a pointer to the table
    */
-  static std::shared_ptr<Table> from_csv(const std::string &path);
+  static Status FromCSV(const std::string &path, std::unique_ptr<Table> *tableOut);
 
   /**
    * Create table from parquet
    * @param path file path
    * @return a pointer to the table
    */
-  static Status from_parquet(const std::string &path, std::shared_ptr<Table> out);
+  static Status FromParquet(const std::string &path, std::shared_ptr<Table> out);
 
   /**
    * Create a table from set of columns
@@ -37,6 +44,13 @@ class Table {
    * @return the created table
    */
   static Status FromColumns(std::vector<std::shared_ptr<Column>> columns, std::shared_ptr<Table> out);
+
+  /**
+   * Create a table from an arrow table,
+   * @param table
+   * @return
+   */
+  static Status FromArrowTable(std::shared_ptr<arrow::Table> table);
 
   /**
    * Write the table as a CSV
@@ -58,28 +72,21 @@ class Table {
    * @param no_of_partitions number partitions
    * @return new set of tables each with the new partition
    */
-  Status hash_partition(std::vector<int> hash_columns, int no_of_partitions, const std::vector<twisterx::Table> *out);
-
-  /**
-   * Partition round robin
-   * @param no_of_partitions
-   * @return
-   */
-  std::vector<twisterx::Table> round_robin_partition(int no_of_partitions);
+  Status hashPartition(std::vector<int> hash_columns, int no_of_partitions, const std::vector<twisterx::Table> *out);
 
   /**
    * Merge the set of tables to create a single table
    * @param tables
    * @return new merged table
    */
-  static std::shared_ptr<Table> merge(const std::vector<std::shared_ptr<twisterx::Table>>& tables);
+  static Status Merge(const std::vector<std::shared_ptr<twisterx::Table>>& tables, std::unique_ptr<Table> *tableOut);
 
   /**
    * Sort the table according to the given column, this is a local sort
    * @param sort_column
    * @return new table sorted according to the sort column
    */
-  std::shared_ptr<Table> sort(int sort_column);
+  Status Sort(int sort_column, std::unique_ptr<Table> *tableOut);
 
   /**
    *
@@ -89,7 +96,6 @@ class Table {
   std::shared_ptr<Table> join(Table right);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
-
   int columns();
 
   int rows();
@@ -101,32 +107,14 @@ class Table {
   void print(int row1, int row2, int col1, int col2);
 
   std::string get_id() {
-    return this->id;
+    return this->id_;
   }
 
- private:
+private:
   /**
    * Every table should have an unique id
    */
-  std::string id;
-
-  /**
-   * Tables can only be created using the factory methods, so the constructor is private
-   */
-  Table() {
-  }
-
-  static std::shared_ptr<Table> create(std::string uuid) {
-    std::shared_ptr<Table> t = std::allocate_shared<Table>(A<Table>());
-    t->id = uuid;
-    return t;
-  }
-
-  template<class T>
-  struct A : std::allocator<T> {
-    void construct(void *p) { ::new(p) Table(); }
-    void destroy(Table *p) { p->~Table(); }
-  };
+  std::string id_;
 };
 }
 

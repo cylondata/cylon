@@ -140,10 +140,8 @@ twisterx::Status sortTable(const std::string& id, const std::string& sortedTable
   std::vector<std::shared_ptr<arrow::Array>> data_arrays;
   for (auto &column : table->columns()) {
     std::shared_ptr<arrow::Array> destination_col_array;
-    status = twisterx::util::copy_array_by_indices(nullptr,
-                                                       col,
-                                                       &destination_col_array,
-                                                       arrow::default_memory_pool());
+    status = twisterx::util::copy_array_by_indices(nullptr, column->chunk(0),
+                                                   &destination_col_array, arrow::default_memory_pool());
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed while copying a column to the final table from left table. " << status.ToString();
       return twisterx::Status((int)status.code(), status.message());
