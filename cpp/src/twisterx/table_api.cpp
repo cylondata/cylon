@@ -112,12 +112,19 @@ namespace twisterx {
             tables.push_back(get_table(*it));
         }
         arrow::Result<std::shared_ptr<arrow::Table>> result = arrow::ConcatenateTables(tables);
-        if (result.status() == arrow::Status::OK()) {
+        if (result.status().code() == arrow::Status::OK().code()) {
             put_table(merged_tab, result.ValueOrDie());
             return twisterx::Status::OK();
         } else {
             return twisterx::Status((int) result.status().code(), result.status().message());
         }
+    }
+
+    int value(std::string id) {
+        std::string val;
+
+        val = id.append(id);
+        return 100;
     }
 
 }

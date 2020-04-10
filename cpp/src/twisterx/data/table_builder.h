@@ -6,11 +6,18 @@
 #define TWISTERX_TABLE_BUILDER_H
 
 #include "string"
+#include <arrow/api.h>
+#include "../io/arrow_io.hpp"
+#include "../join/join.hpp"
+#include "../status.cpp"
+
 
 using namespace std;
 
 namespace twisterx {
     namespace data {
+
+        twisterx::Status read_csv(const std::string &path, const std::string &id);
 
         int get_rows();
 
