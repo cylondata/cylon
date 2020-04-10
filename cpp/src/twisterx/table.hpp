@@ -109,7 +109,6 @@ class Table {
    * @return the status of the operation
    */
   Status ToArrowTable(std::shared_ptr<arrow::Table> *out);
-  std::shared_ptr<Table> Join(std::shared_ptr<Table> right, twisterx::join::config::JoinConfig join_config);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
   int columns();
