@@ -85,6 +85,7 @@ Status Table::Join(std::shared_ptr<Table> right,
                    twisterx::join::config::JoinConfig joinConfig,
                    std::unique_ptr<Table> *out) {
 
+
   return Status::OK();
 }
 

@@ -73,10 +73,9 @@ twisterx::Status print_to_ostream(const std::string &table_id,
   return twisterx::Status(Code::OK);
 }
 
-twisterx::Status joinTables(const std::string &table_left,
+twisterx::Status JoinTables(const std::string &table_left,
                             const std::string &table_right,
-                            int left_col_idx,
-                            int right_col_idx,
+                            twisterx::join::config::JoinConfig join_config,
                             const std::string &dest_id) {
   auto left = get_table(table_left);
   auto right = get_table(table_right);
@@ -90,10 +89,7 @@ twisterx::Status joinTables(const std::string &table_left,
     arrow::Status status = join::joinTables(
         left,
         right,
-        left_col_idx,
-        right_col_idx,
-        twisterx::join::config::INNER,
-        twisterx::join::config::SORT,
+        join_config,
         &table,
         arrow::default_memory_pool()
     );

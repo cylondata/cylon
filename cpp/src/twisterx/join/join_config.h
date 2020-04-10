@@ -27,21 +27,21 @@ class JoinConfig {
  public:
   JoinConfig() = delete;
 
-  static JoinConfig *InnerJoin(int left_column_idx, int right_column_idx) {
-    return new JoinConfig(left_column_idx, right_column_idx);
+  static JoinConfig InnerJoin(int left_column_idx, int right_column_idx) {
+    return JoinConfig(left_column_idx, right_column_idx);
   }
 
-  static JoinConfig *LeftJoin(int left_column_idx, int right_column_idx) {
-    return new JoinConfig(left_column_idx, right_column_idx);
+  static JoinConfig LeftJoin(int left_column_idx, int right_column_idx) {
+    return JoinConfig(left_column_idx, right_column_idx);
   }
 
-  static JoinConfig *RightJoin(int left_column_idx, int right_column_idx) {
-    return new JoinConfig(left_column_idx, right_column_idx);
+  static JoinConfig RightJoin(int left_column_idx, int right_column_idx) {
+    return JoinConfig(left_column_idx, right_column_idx);
   }
 
-  JoinConfig *UseHashAlgorithm() {
+  JoinConfig UseHashAlgorithm() {
     this->algorithm = HASH;
-    return this;
+    return *this;
   }
 
   JoinType GetType() const {

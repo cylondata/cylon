@@ -26,9 +26,8 @@ bool ArrowJoin::isComplete() {
     LOG(INFO) << "Received everything to join";
     auto start = std::chrono::high_resolution_clock::now();
     std::shared_ptr<arrow::Table> joined_table;
-    arrow::Status status = join::joinTables(leftTables_, rightTables_, (int64_t) 0, (int64_t) 0,
-                                            twisterx::join::config::INNER,
-                                            twisterx::join::config::SORT,
+    arrow::Status status = join::joinTables(leftTables_, rightTables_,
+                                            twisterx::join::config::JoinConfig::InnerJoin(0, 0),
                                             &joined_table,
                                             arrow::default_memory_pool());
     if (status != arrow::Status::OK()) {

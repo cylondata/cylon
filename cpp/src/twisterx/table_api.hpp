@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "status.hpp"
+#include "join/join_config.h"
 #include <arrow/api.h>
 
 namespace twisterx {
@@ -11,13 +12,11 @@ std::shared_ptr<arrow::Table> get_table(const std::string &id);
 void put_table(const std::string &id, const std::shared_ptr<arrow::Table> &table);
 
 twisterx::Status read_csv(const std::string &path, const std::string &id);
-twisterx::Status joinTables(const std::string &table_left,
+twisterx::Status JoinTables(const std::string &table_left,
                             const std::string &table_right,
-                            int left_col_idx,
-                            int right_col_idx,
+                            twisterx::join::config::JoinConfig join_config,
                             const std::string &dest_id);
 int column_count(const std::string &id);
-
 
 int row_count(const std::string &id);
 
@@ -46,7 +45,7 @@ twisterx::Status merge(std::vector<std::string> table_ids, const std::string &me
  * @param merged_tab id of the merged table
  * @return the status of the merge
  */
-twisterx::Status merge(std::vector<std::string> table_ids, const std::string& merged_tab);
+twisterx::Status merge(std::vector<std::string> table_ids, const std::string &merged_tab);
 
 /**
  * Sort the table with the given identifier
