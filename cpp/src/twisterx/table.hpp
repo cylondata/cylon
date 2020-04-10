@@ -58,7 +58,7 @@ class Table {
    * @param path file path
    * @return the status of the operation
    */
-  Status write_csv(const std::string &path);
+  Status WriteCSV(const std::string &path);
 
   /**
    * Write the table to parquet file

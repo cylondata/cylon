@@ -1,4 +1,5 @@
 #include <arrow/table.h>
+#include <fstream>
 #include "table.hpp"
 #include "table_api.hpp"
 #include "util/uuid.h"
@@ -12,6 +13,13 @@ Status Table::FromCSV(const std::string &path, std::unique_ptr<Table> *tableOut)
     *tableOut = std::make_unique<Table>(uuid);
   }
   return status;
+}
+
+Status Table::WriteCSV(const std::string &path) {
+  std::ofstream out_csv;
+  out_csv.open(path);
+  return twisterx::print_to_ostream(this->get_id(), 0,
+                                    this->columns(), 0, this->rows(), out_csv);
 }
 
 int Table::columns() {
@@ -30,7 +38,7 @@ void Table::print(int row1, int row2, int col1, int col2) {
   twisterx::print(this->get_id(), col1, col2, row1, row2);
 }
 
-Status Table::Merge(const std::vector<std::shared_ptr<twisterx::Table>>& tables, std::unique_ptr<Table> *tableOut) {
+Status Table::Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables, std::unique_ptr<Table> *tableOut) {
   std::vector<std::string> table_ids;
   for (auto it = tables.begin(); it < tables.end(); it++) {
     table_ids.push_back((*it)->get_id());
@@ -52,8 +60,8 @@ Status Table::Sort(int sort_column, std::unique_ptr<Table> *tableOut) {
   return status;
 }
 
-Status Table::HashPartition(const std::vector<int>& hash_columns, int no_of_partitions,
-    std::vector<std::shared_ptr<twisterx::Table>> *out) {
+Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_partitions,
+                            std::vector<std::shared_ptr<twisterx::Table>> *out) {
   std::vector<std::shared_ptr<arrow::Table>> tables;
   Status status = hashPartition(id_, hash_columns, no_of_partitions, &tables, arrow::default_memory_pool());
   if (!status.is_ok()) {
@@ -61,7 +69,7 @@ Status Table::HashPartition(const std::vector<int>& hash_columns, int no_of_part
     return status;
   }
 
-  for (const auto& t : tables) {
+  for (const auto &t : tables) {
     std::string uuid = twisterx::util::uuid::generate_uuid_v4();
     put_table(uuid, t);
     std::shared_ptr<Table> tab = std::make_shared<Table>(uuid);

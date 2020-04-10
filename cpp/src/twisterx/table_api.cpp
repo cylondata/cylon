@@ -38,10 +38,18 @@ twisterx::Status read_csv(const std::string &path, const std::string &id) {
 }
 
 twisterx::Status print(const std::string &table_id, int col1, int col2, int row1, int row2) {
+  return print_to_ostream(table_id, col1, col2, row1, row2, std::cout);
+}
+
+twisterx::Status print_to_ostream(const std::string &table_id,
+                                  int col1,
+                                  int col2,
+                                  int row1,
+                                  int row2,
+                                  std::ostream &out) {
   auto table = get_table(table_id);
   if (table != NULLPTR) {
     for (int row = row1; row < row2; row++) {
-      std::cout << "[";
       for (int col = col1; col < col2; col++) {
         auto column = table->column(col);
         int rowCount = 0;
@@ -49,16 +57,17 @@ twisterx::Status print(const std::string &table_id, int col1, int col2, int row1
           auto array = column->chunk(chunk);
           if (rowCount <= row && rowCount + array->length() > row) {
             // print this array
-            std::cout << twisterx::util::array_to_string(array, row - rowCount);
+            out << twisterx::util::array_to_string(array, row - rowCount);
             if (col != col2 - 1) {
-              std::cout << ",";
+
+              out << ",";
             }
             break;
           }
           rowCount += array->length();
         }
       }
-      std::cout << "]" << std::endl;
+      out << std::endl;
     }
   }
   return twisterx::Status(Code::OK);
@@ -123,7 +132,7 @@ twisterx::Status merge(std::vector<std::string> table_ids, const std::string &me
   }
 }
 
-twisterx::Status sortTable(const std::string& id, const std::string& sortedTableId, int columnIndex) {
+twisterx::Status sortTable(const std::string &id, const std::string &sortedTableId, int columnIndex) {
   auto table = get_table(id);
   if (table == NULLPTR) {
     LOG(FATAL) << "Failed to retrieve table";
@@ -135,7 +144,7 @@ twisterx::Status sortTable(const std::string& id, const std::string& sortedTable
 
   if (status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed when sorting table to indices. " << status.ToString();
-    return twisterx::Status((int)status.code(), status.message());
+    return twisterx::Status((int) status.code(), status.message());
   }
 
   std::vector<std::shared_ptr<arrow::Array>> data_arrays;
@@ -145,7 +154,7 @@ twisterx::Status sortTable(const std::string& id, const std::string& sortedTable
                                                    &destination_col_array, arrow::default_memory_pool());
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed while copying a column to the final table from left table. " << status.ToString();
-      return twisterx::Status((int)status.code(), status.message());
+      return twisterx::Status((int) status.code(), status.message());
     }
     data_arrays.push_back(destination_col_array);
   }
@@ -155,8 +164,8 @@ twisterx::Status sortTable(const std::string& id, const std::string& sortedTable
   return Status::OK();
 }
 
-twisterx::Status hashPartition(const std::string& id, const std::vector<int>& hash_columns, int no_of_partitions,
-                            std::vector<std::shared_ptr<arrow::Table>> *out, arrow::MemoryPool *pool) {
+twisterx::Status hashPartition(const std::string &id, const std::vector<int> &hash_columns, int no_of_partitions,
+                               std::vector<std::shared_ptr<arrow::Table>> *out, arrow::MemoryPool *pool) {
   std::shared_ptr<arrow::Table> left_tab = get_table(id);
   // keep arrays for each target, these arrays are used for creating the table
   std::unordered_map<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>> data_arrays;
@@ -175,7 +184,7 @@ twisterx::Status hashPartition(const std::string& id, const std::vector<int>& ha
   arrow::Status status = HashPartitionArray(pool, array, partitions, &outPartitions);
   if (status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed to create the hash partition";
-    return twisterx::Status((int)status.code(), status.message());
+    return twisterx::Status((int) status.code(), status.message());
   }
 
   for (int i = 0; i < left_tab->num_columns(); i++) {
@@ -184,20 +193,20 @@ twisterx::Status hashPartition(const std::string& id, const std::vector<int>& ha
     status = CreateSplitter(type, pool, &splitKernel);
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to create the splitter";
-      return twisterx::Status((int)status.code(), status.message());
+      return twisterx::Status((int) status.code(), status.message());
     }
 
     // this one outputs arrays for each target as a map
     std::unordered_map<int, std::shared_ptr<arrow::Array>> arrays;
     splitKernel->Split(array, outPartitions, partitions, arrays);
 
-    for (const auto& x : arrays) {
+    for (const auto &x : arrays) {
       std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];
       cols->push_back(x.second);
     }
   }
   // now insert these array to
-  for (const auto& x : data_arrays) {
+  for (const auto &x : data_arrays) {
     std::shared_ptr<arrow::Table> table = arrow::Table::Make(left_tab->schema(), *x.second);
     out->push_back(table);
   }

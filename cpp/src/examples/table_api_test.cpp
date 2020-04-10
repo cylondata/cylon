@@ -11,6 +11,6 @@ int main(int argc, char *argv[]) {
   tables.push_back(std::move(table2));
   tables.push_back(std::move(table3));
   twisterx::Table::Merge(tables, &table4);
-  table4->print();
+  table4->WriteCSV("/tmp/out.csv");
   return 0;
 }
