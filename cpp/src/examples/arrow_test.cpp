@@ -30,19 +30,19 @@ void merge_test() {
   int range = count * 10;
 
   for (int i = 0; i < count; i++) {
-	int l = rand() % range;
-	int r = rand() % range;
+    int l = rand() % range;
+    int r = rand() % range;
 
-	//LOG(INFO) << "adding " << r << "and" << l;
-	left_id_builder.Append(l);
-	right_id_builder.Append(r);
-	cost_builder.Append(i);
+    //LOG(INFO) << "adding " << r << "and" << l;
+    left_id_builder.Append(l);
+    right_id_builder.Append(r);
+    cost_builder.Append(i);
   }
 
   LOG(INFO) << "added";
 
   std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
-	  arrow::field("id", arrow::int64()), arrow::field("cost", arrow::int64())};
+      arrow::field("id", arrow::int64()), arrow::field("cost", arrow::int64())};
   auto schema = std::make_shared<arrow::Schema>(schema_vector);
 
   std::shared_ptr<arrow::Array> left_id_array;
@@ -62,10 +62,7 @@ void merge_test() {
   twisterx::join::joinTables(
       left_table,
       right_table,
-      0,
-      0,
-      twisterx::join::JoinType::INNER,
-      twisterx::join::JoinAlgorithm::SORT,
+      twisterx::join::config::JoinConfig::InnerJoin(0, 0),
       &joined_table,
       pool
   );
@@ -76,9 +73,9 @@ void merge_test() {
   arrow::Int64Builder firstBuilder(pool);
   arrow::Int32Builder targetBuilder(pool);
   for (int i = 0; i < count; i++) {
-	int l = rand() % range;
-	firstBuilder.Append(i);
-	targetBuilder.Append(i % 10);
+    int l = rand() % range;
+    firstBuilder.Append(i);
+    targetBuilder.Append(i % 10);
   }
   std::shared_ptr<arrow::Array> firstArray;
   firstBuilder.Finish(&firstArray);
@@ -97,12 +94,12 @@ void merge_test() {
   LOG(INFO) << "Size: " << out.size();
 
   for (auto i : out) {
-	LOG(INFO) << i.first << "   " << i.second->length();
-	auto ids =
-		std::static_pointer_cast<arrow::Int64Array>(i.second);
-	for (int k = 0; k < ids->length(); k++) {
-	  LOG(INFO) << "array: " << k << ": " << ids->Value(k);
-	}
+    LOG(INFO) << i.first << "   " << i.second->length();
+    auto ids =
+        std::static_pointer_cast<arrow::Int64Array>(i.second);
+    for (int k = 0; k < ids->length(); k++) {
+      LOG(INFO) << "array: " << k << ": " << ids->Value(k);
+    }
   }
 }
 
@@ -117,17 +114,17 @@ std::shared_ptr<arrow::Table> make_table(int32_t id, int32_t rows, arrow::Memory
   LOG(INFO) << "creating values for table " << id;
 
   for (int i = 0; i < rows; i++) {
-	int l = rand() % range;
-	float f = l + (0.1f * id);
-	//LOG(INFO) << "adding " << l << " and " << f;
-	left_id_builder.Append(l);
-	cost_builder.Append(f);
+    int l = rand() % range;
+    float f = l + (0.1f * id);
+    //LOG(INFO) << "adding " << l << " and " << f;
+    left_id_builder.Append(l);
+    cost_builder.Append(f);
   }
 
   LOG(INFO) << "created values for table " << id;
 
   std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
-	  arrow::field("id", arrow::int64()), arrow::field("cost", arrow::float16())};
+      arrow::field("id", arrow::int64()), arrow::field("cost", arrow::float16())};
   auto schema = std::make_shared<arrow::Schema>(schema_vector);
 
   std::shared_ptr<arrow::Array> left_id_array;
@@ -150,9 +147,9 @@ void sort_test() {
   twisterx::util::sort_table(left_table, 0, &sorted_table, pool);
 
   for (int i = 0; i < count; i++) {
-	auto key = std::static_pointer_cast<arrow::Int64Array>(sorted_table->column(0)->chunk(0));
-	auto val = std::static_pointer_cast<arrow::FloatArray>(sorted_table->column(1)->chunk(0));
-	LOG(INFO) << "reading " << key->Value(i) << " and " << val->Value(i);
+    auto key = std::static_pointer_cast<arrow::Int64Array>(sorted_table->column(0)->chunk(0));
+    auto val = std::static_pointer_cast<arrow::FloatArray>(sorted_table->column(1)->chunk(0));
+    LOG(INFO) << "reading " << key->Value(i) << " and " << val->Value(i);
   }
 }
 
@@ -165,20 +162,20 @@ void join_test(bool sort, int count) {
   auto t1 = std::chrono::high_resolution_clock::now();
   arrow::Status status;
   if (sort) {
-	status = twisterx::util::sort_table(left_table, 0, &left_table, pool);
-	if (status != arrow::Status::OK()) {
-	  LOG(FATAL) << "Failed to sort left table. " << status.ToString();
-	}
+    status = twisterx::util::sort_table(left_table, 0, &left_table, pool);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to sort left table. " << status.ToString();
+    }
 
-	status = twisterx::util::sort_table(right_table, 0, &right_table, pool);
-	if (status != arrow::Status::OK()) {
-	  LOG(FATAL) << "Failed to sort right table. " << status.ToString();
-	}
+    status = twisterx::util::sort_table(right_table, 0, &right_table, pool);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to sort right table. " << status.ToString();
+    }
   }
   auto t2 = std::chrono::high_resolution_clock::now();
 
   LOG(INFO) << "Table sorting took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-			<< "milis";
+            << "milis";
 
   LOG(INFO) << "joining...";
   t1 = std::chrono::high_resolution_clock::now();
@@ -197,10 +194,10 @@ void join_test(bool sort, int count) {
   count = joined_table->column(0)->length();
 
   if (status == arrow::Status::OK()) {
-	LOG(INFO) << "Join produced " << count << " tuples  in "
-			  << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "milis";
+    LOG(INFO) << "Join produced " << count << " tuples  in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "milis";
   } else {
-	LOG(INFO) << "Join failed. " << status.ToString();
+    LOG(INFO) << "Join failed. " << status.ToString();
   }
 
 //  for (int i = 0; i < count; i++) {

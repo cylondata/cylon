@@ -19,29 +19,44 @@ class JoinConfig {
   int left_column_idx, right_column_idx;
 
  public:
-  JoinConfig(int left_column_idx, int right_column_idx) {
+  JoinConfig(JoinType type, int left_column_idx, int right_column_idx) {
+    this->type = type;
     this->left_column_idx = left_column_idx;
     this->right_column_idx = right_column_idx;
+  }
+
+  JoinConfig(JoinType type, int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
+    this->type = type;
+    this->left_column_idx = left_column_idx;
+    this->right_column_idx = right_column_idx;
+    this->algorithm = algorithm;
   }
 
  public:
   JoinConfig() = delete;
 
   static JoinConfig InnerJoin(int left_column_idx, int right_column_idx) {
-    return JoinConfig(left_column_idx, right_column_idx);
+    return JoinConfig(INNER, left_column_idx, right_column_idx);
   }
 
   static JoinConfig LeftJoin(int left_column_idx, int right_column_idx) {
-    return JoinConfig(left_column_idx, right_column_idx);
+    return JoinConfig(LEFT, left_column_idx, right_column_idx);
   }
 
   static JoinConfig RightJoin(int left_column_idx, int right_column_idx) {
-    return JoinConfig(left_column_idx, right_column_idx);
+    return JoinConfig(RIGHT, left_column_idx, right_column_idx);
   }
 
-  JoinConfig UseHashAlgorithm() {
-    this->algorithm = HASH;
-    return *this;
+  static JoinConfig InnerJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
+    return JoinConfig(INNER, left_column_idx, right_column_idx, algorithm);
+  }
+
+  static JoinConfig LeftJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
+    return JoinConfig(LEFT, left_column_idx, right_column_idx, algorithm);
+  }
+
+  static JoinConfig RightJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
+    return JoinConfig(RIGHT, left_column_idx, right_column_idx, algorithm);
   }
 
   JoinType GetType() const {

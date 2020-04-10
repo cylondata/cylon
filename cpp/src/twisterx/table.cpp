@@ -1,5 +1,6 @@
 #include <arrow/table.h>
 #include <fstream>
+#include <memory>
 #include "table.hpp"
 #include "table_api.hpp"
 #include "util/uuid.h"
@@ -10,7 +11,7 @@ Status Table::FromCSV(const std::string &path, std::unique_ptr<Table> *tableOut)
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::read_csv(path, uuid);
   if (status.is_ok()) {
-    *tableOut = std::make_unique<Table>(uuid);
+    *tableOut = std::make_unique<Table>(Table(uuid));
   }
   return status;
 }
@@ -81,12 +82,20 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
   return Status::OK();
 }
 
-Status Table::Join(std::shared_ptr<Table> right,
-                   twisterx::join::config::JoinConfig joinConfig,
+Status Table::Join(const std::unique_ptr<Table> &right,
+                   twisterx::join::config::JoinConfig join_config,
                    std::unique_ptr<Table> *out) {
-
-
-  return Status::OK();
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  twisterx::Status status = twisterx::JoinTables(
+      this->get_id(),
+      right->get_id(),
+      join_config,
+      uuid
+  );
+  if (status.is_ok()) {
+    *out = std::make_unique<Table>(Table(uuid));
+  }
+  return status;
 }
 
 }

@@ -101,7 +101,9 @@ class Table {
    * @param out the final table
    * @return success
    */
-  Status Join(std::shared_ptr<Table> right, twisterx::join::config::JoinConfig joinConfig, std::unique_ptr<Table> *out);
+  Status Join(const std::unique_ptr<Table> &right,
+              twisterx::join::config::JoinConfig join_config,
+              std::unique_ptr<Table> *out);
 
   /**
    * Create a arrow table from this data structure
