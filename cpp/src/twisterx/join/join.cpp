@@ -147,18 +147,18 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
                       const std::shared_ptr<arrow::Table> &right_tab,
                       int64_t left_join_column_idx,
                       int64_t right_join_column_idx,
-                      JoinType join_type,
-                      JoinAlgorithm join_algorithm,
+                      twisterx::join::config::JoinType join_type,
+                      twisterx::join::config::JoinAlgorithm join_algorithm,
                       std::shared_ptr<arrow::Table> *joined_table,
                       arrow::MemoryPool *memory_pool) {
-  if (join_type == JoinType::INNER) {
+  if (join_type == twisterx::join::config::JoinType::INNER) {
     switch (join_algorithm) {
-      case SORT:
+      case twisterx::join::config::SORT:
         return do_sorted_inner_join<ARROW_KEY_TYPE, CPP_KEY_TYPE>(left_tab,
                                                                   right_tab,
                                                                   left_join_column_idx,
                                                                   right_join_column_idx, joined_table, memory_pool);
-      case HASH:break;
+      case twisterx::join::config::HASH:break;
     }
   }
   return arrow::Status::OK();
@@ -168,8 +168,8 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
                          const std::vector<std::shared_ptr<arrow::Table>> &right_tabs,
                          int64_t left_join_column_idx,
                          int64_t right_join_column_idx,
-                         JoinType join_type,
-                         JoinAlgorithm join_algorithm,
+                         twisterx::join::config::JoinType join_type,
+                         twisterx::join::config::JoinAlgorithm join_algorithm,
                          std::shared_ptr<arrow::Table> *joined_table,
                          arrow::MemoryPool *memory_pool) {
   std::shared_ptr<arrow::Table> left_tab = arrow::ConcatenateTables(left_tabs,
@@ -225,8 +225,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                          const std::shared_ptr<arrow::Table> &right_tab,
                          int64_t left_join_column_idx,
                          int64_t right_join_column_idx,
-                         JoinType join_type,
-                         JoinAlgorithm join_algorithm,
+                         twisterx::join::config::JoinType join_type,
+                         twisterx::join::config::JoinAlgorithm join_algorithm,
                          std::shared_ptr<arrow::Table> *joined_table,
                          arrow::MemoryPool *memory_pool) {
   auto left_type = left_tab->column(left_join_column_idx)->type()->id();

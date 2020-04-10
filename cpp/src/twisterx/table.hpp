@@ -15,22 +15,6 @@
 
 namespace twisterx {
 
-class JoinConfig {
-public:
-  JoinConfig(twisterx::join::JoinAlgorithm  algorithm) : algorithm_(algorithm) { };
-
-  static std::shared_ptr<JoinConfig> Make(twisterx::join::JoinAlgorithm  algorithm) {
-    return std::make_shared<JoinConfig>(algorithm);
-  }
-
-  join::JoinAlgorithm getAlgorithm() const {
-    return algorithm_;
-  }
-
-private:
-  twisterx::join::JoinAlgorithm  algorithm_;
-};
-
 /**
  * Table provides the main API for using TwisterX for data processing.
  */
@@ -117,7 +101,7 @@ class Table {
    * @param out the final table
    * @return success
    */
-  Status Join(std::shared_ptr<Table> right, JoinConfig joinConfig, std::unique_ptr<Table> *out);
+  Status Join(std::shared_ptr<Table> right, twisterx::join::config::JoinConfig joinConfig, std::unique_ptr<Table> *out);
 
   /**
    * Create a arrow table from this data structure

@@ -92,8 +92,8 @@ twisterx::Status joinTables(const std::string &table_left,
         right,
         left_col_idx,
         right_col_idx,
-        join::JoinType::INNER,
-        join::JoinAlgorithm::SORT,
+        twisterx::join::config::INNER,
+        twisterx::join::config::SORT,
         &table,
         arrow::default_memory_pool()
     );

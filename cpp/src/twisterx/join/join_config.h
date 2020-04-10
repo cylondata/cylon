@@ -4,6 +4,7 @@
 namespace twisterx {
 namespace join {
 namespace config {
+
 enum JoinType {
   INNER, LEFT, RIGHT
 };

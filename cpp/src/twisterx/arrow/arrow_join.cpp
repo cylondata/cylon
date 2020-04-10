@@ -27,7 +27,8 @@ bool ArrowJoin::isComplete() {
     auto start = std::chrono::high_resolution_clock::now();
     std::shared_ptr<arrow::Table> joined_table;
     arrow::Status status = join::joinTables(leftTables_, rightTables_, (int64_t) 0, (int64_t) 0,
-                                            join::JoinType::INNER, join::JoinAlgorithm::SORT,
+                                            twisterx::join::config::INNER,
+                                            twisterx::join::config::SORT,
                                             &joined_table,
                                             arrow::default_memory_pool());
     if (status != arrow::Status::OK()) {
@@ -71,8 +72,10 @@ bool ArrowJoinWithPartition::isComplete() {
     std::unordered_map<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>> data_arrays;
 
     for (int t : targets_) {
-      data_arrays.insert(std::pair<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>>(t, 
-          std::make_shared<std::vector<std::shared_ptr<arrow::Array>>>()));
+      data_arrays.insert(std::pair<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>>(t,
+                                                                                                     std::make_shared<
+                                                                                                         std::vector<std::shared_ptr<
+                                                                                                             arrow::Array>>>()));
     }
 
     auto column = left_tab->column(leftColumnIndex_);
@@ -98,13 +101,13 @@ bool ArrowJoinWithPartition::isComplete() {
       std::unordered_map<int, std::shared_ptr<arrow::Array>> arrays;
       splitKernel->Split(array, outPartitions, targets_, arrays);
 
-      for (const auto& x : arrays) {
+      for (const auto &x : arrays) {
         std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];
         cols->push_back(x.second);
       }
     }
     // now insert these array to
-    for (const auto& x : data_arrays) {
+    for (const auto &x : data_arrays) {
       std::shared_ptr<arrow::Table> table = arrow::Table::Make(left_tab->schema(), *x.second);
       join_->leftInsert(table, x.first);
     }
@@ -144,13 +147,13 @@ bool ArrowJoinWithPartition::isComplete() {
       std::unordered_map<int, std::shared_ptr<arrow::Array>> arrays;
       splitKernel->Split(array, outPartitions, targets_, arrays);
 
-      for (const auto& x : arrays) {
+      for (const auto &x : arrays) {
         std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];
         cols->push_back(x.second);
       }
     }
     // now insert these array to
-    for (const auto& x : data_arrays) {
+    for (const auto &x : data_arrays) {
       std::shared_ptr<arrow::Table> table = arrow::Table::Make(left_tab->schema(), *x.second);
       join_->rightInsert(table, x.first);
     }

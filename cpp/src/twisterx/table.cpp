@@ -19,7 +19,8 @@ Status Table::WriteCSV(const std::string &path) {
   std::ofstream out_csv;
   out_csv.open(path);
   twisterx::Status status = twisterx::print_to_ostream(this->get_id(), 0,
-                                                       this->columns(), 0, this->rows(), out_csv);
+                                                       this->columns(), 0,
+                                                       this->rows(), out_csv);
   out_csv.close();
   return status;
 }
@@ -80,7 +81,9 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
   return Status::OK();
 }
 
-Status Table::Join(std::shared_ptr<Table> right, JoinConfig joinConfig, std::unique_ptr<Table> *out) {
+Status Table::Join(std::shared_ptr<Table> right,
+                   twisterx::join::config::JoinConfig joinConfig,
+                   std::unique_ptr<Table> *out) {
 
   return Status::OK();
 }
