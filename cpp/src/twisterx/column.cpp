@@ -1,5 +1,9 @@
-//
-// Created by chathura on 3/31/20.
-//
-
 #include "column.hpp"
+
+namespace twisterx {
+
+std::shared_ptr<Column> twisterx::Column::FromArrow(std::shared_ptr<arrow::Array> array) {
+  return std::shared_ptr<Column>();
+}
+
+}

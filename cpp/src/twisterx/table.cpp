@@ -5,13 +5,13 @@
 
 namespace twisterx {
 
-std::shared_ptr<Table> Table::from_csv(const std::string &path) {
+Status Table::FromCSV(const std::string &path, std::unique_ptr<Table> *tableOut) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::read_csv(path, uuid);
   if (status.is_ok()) {
-    return create(uuid);
+    *tableOut = std::make_unique<Table>(uuid);
   }
-  throw status.get_msg();
+  return status;
 }
 
 int Table::columns() {
@@ -30,7 +30,7 @@ void Table::print(int row1, int row2, int col1, int col2) {
   twisterx::print(this->get_id(), col1, col2, row1, row2);
 }
 
-std::shared_ptr<Table> Table::merge(std::vector<std::shared_ptr<twisterx::Table>> tables) {
+Status Table::Merge(const std::vector<std::shared_ptr<twisterx::Table>>& tables, std::unique_ptr<Table> *tableOut) {
   std::vector<std::string> table_ids;
   for (auto it = tables.begin(); it < tables.end(); it++) {
     table_ids.push_back((*it)->get_id());
@@ -38,10 +38,36 @@ std::shared_ptr<Table> Table::merge(std::vector<std::shared_ptr<twisterx::Table>
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::merge(table_ids, uuid);
   if (status.is_ok()) {
-    return Table::create(uuid);
-  } else {
-    throw status.get_msg();
+    *tableOut = std::make_unique<Table>(uuid);
   }
+  return status;
+}
+
+Status Table::Sort(int sort_column, std::unique_ptr<Table> *tableOut) {
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  Status status = twisterx::sortTable(id_, uuid, sort_column);
+  if (status.is_ok()) {
+    *tableOut = std::make_unique<Table>(uuid);
+  }
+  return status;
+}
+
+Status Table::HashPartition(const std::vector<int>& hash_columns, int no_of_partitions,
+    std::vector<std::shared_ptr<twisterx::Table>> *out) {
+  std::vector<std::shared_ptr<arrow::Table>> tables;
+  Status status = hashPartition(id_, hash_columns, no_of_partitions, &tables, arrow::default_memory_pool());
+  if (!status.is_ok()) {
+    LOG(FATAL) << "Failed to partition";
+    return status;
+  }
+
+  for (const auto& t : tables) {
+    std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+    put_table(uuid, t);
+    std::shared_ptr<Table> tab = std::make_shared<Table>(uuid);
+    out->push_back(tab);
+  }
+  return Status::OK();
 }
 
 }
