@@ -2,10 +2,10 @@ clean:
 	rm -rf build; rm -rf dist; rm -rf *egg-info*; rm -rf *.so; rm -rf pytwisterx; rm -rf twisterx/*/*.cpp;
 
 install:
-	python3 setup.py install
+	sudo python3 setup.py install
 
 uninstall:
-	pip3 uninstall pytwisterx
+	sudo pip3 uninstall -y pytwisterx;
 
 develop:
 	mkdir pytwisterx;python3 setup.py develop;
