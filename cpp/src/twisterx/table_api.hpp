@@ -3,8 +3,11 @@
 #include <string>
 #include <vector>
 #include "status.hpp"
+#include <arrow/api.h>
 
 namespace twisterx {
+
+void put_table(const std::string &id, const std::shared_ptr<arrow::Table> &table);
 
 twisterx::Status read_csv(const std::string &path, const std::string &id);
 twisterx::Status joinTables(const std::string &table_left,
@@ -25,5 +28,16 @@ twisterx::Status merge(std::vector<std::string> table_ids, const std::string& me
  */
 twisterx::Status sortTable(const std::string& tableId, const std::string& sortTableId, int columnIndex);
 
+/**
+ * Partition the table into multiple tables
+ * @param id
+ * @param hash_columns
+ * @param no_of_partitions
+ * @param out
+ * @param pool
+ * @return
+ */
+twisterx::Status hashPartition(const std::string& id, const std::vector<int>& hash_columns, int no_of_partitions,
+                               std::vector<std::shared_ptr<arrow::Table>> *out, arrow::MemoryPool *pool);
 }
 #endif //TWISTERX_SRC_IO_TABLE_API_H_

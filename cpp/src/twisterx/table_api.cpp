@@ -8,6 +8,7 @@
 #include "iostream"
 #include <glog/logging.h>
 #include "util/arrow_utils.hpp"
+#include "arrow/arrow_partition_kernels.hpp"
 
 namespace twisterx {
 
@@ -152,6 +153,55 @@ twisterx::Status sortTable(const std::string& id, const std::string& sortedTable
   std::shared_ptr<arrow::Table> sortedTable = arrow::Table::Make(table->schema(), data_arrays);
   put_table(sortedTableId, sortedTable);
   return Status::OK();
+}
+
+twisterx::Status hashPartition(const std::string& id, const std::vector<int>& hash_columns, int no_of_partitions,
+                            std::vector<std::shared_ptr<arrow::Table>> *out, arrow::MemoryPool *pool) {
+  std::shared_ptr<arrow::Table> left_tab = get_table(id);
+  // keep arrays for each target, these arrays are used for creating the table
+  std::unordered_map<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>> data_arrays;
+  std::vector<int> partitions;
+  for (int t = 0; t < no_of_partitions; t++) {
+    partitions.push_back(t);
+    data_arrays.insert(
+        std::pair<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>>(
+            t, std::make_shared<std::vector<std::shared_ptr<arrow::Array>>>()));
+  }
+
+  auto column = left_tab->column(hash_columns.at(0));
+  std::vector<int64_t> outPartitions;
+  std::shared_ptr<arrow::Array> array = column->chunk(0);
+  // first we partition the table
+  arrow::Status status = HashPartitionArray(pool, array, partitions, &outPartitions);
+  if (status != arrow::Status::OK()) {
+    LOG(FATAL) << "Failed to create the hash partition";
+    return twisterx::Status((int)status.code(), status.message());
+  }
+
+  for (int i = 0; i < left_tab->num_columns(); i++) {
+    std::shared_ptr<arrow::DataType> type = array->type();
+    std::unique_ptr<ArrowArraySplitKernel> splitKernel;
+    status = CreateSplitter(type, pool, &splitKernel);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to create the splitter";
+      return twisterx::Status((int)status.code(), status.message());
+    }
+
+    // this one outputs arrays for each target as a map
+    std::unordered_map<int, std::shared_ptr<arrow::Array>> arrays;
+    splitKernel->Split(array, outPartitions, partitions, arrays);
+
+    for (const auto& x : arrays) {
+      std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];
+      cols->push_back(x.second);
+    }
+  }
+  // now insert these array to
+  for (const auto& x : data_arrays) {
+    std::shared_ptr<arrow::Table> table = arrow::Table::Make(left_tab->schema(), *x.second);
+    out->push_back(table);
+  }
+  return twisterx::Status::OK();
 }
 
 }

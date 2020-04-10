@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <glog/logging.h>
 
 #include "status.hpp"
 #include "util/uuid.h"
@@ -72,7 +73,7 @@ class Table {
    * @param no_of_partitions number partitions
    * @return new set of tables each with the new partition
    */
-  Status hashPartition(std::vector<int> hash_columns, int no_of_partitions, const std::vector<twisterx::Table> *out);
+  Status HashPartition(const std::vector<int>& hash_columns, int no_of_partitions, std::vector<std::shared_ptr<twisterx::Table>> *out);
 
   /**
    * Merge the set of tables to create a single table

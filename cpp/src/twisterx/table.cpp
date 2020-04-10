@@ -52,4 +52,22 @@ Status Table::Sort(int sort_column, std::unique_ptr<Table> *tableOut) {
   return status;
 }
 
+Status Table::HashPartition(const std::vector<int>& hash_columns, int no_of_partitions,
+    std::vector<std::shared_ptr<twisterx::Table>> *out) {
+  std::vector<std::shared_ptr<arrow::Table>> tables;
+  Status status = hashPartition(id_, hash_columns, no_of_partitions, &tables, arrow::default_memory_pool());
+  if (!status.is_ok()) {
+    LOG(FATAL) << "Failed to partition";
+    return status;
+  }
+
+  for (const auto& t : tables) {
+    std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+    put_table(uuid, t);
+    std::shared_ptr<Table> tab = std::make_shared<Table>(uuid);
+    out->push_back(tab);
+  }
+  return Status::OK();
+}
+
 }
