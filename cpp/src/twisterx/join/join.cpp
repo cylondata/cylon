@@ -198,7 +198,7 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
     return left_combine_stat;
   }
   if (left_tabs.size() > 1) {
-    for (auto t : left_tabs) {
+    for (const auto& t : left_tabs) {
       arrow::Status status = twisterx::util::free_table(t);
       if (status != arrow::Status::OK()) {
         LOG(FATAL) << "Failed to free table" << status.ToString();

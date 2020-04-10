@@ -36,7 +36,7 @@ class Table {
    * @param columns the columns
    * @return the created table
    */
-  static std::shared_ptr<Table> FromColumns(std::vector<std::shared_ptr<Column>> columns);
+  static std::shared_ptr<Table> from_columns(std::vector<std::shared_ptr<Column>> columns);
 
   /**
    * Write the table as a CSV
