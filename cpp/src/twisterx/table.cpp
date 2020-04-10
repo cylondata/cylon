@@ -18,8 +18,10 @@ Status Table::FromCSV(const std::string &path, std::unique_ptr<Table> *tableOut)
 Status Table::WriteCSV(const std::string &path) {
   std::ofstream out_csv;
   out_csv.open(path);
-  return twisterx::print_to_ostream(this->get_id(), 0,
-                                    this->columns(), 0, this->rows(), out_csv);
+  twisterx::Status status = twisterx::print_to_ostream(this->get_id(), 0,
+                                                       this->columns(), 0, this->rows(), out_csv);
+  out_csv.close();
+  return status;
 }
 
 int Table::columns() {
