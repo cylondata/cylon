@@ -33,12 +33,13 @@ void advance(std::vector<CPP_KEY_TYPE> *subset,
 }
 
 template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
-arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab,
-                                   const std::shared_ptr<arrow::Table> &right_tab,
-                                   int64_t left_join_column_idx,
-                                   int64_t right_join_column_idx,
-                                   std::shared_ptr<arrow::Table> *joined_table,
-                                   arrow::MemoryPool *memory_pool) {
+arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
+                             const std::shared_ptr<arrow::Table> &right_tab,
+                             int64_t left_join_column_idx,
+                             int64_t right_join_column_idx,
+                             twisterx::join::config::JoinType join_type,
+                             std::shared_ptr<arrow::Table> *joined_table,
+                             arrow::MemoryPool *memory_pool) {
   //sort columns
   auto left_join_column = left_tab->column(left_join_column_idx)->chunk(0);
   auto right_join_column = right_tab->column(right_join_column_idx)->chunk(0);
@@ -106,6 +107,14 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
                                             right_join_column,
                                             &right_key);
     } else if (left_key < right_key) {
+      // if this is a left join, this is the time to include them all in the result set
+      if (join_type == twisterx::join::config::LEFT) {
+        for (int64_t left_idx : left_subset) {
+          left_indices->push_back(left_idx);
+          right_indices->push_back(-1);
+        }
+      }
+
       advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&left_subset,
                                             std::static_pointer_cast<arrow::Int64Array>(
                                                 left_index_sorted_column),
@@ -113,6 +122,43 @@ arrow::Status do_sorted_inner_join(const std::shared_ptr<arrow::Table> &left_tab
                                             left_join_column,
                                             &left_key);
     } else {
+      // if this is a right join, this is the time to include them all in the result set
+      if (join_type == twisterx::join::config::RIGHT) {
+        for (int64_t right_idx : right_subset) {
+          left_indices->push_back(-1);
+          right_indices->push_back(right_idx);
+        }
+      }
+
+      advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&right_subset,
+                                            std::static_pointer_cast<arrow::Int64Array>(
+                                                right_index_sorted_column),
+                                            &right_current_index,
+                                            right_join_column,
+                                            &right_key);
+    }
+  }
+
+  // specially handling left and right join
+  if (join_type == twisterx::join::config::LEFT) {
+    while (!left_subset.empty()) {
+      for (int64_t left_idx : left_subset) {
+        left_indices->push_back(left_idx);
+        right_indices->push_back(-1);
+      }
+      advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&left_subset,
+                                            std::static_pointer_cast<arrow::Int64Array>(
+                                                left_index_sorted_column),
+                                            &left_current_index,
+                                            left_join_column,
+                                            &left_key);
+    }
+  } else if (join_type == twisterx::join::config::RIGHT) {
+    while (!right_subset.empty()) {
+      for (int64_t right_idx : right_subset) {
+        left_indices->push_back(-1);
+        right_indices->push_back(right_idx);
+      }
       advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&right_subset,
                                             std::static_pointer_cast<arrow::Int64Array>(
                                                 right_index_sorted_column),
@@ -151,15 +197,15 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
                       twisterx::join::config::JoinAlgorithm join_algorithm,
                       std::shared_ptr<arrow::Table> *joined_table,
                       arrow::MemoryPool *memory_pool) {
-  if (join_type == twisterx::join::config::JoinType::INNER) {
-    switch (join_algorithm) {
-      case twisterx::join::config::SORT:
-        return do_sorted_inner_join<ARROW_KEY_TYPE, CPP_KEY_TYPE>(left_tab,
-                                                                  right_tab,
-                                                                  left_join_column_idx,
-                                                                  right_join_column_idx, joined_table, memory_pool);
-      case twisterx::join::config::HASH:break;
-    }
+  switch (join_algorithm) {
+    case twisterx::join::config::SORT:
+      return do_sorted_join<ARROW_KEY_TYPE, CPP_KEY_TYPE>(left_tab,
+                                                          right_tab,
+                                                          left_join_column_idx,
+                                                          right_join_column_idx,
+                                                          join_type,
+                                                          joined_table, memory_pool);
+    case twisterx::join::config::HASH:break;
   }
   return arrow::Status::OK();
 }
