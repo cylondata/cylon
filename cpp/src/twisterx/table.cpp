@@ -98,4 +98,10 @@ Status Table::Join(const std::unique_ptr<Table> &right,
   return status;
 }
 
+Status Table::ToArrowTable(std::shared_ptr<arrow::Table> *out) {
+  std::shared_ptr<arrow::Table> tab = get_table(id_);
+  *out = tab;
+  return Status::OK();
+}
+
 }
