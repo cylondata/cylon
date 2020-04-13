@@ -6,7 +6,7 @@ namespace join {
 namespace config {
 
 enum JoinType {
-  INNER, LEFT, RIGHT
+  INNER, LEFT, RIGHT, FULL_OUTER
 };
 enum JoinAlgorithm {
   SORT, HASH
@@ -36,27 +36,35 @@ class JoinConfig {
   JoinConfig() = delete;
 
   static JoinConfig InnerJoin(int left_column_idx, int right_column_idx) {
-    return JoinConfig(INNER, left_column_idx, right_column_idx);
+    return {INNER, left_column_idx, right_column_idx};
   }
 
   static JoinConfig LeftJoin(int left_column_idx, int right_column_idx) {
-    return JoinConfig(LEFT, left_column_idx, right_column_idx);
+    return {LEFT, left_column_idx, right_column_idx};
   }
 
   static JoinConfig RightJoin(int left_column_idx, int right_column_idx) {
-    return JoinConfig(RIGHT, left_column_idx, right_column_idx);
+    return {RIGHT, left_column_idx, right_column_idx};
+  }
+
+  static JoinConfig FullOuterJoin(int left_column_idx, int right_column_idx) {
+    return {FULL_OUTER, left_column_idx, right_column_idx};
   }
 
   static JoinConfig InnerJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-    return JoinConfig(INNER, left_column_idx, right_column_idx, algorithm);
+    return {INNER, left_column_idx, right_column_idx, algorithm};
   }
 
   static JoinConfig LeftJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-    return JoinConfig(LEFT, left_column_idx, right_column_idx, algorithm);
+    return {LEFT, left_column_idx, right_column_idx, algorithm};
   }
 
   static JoinConfig RightJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-    return JoinConfig(RIGHT, left_column_idx, right_column_idx, algorithm);
+    return {RIGHT, left_column_idx, right_column_idx, algorithm};
+  }
+
+  static JoinConfig FullOuterJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
+    return {FULL_OUTER, left_column_idx, right_column_idx, algorithm};
   }
 
   JoinType GetType() const {

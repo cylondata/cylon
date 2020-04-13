@@ -108,7 +108,7 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
                                             &right_key);
     } else if (left_key < right_key) {
       // if this is a left join, this is the time to include them all in the result set
-      if (join_type == twisterx::join::config::LEFT) {
+      if (join_type == twisterx::join::config::LEFT || join_type == twisterx::join::config::FULL_OUTER) {
         for (int64_t left_idx : left_subset) {
           left_indices->push_back(left_idx);
           right_indices->push_back(-1);
@@ -123,7 +123,7 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
                                             &left_key);
     } else {
       // if this is a right join, this is the time to include them all in the result set
-      if (join_type == twisterx::join::config::RIGHT) {
+      if (join_type == twisterx::join::config::RIGHT || join_type == twisterx::join::config::FULL_OUTER) {
         for (int64_t right_idx : right_subset) {
           left_indices->push_back(-1);
           right_indices->push_back(right_idx);
@@ -140,7 +140,7 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
   }
 
   // specially handling left and right join
-  if (join_type == twisterx::join::config::LEFT) {
+  if (join_type == twisterx::join::config::LEFT || join_type == twisterx::join::config::FULL_OUTER) {
     while (!left_subset.empty()) {
       for (int64_t left_idx : left_subset) {
         left_indices->push_back(left_idx);
@@ -153,7 +153,9 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
                                             left_join_column,
                                             &left_key);
     }
-  } else if (join_type == twisterx::join::config::RIGHT) {
+  }
+
+  if (join_type == twisterx::join::config::RIGHT || join_type == twisterx::join::config::FULL_OUTER) {
     while (!right_subset.empty()) {
       for (int64_t right_idx : right_subset) {
         left_indices->push_back(-1);
