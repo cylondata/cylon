@@ -38,7 +38,6 @@ twisterx::Status print_to_ostream(const std::string &table_id,
                                   int row1,
                                   int row2,
                                   std::ostream &out);
-twisterx::Status merge(std::vector<std::string> table_ids, const std::string &merged_tab);
 
 /**
  * Merge the set of tables into a single table, each table should have the same schema
