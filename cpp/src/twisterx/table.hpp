@@ -36,13 +36,6 @@ class Table {
   static Status FromCSV(const std::string &path, std::unique_ptr<Table> *tableOut);
 
   /**
-   * Create table from parquet
-   * @param path file path
-   * @return a pointer to the table
-   */
-  static Status FromParquet(const std::string &path, std::shared_ptr<Table> out);
-
-  /**
    * Create a table from set of columns
    * @param columns the columns
    * @return the created table
@@ -62,13 +55,6 @@ class Table {
    * @return the status of the operation
    */
   Status WriteCSV(const std::string &path);
-
-  /**
-   * Write the table to parquet file
-   * @param path file path
-   * @return status of the operation
-   */
-  Status write_parquet(const std::string &path);
 
   /**
    * Partition the table based on the hash
