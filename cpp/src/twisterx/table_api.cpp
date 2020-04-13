@@ -27,8 +27,10 @@ void put_table(const std::string &id, const std::shared_ptr<arrow::Table> &table
   table_map.insert(pair);
 }
 
-twisterx::Status read_csv(const std::string &path, const std::string &id) {
-  arrow::Result<std::shared_ptr<arrow::Table>> result = twisterx::io::read_csv(path);
+twisterx::Status read_csv(const std::string &path,
+                          const std::string &id,
+                          twisterx::io::config::CSVReadOptions options) {
+  arrow::Result<std::shared_ptr<arrow::Table>> result = twisterx::io::read_csv(path, options);
   if (result.ok()) {
     std::shared_ptr<arrow::Table> table = *result;
     put_table(id, table);

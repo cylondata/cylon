@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <glog/logging.h>
+#include "io/csv_read_config.h"
 
 #include "status.hpp"
 #include "util/uuid.h"
@@ -33,7 +34,9 @@ class Table {
    * @param path file path
    * @return a pointer to the table
    */
-  static Status FromCSV(const std::string &path, std::unique_ptr<Table> *tableOut);
+  static Status FromCSV(const std::string &path,
+                        std::unique_ptr<Table> *tableOut,
+                        twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
 
   /**
    * Create table from parquet

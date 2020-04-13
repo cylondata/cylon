@@ -4,6 +4,7 @@
 #include <vector>
 #include "status.hpp"
 #include "join/join_config.h"
+#include "io/csv_read_config.h"
 #include <arrow/api.h>
 
 namespace twisterx {
@@ -11,7 +12,8 @@ namespace twisterx {
 std::shared_ptr<arrow::Table> get_table(const std::string &id);
 void put_table(const std::string &id, const std::shared_ptr<arrow::Table> &table);
 
-twisterx::Status read_csv(const std::string &path, const std::string &id);
+twisterx::Status read_csv(const std::string &path, const std::string &id,
+                          twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
 twisterx::Status JoinTables(const std::string &table_left,
                             const std::string &table_right,
                             twisterx::join::config::JoinConfig join_config,

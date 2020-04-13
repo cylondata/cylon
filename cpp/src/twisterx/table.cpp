@@ -7,9 +7,11 @@
 
 namespace twisterx {
 
-Status Table::FromCSV(const std::string &path, std::unique_ptr<Table> *tableOut) {
+Status Table::FromCSV(const std::string &path,
+                      std::unique_ptr<Table> *tableOut,
+                      twisterx::io::config::CSVReadOptions options) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  twisterx::Status status = twisterx::read_csv(path, uuid);
+  twisterx::Status status = twisterx::read_csv(path, uuid, options);
   if (status.is_ok()) {
     *tableOut = std::make_unique<Table>(Table(uuid));
   }
