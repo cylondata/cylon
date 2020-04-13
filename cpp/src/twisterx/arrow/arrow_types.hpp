@@ -16,6 +16,13 @@ namespace tarrow {
  */
 std::shared_ptr<arrow::DataType> convertToArrowType(DataType tType);
 
+/**
+ * Validate the types of an arrow table
+ * @param table true if we support the types
+ * @return false if we don't support the types
+ */
+bool validateArrowTableTypes(const std::shared_ptr<arrow::Table>& table);
+
 }
 }
 

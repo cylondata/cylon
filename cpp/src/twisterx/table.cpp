@@ -4,6 +4,7 @@
 #include "table.hpp"
 #include "table_api.hpp"
 #include "util/uuid.h"
+#include "arrow/arrow_types.hpp"
 
 namespace twisterx {
 
@@ -14,6 +15,16 @@ Status Table::FromCSV(const std::string &path, std::unique_ptr<Table> *tableOut)
     *tableOut = std::make_unique<Table>(Table(uuid));
   }
   return status;
+}
+
+Status Table::FromArrowTable(std::shared_ptr<arrow::Table> table) {
+  // first check the types
+  if (!twisterx::tarrow::validateArrowTableTypes(table)) {
+    LOG(FATAL) << "Types not supported";
+    return Status(twisterx::Invalid, "This type not supported");
+  }
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  put_table(uuid, table);
 }
 
 Status Table::WriteCSV(const std::string &path) {
