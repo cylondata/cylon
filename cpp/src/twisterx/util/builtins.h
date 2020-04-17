@@ -25,6 +25,8 @@ namespace twisterx{
         void printFloatArray(float * buf, int size);
 
         void printDoubleArray(double * buf, int size);
+
+        void printLongArray(long * buf, int size);
     }
 }
 

@@ -87,6 +87,10 @@ void twisterx::util::printArray(void *buf, int size, string dataType, int depth)
         double *doublePtr = (double *)buf;//getFloatPointer(buf);
         printDoubleArray(doublePtr, size);
     }
+    else if (dataType == "long") {
+        long *longPtr = (long *)buf;//getFloatPointer(buf);
+        printLongArray(longPtr, size);
+    }
 
 }
 void twisterx::util::printInt8Array(int8_t *buf, int size) {
@@ -124,6 +128,13 @@ void twisterx::util::printFloatArray(float *buf, int size) {
 }
 
 void twisterx::util::printDoubleArray(double *buf, int size) {
+    for (int i = 0; i < size; ++i) {
+        std::cout << buf[i] << " ";
+    }
+    std::cout << std::endl;
+}
+
+void twisterx::util::printLongArray(long *buf, int size) {
     for (int i = 0; i < size; ++i) {
         std::cout << buf[i] << " ";
     }
