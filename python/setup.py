@@ -21,6 +21,7 @@ extra_compile_args.append("-std=c++14")
 
 _include_dirs = ["../cpp/src/twisterx/lib",
                  "../cpp/src/twisterx/",
+                 "../cpp/src/twisterx/net",
                  "../cpp/src/twisterx/data",
                  "../cpp/src/twisterx/io",
                  "../cpp/src/twisterx/join",
@@ -59,6 +60,14 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
+              ),
+    Extension("pytwisterx.api.comms.channel",
+              sources=["twisterx/api/txrequest.pyx", "../cpp/src/twisterx/net/TxRequest.cpp"],
+              include_dirs=_include_dirs,
+              library_dirs=["/home/vibhatha/github/forks/twisterx/cpp/build/arrow/install/lib/"],
+              language='c++',
+              extra_compile_args=extra_compile_args,
+              extra_link_args=extra_link_args,
               )
 ]
 
@@ -81,7 +90,9 @@ setup(
               'twisterx.tablebuilder',
               'twisterx.common'],
     version='0.0.1',
-    setup_requires=["cython", "setuptools", "numpy"],
+    setup_requires=["cython",
+                    "setuptools",
+                    "numpy"],
     ext_modules=ext_modules,
     python_requires='>=3.7',
     install_requires=[
