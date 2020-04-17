@@ -18,8 +18,8 @@ int main(){
     cout << "Circle Area (Int) : " << circle.getArea() << endl;
 
 
-    twisterx::Status  s = twisterx::data::read_csv();
+    //twisterx::Status  s = twisterx::data::read_csv();
 
-    cout << s.get_code() << endl;
+    //cout << s.get_code() << endl;
     return 0;
 }

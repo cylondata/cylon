@@ -3,47 +3,67 @@
 
 namespace twisterx {
 
+/**
+ * The types are a strip down from arrow types
+ */
 struct Type {
   enum type {
-    BIGINT = 0,
-    BIT = 1,
-    DATEDAY = 2,
-    DATEMILLI = 3,
-    DECIMAL = 4,
-    DURATION = 5,
-    EXTENSIONTYPE = 38,
-    FIXED_SIZE_LIST = 6,
-    FIXEDSIZEBINARY = 7,
-    FLOAT4 = 8,
-    FLOAT8 = 9,
-    INT = 10,
-    INTERVALDAY = 11,
-    INTERVALYEAR = 12,
-    LIST = 13,
-    MAP = 14,
-    NULL_ = 15,
-    SMALLINT = 16,
-    STRUCT = 17,
-    TIMEMICRO = 18,
-    TIMEMILLI = 19,
-    TIMENANO = 20,
-    TIMESEC = 21,
-    TIMESTAMPMICRO = 22,
-    TIMESTAMPMICROTZ = 23,
-    TIMESTAMPMILLI = 24,
-    TIMESTAMPMILLITZ = 25,
-    TIMESTAMPNANO = 26,
-    TIMESTAMPNANOTZ = 27,
-    TIMESTAMPSEC = 28,
-    TIMESTAMPSECTZ = 29,
-    TINYINT = 30,
-    UINT1 = 31,
-    UINT2 = 32,
-    UINT4 = 33,
-    UINT8 = 34,
-    UNION = 35,
-    VARBINARY = 36,
-    VARCHAR = 37
+    /// Boolean as 1 bit, LSB bit-packed ordering
+    BOOL,
+    /// Unsigned 8-bit little-endian integer
+    UINT8,
+    /// Signed 8-bit little-endian integer
+    INT8,
+    /// Unsigned 16-bit little-endian integer
+    UINT16,
+    /// Signed 16-bit little-endian integer
+    INT16,
+    /// Unsigned 32-bit little-endian integer
+    UINT32,
+    /// Signed 32-bit little-endian integer
+    INT32,
+    /// Unsigned 64-bit little-endian integer
+    UINT64,
+    /// Signed 64-bit little-endian integer
+    INT64,
+    /// 2-byte floating point value
+    HALF_FLOAT,
+    /// 4-byte floating point value
+    FLOAT,
+    /// 8-byte floating point value
+    DOUBLE,
+    /// UTF8 variable-length string as List<Char>
+    STRING,
+    /// Variable-length bytes (no guarantee of UTF8-ness)
+    BINARY,
+    /// Fixed-size binary. Each value occupies the same number of bytes
+    FIXED_SIZE_BINARY,
+    /// int32_t days since the UNIX epoch
+    DATE32,
+    /// int64_t milliseconds since the UNIX epoch
+    DATE64,
+    /// Exact timestamp encoded with int64 since UNIX epoch
+    /// Default unit millisecond
+    TIMESTAMP,
+    /// Time as signed 32-bit integer, representing either seconds or
+    /// milliseconds since midnight
+    TIME32,
+    /// Time as signed 64-bit integer, representing either microseconds or
+    /// nanoseconds since midnight
+    TIME64,
+    /// YEAR_MONTH or DAY_TIME interval in SQL style
+    INTERVAL,
+    /// Precision- and scale-based decimal type. Storage type depends on the
+    /// parameters.
+    DECIMAL,
+    /// A list of some logical data type
+    LIST,
+    /// Custom data type, implemented by user
+    EXTENSION,
+    /// Fixed size list of some logical type
+    FIXED_SIZE_LIST,
+    /// or nanoseconds.
+    DURATION,
   };
 };
 
@@ -75,36 +95,20 @@ public:
    */
   Type::type getType() {
     return t;
-  }
+  };
 
   /**
    * Get the data layout
    * @return
    */
-  Layout::layout getLayout() {
+  Layout::layout getLayout(){
     return l;
-  }
+  };
 private:
   // the type
   Type::type t;
   // the layout
   Layout::layout l;
-};
-
-/**
- * The numeric data types
- */
-class NumericType : DataType {
-public:
-private:
-
-};
-
-/**
- * The list type
- */
-class ListType : DataType {
-
 };
 
 }

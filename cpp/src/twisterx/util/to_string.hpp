@@ -9,6 +9,9 @@ namespace util {
 template<typename TYPE>
 std::string do_to_string_numeric(const std::shared_ptr<arrow::Array> &array, int index) {
   auto casted_array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(array);
+  if (casted_array->IsNull(index)) {
+    return "";
+  }
   return std::to_string(casted_array->Value(index));
 }
 
