@@ -3,11 +3,12 @@
 #include <iterator>
 
 #include <glog/logging.h>
-
+#include "TxRequest.h"
 #include "all_to_all.hpp"
 #include "mpi_channel.hpp"
 
 namespace twisterx {
+
 AllToAll::AllToAll(int w_id, const std::vector<int>& srcs,
                    const std::vector<int>& tgts, int edge_id, ReceiveCallback * rcvCallback) {
   worker_id = w_id;

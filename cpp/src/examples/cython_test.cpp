@@ -6,6 +6,7 @@
 #include "data/table_builder.h"
 #include "status.cpp"
 
+
 using namespace std;
 
 int main(){
@@ -17,11 +18,8 @@ int main(){
     cout << "Circle Area (Int) : " << circle.getArea() << endl;
 
 
-    twisterx::Status  s = twisterx::data::read_csv("s", "s");
+    twisterx::Status  s = twisterx::data::read_csv();
 
     cout << s.get_code() << endl;
-
-
-
     return 0;
 }
