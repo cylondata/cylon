@@ -6,6 +6,7 @@
 #include <memory>
 #include <cstring>
 #include "iostream"
+#include "../util/builtins.h"
 
 twisterx::TxRequest::TxRequest(int tgt) {
     target = tgt;
@@ -29,15 +30,12 @@ twisterx::TxRequest::~TxRequest() {
     buffer = nullptr;
 }
 
-void twisterx::TxRequest::to_string() {
+void twisterx::TxRequest::to_string(string dataType, int bufDepth) {
     std::cout << "Target: " << target << std::endl;
     std::cout << "Length: " << length << std::endl;
     std::cout << "Header Length: " << headerLength << std::endl;
     std::cout << "Buffer: " << std::endl;
-    for (int i = 0; i < length; ++i) {
-        std::cout << ((int32_t *)buffer)[i] << " ";
-    }
-    std::cout << std::endl;
+    twisterx::util::printArray(buffer, length, dataType, bufDepth);
     std::cout << "Header: " << std::endl;
     for (int i = 0; i < headerLength; ++i) {
         std::cout << header[i] << " ";

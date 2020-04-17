@@ -5,6 +5,9 @@
 #ifndef TWISTERX_TXREQUEST_H
 #define TWISTERX_TXREQUEST_H
 
+#include "iostream"
+using namespace std;
+
 namespace twisterx {
     class TxRequest {
 
@@ -23,7 +26,7 @@ namespace twisterx {
 
         ~TxRequest();
 
-        void to_string();
+        void to_string(string dataType, int bufDepth);
     };
 }
 
