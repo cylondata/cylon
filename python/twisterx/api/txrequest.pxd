@@ -12,7 +12,7 @@ cdef extern from "../../../cpp/src/twisterx/net/TxRequest.h" namespace "twisterx
         _TxRequest(int)
         _TxRequest(int, void *, int)
         _TxRequest(int, void *, int, int *, int)
-        void to_string()
+        void to_string(string, int)
 
 
 

@@ -1,3 +1,4 @@
+from libcpp.string cimport string
 import numpy as np
 cimport numpy as np
 from twisterx.api.txrequest cimport _TxRequest
@@ -113,5 +114,5 @@ cdef class TxRequest:
     def headerLength(self):
         return self.thisptr.headerLength
 
-    def to_string(self):
-        self.thisptr.to_string()
+    def to_string(self, data_type, depth):
+        self.thisptr.to_string(data_type, depth)

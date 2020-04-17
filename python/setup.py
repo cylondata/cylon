@@ -62,7 +62,7 @@ ext_modules = [
               extra_link_args=extra_link_args,
               ),
     Extension("pytwisterx.api.comms.channel",
-              sources=["twisterx/api/txrequest.pyx", "../cpp/src/twisterx/net/TxRequest.cpp"],
+              sources=["twisterx/api/txrequest.pyx", "../cpp/src/twisterx/net/TxRequest.cpp", "../cpp/src/twisterx/util/builtins.cpp"],
               include_dirs=_include_dirs,
               library_dirs=["/home/vibhatha/github/forks/twisterx/cpp/build/arrow/install/lib/"],
               language='c++',

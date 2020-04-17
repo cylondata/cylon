@@ -7,4 +7,4 @@ print(tx.target, tx.buf, tx.header, tx.headerLength, tx.length)
 
 print(type(tx.buf), type(tx.header))
 
-print(tx.to_string())
+print(tx.to_string(b'int', 32))
