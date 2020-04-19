@@ -8,7 +8,7 @@
 #include "io/csv_read_config.h"
 
 #include "status.hpp"
-#include "util/uuid.h"
+#include "util/uuid.hpp"
 #include "column.hpp"
 #include "join/join_config.h"
 #include "arrow/arrow_join.hpp"
