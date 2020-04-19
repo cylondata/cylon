@@ -1,7 +1,3 @@
-//
-// Created by vibhatha on 4/17/20.
-//
-
 #ifndef TWISTERX_BUILTINS_H
 #define TWISTERX_BUILTINS_H
 

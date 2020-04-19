@@ -1,63 +1,7 @@
-//
-// Created by vibhatha on 4/17/20.
-//
-
 #include "builtins.h"
 #include "iostream"
 
 using namespace std;
-
-//template<int depth>
-//struct IntDataType;
-//
-//// Define Types
-//template<>
-//struct IntDataType<8> {
-//    typedef int8_t type;
-//};
-//template<>
-//struct IntDataType<16> {
-//    typedef int16_t type;
-//};
-//template<>
-//struct IntDataType<32> {
-//    typedef int32_t type;
-//};
-//template<>
-//struct IntDataType<64> {
-//    typedef int64_t type;
-//};
-//
-//
-//template<int depth>
-//typename IntDataType<depth>::type *getIntPointer(void *ptr);
-//
-//// sub specializations
-//template<>
-//int8_t *getIntPointer<8>(void *ptr) { return (int8_t *) ptr; }
-//
-//template<>
-//int16_t *getIntPointer<16>(void *ptr) { return (int16_t *) ptr; }
-//
-//template<>
-//int32_t *getIntPointer<32>(void *ptr) { return (int32_t *) ptr; }
-//
-//template<>
-//int64_t *getIntPointer<64>(void *ptr) { return (int64_t *) ptr; }
-//
-//// float
-//struct FloatDataType;
-//
-//// Define Types
-//struct FloatDataType {
-//    typedef float type;
-//};
-//
-//
-//typename FloatDataType::type *getFloatPointer(void *ptr);
-//
-//// sub specializations
-//float *getFloatPointer(void *ptr) { return (float *) ptr; }
 
 
 void twisterx::util::printArray(void *buf, int size, string dataType, int depth) {
