@@ -3,7 +3,7 @@
 #include <memory>
 #include "table.hpp"
 #include "table_api.hpp"
-#include "util/uuid.h"
+#include "util/uuid.hpp"
 #include "arrow/arrow_types.hpp"
 
 namespace twisterx {
