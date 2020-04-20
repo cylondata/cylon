@@ -4,6 +4,7 @@
 #include <arrow/api.h>
 #include <arrow/compute/kernel.h>
 #include <glog/logging.h>
+#include "../status.hpp"
 
 namespace twisterx {
 
@@ -103,7 +104,7 @@ using HalfFloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::HalfFloatType
 using FloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::FloatType>;
 using DoubleArraySplitter = ArrowArrayNumericSplitKernel<arrow::DoubleType>;
 
-arrow::Status CreateSplitter(std::shared_ptr<arrow::DataType>& type,
+twisterx::Status CreateSplitter(std::shared_ptr<arrow::DataType>& type,
                    arrow::MemoryPool* pool,
                    std::unique_ptr<ArrowArraySplitKernel>* out);
 

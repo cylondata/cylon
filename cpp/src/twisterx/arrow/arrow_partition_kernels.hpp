@@ -7,13 +7,14 @@
 #include <glog/logging.h>
 
 #include "../util/murmur3.hpp"
+#include "../status.hpp"
 
 namespace twisterx {
 
 class ArrowPartitionKernel {
-public:
+ public:
   explicit ArrowPartitionKernel(
-    arrow::MemoryPool* pool) : pool_(pool) {}
+      arrow::MemoryPool *pool) : pool_(pool) {}
 
   /**
    * We partition the table and return the indexes as an array
@@ -22,26 +23,47 @@ public:
    * @param out
    * @return
    */
-  virtual int Partition(const std::shared_ptr <arrow::Array> &values, const std::vector<int> &targets,
+  virtual int Partition(const std::shared_ptr<arrow::Array> &values, const std::vector<int> &targets,
                         std::vector<int64_t> *partitions) = 0;
-protected:
-  arrow::MemoryPool* pool_;
+
+  virtual uint32_t ToHash(const std::shared_ptr<arrow::Array> &values,
+                          int16_t index) = 0;
+ protected:
+  arrow::MemoryPool *pool_;
 };
 
-template <typename TYPE>
+template<typename TYPE>
 class NumericHashPartitionKernel : public ArrowPartitionKernel {
-public:
-  explicit NumericHashPartitionKernel(arrow::MemoryPool* pool) : ArrowPartitionKernel(pool) {}
+ public:
+  explicit NumericHashPartitionKernel(arrow::MemoryPool *pool) : ArrowPartitionKernel(pool) {}
 
-  int Partition(const std::shared_ptr <arrow::Array> &values, const std::vector<int> &targets,
+  uint32_t ToHash(const std::shared_ptr<arrow::Array> &values,
+                  int16_t index) {
+    auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
+    auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
+    int bitWidth = type->bit_width();
+    if (values->IsNull(index)) {
+      return 0;
+    } else {
+      auto lValue = reader->Value(index);
+      uint32_t hash = 0;
+      uint32_t seed = 0;
+      void *val = (void *) &(lValue);
+      // do the hash as we know the bit width
+      twisterx::util::MurmurHash3_x86_32(val, bitWidth, seed, &hash);
+      return hash;
+    }
+
+  }
+
+  int Partition(const std::shared_ptr<arrow::Array> &values, const std::vector<int> &targets,
                 std::vector<int64_t> *partitions) override {
     auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
-    std::shared_ptr<arrow::Buffer> indices_buf;
     int bitWidth = type->bit_width();
     for (int64_t i = 0; i < reader->length(); i++) {
       auto lValue = reader->Value(i);
-      void *val = (void *)&(lValue);
+      void *val = (void *) &(lValue);
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
@@ -66,10 +88,16 @@ using HalfFloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::HalfFloa
 using FloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::FloatType>;
 using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType>;
 
-arrow::Status HashPartitionArray(arrow::MemoryPool *pool,
+twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
                                  std::shared_ptr<arrow::Array> values,
                                  const std::vector<int> &targets,
                                  std::vector<int64_t> *outPartitions);
+
+twisterx::Status HashPartitionArrays(arrow::MemoryPool *pool,
+                                  std::vector<std::shared_ptr<arrow::Array>> values,
+                                  int64_t length,
+                                  const std::vector<int> &targets,
+                                  std::vector<int64_t> *outPartitions);
 
 }
 
