@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include <glog/logging.h>
 #include "io/csv_read_config.h"
@@ -26,7 +27,7 @@ class Table {
    * Tables can only be created using the factory methods, so the constructor is private
    */
   Table(std::string id) {
-    id_ = id;
+    id_ = std::move(id);
   }
 
   /**
