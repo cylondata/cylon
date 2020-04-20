@@ -11,18 +11,41 @@ cdef extern from "../../../cpp/src/twisterx/table.hpp" namespace "twisterx":
         _Table()
         _Table(string)
         string get_id()
+        int columns()
+        int rows()
+        void show()
+
+
 
 
 cdef extern from "../../../cpp/src/twisterx/table.hpp" namespace "twisterx::Table":
-    #cdef cppclass _Table "twisterx::Table":
-    cdef extern int columns()
-    cdef extern int rows()
-    cdef extern void clear()
-    cdef extern void tb_print()
     cdef extern _Status from_csv(const string, const char, const string)
 
 
-cdef class PyTable:
+cdef class Table:
+    cdef _Table *thisPtr
+    def __cinit__(self, string id):
+        self.thisPtr = new _Table(id)
+        #self.tablePtr = make_unique[_Table]()
+
+    @property
+    def id(self) -> str:
+        return self.thisPtr.get_id().decode()
+
+    @property
+    def columns(self) -> str:
+        return self.thisPtr.columns()
+
+    @property
+    def rows(self) -> str:
+        return self.thisPtr.rows()
+
+    def show(self):
+        self.thisPtr.show()
+
+
+
+cdef class TableUtil:
     cdef _Table *thisPtr
     cdef unique_ptr[_Table] tablePtr
 
@@ -43,17 +66,12 @@ cdef class PyTable:
 
 
     @staticmethod
-    def read_csv(path: str, delimiter: str):
+    def read_csv(path: str, delimiter: str) -> str:
         cdef string spath = path.encode()
         cdef string sdelm = delimiter.encode()
         id = uuid.uuid4()
-        id_buf = id.__str__().encode()
+        id_str = id.__str__()
+        id_buf = id_str.encode()
         from_csv(spath, sdelm[0], id_buf)
+        return id_str
 
-    @staticmethod
-    def columns() -> int:
-        return 1;
-
-    @staticmethod
-    def rows() -> int:
-        return 1;
