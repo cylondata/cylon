@@ -8,7 +8,6 @@
 #include "io/csv_read_config.h"
 
 #include "status.cpp"
-#include "util/uuid.h"
 #include "column.hpp"
 #include "join/join_config.h"
 #include "arrow/arrow_join.hpp"
@@ -25,9 +24,10 @@ class Table {
   /**
    * Tables can only be created using the factory methods, so the constructor is private
    */
-  Table(std::string id) {
-    id_ = id;
-  }
+  Table(std::string id);
+
+  Table();
+
 
   /**
    * Create a table by reading a csv file
@@ -37,6 +37,9 @@ class Table {
   static Status FromCSV(const std::string &path,
                         std::unique_ptr<Table> *tableOut,
                         twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+
+
+  static Status from_csv(const std::string &path, const char &delimiter, const std::string &uuid);
 
   /**
    * Create a table from set of columns
@@ -108,9 +111,9 @@ class Table {
 
   void clear();
 
-  void print();
+  void show();
 
-  void print(int row1, int row2, int col1, int col2);
+  void show(int row1, int row2, int col1, int col2);
 
   std::string get_id() {
     return this->id_;

@@ -10,6 +10,7 @@
 #include "../io/arrow_io.hpp"
 #include <arrow/io/api.h>
 #include <fstream>
+#include "../table.hpp"
 
 
 using namespace std;
@@ -56,31 +57,13 @@ twisterx::Status twisterx::data::read_csv() {
         indices_begin[i] = i;
     }
 
-    //arrow::io::MemoryMappedFile::Open("/tmp/csv.csv", arrow::io::FileMode::READ);
-//    string line;
-//    ifstream myfile ("/tmp/csv.csv");
-//    if (myfile.is_open())
-//    {
-//        while ( getline (myfile,line) )
-//        {
-//            cout << line << '\n';
-//        }
-//        myfile.close();
-//    }
+    arrow::io::MemoryMappedFile::Open("/tmp/csv.csv", arrow::io::FileMode::READ);
 
+    return twisterx::Status::OK();
+}
 
-//    if (!mmap_result.status().ok()) {
-//        mmap_result.status();
-//    }
-
-    //arrow::Result<std::shared_ptr<arrow::Table>> result =
-    //arrow::Status st;
-    //twisterx::io::read_csv(path);
-//    if (result.ok()) {
-//        std::shared_ptr<arrow::Table> table = *result;
-//        put_table(id, table);
-//        return twisterx::Status(Code::OK, result.status().message());
-//    }
-//    twisterx::Status s =  twisterx::Status(Code::IOError, result.status().message());;
+twisterx::Status twisterx::data::from_csv(const string &path, const char &delimiter) {
+    std::unique_ptr<twisterx::Table> table1;
+    //twisterx::Table::from_csv(path, delimiter);
     return twisterx::Status::OK();
 }

@@ -13,6 +13,7 @@
 #include "../io/arrow_io.hpp"
 
 
+
 using namespace std;
 
 namespace twisterx {
@@ -25,6 +26,8 @@ namespace twisterx {
         int get_columns();
 
         string get_id();
+
+        twisterx::Status from_csv(const string &path, const char &delimiter);
 
     }
 }
