@@ -3,6 +3,8 @@ from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.string cimport string
 from twisterx.common.code cimport _Code
 from twisterx.common.status cimport _Status
+from pytwisterx.common.status import Status
+from pytwisterx.common.code import Code
 import cython
 
 
