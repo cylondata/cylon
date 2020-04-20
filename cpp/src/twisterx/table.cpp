@@ -9,12 +9,12 @@
 namespace twisterx {
 
 Status Table::FromCSV(const std::string &path,
-                      std::unique_ptr<Table> *tableOut,
+                      std::shared_ptr<Table> *tableOut,
                       twisterx::io::config::CSVReadOptions options) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::read_csv(path, uuid, options);
   if (status.is_ok()) {
-    *tableOut = std::make_unique<Table>(Table(uuid));
+    *tableOut = std::make_shared<Table>(Table(uuid));
   }
   return status;
 }
@@ -82,7 +82,7 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
   std::vector<std::shared_ptr<arrow::Table>> tables;
   Status status = hashPartition(id_, hash_columns, no_of_partitions, &tables, arrow::default_memory_pool());
   if (!status.is_ok()) {
-    LOG(FATAL) << "Failed to partition";
+    LOG(FATAL) << "Failed to partition : " << status.get_msg();
     return status;
   }
 
@@ -95,9 +95,9 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
   return Status::OK();
 }
 
-Status Table::Join(const std::unique_ptr<Table> &right,
+Status Table::Join(const std::shared_ptr<Table> &right,
                    twisterx::join::config::JoinConfig join_config,
-                   std::unique_ptr<Table> *out) {
+                   std::shared_ptr<Table> *out) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::JoinTables(
       this->get_id(),
@@ -106,7 +106,7 @@ Status Table::Join(const std::unique_ptr<Table> &right,
       uuid
   );
   if (status.is_ok()) {
-    *out = std::make_unique<Table>(Table(uuid));
+    *out = std::make_shared<Table>(Table(uuid));
   }
   return status;
 }

@@ -36,7 +36,7 @@ class Table {
    * @return a pointer to the table
    */
   static Status FromCSV(const std::string &path,
-                        std::unique_ptr<Table> *tableOut,
+                        std::shared_ptr<Table> *tableOut,
                         twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
 
   /**
@@ -91,9 +91,9 @@ class Table {
    * @param out the final table
    * @return success
    */
-  Status Join(const std::unique_ptr<Table> &right,
+  Status Join(const std::shared_ptr<Table> &right,
               twisterx::join::config::JoinConfig join_config,
-              std::unique_ptr<Table> *out);
+              std::shared_ptr<Table> *out);
 
   /**
    * Create a arrow table from this data structure

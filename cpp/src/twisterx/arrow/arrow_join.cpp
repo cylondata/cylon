@@ -81,8 +81,8 @@ bool ArrowJoinWithPartition::isComplete() {
     std::vector<int64_t> outPartitions;
     std::shared_ptr<arrow::Array> array = column->chunk(0);
     // first we partition the table
-    arrow::Status status = HashPartitionArray(pool_, array, targets_, &outPartitions);
-    if (status != arrow::Status::OK()) {
+    twisterx::Status status = HashPartitionArray(pool_, array, targets_, &outPartitions);
+    if (!status.is_ok()) {
       LOG(FATAL) << "Failed to create the hash partition";
       return true;
     }
@@ -91,7 +91,7 @@ bool ArrowJoinWithPartition::isComplete() {
       std::shared_ptr<arrow::DataType> type = array->type();
       std::unique_ptr<ArrowArraySplitKernel> splitKernel;
       status = CreateSplitter(type, pool_, &splitKernel);
-      if (status != arrow::Status::OK()) {
+      if (!status.is_ok()) {
         LOG(FATAL) << "Failed to create the splitter";
         return true;
       }
@@ -127,8 +127,8 @@ bool ArrowJoinWithPartition::isComplete() {
     std::vector<int64_t> outPartitions;
     std::shared_ptr<arrow::Array> array = column->chunk(0);
     // first we partition the table
-    arrow::Status status = HashPartitionArray(pool_, array, targets_, &outPartitions);
-    if (status != arrow::Status::OK()) {
+    twisterx::Status status = HashPartitionArray(pool_, array, targets_, &outPartitions);
+    if (!status.is_ok()) {
       LOG(FATAL) << "Failed to create the hash partition";
       return true;
     }
@@ -137,7 +137,7 @@ bool ArrowJoinWithPartition::isComplete() {
       std::shared_ptr<arrow::DataType> type = array->type();
       std::unique_ptr<ArrowArraySplitKernel> splitKernel;
       status = CreateSplitter(type, pool_, &splitKernel);
-      if (status != arrow::Status::OK()) {
+      if (!status.is_ok()) {
         LOG(FATAL) << "Failed to create the splitter";
         return true;
       }

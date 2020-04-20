@@ -33,9 +33,9 @@ ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
 }
 
 twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
-                                 std::shared_ptr<arrow::Array> values,
-                                 const std::vector<int> &targets,
-                                 std::vector<int64_t> *outPartitions) {
+                                    std::shared_ptr<arrow::Array> values,
+                                    const std::vector<int> &targets,
+                                    std::vector<int64_t> *outPartitions) {
   ArrowPartitionKernel *kernel = GetPartitionKernel(pool, values);
   kernel->Partition(values, targets, outPartitions);
   return twisterx::Status::OK();
@@ -58,8 +58,9 @@ twisterx::Status HashPartitionArrays(arrow::MemoryPool *pool,
 
   for (int64_t index = 0; index < length; index++) {
     int64_t hash_code = 1;
+    int64_t array_index = 0;
     for (const auto &array: values) {
-      hash_code = 31 * hash_code + hash_kernels[index]->ToHash(array, index);
+      hash_code = 31 * hash_code + hash_kernels[array_index++]->ToHash(array, index);
     }
     outPartitions->push_back(targets[hash_code % targets.size()]);
   }
