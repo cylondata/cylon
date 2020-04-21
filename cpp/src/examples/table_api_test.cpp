@@ -1,5 +1,5 @@
 #include <table.hpp>
-#include <status.cpp>
+#include <status.hpp>
 #include <iostream>
 #include <io/csv_read_config.h>
 
@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
 
 
 
-  std::unique_ptr<twisterx::Table> table1, table2, joined;
+  std::shared_ptr<twisterx::Table> table1, table2, joined;
   auto status1 = twisterx::Table::FromCSV("/tmp/csv.csv", &table1,
                                           twisterx::io::config::CSVReadOptions().WithDelimiter(','));
   auto status2 = twisterx::Table::FromCSV("/tmp/csv.csv", &table2);

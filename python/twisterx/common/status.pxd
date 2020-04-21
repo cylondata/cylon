@@ -2,7 +2,7 @@ from libcpp.string cimport string
 from libcpp cimport bool
 from twisterx.common.code cimport _Code
 
-cdef extern from "../../../cpp/src/twisterx/status.cpp" namespace "twisterx":
+cdef extern from "../../../cpp/src/twisterx/status.hpp" namespace "twisterx":
     cdef cppclass _Status "twisterx::Status":
         _Status()
         _Status(int, string)

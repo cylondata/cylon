@@ -3,8 +3,8 @@
 //
 #include "lib/Circle.h"
 #include "iostream"
-#include "data/table_builder.h"
-#include "status.cpp"
+#include "data/table_builder.hpp"
+#include "status.hpp"
 
 
 using namespace std;

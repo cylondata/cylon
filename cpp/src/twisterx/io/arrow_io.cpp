@@ -2,8 +2,8 @@
 #include <arrow/io/api.h>
 #include <arrow/csv/api.h>
 
-#include <utility>
 #include "arrow_io.hpp"
+#include "csv_read_config_holder.hpp"
 
 namespace twisterx {
 namespace io {
@@ -17,9 +17,9 @@ arrow::Result<std::shared_ptr<arrow::Table>> read_csv(const std::string &path,
     return mmap_result.status();
   }
 
-  auto read_options = dynamic_cast<arrow::csv::ReadOptions *>(&options);
-  auto parse_options = dynamic_cast<arrow::csv::ParseOptions *>(&options);
-  auto convert_options = dynamic_cast<arrow::csv::ConvertOptions *>(&options);
+  auto read_options = dynamic_cast<arrow::csv::ReadOptions *>(config::CSVConfigHolder::GetCastedHolder(options));
+  auto parse_options = dynamic_cast<arrow::csv::ParseOptions *>(config::CSVConfigHolder::GetCastedHolder(options));
+  auto convert_options = dynamic_cast<arrow::csv::ConvertOptions *>(config::CSVConfigHolder::GetCastedHolder(options));
 
   // Instantiate TableReader from input stream and options
   std::shared_ptr<arrow::csv::TableReader> reader;

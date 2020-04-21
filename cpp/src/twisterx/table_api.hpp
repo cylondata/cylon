@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "status.cpp"
+#include "status.hpp"
 #include "join/join_config.h"
 #include "io/csv_read_config.h"
 #include <arrow/api.h>

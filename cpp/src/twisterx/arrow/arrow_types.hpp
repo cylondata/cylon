@@ -14,7 +14,7 @@ namespace tarrow {
  * @param tType the twisterx type
  * @return corresponding arrow type
  */
-std::shared_ptr<arrow::DataType> convertToArrowType(DataType tType);
+std::shared_ptr<arrow::DataType> convertToArrowType(std::shared_ptr<DataType> tType);
 
 /**
  * Validate the types of an arrow table

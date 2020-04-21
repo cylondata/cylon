@@ -11,12 +11,7 @@ from pytwisterx.common.status import Status
 print(tablebuilder.id(), tablebuilder.rows(), tablebuilder.columns())
 print("Print Tables")
 
-path =b'/tmp/csv.csv'
-id = b'id'
 
-s: Status = tablebuilder.csv(b"s", b"s")
-print("Status got from reading")
-print(s.get_code())
 
 # _ZN8twisterx2io8read_csvERKSs
 

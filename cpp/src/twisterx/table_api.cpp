@@ -39,10 +39,6 @@ namespace twisterx {
         return twisterx::Status(Code::IOError, result.status().message());;
     }
 
-    twisterx::Status from_csv(const std::string &path, const std::string &id, const char delimiter) {
-        read_csv(path, id, twisterx::io::config::CSVReadOptions().WithDelimiter(delimiter));
-    }
-
     twisterx::Status print(const std::string &table_id, int col1, int col2, int row1, int row2) {
         return print_to_ostream(table_id, col1, col2, row1, row2, std::cout);
     }
@@ -179,30 +175,44 @@ namespace twisterx {
                             t, std::make_shared<std::vector<std::shared_ptr<arrow::Array>>>()));
         }
 
-        auto column = left_tab->column(hash_columns.at(0));
-        std::vector<int64_t> outPartitions;
-        std::shared_ptr<arrow::Array> array = column->chunk(0);
+        std::vector<std::shared_ptr<arrow::Array>> arrays;
+        int64_t length = 0;
+        for (auto col_index: hash_columns) {
+            auto column = left_tab->column(col_index);
+            std::vector<int64_t> outPartitions;
+            std::shared_ptr<arrow::Array> array = column->chunk(0);
+            arrays.push_back(array);
+
+            if (!(length == 0 || length == column->length())) {
+                return twisterx::Status(twisterx::IndexError, "Column lengths doesnt match " + std::to_string(length));
+            }
+            length = column->length();
+        }
+
         // first we partition the table
-        arrow::Status status = HashPartitionArray(pool, array, partitions, &outPartitions);
-        if (status != arrow::Status::OK()) {
+        std::vector<int64_t> outPartitions;
+        twisterx::Status status = HashPartitionArrays(pool, arrays, length, partitions, &outPartitions);
+        if (!status.is_ok()) {
             LOG(FATAL) << "Failed to create the hash partition";
-            return twisterx::Status((int) status.code(), status.message());
+            return status;
         }
 
         for (int i = 0; i < left_tab->num_columns(); i++) {
-            std::shared_ptr<arrow::DataType> type = array->type();
+            std::shared_ptr<arrow::DataType> type = left_tab->column(i)->chunk(0)->type();
+            std::shared_ptr<arrow::Array> array = left_tab->column(i)->chunk(0);
+
             std::unique_ptr<ArrowArraySplitKernel> splitKernel;
             status = CreateSplitter(type, pool, &splitKernel);
-            if (status != arrow::Status::OK()) {
+            if (!status.is_ok()) {
                 LOG(FATAL) << "Failed to create the splitter";
-                return twisterx::Status((int) status.code(), status.message());
+                return status;
             }
 
             // this one outputs arrays for each target as a map
-            std::unordered_map<int, std::shared_ptr<arrow::Array>> arrays;
-            splitKernel->Split(array, outPartitions, partitions, arrays);
+            std::unordered_map<int, std::shared_ptr<arrow::Array>> splited_arrays;
+            splitKernel->Split(array, outPartitions, partitions, splited_arrays);
 
-            for (const auto &x : arrays) {
+            for (const auto &x : splited_arrays) {
                 std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];
                 cols->push_back(x.second);
             }
@@ -213,6 +223,10 @@ namespace twisterx {
             out->push_back(table);
         }
         return twisterx::Status::OK();
+    }
+    //TODO: Move to python dir within cpp
+    twisterx::Status from_csv(const std::string &path, const std::string &id, const char delimiter) {
+        read_csv(path, id, twisterx::io::config::CSVReadOptions().WithDelimiter(delimiter));
     }
 
 }
