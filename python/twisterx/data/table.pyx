@@ -14,6 +14,7 @@ cdef extern from "../../../cpp/src/twisterx/table.hpp" namespace "twisterx":
         int columns()
         int rows()
         void show()
+        void show(int, int, int, int)
 
 
 
@@ -43,27 +44,12 @@ cdef class Table:
     def show(self):
         self.thisPtr.show()
 
-
+    def show_by_range(self, row1:int, row2:int, col1: int, col2: int):
+        self.thisPtr.show(row1, row2, col1, col2)
 
 cdef class TableUtil:
     cdef _Table *thisPtr
     cdef unique_ptr[_Table] tablePtr
-
-    # def __cinit__(self):
-    #     id = uuid.uuid4()
-    #     id = id.__str__().encode()
-    #     self.thisPtr = new _Table(id)
-    #     #self.tablePtr = make_unique[_Table]()
-    #
-    # def __init__(self):
-    #     pass
-
-    # def get_table_ptr(self, id: uuid.UUID):
-    #     self.thisPtr = new _Table(id.__str__().encode())
-    #     self.tablePtr.reset(self.thisPtr)
-        #val = deref(self.thisptr)
-        #print(val)
-
 
     @staticmethod
     def read_csv(path: str, delimiter: str) -> str:
