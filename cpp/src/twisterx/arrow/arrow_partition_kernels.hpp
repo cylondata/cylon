@@ -47,12 +47,12 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
     } else {
       CTYPE lValue = reader->Value(index);
 
-//      uint32_t hash = 0;
-//      uint32_t seed = 0;
-//      void *val = (void *) &(lValue);
-//      // do the hash as we know the bit width
-//      twisterx::util::MurmurHash3_x86_32(val, bitWidth, seed, &hash);
-      return std::hash<CTYPE>{}(lValue);
+      uint32_t hash = 0;
+      uint32_t seed = 0;
+      void *val = (void *) &(lValue);
+      // do the hash as we know the bit width
+      twisterx::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
+      return hash;
     }
 
   }
@@ -65,11 +65,10 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
     for (int64_t i = 0; i < reader->length(); i++) {
       auto lValue = reader->Value(i);
       void *val = (void *) &(lValue);
-      uint32_t hash = std::hash<CTYPE>{}(lValue);;
-//      uint32_t seed = 0;
-//      // do the hash as we know the bit width
-//      twisterx::util::MurmurHash3_x86_32(val, bitWidth, seed, &hash);
-      // this is the hash
+      uint32_t hash = 0;
+      uint32_t seed = 0;
+      // do the hash as we know the bit width
+      twisterx::util::MurmurHash3_x86_32(val, bitWidth/8, seed, &hash);
       partitions->push_back(targets.at(hash % targets.size()));
     }
     // now build the
