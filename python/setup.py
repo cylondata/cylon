@@ -5,12 +5,9 @@ https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
 '''
 
 import os
-from distutils.sysconfig import get_python_lib
-from setuptools import setup, find_packages, find_namespace_packages, Extension
-from Cython.Build import cythonize
 
-import numpy as np
-import pyarrow as pa
+from Cython.Build import cythonize
+from setuptools import setup, Extension
 
 extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
@@ -79,15 +76,6 @@ ext_modules = [
               libraries=["arrow", "twisterx", "glog"],
               library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
               ),
-    Extension("pytwisterx.tablebuilder",
-              sources=["twisterx/tablebuilder/table_builder.pyx"],
-              include_dirs=_include_dirs,
-              language='c++',
-              extra_compile_args=extra_compile_args,
-              extra_link_args=extra_link_args,
-              libraries=["arrow", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
-              ),
     # Extension("pytwisterx.io.csv",
     #           sources=["twisterx/io/csv_read_config.pyx", "../cpp/src/twisterx/io/csv_read_config.cpp"],
     #           include_dirs=_include_dirs,
@@ -115,7 +103,6 @@ setup(
     name="pytwisterx",
     packages=['twisterx',
               'twisterx.geometry',
-              'twisterx.tablebuilder',
               'twisterx.common',
               'twisterx.api',
               'twisterx.io',
@@ -133,6 +120,3 @@ setup(
     ],
     zip_safe=False,
 )
-print(extra_compile_args)
-print(extra_link_args)
-# print(find_namespace_packages())
