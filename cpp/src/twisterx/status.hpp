@@ -15,6 +15,11 @@ class Status {
   std::string msg;
 
  public:
+
+  Status() {
+
+  }
+
   Status(int code, const std::string &msg) {
     this->code = code;
     this->msg = msg;

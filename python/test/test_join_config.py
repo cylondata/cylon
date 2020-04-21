@@ -1,16 +1,16 @@
-from pytwisterx.common.join.config import Algorithm
-from pytwisterx.common.join.config import JoinConfig
+from pytwisterx.common.join.config import JoinAlgorithm
+from pytwisterx.common.join.config import JoinType
 
-# print(Algorithm.SORT)
-# print(Algorithm.HASH)
-# print(JoinConfig.INNER)
-# print(JoinConfig.OUTER)
-# print(JoinConfig.LEFT)
-# print(JoinConfig.RIGHT)
+#print(JoinAlgorithm.SORT)
+# print(JoinAlgorithm.HASH)
+# print(JoinType.INNER)
+# print(JoinType.OUTER)
+# print(JoinType.LEFT)
+# print(JoinType.RIGHT)
 
-c = JoinConfig.LEFT
-a = Algorithm.HASH
+c = JoinType.LEFT
+a = JoinAlgorithm.HASH
 
-assert (c == JoinConfig.LEFT)
-assert (a != Algorithm.SORT)
-assert (a == Algorithm.HASH)
+assert (c == JoinType.LEFT)
+assert (a != JoinAlgorithm.SORT)
+assert (a == JoinAlgorithm.HASH)

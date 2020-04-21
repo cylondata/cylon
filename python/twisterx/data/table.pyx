@@ -16,6 +16,8 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
         int rows()
         void show()
         void show(int, int, int, int)
+        _Status to_csv(const string)
+        string join(const string)
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CTable":
     cdef extern _Status from_csv(const string, const char, const string)
@@ -25,7 +27,7 @@ cdef class Table:
     cdef CTable *thisPtr
     def __cinit__(self, string id):
         self.thisPtr = new CTable(id)
-        #self.tablePtr = make_unique[_Table]()
+        #self.tablePtr = make_unique[CTable]()
 
     @property
     def id(self) -> str:
@@ -44,6 +46,18 @@ cdef class Table:
 
     def show_by_range(self, row1:int, row2:int, col1: int, col2: int):
         self.thisPtr.show(row1, row2, col1, col2)
+
+    def to_csv(self, path: str) -> Status:
+        cdef _Status status = self.thisPtr.to_csv(path.encode())
+        s = Status(status.get_code(), b"", -1)
+        return s
+
+    def join(self, table: Table, join_type:str, algorithm:str, left_col:int, right_col: int) -> Table:
+        cdef string table_out_id = self.thisPtr.join(table.id.encode())
+        if table_out_id.size() == 0:
+            raise Exception("Join Failed !!!")
+        return Table(table_out_id)
+
 
 cdef class csv:
     #cdef _Table *thisPtr

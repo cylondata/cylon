@@ -32,6 +32,12 @@ class CTable {
 
   static Status from_csv(const std::string &path, const char &delimiter, const std::string &uuid);
 
+  Status to_csv(const std::string &path);
+
+  std::string join(const std::string &table_id);
+
+  //unique_ptr<CTable> sort(int sort_column);
+
 };
 }
 }

@@ -15,6 +15,21 @@ tb.show()
 print('Table By Range')
 tb.show_by_range(0,2,0,2)
 
+print("Write an already Loaded Table")
+
+new_path: str = '/tmp/csv1.csv'
+tb.to_csv(new_path)
+
+tb2: Table = csv.read(new_path, ',')
+tb2.show()
+
+
+tb3: Table = tb2.join(table=tb, join_type='left', algorithm='hash', left_col=0, right_col=1)
+
+tb3.show()
+
+
+
 
 
 
