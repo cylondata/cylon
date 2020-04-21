@@ -102,7 +102,6 @@ ext_modules = cythonize(ext_modules, compiler_directives=compiler_directives, gd
 setup(
     name="pytwisterx",
     packages=['twisterx',
-              'twisterx.geometry',
               'twisterx.common',
               'twisterx.api',
               'twisterx.io',

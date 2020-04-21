@@ -11,7 +11,6 @@ tx_add_exe(arrow_test)
 tx_add_exe(join_test)
 tx_add_exe(table_api_test)
 tx_add_exe(hash_partition)
-tx_add_exe(cython_test)
 tx_add_exe(test_util)
 
 include_directories(${MPI_INCLUDE_PATH})
@@ -42,10 +41,6 @@ target_link_libraries(hash_partition ${MPI_LIBRARIES})
 target_link_libraries(hash_partition twisterx)
 target_link_libraries(hash_partition ${ARROW_LIB})
 target_link_libraries(hash_partition glog::glog)
-
-target_link_libraries(cython_test twisterx)
-target_link_libraries(cython_test ${ARROW_LIB})
-target_link_libraries(cython_test glog::glog)
 
 target_link_libraries(test_util twisterx)
 target_link_libraries(test_util ${ARROW_LIB})
