@@ -13,7 +13,7 @@ namespace twisterx {
 
 class Column {
  public:
-  Column(std::string  id, std::shared_ptr<DataType> type) : id(std::move(id)), type(std::move(type)) {
+  Column(std::string id, std::shared_ptr<DataType> type) : id(std::move(id)), type(std::move(type)) {
   }
 
   /**
@@ -31,7 +31,7 @@ class Column {
     return this->id;
   }
 
-private:
+ private:
   /**
    * The id of the column
    */

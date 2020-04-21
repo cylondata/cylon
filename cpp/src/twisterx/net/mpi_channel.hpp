@@ -45,7 +45,7 @@ struct PendingReceive {
   // we allow upto 8 integer header
   int headerBuf[TWISTERX_CHANNEL_HEADER_SIZE]{};
   int receiveId{};
-  void * data{};
+  void *data{};
   int length{};
   ReceiveStatus status = RECEIVE_INIT;
   MPI_Request request{};
@@ -57,14 +57,14 @@ struct PendingReceive {
  * to post the network buffer to receive the message
  */
 class MPIChannel : public Channel {
-public:
+ public:
   /**
    * Initialize the channel
    *
    * @param receives receive from these ranks
    */
-  void init(int edge, const std::vector<int>& receives, const std::vector<int>& sendIds,
-            ChannelReceiveCallback * rcv, ChannelSendCallback * send) override;
+  void init(int edge, const std::vector<int> &receives, const std::vector<int> &sendIds,
+            ChannelReceiveCallback *rcv, ChannelSendCallback *send) override;
 
   /**
   * Send the message to the target.
@@ -94,7 +94,7 @@ public:
 
   void close() override;
 
-private:
+ private:
   int edge;
   // keep track of the length buffers for each receiver
   std::unordered_map<int, PendingSend *> sends;
@@ -103,9 +103,9 @@ private:
   // we got finish requests
   std::unordered_map<int, std::shared_ptr<TxRequest>> finishRequests;
   // receive callback function
-  ChannelReceiveCallback * rcv_fn;
+  ChannelReceiveCallback *rcv_fn;
   // send complete callback function
-  ChannelSendCallback * send_comp_fn;
+  ChannelSendCallback *send_comp_fn;
   // mpi rank
   int rank;
 

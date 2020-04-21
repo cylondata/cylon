@@ -9,8 +9,8 @@
 
 namespace twisterx {
 
-AllToAll::AllToAll(int w_id, const std::vector<int>& srcs,
-                   const std::vector<int>& tgts, int edge_id, ReceiveCallback * rcvCallback) {
+AllToAll::AllToAll(int w_id, const std::vector<int> &srcs,
+                   const std::vector<int> &tgts, int edge_id, ReceiveCallback *rcvCallback) {
   worker_id = w_id;
   sources = srcs;
   targets = tgts;
@@ -43,7 +43,7 @@ void AllToAll::close() {
   sends.clear();
   // free the channel
   channel->close();
-  delete  channel;
+  delete channel;
 }
 
 int AllToAll::insert(void *buffer, int length, int target) {
@@ -133,14 +133,14 @@ void AllToAll::sendComplete(std::shared_ptr<TxRequest> request) {
   AllToAllSends *s = sends[request->target];
   s->pendingQueue.pop();
   // we sent this request so we need to reduce memory
-  s->messageSizes  = s->messageSizes - request->length;
+  s->messageSizes = s->messageSizes - request->length;
   callback->onSendComplete(request->target, request->buffer, request->length);
   // we don't have much to do here, so we delete the request
   // LOG(INFO) << worker_id << " Free buffer " << request->length;
 }
 
 void AllToAll::receivedHeader(int receiveId, int finished,
-                              int * header, int headerLength) {
+                              int *header, int headerLength) {
   if (finished) {
     // LOG(INFO) << worker_id << " Received finish " << receiveId;
     finishedSources.insert(receiveId);
@@ -153,7 +153,7 @@ void AllToAll::receivedHeader(int receiveId, int finished,
 //        }
 //        std::cout << std::endl;
       callback->onReceiveHeader(receiveId, finished, header, headerLength);
-      delete [] header;
+      delete[] header;
     } else {
       callback->onReceiveHeader(receiveId, finished, nullptr, 0);
       // LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;

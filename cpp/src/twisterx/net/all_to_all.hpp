@@ -10,7 +10,7 @@
 
 namespace twisterx {
 class ReceiveCallback {
-public:
+ public:
   /**
    * This function is called when a data is received
    * @param source the source
@@ -18,7 +18,7 @@ public:
    * @param length the length of the buffer
    * @return true if we accept this buffer
    */
-  virtual bool onReceive(int source, void * buffer, int length) = 0;
+  virtual bool onReceive(int source, void *buffer, int length) = 0;
 
   /**
    * Receive the header, this happens before we receive the actual data
@@ -27,7 +27,7 @@ public:
    * @param length the length of the integer array
    * @return true if we accept the header
    */
-  virtual bool onReceiveHeader(int source, int finished, int * buffer, int length) = 0;
+  virtual bool onReceiveHeader(int source, int finished, int *buffer, int length) = 0;
 
   /**
    * This method is called after we successfully send a buffer
@@ -36,7 +36,7 @@ public:
    * @param length
    * @return
    */
-  virtual bool onSendComplete(int target, void * buffer, int length) = 0;
+  virtual bool onSendComplete(int target, void *buffer, int length) = 0;
 };
 
 enum AllToAllSendStatus {
@@ -59,15 +59,15 @@ struct AllToAllSends {
  * The all to all communication. We insert values and wait until it completes
  */
 class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
-public:
+ public:
   /**
    * Constructor
    * @param worker_id
    * @param all_workers
    * @return
    */
-  AllToAll(int worker_id, const std::vector<int>& source, const std::vector<int>& targets, int edgeId,
-      ReceiveCallback * callback);
+  AllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId,
+           ReceiveCallback *callback);
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true
@@ -77,8 +77,7 @@ public:
    * @param target the target to send the message
    * @return true if the buffer is accepted
    */
-  int insert(void *buffer, int length, int target, int * header, int headerLength);
-
+  int insert(void *buffer, int length, int target, int *header, int headerLength);
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true
@@ -123,26 +122,26 @@ public:
    * @param header the header as an set of integers
    * @param headerLength length of the header
    */
-  void receivedHeader(int receiveId, int finished, int * header, int headerLength) override;
+  void receivedHeader(int receiveId, int finished, int *header, int headerLength) override;
 
   /**
    * Close the operation
    */
   void close();
-private:
+ private:
   void sendFinishComplete(std::shared_ptr<TxRequest> request) override;
 
-private:
+ private:
   int worker_id;                 // the worker id
   std::vector<int> sources;  // the list of all the workers
   std::vector<int> targets;  // the list of all the workers
   int edge;                  // the edge id we are going to use
-  std::vector<AllToAllSends *>  sends; // keep track of the sends
+  std::vector<AllToAllSends *> sends; // keep track of the sends
   std::unordered_set<int> finishedSources;  // keep track of  the finished sources
   std::unordered_set<int> finishedTargets;  // keep track of  the finished targets
   bool finishFlag = false;
-  Channel * channel;             // the underlying channel
-  ReceiveCallback * callback;    // after we receive a buffer we will call this function
+  Channel *channel;             // the underlying channel
+  ReceiveCallback *callback;    // after we receive a buffer we will call this function
   unsigned long thisNumTargets;            // number of targets in this process, 1 or 0
   int thisNumSources;            // number of sources in this process, 1 or 0
 };

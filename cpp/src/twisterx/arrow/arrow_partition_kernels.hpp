@@ -89,15 +89,15 @@ using FloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::FloatType>;
 using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType>;
 
 twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
-                                 std::shared_ptr<arrow::Array> values,
-                                 const std::vector<int> &targets,
-                                 std::vector<int64_t> *outPartitions);
+                                    std::shared_ptr<arrow::Array> values,
+                                    const std::vector<int> &targets,
+                                    std::vector<int64_t> *outPartitions);
 
 twisterx::Status HashPartitionArrays(arrow::MemoryPool *pool,
-                                  std::vector<std::shared_ptr<arrow::Array>> values,
-                                  int64_t length,
-                                  const std::vector<int> &targets,
-                                  std::vector<int64_t> *outPartitions);
+                                     std::vector<std::shared_ptr<arrow::Array>> values,
+                                     int64_t length,
+                                     const std::vector<int> &targets,
+                                     std::vector<int64_t> *outPartitions);
 
 }
 

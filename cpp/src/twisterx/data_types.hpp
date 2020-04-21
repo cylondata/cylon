@@ -81,7 +81,7 @@ struct Layout {
  * Base class for encapsulating a data type
  */
 class DataType {
-public:
+ public:
   DataType() {}
 
   explicit DataType(Type::type t) : t(t), l(Layout::FIXED_WIDTH) {}
@@ -101,10 +101,10 @@ public:
    * Get the data layout
    * @return
    */
-  Layout::layout getLayout(){
+  Layout::layout getLayout() {
     return l;
   };
-private:
+ private:
   // the type
   Type::type t;
   // the layout

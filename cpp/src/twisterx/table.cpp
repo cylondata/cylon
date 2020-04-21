@@ -118,8 +118,8 @@ Status Table::ToArrowTable(std::shared_ptr<arrow::Table> *out) {
 }
 
 Status twisterx::Table::from_csv(const std::string &path, const char &delimiter, const std::string &uuid) {
-    twisterx::Status status = twisterx::from_csv(path, uuid, delimiter);
-    return status;
+  twisterx::Status status = twisterx::from_csv(path, uuid, delimiter);
+  return status;
 }
 
 }

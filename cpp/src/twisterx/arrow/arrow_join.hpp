@@ -8,7 +8,7 @@
 
 namespace twisterx {
 class JoinCallback {
-public:
+ public:
   /**
      * This function is called when a data is received
      * @param source the source
@@ -16,34 +16,39 @@ public:
      * @param length the length of the buffer
      * @return true if we accept this buffer
      */
-  virtual bool onJoin(std::shared_ptr <arrow::Table> table) = 0;
+  virtual bool onJoin(std::shared_ptr<arrow::Table> table) = 0;
 };
 
 class AllToAllCallback : public ArrowCallback {
-public:
-  explicit AllToAllCallback(std::vector<std::shared_ptr<arrow::Table>>* table);
+ public:
+  explicit AllToAllCallback(std::vector<std::shared_ptr<arrow::Table>> *table);
   /**
    * The receive callback with the arrow table
    * @param source source
    * @param table the table
    * @return true if the table is accepted
    */
-  bool onReceive(int source, std::shared_ptr <arrow::Table> table) override;
-private:
-  std::vector<std::shared_ptr<arrow::Table>>* tables_;
+  bool onReceive(int source, std::shared_ptr<arrow::Table> table) override;
+ private:
+  std::vector<std::shared_ptr<arrow::Table>> *tables_;
 };
 
-
 class ArrowJoin {
-public:
+ public:
   /**
      * Constructor
      * @param worker_id
      * @param all_workers
      * @return
      */
-  ArrowJoin(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int leftEdgeId, int rightEdgeId,
-            JoinCallback *callback, std::shared_ptr <arrow::Schema> schema, arrow::MemoryPool *pool);
+  ArrowJoin(int worker_id,
+            const std::vector<int> &source,
+            const std::vector<int> &targets,
+            int leftEdgeId,
+            int rightEdgeId,
+            JoinCallback *callback,
+            std::shared_ptr<arrow::Schema> schema,
+            arrow::MemoryPool *pool);
 
   /**
    * Insert a partitioned table, this table will be sent directly
@@ -53,7 +58,7 @@ public:
    * @param target the target to send the message
    * @return true if the buffer is accepted
    */
-  int leftInsert(const std::shared_ptr <arrow::Table> &table, int target) {
+  int leftInsert(const std::shared_ptr<arrow::Table> &table, int target) {
     return leftAllToAll_->insert(table, target);
   }
 
@@ -63,7 +68,7 @@ public:
    * @param target
    * @return
    */
-  int rightInsert(const std::shared_ptr <arrow::Table> &table, int target) {
+  int rightInsert(const std::shared_ptr<arrow::Table> &table, int target) {
     return rightAllToAll_->insert(table, target);
   }
 
@@ -90,7 +95,7 @@ public:
     rightAllToAll_->close();
   }
 
-private:
+ private:
   std::shared_ptr<ArrowAllToAll> leftAllToAll_;
   std::shared_ptr<ArrowAllToAll> rightAllToAll_;
   std::vector<std::shared_ptr<arrow::Table>> leftTables_;
@@ -102,15 +107,23 @@ private:
 };
 
 class ArrowJoinWithPartition {
-public:
+ public:
   /**
    * Constructor
    * @param worker_id
    * @param all_workers
    * @return
    */
-  ArrowJoinWithPartition(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int leftEdgeId, int rightEdgeId,
-            JoinCallback *callback, std::shared_ptr <arrow::Schema> schema, arrow::MemoryPool *pool, int leftColumnIndex, int rightColumnIndex);
+  ArrowJoinWithPartition(int worker_id,
+                         const std::vector<int> &source,
+                         const std::vector<int> &targets,
+                         int leftEdgeId,
+                         int rightEdgeId,
+                         JoinCallback *callback,
+                         std::shared_ptr<arrow::Schema> schema,
+                         arrow::MemoryPool *pool,
+                         int leftColumnIndex,
+                         int rightColumnIndex);
 
   /**
    * Insert a partitioned table, this table will be sent directly
@@ -131,7 +144,7 @@ public:
    * @param target
    * @return
    */
-  int rightInsert(const std::shared_ptr <arrow::Table> &table) {
+  int rightInsert(const std::shared_ptr<arrow::Table> &table) {
     rightUnPartitionedTables_.push(table);
   }
 
@@ -155,7 +168,7 @@ public:
   void close() {
     join_->close();
   }
-private:
+ private:
   // keep track of the un partitioned tables
   std::queue<std::shared_ptr<arrow::Table>> leftUnPartitionedTables_;
   std::queue<std::shared_ptr<arrow::Table>> rightUnPartitionedTables_;
@@ -170,6 +183,5 @@ private:
 };
 
 }
-
 
 #endif //TWISTERX_ARROW_JOIN_H

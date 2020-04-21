@@ -12,7 +12,7 @@ using arrow::DoubleBuilder;
 using arrow::Int64Builder;
 
 class Clbk : public twisterx::ArrowCallback {
-public:
+ public:
   bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
     auto ids =
         std::static_pointer_cast<arrow::Int64Array>(table->column(0)->chunk(0));
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     targets.push_back(i);
   }
 
-  arrow::MemoryPool* pool = arrow::default_memory_pool();
+  arrow::MemoryPool *pool = arrow::default_memory_pool();
 
   Int64Builder id_builder(pool);
   DoubleBuilder cost_builder(pool);

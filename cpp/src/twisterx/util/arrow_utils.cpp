@@ -37,8 +37,7 @@ arrow::Status sort_column(const std::shared_ptr<arrow::Array> &data_column,
                                                         sorted_indices,
                                                         sorted_column_array,
                                                         memory_pool);
-    case arrow::Type::NA:
-      break;
+    case arrow::Type::NA:break;
     case arrow::Type::BOOL:
       return sort_numeric_column_type<arrow::BooleanType>(data_column,
                                                           sorted_indices,
@@ -94,48 +93,27 @@ arrow::Status sort_column(const std::shared_ptr<arrow::Array> &data_column,
                                                          sorted_indices,
                                                          sorted_column_array,
                                                          memory_pool);
-    case arrow::Type::STRING:
-      break;
-    case arrow::Type::BINARY:
-      break;
-    case arrow::Type::FIXED_SIZE_BINARY:
-      break;
-    case arrow::Type::DATE32:
-      break;
-    case arrow::Type::DATE64:
-      break;
-    case arrow::Type::TIMESTAMP:
-      break;
-    case arrow::Type::TIME32:
-      break;
-    case arrow::Type::TIME64:
-      break;
-    case arrow::Type::INTERVAL:
-      break;
-    case arrow::Type::DECIMAL:
-      break;
-    case arrow::Type::LIST:
-      break;
-    case arrow::Type::STRUCT:
-      break;
-    case arrow::Type::UNION:
-      break;
-    case arrow::Type::DICTIONARY:
-      break;
-    case arrow::Type::MAP:
-      break;
-    case arrow::Type::EXTENSION:
-      break;
-    case arrow::Type::FIXED_SIZE_LIST:
-      break;
-    case arrow::Type::DURATION:
-      break;
-    case arrow::Type::LARGE_STRING:
-      break;
-    case arrow::Type::LARGE_BINARY:
-      break;
-    case arrow::Type::LARGE_LIST:
-      break;
+    case arrow::Type::STRING:break;
+    case arrow::Type::BINARY:break;
+    case arrow::Type::FIXED_SIZE_BINARY:break;
+    case arrow::Type::DATE32:break;
+    case arrow::Type::DATE64:break;
+    case arrow::Type::TIMESTAMP:break;
+    case arrow::Type::TIME32:break;
+    case arrow::Type::TIME64:break;
+    case arrow::Type::INTERVAL:break;
+    case arrow::Type::DECIMAL:break;
+    case arrow::Type::LIST:break;
+    case arrow::Type::STRUCT:break;
+    case arrow::Type::UNION:break;
+    case arrow::Type::DICTIONARY:break;
+    case arrow::Type::MAP:break;
+    case arrow::Type::EXTENSION:break;
+    case arrow::Type::FIXED_SIZE_LIST:break;
+    case arrow::Type::DURATION:break;
+    case arrow::Type::LARGE_STRING:break;
+    case arrow::Type::LARGE_BINARY:break;
+    case arrow::Type::LARGE_LIST:break;
   }
   return arrow::Status::OK();
 }
@@ -190,7 +168,7 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table) {
       auto chunk = col->chunk(c);
       std::shared_ptr<arrow::ArrayData> ptr = chunk->data();
       for (const auto &t : ptr->buffers) {
-        delete [] t->data();
+        delete[] t->data();
       }
     }
   }

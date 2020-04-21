@@ -180,7 +180,8 @@ void join_test(bool sort, int count) {
   LOG(INFO) << "joining...";
   t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::Table> joined_table;
-  twisterx::join::config::JoinConfig joinConfig(twisterx::join::config::JoinType::INNER, 0, 0, twisterx::join::config::JoinAlgorithm::SORT);
+  twisterx::join::config::JoinConfig
+      joinConfig(twisterx::join::config::JoinType::INNER, 0, 0, twisterx::join::config::JoinAlgorithm::SORT);
   status = twisterx::join::joinTables(
       left_table,
       right_table,

@@ -10,14 +10,14 @@
 
 namespace twisterx {
 
-void MPIChannel::init(int ed, const std::vector<int>& receives, const std::vector<int>& sendIds,
-                      ChannelReceiveCallback * rcv, ChannelSendCallback * send_fn) {
+void MPIChannel::init(int ed, const std::vector<int> &receives, const std::vector<int> &sendIds,
+                      ChannelReceiveCallback *rcv, ChannelSendCallback *send_fn) {
   edge = ed;
   rcv_fn = rcv;
   send_comp_fn = send_fn;
   // we need to post the length buffers
   for (int source : receives) {
-    auto * buf = new PendingReceive();
+    auto *buf = new PendingReceive();
     buf->receiveId = source;
     pendingReceives.insert(std::pair<int, PendingReceive *>(source, buf));
     MPI_Irecv(buf->headerBuf, TWISTERX_CHANNEL_HEADER_SIZE, MPI_INT, source, edge, MPI_COMM_WORLD, &buf->request);
@@ -33,7 +33,7 @@ void MPIChannel::init(int ed, const std::vector<int>& receives, const std::vecto
 }
 
 int MPIChannel::send(std::shared_ptr<TxRequest> request) {
-  PendingSend * ps = sends[request->target];
+  PendingSend *ps = sends[request->target];
   if (ps->pendingData.size() > 1000) {
     return -1;
   }
@@ -102,7 +102,7 @@ void MPIChannel::progressReceives() {
         int count = 0;
         MPI_Get_count(&status, MPI_BYTE, &count);
         if (count != x.second->length) {
-          LOG(FATAL) << "Un-expected number of bytes expected:" <<  x.second->length << " received: " << count;
+          LOG(FATAL) << "Un-expected number of bytes expected:" << x.second->length << " received: " << count;
         }
 
         //LOG(INFO) << rank << " ## received from " << x.first
@@ -113,13 +113,13 @@ void MPIChannel::progressReceives() {
         std::fill_n(x.second->headerBuf, TWISTERX_CHANNEL_HEADER_SIZE, 0);
         // malloc a buffer
         MPI_Irecv(x.second->headerBuf, TWISTERX_CHANNEL_HEADER_SIZE, MPI_INT,
-            x.second->receiveId, edge, MPI_COMM_WORLD, &(x.second->request));
+                  x.second->receiveId, edge, MPI_COMM_WORLD, &(x.second->request));
         // LOG(INFO) << rank << " ** POST HEADER " << 8 << " addr: " << x.second->headerBuf;
         x.second->status = RECEIVE_LENGTH_POSTED;
         // call the back end
         rcv_fn->receivedData(x.first, x.second->data, x.second->length);
       }
-    } else if (x.second->status != RECEIVED_FIN){
+    } else if (x.second->status != RECEIVED_FIN) {
       LOG(FATAL) << "At an un-expected state " << x.second->status;
     }
   }
@@ -175,7 +175,7 @@ void MPIChannel::progressSends() {
           }
         }
       }
-    } else if (x.second->status == SEND_FINISH){
+    } else if (x.second->status == SEND_FINISH) {
       MPI_Test(&(x.second->request), &flag, &status);
       if (flag) {
         // LOG(INFO) << rank << " FINISHED send " << x.first;
@@ -184,7 +184,7 @@ void MPIChannel::progressSends() {
         send_comp_fn->sendFinishComplete(finReq);
         x.second->status = SEND_DONE;
       }
-    } else if (x.second->status != SEND_DONE){
+    } else if (x.second->status != SEND_DONE) {
       // throw an exception and log
       LOG(FATAL) << "At an un-expected state " << x.second->status;
     }
@@ -204,7 +204,7 @@ void MPIChannel::sendHeader(const std::pair<const int, PendingSend *> &x) const 
   // LOG(INFO) << rank << " Sent length to " << r->target << " addr: " << x.second->headerBuf << " len: " << r->headerLength + 2;
   // we have to add 2 to the header length
   MPI_Isend(&(x.second->headerBuf[0]), 2 + r->headerLength, MPI_INT,
-      x.first, edge, MPI_COMM_WORLD, &(x.second->request));
+            x.first, edge, MPI_COMM_WORLD, &(x.second->request));
   x.second->status = SEND_LENGTH_POSTED;
 }
 
@@ -218,12 +218,12 @@ void MPIChannel::sendFinishHeader(const std::pair<const int, PendingSend *> &x) 
 }
 
 void MPIChannel::close() {
-  for (auto & pendingReceive : pendingReceives) {
+  for (auto &pendingReceive : pendingReceives) {
     delete (pendingReceive.second);
   }
   pendingReceives.clear();
 
-  for (auto & s : sends) {
+  for (auto &s : sends) {
     delete (s.second);
   }
   sends.clear();

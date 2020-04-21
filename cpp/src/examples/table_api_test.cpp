@@ -5,8 +5,6 @@
 
 int main(int argc, char *argv[]) {
 
-
-
   std::shared_ptr<twisterx::Table> table1, table2, joined;
   auto status1 = twisterx::Table::FromCSV("/tmp/csv.csv", &table1,
                                           twisterx::io::config::CSVReadOptions().WithDelimiter(','));

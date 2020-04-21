@@ -9,26 +9,25 @@
 using namespace std;
 
 namespace twisterx {
-    class TxRequest {
+class TxRequest {
 
-    public:
-        void *buffer{};
-        int length{};
-        int target;
-        int header[6] = {};
-        int headerLength{};
+ public:
+  void *buffer{};
+  int length{};
+  int target;
+  int header[6] = {};
+  int headerLength{};
 
-        TxRequest(int tgt, void *buf, int len);
+  TxRequest(int tgt, void *buf, int len);
 
-        TxRequest(int tgt, void *buf, int len, int *head, int hLength);
+  TxRequest(int tgt, void *buf, int len, int *head, int hLength);
 
-        explicit TxRequest(int tgt);
+  explicit TxRequest(int tgt);
 
-        ~TxRequest();
+  ~TxRequest();
 
-        void to_string(string dataType, int bufDepth);
-    };
+  void to_string(string dataType, int bufDepth);
+};
 }
-
 
 #endif //TWISTERX_TXREQUEST_H
