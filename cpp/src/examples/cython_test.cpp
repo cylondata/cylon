@@ -6,17 +6,12 @@
 
 using namespace std;
 
-int main(){
+int main() {
 
+  shapes::Circle circle(0, 0, 10);
+  cout << "Circle Radius : " << circle.getRadius() << endl;
+  cout << "Circle Circumference (Int) : " << circle.getCircumference() << endl;
+  cout << "Circle Area (Int) : " << circle.getArea() << endl;
 
-    shapes::Circle circle(0,0, 10);
-    cout << "Circle Radius : " << circle.getRadius() << endl;
-    cout << "Circle Circumference (Int) : " << circle.getCircumference() << endl;
-    cout << "Circle Area (Int) : " << circle.getArea() << endl;
-
-
-
-
-
-    return 0;
+  return 0;
 }

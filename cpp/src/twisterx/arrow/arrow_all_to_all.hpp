@@ -58,7 +58,7 @@ struct PendingReceiveTable {
 };
 
 class ArrowCallback {
-public:
+ public:
   /**
    * This function is called when a data is received
    * @param source the source
@@ -69,12 +69,11 @@ public:
   virtual bool onReceive(int source, std::shared_ptr<arrow::Table> table) = 0;
 };
 
-
 /**
  * We are going to take a table as input and send its columns one by one
  */
 class ArrowAllToAll : public ReceiveCallback {
-public:
+ public:
   /**
    * Constructor
    * @param worker_id
@@ -93,7 +92,7 @@ public:
    * @param target the target to send the message
    * @return true if the buffer is accepted
    */
-  int insert(const std::shared_ptr<arrow::Table>& arrow, int target);
+  int insert(const std::shared_ptr<arrow::Table> &arrow, int target);
 
   /**
    * Check weather the operation is complete, this method needs to be called until the operation is complete
@@ -128,7 +127,7 @@ public:
 
   bool onSendComplete(int target, void *buffer, int length) override;
 
-private:
+ private:
   /**
    * The targets
    */
@@ -167,27 +166,27 @@ private:
   /**
    * We have received the finish
    */
-   bool finished = false;
+  bool finished = false;
 
-   /**
-    * Finished sources
-    */
-    std::vector<int> finishedSources_;
+  /**
+   * Finished sources
+   */
+  std::vector<int> finishedSources_;
 
-    /**
-     * Keep a count of received buffers
-     */
-    int receivedBuffers_;
+  /**
+   * Keep a count of received buffers
+   */
+  int receivedBuffers_;
 
-    /**
-     * The worker id
-     */
-    int workerId_;
+  /**
+   * The worker id
+   */
+  int workerId_;
 
-    /**
-     * The memory pool
-     */
-    arrow::MemoryPool *pool_;
+  /**
+   * The memory pool
+   */
+  arrow::MemoryPool *pool_;
 };
 }
 #endif //TWISTERX_ARROW_H

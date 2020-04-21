@@ -27,7 +27,7 @@ ArrowAllToAll::ArrowAllToAll(int worker_id, const std::vector<int> &source, cons
   }
 }
 
-int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table>& arrow, int target) {
+int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int target) {
   //todo: check weather we have enough memory
   // lets save the table into pending and move on
   std::shared_ptr<PendingSendTable> st = inputs_[target];
@@ -127,7 +127,7 @@ bool ArrowAllToAll::onReceive(int source, void *buffer, int length) {
   receivedBuffers_++;
   // LOG(INFO) << workerId_ <<  " Received buffers " << receivedBuffers_ << " length " << length << " last: " << (int) b[length / 2 - 1];
   // create the buffer hosting the value
-  std::shared_ptr<arrow::Buffer>  buf = std::make_shared<arrow::Buffer>((uint8_t *)buffer, length);
+  std::shared_ptr<arrow::Buffer> buf = std::make_shared<arrow::Buffer>((uint8_t *) buffer, length);
   table->buffers.push_back(buf);
   // now check weather we have the expected number of buffers received
   if (table->noBuffers == table->bufferIndex + 1) {

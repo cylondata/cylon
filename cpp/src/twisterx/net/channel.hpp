@@ -10,7 +10,7 @@ namespace twisterx {
  * When a buffer is inserted, we need to return a reference to that buffer
  */
 struct TxRequest {
-  void * buffer{};
+  void *buffer{};
   int length{};
   int target;
   int header[6] = {};
@@ -22,7 +22,7 @@ struct TxRequest {
     length = len;
   }
 
-  TxRequest(int tgt, void *buf, int len, int * head, int hLength) {
+  TxRequest(int tgt, void *buf, int len, int *head, int hLength) {
     target = tgt;
     buffer = buf;
     length = len;
@@ -45,36 +45,36 @@ struct TxRequest {
  * When a send is complete, this callback is called by the channel, it is the responsibility
  * of the operations to register this callback
  */
- class ChannelSendCallback {
+class ChannelSendCallback {
  public:
-   virtual void sendComplete(std::shared_ptr<TxRequest> request) = 0;
+  virtual void sendComplete(std::shared_ptr<TxRequest> request) = 0;
 
-   virtual void sendFinishComplete(std::shared_ptr<TxRequest> request) = 0;
- };
+  virtual void sendFinishComplete(std::shared_ptr<TxRequest> request) = 0;
+};
 
 /**
  * When a receive is complete, this method is called
  */
- class ChannelReceiveCallback {
+class ChannelReceiveCallback {
  public:
-   virtual void receivedData(int receiveId, void *buffer, int length) = 0;
+  virtual void receivedData(int receiveId, void *buffer, int length) = 0;
 
-   virtual void receivedHeader(int receiveId, int finished, int * header, int headerLength) = 0;
- };
+  virtual void receivedHeader(int receiveId, int finished, int *header, int headerLength) = 0;
+};
 
 /**
  * This is an interface to send messages using a particular channel, a channel
  * can be based on MPI, it can be a TCP channel or a UCX channel etc
  */
 class Channel {
-public:
+ public:
   /**
    * Initialize the channel with the worker ids from which we are going to receive
    *
    * @param receives these are the workers we are going to receive from
    */
-  virtual void init(int edge, const std::vector<int>& receives, const std::vector<int>& sendIds,
-                    ChannelReceiveCallback * rcv, ChannelSendCallback * send) = 0;
+  virtual void init(int edge, const std::vector<int> &receives, const std::vector<int> &sendIds,
+                    ChannelReceiveCallback *rcv, ChannelSendCallback *send) = 0;
   /**
    * Send the request
    * @param request the request containing buffer, destination etc

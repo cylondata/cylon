@@ -9,7 +9,6 @@ int main(int argc, char *argv[]) {
                                           twisterx::io::config::CSVReadOptions().WithDelimiter('-'));
   auto status2 = twisterx::Table::FromCSV("/tmp/csv.csv", &table2);
 
-
   table1->Join(table2,
                twisterx::join::config::JoinConfig::RightJoin(0, 1),
                &joined);

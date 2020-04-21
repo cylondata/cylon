@@ -5,10 +5,10 @@
 #include "arrow/arrow_all_to_all.hpp"
 
 class Clbk : public twisterx::ReceiveCallback {
-public:
+ public:
   bool onReceive(int source, void *buffer, int length) override {
     std::cout << "Received value: " << source << " length " << length << std::endl;
-    delete[] reinterpret_cast<char*>(buffer);
+    delete[] reinterpret_cast<char *>(buffer);
     return false;
   }
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   twisterx::AllToAll all(rank, sources, targets, 1, &c);
   std::cout << "Starting the all receive - " << rank << std::endl;
   int buf[4] = {rank};
-  int * header = new int[4];
+  int *header = new int[4];
   header[0] = 1;
   header[1] = 2;
   header[2] = 3;
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   while (!all.isComplete()) {
   }
 
-  delete [] header;
+  delete[] header;
   all.close();
   MPI_Finalize();
   return 0;

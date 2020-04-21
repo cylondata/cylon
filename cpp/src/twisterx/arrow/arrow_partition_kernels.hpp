@@ -68,7 +68,7 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
-      twisterx::util::MurmurHash3_x86_32(val, bitWidth/8, seed, &hash);
+      twisterx::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
       partitions->push_back(targets.at(hash % targets.size()));
     }
     // now build the

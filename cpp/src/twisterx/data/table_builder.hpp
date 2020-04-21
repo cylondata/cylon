@@ -6,7 +6,6 @@
 #include "../join/join.hpp"
 #include "../status.hpp"
 
-
 using namespace std;
 
 namespace twisterx {

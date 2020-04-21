@@ -21,7 +21,7 @@ std::shared_ptr<arrow::DataType> convertToArrowType(std::shared_ptr<DataType> tT
  * @param table true if we support the types
  * @return false if we don't support the types
  */
-bool validateArrowTableTypes(const std::shared_ptr<arrow::Table>& table);
+bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table);
 
 }
 }

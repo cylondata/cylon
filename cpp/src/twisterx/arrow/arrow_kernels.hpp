@@ -9,9 +9,9 @@
 namespace twisterx {
 
 class ArrowArraySplitKernel {
-public:
+ public:
   explicit ArrowArraySplitKernel(std::shared_ptr<arrow::DataType> type,
-                                 arrow::MemoryPool* pool) : type_(type), pool_(pool) {}
+                                 arrow::MemoryPool *pool) : type_(type), pool_(pool) {}
 
   /**
    * Merge the values in the column and return an array
@@ -23,25 +23,25 @@ public:
    * @return
    */
   virtual int Split(std::shared_ptr<arrow::Array> &values,
-                    const std::vector<int64_t>& partitions,
+                    const std::vector<int64_t> &partitions,
                     const std::vector<int32_t> &targets,
-                    std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) = 0;
-protected:
+                    std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) = 0;
+ protected:
   std::shared_ptr<arrow::DataType> type_;
-  arrow::MemoryPool* pool_;
+  arrow::MemoryPool *pool_;
 };
 
-template <typename TYPE>
+template<typename TYPE>
 class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
-public:
+ public:
   explicit ArrowArrayNumericSplitKernel(std::shared_ptr<arrow::DataType> type,
-                                        arrow::MemoryPool* pool) :
+                                        arrow::MemoryPool *pool) :
       ArrowArraySplitKernel(type, pool) {}
 
   int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t>& partitions,
+            const std::vector<int64_t> &partitions,
             const std::vector<int32_t> &targets,
-            std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override {
+            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) override {
     auto reader =
         std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     std::unordered_map<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
@@ -67,27 +67,27 @@ public:
 };
 
 class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
-public:
+ public:
   explicit FixedBinaryArraySplitKernel(std::shared_ptr<arrow::DataType> type,
-                                       arrow::MemoryPool* pool) :
+                                       arrow::MemoryPool *pool) :
       ArrowArraySplitKernel(type, pool) {}
 
   int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t>& partitions,
+            const std::vector<int64_t> &partitions,
             const std::vector<int32_t> &targets,
-            std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override;
+            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) override;
 };
 
 class BinaryArraySplitKernel : public ArrowArraySplitKernel {
-public:
+ public:
   explicit BinaryArraySplitKernel(std::shared_ptr<arrow::DataType> type,
-                                  arrow::MemoryPool* pool) :
+                                  arrow::MemoryPool *pool) :
       ArrowArraySplitKernel(type, pool) {}
 
   int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t>& partitions,
+            const std::vector<int64_t> &partitions,
             const std::vector<int32_t> &targets,
-            std::unordered_map<int, std::shared_ptr<arrow::Array>>& out) override;
+            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) override;
 };
 
 using UInt8ArraySplitter = ArrowArrayNumericSplitKernel<arrow::UInt8Type>;
@@ -104,14 +104,14 @@ using HalfFloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::HalfFloatType
 using FloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::FloatType>;
 using DoubleArraySplitter = ArrowArrayNumericSplitKernel<arrow::DoubleType>;
 
-twisterx::Status CreateSplitter(std::shared_ptr<arrow::DataType>& type,
-                   arrow::MemoryPool* pool,
-                   std::unique_ptr<ArrowArraySplitKernel>* out);
+twisterx::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
+                                arrow::MemoryPool *pool,
+                                std::unique_ptr<ArrowArraySplitKernel> *out);
 
 class ArrowArraySortKernel {
-public:
+ public:
   explicit ArrowArraySortKernel(std::shared_ptr<arrow::DataType> type,
-                                 arrow::MemoryPool* pool) : type_(type), pool_(pool) {}
+                                arrow::MemoryPool *pool) : type_(type), pool_(pool) {}
 
   /**
    * Sort the values in the column and return an array with the indices
@@ -123,25 +123,25 @@ public:
    * @return
    */
   virtual int Sort(std::shared_ptr<arrow::Array> values,
-                    std::shared_ptr<arrow::Array>* out) = 0;
-protected:
+                   std::shared_ptr<arrow::Array> *out) = 0;
+ protected:
   std::shared_ptr<arrow::DataType> type_;
-  arrow::MemoryPool* pool_;
+  arrow::MemoryPool *pool_;
 };
 
-template <typename TYPE>
+template<typename TYPE>
 class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
-public:
+ public:
   using T = typename TYPE::c_type;
 
   explicit ArrowArrayNumericSortKernel(std::shared_ptr<arrow::DataType> type,
-                                        arrow::MemoryPool* pool) :
+                                       arrow::MemoryPool *pool) :
       ArrowArraySortKernel(type, pool) {}
 
   int Sort(std::shared_ptr<arrow::Array> values,
-            std::shared_ptr<arrow::Array>* offsets) override {
+           std::shared_ptr<arrow::Array> *offsets) override {
     auto array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-    const T* left_data = array->raw_values();
+    const T *left_data = array->raw_values();
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
     arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
@@ -163,8 +163,6 @@ public:
   }
 };
 
-
-
 using UInt8ArraySorter = ArrowArrayNumericSortKernel<arrow::UInt8Type>;
 using UInt16ArraySorter = ArrowArrayNumericSortKernel<arrow::UInt16Type>;
 using UInt32ArraySorter = ArrowArrayNumericSortKernel<arrow::UInt32Type>;
@@ -178,7 +176,7 @@ using FloatArraySorter = ArrowArrayNumericSortKernel<arrow::FloatType>;
 using DoubleArraySorter = ArrowArrayNumericSortKernel<arrow::DoubleType>;
 
 arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> values,
-                              std::shared_ptr<arrow::Array>* offsets);
+                          std::shared_ptr<arrow::Array> *offsets);
 
 }
 

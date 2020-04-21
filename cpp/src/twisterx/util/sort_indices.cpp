@@ -13,10 +13,10 @@ namespace twisterx {
 namespace util {
 
 class SortToIndicesKernel : public arrow::compute::UnaryKernel {
-protected:
+ protected:
   std::shared_ptr<arrow::DataType> type_;
 
-public:
+ public:
 
   /// \brief UnaryKernel interface
   ///
@@ -58,7 +58,7 @@ template<typename ArrowType, typename Comparator>
 class CompareSorter {
   using ArrayType = typename arrow::TypeTraits<ArrowType>::ArrayType;
 
-public:
+ public:
   explicit CompareSorter(Comparator compare) : compare_(compare) {}
 
   void Sort(int64_t *indices_begin, int64_t *indices_end, const ArrayType &values) {
@@ -80,7 +80,7 @@ public:
     LOG(INFO) << "Arrow sorting time: " + std::to_string(duration4.count());
   }
 
-private:
+ private:
   Comparator compare_;
 };
 
@@ -89,7 +89,7 @@ class CountSorter {
   using ArrayType = typename arrow::TypeTraits<ArrowType>::ArrayType;
   using c_type = typename ArrowType::c_type;
 
-public:
+ public:
   CountSorter() = default;
 
   explicit CountSorter(c_type min, c_type max) { SetMinMax(min, max); }
@@ -109,7 +109,7 @@ public:
     }
   }
 
-private:
+ private:
   c_type min_{0};
   uint32_t value_range_{0};
 
@@ -178,7 +178,7 @@ class CountOrCompareSorter {
   using ArrayType = typename arrow::TypeTraits<ArrowType>::ArrayType;
   using c_type = typename ArrowType::c_type;
 
-public:
+ public:
   explicit CountOrCompareSorter(Comparator compare) : compare_sorter_(compare) {}
 
   void Sort(int64_t *indices_begin, int64_t *indices_end, const ArrayType &values) {
@@ -214,7 +214,7 @@ public:
     compare_sorter_.Sort(indices_begin, indices_end, values);
   }
 
-private:
+ private:
   CompareSorter<ArrowType, Comparator> compare_sorter_;
   CountSorter<ArrowType> count_sorter_;
 
@@ -235,7 +235,7 @@ template<typename ArrowType, typename Sorter>
 class SortToIndicesKernelImpl : public SortToIndicesKernel {
   using ArrayType = typename arrow::TypeTraits<ArrowType>::ArrayType;
 
-public:
+ public:
   explicit SortToIndicesKernelImpl(Sorter sorter) : sorter_(sorter) {}
 
   arrow::Status SortToIndices(arrow::compute::FunctionContext *ctx, const std::shared_ptr<arrow::Array> &values,
@@ -257,7 +257,7 @@ public:
 
   std::shared_ptr<arrow::DataType> out_type() const { return type_; }
 
-private:
+ private:
   Sorter sorter_;
 
   arrow::Status SortToIndicesImpl(arrow::compute::FunctionContext *ctx, const std::shared_ptr<ArrayType> &values,
@@ -297,44 +297,31 @@ arrow::Status SortToIndicesKernel::Make(const std::shared_ptr<arrow::DataType> &
                                         std::unique_ptr<SortToIndicesKernel> *out) {
   SortToIndicesKernel *kernel;
   switch (value_type->id()) {
-    case arrow::Type::UINT8:
-      kernel = MakeCountKernel<arrow::UInt8Type>(0, 255);
+    case arrow::Type::UINT8:kernel = MakeCountKernel<arrow::UInt8Type>(0, 255);
       break;
-    case arrow::Type::INT8:
-      kernel = MakeCountKernel<arrow::Int8Type>(-128, 127);
+    case arrow::Type::INT8:kernel = MakeCountKernel<arrow::Int8Type>(-128, 127);
       break;
-    case arrow::Type::UINT16:
-      kernel = MakeCountOrCompareKernel<arrow::UInt16Type>(CompareValues<arrow::UInt16Array>);
+    case arrow::Type::UINT16:kernel = MakeCountOrCompareKernel<arrow::UInt16Type>(CompareValues<arrow::UInt16Array>);
       break;
-    case arrow::Type::INT16:
-      kernel = MakeCountOrCompareKernel<arrow::Int16Type>(CompareValues<arrow::Int16Array>);
+    case arrow::Type::INT16:kernel = MakeCountOrCompareKernel<arrow::Int16Type>(CompareValues<arrow::Int16Array>);
       break;
-    case arrow::Type::UINT32:
-      kernel = MakeCountOrCompareKernel<arrow::UInt32Type>(CompareValues<arrow::UInt32Array>);
+    case arrow::Type::UINT32:kernel = MakeCountOrCompareKernel<arrow::UInt32Type>(CompareValues<arrow::UInt32Array>);
       break;
-    case arrow::Type::INT32:
-      kernel = MakeCountOrCompareKernel<arrow::Int32Type>(CompareValues<arrow::Int32Array>);
+    case arrow::Type::INT32:kernel = MakeCountOrCompareKernel<arrow::Int32Type>(CompareValues<arrow::Int32Array>);
       break;
-    case arrow::Type::UINT64:
-      kernel = MakeCountOrCompareKernel<arrow::UInt64Type>(CompareValues<arrow::UInt64Array>);
+    case arrow::Type::UINT64:kernel = MakeCountOrCompareKernel<arrow::UInt64Type>(CompareValues<arrow::UInt64Array>);
       break;
-    case arrow::Type::INT64:
-      kernel = MakeCountOrCompareKernel<arrow::Int64Type>(CompareValues<arrow::Int64Array>);
+    case arrow::Type::INT64:kernel = MakeCountOrCompareKernel<arrow::Int64Type>(CompareValues<arrow::Int64Array>);
       break;
-    case arrow::Type::FLOAT:
-      kernel = MakeCompareKernel<arrow::FloatType>(CompareValues<arrow::FloatArray>);
+    case arrow::Type::FLOAT:kernel = MakeCompareKernel<arrow::FloatType>(CompareValues<arrow::FloatArray>);
       break;
-    case arrow::Type::DOUBLE:
-      kernel = MakeCompareKernel<arrow::DoubleType>(CompareValues<arrow::DoubleArray>);
+    case arrow::Type::DOUBLE:kernel = MakeCompareKernel<arrow::DoubleType>(CompareValues<arrow::DoubleArray>);
       break;
-    case arrow::Type::BINARY:
-      kernel = MakeCompareKernel<arrow::BinaryType>(CompareViews<arrow::BinaryArray>);
+    case arrow::Type::BINARY:kernel = MakeCompareKernel<arrow::BinaryType>(CompareViews<arrow::BinaryArray>);
       break;
-    case arrow::Type::STRING:
-      kernel = MakeCompareKernel<arrow::StringType>(CompareViews<arrow::StringArray>);
+    case arrow::Type::STRING:kernel = MakeCompareKernel<arrow::StringType>(CompareViews<arrow::StringArray>);
       break;
-    default:
-      return arrow::Status::NotImplemented("Sorting of ", *value_type, " arrays");
+    default:return arrow::Status::NotImplemented("Sorting of ", *value_type, " arrays");
   }
   out->reset(kernel);
   return arrow::Status::OK();
@@ -355,5 +342,5 @@ arrow::Status SortToIndices(arrow::compute::FunctionContext *ctx, const arrow::A
   return arrow::Status::OK();
 }
 
-  }
+}
 }

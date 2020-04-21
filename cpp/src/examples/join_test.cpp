@@ -13,7 +13,7 @@ using arrow::DoubleBuilder;
 using arrow::Int64Builder;
 
 class JC : public twisterx::JoinCallback {
-public:
+ public:
   /**
   * This function is called when a data is received
   * @param source the source
@@ -21,7 +21,7 @@ public:
   * @param length the length of the buffer
   * @return true if we accept this buffer
   */
-  bool onJoin(std::shared_ptr <arrow::Table> table) override {
+  bool onJoin(std::shared_ptr<arrow::Table> table) override {
     LOG(INFO) << "Joined";
     return true;
   }
@@ -29,7 +29,7 @@ public:
 
 int main(int argc, char *argv[]) {
   MPI_Init(NULLPTR, NULLPTR);
-  arrow::MemoryPool *pool =arrow::default_memory_pool();
+  arrow::MemoryPool *pool = arrow::default_memory_pool();
 
 //  int* x = (int *)malloc(10 * sizeof(int));
 //  std::cout << "error: " << x << std::endl;
@@ -61,8 +61,8 @@ int main(int argc, char *argv[]) {
   }
 
   int actualCount = std::atoi(argv[1]);
-  long* values = new long[actualCount];
-  int* indices = new int[actualCount];
+  long *values = new long[actualCount];
+  int *indices = new int[actualCount];
   for (int i = 0; i < actualCount; i++) {
     indices[i] = i;
     int l = rand() % range;
@@ -83,8 +83,8 @@ int main(int argc, char *argv[]) {
   auto end3 = std::chrono::high_resolution_clock::now();
   auto duration4 = std::chrono::duration_cast<std::chrono::milliseconds>(end3 - start3);
   LOG(INFO) << "Sort done 2 " + std::to_string(duration4.count());
-  delete [] values;
-  delete [] indices;
+  delete[] values;
+  delete[] indices;
 
   JC jc;
   twisterx::ArrowJoin join(rank, sources, targets, 0, 1, &jc, schema, pool);
