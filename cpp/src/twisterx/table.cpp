@@ -25,19 +25,6 @@ namespace twisterx {
         return status;
     }
 
-    Status Table::from_csv(const std::string &path, const char &delimiter, const std::string &uuid) {
-        //std::unique_ptr<Table> *tableOut;
-        std::cout << "UUID : " << uuid << std::endl;
-        twisterx::Status status = twisterx::from_csv(path, uuid, delimiter);
-        if (status.is_ok()) {
-            //tableOut = std::make_unique<Table>(Table(uuid));
-            std::cout << "Status : " << status.is_ok() << ", Code " << status.get_code() << std::endl;
-        }
-
-        return status;
-    }
-
-
     Status Table::FromArrowTable(std::shared_ptr<arrow::Table> table) {
         // first check the types
         if (!twisterx::tarrow::validateArrowTableTypes(table)) {
@@ -134,6 +121,14 @@ namespace twisterx {
         std::shared_ptr<arrow::Table> tab = get_table(id_);
         *out = tab;
         return Status::OK();
+    }
+
+    /*
+     * For Cython
+     */
+    Status Table::from_csv(const std::string &path, const char &delimiter, const std::string &uuid) {
+        twisterx::Status status = twisterx::from_csv(path, uuid, delimiter);
+        return status;
     }
 
 }
