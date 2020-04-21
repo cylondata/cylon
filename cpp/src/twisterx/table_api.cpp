@@ -224,9 +224,5 @@ twisterx::Status hashPartition(const std::string &id, const std::vector<int> &ha
   }
   return twisterx::Status::OK();
 }
-//TODO: Move to python dir within cpp
-twisterx::Status from_csv(const std::string &path, const std::string &id, const char delimiter) {
-  read_csv(path, id, twisterx::io::config::CSVReadOptions().WithDelimiter(delimiter));
-}
 
 }
