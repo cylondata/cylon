@@ -1,3 +1,4 @@
+import cython
 from libcpp.string cimport string
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport unique_ptr, shared_ptr, make_unique
@@ -15,9 +16,6 @@ cdef extern from "../../../cpp/src/twisterx/table.hpp" namespace "twisterx":
         int rows()
         void show()
         void show(int, int, int, int)
-
-
-
 
 cdef extern from "../../../cpp/src/twisterx/table.hpp" namespace "twisterx::Table":
     cdef extern _Status from_csv(const string, const char, const string)
@@ -47,17 +45,17 @@ cdef class Table:
     def show_by_range(self, row1:int, row2:int, col1: int, col2: int):
         self.thisPtr.show(row1, row2, col1, col2)
 
-cdef class TableUtil:
-    cdef _Table *thisPtr
-    cdef unique_ptr[_Table] tablePtr
+cdef class csv:
+    #cdef _Table *thisPtr
+    #cdef unique_ptr[_Table] tablePtr
 
     @staticmethod
-    def read_csv(path: str, delimiter: str) -> str:
+    def read(path: str, delimiter: str) -> Table:
         cdef string spath = path.encode()
         cdef string sdelm = delimiter.encode()
         id = uuid.uuid4()
         id_str = id.__str__()
         id_buf = id_str.encode()
         from_csv(spath, sdelm[0], id_buf)
-        return id_str
-
+        id_buf = id_str.encode()
+        return Table(id_buf)

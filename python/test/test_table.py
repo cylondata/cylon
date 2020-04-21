@@ -1,12 +1,8 @@
 import uuid
-from pytwisterx.data import TableUtil
+from pytwisterx.data import csv
 from pytwisterx.data import Table
 
-tb_util = TableUtil
-table_id: str = tb_util.read_csv('/tmp/csv.csv', ',')
-print("From Table Utils, Table Id : {}".format(table_id))
-
-tb = Table(table_id.encode())
+tb: Table = csv.read('/tmp/csv.csv', ',')
 
 print("From Python User, Table Id : {}".format(tb.id))
 
@@ -15,6 +11,12 @@ print("Table Rows : ", tb.rows)
 
 print("Table Show")
 tb.show()
+
+print('Table By Range')
+tb.show_by_range(0,2,0,2)
+
+
+
 
 
 
