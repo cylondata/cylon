@@ -9,13 +9,13 @@ int main(int argc, char *argv[]) {
 
   std::vector<std::shared_ptr<twisterx::Table>> outs;
 
-  table1->show();
+  table1->print();
 
   table1->HashPartition({1}, 2, &outs);
 
   for (auto t: outs) {
     std::cout << "-----" << std::endl;
-    t->show();
+    t->print();
   }
 
   return 0;

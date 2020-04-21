@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
   table1->Join(table2,
                twisterx::join::config::JoinConfig::RightJoin(0, 1),
                &joined);
-  joined->show();
+  joined->print();
   joined->WriteCSV("/tmp/out.csv");
 
   return 0;

@@ -7,24 +7,24 @@ from pytwisterx.common.status import Status
 from libc.stdlib cimport malloc, free
 import uuid
 
-cdef extern from "../../../cpp/src/twisterx/table.hpp" namespace "twisterx":
-    cdef cppclass _Table "twisterx::Table":
-        _Table()
-        _Table(string)
+cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table":
+    cdef cppclass CTable "twisterx::python::table::CTable":
+        CTable()
+        CTable(string)
         string get_id()
         int columns()
         int rows()
         void show()
         void show(int, int, int, int)
 
-cdef extern from "../../../cpp/src/twisterx/table.hpp" namespace "twisterx::Table":
+cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CTable":
     cdef extern _Status from_csv(const string, const char, const string)
 
 
 cdef class Table:
-    cdef _Table *thisPtr
+    cdef CTable *thisPtr
     def __cinit__(self, string id):
-        self.thisPtr = new _Table(id)
+        self.thisPtr = new CTable(id)
         #self.tablePtr = make_unique[_Table]()
 
     @property

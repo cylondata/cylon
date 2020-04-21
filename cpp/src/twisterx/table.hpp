@@ -110,15 +110,13 @@ class Table {
 
   void clear();
 
-  void show();
+  void print();
 
-  void show(int row1, int row2, int col1, int col2);
+  void print(int row1, int row2, int col1, int col2);
 
   std::string get_id() {
 	return this->id_;
   }
-
-  static Status from_csv(const std::string &path, const char &delimiter, const std::string &uuid);
 
  private:
   /**

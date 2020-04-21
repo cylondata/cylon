@@ -15,7 +15,8 @@ additional_compile_args = ['-std=c++14', '-DARROW_METADATA_V4', '-DGOOGLE_GLOG_D
 # extra_compile_args#.append(additional_compile_args)
 extra_compile_args = ['-std=c++14', '-DARROW_METADATA_V4 -DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
 
-_include_dirs = ["../cpp/src/twisterx/lib",
+_include_dirs = ["../cpp/src/twisterx/python",
+                 "../cpp/src/twisterx/lib",
                  "../cpp/src/twisterx/",
                  "../cpp/src/twisterx/net",
                  "../cpp/src/twisterx/data",
