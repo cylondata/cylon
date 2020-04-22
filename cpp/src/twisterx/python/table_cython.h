@@ -5,6 +5,11 @@
 #include "../table.hpp"
 #include "../status.hpp"
 
+using namespace twisterx;
+using namespace twisterx::io::config;
+using namespace twisterx::util::uuid;
+using namespace twisterx::join::config;
+
 namespace twisterx {
 namespace python {
 namespace table {
@@ -34,7 +39,11 @@ class CTable {
 
   Status to_csv(const std::string &path);
 
-  std::string join(const std::string &table_id);
+  std::string join(const std::string &table_id,
+				   JoinType type,
+				   JoinAlgorithm algorithm,
+				   int left_column_index,
+				   int right_column_index);
 
   //unique_ptr<CTable> sort(int sort_column);
 

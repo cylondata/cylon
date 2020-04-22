@@ -53,7 +53,11 @@ Status CTable::to_csv(const std::string &path) {
   return status;
 }
 
-std::string CTable::join(const std::string &table_id) {
+std::string CTable::join(const std::string &table_id,
+						 JoinType type,
+						 JoinAlgorithm algorithm,
+						 int left_column_index,
+						 int right_column_index) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::JoinTables(
 	  this->get_id(),
