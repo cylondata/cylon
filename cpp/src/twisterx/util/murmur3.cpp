@@ -2,6 +2,7 @@
  * Murmur 3 hash, code is taken from
  * https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp
  */
+#include <iostream>
 #include "murmur3.hpp"
 
 #define FORCE_INLINE inline __attribute__((always_inline))

@@ -32,7 +32,7 @@ class ArrowPartitionKernel {
   arrow::MemoryPool *pool_;
 };
 
-template<typename TYPE>
+template<typename TYPE, typename CTYPE>
 class NumericHashPartitionKernel : public ArrowPartitionKernel {
  public:
   explicit NumericHashPartitionKernel(arrow::MemoryPool *pool) : ArrowPartitionKernel(pool) {}
@@ -45,12 +45,13 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
     if (values->IsNull(index)) {
       return 0;
     } else {
-      auto lValue = reader->Value(index);
+      CTYPE lValue = reader->Value(index);
+
       uint32_t hash = 0;
       uint32_t seed = 0;
       void *val = (void *) &(lValue);
       // do the hash as we know the bit width
-      twisterx::util::MurmurHash3_x86_32(val, bitWidth, seed, &hash);
+      twisterx::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
       return hash;
     }
 
@@ -67,8 +68,7 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
-      twisterx::util::MurmurHash3_x86_32(val, bitWidth, seed, &hash);
-      // this is the hash
+      twisterx::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
       partitions->push_back(targets.at(hash % targets.size()));
     }
     // now build the
@@ -76,17 +76,17 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
   }
 };
 
-using UInt8ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt8Type>;
-using UInt16ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt16Type>;
-using UInt32ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt32Type>;
-using UInt64ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt64Type>;
-using Int8ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int8Type>;
-using Int16ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int16Type>;
-using Int32ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int32Type>;
-using Int64ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int64Type>;
-using HalfFloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::HalfFloatType>;
-using FloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::FloatType>;
-using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType>;
+using UInt8ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt8Type, uint8_t>;
+using UInt16ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt16Type, uint16_t>;
+using UInt32ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt32Type, uint32_t>;
+using UInt64ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt64Type, uint64_t>;
+using Int8ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int8Type, int8_t>;
+using Int16ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int16Type, int16_t>;
+using Int32ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int32Type, int32_t>;
+using Int64ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int64Type, int64_t>;
+using HalfFloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::HalfFloatType, float_t>;
+using FloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::FloatType, float_t>;
+using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType, double_t>;
 
 twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
                                     std::shared_ptr<arrow::Array> values,

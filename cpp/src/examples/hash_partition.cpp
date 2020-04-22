@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
 
   table1->print();
 
-  table1->HashPartition({1}, 2, &outs);
+  table1->HashPartition({1, 2, 3}, 4, &outs);
 
   for (auto t: outs) {
     std::cout << "-----" << std::endl;
