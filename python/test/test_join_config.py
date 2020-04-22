@@ -1,12 +1,12 @@
 from pytwisterx.common.join.config import JoinAlgorithm
 from pytwisterx.common.join.config import JoinType
 
-#print(JoinAlgorithm.SORT)
-# print(JoinAlgorithm.HASH)
-# print(JoinType.INNER)
-# print(JoinType.OUTER)
-# print(JoinType.LEFT)
-# print(JoinType.RIGHT)
+# print(JoinAlgorithm.SORT.value)
+# print(JoinAlgorithm.HASH.value)
+# print(JoinType.INNER.value)
+# print(JoinType.OUTER.value)
+# print(JoinType.LEFT.value)
+# print(JoinType.RIGHT.value)
 
 c = JoinType.LEFT
 a = JoinAlgorithm.HASH

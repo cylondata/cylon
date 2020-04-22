@@ -6,6 +6,8 @@ from twisterx.common.status cimport _Status
 from pytwisterx.common.status import Status
 from libc.stdlib cimport malloc, free
 import uuid
+from twisterx.common.join_config cimport _JoinType
+from twisterx.common.join_config cimport _JoinAlgorithm
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table":
     cdef cppclass CTable "twisterx::python::table::CTable":
@@ -17,7 +19,7 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
         void show()
         void show(int, int, int, int)
         _Status to_csv(const string)
-        string join(const string)
+        string join(const string, _JoinType, _JoinAlgorithm, int, int)
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CTable":
     cdef extern _Status from_csv(const string, const char, const string)
@@ -44,7 +46,7 @@ cdef class Table:
     def show(self):
         self.thisPtr.show()
 
-    def show_by_range(self, row1:int, row2:int, col1: int, col2: int):
+    def show_by_range(self, row1: int, row2: int, col1: int, col2: int):
         self.thisPtr.show(row1, row2, col1, col2)
 
     def to_csv(self, path: str) -> Status:
@@ -52,12 +54,12 @@ cdef class Table:
         s = Status(status.get_code(), b"", -1)
         return s
 
-    def join(self, table: Table, join_type:str, algorithm:str, left_col:int, right_col: int) -> Table:
-        cdef string table_out_id = self.thisPtr.join(table.id.encode())
+    def join(self, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
+        cdef string table_out_id = self.thisPtr.join(table.id.encode(), _JoinType.RIGHT, _JoinAlgorithm.HASH, left_col,
+                                                     right_col)
         if table_out_id.size() == 0:
             raise Exception("Join Failed !!!")
         return Table(table_out_id)
-
 
 cdef class csv:
     #cdef _Table *thisPtr
