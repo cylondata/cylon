@@ -23,9 +23,12 @@ tb.to_csv(new_path)
 tb2: Table = csv.read(new_path, ',')
 tb2.show()
 
+print("Joining Tables")
 
-tb3: Table = tb2.join(table=tb, join_type='left', algorithm='hash', left_col=0, right_col=1)
-
+tb1: Table = csv.read('/tmp/csv.csv', ',')
+tb2: Table = csv.read('/tmp/csv.csv', ',')
+tb3: Table = tb2.join(table=tb1, join_type='right', algorithm='hash', left_col=0, right_col=1)
+print(tb3.id)
 tb3.show()
 
 

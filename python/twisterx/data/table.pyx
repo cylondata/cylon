@@ -6,8 +6,11 @@ from twisterx.common.status cimport _Status
 from pytwisterx.common.status import Status
 from libc.stdlib cimport malloc, free
 import uuid
-from twisterx.common.join_config cimport _JoinType
-from twisterx.common.join_config cimport _JoinAlgorithm
+from twisterx.common.join_config cimport CJoinType
+from twisterx.common.join_config cimport CJoinAlgorithm
+from twisterx.common.join_config cimport CJoinConfig
+from pytwisterx.common.join.config import JoinConfig
+
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table":
     cdef cppclass CTable "twisterx::python::table::CTable":
@@ -19,7 +22,8 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
         void show()
         void show(int, int, int, int)
         _Status to_csv(const string)
-        string join(const string, _JoinType, _JoinAlgorithm, int, int)
+        string join(const string, CJoinType, CJoinAlgorithm, int, int)
+        string join(const string, CJoinConfig)
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CTable":
     cdef extern _Status from_csv(const string, const char, const string)
@@ -55,8 +59,11 @@ cdef class Table:
         return s
 
     def join(self, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
-        cdef string table_out_id = self.thisPtr.join(table.id.encode(), _JoinType.RIGHT, _JoinAlgorithm.HASH, left_col,
-                                                     right_col)
+        joinconfig = JoinConfig(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col, right_column_index=right_col)
+        #print(type((<JoinConfig?>joinconfig).jcPtr))
+        #cdef CJoinConfig jc1 =
+        cdef CJoinConfig *jc = new CJoinConfig(CJoinType.RIGHT, left_col, right_col, CJoinAlgorithm.SORT)
+        cdef string table_out_id = self.thisPtr.join(table.id.encode(), jc[0])
         if table_out_id.size() == 0:
             raise Exception("Join Failed !!!")
         return Table(table_out_id)
