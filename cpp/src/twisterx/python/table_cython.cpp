@@ -59,10 +59,27 @@ std::string CTable::join(const std::string &table_id,
 						 int left_column_index,
 						 int right_column_index) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+
+  JoinConfig jc(type, left_column_index, right_column_index, algorithm);
   twisterx::Status status = twisterx::JoinTables(
 	  this->get_id(),
 	  table_id,
-	  JoinConfig::RightJoin(0, 1),
+	  jc,
+	  uuid
+  );
+  if (status.is_ok()) {
+	return uuid;
+  } else {
+	return "";
+  }
+}
+
+std::string CTable::join(const std::string &table_id, JoinConfig join_config) {
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  twisterx::Status status = twisterx::JoinTables(
+	  this->get_id(),
+	  table_id,
+	  join_config,
 	  uuid
   );
   if (status.is_ok()) {

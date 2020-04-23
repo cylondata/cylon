@@ -45,6 +45,8 @@ class CTable {
 				   int left_column_index,
 				   int right_column_index);
 
+  std::string join(const std::string &table_id, JoinConfig join_config);
+
   //unique_ptr<CTable> sort(int sort_column);
 
 };

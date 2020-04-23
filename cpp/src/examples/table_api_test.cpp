@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
   joined->WriteCSV("/tmp/out.csv");
 
 
-  table1->Sort(0, sorted);
+  //table1->Sort(0, sorted);
 
 
 
