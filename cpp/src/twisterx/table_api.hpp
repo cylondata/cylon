@@ -1,5 +1,6 @@
 #ifndef TWISTERX_SRC_IO_TABLE_API_H_
 #define TWISTERX_SRC_IO_TABLE_API_H_
+
 #include <string>
 #include <vector>
 #include "status.hpp"
@@ -10,14 +11,19 @@
 namespace twisterx {
 
 std::shared_ptr<arrow::Table> get_table(const std::string &id);
+
 void put_table(const std::string &id, const std::shared_ptr<arrow::Table> &table);
+
+twisterx::Status from_csv(const std::string &path, const std::string &id, const char delimiter);
 
 twisterx::Status read_csv(const std::string &path, const std::string &id,
                           twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+
 twisterx::Status JoinTables(const std::string &table_left,
                             const std::string &table_right,
                             twisterx::join::config::JoinConfig join_config,
                             const std::string &dest_id);
+
 int column_count(const std::string &id);
 
 int row_count(const std::string &id);
@@ -32,6 +38,7 @@ int row_count(const std::string &id);
  * @return
  */
 twisterx::Status print(const std::string &table_id, int col1, int col2, int row1, int row2);
+
 twisterx::Status print_to_ostream(const std::string &table_id,
                                   int col1,
                                   int col2,

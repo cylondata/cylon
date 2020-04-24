@@ -27,7 +27,7 @@ class Table {
    * Tables can only be created using the factory methods, so the constructor is private
    */
   Table(std::string id) {
-    id_ = std::move(id);
+	id_ = std::move(id);
   }
 
   /**
@@ -36,8 +36,8 @@ class Table {
    * @return a pointer to the table
    */
   static Status FromCSV(const std::string &path,
-                        std::shared_ptr<Table> *tableOut,
-                        twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+						std::shared_ptr<Table> *tableOut,
+						twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
 
   /**
    * Create a table from set of columns
@@ -67,15 +67,16 @@ class Table {
    * @return new set of tables each with the new partition
    */
   Status HashPartition(const std::vector<int> &hash_columns,
-                       int no_of_partitions,
-                       std::vector<std::shared_ptr<twisterx::Table>> *out);
+					   int no_of_partitions,
+					   std::vector<std::shared_ptr<twisterx::Table>> *out);
 
   /**
    * Merge the set of tables to create a single table
    * @param tables
    * @return new merged table
    */
-  static Status Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables, std::unique_ptr<Table> *tableOut);
+  static Status
+  Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables, std::unique_ptr<Table> *tableOut);
 
   /**
    * Sort the table according to the given column, this is a local sort
@@ -92,8 +93,8 @@ class Table {
    * @return success
    */
   Status Join(const std::shared_ptr<Table> &right,
-              twisterx::join::config::JoinConfig join_config,
-              std::shared_ptr<Table> *out);
+			  twisterx::join::config::JoinConfig join_config,
+			  std::shared_ptr<Table> *out);
 
   /**
    * Create a arrow table from this data structure
@@ -114,7 +115,7 @@ class Table {
   void print(int row1, int row2, int col1, int col2);
 
   std::string get_id() {
-    return this->id_;
+	return this->id_;
   }
 
  private:

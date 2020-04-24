@@ -17,6 +17,12 @@ TwisterX provides Python APIs with Cython.
 
 ### Pre-requisites
 
+Make sure to add the LD_LIBRARY_PATH once the CPP build is completed. 
+
+```bash
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<base_path>/twisterx/cpp/build/lib:<base_path>/twisterx/cpp/build/arrow/install/lib/
+```
+
 0. Create a Virtual Environment for Development and Testing
 
 Create an environment called `ENV`
@@ -65,14 +71,14 @@ make develop
 
 ```bash
 cd python
-make install
+sudo make setup
 ```
 
 4. Test Python API
 
 ```bash
 cd python
-python3 test/test_pytwisterx.py
+python3 test/test_table.py
 ```
 
 
