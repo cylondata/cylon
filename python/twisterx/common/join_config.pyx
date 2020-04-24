@@ -1,8 +1,6 @@
 from twisterx.common.join_config cimport CJoinType
 from twisterx.common.join_config cimport CJoinAlgorithm
 from twisterx.common.join_config cimport CJoinConfig
-#from pytwisterx.common.join.config import JoinType
-#from pytwisterx.common.join.config import JoinAlgorithm
 cimport cython
 from enum import Enum
 

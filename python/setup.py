@@ -8,7 +8,7 @@ import os
 
 from Cython.Build import cythonize
 from setuptools import setup, Extension
-
+#os.environ["CXX"] = "mpic++"
 extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
 additional_compile_args = ['-std=c++14', '-DARROW_METADATA_V4', '-DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
@@ -111,7 +111,7 @@ ext_modules = [
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
 
-ext_modules = cythonize(ext_modules, compiler_directives=compiler_directives, gdb_debug=True)
+ext_modules = cythonize(ext_modules, compiler_directives=compiler_directives, gdb_debug=False)
 
 # for ext in ext_modules:
 #     # The Numpy C headers are currently required

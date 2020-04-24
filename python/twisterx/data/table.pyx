@@ -1,16 +1,12 @@
-import cython
 from libcpp.string cimport string
-from cython.operator cimport dereference as deref
-from libcpp.memory cimport unique_ptr, shared_ptr, make_unique
 from twisterx.common.status cimport _Status
 from pytwisterx.common.status import Status
-from libc.stdlib cimport malloc, free
 import uuid
 from twisterx.common.join_config cimport CJoinType
 from twisterx.common.join_config cimport CJoinAlgorithm
 from twisterx.common.join_config cimport CJoinConfig
-from pytwisterx.common.join.config import JoinConfig
-
+from pytwisterx.common.join.config import PJoinType
+from pytwisterx.common.join.config import PJoinAlgorithm
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table":
     cdef cppclass CTable "twisterx::python::table::CTable":
@@ -29,11 +25,67 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
     cdef extern _Status from_csv(const string, const char, const string)
 
 
+
 cdef class Table:
     cdef CTable *thisPtr
+    cdef CJoinConfig *jcPtr
+
     def __cinit__(self, string id):
         self.thisPtr = new CTable(id)
         #self.tablePtr = make_unique[CTable]()
+
+    cdef __get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
+                           right_column_index: int):
+        if left_column_index is None or right_column_index is None:
+            raise Exception("Join Column index not provided")
+
+        if join_algorithm is None:
+            join_algorithm = PJoinAlgorithm.HASH.value
+
+        if join_algorithm == PJoinAlgorithm.HASH.value:
+
+            if join_type == PJoinType.INNER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.INNER, left_column_index, right_column_index,
+                                             CJoinAlgorithm.HASH)
+            elif join_type == PJoinType.LEFT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.LEFT, left_column_index, right_column_index,
+                                             CJoinAlgorithm.HASH)
+            elif join_type == PJoinType.RIGHT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.RIGHT, left_column_index, right_column_index,
+                                             CJoinAlgorithm.HASH)
+            elif join_type == PJoinType.OUTER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.OUTER, left_column_index, right_column_index,
+                                             CJoinAlgorithm.HASH)
+            else:
+                raise ValueError("Unsupported Join Type {}".format(join_type))
+
+        elif join_algorithm == PJoinAlgorithm.SORT.value:
+
+            if join_type == PJoinType.INNER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.INNER, left_column_index, right_column_index,
+                                             CJoinAlgorithm.SORT)
+            elif join_type == PJoinType.LEFT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.LEFT, left_column_index, right_column_index,
+                                             CJoinAlgorithm.SORT)
+            elif join_type == PJoinType.RIGHT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.RIGHT, left_column_index, right_column_index,
+                                             CJoinAlgorithm.SORT)
+            elif join_type == PJoinType.OUTER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.OUTER, left_column_index, right_column_index,
+                                             CJoinAlgorithm.SORT)
+            else:
+                raise ValueError("Unsupported Join Type {}".format(join_type))
+        else:
+            if join_type == PJoinType.INNER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.INNER, left_column_index, right_column_index)
+            elif join_type == PJoinType.LEFT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.LEFT, left_column_index, right_column_index)
+            elif join_type == PJoinType.RIGHT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.RIGHT, left_column_index, right_column_index)
+            elif join_type == PJoinType.OUTER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.OUTER, left_column_index, right_column_index)
+            else:
+                raise ValueError("Unsupported Join Type {}".format(join_type))
 
     @property
     def id(self) -> str:
@@ -59,11 +111,10 @@ cdef class Table:
         return s
 
     def join(self, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
-        joinconfig = JoinConfig(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col, right_column_index=right_col)
-        #print(type((<JoinConfig?>joinconfig).jcPtr))
-        #cdef CJoinConfig jc1 =
-        cdef CJoinConfig *jc = new CJoinConfig(CJoinType.RIGHT, left_col, right_col, CJoinAlgorithm.SORT)
-        cdef string table_out_id = self.thisPtr.join(table.id.encode(), jc[0])
+        self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
+                                right_column_index=right_col)
+        cdef CJoinConfig *jc1 = self.jcPtr
+        cdef string table_out_id = self.thisPtr.join(table.id.encode(), jc1[0])
         if table_out_id.size() == 0:
             raise Exception("Join Failed !!!")
         return Table(table_out_id)

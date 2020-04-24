@@ -1,7 +1,6 @@
 from pytwisterx.common.join.config import JoinAlgorithm
-from pytwisterx.common.join.config import JoinType
 from pytwisterx.common.join.config import JoinConfig
-from pytwisterx.utils import join as joinutils
+from pytwisterx.common.join.config import JoinType
 
 # print(JoinAlgorithm.SORT.value)
 # print(JoinAlgorithm.HASH.value)
