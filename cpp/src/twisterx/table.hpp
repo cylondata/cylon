@@ -104,16 +104,32 @@ class Table {
   Status ToArrowTable(std::shared_ptr<arrow::Table> *out);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
-  int columns();
+  int32_t columns();
 
-  int rows();
+  /**
+   * Get the number of rows in this table
+   * @return number of rows in the table
+   */
+  int64_t rows();
 
-  void clear();
-
+  /**
+   * Print the complete table
+   */
   void print();
 
+  /**
+   * Print the table from row1 to row2 and col1 to col2
+   * @param row1 first row to start printing (including)
+   * @param row2 end row to stop printing (including)
+   * @param col1 first column to start printing (including)
+   * @param col2 end column to stop printing (including)
+   */
   void print(int row1, int row2, int col1, int col2);
 
+  /**
+   * Get the id associated with this table
+   * @return string id
+   */
   std::string get_id() {
 	return this->id_;
   }

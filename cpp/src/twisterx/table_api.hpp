@@ -26,7 +26,7 @@ twisterx::Status JoinTables(const std::string &table_left,
 
 int column_count(const std::string &id);
 
-int row_count(const std::string &id);
+int64_t row_count(const std::string &id);
 
 /**
  * Print a table
