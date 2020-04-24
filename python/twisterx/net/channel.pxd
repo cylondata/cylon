@@ -3,7 +3,7 @@ from libcpp cimport bool
 cimport numpy as np
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr
-from twisterx.api.txrequest cimport _TxRequest
+from twisterx.net.txrequest cimport _TxRequest
 
 
 cdef extern from "../../../cpp/src/twisterx/net/channel.hpp" namespace "twisterx":

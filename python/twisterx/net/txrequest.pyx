@@ -2,14 +2,13 @@ from libcpp.string cimport string
 
 import numpy as np
 cimport numpy as np
-from twisterx.api.txrequest cimport _TxRequest
+from twisterx.net.txrequest cimport _TxRequest
 
 ctypedef np.int_t DTYPE_int
 ctypedef np.float_t DTYPE_float
 
 cdef class TxRequest:
     cdef _TxRequest *thisptr
-    #cdef cnp.ndarray[cnp.int, ndim=1, mode="c"] bufval
     cdef public int[:] buf_val_int
     cdef public float[:] buf_val_float
     cdef public char[:] buf_val_char
@@ -20,12 +19,6 @@ cdef class TxRequest:
 
     cdef public np_buf_val
     cdef public np_head_val
-    # cdef np.ndarray[np.uint32_t, ndim=3, mode = 'c'] np_buff = np.ascontiguousarray(im, dtype = np.uint32)
-    # cdef unsigned int* im_buff = <unsigned int*> np_buff.data
-    # [int, ndim=1, mode="c"]
-    # def __init__(self):
-    #     self.np_buf_val = None
-    #     self.np_head_val = None
 
     def __cinit__(self, int tgt, np.ndarray buf, int len,
                   np.ndarray[int, ndim=1, mode="c"] head, int hLength):

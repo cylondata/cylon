@@ -1,2 +1,2 @@
-from pytwisterx.api.comms.channel import ChannelSendCallback
-from pytwisterx.api.comms.channel import ChannelReceiveCallback
+from pytwisterx.net.comms.channel import ChannelSendCallback
+from pytwisterx.net.comms.channel import ChannelReceiveCallback
