@@ -8,7 +8,8 @@ import os
 
 from Cython.Build import cythonize
 from setuptools import setup, Extension
-#os.environ["CXX"] = "mpic++"
+
+# os.environ["CXX"] = "mpic++"
 extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
 additional_compile_args = ['-std=c++14', '-DARROW_METADATA_V4', '-DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
@@ -69,6 +70,16 @@ ext_modules = [
               ),
     Extension("pytwisterx.net.comms.channel",
               sources=["twisterx/net/channel.pyx",
+                       ],
+              include_dirs=_include_dirs,
+              language='c++',
+              extra_compile_args=extra_compile_args,
+              extra_link_args=extra_link_args,
+              libraries=["arrow", "twisterx", "glog"],
+              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              ),
+    Extension("pytwisterx.net.comms.all_to_all",
+              sources=["twisterx/net/all_to_all.pyx",
                        ],
               include_dirs=_include_dirs,
               language='c++',

@@ -4,8 +4,6 @@ import numpy as np
 cimport numpy as np
 from twisterx.net.txrequest cimport _TxRequest
 
-ctypedef np.int_t DTYPE_int
-ctypedef np.float_t DTYPE_float
 
 cdef class TxRequest:
     cdef _TxRequest *thisptr
@@ -172,3 +170,4 @@ cdef class TxRequest:
 
     def to_string(self, data_type, depth):
         self.thisptr.to_string(data_type, depth)
+
