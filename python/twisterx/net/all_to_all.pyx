@@ -1,6 +1,9 @@
 import numpy as np
 cimport numpy as np
 from twisterx.net.all_to_all cimport CReceiveCallback
+from twisterx.net.all_to_all cimport CAllToAll
+from libcpp.memory cimport shared_ptr
+from libcpp.vector cimport vector
 
 cdef class ReceiveCallBack:
     cdef CReceiveCallback *thisPtr
@@ -107,3 +110,15 @@ cdef class ReceiveCallBack:
             #     self.buf_val_long = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
             #     self.thisptr = new _TxRequest(tgt, &self.buf_val_long[0], len, &head[0], hLength)
             #     self.thisptr.buffer = &self.buf_val_long[0]
+
+cdef class AllToAll:
+
+    cdef vector[int] c_sources
+    cdef vector[int] c_targets
+    cdef CReceiveCallback *callback
+    cdef CAllToAll *thisPtr
+
+    def __cinit__(self, int worker_id, sources:list, targets: list, int edge_id):
+        self.c_sources = sources
+        self.c_targets = targets
+        self.thisPtr = new CAllToAll(worker_id, self.c_sources, self.c_targets, edge_id, self.callback)
