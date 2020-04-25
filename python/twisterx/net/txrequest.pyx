@@ -2,11 +2,11 @@ from libcpp.string cimport string
 
 import numpy as np
 cimport numpy as np
-from twisterx.net.txrequest cimport _TxRequest
+from twisterx.net.txrequest cimport CTxRequest
 
 
 cdef class TxRequest:
-    cdef _TxRequest *thisptr
+    cdef CTxRequest *thisptr
     cdef public int[:] buf_val_int
     cdef public float[:] buf_val_float
     cdef public char[:] buf_val_char
@@ -21,7 +21,7 @@ cdef class TxRequest:
     def __cinit__(self, int tgt, np.ndarray buf, int len,
                   np.ndarray[int, ndim=1, mode="c"] head, int hLength):
         if tgt != -1 and buf is None and len == -1 and head is None and hLength == -1:
-            self.thisptr = new _TxRequest(tgt)
+            self.thisptr = new CTxRequest(tgt)
             self.thisptr.target = tgt
         if tgt != -1 and buf is not None and len != -1 and head is not None and hLength != -1:
 
@@ -30,42 +30,42 @@ cdef class TxRequest:
 
             if self.buf_val_type == np.int16:
                 self.buf_val_int = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_int[0], len, &head[0], hLength)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_int[0], len, &head[0], hLength)
                 self.thisptr.buffer = &self.buf_val_int[0]
 
             if self.buf_val_type == np.int32:
                 self.buf_val_int = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_int[0], len, &head[0], hLength)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_int[0], len, &head[0], hLength)
                 self.thisptr.buffer = &self.buf_val_int[0]
 
             if self.buf_val_type == np.int64:
                 self.buf_val_long = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_long[0], len, &head[0], hLength)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_long[0], len, &head[0], hLength)
                 self.thisptr.buffer = &self.buf_val_long[0]
 
             if self.buf_val_type == np.float32:
                 self.buf_val_float = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_float[0], len, &head[0], hLength)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_float[0], len, &head[0], hLength)
                 self.thisptr.buffer = &self.buf_val_float[0]
 
             if self.buf_val_type == np.float:
                 self.buf_val_double = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_double[0], len, &head[0], hLength)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_double[0], len, &head[0], hLength)
                 self.thisptr.buffer = &self.buf_val_double[0]
 
             if self.buf_val_type == np.float64:
                 self.buf_val_double = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_double[0], len, &head[0], hLength)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_double[0], len, &head[0], hLength)
                 self.thisptr.buffer = &self.buf_val_double[0]
 
             if self.buf_val_type == np.double:
                 self.buf_val_double = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_double[0], len, &head[0], hLength)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_double[0], len, &head[0], hLength)
                 self.thisptr.buffer = &self.buf_val_double[0]
 
             if self.buf_val_type == np.long:
                 self.buf_val_long = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_long[0], len, &head[0], hLength)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_long[0], len, &head[0], hLength)
                 self.thisptr.buffer = &self.buf_val_long[0]
 
             # if self.buf_val_type == np.char:
@@ -95,42 +95,42 @@ cdef class TxRequest:
 
             if self.buf_val_type == np.int16:
                 self.buf_val_int = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_int[0], len)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_int[0], len)
                 self.thisptr.buffer = &self.buf_val_int[0]
 
             if self.buf_val_type == np.int32:
                 self.buf_val_int = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_int[0], len)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_int[0], len)
                 self.thisptr.buffer = &self.buf_val_int[0]
 
             if self.buf_val_type == np.int64:
                 self.buf_val_int = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_int[0], len)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_int[0], len)
                 self.thisptr.buffer = &self.buf_val_int[0]
 
             if self.buf_val_type == np.float32:
                 self.buf_val_float = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_float[0], len)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_float[0], len)
                 self.thisptr.buffer = &self.buf_val_float[0]
 
             if self.buf_val_type == np.float:
                 self.buf_val_double = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_double[0], len)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_double[0], len)
                 self.thisptr.buffer = &self.buf_val_double[0]
 
             if self.buf_val_type == np.float64:
                 self.buf_val_double = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_double[0], len)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_double[0], len)
                 self.thisptr.buffer = &self.buf_val_double[0]
 
             if self.buf_val_type == np.double:
                 self.buf_val_double = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_double[0], len)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_double[0], len)
                 self.thisptr.buffer = &self.buf_val_double[0]
 
             if self.buf_val_type == np.long:
                 self.buf_val_long = buf#np.ndarray(buffer=buf.data, dtype=buf.dtype, ndim=ndim)
-                self.thisptr = new _TxRequest(tgt, &self.buf_val_long[0], len)
+                self.thisptr = new CTxRequest(tgt, &self.buf_val_long[0], len)
                 self.thisptr.buffer = &self.buf_val_long[0]
 
             # if self.buf_val_type == np.char:

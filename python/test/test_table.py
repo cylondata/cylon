@@ -32,10 +32,6 @@ print(tb3.id)
 tb3.show()
 
 
-ar: np.ndarray = tb3.to_numpy(cols=[0,1,12], dtype=np.float32)
-
-
-
 
 
 
