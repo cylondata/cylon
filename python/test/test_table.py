@@ -1,4 +1,3 @@
-import uuid
 from pytwisterx.data import csv
 from pytwisterx.data import Table
 
@@ -30,6 +29,8 @@ tb2: Table = csv.read('/tmp/csv.csv', ',')
 tb3: Table = tb2.join(table=tb1, join_type='inner', algorithm='sort', left_col=0, right_col=1)
 print(tb3.id)
 tb3.show()
+
+
 
 
 

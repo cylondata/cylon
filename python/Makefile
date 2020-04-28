@@ -19,5 +19,8 @@ pytwisterx:
 setup:
 	make clean; make uninstall; make install;
 
+x:
+	sudo make clean; pip3 uninstall -y pytwisterx; python3 setup.py install
+
 inplace:
 	make clean; make init; python3 setup.py build_ext --inplace;
