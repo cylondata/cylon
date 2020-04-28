@@ -28,8 +28,6 @@ class all_to_all_wrap{
   void finish();
   void set_instance(twisterx::AllToAll *all);
   twisterx::AllToAll* get_instance();
-  void init_all_to_all(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId, void *buffer, int length, int target, int *header, int headerLength);
-  void execute();
 };
 }
 }

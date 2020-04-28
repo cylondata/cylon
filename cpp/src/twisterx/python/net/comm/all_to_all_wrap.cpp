@@ -51,33 +51,6 @@ void twisterx::net::comm::all_to_all_wrap::finish() {
   all_->close();
 }
 
-void twisterx::net::comm::all_to_all_wrap::init_all_to_all(int worker_id,
-														   const std::vector<int> &source,
-														   const std::vector<int> &targets,
-														   int edgeId,
-														   void *buffer,
-														   int length,
-														   int target,
-														   int *header,
-														   int headerLength) {
-  twisterx::net::comms::Callback callback;
-  all_ = new twisterx::AllToAll(worker_id, source, targets, edgeId, &callback);
-
-  all_->insert(buffer, length, target, header, headerLength);
-
-//  all_->finish();
-//  while (!all_->isComplete()) {
-//
-//  }
-//  all_->close();
-}
-
-void twisterx::net::comm::all_to_all_wrap::execute() {
-  this->wait();
-  this->finish();
-
-}
-
 }
 }
 }
