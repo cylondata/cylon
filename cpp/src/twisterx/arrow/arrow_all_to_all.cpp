@@ -3,19 +3,23 @@
 #include <glog/logging.h>
 
 namespace twisterx {
-ArrowAllToAll::ArrowAllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets,
-                             int edgeId, std::shared_ptr<ArrowCallback> callback, std::shared_ptr<arrow::Schema> schema,
+ArrowAllToAll::ArrowAllToAll(twisterx::TwisterXContext *ctx,
+                             const std::vector<int> &source,
+                             const std::vector<int> &targets,
+                             int edgeId,
+                             std::shared_ptr<ArrowCallback> callback,
+                             std::shared_ptr<arrow::Schema> schema,
                              arrow::MemoryPool *pool) {
   targets_ = targets;
   srcs_ = source;
   recv_callback_ = callback;
   schema_ = schema;
   receivedBuffers_ = 0;
-  workerId_ = worker_id;
+  workerId_ = ctx->GetRank();
   pool_ = pool;
 
   // we need to pass the correct arguments
-  all_ = std::make_shared<AllToAll>(worker_id, source, targets, edgeId, this);
+  all_ = std::make_shared<AllToAll>(ctx, source, targets, edgeId, this);
 
   // add the trackers for sending
   for (auto t : targets) {

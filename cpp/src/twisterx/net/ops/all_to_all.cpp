@@ -5,32 +5,32 @@
 #include <glog/logging.h>
 
 #include "all_to_all.hpp"
-#include "mpi_channel.hpp"
+#include "../mpi/mpi_channel.hpp"
 
 namespace twisterx {
-AllToAll::AllToAll(int w_id, const std::vector<int> &srcs,
+AllToAll::AllToAll(twisterx::TwisterXContext *ctx, const std::vector<int> &srcs,
                    const std::vector<int> &tgts, int edge_id, ReceiveCallback *rcvCallback) {
-  worker_id = w_id;
+  worker_id = ctx->GetRank();
   sources = srcs;
   targets = tgts;
   edge = edge_id;
-  channel = new MPIChannel();
+  channel = ctx->GetCommunicator()->CreateChannel();
   channel->init(edge_id, srcs, tgts, this, this);
   callback = rcvCallback;
 
   // initialize the sends
   for (int t : tgts) {
-    int tAdjusted = (t + w_id) % targets.size();
+    int tAdjusted = (t + ctx->GetRank()) % targets.size();
     sends.push_back(new AllToAllSends(tAdjusted));
   }
 
   thisNumTargets = 0;
   thisNumSources = 0;
-  if (std::find(targets.begin(), targets.end(), w_id) != targets.end()) {
+  if (std::find(targets.begin(), targets.end(), ctx->GetRank()) != targets.end()) {
     thisNumTargets = 1;
   }
 
-  if (std::find(sources.begin(), sources.end(), w_id) != sources.end()) {
+  if (std::find(sources.begin(), sources.end(), ctx->GetRank()) != sources.end()) {
     thisNumSources = 1;
   }
 }

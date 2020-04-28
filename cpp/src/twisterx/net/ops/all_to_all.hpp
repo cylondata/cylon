@@ -5,8 +5,9 @@
 #include<unordered_map>
 #include<queue>
 #include<unordered_set>
+#include "../../ctx/twisterx_context.h"
 
-#include "channel.hpp"
+#include "../channel.hpp"
 
 namespace twisterx {
 class ReceiveCallback {
@@ -66,7 +67,10 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
    * @param all_workers
    * @return
    */
-  AllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId,
+  AllToAll(twisterx::TwisterXContext *ctx,
+           const std::vector<int> &source,
+           const std::vector<int> &targets,
+           int edgeId,
            ReceiveCallback *callback);
 
   /**

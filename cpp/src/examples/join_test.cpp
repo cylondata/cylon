@@ -7,6 +7,7 @@
 #include <arrow/compute/api.h>
 #include <chrono>
 #include <ctime>
+#include <net/mpi/mpi_communicator.h>
 #include "arrow/arrow_join.hpp"
 
 using arrow::DoubleBuilder;
@@ -28,17 +29,18 @@ class JC : public twisterx::JoinCallback {
 };
 
 int main(int argc, char *argv[]) {
-  MPI_Init(NULLPTR, NULLPTR);
+
+  auto mpi_config = new twisterx::net::MPIConfig();
+  auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
+
   arrow::MemoryPool *pool = arrow::default_memory_pool();
 
 //  int* x = (int *)malloc(10 * sizeof(int));
 //  std::cout << "error: " << x << std::endl;
 //  x[12] = 1;
 
-  int rank = 0;
-  int size = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int rank = ctx->GetRank();
+  int size = ctx->GetWorldSize();
 
   Int64Builder left_id_builder(pool);
   Int64Builder right_id_builder(pool);

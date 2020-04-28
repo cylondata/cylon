@@ -5,17 +5,22 @@
 #include <chrono>
 
 namespace twisterx {
-ArrowJoin::ArrowJoin(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int leftEdgeId,
-                     int rightEdgeId, twisterx::JoinCallback *callback, std::shared_ptr<arrow::Schema> schema,
+ArrowJoin::ArrowJoin(twisterx::TwisterXContext *ctx,
+                     const std::vector<int> &source,
+                     const std::vector<int> &targets,
+                     int leftEdgeId,
+                     int rightEdgeId,
+                     twisterx::JoinCallback *callback,
+                     std::shared_ptr<arrow::Schema> schema,
                      arrow::MemoryPool *pool) {
   joinCallBack_ = callback;
-  workerId_ = worker_id;
+  workerId_ = ctx->GetRank();
   leftCallBack_ = std::make_shared<AllToAllCallback>(&leftTables_);
   rightCallBack_ = std::make_shared<AllToAllCallback>(&rightTables_);
   leftAllToAll_ =
-      std::make_shared<ArrowAllToAll>(worker_id, source, targets, leftEdgeId, leftCallBack_, schema, pool);
+      std::make_shared<ArrowAllToAll>(ctx, source, targets, leftEdgeId, leftCallBack_, schema, pool);
   rightAllToAll_ =
-      std::make_shared<ArrowAllToAll>(worker_id, source, targets, rightEdgeId, rightCallBack_, schema, pool);
+      std::make_shared<ArrowAllToAll>(ctx, source, targets, rightEdgeId, rightCallBack_, schema, pool);
 }
 
 bool ArrowJoin::isComplete() {
@@ -52,16 +57,16 @@ bool AllToAllCallback::onReceive(int source, std::shared_ptr<arrow::Table> table
   return true;
 }
 
-ArrowJoinWithPartition::ArrowJoinWithPartition(int worker_id, const std::vector<int> &source,
+ArrowJoinWithPartition::ArrowJoinWithPartition(twisterx::TwisterXContext *ctx, const std::vector<int> &source,
                                                const std::vector<int> &targets, int leftEdgeId, int rightEdgeId,
                                                JoinCallback *callback, std::shared_ptr<arrow::Schema> schema,
                                                arrow::MemoryPool *pool, int leftColumnIndex, int rightColumnIndex) {
-  workerId_ = worker_id;
+  workerId_ = ctx->GetRank();
   finished_ = false;
   targets_ = targets;
   leftColumnIndex_ = leftColumnIndex;
   rightColumnIndex_ = rightColumnIndex;
-  join_ = std::make_shared<ArrowJoin>(worker_id, source, targets, leftEdgeId, rightEdgeId, callback, schema, pool);
+  join_ = std::make_shared<ArrowJoin>(ctx, source, targets, leftEdgeId, rightEdgeId, callback, schema, pool);
 }
 
 bool ArrowJoinWithPartition::isComplete() {

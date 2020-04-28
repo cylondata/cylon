@@ -4,7 +4,7 @@
 #include <arrow/api.h>
 #include <arrow/table.h>
 
-#include "../net/all_to_all.hpp"
+#include "../net/ops/all_to_all.hpp"
 
 namespace twisterx {
 // lets define some integers to indicate the state of the data transfer using headers
@@ -80,7 +80,7 @@ class ArrowAllToAll : public ReceiveCallback {
    * @param all_workers
    * @return
    */
-  ArrowAllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId,
+  ArrowAllToAll(twisterx::TwisterXContext *ctx, const std::vector<int> &source, const std::vector<int> &targets, int edgeId,
                 std::shared_ptr<ArrowCallback> callback, std::shared_ptr<arrow::Schema> schema,
                 arrow::MemoryPool *pool);
 
