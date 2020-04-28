@@ -16,7 +16,7 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_COMPUTE=ON"
         " -DARROW_CUDA=OFF"
         " -DARROW_JEMALLOC=OFF"
-        " -DARROW_PYTHON=OFF"
+        " -DARROW_PYTHON=ON"
         " -DARROW_USE_GLOG=OFF"
         " -DARROW_DATASET=ON"
         " -DARROW_BUILD_UTILITIES=OFF"
@@ -28,6 +28,8 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_JSON=ON"
         " -DARROW_BOOST_USE_SHARED=ON")
 
+message("CMake Source Dir :")
+message(${CMAKE_SOURCE_DIR})
 configure_file("${CMAKE_SOURCE_DIR}/CMake/Templates/Arrow.CMakeLists.txt.cmake"
         "${ARROW_ROOT}/CMakeLists.txt")
 
