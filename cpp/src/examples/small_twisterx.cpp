@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "net/all_to_all.hpp"
-#include "arrow/arrow_all_to_all.hpp"
+
 
 class Clbk : public twisterx::ReceiveCallback {
  public:
@@ -47,8 +47,9 @@ int main(int argc, char *argv[]) {
   header[1] = 2;
   header[2] = 3;
   header[3] = 4;
+  std::cout << "Size : " << size  << ", Rank : " << rank << std::endl;
   for (int i = 0; i < size * 1; i++) {
-    all.insert(buf, 16, i % size, header, 4);
+    all.insert(buf, 4, i % size, header, 4);
   }
   all.finish();
 //
