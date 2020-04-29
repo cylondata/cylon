@@ -5,7 +5,8 @@ https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
 '''
 
 import os
-
+import pyarrow as pa
+import numpy as np
 from Cython.Build import cythonize
 from setuptools import setup, Extension
 
@@ -58,6 +59,15 @@ ext_modules = [
               extra_link_args=extra_link_args,
               libraries=["arrow", "twisterx", "glog"],
               library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              ),
+    Extension("pytwisterx.arrow.util",
+              sources=["twisterx/data/arrow_util.pyx"],
+              include_dirs=_include_dirs,
+              language='c++',
+              extra_compile_args=extra_compile_args,
+              extra_link_args=extra_link_args,
+              libraries=["arrow", "arrow_python", "glog"],
+              library_dirs=["../cpp/build/arrow/install/lib"],
               ),
     Extension("pytwisterx.net.comms.request",
               sources=["twisterx/net/txrequest.pyx",
@@ -152,6 +162,9 @@ ext_modules = cythonize(ext_modules, compiler_directives=compiler_directives, gd
 #     ext.library_dirs.extend(pa.get_library_dirs())
 #     ext.define_macros.append(("_GLIBCXX_USE_CXX11_ABI", "0"))
 
+
+
+
 setup(
     name="pytwisterx",
     packages=['twisterx',
@@ -168,7 +181,10 @@ setup(
     install_requires=[
         'numpy',
         'cython',
-        'pyarrow'
+        'pyarrow==0.16.0'
     ],
     zip_safe=False,
 )
+print("Arrow Include Dirs {}".format(pa.get_include()))
+print("Arrow Libraries{}".format(pa.get_libraries()))
+print("Arrow Libraries Dirs {}".format(pa.get_library_dirs()))
