@@ -11,7 +11,7 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_TEST_LINKAGE=OFF"
         " -DARROW_TEST_MEMCHECK=OFF"
         " -DARROW_BUILD_BENCHMARKS=OFF"
-        " -DARROW_IPC=OFF"
+        " -DARROW_IPC=ON"
         " -DARROW_FLIGHT=OFF"
         " -DARROW_COMPUTE=ON"
         " -DARROW_CUDA=OFF"
@@ -26,7 +26,8 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_DATASET=OFF"
         " -DARROW_CSV=ON"
         " -DARROW_JSON=ON"
-        " -DARROW_BOOST_USE_SHARED=ON")
+        " -DARROW_BOOST_USE_SHARED=ON"
+        )
 
 message("CMake Source Dir :")
 message(${CMAKE_SOURCE_DIR})
