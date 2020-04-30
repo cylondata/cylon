@@ -1,3 +1,4 @@
+from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from twisterx.common.status cimport _Status
 from pytwisterx.common.status import Status
@@ -7,11 +8,13 @@ from twisterx.common.join_config cimport CJoinAlgorithm
 from twisterx.common.join_config cimport CJoinConfig
 from pytwisterx.common.join.config import PJoinType
 from pytwisterx.common.join.config import PJoinAlgorithm
+#from pyarrow.lib cimport CTable
+#from pyarrow.lib cimport pyarrow_unwrap_table
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table":
-    cdef cppclass CTable "twisterx::python::table::CTable":
-        CTable()
-        CTable(string)
+    cdef cppclass CxTable "twisterx::python::table::CTable":
+        CxTable()
+        CxTable(string)
         string get_id()
         int columns()
         int rows()
@@ -23,15 +26,15 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CTable":
     cdef extern _Status from_csv(const string, const char, const string)
-
+    #cdef extern string from_pyarrow_table(shared_ptr[CTable] table)
 
 
 cdef class Table:
-    cdef CTable *thisPtr
+    cdef CxTable *thisPtr
     cdef CJoinConfig *jcPtr
 
     def __cinit__(self, string id):
-        self.thisPtr = new CTable(id)
+        self.thisPtr = new CxTable(id)
         #self.tablePtr = make_unique[CTable]()
 
     cdef __get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
@@ -112,14 +115,14 @@ cdef class Table:
 
     def join(self, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
-                                right_column_index=right_col)
+                               right_column_index=right_col)
         cdef CJoinConfig *jc1 = self.jcPtr
         cdef string table_out_id = self.thisPtr.join(table.id.encode(), jc1[0])
         if table_out_id.size() == 0:
             raise Exception("Join Failed !!!")
         return Table(table_out_id)
 
-cdef class csv:
+cdef class csv_reader:
     #cdef _Table *thisPtr
     #cdef unique_ptr[_Table] tablePtr
 
@@ -133,3 +136,15 @@ cdef class csv:
         from_csv(spath, sdelm[0], id_buf)
         id_buf = id_str.encode()
         return Table(id_buf)
+
+    @staticmethod
+    def from_arrow(obj):
+        print(obj)
+        # cdef shared_ptr[CTable] table = pyarrow_unwrap_table(obj)
+        #
+        # if table.get() == NULL:
+        #     raise TypeError("not an table")
+        # else:
+        #     print("OK")
+        #     #id = from_pyarrow_table(table)
+        #     #print(id)
