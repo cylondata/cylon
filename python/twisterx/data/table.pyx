@@ -1,4 +1,3 @@
-from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from twisterx.common.status cimport _Status
 from pytwisterx.common.status import Status
@@ -8,11 +7,9 @@ from twisterx.common.join_config cimport CJoinAlgorithm
 from twisterx.common.join_config cimport CJoinConfig
 from pytwisterx.common.join.config import PJoinType
 from pytwisterx.common.join.config import PJoinAlgorithm
-#from pyarrow.lib cimport CTable
-#from pyarrow.lib cimport pyarrow_unwrap_table
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table":
-    cdef cppclass CxTable "twisterx::python::table::CTable":
+    cdef cppclass CxTable "twisterx::python::table::CxTable":
         CxTable()
         CxTable(string)
         string get_id()
@@ -24,10 +21,8 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
         string join(const string, CJoinType, CJoinAlgorithm, int, int)
         string join(const string, CJoinConfig)
 
-cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CTable":
+cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CxTable":
     cdef extern _Status from_csv(const string, const char, const string)
-    #cdef extern string from_pyarrow_table(shared_ptr[CTable] table)
-
 
 cdef class Table:
     cdef CxTable *thisPtr
@@ -139,12 +134,4 @@ cdef class csv_reader:
 
     @staticmethod
     def from_arrow(obj):
-        print(obj)
-        # cdef shared_ptr[CTable] table = pyarrow_unwrap_table(obj)
-        #
-        # if table.get() == NULL:
-        #     raise TypeError("not an table")
-        # else:
-        #     print("OK")
-        #     #id = from_pyarrow_table(table)
-        #     #print(id)
+        pass

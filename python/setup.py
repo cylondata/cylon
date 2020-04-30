@@ -5,17 +5,26 @@ https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
 '''
 
 import os
-#import pyarrow as pa
-#import numpy as np
+import pyarrow as pa
+import numpy as np
 from Cython.Build import cythonize
 from setuptools import setup, Extension
 
 # os.environ["CXX"] = "mpic++"
+pyarrow_location = os.path.dirname(pa.__file__)
+# For now, assume that we build against bundled pyarrow releases.
+pyarrow_include_dir = os.path.join(pyarrow_location, 'include')
 extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
 additional_compile_args = ['-std=c++14', '-DARROW_METADATA_V4', '-DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
 # extra_compile_args#.append(additional_compile_args)
 extra_compile_args = ['-std=c++14', '-DARROW_METADATA_V4 -DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
+pyarrow_module_link_args = []
+extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
+arrow_library_directory = "../cpp/build/arrow/install/lib"
+twisterx_library_directory = "../cpp/build/lib"
+library_directories = [twisterx_library_directory, arrow_library_directory]
+libraries = ["arrow", "twisterx", "glog"]
 
 _include_dirs = ["../cpp/src/twisterx/python",
                  "../cpp/src/twisterx/lib",
@@ -30,7 +39,10 @@ _include_dirs = ["../cpp/src/twisterx/python",
                  "../cpp/build/thirdparty/glog/",
                  "../cpp/build/external/Catch/include",
                  "../cpp/thirdparty/glog/src",
+                 pyarrow_include_dir
                  ]
+
+#pyarrow_module_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 
 ext_modules = [
     Extension("pytwisterx.common.code",
@@ -39,8 +51,8 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
-              libraries=["arrow", "arrow_python", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              libraries=libraries,
+              library_dirs=library_directories
               ),
     Extension("pytwisterx.common.status",
               sources=["twisterx/common/status.pyx"],
@@ -48,8 +60,8 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
-              libraries=["arrow", "arrow_python", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              libraries=libraries,
+              library_dirs=library_directories,
               ),
     Extension("pytwisterx.data",
               sources=["twisterx/data/table.pyx"],
@@ -57,8 +69,8 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
-              libraries=["arrow", "arrow_python", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib", "/home/vibhatha/github/forks/twisterx/ENVTX/lib/python3.8/site-packages/pyarrow"],
+              libraries=libraries,
+              library_dirs=library_directories,
               ),
     Extension("pytwisterx.arrow.util",
               sources=["twisterx/data/arrow_util.pyx"],
@@ -66,8 +78,8 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
-              libraries=["arrow", "arrow_python", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              libraries=libraries + ["arrow_python"],
+              library_dirs=library_directories + [pyarrow_location],
               ),
     Extension("pytwisterx.net.comms.request",
               sources=["twisterx/net/txrequest.pyx",
@@ -85,8 +97,8 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
-              libraries=["arrow", "arrow_python", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              libraries=libraries,
+              library_dirs=library_directories,
               ),
     Extension("pytwisterx.net.comms.all_to_all",
               sources=["twisterx/net/all_to_all.pyx",
@@ -95,8 +107,8 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
-              libraries=["arrow", "arrow_python", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              libraries=libraries,
+              library_dirs=library_directories,
               ),
     Extension("pytwisterx.net.comms.algorithm",
               sources=["twisterx/net/comms.pyx",
@@ -105,8 +117,8 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
-              libraries=["arrow", "arrow_python", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              libraries=libraries,
+              library_dirs=library_directories,
               ),
     Extension("pytwisterx.net.comms.dist",
               sources=["twisterx/net/dist.pyx",
@@ -115,8 +127,8 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
-              libraries=["arrow", "arrow_python", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              libraries=libraries,
+              library_dirs=library_directories,
               ),
     Extension("pytwisterx.common.join.config",
               sources=["twisterx/common/join_config.pyx",
@@ -125,8 +137,8 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
-              libraries=["arrow", "arrow_python", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              libraries=libraries,
+              library_dirs=library_directories,
               ),
     Extension("pytwisterx.utils.join",
               sources=["twisterx/util/joinutils.py",
@@ -135,8 +147,8 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
-              libraries=["arrow", "arrow_python", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              libraries=libraries,
+              library_dirs=library_directories,
               ),
 
     # Extension("pytwisterx.io.csv",
@@ -163,8 +175,6 @@ ext_modules = cythonize(ext_modules, compiler_directives=compiler_directives, gd
 #     ext.define_macros.append(("_GLIBCXX_USE_CXX11_ABI", "0"))
 
 
-
-
 setup(
     name="pytwisterx",
     packages=['twisterx',
@@ -185,6 +195,6 @@ setup(
     ],
     zip_safe=False,
 )
-#print("Arrow Include Dirs {}".format(pa.get_include()))
-#print("Arrow Libraries{}".format(pa.get_libraries()))
-#print("Arrow Libraries Dirs {}".format(pa.get_library_dirs()))
+# print("Arrow Include Dirs {}".format(pa.get_include()))
+# print("Arrow Libraries{}".format(pa.get_libraries()))
+# print("Arrow Libraries Dirs {}".format(pa.get_library_dirs()))

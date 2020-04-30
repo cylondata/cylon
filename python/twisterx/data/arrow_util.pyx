@@ -1,3 +1,4 @@
+from libcpp.string cimport string
 from pyarrow.lib cimport *
 
 
@@ -24,13 +25,14 @@ cdef class ArrowUtil:
             print("Num Fields : {}".format(arr.get().num_fields()))
 
     @staticmethod
-    def get_table_info(obj):
+    cdef get_table_info(obj):
         cdef shared_ptr[CTable] artb = pyarrow_unwrap_table(obj)
 
         if artb.get() == NULL:
             raise TypeError("not an table")
         else:
             print("OK")
-            artb.get().num_columns()
-        #print(num_cols)
+            num_cols = artb.get().num_columns()
+            print(num_cols)
+
 
