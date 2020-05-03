@@ -9,6 +9,7 @@
 #include <glog/logging.h>
 #include "util/arrow_utils.hpp"
 #include "arrow/arrow_partition_kernels.hpp"
+#include "util/uuid.hpp"
 
 namespace twisterx {
 

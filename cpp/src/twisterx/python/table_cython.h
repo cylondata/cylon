@@ -4,6 +4,8 @@
 #include "string"
 #include "../table.hpp"
 #include "../status.hpp"
+#include <arrow/python/pyarrow.h>
+#include <arrow/python/serialize.h>
 
 using namespace twisterx;
 using namespace twisterx::io::config;
@@ -13,7 +15,7 @@ using namespace twisterx::join::config;
 namespace twisterx {
 namespace python {
 namespace table {
-class CTable {
+class CxTable {
 
  private:
 
@@ -21,7 +23,7 @@ class CTable {
 
  public:
 
-  CTable(std::string id);
+  CxTable(std::string id);
 
   std::string get_id();
 
@@ -36,6 +38,10 @@ class CTable {
   void show(int row1, int row2, int col1, int col2);
 
   static Status from_csv(const std::string &path, const char &delimiter, const std::string &uuid);
+
+  static std::string from_pyarrow_table(std::shared_ptr<arrow::Table> table);
+
+  static PyObject* to_pyarrow_table(const std::string &table_id);
 
   Status to_csv(const std::string &path);
 
