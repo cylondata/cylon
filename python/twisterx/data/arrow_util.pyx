@@ -25,7 +25,7 @@ cdef class ArrowUtil:
             print("Num Fields : {}".format(arr.get().num_fields()))
 
     @staticmethod
-    cdef get_table_info(obj):
+    def get_table_info(obj):
         cdef shared_ptr[CTable] artb = pyarrow_unwrap_table(obj)
 
         if artb.get() == NULL:

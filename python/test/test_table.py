@@ -32,17 +32,26 @@ tb3.show()
 
 print("===============================")
 
-# from pyarrow import csv
-#
-# fn = '/tmp/csv.csv'
-#
-# table = csv.read_csv(fn)
-#
-# print(table)
+from pyarrow import csv
+
+fn = '/tmp/csv.csv'
+
+table = csv.read_csv(fn)
+
+print(table)
 
 
+table_frm_arrow: Table = csv_reader.from_arrow(table)
 
+table_frm_arrow.show()
 
+print("Joining Loaded table from Python with Twisterx APIs")
+
+tb4: Table = table_frm_arrow.join(table=table_frm_arrow, join_type='inner', algorithm='sort', left_col=0, right_col=1)
+
+print("Result")
+
+tb4.show()
 
 
 

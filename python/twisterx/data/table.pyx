@@ -7,6 +7,9 @@ from twisterx.common.join_config cimport CJoinAlgorithm
 from twisterx.common.join_config cimport CJoinConfig
 from pytwisterx.common.join.config import PJoinType
 from pytwisterx.common.join.config import PJoinAlgorithm
+from pyarrow.lib cimport CTable
+from pyarrow.lib cimport pyarrow_unwrap_table
+from libcpp.memory cimport shared_ptr
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table":
     cdef cppclass CxTable "twisterx::python::table::CxTable":
@@ -23,6 +26,7 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CxTable":
     cdef extern _Status from_csv(const string, const char, const string)
+    cdef string from_pyarrow_table(shared_ptr[CTable] table)
 
 cdef class Table:
     cdef CxTable *thisPtr
@@ -133,5 +137,11 @@ cdef class csv_reader:
         return Table(id_buf)
 
     @staticmethod
-    def from_arrow(obj):
-        pass
+    def from_arrow(obj) -> Table:
+        cdef shared_ptr[CTable] artb = pyarrow_unwrap_table(obj)
+        cdef string table_id
+        if artb.get() == NULL:
+            raise TypeError("not an table")
+        table_id = from_pyarrow_table(artb)
+        return Table(table_id)
+
