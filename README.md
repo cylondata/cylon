@@ -17,16 +17,19 @@ sudo make install
 
 ## Build C++ Twisterx API
 
+```bash
 ./build_cpp.sh
+```
    
 
 ## Python Support
 
 TwisterX provides Python APIs with Cython. 
 
+```bash
 ./build_pyarrow.sh
 ./build_python.sh
-
+```
 
 ### Example 
 
