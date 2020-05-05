@@ -5,6 +5,9 @@ https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
 '''
 
 import os
+import os
+import sysconfig
+from distutils.sysconfig import get_python_lib
 import pyarrow as pa
 import numpy as np
 from Cython.Build import cythonize
@@ -19,7 +22,6 @@ extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
 additional_compile_args = ['-std=c++14', '-DARROW_METADATA_V4', '-DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
 # extra_compile_args#.append(additional_compile_args)
 extra_compile_args = ['-std=c++14', '-DARROW_METADATA_V4 -DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
-pyarrow_module_link_args = []
 extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 arrow_library_directory = "../cpp/build/arrow/install/lib"
 twisterx_library_directory = "../cpp/build/lib"
@@ -41,8 +43,6 @@ _include_dirs = ["../cpp/src/twisterx/python",
                  "../cpp/thirdparty/glog/src",
                  pyarrow_include_dir
                  ]
-
-#pyarrow_module_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 
 ext_modules = [
     Extension("pytwisterx.common.code",

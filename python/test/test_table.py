@@ -1,5 +1,6 @@
 from pytwisterx.data import csv_reader
 from pytwisterx.data import Table
+from pyarrow import Table as PyArrowTable
 
 tb: Table = csv_reader.read('/tmp/csv.csv', ',')
 
@@ -39,19 +40,41 @@ fn = '/tmp/csv.csv'
 table = csv.read_csv(fn)
 
 print(table)
+print(type(table))
+df = table.to_pandas()
+print("Data Frame : ")
+print(df)
+print("==============================")
 
 
-table_frm_arrow: Table = csv_reader.from_arrow(table)
+table_frm_arrow: Table = Table.from_arrow(table)
 
 table_frm_arrow.show()
 
 print("Joining Loaded table from Python with Twisterx APIs")
 
 tb4: Table = table_frm_arrow.join(table=table_frm_arrow, join_type='inner', algorithm='sort', left_col=0, right_col=1)
-
 print("Result")
 
 tb4.show()
+
+tbx: PyArrowTable = Table.to_arrow(tb4)
+
+print(tbx)
+
+
+dfx = tbx.to_pandas()
+
+print(dfx)
+npr = dfx.to_numpy()
+
+print(npr)
+
+
+
+
+
+
 
 
 

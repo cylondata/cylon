@@ -9,7 +9,9 @@ from pytwisterx.common.join.config import PJoinType
 from pytwisterx.common.join.config import PJoinAlgorithm
 from pyarrow.lib cimport CTable
 from pyarrow.lib cimport pyarrow_unwrap_table
+from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
+
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table":
     cdef cppclass CxTable "twisterx::python::table::CxTable":
@@ -26,7 +28,8 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CxTable":
     cdef extern _Status from_csv(const string, const char, const string)
-    cdef string from_pyarrow_table(shared_ptr[CTable] table)
+    cdef extern string from_pyarrow_table(shared_ptr[CTable] table)
+    cdef extern shared_ptr[CTable] to_pyarrow_table(const string table_id)
 
 cdef class Table:
     cdef CxTable *thisPtr
@@ -34,7 +37,6 @@ cdef class Table:
 
     def __cinit__(self, string id):
         self.thisPtr = new CxTable(id)
-        #self.tablePtr = make_unique[CTable]()
 
     cdef __get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
                            right_column_index: int):
@@ -121,9 +123,22 @@ cdef class Table:
             raise Exception("Join Failed !!!")
         return Table(table_out_id)
 
+    @staticmethod
+    def from_arrow(obj) -> Table:
+        cdef shared_ptr[CTable] artb = pyarrow_unwrap_table(obj)
+        cdef string table_id
+        if artb.get() == NULL:
+            raise TypeError("not an table")
+        table_id = from_pyarrow_table(artb)
+        return Table(table_id)
+
+    @staticmethod
+    def to_arrow(tx_table: Table) :
+        table = to_pyarrow_table(tx_table.id.encode())
+        py_arrow_table = pyarrow_wrap_table(table)
+        return py_arrow_table
+
 cdef class csv_reader:
-    #cdef _Table *thisPtr
-    #cdef unique_ptr[_Table] tablePtr
 
     @staticmethod
     def read(path: str, delimiter: str) -> Table:
@@ -136,12 +151,5 @@ cdef class csv_reader:
         id_buf = id_str.encode()
         return Table(id_buf)
 
-    @staticmethod
-    def from_arrow(obj) -> Table:
-        cdef shared_ptr[CTable] artb = pyarrow_unwrap_table(obj)
-        cdef string table_id
-        if artb.get() == NULL:
-            raise TypeError("not an table")
-        table_id = from_pyarrow_table(artb)
-        return Table(table_id)
+
 
