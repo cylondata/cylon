@@ -74,6 +74,10 @@ find_library(ARROW_LIB arrow
         NO_DEFAULT_PATH
         HINTS "${ARROW_LIBRARY_DIR}")
 
+find_library(ARROW_PYTHON arrow_python
+        NO_DEFAULT_PATH
+        HINTS "${ARROW_LIBRARY_DIR}")
+
 if(ARROW_LIB)
     message(STATUS "Arrow library: " ${ARROW_LIB})
     set(ARROW_FOUND TRUE)

@@ -69,6 +69,9 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
   AllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId,
            ReceiveCallback *callback);
 
+
+  AllToAll(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId);
+
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true
    *

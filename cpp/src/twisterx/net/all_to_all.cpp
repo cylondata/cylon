@@ -10,7 +10,7 @@
 namespace twisterx {
 
 AllToAll::AllToAll(int w_id, const std::vector<int> &srcs,
-                   const std::vector<int> &tgts, int edge_id, ReceiveCallback *rcvCallback) {
+				   const std::vector<int> &tgts, int edge_id, ReceiveCallback *rcvCallback) {
   worker_id = w_id;
   sources = srcs;
   targets = tgts;
@@ -21,24 +21,25 @@ AllToAll::AllToAll(int w_id, const std::vector<int> &srcs,
 
   // initialize the sends
   for (int t : tgts) {
-    int tAdjusted = (t + w_id) % targets.size();
-    sends.push_back(new AllToAllSends(tAdjusted));
+	int tAdjusted = (t + w_id) % targets.size();
+	sends.push_back(new AllToAllSends(tAdjusted));
   }
 
   thisNumTargets = 0;
   thisNumSources = 0;
   if (std::find(targets.begin(), targets.end(), w_id) != targets.end()) {
-    thisNumTargets = 1;
+	thisNumTargets = 1;
   }
 
   if (std::find(sources.begin(), sources.end(), w_id) != sources.end()) {
-    thisNumSources = 1;
+	thisNumSources = 1;
   }
 }
 
 void AllToAll::close() {
+  std::cout << "CLose check" << std::endl;
   for (int t : targets) {
-    delete sends[t];
+	delete sends[t];
   }
   sends.clear();
   // free the channel
@@ -48,8 +49,8 @@ void AllToAll::close() {
 
 int AllToAll::insert(void *buffer, int length, int target) {
   if (finishFlag) {
-    // we cannot accept further
-    return -1;
+	// we cannot accept further
+	return -1;
   }
 
   AllToAllSends *s = sends[target];
@@ -62,13 +63,13 @@ int AllToAll::insert(void *buffer, int length, int target) {
 
 int AllToAll::insert(void *buffer, int length, int target, int *header, int headerLength) {
   if (finishFlag) {
-    // we cannot accept further
-    return -1;
+	// we cannot accept further
+	return -1;
   }
 
   // we cannot accept headers greater than 6
   if (headerLength > 6) {
-    return -1;
+	return -1;
   }
 
   AllToAllSends *s = sends[target];
@@ -82,40 +83,47 @@ int AllToAll::insert(void *buffer, int length, int target, int *header, int head
 bool AllToAll::isComplete() {
   bool allQueuesEmpty = true;
   // if this is a source, send until the operation is finished
+  std::cout << "Is Complete Called" << std::endl;
+  int count = 0;
   for (auto w : sends) {
-    while (!w->requestQueue.empty()) {
-      if (w->sendStatus == ALL_TO_ALL_FINISH_SENT || w->sendStatus == ALL_TO_ALL_FINISHED) {
-        LOG(FATAL) << "We cannot have items to send after finish sent";
-      }
+	std::cout << "Call Sends :" << count++ << std::endl;
+	while (!w->requestQueue.empty()) {
+	  std::cout << "Check Until request is empty" << std::endl;
+	  if (w->sendStatus == ALL_TO_ALL_FINISH_SENT || w->sendStatus == ALL_TO_ALL_FINISHED) {
+		LOG(FATAL) << "We cannot have items to send after finish sent";
+	  }
 
-      std::shared_ptr<TxRequest> request = w->requestQueue.front();
-      // if the request is accepted to be set, pop
-      if (channel->send(request)) {
-        w->requestQueue.pop();
-        // we add to the pending queue
-        w->pendingQueue.push(request);
-      }
-    }
-
-    if (w->requestQueue.empty() && w->pendingQueue.empty()) {
-      if (finishFlag) {
-        if (w->sendStatus == ALL_TO_ALL_SENDING) {
-          std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(w->target);
-          if (channel->sendFin(request)) {
-            // LOG(INFO) << worker_id << " Sent FIN *** " << w.first;
-            w->sendStatus = ALL_TO_ALL_FINISH_SENT;
-          }
-        }
-      }
-    } else {
-      allQueuesEmpty = false;
-    }
+	  std::shared_ptr<TxRequest> request = w->requestQueue.front();
+	  // if the request is accepted to be set, pop
+	  if (channel->send(request)) {
+		w->requestQueue.pop();
+		// we add to the pending queue
+		w->pendingQueue.push(request);
+	  }
+	}
+	std::cout << "End of While : " << count << std::endl;
+	if (w->requestQueue.empty() && w->pendingQueue.empty()) {
+	  if (finishFlag) {
+		if (w->sendStatus == ALL_TO_ALL_SENDING) {
+		  std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(w->target);
+		  if (channel->sendFin(request)) {
+			// LOG(INFO) << worker_id << " Sent FIN *** " << w.first;
+			w->sendStatus = ALL_TO_ALL_FINISH_SENT;
+		  }
+		}
+	  }
+	} else {
+	  allQueuesEmpty = false;
+	}
+	std::cout << "End of IF Else Blocks : " << count << std::endl;
   }
+  std::cout << "End of Outer For" << std::endl;
   // progress the sends
   channel->progressSends();
+  std::cout << "Progress Sends" << std::endl;
   // progress the receives
   channel->progressReceives();
-
+  std::cout << "Progress Receives" << std::endl;
   return allQueuesEmpty && finishedTargets.size() == targets.size() && finishedSources.size() == sources.size();
 }
 
@@ -140,24 +148,24 @@ void AllToAll::sendComplete(std::shared_ptr<TxRequest> request) {
 }
 
 void AllToAll::receivedHeader(int receiveId, int finished,
-                              int *header, int headerLength) {
+							  int *header, int headerLength) {
   if (finished) {
-    // LOG(INFO) << worker_id << " Received finish " << receiveId;
-    finishedSources.insert(receiveId);
-    callback->onReceiveHeader(receiveId, finished, header, headerLength);
+	//LOG(INFO) << worker_id << " Received finish " << receiveId;
+	finishedSources.insert(receiveId);
+	callback->onReceiveHeader(receiveId, finished, header, headerLength);
   } else {
-    if (headerLength > 0) {
-      // LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
-//        for (int i = 0; i < headerLength; i++) {
-//          std::cout << i << " ";
-//        }
-//        std::cout << std::endl;
-      callback->onReceiveHeader(receiveId, finished, header, headerLength);
-      delete[] header;
-    } else {
-      callback->onReceiveHeader(receiveId, finished, nullptr, 0);
-      // LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
-    }
+	if (headerLength > 0) {
+//	  LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
+//	  for (int i = 0; i < headerLength; i++) {
+//		std::cout << i << " ";
+//	  }
+//	  std::cout << std::endl;
+	  callback->onReceiveHeader(receiveId, finished, header, headerLength);
+	  delete[] header;
+	} else {
+	  callback->onReceiveHeader(receiveId, finished, nullptr, 0);
+	  // LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
+	}
   }
 }
 

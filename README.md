@@ -1,50 +1,10 @@
 # TwisterX
 Optimized dataflow operations
 
-# Build instructions
-   - Build any MPI of preference
-   - Update LD_LIBRARY_PATH to include lib directory containing MPI libraries
-   - First go to the `cpp` directory,
-   - Create a directory `build`
-   - `cd build`
-   - `cmake -DCMAKE_BUILD_TYPE=Debug ../`
-   - `make -j4`
-   
 
-## Python Support
+## CMake Installation
 
-TwisterX provides Python APIs with Cython. 
-
-### Pre-requisites
-
-Make sure to add the LD_LIBRARY_PATH once the CPP build is completed. 
-
-```bash
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<base_path>/twisterx/cpp/build/lib:<base_path>/twisterx/cpp/build/arrow/install/lib/
-```
-
-0. Create a Virtual Environment for Development and Testing
-
-Create an environment called `ENV`
-
-```bash
-python3 -m venv ENV
-```
-
-Activate the virtual environment (Do prior to development)
-
-```bash
-source ENV/bin/activate
-```
-
-Deactivate a pre-activated virtual environment
-
-```bash
-deactivate
-```
-
-
-1. Install CMake 3.16.5 (Optional)
+### Install CMake 3.16.5 (Optional)
 
 ```bash
 wget https://github.com/Kitware/CMake/releases/download/v3.16.5/cmake-3.16.5.tar.gz
@@ -54,31 +14,34 @@ make
 sudo make install
 ```
 
-2. Install Pre-Requisites 
+
+## Build C++ Twisterx API
+
+./build_cpp.sh
+   
+
+## Python Support
+
+TwisterX provides Python APIs with Cython. 
+
+./build_pyarrow.sh
+./build_python.sh
+
+
+### Example 
+
+Before running the code in the base path of the cloned repo
+run the following command. 
 
 ```bash
-pip3 install -r requirements.txt
-```
-
-3. Install Python Library From Source For Development
-
-```bash
-cd python
-make develop
-```
-
-4. Install Python Library From Source for Local System
-
-```bash
-cd python
-sudo make setup
+export LD_LIBRARY_PATH=$(pwd)/cpp/build/arrow/install/lib:$(pwd)/cpp/build/lib:$LD_LIBRARY_PATH
 ```
 
 4. Test Python API
 
+
 ```bash
-cd python
-python3 test/test_table.py
+python3 python/test/test_pytwisterx.py
 ```
 
 

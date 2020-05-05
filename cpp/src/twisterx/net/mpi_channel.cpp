@@ -53,12 +53,19 @@ int MPIChannel::sendFin(std::shared_ptr<TxRequest> request) {
 
 void MPIChannel::progressReceives() {
   MPI_Status status;
+  std::cout << "Progress receives " << std::endl;
+  int count = 0;
   for (auto x : pendingReceives) {
+	std::cout << "For Loop  " << count << std::endl;
     int flag = 0;
     status = {};
     if (x.second->status == RECEIVE_LENGTH_POSTED) {
+	  std::cout << "IF Receive Length Posted " << count << std::endl;
+	  std::cout << "Data Len : " << x.second->length << std::endl;
       MPI_Test(&(x.second->request), &flag, &status);
+	  std::cout << "MPI_Test On Request Completed" << count << std::endl;
       if (flag) {
+		std::cout << "IF-Flag Receive Length Posted" << count << std::endl;
         x.second->request = {};
         int count = 0;
         MPI_Get_count(&status, MPI_INT, &count);
@@ -68,14 +75,17 @@ void MPIChannel::progressReceives() {
         // LOG(INFO) << rank << " ** received " << length << " flag " << finFlag;
         // check weather we are at the end
         if (finFlag != TWISTERX_MSG_FIN) {
+		  std::cout << "IF Twisterx_MSG_FIN Receive Length Posted" << count << std::endl;
           if (count > 8) {
             LOG(FATAL) << "Un-expected number of bytes expected: 8 or less " << " received: " << count;
           }
           // malloc a buffer
           x.second->data = new char[length];
           x.second->length = length;
+		  std::cout << "Start MPI_Irecv" << count << std::endl;
           MPI_Irecv(x.second->data, length, MPI_BYTE, x.second->receiveId, edge, MPI_COMM_WORLD, &(x.second->request));
           // LOG(INFO) << rank << " ** POST RECEIVE " << length << " addr: " << x.second->data;
+		  std::cout << "End MPI_Irecv" << count << std::endl;
           x.second->status = RECEIVE_POSTED;
           // copy the count - 2 to the buffer
           int *header = nullptr;
@@ -83,7 +93,7 @@ void MPIChannel::progressReceives() {
             header = new int[count - 2];
             memcpy(header, &(x.second->headerBuf[2]), (count - 2) * sizeof(int));
           }
-          // LOG(INFO) << rank << " Receive header 1 " << count - 2;
+          //LOG(INFO) << rank << " Receive header 1 " << count - 2;
           // notify the receiver
           rcv_fn->receivedHeader(x.first, finFlag, header, count - 2);
         } else {
@@ -123,6 +133,7 @@ void MPIChannel::progressReceives() {
       LOG(FATAL) << "At an un-expected state " << x.second->status;
     }
   }
+  std::cout << " End Receiving " << std::endl;
 }
 
 void MPIChannel::progressSends() {
