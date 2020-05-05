@@ -5,7 +5,7 @@
 #ifndef TWISTERX_SRC_TWISTERX_PYTHON_NET_DISTRIBUTED_H_
 #define TWISTERX_SRC_TWISTERX_PYTHON_NET_DISTRIBUTED_H_
 #include <iostream>
-#include "../../net/all_to_all.hpp"
+#include "../../net/ops/all_to_all.hpp"
 #include "../../arrow/arrow_all_to_all.hpp"
 
 namespace twisterx {

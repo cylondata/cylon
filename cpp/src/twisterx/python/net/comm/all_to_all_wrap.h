@@ -5,7 +5,8 @@
 #ifndef TWISTERX_SRC_TWISTERX_PYTHON_NET_COMM_ALL_TO_ALL_WRAP_H_
 #define TWISTERX_SRC_TWISTERX_PYTHON_NET_COMM_ALL_TO_ALL_WRAP_H_
 
-#include "../../../net/all_to_all.hpp"
+#include "../../../net/ops/all_to_all.hpp"
+#include "../../../net/mpi/mpi_communicator.h"
 #include "Callback.h"
 
 using namespace twisterx;

@@ -41,7 +41,7 @@ class ArrowJoin {
      * @param all_workers
      * @return
      */
-  ArrowJoin(int worker_id,
+  ArrowJoin(twisterx::TwisterXContext *ctx,
             const std::vector<int> &source,
             const std::vector<int> &targets,
             int leftEdgeId,
@@ -114,7 +114,7 @@ class ArrowJoinWithPartition {
    * @param all_workers
    * @return
    */
-  ArrowJoinWithPartition(int worker_id,
+  ArrowJoinWithPartition(twisterx::TwisterXContext *ctx,
                          const std::vector<int> &source,
                          const std::vector<int> &targets,
                          int leftEdgeId,

@@ -1,7 +1,7 @@
 #ifndef TWISTERX_MPI_CHANNEL_H
 #define TWISTERX_MPI_CHANNEL_H
 
-#include "channel.hpp"
+#include "../channel.hpp"
 
 #include <vector>
 #include <unordered_map>

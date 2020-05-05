@@ -20,7 +20,9 @@ twisterx::net::comm::all_to_all_wrap::all_to_all_wrap(int worker_id,
 													  const std::vector<int> &targets,
 													  int edgeId) {
   Callback *callback = new Callback();
-  all_ = new twisterx::AllToAll(worker_id, source, targets, edgeId, callback);
+  auto mpi_config = new twisterx::net::MPIConfig();
+  auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
+  all_ = new twisterx::AllToAll(ctx, source, targets, edgeId, callback);
 
 }
 

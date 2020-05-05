@@ -3,41 +3,39 @@
 #include <iterator>
 
 #include <glog/logging.h>
-#include "TxRequest.h"
+
 #include "all_to_all.hpp"
-#include "mpi_channel.hpp"
+#include "../mpi/mpi_channel.hpp"
 
 namespace twisterx {
-
-AllToAll::AllToAll(int w_id, const std::vector<int> &srcs,
+AllToAll::AllToAll(twisterx::TwisterXContext *ctx, const std::vector<int> &srcs,
 				   const std::vector<int> &tgts, int edge_id, ReceiveCallback *rcvCallback) {
-  worker_id = w_id;
+  worker_id = ctx->GetRank();
   sources = srcs;
   targets = tgts;
   edge = edge_id;
-  channel = new MPIChannel();
+  channel = ctx->GetCommunicator()->CreateChannel();
   channel->init(edge_id, srcs, tgts, this, this);
   callback = rcvCallback;
 
   // initialize the sends
   for (int t : tgts) {
-	int tAdjusted = (t + w_id) % targets.size();
+	int tAdjusted = (t + ctx->GetRank()) % targets.size();
 	sends.push_back(new AllToAllSends(tAdjusted));
   }
 
   thisNumTargets = 0;
   thisNumSources = 0;
-  if (std::find(targets.begin(), targets.end(), w_id) != targets.end()) {
+  if (std::find(targets.begin(), targets.end(), ctx->GetRank()) != targets.end()) {
 	thisNumTargets = 1;
   }
 
-  if (std::find(sources.begin(), sources.end(), w_id) != sources.end()) {
+  if (std::find(sources.begin(), sources.end(), ctx->GetRank()) != sources.end()) {
 	thisNumSources = 1;
   }
 }
 
 void AllToAll::close() {
-  std::cout << "CLose check" << std::endl;
   for (int t : targets) {
 	delete sends[t];
   }
@@ -83,12 +81,8 @@ int AllToAll::insert(void *buffer, int length, int target, int *header, int head
 bool AllToAll::isComplete() {
   bool allQueuesEmpty = true;
   // if this is a source, send until the operation is finished
-  std::cout << "Is Complete Called" << std::endl;
-  int count = 0;
   for (auto w : sends) {
-	std::cout << "Call Sends :" << count++ << std::endl;
 	while (!w->requestQueue.empty()) {
-	  std::cout << "Check Until request is empty" << std::endl;
 	  if (w->sendStatus == ALL_TO_ALL_FINISH_SENT || w->sendStatus == ALL_TO_ALL_FINISHED) {
 		LOG(FATAL) << "We cannot have items to send after finish sent";
 	  }
@@ -101,7 +95,7 @@ bool AllToAll::isComplete() {
 		w->pendingQueue.push(request);
 	  }
 	}
-	std::cout << "End of While : " << count << std::endl;
+
 	if (w->requestQueue.empty() && w->pendingQueue.empty()) {
 	  if (finishFlag) {
 		if (w->sendStatus == ALL_TO_ALL_SENDING) {
@@ -115,15 +109,12 @@ bool AllToAll::isComplete() {
 	} else {
 	  allQueuesEmpty = false;
 	}
-	std::cout << "End of IF Else Blocks : " << count << std::endl;
   }
-  std::cout << "End of Outer For" << std::endl;
   // progress the sends
   channel->progressSends();
-  std::cout << "Progress Sends" << std::endl;
   // progress the receives
   channel->progressReceives();
-  std::cout << "Progress Receives" << std::endl;
+
   return allQueuesEmpty && finishedTargets.size() == targets.size() && finishedSources.size() == sources.size();
 }
 
@@ -150,16 +141,16 @@ void AllToAll::sendComplete(std::shared_ptr<TxRequest> request) {
 void AllToAll::receivedHeader(int receiveId, int finished,
 							  int *header, int headerLength) {
   if (finished) {
-	//LOG(INFO) << worker_id << " Received finish " << receiveId;
+	// LOG(INFO) << worker_id << " Received finish " << receiveId;
 	finishedSources.insert(receiveId);
 	callback->onReceiveHeader(receiveId, finished, header, headerLength);
   } else {
 	if (headerLength > 0) {
-//	  LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
-//	  for (int i = 0; i < headerLength; i++) {
-//		std::cout << i << " ";
-//	  }
-//	  std::cout << std::endl;
+	  // LOG(INFO) << worker_id << " Received header " << receiveId << "Header length " << headerLength;
+//        for (int i = 0; i < headerLength; i++) {
+//          std::cout << i << " ";
+//        }
+//        std::cout << std::endl;
 	  callback->onReceiveHeader(receiveId, finished, header, headerLength);
 	  delete[] header;
 	} else {

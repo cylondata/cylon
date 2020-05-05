@@ -43,7 +43,7 @@ int Table::columns() {
   return twisterx::column_count(this->get_id());
 }
 
-int Table::rows() {
+int64_t Table::rows() {
   return twisterx::row_count(this->get_id());
 }
 

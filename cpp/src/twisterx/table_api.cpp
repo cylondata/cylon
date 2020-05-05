@@ -109,7 +109,7 @@ int column_count(const std::string &id) {
   return -1;
 }
 
-int row_count(const std::string &id) {
+int64_t row_count(const std::string &id) {
   auto table = get_table(id);
   if (table != NULLPTR) {
     return table->num_rows();

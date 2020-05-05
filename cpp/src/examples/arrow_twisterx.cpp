@@ -4,8 +4,9 @@
 #include <arrow/api.h>
 #include <arrow/array/builder_primitive.h>
 #include <glog/logging.h>
+#include <net/mpi/mpi_communicator.h>
 
-#include "net/all_to_all.hpp"
+#include "net/ops/all_to_all.hpp"
 #include "arrow/arrow_all_to_all.hpp"
 
 using arrow::DoubleBuilder;
@@ -31,11 +32,13 @@ class Clbk : public twisterx::ArrowCallback {
 
 int main(int argc, char *argv[]) {
   std::cout << "First - ";
-  MPI_Init(NULL, NULL);
-  int rank = 0;
-  int size = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  auto mpi_config = new twisterx::net::MPIConfig();
+  auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
+
+  int rank = ctx->GetRank();
+  int size = ctx->GetWorldSize();
+
   std::cout << "First - " << rank << " size " << size << std::endl;
   std::vector<int> sources;
   std::vector<int> targets;
@@ -61,7 +64,7 @@ int main(int argc, char *argv[]) {
   std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
       arrow::field("id", arrow::int64()), arrow::field("cost", arrow::float64())};
   auto schema = std::make_shared<arrow::Schema>(schema_vector);
-  twisterx::ArrowAllToAll all(rank, sources, targets, 0, clbk, schema, pool);
+  twisterx::ArrowAllToAll all(ctx, sources, targets, 0, clbk, schema, pool);
 
   std::shared_ptr<arrow::Array> id_array;
   id_builder.Finish(&id_array);
@@ -77,6 +80,6 @@ int main(int argc, char *argv[]) {
   }
   all.close();
 
-  MPI_Finalize();
+  ctx->Finalize();
   return 0;
 }

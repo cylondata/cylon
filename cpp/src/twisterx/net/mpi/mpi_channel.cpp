@@ -4,7 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <cstring>
-#include "TxRequest.h"
+#include "../TxRequest.h"
 
 #include <glog/logging.h>
 

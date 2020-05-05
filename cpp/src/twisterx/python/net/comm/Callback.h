@@ -5,7 +5,7 @@
 #ifndef TWISTERX_SRC_TWISTERX_PYTHON_NET_COMM_CALLBACK_H_
 #define TWISTERX_SRC_TWISTERX_PYTHON_NET_COMM_CALLBACK_H_
 
-#include "../../../net/all_to_all.hpp"
+#include "../../../net/ops/all_to_all.hpp"
 
 namespace twisterx {
 namespace net {
