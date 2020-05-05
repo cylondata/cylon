@@ -55,5 +55,3 @@ target_link_libraries(test_net glog::glog)
 target_link_libraries(test_cy_alltoallwrap twisterx)
 target_link_libraries(test_cy_alltoallwrap ${ARROW_LIB})
 target_link_libraries(test_cy_alltoallwrap glog::glog)
-
-

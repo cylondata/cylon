@@ -1,3 +1,7 @@
+#CMAKE BIN DIR
+#/home/vibhatha/github/forks/twisterx/cpp/build
+set(ARROW_HOME ${CMAKE_BINARY_DIR}/arrow/install)
+set(PYTHON_HOME ${CMAKE_BINARY_DIR}/ENV)
 set(ARROW_ROOT ${CMAKE_BINARY_DIR}/arrow)
 
 set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
@@ -27,6 +31,7 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_CSV=ON"
         " -DARROW_JSON=ON"
         " -DARROW_BOOST_USE_SHARED=ON"
+        " -DPYTHON_EXECUTABLE=${PYTHON_HOME}/bin/python3"
         )
 
 message("CMake Source Dir :")

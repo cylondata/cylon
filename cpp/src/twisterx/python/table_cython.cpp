@@ -2,8 +2,9 @@
 #include "../table.hpp"
 #include "table_cython.h"
 #include "../table_api.hpp"
-#include <arrow/python/pyarrow.h>
 #include <arrow/python/serialize.h>
+#include "arrow/api.h"
+
 
 using namespace std;
 using namespace twisterx;
@@ -11,6 +12,7 @@ using namespace twisterx::python::table;
 using namespace twisterx::io::config;
 using namespace twisterx::util::uuid;
 using namespace twisterx::join::config;
+using namespace arrow::py;
 
 CxTable::CxTable(std::string id) {
   id_ = id;
@@ -56,15 +58,14 @@ Status CxTable::to_csv(const std::string &path) {
 }
 
 std::string CxTable::from_pyarrow_table(std::shared_ptr<arrow::Table> table) {
-  std::cout << "From PyArrow Table CPP" << std::endl;
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   put_table(uuid, table);
   return uuid;
 }
 
-PyObject * CxTable::to_pyarrow_table(const std::string &table_id) {
-  auto table = get_table(table_id);
-
+std::shared_ptr<arrow::Table> CxTable::to_pyarrow_table(const std::string &table_id) {
+  shared_ptr<arrow::Table> table1 = get_table(table_id);
+  return table1;
 }
 
 std::string CxTable::join(const std::string &table_id,

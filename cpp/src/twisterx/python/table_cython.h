@@ -41,7 +41,7 @@ class CxTable {
 
   static std::string from_pyarrow_table(std::shared_ptr<arrow::Table> table);
 
-  static PyObject* to_pyarrow_table(const std::string &table_id);
+  static std::shared_ptr<arrow::Table> to_pyarrow_table(const std::string &table_id);
 
   Status to_csv(const std::string &path);
 

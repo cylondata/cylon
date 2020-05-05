@@ -76,7 +76,13 @@ if (NOT HAVE_EXCLUSIVE_SCAN)
     add_definitions(-DNEED_EXCLUSIVE_SCAN)
 endif ()
 
+
 include_directories("${ARROW_INCLUDE_DIR}")
+
+
+## Find Python
+find_package(PythonLibs REQUIRED)
+include_directories(${PYTHON_INCLUDE_DIRS})
 
 #Off if you dont want to build tests -- ON default
 option(TWISTERX_BUILD_TESTS "Build tests." ON)
