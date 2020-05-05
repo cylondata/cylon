@@ -132,6 +132,6 @@ int main(int argc, char *argv[]) {
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   LOG(INFO) << "Total time " + std::to_string(duration.count()) << " genTime : " << std::to_string(genTime);
 
-  MPI_Finalize();
+  ctx->Finalize();
   return 0;
 }
