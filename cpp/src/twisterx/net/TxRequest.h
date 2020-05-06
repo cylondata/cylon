@@ -1,7 +1,3 @@
-//
-// Created by vibhatha on 4/15/20.
-//
-
 #ifndef TWISTERX_TXREQUEST_H
 #define TWISTERX_TXREQUEST_H
 

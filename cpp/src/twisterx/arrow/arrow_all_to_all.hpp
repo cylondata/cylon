@@ -80,9 +80,13 @@ class ArrowAllToAll : public ReceiveCallback {
    * @param all_workers
    * @return
    */
-  ArrowAllToAll(twisterx::TwisterXContext *ctx, const std::vector<int> &source, const std::vector<int> &targets, int edgeId,
-                std::shared_ptr<ArrowCallback> callback, std::shared_ptr<arrow::Schema> schema,
-                arrow::MemoryPool *pool);
+  ArrowAllToAll(twisterx::TwisterXContext *ctx,
+				const std::vector<int> &source,
+				const std::vector<int> &targets,
+				int edgeId,
+				std::shared_ptr<ArrowCallback> callback,
+				std::shared_ptr<arrow::Schema> schema,
+				arrow::MemoryPool *pool);
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true

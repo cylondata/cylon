@@ -23,8 +23,8 @@ class JC : public twisterx::JoinCallback {
   * @return true if we accept this buffer
   */
   bool onJoin(std::shared_ptr<arrow::Table> table) override {
-    LOG(INFO) << "Joined";
-    return true;
+	LOG(INFO) << "Joined";
+	return true;
   }
 };
 
@@ -52,27 +52,27 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << "No of tuples " << count;
   int range = count * size;
   std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
-      arrow::field("id", arrow::int64()), arrow::field("cost", arrow::int64())};
+	  arrow::field("id", arrow::int64()), arrow::field("cost", arrow::int64())};
   auto schema = std::make_shared<arrow::Schema>(schema_vector);
 
   std::vector<int> sources;
   std::vector<int> targets;
   for (int i = 0; i < size; i++) {
-    sources.push_back(i);
-    targets.push_back(i);
+	sources.push_back(i);
+	targets.push_back(i);
   }
 
   int actualCount = std::atoi(argv[1]);
   long *values = new long[actualCount];
   int *indices = new int[actualCount];
   for (int i = 0; i < actualCount; i++) {
-    indices[i] = i;
-    int l = rand() % range;
-    values[i] = l;
+	indices[i] = i;
+	int l = rand() % range;
+	values[i] = l;
   }
   auto start2 = std::chrono::high_resolution_clock::now();
   std::stable_sort(indices, indices + actualCount, [values](uint64_t left, uint64_t right) {
-    return values[left] < values[right];
+	return values[left] < values[right];
   });
 
   auto end2 = std::chrono::high_resolution_clock::now();
@@ -89,38 +89,38 @@ int main(int argc, char *argv[]) {
   delete[] indices;
 
   JC jc;
-  twisterx::ArrowJoin join(rank, sources, targets, 0, 1, &jc, schema, pool);
+  twisterx::ArrowJoin join(ctx, sources, targets, 0, 1, &jc, schema, pool);
   auto start = std::chrono::high_resolution_clock::now();
   long genTime = 0;
   for (int j = 0; j < size; j++) {
-    auto genTimeStart = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < count; i++) {
-      int l = rand() % range;
-      int r = rand() % range;
+	auto genTimeStart = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < count; i++) {
+	  int l = rand() % range;
+	  int r = rand() % range;
 
-      left_id_builder.Append(l);
-      right_id_builder.Append(r);
-      cost_builder.Append(i);
-    }
+	  left_id_builder.Append(l);
+	  right_id_builder.Append(r);
+	  cost_builder.Append(i);
+	}
 
-    std::shared_ptr<arrow::Array> left_id_array;
-    left_id_builder.Finish(&left_id_array);
-    std::shared_ptr<arrow::Array> right_id_array;
-    right_id_builder.Finish(&right_id_array);
+	std::shared_ptr<arrow::Array> left_id_array;
+	left_id_builder.Finish(&left_id_array);
+	std::shared_ptr<arrow::Array> right_id_array;
+	right_id_builder.Finish(&right_id_array);
 
-    std::shared_ptr<arrow::Array> cost_array;
-    cost_builder.Finish(&cost_array);
+	std::shared_ptr<arrow::Array> cost_array;
+	cost_builder.Finish(&cost_array);
 
-    std::shared_ptr<arrow::Table> left_table = arrow::Table::Make(schema, {left_id_array, cost_array});
-    std::shared_ptr<arrow::Table> right_table = arrow::Table::Make(schema, {right_id_array, cost_array});
-    auto genTimeEnd = std::chrono::high_resolution_clock::now();
+	std::shared_ptr<arrow::Table> left_table = arrow::Table::Make(schema, {left_id_array, cost_array});
+	std::shared_ptr<arrow::Table> right_table = arrow::Table::Make(schema, {right_id_array, cost_array});
+	auto genTimeEnd = std::chrono::high_resolution_clock::now();
 
-    join.leftInsert(left_table, (j + rank) % size);
-    join.rightInsert(right_table, (j + rank) % size);
-    auto genDur = std::chrono::duration_cast<std::chrono::milliseconds>(genTimeEnd - genTimeStart);
-    genTime += genDur.count();
-    // call this to progress comms
-    join.isComplete();
+	join.leftInsert(left_table, (j + rank) % size);
+	join.rightInsert(right_table, (j + rank) % size);
+	auto genDur = std::chrono::duration_cast<std::chrono::milliseconds>(genTimeEnd - genTimeStart);
+	genTime += genDur.count();
+	// call this to progress comms
+	join.isComplete();
   }
 
   join.finish();
@@ -132,6 +132,6 @@ int main(int argc, char *argv[]) {
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   LOG(INFO) << "Total time " + std::to_string(duration.count()) << " genTime : " << std::to_string(genTime);
 
-  MPI_Finalize();
+  ctx->Finalize();
   return 0;
 }

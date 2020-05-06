@@ -1,7 +1,3 @@
-//
-// Created by vibhatha on 4/17/20.
-//
-
 #include "util/builtins.h"
 #include "net/TxRequest.h"
 

@@ -29,16 +29,5 @@ cdef class CSVReadOptions:
         return self
 
     def auto_generate_column_names(self, column_names: List[str]) -> CSVReadOptions:
-
-        cpp_strings = b'It is a good shrubbery'.split()
-        print(cpp_strings[1])   # b'is'
-        cdef public vector[string] column_name_vect
-        #cdef vector[string] column_name_vect = b'a a a '.split()
-        # lst = []
-        # for str1 in column_names:
-        #     byte_str = str1.encode('ASCII')
-        #     lst.append(byte_str)
-        # column_name_vect = lst
-        #self.thisPtr.AutoGenerateColumnNames(column_name_vect)
-        return self
+        pass
 

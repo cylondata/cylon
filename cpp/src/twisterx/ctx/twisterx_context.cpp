@@ -12,12 +12,12 @@ TwisterXContext::TwisterXContext(bool distributed) {
 
 TwisterXContext *TwisterXContext::InitDistributed(net::CommConfig *config) {
   if (config->Type() == net::CommType::MPI) {
-    auto ctx = new TwisterXContext(true);
-    ctx->communicator = new net::MPICommunicator();
-    ctx->communicator->Init(config);
-    return ctx;
+	auto ctx = new TwisterXContext(true);
+	ctx->communicator = new net::MPICommunicator();
+	ctx->communicator->Init(config);
+	return ctx;
   } else {
-    throw "Unsupported communication type";
+	throw "Unsupported communication type";
   }
   return nullptr;
 }
@@ -30,25 +30,25 @@ void TwisterXContext::AddConfig(const std::string &key, const std::string &value
 std::string TwisterXContext::GetConfig(const std::string &key, const std::string &def) {
   auto find = this->config.find(key);
   if (find == this->config.end()) {
-    return def;
+	return def;
   }
   return find->second;
 }
 int TwisterXContext::GetRank() {
   if (this->distributed) {
-    this->communicator->GetRank();
+	this->communicator->GetRank();
   }
   return 0;
 }
 int TwisterXContext::GetWorldSize() {
   if (this->distributed) {
-    this->communicator->GetWorldSize();
+	this->communicator->GetWorldSize();
   }
   return 1;
 }
 void TwisterXContext::Finalize() {
   if (this->distributed) {
-    delete this->communicator;
+	delete this->communicator;
   }
 }
 }

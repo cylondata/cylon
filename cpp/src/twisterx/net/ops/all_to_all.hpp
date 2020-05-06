@@ -68,10 +68,10 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
    * @return
    */
   AllToAll(twisterx::TwisterXContext *ctx,
-           const std::vector<int> &source,
-           const std::vector<int> &targets,
-           int edgeId,
-           ReceiveCallback *callback);
+		   const std::vector<int> &source,
+		   const std::vector<int> &targets,
+		   int edgeId,
+		   ReceiveCallback *callback);
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true

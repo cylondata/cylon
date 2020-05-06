@@ -1,3 +1,5 @@
+set(ARROW_HOME ${CMAKE_BINARY_DIR}/arrow/install)
+set(PYTHON_HOME ${CMAKE_BINARY_DIR}/ENV)
 set(ARROW_ROOT ${CMAKE_BINARY_DIR}/arrow)
 
 set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
@@ -11,7 +13,7 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_TEST_LINKAGE=OFF"
         " -DARROW_TEST_MEMCHECK=OFF"
         " -DARROW_BUILD_BENCHMARKS=OFF"
-        " -DARROW_IPC=OFF"
+        " -DARROW_IPC=ON"
         " -DARROW_FLIGHT=OFF"
         " -DARROW_COMPUTE=ON"
         " -DARROW_CUDA=OFF"
@@ -26,7 +28,9 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_DATASET=OFF"
         " -DARROW_CSV=ON"
         " -DARROW_JSON=ON"
-        " -DARROW_BOOST_USE_SHARED=ON")
+        " -DARROW_BOOST_USE_SHARED=ON"
+        " -DPYTHON_EXECUTABLE=${PYTHON_HOME}/bin/python3"
+        )
 
 message("CMake Source Dir :")
 message(${CMAKE_SOURCE_DIR})
@@ -65,6 +69,10 @@ set(ARROW_LIBRARY_DIR "${ARROW_ROOT}/install/lib")
 set(ARROW_INCLUDE_DIR "${ARROW_ROOT}/install/include")
 
 find_library(ARROW_LIB arrow
+        NO_DEFAULT_PATH
+        HINTS "${ARROW_LIBRARY_DIR}")
+
+find_library(ARROW_PYTHON arrow_python
         NO_DEFAULT_PATH
         HINTS "${ARROW_LIBRARY_DIR}")
 

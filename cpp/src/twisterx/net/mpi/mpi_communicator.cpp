@@ -10,7 +10,7 @@ void MPIConfig::DummyConfig(int dummy) {
   this->AddConfig("Dummy", &dummy);
 }
 int MPIConfig::GetDummyConfig() {
-  return *(int *) this->GetConfig("Dummy");
+  return *(int *)this->GetConfig("Dummy");
 }
 
 CommType MPIConfig::Type() {
@@ -28,7 +28,14 @@ int MPICommunicator::GetWorldSize() {
   return this->world_size;
 }
 void MPICommunicator::Init(CommConfig *config) {
-  MPI_Init(nullptr, nullptr);
+  int initialized;
+  MPI_Initialized(&initialized);
+  if (!initialized) {
+	MPI_Init(nullptr, nullptr);
+  } else {
+	LOG(INFO) << "MPI is already initialized";
+  }
+
   MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
   MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
 }

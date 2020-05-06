@@ -17,12 +17,12 @@ void put_table(const std::string &id, const std::shared_ptr<arrow::Table> &table
 twisterx::Status from_csv(const std::string &path, const std::string &id, const char delimiter);
 
 twisterx::Status read_csv(const std::string &path, const std::string &id,
-                          twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+						  twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
 
 twisterx::Status JoinTables(const std::string &table_left,
-                            const std::string &table_right,
-                            twisterx::join::config::JoinConfig join_config,
-                            const std::string &dest_id);
+							const std::string &table_right,
+							twisterx::join::config::JoinConfig join_config,
+							const std::string &dest_id);
 
 int column_count(const std::string &id);
 
@@ -40,11 +40,11 @@ int64_t row_count(const std::string &id);
 twisterx::Status print(const std::string &table_id, int col1, int col2, int row1, int row2);
 
 twisterx::Status print_to_ostream(const std::string &table_id,
-                                  int col1,
-                                  int col2,
-                                  int row1,
-                                  int row2,
-                                  std::ostream &out);
+								  int col1,
+								  int col2,
+								  int row1,
+								  int row2,
+								  std::ostream &out);
 
 /**
  * Merge the set of tables into a single table, each table should have the same schema
@@ -73,6 +73,6 @@ twisterx::Status sortTable(const std::string &tableId, const std::string &sortTa
  * @return the status of the partition operation
  */
 twisterx::Status hashPartition(const std::string &id, const std::vector<int> &hash_columns, int no_of_partitions,
-                               std::vector<std::shared_ptr<arrow::Table>> *out, arrow::MemoryPool *pool);
+							   std::vector<std::shared_ptr<arrow::Table>> *out, arrow::MemoryPool *pool);
 }
 #endif //TWISTERX_SRC_IO_TABLE_API_H_

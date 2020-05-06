@@ -1,7 +1,3 @@
-//
-// Created by vibhatha on 4/15/20.
-//
-
 #include "TxRequest.h"
 #include <memory>
 #include <cstring>
@@ -38,7 +34,7 @@ void twisterx::TxRequest::to_string(string dataType, int bufDepth) {
   twisterx::util::printArray(buffer, length, dataType, bufDepth);
   std::cout << "Header: " << std::endl;
   for (int i = 0; i < headerLength; ++i) {
-    std::cout << header[i] << " ";
+	std::cout << header[i] << " ";
   }
   std::cout << std::endl;
 }

@@ -77,7 +77,7 @@ class CSVReadOptions {
   CSVReadOptions SkipRows(int32_t skip_rows);
 
   CSVReadOptions WithColumnTypes(const std::unordered_map<std::string,
-                                                          std::shared_ptr<DataType>> &column_types);
+														  std::shared_ptr<DataType>> &column_types);
 
   /**
    * Recognized spellings for null values

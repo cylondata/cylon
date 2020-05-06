@@ -1,19 +1,18 @@
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr
-from twisterx.api.channel cimport _ChannelReceiveCallback
-from twisterx.api.channel cimport _ChannelSendCallback
-from twisterx.api.txrequest cimport _TxRequest
-from pytwisterx.api.comms.request import TxRequest
+from twisterx.net.channel cimport CChannelReceiveCallback
+from twisterx.net.channel cimport CChannelSendCallback
+from twisterx.net.txrequest cimport CTxRequest
+from pytwisterx.net.comms.request import TxRequest
 
 
 cdef class ChannelSendCallback:
 
-    cdef _ChannelSendCallback *thisPtr
-    cdef shared_ptr[_TxRequest] txreqPtr
+    cdef CChannelSendCallback *thisPtr
+    cdef shared_ptr[CTxRequest] txreqPtr
 
 
     def sendComplete(self, tx: TxRequest):
-
         self.txreqPtr.reset()
         #self.thisPtr.sendFinishComplete()
         pass
@@ -24,7 +23,7 @@ cdef class ChannelSendCallback:
 
 cdef class ChannelReceiveCallback:
 
-    cdef _ChannelReceiveCallback *thisPtr
+    cdef CChannelReceiveCallback *thisPtr
 
     def receiveData(self):
         #self.thisPtr.receivedData()
