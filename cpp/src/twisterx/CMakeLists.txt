@@ -29,7 +29,7 @@ add_library(twisterx SHARED
         python/table_cython.h python/table_cython.cpp
         python/net/distributed.h python/net/distributed.cpp
         python/net/comm/all_to_all_wrap.h python/net/comm/all_to_all_wrap.cpp
-        python/net/comm/Callback.h python/net/comm/Callback.cpp
+        python/net/comm/callback.h python/net/comm/callback.cpp
         ctx/twisterx_context.h ctx/twisterx_context.cpp)
 
 include_directories(${MPI_INCLUDE_PATH})

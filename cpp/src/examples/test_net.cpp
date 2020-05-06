@@ -1,7 +1,3 @@
-//
-// Created by vibhatha on 4/26/20.
-//
-
 #include "python/net/distributed.h"
 
 using namespace std;

@@ -1,7 +1,3 @@
-//
-// Created by vibhatha on 4/21/20.
-//
-
 #ifndef TWISTERX_STATUS_H
 #define TWISTERX_STATUS_H
 #include "string"

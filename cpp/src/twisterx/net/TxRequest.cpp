@@ -1,7 +1,3 @@
-//
-// Created by vibhatha on 4/15/20.
-//
-
 #include "TxRequest.h"
 #include <memory>
 #include <cstring>

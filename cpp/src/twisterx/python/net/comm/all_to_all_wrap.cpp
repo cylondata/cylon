@@ -1,9 +1,5 @@
-//
-// Created by vibhatha on 4/26/20.
-//
-
 #include "all_to_all_wrap.h"
-#include "Callback.h"
+#include "callback.h"
 
 using namespace twisterx::net::comms;
 

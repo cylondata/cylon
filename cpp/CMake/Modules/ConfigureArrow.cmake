@@ -1,5 +1,3 @@
-#CMAKE BIN DIR
-#/home/vibhatha/github/forks/twisterx/cpp/build
 set(ARROW_HOME ${CMAKE_BINARY_DIR}/arrow/install)
 set(PYTHON_HOME ${CMAKE_BINARY_DIR}/ENV)
 set(ARROW_ROOT ${CMAKE_BINARY_DIR}/arrow)

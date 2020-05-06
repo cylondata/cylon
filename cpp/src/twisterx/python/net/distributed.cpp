@@ -1,7 +1,3 @@
-//
-// Created by vibhatha on 4/25/20.
-//
-
 #include <mpi.h>
 #include "distributed.h"
 

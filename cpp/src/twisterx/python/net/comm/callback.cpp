@@ -1,8 +1,4 @@
-//
-// Created by vibhatha on 4/27/20.
-//
-
-#include "Callback.h"
+#include "callback.h"
 
 bool twisterx::net::comms::Callback::onReceive(int source, void *buffer, int length) {
   std::cout << "Received value: " << source << " length " << length << std::endl;

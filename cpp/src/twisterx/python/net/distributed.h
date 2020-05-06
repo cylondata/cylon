@@ -1,7 +1,3 @@
-//
-// Created by vibhatha on 4/25/20.
-//
-
 #ifndef TWISTERX_SRC_TWISTERX_PYTHON_NET_DISTRIBUTED_H_
 #define TWISTERX_SRC_TWISTERX_PYTHON_NET_DISTRIBUTED_H_
 #include <iostream>
