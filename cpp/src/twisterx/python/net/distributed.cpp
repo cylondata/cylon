@@ -1,7 +1,6 @@
 #include <mpi.h>
 #include "distributed.h"
 
-
 void twisterx::net::cdist_init() {
   MPI_Init(NULL, NULL);
 }

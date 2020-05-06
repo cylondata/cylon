@@ -10,7 +10,7 @@ using namespace twisterx;
 namespace twisterx {
 namespace net {
 namespace comm {
-class all_to_all_wrap{
+class all_to_all_wrap {
  private:
   std::vector<int> sources = {0};
   std::vector<int> targets = {0};
@@ -24,7 +24,7 @@ class all_to_all_wrap{
   void wait();
   void finish();
   void set_instance(twisterx::AllToAll *all);
-  twisterx::AllToAll* get_instance();
+  twisterx::AllToAll *get_instance();
 };
 }
 }

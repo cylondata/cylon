@@ -34,7 +34,7 @@ void twisterx::TxRequest::to_string(string dataType, int bufDepth) {
   twisterx::util::printArray(buffer, length, dataType, bufDepth);
   std::cout << "Header: " << std::endl;
   for (int i = 0; i < headerLength; ++i) {
-    std::cout << header[i] << " ";
+	std::cout << header[i] << " ";
   }
   std::cout << std::endl;
 }

@@ -5,7 +5,6 @@
 #include <arrow/python/serialize.h>
 #include "arrow/api.h"
 
-
 using namespace std;
 using namespace twisterx;
 using namespace twisterx::python::table;
@@ -69,10 +68,10 @@ std::shared_ptr<arrow::Table> CxTable::to_pyarrow_table(const std::string &table
 }
 
 std::string CxTable::join(const std::string &table_id,
-						 JoinType type,
-						 JoinAlgorithm algorithm,
-						 int left_column_index,
-						 int right_column_index) {
+						  JoinType type,
+						  JoinAlgorithm algorithm,
+						  int left_column_index,
+						  int right_column_index) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
 
   JoinConfig jc(type, left_column_index, right_column_index, algorithm);

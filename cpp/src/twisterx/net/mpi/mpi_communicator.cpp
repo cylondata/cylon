@@ -10,7 +10,7 @@ void MPIConfig::DummyConfig(int dummy) {
   this->AddConfig("Dummy", &dummy);
 }
 int MPIConfig::GetDummyConfig() {
-  return *(int *) this->GetConfig("Dummy");
+  return *(int *)this->GetConfig("Dummy");
 }
 
 CommType MPIConfig::Type() {

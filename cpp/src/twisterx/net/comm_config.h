@@ -11,11 +11,11 @@ class CommConfig {
 
  protected:
   void AddConfig(const std::string &key, void *value) {
-    this->config.insert(std::pair<std::string, void *>(key, value));
+	this->config.insert(std::pair<std::string, void *>(key, value));
   }
 
   void *GetConfig(const std::string &key) {
-    return this->config.find(key)->second;
+	return this->config.find(key)->second;
   }
  public:
   virtual CommType Type() = 0;

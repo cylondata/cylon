@@ -23,10 +23,12 @@ arrow::Status build_final_table(const std::shared_ptr<std::vector<int64_t>> &lef
   std::string right_tb_prefix = "rt-";
   std::string prefix = left_tb_prefix;
   for (int i = 0; i < fields.size(); i++) {
-    if (i >= left_table_columns) {
-      prefix = right_tb_prefix;
-    }
-	new_fields.push_back(std::make_shared<arrow::Field>(prefix + std::to_string(i), fields.at(i)->type(), fields.at(i)->nullable()));
+	if (i >= left_table_columns) {
+	  prefix = right_tb_prefix;
+	}
+	new_fields.push_back(std::make_shared<arrow::Field>(prefix + std::to_string(i),
+														fields.at(i)->type(),
+														fields.at(i)->nullable()));
   }
   auto schema = arrow::schema(new_fields);
 

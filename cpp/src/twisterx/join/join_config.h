@@ -20,64 +20,64 @@ class JoinConfig {
 
  public:
   JoinConfig(JoinType type, int left_column_idx, int right_column_idx) {
-    this->type = type;
-    this->left_column_idx = left_column_idx;
-    this->right_column_idx = right_column_idx;
+	this->type = type;
+	this->left_column_idx = left_column_idx;
+	this->right_column_idx = right_column_idx;
   }
 
   JoinConfig(JoinType type, int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-    this->type = type;
-    this->left_column_idx = left_column_idx;
-    this->right_column_idx = right_column_idx;
-    this->algorithm = algorithm;
+	this->type = type;
+	this->left_column_idx = left_column_idx;
+	this->right_column_idx = right_column_idx;
+	this->algorithm = algorithm;
   }
 
  public:
   JoinConfig() = delete;
 
   static JoinConfig InnerJoin(int left_column_idx, int right_column_idx) {
-    return {INNER, left_column_idx, right_column_idx};
+	return {INNER, left_column_idx, right_column_idx};
   }
 
   static JoinConfig LeftJoin(int left_column_idx, int right_column_idx) {
-    return {LEFT, left_column_idx, right_column_idx};
+	return {LEFT, left_column_idx, right_column_idx};
   }
 
   static JoinConfig RightJoin(int left_column_idx, int right_column_idx) {
-    return {RIGHT, left_column_idx, right_column_idx};
+	return {RIGHT, left_column_idx, right_column_idx};
   }
 
   static JoinConfig FullOuterJoin(int left_column_idx, int right_column_idx) {
-    return {FULL_OUTER, left_column_idx, right_column_idx};
+	return {FULL_OUTER, left_column_idx, right_column_idx};
   }
 
   static JoinConfig InnerJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-    return {INNER, left_column_idx, right_column_idx, algorithm};
+	return {INNER, left_column_idx, right_column_idx, algorithm};
   }
 
   static JoinConfig LeftJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-    return {LEFT, left_column_idx, right_column_idx, algorithm};
+	return {LEFT, left_column_idx, right_column_idx, algorithm};
   }
 
   static JoinConfig RightJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-    return {RIGHT, left_column_idx, right_column_idx, algorithm};
+	return {RIGHT, left_column_idx, right_column_idx, algorithm};
   }
 
   static JoinConfig FullOuterJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-    return {FULL_OUTER, left_column_idx, right_column_idx, algorithm};
+	return {FULL_OUTER, left_column_idx, right_column_idx, algorithm};
   }
 
   JoinType GetType() const {
-    return type;
+	return type;
   }
   JoinAlgorithm GetAlgorithm() const {
-    return algorithm;
+	return algorithm;
   }
   int GetLeftColumnIdx() const {
-    return left_column_idx;
+	return left_column_idx;
   }
   int GetRightColumnIdx() const {
-    return right_column_idx;
+	return right_column_idx;
   }
 };
 }

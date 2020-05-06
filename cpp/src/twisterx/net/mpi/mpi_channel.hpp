@@ -64,7 +64,7 @@ class MPIChannel : public Channel {
    * @param receives receive from these ranks
    */
   void init(int edge, const std::vector<int> &receives, const std::vector<int> &sendIds,
-            ChannelReceiveCallback *rcv, ChannelSendCallback *send) override;
+			ChannelReceiveCallback *rcv, ChannelSendCallback *send) override;
 
   /**
   * Send the message to the target.

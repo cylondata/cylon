@@ -12,12 +12,12 @@ namespace config {
  * dependency.
  */
 class CSVConfigHolder : public arrow::csv::ReadOptions,
-                        public arrow::csv::ParseOptions,
-                        public arrow::csv::ConvertOptions {
+						public arrow::csv::ParseOptions,
+						public arrow::csv::ConvertOptions {
  public:
   static CSVConfigHolder *GetCastedHolder(const CSVReadOptions &options) {
-    void *holder = options.GetHolder();
-    return (CSVConfigHolder *) (holder);
+	void *holder = options.GetHolder();
+	return (CSVConfigHolder *)(holder);
   }
 };
 }

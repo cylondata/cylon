@@ -34,7 +34,7 @@ int twisterx::net::comm::all_to_all_wrap::insert(void *buffer, int length, int t
   all_->insert(buffer, length, target);
 }
 
-twisterx::AllToAll * twisterx::net::comm::all_to_all_wrap::get_instance() {
+twisterx::AllToAll *twisterx::net::comm::all_to_all_wrap::get_instance() {
   return all_;
 }
 

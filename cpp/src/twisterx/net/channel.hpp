@@ -41,7 +41,7 @@ class Channel {
    * @param receives these are the workers we are going to receive from
    */
   virtual void init(int edge, const std::vector<int> &receives, const std::vector<int> &sendIds,
-                    ChannelReceiveCallback *rcv, ChannelSendCallback *send) = 0;
+					ChannelReceiveCallback *rcv, ChannelSendCallback *send) = 0;
   /**
    * Send the request
    * @param request the request containing buffer, destination etc
