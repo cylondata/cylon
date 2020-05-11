@@ -54,8 +54,8 @@ tb_train_arw: PyArrowTable = None
 tb_test_arw: PyArrowTable = None
 train_npy: np.ndarray = None
 test_npy: np.ndarray = None
-train_arrow_tensor = None
-test_arrow_tensor = None
+train_arrow_tensor: ArrowTensor = None
+test_arrow_tensor: ArrowTensor = None
 train_torch_tensor: TorchTensor = None
 test_torch_tensor: TorchTensor = None
 
@@ -105,7 +105,6 @@ def convert_numpy_to_torch_tensor():
 
 
 ########################################################################################################################
-
 
 time_data_loading, (tb_train, tb_test ) = load_data_to_tx_tables()
 time_txtb_to_arrowtb, (tb_train_arw, tb_test_arw) = convert_tx_table_to_arrow_table()

@@ -78,7 +78,7 @@ print(npr.shape)
 
 
 print("Stats")
-print("-------------------------------------------")
+print("---------------------------------------------------------------------------------------------------------------")
 print("PyArrow CSV Load Time : {} ms".format(py_arrow_csv_loading_time / 1000000))
 print("PyArrow Table to Twisterx Table Conversion Time : {} ms".format(pyarrow_tb_to_tx_table_time / 1000000))
 print("Twisterx Table Join Time: {} ms".format(tx_join_time / 1000000))
