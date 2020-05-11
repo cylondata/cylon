@@ -5,7 +5,6 @@ https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
 '''
 
 import os
-import os
 import sysconfig
 from distutils.sysconfig import get_python_lib
 import pyarrow as pa
@@ -150,7 +149,6 @@ ext_modules = [
               libraries=libraries,
               library_dirs=library_directories,
               ),
-
     # Extension("pytwisterx.io.csv",
     #           sources=["twisterx/io/csv_read_config.pyx", "../cpp/src/twisterx/io/csv_read_config.cpp"],
     #           include_dirs=_include_dirs,
