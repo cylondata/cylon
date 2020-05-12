@@ -15,6 +15,7 @@ TwisterXContext *TwisterXContext::InitDistributed(net::CommConfig *config) {
 	auto ctx = new TwisterXContext(true);
 	ctx->communicator = new net::MPICommunicator();
 	ctx->communicator->Init(config);
+	ctx->distributed = true;
 	return ctx;
   } else {
 	throw "Unsupported communication type";
@@ -36,18 +37,19 @@ std::string TwisterXContext::GetConfig(const std::string &key, const std::string
 }
 int TwisterXContext::GetRank() {
   if (this->distributed) {
-	this->communicator->GetRank();
+	return this->communicator->GetRank();
   }
   return 0;
 }
 int TwisterXContext::GetWorldSize() {
   if (this->distributed) {
-	this->communicator->GetWorldSize();
+	return this->communicator->GetWorldSize();
   }
   return 1;
 }
 void TwisterXContext::Finalize() {
   if (this->distributed) {
+    this->communicator->Finalize();
 	delete this->communicator;
   }
 }
