@@ -41,7 +41,8 @@ _include_dirs = ["../cpp/src/twisterx/python",
                  "../cpp/build/thirdparty/glog/",
                  "../cpp/build/external/Catch/include",
                  "../cpp/thirdparty/glog/src",
-                 pyarrow_include_dir
+                 pyarrow_include_dir,
+                 np.get_include(),
                  ]
 
 ext_modules = [
