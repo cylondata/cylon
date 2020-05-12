@@ -12,13 +12,13 @@ TwisterXContext::TwisterXContext(bool distributed) {
 
 TwisterXContext *TwisterXContext::InitDistributed(net::CommConfig *config) {
   if (config->Type() == net::CommType::MPI) {
-	auto ctx = new TwisterXContext(true);
-	ctx->communicator = new net::MPICommunicator();
-	ctx->communicator->Init(config);
-	ctx->distributed = true;
-	return ctx;
+    auto ctx = new TwisterXContext(true);
+    ctx->communicator = new net::MPICommunicator();
+    ctx->communicator->Init(config);
+    ctx->distributed = true;
+    return ctx;
   } else {
-	throw "Unsupported communication type";
+    throw "Unsupported communication type";
   }
   return nullptr;
 }
@@ -31,26 +31,37 @@ void TwisterXContext::AddConfig(const std::string &key, const std::string &value
 std::string TwisterXContext::GetConfig(const std::string &key, const std::string &def) {
   auto find = this->config.find(key);
   if (find == this->config.end()) {
-	return def;
+    return def;
   }
   return find->second;
 }
 int TwisterXContext::GetRank() {
   if (this->distributed) {
-	return this->communicator->GetRank();
+    return this->communicator->GetRank();
   }
   return 0;
 }
 int TwisterXContext::GetWorldSize() {
   if (this->distributed) {
-	return this->communicator->GetWorldSize();
+    return this->communicator->GetWorldSize();
   }
   return 1;
 }
 void TwisterXContext::Finalize() {
   if (this->distributed) {
     this->communicator->Finalize();
-	delete this->communicator;
+    delete this->communicator;
   }
+}
+vector<int> TwisterXContext::GetNeighbours(bool include_self) {
+  vector<int> neighbours{};
+  neighbours.reserve(this->GetWorldSize());
+  for (int i = 0; i < this->GetWorldSize(); i++) {
+    if (i == this->GetRank() && !include_self) {
+      continue;
+    }
+    neighbours.push_back(i);
+  }
+  return neighbours;
 }
 }

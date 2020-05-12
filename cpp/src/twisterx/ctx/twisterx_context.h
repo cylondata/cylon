@@ -25,6 +25,7 @@ class TwisterXContext {
   net::Communicator *GetCommunicator() const;
   int GetRank();
   int GetWorldSize();
+  vector<int> GetNeighbours(bool include_self);
 };
 }
 
