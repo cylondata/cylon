@@ -13,11 +13,25 @@ from pytwisterx.utils.benchmark import benchmark_with_repitions
 from pytwisterx.utils.data import MiniBatcher
 
 '''
+## Reference
+
+Get the data from [Here](https://www.kaggle.com/oddrationale/mnist-in-csv/)
+
+## Place Data
+
+Place the data in the relative path 
+
+```bash
+data/mnist/full/
+```
+'''
+
+'''
 Configurations
 '''
 
-base_path: str = "/home/vibhatha/data/mnist"
-train_file_name: str = "mnist_train_small.csv"
+base_path: str = "data/mnist/full/"
+train_file_name: str = "mnist_train.csv"
 test_file_name: str = "mnist_test.csv"
 train_file_path: str = os.path.join(base_path, train_file_name)
 test_file_path: str = os.path.join(base_path, test_file_name)
