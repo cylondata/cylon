@@ -79,7 +79,6 @@ endif ()
 
 include_directories("${ARROW_INCLUDE_DIR}")
 
-
 ## Find Python
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
@@ -125,6 +124,3 @@ endif ()
 
 add_subdirectory(src/twisterx)
 add_subdirectory(src/examples)
-message("=================================================================================================")
-message("Python PATH ${ARROW_PYTHON}")
-message("=================================================================================================")
