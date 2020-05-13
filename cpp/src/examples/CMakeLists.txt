@@ -39,7 +39,7 @@ target_link_libraries(table_api_test twisterx)
 target_link_libraries(table_api_test ${ARROW_LIB})
 target_link_libraries(table_api_test glog::glog)
 
-target_link_libraries(table_api_test_hash.cpp ${MPI_LIBRARIES} twisterx ${ARROW_LIB} glog::glog)
+target_link_libraries(table_api_test_hash ${MPI_LIBRARIES} twisterx ${ARROW_LIB} glog::glog)
 
 target_link_libraries(hash_partition ${MPI_LIBRARIES})
 target_link_libraries(hash_partition twisterx)
