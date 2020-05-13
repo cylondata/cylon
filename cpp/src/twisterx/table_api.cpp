@@ -163,8 +163,12 @@ twisterx::Status JoinDistributedTables(
   // now complete the communication
   left_all.finish();
   right_all.finish();
+
   while (!left_all.isComplete()) {}
   while (!right_all.isComplete()) {}
+
+  left_all.close();
+  right_all.close();
 
   // now we have the final set of tables
   arrow::Result<std::shared_ptr<arrow::Table>> left_concat = arrow::ConcatenateTables(left_tables);

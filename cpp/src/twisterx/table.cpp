@@ -116,4 +116,16 @@ Status Table::ToArrowTable(std::shared_ptr<arrow::Table> *out) {
   return Status::OK();
 }
 
+Status Table::DistributedJoin(twisterx::TwisterXContext *ctx,
+                              const shared_ptr<Table> &right,
+                              twisterx::join::config::JoinConfig join_config,
+                              std::shared_ptr<Table> *out) {
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  twisterx::Status status = twisterx::JoinDistributedTables(ctx, this->id_, right->id_, join_config, uuid);
+  if (status.is_ok()) {
+    *out = std::make_shared<Table>(Table(uuid));
+  }
+  return status;
+}
+
 }
