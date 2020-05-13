@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import torch
 from torch import Tensor as TorchTensor
-from benchutils import benchmark_with_repitions
+from pytwisterx.utils.benchmark import benchmark_with_repitions
 
 '''
 Configurations
@@ -70,6 +70,7 @@ def load_data_to_tx_tables():
     tb_test: Table = csv_reader.read(test_file_path, delimiter)
     return tb_train, tb_test
 
+
 '''
 If some pre-processing to do, do it here...
 Join, shuffle, partition, etc
@@ -106,7 +107,7 @@ def convert_numpy_to_torch_tensor():
 
 ########################################################################################################################
 
-time_data_loading, (tb_train, tb_test ) = load_data_to_tx_tables()
+time_data_loading, (tb_train, tb_test) = load_data_to_tx_tables()
 time_txtb_to_arrowtb, (tb_train_arw, tb_test_arw) = convert_tx_table_to_arrow_table()
 time_pyarwtb_to_numpy, (train_npy, test_npy) = covert_arrow_table_to_numpy()
 time_numpy_to_arrowtn, (train_arrow_tensor, test_arrow_tensor) = convert_numpy_to_arrow_tensor()
