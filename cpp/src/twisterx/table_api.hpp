@@ -6,27 +6,32 @@
 #include "status.hpp"
 #include "join/join_config.h"
 #include "io/csv_read_config.h"
-#include <arrow/api.h>
-
+#include "ctx/twisterx_context.h"
+/**
+ * This file shouldn't have an arrow dependency. Use the table_api_extended to define
+ * the functions with arrow dependency
+ */
 namespace twisterx {
 
-std::shared_ptr<arrow::Table> get_table(const std::string &id);
-
-void put_table(const std::string &id, const std::shared_ptr<arrow::Table> &table);
-
-twisterx::Status from_csv(const std::string &path, const std::string &id, const char delimiter);
-
-twisterx::Status read_csv(const std::string &path, const std::string &id,
-						  twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+twisterx::Status ReadCSV(const std::string &path, const std::string &id,
+                         twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
 
 twisterx::Status JoinTables(const std::string &table_left,
-							const std::string &table_right,
-							twisterx::join::config::JoinConfig join_config,
-							const std::string &dest_id);
+                            const std::string &table_right,
+                            twisterx::join::config::JoinConfig join_config,
+                            const std::string &dest_id);
 
-int column_count(const std::string &id);
+twisterx::Status JoinDistributedTables(
+    twisterx::TwisterXContext *ctx,
+    const std::string &table_left,
+    const std::string &table_right,
+    twisterx::join::config::JoinConfig join_config,
+    const std::string &dest_id
+);
 
-int64_t row_count(const std::string &id);
+int ColumnCount(const std::string &id);
+
+int64_t RowCount(const std::string &id);
 
 /**
  * Print a table
@@ -37,14 +42,14 @@ int64_t row_count(const std::string &id);
  * @param row2
  * @return
  */
-twisterx::Status print(const std::string &table_id, int col1, int col2, int row1, int row2);
+twisterx::Status Print(const std::string &table_id, int col1, int col2, int row1, int row2);
 
-twisterx::Status print_to_ostream(const std::string &table_id,
-								  int col1,
-								  int col2,
-								  int row1,
-								  int row2,
-								  std::ostream &out);
+twisterx::Status PrintToOStream(const std::string &table_id,
+                                int col1,
+                                int col2,
+                                int row1,
+                                int row2,
+                                std::ostream &out);
 
 /**
  * Merge the set of tables into a single table, each table should have the same schema
@@ -53,7 +58,7 @@ twisterx::Status print_to_ostream(const std::string &table_id,
  * @param merged_tab id of the merged table
  * @return the status of the merge
  */
-twisterx::Status merge(std::vector<std::string> table_ids, const std::string &merged_tab);
+twisterx::Status Merge(std::vector<std::string> table_ids, const std::string &merged_tab);
 
 /**
  * Sort the table with the given identifier
@@ -61,7 +66,7 @@ twisterx::Status merge(std::vector<std::string> table_ids, const std::string &me
  * @param columnIndex the sorting column index
  * @return the status of the merge
  */
-twisterx::Status sortTable(const std::string &tableId, const std::string &sortTableId, int columnIndex);
+twisterx::Status SortTable(const std::string &tableId, const std::string &sortTableId, int columnIndex);
 
 /**
  * Partition the table into multiple tables using a hash function, hash will be applied to the bytes of the data
@@ -72,7 +77,7 @@ twisterx::Status sortTable(const std::string &tableId, const std::string &sortTa
  * @param pool the memory pool
  * @return the status of the partition operation
  */
-twisterx::Status hashPartition(const std::string &id, const std::vector<int> &hash_columns, int no_of_partitions,
-							   std::vector<std::shared_ptr<arrow::Table>> *out, arrow::MemoryPool *pool);
+twisterx::Status HashPartition(const std::string &id, const std::vector<int> &hash_columns, int no_of_partitions,
+                               std::unordered_map<int, std::string> *out);
 }
 #endif //TWISTERX_SRC_IO_TABLE_API_H_

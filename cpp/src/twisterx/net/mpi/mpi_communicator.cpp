@@ -39,5 +39,8 @@ void MPICommunicator::Init(CommConfig *config) {
   MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
   MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
 }
+void MPICommunicator::Finalize() {
+  MPI_Finalize();
+}
 }
 }

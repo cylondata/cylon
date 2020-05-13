@@ -20,6 +20,7 @@ class MPICommunicator : public Communicator {
   Channel *CreateChannel();
   int GetRank();
   int GetWorldSize();
+  void Finalize();
 };
 }
 }
