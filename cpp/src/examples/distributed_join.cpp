@@ -1,4 +1,3 @@
-#include <mpi.h>
 #include <glog/logging.h>
 #include <net/mpi/mpi_communicator.h>
 #include <ctx/twisterx_context.h>
