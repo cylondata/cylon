@@ -191,6 +191,164 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
 }
 
 template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
+arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
+						   const std::shared_ptr<arrow::Table> &right_tab,
+						   int64_t left_join_column_idx,
+						   int64_t right_join_column_idx,
+						   twisterx::join::config::JoinType join_type,
+						   std::shared_ptr<arrow::Table> *joined_table,
+						   arrow::MemoryPool *memory_pool) {
+  //sort columns
+  auto left_join_column = left_tab->column(left_join_column_idx)->chunk(0);
+  auto right_join_column = right_tab->column(right_join_column_idx)->chunk(0);
+
+  auto t1 = std::chrono::high_resolution_clock::now();
+  std::shared_ptr<arrow::Array> left_index_sorted_column;
+  auto status = SortIndices(memory_pool, left_join_column, &left_index_sorted_column);
+  if (status != arrow::Status::OK()) {
+	LOG(FATAL) << "Failed when sorting left table to indices. " << status.ToString();
+	return status;
+  }
+  auto t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Left sorting time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
+  t1 = std::chrono::high_resolution_clock::now();
+  std::shared_ptr<arrow::Array> right_index_sorted_column;
+  status = SortIndices(memory_pool, right_join_column, &right_index_sorted_column);
+  if (status != arrow::Status::OK()) {
+	LOG(FATAL) << "Failed when sorting right table to indices. " << status.ToString();
+	return status;
+  }
+  t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "right sorting time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
+  CPP_KEY_TYPE left_key, right_key;
+  std::vector<CPP_KEY_TYPE> left_subset, right_subset;
+  int64_t left_current_index = 0;
+  int64_t right_current_index = 0;
+
+  t1 = std::chrono::high_resolution_clock::now();
+
+  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
+  std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>();
+  advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&left_subset,
+										std::static_pointer_cast<arrow::Int64Array>(left_index_sorted_column),
+										&left_current_index,
+										left_join_column,
+										&left_key);
+
+  advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&right_subset,
+										std::static_pointer_cast<arrow::Int64Array>(right_index_sorted_column),
+										&right_current_index,
+										right_join_column,
+										&right_key);
+  while (!left_subset.empty() && !right_subset.empty()) {
+	if (left_key == right_key) { // use a key comparator
+	  for (int64_t left_idx : left_subset) {
+		for (int64_t right_idx: right_subset) {
+		  left_indices->push_back(left_idx);
+		  right_indices->push_back(right_idx);
+		}
+	  }
+	  //advance
+	  advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&left_subset,
+											std::static_pointer_cast<arrow::Int64Array>(
+												left_index_sorted_column),
+											&left_current_index,
+											left_join_column,
+											&left_key);
+
+	  advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&right_subset,
+											std::static_pointer_cast<arrow::Int64Array>(
+												right_index_sorted_column),
+											&right_current_index,
+											right_join_column,
+											&right_key);
+	} else if (left_key < right_key) {
+	  // if this is a left join, this is the time to include them all in the result set
+	  if (join_type == twisterx::join::config::LEFT || join_type == twisterx::join::config::FULL_OUTER) {
+		for (int64_t left_idx : left_subset) {
+		  left_indices->push_back(left_idx);
+		  right_indices->push_back(-1);
+		}
+	  }
+
+	  advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&left_subset,
+											std::static_pointer_cast<arrow::Int64Array>(
+												left_index_sorted_column),
+											&left_current_index,
+											left_join_column,
+											&left_key);
+	} else {
+	  // if this is a right join, this is the time to include them all in the result set
+	  if (join_type == twisterx::join::config::RIGHT || join_type == twisterx::join::config::FULL_OUTER) {
+		for (int64_t right_idx : right_subset) {
+		  left_indices->push_back(-1);
+		  right_indices->push_back(right_idx);
+		}
+	  }
+
+	  advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&right_subset,
+											std::static_pointer_cast<arrow::Int64Array>(
+												right_index_sorted_column),
+											&right_current_index,
+											right_join_column,
+											&right_key);
+	}
+  }
+
+  // specially handling left and right join
+  if (join_type == twisterx::join::config::LEFT || join_type == twisterx::join::config::FULL_OUTER) {
+	while (!left_subset.empty()) {
+	  for (int64_t left_idx : left_subset) {
+		left_indices->push_back(left_idx);
+		right_indices->push_back(-1);
+	  }
+	  advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&left_subset,
+											std::static_pointer_cast<arrow::Int64Array>(
+												left_index_sorted_column),
+											&left_current_index,
+											left_join_column,
+											&left_key);
+	}
+  }
+
+  if (join_type == twisterx::join::config::RIGHT || join_type == twisterx::join::config::FULL_OUTER) {
+	while (!right_subset.empty()) {
+	  for (int64_t right_idx : right_subset) {
+		left_indices->push_back(-1);
+		right_indices->push_back(right_idx);
+	  }
+	  advance<ARROW_KEY_TYPE, CPP_KEY_TYPE>(&right_subset,
+											std::static_pointer_cast<arrow::Int64Array>(
+												right_index_sorted_column),
+											&right_current_index,
+											right_join_column,
+											&right_key);
+	}
+  }
+
+  t2 = std::chrono::high_resolution_clock::now();
+
+  LOG(INFO) << "Index join time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Building final table with number of tuples - " << left_indices->size();
+
+  t1 = std::chrono::high_resolution_clock::now();
+  // build final table
+  status = twisterx::join::util::build_final_table(
+	  left_indices, right_indices,
+	  left_tab,
+	  right_tab,
+	  joined_table,
+	  memory_pool
+  );
+  t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Built final table in : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Done and produced : " << left_indices->size();
+  return status;
+}
+
+template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
 arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
 					  const std::shared_ptr<arrow::Table> &right_tab,
 					  int64_t left_join_column_idx,
@@ -207,7 +365,13 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
 														  right_join_column_idx,
 														  join_type,
 														  joined_table, memory_pool);
-	case twisterx::join::config::HASH:break;
+	case twisterx::join::config::HASH:
+	  return do_hash_join<ARROW_KEY_TYPE, CPP_KEY_TYPE>(left_tab,
+														right_tab,
+														left_join_column_idx,
+														right_join_column_idx,
+														join_type,
+														joined_table, memory_pool);
   }
   return arrow::Status::OK();
 }
