@@ -80,9 +80,9 @@ class LocalDataLoader(DataLoader):
                 _loaded_data_list.append(csv.read_csv(fpath))
             self.dataset = _loaded_data_list
         elif self.loader_type == 'numpy':
-            pass
+            raise NotImplementedError("Numpy Loader is not implemented!")
         else:
-            raise NotImplementedError("The Loader Type {} is not implemented!".format(self.loader_type))
+            raise NotImplementedError("The Loader Type {} is not supported!".format(self.loader_type))
 
 
 
