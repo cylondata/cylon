@@ -2,6 +2,7 @@
 #include "../table.hpp"
 #include "table_cython.h"
 #include "../table_api.hpp"
+#include "../table_api_extended.hpp"
 #include <arrow/python/serialize.h>
 #include "arrow/api.h"
 
@@ -22,11 +23,11 @@ std::string CxTable::get_id() {
 }
 
 int CxTable::columns() {
-  return column_count(this->get_id());
+  return ColumnCount(this->get_id());
 }
 
 int CxTable::rows() {
-  return row_count(this->get_id());
+  return RowCount(this->get_id());
 }
 
 void CxTable::clear() {
@@ -34,36 +35,36 @@ void CxTable::clear() {
 }
 
 void CxTable::show() {
-  print(this->get_id(), 0, this->columns(), 0, this->rows());
+  Print(this->get_id(), 0, this->columns(), 0, this->rows());
 }
 
 void CxTable::show(int row1, int row2, int col1, int col2) {
-  print(this->get_id(), col1, col2, row1, row2);
+  Print(this->get_id(), col1, col2, row1, row2);
 }
 
 Status CxTable::from_csv(const std::string &path, const char &delimiter, const std::string &uuid) {
-  twisterx::Status status = read_csv(path, uuid, CSVReadOptions().WithDelimiter(delimiter));
+  twisterx::Status status = ReadCSV(path, uuid, CSVReadOptions().WithDelimiter(delimiter));
   return status;
 }
 
 Status CxTable::to_csv(const std::string &path) {
   ofstream out_csv;
   out_csv.open(path);
-  Status status = print_to_ostream(this->get_id(), 0,
-								   this->columns(), 0,
-								   this->rows(), out_csv);
+  Status status = PrintToOStream(this->get_id(), 0,
+                                 this->columns(), 0,
+                                 this->rows(), out_csv);
   out_csv.close();
   return status;
 }
 
 std::string CxTable::from_pyarrow_table(std::shared_ptr<arrow::Table> table) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  put_table(uuid, table);
+  PutTable(uuid, table);
   return uuid;
 }
 
 std::shared_ptr<arrow::Table> CxTable::to_pyarrow_table(const std::string &table_id) {
-  shared_ptr<arrow::Table> table1 = get_table(table_id);
+  shared_ptr<arrow::Table> table1 = GetTable(table_id);
   return table1;
 }
 

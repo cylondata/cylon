@@ -6,6 +6,7 @@ endmacro(tx_add_exe)
 include_directories(../twisterx)
 
 tx_add_exe(arrow_twisterx)
+tx_add_exe(distributed_join)
 tx_add_exe(arrow_test)
 tx_add_exe(join_test)
 tx_add_exe(table_api_test)
@@ -18,6 +19,10 @@ tx_add_exe(test_cy_alltoallwrap)
 target_link_libraries(arrow_twisterx ${MPI_LIBRARIES})
 target_link_libraries(arrow_twisterx twisterx)
 target_link_libraries(arrow_twisterx ${ARROW_LIB})
+
+target_link_libraries(distributed_join ${MPI_LIBRARIES})
+target_link_libraries(distributed_join twisterx)
+target_link_libraries(distributed_join ${ARROW_LIB})
 
 target_link_libraries(arrow_test ${MPI_LIBRARIES})
 target_link_libraries(arrow_test twisterx)

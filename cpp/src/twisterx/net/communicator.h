@@ -16,6 +16,7 @@ class Communicator {
   virtual Channel *CreateChannel() = 0;
   virtual int GetRank() = 0;
   virtual int GetWorldSize() = 0;
+  virtual void Finalize() = 0;
 };
 }
 }
