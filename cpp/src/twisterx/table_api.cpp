@@ -37,9 +37,9 @@ std::string PutTable(const std::shared_ptr<arrow::Table> &table) {
   return id;
 }
 
-twisterx::Status read_csv(const std::string &path,
-                          const std::string &id,
-                          twisterx::io::config::CSVReadOptions options) {
+twisterx::Status ReadCSV(const std::string &path,
+                         const std::string &id,
+                         twisterx::io::config::CSVReadOptions options) {
   arrow::Result<std::shared_ptr<arrow::Table>> result = twisterx::io::read_csv(path, options);
   if (result.ok()) {
     std::shared_ptr<arrow::Table> table = *result;
@@ -49,16 +49,16 @@ twisterx::Status read_csv(const std::string &path,
   return twisterx::Status(Code::IOError, result.status().message());;
 }
 
-twisterx::Status print(const std::string &table_id, int col1, int col2, int row1, int row2) {
-  return print_to_ostream(table_id, col1, col2, row1, row2, std::cout);
+twisterx::Status Print(const std::string &table_id, int col1, int col2, int row1, int row2) {
+  return PrintToOStream(table_id, col1, col2, row1, row2, std::cout);
 }
 
-twisterx::Status print_to_ostream(const std::string &table_id,
-                                  int col1,
-                                  int col2,
-                                  int row1,
-                                  int row2,
-                                  std::ostream &out) {
+twisterx::Status PrintToOStream(const std::string &table_id,
+                                int col1,
+                                int col2,
+                                int row1,
+                                int row2,
+                                std::ostream &out) {
   auto table = GetTable(table_id);
   if (table != NULLPTR) {
     for (int row = row1; row < row2; row++) {
@@ -208,7 +208,7 @@ twisterx::Status JoinTables(const std::string &table_left,
   }
 }
 
-int column_count(const std::string &id) {
+int ColumnCount(const std::string &id) {
   auto table = GetTable(id);
   if (table != NULLPTR) {
     return table->num_columns();
@@ -216,7 +216,7 @@ int column_count(const std::string &id) {
   return -1;
 }
 
-int64_t row_count(const std::string &id) {
+int64_t RowCount(const std::string &id) {
   auto table = GetTable(id);
   if (table != NULLPTR) {
     return table->num_rows();
@@ -224,7 +224,7 @@ int64_t row_count(const std::string &id) {
   return -1;
 }
 
-twisterx::Status merge(std::vector<std::string> table_ids, const std::string &merged_tab) {
+twisterx::Status Merge(std::vector<std::string> table_ids, const std::string &merged_tab) {
   std::vector<std::shared_ptr<arrow::Table>> tables;
   for (auto it = table_ids.begin(); it < table_ids.end(); it++) {
     tables.push_back(GetTable(*it));
@@ -238,7 +238,7 @@ twisterx::Status merge(std::vector<std::string> table_ids, const std::string &me
   }
 }
 
-twisterx::Status sortTable(const std::string &id, const std::string &sortedTableId, int columnIndex) {
+twisterx::Status SortTable(const std::string &id, const std::string &sortedTableId, int columnIndex) {
   auto table = GetTable(id);
   if (table == NULLPTR) {
     LOG(FATAL) << "Failed to retrieve table";
