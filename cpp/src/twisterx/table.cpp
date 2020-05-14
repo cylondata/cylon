@@ -64,7 +64,7 @@ Status Table::Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables,
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::Merge(table_ids, uuid);
   if (status.is_ok()) {
-    *tableOut = std::make_unique<Table>(uuid);
+    *tableOut = std::make_shared<Table>(uuid);
   }
   return status;
 }
@@ -73,7 +73,7 @@ Status Table::Sort(int sort_column, std::shared_ptr<Table> *tableOut) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   Status status = twisterx::SortTable(id_, uuid, sort_column);
   if (status.is_ok()) {
-    *tableOut = std::make_unique<Table>(uuid);
+    *tableOut = std::make_shared<Table>(uuid);
   }
   return status;
 }
