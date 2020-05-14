@@ -314,7 +314,7 @@ twisterx::Status HashPartition(const std::string &id, const std::vector<int> &ha
     std::shared_ptr<arrow::DataType> type = left_tab->column(i)->chunk(0)->type();
     std::shared_ptr<arrow::Array> array = left_tab->column(i)->chunk(0);
 
-    std::unique_ptr<ArrowArraySplitKernel> splitKernel;
+    std::shared_ptr<ArrowArraySplitKernel> splitKernel;
     status = CreateSplitter(type, arrow::default_memory_pool(), &splitKernel);
     if (!status.is_ok()) {
       LOG(FATAL) << "Failed to create the splitter";

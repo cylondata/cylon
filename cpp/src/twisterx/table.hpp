@@ -76,14 +76,14 @@ class Table {
    * @return new merged table
    */
   static Status
-  Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables, std::unique_ptr<Table> *tableOut);
+  Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables, std::shared_ptr<Table> *tableOut);
 
   /**
    * Sort the table according to the given column, this is a local sort
    * @param sort_column
    * @return new table sorted according to the sort column
    */
-  Status Sort(int sort_column, std::unique_ptr<Table> *tableOut);
+  Status Sort(int sort_column, std::shared_ptr<Table> *tableOut);
 
   /**
    * Do the join with the right table

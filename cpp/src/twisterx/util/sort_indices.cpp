@@ -40,7 +40,7 @@ class SortToIndicesKernel : public arrow::compute::UnaryKernel {
   ///            values of this type
   /// \param[out] out created kernel
   static arrow::Status Make(const std::shared_ptr<arrow::DataType> &value_type,
-                            std::unique_ptr<SortToIndicesKernel> *out);
+                            std::shared_ptr<SortToIndicesKernel> *out);
 
 };
 
@@ -294,7 +294,7 @@ SortToIndicesKernelImpl<ArrowType, Sorter> *MakeCountOrCompareKernel(
 }
 
 arrow::Status SortToIndicesKernel::Make(const std::shared_ptr<arrow::DataType> &value_type,
-                                        std::unique_ptr<SortToIndicesKernel> *out) {
+                                        std::shared_ptr<SortToIndicesKernel> *out) {
   SortToIndicesKernel *kernel;
   switch (value_type->id()) {
     case arrow::Type::UINT8:kernel = MakeCountKernel<arrow::UInt8Type>(0, 255);
@@ -329,7 +329,7 @@ arrow::Status SortToIndicesKernel::Make(const std::shared_ptr<arrow::DataType> &
 
 arrow::Status SortToIndices(arrow::compute::FunctionContext *ctx, const arrow::compute::Datum &values,
                             arrow::compute::Datum *offsets) {
-  std::unique_ptr<SortToIndicesKernel> kernel;
+  std::shared_ptr<SortToIndicesKernel> kernel;
   RETURN_NOT_OK(SortToIndicesKernel::Make(values.type(), &kernel));
   return kernel->Call(ctx, values, offsets);
 }

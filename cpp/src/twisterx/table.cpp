@@ -56,7 +56,7 @@ void Table::print(int row1, int row2, int col1, int col2) {
   twisterx::Print(this->get_id(), col1, col2, row1, row2);
 }
 
-Status Table::Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables, std::unique_ptr<Table> *tableOut) {
+Status Table::Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables, std::shared_ptr<Table> *tableOut) {
   std::vector<std::string> table_ids(tables.size());
   for (auto it = tables.begin(); it < tables.end(); it++) {
     table_ids.push_back((*it)->get_id());
@@ -69,7 +69,7 @@ Status Table::Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables,
   return status;
 }
 
-Status Table::Sort(int sort_column, std::unique_ptr<Table> *tableOut) {
+Status Table::Sort(int sort_column, std::shared_ptr<Table> *tableOut) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   Status status = twisterx::SortTable(id_, uuid, sort_column);
   if (status.is_ok()) {

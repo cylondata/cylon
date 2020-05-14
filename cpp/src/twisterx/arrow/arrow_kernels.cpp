@@ -3,7 +3,7 @@
 namespace twisterx {
 twisterx::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
 								arrow::MemoryPool *pool,
-								std::unique_ptr<ArrowArraySplitKernel> *out) {
+								std::shared_ptr<ArrowArraySplitKernel> *out) {
   ArrowArraySplitKernel *kernel;
   switch (type->id()) {
 	case arrow::Type::UINT8:kernel = new UInt8ArraySplitter(type, pool);
@@ -165,7 +165,7 @@ class ArrowBinarySortKernel : public ArrowArraySortKernel {
 
 int CreateSorter(std::shared_ptr<arrow::DataType> type,
 				 arrow::MemoryPool *pool,
-				 std::unique_ptr<ArrowArraySortKernel> *out) {
+				 std::shared_ptr<ArrowArraySortKernel> *out) {
   ArrowArraySortKernel *kernel;
   switch (type->id()) {
 	case arrow::Type::UINT8:kernel = new UInt8ArraySorter(type, pool);
@@ -203,7 +203,7 @@ int CreateSorter(std::shared_ptr<arrow::DataType> type,
 
 arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> values,
 						  std::shared_ptr<arrow::Array> *offsets) {
-  std::unique_ptr<ArrowArraySortKernel> out;
+  std::shared_ptr<ArrowArraySortKernel> out;
   CreateSorter(values->type(), memory_pool, &out);
   out->Sort(values, offsets);
   return arrow::Status::OK();

@@ -106,7 +106,7 @@ using DoubleArraySplitter = ArrowArrayNumericSplitKernel<arrow::DoubleType>;
 
 twisterx::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
 								arrow::MemoryPool *pool,
-								std::unique_ptr<ArrowArraySplitKernel> *out);
+								std::shared_ptr<ArrowArraySplitKernel> *out);
 
 class ArrowArraySortKernel {
  public:
