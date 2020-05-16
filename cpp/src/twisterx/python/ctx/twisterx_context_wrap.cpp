@@ -25,11 +25,13 @@
 
 twisterx::py::twisterx_context_wrap::twisterx_context_wrap() {
   this->context = new TwisterXContext(false);
+  this->distributed = false;
 }
 
 twisterx::py::twisterx_context_wrap::twisterx_context_wrap(std::string config) {
   if (config == "mpi") {
 	auto ctx = new TwisterXContext(true);
+	this->distributed = true;
 	ctx->setCommunicator(new net::MPICommunicator());
 	auto mpi_config = new twisterx::net::MPIConfig();
 	ctx->GetCommunicator()->Init(mpi_config);
@@ -46,7 +48,7 @@ TwisterXContext * twisterx::py::twisterx_context_wrap::getInstance() {
 
 
 net::Communicator * twisterx::py::twisterx_context_wrap::GetCommunicator() const {
-  return this->communicator;
+  return this->context->GetCommunicator();
 }
 
 void twisterx::py::twisterx_context_wrap::AddConfig(const std::string &key, const std::string &value) {
@@ -63,22 +65,22 @@ std::string twisterx::py::twisterx_context_wrap::GetConfig(const std::string &ke
 
 int twisterx::py::twisterx_context_wrap::GetRank() {
   if (this->distributed) {
-	return this->communicator->GetRank();
+	return this->context->GetCommunicator()->GetRank();
   }
   return 0;
 }
 
 int twisterx::py::twisterx_context_wrap::GetWorldSize() {
   if (this->distributed) {
-	return this->communicator->GetWorldSize();
+	return this->context->GetCommunicator()->GetWorldSize();
   }
   return 1;
 }
 
 void twisterx::py::twisterx_context_wrap::Finalize() {
   if (this->distributed) {
-	this->communicator->Finalize();
-	delete this->communicator;
+	this->context->GetCommunicator()->Finalize();
+	delete this->context->GetCommunicator();
   }
 }
 
