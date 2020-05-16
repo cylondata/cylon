@@ -112,8 +112,8 @@ twisterx::Status JoinDistributedTables(
   auto neighbours = ctx->GetNeighbours(true);
 
   // vectors to hold the receiving tables
-  vector<std::shared_ptr<arrow::Table>> left_tables(ctx->GetWorldSize());
-  vector<std::shared_ptr<arrow::Table>> right_tables(ctx->GetWorldSize());
+  vector<std::shared_ptr<arrow::Table>> left_tables;
+  vector<std::shared_ptr<arrow::Table>> right_tables;
 
   // add partition of this worker to the vector
   auto left_partition_of_this_worker = left_partitioned_tables.find(ctx->GetRank());
@@ -137,7 +137,7 @@ twisterx::Status JoinDistributedTables(
     }
 
     bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
-      tabs.push_back(table);
+      this->tabs.push_back(table);
     };
   };
 
@@ -145,16 +145,16 @@ twisterx::Status JoinDistributedTables(
   twisterx::ArrowAllToAll left_all(ctx, neighbours, neighbours, 0,
                                    std::make_shared<AllToAllListener>(left_tables),
                                    left->schema(), arrow::default_memory_pool());
-  for (auto & left_partitioned_table : left_partitioned_tables) {
+  for (auto &left_partitioned_table : left_partitioned_tables) {
     if (left_partitioned_table.first != ctx->GetRank()) {
       left_all.insert(GetTable(left_partitioned_table.second), left_partitioned_table.first);
     }
   }
 
-  twisterx::ArrowAllToAll right_all(ctx, neighbours, neighbours, 0,
+  twisterx::ArrowAllToAll right_all(ctx, neighbours, neighbours, 1,
                                     std::make_shared<AllToAllListener>(right_tables),
                                     right->schema(), arrow::default_memory_pool());
-  for (auto & right_partitioned_table : right_partitioned_tables) {
+  for (auto &right_partitioned_table : right_partitioned_tables) {
     if (right_partitioned_table.first != ctx->GetRank()) {
       right_all.insert(GetTable(right_partitioned_table.second), right_partitioned_table.first);
     }
@@ -162,12 +162,11 @@ twisterx::Status JoinDistributedTables(
 
   // now complete the communication
   left_all.finish();
-  right_all.finish();
-
   while (!left_all.isComplete()) {}
-  while (!right_all.isComplete()) {}
-
   left_all.close();
+
+  right_all.finish();
+  while (!right_all.isComplete()) {}
   right_all.close();
 
   // now we have the final set of tables
