@@ -15,6 +15,8 @@ tx_add_exe(test_util)
 tx_add_exe(test_net)
 tx_add_exe(test_cy_alltoallwrap)
 tx_add_exe(distributed_context)
+tx_add_exe(join_test_single_thread)
+
 
 target_link_libraries(arrow_twisterx ${MPI_LIBRARIES})
 target_link_libraries(arrow_twisterx twisterx)
@@ -59,3 +61,7 @@ target_link_libraries(test_cy_alltoallwrap glog::glog)
 target_link_libraries(distributed_context twisterx)
 target_link_libraries(distributed_context ${ARROW_LIB})
 target_link_libraries(distributed_context glog::glog)
+
+target_link_libraries(join_test_single_thread twisterx)
+target_link_libraries(join_test_single_thread ${ARROW_LIB})
+target_link_libraries(join_test_single_thread glog::glog)

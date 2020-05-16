@@ -28,6 +28,18 @@ Status Table::FromArrowTable(std::shared_ptr<arrow::Table> table) {
   }
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   PutTable(uuid, table);
+  return Status(twisterx::OK, "Loaded Successfully");
+}
+
+Status Table::FromArrowTable(std::shared_ptr<arrow::Table> table, std::shared_ptr<Table> *tableOut) {
+  if (!twisterx::tarrow::validateArrowTableTypes(table)) {
+	LOG(FATAL) << "Types not supported";
+	return Status(twisterx::Invalid, "This type not supported");
+  }
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  *tableOut = std::make_shared<Table>(Table(uuid));
+  PutTable(uuid, table);
+  return Status(twisterx::OK, "Loaded Successfully");
 }
 
 Status Table::WriteCSV(const std::string &path) {

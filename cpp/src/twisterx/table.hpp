@@ -53,6 +53,9 @@ class Table {
    */
   static Status FromArrowTable(std::shared_ptr<arrow::Table> table);
 
+
+  static Status FromArrowTable(std::shared_ptr<arrow::Table> table, std::shared_ptr<Table> *tableOut);
+
   /**
    * Write the table as a CSV
    * @param path file path
