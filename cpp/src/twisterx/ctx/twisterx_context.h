@@ -13,7 +13,7 @@ class TwisterXContext {
   bool distributed;
   twisterx::net::Communicator *communicator{};
 
-  explicit TwisterXContext(bool distributed);
+
 
  public:
   static TwisterXContext *Init();
@@ -23,9 +23,13 @@ class TwisterXContext {
   void AddConfig(const std::string &key, const std::string &value);
   std::string GetConfig(const std::string &key, const std::string &def = "");
   net::Communicator *GetCommunicator() const;
+  void setCommunicator(net::Communicator * communicator1);
+  void setDistributed(bool distributed);
   int GetRank();
   int GetWorldSize();
   vector<int> GetNeighbours(bool include_self);
+  explicit TwisterXContext(bool distributed);
+
 };
 }
 

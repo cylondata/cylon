@@ -28,7 +28,7 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_DATASET=OFF"
         " -DARROW_CSV=ON"
         " -DARROW_JSON=ON"
-        " -DARROW_BOOST_USE_SHARED=ON"
+	" -DARROW_BOOST_USE_SHARED=OFF"
         " -DPYTHON_EXECUTABLE=${PYTHON_HOME}/bin/python3"
         )
 

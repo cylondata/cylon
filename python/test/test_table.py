@@ -43,7 +43,7 @@ tx_table_to_pyarrow_tb: int = 0
 
 from pyarrow import csv
 
-fn: str = '/tmp/test_join_data_small.csv'
+fn: str = '/tmp/test_join_records_100000_columns_100.csv'
 t1 = time.time_ns()
 table = csv.read_csv(fn)
 py_arrow_csv_loading_time = time.time_ns() - t1
