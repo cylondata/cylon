@@ -10,8 +10,8 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<twisterx::Table> table1, table2, joined;
 
-  auto status1 = twisterx::Table::FromCSV("/tmp/csv.csv", &table1);
-  auto status2 = twisterx::Table::FromCSV("/tmp/csv.csv", &table2);
+  auto status1 = twisterx::Table::FromCSV("/tmp/test_join_records_100000_columns_100.csv", &table1);
+  auto status2 = twisterx::Table::FromCSV("/tmp/test_join_records_100000_columns_100.csv", &table2);
 
   table1->DistributedJoin(ctx, table2,
 						  twisterx::join::config::JoinConfig::InnerJoin(0, 0),
