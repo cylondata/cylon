@@ -23,18 +23,34 @@ class twisterx_context_wrap {
 
   twisterx::net::Communicator *communicator{};
 
+  TwisterXContext *context;
+
   explicit twisterx_context_wrap(bool distributed);
 
  public:
-  static TwisterXContext *Init();
+
+  twisterx_context_wrap();
+
+  twisterx_context_wrap(std::string config);
+
+  TwisterXContext *getInstance();
+
+//  static TwisterXContext *Init();
+//
+//  static TwisterXContext *InitDistributed(std::string config);
+
+  void AddConfig(const std::string &key, const std::string &value);
+
+  std::string GetConfig(const std::string &key, const std::string &defn = "");
+
+  net::Communicator *GetCommunicator() const;
+
+  int GetRank();
+
+  int GetWorldSize();
+
   void Finalize();
 
-  static TwisterXContext *InitDistributed(std::string config);
-  void AddConfig(const std::string &key, const std::string &value);
-  std::string GetConfig(const std::string &key, const std::string &def = "");
-  net::Communicator *GetCommunicator() const;
-  int GetRank();
-  int GetWorldSize();
   vector<int> GetNeighbours(bool include_self);
 
 };
