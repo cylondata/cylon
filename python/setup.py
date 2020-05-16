@@ -5,7 +5,6 @@ https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
 '''
 
 import os
-import os
 import sysconfig
 from distutils.sysconfig import get_python_lib
 import pyarrow as pa
@@ -151,7 +150,35 @@ ext_modules = [
               libraries=libraries,
               library_dirs=library_directories,
               ),
-
+    Extension("pytwisterx.utils.benchmark",
+              sources=["twisterx/util/benchutils.py",
+                       ],
+              include_dirs=_include_dirs,
+              language='c++',
+              extra_compile_args=extra_compile_args,
+              extra_link_args=extra_link_args,
+              libraries=libraries,
+              library_dirs=library_directories,
+              ),
+    Extension("pytwisterx.utils.data",
+              sources=["twisterx/util/data/DataManager.py"],
+              include_dirs=_include_dirs,
+              language='c++',
+              extra_compile_args=extra_compile_args,
+              extra_link_args=extra_link_args,
+              libraries=libraries,
+              library_dirs=library_directories,
+              ),
+    Extension("pytwisterx.utils.file",
+              sources=["twisterx/util/FileUtils.py",
+                       ],
+              include_dirs=_include_dirs,
+              language='c++',
+              extra_compile_args=extra_compile_args,
+              extra_link_args=extra_link_args,
+              libraries=libraries,
+              library_dirs=library_directories,
+              ),
     # Extension("pytwisterx.io.csv",
     #           sources=["twisterx/io/csv_read_config.pyx", "../cpp/src/twisterx/io/csv_read_config.cpp"],
     #           include_dirs=_include_dirs,
@@ -182,11 +209,14 @@ setup(
               'twisterx.common',
               'twisterx.net',
               'twisterx.io',
-              'twisterx.data'],
+              'twisterx.data',
+              'twisterx.util',
+              'twisterx.util.data'],
     version='0.0.1',
     setup_requires=["cython",
                     "setuptools",
-                    "numpy"],
+                    "numpy",
+                    ],
     ext_modules=ext_modules,
     python_requires='>=3.7',
     install_requires=[
