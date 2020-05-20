@@ -14,25 +14,7 @@
 using arrow::DoubleBuilder;
 using arrow::Int64Builder;
 
-class JC : public twisterx::JoinCallback {
- public:
-  /**
-  * This function is called when a data is received
-  * @param source the source
-  * @param buffer the buffer allocated by the system, we need to free this
-  * @param length the length of the buffer
-  * @return true if we accept this buffer
-  */
-  bool onJoin(std::shared_ptr<arrow::Table> table) override {
-	LOG(INFO) << "Joined";
-	return true;
-  }
-};
-
 int main(int argc, char *argv[]) {
-
-  //auto mpi_config = new twisterx::net::MPIConfig();
-  //auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
 
   int rank = 0;//ctx->GetRank();
   int size = 1;//ctx->GetWorldSize();
@@ -73,26 +55,7 @@ int main(int argc, char *argv[]) {
 	int l = rand() % range;
 	values[i] = l;
   }
-//  auto start2 = std::chrono::high_resolution_clock::now();
-//  std::stable_sort(indices, indices + actualCount, [values](uint64_t left, uint64_t right) {
-//	return values[left] < values[right];
-//  });
-//
-//  auto end2 = std::chrono::high_resolution_clock::now();
-//  auto duration3 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
-//
-//  if (rank == 0) {
-//	LOG(INFO) << "Sort done 1 " + std::to_string(duration3.count());
-//  }
-//
-//  auto start3 = std::chrono::high_resolution_clock::now();
-//  std::stable_sort(values, values + actualCount);
-//
-//  auto end3 = std::chrono::high_resolution_clock::now();
-//  auto duration4 = std::chrono::duration_cast<std::chrono::milliseconds>(end3 - start3);
-//  if (rank == 0) {
-//	LOG(INFO) << "Sort done 2 " + std::to_string(duration4.count());
-//  }
+
   delete[] values;
   delete[] indices;
 

@@ -35,6 +35,7 @@ add_library(twisterx SHARED
 
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(twisterx ${MPI_LIBRARIES})
+#target_link_libraries(twisterx asan)
 target_link_libraries(twisterx glog::glog)
 target_link_libraries(twisterx ${ARROW_LIB})
 target_link_libraries(twisterx  ${ARROW_PYTHON})
