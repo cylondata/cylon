@@ -13,6 +13,16 @@ project(TWISTERX)
 
 set(TWISTERX_VERSION 0.0)
 
+###### Read Command Line Arguments #####
+if(PYTHON_EXEC_PATH)
+    message("Python Executable Path ${PYTHON_EXEC_PATH}")
+else ()
+    set(PYTHON_EXEC_PATH /usr)
+    message("Python Executable Path ${PYTHON_EXEC_PATH}")
+endif()
+
+
+
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 # So we can find our custom modules
 list(APPEND CMAKE_MODULE_PATH ${TWISTERX_SOURCE_DIR}/CMake)

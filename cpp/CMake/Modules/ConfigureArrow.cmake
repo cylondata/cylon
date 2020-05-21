@@ -1,6 +1,9 @@
 set(ARROW_HOME ${CMAKE_BINARY_DIR}/arrow/install)
 set(PYTHON_HOME ${CMAKE_BINARY_DIR}/ENV)
 set(ARROW_ROOT ${CMAKE_BINARY_DIR}/arrow)
+message("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+message("Python Executable Path ${PYTHON_EXEC_PATH}")
+message("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
 set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_WITH_ZSTD=OFF"
@@ -29,7 +32,7 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_CSV=ON"
         " -DARROW_JSON=ON"
 	" -DARROW_BOOST_USE_SHARED=OFF"
-        " -DPYTHON_EXECUTABLE=${PYTHON_HOME}/bin/python3"
+        " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/bin/python3"
         )
 
 message("CMake Source Dir :")

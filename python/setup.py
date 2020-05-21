@@ -14,6 +14,12 @@ from setuptools import setup, Extension
 
 # os.environ["CXX"] = "mpic++"
 pyarrow_location = os.path.dirname(pa.__file__)
+
+ARROW_HOME = os.environ.get('ARROW_HOME')
+
+if not ARROW_HOME:
+    raise ValueError("ARROW_HOME not set")
+
 # For now, assume that we build against bundled pyarrow releases.
 pyarrow_include_dir = os.path.join(pyarrow_location, 'include')
 extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
@@ -22,8 +28,11 @@ additional_compile_args = ['-std=c++14', '-DARROW_METADATA_V4', '-DGOOGLE_GLOG_D
 # extra_compile_args#.append(additional_compile_args)
 extra_compile_args = ['-std=c++14', '-DARROW_METADATA_V4 -DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
 extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
-arrow_library_directory = "../cpp/build/arrow/install/lib"
-twisterx_library_directory = "../cpp/build/lib"
+
+arrow_library_directory = os.path.join(ARROW_HOME, "arrow/install/lib")
+arrow_lib_include_dir = os.path.join(ARROW_HOME, "arrow/install/include")
+twisterx_library_directory = os.path.join(ARROW_HOME, "lib")
+
 library_directories = [twisterx_library_directory, arrow_library_directory]
 libraries = ["arrow", "twisterx", "glog"]
 
@@ -35,11 +44,11 @@ _include_dirs = ["../cpp/src/twisterx/python",
                  "../cpp/src/twisterx/io",
                  "../cpp/src/twisterx/join",
                  "../cpp/src/twisterx/util",
-                 "../cpp/build/arrow/install/lib/",
-                 "../cpp/build/arrow/install/include",
-                 "../cpp/build/thirdparty/glog/",
-                 "../cpp/build/external/Catch/include",
-                 "../cpp/thirdparty/glog/src",
+                 arrow_library_directory,
+                 arrow_lib_include_dir,
+                 #"../cpp/build/thirdparty/glog/",
+                 #"../cpp/build/external/Catch/include",
+                 #"../cpp/thirdparty/glog/src",
                  pyarrow_include_dir,
                  np.get_include(),
                  ]
@@ -269,3 +278,4 @@ setup(
 # print("Arrow Include Dirs {}".format(pa.get_include()))
 # print("Arrow Libraries{}".format(pa.get_libraries()))
 # print("Arrow Libraries Dirs {}".format(pa.get_library_dirs()))
+print("Arrow Home {}".format(ARROW_HOME))
