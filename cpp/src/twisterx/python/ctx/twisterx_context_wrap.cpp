@@ -1,7 +1,3 @@
-//
-// Created by vibhatha on 5/15/20.
-//
-
 #include "twisterx_context_wrap.h"
 #include "../../net/mpi/mpi_communicator.h"
 

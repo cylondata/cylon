@@ -176,9 +176,11 @@ fi
 
 
 if [ "${FLAG_PYARROW_BUILD}" -eq "1" ]; then
-   		build_pyarrow
-   		export_info
-   	fi	
+	build_pyarrow
+	check_pyarrow_installation
+	export_info
+
+fi	
 
 
 if [ "${FLAG_PYTHON_BUILD}" -eq "1" ]; then	
