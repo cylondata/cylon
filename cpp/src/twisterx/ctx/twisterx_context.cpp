@@ -25,6 +25,15 @@ TwisterXContext *TwisterXContext::InitDistributed(net::CommConfig *config) {
 net::Communicator *TwisterXContext::GetCommunicator() const {
   return this->communicator;
 }
+
+void TwisterXContext::setCommunicator(net::Communicator *communicator1) {
+  this->communicator = communicator1;
+}
+
+void TwisterXContext::setDistributed(bool distributed) {
+  this->distributed = distributed;
+}
+
 void TwisterXContext::AddConfig(const std::string &key, const std::string &value) {
   this->config.insert(std::pair<std::string, std::string>(key, value));
 }
