@@ -117,5 +117,7 @@ export LD_LIBRARY_PATH=/home/<username>/twisterx/build/arrow/install/lib:/home/<
 python3 python/test/test_pytwisterx.py
 ```
 
+## Samples in Google Colab
 
+[![PyTwisterX Install Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Nrt2AeOxO7-bGXweYsydfLnOXXOCCazZ?usp=sharing)
 
