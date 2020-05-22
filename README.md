@@ -117,7 +117,9 @@ export LD_LIBRARY_PATH=/home/<username>/twisterx/build/arrow/install/lib:/home/<
 python3 python/test/test_pytwisterx.py
 ```
 
-## Samples in Google Colab
+## Samples in Google Colab (Experimental)
 
-[![PyTwisterX Install Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Nrt2AeOxO7-bGXweYsydfLnOXXOCCazZ?usp=sharing)
+1. PyTwisterX Install [![PyTwisterX Install Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Nrt2AeOxO7-bGXweYsydfLnOXXOCCazZ?usp=sharing)
+2. PyTwisterX Table Demo [![PyTwisterX Table Demo](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/10QTmx4mHZsVkBzklXD21_DLqmXRl443Q?usp=sharing)
+3. PyTwisterX Pytorch Mnist Demo [![PyTwisterX Table Demo](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1-oq4BpYiKJbmf0BBmuUZXOLl4k0Kgsy1?usp=sharing)
 
