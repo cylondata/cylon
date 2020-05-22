@@ -138,6 +138,9 @@ cdef class Table:
         py_arrow_table = pyarrow_wrap_table(table)
         return py_arrow_table
 
+
+
+
 cdef class csv_reader:
 
     @staticmethod
