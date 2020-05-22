@@ -109,7 +109,7 @@ class Table {
    * @param out arrow table
    * @return the status of the operation
    */
-  Status ToArrowTable(std::shared_ptr<arrow::Table> *out);
+  Status ToArrowTable(std::shared_ptr<arrow::Table> &out);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
   int32_t columns();

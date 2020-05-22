@@ -122,9 +122,9 @@ Status Table::Join(const std::shared_ptr<Table> &right,
   return status;
 }
 
-Status Table::ToArrowTable(std::shared_ptr<arrow::Table> *out) {
+Status Table::ToArrowTable(std::shared_ptr<arrow::Table> &out) {
   std::shared_ptr<arrow::Table> tab = GetTable(id_);
-  *out = tab;
+  out = tab;
   return Status::OK();
 }
 
