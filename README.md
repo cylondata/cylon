@@ -121,5 +121,5 @@ python3 python/test/test_pytwisterx.py
 
 1. PyTwisterX Install [![PyTwisterX Install Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/vibhatha/345a4992fea18dbf27b4b61b14313b24/twisterx-install.ipynb)
 2. PyTwisterX Table Demo [![PyTwisterX Table Demo](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/vibhatha/52f0fd336be1bd9436f5050873e4aa54/pytwisterx-table-demo.ipynb)
-3. PyTwisterX Pytorch Mnist Demo [![PyTwisterX Table Demo](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1-oq4BpYiKJbmf0BBmuUZXOLl4k0Kgsy1?usp=sharing)
+3. PyTwisterX Pytorch Mnist Demo [![PyTwisterX Table Demo](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/vibhatha/0e50ae349e2811c597184033a9052080/pytwisterx-pytorch-demo.ipynb)
 
