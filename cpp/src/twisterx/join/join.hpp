@@ -3,6 +3,7 @@
 
 #include <arrow/table.h>
 #include "../arrow/arrow_kernels.hpp"
+#include "../arrow/arrow_hash_kernels.hpp"
 #include "join_config.h"
 
 namespace twisterx {
