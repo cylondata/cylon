@@ -94,7 +94,7 @@ bool ArrowJoinWithPartition::isComplete() {
 
 	for (int i = 0; i < left_tab->num_columns(); i++) {
 	  std::shared_ptr<arrow::DataType> type = array->type();
-	  std::unique_ptr<ArrowArraySplitKernel> splitKernel;
+	  std::shared_ptr<ArrowArraySplitKernel> splitKernel;
 	  status = CreateSplitter(type, pool_, &splitKernel);
 	  if (!status.is_ok()) {
 		LOG(FATAL) << "Failed to create the splitter";
@@ -140,7 +140,7 @@ bool ArrowJoinWithPartition::isComplete() {
 
 	for (int i = 0; i < left_tab->num_columns(); i++) {
 	  std::shared_ptr<arrow::DataType> type = array->type();
-	  std::unique_ptr<ArrowArraySplitKernel> splitKernel;
+	  std::shared_ptr<ArrowArraySplitKernel> splitKernel;
 	  status = CreateSplitter(type, pool_, &splitKernel);
 	  if (!status.is_ok()) {
 		LOG(FATAL) << "Failed to create the splitter";

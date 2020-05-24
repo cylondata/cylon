@@ -13,6 +13,16 @@ project(TWISTERX)
 
 set(TWISTERX_VERSION 0.0)
 
+###### Read Command Line Arguments #####
+if(PYTHON_EXEC_PATH)
+    message("Python Executable Path ${PYTHON_EXEC_PATH}")
+else ()
+    set(PYTHON_EXEC_PATH /usr)
+    message("Python Executable Path ${PYTHON_EXEC_PATH}")
+endif()
+
+
+
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 # So we can find our custom modules
 list(APPEND CMAKE_MODULE_PATH ${TWISTERX_SOURCE_DIR}/CMake)
@@ -55,9 +65,13 @@ IF (NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEA
 ENDIF (NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEASE"))
 
 #Enable address sanitizer and disable return-value-optimizations
-IF (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
-ENDIF (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+IF(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}") #  -fsanitize=address
+ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+
+#IF (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+#    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+#ENDIF (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
 
 SET(CMAKE_REQUIRED_FLAGS "-std=c++17")
 add_compile_options(-Wall -Wextra -W)
@@ -78,7 +92,6 @@ endif ()
 
 
 include_directories("${ARROW_INCLUDE_DIR}")
-
 
 ## Find Python
 find_package(PythonLibs REQUIRED)
@@ -125,6 +138,3 @@ endif ()
 
 add_subdirectory(src/twisterx)
 add_subdirectory(src/examples)
-message("=================================================================================================")
-message("Python PATH ${ARROW_PYTHON}")
-message("=================================================================================================")
