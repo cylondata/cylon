@@ -64,7 +64,10 @@ class ArrowArrayIdxHashJoinKernel {
 		}
 		break;
 	  }
-	  default: LOG(ERROR) << "not implemented!";
+	  default: {
+		LOG(ERROR) << "not implemented!";
+		return 1;
+	  }
 	}
 	return 0;
   }

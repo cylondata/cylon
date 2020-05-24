@@ -207,11 +207,21 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
 
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  // build phase
   ArrowArrayIdxHashJoinKernel<ARROW_KEY_TYPE> idx_join_kernel = ArrowArrayIdxHashJoinKernel<ARROW_KEY_TYPE>();
-  auto result = idx_join_kernel.BuildHashMap(left_idx_column, right_idx_column, join_type, left_indices, right_indices);
+  auto result = idx_join_kernel.BuildHashMap(left_idx_column, right_idx_column, join_type, left_indices,
+											 right_indices);
 
-  LOG(INFO) << "##" << result;
+  auto t2 = std::chrono::high_resolution_clock::now();
+
+  if (result) {
+	LOG(ERROR) << "Index join failed!";
+	return arrow::Status::Invalid("Index join failed!");
+  }
+
+  LOG(INFO) << "Index join time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Building final table with number of tuples - " << left_indices->size();
+
+  t1 = std::chrono::high_resolution_clock::now();
 
   auto status = twisterx::join::util::build_final_table(
 	  left_indices, right_indices,
@@ -220,6 +230,11 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
 	  joined_table,
 	  memory_pool
   );
+
+  t2 = std::chrono::high_resolution_clock::now();
+
+  LOG(INFO) << "Built final table in : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Done and produced : " << left_indices->size();
 
   return arrow::Status::OK();
 }
