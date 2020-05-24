@@ -16,9 +16,10 @@
 namespace twisterx {
 
 // default implementation for Numeric arrow types
-template<class ARROW_TYPE>
+template<class ARROW_ARRAY_TYPE>
 class ArrowArrayIdxHashJoinKernel {
  public:
+  using ARROW_TYPE = typename ARROW_ARRAY_TYPE::TypeClass;
   using CTYPE = typename ARROW_TYPE::c_type;
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
 
@@ -75,7 +76,7 @@ class ArrowArrayIdxHashJoinKernel {
  private:
   void BuildPhase(const std::shared_ptr<arrow::Array> &smaller_idx_col,
 				  std::unique_ptr<MMAP_TYPE> &smaller_idx_map) {
-	auto reader0 = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(smaller_idx_col);
+	auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(smaller_idx_col);
 
 	for (int64_t i = 0; i < reader0->length(); i++) {
 	  auto lValue = reader0->Value(i);
@@ -87,7 +88,7 @@ class ArrowArrayIdxHashJoinKernel {
   void BuildPhase(const std::shared_ptr<arrow::Array> &smaller_idx_col,
 				  std::unique_ptr<MMAP_TYPE> &smaller_idx_map,
 				  std::unique_ptr<std::unordered_set<CTYPE>> &smaller_key_set) {
-	auto reader0 = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(smaller_idx_col);
+	auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(smaller_idx_col);
 
 	for (int64_t i = 0; i < reader0->length(); i++) {
 	  auto lValue = reader0->Value(i);
@@ -101,7 +102,7 @@ class ArrowArrayIdxHashJoinKernel {
 				  const std::shared_ptr<arrow::Array> &larger_idx_col,
 				  std::shared_ptr<std::vector<int64_t>> &smaller_output,
 				  std::shared_ptr<std::vector<int64_t>> &larger_output) {
-	auto reader1 = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(larger_idx_col);
+	auto reader1 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(larger_idx_col);
 	for (int64_t i = 0; i < reader1->length(); ++i) {
 	  CTYPE val = (CTYPE)reader1->Value(i);
 	  auto range = smaller_idx_map->equal_range(val);
@@ -121,7 +122,7 @@ class ArrowArrayIdxHashJoinKernel {
 						const std::shared_ptr<arrow::Array> &larger_idx_col,
 						std::shared_ptr<std::vector<int64_t>> &smaller_output,
 						std::shared_ptr<std::vector<int64_t>> &larger_output) {
-	auto reader1 = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(larger_idx_col);
+	auto reader1 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(larger_idx_col);
 	for (int64_t i = 0; i < reader1->length(); ++i) {
 	  CTYPE val = (CTYPE)reader1->Value(i);
 	  auto range = smaller_idx_map->equal_range(val);
