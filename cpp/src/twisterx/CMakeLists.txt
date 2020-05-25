@@ -31,7 +31,8 @@ add_library(twisterx SHARED
         python/net/comm/all_to_all_wrap.h python/net/comm/all_to_all_wrap.cpp
         python/net/comm/callback.h python/net/comm/callback.cpp
         ctx/twisterx_context.h ctx/twisterx_context.cpp table_api_extended.hpp
-        python/ctx/twisterx_context_wrap.h python/ctx/twisterx_context_wrap.cpp)
+        python/ctx/twisterx_context_wrap.h python/ctx/twisterx_context_wrap.cpp
+        io/csv_write_config.h io/csv_write_config.cpp)
 
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(twisterx ${MPI_LIBRARIES})

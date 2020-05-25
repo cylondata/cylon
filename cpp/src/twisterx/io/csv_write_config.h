@@ -1,5 +1,5 @@
-#ifndef TWISTERX_SRC_TWISTERX_IO_CSV_READ_CONFIG_H_
-#define TWISTERX_SRC_TWISTERX_IO_CSV_READ_CONFIG_H_
+#ifndef TWISTERX_SRC_TWISTERX_IO_CSV_WRITE_CONFIG_H_
+#define TWISTERX_SRC_TWISTERX_IO_CSV_WRITE_CONFIG_H_
 #include <vector>
 #include <string>
 
@@ -10,10 +10,11 @@ class CSVWriteOptions {
 
  private:
   char delimiter = ',';
-  std::vector<std::string> &column_names;
+  std::vector<std::string> column_names{};
   bool override_column_names = false;
 
  public:
+  CSVWriteOptions();
   /**
    * Change the default delimiter(",")
    * @param delimiter character representing the delimiter
@@ -23,10 +24,10 @@ class CSVWriteOptions {
   CSVWriteOptions ColumnNames(const std::vector<std::string> &column_names);
 
   char GetDelimiter() const;
-  std::vector<std::string> &GetColumnNames() const;
+  std::vector<std::string> GetColumnNames() const;
   bool IsOverrideColumnNames() const;
 };
 }
 }
 }
-#endif //TWISTERX_SRC_TWISTERX_IO_CSV_READ_CONFIG_H_
+#endif //TWISTERX_SRC_TWISTERX_IO_CSV_WRITE_CONFIG_H_

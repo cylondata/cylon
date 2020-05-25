@@ -1,13 +1,13 @@
 #include "table_api.hpp"
 #include "table_api_extended.hpp"
 #include <memory>
-#include <arrow/api.h>
 #include <map>
 #include "io/arrow_io.hpp"
 #include "join/join.hpp"
 #include  "util/to_string.hpp"
 #include "iostream"
 #include <glog/logging.h>
+#include <fstream>
 #include "util/arrow_utils.hpp"
 #include "arrow/arrow_partition_kernels.hpp"
 #include "util/uuid.hpp"
@@ -49,6 +49,21 @@ twisterx::Status ReadCSV(const std::string &path,
   return twisterx::Status(Code::IOError, result.status().message());;
 }
 
+twisterx::Status WriteCSV(const std::string &id, const std::string &path,
+                          twisterx::io::config::CSVWriteOptions options) {
+  auto table = GetTable(id);
+  std::ofstream out_csv;
+  out_csv.open(path);
+  twisterx::Status status = PrintToOStream(id, 0,
+                                           table->num_columns(), 0,
+                                           table->num_rows(), out_csv,
+                                           options.GetDelimiter(),
+                                           options.IsOverrideColumnNames(),
+                                           options.GetColumnNames());
+  out_csv.close();
+  return status;
+}
+
 twisterx::Status Print(const std::string &table_id, int col1, int col2, int row1, int row2) {
   return PrintToOStream(table_id, col1, col2, row1, row2, std::cout);
 }
@@ -58,9 +73,31 @@ twisterx::Status PrintToOStream(const std::string &table_id,
                                 int col2,
                                 int row1,
                                 int row2,
-                                std::ostream &out) {
+                                std::ostream &out,
+                                char delimiter,
+                                bool use_custom_header,
+                                const std::vector<std::string> &headers) {
   auto table = GetTable(table_id);
   if (table != NULLPTR) {
+    // print the headers
+    if (use_custom_header) {
+      // check if the headers are valid
+      if (headers.size() != table->num_columns()) {
+        return twisterx::Status(twisterx::Code::IndexError,
+                                "Provided headers doesn't match with the number of columns of the table. Given "
+                                    + std::to_string(headers.size())
+                                    + ", Expected " + std::to_string(table->num_columns()));
+      }
+
+      for (int col = col1; col < col2; col++) {
+        out << headers[col];
+        if (col != col2 - 1) {
+          out << delimiter;
+        } else {
+          out << std::endl;
+        }
+      }
+    }
     for (int row = row1; row < row2; row++) {
       for (int col = col1; col < col2; col++) {
         auto column = table->column(col);
@@ -72,7 +109,7 @@ twisterx::Status PrintToOStream(const std::string &table_id,
             out << twisterx::util::array_to_string(array, row - rowCount);
             if (col != col2 - 1) {
 
-              out << ",";
+              out << delimiter;
             }
             break;
           }

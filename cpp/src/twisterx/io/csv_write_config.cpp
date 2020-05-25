@@ -16,11 +16,14 @@ CSVWriteOptions CSVWriteOptions::ColumnNames(const std::vector<std::string> &col
 char CSVWriteOptions::GetDelimiter() const {
   return delimiter;
 }
-std::vector<std::string> &CSVWriteOptions::GetColumnNames() const {
+std::vector<std::string> CSVWriteOptions::GetColumnNames() const {
   return column_names;
 }
 bool CSVWriteOptions::IsOverrideColumnNames() const {
   return override_column_names;
+}
+CSVWriteOptions::CSVWriteOptions() {
+
 }
 }
 }
