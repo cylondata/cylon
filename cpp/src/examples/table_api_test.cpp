@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 			   twisterx::join::config::JoinConfig::RightJoin(0, 1),
 			   &joined);
   joined->print();
-  joined->WriteCSV("/tmp/out.csv");
+  joined->WriteCSV("/tmp/out.csv", twisterx::io::config::CSVWriteOptions().WithDelimiter(':'));
 
 
   //table1->Sort(0, sorted);
