@@ -14,6 +14,18 @@ project(TWISTERX)
 set(TWISTERX_VERSION 0.0)
 
 ###### Read Command Line Arguments #####
+
+## PyTwisterX build
+
+if(PYTWISTERX_BUILD)
+    message("TwisterX Python Build [READ] ${PYTWISTERX_BUILD}")
+else ()
+    message("TwisterX Python Build [UNREAD] ${PYTWISTERX_BUILD}")
+    set(PYTWISTERX_BUILD OFF)
+endif()
+
+
+## Python Executable Path
 if(PYTHON_EXEC_PATH)
     message("Python Executable Path ${PYTHON_EXEC_PATH}")
 else ()
@@ -138,3 +150,6 @@ endif ()
 
 add_subdirectory(src/twisterx)
 add_subdirectory(src/examples)
+if(PYTWISTERX_BUILD)
+    add_subdirectory(src/examples/python)
+endif()

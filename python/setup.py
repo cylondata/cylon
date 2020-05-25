@@ -5,8 +5,6 @@ https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
 '''
 
 import os
-import sysconfig
-from distutils.sysconfig import get_python_lib
 import pyarrow as pa
 import numpy as np
 from Cython.Build import cythonize
@@ -34,7 +32,7 @@ arrow_lib_include_dir = os.path.join(ARROW_HOME, "arrow/install/include")
 twisterx_library_directory = os.path.join(ARROW_HOME, "lib")
 
 library_directories = [twisterx_library_directory, arrow_library_directory]
-libraries = ["arrow", "twisterx", "glog"]
+libraries = ["arrow", "twisterx", "twisterx_python", "glog"]
 
 _include_dirs = ["../cpp/src/twisterx/python",
                  "../cpp/src/twisterx/lib",
@@ -242,15 +240,6 @@ ext_modules = [
 compiler_directives = {"language_level": 3, "embedsignature": True}
 
 ext_modules = cythonize(ext_modules, compiler_directives=compiler_directives, gdb_debug=False)
-
-# for ext in ext_modules:
-#     # The Numpy C headers are currently required
-#     ext.include_dirs.append(np.get_include())
-#     ext.include_dirs.append(pa.get_include())
-#     ext.libraries.extend(pa.get_libraries())
-#     ext.library_dirs.extend(pa.get_library_dirs())
-#     ext.define_macros.append(("_GLIBCXX_USE_CXX11_ABI", "0"))
-
 
 setup(
     name="pytwisterx",
