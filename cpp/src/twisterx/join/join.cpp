@@ -190,6 +190,18 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
   return status;
 }
 
+/**
+ * Hash join impl
+ * @tparam ARROW_ARRAY_TYPE type of the key array type that will be used for static casting
+ * @param left_tab
+ * @param right_tab
+ * @param left_join_column_idx
+ * @param right_join_column_idx
+ * @param join_type
+ * @param joined_table
+ * @param memory_pool
+ * @return arrow status
+ */
 template<typename ARROW_ARRAY_TYPE>
 arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
 						   const std::shared_ptr<arrow::Table> &right_tab,
@@ -208,8 +220,8 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
   auto t1 = std::chrono::high_resolution_clock::now();
 
   ArrowArrayIdxHashJoinKernel<ARROW_ARRAY_TYPE> idx_join_kernel = ArrowArrayIdxHashJoinKernel<ARROW_ARRAY_TYPE>();
-  auto result = idx_join_kernel.BuildHashMap(left_idx_column, right_idx_column, join_type, left_indices,
-											 right_indices);
+  auto result = idx_join_kernel.IdxHashJoin(left_idx_column, right_idx_column, join_type, left_indices,
+											right_indices);
 
   auto t2 = std::chrono::high_resolution_clock::now();
 

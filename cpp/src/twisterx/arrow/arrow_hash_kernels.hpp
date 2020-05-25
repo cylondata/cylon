@@ -15,7 +15,10 @@
 
 namespace twisterx {
 
-// default implementation for Numeric arrow types
+/**
+ * Kernel to join indices using hashing
+ * @tparam ARROW_ARRAY_TYPE arrow array type to be used for static type casting
+ */
 template<class ARROW_ARRAY_TYPE>
 class ArrowArrayIdxHashJoinKernel {
  public:
@@ -23,26 +26,38 @@ class ArrowArrayIdxHashJoinKernel {
   using CTYPE = typename ARROW_TYPE::c_type;
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
 
-  virtual int BuildHashMap(const std::shared_ptr<arrow::Array> &left_idx_col,
-						   const std::shared_ptr<arrow::Array> &right_idx_col,
-						   const twisterx::join::config::JoinType join_type,
-						   std::shared_ptr<std::vector<int64_t>> &left_output,
-						   std::shared_ptr<std::vector<int64_t>> &right_output) {
+  /**
+   * perform index hash join
+   * @param left_idx_col
+   * @param right_idx_col
+   * @param join_type
+   * @param left_output row indices of the left table
+   * @param right_output row indices of the right table
+   * @return 0 if success; non-zero otherwise
+   */
+  virtual int IdxHashJoin(const std::shared_ptr<arrow::Array> &left_idx_col,
+						  const std::shared_ptr<arrow::Array> &right_idx_col,
+						  const twisterx::join::config::JoinType join_type,
+						  std::shared_ptr<std::vector<int64_t>> &left_output,
+						  std::shared_ptr<std::vector<int64_t>> &right_output) {
 
 	std::unique_ptr<MMAP_TYPE> out_umm = std::make_unique<MMAP_TYPE>();
 
 	switch (join_type) {
 	  case twisterx::join::config::JoinType::RIGHT: {
+		// build hashmap using left col idx
 		BuildPhase(left_idx_col, out_umm);
 		ProbePhase(out_umm, right_idx_col, left_output, right_output);
 		break;
 	  }
 	  case twisterx::join::config::JoinType::LEFT: {
+		// build hashmap using right col idx
 		BuildPhase(right_idx_col, out_umm);
 		ProbePhase(out_umm, left_idx_col, right_output, left_output);
 		break;
 	  }
 	  case twisterx::join::config::JoinType::INNER: {
+		// build hashmap using col idx with smaller len
 		if (left_idx_col->length() < right_idx_col->length()) {
 		  BuildPhase(left_idx_col, out_umm);
 		  ProbePhaseNoFill(out_umm, right_idx_col, left_output, right_output);
@@ -53,6 +68,9 @@ class ArrowArrayIdxHashJoinKernel {
 		break;
 	  }
 	  case twisterx::join::config::JoinType::FULL_OUTER: {
+		// build hashmap using col idx with smaller len
+
+		// a key set to track matched keys from the other table
 		// todo: use an index vector rather than a key set!
 		std::unique_ptr<std::unordered_set<CTYPE>> key_set = std::make_unique<std::unordered_set<CTYPE>>();
 
@@ -74,6 +92,7 @@ class ArrowArrayIdxHashJoinKernel {
   }
 
  private:
+  // build hashmap
   void BuildPhase(const std::shared_ptr<arrow::Array> &smaller_idx_col,
 				  std::unique_ptr<MMAP_TYPE> &smaller_idx_map) {
 	auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(smaller_idx_col);
@@ -85,6 +104,7 @@ class ArrowArrayIdxHashJoinKernel {
 	}
   }
 
+  // builds hashmap as well as populate keyset
   void BuildPhase(const std::shared_ptr<arrow::Array> &smaller_idx_col,
 				  std::unique_ptr<MMAP_TYPE> &smaller_idx_map,
 				  std::unique_ptr<std::unordered_set<CTYPE>> &smaller_key_set) {
@@ -98,6 +118,7 @@ class ArrowArrayIdxHashJoinKernel {
 	}
   }
 
+  // probes hashmap and fill -1 for no matches
   void ProbePhase(const std::unique_ptr<MMAP_TYPE> &smaller_idx_map,
 				  const std::shared_ptr<arrow::Array> &larger_idx_col,
 				  std::shared_ptr<std::vector<int64_t>> &smaller_output,
@@ -118,6 +139,7 @@ class ArrowArrayIdxHashJoinKernel {
 	}
   }
 
+  // probes hashmap with no filling
   void ProbePhaseNoFill(const std::unique_ptr<MMAP_TYPE> &smaller_idx_map,
 						const std::shared_ptr<arrow::Array> &larger_idx_col,
 						std::shared_ptr<std::vector<int64_t>> &smaller_output,
@@ -133,6 +155,8 @@ class ArrowArrayIdxHashJoinKernel {
 	}
   }
 
+  // probes hashmap and removes matched keys from the keyset. Then traverses the remaining keys in the keyset and
+  // fill with -1
   void ProbePhaseOuter(const std::unique_ptr<MMAP_TYPE> &smaller_idx_map,
 					   const std::shared_ptr<arrow::Array> &larger_idx_col,
 					   std::unique_ptr<std::unordered_set<CTYPE>> &smaller_key_set,
@@ -154,6 +178,7 @@ class ArrowArrayIdxHashJoinKernel {
 	  }
 	}
 
+	// fill the remaining keys with -1
 	// todo: use an index vector rather than a key set! this second probe is inefficient!
 	for (auto it = smaller_key_set->begin(); it != smaller_key_set->end(); it++) {
 	  auto range = smaller_idx_map->equal_range(*it);
