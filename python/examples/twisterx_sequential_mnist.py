@@ -1,16 +1,14 @@
 import os
-from pytwisterx.data import csv_reader
-from pytwisterx.data import Table
-from pyarrow import Table as PyArrowTable
-from pyarrow import Tensor as ArrowTensor
-import time
-import timeit
-import pandas as pd
+
 import numpy as np
 import torch
-from torch import Tensor as TorchTensor
+from pyarrow import Table as PyArrowTable
+from pyarrow import Tensor as ArrowTensor
+from pytwisterx.data import Table
+from pytwisterx.data import csv_reader
 from pytwisterx.utils.benchmark import benchmark_with_repitions
 from pytwisterx.utils.data import MiniBatcher
+from torch import Tensor as TorchTensor
 
 '''
 Configurations
@@ -67,7 +65,10 @@ load To Twisterx Tables
 
 @benchmark_with_repitions(repititions=reps, time_type=time_type)
 def load_data_to_tx_tables():
+    # TODO : add an API endpoint
+    # Table.from_csv('file.csv')
     tb_train: Table = csv_reader.read(train_file_path, delimiter)
+
     tb_test: Table = csv_reader.read(test_file_path, delimiter)
     return tb_train, tb_test
 
@@ -80,6 +81,7 @@ Join, shuffle, partition, etc
 
 @benchmark_with_repitions(repititions=reps, time_type=time_type)
 def convert_tx_table_to_arrow_table():
+    # TODO tb_tx: Table => tb_tx.to_arrow(None)
     tb_train_arw: PyArrowTable = Table.to_arrow(tb_train)
     tb_test_arw: PyArrowTable = Table.to_arrow(tb_test)
     return tb_train_arw, tb_test_arw
@@ -87,6 +89,7 @@ def convert_tx_table_to_arrow_table():
 
 @benchmark_with_repitions(repititions=reps, time_type=time_type)
 def covert_arrow_table_to_numpy():
+    # TODO: Can we get a direct npy
     train_npy: np.ndarray = tb_train_arw.to_pandas().to_numpy()
     test_npy: np.ndarray = tb_test_arw.to_pandas().to_numpy()
     return train_npy, test_npy
@@ -149,6 +152,8 @@ test_target = MiniBatcher.generate_minibatches(data=test_target, minibatch_size=
 '''
 Data reshaping to match the network config (using original image size)
 '''
+
+
 
 train_data = np.reshape(train_data, (train_data.shape[0], train_data.shape[1], img_size, img_size))
 train_target = np.reshape(train_target, (train_target.shape[0], train_target.shape[1]))
@@ -327,6 +332,7 @@ def train(train_data=None, train_target=None, do_log=False):
             epoch_loss += loss.item()
             loss.backward()
             optimizer.step()
+
         print('Epoch ', epoch, ': ', epoch_loss / num_batches)
     return model
 
