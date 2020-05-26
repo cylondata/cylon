@@ -27,6 +27,7 @@ add_library(twisterx SHARED
         net/TxRequest.h net/TxRequest.cpp
         util/builtins.h util/builtins.cpp
         ctx/twisterx_context.h ctx/twisterx_context.cpp table_api_extended.hpp
+        io/csv_write_config.h io/csv_write_config.cpp
         )
 
 include_directories(${MPI_INCLUDE_PATH})
