@@ -19,16 +19,18 @@ if not ARROW_HOME:
     raise ValueError("ARROW_HOME not set")
 
 # For now, assume that we build against bundled pyarrow releases.
+
+std_version = '-std=c++14'
 pyarrow_include_dir = os.path.join(pyarrow_location, 'include')
 extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
-additional_compile_args = ['-std=c++14', '-DARROW_METADATA_V4', '-DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
-# extra_compile_args#.append(additional_compile_args)
-extra_compile_args = ['-std=c++14', '-DARROW_METADATA_V4 -DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
+additional_compile_args = [std_version,
+                                         '-DARROW_METADATA_V4 -DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
+extra_compile_args = extra_link_args + additional_compile_args
 extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 
-arrow_library_directory = os.path.join(ARROW_HOME, "arrow/install/lib")
-arrow_lib_include_dir = os.path.join(ARROW_HOME, "arrow/install/include")
+arrow_library_directory = os.path.join(ARROW_HOME, "arrow", "install", "lib")
+arrow_lib_include_dir = os.path.join(ARROW_HOME, "arrow", "install", "include")
 twisterx_library_directory = os.path.join(ARROW_HOME, "lib")
 
 library_directories = [twisterx_library_directory, arrow_library_directory]
@@ -264,7 +266,3 @@ setup(
     ],
     zip_safe=False,
 )
-# print("Arrow Include Dirs {}".format(pa.get_include()))
-# print("Arrow Libraries{}".format(pa.get_libraries()))
-# print("Arrow Libraries Dirs {}".format(pa.get_library_dirs()))
-print("Arrow Home {}".format(ARROW_HOME))
