@@ -5,8 +5,6 @@ https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
 '''
 
 import os
-import sysconfig
-from distutils.sysconfig import get_python_lib
 import pyarrow as pa
 import numpy as np
 from Cython.Build import cythonize
@@ -21,20 +19,22 @@ if not ARROW_HOME:
     raise ValueError("ARROW_HOME not set")
 
 # For now, assume that we build against bundled pyarrow releases.
+
+std_version = '-std=c++14'
 pyarrow_include_dir = os.path.join(pyarrow_location, 'include')
 extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
-additional_compile_args = ['-std=c++14', '-DARROW_METADATA_V4', '-DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
-# extra_compile_args#.append(additional_compile_args)
-extra_compile_args = ['-std=c++14', '-DARROW_METADATA_V4 -DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
+additional_compile_args = [std_version,
+                                         '-DARROW_METADATA_V4 -DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
+extra_compile_args = extra_link_args + additional_compile_args
 extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 
-arrow_library_directory = os.path.join(ARROW_HOME, "arrow/install/lib")
-arrow_lib_include_dir = os.path.join(ARROW_HOME, "arrow/install/include")
+arrow_library_directory = os.path.join(ARROW_HOME, "arrow", "install", "lib")
+arrow_lib_include_dir = os.path.join(ARROW_HOME, "arrow", "install", "include")
 twisterx_library_directory = os.path.join(ARROW_HOME, "lib")
 
 library_directories = [twisterx_library_directory, arrow_library_directory]
-libraries = ["arrow", "twisterx", "glog"]
+libraries = ["arrow", "twisterx", "twisterx_python", "glog"]
 
 _include_dirs = ["../cpp/src/twisterx/python",
                  "../cpp/src/twisterx/lib",
@@ -46,9 +46,9 @@ _include_dirs = ["../cpp/src/twisterx/python",
                  "../cpp/src/twisterx/util",
                  arrow_library_directory,
                  arrow_lib_include_dir,
-                 #"../cpp/build/thirdparty/glog/",
-                 #"../cpp/build/external/Catch/include",
-                 #"../cpp/thirdparty/glog/src",
+                 # "../cpp/build/thirdparty/glog/",
+                 # "../cpp/build/external/Catch/include",
+                 # "../cpp/thirdparty/glog/src",
                  pyarrow_include_dir,
                  np.get_include(),
                  ]
@@ -228,29 +228,20 @@ ext_modules = [
               libraries=libraries,
               library_dirs=library_directories,
               ),
-    # Extension("pytwisterx.io.csv",
-    #           sources=["twisterx/io/csv_read_config.pyx", "../cpp/src/twisterx/io/csv_read_config.cpp"],
-    #           include_dirs=_include_dirs,
-    #           language='c++',
-    #           extra_compile_args=extra_compile_args,
-    #           extra_link_args=extra_link_args,
-    #           libraries=["arrow", "twisterx", "glog"],
-    #           library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
-    #           ),
+    Extension("pytwisterx.io.csv.config",
+              sources=["twisterx/io/csv_read_config.pyx"],
+              include_dirs=_include_dirs,
+              language='c++',
+              extra_compile_args=extra_compile_args,
+              extra_link_args=extra_link_args,
+              libraries=libraries,
+              library_dirs=library_directories,
+              ),
 ]
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
 
 ext_modules = cythonize(ext_modules, compiler_directives=compiler_directives, gdb_debug=False)
-
-# for ext in ext_modules:
-#     # The Numpy C headers are currently required
-#     ext.include_dirs.append(np.get_include())
-#     ext.include_dirs.append(pa.get_include())
-#     ext.libraries.extend(pa.get_libraries())
-#     ext.library_dirs.extend(pa.get_library_dirs())
-#     ext.define_macros.append(("_GLIBCXX_USE_CXX11_ABI", "0"))
-
 
 setup(
     name="pytwisterx",
@@ -275,7 +266,3 @@ setup(
     ],
     zip_safe=False,
 )
-# print("Arrow Include Dirs {}".format(pa.get_include()))
-# print("Arrow Libraries{}".format(pa.get_libraries()))
-# print("Arrow Libraries Dirs {}".format(pa.get_library_dirs()))
-print("Arrow Home {}".format(ARROW_HOME))

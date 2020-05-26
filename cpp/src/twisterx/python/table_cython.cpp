@@ -1,10 +1,11 @@
 #include <fstream>
-#include "../table.hpp"
 #include "table_cython.h"
 #include "../table_api.hpp"
 #include "../table_api_extended.hpp"
 #include <arrow/python/serialize.h>
 #include "arrow/api.h"
+#include "../util/uuid.hpp"
+#include "../join/join_config.h"
 
 using namespace std;
 using namespace twisterx;

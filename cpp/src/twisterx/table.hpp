@@ -14,6 +14,7 @@
 #include "join/join_config.h"
 #include "arrow/arrow_join.hpp"
 #include "join/join.hpp"
+#include "io/csv_write_config.h"
 
 namespace twisterx {
 
@@ -37,7 +38,7 @@ class Table {
    */
   static Status FromCSV(const std::string &path,
                         std::shared_ptr<Table> *tableOut,
-                        twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+                        const twisterx::io::config::CSVReadOptions &options = twisterx::io::config::CSVReadOptions());
 
   /**
    * Create a table from set of columns
@@ -61,7 +62,7 @@ class Table {
    * @param path file path
    * @return the status of the operation
    */
-  Status WriteCSV(const std::string &path);
+  Status WriteCSV(const std::string &path, const twisterx::io::config::CSVWriteOptions &options = twisterx::io::config::CSVWriteOptions());
 
   /**
    * Partition the table based on the hash
@@ -109,7 +110,7 @@ class Table {
    * @param out arrow table
    * @return the status of the operation
    */
-  Status ToArrowTable(std::shared_ptr<arrow::Table> *out);
+  Status ToArrowTable(std::shared_ptr<arrow::Table> &out);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
   int32_t columns();

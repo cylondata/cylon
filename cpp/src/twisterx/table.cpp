@@ -11,7 +11,7 @@ namespace twisterx {
 
 Status Table::FromCSV(const std::string &path,
                       std::shared_ptr<Table> *tableOut,
-                      twisterx::io::config::CSVReadOptions options) {
+                      const twisterx::io::config::CSVReadOptions &options) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::ReadCSV(path, uuid, options);
   if (status.is_ok()) {
@@ -33,8 +33,8 @@ Status Table::FromArrowTable(std::shared_ptr<arrow::Table> table) {
 
 Status Table::FromArrowTable(std::shared_ptr<arrow::Table> table, std::shared_ptr<Table> *tableOut) {
   if (!twisterx::tarrow::validateArrowTableTypes(table)) {
-	LOG(FATAL) << "Types not supported";
-	return Status(twisterx::Invalid, "This type not supported");
+    LOG(FATAL) << "Types not supported";
+    return Status(twisterx::Invalid, "This type not supported");
   }
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   *tableOut = std::make_shared<Table>(uuid);
@@ -42,14 +42,8 @@ Status Table::FromArrowTable(std::shared_ptr<arrow::Table> table, std::shared_pt
   return Status(twisterx::OK, "Loaded Successfully");
 }
 
-Status Table::WriteCSV(const std::string &path) {
-  std::ofstream out_csv;
-  out_csv.open(path);
-  twisterx::Status status = twisterx::PrintToOStream(this->get_id(), 0,
-                                                     this->columns(), 0,
-                                                     this->rows(), out_csv);
-  out_csv.close();
-  return status;
+Status Table::WriteCSV(const std::string &path, const twisterx::io::config::CSVWriteOptions &options) {
+  return twisterx::WriteCSV(this->get_id(), path, options);
 }
 
 int Table::columns() {
@@ -122,9 +116,9 @@ Status Table::Join(const std::shared_ptr<Table> &right,
   return status;
 }
 
-Status Table::ToArrowTable(std::shared_ptr<arrow::Table> *out) {
+Status Table::ToArrowTable(std::shared_ptr<arrow::Table> &out) {
   std::shared_ptr<arrow::Table> tab = GetTable(id_);
-  *out = tab;
+  out = tab;
   return Status::OK();
 }
 

@@ -2,14 +2,13 @@
 #define TWISTERX_TABLE_CYTHON_H
 
 #include "string"
-#include "../table.hpp"
 #include "../status.hpp"
+#include "../join/join_config.h"
 #include <arrow/python/pyarrow.h>
 #include <arrow/python/serialize.h>
+#include "../join/join_config.h"
 
 using namespace twisterx;
-using namespace twisterx::io::config;
-using namespace twisterx::util::uuid;
 using namespace twisterx::join::config;
 
 namespace twisterx {

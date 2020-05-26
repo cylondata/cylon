@@ -6,7 +6,9 @@
 #include "status.hpp"
 #include "join/join_config.h"
 #include "io/csv_read_config.h"
+#include "io/csv_write_config.h"
 #include "ctx/twisterx_context.h"
+
 /**
  * This file shouldn't have an arrow dependency. Use the table_api_extended to define
  * the functions with arrow dependency
@@ -15,6 +17,9 @@ namespace twisterx {
 
 twisterx::Status ReadCSV(const std::string &path, const std::string &id,
                          twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+
+twisterx::Status WriteCSV(const std::string &id, const std::string &path,
+                          twisterx::io::config::CSVWriteOptions options = twisterx::io::config::CSVWriteOptions());
 
 twisterx::Status JoinTables(const std::string &table_left,
                             const std::string &table_right,
@@ -49,7 +54,10 @@ twisterx::Status PrintToOStream(const std::string &table_id,
                                 int col2,
                                 int row1,
                                 int row2,
-                                std::ostream &out);
+                                std::ostream &out,
+                                char delimiter = ',',
+                                bool use_custom_header = false,
+                                const std::vector<std::string> &headers = {});
 
 /**
  * Merge the set of tables into a single table, each table should have the same schema
