@@ -48,10 +48,10 @@ add_library(twisterx_python SHARED
 target_link_libraries(twisterx_python ${MPI_LIBRARIES})
 target_link_libraries(twisterx_python glog::glog)
 target_link_libraries(twisterx_python ${ARROW_LIB})
-target_link_libraries(twisterx_python  ${ARROW_PYTHON})
+target_link_libraries(twisterx_python ${ARROW_PYTHON})
 target_link_libraries(twisterx_python ${PYTHON_LIBRARIES})
 target_link_libraries(twisterx_python twisterx)
 
 else()
-    message("Skip Building TwisterX Python")
+    message("Skip Building TwisterX Cython-CPP")
 endif()

@@ -2,8 +2,8 @@
 #define TWISTERX_TABLE_CYTHON_H
 
 #include "string"
-#include "../table.hpp"
 #include "../status.hpp"
+#include "../join/join_config.h"
 #include <arrow/python/pyarrow.h>
 #include <arrow/python/serialize.h>
 
