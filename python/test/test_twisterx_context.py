@@ -1,4 +1,4 @@
-from pytwisterx.ctx import TwisterxContext
+from pytwisterx.ctx.context import TwisterxContext
 
 ctx: TwisterxContext = TwisterxContext("mpi")
 

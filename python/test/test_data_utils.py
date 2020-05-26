@@ -1,4 +1,4 @@
-from pytwisterx.utils.data import LocalDataLoader
+from pytwisterx.util.data.DataManager import LocalDataLoader
 
 base_path: str = "/home/vibhatha/data/mnist"
 train_file_name: str = "mnist_train_small.csv"
@@ -11,4 +11,4 @@ print(dl.source_dir, dl.source_files, dl.file_type, dl.delimiter, dl.loader_type
 dl.load()
 
 for id, dataset in enumerate(dl.dataset):
-    print(id, type(dataset))
+    print(id, type(dataset), dataset.to_pandas().to_numpy().shape)

@@ -1,14 +1,14 @@
 cdef extern from "../../../cpp/src/twisterx/join/join_config.h" namespace "twisterx::join::config":
     cdef enum CJoinType "twisterx::join::config::JoinType":
-        INNER "twisterx::join::config::JoinType::INNER"
-        LEFT "twisterx::join::config::JoinType::LEFT"
-        RIGHT "twisterx::join::config::JoinType::RIGHT"
-        OUTER "twisterx::join::config::JoinType::FULL_OUTER"
+        CINNER "twisterx::join::config::JoinType::INNER"
+        CLEFT "twisterx::join::config::JoinType::LEFT"
+        CRIGHT "twisterx::join::config::JoinType::RIGHT"
+        COUTER "twisterx::join::config::JoinType::FULL_OUTER"
 
 cdef extern from "../../../cpp/src/twisterx/join/join_config.h" namespace "twisterx::join::config":
     cdef enum CJoinAlgorithm "twisterx::join::config::JoinAlgorithm":
-        SORT "twisterx::join::config::JoinAlgorithm::SORT"
-        HASH "twisterx::join::config::JoinAlgorithm::HASH"
+        CSORT "twisterx::join::config::JoinAlgorithm::SORT"
+        CHASH "twisterx::join::config::JoinAlgorithm::HASH"
 
 
 cdef extern from "../../../cpp/src/twisterx/join/join_config.h" namespace "twisterx::join::config":

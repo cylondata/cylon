@@ -1,9 +1,9 @@
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr
-from twisterx.net.channel cimport CChannelReceiveCallback
-from twisterx.net.channel cimport CChannelSendCallback
-from twisterx.net.txrequest cimport CTxRequest
-from pytwisterx.net.comms.request import TxRequest
+from pytwisterx.net.channel cimport CChannelReceiveCallback
+from pytwisterx.net.channel cimport CChannelSendCallback
+from pytwisterx.net.txrequest cimport CTxRequest
+from pytwisterx.net.txrequest import TxRequest
 
 
 cdef class ChannelSendCallback:

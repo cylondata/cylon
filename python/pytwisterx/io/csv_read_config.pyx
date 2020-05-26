@@ -1,4 +1,4 @@
-from twisterx.io.csv_read_config cimport _CSVReadOptions
+from pytwisterx.io.csv_read_config cimport _CSVReadOptions
 from libcpp cimport bool
 from typing import List
 from libcpp.string cimport string

@@ -1,6 +1,6 @@
 from libcpp.string cimport string
 from libcpp cimport bool
-from twisterx.common.code cimport _Code
+from pytwisterx.common.code cimport _Code
 
 # cdef extern from "../../../cpp/src/twisterx/code.cpp" namespace "twisterx":
 #

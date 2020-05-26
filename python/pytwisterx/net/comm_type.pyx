@@ -1,4 +1,4 @@
-from twisterx.net.comm_type cimport _CommType
+from pytwisterx.net.comm_type cimport _CommType
 
 cpdef enum CommType:
     MPI = _CommType._MPI
