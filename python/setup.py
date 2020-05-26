@@ -44,9 +44,9 @@ _include_dirs = ["../cpp/src/twisterx/python",
                  "../cpp/src/twisterx/util",
                  arrow_library_directory,
                  arrow_lib_include_dir,
-                 #"../cpp/build/thirdparty/glog/",
-                 #"../cpp/build/external/Catch/include",
-                 #"../cpp/thirdparty/glog/src",
+                 # "../cpp/build/thirdparty/glog/",
+                 # "../cpp/build/external/Catch/include",
+                 # "../cpp/thirdparty/glog/src",
                  pyarrow_include_dir,
                  np.get_include(),
                  ]
@@ -232,8 +232,8 @@ ext_modules = [
               language='c++',
               extra_compile_args=extra_compile_args,
               extra_link_args=extra_link_args,
-              libraries=["arrow", "twisterx", "glog"],
-              library_dirs=["../cpp/build/arrow/install/lib", "../cpp/build/lib"],
+              libraries=libraries,
+              library_dirs=library_directories,
               ),
 ]
 
