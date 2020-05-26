@@ -1,11 +1,11 @@
 SOURCE_DIR=$(pwd)/cpp
-FLAG_CPP_BUILD=0
-FLAG_PYTHON_BUILD=0
-FLAG_PYARROW_BUILD=0
-BUILD_ALL=0
+FLAG_CPP_BUILD="OFF"
+FLAG_PYTHON_BUILD="OFF"
+FLAG_PYARROW_BUILD="OFF"
+BUILD_ALL="OFF"
 BUILD_MODE=Debug
-BUILD_MODE_DEBUG=0
-BUILD_MODE_RELEASE=0
+BUILD_MODE_DEBUG="OFF"
+BUILD_MODE_RELEASE="OFF"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -25,30 +25,30 @@ case $key in
     shift # past value
     ;;
     --cpp)
-    FLAG_CPP_BUILD=1
+    FLAG_CPP_BUILD="ON"
     shift # past argument
     ;;
     --python)
-    FLAG_PYTHON_BUILD=1
+    FLAG_PYTHON_BUILD="ON"
     shift # past argument
     ;;
     --pyarrow)
-    FLAG_PYARROW_BUILD=1
+    FLAG_PYARROW_BUILD="ON"
     shift # past argument
     ;;
     --debug)
-    BUILD_MODE_DEBUG=1
+    BUILD_MODE_DEBUG="ON"
     shift # past argument
     ;;
     --release)
-    BUILD_MODE_RELEASE=1
+    BUILD_MODE_RELEASE="ON"
     shift # past argument
     ;;
     --all)
-    BUILD_ALL=1
-    FLAG_CPP_BUILD=1
-    FLAG_PYTHON_BUILD=1
-    FLAG_PYARROW_BUILD=1
+    BUILD_ALL="ON"
+    FLAG_CPP_BUILD="ON"
+    FLAG_PYTHON_BUILD="ON"
+    FLAG_PYARROW_BUILD="ON"
     shift # past argument
     ;;
     *)    # unknown option
@@ -96,7 +96,7 @@ print_line
 mkdir ${BUILD_PATH}
 pushd ${BUILD_PATH}
 export ARROW_HOME=${BUILD_PATH}/arrow/install
-cmake -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} ${SOURCE_DIR}
+cmake -DPYARROW_BUILD=${FLAG_PYARROW_BUILD} -DPYTWISTERX_BUILD=${FLAG_PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} ${SOURCE_DIR}
 make -j 4
 printf "\n\n ### ARROW HOME SET :%s \n\n" "${ARROW_HOME}"
 printf "\n\n ### TwisterX CPP Built Successufully !!! \n\n"
@@ -157,25 +157,22 @@ echo "${response}"
 
 ####################################################################################################
 
-if [ "${BUILD_MODE_DEBUG}" -eq "1" ]; then
+if [ "${BUILD_MODE_DEBUG}" = "ON" ]; then
    	BUILD_MODE=Debug	
 fi
 
-if [ "${BUILD_MODE_RELEASE}" -eq "1" ]; then
+if [ "${BUILD_MODE_RELEASE}" = "ON" ]; then
    	BUILD_MODE=Release	
 fi
 
 
-if [ "${FLAG_CPP_BUILD}" -eq "1" ]; then
+if [ "${FLAG_CPP_BUILD}" = "ON" ]; then
    	build_cpp
-   	if [ "${FLAG_PYARROW_BUILD}" -eq "1" ]; then
-   		build_pyarrow
-   		export_info
-   	fi	
 fi
 
 
-if [ "${FLAG_PYARROW_BUILD}" -eq "1" ]; then
+if [ "${FLAG_PYARROW_BUILD}" = "ON" ]; then
+	build_cpp
 	build_pyarrow
 	check_pyarrow_installation
 	export_info
@@ -183,7 +180,7 @@ if [ "${FLAG_PYARROW_BUILD}" -eq "1" ]; then
 fi	
 
 
-if [ "${FLAG_PYTHON_BUILD}" -eq "1" ]; then	
+if [ "${FLAG_PYTHON_BUILD}" = "ON" ]; then	
 	export_info
 	check_pyarrow_installation
 	build_python
