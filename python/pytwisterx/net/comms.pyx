@@ -1,6 +1,6 @@
 import numpy as np
 cimport numpy as np
-from twisterx.net.comms cimport CAll_to_all_wrap
+from pytwisterx.net.comms cimport CAll_to_all_wrap
 from libcpp.vector cimport vector
 
 cdef class Communication:

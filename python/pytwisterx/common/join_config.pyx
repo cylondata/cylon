@@ -1,6 +1,6 @@
-from twisterx.common.join_config cimport CJoinType
-from twisterx.common.join_config cimport CJoinAlgorithm
-from twisterx.common.join_config cimport CJoinConfig
+from pytwisterx.common.join_config cimport CJoinType
+from pytwisterx.common.join_config cimport CJoinAlgorithm
+from pytwisterx.common.join_config cimport CJoinConfig
 cimport cython
 from enum import Enum
 
@@ -18,14 +18,14 @@ class PJoinType(Enum):
 
 
 cpdef enum JoinType:
-    INNER = CJoinType.INNER
-    LEFT = CJoinType.LEFT
-    RIGHT = CJoinType.RIGHT
-    OUTER = CJoinType.OUTER
+    INNER = CJoinType.CINNER
+    LEFT = CJoinType.CLEFT
+    RIGHT = CJoinType.CRIGHT
+    OUTER = CJoinType.COUTER
 
 cpdef enum JoinAlgorithm:
-    SORT = CJoinAlgorithm.SORT
-    HASH = CJoinAlgorithm.HASH
+    SORT = CJoinAlgorithm.CSORT
+    HASH = CJoinAlgorithm.CHASH
 
 cdef class JoinConfig:
     cdef CJoinConfig *jcPtr
@@ -49,45 +49,45 @@ cdef class JoinConfig:
         if join_algorithm == PJoinAlgorithm.HASH.value:
 
             if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.INNER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.HASH)
+                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index, right_column_index,
+                                             CJoinAlgorithm.CHASH)
             elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.LEFT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.HASH)
+                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index,
+                                             CJoinAlgorithm.CHASH)
             elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.RIGHT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.HASH)
+                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index, right_column_index,
+                                             CJoinAlgorithm.CHASH)
             elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.OUTER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.HASH)
+                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index, right_column_index,
+                                             CJoinAlgorithm.CHASH)
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
 
         elif join_algorithm == PJoinAlgorithm.SORT.value:
 
             if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.INNER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.SORT)
+                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index, right_column_index,
+                                             CJoinAlgorithm.CSORT)
             elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.LEFT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.SORT)
+                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index,
+                                             CJoinAlgorithm.CSORT)
             elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.RIGHT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.SORT)
+                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index, right_column_index,
+                                             CJoinAlgorithm.CSORT)
             elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.OUTER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.SORT)
+                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index, right_column_index,
+                                             CJoinAlgorithm.CSORT)
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
         else:
             if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.INNER, left_column_index, right_column_index)
+                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index, right_column_index)
             elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.LEFT, left_column_index, right_column_index)
+                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index)
             elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.RIGHT, left_column_index, right_column_index)
+                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index, right_column_index)
             elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.OUTER, left_column_index, right_column_index)
+                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index, right_column_index)
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
 

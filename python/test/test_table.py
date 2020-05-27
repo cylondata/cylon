@@ -1,5 +1,5 @@
-from pytwisterx.data import csv_reader
-from pytwisterx.data import Table
+from pytwisterx.data.table import csv_reader
+from pytwisterx.data.table import Table
 from pyarrow import Table as PyArrowTable
 import time
 

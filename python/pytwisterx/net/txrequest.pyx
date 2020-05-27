@@ -2,7 +2,7 @@ from libcpp.string cimport string
 
 import numpy as np
 cimport numpy as np
-from twisterx.net.txrequest cimport CTxRequest
+from pytwisterx.net.txrequest cimport CTxRequest
 
 
 cdef class TxRequest:

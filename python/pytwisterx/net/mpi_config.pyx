@@ -1,7 +1,7 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
-from twisterx.net.comm_type cimport _CommType
+from pytwisterx.net.comm_type cimport _CommType
 from pytwisterx.net.comms.types import CommType
 
 
