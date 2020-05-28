@@ -54,7 +54,6 @@ class Table {
    */
   static Status FromArrowTable(std::shared_ptr<arrow::Table> table);
 
-
   static Status FromArrowTable(std::shared_ptr<arrow::Table> table, std::shared_ptr<Table> *tableOut);
 
   /**
@@ -62,7 +61,8 @@ class Table {
    * @param path file path
    * @return the status of the operation
    */
-  Status WriteCSV(const std::string &path, const twisterx::io::config::CSVWriteOptions &options = twisterx::io::config::CSVWriteOptions());
+  Status WriteCSV(const std::string &path,
+                  const twisterx::io::config::CSVWriteOptions &options = twisterx::io::config::CSVWriteOptions());
 
   /**
    * Partition the table based on the hash
@@ -104,6 +104,8 @@ class Table {
                          const std::shared_ptr<Table> &right,
                          twisterx::join::config::JoinConfig join_config,
                          std::shared_ptr<Table> *out);
+
+  Status Union(const std::shared_ptr<Table> &right);
 
   /**
    * Create a arrow table from this data structure

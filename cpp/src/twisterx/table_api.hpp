@@ -34,6 +34,11 @@ twisterx::Status JoinDistributedTables(
     const std::string &dest_id
 );
 
+twisterx::Status Union(
+    const std::string &table_left,
+    const std::string &table_right
+);
+
 int ColumnCount(const std::string &id);
 
 int64_t RowCount(const std::string &id);

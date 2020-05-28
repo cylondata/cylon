@@ -133,5 +133,8 @@ Status Table::DistributedJoin(twisterx::TwisterXContext *ctx,
   }
   return status;
 }
+Status Table::Union(const shared_ptr<Table> &right) {
+  return twisterx::Union(this->get_id(), right->get_id());
+}
 
 }

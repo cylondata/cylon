@@ -13,6 +13,8 @@
 #include "util/uuid.hpp"
 #include "arrow/arrow_all_to_all.hpp"
 
+#include "arrow/arrow_comparator.h"
+
 namespace twisterx {
 
 std::map<std::string, std::shared_ptr<arrow::Table>> table_map{}; //todo make this un ordered
@@ -374,4 +376,15 @@ twisterx::Status HashPartition(const std::string &id, const std::vector<int> &ha
   return twisterx::Status::OK();
 }
 
+twisterx::Status Union(const std::string &table_left, const std::string &table_right) {
+  auto ltab = GetTable(table_left);
+  auto rtab = GetTable(table_right);
+
+  // locally remove duplicates
+
+  auto comp = twisterx::GetComparator(ltab->column(0)->type());
+
+
+  return twisterx::Status::OK();
+}
 }

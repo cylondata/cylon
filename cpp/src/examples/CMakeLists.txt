@@ -1,6 +1,9 @@
 #build a binary
 macro(tx_add_exe EXENAME)
     add_executable(${EXENAME} ${EXENAME}.cpp)
+    target_link_libraries(${EXENAME} ${MPI_LIBRARIES})
+    target_link_libraries(${EXENAME} twisterx)
+    target_link_libraries(${EXENAME} ${ARROW_LIB})
 endmacro(tx_add_exe)
 
 include_directories(../twisterx)
@@ -16,52 +19,4 @@ tx_add_exe(test_net)
 tx_add_exe(test_cy_alltoallwrap)
 tx_add_exe(distributed_context)
 tx_add_exe(join_test_single_thread)
-
-
-target_link_libraries(arrow_twisterx ${MPI_LIBRARIES})
-target_link_libraries(arrow_twisterx twisterx)
-target_link_libraries(arrow_twisterx ${ARROW_LIB})
-
-target_link_libraries(distributed_join ${MPI_LIBRARIES})
-target_link_libraries(distributed_join twisterx)
-target_link_libraries(distributed_join ${ARROW_LIB})
-
-target_link_libraries(arrow_test ${MPI_LIBRARIES})
-target_link_libraries(arrow_test twisterx)
-target_link_libraries(arrow_test ${ARROW_LIB})
-target_link_libraries(arrow_test glog::glog)
-
-target_link_libraries(join_test ${MPI_LIBRARIES})
-target_link_libraries(join_test twisterx)
-target_link_libraries(join_test ${ARROW_LIB})
-target_link_libraries(join_test glog::glog)
-
-target_link_libraries(table_api_test ${MPI_LIBRARIES})
-target_link_libraries(table_api_test twisterx)
-target_link_libraries(table_api_test ${ARROW_LIB})
-target_link_libraries(table_api_test glog::glog)
-
-target_link_libraries(hash_partition ${MPI_LIBRARIES})
-target_link_libraries(hash_partition twisterx)
-target_link_libraries(hash_partition ${ARROW_LIB})
-target_link_libraries(hash_partition glog::glog)
-
-target_link_libraries(test_util twisterx)
-target_link_libraries(test_util ${ARROW_LIB})
-target_link_libraries(test_util glog::glog)
-
-target_link_libraries(test_net twisterx)
-target_link_libraries(test_net ${ARROW_LIB})
-target_link_libraries(test_net glog::glog)
-
-target_link_libraries(test_cy_alltoallwrap twisterx)
-target_link_libraries(test_cy_alltoallwrap ${ARROW_LIB})
-target_link_libraries(test_cy_alltoallwrap glog::glog)
-
-target_link_libraries(distributed_context twisterx)
-target_link_libraries(distributed_context ${ARROW_LIB})
-target_link_libraries(distributed_context glog::glog)
-
-target_link_libraries(join_test_single_thread twisterx)
-target_link_libraries(join_test_single_thread ${ARROW_LIB})
-target_link_libraries(join_test_single_thread glog::glog)
+tx_add_exe(union_example)
