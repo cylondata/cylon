@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 from typing import List
-from pytwisterx.utils.file import path_exists
-from pytwisterx.utils.file import files_exist
+from pytwisterx.util.FileUtils import path_exists
+from pytwisterx.util.FileUtils import files_exist
 from pyarrow import csv
 from pyarrow import Table as ArrowTable
 

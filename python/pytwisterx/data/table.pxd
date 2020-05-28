@@ -1,6 +1,6 @@
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.string cimport string
-from twisterx.common.status cimport _Status
+from pytwisterx.common.status cimport _Status
 from pytwisterx.common.status import Status
 from libcpp.memory cimport unique_ptr
 

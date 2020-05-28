@@ -1,6 +1,6 @@
-from pytwisterx.net.comms import dist
+from pytwisterx.net import dist
 import numpy as np
-from pytwisterx.net.comms.algorithm import Communication
+from pytwisterx.net.comms import Communication
 
 dist.dist_init()
 

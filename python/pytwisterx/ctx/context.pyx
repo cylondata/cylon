@@ -1,10 +1,10 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
-from pytwisterx.net.comms.types import CommType
-from twisterx.net.comm_type cimport _CommType
-from twisterx.ctx.context cimport CTwisterXContext
-from twisterx.ctx.context cimport CTwisterXContextWrap
+from pytwisterx.net.comm_type import CommType
+from pytwisterx.net.comm_type cimport _CommType
+from pytwisterx.ctx.context cimport CTwisterXContext
+from pytwisterx.ctx.context cimport CTwisterXContextWrap
 
 # cdef extern from "../../../cpp/src/twisterx/ctx/twisterx_context.h" namespace "twisterx":
 #     cdef cppclass CTwisterXContext "twisterx::TwisterXContext":

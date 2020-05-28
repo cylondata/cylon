@@ -1,7 +1,7 @@
 from libcpp.string cimport string
 from libcpp cimport bool
-from twisterx.common.code cimport _Code
-from twisterx.common.status cimport _Status
+from pytwisterx.common.code cimport _Code
+from pytwisterx.common.status cimport _Status
 
 
 cdef class Status:
