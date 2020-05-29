@@ -109,7 +109,7 @@ class RowHashingKernel {
  private:
   std::vector<std::shared_ptr<ArrowPartitionKernel>> hash_kernels;
  public:
-  RowHashingKernel(std::vector<std::shared_ptr<arrow::Field>> vector, arrow::MemoryPool *memory_pool);
+  RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>>& vector, arrow::MemoryPool *memory_pool);
   int32_t hash(const std::shared_ptr<arrow::Table>& table, int64_t row);
 };
 }

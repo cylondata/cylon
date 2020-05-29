@@ -72,7 +72,8 @@ twisterx::Status HashPartitionArrays(arrow::MemoryPool *pool,
   return twisterx::Status::OK();
 }
 
-RowHashingKernel::RowHashingKernel(std::vector<std::shared_ptr<arrow::Field>> fields, arrow::MemoryPool *memory_pool) {
+RowHashingKernel::RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields,
+                                   arrow::MemoryPool *memory_pool) {
   for (auto const &field: fields) {
     this->hash_kernels.push_back(std::shared_ptr<ArrowPartitionKernel>(GetPartitionKernel(memory_pool, field->type())));
   }
