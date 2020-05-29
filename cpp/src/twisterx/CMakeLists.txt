@@ -28,13 +28,15 @@ add_library(twisterx SHARED
         util/builtins.h util/builtins.cpp
         ctx/twisterx_context.h ctx/twisterx_context.cpp table_api_extended.hpp
         io/csv_write_config.h io/csv_write_config.cpp
-        arrow/arrow_comparator.h arrow/arrow_comparator.cpp)
+        python/ctx/twisterx_context_wrap.h python/ctx/twisterx_context_wrap.cpp
+        arrow/arrow_hash_kernels.hpp
+        arrow/arrow_comparator.h arrow/arrow_comparator.cpp
+        )
 
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(twisterx ${MPI_LIBRARIES})
 target_link_libraries(twisterx glog::glog)
 target_link_libraries(twisterx ${ARROW_LIB})
-target_link_libraries(twisterx ${ARROW_PYTHON})
 target_link_libraries(twisterx ${PYTHON_LIBRARIES})
 
 if(${PYTWISTERX_BUILD})
