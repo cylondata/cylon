@@ -14,26 +14,19 @@ enum JoinAlgorithm {
 
 class JoinConfig {
  private:
-  JoinType type = INNER;
-  JoinAlgorithm algorithm = SORT;
+  JoinType type;
+  JoinAlgorithm algorithm;
   int left_column_idx, right_column_idx;
 
  public:
-  JoinConfig(JoinType type, int left_column_idx, int right_column_idx) {
-	this->type = type;
-	this->left_column_idx = left_column_idx;
-	this->right_column_idx = right_column_idx;
-  }
-
-  JoinConfig(JoinType type, int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-	this->type = type;
-	this->left_column_idx = left_column_idx;
-	this->right_column_idx = right_column_idx;
-	this->algorithm = algorithm;
-  }
-
- public:
   JoinConfig() = delete;
+
+  JoinConfig(JoinType type, int left_column_idx, int right_column_idx)
+	  : JoinConfig(type, left_column_idx, right_column_idx, SORT) {
+  }
+
+  JoinConfig(JoinType type, int left_column_idx, int right_column_idx, JoinAlgorithm algorithm)
+	  : type(type), algorithm(algorithm), left_column_idx(left_column_idx), right_column_idx(right_column_idx) {}
 
   static JoinConfig InnerJoin(int left_column_idx, int right_column_idx) {
 	return {INNER, left_column_idx, right_column_idx};

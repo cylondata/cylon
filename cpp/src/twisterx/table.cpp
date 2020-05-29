@@ -15,7 +15,7 @@ Status Table::FromCSV(const std::string &path,
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::ReadCSV(path, uuid, options);
   if (status.is_ok()) {
-    *tableOut = std::make_shared<Table>(Table(uuid));
+    *tableOut = std::make_shared<Table>(uuid);
   }
   return status;
 }
@@ -37,7 +37,7 @@ Status Table::FromArrowTable(std::shared_ptr<arrow::Table> table, std::shared_pt
     return Status(twisterx::Invalid, "This type not supported");
   }
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  *tableOut = std::make_shared<Table>(Table(uuid));
+  *tableOut = std::make_shared<Table>(uuid);
   PutTable(uuid, table);
   return Status(twisterx::OK, "Loaded Successfully");
 }
@@ -111,7 +111,7 @@ Status Table::Join(const std::shared_ptr<Table> &right,
       uuid
   );
   if (status.is_ok()) {
-    *out = std::make_shared<Table>(Table(uuid));
+    *out = std::make_shared<Table>(uuid);
   }
   return status;
 }
@@ -129,7 +129,7 @@ Status Table::DistributedJoin(twisterx::TwisterXContext *ctx,
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::JoinDistributedTables(ctx, this->id_, right->id_, join_config, uuid);
   if (status.is_ok()) {
-    *out = std::make_shared<Table>(Table(uuid));
+    *out = std::make_shared<Table>(uuid);
   }
   return status;
 }

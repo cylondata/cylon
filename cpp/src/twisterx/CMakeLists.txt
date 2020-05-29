@@ -28,7 +28,10 @@ add_library(twisterx SHARED
         util/builtins.h util/builtins.cpp
         ctx/twisterx_context.h ctx/twisterx_context.cpp table_api_extended.hpp
         io/csv_write_config.h io/csv_write_config.cpp
+        python/ctx/twisterx_context_wrap.h python/ctx/twisterx_context_wrap.cpp
+        arrow/arrow_hash_kernels.hpp
         )
+
 
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(twisterx ${MPI_LIBRARIES})
