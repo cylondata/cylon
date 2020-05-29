@@ -8,12 +8,15 @@ int main(int argc, char *argv[]) {
   auto mpi_config = new twisterx::net::MPIConfig();
   auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<twisterx::Table> table1, table2, joined;
+  std::shared_ptr<twisterx::Table> table1, table2, unioned;
   std::string join_file = "/tmp/csv.csv";
-  auto status1 = twisterx::Table::FromCSV(join_file, &table1) ;
+  auto status1 = twisterx::Table::FromCSV(join_file, &table1);
   auto status2 = twisterx::Table::FromCSV(join_file, &table2);
 
-  table1->Union(table2);
+  twisterx::Status status = table1->Union(table2, unioned);
+
+  unioned->print();
+
   ctx->Finalize();
   return 0;
 }

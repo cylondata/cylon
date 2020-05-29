@@ -92,7 +92,7 @@ ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
                                          std::shared_ptr<arrow::Array> values);
 
 ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
-                                         const std::shared_ptr<arrow::DataType>& data_type);
+                                         const std::shared_ptr<arrow::DataType> &data_type);
 
 twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
                                     std::shared_ptr<arrow::Array> values,
@@ -100,7 +100,7 @@ twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
                                     std::vector<int64_t> *outPartitions);
 
 twisterx::Status HashPartitionArrays(arrow::MemoryPool *pool,
-                                     const std::vector<std::shared_ptr<arrow::Array>>& values,
+                                     const std::vector<std::shared_ptr<arrow::Array>> &values,
                                      int64_t length,
                                      const std::vector<int> &targets,
                                      std::vector<int64_t> *outPartitions);
@@ -109,8 +109,8 @@ class RowHashingKernel {
  private:
   std::vector<std::shared_ptr<ArrowPartitionKernel>> hash_kernels;
  public:
-  RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>>& vector, arrow::MemoryPool *memory_pool);
-  int32_t hash(const std::shared_ptr<arrow::Table>& table, int64_t row);
+  RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &vector, arrow::MemoryPool *memory_pool);
+  int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
 };
 }
 

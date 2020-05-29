@@ -376,15 +376,93 @@ twisterx::Status HashPartition(const std::string &id, const std::vector<int> &ha
   return twisterx::Status::OK();
 }
 
-twisterx::Status Union(const std::string &table_left, const std::string &table_right) {
+twisterx::Status Union(const std::string &table_left, const std::string &table_right, const std::string &dest_id) {
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
 
-  // locally remove duplicates
+  if (!ltab->Equals(*rtab)) {
+    return twisterx::Status(twisterx::Invalid, "The schemas of two tables are not similar. Can't perform union.");
+  }
 
-  auto comp = twisterx::GetComparator(ltab->column(0)->type());
+  class RowComparator {
+   private:
+    std::shared_ptr<arrow::Table> tables[2];
+    twisterx::TableRowComparator *comparator;
+    twisterx::RowHashingKernel *row_hashing_kernel;
+   public:
+    RowComparator(const std::shared_ptr<arrow::Table> &table_left, const std::shared_ptr<arrow::Table> &table_right) {
+      this->tables[0] = table_left;
+      this->tables[1] = table_right;
+      this->comparator = new twisterx::TableRowComparator(table_left->fields());
+      this->row_hashing_kernel = new twisterx::RowHashingKernel(table_left->fields(), arrow::default_memory_pool());
+    }
 
+    // equality
+    bool operator()(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const {
+      return this->comparator->compare(
+          this->tables[record1.first],
+          record1.second,
+          this->tables[record2.first],
+          record2.second
+      ) == 0;
+    }
 
+    // hashing
+    size_t operator()(const std::pair<int8_t, int64_t> &record) const {
+      return this->row_hashing_kernel->Hash(this->tables[record.first], record.second);
+    }
+  };
+
+  auto row_comp = RowComparator(ltab, rtab);
+
+  std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator> rows_set(
+      ltab->num_rows() + rtab->num_rows(),
+      row_comp, row_comp
+  );
+
+  for (int row = 0; row < std::max(ltab->num_rows(), rtab->num_rows()); ++row) {
+    if (row < ltab->num_rows()) {
+      rows_set.insert(std::make_pair<int8_t, int64_t>(0, row));
+    }
+
+    if (row < rtab->num_rows()) {
+      rows_set.insert(std::make_pair<int8_t, int64_t>(1, row));
+    }
+  }
+
+  std::vector<int64_t> indices_from_left{};
+  std::vector<int64_t> indices_from_right{};
+
+  for (auto const &pr:rows_set) {
+    if (pr.first == 0) {
+      indices_from_left.push_back(pr.second);
+    } else {
+      indices_from_right.push_back(pr.second);
+    }
+  }
+
+  std::vector<std::shared_ptr<arrow::Array>> final_data_arrays;
+
+  // prepare final arrays
+  for (int32_t c = 0; c < ltab->num_columns(); c++) {
+    std::shared_ptr<arrow::Array> destination_col_array;
+    for (auto tab: {ltab, rtab}) {
+      arrow::Status
+          status = twisterx::util::copy_array_by_indices(std::make_shared<std::vector<int64_t>>(indices_from_left),
+                                                         tab->column(c)->chunk(0),
+                                                         &destination_col_array,
+                                                         arrow::default_memory_pool());
+      if (status != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed while copying a column to the final table from tables." << status.ToString();
+        return twisterx::Status((int) status.code(), status.message());
+      }
+    }
+    final_data_arrays.push_back(destination_col_array);
+  }
+
+  // create final table
+  std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
+  PutTable(dest_id, table);
   return twisterx::Status::OK();
 }
 }

@@ -105,7 +105,7 @@ class Table {
                          twisterx::join::config::JoinConfig join_config,
                          std::shared_ptr<Table> *out);
 
-  Status Union(const std::shared_ptr<Table> &right);
+  Status Union(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
 
   /**
    * Create a arrow table from this data structure

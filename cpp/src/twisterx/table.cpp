@@ -133,8 +133,13 @@ Status Table::DistributedJoin(twisterx::TwisterXContext *ctx,
   }
   return status;
 }
-Status Table::Union(const shared_ptr<Table> &right) {
-  return twisterx::Union(this->get_id(), right->get_id());
+Status Table::Union(const shared_ptr<Table> &right, std::shared_ptr<Table> &out) {
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  twisterx::Status status = twisterx::Union(this->get_id(), right->get_id(), uuid);
+  if (status.is_ok()) {
+    out = std::make_shared<Table>(uuid);
+  }
+  return status;
 }
 
 }
