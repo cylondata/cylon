@@ -41,7 +41,7 @@ class ArrowPartitionKernel {
                         std::vector<int64_t> *partitions) = 0;
 
   virtual uint32_t ToHash(const std::shared_ptr<arrow::Array> &values,
-                          int16_t index) = 0;
+                          int64_t index) = 0;
  protected:
   arrow::MemoryPool *pool_;
 };
@@ -52,7 +52,7 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
   explicit NumericHashPartitionKernel(arrow::MemoryPool *pool) : ArrowPartitionKernel(pool) {}
 
   uint32_t ToHash(const std::shared_ptr<arrow::Array> &values,
-                  int16_t index) {
+                  int64_t index) {
     auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
     int bitWidth = type->bit_width();
