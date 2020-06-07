@@ -12,6 +12,11 @@
  # limitations under the License.
  ##
 
+'''
+Wrapping for custom communication APIs for PyTwisterX
+(Work in Progress)
+'''
+
 cdef extern from "../../../cpp/src/twisterx/python/net/distributed.h" namespace "twisterx::net":
     cdef extern void cdist_init()
     cdef extern void cdist_finalize()

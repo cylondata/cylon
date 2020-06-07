@@ -18,6 +18,9 @@ from pytwisterx.net.channel cimport CChannelSendCallback
 from pytwisterx.net.txrequest cimport CTxRequest
 from pytwisterx.net.txrequest import TxRequest
 
+'''
+Implementation In Progress
+'''
 
 cdef class ChannelSendCallback:
 

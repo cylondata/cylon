@@ -12,6 +12,10 @@
  # limitations under the License.
  ##
 
+'''
+Mapping TwisterX C++ Comm Type with PyTwisterX CommType
+'''
+
 from pytwisterx.net.comm_type cimport _CommType
 
 cpdef enum CommType:

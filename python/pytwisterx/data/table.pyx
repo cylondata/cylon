@@ -26,6 +26,9 @@ from pyarrow.lib cimport pyarrow_unwrap_table
 from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
 
+'''
+TwisterX Table definition mapping 
+'''
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table":
     cdef cppclass CxTable "twisterx::python::table::CxTable":
@@ -50,6 +53,11 @@ cdef class Table:
     cdef CJoinConfig *jcPtr
 
     def __cinit__(self, string id):
+        '''
+        Initializes the PyTwisterX Table
+        :param id: unique id for the Table
+        :return: None
+        '''
         self.thisPtr = new CxTable(id)
 
     cdef __get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
@@ -107,28 +115,67 @@ cdef class Table:
 
     @property
     def id(self) -> str:
+        '''
+        Table Id is extracted from the TwisterX C++ API
+        :return: table id
+        '''
         return self.thisPtr.get_id().decode()
 
     @property
-    def columns(self) -> str:
+    def columns(self) -> int:
+        '''
+        Column count is extracted from the TwisterX C++ Table API
+        :return: number of columns in PyTwisterX table
+        '''
         return self.thisPtr.columns()
 
     @property
-    def rows(self) -> str:
+    def rows(self) -> int:
+        '''
+        Rows count is extracted from the TwisterX C++ Table API
+        :return: number of rows in PyTwisterX table
+        '''
         return self.thisPtr.rows()
 
     def show(self):
+        '''
+        prints the table in console from the TwisterX C++ Table API
+        :return: None
+        '''
         self.thisPtr.show()
 
     def show_by_range(self, row1: int, row2: int, col1: int, col2: int):
+        '''
+        prints the table in console from the TwisterX C++ Table API
+        uses row range and column range
+        :param row1: starting row number as int
+        :param row2: ending row number as int
+        :param col1: starting column number as int
+        :param col2: ending column number as int
+        :return: None
+        '''
         self.thisPtr.show(row1, row2, col1, col2)
 
     def to_csv(self, path: str) -> Status:
+        '''
+        writes a PyTwisterX table to CSV file
+        :param path: passed as a str, the path of the csv file
+        :return: Status of the process (SUCCESS or FAILURE)
+        '''
         cdef _Status status = self.thisPtr.to_csv(path.encode())
         s = Status(status.get_code(), b"", -1)
         return s
 
     def join(self, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
+        '''
+        Joins two PyTwisterX tables
+        :param table: PyTwisterX table on which the join is performed (becomes the left table)
+        :param join_type: Join Type as str ["inner", "left", "right", "outer"]
+        :param algorithm: Join Algorithm as str ["hash", "sort"]
+        :param left_col: Join column of the left table as int
+        :param right_col: Join column of the right table as int
+        :return: Joined PyTwisterX table
+        '''
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
                                right_column_index=right_col)
         cdef CJoinConfig *jc1 = self.jcPtr
@@ -139,6 +186,11 @@ cdef class Table:
 
     @staticmethod
     def from_arrow(obj) -> Table:
+        '''
+        creating a PyTwisterX table from PyArrow Table
+        :param obj: PyArrow table
+        :return: PyTwisterX table
+        '''
         cdef shared_ptr[CTable] artb = pyarrow_unwrap_table(obj)
         cdef string table_id
         if artb.get() == NULL:
@@ -148,6 +200,11 @@ cdef class Table:
 
     @staticmethod
     def to_arrow(tx_table: Table) :
+        '''
+        creating PyArrow Table from PyTwisterX table
+        :param tx_table: PyTwisterx Table
+        :return: PyArrow Table
+        '''
         table = to_pyarrow_table(tx_table.id.encode())
         py_arrow_table = pyarrow_wrap_table(table)
         return py_arrow_table

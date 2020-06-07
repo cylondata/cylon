@@ -12,6 +12,10 @@
  # limitations under the License.
  ##
 
+'''
+TwisterX Status codes carrying responses related to SUCCESS and FAIL report, etc.
+'''
+
 from libcpp.string cimport string
 from libcpp cimport bool
 from pytwisterx.common.code cimport _Code

@@ -25,6 +25,13 @@ cdef class Status:
     cdef int code
 
     def __cinit__(self, int code, string msg, _Code _code):
+        '''
+        Initializes the Status to wrap the C++ object in Cython
+        :param code: passes as an int to represent the status code.
+        :param msg: passes a str to convery the status message
+        :param _code: Cython correpondence to C++ Code object
+        :return: None
+        '''
         if _code != -1 and msg.size() == 0 and code == -1:
             #print("Status(_Code)")
             self.thisptr = new _Status(_code)
@@ -48,10 +55,22 @@ cdef class Status:
             self.msg = msg
 
     def get_code(self):
+        '''
+
+        :return: the code
+        '''
         return self.thisptr.get_code()
 
     def is_ok(self):
+        '''
+
+        :return: OK status from Status
+        '''
         return self.thisptr.is_ok()
 
     def get_msg(self):
+        '''
+
+        :return: Message from Status
+        '''
         return self.thisptr.get_msg()

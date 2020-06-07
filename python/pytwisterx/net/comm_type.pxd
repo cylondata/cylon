@@ -12,6 +12,10 @@
  # limitations under the License.
  ##
 
+'''
+Communication Type mapping from TwisterX C++ API
+'''
+
 cdef extern from "../../../cpp/src/twisterx/net/comm_type.h" namespace "twisterx::net":
 
     cdef enum _CommType 'twisterx::net::CommType':
