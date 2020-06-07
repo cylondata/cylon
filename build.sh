@@ -1,11 +1,12 @@
 SOURCE_DIR=$(pwd)/cpp
-FLAG_CPP_BUILD="OFF"
-FLAG_PYTHON_BUILD="OFF"
-FLAG_PYARROW_BUILD="OFF"
+CPP_BUILD="OFF"
+PYTHON_BUILD="OFF"
+PYARROW_BUILD="OFF"
 BUILD_ALL="OFF"
 BUILD_MODE=Debug
 BUILD_MODE_DEBUG="OFF"
 BUILD_MODE_RELEASE="OFF"
+PYTHON_RELEASE="OFF"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -25,15 +26,15 @@ case $key in
     shift # past value
     ;;
     --cpp)
-    FLAG_CPP_BUILD="ON"
+    CPP_BUILD="ON"
     shift # past argument
     ;;
     --python)
-    FLAG_PYTHON_BUILD="ON"
+    PYTHON_BUILD="ON"
     shift # past argument
     ;;
     --pyarrow)
-    FLAG_PYARROW_BUILD="ON"
+    PYARROW_BUILD="ON"
     shift # past argument
     ;;
     --debug)
@@ -44,11 +45,17 @@ case $key in
     BUILD_MODE_RELEASE="ON"
     shift # past argument
     ;;
+    --py-release)
+    PYTHON_RELEASE="ON"
+    CPP_BUILD="OFF"
+    PYARROW_BUILD="OFF"
+    shift # past argument
+    ;;
     --all)
     BUILD_ALL="ON"
-    FLAG_CPP_BUILD="ON"
-    FLAG_PYTHON_BUILD="ON"
-    FLAG_PYARROW_BUILD="ON"
+    CPP_BUILD="ON"
+    PYTHON_BUILD="ON"
+    PYARROW_BUILD="ON"
     shift # past argument
     ;;
     *)    # unknown option
@@ -59,10 +66,10 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-echo "FILE EXTENSION     = ${PYTHON_ENV_PATH}"
-echo "SEARCH PATH        = ${BUILD_PATH}"
-echo "FLAG CPP BUILD     = ${FLAG_CPP_BUILD}"
-echo "FLAG PYTHON BUILD  = ${FLAG_PYTHON_BUILD}"
+echo "PYTHON ENV PATH    = ${PYTHON_ENV_PATH}"
+echo "BUILD PATH         = ${BUILD_PATH}"
+echo "FLAG CPP BUILD     = ${CPP_BUILD}"
+echo "FLAG PYTHON BUILD  = ${PYTHON_BUILD}"
 echo "FLAG BUILD ALL     = ${BUILD_ALL}"
 echo "FLAG BUILD DEBUG   = ${BUILD_MODE_DEBUG}"
 echo "FLAG BUILD RELEASE = ${BUILD_MODE_RELEASE}"
@@ -96,7 +103,7 @@ print_line
 mkdir ${BUILD_PATH}
 pushd ${BUILD_PATH}
 export ARROW_HOME=${BUILD_PATH}/arrow/install
-cmake -DPYARROW_BUILD=${FLAG_PYARROW_BUILD} -DPYTWISTERX_BUILD=${FLAG_PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} ${SOURCE_DIR}
+cmake -DPYARROW_BUILD=${PYARROW_BUILD} -DPYTWISTERX_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} ${SOURCE_DIR}
 make -j 4
 printf "\n\n ### ARROW HOME SET :%s \n\n" "${ARROW_HOME}"
 printf "\n\n ### TwisterX CPP Built Successufully !!! \n\n"
@@ -118,6 +125,7 @@ popd
 print_line
 }
 
+
 build_python() {
 print_line
 echo "Make sure CPP build is already done!"
@@ -131,6 +139,25 @@ pushd python
 pip3 uninstall -y pytwisterx
 make clean
 ARROW_HOME=${BUILD_PATH} python3 setup.py install
+popd
+print_line
+}
+
+release_python() {
+print_line
+echo "Make sure CPP build is already done!"
+echo "Building Python"
+
+export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
+source ${PYTHON_ENV_PATH}/bin/activate
+read_python_requirements
+pushd python
+pip3 uninstall -y pytwisterx
+make clean
+# https://www.scivision.dev/easy-upload-to-pypi/ [solution to linux wheel issue]
+#ARROW_HOME=${BUILD_PATH} python3 setup.py sdist bdist_wheel
+ARROW_HOME=${BUILD_PATH} python3 setup.py build_ext --inplace --library-dir=${BUILD_PATH}
 popd
 print_line
 }
@@ -166,12 +193,12 @@ if [ "${BUILD_MODE_RELEASE}" = "ON" ]; then
 fi
 
 
-if [ "${FLAG_CPP_BUILD}" = "ON" ]; then
+if [ "${CPP_BUILD}" = "ON" ]; then
    	build_cpp
 fi
 
 
-if [ "${FLAG_PYARROW_BUILD}" = "ON" ]; then
+if [ "${PYARROW_BUILD}" = "ON" ]; then
 	build_cpp
 	build_pyarrow
 	check_pyarrow_installation
@@ -180,13 +207,18 @@ if [ "${FLAG_PYARROW_BUILD}" = "ON" ]; then
 fi	
 
 
-if [ "${FLAG_PYTHON_BUILD}" = "ON" ]; then	
+if [ "${PYTHON_BUILD}" = "ON" ]; then	
 	export_info
 	check_pyarrow_installation
 	build_python
 	check_pytwisterx_installation
 fi
 
+if [ "${PYTHON_RELEASE}" = "ON" ]; then	
+	export_info
+	check_pyarrow_installation
+	release_python
+fi
 
 
 
