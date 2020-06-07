@@ -1,20 +1,40 @@
 import os
-
+import getpass
 import numpy as np
 import torch
 from pyarrow import Table as PyArrowTable
 from pyarrow import Tensor as ArrowTensor
-from pytwisterx.data import Table
-from pytwisterx.data import csv_reader
-from pytwisterx.utils.benchmark import benchmark_with_repitions
-from pytwisterx.utils.data import MiniBatcher
+
+from pytwisterx.data.table import Table
+from pytwisterx.data.table import csv_reader
+from pytwisterx.util.benchutils import benchmark_with_repitions
+from pytwisterx.util.data.DataManager import MiniBatcher
+
 from torch import Tensor as TorchTensor
+
+'''
+## Reference
+
+Get the data from [Here](https://www.kaggle.com/oddrationale/mnist-in-csv/)
+
+'''
 
 '''
 Configurations
 '''
 
-base_path: str = "/home/vibhatha/data/mnist"
+'''
+## Place Data
+
+Place the data in the relative path
+
+Assume the data is your 
+/home/<your_username>/data/mnist/full/
+'''
+
+username = getpass.getuser()
+
+base_path: str = "/home/{}/data/mnist/".format(username)
 train_file_name: str = "mnist_train_small.csv"
 test_file_name: str = "mnist_test.csv"
 train_file_path: str = os.path.join(base_path, train_file_name)
