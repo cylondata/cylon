@@ -18,6 +18,11 @@ from typing import List
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
+'''
+This API is work in progress 
+We currenly support data loading through PyArrow APIs with minimum overheads and full compatibility with
+Pandas. 
+'''
 
 cdef class CSVReadOptions:
     cdef _CSVReadOptions *thisPtr

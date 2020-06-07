@@ -20,6 +20,11 @@ cdef class ArrowUtil:
 
     @staticmethod
     def get_array_length(obj):
+        '''
+
+        :param obj: passing a PyArrow array
+        :return: length from the shared pointer for the corresponding python object
+        '''
         # Just an example function accessing both the pyarrow Cython API
         # and the Arrow C++ API
         cdef shared_ptr[CArray] arr = pyarrow_unwrap_array(obj)
@@ -29,6 +34,11 @@ cdef class ArrowUtil:
 
     @staticmethod
     def get_array_info(obj):
+        '''
+        Test method to get information from extracted C++ shared object
+        :param obj: Pyarrow array
+        :return: None
+        '''
         # Just an example function accessing both the pyarrow Cython API
         # and the Arrow C++ API
         cdef shared_ptr[CArray] arr = pyarrow_unwrap_array(obj)
@@ -40,6 +50,11 @@ cdef class ArrowUtil:
 
     @staticmethod
     def get_table_info(obj):
+        '''
+        Test method for getting table info from shared pointer
+        :param obj: PyArrow Table
+        :return: None
+        '''
         cdef shared_ptr[CTable] artb = pyarrow_unwrap_table(obj)
 
         if artb.get() == NULL:

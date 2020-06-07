@@ -12,6 +12,10 @@
  # limitations under the License.
  ##
 
+'''
+Join Configurations in TwisterX
+'''
+
 cdef extern from "../../../cpp/src/twisterx/join/join_config.h" namespace "twisterx::join::config":
     cdef enum CJoinType "twisterx::join::config::JoinType":
         CINNER "twisterx::join::config::JoinType::INNER"

@@ -12,6 +12,10 @@
  # limitations under the License.
  ##
 
+'''
+Cython API Mapping for TwisterX C++ TxRequest for communication channels
+'''
+
 from libcpp.memory cimport shared_ptr
 from pytwisterx.net.txrequest cimport CTxRequest
 

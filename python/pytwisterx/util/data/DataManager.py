@@ -14,15 +14,20 @@
 
 import os
 from math import ceil
-from math import sqrt
-import numpy as np
-import pandas as pd
-import pyarrow as pa
 from typing import List
-from pytwisterx.util.FileUtils import path_exists
-from pytwisterx.util.FileUtils import files_exist
-from pyarrow import csv
+
+import numpy as np
 from pyarrow import Table as ArrowTable
+from pyarrow import csv
+
+from pytwisterx.util.FileUtils import files_exist
+from pytwisterx.util.FileUtils import path_exists
+
+'''
+Supporting Data Loading from DL Workloads
+References: https://github.com/pytorch/pytorch
+'''
+
 
 
 class Partition(object):

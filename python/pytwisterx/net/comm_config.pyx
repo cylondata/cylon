@@ -18,6 +18,10 @@ from libcpp cimport bool
 from pytwisterx.net.comms.types import CommType
 from pytwisterx.net.comm_type cimport _CommType
 
+'''
+Communication Config Mapping from TwisterX C++ 
+'''
+
 cdef extern from "../../../cpp/src/twisterx/net/comm_config.h" namespace "twisterx::net":
     cdef cppclass CCommConfig "twisterx::net::CommConfig":
         _CommType Type()

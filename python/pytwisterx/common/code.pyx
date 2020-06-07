@@ -36,6 +36,9 @@ from pytwisterx.common.code cimport _Code
 #         _ExecutionError 'twisterx::Code::ExecutionError'
 #         _AlreadyExists 'twisterx::Code::AlreadyExists'
 
+'''
+TwisterX C++ Error Tracing is done with the following enums. 
+'''
 
 cpdef enum Code:
     OK = _Code._OK

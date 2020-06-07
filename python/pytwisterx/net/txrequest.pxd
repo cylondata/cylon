@@ -12,6 +12,10 @@
  # limitations under the License.
  ##
 
+'''
+libTwisterX to PyTwisterX mapping for TxRequest API
+'''
+
 from libcpp.string cimport string
 
 cdef extern from "../../../cpp/src/twisterx/net/TxRequest.h" namespace "twisterx":

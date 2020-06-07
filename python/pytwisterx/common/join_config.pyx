@@ -12,6 +12,7 @@
  # limitations under the License.
  ##
 
+
 from pytwisterx.common.join_config cimport CJoinType
 from pytwisterx.common.join_config cimport CJoinAlgorithm
 from pytwisterx.common.join_config cimport CJoinConfig
@@ -47,6 +48,14 @@ cdef class JoinConfig:
     cdef CJoinAlgorithm jaPtr
 
     def __cinit__(self, join_type: str, join_algorithm: str, left_column_index: int, right_column_index: int):
+        '''
+
+        :param join_type: passed as a str from one of the ["inner","left","outer","right"]
+        :param join_algorithm: passed as a str from one of the ["sort", "hash"]
+        :param left_column_index: passed as a int (currently support joining a single column)
+        :param right_column_index: passed as a int (currently support joining a single column)
+        :return: None
+        '''
         if join_type is not None and join_algorithm is not None and left_column_index is not None and right_column_index is not None:
             self._get_join_config(join_type=join_type, join_algorithm=join_algorithm,
                                   left_column_index=left_column_index,
@@ -107,18 +116,34 @@ cdef class JoinConfig:
 
     @property
     def join_type(self) -> JoinType:
+        '''
+        this an accessible property to the users
+        :return: JoinType python object
+        '''
         self.jtPtr = self.jcPtr.GetType()
         return self.jtPtr
 
     @property
     def join_algorithm(self) -> JoinAlgorithm:
+        '''
+        this an accessible property to the users
+        :return: JoinAlgorithm python object
+        '''
         self.jaPtr = self.jcPtr.GetAlgorithm()
         return self.jaPtr
 
     @property
     def left_index(self) -> int:
+        '''
+        this an accessible property to the users
+        :return: index of the join column in left table
+        '''
         return self.jcPtr.GetLeftColumnIdx()
 
     @property
     def right_index(self)-> int:
+        '''
+        this an accessible property to the users
+        :return: index of the join column in right table
+        '''
         return self.jcPtr.GetRightColumnIdx()

@@ -51,6 +51,11 @@ cdef class TwisterxContext:
     cdef CTwisterXContextWrap *thisPtr;
 
     def __cinit__(self, config: str):
+        '''
+        Initializing the TwisterX Context based on the distributed or non-distributed context
+        :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
+        :return: None
+        '''
         if config is None:
             #print("Single Thread Config Loaded")
             self.thisPtr = new CTwisterXContextWrap()
@@ -59,12 +64,24 @@ cdef class TwisterxContext:
             self.thisPtr = new CTwisterXContextWrap(config.encode())
 
     def get_rank(self) -> int:
+        '''
+        this is the process id (unique per process)
+        :return: an int as the rank (0 for non distributed mode)
+        '''
         return self.thisPtr.GetRank()
 
     def get_world_size(self) -> int:
+        '''
+        this is the total number of processes joined for the distributed task
+        :return: an int as the world size  (1 for non distributed mode)
+        '''
         return self.thisPtr.GetWorldSize()
 
     def finalize(self):
+        '''
+        gracefully shuts down the context by closing any distributed processes initialization ,etc
+        :return: None
+        '''
         self.thisPtr.Finalize()
 
 
