@@ -1,3 +1,17 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "join.hpp"
 #include "arrow/compute/api.h"
 #include <glog/logging.h>
@@ -190,7 +204,68 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
   return status;
 }
 
-template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
+/**
+ * Hash join impl
+ * @tparam ARROW_ARRAY_TYPE type of the key array type that will be used for static casting
+ * @param left_tab
+ * @param right_tab
+ * @param left_join_column_idx
+ * @param right_join_column_idx
+ * @param join_type
+ * @param joined_table
+ * @param memory_pool
+ * @return arrow status
+ */
+template<typename ARROW_ARRAY_TYPE>
+arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
+						   const std::shared_ptr<arrow::Table> &right_tab,
+						   int64_t left_join_column_idx,
+						   int64_t right_join_column_idx,
+						   twisterx::join::config::JoinType join_type,
+						   std::shared_ptr<arrow::Table> *joined_table,
+						   arrow::MemoryPool *memory_pool) {
+  //sort columns
+  std::shared_ptr<arrow::Array> left_idx_column = left_tab->column(left_join_column_idx)->chunk(0);
+  std::shared_ptr<arrow::Array> right_idx_column = right_tab->column(right_join_column_idx)->chunk(0);
+
+  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
+  std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>();
+
+  auto t1 = std::chrono::high_resolution_clock::now();
+
+  ArrowArrayIdxHashJoinKernel<ARROW_ARRAY_TYPE> idx_join_kernel = ArrowArrayIdxHashJoinKernel<ARROW_ARRAY_TYPE>();
+  auto result = idx_join_kernel.IdxHashJoin(left_idx_column, right_idx_column, join_type, left_indices,
+											right_indices);
+
+  auto t2 = std::chrono::high_resolution_clock::now();
+
+  if (result) {
+	LOG(ERROR) << "Index join failed!";
+	return arrow::Status::Invalid("Index join failed!");
+  }
+
+  LOG(INFO) << "Index join time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Building final table with number of tuples - " << left_indices->size();
+
+  t1 = std::chrono::high_resolution_clock::now();
+
+  auto status = twisterx::join::util::build_final_table(
+	  left_indices, right_indices,
+	  left_tab,
+	  right_tab,
+	  joined_table,
+	  memory_pool
+  );
+
+  t2 = std::chrono::high_resolution_clock::now();
+
+  LOG(INFO) << "Built final table in : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Done and produced : " << left_indices->size();
+
+  return arrow::Status::OK();
+}
+
+template<typename ARROW_ARRAY_TYPE>
 arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
 					  const std::shared_ptr<arrow::Table> &right_tab,
 					  int64_t left_join_column_idx,
@@ -199,6 +274,9 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
 					  twisterx::join::config::JoinAlgorithm join_algorithm,
 					  std::shared_ptr<arrow::Table> *joined_table,
 					  arrow::MemoryPool *memory_pool) {
+  using ARROW_KEY_TYPE = typename ARROW_ARRAY_TYPE::TypeClass;
+  using CPP_KEY_TYPE = typename ARROW_KEY_TYPE::c_type;
+
   switch (join_algorithm) {
 	case twisterx::join::config::SORT:
 	  return do_sorted_join<ARROW_KEY_TYPE, CPP_KEY_TYPE>(left_tab,
@@ -207,7 +285,13 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
 														  right_join_column_idx,
 														  join_type,
 														  joined_table, memory_pool);
-	case twisterx::join::config::HASH:break;
+	case twisterx::join::config::HASH:
+	  return do_hash_join<ARROW_ARRAY_TYPE>(left_tab,
+											right_tab,
+											left_join_column_idx,
+											right_join_column_idx,
+											join_type,
+											joined_table, memory_pool);
   }
   return arrow::Status::OK();
 }
@@ -282,104 +366,104 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
 	case arrow::Type::NA:break;
 	case arrow::Type::BOOL:break;
 	case arrow::Type::UINT8:
-	  return do_join<arrow::UInt8Type, int8_t>(left_tab,
-											   right_tab,
-											   join_config.GetLeftColumnIdx(),
-											   join_config.GetRightColumnIdx(),
-											   join_config.GetType(),
-											   join_config.GetAlgorithm(),
-											   joined_table,
-											   memory_pool);
+	  return do_join<arrow::NumericArray<arrow::UInt8Type>>(left_tab,
+															right_tab,
+															join_config.GetLeftColumnIdx(),
+															join_config.GetRightColumnIdx(),
+															join_config.GetType(),
+															join_config.GetAlgorithm(),
+															joined_table,
+															memory_pool);
 	case arrow::Type::INT8:
-	  return do_join<arrow::Int8Type, int8_t>(left_tab,
-											  right_tab,
-											  join_config.GetLeftColumnIdx(),
-											  join_config.GetRightColumnIdx(),
-											  join_config.GetType(),
-											  join_config.GetAlgorithm(),
-											  joined_table,
-											  memory_pool);
+	  return do_join<arrow::NumericArray<arrow::Int8Type>>(left_tab,
+														   right_tab,
+														   join_config.GetLeftColumnIdx(),
+														   join_config.GetRightColumnIdx(),
+														   join_config.GetType(),
+														   join_config.GetAlgorithm(),
+														   joined_table,
+														   memory_pool);
 	case arrow::Type::UINT16:
-	  return do_join<arrow::UInt16Type, uint16_t>(left_tab,
-												  right_tab,
-												  join_config.GetLeftColumnIdx(),
-												  join_config.GetRightColumnIdx(),
-												  join_config.GetType(),
-												  join_config.GetAlgorithm(),
-												  joined_table,
-												  memory_pool);
+	  return do_join<arrow::NumericArray<arrow::UInt16Type>>(left_tab,
+															 right_tab,
+															 join_config.GetLeftColumnIdx(),
+															 join_config.GetRightColumnIdx(),
+															 join_config.GetType(),
+															 join_config.GetAlgorithm(),
+															 joined_table,
+															 memory_pool);
 	case arrow::Type::INT16:
-	  return do_join<arrow::Int16Type, int16_t>(left_tab,
-												right_tab,
-												join_config.GetLeftColumnIdx(),
-												join_config.GetRightColumnIdx(),
-												join_config.GetType(),
-												join_config.GetAlgorithm(),
-												joined_table,
-												memory_pool);
+	  return do_join<arrow::NumericArray<arrow::Int16Type>>(left_tab,
+															right_tab,
+															join_config.GetLeftColumnIdx(),
+															join_config.GetRightColumnIdx(),
+															join_config.GetType(),
+															join_config.GetAlgorithm(),
+															joined_table,
+															memory_pool);
 	case arrow::Type::UINT32:
-	  return do_join<arrow::UInt32Type, uint32_t>(left_tab,
-												  right_tab,
-												  join_config.GetLeftColumnIdx(),
-												  join_config.GetRightColumnIdx(),
-												  join_config.GetType(),
-												  join_config.GetAlgorithm(),
-												  joined_table,
-												  memory_pool);
+	  return do_join<arrow::NumericArray<arrow::UInt32Type>>(left_tab,
+															 right_tab,
+															 join_config.GetLeftColumnIdx(),
+															 join_config.GetRightColumnIdx(),
+															 join_config.GetType(),
+															 join_config.GetAlgorithm(),
+															 joined_table,
+															 memory_pool);
 	case arrow::Type::INT32:
-	  return do_join<arrow::Int32Type, int32_t>(left_tab,
-												right_tab,
-												join_config.GetLeftColumnIdx(),
-												join_config.GetRightColumnIdx(),
-												join_config.GetType(),
-												join_config.GetAlgorithm(),
-												joined_table,
-												memory_pool);
+	  return do_join<arrow::NumericArray<arrow::Int32Type>>(left_tab,
+															right_tab,
+															join_config.GetLeftColumnIdx(),
+															join_config.GetRightColumnIdx(),
+															join_config.GetType(),
+															join_config.GetAlgorithm(),
+															joined_table,
+															memory_pool);
 	case arrow::Type::UINT64:
-	  return do_join<arrow::UInt64Type, uint64_t>(left_tab,
-												  right_tab,
-												  join_config.GetLeftColumnIdx(),
-												  join_config.GetRightColumnIdx(),
-												  join_config.GetType(),
-												  join_config.GetAlgorithm(),
-												  joined_table,
-												  memory_pool);
+	  return do_join<arrow::NumericArray<arrow::UInt64Type>>(left_tab,
+															 right_tab,
+															 join_config.GetLeftColumnIdx(),
+															 join_config.GetRightColumnIdx(),
+															 join_config.GetType(),
+															 join_config.GetAlgorithm(),
+															 joined_table,
+															 memory_pool);
 	case arrow::Type::INT64:
-	  return do_join<arrow::Int64Type, int64_t>(left_tab,
-												right_tab,
-												join_config.GetLeftColumnIdx(),
-												join_config.GetRightColumnIdx(),
-												join_config.GetType(),
-												join_config.GetAlgorithm(),
-												joined_table,
-												memory_pool);;
+	  return do_join<arrow::NumericArray<arrow::Int64Type>>(left_tab,
+															right_tab,
+															join_config.GetLeftColumnIdx(),
+															join_config.GetRightColumnIdx(),
+															join_config.GetType(),
+															join_config.GetAlgorithm(),
+															joined_table,
+															memory_pool);;
 	case arrow::Type::HALF_FLOAT:
-	  return do_join<arrow::HalfFloatType, uint16_t>(left_tab,
-													 right_tab,
-													 join_config.GetLeftColumnIdx(),
-													 join_config.GetRightColumnIdx(),
-													 join_config.GetType(),
-													 join_config.GetAlgorithm(),
-													 joined_table,
-													 memory_pool);
+	  return do_join<arrow::NumericArray<arrow::HalfFloatType>>(left_tab,
+																right_tab,
+																join_config.GetLeftColumnIdx(),
+																join_config.GetRightColumnIdx(),
+																join_config.GetType(),
+																join_config.GetAlgorithm(),
+																joined_table,
+																memory_pool);
 	case arrow::Type::FLOAT:
-	  return do_join<arrow::FloatType, float_t>(left_tab,
-												right_tab,
-												join_config.GetLeftColumnIdx(),
-												join_config.GetRightColumnIdx(),
-												join_config.GetType(),
-												join_config.GetAlgorithm(),
-												joined_table,
-												memory_pool);
+	  return do_join<arrow::NumericArray<arrow::FloatType>>(left_tab,
+															right_tab,
+															join_config.GetLeftColumnIdx(),
+															join_config.GetRightColumnIdx(),
+															join_config.GetType(),
+															join_config.GetAlgorithm(),
+															joined_table,
+															memory_pool);
 	case arrow::Type::DOUBLE:
-	  return do_join<arrow::DoubleType, double_t>(left_tab,
-												  right_tab,
-												  join_config.GetLeftColumnIdx(),
-												  join_config.GetRightColumnIdx(),
-												  join_config.GetType(),
-												  join_config.GetAlgorithm(),
-												  joined_table,
-												  memory_pool);
+	  return do_join<arrow::NumericArray<arrow::DoubleType>>(left_tab,
+															 right_tab,
+															 join_config.GetLeftColumnIdx(),
+															 join_config.GetRightColumnIdx(),
+															 join_config.GetType(),
+															 join_config.GetAlgorithm(),
+															 joined_table,
+															 memory_pool);
 	case arrow::Type::STRING:break;
 	case arrow::Type::BINARY:break;
 	case arrow::Type::FIXED_SIZE_BINARY:break;

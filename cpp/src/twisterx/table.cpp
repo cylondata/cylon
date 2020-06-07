@@ -1,3 +1,17 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <arrow/table.h>
 #include <fstream>
 #include <memory>
@@ -15,7 +29,7 @@ Status Table::FromCSV(const std::string &path,
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::ReadCSV(path, uuid, options);
   if (status.is_ok()) {
-    *tableOut = std::make_shared<Table>(Table(uuid));
+    *tableOut = std::make_shared<Table>(uuid);
   }
   return status;
 }
@@ -37,7 +51,7 @@ Status Table::FromArrowTable(std::shared_ptr<arrow::Table> table, std::shared_pt
     return Status(twisterx::Invalid, "This type not supported");
   }
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  *tableOut = std::make_shared<Table>(Table(uuid));
+  *tableOut = std::make_shared<Table>(uuid);
   PutTable(uuid, table);
   return Status(twisterx::OK, "Loaded Successfully");
 }
@@ -111,7 +125,7 @@ Status Table::Join(const std::shared_ptr<Table> &right,
       uuid
   );
   if (status.is_ok()) {
-    *out = std::make_shared<Table>(Table(uuid));
+    *out = std::make_shared<Table>(uuid);
   }
   return status;
 }
@@ -129,7 +143,15 @@ Status Table::DistributedJoin(twisterx::TwisterXContext *ctx,
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::JoinDistributedTables(ctx, this->id_, right->id_, join_config, uuid);
   if (status.is_ok()) {
-    *out = std::make_shared<Table>(Table(uuid));
+    *out = std::make_shared<Table>(uuid);
+  }
+  return status;
+}
+Status Table::Union(const shared_ptr<Table> &right, std::shared_ptr<Table> &out) {
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  twisterx::Status status = twisterx::Union(this->get_id(), right->get_id(), uuid);
+  if (status.is_ok()) {
+    out = std::make_shared<Table>(uuid);
   }
   return status;
 }

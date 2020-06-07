@@ -1,3 +1,17 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef TWISTERX_ARROW_PARTITION_KERNELS_H
 #define TWISTERX_ARROW_PARTITION_KERNELS_H
 
@@ -14,7 +28,7 @@ namespace twisterx {
 class ArrowPartitionKernel {
  public:
   explicit ArrowPartitionKernel(
-	  arrow::MemoryPool *pool) : pool_(pool) {}
+      arrow::MemoryPool *pool) : pool_(pool) {}
 
   /**
    * We partition the table and return the indexes as an array
@@ -24,10 +38,10 @@ class ArrowPartitionKernel {
    * @return
    */
   virtual int Partition(const std::shared_ptr<arrow::Array> &values, const std::vector<int> &targets,
-						std::vector<int64_t> *partitions) = 0;
+                        std::vector<int64_t> *partitions) = 0;
 
   virtual uint32_t ToHash(const std::shared_ptr<arrow::Array> &values,
-						  int16_t index) = 0;
+                          int16_t index) = 0;
  protected:
   arrow::MemoryPool *pool_;
 };
@@ -38,41 +52,41 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
   explicit NumericHashPartitionKernel(arrow::MemoryPool *pool) : ArrowPartitionKernel(pool) {}
 
   uint32_t ToHash(const std::shared_ptr<arrow::Array> &values,
-				  int16_t index) {
-	auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-	auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
-	int bitWidth = type->bit_width();
-	if (values->IsNull(index)) {
-	  return 0;
-	} else {
-	  CTYPE lValue = reader->Value(index);
+                  int16_t index) {
+    auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
+    auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
+    int bitWidth = type->bit_width();
+    if (values->IsNull(index)) {
+      return 0;
+    } else {
+      CTYPE lValue = reader->Value(index);
 
-	  uint32_t hash = 0;
-	  uint32_t seed = 0;
-	  void *val = (void *)&(lValue);
-	  // do the hash as we know the bit width
-	  twisterx::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
-	  return hash;
-	}
+      uint32_t hash = 0;
+      uint32_t seed = 0;
+      void *val = (void *) &(lValue);
+      // do the hash as we know the bit width
+      twisterx::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
+      return hash;
+    }
 
   }
 
   int Partition(const std::shared_ptr<arrow::Array> &values, const std::vector<int> &targets,
-				std::vector<int64_t> *partitions) override {
-	auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-	auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
-	int bitWidth = type->bit_width();
-	for (int64_t i = 0; i < reader->length(); i++) {
-	  auto lValue = reader->Value(i);
-	  void *val = (void *)&(lValue);
-	  uint32_t hash = 0;
-	  uint32_t seed = 0;
-	  // do the hash as we know the bit width
-	  twisterx::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
-	  partitions->push_back(targets.at(hash % targets.size()));
-	}
-	// now build the
-	return 0;
+                std::vector<int64_t> *partitions) override {
+    auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
+    auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
+    int bitWidth = type->bit_width();
+    for (int64_t i = 0; i < reader->length(); i++) {
+      auto lValue = reader->Value(i);
+      void *val = (void *) &(lValue);
+      uint32_t hash = 0;
+      uint32_t seed = 0;
+      // do the hash as we know the bit width
+      twisterx::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
+      partitions->push_back(targets.at(hash % targets.size()));
+    }
+    // now build the
+    return 0;
   }
 };
 
@@ -88,17 +102,30 @@ using HalfFloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::HalfFloa
 using FloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::FloatType, float_t>;
 using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType, double_t>;
 
+ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
+                                         std::shared_ptr<arrow::Array> values);
+
+ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
+                                         const std::shared_ptr<arrow::DataType> &data_type);
+
 twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
-									std::shared_ptr<arrow::Array> values,
-									const std::vector<int> &targets,
-									std::vector<int64_t> *outPartitions);
+                                    std::shared_ptr<arrow::Array> values,
+                                    const std::vector<int> &targets,
+                                    std::vector<int64_t> *outPartitions);
 
 twisterx::Status HashPartitionArrays(arrow::MemoryPool *pool,
-									 std::vector<std::shared_ptr<arrow::Array>> values,
-									 int64_t length,
-									 const std::vector<int> &targets,
-									 std::vector<int64_t> *outPartitions);
+                                     const std::vector<std::shared_ptr<arrow::Array>> &values,
+                                     int64_t length,
+                                     const std::vector<int> &targets,
+                                     std::vector<int64_t> *outPartitions);
 
+class RowHashingKernel {
+ private:
+  std::vector<std::shared_ptr<ArrowPartitionKernel>> hash_kernels;
+ public:
+  RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &vector, arrow::MemoryPool *memory_pool);
+  int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
+};
 }
 
 #endif //TWISTERX_ARROW_PARTITION_KERNELS_H

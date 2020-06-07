@@ -22,14 +22,19 @@ int main(int argc, char *argv[]) {
   auto mpi_config = new twisterx::net::MPIConfig();
   auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<twisterx::Table> table1, table2, joined;
-  std::string join_file = "/tmp/csv.csv";
-  auto status1 = twisterx::Table::FromCSV(join_file, &table1) ;
-  auto status2 = twisterx::Table::FromCSV(join_file, &table2);
+  std::shared_ptr<twisterx::Table> table1, table2, unioned;
 
-  table1->DistributedJoin(ctx, table2,
-               twisterx::join::config::JoinConfig::InnerJoin(0, 0),
-               &joined);
+  LOG(INFO) << "Reading tables";
+  auto status1 = twisterx::Table::FromCSV("/home/chathura/Code/twisterx/cpp/data/csv1.csv", &table1);
+  auto status2 = twisterx::Table::FromCSV("/home/chathura/Code/twisterx/cpp/data/csv2.csv", &table2);
+  LOG(INFO) << "Done reading tables";
+
+  twisterx::Status status = table1->Union(table2, unioned);
+
+  LOG(INFO) << "Done union tables " << status.get_msg();
+  //unioned->print();
+  LOG(INFO) << "Table 1 had : " << table1->rows() << " and Table 2 had : " << table2->rows() << ", Union has : "
+            << unioned->rows();
   ctx->Finalize();
   return 0;
 }
