@@ -16,64 +16,62 @@
 #include <status.hpp>
 #include <iostream>
 #include <io/csv_read_config.h>
+#include <chrono>
 
 using namespace twisterx;
 using namespace twisterx::join::config;
 
-int main(int argc, char *argv[]) {
-
-  std::shared_ptr<Table> table1, table2, joined, expected_result;
+//template <const char* jtype>
+bool RunJoin(const JoinConfig &jc,
+             const std::shared_ptr<Table> &table1,
+             const std::shared_ptr<Table> &table2,
+             std::shared_ptr<Table> &output,
+             const string &out_path) {
   Status status;
 
-  status = Table::FromCSV("/tmp/csv.csv", &table1,
-						  io::config::CSVReadOptions().WithDelimiter(','));
-  status = Table::FromCSV("/tmp/csv.csv", &table2);
+  auto t1 = std::chrono::high_resolution_clock::now();
+  status = table1->Join(table2, jc, &output);
+  auto t2 = std::chrono::high_resolution_clock::now();
+//  output->print();
+  output->WriteCSV(out_path);
+  auto t3 = std::chrono::high_resolution_clock::now();
 
-  std::cout << "### right join start" << std::endl;
-  auto jc1 = JoinConfig::RightJoin(0, 1, JoinAlgorithm::SORT);
-  status = table1->Join(table2, jc1, &expected_result);
-  expected_result->print();
+  if (status.is_ok()) {
+    LOG(INFO) << "join_ms " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " write_ms "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
+    return true;
+  } else {
+    LOG(ERROR) << "Join failed!";
+    return false;
+  }
+}
 
-  std::cout << "---" << std::endl;
+int main(int argc, char *argv[]) {
 
-  auto jc2 = JoinConfig::RightJoin(0, 1, JoinAlgorithm::HASH);
-  status = table1->Join(table2, jc2, &joined);
-  joined->print();
+  std::shared_ptr<Table> table1, table2, joined;
+  Status status;
 
-  std::cout << "### left join start" << std::endl;
-  auto jc3 = JoinConfig::LeftJoin(0, 1, JoinAlgorithm::SORT);
-  status = table1->Join(table2, jc3, &expected_result);
-  expected_result->print();
+  LOG(INFO) << "Reading tables";
+  auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1<<30);
+  status = Table::FromCSV("/home/niranda/csv1.csv", &table1, read_options);
+  status = Table::FromCSV("/home/niranda/csv2.csv", &table2, read_options);
+  LOG(INFO) << "Done reading tables";
 
-  std::cout << "---" << std::endl;
+  LOG(INFO) << "right join start";
+  auto right_jc = JoinConfig::RightJoin(0, 0, JoinAlgorithm::HASH);
+  RunJoin(right_jc, table1, table2, joined, "/home/niranda/out_right.csv");
 
-  auto jc4 = JoinConfig::LeftJoin(0, 1, JoinAlgorithm::HASH);
-  status = table1->Join(table2, jc4, &joined);
-  joined->print();
+  LOG(INFO) << "left join start";
+  auto left_jc = JoinConfig::LeftJoin(0, 0, JoinAlgorithm::HASH);
+  RunJoin(left_jc, table1, table2, joined, "/home/niranda/out_left.csv");
 
-  std::cout << "### inner join start" << std::endl;
-  auto jc5 = JoinConfig::InnerJoin(0, 1, JoinAlgorithm::SORT);
-  status = table1->Join(table2, jc5, &expected_result);
-  expected_result->print();
+  LOG(INFO) << "inner join start";
+  auto inner_jc = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::HASH);
+  RunJoin(inner_jc, table1, table2, joined, "/home/niranda/out_inner.csv");
 
-  std::cout << "---" << std::endl;
-
-  auto jc6 = JoinConfig::InnerJoin(0, 1, JoinAlgorithm::HASH);
-  status = table1->Join(table2, jc6, &joined);
-  joined->print();
-
-  std::cout << "### outer join start" << std::endl;
-  auto jc7 = JoinConfig::FullOuterJoin(0, 1, JoinAlgorithm::SORT);
-  status = table1->Join(table2, jc7, &expected_result);
-  expected_result->print();
-
-  std::cout << "---" << std::endl;
-
-  auto jc8 = JoinConfig::FullOuterJoin(0, 1, JoinAlgorithm::HASH);
-  status = table1->Join(table2, jc8, &joined);
-  joined->print();
-
-//  joined->WriteCSV("/tmp/out.csv");
+  LOG(INFO) << "outer join start";
+  auto outer_jc = JoinConfig::FullOuterJoin(0, 0, JoinAlgorithm::HASH);
+  RunJoin(outer_jc, table1, table2, joined, "/home/niranda/out_outer.csv");
 
   return 0;
 }
