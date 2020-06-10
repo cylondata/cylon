@@ -1,4 +1,16 @@
-from libcpp.string cimport string
+##
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
+ # You may obtain a copy of the License at
+ #
+ # http://www.apache.org/licenses/LICENSE-2.0
+ #
+ # Unless required by applicable law or agreed to in writing, software
+ # distributed under the License is distributed on an "AS IS" BASIS,
+ # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ ##
 
 import numpy as np
 cimport numpy as np
@@ -20,6 +32,15 @@ cdef class TxRequest:
 
     def __cinit__(self, int tgt, np.ndarray buf, int len,
                   np.ndarray[int, ndim=1, mode="c"] head, int hLength):
+        '''
+        Initialized the PyTwisterX TxRequest
+        :param tgt: passed as an int; the target of communication
+        :param buf: passed as an numpy array; the buf that is passed to the communication
+        :param len: passed as an int; the length of the target buf
+        :param head: passed as an int numpy array; the header of the passed request
+        :param hLength: passed as an int; the length of the header
+        :return: None
+        '''
         if tgt != -1 and buf is None and len == -1 and head is None and hLength == -1:
             self.thisptr = new CTxRequest(tgt)
             self.thisptr.target = tgt
@@ -150,10 +171,18 @@ cdef class TxRequest:
 
     @property
     def target(self):
+        '''
+        provided as a property for user API
+        :return: target
+        '''
         return self.thisptr.target
 
     @property
     def length(self):
+        '''
+        provided as a property for user API
+        :return: length of the buffer
+        '''
         return self.thisptr.length
 
     @property
@@ -162,12 +191,26 @@ cdef class TxRequest:
 
     @property
     def header(self):
+        '''
+        provided as a property for user API
+        :return: the header
+        '''
         return self.np_head_val
 
     @property
     def headerLength(self):
+        '''
+        provided as a property for user API
+        :return: header length
+        '''
         return self.thisptr.headerLength
 
     def to_string(self, data_type, depth):
+        '''
+        provided as a property for user API
+        :param data_type: data type of the buffer
+        :param depth: depth of the buffer
+        :return: stringify the TxRequest
+        '''
         self.thisptr.to_string(data_type, depth)
 
