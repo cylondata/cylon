@@ -31,7 +31,7 @@ add_library(twisterx SHARED
         python/ctx/twisterx_context_wrap.h python/ctx/twisterx_context_wrap.cpp
         arrow/arrow_hash_kernels.hpp
         arrow/arrow_comparator.h arrow/arrow_comparator.cpp
-        )
+        select/select.hpp row.hpp row.cpp)
 
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(twisterx ${MPI_LIBRARIES})

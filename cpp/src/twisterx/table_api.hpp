@@ -17,11 +17,13 @@
 
 #include <string>
 #include <vector>
+#include <functional>
 #include "status.hpp"
 #include "join/join_config.h"
 #include "io/csv_read_config.h"
 #include "io/csv_write_config.h"
 #include "ctx/twisterx_context.h"
+#include "row.hpp"
 
 /**
  * This file shouldn't have an arrow dependency. Use the table_api_extended to define
@@ -107,5 +109,14 @@ twisterx::Status SortTable(const std::string &tableId, const std::string &sortTa
  */
 twisterx::Status HashPartition(const std::string &id, const std::vector<int> &hash_columns, int no_of_partitions,
                                std::unordered_map<int, std::string> *out);
+
+/**
+ * Select a set of rows based on the selector condition
+ *
+ * @param id id the table id
+ * @param selector row selection logic
+ * @return the status of the partition operation
+ */
+Status Select(const std::string &id, const std::function <bool (twisterx::Row)>& selector, const std::string &out);
 }
 #endif //TWISTERX_SRC_IO_TABLE_API_H_

@@ -98,6 +98,6 @@ int32_t RowHashingKernel::Hash(const std::shared_ptr<arrow::Table> &table, int64
   for (int c = 0; c < table->num_columns(); ++c) {
     hash_code = 31 * hash_code + this->hash_kernels[c]->ToHash(table->column(c)->chunk(0), row);
   }
-  return 0;
+  return hash_code;
 }
 }

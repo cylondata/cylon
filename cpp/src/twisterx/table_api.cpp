@@ -22,6 +22,9 @@
 #include "iostream"
 #include <glog/logging.h>
 #include <fstream>
+#include <chrono>
+#include <arrow/compute/context.h>
+#include <arrow/compute/api.h>
 #include "util/arrow_utils.hpp"
 #include "arrow/arrow_partition_kernels.hpp"
 #include "util/uuid.hpp"
@@ -59,6 +62,7 @@ twisterx::Status ReadCSV(const std::string &path,
   arrow::Result<std::shared_ptr<arrow::Table>> result = twisterx::io::read_csv(path, options);
   if (result.ok()) {
     std::shared_ptr<arrow::Table> table = *result;
+    LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
     PutTable(id, table);
     return twisterx::Status(Code::OK, result.status().message());
   }
@@ -408,20 +412,26 @@ twisterx::Status Union(const std::string &table_left, const std::string &table_r
     }
   }
 
+  int64_t eq_calls = 0, hash_calls = 0;
+
   class RowComparator {
    private:
     const std::shared_ptr<arrow::Table> *tables;
     twisterx::TableRowComparator *comparator;
     twisterx::RowHashingKernel *row_hashing_kernel;
+    int64_t *eq, *hs;
    public:
-    RowComparator(const std::shared_ptr<arrow::Table> *tables) {
+    RowComparator(const std::shared_ptr<arrow::Table> *tables, int64_t *eq, int64_t *hs) {
       this->tables = tables;
       this->comparator = new twisterx::TableRowComparator(tables[0]->fields());
       this->row_hashing_kernel = new twisterx::RowHashingKernel(tables[0]->fields(), arrow::default_memory_pool());
+      this->eq = eq;
+      this->hs = hs;
     }
 
     // equality
     bool operator()(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const {
+      (*this->eq)++;
       return this->comparator->compare(
           this->tables[record1.first],
           record1.second,
@@ -432,18 +442,25 @@ twisterx::Status Union(const std::string &table_left, const std::string &table_r
 
     // hashing
     size_t operator()(const std::pair<int8_t, int64_t> &record) const {
-      return this->row_hashing_kernel->Hash(this->tables[record.first], record.second);
+      (*this->hs)++;
+      size_t hash = this->row_hashing_kernel->Hash(this->tables[record.first], record.second);
+      return hash;
     }
   };
 
-  auto row_comp = RowComparator(tables);
+  auto row_comp = RowComparator(tables, &eq_calls, &hash_calls);
 
+  auto buckets_pre_alloc = (ltab->num_rows() + rtab->num_rows());
+  LOG(INFO) << "Buckets : " << buckets_pre_alloc;
   std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator> rows_set(
-      ltab->num_rows() + rtab->num_rows(),
+      buckets_pre_alloc,
       row_comp, row_comp
   );
 
-  for (int row = 0; row < std::max(ltab->num_rows(), rtab->num_rows()); ++row) {
+  auto t1 = std::chrono::steady_clock::now();
+
+  int64_t max = std::max(ltab->num_rows(), rtab->num_rows());
+  for (int row = 0; row < max; ++row) {
     if (row < ltab->num_rows()) {
       rows_set.insert(std::make_pair<int8_t, int64_t>(0, row));
     }
@@ -451,7 +468,16 @@ twisterx::Status Union(const std::string &table_left, const std::string &table_r
     if (row < rtab->num_rows()) {
       rows_set.insert(std::make_pair<int8_t, int64_t>(1, row));
     }
+
+    if (row % 100000 == 0) {
+      LOG(INFO) << "Done " << (row + 1) * 100 / max << "%" << " N : " << row << ", Eq : " << eq_calls << ", Hs : "
+                << hash_calls;
+    }
   }
+
+  auto t2 = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Adding to Set took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms";
 
   std::vector<int64_t> indices_from_tabs[2];
 
@@ -461,6 +487,7 @@ twisterx::Status Union(const std::string &table_left, const std::string &table_r
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
 
+  t1 = std::chrono::steady_clock::now();
   // prepare final arrays
   for (int32_t c = 0; c < ltab->num_columns(); c++) {
     arrow::ArrayVector array_vector;
@@ -480,10 +507,49 @@ twisterx::Status Union(const std::string &table_left, const std::string &table_r
     }
     final_data_arrays.push_back(std::make_shared<arrow::ChunkedArray>(array_vector));
   }
+  t2 = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Final array preparation took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            << "ms";
+
 
   // create final table
   std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
   PutTable(dest_id, table);
+  return twisterx::Status::OK();
+}
+
+Status Select(const std::string &id, const std::function<bool(twisterx::Row)> &selector, const std::string &out) {
+
+  auto src_table = GetTable(id);
+
+  // boolean builder to hold the mask
+  arrow::BooleanBuilder boolean_builder(arrow::default_memory_pool());
+
+  for (int64_t row_index = 0; row_index < src_table->num_rows(); row_index++) {
+    auto row = twisterx::Row(id, row_index);
+    arrow::Status status = boolean_builder.Append(selector(row));
+    if (!status.ok()) {
+      return twisterx::Status(UnknownError, status.message());
+    }
+  }
+
+  // building the mask
+  std::shared_ptr<arrow::Array> mask;
+  arrow::Status status = boolean_builder.Finish(&mask);
+
+  if (!status.ok()) {
+    return twisterx::Status(UnknownError, status.message());
+  }
+
+  std::shared_ptr<arrow::Table> out_table;
+  arrow::compute::FunctionContext ctx;
+  status = arrow::compute::Filter(&ctx, *src_table, *mask, &out_table);
+  if (!status.ok()) {
+    return twisterx::Status(UnknownError, status.message());
+  }
+
+  PutTable(out, out_table);
   return twisterx::Status::OK();
 }
 }

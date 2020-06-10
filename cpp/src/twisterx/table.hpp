@@ -29,6 +29,7 @@
 #include "arrow/arrow_join.hpp"
 #include "join/join.hpp"
 #include "io/csv_write_config.h"
+#include "row.hpp"
 
 namespace twisterx {
 
@@ -120,6 +121,8 @@ class Table {
                          std::shared_ptr<Table> *out);
 
   Status Union(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
+
+  Status Select(const std::function <bool (twisterx::Row)>& selector, std::shared_ptr<Table> &out);
 
   /**
    * Create a arrow table from this data structure

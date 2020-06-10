@@ -155,5 +155,12 @@ Status Table::Union(const shared_ptr<Table> &right, std::shared_ptr<Table> &out)
   }
   return status;
 }
-
+Status Table::Select(const std::function<bool(twisterx::Row)> &selector, shared_ptr<Table> &out) {
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  twisterx::Status status = twisterx::Select(this->get_id(), selector, uuid);
+  if (status.is_ok()) {
+    out = std::make_shared<Table>(uuid);
+  }
+  return status;
+}
 }
