@@ -35,6 +35,33 @@ class Row {
   uint32_t GetUInt32(int64_t col_index);
   int64_t GetInt64(int64_t col_index);
   uint64_t GetUInt64(int64_t col_index);
+  float GetHalfFloat(int64_t col_index);
+  float GetFloat(int64_t col_index);
+  bool GetBool(int64_t col_index);
+  double GetDouble(int64_t col_index);
+  std::string GetString(int64_t col_index);
+//  std::string GetBinary(int64_t col_index, int32_t length);
+  const uint8_t *GetFixedBinary(int64_t col_index);
+  int32_t GetDate32(int64_t col_index);
+  int64_t GetDate64(int64_t col_index);
+  int64_t GetTimestamp(int64_t col_index);
+  int32_t Time32(int64_t col_index);
+  int64_t Time64(int64_t col_index);
+//  void Interval(int64_t col_index);
+  const uint8_t *Decimal(int64_t col_index);
+
+//  case arrow::Type::NA:break;
+//  case arrow::Type::LIST:break;
+//  case arrow::Type::STRUCT:break;
+//  case arrow::Type::UNION:break;
+//  case arrow::Type::DICTIONARY:break;
+//  case arrow::Type::MAP:break;
+//  case arrow::Type::EXTENSION:break;
+//  case arrow::Type::FIXED_SIZE_LIST:break;
+//  case arrow::Type::DURATION:break;
+//  case arrow::Type::LARGE_STRING:break;
+//  case arrow::Type::LARGE_BINARY:break;
+//  case arrow::Type::LARGE_LIST:break;
 };
 }
 

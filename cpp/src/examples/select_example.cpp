@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
   if (status1.is_ok()) {
     t1 = std::chrono::steady_clock::now();
     twisterx::Status status = table1->Select([](twisterx::Row row) {
-      return row.GetInt64(0) == 0;
+      return row.GetInt64(0) % 2 == 0;
     }, select);
     t2 = std::chrono::steady_clock::now();
 

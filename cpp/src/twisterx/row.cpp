@@ -27,14 +27,6 @@ auto get_numeric(const std::string &table_id, int64_t col_index, int64_t row_ind
 Row::Row(const std::string &table_id, int64_t row_index) {
   this->table_id = table_id;
   this->row_index = row_index;
-
-  std::shared_ptr<arrow::Table> table = GetTable(this->table_id);
-  auto fields = table->schema()->fields();
-
-  int64_t field_index = 0;
-  for (const auto &field: fields) {
-    field_index++;
-  }
 }
 
 int8_t Row::GetInt8(int64_t col_index) {
@@ -61,7 +53,54 @@ int64_t Row::GetInt64(int64_t col_index) {
 uint64_t Row::GetUInt64(int64_t col_index) {
   return get_numeric<arrow::UInt64Type>(this->table_id, col_index, this->row_index);
 }
+
 int64_t Row::RowIndex() {
   return this->row_index;
+}
+
+bool Row::GetBool(int64_t col_index) {
+  std::shared_ptr<arrow::Table> table = GetTable(table_id);
+  auto numeric_array = std::static_pointer_cast<arrow::BooleanArray>(table->column(col_index)->chunk(0));
+  return numeric_array->Value(row_index);
+}
+float Row::GetHalfFloat(int64_t col_index) {
+  return get_numeric<arrow::HalfFloatType>(this->table_id, col_index, this->row_index);
+}
+float Row::GetFloat(int64_t col_index) {
+  return get_numeric<arrow::FloatType>(this->table_id, col_index, this->row_index);
+}
+double Row::GetDouble(int64_t col_index) {
+  return get_numeric<arrow::DoubleType>(this->table_id, col_index, this->row_index);
+}
+
+std::string Row::GetString(int64_t col_index) {
+  std::shared_ptr<arrow::Table> table = GetTable(table_id);
+  auto numeric_array = std::static_pointer_cast<arrow::StringArray>(table->column(col_index)->chunk(0));
+  return numeric_array->GetString(row_index);
+}
+const uint8_t *Row::GetFixedBinary(int64_t col_index) {
+  std::shared_ptr<arrow::Table> table = GetTable(table_id);
+  auto numeric_array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(table->column(col_index)->chunk(0));
+  return numeric_array->GetValue(row_index);
+}
+int32_t Row::GetDate32(int64_t col_index) {
+  return get_numeric<arrow::Date32Type>(this->table_id, col_index, this->row_index);
+}
+int64_t Row::GetDate64(int64_t col_index) {
+  return get_numeric<arrow::Date64Type>(this->table_id, col_index, this->row_index);
+}
+int64_t Row::GetTimestamp(int64_t col_index) {
+  return get_numeric<arrow::TimestampType>(this->table_id, col_index, this->row_index);
+}
+int32_t Row::Time32(int64_t col_index) {
+  return get_numeric<arrow::Time32Type>(this->table_id, col_index, this->row_index);
+}
+int64_t Row::Time64(int64_t col_index) {
+  return get_numeric<arrow::Time64Type>(this->table_id, col_index, this->row_index);
+}
+const uint8_t * Row::Decimal(int64_t col_index) {
+  std::shared_ptr<arrow::Table> table = GetTable(table_id);
+  auto numeric_array = std::static_pointer_cast<arrow::DecimalArray>(table->column(col_index)->chunk(0));
+  return numeric_array->GetValue(row_index);
 }
 }
