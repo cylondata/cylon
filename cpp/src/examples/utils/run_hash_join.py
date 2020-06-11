@@ -29,7 +29,7 @@ for i in [10000, 100000, 1000000, 10000000, 100000000]:
     os.system(f"mv {csv1} {test_dir}")
     os.system(f"mv {csv2} {test_dir}")
     for j in ['right', 'left', 'inner', 'outer']:
-        os.system(f"mv {home}/h_out_{j}.csv {test_dir}/")
-        os.system(f"mv {home}/s_out_{j}.csv {test_dir}/")
+        os.system(f"mv /tmp/h_out_{j}.csv {test_dir}/")
+        os.system(f"mv /tmp/s_out_{j}.csv {test_dir}/")
 
     print(f"##### test {i} done!")
