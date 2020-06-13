@@ -34,7 +34,7 @@ bool RunJoin(const JoinConfig &jc,
   auto t2 = std::chrono::high_resolution_clock::now();
 
   if (status.is_ok()) {
-    status = output->WriteCSV(h_out_path);
+//    status = output->WriteCSV(h_out_path);
   } else {
     LOG(ERROR) << "Join failed!";
     return false;
