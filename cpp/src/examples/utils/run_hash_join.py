@@ -14,15 +14,21 @@ print(f"output dir: {out_dir}")
 os.system(f"rm -rf {out_dir}; mkdir -p {out_dir}")
 
 cols = 4
-key_duplication_ratio = 0.1  # on avg there will be rows/key_range_ratio num of duplicate keys
+key_duplication_ratio = 0.99  # on avg there will be rows/key_range_ratio num of duplicate keys
 
-# for i in [1000000]:
-for i in [10000, 100000, 1000000, 10000000, 100000000]:
+# for i in [10000000]:
+for i in [int(ii * 1000000) for ii in [0.1, 1, 10, 25, 50, 75, 100]]:
+    print(f"##### test {i} starting!")
+
     test_dir = f"{out_dir}/{i}"
     os.system(f"rm -rf {test_dir}; mkdir -p {test_dir}")
 
-    os.system(f"python ./generate_csv.py -o {csv1} -r {i} -c {cols} --krange 0 {int(i * key_duplication_ratio)}")
-    os.system(f"python ./generate_csv.py -o {csv2} -r {i} -c {cols} --krange 0 {int(i * key_duplication_ratio)}")
+    os.system(
+        f"python ./generate_csv.py -o {csv1} -r {i} -c {cols} "
+        f"--krange 0 {int(i * key_duplication_ratio)}")
+    os.system(
+        f"python ./generate_csv.py -o {csv2} -r {i} -c {cols} "
+        f"--krange 0 {int(i * key_duplication_ratio)}")
 
     os.system(f"{join_exec}")
 
