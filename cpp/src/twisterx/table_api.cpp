@@ -149,7 +149,7 @@ void Shuffle(twisterx::TwisterXContext *ctx,
              int edge_id,
              std::shared_ptr<arrow::Table> *table_out,
              std::promise<twisterx::Status> *status_promise) {
-  LOG(INFO) << "Shuffling table " << table_id;
+  LOG(INFO) << "Shuffling table " << table_id << ", edge id : " << edge_id;
   auto table = GetTable(table_id);
 
   std::unordered_map<int, std::string> partitioned_tables{};
