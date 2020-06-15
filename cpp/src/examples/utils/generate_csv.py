@@ -30,6 +30,6 @@ for i in idx_cols:
     assert cols > i >= 0
     df[i] = df[i].map(lambda x: int(krange[0] + (x - vrange[0]) * (krange[1] - krange[0]) / (vrange[1] - vrange[0])))
 
-df.to_csv(out_file, header=not no_header, index=False)
+df.to_csv(out_file, header=not no_header, index=False, float_format='%.3f')
 
 pass

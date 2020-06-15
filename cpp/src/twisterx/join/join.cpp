@@ -25,35 +25,35 @@ namespace join {
 
 template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
 void advance(std::vector<CPP_KEY_TYPE> *subset,
-			 const std::shared_ptr<arrow::Int64Array> &sorted_indices, // this is always Int64Array
-			 int64_t *current_index, //always int64_t
-			 std::shared_ptr<arrow::Array> data_column,
-			 CPP_KEY_TYPE *key) {
+             const std::shared_ptr<arrow::Int64Array> &sorted_indices, // this is always Int64Array
+             int64_t *current_index, //always int64_t
+             std::shared_ptr<arrow::Array> data_column,
+             CPP_KEY_TYPE *key) {
   subset->clear();
   if (*current_index == sorted_indices->length()) {
-	return;
+    return;
   }
   auto data_column_casted = std::static_pointer_cast<arrow::NumericArray<ARROW_KEY_TYPE>>(data_column);
   int64_t data_index = sorted_indices->Value(*current_index);
   *key = data_column_casted->Value(data_index);
   while (*current_index < sorted_indices->length() && data_column_casted->Value(data_index) == *key) {
-	subset->push_back(data_index);
-	(*current_index)++;
-	if (*current_index == sorted_indices->length()) {
-	  break;
-	}
-	data_index = sorted_indices->Value(*current_index);
+    subset->push_back(data_index);
+    (*current_index)++;
+    if (*current_index == sorted_indices->length()) {
+      break;
+    }
+    data_index = sorted_indices->Value(*current_index);
   }
 }
 
 template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
 arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
-							 const std::shared_ptr<arrow::Table> &right_tab,
-							 int64_t left_join_column_idx,
-							 int64_t right_join_column_idx,
-							 twisterx::join::config::JoinType join_type,
-							 std::shared_ptr<arrow::Table> *joined_table,
-							 arrow::MemoryPool *memory_pool) {
+                             const std::shared_ptr<arrow::Table> &right_tab,
+                             int64_t left_join_column_idx,
+                             int64_t right_join_column_idx,
+                             twisterx::join::config::JoinType join_type,
+                             std::shared_ptr<arrow::Table> *joined_table,
+                             arrow::MemoryPool *memory_pool) {
   //sort columns
   auto left_join_column = left_tab->column(left_join_column_idx)->chunk(0);
   auto right_join_column = right_tab->column(right_join_column_idx)->chunk(0);
@@ -62,8 +62,8 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
   std::shared_ptr<arrow::Array> left_index_sorted_column;
   auto status = SortIndices(memory_pool, left_join_column, &left_index_sorted_column);
   if (status != arrow::Status::OK()) {
-	LOG(FATAL) << "Failed when sorting left table to indices. " << status.ToString();
-	return status;
+    LOG(FATAL) << "Failed when sorting left table to indices. " << status.ToString();
+    return status;
   }
   auto t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Left sorting time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -72,8 +72,8 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
   std::shared_ptr<arrow::Array> right_index_sorted_column;
   status = SortIndices(memory_pool, right_join_column, &right_index_sorted_column);
   if (status != arrow::Status::OK()) {
-	LOG(FATAL) << "Failed when sorting right table to indices. " << status.ToString();
-	return status;
+    LOG(FATAL) << "Failed when sorting right table to indices. " << status.ToString();
+    return status;
   }
   t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "right sorting time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -228,15 +228,14 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
   std::shared_ptr<arrow::Array> left_idx_column = left_tab->column(left_join_column_idx)->chunk(0);
   std::shared_ptr<arrow::Array> right_idx_column = right_tab->column(right_join_column_idx)->chunk(0);
 
-  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
-  std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>();
+  int64_t init_vec_size = std::min(left_idx_column->length(), right_idx_column->length());
+  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>(init_vec_size);
+  std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>(init_vec_size);
 
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  ArrowArrayIdxHashJoinKernel<ARROW_ARRAY_TYPE> idx_join_kernel = ArrowArrayIdxHashJoinKernel<ARROW_ARRAY_TYPE>();
-  auto result = idx_join_kernel.IdxHashJoin(left_idx_column, right_idx_column, join_type, left_indices,
-											right_indices);
-
+  auto result = ArrowArrayIdxHashJoinKernel<ARROW_ARRAY_TYPE>()
+      .IdxHashJoin(left_idx_column, right_idx_column, join_type, left_indices, right_indices);
   auto t2 = std::chrono::high_resolution_clock::now();
 
   if (result) {
