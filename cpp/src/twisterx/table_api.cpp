@@ -247,7 +247,7 @@ twisterx::Status ShuffleTwoTables(twisterx::TwisterXContext *ctx,
   }
 }
 
-twisterx::Status JoinDistributedTables(twisterx::TwisterXContext *ctx,
+twisterx::Status DistributedJoinTables(twisterx::TwisterXContext *ctx,
                                        const std::string &table_left,
                                        const std::string &table_right,
                                        twisterx::join::config::JoinConfig join_config,
@@ -447,7 +447,7 @@ twisterx::Status Union(const std::string &table_left, const std::string &table_r
 
   std::shared_ptr<arrow::Table> tables[2] = {ltab, rtab};
 
-  // manual field check. todo check why  doesn't work ltab->schema()->Equals(rtab->schema(), false)
+  // manual field check. todo check why  ltab->schema()->Equals(rtab->schema(), false) doesn't work
 
   if (ltab->num_columns() != rtab->num_columns()) {
     return twisterx::Status(twisterx::Invalid, "The no of columns of two tables are not similar. Can't perform union.");
@@ -574,6 +574,44 @@ twisterx::Status DistributedUnion(twisterx::TwisterXContext *ctx,
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
 
+  if (left->num_columns() != right->num_columns()) {
+    return twisterx::Status(twisterx::Invalid, "The no of columns of two tables are not similar. Can't perform union.");
+  }
+
+  for (int fd = 0; fd < left->num_columns(); ++fd) {
+    if (!left->field(fd)->type()->Equals(right->field(fd)->type())) {
+      return twisterx::Status(twisterx::Invalid, "The fields of two tables are not similar. Can't perform union.");
+    }
+  }
+
+  std::vector<int32_t> hash_columns;
+  for (int kI = 0; kI < left->num_columns(); ++kI) {
+    hash_columns.push_back(kI);
+  }
+
+  std::shared_ptr<arrow::Table> left_final_table;
+  std::shared_ptr<arrow::Table> right_final_table;
+
+  auto shuffle_status = ShuffleTwoTables(ctx,
+                                         table_left,
+                                         hash_columns,
+                                         table_right,
+                                         hash_columns,
+                                         &left_final_table,
+                                         &right_final_table);
+
+  if (shuffle_status.is_ok()) {
+    auto ltab_id = PutTable(left_final_table);
+    auto rtab_id = PutTable(right_final_table);
+
+    //todo remove temp tables
+
+    // now do the local union
+    std::shared_ptr<arrow::Table> table;
+    return Union(ltab_id, rtab_id, dest_id);
+  } else {
+    return shuffle_status;
+  }
 
 }
 

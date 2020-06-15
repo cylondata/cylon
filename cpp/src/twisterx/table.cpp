@@ -141,7 +141,7 @@ Status Table::DistributedJoin(twisterx::TwisterXContext *ctx,
                               twisterx::join::config::JoinConfig join_config,
                               std::shared_ptr<Table> *out) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  twisterx::Status status = twisterx::JoinDistributedTables(ctx, this->id_, right->id_, join_config, uuid);
+  twisterx::Status status = twisterx::DistributedJoinTables(ctx, this->id_, right->id_, join_config, uuid);
   if (status.is_ok()) {
     *out = std::make_shared<Table>(uuid);
   }
@@ -163,7 +163,12 @@ Status Table::Select(const std::function<bool(twisterx::Row)> &selector, shared_
   }
   return status;
 }
-Status Table::DistributedUnion(const shared_ptr<Table> &right, shared_ptr<Table> &out) {
-  return Status();
+Status Table::DistributedUnion(twisterx::TwisterXContext *ctx, const shared_ptr<Table> &right, shared_ptr<Table> &out) {
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  twisterx::Status status = twisterx::DistributedUnion(ctx, this->id_, right->id_, uuid);
+  if (status.is_ok()) {
+    out = std::make_shared<Table>(uuid);
+  }
+  return status;
 }
 }

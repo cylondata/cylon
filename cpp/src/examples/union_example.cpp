@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 
   if (status1.is_ok() && status2.is_ok()) {
     t1 = std::chrono::steady_clock::now();
-    twisterx::Status status = table1->Union(table2, unioned);
+    twisterx::Status status = table1->DistributedUnion(ctx, table2, unioned);
     t2 = std::chrono::steady_clock::now();
 
     LOG(INFO) << "Done union tables " << status.get_msg();

@@ -42,7 +42,7 @@ twisterx::Status JoinTables(const std::string &table_left,
                             twisterx::join::config::JoinConfig join_config,
                             const std::string &dest_id);
 
-twisterx::Status JoinDistributedTables(
+twisterx::Status DistributedJoinTables(
     twisterx::TwisterXContext *ctx,
     const std::string &table_left,
     const std::string &table_right,

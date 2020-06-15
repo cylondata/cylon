@@ -122,7 +122,7 @@ class Table {
 
   Status Union(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
 
-  Status DistributedUnion(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
+  Status DistributedUnion(twisterx::TwisterXContext *ctx, const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
 
   Status Select(const std::function<bool(twisterx::Row)> &selector, std::shared_ptr<Table> &out);
 
