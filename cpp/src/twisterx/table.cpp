@@ -163,4 +163,7 @@ Status Table::Select(const std::function<bool(twisterx::Row)> &selector, shared_
   }
   return status;
 }
+Status Table::DistributedUnion(const shared_ptr<Table> &right, shared_ptr<Table> &out) {
+  return Status();
+}
 }

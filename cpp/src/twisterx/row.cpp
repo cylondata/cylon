@@ -24,7 +24,7 @@ auto get_numeric(const std::string &table_id, int64_t col_index, int64_t row_ind
   return numeric_array->Value(row_index);
 }
 
-Row::Row(const std::string &table_id, int64_t row_index) {
+Row:: Row(const std::string &table_id, int64_t row_index) {
   this->table_id = table_id;
   this->row_index = row_index;
 }
