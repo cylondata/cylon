@@ -42,7 +42,7 @@ twisterx::Status JoinTables(const std::string &table_left,
                             twisterx::join::config::JoinConfig join_config,
                             const std::string &dest_id);
 
-twisterx::Status JoinDistributedTables(
+twisterx::Status DistributedJoinTables(
     twisterx::TwisterXContext *ctx,
     const std::string &table_left,
     const std::string &table_right,
@@ -51,6 +51,13 @@ twisterx::Status JoinDistributedTables(
 );
 
 twisterx::Status Union(
+    const std::string &table_left,
+    const std::string &table_right,
+    const std::string &dest_id
+);
+
+twisterx::Status DistributedUnion(
+    twisterx::TwisterXContext *ctx,
     const std::string &table_left,
     const std::string &table_right,
     const std::string &dest_id
@@ -117,6 +124,6 @@ twisterx::Status HashPartition(const std::string &id, const std::vector<int> &ha
  * @param selector row selection logic
  * @return the status of the partition operation
  */
-Status Select(const std::string &id, const std::function <bool (twisterx::Row)>& selector, const std::string &out);
+Status Select(const std::string &id, const std::function<bool(twisterx::Row)> &selector, const std::string &out);
 }
 #endif //TWISTERX_SRC_IO_TABLE_API_H_

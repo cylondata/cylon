@@ -25,6 +25,7 @@
 #include <chrono>
 #include <arrow/compute/context.h>
 #include <arrow/compute/api.h>
+#include <future>
 #include "util/arrow_utils.hpp"
 #include "arrow/arrow_partition_kernels.hpp"
 #include "util/uuid.hpp"
@@ -142,45 +143,28 @@ twisterx::Status PrintToOStream(const std::string &table_id,
   return twisterx::Status(Code::OK);
 }
 
-twisterx::Status JoinDistributedTables(
-    twisterx::TwisterXContext *ctx,
-    const std::string &table_left,
-    const std::string &table_right,
-    twisterx::join::config::JoinConfig join_config,
-    const std::string &dest_id) {
+void Shuffle(twisterx::TwisterXContext *ctx,
+             const std::string &table_id,
+             const std::vector<int> &hash_columns,
+             int edge_id,
+             std::shared_ptr<arrow::Table> *table_out,
+             std::promise<twisterx::Status> *status_promise) {
+  LOG(INFO) << "Shuffling table " << table_id;
+  auto table = GetTable(table_id);
 
-  // extract the tables out
-  auto left = GetTable(table_left);
-  auto right = GetTable(table_right);
+  std::unordered_map<int, std::string> partitioned_tables{};
 
-  std::vector<int> left_hash_columns{1};
-  left_hash_columns.push_back(join_config.GetLeftColumnIdx());
-
-  std::vector<int> right_hash_columns{1};
-  right_hash_columns.push_back(join_config.GetRightColumnIdx());
-
-  std::unordered_map<int, std::string> left_partitioned_tables{};
-  std::unordered_map<int, std::string> right_partitioned_tables{};
-
-  // partition the tables
-  HashPartition(table_left, left_hash_columns, ctx->GetWorldSize(), &left_partitioned_tables);
-  HashPartition(table_right, right_hash_columns, ctx->GetWorldSize(), &right_partitioned_tables);
+  // partition the tables locally
+  HashPartition(table_id, hash_columns, ctx->GetWorldSize(), &partitioned_tables);
 
   auto neighbours = ctx->GetNeighbours(true);
 
-  // vectors to hold the receiving tables
-  vector<std::shared_ptr<arrow::Table>> left_tables;
-  vector<std::shared_ptr<arrow::Table>> right_tables;
+  vector<std::shared_ptr<arrow::Table>> received_tables;
 
   // add partition of this worker to the vector
-  auto left_partition_of_this_worker = left_partitioned_tables.find(ctx->GetRank());
-  if (left_partition_of_this_worker != left_partitioned_tables.end()) {
-    left_tables.push_back(GetTable(left_partition_of_this_worker->second));
-  }
-
-  auto right_partition_of_this_worker = right_partitioned_tables.find(ctx->GetRank());
-  if (right_partition_of_this_worker != right_partitioned_tables.end()) {
-    right_tables.push_back(GetTable(right_partition_of_this_worker->second));
+  auto partition_of_this_worker = partitioned_tables.find(ctx->GetRank());
+  if (partition_of_this_worker != partitioned_tables.end()) {
+    received_tables.push_back(GetTable(partition_of_this_worker->second));
   }
 
   // define call back to catch the receiving tables
@@ -199,48 +183,111 @@ twisterx::Status JoinDistributedTables(
   };
 
   // doing all to all communication to exchange tables
-  twisterx::ArrowAllToAll left_all(ctx, neighbours, neighbours, 0,
-                                   std::make_shared<AllToAllListener>(left_tables),
-                                   left->schema(), arrow::default_memory_pool());
-  for (auto &left_partitioned_table : left_partitioned_tables) {
-    if (left_partitioned_table.first != ctx->GetRank()) {
-      left_all.insert(GetTable(left_partitioned_table.second), left_partitioned_table.first);
+  twisterx::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
+                                     std::make_shared<AllToAllListener>(received_tables),
+                                     table->schema(), arrow::default_memory_pool());
+  for (auto &partitioned_table : partitioned_tables) {
+    if (partitioned_table.first != ctx->GetRank()) {
+      all_to_all.insert(GetTable(partitioned_table.second), partitioned_table.first);
     }
   }
 
-  twisterx::ArrowAllToAll right_all(ctx, neighbours, neighbours, 1,
-                                    std::make_shared<AllToAllListener>(right_tables),
-                                    right->schema(), arrow::default_memory_pool());
-  for (auto &right_partitioned_table : right_partitioned_tables) {
-    if (right_partitioned_table.first != ctx->GetRank()) {
-      right_all.insert(GetTable(right_partitioned_table.second), right_partitioned_table.first);
-    }
-  }
-
+  LOG(INFO) << "Communicating table " << table_id;
   // now complete the communication
-  left_all.finish();
-  while (!left_all.isComplete()) {}
-  left_all.close();
+  all_to_all.finish();
+  while (!all_to_all.isComplete()) {}
+  all_to_all.close();
 
-  right_all.finish();
-  while (!right_all.isComplete()) {}
-  right_all.close();
+  LOG(INFO) << "Done communicating table " << table_id << "  received " << received_tables.size();
 
   // now we have the final set of tables
-  arrow::Result<std::shared_ptr<arrow::Table>> left_concat = arrow::ConcatenateTables(left_tables);
-  arrow::Result<std::shared_ptr<arrow::Table>> right_concat = arrow::ConcatenateTables(right_tables);
+  arrow::Result<std::shared_ptr<arrow::Table>> concat_tables = arrow::ConcatenateTables(received_tables);
 
-  // now do the local join
-  std::shared_ptr<arrow::Table> table;
-  arrow::Status status = join::joinTables(
-      left_concat.ValueOrDie(),
-      right_concat.ValueOrDie(),
-      join_config,
-      &table,
-      arrow::default_memory_pool()
-  );
-  PutTable(dest_id, table);
-  return twisterx::Status((int) status.code(), status.message());
+  LOG(INFO) << "Done concating tables " << table_id;
+
+  if (concat_tables.ok()) {
+    auto final_table = concat_tables.ValueOrDie();
+    auto status = final_table->CombineChunks(arrow::default_memory_pool(), table_out);
+    LOG(INFO) << "Done combining chinks " << status_promise;
+    status_promise->set_value(twisterx::Status::OK());
+  } else {
+    status_promise->set_value(twisterx::Status((int) concat_tables.status().code(), concat_tables.status().message()));
+  }
+}
+
+twisterx::Status ShuffleTwoTables(twisterx::TwisterXContext *ctx,
+                                  const std::string &left_table_id,
+                                  const std::vector<int> &left_hash_columns,
+                                  const std::string &right_table_id,
+                                  const std::vector<int> &right_hash_columns,
+                                  std::shared_ptr<arrow::Table> *left_table_out,
+                                  std::shared_ptr<arrow::Table> *right_table_out) {
+  LOG(INFO) << "Shuffling two tables";
+
+  std::promise<twisterx::Status> left_tab_promise;
+  std::promise<twisterx::Status> right_tab_promise;
+
+  // using threads to progress both relations
+  std::thread left_tab_trd(Shuffle, ctx, left_table_id, left_hash_columns, 0,
+                           left_table_out, &left_tab_promise);
+  std::thread right_tab_trd(Shuffle, ctx, right_table_id, right_hash_columns, 1,
+                            right_table_out, &right_tab_promise);
+
+  LOG(INFO) << "Created two threads";
+  auto left_status = left_tab_promise.get_future().get();
+  auto right_status = right_tab_promise.get_future().get();
+
+  left_tab_trd.join();
+  right_tab_trd.join();
+
+  if (left_status.is_ok() && right_status.is_ok()) {
+    return left_status;
+  } else {
+    return !left_status.is_ok() ? left_status : right_status;
+  }
+}
+
+twisterx::Status DistributedJoinTables(twisterx::TwisterXContext *ctx,
+                                       const std::string &table_left,
+                                       const std::string &table_right,
+                                       twisterx::join::config::JoinConfig join_config,
+                                       const std::string &dest_id) {
+  // extract the tables out
+  auto left = GetTable(table_left);
+  auto right = GetTable(table_right);
+
+  std::vector<int> left_hash_columns{1};
+  left_hash_columns.push_back(join_config.GetLeftColumnIdx());
+
+  std::vector<int> right_hash_columns{1};
+  right_hash_columns.push_back(join_config.GetRightColumnIdx());
+
+  std::shared_ptr<arrow::Table> left_final_table;
+  std::shared_ptr<arrow::Table> right_final_table;
+
+  auto shuffle_status = ShuffleTwoTables(ctx,
+                                         table_left,
+                                         left_hash_columns,
+                                         table_right,
+                                         right_hash_columns,
+                                         &left_final_table,
+                                         &right_final_table);
+
+  if (shuffle_status.is_ok()) {
+    // now do the local join
+    std::shared_ptr<arrow::Table> table;
+    arrow::Status status = join::joinTables(
+        left_final_table,
+        right_final_table,
+        join_config,
+        &table,
+        arrow::default_memory_pool()
+    );
+    PutTable(dest_id, table);
+    return twisterx::Status((int) status.code(), status.message());
+  } else {
+    return shuffle_status;
+  }
 }
 
 twisterx::Status JoinTables(const std::string &table_left,
@@ -400,7 +447,7 @@ twisterx::Status Union(const std::string &table_left, const std::string &table_r
 
   std::shared_ptr<arrow::Table> tables[2] = {ltab, rtab};
 
-  // manual field check. todo check why  doesn't work ltab->schema()->Equals(rtab->schema(), false)
+  // manual field check. todo check why  ltab->schema()->Equals(rtab->schema(), false) doesn't work
 
   if (ltab->num_columns() != rtab->num_columns()) {
     return twisterx::Status(twisterx::Invalid, "The no of columns of two tables are not similar. Can't perform union.");
@@ -517,6 +564,55 @@ twisterx::Status Union(const std::string &table_left, const std::string &table_r
   std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
   PutTable(dest_id, table);
   return twisterx::Status::OK();
+}
+
+twisterx::Status DistributedUnion(twisterx::TwisterXContext *ctx,
+                                  const std::string &table_left,
+                                  const std::string &table_right,
+                                  const std::string &dest_id) {
+  // extract the tables out
+  auto left = GetTable(table_left);
+  auto right = GetTable(table_right);
+
+  if (left->num_columns() != right->num_columns()) {
+    return twisterx::Status(twisterx::Invalid, "The no of columns of two tables are not similar. Can't perform union.");
+  }
+
+  for (int fd = 0; fd < left->num_columns(); ++fd) {
+    if (!left->field(fd)->type()->Equals(right->field(fd)->type())) {
+      return twisterx::Status(twisterx::Invalid, "The fields of two tables are not similar. Can't perform union.");
+    }
+  }
+
+  std::vector<int32_t> hash_columns;
+  for (int kI = 0; kI < left->num_columns(); ++kI) {
+    hash_columns.push_back(kI);
+  }
+
+  std::shared_ptr<arrow::Table> left_final_table;
+  std::shared_ptr<arrow::Table> right_final_table;
+
+  auto shuffle_status = ShuffleTwoTables(ctx,
+                                         table_left,
+                                         hash_columns,
+                                         table_right,
+                                         hash_columns,
+                                         &left_final_table,
+                                         &right_final_table);
+
+  if (shuffle_status.is_ok()) {
+    auto ltab_id = PutTable(left_final_table);
+    auto rtab_id = PutTable(right_final_table);
+
+    //todo remove temp tables
+
+    // now do the local union
+    std::shared_ptr<arrow::Table> table;
+    return Union(ltab_id, rtab_id, dest_id);
+  } else {
+    return shuffle_status;
+  }
+
 }
 
 Status Select(const std::string &id, const std::function<bool(twisterx::Row)> &selector, const std::string &out) {

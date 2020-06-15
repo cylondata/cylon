@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   auto mpi_config = new twisterx::net::MPIConfig();
   auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<twisterx::Table> table1, table2, unioned;
+  std::shared_ptr<twisterx::Table> table1, table2, joined;
 
   LOG(INFO) << "Reading tables";
   auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
@@ -45,13 +45,15 @@ int main(int argc, char *argv[]) {
 
   if (status1.is_ok() && status2.is_ok()) {
     t1 = std::chrono::steady_clock::now();
-    twisterx::Status status = table1->DistributedUnion(ctx, table2, unioned);
+    twisterx::Status
+        status = table1->DistributedJoin(ctx, table2,
+                                         twisterx::join::config::JoinConfig::InnerJoin(0, 0), &joined);
     t2 = std::chrono::steady_clock::now();
 
-    LOG(INFO) << "Done union tables " << status.get_msg();
-    //unioned->print();
+    LOG(INFO) << "Done join tables " << status.get_msg();
+    //joined->print();
     LOG(INFO) << "Table 1 had : " << table1->rows() << " and Table 2 had : " << table2->rows() << ", Union has : "
-              << unioned->rows();
+              << joined->rows();
     LOG(INFO) << "Union done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
   } else {
     LOG(INFO) << "Table reading has failed  : " << status1.get_msg() << ":" << status2.get_msg();

@@ -94,8 +94,8 @@ class Table {
    * @param tables
    * @return new merged table
    */
-  static Status
-  Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables, std::shared_ptr<Table> *tableOut);
+  static Status Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables,
+                      std::shared_ptr<Table> *tableOut);
 
   /**
    * Sort the table according to the given column, this is a local sort
@@ -122,7 +122,9 @@ class Table {
 
   Status Union(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
 
-  Status Select(const std::function <bool (twisterx::Row)>& selector, std::shared_ptr<Table> &out);
+  Status DistributedUnion(twisterx::TwisterXContext *ctx, const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
+
+  Status Select(const std::function<bool(twisterx::Row)> &selector, std::shared_ptr<Table> &out);
 
   /**
    * Create a arrow table from this data structure
