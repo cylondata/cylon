@@ -256,10 +256,10 @@ twisterx::Status DistributedJoinTables(twisterx::TwisterXContext *ctx,
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
 
-  std::vector<int> left_hash_columns{1};
+  std::vector<int> left_hash_columns;
   left_hash_columns.push_back(join_config.GetLeftColumnIdx());
 
-  std::vector<int> right_hash_columns{1};
+  std::vector<int> right_hash_columns;
   right_hash_columns.push_back(join_config.GetRightColumnIdx());
 
   std::shared_ptr<arrow::Table> left_final_table;
