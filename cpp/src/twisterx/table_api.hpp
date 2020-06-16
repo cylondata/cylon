@@ -31,6 +31,8 @@
  */
 namespace twisterx {
 
+void RemoveTable(const std::string &id);
+
 twisterx::Status ReadCSV(const std::string &path, const std::string &id,
                          twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
 

@@ -57,6 +57,10 @@ std::string PutTable(const std::shared_ptr<arrow::Table> &table) {
   return id;
 }
 
+void RemoveTable(const std::string &id){
+  table_map.erase(id);
+}
+
 twisterx::Status ReadCSV(const std::string &path,
                          const std::string &id,
                          twisterx::io::config::CSVReadOptions options) {

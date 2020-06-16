@@ -46,6 +46,8 @@ class Table {
     id_ = std::move(id);
   }
 
+  virtual ~Table();
+
   /**
    * Create a table by reading a csv file
    * @param path file path
@@ -163,6 +165,8 @@ class Table {
   std::string get_id() {
     return this->id_;
   }
+
+  void Clear();
 
  private:
   /**
