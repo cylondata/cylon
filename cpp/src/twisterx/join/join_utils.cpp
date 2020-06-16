@@ -71,14 +71,27 @@ arrow::Status build_final_table(const std::shared_ptr<std::vector<int64_t>> &lef
 													   column->chunk(0),
 													   &destination_col_array,
 													   memory_pool);
-	if (status != arrow::Status::OK()) {
-	  LOG(FATAL) << "Failed while copying a column to the final table from right table. " << status.ToString();
-	  return status;
-	}
-	data_arrays.push_back(destination_col_array);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed while copying a column to the final table from right table. " << status.ToString();
+      return status;
+    }
+    data_arrays.push_back(destination_col_array);
   }
   *final_table = arrow::Table::Make(schema, data_arrays);
   return arrow::Status::OK();
+}
+
+arrow::Status CombineChunks(const std::shared_ptr<arrow::Table> &table,
+                            int64_t col_index,
+                            std::shared_ptr<arrow::Table> &output_table,
+                            arrow::MemoryPool *memory_pool) {
+  if (table->column(col_index)->num_chunks() > 1) {
+    LOG(INFO) << "Combining chunks " << table->column(col_index)->num_chunks();
+    return table->CombineChunks(memory_pool, &output_table);
+  } else {
+    output_table = table;
+    return arrow::Status::OK();
+  }
 }
 
 }

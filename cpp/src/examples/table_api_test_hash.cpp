@@ -43,6 +43,8 @@ bool RunJoin(const JoinConfig &jc,
 
   auto t3 = std::chrono::high_resolution_clock::now();
 
+  output->Clear();
+
   if (status.is_ok()) {
     LOG(INFO) << "join_ms " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << " write_ms "
               << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();

@@ -228,9 +228,27 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
 						   twisterx::join::config::JoinType join_type,
 						   std::shared_ptr<arrow::Table> *joined_table,
 						   arrow::MemoryPool *memory_pool) {
+
+  // combine chunks if multiple chunks are available
+  std::shared_ptr<arrow::Table> left_tab_comb, right_tab_comb;
+  arrow::Status lstatus, rstatus;
+  auto t11 = std::chrono::high_resolution_clock::now();
+
+  lstatus = twisterx::join::util::CombineChunks(left_tab, left_join_column_idx, left_tab_comb, memory_pool);
+  rstatus = twisterx::join::util::CombineChunks(right_tab, right_join_column_idx, right_tab_comb, memory_pool);
+
+  auto t22 = std::chrono::high_resolution_clock::now();
+
+  if (!lstatus.ok() || !rstatus.ok()){
+    LOG(ERROR) << "Combining chunks failed!";
+    return arrow::Status::Invalid("Hash join failed!");
+  }
+
+  LOG(INFO) << "Combine chunk time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
+
   //sort columns
-  std::shared_ptr<arrow::Array> left_idx_column = left_tab->column(left_join_column_idx)->chunk(0);
-  std::shared_ptr<arrow::Array> right_idx_column = right_tab->column(right_join_column_idx)->chunk(0);
+  std::shared_ptr<arrow::Array> left_idx_column = left_tab_comb->column(left_join_column_idx)->chunk(0);
+  std::shared_ptr<arrow::Array> right_idx_column = right_tab_comb->column(right_join_column_idx)->chunk(0);
 
   std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
   std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>();
@@ -259,8 +277,8 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
 
   auto status = twisterx::join::util::build_final_table(
 	  left_indices, right_indices,
-	  left_tab,
-	  right_tab,
+      left_tab_comb,
+	  right_tab_comb,
 	  joined_table,
 	  memory_pool
   );
@@ -269,6 +287,9 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
 
   LOG(INFO) << "Built final table in : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   LOG(INFO) << "Done and produced : " << left_indices->size();
+
+  left_indices.reset();
+  right_indices.reset();
 
   return arrow::Status::OK();
 }
