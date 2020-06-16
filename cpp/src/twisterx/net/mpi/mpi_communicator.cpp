@@ -24,7 +24,7 @@ void MPIConfig::DummyConfig(int dummy) {
   this->AddConfig("Dummy", &dummy);
 }
 int MPIConfig::GetDummyConfig() {
-  return *(int *)this->GetConfig("Dummy");
+  return *(int *) this->GetConfig("Dummy");
 }
 
 CommType MPIConfig::Type() {
@@ -45,9 +45,10 @@ void MPICommunicator::Init(CommConfig *config) {
   int initialized;
   MPI_Initialized(&initialized);
   if (!initialized) {
-	MPI_Init(nullptr, nullptr);
+    int provided;
+    MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided);
   } else {
-	LOG(INFO) << "MPI is already initialized";
+    LOG(INFO) << "MPI is already initialized";
   }
 
   MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
