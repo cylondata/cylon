@@ -24,12 +24,12 @@
 namespace twisterx {
 
 Status Table::FromCSV(const std::string &path,
-                      std::shared_ptr<Table> *tableOut,
+                      std::shared_ptr<Table> tableOut,
                       const twisterx::io::config::CSVReadOptions &options) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::ReadCSV(path, uuid, options);
   if (status.is_ok()) {
-    *tableOut = std::make_shared<Table>(uuid);
+    tableOut = std::make_shared<Table>(uuid);
   }
   return status;
 }

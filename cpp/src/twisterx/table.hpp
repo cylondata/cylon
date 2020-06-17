@@ -54,7 +54,11 @@ class Table {
    * @return a pointer to the table
    */
   static Status FromCSV(const std::string &path,
-                        std::shared_ptr<Table> *tableOut,
+                        std::shared_ptr<Table> tableOut,
+                        const twisterx::io::config::CSVReadOptions &options = twisterx::io::config::CSVReadOptions());
+
+  static Status FromCSV(const std::string &path,
+                        const std::vector<std::shared_ptr<Table>> tableOuts,
                         const twisterx::io::config::CSVReadOptions &options = twisterx::io::config::CSVReadOptions());
 
   /**
@@ -124,7 +128,9 @@ class Table {
 
   Status Union(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
 
-  Status DistributedUnion(twisterx::TwisterXContext *ctx, const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
+  Status DistributedUnion(twisterx::TwisterXContext *ctx,
+                          const std::shared_ptr<Table> &right,
+                          std::shared_ptr<Table> &out);
 
   Status Select(const std::function<bool(twisterx::Row)> &selector, std::shared_ptr<Table> &out);
 

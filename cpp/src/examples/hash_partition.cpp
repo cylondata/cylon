@@ -19,7 +19,7 @@
 
 int main(int argc, char *argv[]) {
   std::shared_ptr<twisterx::Table> table1;
-  auto status2 = twisterx::Table::FromCSV("/tmp/csv.csv", &table1);
+  auto status2 = twisterx::Table::FromCSV("/tmp/csv.csv", table1);
 
   std::vector<std::shared_ptr<twisterx::Table>> outs;
 

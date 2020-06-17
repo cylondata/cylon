@@ -30,11 +30,11 @@ int main(int argc, char *argv[]) {
   columnnames.push_back("c2");
   columnnames.push_back("c3");
 
-  auto status1 = twisterx::Table::FromCSV("/tmp/csv.csv", &table1,
+  auto status1 = twisterx::Table::FromCSV("/tmp/csv.csv", table1,
 										  twisterx::io::config::CSVReadOptions()
 										  .WithDelimiter(',')
 										  .ColumnNames(columnnames));
-  auto status2 = twisterx::Table::FromCSV("/tmp/csv.csv", &table2,
+  auto status2 = twisterx::Table::FromCSV("/tmp/csv.csv", table2,
 										  twisterx::io::config::CSVReadOptions()
 											  .WithDelimiter(',')
 											  .ColumnNames(columnnames));
