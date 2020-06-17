@@ -171,4 +171,10 @@ Status Table::DistributedUnion(twisterx::TwisterXContext *ctx, const shared_ptr<
   }
   return status;
 }
+void Table::Clear() {
+  twisterx::RemoveTable(this->id_);
+}
+Table::~Table() {
+  this->Clear();
+}
 }

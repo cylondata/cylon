@@ -56,17 +56,19 @@ class ArrowArrayIdxHashJoinKernel {
                   std::shared_ptr<std::vector<int64_t>> &left_table_indices,
                   std::shared_ptr<std::vector<int64_t>> &right_table_indices) {
 
-    std::unique_ptr<MMAP_TYPE> out_umm_ptr;
+//    std::unique_ptr<MMAP_TYPE> out_umm_ptr;
 
     switch (join_type) {
       case twisterx::join::config::JoinType::RIGHT: {
         // build hashmap using left col idx
+        MMAP_TYPE out_umm_ptr = MMAP_TYPE(left_idx_col->length());
         BuildPhase(left_idx_col, out_umm_ptr);
         ProbePhase(out_umm_ptr, right_idx_col, left_table_indices, right_table_indices);
         break;
       }
       case twisterx::join::config::JoinType::LEFT: {
         // build hashmap using right col idx
+        MMAP_TYPE out_umm_ptr = MMAP_TYPE(right_idx_col->length());
         BuildPhase(right_idx_col, out_umm_ptr);
         ProbePhase(out_umm_ptr, left_idx_col, right_table_indices, left_table_indices);
         break;
@@ -74,9 +76,11 @@ class ArrowArrayIdxHashJoinKernel {
       case twisterx::join::config::JoinType::INNER: {
         // build hashmap using col idx with smaller len
         if (left_idx_col->length() < right_idx_col->length()) {
+          MMAP_TYPE out_umm_ptr = MMAP_TYPE(left_idx_col->length());
           BuildPhase(left_idx_col, out_umm_ptr);
           ProbePhaseNoFill(out_umm_ptr, right_idx_col, left_table_indices, right_table_indices);
         } else {
+          MMAP_TYPE out_umm_ptr = MMAP_TYPE(right_idx_col->length());
           BuildPhase(right_idx_col, out_umm_ptr);
           ProbePhaseNoFill(out_umm_ptr, left_idx_col, right_table_indices, left_table_indices);
         }
@@ -87,13 +91,17 @@ class ArrowArrayIdxHashJoinKernel {
 
         // a key set to track matched keys from the other table
         // todo: use an index vector rather than a key set!
-        std::unique_ptr<std::unordered_set<CTYPE>> key_set;
+//        std::unordered_set<CTYPE> key_set;
 //        std::unique_ptr<std::unordered_set<typename MMAP_TYPE::iterator>> key_set;
 
         if (left_idx_col->length() < right_idx_col->length()) {
+          MMAP_TYPE out_umm_ptr = MMAP_TYPE(left_idx_col->length());
+          std::unordered_set<CTYPE> key_set = std::unordered_set<CTYPE>(left_idx_col->length());
           BuildPhase(left_idx_col, out_umm_ptr, key_set);
           ProbePhaseOuter(out_umm_ptr, right_idx_col, key_set, left_table_indices, right_table_indices);
         } else {
+          MMAP_TYPE out_umm_ptr = MMAP_TYPE(right_idx_col->length());
+          std::unordered_set<CTYPE> key_set = std::unordered_set<CTYPE>(right_idx_col->length());
           BuildPhase(right_idx_col, out_umm_ptr, key_set);
           ProbePhaseOuter(out_umm_ptr, left_idx_col, key_set, right_table_indices, left_table_indices);
         }
@@ -110,16 +118,16 @@ class ArrowArrayIdxHashJoinKernel {
  private:
   // build hashmap
   void BuildPhase(const std::shared_ptr<arrow::Array> &smaller_idx_col,
-                  std::unique_ptr<MMAP_TYPE> &smaller_idx_map) {
+                  MMAP_TYPE &smaller_idx_map) {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(smaller_idx_col);
 
-    smaller_idx_map = std::make_unique<MMAP_TYPE>(smaller_idx_col->length());
+//    smaller_idx_map = std::make_unique<MMAP_TYPE>(smaller_idx_col->length());
 
     for (int64_t i = 0; i < reader0->length(); i++) {
       auto lValue = reader0->Value(i);
       auto val = (CTYPE) lValue;
-      smaller_idx_map->insert(std::make_pair(val, i));
+      smaller_idx_map.insert(std::make_pair(val, i));
     }
     auto t2 = std::chrono::high_resolution_clock::now();
     LOG(INFO) << "build_phase " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1)
@@ -128,19 +136,19 @@ class ArrowArrayIdxHashJoinKernel {
 
   // builds hashmap as well as populate keyset
   void BuildPhase(const std::shared_ptr<arrow::Array> &smaller_idx_col,
-                  std::unique_ptr<MMAP_TYPE> &smaller_idx_map,
-                  std::unique_ptr<std::unordered_set<CTYPE>> &smaller_key_set) {
+                  MMAP_TYPE &smaller_idx_map,
+                  std::unordered_set<CTYPE> &smaller_key_set) {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(smaller_idx_col);
 
-    smaller_idx_map = std::make_unique<MMAP_TYPE>(smaller_idx_col->length());
-    smaller_key_set = std::make_unique<std::unordered_set<CTYPE>>(smaller_idx_col->length());
+//    smaller_idx_map = std::make_unique<MMAP_TYPE>(smaller_idx_col->length());
+//    smaller_key_set = std::make_unique<std::unordered_set<CTYPE>>(smaller_idx_col->length());
 
     for (int64_t i = 0; i < reader0->length(); i++) {
       auto lValue = reader0->Value(i);
       auto val = (CTYPE) lValue;
-      smaller_idx_map->insert(std::make_pair(val, i));
-      smaller_key_set->emplace(val);
+      smaller_idx_map.insert(std::make_pair(val, i));
+      smaller_key_set.emplace(val);
 //      smaller_key_set->emplace(it); // save all iter positions
     }
     auto t2 = std::chrono::high_resolution_clock::now();
@@ -149,7 +157,7 @@ class ArrowArrayIdxHashJoinKernel {
   }
 
   // probes hashmap and fill -1 for no matches
-  void ProbePhase(const std::unique_ptr<MMAP_TYPE> &smaller_idx_map,
+  void ProbePhase(const MMAP_TYPE &smaller_idx_map,
                   const std::shared_ptr<arrow::Array> &larger_idx_col,
                   std::shared_ptr<std::vector<int64_t>> &smaller_output,
                   std::shared_ptr<std::vector<int64_t>> &larger_output) {
@@ -157,7 +165,7 @@ class ArrowArrayIdxHashJoinKernel {
     auto reader1 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(larger_idx_col);
     for (int64_t i = 0; i < reader1->length(); ++i) {
       auto val = (CTYPE) reader1->Value(i);
-      const auto range = smaller_idx_map->equal_range(val);
+      const auto range = smaller_idx_map.equal_range(val);
       if (range.first == range.second) {
         smaller_output->push_back(-1);
         larger_output->push_back(i);
@@ -174,7 +182,7 @@ class ArrowArrayIdxHashJoinKernel {
   }
 
   // probes hashmap with no filling
-  void ProbePhaseNoFill(const std::unique_ptr<MMAP_TYPE> &smaller_idx_map,
+  void ProbePhaseNoFill(const MMAP_TYPE &smaller_idx_map,
                         const std::shared_ptr<arrow::Array> &larger_idx_col,
                         std::shared_ptr<std::vector<int64_t>> &smaller_table_indices,
                         std::shared_ptr<std::vector<int64_t>> &larger_table_indices) {
@@ -182,7 +190,7 @@ class ArrowArrayIdxHashJoinKernel {
     auto reader1 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(larger_idx_col);
     for (int64_t i = 0; i < reader1->length(); ++i) {
       auto val = (CTYPE) reader1->Value(i);
-      auto range = smaller_idx_map->equal_range(val);
+      auto range = smaller_idx_map.equal_range(val);
       for (auto it = range.first; it != range.second; it++) {
         smaller_table_indices->push_back(it->second);
         larger_table_indices->push_back(i);
@@ -195,22 +203,22 @@ class ArrowArrayIdxHashJoinKernel {
 
   // probes hashmap and removes matched keys from the keyset. Then traverses the remaining keys in the keyset and
   // fill with -1
-  void ProbePhaseOuter(const std::unique_ptr<MMAP_TYPE> &smaller_idx_map,
+  void ProbePhaseOuter(const MMAP_TYPE &smaller_idx_map,
                        const std::shared_ptr<arrow::Array> &larger_idx_col,
-                       std::unique_ptr<std::unordered_set<CTYPE>> &smaller_key_set,
+                       std::unordered_set<CTYPE> &smaller_key_set,
                        std::shared_ptr<std::vector<int64_t>> &smaller_table_indices,
                        std::shared_ptr<std::vector<int64_t>> &larger_table_indices) {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto reader1 = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(larger_idx_col);
     for (int64_t i = 0; i < reader1->length(); ++i) {
       auto val = (CTYPE) reader1->Value(i);
-      auto range = smaller_idx_map->equal_range(val);
+      auto range = smaller_idx_map.equal_range(val);
       if (range.first == range.second) {
         smaller_table_indices->push_back(-1);
         larger_table_indices->push_back(i);
       } else {
         for (auto it = range.first; it != range.second; it++) {
-          smaller_key_set->erase(it->first); // todo: this erase would be inefficient
+          smaller_key_set.erase(it->first); // todo: this erase would be inefficient
           smaller_table_indices->push_back(it->second);
           larger_table_indices->push_back(i);
         }
@@ -219,8 +227,8 @@ class ArrowArrayIdxHashJoinKernel {
 
     // fill the remaining keys with -1
     // todo: use an index vector rather than a key set! this second probe is inefficient!
-    for (auto it = smaller_key_set->begin(); it != smaller_key_set->end(); it++) {
-      auto range = smaller_idx_map->equal_range(*it);
+    for (auto it = smaller_key_set.begin(); it != smaller_key_set.end(); it++) {
+      auto range = smaller_idx_map.equal_range(*it);
       for (auto it2 = range.first; it2 != range.second; it2++) {
         smaller_table_indices->push_back(it2->second);
         larger_table_indices->push_back(-1);
