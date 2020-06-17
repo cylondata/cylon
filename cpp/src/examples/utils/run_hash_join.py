@@ -20,7 +20,7 @@ repetitions = 10
 print("repetitions for each test", repetitions, flush=True)
 
 # for i in [10000000]:
-for i in [int(ii * 1000000) for ii in [0.1, 1, 10, 25, 50, 75, 100]]:
+for i in [int(ii * 1000000) for ii in [0.1, 0.25, 0.5, 0.75, 1, 10, 25, 50, 75, 100, 250, 500]]:
     print(f"##### test {i} starting!", flush=True)
 
     test_dir = f"{out_dir}/{i}"
