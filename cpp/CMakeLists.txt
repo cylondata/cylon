@@ -8,7 +8,6 @@
 # For more information about CMake, see http://www.cmake.org             #
 ##########################################################################
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
-
 project(TWISTERX)
 
 set(TWISTERX_VERSION 0.0)

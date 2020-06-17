@@ -45,8 +45,7 @@ void MPICommunicator::Init(CommConfig *config) {
   int initialized;
   MPI_Initialized(&initialized);
   if (!initialized) {
-    int provided;
-    MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided);
+    MPI_Init(nullptr, nullptr);
   } else {
     LOG(INFO) << "MPI is already initialized";
   }

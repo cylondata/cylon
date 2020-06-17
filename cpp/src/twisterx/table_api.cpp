@@ -143,12 +143,11 @@ twisterx::Status PrintToOStream(const std::string &table_id,
   return twisterx::Status(Code::OK);
 }
 
-void Shuffle(twisterx::TwisterXContext *ctx,
-             const std::string &table_id,
-             const std::vector<int> &hash_columns,
-             int edge_id,
-             std::shared_ptr<arrow::Table> *table_out,
-             std::promise<twisterx::Status> *status_promise) {
+twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
+                         const std::string &table_id,
+                         const std::vector<int> &hash_columns,
+                         int edge_id,
+                         std::shared_ptr<arrow::Table> *table_out) {
   LOG(INFO) << "Shuffling table " << table_id << ", edge id : " << edge_id;
   auto table = GetTable(table_id);
 
@@ -208,10 +207,9 @@ void Shuffle(twisterx::TwisterXContext *ctx,
   if (concat_tables.ok()) {
     auto final_table = concat_tables.ValueOrDie();
     auto status = final_table->CombineChunks(arrow::default_memory_pool(), table_out);
-    LOG(INFO) << "Done combining chinks " << status_promise;
-    status_promise->set_value(twisterx::Status::OK());
+    return twisterx::Status((int) status.code(), status.message());
   } else {
-    status_promise->set_value(twisterx::Status((int) concat_tables.status().code(), concat_tables.status().message()));
+    return twisterx::Status((int) concat_tables.status().code(), concat_tables.status().message());
   }
 }
 
@@ -223,28 +221,11 @@ twisterx::Status ShuffleTwoTables(twisterx::TwisterXContext *ctx,
                                   std::shared_ptr<arrow::Table> *left_table_out,
                                   std::shared_ptr<arrow::Table> *right_table_out) {
   LOG(INFO) << "Shuffling two tables";
-
-  std::promise<twisterx::Status> left_tab_promise;
-  std::promise<twisterx::Status> right_tab_promise;
-
-  // using threads to progress both relations
-  std::thread left_tab_trd(Shuffle, ctx, left_table_id, left_hash_columns, 0,
-                           left_table_out, &left_tab_promise);
-  std::thread right_tab_trd(Shuffle, ctx, right_table_id, right_hash_columns, 1,
-                            right_table_out, &right_tab_promise);
-
-  LOG(INFO) << "Created two threads";
-  auto left_status = left_tab_promise.get_future().get();
-  auto right_status = right_tab_promise.get_future().get();
-
-  left_tab_trd.join();
-  right_tab_trd.join();
-
-  if (left_status.is_ok() && right_status.is_ok()) {
-    return left_status;
-  } else {
-    return !left_status.is_ok() ? left_status : right_status;
+  auto status = Shuffle(ctx, left_table_id, left_hash_columns, 0, left_table_out);
+  if (status.is_ok()) {
+    return Shuffle(ctx, right_table_id, right_hash_columns, 1, right_table_out);
   }
+  return status;
 }
 
 twisterx::Status DistributedJoinTables(twisterx::TwisterXContext *ctx,
