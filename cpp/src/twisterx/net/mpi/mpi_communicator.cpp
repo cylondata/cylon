@@ -54,6 +54,7 @@ void MPICommunicator::Init(CommConfig *config) {
   MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
 }
 void MPICommunicator::Finalize() {
+  LOG(INFO) << "Finalizing MPI";
   MPI_Finalize();
 }
 }

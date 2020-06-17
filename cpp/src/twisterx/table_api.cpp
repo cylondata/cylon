@@ -57,7 +57,7 @@ std::string PutTable(const std::shared_ptr<arrow::Table> &table) {
   return id;
 }
 
-void RemoveTable(const std::string &id){
+void RemoveTable(const std::string &id) {
   table_map.erase(id);
 }
 
@@ -174,20 +174,29 @@ twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
   class AllToAllListener : public twisterx::ArrowCallback {
 
     vector<std::shared_ptr<arrow::Table>> tabs;
+    int workerId;
 
    public:
-    explicit AllToAllListener(const vector<std::shared_ptr<arrow::Table>> &tabs) {
+    explicit AllToAllListener(const vector<std::shared_ptr<arrow::Table>> &tabs, int workerId) {
       this->tabs = tabs;
+      this->workerId = workerId;
     }
 
     bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
+      if (workerId == 0) {
+        LOG(INFO) << "push tabs from src " << source;
+      }
       this->tabs.push_back(table);
+      if (workerId == 0) {
+        LOG(INFO) << "after push tabs";
+      }
+      return true;
     };
   };
 
   // doing all to all communication to exchange tables
   twisterx::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
-                                     std::make_shared<AllToAllListener>(received_tables),
+                                     std::make_shared<AllToAllListener>(received_tables, ctx->GetRank()),
                                      table->schema(), arrow::default_memory_pool());
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
