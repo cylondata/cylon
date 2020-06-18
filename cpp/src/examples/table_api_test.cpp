@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   table1->Join(table2,
 			   twisterx::join::config::JoinConfig::RightJoin(0, 1),
 			   &joined);
-  joined->print();
+  joined->Print();
   joined->WriteCSV("/tmp/out.csv", twisterx::io::config::CSVWriteOptions().WithDelimiter(':'));
 
 

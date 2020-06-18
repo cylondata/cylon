@@ -36,6 +36,9 @@ void RemoveTable(const std::string &id);
 twisterx::Status ReadCSV(const std::string &path, const std::string &id,
                          twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
 
+twisterx::Status ReadCSV(const std::vector<std::string> &paths, const std::vector<std::string> &ids,
+                         twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+
 twisterx::Status WriteCSV(const std::string &id, const std::string &path,
                           twisterx::io::config::CSVWriteOptions options = twisterx::io::config::CSVWriteOptions());
 
@@ -127,5 +130,7 @@ twisterx::Status HashPartition(const std::string &id, const std::vector<int> &ha
  * @return the status of the partition operation
  */
 Status Select(const std::string &id, const std::function<bool(twisterx::Row)> &selector, const std::string &out);
+
+Status Project(const std::string &id, std::vector<int64_t> project_columns, const std::string &out);
 }
 #endif //TWISTERX_SRC_IO_TABLE_API_H_

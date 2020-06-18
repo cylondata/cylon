@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   auto mpi_config = new twisterx::net::MPIConfig();
   auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<twisterx::Table> table1, select;
+  std::shared_ptr<twisterx::Table> table1, project;
 
   LOG(INFO) << "Reading tables";
   auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
@@ -40,15 +40,14 @@ int main(int argc, char *argv[]) {
 
   if (status1.is_ok()) {
     t1 = std::chrono::steady_clock::now();
-    twisterx::Status status = table1->Select([](twisterx::Row row) {
-      return row.GetInt64(0) % 2 == 0;
-    }, select);
+    twisterx::Status status = table1->Project({0}, project);
     t2 = std::chrono::steady_clock::now();
 
-    LOG(INFO) << "Done select tables " << status.get_msg();
+    LOG(INFO) << "Done project tables " << status.get_msg();
     //unioned->print();
-    LOG(INFO) << "Table 1 had : " << table1->Rows() << ", Select has : " << select->Rows();
-    LOG(INFO) << "Select done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
+    LOG(INFO) << "Table 1 had : " << table1->Columns() << "," << table1->Rows() << ", Project has : "
+              << project->Columns() << "," << project->Rows();
+    LOG(INFO) << "Project done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
   } else {
     LOG(INFO) << "Table reading has failed  : " << status1.get_msg();
   }

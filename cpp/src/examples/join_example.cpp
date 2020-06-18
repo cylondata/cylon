@@ -52,8 +52,8 @@ int main(int argc, char *argv[]) {
 
     LOG(INFO) << "Done join tables " << status.get_msg();
     //joined->print();
-    LOG(INFO) << "Table 1 had : " << table1->rows() << " and Table 2 had : " << table2->rows() << ", Union has : "
-              << joined->rows();
+    LOG(INFO) << "Table 1 had : " << table1->Rows() << " and Table 2 had : " << table2->Rows() << ", Union has : "
+              << joined->Rows();
     LOG(INFO) << "Union done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
   } else {
     LOG(INFO) << "Table reading has failed  : " << status1.get_msg() << ":" << status2.get_msg();

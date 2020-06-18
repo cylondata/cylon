@@ -54,11 +54,11 @@ class Table {
    * @return a pointer to the table
    */
   static Status FromCSV(const std::string &path,
-                        std::shared_ptr<Table> tableOut,
+                        std::shared_ptr<Table> &tableOut,
                         const twisterx::io::config::CSVReadOptions &options = twisterx::io::config::CSVReadOptions());
 
-  static Status FromCSV(const std::string &path,
-                        const std::vector<std::shared_ptr<Table>> tableOuts,
+  static Status FromCSV(const std::vector<std::string> &paths,
+                        const std::vector<std::shared_ptr<Table>> &tableOuts,
                         const twisterx::io::config::CSVReadOptions &options = twisterx::io::config::CSVReadOptions());
 
   /**
@@ -73,9 +73,11 @@ class Table {
    * @param table
    * @return
    */
-  static Status FromArrowTable(std::shared_ptr<arrow::Table> table);
+  static Status FromArrowTable(const std::shared_ptr<arrow::Table> &table);
 
-  static Status FromArrowTable(std::shared_ptr<arrow::Table> table, std::shared_ptr<Table> *tableOut);
+  static Status FromArrowTable(const std::shared_ptr<arrow::Table> &table, std::shared_ptr<Table> *tableOut);
+
+  Status Project(const std::vector<int64_t> &project_columns, std::shared_ptr<Table> &out);
 
   /**
    * Write the table as a CSV
@@ -142,18 +144,18 @@ class Table {
   Status ToArrowTable(std::shared_ptr<arrow::Table> &out);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
-  int32_t columns();
+  int32_t Columns();
 
   /**
    * Get the number of rows in this table
    * @return number of rows in the table
    */
-  int64_t rows();
+  int64_t Rows();
 
   /**
    * Print the complete table
    */
-  void print();
+  void Print();
 
   /**
    * Print the table from row1 to row2 and col1 to col2
@@ -162,13 +164,13 @@ class Table {
    * @param col1 first column to start printing (including)
    * @param col2 end column to stop printing (including)
    */
-  void print(int row1, int row2, int col1, int col2);
+  void Print(int row1, int row2, int col1, int col2);
 
   /**
    * Get the id associated with this table
    * @return string id
    */
-  std::string get_id() {
+  std::string GetID() {
     return this->id_;
   }
 

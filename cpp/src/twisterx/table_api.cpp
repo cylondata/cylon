@@ -74,6 +74,51 @@ twisterx::Status ReadCSV(const std::string &path,
   return twisterx::Status(Code::IOError, result.status().message());;
 }
 
+void ReadCSVThread(const std::string &path,
+                   const std::string &id,
+                   twisterx::io::config::CSVReadOptions options,
+                   std::promise<twisterx::Status> *status_promise) {
+  status_promise->set_value(ReadCSV(path, id, options));
+}
+
+twisterx::Status ReadCSV(const std::vector<std::string> &paths, const std::vector<std::string> &ids,
+                         twisterx::io::config::CSVReadOptions options) {
+
+  if (paths.size() != ids.size()) {
+    return twisterx::Status(twisterx::Invalid, "Size of paths and ids mismatch.");
+  }
+
+  if (options.IsConcurrentFileReads()) {
+    std::vector<std::pair<std::future<twisterx::Status>, std::thread>> futures;
+    futures.reserve(paths.size());
+    for (uint64_t kI = 0; kI < paths.size(); ++kI) {
+      std::promise<twisterx::Status> read_promise;
+      futures.push_back(std::pair<std::future<twisterx::Status>, std::thread>
+                            (read_promise.get_future(),
+                             std::thread(ReadCSVThread,
+                                         paths[kI],
+                                         ids[kI],
+                                         options,
+                                         &read_promise)));
+    }
+    bool all_passed = false;
+    for (auto &future: futures) {
+      all_passed &= future.first.get().is_ok();
+      future.second.join();
+    }
+    return all_passed ? twisterx::Status::OK() : twisterx::Status(twisterx::IOError, "Failed to read the csv files");
+  } else {
+    auto status = twisterx::Status::OK();
+    for (int kI = 0; kI < paths.size(); ++kI) {
+      status = ReadCSV(paths[kI], ids[kI], options);
+      if (!status.is_ok()) {
+        return status;
+      }
+    }
+    return status;
+  }
+}
+
 twisterx::Status WriteCSV(const std::string &id, const std::string &path,
                           twisterx::io::config::CSVWriteOptions options) {
   auto table = GetTable(id);
@@ -579,6 +624,7 @@ twisterx::Status DistributedUnion(twisterx::TwisterXContext *ctx,
   }
 
   std::vector<int32_t> hash_columns;
+  hash_columns.reserve(left->num_columns());
   for (int kI = 0; kI < left->num_columns(); ++kI) {
     hash_columns.push_back(kI);
   }
@@ -640,6 +686,26 @@ Status Select(const std::string &id, const std::function<bool(twisterx::Row)> &s
   }
 
   PutTable(out, out_table);
+  return twisterx::Status::OK();
+}
+
+Status Project(const std::string &id, std::vector<int64_t> project_columns, const std::string &out) {
+  auto table = GetTable(id);
+  std::vector<std::shared_ptr<arrow::Field>> schema_vector;
+  std::vector<std::shared_ptr<arrow::ChunkedArray>> column_arrays;
+  schema_vector.reserve(project_columns.size());
+
+  for (auto &col_index: project_columns) {
+    schema_vector.push_back(table->field(col_index));
+    auto chunked_array = std::make_shared<arrow::ChunkedArray>(table->column(col_index)->chunks());
+    column_arrays.push_back(chunked_array);
+  }
+
+  auto schema = std::make_shared<arrow::Schema>(schema_vector);
+
+  std::shared_ptr<arrow::Table> projected_table = arrow::Table::Make(schema, column_arrays);
+
+  PutTable(out, projected_table);
   return twisterx::Status::OK();
 }
 }

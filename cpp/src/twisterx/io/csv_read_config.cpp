@@ -81,16 +81,16 @@ CSVReadOptions CSVReadOptions::HasNewLinesInValues() {
   return *this;
 }
 CSVReadOptions CSVReadOptions::WithColumnTypes(const std::unordered_map<std::string,
-																		std::shared_ptr<DataType>> &column_types) {
+                                                                        std::shared_ptr<DataType>> &column_types) {
   std::unordered_map<std::string,
-					 std::shared_ptr<arrow::DataType>> arrow_types{};
+                     std::shared_ptr<arrow::DataType>> arrow_types{};
 
   for (const auto &column_type : column_types) {
-	auto pr = std::pair<std::string, std::shared_ptr<arrow::DataType>>(column_type.first,
-																	   twisterx::tarrow::convertToArrowType(
-																		   column_type.second
-																	   ));
-	arrow_types.insert(pr);
+    auto pr = std::pair<std::string, std::shared_ptr<arrow::DataType>>(column_type.first,
+                                                                       twisterx::tarrow::convertToArrowType(
+                                                                           column_type.second
+                                                                       ));
+    arrow_types.insert(pr);
   }
   CSVConfigHolder::GetCastedHolder(*this)->column_types = arrow_types;
   return *this;
@@ -118,6 +118,13 @@ CSVReadOptions CSVReadOptions::IncludeColumns(const std::vector<std::string> &in
 CSVReadOptions CSVReadOptions::IncludeMissingColumns() {
   CSVConfigHolder::GetCastedHolder(*this)->include_missing_columns = true;
   return *this;
+}
+CSVReadOptions CSVReadOptions::ConcurrentFileReads(bool concurrent_file_reads) {
+  this->concurrent_file_reads = concurrent_file_reads;
+  return *this;
+}
+bool CSVReadOptions::IsConcurrentFileReads() {
+  return this->concurrent_file_reads;
 }
 }
 }

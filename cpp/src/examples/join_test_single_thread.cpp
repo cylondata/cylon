@@ -110,8 +110,8 @@ int main(int argc, char *argv[]) {
   std::cout << "Left arrow table Converted to tx table  : " << status_lf_tx.get_msg() << std::endl;
   std::cout << "Right arrow table Converted to tx table  : " << status_rt_tx.get_msg() << std::endl;
 
-  std::cout << "Left Table Id : " << left_table_tx->get_id() << std::endl;
-  std::cout << "Right Table Id : " << right_table_tx->get_id() << std::endl;
+  std::cout << "Left Table Id : " << left_table_tx->GetID() << std::endl;
+  std::cout << "Right Table Id : " << right_table_tx->GetID() << std::endl;
 
 //	std::cout << "Left Table" << std::endl;
 //	left_table_tx->print();
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   }
   auto end_join = std::chrono::high_resolution_clock::now();
   auto join_duration = std::chrono::duration_cast<std::chrono::milliseconds>((end_join - start_join) / reps);
-  std::cout << "[Joined Table] : Rows : " << joined_tx->rows() << ", Columns : " << joined_tx->columns() << std::endl;
+  std::cout << "[Joined Table] : Rows : " << joined_tx->Rows() << ", Columns : " << joined_tx->Columns() << std::endl;
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
