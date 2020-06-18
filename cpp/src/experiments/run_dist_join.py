@@ -1,7 +1,7 @@
 import os
 from os.path import expanduser
 
-from generate_csv import generate_file
+from cpp.src.experiments.generate_csv import generate_file
 
 home = expanduser("~")
 # join_exec = f"{home}/git/twisterx/build/bin/table_api_test_hash"
@@ -40,7 +40,9 @@ for i in row_cases:
             for f in csvs:
                 generate_file(output=f.replace('RANK', str(rank)), rows=i, cols=cols, krange=krange)
 
-        join_exec = f"mpirun -np {w} ../../../../build/bin/table_join_dist_test"
+        join_exec = f"mpirun mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
+                    f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
+                    f"--hostfile nodes -np {w} ../../../../build/bin/table_join_dist_test"
         print("\n\n##### running", join_exec, flush=True)
 
         for r in range(repetitions):
