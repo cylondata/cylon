@@ -19,6 +19,7 @@
 #include "unordered_map"
 #include "../net/comm_config.h"
 #include "../net/communicator.h"
+#include "memory_pool.h"
 
 namespace twisterx {
 class TwisterXContext {
@@ -26,8 +27,7 @@ class TwisterXContext {
   std::unordered_map<std::string, std::string> config{};
   bool distributed;
   twisterx::net::Communicator *communicator{};
-
-
+  twisterx::MemoryPool *memory_pool;
 
  public:
   static TwisterXContext *Init();
@@ -37,13 +37,17 @@ class TwisterXContext {
   void AddConfig(const std::string &key, const std::string &value);
   std::string GetConfig(const std::string &key, const std::string &def = "");
   net::Communicator *GetCommunicator() const;
-  void setCommunicator(net::Communicator * communicator1);
+  void setCommunicator(net::Communicator *communicator1);
   void setDistributed(bool distributed);
   int GetRank();
   int GetWorldSize();
   vector<int> GetNeighbours(bool include_self);
   explicit TwisterXContext(bool distributed);
 
+  template<typename TYPE>
+  TYPE *GetMemoryPool();
+
+  void SetMemoryPool(twisterx::MemoryPool* mem_pool);
 };
 }
 

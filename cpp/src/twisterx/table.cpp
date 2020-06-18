@@ -15,7 +15,6 @@
 #include <arrow/table.h>
 #include <fstream>
 #include <memory>
-#include <utility>
 #include "table.hpp"
 #include "table_api.hpp"
 #include "table_api_extended.hpp"
