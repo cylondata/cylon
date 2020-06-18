@@ -176,11 +176,15 @@ class Table {
 
   void Clear();
 
+  twisterx::TwisterXContext *GetContext();
+
  private:
   /**
    * Every table should have an unique id
    */
   std::string id_;
+
+  twisterx::TwisterXContext *ctx;
 };
 }
 

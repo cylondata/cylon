@@ -203,4 +203,8 @@ Status Table::Project(const std::vector<int64_t> &project_columns, std::shared_p
 
   return status;
 }
+
+twisterx::TwisterXContext *Table::GetContext() {
+  return this->ctx;
+}
 }
