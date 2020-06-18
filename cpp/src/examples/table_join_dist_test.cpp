@@ -70,13 +70,15 @@ int main(int argc, char *argv[]) {
 
   int rank = ctx->GetRank();
   std::string srank = std::to_string(rank);
-  std::string csv1 = "/scratch/dnperera/csv1_" + srank + ".csv";
-  std::string csv2 = "/scratch/dnperera/csv2_" + srank + ".csv";
-//  std::string csv1 = "/tmp/csv1_" + srank + ".csv";
-//  std::string csv2 = "/tmp/csv2_" + srank + ".csv";
+  std::string base_dir = "/scratch/dnperera";
+//  std::string base_dir = "/tmp";
+  system(("mkdir -p " + base_dir).c_str());
 
-  system(("cp ~/temp/csv1_"+ srank + ".csv " + csv1).c_str());
-  system(("cp ~/temp/csv2_"+ srank + ".csv " + csv2).c_str());
+  std::string csv1 = base_dir + "/csv1_" + srank + ".csv";
+  std::string csv2 = base_dir + "/csv2_" + srank + ".csv";
+
+  system(("cp ~/temp/csv1_" + srank + ".csv " + csv1).c_str());
+  system(("cp ~/temp/csv2_" + srank + ".csv " + csv2).c_str());
 
   LOG(INFO) << rank << " Reading tables";
   auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
