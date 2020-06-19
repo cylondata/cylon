@@ -60,8 +60,8 @@ void CxTable::show(int row1, int row2, int col1, int col2) {
   Print(this->get_id(), col1, col2, row1, row2);
 }
 
-Status CxTable::from_csv(const std::string &path, const char &delimiter, const std::string &uuid) {
-  twisterx::Status status = ReadCSV(path, uuid, CSVReadOptions().WithDelimiter(delimiter));
+Status CxTable::from_csv(twisterx_context_wrap *ctx_wrap, const std::string &path, const char &delimiter, const std::string &uuid) {
+  twisterx::Status status = ReadCSV(ctx_wrap->getInstance(), path, uuid, CSVReadOptions().WithDelimiter(delimiter));
   return status;
 }
 
@@ -86,7 +86,7 @@ std::shared_ptr<arrow::Table> CxTable::to_pyarrow_table(const std::string &table
   return table1;
 }
 
-std::string CxTable::join(const std::string &table_id,
+std::string CxTable::join(twisterx_context_wrap *ctx_wrap, const std::string &table_id,
 						  JoinType type,
 						  JoinAlgorithm algorithm,
 						  int left_column_index,
@@ -95,6 +95,7 @@ std::string CxTable::join(const std::string &table_id,
 
   JoinConfig jc(type, left_column_index, right_column_index, algorithm);
   twisterx::Status status = twisterx::JoinTables(
+    ctx_wrap->getInstance(),
 	  this->get_id(),
 	  table_id,
 	  jc,
@@ -107,9 +108,10 @@ std::string CxTable::join(const std::string &table_id,
   }
 }
 
-std::string CxTable::join(const std::string &table_id, JoinConfig join_config) {
+std::string CxTable::join(twisterx_context_wrap *ctx_wrap, const std::string &table_id, JoinConfig join_config) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
   twisterx::Status status = twisterx::JoinTables(
+    ctx_wrap->getInstance(),
 	  this->get_id(),
 	  table_id,
 	  join_config,
@@ -122,9 +124,9 @@ std::string CxTable::join(const std::string &table_id, JoinConfig join_config) {
   }
 }
 //
-std::string CxTable::distributed_join(twisterx_context_wrap ctx_wrap,const std::string &table_id, JoinConfig join_config) {
+std::string CxTable::distributed_join(twisterx_context_wrap *ctx_wrap,const std::string &table_id, JoinConfig join_config) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  TwisterXContext *ctx = ctx_wrap.getInstance();  
+  TwisterXContext *ctx = ctx_wrap->getInstance();
   twisterx::Status status = twisterx::DistributedJoinTables(ctx, this->id_, table_id, join_config, uuid);
   if (status.is_ok()) {
 	return uuid;

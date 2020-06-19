@@ -16,11 +16,14 @@ from pytwisterx.data.table import csv_reader
 from pytwisterx.data.table import Table
 from pyarrow import Table as PyArrowTable
 import time
+from pytwisterx.ctx.context import TwisterxContext
+
+ctx: TwisterxContext = TwisterxContext("mpi")
 
 print('Loading Simple CSV File with Twisterx APIs')
 print("----------------------------------------------------")
 
-tb: Table = csv_reader.read('/tmp/csv.csv', ',')
+tb: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
 print("----------------------------------------------------")
 print("From Python User, Table Id : {}".format(tb.id))
 print("Table Columns : ", tb.columns)
@@ -38,14 +41,14 @@ print("----------------------------------------------------")
 new_path: str = '/tmp/csv1.csv'
 tb.to_csv(new_path)
 
-tb2: Table = csv_reader.read(new_path, ',')
+tb2: Table = csv_reader.read(ctx, new_path, ',')
 tb2.show()
 
 print("Joining Tables")
 print("----------------------------------------------------")
-tb1: Table = csv_reader.read('/tmp/csv.csv', ',')
-tb2: Table = csv_reader.read('/tmp/csv.csv', ',')
-tb3: Table = tb2.join(table=tb1, join_type='inner', algorithm='sort', left_col=0, right_col=1)
+tb1: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
+tb2: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
+tb3: Table = tb2.join(ctx, table=tb1, join_type='inner', algorithm='sort', left_col=0, right_col=1)
 print(tb3.id)
 tb3.show()
 
@@ -74,7 +77,7 @@ pyarrow_tb_to_tx_table_time = time.time_ns() - t1
 print("Joining Loaded table from Python with Twisterx APIs")
 
 t1 = time.time_ns()
-tb4: Table = table_frm_arrow.join(table=table_frm_arrow, join_type='inner', algorithm='sort', left_col=0, right_col=0)
+tb4: Table = table_frm_arrow.join(ctx, table=table_frm_arrow, join_type='inner', algorithm='sort', left_col=0, right_col=0)
 tx_join_time = time.time_ns() - t1
 
 print("Result")

@@ -26,6 +26,9 @@ from pyarrow.lib cimport pyarrow_unwrap_table
 from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
 
+from pytwisterx.ctx.context cimport CTwisterXContextWrap
+from pytwisterx.ctx.context import TwisterxContext
+
 '''
 TwisterX Table definition mapping 
 '''
@@ -40,17 +43,18 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
         void show()
         void show(int, int, int, int)
         _Status to_csv(const string)
-        string join(const string, CJoinType, CJoinAlgorithm, int, int)
-        string join(const string, CJoinConfig)
+        string join(CTwisterXContextWrap *ctx_wrap, const string, CJoinType, CJoinAlgorithm, int, int)
+        string join(CTwisterXContextWrap *ctx_wrap, const string, CJoinConfig)
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CxTable":
-    cdef extern _Status from_csv(const string, const char, const string)
+    cdef extern _Status from_csv(CTwisterXContextWrap *ctx_wrap, const string, const char, const string)
     cdef extern string from_pyarrow_table(shared_ptr[CTable] table)
     cdef extern shared_ptr[CTable] to_pyarrow_table(const string table_id)
 
 cdef class Table:
     cdef CxTable *thisPtr
     cdef CJoinConfig *jcPtr
+    cdef CTwisterXContextWrap *ctx_wrap
 
     def __cinit__(self, string id):
         '''
@@ -166,7 +170,7 @@ cdef class Table:
         s = Status(status.get_code(), b"", -1)
         return s
 
-    def join(self, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
+    def join(self, ctx: TwisterxContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
         '''
         Joins two PyTwisterX tables
         :param table: PyTwisterX table on which the join is performed (becomes the left table)
@@ -179,7 +183,15 @@ cdef class Table:
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
                                right_column_index=right_col)
         cdef CJoinConfig *jc1 = self.jcPtr
-        cdef string table_out_id = self.thisPtr.join(table.id.encode(), jc1[0])
+        cdef CTwisterXContextWrap *ctx_wrap
+        config = ctx.get_config()
+        if config is None:
+            #print("Single Thread Config Loaded")
+            ctx_wrap = new CTwisterXContextWrap()
+        else:
+            #print("Distributed Config Loaded")
+            ctx_wrap = new CTwisterXContextWrap(config)
+        cdef string table_out_id = self.thisPtr.join(ctx_wrap, table.id.encode(), jc1[0])
         if table_out_id.size() == 0:
             raise Exception("Join Failed !!!")
         return Table(table_out_id)
@@ -215,13 +227,21 @@ cdef class Table:
 cdef class csv_reader:
 
     @staticmethod
-    def read(path: str, delimiter: str) -> Table:
+    def read(ctx: TwisterxContext, path: str, delimiter: str) -> Table:
+        cdef CTwisterXContextWrap *ctx_wrap
+        config = ctx.get_config()
+        if config is None:
+            #print("Single Thread Config Loaded")
+            ctx_wrap = new CTwisterXContextWrap()
+        else:
+            #print("Distributed Config Loaded")
+            ctx_wrap = new CTwisterXContextWrap(config)
         cdef string spath = path.encode()
         cdef string sdelm = delimiter.encode()
         id = uuid.uuid4()
         id_str = id.__str__()
         id_buf = id_str.encode()
-        from_csv(spath, sdelm[0], id_buf)
+        from_csv(ctx_wrap, spath, sdelm[0], id_buf)
         id_buf = id_str.encode()
         return Table(id_buf)
 

@@ -49,6 +49,7 @@ from pytwisterx.ctx.context cimport CTwisterXContextWrap
 #
 cdef class TwisterxContext:
     cdef CTwisterXContextWrap *thisPtr;
+    cdef string config;
 
     def __cinit__(self, config: str):
         '''
@@ -56,6 +57,7 @@ cdef class TwisterxContext:
         :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
         :return: None
         '''
+        self.config = config.encode()
         if config is None:
             #print("Single Thread Config Loaded")
             self.thisPtr = new CTwisterXContextWrap()
@@ -83,6 +85,9 @@ cdef class TwisterxContext:
         :return: None
         '''
         self.thisPtr.Finalize()
+
+    def get_config(self):
+        return self.config
 
 
 
