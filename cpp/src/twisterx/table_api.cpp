@@ -213,37 +213,34 @@ twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
 
   vector<std::shared_ptr<arrow::Table>> received_tables;
 
-  // add partition of this worker to the vector
-  auto partition_of_this_worker = partitioned_tables.find(ctx->GetRank());
-  if (partition_of_this_worker != partitioned_tables.end()) {
-    received_tables.push_back(GetTable(partition_of_this_worker->second));
-  }
-
   // define call back to catch the receiving tables
   class AllToAllListener : public twisterx::ArrowCallback {
 
-    vector<std::shared_ptr<arrow::Table>> tabs;
+    vector<std::shared_ptr<arrow::Table>> *tabs;
     int workerId;
 
    public:
-    explicit AllToAllListener(const vector<std::shared_ptr<arrow::Table>> &tabs, int workerId) {
+    explicit AllToAllListener(vector<std::shared_ptr<arrow::Table>> *tabs, int workerId) {
       this->tabs = tabs;
       this->workerId = workerId;
     }
 
     bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
-      this->tabs.push_back(table);
+      LOG(INFO) << workerId << "received from " << source << "already in tabs : " << tabs->size();
+      this->tabs->push_back(table);
       return true;
     };
   };
 
   // doing all to all communication to exchange tables
   twisterx::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
-                                     std::make_shared<AllToAllListener>(received_tables, ctx->GetRank()),
+                                     std::make_shared<AllToAllListener>(&received_tables, ctx->GetRank()),
                                      table->schema(), twisterx::ToArrowPool(ctx));
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
       all_to_all.insert(GetTable(partitioned_table.second), partitioned_table.first);
+    } else {
+      received_tables.push_back(GetTable(partitioned_table.second));
     }
   }
 
@@ -253,6 +250,7 @@ twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
   all_to_all.close();
 
   // now we have the final set of tables
+  LOG(INFO) << "Concatenating tables, Num of tables :  " << received_tables.size();
   arrow::Result<std::shared_ptr<arrow::Table>> concat_tables = arrow::ConcatenateTables(received_tables);
 
   if (concat_tables.ok()) {
@@ -272,9 +270,11 @@ twisterx::Status ShuffleTwoTables(twisterx::TwisterXContext *ctx,
                                   const std::vector<int> &right_hash_columns,
                                   std::shared_ptr<arrow::Table> *left_table_out,
                                   std::shared_ptr<arrow::Table> *right_table_out) {
-  LOG(INFO) << "Shuffling two tables";
+  LOG(INFO) << "Shuffling two tables with total rows : "
+            << GetTable(left_table_id)->num_rows() + GetTable(right_table_id)->num_rows();
   auto status = Shuffle(ctx, left_table_id, left_hash_columns, ctx->GetNextSequence(), left_table_out);
   if (status.is_ok()) {
+    LOG(INFO) << "Left table shuffled";
     return Shuffle(ctx, right_table_id, right_hash_columns, ctx->GetNextSequence(), right_table_out);
   }
   return status;
@@ -656,11 +656,14 @@ twisterx::Status DistributedUnion(twisterx::TwisterXContext *ctx,
     auto ltab_id = PutTable(left_final_table);
     auto rtab_id = PutTable(right_final_table);
 
-    //todo remove temp tables
-
     // now do the local union
     std::shared_ptr<arrow::Table> table;
-    return Union(ctx, ltab_id, rtab_id, dest_id);
+    auto status = Union(ctx, ltab_id, rtab_id, dest_id);
+
+    RemoveTable(ltab_id);
+    RemoveTable(rtab_id);
+
+    return status;
   } else {
     return shuffle_status;
   }
