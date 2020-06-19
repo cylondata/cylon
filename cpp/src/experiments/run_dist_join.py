@@ -42,9 +42,10 @@ for i in row_cases:
     # test_dir = f"{out_dir}/{i}"
     # os.system(f"rm -rf {test_dir}; mkdir -p {test_dir}")
 
-    krange = (0, int(i * key_duplication_ratio))
+    krange = (0, int(i * key_duplication_ratio * max(world_sizes)))
 
     # generate 2 cvs for max of world
+    print(f"\n\n##### generating files of rows {i}!", flush=True)
     for rank in range(max(world_sizes)):
         for f in csvs:
             generate_file(output=f.replace('RANK', str(rank)), rows=i, cols=cols, krange=krange)
