@@ -18,12 +18,15 @@
 #include "../table_api_extended.hpp"
 #include <arrow/python/serialize.h>
 #include "arrow/api.h"
+#include <arrow/python/serialize.h>
+#include "arrow/api.h"
 #include "../util/uuid.hpp"
 #include "../join/join_config.h"
 
 using namespace std;
 using namespace twisterx;
 using namespace twisterx::python::table;
+using namespace twisterx::python;
 using namespace twisterx::io::config;
 using namespace twisterx::util::uuid;
 using namespace twisterx::join::config;
@@ -66,8 +69,8 @@ Status CxTable::to_csv(const std::string &path) {
   ofstream out_csv;
   out_csv.open(path);
   Status status = PrintToOStream(this->get_id(), 0,
-                                 this->columns(), 0,
-                                 this->rows(), out_csv);
+								 this->columns(), 0,
+								 this->rows(), out_csv);
   out_csv.close();
   return status;
 }
@@ -117,4 +120,16 @@ std::string CxTable::join(const std::string &table_id, JoinConfig join_config) {
   } else {
 	return "";
   }
+}
+//
+std::string CxTable::distributed_join(twisterx_context_wrap ctx_wrap,const std::string &table_id, JoinConfig join_config) {
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  TwisterXContext *ctx = ctx_wrap.getInstance();  
+  twisterx::Status status = twisterx::DistributedJoinTables(ctx, this->id_, table_id, join_config, uuid);
+  if (status.is_ok()) {
+	return uuid;
+  } else {
+	return "";
+  }
+
 }
