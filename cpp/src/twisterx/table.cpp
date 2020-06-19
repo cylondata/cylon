@@ -23,13 +23,13 @@
 
 namespace twisterx {
 
-Status Table::FromCSV(const std::string &path,
+Status Table::FromCSV(twisterx::TwisterXContext *ctx, const std::string &path,
                       std::shared_ptr<Table> &tableOut,
                       const twisterx::io::config::CSVReadOptions &options) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  twisterx::Status status = twisterx::ReadCSV(path, uuid, options);
+  twisterx::Status status = twisterx::ReadCSV(ctx, path, uuid, options);
   if (status.is_ok()) {
-    tableOut = std::make_shared<Table>(uuid);
+    tableOut = std::make_shared<Table>(uuid, ctx);
   }
   return status;
 }
@@ -45,13 +45,15 @@ Status Table::FromArrowTable(const std::shared_ptr<arrow::Table> &table) {
   return Status(twisterx::OK, "Loaded Successfully");
 }
 
-Status Table::FromArrowTable(const std::shared_ptr<arrow::Table> &table, std::shared_ptr<Table> *tableOut) {
+Status Table::FromArrowTable(twisterx::TwisterXContext *ctx,
+                             const std::shared_ptr<arrow::Table> &table,
+                             std::shared_ptr<Table> *tableOut) {
   if (!twisterx::tarrow::validateArrowTableTypes(table)) {
     LOG(FATAL) << "Types not supported";
     return Status(twisterx::Invalid, "This type not supported");
   }
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  *tableOut = std::make_shared<Table>(uuid);
+  *tableOut = std::make_shared<Table>(uuid, ctx);
   PutTable(uuid, table);
   return Status(twisterx::OK, "Loaded Successfully");
 }
@@ -76,24 +78,26 @@ void Table::Print(int row1, int row2, int col1, int col2) {
   twisterx::Print(this->GetID(), col1, col2, row1, row2);
 }
 
-Status Table::Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables, std::shared_ptr<Table> *tableOut) {
+Status Table::Merge(twisterx::TwisterXContext *ctx,
+                    const std::vector<std::shared_ptr<twisterx::Table>> &tables,
+                    shared_ptr<Table> &tableOut) {
   std::vector<std::string> table_ids(tables.size());
   for (auto it = tables.begin(); it < tables.end(); it++) {
     table_ids.push_back((*it)->GetID());
   }
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  twisterx::Status status = twisterx::Merge(table_ids, uuid);
+  twisterx::Status status = twisterx::Merge(ctx, table_ids, uuid);
   if (status.is_ok()) {
-    *tableOut = std::make_shared<Table>(uuid);
+    tableOut = std::make_shared<Table>(uuid, ctx);
   }
   return status;
 }
 
-Status Table::Sort(int sort_column, std::shared_ptr<Table> *tableOut) {
+Status Table::Sort(int sort_column, shared_ptr<Table> &out) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  Status status = twisterx::SortTable(id_, uuid, sort_column);
+  Status status = twisterx::SortTable(this->ctx, id_, uuid, sort_column);
   if (status.is_ok()) {
-    *tableOut = std::make_shared<Table>(uuid);
+    out = std::make_shared<Table>(uuid, ctx);
   }
   return status;
 }
@@ -101,14 +105,14 @@ Status Table::Sort(int sort_column, std::shared_ptr<Table> *tableOut) {
 Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_partitions,
                             std::vector<std::shared_ptr<twisterx::Table>> *out) {
   std::unordered_map<int, std::string> tables;
-  Status status = twisterx::HashPartition(id_, hash_columns, no_of_partitions, &tables);
+  Status status = twisterx::HashPartition(ctx, id_, hash_columns, no_of_partitions, &tables);
   if (!status.is_ok()) {
     LOG(FATAL) << "Failed to partition : " << status.get_msg();
     return status;
   }
 
   for (const auto &t : tables) {
-    std::shared_ptr<Table> tab = std::make_shared<Table>(t.second);
+    std::shared_ptr<Table> tab = std::make_shared<Table>(t.second, this->ctx);
     out->push_back(tab);
   }
   return Status::OK();
@@ -118,14 +122,14 @@ Status Table::Join(const std::shared_ptr<Table> &right,
                    twisterx::join::config::JoinConfig join_config,
                    std::shared_ptr<Table> *out) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  twisterx::Status status = twisterx::JoinTables(
-      this->GetID(),
-      right->GetID(),
-      join_config,
-      uuid
+  twisterx::Status status = twisterx::JoinTables(ctx,
+                                                 this->GetID(),
+                                                 right->GetID(),
+                                                 join_config,
+                                                 uuid
   );
   if (status.is_ok()) {
-    *out = std::make_shared<Table>(uuid);
+    *out = std::make_shared<Table>(uuid, this->ctx);
   }
   return status;
 }
@@ -136,30 +140,29 @@ Status Table::ToArrowTable(std::shared_ptr<arrow::Table> &out) {
   return Status::OK();
 }
 
-Status Table::DistributedJoin(twisterx::TwisterXContext *ctx,
-                              const shared_ptr<Table> &right,
+Status Table::DistributedJoin(const shared_ptr<Table> &right,
                               twisterx::join::config::JoinConfig join_config,
                               std::shared_ptr<Table> *out) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  twisterx::Status status = twisterx::DistributedJoinTables(ctx, this->id_, right->id_, join_config, uuid);
+  twisterx::Status status = twisterx::DistributedJoinTables(this->ctx, this->id_, right->id_, join_config, uuid);
   if (status.is_ok()) {
-    *out = std::make_shared<Table>(uuid);
+    *out = std::make_shared<Table>(uuid, this->ctx);
   }
   return status;
 }
 Status Table::Union(const shared_ptr<Table> &right, std::shared_ptr<Table> &out) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  twisterx::Status status = twisterx::Union(this->GetID(), right->GetID(), uuid);
+  twisterx::Status status = twisterx::Union(ctx, this->GetID(), right->GetID(), uuid);
   if (status.is_ok()) {
-    out = std::make_shared<Table>(uuid);
+    out = std::make_shared<Table>(uuid, this->ctx);
   }
   return status;
 }
 Status Table::Select(const std::function<bool(twisterx::Row)> &selector, shared_ptr<Table> &out) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-  twisterx::Status status = twisterx::Select(this->GetID(), selector, uuid);
+  twisterx::Status status = twisterx::Select(ctx, this->GetID(), selector, uuid);
   if (status.is_ok()) {
-    out = std::make_shared<Table>(uuid);
+    out = std::make_shared<Table>(uuid, this->ctx);
   }
   return status;
 }
@@ -169,7 +172,7 @@ Status Table::DistributedUnion(twisterx::TwisterXContext *ctx, const shared_ptr<
   twisterx::Status status = twisterx::DistributedUnion(ctx, this->id_, right->id_, uuid);
   LOG(INFO) << "after";
   if (status.is_ok()) {
-    out = std::make_shared<Table>(uuid);
+    out = std::make_shared<Table>(uuid, this->ctx);
   }
   return status;
 }
@@ -180,7 +183,7 @@ Table::~Table() {
   this->Clear();
 }
 
-Status Table::FromCSV(const vector<std::string> &paths,
+Status Table::FromCSV(twisterx::TwisterXContext *ctx, const vector<std::string> &paths,
                       const std::vector<std::shared_ptr<Table>> &tableOuts,
                       const io::config::CSVReadOptions &options) {
   std::vector<std::string> out_table_ids;
@@ -190,7 +193,7 @@ Status Table::FromCSV(const vector<std::string> &paths,
     out_table_ids.push_back(tab->GetID());
   }
 
-  return twisterx::ReadCSV(paths, out_table_ids, options);
+  return twisterx::ReadCSV(ctx, paths, out_table_ids, options);
 }
 
 Status Table::Project(const std::vector<int64_t> &project_columns, std::shared_ptr<Table> &out) {
@@ -198,7 +201,7 @@ Status Table::Project(const std::vector<int64_t> &project_columns, std::shared_p
   auto status = twisterx::Project(this->id_, project_columns, uuid);
 
   if (status.is_ok()) {
-    out = std::make_shared<Table>(uuid);
+    out = std::make_shared<Table>(uuid, this->ctx);
   }
 
   return status;

@@ -32,6 +32,7 @@
 #include "arrow/arrow_all_to_all.hpp"
 
 #include "arrow/arrow_comparator.h"
+#include "ctx/arrow_memory_pool_utils.h"
 
 namespace twisterx {
 
@@ -61,10 +62,11 @@ void RemoveTable(const std::string &id) {
   table_map.erase(id);
 }
 
-twisterx::Status ReadCSV(const std::string &path,
+twisterx::Status ReadCSV(twisterx::TwisterXContext *ctx,
+                         const std::string &path,
                          const std::string &id,
                          twisterx::io::config::CSVReadOptions options) {
-  arrow::Result<std::shared_ptr<arrow::Table>> result = twisterx::io::read_csv(path, options);
+  arrow::Result<std::shared_ptr<arrow::Table>> result = twisterx::io::read_csv(ctx, path, options);
   if (result.ok()) {
     std::shared_ptr<arrow::Table> table = *result;
     LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
@@ -74,14 +76,16 @@ twisterx::Status ReadCSV(const std::string &path,
   return twisterx::Status(Code::IOError, result.status().message());;
 }
 
-void ReadCSVThread(const std::string &path,
+void ReadCSVThread(twisterx::TwisterXContext *ctx, const std::string &path,
                    const std::string &id,
                    twisterx::io::config::CSVReadOptions options,
-                   std::promise<twisterx::Status> *status_promise) {
-  status_promise->set_value(ReadCSV(path, id, options));
+                   const std::shared_ptr<std::promise<twisterx::Status>> &status_promise) {
+  status_promise->set_value(ReadCSV(ctx, path, id, options));
 }
 
-twisterx::Status ReadCSV(const std::vector<std::string> &paths, const std::vector<std::string> &ids,
+twisterx::Status ReadCSV(twisterx::TwisterXContext *ctx,
+                         const std::vector<std::string> &paths,
+                         const std::vector<std::string> &ids,
                          twisterx::io::config::CSVReadOptions options) {
 
   if (paths.size() != ids.size()) {
@@ -92,14 +96,15 @@ twisterx::Status ReadCSV(const std::vector<std::string> &paths, const std::vecto
     std::vector<std::pair<std::future<twisterx::Status>, std::thread>> futures;
     futures.reserve(paths.size());
     for (uint64_t kI = 0; kI < paths.size(); ++kI) {
-      std::promise<twisterx::Status> read_promise;
+      auto read_promise = std::make_shared<std::promise<twisterx::Status>>();
       futures.push_back(std::pair<std::future<twisterx::Status>, std::thread>
-                            (read_promise.get_future(),
+                            (read_promise->get_future(),
                              std::thread(ReadCSVThread,
+                                         ctx,
                                          paths[kI],
                                          ids[kI],
                                          options,
-                                         &read_promise)));
+                                         read_promise)));
     }
     bool all_passed = false;
     for (auto &future: futures) {
@@ -110,7 +115,7 @@ twisterx::Status ReadCSV(const std::vector<std::string> &paths, const std::vecto
   } else {
     auto status = twisterx::Status::OK();
     for (int kI = 0; kI < paths.size(); ++kI) {
-      status = ReadCSV(paths[kI], ids[kI], options);
+      status = ReadCSV(ctx, paths[kI], ids[kI], options);
       if (!status.is_ok()) {
         return status;
       }
@@ -120,7 +125,7 @@ twisterx::Status ReadCSV(const std::vector<std::string> &paths, const std::vecto
 }
 
 twisterx::Status WriteCSV(const std::string &id, const std::string &path,
-                          twisterx::io::config::CSVWriteOptions options) {
+                          const twisterx::io::config::CSVWriteOptions &options) {
   auto table = GetTable(id);
   std::ofstream out_csv;
   out_csv.open(path);
@@ -197,13 +202,12 @@ twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
                          const std::vector<int> &hash_columns,
                          int edge_id,
                          std::shared_ptr<arrow::Table> *table_out) {
-  LOG(INFO) << "Shuffling table " << table_id << ", edge id : " << edge_id;
   auto table = GetTable(table_id);
 
   std::unordered_map<int, std::string> partitioned_tables{};
 
   // partition the tables locally
-  HashPartition(table_id, hash_columns, ctx->GetWorldSize(), &partitioned_tables);
+  HashPartition(ctx, table_id, hash_columns, ctx->GetWorldSize(), &partitioned_tables);
 
   auto neighbours = ctx->GetNeighbours(true);
 
@@ -242,29 +246,25 @@ twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
   // doing all to all communication to exchange tables
   twisterx::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
                                      std::make_shared<AllToAllListener>(received_tables, ctx->GetRank()),
-                                     table->schema(), arrow::default_memory_pool());
+                                     table->schema(), twisterx::ToArrowPool(ctx));
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
       all_to_all.insert(GetTable(partitioned_table.second), partitioned_table.first);
     }
   }
 
-  LOG(INFO) << "Communicating table " << table_id;
   // now complete the communication
   all_to_all.finish();
   while (!all_to_all.isComplete()) {}
   all_to_all.close();
 
-  LOG(INFO) << "Done communicating table " << table_id << "  received " << received_tables.size();
-
   // now we have the final set of tables
   arrow::Result<std::shared_ptr<arrow::Table>> concat_tables = arrow::ConcatenateTables(received_tables);
 
-  LOG(INFO) << "Done concating tables " << table_id;
-
   if (concat_tables.ok()) {
     auto final_table = concat_tables.ValueOrDie();
-    auto status = final_table->CombineChunks(arrow::default_memory_pool(), table_out);
+    LOG(INFO) << "Done concating tables, rows :  " << final_table->num_rows();
+    auto status = final_table->CombineChunks(twisterx::ToArrowPool(ctx), table_out);
     return twisterx::Status((int) status.code(), status.message());
   } else {
     return twisterx::Status((int) concat_tables.status().code(), concat_tables.status().message());
@@ -279,9 +279,9 @@ twisterx::Status ShuffleTwoTables(twisterx::TwisterXContext *ctx,
                                   std::shared_ptr<arrow::Table> *left_table_out,
                                   std::shared_ptr<arrow::Table> *right_table_out) {
   LOG(INFO) << "Shuffling two tables";
-  auto status = Shuffle(ctx, left_table_id, left_hash_columns, 0, left_table_out);
+  auto status = Shuffle(ctx, left_table_id, left_hash_columns, ctx->GetNextSequence(), left_table_out);
   if (status.is_ok()) {
-    return Shuffle(ctx, right_table_id, right_hash_columns, 1, right_table_out);
+    return Shuffle(ctx, right_table_id, right_hash_columns, ctx->GetNextSequence(), right_table_out);
   }
   return status;
 }
@@ -320,7 +320,7 @@ twisterx::Status DistributedJoinTables(twisterx::TwisterXContext *ctx,
         right_final_table,
         join_config,
         &table,
-        arrow::default_memory_pool()
+        twisterx::ToArrowPool(ctx)
     );
     PutTable(dest_id, table);
     return twisterx::Status((int) status.code(), status.message());
@@ -329,7 +329,8 @@ twisterx::Status DistributedJoinTables(twisterx::TwisterXContext *ctx,
   }
 }
 
-twisterx::Status JoinTables(const std::string &table_left,
+twisterx::Status JoinTables(twisterx::TwisterXContext *ctx,
+                            const std::string &table_left,
                             const std::string &table_right,
                             twisterx::join::config::JoinConfig join_config,
                             const std::string &dest_id) {
@@ -347,7 +348,7 @@ twisterx::Status JoinTables(const std::string &table_left,
         right,
         join_config,
         &table,
-        arrow::default_memory_pool()
+        twisterx::ToArrowPool(ctx)
     );
     PutTable(dest_id, table);
     return twisterx::Status((int) status.code(), status.message());
@@ -370,21 +371,28 @@ int64_t RowCount(const std::string &id) {
   return -1;
 }
 
-twisterx::Status Merge(std::vector<std::string> table_ids, const std::string &merged_tab) {
+twisterx::Status Merge(twisterx::TwisterXContext *ctx,
+                       std::vector<std::string> table_ids,
+                       const std::string &merged_tab) {
   std::vector<std::shared_ptr<arrow::Table>> tables;
   for (auto it = table_ids.begin(); it < table_ids.end(); it++) {
     tables.push_back(GetTable(*it));
   }
   arrow::Result<std::shared_ptr<arrow::Table>> result = arrow::ConcatenateTables(tables);
   if (result.status() == arrow::Status::OK()) {
-    PutTable(merged_tab, result.ValueOrDie());
+    std::shared_ptr<arrow::Table> combined;
+    result.ValueOrDie()->CombineChunks(twisterx::ToArrowPool(ctx), &combined);
+    PutTable(merged_tab, combined);
     return twisterx::Status::OK();
   } else {
     return twisterx::Status((int) result.status().code(), result.status().message());
   }
 }
 
-twisterx::Status SortTable(const std::string &id, const std::string &sortedTableId, int columnIndex) {
+twisterx::Status SortTable(twisterx::TwisterXContext *ctx,
+                           const std::string &id,
+                           const std::string &sortedTableId,
+                           int columnIndex) {
   auto table = GetTable(id);
   if (table == NULLPTR) {
     LOG(FATAL) << "Failed to retrieve table";
@@ -392,7 +400,7 @@ twisterx::Status SortTable(const std::string &id, const std::string &sortedTable
   }
   auto col = table->column(columnIndex)->chunk(0);
   std::shared_ptr<arrow::Array> indexSorts;
-  arrow::Status status = SortIndices(arrow::default_memory_pool(), col, &indexSorts);
+  arrow::Status status = SortIndices(twisterx::ToArrowPool(ctx), col, &indexSorts);
 
   if (status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed when sorting table to indices. " << status.ToString();
@@ -403,7 +411,7 @@ twisterx::Status SortTable(const std::string &id, const std::string &sortedTable
   for (auto &column : table->columns()) {
     std::shared_ptr<arrow::Array> destination_col_array;
     status = twisterx::util::copy_array_by_indices(nullptr, column->chunk(0),
-                                                   &destination_col_array, arrow::default_memory_pool());
+                                                   &destination_col_array, twisterx::ToArrowPool(ctx));
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed while copying a column to the final table from left table. " << status.ToString();
       return twisterx::Status((int) status.code(), status.message());
@@ -416,7 +424,10 @@ twisterx::Status SortTable(const std::string &id, const std::string &sortedTable
   return Status::OK();
 }
 
-twisterx::Status HashPartition(const std::string &id, const std::vector<int> &hash_columns, int no_of_partitions,
+twisterx::Status HashPartition(twisterx::TwisterXContext *ctx,
+                               const std::string &id,
+                               const std::vector<int> &hash_columns,
+                               int no_of_partitions,
                                std::unordered_map<int, std::string> *out) {
   std::shared_ptr<arrow::Table> left_tab = GetTable(id);
   // keep arrays for each target, these arrays are used for creating the table
@@ -446,7 +457,7 @@ twisterx::Status HashPartition(const std::string &id, const std::vector<int> &ha
   // first we partition the table
   std::vector<int64_t> outPartitions;
   twisterx::Status
-      status = HashPartitionArrays(arrow::default_memory_pool(), arrays, length, partitions, &outPartitions);
+      status = HashPartitionArrays(twisterx::ToArrowPool(ctx), arrays, length, partitions, &outPartitions);
   if (!status.is_ok()) {
     LOG(FATAL) << "Failed to create the hash partition";
     return status;
@@ -457,7 +468,7 @@ twisterx::Status HashPartition(const std::string &id, const std::vector<int> &ha
     std::shared_ptr<arrow::Array> array = left_tab->column(i)->chunk(0);
 
     std::shared_ptr<ArrowArraySplitKernel> splitKernel;
-    status = CreateSplitter(type, arrow::default_memory_pool(), &splitKernel);
+    status = CreateSplitter(type, twisterx::ToArrowPool(ctx), &splitKernel);
     if (!status.is_ok()) {
       LOG(FATAL) << "Failed to create the splitter";
       return status;
@@ -480,7 +491,10 @@ twisterx::Status HashPartition(const std::string &id, const std::vector<int> &ha
   return twisterx::Status::OK();
 }
 
-twisterx::Status Union(const std::string &table_left, const std::string &table_right, const std::string &dest_id) {
+twisterx::Status Union(twisterx::TwisterXContext *ctx,
+                       const std::string &table_left,
+                       const std::string &table_right,
+                       const std::string &dest_id) {
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
 
@@ -507,10 +521,14 @@ twisterx::Status Union(const std::string &table_left, const std::string &table_r
     twisterx::RowHashingKernel *row_hashing_kernel;
     int64_t *eq, *hs;
    public:
-    RowComparator(const std::shared_ptr<arrow::Table> *tables, int64_t *eq, int64_t *hs) {
+    RowComparator(twisterx::TwisterXContext *ctx,
+                  const std::shared_ptr<arrow::Table> *tables,
+                  int64_t *eq,
+                  int64_t *hs) {
       this->tables = tables;
       this->comparator = new twisterx::TableRowComparator(tables[0]->fields());
-      this->row_hashing_kernel = new twisterx::RowHashingKernel(tables[0]->fields(), arrow::default_memory_pool());
+      this->row_hashing_kernel =
+          new twisterx::RowHashingKernel(tables[0]->fields(), twisterx::ToArrowPool(ctx));
       this->eq = eq;
       this->hs = hs;
     }
@@ -534,7 +552,7 @@ twisterx::Status Union(const std::string &table_left, const std::string &table_r
     }
   };
 
-  auto row_comp = RowComparator(tables, &eq_calls, &hash_calls);
+  auto row_comp = RowComparator(ctx, tables, &eq_calls, &hash_calls);
 
   auto buckets_pre_alloc = (ltab->num_rows() + rtab->num_rows());
   LOG(INFO) << "Buckets : " << buckets_pre_alloc;
@@ -584,7 +602,7 @@ twisterx::Status Union(const std::string &table_left, const std::string &table_r
           twisterx::util::copy_array_by_indices(std::make_shared<std::vector<int64_t>>(indices_from_tabs[tab_idx]),
                                                 tables[tab_idx]->column(c)->chunk(0),
                                                 &destination_col_array,
-                                                arrow::default_memory_pool());
+                                                twisterx::ToArrowPool(ctx));
       if (status != arrow::Status::OK()) {
         LOG(FATAL) << "Failed while copying a column to the final table from tables." << status.ToString();
         return twisterx::Status((int) status.code(), status.message());
@@ -648,19 +666,22 @@ twisterx::Status DistributedUnion(twisterx::TwisterXContext *ctx,
 
     // now do the local union
     std::shared_ptr<arrow::Table> table;
-    return Union(ltab_id, rtab_id, dest_id);
+    return Union(ctx, ltab_id, rtab_id, dest_id);
   } else {
     return shuffle_status;
   }
 
 }
 
-Status Select(const std::string &id, const std::function<bool(twisterx::Row)> &selector, const std::string &out) {
+Status Select(twisterx::TwisterXContext *ctx,
+              const std::string &id,
+              const std::function<bool(twisterx::Row)> &selector,
+              const std::string &out) {
 
   auto src_table = GetTable(id);
 
   // boolean builder to hold the mask
-  arrow::BooleanBuilder boolean_builder(arrow::default_memory_pool());
+  arrow::BooleanBuilder boolean_builder(twisterx::ToArrowPool(ctx));
 
   for (int64_t row_index = 0; row_index < src_table->num_rows(); row_index++) {
     auto row = twisterx::Row(id, row_index);
@@ -679,8 +700,8 @@ Status Select(const std::string &id, const std::function<bool(twisterx::Row)> &s
   }
 
   std::shared_ptr<arrow::Table> out_table;
-  arrow::compute::FunctionContext ctx;
-  status = arrow::compute::Filter(&ctx, *src_table, *mask, &out_table);
+  arrow::compute::FunctionContext func_ctx;
+  status = arrow::compute::Filter(&func_ctx, *src_table, *mask, &out_table);
   if (!status.ok()) {
     return twisterx::Status(UnknownError, status.message());
   }
@@ -689,13 +710,13 @@ Status Select(const std::string &id, const std::function<bool(twisterx::Row)> &s
   return twisterx::Status::OK();
 }
 
-Status Project(const std::string &id, std::vector<int64_t> project_columns, const std::string &out) {
+Status Project(const std::string &id, const std::vector<int64_t> &project_columns, const std::string &out) {
   auto table = GetTable(id);
   std::vector<std::shared_ptr<arrow::Field>> schema_vector;
   std::vector<std::shared_ptr<arrow::ChunkedArray>> column_arrays;
   schema_vector.reserve(project_columns.size());
 
-  for (auto &col_index: project_columns) {
+  for (auto const &col_index: project_columns) {
     schema_vector.push_back(table->field(col_index));
     auto chunked_array = std::make_shared<arrow::ChunkedArray>(table->column(col_index)->chunks());
     column_arrays.push_back(chunked_array);

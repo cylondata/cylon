@@ -27,7 +27,8 @@ class TwisterXContext {
   std::unordered_map<std::string, std::string> config{};
   bool distributed;
   twisterx::net::Communicator *communicator{};
-  twisterx::MemoryPool *memory_pool;
+  twisterx::MemoryPool *memory_pool{};
+  int32_t sequence_no;
 
  public:
   static TwisterXContext *Init();
@@ -43,11 +44,9 @@ class TwisterXContext {
   int GetWorldSize();
   vector<int> GetNeighbours(bool include_self);
   explicit TwisterXContext(bool distributed);
-
-  template<typename TYPE>
-  TYPE *GetMemoryPool();
-
-  void SetMemoryPool(twisterx::MemoryPool* mem_pool);
+  twisterx::MemoryPool *GetMemoryPool();
+  void SetMemoryPool(twisterx::MemoryPool *mem_pool);
+  int32_t GetNextSequence();
 };
 }
 

@@ -18,48 +18,6 @@
 
 namespace twisterx {
 
-arrow::Status ArrowStatus(twisterx::Status status) {
-  return arrow::Status(static_cast<arrow::StatusCode>(status.get_code()), status.get_msg());
-};
-
-class ProxyMemoryPool : public arrow::MemoryPool {
-
- private:
-  twisterx::MemoryPool *tx_memory;
- public:
-  ProxyMemoryPool(twisterx::MemoryPool *tx_memory) {
-    this->tx_memory = tx_memory;
-  }
-
-  ~ProxyMemoryPool() override {
-    delete tx_memory;
-  }
-
-  arrow::Status Allocate(int64_t size, uint8_t **out) override {
-    return ArrowStatus(tx_memory->Allocate(size, out));
-  }
-
-  arrow::Status Reallocate(int64_t old_size, int64_t new_size, uint8_t **ptr) override {
-    return ArrowStatus(tx_memory->Reallocate(old_size, new_size, ptr));
-  };
-
-  void Free(uint8_t *buffer, int64_t size) override {
-    tx_memory->Free(buffer, size);
-  }
-
-  int64_t bytes_allocated() const override {
-    return this->tx_memory->bytes_allocated();
-  }
-
-  int64_t max_memory() const override {
-    return this->tx_memory->max_memory();
-  }
-
-  std::string backend_name() const override {
-    return this->tx_memory->backend_name();
-  }
-};
-
 TwisterXContext *TwisterXContext::Init() {
   return new TwisterXContext(false);
 }
@@ -131,16 +89,14 @@ vector<int> TwisterXContext::GetNeighbours(bool include_self) {
   return neighbours;
 }
 
-template<typename TYPE>
-TYPE *TwisterXContext::GetMemoryPool() {
-  if (this->memory_pool == nullptr) {
-    return arrow::default_memory_pool();
-  } else {
-    return new ProxyMemoryPool(this->memory_pool);
-  }
+twisterx::MemoryPool *TwisterXContext::GetMemoryPool() {
+  return this->memory_pool;
 }
 
 void TwisterXContext::SetMemoryPool(twisterx::MemoryPool *mem_pool) {
   this->memory_pool = mem_pool;
+}
+int32_t TwisterXContext::GetNextSequence() {
+  return this->sequence_no++;
 }
 }

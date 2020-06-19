@@ -18,17 +18,20 @@
 
 #include "arrow_io.hpp"
 #include "csv_read_config_holder.hpp"
+#include "../ctx/twisterx_context.h"
+#include "../ctx/arrow_memory_pool_utils.h"
 
 namespace twisterx {
 namespace io {
-arrow::Result<std::shared_ptr<arrow::Table>> read_csv(const std::string &path,
-													  twisterx::io::config::CSVReadOptions options) {
+arrow::Result<std::shared_ptr<arrow::Table>> read_csv(twisterx::TwisterXContext *ctx,
+                                                      const std::string &path,
+                                                      twisterx::io::config::CSVReadOptions options) {
   arrow::Status st;
-  arrow::MemoryPool *pool = arrow::default_memory_pool();
+  auto *pool = twisterx::ToArrowPool(ctx);
   arrow::Result<std::shared_ptr<arrow::io::MemoryMappedFile>> mmap_result = arrow::io::MemoryMappedFile::Open(path,
-																											  arrow::io::FileMode::READ);
+                                                                                                              arrow::io::FileMode::READ);
   if (!mmap_result.status().ok()) {
-	return mmap_result.status();
+    return mmap_result.status();
   }
 
   auto read_options = dynamic_cast<arrow::csv::ReadOptions *>(config::CSVConfigHolder::GetCastedHolder(options));
@@ -38,10 +41,10 @@ arrow::Result<std::shared_ptr<arrow::Table>> read_csv(const std::string &path,
   // Instantiate TableReader from input stream and options
   std::shared_ptr<arrow::csv::TableReader> reader;
   st = arrow::csv::TableReader::Make(pool, *mmap_result, *read_options,
-									 *parse_options, *convert_options,
-									 &reader);
+                                     *parse_options, *convert_options,
+                                     &reader);
   if (!st.ok()) {
-	return arrow::Result<std::shared_ptr<arrow::Table>>(st);
+    return arrow::Result<std::shared_ptr<arrow::Table>>(st);
   }
 
   // Read table from CSV file

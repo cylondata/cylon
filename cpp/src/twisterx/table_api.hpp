@@ -33,16 +33,21 @@ namespace twisterx {
 
 void RemoveTable(const std::string &id);
 
-twisterx::Status ReadCSV(const std::string &path, const std::string &id,
+twisterx::Status ReadCSV(twisterx::TwisterXContext *ctx,
+                         const std::string &path,
+                         const std::string &id,
                          twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
 
-twisterx::Status ReadCSV(const std::vector<std::string> &paths, const std::vector<std::string> &ids,
-                         twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+twisterx::Status ReadCSV(twisterx::TwisterXContext *ctx,
+                         const std::vector<std::string> &paths,
+                         const std::vector<std::string> &ids,
+                         twisterx::io::config::CSVReadOptions options);
 
 twisterx::Status WriteCSV(const std::string &id, const std::string &path,
-                          twisterx::io::config::CSVWriteOptions options = twisterx::io::config::CSVWriteOptions());
+                          const twisterx::io::config::CSVWriteOptions& options = twisterx::io::config::CSVWriteOptions());
 
-twisterx::Status JoinTables(const std::string &table_left,
+twisterx::Status JoinTables(twisterx::TwisterXContext *ctx,
+                            const std::string &table_left,
                             const std::string &table_right,
                             twisterx::join::config::JoinConfig join_config,
                             const std::string &dest_id);
@@ -55,11 +60,10 @@ twisterx::Status DistributedJoinTables(
     const std::string &dest_id
 );
 
-twisterx::Status Union(
-    const std::string &table_left,
-    const std::string &table_right,
-    const std::string &dest_id
-);
+twisterx::Status Union(twisterx::TwisterXContext *ctx,
+                       const std::string &table_left,
+                       const std::string &table_right,
+                       const std::string &dest_id);
 
 twisterx::Status DistributedUnion(
     twisterx::TwisterXContext *ctx,
@@ -100,7 +104,9 @@ twisterx::Status PrintToOStream(const std::string &table_id,
  * @param merged_tab id of the merged table
  * @return the status of the merge
  */
-twisterx::Status Merge(std::vector<std::string> table_ids, const std::string &merged_tab);
+twisterx::Status Merge(twisterx::TwisterXContext *ctx,
+                       std::vector<std::string> table_ids,
+                       const std::string &merged_tab);
 
 /**
  * Sort the table with the given identifier
@@ -108,7 +114,10 @@ twisterx::Status Merge(std::vector<std::string> table_ids, const std::string &me
  * @param columnIndex the sorting column index
  * @return the status of the merge
  */
-twisterx::Status SortTable(const std::string &tableId, const std::string &sortTableId, int columnIndex);
+twisterx::Status SortTable(twisterx::TwisterXContext *ctx,
+                           const std::string &tableId,
+                           const std::string &sortTableId,
+                           int columnIndex);
 
 /**
  * Partition the table into multiple tables using a hash function, hash will be applied to the bytes of the data
@@ -119,7 +128,10 @@ twisterx::Status SortTable(const std::string &tableId, const std::string &sortTa
  * @param pool the memory pool
  * @return the status of the partition operation
  */
-twisterx::Status HashPartition(const std::string &id, const std::vector<int> &hash_columns, int no_of_partitions,
+twisterx::Status HashPartition(twisterx::TwisterXContext *ctx,
+                               const std::string &id,
+                               const std::vector<int> &hash_columns,
+                               int no_of_partitions,
                                std::unordered_map<int, std::string> *out);
 
 /**
@@ -129,8 +141,11 @@ twisterx::Status HashPartition(const std::string &id, const std::vector<int> &ha
  * @param selector row selection logic
  * @return the status of the partition operation
  */
-Status Select(const std::string &id, const std::function<bool(twisterx::Row)> &selector, const std::string &out);
+Status Select(twisterx::TwisterXContext *ctx,
+              const std::string &id,
+              const std::function<bool(twisterx::Row)> &selector,
+              const std::string &out);
 
-Status Project(const std::string &id, std::vector<int64_t> project_columns, const std::string &out);
+Status Project(const std::string &id, const std::vector<int64_t>& project_columns, const std::string &out);
 }
 #endif //TWISTERX_SRC_IO_TABLE_API_H_
