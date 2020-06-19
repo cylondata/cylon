@@ -13,6 +13,7 @@
  */
 
 #include "twisterx_context.h"
+#include "arrow/memory_pool.h"
 #include "../net/mpi/mpi_communicator.h"
 
 namespace twisterx {
@@ -86,5 +87,16 @@ vector<int> TwisterXContext::GetNeighbours(bool include_self) {
     neighbours.push_back(i);
   }
   return neighbours;
+}
+
+twisterx::MemoryPool *TwisterXContext::GetMemoryPool() {
+  return this->memory_pool;
+}
+
+void TwisterXContext::SetMemoryPool(twisterx::MemoryPool *mem_pool) {
+  this->memory_pool = mem_pool;
+}
+int32_t TwisterXContext::GetNextSequence() {
+  return this->sequence_no++;
 }
 }

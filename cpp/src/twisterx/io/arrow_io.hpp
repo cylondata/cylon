@@ -17,11 +17,13 @@
 
 #include <string>
 #include "csv_read_config.h"
+#include "../ctx/twisterx_context.h"
 namespace twisterx {
 namespace io {
 
-arrow::Result<std::shared_ptr<arrow::Table>> read_csv(const std::string &path,
-													  twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+arrow::Result<std::shared_ptr<arrow::Table>> read_csv(twisterx::TwisterXContext *ctx,
+                                                      const std::string &path,
+                                                      twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
 
 }
 }

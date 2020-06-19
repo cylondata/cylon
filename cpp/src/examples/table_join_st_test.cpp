@@ -60,13 +60,15 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<Table> table1, table2, joined;
   Status status;
 
+  auto ctx = twisterx::TwisterXContext::Init();
+
   LOG(INFO) << "Reading tables";
   auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-  if (!(status = Table::FromCSV("/tmp/csv1.csv", &table1, read_options)).is_ok()) {
+  if (!(status = Table::FromCSV(ctx, "/tmp/csv1.csv", table1, read_options)).is_ok()) {
     LOG(ERROR) << "File read failed!";
     return 1;
   }
-  if (!(status = Table::FromCSV("/tmp/csv2.csv", &table2, read_options)).is_ok()) {
+  if (!(status = Table::FromCSV(ctx, "/tmp/csv2.csv", table2, read_options)).is_ok()) {
     LOG(ERROR) << "File read failed!";
     return 1;
   }

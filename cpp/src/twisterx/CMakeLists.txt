@@ -30,7 +30,7 @@ add_library(twisterx SHARED
         io/csv_write_config.h io/csv_write_config.cpp
         arrow/arrow_hash_kernels.hpp
         arrow/arrow_comparator.h arrow/arrow_comparator.cpp
-        row.hpp row.cpp ctx/memory_pool.cpp ctx/memory_pool.h)
+        row.hpp row.cpp ctx/memory_pool.h ctx/arrow_memory_pool_utils.h ctx/arrow_memory_pool_utils.cpp)
 
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(twisterx ${MPI_LIBRARIES})

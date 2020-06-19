@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   auto mpi_config = new twisterx::net::MPIConfig();
   auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<twisterx::Table> table1, table2, joined;
+  std::shared_ptr<twisterx::Table> table1, project;
 
   LOG(INFO) << "Reading tables";
   auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
@@ -36,27 +36,20 @@ int main(int argc, char *argv[]) {
   auto t2 = std::chrono::steady_clock::now();
   LOG(INFO) << "Read table 1 in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
 
-  t1 = std::chrono::steady_clock::now();
-  auto status2 = twisterx::Table::FromCSV(ctx, "/home/chathura/Code/twisterx/cpp/data/csv2.csv", table2, read_options);
-  t2 = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "Read table 2 in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
   LOG(INFO) << "Done reading tables";
 
-  if (status1.is_ok() && status2.is_ok()) {
+  if (status1.is_ok()) {
     t1 = std::chrono::steady_clock::now();
-    twisterx::Status
-        status = table1->DistributedJoin(table2,
-                                         twisterx::join::config::JoinConfig::InnerJoin(0, 0), &joined);
+    twisterx::Status status = table1->Project({0}, project);
     t2 = std::chrono::steady_clock::now();
 
-    LOG(INFO) << "Done join tables " << status.get_msg();
-    //joined->print();
-    LOG(INFO) << "Table 1 had : " << table1->Rows() << " and Table 2 had : " << table2->Rows() << ", Union has : "
-              << joined->Rows();
-    LOG(INFO) << "Union done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
+    LOG(INFO) << "Done project tables " << status.get_msg();
+    //unioned->print();
+    LOG(INFO) << "Table 1 had : " << table1->Columns() << "," << table1->Rows() << ", Project has : "
+              << project->Columns() << "," << project->Rows();
+    LOG(INFO) << "Project done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
   } else {
-    LOG(INFO) << "Table reading has failed  : " << status1.get_msg() << ":" << status2.get_msg();
+    LOG(INFO) << "Table reading has failed  : " << status1.get_msg();
   }
   ctx->Finalize();
 

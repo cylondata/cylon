@@ -23,10 +23,19 @@ class CSVReadOptions {
 
  private:
   void *holder;
+  bool concurrent_file_reads = true;
 
  public:
 
   CSVReadOptions();
+
+  /*TwisterX specific options*/
+
+  CSVReadOptions ConcurrentFileReads(bool concurrent_file_reads);
+  bool IsConcurrentFileReads();
+
+  /*End of TwisterX specific options*/
+
   /**
    * Whether to use the global CPU thread pool for reading.
    * Default is true

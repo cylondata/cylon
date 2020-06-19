@@ -42,8 +42,9 @@ class Table {
   /**
    * Tables can only be created using the factory methods, so the constructor is private
    */
-  Table(std::string id) {
+  Table(std::string id, twisterx::TwisterXContext *ctx) {
     id_ = std::move(id);
+    this->ctx = ctx;
   }
 
   virtual ~Table();
@@ -53,8 +54,12 @@ class Table {
    * @param path file path
    * @return a pointer to the table
    */
-  static Status FromCSV(const std::string &path,
-                        std::shared_ptr<Table> *tableOut,
+  static Status FromCSV(twisterx::TwisterXContext *ctx, const std::string &path,
+                        std::shared_ptr<Table> &tableOut,
+                        const twisterx::io::config::CSVReadOptions &options = twisterx::io::config::CSVReadOptions());
+
+  static Status FromCSV(twisterx::TwisterXContext *ctx, const std::vector<std::string> &paths,
+                        const std::vector<std::shared_ptr<Table>> &tableOuts,
                         const twisterx::io::config::CSVReadOptions &options = twisterx::io::config::CSVReadOptions());
 
   /**
@@ -69,9 +74,13 @@ class Table {
    * @param table
    * @return
    */
-  static Status FromArrowTable(std::shared_ptr<arrow::Table> table);
+  static Status FromArrowTable(const std::shared_ptr<arrow::Table> &table);
 
-  static Status FromArrowTable(std::shared_ptr<arrow::Table> table, std::shared_ptr<Table> *tableOut);
+  static Status FromArrowTable(twisterx::TwisterXContext *ctx,
+                               const std::shared_ptr<arrow::Table> &table,
+                               std::shared_ptr<Table> *tableOut);
+
+  Status Project(const std::vector<int64_t> &project_columns, std::shared_ptr<Table> &out);
 
   /**
    * Write the table as a CSV
@@ -96,15 +105,16 @@ class Table {
    * @param tables
    * @return new merged table
    */
-  static Status Merge(const std::vector<std::shared_ptr<twisterx::Table>> &tables,
-                      std::shared_ptr<Table> *tableOut);
+  static Status Merge(twisterx::TwisterXContext *ctx,
+                      const std::vector<std::shared_ptr<twisterx::Table>> &tables,
+                      shared_ptr<Table> &tableOut);
 
   /**
    * Sort the table according to the given column, this is a local sort
    * @param sort_column
    * @return new table sorted according to the sort column
    */
-  Status Sort(int sort_column, std::shared_ptr<Table> *tableOut);
+  Status Sort(int sort_column, shared_ptr<Table> &out);
 
   /**
    * Do the join with the right table
@@ -117,14 +127,15 @@ class Table {
               twisterx::join::config::JoinConfig join_config,
               std::shared_ptr<Table> *out);
 
-  Status DistributedJoin(twisterx::TwisterXContext *ctx,
-                         const std::shared_ptr<Table> &right,
+  Status DistributedJoin(const shared_ptr<Table> &right,
                          twisterx::join::config::JoinConfig join_config,
                          std::shared_ptr<Table> *out);
 
   Status Union(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
 
-  Status DistributedUnion(twisterx::TwisterXContext *ctx, const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
+  Status DistributedUnion(twisterx::TwisterXContext *ctx,
+                          const std::shared_ptr<Table> &right,
+                          std::shared_ptr<Table> &out);
 
   Status Select(const std::function<bool(twisterx::Row)> &selector, std::shared_ptr<Table> &out);
 
@@ -136,18 +147,18 @@ class Table {
   Status ToArrowTable(std::shared_ptr<arrow::Table> &out);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
-  int32_t columns();
+  int32_t Columns();
 
   /**
    * Get the number of rows in this table
    * @return number of rows in the table
    */
-  int64_t rows();
+  int64_t Rows();
 
   /**
    * Print the complete table
    */
-  void print();
+  void Print();
 
   /**
    * Print the table from row1 to row2 and col1 to col2
@@ -156,23 +167,27 @@ class Table {
    * @param col1 first column to start printing (including)
    * @param col2 end column to stop printing (including)
    */
-  void print(int row1, int row2, int col1, int col2);
+  void Print(int row1, int row2, int col1, int col2);
 
   /**
    * Get the id associated with this table
    * @return string id
    */
-  std::string get_id() {
+  std::string GetID() {
     return this->id_;
   }
 
   void Clear();
+
+  twisterx::TwisterXContext *GetContext();
 
  private:
   /**
    * Every table should have an unique id
    */
   std::string id_;
+
+  twisterx::TwisterXContext *ctx;
 };
 }
 
