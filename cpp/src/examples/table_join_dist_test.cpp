@@ -34,28 +34,28 @@ bool RunJoin(int rank,
   Status status;
 
   auto t1 = std::chrono::high_resolution_clock::now();
-  status = table1->DistributedJoin(ctx, table2, jc, &output);
+  status = table1->DistributedJoin(table2, jc, &output);
   auto t2 = std::chrono::high_resolution_clock::now();
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Join failed!";
     return false;
   }
-//  else {
 //    status = output->WriteCSV(h_out_path);
-//  }
 
   auto t3 = std::chrono::high_resolution_clock::now();
 
-  output->Clear();
-
   if (status.is_ok()) {
-    LOG(INFO) << rank << " join_ms " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-              << " write_ms "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
+    LOG(INFO) << rank << " j_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+              << " w_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+              << " lines " << output->Rows()
+              << " t " << jc.GetType()
+              << " a" << jc.GetAlgorithm();
+    output->Clear();
     return true;
   } else {
     LOG(ERROR) << "Join write failed!";
+    output->Clear();
     return false;
   }
 }
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<Table> table1, table2, joined;
   Status status;
 
-  auto mpi_config = new net::MPIConfig();
+  auto mpi_config = new twisterx::net::MPIConfig();
   auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
 
   int rank = ctx->GetRank();
@@ -82,15 +82,15 @@ int main(int argc, char *argv[]) {
 
   LOG(INFO) << rank << " Reading tables";
   auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-  if (!(status = Table::FromCSV(csv1, &table1, read_options)).is_ok()) {
+  if (!(status = Table::FromCSV(ctx, csv1, table1, read_options)).is_ok()) {
     LOG(ERROR) << "File read failed! " << csv1;
     return 1;
   }
-  if (!(status = Table::FromCSV(csv2, &table2, read_options)).is_ok()) {
+  if (!(status = Table::FromCSV(ctx, csv2, table2, read_options)).is_ok()) {
     LOG(ERROR) << "File read failed! " << csv2;
     return 1;
   }
-  LOG(INFO) << rank << " Done reading tables";
+  LOG(INFO) << rank << " Done reading tables. rows " << table1->Rows() << " " << table2->Rows();
 
   LOG(INFO) << rank << " right join start";
   auto right_jc = JoinConfig::RightJoin(0, 0, JoinAlgorithm::HASH);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
   auto left_jc = JoinConfig::LeftJoin(0, 0, JoinAlgorithm::HASH);
   RunJoin(rank, ctx, left_jc, table1, table2, joined, "/scratch/dnperera/h_out_left_" + srank + ".csv");
   auto left_jc2 = JoinConfig::LeftJoin(0, 0, JoinAlgorithm::SORT);
-  RunJoin(rank, ctx, left_jc2, table1, table2, joined, "/scratch/dnperera/s_out_left_" + srank + ".csv");
+  RunJoin(rank, ctx, left_jc2, table1, table2, joined, base_dir + "/s_out_left_" + srank + ".csv");
   LOG(INFO) << rank << " left join end ----------------------------------";
 
   LOG(INFO) << rank << " inner join start";
