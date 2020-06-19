@@ -36,21 +36,22 @@ bool RunJoin(int rank,
   auto t1 = std::chrono::high_resolution_clock::now();
   status = table1->DistributedJoin(table2, jc, &output);
   auto t2 = std::chrono::high_resolution_clock::now();
+  ctx->GetCommunicator()->Barrier(); // todo: should we take this inside the dist join?
+  auto t3 = std::chrono::high_resolution_clock::now();
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Join failed!";
     return false;
   }
 //    status = output->WriteCSV(h_out_path);
-
-  auto t3 = std::chrono::high_resolution_clock::now();
+//  auto t4 = std::chrono::high_resolution_clock::now();
 
   if (status.is_ok()) {
     LOG(INFO) << rank << " j_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
               << " w_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
               << " lines " << output->Rows()
               << " t " << jc.GetType()
-              << " a" << jc.GetAlgorithm();
+              << " a " << jc.GetAlgorithm();
     output->Clear();
     return true;
   } else {
@@ -70,8 +71,8 @@ int main(int argc, char *argv[]) {
 
   int rank = ctx->GetRank();
   std::string srank = std::to_string(rank);
-  std::string base_dir = "/scratch/dnperera";
-//  std::string base_dir = "/tmp";
+//  std::string base_dir = "/scratch/dnperera";
+  std::string base_dir = "/tmp";
   system(("mkdir -p " + base_dir).c_str());
 
   std::string csv1 = base_dir + "/csv1_" + srank + ".csv";
