@@ -226,7 +226,6 @@ twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
     }
 
     bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
-      LOG(INFO) << workerId << "received from " << source << "already in tabs : " << tabs->size();
       this->tabs->push_back(table);
       return true;
     };
