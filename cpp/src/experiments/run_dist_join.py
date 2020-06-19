@@ -27,7 +27,7 @@ if dry:
     repetitions = 1
 else:
     row_cases = [int(ii * 1000000) for ii in [0.125, 0.25, 0.5, 1, 2]]
-    world_sizes = [1, 2, 4, 8, 16, 32, 64]
+    world_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 160]
     repetitions = 4
 
 out_dir = f"{base_dir}/twx_join_test/"
