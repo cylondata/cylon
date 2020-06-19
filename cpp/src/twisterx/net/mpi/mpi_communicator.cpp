@@ -57,5 +57,8 @@ void MPICommunicator::Finalize() {
   LOG(INFO) << "Finalizing MPI";
   MPI_Finalize();
 }
+void MPICommunicator::Barrier() {
+  MPI_Barrier(MPI_COMM_WORLD);
+}
 }
 }
