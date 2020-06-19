@@ -232,13 +232,7 @@ twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
     }
 
     bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
-      if (workerId == 0) {
-        LOG(INFO) << "push tabs from src " << source;
-      }
       this->tabs.push_back(table);
-      if (workerId == 0) {
-        LOG(INFO) << "after push tabs";
-      }
       return true;
     };
   };
@@ -263,7 +257,7 @@ twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
 
   if (concat_tables.ok()) {
     auto final_table = concat_tables.ValueOrDie();
-    LOG(INFO) << "Done concating tables, rows :  " << final_table->num_rows();
+    LOG(INFO) << "Done concatenating tables, rows :  " << final_table->num_rows();
     auto status = final_table->CombineChunks(twisterx::ToArrowPool(ctx), table_out);
     return twisterx::Status((int) status.code(), status.message());
   } else {
