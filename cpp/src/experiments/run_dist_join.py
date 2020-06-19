@@ -2,6 +2,8 @@ import os
 from os.path import expanduser
 
 from generate_csv import generate_file
+from multiprocessing import Process
+
 import argparse
 
 parser = argparse.ArgumentParser(description='generate random data')
@@ -37,6 +39,15 @@ key_duplication_ratio = 0.99  # on avg there will be rows/key_range_ratio num of
 
 print("\n##### repetitions for each test", repetitions, flush=True)
 
+file_gen_threads = 16
+
+
+def generate_files(_rank, _i, _krange):
+    print(f"generating files for {_i} {_rank}")
+    for _f in csvs:
+        generate_file(output=_f.replace('RANK', str(_rank)), rows=_i, cols=cols, krange=_krange)
+
+
 # for i in [10000000]:
 for i in row_cases:
     # test_dir = f"{out_dir}/{i}"
@@ -47,9 +58,15 @@ for i in row_cases:
 
         # generate 2 cvs for world size
         print(f"\n\n##### generating files of rows {i} {w}!", flush=True)
-        for rank in range(w):
-            for f in csvs:
-                generate_file(output=f.replace('RANK', str(rank)), rows=i, cols=cols, krange=krange)
+        for rank in range(0, w, file_gen_threads):
+            procs = []
+            for r in range(rank, min(rank + file_gen_threads, w)):
+                p = Process(target=generate_files, args=(r, i, krange))
+                p.start()
+                procs.append(p)
+
+            for p in procs:
+                p.join()
 
         print(f"\n\n##### rows {i} world_size {w} starting!", flush=True)
 
