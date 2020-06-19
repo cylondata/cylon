@@ -46,7 +46,7 @@ for i in row_cases:
         krange = (0, int(i * key_duplication_ratio * w))
 
         # generate 2 cvs for world size
-        print(f"\n\n##### generating files of rows {i}!", flush=True)
+        print(f"\n\n##### generating files of rows {i} {w}!", flush=True)
         for rank in range(w):
             for f in csvs:
                 generate_file(output=f.replace('RANK', str(rank)), rows=i, cols=cols, krange=krange)
@@ -56,9 +56,10 @@ for i in row_cases:
         if dry:
             join_exec = f"mpirun -np {w} ../../../build/bin/table_join_dist_test"
         else:
+            hostfile = "" if w == 1 else "--hostfile nodes"
             join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
                         f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
-                        f"--hostfile nodes -np {w} ../../../build/bin/table_join_dist_test"
+                        f"{hostfile} -np {w} ../../../build/bin/table_join_dist_test"
         print("\n\n##### running", join_exec, flush=True)
 
         for r in range(repetitions):
