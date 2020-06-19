@@ -46,10 +46,11 @@ bool RunJoin(int rank,
   auto t3 = std::chrono::high_resolution_clock::now();
 
   if (status.is_ok()) {
-    LOG(INFO) << rank << " join_ms " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-              << " write_ms " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
-              << " produced " << output->Rows()
-              << " type " << jc.GetType();
+    LOG(INFO) << rank << " j_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+              << " w_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+              << " lines " << output->Rows()
+              << " t " << jc.GetType()
+              << " a" << jc.GetAlgorithm();
     output->Clear();
     return true;
   } else {
