@@ -15,6 +15,7 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
+from cython.operator cimport dereference as deref
 from pytwisterx.net.comm_type import CommType
 from pytwisterx.net.comm_type cimport _CommType
 from pytwisterx.ctx.context cimport CTwisterXContext
@@ -59,10 +60,10 @@ cdef class TwisterxContext:
         '''
         self.config = config.encode()
         if config is None:
-            #print("Single Thread Config Loaded")
+            print("Single Thread Config Loaded")
             self.thisPtr = new CTwisterXContextWrap()
         else:
-            #print("Distributed Config Loaded")
+            print("Distributed Config Loaded")
             self.thisPtr = new CTwisterXContextWrap(config.encode())
 
     def get_rank(self) -> int:
@@ -88,6 +89,8 @@ cdef class TwisterxContext:
 
     def get_config(self):
         return self.config
+
+
 
 
 

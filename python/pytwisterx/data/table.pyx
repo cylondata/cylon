@@ -25,6 +25,7 @@ from pyarrow.lib cimport CTable
 from pyarrow.lib cimport pyarrow_unwrap_table
 from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
+from cython.operator cimport dereference as deref
 
 from pytwisterx.ctx.context cimport CTwisterXContextWrap
 from pytwisterx.ctx.context import TwisterxContext
@@ -43,11 +44,16 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
         void show()
         void show(int, int, int, int)
         _Status to_csv(const string)
-        string join(CTwisterXContextWrap *ctx_wrap, const string, CJoinType, CJoinAlgorithm, int, int)
-        string join(CTwisterXContextWrap *ctx_wrap, const string, CJoinConfig)
+        string join(const string, CJoinType, CJoinAlgorithm, int, int)
+        string join(const string, CJoinConfig)
+        string distributed_join(const string &table_id, CJoinConfig join_config);
+        string distributed_join(const string &table_id, CJoinType type,
+							   CJoinAlgorithm algorithm,
+							   int left_column_index,
+							   int right_column_index);
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CxTable":
-    cdef extern _Status from_csv(CTwisterXContextWrap *ctx_wrap, const string, const char, const string)
+    cdef extern _Status from_csv(const string, const char, const string)
     cdef extern string from_pyarrow_table(shared_ptr[CTable] table)
     cdef extern shared_ptr[CTable] to_pyarrow_table(const string table_id)
 
@@ -182,22 +188,34 @@ cdef class Table:
         '''
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
                                right_column_index=right_col)
-        cdef CJoinConfig *jc1 = self.jcPtr
-        cdef CTwisterXContextWrap *ctx_wrap
-        config = ctx.get_config()
-        if config is None:
-            #print("Single Thread Config Loaded")
-            ctx_wrap = new CTwisterXContextWrap()
-        else:
-            #print("Distributed Config Loaded")
-            ctx_wrap = new CTwisterXContextWrap(config)
-        cdef string table_out_id = self.thisPtr.join(ctx_wrap, table.id.encode(), jc1[0])
+        cdef CJoinConfig *jc1 = self.jcPtr        
+        cdef string table_out_id = self.thisPtr.join(table.id.encode(), jc1[0])
         if table_out_id.size() == 0:
             raise Exception("Join Failed !!!")
         return Table(table_out_id)
 
+
+    def distributed_join(self, ctx: TwisterxContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
+        '''
+        Joins two PyTwisterX tables
+        :param table: PyTwisterX table on which the join is performed (becomes the left table)
+        :param join_type: Join Type as str ["inner", "left", "right", "outer"]
+        :param algorithm: Join Algorithm as str ["hash", "sort"]
+        :param left_col: Join column of the left table as int
+        :param right_col: Join column of the right table as int
+        :return: Joined PyTwisterX table
+        '''
+        self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
+                               right_column_index=right_col)
+        cdef CJoinConfig *jc1 = self.jcPtr        
+        cdef string table_out_id = self.thisPtr.distributed_join(table.id.encode(), jc1[0])
+        if table_out_id.size() == 0:
+            raise Exception("Join Failed !!!")
+        return Table(table_out_id)
+
+
     @staticmethod
-    def from_arrow(obj) -> Table:
+    def from_arrow(obj) -> Table:       
         '''
         creating a PyTwisterX table from PyArrow Table
         :param obj: PyArrow table
@@ -226,22 +244,15 @@ cdef class Table:
 
 cdef class csv_reader:
 
+
     @staticmethod
-    def read(ctx: TwisterxContext, path: str, delimiter: str) -> Table:
-        cdef CTwisterXContextWrap *ctx_wrap
-        config = ctx.get_config()
-        if config is None:
-            #print("Single Thread Config Loaded")
-            ctx_wrap = new CTwisterXContextWrap()
-        else:
-            #print("Distributed Config Loaded")
-            ctx_wrap = new CTwisterXContextWrap(config)
+    def read(ctx: TwisterxContext, path: str, delimiter: str) -> Table:    
         cdef string spath = path.encode()
         cdef string sdelm = delimiter.encode()
         id = uuid.uuid4()
         id_str = id.__str__()
         id_buf = id_str.encode()
-        from_csv(ctx_wrap, spath, sdelm[0], id_buf)
+        from_csv(spath, sdelm[0], id_buf)
         id_buf = id_str.encode()
         return Table(id_buf)
 

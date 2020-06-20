@@ -22,6 +22,8 @@
 #include "arrow/api.h"
 #include "../util/uuid.hpp"
 #include "../join/join_config.h"
+#include <map>
+
 
 using namespace std;
 using namespace twisterx;
@@ -31,6 +33,8 @@ using namespace twisterx::io::config;
 using namespace twisterx::util::uuid;
 using namespace twisterx::join::config;
 using namespace arrow::py;
+
+std::map<std::string, twisterx::python::twisterx_context_wrap*> context_map{};
 
 CxTable::CxTable(std::string id) {
   id_ = id;
@@ -60,7 +64,10 @@ void CxTable::show(int row1, int row2, int col1, int col2) {
   Print(this->get_id(), col1, col2, row1, row2);
 }
 
-Status CxTable::from_csv(twisterx_context_wrap *ctx_wrap, const std::string &path, const char &delimiter, const std::string &uuid) {
+Status CxTable::from_csv(const std::string &path,
+						 const char &delimiter,
+						 const std::string &uuid) {
+  auto ctx_wrap = get_new_context();
   twisterx::Status status = ReadCSV(ctx_wrap->getInstance(), path, uuid, CSVReadOptions().WithDelimiter(delimiter));
   return status;
 }
@@ -86,16 +93,16 @@ std::shared_ptr<arrow::Table> CxTable::to_pyarrow_table(const std::string &table
   return table1;
 }
 
-std::string CxTable::join(twisterx_context_wrap *ctx_wrap, const std::string &table_id,
+std::string CxTable::join(const std::string &table_id,
 						  JoinType type,
 						  JoinAlgorithm algorithm,
 						  int left_column_index,
 						  int right_column_index) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
-
+  auto ctx_wrap = this->get_new_context();
   JoinConfig jc(type, left_column_index, right_column_index, algorithm);
   twisterx::Status status = twisterx::JoinTables(
-    ctx_wrap->getInstance(),
+	  ctx_wrap->getInstance(),
 	  this->get_id(),
 	  table_id,
 	  jc,
@@ -108,10 +115,11 @@ std::string CxTable::join(twisterx_context_wrap *ctx_wrap, const std::string &ta
   }
 }
 
-std::string CxTable::join(twisterx_context_wrap *ctx_wrap, const std::string &table_id, JoinConfig join_config) {
+std::string CxTable::join(const std::string &table_id, JoinConfig join_config) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  auto ctx_wrap = this->get_new_context();
   twisterx::Status status = twisterx::JoinTables(
-    ctx_wrap->getInstance(),
+	  ctx_wrap->getInstance(),
 	  this->get_id(),
 	  table_id,
 	  join_config,
@@ -124,10 +132,12 @@ std::string CxTable::join(twisterx_context_wrap *ctx_wrap, const std::string &ta
   }
 }
 //
-std::string CxTable::distributed_join(twisterx_context_wrap *ctx_wrap,const std::string &table_id, JoinConfig join_config) {
+std::string CxTable::distributed_join(const std::string &table_id, JoinConfig join_config) {
   std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  auto ctx_wrap = this->get_new_context();
   TwisterXContext *ctx = ctx_wrap->getInstance();
-  twisterx::Status status = twisterx::DistributedJoinTables(ctx, this->id_, table_id, join_config, uuid);
+  std::cout << "distributed join , Rank  " << ctx_wrap->GetRank() << " , Size " << ctx_wrap->GetWorldSize() << std::endl;
+  twisterx::Status status = twisterx::DistributedJoinTables(ctx_wrap->getInstance(), this->id_, table_id, join_config, uuid);  
   if (status.is_ok()) {
 	return uuid;
   } else {
@@ -135,3 +145,38 @@ std::string CxTable::distributed_join(twisterx_context_wrap *ctx_wrap,const std:
   }
 
 }
+
+std::string CxTable::distributed_join(const std::string &table_id, JoinType type,
+									  JoinAlgorithm algorithm,
+									  int left_column_index,
+									  int right_column_index) {
+  JoinConfig jc(type, left_column_index, right_column_index, algorithm);
+  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  auto ctx_wrap = this->get_new_context();
+  twisterx::Status status = twisterx::DistributedJoinTables(ctx_wrap->getInstance(), this->id_, table_id, jc, uuid);
+  if (status.is_ok()) {
+	return uuid;
+  } else {
+	return "";
+  }
+
+}
+
+twisterx::python::twisterx_context_wrap* CxTable::get_new_context(){
+  if(context_map.size() == 0) {
+    std::cout << "Creating New Contet " << std::endl;
+    std::string mpi_config = "mpi";
+    twisterx::python::twisterx_context_wrap *ctx_wrap = new twisterx::python::twisterx_context_wrap(mpi_config);
+    std::pair<std::string, twisterx::python::twisterx_context_wrap*> pair("dist_context", ctx_wrap);
+    context_map.insert(pair);
+    return ctx_wrap;
+  }
+  if(context_map.size() == 1) {
+    auto itr = context_map.find("dist_context");
+    if (itr != context_map.end()) {
+      return itr->second;
+    }
+  }
+  
+}
+

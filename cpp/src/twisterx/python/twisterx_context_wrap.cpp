@@ -12,26 +12,12 @@
  * limitations under the License.
  */
 
+#include <map>
 #include "twisterx_context_wrap.h"
 #include "../net/mpi/mpi_communicator.h"
 
-//TwisterXContext * twisterx::py::twisterx_context_wrap::Init() {
-//  new TwisterXContext(false);
-//}
-//
-//TwisterXContext * twisterx::py::twisterx_context_wrap::InitDistributed(std::string config) {
-//  if (config == "mpi") {
-//	auto ctx = new TwisterXContext(true);
-//	ctx->setCommunicator(new net::MPICommunicator());
-//	auto mpi_config = new twisterx::net::MPIConfig();
-//	ctx->GetCommunicator()->Init(mpi_config);
-//	ctx->setDistributed(true);
-//	return ctx;
-//  } else {
-//	throw "Unsupported communication type";
-//  }
-//  return nullptr;
-//}
+//std::map<std::string, TwisterXContext> context_map{};
+
 
 twisterx::python::twisterx_context_wrap::twisterx_context_wrap() {
   this->context = new TwisterXContext(false);
@@ -40,17 +26,18 @@ twisterx::python::twisterx_context_wrap::twisterx_context_wrap() {
 
 twisterx::python::twisterx_context_wrap::twisterx_context_wrap(std::string config) {
   if (config == "mpi") {
-	auto ctx = new TwisterXContext(true);
-	this->distributed = true;
-	ctx->setCommunicator(new net::MPICommunicator());
-	auto mpi_config = new twisterx::net::MPIConfig();
-	ctx->GetCommunicator()->Init(mpi_config);
-	ctx->setDistributed(true);
-	this->context = ctx;
+    auto ctx = new TwisterXContext(true);
+    this->distributed = true;
+    ctx->setCommunicator(new net::MPICommunicator());
+    auto mpi_config = new twisterx::net::MPIConfig();
+    ctx->GetCommunicator()->Init(mpi_config);
+    ctx->setDistributed(true);
+    this->context = ctx;
   } else {
-	throw "Unsupported communication type";
+	  throw "Unsupported communication type";
   }
 }
+
 
 TwisterXContext * twisterx::python::twisterx_context_wrap::getInstance() {
   return context;
@@ -106,6 +93,20 @@ vector<int> twisterx::python::twisterx_context_wrap::GetNeighbours(bool include_
   return neighbours;
 }
 
+// void twisterx::python::twisterx_context_wrap::SetMemoryPool(twisterx::MemoryPool *mem_pool) {
+
+// }
+
+// twisterx::MemoryPool* twisterx::python::twisterx_context_wrap::GetMemoryPool(){
+
+// }
+
+// int32_t twisterx::python::twisterx_context_wrap::GetNextSequence(){
+
+// }
+
+  
+  
 
 
 
