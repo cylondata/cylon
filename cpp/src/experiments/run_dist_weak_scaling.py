@@ -7,12 +7,14 @@ from multiprocessing import Process
 import argparse
 
 parser = argparse.ArgumentParser(description='generate random data')
+parser.add_argument('-e', required=True, dest='exec', type=str, help='executable')
 parser.add_argument('--dry', action='store_true', help='if this is a dry run')
 
 args = parser.parse_args()
 args = vars(args)
 
 dry = args['dry']
+exec = args['exec']
 
 home = expanduser("~")
 
@@ -20,15 +22,17 @@ base_dir = "~/temp"
 
 csvs = [f"{base_dir}/csv1_RANK.csv", f"{base_dir}/csv2_RANK.csv"]
 if dry:
-    row_cases = [10]
-    world_sizes = [1, 2, ]
+    row_cases = [20]
+    world_sizes = [1, 2, 4]
     repetitions = 1
 else:
     row_cases = [int(ii * 1000000) for ii in [0.125, 0.25, 0.5, 1, 2]]
     world_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 160]
     repetitions = 4
 
-out_dir = f"{base_dir}/twx_union_test/"
+print(f"\n##### running {exec} test for weak scaling", flush=True)
+
+out_dir = f"{base_dir}/{exec}/"
 print(f"\n##### output dir: {out_dir}", flush=True)
 os.system(f"rm -rf {out_dir}; mkdir -p {out_dir}")
 
@@ -69,12 +73,12 @@ for i in row_cases:
         print(f"\n\n##### rows {i} world_size {w} starting!", flush=True)
 
         if dry:
-            join_exec = f"mpirun -np {w} ../../../build/bin/table_union_dist_test"
+            join_exec = f"mpirun -np {w} ../../../build/bin/{exec} dry"
         else:
             hostfile = "" if w == 1 else "--hostfile nodes"
             join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
                         f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
-                        f"{hostfile} -np {w} ../../../build/bin/table_union_dist_test"
+                        f"{hostfile} -np {w} ../../../build/bin/{exec}"
         print("\n\n##### running", join_exec, flush=True)
 
         for r in range(repetitions):

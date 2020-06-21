@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 
   int rank = ctx->GetRank();
   std::string srank = std::to_string(rank);
-  std::string base_dir = "/scratch/dnperera";
+  std::string base_dir = argc > 1 ? "/tmp" : "/scratch/dnperera";
 //  std::string base_dir = "/tmp";
   system(("mkdir -p " + base_dir).c_str());
 
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << rank << " Done reading tables. rows " << table1->Rows() << " " << table2->Rows();
 
   LOG(INFO) << rank << " union start";
-  RunUnion(rank, ctx, table1, table2, joined, "/scratch/dnperera/union_" + srank + ".csv");
+  RunUnion(rank, ctx, table1, table2, joined, base_dir + "/union_" + srank + ".csv");
   LOG(INFO) << rank << " union end ----------------------------------";
 
   ctx->Finalize();

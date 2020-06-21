@@ -7,30 +7,32 @@ from multiprocessing import Process
 import argparse
 
 parser = argparse.ArgumentParser(description='generate random data')
+parser.add_argument('-e', required=True, dest='exec', type=str, help='executable')
 parser.add_argument('--dry', action='store_true', help='if this is a dry run')
 
 args = parser.parse_args()
 args = vars(args)
 
 dry = args['dry']
+exec = args['exec']
 
 home = expanduser("~")
-# join_exec = f"{home}/git/twisterx/build/bin/table_api_test_hash"
-# print(f"twx home: {join_exec}", flush=True)
 
 base_dir = "~/temp"
 
 csvs = [f"{base_dir}/csv1_RANK.csv", f"{base_dir}/csv2_RANK.csv"]
 if dry:
-    row_cases = [10]
-    world_sizes = [1, 2, ]
+    row_cases = [20]
+    world_sizes = [1, 2, 4]
     repetitions = 1
 else:
-    row_cases = [int(ii * 1000000) for ii in [0.125, 0.25, 0.5, 1, 2]]
+    row_cases = [int(ii * 1000000) for ii in [50, 100, 200, 400, 500]]
     world_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 160]
     repetitions = 4
 
-out_dir = f"{base_dir}/twx_join_test/"
+print(f"\n##### running {exec} test for strong scaling", flush=True)
+
+out_dir = f"{base_dir}/{exec}/"
 print(f"\n##### output dir: {out_dir}", flush=True)
 os.system(f"rm -rf {out_dir}; mkdir -p {out_dir}")
 
@@ -54,14 +56,14 @@ for i in row_cases:
     # os.system(f"rm -rf {test_dir}; mkdir -p {test_dir}")
 
     for w in world_sizes:
-        krange = (0, int(i * key_duplication_ratio * w))
+        krange = (0, int(i * key_duplication_ratio))
 
         # generate 2 cvs for world size
         print(f"\n\n##### generating files of rows {i} {w}!", flush=True)
         for rank in range(0, w, file_gen_threads):
             procs = []
             for r in range(rank, min(rank + file_gen_threads, w)):
-                p = Process(target=generate_files, args=(r, i, krange))
+                p = Process(target=generate_files, args=(r, int(i/w), krange))
                 p.start()
                 procs.append(p)
 
@@ -71,12 +73,12 @@ for i in row_cases:
         print(f"\n\n##### rows {i} world_size {w} starting!", flush=True)
 
         if dry:
-            join_exec = f"mpirun -np {w} ../../../build/bin/table_join_dist_test"
+            join_exec = f"mpirun -np {w} ../../../build/bin/{exec} dry"
         else:
             hostfile = "" if w == 1 else "--hostfile nodes"
             join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
                         f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
-                        f"{hostfile} -np {w} ../../../build/bin/table_join_dist_test"
+                        f"{hostfile} -np {w} ../../../build/bin/{exec}"
         print("\n\n##### running", join_exec, flush=True)
 
         for r in range(repetitions):

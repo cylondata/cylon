@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 
   int rank = ctx->GetRank();
   std::string srank = std::to_string(rank);
-  std::string base_dir = "/scratch/dnperera";
+  std::string base_dir = argc > 1 ? "/tmp" : "/scratch/dnperera";
 //  std::string base_dir = "/tmp";
   system(("mkdir -p " + base_dir).c_str());
 
