@@ -45,9 +45,10 @@ file_gen_threads = 16
 
 
 def generate_files(_rank, _i, _krange):
-    print(f"generating files for {_i} {_rank}")
+    # print(f"generating files for {_i} {_rank}")
     for _f in csvs:
-        generate_file(output=_f.replace('RANK', str(_rank)), rows=_i, cols=cols, krange=_krange)
+        os.system(f"python generate_csv.py -o {_f.replace('RANK', str(_rank))} -r {_i} -c {cols} "
+                  f"--krange 0 {_krange[1]}")
 
 
 # for i in [10000000]:
