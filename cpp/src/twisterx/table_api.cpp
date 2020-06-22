@@ -70,6 +70,12 @@ twisterx::Status ReadCSV(twisterx::TwisterXContext *ctx,
   if (result.ok()) {
     std::shared_ptr<arrow::Table> table = *result;
     LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
+    if (table->column(0)->chunks().size() > 1) {
+      auto status = table->CombineChunks(ToArrowPool(ctx), &table);
+      if (!status.ok()) {
+        return twisterx::Status(Code::IOError, status.message());;
+      }
+    }
     PutTable(id, table);
     return twisterx::Status(Code::OK, result.status().message());
   }
