@@ -93,19 +93,19 @@ int main(int argc, char *argv[]) {
   }
   LOG(INFO) << rank << " Done reading tables. rows " << table1->Rows() << " " << table2->Rows();
 
-  LOG(INFO) << rank << " right join start";
-  auto right_jc = JoinConfig::RightJoin(0, 0, JoinAlgorithm::HASH);
-  RunJoin(rank, ctx, right_jc, table1, table2, joined, "/scratch/dnperera/h_out_right_" + srank + ".csv");
-  auto right_jc2 = JoinConfig::RightJoin(0, 0, JoinAlgorithm::SORT);
-  RunJoin(rank, ctx, right_jc2, table1, table2, joined, "/scratch/dnperera/s_out_right_" + srank + ".csv");
-  LOG(INFO) << rank << " right join end ----------------------------------";
-
-  LOG(INFO) << rank << " left join start";
-  auto left_jc = JoinConfig::LeftJoin(0, 0, JoinAlgorithm::HASH);
-  RunJoin(rank, ctx, left_jc, table1, table2, joined, "/scratch/dnperera/h_out_left_" + srank + ".csv");
-  auto left_jc2 = JoinConfig::LeftJoin(0, 0, JoinAlgorithm::SORT);
-  RunJoin(rank, ctx, left_jc2, table1, table2, joined, base_dir + "/s_out_left_" + srank + ".csv");
-  LOG(INFO) << rank << " left join end ----------------------------------";
+//  LOG(INFO) << rank << " right join start";
+//  auto right_jc = JoinConfig::RightJoin(0, 0, JoinAlgorithm::HASH);
+//  RunJoin(rank, ctx, right_jc, table1, table2, joined, "/scratch/dnperera/h_out_right_" + srank + ".csv");
+//  auto right_jc2 = JoinConfig::RightJoin(0, 0, JoinAlgorithm::SORT);
+//  RunJoin(rank, ctx, right_jc2, table1, table2, joined, "/scratch/dnperera/s_out_right_" + srank + ".csv");
+//  LOG(INFO) << rank << " right join end ----------------------------------";
+//
+//  LOG(INFO) << rank << " left join start";
+//  auto left_jc = JoinConfig::LeftJoin(0, 0, JoinAlgorithm::HASH);
+//  RunJoin(rank, ctx, left_jc, table1, table2, joined, "/scratch/dnperera/h_out_left_" + srank + ".csv");
+//  auto left_jc2 = JoinConfig::LeftJoin(0, 0, JoinAlgorithm::SORT);
+//  RunJoin(rank, ctx, left_jc2, table1, table2, joined, base_dir + "/s_out_left_" + srank + ".csv");
+//  LOG(INFO) << rank << " left join end ----------------------------------";
 
   LOG(INFO) << rank << " inner join start";
   auto inner_jc = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::HASH);
@@ -114,12 +114,12 @@ int main(int argc, char *argv[]) {
   RunJoin(rank, ctx, inner_jc2, table1, table2, joined, "/scratch/dnperera/s_out_inner_" + srank + ".csv");
   LOG(INFO) << rank << " inner join end ----------------------------------";
 
-  LOG(INFO) << rank << " outer join start";
-  auto outer_jc = JoinConfig::FullOuterJoin(0, 0, JoinAlgorithm::HASH);
-  RunJoin(rank, ctx, outer_jc, table1, table2, joined, "/scratch/dnperera/h_out_outer_" + srank + ".csv");
-  auto outer_jc2 = JoinConfig::FullOuterJoin(0, 0, JoinAlgorithm::SORT);
-  RunJoin(rank, ctx, outer_jc2, table1, table2, joined, "/scratch/dnperera/s_out_outer_" + srank + ".csv");
-  LOG(INFO) << rank << " outer join end ----------------------------------";
+//  LOG(INFO) << rank << " outer join start";
+//  auto outer_jc = JoinConfig::FullOuterJoin(0, 0, JoinAlgorithm::HASH);
+//  RunJoin(rank, ctx, outer_jc, table1, table2, joined, "/scratch/dnperera/h_out_outer_" + srank + ".csv");
+//  auto outer_jc2 = JoinConfig::FullOuterJoin(0, 0, JoinAlgorithm::SORT);
+//  RunJoin(rank, ctx, outer_jc2, table1, table2, joined, "/scratch/dnperera/s_out_outer_" + srank + ".csv");
+//  LOG(INFO) << rank << " outer join end ----------------------------------";
 
   ctx->Finalize();
 

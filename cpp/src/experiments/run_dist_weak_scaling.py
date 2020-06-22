@@ -1,7 +1,6 @@
 import os
 from os.path import expanduser
 
-from generate_csv import generate_file
 from multiprocessing import Process
 
 import argparse
@@ -9,12 +8,16 @@ import argparse
 parser = argparse.ArgumentParser(description='generate random data')
 parser.add_argument('-e', required=True, dest='exec', type=str, help='executable')
 parser.add_argument('--dry', action='store_true', help='if this is a dry run')
+parser.add_argument('--no-spark', dest='no_spark', action='store_true', help='skip spark')
+parser.add_argument('--ext', dest='ext', action='store_true', help='extended test')
 
 args = parser.parse_args()
 args = vars(args)
 
 dry = args['dry']
+ext = args['ext']
 exec = args['exec']
+spark = not args['no_spark']
 
 home = expanduser("~")
 
@@ -26,8 +29,8 @@ if dry:
     world_sizes = [1, 2, 4]
     repetitions = 1
 else:
-    row_cases = [int(ii * 1000000) for ii in [0.125, 0.25, 0.5, 1, 2]]
-    # row_cases = [int(ii * 1000000) for ii in [4, 8, 16, 32, 64, 128]]
+    row_cases = [int(ii * 1000000) for ii in [0.125, 0.25, 0.5, 1, 2]] if not ext \
+        else [int(ii * 1000000) for ii in [4, 8, 16, 32, 64, 128]]
     world_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 160]
     repetitions = 4
 
@@ -44,13 +47,24 @@ print("\n##### repetitions for each test", repetitions, flush=True)
 
 file_gen_threads = 16
 
+hdfs_url = "hdfs://v-login1:9001"
+hdfs_dfs = f"~/victor/software/hadoop-2.10.0//bin/hdfs dfs -fs {hdfs_url}"
+dfs_base = "/twx/"
+
+spark_submit = "~/victor/software/spark-2.4.6-bin-hadoop2.7/bin/spark-submit "
+spark_jar = "~/victor/git/SparkOps/target/scala-2.11/sparkops_2.11-0.1.jar "
+spark_master = "spark://v-001:7077"
+
 
 def generate_files(_rank, _i, _krange):
     # print(f"generating files for {_i} {_rank}")
     for _f in csvs:
-        # generate_file(output=_f.replace('RANK', str(_rank)), rows=_i, cols=cols, krange=_krange)
         os.system(f"python generate_csv.py -o {_f.replace('RANK', str(_rank))} -r {_i} -c {cols} "
                   f"--krange 0 {_krange[1]}")
+
+    if spark:  # push all csvs to hdfs
+        print(f"pushing files to hdfs {_i} {_rank}")
+        os.system(f"{hdfs_dfs} -put -f {base_dir}/csv*_{_rank}.csv {dfs_base}")
 
 
 # for i in [10000000]:
@@ -96,5 +110,19 @@ for i in row_cases:
 
         print(f"\n\n##### rows {i} world_size {w} done!\n-----------------------------------------",
               flush=True)
+
+        if spark:
+            print(f"\n\n##### starting spark rows {i} world_size {w} .....", flush=True)
+            spark_exec = f"{spark_submit} --class {exec} {spark_jar} {w} {hdfs_url}/{dfs_base} " \
+                         f"{spark_master}"
+            print("\n\n##### executing", spark_exec, flush=True)
+
+            for r in range(repetitions):
+                print(f"\n\n{i} {w} ##### spark {r + 1}/{repetitions} iter start!", flush=True)
+                os.system(spark_exec)
+
+            print("\n\n##### cleaning up hdfs dfs", flush=True)
+            os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
+            print("\n\n##### spark done .....", flush=True)
 
     print(f"\n\n##### rows {i} done!\n ====================================== \n", flush=True)
