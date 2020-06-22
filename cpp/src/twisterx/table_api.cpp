@@ -294,6 +294,20 @@ twisterx::Status DistributedJoinTables(twisterx::TwisterXContext *ctx,
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
 
+  // check whether the world size is 1
+  if (ctx->GetWorldSize() == 1) {
+    std::shared_ptr<arrow::Table> table;
+    arrow::Status status = join::joinTables(
+        left,
+        right,
+        join_config,
+        &table,
+        twisterx::ToArrowPool(ctx)
+    );
+    PutTable(dest_id, table);
+    return twisterx::Status((int) status.code(), status.message());
+  }
+
   std::vector<int> left_hash_columns;
   left_hash_columns.push_back(join_config.GetLeftColumnIdx());
 
@@ -629,6 +643,10 @@ twisterx::Status DistributedUnion(twisterx::TwisterXContext *ctx,
   // extract the tables out
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
+
+  if (ctx->GetWorldSize() == 1) {
+    return Union(ctx, table_left, table_right, dest_id);
+  }
 
   if (left->num_columns() != right->num_columns()) {
     return twisterx::Status(twisterx::Invalid, "The no of columns of two tables are not similar. Can't perform union.");
