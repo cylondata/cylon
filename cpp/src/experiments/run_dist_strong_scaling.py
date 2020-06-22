@@ -6,7 +6,7 @@ from multiprocessing import Process
 import argparse
 
 parser = argparse.ArgumentParser(description='generate random data')
-parser.add_argument('-e', required=True, dest='exec', type=str, help='executable')
+parser.add_argument('-e', required=True, dest='execs', type=str, nargs='+', help='executables')
 parser.add_argument('--dry', action='store_true', help='if this is a dry run')
 parser.add_argument('--no-spark', dest='no_spark', action='store_true', help='skip spark')
 parser.add_argument('--ext', dest='ext', action='store_true', help='extended test')
@@ -16,7 +16,7 @@ args = vars(args)
 
 dry = args['dry']
 ext = args['ext']
-exec = args['exec']
+execs = args['execs']
 spark = not args['no_spark']
 
 home = expanduser("~")
@@ -33,11 +33,11 @@ else:
     world_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 160]
     repetitions = 4
 
-print(f"\n##### running {exec} test for strong scaling", flush=True)
+print(f"\n##### running {execs} test for weak scaling", flush=True)
 
-out_dir = f"{base_dir}/{exec}/"
-print(f"\n##### output dir: {out_dir}", flush=True)
-os.system(f"rm -rf {out_dir}; mkdir -p {out_dir}")
+# out_dir = f"{base_dir}/{ex}/"
+# print(f"\n##### output dir: {out_dir}", flush=True)
+# os.system(f"rm -rf {out_dir}; mkdir -p {out_dir}")
 
 cols = 4
 key_duplication_ratio = 0.99  # on avg there will be rows/key_range_ratio num of duplicate keys
@@ -88,18 +88,20 @@ for i in row_cases:
 
         print(f"\n\n##### rows {i} world_size {w} starting!", flush=True)
 
-        if dry:
-            join_exec = f"mpirun -np {w} ../../../build/bin/{exec} dry"
-        else:
-            hostfile = "" if w == 1 else "--hostfile nodes"
-            join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
-                        f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
-                        f"{hostfile} -np {w} ../../../build/bin/{exec}"
-        print("\n\n##### running", join_exec, flush=True)
+        for ex in execs:
+            if dry:
+                    join_exec = f"mpirun -np {w} ../../../build/bin/{ex} dry"
+            else:
+                hostfile = "" if w == 1 else "--hostfile nodes"
+                join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
+                            f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
+                            f"{hostfile} -np {w} ../../../build/bin/{ex}"
+            print("\n\n##### running", join_exec, flush=True)
 
-        for r in range(repetitions):
-            print(f"\n\n{i} {w} ##### {r + 1}/{repetitions} iter start!", flush=True)
-            os.system(f"{join_exec}")
+            for r in range(repetitions):
+                print(f"\n\n{ex} {i} {w} ##### twx {r + 1}/{repetitions} iter start! "
+                      f"SPLIT_FROM_HERE", flush=True)
+                os.system(f"{join_exec}")
 
         # os.system(f"mv {csv1} {test_dir}")
         # os.system(f"mv {csv2} {test_dir}")
@@ -111,14 +113,16 @@ for i in row_cases:
               flush=True)
 
         if spark:
-            print(f"\n\n##### starting spark rows {i} world_size {w} .....", flush=True)
-            spark_exec = f"{spark_submit} --class {exec} {spark_jar} {w} {hdfs_url}/{dfs_base} " \
-                         f"{spark_master}"
-            print("\n\n##### executing", spark_exec, flush=True)
+            for ex in execs:
+                print(f"\n\n##### starting spark rows {i} world_size {w} .....", flush=True)
+                spark_exec = f"{spark_submit} --class {ex} {spark_jar} {w} {hdfs_url}/{dfs_base} " \
+                             f"{spark_master}"
+                print("\n\n##### executing", spark_exec, flush=True)
 
-            for r in range(repetitions):
-                print(f"\n\n{i} {w} ##### spark {r + 1}/{repetitions} iter start!", flush=True)
-                os.system(spark_exec)
+                for r in range(repetitions):
+                    print(f"\n\n{ex} {i} {w} ##### spark {r + 1}/{repetitions} iter start! "
+                          f"SPLIT_FROM_HERE", flush=True)
+                    os.system(spark_exec)
 
             print("\n\n##### cleaning up hdfs dfs", flush=True)
             os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
