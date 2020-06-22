@@ -122,6 +122,10 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << rank << " outer join end ----------------------------------";
 
   ctx->Finalize();
+
+  system(("rm " + csv1).c_str());
+  system(("rm " + csv2).c_str());
+
   return 0;
 }
 
