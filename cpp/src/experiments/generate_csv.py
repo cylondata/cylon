@@ -32,5 +32,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args = vars(args)
 
-    print("generate csv :", args)
+    print("generate csv :", args, flush=True)
     generate_file(**args)

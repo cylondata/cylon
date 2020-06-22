@@ -31,6 +31,7 @@ class Communicator {
   virtual int GetRank() = 0;
   virtual int GetWorldSize() = 0;
   virtual void Finalize() = 0;
+  virtual void Barrier() = 0;
 };
 }
 }
