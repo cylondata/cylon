@@ -57,6 +57,9 @@ spark_submit = "~/victor/software/spark-2.4.6-bin-hadoop2.7/bin/spark-submit "
 spark_jar = "~/victor/git/SparkOps/target/scala-2.11/sparkops_2.11-0.1.jar "
 spark_master = "spark://v-001:7077"
 
+print("\n\n##### cleaning up hdfs dfs", flush=True)
+os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
+
 
 def generate_files(_rank, _i, _krange):
     # print(f"generating files for {_i} {_rank}")
