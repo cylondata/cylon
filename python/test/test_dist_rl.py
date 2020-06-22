@@ -28,6 +28,8 @@ tb2: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
 
 print("First Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
 
-tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type='right', algorithm='sort', left_col=0, right_col=1)
+tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type='left', algorithm='hash', left_col=0, right_col=1)
+
+tb3.show()
 
 ctx.finalize()

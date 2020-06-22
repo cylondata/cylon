@@ -57,5 +57,7 @@ void dist_join(bool run) {
 
   tb_l->distributed_join(tb_r->get_id(), join_config);
 
+  
+
   ctx_wrap->Finalize();
 }
