@@ -22,6 +22,8 @@ spark = not args['no_spark']
 home = expanduser("~")
 
 base_dir = "~/temp"
+print("\n\n##### cleaning up .....", flush=True)
+os.system(f"mkdir -p {base_dir}; rm -f {base_dir}/*.csv")
 
 csvs = [f"{base_dir}/csv1_RANK.csv", f"{base_dir}/csv2_RANK.csv"]
 if dry:
@@ -128,5 +130,8 @@ for i in row_cases:
             print("\n\n##### cleaning up hdfs dfs", flush=True)
             os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
             print("\n\n##### spark done .....", flush=True)
+
+        print("\n\n##### cleaning up .....", flush=True)
+        os.system(f"rm -f {base_dir}/*.csv")
 
     print(f"\n\n##### rows {i} done!\n ====================================== \n", flush=True)
