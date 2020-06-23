@@ -10,15 +10,34 @@ parser = argparse.ArgumentParser(description='generate random data')
 parser.add_argument('-e', required=True, dest='execs', type=str, nargs='+', help='executables')
 parser.add_argument('--dry', action='store_true', help='if this is a dry run')
 parser.add_argument('--no-spark', dest='no_spark', action='store_true', help='skip spark')
-parser.add_argument('--ext', dest='ext', action='store_true', help='extended test')
+parser.add_argument('--no-twx', dest='no_twx', action='store_true', help='skip twx')
+parser.add_argument('-r', dest='rows', type=float, nargs='+', help='row cases in millions',
+                    default=[50, 100, 200, 400, 500])
+parser.add_argument('-w', dest='world', type=int, nargs='+', help='world sizes',
+                    default=[1, 2, 4, 8, 16, 32, 64, 128, 160])
+parser.add_argument('--reps', dest='reps', type=int, help='number of repetitions', default=4)
 
 args = parser.parse_args()
 args = vars(args)
 
 dry = args['dry']
-ext = args['ext']
 execs = args['execs']
 spark = not args['no_spark']
+twx = not args['no_twx']
+row_cases = [int(ii * 1000000) for ii in args['rows']]
+repetitions = args['reps']
+world_sizes = args['world']
+
+if dry:
+    row_cases = [20]
+    world_sizes = [1, 2, 4]
+    repetitions = 1
+
+print("\n\n##### args: ", args, flush=True)
+
+if not twx and not spark:
+    print("\n\nnothing to do!", flush=True)
+    exit(0)
 
 home = expanduser("~")
 
@@ -27,14 +46,6 @@ print("\n\n##### cleaning up .....", flush=True)
 os.system(f"mkdir -p {base_dir}; rm -f {base_dir}/*.csv")
 
 csvs = [f"{base_dir}/csv1_RANK.csv", f"{base_dir}/csv2_RANK.csv"]
-if dry:
-    row_cases = [20]
-    world_sizes = [1, 2, 4]
-    repetitions = 1
-else:
-    row_cases = [int(ii * 1000000) for ii in [50, 100, 200, 400, 500]]
-    world_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 160]
-    repetitions = 4
 
 print(f"\n##### running {execs} test for weak scaling", flush=True)
 
@@ -116,28 +127,24 @@ for i in row_cases:
 
         print(f"\n\n##### rows {i} world_size {w} starting!", flush=True)
 
-        restart_spark_cluster(w)
+        if spark:
+            restart_spark_cluster(w)
 
-        for ex in execs:
-            if dry:
-                join_exec = f"mpirun -np {w} ../../../build/bin/{ex} dry"
-            else:
-                hostfile = "" if w == 1 else "--hostfile nodes"
-                join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
-                            f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
-                            f"{hostfile} -np {w} ../../../build/bin/{ex}"
-            print("\n\n##### running", join_exec, flush=True)
+        if twx:
+            for ex in execs:
+                if dry:
+                    join_exec = f"mpirun -np {w} ../../../build/bin/{ex} dry"
+                else:
+                    hostfile = "" if w == 1 else "--hostfile nodes"
+                    join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
+                                f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
+                                f"{hostfile} -np {w} ../../../build/bin/{ex}"
+                print("\n\n##### running", join_exec, flush=True)
 
-            for r in range(repetitions):
-                print(f"\n\n{ex} {i} {w} ##### twx {r + 1}/{repetitions} iter start! "
-                      f"SPLIT_FROM_HERE", flush=True)
-                os.system(f"{join_exec}")
-
-        # os.system(f"mv {csv1} {test_dir}")
-        # os.system(f"mv {csv2} {test_dir}")
-        # for j in ['right', 'left', 'inner', 'outer']:
-        #     os.system(f"mv /tmp/h_out_{j}.csv {test_dir}/")
-        #     os.system(f"mv /tmp/s_out_{j}.csv {test_dir}/")
+                for r in range(repetitions):
+                    print(f"\n\n{ex} {i} {w} ##### twx {r + 1}/{repetitions} iter start! "
+                          f"SPLIT_FROM_HERE", flush=True)
+                    os.system(f"{join_exec}")
 
         print(f"\n\n##### rows {i} world_size {w} done!\n-----------------------------------------",
               flush=True)
