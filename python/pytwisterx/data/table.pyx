@@ -25,6 +25,10 @@ from pyarrow.lib cimport CTable
 from pyarrow.lib cimport pyarrow_unwrap_table
 from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
+from cython.operator cimport dereference as deref
+
+from pytwisterx.ctx.context cimport CTwisterXContextWrap
+from pytwisterx.ctx.context import TwisterxContext
 
 '''
 TwisterX Table definition mapping 
@@ -42,6 +46,12 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
         _Status to_csv(const string)
         string join(const string, CJoinType, CJoinAlgorithm, int, int)
         string join(const string, CJoinConfig)
+        string distributed_join(const string &table_id, CJoinConfig join_config);
+        string distributed_join(CTwisterXContextWrap *ctx_wrap, const string &table_id, CJoinConfig join_config);
+        string distributed_join(const string &table_id, CJoinType type,
+							   CJoinAlgorithm algorithm,
+							   int left_column_index,
+							   int right_column_index);
 
 cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CxTable":
     cdef extern _Status from_csv(const string, const char, const string)
@@ -51,6 +61,7 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
 cdef class Table:
     cdef CxTable *thisPtr
     cdef CJoinConfig *jcPtr
+    cdef CTwisterXContextWrap *ctx_wrap
 
     def __cinit__(self, string id):
         '''
@@ -166,7 +177,7 @@ cdef class Table:
         s = Status(status.get_code(), b"", -1)
         return s
 
-    def join(self, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
+    def join(self, ctx: TwisterxContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
         '''
         Joins two PyTwisterX tables
         :param table: PyTwisterX table on which the join is performed (becomes the left table)
@@ -178,14 +189,35 @@ cdef class Table:
         '''
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
                                right_column_index=right_col)
-        cdef CJoinConfig *jc1 = self.jcPtr
+        cdef CJoinConfig *jc1 = self.jcPtr        
         cdef string table_out_id = self.thisPtr.join(table.id.encode(), jc1[0])
         if table_out_id.size() == 0:
             raise Exception("Join Failed !!!")
         return Table(table_out_id)
 
+
+    def distributed_join(self, ctx: TwisterxContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
+        '''
+        Joins two PyTwisterX tables
+        :param table: PyTwisterX table on which the join is performed (becomes the left table)
+        :param join_type: Join Type as str ["inner", "left", "right", "outer"]
+        :param algorithm: Join Algorithm as str ["hash", "sort"]
+        :param left_col: Join column of the left table as int
+        :param right_col: Join column of the right table as int
+        :return: Joined PyTwisterX table
+        '''
+        self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
+                               right_column_index=right_col)
+        cdef CJoinConfig *jc1 = self.jcPtr        
+        #cdef CTwisterXContextWrap *ctx_wrap = <CTwisterXContextWrap*>ctx.get_c_context()
+        cdef string table_out_id = self.thisPtr.distributed_join(table.id.encode(), jc1[0])
+        if table_out_id.size() == 0:
+            raise Exception("Join Failed !!!")
+        return Table(table_out_id)
+
+
     @staticmethod
-    def from_arrow(obj) -> Table:
+    def from_arrow(obj) -> Table:       
         '''
         creating a PyTwisterX table from PyArrow Table
         :param obj: PyArrow table
@@ -214,8 +246,9 @@ cdef class Table:
 
 cdef class csv_reader:
 
+
     @staticmethod
-    def read(path: str, delimiter: str) -> Table:
+    def read(ctx: TwisterxContext, path: str, delimiter: str) -> Table:    
         cdef string spath = path.encode()
         cdef string sdelm = delimiter.encode()
         id = uuid.uuid4()
