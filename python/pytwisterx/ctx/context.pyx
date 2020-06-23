@@ -15,6 +15,7 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
+from cython.operator cimport dereference as deref
 from pytwisterx.net.comm_type import CommType
 from pytwisterx.net.comm_type cimport _CommType
 from pytwisterx.ctx.context cimport CTwisterXContext
@@ -49,6 +50,7 @@ from pytwisterx.ctx.context cimport CTwisterXContextWrap
 #
 cdef class TwisterxContext:
     cdef CTwisterXContextWrap *thisPtr;
+    cdef string config;
 
     def __cinit__(self, config: str):
         '''
@@ -56,11 +58,12 @@ cdef class TwisterxContext:
         :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
         :return: None
         '''
+        self.config = config.encode()
         if config is None:
-            #print("Single Thread Config Loaded")
+            print("Single Thread Config Loaded")
             self.thisPtr = new CTwisterXContextWrap()
         else:
-            #print("Distributed Config Loaded")
+            print("Distributed Config Loaded")
             self.thisPtr = new CTwisterXContextWrap(config.encode())
 
     def get_rank(self) -> int:
@@ -83,6 +86,21 @@ cdef class TwisterxContext:
         :return: None
         '''
         self.thisPtr.Finalize()
+
+    def barrier(self):
+        '''
+        calling barrier to sync workers
+        '''
+        self.thisPtr.Barrier()
+    
+    def get_config(self):
+        return self.config
+
+
+    cdef CTwisterXContextWrap* get_c_context(self):
+        return self.thisPtr
+
+
 
 
 

@@ -28,7 +28,6 @@ add_library(twisterx SHARED
         util/builtins.h util/builtins.cpp
         ctx/twisterx_context.h ctx/twisterx_context.cpp table_api_extended.hpp
         io/csv_write_config.h io/csv_write_config.cpp
-        python/ctx/twisterx_context_wrap.h python/ctx/twisterx_context_wrap.cpp
         arrow/arrow_hash_kernels.hpp
         arrow/arrow_comparator.h arrow/arrow_comparator.cpp
         row.hpp row.cpp ctx/memory_pool.h ctx/arrow_memory_pool_utils.h ctx/arrow_memory_pool_utils.cpp)
@@ -42,11 +41,11 @@ target_link_libraries(twisterx ${PYTHON_LIBRARIES})
 if(${PYTWISTERX_BUILD})
 
 add_library(twisterx_python SHARED
+        python/twisterx_context_wrap.h python/twisterx_context_wrap.cpp
         python/table_cython.h python/table_cython.cpp
         python/net/distributed.h python/net/distributed.cpp
         python/net/comm/all_to_all_wrap.h python/net/comm/all_to_all_wrap.cpp
-        python/net/comm/callback.h python/net/comm/callback.cpp
-        python/ctx/twisterx_context_wrap.h python/ctx/twisterx_context_wrap.cpp)
+        python/net/comm/callback.h python/net/comm/callback.cpp)
 
 target_link_libraries(twisterx_python ${MPI_LIBRARIES})
 target_link_libraries(twisterx_python glog::glog)
