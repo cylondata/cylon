@@ -12,10 +12,11 @@ parser.add_argument('--dry', action='store_true', help='if this is a dry run')
 parser.add_argument('--no-spark', dest='no_spark', action='store_true', help='skip spark')
 parser.add_argument('--no-twx', dest='no_twx', action='store_true', help='skip twx')
 parser.add_argument('-r', dest='rows', type=float, nargs='+', help='row cases in millions',
-                    default=[50, 100, 200, 400, 500])
+                    default=[0.5, 1, 2])
 parser.add_argument('-w', dest='world', type=int, nargs='+', help='world sizes',
                     default=[1, 2, 4, 8, 16, 32, 64, 128, 160])
 parser.add_argument('--reps', dest='reps', type=int, help='number of repetitions', default=4)
+parser.add_argument('-t', dest='threads', type=int, help='file writing threads', default=16)
 
 args = parser.parse_args()
 args = vars(args)
@@ -58,7 +59,7 @@ key_duplication_ratio = 0.99  # on avg there will be rows/key_range_ratio num of
 
 print("\n##### repetitions for each test", repetitions, flush=True)
 
-file_gen_threads = 16
+file_gen_threads = args['threads']
 
 hdfs_url = "hdfs://v-login1:9001"
 hdfs_dfs = f"~/victor/software/hadoop-2.10.0//bin/hdfs dfs -fs {hdfs_url}"
