@@ -2,8 +2,9 @@ import os
 from os.path import expanduser
 
 from multiprocessing import Process
-
+import math
 import argparse
+from time import sleep
 
 parser = argparse.ArgumentParser(description='generate random data')
 parser.add_argument('-e', required=True, dest='execs', type=str, nargs='+', help='executables')
@@ -52,12 +53,15 @@ hdfs_url = "hdfs://v-login1:9001"
 hdfs_dfs = f"~/victor/software/hadoop-2.10.0//bin/hdfs dfs -fs {hdfs_url}"
 dfs_base = "/twx/"
 
-spark_submit = "~/victor/software/spark-2.4.6-bin-hadoop2.7/bin/spark-submit "
+spark_home = "~/victor/software/spark-2.4.6-bin-hadoop2.7"
+spark_submit = f"{spark_home}/bin/spark-submit "
 spark_jar = "~/victor/git/SparkOps/target/scala-2.11/sparkops_2.11-0.1.jar "
 spark_master = "spark://v-001:7077"
 
 print("\n\n##### cleaning up hdfs dfs", flush=True)
 os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
+
+TOTAL_NODES = 10
 
 
 def generate_files(_rank, _i, _krange):
@@ -69,6 +73,25 @@ def generate_files(_rank, _i, _krange):
     if spark:  # push all csvs to hdfs
         print(f"pushing files to hdfs {_i} {_rank}")
         os.system(f"{hdfs_dfs} -put -f {base_dir}/csv*_{_rank}.csv {dfs_base}")
+
+
+def restart_spark_cluster(world_size):
+    print(f"\n\n##### restarting spark cluster. world size {world_size}!", flush=True)
+
+    os.system(f"{spark_home}/sbin/stop-all.sh")
+    print(f"##### spark cluster stopped!", flush=True)
+
+    cores_per_worker = int(math.ceil(world_size / TOTAL_NODES))
+    print(f"\n\n##### new cores per worker {cores_per_worker}!", flush=True)
+    os.system(
+        f"sed -i 's/SPARK_WORKER_CORES=[[:digit:]]\\+/SPARK_WORKER_CORES={cores_per_worker}/g' "
+        f" ~/.bashrc ")
+
+    sleep(5)
+    os.system(f"tail ~/.bashrc")
+
+    os.system(f"{spark_home}/sbin/start-all.sh")
+    print(f"##### spark cluster restarted! {world_size}", flush=True)
 
 
 # for i in [10000000]:
@@ -84,7 +107,7 @@ for i in row_cases:
         for rank in range(0, w, file_gen_threads):
             procs = []
             for r in range(rank, min(rank + file_gen_threads, w)):
-                p = Process(target=generate_files, args=(r, int(i/w), krange))
+                p = Process(target=generate_files, args=(r, int(i / w), krange))
                 p.start()
                 procs.append(p)
 
@@ -93,9 +116,11 @@ for i in row_cases:
 
         print(f"\n\n##### rows {i} world_size {w} starting!", flush=True)
 
+        restart_spark_cluster(w)
+
         for ex in execs:
             if dry:
-                    join_exec = f"mpirun -np {w} ../../../build/bin/{ex} dry"
+                join_exec = f"mpirun -np {w} ../../../build/bin/{ex} dry"
             else:
                 hostfile = "" if w == 1 else "--hostfile nodes"
                 join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
@@ -119,7 +144,7 @@ for i in row_cases:
 
         if spark:
             for ex in execs:
-                print(f"\n\n##### starting spark rows {i} world_size {w} .....", flush=True)
+                print(f"\n\n##### starting spark rows {i} world_size {w}...", flush=True)
                 spark_exec = f"{spark_submit} --class {ex} {spark_jar} {w} {hdfs_url}/{dfs_base} " \
                              f"{spark_master}"
                 print("\n\n##### executing", spark_exec, flush=True)
@@ -134,6 +159,6 @@ for i in row_cases:
             print("\n\n##### spark done .....", flush=True)
 
         print("\n\n##### cleaning up .....", flush=True)
-        os.system(f"rm {base_dir}/*.csv")
+        os.system(f"rm -f {base_dir}/*.csv")
 
     print(f"\n\n##### rows {i} done!\n ====================================== \n", flush=True)
