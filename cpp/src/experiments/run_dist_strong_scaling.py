@@ -139,7 +139,8 @@ for i in row_cases:
                     hostfile = "" if w == 1 else "--hostfile nodes"
                     join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
                                 f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
-                                f"{hostfile} -np {w} ../../../build/bin/{ex}"
+                                f"{hostfile} --bind-to core --bind-to socket -np {w} " \
+                                f"../../../build/bin/{ex}"
                 print("\n\n##### running", join_exec, flush=True)
 
                 for r in range(repetitions):
