@@ -577,16 +577,19 @@ twisterx::Status Union(twisterx::TwisterXContext *ctx,
   auto t1 = std::chrono::steady_clock::now();
 
   int64_t max = std::max(ltab->num_rows(), rtab->num_rows());
-  for (int row = 0; row < max; ++row) {
+  int8_t table0 = 0;
+  int8_t table1 = 1;
+  int64_t print_threshold = max / 10;
+  for (int64_t row = 0; row < max; ++row) {
     if (row < ltab->num_rows()) {
-      rows_set.insert(std::make_pair<int8_t, int64_t>(0, row));
+      rows_set.insert(std::pair<int8_t, int64_t>(table0, row));
     }
 
     if (row < rtab->num_rows()) {
-      rows_set.insert(std::make_pair<int8_t, int64_t>(1, row));
+      rows_set.insert(std::pair<int8_t, int64_t>(table1, row));
     }
 
-    if (row % 100000 == 0) {
+    if (row % print_threshold == 0) {
       LOG(INFO) << "Done " << (row + 1) * 100 / max << "%" << " N : " << row << ", Eq : " << eq_calls << ", Hs : "
                 << hash_calls;
     }
