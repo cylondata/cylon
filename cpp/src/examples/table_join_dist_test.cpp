@@ -91,6 +91,7 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << "File read failed! " << csv2;
     return 1;
   }
+  ctx->GetCommunicator()->Barrier();
   LOG(INFO) << rank << " Done reading tables. rows " << table1->Rows() << " " << table2->Rows();
 
 //  LOG(INFO) << rank << " right join start";
