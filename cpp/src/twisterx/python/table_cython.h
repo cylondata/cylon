@@ -73,6 +73,8 @@ class CxTable {
   //
   std::string distributed_join(const std::string &table_id, JoinConfig join_config);
 
+  std::string distributed_join(twisterx_context_wrap *ctx_wrap, std::string &table_id, JoinConfig join_config);
+
   std::string distributed_join(const std::string &table_id, JoinType type, JoinAlgorithm algorithm, int left_column_index, int right_column_index);
 
   //unique_ptr<CTable> sort(int sort_column);

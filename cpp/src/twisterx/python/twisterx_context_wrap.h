@@ -60,6 +60,8 @@ class twisterx_context_wrap {
 
   net::Communicator *GetCommunicator() const;
 
+  void Barrier();
+
   int GetRank();
 
   int GetWorldSize();

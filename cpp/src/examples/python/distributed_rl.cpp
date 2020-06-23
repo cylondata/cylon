@@ -55,7 +55,9 @@ void dist_join(bool run) {
   auto tb_r = new twisterx::python::table::CxTable(uuid_r);
   auto join_config = twisterx::join::config::JoinConfig::RightJoin(0, 1);
 
-  tb_l->distributed_join(tb_r->get_id(), join_config);
+  tb_l->distributed_join(tb_r->get_id(), join_config);   
+
+  //tb_l->distributed_join(ctx_wrap, tb_r->get_id(), join_config);
 
   
 

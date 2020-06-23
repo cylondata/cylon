@@ -24,7 +24,7 @@ ctx: TwisterxContext = TwisterxContext("mpi")
 tb1: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
 tb2: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
 
-
+tb1.show()
 
 print("First Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
 

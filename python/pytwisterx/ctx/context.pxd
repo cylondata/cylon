@@ -39,4 +39,5 @@ cdef extern from "../../../cpp/src/twisterx/python/twisterx_context_wrap.h" name
         CTwisterXContext *getInstance()
         int GetRank()
         int GetWorldSize()
+        void Barrier()
         void Finalize()

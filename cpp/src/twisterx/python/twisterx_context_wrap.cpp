@@ -43,6 +43,9 @@ TwisterXContext * twisterx::python::twisterx_context_wrap::getInstance() {
   return context;
 }
 
+void twisterx::python::twisterx_context_wrap::Barrier() {
+  this->context->GetCommunicator()->Barrier();
+}
 
 net::Communicator * twisterx::python::twisterx_context_wrap::GetCommunicator() const {
   return this->context->GetCommunicator();

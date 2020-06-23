@@ -87,8 +87,18 @@ cdef class TwisterxContext:
         '''
         self.thisPtr.Finalize()
 
+    def barrier(self):
+        '''
+        calling barrier to sync workers
+        '''
+        self.thisPtr.Barrier()
+    
     def get_config(self):
         return self.config
+
+
+    cdef CTwisterXContextWrap* get_c_context(self):
+        return self.thisPtr
 
 
 

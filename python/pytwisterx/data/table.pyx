@@ -47,6 +47,7 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
         string join(const string, CJoinType, CJoinAlgorithm, int, int)
         string join(const string, CJoinConfig)
         string distributed_join(const string &table_id, CJoinConfig join_config);
+        string distributed_join(CTwisterXContextWrap *ctx_wrap, const string &table_id, CJoinConfig join_config);
         string distributed_join(const string &table_id, CJoinType type,
 							   CJoinAlgorithm algorithm,
 							   int left_column_index,
@@ -208,6 +209,7 @@ cdef class Table:
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
                                right_column_index=right_col)
         cdef CJoinConfig *jc1 = self.jcPtr        
+        #cdef CTwisterXContextWrap *ctx_wrap = <CTwisterXContextWrap*>ctx.get_c_context()
         cdef string table_out_id = self.thisPtr.distributed_join(table.id.encode(), jc1[0])
         if table_out_id.size() == 0:
             raise Exception("Join Failed !!!")
