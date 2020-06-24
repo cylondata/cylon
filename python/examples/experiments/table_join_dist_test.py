@@ -18,7 +18,7 @@ def RunJoin(rank: int, ctx: TwisterxContext, table1: Table, table2: Table, join_
     t1 = time.time()
     table3: Table = table1.distributed_join(ctx, table=table2, join_type=join_type, algorithm=join_algorithm, left_col=left_col, right_col=right_col)
     t2 = time.time()
-    ctx.Barrier()
+    ctx.barrier()
     t3 = time.time()
     try:
         logging.info(f"j_t {str(t2-t1)} sec, w_t {t3-t2} ,lines {table3.rows} t {join_type} a {join_algorithm}")
@@ -32,7 +32,7 @@ def RunJoin(rank: int, ctx: TwisterxContext, table1: Table, table2: Table, join_
 
 ctx: TwisterxContext = TwisterxContext("mpi")
 
-argv = sys.args
+argv = sys.argv
 argc = len(argv)
 
 hostname: str = socket.gethostname()
