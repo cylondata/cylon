@@ -17,18 +17,18 @@
 
 #include <string>
 #include "unordered_map"
-#include "../../net/comm_config.h"
-#include "../../net/communicator.h"
-#include "../../ctx/twisterx_context.h"
+#include "../net/comm_config.h"
+#include "../net/communicator.h"
+#include "../ctx/twisterx_context.h"
 
 using namespace twisterx;
 
 namespace twisterx {
-namespace py {
+namespace python {
 class twisterx_context_wrap {
  private:
   std::unordered_map<std::string, std::string> config{};
-
+     
   bool distributed;
 
   twisterx::net::Communicator *communicator{};
@@ -36,6 +36,11 @@ class twisterx_context_wrap {
   TwisterXContext *context;
 
   explicit twisterx_context_wrap(bool distributed);
+
+  twisterx::MemoryPool *memory_pool{};
+
+  int32_t sequence_no;
+
 
  public:
 
@@ -55,13 +60,23 @@ class twisterx_context_wrap {
 
   net::Communicator *GetCommunicator() const;
 
+  void Barrier();
+
   int GetRank();
 
   int GetWorldSize();
 
   void Finalize();
 
+  int GetContextId();
+
   vector<int> GetNeighbours(bool include_self);
+
+  twisterx::MemoryPool *GetMemoryPool();
+
+  void SetMemoryPool(twisterx::MemoryPool *mem_pool);
+  
+  int32_t GetNextSequence();
 
 };
 }
