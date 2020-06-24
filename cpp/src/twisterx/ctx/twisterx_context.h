@@ -28,7 +28,7 @@ class TwisterXContext {
   bool distributed;
   twisterx::net::Communicator *communicator{};
   twisterx::MemoryPool *memory_pool{};
-  int32_t sequence_no;
+  int32_t sequence_no = 0;
 
  public:
   static TwisterXContext *Init();
