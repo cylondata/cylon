@@ -19,11 +19,26 @@
 #include <iostream>
 #include <io/csv_read_config.h>
 #include <chrono>
+#include <fstream>
+#include <iostream>
 
 using namespace twisterx;
 using namespace twisterx::join::config;
 
 //template <const char* jtype>
+
+void write_results(std::string line, std::string filename){
+   ofstream fout;  // Create Object of Ofstream
+   ifstream fin;
+   fin.open(filename);
+   fout.open (filename,ios::app); // Append mode
+   if(fin.is_open())
+       fout<< line; // Writing data to file
+   cout<<"\n Results Written";
+   fin.close();
+   fout.close(); // Closing the file
+}
+
 bool RunJoin(int rank,
              twisterx::TwisterXContext *ctx,
              const JoinConfig &jc,
@@ -43,7 +58,7 @@ bool RunJoin(int rank,
     LOG(ERROR) << "Join failed!";
     return false;
   }
-  status = output->WriteCSV(h_out_path);
+  //status = output->WriteCSV(h_out_path);
 //  auto t4 = std::chrono::high_resolution_clock::now();
 
   if (status.is_ok()) {
@@ -52,6 +67,18 @@ bool RunJoin(int rank,
               << " lines " << output->Rows()
               << " t " << jc.GetType()
               << " a " << jc.GetAlgorithm();
+
+    std::string res_ln = std::to_string(jc.GetType()) + "," + std::to_string(ctx->GetWorldSize()) + "," 
+    + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count())
+    + ","
+    + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count())
+    +","
+    + std::to_string(output->Rows())
+    +","
+    + std::to_string(jc.GetAlgorithm())
+    +"\n";
+    write_results(res_ln, "results_cpp.csv");
+              
     output->Clear();
     return true;
   } else {
