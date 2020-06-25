@@ -43,7 +43,7 @@ bool RunJoin(int rank,
     LOG(ERROR) << "Join failed!";
     return false;
   }
-//    status = output->WriteCSV(h_out_path);
+  status = output->WriteCSV(h_out_path);
 //  auto t4 = std::chrono::high_resolution_clock::now();
 
   if (status.is_ok()) {
@@ -73,6 +73,7 @@ int main(int argc, char *argv[]) {
   std::string srank = std::to_string(rank);
   std::string base_dir = argc > 1 ? "~/temp" : "/scratch/"+username;
 //  std::string base_dir = "/tmp";
+  std::cout << ">>>>>>>> Reading from  :" << base_dir << std::endl;
   system(("mkdir -p " + base_dir).c_str());
 
   std::string csv1 = base_dir + "/csv1_" + srank + ".csv";
@@ -110,9 +111,9 @@ int main(int argc, char *argv[]) {
 
   LOG(INFO) << rank << " inner join start";
   auto inner_jc = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::HASH);
-  RunJoin(rank, ctx, inner_jc, table1, table2, joined, "/scratch/"+username+"/h_out_inner_" + srank + ".csv");
+  RunJoin(rank, ctx, inner_jc, table1, table2, joined, "h_out_inner_" + srank + ".csv");
   auto inner_jc2 = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::SORT);
-  RunJoin(rank, ctx, inner_jc2, table1, table2, joined, "/scratch/"+username+"/s_out_inner_" + srank + ".csv");
+  RunJoin(rank, ctx, inner_jc2, table1, table2, joined, "s_out_inner_" + srank + ".csv");
   LOG(INFO) << rank << " inner join end ----------------------------------";
 
 //  LOG(INFO) << rank << " outer join start";
@@ -122,10 +123,12 @@ int main(int argc, char *argv[]) {
 //  RunJoin(rank, ctx, outer_jc2, table1, table2, joined, "/scratch/dnperera/s_out_outer_" + srank + ".csv");
 //  LOG(INFO) << rank << " outer join end ----------------------------------";
 
-  ctx->Finalize();
-
   system(("rm " + csv1).c_str());
   system(("rm " + csv2).c_str());
+  
+  ctx->Finalize();
+
+  
 
   return 0;
 }
