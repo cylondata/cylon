@@ -39,7 +39,7 @@ ctx: TwisterxContext = TwisterxContext("mpi")
 argv = sys.argv
 argc = len(argv)
 
-hostname: str = socket.gethostname()
+hostname: str = "vlabeyko"
 
 rank: int = ctx.get_rank()
 world_size: int = ctx.get_world_size()
@@ -47,7 +47,7 @@ world_size: int = ctx.get_world_size()
 srank = str(rank)
 sworld_size = str(world_size)
 
-base_dir: str = "/tmp" if argc > 1 else f"/scratch/{hostname}"
+base_dir: str = "~/temp" if argc > 1 else f"/scratch/{hostname}"
 
 os.system("mkdir -p " + base_dir)
 
