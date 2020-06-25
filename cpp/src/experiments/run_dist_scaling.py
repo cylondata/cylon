@@ -11,8 +11,10 @@ parser.add_argument('-e', required=True, dest='execs', type=str, nargs='+', help
 parser.add_argument('--dry', action='store_true', help='if this is a dry run')
 parser.add_argument('--no-spark', dest='no_spark', action='store_true', help='skip spark')
 parser.add_argument('--no-twx', dest='no_twx', action='store_true', help='skip twx')
+
+parser.add_argument('-s', required=True, dest='scaling', type=str, help='weak or strong')
 parser.add_argument('-r', dest='rows', type=float, nargs='+', help='row cases in millions',
-                    default=[0.5, 1, 2])
+                    required=True)
 parser.add_argument('-w', dest='world', type=int, nargs='+', help='world sizes',
                     default=[1, 2, 4, 8, 16, 32, 64, 128, 160])
 parser.add_argument('--reps', dest='reps', type=int, help='number of repetitions', default=4)
@@ -29,6 +31,15 @@ row_cases = [int(ii * 1000000) for ii in args['rows']]
 repetitions = args['reps']
 world_sizes = args['world']
 
+if args['scaling'] == 'w':
+    scaling = 'weak'
+elif args['scaling'] == 's':
+    scaling = 'strong'
+else:
+    scaling = None
+    print("\n\nnothing to do!", flush=True)
+    exit(0)
+
 if dry:
     row_cases = [20]
     world_sizes = [1, 2, 4]
@@ -40,7 +51,7 @@ if not twx and not spark:
     print("\n\nnothing to do!", flush=True)
     exit(0)
 
-print(f"##### running {execs} test for weak scaling", flush=True)
+print(f"##### running {execs} test for {scaling} scaling", flush=True)
 
 cols = 4
 key_duplication_ratio = 0.99  # on avg there will be rows/key_range_ratio num of duplicate keys
@@ -84,7 +95,7 @@ def restart_spark_cluster(world_size):
 for i in row_cases:
     for w in world_sizes:
         print(f"\n##### rows {i} world_size {w} starting!", flush=True)
-        s_dir = f"~/temp/twx/weak/{i}/{w}/"
+        s_dir = f"~/temp/twx/{scaling}/{i}/{w}/"
         b_dir = f"/scratch/dnperera/"
 
         if spark:
