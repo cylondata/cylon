@@ -47,15 +47,15 @@ world_size: int = ctx.get_world_size()
 srank = str(rank)
 sworld_size = str(world_size)
 
-base_dir: str = "~/temp" if argc > 1 else f"/scratch/{hostname}"
+base_dir: str = f"/scratch/{hostname}"
 
 os.system("mkdir -p " + base_dir)
 
 csv1: str = os.path.join(base_dir, f"csv1_{srank}.csv")
 csv2: str = os.path.join(base_dir, f"csv2_{srank}.csv")
 
-os.system(f"cp ~/temp/csv1_{srank}.csv {csv1}")
-os.system(f"cp ~/temp/csv2_{srank}.csv {csv2}")
+os.system(f"cp ~/temp/{sworld_size}/csv1_{srank}.csv {csv1}")
+os.system(f"cp ~/temp/{sworld_size}/csv2_{srank}.csv {csv2}")
 
 logging.info(f"{srank} Reading tables")
 
@@ -74,5 +74,8 @@ RunJoin(rank=rank, ctx=ctx, table1=table1, table2=table2, join_type="inner", joi
 
 ctx.finalize()
 
-
+print(f"Removing File {csv1}")
+print(f"Removing File {csv2}")
+os.system("rm " + csv1)
+os.system("rm " + csv2)
 

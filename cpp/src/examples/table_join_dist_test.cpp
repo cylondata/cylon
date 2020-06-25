@@ -34,7 +34,7 @@ void write_results(std::string line, std::string filename){
    fout.open (filename,ios::app); // Append mode
    if(fin.is_open())
        fout<< line; // Writing data to file
-   cout<<"\n Results Written";
+   cout<<"\n Results Written\n";
    fin.close();
    fout.close(); // Closing the file
 }
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
   int world_size = ctx->GetWorldSize();
   std::string srank = std::to_string(rank);
   std::string sworld_size = std::to_string(world_size);
-  std::string base_dir = argc > 1 ? "~/temp" : "/scratch/"+username;
+  std::string base_dir = "/scratch/"+username;
 //  std::string base_dir = "/tmp";
   std::cout << ">>>>>>>> Reading from  :" << base_dir << std::endl;
   system(("mkdir -p " + base_dir).c_str());
@@ -152,13 +152,12 @@ int main(int argc, char *argv[]) {
 //  RunJoin(rank, ctx, outer_jc2, table1, table2, joined, "/scratch/dnperera/s_out_outer_" + srank + ".csv");
 //  LOG(INFO) << rank << " outer join end ----------------------------------";
 
-  //system(("rm " + csv1).c_str());
-  //system(("rm " + csv2).c_str());
-
+  
   ctx->Finalize();
-
-  
-  
+  std::cout << "Removing File " << csv1 << std::endl;
+  std::cout << "Removing File " << csv2 << std::endl;
+  system(("rm " + csv1).c_str());
+  system(("rm " + csv2).c_str());  
 
   return 0;
 }
