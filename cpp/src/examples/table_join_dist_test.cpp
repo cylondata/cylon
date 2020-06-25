@@ -97,7 +97,9 @@ int main(int argc, char *argv[]) {
   auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
   std::string username = "vlabeyko";
   int rank = ctx->GetRank();
+  int world_size = ctx->GetWorldSize();
   std::string srank = std::to_string(rank);
+  std::string sworld_size = std::to_string(world_size);
   std::string base_dir = argc > 1 ? "~/temp" : "/scratch/"+username;
 //  std::string base_dir = "/tmp";
   std::cout << ">>>>>>>> Reading from  :" << base_dir << std::endl;
@@ -106,8 +108,8 @@ int main(int argc, char *argv[]) {
   std::string csv1 = base_dir + "/csv1_" + srank + ".csv";
   std::string csv2 = base_dir + "/csv2_" + srank + ".csv";
 
-  system(("cp ~/temp/csv1_" + srank + ".csv " + csv1).c_str());
-  system(("cp ~/temp/csv2_" + srank + ".csv " + csv2).c_str());
+  system(("cp ~/temp/"+sworld_size+"/csv1_" + srank + ".csv " + csv1).c_str());
+  system(("cp ~/temp/"+sworld_size+"/csv2_" + srank + ".csv " + csv2).c_str());
 
   LOG(INFO) << rank << " Reading tables";
   auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
