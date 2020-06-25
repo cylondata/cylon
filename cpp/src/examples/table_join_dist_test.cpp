@@ -68,10 +68,10 @@ int main(int argc, char *argv[]) {
 
   auto mpi_config = new twisterx::net::MPIConfig();
   auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
-
+  std::string username = "vlabeyko";
   int rank = ctx->GetRank();
   std::string srank = std::to_string(rank);
-  std::string base_dir = argc > 1 ? "/tmp" : "/scratch/dnperera";
+  std::string base_dir = argc > 1 ? "~/temp" : "/scratch/"+username;
 //  std::string base_dir = "/tmp";
   system(("mkdir -p " + base_dir).c_str());
 
@@ -110,9 +110,9 @@ int main(int argc, char *argv[]) {
 
   LOG(INFO) << rank << " inner join start";
   auto inner_jc = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::HASH);
-  RunJoin(rank, ctx, inner_jc, table1, table2, joined, "/scratch/dnperera/h_out_inner_" + srank + ".csv");
+  RunJoin(rank, ctx, inner_jc, table1, table2, joined, "/scratch/"+username+"/h_out_inner_" + srank + ".csv");
   auto inner_jc2 = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::SORT);
-  RunJoin(rank, ctx, inner_jc2, table1, table2, joined, "/scratch/dnperera/s_out_inner_" + srank + ".csv");
+  RunJoin(rank, ctx, inner_jc2, table1, table2, joined, "/scratch/"+username+"/s_out_inner_" + srank + ".csv");
   LOG(INFO) << rank << " inner join end ----------------------------------";
 
 //  LOG(INFO) << rank << " outer join start";
