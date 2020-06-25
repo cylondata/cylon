@@ -22,6 +22,10 @@ def RunJoin(rank: int, ctx: TwisterxContext, table1: Table, table2: Table, join_
     t3 = time.time()
     try:
         logging.info(f"j_t {str(t2-t1)} sec, w_t {t3-t2} ,lines {table3.rows} t {join_type} a {join_algorithm}")
+        with open("results.csv","a") as fp:
+            line = f"{join_algorithm} {str(ctx.get_world_size())} >> j_t {str(t2-t1)} sec, w_t {t3-t2} ,lines {table3.rows} t {join_type} a {join_algorithm}"
+            write_line = line + "\n"
+            fp.write(write_line)
         staus = True
     except Exception:
         logging.error("Something went wrong in the distributed join")
