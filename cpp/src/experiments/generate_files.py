@@ -53,7 +53,7 @@ for i in row_cases:
 
         # generate 2 cvs for world size
         print(f"##### generating files of rows {i} {w} {out_d}!", flush=True)
-        for rank in range(0, w, file_gen_threads):
+        for rank in range(w):
             work.append((out_d, rank, i, krange))
 
 # strong scaling
@@ -67,7 +67,7 @@ for i in row_cases:
 
         # generate 2 cvs for world size
         print(f"##### generating files of rows {i} {w}!", flush=True)
-        for rank in range(0, w, file_gen_threads):
+        for rank in range(w):
             work.append((out_d, rank, int(i / w), krange))
 
 print("work:", work, flush=True)
