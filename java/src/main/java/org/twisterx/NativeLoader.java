@@ -30,6 +30,7 @@ public class NativeLoader {
       String prefix = System.getProperty("prefix", "") + arch + "/" + os;
 
       String path = prefix + "/" + System.mapLibraryName(file);
+      System.out.println("Loading libraries from " + path);
       URL resource = NativeLoader.class.getClassLoader().getResource(path);
 
       if (resource == null) {

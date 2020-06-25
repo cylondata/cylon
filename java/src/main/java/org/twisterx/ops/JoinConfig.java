@@ -81,4 +81,12 @@ public class JoinConfig {
   public int getRightIndex() {
     return rightIndex;
   }
+
+  public Algorithm getJoinAlgorithm() {
+    return joinAlgorithm;
+  }
+
+  public Type getJoinType() {
+    return joinType;
+  }
 }

@@ -15,6 +15,7 @@
 #include "csv_read_config.h"
 #include "csv_read_config_holder.hpp"
 #include "../arrow//arrow_types.hpp"
+#include <arrow/csv/options.h>
 
 namespace twisterx {
 namespace io {

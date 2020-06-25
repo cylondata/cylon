@@ -24,7 +24,7 @@ SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
 
 message("${PROJECT_SOURCE_DIR}/../../../../cpp/src")
-set(TWISTERX_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src"
+set(TWISTERX_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src/twisterx"
         "${PROJECT_SOURCE_DIR}/../../../../cpp/thirdparty/cub")
 find_library(TWISTERX_LIBRARY "twisterx" "../../../../cpp/build/lib")
 message(STATUS "TWISTERX_LIBRARY set to ${TWISTERX_LIBRARY}")
@@ -43,8 +43,7 @@ include_directories("include"
         "${JNI_INCLUDE_DIRS}" ${TWISTERX_INCLUDE})
 
 set(SOURCE_FILES
-        "src/AllToAll.cpp"
-        "src/AllToAll.h" src/Join.cpp src/Table.cpp)
+        src/Table.cpp src/TwisterXContext.cpp src/ConversionUtils.h src/ConversionUtils.cpp)
 add_library(twisterxjni SHARED ${SOURCE_FILES})
 
 include_directories(${MPI_INCLUDE_PATH})
