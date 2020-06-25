@@ -118,3 +118,8 @@ JNIEXPORT void JNICALL Java_org_twisterx_Table_merge
     throwIOException(env, status.get_msg());
   }
 }
+
+JNIEXPORT void JNICALL Java_org_twisterx_Table_clear
+    (JNIEnv *env, jclass thiz, jstring table_id) {
+  twisterx::RemoveTable(jstr_to_str(env, table_id));
+}

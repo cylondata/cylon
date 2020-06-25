@@ -198,7 +198,7 @@ public class Table extends DataRepresentation {
    * Clear the table and free memory associated with this table
    */
   public void clear() {
-    throw unSupportedException();
+    Table.clear(this.getId());
   }
 
   /**
@@ -246,6 +246,8 @@ public class Table extends DataRepresentation {
   private static native void print(String tableId, int row1, int row2, int col1, int col2);
 
   private static native void merge(int ctxId, String[] tableIds, String mergedTableId);
+
+  private static native void clear(String id);
 
   //----------------- END OF METHODS ---------------------//
 }

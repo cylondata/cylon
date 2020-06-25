@@ -40,6 +40,8 @@ public class DistributedJoinExample {
     System.out.println("Joined table : " + (joined.getRowCount() + "," + joined.getColumnCount()));
     System.out.println("Total time : " + (System.currentTimeMillis() - t1));
 
+    joined.clear();
+
     ctx.finalizeCtx();
   }
 }
