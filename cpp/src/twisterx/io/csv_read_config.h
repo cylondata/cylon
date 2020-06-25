@@ -14,8 +14,12 @@
 
 #ifndef TWISTERX_SRC_TWISTERX_IO_CSV_READ_CONFIG_H_
 #define TWISTERX_SRC_TWISTERX_IO_CSV_READ_CONFIG_H_
-#include <arrow/csv/options.h>
 #include "../data_types.hpp"
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <memory>
+
 namespace twisterx {
 namespace io {
 namespace config {
@@ -100,7 +104,7 @@ class CSVReadOptions {
   CSVReadOptions SkipRows(int32_t skip_rows);
 
   CSVReadOptions WithColumnTypes(const std::unordered_map<std::string,
-														  std::shared_ptr<DataType>> &column_types);
+                                                          std::shared_ptr<DataType>> &column_types);
 
   /**
    * Recognized spellings for null values

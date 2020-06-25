@@ -47,6 +47,9 @@ class TwisterXContext {
   twisterx::MemoryPool *GetMemoryPool();
   void SetMemoryPool(twisterx::MemoryPool *mem_pool);
   int32_t GetNextSequence();
+  void Barrier() {
+    this->GetCommunicator()->Barrier();
+  }
 };
 }
 

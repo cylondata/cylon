@@ -5,7 +5,6 @@ import org.twisterx.ops.Filter;
 import org.twisterx.ops.JoinConfig;
 import org.twisterx.ops.Mapper;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,13 +23,16 @@ import java.util.UUID;
 @SuppressWarnings({"unused", "rawtypes"})
 public class Table extends DataRepresentation {
 
+  private TwisterXContext ctx;
+
   /**
    * Creates a new instance of a {@link Table}
    *
    * @param tableId ID of the table
    */
-  private Table(String tableId) {
+  private Table(String tableId, TwisterXContext ctx) {
     super(tableId);
+    this.ctx = ctx;
   }
 
   //----------------- METHODS TO GENERATE TABLE ---------------------//
@@ -41,10 +43,10 @@ public class Table extends DataRepresentation {
    * @param path path to the CSV file
    * @return A {@link Table} instance that holds the data from the CSV file
    */
-  public static Table fromCSV(String path) {
+  public static Table fromCSV(TwisterXContext ctx, String path) {
     String uuid = UUID.randomUUID().toString();
-    Table.nativeLoadCSV(path, uuid);
-    return new Table(uuid);
+    Table.nativeLoadCSV(ctx.getCtxId(), path, uuid);
+    return new Table(uuid, ctx);
   }
 
   /**
@@ -59,7 +61,7 @@ public class Table extends DataRepresentation {
 
   /**
    * <p>This method will load a table by reading the data from a CSV file. The behaviour will be similar to
-   * {@link Table#fromCSV(String)}, but additionally data types can be specified for each column.</p>
+   * {@link Table#fromCSV(TwisterXContext, String)}, but additionally data types can be specified for each column.</p>
    *
    * @param path      path to the CSV file
    * @param dataTypes List of data types, i<sup>th</sup> index of the {@link List} should specify the data types of the i<sup>th</sup> column.
@@ -106,8 +108,16 @@ public class Table extends DataRepresentation {
    */
   public Table join(Table rightTable, JoinConfig joinConfig) {
     String uuid = UUID.randomUUID().toString();
-    Table.nativeJoin(this.getId(), rightTable.getId(), joinConfig.getLeftIndex(), joinConfig.getRightIndex(), uuid);
-    return new Table(uuid);
+    Table.nativeJoin(this.ctx.getCtxId(), this.getId(), rightTable.getId(), joinConfig.getLeftIndex(),
+        joinConfig.getRightIndex(), joinConfig.getJoinType().name(), joinConfig.getJoinAlgorithm().name(), uuid);
+    return new Table(uuid, this.ctx);
+  }
+
+  public Table distributedJoin(Table rightTable, JoinConfig joinConfig) {
+    String uuid = UUID.randomUUID().toString();
+    Table.nativeDistributedJoin(this.ctx.getCtxId(), this.getId(), rightTable.getId(), joinConfig.getLeftIndex(),
+        joinConfig.getRightIndex(), joinConfig.getJoinType().name(), joinConfig.getJoinAlgorithm().name(), uuid);
+    return new Table(uuid, this.ctx);
   }
 
   /**
@@ -150,14 +160,14 @@ public class Table extends DataRepresentation {
    * @param tables List of tables to be merged
    * @return merged {@link Table}
    */
-  public static Table merge(Table... tables) {
+  public static Table merge(TwisterXContext ctx, Table... tables) {
     String[] tableIds = new String[tables.length];
     for (int i = 0; i < tables.length; i++) {
       tableIds[i] = tables[i].getId();
     }
     String uuid = UUID.randomUUID().toString();
-    merge(tableIds, uuid);
-    return new Table(uuid);
+    merge(ctx.getCtxId(), tableIds, uuid);
+    return new Table(uuid, ctx);
   }
 
   /**
@@ -188,7 +198,7 @@ public class Table extends DataRepresentation {
    * Clear the table and free memory associated with this table
    */
   public void clear() {
-    throw unSupportedException();
+    Table.clear(this.getId());
   }
 
   /**
@@ -213,41 +223,31 @@ public class Table extends DataRepresentation {
   //----------------- NATIVE METHODS ---------------------//
 
   /**
-   * @param left        id of the left table
-   * @param right       id of the right table
-   * @param tab1Index   left join column index
-   * @param tab2Index   right join column index
-   * @param destination destination table id
+   * @param left          id of the left table
+   * @param right         id of the right table
+   * @param tab1Index     left join column index
+   * @param tab2Index     right join column index
+   * @param joinType      join type
+   * @param joinAlgorithm join algorithm
+   * @param destination   destination table id
    */
-  private static native void nativeJoin(String left, String right, int tab1Index, int tab2Index,
-                                        String destination);
+  private static native void nativeJoin(int ctxId, String left, String right, int tab1Index, int tab2Index,
+                                        String joinType, String joinAlgorithm, String destination);
+
+  private static native void nativeDistributedJoin(int ctxId, String left, String right, int tab1Index, int tab2Index,
+                                                   String joinType, String joinAlgorithm, String destination);
 
   private static native int nativeColumnCount(String tableId);
 
   private static native int nativeRowCount(String tableId);
 
-  private static native void nativeLoadCSV(String path, String id);
+  private static native void nativeLoadCSV(int ctxId, String path, String id);
 
   private static native void print(String tableId, int row1, int row2, int col1, int col2);
 
-  private static native void merge(String[] tableIds, String mergedTableId);
+  private static native void merge(int ctxId, String[] tableIds, String mergedTableId);
+
+  private static native void clear(String id);
 
   //----------------- END OF METHODS ---------------------//
-
-  public static void main(String[] args) throws IOException {
-    boolean loaded = NativeLoader.load();
-
-    Table left = Table.fromCSV("/tmp/csv.csv");
-    Table right = Table.fromCSV("/tmp/csv.csv");
-    Table joined = left.join(right, new JoinConfig(0, 0));
-
-    System.out.println(joined.getColumnCount());
-    System.out.println(joined.getRowCount());
-
-    joined.print();
-
-    Table merged = Table.merge(left, right);
-    merged.print();
-
-  }
 }

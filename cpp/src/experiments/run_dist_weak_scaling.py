@@ -34,32 +34,18 @@ if dry:
     world_sizes = [1, 2, 4]
     repetitions = 1
 
-print("\n\n##### args: ", args, flush=True)
+print("##### args: ", args, flush=True)
 
 if not twx and not spark:
     print("\n\nnothing to do!", flush=True)
     exit(0)
 
-home = expanduser("~")
-
-base_dir = "~/temp"
-print("\n\n##### cleaning up .....", flush=True)
-os.system(f"mkdir -p {base_dir}; rm -f {base_dir}/*.csv")
-
-csvs = [f"{base_dir}/csv1_RANK.csv", f"{base_dir}/csv2_RANK.csv"]
-
-print(f"\n##### running {execs} test for weak scaling", flush=True)
-
-# out_dir = f"{base_dir}/{ex}/"
-# print(f"\n##### output dir: {out_dir}", flush=True)
-# os.system(f"rm -rf {out_dir}; mkdir -p {out_dir}")
+print(f"##### running {execs} test for weak scaling", flush=True)
 
 cols = 4
 key_duplication_ratio = 0.99  # on avg there will be rows/key_range_ratio num of duplicate keys
 
-print("\n##### repetitions for each test", repetitions, flush=True)
-
-file_gen_threads = args['threads']
+print("##### repetitions for each test", repetitions, flush=True)
 
 hdfs_url = "hdfs://v-login1:9001"
 hdfs_dfs = f"~/victor/software/hadoop-2.10.0//bin/hdfs dfs -fs {hdfs_url}"
@@ -74,17 +60,6 @@ print("\n\n##### cleaning up hdfs dfs", flush=True)
 os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
 
 TOTAL_NODES = 10
-
-
-def generate_files(_rank, _i, _krange):
-    # print(f"generating files for {_i} {_rank}")
-    for _f in csvs:
-        os.system(f"python generate_csv.py -o {_f.replace('RANK', str(_rank))} -r {_i} -c {cols} "
-                  f"--krange 0 {_krange[1]}")
-
-    if spark:  # push all csvs to hdfs
-        print(f"pushing files to hdfs {_i} {_rank}")
-        os.system(f"{hdfs_dfs} -put -f {base_dir}/csv*_{_rank}.csv {dfs_base}")
 
 
 def restart_spark_cluster(world_size):
@@ -106,30 +81,15 @@ def restart_spark_cluster(world_size):
     print(f"##### spark cluster restarted! {world_size}", flush=True)
 
 
-# for i in [10000000]:
 for i in row_cases:
-    # test_dir = f"{out_dir}/{i}"
-    # os.system(f"rm -rf {test_dir}; mkdir -p {test_dir}")
-
     for w in world_sizes:
-        krange = (0, int(i * key_duplication_ratio * w))
-
-        # generate 2 cvs for world size
-        print(f"\n\n##### generating files of rows {i} {w}!", flush=True)
-        for rank in range(0, w, file_gen_threads):
-            procs = []
-            for r in range(rank, min(rank + file_gen_threads, w)):
-                p = Process(target=generate_files, args=(r, i, krange))
-                p.start()
-                procs.append(p)
-
-            for p in procs:
-                p.join()
-
-        print(f"\n\n##### rows {i} world_size {w} starting!", flush=True)
+        print(f"\n##### rows {i} world_size {w} starting!", flush=True)
+        s_dir = f"~/temp/twx/weak/{i}/{w}/"
+        b_dir = f"/scratch/dnperera/"
 
         if spark:
-            restart_spark_cluster(w)
+            print(f"pushing files to hdfs {i}")
+            os.system(f"{hdfs_dfs} -put -f {s_dir}/csv*.csv {dfs_base}")
 
         if twx:
             for ex in execs:
@@ -140,7 +100,7 @@ for i in row_cases:
                     join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
                                 f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
                                 f"{hostfile} --bind-to core --bind-to socket -np {w} " \
-                                f"../../../build/bin/{ex}"
+                                f"../../../build/bin/{ex} {s_dir} {b_dir}"
                 print("\n\n##### running", join_exec, flush=True)
 
                 for r in range(repetitions):
@@ -148,16 +108,16 @@ for i in row_cases:
                           f"SPLIT_FROM_HERE", flush=True)
                     os.system(f"{join_exec}")
 
-            print(
-                f"\n\n##### rows {i} world_size {w} done!\n-----------------------------------------",
-                flush=True)
+        print(f"\n##### rows {i} world_size {w} done!\n-----------------------------------------",
+              flush=True)
 
         if spark:
+            restart_spark_cluster(w)
             for ex in execs:
                 print(f"\n\n##### starting spark rows {i} world_size {w}...", flush=True)
                 spark_exec = f"{spark_submit} --class {ex} {spark_jar} {w} {hdfs_url}/{dfs_base} " \
                              f"{spark_master}"
-                print("\n\n##### executing", spark_exec, flush=True)
+                print("\n##### executing", spark_exec, flush=True)
 
                 for r in range(repetitions):
                     print(f"\n\n{ex} {i} {w} ##### spark {r + 1}/{repetitions} iter start! "
@@ -167,8 +127,5 @@ for i in row_cases:
             print("\n\n##### cleaning up hdfs dfs", flush=True)
             os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
             print("\n\n##### spark done .....", flush=True)
-
-        print("\n\n##### cleaning up .....", flush=True)
-        os.system(f"rm -f {base_dir}/*.csv")
 
     print(f"\n\n##### rows {i} done!\n ====================================== \n", flush=True)
