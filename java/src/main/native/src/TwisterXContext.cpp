@@ -21,3 +21,15 @@ JNIEXPORT void JNICALL Java_org_twisterx_TwisterXContext_finalize
   auto ctx = contexts.find(ctx_id)->second;
   ctx->Finalize();
 }
+
+JNIEXPORT jint JNICALL Java_org_twisterx_TwisterXContext_getWorldSize
+    (JNIEnv *env, jclass obj, jint ctx_id) {
+  auto ctx = contexts.find(ctx_id)->second;
+  return ctx->GetWorldSize();
+}
+
+JNIEXPORT jint JNICALL Java_org_twisterx_TwisterXContext_getRank
+    (JNIEnv *env, jclass obj, jint ctx_id) {
+  auto ctx = contexts.find(ctx_id)->second;
+  return ctx->GetRank();
+}

@@ -32,6 +32,18 @@ public class TwisterXContext {
     TwisterXContext.finalize(this.ctxId);
   }
 
+  public int getWorldSize() {
+    return TwisterXContext.getWorldSize(this.ctxId);
+  }
+
+  public int getRank() {
+    return TwisterXContext.getRank(this.ctxId);
+  }
+
+  public static native int getWorldSize(int ctxId);
+
+  public static native int getRank(int ctxId);
+
   public static native void finalize(int ctxId);
 
   public static native void barrier(int ctxId);
