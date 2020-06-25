@@ -19,11 +19,26 @@
 #include <iostream>
 #include <io/csv_read_config.h>
 #include <chrono>
+#include <fstream>
+#include <iostream>
 
 using namespace twisterx;
 using namespace twisterx::join::config;
 
 //template <const char* jtype>
+
+void write_results(std::string line, std::string filename){
+   ofstream fout;  // Create Object of Ofstream
+   ifstream fin;
+   fin.open(filename);
+   fout.open (filename,ios::app); // Append mode
+   if(fin.is_open())
+       fout<< line; // Writing data to file
+   cout<<"\n Results Written\n";
+   fin.close();
+   fout.close(); // Closing the file
+}
+
 bool RunJoin(int rank,
              twisterx::TwisterXContext *ctx,
              const JoinConfig &jc,
@@ -43,7 +58,7 @@ bool RunJoin(int rank,
     LOG(ERROR) << "Join failed!";
     return false;
   }
-//    status = output->WriteCSV(h_out_path);
+  //status = output->WriteCSV(h_out_path);
 //  auto t4 = std::chrono::high_resolution_clock::now();
 
   if (status.is_ok()) {
@@ -52,6 +67,18 @@ bool RunJoin(int rank,
               << " lines " << output->Rows()
               << " t " << jc.GetType()
               << " a " << jc.GetAlgorithm();
+
+    std::string res_ln = std::to_string(jc.GetType()) + "," + std::to_string(ctx->GetWorldSize()) + "," 
+    + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count())
+    + ","
+    + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count())
+    +","
+    + std::to_string(output->Rows())
+    +","
+    + std::to_string(jc.GetAlgorithm())
+    +"\n";
+    write_results(res_ln, "results_cpp.csv");
+              
     output->Clear();
     return true;
   } else {
@@ -68,18 +95,21 @@ int main(int argc, char *argv[]) {
 
   auto mpi_config = new twisterx::net::MPIConfig();
   auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
-
+  std::string username = "vlabeyko";
   int rank = ctx->GetRank();
+  int world_size = ctx->GetWorldSize();
   std::string srank = std::to_string(rank);
-  std::string base_dir = argc > 1 ? "/tmp" : "/scratch/dnperera";
+  std::string sworld_size = std::to_string(world_size);
+  std::string base_dir = "/scratch/"+username;
 //  std::string base_dir = "/tmp";
+  std::cout << ">>>>>>>> Reading from  :" << base_dir << std::endl;
   system(("mkdir -p " + base_dir).c_str());
 
   std::string csv1 = base_dir + "/csv1_" + srank + ".csv";
   std::string csv2 = base_dir + "/csv2_" + srank + ".csv";
 
-  system(("cp ~/temp/csv1_" + srank + ".csv " + csv1).c_str());
-  system(("cp ~/temp/csv2_" + srank + ".csv " + csv2).c_str());
+  system(("cp ~/temp/"+sworld_size+"/csv1_" + srank + ".csv " + csv1).c_str());
+  system(("cp ~/temp/"+sworld_size+"/csv2_" + srank + ".csv " + csv2).c_str());
 
   LOG(INFO) << rank << " Reading tables";
   auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
@@ -110,9 +140,9 @@ int main(int argc, char *argv[]) {
 
   LOG(INFO) << rank << " inner join start";
   auto inner_jc = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::HASH);
-  RunJoin(rank, ctx, inner_jc, table1, table2, joined, "/scratch/dnperera/h_out_inner_" + srank + ".csv");
+  RunJoin(rank, ctx, inner_jc, table1, table2, joined, "/scratch/"+username+"/h_out_inner_" + srank + ".csv");
   auto inner_jc2 = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::SORT);
-  RunJoin(rank, ctx, inner_jc2, table1, table2, joined, "/scratch/dnperera/s_out_inner_" + srank + ".csv");
+  RunJoin(rank, ctx, inner_jc2, table1, table2, joined, "/scratch/"+username+"/s_out_inner_" + srank + ".csv");
   LOG(INFO) << rank << " inner join end ----------------------------------";
 
 //  LOG(INFO) << rank << " outer join start";
@@ -122,10 +152,12 @@ int main(int argc, char *argv[]) {
 //  RunJoin(rank, ctx, outer_jc2, table1, table2, joined, "/scratch/dnperera/s_out_outer_" + srank + ".csv");
 //  LOG(INFO) << rank << " outer join end ----------------------------------";
 
+  
   ctx->Finalize();
-
+  std::cout << "Removing File " << csv1 << std::endl;
+  std::cout << "Removing File " << csv2 << std::endl;
   system(("rm " + csv1).c_str());
-  system(("rm " + csv2).c_str());
+  system(("rm " + csv2).c_str());  
 
   return 0;
 }
