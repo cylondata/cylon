@@ -4,44 +4,60 @@ import org.twisterx.Table;
 import org.twisterx.TwisterXContext;
 import org.twisterx.ops.JoinConfig;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-/**
- * mpirun -np 2 java -cp target/twisterx-0.1-SNAPSHOT-jar-with-dependencies.jar org.twisterx.examples.DistributedJoinExample /tmp/csv.csv /tmp/csv.csv 0 0 RIGHT HASH
- */
 public class DistributedJoinExample {
 
   public static void main(String[] args) throws IOException {
 
-    String path1 = args[0];
-    String path2 = args[1];
-    int table1Column = Integer.parseInt(args[2]);
-    int table2Column = Integer.parseInt(args[3]);
+    String srcPath = args[0];
 
-    JoinConfig.Type type = JoinConfig.Type.valueOf(args[4]);
-    JoinConfig.Algorithm algorithm = JoinConfig.Algorithm.valueOf(args[5]);
+    int table1Column = 0;
+    int table2Column = 0;
+    JoinConfig.Type type = JoinConfig.Type.INNER;
 
     TwisterXContext ctx = TwisterXContext.init();
 
-    long t1 = System.currentTimeMillis();
+    Path csv1FileSrc = Paths.get(srcPath, "csv1_" + ctx.getRank() + ".csv");
+    Path csv2FileSrc = Paths.get(srcPath, "csv1_" + ctx.getRank() + ".csv");
 
-    Table left = Table.fromCSV(ctx, path1);
-    Table right = Table.fromCSV(ctx, path2);
+    File destinationFile = new File("/scratch/cwidanage/data");
+    if (!destinationFile.mkdirs()) {
+      throw new RuntimeException("Failed to create destination directories");
+    }
 
-    System.out.println("Data loading time : " + (System.currentTimeMillis() - t1));
+    File csv1File = new File("/scratch/cwidanage/data/csv1.csv");
+    File csv2File = new File("/scratch/cwidanage/data/csv2.csv");
 
-    long t2 = System.currentTimeMillis();
-    Table joined = left.distributedJoin(right, new JoinConfig(table1Column, table2Column)
-        .joinType(type).useAlgorithm(algorithm));
-    ctx.barrier();
+    System.out.println("Copying files to " + destinationFile.getAbsolutePath());
+    Files.copy(csv1FileSrc, new FileOutputStream(csv1File));
+    Files.copy(csv2FileSrc, new FileOutputStream(csv2File));
+    System.out.println("Copied files.");
 
-    System.out.println("Join algorithm time : " + (System.currentTimeMillis() - t2));
+    Table left = Table.fromCSV(ctx, csv1File.getAbsolutePath());
+    Table right = Table.fromCSV(ctx, csv2File.getAbsolutePath());
 
-    System.out.println("Joined table : " + (joined.getRowCount() + "," + joined.getColumnCount()));
-    System.out.println("Total time : " + (System.currentTimeMillis() - t1));
-
-    joined.clear();
-
+    for (JoinConfig.Algorithm algorithm : JoinConfig.Algorithm.values()) {
+      System.out.println("Starting Join : " + algorithm.name());
+      long t1 = System.currentTimeMillis();
+      Table joined = left.distributedJoin(right, new JoinConfig(table1Column, table2Column)
+          .joinType(type).useAlgorithm(JoinConfig.Algorithm.SORT));
+      ctx.barrier();
+      System.out.println(String.format("TOKEN %d j_t %d w_t %d lines %d t 0 a %d",
+          ctx.getRank(),
+          (System.currentTimeMillis() - t1),
+          0,
+          joined.getRowCount(),
+          algorithm.ordinal()
+      ));
+      joined.clear();
+      System.out.println("Done Join : " + algorithm.name());
+    }
     ctx.finalizeCtx();
   }
 }
