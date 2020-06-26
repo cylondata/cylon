@@ -118,9 +118,9 @@ int main(int argc, char *argv[]) {
 
   LOG(INFO) << rank << " inner join start";
   auto inner_jc = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::HASH);
-  RunJoin(rank, ctx, inner_jc, table1, table2, joined, "/scratch/"+username+"/h_out_inner_" + srank + ".csv");
+  RunJoin(rank, ctx, inner_jc, table1, table2, joined, base_dir +"/h_out_inner_" + srank + ".csv");
   auto inner_jc2 = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::SORT);
-  RunJoin(rank, ctx, inner_jc2, table1, table2, joined, "/scratch/"+username+"/s_out_inner_" + srank + ".csv");
+  RunJoin(rank, ctx, inner_jc2, table1, table2, joined,  base_dir +"/s_out_inner_" + srank + ".csv");
   LOG(INFO) << rank << " inner join end ----------------------------------";
 
 //  LOG(INFO) << rank << " outer join start";

@@ -16,23 +16,26 @@ public class DistributedJoinExample {
   public static void main(String[] args) throws IOException {
 
     String srcPath = args[0];
+    String basePath = args[1];
 
     int table1Column = 0;
     int table2Column = 0;
     JoinConfig.Type type = JoinConfig.Type.INNER;
 
     TwisterXContext ctx = TwisterXContext.init();
+      
+    int rank = ctx.getRank();
 
     Path csv1FileSrc = Paths.get(srcPath, "csv1_" + ctx.getRank() + ".csv");
     Path csv2FileSrc = Paths.get(srcPath, "csv1_" + ctx.getRank() + ".csv");
-
-    File destinationFile = new File("/scratch/cwidanage/data");
+    
+    File destinationFile = new File(basePath);
     if (!destinationFile.mkdirs()) {
       throw new RuntimeException("Failed to create destination directories");
     }
 
-    File csv1File = new File("/scratch/cwidanage/data/csv1.csv");
-    File csv2File = new File("/scratch/cwidanage/data/csv2.csv");
+    File csv1File = new File(basePath + "/csv1_" + rank + ".csv");
+    File csv2File = new File(basePath + "/csv2_" + rank + ".csv");
 
     System.out.println("Copying files to " + destinationFile.getAbsolutePath());
     Files.copy(csv1FileSrc, new FileOutputStream(csv1File));
@@ -59,5 +62,8 @@ public class DistributedJoinExample {
       System.out.println("Done Join : " + algorithm.name());
     }
     ctx.finalizeCtx();
+      
+    csv1File.delete();
+    csv2File.delete();
   }
 }
