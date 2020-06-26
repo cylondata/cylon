@@ -40,6 +40,10 @@ ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
       break;
     case arrow::Type::DOUBLE:kernel = new DoubleArrayHashPartitioner(pool);
       break;
+    case arrow::Type::STRING:kernel = new StringHashPartitioner(pool);
+      break;
+    case arrow::Type::BINARY:kernel = new BinaryHashPartitionKernel(pool);
+      break;
     default:LOG(FATAL) << "Un-known type";
       return NULLPTR;
   }
@@ -47,12 +51,12 @@ ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
 }
 
 ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
-                                         const std::shared_ptr<arrow::Array>& values) {
+                                         const std::shared_ptr<arrow::Array> &values) {
   return GetPartitionKernel(pool, values->type());
 }
 
 twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
-                                    const std::shared_ptr<arrow::Array>& values,
+                                    const std::shared_ptr<arrow::Array> &values,
                                     const std::vector<int> &targets,
                                     std::vector<int64_t> *outPartitions) {
   ArrowPartitionKernel *kernel = GetPartitionKernel(pool, values);

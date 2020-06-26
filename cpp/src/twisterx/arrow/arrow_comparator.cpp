@@ -44,19 +44,10 @@ class BinaryArrowComparator : public ArrowComparator {
     auto reader1 = std::static_pointer_cast<arrow::BinaryArray>(array1);
     auto reader2 = std::static_pointer_cast<arrow::BinaryArray>(array2);
 
-    auto val1_length = reader1->value_length(index1);
-    auto val2_length = reader1->value_length(index2);
+    auto value1 = reader1->GetString(index1);
+    auto value2 = reader2->GetString(index2);
 
-    auto value1 = reader1->GetValue(index1, &val1_length);
-    auto value2 = reader2->GetValue(index2, &val2_length);
-
-    if (val1_length < val2_length) {
-      return -1;
-    } else if (val1_length > val2_length) {
-      return 1;
-    } else {
-      return std::memcmp(value1, value2, val1_length);
-    }
+    return value1.compare(value2);
   }
 };
 
