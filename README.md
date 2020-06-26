@@ -1,6 +1,18 @@
 # TwisterX
 Optimized dataflow operations
 
+1. More detailed of of twisterx
+2. Compling
+   Install OpenMPI
+   Requirements
+   CPP
+   Python
+   Java
+3. Examples
+   One CPP example
+   One Python example
+   One Java example
+
 
 ## CMake Installation
 
