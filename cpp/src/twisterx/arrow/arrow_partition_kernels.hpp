@@ -103,13 +103,13 @@ using FloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::FloatType, f
 using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType, double_t>;
 
 ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
-                                         std::shared_ptr<arrow::Array> values);
+                                         const std::shared_ptr<arrow::Array>& values);
 
 ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
                                          const std::shared_ptr<arrow::DataType> &data_type);
 
 twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
-                                    std::shared_ptr<arrow::Array> values,
+                                    const std::shared_ptr<arrow::Array>& values,
                                     const std::vector<int> &targets,
                                     std::vector<int64_t> *outPartitions);
 

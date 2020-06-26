@@ -36,6 +36,30 @@ class NumericArrowComparator : public ArrowComparator {
   }
 };
 
+class BinaryArrowComparator : public ArrowComparator {
+  int compare(std::shared_ptr<arrow::Array> array1,
+              int64_t index1,
+              std::shared_ptr<arrow::Array> array2,
+              int64_t index2) override {
+    auto reader1 = std::static_pointer_cast<arrow::BinaryArray>(array1);
+    auto reader2 = std::static_pointer_cast<arrow::BinaryArray>(array2);
+
+    auto val1_length = reader1->value_length(index1);
+    auto val2_length = reader1->value_length(index2);
+
+    auto value1 = reader1->GetValue(index1, &val1_length);
+    auto value2 = reader2->GetValue(index2, &val2_length);
+
+    if (val1_length < val2_length) {
+      return -1;
+    } else if (val1_length > val2_length) {
+      return 1;
+    } else {
+      return std::memcmp(value1, value2, val1_length);
+    }
+  }
+};
+
 ArrowComparator *GetComparator(const std::shared_ptr<arrow::DataType> &type) {
   switch (type->id()) {
     case arrow::Type::NA:break;
@@ -51,8 +75,8 @@ ArrowComparator *GetComparator(const std::shared_ptr<arrow::DataType> &type) {
     case arrow::Type::HALF_FLOAT:return new NumericArrowComparator<arrow::HalfFloatType>();
     case arrow::Type::FLOAT:return new NumericArrowComparator<arrow::FloatType>();
     case arrow::Type::DOUBLE:return new NumericArrowComparator<arrow::DoubleType>();
-    case arrow::Type::STRING:break;
-    case arrow::Type::BINARY:break;
+    case arrow::Type::STRING:return new BinaryArrowComparator();
+    case arrow::Type::BINARY:return new BinaryArrowComparator();
     case arrow::Type::FIXED_SIZE_BINARY:break;
     case arrow::Type::DATE32:break;
     case arrow::Type::DATE64:break;

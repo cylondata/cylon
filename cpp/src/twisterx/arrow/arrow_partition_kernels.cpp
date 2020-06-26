@@ -47,12 +47,12 @@ ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
 }
 
 ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
-                                         std::shared_ptr<arrow::Array> values) {
+                                         const std::shared_ptr<arrow::Array>& values) {
   return GetPartitionKernel(pool, values->type());
 }
 
 twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
-                                    std::shared_ptr<arrow::Array> values,
+                                    const std::shared_ptr<arrow::Array>& values,
                                     const std::vector<int> &targets,
                                     std::vector<int64_t> *outPartitions) {
   ArrowPartitionKernel *kernel = GetPartitionKernel(pool, values);
