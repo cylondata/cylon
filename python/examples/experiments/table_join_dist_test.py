@@ -72,8 +72,8 @@ except Exception:
 
 logging.info("Inner Join Start")
 
-RunJoin(rank=rank, ctx=ctx, table1=table1, table2=table2, join_type="inner", join_algorithm="sort", left_col=0, right_col=0)
 RunJoin(rank=rank, ctx=ctx, table1=table1, table2=table2, join_type="inner", join_algorithm="hash", left_col=0, right_col=0)
+RunJoin(rank=rank, ctx=ctx, table1=table1, table2=table2, join_type="inner", join_algorithm="sort", left_col=0, right_col=0)
 
 ctx.finalize()
 

@@ -26,13 +26,11 @@ public class DistributedJoinExample {
       
     int rank = ctx.getRank();
 
-    Path csv1FileSrc = Paths.get(srcPath, "csv1_" + ctx.getRank() + ".csv");
-    Path csv2FileSrc = Paths.get(srcPath, "csv1_" + ctx.getRank() + ".csv");
+    Path csv1FileSrc = Paths.get(srcPath, "/csv1_" + ctx.getRank() + ".csv");
+    Path csv2FileSrc = Paths.get(srcPath, "/csv2_" + ctx.getRank() + ".csv");
     
     File destinationFile = new File(basePath);
-    if (!destinationFile.mkdirs()) {
-      throw new RuntimeException("Failed to create destination directories");
-    }
+    destinationFile.mkdirs();
 
     File csv1File = new File(basePath + "/csv1_" + rank + ".csv");
     File csv2File = new File(basePath + "/csv2_" + rank + ".csv");
@@ -44,12 +42,15 @@ public class DistributedJoinExample {
 
     Table left = Table.fromCSV(ctx, csv1File.getAbsolutePath());
     Table right = Table.fromCSV(ctx, csv2File.getAbsolutePath());
+	
+    ctx.barrier();
+    //for (JoinConfig.Algorithm algorithm : JoinConfig.Algorithm.values()) {
 
-    for (JoinConfig.Algorithm algorithm : JoinConfig.Algorithm.values()) {
+      JoinConfig.Algorithm algorithm = JoinConfig.Algorithm.HASH;
       System.out.println("Starting Join : " + algorithm.name());
       long t1 = System.currentTimeMillis();
       Table joined = left.distributedJoin(right, new JoinConfig(table1Column, table2Column)
-          .joinType(type).useAlgorithm(JoinConfig.Algorithm.SORT));
+          .joinType(type).useAlgorithm(algorithm));
       ctx.barrier();
       System.out.println(String.format("TOKEN %d j_t %d w_t %d lines %d t 0 a %d",
           ctx.getRank(),
@@ -60,10 +61,30 @@ public class DistributedJoinExample {
       ));
       joined.clear();
       System.out.println("Done Join : " + algorithm.name());
-    }
+    
+    algorithm = JoinConfig.Algorithm.SORT;
+      
+	System.out.println("Starting Join : " + algorithm.name());
+      t1 = System.currentTimeMillis();
+      joined = left.distributedJoin(right, new JoinConfig(table1Column, table2Column)
+          .joinType(type).useAlgorithm(algorithm));
+      ctx.barrier();
+      System.out.println(String.format("TOKEN %d j_t %d w_t %d lines %d t 0 a %d",
+          ctx.getRank(),
+          (System.currentTimeMillis() - t1),
+          0,
+          joined.getRowCount(),
+          algorithm.ordinal()
+      ));
+      joined.clear();
+      System.out.println("Done Join : " + algorithm.name());
+//}
     ctx.finalizeCtx();
       
+    csv1File = new File(csv1File.getAbsolutePath());
     csv1File.delete();
+
+    csv2File = new File(csv2File.getAbsolutePath());
     csv2File.delete();
   }
 }
