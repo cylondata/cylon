@@ -1,7 +1,7 @@
 # Cylon
 Optimized dataflow operations
 
-1. More detailed of of twisterx
+1. More detailed of of cylon
 2. Compling
    Install OpenMPI
    Requirements
