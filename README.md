@@ -1,4 +1,4 @@
-# TwisterX
+# Cylon
 Optimized dataflow operations
 
 1. More detailed of of twisterx
@@ -46,12 +46,12 @@ Here after we assume your Python ENV path is,
 ```
 
 ```txt
-Note: User must install Pyarrow with the TwisterX build to use TwisterX APIs.
+Note: User must install Pyarrow with the Cylon build to use Cylon APIs.
 Do not use a prior installed pyarrow in your python environment. 
 Uninstall it before running the setup.
 ```
 
-## Build C++, Python TwisterX APIs
+## Build C++, Python Cylon APIs
 
 ```bash
 ./build.sh -pyenv ${PYTHON_ENV_PATH} -bpath ${TWIXTER_BUILD_DIR} --all
@@ -69,7 +69,7 @@ or
 ./build.sh -pyenv /usr -bpath /home/<username>/build/twisterx/build --all
 ```
 
-## Build C++ TwisterX API
+## Build C++ Cylon API
 
 ```bash
 ./build.sh -bpath /home/<username>/build/twisterx/build --cpp
@@ -103,7 +103,7 @@ If you want to change the build modes, do the following
 
 ## Python Support
 
-TwisterX provides Python APIs with Cython. 
+Cylon provides Python APIs with Cython. 
 
 If you're building for the first time, you can use `--all` option in build. 
 If you'have already built cpp and want to compile the your changes to the API,
@@ -131,7 +131,7 @@ python3 python/test/test_pytwisterx.py
 
 ## Samples in Google Colab (Experimental)
 
-1. PyTwisterX Install [![PyTwisterX Install Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/vibhatha/345a4992fea18dbf27b4b61b14313b24/twisterx-install.ipynb)
-2. PyTwisterX Table Demo [![PyTwisterX Table Demo](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/vibhatha/52f0fd336be1bd9436f5050873e4aa54/pytwisterx-table-demo.ipynb)
-3. PyTwisterX Pytorch Mnist Demo [![PyTwisterX Table Demo](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/vibhatha/0e50ae349e2811c597184033a9052080/pytwisterx-pytorch-demo.ipynb)
+1. PyCylon Install [![PyTwisterX Install Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/vibhatha/345a4992fea18dbf27b4b61b14313b24/twisterx-install.ipynb)
+2. PyCylon Table Demo [![PyTwisterX Table Demo](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/vibhatha/52f0fd336be1bd9436f5050873e4aa54/pytwisterx-table-demo.ipynb)
+3. PyCylon Pytorch Mnist Demo [![PyTwisterX Table Demo](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/vibhatha/0e50ae349e2811c597184033a9052080/pytwisterx-pytorch-demo.ipynb)
 
