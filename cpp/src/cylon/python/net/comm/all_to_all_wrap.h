@@ -19,17 +19,17 @@
 #include "../../../net/mpi/mpi_communicator.h"
 #include "callback.h"
 
-using namespace twisterx;
+using namespace cylon;
 
-namespace twisterx {
+namespace cylon {
 namespace net {
 namespace comm {
 class all_to_all_wrap {
  private:
   std::vector<int> sources = {0};
   std::vector<int> targets = {0};
-  twisterx::net::comms::Callback callback_;
-  twisterx::AllToAll *all_;
+  cylon::net::comms::Callback callback_;
+  cylon::AllToAll *all_;
  public:
   all_to_all_wrap();
   all_to_all_wrap(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId);
@@ -37,8 +37,8 @@ class all_to_all_wrap {
   int insert(void *buffer, int length, int target);
   void wait();
   void finish();
-  void set_instance(twisterx::AllToAll *all);
-  twisterx::AllToAll *get_instance();
+  void set_instance(cylon::AllToAll *all);
+  cylon::AllToAll *get_instance();
 };
 }
 }

@@ -4,7 +4,7 @@ from os.path import expanduser
 from cpp.src.experiments.generate_csv import generate_file
 
 home = expanduser("~")
-# join_exec = f"{home}/git/twisterx/build/bin/table_api_test_hash"
+# join_exec = f"{home}/git/cylon/build/bin/table_api_test_hash"
 join_exec = f"../../../build/bin/table_join_st_test"
 print(f"twx home: {join_exec}", flush=True)
 

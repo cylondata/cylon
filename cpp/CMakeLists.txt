@@ -1,5 +1,5 @@
 ##########################################################################
-#	CMake Build Rules for the TwisterX                               #
+#	CMake Build Rules for the Cylon                               #
 ##########################################################################
 # Basic Usage:                                                           #
 #   cmake .								 #
@@ -8,19 +8,19 @@
 # For more information about CMake, see http://www.cmake.org             #
 ##########################################################################
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
-project(TWISTERX)
+project(CYLON)
 
-set(TWISTERX_VERSION 0.0)
+set(CYLON_VERSION 0.0)
 
 ###### Read Command Line Arguments #####
 
-## PyTwisterX build
+## PyCylon build
 
-if(PYTWISTERX_BUILD)
-    message("TwisterX Python Build [READ] ${PYTWISTERX_BUILD}")
+if(PYCYLON_BUILD)
+    message("Cylon Python Build [READ] ${PYCYLON_BUILD}")
 else ()
-    message("TwisterX Python Build [UNREAD] ${PYTWISTERX_BUILD}")
-    set(PYTWISTERX_BUILD OFF)
+    message("Cylon Python Build [UNREAD] ${PYTCYLON_BUILD}")
+    set(PYCYLON_BUILD OFF)
 endif()
 
 
@@ -36,13 +36,13 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 # So we can find our custom modules
-list(APPEND CMAKE_MODULE_PATH ${TWISTERX_SOURCE_DIR}/CMake)
+list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
 # Put the libaries and binaries that get built into directories at the
 # top of the build.
 SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-SET(TEST_DATA_DIR ${TWISTERX_SOURCE_DIR}/data)
+SET(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
 
 # Find MPI
 find_package(MPI REQUIRED)
@@ -109,30 +109,30 @@ find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 
 #Off if you dont want to build tests -- ON default
-option(TWISTERX_BUILD_TESTS "Build tests." ON)
+option(CYLON_BUILD_TESTS "Build tests." ON)
 
 #Reference -- https://github.com/ComicSansMS/GhulbusBase/blob/master/CMakeLists.txt
-if (TWISTERX_BUILD_TESTS)
+if (CYLON_BUILD_TESTS)
     enable_testing()
 
     if (NOT TARGET Catch)
         include(ExternalProject)
         if (IS_TRAVIS_BUILD)     # on travis, use git for fetching instead of wget
-            set(TWISTERX_FETCH_EXTERNAL_CATCH
+            set(CYLON_FETCH_EXTERNAL_CATCH
                     GIT_REPOSITORY https://github.com/philsquared/Catch.git
                     GIT_TAG 19ab2117c5bac2f376f8da4a4b25e183137bcec0)
         elseif (WIN32)
-            set(TWISTERX_FETCH_EXTERNAL_CATCH
+            set(CYLON_FETCH_EXTERNAL_CATCH
                     URL https://github.com/catchorg/Catch2/archive/v2.0.1.zip
                     URL_HASH MD5=1abca1b324b99b1631e999119b172620)
         else ()
-            set(TWISTERX_FETCH_EXTERNAL_CATCH
+            set(CYLON_FETCH_EXTERNAL_CATCH
                     URL https://github.com/catchorg/Catch2/archive/v2.0.1.tar.gz
                     URL_HASH MD5=2080f4696579351d9323b3b5a8c3c71b)
         endif ()
         ExternalProject_Add(Catch-External
                 PREFIX ${CMAKE_BINARY_DIR}/external/Catch
-                ${TWISTERX_FETCH_EXTERNAL_CATCH}
+                ${CYLON_FETCH_EXTERNAL_CATCH}
                 CONFIGURE_COMMAND ""
                 BUILD_COMMAND ""
                 INSTALL_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/external/Catch/src/Catch-External/single_include/catch.hpp
@@ -147,8 +147,8 @@ if (TWISTERX_BUILD_TESTS)
     add_subdirectory(test)
 endif ()
 
-add_subdirectory(src/twisterx)
+add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
-if(PYTWISTERX_BUILD)
+if(PYCYLON_BUILD)
     add_subdirectory(src/examples/python)
 endif()

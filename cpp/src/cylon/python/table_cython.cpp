@@ -25,15 +25,15 @@
 #include <map>
 
 using namespace std;
-using namespace twisterx;
-using namespace twisterx::python::table;
-using namespace twisterx::python;
-using namespace twisterx::io::config;
-using namespace twisterx::util::uuid;
-using namespace twisterx::join::config;
+using namespace cylon;
+using namespace cylon::python::table;
+using namespace cylon::python;
+using namespace cylon::io::config;
+using namespace cylon::util::uuid;
+using namespace cylon::join::config;
 using namespace arrow::py;
 
-std::map<std::string, twisterx::python::twisterx_context_wrap *> context_map{};
+std::map<std::string, cylon::python::cylon_context_wrap *> context_map{};
 
 CxTable::CxTable(std::string id)
 {
@@ -74,7 +74,7 @@ Status CxTable::from_csv(const std::string &path,
                          const std::string &uuid)
 {
   auto ctx_wrap = get_new_context();
-  twisterx::Status status = ReadCSV(ctx_wrap->getInstance(), path, uuid, CSVReadOptions().WithDelimiter(delimiter).UseThreads(false).BlockSize(1 << 30));
+  cylon::Status status = ReadCSV(ctx_wrap->getInstance(), path, uuid, CSVReadOptions().WithDelimiter(delimiter).UseThreads(false).BlockSize(1 << 30));
   return status;
 }
 
@@ -91,7 +91,7 @@ Status CxTable::to_csv(const std::string &path)
 
 std::string CxTable::from_pyarrow_table(std::shared_ptr<arrow::Table> table)
 {
-  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
   PutTable(uuid, table);
   return uuid;
 }
@@ -108,10 +108,10 @@ std::string CxTable::join(const std::string &table_id,
                           int left_column_index,
                           int right_column_index)
 {
-  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
   auto ctx_wrap = this->get_new_context();
   JoinConfig jc(type, left_column_index, right_column_index, algorithm);
-  twisterx::Status status = twisterx::JoinTables(
+  cylon::Status status = cylon::JoinTables(
       ctx_wrap->getInstance(),
       this->get_id(),
       table_id,
@@ -129,9 +129,9 @@ std::string CxTable::join(const std::string &table_id,
 
 std::string CxTable::join(const std::string &table_id, JoinConfig join_config)
 {
-  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
   auto ctx_wrap = this->get_new_context();
-  twisterx::Status status = twisterx::JoinTables(
+  cylon::Status status = cylon::JoinTables(
       ctx_wrap->getInstance(),
       this->get_id(),
       table_id,
@@ -149,11 +149,11 @@ std::string CxTable::join(const std::string &table_id, JoinConfig join_config)
 //
 std::string CxTable::distributed_join(const std::string &table_id, JoinConfig join_config)
 {
-  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
   auto ctx_wrap = this->get_new_context();
-  TwisterXContext *ctx = ctx_wrap->getInstance();
+  CylonContext *ctx = ctx_wrap->getInstance();
   std::cout << "distributed join , Rank  " << ctx_wrap->GetRank() << " , Size " << ctx_wrap->GetWorldSize() << std::endl;
-  twisterx::Status status = twisterx::DistributedJoinTables(ctx_wrap->getInstance(), this->id_, table_id, join_config, uuid);
+  cylon::Status status = cylon::DistributedJoinTables(ctx_wrap->getInstance(), this->id_, table_id, join_config, uuid);
   if (status.is_ok())
   {
     return uuid;
@@ -164,11 +164,11 @@ std::string CxTable::distributed_join(const std::string &table_id, JoinConfig jo
   }
 }
 
-std::string CxTable::distributed_join(twisterx_context_wrap *ctx_wrap, std::string &table_id, JoinConfig join_config)
+std::string CxTable::distributed_join(cylon_context_wrap *ctx_wrap, std::string &table_id, JoinConfig join_config)
 {
-  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
   std::cout << "distributed join , Rank  " << ctx_wrap->GetRank() << " , Size " << ctx_wrap->GetWorldSize() << std::endl;
-  twisterx::Status status = twisterx::DistributedJoinTables(ctx_wrap->getInstance(), this->id_, table_id, join_config, uuid);
+  cylon::Status status = cylon::DistributedJoinTables(ctx_wrap->getInstance(), this->id_, table_id, join_config, uuid);
   if (status.is_ok())
   {
     return uuid;
@@ -185,9 +185,9 @@ std::string CxTable::distributed_join(const std::string &table_id, JoinType type
                                       int right_column_index)
 {
   JoinConfig jc(type, left_column_index, right_column_index, algorithm);
-  std::string uuid = twisterx::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
   auto ctx_wrap = this->get_new_context();
-  twisterx::Status status = twisterx::DistributedJoinTables(ctx_wrap->getInstance(), this->id_, table_id, jc, uuid);
+  cylon::Status status = cylon::DistributedJoinTables(ctx_wrap->getInstance(), this->id_, table_id, jc, uuid);
   if (status.is_ok())
   {
     return uuid;
@@ -198,14 +198,14 @@ std::string CxTable::distributed_join(const std::string &table_id, JoinType type
   }
 }
 
-twisterx::python::twisterx_context_wrap *CxTable::get_new_context()
+cylon::python::cylon_context_wrap *CxTable::get_new_context()
 {
   if (context_map.size() == 0)
   {
     std::cout << "Creating New Contet " << std::endl;
     std::string mpi_config = "mpi";
-    twisterx::python::twisterx_context_wrap *ctx_wrap = new twisterx::python::twisterx_context_wrap(mpi_config);
-    std::pair<std::string, twisterx::python::twisterx_context_wrap *> pair("dist_context", ctx_wrap);
+    cylon::python::cylon_context_wrap *ctx_wrap = new cylon::python::cylon_context_wrap(mpi_config);
+    std::pair<std::string, cylon::python::cylon_context_wrap *> pair("dist_context", ctx_wrap);
     context_map.insert(pair);
     return ctx_wrap;
   }

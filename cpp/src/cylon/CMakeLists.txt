@@ -1,4 +1,4 @@
-add_library(twisterx SHARED
+add_library(cylon SHARED
         net/ops/all_to_all.cpp net/ops/all_to_all.hpp
         net/channel.hpp
         net/mpi/mpi_channel.hpp net/mpi/mpi_channel.cpp
@@ -33,27 +33,27 @@ add_library(twisterx SHARED
         row.hpp row.cpp ctx/memory_pool.h ctx/arrow_memory_pool_utils.h ctx/arrow_memory_pool_utils.cpp)
 
 include_directories(${MPI_INCLUDE_PATH})
-target_link_libraries(twisterx ${MPI_LIBRARIES})
-target_link_libraries(twisterx glog::glog)
-target_link_libraries(twisterx ${ARROW_LIB})
-target_link_libraries(twisterx ${PYTHON_LIBRARIES})
+target_link_libraries(cylon ${MPI_LIBRARIES})
+target_link_libraries(cylon glog::glog)
+target_link_libraries(cylon ${ARROW_LIB})
+target_link_libraries(cylon ${PYTHON_LIBRARIES})
 
-if(${PYTWISTERX_BUILD})
+if(${PYCYLON_BUILD})
 
-add_library(twisterx_python SHARED
-        python/twisterx_context_wrap.h python/twisterx_context_wrap.cpp
+add_library(cylon_python SHARED
+        python/cylon_context_wrap.h python/cylon_context_wrap.cpp
         python/table_cython.h python/table_cython.cpp
         python/net/distributed.h python/net/distributed.cpp
         python/net/comm/all_to_all_wrap.h python/net/comm/all_to_all_wrap.cpp
         python/net/comm/callback.h python/net/comm/callback.cpp)
 
-target_link_libraries(twisterx_python ${MPI_LIBRARIES})
-target_link_libraries(twisterx_python glog::glog)
-target_link_libraries(twisterx_python ${ARROW_LIB})
-target_link_libraries(twisterx_python ${ARROW_PYTHON})
-target_link_libraries(twisterx_python ${PYTHON_LIBRARIES})
-target_link_libraries(twisterx_python twisterx)
+target_link_libraries(cylon_python ${MPI_LIBRARIES})
+target_link_libraries(cylon_python glog::glog)
+target_link_libraries(cylon_python ${ARROW_LIB})
+target_link_libraries(cylon_python ${ARROW_PYTHON})
+target_link_libraries(cylon_python ${PYTHON_LIBRARIES})
+target_link_libraries(cylon_python cylon)
 
 else()
-    message("Skip Building TwisterX Cython-CPP")
+    message("Skip Building Cylon Cython-CPP")
 endif()

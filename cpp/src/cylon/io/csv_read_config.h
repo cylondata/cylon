@@ -33,12 +33,12 @@ class CSVReadOptions {
 
   CSVReadOptions();
 
-  /*TwisterX specific options*/
+  /*cylon specific options*/
 
   CSVReadOptions ConcurrentFileReads(bool concurrent_file_reads);
   bool IsConcurrentFileReads();
 
-  /*End of TwisterX specific options*/
+  /*End of cylon specific options*/
 
   /**
    * Whether to use the global CPU thread pool for reading.

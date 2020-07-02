@@ -13,23 +13,20 @@
  */
 
 #include <map>
-#include "twisterx_context_wrap.h"
+#include "cylon_context_wrap.h"
 #include "../net/mpi/mpi_communicator.h"
 
-//std::map<std::string, TwisterXContext> context_map{};
-
-
-twisterx::python::twisterx_context_wrap::twisterx_context_wrap() {
-  this->context = new TwisterXContext(false);
+cylon::python::cylon_context_wrap::cylon_context_wrap() {
+  this->context = new CylonContext(false);
   this->distributed = false;
 }
 
-twisterx::python::twisterx_context_wrap::twisterx_context_wrap(std::string config) {
+cylon::python::cylon_context_wrap::cylon_context_wrap(std::string config) {
   if (config == "mpi") {
-    auto ctx = new TwisterXContext(true);
+    auto ctx = new CylonContext(true);
     this->distributed = true;
     ctx->setCommunicator(new net::MPICommunicator());
-    auto mpi_config = new twisterx::net::MPIConfig();
+    auto mpi_config = new cylon::net::MPIConfig();
     ctx->GetCommunicator()->Init(mpi_config);
     ctx->setDistributed(true);
     this->context = ctx;
@@ -39,23 +36,23 @@ twisterx::python::twisterx_context_wrap::twisterx_context_wrap(std::string confi
 }
 
 
-TwisterXContext * twisterx::python::twisterx_context_wrap::getInstance() {
+CylonContext * cylon::python::cylon_context_wrap::getInstance() {
   return context;
 }
 
-void twisterx::python::twisterx_context_wrap::Barrier() {
+void cylon::python::cylon_context_wrap::Barrier() {
   this->context->GetCommunicator()->Barrier();
 }
 
-net::Communicator * twisterx::python::twisterx_context_wrap::GetCommunicator() const {
+net::Communicator * cylon::python::cylon_context_wrap::GetCommunicator() const {
   return this->context->GetCommunicator();
 }
 
-void twisterx::python::twisterx_context_wrap::AddConfig(const std::string &key, const std::string &value) {
+void cylon::python::cylon_context_wrap::AddConfig(const std::string &key, const std::string &value) {
   this->config.insert(std::pair<std::string, std::string>(key, value));
 }
 
-std::string twisterx::python::twisterx_context_wrap::GetConfig(const std::string &key, const std::string &defn) {
+std::string cylon::python::cylon_context_wrap::GetConfig(const std::string &key, const std::string &defn) {
   auto find = this->config.find(key);
   if (find == this->config.end()) {
 	return defn;
@@ -63,28 +60,28 @@ std::string twisterx::python::twisterx_context_wrap::GetConfig(const std::string
   return find->second;
 }
 
-int twisterx::python::twisterx_context_wrap::GetRank() {
+int cylon::python::cylon_context_wrap::GetRank() {
   if (this->distributed) {
 	return this->context->GetCommunicator()->GetRank();
   }
   return 0;
 }
 
-int twisterx::python::twisterx_context_wrap::GetWorldSize() {
+int cylon::python::cylon_context_wrap::GetWorldSize() {
   if (this->distributed) {
 	return this->context->GetCommunicator()->GetWorldSize();
   }
   return 1;
 }
 
-void twisterx::python::twisterx_context_wrap::Finalize() {
+void cylon::python::cylon_context_wrap::Finalize() {
   if (this->distributed) {
 	this->context->GetCommunicator()->Finalize();
 	delete this->context->GetCommunicator();
   }
 }
 
-vector<int> twisterx::python::twisterx_context_wrap::GetNeighbours(bool include_self) {
+vector<int> cylon::python::cylon_context_wrap::GetNeighbours(bool include_self) {
   vector<int> neighbours{};
   neighbours.reserve(this->GetWorldSize());
   for (int i = 0; i < this->GetWorldSize(); i++) {
@@ -96,15 +93,15 @@ vector<int> twisterx::python::twisterx_context_wrap::GetNeighbours(bool include_
   return neighbours;
 }
 
-// void twisterx::python::twisterx_context_wrap::SetMemoryPool(twisterx::MemoryPool *mem_pool) {
+// void cylon::python::cylon_context_wrap::SetMemoryPool(cylon::MemoryPool *mem_pool) {
 
 // }
 
-// twisterx::MemoryPool* twisterx::python::twisterx_context_wrap::GetMemoryPool(){
+// cylon::MemoryPool* cylon::python::cylon_context_wrap::GetMemoryPool(){
 
 // }
 
-// int32_t twisterx::python::twisterx_context_wrap::GetNextSequence(){
+// int32_t cylon::python::cylon_context_wrap::GetNextSequence(){
 
 // }
 

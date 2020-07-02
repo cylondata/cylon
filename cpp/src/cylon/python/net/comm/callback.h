@@ -17,10 +17,10 @@
 
 #include "../../../net/ops/all_to_all.hpp"
 
-namespace twisterx {
+namespace cylon {
 namespace net {
 namespace comms {
-class Callback : public twisterx::ReceiveCallback {
+class Callback : public cylon::ReceiveCallback {
  public:
   bool onReceive(int source, void *buffer, int length);
 

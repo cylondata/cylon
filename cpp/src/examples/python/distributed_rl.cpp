@@ -14,7 +14,7 @@
 
 #include <glog/logging.h>
 #include <net/mpi/mpi_communicator.h>
-#include <python/twisterx_context_wrap.h>
+#include <python/cylon_context_wrap.h>
 #include <python/table_cython.h>
 #include "util/uuid.hpp"
 

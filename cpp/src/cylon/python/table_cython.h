@@ -20,13 +20,13 @@
 #include <arrow/python/serialize.h>
 #include "arrow/api.h"
 #include "../join/join_config.h"
-#include "twisterx_context_wrap.h"
+#include "cylon_context_wrap.h"
 
-using namespace twisterx;
-using namespace twisterx::python;
-using namespace twisterx::join::config;
+using namespace cylon;
+using namespace cylon::python;
+using namespace cylon::join::config;
 
-namespace twisterx {
+namespace cylon {
 namespace python {
 namespace table {
 class CxTable {
@@ -51,7 +51,7 @@ class CxTable {
 
   void show(int row1, int row2, int col1, int col2);
 
-  static twisterx::python::twisterx_context_wrap* get_new_context();
+  static cylon::python::cylon_context_wrap* get_new_context();
 
   static Status from_csv(const std::string &path,
 						 const char &delimiter,
@@ -73,7 +73,7 @@ class CxTable {
   //
   std::string distributed_join(const std::string &table_id, JoinConfig join_config);
 
-  std::string distributed_join(twisterx_context_wrap *ctx_wrap, std::string &table_id, JoinConfig join_config);
+  std::string distributed_join(cylon_context_wrap *ctx_wrap, std::string &table_id, JoinConfig join_config);
 
   std::string distributed_join(const std::string &table_id, JoinType type, JoinAlgorithm algorithm, int left_column_index, int right_column_index);
 

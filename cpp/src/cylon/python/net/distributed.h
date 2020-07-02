@@ -18,7 +18,7 @@
 #include "../../net/ops/all_to_all.hpp"
 #include "../../arrow/arrow_all_to_all.hpp"
 
-namespace twisterx {
+namespace cylon {
 namespace net {
 void cdist_init();
 int cget_rank();

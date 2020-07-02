@@ -21,38 +21,38 @@
 #include "../net/communicator.h"
 #include "../ctx/cylon_context.h"
 
-using namespace twisterx;
+using namespace cylon;
 
-namespace twisterx {
+namespace cylon {
 namespace python {
-class twisterx_context_wrap {
+class cylon_context_wrap {
  private:
   std::unordered_map<std::string, std::string> config{};
      
   bool distributed;
 
-  twisterx::net::Communicator *communicator{};
+  cylon::net::Communicator *communicator{};
 
-  TwisterXContext *context;
+  CylonContext *context;
 
-  explicit twisterx_context_wrap(bool distributed);
+  explicit cylon_context_wrap(bool distributed);
 
-  twisterx::MemoryPool *memory_pool{};
+  cylon::MemoryPool *memory_pool{};
 
   int32_t sequence_no;
 
 
  public:
 
-  twisterx_context_wrap();
+  cylon_context_wrap();
 
-  twisterx_context_wrap(std::string config);
+  cylon_context_wrap(std::string config);
 
-  TwisterXContext *getInstance();
+  CylonContext *getInstance();
 
-//  static TwisterXContext *Init();
+//  static CylonContext *Init();
 //
-//  static TwisterXContext *InitDistributed(std::string config);
+//  static CylonContext *InitDistributed(std::string config);
 
   void AddConfig(const std::string &key, const std::string &value);
 
@@ -72,9 +72,9 @@ class twisterx_context_wrap {
 
   vector<int> GetNeighbours(bool include_self);
 
-  twisterx::MemoryPool *GetMemoryPool();
+  cylon::MemoryPool *GetMemoryPool();
 
-  void SetMemoryPool(twisterx::MemoryPool *mem_pool);
+  void SetMemoryPool(cylon::MemoryPool *mem_pool);
   
   int32_t GetNextSequence();
 

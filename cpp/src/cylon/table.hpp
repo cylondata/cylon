@@ -34,7 +34,7 @@
 namespace cylon {
 
 /**
- * Table provides the main API for using TwisterX for data processing.
+ * Table provides the main API for using cylon for data processing.
  */
 class Table {
 

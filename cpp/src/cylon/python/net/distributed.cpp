@@ -12,19 +12,26 @@
  * limitations under the License.
  */
 
-#include "callback.h"
+#include <mpi.h>
+#include "distributed.h"
 
-bool twisterx::net::comms::Callback::onReceive(int source, void *buffer, int length) {
-  std::cout << "Received value: " << source << " length " << length << std::endl;
-  delete[] reinterpret_cast<char *>(buffer);
-  return false;
+void cylon::net::cdist_init() {
+  MPI_Init(NULL, NULL);
 }
 
-bool twisterx::net::comms::Callback::onReceiveHeader(int source, int finished, int *buffer, int length) {
-  std::cout << "Received HEADER: " << source << " length " << length << std::endl;
-  return false;
+void cylon::net::cdist_finalize() {
+  MPI_Finalize();
 }
 
-bool twisterx::net::comms::Callback::onSendComplete(int target, void *buffer, int length) {
-  return false;
+int cylon::net::cget_rank() {
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  return rank;
 }
+
+int cylon::net::cget_size() {
+  int size = 0;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  return size;
+}
+
