@@ -16,6 +16,7 @@ public class DistributedJoinExample {
   public static void main(String[] args) throws IOException {
 
     String srcPath = args[0];
+    String dstPath = args[1];
 
     int table1Column = 0;
     int table2Column = 0;
@@ -26,13 +27,16 @@ public class DistributedJoinExample {
     Path csv1FileSrc = Paths.get(srcPath, "csv1_" + ctx.getRank() + ".csv");
     Path csv2FileSrc = Paths.get(srcPath, "csv1_" + ctx.getRank() + ".csv");
 
-    File destinationFile = new File("/scratch/cwidanage/data");
+    File destinationFile = new File(dstPath + "/data");
     if (!destinationFile.mkdirs()) {
       throw new RuntimeException("Failed to create destination directories");
     }
 
-    File csv1File = new File("/scratch/cwidanage/data/csv1.csv");
-    File csv2File = new File("/scratch/cwidanage/data/csv2.csv");
+    File csv1File = new File(dstPath + "/data/csv1.csv");
+    File csv2File = new File(dstPath + "/data/csv2.csv");
+
+    csv1File.deleteOnExit();
+    csv2File.deleteOnExit();
 
     System.out.println("Copying files to " + destinationFile.getAbsolutePath());
     Files.copy(csv1FileSrc, new FileOutputStream(csv1File));
