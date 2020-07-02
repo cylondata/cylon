@@ -2,14 +2,13 @@
 macro(tx_add_exe EXENAME)
     add_executable(${EXENAME} ${EXENAME}.cpp)
     target_link_libraries(${EXENAME} ${MPI_LIBRARIES})
-    target_link_libraries(${EXENAME} twisterx)
+    target_link_libraries(${EXENAME} cylon)
     target_link_libraries(${EXENAME} ${ARROW_LIB})
 endmacro(tx_add_exe)
 
-include_directories(../twisterx)
+include_directories(../cylon)
 
 tx_add_exe(arrow_twisterx)
-tx_add_exe(distributed_join)
 tx_add_exe(arrow_test)
 tx_add_exe(join_test)
 tx_add_exe(table_join_dist_test)

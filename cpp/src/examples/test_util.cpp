@@ -26,12 +26,12 @@ int main() {
   float floatbuf[4] = {11.21, 12.10, 13.20, 14.20};
   int head[4] = {1, 2, 3, 4};
 
-  //twisterx::util::printArray(int8buf, 4, "int", 8);
-  twisterx::util::printArray(int16buf, 4, "int", 16);
-  twisterx::util::printArray(int32buf, 4, "int", 32);
-  twisterx::util::printArray(int64buf, 4, "int", 64);
-  twisterx::util::printArray(floatbuf, 4, "float", -1);
-  twisterx::TxRequest tx(10, int32buf, 4, head, 4);
+  //cylon::util::printArray(int8buf, 4, "int", 8);
+  cylon::util::printArray(int16buf, 4, "int", 16);
+  cylon::util::printArray(int32buf, 4, "int", 32);
+  cylon::util::printArray(int64buf, 4, "int", 64);
+  cylon::util::printArray(floatbuf, 4, "float", -1);
+  cylon::TxRequest tx(10, int32buf, 4, head, 4);
   tx.to_string("int", 32);
 
   return 0;

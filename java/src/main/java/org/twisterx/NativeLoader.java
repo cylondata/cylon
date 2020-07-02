@@ -1,6 +1,8 @@
 package org.twisterx;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +36,7 @@ public class NativeLoader {
       URL resource = NativeLoader.class.getClassLoader().getResource(path);
 
       if (resource == null) {
-        LOG.log(Level.SEVERE, "Cannot file the file - " + path);
+        LOG.log(Level.SEVERE, "Cannot find the file - " + path);
         loadSuccess = false;
         return;
       }

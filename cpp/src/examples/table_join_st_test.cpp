@@ -18,8 +18,8 @@
 #include <io/csv_read_config.h>
 #include <chrono>
 
-using namespace twisterx;
-using namespace twisterx::join::config;
+using namespace cylon;
+using namespace cylon::join::config;
 
 //template <const char* jtype>
 bool RunJoin(const JoinConfig &jc,
@@ -60,10 +60,10 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<Table> table1, table2, joined;
   Status status;
 
-  auto ctx = twisterx::TwisterXContext::Init();
+  auto ctx = cylon::CylonContext::Init();
 
   LOG(INFO) << "Reading tables";
-  auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
   if (!(status = Table::FromCSV(ctx, "/tmp/csv1.csv", table1, read_options)).is_ok()) {
     LOG(ERROR) << "File read failed!";
     return 1;

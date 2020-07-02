@@ -3,7 +3,7 @@ macro(tx_add_exe EXENAME)
     add_executable(${EXENAME} ${EXENAME}.cpp)
 endmacro(tx_add_exe)
 
-include_directories(../../twisterx)
+include_directories(../../cylon)
 
 tx_add_exe(test_net)
 tx_add_exe(test_cy_alltoallwrap)

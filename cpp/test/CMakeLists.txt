@@ -3,7 +3,7 @@ SET(MPI_RUN_CMD mpirun)
 file(MAKE_DIRECTORY ${TEST_DATA_DIR})
 file(COPY ${TEST_DATA_DIR} DESTINATION ${CMAKE_BINARY_DIR})
 
-include_directories (${TWISTERX_SOURCE_DIR}/src)
+include_directories (${CYLON_SOURCE_DIR}/src)
 include(CTest)
 
 #build a binary

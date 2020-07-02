@@ -38,14 +38,14 @@ with open(nodes_file, 'r') as fp:
     
 def start_dask(procs, nodes):
     print("starting scheduler", flush=True)
-    subprocess.Popen(["ssh", "v-001", "/N/u2/d/dnperera/victor/git/twisterx/ENV/bin/dask-scheduler", "--interface", "enp175s0f0", "--scheduler-file", "/N/u2/d/dnperera/dask-sched.json"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    subprocess.Popen(["ssh", "v-001", "/N/u2/d/dnperera/victor/git/cylon/ENV/bin/dask-scheduler", "--interface", "enp175s0f0", "--scheduler-file", "/N/u2/d/dnperera/dask-sched.json"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     
     time.sleep(5)   
 
     
     for ip in ips[0:nodes]:
         print("starting worker", ip, flush=True)
-        subprocess.Popen(["ssh", ip, "/N/u2/d/dnperera/victor/git/twisterx/ENV/bin/dask-worker", "v-001:8786", "--interface", "enp175s0f0", "--nthreads", "1", "--nprocs", str(procs), "--memory-limit", "20GB", "--local-directory", "/scratch/dnperera/dask/", "--scheduler-file", "/N/u2/d/dnperera/dask-sched.json"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        subprocess.Popen(["ssh", ip, "/N/u2/d/dnperera/victor/git/cylon/ENV/bin/dask-worker", "v-001:8786", "--interface", "enp175s0f0", "--nthreads", "1", "--nprocs", str(procs), "--memory-limit", "20GB", "--local-directory", "/scratch/dnperera/dask/", "--scheduler-file", "/N/u2/d/dnperera/dask-sched.json"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     
     time.sleep(5)   
         

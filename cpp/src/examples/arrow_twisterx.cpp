@@ -26,7 +26,7 @@
 using arrow::DoubleBuilder;
 using arrow::Int64Builder;
 
-class Clbk : public twisterx::ArrowCallback {
+class Clbk : public cylon::ArrowCallback {
  public:
   bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
     auto ids =
@@ -47,8 +47,8 @@ class Clbk : public twisterx::ArrowCallback {
 int main(int argc, char *argv[]) {
   std::cout << "First - ";
 
-  auto mpi_config = new twisterx::net::MPIConfig();
-  auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
+  auto mpi_config = new cylon::net::MPIConfig();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   int rank = ctx->GetRank();
   int size = ctx->GetWorldSize();
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
       arrow::field("id", arrow::int64()), arrow::field("cost", arrow::float64())};
   auto schema = std::make_shared<arrow::Schema>(schema_vector);
-  twisterx::ArrowAllToAll all(ctx, sources, targets, 0, clbk, schema, pool);
+  cylon::ArrowAllToAll all(ctx, sources, targets, 0, clbk, schema, pool);
 
   std::shared_ptr<arrow::Array> id_array;
   id_builder.Finish(&id_array);
