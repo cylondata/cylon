@@ -8,9 +8,9 @@ parser.add_argument('-w', dest='world', type=int, nargs='+', help='world sizes',
                     default=[1, 2, 4, 8, 16, 32, 64, 128, 160])
 parser.add_argument('-t', dest='threads', type=int, help='file writing threads', default=64)
 parser.add_argument('--wr', dest='weak_rows', type=float, nargs='+', help='weak rows',
-                    default=[2])
+                    default=[])
 parser.add_argument('--sr', dest='strong_rows', type=float, nargs='+', help='strong rows',
-                    default=[200])
+                    default=[])
 parser.add_argument('-b', dest='base_dir', type=str, help='base dir', default="~/temp/twx/")
 
 
@@ -73,7 +73,7 @@ for i in row_cases:
 print("work:", work, flush=True)
 
 p = Pool(file_gen_threads)
-p.starmap(generate_files, work, 4)
+p.starmap(generate_files, work)
 p.close()
 p.join()
 
