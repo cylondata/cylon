@@ -20,7 +20,7 @@
 #include "join_utils.hpp"
 #include "../util/arrow_utils.hpp"
 
-namespace twisterx {
+namespace cylon {
 namespace join {
 
 template<typename ARROW_KEY_TYPE, typename CPP_KEY_TYPE>
@@ -51,7 +51,7 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
                              const std::shared_ptr<arrow::Table> &right_tab,
                              int64_t left_join_column_idx,
                              int64_t right_join_column_idx,
-                             twisterx::join::config::JoinType join_type,
+                             cylon::join::config::JoinType join_type,
                              std::shared_ptr<arrow::Table> *joined_table,
                              arrow::MemoryPool *memory_pool) {
   // combine chunks if multiple chunks are available
@@ -59,8 +59,8 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
   arrow::Status lstatus, rstatus;
   auto t11 = std::chrono::high_resolution_clock::now();
 
-  lstatus = twisterx::join::util::CombineChunks(left_tab, left_join_column_idx, left_tab_comb, memory_pool);
-  rstatus = twisterx::join::util::CombineChunks(right_tab, right_join_column_idx, right_tab_comb, memory_pool);
+  lstatus = cylon::join::util::CombineChunks(left_tab, left_join_column_idx, left_tab_comb, memory_pool);
+  rstatus = cylon::join::util::CombineChunks(right_tab, right_join_column_idx, right_tab_comb, memory_pool);
 
   auto t22 = std::chrono::high_resolution_clock::now();
 
@@ -143,7 +143,7 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
 											&right_key);
 	} else if (left_key < right_key) {
 	  // if this is a left join, this is the time to include them all in the result set
-	  if (join_type == twisterx::join::config::LEFT || join_type == twisterx::join::config::FULL_OUTER) {
+	  if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
 		for (int64_t left_idx : left_subset) {
 		  left_indices->push_back(left_idx);
 		  right_indices->push_back(-1);
@@ -158,7 +158,7 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
 											&left_key);
 	} else {
 	  // if this is a right join, this is the time to include them all in the result set
-	  if (join_type == twisterx::join::config::RIGHT || join_type == twisterx::join::config::FULL_OUTER) {
+	  if (join_type == cylon::join::config::RIGHT || join_type == cylon::join::config::FULL_OUTER) {
 		for (int64_t right_idx : right_subset) {
 		  left_indices->push_back(-1);
 		  right_indices->push_back(right_idx);
@@ -175,7 +175,7 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
   }
 
   // specially handling left and right join
-  if (join_type == twisterx::join::config::LEFT || join_type == twisterx::join::config::FULL_OUTER) {
+  if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
 	while (!left_subset.empty()) {
 	  for (int64_t left_idx : left_subset) {
 		left_indices->push_back(left_idx);
@@ -190,7 +190,7 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
 	}
   }
 
-  if (join_type == twisterx::join::config::RIGHT || join_type == twisterx::join::config::FULL_OUTER) {
+  if (join_type == cylon::join::config::RIGHT || join_type == cylon::join::config::FULL_OUTER) {
 	while (!right_subset.empty()) {
 	  for (int64_t right_idx : right_subset) {
 		left_indices->push_back(-1);
@@ -212,7 +212,7 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
 
   t1 = std::chrono::high_resolution_clock::now();
   // build final table
-  status = twisterx::join::util::build_final_table(
+  status = cylon::join::util::build_final_table(
       left_indices, right_indices,
       left_tab_comb,
       right_tab_comb,
@@ -239,20 +239,20 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
  */
 template<typename ARROW_ARRAY_TYPE>
 arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
-						   const std::shared_ptr<arrow::Table> &right_tab,
-						   int64_t left_join_column_idx,
-						   int64_t right_join_column_idx,
-						   twisterx::join::config::JoinType join_type,
-						   std::shared_ptr<arrow::Table> *joined_table,
-						   arrow::MemoryPool *memory_pool) {
+                           const std::shared_ptr<arrow::Table> &right_tab,
+                           int64_t left_join_column_idx,
+                           int64_t right_join_column_idx,
+                           cylon::join::config::JoinType join_type,
+                           std::shared_ptr<arrow::Table> *joined_table,
+                           arrow::MemoryPool *memory_pool) {
 
   // combine chunks if multiple chunks are available
   std::shared_ptr<arrow::Table> left_tab_comb, right_tab_comb;
   arrow::Status lstatus, rstatus;
   auto t11 = std::chrono::high_resolution_clock::now();
 
-  lstatus = twisterx::join::util::CombineChunks(left_tab, left_join_column_idx, left_tab_comb, memory_pool);
-  rstatus = twisterx::join::util::CombineChunks(right_tab, right_join_column_idx, right_tab_comb, memory_pool);
+  lstatus = cylon::join::util::CombineChunks(left_tab, left_join_column_idx, left_tab_comb, memory_pool);
+  rstatus = cylon::join::util::CombineChunks(right_tab, right_join_column_idx, right_tab_comb, memory_pool);
 
   auto t22 = std::chrono::high_resolution_clock::now();
 
@@ -292,7 +292,7 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
 
   t1 = std::chrono::high_resolution_clock::now();
 
-  auto status = twisterx::join::util::build_final_table(
+  auto status = cylon::join::util::build_final_table(
 	  left_indices, right_indices,
       left_tab_comb,
 	  right_tab_comb,
@@ -313,25 +313,25 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
 
 template<typename ARROW_ARRAY_TYPE>
 arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
-					  const std::shared_ptr<arrow::Table> &right_tab,
-					  int64_t left_join_column_idx,
-					  int64_t right_join_column_idx,
-					  twisterx::join::config::JoinType join_type,
-					  twisterx::join::config::JoinAlgorithm join_algorithm,
-					  std::shared_ptr<arrow::Table> *joined_table,
-					  arrow::MemoryPool *memory_pool) {
+                      const std::shared_ptr<arrow::Table> &right_tab,
+                      int64_t left_join_column_idx,
+                      int64_t right_join_column_idx,
+                      cylon::join::config::JoinType join_type,
+                      cylon::join::config::JoinAlgorithm join_algorithm,
+                      std::shared_ptr<arrow::Table> *joined_table,
+                      arrow::MemoryPool *memory_pool) {
   using ARROW_KEY_TYPE = typename ARROW_ARRAY_TYPE::TypeClass;
   using CPP_KEY_TYPE = typename ARROW_KEY_TYPE::c_type;
 
   switch (join_algorithm) {
-	case twisterx::join::config::SORT:
+	case cylon::join::config::SORT:
 	  return do_sorted_join<ARROW_KEY_TYPE, CPP_KEY_TYPE>(left_tab,
 														  right_tab,
 														  left_join_column_idx,
 														  right_join_column_idx,
 														  join_type,
 														  joined_table, memory_pool);
-	case twisterx::join::config::HASH:
+	case cylon::join::config::HASH:
 	  return do_hash_join<ARROW_ARRAY_TYPE>(left_tab,
 											right_tab,
 											left_join_column_idx,
@@ -343,10 +343,10 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
 }
 
 arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_tabs,
-						 const std::vector<std::shared_ptr<arrow::Table>> &right_tabs,
-						 twisterx::join::config::JoinConfig join_config,
-						 std::shared_ptr<arrow::Table> *joined_table,
-						 arrow::MemoryPool *memory_pool) {
+                         const std::vector<std::shared_ptr<arrow::Table>> &right_tabs,
+                         cylon::join::config::JoinConfig join_config,
+                         std::shared_ptr<arrow::Table> *joined_table,
+                         arrow::MemoryPool *memory_pool) {
   std::shared_ptr<arrow::Table> left_tab = arrow::ConcatenateTables(left_tabs,
 																	arrow::ConcatenateTablesOptions::Defaults(),
 																	memory_pool).ValueOrDie();
@@ -363,7 +363,7 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
   }
   if (left_tabs.size() > 1) {
 	for (const auto &t : left_tabs) {
-	  arrow::Status status = twisterx::util::free_table(t);
+	  arrow::Status status = cylon::util::free_table(t);
 	  if (status != arrow::Status::OK()) {
 		LOG(FATAL) << "Failed to free table" << status.ToString();
 		return status;
@@ -379,7 +379,7 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
 
   if (right_tabs.size() > 1) {
 	for (auto t : right_tabs) {
-	  arrow::Status status = twisterx::util::free_table(t);
+	  arrow::Status status = cylon::util::free_table(t);
 	  if (status != arrow::Status::OK()) {
 		LOG(FATAL) << "Failed to free table" << status.ToString();
 		return status;
@@ -387,18 +387,18 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
 	}
   }
 
-  return twisterx::join::joinTables(left_tab_combined,
-									right_tab_combined,
-									join_config,
-									joined_table,
-									memory_pool);
+  return cylon::join::joinTables(left_tab_combined,
+                                 right_tab_combined,
+                                 join_config,
+                                 joined_table,
+                                 memory_pool);
 }
 
 arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
-						 const std::shared_ptr<arrow::Table> &right_tab,
-						 twisterx::join::config::JoinConfig join_config,
-						 std::shared_ptr<arrow::Table> *joined_table,
-						 arrow::MemoryPool *memory_pool) {
+                         const std::shared_ptr<arrow::Table> &right_tab,
+                         cylon::join::config::JoinConfig join_config,
+                         std::shared_ptr<arrow::Table> *joined_table,
+                         arrow::MemoryPool *memory_pool) {
   auto left_type = left_tab->column(join_config.GetLeftColumnIdx())->type()->id();
   auto right_type = right_tab->column(join_config.GetRightColumnIdx())->type()->id();
 

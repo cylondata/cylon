@@ -23,7 +23,7 @@
 #include "../util/murmur3.hpp"
 #include "../status.hpp"
 
-namespace twisterx {
+namespace cylon {
 
 class ArrowPartitionKernel {
  public:
@@ -59,7 +59,7 @@ class BinaryHashPartitionKernel : public ArrowPartitionKernel {
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
-      twisterx::util::MurmurHash3_x86_32(val.c_str(), val.length(), seed, &hash);
+      cylon::util::MurmurHash3_x86_32(val.c_str(), val.length(), seed, &hash);
       return hash;
     }
   }
@@ -72,7 +72,7 @@ class BinaryHashPartitionKernel : public ArrowPartitionKernel {
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
-      twisterx::util::MurmurHash3_x86_32(lValue.c_str(), lValue.length(), seed, &hash);
+      cylon::util::MurmurHash3_x86_32(lValue.c_str(), lValue.length(), seed, &hash);
       partitions->push_back(targets.at(hash % targets.size()));
     }
     // now build the
@@ -99,7 +99,7 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
       uint32_t seed = 0;
       void *val = (void *) &(lValue);
       // do the hash as we know the bit width
-      twisterx::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
+      cylon::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
       return hash;
     }
 
@@ -116,7 +116,7 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
-      twisterx::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
+      cylon::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
       partitions->push_back(targets.at(hash % targets.size()));
     }
     // now build the
@@ -144,16 +144,16 @@ ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
 ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
                                          const std::shared_ptr<arrow::DataType> &data_type);
 
-twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
-                                    const std::shared_ptr<arrow::Array> &values,
-                                    const std::vector<int> &targets,
-                                    std::vector<int64_t> *outPartitions);
+cylon::Status HashPartitionArray(arrow::MemoryPool *pool,
+                                 const std::shared_ptr<arrow::Array> &values,
+                                 const std::vector<int> &targets,
+                                 std::vector<int64_t> *outPartitions);
 
-twisterx::Status HashPartitionArrays(arrow::MemoryPool *pool,
-                                     const std::vector<std::shared_ptr<arrow::Array>> &values,
-                                     int64_t length,
-                                     const std::vector<int> &targets,
-                                     std::vector<int64_t> *outPartitions);
+cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
+                                  const std::vector<std::shared_ptr<arrow::Array>> &values,
+                                  int64_t length,
+                                  const std::vector<int> &targets,
+                                  std::vector<int64_t> *outPartitions);
 
 class RowHashingKernel {
  private:

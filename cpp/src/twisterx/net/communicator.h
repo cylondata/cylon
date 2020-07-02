@@ -17,7 +17,7 @@
 
 #include "comm_config.h"
 #include "channel.hpp"
-namespace twisterx {
+namespace cylon {
 namespace net {
 
 class Communicator {

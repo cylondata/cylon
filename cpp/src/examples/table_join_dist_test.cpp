@@ -13,7 +13,7 @@
  */
 
 #include <net/mpi/mpi_communicator.h>
-#include <ctx/twisterx_context.h>
+#include <ctx/cylon_context.h>
 #include <table.hpp>
 #include <status.hpp>
 #include <iostream>
@@ -22,11 +22,11 @@
 #include <fstream>
 #include <iostream>
 
-using namespace twisterx;
-using namespace twisterx::join::config;
+using namespace cylon;
+using namespace cylon::join::config;
 
 bool RunJoin(int rank,
-             twisterx::TwisterXContext *ctx,
+             cylon::CylonContext *ctx,
              const JoinConfig &jc,
              const std::shared_ptr<Table> &table1,
              const std::shared_ptr<Table> &table2,
@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<Table> table1, table2, joined;
   Status status;
 
-  auto mpi_config = new twisterx::net::MPIConfig();
-  auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
+  auto mpi_config = new cylon::net::MPIConfig();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   int rank = ctx->GetRank();
   std::string srank = std::to_string(rank);
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
   system(("cp " + src_dir + "/csv2_" + srank + ".csv " + csv2).c_str());
 
   LOG(INFO) << rank << " Reading tables";
-  auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
   if (!(status = Table::FromCSV(ctx, csv1, table1, read_options)).is_ok()) {
     LOG(ERROR) << "File read failed! " << csv1;
     return 1;

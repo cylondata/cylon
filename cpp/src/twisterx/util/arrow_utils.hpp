@@ -17,7 +17,7 @@
 #include <arrow/table.h>
 #include <arrow/compute/kernel.h>
 
-namespace twisterx {
+namespace cylon {
 namespace util {
 
 class FunctionContext;

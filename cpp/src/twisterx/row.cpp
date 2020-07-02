@@ -15,7 +15,7 @@
 #include "row.hpp"
 #include "table_api_extended.hpp"
 
-namespace twisterx {
+namespace cylon {
 
 template<typename ARROW_TYPE>
 auto get_numeric(const std::string &table_id, int64_t col_index, int64_t row_index) {

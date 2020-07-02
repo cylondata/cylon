@@ -17,7 +17,7 @@
 #include <string>
 #include <unordered_map>
 #include "comm_type.h"
-namespace twisterx {
+namespace cylon {
 namespace net {
 class CommConfig {
  private:

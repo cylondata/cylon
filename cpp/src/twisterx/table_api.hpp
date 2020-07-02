@@ -22,51 +22,51 @@
 #include "join/join_config.h"
 #include "io/csv_read_config.h"
 #include "io/csv_write_config.h"
-#include "ctx/twisterx_context.h"
+#include "ctx/cylon_context.h"
 #include "row.hpp"
 
 /**
  * This file shouldn't have an arrow dependency. Use the table_api_extended to define
  * the functions with arrow dependency
  */
-namespace twisterx {
+namespace cylon {
 
 void RemoveTable(const std::string &id);
 
-twisterx::Status ReadCSV(twisterx::TwisterXContext *ctx,
-                         const std::string &path,
-                         const std::string &id,
-                         twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+cylon::Status ReadCSV(cylon::CylonContext *ctx,
+                      const std::string &path,
+                      const std::string &id,
+                      cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 
-twisterx::Status ReadCSV(twisterx::TwisterXContext *ctx,
-                         const std::vector<std::string> &paths,
-                         const std::vector<std::string> &ids,
-                         twisterx::io::config::CSVReadOptions options);
+cylon::Status ReadCSV(cylon::CylonContext *ctx,
+                      const std::vector<std::string> &paths,
+                      const std::vector<std::string> &ids,
+                      cylon::io::config::CSVReadOptions options);
 
-twisterx::Status WriteCSV(const std::string &id, const std::string &path,
-                          const twisterx::io::config::CSVWriteOptions& options = twisterx::io::config::CSVWriteOptions());
+cylon::Status WriteCSV(const std::string &id, const std::string &path,
+                       const cylon::io::config::CSVWriteOptions& options = cylon::io::config::CSVWriteOptions());
 
-twisterx::Status JoinTables(twisterx::TwisterXContext *ctx,
-                            const std::string &table_left,
-                            const std::string &table_right,
-                            twisterx::join::config::JoinConfig join_config,
-                            const std::string &dest_id);
+cylon::Status JoinTables(cylon::CylonContext *ctx,
+                         const std::string &table_left,
+                         const std::string &table_right,
+                         cylon::join::config::JoinConfig join_config,
+                         const std::string &dest_id);
 
-twisterx::Status DistributedJoinTables(
-    twisterx::TwisterXContext *ctx,
+cylon::Status DistributedJoinTables(
+    cylon::CylonContext *ctx,
     const std::string &table_left,
     const std::string &table_right,
-    twisterx::join::config::JoinConfig join_config,
+    cylon::join::config::JoinConfig join_config,
     const std::string &dest_id
 );
 
-twisterx::Status Union(twisterx::TwisterXContext *ctx,
-                       const std::string &table_left,
-                       const std::string &table_right,
-                       const std::string &dest_id);
+cylon::Status Union(cylon::CylonContext *ctx,
+                    const std::string &table_left,
+                    const std::string &table_right,
+                    const std::string &dest_id);
 
-twisterx::Status DistributedUnion(
-    twisterx::TwisterXContext *ctx,
+cylon::Status DistributedUnion(
+    cylon::CylonContext *ctx,
     const std::string &table_left,
     const std::string &table_right,
     const std::string &dest_id
@@ -85,17 +85,17 @@ int64_t RowCount(const std::string &id);
  * @param row2
  * @return
  */
-twisterx::Status Print(const std::string &table_id, int col1, int col2, int row1, int row2);
+cylon::Status Print(const std::string &table_id, int col1, int col2, int row1, int row2);
 
-twisterx::Status PrintToOStream(const std::string &table_id,
-                                int col1,
-                                int col2,
-                                int row1,
-                                int row2,
-                                std::ostream &out,
-                                char delimiter = ',',
-                                bool use_custom_header = false,
-                                const std::vector<std::string> &headers = {});
+cylon::Status PrintToOStream(const std::string &table_id,
+                             int col1,
+                             int col2,
+                             int row1,
+                             int row2,
+                             std::ostream &out,
+                             char delimiter = ',',
+                             bool use_custom_header = false,
+                             const std::vector<std::string> &headers = {});
 
 /**
  * Merge the set of tables into a single table, each table should have the same schema
@@ -104,9 +104,9 @@ twisterx::Status PrintToOStream(const std::string &table_id,
  * @param merged_tab id of the merged table
  * @return the status of the merge
  */
-twisterx::Status Merge(twisterx::TwisterXContext *ctx,
-                       std::vector<std::string> table_ids,
-                       const std::string &merged_tab);
+cylon::Status Merge(cylon::CylonContext *ctx,
+                    std::vector<std::string> table_ids,
+                    const std::string &merged_tab);
 
 /**
  * Sort the table with the given identifier
@@ -114,10 +114,10 @@ twisterx::Status Merge(twisterx::TwisterXContext *ctx,
  * @param columnIndex the sorting column index
  * @return the status of the merge
  */
-twisterx::Status SortTable(twisterx::TwisterXContext *ctx,
-                           const std::string &tableId,
-                           const std::string &sortTableId,
-                           int columnIndex);
+cylon::Status SortTable(cylon::CylonContext *ctx,
+                        const std::string &tableId,
+                        const std::string &sortTableId,
+                        int columnIndex);
 
 /**
  * Partition the table into multiple tables using a hash function, hash will be applied to the bytes of the data
@@ -128,11 +128,11 @@ twisterx::Status SortTable(twisterx::TwisterXContext *ctx,
  * @param pool the memory pool
  * @return the status of the partition operation
  */
-twisterx::Status HashPartition(twisterx::TwisterXContext *ctx,
-                               const std::string &id,
-                               const std::vector<int> &hash_columns,
-                               int no_of_partitions,
-                               std::unordered_map<int, std::string> *out);
+cylon::Status HashPartition(cylon::CylonContext *ctx,
+                            const std::string &id,
+                            const std::vector<int> &hash_columns,
+                            int no_of_partitions,
+                            std::unordered_map<int, std::string> *out);
 
 /**
  * Select a set of rows based on the selector condition
@@ -141,9 +141,9 @@ twisterx::Status HashPartition(twisterx::TwisterXContext *ctx,
  * @param selector row selection logic
  * @return the status of the partition operation
  */
-Status Select(twisterx::TwisterXContext *ctx,
+Status Select(cylon::CylonContext *ctx,
               const std::string &id,
-              const std::function<bool(twisterx::Row)> &selector,
+              const std::function<bool(cylon::Row)> &selector,
               const std::string &out);
 
 Status Project(const std::string &id, const std::vector<int64_t>& project_columns, const std::string &out);

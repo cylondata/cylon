@@ -17,7 +17,7 @@
 
 #include <memory>
 #include "../status.hpp"
-namespace twisterx {
+namespace cylon {
 
 /**
  * This class is am exact copy of arrow memory pool

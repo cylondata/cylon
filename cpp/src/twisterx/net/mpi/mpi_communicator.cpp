@@ -17,7 +17,7 @@
 #include "mpi_communicator.h"
 #include "mpi_channel.hpp"
 
-namespace twisterx {
+namespace cylon {
 namespace net {
 // configs
 void MPIConfig::DummyConfig(int dummy) {

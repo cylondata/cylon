@@ -16,7 +16,7 @@
 #include "join_utils.hpp"
 #include "../util/arrow_utils.hpp"
 
-namespace twisterx {
+namespace cylon {
 namespace join {
 namespace util {
 
@@ -52,10 +52,10 @@ arrow::Status build_final_table(const std::shared_ptr<std::vector<int64_t>> &lef
   for (auto &column :left_tab->columns()) {
 	std::shared_ptr<arrow::Array> destination_col_array;
 	arrow::Status
-		status = twisterx::util::copy_array_by_indices(left_indices,
-													   column->chunk(0),
-													   &destination_col_array,
-													   memory_pool);
+		status = cylon::util::copy_array_by_indices(left_indices,
+                                                    column->chunk(0),
+                                                    &destination_col_array,
+                                                    memory_pool);
 	if (status != arrow::Status::OK()) {
 	  LOG(FATAL) << "Failed while copying a column to the final table from left table. " << status.ToString();
 	  return status;
@@ -67,10 +67,10 @@ arrow::Status build_final_table(const std::shared_ptr<std::vector<int64_t>> &lef
   for (auto &column :right_tab->columns()) {
 	std::shared_ptr<arrow::Array> destination_col_array;
 	arrow::Status
-		status = twisterx::util::copy_array_by_indices(right_indices,
-													   column->chunk(0),
-													   &destination_col_array,
-													   memory_pool);
+		status = cylon::util::copy_array_by_indices(right_indices,
+                                                    column->chunk(0),
+                                                    &destination_col_array,
+                                                    memory_pool);
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed while copying a column to the final table from right table. " << status.ToString();
       return status;

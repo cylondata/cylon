@@ -18,7 +18,7 @@
 #include <random>
 #include <sstream>
 
-namespace twisterx {
+namespace cylon {
 namespace util {
 namespace uuid {
 

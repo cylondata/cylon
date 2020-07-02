@@ -26,7 +26,7 @@
 #define TWISTERX_CHANNEL_HEADER_SIZE 8
 #define TWISTERX_MSG_FIN 1
 
-namespace twisterx {
+namespace cylon {
 enum SendStatus {
   SEND_INIT = 0,
   SEND_LENGTH_POSTED = 1,

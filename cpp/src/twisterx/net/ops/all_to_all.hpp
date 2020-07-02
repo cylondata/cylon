@@ -19,11 +19,11 @@
 #include<unordered_map>
 #include<queue>
 #include<unordered_set>
-#include "../../ctx/twisterx_context.h"
+#include "../../ctx/cylon_context.h"
 
 #include "../channel.hpp"
 
-namespace twisterx {
+namespace cylon {
 class ReceiveCallback {
  public:
   /**
@@ -81,11 +81,11 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
    * @param all_workers
    * @return
    */
-  AllToAll(twisterx::TwisterXContext *ctx,
-		   const std::vector<int> &source,
-		   const std::vector<int> &targets,
-		   int edgeId,
-		   ReceiveCallback *callback);
+  AllToAll(cylon::CylonContext *ctx,
+           const std::vector<int> &source,
+           const std::vector<int> &targets,
+           int edgeId,
+           ReceiveCallback *callback);
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true

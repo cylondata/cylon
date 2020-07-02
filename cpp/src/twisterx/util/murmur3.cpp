@@ -21,7 +21,7 @@
 
 #define FORCE_INLINE inline __attribute__((always_inline))
 
-namespace twisterx {
+namespace cylon {
 namespace util {
 
 inline uint32_t rotl32(uint32_t x, int8_t r) {

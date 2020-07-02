@@ -27,7 +27,7 @@
 using arrow::DoubleBuilder;
 using arrow::Int64Builder;
 
-class JC : public twisterx::JoinCallback {
+class JC : public cylon::JoinCallback {
  public:
   /**
   * This function is called when a data is received
@@ -44,8 +44,8 @@ class JC : public twisterx::JoinCallback {
 
 int main(int argc, char *argv[]) {
 
-  auto mpi_config = new twisterx::net::MPIConfig();
-  auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
+  auto mpi_config = new cylon::net::MPIConfig();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   arrow::MemoryPool *pool = arrow::default_memory_pool();
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
   delete[] indices;
 
   JC jc;
-  twisterx::ArrowJoin join(ctx, sources, targets, 0, 1, &jc, schema, pool);
+  cylon::ArrowJoin join(ctx, sources, targets, 0, 1, &jc, schema, pool);
   auto start = std::chrono::high_resolution_clock::now();
   long genTime = 0;
   for (int j = 0; j < size; j++) {

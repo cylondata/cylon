@@ -17,7 +17,7 @@
 
 #include <arrow/api.h>
 
-namespace twisterx {
+namespace cylon {
 std::shared_ptr<arrow::Table> GetTable(const std::string &id);
 void PutTable(const std::string &id, const std::shared_ptr<arrow::Table> &table);
 }

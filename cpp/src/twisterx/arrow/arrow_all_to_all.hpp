@@ -20,7 +20,7 @@
 
 #include "../net/ops/all_to_all.hpp"
 
-namespace twisterx {
+namespace cylon {
 // lets define some integers to indicate the state of the data transfer using headers
 enum ArrowHeader {
   ARROW_HEADER_INIT = 0,
@@ -94,13 +94,13 @@ class ArrowAllToAll : public ReceiveCallback {
    * @param all_workers
    * @return
    */
-  ArrowAllToAll(twisterx::TwisterXContext *ctx,
-				const std::vector<int> &source,
-				const std::vector<int> &targets,
-				int edgeId,
-				std::shared_ptr<ArrowCallback> callback,
-				std::shared_ptr<arrow::Schema> schema,
-				arrow::MemoryPool *pool);
+  ArrowAllToAll(cylon::CylonContext *ctx,
+                const std::vector<int> &source,
+                const std::vector<int> &targets,
+                int edgeId,
+                std::shared_ptr<ArrowCallback> callback,
+                std::shared_ptr<arrow::Schema> schema,
+                arrow::MemoryPool *pool);
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true

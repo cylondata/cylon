@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 
-namespace twisterx {
+namespace cylon {
 namespace util {
 
 void MurmurHash3_x86_32(const void *key, int len, uint32_t seed, void *out);

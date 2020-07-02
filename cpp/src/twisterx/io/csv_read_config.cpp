@@ -17,7 +17,7 @@
 #include "../arrow//arrow_types.hpp"
 #include <arrow/csv/options.h>
 
-namespace twisterx {
+namespace cylon {
 namespace io {
 namespace config {
 
@@ -88,7 +88,7 @@ CSVReadOptions CSVReadOptions::WithColumnTypes(const std::unordered_map<std::str
 
   for (const auto &column_type : column_types) {
     auto pr = std::pair<std::string, std::shared_ptr<arrow::DataType>>(column_type.first,
-                                                                       twisterx::tarrow::convertToArrowType(
+                                                                       cylon::tarrow::convertToArrowType(
                                                                            column_type.second
                                                                        ));
     arrow_types.insert(pr);

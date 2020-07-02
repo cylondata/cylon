@@ -17,7 +17,7 @@
 #include <glog/logging.h>
 #include "arrow_utils.hpp"
 
-namespace twisterx {
+namespace cylon {
 namespace util {
 
 template<typename TYPE>

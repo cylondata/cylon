@@ -14,7 +14,7 @@
 
 #include "arrow_partition_kernels.hpp"
 
-namespace twisterx {
+namespace cylon {
 
 ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
                                          const std::shared_ptr<arrow::DataType> &data_type) {
@@ -55,26 +55,26 @@ ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
   return GetPartitionKernel(pool, values->type());
 }
 
-twisterx::Status HashPartitionArray(arrow::MemoryPool *pool,
-                                    const std::shared_ptr<arrow::Array> &values,
-                                    const std::vector<int> &targets,
-                                    std::vector<int64_t> *outPartitions) {
+cylon::Status HashPartitionArray(arrow::MemoryPool *pool,
+                                 const std::shared_ptr<arrow::Array> &values,
+                                 const std::vector<int> &targets,
+                                 std::vector<int64_t> *outPartitions) {
   ArrowPartitionKernel *kernel = GetPartitionKernel(pool, values);
   kernel->Partition(values, targets, outPartitions);
-  return twisterx::Status::OK();
+  return cylon::Status::OK();
 }
 
-twisterx::Status HashPartitionArrays(arrow::MemoryPool *pool,
-                                     const std::vector<std::shared_ptr<arrow::Array>> &values,
-                                     int64_t length,
-                                     const std::vector<int> &targets,
-                                     std::vector<int64_t> *outPartitions) {
+cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
+                                  const std::vector<std::shared_ptr<arrow::Array>> &values,
+                                  int64_t length,
+                                  const std::vector<int> &targets,
+                                  std::vector<int64_t> *outPartitions) {
   std::vector<ArrowPartitionKernel *> hash_kernels;
   for (const auto &array: values) {
     auto hash_kernel = GetPartitionKernel(pool, array);
     if (hash_kernel == NULLPTR) {
       LOG(FATAL) << "Un-known type";
-      return twisterx::Status(twisterx::NotImplemented, "Not implemented or unsupported data type.");
+      return cylon::Status(cylon::NotImplemented, "Not implemented or unsupported data type.");
     }
     hash_kernels.push_back(hash_kernel);
   }
@@ -87,7 +87,7 @@ twisterx::Status HashPartitionArrays(arrow::MemoryPool *pool,
     }
     outPartitions->push_back(targets[hash_code % targets.size()]);
   }
-  return twisterx::Status::OK();
+  return cylon::Status::OK();
 }
 
 RowHashingKernel::RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields,

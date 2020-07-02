@@ -18,15 +18,15 @@
 #include "arrow_kernels.hpp"
 #include <chrono>
 
-namespace twisterx {
-ArrowJoin::ArrowJoin(twisterx::TwisterXContext *ctx,
-					 const std::vector<int> &source,
-					 const std::vector<int> &targets,
-					 int leftEdgeId,
-					 int rightEdgeId,
-					 twisterx::JoinCallback *callback,
-					 std::shared_ptr<arrow::Schema> schema,
-					 arrow::MemoryPool *pool) {
+namespace cylon {
+ArrowJoin::ArrowJoin(cylon::CylonContext *ctx,
+                     const std::vector<int> &source,
+                     const std::vector<int> &targets,
+                     int leftEdgeId,
+                     int rightEdgeId,
+                     cylon::JoinCallback *callback,
+                     std::shared_ptr<arrow::Schema> schema,
+                     arrow::MemoryPool *pool) {
   joinCallBack_ = callback;
   workerId_ = ctx->GetRank();
   leftCallBack_ = std::make_shared<AllToAllCallback>(&leftTables_);
@@ -46,9 +46,9 @@ bool ArrowJoin::isComplete() {
 	auto start = std::chrono::high_resolution_clock::now();
 	std::shared_ptr<arrow::Table> joined_table;
 	arrow::Status status = join::joinTables(leftTables_, rightTables_,
-											twisterx::join::config::JoinConfig::InnerJoin(0, 0),
-											&joined_table,
-											arrow::default_memory_pool());
+                                            cylon::join::config::JoinConfig::InnerJoin(0, 0),
+                                            &joined_table,
+                                            arrow::default_memory_pool());
 	if (status != arrow::Status::OK()) {
 	  LOG(FATAL) << "Failed to join - error: " << status.CodeAsString();
 	  return true;
@@ -71,10 +71,10 @@ bool AllToAllCallback::onReceive(int source, std::shared_ptr<arrow::Table> table
   return true;
 }
 
-ArrowJoinWithPartition::ArrowJoinWithPartition(twisterx::TwisterXContext *ctx, const std::vector<int> &source,
-											   const std::vector<int> &targets, int leftEdgeId, int rightEdgeId,
-											   JoinCallback *callback, std::shared_ptr<arrow::Schema> schema,
-											   arrow::MemoryPool *pool, int leftColumnIndex, int rightColumnIndex) {
+ArrowJoinWithPartition::ArrowJoinWithPartition(cylon::CylonContext *ctx, const std::vector<int> &source,
+                                               const std::vector<int> &targets, int leftEdgeId, int rightEdgeId,
+                                               JoinCallback *callback, std::shared_ptr<arrow::Schema> schema,
+                                               arrow::MemoryPool *pool, int leftColumnIndex, int rightColumnIndex) {
   workerId_ = ctx->GetRank();
   finished_ = false;
   targets_ = targets;
@@ -100,7 +100,7 @@ bool ArrowJoinWithPartition::isComplete() {
 	std::vector<int64_t> outPartitions;
 	std::shared_ptr<arrow::Array> array = column->chunk(0);
 	// first we partition the table
-	twisterx::Status status = HashPartitionArray(pool_, array, targets_, &outPartitions);
+	cylon::Status status = HashPartitionArray(pool_, array, targets_, &outPartitions);
 	if (!status.is_ok()) {
 	  LOG(FATAL) << "Failed to create the hash partition";
 	  return true;
@@ -146,7 +146,7 @@ bool ArrowJoinWithPartition::isComplete() {
 	std::vector<int64_t> outPartitions;
 	std::shared_ptr<arrow::Array> array = column->chunk(0);
 	// first we partition the table
-	twisterx::Status status = HashPartitionArray(pool_, array, targets_, &outPartitions);
+	cylon::Status status = HashPartitionArray(pool_, array, targets_, &outPartitions);
 	if (!status.is_ok()) {
 	  LOG(FATAL) << "Failed to create the hash partition";
 	  return true;

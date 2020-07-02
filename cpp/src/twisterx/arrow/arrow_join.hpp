@@ -20,7 +20,7 @@
 
 #include "arrow_all_to_all.hpp"
 
-namespace twisterx {
+namespace cylon {
 class JoinCallback {
  public:
   /**
@@ -55,14 +55,14 @@ class ArrowJoin {
      * @param all_workers
      * @return
      */
-  ArrowJoin(twisterx::TwisterXContext *ctx,
-			const std::vector<int> &source,
-			const std::vector<int> &targets,
-			int leftEdgeId,
-			int rightEdgeId,
-			JoinCallback *callback,
-			std::shared_ptr<arrow::Schema> schema,
-			arrow::MemoryPool *pool);
+  ArrowJoin(cylon::CylonContext *ctx,
+            const std::vector<int> &source,
+            const std::vector<int> &targets,
+            int leftEdgeId,
+            int rightEdgeId,
+            JoinCallback *callback,
+            std::shared_ptr<arrow::Schema> schema,
+            arrow::MemoryPool *pool);
 
   /**
    * Insert a partitioned table, this table will be sent directly
@@ -116,7 +116,7 @@ class ArrowJoin {
   std::vector<std::shared_ptr<arrow::Table>> rightTables_;
   std::shared_ptr<AllToAllCallback> leftCallBack_;
   std::shared_ptr<AllToAllCallback> rightCallBack_;
-  twisterx::JoinCallback *joinCallBack_;
+  cylon::JoinCallback *joinCallBack_;
   int workerId_;
 };
 
@@ -128,16 +128,16 @@ class ArrowJoinWithPartition {
    * @param all_workers
    * @return
    */
-  ArrowJoinWithPartition(twisterx::TwisterXContext *ctx,
-						 const std::vector<int> &source,
-						 const std::vector<int> &targets,
-						 int leftEdgeId,
-						 int rightEdgeId,
-						 JoinCallback *callback,
-						 std::shared_ptr<arrow::Schema> schema,
-						 arrow::MemoryPool *pool,
-						 int leftColumnIndex,
-						 int rightColumnIndex);
+  ArrowJoinWithPartition(cylon::CylonContext *ctx,
+                         const std::vector<int> &source,
+                         const std::vector<int> &targets,
+                         int leftEdgeId,
+                         int rightEdgeId,
+                         JoinCallback *callback,
+                         std::shared_ptr<arrow::Schema> schema,
+                         arrow::MemoryPool *pool,
+                         int leftColumnIndex,
+                         int rightColumnIndex);
 
   /**
    * Insert a partitioned table, this table will be sent directly

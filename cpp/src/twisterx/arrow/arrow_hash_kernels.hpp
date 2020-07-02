@@ -28,7 +28,7 @@
 #include <unordered_set>
 #include <chrono>
 
-namespace twisterx {
+namespace cylon {
 
 /**
  * Kernel to join indices using hashing
@@ -52,28 +52,28 @@ class ArrowArrayIdxHashJoinKernel {
    */
   int IdxHashJoin(const std::shared_ptr<arrow::Array> &left_idx_col,
                   const std::shared_ptr<arrow::Array> &right_idx_col,
-                  const twisterx::join::config::JoinType join_type,
+                  const cylon::join::config::JoinType join_type,
                   std::shared_ptr<std::vector<int64_t>> &left_table_indices,
                   std::shared_ptr<std::vector<int64_t>> &right_table_indices) {
 
 //    std::unique_ptr<MMAP_TYPE> out_umm_ptr;
 
     switch (join_type) {
-      case twisterx::join::config::JoinType::RIGHT: {
+      case cylon::join::config::JoinType::RIGHT: {
         // build hashmap using left col idx
         MMAP_TYPE out_umm_ptr = MMAP_TYPE(left_idx_col->length());
         BuildPhase(left_idx_col, out_umm_ptr);
         ProbePhase(out_umm_ptr, right_idx_col, left_table_indices, right_table_indices);
         break;
       }
-      case twisterx::join::config::JoinType::LEFT: {
+      case cylon::join::config::JoinType::LEFT: {
         // build hashmap using right col idx
         MMAP_TYPE out_umm_ptr = MMAP_TYPE(right_idx_col->length());
         BuildPhase(right_idx_col, out_umm_ptr);
         ProbePhase(out_umm_ptr, left_idx_col, right_table_indices, left_table_indices);
         break;
       }
-      case twisterx::join::config::JoinType::INNER: {
+      case cylon::join::config::JoinType::INNER: {
         // build hashmap using col idx with smaller len
         if (left_idx_col->length() < right_idx_col->length()) {
           MMAP_TYPE out_umm_ptr = MMAP_TYPE(left_idx_col->length());
@@ -86,7 +86,7 @@ class ArrowArrayIdxHashJoinKernel {
         }
         break;
       }
-      case twisterx::join::config::JoinType::FULL_OUTER: {
+      case cylon::join::config::JoinType::FULL_OUTER: {
         // build hashmap using col idx with smaller len
 
         // a key set to track matched keys from the other table

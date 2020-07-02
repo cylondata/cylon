@@ -18,17 +18,17 @@
 #include "iostream"
 #include "../util/builtins.h"
 
-twisterx::TxRequest::TxRequest(int tgt) {
+cylon::TxRequest::TxRequest(int tgt) {
   target = tgt;
 }
 
-twisterx::TxRequest::TxRequest(int tgt, void *buf, int len) {
+cylon::TxRequest::TxRequest(int tgt, void *buf, int len) {
   target = tgt;
   buffer = buf;
   length = len;
 }
 
-twisterx::TxRequest::TxRequest(int tgt, void *buf, int len, int *head, int hLength) {
+cylon::TxRequest::TxRequest(int tgt, void *buf, int len, int *head, int hLength) {
   target = tgt;
   buffer = buf;
   length = len;
@@ -36,16 +36,16 @@ twisterx::TxRequest::TxRequest(int tgt, void *buf, int len, int *head, int hLeng
   headerLength = hLength;
 }
 
-twisterx::TxRequest::~TxRequest() {
+cylon::TxRequest::~TxRequest() {
   buffer = nullptr;
 }
 
-void twisterx::TxRequest::to_string(string dataType, int bufDepth) {
+void cylon::TxRequest::to_string(string dataType, int bufDepth) {
   std::cout << "Target: " << target << std::endl;
   std::cout << "Length: " << length << std::endl;
   std::cout << "Header Length: " << headerLength << std::endl;
   std::cout << "Buffer: " << std::endl;
-  twisterx::util::printArray(buffer, length, dataType, bufDepth);
+  cylon::util::printArray(buffer, length, dataType, bufDepth);
   std::cout << "Header: " << std::endl;
   for (int i = 0; i < headerLength; ++i) {
 	std::cout << header[i] << " ";

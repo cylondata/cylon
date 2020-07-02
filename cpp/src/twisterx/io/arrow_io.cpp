@@ -18,16 +18,16 @@
 
 #include "arrow_io.hpp"
 #include "csv_read_config_holder.hpp"
-#include "../ctx/twisterx_context.h"
+#include "../ctx/cylon_context.h"
 #include "../ctx/arrow_memory_pool_utils.h"
 
-namespace twisterx {
+namespace cylon {
 namespace io {
-arrow::Result<std::shared_ptr<arrow::Table>> read_csv(twisterx::TwisterXContext *ctx,
+arrow::Result<std::shared_ptr<arrow::Table>> read_csv(cylon::CylonContext *ctx,
                                                       const std::string &path,
-                                                      twisterx::io::config::CSVReadOptions options) {
+                                                      cylon::io::config::CSVReadOptions options) {
   arrow::Status st;
-  auto *pool = twisterx::ToArrowPool(ctx);
+  auto *pool = cylon::ToArrowPool(ctx);
   arrow::Result<std::shared_ptr<arrow::io::MemoryMappedFile>> mmap_result = arrow::io::MemoryMappedFile::Open(path,
                                                                                                               arrow::io::FileMode::READ);
   if (!mmap_result.status().ok()) {

@@ -15,7 +15,7 @@
 #ifndef TWISTERX_SRC_CODE_H_
 #define TWISTERX_SRC_CODE_H_
 
-namespace twisterx {
+namespace cylon {
 enum Code {
   OK = 0,
   OutOfMemory = 1,

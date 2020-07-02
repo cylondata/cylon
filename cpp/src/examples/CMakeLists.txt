@@ -9,7 +9,6 @@ endmacro(tx_add_exe)
 include_directories(../twisterx)
 
 tx_add_exe(arrow_twisterx)
-tx_add_exe(distributed_join)
 tx_add_exe(arrow_test)
 tx_add_exe(join_test)
 tx_add_exe(table_join_dist_test)

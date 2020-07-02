@@ -12,22 +12,22 @@
  * limitations under the License.
  */
 
-#include "twisterx_context.h"
+#include "cylon_context.h"
 #include "arrow/memory_pool.h"
 #include "../net/mpi/mpi_communicator.h"
 
-namespace twisterx {
+namespace cylon {
 
-TwisterXContext *TwisterXContext::Init() {
-  return new TwisterXContext(false);
+CylonContext *CylonContext::Init() {
+  return new CylonContext(false);
 }
-TwisterXContext::TwisterXContext(bool distributed) {
+CylonContext::CylonContext(bool distributed) {
   this->distributed = distributed;
 }
 
-TwisterXContext *TwisterXContext::InitDistributed(net::CommConfig *config) {
+CylonContext *CylonContext::InitDistributed(net::CommConfig *config) {
   if (config->Type() == net::CommType::MPI) {
-    auto ctx = new TwisterXContext(true);
+    auto ctx = new CylonContext(true);
     ctx->communicator = new net::MPICommunicator();
     ctx->communicator->Init(config);
     ctx->distributed = true;
@@ -37,47 +37,47 @@ TwisterXContext *TwisterXContext::InitDistributed(net::CommConfig *config) {
   }
   return nullptr;
 }
-net::Communicator *TwisterXContext::GetCommunicator() const {
+net::Communicator *CylonContext::GetCommunicator() const {
   return this->communicator;
 }
 
-void TwisterXContext::setCommunicator(net::Communicator *communicator1) {
+void CylonContext::setCommunicator(net::Communicator *communicator1) {
   this->communicator = communicator1;
 }
 
-void TwisterXContext::setDistributed(bool distributed) {
+void CylonContext::setDistributed(bool distributed) {
   this->distributed = distributed;
 }
 
-void TwisterXContext::AddConfig(const std::string &key, const std::string &value) {
+void CylonContext::AddConfig(const std::string &key, const std::string &value) {
   this->config.insert(std::pair<std::string, std::string>(key, value));
 }
-std::string TwisterXContext::GetConfig(const std::string &key, const std::string &def) {
+std::string CylonContext::GetConfig(const std::string &key, const std::string &def) {
   auto find = this->config.find(key);
   if (find == this->config.end()) {
     return def;
   }
   return find->second;
 }
-int TwisterXContext::GetRank() {
+int CylonContext::GetRank() {
   if (this->distributed) {
     return this->communicator->GetRank();
   }
   return 0;
 }
-int TwisterXContext::GetWorldSize() {
+int CylonContext::GetWorldSize() {
   if (this->distributed) {
     return this->communicator->GetWorldSize();
   }
   return 1;
 }
-void TwisterXContext::Finalize() {
+void CylonContext::Finalize() {
   if (this->distributed) {
     this->communicator->Finalize();
     delete this->communicator;
   }
 }
-vector<int> TwisterXContext::GetNeighbours(bool include_self) {
+vector<int> CylonContext::GetNeighbours(bool include_self) {
   vector<int> neighbours{};
   neighbours.reserve(this->GetWorldSize());
   for (int i = 0; i < this->GetWorldSize(); i++) {
@@ -89,14 +89,14 @@ vector<int> TwisterXContext::GetNeighbours(bool include_self) {
   return neighbours;
 }
 
-twisterx::MemoryPool *TwisterXContext::GetMemoryPool() {
+cylon::MemoryPool *CylonContext::GetMemoryPool() {
   return this->memory_pool;
 }
 
-void TwisterXContext::SetMemoryPool(twisterx::MemoryPool *mem_pool) {
+void CylonContext::SetMemoryPool(cylon::MemoryPool *mem_pool) {
   this->memory_pool = mem_pool;
 }
-int32_t TwisterXContext::GetNextSequence() {
+int32_t CylonContext::GetNextSequence() {
   return this->sequence_no++;
 }
 }

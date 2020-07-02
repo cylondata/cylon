@@ -21,9 +21,9 @@
 #include "all_to_all.hpp"
 #include "../mpi/mpi_channel.hpp"
 
-namespace twisterx {
-AllToAll::AllToAll(twisterx::TwisterXContext *ctx, const std::vector<int> &srcs,
-				   const std::vector<int> &tgts, int edge_id, ReceiveCallback *rcvCallback) {
+namespace cylon {
+AllToAll::AllToAll(cylon::CylonContext *ctx, const std::vector<int> &srcs,
+                   const std::vector<int> &tgts, int edge_id, ReceiveCallback *rcvCallback) {
   worker_id = ctx->GetRank();
   sources = srcs;
   targets = tgts;

@@ -14,7 +14,7 @@
 
 #include <glog/logging.h>
 #include <net/mpi/mpi_communicator.h>
-#include <ctx/twisterx_context.h>
+#include <ctx/cylon_context.h>
 #include <table.hpp>
 #include <chrono>
 
@@ -22,17 +22,17 @@ int main(int argc, char *argv[]) {
 
   auto tstart = std::chrono::steady_clock::now();
 
-  auto mpi_config = new twisterx::net::MPIConfig();
-  auto ctx = twisterx::TwisterXContext::InitDistributed(mpi_config);
+  auto mpi_config = new cylon::net::MPIConfig();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<twisterx::Table> table1, select;
+  std::shared_ptr<cylon::Table> table1, select;
 
   LOG(INFO) << "Reading tables";
-  auto read_options = twisterx::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   auto t1 = std::chrono::steady_clock::now();
 
-  auto status1 = twisterx::Table::FromCSV(ctx, "/home/chathura/Code/twisterx/cpp/data/csv1.csv", table1, read_options);
+  auto status1 = cylon::Table::FromCSV(ctx, "/home/chathura/Code/cylon/cpp/data/csv1.csv", table1, read_options);
   auto t2 = std::chrono::steady_clock::now();
   LOG(INFO) << "Read table 1 in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
 
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
   if (status1.is_ok()) {
     t1 = std::chrono::steady_clock::now();
-    twisterx::Status status = table1->Select([](twisterx::Row row) {
+    cylon::Status status = table1->Select([](cylon::Row row) {
       return row.GetInt64(0) % 2 == 0;
     }, select);
     t2 = std::chrono::steady_clock::now();

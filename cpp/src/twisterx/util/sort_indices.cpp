@@ -23,7 +23,7 @@
  * This class is direct copy from arrow to measure the difference between stable sort and sort
  */
 
-namespace twisterx {
+namespace cylon {
 namespace util {
 
 class SortToIndicesKernel : public arrow::compute::UnaryKernel {

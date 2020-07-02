@@ -22,7 +22,7 @@
 
 #include <glog/logging.h>
 
-namespace twisterx {
+namespace cylon {
 
 void MPIChannel::init(int ed, const std::vector<int> &receives, const std::vector<int> &sendIds,
 					  ChannelReceiveCallback *rcv, ChannelSendCallback *send_fn) {

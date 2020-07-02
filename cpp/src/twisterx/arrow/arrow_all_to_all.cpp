@@ -16,8 +16,8 @@
 
 #include <glog/logging.h>
 
-namespace twisterx {
-ArrowAllToAll::ArrowAllToAll(twisterx::TwisterXContext *ctx,
+namespace cylon {
+ArrowAllToAll::ArrowAllToAll(cylon::CylonContext *ctx,
                              const std::vector<int> &source,
                              const std::vector<int> &targets,
                              int edgeId,

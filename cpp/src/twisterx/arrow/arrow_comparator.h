@@ -17,7 +17,7 @@
 
 #include <arrow/api.h>
 #include "../status.hpp"
-namespace twisterx {
+namespace cylon {
 class ArrowComparator {
  public:
   virtual int compare(std::shared_ptr<arrow::Array> array1,

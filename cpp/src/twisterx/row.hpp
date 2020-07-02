@@ -17,7 +17,7 @@
 
 #include <string>
 #include <vector>
-namespace twisterx {
+namespace cylon {
 class Row {
  private:
   std::string table_id;

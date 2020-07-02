@@ -23,7 +23,7 @@
 #include <arrow/api.h>
 #include <arrow/table.h>
 
-namespace twisterx {
+namespace cylon {
 
 class Column {
  public:

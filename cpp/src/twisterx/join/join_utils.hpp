@@ -18,7 +18,7 @@
 #include <arrow/api.h>
 #include <map>
 
-namespace twisterx {
+namespace cylon {
 namespace join {
 namespace util {
 

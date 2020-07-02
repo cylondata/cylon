@@ -16,18 +16,18 @@
 #define TWISTERX_SRC_TWISTERX_CTX_ARROW_MEMORY_POOL_UTILS_H_
 
 #include "arrow//memory_pool.h"
-#include "twisterx_context.h"
+#include "cylon_context.h"
 
-namespace twisterx {
+namespace cylon {
 
-arrow::Status ArrowStatus(twisterx::Status status);
+arrow::Status ArrowStatus(cylon::Status status);
 
 class ProxyMemoryPool : public arrow::MemoryPool {
 
  private:
-  twisterx::MemoryPool *tx_memory;
+  cylon::MemoryPool *tx_memory;
  public:
-  explicit ProxyMemoryPool(twisterx::MemoryPool *tx_memory) {
+  explicit ProxyMemoryPool(cylon::MemoryPool *tx_memory) {
     this->tx_memory = tx_memory;
   }
 
@@ -60,7 +60,7 @@ class ProxyMemoryPool : public arrow::MemoryPool {
   }
 };
 
-arrow::MemoryPool *ToArrowPool(twisterx::TwisterXContext *ctx);
+arrow::MemoryPool *ToArrowPool(cylon::CylonContext *ctx);
 }
 
 #endif //TWISTERX_SRC_TWISTERX_CTX_ARROW_MEMORY_POOL_UTILS_H_

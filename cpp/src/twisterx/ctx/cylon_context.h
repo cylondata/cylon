@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_CTX_TWISTERX_CONTEXT_H_
-#define TWISTERX_SRC_TWISTERX_CTX_TWISTERX_CONTEXT_H_
+#ifndef TWISTERX_SRC_TWISTERX_CTX_CYLON_CONTEXT_H_
+#define TWISTERX_SRC_TWISTERX_CTX_CYLON_CONTEXT_H_
 
 #include <string>
 #include "unordered_map"
@@ -21,20 +21,20 @@
 #include "../net/communicator.h"
 #include "memory_pool.h"
 
-namespace twisterx {
-class TwisterXContext {
+namespace cylon {
+class CylonContext {
  private:
   std::unordered_map<std::string, std::string> config{};
   bool distributed;
-  twisterx::net::Communicator *communicator{};
-  twisterx::MemoryPool *memory_pool{};
+  cylon::net::Communicator *communicator{};
+  cylon::MemoryPool *memory_pool{};
   int32_t sequence_no = 0;
 
  public:
-  static TwisterXContext *Init();
+  static CylonContext *Init();
   void Finalize();
 
-  static TwisterXContext *InitDistributed(net::CommConfig *config);
+  static CylonContext *InitDistributed(net::CommConfig *config);
   void AddConfig(const std::string &key, const std::string &value);
   std::string GetConfig(const std::string &key, const std::string &def = "");
   net::Communicator *GetCommunicator() const;
@@ -43,9 +43,9 @@ class TwisterXContext {
   int GetRank();
   int GetWorldSize();
   vector<int> GetNeighbours(bool include_self);
-  explicit TwisterXContext(bool distributed);
-  twisterx::MemoryPool *GetMemoryPool();
-  void SetMemoryPool(twisterx::MemoryPool *mem_pool);
+  explicit CylonContext(bool distributed);
+  cylon::MemoryPool *GetMemoryPool();
+  void SetMemoryPool(cylon::MemoryPool *mem_pool);
   int32_t GetNextSequence();
   void Barrier() {
     this->GetCommunicator()->Barrier();
@@ -53,4 +53,4 @@ class TwisterXContext {
 };
 }
 
-#endif //TWISTERX_SRC_TWISTERX_CTX_TWISTERX_CONTEXT_H_
+#endif //TWISTERX_SRC_TWISTERX_CTX_CYLON_CONTEXT_H_

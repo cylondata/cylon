@@ -19,7 +19,7 @@
 
 using namespace std;
 
-namespace twisterx {
+namespace cylon {
 namespace util {
 
 void printArray(void *buf, int size, string dataType, int depth);

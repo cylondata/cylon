@@ -73,12 +73,12 @@ void merge_test() {
 
   LOG(INFO) << "Starting join";
   auto start = std::chrono::high_resolution_clock::now();
-  twisterx::join::joinTables(
-	  left_table,
-	  right_table,
-	  twisterx::join::config::JoinConfig::InnerJoin(0, 0),
-	  &joined_table,
-	  pool
+  cylon::join::joinTables(
+      left_table,
+      right_table,
+      cylon::join::config::JoinConfig::InnerJoin(0, 0),
+      &joined_table,
+      pool
   );
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -99,7 +99,7 @@ void merge_test() {
   std::shared_ptr<std::vector<int>> ivec = std::make_shared<std::vector<int>>(10);
   int i = 0;
   std::iota(ivec->begin(), ivec->end(), 0);
-  std::shared_ptr<twisterx::ArrowArraySplitKernel> kernel;
+  std::shared_ptr<cylon::ArrowArraySplitKernel> kernel;
   std::shared_ptr<arrow::DataType> type = std::make_shared<arrow::Int64Type>();
   CreateSplitter(type, pool, &kernel);
 
@@ -158,7 +158,7 @@ void sort_test() {
 
   LOG(INFO) << "sorting...";
   std::shared_ptr<arrow::Table> sorted_table;
-  twisterx::util::sort_table(left_table, 0, &sorted_table, pool);
+  cylon::util::sort_table(left_table, 0, &sorted_table, pool);
 
   for (int i = 0; i < count; i++) {
 	auto key = std::static_pointer_cast<arrow::Int64Array>(sorted_table->column(0)->chunk(0));
@@ -176,12 +176,12 @@ void join_test(bool sort, int count) {
   auto t1 = std::chrono::high_resolution_clock::now();
   arrow::Status status;
   if (sort) {
-	status = twisterx::util::sort_table(left_table, 0, &left_table, pool);
+	status = cylon::util::sort_table(left_table, 0, &left_table, pool);
 	if (status != arrow::Status::OK()) {
 	  LOG(FATAL) << "Failed to sort left table. " << status.ToString();
 	}
 
-	status = twisterx::util::sort_table(right_table, 0, &right_table, pool);
+	status = cylon::util::sort_table(right_table, 0, &right_table, pool);
 	if (status != arrow::Status::OK()) {
 	  LOG(FATAL) << "Failed to sort right table. " << status.ToString();
 	}
@@ -194,9 +194,9 @@ void join_test(bool sort, int count) {
   LOG(INFO) << "joining...";
   t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::Table> joined_table;
-  twisterx::join::config::JoinConfig
-	  joinConfig(twisterx::join::config::JoinType::INNER, 0, 0, twisterx::join::config::JoinAlgorithm::SORT);
-  status = twisterx::join::joinTables(
+  cylon::join::config::JoinConfig
+	  joinConfig(cylon::join::config::JoinType::INNER, 0, 0, cylon::join::config::JoinAlgorithm::SORT);
+  status = cylon::join::joinTables(
 	  left_table,
 	  right_table,
 	  joinConfig,

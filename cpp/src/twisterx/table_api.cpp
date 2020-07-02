@@ -34,7 +34,7 @@
 #include "arrow/arrow_comparator.h"
 #include "ctx/arrow_memory_pool_utils.h"
 
-namespace twisterx {
+namespace cylon {
 
 std::map<std::string, std::shared_ptr<arrow::Table>> table_map{}; //todo make this un ordered
 
@@ -52,7 +52,7 @@ void PutTable(const std::string &id, const std::shared_ptr<arrow::Table> &table)
 }
 
 std::string PutTable(const std::shared_ptr<arrow::Table> &table) {
-  auto id = twisterx::util::uuid::generate_uuid_v4();
+  auto id = cylon::util::uuid::generate_uuid_v4();
   std::pair<std::string, std::shared_ptr<arrow::Table>> pair(id, table);
   table_map.insert(pair);
   return id;
@@ -62,48 +62,48 @@ void RemoveTable(const std::string &id) {
   table_map.erase(id);
 }
 
-twisterx::Status ReadCSV(twisterx::TwisterXContext *ctx,
-                         const std::string &path,
-                         const std::string &id,
-                         twisterx::io::config::CSVReadOptions options) {
-  arrow::Result<std::shared_ptr<arrow::Table>> result = twisterx::io::read_csv(ctx, path, options);
+cylon::Status ReadCSV(cylon::CylonContext *ctx,
+                      const std::string &path,
+                      const std::string &id,
+                      cylon::io::config::CSVReadOptions options) {
+  arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::read_csv(ctx, path, options);
   if (result.ok()) {
     std::shared_ptr<arrow::Table> table = *result;
     LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
     if (table->column(0)->chunks().size() > 1) {
       auto status = table->CombineChunks(ToArrowPool(ctx), &table);
       if (!status.ok()) {
-        return twisterx::Status(Code::IOError, status.message());;
+        return cylon::Status(Code::IOError, status.message());;
       }
     }
     PutTable(id, table);
-    return twisterx::Status(Code::OK, result.status().message());
+    return cylon::Status(Code::OK, result.status().message());
   }
-  return twisterx::Status(Code::IOError, result.status().message());;
+  return cylon::Status(Code::IOError, result.status().message());;
 }
 
-void ReadCSVThread(twisterx::TwisterXContext *ctx, const std::string &path,
+void ReadCSVThread(cylon::CylonContext *ctx, const std::string &path,
                    const std::string &id,
-                   twisterx::io::config::CSVReadOptions options,
-                   const std::shared_ptr<std::promise<twisterx::Status>> &status_promise) {
+                   cylon::io::config::CSVReadOptions options,
+                   const std::shared_ptr<std::promise<cylon::Status>> &status_promise) {
   status_promise->set_value(ReadCSV(ctx, path, id, options));
 }
 
-twisterx::Status ReadCSV(twisterx::TwisterXContext *ctx,
-                         const std::vector<std::string> &paths,
-                         const std::vector<std::string> &ids,
-                         twisterx::io::config::CSVReadOptions options) {
+cylon::Status ReadCSV(cylon::CylonContext *ctx,
+                      const std::vector<std::string> &paths,
+                      const std::vector<std::string> &ids,
+                      cylon::io::config::CSVReadOptions options) {
 
   if (paths.size() != ids.size()) {
-    return twisterx::Status(twisterx::Invalid, "Size of paths and ids mismatch.");
+    return cylon::Status(cylon::Invalid, "Size of paths and ids mismatch.");
   }
 
   if (options.IsConcurrentFileReads()) {
-    std::vector<std::pair<std::future<twisterx::Status>, std::thread>> futures;
+    std::vector<std::pair<std::future<cylon::Status>, std::thread>> futures;
     futures.reserve(paths.size());
     for (uint64_t kI = 0; kI < paths.size(); ++kI) {
-      auto read_promise = std::make_shared<std::promise<twisterx::Status>>();
-      futures.push_back(std::pair<std::future<twisterx::Status>, std::thread>
+      auto read_promise = std::make_shared<std::promise<cylon::Status>>();
+      futures.push_back(std::pair<std::future<cylon::Status>, std::thread>
                             (read_promise->get_future(),
                              std::thread(ReadCSVThread,
                                          ctx,
@@ -117,9 +117,9 @@ twisterx::Status ReadCSV(twisterx::TwisterXContext *ctx,
       all_passed &= future.first.get().is_ok();
       future.second.join();
     }
-    return all_passed ? twisterx::Status::OK() : twisterx::Status(twisterx::IOError, "Failed to read the csv files");
+    return all_passed ? cylon::Status::OK() : cylon::Status(cylon::IOError, "Failed to read the csv files");
   } else {
-    auto status = twisterx::Status::OK();
+    auto status = cylon::Status::OK();
     for (int kI = 0; kI < paths.size(); ++kI) {
       status = ReadCSV(ctx, paths[kI], ids[kI], options);
       if (!status.is_ok()) {
@@ -130,42 +130,42 @@ twisterx::Status ReadCSV(twisterx::TwisterXContext *ctx,
   }
 }
 
-twisterx::Status WriteCSV(const std::string &id, const std::string &path,
-                          const twisterx::io::config::CSVWriteOptions &options) {
+cylon::Status WriteCSV(const std::string &id, const std::string &path,
+                       const cylon::io::config::CSVWriteOptions &options) {
   auto table = GetTable(id);
   std::ofstream out_csv;
   out_csv.open(path);
-  twisterx::Status status = PrintToOStream(id, 0,
-                                           table->num_columns(), 0,
-                                           table->num_rows(), out_csv,
-                                           options.GetDelimiter(),
-                                           options.IsOverrideColumnNames(),
-                                           options.GetColumnNames());
+  cylon::Status status = PrintToOStream(id, 0,
+                                        table->num_columns(), 0,
+                                        table->num_rows(), out_csv,
+                                        options.GetDelimiter(),
+                                        options.IsOverrideColumnNames(),
+                                        options.GetColumnNames());
   out_csv.close();
   return status;
 }
 
-twisterx::Status Print(const std::string &table_id, int col1, int col2, int row1, int row2) {
+cylon::Status Print(const std::string &table_id, int col1, int col2, int row1, int row2) {
   return PrintToOStream(table_id, col1, col2, row1, row2, std::cout);
 }
 
-twisterx::Status PrintToOStream(const std::string &table_id,
-                                int col1,
-                                int col2,
-                                int row1,
-                                int row2,
-                                std::ostream &out,
-                                char delimiter,
-                                bool use_custom_header,
-                                const std::vector<std::string> &headers) {
+cylon::Status PrintToOStream(const std::string &table_id,
+                             int col1,
+                             int col2,
+                             int row1,
+                             int row2,
+                             std::ostream &out,
+                             char delimiter,
+                             bool use_custom_header,
+                             const std::vector<std::string> &headers) {
   auto table = GetTable(table_id);
   if (table != NULLPTR) {
     // print the headers
     if (use_custom_header) {
       // check if the headers are valid
       if (headers.size() != table->num_columns()) {
-        return twisterx::Status(twisterx::Code::IndexError,
-                                "Provided headers doesn't match with the number of columns of the table. Given "
+        return cylon::Status(cylon::Code::IndexError,
+                             "Provided headers doesn't match with the number of columns of the table. Given "
                                     + std::to_string(headers.size())
                                     + ", Expected " + std::to_string(table->num_columns()));
       }
@@ -187,7 +187,7 @@ twisterx::Status PrintToOStream(const std::string &table_id,
           auto array = column->chunk(chunk);
           if (rowCount <= row && rowCount + array->length() > row) {
             // print this array
-            out << twisterx::util::array_to_string(array, row - rowCount);
+            out << cylon::util::array_to_string(array, row - rowCount);
             if (col != col2 - 1) {
 
               out << delimiter;
@@ -200,14 +200,14 @@ twisterx::Status PrintToOStream(const std::string &table_id,
       out << std::endl;
     }
   }
-  return twisterx::Status(Code::OK);
+  return cylon::Status(Code::OK);
 }
 
-twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
-                         const std::string &table_id,
-                         const std::vector<int> &hash_columns,
-                         int edge_id,
-                         std::shared_ptr<arrow::Table> *table_out) {
+cylon::Status Shuffle(cylon::CylonContext *ctx,
+                      const std::string &table_id,
+                      const std::vector<int> &hash_columns,
+                      int edge_id,
+                      std::shared_ptr<arrow::Table> *table_out) {
   auto table = GetTable(table_id);
 
   std::unordered_map<int, std::string> partitioned_tables{};
@@ -220,7 +220,7 @@ twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
   vector<std::shared_ptr<arrow::Table>> received_tables;
 
   // define call back to catch the receiving tables
-  class AllToAllListener : public twisterx::ArrowCallback {
+  class AllToAllListener : public cylon::ArrowCallback {
 
     vector<std::shared_ptr<arrow::Table>> *tabs;
     int workerId;
@@ -238,9 +238,9 @@ twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
   };
 
   // doing all to all communication to exchange tables
-  twisterx::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
-                                     std::make_shared<AllToAllListener>(&received_tables, ctx->GetRank()),
-                                     table->schema(), twisterx::ToArrowPool(ctx));
+  cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
+                                  std::make_shared<AllToAllListener>(&received_tables, ctx->GetRank()),
+                                  table->schema(), cylon::ToArrowPool(ctx));
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
       all_to_all.insert(GetTable(partitioned_table.second), partitioned_table.first);
@@ -261,20 +261,20 @@ twisterx::Status Shuffle(twisterx::TwisterXContext *ctx,
   if (concat_tables.ok()) {
     auto final_table = concat_tables.ValueOrDie();
     LOG(INFO) << "Done concatenating tables, rows :  " << final_table->num_rows();
-    auto status = final_table->CombineChunks(twisterx::ToArrowPool(ctx), table_out);
-    return twisterx::Status((int) status.code(), status.message());
+    auto status = final_table->CombineChunks(cylon::ToArrowPool(ctx), table_out);
+    return cylon::Status((int) status.code(), status.message());
   } else {
-    return twisterx::Status((int) concat_tables.status().code(), concat_tables.status().message());
+    return cylon::Status((int) concat_tables.status().code(), concat_tables.status().message());
   }
 }
 
-twisterx::Status ShuffleTwoTables(twisterx::TwisterXContext *ctx,
-                                  const std::string &left_table_id,
-                                  const std::vector<int> &left_hash_columns,
-                                  const std::string &right_table_id,
-                                  const std::vector<int> &right_hash_columns,
-                                  std::shared_ptr<arrow::Table> *left_table_out,
-                                  std::shared_ptr<arrow::Table> *right_table_out) {
+cylon::Status ShuffleTwoTables(cylon::CylonContext *ctx,
+                               const std::string &left_table_id,
+                               const std::vector<int> &left_hash_columns,
+                               const std::string &right_table_id,
+                               const std::vector<int> &right_hash_columns,
+                               std::shared_ptr<arrow::Table> *left_table_out,
+                               std::shared_ptr<arrow::Table> *right_table_out) {
   LOG(INFO) << "Shuffling two tables with total rows : "
             << GetTable(left_table_id)->num_rows() + GetTable(right_table_id)->num_rows();
   auto status = Shuffle(ctx, left_table_id, left_hash_columns, ctx->GetNextSequence(), left_table_out);
@@ -285,11 +285,11 @@ twisterx::Status ShuffleTwoTables(twisterx::TwisterXContext *ctx,
   return status;
 }
 
-twisterx::Status DistributedJoinTables(twisterx::TwisterXContext *ctx,
-                                       const std::string &table_left,
-                                       const std::string &table_right,
-                                       twisterx::join::config::JoinConfig join_config,
-                                       const std::string &dest_id) {
+cylon::Status DistributedJoinTables(cylon::CylonContext *ctx,
+                                    const std::string &table_left,
+                                    const std::string &table_right,
+                                    cylon::join::config::JoinConfig join_config,
+                                    const std::string &dest_id) {
   // extract the tables out
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
@@ -302,10 +302,10 @@ twisterx::Status DistributedJoinTables(twisterx::TwisterXContext *ctx,
         right,
         join_config,
         &table,
-        twisterx::ToArrowPool(ctx)
+        cylon::ToArrowPool(ctx)
     );
     PutTable(dest_id, table);
-    return twisterx::Status((int) status.code(), status.message());
+    return cylon::Status((int) status.code(), status.message());
   }
 
   std::vector<int> left_hash_columns;
@@ -333,27 +333,27 @@ twisterx::Status DistributedJoinTables(twisterx::TwisterXContext *ctx,
         right_final_table,
         join_config,
         &table,
-        twisterx::ToArrowPool(ctx)
+        cylon::ToArrowPool(ctx)
     );
     PutTable(dest_id, table);
-    return twisterx::Status((int) status.code(), status.message());
+    return cylon::Status((int) status.code(), status.message());
   } else {
     return shuffle_status;
   }
 }
 
-twisterx::Status JoinTables(twisterx::TwisterXContext *ctx,
-                            const std::string &table_left,
-                            const std::string &table_right,
-                            twisterx::join::config::JoinConfig join_config,
-                            const std::string &dest_id) {
+cylon::Status JoinTables(cylon::CylonContext *ctx,
+                         const std::string &table_left,
+                         const std::string &table_right,
+                         cylon::join::config::JoinConfig join_config,
+                         const std::string &dest_id) {
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
 
   if (left == NULLPTR) {
-    return twisterx::Status(Code::KeyError, "Couldn't find the left table");
+    return cylon::Status(Code::KeyError, "Couldn't find the left table");
   } else if (right == NULLPTR) {
-    return twisterx::Status(Code::KeyError, "Couldn't find the right table");
+    return cylon::Status(Code::KeyError, "Couldn't find the right table");
   } else {
     std::shared_ptr<arrow::Table> table;
     arrow::Status status = join::joinTables(
@@ -361,10 +361,10 @@ twisterx::Status JoinTables(twisterx::TwisterXContext *ctx,
         right,
         join_config,
         &table,
-        twisterx::ToArrowPool(ctx)
+        cylon::ToArrowPool(ctx)
     );
     PutTable(dest_id, table);
-    return twisterx::Status((int) status.code(), status.message());
+    return cylon::Status((int) status.code(), status.message());
   }
 }
 
@@ -384,9 +384,9 @@ int64_t RowCount(const std::string &id) {
   return -1;
 }
 
-twisterx::Status Merge(twisterx::TwisterXContext *ctx,
-                       std::vector<std::string> table_ids,
-                       const std::string &merged_tab) {
+cylon::Status Merge(cylon::CylonContext *ctx,
+                    std::vector<std::string> table_ids,
+                    const std::string &merged_tab) {
   std::vector<std::shared_ptr<arrow::Table>> tables;
   for (auto it = table_ids.begin(); it < table_ids.end(); it++) {
     tables.push_back(GetTable(*it));
@@ -394,18 +394,18 @@ twisterx::Status Merge(twisterx::TwisterXContext *ctx,
   arrow::Result<std::shared_ptr<arrow::Table>> result = arrow::ConcatenateTables(tables);
   if (result.status() == arrow::Status::OK()) {
     std::shared_ptr<arrow::Table> combined;
-    result.ValueOrDie()->CombineChunks(twisterx::ToArrowPool(ctx), &combined);
+    result.ValueOrDie()->CombineChunks(cylon::ToArrowPool(ctx), &combined);
     PutTable(merged_tab, combined);
-    return twisterx::Status::OK();
+    return cylon::Status::OK();
   } else {
-    return twisterx::Status((int) result.status().code(), result.status().message());
+    return cylon::Status((int) result.status().code(), result.status().message());
   }
 }
 
-twisterx::Status SortTable(twisterx::TwisterXContext *ctx,
-                           const std::string &id,
-                           const std::string &sortedTableId,
-                           int columnIndex) {
+cylon::Status SortTable(cylon::CylonContext *ctx,
+                        const std::string &id,
+                        const std::string &sortedTableId,
+                        int columnIndex) {
   auto table = GetTable(id);
   if (table == NULLPTR) {
     LOG(FATAL) << "Failed to retrieve table";
@@ -413,21 +413,21 @@ twisterx::Status SortTable(twisterx::TwisterXContext *ctx,
   }
   auto col = table->column(columnIndex)->chunk(0);
   std::shared_ptr<arrow::Array> indexSorts;
-  arrow::Status status = SortIndices(twisterx::ToArrowPool(ctx), col, &indexSorts);
+  arrow::Status status = SortIndices(cylon::ToArrowPool(ctx), col, &indexSorts);
 
   if (status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed when sorting table to indices. " << status.ToString();
-    return twisterx::Status((int) status.code(), status.message());
+    return cylon::Status((int) status.code(), status.message());
   }
 
   std::vector<std::shared_ptr<arrow::Array>> data_arrays;
   for (auto &column : table->columns()) {
     std::shared_ptr<arrow::Array> destination_col_array;
-    status = twisterx::util::copy_array_by_indices(nullptr, column->chunk(0),
-                                                   &destination_col_array, twisterx::ToArrowPool(ctx));
+    status = cylon::util::copy_array_by_indices(nullptr, column->chunk(0),
+                                                &destination_col_array, cylon::ToArrowPool(ctx));
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed while copying a column to the final table from left table. " << status.ToString();
-      return twisterx::Status((int) status.code(), status.message());
+      return cylon::Status((int) status.code(), status.message());
     }
     data_arrays.push_back(destination_col_array);
   }
@@ -437,11 +437,11 @@ twisterx::Status SortTable(twisterx::TwisterXContext *ctx,
   return Status::OK();
 }
 
-twisterx::Status HashPartition(twisterx::TwisterXContext *ctx,
-                               const std::string &id,
-                               const std::vector<int> &hash_columns,
-                               int no_of_partitions,
-                               std::unordered_map<int, std::string> *out) {
+cylon::Status HashPartition(cylon::CylonContext *ctx,
+                            const std::string &id,
+                            const std::vector<int> &hash_columns,
+                            int no_of_partitions,
+                            std::unordered_map<int, std::string> *out) {
   std::shared_ptr<arrow::Table> left_tab = GetTable(id);
   // keep arrays for each target, these arrays are used for creating the table
   std::unordered_map<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>> data_arrays;
@@ -462,15 +462,15 @@ twisterx::Status HashPartition(twisterx::TwisterXContext *ctx,
     arrays.push_back(array);
 
     if (!(length == 0 || length == column->length())) {
-      return twisterx::Status(twisterx::IndexError, "Column lengths doesnt match " + std::to_string(length));
+      return cylon::Status(cylon::IndexError, "Column lengths doesnt match " + std::to_string(length));
     }
     length = column->length();
   }
 
   // first we partition the table
   std::vector<int64_t> outPartitions;
-  twisterx::Status
-      status = HashPartitionArrays(twisterx::ToArrowPool(ctx), arrays, length, partitions, &outPartitions);
+  cylon::Status
+      status = HashPartitionArrays(cylon::ToArrowPool(ctx), arrays, length, partitions, &outPartitions);
   if (!status.is_ok()) {
     LOG(FATAL) << "Failed to create the hash partition";
     return status;
@@ -481,7 +481,7 @@ twisterx::Status HashPartition(twisterx::TwisterXContext *ctx,
     std::shared_ptr<arrow::Array> array = left_tab->column(i)->chunk(0);
 
     std::shared_ptr<ArrowArraySplitKernel> splitKernel;
-    status = CreateSplitter(type, twisterx::ToArrowPool(ctx), &splitKernel);
+    status = CreateSplitter(type, cylon::ToArrowPool(ctx), &splitKernel);
     if (!status.is_ok()) {
       LOG(FATAL) << "Failed to create the splitter";
       return status;
@@ -501,13 +501,13 @@ twisterx::Status HashPartition(twisterx::TwisterXContext *ctx,
     std::shared_ptr<arrow::Table> table = arrow::Table::Make(left_tab->schema(), *x.second);
     out->insert(std::pair<int, std::string>(x.first, PutTable(table)));
   }
-  return twisterx::Status::OK();
+  return cylon::Status::OK();
 }
 
-twisterx::Status Union(twisterx::TwisterXContext *ctx,
-                       const std::string &table_left,
-                       const std::string &table_right,
-                       const std::string &dest_id) {
+cylon::Status Union(cylon::CylonContext *ctx,
+                    const std::string &table_left,
+                    const std::string &table_right,
+                    const std::string &dest_id) {
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
 
@@ -516,12 +516,12 @@ twisterx::Status Union(twisterx::TwisterXContext *ctx,
   // manual field check. todo check why  ltab->schema()->Equals(rtab->schema(), false) doesn't work
 
   if (ltab->num_columns() != rtab->num_columns()) {
-    return twisterx::Status(twisterx::Invalid, "The no of columns of two tables are not similar. Can't perform union.");
+    return cylon::Status(cylon::Invalid, "The no of columns of two tables are not similar. Can't perform union.");
   }
 
   for (int fd = 0; fd < ltab->num_columns(); ++fd) {
     if (!ltab->field(fd)->type()->Equals(rtab->field(fd)->type())) {
-      return twisterx::Status(twisterx::Invalid, "The fields of two tables are not similar. Can't perform union.");
+      return cylon::Status(cylon::Invalid, "The fields of two tables are not similar. Can't perform union.");
     }
   }
 
@@ -530,18 +530,18 @@ twisterx::Status Union(twisterx::TwisterXContext *ctx,
   class RowComparator {
    private:
     const std::shared_ptr<arrow::Table> *tables;
-    twisterx::TableRowComparator *comparator;
-    twisterx::RowHashingKernel *row_hashing_kernel;
+    cylon::TableRowComparator *comparator;
+    cylon::RowHashingKernel *row_hashing_kernel;
     int64_t *eq, *hs;
    public:
-    RowComparator(twisterx::TwisterXContext *ctx,
+    RowComparator(cylon::CylonContext *ctx,
                   const std::shared_ptr<arrow::Table> *tables,
                   int64_t *eq,
                   int64_t *hs) {
       this->tables = tables;
-      this->comparator = new twisterx::TableRowComparator(tables[0]->fields());
+      this->comparator = new cylon::TableRowComparator(tables[0]->fields());
       this->row_hashing_kernel =
-          new twisterx::RowHashingKernel(tables[0]->fields(), twisterx::ToArrowPool(ctx));
+          new cylon::RowHashingKernel(tables[0]->fields(), cylon::ToArrowPool(ctx));
       this->eq = eq;
       this->hs = hs;
     }
@@ -615,13 +615,13 @@ twisterx::Status Union(twisterx::TwisterXContext *ctx,
       std::shared_ptr<arrow::Array> destination_col_array;
       arrow::Status
           status =
-          twisterx::util::copy_array_by_indices(std::make_shared<std::vector<int64_t>>(indices_from_tabs[tab_idx]),
-                                                tables[tab_idx]->column(c)->chunk(0),
-                                                &destination_col_array,
-                                                twisterx::ToArrowPool(ctx));
+          cylon::util::copy_array_by_indices(std::make_shared<std::vector<int64_t>>(indices_from_tabs[tab_idx]),
+                                             tables[tab_idx]->column(c)->chunk(0),
+                                             &destination_col_array,
+                                             cylon::ToArrowPool(ctx));
       if (status != arrow::Status::OK()) {
         LOG(FATAL) << "Failed while copying a column to the final table from tables." << status.ToString();
-        return twisterx::Status((int) status.code(), status.message());
+        return cylon::Status((int) status.code(), status.message());
       }
       array_vector.push_back(destination_col_array);
     }
@@ -636,13 +636,13 @@ twisterx::Status Union(twisterx::TwisterXContext *ctx,
   // create final table
   std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
   PutTable(dest_id, table);
-  return twisterx::Status::OK();
+  return cylon::Status::OK();
 }
 
-twisterx::Status DistributedUnion(twisterx::TwisterXContext *ctx,
-                                  const std::string &table_left,
-                                  const std::string &table_right,
-                                  const std::string &dest_id) {
+cylon::Status DistributedUnion(cylon::CylonContext *ctx,
+                               const std::string &table_left,
+                               const std::string &table_right,
+                               const std::string &dest_id) {
   // extract the tables out
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
@@ -652,12 +652,12 @@ twisterx::Status DistributedUnion(twisterx::TwisterXContext *ctx,
   }
 
   if (left->num_columns() != right->num_columns()) {
-    return twisterx::Status(twisterx::Invalid, "The no of columns of two tables are not similar. Can't perform union.");
+    return cylon::Status(cylon::Invalid, "The no of columns of two tables are not similar. Can't perform union.");
   }
 
   for (int fd = 0; fd < left->num_columns(); ++fd) {
     if (!left->field(fd)->type()->Equals(right->field(fd)->type())) {
-      return twisterx::Status(twisterx::Invalid, "The fields of two tables are not similar. Can't perform union.");
+      return cylon::Status(cylon::Invalid, "The fields of two tables are not similar. Can't perform union.");
     }
   }
 
@@ -696,21 +696,21 @@ twisterx::Status DistributedUnion(twisterx::TwisterXContext *ctx,
 
 }
 
-Status Select(twisterx::TwisterXContext *ctx,
+Status Select(cylon::CylonContext *ctx,
               const std::string &id,
-              const std::function<bool(twisterx::Row)> &selector,
+              const std::function<bool(cylon::Row)> &selector,
               const std::string &out) {
 
   auto src_table = GetTable(id);
 
   // boolean builder to hold the mask
-  arrow::BooleanBuilder boolean_builder(twisterx::ToArrowPool(ctx));
+  arrow::BooleanBuilder boolean_builder(cylon::ToArrowPool(ctx));
 
   for (int64_t row_index = 0; row_index < src_table->num_rows(); row_index++) {
-    auto row = twisterx::Row(id, row_index);
+    auto row = cylon::Row(id, row_index);
     arrow::Status status = boolean_builder.Append(selector(row));
     if (!status.ok()) {
-      return twisterx::Status(UnknownError, status.message());
+      return cylon::Status(UnknownError, status.message());
     }
   }
 
@@ -719,18 +719,18 @@ Status Select(twisterx::TwisterXContext *ctx,
   arrow::Status status = boolean_builder.Finish(&mask);
 
   if (!status.ok()) {
-    return twisterx::Status(UnknownError, status.message());
+    return cylon::Status(UnknownError, status.message());
   }
 
   std::shared_ptr<arrow::Table> out_table;
   arrow::compute::FunctionContext func_ctx;
   status = arrow::compute::Filter(&func_ctx, *src_table, *mask, &out_table);
   if (!status.ok()) {
-    return twisterx::Status(UnknownError, status.message());
+    return cylon::Status(UnknownError, status.message());
   }
 
   PutTable(out, out_table);
-  return twisterx::Status::OK();
+  return cylon::Status::OK();
 }
 
 Status Project(const std::string &id, const std::vector<int64_t> &project_columns, const std::string &out) {
@@ -750,6 +750,6 @@ Status Project(const std::string &id, const std::vector<int64_t> &project_column
   std::shared_ptr<arrow::Table> projected_table = arrow::Table::Make(schema, column_arrays);
 
   PutTable(out, projected_table);
-  return twisterx::Status::OK();
+  return cylon::Status::OK();
 }
 }

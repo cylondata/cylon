@@ -14,10 +14,10 @@
 
 #include "arrow_kernels.hpp"
 
-namespace twisterx {
-twisterx::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
-								arrow::MemoryPool *pool,
-								std::shared_ptr<ArrowArraySplitKernel> *out) {
+namespace cylon {
+cylon::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
+                             arrow::MemoryPool *pool,
+                             std::shared_ptr<ArrowArraySplitKernel> *out) {
   ArrowArraySplitKernel *kernel;
   switch (type->id()) {
 	case arrow::Type::UINT8:kernel = new UInt8ArraySplitter(type, pool);
@@ -45,10 +45,10 @@ twisterx::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
 	case arrow::Type::BINARY:kernel = new BinaryArraySplitKernel(type, pool);
 	  break;
 	default:LOG(FATAL) << "Un-known type";
-	  return twisterx::Status(twisterx::NotImplemented, "This type not implemented");
+	  return cylon::Status(cylon::NotImplemented, "This type not implemented");
   }
   out->reset(kernel);
-  return twisterx::Status::OK();
+  return cylon::Status::OK();
 }
 
 int FixedBinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,

@@ -26,7 +26,7 @@ add_library(twisterx SHARED
         util/uuid.hpp util/uuid.cpp
         net/TxRequest.h net/TxRequest.cpp
         util/builtins.h util/builtins.cpp
-        ctx/twisterx_context.h ctx/twisterx_context.cpp table_api_extended.hpp
+        ctx/cylon_context.h ctx/cylon_context.cpp table_api_extended.hpp
         io/csv_write_config.h io/csv_write_config.cpp
         arrow/arrow_hash_kernels.hpp
         arrow/arrow_comparator.h arrow/arrow_comparator.cpp

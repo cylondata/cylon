@@ -20,12 +20,12 @@
 
 #include "../data_types.hpp"
 
-namespace twisterx {
+namespace cylon {
 namespace tarrow {
 
 /**
- * Convert a twisterx type to an arrow type
- * @param tType the twisterx type
+ * Convert a cylon type to an arrow type
+ * @param tType the cylon type
  * @return corresponding arrow type
  */
 std::shared_ptr<arrow::DataType> convertToArrowType(std::shared_ptr<DataType> tType);

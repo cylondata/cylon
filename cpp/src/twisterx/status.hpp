@@ -17,7 +17,7 @@
 #include "string"
 #include "code.cpp"
 
-namespace twisterx {
+namespace cylon {
 class Status {
 
  private:
@@ -57,7 +57,7 @@ class Status {
   }
 
   static Status OK() {
-	return twisterx::Status(Code::OK);
+	return cylon::Status(Code::OK);
   }
 
   std::string get_msg() {

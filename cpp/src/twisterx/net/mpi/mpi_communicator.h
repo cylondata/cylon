@@ -16,7 +16,7 @@
 #define TWISTERX_SRC_TWISTERX_COMM_MPICOMMUNICATOR_H_
 #include "../comm_config.h"
 #include "../communicator.h"
-namespace twisterx {
+namespace cylon {
 namespace net {
 
 class MPIConfig : public CommConfig {

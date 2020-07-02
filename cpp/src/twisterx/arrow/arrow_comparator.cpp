@@ -13,7 +13,7 @@
  */
 
 #include "arrow_comparator.h"
-namespace twisterx {
+namespace cylon {
 
 template<typename ARROW_TYPE>
 class NumericArrowComparator : public ArrowComparator {
@@ -101,7 +101,7 @@ int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1,
                                 const std::shared_ptr<arrow::Table> &table2,
                                 int64_t index2) {
   // not doing schema validations here due to performance overheads. Don't expect users to use this function.
-  // before calling this function from an internal twisterx function, schema validation should be done to make sure
+  // before calling this function from an internal cylon function, schema validation should be done to make sure
   // table1 and table2 has the same schema.
   for (int c = 0; c < table1->num_columns(); ++c) {
     int comparision =

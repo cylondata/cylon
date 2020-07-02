@@ -17,7 +17,7 @@
 #include <glog/logging.h>
 #include "arrow_utils.hpp"
 
-namespace twisterx {
+namespace cylon {
 namespace util {
 
 template<typename TYPE>
@@ -190,4 +190,4 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table) {
 }
 
 } // namespace util
-} // namespace twisterx
+} // namespace cylon

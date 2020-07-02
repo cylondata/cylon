@@ -17,13 +17,13 @@
 
 #include <string>
 #include "csv_read_config.h"
-#include "../ctx/twisterx_context.h"
-namespace twisterx {
+#include "../ctx/cylon_context.h"
+namespace cylon {
 namespace io {
 
-arrow::Result<std::shared_ptr<arrow::Table>> read_csv(twisterx::TwisterXContext *ctx,
+arrow::Result<std::shared_ptr<arrow::Table>> read_csv(cylon::CylonContext *ctx,
                                                       const std::string &path,
-                                                      twisterx::io::config::CSVReadOptions options = twisterx::io::config::CSVReadOptions());
+                                                      cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 
 }
 }

@@ -20,7 +20,7 @@
 #include <glog/logging.h>
 #include "../status.hpp"
 
-namespace twisterx {
+namespace cylon {
 
 class ArrowArraySplitKernel {
  public:
@@ -118,9 +118,9 @@ using HalfFloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::HalfFloatType
 using FloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::FloatType>;
 using DoubleArraySplitter = ArrowArrayNumericSplitKernel<arrow::DoubleType>;
 
-twisterx::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
-								arrow::MemoryPool *pool,
-								std::shared_ptr<ArrowArraySplitKernel> *out);
+cylon::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
+                             arrow::MemoryPool *pool,
+                             std::shared_ptr<ArrowArraySplitKernel> *out);
 
 class ArrowArraySortKernel {
  public:

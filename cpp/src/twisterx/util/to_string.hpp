@@ -17,7 +17,7 @@
 
 #include <string>
 #include <arrow/array.h>
-namespace twisterx {
+namespace cylon {
 namespace util {
 
 template<typename TYPE>

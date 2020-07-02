@@ -75,7 +75,7 @@ spark_master = "spark://v-001:7077"
 print("\n\n##### cleaning up hdfs dfs", flush=True)
 os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
 
-PYTHON_EXEC = "~/victor/git/twisterx/ENV/bin/python"
+PYTHON_EXEC = "~/victor/git/cylon/ENV/bin/python"
 
 TOTAL_NODES = 10
 
@@ -154,7 +154,7 @@ for i in row_cases:
                 join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
                             f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
                             f"{hostfile} --bind-to socket -np {w} " \
-                            f"java -Xmx4g -Xms4g -cp ~/victor/git/twisterx/java/target/twisterx-0.1-SNAPSHOT-jar-with-dependencies.jar org.twisterx.examples.DistributedJoinExample {s_dir} {b_dir}"
+                            f"java -Xmx4g -Xms4g -cp ~/victor/git/cylon/java/target/cylon-0.1-SNAPSHOT-jar-with-dependencies.jar org.cylon.examples.DistributedJoinExample {s_dir} {b_dir}"
                 print("\n\n##### running", join_exec, flush=True)
 
                 for r in range(repetitions):

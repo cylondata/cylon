@@ -17,7 +17,7 @@
 
 using namespace std;
 
-void twisterx::util::printArray(void *buf, int size, string dataType, int depth) {
+void cylon::util::printArray(void *buf, int size, string dataType, int depth) {
   if (dataType == "int") {
     if (depth == 8) {
       int8_t *int8Ptr = (int8_t *) buf;//getIntPointer<8>(buf);
@@ -44,48 +44,48 @@ void twisterx::util::printArray(void *buf, int size, string dataType, int depth)
   }
 
 }
-void twisterx::util::printInt8Array(int8_t *buf, int size) {
+void cylon::util::printInt8Array(int8_t *buf, int size) {
   for (int i = 0; i < size; ++i) {
     std::cout << buf[i] << " ";
   }
   std::cout << std::endl;
 }
 
-void twisterx::util::printInt16Array(int16_t *buf, int size) {
+void cylon::util::printInt16Array(int16_t *buf, int size) {
   for (int i = 0; i < size; ++i) {
     std::cout << buf[i] << " ";
   }
   std::cout << std::endl;
 }
-void twisterx::util::printInt32Array(int32_t *buf, int size) {
-  for (int i = 0; i < size; ++i) {
-    std::cout << buf[i] << " ";
-  }
-  std::cout << std::endl;
-}
-
-void twisterx::util::printInt64Array(int64_t *buf, int size) {
+void cylon::util::printInt32Array(int32_t *buf, int size) {
   for (int i = 0; i < size; ++i) {
     std::cout << buf[i] << " ";
   }
   std::cout << std::endl;
 }
 
-void twisterx::util::printFloatArray(float *buf, int size) {
+void cylon::util::printInt64Array(int64_t *buf, int size) {
   for (int i = 0; i < size; ++i) {
     std::cout << buf[i] << " ";
   }
   std::cout << std::endl;
 }
 
-void twisterx::util::printDoubleArray(double *buf, int size) {
+void cylon::util::printFloatArray(float *buf, int size) {
   for (int i = 0; i < size; ++i) {
     std::cout << buf[i] << " ";
   }
   std::cout << std::endl;
 }
 
-void twisterx::util::printLongArray(long *buf, int size) {
+void cylon::util::printDoubleArray(double *buf, int size) {
+  for (int i = 0; i < size; ++i) {
+    std::cout << buf[i] << " ";
+  }
+  std::cout << std::endl;
+}
+
+void cylon::util::printLongArray(long *buf, int size) {
   for (int i = 0; i < size; ++i) {
     std::cout << buf[i] << " ";
   }

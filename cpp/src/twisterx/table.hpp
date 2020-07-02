@@ -31,7 +31,7 @@
 #include "io/csv_write_config.h"
 #include "row.hpp"
 
-namespace twisterx {
+namespace cylon {
 
 /**
  * Table provides the main API for using TwisterX for data processing.
@@ -42,7 +42,7 @@ class Table {
   /**
    * Tables can only be created using the factory methods, so the constructor is private
    */
-  Table(std::string id, twisterx::TwisterXContext *ctx) {
+  Table(std::string id, cylon::CylonContext *ctx) {
     id_ = std::move(id);
     this->ctx = ctx;
   }
@@ -54,13 +54,13 @@ class Table {
    * @param path file path
    * @return a pointer to the table
    */
-  static Status FromCSV(twisterx::TwisterXContext *ctx, const std::string &path,
+  static Status FromCSV(cylon::CylonContext *ctx, const std::string &path,
                         std::shared_ptr<Table> &tableOut,
-                        const twisterx::io::config::CSVReadOptions &options = twisterx::io::config::CSVReadOptions());
+                        const cylon::io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
 
-  static Status FromCSV(twisterx::TwisterXContext *ctx, const std::vector<std::string> &paths,
+  static Status FromCSV(cylon::CylonContext *ctx, const std::vector<std::string> &paths,
                         const std::vector<std::shared_ptr<Table>> &tableOuts,
-                        const twisterx::io::config::CSVReadOptions &options = twisterx::io::config::CSVReadOptions());
+                        const cylon::io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
 
   /**
    * Create a table from set of columns
@@ -76,7 +76,7 @@ class Table {
    */
   static Status FromArrowTable(const std::shared_ptr<arrow::Table> &table);
 
-  static Status FromArrowTable(twisterx::TwisterXContext *ctx,
+  static Status FromArrowTable(cylon::CylonContext *ctx,
                                const std::shared_ptr<arrow::Table> &table,
                                std::shared_ptr<Table> *tableOut);
 
@@ -88,7 +88,7 @@ class Table {
    * @return the status of the operation
    */
   Status WriteCSV(const std::string &path,
-                  const twisterx::io::config::CSVWriteOptions &options = twisterx::io::config::CSVWriteOptions());
+                  const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
 
   /**
    * Partition the table based on the hash
@@ -98,15 +98,15 @@ class Table {
    */
   Status HashPartition(const std::vector<int> &hash_columns,
                        int no_of_partitions,
-                       std::vector<std::shared_ptr<twisterx::Table>> *out);
+                       std::vector<std::shared_ptr<cylon::Table>> *out);
 
   /**
    * Merge the set of tables to create a single table
    * @param tables
    * @return new merged table
    */
-  static Status Merge(twisterx::TwisterXContext *ctx,
-                      const std::vector<std::shared_ptr<twisterx::Table>> &tables,
+  static Status Merge(cylon::CylonContext *ctx,
+                      const std::vector<std::shared_ptr<cylon::Table>> &tables,
                       shared_ptr<Table> &tableOut);
 
   /**
@@ -124,20 +124,20 @@ class Table {
    * @return success
    */
   Status Join(const std::shared_ptr<Table> &right,
-              twisterx::join::config::JoinConfig join_config,
+              cylon::join::config::JoinConfig join_config,
               std::shared_ptr<Table> *out);
 
   Status DistributedJoin(const shared_ptr<Table> &right,
-                         twisterx::join::config::JoinConfig join_config,
+                         cylon::join::config::JoinConfig join_config,
                          std::shared_ptr<Table> *out);
 
   Status Union(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
 
-  Status DistributedUnion(twisterx::TwisterXContext *ctx,
+  Status DistributedUnion(cylon::CylonContext *ctx,
                           const std::shared_ptr<Table> &right,
                           std::shared_ptr<Table> &out);
 
-  Status Select(const std::function<bool(twisterx::Row)> &selector, std::shared_ptr<Table> &out);
+  Status Select(const std::function<bool(cylon::Row)> &selector, std::shared_ptr<Table> &out);
 
   /**
    * Create a arrow table from this data structure
@@ -179,7 +179,7 @@ class Table {
 
   void Clear();
 
-  twisterx::TwisterXContext *GetContext();
+  cylon::CylonContext *GetContext();
 
  private:
   /**
@@ -187,7 +187,7 @@ class Table {
    */
   std::string id_;
 
-  twisterx::TwisterXContext *ctx;
+  cylon::CylonContext *ctx;
 };
 }
 

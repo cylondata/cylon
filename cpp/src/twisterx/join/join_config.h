@@ -15,7 +15,7 @@
 #ifndef TWISTERX_SRC_TWISTERX_JOIN_JOIN_CONFIG_H_
 #define TWISTERX_SRC_TWISTERX_JOIN_JOIN_CONFIG_H_
 
-namespace twisterx {
+namespace cylon {
 namespace join {
 namespace config {
 
