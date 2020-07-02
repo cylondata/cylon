@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_IO_DATATYPES_H_
-#define TWISTERX_SRC_IO_DATATYPES_H_
+#ifndef CYLON_SRC_IO_DATATYPES_H_
+#define CYLON_SRC_IO_DATATYPES_H_
 
 namespace cylon {
 
@@ -127,4 +127,4 @@ class DataType {
 
 }
 
-#endif //TWISTERX_SRC_IO_DATATYPES_H_
+#endif //CYLON_SRC_IO_DATATYPES_H_

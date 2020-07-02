@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_IO_CSV_READ_CONFIG_HOLDER_HPP_
-#define TWISTERX_SRC_TWISTERX_IO_CSV_READ_CONFIG_HOLDER_HPP_
+#ifndef CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HOLDER_HPP_
+#define CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HOLDER_HPP_
 #include <arrow/csv/options.h>
 #include "csv_read_config.h"
 
@@ -37,4 +37,4 @@ class CSVConfigHolder : public arrow::csv::ReadOptions,
 }
 }
 }
-#endif //TWISTERX_SRC_TWISTERX_IO_CSV_READ_CONFIG_HOLDER_HPP_
+#endif //CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HOLDER_HPP_

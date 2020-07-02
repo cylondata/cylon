@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_JOIN_JOIN_UTILS_HPP_
-#define TWISTERX_SRC_JOIN_JOIN_UTILS_HPP_
+#ifndef CYLON_SRC_JOIN_JOIN_UTILS_HPP_
+#define CYLON_SRC_JOIN_JOIN_UTILS_HPP_
 
 #include <arrow/api.h>
 #include <map>
@@ -36,4 +36,4 @@ arrow::Status CombineChunks(const std::shared_ptr<arrow::Table> &table,
 }
 }
 }
-#endif //TWISTERX_SRC_JOIN_JOIN_UTILS_HPP_
+#endif //CYLON_SRC_JOIN_JOIN_UTILS_HPP_

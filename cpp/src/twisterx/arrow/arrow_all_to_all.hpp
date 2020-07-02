@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_ARROW_H
-#define TWISTERX_ARROW_H
+#ifndef CYLON_ARROW_H
+#define CYLON_ARROW_H
 
 #include <arrow/api.h>
 #include <arrow/table.h>
@@ -207,4 +207,4 @@ class ArrowAllToAll : public ReceiveCallback {
   arrow::MemoryPool *pool_;
 };
 }
-#endif //TWISTERX_ARROW_H
+#endif //CYLON_ARROW_H

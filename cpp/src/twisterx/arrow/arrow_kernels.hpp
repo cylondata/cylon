@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_ARROW_KERNELS_H
-#define TWISTERX_ARROW_KERNELS_H
+#ifndef CYLON_ARROW_KERNELS_H
+#define CYLON_ARROW_KERNELS_H
 
 #include <arrow/api.h>
 #include <arrow/compute/kernel.h>
@@ -194,4 +194,4 @@ arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow:
 
 }
 
-#endif //TWISTERX_ARROW_KERNELS_H
+#endif //CYLON_ARROW_KERNELS_H

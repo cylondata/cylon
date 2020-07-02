@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_UTIL_UUID_H_
-#define TWISTERX_SRC_UTIL_UUID_H_
+#ifndef CYLON_SRC_UTIL_UUID_H_
+#define CYLON_SRC_UTIL_UUID_H_
 
 #include <random>
 #include <sstream>
@@ -31,4 +31,4 @@ std::string generate_uuid_v4();
 }
 }
 
-#endif //TWISTERX_SRC_UTIL_UUID_H_
+#endif //CYLON_SRC_UTIL_UUID_H_

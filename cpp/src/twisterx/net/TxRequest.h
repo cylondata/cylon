@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_TXREQUEST_H
-#define TWISTERX_TXREQUEST_H
+#ifndef CYLON_TXREQUEST_H
+#define CYLON_TXREQUEST_H
 
 #include "iostream"
 using namespace std;
@@ -40,4 +40,4 @@ class TxRequest {
 };
 }
 
-#endif //TWISTERX_TXREQUEST_H
+#endif //CYLON_TXREQUEST_H

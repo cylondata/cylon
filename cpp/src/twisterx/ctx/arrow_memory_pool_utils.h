@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_CTX_ARROW_MEMORY_POOL_UTILS_H_
-#define TWISTERX_SRC_TWISTERX_CTX_ARROW_MEMORY_POOL_UTILS_H_
+#ifndef CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_H_
+#define CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_H_
 
 #include "arrow//memory_pool.h"
 #include "cylon_context.h"
@@ -63,4 +63,4 @@ class ProxyMemoryPool : public arrow::MemoryPool {
 arrow::MemoryPool *ToArrowPool(cylon::CylonContext *ctx);
 }
 
-#endif //TWISTERX_SRC_TWISTERX_CTX_ARROW_MEMORY_POOL_UTILS_H_
+#endif //CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_H_

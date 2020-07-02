@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_CHANNEL_H
-#define TWISTERX_CHANNEL_H
+#ifndef CYLON_CHANNEL_H
+#define CYLON_CHANNEL_H
 
 #include <vector>
 #include <memory>

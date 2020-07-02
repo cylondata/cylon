@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_MPI_CHANNEL_H
-#define TWISTERX_MPI_CHANNEL_H
+#ifndef CYLON_MPI_CHANNEL_H
+#define CYLON_MPI_CHANNEL_H
 
 #include "../channel.hpp"
 
@@ -23,8 +23,8 @@
 #include <mpi.h>
 #include <glog/logging.h>
 
-#define TWISTERX_CHANNEL_HEADER_SIZE 8
-#define TWISTERX_MSG_FIN 1
+#define CYLON_CHANNEL_HEADER_SIZE 8
+#define CYLON_MSG_FIN 1
 
 namespace cylon {
 enum SendStatus {
@@ -47,7 +47,7 @@ enum ReceiveStatus {
  */
 struct PendingSend {
   //  we allow upto 8 ints for the header
-  int headerBuf[TWISTERX_CHANNEL_HEADER_SIZE]{};
+  int headerBuf[CYLON_CHANNEL_HEADER_SIZE]{};
   std::queue<std::shared_ptr<TxRequest>> pendingData;
   SendStatus status = SEND_INIT;
   MPI_Request request{};
@@ -57,7 +57,7 @@ struct PendingSend {
 
 struct PendingReceive {
   // we allow upto 8 integer header
-  int headerBuf[TWISTERX_CHANNEL_HEADER_SIZE]{};
+  int headerBuf[CYLON_CHANNEL_HEADER_SIZE]{};
   int receiveId{};
   void *data{};
   int length{};

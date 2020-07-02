@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_MURMUR3_H
-#define TWISTERX_MURMUR3_H
+#ifndef CYLON_MURMUR3_H
+#define CYLON_MURMUR3_H
 
 #include <memory>
 #include <string>
@@ -29,4 +29,4 @@ void MurmurHash3_x64_128(const void *key, int len, uint32_t seed, void *out);
 }
 }
 
-#endif //TWISTERX_MURMER3_H
+#endif //CYLON_MURMER3_H

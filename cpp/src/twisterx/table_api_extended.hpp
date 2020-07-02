@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_TABLE_API_EXTENDED_HPP_
-#define TWISTERX_SRC_TWISTERX_TABLE_API_EXTENDED_HPP_
+#ifndef CYLON_SRC_CYLON_TABLE_API_EXTENDED_HPP_
+#define CYLON_SRC_CYLON_TABLE_API_EXTENDED_HPP_
 
 #include <arrow/api.h>
 
@@ -21,4 +21,4 @@ namespace cylon {
 std::shared_ptr<arrow::Table> GetTable(const std::string &id);
 void PutTable(const std::string &id, const std::shared_ptr<arrow::Table> &table);
 }
-#endif //TWISTERX_SRC_TWISTERX_TABLE_API_EXTENDED_HPP_
+#endif //CYLON_SRC_CYLON_TABLE_API_EXTENDED_HPP_

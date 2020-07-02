@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_UTIL_ARROW_UTILS_HPP_
-#define TWISTERX_SRC_UTIL_ARROW_UTILS_HPP_
+#ifndef CYLON_SRC_UTIL_ARROW_UTILS_HPP_
+#define CYLON_SRC_UTIL_ARROW_UTILS_HPP_
 #include <arrow/table.h>
 #include <arrow/compute/kernel.h>
 
@@ -42,4 +42,4 @@ arrow::Status SortToIndices(arrow::compute::FunctionContext *ctx, const arrow::A
                             std::shared_ptr<arrow::Array> *offsets);
 }
 }
-#endif //TWISTERX_SRC_UTIL_ARROW_UTILS_HPP_
+#endif //CYLON_SRC_UTIL_ARROW_UTILS_HPP_

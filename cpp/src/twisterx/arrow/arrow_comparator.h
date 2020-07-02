@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_ARROW_ARROW_COMPARATOR_H_
-#define TWISTERX_SRC_TWISTERX_ARROW_ARROW_COMPARATOR_H_
+#ifndef CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_H_
+#define CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_H_
 
 #include <arrow/api.h>
 #include "../status.hpp"
@@ -47,4 +47,4 @@ class TableRowComparator {
 
 }
 
-#endif //TWISTERX_SRC_TWISTERX_ARROW_ARROW_COMPARATOR_H_
+#endif //CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_H_

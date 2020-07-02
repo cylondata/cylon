@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_IO_ARROW_IO_H_
-#define TWISTERX_SRC_IO_ARROW_IO_H_
+#ifndef CYLON_SRC_IO_ARROW_IO_H_
+#define CYLON_SRC_IO_ARROW_IO_H_
 
 #include <string>
 #include "csv_read_config.h"
@@ -28,4 +28,4 @@ arrow::Result<std::shared_ptr<arrow::Table>> read_csv(cylon::CylonContext *ctx,
 }
 }
 
-#endif //TWISTERX_SRC_IO_ARROW_IO_H_
+#endif //CYLON_SRC_IO_ARROW_IO_H_

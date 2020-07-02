@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_IO_CSV_WRITE_CONFIG_H_
-#define TWISTERX_SRC_TWISTERX_IO_CSV_WRITE_CONFIG_H_
+#ifndef CYLON_SRC_CYLON_IO_CSV_WRITE_CONFIG_H_
+#define CYLON_SRC_CYLON_IO_CSV_WRITE_CONFIG_H_
 #include <vector>
 #include <string>
 
@@ -44,4 +44,4 @@ class CSVWriteOptions {
 }
 }
 }
-#endif //TWISTERX_SRC_TWISTERX_IO_CSV_WRITE_CONFIG_H_
+#endif //CYLON_SRC_CYLON_IO_CSV_WRITE_CONFIG_H_

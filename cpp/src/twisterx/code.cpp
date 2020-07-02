@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_CODE_H_
-#define TWISTERX_SRC_CODE_H_
+#ifndef CYLON_SRC_CODE_H_
+#define CYLON_SRC_CODE_H_
 
 namespace cylon {
 enum Code {
@@ -37,4 +37,4 @@ enum Code {
   AlreadyExists = 45
 };
 }
-#endif //TWISTERX_SRC_IO_STATUS_H_
+#endif //CYLON_SRC_IO_STATUS_H_

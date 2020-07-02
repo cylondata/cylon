@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_ROW_HPP_
-#define TWISTERX_SRC_TWISTERX_ROW_HPP_
+#ifndef CYLON_SRC_CYLON_ROW_HPP_
+#define CYLON_SRC_CYLON_ROW_HPP_
 
 #include <string>
 #include <vector>
@@ -65,4 +65,4 @@ class Row {
 };
 }
 
-#endif //TWISTERX_SRC_TWISTERX_ROW_HPP_
+#endif //CYLON_SRC_CYLON_ROW_HPP_

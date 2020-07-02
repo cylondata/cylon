@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_COMM_COMM_CONFIG_H_
-#define TWISTERX_SRC_TWISTERX_COMM_COMM_CONFIG_H_
+#ifndef CYLON_SRC_CYLON_COMM_COMM_CONFIG_H_
+#define CYLON_SRC_CYLON_COMM_COMM_CONFIG_H_
 #include <string>
 #include <unordered_map>
 #include "comm_type.h"
@@ -37,4 +37,4 @@ class CommConfig {
 }
 }
 
-#endif //TWISTERX_SRC_TWISTERX_COMM_COMM_CONFIG_H_
+#endif //CYLON_SRC_CYLON_COMM_COMM_CONFIG_H_

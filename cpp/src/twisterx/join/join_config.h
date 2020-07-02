@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_JOIN_JOIN_CONFIG_H_
-#define TWISTERX_SRC_TWISTERX_JOIN_JOIN_CONFIG_H_
+#ifndef CYLON_SRC_CYLON_JOIN_JOIN_CONFIG_H_
+#define CYLON_SRC_CYLON_JOIN_JOIN_CONFIG_H_
 
 namespace cylon {
 namespace join {
@@ -91,4 +91,4 @@ class JoinConfig {
 }
 }
 
-#endif //TWISTERX_SRC_TWISTERX_JOIN_JOIN_CONFIG_H_
+#endif //CYLON_SRC_CYLON_JOIN_JOIN_CONFIG_H_

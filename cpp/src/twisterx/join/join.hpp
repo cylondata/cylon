@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_TX_JOIN_H
-#define TWISTERX_TX_JOIN_H
+#ifndef CYLON_TX_JOIN_H
+#define CYLON_TX_JOIN_H
 
 #include <arrow/table.h>
 #include "../arrow/arrow_kernels.hpp"
@@ -37,4 +37,4 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
 
 }
 }
-#endif //TWISTERX_TX_JOIN_H
+#endif //CYLON_TX_JOIN_H

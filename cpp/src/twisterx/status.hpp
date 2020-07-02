@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_STATUS_H
-#define TWISTERX_STATUS_H
+#ifndef CYLON_STATUS_H
+#define CYLON_STATUS_H
 #include "string"
 #include "code.cpp"
 
@@ -66,4 +66,4 @@ class Status {
 };
 }
 
-#endif //TWISTERX_STATUS_H
+#endif //CYLON_STATUS_H

@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_PYTHON_NET_DISTRIBUTED_H_
-#define TWISTERX_SRC_TWISTERX_PYTHON_NET_DISTRIBUTED_H_
+#ifndef CYLON_SRC_CYLON_PYTHON_NET_DISTRIBUTED_H_
+#define CYLON_SRC_CYLON_PYTHON_NET_DISTRIBUTED_H_
 #include <iostream>
 #include "../../net/ops/all_to_all.hpp"
 #include "../../arrow/arrow_all_to_all.hpp"
@@ -28,4 +28,4 @@ void cdist_finalize();
 }
 }
 
-#endif //TWISTERX_SRC_TWISTERX_PYTHON_NET_DISTRIBUTED_H_
+#endif //CYLON_SRC_CYLON_PYTHON_NET_DISTRIBUTED_H_

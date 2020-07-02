@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_PYTHON_NET_COMM_CALLBACK_H_
-#define TWISTERX_SRC_TWISTERX_PYTHON_NET_COMM_CALLBACK_H_
+#ifndef CYLON_SRC_CYLON_PYTHON_NET_COMM_CALLBACK_H_
+#define CYLON_SRC_CYLON_PYTHON_NET_COMM_CALLBACK_H_
 
 #include "../../../net/ops/all_to_all.hpp"
 
@@ -32,4 +32,4 @@ class Callback : public twisterx::ReceiveCallback {
 }
 }
 
-#endif //TWISTERX_SRC_TWISTERX_PYTHON_NET_COMM_CALLBACK_H_
+#endif //CYLON_SRC_CYLON_PYTHON_NET_COMM_CALLBACK_H_

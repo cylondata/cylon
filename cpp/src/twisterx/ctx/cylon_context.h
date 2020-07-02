@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_CTX_CYLON_CONTEXT_H_
-#define TWISTERX_SRC_TWISTERX_CTX_CYLON_CONTEXT_H_
+#ifndef CYLON_SRC_CYLON_CTX_CYLON_CONTEXT_H_
+#define CYLON_SRC_CYLON_CTX_CYLON_CONTEXT_H_
 
 #include <string>
 #include "unordered_map"
@@ -53,4 +53,4 @@ class CylonContext {
 };
 }
 
-#endif //TWISTERX_SRC_TWISTERX_CTX_CYLON_CONTEXT_H_
+#endif //CYLON_SRC_CYLON_CTX_CYLON_CONTEXT_H_

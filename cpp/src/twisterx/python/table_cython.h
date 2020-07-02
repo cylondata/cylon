@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_TABLE_CYTHON_H
-#define TWISTERX_TABLE_CYTHON_H
+#ifndef CYLON_TABLE_CYTHON_H
+#define CYLON_TABLE_CYTHON_H
 
 #include "string"
 #include "../status.hpp"
@@ -84,4 +84,4 @@ class CxTable {
 }
 }
 
-#endif //TWISTERX_TABLE_CYTHON_H
+#endif //CYLON_TABLE_CYTHON_H

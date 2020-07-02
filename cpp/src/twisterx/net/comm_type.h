@@ -13,8 +13,8 @@
  */
 
 
-#ifndef TWISTERX_SRC_TWISTERX_NET_COMM_TYPE_H_
-#define TWISTERX_SRC_TWISTERX_NET_COMM_TYPE_H_
+#ifndef CYLON_SRC_CYLON_NET_COMM_TYPE_H_
+#define CYLON_SRC_CYLON_NET_COMM_TYPE_H_
 namespace cylon {
 namespace net {
 enum CommType {
@@ -22,4 +22,4 @@ enum CommType {
 };
 }
 }
-#endif //TWISTERX_SRC_TWISTERX_NET_COMM_TYPE_H_
+#endif //CYLON_SRC_CYLON_NET_COMM_TYPE_H_

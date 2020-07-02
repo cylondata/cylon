@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_ARROW_TYPES_H
-#define TWISTERX_ARROW_TYPES_H
+#ifndef CYLON_ARROW_TYPES_H
+#define CYLON_ARROW_TYPES_H
 
 #include <memory>
 #include <arrow/api.h>
@@ -40,4 +40,4 @@ bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table);
 }
 }
 
-#endif //TWISTERX_ARROW_TYPES_H
+#endif //CYLON_ARROW_TYPES_H

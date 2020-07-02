@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_IO_TABLE_API_H_
-#define TWISTERX_SRC_IO_TABLE_API_H_
+#ifndef CYLON_SRC_IO_TABLE_API_H_
+#define CYLON_SRC_IO_TABLE_API_H_
 
 #include <string>
 #include <vector>
@@ -148,4 +148,4 @@ Status Select(cylon::CylonContext *ctx,
 
 Status Project(const std::string &id, const std::vector<int64_t>& project_columns, const std::string &out);
 }
-#endif //TWISTERX_SRC_IO_TABLE_API_H_
+#endif //CYLON_SRC_IO_TABLE_API_H_

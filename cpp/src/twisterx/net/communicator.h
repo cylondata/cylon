@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_COMM_COMMUNICATOR_H_
-#define TWISTERX_SRC_TWISTERX_COMM_COMMUNICATOR_H_
+#ifndef CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
+#define CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
 
 #include "comm_config.h"
 #include "channel.hpp"
@@ -36,4 +36,4 @@ class Communicator {
 }
 }
 
-#endif //TWISTERX_SRC_TWISTERX_COMM_COMMUNICATOR_H_
+#endif //CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_

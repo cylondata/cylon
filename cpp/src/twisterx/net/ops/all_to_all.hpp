@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_ALL_TO_ALL_H
-#define TWISTERX_ALL_TO_ALL_H
+#ifndef CYLON_ALL_TO_ALL_H
+#define CYLON_ALL_TO_ALL_H
 
 #include<vector>
 #include<unordered_map>

@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_IO_COLUMN_H_
-#define TWISTERX_SRC_IO_COLUMN_H_
+#ifndef CYLON_SRC_IO_COLUMN_H_
+#define CYLON_SRC_IO_COLUMN_H_
 
 #include <string>
 #include <utility>
@@ -58,5 +58,5 @@ class Column {
 };
 
 }
-#endif //TWISTERX_SRC_IO_COLUMN_H_
+#endif //CYLON_SRC_IO_COLUMN_H_
 

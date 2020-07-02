@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_ARROW_JOIN_H
-#define TWISTERX_ARROW_JOIN_H
+#ifndef CYLON_ARROW_JOIN_H
+#define CYLON_ARROW_JOIN_H
 
 #include <vector>
 #include <glog/logging.h>
@@ -198,4 +198,4 @@ class ArrowJoinWithPartition {
 
 }
 
-#endif //TWISTERX_ARROW_JOIN_H
+#endif //CYLON_ARROW_JOIN_H

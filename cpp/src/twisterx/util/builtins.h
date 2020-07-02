@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_BUILTINS_H
-#define TWISTERX_BUILTINS_H
+#ifndef CYLON_BUILTINS_H
+#define CYLON_BUILTINS_H
 
 #include "iostream"
 
@@ -40,4 +40,4 @@ void printLongArray(long *buf, int size);
 }
 }
 
-#endif //TWISTERX_BUILTINS_H
+#endif //CYLON_BUILTINS_H

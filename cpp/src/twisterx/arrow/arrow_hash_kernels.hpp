@@ -12,12 +12,8 @@
  * limitations under the License.
  */
 
-//
-// Created by nira on 5/21/20.
-//
-
-#ifndef TWISTERX_CPP_SRC_TWISTERX_ARROW_ARROW_HASH_KERNELS_HPP_
-#define TWISTERX_CPP_SRC_TWISTERX_ARROW_ARROW_HASH_KERNELS_HPP_
+#ifndef CYLON_CPP_SRC_CYLON_ARROW_ARROW_HASH_KERNELS_HPP_
+#define CYLON_CPP_SRC_CYLON_ARROW_ARROW_HASH_KERNELS_HPP_
 
 #include <arrow/api.h>
 #include <arrow/compute/kernel.h>
@@ -241,4 +237,4 @@ class ArrowArrayIdxHashJoinKernel {
   }
 };
 }
-#endif //TWISTERX_CPP_SRC_TWISTERX_ARROW_ARROW_HASH_KERNELS_HPP_
+#endif //CYLON_CPP_SRC_CYLON_ARROW_ARROW_HASH_KERNELS_HPP_

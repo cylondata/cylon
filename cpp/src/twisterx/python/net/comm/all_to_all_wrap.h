@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_SRC_TWISTERX_PYTHON_NET_COMM_ALL_TO_ALL_WRAP_H_
-#define TWISTERX_SRC_TWISTERX_PYTHON_NET_COMM_ALL_TO_ALL_WRAP_H_
+#ifndef CYLON_SRC_CYLON_PYTHON_NET_COMM_ALL_TO_ALL_WRAP_H_
+#define CYLON_SRC_CYLON_PYTHON_NET_COMM_ALL_TO_ALL_WRAP_H_
 
 #include "../../../net/ops/all_to_all.hpp"
 #include "../../../net/mpi/mpi_communicator.h"
@@ -44,4 +44,4 @@ class all_to_all_wrap {
 }
 }
 
-#endif //TWISTERX_SRC_TWISTERX_PYTHON_NET_COMM_ALL_TO_ALL_WRAP_H_
+#endif //CYLON_SRC_CYLON_PYTHON_NET_COMM_ALL_TO_ALL_WRAP_H_

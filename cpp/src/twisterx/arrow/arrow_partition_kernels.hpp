@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef TWISTERX_ARROW_PARTITION_KERNELS_H
-#define TWISTERX_ARROW_PARTITION_KERNELS_H
+#ifndef CYLON_ARROW_PARTITION_KERNELS_H
+#define CYLON_ARROW_PARTITION_KERNELS_H
 
 #include <memory>
 #include <vector>
@@ -164,4 +164,4 @@ class RowHashingKernel {
 };
 }
 
-#endif //TWISTERX_ARROW_PARTITION_KERNELS_H
+#endif //CYLON_ARROW_PARTITION_KERNELS_H
