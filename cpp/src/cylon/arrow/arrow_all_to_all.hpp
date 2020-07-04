@@ -205,6 +205,9 @@ class ArrowAllToAll : public ReceiveCallback {
    * The memory pool
    */
   arrow::MemoryPool *pool_;
+
+  bool completed_;
+  bool finishCalled_;
 };
 }
 #endif //CYLON_ARROW_H

@@ -31,6 +31,8 @@ ArrowAllToAll::ArrowAllToAll(cylon::CylonContext *ctx,
   receivedBuffers_ = 0;
   workerId_ = ctx->GetRank();
   pool_ = pool;
+  completed_ = false;
+  finishCalled_ = false;
 
   // we need to pass the correct arguments
   all_ = std::make_shared<AllToAll>(ctx, source, targets, edgeId, this);
@@ -54,6 +56,9 @@ int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int target
 }
 
 bool ArrowAllToAll::isComplete() {
+  if (completed_) {
+    return true;
+  }
   bool isAllEmpty = true;
   // we need to send the buffers
   for (auto t : inputs_) {
@@ -122,11 +127,14 @@ bool ArrowAllToAll::isComplete() {
     }
   }
 
-  if (isAllEmpty && finished) {
+  if (isAllEmpty && finished && !finishCalled_) {
     all_->finish();
+    finishCalled_ = true;
   }
 
-  return isAllEmpty && all_->isComplete() && finishedSources_.size() == srcs_.size();
+  // if completed gets true, we will never reach this point
+  completed_ = isAllEmpty && all_->isComplete() && finishedSources_.size() == srcs_.size();
+  return completed_;
 }
 
 void ArrowAllToAll::finish() {
