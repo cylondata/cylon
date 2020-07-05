@@ -1,5 +1,6 @@
 module.exports = {
   someSidebar: {
-    Cylon: ['compile', 'cpp', 'python', "java"],
+    "Setting Up": ['compile'],
+    Develop: ['cpp', 'python', "java"],
   },
 };
