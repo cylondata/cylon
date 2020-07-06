@@ -59,7 +59,7 @@ class Table {
                         const cylon::io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
 
   static Status FromCSV(cylon::CylonContext *ctx, const std::vector<std::string> &paths,
-                        const std::vector<std::shared_ptr<Table>> &tableOuts,
+                        const std::vector<std::shared_ptr<Table> *> &tableOuts,
                         const cylon::io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
 
   /**
@@ -133,8 +133,7 @@ class Table {
 
   Status Union(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
 
-  Status DistributedUnion(cylon::CylonContext *ctx,
-                          const std::shared_ptr<Table> &right,
+  Status DistributedUnion(const std::shared_ptr<Table> &right,
                           std::shared_ptr<Table> &out);
 
   Status Select(const std::function<bool(cylon::Row)> &selector, std::shared_ptr<Table> &out);

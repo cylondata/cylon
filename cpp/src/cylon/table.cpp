@@ -166,11 +166,9 @@ Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr
   }
   return status;
 }
-Status Table::DistributedUnion(cylon::CylonContext *ctx, const shared_ptr<Table> &right, shared_ptr<Table> &out) {
+Status Table::DistributedUnion(const shared_ptr<Table> &right, shared_ptr<Table> &out) {
   std::string uuid = cylon::util::uuid::generate_uuid_v4();
-  LOG(INFO) << "before";
   cylon::Status status = cylon::DistributedUnion(ctx, this->id_, right->id_, uuid);
-  LOG(INFO) << "after";
   if (status.is_ok()) {
     out = std::make_shared<Table>(uuid, this->ctx);
   }
@@ -184,16 +182,23 @@ Table::~Table() {
 }
 
 Status Table::FromCSV(cylon::CylonContext *ctx, const vector<std::string> &paths,
-                      const std::vector<std::shared_ptr<Table>> &tableOuts,
+                      const std::vector<std::shared_ptr<Table> *> &tableOuts,
                       const io::config::CSVReadOptions &options) {
   std::vector<std::string> out_table_ids;
   out_table_ids.reserve(tableOuts.size());
 
-  for (auto const &tab: tableOuts) {
-    out_table_ids.push_back(tab->GetID());
+  for (size_t i = 0; i < tableOuts.size(); i++) {
+    out_table_ids.push_back(cylon::util::uuid::generate_uuid_v4());
   }
 
-  return cylon::ReadCSV(ctx, paths, out_table_ids, options);
+  auto status = cylon::ReadCSV(ctx, paths, out_table_ids, options);
+
+  if (status.is_ok()) {
+    for (size_t i = 0; i < tableOuts.size(); i++) {
+      *tableOuts[i] = std::make_shared<Table>(out_table_ids[i], ctx);
+    }
+  }
+  return status;
 }
 
 Status Table::Project(const std::vector<int64_t> &project_columns, std::shared_ptr<Table> &out) {

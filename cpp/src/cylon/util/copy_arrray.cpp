@@ -70,6 +70,23 @@ arrow::Status do_copy_binary_array(std::shared_ptr<std::vector<int64_t>> indices
   return binary_builder.Finish(copied_array);
 }
 
+arrow::Status do_copy_string_array(const std::shared_ptr<std::vector<int64_t>> &indices,
+                                   const std::shared_ptr<arrow::Array> &data_array,
+                                   std::shared_ptr<arrow::Array> *copied_array,
+                                   arrow::MemoryPool *memory_pool) {
+  arrow::StringBuilder binary_builder(memory_pool);
+  binary_builder.Reserve(indices->size());
+  auto casted_array = std::static_pointer_cast<arrow::StringArray>(data_array);
+  for (auto &index : *indices) {
+    if (casted_array->length() <= index) {
+      LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
+    }
+    auto str = casted_array->GetString(index);
+    binary_builder.UnsafeAppend(str);
+  }
+  return binary_builder.Finish(copied_array);
+}
+
 arrow::Status do_copy_fixed_binary_array(std::shared_ptr<std::vector<int64_t>> indices,
                                          std::shared_ptr<arrow::Array> data_array,
                                          std::shared_ptr<arrow::Array> *copied_array,
@@ -119,8 +136,8 @@ arrow::Status do_copy_numeric_list(std::shared_ptr<std::vector<int64_t>> indices
   return list_builder.Finish(copied_array);
 }
 
-arrow::Status copy_array_by_indices(std::shared_ptr<std::vector<int64_t>> indices,
-                                    std::shared_ptr<arrow::Array> data_array,
+arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> &indices,
+                                    const std::shared_ptr<arrow::Array> &data_array,
                                     std::shared_ptr<arrow::Array> *copied_array,
                                     arrow::MemoryPool *memory_pool) {
   switch (data_array->type()->id()) {
@@ -181,7 +198,7 @@ arrow::Status copy_array_by_indices(std::shared_ptr<std::vector<int64_t>> indice
                                                       data_array,
                                                       copied_array,
                                                       memory_pool);
-    case arrow::Type::STRING:break;
+    case arrow::Type::STRING:return do_copy_string_array(indices, data_array, copied_array, memory_pool);
     case arrow::Type::BINARY:return do_copy_binary_array(indices, data_array, copied_array, memory_pool);
     case arrow::Type::FIXED_SIZE_BINARY:
       return do_copy_fixed_binary_array(indices,

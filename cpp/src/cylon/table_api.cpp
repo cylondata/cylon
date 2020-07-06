@@ -48,7 +48,10 @@ std::shared_ptr<arrow::Table> GetTable(const std::string &id) {
 
 void PutTable(const std::string &id, const std::shared_ptr<arrow::Table> &table) {
   std::pair<std::string, std::shared_ptr<arrow::Table>> pair(id, table);
+  LOG(INFO) << "About to insert to map without id";
+  LOG(INFO) << "About to insert to map " << id;
   table_map.insert(pair);
+  LOG(INFO) << "Inserted to map";
 }
 
 std::string PutTable(const std::shared_ptr<arrow::Table> &table) {
@@ -112,15 +115,16 @@ cylon::Status ReadCSV(cylon::CylonContext *ctx,
                                          options,
                                          read_promise)));
     }
-    bool all_passed = false;
+    bool all_passed = true;
     for (auto &future: futures) {
-      all_passed &= future.first.get().is_ok();
+      auto status = future.first.get();
+      all_passed &= status.is_ok();
       future.second.join();
     }
     return all_passed ? cylon::Status::OK() : cylon::Status(cylon::IOError, "Failed to read the csv files");
   } else {
     auto status = cylon::Status::OK();
-    for (int kI = 0; kI < paths.size(); ++kI) {
+    for (std::size_t kI = 0; kI < paths.size(); ++kI) {
       status = ReadCSV(ctx, paths[kI], ids[kI], options);
       if (!status.is_ok()) {
         return status;
@@ -166,8 +170,8 @@ cylon::Status PrintToOStream(const std::string &table_id,
       if (headers.size() != table->num_columns()) {
         return cylon::Status(cylon::Code::IndexError,
                              "Provided headers doesn't match with the number of columns of the table. Given "
-                                    + std::to_string(headers.size())
-                                    + ", Expected " + std::to_string(table->num_columns()));
+                                 + std::to_string(headers.size())
+                                 + ", Expected " + std::to_string(table->num_columns()));
       }
 
       for (int col = col1; col < col2; col++) {
@@ -545,6 +549,11 @@ cylon::Status Union(cylon::CylonContext *ctx,
       this->eq = eq;
       this->hs = hs;
     }
+//
+//    virtual ~RowComparator() {
+//      delete this->comparator;
+//      delete this->row_hashing_kernel;
+//    }
 
     // equality
     bool operator()(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const {
@@ -635,6 +644,11 @@ cylon::Status Union(cylon::CylonContext *ctx,
 
   // create final table
   std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
+  LOG(INFO) << table->num_rows() << "," << table->num_columns() << "," << table->column(0)->num_chunks();
+  auto str_array = std::dynamic_pointer_cast<arrow::StringArray>(table->column(0)->chunk(0));
+  for (int32_t i = 0; i < 10; i++) {
+    LOG(INFO) << str_array->GetString(i);
+  }
   PutTable(dest_id, table);
   return cylon::Status::OK();
 }

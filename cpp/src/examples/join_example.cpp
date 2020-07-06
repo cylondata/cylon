@@ -32,12 +32,12 @@ int main(int argc, char *argv[]) {
 
   auto t1 = std::chrono::steady_clock::now();
 
-  auto status1 = cylon::Table::FromCSV(ctx, "/home/chathura/Code/cylon/cpp/data/csv1.csv", table1, read_options);
+  auto status1 = cylon::Table::FromCSV(ctx, "/home/chathura/Code/twisterx/cpp/data/csv1.csv", table1, read_options);
   auto t2 = std::chrono::steady_clock::now();
   LOG(INFO) << "Read table 1 in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
 
   t1 = std::chrono::steady_clock::now();
-  auto status2 = cylon::Table::FromCSV(ctx, "/home/chathura/Code/cylon/cpp/data/csv2.csv", table2, read_options);
+  auto status2 = cylon::Table::FromCSV(ctx, "/home/chathura/Code/twisterx/cpp/data/csv2.csv", table2, read_options);
   t2 = std::chrono::steady_clock::now();
 
   LOG(INFO) << "Read table 2 in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     //joined->print();
     LOG(INFO) << "Table 1 had : " << table1->Rows() << " and Table 2 had : " << table2->Rows() << ", Union has : "
               << joined->Rows();
-    LOG(INFO) << "Union done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
+    LOG(INFO) << "Join done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
   } else {
     LOG(INFO) << "Table reading has failed  : " << status1.get_msg() << ":" << status2.get_msg();
   }
