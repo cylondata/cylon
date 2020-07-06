@@ -38,8 +38,8 @@ int main(int argc, char *argv[]) {
 //  std::vector<std::shared_ptr<cylon::Table> *> tables{&table1, &table2};
   //auto status3 = cylon::Table::FromCSV(ctx, paths, tables, read_options);
 
-  auto status3 = cylon::Table::FromCSV(ctx,  "/home/chathura/Code/twisterx/cpp/data/csv1.csv", table1, read_options);
-  status3 = cylon::Table::FromCSV(ctx,  "/home/chathura/Code/twisterx/cpp/data/csv2.csv", table2, read_options);
+  auto status3 = cylon::Table::FromCSV(ctx, argv[0], table1, read_options);
+  status3 = cylon::Table::FromCSV(ctx, argv[1], table2, read_options);
 
   auto t2 = std::chrono::steady_clock::now();
   LOG(INFO) << "Read all in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
