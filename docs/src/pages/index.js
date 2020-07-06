@@ -8,32 +8,29 @@ import styles from './styles.module.css';
 
 const features = [
   {
-    title: <>Easy to Use</>,
+    title: <>Fast & Scalable</>,
     imageUrl: 'img/undraw_docusaurus_mountain.svg',
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Cylon uses OpenMPI underneath. It provides core data processing operators many times efficiently than current systems.
       </>
     ),
   },
   {
-    title: <>Focus on What Matters</>,
-    imageUrl: 'img/undraw_docusaurus_tree.svg',
+    title: <>Designed to be integrated</>,
+    imageUrl: 'img/wheel.png',
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Cylon is designed to work accross different data processing frameworks, deep learning frameworks and data formats.
       </>
     ),
   },
   {
-    title: <>Powered by React</>,
+    title: <>Powered by Apache Arrow</>,
     imageUrl: 'img/undraw_docusaurus_react.svg',
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        Cylon uses Apache Arrow underneath to represent data.
       </>
     ),
   },
