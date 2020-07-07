@@ -37,21 +37,22 @@
 namespace cylon {
 
 std::map<std::string, std::shared_ptr<arrow::Table>> table_map{}; //todo make this un ordered
+std::mutex table_map_mutex;
 
 std::shared_ptr<arrow::Table> GetTable(const std::string &id) {
   auto itr = table_map.find(id);
   if (itr != table_map.end()) {
     return itr->second;
   }
+  LOG(INFO) << "Couldn't find table with ID " << id;
   return NULLPTR;
 }
 
 void PutTable(const std::string &id, const std::shared_ptr<arrow::Table> &table) {
   std::pair<std::string, std::shared_ptr<arrow::Table>> pair(id, table);
-  LOG(INFO) << "About to insert to map without id";
-  LOG(INFO) << "About to insert to map " << id;
+  table_map_mutex.lock();
   table_map.insert(pair);
-  LOG(INFO) << "Inserted to map";
+  table_map_mutex.unlock();
 }
 
 std::string PutTable(const std::shared_ptr<arrow::Table> &table) {
@@ -644,11 +645,6 @@ cylon::Status Union(cylon::CylonContext *ctx,
 
   // create final table
   std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
-  LOG(INFO) << table->num_rows() << "," << table->num_columns() << "," << table->column(0)->num_chunks();
-  auto str_array = std::dynamic_pointer_cast<arrow::StringArray>(table->column(0)->chunk(0));
-  for (int32_t i = 0; i < 10; i++) {
-    LOG(INFO) << str_array->GetString(i);
-  }
   PutTable(dest_id, table);
   return cylon::Status::OK();
 }
