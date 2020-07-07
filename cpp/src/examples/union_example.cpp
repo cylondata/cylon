@@ -18,6 +18,9 @@
 #include <table.hpp>
 #include <chrono>
 
+/**
+ * This example reads two csv files and does a union on them.
+ */
 int main(int argc, char *argv[]) {
   if (argc < 3) {
     LOG(ERROR) << "There should be two arguments with paths to csv files";
