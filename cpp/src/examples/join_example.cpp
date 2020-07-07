@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 
     LOG(INFO) << "Done join tables " << status.get_msg();
     //joined->print();
-    LOG(INFO) << "Table 1 had : " << table1->Rows() << " and Table 2 had : " << table2->Rows() << ", Union has : "
+    LOG(INFO) << "Table 1 had : " << table1->Rows() << " and Table 2 had : " << table2->Rows() << ", Joined has : "
               << joined->Rows();
     LOG(INFO) << "Join done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
   } else {
