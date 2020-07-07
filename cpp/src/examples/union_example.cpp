@@ -35,12 +35,14 @@ int main(int argc, char *argv[]) {
   auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[1];
+    ctx->Finalize();
     return 1;
   }
   // read second table
   status = cylon::Table::FromCSV(ctx, argv[2], second_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[2];
+    ctx->Finalize();
     return 1;
   }
   auto read_end_time = std::chrono::steady_clock::now();
@@ -52,6 +54,7 @@ int main(int argc, char *argv[]) {
   status = first_table->DistributedUnion(second_table, unioned_table);
   if (!status.is_ok()) {
     LOG(INFO) << "Union failed " << status.get_msg();
+    ctx->Finalize();
     return 1;
   }
   read_end_time = std::chrono::steady_clock::now();
