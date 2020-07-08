@@ -185,10 +185,10 @@ Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr
   }
   return status;
 }
-Status Table::DistributedUnion(cylon::CylonContext *ctx, const shared_ptr<Table> &right, shared_ptr<Table> &out) {
+Status Table::DistributedUnion(const shared_ptr<Table> &right, shared_ptr<Table> &out) {
   std::string uuid = cylon::util::uuid::generate_uuid_v4();
   LOG(INFO) << "before";
-  cylon::Status status = cylon::DistributedUnion(ctx, this->id_, right->id_, uuid);
+  cylon::Status status = cylon::DistributedUnion(this->ctx, this->id_, right->id_, uuid);
   LOG(INFO) << "after";
   if (status.is_ok()) {
     out = std::make_shared<Table>(uuid, this->ctx);

@@ -33,7 +33,7 @@ bool RunUnion(int rank,
   Status status;
 
   auto t1 = std::chrono::high_resolution_clock::now();
-  status = table1->DistributedUnion(ctx, table2, output);
+  status = table1->DistributedUnion(table2, output);
   auto t2 = std::chrono::high_resolution_clock::now();
   ctx->GetCommunicator()->Barrier(); // todo: should we take this inside the dist join?
   auto t3 = std::chrono::high_resolution_clock::now();

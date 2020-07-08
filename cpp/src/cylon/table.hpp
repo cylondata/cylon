@@ -133,9 +133,7 @@ class Table {
 
   Status Union(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
 
-  Status DistributedUnion(cylon::CylonContext *ctx,
-                          const std::shared_ptr<Table> &right,
-                          std::shared_ptr<Table> &out);
+  Status DistributedUnion(const shared_ptr<Table> &right, shared_ptr<Table> &out);
 
   Status Subtract(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
 
