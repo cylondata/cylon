@@ -778,7 +778,7 @@ cylon::Status Intersect(cylon::CylonContext *ctx,
     }
   }
 
-  std::vector<int64_t> left_indices;
+  std::unordered_set<int64_t> left_indices_set(ltab->num_rows());
 
   // then add matching rows to the indices_from_tabs vector
   print_offset = rtab->num_rows() / 4;
@@ -788,7 +788,7 @@ cylon::Status Intersect(cylon::CylonContext *ctx,
 
     if (matching_row_it != rows_set.end()) {
       std::pair<int8_t, int64_t> matching_row = *matching_row_it;
-      left_indices.push_back(matching_row.second);
+      left_indices_set.insert(matching_row.second);
     }
 
     if (row == next_print) {
@@ -797,6 +797,12 @@ cylon::Status Intersect(cylon::CylonContext *ctx,
       next_print += print_offset;
     }
   }
+
+  // convert set to vector todo: find a better way to do this inplace!
+  std::vector<int64_t> left_indices;
+  left_indices.reserve(left_indices_set.size() / 2);
+  left_indices.assign(left_indices_set.begin(), left_indices_set.end());
+  left_indices.shrink_to_fit();
 
   auto t2 = std::chrono::steady_clock::now();
 
