@@ -16,8 +16,8 @@
 #define CYLON_SRC_IO_ARROW_IO_H_
 
 #include <string>
-#include "csv_read_config.h"
-#include "../ctx/cylon_context.h"
+#include "csv_read_config.hpp"
+#include "../ctx/cylon_context.hpp"
 namespace cylon {
 namespace io {
 

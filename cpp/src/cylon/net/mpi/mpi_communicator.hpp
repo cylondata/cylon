@@ -14,8 +14,10 @@
 
 #ifndef CYLON_SRC_CYLON_COMM_MPICOMMUNICATOR_H_
 #define CYLON_SRC_CYLON_COMM_MPICOMMUNICATOR_H_
-#include "../comm_config.h"
-#include "../communicator.h"
+
+#include "../comm_config.hpp"
+#include "../communicator.hpp"
+
 namespace cylon {
 namespace net {
 

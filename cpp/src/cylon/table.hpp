@@ -20,15 +20,15 @@
 #include <utility>
 #include <vector>
 #include <glog/logging.h>
-#include "io/csv_read_config.h"
+#include "io/csv_read_config.hpp"
 
 #include "status.hpp"
 #include "util/uuid.hpp"
 #include "column.hpp"
-#include "join/join_config.h"
+#include "join/join_config.hpp"
 #include "arrow/arrow_join.hpp"
 #include "join/join.hpp"
-#include "io/csv_write_config.h"
+#include "io/csv_write_config.hpp"
 #include "row.hpp"
 
 namespace cylon {
@@ -59,7 +59,7 @@ class Table {
                         const cylon::io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
 
   static Status FromCSV(cylon::CylonContext *ctx, const std::vector<std::string> &paths,
-                        const std::vector<std::shared_ptr<Table>> &tableOuts,
+                        const std::vector<std::shared_ptr<Table> *> &tableOuts,
                         const cylon::io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
 
   /**

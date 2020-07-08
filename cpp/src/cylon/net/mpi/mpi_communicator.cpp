@@ -12,9 +12,9 @@
  * limitations under the License.
  */
 
-#include "../communicator.h"
+#include "../communicator.hpp"
 #include "mpi.h"
-#include "mpi_communicator.h"
+#include "mpi_communicator.hpp"
 #include "mpi_channel.hpp"
 
 namespace cylon {

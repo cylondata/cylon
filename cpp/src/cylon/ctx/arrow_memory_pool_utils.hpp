@@ -12,11 +12,11 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_H_
-#define CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_H_
+#ifndef CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_HPP_
+#define CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_HPP_
 
 #include "arrow//memory_pool.h"
-#include "cylon_context.h"
+#include "cylon_context.hpp"
 
 namespace cylon {
 
@@ -63,4 +63,4 @@ class ProxyMemoryPool : public arrow::MemoryPool {
 arrow::MemoryPool *ToArrowPool(cylon::CylonContext *ctx);
 }
 
-#endif //CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_H_
+#endif //CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_HPP_

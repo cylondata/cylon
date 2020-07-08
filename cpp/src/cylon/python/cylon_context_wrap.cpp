@@ -14,7 +14,7 @@
 
 #include <map>
 #include "cylon_context_wrap.h"
-#include "../net/mpi/mpi_communicator.h"
+#include "../net/mpi/mpi_communicator.hpp"
 
 cylon::python::cylon_context_wrap::cylon_context_wrap() {
   this->context = new CylonContext(false);

@@ -12,30 +12,28 @@
  * limitations under the License.
  */
 
-#include <net/mpi/mpi_communicator.h>
-#include <ctx/cylon_context.h>
+#include <net/mpi/mpi_communicator.hpp>
+#include <ctx/cylon_context.hpp>
 #include <table.hpp>
 #include <status.hpp>
 #include <iostream>
-#include <io/csv_read_config.h>
+#include <io/csv_read_config.hpp>
 #include <chrono>
-#include <fstream>
-#include <iostream>
 
 using namespace cylon;
 using namespace cylon::join::config;
 
-bool RunJoin(int rank,
-             cylon::CylonContext *ctx,
-             const JoinConfig &jc,
-             const std::shared_ptr<Table> &table1,
-             const std::shared_ptr<Table> &table2,
-             std::shared_ptr<Table> &output,
-             const string &h_out_path) {
+//template <const char* jtype>
+bool RunUnion(int rank,
+              cylon::CylonContext *ctx,
+              const std::shared_ptr<Table> &table1,
+              const std::shared_ptr<Table> &table2,
+              std::shared_ptr<Table> &output,
+              const string &h_out_path) {
   Status status;
 
   auto t1 = std::chrono::high_resolution_clock::now();
-  status = table1->DistributedJoin(table2, jc, &output);
+  status = table1->DistributedUnion(table2, output);
   auto t2 = std::chrono::high_resolution_clock::now();
   ctx->GetCommunicator()->Barrier(); // todo: should we take this inside the dist join?
   auto t3 = std::chrono::high_resolution_clock::now();
@@ -44,15 +42,13 @@ bool RunJoin(int rank,
     LOG(ERROR) << "Join failed!";
     return false;
   }
-  //status = output->WriteCSV(h_out_path);
+//    status = output->WriteCSV(h_out_path);
 //  auto t4 = std::chrono::high_resolution_clock::now();
 
   if (status.is_ok()) {
     LOG(INFO) << rank << " j_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
               << " w_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
-              << " lines " << output->Rows()
-              << " t " << jc.GetType()
-              << " a " << jc.GetAlgorithm();
+              << " lines " << output->Rows();
     output->Clear();
     return true;
   } else {
@@ -81,7 +77,7 @@ int main(int argc, char *argv[]) {
   std::string src_dir = argv[1];
   std::string base_dir = argv[2];
 
-  system(("mkdir -p " + base_dir + "; rm -f " + base_dir + "/*csv").c_str());
+  system(("mkdir -p " + base_dir).c_str());
 
   std::string csv1 = base_dir + "/csv1_" + srank + ".csv";
   std::string csv2 = base_dir + "/csv2_" + srank + ".csv";
@@ -102,40 +98,14 @@ int main(int argc, char *argv[]) {
   ctx->GetCommunicator()->Barrier();
   LOG(INFO) << rank << " Done reading tables. rows " << table1->Rows() << " " << table2->Rows();
 
-//  LOG(INFO) << rank << " right join start";
-//  auto right_jc = JoinConfig::RightJoin(0, 0, JoinAlgorithm::HASH);
-//  RunJoin(rank, ctx, right_jc, table1, table2, joined, "/scratch/dnperera/h_out_right_" + srank + ".csv");
-//  auto right_jc2 = JoinConfig::RightJoin(0, 0, JoinAlgorithm::SORT);
-//  RunJoin(rank, ctx, right_jc2, table1, table2, joined, "/scratch/dnperera/s_out_right_" + srank + ".csv");
-//  LOG(INFO) << rank << " right join end ----------------------------------";
-//
-//  LOG(INFO) << rank << " left join start";
-//  auto left_jc = JoinConfig::LeftJoin(0, 0, JoinAlgorithm::HASH);
-//  RunJoin(rank, ctx, left_jc, table1, table2, joined, "/scratch/dnperera/h_out_left_" + srank + ".csv");
-//  auto left_jc2 = JoinConfig::LeftJoin(0, 0, JoinAlgorithm::SORT);
-//  RunJoin(rank, ctx, left_jc2, table1, table2, joined, base_dir + "/s_out_left_" + srank + ".csv");
-//  LOG(INFO) << rank << " left join end ----------------------------------";
+  LOG(INFO) << rank << " union start";
+  RunUnion(rank, ctx, table1, table2, joined, base_dir + "/union_" + srank + ".csv");
+  LOG(INFO) << rank << " union end ----------------------------------";
 
-  LOG(INFO) << rank << " inner join start";
-  auto inner_jc = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::HASH);
-  RunJoin(rank, ctx, inner_jc, table1, table2, joined, base_dir +"/h_out_inner_" + srank + ".csv");
-  auto inner_jc2 = JoinConfig::InnerJoin(0, 0, JoinAlgorithm::SORT);
-  RunJoin(rank, ctx, inner_jc2, table1, table2, joined,  base_dir +"/s_out_inner_" + srank + ".csv");
-  LOG(INFO) << rank << " inner join end ----------------------------------";
-
-//  LOG(INFO) << rank << " outer join start";
-//  auto outer_jc = JoinConfig::FullOuterJoin(0, 0, JoinAlgorithm::HASH);
-//  RunJoin(rank, ctx, outer_jc, table1, table2, joined, "/scratch/dnperera/h_out_outer_" + srank + ".csv");
-//  auto outer_jc2 = JoinConfig::FullOuterJoin(0, 0, JoinAlgorithm::SORT);
-//  RunJoin(rank, ctx, outer_jc2, table1, table2, joined, "/scratch/dnperera/s_out_outer_" + srank + ".csv");
-//  LOG(INFO) << rank << " outer join end ----------------------------------";
-
-  
   ctx->Finalize();
-  std::cout << "Removing File " << csv1 << std::endl;
-  std::cout << "Removing File " << csv2 << std::endl;
+
   system(("rm " + csv1).c_str());
-  system(("rm " + csv2).c_str());  
+  system(("rm " + csv2).c_str());
 
   return 0;
 }

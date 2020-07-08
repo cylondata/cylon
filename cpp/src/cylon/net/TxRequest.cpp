@@ -12,11 +12,11 @@
  * limitations under the License.
  */
 
-#include "TxRequest.h"
+#include "TxRequest.hpp"
 #include <memory>
 #include <cstring>
 #include "iostream"
-#include "../util/builtins.h"
+#include "../util/builtins.hpp"
 
 cylon::TxRequest::TxRequest(int tgt) {
   target = tgt;

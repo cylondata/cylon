@@ -19,10 +19,10 @@
 #include <vector>
 #include <functional>
 #include "status.hpp"
-#include "join/join_config.h"
-#include "io/csv_read_config.h"
-#include "io/csv_write_config.h"
-#include "ctx/cylon_context.h"
+#include "join/join_config.hpp"
+#include "io/csv_read_config.hpp"
+#include "io/csv_write_config.hpp"
+#include "ctx/cylon_context.hpp"
 #include "row.hpp"
 
 /**

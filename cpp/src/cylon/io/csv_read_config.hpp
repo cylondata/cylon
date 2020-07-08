@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_H_
-#define CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_H_
+#ifndef CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HPP_
+#define CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HPP_
 #include "../data_types.hpp"
 #include <vector>
 #include <string>
@@ -147,4 +147,4 @@ class CSVReadOptions {
 }
 }
 }
-#endif //CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_H_
+#endif //CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HPP_

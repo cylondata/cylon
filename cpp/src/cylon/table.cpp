@@ -150,6 +150,22 @@ Status Table::DistributedJoin(const shared_ptr<Table> &right,
   }
   return status;
 }
+Status Table::Union(const shared_ptr<Table> &right, std::shared_ptr<Table> &out) {
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::Union(ctx, this->GetID(), right->GetID(), uuid);
+  if (status.is_ok()) {
+    out = std::make_shared<Table>(uuid, this->ctx);
+  }
+  return status;
+}
+Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr<Table> &out) {
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::Select(ctx, this->GetID(), selector, uuid);
+  if (status.is_ok()) {
+    out = std::make_shared<Table>(uuid, this->ctx);
+  }
+  return status;
+}
 
 Status Table::DoSetOperation(SetOperation operation, const shared_ptr<Table> &right, shared_ptr<Table> &out) {
   std::string uuid = cylon::util::uuid::generate_uuid_v4();
@@ -193,23 +209,21 @@ Table::~Table() {
 }
 
 Status Table::FromCSV(cylon::CylonContext *ctx, const vector<std::string> &paths,
-                      const std::vector<std::shared_ptr<Table>> &tableOuts,
+                      const std::vector<std::shared_ptr<Table> *> &tableOuts,
                       const io::config::CSVReadOptions &options) {
   std::vector<std::string> out_table_ids;
   out_table_ids.reserve(tableOuts.size());
 
-  for (auto const &tab: tableOuts) {
-    out_table_ids.push_back(tab->GetID());
+  for (size_t i = 0; i < tableOuts.size(); i++) {
+    out_table_ids.push_back(cylon::util::uuid::generate_uuid_v4());
   }
 
-  return cylon::ReadCSV(ctx, paths, out_table_ids, options);
-}
+  auto status = cylon::ReadCSV(ctx, paths, out_table_ids, options);
 
-Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr<Table> &out) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
-  cylon::Status status = cylon::Select(ctx, this->GetID(), selector, uuid);
   if (status.is_ok()) {
-    out = std::make_shared<Table>(uuid, this->ctx);
+    for (size_t i = 0; i < tableOuts.size(); i++) {
+      *tableOuts[i] = std::make_shared<Table>(out_table_ids[i], ctx);
+    }
   }
   return status;
 }

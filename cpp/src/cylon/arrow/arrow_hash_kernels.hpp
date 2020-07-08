@@ -19,7 +19,7 @@
 #include <arrow/compute/kernel.h>
 #include <glog/logging.h>
 #include "../status.hpp"
-#include "../join/join_config.h"
+#include "../join/join_config.hpp"
 #include "iostream"
 #include <unordered_set>
 #include <chrono>
@@ -30,11 +30,10 @@ namespace cylon {
  * Kernel to join indices using hashing
  * @tparam ARROW_ARRAY_TYPE arrow array type to be used for static type casting
  */
-template<class ARROW_ARRAY_TYPE>
+template<class ARROW_ARRAY_TYPE, typename CTYPE>
 class ArrowArrayIdxHashJoinKernel {
  public:
   using ARROW_TYPE = typename ARROW_ARRAY_TYPE::TypeClass;
-  using CTYPE = typename ARROW_TYPE::c_type;
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
 
   /**
@@ -121,7 +120,7 @@ class ArrowArrayIdxHashJoinKernel {
 //    smaller_idx_map = std::make_unique<MMAP_TYPE>(smaller_idx_col->length());
 
     for (int64_t i = 0; i < reader0->length(); i++) {
-      auto lValue = reader0->Value(i);
+      auto lValue = reader0->GetView(i);
       auto val = (CTYPE) lValue;
       smaller_idx_map.insert(std::make_pair(val, i));
     }
@@ -141,7 +140,7 @@ class ArrowArrayIdxHashJoinKernel {
 //    smaller_key_set = std::make_unique<std::unordered_set<CTYPE>>(smaller_idx_col->length());
 
     for (int64_t i = 0; i < reader0->length(); i++) {
-      auto lValue = reader0->Value(i);
+      auto lValue = reader0->GetView(i);
       auto val = (CTYPE) lValue;
       smaller_idx_map.insert(std::make_pair(val, i));
       smaller_key_set.emplace(val);
@@ -160,7 +159,7 @@ class ArrowArrayIdxHashJoinKernel {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto reader1 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(larger_idx_col);
     for (int64_t i = 0; i < reader1->length(); ++i) {
-      auto val = (CTYPE) reader1->Value(i);
+      auto val = (CTYPE) reader1->GetView(i);
       const auto range = smaller_idx_map.equal_range(val);
       if (range.first == range.second) {
         smaller_output->push_back(-1);
@@ -185,7 +184,7 @@ class ArrowArrayIdxHashJoinKernel {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto reader1 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(larger_idx_col);
     for (int64_t i = 0; i < reader1->length(); ++i) {
-      auto val = (CTYPE) reader1->Value(i);
+      auto val = (CTYPE) reader1->GetView(i);
       auto range = smaller_idx_map.equal_range(val);
       for (auto it = range.first; it != range.second; it++) {
         smaller_table_indices->push_back(it->second);
@@ -205,9 +204,9 @@ class ArrowArrayIdxHashJoinKernel {
                        std::shared_ptr<std::vector<int64_t>> &smaller_table_indices,
                        std::shared_ptr<std::vector<int64_t>> &larger_table_indices) {
     auto t1 = std::chrono::high_resolution_clock::now();
-    auto reader1 = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(larger_idx_col);
+    auto reader1 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(larger_idx_col);
     for (int64_t i = 0; i < reader1->length(); ++i) {
-      auto val = (CTYPE) reader1->Value(i);
+      auto val = (CTYPE) reader1->GetView(i);
       auto range = smaller_idx_map.equal_range(val);
       if (range.first == range.second) {
         smaller_table_indices->push_back(-1);

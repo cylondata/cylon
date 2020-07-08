@@ -31,24 +31,28 @@
 #include "util/uuid.hpp"
 #include "arrow/arrow_all_to_all.hpp"
 
-#include "arrow/arrow_comparator.h"
-#include "ctx/arrow_memory_pool_utils.h"
+#include "arrow/arrow_comparator.hpp"
+#include "ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
 
 std::map<std::string, std::shared_ptr<arrow::Table>> table_map{}; //todo make this un ordered
+std::mutex table_map_mutex;
 
 std::shared_ptr<arrow::Table> GetTable(const std::string &id) {
   auto itr = table_map.find(id);
   if (itr != table_map.end()) {
     return itr->second;
   }
+  LOG(INFO) << "Couldn't find table with ID " << id;
   return NULLPTR;
 }
 
 void PutTable(const std::string &id, const std::shared_ptr<arrow::Table> &table) {
   std::pair<std::string, std::shared_ptr<arrow::Table>> pair(id, table);
+  table_map_mutex.lock();
   table_map.insert(pair);
+  table_map_mutex.unlock();
 }
 
 std::string PutTable(const std::shared_ptr<arrow::Table> &table) {
@@ -112,15 +116,16 @@ cylon::Status ReadCSV(cylon::CylonContext *ctx,
                                          options,
                                          read_promise)));
     }
-    bool all_passed = false;
+    bool all_passed = true;
     for (auto &future: futures) {
-      all_passed &= future.first.get().is_ok();
+      auto status = future.first.get();
+      all_passed &= status.is_ok();
       future.second.join();
     }
     return all_passed ? cylon::Status::OK() : cylon::Status(cylon::IOError, "Failed to read the csv files");
   } else {
     auto status = cylon::Status::OK();
-    for (int kI = 0; kI < paths.size(); ++kI) {
+    for (std::size_t kI = 0; kI < paths.size(); ++kI) {
       status = ReadCSV(ctx, paths[kI], ids[kI], options);
       if (!status.is_ok()) {
         return status;
