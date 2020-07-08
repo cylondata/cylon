@@ -17,9 +17,9 @@
 
 #include <string>
 #include "unordered_map"
-#include "../net/comm_config.h"
-#include "../net/communicator.h"
-#include "../ctx/cylon_context.h"
+#include "../net/comm_config.hpp"
+#include "../net/communicator.hpp"
+#include "../ctx/cylon_context.hpp"
 
 using namespace cylon;
 

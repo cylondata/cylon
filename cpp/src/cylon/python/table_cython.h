@@ -19,7 +19,7 @@
 #include "../status.hpp"
 #include <arrow/python/serialize.h>
 #include "arrow/api.h"
-#include "../join/join_config.h"
+#include "../join/join_config.hpp"
 #include "cylon_context_wrap.h"
 
 using namespace cylon;

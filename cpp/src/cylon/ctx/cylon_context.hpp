@@ -12,14 +12,14 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_CTX_CYLON_CONTEXT_H_
-#define CYLON_SRC_CYLON_CTX_CYLON_CONTEXT_H_
+#ifndef CYLON_SRC_CYLON_CTX_CYLON_CONTEXT_HPP_
+#define CYLON_SRC_CYLON_CTX_CYLON_CONTEXT_HPP_
 
 #include <string>
 #include "unordered_map"
-#include "../net/comm_config.h"
-#include "../net/communicator.h"
-#include "memory_pool.h"
+#include "../net/comm_config.hpp"
+#include "../net/communicator.hpp"
+#include "memory_pool.hpp"
 
 namespace cylon {
 class CylonContext {
@@ -53,4 +53,4 @@ class CylonContext {
 };
 }
 
-#endif //CYLON_SRC_CYLON_CTX_CYLON_CONTEXT_H_
+#endif //CYLON_SRC_CYLON_CTX_CYLON_CONTEXT_HPP_

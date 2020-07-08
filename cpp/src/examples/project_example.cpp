@@ -13,8 +13,8 @@
  */
 
 #include <glog/logging.h>
-#include <net/mpi/mpi_communicator.h>
-#include <ctx/cylon_context.h>
+#include <net/mpi/mpi_communicator.hpp>
+#include <ctx/cylon_context.hpp>
 #include <table.hpp>
 #include <chrono>
 

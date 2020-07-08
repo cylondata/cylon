@@ -12,11 +12,12 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_H_
-#define CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_H_
+#ifndef CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_HPP_
+#define CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_HPP_
 
 #include <arrow/api.h>
 #include "../status.hpp"
+
 namespace cylon {
 class ArrowComparator {
  public:
@@ -47,4 +48,4 @@ class TableRowComparator {
 
 }
 
-#endif //CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_H_
+#endif //CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_HPP_

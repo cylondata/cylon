@@ -2,7 +2,7 @@ add_library(cylon SHARED
         net/ops/all_to_all.cpp net/ops/all_to_all.hpp
         net/channel.hpp
         net/mpi/mpi_channel.hpp net/mpi/mpi_channel.cpp
-        net/mpi/mpi_communicator.h net/mpi/mpi_communicator.cpp
+        net/mpi/mpi_communicator.hpp net/mpi/mpi_communicator.cpp
         arrow/arrow_all_to_all.cpp arrow/arrow_all_to_all.hpp
         join/join.hpp join/join.cpp
         util/arrow_utils.hpp util/arrow_utils.cpp
@@ -20,17 +20,17 @@ add_library(cylon SHARED
         arrow/arrow_types.hpp arrow/arrow_types.cpp
         arrow/arrow_partition_kernels.hpp arrow/arrow_partition_kernels.cpp
         util/murmur3.cpp util/murmur3.hpp
-        join/join_config.h
-        io/csv_read_config.h io/csv_read_config.cpp
+        join/join_config.hpp
+        io/csv_read_config.hpp io/csv_read_config.cpp
         io/csv_read_config_holder.hpp
         util/uuid.hpp util/uuid.cpp
-        net/TxRequest.h net/TxRequest.cpp
-        util/builtins.h util/builtins.cpp
-        ctx/cylon_context.h ctx/cylon_context.cpp table_api_extended.hpp
-        io/csv_write_config.h io/csv_write_config.cpp
+        net/TxRequest.hpp net/TxRequest.cpp
+        util/builtins.hpp util/builtins.cpp
+        ctx/cylon_context.hpp ctx/cylon_context.cpp table_api_extended.hpp
+        io/csv_write_config.hpp io/csv_write_config.cpp
         arrow/arrow_hash_kernels.hpp
-        arrow/arrow_comparator.h arrow/arrow_comparator.cpp
-        row.hpp row.cpp ctx/memory_pool.h ctx/arrow_memory_pool_utils.h ctx/arrow_memory_pool_utils.cpp)
+        arrow/arrow_comparator.hpp arrow/arrow_comparator.cpp
+        row.hpp row.cpp ctx/memory_pool.hpp ctx/arrow_memory_pool_utils.hpp ctx/arrow_memory_pool_utils.cpp)
 
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(cylon ${MPI_LIBRARIES})

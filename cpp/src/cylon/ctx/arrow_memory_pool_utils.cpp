@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "arrow_memory_pool_utils.h"
+#include "arrow_memory_pool_utils.hpp"
 
 arrow::Status cylon::ArrowStatus(cylon::Status status) {
   return arrow::Status(static_cast<arrow::StatusCode>(status.get_code()), status.get_msg());

@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_IO_CSV_WRITE_CONFIG_H_
-#define CYLON_SRC_CYLON_IO_CSV_WRITE_CONFIG_H_
+#ifndef CYLON_SRC_CYLON_IO_CSV_WRITE_CONFIG_HPP_
+#define CYLON_SRC_CYLON_IO_CSV_WRITE_CONFIG_HPP_
 #include <vector>
 #include <string>
 
@@ -44,4 +44,4 @@ class CSVWriteOptions {
 }
 }
 }
-#endif //CYLON_SRC_CYLON_IO_CSV_WRITE_CONFIG_H_
+#endif //CYLON_SRC_CYLON_IO_CSV_WRITE_CONFIG_HPP_
