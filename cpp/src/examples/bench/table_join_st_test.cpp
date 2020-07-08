@@ -15,7 +15,7 @@
 #include <table.hpp>
 #include <status.hpp>
 #include <iostream>
-#include <io/csv_read_config.h>
+#include <io/csv_read_config.hpp>
 #include <chrono>
 
 using namespace cylon;

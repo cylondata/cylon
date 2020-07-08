@@ -31,8 +31,8 @@
 #include "util/uuid.hpp"
 #include "arrow/arrow_all_to_all.hpp"
 
-#include "arrow/arrow_comparator.h"
-#include "ctx/arrow_memory_pool_utils.h"
+#include "arrow/arrow_comparator.hpp"
+#include "ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
 

@@ -15,7 +15,7 @@
 #ifndef CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HOLDER_HPP_
 #define CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HOLDER_HPP_
 #include <arrow/csv/options.h>
-#include "csv_read_config.h"
+#include "csv_read_config.hpp"
 
 namespace cylon {
 namespace io {

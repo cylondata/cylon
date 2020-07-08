@@ -19,7 +19,7 @@
 #include <arrow/compute/kernel.h>
 #include <glog/logging.h>
 #include "../status.hpp"
-#include "../join/join_config.h"
+#include "../join/join_config.hpp"
 #include "iostream"
 #include <unordered_set>
 #include <chrono>

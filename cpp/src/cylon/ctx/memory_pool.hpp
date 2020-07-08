@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_CTX_MEMORY_POOL_H_
-#define CYLON_SRC_CYLON_CTX_MEMORY_POOL_H_
+#ifndef CYLON_SRC_CYLON_CTX_MEMORY_POOL_HPP_
+#define CYLON_SRC_CYLON_CTX_MEMORY_POOL_HPP_
 
 #include <memory>
 #include "../status.hpp"
@@ -66,4 +66,4 @@ class MemoryPool {
 };
 }
 
-#endif //CYLON_SRC_CYLON_CTX_MEMORY_POOL_H_
+#endif //CYLON_SRC_CYLON_CTX_MEMORY_POOL_HPP_

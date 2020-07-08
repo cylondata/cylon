@@ -12,9 +12,9 @@
  * limitations under the License.
  */
 
-#include "cylon_context.h"
+#include "cylon_context.hpp"
 #include "arrow/memory_pool.h"
-#include "../net/mpi/mpi_communicator.h"
+#include "../net/mpi/mpi_communicator.hpp"
 
 namespace cylon {
 

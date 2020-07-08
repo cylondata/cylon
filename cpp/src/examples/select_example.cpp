@@ -13,49 +13,53 @@
  */
 
 #include <glog/logging.h>
-#include <net/mpi/mpi_communicator.h>
-#include <ctx/cylon_context.h>
+#include <net/mpi/mpi_communicator.hpp>
+#include <ctx/cylon_context.hpp>
 #include <table.hpp>
 #include <chrono>
 
+/**
+ * This example reads a csv file and selects few records from it based on a function
+ */
 int main(int argc, char *argv[]) {
-
-  auto tstart = std::chrono::steady_clock::now();
-
+  if (argc < 2) {
+    LOG(ERROR) << "There should be an argument with path to a csv file";
+    return 1;
+  }
+  auto start_time = std::chrono::steady_clock::now();
   auto mpi_config = new cylon::net::MPIConfig();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<cylon::Table> table1, select;
-
-  LOG(INFO) << "Reading tables";
+  std::shared_ptr<cylon::Table> table, select;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
-  auto t1 = std::chrono::steady_clock::now();
+  auto status = cylon::Table::FromCSV(ctx, argv[1], table, read_options);
+  auto read_end_time = std::chrono::steady_clock::now();
 
-  auto status1 = cylon::Table::FromCSV(ctx, "/home/chathura/Code/cylon/cpp/data/csv1.csv", table1, read_options);
-  auto t2 = std::chrono::steady_clock::now();
-  LOG(INFO) << "Read table 1 in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
-
-  LOG(INFO) << "Done reading tables";
-
-  if (status1.is_ok()) {
-    t1 = std::chrono::steady_clock::now();
-    cylon::Status status = table1->Select([](cylon::Row row) {
-      return row.GetInt64(0) % 2 == 0;
-    }, select);
-    t2 = std::chrono::steady_clock::now();
-
-    LOG(INFO) << "Done select tables " << status.get_msg();
-    //unioned->print();
-    LOG(INFO) << "Table 1 had : " << table1->Rows() << ", Select has : " << select->Rows();
-    LOG(INFO) << "Select done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
-  } else {
-    LOG(INFO) << "Table reading has failed  : " << status1.get_msg();
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Table reading has failed  : " << status.get_msg();
+    ctx->Finalize();
+    return 1;
   }
+  LOG(INFO) << "Read table in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_time).count() << "[ms]";
+  status = table->Select([](cylon::Row row) {
+    return row.GetInt64(0) % 2 == 0;
+  }, select);
+  auto select_end_time = std::chrono::steady_clock::now();
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Table select has failed  : " << status.get_msg();
+    ctx->Finalize();
+    return 1;
+  }
+  
+  LOG(INFO) << "Table had : " << table->Rows() << ", Select has : " << select->Rows();
+  LOG(INFO) << "Select done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - select_end_time).count()
+            << "[ms]";
   ctx->Finalize();
-
-  auto tend = std::chrono::steady_clock::now();
-  LOG(INFO) << "Operation took : " << std::chrono::duration_cast<std::chrono::milliseconds>(tend - tstart).count()
+  LOG(INFO) << "Operation took : " 
+            << std::chrono::duration_cast<std::chrono::milliseconds>(select_end_time - start_time).count()
             << "[ms]";
   return 0;
 }

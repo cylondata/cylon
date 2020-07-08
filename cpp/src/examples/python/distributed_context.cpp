@@ -13,7 +13,7 @@
  */
 
 #include <glog/logging.h>
-#include <net/mpi/mpi_communicator.h>
+#include <net/mpi/mpi_communicator.hpp>
 #include <python/cylon_context_wrap.h>
 
 int main(int argc, char *argv[]) {

@@ -21,7 +21,7 @@
 #include <arrow/python/serialize.h>
 #include "arrow/api.h"
 #include "../util/uuid.hpp"
-#include "../join/join_config.h"
+#include "../join/join_config.hpp"
 #include <map>
 
 using namespace std;

@@ -18,7 +18,7 @@
 #include <vector>
 #include <iostream>
 #include <cstring>
-#include "../TxRequest.h"
+#include "../TxRequest.hpp"
 
 #include <glog/logging.h>
 

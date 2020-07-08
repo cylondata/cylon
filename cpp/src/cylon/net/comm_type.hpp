@@ -12,28 +12,14 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
-#define CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
 
-#include "comm_config.h"
-#include "channel.hpp"
+#ifndef CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_
+#define CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_
 namespace cylon {
 namespace net {
-
-class Communicator {
-
- protected:
-  int rank = -1;
-  int world_size = -1;
- public:
-  virtual void Init(CommConfig *config) = 0;
-  virtual Channel *CreateChannel() = 0;
-  virtual int GetRank() = 0;
-  virtual int GetWorldSize() = 0;
-  virtual void Finalize() = 0;
-  virtual void Barrier() = 0;
+enum CommType {
+  MPI, TCP, UCX
 };
 }
 }
-
-#endif //CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
+#endif //CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_

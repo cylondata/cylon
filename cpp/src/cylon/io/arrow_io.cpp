@@ -18,8 +18,8 @@
 
 #include "arrow_io.hpp"
 #include "csv_read_config_holder.hpp"
-#include "../ctx/cylon_context.h"
-#include "../ctx/arrow_memory_pool_utils.h"
+#include "../ctx/cylon_context.hpp"
+#include "../ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
 namespace io {

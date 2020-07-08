@@ -12,7 +12,8 @@
  * limitations under the License.
  */
 
-#include "arrow_comparator.h"
+#include "arrow_comparator.hpp"
+
 namespace cylon {
 
 template<typename ARROW_TYPE>

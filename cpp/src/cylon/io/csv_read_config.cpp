@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "csv_read_config.h"
+#include "csv_read_config.hpp"
 #include "csv_read_config_holder.hpp"
 #include "../arrow//arrow_types.hpp"
 

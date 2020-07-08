@@ -8,13 +8,6 @@ endmacro(tx_add_exe)
 
 include_directories(../cylon)
 
-tx_add_exe(arrow_twisterx)
-tx_add_exe(arrow_test)
-tx_add_exe(join_test)
-tx_add_exe(table_join_dist_test)
-tx_add_exe(table_join_st_test)
-tx_add_exe(table_union_dist_test)
-tx_add_exe(test_util)
 tx_add_exe(union_example)
 tx_add_exe(select_example)
 tx_add_exe(join_example)

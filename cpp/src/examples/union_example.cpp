@@ -13,54 +13,65 @@
  */
 
 #include <glog/logging.h>
-#include <net/mpi/mpi_communicator.h>
-#include <ctx/cylon_context.h>
+#include <net/mpi/mpi_communicator.hpp>
+#include <ctx/cylon_context.hpp>
 #include <table.hpp>
 #include <chrono>
 
+/**
+ * This example reads two csv files and does a union on them.
+ */
 int main(int argc, char *argv[]) {
+  if (argc < 3) {
+    LOG(ERROR) << "There should be two arguments with paths to csv files";
+    return 1;
+  }
 
-  auto tstart = std::chrono::steady_clock::now();
-
+  auto start_time = std::chrono::steady_clock::now();
   auto mpi_config = new cylon::net::MPIConfig();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<cylon::Table> table1, table2, unioned;
-
-  LOG(INFO) << "Reading tables";
+  std::shared_ptr<cylon::Table> first_table, second_table, unioned_table;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
-  auto t1 = std::chrono::steady_clock::now();
-
-  t1 = std::chrono::steady_clock::now();
-  std::vector<std::string> paths{"/home/chathura/Code/twisterx/cpp/data/csv2.csv",
-      "/home/chathura/Code/twisterx/cpp/data/csv1.csv"};
-  std::vector<std::shared_ptr<cylon::Table> *> tables{&table1, &table2};
-  auto status3 = cylon::Table::FromCSV(ctx, paths, tables, read_options);
-
-//  auto status3 = cylon::Table::FromCSV(ctx, argv[0], table1, read_options);
-//  status3 = cylon::Table::FromCSV(ctx, argv[1], table2, read_options);
-
-  auto t2 = std::chrono::steady_clock::now();
-  LOG(INFO) << "Read all in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
-
-  if (status3.is_ok()) {
-    t1 = std::chrono::steady_clock::now();
-    cylon::Status status = table1->DistributedUnion(table2, unioned);
-    t2 = std::chrono::steady_clock::now();
-
-    LOG(INFO) << "Done union tables " << status.get_msg();
-    //unioned->print();
-    LOG(INFO) << "Table 1 had : " << table1->Rows() << " and Table 2 had : " << table2->Rows() << ", Union has : "
-              << unioned->Rows();
-    LOG(INFO) << "Union done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
-  } else {
-    LOG(INFO) << "Table reading has failed  : " << status3.get_msg();
+  // read first table
+  auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading failed " << argv[1];
+    ctx->Finalize();
+    return 1;
   }
-  ctx->Finalize();
+  // read second table
+  status = cylon::Table::FromCSV(ctx, argv[2], second_table, read_options);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading failed " << argv[2];
+    ctx->Finalize();
+    return 1;
+  }
+  auto read_end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Read all in " << std::chrono::duration_cast<std::chrono::milliseconds>(
+      read_end_time - start_time).count() << "[ms]";
 
-  auto tend = std::chrono::steady_clock::now();
-  LOG(INFO) << "Operation took : " << std::chrono::duration_cast<std::chrono::milliseconds>(tend - tstart).count()
+  auto union_start_time = std::chrono::steady_clock::now();
+  // apply union operation
+  status = first_table->DistributedUnion(second_table, unioned_table);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Union failed " << status.get_msg();
+    ctx->Finalize();
+    return 1;
+  }
+  read_end_time = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
+            << second_table->Rows() << ", Union has : "
+            << unioned_table->Rows() << " rows";
+  LOG(INFO) << "Union done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - union_start_time).count()
             << "[ms]";
+
+  ctx->Finalize();
+  auto end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Operation took : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "[ms]";
   return 0;
 }

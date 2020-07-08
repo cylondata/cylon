@@ -13,48 +13,50 @@
  */
 
 #include <glog/logging.h>
-#include <net/mpi/mpi_communicator.h>
-#include <ctx/cylon_context.h>
+#include <net/mpi/mpi_communicator.hpp>
+#include <ctx/cylon_context.hpp>
 #include <table.hpp>
 #include <chrono>
 
+/**
+ * This example apply the project operation to a csv file
+ */
 int main(int argc, char *argv[]) {
-
-  auto tstart = std::chrono::steady_clock::now();
-
+  if (argc < 2) {
+    LOG(ERROR) << "There should be an argument with path to a csv file";
+    return 1;
+  }
+  auto start_time = std::chrono::steady_clock::now();
   auto mpi_config = new cylon::net::MPIConfig();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<cylon::Table> table1, project;
-
-  LOG(INFO) << "Reading tables";
+  std::shared_ptr<cylon::Table> table, project;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
-  auto t1 = std::chrono::steady_clock::now();
-
-  auto status1 = cylon::Table::FromCSV(ctx, "/home/chathura/Code/cylon/cpp/data/csv1.csv", table1, read_options);
-  auto t2 = std::chrono::steady_clock::now();
-  LOG(INFO) << "Read table 1 in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
-
-  LOG(INFO) << "Done reading tables";
-
-  if (status1.is_ok()) {
-    t1 = std::chrono::steady_clock::now();
-    cylon::Status status = table1->Project({0}, project);
-    t2 = std::chrono::steady_clock::now();
-
-    LOG(INFO) << "Done project tables " << status.get_msg();
-    //unioned->print();
-    LOG(INFO) << "Table 1 had : " << table1->Columns() << "," << table1->Rows() << ", Project has : "
-              << project->Columns() << "," << project->Rows();
-    LOG(INFO) << "Project done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";
-  } else {
-    LOG(INFO) << "Table reading has failed  : " << status1.get_msg();
-  }
-  ctx->Finalize();
-
-  auto tend = std::chrono::steady_clock::now();
-  LOG(INFO) << "Operation took : " << std::chrono::duration_cast<std::chrono::milliseconds>(tend - tstart).count()
+  auto status = cylon::Table::FromCSV(ctx, argv[1], table, read_options);
+  auto read_end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Read table in " 
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_time).count() 
             << "[ms]";
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading has failed  : " << status.get_msg();
+    ctx->Finalize();
+    return 1;
+  }
+  
+  status = table->Project({0}, project);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Project failed  : " << status.get_msg();
+    ctx->Finalize();
+    return 1;
+  }
+  auto project_time = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Table had : " << table->Columns() << "," << table->Rows() << ", Project has : "
+            << project->Columns() << "," << project->Rows();
+  LOG(INFO) << "Project done in " 
+            << std::chrono::duration_cast<std::chrono::milliseconds>(project_time - read_end_time).count() 
+            << "[ms]";
+  ctx->Finalize();
   return 0;
 }

@@ -18,7 +18,7 @@
 #include <vector>
 #include <memory>
 #include <cstring>
-#include "TxRequest.h"
+#include "TxRequest.hpp"
 
 namespace cylon {
 
