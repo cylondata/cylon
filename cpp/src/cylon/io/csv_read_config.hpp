@@ -142,7 +142,7 @@ class CSVReadOptions {
    */
   CSVReadOptions IncludeMissingColumns();
 
-  void *GetHolder() const;
+  std::shared_ptr<void> GetHolder() const;
 };
 }
 }

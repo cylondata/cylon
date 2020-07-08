@@ -53,8 +53,8 @@ CSVReadOptions::CSVReadOptions() {
   CSVReadOptions::holder = std::shared_ptr<void>(new CSVConfigHolder());
 }
 
-void *CSVReadOptions::GetHolder() const {
-  return CSVReadOptions::holder.get();
+std::shared_ptr<void> CSVReadOptions::GetHolder() const {
+  return CSVReadOptions::holder;
 }
 CSVReadOptions CSVReadOptions::UseQuoting() {
   CSVConfigHolder::GetCastedHolder(*this)->quoting = true;
