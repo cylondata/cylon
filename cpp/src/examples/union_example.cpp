@@ -22,9 +22,13 @@
  * This example reads two csv files and does a union on them.
  */
 int main(int argc, char *argv[]) {
-  if (argc < 3) {
-    LOG(ERROR) << "There should be two arguments with paths to csv files";
-    return 1;
+  std::string path1, path2;
+  if (argc != 3) {
+    path1 = "/tmp/csv1.csv";
+    path2 = "/tmp/csv2.csv";
+  } else {
+    path1 = argv[1];
+    path2 = argv[2];
   }
 
   auto start_time = std::chrono::steady_clock::now();
@@ -35,16 +39,16 @@ int main(int argc, char *argv[]) {
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
-  auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
+  auto status = cylon::Table::FromCSV(ctx, path1, first_table, read_options);
   if (!status.is_ok()) {
-    LOG(INFO) << "Table reading failed " << argv[1];
+    LOG(INFO) << "Table reading failed " << path1;
     ctx->Finalize();
     return 1;
   }
   // read second table
-  status = cylon::Table::FromCSV(ctx, argv[2], second_table, read_options);
+  status = cylon::Table::FromCSV(ctx, path2, second_table, read_options);
   if (!status.is_ok()) {
-    LOG(INFO) << "Table reading failed " << argv[2];
+    LOG(INFO) << "Table reading failed " << path2;
     ctx->Finalize();
     return 1;
   }

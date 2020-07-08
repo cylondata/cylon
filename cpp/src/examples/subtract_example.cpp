@@ -13,10 +13,9 @@
  */
 
 #include <glog/logging.h>
-#include <net/mpi/mpi_communicator.h>
-#include <ctx/cylon_context.h>
 #include <table.hpp>
 #include <chrono>
+#include <net/mpi/mpi_communicator.hpp>
 
 int main(int argc, char *argv[]) {
 
