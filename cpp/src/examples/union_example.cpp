@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     t2 = std::chrono::steady_clock::now();
 
     LOG(INFO) << "Done union tables " << status.get_msg();
-//    unioned->Print();
+    unioned->Print();
     LOG(INFO) << "Table 1 had : " << table1->Rows() << " and Table 2 had : " << table2->Rows() << ", Union has : "
               << unioned->Rows();
     LOG(INFO) << "Union done in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "[ms]";

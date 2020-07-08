@@ -150,54 +150,44 @@ Status Table::DistributedJoin(const shared_ptr<Table> &right,
   }
   return status;
 }
-Status Table::Union(const shared_ptr<Table> &right, std::shared_ptr<Table> &out) {
+
+Status Table::DoSetOperation(SetOperation operation, const shared_ptr<Table> &right, shared_ptr<Table> &out) {
   std::string uuid = cylon::util::uuid::generate_uuid_v4();
-  cylon::Status status = cylon::Union(ctx, this->GetID(), right->GetID(), uuid);
+  cylon::Status status = operation(this->ctx, this->id_, right->id_, uuid);
   if (status.is_ok()) {
     out = std::make_shared<Table>(uuid, this->ctx);
   }
   return status;
+}
+
+Status Table::Union(const shared_ptr<Table> &right, std::shared_ptr<Table> &out) {
+  return DoSetOperation(&cylon::Union, right, out);
 }
 
 Status Table::Subtract(const shared_ptr<Table> &right, std::shared_ptr<Table> &out) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
-  cylon::Status status = cylon::Subtract(ctx, this->GetID(), right->GetID(), uuid);
-  if (status.is_ok()) {
-    out = std::make_shared<Table>(uuid, this->ctx);
-  }
-  return status;
+  return DoSetOperation(&cylon::Subtract, right, out);
 }
 
 Status Table::Intersect(const shared_ptr<Table> &right, std::shared_ptr<Table> &out) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
-  cylon::Status status = cylon::Intersect(ctx, this->GetID(), right->GetID(), uuid);
-  if (status.is_ok()) {
-    out = std::make_shared<Table>(uuid, this->ctx);
-  }
-  return status;
+  return DoSetOperation(&cylon::Intersect, right, out);
 }
 
-Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr<Table> &out) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
-  cylon::Status status = cylon::Select(ctx, this->GetID(), selector, uuid);
-  if (status.is_ok()) {
-    out = std::make_shared<Table>(uuid, this->ctx);
-  }
-  return status;
-}
 Status Table::DistributedUnion(const shared_ptr<Table> &right, shared_ptr<Table> &out) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
-  LOG(INFO) << "before";
-  cylon::Status status = cylon::DistributedUnion(this->ctx, this->id_, right->id_, uuid);
-  LOG(INFO) << "after";
-  if (status.is_ok()) {
-    out = std::make_shared<Table>(uuid, this->ctx);
-  }
-  return status;
+  return DoSetOperation(&cylon::DistributedUnion, right, out);
 }
+
+Status Table::DistributedSubtract(const shared_ptr<Table> &right, shared_ptr<Table> &out) {
+  return DoSetOperation(&cylon::DistributedSubtract, right, out);
+}
+
+Status Table::DistributedIntersect(const shared_ptr<Table> &right, shared_ptr<Table> &out) {
+  return DoSetOperation(&cylon::DistributedIntersect, right, out);
+}
+
 void Table::Clear() {
   cylon::RemoveTable(this->id_);
 }
+
 Table::~Table() {
   this->Clear();
 }
@@ -213,6 +203,15 @@ Status Table::FromCSV(cylon::CylonContext *ctx, const vector<std::string> &paths
   }
 
   return cylon::ReadCSV(ctx, paths, out_table_ids, options);
+}
+
+Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr<Table> &out) {
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::Select(ctx, this->GetID(), selector, uuid);
+  if (status.is_ok()) {
+    out = std::make_shared<Table>(uuid, this->ctx);
+  }
+  return status;
 }
 
 Status Table::Project(const std::vector<int64_t> &project_columns, std::shared_ptr<Table> &out) {

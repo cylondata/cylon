@@ -22,7 +22,8 @@ int main(int argc, char *argv[]) {
 
   auto tstart = std::chrono::steady_clock::now();
 
-  auto ctx = cylon::CylonContext::Init();
+  auto mpi_config = new cylon::net::MPIConfig();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::shared_ptr<cylon::Table> table1, table2, result;
 
@@ -44,7 +45,7 @@ int main(int argc, char *argv[]) {
 
   if (status1.is_ok() && status2.is_ok()) {
     t1 = std::chrono::steady_clock::now();
-    cylon::Status status = table1->Intersect(table2, result);
+    cylon::Status status = table1->DistributedIntersect(table2, result);
     t2 = std::chrono::steady_clock::now();
 
     LOG(INFO) << "Done intersect tables " << status.get_msg();

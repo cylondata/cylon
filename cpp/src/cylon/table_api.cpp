@@ -553,14 +553,22 @@ cylon::Status VerifyTableSchema(const std::shared_ptr<arrow::Table> &ltab, const
 
   return cylon::Status::OK();
 }
-
-cylon::Status PrepareTable(cylon::CylonContext *ctx,
+/**
+ * creates an Arrow array based on col_idx, filtered by row_indices
+ * @param ctx
+ * @param table
+ * @param col_idx
+ * @param row_indices
+ * @param array_vector
+ * @return
+ */
+cylon::Status PrepareArray(cylon::CylonContext *ctx,
                            const std::shared_ptr<arrow::Table> &table,
                            const int32_t col_idx,
-                           const std::shared_ptr<std::vector<int64_t>> &table_indices,
+                           const std::shared_ptr<std::vector<int64_t>> &row_indices,
                            arrow::ArrayVector &array_vector) {
   std::shared_ptr<arrow::Array> destination_col_array;
-  arrow::Status ar_status = cylon::util::copy_array_by_indices(table_indices, table->column(col_idx)->chunk(0),
+  arrow::Status ar_status = cylon::util::copy_array_by_indices(row_indices, table->column(col_idx)->chunk(0),
                                                                &destination_col_array, cylon::ToArrowPool(ctx));
   if (ar_status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed while copying a column to the final table from tables." << ar_status.ToString();
@@ -630,18 +638,7 @@ cylon::Status Union(cylon::CylonContext *ctx,
   for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
     arrow::ArrayVector array_vector;
     for (int tab_idx = 0; tab_idx < 2; tab_idx++) {
-//      std::shared_ptr<arrow::Array> destination_col_array;
-//      arrow::Status ar_status =
-//          cylon::util::copy_array_by_indices(std::make_shared<std::vector<int64_t>>(indices_from_tabs[tab_idx]),
-//                                             tables[tab_idx]->column(c)->chunk(0),
-//                                             &destination_col_array,
-//                                             cylon::ToArrowPool(ctx));
-//      if (ar_status != arrow::Status::OK()) {
-//        LOG(FATAL) << "Failed while copying a column to the final table from tables." << ar_status.ToString();
-//        return cylon::Status((int) ar_status.code(), ar_status.message());
-//      }
-//      array_vector.push_back(destination_col_array);
-      status = PrepareTable(ctx,
+      status = PrepareArray(ctx,
                             tables[tab_idx],
                             col_idx,
                             std::make_shared<std::vector<int64_t>>(indices_from_tabs[tab_idx]),
@@ -728,17 +725,8 @@ cylon::Status Subtract(cylon::CylonContext *ctx,
   // prepare final arrays
   for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
     arrow::ArrayVector array_vector;
-//    std::shared_ptr<arrow::Array> destination_col_array;
-//    arrow::Status status1 = cylon::util::copy_array_by_indices(std::make_shared<std::vector<int64_t>>(left_indices),
-//                                                               ltab->column(c)->chunk(0),
-//                                                               &destination_col_array,
-//                                                               cylon::ToArrowPool(ctx));
-//    if (!status1.ok()) {
-//      LOG(FATAL) << "Failed while copying a column to the final table from tables." << status1.ToString();
-//      return cylon::Status((int) status1.code(), status1.message());
-//    }
-//    array_vector.push_back(destination_col_array);
-    status = PrepareTable(ctx, ltab, col_idx, std::make_shared<std::vector<int64_t>>(left_indices), array_vector);
+
+    status = PrepareArray(ctx, ltab, col_idx, std::make_shared<std::vector<int64_t>>(left_indices), array_vector);
 
     if (!status.is_ok()) return status;
 
@@ -820,7 +808,7 @@ cylon::Status Intersect(cylon::CylonContext *ctx,
   // prepare final arrays
   for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
     arrow::ArrayVector array_vector;
-    status = PrepareTable(ctx, ltab, col_idx, std::make_shared<std::vector<int64_t>>(left_indices), array_vector);
+    status = PrepareArray(ctx, ltab, col_idx, std::make_shared<std::vector<int64_t>>(left_indices), array_vector);
 
     if (!status.is_ok()) return status;
 
@@ -838,27 +826,19 @@ cylon::Status Intersect(cylon::CylonContext *ctx,
   return cylon::Status::OK();
 }
 
-cylon::Status DistributedUnion(cylon::CylonContext *ctx,
-                               const std::string &table_left,
-                               const std::string &table_right,
-                               const std::string &dest_id) {
+typedef Status
+(*LocalSetOperation)(CylonContext *, const std::string &, const std::string &, const std::string &);
+cylon::Status DoDistributedSetOperation(CylonContext *ctx,
+                                        LocalSetOperation local_operation,
+                                        const std::string &table_left,
+                                        const std::string &table_right,
+                                        const std::string &dest_id) {
   // extract the tables out
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
 
-  if (ctx->GetWorldSize() == 1) {
-    return Union(ctx, table_left, table_right, dest_id);
-  }
-
-  if (left->num_columns() != right->num_columns()) {
-    return cylon::Status(cylon::Invalid, "The no of columns of two tables are not similar. Can't perform union.");
-  }
-
-  for (int fd = 0; fd < left->num_columns(); ++fd) {
-    if (!left->field(fd)->type()->Equals(right->field(fd)->type())) {
-      return cylon::Status(cylon::Invalid, "The fields of two tables are not similar. Can't perform union.");
-    }
-  }
+  cylon::Status status = VerifyTableSchema(left, right);
+  if (!status.is_ok()) return status;
 
   std::vector<int32_t> hash_columns;
   hash_columns.reserve(left->num_columns());
@@ -883,7 +863,7 @@ cylon::Status DistributedUnion(cylon::CylonContext *ctx,
 
     // now do the local union
     std::shared_ptr<arrow::Table> table;
-    auto status = Union(ctx, ltab_id, rtab_id, dest_id);
+    status = local_operation(ctx, ltab_id, rtab_id, dest_id);
 
     RemoveTable(ltab_id);
     RemoveTable(rtab_id);
@@ -892,7 +872,27 @@ cylon::Status DistributedUnion(cylon::CylonContext *ctx,
   } else {
     return shuffle_status;
   }
+}
 
+cylon::Status DistributedUnion(cylon::CylonContext *ctx,
+                               const std::string &table_left,
+                               const std::string &table_right,
+                               const std::string &dest_id) {
+  return DoDistributedSetOperation(ctx, &Union, table_left, table_right, dest_id);
+}
+
+Status DistributedSubtract(cylon::CylonContext *ctx,
+                           const std::string &table_left,
+                           const std::string &table_right,
+                           const std::string &dest_id) {
+  return DoDistributedSetOperation(ctx, &Subtract, table_left, table_right, dest_id);
+}
+
+Status DistributedIntersect(cylon::CylonContext *ctx,
+                            const std::string &table_left,
+                            const std::string &table_right,
+                            const std::string &dest_id) {
+  return DoDistributedSetOperation(ctx, &Intersect, table_left, table_right, dest_id);
 }
 
 Status Select(cylon::CylonContext *ctx,
