@@ -51,23 +51,23 @@ class BinaryArrowComparator : public ArrowComparator {
   }
 };
 
-ArrowComparator *GetComparator(const std::shared_ptr<arrow::DataType> &type) {
+std::shared_ptr<ArrowComparator> GetComparator(const std::shared_ptr<arrow::DataType> &type) {
   switch (type->id()) {
     case arrow::Type::NA:break;
     case arrow::Type::BOOL:break;
-    case arrow::Type::UINT8:return new NumericArrowComparator<arrow::UInt8Type>();
-    case arrow::Type::INT8:return new NumericArrowComparator<arrow::Int8Type>();
-    case arrow::Type::UINT16:return new NumericArrowComparator<arrow::UInt16Type>();
-    case arrow::Type::INT16:return new NumericArrowComparator<arrow::Int16Type>();
-    case arrow::Type::UINT32:return new NumericArrowComparator<arrow::UInt32Type>();
-    case arrow::Type::INT32:return new NumericArrowComparator<arrow::Int16Type>();
-    case arrow::Type::UINT64:return new NumericArrowComparator<arrow::UInt64Type>();
-    case arrow::Type::INT64:return new NumericArrowComparator<arrow::Int64Type>();
-    case arrow::Type::HALF_FLOAT:return new NumericArrowComparator<arrow::HalfFloatType>();
-    case arrow::Type::FLOAT:return new NumericArrowComparator<arrow::FloatType>();
-    case arrow::Type::DOUBLE:return new NumericArrowComparator<arrow::DoubleType>();
-    case arrow::Type::STRING:return new BinaryArrowComparator();
-    case arrow::Type::BINARY:return new BinaryArrowComparator();
+    case arrow::Type::UINT8:return std::make_shared<NumericArrowComparator<arrow::UInt8Type>>();
+    case arrow::Type::INT8:return std::make_shared<NumericArrowComparator<arrow::Int8Type>>();
+    case arrow::Type::UINT16:return std::make_shared<NumericArrowComparator<arrow::UInt16Type>>();
+    case arrow::Type::INT16:return std::make_shared<NumericArrowComparator<arrow::Int16Type>>();
+    case arrow::Type::UINT32:return std::make_shared<NumericArrowComparator<arrow::UInt32Type>>();
+    case arrow::Type::INT32:return std::make_shared<NumericArrowComparator<arrow::Int16Type>>();
+    case arrow::Type::UINT64:return std::make_shared<NumericArrowComparator<arrow::UInt64Type>>();
+    case arrow::Type::INT64:return std::make_shared<NumericArrowComparator<arrow::Int64Type>>();
+    case arrow::Type::HALF_FLOAT:return std::make_shared<NumericArrowComparator<arrow::HalfFloatType>>();
+    case arrow::Type::FLOAT:return std::make_shared<NumericArrowComparator<arrow::FloatType>>();
+    case arrow::Type::DOUBLE:return std::make_shared<NumericArrowComparator<arrow::DoubleType>>();
+    case arrow::Type::STRING:return std::make_shared<BinaryArrowComparator>();
+    case arrow::Type::BINARY:return std::make_shared<BinaryArrowComparator>();
     case arrow::Type::FIXED_SIZE_BINARY:break;
     case arrow::Type::DATE32:break;
     case arrow::Type::DATE64:break;
@@ -90,9 +90,9 @@ ArrowComparator *GetComparator(const std::shared_ptr<arrow::DataType> &type) {
   }
 }
 
-TableRowComparator::TableRowComparator(const std::vector<std::shared_ptr<arrow::Field>> fields) {
+TableRowComparator::TableRowComparator(const std::vector<std::shared_ptr<arrow::Field>> &fields) {
   for (const auto &field : fields) {
-    this->comparators.push_back(std::shared_ptr<ArrowComparator>(GetComparator(field->type())));
+    this->comparators.push_back(GetComparator(field->type()));
   }
 }
 

@@ -166,8 +166,8 @@ cylon::Status PrintToOStream(const std::string &table_id,
       if (headers.size() != table->num_columns()) {
         return cylon::Status(cylon::Code::IndexError,
                              "Provided headers doesn't match with the number of columns of the table. Given "
-                                    + std::to_string(headers.size())
-                                    + ", Expected " + std::to_string(table->num_columns()));
+                                 + std::to_string(headers.size()) + ", Expected "
+                                 + std::to_string(table->num_columns()));
       }
 
       for (int col = col1; col < col2; col++) {
@@ -504,15 +504,41 @@ cylon::Status HashPartition(cylon::CylonContext *ctx,
   return cylon::Status::OK();
 }
 
-cylon::Status Union(cylon::CylonContext *ctx,
-                    const std::string &table_left,
-                    const std::string &table_right,
-                    const std::string &dest_id) {
-  auto ltab = GetTable(table_left);
-  auto rtab = GetTable(table_right);
+class RowComparator {
+ private:
+  const std::shared_ptr<arrow::Table> *tables;
+  std::shared_ptr<cylon::TableRowComparator> comparator;
+  std::shared_ptr<cylon::RowHashingKernel> row_hashing_kernel;
+  int64_t *eq, *hs;
 
-  std::shared_ptr<arrow::Table> tables[2] = {ltab, rtab};
+ public:
+  RowComparator(cylon::CylonContext *ctx,
+                const std::shared_ptr<arrow::Table> *tables,
+                int64_t *eq,
+                int64_t *hs) {
+    this->tables = tables;
+    this->comparator = std::make_shared<cylon::TableRowComparator>(tables[0]->fields());
+    this->row_hashing_kernel = std::make_shared<cylon::RowHashingKernel>(tables[0]->fields(), cylon::ToArrowPool(ctx));
+    this->eq = eq;
+    this->hs = hs;
+  }
 
+  // equality
+  bool operator()(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const {
+    (*this->eq)++;
+    return this->comparator->compare(this->tables[record1.first], record1.second,
+                                     this->tables[record2.first], record2.second) == 0;
+  }
+
+  // hashing
+  size_t operator()(const std::pair<int8_t, int64_t> &record) const {
+    (*this->hs)++;
+    size_t hash = this->row_hashing_kernel->Hash(this->tables[record.first], record.second);
+    return hash;
+  }
+};
+
+cylon::Status VerifyTableSchema(const std::shared_ptr<arrow::Table> &ltab, const std::shared_ptr<arrow::Table> &rtab) {
   // manual field check. todo check why  ltab->schema()->Equals(rtab->schema(), false) doesn't work
 
   if (ltab->num_columns() != rtab->num_columns()) {
@@ -525,61 +551,53 @@ cylon::Status Union(cylon::CylonContext *ctx,
     }
   }
 
+  return cylon::Status::OK();
+}
+
+cylon::Status PrepareTable(cylon::CylonContext *ctx,
+                           const std::shared_ptr<arrow::Table> &table,
+                           const int32_t col_idx,
+                           const std::shared_ptr<std::vector<int64_t>> &table_indices,
+                           arrow::ArrayVector &array_vector) {
+  std::shared_ptr<arrow::Array> destination_col_array;
+  arrow::Status ar_status = cylon::util::copy_array_by_indices(table_indices, table->column(col_idx)->chunk(0),
+                                                               &destination_col_array, cylon::ToArrowPool(ctx));
+  if (ar_status != arrow::Status::OK()) {
+    LOG(FATAL) << "Failed while copying a column to the final table from tables." << ar_status.ToString();
+    return cylon::Status((int) ar_status.code(), ar_status.message());
+  }
+  array_vector.push_back(destination_col_array);
+
+  return cylon::Status::OK();
+}
+
+cylon::Status Union(cylon::CylonContext *ctx,
+                    const std::string &table_left,
+                    const std::string &table_right,
+                    const std::string &dest_id) {
+  auto ltab = GetTable(table_left);
+  auto rtab = GetTable(table_right);
+
+  cylon::Status status = VerifyTableSchema(ltab, rtab);
+  if (!status.is_ok()) return status;
+
+  std::shared_ptr<arrow::Table> tables[2] = {ltab, rtab};
+
   int64_t eq_calls = 0, hash_calls = 0;
-
-  class RowComparator {
-   private:
-    const std::shared_ptr<arrow::Table> *tables;
-    cylon::TableRowComparator *comparator;
-    cylon::RowHashingKernel *row_hashing_kernel;
-    int64_t *eq, *hs;
-   public:
-    RowComparator(cylon::CylonContext *ctx,
-                  const std::shared_ptr<arrow::Table> *tables,
-                  int64_t *eq,
-                  int64_t *hs) {
-      this->tables = tables;
-      this->comparator = new cylon::TableRowComparator(tables[0]->fields());
-      this->row_hashing_kernel =
-          new cylon::RowHashingKernel(tables[0]->fields(), cylon::ToArrowPool(ctx));
-      this->eq = eq;
-      this->hs = hs;
-    }
-
-    // equality
-    bool operator()(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const {
-      (*this->eq)++;
-      return this->comparator->compare(
-          this->tables[record1.first],
-          record1.second,
-          this->tables[record2.first],
-          record2.second
-      ) == 0;
-    }
-
-    // hashing
-    size_t operator()(const std::pair<int8_t, int64_t> &record) const {
-      (*this->hs)++;
-      size_t hash = this->row_hashing_kernel->Hash(this->tables[record.first], record.second);
-      return hash;
-    }
-  };
 
   auto row_comp = RowComparator(ctx, tables, &eq_calls, &hash_calls);
 
   auto buckets_pre_alloc = (ltab->num_rows() + rtab->num_rows());
   LOG(INFO) << "Buckets : " << buckets_pre_alloc;
-  std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator> rows_set(
-      buckets_pre_alloc,
-      row_comp, row_comp
-  );
+  std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>
+      rows_set(buckets_pre_alloc, row_comp, row_comp);
 
   auto t1 = std::chrono::steady_clock::now();
 
-  int64_t max = std::max(ltab->num_rows(), rtab->num_rows());
-  int8_t table0 = 0;
-  int8_t table1 = 1;
-  int64_t print_threshold = max / 10;
+  const int64_t max = std::max(ltab->num_rows(), rtab->num_rows());
+  const int8_t table0 = 0;
+  const int8_t table1 = 1;
+  const int64_t print_threshold = max / 10;
   for (int64_t row = 0; row < max; ++row) {
     if (row < ltab->num_rows()) {
       rows_set.insert(std::pair<int8_t, int64_t>(table0, row));
@@ -609,21 +627,27 @@ cylon::Status Union(cylon::CylonContext *ctx,
 
   t1 = std::chrono::steady_clock::now();
   // prepare final arrays
-  for (int32_t c = 0; c < ltab->num_columns(); c++) {
+  for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
     arrow::ArrayVector array_vector;
     for (int tab_idx = 0; tab_idx < 2; tab_idx++) {
-      std::shared_ptr<arrow::Array> destination_col_array;
-      arrow::Status
-          status =
-          cylon::util::copy_array_by_indices(std::make_shared<std::vector<int64_t>>(indices_from_tabs[tab_idx]),
-                                             tables[tab_idx]->column(c)->chunk(0),
-                                             &destination_col_array,
-                                             cylon::ToArrowPool(ctx));
-      if (status != arrow::Status::OK()) {
-        LOG(FATAL) << "Failed while copying a column to the final table from tables." << status.ToString();
-        return cylon::Status((int) status.code(), status.message());
-      }
-      array_vector.push_back(destination_col_array);
+//      std::shared_ptr<arrow::Array> destination_col_array;
+//      arrow::Status ar_status =
+//          cylon::util::copy_array_by_indices(std::make_shared<std::vector<int64_t>>(indices_from_tabs[tab_idx]),
+//                                             tables[tab_idx]->column(c)->chunk(0),
+//                                             &destination_col_array,
+//                                             cylon::ToArrowPool(ctx));
+//      if (ar_status != arrow::Status::OK()) {
+//        LOG(FATAL) << "Failed while copying a column to the final table from tables." << ar_status.ToString();
+//        return cylon::Status((int) ar_status.code(), ar_status.message());
+//      }
+//      array_vector.push_back(destination_col_array);
+      status = PrepareTable(ctx,
+                            tables[tab_idx],
+                            col_idx,
+                            std::make_shared<std::vector<int64_t>>(indices_from_tabs[tab_idx]),
+                            array_vector);
+
+      if (!status.is_ok()) return status;
     }
     final_data_arrays.push_back(std::make_shared<arrow::ChunkedArray>(array_vector));
   }
@@ -632,6 +656,181 @@ cylon::Status Union(cylon::CylonContext *ctx,
   LOG(INFO) << "Final array preparation took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
             << "ms";
 
+
+  // create final table
+  std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
+  PutTable(dest_id, table);
+  return cylon::Status::OK();
+}
+
+cylon::Status Subtract(cylon::CylonContext *ctx,
+                       const std::string &table_left,
+                       const std::string &table_right,
+                       const std::string &dest_id) {
+  auto ltab = GetTable(table_left);
+  auto rtab = GetTable(table_right);
+
+  cylon::Status status = VerifyTableSchema(ltab, rtab);
+  if (!status.is_ok()) return status;
+
+  std::shared_ptr<arrow::Table> tables[2] = {ltab, rtab};
+
+  int64_t eq_calls = 0, hash_calls = 0;
+
+  auto row_comp = RowComparator(ctx, tables, &eq_calls, &hash_calls);
+
+  auto buckets_pre_alloc = ltab->num_rows();
+  LOG(INFO) << "Buckets : " << buckets_pre_alloc;
+  std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>
+      left_row_set(buckets_pre_alloc, row_comp, row_comp);
+
+  auto t1 = std::chrono::steady_clock::now();
+
+  // first populate left table in the hash set
+  int64_t print_offset = ltab->num_rows() / 4, next_print = print_offset;
+  for (int64_t row = 0; row < ltab->num_rows(); ++row) {
+    left_row_set.insert(std::pair<int8_t, int64_t>(0, row));
+
+    if (row == next_print) {
+      LOG(INFO) << "Done " << (row + 1) * 100 / ltab->num_rows() << "%" << " N : " << row << ", Eq : " << eq_calls
+                << ", Hs : " << hash_calls;
+      next_print += print_offset;
+    }
+  }
+
+  // then remove matching rows using hash map comparator
+  print_offset = rtab->num_rows() / 4;
+  next_print = print_offset;
+  for (int64_t row = 0; row < rtab->num_rows(); ++row) {
+    left_row_set.erase(std::pair<int8_t, int64_t>(1, row)); // finds a matching row from left and erase it
+
+    if (row == next_print) {
+      LOG(INFO) << "Done " << (row + 1) * 100 / rtab->num_rows() << "%" << " N : " << row << ", Eq : " << eq_calls
+                << ", Hs : " << hash_calls;
+      next_print += print_offset;
+    }
+  }
+
+  auto t2 = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Adding to Set took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms";
+
+  std::vector<int64_t> left_indices;
+  left_indices.reserve(left_row_set.size()); // reserve space for vec
+
+  for (auto const &pr:left_row_set) {
+    left_indices.push_back(pr.second);
+  }
+
+  std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
+
+  t1 = std::chrono::steady_clock::now();
+  // prepare final arrays
+  for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
+    arrow::ArrayVector array_vector;
+//    std::shared_ptr<arrow::Array> destination_col_array;
+//    arrow::Status status1 = cylon::util::copy_array_by_indices(std::make_shared<std::vector<int64_t>>(left_indices),
+//                                                               ltab->column(c)->chunk(0),
+//                                                               &destination_col_array,
+//                                                               cylon::ToArrowPool(ctx));
+//    if (!status1.ok()) {
+//      LOG(FATAL) << "Failed while copying a column to the final table from tables." << status1.ToString();
+//      return cylon::Status((int) status1.code(), status1.message());
+//    }
+//    array_vector.push_back(destination_col_array);
+    status = PrepareTable(ctx, ltab, col_idx, std::make_shared<std::vector<int64_t>>(left_indices), array_vector);
+
+    if (!status.is_ok()) return status;
+
+    final_data_arrays.push_back(std::make_shared<arrow::ChunkedArray>(array_vector));
+  }
+  t2 = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Final array preparation took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            << "ms";
+
+  // create final table
+  std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
+  PutTable(dest_id, table);
+  return cylon::Status::OK();
+}
+
+cylon::Status Intersect(cylon::CylonContext *ctx,
+                        const std::string &table_left,
+                        const std::string &table_right,
+                        const std::string &dest_id) {
+  auto ltab = GetTable(table_left);
+  auto rtab = GetTable(table_right);
+
+  cylon::Status status = VerifyTableSchema(ltab, rtab);
+  if (!status.is_ok()) return status;
+
+  std::shared_ptr<arrow::Table> tables[2] = {ltab, rtab};
+
+  int64_t eq_calls = 0, hash_calls = 0;
+
+  auto row_comp = RowComparator(ctx, tables, &eq_calls, &hash_calls);
+
+  auto buckets_pre_alloc = (ltab->num_rows() + rtab->num_rows());
+  LOG(INFO) << "Buckets : " << buckets_pre_alloc;
+  std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>
+      rows_set(buckets_pre_alloc, row_comp, row_comp);
+
+  auto t1 = std::chrono::steady_clock::now();
+
+  // first populate left table in the hash set
+  int64_t print_offset = ltab->num_rows() / 4, next_print = print_offset;
+  for (int64_t row = 0; row < ltab->num_rows(); ++row) {
+    rows_set.insert(std::pair<int8_t, int64_t>(0, row));
+
+    if (row == next_print) {
+      LOG(INFO) << "left done " << (row + 1) * 100 / ltab->num_rows() << "%" << " N : " << row << ", Eq : " << eq_calls
+                << ", Hs : " << hash_calls;
+      next_print += print_offset;
+    }
+  }
+
+  std::vector<int64_t> left_indices;
+
+  // then add matching rows to the indices_from_tabs vector
+  print_offset = rtab->num_rows() / 4;
+  next_print = print_offset;
+  for (int64_t row = 0; row < rtab->num_rows(); ++row) {
+    auto matching_row_it = rows_set.find(std::pair<int8_t, int64_t>(1, row));
+
+    if (matching_row_it != rows_set.end()) {
+      std::pair<int8_t, int64_t> matching_row = *matching_row_it;
+      left_indices.push_back(matching_row.second);
+    }
+
+    if (row == next_print) {
+      LOG(INFO) << "right done " << (row + 1) * 100 / rtab->num_rows() << "%" << " N : " << row << ", Eq : " << eq_calls
+                << ", Hs : " << hash_calls;
+      next_print += print_offset;
+    }
+  }
+
+  auto t2 = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Adding to Set took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms";
+
+  std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
+
+  t1 = std::chrono::steady_clock::now();
+  // prepare final arrays
+  for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
+    arrow::ArrayVector array_vector;
+    status = PrepareTable(ctx, ltab, col_idx, std::make_shared<std::vector<int64_t>>(left_indices), array_vector);
+
+    if (!status.is_ok()) return status;
+
+    final_data_arrays.push_back(std::make_shared<arrow::ChunkedArray>(array_vector));
+  }
+
+  t2 = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Final array preparation took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            << "ms";
 
   // create final table
   std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);

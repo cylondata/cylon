@@ -72,6 +72,30 @@ cylon::Status DistributedUnion(
     const std::string &dest_id
 );
 
+cylon::Status Subtract(cylon::CylonContext *ctx,
+                const std::string &table_left,
+                const std::string &table_right,
+                const std::string &dest_id);
+
+//cylon::Status DistributedSubtract(
+//        cylon::CylonContext *ctx,
+//        const std::string &table_left,
+//        const std::string &table_right,
+//        const std::string &dest_id
+//);
+
+cylon::Status Intersect(cylon::CylonContext *ctx,
+                       const std::string &table_left,
+                       const std::string &table_right,
+                       const std::string &dest_id);
+
+//cylon::Status DistributedIntersect(
+//        cylon::CylonContext *ctx,
+//        const std::string &table_left,
+//        const std::string &table_right,
+//        const std::string &dest_id
+//);
+
 int ColumnCount(const std::string &id);
 
 int64_t RowCount(const std::string &id);

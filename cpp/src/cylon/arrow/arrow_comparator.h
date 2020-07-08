@@ -26,7 +26,7 @@ class ArrowComparator {
                       int64_t index2) = 0;
 };
 
-ArrowComparator *GetComparator(const std::shared_ptr<arrow::DataType> &type);
+std::shared_ptr<ArrowComparator> GetComparator(const std::shared_ptr<arrow::DataType> &type);
 
 /**
  * This Util class can be used to compare the equality  of rows of two tables. This class
@@ -38,7 +38,7 @@ class TableRowComparator {
  private:
   std::vector<std::shared_ptr<ArrowComparator>> comparators;
  public:
-  TableRowComparator(std::vector<std::shared_ptr<arrow::Field>> vector);
+  explicit TableRowComparator(const std::vector<std::shared_ptr<arrow::Field>> &vector);
   int compare(const std::shared_ptr<arrow::Table> &table1,
               int64_t index1,
               const std::shared_ptr<arrow::Table> &table2,

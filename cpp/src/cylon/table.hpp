@@ -137,6 +137,10 @@ class Table {
                           const std::shared_ptr<Table> &right,
                           std::shared_ptr<Table> &out);
 
+  Status Subtract(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
+
+  Status Intersect(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
+
   Status Select(const std::function<bool(cylon::Row)> &selector, std::shared_ptr<Table> &out);
 
   /**

@@ -158,6 +158,25 @@ Status Table::Union(const shared_ptr<Table> &right, std::shared_ptr<Table> &out)
   }
   return status;
 }
+
+Status Table::Subtract(const shared_ptr<Table> &right, std::shared_ptr<Table> &out) {
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::Subtract(ctx, this->GetID(), right->GetID(), uuid);
+  if (status.is_ok()) {
+    out = std::make_shared<Table>(uuid, this->ctx);
+  }
+  return status;
+}
+
+Status Table::Intersect(const shared_ptr<Table> &right, std::shared_ptr<Table> &out) {
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::Intersect(ctx, this->GetID(), right->GetID(), uuid);
+  if (status.is_ok()) {
+    out = std::make_shared<Table>(uuid, this->ctx);
+  }
+  return status;
+}
+
 Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr<Table> &out) {
   std::string uuid = cylon::util::uuid::generate_uuid_v4();
   cylon::Status status = cylon::Select(ctx, this->GetID(), selector, uuid);
