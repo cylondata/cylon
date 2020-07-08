@@ -26,7 +26,7 @@ namespace config {
 class CSVReadOptions {
 
  private:
-  void *holder;
+  std::shared_ptr<void> holder;
   bool concurrent_file_reads = true;
 
  public:
