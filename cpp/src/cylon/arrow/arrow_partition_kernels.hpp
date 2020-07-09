@@ -138,11 +138,11 @@ using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType,
 using StringHashPartitioner = BinaryHashPartitionKernel;
 using BinaryHashPartitioner = BinaryHashPartitionKernel;
 
-ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
-                                         const std::shared_ptr<arrow::Array> &values);
+std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
+                                                         const std::shared_ptr<arrow::Array> &values);
 
-ArrowPartitionKernel *GetPartitionKernel(arrow::MemoryPool *pool,
-                                         const std::shared_ptr<arrow::DataType> &data_type);
+std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
+                                                         const std::shared_ptr<arrow::DataType> &data_type);
 
 cylon::Status HashPartitionArray(arrow::MemoryPool *pool,
                                  const std::shared_ptr<arrow::Array> &values,
