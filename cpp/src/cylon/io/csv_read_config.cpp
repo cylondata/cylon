@@ -15,7 +15,6 @@
 #include "csv_read_config.hpp"
 #include "csv_read_config_holder.hpp"
 #include "../arrow//arrow_types.hpp"
-#include <arrow/csv/options.h>
 
 namespace cylon {
 namespace io {
@@ -51,10 +50,10 @@ CSVReadOptions CSVReadOptions::SkipRows(int32_t skip_rows) {
 }
 
 CSVReadOptions::CSVReadOptions() {
-  CSVReadOptions::holder = new CSVConfigHolder();
+  CSVReadOptions::holder = std::shared_ptr<void>(new CSVConfigHolder());
 }
 
-void *CSVReadOptions::GetHolder() const {
+std::shared_ptr<void> CSVReadOptions::GetHolder() const {
   return CSVReadOptions::holder;
 }
 CSVReadOptions CSVReadOptions::UseQuoting() {

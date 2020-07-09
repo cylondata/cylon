@@ -26,7 +26,7 @@ namespace config {
 class CSVReadOptions {
 
  private:
-  void *holder;
+  std::shared_ptr<void> holder;
   bool concurrent_file_reads = true;
 
  public:
@@ -142,7 +142,7 @@ class CSVReadOptions {
    */
   CSVReadOptions IncludeMissingColumns();
 
-  void *GetHolder() const;
+  std::shared_ptr<void> GetHolder() const;
 };
 }
 }
