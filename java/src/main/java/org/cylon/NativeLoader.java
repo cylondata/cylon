@@ -1,4 +1,4 @@
-package org.twisterx;
+package org.cylon;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -10,14 +10,14 @@ import java.util.logging.Logger;
 public class NativeLoader {
   private static final Logger LOG = Logger.getLogger(NativeLoader.class.getName());
 
-  private static String TWISTERX = "twisterx";
-  private static String TWISTERX_JNI = "twisterxjni";
+  private static String CYLON = "cylon";
+  private static String CYLON_JNI = "cylonjni";
 
   private static boolean loadSuccess = true;
 
   static {
-    loadLibrary(TWISTERX);
-    loadLibrary(TWISTERX_JNI);
+    loadLibrary(CYLON);
+    loadLibrary(CYLON_JNI);
   }
 
 

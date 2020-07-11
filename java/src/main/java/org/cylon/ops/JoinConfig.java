@@ -1,4 +1,4 @@
-package org.twisterx.ops;
+package org.cylon.ops;
 
 import java.util.List;
 
@@ -53,7 +53,7 @@ public class JoinConfig {
   }
 
   /**
-   * Algorithm to be used when joining two {@link org.twisterx.Table}s
+   * Algorithm to be used when joining two {@link org.cylon.Table}s
    *
    * @param algorithm the {@link Algorithm}
    * @return The instance of {@link JoinConfig}

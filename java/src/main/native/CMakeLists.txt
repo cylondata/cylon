@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
-project(TWISTERX_JNI)
-set(TWISTERX_VERSION 0.0)
+project(CYLON_JNI)
+set(CYLON_VERSION 0.0)
 
 SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-SET(TEST_DATA_DIR ${TWISTERX_SOURCE_DIR}/data)
+SET(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
 
 # Find MPI
 find_package(MPI REQUIRED)
@@ -24,12 +24,12 @@ SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
 
 message("${PROJECT_SOURCE_DIR}/../../../../cpp/src")
-set(TWISTERX_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src/twisterx"
+set(CYLON_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src/cylon"
         "${PROJECT_SOURCE_DIR}/../../../../cpp/thirdparty/cub")
-find_library(TWISTERX_LIBRARY "twisterx" "../../../../cpp/build/lib")
-message(STATUS "TWISTERX_LIBRARY set to ${TWISTERX_LIBRARY}")
-add_library(twisterx SHARED IMPORTED ${TWISTERX_LIBRARY})
-set_target_properties(twisterx PROPERTIES IMPORTED_LOCATION ${TWISTERX_LIBRARY})
+find_library(CYLON_LIBRARY "cylon" "../../../../cpp/build/lib")
+message(STATUS "CYLON_LIBRARY set to ${CYLON_LIBRARY}")
+add_library(cylon SHARED IMPORTED ${CYLON_LIBRARY})
+set_target_properties(cylon PROPERTIES IMPORTED_LOCATION ${CYLON_LIBRARY})
 
 
 find_package(JNI REQUIRED)
@@ -40,13 +40,13 @@ else ()
 endif (JNI_FOUND)
 
 include_directories("include"
-        "${JNI_INCLUDE_DIRS}" ${TWISTERX_INCLUDE})
+        "${JNI_INCLUDE_DIRS}" ${CYLON_INCLUDE})
 
 set(SOURCE_FILES
         src/Table.cpp src/TwisterXContext.cpp src/ConversionUtils.h src/ConversionUtils.cpp)
-add_library(twisterxjni SHARED ${SOURCE_FILES})
+add_library(cylonjni SHARED ${SOURCE_FILES})
 
 include_directories(${MPI_INCLUDE_PATH})
-target_link_libraries(twisterxjni ${MPI_LIBRARIES})
-target_link_libraries(twisterxjni twisterx)
-target_link_libraries(twisterxjni ${JNI_LIBRARIES})
+target_link_libraries(cylonjni ${MPI_LIBRARIES})
+target_link_libraries(cylonjni cylon)
+target_link_libraries(cylonjni ${JNI_LIBRARIES})

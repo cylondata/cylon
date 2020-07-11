@@ -1,4 +1,4 @@
-package org.twisterx;
+package org.cylon;
 
 /**
  * This class models a column of a {@link Table} instance

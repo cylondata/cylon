@@ -1,9 +1,9 @@
-package org.twisterx;
+package org.cylon;
 
 import org.apache.arrow.vector.types.Types;
-import org.twisterx.ops.Filter;
-import org.twisterx.ops.JoinConfig;
-import org.twisterx.ops.Mapper;
+import org.cylon.ops.Filter;
+import org.cylon.ops.JoinConfig;
+import org.cylon.ops.Mapper;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,14 +23,14 @@ import java.util.UUID;
 @SuppressWarnings({"unused", "rawtypes"})
 public class Table extends DataRepresentation {
 
-  private TwisterXContext ctx;
+  private CylonContext ctx;
 
   /**
    * Creates a new instance of a {@link Table}
    *
    * @param tableId ID of the table
    */
-  private Table(String tableId, TwisterXContext ctx) {
+  private Table(String tableId, CylonContext ctx) {
     super(tableId);
     this.ctx = ctx;
   }
@@ -43,7 +43,7 @@ public class Table extends DataRepresentation {
    * @param path path to the CSV file
    * @return A {@link Table} instance that holds the data from the CSV file
    */
-  public static Table fromCSV(TwisterXContext ctx, String path) {
+  public static Table fromCSV(CylonContext ctx, String path) {
     String uuid = UUID.randomUUID().toString();
     Table.nativeLoadCSV(ctx.getCtxId(), path, uuid);
     return new Table(uuid, ctx);
@@ -61,7 +61,7 @@ public class Table extends DataRepresentation {
 
   /**
    * <p>This method will load a table by reading the data from a CSV file. The behaviour will be similar to
-   * {@link Table#fromCSV(TwisterXContext, String)}, but additionally data types can be specified for each column.</p>
+   * {@link Table#fromCSV(CylonContext, String)}, but additionally data types can be specified for each column.</p>
    *
    * @param path      path to the CSV file
    * @param dataTypes List of data types, i<sup>th</sup> index of the {@link List} should specify the data types of the i<sup>th</sup> column.
@@ -160,7 +160,7 @@ public class Table extends DataRepresentation {
    * @param tables List of tables to be merged
    * @return merged {@link Table}
    */
-  public static Table merge(TwisterXContext ctx, Table... tables) {
+  public static Table merge(CylonContext ctx, Table... tables) {
     String[] tableIds = new String[tables.length];
     for (int i = 0; i < tables.length; i++) {
       tableIds[i] = tables[i].getId();

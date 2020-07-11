@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.twister2</groupId>
-    <artifactId>twisterx</artifactId>
+    <groupId>org.cylon</groupId>
+    <artifactId>cylon-core</artifactId>
     <version>0.1-SNAPSHOT</version>
-    <name>twisterx jni</name>
+    <name>cylon jni</name>
 
     <description>
-        Java binding for Twisterx
+        Java binding for Cylon
     </description>
 
     <licenses>
@@ -110,13 +110,13 @@
                                 <resource>
                                     <directory>${native.build.path}/lib</directory>
                                     <includes>
-                                        <include>libtwisterxjni.so</include>
+                                        <include>libcylonjni.so</include>
                                     </includes>
                                 </resource>
                                 <resource>
                                     <directory>../cpp/build/lib</directory>
                                     <includes>
-                                        <include>libtwisterx.so</include>
+                                        <include>libcylon.so</include>
                                     </includes>
                                 </resource>
                             </resources>

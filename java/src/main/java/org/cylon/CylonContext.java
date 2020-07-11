@@ -1,43 +1,43 @@
-package org.twisterx;
+package org.cylon;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TwisterXContext {
+public class CylonContext {
 
   private static AtomicInteger ctxIdGenerator = new AtomicInteger();
 
   private int ctxId;
 
-  private TwisterXContext() {
+  private CylonContext() {
     this.ctxId = ctxIdGenerator.getAndIncrement();
   }
 
-  public static TwisterXContext init() {
+  public static CylonContext init() {
     boolean loaded = NativeLoader.load();
 
     if (!loaded) {
-      throw new RuntimeException("Failed to load twisterx native libraries");
+      throw new RuntimeException("Failed to load cylon native libraries");
     }
 
-    TwisterXContext ctx = new TwisterXContext();
-    TwisterXContext.nativeInit(ctx.getCtxId());
+    CylonContext ctx = new CylonContext();
+    CylonContext.nativeInit(ctx.getCtxId());
     return ctx;
   }
 
   public void barrier() {
-    TwisterXContext.barrier(this.ctxId);
+    CylonContext.barrier(this.ctxId);
   }
 
   public void finalizeCtx() {
-    TwisterXContext.finalize(this.ctxId);
+    CylonContext.finalize(this.ctxId);
   }
 
   public int getWorldSize() {
-    return TwisterXContext.getWorldSize(this.ctxId);
+    return CylonContext.getWorldSize(this.ctxId);
   }
 
   public int getRank() {
-    return TwisterXContext.getRank(this.ctxId);
+    return CylonContext.getRank(this.ctxId);
   }
 
   public static native int getWorldSize(int ctxId);

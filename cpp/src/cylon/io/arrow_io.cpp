@@ -34,6 +34,8 @@ arrow::Result<std::shared_ptr<arrow::Table>> read_csv(cylon::CylonContext *ctx,
     return mmap_result.status();
   }
 
+  arrow::Array
+
   auto read_options = dynamic_cast<arrow::csv::ReadOptions *>(config::CSVConfigHolder::GetCastedHolder(options));
   auto parse_options = dynamic_cast<arrow::csv::ParseOptions *>(config::CSVConfigHolder::GetCastedHolder(options));
   auto convert_options = dynamic_cast<arrow::csv::ConvertOptions *>(config::CSVConfigHolder::GetCastedHolder(options));
