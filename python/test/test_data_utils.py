@@ -12,7 +12,7 @@
  # limitations under the License.
  ##
 
-from pytwisterx.util.data.DataManager import LocalDataLoader
+from pycylon.util.data.DataManager import LocalDataLoader
 
 base_path: str = "/home/vibhatha/data/mnist"
 train_file_name: str = "mnist_train_small.csv"

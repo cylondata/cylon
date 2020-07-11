@@ -14,7 +14,7 @@
 
 import numpy as np
 cimport numpy as np
-from pytwisterx.net.txrequest cimport CTxRequest
+from pycylon.net.txrequest cimport CTxRequest
 
 
 cdef class TxRequest:
@@ -33,7 +33,7 @@ cdef class TxRequest:
     def __cinit__(self, int tgt, np.ndarray buf, int len,
                   np.ndarray[int, ndim=1, mode="c"] head, int hLength):
         '''
-        Initialized the PyTwisterX TxRequest
+        Initialized the PyCylon TxRequest
         :param tgt: passed as an int; the target of communication
         :param buf: passed as an numpy array; the buf that is passed to the communication
         :param len: passed as an int; the length of the target buf

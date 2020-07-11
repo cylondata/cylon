@@ -12,9 +12,9 @@
  # limitations under the License.
  ##
 
-from pytwisterx.net import dist
+from pycylon.net import dist
 import numpy as np
-from pytwisterx.net.comms import Communication
+from pycylon.net.comms import Communication
 
 dist.dist_init()
 

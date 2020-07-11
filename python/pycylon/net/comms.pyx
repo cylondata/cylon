@@ -13,12 +13,12 @@
  ##
 
 '''
-LibTwisterX Communication mapping with PyTwisterX
+LibCylon Communication mapping with PyCylon
 '''
 
 import numpy as np
 cimport numpy as np
-from pytwisterx.net.comms cimport CAll_to_all_wrap
+from pycylon.net.comms cimport CAll_to_all_wrap
 from libcpp.vector cimport vector
 
 cdef class Communication:

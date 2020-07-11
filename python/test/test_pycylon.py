@@ -12,13 +12,13 @@
  # limitations under the License.
  ##
 
-no_twisterx = False
+no_cylon = False
 try:
-    import pytwisterx
+    import pycylon
 except ImportError:
-    no_twisterx = True
+    no_cylon = True
 
-if no_twisterx:
-    print("No Pytwisterx installation found!")
+if no_cylon:
+    print("No PyCylon installation found!")
 else:
-    print("Pytwisterx Installed!")
+    print("PyCylon Installed!")

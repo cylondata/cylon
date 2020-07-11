@@ -13,17 +13,17 @@
  ##
 
 '''
-Cython Interface for TwisterXContext
+Cython Interface for CylonContext
 '''
 
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 #
-cdef extern from "../../../cpp/src/cylon/ctx/cylon_context.h" namespace "cylon":
+cdef extern from "../../../cpp/src/cylon/ctx/cylon_context.hpp" namespace "cylon":
     cdef cppclass CCylonContext "cylon::cylon_context":
         pass
 #         void Finalize();
-#         #CTwisterXContext *InitDistributed(net::CommConfig *config);
+#         #CCylonContext *InitDistributed(net::CommConfig *config);
 #         void AddConfig(const string &key, const string &value);
 #         string GetConfig(const string &key, const string &defn);
 #         #net::Communicator *GetCommunicator() const;

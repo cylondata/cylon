@@ -23,8 +23,8 @@ from libcpp.string cimport string
 from libcpp.unordered_map cimport unordered_map
 from libcpp.memory cimport shared_ptr
 
-cdef extern from "../../../cpp/src/twisterx/io/csv_read_config.h" namespace "twisterx::io::config":
-    cdef cppclass _CSVReadOptions "twisterx::io::config::CSVReadOptions":
+cdef extern from "../../../cpp/src/cylon/io/csv_read_config.hpp" namespace "cylon::io::config":
+    cdef cppclass _CSVReadOptions "cylon::io::config::CSVReadOptions":
         _CSVReadOptions()
 
         _CSVReadOptions UseThreads(bool use_threads)

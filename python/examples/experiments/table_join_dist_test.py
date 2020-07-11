@@ -3,9 +3,9 @@ import logging
 import os
 import time
 
-from pytwisterx.ctx.context import TwisterxContext
-from pytwisterx.data.table import Table
-from pytwisterx.data.table import csv_reader
+from pycylon.ctx.context import CylonContext
+from pycylon.data.table import Table
+from pycylon.data.table import csv_reader
 
 parser = argparse.ArgumentParser(description='generate random data')
 parser.add_argument('-s', dest='src_dir', type=str, help='source dir', required=True)
@@ -18,7 +18,7 @@ src_dir = args['src_dir']
 base_dir = args['base_dir']
 
 
-def RunJoin(rank: int, ctx: TwisterxContext, table1: Table, table2: Table, join_type: str,
+def RunJoin(rank: int, ctx: CylonContext, table1: Table, table2: Table, join_type: str,
             join_algorithm: str, left_col: int, right_col: int) -> bool:
     w_sz: int = ctx.get_world_size()
 
@@ -38,7 +38,7 @@ def RunJoin(rank: int, ctx: TwisterxContext, table1: Table, table2: Table, join_
     return staus
 
 
-ctx: TwisterxContext = TwisterxContext("mpi")
+ctx: CylonContext = CylonContext("mpi")
 
 rank: int = ctx.get_rank()
 world_size: int = ctx.get_world_size()
@@ -68,7 +68,7 @@ try:
     logging.info(
         f"Table 1 & 2 Rows [{table1.rows},{table2.rows}], Columns [{table1.columns},{table1.columns}]")
 except Exception:
-    raise "Something went wrong in loading tables from disk"
+    raise Exception("Something went wrong in loading tables from disk")
 
 logging.info("Inner Join Start")
 

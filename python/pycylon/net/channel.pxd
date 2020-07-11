@@ -17,14 +17,14 @@ Cython API Mapping for TwisterX C++ TxRequest for communication channels
 '''
 
 from libcpp.memory cimport shared_ptr
-from pytwisterx.net.txrequest cimport CTxRequest
+from pycylon.net.txrequest cimport CTxRequest
 
 
-cdef extern from "../../../cpp/src/twisterx/net/channel.hpp" namespace "twisterx":
-    cdef cppclass CChannelSendCallback "twisterx::ChannelSendCallback":
+cdef extern from "../../../cpp/src/cylon/net/channel.hpp" namespace "cylon":
+    cdef cppclass CChannelSendCallback "cylon::ChannelSendCallback":
         void sendComplete(shared_ptr[CTxRequest])
         void sendFinishComplete(shared_ptr[CTxRequest])
 
-    cdef cppclass CChannelReceiveCallback "twisterx::ChannelReceiveCallback":
+    cdef cppclass CChannelReceiveCallback "cylon::ChannelReceiveCallback":
         void receivedData(int, void *, int)
         void receivedHeader(int, int, int *, int)

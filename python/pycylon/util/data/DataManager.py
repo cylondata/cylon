@@ -20,8 +20,8 @@ import numpy as np
 from pyarrow import Table as ArrowTable
 from pyarrow import csv
 
-from pytwisterx.util.FileUtils import files_exist
-from pytwisterx.util.FileUtils import path_exists
+from pycylon.util.FileUtils import files_exist
+from pycylon.util.FileUtils import path_exists
 
 '''
 Supporting Data Loading from DL Workloads

@@ -16,20 +16,20 @@
 Join Configurations in TwisterX
 '''
 
-cdef extern from "../../../cpp/src/cylon/join/join_config.h" namespace "cylon::join::config":
+cdef extern from "../../../cpp/src/cylon/join/join_config.hpp" namespace "cylon::join::config":
     cdef enum CJoinType "cylon::join::config::JoinType":
         CINNER "cylon::join::config::JoinType::INNER"
         CLEFT "cylon::join::config::JoinType::LEFT"
         CRIGHT "cylon::join::config::JoinType::RIGHT"
         COUTER "cylon::join::config::JoinType::FULL_OUTER"
 
-cdef extern from "../../../cpp/src/cylon/join/join_config.h" namespace "cylon::join::config":
+cdef extern from "../../../cpp/src/cylon/join/join_config.hpp" namespace "cylon::join::config":
     cdef enum CJoinAlgorithm "cylon::join::config::JoinAlgorithm":
         CSORT "cylon::join::config::JoinAlgorithm::SORT"
         CHASH "cylon::join::config::JoinAlgorithm::HASH"
 
 
-cdef extern from "../../../cpp/src/cylon/join/join_config.h" namespace "cylon::join::config":
+cdef extern from "../../../cpp/src/cylon/join/join_config.hpp" namespace "cylon::join::config":
     cdef cppclass CJoinConfig "cylon::join::config::JoinConfig":
         CJoinConfig(CJoinType type, int, int)
         CJoinConfig(CJoinType, int, int, CJoinAlgorithm)

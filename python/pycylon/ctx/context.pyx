@@ -21,40 +21,13 @@ from pycylon.net.comm_type cimport _CommType
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context cimport CCylonContextWrap
 
-# cdef extern from "../../../cpp/src/twisterx/ctx/twisterx_context.h" namespace "twisterx":
-#     cdef cppclass CTwisterXContext "twisterx::TwisterXContext":
-#         void Finalize();
-#         void AddConfig(const string &key, const string &value);
-#         string GetConfig(const string &key, const string &defn);
-#         #net::Communicator *GetCommunicator() const;
-#         int GetRank();
-#         int GetWorldSize();
-#         vector[int] GetNeighbours(bool include_self);
-#
-# cdef extern from "../../../cpp/src/twisterx/net/comm_config.h" namespace "twisterx::net":
-#     cdef cppclass CCommConfig "twisterx::net::CommConfig":
-#         _CommType Type()
-#
-# cdef extern from "../../../cpp/src/twisterx/ctx/twisterx_context.h" namespace "twisterx::TwisterXContext":
-#     cdef extern CTwisterXContext *Init()
-#     cdef extern CTwisterXContext *InitDistributed(CCommConfig *config);
-#
-# cdef extern from "../../../cpp/src/twisterx/net/mpi/mpi_communicator.h" namespace "twisterx::net":
-#     cdef cppclass CMPIConfig "twisterx::MPIConfig":
-#         _CommType Type()
-#
-# cdef class CommConfig:
-#     @staticmethod
-#     def type() -> CommType:
-#         return CommType.MPI.value
-#
 cdef class CylonContext:
     cdef CCylonContextWrap *thisPtr;
     cdef string config;
 
     def __cinit__(self, config: str):
         '''
-        Initializing the TwisterX Context based on the distributed or non-distributed context
+        Initializing the Cylon Context based on the distributed or non-distributed context
         :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
         :return: None
         '''

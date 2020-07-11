@@ -13,11 +13,11 @@
  ##
 
 '''
-Wrapping for custom communication APIs for PyTwisterX
+Wrapping for custom communication APIs for PyCylon
 (Work in Progress)
 '''
 
-cdef extern from "../../../cpp/src/twisterx/python/net/distributed.h" namespace "twisterx::net":
+cdef extern from "../../../cpp/src/cylon/python/net/distributed.h" namespace "cylon::net":
     cdef extern void cdist_init()
     cdef extern void cdist_finalize()
     cdef extern int cget_rank()

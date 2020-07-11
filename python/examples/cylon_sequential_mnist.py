@@ -19,10 +19,10 @@ import torch
 from pyarrow import Table as PyArrowTable
 from pyarrow import Tensor as ArrowTensor
 
-from pytwisterx.data.table import Table
-from pytwisterx.data.table import csv_reader
-from pytwisterx.util.benchutils import benchmark_with_repitions
-from pytwisterx.util.data.DataManager import MiniBatcher
+from pycylon.data.table import Table
+from pycylon.data.table import csv_reader
+from pycylon.util.benchutils import benchmark_with_repitions
+from pycylon.util.data.DataManager import MiniBatcher
 
 from torch import Tensor as TorchTensor
 

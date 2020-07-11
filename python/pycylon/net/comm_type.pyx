@@ -16,7 +16,7 @@
 Mapping TwisterX C++ Comm Type with PyTwisterX CommType
 '''
 
-from pytwisterx.net.comm_type cimport _CommType
+from pycylon.net.comm_type cimport _CommType
 
 cpdef enum CommType:
     MPI = _CommType._MPI

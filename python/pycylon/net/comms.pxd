@@ -13,13 +13,13 @@
  ##
 
 '''
-libTwisterX mapping for All To ALl Communication.
+libCylon mapping for All To ALl Communication.
 '''
 
 from libcpp.vector cimport vector
 
-cdef extern from "../../../cpp/src/twisterx/python/net/comm/all_to_all_wrap.h" namespace "twisterx::net::comm":
-    cdef cppclass CAll_to_all_wrap "twisterx::net::comm::all_to_all_wrap":
+cdef extern from "../../../cpp/src/cylon/python/net/comm/all_to_all_wrap.h" namespace "cylon::net::comm":
+    cdef cppclass CAll_to_all_wrap "cylon::net::comm::all_to_all_wrap":
         CAll_to_all_wrap();
         CAll_to_all_wrap(int worker_id, const vector[int] &source, const vector[int] &targets, int edgeId);
         void insert(void *buffer, int length, int target, int *header, int headerLength);

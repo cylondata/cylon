@@ -17,13 +17,13 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
-from pytwisterx.net.comm_type cimport _CommType
-from pytwisterx.net.comm_type import CommType
+from pycylon.net.comm_type cimport _CommType
+from pycylon.net.comm_type import CommType
 
 '''
-MPIConfig Type mapping from libTwisterX to PyTwisterX
+MPIConfig Type mapping from libCylon to PyCylon
 '''
 
-cdef extern from "../../../cpp/src/twisterx/net/mpi/mpi_communicator.h" namespace "twisterx::net":
-    cdef cppclass CMPIConfig "twisterx::MPIConfig":
+cdef extern from "../../../cpp/src/cylon/net/mpi/mpi_communicator.hpp" namespace "cylon::net":
+    cdef cppclass CMPIConfig "cylon::MPIConfig":
         _CommType Type()

@@ -13,10 +13,10 @@
  ##
 
 from libcpp.memory cimport shared_ptr
-from pytwisterx.net.channel cimport CChannelReceiveCallback
-from pytwisterx.net.channel cimport CChannelSendCallback
-from pytwisterx.net.txrequest cimport CTxRequest
-from pytwisterx.net.txrequest import TxRequest
+from pycylon.net.channel cimport CChannelReceiveCallback
+from pycylon.net.channel cimport CChannelSendCallback
+from pycylon.net.txrequest cimport CTxRequest
+from pycylon.net.txrequest import TxRequest
 
 '''
 Implementation In Progress

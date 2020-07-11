@@ -12,9 +12,9 @@
  # limitations under the License.
  ##
 
-from pytwisterx.ctx.context import TwisterxContext
+from pycylon.ctx.context import CylonContext
 
-ctx: TwisterxContext = TwisterxContext("mpi")
+ctx: CylonContext = CylonContext("mpi")
 
 print("Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
 

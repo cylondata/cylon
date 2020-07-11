@@ -17,9 +17,9 @@
 using namespace std;
 
 int main(int argc, char *argv[]) {
-  twisterx::net::cdist_init();
-  int rank = twisterx::net::cget_rank();
-  int size = twisterx::net::cget_size();
+  cylon::net::cdist_init();
+  int rank = cylon::net::cget_rank();
+  int size = cylon::net::cget_size();
   cout << "Rank : " << rank << ", Size : " << size << endl;
-  twisterx::net::cdist_finalize();
+  cylon::net::cdist_finalize();
 }

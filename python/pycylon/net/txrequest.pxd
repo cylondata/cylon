@@ -13,13 +13,13 @@
  ##
 
 '''
-libTwisterX to PyTwisterX mapping for TxRequest API
+libCylon to PyCylon mapping for TxRequest API
 '''
 
 from libcpp.string cimport string
 
-cdef extern from "../../../cpp/src/twisterx/net/TxRequest.h" namespace "twisterx":
-    cdef cppclass CTxRequest "twisterx::TxRequest":
+cdef extern from "../../../cpp/src/cylon/net/TxRequest.hpp" namespace "cylon":
+    cdef cppclass CTxRequest "cylon::TxRequest":
         void *buffer;
         int length;
         int target;

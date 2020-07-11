@@ -11,7 +11,7 @@
  # See the License for the specific language governing permissions and
  # limitations under the License.
  ##
-cdef extern from "../../../cpp/src/cylon/code.cpp" namespace "twisterx":
+cdef extern from "../../../cpp/src/cylon/code.cpp" namespace "cylon":
 
     cdef enum _Code 'cylon::Code':
         _OK 'cylon::Code::OK'

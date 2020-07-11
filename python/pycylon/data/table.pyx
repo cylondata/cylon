@@ -127,7 +127,7 @@ cdef class Table:
     @property
     def id(self) -> str:
         '''
-        Table Id is extracted from the TwisterX C++ API
+        Table Id is extracted from the Cylon C++ API
         :return: table id
         '''
         return self.thisPtr.get_id().decode()
@@ -135,16 +135,16 @@ cdef class Table:
     @property
     def columns(self) -> int:
         '''
-        Column count is extracted from the TwisterX C++ Table API
-        :return: number of columns in PyTwisterX table
+        Column count is extracted from the Cylon C++ Table API
+        :return: number of columns in PyCylon table
         '''
         return self.thisPtr.columns()
 
     @property
     def rows(self) -> int:
         '''
-        Rows count is extracted from the TwisterX C++ Table API
-        :return: number of rows in PyTwisterX table
+        Rows count is extracted from the Cylon C++ Table API
+        :return: number of rows in PyCylon table
         '''
         return self.thisPtr.rows()
 
@@ -157,7 +157,7 @@ cdef class Table:
 
     def show_by_range(self, row1: int, row2: int, col1: int, col2: int):
         '''
-        prints the table in console from the TwisterX C++ Table API
+        prints the table in console from the Cylon C++ Table API
         uses row range and column range
         :param row1: starting row number as int
         :param row2: ending row number as int
@@ -169,7 +169,7 @@ cdef class Table:
 
     def to_csv(self, path: str) -> Status:
         '''
-        writes a PyTwisterX table to CSV file
+        writes a PyCylon table to CSV file
         :param path: passed as a str, the path of the csv file
         :return: Status of the process (SUCCESS or FAILURE)
         '''
@@ -179,13 +179,13 @@ cdef class Table:
 
     def join(self, ctx: CylonContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
         '''
-        Joins two PyTwisterX tables
-        :param table: PyTwisterX table on which the join is performed (becomes the left table)
+        Joins two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
         :param join_type: Join Type as str ["inner", "left", "right", "outer"]
         :param algorithm: Join Algorithm as str ["hash", "sort"]
         :param left_col: Join column of the left table as int
         :param right_col: Join column of the right table as int
-        :return: Joined PyTwisterX table
+        :return: Joined PyCylon table
         '''
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
                                right_column_index=right_col)
@@ -198,18 +198,18 @@ cdef class Table:
 
     def distributed_join(self, ctx: CylonContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
         '''
-        Joins two PyTwisterX tables
-        :param table: PyTwisterX table on which the join is performed (becomes the left table)
+        Joins two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
         :param join_type: Join Type as str ["inner", "left", "right", "outer"]
         :param algorithm: Join Algorithm as str ["hash", "sort"]
         :param left_col: Join column of the left table as int
         :param right_col: Join column of the right table as int
-        :return: Joined PyTwisterX table
+        :return: Joined PyCylon table
         '''
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
                                right_column_index=right_col)
         cdef CJoinConfig *jc1 = self.jcPtr        
-        #cdef CTwisterXContextWrap *ctx_wrap = <CTwisterXContextWrap*>ctx.get_c_context()
+        #cdef CCylonContextWrap *ctx_wrap = <CCylonContextWrap*>ctx.get_c_context()
         cdef string table_out_id = self.thisPtr.distributed_join(table.id.encode(), jc1[0])
         if table_out_id.size() == 0:
             raise Exception("Join Failed !!!")
@@ -234,7 +234,7 @@ cdef class Table:
     def to_arrow(tx_table: Table) :
         '''
         creating PyArrow Table from PyTwisterX table
-        :param tx_table: PyTwisterx Table
+        :param tx_table: PyCylon Table
         :return: PyArrow Table
         '''
         table = to_pyarrow_table(tx_table.id.encode())
