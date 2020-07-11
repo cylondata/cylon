@@ -19,8 +19,8 @@ Cython Interface for TwisterXContext
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 #
-cdef extern from "../../../cpp/src/twisterx/ctx/twisterx_context.h" namespace "twisterx":
-    cdef cppclass CTwisterXContext "twisterx::twisterx_context":
+cdef extern from "../../../cpp/src/cylon/ctx/cylon_context.h" namespace "cylon":
+    cdef cppclass CCylonContext "cylon::cylon_context":
         pass
 #         void Finalize();
 #         #CTwisterXContext *InitDistributed(net::CommConfig *config);
@@ -32,11 +32,11 @@ cdef extern from "../../../cpp/src/twisterx/ctx/twisterx_context.h" namespace "t
 #         vector[int] GetNeighbours(bool include_self);
 
 
-cdef extern from "../../../cpp/src/twisterx/python/twisterx_context_wrap.h" namespace "twisterx::python":
-    cdef cppclass CTwisterXContextWrap "twisterx::python::twisterx_context_wrap":
-        CTwisterXContextWrap()
-        CTwisterXContextWrap(string config)
-        CTwisterXContext *getInstance()
+cdef extern from "../../../cpp/src/cylon/python/cylon_context_wrap.h" namespace "cylon::python":
+    cdef cppclass CCylonContextWrap "cylon::python::cylon_context_wrap":
+        CCylonContextWrap()
+        CCylonContextWrap(string config)
+        CCylonContext *getInstance()
         int GetRank()
         int GetWorldSize()
         void Barrier()

@@ -16,10 +16,10 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
 from cython.operator cimport dereference as deref
-from pytwisterx.net.comm_type import CommType
-from pytwisterx.net.comm_type cimport _CommType
-from pytwisterx.ctx.context cimport CTwisterXContext
-from pytwisterx.ctx.context cimport CTwisterXContextWrap
+from pycylon.net.comm_type import CommType
+from pycylon.net.comm_type cimport _CommType
+from pycylon.ctx.context cimport CCylonContext
+from pycylon.ctx.context cimport CCylonContextWrap
 
 # cdef extern from "../../../cpp/src/twisterx/ctx/twisterx_context.h" namespace "twisterx":
 #     cdef cppclass CTwisterXContext "twisterx::TwisterXContext":
@@ -48,8 +48,8 @@ from pytwisterx.ctx.context cimport CTwisterXContextWrap
 #     def type() -> CommType:
 #         return CommType.MPI.value
 #
-cdef class TwisterxContext:
-    cdef CTwisterXContextWrap *thisPtr;
+cdef class CylonContext:
+    cdef CCylonContextWrap *thisPtr;
     cdef string config;
 
     def __cinit__(self, config: str):
@@ -61,10 +61,10 @@ cdef class TwisterxContext:
         self.config = config.encode()
         if config is None:
             print("Single Thread Config Loaded")
-            self.thisPtr = new CTwisterXContextWrap()
+            self.thisPtr = new CCylonContextWrap()
         else:
             print("Distributed Config Loaded")
-            self.thisPtr = new CTwisterXContextWrap(config.encode())
+            self.thisPtr = new CCylonContextWrap(config.encode())
 
     def get_rank(self) -> int:
         '''
@@ -97,7 +97,7 @@ cdef class TwisterxContext:
         return self.config
 
 
-    cdef CTwisterXContextWrap* get_c_context(self):
+    cdef CCylonContextWrap* get_c_context(self):
         return self.thisPtr
 
 

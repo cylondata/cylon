@@ -13,29 +13,29 @@
  ##
 
 from libcpp.string cimport string
-from pytwisterx.common.status cimport _Status
-from pytwisterx.common.status import Status
+from pycylon.common.status cimport _Status
+from pycylon.common.status import Status
 import uuid
-from pytwisterx.common.join_config cimport CJoinType
-from pytwisterx.common.join_config cimport CJoinAlgorithm
-from pytwisterx.common.join_config cimport CJoinConfig
-from pytwisterx.common.join_config import PJoinType
-from pytwisterx.common.join_config import PJoinAlgorithm
+from pycylon.common.join_config cimport CJoinType
+from pycylon.common.join_config cimport CJoinAlgorithm
+from pycylon.common.join_config cimport CJoinConfig
+from pycylon.common.join_config import PJoinType
+from pycylon.common.join_config import PJoinAlgorithm
 from pyarrow.lib cimport CTable
 from pyarrow.lib cimport pyarrow_unwrap_table
 from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
 from cython.operator cimport dereference as deref
 
-from pytwisterx.ctx.context cimport CTwisterXContextWrap
-from pytwisterx.ctx.context import TwisterxContext
+from pycylon.ctx.context cimport CCylonContextWrap
+from pycylon.ctx.context import CylonContext
 
 '''
 TwisterX Table definition mapping 
 '''
 
-cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table":
-    cdef cppclass CxTable "twisterx::python::table::CxTable":
+cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table":
+    cdef cppclass CxTable "cylon::python::table::CxTable":
         CxTable()
         CxTable(string)
         string get_id()
@@ -47,13 +47,13 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
         string join(const string, CJoinType, CJoinAlgorithm, int, int)
         string join(const string, CJoinConfig)
         string distributed_join(const string &table_id, CJoinConfig join_config);
-        string distributed_join(CTwisterXContextWrap *ctx_wrap, const string &table_id, CJoinConfig join_config);
+        string distributed_join(CCylonContextWrap *ctx_wrap, const string &table_id, CJoinConfig join_config);
         string distributed_join(const string &table_id, CJoinType type,
 							   CJoinAlgorithm algorithm,
 							   int left_column_index,
 							   int right_column_index);
 
-cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "twisterx::python::table::CxTable":
+cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table::CxTable":
     cdef extern _Status from_csv(const string, const char, const string)
     cdef extern string from_pyarrow_table(shared_ptr[CTable] table)
     cdef extern shared_ptr[CTable] to_pyarrow_table(const string table_id)
@@ -61,7 +61,7 @@ cdef extern from "../../../cpp/src/twisterx/python/table_cython.h" namespace "tw
 cdef class Table:
     cdef CxTable *thisPtr
     cdef CJoinConfig *jcPtr
-    cdef CTwisterXContextWrap *ctx_wrap
+    cdef CCylonContextWrap *ctx_wrap
 
     def __cinit__(self, string id):
         '''
@@ -177,7 +177,7 @@ cdef class Table:
         s = Status(status.get_code(), b"", -1)
         return s
 
-    def join(self, ctx: TwisterxContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
+    def join(self, ctx: CylonContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
         '''
         Joins two PyTwisterX tables
         :param table: PyTwisterX table on which the join is performed (becomes the left table)
@@ -196,7 +196,7 @@ cdef class Table:
         return Table(table_out_id)
 
 
-    def distributed_join(self, ctx: TwisterxContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
+    def distributed_join(self, ctx: CylonContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
         '''
         Joins two PyTwisterX tables
         :param table: PyTwisterX table on which the join is performed (becomes the left table)
@@ -248,7 +248,7 @@ cdef class csv_reader:
 
 
     @staticmethod
-    def read(ctx: TwisterxContext, path: str, delimiter: str) -> Table:    
+    def read(ctx: CylonContext, path: str, delimiter: str) -> Table:
         cdef string spath = path.encode()
         cdef string sdelm = delimiter.encode()
         id = uuid.uuid4()

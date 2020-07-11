@@ -14,8 +14,8 @@
 
 from libcpp.string cimport string
 from libcpp cimport bool
-from pytwisterx.common.code cimport _Code
-from pytwisterx.common.status cimport _Status
+from pycylon.common.code cimport _Code
+from pycylon.common.status cimport _Status
 
 
 cdef class Status:

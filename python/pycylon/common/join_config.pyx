@@ -13,9 +13,9 @@
  ##
 
 
-from pytwisterx.common.join_config cimport CJoinType
-from pytwisterx.common.join_config cimport CJoinAlgorithm
-from pytwisterx.common.join_config cimport CJoinConfig
+from pycylon.common.join_config cimport CJoinType
+from pycylon.common.join_config cimport CJoinAlgorithm
+from pycylon.common.join_config cimport CJoinConfig
 cimport cython
 from enum import Enum
 

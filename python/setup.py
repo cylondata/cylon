@@ -39,7 +39,7 @@ except Exception:
     nthreads = 0
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
-cython_files = ["pytwisterx/*/*.pyx"]
+cython_files = ["pycylon/*/*.pyx"]
 
 if not ARROW_HOME:
     raise ValueError("ARROW_HOME not set")
@@ -57,23 +57,23 @@ extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 
 arrow_library_directory = os.path.join(ARROW_HOME, "arrow", "install", "lib")
 arrow_lib_include_dir = os.path.join(ARROW_HOME, "arrow", "install", "include")
-twisterx_library_directory = os.path.join(ARROW_HOME, "lib")
+cylon_library_directory = os.path.join(ARROW_HOME, "lib")
 
-library_directories = [twisterx_library_directory,
+library_directories = [cylon_library_directory,
                        arrow_library_directory,
                        get_python_lib(),
                        os.path.join(os.sys.prefix, "lib")]
 
-libraries = ["arrow", "twisterx", "twisterx_python", "glog"]
+libraries = ["arrow", "cylon", "cylon_python", "glog"]
 
-_include_dirs = ["../cpp/src/twisterx/python",
-                 "../cpp/src/twisterx/lib",
-                 "../cpp/src/twisterx/",
-                 "../cpp/src/twisterx/net",
-                 "../cpp/src/twisterx/data",
-                 "../cpp/src/twisterx/io",
-                 "../cpp/src/twisterx/join",
-                 "../cpp/src/twisterx/util",
+_include_dirs = ["../cpp/src/cylon/python",
+                 "../cpp/src/cylon/lib",
+                 "../cpp/src/cylon/",
+                 "../cpp/src/cylon/net",
+                 "../cpp/src/cylon/data",
+                 "../cpp/src/cylon/io",
+                 "../cpp/src/cylon/join",
+                 "../cpp/src/cylon/util",
                  arrow_library_directory,
                  arrow_lib_include_dir,
                  pyarrow_include_dir,
@@ -97,10 +97,10 @@ extensions = [
 ]
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
-packages = find_packages(include=["pytwisterx", "pytwisterx.*"])
+packages = find_packages(include=["pycylon", "pycylon.*"])
 
 setup(
-    name="pytwisterx",
+    name="pycylon",
     packages=packages,
     version='0.0.1',
     setup_requires=["cython",

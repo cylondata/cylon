@@ -14,7 +14,7 @@
 
 from libcpp.string cimport string
 from libcpp cimport bool
-from pytwisterx.common.code cimport _Code
+from pycylon.common.code cimport _Code
 
 # cdef extern from "../../../cpp/src/twisterx/code.cpp" namespace "twisterx":
 #
