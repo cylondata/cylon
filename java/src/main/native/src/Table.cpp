@@ -17,17 +17,7 @@
 #include "../include/org_cylon_Table.h"
 #include "table_api.hpp"
 #include "ConversionUtils.h"
-
-std::string jstr_to_str(JNIEnv *env, jstring jstr) {
-  jboolean is_copy;
-  return std::string(env->GetStringUTFChars(jstr, &is_copy));
-}
-
-void throwException(JNIEnv *env, const std::string &clazz, const std::string &msg) {
-  std::cout << "throwing" << msg << std::endl;
-  jclass exClass = env->FindClass(clazz.c_str());
-  env->ThrowNew(exClass, msg.c_str());
-}
+#include "Utils.hpp"
 
 void throwIOException(JNIEnv *env, const std::string &msg) {
   throwException(env, "java/io/IOException", msg);
