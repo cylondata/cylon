@@ -12,9 +12,9 @@
  # limitations under the License.
  ##
 
-from pytwisterx.common.join_config import JoinAlgorithm
-from pytwisterx.common.join_config import JoinConfig
-from pytwisterx.common.join_config import JoinType
+from pycylon.common.join_config import JoinAlgorithm
+from pycylon.common.join_config import JoinConfig
+from pycylon.common.join_config import JoinType
 
 # print(JoinAlgorithm.SORT.value)
 # print(JoinAlgorithm.HASH.value)

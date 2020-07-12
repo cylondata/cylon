@@ -12,7 +12,7 @@
  # limitations under the License.
  ##
 
-from pytwisterx.net import dist
+from pycylon.net import dist
 
 dist.dist_init()
 print("World Rank {}, World Size {}".format(dist.rank(), dist.size()))

@@ -12,6 +12,6 @@
  # limitations under the License.
  ##
 
-from pytwisterx.net.comm_type import CommType
+from pycylon.net.comm_type import CommType
 
 print(CommType.MPI.value, CommType.UCX.value, CommType.TCP.value)

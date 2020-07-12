@@ -133,8 +133,15 @@ class Table {
 
   Status Union(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
 
-  Status DistributedUnion(const std::shared_ptr<Table> &right,
-                          std::shared_ptr<Table> &out);
+  Status DistributedUnion(const shared_ptr<Table> &right, shared_ptr<Table> &out);
+
+  Status Subtract(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
+
+  Status DistributedSubtract(const shared_ptr<Table> &right, shared_ptr<Table> &out);
+
+  Status Intersect(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
+
+  Status DistributedIntersect(const shared_ptr<Table> &right, shared_ptr<Table> &out);
 
   Status Select(const std::function<bool(cylon::Row)> &selector, std::shared_ptr<Table> &out);
 
@@ -187,6 +194,11 @@ class Table {
   std::string id_;
 
   cylon::CylonContext *ctx;
+
+  typedef Status(*SetOperation)
+      (CylonContext *ctx, const std::string &left_table, const std::string &right_table, const std::string &out_table);
+  Status DoSetOperation(SetOperation operation, const shared_ptr<Table> &right, shared_ptr<Table> &out);
+
 };
 }
 

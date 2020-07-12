@@ -12,13 +12,13 @@
  # limitations under the License.
  ##
 
-from pytwisterx.data.table import csv_reader
-from pytwisterx.data.table import Table
+from pycylon.data.table import csv_reader
+from pycylon.data.table import Table
 from pyarrow import Table as PyArrowTable
 import time
-from pytwisterx.ctx.context import TwisterxContext
+from pycylon.ctx.context import CylonContext
 
-ctx: TwisterxContext = TwisterxContext("mpi")
+ctx: CylonContext = CylonContext("mpi")
 
 print('Loading Simple CSV File with Twisterx APIs')
 print("----------------------------------------------------")
@@ -74,7 +74,7 @@ pyarrow_tb_to_tx_table_time = time.time_ns() - t1
 
 #table_frm_arrow.show()
 
-print("Joining Loaded table from Python with Twisterx APIs")
+print("Joining Loaded table from Python with Cylon APIs")
 
 t1 = time.time_ns()
 tb4: Table = table_frm_arrow.join(ctx, table=table_frm_arrow, join_type='inner', algorithm='sort', left_col=0, right_col=0)
@@ -98,8 +98,8 @@ print("Stats")
 print("---------------------------------------------------------------------------------------------------------------")
 print("PyArrow CSV Load Time : {} ms".format(py_arrow_csv_loading_time / 1000000))
 print("PyArrow Table to Twisterx Table Conversion Time : {} ms".format(pyarrow_tb_to_tx_table_time / 1000000))
-print("Twisterx Table Join Time: {} ms".format(tx_join_time / 1000000))
-print("Twiterx Table to PyArrow Table Conversion Time : {} ms".format(tx_table_to_pyarrow_tb / 1000000))
+print("PyCylon Table Join Time: {} ms".format(tx_join_time / 1000000))
+print("PyCylon Table to PyArrow Table Conversion Time : {} ms".format(tx_table_to_pyarrow_tb / 1000000))
 
 # spark_pandas_to_dataframe : 38108.9990289 ms, tx-time 127 ms
 # spark join : 261.089 ms, tx-time 176.189 (sort + join)

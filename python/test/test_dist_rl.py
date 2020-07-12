@@ -12,13 +12,13 @@
  # limitations under the License.
  ##
 
-from pytwisterx.data.table import csv_reader
-from pytwisterx.data.table import Table
+from pycylon.data.table import csv_reader
+from pycylon.data.table import Table
 from pyarrow import Table as PyArrowTable
 import time
-from pytwisterx.ctx.context import TwisterxContext
+from pycylon.ctx.context import CylonContext
 
-ctx: TwisterxContext = TwisterxContext("mpi")
+ctx: CylonContext = CylonContext("mpi")
 
 
 tb1: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')

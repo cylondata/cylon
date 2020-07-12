@@ -33,40 +33,64 @@ namespace cylon {
 
 void RemoveTable(const std::string &id);
 
-cylon::Status ReadCSV(cylon::CylonContext *ctx,
-                      const std::string &path,
-                      const std::string &id,
-                      cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
+Status ReadCSV(CylonContext *ctx,
+               const std::string &path,
+               const std::string &id,
+               cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 
-cylon::Status ReadCSV(cylon::CylonContext *ctx,
-                      const std::vector<std::string> &paths,
-                      const std::vector<std::string> &ids,
-                      cylon::io::config::CSVReadOptions options);
+Status ReadCSV(CylonContext *ctx,
+               const std::vector<std::string> &paths,
+               const std::vector<std::string> &ids,
+               cylon::io::config::CSVReadOptions options);
 
-cylon::Status WriteCSV(const std::string &id, const std::string &path,
-                       const cylon::io::config::CSVWriteOptions& options = cylon::io::config::CSVWriteOptions());
+Status WriteCSV(const std::string &id, const std::string &path,
+                const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
 
-cylon::Status JoinTables(cylon::CylonContext *ctx,
-                         const std::string &table_left,
-                         const std::string &table_right,
-                         cylon::join::config::JoinConfig join_config,
-                         const std::string &dest_id);
+Status JoinTables(CylonContext *ctx,
+                  const std::string &table_left,
+                  const std::string &table_right,
+                  cylon::join::config::JoinConfig join_config,
+                  const std::string &dest_id);
 
-cylon::Status DistributedJoinTables(
-    cylon::CylonContext *ctx,
+Status DistributedJoinTables(
+    CylonContext *ctx,
     const std::string &table_left,
     const std::string &table_right,
     cylon::join::config::JoinConfig join_config,
     const std::string &dest_id
 );
 
-cylon::Status Union(cylon::CylonContext *ctx,
-                    const std::string &table_left,
-                    const std::string &table_right,
-                    const std::string &dest_id);
+Status Union(CylonContext *ctx,
+             const std::string &table_left,
+             const std::string &table_right,
+             const std::string &dest_id);
 
-cylon::Status DistributedUnion(
-    cylon::CylonContext *ctx,
+Status DistributedUnion(
+    CylonContext *ctx,
+    const std::string &table_left,
+    const std::string &table_right,
+    const std::string &dest_id
+);
+
+Status Subtract(CylonContext *ctx,
+                const std::string &table_left,
+                const std::string &table_right,
+                const std::string &dest_id);
+
+Status DistributedSubtract(
+    CylonContext *ctx,
+    const std::string &table_left,
+    const std::string &table_right,
+    const std::string &dest_id
+);
+
+Status Intersect(CylonContext *ctx,
+                 const std::string &table_left,
+                 const std::string &table_right,
+                 const std::string &dest_id);
+
+Status DistributedIntersect(
+    CylonContext *ctx,
     const std::string &table_left,
     const std::string &table_right,
     const std::string &dest_id
@@ -85,17 +109,17 @@ int64_t RowCount(const std::string &id);
  * @param row2
  * @return
  */
-cylon::Status Print(const std::string &table_id, int col1, int col2, int row1, int row2);
+Status Print(const std::string &table_id, int col1, int col2, int row1, int row2);
 
-cylon::Status PrintToOStream(const std::string &table_id,
-                             int col1,
-                             int col2,
-                             int row1,
-                             int row2,
-                             std::ostream &out,
-                             char delimiter = ',',
-                             bool use_custom_header = false,
-                             const std::vector<std::string> &headers = {});
+Status PrintToOStream(const std::string &table_id,
+                      int col1,
+                      int col2,
+                      int row1,
+                      int row2,
+                      std::ostream &out,
+                      char delimiter = ',',
+                      bool use_custom_header = false,
+                      const std::vector<std::string> &headers = {});
 
 /**
  * Merge the set of tables into a single table, each table should have the same schema
@@ -104,9 +128,9 @@ cylon::Status PrintToOStream(const std::string &table_id,
  * @param merged_tab id of the merged table
  * @return the status of the merge
  */
-cylon::Status Merge(cylon::CylonContext *ctx,
-                    std::vector<std::string> table_ids,
-                    const std::string &merged_tab);
+Status Merge(CylonContext *ctx,
+             std::vector<std::string> table_ids,
+             const std::string &merged_tab);
 
 /**
  * Sort the table with the given identifier
@@ -114,10 +138,10 @@ cylon::Status Merge(cylon::CylonContext *ctx,
  * @param columnIndex the sorting column index
  * @return the status of the merge
  */
-cylon::Status SortTable(cylon::CylonContext *ctx,
-                        const std::string &tableId,
-                        const std::string &sortTableId,
-                        int columnIndex);
+Status SortTable(CylonContext *ctx,
+                 const std::string &tableId,
+                 const std::string &sortTableId,
+                 int columnIndex);
 
 /**
  * Partition the table into multiple tables using a hash function, hash will be applied to the bytes of the data
@@ -128,11 +152,11 @@ cylon::Status SortTable(cylon::CylonContext *ctx,
  * @param pool the memory pool
  * @return the status of the partition operation
  */
-cylon::Status HashPartition(cylon::CylonContext *ctx,
-                            const std::string &id,
-                            const std::vector<int> &hash_columns,
-                            int no_of_partitions,
-                            std::unordered_map<int, std::string> *out);
+Status HashPartition(CylonContext *ctx,
+                     const std::string &id,
+                     const std::vector<int> &hash_columns,
+                     int no_of_partitions,
+                     std::unordered_map<int, std::string> *out);
 
 /**
  * Select a set of rows based on the selector condition
@@ -141,7 +165,7 @@ cylon::Status HashPartition(cylon::CylonContext *ctx,
  * @param selector row selection logic
  * @return the status of the partition operation
  */
-Status Select(cylon::CylonContext *ctx,
+Status Select(CylonContext *ctx,
               const std::string &id,
               const std::function<bool(cylon::Row)> &selector,
               const std::string &out);

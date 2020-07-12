@@ -12,5 +12,5 @@
  # limitations under the License.
  ##
 
-from pytwisterx.io.csv_read_config import CSVReadOptions
+from pycylon.io.csv_read_config import CSVReadOptions
 

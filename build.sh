@@ -103,10 +103,10 @@ print_line
 mkdir ${BUILD_PATH}
 pushd ${BUILD_PATH}
 export ARROW_HOME=${BUILD_PATH}/arrow/install
-cmake -DPYARROW_BUILD=${PYARROW_BUILD} -DPYTWISTERX_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} ${SOURCE_DIR}
+cmake -DPYARROW_BUILD=${PYARROW_BUILD} -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} ${SOURCE_DIR}
 make -j 4
 printf "\n\n ### ARROW HOME SET :%s \n\n" "${ARROW_HOME}"
-printf "\n\n ### TwisterX CPP Built Successufully !!! \n\n"
+printf "\n\n ### Cylon CPP Built Successufully !!! \n\n"
 popd
 print_line
 }
@@ -136,7 +136,7 @@ echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
 source ${PYTHON_ENV_PATH}/bin/activate
 read_python_requirements
 pushd python
-pip3 uninstall -y pytwisterx
+pip3 uninstall -y pycylon
 make clean
 ARROW_HOME=${BUILD_PATH} python3 setup.py install
 popd
@@ -153,7 +153,7 @@ echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
 source ${PYTHON_ENV_PATH}/bin/activate
 read_python_requirements
 pushd python
-pip3 uninstall -y pytwisterx
+pip3 uninstall -y pycylon
 make clean
 # https://www.scivision.dev/easy-upload-to-pypi/ [solution to linux wheel issue]
 #ARROW_HOME=${BUILD_PATH} python3 setup.py sdist bdist_wheel
@@ -177,8 +177,8 @@ response=$(python3 -c \
 echo "${response}"
 }
 
-check_pytwisterx_installation(){
-response=$(python3 python/test/test_pytwisterx.py)
+check_pycylon_installation(){
+response=$(python3 python/test/test_pycylon.py)
 echo "${response}"
 }
 
@@ -211,7 +211,7 @@ if [ "${PYTHON_BUILD}" = "ON" ]; then
 	export_info
 	check_pyarrow_installation
 	build_python
-	check_pytwisterx_installation
+	check_pycylon_installation
 fi
 
 if [ "${PYTHON_RELEASE}" = "ON" ]; then	
