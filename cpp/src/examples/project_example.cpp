@@ -51,7 +51,6 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   auto project_time = std::chrono::steady_clock::now();
-
   LOG(INFO) << "Table had : " << table->Columns() << "," << table->Rows() << ", Project has : "
             << project->Columns() << "," << project->Rows();
   LOG(INFO) << "Project done in " 
