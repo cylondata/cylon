@@ -12,5 +12,21 @@
  # limitations under the License.
  ##
 
-from pycylon.io.csv_read_config import CSVReadOptions
+'''
+TwisterX Status codes carrying responses related to SUCCESS and FAIL report, etc.
+'''
 
+from libcpp.string cimport string
+from libcpp cimport bool
+from pycylon.common.code cimport _Code
+
+cdef extern from "../../../cpp/src/cylon/status.hpp" namespace "cylon":
+    cdef cppclass _Status "cylon::Status":
+        _Status()
+        _Status(int, string)
+        _Status(int)
+        _Status(_Code)
+        _Status(_Code, string)
+        int get_code()
+        bool is_ok()
+        string get_msg()

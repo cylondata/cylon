@@ -12,5 +12,13 @@
  # limitations under the License.
  ##
 
-from pycylon.io.csv_read_config import CSVReadOptions
+'''
+Mapping TwisterX C++ Comm Type with PyTwisterX CommType
+'''
 
+from pycylon.net.comm_type cimport _CommType
+
+cpdef enum CommType:
+    MPI = _CommType._MPI
+    TCP = _CommType._TCP
+    UCX = _CommType._UCX

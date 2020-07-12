@@ -12,5 +12,5 @@
  # limitations under the License.
  ##
 
-from pytwisterx.net.channel import ChannelSendCallback
-from pytwisterx.net.channel import ChannelReceiveCallback
+from pycylon.net.channel import ChannelSendCallback
+from pycylon.net.channel import ChannelReceiveCallback

@@ -12,5 +12,18 @@
  # limitations under the License.
  ##
 
-from pycylon.io.csv_read_config import CSVReadOptions
 
+
+from libcpp.vector cimport vector
+from libcpp.string cimport string
+from libcpp cimport bool
+from pycylon.net.comm_type cimport _CommType
+from pycylon.net.comm_type import CommType
+
+'''
+MPIConfig Type mapping from libCylon to PyCylon
+'''
+
+cdef extern from "../../../cpp/src/cylon/net/mpi/mpi_communicator.hpp" namespace "cylon::net":
+    cdef cppclass CMPIConfig "cylon::MPIConfig":
+        _CommType Type()

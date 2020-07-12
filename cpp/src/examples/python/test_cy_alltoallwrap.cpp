@@ -18,7 +18,7 @@
 #include "python/net/distributed.h"
 
 using namespace std;
-using namespace twisterx::net::comm;
+using namespace cylon::net::comm;
 
 int main(int argc, char *argv[]) {
   MPI_Init(NULL, NULL);

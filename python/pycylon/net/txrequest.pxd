@@ -12,5 +12,25 @@
  # limitations under the License.
  ##
 
-from pycylon.io.csv_read_config import CSVReadOptions
+'''
+libCylon to PyCylon mapping for TxRequest API
+'''
+
+from libcpp.string cimport string
+
+cdef extern from "../../../cpp/src/cylon/net/TxRequest.hpp" namespace "cylon":
+    cdef cppclass CTxRequest "cylon::TxRequest":
+        void *buffer;
+        int length;
+        int target;
+        int header[6];
+        int headerLength;
+        CTxRequest(int)
+        CTxRequest(int, void *, int)
+        CTxRequest(int, void *, int, int *, int)
+        void to_string(string, int)
+
+
+
+
 

@@ -12,5 +12,13 @@
  # limitations under the License.
  ##
 
-from pycylon.io.csv_read_config import CSVReadOptions
+no_cylon = False
+try:
+    import pycylon
+except ImportError:
+    no_cylon = True
 
+if no_cylon:
+    print("No PyCylon installation found!")
+else:
+    print("PyCylon Installed!")

@@ -12,5 +12,10 @@
  # limitations under the License.
  ##
 
-from pycylon.io.csv_read_config import CSVReadOptions
+from pycylon.ctx.context import CylonContext
 
+ctx: CylonContext = CylonContext("mpi")
+
+print("Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
+
+ctx.finalize()

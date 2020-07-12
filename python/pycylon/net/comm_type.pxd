@@ -12,5 +12,13 @@
  # limitations under the License.
  ##
 
-from pycylon.io.csv_read_config import CSVReadOptions
+'''
+Communication Type mapping from Cylon C++ API
+'''
 
+cdef extern from "../../../cpp/src/cylon/net/comm_type.hpp" namespace "cylon::net":
+
+    cdef enum _CommType 'cylon::net::CommType':
+        _MPI 'cylon::net::CommType::MPI'
+        _TCP 'cylon::net::CommType::TCP'
+        _UCX 'cylon::net::CommType::UCX'
