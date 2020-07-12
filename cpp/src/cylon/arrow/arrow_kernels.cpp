@@ -42,6 +42,8 @@ cylon::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
       break;
     case arrow::Type::FIXED_SIZE_BINARY:kernel = new FixedBinaryArraySplitKernel(type, pool);
       break;
+    case arrow::Type::STRING:kernel = new BinaryArraySplitKernel(type, pool);
+      break;
     case arrow::Type::BINARY:kernel = new BinaryArraySplitKernel(type, pool);
       break;
     default:LOG(FATAL) << "Un-known type";

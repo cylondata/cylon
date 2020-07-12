@@ -1,8 +1,15 @@
 package org.cylon.arrow;
 
+import com.google.flatbuffers.FlatBufferBuilder;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.IntVector;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.cylon.NativeLoader;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ArrowTable {
   public static void main(String[] args) {
@@ -17,6 +24,14 @@ public class ArrowTable {
       intVector.setSafe(i, i);
     }
     intVector.setValueCount(200);
+
+    List<Field> arrowFields = new ArrayList<>();
+    arrowFields.add(Field.nullable("col1", new ArrowType.Int(8, true)));
+
+    Schema schema = new Schema(arrowFields);
+    schema.toByteArray();
+    System.out.println(schema.toJson());
+
 
     ArrowTable.addColumn("", 0, intVector.getDataBufferAddress(), 200 * 4);
   }

@@ -30,7 +30,7 @@ add_library(cylon SHARED
         io/csv_write_config.hpp io/csv_write_config.cpp
         arrow/arrow_hash_kernels.hpp
         arrow/arrow_comparator.hpp arrow/arrow_comparator.cpp
-        row.hpp row.cpp ctx/memory_pool.hpp ctx/arrow_memory_pool_utils.hpp ctx/arrow_memory_pool_utils.cpp arrow/arrow_builder.h)
+        row.hpp row.cpp ctx/memory_pool.hpp ctx/arrow_memory_pool_utils.hpp ctx/arrow_memory_pool_utils.cpp arrow/arrow_builder.hpp arrow/arrow_builder.cpp)
 
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(cylon ${MPI_LIBRARIES})
