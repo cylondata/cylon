@@ -13,6 +13,7 @@
  */
 
 #include <iostream>
+#include <memory>
 #include <vector>
 #include "../include/org_cylon_Table.h"
 #include "table_api.hpp"
@@ -112,4 +113,31 @@ JNIEXPORT void JNICALL Java_org_cylon_Table_merge
 JNIEXPORT void JNICALL Java_org_cylon_Table_clear
     (JNIEnv *env, jclass thiz, jstring table_id) {
   cylon::RemoveTable(jstr_to_str(env, table_id));
+}
+
+JNIEXPORT void JNICALL Java_org_cylon_Table_select
+    (JNIEnv *env, jclass thiz, jint ctx_id, jstring table_id, jobject selector, jstring destination_table) {
+  auto ctx = contexts.find(ctx_id)->second;
+
+  // selector select method
+  jclass selector_cls = env->FindClass("org/cylon/ops/Selector");
+  jmethodID select_method = env->GetMethodID(selector_cls, "select", "(Lorg/cylon/ops/Row;)Z");
+
+  //create a java Row object
+  jclass row_cls = env->FindClass("org/cylon/ops/Row");
+  jmethodID row_cls_constructor = env->GetMethodID(row_cls, "<init>", "()V");
+  jfieldID row_id_field = env->GetFieldID(row_cls, "memoryAddress", "J");
+
+  jobject row_obj = env->NewObject(row_cls, row_cls_constructor);
+  cylon::Select(ctx,
+                jstr_to_str(env, table_id),
+                [env, row_obj, row_id_field, selector, select_method](const cylon::Row &row) {
+                  // set the current row address
+                  env->SetLongField(row_obj, row_id_field, (int64_t) std::addressof(row));
+
+                  // now call the selector
+                  return env->CallBooleanMethod(selector, select_method, row_obj);
+                },
+                jstr_to_str(env, destination_table)
+  );
 }
