@@ -198,11 +198,114 @@ std::string CxTable::distributed_join(const std::string &table_id, JoinType type
   }
 }
 
+std::string CxTable::Union(const std::string &table_right)
+{
+  auto ctx_wrap = this->get_new_context();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::Union(ctx_wrap->getInstance(), this->id_, table_right, uuid);
+  if (status.is_ok())
+  {
+    return uuid;
+  }
+  else
+  {
+    return "";
+  }
+}
+
+std::string CxTable::DistributedUnion(const std::string &table_right)
+{
+  auto ctx_wrap = this->get_new_context();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::DistributedUnion(ctx_wrap->getInstance(), this->id_, table_right, uuid);
+  if (status.is_ok())
+  {
+    return uuid;
+  }
+  else
+  {
+    return "";
+  }
+}
+
+std::string CxTable::Intersect(const std::string &table_right)
+{
+  auto ctx_wrap = this->get_new_context();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::Intersect(ctx_wrap->getInstance(), this->id_, table_right, uuid);
+  if (status.is_ok())
+  {
+	return uuid;
+  }
+  else
+  {
+	return "";
+  }
+}
+
+std::string CxTable::DistributedIntersect(const std::string &table_right)
+{
+  auto ctx_wrap = this->get_new_context();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::DistributedIntersect(ctx_wrap->getInstance(), this->id_, table_right, uuid);
+  if (status.is_ok())
+  {
+	return uuid;
+  }
+  else
+  {
+	return "";
+  }
+}
+
+std::string CxTable::Subtract(const std::string &table_right) {
+  auto ctx_wrap = this->get_new_context();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::Subtract(ctx_wrap->getInstance(), this->id_, table_right, uuid);
+  if (status.is_ok())
+  {
+	return uuid;
+  }
+  else
+  {
+	return "";
+  }
+}
+
+std::string CxTable::DistributedSubtract(const std::string &table_right) {
+  auto ctx_wrap = this->get_new_context();
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::DistributedSubtract(ctx_wrap->getInstance(), this->id_, table_right, uuid);
+  if (status.is_ok())
+  {
+	return uuid;
+  }
+  else
+  {
+	return "";
+  }
+}
+
+std::string CxTable::Project(const std::vector<int64_t> &project_columns) {
+  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  cylon::Status status = cylon::Project(this->id_, project_columns, uuid);
+  if (status.is_ok())
+  {
+	return uuid;
+  }
+  else
+  {
+	return "";
+  }
+}
+
+//FIXME: This context handling must be replaced with a better logic
+// Cython Reference passing needs to be added
 cylon::python::cylon_context_wrap *CxTable::get_new_context()
 {
   if (context_map.size() == 0)
   {
-    std::cout << "Creating New Contet " << std::endl;
+    std::cout << "Creating a New Context " << std::endl;
     std::string mpi_config = "mpi";
     cylon::python::cylon_context_wrap *ctx_wrap = new cylon::python::cylon_context_wrap(mpi_config);
     std::pair<std::string, cylon::python::cylon_context_wrap *> pair("dist_context", ctx_wrap);
@@ -218,3 +321,5 @@ cylon::python::cylon_context_wrap *CxTable::get_new_context()
     }
   }
 }
+
+

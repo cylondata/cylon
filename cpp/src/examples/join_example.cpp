@@ -50,6 +50,11 @@ int main(int argc, char *argv[]) {
 
   status = first_table->DistributedJoin(second_table,
                                             cylon::join::config::JoinConfig::InnerJoin(0, 0), &joined);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table join failed ";
+    ctx->Finalize();
+    return 1;
+  }
   auto join_end_time = std::chrono::steady_clock::now();
 
   LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "

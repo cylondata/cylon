@@ -51,7 +51,7 @@ class CxTable {
 
   void show(int row1, int row2, int col1, int col2);
 
-  static cylon::python::cylon_context_wrap* get_new_context();
+  static cylon::python::cylon_context_wrap *get_new_context();
 
   static Status from_csv(const std::string &path,
 						 const char &delimiter,
@@ -75,7 +75,25 @@ class CxTable {
 
   std::string distributed_join(cylon_context_wrap *ctx_wrap, std::string &table_id, JoinConfig join_config);
 
-  std::string distributed_join(const std::string &table_id, JoinType type, JoinAlgorithm algorithm, int left_column_index, int right_column_index);
+  std::string distributed_join(const std::string &table_id,
+							   JoinType type,
+							   JoinAlgorithm algorithm,
+							   int left_column_index,
+							   int right_column_index);
+
+  std::string Union(const std::string &table_right);
+
+  std::string DistributedUnion(const std::string &table_right);
+
+  std::string Intersect(const std::string &table_right);
+
+  std::string DistributedIntersect(const std::string &table_right);
+
+  std::string Subtract(const std::string &table_right);
+
+  std::string DistributedSubtract(const std::string &table_right);
+
+  std::string Project(const std::vector<int64_t>& project_columns);
 
   //unique_ptr<CTable> sort(int sort_column);
 

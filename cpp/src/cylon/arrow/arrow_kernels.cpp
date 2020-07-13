@@ -46,7 +46,8 @@ cylon::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
       break;
     case arrow::Type::BINARY:kernel = new BinaryArraySplitKernel(type, pool);
       break;
-    default:LOG(FATAL) << "Un-known type";
+    default:
+      LOG(FATAL) << "Un-known type " << type->name();
       return cylon::Status(cylon::NotImplemented, "This type not implemented");
   }
   out->reset(kernel);
