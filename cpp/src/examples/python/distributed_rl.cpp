@@ -55,11 +55,29 @@ void dist_join(bool run) {
   auto tb_r = new cylon::python::table::CxTable(uuid_r);
   auto join_config = cylon::join::config::JoinConfig::RightJoin(0, 1);
 
-  tb_l->distributed_join(tb_r->get_id(), join_config);   
+  //tb_l->distributed_join(tb_r->get_id(), join_config);   
 
   //tb_l->distributed_join(ctx_wrap, tb_r->get_id(), join_config);
-
+  std::cout << "Union Sequential" << std::endl;
+  tb_l->Union(tb_r->get_id());
   
+  std::cout << "Union Distributed" << std::endl;
+  tb_l->DistributedUnion(tb_r->get_id());
+
+  std::cout << "Intersect Sequential" << std::endl;
+  tb_l->Intersect(tb_r->get_id());
+
+  std::cout << "Intersect Distributed" << std::endl;
+  tb_l->DistributedIntersect(tb_r->get_id());
+
+  std::cout << "Subtract Sequential" << std::endl;
+  tb_l->Subtract(tb_r->get_id());
+
+  std::cout << "Subtract Distributed" << std::endl;
+  tb_l->DistributedSubtract(tb_r->get_id());
+
+  std::cout << "Project" << std::endl;
+  tb_l->Project({0});
 
   ctx_wrap->Finalize();
 }

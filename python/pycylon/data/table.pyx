@@ -52,6 +52,19 @@ cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon
 							   CJoinAlgorithm algorithm,
 							   int left_column_index,
 							   int right_column_index);
+        string Union(const string &table_right);
+
+        string DistributedUnion(const string &table_right);
+
+        string Intersect(const string &table_right);
+
+        string DistributedIntersect(const string &table_right);
+
+        string Subtract(const string &table_right);
+
+        string DistributedSubtract(const string &table_right);
+
+        #string Project(const vector[int64_t]& project_columns);
 
 cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table::CxTable":
     cdef extern _Status from_csv(const string, const char, const string)
@@ -215,6 +228,81 @@ cdef class Table:
             raise Exception("Join Failed !!!")
         return Table(table_out_id)
 
+
+    def union(self, ctx: CylonContext, table: Table) -> Table:
+        '''
+        Union two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Union PyCylon table
+        '''
+
+        cdef string table_out_id = self.thisPtr.Union(table.id.encode())
+        if table_out_id.size() == 0:
+            raise Exception("Union Failed !!!")
+        return Table(table_out_id)
+
+
+    def distributed_union(self, ctx: CylonContext, table: Table) -> Table:
+        '''
+        Union two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Union PyCylon table
+        '''
+
+        cdef string table_out_id = self.thisPtr.DistributedUnion(table.id.encode())
+        if table_out_id.size() == 0:
+            raise Exception("Distributed Union Failed !!!")
+        return Table(table_out_id)
+
+    def intersect(self, ctx: CylonContext, table: Table) -> Table:
+        '''
+        Union two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Intersect PyCylon table
+        '''
+
+        cdef string table_out_id = self.thisPtr.Intersect(table.id.encode())
+        if table_out_id.size() == 0:
+            raise Exception("Intersect Failed !!!")
+        return Table(table_out_id)
+
+
+    def distributed_intersect(self, ctx: CylonContext, table: Table) -> Table:
+        '''
+        Union two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Intersect PyCylon table
+        '''
+
+        cdef string table_out_id = self.thisPtr.DistributedIntersect(table.id.encode())
+        if table_out_id.size() == 0:
+            raise Exception("Distributed Union Failed !!!")
+        return Table(table_out_id)
+
+    def subtract(self, ctx: CylonContext, table: Table) -> Table:
+        '''
+        Union two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Subtract PyCylon table
+        '''
+
+        cdef string table_out_id = self.thisPtr.Subtract(table.id.encode())
+        if table_out_id.size() == 0:
+            raise Exception("Subtract Failed !!!")
+        return Table(table_out_id)
+
+
+    def distributed_subtract(self, ctx: CylonContext, table: Table) -> Table:
+        '''
+        Union two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Subtract PyCylon table
+        '''
+
+        cdef string table_out_id = self.thisPtr.DistributedSubtract(table.id.encode())
+        if table_out_id.size() == 0:
+            raise Exception("Distributed Subtract Failed !!!")
+        return Table(table_out_id)
 
     @staticmethod
     def from_arrow(obj) -> Table:       
