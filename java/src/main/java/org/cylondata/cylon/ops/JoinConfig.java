@@ -1,4 +1,6 @@
-package org.cylon.ops;
+package org.cylondata.cylon.ops;
+
+import org.cylondata.cylon.Table;
 
 import java.util.List;
 
@@ -53,7 +55,7 @@ public class JoinConfig {
   }
 
   /**
-   * Algorithm to be used when joining two {@link org.cylon.Table}s
+   * Algorithm to be used when joining two {@link Table}s
    *
    * @param algorithm the {@link Algorithm}
    * @return The instance of {@link JoinConfig}

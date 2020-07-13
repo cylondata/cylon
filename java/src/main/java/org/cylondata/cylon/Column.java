@@ -1,4 +1,4 @@
-package org.cylon;
+package org.cylondata.cylon;
 
 /**
  * This class models a column of a {@link Table} instance

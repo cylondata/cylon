@@ -1,7 +1,7 @@
-package org.cylon.examples;
+package org.cylondata.cylon.examples;
 
-import org.cylon.CylonContext;
-import org.cylon.Table;
+import org.cylondata.cylon.CylonContext;
+import org.cylondata.cylon.Table;
 
 public class SelectExample {
   public static void main(String[] args) {

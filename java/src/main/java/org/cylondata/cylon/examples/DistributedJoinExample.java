@@ -1,8 +1,8 @@
-package org.cylon.examples;
+package org.cylondata.cylon.examples;
 
-import org.cylon.CylonContext;
-import org.cylon.Table;
-import org.cylon.ops.JoinConfig;
+import org.cylondata.cylon.CylonContext;
+import org.cylondata.cylon.Table;
+import org.cylondata.cylon.ops.JoinConfig;
 
 public class DistributedJoinExample {
 
