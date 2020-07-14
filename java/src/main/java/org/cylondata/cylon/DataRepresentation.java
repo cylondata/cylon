@@ -1,4 +1,4 @@
-package org.cylon;
+package org.cylondata.cylon;
 
 @SuppressWarnings("unused")
 public class DataRepresentation {

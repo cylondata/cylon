@@ -1,9 +1,10 @@
-package org.cylon;
+package org.cylondata.cylon;
 
 import org.apache.arrow.vector.types.Types;
-import org.cylon.ops.Filter;
-import org.cylon.ops.JoinConfig;
-import org.cylon.ops.Mapper;
+import org.cylondata.cylon.ops.Filter;
+import org.cylondata.cylon.ops.JoinConfig;
+import org.cylondata.cylon.ops.Mapper;
+import org.cylondata.cylon.ops.Selector;
 
 import java.util.List;
 import java.util.UUID;
@@ -192,6 +193,12 @@ public class Table extends DataRepresentation {
     throw unSupportedException();
   }
 
+  public Table select(Selector selector) {
+    String destination = UUID.randomUUID().toString();
+    Table.select(this.ctx.getCtxId(), this.getId(), selector, destination);
+    return new Table(destination, this.ctx);
+  }
+
   //----------------- END OF METHODS FOR TRANSFORMATIONS ---------------------//
 
   /**
@@ -248,6 +255,8 @@ public class Table extends DataRepresentation {
   private static native void merge(int ctxId, String[] tableIds, String mergedTableId);
 
   private static native void clear(String id);
+
+  private static native void select(int ctx, String tableId, Selector selector, String destination);
 
   //----------------- END OF METHODS ---------------------//
 }

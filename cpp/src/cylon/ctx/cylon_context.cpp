@@ -74,7 +74,7 @@ int CylonContext::GetWorldSize() {
 void CylonContext::Finalize() {
   if (this->distributed) {
     this->communicator->Finalize();
-    delete this->communicator;
+    //delete this->communicator;
   }
 }
 vector<int> CylonContext::GetNeighbours(bool include_self) {

@@ -1,9 +1,9 @@
 #include "ArrowTable.h"
-#include <org_cylon_arrow_ArrowTable.h>
+#include <org_cylondata_cylon_arrow_ArrowTable.h>
 #include <cstdint>
 #include <iostream>
 
-JNIEXPORT void JNICALL Java_org_cylon_arrow_ArrowTable_addColumn
+JNIEXPORT void JNICALL Java_org_cylondata_cylon_arrow_ArrowTable_addColumn
     (JNIEnv *env, jclass clz, jstring table_id, jint data_type, jlong address, jlong size) {
   auto *buffer = reinterpret_cast<int8_t *>(address);
   for (int64_t i = 0; i < size;) {

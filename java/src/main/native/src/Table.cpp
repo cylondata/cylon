@@ -13,8 +13,9 @@
  */
 
 #include <iostream>
+#include <memory>
 #include <vector>
-#include "../include/org_cylon_Table.h"
+#include "org_cylondata_cylon_Table.h"
 #include "table_api.hpp"
 #include "ConversionUtils.h"
 #include "Utils.hpp"
@@ -23,7 +24,7 @@ void throwIOException(JNIEnv *env, const std::string &msg) {
   throwException(env, "java/io/IOException", msg);
 }
 
-JNIEXPORT void JNICALL Java_org_cylon_Table_nativeJoin
+JNIEXPORT void JNICALL Java_org_cylondata_cylon_Table_nativeJoin
     (JNIEnv *env, jclass thiz, jint ctx_id, jstring left_table, jstring right_table,
      jint left_join_col, jint right_join_col,
      jstring join_type_str, jstring join_algorithm_str,
@@ -45,7 +46,7 @@ JNIEXPORT void JNICALL Java_org_cylon_Table_nativeJoin
   );
 }
 
-JNIEXPORT void JNICALL Java_org_cylon_Table_nativeDistributedJoin
+JNIEXPORT void JNICALL Java_org_cylondata_cylon_Table_nativeDistributedJoin
     (JNIEnv *env, jclass thiz, jint ctx_id, jstring left_table, jstring right_table,
      jint left_join_col, jint right_join_col,
      jstring join_type_str, jstring join_algorithm_str,
@@ -66,7 +67,7 @@ JNIEXPORT void JNICALL Java_org_cylon_Table_nativeDistributedJoin
   );
 }
 
-JNIEXPORT void JNICALL Java_org_cylon_Table_nativeLoadCSV
+JNIEXPORT void JNICALL Java_org_cylondata_cylon_Table_nativeLoadCSV
     (JNIEnv *env, jclass thiz, jint ctx_id, jstring path, jstring uuid) {
   auto ctx = contexts.find(ctx_id)->second;
   cylon::Status status = cylon::ReadCSV(ctx, jstr_to_str(env, path),
@@ -76,22 +77,22 @@ JNIEXPORT void JNICALL Java_org_cylon_Table_nativeLoadCSV
   }
 }
 
-JNIEXPORT jint JNICALL Java_org_cylon_Table_nativeColumnCount
+JNIEXPORT jint JNICALL Java_org_cylondata_cylon_Table_nativeColumnCount
     (JNIEnv *env, jclass thiz, jstring uuid) {
   return cylon::ColumnCount(jstr_to_str(env, uuid));
 }
 
-JNIEXPORT jint JNICALL Java_org_cylon_Table_nativeRowCount
+JNIEXPORT jint JNICALL Java_org_cylondata_cylon_Table_nativeRowCount
     (JNIEnv *env, jclass thiz, jstring uuid) {
   return cylon::RowCount(jstr_to_str(env, uuid));
 }
 
-JNIEXPORT void JNICALL Java_org_cylon_Table_print
+JNIEXPORT void JNICALL Java_org_cylondata_cylon_Table_print
     (JNIEnv *env, jclass thiz, jstring uuid, jint row1, jint row2, jint col1, jint col2) {
   cylon::Print(jstr_to_str(env, uuid), col1, col2, row1, row2);
 }
 
-JNIEXPORT void JNICALL Java_org_cylon_Table_merge
+JNIEXPORT void JNICALL Java_org_cylondata_cylon_Table_merge
     (JNIEnv *env, jclass thiz, jint ctx_id, jobjectArray table_ids, jstring merge_tab_id) {
   auto ctx = contexts.find(ctx_id)->second;
 
@@ -109,7 +110,34 @@ JNIEXPORT void JNICALL Java_org_cylon_Table_merge
   }
 }
 
-JNIEXPORT void JNICALL Java_org_cylon_Table_clear
+JNIEXPORT void JNICALL Java_org_cylondata_cylon_Table_clear
     (JNIEnv *env, jclass thiz, jstring table_id) {
   cylon::RemoveTable(jstr_to_str(env, table_id));
+}
+
+JNIEXPORT void JNICALL Java_org_cylondata_cylon_Table_select
+    (JNIEnv *env, jclass thiz, jint ctx_id, jstring table_id, jobject selector, jstring destination_table) {
+  auto ctx = contexts.find(ctx_id)->second;
+
+  // selector select method
+  jclass selector_cls = env->FindClass("org/cylondata/cylon/ops/Selector");
+  jmethodID select_method = env->GetMethodID(selector_cls, "select", "(Lorg/cylondata/cylon/ops/Row;)Z");
+
+  //create a java Row object
+  jclass row_cls = env->FindClass("org/cylondata/cylon/ops/Row");
+  jmethodID row_cls_constructor = env->GetMethodID(row_cls, "<init>", "()V");
+  jfieldID row_id_field = env->GetFieldID(row_cls, "memoryAddress", "J");
+
+  jobject row_obj = env->NewObject(row_cls, row_cls_constructor);
+  cylon::Select(ctx,
+                jstr_to_str(env, table_id),
+                [env, row_obj, row_id_field, selector, select_method](const cylon::Row &row) {
+                  // set the current row address
+                  env->SetLongField(row_obj, row_id_field, (int64_t) std::addressof(row));
+
+                  // now call the selector
+                  return env->CallBooleanMethod(selector, select_method, row_obj);
+                },
+                jstr_to_str(env, destination_table)
+  );
 }
