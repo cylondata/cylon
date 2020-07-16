@@ -9,6 +9,6 @@ By default it works with MPI for distributing the applications.
 
 Internally Cylon uses [Apache Arrow](https://arrow.apache.org/) to represent the data in a column format.
 
-The documentation can be found at [https://cylondata.github.io/cylon](https://cylondata.github.io/cylon)
+The documentation can be found at [https://cylondata.org](https://cylondata.org)
 
 Email - [cylondata@googlegrous.com](cylondata@googlegrous.com)

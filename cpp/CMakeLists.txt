@@ -29,6 +29,12 @@ project(CYLON)
 
 set(CYLON_VERSION 0.1)
 
+## defaults to debug build
+IF (NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEASE"))
+    SET(CMAKE_BUILD_TYPE "Debug")
+    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}") #  -fsanitize=address
+ENDIF (NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEASE"))
+
 ## PyCylon build
 if (PYCYLON_BUILD)
     message("Cylon Python Build [READ] ${PYCYLON_BUILD}")
@@ -45,9 +51,19 @@ else ()
     message("Python Executable Path ${PYTHON_EXEC_PATH}")
 endif ()
 
+# cmake modules directories
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
-# So we can find our custom modules
 list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
+
+# C++ standard
+SET(CMAKE_CXX_STANDARD 14)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_CXX_EXTENSIONS OFF)
+SET(CMAKE_REQUIRED_FLAGS "-std=c++17")
+add_compile_options(-Wall -Wextra -W)
+if (NOT HAVE_EXCLUSIVE_SCAN)
+    add_definitions(-DNEED_EXCLUSIVE_SCAN)
+endif ()
 
 # Put the libaries and binaries that get built into directories at the
 # top of the build.
@@ -59,55 +75,18 @@ SET(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
 find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
-if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    message(STATUS "No build type selected, default to Debug")
-    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type (default Debug)" FORCE)
-endif ()
-
-# C++ standard
-SET(CMAKE_CXX_STANDARD 14)
-SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_CXX_EXTENSIONS OFF)
-
 # glog
 option(WITH_GFLAGS "Use gflags" ON)
 SET(WITH_GFLAGS OFF)
 
+# arrow
 include(ConfigureArrow)
 include(Build)
-
 if (ARROW_FOUND)
     message(STATUS "Apache Arrow found in ${ARROW_INCLUDE_DIR}")
 else ()
     message(FATAL_ERROR "Apache Arrow not found, please check your settings.")
 endif (ARROW_FOUND)
-
-IF (NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEASE"))
-    SET(CMAKE_BUILD_TYPE "Debug")
-ENDIF (NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEASE"))
-
-#Enable address sanitizer and disable return-value-optimizations
-IF (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}") #  -fsanitize=address
-ENDIF (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-
-SET(CMAKE_REQUIRED_FLAGS "-std=c++17")
-add_compile_options(-Wall -Wextra -W)
-
-include(CheckCXXSourceCompiles)
-check_cxx_source_compiles(
-        "#include<numeric>
-    int main() {
-        int* ptr;
-        std::exclusive_scan(ptr, ptr, ptr, 0);
-    }"
-        HAVE_EXCLUSIVE_SCAN
-)
-
-if (NOT HAVE_EXCLUSIVE_SCAN)
-    add_definitions(-DNEED_EXCLUSIVE_SCAN)
-endif ()
-
 include_directories("${ARROW_INCLUDE_DIR}")
 
 ## Find Python
