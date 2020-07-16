@@ -7,6 +7,7 @@ BUILD_MODE=Debug
 BUILD_MODE_DEBUG="OFF"
 BUILD_MODE_RELEASE="OFF"
 PYTHON_RELEASE="OFF"
+INSTALL_PATH=
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -22,6 +23,11 @@ case $key in
     ;;
     -bpath|--build_path)
     BUILD_PATH="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -ipath|--install_path)
+    INSTALL_PATH="$2"
     shift # past argument
     shift # past value
     ;;
@@ -96,6 +102,15 @@ do
 done < "$input"
 }
 
+INSTALL_CMD=
+if [ -z "$INSTALL_PATH" ]
+then
+  echo "\-ipath|--install_path is NOT set default to cmake"
+else
+  INSTALL_CMD="-DCMAKE_INSTALL_PREFIX=${INSTALL_PATH}"
+  echo "Install location set to: ${INSTALL_PATH}"
+fi
+
 build_cpp(){
 print_line
 echo "Building CPP in ${BUILD_MODE} mode" 
@@ -103,7 +118,7 @@ print_line
 mkdir ${BUILD_PATH}
 pushd ${BUILD_PATH}
 export ARROW_HOME=${BUILD_PATH}/arrow/install
-cmake -DPYARROW_BUILD=${PYARROW_BUILD} -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} ${SOURCE_DIR}
+cmake -DPYARROW_BUILD=${PYARROW_BUILD} -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} $INSTALL_CMD ${SOURCE_DIR}
 make -j 4
 printf "\n\n ### ARROW HOME SET :%s \n\n" "${ARROW_HOME}"
 printf "\n\n ### Cylon CPP Built Successufully !!! \n\n"
