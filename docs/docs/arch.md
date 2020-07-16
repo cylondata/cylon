@@ -3,9 +3,7 @@ id: arch
 title: Architecture
 ---
 
-# Cylon 
-
-[Cylon](https://github.com/cylondata/cylon) is a data engineering toolkit designed to work with AI/ML systems and 
+[Cylon](https://github.com/cylondata/cylon) is a data engineering toolkit designed to work with AI/ML systems and
 integrate with data processing systems. *"Data engineering everywhere"* is the main vision of Cylon. 
 
 ![Data Engineering Everywhere](assets/wheel.png)

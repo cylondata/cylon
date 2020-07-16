@@ -2,7 +2,6 @@
 id: cpp
 title: C++ API
 ---
-# C++ API 
 
 ## `cylon::CylonContext` 
 The entry point to cylon operations
