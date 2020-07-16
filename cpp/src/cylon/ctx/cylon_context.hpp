@@ -22,6 +22,10 @@
 #include "memory_pool.hpp"
 
 namespace cylon {
+
+/**
+ * The entry point to cylon operations
+ */
 class CylonContext {
  private:
   std::unordered_map<std::string, std::string> config{};
@@ -31,22 +35,103 @@ class CylonContext {
   int32_t sequence_no = 0;
 
  public:
+  /**
+   * Constructor
+   * @param distributed <bool>
+   */
+  explicit CylonContext(bool distributed);
+
+  /**
+   * Initializes context
+   * @return <cylon::CylonContext*>
+   */
   static CylonContext *Init();
+
+  /**
+   * Initializes distributed context
+   * @param <cylon::net::CommConfig*> config Configuration to be passed on to the cylon::net::Communicator
+   * @return <cylon::CylonContext*>
+   */
+  static CylonContext *InitDistributed(net::CommConfig *config);
+
+  /**
+   * Completes and closes all operations under the context
+   */
   void Finalize();
 
-  static CylonContext *InitDistributed(net::CommConfig *config);
+  /**
+   * Adds a configuration
+   * @param <std::string> key
+   * @param <std::string> value
+   */
   void AddConfig(const std::string &key, const std::string &value);
+
+  /**
+   * Returns a configuration
+   * @param <std::string> key
+   * @param <std::string> def Default value
+   * @return <std::string> configuration value
+   */
   std::string GetConfig(const std::string &key, const std::string &def = "");
+
+  /**
+   * Returns the Communicator instance
+   * @return <cylon::net::Communicator>
+   */
   net::Communicator *GetCommunicator() const;
+
+  /**
+   * Sets a Communicator
+   * @param <cylon::net::Communicator*> pointer to another communicator
+   */
   void setCommunicator(net::Communicator *communicator1);
+
+  /**
+   * Sets if distributed
+   * @param <bool> distributed
+   */
   void setDistributed(bool distributed);
+
+  /**
+   * Returns the local rank
+   * @return rank <int>
+   */
   int GetRank();
+
+  /**
+   * Returns the world size
+   * @return world size <int>
+   */
   int GetWorldSize();
+
+  /**
+   * Returns the neighbors in the world
+   * @param include_self
+   * @return a std::vector<int> of ranks
+   */
   vector<int> GetNeighbours(bool include_self);
-  explicit CylonContext(bool distributed);
+
+  /**
+   * Returns memory pool
+   * @return <cylon::MemoryPool>
+   */
   cylon::MemoryPool *GetMemoryPool();
+
+  /**
+   * Sets a memory pool
+   * @param <cylon::MemoryPool> mem_pool
+   */
   void SetMemoryPool(cylon::MemoryPool *mem_pool);
+
+  /**
+   * Returns the next sequence number
+   * @return <int>
+   */
   int32_t GetNextSequence();
+
+  /**
+   * Performs a barrier operation
+   */
   void Barrier() {
     this->GetCommunicator()->Barrier();
   }
