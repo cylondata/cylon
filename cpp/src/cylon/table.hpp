@@ -67,7 +67,7 @@ class Table {
    * @param columns the columns
    * @return the created table
    */
-  static Status FromColumns(std::vector<std::shared_ptr<Column>> columns, std::shared_ptr<Table> out);
+  static Status FromColumns(std::vector<std::shared_ptr<Column>> columns, std::shared_ptr<Table> output);
 
   /**
    * Create a table from an arrow table,
@@ -80,8 +80,6 @@ class Table {
                                const std::shared_ptr<arrow::Table> &table,
                                std::shared_ptr<Table> *tableOut);
 
-  Status Project(const std::vector<int64_t> &project_columns, std::shared_ptr<Table> &out);
-
   /**
    * Write the table as a CSV
    * @param path file path
@@ -91,6 +89,13 @@ class Table {
                   const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
 
   /**
+   * Create a arrow table from this data structure
+   * @param output arrow table
+   * @return the status of the operation
+   */
+  Status ToArrowTable(std::shared_ptr<arrow::Table> &output);
+
+  /**
    * Partition the table based on the hash
    * @param hash_columns the columns use for has
    * @param no_of_partitions number partitions
@@ -98,7 +103,7 @@ class Table {
    */
   Status HashPartition(const std::vector<int> &hash_columns,
                        int no_of_partitions,
-                       std::vector<std::shared_ptr<cylon::Table>> *out);
+                       std::vector<std::shared_ptr<cylon::Table>> *output);
 
   /**
    * Merge the set of tables to create a single table
@@ -114,45 +119,100 @@ class Table {
    * @param sort_column
    * @return new table sorted according to the sort column
    */
-  Status Sort(int sort_column, shared_ptr<Table> &out);
+  Status Sort(int sort_column, shared_ptr<Table> &output);
 
   /**
    * Do the join with the right table
    * @param right the right table
    * @param joinConfig the join configurations
-   * @param out the final table
+   * @param output the final table
    * @return success
    */
   Status Join(const std::shared_ptr<Table> &right,
               cylon::join::config::JoinConfig join_config,
-              std::shared_ptr<Table> *out);
-
-  Status DistributedJoin(const shared_ptr<Table> &right,
-                         cylon::join::config::JoinConfig join_config,
-                         std::shared_ptr<Table> *out);
-
-  Status Union(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
-
-  Status DistributedUnion(const shared_ptr<Table> &right, shared_ptr<Table> &out);
-
-  Status Subtract(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
-
-  Status DistributedSubtract(const shared_ptr<Table> &right, shared_ptr<Table> &out);
-
-  Status Intersect(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out);
-
-  Status DistributedIntersect(const shared_ptr<Table> &right, shared_ptr<Table> &out);
-
-  Status Select(const std::function<bool(cylon::Row)> &selector, std::shared_ptr<Table> &out);
+              std::shared_ptr<Table> *output);
 
   /**
-   * Create a arrow table from this data structure
-   * @param out arrow table
-   * @return the status of the operation
+   * Similar to local join, but performs the join in a distributed fashion
+   * @param right
+   * @param join_config
+   * @param output
+   * @return <cylon::Status>
    */
-  Status ToArrowTable(std::shared_ptr<arrow::Table> &out);
+  Status DistributedJoin(const shared_ptr<Table> &right,
+                         cylon::join::config::JoinConfig join_config,
+                         std::shared_ptr<Table> *output);
+
+  /**
+   * Performs union with the passed table
+   * @param other right table
+   * @param output output table
+   * @return <cylon::Status>
+   */
+  Status Union(const std::shared_ptr<Table> &other, std::shared_ptr<Table> &output);
+
+  /**
+   * Similar to local union, but performs the union in a distributed fashion
+   * @param other
+   * @param output
+   * @return
+   */
+  Status DistributedUnion(const shared_ptr<Table> &other, shared_ptr<Table> &output);
+
+  /**
+   * Performs subtract/difference with the passed table
+   * @param right right table
+   * @param output output table
+   * @return <cylon::Status>
+   */
+  Status Subtract(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &output);
+
+  /**
+   * Similar to local subtract/difference, but performs in a distributed fashion
+   * @param other
+   * @param output
+   * @return
+   */
+  Status DistributedSubtract(const shared_ptr<Table> &right, shared_ptr<Table> &output);
+
+  /**
+   * Performs intersection with the passed table
+   * @param other right table
+   * @param output output table
+   * @return <cylon::Status>
+   */
+  Status Intersect(const std::shared_ptr<Table> &other, std::shared_ptr<Table> &output);
+
+  /**
+   * Similar to local intersection, but performs in a distributed fashion
+   * @param other
+   * @param output
+   * @return
+   */
+  Status DistributedIntersect(const shared_ptr<Table> &other, shared_ptr<Table> &output);
+
+  /**
+   * Filters out rows based on the selector function
+   * @param selector lambda function returning a bool
+   * @param output
+   * @return
+   */
+  Status Select(const std::function<bool(cylon::Row)> &selector, std::shared_ptr<Table> &output);
+
+  /**
+   * Creates a simpler view of an existing table by dropping one or more columns
+   * @param project_columns
+   * @param output
+   * @return
+   */
+  Status Project(const std::vector<int64_t> &project_columns, std::shared_ptr<Table> &output);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
+
+  /**
+   * Get the number of columns in the table
+   * @return numbre of columns
+   */
   int32_t Columns();
 
   /**
@@ -183,8 +243,15 @@ class Table {
     return this->id_;
   }
 
+  /**
+   * Clears the table
+   */
   void Clear();
 
+  /**
+   * Returns the cylon Context
+   * @return
+   */
   cylon::CylonContext *GetContext();
 
  private:
@@ -197,7 +264,7 @@ class Table {
 
   typedef Status(*SetOperation)
       (CylonContext *ctx, const std::string &left_table, const std::string &right_table, const std::string &out_table);
-  Status DoSetOperation(SetOperation operation, const shared_ptr<Table> &right, shared_ptr<Table> &out);
+  Status DoSetOperation(SetOperation operation, const shared_ptr<Table> &right, shared_ptr<Table> &output);
 
 };
 }
