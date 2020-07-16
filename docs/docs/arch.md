@@ -3,15 +3,12 @@ id: arch
 title: Architecture
 ---
 
-# Cylon 
-
-[Cylon](https://github.com/cylondata/cylon) is a data engineering toolkit designed to work with AI/ML systems and 
+[Cylon](https://github.com/cylondata/cylon) is a data engineering toolkit designed to work with AI/ML systems and
 integrate with data processing systems. *"Data engineering everywhere"* is the main vision of Cylon. 
 
-![alt text](../static/img/cylon/wheel.png "*Data engineering everywhere*")
+![Data Engineering Everywhere](assets/wheel.png)
 
-
-It can be deployed either as a library or a framework. 
+It can be deployed either as a library or a framework.
 Big Data systems like [Apache Spark](https://spark.apache.org/), [Apache Flink](https://flink.apache.org/), [Twister2](https://twister2.org/), etc may use Cylon to boost the performance 
 in the ETL pipeline. For AI/ML systems like [PyTorch](https://pytorch.org/), [Tensorflow](https://www.tensorflow.org/) and [Apache MXNet](https://mxnet.apache.org/), 
 Cylon acts as a library to enhance ETL performance. Additionally, Cylon is being expanded to perform as a generic framework 
@@ -23,7 +20,7 @@ that are commonly used in Machine Learning and Artificial Intelligence platforms
 When an operator is invoked in any of these platforms, that invocation is delegated to the "Core Cylon" framework, 
 which implements the actual logic to perform the operation in a distributed setting.
 
-![alt text](../static/img/cylon/arch.png "*Core Cylon Architecture*")
+![Core Cylon Architecture](assets/arch.png)
 
 ## Data Model 
 
@@ -160,4 +157,4 @@ Following is the Cylon performance on Joins against Apache Spark and Dask.
 | 128     | 70\.6           | 18\.1            | 2\.5             | 28\.1x         | 7\.2x           |
 | 160     | 68\.9           | 18\.0            | 2\.3             | 30\.0x         | 7\.8x           |
 
-![alt text](../static/img/cylon/join.png "*Cylon Join Performance*")
+![Cylon Join Performance](assets/join.png )

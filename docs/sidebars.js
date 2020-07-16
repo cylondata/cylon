@@ -1,6 +1,7 @@
 module.exports = {
   someSidebar: {
     "Setting Up": ['compile'],
-    Develop: ['cpp', 'python', "java"],
+    "Architecture": ['arch'],
+    "Develop": ['cpp', 'python', "java"],
   },
 };

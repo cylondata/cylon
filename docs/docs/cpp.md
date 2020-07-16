@@ -2,7 +2,6 @@
 id: cpp
 title: C++ API
 ---
-# C++ API 
 
 ## `cylon::CylonContext` 
 The entry point to cylon operations
@@ -230,7 +229,7 @@ auto status = table1->ToArrowTable(some_arrow_table);
   void Clear();
 ```
 
-### `cylon::Table` attributes 
+### `cylon::Table` Attributes 
 
 ```c++
  /**
@@ -272,4 +271,66 @@ auto status = table1->ToArrowTable(some_arrow_table);
    * @return
    */
   cylon::CylonContext *GetContext();
+```
+
+### C++ Examples 
+
+Following is a simple C++ API example. 
+
+```c++
+#include <glog/logging.h>
+#include <net/mpi/mpi_communicator.hpp>
+#include <ctx/cylon_context.hpp>
+#include <table.hpp>
+
+int main(int argc, char *argv[]) {
+  if (argc < 3) {
+    LOG(ERROR) << "There should be two arguments with paths to csv files";
+    return 1;
+  }
+  std::shared_ptr<cylon::Table> first_table, second_table, joined;
+
+  auto mpi_config = new cylon::net::MPIConfig();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+  auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading failed " << argv[1];
+    ctx->Finalize();
+    return 1;
+  }
+
+  status = cylon::Table::FromCSV(ctx, argv[2], second_table, read_options);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading failed " << argv[2];
+    ctx->Finalize();
+    return 1;
+  }
+  LOG(INFO) << "Read tables completed!";
+
+  status = first_table->DistributedJoin(second_table, cylon::join::config::JoinConfig::InnerJoin(0, 0), &joined);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table join failed ";
+    ctx->Finalize();
+    return 1;
+  }
+
+  LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
+            << second_table->Rows() << ", Joined has : " << joined->Rows();
+  LOG(INFO) << "Join completed!";
+  
+  ctx->Finalize();
+  return 0;
+}
+```
+
+Further examples can be found in [Cylon examples in Github](https://github.com/cylondata/cylon/tree/master/cpp/src/examples).
+
+### Running examples 
+
+Once examples are built, the binaries can be run like any usual MPI job. For an example, 
+
+```bash
+mpirun -np 4 <CYLON_HOME>/bin/join_example /path/to/csv1 /path/to/csv2
 ```

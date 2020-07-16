@@ -1,8 +1,8 @@
 module.exports = {
   title: 'Cylon',
   tagline: 'Data engineering everywhere',
-  url: 'https://cylondata.github.io/cylon/',
-  baseUrl: '/cylon/',
+  url: 'https://cylondata.org',
+  baseUrl: '/',
   favicon: 'img/favicon.ico',
   organizationName: 'CylonData', // Usually your GitHub org/user name.
   projectName: 'cylon', // Usually your repo name.

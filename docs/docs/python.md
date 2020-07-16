@@ -1,9 +1,7 @@
 ---
 id: python
-title: Python API
+title: PyCylon
 ---
-
-# PyCylon
 
 PyCylon is the Python binding for LibCylon (C++ Cylon). The uniqueness of PyCylon 
 is that it can be used as a library or a framework. As a library, PyCylon seamlessly
