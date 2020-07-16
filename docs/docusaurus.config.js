@@ -63,6 +63,10 @@ module.exports = {
         },
       ],
     },
+    colorMode:{
+      defaultMode: 'light',
+      disableSwitch: true,
+    }
   },
   presets: [
     [
