@@ -7,6 +7,7 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.cylondata.cylon.NativeLoader;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,8 +30,13 @@ public class ArrowTable {
 
     Schema schema = new Schema(arrowFields);
     schema.toByteArray();
-    System.out.println(schema.toJson());
 
+    Schema x = Schema.deserialize(ByteBuffer.wrap(schema.toByteArray()));
+    System.out.println(x);
+
+    System.out.println("Calling create table");
+    ArrowTable.createTable("");
+    System.out.println("Out of create table");
 
     ArrowTable.addColumn("", 0, intVector.getDataBufferAddress(), 200 * 4);
   }

@@ -33,6 +33,7 @@
         </dependency>
     </dependencies>
 
+
     <build>
         <resources>
             <resource>
@@ -59,6 +60,15 @@
         </pluginManagement>
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <reportOutputDirectory>${project.reporting.outputDirectory}/../../../docs/static
+                    </reportOutputDirectory>
+                    <destDir>javadocs</destDir>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

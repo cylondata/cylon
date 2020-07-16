@@ -114,6 +114,13 @@ public class Table extends DataRepresentation {
     return new Table(uuid, this.ctx);
   }
 
+  /**
+   * Apply the join algorithm across a distributed set of nodes/dataset
+   *
+   * @param rightTable Table to be joined with this table
+   * @param joinConfig Configurations for the join operation
+   * @return Joined Table
+   */
   public Table distributedJoin(Table rightTable, JoinConfig joinConfig) {
     String uuid = UUID.randomUUID().toString();
     Table.nativeDistributedJoin(this.ctx.getCtxId(), this.getId(), rightTable.getId(), joinConfig.getLeftIndex(),
@@ -193,6 +200,13 @@ public class Table extends DataRepresentation {
     throw unSupportedException();
   }
 
+  /**
+   * This method can be used to filter out some rows from a table based on a
+   * user defined logic
+   *
+   * @param selector logic to select(filter) rows from the table
+   * @return resulting table, after filtering out rows
+   */
   public Table select(Selector selector) {
     String destination = UUID.randomUUID().toString();
     Table.select(this.ctx.getCtxId(), this.getId(), selector, destination);
