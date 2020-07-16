@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 ##########################################################################
 #	CMake Build Rules for the Cylon                               #
 ##########################################################################
@@ -13,20 +30,20 @@ project(CYLON)
 set(CYLON_VERSION 0.1)
 
 ## PyCylon build
-if(PYCYLON_BUILD)
+if (PYCYLON_BUILD)
     message("Cylon Python Build [READ] ${PYCYLON_BUILD}")
 else ()
     message("Cylon Python Build [UNREAD] ${PYTCYLON_BUILD}")
     set(PYCYLON_BUILD OFF)
-endif()
+endif ()
 
 ## Python Executable Path
-if(PYTHON_EXEC_PATH)
+if (PYTHON_EXEC_PATH)
     message("Python Executable Path ${PYTHON_EXEC_PATH}")
 else ()
     set(PYTHON_EXEC_PATH /usr)
     message("Python Executable Path ${PYTHON_EXEC_PATH}")
-endif()
+endif ()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 # So we can find our custom modules
@@ -55,9 +72,9 @@ SET(CMAKE_CXX_EXTENSIONS OFF)
 # glog
 option(WITH_GFLAGS "Use gflags" ON)
 SET(WITH_GFLAGS OFF)
-add_subdirectory(thirdparty/glog)
 
 include(ConfigureArrow)
+include(Build)
 
 if (ARROW_FOUND)
     message(STATUS "Apache Arrow found in ${ARROW_INCLUDE_DIR}")
@@ -70,9 +87,9 @@ IF (NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEA
 ENDIF (NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEASE"))
 
 #Enable address sanitizer and disable return-value-optimizations
-IF(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+IF (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
     SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}") #  -fsanitize=address
-ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+ENDIF (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
 
 SET(CMAKE_REQUIRED_FLAGS "-std=c++17")
 add_compile_options(-Wall -Wextra -W)
@@ -100,9 +117,10 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 # Off if you dont want to build tests -- ON default
 option(CYLON_BUILD_TESTS "Build tests." ON)
 
+add_subdirectory(thirdparty/glog)
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
 
 if (PYCYLON_BUILD)
     add_subdirectory(src/examples/python)
-endif()
+endif ()
