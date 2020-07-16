@@ -157,4 +157,4 @@ Following is the Cylon performance on Joins against Apache Spark and Dask.
 | 128     | 70\.6           | 18\.1            | 2\.5             | 28\.1x         | 7\.2x           |
 | 160     | 68\.9           | 18\.0            | 2\.3             | 30\.0x         | 7\.8x           |
 
-!["Cylon Join Performance"](static/img/cylon/join.png )
+!["Cylon Join Performance"](assets/join.png )
