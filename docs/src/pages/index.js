@@ -203,7 +203,7 @@ function Home() {
                         naturalSlideHeight={400}
                         isPlaying={true}
                         infinite={true}
-                        interval={30000}
+                        interval={5000}
                         totalSlides={3}>
                         <Slider>
                             <Slide index={0}>
