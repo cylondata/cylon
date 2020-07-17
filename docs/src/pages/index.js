@@ -6,10 +6,13 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
 import "./custom.css";
-import {CodeBlock, monoBlue} from "react-code-blocks";
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import {docco} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {CarouselProvider, Slide, Slider} from 'pure-react-carousel';
 import 'pure-react-carousel/dist/react-carousel.es.css';
-import {Bar, BarChart, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import {Bar, BarChart, Label, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
+import 'react-tabs/style/react-tabs.css';
 
 
 const features = [
@@ -24,7 +27,7 @@ const features = [
     // },
     {
         title: <>Fast & Scalable</>,
-        imageUrl: 'https://fuelcycle.com/wp-content/uploads/2018/12/Fast-Flexible-Connected-01-2-310x300.png',
+        imageUrl: 'img/fast.png',
         description: (
             <>
                 Cylon uses OpenMPI underneath. It provides core data processing operators many times efficiently than
@@ -34,7 +37,7 @@ const features = [
     },
     {
         title: <>Designed to be Integrated</>,
-        imageUrl: 'https://uucss.org/wp-content/uploads/2016/10/operations-council.png',
+        imageUrl: 'img/compatible.png',
         description: (
             <>
                 Cylon is designed to work across different data processing frameworks, deep learning frameworks and
@@ -80,49 +83,45 @@ const languageData = [
 ];
 
 
-const joinData = [{"worldSize": "1", "cylonH": "0.8025", "cylonS": "0.88675", "spark": "7.338"}, {
+const joinData = [{"worldSize": "1", "cylonH": "141.5", "cylonS": "164.2", "spark": "586.5"}, {
     "worldSize": "2",
-    "cylonH": "1.6715",
-    "cylonS": "1.604875",
-    "spark": "7.73"
-}, {"worldSize": "4", "cylonH": "1.748875", "cylonS": "1.637625", "spark": "9.4625"}, {
+    "cylonH": "121.2",
+    "cylonS": "116.2",
+    "spark": "332.8"
+}, {"worldSize": "4", "cylonH": "61.6", "cylonS": "56.5", "spark": "207.1"}, {
     "worldSize": "8",
-    "cylonH": "1.82803125",
-    "cylonS": "1.64871875",
-    "spark": "11.148"
-}, {"worldSize": "16", "cylonH": "1.889375", "cylonS": "1.6979375", "spark": "11.505"}, {
+    "cylonH": "30.7",
+    "cylonS": "27.4",
+    "spark": "119.0"
+}, {"worldSize": "16", "cylonH": "15.0", "cylonS": "13.2", "spark": "62.3"}, {
     "worldSize": "32",
-    "cylonH": "2.256546875",
-    "cylonS": "1.978664063",
-    "spark": "12.5295"
-}, {"worldSize": "64", "cylonH": "2.890671875", "cylonS": "2.53996875", "spark": "15.22"}, {
+    "cylonH": "8.1",
+    "cylonS": "7.0",
+    "spark": "39.6"
+}, {"worldSize": "64", "cylonH": "4.5", "cylonS": "4.0", "spark": "22.2"}, {
     "worldSize": "128",
-    "cylonH": "3.562925781",
-    "cylonS": "3.307162109",
-    "spark": "21.5975"
-}, {"worldSize": "160", "cylonH": "3.976823438", "cylonS": "3.821015625", "spark": "23.1185"}]
+    "cylonH": "2.8",
+    "cylonS": "2.5",
+    "spark": "18.1"
+}, {"worldSize": "160", "cylonH": "2.5", "cylonS": "2.3", "spark": "18.0"}]
 
-const unionData = [{
-    "worldSize": "1",
-    "cylon": "2.6275",
-    "spark": "6.7465"
-}, {"worldSize": "2", "cylon": "4.156", "spark": "7.398"}, {
-    "worldSize": "4",
-    "cylon": "4.1535",
-    "spark": "8.671"
-}, {"worldSize": "8", "cylon": "4.198", "spark": "13.5205"}, {
-    "worldSize": "16",
-    "cylon": "4.2725",
-    "spark": "13.2175"
-}, {"worldSize": "32", "cylon": "4.7045", "spark": "13.9885"}, {
-    "worldSize": "64",
-    "cylon": "5.6175",
-    "spark": "16.742"
-}, {"worldSize": "128", "cylon": "8.067", "spark": "21.227"}, {
-    "worldSize": "160",
-    "cylon": "9.4145",
-    "spark": "23.647"
-}];
+const unionData = [{"worldSize": "1", "cylon": "342.537", "spark": "748.567"}, {
+    "worldSize": "2",
+    "cylon": "223.186",
+    "spark": "412.414"
+}, {"worldSize": "4", "cylon": "108.53", "spark": "239.747"}, {
+    "worldSize": "8",
+    "cylon": "53.022",
+    "spark": "141.44"
+}, {"worldSize": "16", "cylon": "26.676", "spark": "69.525"}, {
+    "worldSize": "32",
+    "cylon": "14.064",
+    "spark": "43.651"
+}, {"worldSize": "64", "cylon": "8.399", "spark": "23.895"}, {
+    "worldSize": "128",
+    "cylon": "6.773",
+    "spark": "18.384"
+}, {"worldSize": "160", "cylon": "7.261", "spark": "17.572"}];
 
 function Home() {
     const context = useDocusaurusContext();
@@ -169,26 +168,58 @@ function Home() {
                                 ))}
 
                                 <div className={clsx('col col--8', styles.feature)}>
-                                    <CodeBlock
-                                        text={`int main(int argc, char *argv[]) {
-  auto mpi_config = new cylon::net::MPIConfig();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+                                    <Tabs>
+                                        <TabList>
+                                            <Tab><i className="devicon-cplusplus-plain"/></Tab>
+                                            <Tab><i className="devicon-java-plain"/></Tab>
+                                            <Tab><i className="devicon-python-plain"/></Tab>
+                                        </TabList>
 
-  std::shared_ptr<cylon::Table> first_table, second_table, joined;
-  auto read_options = cylon::io::config::CSVReadOptions();
-  auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
-  status = cylon::Table::FromCSV(ctx, argv[2], second_table, read_options);
-  status = first_table->DistributedJoin(second_table,
-                                        cylon::join::config::JoinConfig::InnerJoin(0, 0),
-                                        &joined);
+                                        <TabPanel>
+                                            <SyntaxHighlighter language="cpp" style={docco} showLineNumbers={true}>
+                                                {`int main(int argc, char *argv[]) {
+  auto mpi_config = new MPIConfig();
+  auto ctx = CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<Table> table1, table2, joined;
+
+  auto read_options = CSVReadOptions().UseThreads(true);
+  Table::FromCSV(ctx, {
+      "/path/to/csv1.csv",
+      "/path/to/csv2.csv"
+  }, {table1, table2}, read_options);
+
+  auto join_config = JoinConfig::InnerJoin(0, 0);
+  table1->DistributedJoin(table2, join_config, &joined);
+  joined->Print();
+  
   ctx->Finalize();
   return 0;
 }`}
-                                        language={"cpp"}
-                                        theme={monoBlue}
-                                        showLineNumbers={true}
-                                        wrapLines
-                                    />
+                                            </SyntaxHighlighter>
+                                        </TabPanel>
+                                        <TabPanel>
+                                            <SyntaxHighlighter language="java" style={docco} showLineNumbers={true}>
+                                                {`public class DistributedJoinExample {
+                                                
+  public static void main(String[] args) {
+    String src1Path = args[0];
+    String src2Path = args[1];
+
+    CylonContext ctx = CylonContext.init();
+
+    Table left = Table.fromCSV(ctx, src1Path);
+    Table right = Table.fromCSV(ctx, src2Path);
+
+    JoinConfig joinConfig = new JoinConfig(0, 0);
+    Table joined = left.distributedJoin(right, joinConfig);
+    joined.print();
+    
+    ctx.finalizeCtx();
+  }
+}`}
+                                            </SyntaxHighlighter>
+                                        </TabPanel>
+                                    </Tabs>
                                 </div>
                             </div>
                         </div>
@@ -209,28 +240,30 @@ function Home() {
                             <Slide index={0}>
                                 <h4>Cross Language Performance</h4>
                                 <p>Experiment informatiom goes here</p>
-                                <ResponsiveContainer width="100%" height={350}>
+                                <ResponsiveContainer width="100%" height={330}>
                                     <BarChart data={languageData}>
                                         <Bar fill="#00BCD4" dataKey="cpp"/>
                                         <Bar fill="#4CAF50" dataKey="python"/>
                                         <Bar fill="#FF5722" dataKey="java"/>
                                         <XAxis dataKey="world" label="World Size"/>
-                                        <YAxis label={{value: "time(s)", angle: -90}}/>
+                                        <YAxis label={{value: "time(s)", angle: -90, position: 'insideLeft'}}/>
                                         <Legend verticalAlign="top" height={36}/>
                                         {/*<Tooltip/>*/}
                                     </BarChart>
                                 </ResponsiveContainer>
                             </Slide>
                             <Slide index={1}>
-                                <h4>Distributed Join</h4>
-                                <p>Experiment informatiom goes here</p>
-                                <ResponsiveContainer width="100%" height={350}>
+                                <h4>Distributed Join(String Scaling)</h4>
+                                <p>Cylon(Hash Join) vs Cylon(Sort Join) vs Spark</p>
+                                <ResponsiveContainer width="100%" height={330}>
                                     <LineChart data={joinData}>
                                         <Line stroke="#00BCD4" dataKey="cylonH"/>
                                         <Line stroke="#4CAF50" dataKey="cylonS"/>
                                         <Line stroke="#FF5722" dataKey="spark"/>
-                                        <XAxis dataKey="worldSize" label=" World Size"/>
-                                        <YAxis label={{value: " time(s)", angle: -90}}/>
+                                        <XAxis dataKey="worldSize">
+                                            <Label value="World Size" offset={0} position="insideBottom"/>
+                                        </XAxis>
+                                        <YAxis label={{value: " time(s)", angle: -90, position: 'insideLeft'}}/>
                                         <Legend verticalAlign="top" height={36}/>
                                         <Tooltip/>
                                     </LineChart>
@@ -238,13 +271,14 @@ function Home() {
                             </Slide>
                             <Slide index={2}>
                                 <h4>Distributed Union</h4>
-                                <p>Experiment informatiom goes here</p>
-                                <ResponsiveContainer width="100%" height={350}>
+                                <ResponsiveContainer width="100%" height={380}>
                                     <LineChart data={unionData}>
                                         <Line stroke="#00BCD4" dataKey="cylon"/>
                                         <Line stroke="#FF5722" dataKey="spark"/>
-                                        <XAxis dataKey="worldSize" label=" World Size"/>
-                                        <YAxis label={{value: " time(s)", angle: -90}}/>
+                                        <XAxis dataKey="worldSize">
+                                            <Label value="World Size" position="insideBottom" offset={0}/>
+                                        </XAxis>
+                                        <YAxis label={{value: " time(s)", angle: -90, position: 'insideLeft'}}/>
                                         <Legend verticalAlign="top" align="right" height={36}/>
                                         <Tooltip/>
                                     </LineChart>
