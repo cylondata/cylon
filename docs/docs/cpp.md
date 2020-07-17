@@ -1,6 +1,6 @@
 ---
 id: cpp
-title: C++ API
+title: C++
 ---
 
 ## `cylon::CylonContext` 
