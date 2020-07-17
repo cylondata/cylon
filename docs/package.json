@@ -12,9 +12,11 @@
     "@docusaurus/core": "^2.0.0-alpha.58",
     "@docusaurus/preset-classic": "^2.0.0-alpha.58",
     "clsx": "^1.1.1",
+    "pure-react-carousel": "^1.27.1",
     "react": "^16.8.4",
     "react-code-blocks": "0.0.8",
-    "react-dom": "^16.8.4"
+    "react-dom": "^16.8.4",
+    "recharts": "^1.8.5"
   },
   "browserslist": {
     "production": [

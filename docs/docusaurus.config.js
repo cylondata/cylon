@@ -1,6 +1,6 @@
 module.exports = {
   title: 'Cylon',
-  tagline: 'Data engineering everywhere',
+  tagline: 'Data Engineering Everywhere!',
   url: 'https://cylondata.org',
   baseUrl: '/',
   favicon: 'img/favicon.ico',
