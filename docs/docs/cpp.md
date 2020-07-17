@@ -326,11 +326,3 @@ int main(int argc, char *argv[]) {
 ```
 
 Further examples can be found in [Cylon examples in Github](https://github.com/cylondata/cylon/tree/master/cpp/src/examples).
-
-### Running examples 
-
-Once examples are built, the binaries can be run like any usual MPI job. For an example, 
-
-```bash
-mpirun -np 4 <CYLON_HOME>/bin/join_example /path/to/csv1 /path/to/csv2
-```

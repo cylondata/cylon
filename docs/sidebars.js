@@ -3,5 +3,6 @@ module.exports = {
     "Setting Up": ['compile'],
     "Architecture": ['arch'],
     "Develop": ['cpp', 'python', "java"],
+    "Running Examples": ['mpi'],
   },
 };
