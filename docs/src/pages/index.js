@@ -11,7 +11,7 @@ import {docco} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {CarouselProvider, Slide, Slider} from 'pure-react-carousel';
 import 'pure-react-carousel/dist/react-carousel.es.css';
 import {Bar, BarChart, Label, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
+import {Tab, TabList, TabPanel, Tabs} from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 
 
@@ -57,12 +57,21 @@ const features2 = [
             </>
         ),
     },
+    {
+        title: <>We have flattened the Curve, The Learning Curve!</>,
+        imageUrl: 'img/curve.png',
+        description: (
+            <>
+                Write in the language you are already familiar with, yet experience the same native performance.
+            </>
+        ),
+    },
 ];
 
-function Feature({imageUrl, title, description, fixedWidth = false}) {
+function Feature({imageUrl, title, description, fixedWidth = false, col = 'col--4'}) {
     const imgUrl = useBaseUrl(imageUrl);
     return (
-        <div className={clsx('col col--4', styles.feature)}>
+        <div className={clsx('col ' + col, styles.feature)}>
             {imgUrl && (
                 <div className="text--left">
                     <img className={fixedWidth ? styles.featureImageFixedWidth : styles.featureImage} src={imgUrl}
@@ -163,10 +172,11 @@ function Home() {
                     <section className={styles.features}>
                         <div className="container">
                             <div className="row">
-                                {features2.map((props, idx) => (
-                                    <Feature key={idx} {...props} fixedWidth={true}/>
-                                ))}
-
+                                <div className={clsx('col col--4', styles.feature)}>
+                                    {features2.map((props, idx) => (
+                                        <Feature key={idx} {...props} fixedWidth={true} col="col--12"/>
+                                    ))}
+                                </div>
                                 <div className={clsx('col col--8', styles.feature)}>
                                     <Tabs>
                                         <TabList>
