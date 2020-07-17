@@ -209,24 +209,46 @@ function Home() {
                                         </TabPanel>
                                         <TabPanel>
                                             <SyntaxHighlighter language="java" style={docco} showLineNumbers={true}>
-                                                {`public class DistributedJoinExample {
+                                                {`import org.cylondata.cylon.CylonContext;
+import org.cylondata.cylon.Table;
+import org.cylondata.cylon.ops.JoinConfig;
+
+public class DistributedJoinExample {
                                                 
   public static void main(String[] args) {
-    String src1Path = args[0];
-    String src2Path = args[1];
-
     CylonContext ctx = CylonContext.init();
 
-    Table left = Table.fromCSV(ctx, src1Path);
-    Table right = Table.fromCSV(ctx, src2Path);
+    Table left = Table.fromCSV(ctx, "/tmp/csv1.csv");
+    Table right = Table.fromCSV(ctx, "/tmp/csv2.csv");
 
-    JoinConfig joinConfig = new JoinConfig(0, 0);
-    Table joined = left.distributedJoin(right, joinConfig);
-    joined.print();
+    Table joined = left.distributedJoin(right, new JoinConfig(0, 0));
     
+    joined.print();    
     ctx.finalizeCtx();
   }
 }`}
+                                            </SyntaxHighlighter>
+                                        </TabPanel>
+                                        <TabPanel>
+                                            <SyntaxHighlighter language="python" style={docco} showLineNumbers={true}>
+                                                {`from pycylon.data.table import csv_reader
+from pycylon.data.table import Table
+from pycylon.ctx.context import CylonContext
+
+ctx: CylonContext = CylonContext("mpi")
+
+tb1: Table = csv_reader.read(ctx, '/tmp/csv1.csv', ',')
+tb2: Table = csv_reader.read(ctx, '/tmp/csv2.csv', ',')
+
+configs = {'join_type':'left', 'algorithm':'hash', 
+                'left_col':0, 'right_col':0}
+                
+tb3: Table = tb1.distributed_join(ctx, table=tb2, 
+        join_type=configs['join_type'], algorithm=configs['algorithm'],
+        left_col=configs['left_col'], right_col=configs['right_col'])
+        
+tb3.show()
+ctx.finalize()`}
                                             </SyntaxHighlighter>
                                         </TabPanel>
                                     </Tabs>
@@ -289,7 +311,7 @@ function Home() {
                                             <Label value="World Size" position="insideBottom" offset={0}/>
                                         </XAxis>
                                         <YAxis label={{value: " time(s)", angle: -90, position: 'insideLeft'}}/>
-                                        <Legend verticalAlign="top" align="right" height={36}/>
+                                        <Legend verticalAlign="top" height={36}/>
                                         <Tooltip/>
                                     </LineChart>
                                 </ResponsiveContainer>
