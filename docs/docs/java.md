@@ -1,6 +1,6 @@
 ---
 id: java
-title: Java API
+title: JCylon
 ---
 
 With Cylon's java binding(JCylon), Java programmers can achieve the same performance of a native C++ Cylon code and minimize downsides of java codes such as garbage collection overheads.

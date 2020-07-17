@@ -137,8 +137,8 @@ function Home() {
     const {siteConfig = {}} = context;
     return (
         <Layout
-            title={`Hello from ${siteConfig.title}`}
-            description="Description will go into a meta tag in <head />">
+            title={`${siteConfig.title}`}
+            description="Fast, Scalable, Distributed Data Processing <head />">
             <header className={clsx('hero hero--primary', styles.heroBanner, 'custom-background')}>
                 <div className="container header-container">
                     <h1 className="hero__title">{siteConfig.title}</h1>
@@ -271,7 +271,7 @@ ctx.finalize()`}
                         <Slider>
                             <Slide index={0}>
                                 <h4>Cross Language Performance</h4>
-                                <p>Experiment informatiom goes here</p>
+                                <p>Join performance with C++, Java and Python</p>
                                 <ResponsiveContainer width="100%" height={330}>
                                     <BarChart data={languageData}>
                                         <Bar fill="#00BCD4" dataKey="cpp"/>
@@ -285,7 +285,7 @@ ctx.finalize()`}
                                 </ResponsiveContainer>
                             </Slide>
                             <Slide index={1}>
-                                <h4>Distributed Join(String Scaling)</h4>
+                                <h4>Distributed Join(Strong Scaling)</h4>
                                 <p>Cylon(Hash Join) vs Cylon(Sort Join) vs Spark</p>
                                 <ResponsiveContainer width="100%" height={330}>
                                     <LineChart data={joinData}>
