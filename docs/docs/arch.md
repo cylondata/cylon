@@ -3,10 +3,12 @@ id: arch
 title: Architecture
 ---
 
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
 [Cylon](https://github.com/cylondata/cylon) is a data engineering toolkit designed to work with AI/ML systems and
 integrate with data processing systems. *"Data engineering everywhere"* is the main vision of Cylon. 
 
-![Data Engineering Everywhere](assets/wheel.png)
+<img alt="Data Engineering Everywhere" src={useBaseUrl('img/docs/wheel.png')}/>
 
 It can be deployed either as a library or a framework.
 Big Data systems like [Apache Spark](https://spark.apache.org/), [Apache Flink](https://flink.apache.org/), [Twister2](https://twister2.org/), etc may use Cylon to boost the performance 
@@ -20,7 +22,7 @@ that are commonly used in Machine Learning and Artificial Intelligence platforms
 When an operator is invoked in any of these platforms, that invocation is delegated to the "Core Cylon" framework, 
 which implements the actual logic to perform the operation in a distributed setting.
 
-![Core Cylon Architecture](assets/arch.png)
+<img alt="Core Cylon Architecture" src={useBaseUrl('img/docs/arch.png')}/>
 
 ## Data Model 
 
@@ -96,7 +98,7 @@ tensor = torch.from_numpy(npy)
 #...
 ```
 
-```c++
+```cpp
 #include <net/mpi/mpi_communicator.h>
 #include <ctx/cylon_context.h>
 #include <table.hpp>
@@ -157,4 +159,4 @@ Following is the Cylon performance on Joins against Apache Spark and Dask.
 | 128     | 70\.6           | 18\.1            | 2\.5             | 28\.1x         | 7\.2x           |
 | 160     | 68\.9           | 18\.0            | 2\.3             | 30\.0x         | 7\.8x           |
 
-![Cylon Join Performance](assets/join.png )
+<img alt="Cylon Join Performance" src={useBaseUrl('img/docs/join.png')}/>

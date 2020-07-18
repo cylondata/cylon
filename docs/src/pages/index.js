@@ -13,6 +13,7 @@ import 'pure-react-carousel/dist/react-carousel.es.css';
 import {Bar, BarChart, Label, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {Tab, TabList, TabPanel, Tabs} from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
+import Head from "@docusaurus/Head";
 
 
 const features = [
@@ -68,10 +69,10 @@ const features2 = [
     },
 ];
 
-function Feature({imageUrl, title, description, fixedWidth = false, col = 'col--4'}) {
+function Feature({imageUrl, title, description, fixedWidth = false, col = 'col--4', style = {}}) {
     const imgUrl = useBaseUrl(imageUrl);
     return (
-        <div className={clsx('col ' + col, styles.feature)}>
+        <div className={clsx('col ' + col, styles.feature)} style={style}>
             {imgUrl && (
                 <div className="text--left">
                     <img className={fixedWidth ? styles.featureImageFixedWidth : styles.featureImage} src={imgUrl}
@@ -135,10 +136,24 @@ const unionData = [{"worldSize": "1", "cylon": "342.537", "spark": "748.567"}, {
 function Home() {
     const context = useDocusaurusContext();
     const {siteConfig = {}} = context;
+
+
     return (
         <Layout
             title={`${siteConfig.title}`}
-            description="Fast, Scalable, Distributed Data Processing <head />">
+            description={`${siteConfig.tagline}`}>
+            <>
+                <Head>
+                    <meta property="og:title" content={`${siteConfig.title}`}/>
+                    <meta property="og:description" content={`${siteConfig.tagline}`}/>
+                    <meta property="og:image" content="https://cylondata.org/img/wheel.png"/>
+                    <meta property="og:url" content="https://cylondata.org"/>
+                    <meta property="twitter:title" content={`${siteConfig.title}`}/>
+                    <meta property="twitter:description" content={`${siteConfig.tagline}`}/>
+                    <meta property="twitter:image" content="https://cylondata.org/img/wheel.png"/>
+                    <meta name="twitter:card" content="summary_large_image"/>
+                </Head>
+            </>
             <header className={clsx('hero hero--primary', styles.heroBanner, 'custom-background')}>
                 <div className="container header-container">
                     <h1 className="hero__title">{siteConfig.title}</h1>
@@ -174,7 +189,8 @@ function Home() {
                             <div className="row">
                                 <div className={clsx('col col--4', styles.feature)}>
                                     {features2.map((props, idx) => (
-                                        <Feature key={idx} {...props} fixedWidth={true} col="col--12"/>
+                                        <Feature key={idx} {...props} fixedWidth={true} col="col--12"
+                                                 style={{marginTop: idx === 1 ? "4rem" : "0", paddingLeft: 0}}/>
                                     ))}
                                 </div>
                                 <div className={clsx('col col--8', styles.feature)}>
@@ -188,6 +204,7 @@ function Home() {
                                         <TabPanel>
                                             <SyntaxHighlighter language="cpp" style={docco} showLineNumbers={true}>
                                                 {`int main(int argc, char *argv[]) {
+
   auto mpi_config = new MPIConfig();
   auto ctx = CylonContext::InitDistributed(mpi_config);
   std::shared_ptr<Table> table1, table2, joined;
@@ -200,6 +217,7 @@ function Home() {
 
   auto join_config = JoinConfig::InnerJoin(0, 0);
   table1->DistributedJoin(table2, join_config, &joined);
+  
   joined->Print();
   
   ctx->Finalize();
@@ -216,6 +234,7 @@ import org.cylondata.cylon.ops.JoinConfig;
 public class DistributedJoinExample {
                                                 
   public static void main(String[] args) {
+  
     CylonContext ctx = CylonContext.init();
 
     Table left = Table.fromCSV(ctx, "/tmp/csv1.csv");
@@ -224,6 +243,7 @@ public class DistributedJoinExample {
     Table joined = left.distributedJoin(right, new JoinConfig(0, 0));
     
     joined.print();    
+    
     ctx.finalizeCtx();
   }
 }`}
@@ -244,8 +264,10 @@ configs = {'join_type':'left', 'algorithm':'hash',
                 'left_col':0, 'right_col':0}
                 
 tb3: Table = tb1.distributed_join(ctx, table=tb2, 
-        join_type=configs['join_type'], algorithm=configs['algorithm'],
-        left_col=configs['left_col'], right_col=configs['right_col'])
+        join_type=configs['join_type'], 
+        algorithm=configs['algorithm'],
+        left_col=configs['left_col'], 
+        right_col=configs['right_col'])
         
 tb3.show()
 ctx.finalize()`}
@@ -295,8 +317,10 @@ ctx.finalize()`}
                                         <XAxis dataKey="worldSize">
                                             <Label value="World Size" offset={0} position="insideBottom"/>
                                         </XAxis>
-                                        <YAxis label={{value: " time(s)", angle: -90, position: 'insideLeft'}}/>
-                                        <Legend verticalAlign="top" height={36}/>
+                                        <YAxis label={{value: " time(s)", angle: -90, position: 'insideLeft'}}
+                                               domain={[1, 'dataMax']}
+                                               scale="log"/>
+                                        <Legend verticalAlign="top" align="right" height={36}/>
                                         <Tooltip/>
                                     </LineChart>
                                 </ResponsiveContainer>
@@ -310,7 +334,9 @@ ctx.finalize()`}
                                         <XAxis dataKey="worldSize">
                                             <Label value="World Size" position="insideBottom" offset={0}/>
                                         </XAxis>
-                                        <YAxis label={{value: " time(s)", angle: -90, position: 'insideLeft'}}/>
+                                        <YAxis label={{value: " time(s)", angle: -90, position: 'insideLeft'}}
+                                               domain={[1, 'dataMax']}
+                                               scale="log"/>
                                         <Legend verticalAlign="top" height={36}/>
                                         <Tooltip/>
                                     </LineChart>
