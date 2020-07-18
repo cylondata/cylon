@@ -27,7 +27,7 @@
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 project(CYLON)
 
-set(CYLON_VERSION 0.1)
+set(CYLON_VERSION 0.1.0)
 
 ## defaults to debug build
 IF (NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEASE"))
