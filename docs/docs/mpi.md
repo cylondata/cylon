@@ -31,5 +31,5 @@ mvn clean package
 
 Then run the fat-jar main class,
 ```bash
-mpirun -np <NUM_WORKERS> java -cp <CYLON_HOME>/target/cylon-0.1-SNAPSHOT-jar-with-dependencies.jar  org.cylondata.cylon.examples.DistributedJoinExample /path/to/csv1 /path/to/csv2
+mpirun -np <NUM_WORKERS> java -cp <CYLON_HOME>/target/cylon-0.1.0-jar-with-dependencies.jar  org.cylondata.cylon.examples.DistributedJoinExample /path/to/csv1 /path/to/csv2
 ```
