@@ -7,6 +7,9 @@ module.exports = {
     organizationName: 'CylonData', // Usually your GitHub org/user name.
     projectName: 'cylon', // Usually your repo name.
     themeConfig: {
+        googleAnalytics: {
+            trackingID: 'UA-173169112-1'
+        },
         disableDarkMode: true,
         navbar: {
             logo: {
@@ -95,7 +98,8 @@ module.exports = {
     stylesheets: [
         'https://cdn.jsdelivr.net/gh/konpa/devicon@master/devicon.min.css',
     ],
+    plugins: ['@docusaurus/plugin-google-analytics'],
     customFields: {
-        twitterImage: "img/wheel.png"
+        twitterImage: "img/wheel.png",
     }
 };
