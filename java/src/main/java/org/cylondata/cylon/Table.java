@@ -1,6 +1,7 @@
 package org.cylondata.cylon;
 
 import org.apache.arrow.vector.types.Types;
+import org.cylondata.cylon.arrow.ArrowTable;
 import org.cylondata.cylon.ops.Filter;
 import org.cylondata.cylon.ops.JoinConfig;
 import org.cylondata.cylon.ops.Mapper;
@@ -37,6 +38,10 @@ public class Table extends DataRepresentation {
   }
 
   //----------------- METHODS TO GENERATE TABLE ---------------------//
+
+  public static Table fromArrowTable(CylonContext ctx, ArrowTable arrowTable) {
+    return new Table(arrowTable.getUuid(), ctx);
+  }
 
   /**
    * This method will load a table by reading the data from a CSV file.

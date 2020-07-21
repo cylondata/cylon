@@ -4,12 +4,10 @@
 #include <string>
 #include <vector>
 namespace cylon {
-namespace carrow {
-void Build(std::string table_id,
-           uint8_t *schema,
-           int64_t schema_length,
-           std::vector<int8_t *> buffers,
-           std::vector<int64_t> lengths);
+namespace cyarrow {
+void BeginTable(const std::string& table_id);
+void AddColumn(const std::string& table_id, int32_t col_index, int32_t type, int64_t address, int64_t size);
+void EndTable(std::string table_id);
 }
 }
 

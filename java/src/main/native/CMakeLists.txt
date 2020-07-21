@@ -43,7 +43,7 @@ include_directories("include"
         "${JNI_INCLUDE_DIRS}" ${CYLON_INCLUDE})
 
 set(SOURCE_FILES
-        src/Table.cpp src/TwisterXContext.cpp src/ConversionUtils.h src/ConversionUtils.cpp src/ArrowTable.cpp src/ArrowTable.h src/Utils.hpp src/Row.cpp)
+        src/Table.cpp src/TwisterXContext.cpp src/ConversionUtils.h src/ConversionUtils.cpp src/ArrowTable.cpp src/Utils.hpp src/Row.cpp src/Utils.cpp)
 add_library(cylonjni SHARED ${SOURCE_FILES})
 
 include_directories(${MPI_INCLUDE_PATH})

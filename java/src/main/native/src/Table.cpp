@@ -13,7 +13,6 @@
  */
 
 #include <iostream>
-#include <memory>
 #include <vector>
 #include "org_cylondata_cylon_Table.h"
 #include "table_api.hpp"

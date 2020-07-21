@@ -1,17 +1,31 @@
 package org.cylondata.cylon.arrow;
 
 import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.IntVector;
+import org.apache.arrow.vector.types.FloatingPointPrecision;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.cylondata.cylon.NativeLoader;
+import org.cylondata.cylon.Table;
+import org.cylondata.cylon.exception.CylonRuntimeException;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
+/**
+ * This class provides basic types support to map a java arrow table to cpp arrow table.
+ * This class needs to be improved to support complex types
+ */
 public class ArrowTable {
+
+  private final String uuid;
+  private Schema schema;
+  private boolean finished;
+
   public static void main(String[] args) {
 
     NativeLoader.load();
@@ -19,31 +33,60 @@ public class ArrowTable {
     RootAllocator rootAllocator = new RootAllocator();
     IntVector intVector = new IntVector("col1", rootAllocator);
     intVector.allocateNew(200);
-    //intVector.setValueCount(200);
+
+    Float8Vector float8Vector = new Float8Vector("col2", rootAllocator);
     for (int i = 0; i < 200; i++) {
-      intVector.setSafe(i, i);
+      float8Vector.setSafe(i, i);
     }
-    intVector.setValueCount(200);
 
     List<Field> arrowFields = new ArrayList<>();
     arrowFields.add(Field.nullable("col1", new ArrowType.Int(8, true)));
+    arrowFields.add(Field.nullable("col2", new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE)));
+
 
     Schema schema = new Schema(arrowFields);
     schema.toByteArray();
 
-    Schema x = Schema.deserialize(ByteBuffer.wrap(schema.toByteArray()));
-    System.out.println(x);
+    ArrowTable arrowTable = new ArrowTable(schema);
+    arrowTable.addColumn(0, intVector);
+    arrowTable.addColumn(1, float8Vector);
+    arrowTable.finish();
+  }
 
-    System.out.println("Calling create table");
-    ArrowTable.createTable("");
-    System.out.println("Out of create table");
+  public ArrowTable(Schema schema) {
+    this.schema = schema;
+    this.uuid = UUID.randomUUID().toString();
+    ArrowTable.createTable(this.uuid);
+  }
 
-    ArrowTable.addColumn("", 0, intVector.getDataBufferAddress(), 200 * 4);
+  private void checkFinished() {
+    if (this.finished) {
+      throw new CylonRuntimeException("This operation is not permitted on a finished table");
+    }
+  }
+
+  public void addColumn(int columnIndex, FieldVector fieldVector) {
+    ArrowTable.addColumn(this.uuid,
+        columnIndex,
+        this.schema.getFields().get(columnIndex).getType().getTypeID().getFlatbufID(),
+        fieldVector.getDataBufferAddress(),
+        fieldVector.getBufferSize()
+    );
+  }
+
+  public void finish() {
+    this.checkFinished();
+    ArrowTable.finishTable(this.uuid);
+    this.finished = true;
+  }
+
+  public String getUuid() {
+    return uuid;
   }
 
   private static native void createTable(String tableId);
 
-  private static native void addColumn(String tableId, int type, long address, long size);
+  private static native void addColumn(String tableId, int columnIndex, int type, long address, long size);
 
   private static native void finishTable(String tableId);
 }
