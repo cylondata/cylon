@@ -9,11 +9,10 @@ module.exports = {
     themeConfig: {
         disableDarkMode: true,
         navbar: {
-            title: 'Cylon',
-            // logo: {
-            //     alt: 'Cylon',
-            //     src: 'img/logo.png',
-            // },
+            logo: {
+                alt: 'Cylon',
+                src: 'img/logo.png',
+            },
             links: [
                 {
                     to: 'docs/',

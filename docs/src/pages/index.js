@@ -146,11 +146,11 @@ function Home() {
                 <Head>
                     <meta property="og:title" content={`${siteConfig.title}`}/>
                     <meta property="og:description" content={`${siteConfig.tagline}`}/>
-                    <meta property="og:image" content="https://cylondata.org/img/wheel.png"/>
+                    <meta property="og:image" content="https://cylondata.org/img/cylon_twitter.png"/>
                     <meta property="og:url" content="https://cylondata.org"/>
                     <meta property="twitter:title" content={`${siteConfig.title}`}/>
                     <meta property="twitter:description" content={`${siteConfig.tagline}`}/>
-                    <meta property="twitter:image" content="https://cylondata.org/img/wheel.png"/>
+                    <meta property="twitter:image" content="https://cylondata.org/img/cylon_twitter.png"/>
                     <meta name="twitter:card" content="summary_large_image"/>
                 </Head>
             </>

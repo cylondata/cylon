@@ -850,6 +850,10 @@ Status DoDistributedSetOperation(CylonContext *ctx,
   Status status = VerifyTableSchema(left, right);
   if (!status.is_ok()) return status;
 
+  if (ctx->GetWorldSize() < 2) {
+    return local_operation(ctx, table_left, table_right, dest_id);
+  }
+
   std::vector<int32_t> hash_columns;
   hash_columns.reserve(left->num_columns());
   for (int kI = 0; kI < left->num_columns(); ++kI) {
