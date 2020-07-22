@@ -660,6 +660,7 @@ Status Union(CylonContext *ctx,
 
   // create final table
   std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
+  table->CombineChunks(ctx->GetMemoryPool(), table);
   PutTable(dest_id, table);
   return Status::OK();
 }
