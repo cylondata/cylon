@@ -254,6 +254,8 @@ class Table {
    */
   cylon::CylonContext *GetContext();
 
+  std::vector<std::string> ColumnNames();
+
  private:
   /**
    * Every table should have an unique id
