@@ -9,7 +9,6 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.cylondata.cylon.NativeLoader;
-import org.cylondata.cylon.Table;
 import org.cylondata.cylon.exception.CylonRuntimeException;
 
 import java.util.ArrayList;
@@ -39,6 +38,7 @@ public class ArrowTable {
       float8Vector.setSafe(i, i);
     }
 
+
     List<Field> arrowFields = new ArrayList<>();
     arrowFields.add(Field.nullable("col1", new ArrowType.Int(8, true)));
     arrowFields.add(Field.nullable("col2", new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE)));
@@ -48,8 +48,8 @@ public class ArrowTable {
     schema.toByteArray();
 
     ArrowTable arrowTable = new ArrowTable(schema);
-    arrowTable.addColumn(0, intVector);
-    arrowTable.addColumn(1, float8Vector);
+    arrowTable.addColumn("col1", intVector);
+    arrowTable.addColumn("col2", float8Vector);
     arrowTable.finish();
   }
 
@@ -65,10 +65,10 @@ public class ArrowTable {
     }
   }
 
-  public void addColumn(int columnIndex, FieldVector fieldVector) {
+  public void addColumn(String columnName, FieldVector fieldVector) {
     ArrowTable.addColumn(this.uuid,
-        columnIndex,
-        this.schema.getFields().get(columnIndex).getType().getTypeID().getFlatbufID(),
+        columnName,
+        this.schema.findField(columnName).getType().getTypeID().getFlatbufID(),
         fieldVector.getDataBufferAddress(),
         fieldVector.getBufferSize()
     );
@@ -86,7 +86,7 @@ public class ArrowTable {
 
   private static native void createTable(String tableId);
 
-  private static native void addColumn(String tableId, int columnIndex, int type, long address, long size);
+  private static native void addColumn(String tableId, String columnName, int type, long address, long size);
 
   private static native void finishTable(String tableId);
 }

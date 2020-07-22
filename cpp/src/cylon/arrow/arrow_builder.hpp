@@ -3,11 +3,12 @@
 
 #include <string>
 #include <vector>
+#include "../status.hpp"
 namespace cylon {
 namespace cyarrow {
-void BeginTable(const std::string& table_id);
-void AddColumn(const std::string& table_id, int32_t col_index, int32_t type, int64_t address, int64_t size);
-void EndTable(std::string table_id);
+cylon::Status BeginTable(const std::string &table_id);
+cylon::Status AddColumn(const std::string &table_id, const std::string &col_name, int32_t type, int64_t address, int64_t size);
+cylon::Status EndTable(const std::string &table_id);
 }
 }
 

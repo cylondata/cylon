@@ -24,10 +24,10 @@ JNIEXPORT void JNICALL Java_org_cylondata_cylon_arrow_ArrowTable_createTable
 }
 
 JNIEXPORT void JNICALL Java_org_cylondata_cylon_arrow_ArrowTable_addColumn
-    (JNIEnv *env, jclass cls, jstring table_id, jint col_index, jint type_id, jlong address, jlong size) {
+    (JNIEnv *env, jclass cls, jstring table_id, jstring col_name, jint type_id, jlong address, jlong size) {
   cylon::cyarrow::AddColumn(
       jstr_to_str(env, table_id),
-      col_index,
+      jstr_to_str(env, col_name),
       type_id,
       address,
       size
