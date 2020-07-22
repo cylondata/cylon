@@ -7,11 +7,11 @@ module.exports = {
     organizationName: 'CylonData', // Usually your GitHub org/user name.
     projectName: 'cylon', // Usually your repo name.
     themeConfig: {
+        disableDarkMode: true,
         navbar: {
-            title: 'Cylon',
             logo: {
                 alt: 'Cylon',
-                src: 'img/logo.svg',
+                src: 'img/logo.png',
             },
             links: [
                 {
@@ -95,4 +95,7 @@ module.exports = {
     stylesheets: [
         'https://cdn.jsdelivr.net/gh/konpa/devicon@master/devicon.min.css',
     ],
+    customFields: {
+        twitterImage: "img/wheel.png"
+    }
 };

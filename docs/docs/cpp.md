@@ -20,7 +20,7 @@ Distributed initialization
 
 ### Context methods
 
-```c++
+```cpp
   /**
    * Completes and closes all operations under the context
    */
@@ -96,21 +96,21 @@ Distributed initialization
 
 ### Reading tables 
 A `cylon::Table` can be created from a csv file as follows. 
-```c++
+```cpp
 std::shared_ptr<cylon::Table> table1;
 auto read_options = CSVReadOptions();
 auto status = Table::FromCSV(ctx, "/path/to/csv", table1, read_options))
 ```
 
 Read a set of tables using threads, 
-```c++
+```cpp
 std::shared_ptr<cylon::Table> table1, table2;
 auto read_options = CSVReadOptions().UseThreads(true);
 auto status = Table::FromCSV(ctx, {"/path/to/csv1.csv", "/path/to/csv2.csv"}, {table1, table2}, read_options);
 ```
 
 An `arrow::Table` can be imported as follows, 
-```c++
+```cpp
 std::shared_ptr<cylon::Table> table1;
 std::shared_ptr<arrow::Table> some_arrow_table = ...;
 auto status = Table::FromArrowTable(ctx, some_arrow_table, table1);
@@ -118,7 +118,7 @@ auto status = Table::FromArrowTable(ctx, some_arrow_table, table1);
 
 ### Writing tables 
 A `cylon::Table` can be written to a CSV file as follows, 
-```c++
+```cpp
 std::shared_ptr<cylon::Table> table1; 
 ...
 auto write_options = cylon::io::config::CSVWriteOptions();
@@ -126,7 +126,7 @@ auto status = table1->WriteCSV("/path/to/csv", write_options);
 ```
 
 A `cylon::Table` can be coverted into an `arrow::Table` by simply, 
-```c++
+```cpp
 std::shared_ptr<arrow::Table> some_arrow_table;
 std::shared_ptr<cylon::Table> table1; 
 ...
@@ -135,7 +135,7 @@ auto status = table1->ToArrowTable(some_arrow_table);
 
 ### `cylon::Table` Operations
  
-```c++
+```cpp
  /**
    * Do the join with the right table
    * @param right the right table
@@ -231,7 +231,7 @@ auto status = table1->ToArrowTable(some_arrow_table);
 
 ### `cylon::Table` Attributes 
 
-```c++
+```cpp
  /**
    * Get the number of columns in the table
    * @return numbre of columns
@@ -277,7 +277,7 @@ auto status = table1->ToArrowTable(some_arrow_table);
 
 Following is a simple C++ API example. 
 
-```c++
+```cpp
 #include <glog/logging.h>
 #include <net/mpi/mpi_communicator.hpp>
 #include <ctx/cylon_context.hpp>
