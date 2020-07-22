@@ -380,7 +380,7 @@ int ColumnCount(const std::string &id) {
   return -1;
 }
 
-std::vector<std::string> ColumnNames(const std::string &id){
+std::vector<std::string> ColumnNames(const std::string &id) {
   auto table = GetTable(id);
   if (table != NULLPTR) {
     return table->ColumnNames();
@@ -669,7 +669,10 @@ Status Union(CylonContext *ctx,
 
   // create final table
   std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
-  table->CombineChunks(ctx->GetMemoryPool(), table);
+  auto merge_status = table->CombineChunks(cylon::ToArrowPool(ctx), &table);
+  if (!merge_status.ok()) {
+    return Status((int) merge_status.code(), merge_status.message());
+  }
   PutTable(dest_id, table);
   return Status::OK();
 }
