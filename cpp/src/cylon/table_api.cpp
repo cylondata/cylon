@@ -380,6 +380,15 @@ int ColumnCount(const std::string &id) {
   return -1;
 }
 
+std::vector<std::string> ColumnNames(const std::string &id){
+  auto table = GetTable(id);
+  if (table != NULLPTR) {
+    return table->ColumnNames();
+  } else {
+    return {};
+  }
+}
+
 int64_t RowCount(const std::string &id) {
   auto table = GetTable(id);
   if (table != NULLPTR) {

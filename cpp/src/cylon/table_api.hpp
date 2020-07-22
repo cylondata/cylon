@@ -100,6 +100,8 @@ int ColumnCount(const std::string &id);
 
 int64_t RowCount(const std::string &id);
 
+std::vector<std::string> ColumnNames(const std::string &id);
+
 /**
  * Print a table
  * @param table_id id of the table
