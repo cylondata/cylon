@@ -66,6 +66,10 @@ int Table::Columns() {
   return cylon::ColumnCount(this->GetID());
 }
 
+std::vector<std::string> Table::ColumnNames() {
+  return cylon::ColumnNames(this->GetID());
+}
+
 int64_t Table::Rows() {
   return cylon::RowCount(this->GetID());
 }
