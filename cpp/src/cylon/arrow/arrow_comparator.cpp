@@ -105,12 +105,9 @@ int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1,
   // before calling this function from an internal cylon function, schema validation should be done to make sure
   // table1 and table2 has the same schema.
   for (int c = 0; c < table1->num_columns(); ++c) {
-    int comparision =
-        this->comparators[c]->compare(table1->column(c)->chunk(0), index1,
-                                      table2->column(c)->chunk(0), index2) != 0;
-    if (comparision != 0) {
-      return comparision;
-    }
+    int comparision = this->comparators[c]->compare(table1->column(c)->chunk(0), index1,
+                                                    table2->column(c)->chunk(0), index2);
+    if (comparision) return comparision;
   }
   return 0;
 }

@@ -602,6 +602,18 @@ Status Union(CylonContext *ctx,
   Status status = VerifyTableSchema(ltab, rtab);
   if (!status.is_ok()) return status;
 
+/*  // if right table is empty, return left table;
+  if (rtab->num_rows() == 0) {
+    PutTable(dest_id, ltab);
+    return Status::OK();
+  }
+
+  // if left table is empty, return right table;
+  if (ltab->num_rows() == 0) {
+    PutTable(dest_id, rtab);
+    return Status::OK();
+  }*/
+
   std::shared_ptr<arrow::Table> tables[2] = {ltab, rtab};
 
   int64_t eq_calls = 0, hash_calls = 0;
@@ -638,10 +650,13 @@ Status Union(CylonContext *ctx,
 
   LOG(INFO) << "Adding to Set took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms";
 
-  std::vector<int64_t> indices_from_tabs[2];
+  std::shared_ptr<std::vector<int64_t>> indices_from_tabs[2] = {
+      std::make_shared<std::vector<int64_t>>(),
+      std::make_shared<std::vector<int64_t>>()
+  };
 
   for (auto const &pr:rows_set) {
-    indices_from_tabs[pr.first].push_back(pr.second);
+    indices_from_tabs[pr.first]->push_back(pr.second);
   }
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
@@ -654,7 +669,7 @@ Status Union(CylonContext *ctx,
       status = PrepareArray(ctx,
                             tables[tab_idx],
                             col_idx,
-                            std::make_shared<std::vector<int64_t>>(indices_from_tabs[tab_idx]),
+                            indices_from_tabs[tab_idx],
                             array_vector);
 
       if (!status.is_ok()) return status;
@@ -686,6 +701,15 @@ Status Subtract(CylonContext *ctx,
 
   Status status = VerifyTableSchema(ltab, rtab);
   if (!status.is_ok()) return status;
+
+/*
+//   if right table is empty, return left table;
+//   if left table is empty, just return it again because there are no negative notion in set operations
+  if (rtab->num_rows() == 0 || ltab->num_rows() == 0) {
+    LOG(INFO) << "#####";
+    PutTable(dest_id, ltab);
+    return Status::OK();
+  }*/
 
   std::shared_ptr<arrow::Table> tables[2] = {ltab, rtab};
 
@@ -729,11 +753,11 @@ Status Subtract(CylonContext *ctx,
 
   LOG(INFO) << "Adding to Set took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms";
 
-  std::vector<int64_t> left_indices;
-  left_indices.reserve(left_row_set.size()); // reserve space for vec
+  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
+  left_indices->reserve(left_row_set.size()); // reserve space for vec
 
   for (auto const &pr:left_row_set) {
-    left_indices.push_back(pr.second);
+    left_indices->push_back(pr.second);
   }
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
@@ -743,7 +767,7 @@ Status Subtract(CylonContext *ctx,
   for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
     arrow::ArrayVector array_vector;
 
-    status = PrepareArray(ctx, ltab, col_idx, std::make_shared<std::vector<int64_t>>(left_indices), array_vector);
+    status = PrepareArray(ctx, ltab, col_idx, left_indices, array_vector);
 
     if (!status.is_ok()) return status;
 
@@ -769,6 +793,18 @@ Status Intersect(CylonContext *ctx,
 
   Status status = VerifyTableSchema(ltab, rtab);
   if (!status.is_ok()) return status;
+
+/*// if right table is empty, then result would be empty;
+  if (rtab->num_rows() == 0) {
+    PutTable(dest_id, rtab);
+    return Status::OK();
+  }
+
+  // if left table is empty, then result would be empty;
+  if (ltab->num_rows() == 0) {
+    PutTable(dest_id, ltab);
+    return Status::OK();
+  }*/
 
   std::shared_ptr<arrow::Table> tables[2] = {ltab, rtab};
 
@@ -816,10 +852,10 @@ Status Intersect(CylonContext *ctx,
   }
 
   // convert set to vector todo: find a better way to do this inplace!
-  std::vector<int64_t> left_indices;
-  left_indices.reserve(left_indices_set.size() / 2);
-  left_indices.assign(left_indices_set.begin(), left_indices_set.end());
-  left_indices.shrink_to_fit();
+  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();;
+  left_indices->reserve(left_indices_set.size() / 2);
+  left_indices->assign(left_indices_set.begin(), left_indices_set.end());
+  left_indices->shrink_to_fit();
 
   auto t2 = std::chrono::steady_clock::now();
 
@@ -831,7 +867,7 @@ Status Intersect(CylonContext *ctx,
   // prepare final arrays
   for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
     arrow::ArrayVector array_vector;
-    status = PrepareArray(ctx, ltab, col_idx, std::make_shared<std::vector<int64_t>>(left_indices), array_vector);
+    status = PrepareArray(ctx, ltab, col_idx, left_indices, array_vector);
 
     if (!status.is_ok()) return status;
 
