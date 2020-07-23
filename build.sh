@@ -1,7 +1,6 @@
 SOURCE_DIR=$(pwd)/cpp
 CPP_BUILD="OFF"
 PYTHON_BUILD="OFF"
-PYARROW_BUILD="OFF"
 BUILD_ALL="OFF"
 BUILD_MODE=Debug
 BUILD_MODE_DEBUG="OFF"
@@ -36,11 +35,8 @@ case $key in
     shift # past argument
     ;;
     --python)
+    CPP_BUILD="ON"
     PYTHON_BUILD="ON"
-    shift # past argument
-    ;;
-    --pyarrow)
-    PYARROW_BUILD="ON"
     shift # past argument
     ;;
     --debug)
@@ -54,14 +50,12 @@ case $key in
     --py-release)
     PYTHON_RELEASE="ON"
     CPP_BUILD="OFF"
-    PYARROW_BUILD="OFF"
     shift # past argument
     ;;
     --all)
     BUILD_ALL="ON"
     CPP_BUILD="ON"
     PYTHON_BUILD="ON"
-    PYARROW_BUILD="ON"
     shift # past argument
     ;;
     *)    # unknown option
@@ -79,7 +73,6 @@ echo "FLAG PYTHON BUILD  = ${PYTHON_BUILD}"
 echo "FLAG BUILD ALL     = ${BUILD_ALL}"
 echo "FLAG BUILD DEBUG   = ${BUILD_MODE_DEBUG}"
 echo "FLAG BUILD RELEASE = ${BUILD_MODE_RELEASE}"
-#echo "Number files in SEARCH PATH with EXTENSION:" $(ls -1 "${SEARCHPATH}"/*."${EXTENSION}" | wc -l)
 
 if [[ -n $1 ]]; then
     echo "Last line of file specified as non-opt/last argument:"
@@ -118,34 +111,17 @@ print_line
 mkdir ${BUILD_PATH}
 pushd ${BUILD_PATH}
 export ARROW_HOME=${BUILD_PATH}/arrow/install
-cmake -DPYARROW_BUILD=${PYARROW_BUILD} -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} $INSTALL_CMD ${SOURCE_DIR}
+cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} $INSTALL_CMD ${SOURCE_DIR}
 make -j 4
-printf "\n\n ### ARROW HOME SET :%s \n\n" "${ARROW_HOME}"
-printf "\n\n ### Cylon CPP Built Successufully !!! \n\n"
+printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
+printf "Cylon CPP Built Successufully!"
 popd
 print_line
 }
-
-build_pyarrow(){
-print_line
-echo "Building PyArrow"
-pushd ${BUILD_PATH}
-export ARROW_HOME=${BUILD_PATH}/arrow/install
-popd
-source ${PYTHON_ENV_PATH}/bin/activate
-read_python_requirements
-pushd ${BUILD_PATH}/arrow/arrow/python
-PYARROW_CMAKE_OPTIONS="-DCMAKE_MODULE_PATH=${ARROW_HOME}/lib/cmake/arrow" python3 setup.py install
-popd
-print_line
-}
-
 
 build_python() {
 print_line
-echo "Make sure CPP build is already done!"
 echo "Building Python"
-
 export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
 echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
 source ${PYTHON_ENV_PATH}/bin/activate
@@ -160,9 +136,7 @@ print_line
 
 release_python() {
 print_line
-echo "Make sure CPP build is already done!"
 echo "Building Python"
-
 export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
 echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
 source ${PYTHON_ENV_PATH}/bin/activate
@@ -207,22 +181,11 @@ if [ "${BUILD_MODE_RELEASE}" = "ON" ]; then
    	BUILD_MODE=Release	
 fi
 
-
 if [ "${CPP_BUILD}" = "ON" ]; then
    	build_cpp
 fi
 
-
-if [ "${PYARROW_BUILD}" = "ON" ]; then
-	build_cpp
-	build_pyarrow
-	check_pyarrow_installation
-	export_info
-
-fi	
-
-
-if [ "${PYTHON_BUILD}" = "ON" ]; then	
+if [ "${PYTHON_BUILD}" = "ON" ]; then
 	export_info
 	check_pyarrow_installation
 	build_python
