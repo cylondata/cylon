@@ -25,7 +25,6 @@ macro(tx_add_test_exe EXENAME)
     install (TARGETS ${EXENAME} RUNTIME DESTINATION examples)
 endmacro(tx_add_test_exe)
 tx_add_test_exe(join_test)
-tx_add_test_exe(union_test)
-tx_add_test_exe(intersect_test)
-tx_add_test_exe(subtract_test)
+tx_add_test_exe(set_op_test)
+
 
