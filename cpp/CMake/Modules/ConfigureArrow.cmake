@@ -1,10 +1,7 @@
 set(ARROW_HOME ${CMAKE_BINARY_DIR}/arrow/install)
 set(ARROW_ROOT ${CMAKE_BINARY_DIR}/arrow)
 
-message("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 message("Python Executable Path ${PYTHON_EXEC_PATH}")
-message("Arrow Python Build ${PYARROW_BUILD}")
-message("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
 set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_WITH_ZSTD=OFF"
@@ -22,7 +19,6 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_COMPUTE=ON"
         " -DARROW_CUDA=OFF"
         " -DARROW_JEMALLOC=OFF"
-        " -DARROW_PYTHON=${PYARROW_BUILD}"
         " -DARROW_USE_GLOG=OFF"
         " -DARROW_DATASET=ON"
         " -DARROW_BUILD_UTILITIES=OFF"
@@ -33,8 +29,13 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_CSV=ON"
         " -DARROW_JSON=ON"
 	    " -DARROW_BOOST_USE_SHARED=OFF"
+        )
+
+if (PYCYLON_BUILD)
+    list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
         " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/bin/python3"
         )
+endif (PYCYLON_BUILD)
 
 message("CMake Source Dir :")
 message(${CMAKE_SOURCE_DIR})
