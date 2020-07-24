@@ -8,7 +8,7 @@ addons:
       - wget
       - pkg-config
 
-jdk: oraclejdk8
+jdk: openjdk9
 
 cache:
   directories:
