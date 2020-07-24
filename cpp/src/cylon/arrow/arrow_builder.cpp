@@ -17,40 +17,21 @@ cylon::Status cylon::cyarrow::BeginTable(const std::string &table_id) {
   return cylon::Status::OK();
 }
 
-template<typename TYPE>
-void AddColumnToTable(const std::string &table_id,
-                      const std::string &col_name,
-                      std::shared_ptr<arrow::Buffer> buffer, int64_t size) {
-  auto array_data = std::make_shared<arrow::ArrayData>(std::shared_ptr<TYPE>(),
-                                                       size,
-                                                       std::vector<std::shared_ptr<arrow::Buffer>>{std::move(buffer)});
-  columns.find(table_id)->second->push_back(arrow::MakeArray(array_data));
-  fields.find(table_id)->second->push_back(arrow::field(col_name, std::shared_ptr<TYPE>()));
-}
-
-cylon::Status cylon::cyarrow::AddColumn(const std::string &table_id,
-                                        const std::string &col_name,
-                                        int32_t type,
-                                        int64_t address,
-                                        int64_t size) {
-  auto *buffer = reinterpret_cast<uint8_t *>(address);
-  auto buff = std::make_shared<arrow::Buffer>(buffer, size);
+std::shared_ptr<arrow::DataType> GetArrowType(int8_t type) {
   switch (type) {
     case arrow::Type::NA:break;
-    case arrow::Type::BOOL:AddColumnToTable<arrow::BooleanType>(table_id, col_name, buff, size);
+    case arrow::Type::BOOL:return arrow::boolean();
     case arrow::Type::UINT8:break;
     case arrow::Type::INT8:break;
     case arrow::Type::UINT16:break;
     case arrow::Type::INT16:break;
     case arrow::Type::UINT32:break;
-    case arrow::Type::INT32:AddColumnToTable<arrow::Int32Type>(table_id, col_name, buff, size);
-      break;
+    case arrow::Type::INT32:return arrow::int32();
     case arrow::Type::UINT64:break;
     case arrow::Type::INT64:break;
-    case arrow::Type::HALF_FLOAT:break;
-    case arrow::Type::FLOAT:break;
-    case arrow::Type::DOUBLE:AddColumnToTable<arrow::DoubleType>(table_id, col_name, buff, size);
-      break;
+    case arrow::Type::HALF_FLOAT:return arrow::float16();
+    case arrow::Type::FLOAT:return arrow::float32();
+    case arrow::Type::DOUBLE:return arrow::float64();
     case arrow::Type::STRING:break;
     case arrow::Type::BINARY:break;
     case arrow::Type::FIXED_SIZE_BINARY:break;
@@ -73,9 +54,49 @@ cylon::Status cylon::cyarrow::AddColumn(const std::string &table_id,
     case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
   }
+}
+
+void AddColumnToTable(const std::string &table_id,
+                      const std::string &col_name,
+                      int32_t values_count,
+                      int32_t null_count,
+                      const std::shared_ptr<arrow::Buffer> &validity_buf,
+                      const std::shared_ptr<arrow::Buffer> &data_buf,
+                      const std::shared_ptr<arrow::DataType> &data_type) {
+  LOG(INFO) << "Adding column of type " << data_type->name() << " to the table";
+  auto buffers = std::vector<std::shared_ptr<arrow::Buffer>>{validity_buf, data_buf};
+  
+  auto array_data = arrow::ArrayData::Make(
+      data_type,
+      values_count,
+      buffers,
+      null_count
+  );
+
+  LOG(INFO) << "length : " << array_data->length << ", expected size : " << values_count;
+
+  columns.find(table_id)->second->push_back(arrow::MakeArray(array_data));
+  fields.find(table_id)->second->push_back(arrow::field(col_name, data_type));
+}
+
+cylon::Status cylon::cyarrow::AddColumn(const std::string &table_id,
+                                        const std::string &col_name,
+                                        int8_t type,
+                                        int32_t value_count,
+                                        int32_t null_count,
+                                        int64_t validity_address, int64_t validity_size,
+                                        int64_t data_address, int64_t data_size) {
+  auto validity_buff = arrow::Buffer::Wrap(reinterpret_cast<uint8_t *>(validity_address), validity_size);
+  auto data_buff = arrow::Buffer::Wrap(reinterpret_cast<uint8_t *>(data_address), data_size);
+
+  auto arrow_type = GetArrowType(type);
+  LOG(INFO) << "Preparing to add column of type " << arrow_type->name() << " to tale "
+            << table_id << ", column " << col_name;
+  AddColumnToTable(table_id, col_name, value_count, null_count, validity_buff,
+                   data_buff, arrow_type);
   return cylon::Status::OK();
 }
-cylon::Status cylon::cyarrow::EndTable(const std::string &table_id) {
+cylon::Status cylon::cyarrow::FinishTable(const std::string &table_id) {
   // building schema
   arrow::SchemaBuilder schema_builder;
   auto status = schema_builder.AddFields(*fields.find(table_id)->second);

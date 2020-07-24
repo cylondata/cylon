@@ -1,14 +1,18 @@
 package org.cylondata.cylon.arrow;
 
+import io.netty.buffer.ArrowBuf;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.FixedWidthVector;
 import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.types.FloatingPointPrecision;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.cylondata.cylon.CylonContext;
 import org.cylondata.cylon.NativeLoader;
+import org.cylondata.cylon.Table;
 import org.cylondata.cylon.exception.CylonRuntimeException;
 
 import java.util.ArrayList;
@@ -34,9 +38,14 @@ public class ArrowTable {
     intVector.allocateNew(200);
 
     Float8Vector float8Vector = new Float8Vector("col2", rootAllocator);
+    float8Vector.allocateNew(200);
     for (int i = 0; i < 200; i++) {
       float8Vector.setSafe(i, i);
+      intVector.setSafe(i, i);
     }
+
+    intVector.setValueCount(200);
+    float8Vector.setValueCount(200);
 
 
     List<Field> arrowFields = new ArrayList<>();
@@ -51,6 +60,14 @@ public class ArrowTable {
     arrowTable.addColumn("col1", intVector);
     arrowTable.addColumn("col2", float8Vector);
     arrowTable.finish();
+
+    CylonContext ctx = CylonContext.init();
+
+    Table table = Table.fromArrowTable(ctx, arrowTable);
+
+    System.out.println(table.getRowCount());
+
+    table.print();
   }
 
   public ArrowTable(Schema schema) {
@@ -66,11 +83,24 @@ public class ArrowTable {
   }
 
   public void addColumn(String columnName, FieldVector fieldVector) {
+    ArrowBuf dataBuffer = fieldVector.getDataBuffer();
+    ArrowBuf validityBuffer = fieldVector.getValidityBuffer();
+
+    boolean fixedWidth = fieldVector instanceof FixedWidthVector;
+
+    if (!fixedWidth) {
+      throw new CylonRuntimeException("Non fixed width vectors are not yet supported.");
+    }
+
     ArrowTable.addColumn(this.uuid,
         columnName,
-        this.schema.findField(columnName).getType().getTypeID().getFlatbufID(),
-        fieldVector.getDataBufferAddress(),
-        fieldVector.getBufferSize()
+        fieldVector.getField().getType().getTypeID().getFlatbufID(),
+        fieldVector.getValueCount(),
+        fieldVector.getNullCount(),
+        validityBuffer.memoryAddress(),
+        validityBuffer.capacity(),
+        dataBuffer.memoryAddress(),
+        dataBuffer.capacity()
     );
   }
 
@@ -80,13 +110,19 @@ public class ArrowTable {
     this.finished = true;
   }
 
+  public boolean isFinished() {
+    return finished;
+  }
+
   public String getUuid() {
     return uuid;
   }
 
   private static native void createTable(String tableId);
 
-  private static native void addColumn(String tableId, String columnName, int type, long address, long size);
+  private static native void addColumn(String tableId, String columnName, byte type, int valueCount, int nullCount,
+                                       long validityAddress, long validitySize,
+                                       long dataAddress, long dataSize);
 
   private static native void finishTable(String tableId);
 }
