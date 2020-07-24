@@ -7,6 +7,7 @@ BUILD_MODE_DEBUG="OFF"
 BUILD_MODE_RELEASE="OFF"
 PYTHON_RELEASE="OFF"
 INSTALL_PATH=
+BUILD_PATH=$(pwd)/build
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -52,12 +53,6 @@ case $key in
     CPP_BUILD="OFF"
     shift # past argument
     ;;
-    --all)
-    BUILD_ALL="ON"
-    CPP_BUILD="ON"
-    PYTHON_BUILD="ON"
-    shift # past argument
-    ;;
     *)    # unknown option
     POSITIONAL+=("$1") # save it in an array for later
     shift # past argument
@@ -88,11 +83,11 @@ echo "=================================================================";
 }
 
 read_python_requirements(){
-input="requirements.txt"
-while IFS= read -r line
-do
-  pip3 install "$line"
-done < "$input"
+  input="requirements.txt"
+  while IFS= read -r line
+  do
+    pip3 install "$line"
+  done < "$input"
 }
 
 INSTALL_CMD=
@@ -105,70 +100,89 @@ else
 fi
 
 build_cpp(){
-print_line
-echo "Building CPP in ${BUILD_MODE} mode" 
-print_line
-mkdir ${BUILD_PATH}
-pushd ${BUILD_PATH}
-export ARROW_HOME=${BUILD_PATH}/arrow/install
-cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} $INSTALL_CMD ${SOURCE_DIR}
-make -j 4
-printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
-printf "Cylon CPP Built Successufully!"
-popd
-print_line
+  print_line
+  echo "Building CPP in ${BUILD_MODE} mode"
+  print_line
+  mkdir ${BUILD_PATH}
+  pushd ${BUILD_PATH}
+  export ARROW_HOME=${BUILD_PATH}/arrow/install
+  if [ "${PYTHON_BUILD}" = "ON" ]; then
+    source "${PYTHON_ENV_PATH}"/bin/activate
+  fi
+  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} $INSTALL_CMD ${SOURCE_DIR}
+  make -j 4
+  printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
+  printf "Cylon CPP Built Successufully!"
+  popd
+  print_line
+}
+
+build_pyarrow(){
+  print_line
+  echo "Building PyArrow"
+  pushd ${BUILD_PATH} || exit
+  export ARROW_HOME=${BUILD_PATH}/arrow/install
+  popd || exit
+  source "${PYTHON_ENV_PATH}"/bin/activate
+  read_python_requirements
+  pushd ${BUILD_PATH}/arrow/arrow/python || exit
+  PYARROW_CMAKE_OPTIONS="-DCMAKE_MODULE_PATH=${ARROW_HOME}/lib/cmake/arrow" python3 setup.py install
+  popd || exit
+  print_line
 }
 
 build_python() {
-print_line
-echo "Building Python"
-export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
-echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
-source ${PYTHON_ENV_PATH}/bin/activate
-read_python_requirements
-pushd python
-pip3 uninstall -y pycylon
-make clean
-ARROW_HOME=${BUILD_PATH} python3 setup.py install
-popd
-print_line
+  print_line
+  echo "Building Python"
+  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
+  # shellcheck disable=SC1090
+  source "${PYTHON_ENV_PATH}"/bin/activate
+  read_python_requirements
+  pushd python || exit
+  pip3 uninstall -y pycylon
+  make clean
+  ARROW_HOME=${BUILD_PATH} python3 setup.py install
+  popd || exit
+  print_line
 }
 
 release_python() {
-print_line
-echo "Building Python"
-export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
-echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
-source ${PYTHON_ENV_PATH}/bin/activate
-read_python_requirements
-pushd python
-pip3 uninstall -y pycylon
-make clean
-# https://www.scivision.dev/easy-upload-to-pypi/ [solution to linux wheel issue]
-#ARROW_HOME=${BUILD_PATH} python3 setup.py sdist bdist_wheel
-ARROW_HOME=${BUILD_PATH} python3 setup.py build_ext --inplace --library-dir=${BUILD_PATH}
-popd
-print_line
+  print_line
+  echo "Building Python"
+  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
+  source "${PYTHON_ENV_PATH}"/bin/activate
+  read_python_requirements
+  pushd python || exit
+  pip3 uninstall -y pycylon
+  make clean
+  # https://www.scivision.dev/easy-upload-to-pypi/ [solution to linux wheel issue]
+  #ARROW_HOME=${BUILD_PATH} python3 setup.py sdist bdist_wheel
+  ARROW_HOME=${BUILD_PATH} python3 setup.py build_ext --inplace --library-dir=${BUILD_PATH}
+  popd || exit
+  print_line
 }
 
 export_info(){
-print_line
-echo "Add the following to your LD_LIBRARY_PATH";
-echo "export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:"\$"LD_LIBRARY_PATH";
-print_line
+  print_line
+  echo "Add the following to your LD_LIBRARY_PATH";
+  echo "export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:"\$"LD_LIBRARY_PATH";
+  print_line
 }
 
 check_pyarrow_installation(){
-response=$(python3 -c \
-	"import pyarrow; print('PyArrow Installation');\
-	print('Version {}'.format(pyarrow.__version__));\
-	print('Library Installation Path {}'.format(pyarrow.get_library_dirs()))")
-echo "${response}"
+  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  response=$(python3 -c \
+    "import pyarrow; print('PyArrow Installation');\
+    print('Version {}'.format(pyarrow.__version__));\
+    print('Library Installation Path {}'.format(pyarrow.get_library_dirs()))")
+  echo "${response}"
 }
 
 check_pycylon_installation(){
-response=$(python3 python/test/test_pycylon.py)
-echo "${response}"
+  response=$(python3 python/test/test_pycylon.py)
+  echo "${response}"
 }
 
 ####################################################################################################
@@ -186,7 +200,15 @@ if [ "${CPP_BUILD}" = "ON" ]; then
 fi
 
 if [ "${PYTHON_BUILD}" = "ON" ]; then
+  if [ -z "$PYTHON_ENV_PATH" ]; then
+    echo "To build python, -pyenv|--python_env_path should be set to a python environment"
+    exit 1
+  fi
+fi
+
+if [ "${PYTHON_BUILD}" = "ON" ]; then
 	export_info
+	build_pyarrow
 	check_pyarrow_installation
 	build_python
 	check_pycylon_installation
