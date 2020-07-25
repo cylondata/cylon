@@ -15,6 +15,8 @@
 #include <arrow/table.h>
 #include <fstream>
 #include <memory>
+#include <unordered_map>
+
 #include "table.hpp"
 #include "table_api.hpp"
 #include "table_api_extended.hpp"
@@ -130,8 +132,7 @@ Status Table::Join(const std::shared_ptr<Table> &right,
                                            this->GetID(),
                                            right->GetID(),
                                            join_config,
-                                           uuid
-  );
+                                           uuid);
   if (status.is_ok()) {
     *out = std::make_shared<Table>(uuid, this->ctx);
   }
@@ -148,7 +149,8 @@ Status Table::DistributedJoin(const shared_ptr<Table> &right,
                               cylon::join::config::JoinConfig join_config,
                               std::shared_ptr<Table> *out) {
   std::string uuid = cylon::util::uuid::generate_uuid_v4();
-  cylon::Status status = cylon::DistributedJoinTables(this->ctx, this->id_, right->id_, join_config, uuid);
+  cylon::Status status = cylon::DistributedJoinTables(this->ctx, this->id_,
+      right->id_, join_config, uuid);
   if (status.is_ok()) {
     *out = std::make_shared<Table>(uuid, this->ctx);
   }
@@ -164,7 +166,8 @@ Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr
   return status;
 }
 
-Status Table::DoSetOperation(SetOperation operation, const shared_ptr<Table> &right, shared_ptr<Table> &out) {
+Status Table::DoSetOperation(SetOperation operation, const shared_ptr<Table> &right,
+                             shared_ptr<Table> &out) {
   std::string uuid = cylon::util::uuid::generate_uuid_v4();
   cylon::Status status = operation(this->ctx, this->id_, right->id_, uuid);
   if (status.is_ok()) {
@@ -239,4 +242,4 @@ Status Table::Project(const std::vector<int64_t> &project_columns, std::shared_p
 cylon::CylonContext *Table::GetContext() {
   return this->ctx;
 }
-}
+}  // namespace cylon

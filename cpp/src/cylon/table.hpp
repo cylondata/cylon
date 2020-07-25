@@ -37,7 +37,6 @@ namespace cylon {
  * Table provides the main API for using cylon for data processing.
  */
 class Table {
-
  public:
   /**
    * Tables can only be created using the factory methods, so the constructor is private
