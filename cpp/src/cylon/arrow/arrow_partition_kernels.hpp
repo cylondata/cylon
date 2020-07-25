@@ -162,6 +162,6 @@ class RowHashingKernel {
   RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &vector, arrow::MemoryPool *memory_pool);
   int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
 };
-}
+}  // namespace cylon
 
 #endif //CYLON_ARROW_PARTITION_KERNELS_H

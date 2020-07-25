@@ -36,7 +36,8 @@ void advance(std::vector<int64_t> *subset,
   auto data_column_casted = std::static_pointer_cast<ARROW_ARRAY_TYPE>(data_column);
   int64_t data_index = sorted_indices->Value(*current_index);
   *key = data_column_casted->GetView(data_index);
-  while (*current_index < sorted_indices->length() && data_column_casted->GetView(data_index) == *key) {
+  while (*current_index < sorted_indices->length() &&
+         data_column_casted->GetView(data_index) == *key) {
     subset->push_back(data_index);
     (*current_index)++;
     if (*current_index == sorted_indices->length()) {
@@ -59,8 +60,10 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
   arrow::Status lstatus, rstatus;
   auto t11 = std::chrono::high_resolution_clock::now();
 
-  lstatus = cylon::join::util::CombineChunks(left_tab, left_join_column_idx, left_tab_comb, memory_pool);
-  rstatus = cylon::join::util::CombineChunks(right_tab, right_join_column_idx, right_tab_comb, memory_pool);
+  lstatus = cylon::join::util::CombineChunks(left_tab, left_join_column_idx,
+      left_tab_comb, memory_pool);
+  rstatus = cylon::join::util::CombineChunks(right_tab, right_join_column_idx,
+      right_tab_comb, memory_pool);
 
   auto t22 = std::chrono::high_resolution_clock::now();
 
@@ -69,7 +72,8 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
     return arrow::Status::Invalid("Sort join failed!");
   }
 
-  LOG(INFO) << "Combine chunks time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
+  LOG(INFO) << "Combine chunks time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
 
   //sort columns
   auto left_join_column = left_tab_comb->column(left_join_column_idx)->chunk(0);
@@ -83,7 +87,8 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
     return status;
   }
   auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Left sorting time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Left sorting time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::Array> right_index_sorted_column;
@@ -93,7 +98,8 @@ arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
     return status;
   }
   t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "right sorting time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "right sorting time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   CPP_KEY_TYPE left_key, right_key;
   std::vector<int64_t> left_subset, right_subset;
