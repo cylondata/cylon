@@ -19,15 +19,8 @@
 
 namespace cylon {
 class Status {
-
- private:
-  int code;
-  std::string msg;
-
- public:
-
+public:
   Status() {
-
   }
 
   Status(int code, const std::string &msg) {
@@ -63,7 +56,11 @@ class Status {
   std::string get_msg() {
     return this->msg;
   }
+
+private:
+  int code;
+  std::string msg;
 };
-}
+}  // namespace cylon
 
 #endif //CYLON_STATUS_H

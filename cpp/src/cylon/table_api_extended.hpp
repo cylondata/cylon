@@ -20,9 +20,11 @@
 #include "status.hpp"
 
 namespace cylon {
+
 std::shared_ptr<arrow::Table> GetTable(const std::string &id);
+
 void PutTable(const std::string &id, const std::shared_ptr<arrow::Table> &table);
 
 Status VerifyTableSchema(const std::shared_ptr<arrow::Table> &ltab, const std::shared_ptr<arrow::Table> &rtab);
-}
+}  // namespace cylon
 #endif //CYLON_SRC_CYLON_TABLE_API_EXTENDED_HPP_
