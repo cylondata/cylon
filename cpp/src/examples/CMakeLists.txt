@@ -4,6 +4,7 @@ macro(tx_add_exe EXENAME)
     target_link_libraries(${EXENAME} ${MPI_LIBRARIES})
     target_link_libraries(${EXENAME} cylon)
     target_link_libraries(${EXENAME} ${ARROW_LIB})
+    target_link_libraries(${EXENAME} ${GLOG_LIBRARIES})
     install (TARGETS ${EXENAME} RUNTIME DESTINATION examples)
 endmacro(tx_add_exe)
 

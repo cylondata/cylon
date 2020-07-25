@@ -78,6 +78,8 @@ include_directories(${MPI_CXX_INCLUDE_PATH})
 # glog
 option(WITH_GFLAGS "Use gflags" ON)
 SET(WITH_GFLAGS OFF)
+include(ConfigureGlog)
+include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
 
 # arrow
 include(ConfigureArrow)
@@ -87,7 +89,7 @@ if (ARROW_FOUND)
 else ()
     message(FATAL_ERROR "Apache Arrow not found, please check your settings.")
 endif (ARROW_FOUND)
-include_directories("${ARROW_INCLUDE_DIR}")
+include_directories(SYSTEM "${ARROW_INCLUDE_DIR}")
 
 ## Find Python
 find_package(PythonLibs REQUIRED)
@@ -96,7 +98,6 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 # Off if you dont want to build tests -- ON default
 option(CYLON_BUILD_TESTS "Build tests." ON)
 
-add_subdirectory(thirdparty/glog)
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
 
