@@ -60,14 +60,12 @@ int MPIChannel::sendFin(std::shared_ptr<TxRequest> request) {
     return -1;
   }
 
-  // LOG(INFO) << rank << " Insert FIN " << request->target;
   finishRequests.insert(std::pair<int, std::shared_ptr<TxRequest>>(request->target, request));
   return 1;
 }
 
 void MPIChannel::progressReceives() {
   MPI_Status status;
-  int count = 0;
   for (auto x : pendingReceives) {
     int flag = 0;
     status = {};

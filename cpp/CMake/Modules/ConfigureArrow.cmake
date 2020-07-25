@@ -45,6 +45,7 @@ configure_file("${CMAKE_SOURCE_DIR}/CMake/Templates/Arrow.CMakeLists.txt.cmake"
 file(MAKE_DIRECTORY "${ARROW_ROOT}/build")
 file(MAKE_DIRECTORY "${ARROW_ROOT}/install")
 
+message("Execute process--------" ${CMAKE_COMMAND} ${CMAKE_GENERATOR})
 execute_process(
         COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
         RESULT_VARIABLE ARROW_CONFIG
