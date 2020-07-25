@@ -16,7 +16,6 @@
 #include <arrow/io/api.h>
 #include <arrow/csv/api.h>
 
-#include "arrow_io.hpp"
 #include "csv_read_config_holder.hpp"
 #include "../ctx/cylon_context.hpp"
 #include "../ctx/arrow_memory_pool_utils.hpp"
@@ -39,16 +38,15 @@ arrow::Result<std::shared_ptr<arrow::Table>> read_csv(cylon::CylonContext *ctx,
   auto convert_options = dynamic_cast<arrow::csv::ConvertOptions *>(config::CSVConfigHolder::GetCastedHolder(options));
 
   // Instantiate TableReader from input stream and options
-  std::shared_ptr<arrow::csv::TableReader> reader;
-  st = arrow::csv::TableReader::Make(pool, *mmap_result, *read_options,
-                                     *parse_options, *convert_options,
-                                     &reader);
-  if (!st.ok()) {
-    return arrow::Result<std::shared_ptr<arrow::Table>>(st);
+  arrow::Result<std::shared_ptr<arrow::csv::TableReader>> reader =
+      arrow::csv::TableReader::Make(pool, *mmap_result, *read_options,
+                                     *parse_options, *convert_options);
+  if (!reader.ok()) {
+    return arrow::Result<std::shared_ptr<arrow::Table>>(reader.status());
   }
 
   // Read table from CSV file
-  return reader->Read();
+  return (*reader)->Read();
 }
 }
 }

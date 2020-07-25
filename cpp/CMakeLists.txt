@@ -73,7 +73,7 @@ SET(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
 
 # Find MPI
 find_package(MPI REQUIRED)
-include_directories(${MPI_CXX_INCLUDE_PATH})
+include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
 
 # glog
 option(WITH_GFLAGS "Use gflags" ON)

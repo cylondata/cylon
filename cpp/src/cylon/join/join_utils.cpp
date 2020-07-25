@@ -30,13 +30,13 @@ arrow::Status build_final_table(const std::shared_ptr<std::vector<int64_t>> &lef
   // creating joined schema
   std::vector<std::shared_ptr<arrow::Field>> fields;
   std::vector<std::shared_ptr<arrow::Field>> new_fields;
-  int left_table_columns = left_tab->schema()->num_fields();
+  unsigned long left_table_columns = left_tab->schema()->num_fields();
   fields.insert(fields.end(), left_tab->schema()->fields().begin(), left_tab->schema()->fields().end());
   fields.insert(fields.end(), right_tab->schema()->fields().begin(), right_tab->schema()->fields().end());
   std::string left_tb_prefix = "lt-";
   std::string right_tb_prefix = "rt-";
   std::string prefix = left_tb_prefix;
-  for (int i = 0; i < fields.size(); i++) {
+  for (size_t i = 0; i < fields.size(); i++) {
 	if (i >= left_table_columns) {
 	  prefix = right_tb_prefix;
 	}

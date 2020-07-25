@@ -17,6 +17,8 @@
 
 find_package(Threads REQUIRED)
 
+set_source_files_properties(util/murmur3.cpp util/murmur3.hpp PROPERTIES COMPILE_FLAGS -Wno-implicit-fallthrough)
+
 add_library(cylon SHARED
         net/ops/all_to_all.cpp
         net/ops/all_to_all.hpp
@@ -90,7 +92,7 @@ target_link_libraries(cylon ${GLOG_LIBRARIES})
 target_link_libraries(cylon ${ARROW_LIB})
 target_link_libraries(cylon ${PYTHON_LIBRARIES})
 target_link_libraries(cylon Threads::Threads)
-#target_compile_options(cylon PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
+target_compile_options(cylon PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
 
 if(${PYCYLON_BUILD})
     add_library(cylon_python SHARED

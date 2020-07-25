@@ -16,6 +16,7 @@
 #include <arrow/api.h>
 #include <glog/logging.h>
 #include "arrow_utils.hpp"
+#include "../status.hpp"
 
 namespace cylon {
 namespace util {
@@ -123,8 +124,6 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> 
                                     std::shared_ptr<arrow::Array> *copied_array,
                                     arrow::MemoryPool *memory_pool) {
   switch (data_array->type()->id()) {
-    case arrow::Type::NA:break;
-    case arrow::Type::BOOL:break;
     case arrow::Type::UINT8:
       return do_copy_numeric_array<arrow::UInt8Type>(indices,
                                                      data_array,
@@ -180,20 +179,17 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> 
                                                       data_array,
                                                       copied_array,
                                                       memory_pool);
-    case arrow::Type::STRING:return do_copy_binary_array(indices, data_array, copied_array, memory_pool);
-    case arrow::Type::BINARY:return do_copy_binary_array(indices, data_array, copied_array, memory_pool);
+    case arrow::Type::STRING:
+      return do_copy_binary_array(indices, data_array,
+          copied_array, memory_pool);
+    case arrow::Type::BINARY:
+      return do_copy_binary_array(indices, data_array,
+          copied_array, memory_pool);
     case arrow::Type::FIXED_SIZE_BINARY:
       return do_copy_fixed_binary_array(indices,
                                         data_array,
                                         copied_array,
                                         memory_pool);
-    case arrow::Type::DATE32:break;
-    case arrow::Type::DATE64:break;
-    case arrow::Type::TIMESTAMP:break;
-    case arrow::Type::TIME32:break;
-    case arrow::Type::TIME64:break;
-    case arrow::Type::INTERVAL:break;
-    case arrow::Type::DECIMAL:break;
     case arrow::Type::LIST: {
       auto t_value = std::static_pointer_cast<arrow::ListType>(data_array->type());
       switch (t_value->value_type()->id()) {
@@ -252,19 +248,12 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> 
                                                          data_array,
                                                          copied_array,
                                                          memory_pool);
+        default:
+          return arrow::Status::Invalid("Un-supported type");
       }
-      break;
     }
-    case arrow::Type::STRUCT:break;
-    case arrow::Type::UNION:break;
-    case arrow::Type::DICTIONARY:break;
-    case arrow::Type::MAP:break;
-    case arrow::Type::EXTENSION:break;
-    case arrow::Type::FIXED_SIZE_LIST:break;
-    case arrow::Type::DURATION:break;
-    case arrow::Type::LARGE_STRING:break;
-    case arrow::Type::LARGE_BINARY:break;
-    case arrow::Type::LARGE_LIST:break;
+    default:
+      return arrow::Status::Invalid("Un-supported type");
   }
 }
 

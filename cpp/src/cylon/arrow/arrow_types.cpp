@@ -110,6 +110,7 @@ bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table) {
 	  case arrow::Type::LARGE_LIST:return false;
 	}
   }
+  return false;
 }
 
 }

@@ -89,6 +89,7 @@ std::shared_ptr<ArrowComparator> GetComparator(const std::shared_ptr<arrow::Data
     case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
   }
+  return nullptr;
 }
 
 TableRowComparator::TableRowComparator(const std::vector<std::shared_ptr<arrow::Field>> &fields) {
