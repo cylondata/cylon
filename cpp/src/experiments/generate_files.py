@@ -1,6 +1,5 @@
 import argparse
 import os
-from multiprocessing import Process
 from multiprocessing import Pool
 
 parser = argparse.ArgumentParser(description='generate random data')
@@ -11,7 +10,8 @@ parser.add_argument('--wr', dest='weak_rows', type=float, nargs='+', help='weak 
                     default=[])
 parser.add_argument('--sr', dest='strong_rows', type=float, nargs='+', help='strong rows',
                     default=[])
-parser.add_argument('-b', dest='base_dir', type=str, help='base dir', default="~/temp/twx/")
+parser.add_argument('-b', dest='base_dir', type=str, help='base dir', default="~/temp/cylon/")
+parser.add_argument('-c', dest='cols', type=int, help='columns', default=2)
 
 
 args = parser.parse_args()
@@ -26,7 +26,7 @@ print(f"base dir {base_dir}", flush=True)
 os.system(f"mkdir -p {base_dir}")
 
 csvs = ["BASE/csv1_RANK.csv", "BASE/csv2_RANK.csv"]
-cols = 4
+cols = args['cols']
 key_duplication_ratio = 0.99  # on avg there will be rows/key_range_ratio num of duplicate keys
 
 
