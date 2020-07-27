@@ -11,16 +11,16 @@
 <script>window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","UA-173169112-1","auto"),ga("send","pageview")</script>
 <script async src="https://www.google-analytics.com/analytics.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/konpa/devicon@master/devicon.min.css"><title data-react-helmet="true">Compiling | Cylon</title><meta data-react-helmet="true" name="twitter:card" content="summary_large_image"><meta data-react-helmet="true" property="og:title" content="Compiling | Cylon"><meta data-react-helmet="true" name="description" content="Cylon has C++ core, Java and Python bindings. You can compile these in three steps."><meta data-react-helmet="true" property="og:description" content="Cylon has C++ core, Java and Python bindings. You can compile these in three steps."><meta data-react-helmet="true" property="og:url" content="https://cylondata.org/docs/"><link data-react-helmet="true" rel="shortcut icon" href="/img/favicon.ico"><link data-react-helmet="true" rel="canonical" href="https://cylondata.org/docs/"><link rel="stylesheet" href="/styles.9f0d4f8a.css">
-<link rel="preload" href="/styles.f1672894.js" as="script">
-<link rel="preload" href="/runtime~main.4d4764a6.js" as="script">
-<link rel="preload" href="/main.4fa3bc78.js" as="script">
-<link rel="preload" href="/1.24601b67.js" as="script">
-<link rel="preload" href="/2.1d6df807.js" as="script">
-<link rel="preload" href="/16.a44aa93f.js" as="script">
-<link rel="preload" href="/17.ac7124fe.js" as="script">
-<link rel="preload" href="/20ac7829.e66126ae.js" as="script">
-<link rel="preload" href="/17896441.b5228538.js" as="script">
-<link rel="preload" href="/acaacde6.8253d793.js" as="script">
+<link rel="preload" href="/styles.02701994.js" as="script">
+<link rel="preload" href="/runtime~main.847826ab.js" as="script">
+<link rel="preload" href="/main.310e7154.js" as="script">
+<link rel="preload" href="/1.0b8a5855.js" as="script">
+<link rel="preload" href="/2.93711a66.js" as="script">
+<link rel="preload" href="/16.84624f01.js" as="script">
+<link rel="preload" href="/17.bd351a4f.js" as="script">
+<link rel="preload" href="/20ac7829.3912acc8.js" as="script">
+<link rel="preload" href="/17896441.cefadb0d.js" as="script">
+<link rel="preload" href="/acaacde6.3d8013a3.js" as="script">
 </head>
 <body>
 <div id="__docusaurus">
@@ -29,15 +29,15 @@ the path if you&#x27;re installing in the system path.</p><h3><a aria-hidden="tr
 If you&#x27;have already built cpp and want to compile the your changes to the API,
 do the following,</p><div class="mdxCodeBlock_iHAB"><div class="codeBlockContent_32p_"><button type="button" aria-label="Copy code to clipboard" class="copyButton_1BYj">Copy</button><div tabindex="0" class="prism-code language-bash codeBlock_19pQ"><div class="codeBlockLines_2n9r" style="color:#bfc7d5;background-color:#292d3e"><div class="token-line" style="color:#bfc7d5"><span class="token plain">./build.sh -pyenv /home/</span><span class="token operator" style="color:rgb(137, 221, 255)">&lt;</span><span class="token plain">username</span><span class="token operator" style="color:rgb(137, 221, 255)">&gt;</span><span class="token plain">/cylon/ENV -bpath /home/</span><span class="token operator" style="color:rgb(137, 221, 255)">&lt;</span><span class="token plain">username</span><span class="token operator" style="color:rgb(137, 221, 255)">&gt;</span><span class="token plain">/cylon/build --python</span></div></div></div></div></div><h3><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_ZqCz" id="example"></a>Example<a aria-hidden="true" tabindex="-1" class="hash-link" href="#example" title="Direct link to heading">#</a></h3><p>Before running the code in the base path of the cloned repo
 run the following command. Or add this to your <code>bashrc</code>.</p><div class="mdxCodeBlock_iHAB"><div class="codeBlockContent_32p_"><button type="button" aria-label="Copy code to clipboard" class="copyButton_1BYj">Copy</button><div tabindex="0" class="prism-code language-bash codeBlock_19pQ"><div class="codeBlockLines_2n9r" style="color:#bfc7d5;background-color:#292d3e"><div class="token-line" style="color:#bfc7d5"><span class="token builtin class-name" style="color:rgb(255, 203, 107)">export</span><span class="token plain"> </span><span class="token assign-left variable" style="color:rgb(191, 199, 213)">LD_LIBRARY_PATH</span><span class="token operator" style="color:rgb(137, 221, 255)">=</span><span class="token plain">/home/</span><span class="token operator" style="color:rgb(137, 221, 255)">&lt;</span><span class="token plain">username</span><span class="token operator" style="color:rgb(137, 221, 255)">&gt;</span><span class="token plain">/twisterx/build/arrow/install/lib:/home/</span><span class="token operator" style="color:rgb(137, 221, 255)">&lt;</span><span class="token plain">username</span><span class="token operator" style="color:rgb(137, 221, 255)">&gt;</span><span class="token plain">/twisterx/build/lib:</span><span class="token variable" style="color:rgb(191, 199, 213)">$LD_LIBRARY_PATH</span></div></div></div></div></div><ol start="4"><li>Test Python API</li></ol><div class="mdxCodeBlock_iHAB"><div class="codeBlockContent_32p_"><button type="button" aria-label="Copy code to clipboard" class="copyButton_1BYj">Copy</button><div tabindex="0" class="prism-code language-bash codeBlock_19pQ"><div class="codeBlockLines_2n9r" style="color:#bfc7d5;background-color:#292d3e"><div class="token-line" style="color:#bfc7d5"><span class="token plain">python3 python/test/test_pytwisterx.py</span></div></div></div></div></div></div></article><div class="margin-vert--xl"><div class="row"><div class="col"><a href="https://github.com/facebook/docusaurus/edit/master/website/docs/compile.md" target="_blank" rel="noreferrer noopener"><svg fill="currentColor" height="1.2em" width="1.2em" preserveAspectRatio="xMidYMid meet" viewBox="0 0 40 40" style="margin-right:0.3em;vertical-align:sub"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div></div></div><div class="margin-vert--lg"><nav class="pagination-nav" aria-label="Blog list page navigation"><div class="pagination-nav__item"></div><div class="pagination-nav__item pagination-nav__item--next"><a class="pagination-nav__link" href="/docs/arch"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Architecture »</div></a></div></nav></div></div></div><div class="col col--3"><div class="tableOfContents_TbNY"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#prerequisites" class="table-of-contents__link">Prerequisites</a></li><li><a href="#python-environment" class="table-of-contents__link">Python Environment</a><ul><li><a href="#create-a-virtual-environment" class="table-of-contents__link">Create a virtual environment</a></li></ul></li><li><a href="#openmpi" class="table-of-contents__link">OpenMPI</a><ul><li><a href="#from-source" class="table-of-contents__link">From source</a></li><li><a href="#installing-with-package-manager" class="table-of-contents__link">Installing with package manager</a></li></ul></li><li><a href="#building-c" class="table-of-contents__link">Building C++</a></li><li><a href="#build-c-python-cylon-apis" class="table-of-contents__link">Build C++, Python Cylon APIs</a></li><li><a href="#python-support" class="table-of-contents__link">Python Support</a><ul><li><a href="#example" class="table-of-contents__link">Example</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container"><div class="row footer__links"><div class="col footer__col"><h4 class="footer__title">Docs</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/docs/">Docs</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Community</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" target="_blank" rel="noopener noreferrer" href="/docs/cylondata@googlegroups.com">Mailing List</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">More</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/blog">Blog</a></li><li class="footer__item"><a href="https://github.com/cylondata/cylon" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub</a></li></ul></div></div><div class="text--center"><div></div></div></div></footer></div>
-<script src="/styles.f1672894.js"></script>
-<script src="/runtime~main.4d4764a6.js"></script>
-<script src="/main.4fa3bc78.js"></script>
-<script src="/1.24601b67.js"></script>
-<script src="/2.1d6df807.js"></script>
-<script src="/16.a44aa93f.js"></script>
-<script src="/17.ac7124fe.js"></script>
-<script src="/20ac7829.e66126ae.js"></script>
-<script src="/17896441.b5228538.js"></script>
-<script src="/acaacde6.8253d793.js"></script>
+<script src="/styles.02701994.js"></script>
+<script src="/runtime~main.847826ab.js"></script>
+<script src="/main.310e7154.js"></script>
+<script src="/1.0b8a5855.js"></script>
+<script src="/2.93711a66.js"></script>
+<script src="/16.84624f01.js"></script>
+<script src="/17.bd351a4f.js"></script>
+<script src="/20ac7829.3912acc8.js"></script>
+<script src="/17896441.cefadb0d.js"></script>
+<script src="/acaacde6.3d8013a3.js"></script>
 </body>
 </html>
