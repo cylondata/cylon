@@ -59,8 +59,8 @@ const features2 = [
         ),
     },
     {
-        title: <>We have flattened the Curve, The Learning Curve!</>,
-        imageUrl: 'img/curve.png',
+        title: <>BYOL, Bring Your Own Language!</>,
+        imageUrl: 'img/byol.png',
         description: (
             <>
                 Write in the language you are already familiar with, yet experience the same native performance.
