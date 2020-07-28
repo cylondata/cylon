@@ -103,13 +103,13 @@ build_cpp(){
   print_line
   echo "Building CPP in ${BUILD_MODE} mode"
   print_line
+  if [ "${PYTHON_BUILD}" = "ON" ]; then
+    source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
+    read_python_requirements
+  fi
   mkdir ${BUILD_PATH}
   pushd ${BUILD_PATH} || exit 1
   export ARROW_HOME=${BUILD_PATH}/arrow/install
-  if [ "${PYTHON_BUILD}" = "ON" ]; then
-    read_python_requirements
-    source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
-  fi
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} $INSTALL_CMD ${SOURCE_DIR} || exit 1
   make -j 4 || exit 1
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
