@@ -19,21 +19,21 @@ cylon::Status cylon::cyarrow::BeginTable(const std::string &table_id) {
 
 std::shared_ptr<arrow::DataType> GetArrowType(int8_t type) {
   switch (type) {
-    case arrow::Type::NA:break;
+    case arrow::Type::NA:return arrow::null();
     case arrow::Type::BOOL:return arrow::boolean();
-    case arrow::Type::UINT8:break;
-    case arrow::Type::INT8:break;
-    case arrow::Type::UINT16:break;
-    case arrow::Type::INT16:break;
-    case arrow::Type::UINT32:break;
+    case arrow::Type::UINT8:return arrow::uint8();
+    case arrow::Type::INT8:return arrow::int8();
+    case arrow::Type::UINT16:return arrow::uint16();
+    case arrow::Type::INT16:return arrow::int16();
+    case arrow::Type::UINT32:return arrow::uint32();
     case arrow::Type::INT32:return arrow::int32();
-    case arrow::Type::UINT64:break;
-    case arrow::Type::INT64:break;
+    case arrow::Type::UINT64:return arrow::uint64();
+    case arrow::Type::INT64:return arrow::int64();
     case arrow::Type::HALF_FLOAT:return arrow::float16();
     case arrow::Type::FLOAT:return arrow::float32();
     case arrow::Type::DOUBLE:return arrow::float64();
-    case arrow::Type::STRING:break;
-    case arrow::Type::BINARY:break;
+    case arrow::Type::STRING:return arrow::utf8();
+    case arrow::Type::BINARY:return arrow::binary();
     case arrow::Type::FIXED_SIZE_BINARY:break;
     case arrow::Type::DATE32:break;
     case arrow::Type::DATE64:break;
@@ -54,6 +54,7 @@ std::shared_ptr<arrow::DataType> GetArrowType(int8_t type) {
     case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
   }
+  return nullptr;
 }
 
 void AddColumnToTable(const std::string &table_id,
@@ -65,7 +66,7 @@ void AddColumnToTable(const std::string &table_id,
                       const std::shared_ptr<arrow::DataType> &data_type) {
   LOG(INFO) << "Adding column of type " << data_type->name() << " to the table";
   auto buffers = std::vector<std::shared_ptr<arrow::Buffer>>{validity_buf, data_buf};
-  
+
   auto array_data = arrow::ArrayData::Make(
       data_type,
       values_count,
