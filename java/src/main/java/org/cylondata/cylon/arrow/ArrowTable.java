@@ -2,32 +2,35 @@ package org.cylondata.cylon.arrow;
 
 import io.netty.buffer.ArrowBuf;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.FieldVector;
-import org.apache.arrow.vector.FixedWidthVector;
-import org.apache.arrow.vector.Float8Vector;
-import org.apache.arrow.vector.IntVector;
-import org.apache.arrow.vector.types.FloatingPointPrecision;
-import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.arrow.vector.types.pojo.Field;
-import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.arrow.vector.*;
+import org.cylondata.cylon.Clearable;
 import org.cylondata.cylon.CylonContext;
 import org.cylondata.cylon.NativeLoader;
 import org.cylondata.cylon.Table;
 import org.cylondata.cylon.exception.CylonRuntimeException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.lang.ref.PhantomReference;
+import java.lang.ref.ReferenceQueue;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class provides basic types support to map a java arrow table to cpp arrow table.
  * This class needs to be improved to support complex types
  */
-public class ArrowTable {
+public class ArrowTable implements Clearable {
+
+  // this map will prevent GC while arrow tables are in use in CPP
+  private static Map<String, ArrowTable> arrowTableMap = new HashMap<>();
 
   private final String uuid;
-  private Schema schema;
   private boolean finished;
+
+  // handling memory
+  private List<ArrowBuf> bufferRefs;
+
+  // keep count of references
+  private AtomicInteger references;
 
   public static void main(String[] args) {
 
@@ -39,41 +42,52 @@ public class ArrowTable {
 
     Float8Vector float8Vector = new Float8Vector("col2", rootAllocator);
     float8Vector.allocateNew(200);
+
+
+    VarCharVector stringVector = new VarCharVector("col3", rootAllocator);
+
+
     for (int i = 0; i < 200; i++) {
       float8Vector.setSafe(i, i);
-      intVector.setSafe(i, i);
+
+      if (i % 10 == 0) {
+        intVector.setNull(i);
+      } else {
+        intVector.setSafe(i, i);
+      }
+
+      stringVector.setSafe(i, ("hello" + i).getBytes());
     }
 
     intVector.setValueCount(200);
     float8Vector.setValueCount(200);
+    stringVector.setValueCount(200);
 
-
-    List<Field> arrowFields = new ArrayList<>();
-    arrowFields.add(Field.nullable("col1", new ArrowType.Int(8, true)));
-    arrowFields.add(Field.nullable("col2", new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE)));
-
-
-    Schema schema = new Schema(arrowFields);
-    schema.toByteArray();
-
-    ArrowTable arrowTable = new ArrowTable(schema);
+    ArrowTable arrowTable = new ArrowTable();
     arrowTable.addColumn("col1", intVector);
     arrowTable.addColumn("col2", float8Vector);
+    //arrowTable.addColumn("col3", stringVector);
     arrowTable.finish();
 
     CylonContext ctx = CylonContext.init();
 
     Table table = Table.fromArrowTable(ctx, arrowTable);
 
+
+    PhantomReference<Table> ref = new PhantomReference<>(table, new ReferenceQueue<>());
+
+
     System.out.println(table.getRowCount());
 
     table.print();
   }
 
-  public ArrowTable(Schema schema) {
-    this.schema = schema;
+  public ArrowTable() {
     this.uuid = UUID.randomUUID().toString();
+    this.bufferRefs = new ArrayList<>();
+    this.references = new AtomicInteger();
     ArrowTable.createTable(this.uuid);
+    arrowTableMap.put(this.uuid, this);
   }
 
   private void checkFinished() {
@@ -82,7 +96,24 @@ public class ArrowTable {
     }
   }
 
+  /**
+   * Add a column of data. The memory de-allocation and GC prevention will not be handled by Cylon.
+   *
+   * @param columnName  name of the column
+   * @param fieldVector {@link FieldVector} instance
+   */
   public void addColumn(String columnName, FieldVector fieldVector) {
+    this.addColumn(columnName, fieldVector, false);
+  }
+
+  /**
+   * Add a column of data
+   *
+   * @param columnName   name of the column
+   * @param fieldVector  {@link FieldVector} instance
+   * @param manageMemory If true, Cylon will take care of memory de-allocation for the {@link FieldVector} provided.
+   */
+  public void addColumn(String columnName, FieldVector fieldVector, boolean manageMemory) {
     ArrowBuf dataBuffer = fieldVector.getDataBuffer();
     ArrowBuf validityBuffer = fieldVector.getValidityBuffer();
 
@@ -102,6 +133,14 @@ public class ArrowTable {
         dataBuffer.memoryAddress(),
         dataBuffer.capacity()
     );
+
+    if (!manageMemory) {
+      dataBuffer.getReferenceManager().retain();
+      validityBuffer.getReferenceManager().retain();
+
+      this.bufferRefs.add(dataBuffer);
+      this.bufferRefs.add(validityBuffer);
+    }
   }
 
   public void finish() {
@@ -125,4 +164,29 @@ public class ArrowTable {
                                        long dataAddress, long dataSize);
 
   private static native void finishTable(String tableId);
+
+  public void markReferred() {
+    this.references.incrementAndGet();
+  }
+
+  @Override
+  public void clear() {
+    // only proceed if there are no more references
+    if (this.references.decrementAndGet() > 0) {
+      return;
+    }
+
+    // remove from arrow table map
+    arrowTableMap.remove(this.uuid);
+
+    // releasing the buffers
+    for (ArrowBuf arrowBuf : this.bufferRefs) {
+      arrowBuf.getReferenceManager().release();
+    }
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    this.clear();
+  }
 }
