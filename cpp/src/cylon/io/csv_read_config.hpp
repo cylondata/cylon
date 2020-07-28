@@ -14,6 +14,7 @@
 
 #ifndef CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HPP_
 #define CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HPP_
+
 #include "../data_types.hpp"
 #include <vector>
 #include <string>
@@ -144,7 +145,8 @@ class CSVReadOptions {
 
   std::shared_ptr<void> GetHolder() const;
 };
-}
-}
-}
+
+}  // namespace config
+}  // namespace io
+}  // namespace cylon
 #endif //CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HPP_

@@ -276,6 +276,6 @@ class Table {
   Status DoSetOperation(SetOperation operation, const shared_ptr<Table> &right, shared_ptr<Table> &output);
 
 };
-}
+}  // namespace cylon
 
 #endif //CYLON_SRC_IO_TABLE_H_

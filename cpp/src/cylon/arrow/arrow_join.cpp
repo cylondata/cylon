@@ -15,12 +15,12 @@
 #include <utility>
 #include <unordered_map>
 #include <memory>
+#include <chrono>
 
 #include "arrow_join.hpp"
 #include "../join/join.hpp"
 #include "arrow_partition_kernels.hpp"
 #include "arrow_kernels.hpp"
-#include <chrono>
 
 namespace cylon {
 
