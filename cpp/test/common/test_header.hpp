@@ -12,13 +12,50 @@
  * limitations under the License.
  */
 
-#ifndef __TX_TEST_HEADER_
-#define __TX_TEST_HEADER_
+#ifndef __CYLON_TEST_HEADER_
+#define __CYLON_TEST_HEADER_
 
-// Tell Catch to provide a main() - only do this in one cpp file
-#define CATCH_CONFIG_MAIN
-
+#define CATCH_CONFIG_RUNNER
 #include <catch.hpp>
+#include <mpi.h>
+#include <iostream>
+#include <glog/logging.h>
+#include <ctx/cylon_context.hpp>
+#include <table.hpp>
+#include <chrono>
+#include <net/mpi/mpi_communicator.hpp>
+
+cylon::CylonContext *ctx = NULL;
+
+using namespace cylon;
+
+Status Table::FromCSV(cylon::CylonContext *context,
+               const vector<std::string> &paths,
+               const std::vector<std::shared_ptr<Table> *> &tableOuts,
+               const io::config::CSVReadOptions &options) {
+  // modify paths to reflect the rank
+  // hypothetical...
+  int rank = context->GetRank();
+  // modify paths to include rank depending upon the position in the vector
+  //"../data/join/table0.csv", --> "../data/join/0/table0.csv"
+  // "../data/join//table1.csv" --> "../data/join/0/table1.csv"
+
+  // read ...
+  return Status::OK();
+}
+
+int main(int argc, char *argv[]) {
+  // global setup...
+
+  auto mpi_config = new cylon::net::MPIConfig();
+  ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  int result = Catch::Session().run(argc, argv);
+
+  // global clean-up...
+  ctx->Finalize();
+  return result;
+}
 
 // Other common stuff goes here ...
 
