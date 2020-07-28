@@ -51,7 +51,7 @@ pyarrow_include_dir = os.path.join(pyarrow_location, 'include')
 extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
 additional_compile_args = [std_version,
-                           '-DARROW_METADATA_V4 -DGOOGLE_GLOG_DLL_DECL="" -DNEED_EXCLUSIVE_SCAN']
+                           '-DARROW_METADATA_V4 -DNEED_EXCLUSIVE_SCAN']
 extra_compile_args = extra_link_args + additional_compile_args
 extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 
@@ -64,7 +64,7 @@ library_directories = [cylon_library_directory,
                        get_python_lib(),
                        os.path.join(os.sys.prefix, "lib")]
 
-libraries = ["arrow", "cylon", "cylon_python", "glog"]
+libraries = ["arrow", "cylon", "cylon_python"]
 
 _include_dirs = ["../cpp/src/cylon/python",
                  "../cpp/src/cylon/lib",

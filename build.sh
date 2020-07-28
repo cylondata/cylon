@@ -104,46 +104,46 @@ build_cpp(){
   echo "Building CPP in ${BUILD_MODE} mode"
   print_line
   mkdir ${BUILD_PATH}
-  pushd ${BUILD_PATH}
+  pushd ${BUILD_PATH} || exit 1
   export ARROW_HOME=${BUILD_PATH}/arrow/install
   if [ "${PYTHON_BUILD}" = "ON" ]; then
-    source "${PYTHON_ENV_PATH}"/bin/activate
+    source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   fi
-  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} $INSTALL_CMD ${SOURCE_DIR}
-  make -j 4
+  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} $INSTALL_CMD ${SOURCE_DIR} || exit 1
+  make -j 4 || exit 1
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
   printf "Cylon CPP Built Successufully!"
-  popd
+  popd || exit 1
   print_line
 }
 
 build_pyarrow(){
   print_line
   echo "Building PyArrow"
-  pushd ${BUILD_PATH} || exit
+  pushd ${BUILD_PATH} || exit 1
   export ARROW_HOME=${BUILD_PATH}/arrow/install
   popd || exit
-  source "${PYTHON_ENV_PATH}"/bin/activate
+  source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
-  pushd ${BUILD_PATH}/arrow/arrow/python || exit
-  PYARROW_CMAKE_OPTIONS="-DCMAKE_MODULE_PATH=${ARROW_HOME}/lib/cmake/arrow" python3 setup.py install
-  popd || exit
+  pushd ${BUILD_PATH}/arrow/arrow/python || exit 1
+  PYARROW_CMAKE_OPTIONS="-DCMAKE_MODULE_PATH=${ARROW_HOME}/lib/cmake/arrow" python3 setup.py install || exit 1
+  popd || exit 1
   print_line
 }
 
 build_python() {
   print_line
   echo "Building Python"
-  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH || exit 1
   echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
   # shellcheck disable=SC1090
-  source "${PYTHON_ENV_PATH}"/bin/activate
+  source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
-  pushd python || exit
+  pushd python || exit 1
   pip3 uninstall -y pycylon
   make clean
-  ARROW_HOME=${BUILD_PATH} python3 setup.py install
-  popd || exit
+  ARROW_HOME=${BUILD_PATH} python3 setup.py install || exit 1
+  popd || exit 1
   print_line
 }
 
@@ -154,13 +154,13 @@ release_python() {
   echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
   source "${PYTHON_ENV_PATH}"/bin/activate
   read_python_requirements
-  pushd python || exit
+  pushd python || exit 1
   pip3 uninstall -y pycylon
   make clean
   # https://www.scivision.dev/easy-upload-to-pypi/ [solution to linux wheel issue]
   #ARROW_HOME=${BUILD_PATH} python3 setup.py sdist bdist_wheel
-  ARROW_HOME=${BUILD_PATH} python3 setup.py build_ext --inplace --library-dir=${BUILD_PATH}
-  popd || exit
+  ARROW_HOME=${BUILD_PATH} python3 setup.py build_ext --inplace --library-dir=${BUILD_PATH} || exit 1
+  popd || exit 1
   print_line
 }
 
