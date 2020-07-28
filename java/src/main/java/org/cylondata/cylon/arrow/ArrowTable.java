@@ -21,16 +21,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ArrowTable implements Clearable {
 
   // this map will prevent GC while arrow tables are in use in CPP
-  private static Map<String, ArrowTable> arrowTableMap = new HashMap<>();
+  private static final Map<String, ArrowTable> ARROW_TABLE_MAP = new HashMap<>();
 
   private final String uuid;
   private boolean finished;
 
   // handling memory
-  private List<ArrowBuf> bufferRefs;
+  private final List<ArrowBuf> bufferRefs;
 
   // keep count of references
-  private AtomicInteger references;
+  private final AtomicInteger references;
 
   public static void main(String[] args) {
 
@@ -87,7 +87,7 @@ public class ArrowTable implements Clearable {
     this.bufferRefs = new ArrayList<>();
     this.references = new AtomicInteger();
     ArrowTable.createTable(this.uuid);
-    arrowTableMap.put(this.uuid, this);
+    ARROW_TABLE_MAP.put(this.uuid, this);
   }
 
   private void checkFinished() {
@@ -177,7 +177,7 @@ public class ArrowTable implements Clearable {
     }
 
     // remove from arrow table map
-    arrowTableMap.remove(this.uuid);
+    ARROW_TABLE_MAP.remove(this.uuid);
 
     // releasing the buffers
     for (ArrowBuf arrowBuf : this.bufferRefs) {
