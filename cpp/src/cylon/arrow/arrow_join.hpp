@@ -73,7 +73,6 @@ class ArrowJoin {
    * @return true if the buffer is accepted
    */
   int leftInsert(const std::shared_ptr<arrow::Table> &table, int target) {
-    int a = 10;
 	return leftAllToAll_->insert(table, target);
   }
 
@@ -161,6 +160,7 @@ class ArrowJoinWithPartition {
    */
   int rightInsert(const std::shared_ptr<arrow::Table> &table) {
 	rightUnPartitionedTables_.push(table);
+    return 1;
   }
 
   /**

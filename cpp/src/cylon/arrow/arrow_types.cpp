@@ -18,11 +18,41 @@
 namespace cylon {
 namespace tarrow {
 
-std::shared_ptr<arrow::DataType> convertToArrowType(std::shared_ptr<DataType> tType) {
-  if (tType->getType() == Type::INT8) {
+std::shared_ptr<arrow::DataType> convertToArrowType(std::shared_ptr<DataType> tType,
+                                                    int32_t width,
+                                                    int32_t precision,
+                                                    int32_t scale) {
+  switch (tType->getType()) {
+    case Type::BOOL:return std::make_shared<arrow::BooleanType>();
+    case Type::UINT8: return std::make_shared<arrow::UInt8Type>();
+    case Type::INT8: return std::make_shared<arrow::Int8Type>();
+    case Type::UINT16:return std::make_shared<arrow::UInt16Type>();
+    case Type::INT16:return std::make_shared<arrow::Int16Type>();
+    case Type::UINT32:return std::make_shared<arrow::UInt32Type>();
+    case Type::INT32:return std::make_shared<arrow::Int32Type>();
+    case Type::UINT64:return std::make_shared<arrow::UInt64Type>();
+    case Type::INT64:return std::make_shared<arrow::Int64Type>();
+    case Type::HALF_FLOAT:return std::make_shared<arrow::HalfFloatType>();
+    case Type::FLOAT:return std::make_shared<arrow::FloatType>();
+    case Type::DOUBLE:return std::make_shared<arrow::DoubleType>();
+    case Type::STRING:return std::make_shared<arrow::StringType>();
+    case Type::BINARY:return std::make_shared<arrow::BinaryType>();
+    case Type::FIXED_SIZE_BINARY:return std::make_shared<arrow::FixedSizeBinaryType>(width);
+    case Type::DATE32:return std::make_shared<arrow::Date32Type>();
+    case Type::DATE64:return std::make_shared<arrow::Date64Type>();
+    case Type::TIMESTAMP:return std::make_shared<arrow::TimestampType>();
+    case Type::TIME32:return std::make_shared<arrow::Time32Type>();
+    case Type::TIME64:return std::make_shared<arrow::Time64Type>();
+    case Type::DECIMAL:return std::make_shared<arrow::DecimalType>(width, precision, scale);
+    case Type::DURATION:return std::make_shared<arrow::DurationType>();
+    case Type::INTERVAL:
+    case Type::LIST:
+    case Type::FIXED_SIZE_LIST:
+    case Type::EXTENSION:break;
   }
   return nullptr;
 }
+
 
 bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table) {
   std::shared_ptr<arrow::Schema> schema = table->schema();
@@ -80,6 +110,7 @@ bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table) {
 	  case arrow::Type::LARGE_LIST:return false;
 	}
   }
+  return false;
 }
 
 }

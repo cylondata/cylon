@@ -15,6 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
+find_package(Threads REQUIRED)
+
+set_source_files_properties(util/murmur3.cpp util/murmur3.hpp PROPERTIES COMPILE_FLAGS -Wno-implicit-fallthrough)
+
 add_library(cylon SHARED
         net/ops/all_to_all.cpp
         net/ops/all_to_all.hpp
@@ -80,11 +84,15 @@ add_library(cylon SHARED
         arrow/arrow_builder.hpp
         arrow/arrow_builder.cpp)
 
+set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
+
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(cylon ${MPI_LIBRARIES})
-target_link_libraries(cylon glog::glog)
+target_link_libraries(cylon ${GLOG_LIBRARIES})
 target_link_libraries(cylon ${ARROW_LIB})
 target_link_libraries(cylon ${PYTHON_LIBRARIES})
+target_link_libraries(cylon Threads::Threads)
+target_compile_options(cylon PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
 
 if(${PYCYLON_BUILD})
     add_library(cylon_python SHARED
@@ -95,7 +103,7 @@ if(${PYCYLON_BUILD})
             python/net/comm/callback.h python/net/comm/callback.cpp)
 
     target_link_libraries(cylon_python ${MPI_LIBRARIES})
-    target_link_libraries(cylon_python glog::glog)
+    target_link_libraries(cylon_python ${GLOG_LIBRARIES})
     target_link_libraries(cylon_python ${ARROW_LIB})
     target_link_libraries(cylon_python ${ARROW_PYTHON})
     target_link_libraries(cylon_python ${PYTHON_LIBRARIES})

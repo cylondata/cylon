@@ -16,6 +16,7 @@
 #include <arrow/api.h>
 #include <glog/logging.h>
 #include "arrow_utils.hpp"
+#include "../status.hpp"
 
 namespace cylon {
 namespace util {
@@ -28,7 +29,8 @@ arrow::Status do_copy_numeric_array(const std::shared_ptr<std::vector<int64_t>> 
   arrow::NumericBuilder<TYPE> array_builder(memory_pool);
   arrow::Status status = array_builder.Reserve(indices->size());
   if (status != arrow::Status::OK()) {
-    LOG(FATAL) << "Failed to reserve memory when re arranging the array based on indices. " << status.ToString();
+    LOG(FATAL) << "Failed to reserve memory when re arranging the array based on indices. "
+               << status.ToString();
     return status;
   }
 
@@ -62,7 +64,8 @@ arrow::Status do_copy_binary_array(std::shared_ptr<std::vector<int64_t>> indices
     const uint8_t *data = casted_array->GetValue(index, &out);
     auto status = binary_builder.Append(data, out);
     if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
+      LOG(FATAL) << "Failed to append rearranged data points to the array builder. "
+                 << status.ToString();
       return status;
     }
   }
@@ -82,7 +85,8 @@ arrow::Status do_copy_fixed_binary_array(std::shared_ptr<std::vector<int64_t>> i
     const uint8_t *data = casted_array->GetValue(index);
     arrow::Status status = binary_builder.Append(data);
     if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
+      LOG(FATAL) << "Failed to append rearranged data points to the array builder. "
+                 << status.ToString();
       return status;
     }
   }
@@ -94,23 +98,26 @@ arrow::Status do_copy_numeric_list(std::shared_ptr<std::vector<int64_t>> indices
                                    std::shared_ptr<arrow::Array> data_array,
                                    std::shared_ptr<arrow::Array> *copied_array,
                                    arrow::MemoryPool *memory_pool) {
-
-  arrow::ListBuilder list_builder(memory_pool, std::make_shared<arrow::NumericBuilder<TYPE>>(memory_pool));
+  arrow::ListBuilder list_builder(memory_pool,
+      std::make_shared<arrow::NumericBuilder<TYPE>>(memory_pool));
   arrow::NumericBuilder<TYPE> &value_builder =
       *(static_cast<arrow::NumericBuilder<TYPE> *>(list_builder.value_builder()));
   auto casted_array = std::static_pointer_cast<arrow::ListArray>(data_array);
   for (auto &index : *indices) {
     arrow::Status status = list_builder.Append();
     if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
+      LOG(FATAL) << "Failed to append rearranged data points to the array builder. "
+                 << status.ToString();
       return status;
     }
-    auto numericArray = std::static_pointer_cast<arrow::NumericArray<TYPE>>(casted_array->Slice(index));
+    auto numericArray = std::static_pointer_cast<arrow::NumericArray<TYPE>>(
+        casted_array->Slice(index));
 
-    for (int n = 0; n < numericArray->length(); n++) {
+    for (int64_t n = 0; n < numericArray->length(); n++) {
       status = value_builder.Append(numericArray->Value(n));
       if (status != arrow::Status::OK()) {
-        LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
+        LOG(FATAL) << "Failed to append rearranged data points to the array builder. "
+                   << status.ToString();
         return status;
       }
     }
@@ -123,8 +130,6 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> 
                                     std::shared_ptr<arrow::Array> *copied_array,
                                     arrow::MemoryPool *memory_pool) {
   switch (data_array->type()->id()) {
-    case arrow::Type::NA:break;
-    case arrow::Type::BOOL:break;
     case arrow::Type::UINT8:
       return do_copy_numeric_array<arrow::UInt8Type>(indices,
                                                      data_array,
@@ -180,20 +185,17 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> 
                                                       data_array,
                                                       copied_array,
                                                       memory_pool);
-    case arrow::Type::STRING:return do_copy_binary_array(indices, data_array, copied_array, memory_pool);
-    case arrow::Type::BINARY:return do_copy_binary_array(indices, data_array, copied_array, memory_pool);
+    case arrow::Type::STRING:
+      return do_copy_binary_array(indices, data_array,
+          copied_array, memory_pool);
+    case arrow::Type::BINARY:
+      return do_copy_binary_array(indices, data_array,
+          copied_array, memory_pool);
     case arrow::Type::FIXED_SIZE_BINARY:
       return do_copy_fixed_binary_array(indices,
                                         data_array,
                                         copied_array,
                                         memory_pool);
-    case arrow::Type::DATE32:break;
-    case arrow::Type::DATE64:break;
-    case arrow::Type::TIMESTAMP:break;
-    case arrow::Type::TIME32:break;
-    case arrow::Type::TIME64:break;
-    case arrow::Type::INTERVAL:break;
-    case arrow::Type::DECIMAL:break;
     case arrow::Type::LIST: {
       auto t_value = std::static_pointer_cast<arrow::ListType>(data_array->type());
       switch (t_value->value_type()->id()) {
@@ -252,21 +254,14 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> 
                                                          data_array,
                                                          copied_array,
                                                          memory_pool);
+        default:
+          return arrow::Status::Invalid("Un-supported type");
       }
-      break;
     }
-    case arrow::Type::STRUCT:break;
-    case arrow::Type::UNION:break;
-    case arrow::Type::DICTIONARY:break;
-    case arrow::Type::MAP:break;
-    case arrow::Type::EXTENSION:break;
-    case arrow::Type::FIXED_SIZE_LIST:break;
-    case arrow::Type::DURATION:break;
-    case arrow::Type::LARGE_STRING:break;
-    case arrow::Type::LARGE_BINARY:break;
-    case arrow::Type::LARGE_LIST:break;
+    default:
+      return arrow::Status::Invalid("Un-supported type");
   }
 }
 
-}
-}
+}  // namespace util
+}  // namespace cylon

@@ -17,6 +17,7 @@
 
 #include <string>
 #include <vector>
+
 namespace cylon {
 class Row {
  private:
@@ -47,6 +48,6 @@ class Row {
   int64_t Time64(int64_t col_index);
   const uint8_t *Decimal(int64_t col_index);
 };
-}
+}  // namespace cylon
 
 #endif //CYLON_SRC_CYLON_ROW_HPP_

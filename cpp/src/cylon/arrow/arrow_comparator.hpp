@@ -46,6 +46,6 @@ class TableRowComparator {
               int64_t index2);
 };
 
-}
+}  // namespace cylon
 
 #endif //CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_HPP_

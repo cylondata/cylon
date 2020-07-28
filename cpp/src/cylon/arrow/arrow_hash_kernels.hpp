@@ -50,9 +50,6 @@ class ArrowArrayIdxHashJoinKernel {
                   const cylon::join::config::JoinType join_type,
                   std::shared_ptr<std::vector<int64_t>> &left_table_indices,
                   std::shared_ptr<std::vector<int64_t>> &right_table_indices) {
-
-//    std::unique_ptr<MMAP_TYPE> out_umm_ptr;
-
     switch (join_type) {
       case cylon::join::config::JoinType::RIGHT: {
         // build hashmap using left col idx

@@ -163,6 +163,6 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
   unsigned long thisNumTargets;            // number of targets in this process, 1 or 0
   int thisNumSources;            // number of sources in this process, 1 or 0
 };
-}
+}  // namespace cylon
 
 #endif

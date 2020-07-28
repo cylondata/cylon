@@ -37,7 +37,6 @@ namespace cylon {
  * Table provides the main API for using cylon for data processing.
  */
 class Table {
-
  public:
   /**
    * Tables can only be created using the factory methods, so the constructor is private
@@ -254,6 +253,10 @@ class Table {
    */
   cylon::CylonContext *GetContext();
 
+  /**
+   * Get column names of the table
+   * @return vector<string>
+   */
   std::vector<std::string> ColumnNames();
 
  private:
@@ -264,8 +267,12 @@ class Table {
 
   cylon::CylonContext *ctx;
 
+  /**
+ * Generic function declaration for set operations
+ */
   typedef Status(*SetOperation)
       (CylonContext *ctx, const std::string &left_table, const std::string &right_table, const std::string &out_table);
+
   Status DoSetOperation(SetOperation operation, const shared_ptr<Table> &right, shared_ptr<Table> &output);
 
 };
