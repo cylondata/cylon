@@ -32,56 +32,6 @@ public class ArrowTable implements Clearable {
   // keep count of references
   private final AtomicInteger references;
 
-  public static void main(String[] args) {
-
-    NativeLoader.load();
-
-    RootAllocator rootAllocator = new RootAllocator();
-    IntVector intVector = new IntVector("col1", rootAllocator);
-    intVector.allocateNew(200);
-
-    Float8Vector float8Vector = new Float8Vector("col2", rootAllocator);
-    float8Vector.allocateNew(200);
-
-
-    VarCharVector stringVector = new VarCharVector("col3", rootAllocator);
-
-
-    for (int i = 0; i < 200; i++) {
-      float8Vector.setSafe(i, i);
-
-      if (i % 10 == 0) {
-        intVector.setNull(i);
-      } else {
-        intVector.setSafe(i, i);
-      }
-
-      stringVector.setSafe(i, ("hello" + i).getBytes());
-    }
-
-    intVector.setValueCount(200);
-    float8Vector.setValueCount(200);
-    stringVector.setValueCount(200);
-
-    ArrowTable arrowTable = new ArrowTable();
-    arrowTable.addColumn("col1", intVector);
-    arrowTable.addColumn("col2", float8Vector);
-    //arrowTable.addColumn("col3", stringVector);
-    arrowTable.finish();
-
-    CylonContext ctx = CylonContext.init();
-
-    Table table = Table.fromArrowTable(ctx, arrowTable);
-
-
-    PhantomReference<Table> ref = new PhantomReference<>(table, new ReferenceQueue<>());
-
-
-    System.out.println(table.getRowCount());
-
-    table.print();
-  }
-
   public ArrowTable() {
     this.uuid = UUID.randomUUID().toString();
     this.bufferRefs = new ArrayList<>();
