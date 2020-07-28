@@ -87,8 +87,8 @@ class JoinConfig {
 	return right_column_idx;
   }
 };
-}
-}
-}
+}  // namespace util
+}  // namespace join
+}  // namespace cylon
 
 #endif //CYLON_SRC_CYLON_JOIN_JOIN_CONFIG_HPP_
