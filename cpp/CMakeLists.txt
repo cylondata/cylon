@@ -110,5 +110,8 @@ install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION in
 install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.16.0.0 DESTINATION lib)
 install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
 
-enable_testing()
-add_subdirectory(test)
+if (ENABLE_TESTS)
+    message("Tests enabled!")
+    enable_testing()
+    add_subdirectory(test)
+endif()
