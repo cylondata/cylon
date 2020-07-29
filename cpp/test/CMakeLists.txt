@@ -34,14 +34,24 @@ endmacro(tx_add_exe)
 
 #a macro to add a test
 function(cylon_add_test TESTNAME no_mpi_proc)
-  add_executable(${TESTNAME} ${TESTNAME}.cpp)
-  target_link_libraries(${TESTNAME} ${MPI_LIBRARIES})
-  target_link_libraries(${TESTNAME} cylon)
-  target_link_libraries(${TESTNAME} ${ARROW_LIB})
-  set(test_params -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}")
-  add_test(NAME ${TESTNAME} COMMAND ${MPI_RUN_CMD} ${test_params})
+  set(exec_name "${TESTNAME}_${no_mpi_proc}")
+  add_executable(${exec_name} ${TESTNAME}.cpp test_utils.hpp)
+  target_link_libraries(${exec_name} ${MPI_LIBRARIES})
+  target_link_libraries(${exec_name} cylon)
+  target_link_libraries(${exec_name} ${ARROW_LIB})
+  set(test_params -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${exec_name}")
+  add_test(NAME ${exec_name} COMMAND ${MPI_RUN_CMD} ${test_params})
 endfunction(cylon_add_test)
 
 #Add tests as follows ...
 # param 1 -- name of the test, param 2 -- number of processes
-cylon_add_test(join_test_2 4)
+
+# join tests
+cylon_add_test(join_test 1)
+cylon_add_test(join_test 2)
+cylon_add_test(join_test 4)
+
+# set operation tests
+cylon_add_test(set_op_test 1)
+cylon_add_test(set_op_test 2)
+cylon_add_test(set_op_test 4)

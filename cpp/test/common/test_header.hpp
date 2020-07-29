@@ -26,30 +26,17 @@
 #include <net/mpi/mpi_communicator.hpp>
 
 cylon::CylonContext *ctx = NULL;
+int RANK = 0;
+int WORLD_SZ = 0;
 
 using namespace cylon;
 
-//Status Table::FromCSV(cylon::CylonContext *context,
-//               const vector<std::string> &paths,
-//               const std::vector<std::shared_ptr<Table> *> &tableOuts,
-//               const io::config::CSVReadOptions &options) {
-//  // modify paths to reflect the rank
-//  // hypothetical...
-//  int rank = context->GetRank();
-//  // modify paths to include rank depending upon the position in the vector
-//  //"../data/join/table0.csv", --> "../data/join/0/table0.csv"
-//  // "../data/join//table1.csv" --> "../data/join/0/table1.csv"
-//
-//  // read ...
-//  return Status::OK();
-//}
-
 int main(int argc, char *argv[]) {
   // global setup...
-  LOG(INFO)<<"^^^^^^^^^^^^^ TEST1 ";
-
   auto mpi_config = new cylon::net::MPIConfig();
   ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  RANK = ctx->GetRank();
+  WORLD_SZ = ctx->GetWorldSize();
 
   int result = Catch::Session().run(argc, argv);
 

@@ -11,7 +11,7 @@
 #include <table.hpp>
 #include <chrono>
 
-#define EXECUTE 0
+#define EXECUTE 1
 
 namespace cylon {
 namespace test {
@@ -37,7 +37,7 @@ static int Verify(CylonContext *ctx, const std::shared_ptr<Table> &result,
   }
 }
 
-static int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out),
+int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out),
                             CylonContext *ctx,
                             const std::string &path1,
                             const std::string &path2,
@@ -95,7 +95,7 @@ static int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table>
 #endif
 }
 
-static int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
+int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
                              CylonContext *ctx,
                              const std::string &path1,
                              const std::string &path2,
