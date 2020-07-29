@@ -64,6 +64,7 @@ int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int target
 
 bool ArrowAllToAll::isComplete() {
   if (completed_) {
+    LOG(INFO) << "Already Completed TRUE " << completed_;
     return true;
   }
   bool isAllEmpty = true;
@@ -221,7 +222,7 @@ bool ArrowAllToAll::onReceive(int source, void *buffer, int length) {
 }
 
 bool ArrowAllToAll::onReceiveHeader(int source, int fin, int *buffer, int length) {
-  if (!finished) {
+  if (!fin) {
     if (length != 5) {
       LOG(FATAL) << "Incorrect length on header, expected 5 ints got " << length;
       return false;
