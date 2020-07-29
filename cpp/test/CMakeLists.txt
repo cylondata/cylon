@@ -17,7 +17,6 @@
 
 SET(MPI_RUN_CMD mpirun)
 
-message("************** ${CYLON_SOURCE_DIR}")
 file(COPY ${CYLON_SOURCE_DIR}/../data DESTINATION ${CMAKE_BINARY_DIR})
 
 include_directories (${CYLON_SOURCE_DIR}/src)
@@ -39,9 +38,10 @@ function(cylon_add_test TESTNAME no_mpi_proc)
   target_link_libraries(${TESTNAME} ${MPI_LIBRARIES})
   target_link_libraries(${TESTNAME} cylon)
   target_link_libraries(${TESTNAME} ${ARROW_LIB})
-  add_test(NAME ${TESTNAME} COMMAND ${MPI_RUN_CMD} -np ${no_mpi_proc} ${TESTNAME})
+  set(test_params -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}")
+  add_test(NAME ${TESTNAME} COMMAND ${MPI_RUN_CMD} ${test_params})
 endfunction(cylon_add_test)
 
 #Add tests as follows ...
 # param 1 -- name of the test, param 2 -- number of processes
-cylon_add_test(join_test_2 2)
+cylon_add_test(join_test_2 4)

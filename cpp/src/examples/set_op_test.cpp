@@ -29,23 +29,21 @@ int main(int argc, char *argv[]) {
   int world_sz = ctx->GetWorldSize();
   std::string path1 = "/tmp/cylon/input/csv1_" + std::to_string(rank) + ".csv";
   std::string path2 = "/tmp/cylon/input/csv2_" + std::to_string(rank) + ".csv";
-//  std::string path1 = "/tmp/cylon/output/intersect_4_2.csv";
-//  std::string path2 = "/tmp/cylon/output/intersect_4_2.csv";
   std::string out_path;
 
-//  out_path = "/tmp/cylon/output/union_" + std::to_string(world_sz) + "_" + std::to_string(rank) + ".csv";
-//  if (test::TestSetOperation(&Table::DistributedUnion, ctx, path1, path2, out_path)) {
-//    LOG(ERROR) << "union failed!";
-//    results++;
-//  }
-//
-//  LOG(INFO) << "----------------------------------------";
-//
-//  out_path = "/tmp/cylon/output/subtract_" + std::to_string(world_sz) + "_" + std::to_string(rank) + ".csv";
-//  if (test::TestSetOperation(&Table::DistributedSubtract, ctx, path1, path2, out_path)) {
-//    LOG(ERROR) << "union failed!";
-//    results++;
-//  }
+  out_path = "/tmp/cylon/output/union_" + std::to_string(world_sz) + "_" + std::to_string(rank) + ".csv";
+  if (test::TestSetOperation(&Table::DistributedUnion, ctx, path1, path2, out_path)) {
+    LOG(ERROR) << "union failed!";
+    results++;
+  }
+
+  LOG(INFO) << "----------------------------------------";
+
+  out_path = "/tmp/cylon/output/subtract_" + std::to_string(world_sz) + "_" + std::to_string(rank) + ".csv";
+  if (test::TestSetOperation(&Table::DistributedSubtract, ctx, path1, path2, out_path)) {
+    LOG(ERROR) << "union failed!";
+    results++;
+  }
 
   LOG(INFO) << "----------------------------------------";
 
@@ -54,22 +52,6 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << "intersect failed!";
     results++;
   }
-
-//  std::shared_ptr<cylon::Table> table1, table2, result_expected, result, var;
-//
-//  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false);
-//
-//  Status status;
-//  status = cylon::Table::FromCSV(ctx,
-//                                 std::vector<std::string>{path1, path2, path2},
-//                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2, &result_expected},
-//                                 read_options);
-//
-//  table1->DistributedIntersect(table2, result);
-//
-//  result->Subtract(result_expected, var);
-//
-//  LOG(INFO)<< " " << result->Rows() << " " << result_expected->Rows() << " " << var->Rows();
 
   ctx->Finalize();
 

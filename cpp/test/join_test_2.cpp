@@ -12,9 +12,10 @@ TEST_CASE( "Join testing", "[join]" ) {
 //  auto join_config = cylon::join::config::JoinConfig::InnerJoin(0, 0);
 //  table1->DistributedJoin(table2, join_config, &joined);
 
-  LOG(INFO)<<"^^^^^^^^^^^^^ TEST";
-  LOG(INFO)<<"^^^^^^^^^^^^^ TEST";
-  REQUIRE(true);
+  LOG(INFO) << "^^^^^^^^^^^^^ TEST";
+  LOG(INFO) << "^^^^^^^^^^^^^ TEST";
+  LOG(INFO) << "^^^^^^^^^^^^^ TEST";
+  REQUIRE(1 == 2);
 
   // TODO read results from ../data/join/result.csv and compare with joined
 }
