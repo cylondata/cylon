@@ -64,7 +64,6 @@ int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int target
 
 bool ArrowAllToAll::isComplete() {
   if (completed_) {
-    LOG(INFO) << "Already Completed TRUE " << completed_;
     return true;
   }
   bool isAllEmpty = true;
