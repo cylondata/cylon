@@ -11,6 +11,8 @@
 #include <table.hpp>
 #include <chrono>
 
+// this is a toggle to generate test files. Set execute to 0 then, it will generate the expected
+// output files
 #define EXECUTE 1
 
 namespace cylon {
@@ -28,8 +30,9 @@ static int Verify(CylonContext *ctx, const std::shared_ptr<Table> &result,
     LOG(ERROR) << "subtract FAIL! " << status.get_msg();
     return 1;
   } else if (verification->Rows()) {
-    LOG(ERROR) << "verification FAIL! Rank:" << ctx->GetRank() << " status:" << status.get_msg() << " expected:"
-               << expected_result->Rows() << " found:" << result->Rows() << " " << verification->Rows();
+    LOG(ERROR) << "verification FAIL! Rank:" << ctx->GetRank() << " status:" << status.get_msg()
+               << " expected:" << expected_result->Rows() << " found:" << result->Rows() << " "
+               << verification->Rows();
     return 1;
   } else {
     LOG(INFO) << "verification SUCCESS!";
@@ -37,11 +40,12 @@ static int Verify(CylonContext *ctx, const std::shared_ptr<Table> &result,
   }
 }
 
-int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out),
-                            CylonContext *ctx,
-                            const std::string &path1,
-                            const std::string &path2,
-                            const std::string &out_path) {
+int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right,
+                                             std::shared_ptr<Table> &out),
+                     CylonContext *ctx,
+                     const std::string &path1,
+                     const std::string &path2,
+                     const std::string &out_path) {
   std::shared_ptr<cylon::Table> table1, table2, result_expected, result;
 
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false)
@@ -56,7 +60,8 @@ int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right
   status = cylon::Table::FromCSV(ctx,
 #if EXECUTE
                                  std::vector<std::string>{path1, path2, out_path},
-                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2, &result_expected},
+                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2,
+                                                                       &result_expected},
 #else
       std::vector<std::string>{path1, path2},
       std::vector<std::shared_ptr<Table> *>{&table1, &table2},
@@ -72,7 +77,9 @@ int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right
   auto read_end_time = std::chrono::steady_clock::now();
 
   LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start)
+                .count()
+            << "[ms]";
 
   if (!(status = ((*table1).*fun_ptr)(table2, result)).is_ok()) {
     LOG(INFO) << "Table op failed ";
@@ -84,7 +91,9 @@ int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right
   LOG(INFO) << "First table had : " << table1->Rows() << " and Second table had : "
             << table2->Rows() << ", result has : " << result->Rows();
   LOG(INFO) << "operation done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(op_end_time - read_end_time).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(op_end_time - read_end_time)
+                .count()
+            << "[ms]";
 
 #if EXECUTE
   return test::Verify(ctx, result, result_expected);
@@ -96,10 +105,10 @@ int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right
 }
 
 int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
-                             CylonContext *ctx,
-                             const std::string &path1,
-                             const std::string &path2,
-                             const std::string &out_path) {
+                      CylonContext *ctx,
+                      const std::string &path1,
+                      const std::string &path2,
+                      const std::string &out_path) {
   Status status;
   std::shared_ptr<cylon::Table> table1, table2, joined_expected, joined, verification;
 
@@ -109,7 +118,8 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   status = cylon::Table::FromCSV(ctx,
 #if EXECUTE
                                  std::vector<std::string>{path1, path2, out_path},
-                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2, &joined_expected},
+                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2,
+                                                                       &joined_expected},
 #else
       std::vector<std::string>{path1, path2},
       std::vector<std::shared_ptr<Table> *>{&table1, &table2},
@@ -124,7 +134,9 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   auto read_end_time = std::chrono::steady_clock::now();
 
   LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start)
+                .count()
+            << "[ms]";
 
   status = table1->DistributedJoin(table2, join_config, &joined);
   if (!status.is_ok()) {
@@ -136,7 +148,9 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   LOG(INFO) << "First table had : " << table1->Rows() << " and Second table had : "
             << table2->Rows() << ", Joined has : " << joined->Rows();
   LOG(INFO) << "Join done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time)
+                .count()
+            << "[ms]";
 
 #if EXECUTE
   if (test::Verify(ctx, joined, joined_expected)) {
