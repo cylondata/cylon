@@ -1,7 +1,8 @@
 SOURCE_DIR=$(pwd)/cpp
-CPP_BUILD="OFF"
+CPP_BUILD="ON"
 PYTHON_BUILD="OFF"
-BUILD_ALL="OFF"
+JAVA_BUILD="ON"
+BUILD_ALL="ON"
 BUILD_MODE=Debug
 BUILD_MODE_DEBUG="OFF"
 BUILD_MODE_RELEASE="OFF"
@@ -38,6 +39,11 @@ case $key in
     --python)
     CPP_BUILD="ON"
     PYTHON_BUILD="ON"
+    shift # past argument
+    ;;
+    --java)
+    CPP_BUILD="ON"
+    JAVA_BUILD="ON"
     shift # past argument
     ;;
     --debug)
@@ -186,6 +192,14 @@ check_pycylon_installation(){
   echo "${response}"
 }
 
+build_java(){
+  echo "Building Java"
+  cd java
+  mvn clean install || exit 1
+  echo "Cylon Java built Successufully!"
+  cd ../
+}
+
 ####################################################################################################
 
 if [ "${BUILD_MODE_DEBUG}" = "ON" ]; then
@@ -213,6 +227,10 @@ if [ "${PYTHON_BUILD}" = "ON" ]; then
 	check_pyarrow_installation
 	build_python
 	check_pycylon_installation
+fi
+
+if [ "${JAVA_BUILD}" = "ON" ]; then
+	build_java
 fi
 
 if [ "${PYTHON_RELEASE}" = "ON" ]; then	
