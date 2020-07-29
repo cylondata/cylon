@@ -18,14 +18,14 @@ tx_add_exe(subtract_example)
 tx_add_exe(intersect_example)
 
 
-macro(tx_add_test_exe EXENAME)
-    add_executable(${EXENAME} ${EXENAME}.cpp test_utils.hpp)
-    target_link_libraries(${EXENAME} ${MPI_LIBRARIES})
-    target_link_libraries(${EXENAME} cylon)
-    target_link_libraries(${EXENAME} ${ARROW_LIB})
-    install (TARGETS ${EXENAME} RUNTIME DESTINATION examples)
-endmacro(tx_add_test_exe)
-tx_add_test_exe(join_test)
-tx_add_test_exe(set_op_test)
+#macro(tx_add_test_exe EXENAME)
+#    add_executable(${EXENAME} ${EXENAME}.cpp ../../test/test_utils.hpp)
+#    target_link_libraries(${EXENAME} ${MPI_LIBRARIES})
+#    target_link_libraries(${EXENAME} cylon)
+#    target_link_libraries(${EXENAME} ${ARROW_LIB})
+#    install (TARGETS ${EXENAME} RUNTIME DESTINATION examples)
+#endmacro(tx_add_test_exe)
+#tx_add_test_exe(join_test)
+#tx_add_test_exe(set_op_test)
 
 

@@ -12,13 +12,38 @@
  * limitations under the License.
  */
 
-#ifndef __TX_TEST_HEADER_
-#define __TX_TEST_HEADER_
+#ifndef __CYLON_TEST_HEADER_
+#define __CYLON_TEST_HEADER_
 
-// Tell Catch to provide a main() - only do this in one cpp file
-#define CATCH_CONFIG_MAIN
-
+#define CATCH_CONFIG_RUNNER
 #include <catch.hpp>
+#include <mpi.h>
+#include <iostream>
+#include <glog/logging.h>
+#include <ctx/cylon_context.hpp>
+#include <table.hpp>
+#include <chrono>
+#include <net/mpi/mpi_communicator.hpp>
+
+cylon::CylonContext *ctx = NULL;
+int RANK = 0;
+int WORLD_SZ = 0;
+
+using namespace cylon;
+
+int main(int argc, char *argv[]) {
+  // global setup...
+  auto mpi_config = new cylon::net::MPIConfig();
+  ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  RANK = ctx->GetRank();
+  WORLD_SZ = ctx->GetWorldSize();
+
+  int result = Catch::Session().run(argc, argv);
+
+  // global clean-up...
+  ctx->Finalize();
+  return result;
+}
 
 // Other common stuff goes here ...
 
