@@ -11,12 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include <glog/logging.h>
 #include <arrow/compare.h>
 #include <arrow/visitor_inline.h>
+
 #include <numeric>
 #include <chrono>
-#include <glog/logging.h>
 
 #include "arrow_utils.hpp"
 

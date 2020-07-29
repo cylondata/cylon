@@ -71,6 +71,9 @@ SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 SET(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
 
+# root include directory
+include_directories(src/cylon)
+
 # Find MPI
 find_package(MPI REQUIRED)
 include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})

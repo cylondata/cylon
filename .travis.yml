@@ -18,13 +18,14 @@ cache:
 before_install:
   - echo "Installing C++ and Python"
   - sudo apt-get update && sudo apt-get install -y --no-install-recommends --no-install-suggests g++ python-dev python-pip python3-dev python3-pip maven libnuma-dev libc-dev python3-venv  openmpi-bin libopenmpi-dev
+  - sudo pip3 install cpplint
   - cp /var/cache/apt/archives/*.deb $HOME/.cache/apt/
 
 jobs:
   include:
     - stage: "Build Stages"
       script:
-        - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp --test
+        - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp --test --style-check
       name: "Build CPP"
     - script:
         - python3 -m venv ENV

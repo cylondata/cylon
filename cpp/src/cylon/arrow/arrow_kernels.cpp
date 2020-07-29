@@ -14,8 +14,14 @@
 
 #include "arrow_kernels.hpp"
 
+#include <vector>
+#include <unordered_map>
+#include <utility>
+#include <algorithm>
+#include <memory>
+
 namespace cylon {
-cylon::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
+cylon::Status CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
                              arrow::MemoryPool *pool,
                              std::shared_ptr<ArrowArraySplitKernel> *out) {
   ArrowArraySplitKernel *kernel;
@@ -55,15 +61,16 @@ cylon::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
 }
 
 int FixedBinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,
-                                       const std::vector<int64_t> &partitions,
-                                       const std::vector<int32_t> &targets,
-                                       std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
+                                     const std::vector<int64_t> &partitions,
+                                     const std::vector<int32_t> &targets,
+                                     std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
   auto reader =
       std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
   std::unordered_map<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>> builders;
 
   for (int it : targets) {
-    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = std::make_shared<arrow::FixedSizeBinaryBuilder>(type_, pool_);
+    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b =
+        std::make_shared<arrow::FixedSizeBinaryBuilder>(type_, pool_);
     builders.insert(std::pair<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>>(it, b));
   }
 
@@ -133,8 +140,7 @@ class ArrowStringSortKernel : public ArrowArraySortKernel {
     auto array = std::static_pointer_cast<arrow::StringArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(int64_t);
-    //todo default mem pool
-    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size, &indices_buf);
+    arrow::Status status = AllocateBuffer(pool_, buf_size, &indices_buf);
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
       return -1;
@@ -164,7 +170,8 @@ class ArrowBinarySortKernel : public ArrowArraySortKernel {
     auto array = std::static_pointer_cast<arrow::BinaryArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
-    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
+    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(),
+        buf_size + 1, &indices_buf);
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
       return -1;
@@ -228,4 +235,4 @@ arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow:
   return arrow::Status::OK();
 }
 
-}
+}  // namespace cylon

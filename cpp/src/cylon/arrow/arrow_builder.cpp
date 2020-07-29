@@ -1,9 +1,26 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "arrow_builder.hpp"
-#include "../table_api_extended.hpp"
+#include <glog/logging.h>
 #include <arrow/ipc/reader.h>
 #include <iostream>
 #include <utility>
-#include <glog/logging.h>
+#include <unordered_map>
+#include <memory>
+
+#include "../table_api_extended.hpp"
 
 std::unordered_map<std::string,
                    std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>> columns;
@@ -71,8 +88,7 @@ void AddColumnToTable(const std::string &table_id,
       data_type,
       values_count,
       buffers,
-      null_count
-  );
+      null_count);
 
   LOG(INFO) << "length : " << array_data->length << ", expected size : " << values_count;
 
@@ -87,7 +103,8 @@ cylon::Status cylon::cyarrow::AddColumn(const std::string &table_id,
                                         int32_t null_count,
                                         int64_t validity_address, int64_t validity_size,
                                         int64_t data_address, int64_t data_size) {
-  auto validity_buff = arrow::Buffer::Wrap(reinterpret_cast<uint8_t *>(validity_address), validity_size);
+  auto validity_buff = arrow::Buffer::Wrap(reinterpret_cast<uint8_t *>(validity_address),
+                                           validity_size);
   auto data_buff = arrow::Buffer::Wrap(reinterpret_cast<uint8_t *>(data_address), data_size);
 
   auto arrow_type = GetArrowType(type);
@@ -103,12 +120,13 @@ cylon::Status cylon::cyarrow::FinishTable(const std::string &table_id) {
   auto status = schema_builder.AddFields(*fields.find(table_id)->second);
 
   if (!status.ok()) {
-    return cylon::Status((int) status.code(), status.message());
+    return cylon::Status(static_cast<int>(status.code()), status.message());
   }
 
   auto schema_result = schema_builder.Finish();
   if (!schema_result.ok()) {
-    return cylon::Status((int) schema_result.status().code(), schema_result.status().message());
+    return cylon::Status(static_cast<int>(schema_result.status().code()),
+        schema_result.status().message());
   }
 
   // building the table

@@ -98,8 +98,8 @@ bool ArrowAllToAll::isComplete() {
             hdr[3] = cArr->chunks().size();
             hdr[4] = data->length;
             // lets send this buffer, we need to send the length at this point
-            bool accept = all_->insert((void *) buf->data(), (int) buf->size(),
-                t.first, hdr, 5);
+            bool accept = all_->insert(buf->mutable_data(),
+                static_cast<int>(buf->size()), t.first, hdr, 5);
             if (!accept) {
               canContinue = false;
               break;

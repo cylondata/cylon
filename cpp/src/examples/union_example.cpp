@@ -13,10 +13,12 @@
  */
 
 #include <glog/logging.h>
+#include <chrono>
+
 #include <net/mpi/mpi_communicator.hpp>
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
-#include <chrono>
+
 
 /**
  * This example reads two csv files and does a union on them.
@@ -66,12 +68,14 @@ int main(int argc, char *argv[]) {
             << second_table->Rows() << ", Union has : "
             << unioned_table->Rows() << " rows";
   LOG(INFO) << "Union done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - union_start_time).count()
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - union_start_time).count()
             << "[ms]";
 
   ctx->Finalize();
   auto end_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Operation took : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                end_time - start_time).count() << "[ms]";
   return 0;
 }

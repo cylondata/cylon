@@ -34,7 +34,7 @@ class CommConfig {
  public:
   virtual CommType Type() = 0;
 };
-}
-}
+}  // namespace net
+}  // namespace cylon
 
 #endif //CYLON_SRC_CYLON_COMM_COMM_CONFIG_H_

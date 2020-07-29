@@ -36,7 +36,7 @@ void printFloatArray(float *buf, int size);
 
 void printDoubleArray(double *buf, int size);
 
-void printLongArray(long *buf, int size);
+void printLongArray(int64_t *buf, int size);
 }  // namespace util
 }  // namespace cylon
 

@@ -13,6 +13,7 @@
  */
 
 #include "uuid.hpp"
+#include <string>
 
 static std::random_device rd;
 static std::mt19937 gen(rd());
@@ -42,6 +43,6 @@ std::string cylon::util::generate_uuid_v4() {
   ss << "-";
   for (i = 0; i < 12; i++) {
     ss << dis(gen);
-  };
+  }
   return ss.str();
 }
