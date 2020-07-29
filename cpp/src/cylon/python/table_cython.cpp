@@ -29,7 +29,7 @@ using namespace cylon;
 using namespace cylon::python::table;
 using namespace cylon::python;
 using namespace cylon::io::config;
-using namespace cylon::util::uuid;
+using namespace cylon::util;
 using namespace cylon::join::config;
 using namespace arrow::py;
 
