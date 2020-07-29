@@ -1,6 +1,16 @@
-//
-// Created by nira on 7/21/20.
-//
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef CYLON_CPP_SRC_EXAMPLES_TEST_UTILS_HPP_
 #define CYLON_CPP_SRC_EXAMPLES_TEST_UTILS_HPP_
@@ -11,6 +21,8 @@
 #include <table.hpp>
 #include <chrono>
 
+// this is a toggle to generate test files. Set execute to 0 then, it will generate the expected
+// output files
 #define EXECUTE 1
 
 namespace cylon {
@@ -28,8 +40,9 @@ static int Verify(CylonContext *ctx, const std::shared_ptr<Table> &result,
     LOG(ERROR) << "subtract FAIL! " << status.get_msg();
     return 1;
   } else if (verification->Rows()) {
-    LOG(ERROR) << "verification FAIL! Rank:" << ctx->GetRank() << " status:" << status.get_msg() << " expected:"
-               << expected_result->Rows() << " found:" << result->Rows() << " " << verification->Rows();
+    LOG(ERROR) << "verification FAIL! Rank:" << ctx->GetRank() << " status:" << status.get_msg()
+               << " expected:" << expected_result->Rows() << " found:" << result->Rows() << " "
+               << verification->Rows();
     return 1;
   } else {
     LOG(INFO) << "verification SUCCESS!";
@@ -37,14 +50,12 @@ static int Verify(CylonContext *ctx, const std::shared_ptr<Table> &result,
   }
 }
 
-typedef Status(*SetOperation)
-    (Table &left_table, Table &right_table, Table &out_table);
-
-static int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right, std::shared_ptr<Table> &out),
-                            CylonContext *ctx,
-                            const std::string &path1,
-                            const std::string &path2,
-                            const std::string &out_path) {
+int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right,
+                                             std::shared_ptr<Table> &out),
+                     CylonContext *ctx,
+                     const std::string &path1,
+                     const std::string &path2,
+                     const std::string &out_path) {
   std::shared_ptr<cylon::Table> table1, table2, result_expected, result;
 
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false)
@@ -59,7 +70,8 @@ static int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table>
   status = cylon::Table::FromCSV(ctx,
 #if EXECUTE
                                  std::vector<std::string>{path1, path2, out_path},
-                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2, &result_expected},
+                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2,
+                                                                       &result_expected},
 #else
       std::vector<std::string>{path1, path2},
       std::vector<std::shared_ptr<Table> *>{&table1, &table2},
@@ -75,7 +87,9 @@ static int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table>
   auto read_end_time = std::chrono::steady_clock::now();
 
   LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start)
+                .count()
+            << "[ms]";
 
   if (!(status = ((*table1).*fun_ptr)(table2, result)).is_ok()) {
     LOG(INFO) << "Table op failed ";
@@ -87,7 +101,9 @@ static int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table>
   LOG(INFO) << "First table had : " << table1->Rows() << " and Second table had : "
             << table2->Rows() << ", result has : " << result->Rows();
   LOG(INFO) << "operation done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(op_end_time - read_end_time).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(op_end_time - read_end_time)
+                .count()
+            << "[ms]";
 
 #if EXECUTE
   return test::Verify(ctx, result, result_expected);
@@ -98,11 +114,11 @@ static int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table>
 #endif
 }
 
-static int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
-                             CylonContext *ctx,
-                             const std::string &path1,
-                             const std::string &path2,
-                             const std::string &out_path) {
+int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
+                      CylonContext *ctx,
+                      const std::string &path1,
+                      const std::string &path2,
+                      const std::string &out_path) {
   Status status;
   std::shared_ptr<cylon::Table> table1, table2, joined_expected, joined, verification;
 
@@ -112,7 +128,8 @@ static int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   status = cylon::Table::FromCSV(ctx,
 #if EXECUTE
                                  std::vector<std::string>{path1, path2, out_path},
-                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2, &joined_expected},
+                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2,
+                                                                       &joined_expected},
 #else
       std::vector<std::string>{path1, path2},
       std::vector<std::shared_ptr<Table> *>{&table1, &table2},
@@ -127,7 +144,9 @@ static int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   auto read_end_time = std::chrono::steady_clock::now();
 
   LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start)
+                .count()
+            << "[ms]";
 
   status = table1->DistributedJoin(table2, join_config, &joined);
   if (!status.is_ok()) {
@@ -139,7 +158,9 @@ static int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   LOG(INFO) << "First table had : " << table1->Rows() << " and Second table had : "
             << table2->Rows() << ", Joined has : " << joined->Rows();
   LOG(INFO) << "Join done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time)
+                .count()
+            << "[ms]";
 
 #if EXECUTE
   if (test::Verify(ctx, joined, joined_expected)) {
