@@ -6,6 +6,7 @@ BUILD_MODE=Debug
 BUILD_MODE_DEBUG="OFF"
 BUILD_MODE_RELEASE="OFF"
 PYTHON_RELEASE="OFF"
+RUN_TESTS="OFF"
 INSTALL_PATH=
 BUILD_PATH=$(pwd)/build
 
@@ -48,6 +49,10 @@ case $key in
     BUILD_MODE_RELEASE="ON"
     shift # past argument
     ;;
+    --test)
+    RUN_TESTS="ON"
+    shift # past argument
+    ;;
     --py-release)
     PYTHON_RELEASE="ON"
     CPP_BUILD="OFF"
@@ -68,6 +73,7 @@ echo "FLAG PYTHON BUILD  = ${PYTHON_BUILD}"
 echo "FLAG BUILD ALL     = ${BUILD_ALL}"
 echo "FLAG BUILD DEBUG   = ${BUILD_MODE_DEBUG}"
 echo "FLAG BUILD RELEASE = ${BUILD_MODE_RELEASE}"
+echo "FLAG RUN TEST      = ${RUN_TESTS}"
 
 if [[ -n $1 ]]; then
     echo "Last line of file specified as non-opt/last argument:"
@@ -220,6 +226,12 @@ if [ "${PYTHON_RELEASE}" = "ON" ]; then
 	check_pyarrow_installation
 	release_python
 fi
+
+if [ "${RUN_TESTS}" = "ON" ]; then
+	echo "Running tests"
+	CTEST_OUTPUT_ON_FAILURE=1 make -C "$BUILD_PATH" test
+fi
+
 
 
 
