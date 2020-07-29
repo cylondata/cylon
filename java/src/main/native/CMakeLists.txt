@@ -6,6 +6,8 @@ SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 SET(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
 
+SET(CYLON_CORE_LIBS "../../../../cpp/build/lib" CACHE STRING "Path to cylon core libs")
+
 # Find MPI
 find_package(MPI REQUIRED)
 include_directories(${MPI_CXX_INCLUDE_PATH})
@@ -26,7 +28,7 @@ SET(CMAKE_CXX_EXTENSIONS OFF)
 message("${PROJECT_SOURCE_DIR}/../../../../cpp/src")
 set(CYLON_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src/cylon"
         "${PROJECT_SOURCE_DIR}/../../../../cpp/thirdparty/cub")
-find_library(CYLON_LIBRARY "cylon" "../../../../cpp/build/lib")
+find_library(CYLON_LIBRARY "cylon" "${CYLON_CORE_LIBS}")
 message(STATUS "CYLON_LIBRARY set to ${CYLON_LIBRARY}")
 add_library(cylon SHARED IMPORTED ${CYLON_LIBRARY})
 set_target_properties(cylon PROPERTIES IMPORTED_LOCATION ${CYLON_LIBRARY})
