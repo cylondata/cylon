@@ -23,6 +23,7 @@
 
     <properties>
         <native.build.path>${basedir}/target/cmake-build</native.build.path>
+        <cylon.core.libs>${cylon.core.libs}</cylon.core.libs>
     </properties>
 
     <dependencies>
@@ -92,6 +93,7 @@
                                 <mkdir dir="${native.build.path}"/>
                                 <exec dir="${native.build.path}" failonerror="true" executable="cmake">
                                     <arg value="${basedir}/src/main/native"/>
+                                    <arg value="-DCYLON_CORE_LIBS:STRING=${cylon.core.libs}"/>
                                 </exec>
                                 <exec dir="${native.build.path}" failonerror="true" executable="make">
                                     <arg value="-j"/>
@@ -124,7 +126,7 @@
                                     </includes>
                                 </resource>
                                 <resource>
-                                    <directory>../cpp/build/lib</directory>
+                                    <directory>${cylon.core.libs}/lib</directory>
                                     <includes>
                                         <include>libcylon.so</include>
                                     </includes>

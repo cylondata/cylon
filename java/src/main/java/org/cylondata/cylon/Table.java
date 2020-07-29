@@ -2,12 +2,15 @@ package org.cylondata.cylon;
 
 import org.apache.arrow.vector.types.Types;
 import org.cylondata.cylon.arrow.ArrowTable;
+import org.cylondata.cylon.exception.CylonRuntimeException;
 import org.cylondata.cylon.ops.Filter;
 import org.cylondata.cylon.ops.JoinConfig;
 import org.cylondata.cylon.ops.Mapper;
 import org.cylondata.cylon.ops.Selector;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -23,9 +26,10 @@ import java.util.UUID;
  * </p>
  */
 @SuppressWarnings({"unused", "rawtypes"})
-public class Table extends DataRepresentation {
+public class Table extends DataRepresentation implements Clearable {
 
   private CylonContext ctx;
+  private Set<Clearable> clearables;
 
   /**
    * Creates a new instance of a {@link Table}
@@ -35,12 +39,19 @@ public class Table extends DataRepresentation {
   private Table(String tableId, CylonContext ctx) {
     super(tableId);
     this.ctx = ctx;
+    this.clearables = new HashSet<>();
   }
 
   //----------------- METHODS TO GENERATE TABLE ---------------------//
 
   public static Table fromArrowTable(CylonContext ctx, ArrowTable arrowTable) {
-    return new Table(arrowTable.getUuid(), ctx);
+    if (!arrowTable.isFinished()) {
+      throw new CylonRuntimeException("Can't create a Table from an unfinished arrow table");
+    }
+    Table table = new Table(arrowTable.getUuid(), ctx);
+    table.clearables.add(arrowTable);
+    arrowTable.markReferred();
+    return table;
   }
 
   /**
@@ -223,7 +234,11 @@ public class Table extends DataRepresentation {
   /**
    * Clear the table and free memory associated with this table
    */
+  @Override
   public void clear() {
+    for (Clearable clearable : this.clearables) {
+      clearable.clear();
+    }
     Table.clear(this.getId());
   }
 

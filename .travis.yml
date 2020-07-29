@@ -24,9 +24,14 @@ jobs:
   include:
     - stage: "Build Stages"
       script:
+        - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp --test
+      name: "Build CPP"
+    - script:
         - python3 -m venv ENV
-        - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp
         - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --python
-      name: "Build CPP and Python"
+      name: "Build Python"
+    - script:
+        - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --java
+      name: "Build Java"
 
 
