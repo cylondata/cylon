@@ -1,0 +1,23 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y --no-install-recommends --no-install-suggests g++ python-dev python-pip python3-dev python3-pip maven libnuma-dev libc-dev python3-venv  openmpi-bin libopenmpi-dev
+    - name: build cpp
+      run: ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp
+    - name: build python
+      run: python3 -m venv ENV && ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --python
+    - name: build java
+      run: ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --java
