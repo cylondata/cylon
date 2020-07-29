@@ -18,6 +18,6 @@ jobs:
     - name: build cpp
       run: ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp
     - name: build python
-      run: ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --python
+      run: python3 -m venv ENV && ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --python
     - name: build java
       run: ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --java
