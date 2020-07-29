@@ -7,8 +7,12 @@
 namespace cylon {
 namespace cyarrow {
 cylon::Status BeginTable(const std::string &table_id);
-cylon::Status AddColumn(const std::string &table_id, const std::string &col_name, int32_t type, int64_t address, int64_t size);
-cylon::Status EndTable(const std::string &table_id);
+cylon::Status AddColumn(const std::string &table_id, const std::string &col_name, int8_t type,
+                        int32_t value_count,
+                        int32_t null_count,
+                        int64_t validity_address, int64_t validity_size,
+                        int64_t data_address, int64_t data_size);
+cylon::Status FinishTable(const std::string &table_id);
 }
 }
 

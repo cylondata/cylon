@@ -9,3 +9,7 @@ void throwException(JNIEnv *env, const std::string &clazz, const std::string &ms
   jclass exClass = env->FindClass(clazz.c_str());
   env->ThrowNew(exClass, msg.c_str());
 }
+
+void throwCylonRuntimeException(JNIEnv *env, const std::string &msg) {
+  throwException(env, "org/cylondata/cylon/exception/CylonRuntimeException", msg);
+}
