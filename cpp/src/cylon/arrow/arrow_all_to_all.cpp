@@ -221,7 +221,7 @@ bool ArrowAllToAll::onReceive(int source, void *buffer, int length) {
 }
 
 bool ArrowAllToAll::onReceiveHeader(int source, int fin, int *buffer, int length) {
-  if (!finished) {
+  if (!fin) {
     if (length != 5) {
       LOG(FATAL) << "Incorrect length on header, expected 5 ints got " << length;
       return false;
