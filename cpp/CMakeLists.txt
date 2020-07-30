@@ -104,10 +104,6 @@ option(CYLON_BUILD_TESTS "Build tests." ON)
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
 
-if (PYCYLON_BUILD)
-    add_subdirectory(src/examples/python)
-endif ()
-
 ## installing arrow files
 install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION include)
 install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.16.0.0 DESTINATION lib)

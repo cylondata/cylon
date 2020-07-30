@@ -95,7 +95,7 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
    * @param target the target to send the message
    * @return true if the buffer is accepted
    */
-  int insert(uint8_t *buffer, int length, int target, int *header, int headerLength);
+  int insert(void *buffer, int length, int target, int *header, int headerLength);
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true

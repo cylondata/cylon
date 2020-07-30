@@ -11,10 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "python/cylon_context_wrap.h"
 
 #include <map>
-#include "cylon_context_wrap.h"
-#include "../net/mpi/mpi_communicator.hpp"
+#include <utility>
+#include <vector>
+
+#include "net/mpi/mpi_communicator.hpp"
+
+namespace cylon {
+namespace python {
 
 cylon::python::cylon_context_wrap::cylon_context_wrap() {
   this->context = new CylonContext(false);
@@ -31,12 +37,11 @@ cylon::python::cylon_context_wrap::cylon_context_wrap(std::string config) {
     ctx->setDistributed(true);
     this->context = ctx;
   } else {
-	  throw "Unsupported communication type";
+    throw "Unsupported communication type";
   }
 }
 
-
-CylonContext * cylon::python::cylon_context_wrap::getInstance() {
+CylonContext *cylon::python::cylon_context_wrap::getInstance() {
   return context;
 }
 
@@ -44,40 +49,42 @@ void cylon::python::cylon_context_wrap::Barrier() {
   this->context->GetCommunicator()->Barrier();
 }
 
-net::Communicator * cylon::python::cylon_context_wrap::GetCommunicator() const {
+net::Communicator *cylon::python::cylon_context_wrap::GetCommunicator() const {
   return this->context->GetCommunicator();
 }
 
-void cylon::python::cylon_context_wrap::AddConfig(const std::string &key, const std::string &value) {
+void cylon::python::cylon_context_wrap::AddConfig(const std::string &key,
+                                                  const std::string &value) {
   this->config.insert(std::pair<std::string, std::string>(key, value));
 }
 
-std::string cylon::python::cylon_context_wrap::GetConfig(const std::string &key, const std::string &defn) {
+std::string cylon::python::cylon_context_wrap::GetConfig(const std::string &key,
+                                                         const std::string &defn) {
   auto find = this->config.find(key);
   if (find == this->config.end()) {
-	return defn;
+    return defn;
   }
   return find->second;
 }
 
 int cylon::python::cylon_context_wrap::GetRank() {
   if (this->distributed) {
-	return this->context->GetCommunicator()->GetRank();
+    return this->context->GetCommunicator()->GetRank();
   }
   return 0;
 }
 
 int cylon::python::cylon_context_wrap::GetWorldSize() {
   if (this->distributed) {
-	return this->context->GetCommunicator()->GetWorldSize();
+    return this->context->GetCommunicator()->GetWorldSize();
   }
   return 1;
 }
 
 void cylon::python::cylon_context_wrap::Finalize() {
   if (this->distributed) {
-	this->context->GetCommunicator()->Finalize();
-	delete this->context->GetCommunicator();
+    this->context->GetCommunicator()->Finalize();
+    delete this->context->GetCommunicator();
   }
 }
 
@@ -85,28 +92,13 @@ vector<int> cylon::python::cylon_context_wrap::GetNeighbours(bool include_self) 
   vector<int> neighbours{};
   neighbours.reserve(this->GetWorldSize());
   for (int i = 0; i < this->GetWorldSize(); i++) {
-	if (i == this->GetRank() && !include_self) {
-	  continue;
-	}
-	neighbours.push_back(i);
+    if (i == this->GetRank() && !include_self) {
+      continue;
+    }
+    neighbours.push_back(i);
   }
   return neighbours;
 }
 
-// void cylon::python::cylon_context_wrap::SetMemoryPool(cylon::MemoryPool *mem_pool) {
-
-// }
-
-// cylon::MemoryPool* cylon::python::cylon_context_wrap::GetMemoryPool(){
-
-// }
-
-// int32_t cylon::python::cylon_context_wrap::GetNextSequence(){
-
-// }
-
-  
-  
-
-
-
+}  // namespace python
+}  // namespace cylon

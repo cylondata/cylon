@@ -13,8 +13,8 @@
  */
 
 #include <glog/logging.h>
-#include <net/mpi/mpi_communicator.hpp>
 #include <python/cylon_context_wrap.h>
+#include <net/mpi/mpi_communicator.hpp>
 
 int main(int argc, char *argv[]) {
   std::string mpi_config = "mpi";

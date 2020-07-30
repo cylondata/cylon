@@ -44,7 +44,8 @@ void dist_join(bool run) {
   auto ctx_wrap2 = get_new_context();
   auto ctx2 = ctx_wrap2->getInstance();
 
-  std::cout << "Hello World , Rank [ " << ctx_wrap->GetRank() << "," << ctx_wrap1->GetRank() << "," << ctx_wrap2->GetRank() <<  " ], Size " << ctx_wrap->GetWorldSize() << std::endl;
+  std::cout << "Hello World , Rank [ " << ctx_wrap->GetRank() << "," << ctx_wrap1->GetRank()
+            << "," << ctx_wrap2->GetRank() <<  " ], Size " << ctx_wrap->GetWorldSize() << std::endl;
 
   std::string uuid_l = cylon::util::generate_uuid_v4();
   std::string uuid_r = cylon::util::generate_uuid_v4();

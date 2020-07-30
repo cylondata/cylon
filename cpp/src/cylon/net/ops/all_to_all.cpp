@@ -74,7 +74,7 @@ int AllToAll::insert(void *buffer, int length, int target) {
   return 1;
 }
 
-int AllToAll::insert(uint8_t *buffer, int length, int target, int *header, int headerLength) {
+int AllToAll::insert(void *buffer, int length, int target, int *header, int headerLength) {
   if (finishFlag) {
     // we cannot accept further
     return -1;
