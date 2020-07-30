@@ -11,13 +11,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include "arrow_utils.hpp"
+#include <glog/logging.h>
 #include <arrow/compare.h>
 #include <arrow/visitor_inline.h>
+
 #include <numeric>
 #include <chrono>
-#include <glog/logging.h>
+
+#include "arrow_utils.hpp"
 
 /**
  * This class is direct copy from arrow to measure the difference between stable sort and sort
@@ -31,7 +32,6 @@ class SortToIndicesKernel : public arrow::compute::UnaryKernel {
   std::shared_ptr<arrow::DataType> type_;
 
  public:
-
   /// \brief UnaryKernel interface
   ///
   /// delegates to subclasses via SortToIndices()
@@ -55,9 +55,7 @@ class SortToIndicesKernel : public arrow::compute::UnaryKernel {
   /// \param[out] out created kernel
   static arrow::Status Make(const std::shared_ptr<arrow::DataType> &value_type,
                             std::shared_ptr<SortToIndicesKernel> *out);
-
 };
-
 template<typename ArrayType>
 bool CompareValues(const ArrayType &array, uint64_t lhs, uint64_t rhs) {
   return array.Value(lhs) < array.Value(rhs);
@@ -252,13 +250,14 @@ class SortToIndicesKernelImpl : public SortToIndicesKernel {
  public:
   explicit SortToIndicesKernelImpl(Sorter sorter) : sorter_(sorter) {}
 
-  arrow::Status SortToIndices(arrow::compute::FunctionContext *ctx, const std::shared_ptr<arrow::Array> &values,
+  arrow::Status SortToIndices(arrow::compute::FunctionContext *ctx,
+                              const std::shared_ptr<arrow::Array> &values,
                               std::shared_ptr<arrow::Array> *offsets) {
     return SortToIndicesImpl(ctx, std::static_pointer_cast<ArrayType>(values), offsets);
   }
 
-  arrow::Status
-  Call(arrow::compute::FunctionContext *ctx, const arrow::compute::Datum &values, arrow::compute::Datum *offsets) {
+  arrow::Status Call(arrow::compute::FunctionContext *ctx,
+                     const arrow::compute::Datum &values, arrow::compute::Datum *offsets) {
     if (!values.is_array()) {
       return arrow::Status::Invalid("SortToIndicesKernel expects array values");
     }
@@ -274,7 +273,8 @@ class SortToIndicesKernelImpl : public SortToIndicesKernel {
  private:
   Sorter sorter_;
 
-  arrow::Status SortToIndicesImpl(arrow::compute::FunctionContext *ctx, const std::shared_ptr<ArrayType> &values,
+  arrow::Status SortToIndicesImpl(arrow::compute::FunctionContext *ctx,
+                                  const std::shared_ptr<ArrayType> &values,
                                   std::shared_ptr<arrow::Array> *offsets) {
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
@@ -315,25 +315,35 @@ arrow::Status SortToIndicesKernel::Make(const std::shared_ptr<arrow::DataType> &
       break;
     case arrow::Type::INT8:kernel = MakeCountKernel<arrow::Int8Type>(-128, 127);
       break;
-    case arrow::Type::UINT16:kernel = MakeCountOrCompareKernel<arrow::UInt16Type>(CompareValues<arrow::UInt16Array>);
+    case arrow::Type::UINT16:kernel = MakeCountOrCompareKernel<arrow::UInt16Type>(
+        CompareValues<arrow::UInt16Array>);
       break;
-    case arrow::Type::INT16:kernel = MakeCountOrCompareKernel<arrow::Int16Type>(CompareValues<arrow::Int16Array>);
+    case arrow::Type::INT16:kernel = MakeCountOrCompareKernel<arrow::Int16Type>(
+        CompareValues<arrow::Int16Array>);
       break;
-    case arrow::Type::UINT32:kernel = MakeCountOrCompareKernel<arrow::UInt32Type>(CompareValues<arrow::UInt32Array>);
+    case arrow::Type::UINT32:kernel = MakeCountOrCompareKernel<arrow::UInt32Type>(
+        CompareValues<arrow::UInt32Array>);
       break;
-    case arrow::Type::INT32:kernel = MakeCountOrCompareKernel<arrow::Int32Type>(CompareValues<arrow::Int32Array>);
+    case arrow::Type::INT32:kernel = MakeCountOrCompareKernel<arrow::Int32Type>(
+        CompareValues<arrow::Int32Array>);
       break;
-    case arrow::Type::UINT64:kernel = MakeCountOrCompareKernel<arrow::UInt64Type>(CompareValues<arrow::UInt64Array>);
+    case arrow::Type::UINT64:kernel = MakeCountOrCompareKernel<arrow::UInt64Type>(
+        CompareValues<arrow::UInt64Array>);
       break;
-    case arrow::Type::INT64:kernel = MakeCountOrCompareKernel<arrow::Int64Type>(CompareValues<arrow::Int64Array>);
+    case arrow::Type::INT64:kernel = MakeCountOrCompareKernel<arrow::Int64Type>(
+        CompareValues<arrow::Int64Array>);
       break;
-    case arrow::Type::FLOAT:kernel = MakeCompareKernel<arrow::FloatType>(CompareValues<arrow::FloatArray>);
+    case arrow::Type::FLOAT:kernel = MakeCompareKernel<arrow::FloatType>(
+        CompareValues<arrow::FloatArray>);
       break;
-    case arrow::Type::DOUBLE:kernel = MakeCompareKernel<arrow::DoubleType>(CompareValues<arrow::DoubleArray>);
+    case arrow::Type::DOUBLE:kernel = MakeCompareKernel<arrow::DoubleType>(
+        CompareValues<arrow::DoubleArray>);
       break;
-    case arrow::Type::BINARY:kernel = MakeCompareKernel<arrow::BinaryType>(CompareViews<arrow::BinaryArray>);
+    case arrow::Type::BINARY:kernel = MakeCompareKernel<arrow::BinaryType>(
+        CompareViews<arrow::BinaryArray>);
       break;
-    case arrow::Type::STRING:kernel = MakeCompareKernel<arrow::StringType>(CompareViews<arrow::StringArray>);
+    case arrow::Type::STRING:kernel = MakeCompareKernel<arrow::StringType>(
+        CompareViews<arrow::StringArray>);
       break;
     default:return arrow::Status::NotImplemented("Sorting of ", *value_type, " arrays");
   }
@@ -341,7 +351,8 @@ arrow::Status SortToIndicesKernel::Make(const std::shared_ptr<arrow::DataType> &
   return arrow::Status::OK();
 }
 
-arrow::Status SortToIndices(arrow::compute::FunctionContext *ctx, const arrow::compute::Datum &values,
+arrow::Status SortToIndices(arrow::compute::FunctionContext *ctx,
+                            const arrow::compute::Datum &values,
                             arrow::compute::Datum *offsets) {
   std::shared_ptr<SortToIndicesKernel> kernel;
   RETURN_NOT_OK(SortToIndicesKernel::Make(values.type(), &kernel));
@@ -356,5 +367,5 @@ arrow::Status SortToIndices(arrow::compute::FunctionContext *ctx, const arrow::A
   return arrow::Status::OK();
 }
 
-}
-}
+}  // namespace util
+}  // namespace cylon

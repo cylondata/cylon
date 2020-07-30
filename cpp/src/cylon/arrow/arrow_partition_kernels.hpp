@@ -37,7 +37,8 @@ class ArrowPartitionKernel {
    * @param out
    * @return
    */
-  virtual int Partition(const std::shared_ptr<arrow::Array> &values, const std::vector<int> &targets,
+  virtual int Partition(const std::shared_ptr<arrow::Array> &values,
+                        const std::vector<int> &targets,
                         std::vector<int64_t> *partitions) = 0;
 
   virtual uint32_t ToHash(const std::shared_ptr<arrow::Array> &values,
@@ -139,10 +140,10 @@ using StringHashPartitioner = BinaryHashPartitionKernel;
 using BinaryHashPartitioner = BinaryHashPartitionKernel;
 
 std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
-                                                         const std::shared_ptr<arrow::Array> &values);
+                                 const std::shared_ptr<arrow::Array> &values);
 
 std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
-                                                         const std::shared_ptr<arrow::DataType> &data_type);
+                                 const std::shared_ptr<arrow::DataType> &data_type);
 
 cylon::Status HashPartitionArray(arrow::MemoryPool *pool,
                                  const std::shared_ptr<arrow::Array> &values,
@@ -159,7 +160,8 @@ class RowHashingKernel {
  private:
   std::vector<std::shared_ptr<ArrowPartitionKernel>> hash_kernels;
  public:
-  RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &vector, arrow::MemoryPool *memory_pool);
+  RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &vector,
+                   arrow::MemoryPool *memory_pool);
   int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
 };
 }  // namespace cylon

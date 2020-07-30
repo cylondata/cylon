@@ -20,6 +20,6 @@ namespace net {
 enum CommType {
   MPI, TCP, UCX
 };
-}
-}
+}  // namespace net
+}  // namespace cylon
 #endif //CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_

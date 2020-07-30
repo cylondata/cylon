@@ -13,7 +13,7 @@
  */
 
 #include <mpi.h>
-#include "distributed.h"
+#include "python/net/distributed.h"
 
 void cylon::net::cdist_init() {
   MPI_Init(NULL, NULL);
@@ -34,4 +34,5 @@ int cylon::net::cget_size() {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   return size;
 }
+
 

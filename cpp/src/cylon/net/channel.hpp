@@ -87,6 +87,6 @@ class Channel {
 
   virtual ~Channel() = default;
 };
-}
+}  // namespace cylon
 
 #endif

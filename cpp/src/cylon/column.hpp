@@ -57,6 +57,6 @@ class Column {
   std::shared_ptr<DataType> type;
 };
 
-}
+}  // namespace cylon
 #endif //CYLON_SRC_IO_COLUMN_H_
 

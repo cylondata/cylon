@@ -21,8 +21,6 @@
 #include "../net/communicator.hpp"
 #include "../ctx/cylon_context.hpp"
 
-using namespace cylon;
-
 namespace cylon {
 namespace python {
 class cylon_context_wrap {

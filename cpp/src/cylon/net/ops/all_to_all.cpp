@@ -11,13 +11,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <glog/logging.h>
 
 #include <algorithm>
 #include <iostream>
 #include <iterator>
 #include <memory>
 
-#include <glog/logging.h>
 
 #include "all_to_all.hpp"
 

@@ -62,7 +62,7 @@ void PutTable(const std::string &id, const std::shared_ptr<arrow::Table> &table)
 }
 
 std::string PutTable(const std::shared_ptr<arrow::Table> &table) {
-  auto id = cylon::util::uuid::generate_uuid_v4();
+  auto id = cylon::util::generate_uuid_v4();
   std::pair<std::string, std::shared_ptr<arrow::Table>> pair(id, table);
   table_map.insert(pair);
   return id;

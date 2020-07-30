@@ -13,10 +13,12 @@
  */
 
 #include <glog/logging.h>
+#include <chrono>
+
 #include <net/mpi/mpi_communicator.hpp>
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
-#include <chrono>
+
 
 /**
  * This example reads a csv file and selects few records from it based on a function
@@ -31,7 +33,8 @@ int main(int argc, char *argv[]) {
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::shared_ptr<cylon::Table> table, select;
-  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(
+      false).BlockSize(1 << 30);
 
   auto status = cylon::Table::FromCSV(ctx, argv[1], table, read_options);
   auto read_end_time = std::chrono::steady_clock::now();
@@ -42,7 +45,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   LOG(INFO) << "Read table in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_time).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - start_time).count() << "[ms]";
   status = table->Select([](cylon::Row row) {
     return row.GetInt64(0) % 2 == 0;
   }, select);
@@ -52,14 +56,15 @@ int main(int argc, char *argv[]) {
     ctx->Finalize();
     return 1;
   }
-  
   LOG(INFO) << "Table had : " << table->Rows() << ", Select has : " << select->Rows();
   LOG(INFO) << "Select done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - select_end_time).count()
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - select_end_time).count()
             << "[ms]";
   ctx->Finalize();
-  LOG(INFO) << "Operation took : " 
-            << std::chrono::duration_cast<std::chrono::milliseconds>(select_end_time - start_time).count()
+  LOG(INFO) << "Operation took : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                select_end_time - start_time).count()
             << "[ms]";
   return 0;
 }

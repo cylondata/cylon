@@ -28,7 +28,7 @@ namespace cylon {
 Status Table::FromCSV(cylon::CylonContext *ctx, const std::string &path,
                       std::shared_ptr<Table> &tableOut,
                       const cylon::io::config::CSVReadOptions &options) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::generate_uuid_v4();
   cylon::Status status = cylon::ReadCSV(ctx, path, uuid, options);
   if (status.is_ok()) {
     tableOut = std::make_shared<Table>(uuid, ctx);
@@ -42,7 +42,7 @@ Status Table::FromArrowTable(const std::shared_ptr<arrow::Table> &table) {
     LOG(FATAL) << "Types not supported";
     return Status(cylon::Invalid, "This type not supported");
   }
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::generate_uuid_v4();
   PutTable(uuid, table);
   return Status(cylon::OK, "Loaded Successfully");
 }
@@ -54,7 +54,7 @@ Status Table::FromArrowTable(cylon::CylonContext *ctx,
     LOG(FATAL) << "Types not supported";
     return Status(cylon::Invalid, "This type not supported");
   }
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::generate_uuid_v4();
   *tableOut = std::make_shared<Table>(uuid, ctx);
   PutTable(uuid, table);
   return Status(cylon::OK, "Loaded Successfully");
@@ -91,7 +91,7 @@ Status Table::Merge(cylon::CylonContext *ctx,
   for (auto it = tables.begin(); it < tables.end(); it++) {
     table_ids.push_back((*it)->GetID());
   }
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::generate_uuid_v4();
   cylon::Status status = cylon::Merge(ctx, table_ids, uuid);
   if (status.is_ok()) {
     tableOut = std::make_shared<Table>(uuid, ctx);
@@ -100,7 +100,7 @@ Status Table::Merge(cylon::CylonContext *ctx,
 }
 
 Status Table::Sort(int sort_column, shared_ptr<Table> &out) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::generate_uuid_v4();
   Status status = cylon::SortTable(this->ctx, id_, uuid, sort_column);
   if (status.is_ok()) {
     out = std::make_shared<Table>(uuid, ctx);
@@ -127,7 +127,7 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
 Status Table::Join(const std::shared_ptr<Table> &right,
                    cylon::join::config::JoinConfig join_config,
                    std::shared_ptr<Table> *out) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::generate_uuid_v4();
   cylon::Status status = cylon::JoinTables(ctx,
                                            this->GetID(),
                                            right->GetID(),
@@ -148,7 +148,7 @@ Status Table::ToArrowTable(std::shared_ptr<arrow::Table> &out) {
 Status Table::DistributedJoin(const shared_ptr<Table> &right,
                               cylon::join::config::JoinConfig join_config,
                               std::shared_ptr<Table> *out) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::generate_uuid_v4();
   cylon::Status status = cylon::DistributedJoinTables(this->ctx, this->id_,
       right->id_, join_config, uuid);
   if (status.is_ok()) {
@@ -158,7 +158,7 @@ Status Table::DistributedJoin(const shared_ptr<Table> &right,
 }
 
 Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr<Table> &out) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::generate_uuid_v4();
   cylon::Status status = cylon::Select(ctx, this->GetID(), selector, uuid);
   if (status.is_ok()) {
     out = std::make_shared<Table>(uuid, this->ctx);
@@ -168,7 +168,7 @@ Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr
 
 Status Table::DoSetOperation(SetOperation operation, const shared_ptr<Table> &right,
                              shared_ptr<Table> &out) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::generate_uuid_v4();
   cylon::Status status = operation(this->ctx, this->id_, right->id_, uuid);
   if (status.is_ok()) {
     out = std::make_shared<Table>(uuid, this->ctx);
@@ -215,7 +215,7 @@ Status Table::FromCSV(cylon::CylonContext *ctx, const vector<std::string> &paths
   out_table_ids.reserve(tableOuts.size());
 
   for (size_t i = 0; i < tableOuts.size(); i++) {
-    out_table_ids.push_back(cylon::util::uuid::generate_uuid_v4());
+    out_table_ids.push_back(cylon::util::generate_uuid_v4());
   }
 
   auto status = cylon::ReadCSV(ctx, paths, out_table_ids, options);
@@ -229,7 +229,7 @@ Status Table::FromCSV(cylon::CylonContext *ctx, const vector<std::string> &paths
 }
 
 Status Table::Project(const std::vector<int64_t> &project_columns, std::shared_ptr<Table> &out) {
-  std::string uuid = cylon::util::uuid::generate_uuid_v4();
+  std::string uuid = cylon::util::generate_uuid_v4();
   auto status = cylon::Project(this->id_, project_columns, uuid);
 
   if (status.is_ok()) {

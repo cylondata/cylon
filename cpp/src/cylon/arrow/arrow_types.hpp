@@ -40,7 +40,7 @@ std::shared_ptr<arrow::DataType> convertToArrowType(std::shared_ptr<DataType> tT
  */
 bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table);
 
-}
-}
+}  // namespace tarrow
+}  // namespace cylon
 
 #endif //CYLON_ARROW_TYPES_H

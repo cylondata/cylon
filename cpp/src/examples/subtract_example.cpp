@@ -13,8 +13,9 @@
  */
 
 #include <glog/logging.h>
-#include <table.hpp>
 #include <chrono>
+
+#include <table.hpp>
 #include <net/mpi/mpi_communicator.hpp>
 
 int main(int argc, char *argv[]) {
@@ -39,7 +40,8 @@ int main(int argc, char *argv[]) {
   }
   auto read_end_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_time).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - start_time).count() << "[ms]";
   if (!status.is_ok()) {
     LOG(INFO) << "Table intersection failed";
     ctx->Finalize();
@@ -53,10 +55,12 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   auto end_time = std::chrono::steady_clock::now();
-  LOG(INFO) << "Table 1 had : " << first_table->Rows() << " and Table 2 had : " << second_table->Rows()
+  LOG(INFO) << "Table 1 had : " << first_table->Rows()
+            << " and Table 2 had : " << second_table->Rows()
             << ", subtract has : " << result->Rows();
   LOG(INFO) << "Subtract done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - read_end_time).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                end_time - read_end_time).count() << "[ms]";
   ctx->Finalize();
   return 0;
 }

@@ -40,6 +40,6 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table);
 
 arrow::Status SortToIndices(arrow::compute::FunctionContext *ctx, const arrow::Array &values,
                             std::shared_ptr<arrow::Array> *offsets);
-}
-}
+}  // namespace util
+}  // namespace cylon
 #endif //CYLON_SRC_UTIL_ARROW_UTILS_HPP_

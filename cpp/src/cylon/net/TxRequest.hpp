@@ -38,6 +38,6 @@ class TxRequest {
 
   void to_string(string dataType, int bufDepth);
 };
-}
+}  // namespace cylon
 
 #endif //CYLON_TXREQUEST_H

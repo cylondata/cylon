@@ -125,6 +125,6 @@ class DataType {
   Layout::layout l;
 };
 
-}
+}  // namespace cylon
 
 #endif //CYLON_SRC_IO_DATATYPES_H_
