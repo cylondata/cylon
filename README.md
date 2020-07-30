@@ -11,4 +11,4 @@ Internally Cylon uses [Apache Arrow](https://arrow.apache.org/) to represent the
 
 The documentation can be found at [https://cylondata.org](https://cylondata.org)
 
-Email - [cylondata@googlegrous.com](cylondata@googlegrous.com)
+Email - [mailto:cylondata@googlegroups.com](cylondata@googlegroups.com)
