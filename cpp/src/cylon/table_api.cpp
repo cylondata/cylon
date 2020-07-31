@@ -24,10 +24,8 @@
 #include <map>
 #include <future>
 #include <unordered_map>
-#include <algorithm>
 #include <unordered_set>
 #include <utility>
-#include <set>
 
 #include "table_api_extended.hpp"
 #include "io/arrow_io.hpp"
