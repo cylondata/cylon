@@ -24,7 +24,6 @@
 #include <map>
 #include <future>
 #include <unordered_map>
-#include <algorithm>
 #include <unordered_set>
 #include <utility>
 
@@ -248,9 +247,13 @@ Status Shuffle(CylonContext *ctx,
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
                               std::make_shared<AllToAllListener>(&received_tables, ctx->GetRank()),
                               table->schema(), cylon::ToArrowPool(ctx));
+
+  std::unordered_set<std::string> deletable_tables{};
+
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
       all_to_all.insert(GetTable(partitioned_table.second), partitioned_table.first);
+      deletable_tables.insert(partitioned_table.second);
     } else {
       received_tables.push_back(GetTable(partitioned_table.second));
     }
@@ -260,6 +263,11 @@ Status Shuffle(CylonContext *ctx,
   all_to_all.finish();
   while (!all_to_all.isComplete()) {}
   all_to_all.close();
+
+  // now clear locally partitioned tables
+  for(auto  &t_id:deletable_tables){
+    RemoveTable(t_id);
+  }
 
   // now we have the final set of tables
   LOG(INFO) << "Concatenating tables, Num of tables :  " << received_tables.size();
