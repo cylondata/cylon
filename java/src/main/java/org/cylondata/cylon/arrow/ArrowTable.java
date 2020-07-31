@@ -61,23 +61,36 @@ public class ArrowTable implements Clearable {
   public void addColumn(String columnName, FieldVector fieldVector, boolean manageMemory) {
     ArrowBuf dataBuffer = fieldVector.getDataBuffer();
     ArrowBuf validityBuffer = fieldVector.getValidityBuffer();
+    ArrowBuf offsetBuffer = null;
 
     boolean fixedWidth = fieldVector instanceof FixedWidthVector;
 
     if (!fixedWidth) {
-      throw new CylonRuntimeException("Non fixed width vectors are not yet supported.");
+      offsetBuffer = fieldVector.getOffsetBuffer();
+      ArrowTable.addColumn(this.uuid,
+          columnName,
+          fieldVector.getField().getType().getTypeID().getFlatbufID(),
+          fieldVector.getValueCount(),
+          fieldVector.getNullCount(),
+          validityBuffer.memoryAddress(),
+          validityBuffer.capacity(),
+          dataBuffer.memoryAddress(),
+          dataBuffer.capacity(),
+          offsetBuffer.memoryAddress(),
+          offsetBuffer.capacity()
+      );
+    } else {
+      ArrowTable.addColumn(this.uuid,
+          columnName,
+          fieldVector.getField().getType().getTypeID().getFlatbufID(),
+          fieldVector.getValueCount(),
+          fieldVector.getNullCount(),
+          validityBuffer.memoryAddress(),
+          validityBuffer.capacity(),
+          dataBuffer.memoryAddress(),
+          dataBuffer.capacity()
+      );
     }
-
-    ArrowTable.addColumn(this.uuid,
-        columnName,
-        fieldVector.getField().getType().getTypeID().getFlatbufID(),
-        fieldVector.getValueCount(),
-        fieldVector.getNullCount(),
-        validityBuffer.memoryAddress(),
-        validityBuffer.capacity(),
-        dataBuffer.memoryAddress(),
-        dataBuffer.capacity()
-    );
 
     if (!manageMemory) {
       dataBuffer.getReferenceManager().retain();
@@ -85,6 +98,11 @@ public class ArrowTable implements Clearable {
 
       this.bufferRefs.add(dataBuffer);
       this.bufferRefs.add(validityBuffer);
+
+      if (offsetBuffer != null) {
+        offsetBuffer.getReferenceManager().retain();
+        this.bufferRefs.add(offsetBuffer);
+      }
     }
   }
 
@@ -107,6 +125,11 @@ public class ArrowTable implements Clearable {
   private static native void addColumn(String tableId, String columnName, byte type, int valueCount, int nullCount,
                                        long validityAddress, long validitySize,
                                        long dataAddress, long dataSize);
+
+  private static native void addColumn(String tableId, String columnName, byte type, int valueCount, int nullCount,
+                                       long validityAddress, long validitySize,
+                                       long dataAddress, long dataSize,
+                                       long offsetAddress, long offsetSize);
 
   private static native void finishTable(String tableId);
 

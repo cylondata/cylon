@@ -193,7 +193,7 @@ JNIEXPORT void JNICALL Java_org_cylondata_cylon_arrow_ArrowTable_createTable
   checkStatusAndThrow(env, cylon::cyarrow::BeginTable(jstr_to_str(env, table_id)));
 }
 
-JNIEXPORT void JNICALL Java_org_cylondata_cylon_arrow_ArrowTable_addColumn
+JNIEXPORT void JNICALL Java_org_cylondata_cylon_arrow_ArrowTable_addColumn__Ljava_lang_String_2Ljava_lang_String_2BIIJJJJ
     (JNIEnv *env, jclass cls, jstring table_id, jstring col_name, jbyte type_id,
      jint value_count,
      jint null_count,
@@ -211,6 +211,28 @@ JNIEXPORT void JNICALL Java_org_cylondata_cylon_arrow_ArrowTable_addColumn
       validity_size,
       data_address,
       data_size
+  ));
+}
+
+JNIEXPORT void JNICALL Java_org_cylondata_cylon_arrow_ArrowTable_addColumn__Ljava_lang_String_2Ljava_lang_String_2BIIJJJJJJ
+    (JNIEnv *env, jclass cls, jstring table_id, jstring col_name, jbyte type_id,
+     jint value_count, jint null_count, jlong validity_address,
+     jlong validity_size, jlong data_address, jlong data_size,
+     jlong offset_address, jlong offset_size) {
+  auto c_column_name = jstr_to_str(env, col_name);
+  auto arrow_type = ToArrowType(env, static_cast<JavaType>(type_id), c_column_name);
+  checkStatusAndThrow(env, cylon::cyarrow::AddColumn(
+      jstr_to_str(env, table_id),
+      c_column_name,
+      arrow_type,
+      value_count,
+      null_count,
+      validity_address,
+      validity_size,
+      data_address,
+      data_size,
+      offset_address,
+      offset_size
   ));
 }
 
