@@ -23,12 +23,14 @@
 #include "../table_api_extended.hpp"
 
 std::unordered_map<std::string,
-                   std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>> columns;
-std::unordered_map<std::string, std::shared_ptr<std::vector<std::shared_ptr<arrow::Field>>>> fields;
+std::shared_ptr<std::vector < std::shared_ptr < arrow::Array>>>>
+columns;
+std::unordered_map<std::string, std::shared_ptr<std::vector < std::shared_ptr < arrow::Field>>>>
+fields;
 
 cylon::Status cylon::cyarrow::BeginTable(const std::string &table_id) {
-  auto columns_vector = std::make_shared<std::vector<std::shared_ptr<arrow::Array>>>();
-  auto fields_vector = std::make_shared<std::vector<std::shared_ptr<arrow::Field>>>();
+  auto columns_vector = std::make_shared < std::vector < std::shared_ptr < arrow::Array>>>();
+  auto fields_vector = std::make_shared < std::vector < std::shared_ptr < arrow::Field>>>();
   columns.insert(std::make_pair(table_id, columns_vector));
   fields.insert(std::make_pair(table_id, fields_vector));
   return cylon::Status::OK();
@@ -78,12 +80,9 @@ void AddColumnToTable(const std::string &table_id,
                       const std::string &col_name,
                       int32_t values_count,
                       int32_t null_count,
-                      const std::shared_ptr<arrow::Buffer> &validity_buf,
-                      const std::shared_ptr<arrow::Buffer> &data_buf,
+                      const std::vector<std::shared_ptr<arrow::Buffer>> &buffers,
                       const std::shared_ptr<arrow::DataType> &data_type) {
   LOG(INFO) << "Adding column of type " << data_type->name() << " to the table";
-  auto buffers = std::vector<std::shared_ptr<arrow::Buffer>>{validity_buf, data_buf};
-
   auto array_data = arrow::ArrayData::Make(
       data_type,
       values_count,
@@ -110,10 +109,11 @@ cylon::Status cylon::cyarrow::AddColumn(const std::string &table_id,
   auto arrow_type = GetArrowType(type);
   LOG(INFO) << "Preparing to add column of type " << arrow_type->name() << " to tale "
             << table_id << ", column " << col_name;
-  AddColumnToTable(table_id, col_name, value_count, null_count, validity_buff,
-                   data_buff, arrow_type);
+  AddColumnToTable(table_id, col_name, value_count, null_count,
+                   {validity_buff, data_buff}, arrow_type);
   return cylon::Status::OK();
 }
+
 cylon::Status cylon::cyarrow::FinishTable(const std::string &table_id) {
   // building schema
   arrow::SchemaBuilder schema_builder;
@@ -132,5 +132,29 @@ cylon::Status cylon::cyarrow::FinishTable(const std::string &table_id) {
   // building the table
   auto table = arrow::Table::Make(schema_result.ValueOrDie(), *columns.find(table_id)->second);
   cylon::PutTable(table_id, table);
+  return cylon::Status::OK();
+}
+
+cylon::Status cylon::cyarrow::AddColumn(const std::string &table_id,
+                                        const std::string &col_name,
+                                        int8_t type,
+                                        int32_t value_count,
+                                        int32_t null_count,
+                                        int64_t validity_address,
+                                        int64_t validity_size,
+                                        int64_t data_address,
+                                        int64_t data_size,
+                                        int64_t offset_address,
+                                        int64_t offset_size) {
+  LOG(INFO) <<"offset size "<< offset_size;
+  auto validity_buff = arrow::Buffer::Wrap(reinterpret_cast<uint8_t *>(validity_address), validity_size);
+  auto data_buff = arrow::Buffer::Wrap(reinterpret_cast<uint8_t *>(data_address), data_size);
+  auto offset_buff = arrow::Buffer::Wrap(reinterpret_cast<uint8_t *>(offset_address), offset_size);
+
+  auto arrow_type = GetArrowType(type);
+  LOG(INFO) << "Preparing to add column of type " << arrow_type->name() << " to tale "
+            << table_id << ", column " << col_name;
+  AddColumnToTable(table_id, col_name, value_count, null_count,
+                   {validity_buff, offset_buff, data_buff}, arrow_type);
   return cylon::Status::OK();
 }

@@ -4,10 +4,14 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.VarCharVector;
+import org.apache.arrow.vector.util.Text;
 import org.cylondata.cylon.CylonContext;
 import org.cylondata.cylon.NativeLoader;
 import org.cylondata.cylon.Table;
 import org.cylondata.cylon.arrow.ArrowTable;
+import org.cylondata.cylon.ops.Filter;
+import org.cylondata.cylon.ops.Row;
+import org.cylondata.cylon.ops.Selector;
 
 public class ArrowTableSimpleExample {
 
@@ -36,7 +40,7 @@ public class ArrowTableSimpleExample {
         intVector.setSafe(i, i);
       }
 
-      stringVector.setSafe(i, ("hello" + i).getBytes());
+      stringVector.setSafe(i, new Text("hello" + i));
     }
 
     intVector.setValueCount(200);
@@ -49,7 +53,7 @@ public class ArrowTableSimpleExample {
     ArrowTable arrowTable = new ArrowTable();
     arrowTable.addColumn("col1", intVector);
     arrowTable.addColumn("col2", float8Vector);
-    //arrowTable.addColumn("col3", stringVector);
+    arrowTable.addColumn("col3", stringVector);
     arrowTable.finish();
 
     CylonContext ctx = CylonContext.init();
