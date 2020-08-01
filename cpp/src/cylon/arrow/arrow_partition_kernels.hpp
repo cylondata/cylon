@@ -47,6 +47,41 @@ class ArrowPartitionKernel {
   arrow::MemoryPool *pool_;
 };
 
+class FixedSizeBinaryHashPartitionKernel : public ArrowPartitionKernel {
+ public:
+  explicit FixedSizeBinaryHashPartitionKernel(arrow::MemoryPool *pool) :
+           ArrowPartitionKernel(pool) {}
+
+  uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) override {
+    auto reader = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
+    if (values->IsNull(index)) {
+      return 0;
+    } else {
+      auto val = reader->GetValue(index);
+      uint32_t hash = 0;
+      uint32_t seed = 0;
+      // do the hash as we know the bit width
+      cylon::util::MurmurHash3_x86_32(val, reader->byte_width(), seed, &hash);
+      return hash;
+    }
+  }
+
+  int Partition(const std::shared_ptr<arrow::Array> &values, const std::vector<int> &targets,
+                std::vector<int64_t> *partitions) override {
+    auto reader = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
+    for (int64_t i = 0; i < reader->length(); i++) {
+      auto lValue = reader->GetValue(i);
+      uint32_t hash = 0;
+      uint32_t seed = 0;
+      // do the hash as we know the bit width
+      cylon::util::MurmurHash3_x86_32(lValue, reader->byte_width(), seed, &hash);
+      partitions->push_back(targets.at(hash % targets.size()));
+    }
+    // now build the
+    return 0;
+  }
+};
+
 class BinaryHashPartitionKernel : public ArrowPartitionKernel {
  public:
   explicit BinaryHashPartitionKernel(arrow::MemoryPool *pool) : ArrowPartitionKernel(pool) {}
@@ -56,11 +91,12 @@ class BinaryHashPartitionKernel : public ArrowPartitionKernel {
     if (values->IsNull(index)) {
       return 0;
     } else {
-      auto val = reader->GetString(index);
+      int length = 0;
+      auto val = reader->GetValue(index, &length);
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
-      cylon::util::MurmurHash3_x86_32(val.c_str(), val.length(), seed, &hash);
+      cylon::util::MurmurHash3_x86_32(val, length, seed, &hash);
       return hash;
     }
   }
@@ -69,11 +105,12 @@ class BinaryHashPartitionKernel : public ArrowPartitionKernel {
                 std::vector<int64_t> *partitions) override {
     auto reader = std::static_pointer_cast<arrow::BinaryArray>(values);
     for (int64_t i = 0; i < reader->length(); i++) {
-      auto lValue = reader->GetString(i);
+      int length = 0;
+      auto lValue = reader->GetValue(i, &length);
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
-      cylon::util::MurmurHash3_x86_32(lValue.c_str(), lValue.length(), seed, &hash);
+      cylon::util::MurmurHash3_x86_32(lValue, length, seed, &hash);
       partitions->push_back(targets.at(hash % targets.size()));
     }
     // now build the

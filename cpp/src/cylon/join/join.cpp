@@ -542,7 +542,15 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                                                    join_config.GetAlgorithm(),
                                                                    joined_table,
                                                                    memory_pool);
-    case arrow::Type::FIXED_SIZE_BINARY:break;
+    case arrow::Type::FIXED_SIZE_BINARY:
+      return do_join<arrow::FixedSizeBinaryArray, arrow::util::string_view>(left_tab,
+                                                                   right_tab,
+                                                                   join_config.GetLeftColumnIdx(),
+                                                                   join_config.GetRightColumnIdx(),
+                                                                   join_config.GetType(),
+                                                                   join_config.GetAlgorithm(),
+                                                                   joined_table,
+                                                                   memory_pool);
     case arrow::Type::DATE32:break;
     case arrow::Type::DATE64:break;
     case arrow::Type::TIMESTAMP:break;
@@ -562,6 +570,7 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
     case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
   }
+  LOG(INFO) << "DONT KNOW";
   return arrow::Status::OK();
 }
 }  // namespace join

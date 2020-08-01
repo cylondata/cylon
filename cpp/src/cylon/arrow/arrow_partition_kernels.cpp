@@ -44,6 +44,9 @@ std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool
       break;
     case arrow::Type::BINARY:kernel = std::make_shared<BinaryHashPartitionKernel>(pool);
       break;
+    case arrow::Type::FIXED_SIZE_BINARY:
+      kernel = std::make_shared<FixedSizeBinaryHashPartitionKernel>(pool);
+      break;
     default:LOG(FATAL) << "Un-known type";
       return NULLPTR;
   }

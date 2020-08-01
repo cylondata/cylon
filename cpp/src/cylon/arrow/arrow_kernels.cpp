@@ -159,6 +159,36 @@ class ArrowStringSortKernel : public ArrowArraySortKernel {
   }
 };
 
+class ArrowFixedSizeBinarySortKernel : public ArrowArraySortKernel {
+ public:
+  explicit ArrowFixedSizeBinarySortKernel(std::shared_ptr<arrow::DataType> type,
+                                 arrow::MemoryPool *pool) :
+      ArrowArraySortKernel(std::move(type), pool) {}
+
+  int Sort(std::shared_ptr<arrow::Array> values,
+           std::shared_ptr<arrow::Array> *offsets) override {
+    auto array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
+    std::shared_ptr<arrow::Buffer> indices_buf;
+    int64_t buf_size = values->length() * sizeof(uint64_t);
+    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(),
+                                          buf_size + 1, &indices_buf);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
+      return -1;
+    }
+    auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
+    for (int64_t i = 0; i < values->length(); i++) {
+      indices_begin[i] = i;
+    }
+    int64_t *indices_end = indices_begin + values->length();
+    std::sort(indices_begin, indices_end, [array](uint64_t left, uint64_t right) {
+      return array->GetView(left).compare(array->GetView(right)) < 0;
+    });
+    *offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
+    return 0;
+  }
+};
+
 class ArrowBinarySortKernel : public ArrowArraySortKernel {
  public:
   explicit ArrowBinarySortKernel(std::shared_ptr<arrow::DataType> type,
@@ -218,7 +248,7 @@ int CreateSorter(std::shared_ptr<arrow::DataType> type,
       break;
     case arrow::Type::BINARY:kernel = new ArrowBinarySortKernel(type, pool);
       break;
-    case arrow::Type::FIXED_SIZE_BINARY:kernel = new ArrowBinarySortKernel(type, pool);
+    case arrow::Type::FIXED_SIZE_BINARY:kernel = new ArrowFixedSizeBinarySortKernel(type, pool);
       break;
     default:LOG(FATAL) << "Un-known type";
       return -1;
