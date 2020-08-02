@@ -570,8 +570,7 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
     case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
   }
-  LOG(INFO) << "DONT KNOW";
-  return arrow::Status::OK();
+  return arrow::Status::Invalid("Un-supported type");
 }
 }  // namespace join
 }  // namespace cylon
