@@ -55,6 +55,21 @@ class BinaryArrowComparator : public ArrowComparator {
   }
 };
 
+class FixedSizeBinaryArrowComparator : public ArrowComparator {
+  int compare(std::shared_ptr<arrow::Array> array1,
+              int64_t index1,
+              std::shared_ptr<arrow::Array> array2,
+              int64_t index2) override {
+    auto reader1 = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(array1);
+    auto reader2 = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(array2);
+
+    auto value1 = reader1->GetString(index1);
+    auto value2 = reader2->GetString(index2);
+
+    return value1.compare(value2);
+  }
+};
+
 std::shared_ptr<ArrowComparator> GetComparator(const std::shared_ptr<arrow::DataType> &type) {
   switch (type->id()) {
     case arrow::Type::NA:break;
@@ -73,7 +88,7 @@ std::shared_ptr<ArrowComparator> GetComparator(const std::shared_ptr<arrow::Data
     case arrow::Type::DOUBLE:return std::make_shared<NumericArrowComparator<arrow::DoubleType>>();
     case arrow::Type::STRING:return std::make_shared<BinaryArrowComparator>();
     case arrow::Type::BINARY:return std::make_shared<BinaryArrowComparator>();
-    case arrow::Type::FIXED_SIZE_BINARY:break;
+    case arrow::Type::FIXED_SIZE_BINARY:return std::make_shared<FixedSizeBinaryArrowComparator>();
     case arrow::Type::DATE32:break;
     case arrow::Type::DATE64:break;
     case arrow::Type::TIMESTAMP:break;
