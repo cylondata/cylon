@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "arrow_all_to_all.hpp"
-
+#include "../ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
 ArrowAllToAll::ArrowAllToAll(cylon::CylonContext *ctx,
@@ -27,15 +27,14 @@ ArrowAllToAll::ArrowAllToAll(cylon::CylonContext *ctx,
                              const std::vector<int> &targets,
                              int edgeId,
                              std::shared_ptr<ArrowCallback> callback,
-                             std::shared_ptr<arrow::Schema> schema,
-                             arrow::MemoryPool *pool) {
+                             std::shared_ptr<arrow::Schema> schema) {
   targets_ = targets;
   srcs_ = source;
   recv_callback_ = callback;
   schema_ = schema;
   receivedBuffers_ = 0;
   workerId_ = ctx->GetRank();
-  pool_ = pool;
+  pool_ = cylon::ToArrowPool(ctx);
   completed_ = false;
   finishCalled_ = false;
 

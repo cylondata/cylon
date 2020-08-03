@@ -246,7 +246,7 @@ Status Shuffle(CylonContext *ctx,
   // doing all to all communication to exchange tables
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
                               std::make_shared<AllToAllListener>(&received_tables, ctx->GetRank()),
-                              table->schema(), cylon::ToArrowPool(ctx));
+                              table->schema());
 
   std::unordered_set<std::string> deletable_tables{};
 

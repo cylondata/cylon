@@ -99,8 +99,7 @@ class ArrowAllToAll : public ReceiveCallback {
                 const std::vector<int> &targets,
                 int edgeId,
                 std::shared_ptr<ArrowCallback> callback,
-                std::shared_ptr<arrow::Schema> schema,
-                arrow::MemoryPool *pool);
+                std::shared_ptr<arrow::Schema> schema);
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true
