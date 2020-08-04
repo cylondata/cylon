@@ -1,0 +1,52 @@
+#include "./arrow_task_all_to_all.h"
+
+cylon::LogicalTaskPlan::LogicalTaskPlan(const vector<int> &task_source,
+                                        const vector<int> &task_targets,
+                                        const vector<int> &worker_sources,
+                                        const vector<int> &worker_targets,
+                                        const unordered_map<int,
+                                                            int> &task_to_worker,
+                                        const vector<int> &task_source_1)
+    : task_source(task_source), task_targets(task_targets),
+      worker_sources(worker_sources), worker_targets(worker_targets), task_to_worker(task_to_worker) {
+
+}
+
+const vector<int> &cylon::LogicalTaskPlan::GetTaskSource() const {
+  return task_source;
+}
+const vector<int> &cylon::LogicalTaskPlan::GetTaskTargets() const {
+  return task_targets;
+}
+const vector<int> &cylon::LogicalTaskPlan::GetWorkerSources() const {
+  return worker_sources;
+}
+const vector<int> &cylon::LogicalTaskPlan::GetWorkerTargets() const {
+  return worker_targets;
+}
+const unordered_map<int, int> &cylon::LogicalTaskPlan::GetTaskToWorker() const {
+  return task_to_worker;
+}
+
+bool cylon::ArrowTaskCallBack::onReceive(int worker_source, std::shared_ptr<arrow::Table> table, int target_task) {
+  return this->onReceive(table, target_task);
+}
+cylon::ArrowTaskAllToAll::ArrowTaskAllToAll(cylon::CylonContext *ctx,
+                                            const cylon::LogicalTaskPlan &plan,
+                                            int edgeId,
+                                            const shared_ptr<ArrowTaskCallBack> &callback,
+                                            const shared_ptr<arrow::Schema> &schema) : ArrowAllToAll(ctx,
+                                                                                                     plan.GetWorkerSources(),
+                                                                                                     plan.GetWorkerTargets(),
+                                                                                                     edgeId,
+                                                                                                     callback,
+                                                                                                     schema),
+                                                                                       plan(plan) {
+
+}
+int cylon::ArrowTaskAllToAll::InsertTable(const shared_ptr<arrow::Table> &arrow, int32_t task_target) {
+  this->mutex.lock();
+  int inserted = this->insert(arrow, this->plan.GetTaskToWorker().find(task_target)->second, task_target);
+  this->mutex.unlock();
+  return inserted;
+}

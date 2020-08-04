@@ -44,20 +44,24 @@ ArrowAllToAll::ArrowAllToAll(cylon::CylonContext *ctx,
   // add the trackers for sending
   for (auto t : targets) {
     inputs_.insert(std::pair<int, std::shared_ptr<PendingSendTable>>(t,
-        std::make_shared<PendingSendTable>()));
+                                                                     std::make_shared<PendingSendTable>()));
   }
 
   for (auto t : source) {
     receives_.insert(std::pair<int, std::shared_ptr<PendingReceiveTable>>(t,
-        std::make_shared<PendingReceiveTable>()));
+                                                                          std::make_shared<PendingReceiveTable>()));
   }
 }
 
-int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int target) {
+int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int32_t target) {
+  return insert(arrow, target, -1);
+}
+
+int ArrowAllToAll::insert(const shared_ptr<arrow::Table> &arrow, int32_t target, int32_t reference) {
   // todo: check weather we have enough memory
   // lets save the table into pending and move on
   std::shared_ptr<PendingSendTable> st = inputs_[target];
-  st->pending.push(arrow);
+  st->pending.push(std::make_pair(arrow, reference));
   return 1;
 }
 
@@ -67,7 +71,7 @@ bool ArrowAllToAll::isComplete() {
   }
   bool isAllEmpty = true;
   // we need to send the buffers
-  for (auto t : inputs_) {
+  for (const auto &t : inputs_) {
     if (t.second->status == ARROW_HEADER_INIT) {
       if (!t.second->pending.empty()) {
         t.second->currentTable = t.second->pending.front();
@@ -77,10 +81,10 @@ bool ArrowAllToAll::isComplete() {
     }
 
     if (t.second->status == ARROW_HEADER_COLUMN_CONTINUE) {
-      int noOfColumns = t.second->currentTable->columns().size();
+      int noOfColumns = t.second->currentTable.first->columns().size();
       bool canContinue = true;
       while (t.second->columnIndex < noOfColumns && canContinue) {
-        std::shared_ptr<arrow::ChunkedArray> cArr = t.second->currentTable->column(
+        std::shared_ptr<arrow::ChunkedArray> cArr = t.second->currentTable.first->column(
             t.second->columnIndex);
 
         uint64_t size = cArr->chunks().size();
@@ -90,15 +94,16 @@ bool ArrowAllToAll::isComplete() {
           std::shared_ptr<arrow::ArrayData> data = arr->data();
           while (static_cast<size_t>(t.second->bufferIndex) < data->buffers.size()) {
             std::shared_ptr<arrow::Buffer> buf = data->buffers[t.second->bufferIndex];
-            int hdr[5];
+            int hdr[6];
             hdr[0] = t.second->columnIndex;
             hdr[1] = t.second->bufferIndex;
             hdr[2] = data->buffers.size();
             hdr[3] = cArr->chunks().size();
             hdr[4] = data->length;
+            hdr[5] = t.second->currentTable.second;
             // lets send this buffer, we need to send the length at this point
             bool accept = all_->insert(buf->mutable_data(),
-                static_cast<int>(buf->size()), t.first, hdr, 5);
+                                       static_cast<int>(buf->size()), t.first, hdr, 5);
             if (!accept) {
               canContinue = false;
               break;
@@ -211,6 +216,7 @@ bool ArrowAllToAll::onReceiveHeader(int source, int fin, int *buffer, int length
     table->noBuffers = buffer[2];
     table->noArray = buffer[3];
     table->length = buffer[4];
+    table->reference = buffer[5];
   } else {
     finishedSources_.push_back(source);
   }
