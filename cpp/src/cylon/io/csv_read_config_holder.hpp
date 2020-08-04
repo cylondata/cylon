@@ -34,7 +34,8 @@ class CSVConfigHolder : public arrow::csv::ReadOptions,
     return (CSVConfigHolder *) (holder);
   }
 };
-}
-}
-}
+}  // namespace config
+}  // namespace io
+}  // namespace cylon
+
 #endif //CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HOLDER_HPP_

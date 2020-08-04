@@ -36,5 +36,5 @@ enum Code {
   // Continue generic codes.
   AlreadyExists = 45
 };
-}
+}  // namespace cylon
 #endif //CYLON_SRC_IO_STATUS_H_

@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "callback.h"
+#include "python/net/comm/callback.h"
 
 bool cylon::net::comms::Callback::onReceive(int source, void *buffer, int length) {
   std::cout << "Received value: " << source << " length " << length << std::endl;
@@ -20,7 +20,8 @@ bool cylon::net::comms::Callback::onReceive(int source, void *buffer, int length
   return false;
 }
 
-bool cylon::net::comms::Callback::onReceiveHeader(int source, int finished, int *buffer, int length) {
+bool cylon::net::comms::Callback::onReceiveHeader(int source, int finished,
+    int *buffer, int length) {
   std::cout << "Received HEADER: " << source << " length " << length << std::endl;
   return false;
 }

@@ -15,6 +15,10 @@
 #include <arrow/compute/api.h>
 #include <arrow/api.h>
 #include <glog/logging.h>
+
+#include <vector>
+#include <memory>
+
 #include "arrow_utils.hpp"
 
 namespace cylon {
@@ -33,7 +37,8 @@ arrow::Status sort_numeric_column_type(const std::shared_ptr<arrow::Array> &data
     int64_t current_index = sorted_indices->Value(index);
     arrow::Status status = array_builder.Append(casted_data_array->Value(current_index));
     if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to append new elements to the builder while sorting. " << status.ToString();
+      LOG(FATAL) << "Failed to append new elements to the builder while sorting. "
+                 << status.ToString();
       return status;
     }
   }
@@ -189,5 +194,5 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table) {
   return arrow::Status::OK();
 }
 
-} // namespace util
-} // namespace cylon
+}  // namespace util
+}  // namespace cylon

@@ -13,6 +13,10 @@
  */
 
 #include "cylon_context.hpp"
+
+#include <utility>
+#include <vector>
+
 #include "arrow/memory_pool.h"
 #include "../net/mpi/mpi_communicator.hpp"
 
@@ -74,7 +78,6 @@ int CylonContext::GetWorldSize() {
 void CylonContext::Finalize() {
   if (this->distributed) {
     this->communicator->Finalize();
-    //delete this->communicator;
   }
 }
 vector<int> CylonContext::GetNeighbours(bool include_self) {
@@ -99,4 +102,4 @@ void CylonContext::SetMemoryPool(cylon::MemoryPool *mem_pool) {
 int32_t CylonContext::GetNextSequence() {
   return this->sequence_no++;
 }
-}
+}  // namespace cylon

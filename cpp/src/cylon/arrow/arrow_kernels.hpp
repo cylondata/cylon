@@ -118,7 +118,7 @@ using HalfFloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::HalfFloatType
 using FloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::FloatType>;
 using DoubleArraySplitter = ArrowArrayNumericSplitKernel<arrow::DoubleType>;
 
-cylon::Status CreateSplitter(std::shared_ptr<arrow::DataType> &type,
+cylon::Status CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
                              arrow::MemoryPool *pool,
                              std::shared_ptr<ArrowArraySplitKernel> *out);
 

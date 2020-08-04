@@ -44,10 +44,11 @@ void dist_join(bool run) {
   auto ctx_wrap2 = get_new_context();
   auto ctx2 = ctx_wrap2->getInstance();
 
-  std::cout << "Hello World , Rank [ " << ctx_wrap->GetRank() << "," << ctx_wrap1->GetRank() << "," << ctx_wrap2->GetRank() <<  " ], Size " << ctx_wrap->GetWorldSize() << std::endl;
+  std::cout << "Hello World , Rank [ " << ctx_wrap->GetRank() << "," << ctx_wrap1->GetRank()
+            << "," << ctx_wrap2->GetRank() <<  " ], Size " << ctx_wrap->GetWorldSize() << std::endl;
 
-  std::string uuid_l = cylon::util::uuid::generate_uuid_v4();
-  std::string uuid_r = cylon::util::uuid::generate_uuid_v4();
+  std::string uuid_l = cylon::util::generate_uuid_v4();
+  std::string uuid_r = cylon::util::generate_uuid_v4();
   auto status1 = cylon::python::table::CxTable::from_csv("/tmp/csv.csv", ',', uuid_l);
   auto status2 = cylon::python::table::CxTable::from_csv( "/tmp/csv.csv", ',', uuid_r);
 

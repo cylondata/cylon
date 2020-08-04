@@ -7,6 +7,8 @@ BUILD_MODE=Debug
 BUILD_MODE_DEBUG="OFF"
 BUILD_MODE_RELEASE="OFF"
 PYTHON_RELEASE="OFF"
+RUN_TESTS="OFF"
+STYLE_CHECK="OFF"
 INSTALL_PATH=
 BUILD_PATH=$(pwd)/build
 
@@ -54,6 +56,14 @@ case $key in
     BUILD_MODE_RELEASE="ON"
     shift # past argument
     ;;
+    --test)
+    RUN_TESTS="ON"
+    shift # past argument
+    ;;
+    --style-check)
+    STYLE_CHECK="ON"
+    shift # past argument
+    ;;
     --py-release)
     PYTHON_RELEASE="ON"
     CPP_BUILD="OFF"
@@ -74,10 +84,14 @@ echo "FLAG PYTHON BUILD  = ${PYTHON_BUILD}"
 echo "FLAG BUILD ALL     = ${BUILD_ALL}"
 echo "FLAG BUILD DEBUG   = ${BUILD_MODE_DEBUG}"
 echo "FLAG BUILD RELEASE = ${BUILD_MODE_RELEASE}"
+echo "FLAG RUN TEST      = ${RUN_TESTS}"
+echo "FLAG STYLE CHECK   = ${STYLE_CHECK}"
 
 if [[ -n $1 ]]; then
     echo "Last line of file specified as non-opt/last argument:"
 fi
+
+CPPLINT_COMMAND=" \"-DCMAKE_CXX_CPPLINT=cpplint;--linelength=100;--headers=h,hpp;--filter=-legal/copyright,-build/c++11,-runtime/references\" "
 
 ################################## Util Functions ##################################################
 quit() {
@@ -113,10 +127,15 @@ build_cpp(){
     source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
     read_python_requirements
   fi
+  CPPLINT_CMD=" "
+  if [ "${STYLE_CHECK}" = "ON" ]; then
+    CPPLINT_CMD=${CPPLINT_COMMAND}
+  fi
   mkdir ${BUILD_PATH}
   pushd ${BUILD_PATH} || exit 1
   export ARROW_HOME=${BUILD_PATH}/arrow/install
-  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} -DCMAKE_BUILD_TYPE=${BUILD_MODE} $INSTALL_CMD ${SOURCE_DIR} || exit 1
+  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
+      -DCYLON_WITH_TEST=${RUN_TESTS} $CPPLINT_CMD $INSTALL_CMD ${SOURCE_DIR} || exit 1
   make -j 4 || exit 1
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
   printf "Cylon CPP Built Successufully!"
@@ -238,6 +257,12 @@ if [ "${PYTHON_RELEASE}" = "ON" ]; then
 	check_pyarrow_installation
 	release_python
 fi
+
+if [ "${RUN_TESTS}" = "ON" ]; then
+	echo "Running tests"
+	CTEST_OUTPUT_ON_FAILURE=1 make -C "$BUILD_PATH" test
+fi
+
 
 
 

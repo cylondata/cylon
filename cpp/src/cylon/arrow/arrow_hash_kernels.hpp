@@ -80,22 +80,20 @@ class ArrowArrayIdxHashJoinKernel {
       }
       case cylon::join::config::JoinType::FULL_OUTER: {
         // build hashmap using col idx with smaller len
-
         // a key set to track matched keys from the other table
         // todo: use an index vector rather than a key set!
-//        std::unordered_set<CTYPE> key_set;
-//        std::unique_ptr<std::unordered_set<typename MMAP_TYPE::iterator>> key_set;
-
         if (left_idx_col->length() < right_idx_col->length()) {
           MMAP_TYPE out_umm_ptr = MMAP_TYPE(left_idx_col->length());
           std::unordered_set<CTYPE> key_set = std::unordered_set<CTYPE>(left_idx_col->length());
           BuildPhase(left_idx_col, out_umm_ptr, key_set);
-          ProbePhaseOuter(out_umm_ptr, right_idx_col, key_set, left_table_indices, right_table_indices);
+          ProbePhaseOuter(out_umm_ptr, right_idx_col, key_set,
+              left_table_indices, right_table_indices);
         } else {
           MMAP_TYPE out_umm_ptr = MMAP_TYPE(right_idx_col->length());
           std::unordered_set<CTYPE> key_set = std::unordered_set<CTYPE>(right_idx_col->length());
           BuildPhase(right_idx_col, out_umm_ptr, key_set);
-          ProbePhaseOuter(out_umm_ptr, left_idx_col, key_set, right_table_indices, left_table_indices);
+          ProbePhaseOuter(out_umm_ptr, left_idx_col, key_set,
+              right_table_indices, left_table_indices);
         }
         break;
       }
@@ -113,9 +111,6 @@ class ArrowArrayIdxHashJoinKernel {
                   MMAP_TYPE &smaller_idx_map) {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(smaller_idx_col);
-
-//    smaller_idx_map = std::make_unique<MMAP_TYPE>(smaller_idx_col->length());
-
     for (int64_t i = 0; i < reader0->length(); i++) {
       auto lValue = reader0->GetView(i);
       auto val = (CTYPE) lValue;
@@ -133,15 +128,11 @@ class ArrowArrayIdxHashJoinKernel {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(smaller_idx_col);
 
-//    smaller_idx_map = std::make_unique<MMAP_TYPE>(smaller_idx_col->length());
-//    smaller_key_set = std::make_unique<std::unordered_set<CTYPE>>(smaller_idx_col->length());
-
     for (int64_t i = 0; i < reader0->length(); i++) {
       auto lValue = reader0->GetView(i);
       auto val = (CTYPE) lValue;
       smaller_idx_map.insert(std::make_pair(val, i));
       smaller_key_set.emplace(val);
-//      smaller_key_set->emplace(it); // save all iter positions
     }
     auto t2 = std::chrono::high_resolution_clock::now();
     LOG(INFO) << "build_phase " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1)
@@ -193,7 +184,8 @@ class ArrowArrayIdxHashJoinKernel {
         .count();
   }
 
-  // probes hashmap and removes matched keys from the keyset. Then traverses the remaining keys in the keyset and
+  // probes hashmap and removes matched keys from the keyset. Then traverses the remaining
+  // keys in the keyset and
   // fill with -1
   void ProbePhaseOuter(const MMAP_TYPE &smaller_idx_map,
                        const std::shared_ptr<arrow::Array> &larger_idx_col,
@@ -226,11 +218,10 @@ class ArrowArrayIdxHashJoinKernel {
         larger_table_indices->push_back(-1);
       }
     }
-
     auto t2 = std::chrono::high_resolution_clock::now();
     LOG(INFO) << "probe_phase " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1)
         .count();
   }
 };
-}
+}  // namespace cylon
 #endif //CYLON_CPP_SRC_CYLON_ARROW_ARROW_HASH_KERNELS_HPP_

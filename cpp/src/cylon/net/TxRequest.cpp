@@ -15,6 +15,8 @@
 #include "TxRequest.hpp"
 #include <memory>
 #include <cstring>
+#include <string>
+
 #include "iostream"
 #include "../util/builtins.hpp"
 
@@ -48,7 +50,7 @@ void cylon::TxRequest::to_string(string dataType, int bufDepth) {
   cylon::util::printArray(buffer, length, dataType, bufDepth);
   std::cout << "Header: " << std::endl;
   for (int i = 0; i < headerLength; ++i) {
-	std::cout << header[i] << " ";
+    std::cout << header[i] << " ";
   }
   std::cout << std::endl;
 }

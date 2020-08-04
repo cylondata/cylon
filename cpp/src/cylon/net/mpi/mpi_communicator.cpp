@@ -12,8 +12,9 @@
  * limitations under the License.
  */
 
-#include "../communicator.hpp"
-#include "mpi.h"
+#include <mpi.h>
+
+#include "net/communicator.hpp"
 #include "mpi_communicator.hpp"
 #include "mpi_channel.hpp"
 
@@ -24,7 +25,7 @@ void MPIConfig::DummyConfig(int dummy) {
   this->AddConfig("Dummy", &dummy);
 }
 int MPIConfig::GetDummyConfig() {
-  return *(int *) this->GetConfig("Dummy");
+  return *reinterpret_cast<int *>(this->GetConfig("Dummy"));
 }
 
 CommType MPIConfig::Type() {
@@ -60,5 +61,5 @@ void MPICommunicator::Finalize() {
 void MPICommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);
 }
-}
-}
+}  // namespace net
+}  // namespace cylon

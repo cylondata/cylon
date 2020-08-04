@@ -13,10 +13,11 @@
  */
 
 #include <glog/logging.h>
+#include <chrono>
+
 #include <net/mpi/mpi_communicator.hpp>
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
-#include <chrono>
 
 /**
  * This example apply the project operation to a csv file
@@ -35,15 +36,16 @@ int main(int argc, char *argv[]) {
 
   auto status = cylon::Table::FromCSV(ctx, argv[1], table, read_options);
   auto read_end_time = std::chrono::steady_clock::now();
-  LOG(INFO) << "Read table in " 
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_time).count() 
+  LOG(INFO) << "Read table in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - start_time).count()
             << "[ms]";
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading has failed  : " << status.get_msg();
     ctx->Finalize();
     return 1;
   }
-  
+
   status = table->Project({0}, project);
   if (!status.is_ok()) {
     LOG(INFO) << "Project failed  : " << status.get_msg();
@@ -53,8 +55,9 @@ int main(int argc, char *argv[]) {
   auto project_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Table had : " << table->Columns() << "," << table->Rows() << ", Project has : "
             << project->Columns() << "," << project->Rows();
-  LOG(INFO) << "Project done in " 
-            << std::chrono::duration_cast<std::chrono::milliseconds>(project_time - read_end_time).count() 
+  LOG(INFO) << "Project done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                project_time - read_end_time).count()
             << "[ms]";
   ctx->Finalize();
   return 0;

@@ -20,14 +20,9 @@
 namespace cylon {
 namespace io {
 namespace config {
+
 class CSVWriteOptions {
-
- private:
-  char delimiter = ',';
-  std::vector<std::string> column_names{};
-  bool override_column_names = false;
-
- public:
+public:
   CSVWriteOptions();
   /**
    * Change the default delimiter(",")
@@ -40,8 +35,14 @@ class CSVWriteOptions {
   char GetDelimiter() const;
   std::vector<std::string> GetColumnNames() const;
   bool IsOverrideColumnNames() const;
+private:
+  char delimiter = ',';
+  std::vector<std::string> column_names{};
+  bool override_column_names = false;
 };
-}
-}
-}
+
+}  // namespace config
+}  // namespace io
+}  // namespace cylon
+
 #endif //CYLON_SRC_CYLON_IO_CSV_WRITE_CONFIG_HPP_

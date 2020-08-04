@@ -15,7 +15,7 @@
 #ifndef CYLON_SRC_CYLON_PYTHON_NET_COMM_CALLBACK_H_
 #define CYLON_SRC_CYLON_PYTHON_NET_COMM_CALLBACK_H_
 
-#include "../../../net/ops/all_to_all.hpp"
+#include "net/ops/all_to_all.hpp"
 
 namespace cylon {
 namespace net {
@@ -28,8 +28,8 @@ class Callback : public cylon::ReceiveCallback {
 
   bool onSendComplete(int target, void *buffer, int length);
 };
-}
-}
-}
+}  // namespace comm
+}  // namespace net
+}  // namespace cylon
 
 #endif //CYLON_SRC_CYLON_PYTHON_NET_COMM_CALLBACK_H_

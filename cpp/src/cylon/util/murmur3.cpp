@@ -32,8 +32,8 @@ inline uint64_t rotl64(uint64_t x, int8_t r) {
   return (x << r) | (x >> (64 - r));
 }
 
-#define ROTL32(x, y)  rotl32(x,y)
-#define ROTL64(x, y)  rotl64(x,y)
+#define ROTL32(x, y)  rotl32(x, y)
+#define ROTL64(x, y)  rotl64(x, y)
 #define BIG_CONSTANT(x) (x##LLU)
 
 //-----------------------------------------------------------------------------
@@ -107,13 +107,13 @@ void MurmurHash3_x86_32(const void *key, int len,
       k1 = ROTL32(k1, 15);
       k1 *= c2;
       h1 ^= k1;
-  };
+  }
 
   //----------
   // finalization
   h1 ^= len;
   h1 = fmix32(h1);
-  *(uint32_t *) out = h1;
+  *reinterpret_cast<uint32_t *>(out) = h1;
 }
 
 //-----------------------------------------------------------------------------
@@ -215,7 +215,7 @@ void MurmurHash3_x86_128(const void *key, const int len, uint32_t seed, void *ou
       k1 = ROTL32(k1, 15);
       k1 *= c2;
       h1 ^= k1;
-  };
+  }
   h1 ^= len;
   h2 ^= len;
   h3 ^= len;
@@ -240,10 +240,10 @@ void MurmurHash3_x86_128(const void *key, const int len, uint32_t seed, void *ou
   h3 += h1;
   h4 += h1;
 
-  ((uint32_t *) out)[0] = h1;
-  ((uint32_t *) out)[1] = h2;
-  ((uint32_t *) out)[2] = h3;
-  ((uint32_t *) out)[3] = h4;
+  (reinterpret_cast<uint32_t *>(out))[0] = h1;
+  (reinterpret_cast<uint32_t *>(out))[1] = h2;
+  (reinterpret_cast<uint32_t *>(out))[2] = h3;
+  (reinterpret_cast<uint32_t *>(out))[3] = h4;
 }
 
 void MurmurHash3_x64_128(const void *key, const int len,
@@ -307,7 +307,7 @@ void MurmurHash3_x64_128(const void *key, const int len,
       k1 = ROTL64(k1, 31);
       k1 *= c2;
       h1 ^= k1;
-  };
+  }
   h1 ^= len;
   h2 ^= len;
   h1 += h2;
@@ -316,9 +316,9 @@ void MurmurHash3_x64_128(const void *key, const int len,
   h2 = fmix64(h2);
   h1 += h2;
   h2 += h1;
-  ((uint64_t *) out)[0] = h1;
-  ((uint64_t *) out)[1] = h2;
+  (reinterpret_cast<uint64_t *>(out))[0] = h1;
+  (reinterpret_cast<uint64_t *>(out))[1] = h2;
 }
 
-}
-}
+}  // namespace util
+}  // namespace cylon

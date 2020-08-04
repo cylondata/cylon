@@ -20,4 +20,4 @@ std::shared_ptr<Column> cylon::Column::FromArrow(std::shared_ptr<arrow::Array> a
   return std::shared_ptr<Column>();
 }
 
-}
+}  // namespace cylon

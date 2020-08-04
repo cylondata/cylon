@@ -15,17 +15,20 @@
 #ifndef CYLON_SRC_IO_ARROW_IO_H_
 #define CYLON_SRC_IO_ARROW_IO_H_
 
+#include <arrow/api.h>
 #include <string>
+
 #include "csv_read_config.hpp"
 #include "../ctx/cylon_context.hpp"
+
 namespace cylon {
 namespace io {
 
 arrow::Result<std::shared_ptr<arrow::Table>> read_csv(cylon::CylonContext *ctx,
-                                                      const std::string &path,
-                                                      cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
+                   const std::string &path,
+                   cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 
-}
-}
+}  // namespace io
+}  // namespace cylon
 
 #endif //CYLON_SRC_IO_ARROW_IO_H_

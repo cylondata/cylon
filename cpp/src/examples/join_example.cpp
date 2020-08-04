@@ -13,10 +13,11 @@
  */
 
 #include <glog/logging.h>
+#include <chrono>
+
 #include <net/mpi/mpi_communicator.hpp>
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
-#include <chrono>
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -46,10 +47,11 @@ int main(int argc, char *argv[]) {
   auto read_end_time = std::chrono::steady_clock::now();
 
   LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - start_start).count() << "[ms]";
 
   status = first_table->DistributedJoin(second_table,
-                                            cylon::join::config::JoinConfig::InnerJoin(0, 0), &joined);
+                              cylon::join::config::JoinConfig::InnerJoin(0, 0), &joined);
   if (!status.is_ok()) {
     LOG(INFO) << "Table join failed ";
     ctx->Finalize();
@@ -60,7 +62,8 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
             << second_table->Rows() << ", Joined has : " << joined->Rows();
   LOG(INFO) << "Join done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                join_end_time - read_end_time).count() << "[ms]";
   ctx->Finalize();
   return 0;
 }

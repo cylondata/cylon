@@ -13,7 +13,7 @@
  */
 
 #include "mpi_channel.hpp"
-
+#include <glog/logging.h>
 #include <mpi.h>
 #include <vector>
 #include <iostream>
@@ -23,7 +23,6 @@
 
 #include "../TxRequest.hpp"
 
-#include <glog/logging.h>
 
 namespace cylon {
 

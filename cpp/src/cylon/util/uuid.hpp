@@ -20,15 +20,13 @@
 
 namespace cylon {
 namespace util {
-namespace uuid {
 
 /*
  * Generate a UUID
  */
 std::string generate_uuid_v4();
 
-}
-}
-}
+}  // namespace util
+}  // namespace cylon
 
 #endif //CYLON_SRC_UTIL_UUID_H_

@@ -17,7 +17,7 @@
 namespace cylon {
 
 std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
-                                                         const std::shared_ptr<arrow::DataType> &data_type) {
+                                              const std::shared_ptr<arrow::DataType> &data_type) {
   std::shared_ptr<ArrowPartitionKernel> kernel;
   switch (data_type->id()) {
     case arrow::Type::UINT8:kernel = std::make_shared<UInt8ArrayHashPartitioner>(pool);
@@ -44,6 +44,9 @@ std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool
       break;
     case arrow::Type::BINARY:kernel = std::make_shared<BinaryHashPartitionKernel>(pool);
       break;
+    case arrow::Type::FIXED_SIZE_BINARY:
+      kernel = std::make_shared<FixedSizeBinaryHashPartitionKernel>(pool);
+      break;
     default:LOG(FATAL) << "Un-known type";
       return NULLPTR;
   }
@@ -51,7 +54,7 @@ std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool
 }
 
 std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
-                                                         const std::shared_ptr<arrow::Array> &values) {
+                                                     const std::shared_ptr<arrow::Array> &values) {
   return GetPartitionKernel(pool, values->type());
 }
 
@@ -70,7 +73,7 @@ cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
                                   const std::vector<int> &targets,
                                   std::vector<int64_t> *outPartitions) {
   std::vector<std::shared_ptr<ArrowPartitionKernel>> hash_kernels;
-  for (const auto &array: values) {
+  for (const auto &array : values) {
     auto hash_kernel = GetPartitionKernel(pool, array);
     if (hash_kernel == NULLPTR) {
       LOG(FATAL) << "Un-known type";
@@ -82,7 +85,7 @@ cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
   for (int64_t index = 0; index < length; index++) {
     int64_t hash_code = 1;
     int64_t array_index = 0;
-    for (const auto &array: values) {
+    for (const auto &array : values) {
       hash_code = 31 * hash_code + hash_kernels[array_index++]->ToHash(array, index);
     }
     outPartitions->push_back(targets[hash_code % targets.size()]);
@@ -92,8 +95,9 @@ cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
 
 RowHashingKernel::RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields,
                                    arrow::MemoryPool *memory_pool) {
-  for (auto const &field: fields) {
-    this->hash_kernels.push_back(std::shared_ptr<ArrowPartitionKernel>(GetPartitionKernel(memory_pool, field->type())));
+  for (auto const &field : fields) {
+    this->hash_kernels.push_back(std::shared_ptr<ArrowPartitionKernel>(
+        GetPartitionKernel(memory_pool, field->type())));
   }
 }
 
@@ -104,4 +108,4 @@ int32_t RowHashingKernel::Hash(const std::shared_ptr<arrow::Table> &table, int64
   }
   return hash_code;
 }
-}
+}  // namespace cylon
