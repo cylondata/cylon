@@ -20,6 +20,7 @@
 #include <cstring>
 #include <memory>
 #include <utility>
+#include <status.hpp>
 
 #include "../TxRequest.hpp"
 
@@ -27,10 +28,12 @@
 namespace cylon {
 
 void MPIChannel::init(int ed, const std::vector<int> &receives, const std::vector<int> &sendIds,
-                      ChannelReceiveCallback *rcv, ChannelSendCallback *send_fn) {
+                      ChannelReceiveCallback *rcv, ChannelSendCallback *send_fn,
+                      Allocator *alloc) {
   edge = ed;
   rcv_fn = rcv;
   send_comp_fn = send_fn;
+  allocator = alloc;
   // we need to post the length buffers
   for (int source : receives) {
     auto *buf = new PendingReceive();
@@ -88,9 +91,12 @@ void MPIChannel::progressReceives() {
                        << " received: " << count;
           }
           // malloc a buffer
-          x.second->data = new char[length];
+          Status stat = allocator->Allocate(length, &x.second->data);
+          if (!stat.is_ok()) {
+            LOG(FATAL) << "Failed to allocate buffer with length " << length;
+          }
           x.second->length = length;
-          MPI_Irecv(x.second->data, length, MPI_BYTE, x.second->receiveId, edge,
+          MPI_Irecv(x.second->data->GetByteBuffer(), length, MPI_BYTE, x.second->receiveId, edge,
               MPI_COMM_WORLD, &(x.second->request));
           x.second->status = RECEIVE_POSTED;
           // copy the count - 2 to the buffer

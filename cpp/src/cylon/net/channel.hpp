@@ -19,6 +19,7 @@
 #include <memory>
 #include <cstring>
 #include "TxRequest.hpp"
+#include "net/buffer.hpp"
 
 namespace cylon {
 
@@ -38,7 +39,7 @@ class ChannelSendCallback {
  */
 class ChannelReceiveCallback {
  public:
-  virtual void receivedData(int receiveId, void *buffer, int length) = 0;
+  virtual void receivedData(int receiveId, std::shared_ptr<Buffer> buffer, int length) = 0;
 
   virtual void receivedHeader(int receiveId, int finished, int *header, int headerLength) = 0;
 };
@@ -55,7 +56,7 @@ class Channel {
    * @param receives these are the workers we are going to receive from
    */
   virtual void init(int edge, const std::vector<int> &receives, const std::vector<int> &sendIds,
-					ChannelReceiveCallback *rcv, ChannelSendCallback *send) = 0;
+					ChannelReceiveCallback *rcv, ChannelSendCallback *send, Allocator *alloc) = 0;
   /**
    * Send the request
    * @param request the request containing buffer, destination etc
