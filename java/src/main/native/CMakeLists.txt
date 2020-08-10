@@ -26,11 +26,12 @@ SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
 
 message("${PROJECT_SOURCE_DIR}/../../../../cpp/src")
-set(CYLON_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src/cylon"
-        "${PROJECT_SOURCE_DIR}/../../../../cpp/thirdparty/cub")
+set(CYLON_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src/cylon")
 find_library(CYLON_LIBRARY "cylon" "${CYLON_CORE_LIBS}")
+find_library(ARROW_LIBRARY "arrow" "${CYLON_ARROW_DIR}/lib")
 message(STATUS "CYLON_LIBRARY set to ${CYLON_LIBRARY}")
 add_library(cylon SHARED IMPORTED ${CYLON_LIBRARY})
+add_library(arrow SHARED IMPORTED ${ARROW_LIBRARY})
 set_target_properties(cylon PROPERTIES IMPORTED_LOCATION ${CYLON_LIBRARY})
 
 
@@ -42,7 +43,7 @@ else ()
 endif (JNI_FOUND)
 
 include_directories("include"
-        "${JNI_INCLUDE_DIRS}" ${CYLON_INCLUDE})
+        "${JNI_INCLUDE_DIRS}" ${CYLON_INCLUDE} "${CYLON_ARROW_DIR}/include")
 
 set(SOURCE_FILES
         src/Table.cpp src/TwisterXContext.cpp src/ConversionUtils.h src/ConversionUtils.cpp src/ArrowTable.cpp src/Utils.hpp src/Row.cpp src/Utils.cpp)
