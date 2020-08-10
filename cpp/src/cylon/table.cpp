@@ -106,6 +106,11 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
   std::unordered_map<int, std::shared_ptr<cylon::Table>> partitioned_tables{};
   // partition the tables locally
   table->HashPartition(hash_columns, ctx->GetWorldSize(), &partitioned_tables);
+  std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
+  // we are going to free if retain is set to false
+  if (!table->IsRetain()) {
+    table.reset();
+  }
   auto neighbours = ctx->GetNeighbours(true);
   vector<std::shared_ptr<arrow::Table>> received_tables;
   // define call back to catch the receiving tables
@@ -128,7 +133,7 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
   // doing all to all communication to exchange tables
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
                                   std::make_shared<AllToAllListener>(&received_tables, ctx->GetRank()),
-                                  table->get_table()->schema(), cylon::ToArrowPool(ctx));
+                                  schema, cylon::ToArrowPool(ctx));
 
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
@@ -175,8 +180,11 @@ Status ShuffleTwoTables(CylonContext *ctx,
                         ctx->GetNextSequence(), left_table_out);
   if (status.is_ok()) {
     LOG(INFO) << "Left table shuffled";
-    return Shuffle(ctx, right_table, right_hash_columns,
-                   ctx->GetNextSequence(), right_table_out);
+    status = Shuffle(ctx, right_table, right_hash_columns,
+                                    ctx->GetNextSequence(), right_table_out);
+    if (status.is_ok()) {
+      LOG(INFO) << "Right table shuffled";
+    }
   }
   return status;
 }
@@ -201,7 +209,7 @@ Status Table::FromCSV(cylon::CylonContext *ctx, const std::string &path,
 }
 
 Status Table::FromArrowTable(cylon::CylonContext *ctx,
-                             const std::shared_ptr<arrow::Table> &table,
+                             std::shared_ptr<arrow::Table> &table,
                              std::shared_ptr<Table> *tableOut) {
   if (!cylon::tarrow::validateArrowTableTypes(table)) {
     LOG(FATAL) << "Types not supported";
@@ -396,7 +404,8 @@ Status Table::DistributedJoin(std::shared_ptr<cylon::Table> &left,
                               cylon::join::config::JoinConfig join_config,
                               std::shared_ptr<cylon::Table> *out) {
   // check whether the world size is 1
-  if (left->ctx->GetWorldSize() == 1) {
+  CylonContext *ctx = left->ctx;
+  if (ctx->GetWorldSize() == 1) {
     cylon::Status status = Table::Join(
         left,
         right,
@@ -413,7 +422,7 @@ Status Table::DistributedJoin(std::shared_ptr<cylon::Table> &left,
 
   std::shared_ptr<arrow::Table> left_final_table;
   std::shared_ptr<arrow::Table> right_final_table;
-  auto shuffle_status = ShuffleTwoTables(left->ctx,
+  auto shuffle_status = ShuffleTwoTables(ctx,
                                          left,
                                          left_hash_columns,
                                          right,
@@ -428,8 +437,8 @@ Status Table::DistributedJoin(std::shared_ptr<cylon::Table> &left,
         right_final_table,
         join_config,
         &table,
-        cylon::ToArrowPool(left->ctx));
-    *out = std::make_shared<cylon::Table>(table, left->ctx);
+        cylon::ToArrowPool(ctx));
+    *out = std::make_shared<cylon::Table>(table, ctx);
     return Status(static_cast<int>(status.code()), status.message());
   } else {
     return shuffle_status;
@@ -864,5 +873,8 @@ Status Table::PrintToOStream(
 }
 shared_ptr<arrow::Table> Table::get_table() {
   return table_;
+}
+bool Table::IsRetain() const {
+  return retain_;
 }
 }  // namespace cylon

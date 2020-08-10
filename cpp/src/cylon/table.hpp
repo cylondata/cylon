@@ -41,8 +41,8 @@ class Table {
   /**
    * Tables can only be created using the factory methods, so the constructor is private
    */
-  Table(std::shared_ptr<arrow::Table> tab, cylon::CylonContext *ctx) {
-    this->table_ = std::move(tab);
+  Table(std::shared_ptr<arrow::Table> &tab, cylon::CylonContext *ctx) {
+    this->table_ = tab;
     this->ctx = ctx;
   }
 
@@ -76,7 +76,7 @@ class Table {
    * @return
    */
   static Status FromArrowTable(cylon::CylonContext *ctx,
-                               const std::shared_ptr<arrow::Table> &table,
+                               std::shared_ptr<arrow::Table> &table,
                                std::shared_ptr<Table> *tableOut);
 
   /**
@@ -285,6 +285,14 @@ class Table {
    */
   std::vector<std::string> ColumnNames();
 
+  /**
+   * Set to true to free the memory of this table when it is not needed
+   */
+  void retainMemory(bool retain) {
+    retain_ = retain;
+  }
+
+  bool IsRetain() const;
  private:
   /**
    * Every table should have an unique id
@@ -292,6 +300,7 @@ class Table {
   std::string id_;
   cylon::CylonContext *ctx;
   std::shared_ptr<arrow::Table> table_;
+  bool retain_ = true;
 };
 }  // namespace cylon
 
