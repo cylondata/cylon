@@ -91,6 +91,8 @@ int main(int argc, char *argv[]) {
     ctx->Finalize();
     return 1;
   }
+  right_table.reset();
+  left_table.reset();
 
   auto read_end_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Read tables in "

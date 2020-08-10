@@ -109,6 +109,7 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
   std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
   // we are going to free if retain is set to false
   if (!table->IsRetain()) {
+    LOG(INFO) << "Free table " << table.use_count();
     table.reset();
   }
   auto neighbours = ctx->GetNeighbours(true);
@@ -132,8 +133,8 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
 
   // doing all to all communication to exchange tables
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
-                                  std::make_shared<AllToAllListener>(&received_tables, ctx->GetRank()),
-                                  schema, cylon::ToArrowPool(ctx));
+                                  std::make_shared<AllToAllListener>(&received_tables,
+                                  ctx->GetRank()), schema, cylon::ToArrowPool(ctx));
 
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
