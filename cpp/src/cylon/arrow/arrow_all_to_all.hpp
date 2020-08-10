@@ -84,9 +84,12 @@ class ArrowCallback {
   virtual bool onReceive(int source, std::shared_ptr<arrow::Table> table) = 0;
 };
 
+/**
+ * Arrow table specific buffer
+ */
 class ArrowBuffer : public Buffer {
 public:
-  ArrowBuffer(shared_ptr<arrow::Buffer> buf);
+  explicit ArrowBuffer(shared_ptr<arrow::Buffer> buf);
   int64_t GetLength() override;
   uint8_t *GetByteBuffer() override;
 
@@ -95,9 +98,12 @@ private:
   std::shared_ptr<arrow::Buffer> buf;
 };
 
+/**
+ * Arrow table specific allocator
+ */
 class ArrowAllocator : public Allocator {
 public:
-  ArrowAllocator(arrow::MemoryPool *pool);
+  explicit ArrowAllocator(arrow::MemoryPool *pool);
 
   Status Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) override;
 private:

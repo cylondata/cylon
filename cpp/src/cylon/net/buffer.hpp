@@ -19,12 +19,18 @@
 #include "status.hpp"
 
 namespace cylon {
+  /**
+   * Represent a buffer abstraction for the channel
+   */
   class Buffer {
   public:
     virtual int64_t GetLength() = 0;
     virtual uint8_t * GetByteBuffer() = 0;
   };
 
+  /**
+   * A custom allocator for the channel
+   */
   class Allocator {
   public:
     virtual Status Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) = 0;
