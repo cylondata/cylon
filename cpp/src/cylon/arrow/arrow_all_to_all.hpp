@@ -37,7 +37,7 @@ struct PendingSendTable {
   // the target
   int target{};
   // pending tables to be sent with it's reference
-  std::queue<std::pair<std::shared_ptr<arrow::Table>, int32_t>> pending;
+  std::queue<std::pair<std::shared_ptr<arrow::Table>, int32_t>> pending{};
 
   // keep the current table, reference pair
   std::pair<std::shared_ptr<arrow::Table>, int32_t> currentTable{};
@@ -85,7 +85,7 @@ class ArrowCallback {
    * @param reference reference sent by the sender
    * @return true if we accept this buffer
    */
-  virtual bool onReceive(int source, std::shared_ptr<arrow::Table> table, int reference) = 0;
+  virtual bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) = 0;
 };
 
 /**
@@ -125,7 +125,7 @@ class ArrowAllToAll : public ReceiveCallback {
    * @param reference a reference that can be sent in the header
    * @return true if the buffer is accepted
    */
-  int insert(const std::shared_ptr<arrow::Table> &arrow, int32_t target, int32_t reference);
+  int insert(std::shared_ptr<arrow::Table> arrow, int32_t target, int32_t reference);
 
   /**
    * Check weather the operation is complete, this method needs to be called until the operation is complete

@@ -237,7 +237,7 @@ Status Shuffle(CylonContext *ctx,
       this->workerId = workerId;
     }
 
-    bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
+    bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override {
       this->tabs->push_back(table);
       return true;
     };

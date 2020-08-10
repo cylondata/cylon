@@ -82,7 +82,9 @@ add_library(cylon SHARED
         ctx/arrow_memory_pool_utils.hpp
         ctx/arrow_memory_pool_utils.cpp
         arrow/arrow_builder.hpp
-        arrow/arrow_builder.cpp arrow/arrow_task_all_to_all.h arrow/arrow_task_all_to_all.cpp)
+        arrow/arrow_builder.cpp
+        arrow/arrow_task_all_to_all.h
+        arrow/arrow_task_all_to_all.cpp)
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
 

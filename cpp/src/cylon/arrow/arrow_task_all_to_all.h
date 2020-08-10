@@ -3,37 +3,37 @@
 
 #include <mutex>
 #include "arrow_all_to_all.hpp"
+#include <glog/logging.h>
 namespace cylon {
 
 class LogicalTaskPlan {
 
  private:
-  const std::vector<int> &task_source;
-  const std::vector<int> &task_targets;
-  const std::vector<int> &worker_sources;
-  const std::vector<int> &worker_targets;
-  const std::unordered_map<int, int> &task_to_worker;
+  std::shared_ptr<vector<int>> task_source;
+  std::shared_ptr<vector<int>> task_targets;
+  std::shared_ptr<vector<int>> worker_sources;
+  std::shared_ptr<vector<int>> worker_targets;
+  std::shared_ptr<std::unordered_map<int, int>> task_to_worker;
 
  public:
-  LogicalTaskPlan(const vector<int> &task_source,
-                  const vector<int> &task_targets,
-                  const vector<int> &worker_sources,
-                  const vector<int> &worker_targets,
-                  const unordered_map<int,
-                                      int> &task_to_worker,
-                  const vector<int> &task_source_1);
+  LogicalTaskPlan(std::shared_ptr<vector<int>> task_source,
+                  std::shared_ptr<vector<int>> task_targets,
+                  std::shared_ptr<vector<int>> worker_sources,
+                  std::shared_ptr<vector<int>> worker_targets,
+                  std::shared_ptr<unordered_map<int,
+                                                int>> task_to_worker);
 
-  const vector<int> &GetTaskSource() const;
-  const vector<int> &GetTaskTargets() const;
-  const vector<int> &GetWorkerSources() const;
-  const vector<int> &GetWorkerTargets() const;
-  const unordered_map<int, int> &GetTaskToWorker() const;
+  const shared_ptr<vector<int>> &GetTaskSource() const;
+  const shared_ptr<vector<int>> &GetTaskTargets() const;
+  const shared_ptr<vector<int>> &GetWorkerSources() const;
+  const shared_ptr<vector<int>> &GetWorkerTargets() const;
+  const shared_ptr<std::unordered_map<int, int>> &GetTaskToWorker() const;
 };
 
 class ArrowTaskCallBack : public ArrowCallback {
-  bool onReceive(int worker_source, std::shared_ptr<arrow::Table> table, int target_task) override;
+  bool onReceive(int worker_source, const std::shared_ptr<arrow::Table> &table, int target_task) override;
 
-  virtual bool onReceive(std::shared_ptr<arrow::Table> table, int target) = 0;
+  virtual bool onReceive(const std::shared_ptr<arrow::Table> &table, int target) = 0;
 };
 
 class ArrowTaskAllToAll : public ArrowAllToAll {
@@ -49,7 +49,11 @@ class ArrowTaskAllToAll : public ArrowAllToAll {
                     const std::shared_ptr<ArrowTaskCallBack> &callback,
                     const std::shared_ptr<arrow::Schema> &schema);
 
-  int InsertTable(const std::shared_ptr<arrow::Table> &arrow, int32_t task_target);
+  int InsertTable(std::shared_ptr<arrow::Table> arrow, int32_t task_target);
+
+  bool IsComplete();
+
+  void WaitForCompletion();
 };
 }
 
