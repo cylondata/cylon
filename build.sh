@@ -214,7 +214,7 @@ check_pycylon_installation(){
 build_java(){
   echo "Building Java"
   cd java
-  mvn clean install -Dcylon.core.libs=$BUILD_PATH/lib -Dcylon.arrow.dir=$BUILD_PATH/lib/arrow/install || exit 1
+  mvn clean install -Dcylon.core.libs=$BUILD_PATH/lib -Dcylon.arrow.dir=$BUILD_PATH/arrow/install || exit 1
   echo "Cylon Java built Successufully!"
   cd ../
 }
