@@ -35,6 +35,30 @@ namespace cylon {
   public:
     virtual Status Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) = 0;
   };
+
+  class DefaultBuffer : public Buffer {
+   public:
+    int64_t GetLength() override {
+      return length;
+    }
+    uint8_t * GetByteBuffer() override {
+      return buf;
+    }
+    DefaultBuffer(uint8_t *buf, int64_t length) : buf(buf), length(length) {}
+   private:
+    uint8_t *buf;
+    int64_t length;
+  };
+
+  class DefaultAllocator : public Allocator {
+   public:
+    cylon::Status Allocate(int64_t length,
+        std::shared_ptr<Buffer> *buffer) override {
+      auto *b = new uint8_t[length];
+      *buffer = std::make_shared<DefaultBuffer>(b, length);
+      return Status();
+    }
+  };
 }  // namespace cylon
 
 #endif //CYLON_BUFFER_H

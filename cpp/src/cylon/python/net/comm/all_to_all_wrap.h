@@ -17,6 +17,7 @@
 
 #include "net/ops/all_to_all.hpp"
 #include "net/mpi/mpi_communicator.hpp"
+#include "net/buffer.hpp"
 #include "callback.h"
 
 using namespace cylon;
@@ -30,6 +31,7 @@ class all_to_all_wrap {
   std::vector<int> targets = {0};
   cylon::net::comms::Callback callback_;
   cylon::AllToAll *all_;
+  DefaultAllocator alloc;
  public:
   all_to_all_wrap();
   all_to_all_wrap(int worker_id, const std::vector<int> &source, const std::vector<int> &targets, int edgeId);
