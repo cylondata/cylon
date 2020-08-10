@@ -23,6 +23,8 @@
 #include <mpi.h>
 #include <glog/logging.h>
 
+#include "../buffer.hpp"
+
 #define CYLON_CHANNEL_HEADER_SIZE 8
 #define CYLON_MSG_FIN 1
 
@@ -59,7 +61,7 @@ struct PendingReceive {
   // we allow upto 8 integer header
   int headerBuf[CYLON_CHANNEL_HEADER_SIZE]{};
   int receiveId{};
-  void *data{};
+  std::shared_ptr<Buffer> data{};
   int length{};
   ReceiveStatus status = RECEIVE_INIT;
   MPI_Request request{};
@@ -78,7 +80,7 @@ class MPIChannel : public Channel {
    * @param receives receive from these ranks
    */
   void init(int edge, const std::vector<int> &receives, const std::vector<int> &sendIds,
-			ChannelReceiveCallback *rcv, ChannelSendCallback *send) override;
+			ChannelReceiveCallback *rcv, ChannelSendCallback *send, Allocator *alloc) override;
 
   /**
   * Send the message to the target.
@@ -120,6 +122,8 @@ class MPIChannel : public Channel {
   ChannelReceiveCallback *rcv_fn;
   // send complete callback function
   ChannelSendCallback *send_comp_fn;
+  // allocator
+  Allocator *allocator;
   // mpi rank
   int rank;
 
