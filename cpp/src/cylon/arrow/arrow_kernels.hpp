@@ -158,7 +158,7 @@ class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
 	const T *left_data = array->raw_values();
 	std::shared_ptr<arrow::Buffer> indices_buf;
 	int64_t buf_size = values->length() * sizeof(uint64_t);
-	arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
+	arrow::Status status = AllocateBuffer(pool_, buf_size + 1, &indices_buf);
 	if (status != arrow::Status::OK()) {
 	  LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
 	  return -1;
@@ -168,7 +168,6 @@ class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
 	  indices_begin[i] = i;
 	}
 	int64_t *indices_end = indices_begin + values->length();
-	// LOG(INFO) << "Length " << values->length() << " ind " << indices_begin << "nd " << indices_begin + values->length();
 	std::sort(indices_begin, indices_end, [left_data](uint64_t left, uint64_t right) {
 	  return left_data[left] < left_data[right];
 	});

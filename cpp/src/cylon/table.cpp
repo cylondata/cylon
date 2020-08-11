@@ -109,7 +109,6 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
   std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
   // we are going to free if retain is set to false
   if (!table->IsRetain()) {
-    LOG(INFO) << "Free table " << table.use_count();
     table.reset();
   }
   auto neighbours = ctx->GetNeighbours(true);
@@ -319,7 +318,6 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
   int64_t length = 0;
   for (auto col_index : hash_columns) {
     auto column = table_->column(col_index);
-    std::vector<int64_t> outPartitions;
     std::shared_ptr<arrow::Array> array = column->chunk(0);
     arrays.push_back(array);
 
@@ -332,6 +330,7 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
 
   // first we partition the table
   std::vector<int64_t> outPartitions;
+  outPartitions.reserve(length);
   Status status = HashPartitionArrays(cylon::ToArrowPool(ctx), arrays, length,
                                    partitions, &outPartitions);
   if (!status.is_ok()) {

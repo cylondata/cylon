@@ -15,6 +15,7 @@
 #include <glog/logging.h>
 #include <net/mpi/mpi_communicator.hpp>
 #include <ctx/cylon_context.hpp>
+#include <util/builtins.hpp>
 #include <table.hpp>
 #include <chrono>
 #include <arrow/api.h>
@@ -51,20 +52,24 @@ int main(int argc, char *argv[]) {
   uint64_t count = std::stoull(argv[1]);
   uint64_t range = count * ctx->GetWorldSize();
   srand(time(NULL) + ctx->GetRank());
+
+  arrow::Status st = left_id_builder.Reserve(count);
+  st = right_id_builder.Reserve(count);
+  st = cost_builder.Reserve(count);
   for (uint64_t i = 0; i < count; i++) {
     uint64_t l = next_random() % range;
     uint64_t r = next_random() % range;
     uint64_t v = next_random() % range;
-    arrow::Status st = left_id_builder.Append((uint8_t *)(&l));
-    st = right_id_builder.Append((uint8_t *)(&r));
-    st = cost_builder.Append((uint8_t *)(&v));
+    left_id_builder.UnsafeAppend((uint8_t *)(&l));
+    right_id_builder.UnsafeAppend((uint8_t *)(&r));
+    cost_builder.UnsafeAppend((uint8_t *)(&v));
   }
 
   std::shared_ptr<arrow::Array> left_id_array;
   std::shared_ptr<arrow::Array> right_id_array;
   std::shared_ptr<arrow::Array> cost_array;
 
-  arrow::Status st = left_id_builder.Finish(&left_id_array);
+  left_id_builder.Finish(&left_id_array);
   st = right_id_builder.Finish(&right_id_array);
   st = cost_builder.Finish(&cost_array);
 

@@ -170,7 +170,7 @@ class ArrowFixedSizeBinarySortKernel : public ArrowArraySortKernel {
     auto array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
-    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(),
+    arrow::Status status = AllocateBuffer(pool_,
                                           buf_size + 1, &indices_buf);
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
@@ -200,7 +200,7 @@ class ArrowBinarySortKernel : public ArrowArraySortKernel {
     auto array = std::static_pointer_cast<arrow::BinaryArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
-    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(),
+    arrow::Status status = AllocateBuffer(pool_,
         buf_size + 1, &indices_buf);
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
