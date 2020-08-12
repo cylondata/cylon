@@ -91,10 +91,23 @@ class Op {
   }
 };
 
+class LocalJoin : public Op {
+ public:
+  LocalJoin(int id) : Op(id) {
+
+  }
+
+  // insert, 2 - LEFT, 3 - RIGHT
+};
+
 class SortOp : public Op {
  public:
   SortOp(int id) : Op(id) {
 
+  }
+
+  void init(CylonContext *ctx) {
+    // initialize merge sort
   }
 };
 
@@ -105,7 +118,21 @@ class ShuffleOp : public Op {
   }
 
   void init(CylonContext *ctx) {
+    // initialize all to all
+    // post whatever we get
+  }
+};
 
+class PartitionOp : public Op {
+ public:
+  PartitionOp(int id) : Op(id) {
+
+  }
+
+  void init(CylonContext *ctx) {
+    // initialize hash partitions
+    // split the table to chunks
+    // do the hash partitioning on chunks and pass the results to the next step
   }
 };
 
@@ -115,13 +142,33 @@ class JoinOp : public Op {
   static const int LEFT = 2;
   static const int RIGHT = 3;
 
+  static const int SHUFFLE = 4;
+  static const int SORT = 5;
+  static const int LOCAL_JOIN = 6;
+
  public:
   JoinOp() : Op(JoinOp::JOIN_OP) {
-    auto left_shuffle = new ShuffleOp(LEFT);
-    auto right_shuffle = new ShuffleOp(RIGHT);
+    auto left_partition = new PartitionOp(LEFT);
+    auto right_partition = new PartitionOp(RIGHT);
 
-    this->AddChild(left_shuffle);
-    this->AddChild(right_shuffle);
+    this->AddChild(left_partition);
+    this->AddChild(right_partition);
+
+    auto local_join = new LocalJoin(LOCAL_JOIN);
+
+    // left and right goes in two directions until the local join
+    for (auto rel:{LEFT, RIGHT}) {
+      auto partition = this->GetChild(rel);
+
+      auto left_shuffle = new ShuffleOp(SHUFFLE);
+      partition->AddChild(left_shuffle);
+
+      auto sort = new SortOp(SORT);
+      left_shuffle->AddChild(sort);
+
+      sort->AddChild(local_join);
+    }
+
   }
 
   void execute() override {
