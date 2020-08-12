@@ -653,7 +653,6 @@ Status Union(CylonContext *ctx,
   const int64_t max = std::max(ltab->num_rows(), rtab->num_rows());
   const int8_t table0 = 0;
   const int8_t table1 = 1;
-  const int64_t print_threshold = max / 10;
   for (int64_t row = 0; row < max; ++row) {
     if (row < ltab->num_rows()) {
       rows_set.insert(std::pair<int8_t, int64_t>(table0, row));
@@ -661,12 +660,6 @@ Status Union(CylonContext *ctx,
 
     if (row < rtab->num_rows()) {
       rows_set.insert(std::pair<int8_t, int64_t>(table1, row));
-    }
-
-    if (row % print_threshold == 0) {
-      LOG(INFO) << "Done " << (row + 1) * 100 / max << "%" << " N : "
-                << row << ", Eq : " << eq_calls << ", Hs : "
-                << hash_calls;
     }
   }
 
