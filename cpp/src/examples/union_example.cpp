@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
   auto union_start_time = std::chrono::steady_clock::now();
   // apply union operation
-  status = first_table->DistributedUnion(second_table, unioned_table);
+  status = cylon::Table::DistributedUnion(first_table, second_table, unioned_table);
   if (!status.is_ok()) {
     LOG(INFO) << "Union failed " << status.get_msg();
     ctx->Finalize();

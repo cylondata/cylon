@@ -13,6 +13,7 @@
  */
 #include <glog/logging.h>
 
+#include <utility>
 #include <vector>
 #include <utility>
 #include <string>
@@ -31,16 +32,17 @@ ArrowAllToAll::ArrowAllToAll(cylon::CylonContext *ctx,
                              arrow::MemoryPool *pool) {
   targets_ = targets;
   srcs_ = source;
-  recv_callback_ = callback;
-  schema_ = schema;
+  recv_callback_ = std::move(callback);
+  schema_ = std::move(schema);
   receivedBuffers_ = 0;
   workerId_ = ctx->GetRank();
   pool_ = pool;
   completed_ = false;
   finishCalled_ = false;
+  allocator_ = new ArrowAllocator(pool);
 
   // we need to pass the correct arguments
-  all_ = std::make_shared<AllToAll>(ctx, source, targets, edgeId, this);
+  all_ = std::make_shared<AllToAll>(ctx, source, targets, edgeId, this, allocator_);
 
   // add the trackers for sending
   for (auto t : targets) {
@@ -161,12 +163,11 @@ void debug(int thisWorker, std::string msg) {
   }
 }
 
-bool ArrowAllToAll::onReceive(int source, void *buffer, int length) {
+bool ArrowAllToAll::onReceive(int source, std::shared_ptr<Buffer> buffer, int length) {
   std::shared_ptr<PendingReceiveTable> table = receives_[source];
   receivedBuffers_++;
   // create the buffer hosting the value
-  std::shared_ptr<arrow::Buffer> buf = std::make_shared<arrow::Buffer>(
-      static_cast<uint8_t *>(buffer), length);
+  std::shared_ptr<arrow::Buffer> buf = std::dynamic_pointer_cast<ArrowBuffer>(buffer)->getBuf();
   table->buffers.push_back(buf);
   // now check weather we have the expected number of buffers received
   if (table->noBuffers == table->bufferIndex + 1) {
@@ -223,4 +224,29 @@ bool ArrowAllToAll::onSendComplete(int target, void *buffer, int length) {
   return false;
 }
 
+Status ArrowAllocator::Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) {
+  std::shared_ptr<arrow::Buffer> buf;
+  arrow::Status status = arrow::AllocateBuffer(pool, length, &buf);
+  if (status != arrow::Status::OK()) {
+    return Status(static_cast<int>(status.code()), status.message());
+  }
+  *buffer = std::make_shared<ArrowBuffer>(buf);
+  return Status::OK();
+}
+
+  ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
+
+  int64_t ArrowBuffer::GetLength() {
+  return 0;
+}
+
+uint8_t *ArrowBuffer::GetByteBuffer() {
+  return buf->mutable_data();
+}
+
+ArrowBuffer::ArrowBuffer(shared_ptr<arrow::Buffer> buf) : buf(std::move(buf)) {}
+
+shared_ptr<arrow::Buffer> ArrowBuffer::getBuf() const {
+  return buf;
+}
 }  // namespace cylon

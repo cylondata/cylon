@@ -1,4 +1,4 @@
-/*
+  /*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,7 +30,7 @@ cylon::net::comm::all_to_all_wrap::all_to_all_wrap(int worker_id,
   cylon::net::comms::Callback *callback = new cylon::net::comms::Callback();
   auto mpi_config = new cylon::net::MPIConfig();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
-  all_ = new cylon::AllToAll(ctx, source, targets, edgeId, callback);
+  all_ = new cylon::AllToAll(ctx, source, targets, edgeId, callback, &alloc);
 }
 
 void cylon::net::comm::all_to_all_wrap::set_instance(cylon::AllToAll *all) {

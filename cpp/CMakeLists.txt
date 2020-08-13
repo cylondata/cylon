@@ -29,11 +29,15 @@ project(CYLON)
 
 set(CYLON_VERSION 0.1.0)
 
-## defaults to debug build
-IF (NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEASE"))
-    SET(CMAKE_BUILD_TYPE "Debug")
-    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}") #  -fsanitize=address
-ENDIF (NOT (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RELEASE"))
+## defaults to release build
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_DEBUG "-fsanitize=address")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 ## PyCylon build
 if (PYCYLON_BUILD)

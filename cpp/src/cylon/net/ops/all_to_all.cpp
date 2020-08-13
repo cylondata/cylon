@@ -17,6 +17,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <net/buffer.hpp>
 
 
 #include "all_to_all.hpp"
@@ -24,13 +25,14 @@
 namespace cylon {
 
 AllToAll::AllToAll(cylon::CylonContext *ctx, const std::vector<int> &srcs,
-                   const std::vector<int> &tgts, int edge_id, ReceiveCallback *rcvCallback) {
+                   const std::vector<int> &tgts, int edge_id, ReceiveCallback *rcvCallback,
+                   Allocator *alloc) {
   worker_id = ctx->GetRank();
   sources = srcs;
   targets = tgts;
   edge = edge_id;
   channel = ctx->GetCommunicator()->CreateChannel();
-  channel->init(edge_id, srcs, tgts, this, this);
+  channel->init(edge_id, srcs, tgts, this, this, alloc);
   callback = rcvCallback;
 
   // initialize the sends
@@ -140,7 +142,7 @@ void AllToAll::finish() {
   finishFlag = true;
 }
 
-void AllToAll::receivedData(int receiveId, void *buffer, int length) {
+void AllToAll::receivedData(int receiveId, std::shared_ptr<Buffer> buffer, int length) {
   // we just call the callback function of this
   callback->onReceive(receiveId, buffer, length);
 }

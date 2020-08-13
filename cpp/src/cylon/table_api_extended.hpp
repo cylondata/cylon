@@ -18,12 +18,13 @@
 #include <arrow/api.h>
 
 #include "status.hpp"
+#include "table.hpp"
 
 namespace cylon {
 
-std::shared_ptr<arrow::Table> GetTable(const std::string &id);
+std::shared_ptr<cylon::Table> GetTable(const std::string &id);
 
-void PutTable(const std::string &id, const std::shared_ptr<arrow::Table> &table);
+void PutTable(const std::string &id, const std::shared_ptr<cylon::Table> &table);
 
 Status VerifyTableSchema(const std::shared_ptr<arrow::Table> &ltab, const std::shared_ptr<arrow::Table> &rtab);
 }  // namespace cylon
