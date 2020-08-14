@@ -38,7 +38,7 @@ ArrowAllToAll::ArrowAllToAll(cylon::CylonContext *ctx,
   pool_ = cylon::ToArrowPool(ctx);
   completed_ = false;
   finishCalled_ = false;
-  allocator_ = new ArrowAllocator(pool);
+  allocator_ = new ArrowAllocator(pool_);
 
   // we need to pass the correct arguments
   all_ = std::make_shared<AllToAll>(ctx, source, targets, edgeId, this, allocator_);
