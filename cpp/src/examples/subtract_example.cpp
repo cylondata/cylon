@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  status = first_table->DistributedSubtract(second_table, result);
+  status = cylon::Table::DistributedSubtract(first_table, second_table, result);
   if (!status.is_ok()) {
     LOG(INFO) << "Table intersection failed";
     ctx->Finalize();

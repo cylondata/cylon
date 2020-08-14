@@ -17,14 +17,15 @@
 
 #include <string>
 #include <vector>
+#include <arrow/api.h>
 
 namespace cylon {
 class Row {
  private:
-  std::string table_id;
+  std::shared_ptr<arrow::Table> table;
   int64_t row_index;
  public:
-  Row(const std::string &tale_id, int64_t row_index);
+  Row(std::shared_ptr<arrow::Table> table, int64_t row_index);
 
   int64_t RowIndex();
   int8_t GetInt8(int64_t col_index);

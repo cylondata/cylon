@@ -22,7 +22,7 @@ namespace net {
 namespace comms {
 class Callback : public cylon::ReceiveCallback {
  public:
-  bool onReceive(int source, void *buffer, int length);
+  bool onReceive(int source, std::shared_ptr<Buffer> buffer, int length);
 
   bool onReceiveHeader(int source, int finished, int *buffer, int length);
 

@@ -77,18 +77,20 @@ arrow::Status do_copy_fixed_binary_array(std::shared_ptr<std::vector<int64_t>> i
                                          std::shared_ptr<arrow::Array> *copied_array,
                                          arrow::MemoryPool *memory_pool) {
   arrow::FixedSizeBinaryBuilder binary_builder(data_array->type(), memory_pool);
+  std::shared_ptr<arrow::FixedSizeBinaryType> t =
+      std::static_pointer_cast<arrow::FixedSizeBinaryType>(data_array->type());
+  arrow::Status st = binary_builder.Reserve(indices->size());
+  if (st != arrow::Status::OK()) {
+    LOG(FATAL) << "Cannot reserve enough memory";
+    return st;
+  }
   auto casted_array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(data_array);
   for (auto &index : *indices) {
     if (casted_array->length() <= index) {
       LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
     }
     const uint8_t *data = casted_array->GetValue(index);
-    arrow::Status status = binary_builder.Append(data);
-    if (status != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to append rearranged data points to the array builder. "
-                 << status.ToString();
-      return status;
-    }
+    binary_builder.UnsafeAppend(data);
   }
   return binary_builder.Finish(copied_array);
 }

@@ -33,7 +33,7 @@ class ReceiveCallback {
    * @param length the length of the buffer
    * @return true if we accept this buffer
    */
-  virtual bool onReceive(int source, void *buffer, int length) = 0;
+  virtual bool onReceive(int source, std::shared_ptr<Buffer> buffer, int length) = 0;
 
   /**
    * Receive the header, this happens before we receive the actual data
@@ -85,7 +85,8 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
            const std::vector<int> &source,
            const std::vector<int> &targets,
            int edgeId,
-           ReceiveCallback *callback);
+           ReceiveCallback *callback,
+           Allocator *alloc);
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true
@@ -125,7 +126,7 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
    * @param buffer
    * @param length
    */
-  void receivedData(int receiveId, void *buffer, int length) override;
+  void receivedData(int receiveId, std::shared_ptr<Buffer> buffer, int length) override;
 
   /**
    * We implement the send callback from channel
