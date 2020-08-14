@@ -16,79 +16,33 @@ class Op {
   int inputs_count = 0;
   std::unordered_map<int, cylon::Op *> children{};
 
-  Op *GetChild(int tag) {
-    return this->children.find(tag)->second;
-  }
+  Op *GetChild(int tag);
 
-  void DrainQueueToChild(int queue, int child, int tag) {
-    auto q = GetQueue(queue);
-    auto c = GetChild(child);
-    while (!q->empty()) {
-      c->insert(tag, q->front());
-      q->pop();
-    }
-  }
+  void DrainQueueToChild(int queue, int child, int tag);
 
-  std::queue<std::shared_ptr<cylon::Table>> *GetQueue(int tag) {
-    return this->queues.find(tag)->second;
-  }
+  std::queue<std::shared_ptr<cylon::Table>> *GetQueue(int tag);
 
  public:
-  Op(int id) {
-    this->id = id;
-  }
+  Op(int id);
 
-  void insert(int src, std::shared_ptr<cylon::Table> table) {
-    if (queues.find(src) == queues.end()) {
-      queues.insert(std::make_pair<>(src, new std::queue<std::shared_ptr<cylon::Table>>()));
-    }
-    this->queues.find(src)->second->push(table);
-    this->inputs_count++;
-  }
+  void insert(int tag, std::shared_ptr<cylon::Table> table);
 
   /**
    * This is the logic of this op
    */
   virtual void execute();
+
   virtual bool ready();
 
-  void init(cylon::CylonContext *ctx) {
-    // possible optimization point
-    for (auto child: children) {
-      child.second->init(ctx);
-    }
-  }
+  void init(cylon::CylonContext *ctx);
 
-  void progress() {
-    if (this->ready()) {
-      this->execute();
-    }
+  void progress();
 
-    // possible optimization point
-    for (auto child: children) {
-      child.second->progress();
-    }
-  }
+  bool isComplete();
 
-  bool isComplete() {
-    for (auto child: children) {
-      if (!child.second->isComplete()) {
-        return false;
-      }
-    }
-    return true;
-  }
+  ~Op();
 
-  ~Op() {
-    for (auto p: queues) {
-      delete p.second;
-    }
-  }
-
-  cylon::Op *AddChild(cylon::Op *child) {
-    this->children.insert(std::make_pair(child->id, child));
-    return this;
-  }
+  cylon::Op *AddChild(cylon::Op *child);
 };
 
 class LocalJoin : public Op {
@@ -122,7 +76,7 @@ class ShuffleOp : public Op {
     // post whatever we get
   }
 };
-
+// ND arr
 class PartitionOp : public Op {
  public:
   PartitionOp(int id) : Op(id) {
