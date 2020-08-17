@@ -18,7 +18,7 @@ class JoinOp : public Op {
 
   void execute(int tag, std::shared_ptr<Table> table) override;
 
-  bool ready() override;
+  bool Ready() override;
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_JOIN_OP_H_

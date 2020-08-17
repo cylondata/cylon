@@ -7,7 +7,7 @@ cylon::JoinOp::JoinOp(std::function<int(int)> router,
     return 0;
   }, callback);
 
-  left_partition->isComplete();
+  left_partition->IsComplete();
   //auto right_partition = new PartitionOp(RIGHT, callback);
 
 //  this->AddChild(left_partition);
@@ -34,6 +34,6 @@ void cylon::JoinOp::execute(int tag, std::shared_ptr<Table> table) {
   this->DrainQueueToChild(RIGHT, RIGHT, 1);
 }
 
-bool cylon::JoinOp::ready() {
+bool cylon::JoinOp::Ready() {
   return true;
 }

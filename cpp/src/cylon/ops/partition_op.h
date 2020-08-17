@@ -16,9 +16,8 @@ class PartitionOp : public Op {
 
   PartitionOp(int id, std::function<int(int)> router, std::shared_ptr<ResultsCallback> callback);
   PartitionOp(std::function<int(int)> router, std::shared_ptr<ResultsCallback> callback);
-  void init(std::shared_ptr<CylonContext> ctx, std::shared_ptr<OpConfig> op_config);
+  void Init(std::shared_ptr<CylonContext> ctx, std::shared_ptr<OpConfig> op_config);
   void execute(int tag, std::shared_ptr<Table> table);
-  bool ready();
 };
 }
 
