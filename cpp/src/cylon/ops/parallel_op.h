@@ -17,6 +17,9 @@ class OpConfig {
   std::unordered_map<std::string, std::string> config{};
   OpConfig *AddConfig(const std::string &key, const std::string &value);
   std::string GetConfig(const std::string &key, const std::string &def = "");
+
+  int64_t GetLong(const std::string &key, int64_t defaultValue = 0);
+  int32_t GetDouble(const std::string &key, double_t defaultValue = 0);
 };
 
 class Op {

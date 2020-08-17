@@ -89,3 +89,18 @@ cylon::OpConfig *cylon::OpConfig::AddConfig(const string &key, const string &val
 std::string cylon::OpConfig::GetConfig(const string &key, const string &def) {
   return std::string();
 }
+int64_t cylon::OpConfig::GetLong(const string &key, int64_t defaultValue) {
+  auto find = this->config.find(key);
+  if (find == this->config.end()) {
+    return defaultValue;
+  }
+  return std::stol(find->second);
+}
+
+int32_t cylon::OpConfig::GetDouble(const string &key, double_t defaultValue) {
+  auto find = this->config.find(key);
+  if (find == this->config.end()) {
+    return defaultValue;
+  }
+  return std::stod(find->second);
+}
