@@ -35,9 +35,17 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_DEBUG "-fsanitize=address")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPERCASE_CMAKE_BUILD_TYPE)
+if (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "DEBUG")
+    message("Running on debug mode...")
+    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -g -fsanitize=address")
+elseif(UPPERCASE_CMAKE_BUILD_TYPE MATCHES "RELEASE")
+    message("Running on Release mode...")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+else()
+    message(FATAL_ERROR "Unknown CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE}! Exiting...")
+endif()
 
 ## PyCylon build
 if (PYCYLON_BUILD)
