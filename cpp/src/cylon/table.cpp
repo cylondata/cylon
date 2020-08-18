@@ -19,7 +19,7 @@
 #include <unordered_map>
 #include <arrow/compute/api.h>
 #include <future>
-#include <ops/kernels/partition.h>
+#include <ops/kernels/computation/partition.h>
 
 #include "table_api_extended.hpp"
 #include "io/arrow_io.hpp"

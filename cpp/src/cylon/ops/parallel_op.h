@@ -11,16 +11,7 @@
 namespace cylon {
 class ResultsCallback {
  public:
-  virtual void OnResult(int tag, std::shared_ptr<cylon::Table> table);
-};
-
-class OpConfig {
-  std::unordered_map<std::string, std::string> config{};
-  OpConfig *AddConfig(const std::string &key, const std::string &value);
-  std::string GetConfig(const std::string &key, const std::string &def = "");
-
-  int64_t GetLong(const std::string &key, int64_t defaultValue = 0);
-  int32_t GetDouble(const std::string &key, double_t defaultValue = 0);
+  virtual void OnResult(int tag, std::shared_ptr<cylon::Table> table) = 0;
 };
 
 class Op {
@@ -35,14 +26,16 @@ class Op {
   std::shared_ptr<ResultsCallback> callback;
   std::function<int(int)> router;
 
-  std::shared_ptr<cylon::CylonContext> ctx_;
-  std::shared_ptr<cylon::OpConfig> config;
-
   std::queue<std::shared_ptr<cylon::Table>> *GetQueue(int tag);
   Op *GetChild(int tag);
 
+ protected:
+  std::shared_ptr<cylon::CylonContext> ctx_;
+
  public:
-  Op(int id, std::function<int(int)> router, std::shared_ptr<ResultsCallback> callback);
+  Op(std::shared_ptr<cylon::CylonContext> ctx,
+     int id, std::function<int(int)> router,
+     std::shared_ptr<ResultsCallback> callback);
 
   void DrainQueueToChild(int queue, int child, int tag);
 
@@ -88,15 +81,6 @@ class Op {
    * @return
    */
   bool Ready();
-
-  /**
-   * This function should initialize the operations. Any Op that overrides this function should
-   * call the super function, Op::Init()
-   *
-   * @param ctx pointer to the Cylon context
-   * @param op_config operation configuration
-   */
-  void Init(std::shared_ptr<cylon::CylonContext> ctx, std::shared_ptr<OpConfig> op_config);
 
   void Progress();
 

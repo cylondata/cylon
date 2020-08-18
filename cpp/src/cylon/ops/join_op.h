@@ -2,7 +2,20 @@
 #define CYLON_SRC_CYLON_OPS_JOIN_OP_H_
 
 #include "parallel_op.h"
+#include "partition_op.h"
+
 namespace cylon {
+
+class JoinOpConfig {
+ private:
+  std::shared_ptr<PartitionOpConfig> partition_config;
+
+ public:
+  JoinOpConfig(std::shared_ptr<PartitionOpConfig> partition_config);
+
+  std::shared_ptr<PartitionOpConfig> GetPartitionConfig();
+};
+
 class JoinOp : public Op {
  private:
   static const int JOIN_OP = 0;
@@ -14,11 +27,12 @@ class JoinOp : public Op {
   static const int LOCAL_JOIN = 6;
 
  public:
-  JoinOp(std::function<int(int)> router, std::shared_ptr<ResultsCallback> callback);
+  JoinOp(std::shared_ptr<CylonContext> ctx, std::function<int(int)> router,
+         std::shared_ptr<ResultsCallback> callback, std::shared_ptr<JoinOpConfig> config);
 
   void execute(int tag, std::shared_ptr<Table> table) override;
 
-  bool Ready() override;
+  bool Ready();
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_JOIN_OP_H_

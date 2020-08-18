@@ -1,11 +1,12 @@
 #include "join_op.h"
 #include "partition_op.h"
 
-cylon::JoinOp::JoinOp(std::function<int(int)> router,
-                      std::shared_ptr<ResultsCallback> callback) : Op(JOIN_OP, router, callback) {
-  auto left_partition = new PartitionOp(LEFT, [](int tag) {
+cylon::JoinOp::JoinOp(std::shared_ptr<CylonContext> ctx, std::function<int(int)> router,
+                      std::shared_ptr<ResultsCallback> callback,
+                      std::shared_ptr<JoinOpConfig> config) : Op(ctx, JOIN_OP, router, callback) {
+  auto left_partition = new PartitionOp(ctx, LEFT, [](int tag) {
     return 0;
-  }, callback);
+  }, callback, config->GetPartitionConfig());
 
   left_partition->IsComplete();
   //auto right_partition = new PartitionOp(RIGHT, callback);
@@ -36,4 +37,11 @@ void cylon::JoinOp::execute(int tag, std::shared_ptr<Table> table) {
 
 bool cylon::JoinOp::Ready() {
   return true;
+}
+
+cylon::JoinOpConfig::JoinOpConfig(shared_ptr<PartitionOpConfig> partition_config) : partition_config(partition_config) {
+
+}
+shared_ptr<cylon::PartitionOpConfig> cylon::JoinOpConfig::GetPartitionConfig() {
+  return this->partition_config;
 }

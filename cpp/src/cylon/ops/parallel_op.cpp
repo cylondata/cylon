@@ -1,5 +1,6 @@
 #include "parallel_op.h"
 
+typedef std::shared_ptr<cylon::CylonContext> ptr;
 cylon::Op *cylon::Op::GetChild(int tag) {
   return this->children.find(tag)->second;
 }
@@ -17,7 +18,11 @@ std::queue<std::shared_ptr<cylon::Table>> *cylon::Op::GetQueue(int tag) {
   return this->queues.find(tag)->second;
 }
 
-cylon::Op::Op(int id, std::function<int(int)> router, std::shared_ptr<ResultsCallback> callback) {
+cylon::Op::Op(std::shared_ptr<cylon::CylonContext> ctx,
+              int id,
+              std::function<int(int)> router,
+              std::shared_ptr<ResultsCallback> callback) {
+  this->ctx_ = ctx;
   this->id = id;
   this->callback = callback;
   this->router = router;
@@ -31,17 +36,7 @@ void cylon::Op::InsertTable(int tag, std::shared_ptr<cylon::Table> table) {
   this->inputs_count++;
 }
 
-void cylon::Op::Init(std::shared_ptr<cylon::CylonContext> ctx, std::shared_ptr<OpConfig> op_config) {
-  this->ctx_ = ctx;
-  this->config = op_config;
-
-// possible optimization point
-  for (auto child: children) {
-    child.second->Init(ctx, op_config);
-  }
-}
-
-void cylon::Op::Progress()  {
+void cylon::Op::Progress() {
   if (this->Ready()) {
     // todo can be changed to incrementally do the processing
     for (auto const &q:this->queues) {
@@ -104,28 +99,4 @@ void cylon::Op::InsertToChild(int tag, int child, std::shared_ptr<cylon::Table> 
 
 bool cylon::Op::Ready() {
   return this->inputs_count > 0;
-}
-
-cylon::OpConfig *cylon::OpConfig::AddConfig(const string &key, const string &value) {
-  this->config.insert(std::make_pair<>(key, value));
-  return this;
-}
-
-std::string cylon::OpConfig::GetConfig(const string &key, const string &def) {
-  return std::string();
-}
-int64_t cylon::OpConfig::GetLong(const string &key, int64_t defaultValue) {
-  auto find = this->config.find(key);
-  if (find == this->config.end()) {
-    return defaultValue;
-  }
-  return std::stol(find->second);
-}
-
-int32_t cylon::OpConfig::GetDouble(const string &key, double_t defaultValue) {
-  auto find = this->config.find(key);
-  if (find == this->config.end()) {
-    return defaultValue;
-  }
-  return std::stod(find->second);
 }
