@@ -39,7 +39,12 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPERCASE_CMAKE_BUILD_TYPE)
 if (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "DEBUG")
     message("Running on debug mode...")
-    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -g -fsanitize=address")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+
+    # if running tests, bypass address sanitizer, because catch header has memory leaks
+    if (NOT CYLON_WITH_TEST)
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer ")
+    endif ()
 elseif(UPPERCASE_CMAKE_BUILD_TYPE MATCHES "RELEASE")
     message("Running on Release mode...")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")

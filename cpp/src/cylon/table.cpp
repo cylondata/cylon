@@ -219,10 +219,34 @@ Status Table::FromArrowTable(cylon::CylonContext *ctx,
   return Status(cylon::OK, "Loaded Successfully");
 }
 
+Status Table::FromColumns(cylon::CylonContext *ctx,
+                          const vector<std::shared_ptr<Column>> &columns,
+                          std::shared_ptr<Table> *tableOut) {
+
+  arrow::Status status;
+  arrow::SchemaBuilder schema_builder;
+  std::vector<std::shared_ptr<arrow::Array>> col_arrays;
+  col_arrays.reserve(columns.size());
+
+  for (const std::shared_ptr<Column> &col: columns) {
+    auto data_type = col->GetDataType();
+    auto field = arrow::field(col->GetID(), cylon::tarrow::convertToArrowType(data_type));
+    status = schema_builder.AddField(field);
+
+    if (!status.ok()) return Status(Code::UnknownError, status.message());
+    col_arrays.push_back(col->GetColumnData());
+  }
+
+  auto schema_result = schema_builder.Finish();
+  shared_ptr<arrow::Table> arrow_table = arrow::Table::Make(schema_result.ValueOrDie(), col_arrays);
+
+  return cylon::Table::FromArrowTable(ctx, arrow_table, tableOut);
+}
+
 Status Table::WriteCSV(const std::string &path, const cylon::io::config::CSVWriteOptions &options) {
   std::ofstream out_csv;
   out_csv.open(path);
-  Status status = PrintToOStream( 0,
+  Status status = PrintToOStream(0,
                                  table_->num_columns(), 0,
                                  table_->num_rows(), out_csv,
                                  options.GetDelimiter(),
@@ -245,7 +269,7 @@ int64_t Table::Rows() {
 }
 
 void Table::Print() {
-  Print(0, this->Columns(), 0, this->Rows());
+  Print(0, this->Rows(), 0, this->Columns());
 }
 
 void Table::Print(int row1, int row2, int col1, int col2) {

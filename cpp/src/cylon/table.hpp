@@ -80,6 +80,17 @@ class Table {
                                std::shared_ptr<Table> *tableOut);
 
   /**
+   * Create a table from cylon columns
+   * @param ctx
+   * @param columns
+   * @param tableOut
+   * @return
+   */
+  static Status FromColumns(cylon::CylonContext *ctx,
+                            const std::vector<std::shared_ptr<Column>>
+                            &columns, std::shared_ptr<Table> *tableOut);
+
+  /**
    * Write the table as a CSV
    * @param path file path
    * @return the status of the operation

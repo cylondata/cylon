@@ -15,6 +15,8 @@
 #ifndef CYLON_SRC_IO_DATATYPES_H_
 #define CYLON_SRC_IO_DATATYPES_H_
 
+#include <memory>
+
 namespace cylon {
 
 /**
@@ -108,7 +110,7 @@ class DataType {
    * @return
    */
   Type::type getType() {
-	return t;
+    return t;
   };
 
   /**
@@ -116,7 +118,17 @@ class DataType {
    * @return
    */
   Layout::layout getLayout() {
-	return l;
+    return l;
+  };
+
+  /**
+   * Makes a shared pointer for the DataType
+   * @param t
+   * @param l
+   * @return
+   */
+  static std::shared_ptr<DataType> Make(Type::type t, Layout::layout l = Layout::FIXED_WIDTH) {
+    return std::make_shared<DataType>(t, l);
   };
  private:
   // the type

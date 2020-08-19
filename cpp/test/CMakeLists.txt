@@ -55,3 +55,7 @@ cylon_add_test(join_test 4)
 cylon_add_test(set_op_test 1)
 cylon_add_test(set_op_test 2)
 cylon_add_test(set_op_test 4)
+
+# create table test
+cylon_add_test(create_table_test 1)
+
