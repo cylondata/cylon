@@ -28,7 +28,7 @@ namespace tarrow {
  * @param tType the cylon type
  * @return corresponding arrow type
  */
-std::shared_ptr<arrow::DataType> convertToArrowType(std::shared_ptr<DataType> tType,
+std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataType> &tType,
                                                     int32_t width = -1,
                                                     int32_t precision = -1,
                                                     int32_t scale = -1);

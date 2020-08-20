@@ -225,11 +225,12 @@ Status Table::FromColumns(cylon::CylonContext *ctx,
 
   arrow::Status status;
   arrow::SchemaBuilder schema_builder;
-  std::vector<std::shared_ptr<arrow::Array>> col_arrays;
+  std::vector<std::shared_ptr<arrow::ChunkedArray>> col_arrays;
   col_arrays.reserve(columns.size());
 
+  std::shared_ptr<cylon::DataType> data_type;
   for (const std::shared_ptr<Column> &col: columns) {
-    auto data_type = col->GetDataType();
+    data_type = col->GetDataType();
     auto field = arrow::field(col->GetID(), cylon::tarrow::convertToArrowType(data_type));
     status = schema_builder.AddField(field);
 

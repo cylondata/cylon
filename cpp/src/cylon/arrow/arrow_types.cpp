@@ -18,17 +18,14 @@
 namespace cylon {
 namespace tarrow {
 
-std::shared_ptr <arrow::DataType> convertToArrowType(std::shared_ptr <DataType> tType,
-                                                     int32_t width,
-                                                     int32_t precision,
-                                                     int32_t scale) {
+std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataType> &tType,
+                                                    int32_t width,
+                                                    int32_t precision,
+                                                    int32_t scale) {
   switch (tType->getType()) {
-    case Type::BOOL:
-      return std::make_shared<arrow::BooleanType>();
-    case Type::UINT8:
-      return std::make_shared<arrow::UInt8Type>();
-    case Type::INT8:
-      return std::make_shared<arrow::Int8Type>();
+    case Type::BOOL:return std::make_shared<arrow::BooleanType>();
+    case Type::UINT8:return std::make_shared<arrow::UInt8Type>();
+    case Type::INT8:return std::make_shared<arrow::Int8Type>();
     case Type::UINT16:
       return std::make_shared<arrow::UInt16Type>();
     case Type::INT16:
@@ -79,6 +76,7 @@ std::shared_ptr <arrow::DataType> convertToArrowType(std::shared_ptr <DataType> 
 bool validateArrowTableTypes(const std::shared_ptr <arrow::Table> &table) {
   std::shared_ptr <arrow::Schema> schema = table->schema();
   for (const auto &t : schema->fields()) {
+
     switch (t->type()->id()) {
       case arrow::Type::NA:
         break;
