@@ -15,6 +15,8 @@
 #ifndef CYLON_SRC_IO_DATATYPES_H_
 #define CYLON_SRC_IO_DATATYPES_H_
 
+#include <memory>
+
 namespace cylon {
 
 /**
@@ -108,7 +110,7 @@ class DataType {
    * @return
    */
   Type::type getType() {
-	return t;
+    return t;
   };
 
   /**
@@ -116,7 +118,17 @@ class DataType {
    * @return
    */
   Layout::layout getLayout() {
-	return l;
+    return l;
+  };
+
+  /**
+   * Makes a shared pointer for the DataType
+   * @param t
+   * @param l
+   * @return
+   */
+  static std::shared_ptr<DataType> Make(Type::type t, Layout::layout l = Layout::FIXED_WIDTH) {
+    return std::make_shared<DataType>(t, l);
   };
  private:
   // the type
@@ -125,6 +137,41 @@ class DataType {
   Layout::layout l;
 };
 
+#define TYPE_FACTORY(NAME, TYPE, LAYOUT)                                                \
+  inline std::shared_ptr<DataType> NAME() {                                                    \
+    static std::shared_ptr<DataType> result = std::make_shared<DataType>(TYPE, LAYOUT); \
+    return result;                                                                      \
+  }
+
+#define FIXED_WIDTH_TYPE_FACTORY(NAME, TYPE) \
+  TYPE_FACTORY(NAME, TYPE, Layout::FIXED_WIDTH)
+
+#define VAR_WIDTH_TYPE_FACTORY(NAME, TYPE) \
+  TYPE_FACTORY(NAME, TYPE, Layout::VARIABLE_WIDTH)
+
+FIXED_WIDTH_TYPE_FACTORY(Bool, Type::BOOL)
+FIXED_WIDTH_TYPE_FACTORY(Int8, Type::INT8)
+FIXED_WIDTH_TYPE_FACTORY(UInt8, Type::UINT8)
+FIXED_WIDTH_TYPE_FACTORY(Int16, Type::INT16)
+FIXED_WIDTH_TYPE_FACTORY(UInt16, Type::UINT16)
+FIXED_WIDTH_TYPE_FACTORY(Int32, Type::INT32)
+FIXED_WIDTH_TYPE_FACTORY(UInt32, Type::UINT32)
+FIXED_WIDTH_TYPE_FACTORY(Int64, Type::INT64)
+FIXED_WIDTH_TYPE_FACTORY(UInt64, Type::UINT64)
+FIXED_WIDTH_TYPE_FACTORY(HalfFloat, Type::HALF_FLOAT)
+FIXED_WIDTH_TYPE_FACTORY(Float, Type::FLOAT)
+FIXED_WIDTH_TYPE_FACTORY(Double, Type::DOUBLE)
+FIXED_WIDTH_TYPE_FACTORY(Date32, Type::DATE32)
+FIXED_WIDTH_TYPE_FACTORY(Date64, Type::DATE64)
+FIXED_WIDTH_TYPE_FACTORY(Timestamp, Type::TIMESTAMP)
+FIXED_WIDTH_TYPE_FACTORY(Time32, Type::TIME32)
+FIXED_WIDTH_TYPE_FACTORY(Time64, Type::TIME64)
+FIXED_WIDTH_TYPE_FACTORY(Interval, Type::INTERVAL)
+FIXED_WIDTH_TYPE_FACTORY(Decimal, Type::DECIMAL)
+FIXED_WIDTH_TYPE_FACTORY(FixedBinary, Type::FIXED_SIZE_BINARY)
+
+VAR_WIDTH_TYPE_FACTORY(String, Type::STRING)
+VAR_WIDTH_TYPE_FACTORY(Binary, Type::BINARY)
 }  // namespace cylon
 
 #endif //CYLON_SRC_IO_DATATYPES_H_

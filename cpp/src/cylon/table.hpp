@@ -41,9 +41,17 @@ class Table {
   /**
    * Tables can only be created using the factory methods, so the constructor is private
    */
-  Table(std::shared_ptr<arrow::Table> &tab, cylon::CylonContext *ctx) {
-    this->table_ = tab;
-    this->ctx = ctx;
+  Table(std::shared_ptr<arrow::Table> &tab, cylon::CylonContext *ctx)
+      : ctx(ctx), table_(tab),
+        columns_(std::vector<shared_ptr<Column>>(tab->num_columns())) {
+//    this->table_ = tab;
+//    this->ctx = ctx;
+    const int num_cols = table_->num_columns();
+    for (int i = 0; i < num_cols; i++) {
+      const auto f = table_->field(i);
+      columns_.at(i) =
+          cylon::Column::Make(f->name(), cylon::tarrow::ToCylonType(f->type()), table_->column(i));
+    }
   }
 
   virtual ~Table();
@@ -78,6 +86,17 @@ class Table {
   static Status FromArrowTable(cylon::CylonContext *ctx,
                                std::shared_ptr<arrow::Table> &table,
                                std::shared_ptr<Table> *tableOut);
+
+  /**
+   * Create a table from cylon columns
+   * @param ctx
+   * @param columns
+   * @param tableOut
+   * @return
+   */
+  static Status FromColumns(cylon::CylonContext *ctx,
+                            const std::vector<std::shared_ptr<Column>>
+                            &columns, std::shared_ptr<Table> *tableOut);
 
   /**
    * Write the table as a CSV
@@ -293,6 +312,20 @@ class Table {
   }
 
   bool IsRetain() const;
+
+  /**
+   * Get the i'th column from the table
+   * @param index
+   * @return
+   */
+  std::shared_ptr<Column> GetColumn(int32_t index) const;
+
+  /**
+   * Get the column vector of the table
+   * @return
+   */
+  std::vector<shared_ptr<cylon::Column>> GetColumns() const;
+
  private:
   /**
    * Every table should have an unique id
@@ -301,6 +334,7 @@ class Table {
   cylon::CylonContext *ctx;
   std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
+  std::vector<shared_ptr<cylon::Column>> columns_;
 };
 }  // namespace cylon
 

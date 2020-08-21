@@ -3,7 +3,7 @@ CPP_BUILD="OFF"
 PYTHON_BUILD="OFF"
 JAVA_BUILD="OFF"
 BUILD_ALL="OFF"
-BUILD_MODE=Debug
+BUILD_MODE=Release
 BUILD_MODE_DEBUG="OFF"
 BUILD_MODE_RELEASE="OFF"
 PYTHON_RELEASE="OFF"
@@ -50,10 +50,12 @@ case $key in
     ;;
     --debug)
     BUILD_MODE_DEBUG="ON"
+    BUILD_MODE_RELEASE="OFF"
     shift # past argument
     ;;
     --release)
     BUILD_MODE_RELEASE="ON"
+    BUILD_MODE_DEBUG="OFF"
     shift # past argument
     ;;
     --test)
@@ -135,7 +137,8 @@ build_cpp(){
   pushd ${BUILD_PATH} || exit 1
   export ARROW_HOME=${BUILD_PATH}/arrow/install
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
-      -DCYLON_WITH_TEST=${RUN_TESTS} $CPPLINT_CMD $INSTALL_CMD ${SOURCE_DIR} || exit 1
+      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_TESTS} $CPPLINT_CMD $INSTALL_CMD \
+      ${SOURCE_DIR} || exit 1
   make -j 4 || exit 1
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
   printf "Cylon CPP Built Successufully!"

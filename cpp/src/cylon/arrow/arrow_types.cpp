@@ -18,60 +18,43 @@
 namespace cylon {
 namespace tarrow {
 
-std::shared_ptr <arrow::DataType> convertToArrowType(std::shared_ptr <DataType> tType,
-                                                     int32_t width,
-                                                     int32_t precision,
-                                                     int32_t scale) {
+std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataType> &tType,
+                                                    int32_t width,
+                                                    int32_t precision,
+                                                    int32_t scale) {
   switch (tType->getType()) {
-    case Type::BOOL:
-      return std::make_shared<arrow::BooleanType>();
-    case Type::UINT8:
-      return std::make_shared<arrow::UInt8Type>();
-    case Type::INT8:
-      return std::make_shared<arrow::Int8Type>();
-    case Type::UINT16:
-      return std::make_shared<arrow::UInt16Type>();
-    case Type::INT16:
-      return std::make_shared<arrow::Int16Type>();
-    case Type::UINT32:
-      return std::make_shared<arrow::UInt32Type>();
-    case Type::INT32:
-      return std::make_shared<arrow::Int32Type>();
-    case Type::UINT64:
-      return std::make_shared<arrow::UInt64Type>();
-    case Type::INT64:
-      return std::make_shared<arrow::Int64Type>();
-    case Type::HALF_FLOAT:
-      return std::make_shared<arrow::HalfFloatType>();
-    case Type::FLOAT:
-      return std::make_shared<arrow::FloatType>();
-    case Type::DOUBLE:
-      return std::make_shared<arrow::DoubleType>();
-    case Type::STRING:
-      return std::make_shared<arrow::StringType>();
-    case Type::BINARY:
-      return std::make_shared<arrow::BinaryType>();
-    case Type::FIXED_SIZE_BINARY:
+    case Type::BOOL:return std::make_shared<arrow::BooleanType>();
+    case Type::UINT8:return std::make_shared<arrow::UInt8Type>();
+    case Type::INT8:return std::make_shared<arrow::Int8Type>();
+    case Type::UINT16:return std::make_shared<arrow::UInt16Type>();
+    case Type::INT16:return std::make_shared<arrow::Int16Type>();
+    case Type::UINT32:return std::make_shared<arrow::UInt32Type>();
+    case Type::INT32:return std::make_shared<arrow::Int32Type>();
+    case Type::UINT64:return std::make_shared<arrow::UInt64Type>();
+    case Type::INT64:return std::make_shared<arrow::Int64Type>();
+    case Type::HALF_FLOAT:return std::make_shared<arrow::HalfFloatType>();
+    case Type::FLOAT:return std::make_shared<arrow::FloatType>();
+    case Type::DOUBLE:return std::make_shared<arrow::DoubleType>();
+    case Type::STRING:return std::make_shared<arrow::StringType>();
+    case Type::BINARY:return std::make_shared<arrow::BinaryType>();
+    case Type::FIXED_SIZE_BINARY: {
+      if (width < 0) break;
       return std::make_shared<arrow::FixedSizeBinaryType>(width);
-    case Type::DATE32:
-      return std::make_shared<arrow::Date32Type>();
-    case Type::DATE64:
-      return std::make_shared<arrow::Date64Type>();
-    case Type::TIMESTAMP:
-      return std::make_shared<arrow::TimestampType>();
-    case Type::TIME32:
-      return std::make_shared<arrow::Time32Type>();
-    case Type::TIME64:
-      return std::make_shared<arrow::Time64Type>();
-    case Type::DECIMAL:
+    }
+    case Type::DATE32:return std::make_shared<arrow::Date32Type>();
+    case Type::DATE64:return std::make_shared<arrow::Date64Type>();
+    case Type::TIMESTAMP:return std::make_shared<arrow::TimestampType>();
+    case Type::TIME32:return std::make_shared<arrow::Time32Type>();
+    case Type::TIME64:return std::make_shared<arrow::Time64Type>();
+    case Type::DECIMAL: {
+      if (width < 0 || precision < 0 || scale < 0) break;
       return std::make_shared<arrow::DecimalType>(width, precision, scale);
-    case Type::DURATION:
-      return std::make_shared<arrow::DurationType>();
+    }
+    case Type::DURATION:return std::make_shared<arrow::DurationType>();
     case Type::INTERVAL:
     case Type::LIST:
     case Type::FIXED_SIZE_LIST:
-    case Type::EXTENSION:
-      break;
+    case Type::EXTENSION:break;
   }
   return nullptr;
 }
@@ -79,6 +62,7 @@ std::shared_ptr <arrow::DataType> convertToArrowType(std::shared_ptr <DataType> 
 bool validateArrowTableTypes(const std::shared_ptr <arrow::Table> &table) {
   std::shared_ptr <arrow::Schema> schema = table->schema();
   for (const auto &t : schema->fields()) {
+
     switch (t->type()->id()) {
       case arrow::Type::NA:
         break;
@@ -142,11 +126,39 @@ bool validateArrowTableTypes(const std::shared_ptr <arrow::Table> &table) {
       case arrow::Type::DURATION:
       case arrow::Type::LARGE_STRING:
       case arrow::Type::LARGE_BINARY:
-      case arrow::Type::LARGE_LIST:
-        return false;
+      case arrow::Type::LARGE_LIST:return false;
     }
   }
   return false;
+}
+
+std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &arr_type) {
+  switch (arr_type->id()) {
+    case arrow::Type::BOOL:return cylon::Bool();
+    case arrow::Type::UINT8:return cylon::UInt8();
+    case arrow::Type::INT8:return cylon::Int8();
+    case arrow::Type::UINT16:return cylon::UInt16();
+    case arrow::Type::INT16:return cylon::Int16();
+    case arrow::Type::UINT32:return cylon::UInt32();
+    case arrow::Type::INT32:return cylon::Int32();
+    case arrow::Type::UINT64:return cylon::UInt64();
+    case arrow::Type::INT64:return cylon::Int64();
+    case arrow::Type::HALF_FLOAT:return cylon::HalfFloat();
+    case arrow::Type::FLOAT:return cylon::Float();
+    case arrow::Type::DOUBLE:return cylon::Double();
+    case arrow::Type::BINARY:return cylon::Binary();
+    case arrow::Type::FIXED_SIZE_BINARY:return cylon::FixedBinary();
+    case arrow::Type::STRING:return cylon::String();
+    case arrow::Type::DATE32:return cylon::Date32();
+    case arrow::Type::DATE64:return cylon::Date64();
+    case arrow::Type::TIMESTAMP:return cylon::Timestamp();
+    case arrow::Type::TIME32:return cylon::Time32();
+    case arrow::Type::TIME64:return cylon::Time64();
+    case arrow::Type::INTERVAL:return cylon::Interval();
+    case arrow::Type::DECIMAL:return cylon::Decimal();
+    default:break;
+  }
+  return nullptr;
 }
 
 }  // namespace tarrow
