@@ -135,7 +135,8 @@ build_cpp(){
   pushd ${BUILD_PATH} || exit 1
   export ARROW_HOME=${BUILD_PATH}/arrow/install
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
-      -DCYLON_WITH_TEST=${RUN_TESTS} $CPPLINT_CMD $INSTALL_CMD ${SOURCE_DIR} || exit 1
+      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_TESTS} $CPPLINT_CMD $INSTALL_CMD \
+      ${SOURCE_DIR} || exit 1
   make -j 4 || exit 1
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
   printf "Cylon CPP Built Successufully!"
