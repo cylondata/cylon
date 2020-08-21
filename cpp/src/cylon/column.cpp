@@ -17,7 +17,7 @@
 namespace cylon {
 
 std::shared_ptr<arrow::ChunkedArray> Column::GetColumnData() const{
-  return this->data_;
+  return this->data_array;
 };
 
 std::string Column::GetID() const{

@@ -32,13 +32,13 @@ class Column {
  public:
   Column(const std::string &id, const std::shared_ptr<DataType> &type,
          const std::shared_ptr<arrow::ChunkedArray> &data_)
-      : id(id), type(type), data_(data_) {
+      : id(id), type(type), data_array(data_) {
   }
 
   Column(const std::string &id, const std::shared_ptr<DataType> &type,
          const std::shared_ptr<arrow::Array> &data_)
       : id(id), type(type),
-        data_(std::make_shared<arrow::ChunkedArray>(data_)) {
+        data_array(std::make_shared<arrow::ChunkedArray>(data_)) {
   }
 
   /**
@@ -74,7 +74,7 @@ class Column {
       : id(std::move(id)), type(std::move(type)) {
   }
 
-  std::shared_ptr<arrow::ChunkedArray> data_;   // pointer to the data array
+  std::shared_ptr<arrow::ChunkedArray> data_array;   // pointer to the data array
 };
 
 template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
@@ -97,7 +97,7 @@ class VectorColumn : public Column {
         arrow::ArrayData::Make(cylon::tarrow::convertToArrowType(type), data_vector->size(),
                                {val_buff, data_buff});
 
-    Column::data_ = std::make_shared<arrow::ChunkedArray>(arrow::MakeArray(arr_data));
+    Column::data_array = std::make_shared<arrow::ChunkedArray>(arrow::MakeArray(arr_data));
   }
 
   static std::shared_ptr<VectorColumn<T>> Make(const std::string &id,
