@@ -896,10 +896,20 @@ Status Table::PrintToOStream(
   }
   return Status(Code::OK);
 }
+
 shared_ptr<arrow::Table> Table::get_table() {
   return table_;
 }
+
 bool Table::IsRetain() const {
   return retain_;
+}
+
+std::shared_ptr<Column> Table::GetColumn(int32_t index) const {
+  return this->columns_.at(index);
+}
+
+std::vector<shared_ptr<cylon::Column>> Table::GetColumns() const {
+  return this->columns_;
 }
 }  // namespace cylon

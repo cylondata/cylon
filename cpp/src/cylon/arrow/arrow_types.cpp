@@ -140,11 +140,39 @@ bool validateArrowTableTypes(const std::shared_ptr <arrow::Table> &table) {
       case arrow::Type::DURATION:
       case arrow::Type::LARGE_STRING:
       case arrow::Type::LARGE_BINARY:
-      case arrow::Type::LARGE_LIST:
-        return false;
+      case arrow::Type::LARGE_LIST:return false;
     }
   }
   return false;
+}
+
+std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &arr_type) {
+  switch (arr_type->id()) {
+    case arrow::Type::BOOL:return cylon::Bool();
+    case arrow::Type::UINT8:return cylon::UInt8();
+    case arrow::Type::INT8:return cylon::Int8();
+    case arrow::Type::UINT16:return cylon::UInt16();
+    case arrow::Type::INT16:return cylon::Int16();
+    case arrow::Type::UINT32:return cylon::UInt32();
+    case arrow::Type::INT32:return cylon::Int32();
+    case arrow::Type::UINT64:return cylon::UInt64();
+    case arrow::Type::INT64:return cylon::Int64();
+    case arrow::Type::HALF_FLOAT:return cylon::HalfFloat();
+    case arrow::Type::FLOAT:return cylon::Float();
+    case arrow::Type::DOUBLE:return cylon::Double();
+    case arrow::Type::BINARY:return cylon::Binary();
+    case arrow::Type::FIXED_SIZE_BINARY:return cylon::FixedBinary();
+    case arrow::Type::STRING:return cylon::String();
+    case arrow::Type::DATE32:return cylon::Date32();
+    case arrow::Type::DATE64:return cylon::Date64();
+    case arrow::Type::TIMESTAMP:return cylon::Timestamp();
+    case arrow::Type::TIME32:return cylon::Time32();
+    case arrow::Type::TIME64:return cylon::Time64();
+    case arrow::Type::INTERVAL:return cylon::Interval();
+    case arrow::Type::DECIMAL:return cylon::Decimal();
+    default:break;
+  }
+  return nullptr;
 }
 
 }  // namespace tarrow

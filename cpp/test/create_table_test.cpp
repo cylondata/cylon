@@ -1,3 +1,17 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "test_header.hpp"
 #include "test_utils.hpp"
 
@@ -15,7 +29,7 @@ TEST_CASE("create table from columns testing", "[columns]") {
     col1->push_back((double_t) i + 10.0);
   }
 
-  SECTION("testing inner joins") {
+  SECTION("testing create table") {
     auto cy_col0 =
         cylon::VectorColumn<int32_t>::Make("col0", cylon::DataType::Make(cylon::Type::INT32), col0);
 
@@ -26,5 +40,12 @@ TEST_CASE("create table from columns testing", "[columns]") {
     status = cylon::Table::FromColumns(ctx, {cy_col0, cy_col1}, &output);
 
     REQUIRE((status.is_ok() && output->Columns() == 2 && output->Rows() == size));
+
+    std::shared_ptr<arrow::DoubleArray> c =
+        static_pointer_cast<arrow::DoubleArray>(output->GetColumn(1)->GetColumnData()->chunk(0));
+
+    for (int i = 0; i < c->length(); i++) {
+      REQUIRE((c->Value(i) == col1->at(i)));
+    }
   }
 }

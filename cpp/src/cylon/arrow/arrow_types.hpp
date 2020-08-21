@@ -34,6 +34,13 @@ std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataTy
                                                     int32_t scale = -1);
 
 /**
+ * Convert arrow data type pointer to Cylon Data type pointer
+ * @param arr_type
+ * @return corresponding
+ */
+std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &arr_type);
+
+/**
  * Validate the types of an arrow table
  * @param table true if we support the types
  * @return false if we don't support the types

@@ -30,14 +30,14 @@ namespace cylon {
 
 class Column {
  public:
-  Column(std::string id, std::shared_ptr<DataType> type,
-         std::shared_ptr<arrow::ChunkedArray> &data_)
-      : id(std::move(id)), type(std::move(type)), data_(data_) {
+  Column(const std::string &id, const std::shared_ptr<DataType> &type,
+         const std::shared_ptr<arrow::ChunkedArray> &data_)
+      : id(id), type(type), data_(data_) {
   }
 
-  Column(std::string id, std::shared_ptr<DataType> type,
-         std::shared_ptr<arrow::Array> &data_)
-      : id(std::move(id)), type(std::move(type)),
+  Column(const std::string &id, const std::shared_ptr<DataType> &type,
+         const std::shared_ptr<arrow::Array> &data_)
+      : id(id), type(type),
         data_(std::make_shared<arrow::ChunkedArray>(data_)) {
   }
 
@@ -45,29 +45,29 @@ class Column {
    * Return the data wrapped by column 
    * @return arrow chunked array
    */
-  std::shared_ptr<arrow::ChunkedArray> GetColumnData();
+  std::shared_ptr<arrow::ChunkedArray> GetColumnData() const;
 
   /**
    * Return the unique id of the array
    * @return
    */
-  std::string GetID();
+  std::string GetID() const;
 
   /**
    * Return the data type of the column
    * @return
    */
-  std::shared_ptr<DataType> GetDataType();
+  std::shared_ptr<DataType> GetDataType() const;
 
   static std::shared_ptr<Column> Make(const std::string &id, const std::shared_ptr<DataType> &type,
-                                      std::shared_ptr<arrow::ChunkedArray> &data_);
+                                      const std::shared_ptr<arrow::ChunkedArray> &data_);
 
   static std::shared_ptr<Column> Make(const std::string &id, const std::shared_ptr<DataType> &type,
-                                      std::shared_ptr<arrow::Array> &data_);
+                                      const std::shared_ptr<arrow::Array> &data_);
 
  private:
-  const std::string id; // The id of the column
-  const std::shared_ptr<DataType> type; // The datatype of the column
+  std::string id; // The id of the column
+  std::shared_ptr<DataType> type; // The datatype of the column
 
  protected:
   Column(std::string id, std::shared_ptr<DataType> type)
