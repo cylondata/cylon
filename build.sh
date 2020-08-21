@@ -3,7 +3,7 @@ CPP_BUILD="OFF"
 PYTHON_BUILD="OFF"
 JAVA_BUILD="OFF"
 BUILD_ALL="OFF"
-BUILD_MODE=Debug
+BUILD_MODE=Release
 BUILD_MODE_DEBUG="OFF"
 BUILD_MODE_RELEASE="OFF"
 PYTHON_RELEASE="OFF"
@@ -50,10 +50,12 @@ case $key in
     ;;
     --debug)
     BUILD_MODE_DEBUG="ON"
+    BUILD_MODE_RELEASE="OFF"
     shift # past argument
     ;;
     --release)
     BUILD_MODE_RELEASE="ON"
+    BUILD_MODE_DEBUG="OFF"
     shift # past argument
     ;;
     --test)
