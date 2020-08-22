@@ -1,5 +1,5 @@
-#ifndef CYLON_SRC_CYLON_OPS_KERNELS_PARTITION_H_
-#define CYLON_SRC_CYLON_OPS_KERNELS_PARTITION_H_
+#ifndef CYLON_SRC_CYLON_OPS_KERNELS_PARTITION_HPP_
+#define CYLON_SRC_CYLON_OPS_KERNELS_PARTITION_HPP_
 
 #include <status.hpp>
 #include <vector>
@@ -14,4 +14,4 @@ Status HashPartition(CylonContext *ctx, const std::shared_ptr<Table> table,
 }
 }
 
-#endif //CYLON_SRC_CYLON_OPS_KERNELS_PARTITION_H_
+#endif //CYLON_SRC_CYLON_OPS_KERNELS_PARTITION_HPP_

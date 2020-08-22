@@ -1,12 +1,14 @@
-#include "partition_op.h"
-#include <ops/kernels/computation/partition.h>
+#include "partition_op.hpp"
+#include <ops/kernels/partition.hpp>
 
 cylon::PartitionOp::PartitionOp(std::shared_ptr<cylon::CylonContext> ctx,
+                                std::shared_ptr<arrow::Schema> schema,
                                 int id, std::function<int(int)> router,
                                 std::shared_ptr<ResultsCallback> callback,
-                                std::shared_ptr<PartitionOpConfig> config) : Op(ctx, id, router, callback) {}
+                                std::shared_ptr<PartitionOpConfig> config) : Op(ctx, schema, id, router, callback),
+                                                                             config(config) {}
 
-void cylon::PartitionOp::execute(int tag, std::shared_ptr<Table> table) {
+void cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
   std::unordered_map<int, std::shared_ptr<Table>> out;
 
   // todo pass ctx as a shared pointer
@@ -15,6 +17,10 @@ void cylon::PartitionOp::execute(int tag, std::shared_ptr<Table> table) {
   for (auto const &tab:out) {
     this->InsertToAllChildren(tab.first, tab.second);
   }
+}
+
+void cylon::PartitionOp::Finalize() {
+
 }
 
 cylon::PartitionOpConfig::PartitionOpConfig(int no_of_partitions,

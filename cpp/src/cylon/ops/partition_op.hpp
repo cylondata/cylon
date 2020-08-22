@@ -1,6 +1,6 @@
-#ifndef CYLON_SRC_CYLON_OPS_PARTITION_OP_H_
-#define CYLON_SRC_CYLON_OPS_PARTITION_OP_H_
-#include "parallel_op.h"
+#ifndef CYLON_SRC_CYLON_OPS_PARTITION_OP_HPP_
+#define CYLON_SRC_CYLON_OPS_PARTITION_OP_HPP_
+#include "parallel_op.hpp"
 
 namespace cylon {
 
@@ -25,11 +25,13 @@ class PartitionOp : public Op {
   static const int INPUT_Q = 0;
 
   PartitionOp(std::shared_ptr<cylon::CylonContext> ctx,
+              std::shared_ptr<arrow::Schema> schema,
               int id, std::function<int(int)> router,
               std::shared_ptr<ResultsCallback> callback,
               std::shared_ptr<PartitionOpConfig> config);
-  void execute(int tag, std::shared_ptr<Table> table) override;
+  void Execute(int tag, std::shared_ptr<Table> table) override;
+  void Finalize() override ;
 };
 }
 
-#endif //CYLON_SRC_CYLON_OPS_PARTITION_OP_H_
+#endif //CYLON_SRC_CYLON_OPS_PARTITION_OP_HPP_

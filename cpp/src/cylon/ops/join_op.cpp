@@ -1,10 +1,12 @@
-#include "join_op.h"
-#include "partition_op.h"
+#include "join_op.hpp"
+#include "partition_op.hpp"
 
-cylon::JoinOp::JoinOp(std::shared_ptr<CylonContext> ctx, std::function<int(int)> router,
+cylon::JoinOp::JoinOp(std::shared_ptr<CylonContext> ctx,
+                      std::shared_ptr<arrow::Schema> schema,
+                      std::function<int(int)> router,
                       std::shared_ptr<ResultsCallback> callback,
-                      std::shared_ptr<JoinOpConfig> config) : Op(ctx, JOIN_OP, router, callback) {
-  auto left_partition = new PartitionOp(ctx, LEFT, [](int tag) {
+                      std::shared_ptr<JoinOpConfig> config) : Op(ctx, schema, JOIN_OP, router, callback) {
+  auto left_partition = new PartitionOp(ctx, schema, LEFT, [](int tag) {
     return 0;
   }, callback, config->GetPartitionConfig());
 
@@ -29,14 +31,10 @@ cylon::JoinOp::JoinOp(std::shared_ptr<CylonContext> ctx, std::function<int(int)>
 //    sort->AddChild(local_join);
 //  }
 }
-void cylon::JoinOp::execute(int tag, std::shared_ptr<Table> table) {
+void cylon::JoinOp::Execute(int tag, std::shared_ptr<Table> table) {
   // pass the left tables
   this->DrainQueueToChild(LEFT, LEFT, 0);
   this->DrainQueueToChild(RIGHT, RIGHT, 1);
-}
-
-bool cylon::JoinOp::Ready() {
-  return true;
 }
 
 cylon::JoinOpConfig::JoinOpConfig(shared_ptr<PartitionOpConfig> partition_config) : partition_config(partition_config) {

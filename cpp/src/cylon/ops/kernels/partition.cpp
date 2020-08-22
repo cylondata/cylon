@@ -1,6 +1,6 @@
 #include <ctx/arrow_memory_pool_utils.hpp>
 #include <arrow/arrow_partition_kernels.hpp>
-#include "partition.h"
+#include "partition.hpp"
 
 namespace cylon {
 namespace kernel {

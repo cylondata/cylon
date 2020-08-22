@@ -85,7 +85,7 @@ add_library(cylon SHARED
         arrow/arrow_builder.cpp
         arrow/arrow_task_all_to_all.h
         arrow/arrow_task_all_to_all.cpp
-        ops/parallel_op.h ops/join_op.h ops/parallel_op.cpp ops/join_op.cpp ops/partition_op.h ops/partition_op.cpp ops/kernels/computation/partition.h ops/kernels/computation/partition.cpp)
+        ops/parallel_op.hpp ops/join_op.hpp ops/parallel_op.cpp ops/join_op.cpp ops/partition_op.hpp ops/partition_op.cpp ops/kernels/partition.hpp ops/kernels/partition.cpp ops/union_op.hpp ops/union_op.cpp ops/kernels/union.cpp ops/kernels/union.hpp ops/kernels/utils/RowComparator.cpp ops/kernels/utils/RowComparator.hpp ops/kernels/utils/PrepareArray.hpp ops/kernels/utils/PrepareArray.cpp ../examples/com_comm_test.cpp)
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
 
