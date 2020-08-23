@@ -11,8 +11,9 @@ UnionOp::UnionOp(std::shared_ptr<cylon::CylonContext> ctx,
   this->union_kernel = new cylon::kernel::Union(ctx, schema, config->GetExpectedRows());
 }
 
-void UnionOp::Execute(int tag, std::shared_ptr<Table> table) {
+bool UnionOp::Execute(int tag, std::shared_ptr<Table> table) {
   this->union_kernel->InsertTable(table);
+  return true;
 }
 
 void UnionOp::Finalize() {

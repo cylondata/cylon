@@ -46,6 +46,11 @@ class Table {
     this->ctx = ctx;
   }
 
+  Table(const std::shared_ptr<arrow::Table> &tab, cylon::CylonContext *ctx) {
+    this->table_ = tab;
+    this->ctx = ctx;
+  }
+
   virtual ~Table();
 
   /**

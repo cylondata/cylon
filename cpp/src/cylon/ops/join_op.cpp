@@ -31,10 +31,12 @@ cylon::JoinOp::JoinOp(std::shared_ptr<CylonContext> ctx,
 //    sort->AddChild(local_join);
 //  }
 }
-void cylon::JoinOp::Execute(int tag, std::shared_ptr<Table> table) {
+bool cylon::JoinOp::Execute(int tag, std::shared_ptr<Table> table) {
   // pass the left tables
   this->DrainQueueToChild(LEFT, LEFT, 0);
   this->DrainQueueToChild(RIGHT, RIGHT, 1);
+
+  return true;
 }
 
 cylon::JoinOpConfig::JoinOpConfig(shared_ptr<PartitionOpConfig> partition_config) : partition_config(partition_config) {

@@ -8,7 +8,7 @@ cylon::PartitionOp::PartitionOp(std::shared_ptr<cylon::CylonContext> ctx,
                                 std::shared_ptr<PartitionOpConfig> config) : Op(ctx, schema, id, router, callback),
                                                                              config(config) {}
 
-void cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
+bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
   std::unordered_map<int, std::shared_ptr<Table>> out;
 
   // todo pass ctx as a shared pointer
@@ -17,6 +17,7 @@ void cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
   for (auto const &tab:out) {
     this->InsertToAllChildren(tab.first, tab.second);
   }
+  return true;
 }
 
 void cylon::PartitionOp::Finalize() {
