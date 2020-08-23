@@ -38,18 +38,24 @@ void cylon::Op::InsertTable(int tag, std::shared_ptr<cylon::Table> table) {
 }
 
 void cylon::Op::Progress() {
+  // first process this Op
   if (this->Ready()) {
-    // todo can be changed to incrementally do the processing
     for (auto const &q:this->queues) {
       if (!q.second->empty()) {
-        this->Execute(q.first, q.second->front());
-        q.second->pop();
-        this->inputs_count--;
-        // todo now yield for another op
+        bool done = this->Execute(q.first, q.second->front());
+        if (done) {
+          q.second->pop();
+          this->inputs_count--;
+          // todo instead of keeping in this queue, partially processed tables can be added to a different queue
+          // todo check whether this is the best way to do this. But always assume that the status of the
+          // partially processed tables will be kept by the Op implementation
+          // std::queue<std::pair<int, std::shared_ptr<cylon::Table>>> partially_processed_queue{};
+        }
       }
     }
   }
 
+  // then progress children
   for (auto child: children) {
     child.second->Progress();
 
@@ -69,6 +75,7 @@ bool cylon::Op::IsComplete() {
       return false;
     }
   }
+  // no more inputs will be received && no more items left in the queues
   return this->finalize_inputs_called && this->inputs_count == 0;
 }
 
@@ -109,6 +116,7 @@ void cylon::Op::InsertToChild(int tag, int child, std::shared_ptr<cylon::Table> 
 bool cylon::Op::Ready() {
   return this->inputs_count > 0;
 }
+
 void cylon::Op::IncrementParentsCount() {
   this->parents++;
 }

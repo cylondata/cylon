@@ -7,6 +7,8 @@
 /**
  * Assumptions
  * 1. Queue, Map lookups will never fail
+ *
+ * todo some functions can be final. Couldn't find a alternative for Java's final methods yet
  */
 namespace cylon {
 class ResultsCallback {
@@ -39,7 +41,15 @@ class Op {
 
  protected:
   std::shared_ptr<cylon::CylonContext> ctx_;
+
+  /**
+   * Parent Op will call this method on (this)child when this has been added a child to the parent Op
+   */
   void IncrementParentsCount();
+
+  /**
+   * Parent Op will call this method to report it's completion to the child
+   */
   void ReportParentCompleted();
   cylon::Op *AddChild(cylon::Op *child);
 
@@ -49,10 +59,16 @@ class Op {
      int id, std::function<int(int)> router,
      std::shared_ptr<ResultsCallback> callback);
 
+  /**
+   * This function can be used if this Op is just a forwarding Op. todo this is a util, possible to move outside the class
+   * @param queue queue Id
+   * @param child child Id
+   * @param tag tag to be sent with the tables
+   */
   void DrainQueueToChild(int queue, int child, int tag);
 
   /**
-   * If this Op is a leaf op, send the table to the callback
+   * If this Op is a leaf op, this function will send the table to the callback. todo this can be private?
    * @param tag tag of the table
    * @param table pointer to the table
    * @return true if this op is a leaf, false otherwise
@@ -60,14 +76,14 @@ class Op {
   bool TerminalCheck(int tag, std::shared_ptr<cylon::Table> table);
 
   /**
-  * Inserts the given table to the input Queue of every child
+  * Inserts the given table to the input Queue of every child todo this is a util, possible to move outside the class
   * @param tag tag of the table
   * @param table pointer to the table
   */
   void InsertToAllChildren(int tag, std::shared_ptr<cylon::Table> table);
 
   /**
-   * Inserts the table to the input queue of a specific child
+   * Inserts the table to the input queue of a specific child todo this is a util, possible to move outside the class
    * @param tag tag of the table
    * @param child target child ID
    * @param table pointer to the table
@@ -75,7 +91,7 @@ class Op {
   void InsertToChild(int tag, int child, std::shared_ptr<cylon::Table> table);
 
   /**
-   * This function will be used by parent Ops to insert a table to the input queue
+   * This function will be used by parent Ops to insert a table to the input queue.
    * @param tag
    * @param table
    */
@@ -85,8 +101,10 @@ class Op {
    * This function defines the execution logic of this op. It can be either a computation or a communication
    * @param tag
    * @param table
+   * @return True if this table has been processed, False if this table is partially processed. If True is returned,
+   * same table will be sent in the next iteration. State can be saved local to the Op, if partially processed.
    */
-  virtual void Execute(int tag, std::shared_ptr<Table> table) = 0;
+  virtual bool Execute(int tag, std::shared_ptr<Table> table) = 0;
 
   /**
    * This function depends on inputs_count to determine whether Op has any input data to proceed
@@ -94,12 +112,31 @@ class Op {
    */
   bool Ready();
 
+  /**
+   * This is where this Op get's CPU time. Progress will do following things in order.
+   *
+   * 1) Check whether this Op has anything to process. doing Read() call
+   * 2) If there are anything left to process, call Execute()
+   * 3) If Execute() returns true, remove the table from the queue, else keep it in the queue
+   * 4)
+   */
   void Progress();
 
+  /**
+   * Parent Op is considered to be completed only if all child Ops are completed
+   * @return
+   */
   bool IsComplete();
 
+  /**
+   * Parents will call this function when they are not intending to send more inputs to this child
+   */
   void FinalizeInputs();
 
+  /**
+   * Every op should implement this function. This function will be called by Progress()
+   * when the end of Op life is reached.
+   */
   virtual void Finalize() = 0;
 
   ~Op();
