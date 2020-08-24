@@ -61,6 +61,7 @@ void cylon::Op::Progress() {
       for (auto child: children) {
         child.second->ReportParentCompleted();
       }
+      this->finalized = true;
     }
   }
 
@@ -81,7 +82,9 @@ bool cylon::Op::IsComplete() {
     }
   }
   // no more inputs will be received && no more items left in the queues
-  return this->all_parents_finalized && this->inputs_count == 0;
+  // this->all_parents_finalized && this->inputs_count == 0; , this has been already checked in Progress()
+  // hence checking finalized is sufficient
+  return this->finalized;
 }
 
 cylon::Op::~Op() {

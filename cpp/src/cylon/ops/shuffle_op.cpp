@@ -28,7 +28,12 @@ cylon::ShuffleOp::ShuffleOp(std::shared_ptr<cylon::CylonContext> ctx,
 
 bool cylon::ShuffleOp::Execute(int tag, shared_ptr<Table> table) {
   LOG(INFO) << "Executing shuffle";
-  this->all_to_all_->insert(table->get_table(), tag);
+  // if the table is for the same worker pass to childern
+  if (tag == ctx_->GetRank()) {
+    this->InsertToAllChildren(tag, table);
+  } else {
+    this->all_to_all_->insert(table->get_table(), tag);
+  }
   return true;
 }
 
@@ -39,6 +44,7 @@ bool cylon::ShuffleOp::Execute(int tag, shared_ptr<Table> table) {
 //}
 
 bool cylon::ShuffleOp::Finalize() {
+  LOG(INFO) << "Finalizing shuffle";
   if (this->all_to_all_->isComplete()) {
     this->all_to_all_->close();
     return true;
