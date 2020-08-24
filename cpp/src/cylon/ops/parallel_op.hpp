@@ -148,9 +148,5 @@ class Op {
 
   ~Op();
 };
-
-class RootOp : public Op {
-  void Finish();
-};
 }
 #endif //CYLON_SRC_CYLON_OPS_PARALLEL_OP_HPP_
