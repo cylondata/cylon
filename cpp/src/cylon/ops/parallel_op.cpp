@@ -1,6 +1,5 @@
-#include "parallel_op.h"
+#include "parallel_op.hpp"
 
-typedef std::shared_ptr<cylon::CylonContext> ptr;
 cylon::Op *cylon::Op::GetChild(int tag) {
   return this->children.find(tag)->second;
 }
@@ -19,13 +18,13 @@ std::queue<std::shared_ptr<cylon::Table>> *cylon::Op::GetQueue(int tag) {
 }
 
 cylon::Op::Op(std::shared_ptr<cylon::CylonContext> ctx,
+              std::shared_ptr<arrow::Schema> schema,
               int id,
-              std::function<int(int)> router,
-              std::shared_ptr<ResultsCallback> callback) {
+              std::shared_ptr<ResultsCallback> callback, bool root_op) : all_parents_finalized(root_op) {
   this->ctx_ = ctx;
   this->id = id;
   this->callback = callback;
-  this->router = router;
+  this->schema = schema;
 }
 
 void cylon::Op::InsertTable(int tag, std::shared_ptr<cylon::Table> table) {
@@ -37,21 +36,41 @@ void cylon::Op::InsertTable(int tag, std::shared_ptr<cylon::Table> table) {
 }
 
 void cylon::Op::Progress() {
+  // first process this Op
   if (this->Ready()) {
-    // todo can be changed to incrementally do the processing
     for (auto const &q:this->queues) {
       if (!q.second->empty()) {
-        this->execute(q.first, q.second->front());
-        q.second->pop();
-        this->inputs_count--;
-        // todo now yield for another op
+        bool done = this->Execute(q.first, q.second->front());
+        if (done) {
+          q.second->pop();
+          this->inputs_count--;
+          // todo instead of keeping in this queue, partially processed tables can be added to a different queue
+          // todo check whether this is the best way to do this. But always assume that the status of the
+          // partially processed tables will be kept by the Op implementation
+          // std::queue<std::pair<int, std::shared_ptr<cylon::Table>>> partially_processed_queue{};
+        }
       }
     }
   }
 
-  // possible optimization point
+  // if no more inputs and all parents have finalized, try to finalize this op
+  // if finalizing this Op is successful report that to children
+  if (!this->finalized && this->inputs_count == 0 && this->all_parents_finalized) {
+    // try to finalize this Op
+    if (this->Finalize()) {
+      for (auto child: children) {
+        child.second->ReportParentCompleted();
+      }
+      this->finalized = true;
+    }
+  }
+
+  // always progress children(or child branches)
   for (auto child: children) {
-    child.second->Progress();
+    // progress only if child(entire child branch) is not competed
+    if (!child.second->IsComplete()) {
+      child.second->Progress();
+    }
   }
 }
 
@@ -61,7 +80,10 @@ bool cylon::Op::IsComplete() {
       return false;
     }
   }
-  return true;
+  // no more inputs will be received && no more items left in the queues
+  // this->all_parents_finalized && this->inputs_count == 0; , this has been already checked in Progress()
+  // hence checking finalized is sufficient
+  return this->finalized;
 }
 
 cylon::Op::~Op() {
@@ -72,6 +94,7 @@ cylon::Op::~Op() {
 
 cylon::Op *cylon::Op::AddChild(cylon::Op *child) {
   this->children.insert(std::make_pair(child->id, child));
+  child->IncrementParentsCount();
   return this;
 }
 
@@ -92,11 +115,23 @@ void cylon::Op::InsertToAllChildren(int tag, std::shared_ptr<cylon::Table> table
 }
 
 void cylon::Op::InsertToChild(int tag, int child, std::shared_ptr<cylon::Table> table) {
-  if (this->children.empty()) {
-
+  if (!this->TerminalCheck(tag, table)) {
+    this->children.find(child)->second->InsertTable(tag, table);
   }
 }
 
 bool cylon::Op::Ready() {
-  return this->inputs_count > 0;
+  return !this->finalized && this->inputs_count > 0;
+}
+
+void cylon::Op::IncrementParentsCount() {
+  this->parents++;
+}
+
+void cylon::Op::ReportParentCompleted() {
+  this->finalized_parents++;
+  if (this->finalized_parents >= parents) {
+    this->all_parents_finalized = true;
+    this->OnParentsFinalized();
+  }
 }

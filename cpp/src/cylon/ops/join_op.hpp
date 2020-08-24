@@ -1,8 +1,8 @@
-#ifndef CYLON_SRC_CYLON_OPS_JOIN_OP_H_
-#define CYLON_SRC_CYLON_OPS_JOIN_OP_H_
+#ifndef CYLON_SRC_CYLON_OPS_JOIN_OP_HPP_
+#define CYLON_SRC_CYLON_OPS_JOIN_OP_HPP_
 
-#include "parallel_op.h"
-#include "partition_op.h"
+#include "parallel_op.hpp"
+#include "partition_op.hpp"
 
 namespace cylon {
 
@@ -27,12 +27,13 @@ class JoinOp : public Op {
   static const int LOCAL_JOIN = 6;
 
  public:
-  JoinOp(std::shared_ptr<CylonContext> ctx, std::function<int(int)> router,
+  JoinOp(std::shared_ptr<CylonContext> ctx,
+         std::shared_ptr<arrow::Schema> schema,
          std::shared_ptr<ResultsCallback> callback, std::shared_ptr<JoinOpConfig> config);
 
-  void execute(int tag, std::shared_ptr<Table> table) override;
+  bool Execute(int tag, std::shared_ptr<Table> table) override;
 
-  bool Ready();
+  void OnParentsFinalized() override;
 };
 }
-#endif //CYLON_SRC_CYLON_OPS_JOIN_OP_H_
+#endif //CYLON_SRC_CYLON_OPS_JOIN_OP_HPP_

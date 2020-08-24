@@ -147,7 +147,6 @@ bool ArrowAllToAll::isComplete() {
 
   // if completed gets true, we will never reach this point
   completed_ = isAllEmpty && all_->isComplete() && finishedSources_.size() == srcs_.size();
-  LOG(INFO) << completed_ <<","<< isAllEmpty << all_->isComplete() << (finishedSources_.size() == srcs_.size());
   return completed_;
 }
 
@@ -240,9 +239,9 @@ Status ArrowAllocator::Allocate(int64_t length, std::shared_ptr<Buffer> *buffer)
   return Status::OK();
 }
 
-  ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
+ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
 
-  int64_t ArrowBuffer::GetLength() {
+int64_t ArrowBuffer::GetLength() {
   return 0;
 }
 

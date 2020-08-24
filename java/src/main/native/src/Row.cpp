@@ -1,5 +1,5 @@
 #include <row.hpp>
-#include "org_cylondata_cylon_ops_Row.h"
+#include "org_cylondata_cylon_Row.h"
 
 cylon::Row *get_cpp_row_address(JNIEnv *env, jobject *obj) {
   jclass row_cls = env->FindClass("org/cylondata/cylon/ops/Row");
