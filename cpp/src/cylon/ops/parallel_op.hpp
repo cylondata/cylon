@@ -125,7 +125,11 @@ class Op {
    * 1) Check whether this Op has anything to process. doing Read() call
    * 2) If there are anything left to process, call Execute()
    * 3) If Execute() returns true, remove the table from the queue, else keep it in the queue
-   * 4)
+   * 4) Then check if this Op can be finalized, based on following conditions.
+   *    a) No more inputs to process
+   *    b) All parents have finalized
+   * 5) If this Op is finalizable call Finalize()
+   * 6) Call progress in Child Ops(Child branches)
    */
   virtual void Progress();
 
