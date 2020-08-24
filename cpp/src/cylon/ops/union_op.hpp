@@ -28,7 +28,8 @@ class UnionOp : public Op {
           std::shared_ptr<UnionOpConfig> config);
   bool Execute(int tag, std::shared_ptr<Table> table) override;
 
-  void Finalize() override;
+  void OnParentsFinalized() override;
+  bool Finalize() override;
 };
 
 }

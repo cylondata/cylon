@@ -12,15 +12,20 @@ UnionOp::UnionOp(std::shared_ptr<cylon::CylonContext> ctx,
 }
 
 bool UnionOp::Execute(int tag, std::shared_ptr<Table> table) {
+  LOG(INFO) << "Executing local union";
   this->union_kernel->InsertTable(table);
   return true;
 }
 
-void UnionOp::Finalize() {
+bool UnionOp::Finalize() {
   std::shared_ptr<cylon::Table> final_result;
   this->union_kernel->Finalize(final_result);
-
   this->InsertToAllChildren(0, final_result);
+  return true;
+}
+
+void UnionOp::OnParentsFinalized() {
+  // do nothing
 }
 
 int64_t UnionOpConfig::GetExpectedRows() const {

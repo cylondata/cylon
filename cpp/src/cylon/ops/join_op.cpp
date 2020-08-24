@@ -38,6 +38,9 @@ bool cylon::JoinOp::Execute(int tag, std::shared_ptr<Table> table) {
 
   return true;
 }
+void cylon::JoinOp::OnParentsFinalized() {
+  //todo
+}
 
 cylon::JoinOpConfig::JoinOpConfig(shared_ptr<PartitionOpConfig> partition_config) : partition_config(partition_config) {
 

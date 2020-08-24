@@ -37,7 +37,22 @@ class Op {
   int32_t finalized_parents = 0;
 
   // finalize status
-  bool finalize_inputs_called = false;
+  bool all_parents_finalized = false;
+  bool finalized = false;
+
+  /**
+   * This function depends on inputs_count to determine whether Op has any input data to proceed
+   * @return
+   */
+  bool Ready();
+
+  /**
+   * If this Op is a leaf op, this function will send the table to the callback. todo this can be private?
+   * @param tag tag of the table
+   * @param table pointer to the table
+   * @return true if this op is a leaf, false otherwise
+   */
+  bool TerminalCheck(int tag, std::shared_ptr<cylon::Table> table);
 
  protected:
   std::shared_ptr<cylon::CylonContext> ctx_;
@@ -51,13 +66,6 @@ class Op {
    * Parent Op will call this method to report it's completion to the child
    */
   void ReportParentCompleted();
-  cylon::Op *AddChild(cylon::Op *child);
-
- public:
-  Op(std::shared_ptr<cylon::CylonContext> ctx,
-     std::shared_ptr<arrow::Schema> schema,
-     int id, std::function<int(int)> router,
-     std::shared_ptr<ResultsCallback> callback);
 
   /**
    * This function can be used if this Op is just a forwarding Op. todo this is a util, possible to move outside the class
@@ -66,14 +74,6 @@ class Op {
    * @param tag tag to be sent with the tables
    */
   void DrainQueueToChild(int queue, int child, int tag);
-
-  /**
-   * If this Op is a leaf op, this function will send the table to the callback. todo this can be private?
-   * @param tag tag of the table
-   * @param table pointer to the table
-   * @return true if this op is a leaf, false otherwise
-   */
-  bool TerminalCheck(int tag, std::shared_ptr<cylon::Table> table);
 
   /**
   * Inserts the given table to the input Queue of every child todo this is a util, possible to move outside the class
@@ -89,6 +89,19 @@ class Op {
    * @param table pointer to the table
    */
   void InsertToChild(int tag, int child, std::shared_ptr<cylon::Table> table);
+
+ public:
+  Op(std::shared_ptr<cylon::CylonContext> ctx,
+     std::shared_ptr<arrow::Schema> schema,
+     int id, std::function<int(int)> router,
+     std::shared_ptr<ResultsCallback> callback, bool root_op = false);
+
+  /**
+   * This function can be used to link a child Op to parent Op
+   * @param child child op to be linked
+   * @return return the parent Op instance, for chaining
+   */
+  cylon::Op *AddChild(cylon::Op *child);
 
   /**
    * This function will be used by parent Ops to insert a table to the input queue.
@@ -107,12 +120,6 @@ class Op {
   virtual bool Execute(int tag, std::shared_ptr<Table> table) = 0;
 
   /**
-   * This function depends on inputs_count to determine whether Op has any input data to proceed
-   * @return
-   */
-  bool Ready();
-
-  /**
    * This is where this Op get's CPU time. Progress will do following things in order.
    *
    * 1) Check whether this Op has anything to process. doing Read() call
@@ -129,17 +136,21 @@ class Op {
   bool IsComplete();
 
   /**
-   * Parents will call this function when they are not intending to send more inputs to this child
+   * This function will be called when no more inputs will be received to this Op, ie parents have been finalized
    */
-  void FinalizeInputs();
+  virtual void OnParentsFinalized() = 0;
 
   /**
    * Every op should implement this function. This function will be called by Progress()
    * when the end of Op life is reached.
    */
-  virtual void Finalize() = 0;
+  virtual bool Finalize() = 0;
 
   ~Op();
+};
+
+class RootOp : public Op {
+  void Finish();
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_PARALLEL_OP_HPP_

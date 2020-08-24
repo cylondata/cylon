@@ -33,6 +33,8 @@ class JoinOp : public Op {
          std::shared_ptr<ResultsCallback> callback, std::shared_ptr<JoinOpConfig> config);
 
   bool Execute(int tag, std::shared_ptr<Table> table) override;
+
+  void OnParentsFinalized() override;
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_JOIN_OP_HPP_

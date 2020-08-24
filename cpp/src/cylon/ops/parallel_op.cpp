@@ -21,7 +21,7 @@ cylon::Op::Op(std::shared_ptr<cylon::CylonContext> ctx,
               std::shared_ptr<arrow::Schema> schema,
               int id,
               std::function<int(int)> router,
-              std::shared_ptr<ResultsCallback> callback) {
+              std::shared_ptr<ResultsCallback> callback, bool root_op) : all_parents_finalized(root_op) {
   this->ctx_ = ctx;
   this->id = id;
   this->callback = callback;
@@ -55,28 +55,35 @@ void cylon::Op::Progress() {
     }
   }
 
-  // then progress children
-  for (auto child: children) {
-    child.second->Progress();
-
-    // if no more inputs and finalize has been called, pass finalize to children
-    if (this->inputs_count == 0 && this->finalize_inputs_called) {
-      child.second->ReportParentCompleted();
+  // if no more inputs and all parents have finalized, try to finalize this op
+  // if finalizing this Op is successful report that to children
+  if (!this->finalized && this->inputs_count == 0 && this->all_parents_finalized) {
+    // try to finalize this Op
+    if (this->Finalize()) {
+      for (auto child: children) {
+        child.second->ReportParentCompleted();
+      }
     }
   }
 
-  // if this is the final node and if there is nothing left to do post the result
-
+  // always progress children(or child branches)
+  for (auto child: children) {
+    // progress only if child(entire child branch) is not competed
+    if (!child.second->IsComplete()) {
+      child.second->Progress();
+    }
+  }
 }
 
 bool cylon::Op::IsComplete() {
   for (auto child: children) {
     if (!child.second->IsComplete()) {
+      LOG(INFO) << "OP : " << this->id << " child " << child.first << " is pending completion";
       return false;
     }
   }
   // no more inputs will be received && no more items left in the queues
-  return this->finalize_inputs_called && this->inputs_count == 0;
+  return this->all_parents_finalized && this->inputs_count == 0;
 }
 
 cylon::Op::~Op() {
@@ -114,7 +121,7 @@ void cylon::Op::InsertToChild(int tag, int child, std::shared_ptr<cylon::Table> 
 }
 
 bool cylon::Op::Ready() {
-  return this->inputs_count > 0;
+  return !this->finalized && this->inputs_count > 0;
 }
 
 void cylon::Op::IncrementParentsCount() {
@@ -123,11 +130,8 @@ void cylon::Op::IncrementParentsCount() {
 
 void cylon::Op::ReportParentCompleted() {
   this->finalized_parents++;
-  if (this->finalized_parents == 0) {
-    this->FinalizeInputs();
+  if (this->finalized_parents >= parents) {
+    this->all_parents_finalized = true;
+    this->OnParentsFinalized();
   }
-}
-
-void cylon::Op::FinalizeInputs() {
-  this->finalize_inputs_called = true;
 }

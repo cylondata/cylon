@@ -1,7 +1,7 @@
 #include <ctx/cylon_context.hpp>
 #include <net/mpi/mpi_communicator.hpp>
 #include <table.hpp>
-#include <ops/union_op.hpp>
+#include <ops/dis_union_op.h>
 
 int main(int argc, char *argv[]) {
 
@@ -26,22 +26,19 @@ int main(int argc, char *argv[]) {
 
   auto cb = std::make_shared<Cb>();
 
-  auto union_config = std::make_shared<cylon::UnionOpConfig>();
+  auto union_config = std::make_shared<cylon::DisUnionOpConfig>();
 
-  auto union_op = cylon::UnionOp(std::shared_ptr<cylon::CylonContext>(ctx),
+  auto union_op = cylon::DisUnionOp(std::shared_ptr<cylon::CylonContext>(ctx),
                                  table1_arr->schema(), 0, [](int x) {
         return 0;
       }, cb, union_config);
   LOG(INFO) << "Created  op";
   union_op.InsertTable(0, table1);
   union_op.InsertTable(1, table2);
-  union_op.FinalizeInputs();
 
   while (!union_op.IsComplete()) {
     union_op.Progress();
   }
-
-  union_op.Finalize();
 
   ctx->Finalize();
   return 0;
