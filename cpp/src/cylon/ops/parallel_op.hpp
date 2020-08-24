@@ -47,7 +47,7 @@ class Op {
   bool Ready();
 
   /**
-   * If this Op is a leaf op, this function will send the table to the callback. todo this can be private?
+   * If this Op is a leaf op, this function will send the table to the callback.
    * @param tag tag of the table
    * @param table pointer to the table
    * @return true if this op is a leaf, false otherwise
