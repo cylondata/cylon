@@ -77,7 +77,6 @@ void cylon::Op::Progress() {
 bool cylon::Op::IsComplete() {
   for (auto child: children) {
     if (!child.second->IsComplete()) {
-      LOG(INFO) << "OP : " << this->id << " child " << child.first << " is pending completion";
       return false;
     }
   }

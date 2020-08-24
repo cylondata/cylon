@@ -127,7 +127,7 @@ class Op {
    * 3) If Execute() returns true, remove the table from the queue, else keep it in the queue
    * 4)
    */
-  void Progress();
+  virtual void Progress();
 
   /**
    * Parent Op is considered to be completed only if all child Ops are completed

@@ -37,11 +37,11 @@ bool cylon::ShuffleOp::Execute(int tag, shared_ptr<Table> table) {
   return true;
 }
 
-//void cylon::ShuffleOp::Progress() {
-//  LOG(INFO) << "Calling shuffle progress";
-//  this->all_to_all_->isComplete();
-//  Op::Progress();
-//}
+void cylon::ShuffleOp::Progress() {
+  LOG(INFO) << "Calling shuffle progress";
+  this->all_to_all_->isComplete();
+  Op::Progress();
+}
 
 bool cylon::ShuffleOp::Finalize() {
   LOG(INFO) << "Finalizing shuffle";
