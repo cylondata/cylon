@@ -9,7 +9,6 @@ cylon::PartitionOp::PartitionOp(std::shared_ptr<cylon::CylonContext> ctx,
                                                                              config(config) {}
 
 bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
-
   LOG(INFO) << "Executing partition op";
 
   std::unordered_map<int, std::shared_ptr<Table>> out;
@@ -18,7 +17,6 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
   cylon::kernel::HashPartition(&*this->ctx_, table, *this->config->HashColumns(),
                                this->config->NoOfPartitions(), &out);
   for (auto const &tab:out) {
-    LOG(INFO) << "PARTITION OP : sending to " << tab.first;
     this->InsertToAllChildren(tab.first, tab.second);
   }
   return true;
