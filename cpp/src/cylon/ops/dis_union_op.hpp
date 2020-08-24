@@ -1,5 +1,5 @@
-#ifndef CYLON_SRC_CYLON_OPS_DIS_UNION_OP_H_
-#define CYLON_SRC_CYLON_OPS_DIS_UNION_OP_H_
+#ifndef CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_
+#define CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_
 
 #include "parallel_op.hpp"
 
@@ -26,4 +26,4 @@ class DisUnionOp : public Op {
   bool Finalize() override;
 };
 }
-#endif //CYLON_SRC_CYLON_OPS_DIS_UNION_OP_H_
+#endif //CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_

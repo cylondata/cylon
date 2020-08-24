@@ -1,4 +1,4 @@
-#include "shuffle_op.h"
+#include "shuffle_op.hpp"
 
 cylon::ShuffleOp::ShuffleOp(std::shared_ptr<cylon::CylonContext> ctx,
                             std::shared_ptr<arrow::Schema> schema,

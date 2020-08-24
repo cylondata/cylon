@@ -1,7 +1,7 @@
 #include <ctx/cylon_context.hpp>
 #include <net/mpi/mpi_communicator.hpp>
 #include <table.hpp>
-#include <ops/dis_union_op.h>
+#include <ops/dis_union_op.hpp>
 
 int main(int argc, char *argv[]) {
 

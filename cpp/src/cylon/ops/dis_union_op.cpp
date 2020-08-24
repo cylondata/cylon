@@ -1,6 +1,6 @@
-#include "dis_union_op.h"
+#include "dis_union_op.hpp"
 #include "partition_op.hpp"
-#include "shuffle_op.h"
+#include "shuffle_op.hpp"
 #include "union_op.hpp"
 
 cylon::DisUnionOp::DisUnionOp(std::shared_ptr<cylon::CylonContext> ctx,
