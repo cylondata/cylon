@@ -29,7 +29,6 @@ class JoinOp : public Op {
  public:
   JoinOp(std::shared_ptr<CylonContext> ctx,
          std::shared_ptr<arrow::Schema> schema,
-         std::function<int(int)> router,
          std::shared_ptr<ResultsCallback> callback, std::shared_ptr<JoinOpConfig> config);
 
   bool Execute(int tag, std::shared_ptr<Table> table) override;

@@ -93,7 +93,7 @@ class Op {
  public:
   Op(std::shared_ptr<cylon::CylonContext> ctx,
      std::shared_ptr<arrow::Schema> schema,
-     int id, std::function<int(int)> router,
+     int id,
      std::shared_ptr<ResultsCallback> callback, bool root_op = false);
 
   /**

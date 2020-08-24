@@ -29,9 +29,7 @@ int main(int argc, char *argv[]) {
   auto union_config = std::make_shared<cylon::DisUnionOpConfig>();
 
   auto union_op = cylon::DisUnionOp(std::shared_ptr<cylon::CylonContext>(ctx),
-                                 table1_arr->schema(), 0, [](int x) {
-        return 0;
-      }, cb, union_config);
+                                    table1_arr->schema(), 0, cb, union_config);
   LOG(INFO) << "Created  op";
   union_op.InsertTable(0, table1);
   union_op.InsertTable(1, table2);

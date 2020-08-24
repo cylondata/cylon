@@ -5,9 +5,8 @@ namespace cylon {
 UnionOp::UnionOp(std::shared_ptr<cylon::CylonContext> ctx,
                  std::shared_ptr<arrow::Schema> schema,
                  int id,
-                 std::function<int(int)> router,
                  std::shared_ptr<ResultsCallback> callback,
-                 std::shared_ptr<UnionOpConfig> config) : Op(ctx, schema, id, router, callback), config(config) {
+                 std::shared_ptr<UnionOpConfig> config) : Op(ctx, schema, id, callback), config(config) {
   this->union_kernel = new cylon::kernel::Union(ctx, schema, config->GetExpectedRows());
 }
 

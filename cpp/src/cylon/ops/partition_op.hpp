@@ -26,7 +26,7 @@ class PartitionOp : public Op {
 
   PartitionOp(std::shared_ptr<cylon::CylonContext> ctx,
               std::shared_ptr<arrow::Schema> schema,
-              int id, std::function<int(int)> router,
+              int id,
               std::shared_ptr<ResultsCallback> callback,
               std::shared_ptr<PartitionOpConfig> config);
   bool Execute(int tag, std::shared_ptr<Table> table) override;

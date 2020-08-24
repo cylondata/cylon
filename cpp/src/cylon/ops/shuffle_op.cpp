@@ -3,9 +3,8 @@
 cylon::ShuffleOp::ShuffleOp(std::shared_ptr<cylon::CylonContext> ctx,
                             std::shared_ptr<arrow::Schema> schema,
                             int id,
-                            std::function<int(int)> router,
                             shared_ptr<ResultsCallback> callback,
-                            shared_ptr<ShuffleOpConfig> config) : Op(ctx, schema, id, router, callback) {
+                            shared_ptr<ShuffleOpConfig> config) : Op(ctx, schema, id, callback) {
   class AllToAllListener : public cylon::ArrowCallback {
     ShuffleOp *shuffle_op;
     cylon::CylonContext *ctx;

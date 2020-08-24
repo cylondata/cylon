@@ -3,12 +3,9 @@
 
 cylon::JoinOp::JoinOp(std::shared_ptr<CylonContext> ctx,
                       std::shared_ptr<arrow::Schema> schema,
-                      std::function<int(int)> router,
                       std::shared_ptr<ResultsCallback> callback,
-                      std::shared_ptr<JoinOpConfig> config) : Op(ctx, schema, JOIN_OP, router, callback) {
-  auto left_partition = new PartitionOp(ctx, schema, LEFT, [](int tag) {
-    return 0;
-  }, callback, config->GetPartitionConfig());
+                      std::shared_ptr<JoinOpConfig> config) : Op(ctx, schema, JOIN_OP, callback) {
+  auto left_partition = new PartitionOp(ctx, schema, LEFT, callback, config->GetPartitionConfig());
 
   left_partition->IsComplete();
   //auto right_partition = new PartitionOp(RIGHT, callback);

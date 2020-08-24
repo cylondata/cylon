@@ -20,12 +20,10 @@ std::queue<std::shared_ptr<cylon::Table>> *cylon::Op::GetQueue(int tag) {
 cylon::Op::Op(std::shared_ptr<cylon::CylonContext> ctx,
               std::shared_ptr<arrow::Schema> schema,
               int id,
-              std::function<int(int)> router,
               std::shared_ptr<ResultsCallback> callback, bool root_op) : all_parents_finalized(root_op) {
   this->ctx_ = ctx;
   this->id = id;
   this->callback = callback;
-  this->router = router;
   this->schema = schema;
 }
 
