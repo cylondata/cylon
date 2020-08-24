@@ -22,7 +22,7 @@ class ShuffleOp : public Op {
             std::shared_ptr<ResultsCallback> callback,
             std::shared_ptr<ShuffleOpConfig> config);
 
-  void Progress();
+  void Progress() override ;
 
   bool Execute(int tag, std::shared_ptr<Table> table) override;
 

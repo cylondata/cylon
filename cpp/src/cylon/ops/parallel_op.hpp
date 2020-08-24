@@ -130,6 +130,8 @@ class Op {
    *    b) All parents have finalized
    * 5) If this Op is finalizable call Finalize()
    * 6) Call progress in Child Ops(Child branches)
+   *
+   * This function can be overridden in child Ops, but it's mandatory to call Op::Progress in such cases
    */
   virtual void Progress();
 
