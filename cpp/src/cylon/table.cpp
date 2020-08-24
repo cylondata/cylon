@@ -20,7 +20,7 @@
 #include <arrow/compute/api.h>
 #include <future>
 #include <ops/kernels/partition.hpp>
-#include <ops/kernels/utils/PrepareArray.hpp>
+#include <ops/kernels/prepare_array.hpp>
 #include <ops/kernels/union.hpp>
 
 #include "table_api_extended.hpp"
