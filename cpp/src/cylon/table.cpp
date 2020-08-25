@@ -220,9 +220,8 @@ Status Table::FromArrowTable(cylon::CylonContext *ctx,
 }
 
 Status Table::FromColumns(cylon::CylonContext *ctx,
-                          const vector<std::shared_ptr<Column>> &columns,
+                          vector<std::shared_ptr<Column>>&& columns,
                           std::shared_ptr<Table> *tableOut) {
-
   arrow::Status status;
   arrow::SchemaBuilder schema_builder;
   std::vector<std::shared_ptr<arrow::ChunkedArray>> col_arrays;
@@ -241,7 +240,13 @@ Status Table::FromColumns(cylon::CylonContext *ctx,
   auto schema_result = schema_builder.Finish();
   shared_ptr<arrow::Table> arrow_table = arrow::Table::Make(schema_result.ValueOrDie(), col_arrays);
 
-  return cylon::Table::FromArrowTable(ctx, arrow_table, tableOut);
+  if (!cylon::tarrow::validateArrowTableTypes(arrow_table)) {
+    LOG(FATAL) << "Types not supported";
+    return Status(cylon::Invalid, "This type not supported");
+  }
+  *tableOut = std::make_shared<Table>(arrow_table, ctx, columns);
+
+  return Status(cylon::OK, "Loaded Successfully");
 }
 
 Status Table::WriteCSV(const std::string &path, const cylon::io::config::CSVWriteOptions &options) {
