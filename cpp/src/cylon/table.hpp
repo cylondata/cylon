@@ -44,14 +44,18 @@ class Table {
   Table(std::shared_ptr<arrow::Table> &tab, cylon::CylonContext *ctx)
       : ctx(ctx), table_(tab),
         columns_(std::vector<shared_ptr<Column>>(tab->num_columns())) {
-//    this->table_ = tab;
-//    this->ctx = ctx;
     const int num_cols = table_->num_columns();
     for (int i = 0; i < num_cols; i++) {
       const auto f = table_->field(i);
       columns_.at(i) =
           cylon::Column::Make(f->name(), cylon::tarrow::ToCylonType(f->type()), table_->column(i));
     }
+  }
+
+  Table(std::shared_ptr<arrow::Table> &tab, cylon::CylonContext *ctx,
+        const std::vector<shared_ptr<Column>> &cols)
+      : ctx(ctx), table_(tab) {
+    this->columns_ = cols;
   }
 
   virtual ~Table();
@@ -95,8 +99,8 @@ class Table {
    * @return
    */
   static Status FromColumns(cylon::CylonContext *ctx,
-                            const std::vector<std::shared_ptr<Column>>
-                            &columns, std::shared_ptr<Table> *tableOut);
+                            std::vector<std::shared_ptr<Column>> &&columns,
+                            std::shared_ptr<Table> *tableOut);
 
   /**
    * Write the table as a CSV
