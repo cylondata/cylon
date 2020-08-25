@@ -14,9 +14,12 @@
 
 #include <mpi.h>
 
+#include <memory>
+
 #include "net/communicator.hpp"
 #include "mpi_communicator.hpp"
 #include "mpi_channel.hpp"
+#include "mpi_sync_channel.hpp"
 
 namespace cylon {
 namespace net {
@@ -60,6 +63,10 @@ void MPICommunicator::Finalize() {
 }
 void MPICommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);
+}
+
+std::shared_ptr<SyncChannel> MPICommunicator::MakeReduceChannel() {
+  return std::static_pointer_cast<SyncChannel>(std::make_shared<MPISyncChannel>());
 }
 }  // namespace net
 }  // namespace cylon

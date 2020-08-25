@@ -29,7 +29,7 @@ namespace cylon {
 class CylonContext {
  private:
   std::unordered_map<std::string, std::string> config{};
-  bool distributed;
+  bool is_distributed;
   cylon::net::Communicator *communicator{};
   cylon::MemoryPool *memory_pool{};
   int32_t sequence_no = 0;
@@ -91,6 +91,8 @@ class CylonContext {
    * @param <bool> distributed
    */
   void setDistributed(bool distributed);
+
+  bool IsDistributed() const;
 
   /**
    * Returns the local rank

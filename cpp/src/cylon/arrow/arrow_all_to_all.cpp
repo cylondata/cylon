@@ -70,7 +70,7 @@ bool ArrowAllToAll::isComplete() {
   }
   bool isAllEmpty = true;
   // we need to send the buffers
-  for (auto t : inputs_) {
+  for (auto &t : inputs_) {
     if (t.second->status == ARROW_HEADER_INIT) {
       if (!t.second->pending.empty()) {
         t.second->currentTable = t.second->pending.front();
