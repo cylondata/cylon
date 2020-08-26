@@ -84,17 +84,18 @@ class VectorColumn : public Column {
                const std::shared_ptr<DataType> &type,
                const std::shared_ptr<std::vector<T>> &data_vector) :
       Column(id, type),
+      data(data_vector),
       // define the validity array based on the size and fill it with 0xff
       validity_vector(std::vector<uint8_t>((data_vector->size() + 7) / 8, 0xff)) {
     // create the mask for the last byte
-    validity_vector.back() = (uint8_t) (1 << (8 + data_vector->size() - 8 * validity_vector.size()))
-        - 1;
+    validity_vector.back() =
+        (uint8_t) (1 << (8 + data_vector->size() - 8 * validity_vector.size())) - 1;
 
-    const std::shared_ptr<arrow::Buffer> &data_buff = arrow::Buffer::Wrap(*data_vector);
+    const std::shared_ptr<arrow::Buffer> &data_buff = arrow::Buffer::Wrap(*data);
     const std::shared_ptr<arrow::Buffer> &val_buff = arrow::Buffer::Wrap(validity_vector);
 
     const std::shared_ptr<arrow::ArrayData> &arr_data =
-        arrow::ArrayData::Make(cylon::tarrow::convertToArrowType(type), data_vector->size(),
+        arrow::ArrayData::Make(cylon::tarrow::convertToArrowType(type), data->size(),
                                {val_buff, data_buff});
 
     Column::data_array = std::make_shared<arrow::ChunkedArray>(arrow::MakeArray(arr_data));
@@ -107,7 +108,8 @@ class VectorColumn : public Column {
   }
 
  private:
-  std::vector<uint8_t> validity_vector;
+  std::shared_ptr<std::vector<T>> data; // pointer to the data vector
+  std::vector<uint8_t> validity_vector; // validity vector
 };
 
 }  // namespace cylon
