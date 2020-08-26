@@ -20,9 +20,8 @@ import numpy as np
 
 ctx: CylonContext = CylonContext("mpi")
 
-
-tb1: Table = csv_reader.read(ctx, '/tmp/csv1.csv', ',')
-tb2: Table = csv_reader.read(ctx, '/tmp/csv1.csv', ',')
+tb1: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
+tb2: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
 
 tb1.show()
 
