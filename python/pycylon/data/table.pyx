@@ -344,6 +344,14 @@ cdef class Table:
         return py_arrow_table.to_pandas()
 
     def to_numpy(self, order='F') -> np.ndarray:
+        """
+        [Experimental]
+        This method converts a Cylon Table to a 2D numpy array.
+        In the conversion we stack each column in the Table and create a numpy array.
+        For Heterogeneous Tables, use the generated array with Caution.
+        :param order: numpy array order. 'F': Fortran Style F_Contiguous or 'C' C Style C_Contiguous
+        :return: ndarray
+        """
         table = to_pyarrow_table(self.id.encode())
         py_arrow_table = pyarrow_wrap_table(table)
         ar_lst = []
@@ -359,7 +367,6 @@ cdef class Table:
 
 
 cdef class csv_reader:
-
 
     @staticmethod
     def read(ctx: CylonContext, path: str, delimiter: str) -> Table:
