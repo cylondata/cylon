@@ -56,7 +56,4 @@ print("Distributed Subtract Test")
 tb5: Table = tb1.distributed_subtract(ctx, table=tb2)
 tb5.show()
 
-
-
-
 ctx.finalize()

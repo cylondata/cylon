@@ -25,10 +25,15 @@ from pyarrow.lib cimport CTable
 from pyarrow.lib cimport pyarrow_unwrap_table
 from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
-from cython.operator cimport dereference as deref
 
 from pycylon.ctx.context cimport CCylonContextWrap
 from pycylon.ctx.context import CylonContext
+
+import pyarrow as pa
+import numpy as np
+import pandas as pd
+
+import warnings
 
 '''
 TwisterX Table definition mapping 
@@ -78,7 +83,7 @@ cdef class Table:
 
     def __cinit__(self, string id):
         '''
-        Initializes the PyTwisterX Table
+        Initializes the PyCylon Table
         :param id: unique id for the Table
         :return: None
         '''
@@ -307,9 +312,9 @@ cdef class Table:
     @staticmethod
     def from_arrow(obj) -> Table:       
         '''
-        creating a PyTwisterX table from PyArrow Table
+        creating a PyCylon table from PyArrow Table
         :param obj: PyArrow table
-        :return: PyTwisterX table
+        :return: PyCylon table
         '''
         cdef shared_ptr[CTable] artb = pyarrow_unwrap_table(obj)
         cdef string table_id
@@ -318,18 +323,39 @@ cdef class Table:
         table_id = from_pyarrow_table(artb)
         return Table(table_id)
 
-    @staticmethod
-    def to_arrow(tx_table: Table) :
+    def to_arrow(self) -> pa.Table :
         '''
-        creating PyArrow Table from PyTwisterX table
-        :param tx_table: PyCylon Table
+        creating PyArrow Table from PyCylon table
+        :param self: PyCylon Table
         :return: PyArrow Table
         '''
-        table = to_pyarrow_table(tx_table.id.encode())
+        table = to_pyarrow_table(self.id.encode())
         py_arrow_table = pyarrow_wrap_table(table)
         return py_arrow_table
 
+    def to_pandas(self) -> pd.DataFrame:
+        """
+        creating Pandas Dataframe from PyCylon Table
+        :param self:
+        :return: a Pandas DataFrame
+        """
+        table = to_pyarrow_table(self.id.encode())
+        py_arrow_table = pyarrow_wrap_table(table)
+        return py_arrow_table.to_pandas()
 
+    def to_numpy(self, order='F') -> np.ndarray:
+        table = to_pyarrow_table(self.id.encode())
+        py_arrow_table = pyarrow_wrap_table(table)
+        ar_lst = []
+        _dtype = None
+        for col in py_arrow_table.columns:
+            npr = col.chunks[0].to_numpy()
+            if None == _dtype:
+                _dtype = npr.dtype
+            if _dtype != npr.dtype:
+                warnings.warn("Heterogeneous Cylon Table Detected!. Use Numpy operations with Caution.")
+            ar_lst.append(npr)
+        return np.array(ar_lst, order=order).T
 
 
 cdef class csv_reader:
