@@ -17,12 +17,18 @@ from pycylon.data.table import Table
 from pyarrow import Table as PyArrowTable
 import time
 from pycylon.ctx.context import CylonContext
+import argparse
 
 ctx: CylonContext = CylonContext("mpi")
 
+parser = argparse.ArgumentParser(description='PyCylon Table Conversion')
+parser.add_argument('--table1_path', type=str, help='Path to table 1 csv')
+parser.add_argument('--table2_path', type=str, help='Path to table 2 csv')
 
-tb1: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
-tb2: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
+args = parser.parse_args()
+
+tb1: Table = csv_reader.read(ctx, args.table1_path, ',')
+tb2: Table = csv_reader.read(ctx, args.table2_path, ',')
 
 tb1.show()
 
@@ -55,8 +61,5 @@ tb4.show()
 print("Distributed Subtract Test")
 tb5: Table = tb1.distributed_subtract(ctx, table=tb2)
 tb5.show()
-
-
-
 
 ctx.finalize()
