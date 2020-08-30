@@ -28,7 +28,7 @@ class Union {
   std::shared_ptr<arrow::Schema> schema;
   shared_ptr<CylonContext> ctx;
 
-  std::unordered_set<std::pair<int8_t, int64_t>, row_comparator, row_comparator> *rows_set;
+  std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator> *rows_set;
 
  public:
   ~Union();

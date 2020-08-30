@@ -14,6 +14,7 @@
 
 #include <ops/kernels/prepare_array.hpp>
 #include "union.hpp"
+#include "row_comparator.hpp"
 
 void cylon::kernel::Union::InsertTable(std::shared_ptr<cylon::Table> table) {
   std::shared_ptr<arrow::Table> arrow_table;
@@ -62,10 +63,10 @@ cylon::kernel::Union::Union(std::shared_ptr<cylon::CylonContext> ctx,
                             std::shared_ptr<arrow::Schema> schema,
                             int64_t expected_rows) {
   this->ctx = ctx;
-  auto row_comparator = row_comparator(ctx,
-                                       std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>>(&this->tables),
-                                       schema);
-  this->rows_set = new std::unordered_set<std::pair<int8_t, int64_t>, row_comparator, row_comparator>
+  auto row_comparator = cylon::kernel::RowComparator(ctx,
+                                                     std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>>(&this->tables),
+                                                     schema);
+  this->rows_set = new std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>
       (expected_rows, row_comparator, row_comparator);
   this->schema = schema;
 }

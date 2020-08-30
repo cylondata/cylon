@@ -18,23 +18,21 @@
 #include "parallel_op.hpp"
 namespace cylon {
 
-class ShuffleOpConfig {
+class AllToAllOpConfig {
 
 };
 
-class ShuffleOp : public Op {
+class AllToAllOp : public Op {
 
  private:
-  cylon::ArrowCallback *arrow_callback_;
   cylon::ArrowAllToAll *all_to_all_;
-  bool communication_done = false;
 
  public:
-  ShuffleOp(std::shared_ptr<cylon::CylonContext> ctx,
-            std::shared_ptr<arrow::Schema> schema,
-            int id,
-            std::shared_ptr<ResultsCallback> callback,
-            std::shared_ptr<ShuffleOpConfig> config);
+  AllToAllOp(std::shared_ptr<cylon::CylonContext> ctx,
+             std::shared_ptr<arrow::Schema> schema,
+             int id,
+             std::shared_ptr<ResultsCallback> callback,
+             std::shared_ptr<AllToAllOpConfig> config);
 
   void Progress() override ;
 

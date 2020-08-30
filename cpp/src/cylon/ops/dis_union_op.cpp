@@ -37,7 +37,7 @@ cylon::DisUnionOp::DisUnionOp(std::shared_ptr<cylon::CylonContext> ctx,
 
   this->AddChild(partition_op);
 
-  auto shuffle_op = new ShuffleOp(ctx, schema, SHUFFLE_OP_ID,  callback, std::make_shared<ShuffleOpConfig>());
+  auto shuffle_op = new AllToAllOp(ctx, schema, SHUFFLE_OP_ID, callback, std::make_shared<AllToAllOpConfig>());
   partition_op->AddChild(shuffle_op);
 
   auto union_op = new UnionOp(ctx, schema, UNION_OP_ID,  callback, std::make_shared<UnionOpConfig>());

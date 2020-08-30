@@ -23,16 +23,16 @@
 
 namespace cylon {
 namespace kernel {
-class row_comparator {
+class RowComparator {
  private:
   std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>> tables;
   std::shared_ptr<cylon::TableRowComparator> comparator;
   std::shared_ptr<cylon::RowHashingKernel> row_hashing_kernel;
 
  public:
-  row_comparator(std::shared_ptr<CylonContext> ctx,
-                 std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>> tables,
-                 std::shared_ptr<arrow::Schema> schema);
+  RowComparator(std::shared_ptr<CylonContext> ctx,
+                std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>> tables,
+                std::shared_ptr<arrow::Schema> schema);
 
   // equality
   bool operator()(const std::pair<int32_t, int64_t> &record1,
