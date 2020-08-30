@@ -55,12 +55,6 @@ class Op {
   bool finalized = false;
 
   /**
-   * This function depends on inputs_count to determine whether Op has any input data to proceed
-   * @return
-   */
-  bool Ready();
-
-  /**
    * If this Op is a leaf op, this function will send the table to the callback.
    * @param tag tag of the table
    * @param table pointer to the table

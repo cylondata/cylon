@@ -51,7 +51,7 @@ void cylon::Op::InsertTable(int tag, std::shared_ptr<cylon::Table> table) {
 
 void cylon::Op::Progress() {
   // first process this Op
-  if (this->Ready()) {
+  if (!this->finalized && this->inputs_count > 0) {
     for (auto const &q:this->queues) {
       if (!q.second->empty()) {
         bool done = this->Execute(q.first, q.second->front());
@@ -132,10 +132,6 @@ void cylon::Op::InsertToChild(int tag, int child, std::shared_ptr<cylon::Table> 
   if (!this->TerminalCheck(tag, table)) {
     this->children.find(child)->second->InsertTable(tag, table);
   }
-}
-
-bool cylon::Op::Ready() {
-  return !this->finalized && this->inputs_count > 0;
 }
 
 void cylon::Op::IncrementParentsCount() {
