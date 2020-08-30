@@ -97,12 +97,12 @@ add_library(cylon SHARED
         ops/union_op.cpp
         ops/kernels/union.cpp
         ops/kernels/union.hpp
-        ops/kernels/utils/RowComparator.cpp
-        ops/kernels/utils/RowComparator.hpp
-        ops/kernels/utils/PrepareArray.hpp
-        ops/kernels/utils/PrepareArray.cpp
-        ops/shuffle_op.hpp
-        ops/shuffle_op.cpp
+        ops/kernels/row_comparator.cpp
+        ops/kernels/row_comparator.hpp
+        ops/kernels/prepare_array.hpp
+        ops/kernels/prepare_array.cpp
+        ops/all_to_all_op.hpp
+        ops/all_to_all_op.cpp
         ops/dis_union_op.hpp
         ops/dis_union_op.cpp)
 
