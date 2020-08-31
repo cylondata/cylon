@@ -32,10 +32,8 @@ class DisUnionOp : public Op {
   DisUnionOp(std::shared_ptr<cylon::CylonContext> ctx, std::shared_ptr<arrow::Schema> schema,
              int id,
              std::shared_ptr<ResultsCallback> callback,
-             std::shared_ptr<DisUnionOpConfig>
-             config);
+             std::shared_ptr<DisUnionOpConfig> config);
   bool Execute(int tag, std::shared_ptr<Table> table) override;
-
   void OnParentsFinalized() override;
   bool Finalize() override;
 };
