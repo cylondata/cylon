@@ -358,6 +358,7 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
     length = column->length();
   }
 
+  auto t1 = std::chrono::high_resolution_clock::now();
   // first we partition the table
   std::vector<int64_t> outPartitions;
   outPartitions.reserve(length);
@@ -368,6 +369,9 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
     LOG(FATAL) << "Failed to create the hash partition";
     return status;
   }
+  auto t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Calculating hash time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   for (int i = 0; i < table_->num_columns(); i++) {
     std::shared_ptr<arrow::DataType> type = table_->column(i)->chunk(0)->type();
@@ -389,6 +393,9 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
       cols->push_back(x.second);
     }
   }
+  auto t3 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Building hashed tables time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
   // now insert these array to
   for (const auto &x : data_arrays) {
     std::shared_ptr<arrow::Table> table = arrow::Table::Make(table_->schema(), *x.second);
