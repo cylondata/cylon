@@ -176,14 +176,19 @@ Status ShuffleTwoTables(CylonContext *ctx,
                         std::shared_ptr<arrow::Table> *right_table_out) {
   LOG(INFO) << "Shuffling two tables with total rows : "
             << left_table->Rows() + right_table->Rows();
+  auto t1 = std::chrono::high_resolution_clock::now();
   auto status = Shuffle(ctx, left_table, left_hash_columns,
                         ctx->GetNextSequence(), left_table_out);
   if (status.is_ok()) {
-    LOG(INFO) << "Left table shuffled";
+    auto t2 = std::chrono::high_resolution_clock::now();
+    LOG(INFO) << "Left shuffle time : "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     status = Shuffle(ctx, right_table, right_hash_columns,
                                     ctx->GetNextSequence(), right_table_out);
     if (status.is_ok()) {
-      LOG(INFO) << "Right table shuffled";
+      auto t3 = std::chrono::high_resolution_clock::now();
+      LOG(INFO) << "Right shuffle time : "
+                << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
     }
   }
   return status;
@@ -356,8 +361,9 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
   // first we partition the table
   std::vector<int64_t> outPartitions;
   outPartitions.reserve(length);
+  std::vector<uint32_t> counts(no_of_partitions, 0);
   Status status = HashPartitionArrays(cylon::ToArrowPool(ctx), arrays, length,
-                                   partitions, &outPartitions);
+                                      partitions, &outPartitions, counts);
   if (!status.is_ok()) {
     LOG(FATAL) << "Failed to create the hash partition";
     return status;
@@ -376,7 +382,7 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
 
     // this one outputs arrays for each target as a map
     std::unordered_map<int, std::shared_ptr<arrow::Array>> splited_arrays;
-    splitKernel->Split(array, outPartitions, partitions, splited_arrays);
+    splitKernel->Split(array, outPartitions, partitions, splited_arrays, counts);
 
     for (const auto &x : splited_arrays) {
       std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];

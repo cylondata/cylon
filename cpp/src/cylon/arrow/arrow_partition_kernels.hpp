@@ -39,7 +39,8 @@ class ArrowPartitionKernel {
    */
   virtual int Partition(const std::shared_ptr<arrow::Array> &values,
                         const std::vector<int> &targets,
-                        std::vector<int64_t> *partitions) = 0;
+                        std::vector<int64_t> *partitions,
+                        std::vector<uint32_t> &counts) = 0;
 
   virtual uint32_t ToHash(const std::shared_ptr<arrow::Array> &values,
                           int64_t index) = 0;
@@ -66,16 +67,21 @@ class FixedSizeBinaryHashPartitionKernel : public ArrowPartitionKernel {
     }
   }
 
-  int Partition(const std::shared_ptr<arrow::Array> &values, const std::vector<int> &targets,
-                std::vector<int64_t> *partitions) override {
+  int Partition(const std::shared_ptr<arrow::Array> &values,
+                const std::vector<int> &targets,
+                std::vector<int64_t> *partitions,
+                std::vector<uint32_t> &counts) override {
     auto reader = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
-    for (int64_t i = 0; i < reader->length(); i++) {
+    int64_t kI = reader->length();
+    for (int64_t i = 0; i < kI; i++) {
       auto lValue = reader->GetValue(i);
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
       cylon::util::MurmurHash3_x86_32(lValue, reader->byte_width(), seed, &hash);
-      partitions->push_back(targets.at(hash % targets.size()));
+      int kX = targets.at(hash % targets.size());
+      partitions->push_back(kX);
+      counts[kX]++;
     }
     // now build the
     return 0;
@@ -101,8 +107,10 @@ class BinaryHashPartitionKernel : public ArrowPartitionKernel {
     }
   }
 
-  int Partition(const std::shared_ptr<arrow::Array> &values, const std::vector<int> &targets,
-                std::vector<int64_t> *partitions) override {
+  int Partition(const std::shared_ptr<arrow::Array> &values,
+                const std::vector<int> &targets,
+                std::vector<int64_t> *partitions,
+                std::vector<uint32_t> &counts) override {
     auto reader = std::static_pointer_cast<arrow::BinaryArray>(values);
     for (int64_t i = 0; i < reader->length(); i++) {
       int length = 0;
@@ -111,7 +119,9 @@ class BinaryHashPartitionKernel : public ArrowPartitionKernel {
       uint32_t seed = 0;
       // do the hash as we know the bit width
       cylon::util::MurmurHash3_x86_32(lValue, length, seed, &hash);
-      partitions->push_back(targets.at(hash % targets.size()));
+      int kX = targets.at(hash % targets.size());
+      partitions->push_back(kX);
+      counts[kX]++;
     }
     // now build the
     return 0;
@@ -143,8 +153,10 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
 
   }
 
-  int Partition(const std::shared_ptr<arrow::Array> &values, const std::vector<int> &targets,
-                std::vector<int64_t> *partitions) override {
+  int Partition(const std::shared_ptr<arrow::Array> &values,
+                const std::vector<int> &targets,
+                std::vector<int64_t> *partitions,
+                std::vector<uint32_t> &counts) override {
     auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
     int bitWidth = type->bit_width();
@@ -155,7 +167,9 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
       uint32_t seed = 0;
       // do the hash as we know the bit width
       cylon::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
-      partitions->push_back(targets.at(hash % targets.size()));
+      int kX = targets.at(hash % targets.size());
+      partitions->push_back(kX);
+      counts[kX]++;
     }
     // now build the
     return 0;
@@ -185,13 +199,15 @@ std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool
 cylon::Status HashPartitionArray(arrow::MemoryPool *pool,
                                  const std::shared_ptr<arrow::Array> &values,
                                  const std::vector<int> &targets,
-                                 std::vector<int64_t> *outPartitions);
+                                 std::vector<int64_t> *outPartitions,
+                                 std::vector<uint32_t> &counts);
 
 cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
                                   const std::vector<std::shared_ptr<arrow::Array>> &values,
                                   int64_t length,
                                   const std::vector<int> &targets,
-                                  std::vector<int64_t> *outPartitions);
+                                  std::vector<int64_t> *outPartitions,
+                                  std::vector<uint32_t> &counts);
 
 class RowHashingKernel {
  private:
