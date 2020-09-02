@@ -55,9 +55,9 @@ template<typename ARROW_ARRAY_TYPE, typename CPP_KEY_TYPE>
 inline void advance_inplace_array(std::vector<int64_t> *subset,
                                   int64_t *current_index,  // always int64_t
                                   std::shared_ptr<arrow::Array> data_column,
+                                  int64_t length,
                                   CPP_KEY_TYPE *key) {
   subset->clear();
-  int64_t length = data_column->length();
   if (*current_index == length) {
     return;
   }
@@ -138,15 +138,17 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
   int64_t init_vec_size = std::min(left_join_column->length(), right_join_column->length());
   left_indices->reserve(init_vec_size);
   right_indices->reserve(init_vec_size);
-
+  int64_t col_length = left_join_column->length();
   advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
                                                         &left_current_index,
                                                         left_join_column,
+                                                        col_length,
                                                         &left_key);
 
   advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
                                                         &right_current_index,
                                                         right_join_column,
+                                                        col_length,
                                                         &right_key);
   while (!left_subset.empty() && !right_subset.empty()) {
     if (left_key == right_key) {  // use a key comparator
@@ -160,11 +162,13 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
                                                             &left_current_index,
                                                             left_join_column,
+                                                            col_length,
                                                             &left_key);
 
       advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
                                                             &right_current_index,
                                                             right_join_column,
+                                                            col_length,
                                                             &right_key);
     } else if (left_key < right_key) {
       // if this is a left join, this is the time to include them all in the result set
@@ -178,6 +182,7 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
                                                             &left_current_index,
                                                             left_join_column,
+                                                            col_length,
                                                             &left_key);
     } else {
       // if this is a right join, this is the time to include them all in the result set
@@ -191,6 +196,7 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
                                                             &right_current_index,
                                                             right_join_column,
+                                                            col_length,
                                                             &right_key);
     }
   }
@@ -205,6 +211,7 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
                                                             &left_current_index,
                                                             left_join_column,
+                                                            col_length,
                                                             &left_key);
     }
   }
@@ -218,6 +225,7 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
                                                             &right_current_index,
                                                             right_join_column,
+                                                            col_length,
                                                             &right_key);
     }
   }
