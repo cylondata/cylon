@@ -64,10 +64,9 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
 	std::vector<std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
 
     for (size_t i = 0; i < targets.size(); i++) {
-      int target = targets[i];
 	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = std::make_shared<arrow::NumericBuilder<TYPE>>(type_, pool_);
       b->Reserve(counts[i]);
-	  builders.push_back(std::shared_ptr<arrow::NumericBuilder<TYPE>>(target, b));
+	  builders.push_back(b);
 	}
 
     size_t kI = partitions.size();
