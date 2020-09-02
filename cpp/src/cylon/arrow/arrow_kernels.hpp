@@ -72,7 +72,7 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
 
 	for (size_t i = 0; i < partitions.size(); i++) {
 	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[partitions.at(i)];
-	  b->Append(reader->Value(i));
+	  b->UnsafeAppend(reader->Value(i));
 	}
 
 	for (long target : targets) {
