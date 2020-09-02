@@ -61,13 +61,13 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
             std::vector<uint32_t> &counts) override {
 	auto reader =
 		std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-	std::unordered_map<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
+	std::vector<std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
 
     for (size_t i = 0; i < targets.size(); i++) {
       int target = targets[i];
 	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = std::make_shared<arrow::NumericBuilder<TYPE>>(type_, pool_);
       b->Reserve(counts[i]);
-	  builders.insert(std::pair<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>>(target, b));
+	  builders.push_back(std::shared_ptr<arrow::NumericBuilder<TYPE>>(target, b));
 	}
 
     size_t kI = partitions.size();
