@@ -70,8 +70,9 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
 	  builders.insert(std::pair<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>>(target, b));
 	}
 
-	for (size_t i = 0; i < partitions.size(); i++) {
-	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[partitions.at(i)];
+    size_t kI = partitions.size();
+    for (size_t i = 0; i < kI; i++) {
+	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[partitions[i]];
 	  b->UnsafeAppend(reader->Value(i));
 	}
 
