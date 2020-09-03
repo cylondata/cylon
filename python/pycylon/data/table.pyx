@@ -323,6 +323,16 @@ cdef class Table:
         table_id = from_pyarrow_table(artb)
         return Table(table_id)
 
+    @staticmethod
+    def from_pandas(obj) -> Table:
+        """
+        creating a PyCylon table from Pandas DataFrame
+        :param obj: Pandas DataFrame
+        :rtype: PyCylon Table
+        """
+        table = pa.Table.from_pandas(obj)
+        return Table.from_arrow(table)
+
     def to_arrow(self) -> pa.Table :
         '''
         creating PyArrow Table from PyCylon table
