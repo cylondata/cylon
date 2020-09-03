@@ -158,7 +158,7 @@ Status HashPartitionTable(CylonContext *ctx, const std::shared_ptr<arrow::Table>
   return Status::OK();
 }
 
-cylon::Status ShuffleSingle(cylon::CylonContext *ctx,
+cylon::Status Shuffle(cylon::CylonContext *ctx,
                       std::shared_ptr<cylon::Table> &table,
                       int hash_column,
                       int edge_id,
@@ -194,7 +194,7 @@ cylon::Status ShuffleSingle(cylon::CylonContext *ctx,
   // doing all to all communication to exchange tables
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
                                   std::make_shared<AllToAllListener>(&received_tables,
-                                                                     ctx->GetRank()), schema, cylon::ToArrowPool(ctx));
+                                  ctx->GetRank()), schema, cylon::ToArrowPool(ctx));
 
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
@@ -307,13 +307,13 @@ Status ShuffleTwoTables(CylonContext *ctx,
   LOG(INFO) << "Shuffling two tables with total rows : "
             << left_table->Rows() + right_table->Rows();
   auto t1 = std::chrono::high_resolution_clock::now();
-  auto status = ShuffleSingle(ctx, left_table, left_hash_column,
+  auto status = Shuffle(ctx, left_table, left_hash_column,
                         ctx->GetNextSequence(), left_table_out);
   if (status.is_ok()) {
     auto t2 = std::chrono::high_resolution_clock::now();
     LOG(INFO) << "Left shuffle time : "
               << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-    status = ShuffleSingle(ctx, right_table, right_hash_column,
+    status = Shuffle(ctx, right_table, right_hash_column,
                      ctx->GetNextSequence(), right_table_out);
     if (status.is_ok()) {
       auto t3 = std::chrono::high_resolution_clock::now();

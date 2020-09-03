@@ -73,13 +73,15 @@ class FixedSizeBinaryHashPartitionKernel : public ArrowPartitionKernel {
                 std::vector<uint32_t> &counts) override {
     auto reader = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
     int64_t kI = reader->length();
+    unsigned long target_size = targets.size();
+    int32_t byte_width = reader->byte_width();
     for (int64_t i = 0; i < kI; i++) {
       auto lValue = reader->GetValue(i);
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
-      cylon::util::MurmurHash3_x86_32(lValue, reader->byte_width(), seed, &hash);
-      int kX = targets.at(hash % targets.size());
+      cylon::util::MurmurHash3_x86_32(lValue, byte_width, seed, &hash);
+      int kX = targets.at(hash % target_size);
       partitions->push_back(kX);
       counts[kX]++;
     }
@@ -112,14 +114,16 @@ class BinaryHashPartitionKernel : public ArrowPartitionKernel {
                 std::vector<int64_t> *partitions,
                 std::vector<uint32_t> &counts) override {
     auto reader = std::static_pointer_cast<arrow::BinaryArray>(values);
-    for (int64_t i = 0; i < reader->length(); i++) {
+    int64_t reader_len = reader->length();
+    unsigned long target_size = targets.size();
+    for (int64_t i = 0; i < reader_len; i++) {
       int length = 0;
       auto lValue = reader->GetValue(i, &length);
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
       cylon::util::MurmurHash3_x86_32(lValue, length, seed, &hash);
-      int kX = targets.at(hash % targets.size());
+      int kX = targets.at(hash % target_size);
       partitions->push_back(kX);
       counts[kX]++;
     }
@@ -159,15 +163,17 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
                 std::vector<uint32_t> &counts) override {
     auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
-    int bitWidth = type->bit_width();
-    for (int64_t i = 0; i < reader->length(); i++) {
+    int bitWidth = type->bit_width() / 8;
+    unsigned long target_size = targets.size();
+    int64_t length = reader->length();
+    for (int64_t i = 0; i < length; i++) {
       auto lValue = reader->Value(i);
       void *val = (void *) &(lValue);
       uint32_t hash = 0;
       uint32_t seed = 0;
       // do the hash as we know the bit width
-      cylon::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
-      int kX = targets.at(hash % targets.size());
+      cylon::util::MurmurHash3_x86_32(val, bitWidth, seed, &hash);
+      int kX = targets[hash % target_size];
       partitions->push_back(kX);
       counts[kX]++;
     }

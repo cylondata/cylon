@@ -235,18 +235,19 @@ class ArrowArrayInplaceNumericSortKernel : public ArrowArrayInplaceSortKernel {
     // get the first buffer as a mutable buffer
     T *left_data = data->GetMutableValues<T>(1);
     std::shared_ptr<arrow::Buffer> indices_buf;
-    int64_t buf_size = values->length() * sizeof(uint64_t);
+    int64_t length = values->length();
+    int64_t buf_size = length * sizeof(uint64_t);
     arrow::Status status = AllocateBuffer(pool_, buf_size + 1, &indices_buf);
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
       return -1;
     }
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
-    for (int64_t i = 0; i < values->length(); i++) {
+    for (int64_t i = 0; i < length; i++) {
       indices_begin[i] = i;
     }
-    cylon::util::quicksort(left_data, 0, values->length(), indices_begin);
-    *offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
+    cylon::util::quicksort(left_data, 0, length, indices_begin);
+    *offsets = std::make_shared<arrow::UInt64Array>(length, indices_buf);
     return 0;
   }
 };
