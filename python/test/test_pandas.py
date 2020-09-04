@@ -12,6 +12,7 @@
  # limitations under the License.
  ##
 
+from pyarrow import csv
 from pycylon.data.table import Table
 from pycylon.ctx.context import CylonContext
 import pandas as pd
@@ -22,17 +23,19 @@ running test case
 >>> python test/test_pandas.py --table_path /tmp/csv.csv 
 '''
 
-parser = argparse.ArgumentParser(description='PyCylon with Pandas')
-parser.add_argument('--table_path', type=str, help='Path to csv')
+
+parser = argparse.ArgumentParser(description='PyCylon Table Conversion')
+parser.add_argument('--table1_path', type=str, help='Path to table 1 csv')
+
 
 args = parser.parse_args()
 
 ctx: CylonContext = CylonContext('mpi')
-pdf: pd.DataFrame = pd.read_csv(args.table_path)
-cylon_table: Table = Table.from_pandas(pdf)
 
-cylon_table.show()
+pdf = pd.read_csv(args.table1_path)
 
-print(f"Rows {cylon_table.rows}, Columns {cylon_table.columns}")
+cylon_table1: Table = Table.from_pandas(pdf, ctx)
+
+cylon_table1.show()
 
 ctx.finalize()

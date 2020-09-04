@@ -22,7 +22,7 @@ from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context cimport CCylonContextWrap
 
 cdef class CylonContext:
-    cdef CCylonContextWrap *thisPtr;
+    cdef CCylonContextWrap* thisPtr;
     cdef string config;
 
     def __cinit__(self, config: str):
@@ -68,11 +68,6 @@ cdef class CylonContext:
     
     def get_config(self):
         return self.config
-
-
-    cdef CCylonContextWrap* get_c_context(self):
-        return self.thisPtr
-
 
 
 
