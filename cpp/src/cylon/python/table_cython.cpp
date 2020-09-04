@@ -196,26 +196,6 @@ std::string CxTable::Project(cylon_context_wrap *ctx_wrap, const std::vector<int
   }
 }
 
-// FIXME: This context handling must be replaced with a better logic
-// Cython Reference passing needs to be added
-cylon::python::cylon_context_wrap *CxTable::get_new_context() {
-  if (context_map.size() == 0) {
-    std::cout << "Creating a New Context " << std::endl;
-    std::string mpi_config = "mpi";
-    cylon::python::cylon_context_wrap *ctx_wrap = new cylon::python::cylon_context_wrap(mpi_config);
-    std::pair<std::string, cylon::python::cylon_context_wrap *> pair("dist_context", ctx_wrap);
-    context_map.insert(pair);
-    return ctx_wrap;
-  }
-  if (context_map.size() == 1) {
-    auto itr = context_map.find("dist_context");
-    if (itr != context_map.end()) {
-      return itr->second;
-    }
-  }
-  return nullptr;
-}
-
 }  // namespace table
 }  // namespace python
 }  // namespace cylon
