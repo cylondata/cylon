@@ -49,7 +49,9 @@ void cylon::Op::InsertTable(int tag, std::shared_ptr<cylon::Table> table) {
   this->inputs_count++;
 }
 
-void cylon::Op::Progress() {
+bool cylon::Op::IsComplete() {
+  this->did_work = false;
+
   // first process this Op
   if (!this->finalized && this->inputs_count > 0) {
     for (auto const &q:this->queues) {
@@ -62,6 +64,7 @@ void cylon::Op::Progress() {
           // todo check whether this is the best way to do this. But always assume that the status of the
           // partially processed tables will be kept by the Op implementation
           // std::queue<std::pair<int, std::shared_ptr<cylon::Table>>> partially_processed_queue{};
+          this->did_work = true;
         }
       }
     }
@@ -79,24 +82,6 @@ void cylon::Op::Progress() {
     }
   }
 
-  // always progress children(or child branches)
-  for (auto child: children) {
-    // progress only if child(entire child branch) is not competed
-    if (!child.second->IsComplete()) {
-      child.second->Progress();
-    }
-  }
-}
-
-bool cylon::Op::IsComplete() {
-  for (auto child: children) {
-    if (!child.second->IsComplete()) {
-      return false;
-    }
-  }
-  // no more inputs will be received && no more items left in the queues
-  // this->all_parents_finalized && this->inputs_count == 0; , this has been already checked in Progress()
-  // hence checking finalized is sufficient
   return this->finalized;
 }
 
@@ -144,4 +129,7 @@ void cylon::Op::ReportParentCompleted() {
     this->all_parents_finalized = true;
     this->OnParentsFinalized();
   }
+}
+bool cylon::Op::DidSomeWork() {
+  return this->did_work;
 }

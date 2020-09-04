@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   union_op.InsertTable(1, table2);
 
   while (!union_op.IsComplete()) {
-    union_op.Progress();
+    union_op.IsComplete();
   }
 
   ctx->Finalize();
