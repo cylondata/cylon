@@ -108,9 +108,14 @@ bool ArrowJoinWithPartition::isComplete() {
 
     auto column = left_tab->column(leftColumnIndex_);
     std::vector<int64_t> outPartitions;
+    std::vector<uint32_t> counts(targets_.size(), 0);
     std::shared_ptr<arrow::Array> array = column->chunk(0);
     // first we partition the table
-    cylon::Status status = HashPartitionArray(pool_, array, targets_, &outPartitions);
+    cylon::Status status = HashPartitionArray(pool_,
+                                              array,
+                                              targets_,
+                                              &outPartitions,
+                                              counts);
     if (!status.is_ok()) {
       LOG(FATAL) << "Failed to create the hash partition";
       return true;
@@ -127,7 +132,7 @@ bool ArrowJoinWithPartition::isComplete() {
 
       // this one outputs arrays for each target as a map
       std::unordered_map<int, std::shared_ptr<arrow::Array>> arrays;
-      splitKernel->Split(array, outPartitions, targets_, arrays);
+      splitKernel->Split(array, outPartitions, targets_, arrays, counts);
 
       for (const auto &x : arrays) {
         std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];
@@ -155,9 +160,13 @@ bool ArrowJoinWithPartition::isComplete() {
 
     auto column = left_tab->column(rightColumnIndex_);
     std::vector<int64_t> outPartitions;
+    std::vector<uint32_t> counts(targets_.size(), 0);
     std::shared_ptr<arrow::Array> array = column->chunk(0);
     // first we partition the table
-    cylon::Status status = HashPartitionArray(pool_, array, targets_, &outPartitions);
+    cylon::Status status = HashPartitionArray(pool_,
+                                              array,
+                                              targets_,
+                                              &outPartitions, counts);
     if (!status.is_ok()) {
       LOG(FATAL) << "Failed to create the hash partition";
       return true;
@@ -174,7 +183,7 @@ bool ArrowJoinWithPartition::isComplete() {
 
       // this one outputs arrays for each target as a map
       std::unordered_map<int, std::shared_ptr<arrow::Array>> arrays;
-      splitKernel->Split(array, outPartitions, targets_, arrays);
+      splitKernel->Split(array, outPartitions, targets_, arrays, counts);
 
       for (const auto &x : arrays) {
         std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];
