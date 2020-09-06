@@ -51,14 +51,14 @@ bool cylon::AllToAllOp::Execute(int tag, shared_ptr<Table> table) {
   return true;
 }
 
-void cylon::AllToAllOp::Progress() {
+bool cylon::AllToAllOp::IsComplete() {
   LOG(INFO) << "Calling shuffle progress";
   this->all_to_all_->isComplete();
-  Op::Progress();
+  return Op::IsComplete();
 }
 
 bool cylon::AllToAllOp::Finalize() {
-  LOG(INFO) << "Finalizing shuffle";
+  LOG(INFO) << "ying to finalize shuffle";
   if (this->all_to_all_->isComplete()) {
     this->all_to_all_->close();
     return true;

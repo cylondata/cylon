@@ -54,6 +54,9 @@ class Op {
   bool all_parents_finalized = false;
   bool finalized = false;
 
+  // flag to indicate whether IsProgress actually did some work. This will be used in adaptive priority execution
+  bool did_work = true;
+
   /**
    * If this Op is a leaf op, this function will send the table to the callback.
    * @param tag tag of the table
@@ -141,13 +144,9 @@ class Op {
    *
    * This function can be overridden in child Ops, but it's mandatory to call Op::Progress in such cases
    */
-  virtual void Progress();
+  virtual bool IsComplete();
 
-  /**
-   * Parent Op is considered to be completed only if all child Ops are completed
-   * @return
-   */
-  bool IsComplete();
+  bool DidSomeWork();
 
   /**
    * This function will be called when no more inputs will be received to this Op, ie parents have been finalized
@@ -161,6 +160,10 @@ class Op {
   virtual bool Finalize() = 0;
 
   ~Op();
+};
+
+class RootOp : public Op {
+
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_PARALLEL_OP_HPP_
