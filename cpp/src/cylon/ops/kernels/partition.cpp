@@ -50,9 +50,11 @@ Status HashPartition(cylon::CylonContext *ctx, const std::shared_ptr<cylon::Tabl
 
   // first we partition the table
   std::vector<int64_t> outPartitions;
+  std::vector<uint32_t> counts;
+
   outPartitions.reserve(length);
   Status status = HashPartitionArrays(cylon::ToArrowPool(ctx), arrays, length,
-                                      partitions, &outPartitions);
+                                      partitions, &outPartitions, counts);
   if (!status.is_ok()) {
     LOG(FATAL) << "Failed to create the hash partition";
     return status;
@@ -71,7 +73,10 @@ Status HashPartition(cylon::CylonContext *ctx, const std::shared_ptr<cylon::Tabl
 
     // this one outputs arrays for each target as a map
     std::unordered_map<int, std::shared_ptr<arrow::Array>> splited_arrays;
-    splitKernel->Split(array, outPartitions, partitions, splited_arrays);
+
+    std::vector<uint32_t> split_counts;
+
+    splitKernel->Split(array, outPartitions, partitions, splited_arrays, split_counts);
 
     for (const auto &x : splited_arrays) {
       std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];

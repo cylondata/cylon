@@ -98,7 +98,7 @@ Status PrepareArray(CylonContext *ctx,
   return Status::OK();
 }
 
-Status HashPartitionTable(CylonContext *ctx, const std::shared_ptr<arrow::Table>& table,
+Status HashPartitionTable(CylonContext *ctx, const std::shared_ptr<arrow::Table> &table,
                           int hash_column, int no_of_partitions,
                           std::unordered_map<int, std::shared_ptr<cylon::Table>> *out) {
   // keep arrays for each target, these arrays are used for creating the table
@@ -166,7 +166,7 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
   std::unordered_map<int, std::shared_ptr<cylon::Table>> partitioned_tables{};
   // partition the tables locally
   HashPartitionTable(ctx, table->get_table(), hash_column, ctx->GetWorldSize(),
-      &partitioned_tables);
+                     &partitioned_tables);
   std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
   // we are going to free if retain is set to false
   if (!table->IsRetain()) {
@@ -185,7 +185,7 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
       this->workerId = workerId;
     }
 
-    bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
+    bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override {
       this->tabs->push_back(table);
       return true;
     };
@@ -194,7 +194,7 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
   // doing all to all communication to exchange tables
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
                                   std::make_shared<AllToAllListener>(&received_tables,
-                                  ctx->GetRank()), schema, cylon::ToArrowPool(ctx));
+                                                                     ctx->GetRank()), schema);
 
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
@@ -254,7 +254,7 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
       this->workerId = workerId;
     }
 
-    bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
+    bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override {
       this->tabs->push_back(table);
       return true;
     };
@@ -263,7 +263,7 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
   // doing all to all communication to exchange tables
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
                                   std::make_shared<AllToAllListener>(&received_tables,
-                                  ctx->GetRank()), schema, cylon::ToArrowPool(ctx));
+                                                                     ctx->GetRank()), schema);
 
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
@@ -341,7 +341,7 @@ Status ShuffleTwoTables(CylonContext *ctx,
     LOG(INFO) << "Left shuffle time : "
               << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     status = Shuffle(ctx, right_table, right_hash_columns,
-                                    ctx->GetNextSequence(), right_table_out);
+                     ctx->GetNextSequence(), right_table_out);
     if (status.is_ok()) {
       auto t3 = std::chrono::high_resolution_clock::now();
       LOG(INFO) << "Right shuffle time : "
@@ -382,7 +382,7 @@ Status Table::FromArrowTable(cylon::CylonContext *ctx,
 }
 
 Status Table::FromColumns(cylon::CylonContext *ctx,
-                          vector<std::shared_ptr<Column>>&& columns,
+                          vector<std::shared_ptr<Column>> &&columns,
                           std::shared_ptr<Table> *tableOut) {
   arrow::Status status;
   arrow::SchemaBuilder schema_builder;
@@ -735,7 +735,7 @@ Status Table::Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &secon
 }
 
 Status Table::Subtract(shared_ptr<Table> &first,
-    shared_ptr<Table> &second, std::shared_ptr<Table> &out) {
+                       shared_ptr<Table> &second, std::shared_ptr<Table> &out) {
   shared_ptr<arrow::Table> ltab = first->get_table();
   shared_ptr<arrow::Table> rtab = second->get_table();
   Status status = VerifyTableSchema(ltab, rtab);
@@ -882,13 +882,13 @@ Status Table::Intersect(shared_ptr<Table> &first,
 
 typedef Status
 (*LocalSetOperation)(std::shared_ptr<cylon::Table> &, std::shared_ptr<cylon::Table> &,
-    std::shared_ptr<cylon::Table> &);
+                     std::shared_ptr<cylon::Table> &);
 
 Status DoDistributedSetOperation(CylonContext *ctx,
                                  LocalSetOperation local_operation,
                                  std::shared_ptr<cylon::Table> &table_left,
                                  std::shared_ptr<cylon::Table> &table_right,
-                                 std::shared_ptr<cylon::Table>& out) {
+                                 std::shared_ptr<cylon::Table> &out) {
   // extract the tables out
   auto left = table_left->get_table();
   auto right = table_right->get_table();
@@ -931,7 +931,7 @@ Status DoDistributedSetOperation(CylonContext *ctx,
 }
 
 Status Table::DistributedUnion(shared_ptr<Table> &left, shared_ptr<Table> &right,
-    shared_ptr<Table> &out) {
+                               shared_ptr<Table> &out) {
   return DoDistributedSetOperation(left->ctx, &Table::Union, left, right, out);
 }
 
@@ -953,7 +953,7 @@ Table::~Table() {
 }
 
 void ReadCSVThread(CylonContext *ctx, const std::string &path,
-                   std::shared_ptr<cylon::Table> * table,
+                   std::shared_ptr<cylon::Table> *table,
                    cylon::io::config::CSVReadOptions options,
                    const std::shared_ptr<std::promise<Status>> &status_promise) {
   status_promise->set_value(Table::FromCSV(ctx, path, *table, options));
@@ -1016,14 +1016,14 @@ cylon::CylonContext *Table::GetContext() {
 }
 
 Status Table::PrintToOStream(
-                      int col1,
-                      int col2,
-                      int row1,
-                      int row2,
-                      std::ostream &out,
-                      char delimiter,
-                      bool use_custom_header,
-                      const std::vector<std::string> &headers) {
+    int col1,
+    int col2,
+    int row1,
+    int row2,
+    std::ostream &out,
+    char delimiter,
+    bool use_custom_header,
+    const std::vector<std::string> &headers) {
   auto table = table_;
   if (table != NULLPTR) {
     // print the headers
