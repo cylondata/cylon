@@ -40,7 +40,7 @@ def start_ray(procs, nodes):
     query = ["ssh", "v-001", RAY_EXEC, "start",
              "--head", "--port=6379", "--node-ip-address=v-001",
              f"--redis-password={RAY_PW}", f"--num-cpus={procs}",
-             f"--memory={20 * procs * 10 ^ 9}"]
+             f"--memory={20 * procs * (10 ** 9)}"]
     print("running: ", " ".join(query), flush=True)
     subprocess.Popen(query, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
