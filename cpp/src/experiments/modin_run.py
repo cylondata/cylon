@@ -57,7 +57,7 @@ def start_ray(procs, nodes):
 
     time.sleep(5)
 
-    ray.init(address='auto', redis_password=RAY_PW)
+    ray.init(address='v-001:6379', redis_password=RAY_PW)
 
 
 def stop_ray():
