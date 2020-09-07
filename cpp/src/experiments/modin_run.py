@@ -33,9 +33,6 @@ with open(nodes_file, 'r') as fp:
     for l in fp.readlines():
         ips.append(l.split(' ')[0])
 
-ray.init(address='auto', redis_password=RAY_PW)
-import modin.pandas as pd
-
 
 # ray start --head --redis-port=6379 --node-ip-address=v-001
 def start_ray(procs, nodes):
@@ -60,6 +57,8 @@ def start_ray(procs, nodes):
 
     time.sleep(5)
 
+    ray.init(address='auto', redis_password=RAY_PW)
+
 
 def stop_ray():
     for ip in ips:
@@ -79,6 +78,8 @@ for r in rows:
 
         stop_ray()
         start_ray(procs, min(w, TOTAL_NODES))
+
+        import modin.pandas as pd
 
         # client = Client("v-001:8786")
         #
