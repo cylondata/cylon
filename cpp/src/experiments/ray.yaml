@@ -9,12 +9,12 @@ cluster_name: default
 min_workers: 10
 # The initial number of worker nodes to launch in addition to the head node.
 # Typically, min_workers == initial_workers == max_workers == len(worker_ips).
-initial_workers: 0
+initial_workers: 10
 
 # The maximum number of workers nodes to launch in addition to the head node.
 # This takes precedence over min_workers.
 # Typically, min_workers == initial_workers == max_workers == len(worker_ips).
-max_workers: 0
+max_workers: 10
 
 # Autoscaling parameters.
 # Ignore this if min_workers == initial_workers == max_workers.
@@ -62,15 +62,6 @@ file_mounts: {
   #    "/path2/on/remote/machine": "/path2/on/local/machine",
 }
 
-# Files or directories to copy from the head node to the worker nodes. The format is a
-# list of paths. The same path on the head node will be copied to the worker node.
-# This behavior is a subset of the file_mounts behavior. In the vast majority of cases
-# you should just use file_mounts. Only use this if you know what you're doing!
-cluster_synced_files: []
-
-# Whether changes to directories in file_mounts or cluster_synced_files in the head node
-# should sync to the worker node continuously
-file_mounts_sync_continuously: False
 
 # List of commands that will be run before `setup_commands`. If docker is
 # enabled, these commands will run outside the container and before docker
