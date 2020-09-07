@@ -1,6 +1,5 @@
 import os
 
-import ray
 
 import time
 import argparse
@@ -57,8 +56,6 @@ def start_ray(procs, nodes):
 
     time.sleep(5)
 
-    ray.init(address='v-001:6379', redis_password=RAY_PW)
-
 
 def stop_ray():
     for ip in ips:
@@ -67,6 +64,17 @@ def stop_ray():
                        stderr=subprocess.STDOUT)
 
     time.sleep(5)
+
+
+INIT = False
+
+
+def initialize():
+    global INIT
+    if not INIT:
+        import ray
+        ray.init(address='v-001:6379', redis_password=RAY_PW)
+        INIT = True
 
 
 for r in rows:
@@ -78,6 +86,8 @@ for r in rows:
 
         stop_ray()
         start_ray(procs, min(w, TOTAL_NODES))
+
+        initialize()
 
         import modin.pandas as pd
 
