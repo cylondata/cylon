@@ -30,7 +30,9 @@ cylon::AllToAllOp::AllToAllOp(std::shared_ptr<cylon::CylonContext> ctx,
     }
 
     bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override {
-      this->shuffle_op->InsertToAllChildren(reference, std::make_shared<cylon::Table>(table, ctx));
+      // todo check whether the const cast is appropriate
+      auto tab = std::make_shared<cylon::Table>(const_cast<std::shared_ptr<arrow::Table> &>(table), ctx);
+      this->shuffle_op->InsertToAllChildren(reference, tab);
       return true;
     };
   };
