@@ -1,7 +1,6 @@
 import os
 
-import dask.dataframe as dd
-from dask.distributed import Client, SSHCluster
+import ray
 
 import time
 import argparse
@@ -34,26 +33,30 @@ with open(nodes_file, 'r') as fp:
     for l in fp.readlines():
         ips.append(l.split(' ')[0])
 
+ray.init(address='auto', redis_password=RAY_PW)
+import modin.pandas as pd
+
 
 # ray start --head --redis-port=6379 --node-ip-address=v-001
 def start_ray(procs, nodes):
-    print("starting scheduler", flush=True)
-    subprocess.Popen(["ssh", "v-001", RAY_EXEC, "start",
-                      "--head", "--port=6379", "--node-ip-address=v-001",
-                      f"--redis-password={RAY_PW}"],
-                     stdout=subprocess.PIPE,
-                     stderr=subprocess.STDOUT)
+    print("starting head", flush=True)
+    query = ["ssh", "v-001", RAY_EXEC, "start",
+             "--head", "--port=6379", "--node-ip-address=v-001",
+             f"--redis-password={RAY_PW}", f"--num-cpus={procs}",
+             f"--memory={20 * procs * 10 ^ 9}"]
+    print("running: ", " ".join(query), flush=True)
+    subprocess.Popen(query, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     time.sleep(5)
 
     for ip in ips[1:nodes]:
         print("starting worker", ip, flush=True)
-        subprocess.Popen(
-            ["ssh", ip, RAY_EXEC, "start",
-             "--interface", "enp175s0f0", "--nthreads", "1", "--nprocs", str(procs),
-             "--memory-limit", "20GB", "--local-directory", "/scratch/dnperera/dask/",
-             "--scheduler-file", "/N/u2/d/dnperera/dask-sched.json"], stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT)
+        query = ["ssh", ip, RAY_EXEC, "start",
+                 "--address=\'v-001:6379\'", f"--node-ip-address={ip}",
+                 f"--redis-password={RAY_PW}", f"--num-cpus={procs}",
+                 f"--memory={20 * procs * 10 ^ 9}"]
+        print("running: ", " ".join(query), flush=True)
+        subprocess.Popen(query, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     time.sleep(5)
 
@@ -61,14 +64,9 @@ def start_ray(procs, nodes):
 def stop_ray():
     for ip in ips:
         print("stopping worker", ip, flush=True)
-        subprocess.run(["ssh", ip, "pkill", "-f", "dask-worker"], stdout=subprocess.PIPE,
+        subprocess.run(["ssh", ip, RAY_EXEC, "stop"], stdout=subprocess.PIPE,
                        stderr=subprocess.STDOUT)
 
-    time.sleep(5)
-
-    print("stopping scheduler", flush=True)
-    subprocess.run(["pkill", "-f", "dask-scheduler"], stdout=subprocess.PIPE,
-                   stderr=subprocess.STDOUT)
     time.sleep(5)
 
 
@@ -82,26 +80,22 @@ for r in rows:
         stop_ray()
         start_ray(procs, min(w, TOTAL_NODES))
 
-        client = Client("v-001:8786")
-
-        df_l = dd.read_csv(f"~/temp/twx/{scale}/{r}/{w}/csv1_*.csv").repartition(npartitions=w)
-        df_r = dd.read_csv(f"~/temp/twx/{scale}/{r}/{w}/csv2_*.csv").repartition(npartitions=w)
-
-        client.persist([df_l, df_r])
-
-        print("left rows", len(df_l), flush=True)
-        print("right rows", len(df_r), flush=True)
+        # client = Client("v-001:8786")
+        #
+        df_l = pd.read_csv(f"~/temp/twx/{scale}/{r}/{w}/csv1_*.csv").repartition(npartitions=w)
+        df_r = pd.read_csv(f"~/temp/twx/{scale}/{r}/{w}/csv2_*.csv").repartition(npartitions=w)
+        #
+        # client.persist([df_l, df_r])
+        #
+        # print("left rows", len(df_l), flush=True)
+        # print("right rows", len(df_r), flush=True)
 
         try:
             for i in range(it):
                 t1 = time.time()
-                out = df_l.merge(df_r, on='0', how='inner', suffixes=('_left', '_right')).compute()
+                out = df_l.merge(df_r, on='0', how='inner', suffixes=('_left', '_right'))
                 t2 = time.time()
 
                 print(f"###time {r} {w} {i} {(t2 - t1) * 1000:.0f}, {len(out)}", flush=True)
-
-            client.restart()
-
-            client.close()
         finally:
             stop_ray()
