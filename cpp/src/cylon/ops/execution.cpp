@@ -35,6 +35,7 @@ void PriorityExecution::AddOp(cylon::Op *op, int32_t priority) {
     this->round_robin_execution_->AddOp(op);
   }
 }
+
 void SequentialExecution::AddOp(cylon::Op *op) {
   this->ops.push(op);
 }
