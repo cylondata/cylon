@@ -22,24 +22,18 @@ void RoundRobinExecution::AddOp(cylon::Op *op) {
   this->indices.push_back(this->ops.size() - 1);
 }
 
-PriorityExecution::PriorityExecution(const std::vector<std::pair<cylon::Op *, int32_t>> &ops) {
-  std::vector<int32_t> counts(ops.size(), 0);
+PriorityExecution::PriorityExecution() {
   round_robin_execution_ = new RoundRobinExecution();
-  bool all_added = false;
-  while (!all_added) {
-    all_added = true;
-    for (std::size_t i = 0; i < ops.size(); i++) {
-      if (counts[i] < ops[i].second) {
-        counts[i]++;
-        round_robin_execution_->AddOp(ops[i].first);
-        all_added = false;
-      }
-    }
-  }
 }
 
 bool PriorityExecution::IsComplete() {
   return this->round_robin_execution_->IsComplete();
+}
+
+void PriorityExecution::AddOp(cylon::Op *op, int32_t priority) {
+  for(int32_t p=0; p< priority;p++){
+    this->round_robin_execution_->AddOp(op);
+  }
 }
 }
 

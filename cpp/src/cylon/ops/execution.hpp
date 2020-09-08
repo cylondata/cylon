@@ -26,7 +26,7 @@ class RoundRobinExecution : public Execution {
   std::vector<std::size_t> indices;
   std::size_t current_index{};
  public:
-  void AddOp(cylon::Op* op);
+  void AddOp(cylon::Op *op);
   bool IsComplete() override;
 };
 
@@ -39,11 +39,10 @@ class PriorityExecution : public Execution {
   RoundRobinExecution *round_robin_execution_;
 
  public:
-  explicit PriorityExecution(const std::vector<std::pair<cylon::Op *, int32_t>> &ops);
-
+  explicit PriorityExecution();
+  void AddOp(cylon::Op *op, int32_t priority);
   bool IsComplete() override;
 };
-
 
 /**
  * This execution performs a BFS over the Op graph
