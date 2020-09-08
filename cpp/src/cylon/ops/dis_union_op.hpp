@@ -23,7 +23,7 @@ class DisUnionOpConfig {
 
 };
 
-class DisUnionOp : public Op {
+class DisUnionOp : public RootOp {
 
  private:
   std::shared_ptr<DisUnionOpConfig> config;
@@ -33,9 +33,6 @@ class DisUnionOp : public Op {
              int id,
              std::shared_ptr<ResultsCallback> callback,
              std::shared_ptr<DisUnionOpConfig> config);
-  bool Execute(int tag, std::shared_ptr<Table> table) override;
-  void OnParentsFinalized() override;
-  bool Finalize() override;
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_

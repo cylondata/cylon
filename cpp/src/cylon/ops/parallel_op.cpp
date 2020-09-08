@@ -130,6 +130,39 @@ void cylon::Op::ReportParentCompleted() {
     this->OnParentsFinalized();
   }
 }
+
 bool cylon::Op::DidSomeWork() {
   return this->did_work;
+}
+
+bool cylon::RootOp::Finalize() {
+  return true;
+}
+
+void cylon::RootOp::OnParentsFinalized() {
+  // do nothing
+}
+
+bool cylon::RootOp::Execute(int tag, shared_ptr<Table> table) {
+  this->InsertToAllChildren(tag, table);
+  return true;
+}
+
+void cylon::RootOp::SetExecution(cylon::Execution *execution) {
+  execution_ = execution;
+}
+
+cylon::Execution *cylon::RootOp::GetExecution() {
+  return this->execution_;
+}
+
+cylon::RootOp::RootOp(std::shared_ptr<cylon::CylonContext> ctx,
+                      std::shared_ptr<arrow::Schema> schema,
+                      int id,
+                      shared_ptr<ResultsCallback> callback) : Op(ctx, schema, id, callback, true) {
+
+}
+
+void cylon::RootOp::WaitForCompletion() {
+  this->execution_->WaitForCompletion();
 }

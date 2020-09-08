@@ -45,12 +45,15 @@ int main(int argc, char *argv[]) {
   auto union_op = cylon::DisUnionOp(std::shared_ptr<cylon::CylonContext>(ctx),
                                     table1_arr->schema(), 0, cb, union_config);
   LOG(INFO) << "Created  op";
+
+  LOG(INFO) << "Adding a table with "<< table1->Rows();
   union_op.InsertTable(0, table1);
+
+  LOG(INFO) << "Adding a table with "<< table2->Rows();
   union_op.InsertTable(1, table2);
 
-  while (!union_op.IsComplete()) {
-    union_op.IsComplete();
-  }
+  auto execution = union_op.GetExecution();
+  execution->WaitForCompletion();
 
   ctx->Finalize();
   return 0;

@@ -16,3 +16,5 @@
 # under the License.
 
 cylon_install_all_headers("cylon/ops")
+
+add_subdirectory(kernels)

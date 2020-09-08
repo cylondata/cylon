@@ -21,7 +21,12 @@ cylon::DisUnionOp::DisUnionOp(std::shared_ptr<cylon::CylonContext> ctx,
                               std::shared_ptr<arrow::Schema> schema,
                               int id,
                               shared_ptr<ResultsCallback> callback,
-                              shared_ptr<DisUnionOpConfig> config) : Op(ctx, schema, id, callback, true) {
+                              shared_ptr<DisUnionOpConfig> config) : RootOp(ctx, schema, id, callback) {
+  auto execution = new RoundRobinExecution();
+  execution->AddOp(this);
+  this->SetExecution(execution);
+
+
   const int32_t PARTITION_OP_ID = 0;
   const int32_t SHUFFLE_OP_ID = 1;
   const int32_t UNION_OP_ID = 2;
@@ -31,31 +36,23 @@ cylon::DisUnionOp::DisUnionOp(std::shared_ptr<cylon::CylonContext> ctx,
   for (int c = 0; c < schema->num_fields(); c++) {
     part_cols.push_back(c);
   }
-  auto partition_op = new PartitionOp(ctx, schema, PARTITION_OP_ID,  callback,
+  auto partition_op = new PartitionOp(ctx, schema, PARTITION_OP_ID, callback,
                                       std::make_shared<PartitionOpConfig>(ctx->GetWorldSize(),
-                                                                          std::make_shared<std::vector<int>>(part_cols)));
+                                                                          std::make_shared<std::vector<int>>(std::move(part_cols))));
 
   this->AddChild(partition_op);
+  execution->AddOp(partition_op);
 
   auto shuffle_op = new AllToAllOp(ctx, schema, SHUFFLE_OP_ID, callback, std::make_shared<AllToAllOpConfig>());
   partition_op->AddChild(shuffle_op);
+  execution->AddOp(shuffle_op);
 
-  auto union_op = new UnionOp(ctx, schema, UNION_OP_ID,  callback, std::make_shared<UnionOpConfig>());
+  auto union_op = new UnionOp(ctx, schema, UNION_OP_ID, callback, std::make_shared<UnionOpConfig>());
   shuffle_op->AddChild(union_op);
-
+  execution->AddOp(union_op);
   // done creating graph
+
+
 }
 
-bool cylon::DisUnionOp::Execute(int tag, shared_ptr<Table> table) {
-  // todo do slicing based on data size
-  this->InsertToAllChildren(tag, table);
-  return true;
-}
 
-void cylon::DisUnionOp::OnParentsFinalized() {
-  // do nothing
-}
-
-bool cylon::DisUnionOp::Finalize() {
-  return true;
-}
