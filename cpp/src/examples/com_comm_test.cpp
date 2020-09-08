@@ -23,8 +23,8 @@ int main(int argc, char *argv[]) {
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   shared_ptr<cylon::Table> table1, table2, out;
-  cylon::Table::FromCSV(ctx, "/home/chathura/Code/twisterx/cpp/data/csv1.csv", table1);
-  cylon::Table::FromCSV(ctx, "/home/chathura/Code/twisterx/cpp/data/csv2.csv", table2);
+  cylon::Table::FromCSV(ctx, argv[0], table1);
+  cylon::Table::FromCSV(ctx, argv[1], table2);
 
   shared_ptr<arrow::Table> table1_arr, table2_arr;
   table1->ToArrowTable(table1_arr);
