@@ -28,6 +28,9 @@ RAY_EXEC = "/N/u2/d/dnperera/victor/git/cylon/ENV/bin/ray"
 
 nodes_file = "nodes"
 ips = []
+
+INIT = False
+
 with open(nodes_file, 'r') as fp:
     for l in fp.readlines():
         ips.append(l.split(' ')[0])
@@ -56,6 +59,9 @@ def start_ray(procs, nodes):
 
     time.sleep(5)
 
+    import ray
+    ray.init(address='v-001:6379', redis_password=RAY_PW)
+
 
 def stop_ray():
     for ip in ips:
@@ -64,9 +70,8 @@ def stop_ray():
                        stderr=subprocess.STDOUT)
 
     time.sleep(5)
-
-
-INIT = False
+    global INIT
+    INIT = False
 
 
 def initialize():
@@ -74,39 +79,38 @@ def initialize():
     if not INIT:
         import ray
         ray.init(address='v-001:6379', redis_password=RAY_PW)
-	import modin.pandas as pd
         INIT = True
 
 
-for r in rows:
-    for w in world:
-        procs = int(math.ceil(w / TOTAL_NODES))
-        print("procs per worker", procs, flush=True)
+if __name__ == "__main__":
+    for r in rows:
+        for w in world:
+            procs = int(math.ceil(w / TOTAL_NODES))
+            print("procs per worker", procs, flush=True)
 
-        assert procs <= 16
+            assert procs <= 16
 
-        stop_ray()
-	start_ray(procs, min(w, TOTAL_NODES))
-
-        initialize()
-
-
-        # client = Client("v-001:8786")
-        #
-        df_l = pd.read_csv(f"~/temp/twx/{scale}/{r}/{w}/csv1_*.csv").repartition(npartitions=w)
-        df_r = pd.read_csv(f"~/temp/twx/{scale}/{r}/{w}/csv2_*.csv").repartition(npartitions=w)
-        #
-        # client.persist([df_l, df_r])
-        #
-        # print("left rows", len(df_l), flush=True)
-        # print("right rows", len(df_r), flush=True)
-
-        try:
-            for i in range(it):
-                t1 = time.time()
-                out = df_l.merge(df_r, on='0', how='inner', suffixes=('_left', '_right'))
-                t2 = time.time()
-
-                print(f"###time {r} {w} {i} {(t2 - t1) * 1000:.0f}, {len(out)}", flush=True)
-        finally:
             stop_ray()
+            start_ray(procs, min(w, TOTAL_NODES))
+
+            # initialize()
+
+            import modin.pandas as pd
+
+            df_l = pd.read_csv(f"~/temp/twx/{scale}/{r}/{w}/csv1_*.csv").repartition(npartitions=w)
+            df_r = pd.read_csv(f"~/temp/twx/{scale}/{r}/{w}/csv2_*.csv").repartition(npartitions=w)
+            #
+            # client.persist([df_l, df_r])
+            #
+            # print("left rows", len(df_l), flush=True)
+            # print("right rows", len(df_r), flush=True)
+
+            try:
+                for i in range(it):
+                    t1 = time.time()
+                    out = df_l.merge(df_r, on='0', how='inner', suffixes=('_left', '_right'))
+                    t2 = time.time()
+
+                    print(f"###time {r} {w} {i} {(t2 - t1) * 1000:.0f}, {len(out)}", flush=True)
+            finally:
+                stop_ray()
