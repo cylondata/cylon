@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <table.hpp>
+#include "execution.hpp"
 
 /**
  * Assumptions
@@ -163,7 +164,21 @@ class Op {
 };
 
 class RootOp : public Op {
+ private:
+  Execution *execution_;
+ protected:
+  void SetExecution(Execution *execution);
 
+ public:
+  RootOp(std::shared_ptr<cylon::CylonContext> ctx,
+         std::shared_ptr<arrow::Schema> schema,
+         int id,
+         std::shared_ptr<ResultsCallback> callback);
+  bool Finalize() override;
+  void OnParentsFinalized() override;
+  bool Execute(int tag, std::shared_ptr<Table> table) override;
+  Execution *GetExecution();
+  void WaitForCompletion();
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_PARALLEL_OP_HPP_

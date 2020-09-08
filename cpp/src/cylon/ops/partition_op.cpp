@@ -33,6 +33,7 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
   for (auto const &tab:out) {
     this->InsertToAllChildren(tab.first, tab.second);
   }
+  LOG(INFO) << "Executed partition op";
   return true;
 }
 

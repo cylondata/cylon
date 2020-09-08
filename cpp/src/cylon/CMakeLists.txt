@@ -105,7 +105,11 @@ add_library(cylon SHARED
         ops/all_to_all_op.hpp
         ops/all_to_all_op.cpp
         ops/dis_union_op.hpp
-        ops/dis_union_op.cpp ops/dis_join_op.cpp ops/dis_join_op.hpp ops/execution.hpp ops/execution.cpp)
+        ops/dis_union_op.cpp
+        ops/dis_join_op.cpp
+        ops/dis_join_op.hpp
+        ops/execution.hpp
+        ops/execution.cpp)
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
 
