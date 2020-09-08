@@ -37,7 +37,7 @@ with open(nodes_file, 'r') as fp:
 def start_ray(procs, nodes):
     print("starting head", flush=True)
     query = ["ssh", "v-001", RAY_EXEC, "start",
-             "--head", "--port=6379", "--node-ip-address=v-001",
+             "--head", "--redis-port=6379", "--node-ip-address=v-001",
              f"--redis-password={RAY_PW}", f"--num-cpus={procs}",
              f"--memory={20 * procs * (10 ** 9)}"]
     print("running: ", " ".join(query), flush=True)
@@ -60,7 +60,7 @@ def start_ray(procs, nodes):
 def stop_ray():
     for ip in ips:
         print("stopping worker", ip, flush=True)
-        subprocess.run(["ssh", ip, RAY_EXEC, "stop"], stdout=subprocess.PIPE,
+        subprocess.run(["ssh",ip , "pkill", "-f", "ray"], stdout=subprocess.PIPE,
                        stderr=subprocess.STDOUT)
 
     time.sleep(5)
@@ -74,6 +74,7 @@ def initialize():
     if not INIT:
         import ray
         ray.init(address='v-001:6379', redis_password=RAY_PW)
+	import modin.pandas as pd
         INIT = True
 
 
@@ -85,11 +86,10 @@ for r in rows:
         assert procs <= 16
 
         stop_ray()
-        start_ray(procs, min(w, TOTAL_NODES))
+	start_ray(procs, min(w, TOTAL_NODES))
 
         initialize()
 
-        import modin.pandas as pd
 
         # client = Client("v-001:8786")
         #
