@@ -1,6 +1,7 @@
 #ifndef CYLON_SRC_CYLON_OPS_EXECUTION_HPP_
 #define CYLON_SRC_CYLON_OPS_EXECUTION_HPP_
 #include <vector>
+#include <queue>
 #include <cstdint>
 
 namespace cylon {
@@ -48,7 +49,11 @@ class PriorityExecution : public Execution {
  * This execution performs a BFS over the Op graph
  */
 class SequentialExecution : public Execution {
-
+ private:
+  std::queue<cylon::Op *> ops;
+ public:
+  void AddOp(cylon::Op *op);
+  bool IsComplete() override;
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_EXECUTION_HPP_

@@ -31,9 +31,20 @@ bool PriorityExecution::IsComplete() {
 }
 
 void PriorityExecution::AddOp(cylon::Op *op, int32_t priority) {
-  for(int32_t p=0; p< priority;p++){
+  for (int32_t p = 0; p < priority; p++) {
     this->round_robin_execution_->AddOp(op);
   }
+}
+void SequentialExecution::AddOp(cylon::Op *op) {
+  this->ops.push(op);
+}
+
+bool SequentialExecution::IsComplete() {
+  cylon::Op *op = this->ops.front();
+  if(op->IsComplete()){
+    this->ops.pop();
+  }
+  return this->ops.empty();
 }
 }
 
