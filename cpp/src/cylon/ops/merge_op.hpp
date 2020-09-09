@@ -12,34 +12,23 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_OPS_JOIN_OP_HPP_
-#define CYLON_SRC_CYLON_OPS_JOIN_OP_HPP_
+#ifndef CYLON_SRC_CYLON_OPS_MERGE_OP_H_
+#define CYLON_SRC_CYLON_OPS_MERGE_OP_H_
+
+#include <vector>
 
 #include "parallel_op.hpp"
 #include "partition_op.hpp"
-#include "ops/kernels/join_kernel.hpp"
 
 namespace cylon {
-
-class JoinOpConfig {
+class MergeOp : public Op {
  private:
-  int32_t join_column;
-
+  std::vector<std::shared_ptr<arrow::Table>> received_tables_;
  public:
-  JoinOpConfig(int32_t join_column);
-  int32_t GetJoinColumn() const;
-};
-
-class JoinOp : public Op {
- private:
-  std::shared_ptr<cylon::join::config::JoinConfig> config;
-  cylon::kernel::JoinKernel *join_kernel_;
- public:
-  JoinOp(std::shared_ptr<CylonContext> ctx,
+  MergeOp(std::shared_ptr<CylonContext> ctx,
          std::shared_ptr<arrow::Schema> schema,
-         int32_t  id,
-         std::shared_ptr<ResultsCallback> callback,
-         std::shared_ptr<cylon::join::config::JoinConfig> config);
+         int32_t id,
+         std::shared_ptr<ResultsCallback> callback);
 
   bool Execute(int tag, std::shared_ptr<Table> table) override;
 
@@ -48,4 +37,5 @@ class JoinOp : public Op {
   bool Finalize() override;
 };
 }
-#endif //CYLON_SRC_CYLON_OPS_JOIN_OP_HPP_
+
+#endif //CYLON_SRC_CYLON_OPS_MERGE_OP_H_

@@ -20,6 +20,7 @@ tx_add_exe(task_test)
 tx_add_exe(join_inmem_datagen_example)
 tx_add_exe(com_comm_test)
 tx_add_exe(table_from_vectors_example)
+tx_add_exe(join_op_example)
 
 
 #macro(tx_add_test_exe EXENAME)
