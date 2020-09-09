@@ -19,6 +19,8 @@ tx_add_exe(intersect_example)
 tx_add_exe(join_inmem_datagen_example)
 tx_add_exe(table_from_vectors_example)
 
+add_subdirectory(bench)
+
 
 #macro(tx_add_test_exe EXENAME)
 #    add_executable(${EXENAME} ${EXENAME}.cpp ../../test/test_utils.hpp)
