@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser(description='generate random data')
 parser.add_argument('-e', required=True, dest='execs', type=str, nargs='+', help='executables')
 parser.add_argument('--dry', action='store_true', help='if this is a dry run')
 parser.add_argument('--no-spark', dest='no_spark', action='store_true', help='skip spark')
+parser.add_argument('--no-pspark', dest='no_pyspark', action='store_true', help='skip pyspark')
 parser.add_argument('--no-twx', dest='no_twx', action='store_true', help='skip twx')
 parser.add_argument('--no-ptwx', dest='no_ptwx', action='store_true', help='skip twx')
 parser.add_argument('--no-jtwx', dest='no_jtwx', action='store_true', help='skip twx')
@@ -28,6 +29,7 @@ args = vars(args)
 dry = args['dry']
 execs = args['execs']
 spark = not args['no_spark']
+pspark = not args['no_pyspark']
 twx = not args['no_twx']
 jtwx = not args['no_jtwx']
 ptwx = not args['no_ptwx']
@@ -70,6 +72,7 @@ dfs_base = "/twx/"
 spark_home = "~/victor/software/spark-2.4.6-bin-hadoop2.7"
 spark_submit = f"{spark_home}/bin/spark-submit "
 spark_jar = "~/victor/git/SparkOps/target/scala-2.11/sparkops_2.11-0.1.jar "
+spark_py = "~/victor/git/cylon/cpp/src/experiments/pyspark_run.py "
 spark_master = "spark://v-001:7077"
 
 print("\n\n##### cleaning up hdfs dfs", flush=True)
@@ -175,6 +178,20 @@ for i in row_cases:
                     print(f"\n\n{ex} {i} {w} ##### spark {r + 1}/{repetitions} iter start! "
                           f"SPLIT_FROM_HERE", flush=True)
                     os.system(spark_exec)
+
+            print("\n\n##### cleaning up hdfs dfs", flush=True)
+            os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
+            print("\n\n##### spark done .....", flush=True)
+            
+        if pspark:
+            restart_spark_cluster(w)
+            for ex in execs:
+                print(f"\n\n##### starting pyspark rows {i} world_size {w}...", flush=True)
+                spark_exec = f"{spark_submit} {spark_py} {w} {hdfs_url}/{dfs_base} " \
+                             f"{spark_master} {repetitions}"
+                print("\n##### executing", spark_exec, flush=True)
+
+                os.system(spark_exec)
 
             print("\n\n##### cleaning up hdfs dfs", flush=True)
             os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
