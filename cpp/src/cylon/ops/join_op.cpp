@@ -21,14 +21,17 @@ cylon::JoinOp::JoinOp(std::shared_ptr<CylonContext> ctx,
                       std::shared_ptr<arrow::Schema> schema,
                       int32_t  id,
                       std::shared_ptr<ResultsCallback> callback,
-                      std::shared_ptr<JoinOpConfig> config) : Op(ctx, schema, id, callback) {
-  this->config = config;
+                      std::shared_ptr<cylon::join::config::JoinConfig> config) :
+                                         Op(std::move(ctx), std::move(schema), id,
+                                             std::move(callback)) {
+  this->config = std::move(config);
   // initialize join kernel
+  join_kernel_ = new cylon::kernel::JoinKernel(ctx, schema, config);
 }
 
 bool cylon::JoinOp::Execute(int tag, std::shared_ptr<Table> table) {
   // do join
-
+  join_kernel_->InsertTable(tag, table);
   return true;
 }
 
@@ -38,7 +41,10 @@ void cylon::JoinOp::OnParentsFinalized() {
 
 bool cylon::JoinOp::Finalize() {
   // return finalize join
-  return false;
+  std::shared_ptr<cylon::Table> final_result;
+  this->join_kernel_->Finalize(final_result);
+  this->InsertToAllChildren(0, final_result);
+  return true;
 }
 
 int32_t cylon::JoinOpConfig::GetJoinColumn() const {

@@ -23,16 +23,17 @@ namespace cylon {
 class DisJoinOpConfig {
  private:
   std::shared_ptr<PartitionOpConfig> partition_config;
-  std::shared_ptr<JoinOpConfig> join_config;
+  std::shared_ptr<cylon::join::config::JoinConfig> join_config;
 
  public:
-  DisJoinOpConfig(std::shared_ptr<PartitionOpConfig> partition_config, std::shared_ptr<JoinOpConfig> join_config);
+  DisJoinOpConfig(std::shared_ptr<PartitionOpConfig> partition_config,
+      std::shared_ptr<cylon::join::config::JoinConfig> join_config);
 
   std::shared_ptr<PartitionOpConfig> GetPartitionConfig();
-  const shared_ptr<JoinOpConfig> &GetJoinConfig() const;
+  const std::shared_ptr<cylon::join::config::JoinConfig> &GetJoinConfig() const;
 };
 
-class DisJoinOP : public Op {
+class DisJoinOP : public RootOp {
  private:
   std::shared_ptr<DisJoinOpConfig> config;
  public:
