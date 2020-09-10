@@ -57,10 +57,15 @@ if __name__ == "__main__":
 
             df_l = pd.read_csv(f_l)
             df_r = pd.read_csv(f_r)
+            
+            print(f"{df_l.shape[0]}", flush=True)
+            print(f"{df_r.shape[0]}", flush=True)
+
 
             for i in range(it):
                 t1 = time.time()
                 out = df_l.merge(df_r, on='0', how='inner', suffixes=('_left', '_right'))
+#                 out = df_l.join(df_r, on='0', how='inner', lsuffix="L", rsuffix ="R")
                 t2 = time.time()
 
                 print(f"###time {r} {w} {i} {(t2 - t1) * 1000:.0f}, {out.shape[0]}", flush=True)

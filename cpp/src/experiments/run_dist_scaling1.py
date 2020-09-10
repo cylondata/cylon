@@ -72,7 +72,7 @@ dfs_base = "/twx/"
 spark_home = "~/victor/software/spark-2.4.6-bin-hadoop2.7"
 spark_submit = f"{spark_home}/bin/spark-submit "
 spark_jar = "~/victor/git/SparkOps/target/scala-2.11/sparkops_2.11-0.1.jar "
-spark_py = "~/victor/git/cylon/cpp/src/experiments/pyspark_run.py "
+spark_py = "~/victor/git/cylon/cpp/src/experiments/pyspark_run1.py "
 spark_master = "spark://v-001:7077"
 spark_slaves_file = "/N/u2/d/dnperera/victor/software/spark-2.4.6-bin-hadoop2.7/conf/slaves"
 
@@ -123,7 +123,7 @@ for i in row_cases:
     for w in world_sizes:
         print(f"\n##### rows {i} world_size {w} starting!", flush=True)
         s_dir = f"~/temp/twx/{scaling}/{i}/{w}/"
-        b_dir = f"/scratch_hdd/dnperera/"
+        b_dir = f"/scratch/dnperera/"
 
         if spark or pspark:
             print(f"pushing files to hdfs {i}")
@@ -156,7 +156,7 @@ for i in row_cases:
                 join_exec = f"mpirun --map-by node --report-bindings -mca btl vader,tcp,openib," \
                             f"self -mca btl_tcp_if_include enp175s0f0 --mca btl_openib_allow_ib 1 " \
                             f"{hostfile} --bind-to core --bind-to socket -np {w} " \
-                            f"{PYTHON_EXEC} ../../../python/examples/experiments/table_join_dist_test.py -s {s_dir} -b {b_dir}"
+                            f"{PYTHON_EXEC} ../../../python/examples/experiments/table_join_dist_test1.py -s {s_dir} -b {b_dir}"
                 print("\n\n##### running", join_exec, flush=True)
 
                 for r in range(repetitions):
