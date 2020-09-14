@@ -22,7 +22,7 @@ namespace kernel {
 JoinKernel::JoinKernel(std::shared_ptr<cylon::CylonContext> ctx,
            std::shared_ptr<arrow::Schema> schema,
            std::shared_ptr<cylon::join::config::JoinConfig> join_config) {
-  this->ctx = std::move(ctx);
+  this->ctx = ctx;
   this->schema = std::move(schema);
   this->join_config = std::move(join_config);
 }

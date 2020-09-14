@@ -135,6 +135,10 @@ bool cylon::Op::DidSomeWork() {
   return this->did_work;
 }
 
+int cylon::Op::GetId() const {
+  return id;
+}
+
 bool cylon::RootOp::Finalize() {
   return true;
 }

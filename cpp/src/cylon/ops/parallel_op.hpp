@@ -160,6 +160,8 @@ class Op {
    */
   virtual bool Finalize() = 0;
 
+  int GetId() const;
+
   ~Op();
 };
 

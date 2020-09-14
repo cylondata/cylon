@@ -18,7 +18,10 @@ cylon::AllToAllOp::AllToAllOp(std::shared_ptr<cylon::CylonContext> ctx,
                               std::shared_ptr<arrow::Schema> schema,
                               int id,
                               shared_ptr<ResultsCallback> callback,
-                              shared_ptr<AllToAllOpConfig> config) : Op(ctx, schema, id, callback) {
+                              shared_ptr<AllToAllOpConfig> config) : Op(ctx,
+                                                                        schema,
+                                                                        id,
+                                                                        callback) {
   class AllToAllListener : public cylon::ArrowCallback {
     AllToAllOp *shuffle_op;
     cylon::CylonContext *ctx;
@@ -29,10 +32,11 @@ cylon::AllToAllOp::AllToAllOp(std::shared_ptr<cylon::CylonContext> ctx,
       this->ctx = ctx;
     }
 
-    bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override {
+    bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int tag) override {
       // todo check whether the const cast is appropriate
+      LOG(INFO) << "received a table with tag" << tag;
       auto tab = std::make_shared<cylon::Table>(const_cast<std::shared_ptr<arrow::Table> &>(table), ctx);
-      this->shuffle_op->InsertToAllChildren(reference, tab);
+      this->shuffle_op->InsertToAllChildren(tag, tab);
       return true;
     };
   };
@@ -46,9 +50,12 @@ bool cylon::AllToAllOp::Execute(int tag, shared_ptr<Table> table) {
   LOG(INFO) << "Executing shuffle";
   // if the table is for the same worker pass to childern
   if (tag == ctx_->GetRank()) {
-    this->InsertToAllChildren(tag, table);
+    LOG(INFO) << "Locally Sending a table with tag " << tag;
+    this->InsertToAllChildren(this->GetId(), table);
   } else {
-    this->all_to_all_->insert(table->get_table(), tag);
+    LOG(INFO) << "Sending a table with tag " << tag;
+    // todo change here to use the tag appropriately
+    this->all_to_all_->insert(table->get_table(), this->GetId());
   }
   return true;
 }

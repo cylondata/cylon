@@ -16,6 +16,7 @@
 #define CYLON_SRC_CYLON_OPS_MERGE_OP_H_
 
 #include <vector>
+#include <map>
 
 #include "parallel_op.hpp"
 #include "partition_op.hpp"
@@ -23,12 +24,12 @@
 namespace cylon {
 class MergeOp : public Op {
  private:
-  std::vector<std::shared_ptr<arrow::Table>> received_tables_;
+  std::map<int32_t, vector<std::shared_ptr<arrow::Table>>> received_tables_;
  public:
   MergeOp(std::shared_ptr<CylonContext> ctx,
-         std::shared_ptr<arrow::Schema> schema,
-         int32_t id,
-         std::shared_ptr<ResultsCallback> callback);
+          std::shared_ptr<arrow::Schema> schema,
+          int32_t id,
+          std::shared_ptr<ResultsCallback> callback);
 
   bool Execute(int tag, std::shared_ptr<Table> table) override;
 

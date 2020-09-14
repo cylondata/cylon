@@ -34,13 +34,13 @@ class AllToAllOp : public Op {
              std::shared_ptr<ResultsCallback> callback,
              std::shared_ptr<AllToAllOpConfig> config);
 
-  bool IsComplete() override ;
+  bool IsComplete() override;
 
   bool Execute(int tag, std::shared_ptr<Table> table) override;
 
   bool Finalize() override;
 
-  void OnParentsFinalized() override ;
+  void OnParentsFinalized() override;
 };
 }
 

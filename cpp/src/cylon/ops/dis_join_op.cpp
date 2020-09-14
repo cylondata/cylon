@@ -17,7 +17,7 @@
 #include "all_to_all_op.hpp"
 #include "merge_op.hpp"
 
-cylon::DisJoinOP::DisJoinOP(std::shared_ptr<cylon::CylonContext> ctx,
+cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
                             std::shared_ptr<arrow::Schema> schema,
                             int id,
                             std::shared_ptr<ResultsCallback> callback,
@@ -29,7 +29,7 @@ cylon::DisJoinOP::DisJoinOP(std::shared_ptr<cylon::CylonContext> ctx,
 
   this->config = std::move(config);
   const std::vector<int32_t> PARTITION_IDS = {LEFT_RELATION, RIGHT_RELATION};
-  const int32_t SHUFFLE_OP_ID = 3;
+  //const int32_t SHUFFLE_OP_ID = 3;
   const int32_t JOIN_OP_ID = 4;
   const int32_t MERGE_OP_ID = 5;
 
@@ -48,7 +48,7 @@ cylon::DisJoinOP::DisJoinOP(std::shared_ptr<cylon::CylonContext> ctx,
     this->AddChild(partition_op);
     execution->AddOp(partition_op);
 
-    auto shuffle_op = new AllToAllOp(ctx, schema, SHUFFLE_OP_ID, callback,
+    auto shuffle_op = new AllToAllOp(ctx, schema, relation_id, callback,
                                      std::make_shared<AllToAllOpConfig>());
 
     partition_op->AddChild(shuffle_op);
