@@ -33,7 +33,7 @@ void JoinKernel::InsertTable(int tag, std::shared_ptr<cylon::Table> table) {
   } else if (tag == 200) {
     right_tables.push_back(table->get_table());
   } else {
-    LOG(FATAL) << "Un-recognized tag";
+    LOG(FATAL) << "Un-recognized tag "<< tag;
   }   
 }
 

@@ -22,7 +22,7 @@ cylon::DisJoinOP::DisJoinOP(std::shared_ptr<cylon::CylonContext> ctx,
                             int id,
                             std::shared_ptr<ResultsCallback> callback,
                             std::shared_ptr<DisJoinOpConfig> config) :
-                                              RootOp(ctx, schema, id, callback) {
+    RootOp(ctx, schema, id, callback) {
   auto execution = new RoundRobinExecution();
   execution->AddOp(this);
   this->SetExecution(execution);
@@ -34,40 +34,32 @@ cylon::DisJoinOP::DisJoinOP(std::shared_ptr<cylon::CylonContext> ctx,
   const int32_t MERGE_OP_ID = 5;
 
   // create graph
-  std::vector<int> part_cols = {this->config->GetJoinConfig()->GetLeftColumnIdx()};
+
+  // local join
   auto join_op = new JoinOp(ctx, schema, JOIN_OP_ID, callback, this->config->GetJoinConfig());
-  auto left_shuffle_op = new AllToAllOp(ctx, schema, SHUFFLE_OP_ID, callback,
-                                        std::make_shared<AllToAllOpConfig>());
 
-  auto left_partition_op = new PartitionOp(ctx, schema, PARTITION_IDS[0], callback,
-                                      std::make_shared<PartitionOpConfig>(ctx->GetWorldSize(),
-                                              std::make_shared<std::vector<int>>(part_cols)));
-  this->AddChild(left_partition_op);
-  execution->AddOp(left_partition_op);
 
-  left_partition_op->AddChild(left_shuffle_op);
-  execution->AddOp(left_shuffle_op);
-  // sorting op can be added here
-  auto left_merge_op = new MergeOp(ctx, schema, MERGE_OP_ID, callback);
-  left_shuffle_op->AddChild(left_merge_op);
-  execution->AddOp(left_merge_op);
-  left_merge_op->AddChild(join_op);
+  for (int32_t relation_id:PARTITION_IDS) {
+    std::vector<int> part_cols = {this->config->GetJoinConfig()->GetLeftColumnIdx()};
+    auto partition_op = new PartitionOp(ctx, schema, relation_id, callback,
+                                        std::make_shared<PartitionOpConfig>(ctx->GetWorldSize(),
+                                                                                 std::make_shared<std::vector<int>>(
+                                                                                     part_cols)));
+    this->AddChild(partition_op);
+    execution->AddOp(partition_op);
 
-  auto right_shuffle_op = new AllToAllOp(ctx, schema, SHUFFLE_OP_ID, callback,
-                                         std::make_shared<AllToAllOpConfig>());
+    auto shuffle_op = new AllToAllOp(ctx, schema, SHUFFLE_OP_ID, callback,
+                                     std::make_shared<AllToAllOpConfig>());
 
-  auto right_partition_op = new PartitionOp(ctx, schema, PARTITION_IDS[0], callback,
-                                           std::make_shared<PartitionOpConfig>(ctx->GetWorldSize(),
-                                           std::make_shared<std::vector<int>>(part_cols)));
-  this->AddChild(right_partition_op);
-  execution->AddOp(right_partition_op);
-  right_partition_op->AddChild(right_shuffle_op);
-  execution->AddOp(right_shuffle_op);
-  // sorting op can be added here
-  auto right_merge_op = new MergeOp(ctx, schema, MERGE_OP_ID, callback);
-  right_shuffle_op->AddChild(right_merge_op);
-  execution->AddOp(right_merge_op);
-  left_merge_op->AddChild(join_op);
+    partition_op->AddChild(shuffle_op);
+    execution->AddOp(shuffle_op);
+
+    auto merge_op = new MergeOp(ctx, schema, MERGE_OP_ID, callback);
+    shuffle_op->AddChild(merge_op);
+    execution->AddOp(merge_op);
+
+    merge_op->AddChild(join_op);
+  }
   execution->AddOp(join_op);
 }
 bool cylon::DisJoinOP::Execute(int tag, shared_ptr<Table> table) {
@@ -75,8 +67,8 @@ bool cylon::DisJoinOP::Execute(int tag, shared_ptr<Table> table) {
     LOG(INFO) << "Unknown tag";
     return false;
   }
-  LOG(INFO) << "Join op";
-  this->InsertTable(tag, table);
+  LOG(INFO) << "Distributed Join op";
+  this->InsertToChild(tag, tag, table);
   return true;
 }
 
@@ -93,12 +85,12 @@ std::shared_ptr<cylon::PartitionOpConfig> cylon::DisJoinOpConfig::GetPartitionCo
 }
 
 cylon::DisJoinOpConfig::DisJoinOpConfig(std::shared_ptr<PartitionOpConfig> partition_config,
-                  std::shared_ptr<cylon::join::config::JoinConfig> join_config) {
+                                        std::shared_ptr<cylon::join::config::JoinConfig> join_config) {
   this->partition_config = std::move(partition_config);
   this->join_config = std::move(join_config);
 }
 
 const std::shared_ptr<cylon::join::config::JoinConfig> &
-    cylon::DisJoinOpConfig::GetJoinConfig() const {
+cylon::DisJoinOpConfig::GetJoinConfig() const {
   return join_config;
 }
