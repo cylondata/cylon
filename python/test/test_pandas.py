@@ -13,6 +13,7 @@
  ##
 
 from pyarrow import csv
+import pyarrow as pa
 from pycylon.data.table import Table
 from pycylon.ctx.context import CylonContext
 import pandas as pd
@@ -34,7 +35,9 @@ ctx: CylonContext = CylonContext('mpi')
 
 pdf = pd.read_csv(args.table1_path)
 
-cylon_table1: Table = Table.from_pandas(pdf, ctx)
+ar_tb = pa.Table.from_pandas(pdf)
+
+cylon_table1: Table = Table.from_arrow(ar_tb, ctx)
 
 cylon_table1.show()
 
