@@ -12,6 +12,27 @@
  # limitations under the License.
  ##
 
-from pycylon.data.table import (Table)
-from pycylon.data.table import csv_reader
-from pycylon.ctx.context import CylonContext
+
+"""
+Run test:
+
+>>> python python/test/test_table.py --table_path /tmp/csv.csv
+"""
+
+from pycylon.csv import csv_reader
+from pycylon import Table
+from pycylon import CylonContext
+import argparse
+
+ctx: CylonContext = CylonContext(config=None)
+
+parser = argparse.ArgumentParser(description='PyCylon Table')
+parser.add_argument('--table_path', type=str, help='Path to table csv')
+
+args = parser.parse_args()
+
+tb1: Table = csv_reader.read(ctx, args.table_path, ',')
+
+print(f"Cylon Table Rows {tb1.rows}, Columns {tb1.columns}")
+
+ctx.finalize()

@@ -25,17 +25,18 @@ cdef class CylonContext:
     cdef CCylonContextWrap* thisPtr;
     cdef string config;
 
-    def __cinit__(self, config: str):
+    def __cinit__(self, config):
         '''
         Initializing the Cylon Context based on the distributed or non-distributed context
         :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
         :return: None
         '''
-        self.config = config.encode()
         if config is None:
             print("Single Thread Config Loaded")
+            self.config = ''.encode()
             self.thisPtr = new CCylonContextWrap()
         else:
+            self.config = config.encode()
             print("Distributed Config Loaded")
             self.thisPtr = new CCylonContextWrap(config.encode())
 
