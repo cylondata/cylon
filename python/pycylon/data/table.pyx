@@ -27,10 +27,7 @@ from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
 
 from pycylon.ctx.context cimport CCylonContextWrap
-from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
-
-from cython.operator cimport dereference as deref
 
 import pyarrow as pa
 import numpy as np
@@ -72,7 +69,6 @@ cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon
         #string Project(const vector[int64_t]& project_columns);
 
 cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table::CxTable":
-    cdef extern _Status from_csv(CCylonContextWrap *ctx_wrap, const string, const char, const string)
     cdef extern string from_pyarrow_table(CCylonContextWrap *ctx_wrap, shared_ptr[CTable] table)
     cdef extern shared_ptr[CTable] to_pyarrow_table(const string table_id)
 
@@ -322,15 +318,15 @@ cdef class Table:
         table_id = from_pyarrow_table(new CCylonContextWrap(ctx.get_config()), artb)
         return Table(table_id)
 
-    @staticmethod
-    def from_pandas(obj, ctx: CylonContext) -> Table:
-        """
-        creating a PyCylon table from Pandas DataFrame
-        :param obj: Pandas DataFrame
-        :rtype: PyCylon Table
-        """
-        table = pa.Table.from_pandas(obj)
-        return Table.from_arrow(table, ctx)
+    # @staticmethod
+    # def from_pandas(obj, ctx: CylonContext) -> Table:
+    #     """
+    #     creating a PyCylon table from Pandas DataFrame
+    #     :param obj: Pandas DataFrame
+    #     :rtype: PyCylon Table
+    #     """
+    #     table = pa.Table.from_pandas(obj)
+    #     return Table.from_arrow(table, ctx)
 
     def to_arrow(self) -> pa.Table :
         '''
@@ -374,20 +370,4 @@ cdef class Table:
                 warnings.warn("Heterogeneous Cylon Table Detected!. Use Numpy operations with Caution.")
             ar_lst.append(npr)
         return np.array(ar_lst, order=order).T
-
-
-cdef class csv_reader:
-
-    @staticmethod
-    def read(ctx: CylonContext, path: str, delimiter: str) -> Table:
-        cdef string spath = path.encode()
-        cdef string sdelm = delimiter.encode()
-        id = uuid.uuid4()
-        id_str = id.__str__()
-        id_buf = id_str.encode()
-        from_csv(new CCylonContextWrap(ctx.get_config()), spath, sdelm[0], id_buf)
-        id_buf = id_str.encode()
-        return Table(id_buf)
-
-
 
