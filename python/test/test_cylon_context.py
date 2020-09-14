@@ -12,7 +12,7 @@
  # limitations under the License.
  ##
 
-from pycylon.context import CylonContext
+from pycylon import CylonContext
 
 ctx: CylonContext = CylonContext("mpi")
 

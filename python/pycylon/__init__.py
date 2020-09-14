@@ -13,5 +13,5 @@
  ##
 
 from pycylon.data.table import (Table)
-from pycylon.data.table import csv_reader
+from pycylon.data.csv import csv_reader
 from pycylon.ctx.context import CylonContext

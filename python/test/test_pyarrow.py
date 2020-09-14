@@ -1,8 +1,8 @@
 import argparse
 import pyarrow as pa
 from pyarrow import csv
-from pycylon.data.table import Table
-from pycylon.ctx.context import CylonContext
+from pycylon import Table
+from pycylon import CylonContext
 
 '''
 running test case 
@@ -15,7 +15,7 @@ parser.add_argument('--table1_path', type=str, help='Path to table 1 csv')
 
 args = parser.parse_args()
 
-ctx: CylonContext = CylonContext('mpi')
+ctx: CylonContext = CylonContext(config=None)
 
 tb = csv.read_csv(args.table1_path)
 
