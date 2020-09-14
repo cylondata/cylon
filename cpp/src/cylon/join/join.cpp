@@ -16,8 +16,6 @@
 #include <glog/logging.h>
 
 #include <chrono>
-#include <map>
-#include <algorithm>
 #include <vector>
 #include <memory>
 #include <string>
@@ -30,7 +28,7 @@ namespace cylon {
 namespace join {
 
 template<typename ARROW_ARRAY_TYPE, typename CPP_KEY_TYPE>
-void advance(std::vector<int64_t> *subset,
+inline void advance(std::vector<int64_t> *subset,
              const std::shared_ptr<arrow::Int64Array> &sorted_indices,  // this is always Int64Array
              int64_t *current_index,  // always int64_t
              std::shared_ptr<arrow::Array> data_column,
@@ -51,6 +49,211 @@ void advance(std::vector<int64_t> *subset,
     }
     data_index = sorted_indices->Value(*current_index);
   }
+}
+
+template<typename ARROW_ARRAY_TYPE, typename CPP_KEY_TYPE>
+inline void advance_inplace_array(std::vector<int64_t> *subset,
+                                  int64_t *current_index,  // always int64_t
+                                  std::shared_ptr<arrow::Array> data_column,
+                                  int64_t length,
+                                  CPP_KEY_TYPE *key) {
+  subset->clear();
+  if (*current_index == length) {
+    return;
+  }
+  auto data_column_casted = std::static_pointer_cast<ARROW_ARRAY_TYPE>(data_column);
+  *key = data_column_casted->GetView(*current_index);
+  while (*current_index < length &&
+      data_column_casted->GetView(*current_index) == *key) {
+    subset->push_back(*current_index);
+    (*current_index)++;
+    if (*current_index == length) {
+      break;
+    }
+  }
+}
+
+template<typename ARROW_ARRAY_TYPE, typename CPP_KEY_TYPE>
+arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
+                                     const std::shared_ptr<arrow::Table> &right_tab,
+                                     int64_t left_join_column_idx,
+                                     int64_t right_join_column_idx,
+                                     cylon::join::config::JoinType join_type,
+                                     std::shared_ptr<arrow::Table> *joined_table,
+                                     arrow::MemoryPool *memory_pool) {
+  // combine chunks if multiple chunks are available
+  std::shared_ptr<arrow::Table> left_tab_comb, right_tab_comb;
+  arrow::Status lstatus, rstatus;
+  auto t11 = std::chrono::high_resolution_clock::now();
+
+  lstatus = cylon::join::util::CombineChunks(left_tab, left_join_column_idx,
+                                             left_tab_comb, memory_pool);
+  rstatus = cylon::join::util::CombineChunks(right_tab, right_join_column_idx,
+                                             right_tab_comb, memory_pool);
+
+  auto t22 = std::chrono::high_resolution_clock::now();
+
+  if (!lstatus.ok() || !rstatus.ok()) {
+    LOG(ERROR) << "Combining chunks failed!";
+    return arrow::Status::Invalid("Sort join failed!");
+  }
+  LOG(INFO) << "Combine chunks time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
+
+  // sort columns
+  auto left_join_column = left_tab_comb->column(left_join_column_idx)->chunk(0);
+  auto right_join_column = right_tab_comb->column(right_join_column_idx)->chunk(0);
+
+  auto t1 = std::chrono::high_resolution_clock::now();
+  std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
+  auto status = SortIndicesInPlace(memory_pool, left_join_column, &left_index_sorted_column);
+  if (status != arrow::Status::OK()) {
+    LOG(FATAL) << "Failed when sorting left table to indices. " << status.ToString();
+    return status;
+  }
+  auto t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Left sorting time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
+  t1 = std::chrono::high_resolution_clock::now();
+  std::shared_ptr<arrow::UInt64Array> right_index_sorted_column;
+  status = SortIndicesInPlace(memory_pool, right_join_column, &right_index_sorted_column);
+  if (status != arrow::Status::OK()) {
+    LOG(FATAL) << "Failed when sorting right table to indices. " << status.ToString();
+    return status;
+  }
+  t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "right sorting time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
+  CPP_KEY_TYPE left_key, right_key;
+  std::vector<int64_t> left_subset, right_subset;
+  int64_t left_current_index = 0;
+  int64_t right_current_index = 0;
+
+  t1 = std::chrono::high_resolution_clock::now();
+
+  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
+  std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>();
+  int64_t init_vec_size = std::min(left_join_column->length(), right_join_column->length());
+  left_indices->reserve(init_vec_size);
+  right_indices->reserve(init_vec_size);
+  int64_t col_length = left_join_column->length();
+  int64_t right_col_length = right_join_column->length();
+  advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
+                                                        &left_current_index,
+                                                        left_join_column,
+                                                        col_length,
+                                                        &left_key);
+
+  advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
+                                                        &right_current_index,
+                                                        right_join_column,
+                                                        right_col_length,
+                                                        &right_key);
+  while (!left_subset.empty() && !right_subset.empty()) {
+    if (left_key == right_key) {  // use a key comparator
+      for (int64_t left_idx : left_subset) {
+        for (int64_t right_idx : right_subset) {
+          left_indices->push_back(left_idx);
+          right_indices->push_back(right_idx);
+        }
+      }
+      // advance
+      advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
+                                                            &left_current_index,
+                                                            left_join_column,
+                                                            col_length,
+                                                            &left_key);
+
+      advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
+                                                            &right_current_index,
+                                                            right_join_column,
+                                                            right_col_length,
+                                                            &right_key);
+    } else if (left_key < right_key) {
+      // if this is a left join, this is the time to include them all in the result set
+      if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
+        for (int64_t left_idx : left_subset) {
+          left_indices->push_back(left_idx);
+          right_indices->push_back(-1);
+        }
+      }
+
+      advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
+                                                            &left_current_index,
+                                                            left_join_column,
+                                                            col_length,
+                                                            &left_key);
+    } else {
+      // if this is a right join, this is the time to include them all in the result set
+      if (join_type == cylon::join::config::RIGHT || join_type == cylon::join::config::FULL_OUTER) {
+        for (int64_t right_idx : right_subset) {
+          left_indices->push_back(-1);
+          right_indices->push_back(right_idx);
+        }
+      }
+
+      advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
+                                                            &right_current_index,
+                                                            right_join_column,
+                                                            right_col_length,
+                                                            &right_key);
+    }
+  }
+
+  // specially handling left and right join
+  if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
+    while (!left_subset.empty()) {
+      for (int64_t left_idx : left_subset) {
+        left_indices->push_back(left_idx);
+        right_indices->push_back(-1);
+      }
+      advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
+                                                            &left_current_index,
+                                                            left_join_column,
+                                                            col_length,
+                                                            &left_key);
+    }
+  }
+
+  if (join_type == cylon::join::config::RIGHT || join_type == cylon::join::config::FULL_OUTER) {
+    while (!right_subset.empty()) {
+      for (int64_t right_idx : right_subset) {
+        left_indices->push_back(-1);
+        right_indices->push_back(right_idx);
+      }
+      advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
+                                                            &right_current_index,
+                                                            right_join_column,
+                                                            right_col_length,
+                                                            &right_key);
+    }
+  }
+
+  t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Index join time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Building final table with number of tuples - " << left_indices->size();
+
+  t1 = std::chrono::high_resolution_clock::now();
+  // build final table
+  status = cylon::join::util::build_final_table_inplace_index(
+      left_join_column_idx, right_join_column_idx,
+      left_indices, right_indices,
+      left_index_sorted_column,
+      right_index_sorted_column,
+      left_tab_comb,
+      right_tab_comb,
+      joined_table,
+      memory_pool);
+  t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Built final table in : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Done and produced : " << left_indices->size();
+  left_indices->clear();
+  right_indices->clear();
+  return status;
 }
 
 template<typename ARROW_ARRAY_TYPE, typename CPP_KEY_TYPE>
@@ -344,14 +547,28 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
                       cylon::join::config::JoinAlgorithm join_algorithm,
                       std::shared_ptr<arrow::Table> *joined_table,
                       arrow::MemoryPool *memory_pool) {
+  arrow::Type::type kType = left_tab->column(left_join_column_idx)->chunk(0)->type()->id();
   switch (join_algorithm) {
     case cylon::join::config::SORT:
-      return do_sorted_join<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(left_tab,
-                                                            right_tab,
-                                                            left_join_column_idx,
-                                                            right_join_column_idx,
-                                                            join_type,
-                                                            joined_table, memory_pool);
+      if (kType == arrow::Type::UINT8 || kType == arrow::Type::INT8 ||
+          kType == arrow::Type::UINT16 || kType == arrow::Type::INT16 ||
+          kType == arrow::Type::UINT32 || kType == arrow::Type::INT32 ||
+          kType == arrow::Type::UINT64 || kType == arrow::Type::INT64 ||
+          kType == arrow::Type::FLOAT || kType == arrow::Type::DOUBLE) {
+        return do_inplace_sorted_join<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(left_tab,
+                                                                      right_tab,
+                                                                      left_join_column_idx,
+                                                                      right_join_column_idx,
+                                                                      join_type,
+                                                                      joined_table, memory_pool);
+      } else {
+        return do_sorted_join<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(left_tab,
+                                                              right_tab,
+                                                              left_join_column_idx,
+                                                              right_join_column_idx,
+                                                              join_type,
+                                                              joined_table, memory_pool);
+      }
     case cylon::join::config::HASH:
       return do_hash_join<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(left_tab,
                                                           right_tab,

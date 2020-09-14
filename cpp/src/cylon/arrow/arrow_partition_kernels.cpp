@@ -61,9 +61,10 @@ std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool
 cylon::Status HashPartitionArray(arrow::MemoryPool *pool,
                                  const std::shared_ptr<arrow::Array> &values,
                                  const std::vector<int> &targets,
-                                 std::vector<int64_t> *outPartitions) {
+                                 std::vector<int64_t> *outPartitions,
+                                 std::vector<uint32_t> &counts) {
   std::shared_ptr<ArrowPartitionKernel> kernel = GetPartitionKernel(pool, values);
-  kernel->Partition(values, targets, outPartitions);
+  kernel->Partition(values, targets, outPartitions, counts);
   return cylon::Status::OK();
 }
 
@@ -71,7 +72,8 @@ cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
                                   const std::vector<std::shared_ptr<arrow::Array>> &values,
                                   int64_t length,
                                   const std::vector<int> &targets,
-                                  std::vector<int64_t> *outPartitions) {
+                                  std::vector<int64_t> *outPartitions,
+                                  std::vector<uint32_t> &counts) {
   std::vector<std::shared_ptr<ArrowPartitionKernel>> hash_kernels;
   for (const auto &array : values) {
     auto hash_kernel = GetPartitionKernel(pool, array);
@@ -88,7 +90,9 @@ cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
     for (const auto &array : values) {
       hash_code = 31 * hash_code + hash_kernels[array_index++]->ToHash(array, index);
     }
-    outPartitions->push_back(targets[hash_code % targets.size()]);
+    int kX = targets[hash_code % targets.size()];
+    outPartitions->push_back(kX);
+    counts[kX]++;
   }
   return cylon::Status::OK();
 }

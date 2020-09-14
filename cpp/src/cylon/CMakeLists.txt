@@ -64,6 +64,7 @@ add_library(cylon SHARED
         io/csv_read_config_holder.hpp
         util/uuid.hpp
         util/uuid.cpp
+        util/sort.hpp
         net/TxRequest.hpp
         net/TxRequest.cpp
         util/builtins.hpp

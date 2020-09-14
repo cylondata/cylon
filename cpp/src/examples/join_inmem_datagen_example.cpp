@@ -21,6 +21,7 @@
 #include <arrow/api.h>
 #include <arrow/array.h>
 #include <random>
+#include <mpi.h>
 
 void create_binary_table(char *const *argv,
                          cylon::CylonContext *ctx,
@@ -61,6 +62,7 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<arrow::Table> right_table;
 //  create_binary_table(argv, ctx, pool, left_table, right_table);
   create_int64_table(argv, ctx, pool, left_table, right_table);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   std::shared_ptr<cylon::Table> first_table, second_table, joined;
   auto status = cylon::Table::FromArrowTable(ctx, left_table, &first_table);
