@@ -14,14 +14,12 @@
 
 #include "all_to_all_op.hpp"
 
-cylon::AllToAllOp::AllToAllOp(std::shared_ptr<cylon::CylonContext> ctx,
-                              std::shared_ptr<arrow::Schema> schema,
+cylon::AllToAllOp::AllToAllOp(const std::shared_ptr<cylon::CylonContext> &ctx,
+                              const std::shared_ptr<arrow::Schema> &schema,
                               int id,
-                              shared_ptr<ResultsCallback> callback,
-                              shared_ptr<AllToAllOpConfig> config) : Op(ctx,
-                                                                        schema,
-                                                                        id,
-                                                                        callback) {
+                              const std::shared_ptr<ResultsCallback> &callback,
+                              const std::shared_ptr<AllToAllOpConfig> &config) :
+                                Op(ctx, schema, id, callback) {
   class AllToAllListener : public cylon::ArrowCallback {
     AllToAllOp *shuffle_op;
     cylon::CylonContext *ctx;
@@ -35,15 +33,16 @@ cylon::AllToAllOp::AllToAllOp(std::shared_ptr<cylon::CylonContext> ctx,
     bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int tag) override {
       // todo check whether the const cast is appropriate
       LOG(INFO) << "received a table with tag" << tag;
-      auto tab = std::make_shared<cylon::Table>(const_cast<std::shared_ptr<arrow::Table> &>(table), ctx);
+      auto tab = std::make_shared<cylon::Table>(
+          const_cast<std::shared_ptr<arrow::Table> &>(table), ctx);
       this->shuffle_op->InsertToAllChildren(tag, tab);
       return true;
     };
   };
 
-  this->all_to_all_ = new cylon::ArrowAllToAll(&*ctx, ctx->GetNeighbours(true),
-                                               ctx->GetNeighbours(true), id,
-                                               std::make_shared<AllToAllListener>(&*ctx, this), schema);
+  this->all_to_all_ = new cylon::ArrowAllToAll(ctx.get(), ctx->GetNeighbours(true),
+                                           ctx->GetNeighbours(true), id,
+                                           std::make_shared<AllToAllListener>(&*ctx, this), schema);
 }
 
 bool cylon::AllToAllOp::Execute(int tag, shared_ptr<Table> table) {

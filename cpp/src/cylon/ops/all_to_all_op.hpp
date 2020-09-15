@@ -28,11 +28,11 @@ class AllToAllOp : public Op {
   cylon::ArrowAllToAll *all_to_all_;
 
  public:
-  AllToAllOp(std::shared_ptr<cylon::CylonContext> ctx,
-             std::shared_ptr<arrow::Schema> schema,
+  AllToAllOp(const std::shared_ptr<cylon::CylonContext> &ctx,
+             const std::shared_ptr<arrow::Schema> &schema,
              int id,
-             std::shared_ptr<ResultsCallback> callback,
-             std::shared_ptr<AllToAllOpConfig> config);
+             const std::shared_ptr<ResultsCallback> &callback,
+             const std::shared_ptr<AllToAllOpConfig> &config);
 
   bool IsComplete() override;
 

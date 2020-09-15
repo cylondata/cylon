@@ -59,7 +59,8 @@ int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int32_t ta
   return insert(arrow, target, -1);
 }
 
-int ArrowAllToAll::insert(shared_ptr<arrow::Table> arrow, int32_t target, int32_t reference) {
+int ArrowAllToAll::insert(const shared_ptr<arrow::Table> &arrow, int32_t target,
+    int32_t reference) {
   // todo: check weather we have enough memory
   // lets save the table into pending and move on
   std::shared_ptr<PendingSendTable> st = inputs_[target];
