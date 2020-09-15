@@ -12,11 +12,11 @@
  # limitations under the License.
  ##
 
-from pycylon.data.table import csv_reader
-from pycylon.data.table import Table
+from pycylon.csv import csv_reader
+from pycylon import Table
 from pyarrow import Table as PyArrowTable
 import time
-from pycylon.ctx.context import CylonContext
+from pycylon import CylonContext
 import argparse
 
 ctx: CylonContext = CylonContext("mpi")
