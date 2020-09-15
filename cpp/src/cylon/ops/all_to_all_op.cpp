@@ -54,7 +54,7 @@ bool cylon::AllToAllOp::Execute(int tag, shared_ptr<Table> table) {
   } else {
     LOG(INFO) << "Sending a table with tag " << tag;
     // todo change here to use the tag appropriately
-    this->all_to_all_->insert(table->get_table(), this->GetId());
+    this->all_to_all_->insert(table->get_table(), tag);
   }
   return true;
 }
