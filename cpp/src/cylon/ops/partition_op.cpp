@@ -15,12 +15,12 @@
 #include "partition_op.hpp"
 #include <ops/kernels/partition.hpp>
 
-cylon::PartitionOp::PartitionOp(std::shared_ptr<cylon::CylonContext> ctx,
-                                std::shared_ptr<arrow::Schema> schema,
+cylon::PartitionOp::PartitionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
+                                const std::shared_ptr<arrow::Schema> &schema,
                                 int id,
-                                std::shared_ptr<ResultsCallback> callback,
-                                std::shared_ptr<PartitionOpConfig> config) : Op(ctx, schema, id, callback),
-                                                                             config(config) {}
+                                const std::shared_ptr<ResultsCallback> &callback,
+                                const std::shared_ptr<PartitionOpConfig> &config) :
+                                Op(ctx, schema, id, callback), config(config) {}
 
 bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
   LOG(INFO) << "Executing partition op";

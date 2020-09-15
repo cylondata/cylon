@@ -16,11 +16,12 @@
 
 namespace cylon {
 
-UnionOp::UnionOp(std::shared_ptr<cylon::CylonContext> ctx,
-                 std::shared_ptr<arrow::Schema> schema,
+UnionOp::UnionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
+                 const std::shared_ptr<arrow::Schema> &schema,
                  int id,
-                 std::shared_ptr<ResultsCallback> callback,
-                 std::shared_ptr<UnionOpConfig> config) : Op(ctx, schema, id, callback), config(config) {
+                 const std::shared_ptr<ResultsCallback> &callback,
+                 const std::shared_ptr<UnionOpConfig> &config) :
+                 Op(ctx, schema, id, callback), config(config) {
   this->union_kernel = new cylon::kernel::Union(ctx, schema, config->GetExpectedRows());
 }
 

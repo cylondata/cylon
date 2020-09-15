@@ -33,7 +33,6 @@ class ResultsCallback {
 
 class Op {
  private:
-  int id;
   std::unordered_map<int, std::queue<std::shared_ptr<cylon::Table>> *> queues{};
 
   // this count should be increased when adding table to the queues,
@@ -67,6 +66,8 @@ class Op {
   bool TerminalCheck(int tag, std::shared_ptr<cylon::Table> table);
 
  protected:
+  int id;
+
   std::shared_ptr<cylon::CylonContext> ctx_;
 
   /**

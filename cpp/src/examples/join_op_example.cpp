@@ -32,14 +32,14 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<cylon::Table> first_table, second_table;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-  auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
+  auto status = cylon::Table::FromCSV(ctx, std::string(argv[1]) + "_" + std::to_string(ctx->GetRank()) + ".csv", first_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[1];
     ctx->Finalize();
     return 1;
   }
 
-  status = cylon::Table::FromCSV(ctx, argv[2], second_table, read_options);
+  status = cylon::Table::FromCSV(ctx, std::string(argv[2]) + "_" + std::to_string(ctx->GetRank()) + ".csv", second_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[2];
     ctx->Finalize();
@@ -52,11 +52,16 @@ int main(int argc, char *argv[]) {
                 read_end_time - start_start).count() << "[ms]";
   class Cb : public cylon::ResultsCallback {
    public:
+    int r;
+    Cb(int rank) : r(rank) {}
+   public:
     virtual void OnResult(int tag, std::shared_ptr<cylon::Table> table) {
       LOG(INFO) << "Result received " << table->Rows();
+      table->Print();
+      table->WriteCSV("out" + std::to_string(r) + ".csv");
     }
   };
-  auto cb = std::make_shared<Cb>();
+  auto cb = std::make_shared<Cb>(ctx->GetRank());
   std::shared_ptr<std::vector<int>> hash_cols = std::make_shared<std::vector<int>>();
   hash_cols->push_back(0);
   auto jc = cylon::join::config::JoinConfig::InnerJoin(0, 0);
