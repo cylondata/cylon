@@ -40,10 +40,11 @@ class DisJoinOP : public RootOp {
   const static int32_t LEFT_RELATION = 100;
   const static int32_t RIGHT_RELATION = 200;
 
-  DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx, std::shared_ptr<arrow::Schema> schema,
+  DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
+            const std::shared_ptr<arrow::Schema> &schema,
             int id,
-            std::shared_ptr<ResultsCallback> callback,
-            std::shared_ptr<DisJoinOpConfig> config);
+            const std::shared_ptr<ResultsCallback> &callback,
+            const std::shared_ptr<DisJoinOpConfig> &config);
 
   bool Execute(int tag, std::shared_ptr<Table> table) override;
   void OnParentsFinalized() override;

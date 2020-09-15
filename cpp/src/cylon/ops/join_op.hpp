@@ -35,11 +35,11 @@ class JoinOp : public Op {
   std::shared_ptr<cylon::join::config::JoinConfig> config;
   cylon::kernel::JoinKernel *join_kernel_;
  public:
-  JoinOp(std::shared_ptr<CylonContext> ctx,
-         std::shared_ptr<arrow::Schema> schema,
+  JoinOp(const std::shared_ptr<CylonContext> &ctx,
+         const std::shared_ptr<arrow::Schema> &schema,
          int32_t  id,
-         std::shared_ptr<ResultsCallback> callback,
-         std::shared_ptr<cylon::join::config::JoinConfig> config);
+         const std::shared_ptr<ResultsCallback> &callback,
+         const std::shared_ptr<cylon::join::config::JoinConfig> &config);
 
   bool Execute(int tag, std::shared_ptr<Table> table) override;
 

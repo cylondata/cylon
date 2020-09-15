@@ -17,14 +17,13 @@
 #include <utility>
 #include "partition_op.hpp"
 
-cylon::JoinOp::JoinOp(std::shared_ptr<CylonContext> ctx,
-                      std::shared_ptr<arrow::Schema> schema,
+cylon::JoinOp::JoinOp(const std::shared_ptr<CylonContext> &ctx,
+                      const std::shared_ptr<arrow::Schema> &schema,
                       int32_t  id,
-                      std::shared_ptr<ResultsCallback> callback,
-                      std::shared_ptr<cylon::join::config::JoinConfig> config) :
-                                         Op(std::move(ctx), std::move(schema), id,
-                                             std::move(callback)) {
-  this->config = std::move(config);
+                      const std::shared_ptr<ResultsCallback> &callback,
+                      const std::shared_ptr<cylon::join::config::JoinConfig> &config) :
+                                         Op(ctx, schema, id, callback) {
+  this->config = config;
   // initialize join kernel
   join_kernel_ = new cylon::kernel::JoinKernel(ctx, schema, config);
 }

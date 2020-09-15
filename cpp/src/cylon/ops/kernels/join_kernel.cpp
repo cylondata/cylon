@@ -19,12 +19,12 @@
 namespace cylon {
 namespace kernel {
 
-JoinKernel::JoinKernel(std::shared_ptr<cylon::CylonContext> ctx,
-           std::shared_ptr<arrow::Schema> schema,
-           std::shared_ptr<cylon::join::config::JoinConfig> join_config) {
+JoinKernel::JoinKernel(const std::shared_ptr<cylon::CylonContext> &ctx,
+           const std::shared_ptr<arrow::Schema> &schema,
+           const std::shared_ptr<cylon::join::config::JoinConfig> &join_config) {
   this->ctx = ctx;
-  this->schema = std::move(schema);
-  this->join_config = std::move(join_config);
+  this->schema = schema;
+  this->join_config = join_config;
 }
 
 void JoinKernel::InsertTable(int tag, std::shared_ptr<cylon::Table> table) {

@@ -18,16 +18,16 @@
 #include "merge_op.hpp"
 
 cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
-                            std::shared_ptr<arrow::Schema> schema,
+                            const std::shared_ptr<arrow::Schema> &schema,
                             int id,
-                            std::shared_ptr<ResultsCallback> callback,
-                            std::shared_ptr<DisJoinOpConfig> config) :
+                            const std::shared_ptr<ResultsCallback> &callback,
+                            const std::shared_ptr<DisJoinOpConfig> &config) :
     RootOp(ctx, schema, id, callback) {
   auto execution = new RoundRobinExecution();
   execution->AddOp(this);
   this->SetExecution(execution);
 
-  this->config = std::move(config);
+  this->config = config;
   const std::vector<int32_t> PARTITION_IDS = {LEFT_RELATION, RIGHT_RELATION};
   //const int32_t SHUFFLE_OP_ID = 3;
   const int32_t JOIN_OP_ID = 4;

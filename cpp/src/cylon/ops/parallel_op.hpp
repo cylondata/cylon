@@ -103,10 +103,10 @@ class Op {
   void InsertToChild(int tag, int child, std::shared_ptr<cylon::Table> table);
 
  public:
-  Op(std::shared_ptr<cylon::CylonContext> ctx,
-     std::shared_ptr<arrow::Schema> schema,
+  Op(const std::shared_ptr<cylon::CylonContext> &ctx,
+     const std::shared_ptr<arrow::Schema> &schema,
      int id,
-     std::shared_ptr<ResultsCallback> callback, bool root_op = false);
+     const std::shared_ptr<ResultsCallback> &callback, bool root_op = false);
 
   /**
    * This function can be used to link a child Op to parent Op
@@ -172,10 +172,10 @@ class RootOp : public Op {
   void SetExecution(Execution *execution);
 
  public:
-  RootOp(std::shared_ptr<cylon::CylonContext> ctx,
-         std::shared_ptr<arrow::Schema> schema,
+  RootOp(const std::shared_ptr<cylon::CylonContext> &ctx,
+         const std::shared_ptr<arrow::Schema> &schema,
          int id,
-         std::shared_ptr<ResultsCallback> callback);
+         const std::shared_ptr<ResultsCallback> &callback);
   bool Finalize() override;
   void OnParentsFinalized() override;
   bool Execute(int tag, std::shared_ptr<Table> table) override;

@@ -31,10 +31,11 @@ std::queue<std::shared_ptr<cylon::Table>> *cylon::Op::GetQueue(int tag) {
   return this->queues.find(tag)->second;
 }
 
-cylon::Op::Op(std::shared_ptr<cylon::CylonContext> ctx,
-              std::shared_ptr<arrow::Schema> schema,
+cylon::Op::Op(const std::shared_ptr<cylon::CylonContext> &ctx,
+              const std::shared_ptr<arrow::Schema> &schema,
               int id,
-              std::shared_ptr<ResultsCallback> callback, bool root_op) : all_parents_finalized(root_op) {
+              const std::shared_ptr<ResultsCallback> &callback, bool root_op) :
+                all_parents_finalized(root_op) {
   this->ctx_ = ctx;
   this->id = id;
   this->callback = callback;
@@ -60,8 +61,10 @@ bool cylon::Op::IsComplete() {
         if (done) {
           q.second->pop();
           this->inputs_count--;
-          // todo instead of keeping in this queue, partially processed tables can be added to a different queue
-          // todo check whether this is the best way to do this. But always assume that the status of the
+          // todo instead of keeping in this queue, partially processed tables
+          //  can be added to a different queue
+          // todo check whether this is the best way to do this. But always
+          //  assume that the status of the
           // partially processed tables will be kept by the Op implementation
           // std::queue<std::pair<int, std::shared_ptr<cylon::Table>>> partially_processed_queue{};
           this->did_work = true;
@@ -160,10 +163,11 @@ cylon::Execution *cylon::RootOp::GetExecution() {
   return this->execution_;
 }
 
-cylon::RootOp::RootOp(std::shared_ptr<cylon::CylonContext> ctx,
-                      std::shared_ptr<arrow::Schema> schema,
+cylon::RootOp::RootOp(const std::shared_ptr<cylon::CylonContext> &ctx,
+                      const std::shared_ptr<arrow::Schema> &schema,
                       int id,
-                      shared_ptr<ResultsCallback> callback) : Op(ctx, schema, id, callback, true) {
+                      const std::shared_ptr<ResultsCallback> &callback) :
+                      Op(ctx, schema, id, callback, true) {
 
 }
 

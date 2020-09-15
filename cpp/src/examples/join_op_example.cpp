@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
   auto mpi_config = new cylon::net::MPIConfig();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<cylon::Table> first_table, second_table, joined;
+  std::shared_ptr<cylon::Table> first_table, second_table;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
   auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
   if (!status.is_ok()) {
@@ -61,10 +61,14 @@ int main(int argc, char *argv[]) {
   hash_cols->push_back(0);
   auto jc = cylon::join::config::JoinConfig::InnerJoin(0, 0);
   cylon::PartitionOpConfig *kP = new cylon::PartitionOpConfig(ctx->GetWorldSize(), hash_cols);
-  auto cfg = std::make_shared<cylon::DisJoinOpConfig>(std::shared_ptr<cylon::PartitionOpConfig>(kP),
-      std::shared_ptr<cylon::join::config::JoinConfig>(&jc));
-  auto op = cylon::DisJoinOP(std::shared_ptr<cylon::CylonContext>(ctx), 
-      first_table->get_table()->schema(), 0, cb, cfg);
+  std::shared_ptr<cylon::PartitionOpConfig> kArgs = std::shared_ptr<cylon::PartitionOpConfig>(kP);
+  std::shared_ptr<cylon::join::config::JoinConfig>
+      kPtr = std::shared_ptr<cylon::join::config::JoinConfig>(&jc);
+  auto cfg = std::make_shared<cylon::DisJoinOpConfig>(kArgs,
+                                                      kPtr);
+  std::shared_ptr<cylon::CylonContext> kCtx = std::shared_ptr<cylon::CylonContext>(ctx);
+  auto op = cylon::DisJoinOP(kCtx,
+                             first_table->get_table()->schema(), 0, cb, cfg);
 
   op.InsertTable(100, first_table);
   op.InsertTable(200, second_table);
@@ -72,8 +76,6 @@ int main(int argc, char *argv[]) {
   execution->WaitForCompletion();
   auto join_end_time = std::chrono::steady_clock::now();
 
-  LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
-            << second_table->Rows() << ", Joined has : " << joined->Rows();
   LOG(INFO) << "Join done in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 join_end_time - read_end_time).count() << "[ms]";
