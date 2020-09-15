@@ -33,8 +33,6 @@ class cylon_context_wrap {
 
   CylonContext *context;
 
-  explicit cylon_context_wrap(bool distributed);
-
   cylon::MemoryPool *memory_pool{};
 
   int32_t sequence_no;

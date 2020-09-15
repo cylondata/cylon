@@ -98,6 +98,136 @@ Status PrepareArray(CylonContext *ctx,
   return Status::OK();
 }
 
+Status HashPartitionTable(CylonContext *ctx, const std::shared_ptr<arrow::Table>& table,
+                          int hash_column, int no_of_partitions,
+                          std::unordered_map<int, std::shared_ptr<cylon::Table>> *out) {
+  // keep arrays for each target, these arrays are used for creating the table
+  std::unordered_map<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>> data_arrays;
+  std::vector<int> partitions;
+  for (int t = 0; t < no_of_partitions; t++) {
+    partitions.push_back(t);
+    data_arrays.insert(
+        std::pair<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>>(
+            t, std::make_shared<std::vector<std::shared_ptr<arrow::Array>>>()));
+  }
+  std::shared_ptr<arrow::Array> arr = table->column(hash_column)->chunk(0);
+  int64_t length = arr->length();
+
+  auto t1 = std::chrono::high_resolution_clock::now();
+  // first we partition the table
+  std::vector<int64_t> outPartitions;
+  outPartitions.reserve(length);
+  std::vector<uint32_t> counts(no_of_partitions, 0);
+  Status status = HashPartitionArray(cylon::ToArrowPool(ctx), arr,
+                                     partitions, &outPartitions, counts);
+  if (!status.is_ok()) {
+    LOG(FATAL) << "Failed to create the hash partition";
+    return status;
+  }
+  auto t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Calculating hash time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
+  for (int i = 0; i < table->num_columns(); i++) {
+    std::shared_ptr<arrow::DataType> type = table->column(i)->chunk(0)->type();
+    std::shared_ptr<arrow::Array> array = table->column(i)->chunk(0);
+
+    std::shared_ptr<ArrowArraySplitKernel> splitKernel;
+    status = CreateSplitter(type, cylon::ToArrowPool(ctx), &splitKernel);
+    if (!status.is_ok()) {
+      LOG(FATAL) << "Failed to create the splitter";
+      return status;
+    }
+    // this one outputs arrays for each target as a map
+    std::unordered_map<int, std::shared_ptr<arrow::Array>> splited_arrays;
+    splitKernel->Split(array, outPartitions, partitions, splited_arrays, counts);
+    for (const auto &x : splited_arrays) {
+      std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];
+      cols->push_back(x.second);
+    }
+  }
+  auto t3 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Building hashed tables time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
+  // now insert these array to
+  for (const auto &x : data_arrays) {
+    std::shared_ptr<arrow::Table> t = arrow::Table::Make(table->schema(), *x.second);
+    std::shared_ptr<cylon::Table> kY = std::make_shared<cylon::Table>(t, ctx);
+    out->insert(std::pair<int, std::shared_ptr<cylon::Table>>(x.first, kY));
+  }
+  return Status::OK();
+}
+
+cylon::Status Shuffle(cylon::CylonContext *ctx,
+                      std::shared_ptr<cylon::Table> &table,
+                      int hash_column,
+                      int edge_id,
+                      std::shared_ptr<arrow::Table> *table_out) {
+  std::unordered_map<int, std::shared_ptr<cylon::Table>> partitioned_tables{};
+  // partition the tables locally
+  HashPartitionTable(ctx, table->get_table(), hash_column, ctx->GetWorldSize(),
+      &partitioned_tables);
+  std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
+  // we are going to free if retain is set to false
+  if (!table->IsRetain()) {
+    table.reset();
+  }
+  auto neighbours = ctx->GetNeighbours(true);
+  vector<std::shared_ptr<arrow::Table>> received_tables;
+  // define call back to catch the receiving tables
+  class AllToAllListener : public cylon::ArrowCallback {
+    vector<std::shared_ptr<arrow::Table>> *tabs;
+    int workerId;
+
+   public:
+    explicit AllToAllListener(vector<std::shared_ptr<arrow::Table>> *tabs, int workerId) {
+      this->tabs = tabs;
+      this->workerId = workerId;
+    }
+
+    bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
+      this->tabs->push_back(table);
+      return true;
+    };
+  };
+
+  // doing all to all communication to exchange tables
+  cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
+                                  std::make_shared<AllToAllListener>(&received_tables,
+                                  ctx->GetRank()), schema, cylon::ToArrowPool(ctx));
+
+  for (auto &partitioned_table : partitioned_tables) {
+    if (partitioned_table.first != ctx->GetRank()) {
+      all_to_all.insert(partitioned_table.second->get_table(), partitioned_table.first);
+    } else {
+      received_tables.push_back(partitioned_table.second->get_table());
+    }
+  }
+
+  // now complete the communication
+  all_to_all.finish();
+  while (!all_to_all.isComplete()) {}
+  all_to_all.close();
+
+  // now clear locally partitioned tables
+  partitioned_tables.clear();
+
+  // now we have the final set of tables
+  LOG(INFO) << "Concatenating tables, Num of tables :  " << received_tables.size();
+  arrow::Result<std::shared_ptr<arrow::Table>> concat_tables =
+      arrow::ConcatenateTables(received_tables);
+
+  if (concat_tables.ok()) {
+    auto final_table = concat_tables.ValueOrDie();
+    LOG(INFO) << "Done concatenating tables, rows :  " << final_table->num_rows();
+    auto status = final_table->CombineChunks(cylon::ToArrowPool(ctx), table_out);
+    return Status(static_cast<int>(status.code()), status.message());
+  } else {
+    return Status(static_cast<int>(concat_tables.status().code()),
+                  concat_tables.status().message());
+  }
+}
+
 cylon::Status Shuffle(cylon::CylonContext *ctx,
                       std::shared_ptr<cylon::Table> &table,
                       const std::vector<int> &hash_columns,
@@ -169,6 +299,33 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
 
 Status ShuffleTwoTables(CylonContext *ctx,
                         std::shared_ptr<cylon::Table> &left_table,
+                        int left_hash_column,
+                        std::shared_ptr<cylon::Table> &right_table,
+                        int right_hash_column,
+                        std::shared_ptr<arrow::Table> *left_table_out,
+                        std::shared_ptr<arrow::Table> *right_table_out) {
+  LOG(INFO) << "Shuffling two tables with total rows : "
+            << left_table->Rows() + right_table->Rows();
+  auto t1 = std::chrono::high_resolution_clock::now();
+  auto status = Shuffle(ctx, left_table, left_hash_column,
+                        ctx->GetNextSequence(), left_table_out);
+  if (status.is_ok()) {
+    auto t2 = std::chrono::high_resolution_clock::now();
+    LOG(INFO) << "Left shuffle time : "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    status = Shuffle(ctx, right_table, right_hash_column,
+                     ctx->GetNextSequence(), right_table_out);
+    if (status.is_ok()) {
+      auto t3 = std::chrono::high_resolution_clock::now();
+      LOG(INFO) << "Right shuffle time : "
+                << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
+    }
+  }
+  return status;
+}
+
+Status ShuffleTwoTables(CylonContext *ctx,
+                        std::shared_ptr<cylon::Table> &left_table,
                         const std::vector<int> &left_hash_columns,
                         std::shared_ptr<cylon::Table> &right_table,
                         const std::vector<int> &right_hash_columns,
@@ -176,14 +333,19 @@ Status ShuffleTwoTables(CylonContext *ctx,
                         std::shared_ptr<arrow::Table> *right_table_out) {
   LOG(INFO) << "Shuffling two tables with total rows : "
             << left_table->Rows() + right_table->Rows();
+  auto t1 = std::chrono::high_resolution_clock::now();
   auto status = Shuffle(ctx, left_table, left_hash_columns,
                         ctx->GetNextSequence(), left_table_out);
   if (status.is_ok()) {
-    LOG(INFO) << "Left table shuffled";
+    auto t2 = std::chrono::high_resolution_clock::now();
+    LOG(INFO) << "Left shuffle time : "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     status = Shuffle(ctx, right_table, right_hash_columns,
                                     ctx->GetNextSequence(), right_table_out);
     if (status.is_ok()) {
-      LOG(INFO) << "Right table shuffled";
+      auto t3 = std::chrono::high_resolution_clock::now();
+      LOG(INFO) << "Right shuffle time : "
+                << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
     }
   }
   return status;
@@ -358,15 +520,20 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
     length = column->length();
   }
 
+  auto t1 = std::chrono::high_resolution_clock::now();
   // first we partition the table
   std::vector<int64_t> outPartitions;
   outPartitions.reserve(length);
+  std::vector<uint32_t> counts(no_of_partitions, 0);
   Status status = HashPartitionArrays(cylon::ToArrowPool(ctx), arrays, length,
-                                   partitions, &outPartitions);
+                                      partitions, &outPartitions, counts);
   if (!status.is_ok()) {
     LOG(FATAL) << "Failed to create the hash partition";
     return status;
   }
+  auto t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Calculating hash time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   for (int i = 0; i < table_->num_columns(); i++) {
     std::shared_ptr<arrow::DataType> type = table_->column(i)->chunk(0)->type();
@@ -381,13 +548,16 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
 
     // this one outputs arrays for each target as a map
     std::unordered_map<int, std::shared_ptr<arrow::Array>> splited_arrays;
-    splitKernel->Split(array, outPartitions, partitions, splited_arrays);
+    splitKernel->Split(array, outPartitions, partitions, splited_arrays, counts);
 
     for (const auto &x : splited_arrays) {
       std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];
       cols->push_back(x.second);
     }
   }
+  auto t3 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Building hashed tables time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
   // now insert these array to
   for (const auto &x : data_arrays) {
     std::shared_ptr<arrow::Table> table = arrow::Table::Make(table_->schema(), *x.second);
@@ -444,19 +614,15 @@ Status Table::DistributedJoin(std::shared_ptr<cylon::Table> &left,
     return status;
   }
 
-  std::vector<int> left_hash_columns;
-  left_hash_columns.push_back(join_config.GetLeftColumnIdx());
-
   std::vector<int> right_hash_columns;
   right_hash_columns.push_back(join_config.GetRightColumnIdx());
-
   std::shared_ptr<arrow::Table> left_final_table;
   std::shared_ptr<arrow::Table> right_final_table;
   auto shuffle_status = ShuffleTwoTables(ctx,
                                          left,
-                                         left_hash_columns,
+                                         join_config.GetLeftColumnIdx(),
                                          right,
-                                         right_hash_columns,
+                                         join_config.GetRightColumnIdx(),
                                          &left_final_table,
                                          &right_final_table);
   if (shuffle_status.is_ok()) {
