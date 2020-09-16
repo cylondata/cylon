@@ -29,39 +29,31 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
 
   this->config = config;
   const std::vector<int32_t> PARTITION_IDS = {LEFT_RELATION, RIGHT_RELATION};
-  //const int32_t SHUFFLE_OP_ID = 3;
   const int32_t JOIN_OP_ID = 4;
   const int32_t MERGE_OP_ID = 5;
-
   // create graph
-
   // local join
   auto join_op = new JoinOp(ctx, schema, JOIN_OP_ID, callback, this->config->GetJoinConfig());
-
 
   for (int32_t relation_id:PARTITION_IDS) {
     std::vector<int> part_cols = {this->config->GetJoinConfig()->GetLeftColumnIdx()};
     auto partition_op = new PartitionOp(ctx, schema, relation_id, callback,
                                         std::make_shared<PartitionOpConfig>(ctx->GetWorldSize(),
-                                                                                 std::make_shared<std::vector<int>>(
-                                                                                     part_cols)));
+                                        std::make_shared<std::vector<int>>(part_cols)));
     this->AddChild(partition_op);
     execution->AddOp(partition_op);
-
     auto shuffle_op = new AllToAllOp(ctx, schema, relation_id, callback,
                                      std::make_shared<AllToAllOpConfig>());
-
     partition_op->AddChild(shuffle_op);
     execution->AddOp(shuffle_op);
-
     auto merge_op = new MergeOp(ctx, schema, MERGE_OP_ID, callback);
     shuffle_op->AddChild(merge_op);
     execution->AddOp(merge_op);
-
     merge_op->AddChild(join_op);
   }
   execution->AddOp(join_op);
 }
+
 bool cylon::DisJoinOP::Execute(int tag, shared_ptr<Table> table) {
   if (tag != LEFT_RELATION && tag != RIGHT_RELATION) {
     LOG(INFO) << "Unknown tag";
@@ -85,7 +77,7 @@ std::shared_ptr<cylon::PartitionOpConfig> cylon::DisJoinOpConfig::GetPartitionCo
 }
 
 cylon::DisJoinOpConfig::DisJoinOpConfig(std::shared_ptr<PartitionOpConfig> partition_config,
-                                        std::shared_ptr<cylon::join::config::JoinConfig> join_config) {
+                                    std::shared_ptr<cylon::join::config::JoinConfig> join_config) {
   this->partition_config = std::move(partition_config);
   this->join_config = std::move(join_config);
 }

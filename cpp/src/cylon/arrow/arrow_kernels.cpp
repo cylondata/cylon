@@ -310,4 +310,127 @@ arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
   return arrow::Status::OK();
 }
 
+cylon::Status CreateStreamingSplitter(const std::shared_ptr<arrow::DataType> &type,
+                                      const std::vector<int32_t> &targets,
+                             arrow::MemoryPool *pool,
+                             std::shared_ptr<ArrowArrayStreamingSplitKernel> *out) {
+  ArrowArrayStreamingSplitKernel *kernel;
+  switch (type->id()) {
+    case arrow::Type::UINT8:kernel = new UInt8ArrayStreamingSplitter(type, targets, pool);
+      break;
+    case arrow::Type::INT8:kernel = new Int8ArrayStreamingSplitter(type, targets, pool);
+      break;
+    case arrow::Type::UINT16:kernel = new UInt16ArrayStreamingSplitter(type, targets, pool);
+      break;
+    case arrow::Type::INT16:kernel = new Int16ArrayStreamingSplitter(type, targets, pool);
+      break;
+    case arrow::Type::UINT32:kernel = new UInt32ArrayStreamingSplitter(type, targets, pool);
+      break;
+    case arrow::Type::INT32:kernel = new Int32ArrayStreamingSplitter(type, targets, pool);
+      break;
+    case arrow::Type::UINT64:kernel = new UInt64ArrayStreamingSplitter(type, targets, pool);
+      break;
+    case arrow::Type::INT64:kernel = new Int64ArrayStreamingSplitter(type, targets, pool);
+      break;
+    case arrow::Type::FLOAT:kernel = new FloatArrayStreamingSplitter(type, targets, pool);
+      break;
+    case arrow::Type::DOUBLE:kernel = new DoubleArrayStreamingSplitter(type, targets, pool);
+      break;
+    case arrow::Type::FIXED_SIZE_BINARY:kernel =
+        new FixedBinaryArrayStreamingSplitKernel(type, targets, pool);
+      break;
+    case arrow::Type::STRING:kernel = new BinaryArrayStreamingSplitKernel(type, targets, pool);
+      break;
+    case arrow::Type::BINARY:kernel = new BinaryArrayStreamingSplitKernel(type, targets, pool);
+      break;
+    default:
+      LOG(FATAL) << "Un-known type " << type->name();
+      return cylon::Status(cylon::NotImplemented, "This type not implemented");
+  }
+  out->reset(kernel);
+  return cylon::Status::OK();
+}
+
+int FixedBinaryArrayStreamingSplitKernel::Split(std::shared_ptr<arrow::Array> &values,
+                                                const std::vector<int64_t> &partitions) {
+  auto reader =
+      std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
+  for (size_t i = 0; i < partitions.size(); i++) {
+    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders_[partitions.at(i)];
+    if (b->Append(reader->Value(i)) != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to merge";
+      return -1;
+    }
+  }
+  return 0;
+}
+
+int FixedBinaryArrayStreamingSplitKernel::finish(
+    std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) {
+  for (int it : targets_) {
+    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders_[it];
+    std::shared_ptr<arrow::Array> array;
+    if (b->Finish(&array) != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to merge";
+      return -1;
+    }
+    out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(it, array));
+  }
+  return 0;
+}
+
+FixedBinaryArrayStreamingSplitKernel::FixedBinaryArrayStreamingSplitKernel(
+    const std::shared_ptr<arrow::DataType>& type,
+    const std::vector<int32_t> &targets,
+    arrow::MemoryPool *pool) : ArrowArrayStreamingSplitKernel(type, targets, pool) {
+  for (size_t i = 0; i < targets.size(); i++) {
+    int target = targets[i];
+    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b =
+        std::make_shared<arrow::FixedSizeBinaryBuilder>(type_, pool_);
+    builders_.insert(std::pair<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>>(target, b));
+  }
+}
+
+int BinaryArrayStreamingSplitKernel::Split(std::shared_ptr<arrow::Array> &values,
+                                           const std::vector<int64_t> &partitions) {
+  auto reader =
+      std::static_pointer_cast<arrow::BinaryArray>(values);
+
+  for (size_t i = 0; i < partitions.size(); i++) {
+    std::shared_ptr<arrow::BinaryBuilder> b = builders_[partitions.at(i)];
+    int length = 0;
+    const uint8_t *value = reader->GetValue(i, &length);
+    if (b->Append(value, length) != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to merge";
+      return -1;
+    }
+  }
+  return 0;
+}
+
+int BinaryArrayStreamingSplitKernel::finish(
+    std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) {
+  for (int it : targets_) {
+    std::shared_ptr<arrow::BinaryBuilder> b = builders_[it];
+    std::shared_ptr<arrow::Array> array;
+    if (b->Finish(&array) != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to merge";
+      return -1;
+    }
+    out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(it, array));
+  }
+  return 0;
+}
+
+BinaryArrayStreamingSplitKernel::BinaryArrayStreamingSplitKernel(
+    const std::shared_ptr<arrow::DataType>& type,
+    const std::vector<int32_t> &targets,
+    arrow::MemoryPool *pool) :
+    ArrowArrayStreamingSplitKernel(type, targets, pool) {
+  for (int it : targets_) {
+    std::shared_ptr<arrow::BinaryBuilder> b = std::make_shared<arrow::BinaryBuilder>(type_, pool_);
+    builders_.insert(std::pair<int, std::shared_ptr<arrow::BinaryBuilder>>(it, b));
+  }
+}
+
 }  // namespace cylon
