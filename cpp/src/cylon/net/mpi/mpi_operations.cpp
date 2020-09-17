@@ -12,9 +12,9 @@
  * limitations under the License.
  */
 
-#include "mpi_sync_channel.hpp"
+#include "mpi_operations.hpp"
 
-MPI_Op cylon::GetMPIOp(cylon::ReduceOp reduce_op) {
+MPI_Op cylon::mpi::GetMPIOp(cylon::ReduceOp reduce_op) {
   switch (reduce_op) {
     case cylon::SUM: return MPI_SUM;
     case cylon::MIN: return MPI_MIN;
@@ -24,7 +24,7 @@ MPI_Op cylon::GetMPIOp(cylon::ReduceOp reduce_op) {
   }
 }
 
-MPI_Datatype cylon::GetMPIDataType(const std::shared_ptr<DataType> &data_type) {
+MPI_Datatype cylon::mpi::GetMPIDataType(const std::shared_ptr<DataType> &data_type) {
   switch (data_type->getType()) {
     case Type::BOOL:return MPI_CXX_BOOL;
     case Type::UINT8:return MPI_UINT8_T;
@@ -57,17 +57,22 @@ MPI_Datatype cylon::GetMPIDataType(const std::shared_ptr<DataType> &data_type) {
   return nullptr;
 }
 
-int cylon::MPISyncChannel::AllReduce(void *send_buf,
-                                     void *rcv_buf,
-                                     int count,
-                                     const std::shared_ptr<DataType> &data_type,
-                                     cylon::ReduceOp reduce_op) {
+cylon::Status cylon::mpi::AllReduce(const void *send_buf,
+                                    void *rcv_buf,
+                                    const int count,
+                                    const std::shared_ptr<cylon::DataType> &data_type,
+                                    const ReduceOp reduce_op) {
+  MPI_Datatype mpi_data_type = cylon::mpi::GetMPIDataType(data_type);
+  MPI_Op mpi_op = cylon::mpi::GetMPIOp(reduce_op);
 
-  MPI_Datatype mpi_data_type = cylon::GetMPIDataType(data_type);
-  MPI_Op mpi_op = cylon::GetMPIOp(reduce_op);
+  if (mpi_data_type == nullptr || mpi_op == nullptr) {
+    return cylon::Status(cylon::Code::NotImplemented, "Unknown data type or operation for MPI");
+  }
 
-  if (mpi_data_type == nullptr || mpi_op == nullptr) return 1;
-
-  return MPI_Allreduce(send_buf, rcv_buf, count, mpi_data_type, mpi_op, MPI_COMM_WORLD);
+  if (MPI_Allreduce(send_buf, rcv_buf, count, mpi_data_type, mpi_op, MPI_COMM_WORLD) == MPI_SUCCESS) {
+    return cylon::Status::OK();
+  } else {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI operation failed!");
+  }
 }
 

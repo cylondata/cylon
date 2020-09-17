@@ -39,7 +39,7 @@ class MPICommunicator : public Communicator {
   int GetWorldSize() override;
   void Finalize() override;
   void Barrier() override;
-  std::shared_ptr<SyncChannel> MakeReduceChannel() override;
+  CommType GetCommType() override;
 };
 }
 }

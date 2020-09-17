@@ -87,8 +87,8 @@ add_library(cylon SHARED
         compute/aggregates.hpp
         compute/aggregates.cpp
         net/sync_channel.hpp
-        net/mpi/mpi_sync_channel.cpp
-        net/mpi/mpi_sync_channel.hpp
+        net/mpi/mpi_operations.cpp
+        net/mpi/mpi_operations.hpp
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")

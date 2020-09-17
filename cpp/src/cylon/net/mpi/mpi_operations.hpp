@@ -12,33 +12,26 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_CPP_SRC_CYLON_NET_MPI_MPI_SYNC_CHANNEL_HPP_
-#define CYLON_CPP_SRC_CYLON_NET_MPI_MPI_SYNC_CHANNEL_HPP_
+#ifndef CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
+#define CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
 
 #include <mpi.h>
 #include "../sync_channel.hpp"
 #include "../communicator.hpp"
 
 namespace cylon {
+namespace mpi {
 
 MPI_Op GetMPIOp(ReduceOp reduce_op);
 
 MPI_Datatype GetMPIDataType(const std::shared_ptr<DataType> &data_type);
 
-/**
- * MPI channel for synchronous operations
- */
-class MPISyncChannel : public SyncChannel {
- public:
-  explicit MPISyncChannel() : SyncChannel() {
-  }
-
-  int AllReduce(void *send_buf,
-                void *rcv_buf,
-                int count,
-                const std::shared_ptr<DataType> &data_type,
-                ReduceOp reduce_op) override;
-};
+cylon::Status AllReduce(const void *send_buf,
+                        void *rcv_buf,
+                        int count,
+                        const std::shared_ptr<DataType> &data_type,
+                        ReduceOp reduce_op);
 
 }
-#endif //CYLON_CPP_SRC_CYLON_NET_MPI_MPI_SYNC_CHANNEL_HPP_
+}
+#endif //CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
