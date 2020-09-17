@@ -21,7 +21,7 @@
 namespace cylon {
 namespace mpi {
 
-MPI_Op GetMPIOp(ReduceOp reduce_op);
+MPI_Op GetMPIOp(cylon::net::ReduceOp reduce_op);
 
 MPI_Datatype GetMPIDataType(const std::shared_ptr<DataType> &data_type);
 
@@ -29,7 +29,7 @@ cylon::Status AllReduce(const void *send_buf,
                         void *rcv_buf,
                         int count,
                         const std::shared_ptr<DataType> &data_type,
-                        ReduceOp reduce_op);
+                        cylon::net::ReduceOp reduce_op);
 
 }
 }

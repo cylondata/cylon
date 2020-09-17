@@ -15,11 +15,11 @@
 #include <status.hpp>
 #include "mpi_operations.hpp"
 
-MPI_Op cylon::mpi::GetMPIOp(cylon::ReduceOp reduce_op) {
+MPI_Op cylon::mpi::GetMPIOp(cylon::net::ReduceOp reduce_op) {
   switch (reduce_op) {
-    case cylon::SUM: return MPI_SUM;
-    case cylon::MIN: return MPI_MIN;
-    case cylon::MAX: return MPI_MAX;
+    case cylon::net::SUM: return MPI_SUM;
+    case cylon::net::MIN: return MPI_MIN;
+    case cylon::net::MAX: return MPI_MAX;
 //    case cylon::PROD: return MPI_PROD;
     default: return nullptr;
   }
@@ -62,7 +62,7 @@ cylon::Status cylon::mpi::AllReduce(const void *send_buf,
                                     void *rcv_buf,
                                     const int count,
                                     const std::shared_ptr<cylon::DataType> &data_type,
-                                    const ReduceOp reduce_op) {
+                                    const cylon::net::ReduceOp reduce_op) {
   MPI_Datatype mpi_data_type = cylon::mpi::GetMPIDataType(data_type);
   MPI_Op mpi_op = cylon::mpi::GetMPIOp(reduce_op);
 

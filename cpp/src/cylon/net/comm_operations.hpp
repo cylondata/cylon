@@ -18,6 +18,7 @@
 #include <data_types.hpp>
 
 namespace cylon {
+namespace net {
 
 /**
  * Cylon reduction operations
@@ -28,5 +29,6 @@ enum ReduceOp {
   MAX
 };
 
+}
 }
 #endif //CYLON_CPP_SRC_CYLON_NET_COMM_OPERATIONS_HPP_
