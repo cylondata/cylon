@@ -51,6 +51,12 @@ class Result {
 };
 
 /**
+ * Function pointer for aggregate functions
+ */
+typedef Status
+(*AggregateOperation)(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output);
+
+/**
  * Calculates the global sum of a column
  * @param ctx
  * @param table
@@ -58,10 +64,7 @@ class Result {
  * @param output
  * @return
  */
-cylon::Status Sum(cylon::CylonContext *ctx,
-                  const std::shared_ptr<cylon::Table> &table,
-                  int32_t col_idx,
-                  std::shared_ptr<Result> *output);
+cylon::Status Sum(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output);
 
 /**
  * Calculates the global count of a column
@@ -71,10 +74,7 @@ cylon::Status Sum(cylon::CylonContext *ctx,
  * @param output
  * @return
  */
-cylon::Status Count(cylon::CylonContext *ctx,
-                    const std::shared_ptr<cylon::Table> &table,
-                    int32_t col_idx,
-                    std::shared_ptr<Result> *output);
+cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output);
 
 /**
  * Calculates the global min of a column
@@ -84,10 +84,7 @@ cylon::Status Count(cylon::CylonContext *ctx,
  * @param output
  * @return
  */
-cylon::Status Min(cylon::CylonContext *ctx,
-                    const std::shared_ptr<cylon::Table> &table,
-                    int32_t col_idx,
-                    std::shared_ptr<Result> *output);
+cylon::Status Min(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output);
 
 /**
  * Calculates the global max of a column
@@ -97,10 +94,7 @@ cylon::Status Min(cylon::CylonContext *ctx,
  * @param output
  * @return
  */
-cylon::Status Max(cylon::CylonContext *ctx,
-                  const std::shared_ptr<cylon::Table> &table,
-                  int32_t col_idx,
-                  std::shared_ptr<Result> *output);
+cylon::Status Max(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output);
 
 } // end compute
 } // end cylon
