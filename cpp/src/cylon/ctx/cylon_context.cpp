@@ -107,7 +107,10 @@ int32_t CylonContext::GetNextSequence() {
   return this->sequence_no++;
 }
 
-bool CylonContext::IsDistributed() const {
+bool CylonContext::IsDistributed() {
   return is_distributed;
+}
+cylon::net::CommType CylonContext::GetCommType() {
+  return is_distributed? this->communicator->GetCommType(): net::CommType::LOCAL;
 }
 }  // namespace cylon

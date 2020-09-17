@@ -92,7 +92,7 @@ class CylonContext {
    */
   void setDistributed(bool distributed);
 
-  bool IsDistributed() const;
+  bool IsDistributed();
 
   /**
    * Returns the local rank
@@ -130,6 +130,11 @@ class CylonContext {
    * @return <int>
    */
   int32_t GetNextSequence();
+
+  /**
+   *
+   */
+  cylon::net::CommType GetCommType();
 
   /**
    * Performs a barrier operation

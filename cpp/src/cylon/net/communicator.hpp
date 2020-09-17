@@ -33,7 +33,7 @@ class Communicator {
   virtual int GetWorldSize() = 0;
   virtual void Finalize() = 0;
   virtual void Barrier() = 0;
-  virtual std::shared_ptr<SyncChannel> MakeReduceChannel()  = 0;
+  virtual CommType GetCommType() = 0;
 };
 }
 }
