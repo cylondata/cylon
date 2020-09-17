@@ -137,7 +137,8 @@ class Table {
                       shared_ptr<Table> &tableOut);
 
   /**
-   * Sort the table according to the given column, this is a local sort
+   * Sort the table according to the given column, this is a local sort (if the table has chunked columns, they will
+   * be merged in the output table)
    * @param sort_column
    * @return new table sorted according to the sort column
    */

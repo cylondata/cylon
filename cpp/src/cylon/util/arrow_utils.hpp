@@ -22,9 +22,9 @@ namespace util {
 
 class FunctionContext;
 
-arrow::Status sort_table(std::shared_ptr<arrow::Table> tab, int64_t sort_column_index,
-                         std::shared_ptr<arrow::Table> *sorted_table,
-                         arrow::MemoryPool *memory_pool = arrow::default_memory_pool());
+arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort_column_index,
+                        std::shared_ptr<arrow::Table> *sorted_table,
+                        arrow::MemoryPool *memory_pool = arrow::default_memory_pool());
 
 arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>>& indices,
                                     const std::shared_ptr<arrow::Array>& source_array,
