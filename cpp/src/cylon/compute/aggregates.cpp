@@ -18,6 +18,7 @@
 #include <status.hpp>
 #include <table.hpp>
 #include <ctx/arrow_memory_pool_utils.hpp>
+#include <net/comm_operations.hpp>
 #include <net/mpi/mpi_operations.hpp>
 
 #include "compute/aggregates.hpp"
