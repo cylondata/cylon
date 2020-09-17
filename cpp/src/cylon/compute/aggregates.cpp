@@ -159,10 +159,8 @@ cylon::Status DoAllReduce(cylon::CylonContext *ctx,
 }
 
 
-cylon::Status Sum(cylon::CylonContext *ctx,
-                  const std::shared_ptr<cylon::Table> &table,
-                  int32_t col_idx,
-                  std::shared_ptr<Result> *output) {
+cylon::Status Sum(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output) {
+  auto ctx = table->GetContext();
   const shared_ptr<Column> &col = table->GetColumn(col_idx); // cylon column object
   const shared_ptr<DataType> &data_type = col->GetDataType();
   const arrow::compute::Datum input(col->GetColumnData()); // input datum
@@ -180,11 +178,9 @@ cylon::Status Sum(cylon::CylonContext *ctx,
   }
 }
 
-cylon::Status Count(cylon::CylonContext *ctx,
-                    const std::shared_ptr<cylon::Table> &table,
-                    int32_t col_idx,
-                    std::shared_ptr<Result> *output) {
+cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output) {
   arrow::Status status;
+  auto ctx = table->GetContext();
 
   const shared_ptr<Column> &col = table->GetColumn(col_idx);
   const shared_ptr<DataType> &data_type = cylon::Int64();
@@ -220,10 +216,9 @@ cylon::Status Count(cylon::CylonContext *ctx,
  * @return
  */
 template<bool minMax>
-cylon::Status MinMax(cylon::CylonContext *ctx,
-                     const std::shared_ptr<cylon::Table> &table,
-                     int32_t col_idx,
-                     std::shared_ptr<Result> *output) {
+cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output) {
+  auto ctx = table->GetContext();
+
   const shared_ptr<Column> &col = table->GetColumn(col_idx);
   const shared_ptr<DataType> &data_type = col->GetDataType();
   const arrow::compute::Datum input(col->GetColumnData());
@@ -242,19 +237,13 @@ cylon::Status MinMax(cylon::CylonContext *ctx,
   }
 }
 
-  cylon::Status Min(cylon::CylonContext *ctx,
-                    const std::shared_ptr<cylon::Table> &table,
-                    int32_t col_idx,
-                    std::shared_ptr<Result> *output) {
-    return MinMax<0>(ctx, table, col_idx, output);
-  }
+cylon::Status Min(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output) {
+  return MinMax<0>(table, col_idx, output);
+}
 
-  cylon::Status Max(cylon::CylonContext *ctx,
-                    const std::shared_ptr<cylon::Table> &table,
-                    int32_t col_idx,
-                    std::shared_ptr<Result> *output) {
-    return MinMax<1>(ctx, table, col_idx, output);
-  }
+cylon::Status Max(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output) {
+  return MinMax<1>(table, col_idx, output);
+}
 
 }  // end compute
 } // end cylon

@@ -55,7 +55,7 @@ int main() {
     return 1;
   }
 
-  if ((status = cylon::compute::Sum(ctx, table, 1, &result)).is_ok()) {
+  if ((status = cylon::compute::Sum(table, 1, &result)).is_ok()) {
     const shared_ptr<arrow::DoubleScalar>
         &aa = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
     std::cout << "sum " << aa->value << " " << status.get_code() << std::endl;
@@ -63,21 +63,21 @@ int main() {
     std::cout << "sum failed! " << status.get_msg() << std::endl;
   }
 
-  if ((status = cylon::compute::Count(ctx, table, 1, &result)).is_ok()) {
+  if ((status = cylon::compute::Count(table, 1, &result)).is_ok()) {
     const auto &aa = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
     std::cout << "count " << aa->value << " " << status.get_code() << std::endl;
   } else {
     std::cout << "count failed! " << status.get_msg() << std::endl;
   }
 
-  if ((status = cylon::compute::Min(ctx, table, 1, &result)).is_ok()) {
+  if ((status = cylon::compute::Min(table, 1, &result)).is_ok()) {
     const auto &aa = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
     std::cout << "min " << aa->value << " " << status.get_code() << std::endl;
   } else {
     std::cout << "min failed! " << status.get_msg() << std::endl;
   }
 
-  if ((status = cylon::compute::Max(ctx, table, 1, &result)).is_ok()) {
+  if ((status = cylon::compute::Max(table, 1, &result)).is_ok()) {
     const shared_ptr<arrow::DoubleScalar>
         &aa = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
     std::cout << "max " << aa->value << " " << status.get_code() << std::endl;
