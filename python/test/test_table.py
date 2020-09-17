@@ -12,26 +12,27 @@
  # limitations under the License.
  ##
 
-from pycylon.net import dist
-import numpy as np
-from pycylon.net.comms import Communication
 
-dist.dist_init()
+"""
+Run test:
 
-size = dist.size()
-rank = dist.rank()
+>>> python python/test/test_table.py --table_path /tmp/csv.csv
+"""
 
-sources = [x for x in range(size)]
-targets = [x for x in range(size)]
+from pycylon.csv import csv_reader
+from pycylon import Table
+from pycylon import CylonContext
+import argparse
 
-all_to_all = Communication(rank, sources, targets, 1)
+ctx: CylonContext = CylonContext(config=None)
 
-buffer = np.array([rank], dtype=np.double)
-header = np.array([1,2,3,4], dtype=np.int32)
+parser = argparse.ArgumentParser(description='PyCylon Table')
+parser.add_argument('--table_path', type=str, help='Path to table csv')
 
-all_to_all.insert(buffer, 1, 1, header, 4)
-all_to_all.wait()
-all_to_all.finish()
+args = parser.parse_args()
 
-print("World Rank {}, World Size {}".format(dist.rank(), dist.size()))
-dist.dist_finalize()
+tb1: Table = csv_reader.read(ctx, args.table_path, ',')
+
+print(f"Cylon Table Rows {tb1.rows}, Columns {tb1.columns}")
+
+ctx.finalize()

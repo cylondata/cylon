@@ -18,10 +18,9 @@ Running the test
 mpirun -n 2 python python/test/test_cylon_table_conversion.py --table1_path /tmp/csv1.csv --table2_path /tmp/csv2.csv
 """
 
-from pycylon.data.table import csv_reader
-from pycylon.data.table import Table
-from pycylon.ctx.context import CylonContext
-from pycylon.util.data.generator import generate_numeric_csv
+from pycylon.csv import csv_reader
+from pycylon import Table
+from pycylon import CylonContext
 import pandas as pd
 import numpy as np
 

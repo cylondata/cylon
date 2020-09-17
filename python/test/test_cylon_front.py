@@ -1,6 +1,6 @@
-from pycylon.data.table import csv_reader
-from pycylon.data.table import Table
-from pycylon.ctx.context import CylonContext
+from pycylon.csv import csv_reader
+from pycylon import Table
+from pycylon import CylonContext
 import argparse
 
 ctx: CylonContext = CylonContext("mpi")

@@ -1,6 +1,7 @@
 SOURCE_DIR=$(pwd)/cpp
 CPP_BUILD="OFF"
 PYTHON_BUILD="OFF"
+CYTHON_BUILD="OFF"
 JAVA_BUILD="OFF"
 BUILD_ALL="OFF"
 BUILD_MODE=Release
@@ -41,6 +42,10 @@ case $key in
     --python)
     CPP_BUILD="ON"
     PYTHON_BUILD="ON"
+    shift # past argument
+    ;;
+    --cython)    
+    CYTHON_BUILD="ON"
     shift # past argument
     ;;
     --java)
@@ -176,6 +181,7 @@ build_python() {
   print_line
 }
 
+
 release_python() {
   print_line
   echo "Building Python"
@@ -247,6 +253,12 @@ if [ "${PYTHON_BUILD}" = "ON" ]; then
 	export_info
 	build_pyarrow
 	check_pyarrow_installation
+	build_python
+	check_pycylon_installation
+fi
+
+if [ "${CYTHON_BUILD}" = "ON" ]; then
+	export_info	
 	build_python
 	check_pycylon_installation
 fi

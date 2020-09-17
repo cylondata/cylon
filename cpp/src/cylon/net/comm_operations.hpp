@@ -12,30 +12,23 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
-#define CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
-
-#include "comm_config.hpp"
-#include "channel.hpp"
+#ifndef CYLON_CPP_SRC_CYLON_NET_COMM_OPERATIONS_HPP_
+#define CYLON_CPP_SRC_CYLON_NET_COMM_OPERATIONS_HPP_
+#include <mpi.h>
+#include <data_types.hpp>
 
 namespace cylon {
 namespace net {
 
-class Communicator {
-
- protected:
-  int rank = -1;
-  int world_size = -1;
- public:
-  virtual void Init(CommConfig *config) = 0;
-  virtual Channel *CreateChannel() = 0;
-  virtual int GetRank() = 0;
-  virtual int GetWorldSize() = 0;
-  virtual void Finalize() = 0;
-  virtual void Barrier() = 0;
-  virtual CommType GetCommType() = 0;
+/**
+ * Cylon reduction operations
+ */
+enum ReduceOp {
+  SUM,
+  MIN,
+  MAX
 };
-}
-}
 
-#endif //CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
+}
+}
+#endif //CYLON_CPP_SRC_CYLON_NET_COMM_OPERATIONS_HPP_
