@@ -59,7 +59,6 @@ bool cylon::DisJoinOP::Execute(int tag, shared_ptr<Table> table) {
     LOG(INFO) << "Unknown tag";
     return false;
   }
-  LOG(INFO) << "Distributed Join op";
   this->InsertToChild(tag, tag, table);
   return true;
 }

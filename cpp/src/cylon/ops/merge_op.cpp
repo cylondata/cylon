@@ -24,7 +24,6 @@ cylon::MergeOp::MergeOp(std::shared_ptr<CylonContext> ctx,
 }
 
 bool cylon::MergeOp::Execute(int tag, std::shared_ptr<Table> table) {
-  LOG(INFO) << "Merge op";
   // do join
   if (received_tables_.find(tag) == received_tables_.end()) {
     received_tables_.insert(std::make_pair(tag, std::vector<std::shared_ptr<arrow::Table>>()));
@@ -40,7 +39,6 @@ void cylon::MergeOp::OnParentsFinalized() {
 bool cylon::MergeOp::Finalize() {
   // return finalize join
   // now we have the final set of tables
-  LOG(INFO) << "Concatenating tables, Num of tables :  " << received_tables_.size();
   std::vector<int32_t> to_remove;
 
   for (auto tab = received_tables_.begin(); tab != received_tables_.end(); tab++ ){

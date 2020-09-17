@@ -32,7 +32,6 @@ cylon::AllToAllOp::AllToAllOp(const std::shared_ptr<cylon::CylonContext> &ctx,
 
     bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int tag) override {
       // todo check whether the const cast is appropriate
-      LOG(INFO) << "Received a table with tag" << tag;
       auto tab = std::make_shared<cylon::Table>(
           const_cast<std::shared_ptr<arrow::Table> &>(table), ctx);
       this->shuffle_op->InsertToAllChildren(tag, tab);
@@ -48,10 +47,8 @@ cylon::AllToAllOp::AllToAllOp(const std::shared_ptr<cylon::CylonContext> &ctx,
 bool cylon::AllToAllOp::Execute(int tag, shared_ptr<Table> table) {
   // if the table is for the same worker pass to childern
   if (tag == ctx_->GetRank()) {
-    LOG(INFO) << "Locally Sending a table with tag " << tag;
     this->InsertToAllChildren(this->GetId(), table);
   } else {
-    LOG(INFO) << "Sending a table with tag " << tag;
     // todo change here to use the tag appropriately
     this->all_to_all_->insert(table->get_table(), tag, this->GetId());
   }
@@ -66,7 +63,6 @@ bool cylon::AllToAllOp::IsComplete() {
 
 bool cylon::AllToAllOp::Finalize() {
   if (!finish_called_) {
-    LOG(INFO) << "Finish called on ALLTOALL " << id;
     this->all_to_all_->finish();
     finish_called_ = true;
   }

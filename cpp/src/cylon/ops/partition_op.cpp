@@ -23,17 +23,13 @@ cylon::PartitionOp::PartitionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
                                 Op(ctx, schema, id, callback), config(config) {}
 
 bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
-  LOG(INFO) << "Executing partition op";
-
   std::unordered_map<int, std::shared_ptr<Table>> out;
-
   // todo pass ctx as a shared pointer
   cylon::kernel::HashPartition(&*this->ctx_, table, *this->config->HashColumns(),
                                this->config->NoOfPartitions(), &out);
   for (auto const &tab:out) {
     this->InsertToAllChildren(tab.first, tab.second);
   }
-  LOG(INFO) << "Executed partition op";
   return true;
 }
 

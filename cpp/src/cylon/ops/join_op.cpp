@@ -30,7 +30,6 @@ cylon::JoinOp::JoinOp(const std::shared_ptr<CylonContext> &ctx,
 
 bool cylon::JoinOp::Execute(int tag, std::shared_ptr<Table> table) {
   // do join
-  LOG(INFO) << "passing to join kernel with tag "<< tag;
   join_kernel_->InsertTable(tag, table);
   return true;
 }
