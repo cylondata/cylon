@@ -11,7 +11,9 @@
 
 namespace cylon {
 
-Status GroupBy(CylonContext *ctx, const std::shared_ptr<Table> &table, const std::vector<int64_t> &col_indices,
+Status GroupBy(const std::shared_ptr<Table> &table,
+               int64_t index_col,
+               const std::vector<int64_t> &aggregate_cols,
                const std::vector<cylon::compute::AggregateOperation> &aggregate_ops,
                std::shared_ptr<Table> &output);
 

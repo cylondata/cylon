@@ -26,7 +26,16 @@
 namespace cylon {
 namespace compute {
 
-//template<typename NUM_ARROW_T>
+/**
+ * All reduce for numeric types
+ * @tparam NUM_ARROW_T arrow numeric type
+ * @param comm_type
+ * @param send sending container
+ * @param output output result
+ * @param data_type
+ * @param reduce_op
+ * @return
+ */
 template<typename NUM_ARROW_T,
     typename = typename std::enable_if<
         arrow::is_number_type<NUM_ARROW_T>::value | arrow::is_boolean_type<NUM_ARROW_T>::value>::type>
@@ -51,7 +60,6 @@ cylon::Status AllReduce(cylon::net::CommType comm_type,
                                                    send.length(),
                                                    data_type,
                                                    reduce_op);
-
       // build the output datum 
       if (status.is_ok()) {
         arrow::compute::Datum global_result(recv_scalar);

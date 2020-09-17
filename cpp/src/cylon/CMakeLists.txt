@@ -40,7 +40,6 @@ add_library(cylon SHARED
         join/join_utils.cpp
         arrow/arrow_join.cpp
         arrow/arrow_join.hpp
-        util/sort_indices.cpp
         io/arrow_io.cpp
         io/arrow_io.hpp
         table_api.hpp
