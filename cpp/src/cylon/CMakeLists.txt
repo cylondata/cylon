@@ -113,14 +113,13 @@ add_library(cylon SHARED
         ops/kernels/join_kernel.hpp
         ops/kernels/join_kernel.cpp
         ops/merge_op.cpp
-        ops/merge_op.hpp)
+        ops/merge_op.hpp
         arrow/arrow_builder.cpp
         compute/aggregates.hpp
         compute/aggregates.cpp
         net/comm_operations.hpp
         net/mpi/mpi_operations.cpp
-        net/mpi/mpi_operations.hpp
-        )
+        net/mpi/mpi_operations.hpp)
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
 
