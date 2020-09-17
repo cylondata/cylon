@@ -89,6 +89,8 @@ add_library(cylon SHARED
         net/comm_operations.hpp
         net/mpi/mpi_operations.cpp
         net/mpi/mpi_operations.hpp
+        groupby/groupby.hpp
+        groupby/groupby.cpp
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
