@@ -19,10 +19,35 @@
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
 #include <ops/dis_join_op.hpp>
+#include <mpi.h>
+
+void create_binary_table(char *const *argv,
+                         cylon::CylonContext *ctx,
+                         arrow::MemoryPool *pool,
+                         shared_ptr<arrow::Table> &left_table,
+                         shared_ptr<arrow::Table> &right_table);
+
+void create_int64_table(char *const *argv,
+                        cylon::CylonContext *ctx,
+                        arrow::MemoryPool *pool,
+                        shared_ptr<arrow::Table> &left_table,
+                        shared_ptr<arrow::Table> &right_table);
+
+uint64_t next_random() {
+  uint64_t randnumber = 0;
+  for (int i = 19; i >= 1; i--) {
+    uint64_t power = pow(10, i - 1);
+    if (power % 2 != 0 && power != 1) {
+      power++;
+    }
+    randnumber += power * (rand() % 10);
+  }
+  return randnumber;
+}
 
 int main(int argc, char *argv[]) {
-  if (argc < 3) {
-    LOG(ERROR) << "There should be two arguments with paths to csv files";
+  if (argc < 2) {
+    LOG(ERROR) << "There should be an argument with number of records to generate";
     return 1;
   }
 
@@ -30,23 +55,37 @@ int main(int argc, char *argv[]) {
   auto mpi_config = new cylon::net::MPIConfig();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<cylon::Table> first_table, second_table;
-  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-  auto status = cylon::Table::FromCSV(ctx, std::string(argv[1]) + "_" + std::to_string(ctx->GetRank()) + ".csv", first_table, read_options);
+  arrow::MemoryPool *pool = arrow::default_memory_pool();
+  std::shared_ptr<arrow::Table> left_table;
+  std::shared_ptr<arrow::Table> right_table;
+//  create_binary_table(argv, ctx, pool, left_table, right_table);
+  create_int64_table(argv, ctx, pool, left_table, right_table);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  std::shared_ptr<cylon::Table> first_table, second_table, joined;
+  auto status = cylon::Table::FromArrowTable(ctx, left_table, &first_table);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[1];
     ctx->Finalize();
     return 1;
   }
 
-  status = cylon::Table::FromCSV(ctx, std::string(argv[2]) + "_" + std::to_string(ctx->GetRank()) + ".csv", second_table, read_options);
+  status = cylon::Table::FromArrowTable(ctx, right_table, &second_table);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[2];
     ctx->Finalize();
     return 1;
   }
-  auto read_end_time = std::chrono::steady_clock::now();
+  right_table.reset();
+  left_table.reset();
 
+  auto read_end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Read tables in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - start_start).count() << "[ms]";
+
+  first_table->retainMemory(false);
+  second_table->retainMemory(false);
   LOG(INFO) << "Read tables in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
@@ -57,8 +96,6 @@ int main(int argc, char *argv[]) {
    public:
     virtual void OnResult(int tag, std::shared_ptr<cylon::Table> table) {
       LOG(INFO) << "Result received " << table->Rows();
-      table->Print();
-      table->WriteCSV("out" + std::to_string(r) + ".csv");
     }
   };
   auto cb = std::make_shared<Cb>(ctx->GetRank());
@@ -86,5 +123,93 @@ int main(int argc, char *argv[]) {
                 join_end_time - read_end_time).count() << "[ms]";
   ctx->Finalize();
   return 0;
+}
+
+void create_binary_table(char *const *argv,
+                         cylon::CylonContext *ctx,
+                         arrow::MemoryPool *pool,
+                         shared_ptr<arrow::Table> &left_table,
+                         shared_ptr<arrow::Table> &right_table) {
+  arrow::FixedSizeBinaryBuilder left_id_builder(arrow::fixed_size_binary(8), pool);
+  arrow::FixedSizeBinaryBuilder right_id_builder(arrow::fixed_size_binary(8), pool);
+  arrow::FixedSizeBinaryBuilder cost_builder(arrow::fixed_size_binary(8), pool);
+
+  uint64_t count = stoull(argv[1]);
+  uint64_t range = count * ctx->GetWorldSize();
+  srand(time(NULL) + ctx->GetRank());
+
+  arrow::Status st = left_id_builder.Reserve(count);
+  st = right_id_builder.Reserve(count);
+  st = cost_builder.Reserve(count);
+  for (uint64_t i = 0; i < count; i++) {
+    uint64_t l = next_random() % range;
+    uint64_t r = next_random() % range;
+    uint64_t v = next_random() % range;
+    left_id_builder.UnsafeAppend((uint8_t *)(&l));
+    right_id_builder.UnsafeAppend((uint8_t *)(&r));
+    cost_builder.UnsafeAppend((uint8_t *)(&v));
+  }
+
+  shared_ptr<arrow::Array> left_id_array;
+  shared_ptr<arrow::Array> right_id_array;
+  shared_ptr<arrow::Array> cost_array;
+
+  st = left_id_builder.Finish(&left_id_array);
+  st = right_id_builder.Finish(&right_id_array);
+  st = cost_builder.Finish(&cost_array);
+
+  vector<shared_ptr<arrow::Field>> schema_vector = {
+      arrow::field("first", arrow::fixed_size_binary(8)),
+      arrow::field("second", arrow::fixed_size_binary(8))};
+  auto schema = make_shared<arrow::Schema>(schema_vector);
+
+  left_table= arrow::Table::Make(schema,
+                                 {std::move(left_id_array), cost_array});
+  right_table= arrow::Table::Make(schema,
+                                  {std::move(right_id_array), std::move(cost_array)});
+}
+
+void create_int64_table(char *const *argv,
+                        cylon::CylonContext *ctx,
+                        arrow::MemoryPool *pool,
+                        shared_ptr<arrow::Table> &left_table,
+                        shared_ptr<arrow::Table> &right_table) {
+  arrow::Int64Builder left_id_builder(pool);
+  arrow::Int64Builder right_id_builder(pool);
+  arrow::Int64Builder cost_builder(pool);
+
+  uint64_t count = stoull(argv[1]);
+  uint64_t range = count * ctx->GetWorldSize();
+  srand(time(NULL) + ctx->GetRank());
+
+  arrow::Status st = left_id_builder.Reserve(count);
+  st = right_id_builder.Reserve(count);
+  st = cost_builder.Reserve(count);
+  for (uint64_t i = 0; i < count; i++) {
+    int64_t l = next_random() % range;
+    int64_t r = next_random() % range;
+    int64_t v = next_random() % range;
+    left_id_builder.UnsafeAppend(l);
+    right_id_builder.UnsafeAppend(r);
+    cost_builder.UnsafeAppend(v);
+  }
+
+  shared_ptr<arrow::Array> left_id_array;
+  shared_ptr<arrow::Array> right_id_array;
+  shared_ptr<arrow::Array> cost_array;
+
+  st = left_id_builder.Finish(&left_id_array);
+  st = right_id_builder.Finish(&right_id_array);
+  st = cost_builder.Finish(&cost_array);
+
+  vector<shared_ptr<arrow::Field>> schema_vector = {
+      arrow::field("first", arrow::int64()),
+      arrow::field("second", arrow::int64())};
+  auto schema = make_shared<arrow::Schema>(schema_vector);
+
+  left_table= arrow::Table::Make(schema,
+                                 {std::move(left_id_array), cost_array});
+  right_table= arrow::Table::Make(schema,
+                                  {std::move(right_id_array), std::move(cost_array)});
 }
 
