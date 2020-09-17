@@ -17,7 +17,7 @@
 
 #include "comm_config.hpp"
 #include "channel.hpp"
-#include "sync_channel.hpp"
+
 namespace cylon {
 namespace net {
 

@@ -86,7 +86,7 @@ add_library(cylon SHARED
         arrow/arrow_builder.cpp
         compute/aggregates.hpp
         compute/aggregates.cpp
-        net/sync_channel.hpp
+        net/comm_operations.hpp
         net/mpi/mpi_operations.cpp
         net/mpi/mpi_operations.hpp
         )

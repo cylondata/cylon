@@ -18,6 +18,7 @@
 #include <status.hpp>
 #include <table.hpp>
 #include <ctx/arrow_memory_pool_utils.hpp>
+#include <net/comm_operations.hpp>
 #include <net/mpi/mpi_operations.hpp>
 
 #include "compute/aggregates.hpp"
@@ -33,7 +34,7 @@ cylon::Status AllReduce(cylon::net::CommType comm_type,
                         const arrow::compute::Datum &send,
                         std::shared_ptr<Result> *output,
                         const std::shared_ptr<DataType> &data_type,
-                        cylon::ReduceOp reduce_op) {
+                        cylon::net::ReduceOp reduce_op) {
   using NUM_ARROW_SCALAR_T = typename arrow::TypeTraits<NUM_ARROW_T>::ScalarType;
 
   const shared_ptr<NUM_ARROW_SCALAR_T> &send_scalar = std::static_pointer_cast<NUM_ARROW_SCALAR_T>(send.scalar());
@@ -69,7 +70,7 @@ cylon::Status DoAllReduce(cylon::CylonContext *ctx,
                           const arrow::compute::Datum &send,
                           std::shared_ptr<Result> *receive,
                           const shared_ptr<DataType> &data_type,
-                          cylon::ReduceOp reduce_op) {
+                          cylon::net::ReduceOp reduce_op) {
   auto comm_type = ctx->GetCommType();
   switch (data_type->getType()) {
     case Type::BOOL:
@@ -172,7 +173,7 @@ cylon::Status Sum(cylon::CylonContext *ctx,
   arrow::Status status = arrow::compute::Sum(&fn_ctx, input, &local_result);
 
   if (status.ok()) {
-    return DoAllReduce(ctx, local_result, output, data_type, cylon::ReduceOp::SUM);
+    return DoAllReduce(ctx, local_result, output, data_type, cylon::net::ReduceOp::SUM);
   } else {
     LOG(ERROR) << "Local aggregation failed! " << status.message();
     return cylon::Status(Code::ExecutionError, status.message());
@@ -202,7 +203,7 @@ cylon::Status Count(cylon::CylonContext *ctx,
   status = arrow::compute::Count(&fn_ctx, options, input, &local_result);
 
   if (status.ok()) {
-    return DoAllReduce(ctx, local_result, output, data_type, cylon::ReduceOp::SUM);
+    return DoAllReduce(ctx, local_result, output, data_type, cylon::net::ReduceOp::SUM);
   } else {
     LOG(ERROR) << "Local aggregation failed! " << status.message();
     return cylon::Status(Code::ExecutionError, status.message());
@@ -234,7 +235,7 @@ cylon::Status MinMax(cylon::CylonContext *ctx,
 
   if (status.ok()) {
     return DoAllReduce(ctx, local_result.collection().at(minMax), output, data_type,
-                       minMax ? cylon::ReduceOp::MIN : cylon::ReduceOp::MAX);
+                       minMax ? cylon::net::ReduceOp::MIN : cylon::net::ReduceOp::MAX);
   } else {
     LOG(ERROR) << "Local aggregation failed! " << status.message();
     return cylon::Status(Code::ExecutionError, status.message());

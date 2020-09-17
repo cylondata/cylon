@@ -19,7 +19,6 @@
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
 #include <compute/aggregates.hpp>
-#include "net/sync_channel.hpp"
 
 cylon::Status CreateTable(cylon::CylonContext *ctx, int rows,
                           std::shared_ptr<cylon::Table> *output) {

@@ -12,12 +12,13 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_CPP_SRC_CYLON_NET_SYNC_CHANNEL_HPP_
-#define CYLON_CPP_SRC_CYLON_NET_SYNC_CHANNEL_HPP_
+#ifndef CYLON_CPP_SRC_CYLON_NET_COMM_OPERATIONS_HPP_
+#define CYLON_CPP_SRC_CYLON_NET_COMM_OPERATIONS_HPP_
 #include <mpi.h>
 #include <data_types.hpp>
 
 namespace cylon {
+namespace net {
 
 /**
  * Cylon reduction operations
@@ -28,26 +29,6 @@ enum ReduceOp {
   MAX
 };
 
-/**
- * Channel for syncronous operations
- */
-class SyncChannel {
- public:
-  explicit SyncChannel() = default;
-
-  /**
-   * All reduce
-   * @param send_buf
-   * @param rcv_buf
-   * @param count
-   * @param data_type cylon::Datatype
-   * @param reduce_op
-   * @return
-   */
-  virtual int AllReduce(void *send_buf, void *rcv_buf, int count, const std::shared_ptr<DataType> &data_type,
-                        ReduceOp reduce_op) = 0;
-
-};
-
 }
-#endif //CYLON_CPP_SRC_CYLON_NET_SYNC_CHANNEL_HPP_
+}
+#endif //CYLON_CPP_SRC_CYLON_NET_COMM_OPERATIONS_HPP_
