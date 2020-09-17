@@ -23,7 +23,7 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
                             const std::shared_ptr<ResultsCallback> &callback,
                             const std::shared_ptr<DisJoinOpConfig> &config) :
     RootOp(ctx, schema, id, callback) {
-  auto execution = new RoundRobinExecution();
+  auto execution = new SequentialExecution();
   execution->AddOp(this);
   this->SetExecution(execution);
 
