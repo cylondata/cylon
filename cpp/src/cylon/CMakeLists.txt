@@ -83,7 +83,13 @@ add_library(cylon SHARED
         ctx/arrow_memory_pool_utils.hpp
         ctx/arrow_memory_pool_utils.cpp
         arrow/arrow_builder.hpp
-        arrow/arrow_builder.cpp)
+        arrow/arrow_builder.cpp
+        compute/aggregates.hpp
+        compute/aggregates.cpp
+        net/comm_operations.hpp
+        net/mpi/mpi_operations.cpp
+        net/mpi/mpi_operations.hpp
+        )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
 
