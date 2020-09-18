@@ -30,6 +30,12 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
   for (auto const &tab:out) {
     this->InsertToAllChildren(tab.first, tab.second);
   }
+
+  // we are going to free if retain is set to false
+  if (!table->IsRetain()) {
+    table.reset();
+  }
+
   return true;
 }
 
