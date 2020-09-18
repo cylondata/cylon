@@ -114,6 +114,8 @@ int main(int argc, char *argv[]) {
 
   op.InsertTable(100, first_table);
   op.InsertTable(200, second_table);
+  first_table.reset();
+  second_table.reset();
   auto execution = op.GetExecution();
   execution->WaitForCompletion();
   auto join_end_time = std::chrono::steady_clock::now();
