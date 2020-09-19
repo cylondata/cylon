@@ -8,10 +8,32 @@
 
 namespace cylon {
 
-template<typename ARROW_T, typename C_TYPE>
-cylon::Status ProcessGroup(const std::shared_ptr<Table> &table, const C_TYPE &start, const C_TYPE &end,) {
-  return Status::OK();
-}
+//template<typename ARROW_T, typename C_TYPE>
+//cylon::Status ProcessGroup(const std::shared_ptr<Table> &table, const C_TYPE &start, const C_TYPE &end) {
+//  return Status::OK();
+//}
+
+//template<typename ARROW_ARRAY_T, typename C_TYPE>
+//void GenerateGroupedColumns(const shared_ptr<ARROW_ARRAY_T> col, std::vector<int64_t> &boundaries) {
+//  const int64_t num_rows = col->length();
+//
+//  if (!num_rows) return;
+//
+//  boundaries.clear();
+//  boundaries.push_back(0);
+//
+//  C_TYPE prev_val = col->Value(0), curr_val;
+//  for (int64_t i = 1; i < num_rows; ++i) {
+//    curr_val = col->Value(i);
+//
+//    if (curr_val != prev_val) {
+////      ProcessGroup<>(start_idx, i);
+//      prev_val = curr_val;
+////      prev_idx = i + 1; // max would be num_rows. so, no OOB
+//    }
+//  }
+//  boundaries.push_back(num_rows);
+//}
 
 /**
  * Local group by operation
@@ -39,34 +61,30 @@ cylon::Status LocalGroupBy(const std::shared_ptr<Table> &table,
 
   shared_ptr<arrow::Table> sorted_table;
   arrow::Status a_status;
+  arrow::MemoryPool *memory_pool = cylon::ToArrowPool(ctx);
 
   // sort table (+ combining table chunks)
-  a_status = cylon::util::SortTable(table->get_table(), 0, &sorted_table, cylon::ToArrowPool(ctx));
+  a_status = cylon::util::SortTable(table->get_table(), 0, &sorted_table, memory_pool);
   if (!a_status.ok()) {
     LOG(FATAL) << "Failed to sort column to indices" << a_status.ToString();
-    return cylon::Status(cylon::Code::ExecutionError, a_status.message());;
+    return cylon::Status(cylon::Code::ExecutionError, a_status.message());
   }
 
-  using ARROW_ARRAY_T = typename arrow::TypeTraits<NUM_ARROW_T>::ArrayType;
-  using C_TYPE = typename arrow::TypeTraits<NUM_ARROW_T>::CType;
-
-//  for ()
+//  using ARROW_ARRAY_T = typename arrow::TypeTraits<NUM_ARROW_T>::ArrayType; // arrow numeric type of the
+//  using C_TYPE = typename arrow::TypeTraits<NUM_ARROW_T>::CType;
+//
+//  // builders for new columns
+//  std::vector<std::unique_ptr<arrow::ArrayBuilder>> builders;
+//  for (auto &&col: sorted_table->columns()) {
+//    std::unique_ptr<arrow::ArrayBuilder> builder;
+//    if (!(a_status = arrow::MakeBuilder(memory_pool, col->type(), &builder)).ok()) {
+//      return cylon::Status(cylon::Code::ExecutionError, a_status.message());
+//    }
+//    builders.push_back(builder);
+//  }
 //
 //  const shared_ptr<ARROW_ARRAY_T>
 //      &index_col = std::static_pointer_cast<ARROW_ARRAY_T>(sorted_table->column(0)->chunk(0));
-//
-//  const int64_t num_rows = index_col->length();
-//  int64_t start_idx = 0;
-//  C_TYPE current_val = index_col->Value(0), next_val;
-//  for (int64_t i = 0; i < num_rows; ++i) {
-//    next_val = index_col->Value(i);
-//
-//    if (current_val != next_val){
-//      ProcessGroup<>(start_idx, i);
-//      current_val = next_val;
-//      start_idx =
-//    }
-//  }
 
   return cylon::Status();
 }
