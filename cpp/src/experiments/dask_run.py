@@ -26,7 +26,8 @@ world = args['world']
 rows = args['rows']
 it = args['it']
 
-
+TOTAL_MEM = 200
+MIN_MEM= 20 
 TOTAL_NODES = 10
 
 nodes_file = "nodes"
@@ -42,15 +43,18 @@ def start_dask(procs, nodes):
     
     time.sleep(5)   
 
+    mem_per_worker = max(int(TOTAL_MEM/procs), MIN_MEM)
     
     for ip in ips[0:nodes]:
         print("starting worker", ip, flush=True)
-        subprocess.Popen(["ssh", ip, "/N/u2/d/dnperera/victor/git/cylon/ENV/bin/dask-worker", "v-001:8786", "--interface", "enp175s0f0", "--nthreads", "1", "--nprocs", str(procs), "--memory-limit", "20GB", "--local-directory", "/scratch/dnperera/dask/", "--scheduler-file", "/N/u2/d/dnperera/dask-sched.json"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        subprocess.Popen(["ssh", ip, "/N/u2/d/dnperera/victor/git/cylon/ENV/bin/dask-worker",
+                          "v-001:8786", "--interface", "enp175s0f0", "--nthreads", "1",
+                          "--nprocs", str(procs), "--memory-limit", f"{mem_per_worker}GB",
+                          "--local-directory", "/scratch/dnperera/dask/", "--scheduler-file", "/N/u2/d/dnperera/dask-sched.json"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     
     time.sleep(5)   
         
         
-
 def stop_dask():   
     for ip in ips:
         print("stopping worker", ip, flush=True)

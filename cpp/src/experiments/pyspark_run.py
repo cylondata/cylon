@@ -28,6 +28,7 @@ if __name__ == "__main__":
         .config("spark.executor.cores", 1) \
         .config("spark.memory.fraction", 0.75) \
         .getOrCreate()
+#         .config("spark.local.dir", "/scratch_hdd/dnperera/") \
 
     spark.conf.set("spark.sql.autoBroadcastJoinThreshold", -1)
     

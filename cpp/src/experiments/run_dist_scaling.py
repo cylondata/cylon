@@ -76,8 +76,11 @@ spark_py = "~/victor/git/cylon/cpp/src/experiments/pyspark_run.py "
 spark_master = "spark://v-001:7077"
 spark_slaves_file = "/N/u2/d/dnperera/victor/software/spark-2.4.6-bin-hadoop2.7/conf/slaves"
 
-print("\n\n##### cleaning up hdfs dfs", flush=True)
-os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
+def cleanup_hdfs():
+    print("\n\n##### cleaning up hdfs dfs", flush=True)
+    os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
+    
+# cleanup_hdfs()
 
 PYTHON_EXEC = "~/victor/git/cylon/ENV/bin/python"
 
@@ -118,16 +121,36 @@ def restart_spark_cluster(world_size):
     os.system(f"{spark_home}/sbin/start-all.sh")
     print(f"##### spark cluster restarted! {world_size}", flush=True)
 
+    
+THREADS = 20
+
+
+def push_file_to_hdfs(f):
+    os.system(f"{hdfs_dfs} -put -f {f} {dfs_base}")
+
+
+from multiprocessing import Pool
+
 
 for i in row_cases:
     for w in world_sizes:
         print(f"\n##### rows {i} world_size {w} starting!", flush=True)
-        s_dir = f"~/temp/twx/{scaling}/{i}/{w}/"
+        s_dir = f"/N/u2/d/dnperera/temp/twx/{scaling}/{i}/{w}/"
         b_dir = f"/scratch_hdd/dnperera/"
 
-        if spark or pspark:
-            print(f"pushing files to hdfs {i}")
-            os.system(f"{hdfs_dfs} -put -f {s_dir}/csv*.csv {dfs_base}")
+#         if spark or pspark:
+#             print(f"pushing files to hdfs {i}", flush=True)
+#             all_files = [os.path.abspath(os.path.join(s_dir, p)) for p in os.listdir(s_dir)]
+#             print(f"total files {len(all_files)}", flush=True)
+
+#             p = Pool(THREADS)
+#             p.map(push_file_to_hdfs, all_files)
+#             p.close()
+#             p.join()
+#             print(f"pushing files to hdfs DONE", flush=True)
+
+#             print(f"pushing files to hdfs {i}")
+#             os.system(f"{hdfs_dfs} -put -f {s_dir}/csv*.csv {dfs_base}")
 
         if twx:
             for ex in execs:
@@ -211,9 +234,9 @@ for i in row_cases:
                 print("\n##### executing", spark_exec, flush=True)
 
                 os.system(spark_exec)
+            
+#             cleanup_hdfs()
 
-            print("\n\n##### cleaning up hdfs dfs", flush=True)
-            os.system(f"{hdfs_dfs} -rm -skipTrash {dfs_base}/csv*.csv")
             print("\n\n##### spark done .....", flush=True)
         
         print(f"\n##### rows {i} world_size {w} done!\n-----------------------------------------", flush=True)
