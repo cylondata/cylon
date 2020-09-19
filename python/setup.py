@@ -55,7 +55,7 @@ additional_compile_args = [std_version,
 extra_compile_args = extra_link_args + additional_compile_args
 extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 
-arrow_library_directory = os.path.join(ARROW_HOME, "arrow", "install", "lib64")
+arrow_library_directory = os.path.join(ARROW_HOME, "arrow", "install", "lib")
 arrow_lib_include_dir = os.path.join(ARROW_HOME, "arrow", "install", "include")
 cylon_library_directory = os.path.join(ARROW_HOME, "lib")
 

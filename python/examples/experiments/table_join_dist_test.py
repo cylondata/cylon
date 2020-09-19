@@ -7,8 +7,6 @@ from pycylon.ctx.context import CylonContext
 from pycylon.data.table import Table
 from pycylon.data.table import csv_reader
 
-import gc
-
 parser = argparse.ArgumentParser(description='generate random data')
 parser.add_argument('-s', dest='src_dir', type=str, help='source dir', required=True)
 parser.add_argument('-b', dest='base_dir', type=str, help='base dir', required=True)
@@ -65,10 +63,6 @@ logging.info(f"{srank} Reading tables")
 
 table1: Table = csv_reader.read(ctx, csv1, ',')
 table2: Table = csv_reader.read(ctx, csv2, ',')
-    
-ctx.barrier()
-print(f"$$$$$ time {time.time()}", flush=True)
-
 
 try:
     logging.info(
