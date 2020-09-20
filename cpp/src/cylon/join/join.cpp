@@ -105,8 +105,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
     return status;
   }
   auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Left sorting time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+//  LOG(INFO) << "Left sorting time : "
+//            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> right_index_sorted_column;
@@ -116,8 +116,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
     return status;
   }
   t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "right sorting time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+//  LOG(INFO) << "right sorting time : "
+//            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   CPP_KEY_TYPE left_key, right_key;
   std::vector<int64_t> left_subset, right_subset;
@@ -225,9 +225,9 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
   }
 
   t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Index join time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Building final table with number of tuples - " << left_indices->size();
+//  LOG(INFO) << "Index join time : "
+//            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+//  LOG(INFO) << "Building final table with number of tuples - " << left_indices->size();
 
   t1 = std::chrono::high_resolution_clock::now();
   // build final table
@@ -241,9 +241,9 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       joined_table,
       memory_pool);
   t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Built final table in : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Done and produced : " << left_indices->size();
+//  LOG(INFO) << "Built final table in : "
+//            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+//  LOG(INFO) << "Done and produced : " << left_indices->size();
   left_indices->clear();
   right_indices->clear();
   return status;
