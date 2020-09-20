@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_OPS_MERGE_OP_H_
-#define CYLON_SRC_CYLON_OPS_MERGE_OP_H_
+#ifndef CYLON_SRC_CYLON_OPS_SPLIT_OP_H_
+#define CYLON_SRC_CYLON_OPS_SPLIT_OP_H_
 
 #include <vector>
 #include <map>
@@ -22,14 +22,32 @@
 #include "partition_op.hpp"
 
 namespace cylon {
-class MergeOp : public Op {
+
+class SplitOpConfig {
  private:
-  std::unordered_map<int32_t, vector<std::shared_ptr<arrow::Table>>> received_tables_;
+  int no_of_partitions;
+  std::shared_ptr<std::vector<int>> hash_columns;
+
  public:
-  MergeOp(const std::shared_ptr<CylonContext> &ctx,
+  SplitOpConfig(int no_of_partitions, std::shared_ptr<std::vector<int>> hash_columns);
+  int NoOfPartitions();
+  std::shared_ptr<std::vector<int>> HashColumns();
+
+  static std::shared_ptr<SplitOpConfig> Make(int no_partitions, const std::vector<int> &hash_cols);
+};
+
+class SplitOp : public Op {
+ private:
+  std::vector<std::shared_ptr<ArrowArrayStreamingSplitKernel>> received_tables_;
+  std::shared_ptr<SplitOpConfig> config_;
+  int hash_column_;
+  std::vector<int> targets;
+ public:
+  SplitOp(const std::shared_ptr<CylonContext> &ctx,
           const std::shared_ptr<arrow::Schema> &schema,
           int32_t id,
-          const std::shared_ptr<ResultsCallback> &callback);
+          const std::shared_ptr<ResultsCallback> &callback,
+          const std::shared_ptr<SplitOpConfig> &cfg);
 
   bool Execute(int tag, std::shared_ptr<Table> table) override;
 
@@ -37,6 +55,6 @@ class MergeOp : public Op {
 
   bool Finalize() override;
 };
-}
+}  // namespace cylon
 
-#endif //CYLON_SRC_CYLON_OPS_MERGE_OP_H_
+#endif //CYLON_SRC_CYLON_OPS_SPLIT_OP_H_

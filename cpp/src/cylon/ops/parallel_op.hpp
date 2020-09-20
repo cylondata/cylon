@@ -41,7 +41,6 @@ class Op {
   std::unordered_map<int, cylon::Op *> children{};
   std::shared_ptr<ResultsCallback> callback;
   std::function<int(int)> router;
-  std::shared_ptr<arrow::Schema> schema;
 
   std::queue<std::shared_ptr<cylon::Table>> *GetQueue(int tag);
   Op *GetChild(int tag);
@@ -66,6 +65,8 @@ class Op {
   bool TerminalCheck(int tag, std::shared_ptr<cylon::Table> table);
 
  protected:
+  std::shared_ptr<arrow::Schema> schema;
+
   int id;
 
   std::shared_ptr<cylon::CylonContext> ctx_;

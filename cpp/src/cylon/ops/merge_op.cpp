@@ -15,12 +15,11 @@
 #include <ctx/arrow_memory_pool_utils.hpp>
 #include "merge_op.hpp"
 
-cylon::MergeOp::MergeOp(std::shared_ptr<CylonContext> ctx,
-                        std::shared_ptr<arrow::Schema> schema,
+cylon::MergeOp::MergeOp(const std::shared_ptr<CylonContext> &ctx,
+                        const std::shared_ptr<arrow::Schema> &schema,
                         int32_t id,
-                        std::shared_ptr<ResultsCallback> callback) :
-    Op(std::move(ctx), std::move(schema), id,
-       std::move(callback)) {
+                        const std::shared_ptr<ResultsCallback> &callback) :
+    Op(ctx, schema, id, callback) {
 }
 
 bool cylon::MergeOp::Execute(int tag, std::shared_ptr<Table> table) {

@@ -114,6 +114,8 @@ add_library(cylon SHARED
         ops/kernels/join_kernel.cpp
         ops/merge_op.cpp
         ops/merge_op.hpp
+        ops/split_op.cpp
+        ops/split_op.hpp
         arrow/arrow_builder.cpp
         compute/aggregates.hpp
         compute/aggregates.cpp

@@ -16,6 +16,7 @@
 #include <utility>
 #include "all_to_all_op.hpp"
 #include "merge_op.hpp"
+#include "split_op.hpp"
 
 cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
                             const std::shared_ptr<arrow::Schema> &schema,
@@ -23,14 +24,14 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
                             const std::shared_ptr<ResultsCallback> &callback,
                             const std::shared_ptr<DisJoinOpConfig> &config) :
     RootOp(ctx, schema, id, callback) {
-  auto execution = new SequentialExecution();
+  auto execution = new RoundRobinExecution();
   execution->AddOp(this);
   this->SetExecution(execution);
 
   this->config = config;
   const std::vector<int32_t> PARTITION_IDS = {LEFT_RELATION, RIGHT_RELATION};
   const int32_t JOIN_OP_ID = 4;
-  const int32_t MERGE_OP_ID = 5;
+//  const int32_t MERGE_OP_ID = 5;
   // create graph
   // local join
   auto join_op = new JoinOp(ctx, schema, JOIN_OP_ID, callback, this->config->GetJoinConfig());
@@ -46,10 +47,13 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
                                      std::make_shared<AllToAllOpConfig>());
     partition_op->AddChild(shuffle_op);
     execution->AddOp(shuffle_op);
-    auto merge_op = new MergeOp(ctx, schema, MERGE_OP_ID, callback);
-    shuffle_op->AddChild(merge_op);
-    execution->AddOp(merge_op);
-    merge_op->AddChild(join_op);
+//    auto merge_op = new MergeOp(ctx, schema, MERGE_OP_ID, callback);
+    std::shared_ptr<SplitOpConfig> kPtr = SplitOpConfig::Make(2000, {0});
+    LOG(INFO) << "aaaaa";
+    auto split_op = new SplitOp(ctx, schema, relation_id, callback, kPtr);
+    shuffle_op->AddChild(split_op);
+    execution->AddOp(split_op);
+    split_op->AddChild(join_op);
   }
   execution->AddOp(join_op);
 }
