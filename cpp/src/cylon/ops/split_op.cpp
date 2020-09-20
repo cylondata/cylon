@@ -94,7 +94,7 @@ cylon::SplitOp::SplitOp(const std::shared_ptr<CylonContext> &ctx,
   config_ = cfg;
   hash_column_ = (*(config_->HashColumns()))[0];
   int kSize = config_->NoOfPartitions();
-  targets.resize(kSize);
+  targets.resize(kSize * ctx->GetWorldSize());
   std::iota (std::begin(targets), std::end(targets), 0);
   for (int i = 0; i < schema->num_fields(); i++) {
     std::shared_ptr<ArrowArrayStreamingSplitKernel> splitKernel;
@@ -114,7 +114,10 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> cy_table) {
   outPartitions.reserve(length);
   Status status = HashPartitionArray(cylon::ToArrowPool(ctx_.get()), arr,
                                      targets, &outPartitions, cnts);
-
+  int size = ctx_->GetWorldSize();
+  for (int i = 0; i < length; i++) {
+    outPartitions[i] = outPartitions[i] / size;
+  }
   // now split
   for (int i = 0; i < table->num_columns(); i++) {
     std::shared_ptr<arrow::DataType> type = table->column(i)->chunk(0)->type();
