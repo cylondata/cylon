@@ -94,8 +94,10 @@ cylon::SplitOp::SplitOp(const std::shared_ptr<CylonContext> &ctx,
   config_ = cfg;
   hash_column_ = (*(config_->HashColumns()))[0];
   int kSize = config_->NoOfPartitions();
-  targets.resize(kSize * ctx->GetWorldSize());
+  targets.resize(kSize);
+  hash_targets.resize(kSize * ctx_->GetWorldSize());
   std::iota (std::begin(targets), std::end(targets), 0);
+  std::iota (std::begin(hash_targets), std::end(hash_targets), 0);
   for (int i = 0; i < schema->num_fields(); i++) {
     std::shared_ptr<ArrowArrayStreamingSplitKernel> splitKernel;
     Status status = CreateStreamingSplitter(schema->fields()[i]->type(), targets,
@@ -109,12 +111,13 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> cy_table) {
   // first we need to calculate the hash
   std::shared_ptr<arrow::Array> arr = table->column(hash_column_)->chunk(0);
   int64_t length = arr->length();
-  std::vector<uint32_t> cnts(config_->NoOfPartitions(), 0);
+  int size = ctx_->GetWorldSize();
+  std::vector<uint32_t> cnts(config_->NoOfPartitions() * size, 0);
   std::vector<int64_t> outPartitions;
   outPartitions.reserve(length);
   Status status = HashPartitionArray(cylon::ToArrowPool(ctx_.get()), arr,
-                                     targets, &outPartitions, cnts);
-  int size = ctx_->GetWorldSize();
+                                     hash_targets, &outPartitions, cnts);
+  std::string s = " ";
   for (int i = 0; i < length; i++) {
     outPartitions[i] = outPartitions[i] / size;
   }

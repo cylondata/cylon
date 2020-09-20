@@ -49,7 +49,6 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
     execution->AddOp(shuffle_op);
 //    auto merge_op = new MergeOp(ctx, schema, MERGE_OP_ID, callback);
     std::shared_ptr<SplitOpConfig> kPtr = SplitOpConfig::Make(2000, {0});
-    LOG(INFO) << "aaaaa";
     auto split_op = new SplitOp(ctx, schema, relation_id, callback, kPtr);
     shuffle_op->AddChild(split_op);
     execution->AddOp(split_op);

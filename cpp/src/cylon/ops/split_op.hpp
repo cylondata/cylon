@@ -42,6 +42,7 @@ class SplitOp : public Op {
   std::shared_ptr<SplitOpConfig> config_;
   int hash_column_;
   std::vector<int> targets;
+  std::vector<int> hash_targets;
  public:
   SplitOp(const std::shared_ptr<CylonContext> &ctx,
           const std::shared_ptr<arrow::Schema> &schema,
