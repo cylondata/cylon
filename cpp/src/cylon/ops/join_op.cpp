@@ -15,6 +15,7 @@
 #include "join_op.hpp"
 
 #include <utility>
+#include <chrono>
 #include "partition_op.hpp"
 
 cylon::JoinOp::JoinOp(const std::shared_ptr<CylonContext> &ctx,
@@ -39,10 +40,14 @@ void cylon::JoinOp::OnParentsFinalized() {
 }
 
 bool cylon::JoinOp::Finalize() {
+  auto t1 = std::chrono::high_resolution_clock::now();
   // return finalize join
   std::shared_ptr<cylon::Table> final_result;
   this->join_kernel_->Finalize(final_result);
   this->InsertToAllChildren(0, final_result);
+  auto t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Join time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   return true;
 }
 
