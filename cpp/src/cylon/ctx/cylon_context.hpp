@@ -31,7 +31,7 @@ class CylonContext {
   std::unordered_map<std::string, std::string> config{};
   bool is_distributed;
   //cylon::net::Communicator *communicator{};
-  shared_ptr<cylon::net::Communicator> communicator{};
+  std::shared_ptr<cylon::net::Communicator> communicator{};
   cylon::MemoryPool *memory_pool{};
   int32_t sequence_no = 0;
 
@@ -53,7 +53,7 @@ class CylonContext {
    * @param <cylon::net::CommConfig*> config Configuration to be passed on to the cylon::net::Communicator
    * @return <cylon::CylonContext*>
    */
-  static std::shared_ptr<CylonContext> InitDistributed(net::CommConfig *config);
+  static std::shared_ptr<CylonContext> InitDistributed(std::shared_ptr<net::CommConfig> config);
 
   /**
    * Completes and closes all operations under the context
@@ -112,7 +112,7 @@ class CylonContext {
    * @param include_self
    * @return a std::vector<int> of ranks
    */
-  vector<int> GetNeighbours(bool include_self);
+  std::vector<int> GetNeighbours(bool include_self);
 
   /**
    * Returns memory pool

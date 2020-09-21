@@ -243,9 +243,9 @@ uint8_t *ArrowBuffer::GetByteBuffer() {
   return buf->mutable_data();
 }
 
-ArrowBuffer::ArrowBuffer(shared_ptr<arrow::Buffer> buf) : buf(std::move(buf)) {}
+ArrowBuffer::ArrowBuffer(std::shared_ptr<arrow::Buffer> buf) : buf(std::move(buf)) {}
 
-shared_ptr<arrow::Buffer> ArrowBuffer::getBuf() const {
+std::shared_ptr<arrow::Buffer> ArrowBuffer::getBuf() const {
   return buf;
 }
 }  // namespace cylon

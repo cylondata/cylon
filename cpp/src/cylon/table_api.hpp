@@ -53,26 +53,26 @@ Status JoinTables(std::shared_ptr<cylon::CylonContext> &ctx,
 				  const std::string &dest_id);
 
 Status DistributedJoinTables(
-	std::shared_ptr<CylonContext> &ctx,
+	std::shared_ptr<cylon::CylonContext> &ctx,
 	const std::string &table_left,
 	const std::string &table_right,
 	cylon::join::config::JoinConfig join_config,
 	const std::string &dest_id
 );
 
-Status Union(std::shared_ptr<CylonContext> &ctx,
+Status Union(std::shared_ptr<cylon::CylonContext> &ctx,
 			 const std::string &table_left,
 			 const std::string &table_right,
 			 const std::string &dest_id);
 
 Status DistributedUnion(
-	std::shared_ptr<CylonContext> &ctx,
+	std::shared_ptr<cylon::CylonContext> &ctx,
 	const std::string &table_left,
 	const std::string &table_right,
 	const std::string &dest_id
 );
 
-Status Subtract(std::shared_ptr<CylonContext> &ctx,
+Status Subtract(std::shared_ptr<cylon::CylonContext> &ctx,
 				const std::string &table_left,
 				const std::string &table_right,
 				const std::string &dest_id);
@@ -84,13 +84,13 @@ Status DistributedSubtract(
 	const std::string &dest_id
 );
 
-Status Intersect(std::shared_ptr<CylonContext> &ctx,
+Status Intersect(std::shared_ptr<cylon::CylonContext> &ctx,
 				 const std::string &table_left,
 				 const std::string &table_right,
 				 const std::string &dest_id);
 
 Status DistributedIntersect(
-	std::shared_ptr<CylonContext> &ctx,
+	std::shared_ptr<cylon::CylonContext> &ctx,
 	const std::string &table_left,
 	const std::string &table_right,
 	const std::string &dest_id

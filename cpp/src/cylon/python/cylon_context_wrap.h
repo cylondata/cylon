@@ -66,7 +66,7 @@ class cylon_context_wrap {
 
   int GetContextId();
 
-  vector<int> GetNeighbours(bool include_self);
+  std::vector<int> GetNeighbours(bool include_self);
 
   cylon::MemoryPool *GetMemoryPool();
 

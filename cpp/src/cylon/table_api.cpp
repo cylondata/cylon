@@ -202,7 +202,7 @@ Status SortTable(std::shared_ptr<cylon::CylonContext> &ctx,
     return Status(Code::KeyError, "Couldn't find the right table");
   }
 
-  shared_ptr<cylon::Table> out;
+  std::shared_ptr<cylon::Table> out;
   Status status = table->Sort(columnIndex, out);
   if (status.is_ok()) {
     PutTable(sortedTableId, out);
@@ -246,7 +246,7 @@ Status VerifyTableSchema(const std::shared_ptr<arrow::Table> &ltab,
 }
 
 
-Status Union(std::shared_ptr<CylonContext> &ctx,
+Status Union(std::shared_ptr<cylon::CylonContext> &ctx,
 			 const std::string &table_left,
 			 const std::string &table_right,
 			 const std::string &dest_id) {
@@ -260,7 +260,7 @@ Status Union(std::shared_ptr<CylonContext> &ctx,
   return status;
 }
 
-Status Subtract(std::shared_ptr<CylonContext> &ctx,
+Status Subtract(std::shared_ptr<cylon::CylonContext> &ctx,
 				const std::string &table_left,
 				const std::string &table_right,
 				const std::string &dest_id) {
@@ -274,7 +274,7 @@ Status Subtract(std::shared_ptr<CylonContext> &ctx,
   return status;
 }
 
-Status Intersect(std::shared_ptr<CylonContext> &ctx,
+Status Intersect(std::shared_ptr<cylon::CylonContext> &ctx,
 				 const std::string &table_left,
 				 const std::string &table_right,
 				 const std::string &dest_id) {
@@ -288,7 +288,7 @@ Status Intersect(std::shared_ptr<CylonContext> &ctx,
   return status;
 }
 
-Status DistributedUnion(std::shared_ptr<CylonContext> &ctx,
+Status DistributedUnion(std::shared_ptr<cylon::CylonContext> &ctx,
 						const std::string &table_left,
 						const std::string &table_right,
 						const std::string &dest_id) {
@@ -316,7 +316,7 @@ Status DistributedSubtract(std::shared_ptr<cylon::CylonContext> &ctx,
   return status;
 }
 
-Status DistributedIntersect(std::shared_ptr<CylonContext> &ctx,
+Status DistributedIntersect(std::shared_ptr<cylon::CylonContext> &ctx,
 							const std::string &table_left,
 							const std::string &table_right,
 							const std::string &dest_id) {

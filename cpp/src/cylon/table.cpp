@@ -173,14 +173,14 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
 	table.reset();
   }
   auto neighbours = ctx->GetNeighbours(true);
-  vector<std::shared_ptr<arrow::Table>> received_tables;
+  std::vector<std::shared_ptr<arrow::Table>> received_tables;
   // define call back to catch the receiving tables
   class AllToAllListener : public cylon::ArrowCallback {
-	vector<std::shared_ptr<arrow::Table>> *tabs;
+	std::vector<std::shared_ptr<arrow::Table>> *tabs;
 	int workerId;
 
    public:
-	explicit AllToAllListener(vector<std::shared_ptr<arrow::Table>> *tabs, int workerId) {
+	explicit AllToAllListener(std::vector<std::shared_ptr<arrow::Table>> *tabs, int workerId) {
 	  this->tabs = tabs;
 	  this->workerId = workerId;
 	}
@@ -242,14 +242,14 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
 	table.reset();
   }
   auto neighbours = ctx->GetNeighbours(true);
-  vector<std::shared_ptr<arrow::Table>> received_tables;
+  std::vector<std::shared_ptr<arrow::Table>> received_tables;
   // define call back to catch the receiving tables
   class AllToAllListener : public cylon::ArrowCallback {
-	vector<std::shared_ptr<arrow::Table>> *tabs;
+	std::vector<std::shared_ptr<arrow::Table>> *tabs;
 	int workerId;
 
    public:
-	explicit AllToAllListener(vector<std::shared_ptr<arrow::Table>> *tabs, int workerId) {
+	explicit AllToAllListener(std::vector<std::shared_ptr<arrow::Table>> *tabs, int workerId) {
 	  this->tabs = tabs;
 	  this->workerId = workerId;
 	}
@@ -382,7 +382,7 @@ Status Table::FromArrowTable(std::shared_ptr<cylon::CylonContext> &ctx,
 }
 
 Status Table::FromColumns(std::shared_ptr<cylon::CylonContext> &ctx,
-						  vector<std::shared_ptr<Column>> &&columns,
+						  std::vector<std::shared_ptr<Column>> &&columns,
 						  std::shared_ptr<Table> *tableOut) {
   arrow::Status status;
   arrow::SchemaBuilder schema_builder;
@@ -400,7 +400,7 @@ Status Table::FromColumns(std::shared_ptr<cylon::CylonContext> &ctx,
   }
 
   auto schema_result = schema_builder.Finish();
-  shared_ptr<arrow::Table> arrow_table = arrow::Table::Make(schema_result.ValueOrDie(), col_arrays);
+  std::shared_ptr<arrow::Table> arrow_table = arrow::Table::Make(schema_result.ValueOrDie(), col_arrays);
 
   if (!cylon::tarrow::validateArrowTableTypes(arrow_table)) {
 	LOG(FATAL) << "Types not supported";
@@ -446,7 +446,7 @@ void Table::Print(int row1, int row2, int col1, int col2) {
 
 Status Table::Merge(std::shared_ptr<cylon::CylonContext> &ctx,
 					const std::vector<std::shared_ptr<cylon::Table>> &ctables,
-					shared_ptr<Table> &tableOut) {
+					std::shared_ptr<Table> &tableOut) {
   std::vector<std::shared_ptr<arrow::Table>> tables;
   for (auto it = ctables.begin(); it < ctables.end(); it++) {
 	std::shared_ptr<arrow::Table> arrow;
@@ -467,7 +467,7 @@ Status Table::Merge(std::shared_ptr<cylon::CylonContext> &ctx,
   }
 }
 
-Status Table::Sort(int sort_column, shared_ptr<cylon::Table> &out) {
+Status Table::Sort(int sort_column, std::shared_ptr<cylon::Table> &out) {
   auto col = table_->column(sort_column)->chunk(0);
   std::shared_ptr<arrow::Array> indexSorts;
   arrow::Status status = SortIndices(cylon::ToArrowPool(ctx), col, &indexSorts);
@@ -604,7 +604,7 @@ Status Table::DistributedJoin(std::shared_ptr<cylon::Table> &left,
 							  cylon::join::config::JoinConfig join_config,
 							  std::shared_ptr<cylon::Table> *out) {
   // check whether the world size is 1
-  shared_ptr<cylon::CylonContext> ctx = left->ctx;
+  std::shared_ptr<cylon::CylonContext> ctx = left->ctx;
   if (ctx->GetWorldSize() == 1) {
 	cylon::Status status = Table::Join(
 		left,
@@ -641,7 +641,7 @@ Status Table::DistributedJoin(std::shared_ptr<cylon::Table> &left,
   }
 }
 
-Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr<Table> &out) {
+Status Table::Select(const std::function<bool(cylon::Row)> &selector, std::shared_ptr<Table> &out) {
   // boolean builder to hold the mask
   arrow::BooleanBuilder boolean_builder(cylon::ToArrowPool(ctx));
   for (int64_t row_index = 0; row_index < Rows(); row_index++) {
@@ -669,8 +669,8 @@ Status Table::Select(const std::function<bool(cylon::Row)> &selector, shared_ptr
 
 Status Table::Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
 					std::shared_ptr<Table> &out) {
-  shared_ptr<arrow::Table> ltab = first->get_table();
-  shared_ptr<arrow::Table> rtab = second->get_table();
+  std::shared_ptr<arrow::Table> ltab = first->get_table();
+  std::shared_ptr<arrow::Table> rtab = second->get_table();
   Status status = VerifyTableSchema(ltab, second->get_table());
   if (!status.is_ok()) return status;
   std::shared_ptr<arrow::Table> tables[2] = {ltab, second->get_table()};
@@ -734,10 +734,10 @@ Status Table::Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &secon
   return Status::OK();
 }
 
-Status Table::Subtract(shared_ptr<Table> &first,
-					   shared_ptr<Table> &second, std::shared_ptr<Table> &out) {
-  shared_ptr<arrow::Table> ltab = first->get_table();
-  shared_ptr<arrow::Table> rtab = second->get_table();
+Status Table::Subtract(std::shared_ptr<Table> &first,
+					   std::shared_ptr<Table> &second, std::shared_ptr<Table> &out) {
+  std::shared_ptr<arrow::Table> ltab = first->get_table();
+  std::shared_ptr<arrow::Table> rtab = second->get_table();
   Status status = VerifyTableSchema(ltab, rtab);
   if (!status.is_ok()) {
 	return status;
@@ -805,10 +805,10 @@ Status Table::Subtract(shared_ptr<Table> &first,
   return Status::OK();
 }
 
-Status Table::Intersect(shared_ptr<Table> &first,
-						shared_ptr<Table> &second, std::shared_ptr<Table> &out) {
-  shared_ptr<arrow::Table> ltab = first->get_table();
-  shared_ptr<arrow::Table> rtab = second->get_table();
+Status Table::Intersect(std::shared_ptr<Table> &first,
+						std::shared_ptr<Table> &second, std::shared_ptr<Table> &out) {
+  std::shared_ptr<arrow::Table> ltab = first->get_table();
+  std::shared_ptr<arrow::Table> rtab = second->get_table();
   Status status = VerifyTableSchema(ltab, rtab);
   if (!status.is_ok()) {
 	return status;
@@ -930,18 +930,18 @@ Status DoDistributedSetOperation(std::shared_ptr<cylon::CylonContext> &ctx,
   }
 }
 
-Status Table::DistributedUnion(shared_ptr<Table> &left, shared_ptr<Table> &right,
-							   shared_ptr<Table> &out) {
+Status Table::DistributedUnion(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
+							   std::shared_ptr<Table> &out) {
   return DoDistributedSetOperation(left->ctx, &Table::Union, left, right, out);
 }
 
-Status Table::DistributedSubtract(shared_ptr<Table> &left, shared_ptr<Table> &right,
-								  shared_ptr<Table> &out) {
+Status Table::DistributedSubtract(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
+								  std::shared_ptr<Table> &out) {
   return DoDistributedSetOperation(left->ctx, &Table::Subtract, left, right, out);
 }
 
-Status Table::DistributedIntersect(shared_ptr<Table> &left, shared_ptr<Table> &right,
-								   shared_ptr<Table> &out) {
+Status Table::DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
+								   std::shared_ptr<Table> &out) {
   return DoDistributedSetOperation(left->ctx, &Table::Intersect, left, right, out);
 }
 
@@ -956,13 +956,13 @@ void ReadCSVThread(cylon::CylonContext *ctx, const std::string &path,
 				   std::shared_ptr<cylon::Table> *table,
 				   cylon::io::config::CSVReadOptions options,
 				   const std::shared_ptr<std::promise<Status>> &status_promise) {
-  status_promise->set_value(Table::FromCSV(reinterpret_cast<shared_ptr<cylon::CylonContext> &>(ctx),
+  status_promise->set_value(Table::FromCSV(reinterpret_cast<std::shared_ptr<cylon::CylonContext> &>(ctx),
 										   path,
 										   *table,
 										   options));
 }
 
-Status Table::FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const vector<std::string> &paths,
+Status Table::FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
 					  const std::vector<std::shared_ptr<Table> *> &tableOuts,
 					  io::config::CSVReadOptions options) {
   if (options.IsConcurrentFileReads()) {
@@ -1072,7 +1072,7 @@ Status Table::PrintToOStream(
   return Status(Code::OK);
 }
 
-shared_ptr<arrow::Table> Table::get_table() {
+std::shared_ptr<arrow::Table> Table::get_table() {
   return table_;
 }
 
@@ -1084,7 +1084,7 @@ std::shared_ptr<Column> Table::GetColumn(int32_t index) const {
   return this->columns_.at(index);
 }
 
-std::vector<shared_ptr<cylon::Column>> Table::GetColumns() const {
+std::vector<std::shared_ptr<cylon::Column>> Table::GetColumns() const {
   return this->columns_;
 }
 }  // namespace cylon

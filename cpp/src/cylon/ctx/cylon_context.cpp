@@ -22,16 +22,16 @@
 
 namespace cylon {
 
-shared_ptr<CylonContext> CylonContext::Init() {
-  return make_shared<CylonContext>(false);
+std::shared_ptr<CylonContext> CylonContext::Init() {
+  return std::make_shared<CylonContext>(false);
 }
 CylonContext::CylonContext(bool distributed) {
   this->is_distributed = distributed;
 }
 
-shared_ptr<CylonContext> CylonContext::InitDistributed(net::CommConfig *config) {
+std::shared_ptr<CylonContext> CylonContext::InitDistributed(std::shared_ptr<net::CommConfig> config) {
   if (config->Type() == net::CommType::MPI) {
-    auto ctx = make_shared<CylonContext>(true);
+    auto ctx = std::make_shared<CylonContext>(true);
     ctx->communicator = std::make_shared<net::MPICommunicator>();
     ctx->communicator->Init(config);
     ctx->is_distributed = true;
@@ -84,8 +84,8 @@ void CylonContext::Finalize() {
     this->communicator->Finalize();
   }
 }
-vector<int> CylonContext::GetNeighbours(bool include_self) {
-  vector<int> neighbours{};
+std::vector<int> CylonContext::GetNeighbours(bool include_self) {
+  std::vector<int> neighbours{};
   neighbours.reserve(this->GetWorldSize());
   for (int i = 0; i < this->GetWorldSize(); i++) {
     if (i == this->GetRank() && !include_self) {

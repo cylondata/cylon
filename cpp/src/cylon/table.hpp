@@ -43,7 +43,7 @@ class Table {
    */
   Table(std::shared_ptr<arrow::Table> &tab, const std::shared_ptr<cylon::CylonContext> &ctx)
 	  : ctx(ctx), table_(tab),
-		columns_(std::vector<shared_ptr<Column>>(tab->num_columns())) {
+		columns_(std::vector<std::shared_ptr<Column>>(tab->num_columns())) {
 	const int num_cols = table_->num_columns();
 	for (int i = 0; i < num_cols; i++) {
 	  const auto f = table_->field(i);
@@ -53,7 +53,7 @@ class Table {
   }
 
   Table(std::shared_ptr<arrow::Table> &tab, std::shared_ptr<cylon::CylonContext> &ctx,
-		const std::vector<shared_ptr<Column>> &cols)
+		const std::vector<std::shared_ptr<Column>> &cols)
 	  : ctx(ctx), table_(tab) {
 	this->columns_ = cols;
   }
@@ -328,17 +328,17 @@ class Table {
    * Get the column vector of the table
    * @return
    */
-  std::vector<shared_ptr<cylon::Column>> GetColumns() const;
+  std::vector<std::shared_ptr<cylon::Column>> GetColumns() const;
 
  private:
   /**
    * Every table should have an unique id
    */
   std::string id_;
-  shared_ptr<cylon::CylonContext> ctx;
+  std::shared_ptr<cylon::CylonContext> ctx;
   std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
-  std::vector<shared_ptr<cylon::Column>> columns_;
+  std::vector<std::shared_ptr<cylon::Column>> columns_;
 };
 }  // namespace cylon
 

@@ -37,7 +37,7 @@ cylon::Status AllReduce(cylon::net::CommType comm_type,
                         cylon::net::ReduceOp reduce_op) {
   using NUM_ARROW_SCALAR_T = typename arrow::TypeTraits<NUM_ARROW_T>::ScalarType;
 
-  const shared_ptr<NUM_ARROW_SCALAR_T> &send_scalar = std::static_pointer_cast<NUM_ARROW_SCALAR_T>(send.scalar());
+  const std::shared_ptr<NUM_ARROW_SCALAR_T> &send_scalar = std::static_pointer_cast<NUM_ARROW_SCALAR_T>(send.scalar());
   std::shared_ptr<NUM_ARROW_SCALAR_T> recv_scalar = std::make_shared<NUM_ARROW_SCALAR_T>();
 
   switch (comm_type) {
@@ -69,7 +69,7 @@ cylon::Status AllReduce(cylon::net::CommType comm_type,
 cylon::Status DoAllReduce(std::shared_ptr<cylon::CylonContext> &ctx,
                           const arrow::compute::Datum &send,
                           std::shared_ptr<Result> *receive,
-                          const shared_ptr<DataType> &data_type,
+                          const std::shared_ptr<DataType> &data_type,
                           cylon::net::ReduceOp reduce_op) {
   auto comm_type = ctx->GetCommType();
   switch (data_type->getType()) {
@@ -161,8 +161,8 @@ cylon::Status DoAllReduce(std::shared_ptr<cylon::CylonContext> &ctx,
 
 cylon::Status Sum(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output) {
   auto ctx = table->GetContext();
-  const shared_ptr<Column> &col = table->GetColumn(col_idx); // cylon column object
-  const shared_ptr<DataType> &data_type = col->GetDataType();
+  const std::shared_ptr<Column> &col = table->GetColumn(col_idx); // cylon column object
+  const std::shared_ptr<DataType> &data_type = col->GetDataType();
   const arrow::compute::Datum input(col->GetColumnData()); // input datum
 
   // do local operation
@@ -182,8 +182,8 @@ cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx,
   arrow::Status status;
   auto ctx = table->GetContext();
 
-  const shared_ptr<Column> &col = table->GetColumn(col_idx);
-  const shared_ptr<DataType> &data_type = cylon::Int64();
+  const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
+  const std::shared_ptr<DataType> &data_type = cylon::Int64();
 
   // count currently requires a single array (not a chunked array). So, merge arrays
   std::shared_ptr<arrow::Array> combined_input;
@@ -219,8 +219,8 @@ template<bool minMax>
 cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output) {
   auto ctx = table->GetContext();
 
-  const shared_ptr<Column> &col = table->GetColumn(col_idx);
-  const shared_ptr<DataType> &data_type = col->GetDataType();
+  const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
+  const std::shared_ptr<DataType> &data_type = col->GetDataType();
   const arrow::compute::Datum input(col->GetColumnData());
 
   arrow::compute::FunctionContext fn_ctx(cylon::ToArrowPool(ctx));

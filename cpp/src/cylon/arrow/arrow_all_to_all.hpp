@@ -89,11 +89,11 @@ class ArrowCallback {
  */
 class ArrowBuffer : public Buffer {
  public:
-  explicit ArrowBuffer(shared_ptr<arrow::Buffer> buf);
+  explicit ArrowBuffer(std::shared_ptr<arrow::Buffer> buf);
   int64_t GetLength() override;
   uint8_t *GetByteBuffer() override;
 
-  shared_ptr<arrow::Buffer> getBuf() const;
+  std::shared_ptr<arrow::Buffer> getBuf() const;
  private:
   std::shared_ptr<arrow::Buffer> buf;
 };

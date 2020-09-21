@@ -45,7 +45,7 @@ int MPICommunicator::GetRank() {
 int MPICommunicator::GetWorldSize() {
   return this->world_size;
 }
-void MPICommunicator::Init(CommConfig *config) {
+void MPICommunicator::Init(std::shared_ptr<CommConfig> config) {
   int initialized;
   MPI_Initialized(&initialized);
   if (!initialized) {
