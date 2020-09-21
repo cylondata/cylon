@@ -46,6 +46,7 @@ class SplitOp : public Op {
   std::chrono::high_resolution_clock::time_point start;
   bool started_time = false;
   long exec_time = 0;
+  long count = 0;
  public:
   SplitOp(const std::shared_ptr<CylonContext> &ctx,
           const std::shared_ptr<arrow::Schema> &schema,

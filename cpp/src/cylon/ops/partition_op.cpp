@@ -23,10 +23,21 @@ cylon::PartitionOp::PartitionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
                                 Op(ctx, schema, id, callback), config(config) {}
 
 bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
+  if (!started_time) {
+    start = std::chrono::high_resolution_clock::now();
+    started_time = true;
+  }
+  auto t1 = std::chrono::high_resolution_clock::now();
   std::unordered_map<int, std::shared_ptr<Table>> out;
   // todo pass ctx as a shared pointer
-  cylon::kernel::HashPartition(&*this->ctx_, table, *this->config->HashColumns(),
-                               this->config->NoOfPartitions(), &out);
+  std::shared_ptr<std::vector<int>> kPtr = this->config->HashColumns();
+  if (kPtr->size() > 1) {
+    cylon::kernel::HashPartition(&*this->ctx_, table, *kPtr,
+                                   this->config->NoOfPartitions(), &out);
+  } else {
+    cylon::kernel::HashPartition(&*this->ctx_, table, kPtr->at(0),
+                                 this->config->NoOfPartitions(), &out);
+  }
   for (auto const &tab:out) {
     this->InsertToAllChildren(tab.first, tab.second);
   }
@@ -35,11 +46,15 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
   if (!table->IsRetain()) {
     table.reset();
   }
-
+  auto t2 = std::chrono::high_resolution_clock::now();
+  exec_time += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   return true;
 }
 
 bool cylon::PartitionOp::Finalize() {
+  auto t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Partition time: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - start).count();
   return true;
 }
 

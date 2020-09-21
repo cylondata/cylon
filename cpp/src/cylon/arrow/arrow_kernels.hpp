@@ -147,7 +147,8 @@ class ArrowArrayStreamingSplitKernel {
    * @return
    */
   virtual int Split(std::shared_ptr<arrow::Array> &values,
-                    const std::vector<int64_t> &partitions) = 0;
+                    const std::vector<int64_t> &partitions,
+                    const std::vector<uint32_t> &cnts) = 0;
 
   /**
    * Finish the split
@@ -179,10 +180,16 @@ class ArrowArrayStreamingNumericSplitKernel : public ArrowArrayStreamingSplitKer
   }
 
   int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t> &partitions) override {
+            const std::vector<int64_t> &partitions,
+            const std::vector<uint32_t> &cnts) override {
     auto reader =
         std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     size_t kI = partitions.size();
+//    size_t kSize = builders_.size();
+//    for (size_t i = 0; i < kSize; i++) {
+//      builders_[i]->Reserve(cnts[i]);
+//    }
+
     for (size_t i = 0; i < kI; i++) {
       std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders_[partitions[i]];
       b->Append(reader->Value(i));
@@ -210,7 +217,8 @@ class FixedBinaryArrayStreamingSplitKernel : public ArrowArrayStreamingSplitKern
                                        arrow::MemoryPool *pool);
 
   int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t> &partitions) override;
+            const std::vector<int64_t> &partitions,
+            const std::vector<uint32_t> &cnts) override;
 
   int finish(std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) override;
 };
@@ -224,7 +232,8 @@ class BinaryArrayStreamingSplitKernel : public ArrowArrayStreamingSplitKernel {
                                   arrow::MemoryPool *pool);
 
   int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t> &partitions) override;
+            const std::vector<int64_t> &partitions,
+            const std::vector<uint32_t> &cnts) override;
 
   int finish(std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) override;
 };

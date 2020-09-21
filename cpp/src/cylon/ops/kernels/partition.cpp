@@ -89,5 +89,67 @@ Status HashPartition(cylon::CylonContext *ctx, const std::shared_ptr<cylon::Tabl
   }
   return Status::OK();
 }
+
+Status HashPartition(cylon::CylonContext *ctx, const std::shared_ptr<cylon::Table> table,
+                     int hash_column, int no_of_partitions,
+                     std::unordered_map<int, std::shared_ptr<cylon::Table>> *out) {
+  std::shared_ptr<arrow::Table> table_;
+  table->ToArrowTable(table_);
+
+  // keep arrays for each target, these arrays are used for creating the table
+  std::unordered_map<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>> data_arrays;
+  std::vector<int> partitions;
+  for (int t = 0; t < no_of_partitions; t++) {
+    partitions.push_back(t);
+    data_arrays.insert(
+        std::pair<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>>(
+            t, std::make_shared<std::vector<std::shared_ptr<arrow::Array>>>()));
+  }
+
+  int64_t length = 0;
+  auto column = table_->column(hash_column);
+  std::shared_ptr<arrow::Array> arr = column->chunk(0);
+  length = column->length();
+
+  // first we partition the table
+  std::vector<int64_t> outPartitions;
+  std::vector<uint32_t> counts(no_of_partitions, 0);
+
+  outPartitions.reserve(length);
+  Status status = HashPartitionArray(cylon::ToArrowPool(ctx), arr,
+                                      partitions, &outPartitions, counts);
+  if (!status.is_ok()) {
+    LOG(FATAL) << "Failed to create the hash partition";
+    return status;
+  }
+
+  for (int i = 0; i < table_->num_columns(); i++) {
+    std::shared_ptr<arrow::DataType> type = table_->column(i)->chunk(0)->type();
+    std::shared_ptr<arrow::Array> array = table_->column(i)->chunk(0);
+    std::shared_ptr<ArrowArraySplitKernel> splitKernel;
+    status = CreateSplitter(type, cylon::ToArrowPool(ctx), &splitKernel);
+    if (!status.is_ok()) {
+      LOG(FATAL) << "Failed to create the splitter";
+      return status;
+    }
+
+    // this one outputs arrays for each target as a map
+    std::unordered_map<int, std::shared_ptr<arrow::Array>> splited_arrays;
+
+    splitKernel->Split(array, outPartitions, partitions, splited_arrays, counts);
+
+    for (const auto &x : splited_arrays) {
+      std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];
+      cols->push_back(x.second);
+    }
+  }
+  // now insert these array to
+  for (const auto &x : data_arrays) {
+    std::shared_ptr<arrow::Table> final_arrow_table = arrow::Table::Make(table_->schema(), *x.second);
+    std::shared_ptr<cylon::Table> kY = std::make_shared<cylon::Table>(final_arrow_table, ctx);
+    out->insert(std::pair<int, std::shared_ptr<cylon::Table>>(x.first, kY));
+  }
+  return Status::OK();
+}
 }
 }

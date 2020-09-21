@@ -32,7 +32,9 @@ class PartitionOpConfig {
 class PartitionOp : public Op {
  private:
   std::shared_ptr<PartitionOpConfig> config;
-
+  std::chrono::high_resolution_clock::time_point start;
+  bool started_time = false;
+  long exec_time = 0;
  public:
   PartitionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
               const std::shared_ptr<arrow::Schema> &schema,

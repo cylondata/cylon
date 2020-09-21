@@ -352,7 +352,8 @@ cylon::Status CreateStreamingSplitter(const std::shared_ptr<arrow::DataType> &ty
 }
 
 int FixedBinaryArrayStreamingSplitKernel::Split(std::shared_ptr<arrow::Array> &values,
-                                                const std::vector<int64_t> &partitions) {
+                                                const std::vector<int64_t> &partitions,
+                                                const std::vector<uint32_t> &cnts) {
   auto reader =
       std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
   for (size_t i = 0; i < partitions.size(); i++) {
@@ -392,7 +393,8 @@ FixedBinaryArrayStreamingSplitKernel::FixedBinaryArrayStreamingSplitKernel(
 }
 
 int BinaryArrayStreamingSplitKernel::Split(std::shared_ptr<arrow::Array> &values,
-                                           const std::vector<int64_t> &partitions) {
+                                           const std::vector<int64_t> &partitions,
+                                           const std::vector<uint32_t> &cnts) {
   auto reader =
       std::static_pointer_cast<arrow::BinaryArray>(values);
 

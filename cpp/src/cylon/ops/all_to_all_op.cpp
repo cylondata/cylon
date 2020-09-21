@@ -45,6 +45,11 @@ cylon::AllToAllOp::AllToAllOp(const std::shared_ptr<cylon::CylonContext> &ctx,
 }
 
 bool cylon::AllToAllOp::Execute(int tag, shared_ptr<Table> table) {
+  if (!started_time) {
+    start = std::chrono::high_resolution_clock::now();
+    started_time = true;
+  }
+  auto t1 = std::chrono::high_resolution_clock::now();
   // if the table is for the same worker pass to childern
   if (tag == ctx_->GetRank()) {
     this->InsertToAllChildren(this->GetId(), table);
@@ -52,6 +57,9 @@ bool cylon::AllToAllOp::Execute(int tag, shared_ptr<Table> table) {
     // todo change here to use the tag appropriately
     this->all_to_all_->insert(table->get_table(), tag, this->GetId());
   }
+  auto t2 = std::chrono::high_resolution_clock::now();
+  exec_time += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  return true;
   return true;
 }
 
@@ -68,6 +76,9 @@ bool cylon::AllToAllOp::Finalize() {
   }
   if (this->all_to_all_->isComplete()) {
     this->all_to_all_->close();
+    auto t2 = std::chrono::high_resolution_clock::now();
+    LOG(INFO) << "Shuffle time: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - start).count();
     return true;
   }
   return false;

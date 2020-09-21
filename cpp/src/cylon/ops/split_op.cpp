@@ -112,13 +112,15 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> cy_table) {
     start = std::chrono::high_resolution_clock::now();
     started_time = true;
   }
+  count++;
   auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::Table> table = cy_table->get_table();
   // first we need to calculate the hash
   std::shared_ptr<arrow::Array> arr = table->column(hash_column_)->chunk(0);
   int64_t length = arr->length();
-  int size = ctx_->GetWorldSize();
-  std::vector<uint32_t> cnts(config_->NoOfPartitions() * size, 0);
+  size_t size = 2;
+  size_t kI = config_->NoOfPartitions();
+  std::vector<uint32_t> cnts(kI * size, 0);
   std::vector<int64_t> outPartitions;
   outPartitions.reserve(length);
   Status status = HashPartitionArray(cylon::ToArrowPool(ctx_.get()), arr,
@@ -127,13 +129,20 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> cy_table) {
   for (int i = 0; i < length; i++) {
     outPartitions[i] = outPartitions[i] / size;
   }
+  for (size_t i = 0; i < kI; i++) {
+//    LOG(INFO) << "Counts i=" << i << " size=" << size << " cnts[i]=" << cnts[i] << " cnts[i *size]=" << cnts[i * size];
+    if ((i * size) >= cnts.size()) {
+      LOG(INFO) << "AAAAAAAAAAAAA";
+    }
+    cnts[i] = cnts[i * size];
+  }
   // now split
   for (int i = 0; i < table->num_columns(); i++) {
     std::shared_ptr<arrow::DataType> type = table->column(i)->chunk(0)->type();
     std::shared_ptr<arrow::Array> array = table->column(i)->chunk(0);
 
     std::shared_ptr<ArrowArrayStreamingSplitKernel> splitKernel = received_tables_[i];
-    splitKernel->Split(array, outPartitions);
+    splitKernel->Split(array, outPartitions, cnts);
   }
   auto t2 = std::chrono::high_resolution_clock::now();
   exec_time += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -178,7 +187,8 @@ bool cylon::SplitOp::Finalize() {
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - start).count()
             << " Fin time: "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-            << " Split time: " << exec_time;
+            << " Split time: " << exec_time
+            << " Call count: " << count;
   return true;
 }
 
