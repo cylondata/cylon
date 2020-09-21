@@ -176,6 +176,7 @@ bool cylon::SplitOp::Finalize() {
   for (int i = 0; i < kI; i++) {
     std::shared_ptr<arrow::Table> t = arrow::Table::Make(schema, *data_arrays[i]);
     std::shared_ptr<cylon::Table> kY = std::make_shared<cylon::Table>(t, ctx_.get());
+    kY->retainMemory(false);
     this->InsertToAllChildren(id, kY);
   }
 
