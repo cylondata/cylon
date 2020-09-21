@@ -20,8 +20,8 @@ from pyarrow import Table as PyArrowTable
 from pyarrow import Tensor as ArrowTensor
 from torch import Tensor as TorchTensor
 
-from pycylon.data.table import Table
-from pycylon.data.table import csv_reader
+from pycylon import Table
+from pycylon.csv import csv_reader
 from pycylon.util.benchutils import benchmark_with_repitions
 
 '''
@@ -59,7 +59,7 @@ Timing Configurations:
 '''
 reps: int = 10
 time_data_loading: int = 0
-time_txtb_to_arrowtb: int = 0
+time_cntb_to_arrowtb: int = 0
 time_pyarwtb_to_numpy: int = 0
 time_numpy_to_arrowtn: int = 0
 time_numpy_to_torchtn: int = 0
@@ -91,12 +91,12 @@ train_torch_tensor: TorchTensor = None
 test_torch_tensor: TorchTensor = None
 
 '''
-load To Twisterx Tables
+load To PyCylon Tables
 '''
 
 
 @benchmark_with_repitions(repititions=reps, time_type=time_type)
-def load_data_to_tx_tables():
+def load_data_to_cn_tables():
     tb_train: Table = csv_reader.read(train_file_path, delimiter)
     tb_test: Table = csv_reader.read(test_file_path, delimiter)
     return tb_train, tb_test
@@ -109,7 +109,7 @@ Join, shuffle, partition, etc
 
 
 @benchmark_with_repitions(repititions=reps, time_type=time_type)
-def convert_tx_table_to_arrow_table():
+def convert_cn_table_to_arrow_table():
     tb_train_arw: PyArrowTable = Table.to_arrow(tb_train)
     tb_test_arw: PyArrowTable = Table.to_arrow(tb_test)
     return tb_train_arw, tb_test_arw
@@ -138,14 +138,14 @@ def convert_numpy_to_torch_tensor():
 
 ########################################################################################################################
 
-time_data_loading, (tb_train, tb_test) = load_data_to_tx_tables()
-time_txtb_to_arrowtb, (tb_train_arw, tb_test_arw) = convert_tx_table_to_arrow_table()
+time_data_loading, (tb_train, tb_test) = load_data_to_cn_tables()
+time_cntb_to_arrowtb, (tb_train_arw, tb_test_arw) = convert_cn_table_to_arrow_table()
 time_pyarwtb_to_numpy, (train_npy, test_npy) = covert_arrow_table_to_numpy()
 time_numpy_to_arrowtn, (train_arrow_tensor, test_arrow_tensor) = convert_numpy_to_arrow_tensor()
 time_numpy_to_torchtn, (train_torch_tensor, test_torch_tensor) = convert_numpy_to_torch_tensor()
 
 print("Data Loading Average Time : {} {}".format(time_data_loading, time_type))
-print("Twisterx Table to PyArrow Table Average Time : {} {}".format(time_txtb_to_arrowtb, time_type))
+print("PyCylon Table to PyArrow Table Average Time : {} {}".format(time_cntb_to_arrowtb, time_type))
 print("Pyarrow Table to Numpy Average Time : {} {}".format(time_pyarwtb_to_numpy, time_type))
 print("Numpy to Arrow Tensor Average Time : {} {}".format(time_numpy_to_arrowtn, time_type))
 print("Numpy to Torch Tensor Average Time : {} {}".format(time_numpy_to_torchtn, time_type))
