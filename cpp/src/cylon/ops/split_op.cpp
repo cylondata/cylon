@@ -118,7 +118,7 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> cy_table) {
   // first we need to calculate the hash
   std::shared_ptr<arrow::Array> arr = table->column(hash_column_)->chunk(0);
   int64_t length = arr->length();
-  size_t size = 2;
+  size_t size = ctx_->GetWorldSize();
   size_t kI = config_->NoOfPartitions();
   std::vector<uint32_t> cnts(kI * size, 0);
   std::vector<int64_t> outPartitions;
@@ -131,9 +131,6 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> cy_table) {
   }
   for (size_t i = 0; i < kI; i++) {
 //    LOG(INFO) << "Counts i=" << i << " size=" << size << " cnts[i]=" << cnts[i] << " cnts[i *size]=" << cnts[i * size];
-    if ((i * size) >= cnts.size()) {
-      LOG(INFO) << "AAAAAAAAAAAAA";
-    }
     cnts[i] = cnts[i * size];
   }
   // now split
