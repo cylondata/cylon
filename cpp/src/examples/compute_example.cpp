@@ -20,7 +20,7 @@
 #include <table.hpp>
 #include <compute/aggregates.hpp>
 
-cylon::Status CreateTable(cylon::CylonContext *ctx, int rows,
+cylon::Status CreateTable(shared_ptr<cylon::CylonContext> &ctx, int rows,
                           std::shared_ptr<cylon::Table> *output) {
   std::shared_ptr<std::vector<int32_t>> col0 = std::make_shared<std::vector<int32_t >>();
   std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t >>();

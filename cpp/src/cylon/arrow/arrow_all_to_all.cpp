@@ -23,7 +23,7 @@
 
 
 namespace cylon {
-ArrowAllToAll::ArrowAllToAll(cylon::CylonContext *ctx,
+ArrowAllToAll::ArrowAllToAll(shared_ptr<cylon::CylonContext> &ctx,
                              const std::vector<int> &source,
                              const std::vector<int> &targets,
                              int edgeId,

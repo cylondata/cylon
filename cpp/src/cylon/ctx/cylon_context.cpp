@@ -22,16 +22,16 @@
 
 namespace cylon {
 
-CylonContext *CylonContext::Init() {
-  return new CylonContext(false);
+shared_ptr<CylonContext> CylonContext::Init() {
+  return make_shared<CylonContext>(false);
 }
 CylonContext::CylonContext(bool distributed) {
   this->is_distributed = distributed;
 }
 
-CylonContext *CylonContext::InitDistributed(net::CommConfig *config) {
+shared_ptr<CylonContext> CylonContext::InitDistributed(net::CommConfig *config) {
   if (config->Type() == net::CommType::MPI) {
-    auto ctx = new CylonContext(true);
+    auto ctx = make_shared<CylonContext>(true);
     ctx->communicator = new net::MPICommunicator();
     ctx->communicator->Init(config);
     ctx->is_distributed = true;

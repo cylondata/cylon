@@ -41,7 +41,7 @@ class Table {
   /**
    * Tables can only be created using the factory methods, so the constructor is private
    */
-  Table(std::shared_ptr<arrow::Table> &tab, cylon::CylonContext *ctx)
+  Table(std::shared_ptr<arrow::Table> &tab, const shared_ptr<cylon::CylonContext> &ctx)
       : ctx(ctx), table_(tab),
         columns_(std::vector<shared_ptr<Column>>(tab->num_columns())) {
     const int num_cols = table_->num_columns();
@@ -52,7 +52,7 @@ class Table {
     }
   }
 
-  Table(std::shared_ptr<arrow::Table> &tab, cylon::CylonContext *ctx,
+  Table(std::shared_ptr<arrow::Table> &tab, shared_ptr<cylon::CylonContext> &ctx,
         const std::vector<shared_ptr<Column>> &cols)
       : ctx(ctx), table_(tab) {
     this->columns_ = cols;
@@ -65,7 +65,7 @@ class Table {
    * @param path file path
    * @return a pointer to the table
    */
-  static Status FromCSV(cylon::CylonContext *ctx, const std::string &path,
+  static Status FromCSV(shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
                         std::shared_ptr<Table> &tableOut,
                         const cylon::io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
 
@@ -78,7 +78,7 @@ class Table {
    * @param options
    * @return
    */
-  static Status FromCSV(cylon::CylonContext *ctx, const std::vector<std::string> &paths,
+  static Status FromCSV(shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
                         const std::vector<std::shared_ptr<Table> *> &tableOuts,
                         io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 
@@ -87,7 +87,7 @@ class Table {
    * @param table
    * @return
    */
-  static Status FromArrowTable(cylon::CylonContext *ctx,
+  static Status FromArrowTable(shared_ptr<cylon::CylonContext> &ctx,
                                std::shared_ptr<arrow::Table> &table,
                                std::shared_ptr<Table> *tableOut);
 
@@ -98,7 +98,7 @@ class Table {
    * @param tableOut
    * @return
    */
-  static Status FromColumns(cylon::CylonContext *ctx,
+  static Status FromColumns(shared_ptr<cylon::CylonContext> &ctx,
                             std::vector<std::shared_ptr<Column>> &&columns,
                             std::shared_ptr<Table> *tableOut);
 
@@ -132,7 +132,7 @@ class Table {
    * @param tables
    * @return new merged table
    */
-  static Status Merge(cylon::CylonContext *ctx,
+  static Status Merge(shared_ptr<cylon::CylonContext> &ctx,
                       const std::vector<std::shared_ptr<cylon::Table>> &tables,
                       shared_ptr<Table> &tableOut);
 
@@ -300,7 +300,7 @@ class Table {
    * Returns the cylon Context
    * @return
    */
-  cylon::CylonContext *GetContext();
+  shared_ptr<cylon::CylonContext> GetContext();
 
   /**
    * Get column names of the table
@@ -335,7 +335,7 @@ class Table {
    * Every table should have an unique id
    */
   std::string id_;
-  cylon::CylonContext *ctx;
+  shared_ptr<cylon::CylonContext> ctx;
   std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
   std::vector<shared_ptr<cylon::Column>> columns_;

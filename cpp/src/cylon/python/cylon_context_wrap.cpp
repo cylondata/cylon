@@ -23,13 +23,13 @@ namespace cylon {
 namespace python {
 
 cylon::python::cylon_context_wrap::cylon_context_wrap() {
-  this->context = new CylonContext(false);
+  this->context = make_shared<cylon::CylonContext>(false);
   this->distributed = false;
 }
 
 cylon::python::cylon_context_wrap::cylon_context_wrap(std::string config) {
   if (config == "mpi") {
-    auto ctx = new CylonContext(true);
+    auto ctx = make_shared<cylon::CylonContext>(true);
     this->distributed = true;
     ctx->setCommunicator(new net::MPICommunicator());
     auto mpi_config = new cylon::net::MPIConfig();
@@ -41,7 +41,7 @@ cylon::python::cylon_context_wrap::cylon_context_wrap(std::string config) {
   }
 }
 
-CylonContext *cylon::python::cylon_context_wrap::getInstance() {
+shared_ptr<cylon::CylonContext> cylon::python::cylon_context_wrap::getInstance() {
   return context;
 }
 
@@ -84,7 +84,6 @@ int cylon::python::cylon_context_wrap::GetWorldSize() {
 void cylon::python::cylon_context_wrap::Finalize() {
   if (this->distributed) {
     this->context->GetCommunicator()->Finalize();
-    delete this->context->GetCommunicator();
   }
 }
 

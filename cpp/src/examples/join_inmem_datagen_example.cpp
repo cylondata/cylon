@@ -24,13 +24,13 @@
 #include <mpi.h>
 
 void create_binary_table(char *const *argv,
-                         cylon::CylonContext *ctx,
+						 shared_ptr<cylon::CylonContext> &ctx,
                          arrow::MemoryPool *pool,
                          shared_ptr<arrow::Table> &left_table,
                          shared_ptr<arrow::Table> &right_table);
 
 void create_int64_table(char *const *argv,
-                         cylon::CylonContext *ctx,
+                         shared_ptr<cylon::CylonContext> &ctx,
                          arrow::MemoryPool *pool,
                          shared_ptr<arrow::Table> &left_table,
                          shared_ptr<arrow::Table> &right_table);
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 }
 
 void create_binary_table(char *const *argv,
-                         cylon::CylonContext *ctx,
+						 shared_ptr<cylon::CylonContext> &ctx,
                          arrow::MemoryPool *pool,
                          shared_ptr<arrow::Table> &left_table,
                          shared_ptr<arrow::Table> &right_table) {
@@ -150,7 +150,7 @@ void create_binary_table(char *const *argv,
 }
 
 void create_int64_table(char *const *argv,
-                        cylon::CylonContext *ctx,
+                        shared_ptr<cylon::CylonContext> &ctx,
                         arrow::MemoryPool *pool,
                         shared_ptr<arrow::Table> &left_table,
                         shared_ptr<arrow::Table> &right_table) {

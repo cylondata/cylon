@@ -65,7 +65,8 @@ Status CxTable::from_csv(cylon_context_wrap *ctx_wrap,
 						 const std::string &path,
                          const char &delimiter,
                          const std::string &uuid) {
-  cylon::Status status = ReadCSV(ctx_wrap->getInstance(), path, uuid,
+  auto ctx = ctx_wrap->getInstance();
+  cylon::Status status = ReadCSV(ctx, path, uuid,
                             cylon::io::config::CSVReadOptions().WithDelimiter(delimiter).UseThreads(
                             false).BlockSize(1 << 30));
   return status;

@@ -43,7 +43,7 @@ class RowComparator {
   int64_t *eq, *hs;
 
  public:
-  RowComparator(CylonContext *ctx,
+  RowComparator(shared_ptr<cylon::CylonContext> &ctx,
                 const std::shared_ptr<arrow::Table> *tables,
                 int64_t *eq,
                 int64_t *hs) {
@@ -80,7 +80,7 @@ class RowComparator {
  * @param array_vector
  * @return
  */
-Status PrepareArray(CylonContext *ctx,
+Status PrepareArray(shared_ptr<cylon::CylonContext> &ctx,
                     const std::shared_ptr<arrow::Table> &table,
                     const int32_t col_idx,
                     const std::shared_ptr<std::vector<int64_t>> &row_indices,
@@ -98,7 +98,7 @@ Status PrepareArray(CylonContext *ctx,
   return Status::OK();
 }
 
-Status HashPartitionTable(CylonContext *ctx, const std::shared_ptr<arrow::Table>& table,
+Status HashPartitionTable(shared_ptr<cylon::CylonContext> &ctx, const std::shared_ptr<arrow::Table>& table,
                           int hash_column, int no_of_partitions,
                           std::unordered_map<int, std::shared_ptr<cylon::Table>> *out) {
   // keep arrays for each target, these arrays are used for creating the table
@@ -158,7 +158,7 @@ Status HashPartitionTable(CylonContext *ctx, const std::shared_ptr<arrow::Table>
   return Status::OK();
 }
 
-cylon::Status Shuffle(cylon::CylonContext *ctx,
+cylon::Status Shuffle(shared_ptr<cylon::CylonContext> &ctx,
                       std::shared_ptr<cylon::Table> &table,
                       int hash_column,
                       int edge_id,
@@ -228,7 +228,7 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
   }
 }
 
-cylon::Status Shuffle(cylon::CylonContext *ctx,
+cylon::Status Shuffle(shared_ptr<cylon::CylonContext> &ctx,
                       std::shared_ptr<cylon::Table> &table,
                       const std::vector<int> &hash_columns,
                       int edge_id,
@@ -297,7 +297,7 @@ cylon::Status Shuffle(cylon::CylonContext *ctx,
   }
 }
 
-Status ShuffleTwoTables(CylonContext *ctx,
+Status ShuffleTwoTables(shared_ptr<cylon::CylonContext> &ctx,
                         std::shared_ptr<cylon::Table> &left_table,
                         int left_hash_column,
                         std::shared_ptr<cylon::Table> &right_table,
@@ -324,7 +324,7 @@ Status ShuffleTwoTables(CylonContext *ctx,
   return status;
 }
 
-Status ShuffleTwoTables(CylonContext *ctx,
+Status ShuffleTwoTables(shared_ptr<cylon::CylonContext> &ctx,
                         std::shared_ptr<cylon::Table> &left_table,
                         const std::vector<int> &left_hash_columns,
                         std::shared_ptr<cylon::Table> &right_table,
@@ -351,7 +351,7 @@ Status ShuffleTwoTables(CylonContext *ctx,
   return status;
 }
 
-Status Table::FromCSV(cylon::CylonContext *ctx, const std::string &path,
+Status Table::FromCSV(shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
                       std::shared_ptr<Table> &tableOut,
                       const cylon::io::config::CSVReadOptions &options) {
   arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::read_csv(ctx, path, options);
@@ -370,7 +370,7 @@ Status Table::FromCSV(cylon::CylonContext *ctx, const std::string &path,
   return Status(Code::IOError, result.status().message());
 }
 
-Status Table::FromArrowTable(cylon::CylonContext *ctx,
+Status Table::FromArrowTable(shared_ptr<cylon::CylonContext> &ctx,
                              std::shared_ptr<arrow::Table> &table,
                              std::shared_ptr<Table> *tableOut) {
   if (!cylon::tarrow::validateArrowTableTypes(table)) {
@@ -381,7 +381,7 @@ Status Table::FromArrowTable(cylon::CylonContext *ctx,
   return Status(cylon::OK, "Loaded Successfully");
 }
 
-Status Table::FromColumns(cylon::CylonContext *ctx,
+Status Table::FromColumns(shared_ptr<cylon::CylonContext> &ctx,
                           vector<std::shared_ptr<Column>>&& columns,
                           std::shared_ptr<Table> *tableOut) {
   arrow::Status status;
@@ -444,7 +444,7 @@ void Table::Print(int row1, int row2, int col1, int col2) {
   PrintToOStream(col1, col2, row1, row2, std::cout);
 }
 
-Status Table::Merge(cylon::CylonContext *ctx,
+Status Table::Merge(shared_ptr<cylon::CylonContext> &ctx,
                     const std::vector<std::shared_ptr<cylon::Table>> &ctables,
                     shared_ptr<Table> &tableOut) {
   std::vector<std::shared_ptr<arrow::Table>> tables;
@@ -604,7 +604,7 @@ Status Table::DistributedJoin(std::shared_ptr<cylon::Table> &left,
                               cylon::join::config::JoinConfig join_config,
                               std::shared_ptr<cylon::Table> *out) {
   // check whether the world size is 1
-  CylonContext *ctx = left->ctx;
+  shared_ptr<cylon::CylonContext> ctx = left->ctx;
   if (ctx->GetWorldSize() == 1) {
     cylon::Status status = Table::Join(
         left,
@@ -884,7 +884,7 @@ typedef Status
 (*LocalSetOperation)(std::shared_ptr<cylon::Table> &, std::shared_ptr<cylon::Table> &,
     std::shared_ptr<cylon::Table> &);
 
-Status DoDistributedSetOperation(CylonContext *ctx,
+Status DoDistributedSetOperation(shared_ptr<cylon::CylonContext> &ctx,
                                  LocalSetOperation local_operation,
                                  std::shared_ptr<cylon::Table> &table_left,
                                  std::shared_ptr<cylon::Table> &table_right,
@@ -952,14 +952,14 @@ Table::~Table() {
   this->Clear();
 }
 
-void ReadCSVThread(CylonContext *ctx, const std::string &path,
+void ReadCSVThread(cylon::CylonContext *ctx, const std::string &path,
                    std::shared_ptr<cylon::Table> * table,
                    cylon::io::config::CSVReadOptions options,
                    const std::shared_ptr<std::promise<Status>> &status_promise) {
-  status_promise->set_value(Table::FromCSV(ctx, path, *table, options));
+  status_promise->set_value(Table::FromCSV(reinterpret_cast<shared_ptr<cylon::CylonContext> &>(ctx), path, *table, options));
 }
 
-Status Table::FromCSV(cylon::CylonContext *ctx, const vector<std::string> &paths,
+Status Table::FromCSV(shared_ptr<cylon::CylonContext> &ctx, const vector<std::string> &paths,
                       const std::vector<std::shared_ptr<Table> *> &tableOuts,
                       io::config::CSVReadOptions options) {
   if (options.IsConcurrentFileReads()) {
@@ -967,9 +967,10 @@ Status Table::FromCSV(cylon::CylonContext *ctx, const vector<std::string> &paths
     futures.reserve(paths.size());
     for (uint64_t kI = 0; kI < paths.size(); ++kI) {
       auto read_promise = std::make_shared<std::promise<Status>>();
+      auto context = ctx.get();
       futures.emplace_back(read_promise->get_future(),
                            std::thread(ReadCSVThread,
-                                       ctx,
+                                       context,
                                        paths[kI],
                                        tableOuts[kI],
                                        options,
@@ -1011,7 +1012,7 @@ Status Table::Project(const std::vector<int64_t> &project_columns, std::shared_p
   return Status::OK();
 }
 
-cylon::CylonContext *Table::GetContext() {
+shared_ptr<cylon::CylonContext> Table::GetContext() {
   return this->ctx;
 }
 

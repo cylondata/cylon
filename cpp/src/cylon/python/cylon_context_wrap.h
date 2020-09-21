@@ -31,7 +31,7 @@ class cylon_context_wrap {
 
   cylon::net::Communicator *communicator{};
 
-  CylonContext *context;
+  shared_ptr<cylon::CylonContext> context;
 
   cylon::MemoryPool *memory_pool{};
 
@@ -44,7 +44,7 @@ class cylon_context_wrap {
 
   cylon_context_wrap(std::string config);
 
-  CylonContext *getInstance();
+  shared_ptr<cylon::CylonContext> getInstance();
 
 //  static CylonContext *Init();
 //

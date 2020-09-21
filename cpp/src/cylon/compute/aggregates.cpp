@@ -66,7 +66,7 @@ cylon::Status AllReduce(cylon::net::CommType comm_type,
   }
 }
 
-cylon::Status DoAllReduce(cylon::CylonContext *ctx,
+cylon::Status DoAllReduce(shared_ptr<cylon::CylonContext> &ctx,
                           const arrow::compute::Datum &send,
                           std::shared_ptr<Result> *receive,
                           const shared_ptr<DataType> &data_type,

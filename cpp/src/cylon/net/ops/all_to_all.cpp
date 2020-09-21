@@ -24,7 +24,7 @@
 
 namespace cylon {
 
-AllToAll::AllToAll(cylon::CylonContext *ctx, const std::vector<int> &srcs,
+AllToAll::AllToAll(shared_ptr<cylon::CylonContext> &ctx, const std::vector<int> &srcs,
                    const std::vector<int> &tgts, int edge_id, ReceiveCallback *rcvCallback,
                    Allocator *alloc) {
   worker_id = ctx->GetRank();

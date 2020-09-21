@@ -45,14 +45,14 @@ class CylonContext {
    * Initializes context
    * @return <cylon::CylonContext*>
    */
-  static CylonContext *Init();
+  static shared_ptr<CylonContext> Init();
 
   /**
    * Initializes distributed context
    * @param <cylon::net::CommConfig*> config Configuration to be passed on to the cylon::net::Communicator
    * @return <cylon::CylonContext*>
    */
-  static CylonContext *InitDistributed(net::CommConfig *config);
+  static shared_ptr<CylonContext> InitDistributed(net::CommConfig *config);
 
   /**
    * Completes and closes all operations under the context
