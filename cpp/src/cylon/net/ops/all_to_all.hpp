@@ -81,7 +81,7 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
    * @param all_workers
    * @return
    */
-  AllToAll(shared_ptr<cylon::CylonContext> &ctx,
+  AllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
            const std::vector<int> &source,
            const std::vector<int> &targets,
            int edgeId,

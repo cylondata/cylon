@@ -21,15 +21,14 @@
 
 #include "arrow_all_to_all.hpp"
 
-
 namespace cylon {
-ArrowAllToAll::ArrowAllToAll(shared_ptr<cylon::CylonContext> &ctx,
-                             const std::vector<int> &source,
-                             const std::vector<int> &targets,
-                             int edgeId,
-                             std::shared_ptr<ArrowCallback> callback,
-                             std::shared_ptr<arrow::Schema> schema,
-                             arrow::MemoryPool *pool) {
+ArrowAllToAll::ArrowAllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
+							 const std::vector<int> &source,
+							 const std::vector<int> &targets,
+							 int edgeId,
+							 std::shared_ptr<ArrowCallback> callback,
+							 std::shared_ptr<arrow::Schema> schema,
+							 arrow::MemoryPool *pool) {
   targets_ = targets;
   srcs_ = source;
   recv_callback_ = std::move(callback);
@@ -46,13 +45,13 @@ ArrowAllToAll::ArrowAllToAll(shared_ptr<cylon::CylonContext> &ctx,
 
   // add the trackers for sending
   for (auto t : targets) {
-    inputs_.insert(std::pair<int, std::shared_ptr<PendingSendTable>>(t,
-        std::make_shared<PendingSendTable>()));
+	inputs_.insert(std::pair<int, std::shared_ptr<PendingSendTable>>(t,
+																	 std::make_shared<PendingSendTable>()));
   }
 
   for (auto t : source) {
-    receives_.insert(std::pair<int, std::shared_ptr<PendingReceiveTable>>(t,
-        std::make_shared<PendingReceiveTable>()));
+	receives_.insert(std::pair<int, std::shared_ptr<PendingReceiveTable>>(t,
+																		  std::make_shared<PendingReceiveTable>()));
   }
 }
 
@@ -66,79 +65,79 @@ int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int target
 
 bool ArrowAllToAll::isComplete() {
   if (completed_) {
-    return true;
+	return true;
   }
   bool isAllEmpty = true;
   // we need to send the buffers
   for (auto &t : inputs_) {
-    if (t.second->status == ARROW_HEADER_INIT) {
-      if (!t.second->pending.empty()) {
-        t.second->currentTable = t.second->pending.front();
-        t.second->pending.pop();
-        t.second->status = ARROW_HEADER_COLUMN_CONTINUE;
-      }
-    }
+	if (t.second->status == ARROW_HEADER_INIT) {
+	  if (!t.second->pending.empty()) {
+		t.second->currentTable = t.second->pending.front();
+		t.second->pending.pop();
+		t.second->status = ARROW_HEADER_COLUMN_CONTINUE;
+	  }
+	}
 
-    if (t.second->status == ARROW_HEADER_COLUMN_CONTINUE) {
-      int noOfColumns = t.second->currentTable->columns().size();
-      bool canContinue = true;
-      while (t.second->columnIndex < noOfColumns && canContinue) {
-        std::shared_ptr<arrow::ChunkedArray> cArr = t.second->currentTable->column(
-            t.second->columnIndex);
+	if (t.second->status == ARROW_HEADER_COLUMN_CONTINUE) {
+	  int noOfColumns = t.second->currentTable->columns().size();
+	  bool canContinue = true;
+	  while (t.second->columnIndex < noOfColumns && canContinue) {
+		std::shared_ptr<arrow::ChunkedArray> cArr = t.second->currentTable->column(
+			t.second->columnIndex);
 
-        uint64_t size = cArr->chunks().size();
-        while (static_cast<size_t>(t.second->arrayIndex) < size && canContinue) {
-          std::shared_ptr<arrow::Array> arr = cArr->chunk(t.second->arrayIndex);
+		uint64_t size = cArr->chunks().size();
+		while (static_cast<size_t>(t.second->arrayIndex) < size && canContinue) {
+		  std::shared_ptr<arrow::Array> arr = cArr->chunk(t.second->arrayIndex);
 
-          std::shared_ptr<arrow::ArrayData> data = arr->data();
-          while (static_cast<size_t>(t.second->bufferIndex) < data->buffers.size()) {
-            std::shared_ptr<arrow::Buffer> buf = data->buffers[t.second->bufferIndex];
-            int hdr[5];
-            hdr[0] = t.second->columnIndex;
-            hdr[1] = t.second->bufferIndex;
-            hdr[2] = data->buffers.size();
-            hdr[3] = cArr->chunks().size();
-            hdr[4] = data->length;
-            // lets send this buffer, we need to send the length at this point
-            bool accept = all_->insert(buf->mutable_data(),
-                static_cast<int>(buf->size()), t.first, hdr, 5);
-            if (!accept) {
-              canContinue = false;
-              break;
-            }
-            t.second->bufferIndex++;
-          }
-          // if we can continue, that means we are finished with this array
-          if (canContinue) {
-            t.second->bufferIndex = 0;
-            t.second->arrayIndex++;
-          }
-        }
-        // if we can continue, that means we are finished with this column
-        if (canContinue) {
-          t.second->arrayIndex = 0;
-          t.second->columnIndex++;
-        }
-      }
+		  std::shared_ptr<arrow::ArrayData> data = arr->data();
+		  while (static_cast<size_t>(t.second->bufferIndex) < data->buffers.size()) {
+			std::shared_ptr<arrow::Buffer> buf = data->buffers[t.second->bufferIndex];
+			int hdr[5];
+			hdr[0] = t.second->columnIndex;
+			hdr[1] = t.second->bufferIndex;
+			hdr[2] = data->buffers.size();
+			hdr[3] = cArr->chunks().size();
+			hdr[4] = data->length;
+			// lets send this buffer, we need to send the length at this point
+			bool accept = all_->insert(buf->mutable_data(),
+									   static_cast<int>(buf->size()), t.first, hdr, 5);
+			if (!accept) {
+			  canContinue = false;
+			  break;
+			}
+			t.second->bufferIndex++;
+		  }
+		  // if we can continue, that means we are finished with this array
+		  if (canContinue) {
+			t.second->bufferIndex = 0;
+			t.second->arrayIndex++;
+		  }
+		}
+		// if we can continue, that means we are finished with this column
+		if (canContinue) {
+		  t.second->arrayIndex = 0;
+		  t.second->columnIndex++;
+		}
+	  }
 
-      // if we are at this stage, we have sent everything for this , so lets resets
-      if (canContinue) {
-        t.second->columnIndex = 0;
-        t.second->arrayIndex = 0;
-        t.second->bufferIndex = 0;
-        // we are done with this target, for this call
-        t.second->status = ARROW_HEADER_INIT;
-      }
-    }
+	  // if we are at this stage, we have sent everything for this , so lets resets
+	  if (canContinue) {
+		t.second->columnIndex = 0;
+		t.second->arrayIndex = 0;
+		t.second->bufferIndex = 0;
+		// we are done with this target, for this call
+		t.second->status = ARROW_HEADER_INIT;
+	  }
+	}
 
-    if (!t.second->pending.empty() || t.second->status == ARROW_HEADER_COLUMN_CONTINUE) {
-      isAllEmpty = false;
-    }
+	if (!t.second->pending.empty() || t.second->status == ARROW_HEADER_COLUMN_CONTINUE) {
+	  isAllEmpty = false;
+	}
   }
 
   if (isAllEmpty && finished && !finishCalled_) {
-    all_->finish();
-    finishCalled_ = true;
+	all_->finish();
+	finishCalled_ = true;
   }
 
   // if completed gets true, we will never reach this point
@@ -159,7 +158,7 @@ void ArrowAllToAll::close() {
 
 void debug(int thisWorker, std::string msg) {
   if (thisWorker == -1) {
-    LOG(INFO) << msg;
+	LOG(INFO) << msg;
   }
 }
 
@@ -171,30 +170,30 @@ bool ArrowAllToAll::onReceive(int source, std::shared_ptr<Buffer> buffer, int le
   table->buffers.push_back(buf);
   // now check weather we have the expected number of buffers received
   if (table->noBuffers == table->bufferIndex + 1) {
-    // okay we are done with this array
-    std::shared_ptr<arrow::ArrayData> data = arrow::ArrayData::Make(
-        schema_->field(table->columnIndex)->type(), table->length, table->buffers);
-    // clears the buffers
-    table->buffers.clear();
-    // create an array
-    std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
-    table->arrays.push_back(array);
+	// okay we are done with this array
+	std::shared_ptr<arrow::ArrayData> data = arrow::ArrayData::Make(
+		schema_->field(table->columnIndex)->type(), table->length, table->buffers);
+	// clears the buffers
+	table->buffers.clear();
+	// create an array
+	std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
+	table->arrays.push_back(array);
 
-    // we have received all the arrays of the chunk array
-    if (table->arrays.size() == static_cast<size_t>(table->noArray)) {
-      std::shared_ptr<arrow::ChunkedArray> chunkedArray = std::make_shared<arrow::ChunkedArray>(
-          table->arrays, schema_->field(table->columnIndex)->type());
-      // clear the arrays
-      table->arrays.clear();
-      table->currentArrays.push_back(chunkedArray);
-      if (table->currentArrays.size() == static_cast<size_t>(schema_->num_fields())) {
-        // now we can create the table
-        std::shared_ptr<arrow::Table> tablePtr = arrow::Table::Make(schema_, table->currentArrays);
-        // clear the current array
-        table->currentArrays.clear();
-        recv_callback_->onReceive(source, tablePtr);
-      }
-    }
+	// we have received all the arrays of the chunk array
+	if (table->arrays.size() == static_cast<size_t>(table->noArray)) {
+	  std::shared_ptr<arrow::ChunkedArray> chunkedArray = std::make_shared<arrow::ChunkedArray>(
+		  table->arrays, schema_->field(table->columnIndex)->type());
+	  // clear the arrays
+	  table->arrays.clear();
+	  table->currentArrays.push_back(chunkedArray);
+	  if (table->currentArrays.size() == static_cast<size_t>(schema_->num_fields())) {
+		// now we can create the table
+		std::shared_ptr<arrow::Table> tablePtr = arrow::Table::Make(schema_, table->currentArrays);
+		// clear the current array
+		table->currentArrays.clear();
+		recv_callback_->onReceive(source, tablePtr);
+	  }
+	}
   }
 
   return true;
@@ -202,19 +201,19 @@ bool ArrowAllToAll::onReceive(int source, std::shared_ptr<Buffer> buffer, int le
 
 bool ArrowAllToAll::onReceiveHeader(int source, int fin, int *buffer, int length) {
   if (!fin) {
-    if (length != 5) {
-      LOG(FATAL) << "Incorrect length on header, expected 5 ints got " << length;
-      return false;
-    }
+	if (length != 5) {
+	  LOG(FATAL) << "Incorrect length on header, expected 5 ints got " << length;
+	  return false;
+	}
 
-    std::shared_ptr<PendingReceiveTable> table = receives_[source];
-    table->columnIndex = buffer[0];
-    table->bufferIndex = buffer[1];
-    table->noBuffers = buffer[2];
-    table->noArray = buffer[3];
-    table->length = buffer[4];
+	std::shared_ptr<PendingReceiveTable> table = receives_[source];
+	table->columnIndex = buffer[0];
+	table->bufferIndex = buffer[1];
+	table->noBuffers = buffer[2];
+	table->noArray = buffer[3];
+	table->length = buffer[4];
   } else {
-    finishedSources_.push_back(source);
+	finishedSources_.push_back(source);
   }
   return true;
 }
@@ -228,15 +227,15 @@ Status ArrowAllocator::Allocate(int64_t length, std::shared_ptr<Buffer> *buffer)
   std::shared_ptr<arrow::Buffer> buf;
   arrow::Status status = arrow::AllocateBuffer(pool, length, &buf);
   if (status != arrow::Status::OK()) {
-    return Status(static_cast<int>(status.code()), status.message());
+	return Status(static_cast<int>(status.code()), status.message());
   }
   *buffer = std::make_shared<ArrowBuffer>(buf);
   return Status::OK();
 }
 
-  ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
+ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
 
-  int64_t ArrowBuffer::GetLength() {
+int64_t ArrowBuffer::GetLength() {
   return 0;
 }
 

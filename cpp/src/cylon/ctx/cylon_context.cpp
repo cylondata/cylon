@@ -32,7 +32,7 @@ CylonContext::CylonContext(bool distributed) {
 shared_ptr<CylonContext> CylonContext::InitDistributed(net::CommConfig *config) {
   if (config->Type() == net::CommType::MPI) {
     auto ctx = make_shared<CylonContext>(true);
-    ctx->communicator = new net::MPICommunicator();
+    ctx->communicator = std::make_shared<net::MPICommunicator>();
     ctx->communicator->Init(config);
     ctx->is_distributed = true;
     return ctx;
@@ -41,7 +41,7 @@ shared_ptr<CylonContext> CylonContext::InitDistributed(net::CommConfig *config) 
   }
   return nullptr;
 }
-net::Communicator *CylonContext::GetCommunicator() const {
+std::shared_ptr<net::Communicator> CylonContext::GetCommunicator() const {
   if (!is_distributed) {
     LOG(FATAL) << "No communicator available for local mode!";
     return nullptr;
@@ -49,7 +49,7 @@ net::Communicator *CylonContext::GetCommunicator() const {
   return this->communicator;
 }
 
-void CylonContext::setCommunicator(net::Communicator *communicator1) {
+void CylonContext::setCommunicator(std::shared_ptr<net::Communicator> communicator1) {
   this->communicator = communicator1;
 }
 

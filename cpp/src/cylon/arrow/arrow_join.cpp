@@ -24,7 +24,7 @@
 
 namespace cylon {
 
-ArrowJoin::ArrowJoin(shared_ptr<cylon::CylonContext> &ctx,
+ArrowJoin::ArrowJoin(std::shared_ptr<cylon::CylonContext> &ctx,
                      const std::vector<int> &source,
                      const std::vector<int> &targets,
                      int leftEdgeId,
@@ -78,7 +78,7 @@ bool AllToAllCallback::onReceive(int source, std::shared_ptr<arrow::Table> table
   return true;
 }
 
-ArrowJoinWithPartition::ArrowJoinWithPartition(shared_ptr<cylon::CylonContext> &ctx,
+ArrowJoinWithPartition::ArrowJoinWithPartition(std::shared_ptr<cylon::CylonContext> &ctx,
                                                const std::vector<int> &source,
                                                const std::vector<int> &targets, int leftEdgeId,
                                                int rightEdgeId,

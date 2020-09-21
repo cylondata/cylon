@@ -29,9 +29,9 @@ cylon::python::cylon_context_wrap::cylon_context_wrap() {
 
 cylon::python::cylon_context_wrap::cylon_context_wrap(std::string config) {
   if (config == "mpi") {
-    auto ctx = make_shared<cylon::CylonContext>(true);
+    auto ctx = std::make_shared<cylon::CylonContext>(true);
     this->distributed = true;
-    ctx->setCommunicator(new net::MPICommunicator());
+    ctx->setCommunicator(std::make_shared<net::MPICommunicator>());
     auto mpi_config = new cylon::net::MPIConfig();
     ctx->GetCommunicator()->Init(mpi_config);
     ctx->setDistributed(true);
@@ -41,7 +41,7 @@ cylon::python::cylon_context_wrap::cylon_context_wrap(std::string config) {
   }
 }
 
-shared_ptr<cylon::CylonContext> cylon::python::cylon_context_wrap::getInstance() {
+std::shared_ptr<cylon::CylonContext> cylon::python::cylon_context_wrap::getInstance() {
   return context;
 }
 
@@ -49,7 +49,7 @@ void cylon::python::cylon_context_wrap::Barrier() {
   this->context->GetCommunicator()->Barrier();
 }
 
-net::Communicator *cylon::python::cylon_context_wrap::GetCommunicator() const {
+std::shared_ptr<net::Communicator> cylon::python::cylon_context_wrap::GetCommunicator() const {
   return this->context->GetCommunicator();
 }
 

@@ -55,7 +55,7 @@ class ArrowJoin {
      * @param all_workers
      * @return
      */
-  ArrowJoin(shared_ptr<cylon::CylonContext> &ctx,
+  ArrowJoin(std::shared_ptr<cylon::CylonContext> &ctx,
             const std::vector<int> &source,
             const std::vector<int> &targets,
             int leftEdgeId,
@@ -128,7 +128,7 @@ class ArrowJoinWithPartition {
    * @param all_workers
    * @return
    */
-  ArrowJoinWithPartition(shared_ptr<cylon::CylonContext> &ctx,
+  ArrowJoinWithPartition(std::shared_ptr<cylon::CylonContext> &ctx,
                          const std::vector<int> &source,
                          const std::vector<int> &targets,
                          int leftEdgeId,

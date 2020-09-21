@@ -62,7 +62,7 @@ void RemoveTable(const std::string &id) {
   table_map.erase(id);
 }
 
-Status ReadCSV(shared_ptr<cylon::CylonContext> &ctx,
+Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
                const std::string &path,
                const std::string &id,
                cylon::io::config::CSVReadOptions options) {
@@ -74,7 +74,7 @@ Status ReadCSV(shared_ptr<cylon::CylonContext> &ctx,
   return status;
 }
 
-Status ReadCSV(shared_ptr<cylon::CylonContext> &ctx,
+Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
                const std::vector<std::string> &paths,
                const std::vector<std::string> &ids,
                cylon::io::config::CSVReadOptions options) {
@@ -115,7 +115,7 @@ Status PrintToOStream(const std::string &table_id,
       delimiter, use_custom_header, headers);
 }
 
-Status DistributedJoinTables(shared_ptr<CylonContext> ctx,
+Status DistributedJoinTables(std::shared_ptr<CylonContext> &ctx,
 							 const std::string &table_left,
 							 const std::string &table_right,
 							 cylon::join::config::JoinConfig join_config,
@@ -133,7 +133,7 @@ Status DistributedJoinTables(shared_ptr<CylonContext> ctx,
   return status;
 }
 
-Status JoinTables(shared_ptr<CylonContext> ctx,
+Status JoinTables(std::shared_ptr<CylonContext> &ctx,
 				  const std::string &table_left,
 				  const std::string &table_right,
 				  cylon::join::config::JoinConfig join_config,
@@ -177,7 +177,7 @@ int64_t RowCount(const std::string &id) {
   return -1;
 }
 
-Status Merge(shared_ptr<cylon::CylonContext> &ctx,
+Status Merge(std::shared_ptr<cylon::CylonContext> &ctx,
              std::vector<std::string> table_ids,
              const std::string &merged_tab) {
   std::vector<std::shared_ptr<cylon::Table>> tables(table_ids.size());
@@ -192,7 +192,7 @@ Status Merge(shared_ptr<cylon::CylonContext> &ctx,
   return status;
 }
 
-Status SortTable(shared_ptr<cylon::CylonContext> &ctx,
+Status SortTable(std::shared_ptr<cylon::CylonContext> &ctx,
                  const std::string &id,
                  const std::string &sortedTableId,
                  int columnIndex) {
@@ -210,7 +210,7 @@ Status SortTable(shared_ptr<cylon::CylonContext> &ctx,
   return status;
 }
 
-Status HashPartition(shared_ptr<cylon::CylonContext> &ctx,
+Status HashPartition(std::shared_ptr<cylon::CylonContext> &ctx,
                      const std::string &id,
                      const std::vector<int> &hash_columns,
                      int no_of_partitions,
@@ -246,7 +246,7 @@ Status VerifyTableSchema(const std::shared_ptr<arrow::Table> &ltab,
 }
 
 
-Status Union(shared_ptr<CylonContext> ctx,
+Status Union(std::shared_ptr<CylonContext> &ctx,
 			 const std::string &table_left,
 			 const std::string &table_right,
 			 const std::string &dest_id) {
@@ -260,7 +260,7 @@ Status Union(shared_ptr<CylonContext> ctx,
   return status;
 }
 
-Status Subtract(shared_ptr<CylonContext> ctx,
+Status Subtract(std::shared_ptr<CylonContext> &ctx,
 				const std::string &table_left,
 				const std::string &table_right,
 				const std::string &dest_id) {
@@ -274,7 +274,7 @@ Status Subtract(shared_ptr<CylonContext> ctx,
   return status;
 }
 
-Status Intersect(shared_ptr<CylonContext> ctx,
+Status Intersect(std::shared_ptr<CylonContext> &ctx,
 				 const std::string &table_left,
 				 const std::string &table_right,
 				 const std::string &dest_id) {
@@ -288,7 +288,7 @@ Status Intersect(shared_ptr<CylonContext> ctx,
   return status;
 }
 
-Status DistributedUnion(shared_ptr<CylonContext> ctx,
+Status DistributedUnion(std::shared_ptr<CylonContext> &ctx,
 						const std::string &table_left,
 						const std::string &table_right,
 						const std::string &dest_id) {
@@ -302,7 +302,7 @@ Status DistributedUnion(shared_ptr<CylonContext> ctx,
   return status;
 }
 
-Status DistributedSubtract(shared_ptr<cylon::CylonContext> ctx,
+Status DistributedSubtract(std::shared_ptr<cylon::CylonContext> &ctx,
 						   const std::string &table_left,
 						   const std::string &table_right,
 						   const std::string &dest_id) {
@@ -316,7 +316,7 @@ Status DistributedSubtract(shared_ptr<cylon::CylonContext> ctx,
   return status;
 }
 
-Status DistributedIntersect(shared_ptr<CylonContext> ctx,
+Status DistributedIntersect(std::shared_ptr<CylonContext> &ctx,
 							const std::string &table_left,
 							const std::string &table_right,
 							const std::string &dest_id) {
@@ -330,7 +330,7 @@ Status DistributedIntersect(shared_ptr<CylonContext> ctx,
   return status;
 }
 
-Status Select(shared_ptr<cylon::CylonContext> &ctx,
+Status Select(std::shared_ptr<cylon::CylonContext> &ctx,
               const std::string &id,
               const std::function<bool(cylon::Row)> &selector,
               const std::string &dest_id) {
