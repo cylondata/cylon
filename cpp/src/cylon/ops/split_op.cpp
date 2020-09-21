@@ -18,6 +18,7 @@
 #include <status.hpp>
 #include <utility>
 #include <vector>
+#include <chrono>
 #include <unordered_map>
 #include <memory>
 #include <table.hpp>
@@ -107,6 +108,11 @@ cylon::SplitOp::SplitOp(const std::shared_ptr<CylonContext> &ctx,
 }
 
 bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> cy_table) {
+  if (!started_time) {
+    start = std::chrono::high_resolution_clock::now();
+    started_time = true;
+  }
+  auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::Table> table = cy_table->get_table();
   // first we need to calculate the hash
   std::shared_ptr<arrow::Array> arr = table->column(hash_column_)->chunk(0);
@@ -129,6 +135,8 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> cy_table) {
     std::shared_ptr<ArrowArrayStreamingSplitKernel> splitKernel = received_tables_[i];
     splitKernel->Split(array, outPartitions);
   }
+  auto t2 = std::chrono::high_resolution_clock::now();
+  exec_time += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   return true;
 }
 
@@ -137,6 +145,7 @@ void cylon::SplitOp::OnParentsFinalized() {
 }
 
 bool cylon::SplitOp::Finalize() {
+  auto t1 = std::chrono::high_resolution_clock::now();
   // keep arrays for each target, these arrays are used for creating the table
   std::unordered_map<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>> data_arrays;
   int kI = config_->NoOfPartitions();
@@ -163,6 +172,13 @@ bool cylon::SplitOp::Finalize() {
     std::shared_ptr<cylon::Table> kY = std::make_shared<cylon::Table>(t, ctx_.get());
     this->InsertToAllChildren(id, kY);
   }
+
+  auto t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Split time: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - start).count()
+            << " Fin time: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            << " Split time: " << exec_time;
   return true;
 }
 

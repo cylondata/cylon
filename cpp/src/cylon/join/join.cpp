@@ -97,25 +97,25 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
   auto left_join_column = left_tab_comb->column(left_join_column_idx)->chunk(0);
   auto right_join_column = right_tab_comb->column(right_join_column_idx)->chunk(0);
 
-  auto t1 = std::chrono::high_resolution_clock::now();
+//  auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
   auto status = SortIndicesInPlace(memory_pool, left_join_column, &left_index_sorted_column);
   if (status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed when sorting left table to indices. " << status.ToString();
     return status;
   }
-  auto t2 = std::chrono::high_resolution_clock::now();
+//  auto t2 = std::chrono::high_resolution_clock::now();
 //  LOG(INFO) << "Left sorting time : "
 //            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
-  t1 = std::chrono::high_resolution_clock::now();
+//  t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> right_index_sorted_column;
   status = SortIndicesInPlace(memory_pool, right_join_column, &right_index_sorted_column);
   if (status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed when sorting right table to indices. " << status.ToString();
     return status;
   }
-  t2 = std::chrono::high_resolution_clock::now();
+//  t2 = std::chrono::high_resolution_clock::now();
 //  LOG(INFO) << "right sorting time : "
 //            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
@@ -124,7 +124,7 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
   int64_t left_current_index = 0;
   int64_t right_current_index = 0;
 
-  t1 = std::chrono::high_resolution_clock::now();
+//  t1 = std::chrono::high_resolution_clock::now();
 
   std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
   std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>();
@@ -224,12 +224,12 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
     }
   }
 
-  t2 = std::chrono::high_resolution_clock::now();
+//  t2 = std::chrono::high_resolution_clock::now();
 //  LOG(INFO) << "Index join time : "
 //            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 //  LOG(INFO) << "Building final table with number of tuples - " << left_indices->size();
 
-  t1 = std::chrono::high_resolution_clock::now();
+//  t1 = std::chrono::high_resolution_clock::now();
   // build final table
   status = cylon::join::util::build_final_table_inplace_index(
       left_join_column_idx, right_join_column_idx,
@@ -240,7 +240,7 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       right_tab_comb,
       joined_table,
       memory_pool);
-  t2 = std::chrono::high_resolution_clock::now();
+//  auto t2 = std::chrono::high_resolution_clock::now();
 //  LOG(INFO) << "Built final table in : "
 //            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 //  LOG(INFO) << "Done and produced : " << left_indices->size();

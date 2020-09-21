@@ -43,6 +43,9 @@ class SplitOp : public Op {
   int hash_column_;
   std::vector<int> targets;
   std::vector<int> hash_targets;
+  std::chrono::high_resolution_clock::time_point start;
+  bool started_time = false;
+  long exec_time = 0;
  public:
   SplitOp(const std::shared_ptr<CylonContext> &ctx,
           const std::shared_ptr<arrow::Schema> &schema,
