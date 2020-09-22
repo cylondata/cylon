@@ -47,6 +47,10 @@ uint64_t next_random() {
   return randnumber;
 }
 
+uint64_t next_random_mt(std::mt19937_64 &gen) {
+  return gen();
+}
+
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     LOG(ERROR) << "There should be one argument with count";
@@ -158,6 +162,7 @@ void create_int64_table(char *const *argv,
   arrow::Int64Builder right_id_builder(pool);
   arrow::Int64Builder cost_builder(pool);
 
+  std::mt19937_64 gen (std::random_device{}());
   uint64_t count = stoull(argv[1]);
   uint64_t range = count * ctx->GetWorldSize();
   srand(time(NULL) + ctx->GetRank());
@@ -166,9 +171,9 @@ void create_int64_table(char *const *argv,
   st = right_id_builder.Reserve(count);
   st = cost_builder.Reserve(count);
   for (uint64_t i = 0; i < count; i++) {
-    int64_t l = next_random() % range;
-    int64_t r = next_random() % range;
-    int64_t v = next_random() % range;
+    int64_t l = next_random_mt(gen) % range;
+    int64_t r = next_random_mt(gen) % range;
+    int64_t v = next_random_mt(gen) % range;
     left_id_builder.UnsafeAppend(l);
     right_id_builder.UnsafeAppend(r);
     cost_builder.UnsafeAppend(v);
