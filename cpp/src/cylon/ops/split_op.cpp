@@ -180,6 +180,7 @@ bool cylon::SplitOp::Finalize() {
     this->InsertToAllChildren(id, kY);
   }
 
+  this->received_tables_.clear();
   auto t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Split time: "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - start).count()

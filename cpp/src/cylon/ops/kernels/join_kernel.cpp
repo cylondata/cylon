@@ -29,9 +29,9 @@ JoinKernel::JoinKernel(const std::shared_ptr<cylon::CylonContext> &ctx,
 
 void JoinKernel::InsertTable(int tag, std::shared_ptr<cylon::Table> table) {
   if (tag == 100) {
-    left_tables.push_back(table->get_table());
+    left_tables.push(table->get_table());
   } else if (tag == 200) {
-    right_tables.push_back(table->get_table());
+    right_tables.push(table->get_table());
   } else {
     LOG(FATAL) << "Un-recognized tag "<< tag;
   }   
@@ -42,10 +42,12 @@ cylon::Status JoinKernel::Finalize(std::shared_ptr<cylon::Table> &result) {
   std::vector<std::shared_ptr<arrow::Table>> joined_tables;
   arrow::MemoryPool *kPool = cylon::ToArrowPool(this->ctx.get());
   for (size_t i = 0; i < kI; i++) {
-    std::shared_ptr<arrow::Table> left_tab = left_tables[i];
-    std::shared_ptr<arrow::Table> right_tab = right_tables[i];
+    std::shared_ptr<arrow::Table> left_tab = left_tables.front();
+    std::shared_ptr<arrow::Table> right_tab = right_tables.front();
     std::shared_ptr<arrow::Table> out;
     arrow::Status st = cylon::join::joinTables(left_tab, right_tab, *join_config, &out, kPool);
+    left_tables.pop();
+    right_tables.pop();
     joined_tables.push_back(out);
   }
   arrow::Result<std::shared_ptr<arrow::Table>> concat_tables =

@@ -18,6 +18,7 @@
 #include <glog/logging.h>
 
 #include <vector>
+#include <queue>
 #include <table.hpp>
 #include <ops/kernels/row_comparator.hpp>
 
@@ -25,8 +26,8 @@ namespace cylon {
 namespace kernel {
 class JoinKernel {
  private:
-  std::vector<std::shared_ptr<arrow::Table >> left_tables{};
-  std::vector<std::shared_ptr<arrow::Table >> right_tables{};
+  std::queue<std::shared_ptr<arrow::Table >> left_tables{};
+  std::queue<std::shared_ptr<arrow::Table >> right_tables{};
   std::shared_ptr<arrow::Schema> schema;
   std::shared_ptr<CylonContext> ctx;
   std::shared_ptr<cylon::join::config::JoinConfig> join_config;
