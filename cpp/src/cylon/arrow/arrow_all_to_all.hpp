@@ -86,7 +86,7 @@ class ArrowCallback {
    * @param reference reference sent by the sender
    * @return true if we accept this buffer
    */
-  virtual bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) = 0;
+  virtual bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference = 0) = 0;
 };
 
 /**
