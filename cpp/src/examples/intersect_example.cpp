@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_time).count() << "[ms]";
 
-  status = first_table->DistributedIntersect(second_table, result_table);
+  status = cylon::Table::DistributedIntersect(first_table, second_table, result_table);
   if (!status.is_ok()) {
     LOG(INFO) << "Table intersection failed";
     ctx->Finalize();

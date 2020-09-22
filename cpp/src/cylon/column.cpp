@@ -16,8 +16,25 @@
 
 namespace cylon {
 
-std::shared_ptr<Column> cylon::Column::FromArrow(std::shared_ptr<arrow::Array> array) {
-  return std::shared_ptr<Column>();
+std::shared_ptr<arrow::ChunkedArray> Column::GetColumnData() const{
+  return this->data_array;
+};
+
+std::string Column::GetID() const{
+  return this->id;
+}
+std::shared_ptr<DataType> Column::GetDataType() const{
+  return this->type;
+}
+std::shared_ptr<Column> Column::Make(const std::string &id,
+                                     const std::shared_ptr<DataType> &type,
+                                     const std::shared_ptr<arrow::ChunkedArray> &data_) {
+  return std::make_shared<Column>(id, type, data_);
+}
+std::shared_ptr<Column> Column::Make(const std::string &id,
+                                     const std::shared_ptr<DataType> &type,
+                                     const std::shared_ptr<arrow::Array> &data_) {
+  return std::make_shared<Column>(id, type, data_);
 }
 
 }  // namespace cylon

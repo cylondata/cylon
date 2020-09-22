@@ -19,42 +19,97 @@
 #include <utility>
 #include <memory>
 #include "data_types.hpp"
+#include "arrow/arrow_types.hpp"
 
 #include <arrow/api.h>
 #include <arrow/table.h>
+
+#include <iostream>
 
 namespace cylon {
 
 class Column {
  public:
-  Column(std::string id, std::shared_ptr<DataType> type) : id(std::move(id)), type(std::move(type)) {
+  Column(const std::string &id, const std::shared_ptr<DataType> &type,
+         const std::shared_ptr<arrow::ChunkedArray> &data_)
+      : id(id), type(type), data_array(data_) {
+  }
+
+  Column(const std::string &id, const std::shared_ptr<DataType> &type,
+         const std::shared_ptr<arrow::Array> &data_)
+      : id(id), type(type),
+        data_array(std::make_shared<arrow::ChunkedArray>(data_)) {
   }
 
   /**
-   * From the arrow array
-   * @param array the array to use
-   * @return the column
+   * Return the data wrapped by column 
+   * @return arrow chunked array
    */
-  std::shared_ptr<Column> FromArrow(std::shared_ptr<arrow::Array> array);
+  std::shared_ptr<arrow::ChunkedArray> GetColumnData() const;
 
   /**
    * Return the unique id of the array
    * @return
    */
-  std::string get_id() {
-	return this->id;
+  std::string GetID() const;
+
+  /**
+   * Return the data type of the column
+   * @return
+   */
+  std::shared_ptr<DataType> GetDataType() const;
+
+  static std::shared_ptr<Column> Make(const std::string &id, const std::shared_ptr<DataType> &type,
+                                      const std::shared_ptr<arrow::ChunkedArray> &data_);
+
+  static std::shared_ptr<Column> Make(const std::string &id, const std::shared_ptr<DataType> &type,
+                                      const std::shared_ptr<arrow::Array> &data_);
+
+ private:
+  std::string id; // The id of the column
+  std::shared_ptr<DataType> type; // The datatype of the column
+
+ protected:
+  Column(std::string id, std::shared_ptr<DataType> type)
+      : id(std::move(id)), type(std::move(type)) {
+  }
+
+  std::shared_ptr<arrow::ChunkedArray> data_array;   // pointer to the data array
+};
+
+template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
+class VectorColumn : public Column {
+ public:
+  VectorColumn(const std::string &id,
+               const std::shared_ptr<DataType> &type,
+               const std::shared_ptr<std::vector<T>> &data_vector) :
+      Column(id, type),
+      data(data_vector),
+      // define the validity array based on the size and fill it with 0xff
+      validity_vector(std::vector<uint8_t>((data_vector->size() + 7) / 8, 0xff)) {
+    // create the mask for the last byte
+    validity_vector.back() =
+        (uint8_t) (1 << (8 + data_vector->size() - 8 * validity_vector.size())) - 1;
+
+    const std::shared_ptr<arrow::Buffer> &data_buff = arrow::Buffer::Wrap(*data);
+    const std::shared_ptr<arrow::Buffer> &val_buff = arrow::Buffer::Wrap(validity_vector);
+
+    const std::shared_ptr<arrow::ArrayData> &arr_data =
+        arrow::ArrayData::Make(cylon::tarrow::convertToArrowType(type), data->size(),
+                               {val_buff, data_buff});
+
+    Column::data_array = std::make_shared<arrow::ChunkedArray>(arrow::MakeArray(arr_data));
+  }
+
+  static std::shared_ptr<VectorColumn<T>> Make(const std::string &id,
+                                               const std::shared_ptr<DataType> &type,
+                                               const std::shared_ptr<std::vector<T>> &data_vector) {
+    return std::make_shared<VectorColumn<T>>(id, type, data_vector);
   }
 
  private:
-  /**
-   * The id of the column
-   */
-  std::string id;
-
-  /**
-   * The datatype of the column
-   */
-  std::shared_ptr<DataType> type;
+  std::shared_ptr<std::vector<T>> data; // pointer to the data vector
+  std::vector<uint8_t> validity_vector; // validity vector
 };
 
 }  // namespace cylon

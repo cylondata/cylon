@@ -18,6 +18,7 @@
 #include <arrow/api.h>
 #include <arrow/table.h>
 
+#include "../net/buffer.hpp"
 #include "../net/ops/all_to_all.hpp"
 
 namespace cylon {
@@ -89,6 +90,32 @@ class ArrowCallback {
 };
 
 /**
+ * Arrow table specific buffer
+ */
+class ArrowBuffer : public Buffer {
+public:
+  explicit ArrowBuffer(shared_ptr<arrow::Buffer> buf);
+  int64_t GetLength() override;
+  uint8_t *GetByteBuffer() override;
+
+  shared_ptr<arrow::Buffer> getBuf() const;
+private:
+  std::shared_ptr<arrow::Buffer> buf;
+};
+
+/**
+ * Arrow table specific allocator
+ */
+class ArrowAllocator : public Allocator {
+public:
+  explicit ArrowAllocator(arrow::MemoryPool *pool);
+
+  Status Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) override;
+private:
+  arrow::MemoryPool *pool;
+};
+
+/**
  * We are going to take a table as input and send its columns one by one
  */
 class ArrowAllToAll : public ReceiveCallback {
@@ -150,7 +177,7 @@ class ArrowAllToAll : public ReceiveCallback {
    * @param buffer
    * @param length
    */
-  bool onReceive(int source, void *buffer, int length) override;
+  bool onReceive(int source, std::shared_ptr<Buffer> buffer, int length) override;
 
   /**
    * We implement the receive callback
@@ -220,6 +247,8 @@ class ArrowAllToAll : public ReceiveCallback {
    * The memory pool
    */
   arrow::MemoryPool *pool_;
+  // this is the allocator to create memory when receiving
+  ArrowAllocator *allocator_;
 
   bool completed_;
   bool finishCalled_;

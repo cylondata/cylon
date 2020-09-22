@@ -1,9 +1,10 @@
 SOURCE_DIR=$(pwd)/cpp
 CPP_BUILD="OFF"
 PYTHON_BUILD="OFF"
+CYTHON_BUILD="OFF"
 JAVA_BUILD="OFF"
 BUILD_ALL="OFF"
-BUILD_MODE=Debug
+BUILD_MODE=Release
 BUILD_MODE_DEBUG="OFF"
 BUILD_MODE_RELEASE="OFF"
 PYTHON_RELEASE="OFF"
@@ -43,6 +44,10 @@ case $key in
     PYTHON_BUILD="ON"
     shift # past argument
     ;;
+    --cython)    
+    CYTHON_BUILD="ON"
+    shift # past argument
+    ;;
     --java)
     CPP_BUILD="ON"
     JAVA_BUILD="ON"
@@ -50,10 +55,12 @@ case $key in
     ;;
     --debug)
     BUILD_MODE_DEBUG="ON"
+    BUILD_MODE_RELEASE="OFF"
     shift # past argument
     ;;
     --release)
     BUILD_MODE_RELEASE="ON"
+    BUILD_MODE_DEBUG="OFF"
     shift # past argument
     ;;
     --test)
@@ -135,7 +142,8 @@ build_cpp(){
   pushd ${BUILD_PATH} || exit 1
   export ARROW_HOME=${BUILD_PATH}/arrow/install
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
-      -DCYLON_WITH_TEST=${RUN_TESTS} $CPPLINT_CMD $INSTALL_CMD ${SOURCE_DIR} || exit 1
+      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_TESTS} $CPPLINT_CMD $INSTALL_CMD \
+      ${SOURCE_DIR} || exit 1
   make -j 4 || exit 1
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
   printf "Cylon CPP Built Successufully!"
@@ -172,6 +180,7 @@ build_python() {
   popd || exit 1
   print_line
 }
+
 
 release_python() {
   print_line
@@ -214,7 +223,7 @@ check_pycylon_installation(){
 build_java(){
   echo "Building Java"
   cd java
-  mvn clean install -Dcylon.core.libs=$BUILD_PATH/lib || exit 1
+  mvn clean install -Dcylon.core.libs=$BUILD_PATH/lib -Dcylon.arrow.dir=$BUILD_PATH/arrow/install || exit 1
   echo "Cylon Java built Successufully!"
   cd ../
 }
@@ -244,6 +253,12 @@ if [ "${PYTHON_BUILD}" = "ON" ]; then
 	export_info
 	build_pyarrow
 	check_pyarrow_installation
+	build_python
+	check_pycylon_installation
+fi
+
+if [ "${CYTHON_BUILD}" = "ON" ]; then
+	export_info	
 	build_python
 	check_pycylon_installation
 fi

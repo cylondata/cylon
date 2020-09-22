@@ -64,6 +64,7 @@ add_library(cylon SHARED
         io/csv_read_config_holder.hpp
         util/uuid.hpp
         util/uuid.cpp
+        util/sort.hpp
         net/TxRequest.hpp
         net/TxRequest.cpp
         util/builtins.hpp
@@ -84,7 +85,14 @@ add_library(cylon SHARED
         arrow/arrow_builder.hpp
         arrow/arrow_builder.cpp
         arrow/arrow_task_all_to_all.h
-        arrow/arrow_task_all_to_all.cpp)
+        arrow/arrow_task_all_to_all.cpp
+        arrow/arrow_builder.cpp
+        compute/aggregates.hpp
+        compute/aggregates.cpp
+        net/comm_operations.hpp
+        net/mpi/mpi_operations.cpp
+        net/mpi/mpi_operations.hpp
+        )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
 

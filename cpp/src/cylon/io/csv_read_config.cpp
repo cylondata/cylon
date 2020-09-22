@@ -119,8 +119,8 @@ CSVReadOptions CSVReadOptions::IncludeMissingColumns() {
   CSVConfigHolder::GetCastedHolder(*this)->include_missing_columns = true;
   return *this;
 }
-CSVReadOptions CSVReadOptions::ConcurrentFileReads(bool concurrent_file_reads) {
-  this->concurrent_file_reads = concurrent_file_reads;
+CSVReadOptions CSVReadOptions::ConcurrentFileReads(bool file_reads) {
+  this->concurrent_file_reads = file_reads;
   return *this;
 }
 bool CSVReadOptions::IsConcurrentFileReads() {

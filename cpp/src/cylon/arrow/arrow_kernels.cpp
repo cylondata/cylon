@@ -61,17 +61,20 @@ cylon::Status CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
 }
 
 int FixedBinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,
-                                     const std::vector<int64_t> &partitions,
-                                     const std::vector<int32_t> &targets,
-                                     std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
+                                       const std::vector<int64_t> &partitions,
+                                       const std::vector<int32_t> &targets,
+                                       std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
+                                       std::vector<uint32_t> &counts) {
   auto reader =
       std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
   std::unordered_map<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>> builders;
 
-  for (int it : targets) {
+  for (size_t i = 0; i < targets.size(); i++) {
+    int target = targets[i];
     std::shared_ptr<arrow::FixedSizeBinaryBuilder> b =
         std::make_shared<arrow::FixedSizeBinaryBuilder>(type_, pool_);
-    builders.insert(std::pair<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>>(it, b));
+    arrow::Status st = b->Reserve(counts[i]);
+    builders.insert(std::pair<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>>(target, b));
   }
 
   for (size_t i = 0; i < partitions.size(); i++) {
@@ -97,7 +100,8 @@ int FixedBinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,
 int BinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,
                                   const std::vector<int64_t> &partitions,
                                   const std::vector<int32_t> &targets,
-                                  std::unordered_map<int, std::shared_ptr<arrow::Array> > &out) {
+                                  std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
+                                  std::vector<uint32_t> &counts) {
   auto reader =
       std::static_pointer_cast<arrow::BinaryArray>(values);
   std::unordered_map<int, std::shared_ptr<arrow::BinaryBuilder>> builders;
@@ -170,7 +174,7 @@ class ArrowFixedSizeBinarySortKernel : public ArrowArraySortKernel {
     auto array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
-    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(),
+    arrow::Status status = AllocateBuffer(pool_,
                                           buf_size + 1, &indices_buf);
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
@@ -200,7 +204,7 @@ class ArrowBinarySortKernel : public ArrowArraySortKernel {
     auto array = std::static_pointer_cast<arrow::BinaryArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
-    arrow::Status status = AllocateBuffer(arrow::default_memory_pool(),
+    arrow::Status status = AllocateBuffer(pool_,
         buf_size + 1, &indices_buf);
     if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
@@ -261,6 +265,47 @@ arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow:
                           std::shared_ptr<arrow::Array> *offsets) {
   std::shared_ptr<ArrowArraySortKernel> out;
   CreateSorter(values->type(), memory_pool, &out);
+  out->Sort(values, offsets);
+  return arrow::Status::OK();
+}
+
+int CreateInplaceSorter(std::shared_ptr<arrow::DataType> type,
+                        arrow::MemoryPool *pool,
+                        std::shared_ptr<ArrowArrayInplaceSortKernel> *out) {
+  ArrowArrayInplaceSortKernel *kernel;
+  switch (type->id()) {
+    case arrow::Type::UINT8:kernel = new UInt8ArrayInplaceSorter(type, pool);
+      break;
+    case arrow::Type::INT8:kernel = new Int8ArrayInplaceSorter(type, pool);
+      break;
+    case arrow::Type::UINT16:kernel = new UInt16ArrayInplaceSorter(type, pool);
+      break;
+    case arrow::Type::INT16:kernel = new Int16ArrayInplaceSorter(type, pool);
+      break;
+    case arrow::Type::UINT32:kernel = new UInt32ArrayInplaceSorter(type, pool);
+      break;
+    case arrow::Type::INT32:kernel = new Int32ArrayInplaceSorter(type, pool);
+      break;
+    case arrow::Type::UINT64:kernel = new UInt64ArrayInplaceSorter(type, pool);
+      break;
+    case arrow::Type::INT64:kernel = new Int64ArrayInplaceSorter(type, pool);
+      break;
+    case arrow::Type::FLOAT:kernel = new FloatArrayInplaceSorter(type, pool);
+      break;
+    case arrow::Type::DOUBLE:kernel = new DoubleArrayInplaceSorter(type, pool);
+      break;
+    default:LOG(FATAL) << "Un-known type";
+      return -1;
+  }
+  out->reset(kernel);
+  return 0;
+}
+
+arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
+                                 std::shared_ptr<arrow::Array> values,
+                                 std::shared_ptr<arrow::UInt64Array> *offsets) {
+  std::shared_ptr<ArrowArrayInplaceSortKernel> out;
+  CreateInplaceSorter(values->type(), memory_pool, &out);
   out->Sort(values, offsets);
   return arrow::Status::OK();
 }

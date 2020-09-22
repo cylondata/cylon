@@ -32,12 +32,14 @@ class MPIConfig : public CommConfig {
 };
 
 class MPICommunicator : public Communicator {
+ public:
   void Init(CommConfig *config) override;
   Channel *CreateChannel() override;
   int GetRank() override;
   int GetWorldSize() override;
   void Finalize() override;
   void Barrier() override;
+  CommType GetCommType() override;
 };
 }
 }

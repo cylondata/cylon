@@ -14,9 +14,10 @@
 
 #include "python/net/comm/callback.h"
 
-bool cylon::net::comms::Callback::onReceive(int source, void *buffer, int length) {
+bool cylon::net::comms::Callback::onReceive(int source,
+    std::shared_ptr<Buffer> buffer, int length) {
   std::cout << "Received value: " << source << " length " << length << std::endl;
-  delete[] reinterpret_cast<char *>(buffer);
+  delete[] reinterpret_cast<char *>(buffer->GetByteBuffer());
   return false;
 }
 

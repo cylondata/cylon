@@ -24,6 +24,7 @@
     <properties>
         <native.build.path>${basedir}/target/cmake-build</native.build.path>
         <cylon.core.libs>${basedir}/../build/lib</cylon.core.libs>
+        <cylon.arrow.dir>${basedir}/../build/arrow</cylon.arrow.dir>
     </properties>
 
     <dependencies>
@@ -94,6 +95,7 @@
                                 <exec dir="${native.build.path}" failonerror="true" executable="cmake">
                                     <arg value="${basedir}/src/main/native"/>
                                     <arg value="-DCYLON_CORE_LIBS:STRING=${cylon.core.libs}"/>
+                                    <arg value="-DCYLON_ARROW_DIR:STRING=${cylon.arrow.dir}"/>
                                 </exec>
                                 <exec dir="${native.build.path}" failonerror="true" executable="make">
                                     <arg value="-j"/>

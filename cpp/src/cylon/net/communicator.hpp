@@ -17,6 +17,7 @@
 
 #include "comm_config.hpp"
 #include "channel.hpp"
+
 namespace cylon {
 namespace net {
 
@@ -32,6 +33,7 @@ class Communicator {
   virtual int GetWorldSize() = 0;
   virtual void Finalize() = 0;
   virtual void Barrier() = 0;
+  virtual CommType GetCommType() = 0;
 };
 }
 }

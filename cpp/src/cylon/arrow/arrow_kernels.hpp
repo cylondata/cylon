@@ -19,6 +19,7 @@
 #include <arrow/compute/kernel.h>
 #include <glog/logging.h>
 #include "../status.hpp"
+#include "util/sort.hpp"
 
 namespace cylon {
 
@@ -37,9 +38,10 @@ class ArrowArraySplitKernel {
    * @return
    */
   virtual int Split(std::shared_ptr<arrow::Array> &values,
-					const std::vector<int64_t> &partitions,
-					const std::vector<int32_t> &targets,
-					std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) = 0;
+                    const std::vector<int64_t> &partitions,
+                    const std::vector<int32_t> &targets,
+                    std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
+                    std::vector<uint32_t> &counts) = 0;
  protected:
   std::shared_ptr<arrow::DataType> type_;
   arrow::MemoryPool *pool_;
@@ -53,21 +55,24 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
 	  ArrowArraySplitKernel(type, pool) {}
 
   int Split(std::shared_ptr<arrow::Array> &values,
-			const std::vector<int64_t> &partitions,
-			const std::vector<int32_t> &targets,
-			std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) override {
+            const std::vector<int64_t> &partitions,
+            const std::vector<int32_t> &targets,
+            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
+            std::vector<uint32_t> &counts) override {
 	auto reader =
 		std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-	std::unordered_map<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
+	std::vector<std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
 
-	for (long target : targets) {
+    for (size_t i = 0; i < targets.size(); i++) {
 	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = std::make_shared<arrow::NumericBuilder<TYPE>>(type_, pool_);
-	  builders.insert(std::pair<int, std::shared_ptr<arrow::NumericBuilder<TYPE>>>(target, b));
+      b->Reserve(counts[i]);
+	  builders.push_back(b);
 	}
 
-	for (size_t i = 0; i < partitions.size(); i++) {
-	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[partitions.at(i)];
-	  b->Append(reader->Value(i));
+    size_t kI = partitions.size();
+    for (size_t i = 0; i < kI; i++) {
+	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[partitions[i]];
+	  b->UnsafeAppend(reader->Value(i));
 	}
 
 	for (long target : targets) {
@@ -87,9 +92,10 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
 	  ArrowArraySplitKernel(type, pool) {}
 
   int Split(std::shared_ptr<arrow::Array> &values,
-			const std::vector<int64_t> &partitions,
-			const std::vector<int32_t> &targets,
-			std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) override;
+            const std::vector<int64_t> &partitions,
+            const std::vector<int32_t> &targets,
+            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
+            std::vector<uint32_t> &counts) override;
 };
 
 class BinaryArraySplitKernel : public ArrowArraySplitKernel {
@@ -99,9 +105,10 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
 	  ArrowArraySplitKernel(type, pool) {}
 
   int Split(std::shared_ptr<arrow::Array> &values,
-			const std::vector<int64_t> &partitions,
-			const std::vector<int32_t> &targets,
-			std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) override;
+            const std::vector<int64_t> &partitions,
+            const std::vector<int32_t> &targets,
+            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
+            std::vector<uint32_t> &counts) override;
 };
 
 using UInt8ArraySplitter = ArrowArrayNumericSplitKernel<arrow::UInt8Type>;
@@ -158,7 +165,7 @@ class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
 	const T *left_data = array->raw_values();
 	std::shared_ptr<arrow::Buffer> indices_buf;
 	int64_t buf_size = values->length() * sizeof(uint64_t);
-	arrow::Status status = AllocateBuffer(arrow::default_memory_pool(), buf_size + 1, &indices_buf);
+	arrow::Status status = AllocateBuffer(pool_, buf_size + 1, &indices_buf);
 	if (status != arrow::Status::OK()) {
 	  LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
 	  return -1;
@@ -168,7 +175,6 @@ class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
 	  indices_begin[i] = i;
 	}
 	int64_t *indices_end = indices_begin + values->length();
-	// LOG(INFO) << "Length " << values->length() << " ind " << indices_begin << "nd " << indices_begin + values->length();
 	std::sort(indices_begin, indices_end, [left_data](uint64_t left, uint64_t right) {
 	  return left_data[left] < left_data[right];
 	});
@@ -191,6 +197,76 @@ using DoubleArraySorter = ArrowArrayNumericSortKernel<arrow::DoubleType>;
 
 arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> values,
 						  std::shared_ptr<arrow::Array> *offsets);
+
+class ArrowArrayInplaceSortKernel {
+ public:
+  explicit ArrowArrayInplaceSortKernel(std::shared_ptr<arrow::DataType> type,
+                                       arrow::MemoryPool *pool) : type_(type), pool_(pool) {}
+
+  /**
+   * Sort the values in the column and return an array with the indices
+   * @param ctx
+   * @param values
+   * @param targets
+   * @param out_length
+   * @param out
+   * @return
+   */
+  virtual int Sort(std::shared_ptr<arrow::Array> values,
+                   std::shared_ptr<arrow::UInt64Array> *out) = 0;
+ protected:
+  std::shared_ptr<arrow::DataType> type_;
+  arrow::MemoryPool *pool_;
+};
+
+template<typename TYPE>
+class ArrowArrayInplaceNumericSortKernel : public ArrowArrayInplaceSortKernel {
+ public:
+  using T = typename TYPE::c_type;
+
+  explicit ArrowArrayInplaceNumericSortKernel(std::shared_ptr<arrow::DataType> type,
+                                              arrow::MemoryPool *pool) :
+      ArrowArrayInplaceSortKernel(type, pool) {}
+
+  int Sort(std::shared_ptr<arrow::Array> values,
+           std::shared_ptr<arrow::UInt64Array> *offsets) override {
+    auto array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
+    std::shared_ptr<arrow::ArrayData> data = array->data();
+    // get the first buffer as a mutable buffer
+    T *left_data = data->GetMutableValues<T>(1);
+    std::shared_ptr<arrow::Buffer> indices_buf;
+    int64_t length = values->length();
+    int64_t buf_size = length * sizeof(uint64_t);
+    arrow::Status status = AllocateBuffer(pool_, buf_size + 1, &indices_buf);
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
+      return -1;
+    }
+    auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
+    for (int64_t i = 0; i < length; i++) {
+      indices_begin[i] = i;
+    }
+    cylon::util::quicksort(left_data, 0, length, indices_begin);
+    *offsets = std::make_shared<arrow::UInt64Array>(length, indices_buf);
+    return 0;
+  }
+};
+
+using UInt8ArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::UInt8Type>;
+using UInt16ArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::UInt16Type>;
+using UInt32ArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::UInt32Type>;
+using UInt64ArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::UInt64Type>;
+using Int8ArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::Int8Type>;
+using Int16ArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::Int16Type>;
+using Int32ArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::Int32Type>;
+using Int64ArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::Int64Type>;
+using HalfFloatArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::HalfFloatType>;
+using FloatArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::FloatType>;
+using DoubleArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::DoubleType>;
+
+arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
+                                 std::shared_ptr<arrow::Array> values,
+                                 std::shared_ptr<arrow::UInt64Array> *offsets);
 
 }
 

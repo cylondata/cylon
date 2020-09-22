@@ -14,9 +14,12 @@
 
 #include <mpi.h>
 
+#include <memory>
+
 #include "net/communicator.hpp"
 #include "mpi_communicator.hpp"
 #include "mpi_channel.hpp"
+#include "mpi_operations.hpp"
 
 namespace cylon {
 namespace net {
@@ -60,6 +63,10 @@ void MPICommunicator::Finalize() {
 }
 void MPICommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);
+}
+
+CommType MPICommunicator::GetCommType() {
+  return MPI;
 }
 }  // namespace net
 }  // namespace cylon

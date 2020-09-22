@@ -27,8 +27,8 @@
 
 namespace cylon {
 namespace test {
-static int Verify(CylonContext *ctx, const std::shared_ptr<Table> &result,
-                  const std::shared_ptr<Table> &expected_result) {
+static int Verify(CylonContext *ctx, std::shared_ptr<Table> &result,
+                  std::shared_ptr<Table> &expected_result) {
   Status status;
   std::shared_ptr<Table> verification;
 
@@ -36,7 +36,7 @@ static int Verify(CylonContext *ctx, const std::shared_ptr<Table> &result,
 
   LOG(INFO) << "expected:" << expected_result->Rows() << " found:" << result->Rows();
 
-  if (!(status = result->Subtract(expected_result, verification)).is_ok()) {
+  if (!(status = cylon::Table::Subtract(result, expected_result, verification)).is_ok()) {
     LOG(ERROR) << "subtract FAIL! " << status.get_msg();
     return 1;
   } else if (verification->Rows()) {
@@ -50,8 +50,11 @@ static int Verify(CylonContext *ctx, const std::shared_ptr<Table> &result,
   }
 }
 
-int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right,
-                                             std::shared_ptr<Table> &out),
+typedef Status(*fun_ptr)(std::shared_ptr<Table> &,
+                         std::shared_ptr<Table> &,
+                         std::shared_ptr<Table> &);
+
+int TestSetOperation(fun_ptr fn,
                      CylonContext *ctx,
                      const std::string &path1,
                      const std::string &path2,
@@ -90,8 +93,8 @@ int TestSetOperation(Status(Table::*fun_ptr)(const std::shared_ptr<Table> &right
             << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start)
                 .count()
             << "[ms]";
-
-  if (!(status = ((*table1).*fun_ptr)(table2, result)).is_ok()) {
+  status = fn(table1, table2, result);
+  if (!status.is_ok()) {
     LOG(INFO) << "Table op failed ";
     ctx->Finalize();
     return 1;
@@ -148,7 +151,7 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
                 .count()
             << "[ms]";
 
-  status = table1->DistributedJoin(table2, join_config, &joined);
+  status = cylon::Table::DistributedJoin(table1, table2, join_config, &joined);
   if (!status.is_ok()) {
     LOG(INFO) << "Table join failed ";
     return 1;
@@ -172,6 +175,21 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   joined->WriteCSV(out_path, write_options);
 #endif
   return 0;
+}
+
+cylon::Status CreateTable(cylon::CylonContext *ctx, int rows, std::shared_ptr<cylon::Table> *output) {
+  std::shared_ptr<std::vector<int32_t>> col0 = std::make_shared<std::vector<int32_t >>();
+  std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t >>();
+
+  for (int i = 0; i < rows; i++) {
+    col0->push_back(i);
+    col1->push_back((double_t) i + 10.0);
+  }
+
+  auto c0 = cylon::VectorColumn<int32_t>::Make("col0", cylon::Int32(), col0);
+  auto c1 = cylon::VectorColumn<double>::Make("col1", cylon::Double(), col1);
+
+  return cylon::Table::FromColumns(ctx, {c0, c1}, output);
 }
 
 }
