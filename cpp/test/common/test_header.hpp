@@ -25,7 +25,7 @@
 #include <chrono>
 #include <net/mpi/mpi_communicator.hpp>
 
-cylon::CylonContext *ctx = NULL;
+std::shared_ptr<cylon::CylonContext> ctx = NULL;
 int RANK = 0;
 int WORLD_SZ = 0;
 
@@ -33,7 +33,7 @@ using namespace cylon;
 
 int main(int argc, char *argv[]) {
   // global setup...
-  auto mpi_config = new cylon::net::MPIConfig();
+  auto mpi_config = std::shared_ptr<cylon::net::MPIConfig>();
   ctx = cylon::CylonContext::InitDistributed(mpi_config);
   RANK = ctx->GetRank();
   WORLD_SZ = ctx->GetWorldSize();
