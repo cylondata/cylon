@@ -12,7 +12,8 @@
 
 namespace cylon {
 
-template<typename T, cylon::GroupByAggregationOp AggregateOp>
+template<typename T, cylon::GroupByAggregationOp AggregateOp,
+    typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
 struct AggregateKernel {
 
 };
@@ -86,7 +87,7 @@ struct AggregateKernel<T, GroupByAggregationOp::COUNT> {
   using ResultType = int64_t;
   using ResultArrowType = arrow::Int64Type;
 
-  static constexpr const char* _prefix = "count_";
+//  static constexpr const char* _prefix = "count_";
 
   static constexpr HashMapType Init(const T &value) {
     return HashMapType{1};
@@ -234,7 +235,8 @@ typedef cylon::Status
                    const std::shared_ptr<arrow::ChunkedArray> &val_col,
                    std::vector<shared_ptr<arrow::Array>> &output_arrays);
 
-template<typename IDX_T, typename VAL_T>
+template<typename IDX_T, typename VAL_T, typename = typename std::enable_if<
+    arrow::is_number_type<VAL_T>::value | arrow::is_boolean_type<VAL_T>::value>::type>
 HashGroupByFptr ResolveOp(cylon::GroupByAggregationOp op) {
   switch (op) {
     case SUM: return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::SUM>;
@@ -246,7 +248,9 @@ HashGroupByFptr ResolveOp(cylon::GroupByAggregationOp op) {
   return nullptr;
 }
 
-template<typename IDX_ARROW_T>
+template<typename IDX_ARROW_T,
+    typename = typename std::enable_if<
+        arrow::is_number_type<IDX_ARROW_T>::value | arrow::is_boolean_type<IDX_ARROW_T>::value>::type>
 HashGroupByFptr PickHashGroupByFptr(const shared_ptr<cylon::DataType> &val_data_type,
                                     const cylon::GroupByAggregationOp op) {
   switch (val_data_type->getType()) {
