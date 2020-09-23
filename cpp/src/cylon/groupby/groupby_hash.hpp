@@ -1,6 +1,16 @@
-//
-// Created by niranda on 9/22/20.
-//
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef CYLON_CPP_SRC_CYLON_GROUPBY_GROUPBY_OPS_HPP_
 #define CYLON_CPP_SRC_CYLON_GROUPBY_GROUPBY_OPS_HPP_
@@ -8,6 +18,9 @@
 #include <functional>
 
 #include <arrow/api.h>
+#include <data_types.hpp>
+#include <table.hpp>
+#include <ctx/arrow_memory_pool_utils.hpp>
 #include "groupby_aggregate_ops.hpp"
 
 namespace cylon {
@@ -126,7 +139,7 @@ struct AggregateKernel<T, GroupByAggregationOp::COUNT> {
 
 template<typename IDX_T, typename VAL_T, cylon::GroupByAggregationOp AGG_OP,
     typename = typename std::enable_if<arrow::is_number_type<IDX_T>::value | arrow::is_boolean_type<IDX_T>::value>::type>
-cylon::Status HashGroupBy(arrow::MemoryPool *pool,
+arrow::Status HashGroupBy(arrow::MemoryPool *pool,
                           const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                           const std::shared_ptr<arrow::ChunkedArray> &val_col,
                           std::vector<std::shared_ptr<arrow::Array>> &output_arrays) {
@@ -179,11 +192,11 @@ cylon::Status HashGroupBy(arrow::MemoryPool *pool,
     const unsigned long groups = hash_map.size();
 
     if (!(s = idx_builder.Reserve(groups)).ok()) {
-      return cylon::Status(static_cast<int>(s.code()), s.message());
+      return s;
     }
 
     if (!(s = val_builder.Reserve(groups)).ok()) {
-      return cylon::Status(static_cast<int>(s.code()), s.message());
+      return s;
     }
 
     for (auto &p:  hash_map) {
@@ -193,10 +206,10 @@ cylon::Status HashGroupBy(arrow::MemoryPool *pool,
     hash_map.clear();
 
     if (!(s = idx_builder.Finish(&out_idx)).ok()) {
-      return cylon::Status(static_cast<int>(s.code()), s.message());
+      return s;
     }
     if (!(s = val_builder.Finish(&out_val)).ok()) {
-      return cylon::Status(static_cast<int>(s.code()), s.message());
+      return s;
     }
 
     output_arrays.push_back(out_idx);
@@ -211,7 +224,7 @@ cylon::Status HashGroupBy(arrow::MemoryPool *pool,
     const unsigned long groups = hash_map.size();
 
     if (!(s = val_builder.Reserve(groups)).ok()) {
-      return cylon::Status(static_cast<int>(s.code()), s.message());
+      return s;
     }
 
     for (auto &p:  hash_map) {
@@ -220,20 +233,20 @@ cylon::Status HashGroupBy(arrow::MemoryPool *pool,
     hash_map.clear();
 
     if (!(s = val_builder.Finish(&out_val)).ok()) {
-      return cylon::Status(static_cast<int>(s.code()), s.message());
+      return s;
     }
 
     output_arrays.push_back(out_val);
   }
 
-  return cylon::Status::OK();
+  return arrow::Status::OK();
 }
 
-typedef cylon::Status
+typedef arrow::Status
 (*HashGroupByFptr)(arrow::MemoryPool *pool,
                    const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                    const std::shared_ptr<arrow::ChunkedArray> &val_col,
-                   std::vector<shared_ptr<arrow::Array>> &output_arrays);
+                   std::vector<std::shared_ptr<arrow::Array>> &output_arrays);
 
 template<typename IDX_T, typename VAL_T, typename = typename std::enable_if<
     arrow::is_number_type<VAL_T>::value | arrow::is_boolean_type<VAL_T>::value>::type>
@@ -251,7 +264,7 @@ HashGroupByFptr ResolveOp(cylon::GroupByAggregationOp op) {
 template<typename IDX_ARROW_T,
     typename = typename std::enable_if<
         arrow::is_number_type<IDX_ARROW_T>::value | arrow::is_boolean_type<IDX_ARROW_T>::value>::type>
-HashGroupByFptr PickHashGroupByFptr(const shared_ptr<cylon::DataType> &val_data_type,
+HashGroupByFptr PickHashGroupByFptr(const std::shared_ptr<cylon::DataType> &val_data_type,
                                     const cylon::GroupByAggregationOp op) {
   switch (val_data_type->getType()) {
     case Type::BOOL: return ResolveOp<IDX_ARROW_T, arrow::BooleanType>(op);
@@ -282,6 +295,61 @@ HashGroupByFptr PickHashGroupByFptr(const shared_ptr<cylon::DataType> &val_data_
     case Type::DURATION:break;
   }
   return nullptr;
+}
+
+/**
+  * Local group by operation
+  * Restrictions:
+  *  - 0th col is the index col
+  *  - every column has an aggregation op
+  * @tparam IDX_ARROW_T index column type
+  * @param table
+  * @param index_col
+  * @param aggregate_cols
+  * @param aggregate_ops
+  * @param output
+  * @return
+  */
+template<typename IDX_ARROW_T,
+    typename = typename std::enable_if<
+        arrow::is_number_type<IDX_ARROW_T>::value | arrow::is_boolean_type<IDX_ARROW_T>::value>::type>
+cylon::Status LocalHashGroupBy(const std::shared_ptr<cylon::Table> &table,
+                               const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
+                               std::shared_ptr<cylon::Table> &output) {
+  if ((std::size_t) table->Columns() != aggregate_ops.size() + 1)
+    return cylon::Status(cylon::Code::Invalid, "num cols != aggergate ops + 1");
+
+  auto ctx = table->GetContext();
+  auto a_table = table->get_table();
+
+  arrow::Status a_status;
+  arrow::MemoryPool *memory_pool = cylon::ToArrowPool(ctx);
+
+  const int cols = a_table->num_columns();
+  const std::shared_ptr<arrow::ChunkedArray> &idx_col = a_table->column(0);
+
+  std::vector<shared_ptr<arrow::Array>> out_vectors;
+  for (int c = 1; c < cols; c++) {
+    const shared_ptr<arrow::ChunkedArray> &val_col = a_table->column(c);
+    const shared_ptr<DataType> &val_data_type = table->GetColumn(c)->GetDataType();
+
+    const HashGroupByFptr hash_group_by = PickHashGroupByFptr<IDX_ARROW_T>(val_data_type, aggregate_ops[c - 1]);
+
+    if (hash_group_by != nullptr) {
+      a_status = hash_group_by(memory_pool, idx_col, val_col, out_vectors);
+    } else {
+      return Status(Code::ExecutionError, "unable to find group by function");
+    }
+
+    if (!a_status.ok()) {
+      LOG(FATAL) << "Aggregation failed!";
+      return cylon::Status(static_cast<int>(a_status.code()), a_status.message());
+    }
+  }
+
+  auto out_a_table = arrow::Table::Make(a_table->schema(), out_vectors);
+
+  return cylon::Table::FromArrowTable(ctx, out_a_table, &output);
 }
 
 }
