@@ -25,67 +25,6 @@
 
 namespace cylon {
 
-Status HashPartition(CylonContext *ctx, const std::shared_ptr<cylon::Table> &cy_table,
-                     int hash_column, int no_of_partitions,
-                     std::unordered_map<int, std::shared_ptr<cylon::Table>> *out) {
-  std::shared_ptr<arrow::Table> table = cy_table->get_table();
-  // keep arrays for each target, these arrays are used for creating the table
-  std::unordered_map<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>> data_arrays;
-  std::vector<int> partitions;
-  for (int t = 0; t < no_of_partitions; t++) {
-    partitions.push_back(t);
-    data_arrays.insert(
-        std::pair<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>>(
-            t, std::make_shared<std::vector<std::shared_ptr<arrow::Array>>>()));
-  }
-  std::shared_ptr<arrow::Array> arr = table->column(hash_column)->chunk(0);
-  int64_t length = arr->length();
-
-  auto t1 = std::chrono::high_resolution_clock::now();
-  // first we partition the table
-  std::vector<int64_t> outPartitions;
-  outPartitions.reserve(length);
-  std::vector<uint32_t> counts(no_of_partitions, 0);
-  Status status = HashPartitionArray(cylon::ToArrowPool(ctx), arr,
-                                     partitions, &outPartitions, counts);
-  if (!status.is_ok()) {
-    LOG(FATAL) << "Failed to create the hash partition";
-    return status;
-  }
-  auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Calculating hash time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-
-  for (int i = 0; i < table->num_columns(); i++) {
-    std::shared_ptr<arrow::DataType> type = table->column(i)->chunk(0)->type();
-    std::shared_ptr<arrow::Array> array = table->column(i)->chunk(0);
-
-    std::shared_ptr<ArrowArraySplitKernel> splitKernel;
-    status = CreateSplitter(type, cylon::ToArrowPool(ctx), &splitKernel);
-    if (!status.is_ok()) {
-      LOG(FATAL) << "Failed to create the splitter";
-      return status;
-    }
-    // this one outputs arrays for each target as a map
-    std::unordered_map<int, std::shared_ptr<arrow::Array>> splited_arrays;
-    splitKernel->Split(array, outPartitions, partitions, splited_arrays, counts);
-    for (const auto &x : splited_arrays) {
-      std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>> cols = data_arrays[x.first];
-      cols->push_back(x.second);
-    }
-  }
-  auto t3 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Building hashed tables time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
-  // now insert these array to
-  for (const auto &x : data_arrays) {
-    std::shared_ptr<arrow::Table> t = arrow::Table::Make(table->schema(), *x.second);
-    std::shared_ptr<cylon::Table> kY = std::make_shared<cylon::Table>(t, ctx);
-    out->insert(std::pair<int, std::shared_ptr<cylon::Table>>(x.first, kY));
-  }
-  return Status::OK();
-}
-
 cylon::SplitOp::SplitOp(const std::shared_ptr<CylonContext> &ctx,
                         const std::shared_ptr<arrow::Schema> &schema,
                         int32_t id,
