@@ -41,7 +41,7 @@ class Table {
   /**
    * Tables can only be created using the factory methods, so the constructor is private
    */
-  Table(std::shared_ptr<arrow::Table> &tab, const std::shared_ptr<cylon::CylonContext> &ctx)
+  Table(std::shared_ptr<arrow::Table> &tab, std::shared_ptr<cylon::CylonContext> &ctx)
 	  : ctx(ctx), table_(tab),
 		columns_(std::vector<std::shared_ptr<Column>>(tab->num_columns())) {
 	const int num_cols = table_->num_columns();

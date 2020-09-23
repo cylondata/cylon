@@ -154,6 +154,8 @@ void ArrowAllToAll::close() {
   inputs_.clear();
   // call close on the underlying allto all
   all_->close();
+
+  delete allocator_;
 }
 
 void debug(int thisWorker, std::string msg) {
@@ -234,6 +236,10 @@ Status ArrowAllocator::Allocate(int64_t length, std::shared_ptr<Buffer> *buffer)
 }
 
 ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
+
+ArrowAllocator::~ArrowAllocator() {
+
+}
 
 int64_t ArrowBuffer::GetLength() {
   return 0;
