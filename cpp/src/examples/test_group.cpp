@@ -27,6 +27,7 @@
 #include <ctx/arrow_memory_pool_utils.hpp>
 
 #include <util/arrow_utils.hpp>
+#include <groupby/groupby.hpp>
 
 using namespace std;
 using namespace arrow;
@@ -35,7 +36,7 @@ void create_table(char *const *argv,
                   arrow::MemoryPool *pool,
                   shared_ptr<arrow::Table> &left_table);
 
-void aggregate(const std::function<int64_t(const int64_t &, const int64_t &)> &fun,
+/*void aggregate(const std::function<int64_t(const int64_t &, const int64_t &)> &fun,
                const shared_ptr<arrow::Int64Array> &arr, int64_t &out) {
 
   const long *vals = arr->raw_values();
@@ -69,6 +70,148 @@ void aggregate3(const shared_ptr<arrow::DoubleArray> &arr, double *out) {
     temp += v;
   }
   *out = temp;
+}*/
+
+void HashArrowGroupBy(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Table> &ctable,
+                      std::shared_ptr<cylon::Table> &output) {
+  auto t1 = std::chrono::steady_clock::now();
+
+  const shared_ptr<arrow::Table> &table = ctable->get_table();
+
+  const shared_ptr<ChunkedArray> &idx_col = table->column(0);
+  const shared_ptr<arrow::Int64Array> &index_arr = static_pointer_cast<arrow::Int64Array>(idx_col->chunk(0));
+  const shared_ptr<DoubleArray> &val_col = static_pointer_cast<arrow::DoubleArray>(table->column(1)->chunk(0));
+
+  arrow::Status s;
+
+  const int64_t len = table->num_rows();
+
+  std::unordered_map<int64_t, std::shared_ptr<arrow::DoubleBuilder>> map;
+  map.reserve(len * 0.5);
+
+  int64_t idx, count = 0;
+  double val;
+  for (int64_t i = 0; i < len; i++) {
+    idx = index_arr->Value(i);
+    val = val_col->Value(i);
+
+    auto iter = map.find(idx);
+    if (iter == map.end()) {
+      auto pos = map.emplace(std::make_pair(idx, std::make_shared<arrow::DoubleBuilder>()));
+      s = pos.first->second->Append(val);
+    } else {
+      s = iter->second->Append(val);
+    }
+
+    if (i % 100000 == 0) {
+      cout << "&& " << i << endl;
+    }
+  }
+
+  auto t2 = std::chrono::steady_clock::now();
+  cout << "hash done! " << endl;
+
+  shared_ptr<arrow::Array> out_idx, out_val, temp;
+
+  arrow::Int64Builder idx_builder(pool);
+  arrow::DoubleBuilder val_builder(pool);
+
+  const unsigned long groups = map.size();
+  s = idx_builder.Reserve(groups);
+  s = val_builder.Reserve(groups);
+
+  compute::FunctionContext fn_ctx;
+  compute::Datum res;
+
+  for (auto &p:  map) {
+    idx_builder.UnsafeAppend(p.first);
+
+    s = p.second->Finish(&temp);
+    s = arrow::compute::Sum(&fn_ctx, temp, &res);
+    p.second->Reset();
+    temp.reset();
+
+    val_builder.UnsafeAppend(static_pointer_cast<DoubleScalar>(res.scalar())->value);
+  }
+
+  temp.reset();
+  map.clear();
+
+  s = idx_builder.Finish(&out_idx);
+  s = val_builder.Finish(&out_val);
+
+  shared_ptr<Table> a_output = Table::Make(table->schema(), {out_idx, out_val});
+  cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);
+
+  auto t3 = std::chrono::steady_clock::now();
+  cout << "hash_arrow " << output->Rows()
+       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+       << endl;
+}
+
+void HashGroupBy2(const std::shared_ptr<cylon::Table> &ctable,
+                  std::shared_ptr<cylon::Table> &output,
+                  const std::function<void(const double &, double *)> &fun) {
+  auto t1 = std::chrono::steady_clock::now();
+
+  const shared_ptr<arrow::Table> &table = ctable->get_table();
+
+  const shared_ptr<ChunkedArray> &idx_col = table->column(0);
+  const shared_ptr<arrow::Int64Array> &index_arr = static_pointer_cast<arrow::Int64Array>(idx_col->chunk(0));
+  const shared_ptr<DoubleArray> &val_col = static_pointer_cast<arrow::DoubleArray>(table->column(1)->chunk(0));
+
+  arrow::Status s;
+
+  const int64_t len = table->num_rows();
+
+  std::unordered_map<int64_t, std::tuple<double>> map;
+  map.reserve(len * 0.5);
+
+  int64_t idx;
+  double val;
+  for (int64_t i = 0; i < len; i++) {
+    idx = index_arr->Value(i);
+    val = val_col->Value(i);
+
+    auto iter = map.find(idx);
+
+    if (iter == map.end()) {
+//      map.insert(make_pair(idx, val));
+      auto pos = map.emplace(idx, 0);
+      fun(val, &(std::get<0>(pos.first->second)));
+    } else {
+      fun(val, &(std::get<0>(iter->second))); // update the value using the fun
+    }
+  }
+
+  auto t2 = std::chrono::steady_clock::now();
+
+  arrow::Int64Builder idx_builder;
+  arrow::DoubleBuilder val_builder;
+  shared_ptr<arrow::Array> out_idx, out_val;
+
+  const unsigned long groups = map.size();
+  s = idx_builder.Reserve(groups);
+  s = val_builder.Reserve(groups);
+
+  for (auto &p:  map) {
+    idx_builder.UnsafeAppend(p.first);
+    val_builder.UnsafeAppend(std::get<0>(p.second));
+  }
+  map.clear();
+
+  s = idx_builder.Finish(&out_idx);
+  s = val_builder.Finish(&out_val);
+
+  shared_ptr<Table> a_output = Table::Make(table->schema(), {out_idx, out_val});
+  cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);
+
+  auto t3 = std::chrono::steady_clock::now();
+  cout << "hash_group " << output->Rows()
+       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+       << endl;
 }
 
 void HashGroupBy(const std::shared_ptr<cylon::Table> &ctable,
@@ -89,7 +232,6 @@ void HashGroupBy(const std::shared_ptr<cylon::Table> &ctable,
   std::unordered_map<int64_t, double> map;
   map.reserve(len * 0.5);
 
-
   int64_t idx;
   double val;
   for (int64_t i = 0; i < len; i++) {
@@ -98,7 +240,7 @@ void HashGroupBy(const std::shared_ptr<cylon::Table> &ctable,
 
     auto iter = map.find(idx);
 
-    if(iter == map.end()){
+    if (iter == map.end()) {
       map.insert(make_pair(idx, val));
     } else {
       fun(val, &(iter->second)); // update the value using the fun
@@ -131,6 +273,27 @@ void HashGroupBy(const std::shared_ptr<cylon::Table> &ctable,
   cout << "hash_group " << output->Rows()
        << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
        << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+       << endl;
+}
+
+void HashGroupBy3(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Table> &ctable,
+                  std::shared_ptr<cylon::Table> &output) {
+  auto t1 = std::chrono::steady_clock::now();
+
+  const shared_ptr<arrow::Table> &table = ctable->get_table();
+
+  std::vector<shared_ptr<arrow::Array>> cols;
+
+  cylon::Status s = cylon::HashGroupBy<arrow::Int64Type, arrow::DoubleType, cylon::GroupByAggregationOp::MEAN>
+      (pool, table->column(0), table->column(1), cols);
+
+  shared_ptr<Table> a_output = Table::Make(table->schema(), cols);
+  cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);
+
+  auto t3 = std::chrono::steady_clock::now();
+  cout << "hash_group3 " << output->Rows()
+       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
+       //       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
        << endl;
 }
 
@@ -227,12 +390,12 @@ int main(int argc, char *argv[]) {
                 read_end_time - start_start).count() << "[ms]";
 
 //  first_table->Sort(0, sorted_table);
-////  sorted_table->Print();
-//
-//  const shared_ptr<arrow::Table> &a_tab = sorted_table->get_table();
-  shared_ptr<cylon::Table> output, output1;
+  first_table->Print();
 
-  ArrowGroupBy(first_table, output);
+//  const shared_ptr<arrow::Table> &a_tab = sorted_table->get_table();
+  shared_ptr<cylon::Table> output;
+
+//  ArrowGroupBy(first_table, output);
 //  output->Print();
 
   output.reset();
@@ -242,9 +405,22 @@ int main(int argc, char *argv[]) {
     *out += v;
   };
 
-  HashGroupBy(first_table, output1, sum);
-  output1.reset();
-//  output1->Print();
+//  HashGroupBy(first_table, output, sum);
+////  output->Print();
+//  output.reset();
+
+  cout << "++++++++++++++++++++++++++" << endl;
+
+  HashGroupBy3(pool, first_table, output);
+  output->Print();
+  output.reset();
+
+  cout << "++++++++++++++++++++++++++" << endl;
+
+//  HashArrowGroupBy(pool, first_table, output);
+//  output->Print();
+//  output.reset();
+////  output1->Print();
 
 
   /* const shared_ptr<arrow::ChunkedArray> &col = first_table->get_table()->column(1);

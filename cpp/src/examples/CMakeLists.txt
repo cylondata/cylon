@@ -21,6 +21,7 @@ tx_add_exe(table_from_vectors_example)
 tx_add_exe(compute_example)
 tx_add_exe(groupby_example)
 tx_add_exe(test_group)
+tx_add_exe(temp)
 
 
 #macro(tx_add_test_exe EXENAME)

@@ -2,101 +2,76 @@
 // Created by niranda on 9/17/20.
 //
 
-#include "groupby.hpp"
 #include <join/join_utils.hpp>
 #include <util/arrow_utils.hpp>
 
+#include "groupby.hpp"
+#include "groupby_aggregate_ops.hpp"
+#include "groupby_hash.hpp"
+
 namespace cylon {
 
-//template<typename ARROW_T, typename C_TYPE>
-//cylon::Status ProcessGroup(const std::shared_ptr<Table> &table, const C_TYPE &start, const C_TYPE &end) {
-//  return Status::OK();
-//}
-
-//template<typename ARROW_ARRAY_T, typename C_TYPE>
-//void GenerateGroupedColumns(const shared_ptr<ARROW_ARRAY_T> col, std::vector<int64_t> &boundaries) {
-//  const int64_t num_rows = col->length();
-//
-//  if (!num_rows) return;
-//
-//  boundaries.clear();
-//  boundaries.push_back(0);
-//
-//  C_TYPE prev_val = col->Value(0), curr_val;
-//  for (int64_t i = 1; i < num_rows; ++i) {
-//    curr_val = col->Value(i);
-//
-//    if (curr_val != prev_val) {
-////      ProcessGroup<>(start_idx, i);
-//      prev_val = curr_val;
-////      prev_idx = i + 1; // max would be num_rows. so, no OOB
-//    }
-//  }
-//  boundaries.push_back(num_rows);
-//}
-
 /**
- * Local group by operation
- * Restrictions:
- *  - 0th col is the index col 
- *  - every column has an aggregation op
- * @tparam NUM_ARROW_T
- * @param table
- * @param index_col
- * @param aggregate_cols
- * @param aggregate_ops
- * @param output
- * @return
- */
-template<typename NUM_ARROW_T,
+  * Local group by operation
+  * Restrictions:
+  *  - 0th col is the index col
+  *  - every column has an aggregation op
+  * @tparam IDX_ARROW_T index column type
+  * @param table
+  * @param index_col
+  * @param aggregate_cols
+  * @param aggregate_ops
+  * @param output
+  * @return
+  */
+template<typename IDX_ARROW_T,
     typename = typename std::enable_if<
-        arrow::is_number_type<NUM_ARROW_T>::value | arrow::is_boolean_type<NUM_ARROW_T>::value>::type>
-cylon::Status LocalGroupBy(const std::shared_ptr<Table> &table,
-                           const std::vector<cylon::compute::AggregateOperation> &aggregate_ops,
-                           std::shared_ptr<Table> &output) {
+        arrow::is_number_type<IDX_ARROW_T>::value | arrow::is_boolean_type<IDX_ARROW_T>::value>::type>
+cylon::Status LocalGroupBy(const std::shared_ptr<cylon::Table> &table,
+                           const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
+                           std::shared_ptr<cylon::Table> &output) {
   if ((std::size_t) table->Columns() != aggregate_ops.size() + 1)
     return cylon::Status(cylon::Code::Invalid, "num cols != aggergate ops + 1");
 
   auto ctx = table->GetContext();
+  auto a_table = table->get_table();
 
-  shared_ptr<arrow::Table> sorted_table;
   arrow::Status a_status;
   arrow::MemoryPool *memory_pool = cylon::ToArrowPool(ctx);
 
-  // sort table (+ combining table chunks)
-  a_status = cylon::util::SortTable(table->get_table(), 0, &sorted_table, memory_pool);
-  if (!a_status.ok()) {
-    LOG(FATAL) << "Failed to sort column to indices" << a_status.ToString();
-    return cylon::Status(cylon::Code::ExecutionError, a_status.message());
+  const int cols = a_table->num_columns();
+  const std::shared_ptr<arrow::ChunkedArray> &idx_col = a_table->column(0);
+
+  std::vector<shared_ptr<arrow::Array>> out_vectors;
+  cylon::Status status;
+  for (int c = 1; c < cols; c++) {
+    const shared_ptr<arrow::ChunkedArray> &val_col = a_table->column(c);
+    const shared_ptr<DataType> &val_data_type = table->GetColumn(c)->GetDataType();
+
+    const HashGroupByFptr hash_group_by = PickHashGroupByFptr<IDX_ARROW_T>(val_data_type, aggregate_ops[c - 1]);
+
+    status = hash_group_by(memory_pool, idx_col, val_col, out_vectors);
+    if (!status.is_ok()){
+      LOG(FATAL) << "Aggregation failed!";
+      return status;
+    }
   }
 
-//  using ARROW_ARRAY_T = typename arrow::TypeTraits<NUM_ARROW_T>::ArrayType; // arrow numeric type of the
-//  using C_TYPE = typename arrow::TypeTraits<NUM_ARROW_T>::CType;
-//
-//  // builders for new columns
-//  std::vector<std::unique_ptr<arrow::ArrayBuilder>> builders;
-//  for (auto &&col: sorted_table->columns()) {
-//    std::unique_ptr<arrow::ArrayBuilder> builder;
-//    if (!(a_status = arrow::MakeBuilder(memory_pool, col->type(), &builder)).ok()) {
-//      return cylon::Status(cylon::Code::ExecutionError, a_status.message());
-//    }
-//    builders.push_back(builder);
-//  }
-//
-//  const shared_ptr<ARROW_ARRAY_T>
-//      &index_col = std::static_pointer_cast<ARROW_ARRAY_T>(sorted_table->column(0)->chunk(0));
+  auto out_a_table = arrow::Table::Make(a_table->schema(), out_vectors);
 
-  return cylon::Status();
+  Status c_status = cylon::Table::FromArrowTable(ctx, out_a_table, &output);
+  return cylon::Status::OK();
 }
 
 /**
- * function pointer for local groupby operators 
+ * Pick a local group by function based on the index column data type
+ * @param idx_data_type 
+ * @return 
  */
 typedef Status
 (*LocalGroupByFptr)(const std::shared_ptr<Table> &table,
-                    const std::vector<cylon::compute::AggregateOperation> &aggregate_ops,
+                    const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
                     std::shared_ptr<Table> &output);
-
 LocalGroupByFptr PickLocalGroupByFptr(const shared_ptr<cylon::DataType> &idx_data_type) {
   switch (idx_data_type->getType()) {
     case Type::BOOL: return &LocalGroupBy<arrow::BooleanType>;
@@ -132,7 +107,7 @@ LocalGroupByFptr PickLocalGroupByFptr(const shared_ptr<cylon::DataType> &idx_dat
 cylon::Status GroupBy(const std::shared_ptr<Table> &table,
                       int64_t index_col,
                       const std::vector<int64_t> &aggregate_cols,
-                      const std::vector<cylon::compute::AggregateOperation> &aggregate_ops,
+                      const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
                       std::shared_ptr<Table> &output) {
   Status status;
   LocalGroupByFptr group_by_fptr = PickLocalGroupByFptr(table->GetColumn(index_col)->GetDataType());
@@ -150,4 +125,48 @@ cylon::Status GroupBy(const std::shared_ptr<Table> &table,
   return group_by_fptr(projected_table, aggregate_ops, output);
 }
 
+/*
+
+ * Local group by operation
+ * Restrictions:
+ *  - 0th col is the index col
+ *  - every column has an aggregation op
+ * @tparam IDX_ARROW_T index column type
+ * @param table
+ * @param index_col
+ * @param aggregate_cols
+ * @param aggregate_ops
+ * @param output
+ * @return
+ *//*
+template<typename IDX_ARROW_T,
+    typename = typename std::enable_if<
+        arrow::is_number_type<IDX_ARROW_T>::value | arrow::is_boolean_type<IDX_ARROW_T>::value>::type>
+cylon::Status LocalGroupBy(const std::shared_ptr<Table> &table,
+                           const std::vector<cylon::compute::AggregateOperation> &aggregate_ops,
+                           std::shared_ptr<Table> &output) {
+  if ((std::size_t) table->Columns() != aggregate_ops.size() + 1)
+    return cylon::Status(cylon::Code::Invalid, "num cols != aggergate ops + 1");
+
+  auto ctx = table->GetContext();
+
+  shared_ptr<arrow::Table> sorted_table;
+  arrow::Status a_status;
+  arrow::MemoryPool *memory_pool = cylon::ToArrowPool(ctx);
+
+  // sort table (+ combining table chunks)
+  a_status = cylon::util::SortTable(table->get_table(), 0, &sorted_table, memory_pool);
+  if (!a_status.ok()) {
+    LOG(FATAL) << "Failed to sort column to indices" << a_status.ToString();
+    return cylon::Status(cylon::Code::ExecutionError, a_status.message());
+  }
+//
+//  using IDX_ARRAY_T = typename arrow::TypeTraits<IDX_ARROW_T>::ArrayType;
+//  using IDX_BUILDER_T = typename arrow::TypeTraits<IDX_ARROW_T>::ArrayType;
+//
+//  const shared_ptr<arrow::ChunkedArray> &idx_col = sorted_table->column(0);
+//  const shared_ptr<IDX_ARRAY_T> &index_arr = static_pointer_cast<IDX_ARRAY_T>(idx_col->chunk(0));
+
+  return cylon::Status();
+}*/
 }

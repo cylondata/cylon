@@ -88,6 +88,8 @@ add_library(cylon SHARED
         net/comm_operations.hpp
         net/mpi/mpi_operations.cpp
         net/mpi/mpi_operations.hpp
+        groupby/groupby_hash.hpp
+        groupby/groupby_aggregate_ops.hpp
         groupby/groupby.hpp
         groupby/groupby.cpp
         )
