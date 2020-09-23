@@ -29,23 +29,22 @@
 #include <util/arrow_utils.hpp>
 #include <groupby/groupby.hpp>
 
-using namespace std;
-using namespace arrow;
-
 void create_table(char *const *argv,
                   arrow::MemoryPool *pool,
-                  shared_ptr<arrow::Table> &left_table);
+                  std::shared_ptr<arrow::Table> &left_table);
 
 void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
                       std::shared_ptr<cylon::Table> &output,
                       const std::function<void(const double &, double *)> &fun) {
   auto t1 = std::chrono::steady_clock::now();
 
-  const shared_ptr<arrow::Table> &table = ctable->get_table();
+  const std::shared_ptr<arrow::Table> &table = ctable->get_table();
 
-  const shared_ptr<ChunkedArray> &idx_col = table->column(0);
-  const shared_ptr<arrow::Int64Array> &index_arr = static_pointer_cast<arrow::Int64Array>(idx_col->chunk(0));
-  const shared_ptr<DoubleArray> &val_col = static_pointer_cast<arrow::DoubleArray>(table->column(1)->chunk(0));
+  const std::shared_ptr<arrow::ChunkedArray> &idx_col = table->column(0);
+  const std::shared_ptr<arrow::Int64Array>
+      &index_arr = static_pointer_cast<arrow::Int64Array>(idx_col->chunk(0));
+  const std::shared_ptr<arrow::DoubleArray>
+      &val_col = static_pointer_cast<arrow::DoubleArray>(table->column(1)->chunk(0));
 
   arrow::Status s;
 
@@ -73,7 +72,7 @@ void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
 
   arrow::Int64Builder idx_builder;
   arrow::DoubleBuilder val_builder;
-  shared_ptr<arrow::Array> out_idx, out_val;
+  std::shared_ptr<arrow::Array> out_idx, out_val;
 
   const unsigned long groups = map.size();
   s = idx_builder.Reserve(groups);
@@ -88,7 +87,7 @@ void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
   s = idx_builder.Finish(&out_idx);
   s = val_builder.Finish(&out_val);
 
-  shared_ptr<Table> a_output = Table::Make(table->schema(), {out_idx, out_val});
+  std::shared_ptr<arrow::Table> a_output = arrow::Table::Make(table->schema(), {out_idx, out_val});
   cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);
 
   auto t3 = std::chrono::steady_clock::now();
@@ -150,7 +149,7 @@ int main(int argc, char *argv[]) {
   first_table->Print();
   cout << "++++++++++++++++++++++++++" << endl;
 
-  shared_ptr<cylon::Table> sorted_table;
+  std::shared_ptr<cylon::Table> sorted_table;
   auto t1 = std::chrono::steady_clock::now();
   first_table->Sort(0, sorted_table);
   auto t2 = std::chrono::steady_clock::now();
@@ -162,7 +161,7 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 t2 - t1).count() << "[ms]";
 
-  shared_ptr<cylon::Table> output;
+  std::shared_ptr<cylon::Table> output;
 
 
 /*  // naive group by
@@ -187,7 +186,7 @@ int main(int argc, char *argv[]) {
 
 void create_table(char *const *argv,
                   arrow::MemoryPool *pool,
-                  shared_ptr<arrow::Table> &left_table) {
+                  std::shared_ptr<arrow::Table> &left_table) {
   arrow::Int64Builder left_id_builder(pool);
   arrow::DoubleBuilder cost_builder(pool);
   uint64_t count = stoull(argv[1]);
@@ -211,8 +210,8 @@ void create_table(char *const *argv,
     cost_builder.UnsafeAppend(v);
   }
 
-  shared_ptr<arrow::Array> left_id_array;
-  shared_ptr<arrow::Array> cost_array;
+  std::shared_ptr<arrow::Array> left_id_array;
+  std::shared_ptr<arrow::Array> cost_array;
 
   st = left_id_builder.Finish(&left_id_array);
   st = cost_builder.Finish(&cost_array);
