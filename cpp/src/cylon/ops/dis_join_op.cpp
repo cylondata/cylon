@@ -42,16 +42,28 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
                                         std::make_shared<PartitionOpConfig>(ctx->GetWorldSize(),
                                         std::make_shared<std::vector<int>>(part_cols)));
     this->AddChild(partition_op);
-    execution->AddP(partition_op);
+    if (relation_id == LEFT_RELATION) {
+      execution->AddP(partition_op);
+    } else {
+      execution->AddS(partition_op);
+    }
     auto shuffle_op = new AllToAllOp(ctx, schema, relation_id, callback,
                                      std::make_shared<AllToAllOpConfig>());
     partition_op->AddChild(shuffle_op);
-    execution->AddS(shuffle_op);
+    if (relation_id == LEFT_RELATION) {
+      execution->AddP(shuffle_op);
+    } else {
+      execution->AddS(shuffle_op);
+    }
 //    auto merge_op = new MergeOp(ctx, schema, MERGE_OP_ID, callback);
-    std::shared_ptr<SplitOpConfig> kPtr = SplitOpConfig::Make(2000, {0});
+    std::shared_ptr<SplitOpConfig> kPtr = SplitOpConfig::Make(100, {0});
     auto split_op = new SplitOp(ctx, schema, relation_id, callback, kPtr);
     shuffle_op->AddChild(split_op);
-    execution->AddS(split_op);
+    if (relation_id == LEFT_RELATION) {
+      execution->AddP(split_op);
+    } else {
+      execution->AddS(split_op);
+    }
     split_op->AddChild(join_op);
   }
   execution->AddJoin(join_op);
