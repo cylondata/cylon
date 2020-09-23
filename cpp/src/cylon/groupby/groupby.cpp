@@ -6,11 +6,10 @@
 #include <util/arrow_utils.hpp>
 
 #include "groupby.hpp"
-/*
 
 namespace cylon {
 
-*//**
+/**
   * Local group by operation
   * Restrictions:
   *  - 0th col is the index col
@@ -22,7 +21,7 @@ namespace cylon {
   * @param aggregate_ops
   * @param output
   * @return
-  *//*
+  */
 template<typename IDX_ARROW_T,
     typename = typename std::enable_if<
         arrow::is_number_type<IDX_ARROW_T>::value | arrow::is_boolean_type<IDX_ARROW_T>::value>::type>
@@ -49,8 +48,13 @@ cylon::Status LocalGroupBy(const std::shared_ptr<cylon::Table> &table,
 
     const HashGroupByFptr hash_group_by = PickHashGroupByFptr<IDX_ARROW_T>(val_data_type, aggregate_ops[c - 1]);
 
-    status = hash_group_by(memory_pool, idx_col, val_col, out_vectors);
-    if (!status.is_ok()){
+    if (hash_group_by != nullptr) {
+      status = hash_group_by(memory_pool, idx_col, val_col, out_vectors);
+    } else {
+      return Status(Code::ExecutionError, "unable to find group by function");
+    }
+
+    if (!status.is_ok()) {
       LOG(FATAL) << "Aggregation failed!";
       return status;
     }
@@ -61,11 +65,11 @@ cylon::Status LocalGroupBy(const std::shared_ptr<cylon::Table> &table,
   return cylon::Table::FromArrowTable(ctx, out_a_table, &output);
 }
 
-*//**
+/**
  * Pick a local group by function based on the index column data type
  * @param idx_data_type 
  * @return 
- *//*
+ */
 typedef Status
 (*LocalGroupByFptr)(const std::shared_ptr<Table> &table,
                     const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
@@ -120,8 +124,31 @@ cylon::Status GroupBy(const std::shared_ptr<Table> &table,
     return status;
   }
 
-  return group_by_fptr(projected_table, aggregate_ops, output);
-}*/
+  // do local group by
+  std::shared_ptr<Table> local_table;
+  if (!(status = group_by_fptr(projected_table, aggregate_ops, local_table)).is_ok()) {
+    LOG(FATAL) << "Local group by failed! " << status.get_msg();
+    return status;
+  }
+
+  if (table->GetContext()->GetWorldSize() > 1) {
+    // shuffle
+    if (!(status = cylon::Table::Shuffle(local_table, {0}, local_table)).is_ok()) {
+      LOG(FATAL) << " table shuffle failed! " << status.get_msg();
+      return status;
+    }
+
+    // do local distribute again
+    if (!(status = group_by_fptr(local_table, aggregate_ops, output)).is_ok()) {
+      LOG(FATAL) << "Local group by failed! " << status.get_msg();
+      return status;
+    }
+  } else {
+    output = local_table;
+  }
+
+  return Status::OK();
+}
 
 /*
 
@@ -166,6 +193,5 @@ cylon::Status LocalGroupBy(const std::shared_ptr<Table> &table,
 //  const shared_ptr<IDX_ARRAY_T> &index_arr = static_pointer_cast<IDX_ARRAY_T>(idx_col->chunk(0));
 
   return cylon::Status();
+}*/
 }
-}
- */

@@ -7,6 +7,7 @@
 
 #include <functional>
 
+#include <arrow/api.h>
 #include "groupby_aggregate_ops.hpp"
 
 namespace cylon {
@@ -20,8 +21,9 @@ template<typename T>
 struct AggregateKernel<T, cylon::GroupByAggregationOp::SUM> {
   using HashMapType = std::tuple<T>;
   using ResultType = T;
+  using ResultArrowType = typename arrow::CTypeTraits<T>::ArrowType;
 
-  static constexpr const char* _prefix = "sum_";
+//  static constexpr const char* _prefix = "sum_";
 
   static constexpr HashMapType Init(const T &value) {
     return HashMapType{value};
@@ -40,7 +42,9 @@ template<typename T>
 struct AggregateKernel<T, cylon::GroupByAggregationOp::MIN> {
   using HashMapType = std::tuple<T>;
   using ResultType = T;
-  static constexpr const char* _prefix = "min_";
+  using ResultArrowType = typename arrow::CTypeTraits<T>::ArrowType;
+
+//  static constexpr const char* _prefix = "min_";
 
   static constexpr HashMapType Init(const T &value) {
     return HashMapType{value};
@@ -59,7 +63,9 @@ template<typename T>
 struct AggregateKernel<T, cylon::GroupByAggregationOp::MAX> {
   using HashMapType = std::tuple<T>;
   using ResultType = T;
-  static constexpr const char* _prefix = "max_";
+  using ResultArrowType = typename arrow::CTypeTraits<T>::ArrowType;
+
+//  static constexpr const char* _prefix = "max_";
 
   static constexpr HashMapType Init(const T &value) {
     return HashMapType{value};
@@ -74,49 +80,51 @@ struct AggregateKernel<T, cylon::GroupByAggregationOp::MAX> {
   }
 };
 
-//template<typename T>
-//struct AggregateKernel<T, GroupByAggregationOp::COUNT> {
-//  using HashMapType = std::tuple<int64_t>;
-//  using ResultType = int64_t;
-//  static constexpr const char* _prefix = "count_";
-//
-//  static constexpr HashMapType Init(const T &value) {
-//    return HashMapType{1};
-//  }
-//
-//  static inline void Update(const T &value, HashMapType *result) {
-//    std::get<0>(*result) += 1;
-//  }
-//
-//  static inline ResultType Finalize(const HashMapType *result) {
-//    return std::get<0>(*result);
-//  }
-//};
-
 template<typename T>
-struct AggregateKernel<T, GroupByAggregationOp::MEAN> {
-  using HashMapType = std::tuple<T, int64_t>;
-  using ResultType = T;
+struct AggregateKernel<T, GroupByAggregationOp::COUNT> {
+  using HashMapType = std::tuple<int64_t>;
+  using ResultType = int64_t;
+  using ResultArrowType = arrow::Int64Type;
 
-  static constexpr char _prefix[] = "mean_";
+  static constexpr const char* _prefix = "count_";
 
   static constexpr HashMapType Init(const T &value) {
-    return HashMapType{value, 1};
+    return HashMapType{1};
   }
 
   static inline void Update(const T &value, HashMapType *result) {
-    std::get<0>(*result) += value;
-    std::get<1>(*result) += 1;
+    std::get<0>(*result) += 1;
   }
 
   static inline ResultType Finalize(const HashMapType *result) {
-    return std::get<0>(*result) / std::get<1>(*result);
+    return std::get<0>(*result);
   }
 };
 
+//template<typename T>
+//struct AggregateKernel<T, GroupByAggregationOp::MEAN> {
+//  using HashMapType = std::tuple<T, int64_t>;
+//  using ResultType = T;
+//  using ResultArrowType = typename arrow::CTypeTraits<T>::ArrowType;
+//
+////  static constexpr char _prefix[] = "mean_";
+//
+//  static constexpr HashMapType Init(const T &value) {
+//    return HashMapType{value, 1};
+//  }
+//
+//  static inline void Update(const T &value, HashMapType *result) {
+//    std::get<0>(*result) += value;
+//    std::get<1>(*result) += 1;
+//  }
+//
+//  static inline ResultType Finalize(const HashMapType *result) {
+//    return std::get<0>(*result) / std::get<1>(*result);
+//  }
+//};
+
 template<typename IDX_T, typename VAL_T, cylon::GroupByAggregationOp AGG_OP,
-    typename = typename std::enable_if<
-        arrow::is_number_type<IDX_T>::value | arrow::is_boolean_type<IDX_T>::value>::type>
+    typename = typename std::enable_if<arrow::is_number_type<IDX_T>::value | arrow::is_boolean_type<IDX_T>::value>::type>
 cylon::Status HashGroupBy(arrow::MemoryPool *pool,
                           const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                           const std::shared_ptr<arrow::ChunkedArray> &val_col,
@@ -131,8 +139,9 @@ cylon::Status HashGroupBy(arrow::MemoryPool *pool,
   using VAL_KERNEL = cylon::AggregateKernel<VAL_C_T, AGG_OP>;
   using VAL_HASHMAP_T = typename VAL_KERNEL::HashMapType;
 
-  std::map<IDX_C_T, VAL_HASHMAP_T> hash_map;
-//  hash_map.reserve(idx_col->length() * 0.5);
+//  std::map<IDX_C_T, VAL_HASHMAP_T> hash_map;
+  std::unordered_map<IDX_C_T, VAL_HASHMAP_T> hash_map;
+  hash_map.reserve(idx_col->length() * 0.5);
 
   const int chunks = idx_col->num_chunks();
   for (int chunk = 0; chunk < chunks; chunk++) {
@@ -160,10 +169,10 @@ cylon::Status HashGroupBy(arrow::MemoryPool *pool,
   arrow::Status s;
   if (output_arrays.empty()) { // if empty --> build the indx array
     using IDX_BUILDER_T = typename arrow::TypeTraits<IDX_T>::BuilderType;
-    using VAL_BUILDER_T = typename arrow::TypeTraits<VAL_T>::BuilderType;
+    using OUT_VAL_BUILDER_T = typename arrow::TypeTraits<typename VAL_KERNEL::ResultArrowType>::BuilderType;
 
     IDX_BUILDER_T idx_builder(pool);
-    VAL_BUILDER_T val_builder(pool);
+    OUT_VAL_BUILDER_T val_builder(pool);
     std::shared_ptr<arrow::Array> out_idx, out_val;
 
     const unsigned long groups = hash_map.size();
@@ -193,9 +202,9 @@ cylon::Status HashGroupBy(arrow::MemoryPool *pool,
     output_arrays.push_back(out_val);
 
   } else { // only build the value array
-    using VAL_BUILDER_T = typename arrow::TypeTraits<VAL_T>::BuilderType;
+    using OUT_VAL_BUILDER_T = typename arrow::TypeTraits<typename VAL_KERNEL::ResultArrowType>::BuilderType;
 
-    VAL_BUILDER_T val_builder(pool);
+    OUT_VAL_BUILDER_T val_builder(pool);
     std::shared_ptr<arrow::Array> out_val;
 
     const unsigned long groups = hash_map.size();
@@ -219,7 +228,7 @@ cylon::Status HashGroupBy(arrow::MemoryPool *pool,
   return cylon::Status::OK();
 }
 
-typedef Status
+typedef cylon::Status
 (*HashGroupByFptr)(arrow::MemoryPool *pool,
                    const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                    const std::shared_ptr<arrow::ChunkedArray> &val_col,
@@ -229,11 +238,10 @@ template<typename IDX_T, typename VAL_T>
 HashGroupByFptr ResolveOp(cylon::GroupByAggregationOp op) {
   switch (op) {
     case SUM: return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::SUM>;
-//    case COUNT: return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::COUNT>;
+    case COUNT: return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::COUNT>;
     case MIN:return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::MIN>;
     case MAX:return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::MAX>;
-    case MEAN:return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::MEAN>;
-//    case COUNT:break;
+//    case MEAN:return &HashNaiveGroupBy<IDX_T, VAL_T, GroupByAggregationOp::MEAN>;
   }
   return nullptr;
 }

@@ -1068,4 +1068,19 @@ std::shared_ptr<Column> Table::GetColumn(int32_t index) const {
 std::vector<shared_ptr<cylon::Column>> Table::GetColumns() const {
   return this->columns_;
 }
+
+Status Table::Shuffle(shared_ptr<cylon::Table> &table,
+                      const vector<int> &hash_columns,
+                      std::shared_ptr<cylon::Table> &output) {
+  auto ctx_ = table->GetContext();
+  std::shared_ptr<arrow::Table> table_out;
+  cylon::Status status;
+
+  if (!(status = cylon::Shuffle(ctx_, table, hash_columns, ctx_->GetNextSequence(), &table_out)).is_ok()){
+    LOG(FATAL) << "table shuffle failed!";
+    return status;
+  }
+
+  return cylon::Table::FromArrowTable(ctx_, table_out, &output);
+}
 }  // namespace cylon
