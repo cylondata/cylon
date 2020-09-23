@@ -84,7 +84,8 @@ Status CxTable::to_csv(const std::string &path) {
 
 std::string CxTable::from_pyarrow_table(cylon_context_wrap *ctx_wrap, std::shared_ptr<arrow::Table> table) {
   std::string uuid = cylon::util::generate_uuid_v4();
-  std::shared_ptr<cylon::Table> tab = std::make_shared<cylon::Table>(table, ctx_wrap->getInstance());
+  auto ctx = ctx_wrap->getInstance();
+  std::shared_ptr<cylon::Table> tab = std::make_shared<cylon::Table>(table, ctx);
   PutTable(uuid, tab);
   return uuid;
 }
