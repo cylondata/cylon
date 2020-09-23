@@ -14,6 +14,24 @@
 
 #include "partition_op.hpp"
 #include <ops/kernels/partition.hpp>
+#include <iomanip>
+
+template<typename Clock, typename Duration>
+std::ostream &operator<<(std::ostream &stream,
+                         const std::chrono::time_point<Clock, Duration> &time_point) {
+  const time_t time = Clock::to_time_t(time_point);
+#if __GNUC__ > 4 || \
+    ((__GNUC__ == 4) && __GNUC_MINOR__ > 8 && __GNUC_REVISION__ > 1)
+  struct tm tm;
+  localtime_r(&time, &tm);
+  return stream << std::put_time(&tm, "%c"); // Print standard date&time
+#else
+  char buffer[26];
+  ctime_r(&time, buffer);
+  buffer[24] = '\0';  // Removes the newline that is added
+  return stream << buffer;
+#endif
+}
 
 cylon::PartitionOp::PartitionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
                                 const std::shared_ptr<arrow::Schema> &schema,
@@ -41,7 +59,7 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
   for (auto const &tab:out) {
     this->InsertToAllChildren(tab.first, tab.second);
   }
-
+  out.clear();
   // we are going to free if retain is set to false
   if (!table->IsRetain()) {
     table.reset();
@@ -53,7 +71,7 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
 
 bool cylon::PartitionOp::Finalize() {
   auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Partition time: "
+  LOG(INFO) << ctx_->GetRank()   << "Partition start: " << start << " time: "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - start).count();
   return true;
 }
