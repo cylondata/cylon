@@ -17,6 +17,47 @@ bool RoundRobinExecution::IsComplete() {
   return indices.empty();
 }
 
+bool JoinExecution::IsComplete() {
+  bool completed;
+  switch(state) {
+    case 0:
+      completed = p_ops[p_indices[current_index]]->IsComplete();
+      if (completed) {
+        p_indices.erase(p_indices.begin() + current_index);
+      } else {
+        current_index++;
+      }
+
+      if (current_index == p_indices.size()) {
+        current_index = 0;
+      }
+      if (p_indices.empty()) {
+        state = 1;
+        current_index = 0;
+      }
+      break;
+    case 1:
+      completed = s_ops[s_indices[current_index]]->IsComplete();
+      if (completed) {
+        s_indices.erase(s_indices.begin() + current_index);
+      } else {
+        current_index++;
+      }
+
+      if (current_index == s_indices.size()) {
+        current_index = 0;
+      }
+      if (s_indices.empty()) {
+        state = 2;
+        current_index = 0;
+      }
+      break;
+    case 2:
+      return join->IsComplete();
+  }
+  return false;
+}
+
 void RoundRobinExecution::AddOp(cylon::Op *op) {
   this->ops.push_back(op);
   this->indices.push_back(this->ops.size() - 1);

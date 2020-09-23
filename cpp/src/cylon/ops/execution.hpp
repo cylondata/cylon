@@ -31,6 +31,30 @@ class RoundRobinExecution : public Execution {
   bool IsComplete() override;
 };
 
+class JoinExecution : public Execution {
+private:
+  std::vector<cylon::Op *> p_ops;
+  std::vector<cylon::Op *> s_ops;
+  cylon::Op *join;
+  std::vector<std::size_t> p_indices;
+  std::vector<std::size_t> s_indices;
+  std::size_t current_index{};
+  int state = 0;
+public:
+  void AddP(cylon::Op *op) {
+    p_ops.push_back(op);
+    this->p_indices.push_back(this->p_ops.size() - 1);
+  }
+  void AddS(cylon::Op *op) {
+    s_ops.push_back(op);
+    this->s_indices.push_back(this->s_ops.size() - 1);
+  }
+  void AddJoin(cylon::Op *op) {
+    join = op;
+  }
+  bool IsComplete() override;
+};
+
 /**
  * This execution allocate chances based on the priority specified by the user.
  * If Op1 hsa priority 3 and Op2 has priority 1, Op1 will execute 3 times per one execution of Op2

@@ -24,8 +24,8 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
                             const std::shared_ptr<ResultsCallback> &callback,
                             const std::shared_ptr<DisJoinOpConfig> &config) :
     RootOp(ctx, schema, id, callback) {
-  auto execution = new RoundRobinExecution();
-  execution->AddOp(this);
+  auto execution = new JoinExecution();
+  execution->AddP(this);
   this->SetExecution(execution);
 
   this->config = config;
@@ -42,19 +42,19 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
                                         std::make_shared<PartitionOpConfig>(ctx->GetWorldSize(),
                                         std::make_shared<std::vector<int>>(part_cols)));
     this->AddChild(partition_op);
-    execution->AddOp(partition_op);
+    execution->AddP(partition_op);
     auto shuffle_op = new AllToAllOp(ctx, schema, relation_id, callback,
                                      std::make_shared<AllToAllOpConfig>());
     partition_op->AddChild(shuffle_op);
-    execution->AddOp(shuffle_op);
+    execution->AddS(shuffle_op);
 //    auto merge_op = new MergeOp(ctx, schema, MERGE_OP_ID, callback);
     std::shared_ptr<SplitOpConfig> kPtr = SplitOpConfig::Make(2000, {0});
     auto split_op = new SplitOp(ctx, schema, relation_id, callback, kPtr);
     shuffle_op->AddChild(split_op);
-    execution->AddOp(split_op);
+    execution->AddS(split_op);
     split_op->AddChild(join_op);
   }
-  execution->AddOp(join_op);
+  execution->AddJoin(join_op);
 }
 
 bool cylon::DisJoinOP::Execute(int tag, shared_ptr<Table> table) {
