@@ -6,12 +6,11 @@
 #include <util/arrow_utils.hpp>
 
 #include "groupby.hpp"
-#include "groupby_aggregate_ops.hpp"
-#include "groupby_hash.hpp"
+/*
 
 namespace cylon {
 
-/**
+*//**
   * Local group by operation
   * Restrictions:
   *  - 0th col is the index col
@@ -23,7 +22,7 @@ namespace cylon {
   * @param aggregate_ops
   * @param output
   * @return
-  */
+  *//*
 template<typename IDX_ARROW_T,
     typename = typename std::enable_if<
         arrow::is_number_type<IDX_ARROW_T>::value | arrow::is_boolean_type<IDX_ARROW_T>::value>::type>
@@ -59,15 +58,14 @@ cylon::Status LocalGroupBy(const std::shared_ptr<cylon::Table> &table,
 
   auto out_a_table = arrow::Table::Make(a_table->schema(), out_vectors);
 
-  Status c_status = cylon::Table::FromArrowTable(ctx, out_a_table, &output);
-  return cylon::Status::OK();
+  return cylon::Table::FromArrowTable(ctx, out_a_table, &output);
 }
 
-/**
+*//**
  * Pick a local group by function based on the index column data type
  * @param idx_data_type 
  * @return 
- */
+ *//*
 typedef Status
 (*LocalGroupByFptr)(const std::shared_ptr<Table> &table,
                     const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
@@ -123,7 +121,7 @@ cylon::Status GroupBy(const std::shared_ptr<Table> &table,
   }
 
   return group_by_fptr(projected_table, aggregate_ops, output);
-}
+}*/
 
 /*
 
@@ -168,5 +166,6 @@ cylon::Status LocalGroupBy(const std::shared_ptr<Table> &table,
 //  const shared_ptr<IDX_ARRAY_T> &index_arr = static_pointer_cast<IDX_ARRAY_T>(idx_col->chunk(0));
 
   return cylon::Status();
-}*/
 }
+}
+ */

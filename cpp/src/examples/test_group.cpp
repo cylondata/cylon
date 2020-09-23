@@ -280,15 +280,17 @@ void HashGroupBy3(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Table> &
                   std::shared_ptr<cylon::Table> &output) {
   auto t1 = std::chrono::steady_clock::now();
 
-  const shared_ptr<arrow::Table> &table = ctable->get_table();
+//  const shared_ptr<arrow::Table> &table = ctable->get_table();
+//  std::vector<shared_ptr<arrow::Array>> cols;
+//
+//  cylon::Status s = cylon::HashGroupBy<arrow::Int64Type, arrow::DoubleType, cylon::GroupByAggregationOp::MEAN>
+//      (pool, table->column(0), table->column(1), cols);
+//
+//  shared_ptr<Table> a_output = Table::Make(table->schema(), cols);
+//  cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);
 
-  std::vector<shared_ptr<arrow::Array>> cols;
-
-  cylon::Status s = cylon::HashGroupBy<arrow::Int64Type, arrow::DoubleType, cylon::GroupByAggregationOp::MEAN>
-      (pool, table->column(0), table->column(1), cols);
-
-  shared_ptr<Table> a_output = Table::Make(table->schema(), cols);
-  cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);
+  cylon::Status s =
+      cylon::GroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
 
   auto t3 = std::chrono::steady_clock::now();
   cout << "hash_group3 " << output->Rows()

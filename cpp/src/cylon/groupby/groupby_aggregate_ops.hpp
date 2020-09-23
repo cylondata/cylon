@@ -9,7 +9,7 @@ namespace cylon {
 
 enum GroupByAggregationOp {
   SUM,
-  COUNT,
+//  COUNT,
   MIN,
   MAX,
   MEAN

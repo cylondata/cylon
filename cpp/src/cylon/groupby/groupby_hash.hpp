@@ -74,24 +74,24 @@ struct AggregateKernel<T, cylon::GroupByAggregationOp::MAX> {
   }
 };
 
-template<typename T>
-struct AggregateKernel<T, GroupByAggregationOp::COUNT> {
-  using HashMapType = std::tuple<int64_t>;
-  using ResultType = int64_t;
-  static constexpr const char* _prefix = "count_";
-
-  static constexpr HashMapType Init(const T &value) {
-    return HashMapType{1};
-  }
-
-  static inline void Update(const T &value, HashMapType *result) {
-    std::get<0>(*result) += 1;
-  }
-
-  static inline ResultType Finalize(const HashMapType *result) {
-    return std::get<0>(*result);
-  }
-};
+//template<typename T>
+//struct AggregateKernel<T, GroupByAggregationOp::COUNT> {
+//  using HashMapType = std::tuple<int64_t>;
+//  using ResultType = int64_t;
+//  static constexpr const char* _prefix = "count_";
+//
+//  static constexpr HashMapType Init(const T &value) {
+//    return HashMapType{1};
+//  }
+//
+//  static inline void Update(const T &value, HashMapType *result) {
+//    std::get<0>(*result) += 1;
+//  }
+//
+//  static inline ResultType Finalize(const HashMapType *result) {
+//    return std::get<0>(*result);
+//  }
+//};
 
 template<typename T>
 struct AggregateKernel<T, GroupByAggregationOp::MEAN> {
@@ -228,12 +228,14 @@ typedef Status
 template<typename IDX_T, typename VAL_T>
 HashGroupByFptr ResolveOp(cylon::GroupByAggregationOp op) {
   switch (op) {
-    case SUM: return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::SUM>();
-    case COUNT: return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::COUNT>();
-    case MIN:return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::MIN>();
-    case MAX:return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::MAX>();
-    case MEAN:return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::MEAN>();
+    case SUM: return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::SUM>;
+//    case COUNT: return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::COUNT>;
+    case MIN:return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::MIN>;
+    case MAX:return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::MAX>;
+    case MEAN:return &HashGroupBy<IDX_T, VAL_T, GroupByAggregationOp::MEAN>;
+//    case COUNT:break;
   }
+  return nullptr;
 }
 
 template<typename IDX_ARROW_T>
