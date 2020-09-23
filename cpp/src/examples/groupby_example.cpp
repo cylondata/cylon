@@ -68,12 +68,12 @@ void HashArrowGroupBy(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Tabl
     }
 
     if (i % 100000 == 0) {
-      cout << "&& " << i << endl;
+       std::cout << "&& " << i << std::endl;
     }
   }
 
   auto t2 = std::chrono::steady_clock::now();
-  cout << "hash done! " << endl;
+  std::cout << "hash done! " << std::endl;
 
   std::shared_ptr<arrow::Array> out_idx, out_val, temp;
 
@@ -108,10 +108,10 @@ void HashArrowGroupBy(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Tabl
   cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);
 
   auto t3 = std::chrono::steady_clock::now();
-  cout << "hash_arrow " << output->Rows()
-       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
-       << endl;
+  std::cout << "hash_arrow " << output->Rows()
+            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+            << std::endl;
 }
 
 void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
@@ -172,10 +172,10 @@ void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
   cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);
 
   auto t3 = std::chrono::steady_clock::now();
-  cout << "hash_group " << output->Rows()
-       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
-       << endl;
+  std::cout << "hash_group " << output->Rows()
+            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+            << std::endl;
 }
 
 void HashCylonGroupBy(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Table> &ctable,
@@ -196,9 +196,9 @@ void HashCylonGroupBy(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Tabl
       cylon::GroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
 
   auto t3 = std::chrono::steady_clock::now();
-  cout << "hash_group3 " << output->Rows()
-       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
-       << endl;
+  std::cout << "hash_group3 " << output->Rows()
+            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
+            << std::endl;
 }
 
 void ArrowGroupBy(const std::shared_ptr<cylon::Table> &ctable, std::shared_ptr<cylon::Table> &output) {
@@ -258,10 +258,10 @@ void ArrowGroupBy(const std::shared_ptr<cylon::Table> &ctable, std::shared_ptr<c
 
   auto t3 = std::chrono::steady_clock::now();
 
-  cout << "arrow_group " << output->Rows()
-       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
-       << endl;
+  std::cout << "arrow_group " << output->Rows()
+            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+            << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -301,7 +301,7 @@ int main(int argc, char *argv[]) {
   ArrowGroupBy(first_table, output);
   // output->Print();
   output.reset();
-  cout << "++++++++++++++++++++++++++" << endl;
+   std::cout << "++++++++++++++++++++++++++" <<  std::endl;
   */
 
 /*  // naive group by
@@ -312,19 +312,19 @@ int main(int argc, char *argv[]) {
   HashNaiveGroupBy(first_table, output, sum);
   // output->Print();
   output.reset();
-  cout << "++++++++++++++++++++++++++" << endl;*/
+   std::cout << "++++++++++++++++++++++++++" <<  std::endl;*/
 
   HashCylonGroupBy(pool, first_table, output);
 //  output->Print();
   output->WriteCSV("/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
   output.reset();
-  cout << "++++++++++++++++++++++++++" << endl;
+  std::cout << "++++++++++++++++++++++++++" << std::endl;
 
   /*// hash arrow group by
   HashArrowGroupBy(pool, first_table, output);
   output->Print();
   output.reset();
-  cout << "++++++++++++++++++++++++++" << endl;*/
+   std::cout << "++++++++++++++++++++++++++" <<  std::endl;*/
 
   ctx->Finalize();
   return 0;
@@ -338,7 +338,7 @@ void create_table(char *const *argv,
   uint64_t count = stoull(argv[1]);
   double dup = stod(argv[2]);
 
-  cout << "#### lines " << count << " dup " << dup << endl;
+  std::cout << "#### lines " << count << " dup " << dup << std::endl;
 
   std::random_device rd;
   std::mt19937_64 gen(rd());

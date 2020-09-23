@@ -91,10 +91,10 @@ void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
   cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);
 
   auto t3 = std::chrono::steady_clock::now();
-  cout << "hash_group " << output->Rows()
-       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
-       << endl;
+  std::cout << "hash_group " << output->Rows()
+            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+            << std::endl;
 }
 
 void CylonPipelineGroupBy(const std::shared_ptr<cylon::Table> &ctable,
@@ -105,15 +105,15 @@ void CylonPipelineGroupBy(const std::shared_ptr<cylon::Table> &ctable,
       cylon::PipelineGroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
 
   if (!s.is_ok()) {
-    cout << " status " << s.get_code() << " " << s.get_msg() << std::endl;
+    std::cout << " status " << s.get_code() << " " << s.get_msg() << std::endl;
     return;
   }
 
   auto t3 = std::chrono::steady_clock::now();
-  cout << "hash_group3 " << output->Rows()
-       << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
-      << " status " << s.get_code()
-       << endl;
+  std::cout << "hash_group3 " << output->Rows()
+            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
+            << " status " << s.get_code()
+            << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
 
   first_table->WriteCSV("/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
   first_table->Print();
-  cout << "++++++++++++++++++++++++++" << endl;
+  std::cout << "++++++++++++++++++++++++++" << std::endl;
 
   std::shared_ptr<cylon::Table> sorted_table;
   auto t1 = std::chrono::steady_clock::now();
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
   auto t2 = std::chrono::steady_clock::now();
 
   sorted_table->Print();
-  cout << "++++++++++++++++++++++++++" << endl;
+  std::cout << "++++++++++++++++++++++++++" << std::endl;
 
   LOG(INFO) << "sorted table in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -172,13 +172,13 @@ int main(int argc, char *argv[]) {
   HashNaiveGroupBy(first_table, output, sum);
   // output->Print();
   output.reset();
-  cout << "++++++++++++++++++++++++++" << endl;*/
+   std::cout << "++++++++++++++++++++++++++" <<  std::endl;*/
 
   CylonPipelineGroupBy(sorted_table, output);
   output->Print();
   output->WriteCSV("/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
   output.reset();
-  cout << "++++++++++++++++++++++++++" << endl;
+  std::cout << "++++++++++++++++++++++++++" << std::endl;
 
   ctx->Finalize();
   return 0;
@@ -192,7 +192,7 @@ void create_table(char *const *argv,
   uint64_t count = stoull(argv[1]);
   double dup = stod(argv[2]);
 
-  cout << "#### lines " << count << " dup " << dup << endl;
+  std::cout << "#### lines " << count << " dup " << dup << std::endl;
 
   std::random_device rd;
   std::mt19937_64 gen(rd());
