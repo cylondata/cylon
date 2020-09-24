@@ -15,7 +15,6 @@
 
 #include <utility>
 #include <vector>
-#include <utility>
 #include <string>
 #include <memory>
 
@@ -23,12 +22,12 @@
 
 namespace cylon {
 ArrowAllToAll::ArrowAllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
-							 const std::vector<int> &source,
-							 const std::vector<int> &targets,
-							 int edgeId,
-							 std::shared_ptr<ArrowCallback> callback,
-							 std::shared_ptr<arrow::Schema> schema,
-							 arrow::MemoryPool *pool) {
+                             const std::vector<int> &source,
+                             const std::vector<int> &targets,
+                             int edgeId,
+                             std::shared_ptr<ArrowCallback> callback,
+                             std::shared_ptr<arrow::Schema> schema,
+                             arrow::MemoryPool *pool) {
   targets_ = targets;
   srcs_ = source;
   recv_callback_ = std::move(callback);
@@ -158,9 +157,9 @@ void ArrowAllToAll::close() {
   delete allocator_;
 }
 
-void debug(int thisWorker, std::string msg) {
+void debug(int thisWorker, std::string &msg) {
   if (thisWorker == -1) {
-	LOG(INFO) << msg;
+    LOG(INFO) << msg;
   }
 }
 
@@ -237,9 +236,7 @@ Status ArrowAllocator::Allocate(int64_t length, std::shared_ptr<Buffer> *buffer)
 
 ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
 
-ArrowAllocator::~ArrowAllocator() {
-
-}
+ArrowAllocator::~ArrowAllocator() = default;
 
 int64_t ArrowBuffer::GetLength() {
   return 0;

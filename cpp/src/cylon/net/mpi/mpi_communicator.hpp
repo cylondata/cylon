@@ -27,13 +27,15 @@ class MPIConfig : public CommConfig {
 
   int GetDummyConfig();
 
-  CommType Type();
+  CommType Type() override;
 
+ public:
+  static std::shared_ptr<MPIConfig> Make();
 };
 
 class MPICommunicator : public Communicator {
  public:
-  void Init(std::shared_ptr<CommConfig> config) override;
+  void Init(const std::shared_ptr<CommConfig> &config) override;
   Channel *CreateChannel() override;
   int GetRank() override;
   int GetWorldSize() override;

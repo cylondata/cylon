@@ -53,7 +53,7 @@ class CylonContext {
    * @param <cylon::net::CommConfig*> config Configuration to be passed on to the cylon::net::Communicator
    * @return <cylon::CylonContext*>
    */
-  static std::shared_ptr<CylonContext> InitDistributed(std::shared_ptr<net::CommConfig> config);
+  static std::shared_ptr<CylonContext> InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config);
 
   /**
    * Completes and closes all operations under the context
@@ -85,7 +85,7 @@ class CylonContext {
    * Sets a Communicator
    * @param <cylon::net::Communicator*> pointer to another communicator
    */
-  void setCommunicator(std::shared_ptr<net::Communicator> communicator1);
+  void setCommunicator(const std::shared_ptr<cylon::net::Communicator> &communicator1);
 
   /**
    * Sets if distributed
@@ -93,7 +93,7 @@ class CylonContext {
    */
   void setDistributed(bool distributed);
 
-  bool IsDistributed();
+  bool IsDistributed() const;
 
   /**
    * Returns the local rank

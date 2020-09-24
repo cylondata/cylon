@@ -50,8 +50,8 @@ arrow::Status do_copy_numeric_array(const std::shared_ptr<std::vector<int64_t>> 
   return array_builder.Finish(copied_array);
 }
 
-arrow::Status do_copy_binary_array(std::shared_ptr<std::vector<int64_t>> indices,
-                                   std::shared_ptr<arrow::Array> data_array,
+arrow::Status do_copy_binary_array(const std::shared_ptr<std::vector<int64_t>> &indices,
+                                   const std::shared_ptr<arrow::Array> &data_array,
                                    std::shared_ptr<arrow::Array> *copied_array,
                                    arrow::MemoryPool *memory_pool) {
   arrow::BinaryBuilder binary_builder(memory_pool);
@@ -72,8 +72,8 @@ arrow::Status do_copy_binary_array(std::shared_ptr<std::vector<int64_t>> indices
   return binary_builder.Finish(copied_array);
 }
 
-arrow::Status do_copy_fixed_binary_array(std::shared_ptr<std::vector<int64_t>> indices,
-                                         std::shared_ptr<arrow::Array> data_array,
+arrow::Status do_copy_fixed_binary_array(const std::shared_ptr<std::vector<int64_t>> &indices,
+                                         const std::shared_ptr<arrow::Array> &data_array,
                                          std::shared_ptr<arrow::Array> *copied_array,
                                          arrow::MemoryPool *memory_pool) {
   arrow::FixedSizeBinaryBuilder binary_builder(data_array->type(), memory_pool);
@@ -96,12 +96,12 @@ arrow::Status do_copy_fixed_binary_array(std::shared_ptr<std::vector<int64_t>> i
 }
 
 template<typename TYPE>
-arrow::Status do_copy_numeric_list(std::shared_ptr<std::vector<int64_t>> indices,
-                                   std::shared_ptr<arrow::Array> data_array,
+arrow::Status do_copy_numeric_list(const std::shared_ptr<std::vector<int64_t>> &indices,
+                                   const std::shared_ptr<arrow::Array> &data_array,
                                    std::shared_ptr<arrow::Array> *copied_array,
                                    arrow::MemoryPool *memory_pool) {
   arrow::ListBuilder list_builder(memory_pool,
-      std::make_shared<arrow::NumericBuilder<TYPE>>(memory_pool));
+                                  std::make_shared<arrow::NumericBuilder<TYPE>>(memory_pool));
   arrow::NumericBuilder<TYPE> &value_builder =
       *(static_cast<arrow::NumericBuilder<TYPE> *>(list_builder.value_builder()));
   auto casted_array = std::static_pointer_cast<arrow::ListArray>(data_array);
@@ -143,10 +143,10 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> 
                                                     copied_array,
                                                     memory_pool);
     case arrow::Type::UINT16:
-      return do_copy_numeric_array<arrow::Int16Type>(indices,
-                                                     data_array,
-                                                     copied_array,
-                                                     memory_pool);
+      return do_copy_numeric_array<arrow::UInt16Type>(indices,
+                                                      data_array,
+                                                      copied_array,
+                                                      memory_pool);
     case arrow::Type::INT16:
       return do_copy_numeric_array<arrow::Int16Type>(indices,
                                                      data_array,

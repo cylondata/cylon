@@ -44,15 +44,15 @@ class RowComparator {
 
  public:
   RowComparator(std::shared_ptr<cylon::CylonContext> &ctx,
-				const std::shared_ptr<arrow::Table> *tables,
-				int64_t *eq,
-				int64_t *hs) {
-	this->tables = tables;
-	this->comparator = std::make_shared<cylon::TableRowComparator>(tables[0]->fields());
-	this->row_hashing_kernel = std::make_shared<cylon::RowHashingKernel>(tables[0]->fields(),
-																		 cylon::ToArrowPool(ctx));
-	this->eq = eq;
-	this->hs = hs;
+                const std::shared_ptr<arrow::Table> *tables,
+                int64_t *eq,
+                int64_t *hs) {
+    this->tables = tables;
+    this->comparator = std::make_shared<cylon::TableRowComparator>(tables[0]->fields());
+    this->row_hashing_kernel = std::make_shared<cylon::RowHashingKernel>(tables[0]->fields(),
+                                                                         cylon::ToArrowPool(ctx));
+    this->eq = eq;
+    this->hs = hs;
   }
 
   // equality
@@ -81,18 +81,18 @@ class RowComparator {
  * @return
  */
 Status PrepareArray(std::shared_ptr<cylon::CylonContext> &ctx,
-					const std::shared_ptr<arrow::Table> &table,
-					const int32_t col_idx,
-					const std::shared_ptr<std::vector<int64_t>> &row_indices,
-					arrow::ArrayVector &array_vector) {
+                    const std::shared_ptr<arrow::Table> &table,
+                    const int32_t col_idx,
+                    const std::shared_ptr<std::vector<int64_t>> &row_indices,
+                    arrow::ArrayVector &array_vector) {
   std::shared_ptr<arrow::Array> destination_col_array;
   arrow::Status ar_status = cylon::util::copy_array_by_indices(row_indices,
-															   table->column(col_idx)->chunk(0),
-															   &destination_col_array, cylon::ToArrowPool(ctx));
+                                                               table->column(col_idx)->chunk(0),
+                                                               &destination_col_array, cylon::ToArrowPool(ctx));
   if (ar_status != arrow::Status::OK()) {
-	LOG(FATAL) << "Failed while copying a column to the final table from tables."
-			   << ar_status.ToString();
-	return Status(static_cast<int>(ar_status.code()), ar_status.message());
+    LOG(FATAL) << "Failed while copying a column to the final table from tables."
+               << ar_status.ToString();
+    return Status(static_cast<int>(ar_status.code()), ar_status.message());
   }
   array_vector.push_back(destination_col_array);
   return Status::OK();
@@ -952,14 +952,15 @@ Table::~Table() {
   this->Clear();
 }
 
-void ReadCSVThread(cylon::CylonContext *ctx, const std::string &path,
-				   std::shared_ptr<cylon::Table> *table,
-				   cylon::io::config::CSVReadOptions options,
-				   const std::shared_ptr<std::promise<Status>> &status_promise) {
-  status_promise->set_value(Table::FromCSV(reinterpret_cast<std::shared_ptr<cylon::CylonContext> &>(ctx),
-										   path,
-										   *table,
-										   options));
+void ReadCSVThread(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
+                   std::shared_ptr<cylon::Table> *table,
+                   const cylon::io::config::CSVReadOptions &options,
+                   const std::shared_ptr<std::promise<Status>> &status_promise) {
+  std::shared_ptr<CylonContext> ctx_ = ctx; // make a copy of the shared ptr
+  status_promise->set_value(Table::FromCSV(ctx_,
+                                           path,
+                                           *table,
+                                           options));
 }
 
 Status Table::FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
@@ -970,14 +971,14 @@ Status Table::FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vect
 	futures.reserve(paths.size());
 	for (uint64_t kI = 0; kI < paths.size(); ++kI) {
 	  auto read_promise = std::make_shared<std::promise<Status>>();
-	  auto context = ctx.get();
+//	  auto context = ctx.get();
 	  futures.emplace_back(read_promise->get_future(),
 						   std::thread(ReadCSVThread,
-									   context,
-									   paths[kI],
-									   tableOuts[kI],
-									   options,
-									   read_promise));
+                                       ctx,
+                                       paths[kI],
+                                       tableOuts[kI],
+                                       options,
+                                       read_promise));
 	}
 	bool all_passed = true;
 	for (auto &future : futures) {
