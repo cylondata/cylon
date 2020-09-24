@@ -29,7 +29,7 @@ CylonContext::CylonContext(bool distributed) {
   this->is_distributed = distributed;
 }
 
-std::shared_ptr<CylonContext> CylonContext::InitDistributed(std::shared_ptr<net::CommConfig> config) {
+std::shared_ptr<CylonContext> CylonContext::InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config) {
   if (config->Type() == net::CommType::MPI) {
     auto ctx = std::make_shared<CylonContext>(true);
     ctx->communicator = std::make_shared<net::MPICommunicator>();
@@ -49,7 +49,7 @@ std::shared_ptr<net::Communicator> CylonContext::GetCommunicator() const {
   return this->communicator;
 }
 
-void CylonContext::setCommunicator(std::shared_ptr<net::Communicator> communicator1) {
+void CylonContext::setCommunicator(const std::shared_ptr<cylon::net::Communicator> &communicator1) {
   this->communicator = communicator1;
 }
 
@@ -107,10 +107,10 @@ int32_t CylonContext::GetNextSequence() {
   return this->sequence_no++;
 }
 
-bool CylonContext::IsDistributed() {
+bool CylonContext::IsDistributed() const {
   return is_distributed;
 }
 cylon::net::CommType CylonContext::GetCommType() {
-  return is_distributed? this->communicator->GetCommType(): net::CommType::LOCAL;
+  return is_distributed ? this->communicator->GetCommType() : net::CommType::LOCAL;
 }
 }  // namespace cylon
