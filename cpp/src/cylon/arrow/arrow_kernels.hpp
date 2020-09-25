@@ -185,14 +185,14 @@ class ArrowArrayStreamingNumericSplitKernel : public ArrowArrayStreamingSplitKer
     auto reader =
         std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     size_t kI = partitions.size();
-//    size_t kSize = builders_.size();
-//    for (size_t i = 0; i < kSize; i++) {
-//      builders_[i]->Reserve(cnts[i]);
-//    }
+    size_t kSize = builders_.size();
+    for (size_t i = 0; i < kSize; i++) {
+      builders_[i]->Reserve(cnts[i]);
+    }
 
     for (size_t i = 0; i < kI; i++) {
       std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders_[partitions[i]];
-      b->Append(reader->Value(i));
+      b->UnsafeAppend(reader->Value(i));
     }
     return 0;
   }

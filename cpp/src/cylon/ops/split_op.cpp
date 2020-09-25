@@ -68,9 +68,18 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> cy_table) {
   for (int i = 0; i < length; i++) {
     outPartitions[i] = outPartitions[i] / size;
   }
+
+  int first = 0;
+  for (size_t i = 0; i < kI; i++) {
+    if (cnts[i] != 0) {
+      first = i;
+      break;
+    }
+  }
+  
   for (size_t i = 0; i < kI; i++) {
 //    LOG(INFO) << "Counts i=" << i << " size=" << size << " cnts[i]=" << cnts[i] << " cnts[i *size]=" << cnts[i * size];
-    cnts[i] = cnts[i * size];
+    cnts[i] = cnts[i * size + first];
   }
   // now split
   for (int i = 0; i < table->num_columns(); i++) {
