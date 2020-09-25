@@ -24,7 +24,6 @@
 #include <mpi.h>
 
 #include <arrow/compute/api.h>
-#include <ctx/arrow_memory_pool_utils.hpp>
 
 #include <util/arrow_utils.hpp>
 #include <groupby/groupby.hpp>
@@ -32,70 +31,6 @@
 void create_table(char *const *argv,
                   arrow::MemoryPool *pool,
                   std::shared_ptr<arrow::Table> &left_table);
-
-void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
-                      std::shared_ptr<cylon::Table> &output,
-                      const std::function<void(const double &, double *)> &fun) {
-  auto t1 = std::chrono::steady_clock::now();
-
-  const std::shared_ptr<arrow::Table> &table = ctable->get_table();
-
-  const std::shared_ptr<arrow::ChunkedArray> &idx_col = table->column(0);
-  const std::shared_ptr<arrow::Int64Array>
-      &index_arr = static_pointer_cast<arrow::Int64Array>(idx_col->chunk(0));
-  const std::shared_ptr<arrow::DoubleArray>
-      &val_col = static_pointer_cast<arrow::DoubleArray>(table->column(1)->chunk(0));
-
-  arrow::Status s;
-
-  const int64_t len = table->num_rows();
-
-  std::unordered_map<int64_t, double> map;
-  map.reserve(len * 0.5);
-
-  int64_t idx;
-  double val;
-  for (int64_t i = 0; i < len; i++) {
-    idx = index_arr->Value(i);
-    val = val_col->Value(i);
-
-    auto iter = map.find(idx);
-
-    if (iter == map.end()) {
-      map.insert(make_pair(idx, val));
-    } else {
-      fun(val, &(iter->second)); // update the value using the fun
-    }
-  }
-
-  auto t2 = std::chrono::steady_clock::now();
-
-  arrow::Int64Builder idx_builder;
-  arrow::DoubleBuilder val_builder;
-  std::shared_ptr<arrow::Array> out_idx, out_val;
-
-  const unsigned long groups = map.size();
-  s = idx_builder.Reserve(groups);
-  s = val_builder.Reserve(groups);
-
-  for (auto &p:  map) {
-    idx_builder.UnsafeAppend(p.first);
-    val_builder.UnsafeAppend(p.second);
-  }
-  map.clear();
-
-  s = idx_builder.Finish(&out_idx);
-  s = val_builder.Finish(&out_val);
-
-  std::shared_ptr<arrow::Table> a_output = arrow::Table::Make(table->schema(), {out_idx, out_val});
-  cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);
-
-  auto t3 = std::chrono::steady_clock::now();
-  std::cout << "hash_group " << output->Rows()
-            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
-            << std::endl;
-}
 
 void CylonPipelineGroupBy(const std::shared_ptr<cylon::Table> &ctable,
                           std::shared_ptr<cylon::Table> &output) {
@@ -146,7 +81,7 @@ int main(int argc, char *argv[]) {
                 read_end_time - start_start).count() << "[ms]";
 
   first_table->WriteCSV("/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
-  first_table->Print();
+//  first_table->Print();
   std::cout << "++++++++++++++++++++++++++" << std::endl;
 
   std::shared_ptr<cylon::Table> sorted_table;
@@ -154,7 +89,7 @@ int main(int argc, char *argv[]) {
   first_table->Sort(0, sorted_table);
   auto t2 = std::chrono::steady_clock::now();
 
-  sorted_table->Print();
+//  sorted_table->Print();
   std::cout << "++++++++++++++++++++++++++" << std::endl;
 
   LOG(INFO) << "sorted table in "
@@ -163,19 +98,8 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<cylon::Table> output;
 
-
-/*  // naive group by
-  auto sum = [](const double &v, double *out) -> void {
-    *out += v;
-  };
-
-  HashNaiveGroupBy(first_table, output, sum);
-  // output->Print();
-  output.reset();
-   std::cout << "++++++++++++++++++++++++++" <<  std::endl;*/
-
   CylonPipelineGroupBy(sorted_table, output);
-  output->Print();
+//  output->Print();
   output->WriteCSV("/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
   output.reset();
   std::cout << "++++++++++++++++++++++++++" << std::endl;
