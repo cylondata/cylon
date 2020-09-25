@@ -73,7 +73,7 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
     size_t kI = partitions.size();
     for (size_t i = 0; i < kI; i++) {
 	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[partitions[i]];
-	  b->Append(reader->Value(i));
+	  b->UnsafeAppend(reader->Value(i));
 	}
 
 	for (long target : targets) {
@@ -192,7 +192,7 @@ class ArrowArrayStreamingNumericSplitKernel : public ArrowArrayStreamingSplitKer
 
     for (size_t i = 0; i < kI; i++) {
       std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders_[partitions[i]];
-      b->UnsafeAppend(reader->Value(i));
+      b->Append(reader->Value(i));
     }
     return 0;
   }
