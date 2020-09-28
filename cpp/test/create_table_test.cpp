@@ -28,7 +28,7 @@ TEST_CASE("create table from columns testing", "[columns]") {
     REQUIRE((status.is_ok() && output->Columns() == 2 && output->Rows() == size));
 
     std::shared_ptr<arrow::DoubleArray> c =
-        static_pointer_cast<arrow::DoubleArray>(output->GetColumn(1)->GetColumnData()->chunk(0));
+        std::static_pointer_cast<arrow::DoubleArray>(output->GetColumn(1)->GetColumnData()->chunk(0));
 
     for (int i = 0; i < c->length(); i++) {
       REQUIRE((c->Value(i) == i + 10.0));

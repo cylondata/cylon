@@ -20,7 +20,7 @@
 #include <table.hpp>
 #include <compute/aggregates.hpp>
 
-cylon::Status CreateTable(cylon::CylonContext *ctx, int rows,
+cylon::Status CreateTable(std::shared_ptr<cylon::CylonContext> &ctx, int rows,
                           std::shared_ptr<cylon::Table> *output) {
   std::shared_ptr<std::vector<int32_t>> col0 = std::make_shared<std::vector<int32_t >>();
   std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t >>();
@@ -40,7 +40,7 @@ int main() {
   cylon::Status status;
   const int rows = 12;
 
-  auto mpi_config = new cylon::net::MPIConfig();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::shared_ptr<cylon::Table> table;
@@ -56,7 +56,7 @@ int main() {
   }
 
   if ((status = cylon::compute::Sum(table, 1, &result)).is_ok()) {
-    const shared_ptr<arrow::DoubleScalar>
+    const std::shared_ptr<arrow::DoubleScalar>
         &aa = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
     std::cout << "sum " << aa->value << " " << status.get_code() << std::endl;
   } else {
@@ -78,7 +78,7 @@ int main() {
   }
 
   if ((status = cylon::compute::Max(table, 1, &result)).is_ok()) {
-    const shared_ptr<arrow::DoubleScalar>
+    const std::shared_ptr<arrow::DoubleScalar>
         &aa = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
     std::cout << "max " << aa->value << " " << status.get_code() << std::endl;
   } else {
@@ -86,6 +86,5 @@ int main() {
   }
 
   ctx->Finalize();
-  free(mpi_config);
   return 0;
 }

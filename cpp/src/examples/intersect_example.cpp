@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   auto start_time = std::chrono::steady_clock::now();
-  auto mpi_config = new cylon::net::MPIConfig();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::shared_ptr<cylon::Table> first_table, second_table, result_table;

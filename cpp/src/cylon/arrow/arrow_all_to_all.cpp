@@ -15,15 +15,13 @@
 
 #include <utility>
 #include <vector>
-#include <utility>
 #include <string>
 #include <memory>
 
 #include "arrow_all_to_all.hpp"
 #include "../ctx/arrow_memory_pool_utils.hpp"
-
 namespace cylon {
-ArrowAllToAll::ArrowAllToAll(cylon::CylonContext *ctx,
+ArrowAllToAll::ArrowAllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
                              const std::vector<int> &source,
                              const std::vector<int> &targets,
                              int edgeId,
@@ -59,7 +57,7 @@ int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int32_t ta
   return insert(arrow, target, -1);
 }
 
-int ArrowAllToAll::insert(shared_ptr<arrow::Table> arrow, int32_t target, int32_t reference) {
+int ArrowAllToAll::insert(std::shared_ptr<arrow::Table> arrow, int32_t target, int32_t reference) {
   // todo: check weather we have enough memory
   // lets save the table into pending and move on
   std::shared_ptr<PendingSendTable> st = inputs_[target];
@@ -159,9 +157,11 @@ void ArrowAllToAll::close() {
   inputs_.clear();
   // call close on the underlying allto all
   all_->close();
+
+  delete allocator_;
 }
 
-void debug(int thisWorker, std::string msg) {
+void debug(int thisWorker, std::string &msg) {
   if (thisWorker == -1) {
     LOG(INFO) << msg;
   }
@@ -239,9 +239,11 @@ Status ArrowAllocator::Allocate(int64_t length, std::shared_ptr<Buffer> *buffer)
   return Status::OK();
 }
 
-  ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
+ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
 
-  int64_t ArrowBuffer::GetLength() {
+ArrowAllocator::~ArrowAllocator() = default;
+
+int64_t ArrowBuffer::GetLength() {
   return 0;
 }
 
@@ -249,9 +251,9 @@ uint8_t *ArrowBuffer::GetByteBuffer() {
   return buf->mutable_data();
 }
 
-ArrowBuffer::ArrowBuffer(shared_ptr<arrow::Buffer> buf) : buf(std::move(buf)) {}
+ArrowBuffer::ArrowBuffer(std::shared_ptr<arrow::Buffer> buf) : buf(std::move(buf)) {}
 
-shared_ptr<arrow::Buffer> ArrowBuffer::getBuf() const {
+std::shared_ptr<arrow::Buffer> ArrowBuffer::getBuf() const {
   return buf;
 }
 }  // namespace cylon

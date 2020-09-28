@@ -93,13 +93,13 @@ class ArrowCallback {
  * Arrow table specific buffer
  */
 class ArrowBuffer : public Buffer {
-public:
-  explicit ArrowBuffer(shared_ptr<arrow::Buffer> buf);
+ public:
+  explicit ArrowBuffer(std::shared_ptr<arrow::Buffer> buf);
   int64_t GetLength() override;
   uint8_t *GetByteBuffer() override;
 
-  shared_ptr<arrow::Buffer> getBuf() const;
-private:
+  std::shared_ptr<arrow::Buffer> getBuf() const;
+ private:
   std::shared_ptr<arrow::Buffer> buf;
 };
 
@@ -107,11 +107,12 @@ private:
  * Arrow table specific allocator
  */
 class ArrowAllocator : public Allocator {
-public:
+ public:
   explicit ArrowAllocator(arrow::MemoryPool *pool);
+  virtual ~ArrowAllocator();
 
   Status Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) override;
-private:
+ private:
   arrow::MemoryPool *pool;
 };
 
@@ -126,7 +127,7 @@ class ArrowAllToAll : public ReceiveCallback {
    * @param all_workers
    * @return
    */
-  ArrowAllToAll(cylon::CylonContext *ctx,
+  ArrowAllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
                 const std::vector<int> &source,
                 const std::vector<int> &targets,
                 int edgeId,

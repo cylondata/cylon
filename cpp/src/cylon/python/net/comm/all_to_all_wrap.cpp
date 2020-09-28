@@ -28,7 +28,7 @@ cylon::net::comm::all_to_all_wrap::all_to_all_wrap(int worker_id,
                                                    const std::vector<int> &targets,
                                                    int edgeId) {
   cylon::net::comms::Callback *callback = new cylon::net::comms::Callback();
-  auto mpi_config = new cylon::net::MPIConfig();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
   all_ = new cylon::AllToAll(ctx, source, targets, edgeId, callback, &alloc);
 }

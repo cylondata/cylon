@@ -48,7 +48,7 @@ int main() {
   }
 
   std::shared_ptr<arrow::DoubleArray>
-      c = static_pointer_cast<arrow::DoubleArray>(output->GetColumn(1)->GetColumnData()->chunk(0));
+      c = std::static_pointer_cast<arrow::DoubleArray>(output->GetColumn(1)->GetColumnData()->chunk(0));
 
   for (int i = 0; i < c->length(); i++) {
     std::cout << c->Value(i) << " ";
