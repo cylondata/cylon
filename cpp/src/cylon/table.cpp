@@ -185,7 +185,7 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
 	  this->workerId = workerId;
 	}
 
-	bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
+	bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override {
 	  this->tabs->push_back(table);
 	  return true;
 	};
@@ -194,7 +194,7 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
   // doing all to all communication to exchange tables
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
 								  std::make_shared<AllToAllListener>(&received_tables,
-																	 ctx->GetRank()), schema, cylon::ToArrowPool(ctx));
+																	 ctx->GetRank()), schema);
 
   for (auto &partitioned_table : partitioned_tables) {
 	if (partitioned_table.first != ctx->GetRank()) {
@@ -254,7 +254,7 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
 	  this->workerId = workerId;
 	}
 
-	bool onReceive(int source, std::shared_ptr<arrow::Table> table) override {
+	bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override {
 	  this->tabs->push_back(table);
 	  return true;
 	};
@@ -263,7 +263,7 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
   // doing all to all communication to exchange tables
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
 								  std::make_shared<AllToAllListener>(&received_tables,
-																	 ctx->GetRank()), schema, cylon::ToArrowPool(ctx));
+																	 ctx->GetRank()), schema);
 
   for (auto &partitioned_table : partitioned_tables) {
 	if (partitioned_table.first != ctx->GetRank()) {

@@ -6,8 +6,8 @@
 
 int main(int argc, char *argv[]) {
 
-  auto config = cylon::net::MPIConfig();
-  auto ctx = cylon::CylonContext::InitDistributed(&config);
+  auto config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(config);
 
   auto tasks_sources = std::make_shared<std::vector<int>>();
   auto tasks_targets = std::make_shared<std::vector<int>>();
@@ -35,10 +35,11 @@ int main(int argc, char *argv[]) {
 
   class CallBack : public cylon::ArrowTaskCallBack {
 
-    cylon::CylonContext *ctx;
+    std::shared_ptr<cylon::CylonContext> ctx;
 
    public:
-    explicit CallBack(cylon::CylonContext *ctx) : ctx(ctx) {
+    explicit CallBack(std::shared_ptr<cylon::CylonContext> ctx) : ctx(ctx) {
+
     }
 
     bool onReceive(const std::shared_ptr<arrow::Table> &table, int target) override {
@@ -60,9 +61,12 @@ int main(int argc, char *argv[]) {
   std::vector<std::shared_ptr<std::thread>> tasks;
   for (int t = ctx->GetRank() * 2; t < ctx->GetRank() * 2 + 2; t++) {
     LOG(INFO) << "Starting  task " << t << " on worker " << ctx->GetRank();
-    auto t1 = std::make_shared<std::thread>([ctx, &all, task_to_worker]() {
+    auto t1 = std::make_shared<std::thread>([ctx, argv, &all, task_to_worker]() {
       std::shared_ptr<cylon::Table> table;
-      cylon::Table::FromCSV(ctx, "/home/chathura/Code/twisterx/cpp/data/csv1.csv", table);
+
+      // todo this can be a mistake
+      auto ctx_non_shared = std::make_shared<cylon::CylonContext>(*ctx);
+      cylon::Table::FromCSV(ctx_non_shared, argv[1], table);
       LOG(INFO) << "Read table with rows " << table->Rows();
 
       std::shared_ptr<arrow::Table> arTable;
