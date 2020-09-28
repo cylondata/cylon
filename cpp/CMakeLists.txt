@@ -117,6 +117,7 @@ option(CYLON_BUILD_TESTS "Build tests." ON)
 
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
+add_subdirectory(src/tutorial)
 
 ## installing arrow files
 install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION include)
