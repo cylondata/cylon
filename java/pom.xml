@@ -93,7 +93,8 @@
                             <tasks>
                                 <mkdir dir="${native.build.path}"/>
                                 <exec dir="${native.build.path}" failonerror="true" executable="cmake">
-                                    <arg value="${basedir}/src/main/native"/>
+                                    <arg value="-B${native.build.path}"/>
+                                    <arg value="-S${basedir}/src/main/native"/>
                                     <arg value="-DCYLON_CORE_LIBS:STRING=${cylon.core.libs}"/>
                                     <arg value="-DCYLON_ARROW_DIR:STRING=${cylon.arrow.dir}"/>
                                 </exec>
