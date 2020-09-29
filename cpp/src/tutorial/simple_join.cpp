@@ -23,15 +23,16 @@
     LOG(ERROR) << msg << " " << status.get_msg(); \
     ctx->Finalize();              \
     return 1;                     \
-  }                               \
+  }                               
 
 int main() {
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  const int rank = ctx->GetRank() + 1;
 
-  const std::string csv1 = "/tmp/csv1.csv";
-  const std::string csv2 = "/tmp/csv2.csv";
+  const std::string csv1 = "/tmp/user_device_tm_" + std::to_string(rank) + ".csv";
+  const std::string csv2 = "/tmp/user_usage_tm_" + std::to_string(rank) + ".csv";
 
   std::shared_ptr<cylon::Table> first_table, second_table, joined_table;
   cylon::Status status;
@@ -42,7 +43,7 @@ int main() {
   status = cylon::Table::FromCSV(ctx, csv2, second_table);
   CHECK_STATUS(status, "Reading csv2 failed!")
 
-  auto join_config = cylon::join::config::JoinConfig::InnerJoin(0, 0);
+  auto join_config = cylon::join::config::JoinConfig::InnerJoin(0, 3);
   status = cylon::Table::DistributedJoin(first_table, second_table, join_config, &joined_table);
   CHECK_STATUS(status, "Join failed!")
 

@@ -11,9 +11,8 @@ endmacro(tx_add_exe)
 include_directories(../cylon)
 
 tx_add_exe(simple_join)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/csv1.csv  DESTINATION /tmp/)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/csv2.csv  DESTINATION /tmp/)
-file(GLOB PYTORCH_DATA_1 "${CMAKE_CURRENT_SOURCE_DIR}/data/user_device_tm_*.csv")
-file(GLOB PYTORCH_DATA_2 "${CMAKE_CURRENT_SOURCE_DIR}/data/user_usage_tm_*.csv")
+
+file(GLOB PYTORCH_DATA_1 "${CMAKE_CURRENT_SOURCE_DIR}/data/user_device_tm*.csv")
+file(GLOB PYTORCH_DATA_2 "${CMAKE_CURRENT_SOURCE_DIR}/data/user_usage_tm*.csv")
 file(COPY ${PYTORCH_DATA_1} DESTINATION /tmp/)
 file(COPY ${PYTORCH_DATA_2} DESTINATION /tmp/)
