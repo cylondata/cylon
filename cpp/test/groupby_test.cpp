@@ -26,7 +26,7 @@
 
 #include "test_header.hpp"
 
-Status create_table(shared_ptr<cylon::Table> &table) {
+Status create_table(std::shared_ptr<cylon::Table> &table) {
   std::vector<int64_t> col0{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
   std::vector<double> col1{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
 
@@ -58,7 +58,7 @@ Status PipelineCylonGroupBy(const std::shared_ptr<cylon::Table> &ctable,
 TEST_CASE("groupby testing", "[groupby]") {
   LOG(INFO) << "Testing groupby";
 
-  shared_ptr<cylon::Table> table, output1, output2, validate;
+  std::shared_ptr<cylon::Table> table, output1, output2, validate;
   auto status = create_table(table);
 
   REQUIRE((status.is_ok() && table->Columns() == 2 && table->Rows() == 10));

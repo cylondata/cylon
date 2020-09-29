@@ -29,7 +29,7 @@ typedef Status
 (*LocalGroupByFptr)(const std::shared_ptr<Table> &table,
                     const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
                     std::shared_ptr<Table> &output);
-LocalGroupByFptr PickLocalHashGroupByFptr(const shared_ptr<cylon::DataType> &idx_data_type) {
+LocalGroupByFptr PickLocalHashGroupByFptr(const std::shared_ptr<cylon::DataType> &idx_data_type) {
   switch (idx_data_type->getType()) {
     case Type::BOOL: return &LocalHashGroupBy<arrow::BooleanType>;
     case Type::UINT8: return &LocalHashGroupBy<arrow::UInt8Type>;
@@ -61,7 +61,7 @@ LocalGroupByFptr PickLocalHashGroupByFptr(const shared_ptr<cylon::DataType> &idx
   return nullptr;
 }
 
-LocalGroupByFptr PickLocalPipelineGroupByFptr(const shared_ptr<cylon::DataType> &idx_data_type) {
+LocalGroupByFptr PickLocalPipelineGroupByFptr(const std::shared_ptr<cylon::DataType> &idx_data_type) {
   switch (idx_data_type->getType()) {
     case Type::BOOL: return &LocalPipelinedGroupBy<arrow::BooleanType>;
     case Type::UINT8: return &LocalPipelinedGroupBy<arrow::UInt8Type>;
@@ -106,7 +106,7 @@ cylon::Status GroupBy(const std::shared_ptr<Table> &table,
   std::vector<int64_t> project_cols = {index_col};
   project_cols.insert(project_cols.end(), aggregate_cols.begin(), aggregate_cols.end());
 
-  shared_ptr<Table> projected_table;
+  std::shared_ptr<Table> projected_table;
   if (!(status = table->Project(project_cols, projected_table)).is_ok()) {
     LOG(FATAL) << "table projection failed! " << status.get_msg();
     return status;
@@ -138,11 +138,11 @@ cylon::Status GroupBy(const std::shared_ptr<Table> &table,
   return Status::OK();
 }
 
-Status PipelineGroupBy(const shared_ptr<Table> &table,
+Status PipelineGroupBy(const std::shared_ptr<Table> &table,
                        int64_t index_col,
-                       const vector<int64_t> &aggregate_cols,
-                       const vector<GroupByAggregationOp> &aggregate_ops,
-                       shared_ptr<Table> &output) {
+                       const std::vector<int64_t> &aggregate_cols,
+                       const std::vector<GroupByAggregationOp> &aggregate_ops,
+                       std::shared_ptr<Table> &output) {
   LocalGroupByFptr group_by_fptr = PickLocalPipelineGroupByFptr(table->GetColumn(index_col)->GetDataType());
 
   Status status;
@@ -151,7 +151,7 @@ Status PipelineGroupBy(const shared_ptr<Table> &table,
   std::vector<int64_t> project_cols = {index_col};
   project_cols.insert(project_cols.end(), aggregate_cols.begin(), aggregate_cols.end());
 
-  shared_ptr<Table> projected_table;
+  std::shared_ptr<Table> projected_table;
   if (!(status = table->Project(project_cols, projected_table)).is_ok()) {
     LOG(FATAL) << "table projection failed! " << status.get_msg();
     return status;

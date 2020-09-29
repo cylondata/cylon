@@ -138,7 +138,8 @@ struct AggregateKernel<T, GroupByAggregationOp::COUNT> {
 //};
 
 template<typename IDX_T, typename VAL_T, cylon::GroupByAggregationOp AGG_OP,
-    typename = typename std::enable_if<arrow::is_number_type<IDX_T>::value | arrow::is_boolean_type<IDX_T>::value>::type>
+    typename = typename std::enable_if<
+        arrow::is_number_type<IDX_T>::value | arrow::is_boolean_type<IDX_T>::value>::type>
 arrow::Status HashGroupBy(arrow::MemoryPool *pool,
                           const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                           const std::shared_ptr<arrow::ChunkedArray> &val_col,
@@ -160,8 +161,10 @@ arrow::Status HashGroupBy(arrow::MemoryPool *pool,
   const int chunks = idx_col->num_chunks();
   for (int chunk = 0; chunk < chunks; chunk++) {
     const int64_t len = idx_col->chunk(chunk)->length();
-    const shared_ptr<IDX_ARRAY_T> &idx_arr = static_pointer_cast<IDX_ARRAY_T>(idx_col->chunk(chunk));
-    const shared_ptr<VAL_ARRAY_T> &val_arr = static_pointer_cast<VAL_ARRAY_T>(val_col->chunk(chunk));
+    const std::shared_ptr<IDX_ARRAY_T> &idx_arr = std::static_pointer_cast<IDX_ARRAY_T>
+        (idx_col->chunk(chunk));
+    const std::shared_ptr<VAL_ARRAY_T> &val_arr = std::static_pointer_cast<VAL_ARRAY_T>
+        (val_col->chunk(chunk));
 
     IDX_C_T idx;
     VAL_C_T val;
@@ -263,7 +266,8 @@ HashGroupByFptr ResolveOp(cylon::GroupByAggregationOp op) {
 
 template<typename IDX_ARROW_T,
     typename = typename std::enable_if<
-        arrow::is_number_type<IDX_ARROW_T>::value | arrow::is_boolean_type<IDX_ARROW_T>::value>::type>
+        arrow::is_number_type<IDX_ARROW_T>::value
+            | arrow::is_boolean_type<IDX_ARROW_T>::value>::type>
 HashGroupByFptr PickHashGroupByFptr(const std::shared_ptr<cylon::DataType> &val_data_type,
                                     const cylon::GroupByAggregationOp op) {
   switch (val_data_type->getType()) {
@@ -312,7 +316,8 @@ HashGroupByFptr PickHashGroupByFptr(const std::shared_ptr<cylon::DataType> &val_
   */
 template<typename IDX_ARROW_T,
     typename = typename std::enable_if<
-        arrow::is_number_type<IDX_ARROW_T>::value | arrow::is_boolean_type<IDX_ARROW_T>::value>::type>
+        arrow::is_number_type<IDX_ARROW_T>::value
+            | arrow::is_boolean_type<IDX_ARROW_T>::value>::type>
 cylon::Status LocalHashGroupBy(const std::shared_ptr<cylon::Table> &table,
                                const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
                                std::shared_ptr<cylon::Table> &output) {
@@ -328,12 +333,13 @@ cylon::Status LocalHashGroupBy(const std::shared_ptr<cylon::Table> &table,
   const int cols = a_table->num_columns();
   const std::shared_ptr<arrow::ChunkedArray> &idx_col = a_table->column(0);
 
-  std::vector<shared_ptr<arrow::Array>> out_vectors;
+  std::vector<std::shared_ptr<arrow::Array>> out_vectors;
   for (int c = 1; c < cols; c++) {
-    const shared_ptr<arrow::ChunkedArray> &val_col = a_table->column(c);
-    const shared_ptr<DataType> &val_data_type = table->GetColumn(c)->GetDataType();
+    const std::shared_ptr<arrow::ChunkedArray> &val_col = a_table->column(c);
+    const std::shared_ptr<DataType> &val_data_type = table->GetColumn(c)->GetDataType();
 
-    const HashGroupByFptr hash_group_by = PickHashGroupByFptr<IDX_ARROW_T>(val_data_type, aggregate_ops[c - 1]);
+    const HashGroupByFptr
+        hash_group_by = PickHashGroupByFptr<IDX_ARROW_T>(val_data_type, aggregate_ops[c - 1]);
 
     if (hash_group_by != nullptr) {
       a_status = hash_group_by(memory_pool, idx_col, val_col, out_vectors);

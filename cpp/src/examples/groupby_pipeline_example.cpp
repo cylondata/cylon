@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   }
 
   auto start_start = std::chrono::steady_clock::now();
-  auto mpi_config = new cylon::net::MPIConfig();
+  auto mpi_config = cylon::net::MPIConfig::Make();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   arrow::MemoryPool *pool = arrow::default_memory_pool();
@@ -113,8 +113,8 @@ void create_table(char *const *argv,
                   std::shared_ptr<arrow::Table> &left_table) {
   arrow::Int64Builder left_id_builder(pool);
   arrow::DoubleBuilder cost_builder(pool);
-  uint64_t count = stoull(argv[1]);
-  double dup = stod(argv[2]);
+  uint64_t count = std::stoull(argv[1]);
+  double dup = std::stod(argv[2]);
 
   std::cout << "#### lines " << count << " dup " << dup << std::endl;
 
@@ -140,10 +140,10 @@ void create_table(char *const *argv,
   st = left_id_builder.Finish(&left_id_array);
   st = cost_builder.Finish(&cost_array);
 
-  vector<shared_ptr<arrow::Field>> schema_vector = {
+  std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
       arrow::field("first", arrow::int64()),
       arrow::field("second", arrow::float64())};
-  auto schema = make_shared<arrow::Schema>(schema_vector);
+  auto schema = std::make_shared<arrow::Schema>(schema_vector);
 
   left_table = arrow::Table::Make(schema, {std::move(left_id_array), std::move(cost_array)});
 

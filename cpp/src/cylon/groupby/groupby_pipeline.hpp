@@ -49,7 +49,7 @@ inline arrow::Status MinMax(const std::shared_ptr<arrow::Array> &array,
                             arrow::compute::FunctionContext *fn_ctx,
                             arrow::compute::Datum *res) {
   static const arrow::compute::MinMaxOptions options;
-  arrow::compute::Datum local_result; // minmax returns a vector<Datum>{min, max}
+  arrow::compute::Datum local_result; // minmax returns a std::vector<Datum>{min, max}
   auto status = arrow::compute::MinMax(fn_ctx, options, array, &local_result);
 
   *res = local_result.collection().at(minMax);
@@ -70,7 +70,7 @@ typedef
 arrow::Status (*AggregateArrayFptr)(arrow::MemoryPool *pool,
                                     const std::shared_ptr<arrow::Array> &array,
                                     const cylon::GroupByAggregationOp &aggregate_op,
-                                    const vector<int64_t> &boundaries,
+                                    const std::vector<int64_t> &boundaries,
                                     std::shared_ptr<arrow::Array> &output_array);
 
 template<typename ARROW_T,
@@ -79,7 +79,7 @@ template<typename ARROW_T,
 arrow::Status AggregateArray(arrow::MemoryPool *pool,
                              const std::shared_ptr<arrow::Array> &array,
                              const cylon::GroupByAggregationOp &aggregate_op,
-                             const vector<int64_t> &boundaries,
+                             const std::vector<int64_t> &boundaries,
                              std::shared_ptr<arrow::Array> &output_array) {
   using BUILDER_T = typename arrow::TypeTraits<ARROW_T>::BuilderType;
   using SCALAR_T = typename arrow::TypeTraits<ARROW_T>::ScalarType;
@@ -101,7 +101,7 @@ arrow::Status AggregateArray(arrow::MemoryPool *pool,
       return s;
     }
     start = end;
-    builder.UnsafeAppend(static_pointer_cast<SCALAR_T>(res.scalar())->value);
+    builder.UnsafeAppend(std::static_pointer_cast<SCALAR_T>(res.scalar())->value);
   }
 
   s = builder.Finish(&output_array);
@@ -112,7 +112,7 @@ arrow::Status AggregateArray(arrow::MemoryPool *pool,
   return arrow::Status::OK();
 }
 
-AggregateArrayFptr PickAggregateArrayFptr(const shared_ptr<cylon::DataType> &val_data_type) {
+AggregateArrayFptr PickAggregateArrayFptr(const std::shared_ptr<cylon::DataType> &val_data_type) {
   switch (val_data_type->getType()) {
     case Type::BOOL: return &AggregateArray<arrow::BooleanType>;
     case Type::UINT8: return &AggregateArray<arrow::UInt8Type>;
@@ -149,7 +149,7 @@ template<typename ARROW_T,
         arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
 arrow::Status BuildIndex(arrow::MemoryPool *pool,
                          const std::shared_ptr<arrow::Array> &array,
-                         const vector<int64_t> &boundaries,
+                         const std::vector<int64_t> &boundaries,
                          std::shared_ptr<arrow::Array> &output_array) {
   using ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using BUILDER_T = typename arrow::TypeTraits<ARROW_T>::BuilderType;
@@ -160,7 +160,7 @@ arrow::Status BuildIndex(arrow::MemoryPool *pool,
     return s;
   }
 
-  const shared_ptr<ARRAY_T> &index_arr = static_pointer_cast<ARRAY_T>(array);
+  const std::shared_ptr<ARRAY_T> &index_arr = std::static_pointer_cast<ARRAY_T>(array);
 
   for (auto &end: boundaries) {
     builder.UnsafeAppend(index_arr->Value(end - 1));
@@ -180,8 +180,8 @@ template<typename IDX_ARROW_T,
 Status LocalPipelinedGroupBy(const std::shared_ptr<cylon::Table> &table,
                              const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
                              std::shared_ptr<cylon::Table> &output) {
-  const shared_ptr<arrow::Table> &a_table = table->get_table();
-  const shared_ptr<arrow::ChunkedArray> &idx_col = a_table->column(0);
+  const  std::shared_ptr<arrow::Table> &a_table = table->get_table();
+  const  std::shared_ptr<arrow::ChunkedArray> &idx_col = a_table->column(0);
 
   if (idx_col->num_chunks() > 1) {
     return cylon::Status(Code::Invalid, "multiple chunks not supported for pipelined groupby");
@@ -196,11 +196,12 @@ Status LocalPipelinedGroupBy(const std::shared_ptr<cylon::Table> &table,
 
   arrow::Status s;
 
-  vector<int64_t> boundaries;
+  std::vector<int64_t> boundaries;
   const int64_t len = idx_col->length();
   boundaries.reserve((int64_t) len * 0.5);
 
-  const shared_ptr<IDX_ARRAY_T> &index_arr = static_pointer_cast<IDX_ARRAY_T>(idx_col->chunk(0));
+  const std::shared_ptr<IDX_ARRAY_T> &index_arr = std::static_pointer_cast<IDX_ARRAY_T>
+      (idx_col->chunk(0));
 
   IDX_C_T prev_v = index_arr->Value(0), curr_v;
   for (int64_t i = 0; i < len; i++) {
@@ -215,10 +216,10 @@ Status LocalPipelinedGroupBy(const std::shared_ptr<cylon::Table> &table,
   }
   boundaries.push_back(len);
 
-  std::vector<shared_ptr<arrow::Array>> out_arrays;
+  std::vector<std::shared_ptr<arrow::Array>> out_arrays;
 
   // build index
-  shared_ptr<arrow::Array> out_idx;
+   std::shared_ptr<arrow::Array> out_idx;
   s = BuildIndex<IDX_ARROW_T>(memory_pool, idx_col->chunk(0), boundaries, out_idx);
   if (!s.ok()) {
     return cylon::Status(static_cast<int>(s.code()), s.message());
@@ -226,7 +227,7 @@ Status LocalPipelinedGroupBy(const std::shared_ptr<cylon::Table> &table,
   out_arrays.push_back(out_idx);
 
   for (size_t i = 0; i < aggregate_ops.size(); i++) {
-    const shared_ptr<DataType> &val_type = table->GetColumn(i + 1)->GetDataType();
+    const  std::shared_ptr<DataType> &val_type = table->GetColumn(i + 1)->GetDataType();
     AggregateArrayFptr aggregate_array_fn = PickAggregateArrayFptr(val_type);
     std::shared_ptr<arrow::Array> out_val;
     s = aggregate_array_fn(memory_pool, a_table->column(i + 1)->chunk(0), aggregate_ops[i], boundaries, out_val);
@@ -238,7 +239,7 @@ Status LocalPipelinedGroupBy(const std::shared_ptr<cylon::Table> &table,
     out_arrays.push_back(out_val);
   }
 
-  shared_ptr<arrow::Table> a_output = arrow::Table::Make(a_table->schema(), out_arrays);
+   std::shared_ptr<arrow::Table> a_output = arrow::Table::Make(a_table->schema(), out_arrays);
 
   return cylon::Table::FromArrowTable(ctx, a_output, &output);
 }
