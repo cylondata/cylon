@@ -17,7 +17,6 @@
 #include "python/net/comm/all_to_all_wrap.h"
 #include "python/net/distributed.h"
 
-using namespace std;
 using namespace cylon::net::comm;
 
 int main(int argc, char *argv[]) {

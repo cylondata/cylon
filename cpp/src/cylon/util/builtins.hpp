@@ -17,12 +17,11 @@
 
 #include "iostream"
 
-using namespace std;
 
 namespace cylon {
 namespace util {
 
-void printArray(void *buf, int size, string dataType, int depth);
+void printArray(void *buf, int size, std::string dataType, int depth);
 
 void printInt8Array(int8_t *buf, int size);
 

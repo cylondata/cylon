@@ -120,10 +120,10 @@ JNIEXPORT void JNICALL Java_org_cylondata_cylon_Table_select
 
   // selector select method
   jclass selector_cls = env->FindClass("org/cylondata/cylon/ops/Selector");
-  jmethodID select_method = env->GetMethodID(selector_cls, "select", "(Lorg/cylondata/cylon/ops/Row;)Z");
+  jmethodID select_method = env->GetMethodID(selector_cls, "select", "(Lorg/cylondata/cylon/Row;)Z");
 
   //create a java Row object
-  jclass row_cls = env->FindClass("org/cylondata/cylon/ops/Row");
+  jclass row_cls = env->FindClass("org/cylondata/cylon/Row");
   jmethodID row_cls_constructor = env->GetMethodID(row_cls, "<init>", "()V");
   jfieldID row_id_field = env->GetFieldID(row_cls, "memoryAddress", "J");
 

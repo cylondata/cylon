@@ -27,7 +27,7 @@
 
 int main() {
 
-  auto mpi_config = new cylon::net::MPIConfig(); // todo use make here
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   const std::string csv1 = "/tmp/csv1.csv";
@@ -50,7 +50,5 @@ int main() {
             << second_table->Rows() << ", Joined has : " << joined_table->Rows();
 
   ctx->Finalize();
-
-  free(mpi_config); // todo remove this
   return 0;
 }

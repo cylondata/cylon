@@ -15,31 +15,28 @@
 
 #include <utility>
 #include <vector>
-#include <utility>
 #include <string>
 #include <memory>
 
 #include "arrow_all_to_all.hpp"
-
-
+#include "../ctx/arrow_memory_pool_utils.hpp"
 namespace cylon {
-ArrowAllToAll::ArrowAllToAll(cylon::CylonContext *ctx,
+ArrowAllToAll::ArrowAllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
                              const std::vector<int> &source,
                              const std::vector<int> &targets,
                              int edgeId,
                              std::shared_ptr<ArrowCallback> callback,
-                             std::shared_ptr<arrow::Schema> schema,
-                             arrow::MemoryPool *pool) {
+                             std::shared_ptr<arrow::Schema> schema) {
   targets_ = targets;
   srcs_ = source;
   recv_callback_ = std::move(callback);
   schema_ = std::move(schema);
   receivedBuffers_ = 0;
   workerId_ = ctx->GetRank();
-  pool_ = pool;
+  pool_ = cylon::ToArrowPool(ctx);
   completed_ = false;
   finishCalled_ = false;
-  allocator_ = new ArrowAllocator(pool);
+  allocator_ = new ArrowAllocator(pool_);
 
   // we need to pass the correct arguments
   all_ = std::make_shared<AllToAll>(ctx, source, targets, edgeId, this, allocator_);
@@ -47,20 +44,24 @@ ArrowAllToAll::ArrowAllToAll(cylon::CylonContext *ctx,
   // add the trackers for sending
   for (auto t : targets) {
     inputs_.insert(std::pair<int, std::shared_ptr<PendingSendTable>>(t,
-        std::make_shared<PendingSendTable>()));
+                                                                     std::make_shared<PendingSendTable>()));
   }
 
   for (auto t : source) {
     receives_.insert(std::pair<int, std::shared_ptr<PendingReceiveTable>>(t,
-        std::make_shared<PendingReceiveTable>()));
+                                                                          std::make_shared<PendingReceiveTable>()));
   }
 }
 
-int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int target) {
+int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int32_t target) {
+  return insert(arrow, target, -1);
+}
+
+int ArrowAllToAll::insert(std::shared_ptr<arrow::Table> arrow, int32_t target, int32_t reference) {
   // todo: check weather we have enough memory
   // lets save the table into pending and move on
   std::shared_ptr<PendingSendTable> st = inputs_[target];
-  st->pending.push(arrow);
+  st->pending.push(std::make_pair(arrow, reference));
   return 1;
 }
 
@@ -70,7 +71,7 @@ bool ArrowAllToAll::isComplete() {
   }
   bool isAllEmpty = true;
   // we need to send the buffers
-  for (auto &t : inputs_) {
+  for (const auto &t : inputs_) {
     if (t.second->status == ARROW_HEADER_INIT) {
       if (!t.second->pending.empty()) {
         t.second->currentTable = t.second->pending.front();
@@ -80,10 +81,10 @@ bool ArrowAllToAll::isComplete() {
     }
 
     if (t.second->status == ARROW_HEADER_COLUMN_CONTINUE) {
-      int noOfColumns = t.second->currentTable->columns().size();
+      int noOfColumns = t.second->currentTable.first->columns().size();
       bool canContinue = true;
       while (t.second->columnIndex < noOfColumns && canContinue) {
-        std::shared_ptr<arrow::ChunkedArray> cArr = t.second->currentTable->column(
+        std::shared_ptr<arrow::ChunkedArray> cArr = t.second->currentTable.first->column(
             t.second->columnIndex);
 
         uint64_t size = cArr->chunks().size();
@@ -93,15 +94,16 @@ bool ArrowAllToAll::isComplete() {
           std::shared_ptr<arrow::ArrayData> data = arr->data();
           while (static_cast<size_t>(t.second->bufferIndex) < data->buffers.size()) {
             std::shared_ptr<arrow::Buffer> buf = data->buffers[t.second->bufferIndex];
-            int hdr[5];
+            int hdr[6];
             hdr[0] = t.second->columnIndex;
             hdr[1] = t.second->bufferIndex;
             hdr[2] = data->buffers.size();
             hdr[3] = cArr->chunks().size();
             hdr[4] = data->length;
+            hdr[5] = t.second->currentTable.second;
             // lets send this buffer, we need to send the length at this point
             bool accept = all_->insert(buf->mutable_data(),
-                static_cast<int>(buf->size()), t.first, hdr, 5);
+                                       static_cast<int>(buf->size()), t.first, hdr, 6);
             if (!accept) {
               canContinue = false;
               break;
@@ -155,9 +157,11 @@ void ArrowAllToAll::close() {
   inputs_.clear();
   // call close on the underlying allto all
   all_->close();
+
+  delete allocator_;
 }
 
-void debug(int thisWorker, std::string msg) {
+void debug(int thisWorker, std::string &msg) {
   if (thisWorker == -1) {
     LOG(INFO) << msg;
   }
@@ -192,7 +196,7 @@ bool ArrowAllToAll::onReceive(int source, std::shared_ptr<Buffer> buffer, int le
         std::shared_ptr<arrow::Table> tablePtr = arrow::Table::Make(schema_, table->currentArrays);
         // clear the current array
         table->currentArrays.clear();
-        recv_callback_->onReceive(source, tablePtr);
+        recv_callback_->onReceive(source, tablePtr, table->reference);
       }
     }
   }
@@ -202,7 +206,7 @@ bool ArrowAllToAll::onReceive(int source, std::shared_ptr<Buffer> buffer, int le
 
 bool ArrowAllToAll::onReceiveHeader(int source, int fin, int *buffer, int length) {
   if (!fin) {
-    if (length != 5) {
+    if (length != 6) {
       LOG(FATAL) << "Incorrect length on header, expected 5 ints got " << length;
       return false;
     }
@@ -213,6 +217,7 @@ bool ArrowAllToAll::onReceiveHeader(int source, int fin, int *buffer, int length
     table->noBuffers = buffer[2];
     table->noArray = buffer[3];
     table->length = buffer[4];
+    table->reference = buffer[5];
   } else {
     finishedSources_.push_back(source);
   }
@@ -234,9 +239,11 @@ Status ArrowAllocator::Allocate(int64_t length, std::shared_ptr<Buffer> *buffer)
   return Status::OK();
 }
 
-  ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
+ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
 
-  int64_t ArrowBuffer::GetLength() {
+ArrowAllocator::~ArrowAllocator() = default;
+
+int64_t ArrowBuffer::GetLength() {
   return 0;
 }
 
@@ -244,9 +251,9 @@ uint8_t *ArrowBuffer::GetByteBuffer() {
   return buf->mutable_data();
 }
 
-ArrowBuffer::ArrowBuffer(shared_ptr<arrow::Buffer> buf) : buf(std::move(buf)) {}
+ArrowBuffer::ArrowBuffer(std::shared_ptr<arrow::Buffer> buf) : buf(std::move(buf)) {}
 
-shared_ptr<arrow::Buffer> ArrowBuffer::getBuf() const {
+std::shared_ptr<arrow::Buffer> ArrowBuffer::getBuf() const {
   return buf;
 }
 }  // namespace cylon

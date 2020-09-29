@@ -42,7 +42,7 @@ cylon::TxRequest::~TxRequest() {
   buffer = nullptr;
 }
 
-void cylon::TxRequest::to_string(string dataType, int bufDepth) {
+void cylon::TxRequest::to_string(std::string dataType, int bufDepth) {
   std::cout << "Target: " << target << std::endl;
   std::cout << "Length: " << length << std::endl;
   std::cout << "Header Length: " << headerLength << std::endl;

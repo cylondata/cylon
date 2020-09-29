@@ -30,7 +30,8 @@ class CylonContext {
  private:
   std::unordered_map<std::string, std::string> config{};
   bool is_distributed;
-  cylon::net::Communicator *communicator{};
+  //cylon::net::Communicator *communicator{};
+  std::shared_ptr<cylon::net::Communicator> communicator{};
   cylon::MemoryPool *memory_pool{};
   int32_t sequence_no = 0;
 
@@ -45,14 +46,14 @@ class CylonContext {
    * Initializes context
    * @return <cylon::CylonContext*>
    */
-  static CylonContext *Init();
+  static std::shared_ptr<CylonContext> Init();
 
   /**
    * Initializes distributed context
    * @param <cylon::net::CommConfig*> config Configuration to be passed on to the cylon::net::Communicator
    * @return <cylon::CylonContext*>
    */
-  static CylonContext *InitDistributed(net::CommConfig *config);
+  static std::shared_ptr<CylonContext> InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config);
 
   /**
    * Completes and closes all operations under the context
@@ -78,13 +79,13 @@ class CylonContext {
    * Returns the Communicator instance
    * @return <cylon::net::Communicator>
    */
-  net::Communicator *GetCommunicator() const;
+  std::shared_ptr<net::Communicator> GetCommunicator() const;
 
   /**
    * Sets a Communicator
    * @param <cylon::net::Communicator*> pointer to another communicator
    */
-  void setCommunicator(net::Communicator *communicator1);
+  void setCommunicator(const std::shared_ptr<cylon::net::Communicator> &communicator1);
 
   /**
    * Sets if distributed
@@ -92,7 +93,7 @@ class CylonContext {
    */
   void setDistributed(bool distributed);
 
-  bool IsDistributed();
+  bool IsDistributed() const;
 
   /**
    * Returns the local rank
@@ -111,7 +112,7 @@ class CylonContext {
    * @param include_self
    * @return a std::vector<int> of ranks
    */
-  vector<int> GetNeighbours(bool include_self);
+  std::vector<int> GetNeighbours(bool include_self);
 
   /**
    * Returns memory pool

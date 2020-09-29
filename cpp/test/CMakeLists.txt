@@ -39,7 +39,7 @@ function(cylon_add_test TESTNAME no_mpi_proc)
   target_link_libraries(${exec_name} ${MPI_LIBRARIES})
   target_link_libraries(${exec_name} cylon)
   target_link_libraries(${exec_name} ${ARROW_LIB})
-  set(test_params -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${exec_name}")
+  set(test_params --oversubscribe -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${exec_name}")
   add_test(NAME ${exec_name} COMMAND ${MPI_RUN_CMD} ${test_params})
 endfunction(cylon_add_test)
 

@@ -23,16 +23,16 @@ namespace cylon {
 namespace python {
 
 cylon::python::cylon_context_wrap::cylon_context_wrap() {
-  this->context = new CylonContext(false);
+  this->context = std::make_shared<cylon::CylonContext>(false);
   this->distributed = false;
 }
 
 cylon::python::cylon_context_wrap::cylon_context_wrap(std::string config) {
   if (config == "mpi") {
-    auto ctx = new CylonContext(true);
+    auto ctx = std::make_shared<cylon::CylonContext>(true);
     this->distributed = true;
-    ctx->setCommunicator(new net::MPICommunicator());
-    auto mpi_config = new cylon::net::MPIConfig();
+    ctx->setCommunicator(std::make_shared<net::MPICommunicator>());
+	auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
     ctx->GetCommunicator()->Init(mpi_config);
     ctx->setDistributed(true);
     this->context = ctx;
@@ -41,7 +41,7 @@ cylon::python::cylon_context_wrap::cylon_context_wrap(std::string config) {
   }
 }
 
-CylonContext *cylon::python::cylon_context_wrap::getInstance() {
+std::shared_ptr<cylon::CylonContext> cylon::python::cylon_context_wrap::getInstance() {
   return context;
 }
 
@@ -49,7 +49,7 @@ void cylon::python::cylon_context_wrap::Barrier() {
   this->context->GetCommunicator()->Barrier();
 }
 
-net::Communicator *cylon::python::cylon_context_wrap::GetCommunicator() const {
+std::shared_ptr<net::Communicator> cylon::python::cylon_context_wrap::GetCommunicator() const {
   return this->context->GetCommunicator();
 }
 
@@ -84,12 +84,11 @@ int cylon::python::cylon_context_wrap::GetWorldSize() {
 void cylon::python::cylon_context_wrap::Finalize() {
   if (this->distributed) {
     this->context->GetCommunicator()->Finalize();
-    delete this->context->GetCommunicator();
   }
 }
 
-vector<int> cylon::python::cylon_context_wrap::GetNeighbours(bool include_self) {
-  vector<int> neighbours{};
+std::vector<int> cylon::python::cylon_context_wrap::GetNeighbours(bool include_self) {
+  std::vector<int> neighbours{};
   neighbours.reserve(this->GetWorldSize());
   for (int i = 0; i < this->GetWorldSize(); i++) {
     if (i == this->GetRank() && !include_self) {
