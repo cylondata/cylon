@@ -22,11 +22,6 @@
 namespace cylon {
 namespace python {
 
-cylon::python::cylon_context_wrap::cylon_context_wrap() {
-  this->context = std::make_shared<cylon::CylonContext>(false);
-  this->distributed = false;
-}
-
 cylon::python::cylon_context_wrap::cylon_context_wrap(std::string config) {
   if (config == "mpi") {
     auto ctx = std::make_shared<cylon::CylonContext>(true);
@@ -36,6 +31,11 @@ cylon::python::cylon_context_wrap::cylon_context_wrap(std::string config) {
     ctx->GetCommunicator()->Init(mpi_config);
     ctx->setDistributed(true);
     this->context = ctx;
+  } else if(config == ""){
+	auto ctx = std::make_shared<cylon::CylonContext>(false);
+	this->distributed = false;
+	ctx->setDistributed(this->distributed);
+	this->context = ctx;
   } else {
     throw "Unsupported communication type";
   }

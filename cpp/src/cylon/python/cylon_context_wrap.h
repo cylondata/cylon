@@ -40,8 +40,6 @@ class cylon_context_wrap {
 
  public:
 
-  cylon_context_wrap();
-
   cylon_context_wrap(std::string config);
 
   std::shared_ptr<cylon::CylonContext> getInstance();
