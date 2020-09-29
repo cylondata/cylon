@@ -27,7 +27,7 @@
 
 int main() {
 
-  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto mpi_config = cylon::net::MPIConfig::Make();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
   const int rank = ctx->GetRank() + 1;
 
