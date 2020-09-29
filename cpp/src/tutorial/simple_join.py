@@ -33,7 +33,7 @@ if __name__ == "__main__":
                                                        table=second_table,
                                                        join_type="inner",
                                                        algorithm="sort",
-                                                       left_col=0, right_col=0)
+                                                       left_col=0, right_col=3)
 
     print(f"First table had : {first_table.rows} and Second table had : {second_table.rows}, "
           f"Joined has : {joined_table.rows}")
