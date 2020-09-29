@@ -20,8 +20,8 @@ if __name__ == "__main__":
     ctx: CylonContext = CylonContext("mpi")
     rank = ctx.get_rank() + 1
 
-    csv1 = "/tmp/user_device_tm_" + rank + ".csv"
-    csv2 = "/tmp/user_usage_tm_" + rank + ".csv"
+    csv1 = f"/tmp/user_device_tm_{rank}.csv"
+    csv2 = f"/tmp/user_usage_tm_{rank}.csv"
 
     first_table: Table = csv_reader.read(ctx, csv1, ',')
     second_table: Table = csv_reader.read(ctx, csv2, ',')
