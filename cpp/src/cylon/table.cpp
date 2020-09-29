@@ -468,30 +468,15 @@ Status Table::Merge(std::shared_ptr<cylon::CylonContext> &ctx,
 }
 
 Status Table::Sort(int sort_column, std::shared_ptr<cylon::Table> &out) {
-  auto col = table_->column(sort_column)->chunk(0);
-  std::shared_ptr<arrow::Array> indexSorts;
-  arrow::Status status = SortIndices(cylon::ToArrowPool(ctx), col, &indexSorts);
+  std::shared_ptr<arrow::Table> sorted_table;
 
-  if (status != arrow::Status::OK()) {
-	LOG(FATAL) << "Failed when sorting table to indices. " << status.ToString();
-	return Status(static_cast<int>(status.code()), status.message());
+  arrow::Status status = cylon::util::SortTable(this->table_, sort_column, &sorted_table,
+                                                cylon::ToArrowPool(this->ctx));
+  if (status.ok()) {
+    return Table::FromArrowTable(this->ctx, sorted_table, &out);
+  } else {
+    return Status(static_cast<int>(status.code()), status.message());
   }
-
-  std::vector<std::shared_ptr<arrow::Array>> data_arrays;
-  for (auto &column : table_->columns()) {
-	std::shared_ptr<arrow::Array> destination_col_array;
-	status = cylon::util::copy_array_by_indices(nullptr, column->chunk(0),
-												&destination_col_array, cylon::ToArrowPool(ctx));
-	if (status != arrow::Status::OK()) {
-	  LOG(FATAL) << "Failed while copying a column to the final table from left table. "
-				 << status.ToString();
-	  return Status(static_cast<int>(status.code()), status.message());
-	}
-	data_arrays.push_back(destination_col_array);
-  }
-  // we need to put this to a new place
-  std::shared_ptr<arrow::Table> sortedTable = arrow::Table::Make(table_->schema(), data_arrays);
-  return Status::OK();
 }
 
 Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_partitions,
@@ -1087,5 +1072,20 @@ std::shared_ptr<Column> Table::GetColumn(int32_t index) const {
 
 std::vector<std::shared_ptr<cylon::Column>> Table::GetColumns() const {
   return this->columns_;
+}
+
+Status Table::Shuffle(std::shared_ptr<cylon::Table> &table,
+                      const std::vector<int> &hash_columns,
+                      std::shared_ptr<cylon::Table> &output) {
+  auto ctx_ = table->GetContext();
+  std::shared_ptr<arrow::Table> table_out;
+  cylon::Status status;
+
+  if (!(status = cylon::Shuffle(ctx_, table, hash_columns, ctx_->GetNextSequence(), &table_out)).is_ok()){
+    LOG(FATAL) << "table shuffle failed!";
+    return status;
+  }
+
+  return cylon::Table::FromArrowTable(ctx_, table_out, &output);
 }
 }  // namespace cylon

@@ -18,7 +18,7 @@
 
 using namespace cylon;
 
-TEST_CASE("aggregate testing", "[join]") {
+TEST_CASE("aggregate testing", "[aggregates]") {
   const int rows = 12;
 
   cylon::Status status;

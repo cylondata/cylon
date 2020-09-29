@@ -64,3 +64,8 @@ cylon_add_test(aggregate_test 1)
 cylon_add_test(aggregate_test 2)
 cylon_add_test(aggregate_test 4)
 
+#groupby tests
+cylon_add_test(groupby_test 1)
+cylon_add_test(groupby_test 2)
+cylon_add_test(groupby_test 4)
+

@@ -137,7 +137,8 @@ class Table {
 					  std::shared_ptr<Table> &tableOut);
 
   /**
-   * Sort the table according to the given column, this is a local sort
+   * Sort the table according to the given column, this is a local sort (if the table has chunked columns, they will
+   * be merged in the output table)
    * @param sort_column
    * @return new table sorted according to the sort column
    */
@@ -218,6 +219,9 @@ class Table {
    */
   static Status DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
 									 std::shared_ptr<Table> &out);
+
+  static Status Shuffle(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_columns,
+                        std::shared_ptr<cylon::Table> &output);
 
   /**
    * Filters out rows based on the selector function

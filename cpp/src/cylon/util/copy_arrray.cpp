@@ -23,7 +23,7 @@ namespace util {
 
 template<typename TYPE>
 arrow::Status do_copy_numeric_array(const std::shared_ptr<std::vector<int64_t>> &indices,
-                                    std::shared_ptr<arrow::Array> data_array,
+                                    const std::shared_ptr<arrow::Array> &data_array,
                                     std::shared_ptr<arrow::Array> *copied_array,
                                     arrow::MemoryPool *memory_pool) {
   arrow::NumericBuilder<TYPE> array_builder(memory_pool);
@@ -212,7 +212,7 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> 
                                                        copied_array,
                                                        memory_pool);
         case arrow::Type::UINT16:
-          return do_copy_numeric_list<arrow::Int16Type>(indices,
+          return do_copy_numeric_list<arrow::UInt16Type>(indices,
                                                         data_array,
                                                         copied_array,
                                                         memory_pool);
