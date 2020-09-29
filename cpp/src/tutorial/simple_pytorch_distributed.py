@@ -114,7 +114,7 @@ def demo_basic(rank, world_size):
     optimizer.zero_grad()
     if rank == 0:
         print("Training A Dummy Model")
-    for t in range(200):
+    for t in range(20):
         for x_batch, y_batch in zip(x_train, y_train):
             print(f"Epoch {t}", end='\r')
             prediction = ddp_model(x_batch)
