@@ -11,7 +11,7 @@ from pycylon import CylonContext
 from pycylon import Table
 from pycylon.csv import csv_reader
 
-ctx: CylonContext = CylonContext(config=None)
+ctx: CylonContext = CylonContext(config='mpi')
 
 base_path = "/tmp"
 
@@ -34,13 +34,13 @@ user_devices_data.show_by_range(1, 5, 0, 4)
 print("-------------------------------------")
 user_usage_data.show_by_range(1, 5, 0, 4)
 
-new_tb: Table = user_devices_data.join(ctx, user_usage_data, 'inner', 'sort', 0, 3)
+new_tb: Table = user_devices_data.join(ctx, table=user_usage_data, join_type='inner', algorithm='sort', left_col=0,
+                                       right_col=3)
+
 print("----------------------")
 print("New Table After Join (5 Records)")
 new_tb.show_by_range(0, 5, 0, 8)
 print("----------------------")
-
-new_df: pd.DataFrame = new_tb.to_pandas()
 
 data_ar: np.ndarray = new_tb.to_numpy()
 
