@@ -316,7 +316,7 @@ cdef class Table:
         if artb.get() == NULL:
             raise TypeError("not an table")
         if ctx.get_config() == ''.encode():
-            table_id = from_pyarrow_table(new CCylonContextWrap(), artb)
+            table_id = from_pyarrow_table(new CCylonContextWrap(''.encode()), artb)
         else:
             table_id = from_pyarrow_table(new CCylonContextWrap(ctx.get_config()), artb)
         return Table(table_id)

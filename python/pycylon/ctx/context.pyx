@@ -23,7 +23,7 @@ from pycylon.ctx.context cimport CCylonContextWrap
 
 cdef class CylonContext:
     cdef CCylonContextWrap* thisPtr;
-    cdef string config;
+    cdef string cconfig;
 
     def __cinit__(self, config):
         '''
@@ -33,10 +33,10 @@ cdef class CylonContext:
         '''
         if config is None:
             print("Single Thread Config Loaded")
-            self.config = ''.encode()
-            self.thisPtr = new CCylonContextWrap()
+            self.cconfig = ''.encode()
+            self.thisPtr = new CCylonContextWrap(''.encode())
         else:
-            self.config = config.encode()
+            self.cconfig = config.encode()
             print("Distributed Config Loaded")
             self.thisPtr = new CCylonContextWrap(config.encode())
 
@@ -68,7 +68,7 @@ cdef class CylonContext:
         self.thisPtr.Barrier()
     
     def get_config(self):
-        return self.config
+        return self.cconfig
 
 
 
