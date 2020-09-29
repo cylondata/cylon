@@ -34,7 +34,6 @@ cdef extern from "../../../cpp/src/cylon/ctx/cylon_context.hpp" namespace "cylon
 
 cdef extern from "../../../cpp/src/cylon/python/cylon_context_wrap.h" namespace "cylon::python":
     cdef cppclass CCylonContextWrap "cylon::python::cylon_context_wrap":
-        CCylonContextWrap()
         CCylonContextWrap(string config)
         CCylonContext *getInstance()
         int GetRank()

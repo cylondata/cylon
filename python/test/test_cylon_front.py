@@ -16,7 +16,7 @@ tb1: Table = csv_reader.read(ctx, args.table1_path, ',')
 
 tb2: Table = csv_reader.read(ctx, args.table2_path, ',')
 
-configs = {'join_type': 'left', 'algorithm': 'hash', 'left_col': 0, 'right_col': 0}
+configs = {'join_type': 'inner', 'algorithm': 'sort', 'left_col': 0, 'right_col': 3}
 
 tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type=configs['join_type'], algorithm=configs['algorithm'],
                                   left_col=configs['left_col'], right_col=configs['right_col'])

@@ -40,7 +40,7 @@ cdef class csv_reader:
         id_buf = id_str.encode()
         # this condition is checked with the initialization in csv.pyx for None config
         if ctx.get_config() is ''.encode():
-            from_csv(new CCylonContextWrap(), spath, sdelm[0], id_buf)
+            from_csv(new CCylonContextWrap(''.encode()), spath, sdelm[0], id_buf)
         else:
             from_csv(new CCylonContextWrap(ctx.get_config()), spath, sdelm[0], id_buf)
         id_buf = id_str.encode()

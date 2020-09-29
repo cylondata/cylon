@@ -11,7 +11,7 @@ from pycylon import CylonContext
 from pycylon import Table
 from pycylon.csv import csv_reader
 
-ctx: CylonContext = CylonContext(config='mpi')
+ctx: CylonContext = CylonContext(config=None)
 
 base_path = "/tmp"
 
