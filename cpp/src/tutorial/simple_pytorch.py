@@ -11,12 +11,14 @@ from pycylon import CylonContext
 from pycylon import Table
 from pycylon.csv import csv_reader
 
-ctx: CylonContext = CylonContext(config=None)
+ctx: CylonContext = CylonContext(config='mpi')
 
 base_path = "/tmp"
 
-user_devices_file = os.path.join(base_path, 'user_device_tm_1.csv')
-user_usage_file = os.path.join(base_path, 'user_usage_tm_1.csv')
+rank = ctx.get_rank()
+
+user_devices_file = os.path.join(base_path, f'user_device_tm_{rank+1}.csv')
+user_usage_file = os.path.join(base_path, f'user_usage_tm_{rank+1}.csv')
 
 user_devices_data: Table = csv_reader.read(ctx, user_devices_file, ',')
 user_usage_data: Table = csv_reader.read(ctx, user_usage_file, ',')
@@ -34,7 +36,7 @@ user_devices_data.show_by_range(1, 5, 0, 4)
 print("-------------------------------------")
 user_usage_data.show_by_range(1, 5, 0, 4)
 
-new_tb: Table = user_devices_data.join(ctx, table=user_usage_data, join_type='inner', algorithm='sort', left_col=0,
+new_tb: Table = user_devices_data.distributed_join(ctx, table=user_usage_data, join_type='inner', algorithm='sort', left_col=0,
                                        right_col=3)
 
 print("----------------------")
