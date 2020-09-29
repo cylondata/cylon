@@ -18,22 +18,23 @@ from pycylon.csv import csv_reader
 
 if __name__ == "__main__":
     ctx: CylonContext = CylonContext("mpi")
+    rank = ctx.get_rank() + 1
 
-    csv1 = "/tmp/csv1.csv"
-    csv2 = "/tmp/csv2.csv"
+    csv1 = "/tmp/user_device_tm_" + rank + ".csv"
+    csv2 = "/tmp/user_usage_tm_" + rank + ".csv"
 
     first_table: Table = csv_reader.read(ctx, csv1, ',')
     second_table: Table = csv_reader.read(ctx, csv2, ',')
 
-    try:
-        print(f"Table 1 & 2 Rows [{first_table.rows},{second_table.rows}], "
-              f"Columns [{first_table.columns},{first_table.columns}]")
-    except Exception:
-        raise Exception("Something went wrong in loading tables from disk")
+    print(f"Table 1 & 2 Rows [{first_table.rows},{second_table.rows}], "
+          f"Columns [{first_table.columns},{first_table.columns}]")
 
-    joined_table: Table = first_table.distributed_join(ctx, table=second_table, join_type="inner",
+    joined_table: Table = first_table.distributed_join(ctx,
+                                                       table=second_table,
+                                                       join_type="inner",
                                                        algorithm="sort",
                                                        left_col=0, right_col=0)
+
     print(f"First table had : {first_table.rows} and Second table had : {second_table.rows}, "
           f"Joined has : {joined_table.rows}")
 
