@@ -29,9 +29,9 @@ class cylon_context_wrap {
      
   bool distributed;
 
-  cylon::net::Communicator *communicator{};
+  std::shared_ptr<cylon::net::Communicator> communicator{};
 
-  CylonContext *context;
+  std::shared_ptr<cylon::CylonContext> context;
 
   cylon::MemoryPool *memory_pool{};
 
@@ -44,7 +44,7 @@ class cylon_context_wrap {
 
   cylon_context_wrap(std::string config);
 
-  CylonContext *getInstance();
+  std::shared_ptr<cylon::CylonContext> getInstance();
 
 //  static CylonContext *Init();
 //
@@ -54,7 +54,7 @@ class cylon_context_wrap {
 
   std::string GetConfig(const std::string &key, const std::string &defn = "");
 
-  net::Communicator *GetCommunicator() const;
+  std::shared_ptr<net::Communicator> GetCommunicator() const;
 
   void Barrier();
 
@@ -66,7 +66,7 @@ class cylon_context_wrap {
 
   int GetContextId();
 
-  vector<int> GetNeighbours(bool include_self);
+  std::vector<int> GetNeighbours(bool include_self);
 
   cylon::MemoryPool *GetMemoryPool();
 

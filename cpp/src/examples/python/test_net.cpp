@@ -14,7 +14,6 @@
 
 #include "python/net/distributed.h"
 
-using namespace std;
 
 int main(int argc, char *argv[]) {
   cylon::net::cdist_init();

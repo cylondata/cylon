@@ -3,9 +3,9 @@ import logging
 import os
 import time
 
-from pycylon.ctx.context import CylonContext
-from pycylon.data.table import Table
-from pycylon.data.table import csv_reader
+from pycylon import CylonContext
+from pycylon import Table
+from pycylon.csv import csv_reader
 
 parser = argparse.ArgumentParser(description='generate random data')
 parser.add_argument('-s', dest='src_dir', type=str, help='source dir', required=True)
