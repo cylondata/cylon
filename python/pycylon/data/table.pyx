@@ -1,16 +1,16 @@
 ##
- # Licensed under the Apache License, Version 2.0 (the "License");
- # you may not use this file except in compliance with the License.
- # You may obtain a copy of the License at
- #
- # http://www.apache.org/licenses/LICENSE-2.0
- #
- # Unless required by applicable law or agreed to in writing, software
- # distributed under the License is distributed on an "AS IS" BASIS,
- # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- # See the License for the specific language governing permissions and
- # limitations under the License.
- ##
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##
 
 from libcpp.string cimport string
 from pycylon.common.status cimport _Status
@@ -27,6 +27,7 @@ from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
 
 from pycylon.ctx.context cimport CCylonContextWrap
+from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 
 import pyarrow as pa
@@ -50,21 +51,21 @@ cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon
         void show(int, int, int, int)
         _Status to_csv(const string)
 
-        string join(CCylonContextWrap *ctx_wrap,const string, CJoinConfig)
+        string join(CCylonContextWrap *ctx_wrap, const string, CJoinConfig)
 
-        string distributed_join(CCylonContextWrap *ctx_wrap, const string &table_id, CJoinConfig join_config);
+        string distributed_join(CCylonContextWrap *ctx_wrap, const string & table_id, CJoinConfig join_config);
 
-        string Union(CCylonContextWrap *ctx_wrap, const string &table_right);
+        string Union(CCylonContextWrap *ctx_wrap, const string & table_right);
 
-        string DistributedUnion(CCylonContextWrap *ctx_wrap, const string &table_right);
+        string DistributedUnion(CCylonContextWrap *ctx_wrap, const string & table_right);
 
-        string Intersect(CCylonContextWrap *ctx_wrap, const string &table_right);
+        string Intersect(CCylonContextWrap *ctx_wrap, const string & table_right);
 
-        string DistributedIntersect(CCylonContextWrap *ctx_wrap, const string &table_right);
+        string DistributedIntersect(CCylonContextWrap *ctx_wrap, const string & table_right);
 
-        string Subtract(CCylonContextWrap *ctx_wrap, const string &table_right);
+        string Subtract(CCylonContextWrap *ctx_wrap, const string & table_right);
 
-        string DistributedSubtract(CCylonContextWrap *ctx_wrap, const string &table_right);
+        string DistributedSubtract(CCylonContextWrap *ctx_wrap, const string & table_right);
 
         #string Project(const vector[int64_t]& project_columns);
 
@@ -77,13 +78,14 @@ cdef class Table:
     cdef CJoinConfig *jcPtr
     cdef CCylonContextWrap *ctx_wrap
 
-    def __cinit__(self, string id):
+    def __cinit__(self, string id, context):
         '''
         Initializes the PyCylon Table
         :param id: unique id for the Table
         :return: None
         '''
         self.thisPtr = new CxTable(id)
+
 
     cdef __get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
                            right_column_index: int):
@@ -191,26 +193,8 @@ cdef class Table:
         s = Status(status.get_code(), b"", -1)
         return s
 
-    def join(self, ctx: CylonContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
-        '''
-        Joins two PyCylon tables
-        :param table: PyCylon table on which the join is performed (becomes the left table)
-        :param join_type: Join Type as str ["inner", "left", "right", "outer"]
-        :param algorithm: Join Algorithm as str ["hash", "sort"]
-        :param left_col: Join column of the left table as int
-        :param right_col: Join column of the right table as int
-        :return: Joined PyCylon table
-        '''
-        self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
-                               right_column_index=right_col)
-        cdef CJoinConfig *jc1 = self.jcPtr        
-        cdef string table_out_id = self.thisPtr.join(new CCylonContextWrap(ctx.get_config()), table.id.encode(), jc1[0])
-        if table_out_id.size() == 0:
-            raise Exception("Join Failed !!!")
-        return Table(table_out_id)
-
-
-    def distributed_join(self, ctx: CylonContext, table: Table, join_type: str, algorithm: str, left_col: int, right_col: int) -> Table:
+    def join(self, ctx: CylonContext, table: Table, join_type: str, algorithm: str, left_col: int,
+             right_col: int) -> Table:
         '''
         Joins two PyCylon tables
         :param table: PyCylon table on which the join is performed (becomes the left table)
@@ -223,11 +207,30 @@ cdef class Table:
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
                                right_column_index=right_col)
         cdef CJoinConfig *jc1 = self.jcPtr
-        cdef string table_out_id = self.thisPtr.distributed_join(new CCylonContextWrap(ctx.get_config()), table.id.encode(), jc1[0])
+        cdef string table_out_id = self.thisPtr.join(new CCylonContextWrap(ctx.get_config()), table.id.encode(), jc1[0])
         if table_out_id.size() == 0:
             raise Exception("Join Failed !!!")
-        return Table(table_out_id)
+        return Table(table_out_id, ctx)
 
+    def distributed_join(self, ctx: CylonContext, table: Table, join_type: str, algorithm: str, left_col: int,
+                         right_col: int) -> Table:
+        '''
+        Joins two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :param join_type: Join Type as str ["inner", "left", "right", "outer"]
+        :param algorithm: Join Algorithm as str ["hash", "sort"]
+        :param left_col: Join column of the left table as int
+        :param right_col: Join column of the right table as int
+        :return: Joined PyCylon table
+        '''
+        self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
+                               right_column_index=right_col)
+        cdef CJoinConfig *jc1 = self.jcPtr
+        cdef string table_out_id = self.thisPtr.distributed_join(
+            new CCylonContextWrap(ctx.get_config()), table.id.encode(), jc1[0])
+        if table_out_id.size() == 0:
+            raise Exception("Join Failed !!!")
+        return Table(table_out_id, ctx)
 
     def union(self, ctx: CylonContext, table: Table) -> Table:
         '''
@@ -239,8 +242,7 @@ cdef class Table:
         cdef string table_out_id = self.thisPtr.Union(new CCylonContextWrap(ctx.get_config()), table.id.encode())
         if table_out_id.size() == 0:
             raise Exception("Union Failed !!!")
-        return Table(table_out_id)
-
+        return Table(table_out_id, ctx)
 
     def distributed_union(self, ctx: CylonContext, table: Table) -> Table:
         '''
@@ -249,10 +251,11 @@ cdef class Table:
         :return: Union PyCylon table
         '''
 
-        cdef string table_out_id = self.thisPtr.DistributedUnion(new CCylonContextWrap(ctx.get_config()), table.id.encode())
+        cdef string table_out_id = self.thisPtr.DistributedUnion(
+            new CCylonContextWrap(ctx.get_config()), table.id.encode())
         if table_out_id.size() == 0:
             raise Exception("Distributed Union Failed !!!")
-        return Table(table_out_id)
+        return Table(table_out_id, ctx)
 
     def intersect(self, ctx: CylonContext, table: Table) -> Table:
         '''
@@ -264,8 +267,7 @@ cdef class Table:
         cdef string table_out_id = self.thisPtr.Intersect(new CCylonContextWrap(ctx.get_config()), table.id.encode())
         if table_out_id.size() == 0:
             raise Exception("Intersect Failed !!!")
-        return Table(table_out_id)
-
+        return Table(table_out_id, ctx)
 
     def distributed_intersect(self, ctx: CylonContext, table: Table) -> Table:
         '''
@@ -274,10 +276,11 @@ cdef class Table:
         :return: Intersect PyCylon table
         '''
 
-        cdef string table_out_id = self.thisPtr.DistributedIntersect(new CCylonContextWrap(ctx.get_config()), table.id.encode())
+        cdef string table_out_id = self.thisPtr.DistributedIntersect(
+            new CCylonContextWrap(ctx.get_config()), table.id.encode())
         if table_out_id.size() == 0:
             raise Exception("Distributed Union Failed !!!")
-        return Table(table_out_id)
+        return Table(table_out_id, ctx)
 
     def subtract(self, ctx: CylonContext, table: Table) -> Table:
         '''
@@ -289,8 +292,7 @@ cdef class Table:
         cdef string table_out_id = self.thisPtr.Subtract(new CCylonContextWrap(ctx.get_config()), table.id.encode())
         if table_out_id.size() == 0:
             raise Exception("Subtract Failed !!!")
-        return Table(table_out_id)
-
+        return Table(table_out_id, ctx)
 
     def distributed_subtract(self, ctx: CylonContext, table: Table) -> Table:
         '''
@@ -299,10 +301,11 @@ cdef class Table:
         :return: Subtract PyCylon table
         '''
 
-        cdef string table_out_id = self.thisPtr.DistributedSubtract(new CCylonContextWrap(ctx.get_config()), table.id.encode())
+        cdef string table_out_id = self.thisPtr.DistributedSubtract(
+            new CCylonContextWrap(ctx.get_config()), table.id.encode())
         if table_out_id.size() == 0:
             raise Exception("Distributed Subtract Failed !!!")
-        return Table(table_out_id)
+        return Table(table_out_id, ctx)
 
     @staticmethod
     def from_arrow(obj, ctx: CylonContext) -> Table:
@@ -319,7 +322,7 @@ cdef class Table:
             table_id = from_pyarrow_table(new CCylonContextWrap(''.encode()), artb)
         else:
             table_id = from_pyarrow_table(new CCylonContextWrap(ctx.get_config()), artb)
-        return Table(table_id)
+        return Table(table_id, ctx)
 
     # @staticmethod
     # def from_pandas(obj, ctx: CylonContext) -> Table:
@@ -331,7 +334,7 @@ cdef class Table:
     #     table = pa.Table.from_pandas(obj)
     #     return Table.from_arrow(table, ctx)
 
-    def to_arrow(self) -> pa.Table :
+    def to_arrow(self) -> pa.Table:
         '''
         creating PyArrow Table from PyCylon table
         :param self: PyCylon Table
@@ -350,7 +353,6 @@ cdef class Table:
         table = to_pyarrow_table(self.id.encode())
         py_arrow_table = pyarrow_wrap_table(table)
         return py_arrow_table.to_pandas()
-
 
     def to_numpy(self, order='F') -> np.ndarray:
         """
@@ -389,11 +391,16 @@ cdef class Table:
     def __getitem__(self, key):
         table = to_pyarrow_table(self.id.encode())
         py_arrow_table = pyarrow_wrap_table(table)
-        ctx = CylonContext(config=None)
+        context = CylonContext(config=None)
         if isinstance(key, slice):
             start, stop, step = key.indices(self.columns)
-            return self.from_arrow(py_arrow_table.slice(start,stop), ctx)
+            return self.from_arrow(py_arrow_table.slice(start, stop), context)
         else:
-            return self.from_arrow(py_arrow_table.slice(key,1), ctx)
+            return self.from_arrow(py_arrow_table.slice(key, 1), context)
 
-
+    def __repr__(self):
+        table = to_pyarrow_table(self.id.encode())
+        py_arrow_table = pyarrow_wrap_table(table)
+        table_str = ''
+        for i in range(self.rows):
+            row = py_arrow_table.slice(i, 1)

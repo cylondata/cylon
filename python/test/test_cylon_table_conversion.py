@@ -43,20 +43,20 @@ print("First Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_w
 
 tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type='inner', algorithm='sort', left_col=0, right_col=0)
 
-pdf: pd.DataFrame = tb3.to_pandas()
+#pdf: pd.DataFrame = tb3.to_pandas()
 npy: np.ndarray = tb3.to_numpy(order='C')
 
 # Cylon table rows must be equal to the rows of pandas dataframe extracted from the table
-assert tb3.rows == pdf.shape[0]
+#assert tb3.rows == pdf.shape[0]
 # Cylon table columns must be equal to the columns of pandas dataframe extracted from the table
-assert tb3.columns == pdf.shape[1]
+#assert tb3.columns == pdf.shape[1]
 # Cylon table rows must be equal to the rows of numpy ndarray extracted from the table
 assert tb3.rows == npy.shape[0]
 # Cylon table columns must be equal to the columns of numpy ndarray extracted from the table
 assert tb3.columns == npy.shape[1]
 
 print(f"Rank[{ctx.get_rank()}]: Table.Rows={tb3.rows}, Table.Columns={tb3.columns}, "
-      f"Pandas DataFrame Shape = {pdf.shape}, Numpy Array Shape = {npy.shape}")
+      f"Numpy Array Shape = {npy.shape}")
 
 print(f"Array Config Rank[{ctx.get_rank()}], {npy.flags} {npy.dtype}")
 

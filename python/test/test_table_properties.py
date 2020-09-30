@@ -27,3 +27,8 @@ tb.show_by_range(0, 4, 0, 4)
 print(tb[0:5].to_pandas())
 
 ctx.finalize()
+
+import pyarrow as pa
+
+arw_table: pa.Table = tb.to_arrow()
+

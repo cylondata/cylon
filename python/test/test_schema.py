@@ -23,6 +23,4 @@ tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type=configs['join_type']
 
 tb3.show()
 
-print(tb3.to_pandas())
-
 ctx.finalize()
