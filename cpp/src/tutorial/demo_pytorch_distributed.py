@@ -61,7 +61,7 @@ def demo_basic(rank, world_size):
     print(f"Simple Batch Train => [{hostname}]Demo DDP Rank {rank}")
     setup(rank=rank, world_size=world_size)
 
-    base_path = "data"
+    base_path = "/tmp"
 
     user_devices_file = os.path.join(base_path, f'user_device_tm_{rank + 1}.csv')
     user_usage_file = os.path.join(base_path, f'user_usage_tm_{rank + 1}.csv')
