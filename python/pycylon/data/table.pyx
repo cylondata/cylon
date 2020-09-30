@@ -386,3 +386,14 @@ cdef class Table:
         py_arrow_table = pyarrow_wrap_table(table)
         return py_arrow_table.schema
 
+    def __getitem__(self, key):
+        table = to_pyarrow_table(self.id.encode())
+        py_arrow_table = pyarrow_wrap_table(table)
+        ctx = CylonContext(config=None)
+        if isinstance(key, slice):
+            start, stop, step = key.indices(self.columns)
+            return self.from_arrow(py_arrow_table.slice(start,stop), ctx)
+        else:
+            return self.from_arrow(py_arrow_table.slice(key,1), ctx)
+
+
