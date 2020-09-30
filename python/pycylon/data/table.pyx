@@ -374,3 +374,15 @@ cdef class Table:
             ar_lst.append(npr)
         return np.array(ar_lst, order=order).T
 
+    @property
+    def column_names(self):
+        table = to_pyarrow_table(self.id.encode())
+        py_arrow_table = pyarrow_wrap_table(table)
+        return py_arrow_table.column_names
+
+    @property
+    def schema(self):
+        table = to_pyarrow_table(self.id.encode())
+        py_arrow_table = pyarrow_wrap_table(table)
+        return py_arrow_table.schema
+
