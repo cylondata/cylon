@@ -1,5 +1,11 @@
 # Instructions 
 
+## Data 
+
+Data files for this tutorial have been taken from the article, ['Merge and Join DataFrames with
+ Pandas in Python' by Shane Lynn](https://www.shanelynn.ie/merge-join-dataframes-python-pandas-index-1/) 
+ that refers to  real data from the [KillBiller application](http://www.killbiller.com/).  
+
 ## C++ 
 
 - Follow [Cylon docs](https://cylondata.org/docs/) for detailed building instructions, but in summary,  
@@ -7,14 +13,14 @@
 ./build.sh --cpp --release
 ```
 
-- Run `simple_join.cpp` example 
+- Run `demo_join.cpp` example 
 ```bash
-./build/bin/simple_join
+./build/bin/demo_join
 ```
 
 - For distributed execution using MPI 
 ```bash
-mpirun -np <procs> ./build/bin/simple_join
+mpirun -np <procs> ./build/bin/demo_join
 ```
 
 ## Python 
@@ -38,16 +44,16 @@ export LD_LIBRARY_PATH=<CYLON_HOME>/build/arrow/install/lib:<CYLON_HOME>/build/l
 
 ### Sequential Join
 
-- Run `simple_join.py` script
+- Run `demo_join.py` script
 ```bash
-python ./cpp/src/tutorial/simple_join.py
+python ./cpp/src/tutorial/demo_join.py
 ```
 
 ### Distributed Join
 
 - For distributed execution using MPI 
 ```bash
-mpirun -np <procs> <CYLON_HOME>/ENV/bin/python ./cpp/src/tutorial/simple_join.py
+mpirun -np <procs> <CYLON_HOME>/ENV/bin/python ./cpp/src/tutorial/demo_join.py
 ```
 
 ### Data Pre-Processing for Deep Learning with PyTorch
@@ -61,16 +67,16 @@ the end of the pipeline.
 
 1. Install PyTorch `pip install torch==1.6.0+cu101 torchvision==0.7.0+cu101 -f https://download.pytorch.org/whl/torch_stable.html`
 
- - Run sequential `simple_pytorch.py`
+ - Run sequential `demo_pytorch.py`
  
 ```bash
-python simple_pytorch.py
+python demo_pytorch.py
 ```
 
- - Run distributed `simple_pytorch_distributed.py`
+ - Run distributed `demo_pytorch_distributed.py`
  
 ```bash
-mpirun -n <procs> <CYLON_HOME>/ENV/bin/python simple_pytorch_distributed.py
+mpirun -n <procs> <CYLON_HOME>/ENV/bin/python demo_pytorch_distributed.py
 ```
 
 `Note: procs must be set such that, 0 < procs < 5`

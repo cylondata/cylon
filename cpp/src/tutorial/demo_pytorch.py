@@ -1,6 +1,6 @@
 """
 Install: PyCylon (Follow: https://cylondata.org/docs/)
-Run Program: python simple_pytorch.py
+Run Program: python demo_pytorch.py
 """
 
 import os
