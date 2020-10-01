@@ -77,6 +77,7 @@ cdef class Table:
     cdef CxTable *thisPtr
     cdef CJoinConfig *jcPtr
     cdef CCylonContextWrap *ctx_wrap
+    cdef dict __dict__
 
     def __cinit__(self, string id, context):
         '''
@@ -85,7 +86,7 @@ cdef class Table:
         :return: None
         '''
         self.thisPtr = new CxTable(id)
-
+        self.ctx = context
 
     cdef __get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
                            right_column_index: int):
@@ -163,6 +164,10 @@ cdef class Table:
         :return: number of rows in PyCylon table
         '''
         return self.thisPtr.rows()
+
+    @property
+    def context(self) -> CylonContext:
+        return self.ctx
 
     def show(self):
         '''
@@ -391,12 +396,11 @@ cdef class Table:
     def __getitem__(self, key):
         table = to_pyarrow_table(self.id.encode())
         py_arrow_table = pyarrow_wrap_table(table)
-        context = CylonContext(config=None)
         if isinstance(key, slice):
             start, stop, step = key.indices(self.columns)
-            return self.from_arrow(py_arrow_table.slice(start, stop), context)
+            return self.from_arrow(py_arrow_table.slice(start, stop), self.context)
         else:
-            return self.from_arrow(py_arrow_table.slice(key, 1), context)
+            return self.from_arrow(py_arrow_table.slice(key, 1), self.context)
 
     def __repr__(self):
         table = to_pyarrow_table(self.id.encode())
