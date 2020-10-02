@@ -44,7 +44,7 @@ cdef class csv_reader:
         else:
             from_csv(new CCylonContextWrap(ctx.get_config()), spath, sdelm[0], id_buf)
         id_buf = id_str.encode()
-        return Table(id_buf)
+        return Table(id_buf, ctx)
 
 
 

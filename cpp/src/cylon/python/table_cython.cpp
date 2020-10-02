@@ -65,7 +65,7 @@ Status CxTable::from_csv(cylon_context_wrap *ctx_wrap,
 						 const std::string &path,
                          const char &delimiter,
                          const std::string &uuid) {
-  auto ctx = ctx_wrap->getInstance();
+  auto ctx = ctx_wrap->getContext();
   cylon::Status status = ReadCSV(ctx, path, uuid,
                             cylon::io::config::CSVReadOptions().WithDelimiter(delimiter).UseThreads(
                             false).BlockSize(1 << 30));
@@ -84,7 +84,7 @@ Status CxTable::to_csv(const std::string &path) {
 
 std::string CxTable::from_pyarrow_table(cylon_context_wrap *ctx_wrap, std::shared_ptr<arrow::Table> table) {
   std::string uuid = cylon::util::generate_uuid_v4();
-  auto ctx = ctx_wrap->getInstance();
+  auto ctx = ctx_wrap->getContext();
   std::shared_ptr<cylon::Table> tab = std::make_shared<cylon::Table>(table, ctx);
   PutTable(uuid, tab);
   return uuid;
@@ -97,7 +97,7 @@ std::shared_ptr<arrow::Table> CxTable::to_pyarrow_table(const std::string &table
 
 std::string CxTable::join(cylon_context_wrap *ctx_wrap, const std::string &table_id, JoinConfig join_config) {
   std::string uuid = cylon::util::generate_uuid_v4();
-  auto context = ctx_wrap->getInstance();
+  auto context = ctx_wrap->getContext();
   cylon::Status status = cylon::JoinTables(
       context,
       this->get_id(),
@@ -117,7 +117,7 @@ std::string CxTable::distributed_join(cylon_context_wrap *ctx_wrap,
   std::string uuid = cylon::util::generate_uuid_v4();
   std::cout << "distributed join , Rank  " << ctx_wrap->GetRank() << " , Size "
             << ctx_wrap->GetWorldSize() << std::endl;
-  auto context = ctx_wrap->getInstance();
+  auto context = ctx_wrap->getContext();
   cylon::Status status =
       cylon::DistributedJoinTables(context, this->id_, table_id, join_config, uuid);
   if (status.is_ok()) {
@@ -129,7 +129,7 @@ std::string CxTable::distributed_join(cylon_context_wrap *ctx_wrap,
 
 std::string CxTable::Union(cylon_context_wrap *ctx_wrap, const std::string &table_right) {
   std::string uuid = cylon::util::generate_uuid_v4();
-  auto context = ctx_wrap->getInstance();
+  auto context = ctx_wrap->getContext();
   cylon::Status status = cylon::Union(context, this->id_, table_right, uuid);
   if (status.is_ok()) {
     return uuid;
@@ -140,7 +140,7 @@ std::string CxTable::Union(cylon_context_wrap *ctx_wrap, const std::string &tabl
 
 std::string CxTable::DistributedUnion(cylon_context_wrap *ctx_wrap, const std::string &table_right) {
   std::string uuid = cylon::util::generate_uuid_v4();
-  auto context = ctx_wrap->getInstance();
+  auto context = ctx_wrap->getContext();
   cylon::Status
       status = cylon::DistributedUnion(context, this->id_, table_right, uuid);
   if (status.is_ok()) {
@@ -152,7 +152,7 @@ std::string CxTable::DistributedUnion(cylon_context_wrap *ctx_wrap, const std::s
 
 std::string CxTable::Intersect(cylon_context_wrap *ctx_wrap, const std::string &table_right) {
   std::string uuid = cylon::util::generate_uuid_v4();
-  auto context = ctx_wrap->getInstance();
+  auto context = ctx_wrap->getContext();
   cylon::Status status = cylon::Intersect(context, this->id_, table_right, uuid);
   if (status.is_ok()) {
     return uuid;
@@ -163,7 +163,7 @@ std::string CxTable::Intersect(cylon_context_wrap *ctx_wrap, const std::string &
 
 std::string CxTable::DistributedIntersect(cylon_context_wrap *ctx_wrap, const std::string &table_right) {
   std::string uuid = cylon::util::generate_uuid_v4();
-  auto context = ctx_wrap->getInstance();
+  auto context = ctx_wrap->getContext();
   cylon::Status
       status = cylon::DistributedIntersect(context, this->id_, table_right, uuid);
   if (status.is_ok()) {
@@ -175,7 +175,7 @@ std::string CxTable::DistributedIntersect(cylon_context_wrap *ctx_wrap, const st
 
 std::string CxTable::Subtract(cylon_context_wrap *ctx_wrap, const std::string &table_right) {
   std::string uuid = cylon::util::generate_uuid_v4();
-  auto context = ctx_wrap->getInstance();
+  auto context = ctx_wrap->getContext();
   cylon::Status status = cylon::Subtract(context, this->id_, table_right, uuid);
   if (status.is_ok()) {
     return uuid;
@@ -186,7 +186,7 @@ std::string CxTable::Subtract(cylon_context_wrap *ctx_wrap, const std::string &t
 
 std::string CxTable::DistributedSubtract(cylon_context_wrap *ctx_wrap, const std::string &table_right) {
   std::string uuid = cylon::util::generate_uuid_v4();
-  auto context = ctx_wrap->getInstance();
+  auto context = ctx_wrap->getContext();
   cylon::Status
       status = cylon::DistributedSubtract(context, this->id_, table_right, uuid);
   if (status.is_ok()) {

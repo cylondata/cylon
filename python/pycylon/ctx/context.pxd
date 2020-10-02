@@ -16,7 +16,7 @@
 Cython Interface for CylonContext
 '''
 
-from libcpp.vector cimport vector
+from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 #
 cdef extern from "../../../cpp/src/cylon/ctx/cylon_context.hpp" namespace "cylon":
@@ -35,7 +35,6 @@ cdef extern from "../../../cpp/src/cylon/ctx/cylon_context.hpp" namespace "cylon
 cdef extern from "../../../cpp/src/cylon/python/cylon_context_wrap.h" namespace "cylon::python":
     cdef cppclass CCylonContextWrap "cylon::python::cylon_context_wrap":
         CCylonContextWrap(string config)
-        CCylonContext *getInstance()
         int GetRank()
         int GetWorldSize()
         void Barrier()

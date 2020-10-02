@@ -41,7 +41,7 @@ cylon::python::cylon_context_wrap::cylon_context_wrap(std::string config) {
   }
 }
 
-std::shared_ptr<cylon::CylonContext> cylon::python::cylon_context_wrap::getInstance() {
+std::shared_ptr<cylon::CylonContext> cylon::python::cylon_context_wrap::getContext() {
   return context;
 }
 
