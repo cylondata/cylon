@@ -33,11 +33,15 @@ from pycylon.ctx.context import CylonContext
 import pyarrow as pa
 import numpy as np
 import pandas as pd
-
+from typing import List
+from typing import Tuple
+from multiprocessing import Process
+from multiprocessing import Manager
+from multiprocessing.managers import DictProxy
 import warnings
 
 '''
-TwisterX Table definition mapping 
+Cylon Table definition mapping 
 '''
 
 cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table":
@@ -53,7 +57,8 @@ cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon
 
         string join(CCylonContextWrap *ctx_wrap, const string, CJoinConfig)
 
-        string distributed_join(CCylonContextWrap *ctx_wrap, const string & table_id, CJoinConfig join_config);
+        string distributed_join(CCylonContextWrap *ctx_wrap, const string & table_id,
+                                CJoinConfig join_config);
 
         string Union(CCylonContextWrap *ctx_wrap, const string & table_right);
 
@@ -99,45 +104,48 @@ cdef class Table:
         if join_algorithm == PJoinAlgorithm.HASH.value:
 
             if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CHASH)
+                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CHASH)
             elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CHASH)
+                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CHASH)
             elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CHASH)
+                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CHASH)
             elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CHASH)
+                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CHASH)
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
 
         elif join_algorithm == PJoinAlgorithm.SORT.value:
 
             if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CSORT)
+                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CSORT)
             elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CSORT)
+                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CSORT)
             elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CSORT)
+                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CSORT)
             elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CSORT)
+                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CSORT)
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
         else:
             if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index, right_column_index)
+                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
+                                             right_column_index)
             elif join_type == PJoinType.LEFT.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index)
             elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index, right_column_index)
+                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
+                                             right_column_index)
             elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index, right_column_index)
+                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
+                                             right_column_index)
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
 
@@ -171,7 +179,7 @@ cdef class Table:
 
     def show(self):
         '''
-        prints the table in console from the TwisterX C++ Table API
+        prints the table in console from the Cylon C++ Table API
         :return: None
         '''
         self.thisPtr.show()
@@ -198,8 +206,40 @@ cdef class Table:
         s = Status(status.get_code(), b"", -1)
         return s
 
-    def join(self, ctx: CylonContext, table: Table, join_type: str, algorithm: str, left_col: int,
-             right_col: int) -> Table:
+    def _is_pycylon_table(self, obj):
+        return isinstance(obj, Table)
+
+    def _parallel_column_resolve(self, table, op_column_names) -> Tuple[List[int], List[int]]:
+        jobs = []
+        manager = Manager()
+        return_dict = manager.dict()
+        table_orders = ['left_table', 'right_table']
+        table_col_names_list = [self.column_names, table.column_names]
+        op_col_names_list = [op_column_names, op_column_names]
+
+        for table_order, table_col_names, op_col_names in zip(table_orders, table_col_names_list,
+                                                              op_col_names_list):
+            p = Process(target=self._resolve_column_indices_from_column_names,
+                        args=(table_order, table_col_names, op_col_names, return_dict))
+            jobs.append(p)
+            p.start()
+
+        for proc in jobs:
+            proc.join()
+
+        return return_dict[table_orders[0]], return_dict[table_orders[1]]
+
+    def _resolve_column_indices_from_column_names(self, table_order: str, column_names: List[
+        str], op_column_names: List[str], return_dict: DictProxy):
+        resolve_col_ids = []
+        for op_col_id, op_column_name in enumerate(op_column_names):
+            for col_id, column_name in enumerate(column_names):
+                if op_column_name == column_name:
+                    resolve_col_ids.append(col_id)
+        return_dict[table_order] = resolve_col_ids
+
+    def join(self, ctx: CylonContext, table: Table, join_type: str,
+             algorithm: str, **kwargs) -> Table:
         '''
         Joins two PyCylon tables
         :param table: PyCylon table on which the join is performed (becomes the left table)
@@ -209,15 +249,29 @@ cdef class Table:
         :param right_col: Join column of the right table as int
         :return: Joined PyCylon table
         '''
-        self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
+        column_names = kwargs.get('column_names')
+        left_col = kwargs.get('left_col')
+        right_col = kwargs.get('right_col')
+        if column_names is None and (left_col is None or right_col is None):
+            raise ValueError("Column Names and col indices cannot be None, Set column_names or "
+                             "set left_col and right_col arguments")
+        if column_names:
+            left_col_indices, right_col_indices = self._parallel_column_resolve(table, column_names)
+            left_col = left_col_indices[0]
+            right_col = right_col_indices[0]
+
+        self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
+                               left_column_index=left_col,
                                right_column_index=right_col)
         cdef CJoinConfig *jc1 = self.jcPtr
-        cdef string table_out_id = self.thisPtr.join(new CCylonContextWrap(ctx.get_config()), table.id.encode(), jc1[0])
+        cdef string table_out_id = self.thisPtr.join(
+            new CCylonContextWrap(ctx.get_config()), table.id.encode(), jc1[0])
         if table_out_id.size() == 0:
             raise Exception("Join Failed !!!")
         return Table(table_out_id, ctx)
 
-    def distributed_join(self, ctx: CylonContext, table: Table, join_type: str, algorithm: str, left_col: int,
+    def distributed_join(self, ctx: CylonContext, table: Table, join_type: str,
+                         algorithm: str, left_col: int,
                          right_col: int) -> Table:
         '''
         Joins two PyCylon tables
@@ -228,7 +282,8 @@ cdef class Table:
         :param right_col: Join column of the right table as int
         :return: Joined PyCylon table
         '''
-        self.__get_join_config(join_type=join_type, join_algorithm=algorithm, left_column_index=left_col,
+        self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
+                               left_column_index=left_col,
                                right_column_index=right_col)
         cdef CJoinConfig *jc1 = self.jcPtr
         cdef string table_out_id = self.thisPtr.distributed_join(
@@ -244,7 +299,8 @@ cdef class Table:
         :return: Union PyCylon table
         '''
 
-        cdef string table_out_id = self.thisPtr.Union(new CCylonContextWrap(ctx.get_config()), table.id.encode())
+        cdef string table_out_id = self.thisPtr.Union(
+            new CCylonContextWrap(ctx.get_config()), table.id.encode())
         if table_out_id.size() == 0:
             raise Exception("Union Failed !!!")
         return Table(table_out_id, ctx)
@@ -269,7 +325,8 @@ cdef class Table:
         :return: Intersect PyCylon table
         '''
 
-        cdef string table_out_id = self.thisPtr.Intersect(new CCylonContextWrap(ctx.get_config()), table.id.encode())
+        cdef string table_out_id = self.thisPtr.Intersect(
+            new CCylonContextWrap(ctx.get_config()), table.id.encode())
         if table_out_id.size() == 0:
             raise Exception("Intersect Failed !!!")
         return Table(table_out_id, ctx)
@@ -294,7 +351,8 @@ cdef class Table:
         :return: Subtract PyCylon table
         '''
 
-        cdef string table_out_id = self.thisPtr.Subtract(new CCylonContextWrap(ctx.get_config()), table.id.encode())
+        cdef string table_out_id = self.thisPtr.Subtract(
+            new CCylonContextWrap(ctx.get_config()), table.id.encode())
         if table_out_id.size() == 0:
             raise Exception("Subtract Failed !!!")
         return Table(table_out_id, ctx)
@@ -324,9 +382,11 @@ cdef class Table:
         if artb.get() == NULL:
             raise TypeError("not an table")
         if ctx.get_config() == ''.encode():
-            table_id = from_pyarrow_table(new CCylonContextWrap(''.encode()), artb)
+            table_id = from_pyarrow_table(
+                new CCylonContextWrap(''.encode()), artb)
         else:
-            table_id = from_pyarrow_table(new CCylonContextWrap(ctx.get_config()), artb)
+            table_id = from_pyarrow_table(
+                new CCylonContextWrap(ctx.get_config()), artb)
         return Table(table_id, ctx)
 
     # @staticmethod
@@ -377,7 +437,8 @@ cdef class Table:
             if None == _dtype:
                 _dtype = npr.dtype
             if _dtype != npr.dtype:
-                warnings.warn("Heterogeneous Cylon Table Detected!. Use Numpy operations with Caution.")
+                warnings.warn(
+                    "Heterogeneous Cylon Table Detected!. Use Numpy operations with Caution.")
             ar_lst.append(npr)
         return np.array(ar_lst, order=order).T
 
@@ -398,7 +459,8 @@ cdef class Table:
         py_arrow_table = pyarrow_wrap_table(table)
         if isinstance(key, slice):
             start, stop, step = key.indices(self.columns)
-            return self.from_arrow(py_arrow_table.slice(start, stop), self.context)
+            return self.from_arrow(py_arrow_table.slice(start, stop),
+                                   self.context)
         else:
             return self.from_arrow(py_arrow_table.slice(key, 1), self.context)
 
