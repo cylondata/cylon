@@ -209,13 +209,16 @@ cdef class Table:
     def _is_pycylon_table(self, obj):
         return isinstance(obj, Table)
 
-    def _parallel_column_resolve(self, table, op_column_names) -> Tuple[List[int], List[int]]:
+    def _parallel_column_resolve(self, table, left_op_column_names, right_column_names) -> Tuple[
+        List[
+            int],
+        List[int]]:
         jobs = []
         manager = Manager()
         return_dict = manager.dict()
         table_orders = ['left_table', 'right_table']
         table_col_names_list = [self.column_names, table.column_names]
-        op_col_names_list = [op_column_names, op_column_names]
+        op_col_names_list = [left_op_column_names, right_column_names]
 
         for table_order, table_col_names, op_col_names in zip(table_orders, table_col_names_list,
                                                               op_col_names_list):
@@ -238,6 +241,34 @@ cdef class Table:
                     resolve_col_ids.append(col_id)
         return_dict[table_order] = resolve_col_ids
 
+    def _get_join_column_indices(self, left_cols, right_cols, column_names, table):
+        ## Check if Passed values are based on left and right column names or indices
+        if left_cols and right_cols and isinstance(left_cols, List) and isinstance(right_cols,
+                                                                                   List):
+            if isinstance(left_cols[0], str) and isinstance(right_cols[0], str):
+
+                left_cols, right_cols = self._parallel_column_resolve(table, left_cols, right_cols)
+                return left_cols, right_cols
+            elif isinstance(left_cols[0], int) and isinstance(right_cols[0], int):
+                return left_cols, right_cols
+        ## Check if Passed values are based on common column names in two tables
+        elif column_names and isinstance(column_names, List):
+            if isinstance(column_names[0], str):
+                left_cols, right_cols = self._parallel_column_resolve(table, column_names,
+                                                                      column_names)
+                return left_cols, right_cols
+            if isinstance(column_names[0], int):
+                return column_names, column_names
+        else:
+            raise TypeError("kwargs 'on' or 'left_on' and 'right_on' must be provided")
+
+        if not (left_cols and isinstance(left_cols[0], int)) and not (right_cols and isinstance(
+                right_cols[0], int)):
+            raise TypeError("kwargs 'on' or 'left_on' and 'right_on' must be type List and contain "
+                            "int type or str type and cannot be None")
+    def _is_column_indices_viable(self, left_cols, right_cols):
+        return left_cols and right_cols
+
     def join(self, ctx: CylonContext, table: Table, join_type: str,
              algorithm: str, **kwargs) -> Table:
         '''
@@ -245,24 +276,23 @@ cdef class Table:
         :param table: PyCylon table on which the join is performed (becomes the left table)
         :param join_type: Join Type as str ["inner", "left", "right", "outer"]
         :param algorithm: Join Algorithm as str ["hash", "sort"]
-        :param left_col: Join column of the left table as int
-        :param right_col: Join column of the right table as int
+        :kwargs left_on: Join column of the left table as List[int] or List[str], right_on:
+        Join column of the right table as List[int] or List[str]
         :return: Joined PyCylon table
         '''
-        column_names = kwargs.get('column_names')
-        left_col = kwargs.get('left_col')
-        right_col = kwargs.get('right_col')
-        if column_names is None and (left_col is None or right_col is None):
-            raise ValueError("Column Names and col indices cannot be None, Set column_names or "
-                             "set left_col and right_col arguments")
-        if column_names:
-            left_col_indices, right_col_indices = self._parallel_column_resolve(table, column_names)
-            left_col = left_col_indices[0]
-            right_col = right_col_indices[0]
+        left_cols = kwargs.get('left_on')
+        right_cols = kwargs.get('right_on')
+        column_names = kwargs.get('on')
 
+        left_cols, right_cols = self._get_join_column_indices(left_cols, right_cols,
+                                                              column_names, table)
+        if not self._is_column_indices_viable(left_cols, right_cols):
+            raise ValueError("Provided Column Names or Column Indices not valid.")
+        # Cylon only supports join by one column and retrieve first left and right column when
+        # resolving join configs
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
-                               left_column_index=left_col,
-                               right_column_index=right_col)
+                               left_column_index=left_cols[0],
+                               right_column_index=right_cols[0])
         cdef CJoinConfig *jc1 = self.jcPtr
         cdef string table_out_id = self.thisPtr.join(
             new CCylonContextWrap(ctx.get_config()), table.id.encode(), jc1[0])
@@ -271,20 +301,29 @@ cdef class Table:
         return Table(table_out_id, ctx)
 
     def distributed_join(self, ctx: CylonContext, table: Table, join_type: str,
-                         algorithm: str, left_col: int,
-                         right_col: int) -> Table:
+                         algorithm: str, **kwargs) -> Table:
         '''
         Joins two PyCylon tables
         :param table: PyCylon table on which the join is performed (becomes the left table)
         :param join_type: Join Type as str ["inner", "left", "right", "outer"]
         :param algorithm: Join Algorithm as str ["hash", "sort"]
-        :param left_col: Join column of the left table as int
-        :param right_col: Join column of the right table as int
+        :kwargs left_on: Join column of the left table as List[int] or List[str], right_on:
+        Join column of the right table as List[int] or List[str]
         :return: Joined PyCylon table
         '''
+        left_cols = kwargs.get('left_on')
+        right_cols = kwargs.get('right_on')
+        column_names = kwargs.get('on')
+
+        left_cols, right_cols = self._get_join_column_indices(left_cols, right_cols,
+                                                              column_names, table)
+        if not self._is_column_indices_viable(left_cols, right_cols):
+            raise ValueError("Provided Column Names or Column Indices not valid.")
+        # Cylon only supports join by one column and retrieve first left and right column when
+        # resolving join configs
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
-                               left_column_index=left_col,
-                               right_column_index=right_col)
+                               left_column_index=left_cols[0],
+                               right_column_index=right_cols[0])
         cdef CJoinConfig *jc1 = self.jcPtr
         cdef string table_out_id = self.thisPtr.distributed_join(
             new CCylonContextWrap(ctx.get_config()), table.id.encode(), jc1[0])
