@@ -209,37 +209,14 @@ cdef class Table:
     def _is_pycylon_table(self, obj):
         return isinstance(obj, Table)
 
-    def _parallel_column_resolve(self, table, left_op_column_names, right_column_names) -> Tuple[
-        List[
-            int],
-        List[int]]:
-        jobs = []
-        manager = Manager()
-        return_dict = manager.dict()
-        table_orders = ['left_table', 'right_table']
-        table_col_names_list = [self.column_names, table.column_names]
-        op_col_names_list = [left_op_column_names, right_column_names]
-
-        for table_order, table_col_names, op_col_names in zip(table_orders, table_col_names_list,
-                                                              op_col_names_list):
-            p = Process(target=self._resolve_column_indices_from_column_names,
-                        args=(table_order, table_col_names, op_col_names, return_dict))
-            jobs.append(p)
-            p.start()
-
-        for proc in jobs:
-            proc.join()
-
-        return return_dict[table_orders[0]], return_dict[table_orders[1]]
-
-    def _resolve_column_indices_from_column_names(self, table_order: str, column_names: List[
-        str], op_column_names: List[str], return_dict: DictProxy):
+    def _resolve_column_indices_from_column_names(self, column_names: List[
+        str], op_column_names: List[str]) -> List[int]:
         resolve_col_ids = []
         for op_col_id, op_column_name in enumerate(op_column_names):
             for col_id, column_name in enumerate(column_names):
                 if op_column_name == column_name:
                     resolve_col_ids.append(col_id)
-        return_dict[table_order] = resolve_col_ids
+        return resolve_col_ids
 
     def _get_join_column_indices(self, table: Table, **kwargs):
         ## Check if Passed values are based on left and right column names or indices
@@ -247,19 +224,25 @@ cdef class Table:
         right_cols = kwargs.get('right_on')
         column_names = kwargs.get('on')
 
+        table_col_names_list = [self.column_names, table.column_names]
+
         if left_cols and right_cols and isinstance(left_cols, List) and isinstance(right_cols,
                                                                                    List):
             if isinstance(left_cols[0], str) and isinstance(right_cols[0], str):
-
-                left_cols, right_cols = self._parallel_column_resolve(table, left_cols, right_cols)
+                left_cols = self._resolve_column_indices_from_column_names(self.column_names,
+                                                                           left_cols)
+                right_cols = self._resolve_column_indices_from_column_names(table.column_names,
+                                                                            right_cols)
                 return left_cols, right_cols
             elif isinstance(left_cols[0], int) and isinstance(right_cols[0], int):
                 return left_cols, right_cols
         ## Check if Passed values are based on common column names in two tables
         elif column_names and isinstance(column_names, List):
             if isinstance(column_names[0], str):
-                left_cols, right_cols = self._parallel_column_resolve(table, column_names,
-                                                                      column_names)
+                left_cols = self._resolve_column_indices_from_column_names(self.column_names,
+                                                                           column_names)
+                right_cols = self._resolve_column_indices_from_column_names(table.column_names,
+                                                                            column_names)
                 return left_cols, right_cols
             if isinstance(column_names[0], int):
                 return column_names, column_names
