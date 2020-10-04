@@ -241,8 +241,12 @@ cdef class Table:
                     resolve_col_ids.append(col_id)
         return_dict[table_order] = resolve_col_ids
 
-    def _get_join_column_indices(self, left_cols, right_cols, column_names, table):
+    def _get_join_column_indices(self, table: Table, **kwargs):
         ## Check if Passed values are based on left and right column names or indices
+        left_cols = kwargs.get('left_on')
+        right_cols = kwargs.get('right_on')
+        column_names = kwargs.get('on')
+
         if left_cols and right_cols and isinstance(left_cols, List) and isinstance(right_cols,
                                                                                    List):
             if isinstance(left_cols[0], str) and isinstance(right_cols[0], str):
@@ -281,12 +285,9 @@ cdef class Table:
         both tables as a List[int] or List[str].
         :return: Joined PyCylon table
         '''
-        left_cols = kwargs.get('left_on')
-        right_cols = kwargs.get('right_on')
-        column_names = kwargs.get('on')
 
-        left_cols, right_cols = self._get_join_column_indices(left_cols, right_cols,
-                                                              column_names, table)
+        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
+
         if not self._is_column_indices_viable(left_cols, right_cols):
             raise ValueError("Provided Column Names or Column Indices not valid.")
         # Cylon only supports join by one column and retrieve first left and right column when
@@ -313,12 +314,9 @@ cdef class Table:
         both tables as a List[int] or List[str].
         :return: Joined PyCylon table
         '''
-        left_cols = kwargs.get('left_on')
-        right_cols = kwargs.get('right_on')
-        column_names = kwargs.get('on')
 
-        left_cols, right_cols = self._get_join_column_indices(left_cols, right_cols,
-                                                              column_names, table)
+        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
+
         if not self._is_column_indices_viable(left_cols, right_cols):
             raise ValueError("Provided Column Names or Column Indices not valid.")
         # Cylon only supports join by one column and retrieve first left and right column when
