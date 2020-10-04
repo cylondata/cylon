@@ -22,8 +22,6 @@ from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context cimport CCylonContextWrap
 
 cdef class CylonContext:
-    cdef CCylonContextWrap*thisPtr;
-    cdef string cconfig;
 
     def __cinit__(self, config):
         '''

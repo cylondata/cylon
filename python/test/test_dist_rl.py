@@ -19,7 +19,7 @@ import time
 from pycylon import CylonContext
 import argparse
 
-ctx: CylonContext = CylonContext("mpi")
+ctx: CylonContext = CylonContext(config="mpi")
 
 parser = argparse.ArgumentParser(description='PyCylon Table Conversion')
 parser.add_argument('--table1_path', type=str, help='Path to table 1 csv')
@@ -34,17 +34,18 @@ tb1.show()
 
 print("First Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
 
-tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type='left', algorithm='hash', left_col=0, right_col=0)
+tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type='left', algorithm='hash', left_on=[0],
+                                  right_on=[0])
 
 tb3.show()
 
-print("Union Test")
-tb4: Table = tb1.union(ctx, table=tb2)
-tb4.show()
-
-print("Distributed Union Test")
-tb5: Table = tb1.distributed_union(ctx, table=tb2)
-tb5.show()
+# print("Union Test")
+# tb4: Table = tb1.union(ctx, table=tb2)
+# tb4.show()
+#
+# print("Distributed Union Test")
+# tb5: Table = tb1.distributed_union(ctx, table=tb2)
+# tb5.show()
 
 print("Intersect Test")
 tb4: Table = tb1.intersect(ctx, table=tb2)

@@ -12,9 +12,64 @@
  # limitations under the License.
  ##
 
-from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.string cimport string
 from pycylon.common.status cimport _Status
-from pytwisterx.common.status import Status
-from libcpp.memory cimport unique_ptr
+from pycylon.common.status import Status
+import uuid
+from pycylon.common.join_config cimport CJoinType
+from pycylon.common.join_config cimport CJoinAlgorithm
+from pycylon.common.join_config cimport CJoinConfig
+from pycylon.common.join_config import PJoinType
+from pycylon.common.join_config import PJoinAlgorithm
+from pyarrow.lib cimport CTable
+from pyarrow.lib cimport pyarrow_unwrap_table
+from pyarrow.lib cimport pyarrow_wrap_table
+from libcpp.memory cimport shared_ptr
+
+from pycylon.ctx.context cimport CCylonContextWrap
+from pycylon.ctx.context cimport CCylonContext
+from pycylon.ctx.context import CylonContext
+
+
+cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table":
+    cdef cppclass CxTable "cylon::python::table::CxTable":
+        CxTable()
+        CxTable(string)
+        string get_id()
+        int columns()
+        int rows()
+        void show()
+        void show(int, int, int, int)
+        _Status to_csv(const string)
+
+        string join(CCylonContextWrap *ctx_wrap, const string, CJoinConfig)
+
+        string distributed_join(CCylonContextWrap *ctx_wrap, const string & table_id,
+                                CJoinConfig join_config);
+
+        string Union(CCylonContextWrap *ctx_wrap, const string & table_right);
+
+        string DistributedUnion(CCylonContextWrap *ctx_wrap, const string & table_right);
+
+        string Intersect(CCylonContextWrap *ctx_wrap, const string & table_right);
+
+        string DistributedIntersect(CCylonContextWrap *ctx_wrap, const string & table_right);
+
+        string Subtract(CCylonContextWrap *ctx_wrap, const string & table_right);
+
+        string DistributedSubtract(CCylonContextWrap *ctx_wrap, const string & table_right);
+
+        #string Project(const vector[int64_t]& project_columns);
+
+cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table::CxTable":
+    cdef extern string from_pyarrow_table(CCylonContextWrap *ctx_wrap, shared_ptr[CTable] table)
+    cdef extern shared_ptr[CTable] to_pyarrow_table(const string table_id)
+
+cdef class Table:
+    cdef:
+        CxTable *thisPtr
+        CJoinConfig *jcPtr
+        CCylonContextWrap *ctx_wrap
+        dict __dict__
+
 
