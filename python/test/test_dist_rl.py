@@ -39,13 +39,13 @@ tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type='left', algorithm='h
 
 tb3.show()
 
-# print("Union Test")
-# tb4: Table = tb1.union(ctx, table=tb2)
-# tb4.show()
-#
-# print("Distributed Union Test")
-# tb5: Table = tb1.distributed_union(ctx, table=tb2)
-# tb5.show()
+print("Union Test")
+tb4: Table = tb1.union(ctx, table=tb2)
+tb4.show()
+
+print("Distributed Union Test")
+tb5: Table = tb1.distributed_union(ctx, table=tb2)
+tb5.show()
 
 print("Intersect Test")
 tb4: Table = tb1.intersect(ctx, table=tb2)
