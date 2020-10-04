@@ -34,7 +34,8 @@ tb1.show()
 
 print("First Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
 
-tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type='left', algorithm='hash', left_col=0, right_col=0)
+tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type='left', algorithm='hash', left_on=[0],
+                                  right_on=[0])
 
 tb3.show()
 
