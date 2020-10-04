@@ -277,7 +277,8 @@ cdef class Table:
         :param join_type: Join Type as str ["inner", "left", "right", "outer"]
         :param algorithm: Join Algorithm as str ["hash", "sort"]
         :kwargs left_on: Join column of the left table as List[int] or List[str], right_on:
-        Join column of the right table as List[int] or List[str]
+        Join column of the right table as List[int] or List[str], on: Join column in common with
+        both tables as a List[int] or List[str].
         :return: Joined PyCylon table
         '''
         left_cols = kwargs.get('left_on')
@@ -308,7 +309,8 @@ cdef class Table:
         :param join_type: Join Type as str ["inner", "left", "right", "outer"]
         :param algorithm: Join Algorithm as str ["hash", "sort"]
         :kwargs left_on: Join column of the left table as List[int] or List[str], right_on:
-        Join column of the right table as List[int] or List[str]
+        Join column of the right table as List[int] or List[str], on: Join column in common with
+        both tables as a List[int] or List[str].
         :return: Joined PyCylon table
         '''
         left_cols = kwargs.get('left_on')
