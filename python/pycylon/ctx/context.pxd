@@ -39,3 +39,8 @@ cdef extern from "../../../cpp/src/cylon/python/cylon_context_wrap.h" namespace 
         int GetWorldSize()
         void Barrier()
         void Finalize()
+
+cdef class CylonContext:
+    cdef:
+        CCylonContextWrap *thisPtr;
+        string cconfig;

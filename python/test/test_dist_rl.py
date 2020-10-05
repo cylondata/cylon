@@ -19,7 +19,7 @@ import time
 from pycylon import CylonContext
 import argparse
 
-ctx: CylonContext = CylonContext("mpi")
+ctx: CylonContext = CylonContext(config="mpi")
 
 parser = argparse.ArgumentParser(description='PyCylon Table Conversion')
 parser.add_argument('--table1_path', type=str, help='Path to table 1 csv')
