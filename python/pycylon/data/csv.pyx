@@ -12,10 +12,10 @@
  # limitations under the License.
  ##
 
+import os
 from libcpp.string cimport string
 from pycylon.common.status cimport _Status
 import uuid
-
 
 from pycylon import Table
 from pycylon.ctx.context cimport CCylonContextWrap
@@ -33,7 +33,13 @@ cdef class csv_reader:
 
     @staticmethod
     def read(ctx: CylonContext, path: str, delimiter: str) -> Table:
+        if path is None:
+            raise ValueError(f'Path is not set')
+        if delimiter is None:
+            raise ValueError(f'Delimiter is not set')
         cdef string spath = path.encode()
+        if not os.path.exists(path):
+            raise ValueError(f"File {path} not found")
         cdef string sdelm = delimiter.encode()
         id = uuid.uuid4()
         id_str = id.__str__()

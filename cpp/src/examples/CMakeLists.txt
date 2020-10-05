@@ -20,8 +20,9 @@ tx_add_exe(task_test)
 tx_add_exe(join_inmem_datagen_example)
 tx_add_exe(table_from_vectors_example)
 tx_add_exe(compute_example)
-tx_add_exe(groupby_example)
+tx_add_exe(groupby_benchmark_example)
 tx_add_exe(groupby_pipeline_example)
+tx_add_exe(groupby_example)
 
 
 #macro(tx_add_test_exe EXENAME)
