@@ -233,6 +233,8 @@ cdef class Table:
                                                                            left_cols)
                 right_cols = self._resolve_column_indices_from_column_names(table.column_names,
                                                                             right_cols)
+                self._check_column_names_viable(left_cols, right_cols)
+
                 return left_cols, right_cols
             elif isinstance(left_cols[0], int) and isinstance(right_cols[0], int):
                 return left_cols, right_cols
@@ -243,6 +245,7 @@ cdef class Table:
                                                                            column_names)
                 right_cols = self._resolve_column_indices_from_column_names(table.column_names,
                                                                             column_names)
+                self._check_column_names_viable(left_cols, right_cols)
                 return left_cols, right_cols
             if isinstance(column_names[0], int):
                 return column_names, column_names
@@ -255,6 +258,10 @@ cdef class Table:
                             "int type or str type and cannot be None")
     def _is_column_indices_viable(self, left_cols, right_cols):
         return left_cols and right_cols
+
+    def _check_column_names_viable(self, left_cols, right_cols):
+        if not self._is_column_indices_viable(left_cols, right_cols):
+                    raise ValueError("Provided Column Names or Column Indices not valid.")
 
     def join(self, ctx: CylonContext, table: Table, join_type: str,
              algorithm: str, **kwargs) -> Table:
@@ -271,8 +278,6 @@ cdef class Table:
 
         left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
 
-        if not self._is_column_indices_viable(left_cols, right_cols):
-            raise ValueError("Provided Column Names or Column Indices not valid.")
         # Cylon only supports join by one column and retrieve first left and right column when
         # resolving join configs
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
@@ -300,8 +305,6 @@ cdef class Table:
 
         left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
 
-        if not self._is_column_indices_viable(left_cols, right_cols):
-            raise ValueError("Provided Column Names or Column Indices not valid.")
         # Cylon only supports join by one column and retrieve first left and right column when
         # resolving join configs
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
