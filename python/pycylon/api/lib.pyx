@@ -11,6 +11,8 @@ cdef api CCylonContextWrap* pycylon_unwrap_context(object context):
     if pyclon_is_context(context):
         ctx = <CylonContext> context
         return ctx.thisPtr
+    else:
+        raise ValueError('Passed object is not a CylonContext')
 
 
 
