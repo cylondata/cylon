@@ -141,7 +141,7 @@ class CylonContext {
    * Performs a barrier operation
    */
   void Barrier() {
-    this->GetCommunicator()->Barrier();
+    if (this->IsDistributed()) this->GetCommunicator()->Barrier();
   }
 };
 }
