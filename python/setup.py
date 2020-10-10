@@ -1,16 +1,16 @@
 ##
- # Licensed under the Apache License, Version 2.0 (the "License");
- # you may not use this file except in compliance with the License.
- # You may obtain a copy of the License at
- #
- # http://www.apache.org/licenses/LICENSE-2.0
- #
- # Unless required by applicable law or agreed to in writing, software
- # distributed under the License is distributed on an "AS IS" BASIS,
- # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- # See the License for the specific language governing permissions and
- # limitations under the License.
- ##
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##
 
 # References
 '''
@@ -55,19 +55,23 @@ additional_compile_args = [std_version,
 extra_compile_args = extra_link_args + additional_compile_args
 extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 
+glob_library_directory = os.path.join(ARROW_HOME, "glog", "install", "lib")
 arrow_library_directory = os.path.join(ARROW_HOME, "arrow", "install", "lib")
+
 if not os.path.exists(arrow_library_directory):
     arrow_library_directory = os.path.join(ARROW_HOME, "arrow", "install", "lib64")
 
 arrow_lib_include_dir = os.path.join(ARROW_HOME, "arrow", "install", "include")
+glog_lib_include_dir = os.path.join(ARROW_HOME, "glog", "install", "include")
 cylon_library_directory = os.path.join(ARROW_HOME, "lib")
 
 library_directories = [cylon_library_directory,
                        arrow_library_directory,
+                       glob_library_directory,
                        get_python_lib(),
                        os.path.join(os.sys.prefix, "lib")]
 
-libraries = ["arrow", "cylon", "cylon_python"]
+libraries = ["arrow", "cylon", "cylon_python", "glog"]
 
 _include_dirs = ["../cpp/src/cylon/python",
                  "../cpp/src/cylon/lib",
@@ -79,6 +83,7 @@ _include_dirs = ["../cpp/src/cylon/python",
                  "../cpp/src/cylon/util",
                  arrow_library_directory,
                  arrow_lib_include_dir,
+                 glog_lib_include_dir,
                  pyarrow_include_dir,
                  np.get_include(),
                  ]
