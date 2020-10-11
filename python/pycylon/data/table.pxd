@@ -47,7 +47,10 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 cdef class Table:
     cdef:
         shared_ptr[CTable] table_shd_ptr
-
+        shared_ptr[CTable] *table_out_shd_ptr
+        shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
+        shared_ptr[CCylonContext] ctx_shd_ptr
+        dict __dict__
 
 # cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table":
 #     cdef cppclass CxTable "cylon::python::table::CxTable":

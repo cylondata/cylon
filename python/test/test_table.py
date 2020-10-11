@@ -19,9 +19,10 @@ Run test:
 >>> python python/test/test_table.py --table_path /tmp/csv.csv
 """
 
-from pycylon.csv import csv_reader
-from pycylon import Table
-from pycylon import CylonContext
+import pyarrow as pa
+from pyarrow.csv import read_csv
+from pycylon.data.table import Table
+from pycylon.ctx.context import CylonContext
 from pycylon.net.mpi_config import MPIConfig
 import argparse
 
@@ -33,8 +34,16 @@ parser.add_argument('--table_path', type=str, help='Path to table csv')
 
 args = parser.parse_args()
 
-tb1: Table = csv_reader.read(ctx, args.table_path, ',')
+pyarrow_table = read_csv(args.table_path)
 
-print(f"Cylon Table Rows {tb1.rows}, Columns {tb1.columns}")
+print(pyarrow_table)
+
+tb = Table(pyarrow_table, ctx)
+
+tb.show()
+
+# tb1: Table = csv_reader.read(ctx, args.table_path, ',')
+#
+# print(f"Cylon Table Rows {tb1.rows}, Columns {tb1.columns}")
 
 ctx.finalize()

@@ -20,10 +20,11 @@ from pycylon.common.join_config cimport CJoinAlgorithm
 from pycylon.common.join_config cimport CJoinConfig
 from pycylon.common.join_config import PJoinType
 from pycylon.common.join_config import PJoinAlgorithm
-from pyarrow.lib cimport CTable
+from pyarrow.lib cimport CTable as CArrowTable
+from pycylon.data.table cimport CTable
 from pyarrow.lib cimport pyarrow_unwrap_table
 from pyarrow.lib cimport pyarrow_wrap_table
-from libcpp.memory cimport shared_ptr
+from libcpp.memory cimport shared_ptr, make_shared
 
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
@@ -40,13 +41,34 @@ Cylon Table definition mapping
 '''
 
 cdef class Table:
+    def __cinit__(self, pyarrow_table not None, context not None, columns=None):
+        if self._is_pyarrow_table(pyarrow_table) and self._is_pycylon_context(context):
+            self.c_arrow_tb_shd_ptr = pyarrow_unwrap_table(pyarrow_table)
+            self.ctx_shd_ptr = pycylon_unwrap_context(context)
+            self.table_shd_ptr = make_shared[CTable](self.c_arrow_tb_shd_ptr, self.ctx_shd_ptr)
 
-    def __cinit__(self, pyarrow_table not None, context not None):
-        if self._is_pyarrow_table(pyarrow_table):
+        else:
             pass
 
-    def _is_pyarrow_table(self, pyarrow_table):
+    @staticmethod
+    def _is_pyarrow_table(pyarrow_table):
         return isinstance(pyarrow_table, pa.Table)
+
+    @staticmethod
+    def _is_pycylon_context(context):
+        return isinstance(context, CylonContext)
+
+    @staticmethod
+    def from_arrow(context, pyarrow_table):
+        if Table._is_pyarrow_table(pyarrow_table):
+            pyarrow_unwrap_table(pyarrow_table)
+            pycylon_unwrap_context(context)
+            #CTable.FromArrowTable(pycylon_unwrap_context(context), pyarrow_unwrap_table(
+            # pyarrow_table))
+
+    def show(self):
+        self.table_shd_ptr.get().Print()
+
 
 # cdef class Table:
 #     def __cinit__(self, string id, context):
