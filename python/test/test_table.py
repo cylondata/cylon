@@ -22,9 +22,11 @@ Run test:
 from pycylon.csv import csv_reader
 from pycylon import Table
 from pycylon import CylonContext
+from pycylon.net.mpi_config import MPIConfig
 import argparse
 
-ctx: CylonContext = CylonContext(config=None)
+mpi_config = MPIConfig()
+ctx: CylonContext = CylonContext(config=mpi_config, distributed=False)
 
 parser = argparse.ArgumentParser(description='PyCylon Table')
 parser.add_argument('--table_path', type=str, help='Path to table csv')
