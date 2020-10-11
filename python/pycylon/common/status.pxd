@@ -18,15 +18,15 @@ TwisterX Status codes carrying responses related to SUCCESS and FAIL report, etc
 
 from libcpp.string cimport string
 from libcpp cimport bool
-from pycylon.common.code cimport _Code
+from pycylon.common.code cimport CCode
 
 cdef extern from "../../../cpp/src/cylon/status.hpp" namespace "cylon":
     cdef cppclass CStatus "cylon::Status":
         CStatus()
         CStatus(int, string)
         CStatus(int)
-        CStatus(_Code)
-        CStatus(_Code, string)
+        CStatus(CCode)
+        CStatus(CCode, string)
         int get_code()
         bool is_ok()
         string get_msg()

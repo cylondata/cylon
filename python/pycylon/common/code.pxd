@@ -13,7 +13,7 @@
  ##
 cdef extern from "../../../cpp/src/cylon/code.cpp" namespace "cylon":
 
-    cdef enum _Code 'cylon::Code':
+    cdef enum CCode 'cylon::Code':
         _OK 'cylon::Code::OK'
         _OutOfMemory 'cylon::Code::OutOfMemory'
         _KeyError 'cylon::Code::KeyError'

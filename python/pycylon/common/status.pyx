@@ -14,17 +14,17 @@
 
 from libcpp.string cimport string
 from libcpp cimport bool
-from pycylon.common.code cimport _Code
+from pycylon.common.code cimport CCode
 from pycylon.common.status cimport CStatus
 
 
 cdef class Status:
     cdef CStatus *thisptr
-    cdef _Code _code
+    cdef CCode _code
     cdef string msg
     cdef int code
 
-    def __cinit__(self, int code, string msg, _Code _code):
+    def __cinit__(self, int code, string msg, CCode _code):
         '''
         Initializes the Status to wrap the C++ object in Cython
         :param code: passes as an int to represent the status code.
