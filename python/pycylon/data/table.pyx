@@ -25,7 +25,6 @@ from pyarrow.lib cimport pyarrow_unwrap_table
 from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
 
-from pycylon.ctx.context cimport CCylonContextWrap
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 from pycylon.api.lib cimport pycylon_unwrap_context
@@ -39,6 +38,15 @@ import warnings
 '''
 Cylon Table definition mapping 
 '''
+
+cdef class Table:
+
+    def __cinit__(self, pyarrow_table not None, context not None):
+        if self._is_pyarrow_table(pyarrow_table):
+            pass
+
+    def _is_pyarrow_table(self, pyarrow_table):
+        return isinstance(pyarrow_table, pa.Table)
 
 # cdef class Table:
 #     def __cinit__(self, string id, context):

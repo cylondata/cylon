@@ -59,19 +59,6 @@ cdef extern from "../../../cpp/src/cylon/ctx/cylon_context.hpp" namespace "cylon
         void Barrier()
 
 
-cdef extern from "../../../cpp/src/cylon/python/cylon_context_wrap.h" namespace "cylon::python":
-    cdef cppclass CCylonContextWrap "cylon::python::cylon_context_wrap":
-        CCylonContextWrap(string config)
-        int GetRank()
-        int GetWorldSize()
-        void Barrier()
-        void Finalize()
-
-
-cdef class XCylonContext:
-    cdef:
-        CCylonContextWrap *thisPtr
-
 cdef class CylonContext:
     cdef:
         CCylonContext *ctx_ptr

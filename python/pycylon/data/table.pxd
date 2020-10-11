@@ -26,13 +26,27 @@ from pyarrow.lib cimport pyarrow_unwrap_table
 from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
 
-from pycylon.ctx.context cimport CCylonContextWrap
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CTable "cylon::Table":
-        pass
+        CTable(shared_ptr[CArrowTable] &tab, shared_ptr[CCylonContext] &ctx)
+
+        @staticmethod
+        CStatus FromArrowTable(shared_ptr[CCylonContext] &ctx, shared_ptr[CArrowTable] &table,
+                               shared_ptr[CTable] *tableOut)
+
+        int Columns()
+
+        int Rows()
+
+        void Print()
+
+
+cdef class Table:
+    cdef:
+        shared_ptr[CTable] table_shd_ptr
 
 
 # cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table":
