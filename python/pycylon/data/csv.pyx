@@ -14,7 +14,7 @@
 
 import os
 from libcpp.string cimport string
-from pycylon.common.status cimport _Status
+from pycylon.common.status cimport CStatus
 import uuid
 
 from pycylon import Table
@@ -27,7 +27,7 @@ Cylon CSV Utils
 '''
 
 cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table::CxTable":
-    cdef extern _Status from_csv(CCylonContextWrap *ctx_wrap, const string, const char, const string)
+    cdef extern CStatus from_csv(CCylonContextWrap *ctx_wrap, const string, const char, const string)
 
 cdef class csv_reader:
 

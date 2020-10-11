@@ -13,7 +13,7 @@
 ##
 
 from libcpp.string cimport string
-from pycylon.common.status cimport _Status
+from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 from pycylon.common.join_config cimport CJoinType
 from pycylon.common.join_config cimport CJoinAlgorithm
@@ -159,7 +159,7 @@ cdef class Table:
         :param path: passed as a str, the path of the csv file
         :return: Status of the process (SUCCESS or FAILURE)
         '''
-        cdef _Status status = self.thisPtr.to_csv(path.encode())
+        cdef CStatus status = self.thisPtr.to_csv(path.encode())
         s = Status(status.get_code(), b"", -1)
         return s
 

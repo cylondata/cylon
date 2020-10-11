@@ -21,12 +21,12 @@ from libcpp cimport bool
 from pycylon.common.code cimport _Code
 
 cdef extern from "../../../cpp/src/cylon/status.hpp" namespace "cylon":
-    cdef cppclass _Status "cylon::Status":
-        _Status()
-        _Status(int, string)
-        _Status(int)
-        _Status(_Code)
-        _Status(_Code, string)
+    cdef cppclass CStatus "cylon::Status":
+        CStatus()
+        CStatus(int, string)
+        CStatus(int)
+        CStatus(_Code)
+        CStatus(_Code, string)
         int get_code()
         bool is_ok()
         string get_msg()

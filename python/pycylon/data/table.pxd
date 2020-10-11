@@ -13,7 +13,7 @@
  ##
 
 from libcpp.string cimport string
-from pycylon.common.status cimport _Status
+from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 import uuid
 from pycylon.common.join_config cimport CJoinType
@@ -44,7 +44,7 @@ cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon
         int rows()
         void show()
         void show(int, int, int, int)
-        _Status to_csv(const string)
+        CStatus to_csv(const string)
 
         string join(CCylonContextWrap *ctx_wrap, const string, CJoinConfig)
 
