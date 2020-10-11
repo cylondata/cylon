@@ -1,4 +1,4 @@
-from pycylon.data.table cimport Table
+#from pycylon.data.table cimport Table
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context cimport CylonContext
 from pycylon.ctx.context import CylonContext

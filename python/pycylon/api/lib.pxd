@@ -1,5 +1,5 @@
 from libcpp.memory cimport shared_ptr
-from pycylon.data.table cimport Table
+#from pycylon.data.table cimport Table
 from pycylon.ctx.context cimport CCylonContextWrap
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context cimport CylonContext

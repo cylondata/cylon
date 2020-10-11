@@ -12,6 +12,6 @@
  # limitations under the License.
  ##
 
-from pycylon.data.table import Table
-from pycylon.data.csv import csv_reader
+#from pycylon.data.table import Table
+#from pycylon.data.csv import csv_reader
 from pycylon.ctx.context import CylonContext
