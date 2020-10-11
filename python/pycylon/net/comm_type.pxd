@@ -18,7 +18,8 @@ Communication Type mapping from Cylon C++ API
 
 cdef extern from "../../../cpp/src/cylon/net/comm_type.hpp" namespace "cylon::net":
 
-    cdef enum _CommType 'cylon::net::CommType':
+    cdef enum CCommType 'cylon::net::CommType':
+        _LOCAL 'cylon::net::CommType::LOCAL'
         _MPI 'cylon::net::CommType::MPI'
         _TCP 'cylon::net::CommType::TCP'
         _UCX 'cylon::net::CommType::UCX'

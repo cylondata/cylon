@@ -21,7 +21,7 @@ from pycylon.common.join_config cimport CJoinAlgorithm
 from pycylon.common.join_config cimport CJoinConfig
 from pycylon.common.join_config import PJoinType
 from pycylon.common.join_config import PJoinAlgorithm
-from pyarrow.lib cimport CTable
+from pyarrow.lib cimport CTable as CArrowTable
 from pyarrow.lib cimport pyarrow_unwrap_table
 from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
@@ -29,6 +29,10 @@ from libcpp.memory cimport shared_ptr
 from pycylon.ctx.context cimport CCylonContextWrap
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
+
+cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
+    cdef cppclass CTable "cylon::Table":
+        pass
 
 
 cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table":
@@ -62,8 +66,8 @@ cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon
         #string Project(const vector[int64_t]& project_columns);
 
 cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table::CxTable":
-    cdef extern string from_pyarrow_table(CCylonContextWrap *ctx_wrap, shared_ptr[CTable] table)
-    cdef extern shared_ptr[CTable] to_pyarrow_table(const string table_id)
+    cdef extern string from_pyarrow_table(CCylonContextWrap *ctx_wrap, shared_ptr[CArrowTable] table)
+    cdef extern shared_ptr[CArrowTable] to_pyarrow_table(const string table_id)
 
 cdef class Table:
     cdef:

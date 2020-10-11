@@ -12,58 +12,110 @@
 # limitations under the License.
 ##
 
+from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
 from cython.operator cimport dereference as deref
-from pycylon.net.comm_type import CommType
-from pycylon.net.comm_type cimport _CommType
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context cimport CCylonContextWrap
+from pycylon.api.lib cimport pycylon_unwrap_mpi_config
+from pycylon.net.mpi_config cimport CMPIConfig
+from pycylon.net.mpi_config import MPIConfig
+from pycylon.net.comm_config cimport CCommConfig
+from pycylon.net.comm_config import CommConfig
+from pycylon.net.comm_config cimport CommConfig
+
+# cdef class XCylonContext:
+#     def __cinit__(self, config):
+#         '''
+#         Initializing the Cylon Context based on the distributed or non-distributed context
+#         :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
+#         :return: None
+#         '''
+#         if config is None:
+#             print("Single Thread Config Loaded")
+#             self.cconfig = ''.encode()
+#             self.thisPtr = new CCylonContextWrap(''.encode())
+#         else:
+#             self.cconfig = config.encode()
+#             print("Distributed Config Loaded")
+#             self.thisPtr = new CCylonContextWrap(config.encode())
+#
+#     def get_rank(self) -> int:
+#         '''
+#         this is the process id (unique per process)
+#         :return: an int as the rank (0 for non distributed mode)
+#         '''
+#         return self.thisPtr.GetRank()
+#
+#     def get_world_size(self) -> int:
+#         '''
+#         this is the total number of processes joined for the distributed task
+#         :return: an int as the world size  (1 for non distributed mode)
+#         '''
+#         return self.thisPtr.GetWorldSize()
+#
+#     def finalize(self):
+#         '''
+#         gracefully shuts down the context by closing any distributed processes initialization ,etc
+#         :return: None
+#         '''
+#         self.thisPtr.Finalize()
+#
+#     def barrier(self):
+#         '''
+#         calling barrier to sync workers
+#         '''
+#         self.thisPtr.Barrier()
+#
+#     def get_config(self):
+#         return self.cconfig
 
 cdef class CylonContext:
+    cdef CCylonContext *ctx_ptr
+    cdef shared_ptr[CCylonContext] ctx_shd_ptr
 
-    def __cinit__(self, config):
+    def __cinit__(self, config, distributed not None):
         '''
         Initializing the Cylon Context based on the distributed or non-distributed context
         :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
         :return: None
         '''
-        if config is None:
-            print("Single Thread Config Loaded")
-            self.cconfig = ''.encode()
-            self.thisPtr = new CCylonContextWrap(''.encode())
+        if not distributed:
+            print("Single Process")
+            self.ctx_shd_ptr = CCylonContext.Init()
         else:
-            self.cconfig = config.encode()
-            print("Distributed Config Loaded")
-            self.thisPtr = new CCylonContextWrap(config.encode())
+            print("Distributed")
+            self.ctx_shd_ptr = CCylonContext.InitDistributed(self.init_dist(config))
+
+    cdef shared_ptr[CCommConfig] init_dist(self, config):
+        return <shared_ptr[CCommConfig]> pycylon_unwrap_mpi_config(config)
+
 
     def get_rank(self) -> int:
         '''
         this is the process id (unique per process)
         :return: an int as the rank (0 for non distributed mode)
         '''
-        return self.thisPtr.GetRank()
+        return self.ctx_shd_ptr.get().GetRank()
 
     def get_world_size(self) -> int:
         '''
         this is the total number of processes joined for the distributed task
         :return: an int as the world size  (1 for non distributed mode)
         '''
-        return self.thisPtr.GetWorldSize()
+        return self.ctx_shd_ptr.get().GetWorldSize()
 
     def finalize(self):
         '''
         gracefully shuts down the context by closing any distributed processes initialization ,etc
         :return: None
         '''
-        self.thisPtr.Finalize()
+        self.ctx_shd_ptr.get().Finalize()
 
     def barrier(self):
         '''
         calling barrier to sync workers
         '''
-        self.thisPtr.Barrier()
-
-    def get_config(self):
-        return self.cconfig
+        self.ctx_shd_ptr.get().Barrier()

@@ -17,30 +17,57 @@ Cython Interface for CylonContext
 '''
 
 from libcpp.memory cimport shared_ptr
+from libcpp cimport bool
+from libcpp.vector cimport vector
 from libcpp.string cimport string
+from pycylon.net.comm_config cimport CCommConfig
+from pycylon.net.mpi_config cimport CMPIConfig
+from pycylon.net.communicator cimport CCommunicator
+from pycylon.net.comm_type cimport CCommType
+
 #
 cdef extern from "../../../cpp/src/cylon/ctx/cylon_context.hpp" namespace "cylon":
-    cdef cppclass CCylonContext "cylon::cylon_context":
-        pass
-#         void Finalize();
-#         #CCylonContext *InitDistributed(net::CommConfig *config);
-#         void AddConfig(const string &key, const string &value);
-#         string GetConfig(const string &key, const string &defn);
-#         #net::Communicator *GetCommunicator() const;
-#         int GetRank();
-#         int GetWorldSize();
-#         vector[int] GetNeighbours(bool include_self);
+    cdef cppclass CCylonContext "cylon::CylonContext":
 
+        CCylonContext(bool distributed)
 
-cdef extern from "../../../cpp/src/cylon/python/cylon_context_wrap.h" namespace "cylon::python":
-    cdef cppclass CCylonContextWrap "cylon::python::cylon_context_wrap":
-        CCylonContextWrap(string config)
-        int GetRank()
-        int GetWorldSize()
-        void Barrier()
+        @staticmethod
+        shared_ptr[CCylonContext] Init()
+
+        @staticmethod
+        shared_ptr[CCylonContext] InitDistributed(const shared_ptr[CCommConfig] &config)
+
         void Finalize()
+
+        void AddConfig(const string &key, const string &value)
+
+        string GetConfig(const string &key, const string &defn)
+
+        shared_ptr[CCommunicator] GetCommunicator() const
+
+        int GetRank()
+
+        int GetWorldSize()
+
+        vector[int] GetNeighbors(bool include_self)
+
+        # TODO: add MemoryPool if necessary
+        int GetNextSequence()
+
+        CCommType GetCommType()
+
+        void Barrier()
+
+
+# cdef extern from "../../../cpp/src/cylon/python/cylon_context_wrap.h" namespace "cylon::python":
+#     cdef cppclass CCylonContextWrap "cylon::python::cylon_context_wrap":
+#         CCylonContextWrap(string config)
+#         int GetRank()
+#         int GetWorldSize()
+#         void Barrier()
+#         void Finalize()
 
 cdef class CylonContext:
     cdef:
-        CCylonContextWrap *thisPtr;
-        string cconfig;
+        CCylonContext *ctx_ptr
+        shared_ptr[CCylonContext] ctx_shd_ptr

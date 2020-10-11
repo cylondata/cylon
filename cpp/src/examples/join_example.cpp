@@ -29,6 +29,8 @@ int main(int argc, char *argv[]) {
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
+
+
   std::shared_ptr<cylon::Table> first_table, second_table, joined;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
   auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
