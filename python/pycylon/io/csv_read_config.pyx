@@ -12,7 +12,7 @@
  # limitations under the License.
  ##
 
-from pycylon.io.csv_read_config cimport _CSVReadOptions
+from pycylon.io.csv_read_config cimport CCSVReadOptions
 from libcpp cimport bool
 from typing import List
 from libcpp.string cimport string
@@ -25,17 +25,18 @@ Pandas.
 '''
 
 cdef class CSVReadOptions:
-    cdef _CSVReadOptions *thisPtr
+    cdef CCSVReadOptions *thisPtr
     cdef vector[string] cpp_strings
 
     def __cinit__(self):
-        pass
-
-    def __init__(self):
-        pass
+        self.thisPtr = new CCSVReadOptions()
 
     def use_threads(self, use_thread: bool)-> CSVReadOptions:
         self.thisPtr.UseThreads(use_thread)
+        return self
+
+    def block_size(self, block_size: int) -> CSVReadOptions:
+        self.thisPtr.BlockSize(block_size)
         return self
 
     def with_delimiter(self, delimiter: str) -> CSVReadOptions:
@@ -47,6 +48,4 @@ cdef class CSVReadOptions:
         self.thisPtr.IgnoreEmptyLines()
         return self
 
-    def auto_generate_column_names(self, column_names: List[str]) -> CSVReadOptions:
-        pass
 

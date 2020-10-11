@@ -24,49 +24,56 @@ from libcpp.unordered_map cimport unordered_map
 from libcpp.memory cimport shared_ptr
 
 cdef extern from "../../../cpp/src/cylon/io/csv_read_config.hpp" namespace "cylon::io::config":
-    cdef cppclass _CSVReadOptions "cylon::io::config::CSVReadOptions":
-        _CSVReadOptions()
+    cdef cppclass CCSVReadOptions "cylon::io::config::CSVReadOptions":
+        CCSVReadOptions()
 
-        _CSVReadOptions UseThreads(bool use_threads)
+        CCSVReadOptions ConcurrentFileReads(bool concurrent_file_reads)
 
-        _CSVReadOptions WithDelimiter(char delimiter)
+        bool IsConcurrentFileReads()
 
-        _CSVReadOptions IgnoreEmptyLines()
+        CCSVReadOptions UseThreads(bool use_threads)
 
-        _CSVReadOptions AutoGenerateColumnNames()
+        CCSVReadOptions WithDelimiter(char delimiter)
 
-        _CSVReadOptions ColumnNames(const vector[string] &column_names);
+        CCSVReadOptions IgnoreEmptyLines()
 
-        _CSVReadOptions BlockSize(int block_size);
+        CCSVReadOptions AutoGenerateColumnNames()
 
-        _CSVReadOptions UseQuoting();
+        CCSVReadOptions ColumnNames(const vector[string] &column_names)
 
-        _CSVReadOptions WithQuoteChar(char quote_char);
+        CCSVReadOptions BlockSize(int block_size)
 
-        _CSVReadOptions DoubleQuote();
+        CCSVReadOptions UseQuoting()
 
-        _CSVReadOptions UseEscaping();
+        CCSVReadOptions WithQuoteChar(char quote_char)
 
-        _CSVReadOptions EscapingCharacter(char escaping_char);
+        CCSVReadOptions DoubleQuote()
 
-        _CSVReadOptions HasNewLinesInValues();
+        CCSVReadOptions UseEscaping()
 
-        _CSVReadOptions SkipRows(int skip_rows);
+        CCSVReadOptions EscapingCharacter(char escaping_char)
 
-        # std::unordered_map<std::string,std::shared_ptr<DataType>>
-        #_CSVReadOptions WithColumnTypes(const unordered_map[string, shared_ptr[DataType]] &column_types);
+        CCSVReadOptions HasNewLinesInValues()
 
-        _CSVReadOptions NullValues(const vector[string] &null_value);
+        CCSVReadOptions SkipRows(int skip_rows)
 
-        _CSVReadOptions TrueValues(const vector[string] &true_values);
+        # NOTE: add upon requirement in Python
+        # CCSVReadOptions WithColumnTypes(const unordered_map[string, shared_ptr[DataType]]
+        #                                 &column_types)
 
-        _CSVReadOptions FalseValues(const vector[string] &false_values);
+        CCSVReadOptions NullValues(const vector[string] &null_value)
 
-        _CSVReadOptions StringsCanBeNull();
+        CCSVReadOptions TrueValues(const vector[string] &true_values)
 
-        _CSVReadOptions IncludeColumns(const vector[string] &include_columns);
+        CCSVReadOptions FalseValues(const vector[string] &false_values)
 
-        _CSVReadOptions IncludeMissingColumns();
+        CCSVReadOptions StringsCanBeNull()
+
+        CCSVReadOptions IncludeColumns(const vector[string] &include_columns)
+
+        CCSVReadOptions IncludeMissingColumns()
+
+        shared_ptr[void] GetHolder() const
 
 
 
