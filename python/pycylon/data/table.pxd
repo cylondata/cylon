@@ -37,6 +37,8 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
         CStatus FromArrowTable(shared_ptr[CCylonContext] &ctx, shared_ptr[CArrowTable] &table,
                                shared_ptr[CTable] *tableOut)
 
+
+
         int Columns()
 
         int Rows()
