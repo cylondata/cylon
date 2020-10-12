@@ -23,6 +23,10 @@ from pycylon.common.join_config import PJoinAlgorithm
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
 from pycylon.io.csv_read_config cimport CSVReadOptions
+from pycylon.io.csv_write_config cimport CCSVWriteOptions
+from pycylon.io.csv_write_config import CSVWriteOptions
+from pycylon.io.csv_write_config cimport CSVWriteOptions
+
 from pyarrow.lib cimport CTable as CArrowTable
 from pycylon.data.table cimport CTable
 from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table)
@@ -33,7 +37,8 @@ from pycylon.ctx.context import CylonContext
 from pycylon.api.lib cimport (pycylon_unwrap_context,
 pycylon_unwrap_table_out_ptr,
 pycylon_wrap_table,
-pycylon_unwrap_csv_read_options)
+pycylon_unwrap_csv_read_options,
+pycylon_unwrap_csv_write_options)
 
 import pyarrow as pa
 import numpy as np
@@ -47,12 +52,12 @@ Cylon Table definition mapping
 
 cdef class Table:
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
-        if self._is_pyarrow_table(pyarrow_table) and self._is_pycylon_context(context):
-            self.c_arrow_tb_shd_ptr = pyarrow_unwrap_table(pyarrow_table)
-            self.ctx_shd_ptr = pycylon_unwrap_context(context)
-            self.table_shd_ptr = make_shared[CTable](self.c_arrow_tb_shd_ptr, self.ctx_shd_ptr)
-        else:
-            pass
+        cdef shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
+        cdef shared_ptr[CCylonContext] ctx_shd_ptr
+        if self._is_pycylon_context(context) and self._is_pyarrow_table(pyarrow_table):
+            c_arrow_tb_shd_ptr = pyarrow_unwrap_table(pyarrow_table)
+            ctx_shd_ptr = pycylon_unwrap_context(context)
+            self.table_shd_ptr = make_shared[CTable](c_arrow_tb_shd_ptr, ctx_shd_ptr)
 
     cdef void init(self, const shared_ptr[CTable]& table):
         self.table_shd_ptr = table
@@ -66,7 +71,7 @@ cdef class Table:
         return isinstance(context, CylonContext)
 
     @staticmethod
-    def from_arrow(context, pyarrow_table):
+    def from_arrow(context, pyarrow_table) -> Table:
         cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
         cdef shared_ptr[CArrowTable] arw_table = pyarrow_unwrap_table(pyarrow_table)
         cdef shared_ptr[CTable] cn_table
@@ -78,7 +83,7 @@ cdef class Table:
             raise Exception("Table couldn't be created from PyArrow Table")
 
     @staticmethod
-    def from_csv(context, path, csv_read_options):
+    def from_csv(context, path, csv_read_options) -> Table:
         cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
         cdef string cpath = path.encode()
         cdef CCSVReadOptions c_csv_read_options = pycylon_unwrap_csv_read_options(csv_read_options)
@@ -89,10 +94,16 @@ cdef class Table:
         else:
             raise Exception("Table couldn't be created from CSV")
 
+    def to_csv(self, path, csv_write_options):
+        cdef string cpath = path.encode()
+        cdef CCSVWriteOptions c_csv_write_options = pycylon_unwrap_csv_write_options(
+            csv_write_options)
+        self.table_shd_ptr.get().WriteCSV(cpath, c_csv_write_options)
+
     def show(self):
         self.table_shd_ptr.get().Print()
 
-    def to_arrow(self):
+    def to_arrow(self) -> pa.Table:
         cdef shared_ptr[CArrowTable] converted_tb
         cdef CStatus status = self.table_shd_ptr.get().ToArrowTable(converted_tb)
         if status.is_ok():

@@ -25,6 +25,7 @@ from pycylon.data.table import Table
 from pycylon.ctx.context import CylonContext
 from pycylon.net.mpi_config import MPIConfig
 from pycylon.io.csv_read_config import CSVReadOptions
+from pycylon.io.csv_write_config import CSVWriteOptions
 import argparse
 
 mpi_config = MPIConfig()
@@ -43,13 +44,14 @@ tb = Table(pyarrow_table, ctx)
 
 tb.show()
 
+ar_tb2 = tb.to_arrow()
+
+print(ar_tb2)
+
 tb2 = Table.from_arrow(ctx, pyarrow_table)
 
 tb2.show()
 
-ar_tb2 = tb2.to_arrow()
-
-print(ar_tb2)
 
 csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
@@ -57,8 +59,8 @@ tb3 = Table.from_csv(ctx, args.table_path, csv_read_options)
 
 tb3.show()
 
-# tb1: Table = csv_reader.read(ctx, args.table_path, ',')
-#
-# print(f"Cylon Table Rows {tb1.rows}, Columns {tb1.columns}")
+csv_write_options = CSVWriteOptions().with_delimiter(',')
+
+tb3.to_csv('/tmp/temp.csv', csv_write_options)
 
 ctx.finalize()

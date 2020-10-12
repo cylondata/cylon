@@ -22,10 +22,10 @@ from pycylon.common.join_config cimport CJoinConfig
 from pycylon.common.join_config import PJoinType
 from pycylon.common.join_config import PJoinAlgorithm
 from pycylon.io.csv_read_config cimport CCSVReadOptions
+from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pyarrow.lib cimport CTable as CArrowTable
-from pyarrow.lib cimport pyarrow_unwrap_table
-from pyarrow.lib cimport pyarrow_wrap_table
 from libcpp.memory cimport shared_ptr
+from libcpp.vector cimport vector
 
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
@@ -41,8 +41,10 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
         CStatus ToArrowTable(shared_ptr[CArrowTable] &output)
 
         @staticmethod
-        CStatus FromCSV(shared_ptr[CCylonContext] &ctx, string &path, shared_ptr[CTable]
+        CStatus FromCSV(shared_ptr[CCylonContext] &ctx, const string &path, shared_ptr[CTable]
                         &tableOut, const CCSVReadOptions &options)
+
+        CStatus WriteCSV(const string &path, const CCSVWriteOptions &options)
 
         int Columns()
 
@@ -55,8 +57,6 @@ cdef class Table:
     cdef:
         shared_ptr[CTable] table_shd_ptr
         shared_ptr[CTable] *table_out_shd_ptr
-        shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
-        shared_ptr[CCylonContext] ctx_shd_ptr
         dict __dict__
 
         void init(self, const shared_ptr[CTable]& table)
