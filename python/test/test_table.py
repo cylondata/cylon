@@ -42,6 +42,12 @@ tb = Table(pyarrow_table, ctx)
 
 tb.show()
 
+tb2 = Table.from_arrow(ctx, pyarrow_table)
+
+tb2.show()
+
+
+
 # tb1: Table = csv_reader.read(ctx, args.table_path, ',')
 #
 # print(f"Cylon Table Rows {tb1.rows}, Columns {tb1.columns}")

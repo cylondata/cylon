@@ -28,7 +28,9 @@ from libcpp.memory cimport shared_ptr, make_shared
 
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
-from pycylon.api.lib cimport pycylon_unwrap_context
+from pycylon.api.lib cimport (pycylon_unwrap_context,
+pycylon_unwrap_table_out_ptr,
+pycylon_wrap_table)
 
 import pyarrow as pa
 import numpy as np
@@ -41,14 +43,16 @@ Cylon Table definition mapping
 '''
 
 cdef class Table:
-    def __cinit__(self, pyarrow_table not None, context not None, columns=None):
+    def __cinit__(self, pyarrow_table=None, context=None, columns=None):
         if self._is_pyarrow_table(pyarrow_table) and self._is_pycylon_context(context):
             self.c_arrow_tb_shd_ptr = pyarrow_unwrap_table(pyarrow_table)
             self.ctx_shd_ptr = pycylon_unwrap_context(context)
             self.table_shd_ptr = make_shared[CTable](self.c_arrow_tb_shd_ptr, self.ctx_shd_ptr)
-
         else:
             pass
+
+    cdef void init(self, const shared_ptr[CTable]& table):
+        self.table_shd_ptr = table
 
     @staticmethod
     def _is_pyarrow_table(pyarrow_table):
@@ -60,15 +64,23 @@ cdef class Table:
 
     @staticmethod
     def from_arrow(context, pyarrow_table):
-        if Table._is_pyarrow_table(pyarrow_table):
-            pyarrow_unwrap_table(pyarrow_table)
-            pycylon_unwrap_context(context)
-            #CTable.FromArrowTable(pycylon_unwrap_context(context), pyarrow_unwrap_table(
-            # pyarrow_table))
+        print(type(context), type(pyarrow_table))
+        cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
+        cdef shared_ptr[CArrowTable] arw_table = pyarrow_unwrap_table(pyarrow_table)
+        cdef shared_ptr[CTable] cn_table
+        cdef CStatus status = CTable.FromArrowTable(ctx, arw_table, &cn_table)
+
+        if status.is_ok():
+            return pycylon_wrap_table(cn_table)
+        else:
+            raise Exception("Table couldn't be created from PyArrow Table")
+        #Table._from_arrow(context, pyarrow_table)
 
     def show(self):
         self.table_shd_ptr.get().Print()
 
+    def to_arrow(self):
+        cdef shared_ptr[CArrowTable] converted_tb
 
 # cdef class Table:
 #     def __cinit__(self, string id, context):
