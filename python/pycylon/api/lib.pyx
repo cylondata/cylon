@@ -37,11 +37,11 @@ cdef api shared_ptr[CCylonContext] pycylon_unwrap_context(object context):
         return ctx.ctx_shd_ptr
     return CCylonContext.Init()
 
-cdef api shared_ptr[CTable]*pycylon_unwrap_table_out_ptr(object table):
+cdef api shared_ptr[CTable] pycylon_unwrap_table(object table):
     cdef Table tb
     if pyclon_is_table(table):
         tb = <Table> table
-        return tb.table_out_shd_ptr
+        return tb.table_shd_ptr
     else:
         raise ValueError('Passed object is not a Cylon Table')
 

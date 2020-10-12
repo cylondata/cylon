@@ -35,7 +35,7 @@ from libcpp.memory cimport shared_ptr, make_shared
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 from pycylon.api.lib cimport (pycylon_unwrap_context,
-pycylon_unwrap_table_out_ptr,
+pycylon_unwrap_table,
 pycylon_wrap_table,
 pycylon_unwrap_csv_read_options,
 pycylon_unwrap_csv_write_options)
@@ -125,6 +125,26 @@ cdef class Table:
         else:
             raise Exception("Table couldn't be sorted")
 
+    @staticmethod
+    def merge(ctx, tables: List[Table]) -> Table:
+        cdef vector[shared_ptr[CTable]] ctables
+        cdef shared_ptr[CTable] curTable
+        cdef shared_ptr[CTable] output
+        cdef CStatus status
+        cdef shared_ptr[CCylonContext] sp_ctx = pycylon_unwrap_context(ctx)
+        if tables:
+            for table in tables:
+                curTable = pycylon_unwrap_table(table)
+                ctables.push_back(curTable)
+            status = CTable.Merge(sp_ctx, ctables, output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception("Tables couldn't be merged")
+        else:
+            raise ValueError("Tables are not parsed for merge")
+
+
     @property
     def column_names(self):
         return pyarrow_wrap_table(pyarrow_unwrap_table(self.to_arrow())).column_names
@@ -138,6 +158,13 @@ cdef class Table:
             raise ValueError(f"Column {column_name} does not exist in the table")
         return index
 
+    @property
+    def columns_count(self) -> int:
+        return self.table_shd_ptr.get().Columns()
+
+    @property
+    def rows_count(self) -> int:
+        return self.table_shd_ptr.get().Rows()
 
     def _resolve_join_column_indices_from_column_names(self, column_names: List[
     str], op_column_names: List[str]) -> List[int]:

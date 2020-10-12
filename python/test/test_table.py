@@ -72,4 +72,12 @@ tb5.show()
 
 print(tb4.column_names)
 
+tb6 = Table.merge(ctx, [tb4, tb4])
+
+tb6.show()
+
+print(f"Tb5 : Rows {tb5.rows_count}, Columns : {tb5.columns_count}")
+
+print(f"After Merge Tb6 : Rows {tb6.rows_count}, Columns : {tb6.columns_count}")
+
 ctx.finalize()
