@@ -76,6 +76,10 @@ cdef extern from "../../../cpp/src/cylon/io/csv_read_config.hpp" namespace "cylo
         shared_ptr[void] GetHolder() const
 
 
+cdef class CSVReadOptions:
+    cdef:
+        CCSVReadOptions *thisPtr
+        vector[string] cpp_strings
 
 
 

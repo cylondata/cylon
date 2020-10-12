@@ -25,8 +25,6 @@ Pandas.
 '''
 
 cdef class CSVReadOptions:
-    cdef CCSVReadOptions *thisPtr
-    cdef vector[string] cpp_strings
 
     def __cinit__(self):
         self.thisPtr = new CCSVReadOptions()

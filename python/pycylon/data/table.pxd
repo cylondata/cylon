@@ -41,8 +41,8 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
         CStatus ToArrowTable(shared_ptr[CArrowTable] &output)
 
         @staticmethod
-        CStatus FromCSV(shared_ptr[CCylonContext] & ctx, string & path, shared_ptr[CTable]
-                        & tableOut, const CCSVReadOptions &options)
+        CStatus FromCSV(shared_ptr[CCylonContext] &ctx, string &path, shared_ptr[CTable]
+                        &tableOut, const CCSVReadOptions &options)
 
         int Columns()
 

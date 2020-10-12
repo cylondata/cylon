@@ -20,17 +20,20 @@ from pycylon.common.join_config cimport CJoinAlgorithm
 from pycylon.common.join_config cimport CJoinConfig
 from pycylon.common.join_config import PJoinType
 from pycylon.common.join_config import PJoinAlgorithm
+from pycylon.io.csv_read_config cimport CCSVReadOptions
+from pycylon.io.csv_read_config import CSVReadOptions
+from pycylon.io.csv_read_config cimport CSVReadOptions
 from pyarrow.lib cimport CTable as CArrowTable
 from pycylon.data.table cimport CTable
-from pyarrow.lib cimport pyarrow_unwrap_table
-from pyarrow.lib cimport pyarrow_wrap_table
+from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table)
 from libcpp.memory cimport shared_ptr, make_shared
 
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 from pycylon.api.lib cimport (pycylon_unwrap_context,
 pycylon_unwrap_table_out_ptr,
-pycylon_wrap_table)
+pycylon_wrap_table,
+pycylon_unwrap_csv_read_options)
 
 import pyarrow as pa
 import numpy as np
@@ -64,7 +67,6 @@ cdef class Table:
 
     @staticmethod
     def from_arrow(context, pyarrow_table):
-        print(type(context), type(pyarrow_table))
         cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
         cdef shared_ptr[CArrowTable] arw_table = pyarrow_unwrap_table(pyarrow_table)
         cdef shared_ptr[CTable] cn_table
@@ -74,13 +76,29 @@ cdef class Table:
             return pycylon_wrap_table(cn_table)
         else:
             raise Exception("Table couldn't be created from PyArrow Table")
-        #Table._from_arrow(context, pyarrow_table)
+
+    @staticmethod
+    def from_csv(context, path, csv_read_options):
+        cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
+        cdef string cpath = path.encode()
+        cdef CCSVReadOptions c_csv_read_options = pycylon_unwrap_csv_read_options(csv_read_options)
+        cdef shared_ptr[CTable] cn_table
+        cdef CStatus status = CTable.FromCSV(ctx, cpath, cn_table, c_csv_read_options)
+        if status.is_ok():
+            return pycylon_wrap_table(cn_table)
+        else:
+            raise Exception("Table couldn't be created from CSV")
 
     def show(self):
         self.table_shd_ptr.get().Print()
 
     def to_arrow(self):
         cdef shared_ptr[CArrowTable] converted_tb
+        cdef CStatus status = self.table_shd_ptr.get().ToArrowTable(converted_tb)
+        if status.is_ok():
+            return pyarrow_wrap_table(converted_tb)
+        else:
+            raise Exception("Table couldn't be converted to a PyArrow Table")
 
 # cdef class Table:
 #     def __cinit__(self, string id, context):
