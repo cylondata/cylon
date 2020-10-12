@@ -46,6 +46,8 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         CStatus WriteCSV(const string &path, const CCSVWriteOptions &options)
 
+        CStatus Sort(int sort_column, shared_ptr[CTable] &output)
+
         int Columns()
 
         int Rows()

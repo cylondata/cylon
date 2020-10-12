@@ -111,6 +111,89 @@ cdef class Table:
         else:
             raise Exception("Table couldn't be converted to a PyArrow Table")
 
+    def sort(self, index) -> Table:
+        cdef shared_ptr[CTable] output
+        sort_index = -1
+        if isinstance(index, str):
+            sort_index = self._resolve_column_index_from_column_name(index)
+        else:
+            sort_index = index
+
+        cdef CStatus status = self.table_shd_ptr.get().Sort(sort_index, output)
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise Exception("Table couldn't be sorted")
+
+    @property
+    def column_names(self):
+        return pyarrow_wrap_table(pyarrow_unwrap_table(self.to_arrow())).column_names
+
+    def _resolve_column_index_from_column_name(self, column_name) -> int:
+        index = None
+        for idx, col_name in enumerate(self.column_names):
+            if column_name == col_name:
+                index = idx
+        if not index:
+            raise ValueError(f"Column {column_name} does not exist in the table")
+        return index
+
+
+    def _resolve_join_column_indices_from_column_names(self, column_names: List[
+    str], op_column_names: List[str]) -> List[int]:
+        resolve_col_ids = []
+        for op_col_id, op_column_name in enumerate(op_column_names):
+            for col_id, column_name in enumerate(column_names):
+                if op_column_name == column_name:
+                    resolve_col_ids.append(col_id)
+        return resolve_col_ids
+
+    def _get_join_column_indices(self, table: Table, **kwargs):
+        ## Check if Passed values are based on left and right column names or indices
+        left_cols = kwargs.get('left_on')
+        right_cols = kwargs.get('right_on')
+        column_names = kwargs.get('on')
+
+        table_col_names_list = [self.column_names, table.column_names]
+
+        if left_cols and right_cols and isinstance(left_cols, List) and isinstance(right_cols,
+                                                                                   List):
+            if isinstance(left_cols[0], str) and isinstance(right_cols[0], str):
+                left_cols = self._resolve_join_column_indices_from_column_names(self.column_names,
+                                                                           left_cols)
+                right_cols = self._resolve_join_column_indices_from_column_names(table.column_names,
+                                                                            right_cols)
+                self._check_column_names_viable(left_cols, right_cols)
+
+                return left_cols, right_cols
+            elif isinstance(left_cols[0], int) and isinstance(right_cols[0], int):
+                return left_cols, right_cols
+        ## Check if Passed values are based on common column names in two tables
+        elif column_names and isinstance(column_names, List):
+            if isinstance(column_names[0], str):
+                left_cols = self._resolve_join_column_indices_from_column_names(self.column_names,
+                                                                           column_names)
+                right_cols = self._resolve_join_column_indices_from_column_names(table.column_names,
+                                                                            column_names)
+                self._check_column_names_viable(left_cols, right_cols)
+                return left_cols, right_cols
+            if isinstance(column_names[0], int):
+                return column_names, column_names
+        else:
+            raise TypeError("kwargs 'on' or 'left_on' and 'right_on' must be provided")
+
+        if not (left_cols and isinstance(left_cols[0], int)) and not (right_cols and isinstance(
+                right_cols[0], int)):
+            raise TypeError("kwargs 'on' or 'left_on' and 'right_on' must be type List and contain "
+                            "int type or str type and cannot be None")
+
+    def _is_column_indices_viable(self, left_cols, right_cols):
+        return left_cols and right_cols
+
+    def _check_column_names_viable(self, left_cols, right_cols):
+        if not self._is_column_indices_viable(left_cols, right_cols):
+                    raise ValueError("Provided Column Names or Column Indices not valid.")
+
 # cdef class Table:
 #     def __cinit__(self, string id, context):
 #         '''

@@ -52,7 +52,6 @@ tb2 = Table.from_arrow(ctx, pyarrow_table)
 
 tb2.show()
 
-
 csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
 tb3 = Table.from_csv(ctx, args.table_path, csv_read_options)
@@ -62,5 +61,15 @@ tb3.show()
 csv_write_options = CSVWriteOptions().with_delimiter(',')
 
 tb3.to_csv('/tmp/temp.csv', csv_write_options)
+
+tb4 = tb3.sort(1)
+
+tb4.show()
+
+tb5 = tb3.sort('use_type_id')
+
+tb5.show()
+
+print(tb4.column_names)
 
 ctx.finalize()
