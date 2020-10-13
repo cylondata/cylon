@@ -28,4 +28,6 @@ cdef api CCSVReadOptions pycylon_unwrap_csv_read_options(object csv_read_options
 
 cdef api CCSVWriteOptions pycylon_unwrap_csv_write_options(object csv_write_options)
 
-cdef api object pycylon_wrap_table(const shared_ptr[CTable]& ctable)
+cdef api object pycylon_wrap_table(const shared_ptr[CTable] &ctable)
+
+cdef api object pycylon_wrap_context(const shared_ptr[CCylonContext] &ctx)
