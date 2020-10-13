@@ -144,7 +144,6 @@ cdef class Table:
         else:
             raise ValueError("Tables are not parsed for merge")
 
-
     @property
     def column_names(self):
         return pyarrow_wrap_table(pyarrow_unwrap_table(self.to_arrow())).column_names
@@ -167,7 +166,7 @@ cdef class Table:
         return self.table_shd_ptr.get().Rows()
 
     def _resolve_join_column_indices_from_column_names(self, column_names: List[
-    str], op_column_names: List[str]) -> List[int]:
+        str], op_column_names: List[str]) -> List[int]:
         resolve_col_ids = []
         for op_col_id, op_column_name in enumerate(op_column_names):
             for col_id, column_name in enumerate(column_names):
@@ -187,9 +186,9 @@ cdef class Table:
                                                                                    List):
             if isinstance(left_cols[0], str) and isinstance(right_cols[0], str):
                 left_cols = self._resolve_join_column_indices_from_column_names(self.column_names,
-                                                                           left_cols)
+                                                                                left_cols)
                 right_cols = self._resolve_join_column_indices_from_column_names(table.column_names,
-                                                                            right_cols)
+                                                                                 right_cols)
                 self._check_column_names_viable(left_cols, right_cols)
 
                 return left_cols, right_cols
@@ -199,9 +198,9 @@ cdef class Table:
         elif column_names and isinstance(column_names, List):
             if isinstance(column_names[0], str):
                 left_cols = self._resolve_join_column_indices_from_column_names(self.column_names,
-                                                                           column_names)
+                                                                                column_names)
                 right_cols = self._resolve_join_column_indices_from_column_names(table.column_names,
-                                                                            column_names)
+                                                                                 column_names)
                 self._check_column_names_viable(left_cols, right_cols)
                 return left_cols, right_cols
             if isinstance(column_names[0], int):
@@ -219,7 +218,91 @@ cdef class Table:
 
     def _check_column_names_viable(self, left_cols, right_cols):
         if not self._is_column_indices_viable(left_cols, right_cols):
-                    raise ValueError("Provided Column Names or Column Indices not valid.")
+            raise ValueError("Provided Column Names or Column Indices not valid.")
+
+    def __get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
+                          right_column_index: int):
+        if left_column_index is None or right_column_index is None:
+            raise Exception("Join Column index not provided")
+
+        if join_algorithm is None:
+            join_algorithm = PJoinAlgorithm.HASH.value
+
+        if join_algorithm == PJoinAlgorithm.HASH.value:
+
+            if join_type == PJoinType.INNER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CHASH)
+            elif join_type == PJoinType.LEFT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CHASH)
+            elif join_type == PJoinType.RIGHT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CHASH)
+            elif join_type == PJoinType.OUTER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CHASH)
+            else:
+                raise ValueError("Unsupported Join Type {}".format(join_type))
+
+        elif join_algorithm == PJoinAlgorithm.SORT.value:
+
+            if join_type == PJoinType.INNER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CSORT)
+            elif join_type == PJoinType.LEFT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CSORT)
+            elif join_type == PJoinType.RIGHT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CSORT)
+            elif join_type == PJoinType.OUTER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
+                                             right_column_index, CJoinAlgorithm.CSORT)
+            else:
+                raise ValueError("Unsupported Join Type {}".format(join_type))
+        else:
+            if join_type == PJoinType.INNER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
+                                             right_column_index)
+            elif join_type == PJoinType.LEFT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index)
+            elif join_type == PJoinType.RIGHT.value:
+                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
+                                             right_column_index)
+            elif join_type == PJoinType.OUTER.value:
+                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
+                                             right_column_index)
+            else:
+                raise ValueError("Unsupported Join Type {}".format(join_type))
+
+    def join(self, table: Table, join_type: str,
+             algorithm: str, **kwargs) -> Table:
+        '''
+        Joins two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :param join_type: Join Type as str ["inner", "left", "right", "outer"]
+        :param algorithm: Join Algorithm as str ["hash", "sort"]
+        :kwargs left_on: Join column of the left table as List[int] or List[str], right_on:
+        Join column of the right table as List[int] or List[str], on: Join column in common with
+        both tables as a List[int] or List[str].
+        :return: Joined PyCylon table
+        '''
+        cdef shared_ptr[CTable] output
+        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
+
+        # Cylon only supports join by one column and retrieve first left and right column when
+        # resolving join configs
+        self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
+                               left_column_index=left_cols[0],
+                               right_column_index=right_cols[0])
+        cdef CJoinConfig *jc1 = self.jcPtr
+        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
+        cdef CStatus status = CTable.Join(self.table_shd_ptr, right, jc1[0], &output)
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise ValueError("Join operation failed!")
 
 # cdef class Table:
 #     def __cinit__(self, string id, context):

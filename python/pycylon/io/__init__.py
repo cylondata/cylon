@@ -11,3 +11,6 @@
  # See the License for the specific language governing permissions and
  # limitations under the License.
  ##
+
+from pycylon.io.csv_read_config import CSVReadOptions
+from pycylon.io.csv_write_config import CSVWriteOptions

@@ -16,16 +16,16 @@
 """
 Run test:
 
->>> python python/test/test_table.py --table_path /tmp/csv.csv
+>>> python python/test/test_table.py --table_path /tmp/user_device_tm_1.csv
 """
 
 import pyarrow as pa
 from pyarrow.csv import read_csv
-from pycylon.data.table import Table
-from pycylon.ctx.context import CylonContext
-from pycylon.net.mpi_config import MPIConfig
-from pycylon.io.csv_read_config import CSVReadOptions
-from pycylon.io.csv_write_config import CSVWriteOptions
+from pycylon import Table
+from pycylon import CylonContext
+from pycylon.net import MPIConfig
+from pycylon.io import CSVReadOptions
+from pycylon.io import CSVWriteOptions
 import argparse
 
 mpi_config = MPIConfig()
