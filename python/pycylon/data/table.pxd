@@ -104,9 +104,11 @@ cdef class Table:
 
         void init(self, const shared_ptr[CTable]& table)
 
-        shared_ptr[CTable] init_ra_params(self, table, join_type, join_algorithm, kwargs)
+        shared_ptr[CTable] init_join_ra_params(self, table, join_type, join_algorithm, kwargs)
 
-        _get_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status)
+        _get_join_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status)
+
+        _get_ra_response(self, table, ra_op_name)
 
 # cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table":
 #     cdef cppclass CxTable "cylon::python::table::CxTable":

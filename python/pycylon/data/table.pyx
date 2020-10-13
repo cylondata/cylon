@@ -158,11 +158,11 @@ cdef class Table:
         return index
 
     @property
-    def columns_count(self) -> int:
+    def column_count(self) -> int:
         return self.table_shd_ptr.get().Columns()
 
     @property
-    def rows_count(self) -> int:
+    def row_count(self) -> int:
         return self.table_shd_ptr.get().Rows()
 
     @property
@@ -280,7 +280,7 @@ cdef class Table:
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
 
-    cdef shared_ptr[CTable] init_ra_params(self, table, join_type, algorithm, kwargs):
+    cdef shared_ptr[CTable] init_join_ra_params(self, table, join_type, algorithm, kwargs):
         left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
 
         # Cylon only supports join by one column and retrieve first left and right column when
@@ -291,11 +291,36 @@ cdef class Table:
         cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
         return right
 
-    cdef _get_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status):
+    cdef _get_join_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status):
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
             raise ValueError(f"{op_name} operation failed!")
+
+    cdef _get_ra_response(self, table, ra_op_name):
+        cdef shared_ptr[CTable] output
+        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
+        cdef CStatus status
+
+        if ra_op_name == 'union':
+            status = CTable.Union(self.table_shd_ptr, right, output)
+        if ra_op_name == 'distributed_union':
+            status = CTable.DistributedUnion(self.table_shd_ptr, right, output)
+        if ra_op_name == 'intersect':
+            status = CTable.Intersect(self.table_shd_ptr, right, output)
+        if ra_op_name == 'distributed_intersect':
+            status = CTable.DistributedIntersect(self.table_shd_ptr, right, output)
+        if ra_op_name == 'subtract':
+            status = CTable.Subtract(self.table_shd_ptr, right, output)
+        if ra_op_name == 'distributed_subtract':
+            status = CTable.DistributedSubtract(self.table_shd_ptr, right, output)
+
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise ValueError(f"{ra_op_name} operation failed!")
+
+
 
     def join(self, table: Table, join_type: str,
              algorithm: str, **kwargs) -> Table:
@@ -310,10 +335,10 @@ cdef class Table:
         :return: Joined PyCylon table
         '''
         cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] right = self.init_ra_params(table, join_type, algorithm, kwargs)
+        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm, kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
         cdef CStatus status = CTable.Join(self.table_shd_ptr, right, jc1[0], &output)
-        return self._get_ra_response("Join", output, status)
+        return self._get_join_ra_response("Join", output, status)
 
 
     def distributed_join(self, table: Table, join_type: str,
@@ -329,10 +354,10 @@ cdef class Table:
         :return: Joined PyCylon table
         '''
         cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] right = self.init_ra_params(table, join_type, algorithm, kwargs)
+        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm, kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
         cdef CStatus status = CTable.DistributedJoin(self.table_shd_ptr, right, jc1[0], &output)
-        return self._get_ra_response("Distributed Join", output, status)
+        return self._get_join_ra_response("Distributed Join", output, status)
 
     def union(self, table: Table) -> Table:
         '''
@@ -340,13 +365,47 @@ cdef class Table:
         :param table: PyCylon table on which the join is performed (becomes the left table)
         :return: Union PyCylon table
         '''
+        return self._get_ra_response(table, 'union')
 
     def distributed_union(self, table: Table) -> Table:
         '''
-        Union two PyCylon tables
+        Union two PyCylon tables in distributed memory
         :param table: PyCylon table on which the join is performed (becomes the left table)
         :return: Union PyCylon table
         '''
+        return self._get_ra_response(table, 'distributed_union')
+
+    def subtract(self, table: Table) -> Table:
+        '''
+        Subtract two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Union PyCylon table
+        '''
+        return self._get_ra_response(table, 'subtract')
+
+    def distributed_subtract(self, table: Table) -> Table:
+        '''
+        Subtract two PyCylon tables in distributed memory
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Union PyCylon table
+        '''
+        return self._get_ra_response(table, 'distributed_subtract')
+
+    def intersect(self, table: Table) -> Table:
+        '''
+        Intersect two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Union PyCylon table
+        '''
+        return self._get_ra_response(table, 'intersect')
+
+    def distributed_intersect(self, table: Table) -> Table:
+        '''
+        Intersect two PyCylon tables in distributed memory
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Union PyCylon table
+        '''
+        return self._get_ra_response(table, 'distributed_intersect')
 
 
 # cdef class Table:

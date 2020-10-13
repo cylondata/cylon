@@ -35,4 +35,7 @@ tb3: Table = tb1.distributed_join(table=tb2,
 
 tb3.show()
 
+print(tb1.context.get_rank(), tb1.context.get_world_size(), tb3.context.get_rank(),
+      tb3.context.get_world_size())
+
 ctx.finalize()

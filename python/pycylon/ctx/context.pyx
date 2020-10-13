@@ -35,14 +35,11 @@ cdef class CylonContext:
         :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
         :return: None
         '''
-        # this close bypasses initializations when context wrapping is done.
-        if config is not None and distributed is not None:
-            if not distributed:
-                print("Single Process")
-                self.ctx_shd_ptr = CCylonContext.Init()
-            else:
-                print("Distributed")
-                self.ctx_shd_ptr = CCylonContext.InitDistributed(self.init_dist(config))
+
+        if not distributed and config is None:
+            self.ctx_shd_ptr = CCylonContext.Init()
+        if distributed and config is not None:
+            self.ctx_shd_ptr = CCylonContext.InitDistributed(self.init_dist(config))
 
     cdef void init(self, const shared_ptr[CCylonContext] &ctx):
         self.ctx_shd_ptr = ctx

@@ -69,10 +69,6 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 join_end_time - read_end_time).count() << "[ms]";
 
-  auto ctx2 = joined->GetContext();
-
-  std::cout << "Context info " << ctx.get()->GetRank() << ", " << ctx.get()->GetWorldSize() << std::endl;
-
   ctx->Finalize();
   return 0;
 }
