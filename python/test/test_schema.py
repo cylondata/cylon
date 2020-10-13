@@ -1,26 +1,20 @@
+##
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
+ # You may obtain a copy of the License at
+ #
+ # http://www.apache.org/licenses/LICENSE-2.0
+ #
+ # Unless required by applicable law or agreed to in writing, software
+ # distributed under the License is distributed on an "AS IS" BASIS,
+ # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ ##
+
 from pycylon.csv import csv_reader
 from pycylon import Table
 from pycylon import CylonContext
 import argparse
 
-ctx: CylonContext = CylonContext("mpi")
 
-parser = argparse.ArgumentParser(description='PyCylon Table Conversion')
-parser.add_argument('--table1_path', type=str, help='Path to table 1 csv')
-parser.add_argument('--table2_path', type=str, help='Path to table 2 csv')
-
-args = parser.parse_args()
-
-
-tb1: Table = csv_reader.read(ctx, args.table1_path, ',')
-
-tb2: Table = csv_reader.read(ctx, args.table2_path, ',')
-
-configs = {'join_type': 'left', 'algorithm': 'hash', 'left_col': 0, 'right_col': 0}
-
-tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type=configs['join_type'], algorithm=configs['algorithm'],
-                                  left_col=configs['left_col'], right_col=configs['right_col'])
-
-tb3.show()
-
-ctx.finalize()
