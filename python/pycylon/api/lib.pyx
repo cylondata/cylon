@@ -28,6 +28,11 @@ from pycylon.io.csv_read_config cimport CSVReadOptions
 from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pycylon.io.csv_write_config import CSVWriteOptions
 from pycylon.io.csv_write_config cimport CSVWriteOptions
+from pycylon.data.data_type cimport CType
+from pycylon.data.data_type import Type
+from pycylon.data.data_type cimport CLayout
+from pycylon.data.data_type import Layout
+
 
 cdef api bint pyclon_is_context(object context):
     return isinstance(context, CylonContext)
@@ -43,6 +48,12 @@ cdef api bint pyclon_is_csv_read_options(object csv_read_options):
 
 cdef api bint pyclon_is_csv_write_options(object csv_write_options):
     return isinstance(csv_write_options, CSVWriteOptions)
+
+cdef api bint pyclon_is_type(object type):
+    return isinstance(type, Type)
+
+cdef api bint pyclon_is_layout(object layout):
+    return isinstance(layout, Layout)
 
 cdef api shared_ptr[CCylonContext] pycylon_unwrap_context(object context):
     cdef CylonContext ctx
@@ -83,6 +94,12 @@ cdef api CCSVWriteOptions pycylon_unwrap_csv_write_options(object csv_write_opti
     else:
         raise ValueError('Passed object is not an instance of CSVWriteOptions')
 
+cdef api CType pycylon_unwrap_type(object type):
+    pass
+
+cdef api CLayout pycylon_unwrap_layout(object layout):\
+    pass
+
 cdef api object pycylon_wrap_table(const shared_ptr[CTable]& ctable):
     cdef Table table = Table.__new__(Table)
     table.init(ctable)
@@ -92,3 +109,11 @@ cdef api object pycylon_wrap_context(const shared_ptr[CCylonContext] &ctx):
     cdef CylonContext context = CylonContext.__new__(CylonContext)
     context.init(ctx)
     return context
+
+cdef api object pycylon_wrap_type(const CType &type):
+    pass
+
+cdef api object pycylon_wrap_layout(const CLayout &layout):
+    pass
+
+

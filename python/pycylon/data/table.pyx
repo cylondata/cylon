@@ -100,8 +100,11 @@ cdef class Table:
             csv_write_options)
         self.table_shd_ptr.get().WriteCSV(cpath, c_csv_write_options)
 
-    def show(self):
-        self.table_shd_ptr.get().Print()
+    def show(self, row1=-1, row2=-1, col1=-1, col2=-1):
+        if row1==-1 and row2==-1 and col1==-1 and col2==-1:
+            self.table_shd_ptr.get().Print()
+        else:
+            self.table_shd_ptr.get().Print(row1, row2, col1, col2)
 
     def to_arrow(self) -> pa.Table:
         cdef shared_ptr[CArrowTable] converted_tb
@@ -127,6 +130,12 @@ cdef class Table:
 
     def clear(self):
         self.table_shd_ptr.get().Clear()
+
+    def retain_memory(self, retain):
+        self.table_shd_ptr.get().retainMemory(retain)
+
+    def is_retain(self) -> bool:
+        self.table_shd_ptr.get().IsRetain()
 
     @staticmethod
     def merge(ctx, tables: List[Table]) -> Table:
@@ -156,7 +165,7 @@ cdef class Table:
         for idx, col_name in enumerate(self.column_names):
             if column_name == col_name:
                 return idx
-        if not index:
+        if index is None:
             raise ValueError(f"Column {column_name} does not exist in the table")
 
     @property
@@ -170,6 +179,14 @@ cdef class Table:
     @property
     def context(self) -> CylonContext:
         return pycylon_wrap_context(self.table_shd_ptr.get().GetContext())
+
+    @property
+    def column_names(self) -> List[str]:
+        column_names = []
+        cdef vector[string] c_column_names = self.table_shd_ptr.get().ColumnNames()
+        for col_name in c_column_names:
+            column_names.append(col_name.decode())
+        return column_names
 
     def _resolve_join_column_indices_from_column_names(self, column_names: List[
         str], op_column_names: List[str]) -> List[int]:
@@ -322,8 +339,6 @@ cdef class Table:
         else:
             raise ValueError(f"{ra_op_name} operation failed!")
 
-
-
     def join(self, table: Table, join_type: str,
              algorithm: str, **kwargs) -> Table:
         '''
@@ -337,14 +352,14 @@ cdef class Table:
         :return: Joined PyCylon table
         '''
         cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm, kwargs)
+        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
+                                                                 kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
         cdef CStatus status = CTable.Join(self.table_shd_ptr, right, jc1[0], &output)
         return self._get_join_ra_response("Join", output, status)
 
-
     def distributed_join(self, table: Table, join_type: str,
-             algorithm: str, **kwargs) -> Table:
+                         algorithm: str, **kwargs) -> Table:
         '''
          Joins two PyCylon tables in distributed memory
         :param table: PyCylon table on which the join is performed (becomes the left table)
@@ -356,7 +371,8 @@ cdef class Table:
         :return: Joined PyCylon table
         '''
         cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm, kwargs)
+        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
+                                                                 kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
         cdef CStatus status = CTable.DistributedJoin(self.table_shd_ptr, right, jc1[0], &output)
         return self._get_join_ra_response("Distributed Join", output, status)

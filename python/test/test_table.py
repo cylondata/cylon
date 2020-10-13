@@ -59,6 +59,8 @@ tb3.to_csv('/tmp/temp.csv', csv_write_options)
 
 tb4 = tb3.sort(1)
 
+print(tb4.column_names)
+
 print(f"Sort Tb 1: Rows={tb4.row_count}, Columns={tb4.column_count}")
 
 tb5 = tb3.sort('use_type_id')
@@ -82,5 +84,9 @@ print(f"Project Tb: Rows={tb8.row_count}, Columns={tb8.column_count}")
 tb9 = tb3.project(['use_id', 'platform_version'])
 
 print(f"Project Tb By Columns: Rows={tb9.row_count}, Columns={tb9.column_count}")
+
+print(tb9.column_names)
+
+tb9.show(row1=0, row2=5, col1=0, col2=2)
 
 ctx.finalize()

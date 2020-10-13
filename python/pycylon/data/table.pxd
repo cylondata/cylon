@@ -13,6 +13,7 @@
 ##
 
 from libcpp.string cimport string
+from libcpp cimport bool
 from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 import uuid
@@ -26,7 +27,6 @@ from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pyarrow.lib cimport CTable as CArrowTable
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
-
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 
@@ -94,9 +94,17 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         void Print()
 
+        void Print(int row1, int row2, int col1, int col2)
+
         void Clear()
 
         shared_ptr[CCylonContext] GetContext()
+
+        vector[string] ColumnNames()
+
+        void retainMemory(bool retain)
+
+        bool IsRetain() const
 
 
 cdef class Table:
