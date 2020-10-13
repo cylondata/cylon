@@ -56,21 +56,57 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
         CStatus Join(shared_ptr[CTable] &left, shared_ptr[CTable] &right,  CJoinConfig
         join_config, shared_ptr[CTable] *output)
 
+        @staticmethod
+        CStatus DistributedJoin(shared_ptr[CTable] &left, shared_ptr[CTable] &right,  CJoinConfig
+        join_config, shared_ptr[CTable] *output);
+
+        @staticmethod
+        CStatus Union(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[CTable]
+        &output)
+
+        @staticmethod
+        CStatus DistributedUnion(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[
+                CTable]
+        &output)
+
+        @staticmethod
+        CStatus Subtract(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[CTable]
+        &output)
+
+        @staticmethod
+        CStatus DistributedSubtract(shared_ptr[CTable] &first, shared_ptr[CTable] &second,
+                                   shared_ptr[CTable] &output)
+
+        @staticmethod
+        CStatus Intersect(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[CTable]
+        &output)
+
+        @staticmethod
+        CStatus DistributedIntersect(shared_ptr[CTable] &first, shared_ptr[CTable] &second,
+                                   shared_ptr[CTable] &output)
+
         int Columns()
 
         int Rows()
 
         void Print()
 
+        shared_ptr[CCylonContext] GetContext()
+
 
 cdef class Table:
     cdef:
         shared_ptr[CTable] table_shd_ptr
         shared_ptr[CTable] *table_out_shd_ptr
+        shared_ptr[CCylonContext] sp_context
         CJoinConfig *jcPtr
         dict __dict__
 
         void init(self, const shared_ptr[CTable]& table)
+
+        shared_ptr[CTable] init_ra_params(self, table, join_type, join_algorithm, kwargs)
+
+        _get_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status)
 
 # cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table":
 #     cdef cppclass CxTable "cylon::python::table::CxTable":

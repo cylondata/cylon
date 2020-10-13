@@ -10,7 +10,7 @@ from pycylon.io import CSVReadOptions
 import argparse
 
 mpi_config = MPIConfig()
-ctx: CylonContext = CylonContext(config=mpi_config, distributed=False)
+ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
 
 parser = argparse.ArgumentParser(description='PyCylon Table Conversion')
 parser.add_argument('--table1_path', type=str, help='Path to table 1 csv')
@@ -26,7 +26,7 @@ tb2: Table = Table.from_csv(ctx, args.table2_path, csv_read_options)
 
 configs = {'join_type': 'inner', 'algorithm': 'sort'}
 
-tb3: Table = tb1.join(table=tb2,
+tb3: Table = tb1.distributed_join(table=tb2,
                       join_type=configs['join_type'],
                       algorithm=configs['algorithm'],
                       left_on=[3],

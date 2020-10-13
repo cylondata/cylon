@@ -29,22 +29,26 @@ from pycylon.net.comm_config cimport CommConfig
 cdef class CylonContext:
 
 
-    def __cinit__(self, config, distributed not None):
+    def __cinit__(self, config=None, distributed=None):
         '''
         Initializing the Cylon Context based on the distributed or non-distributed context
         :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
         :return: None
         '''
-        if not distributed:
-            print("Single Process")
-            self.ctx_shd_ptr = CCylonContext.Init()
-        else:
-            print("Distributed")
-            self.ctx_shd_ptr = CCylonContext.InitDistributed(self.init_dist(config))
+        # this close bypasses initializations when context wrapping is done.
+        if config is not None and distributed is not None:
+            if not distributed:
+                print("Single Process")
+                self.ctx_shd_ptr = CCylonContext.Init()
+            else:
+                print("Distributed")
+                self.ctx_shd_ptr = CCylonContext.InitDistributed(self.init_dist(config))
+
+    cdef void init(self, const shared_ptr[CCylonContext] &ctx):
+        self.ctx_shd_ptr = ctx
 
     cdef shared_ptr[CCommConfig] init_dist(self, config):
         return <shared_ptr[CCommConfig]> pycylon_unwrap_mpi_config(config)
-
 
     def get_rank(self) -> int:
         '''

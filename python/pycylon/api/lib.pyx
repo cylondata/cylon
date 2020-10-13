@@ -73,3 +73,8 @@ cdef api object pycylon_wrap_table(const shared_ptr[CTable]& ctable):
     cdef Table table = Table.__new__(Table)
     table.init(ctable)
     return table
+
+cdef api object pycylon_wrap_context(const shared_ptr[CCylonContext] &ctx):
+    cdef CylonContext context = CylonContext.__new__(CylonContext)
+    context.init(ctx)
+    return context

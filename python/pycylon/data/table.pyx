@@ -34,7 +34,8 @@ from libcpp.memory cimport shared_ptr, make_shared
 
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
-from pycylon.api.lib cimport (pycylon_unwrap_context,
+from pycylon.api.lib cimport (pycylon_wrap_context,
+pycylon_unwrap_context,
 pycylon_unwrap_table,
 pycylon_wrap_table,
 pycylon_unwrap_csv_read_options,
@@ -53,11 +54,10 @@ Cylon Table definition mapping
 cdef class Table:
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
         cdef shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
-        cdef shared_ptr[CCylonContext] ctx_shd_ptr
         if self._is_pycylon_context(context) and self._is_pyarrow_table(pyarrow_table):
             c_arrow_tb_shd_ptr = pyarrow_unwrap_table(pyarrow_table)
-            ctx_shd_ptr = pycylon_unwrap_context(context)
-            self.table_shd_ptr = make_shared[CTable](c_arrow_tb_shd_ptr, ctx_shd_ptr)
+            self.sp_context = pycylon_unwrap_context(context)
+            self.table_shd_ptr = make_shared[CTable](c_arrow_tb_shd_ptr, self.sp_context)
 
     cdef void init(self, const shared_ptr[CTable]& table):
         self.table_shd_ptr = table
@@ -164,6 +164,10 @@ cdef class Table:
     @property
     def rows_count(self) -> int:
         return self.table_shd_ptr.get().Rows()
+
+    @property
+    def context(self) -> CylonContext:
+        return pycylon_wrap_context(self.table_shd_ptr.get().GetContext())
 
     def _resolve_join_column_indices_from_column_names(self, column_names: List[
         str], op_column_names: List[str]) -> List[int]:
@@ -276,6 +280,23 @@ cdef class Table:
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
 
+    cdef shared_ptr[CTable] init_ra_params(self, table, join_type, algorithm, kwargs):
+        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
+
+        # Cylon only supports join by one column and retrieve first left and right column when
+        # resolving join configs
+        self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
+                               left_column_index=left_cols[0],
+                               right_column_index=right_cols[0])
+        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
+        return right
+
+    cdef _get_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status):
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise ValueError(f"{op_name} operation failed!")
+
     def join(self, table: Table, join_type: str,
              algorithm: str, **kwargs) -> Table:
         '''
@@ -289,20 +310,44 @@ cdef class Table:
         :return: Joined PyCylon table
         '''
         cdef shared_ptr[CTable] output
-        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
-
-        # Cylon only supports join by one column and retrieve first left and right column when
-        # resolving join configs
-        self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
-                               left_column_index=left_cols[0],
-                               right_column_index=right_cols[0])
+        cdef shared_ptr[CTable] right = self.init_ra_params(table, join_type, algorithm, kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
-        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
         cdef CStatus status = CTable.Join(self.table_shd_ptr, right, jc1[0], &output)
-        if status.is_ok():
-            return pycylon_wrap_table(output)
-        else:
-            raise ValueError("Join operation failed!")
+        return self._get_ra_response("Join", output, status)
+
+
+    def distributed_join(self, table: Table, join_type: str,
+             algorithm: str, **kwargs) -> Table:
+        '''
+         Joins two PyCylon tables in distributed memory
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :param join_type: Join Type as str ["inner", "left", "right", "outer"]
+        :param algorithm: Join Algorithm as str ["hash", "sort"]
+        :kwargs left_on: Join column of the left table as List[int] or List[str], right_on:
+        Join column of the right table as List[int] or List[str], on: Join column in common with
+        both tables as a List[int] or List[str].
+        :return: Joined PyCylon table
+        '''
+        cdef shared_ptr[CTable] output
+        cdef shared_ptr[CTable] right = self.init_ra_params(table, join_type, algorithm, kwargs)
+        cdef CJoinConfig *jc1 = self.jcPtr
+        cdef CStatus status = CTable.DistributedJoin(self.table_shd_ptr, right, jc1[0], &output)
+        return self._get_ra_response("Distributed Join", output, status)
+
+    def union(self, table: Table) -> Table:
+        '''
+        Union two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Union PyCylon table
+        '''
+
+    def distributed_union(self, table: Table) -> Table:
+        '''
+        Union two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: Union PyCylon table
+        '''
+
 
 # cdef class Table:
 #     def __cinit__(self, string id, context):
