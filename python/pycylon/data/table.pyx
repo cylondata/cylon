@@ -125,6 +125,9 @@ cdef class Table:
         else:
             raise Exception("Table couldn't be sorted")
 
+    def clear(self):
+        self.table_shd_ptr.get().Clear()
+
     @staticmethod
     def merge(ctx, tables: List[Table]) -> Table:
         cdef vector[shared_ptr[CTable]] ctables
@@ -152,10 +155,9 @@ cdef class Table:
         index = None
         for idx, col_name in enumerate(self.column_names):
             if column_name == col_name:
-                index = idx
+                return idx
         if not index:
             raise ValueError(f"Column {column_name} does not exist in the table")
-        return index
 
     @property
     def column_count(self) -> int:
@@ -407,6 +409,26 @@ cdef class Table:
         '''
         return self._get_ra_response(table, 'distributed_intersect')
 
+    def project(self, columns: List):
+        cdef vector[long] c_columns
+        cdef shared_ptr[CTable] output
+        cdef CStatus status
+        if columns:
+            if isinstance(columns[0], int) or isinstance(columns[0], str):
+                for column in columns:
+                    if isinstance(column, str):
+                        column = self._resolve_column_index_from_column_name(column)
+                    c_columns.push_back(column)
+                status = self.table_shd_ptr.get().Project(c_columns, output)
+                if status.is_ok():
+                    return pycylon_wrap_table(output)
+                else:
+                    raise ValueError("Project operation failed!")
+            else:
+                raise ValueError("Invalid column list, it must be column names in string or "
+                                 "column indices in int")
+        else:
+            raise ValueError("Columns not passed.")
 
 # cdef class Table:
 #     def __cinit__(self, string id, context):

@@ -85,11 +85,16 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
         CStatus DistributedIntersect(shared_ptr[CTable] &first, shared_ptr[CTable] &second,
                                    shared_ptr[CTable] &output)
 
+        @staticmethod
+        CStatus Project(const vector[long] &project_columns, shared_ptr[CTable] &output)
+
         int Columns()
 
         int Rows()
 
         void Print()
+
+        void Clear()
 
         shared_ptr[CCylonContext] GetContext()
 
