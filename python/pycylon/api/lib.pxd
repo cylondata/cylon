@@ -31,6 +31,8 @@ from pycylon.data.data_type cimport CType
 from pycylon.data.data_type import Type
 from pycylon.data.data_type cimport CLayout
 from pycylon.data.data_type import Layout
+from pycylon.data.data_type cimport CDataType
+from pycylon.data.data_type import DataType
 
 
 cdef api bint pyclon_is_context(object context)
@@ -42,6 +44,8 @@ cdef api shared_ptr[CCylonContext] pycylon_unwrap_context(object context)
 cdef api shared_ptr[CMPIConfig] pycylon_unwrap_mpi_config(object config)
 
 cdef api shared_ptr[CTable] pycylon_unwrap_table (object table)
+
+cdef api shared_ptr[CDataType] pycylon_unwrap_data_type (object data_type)
 
 cdef api CCSVReadOptions pycylon_unwrap_csv_read_options(object csv_read_options)
 
@@ -58,4 +62,8 @@ cdef api object pycylon_wrap_context(const shared_ptr[CCylonContext] &ctx)
 cdef api object pycylon_wrap_type(const CType &type)
 
 cdef api object pycylon_wrap_layout(const CLayout &layout)
+
+cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] &data_type)
+
+
 

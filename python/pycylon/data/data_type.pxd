@@ -24,7 +24,7 @@ from pycylon.ctx.context import CylonContext
 
 cdef extern from "../../../cpp/src/cylon/data_types.hpp" namespace "cylon":
     cdef cppclass CType 'cylon::Type':
-        enum ctype:
+        enum ctype 'type':
             # Boolean as 1 bit, LSB bit-packed ordering
             CBOOL 'cylon::Type::BOOL'
             # Unsigned 8-bit little-endian integer
@@ -85,18 +85,18 @@ cdef extern from "../../../cpp/src/cylon/data_types.hpp" namespace "cylon":
 
 cdef extern from "../../../cpp/src/cylon/data_types.hpp" namespace "cylon":
     cdef cppclass CLayout 'cylon::Layout':
-        enum clayout:
+        enum clayout 'layout':
             CFIXED_WIDTH 'cylon::Layout::FIXED_WIDTH'
             CVARIABLE_WIDTH 'cylon::Layout::VARIABLE_WIDTH'
 
 
 cdef extern from "../../../cpp/src/cylon/data_types.hpp" namespace "cylon":
     cdef cppclass CDataType "cylon::DataType":
-        DataType()
+        CDataType()
 
-        DataType(CType.ctype t)
+        CDataType(CType.ctype t)
 
-        DataType(CType.ctype t, CLayout.clayout l)
+        CDataType(CType.ctype t, CLayout.clayout l)
 
         CType.ctype getType()
 
@@ -105,5 +105,13 @@ cdef extern from "../../../cpp/src/cylon/data_types.hpp" namespace "cylon":
         @staticmethod
         shared_ptr[CDataType] Make(CType.ctype t, CLayout.clayout l)
 
+
+cdef extern from "../../../cpp/src/cylon/data_types.hpp" namespace "cylon":
+    shared_ptr[CDataType] TYPE_FACTORY(NAME, TYPE, LAYOUT)
+
+
 cdef class DataType:
-    pass
+    cdef:
+        CDataType *thisPtr
+        shared_ptr[CDataType] sp_data_type
+        void init(self, const shared_ptr[CDataType] &cdata_type)

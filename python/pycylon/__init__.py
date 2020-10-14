@@ -14,3 +14,30 @@
 
 from pycylon.data.table import Table
 from pycylon.ctx.context import CylonContext
+import numpy as np
+
+
+int = np.int
+int8 = np.int8
+int16 = np.int16
+int32 = np.int32
+
+uint = np.uint
+uint8 = np.uint8
+uint16 = np.uint16
+uint32 = np.uint32
+
+float = np.float
+float16 = np.float16
+float32 = np.float32
+float64 = np.float64
+
+double = np.double
+long = np.long
+
+byte = np.byte
+
+
+
+
+

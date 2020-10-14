@@ -107,6 +107,7 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
         bool IsRetain() const
 
 
+
 cdef class Table:
     cdef:
         shared_ptr[CTable] table_shd_ptr

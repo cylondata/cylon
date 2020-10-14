@@ -1,5 +1,8 @@
+from libcpp.memory cimport shared_ptr, make_shared
+from pycylon.data.data_type cimport CDataType
 from pycylon.data.data_type cimport CType
 from pycylon.data.data_type cimport CLayout
+
 
 cpdef enum Type:
     # Boolean as 1 bit, LSB bit-packed ordering
@@ -66,7 +69,27 @@ cpdef enum Layout:
     VARIABLE_WIDTH = CLayout.clayout.CVARIABLE_WIDTH
 
 cdef class DataType:
-
+    # TODO: Implement if Required
     def __cinit__(self, type, layout):
+        if type is None and layout is None:
+            self.thisPtr = new CDataType()
+            self.sp_data_type = make_shared[CDataType]()
         if type is not None and layout is None:
-            pass
+            if isinstance(type, Type):
+                self.thisPtr = new CDataType(type)
+                #self.sp_data_type = make_shared[CDataType](type)
+        if type is not None and layout is not None:
+            if isinstance(type, Type) and isinstance(layout,Layout):
+                self.thisPtr = new CDataType(type, layout)
+                self.sp_data_type = self.thisPtr.Make(type, layout)
+
+    cdef void init(self, const shared_ptr[CDataType] &cdata_type):
+        self.sp_data_type = cdata_type
+
+    @property
+    def type(self):
+        return self.sp_data_type.get().getType()
+
+    @property
+    def layout(self):
+        return self.sp_data_type.get().getLayout()

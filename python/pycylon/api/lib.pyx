@@ -32,6 +32,9 @@ from pycylon.data.data_type cimport CType
 from pycylon.data.data_type import Type
 from pycylon.data.data_type cimport CLayout
 from pycylon.data.data_type import Layout
+from pycylon.data.data_type cimport CDataType
+from pycylon.data.data_type import DataType
+from pycylon.data.data_type cimport DataType
 
 
 cdef api bint pyclon_is_context(object context):
@@ -54,6 +57,9 @@ cdef api bint pyclon_is_type(object type):
 
 cdef api bint pyclon_is_layout(object layout):
     return isinstance(layout, Layout)
+
+cdef api bint pyclon_is_data_type(object data_type):
+    return isinstance(data_type, DataType)
 
 cdef api shared_ptr[CCylonContext] pycylon_unwrap_context(object context):
     cdef CylonContext ctx
@@ -94,6 +100,14 @@ cdef api CCSVWriteOptions pycylon_unwrap_csv_write_options(object csv_write_opti
     else:
         raise ValueError('Passed object is not an instance of CSVWriteOptions')
 
+cdef api shared_ptr[CDataType] pycylon_unwrap_data_type (object data_type):
+    cdef DataType dt
+    if pyclon_is_data_type(data_type):
+        dt = <DataType> data_type
+        return dt.sp_data_type
+    else:
+        raise ValueError('Passed object is not an instance of DataType')
+
 cdef api CType pycylon_unwrap_type(object type):
     pass
 
@@ -115,5 +129,11 @@ cdef api object pycylon_wrap_type(const CType &type):
 
 cdef api object pycylon_wrap_layout(const CLayout &layout):
     pass
+
+cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] &cdata_type):
+    cdef DataType data_type = DataType.__new__(DataType)
+    data_type.init(cdata_type)
+    return data_type
+
 
 

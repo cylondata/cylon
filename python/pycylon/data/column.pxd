@@ -12,15 +12,78 @@
 # limitations under the License.
 ##
 
+# distutils: language = c++
+
 from libcpp.string cimport string
 from libcpp cimport bool
 from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
-from libcpp.memory cimport shared_ptr
+from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.vector cimport vector
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
+from pycylon.data.data_type cimport CDataType
+from pycylon.data.data_type cimport CType
+from pycylon.data.data_type cimport CLayout
+from pyarrow.lib cimport CArray as ArrowCAarray
+from pyarrow.lib cimport CChunkedArray as ArrowCChunkedAarray
+from pyarrow.lib cimport pyarrow_unwrap_array
+
 
 cdef extern from "../../../cpp/src/cylon/column.hpp" namespace "cylon":
     cdef cppclass CColumn "cylon::Column":
-        pass
+        CColumn(const string &id, const shared_ptr[CDataType] &type, const shared_ptr[
+                ArrowCChunkedAarray] &data_)
+
+        CColumn(const string &id, const shared_ptr[CDataType] &type, const shared_ptr[
+                ArrowCAarray] &data_)
+
+        shared_ptr[ArrowCChunkedAarray] GetColumnData() const
+
+        string GetId() const
+
+        shared_ptr[CDataType] GetDataType() const
+
+        @staticmethod
+        shared_ptr[CColumn] Make(const string &id, const shared_ptr[CDataType] &type,
+                                const shared_ptr[ArrowCChunkedAarray] &data_)
+
+        @staticmethod
+        shared_ptr[CColumn] Make(const string &id, const shared_ptr[CDataType] &type,
+                                const shared_ptr[ArrowCAarray] &data_)
+
+
+
+cdef extern from "../../../cpp/src/cylon/column.hpp" namespace "cylon":
+
+    ctypedef fused T:
+        signed char
+        signed short
+        signed int
+        signed long
+        signed long long
+
+        unsigned char
+        unsigned short
+        unsigned int
+        unsigned long
+        unsigned long long
+
+        float
+        double
+        long double
+
+    cdef cppclass CVectorColumn "cylon::VectorColumn"[T]:
+        CVectorColumn(const string &id, const shared_ptr[CDataType] &type, const shared_ptr[
+                vector[T]] &data_vector)
+
+        @staticmethod
+        shared_ptr[CVectorColumn[T]] Make(const string &id, const shared_ptr[CDataType] &type,
+                                          const shared_ptr[vector[T]] &data_vector)
+
+
+cdef class Column:
+    cdef:
+        CColumn *thisPtr
+        shared_ptr[CColumn] sp_column
+

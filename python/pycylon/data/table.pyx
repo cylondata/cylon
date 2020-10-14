@@ -101,7 +101,7 @@ cdef class Table:
         self.table_shd_ptr.get().WriteCSV(cpath, c_csv_write_options)
 
     def show(self, row1=-1, row2=-1, col1=-1, col2=-1):
-        if row1==-1 and row2==-1 and col1==-1 and col2==-1:
+        if row1 == -1 and row2 == -1 and col1 == -1 and col2 == -1:
             self.table_shd_ptr.get().Print()
         else:
             self.table_shd_ptr.get().Print(row1, row2, col1, col2)
@@ -445,6 +445,41 @@ cdef class Table:
                                  "column indices in int")
         else:
             raise ValueError("Columns not passed.")
+
+    @staticmethod
+    def from_numpy(context: CylonContext, col_names: List[str], ar_list: List[np.ndarray]) -> Table:
+        return Table.from_arrow(context, pa.Table.from_arrays(ar_list, names=col_names))
+
+    @staticmethod
+    def from_list(context: CylonContext, col_names: List[str], data_list: List) -> Table:
+        ar_list = []
+        if len(col_names) == len(data_list):
+            for data in data_list:
+                ar_list.append(data)
+            return Table.from_arrow(context, pa.Table.from_arrays(ar_list, names=col_names))
+        else:
+            raise ValueError("Column Names count doesn't match data columns count")
+
+    @staticmethod
+    def from_pydict(context: CylonContext, dictionary: dict) -> Table:
+        return Table.from_arrow(context, pa.Table.from_pydict(dictionary))
+
+    @staticmethod
+    def from_pandas(context: CylonContext = None, df: pd.DataFrame = None, preserve_index=False,
+                    nthreads=False, columns=None, safe=False) -> Table:
+        return Table.from_arrow(context,
+                                pa.Table.from_pandas(df=df, schema=None, preserve_index=True,
+                                                     nthreads=nthreads, columns=columns, safe=safe)
+                                )
+
+    def to_pandas(self):
+        pass
+
+    def to_numpy(self):
+        pass
+
+    def to_pydict(self):
+        pass
 
 # cdef class Table:
 #     def __cinit__(self, string id, context):
