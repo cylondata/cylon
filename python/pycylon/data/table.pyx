@@ -347,6 +347,8 @@ cdef class Table:
             status = CTable.Subtract(self.table_shd_ptr, right, output)
         elif ra_op_name == 'distributed_subtract':
             status = CTable.DistributedSubtract(self.table_shd_ptr, right, output)
+        else:
+            raise ValueError(f"Unsupported relational algebra operator: {ra_op_name}")
 
         if status.is_ok():
             return pycylon_wrap_table(output)
