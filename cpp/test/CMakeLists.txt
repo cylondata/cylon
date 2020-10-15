@@ -69,3 +69,8 @@ cylon_add_test(groupby_test 1)
 cylon_add_test(groupby_test 2)
 cylon_add_test(groupby_test 4)
 
+#table op tests
+cylon_add_test(table_op_test 1)
+cylon_add_test(table_op_test 2)
+cylon_add_test(table_op_test 4)
+
