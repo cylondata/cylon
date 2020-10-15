@@ -32,7 +32,6 @@ TEST_CASE("table ops testing", "[table_ops]") {
       return row.GetInt32(0) % 2 == 0;
     }, select);
 
-    select->Print();
     REQUIRE((status.is_ok() && select->Columns() == 2 && select->Rows() == size/2));
   }
 }
