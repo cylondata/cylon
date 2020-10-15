@@ -12,21 +12,27 @@
  # limitations under the License.
  ##
 
-'''
-TwisterX Status codes carrying responses related to SUCCESS and FAIL report, etc.
-'''
 
+from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
-from pycylon.common.code cimport CCode
 
-cdef extern from "../../../cpp/src/cylon/status.hpp" namespace "cylon":
-    cdef cppclass CStatus "cylon::Status":
-        CStatus()
-        CStatus(int, string)
-        CStatus(int)
-        CStatus(CCode)
-        CStatus(CCode, string)
-        int get_code()
-        bool is_ok()
-        string get_msg()
+
+cdef extern from "../../../cpp/src/cylon/io/csv_write_config.hpp" namespace "cylon::io::config":
+    cdef cppclass CCSVWriteOptions "cylon::io::config::CSVWriteOptions":
+
+        CCSVWriteOptions()
+
+        CCSVWriteOptions WithDelimiter(char delimiter)
+
+        CCSVWriteOptions ColumnNames(const vector[string] &column_names)
+
+        char GetDelimiter() const
+
+        vector[string] GetColumnNames() const
+
+        bool IsOverrideColumnNames() const
+
+cdef class CSVWriteOptions:
+    cdef:
+        CCSVWriteOptions *thisPtr

@@ -12,9 +12,13 @@
  # limitations under the License.
  ##
 
-from pycylon.net.comm_type import CommType
+from pycylon.net.mpi_config import MPIConfig
+from pycylon.ctx.context import CylonContext
 
-assert CommType.LOCAL.value == 0
-assert CommType.MPI.value == 1
-assert CommType.TCP.value == 2
-assert CommType.UCX.value == 3
+mpi_config = MPIConfig()
+
+ctx = CylonContext(config=mpi_config, distributed=True)
+
+print(ctx.get_rank(), ctx.get_world_size())
+
+ctx.finalize()

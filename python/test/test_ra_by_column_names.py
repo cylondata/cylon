@@ -1,3 +1,17 @@
+##
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
+ # You may obtain a copy of the License at
+ #
+ # http://www.apache.org/licenses/LICENSE-2.0
+ #
+ # Unless required by applicable law or agreed to in writing, software
+ # distributed under the License is distributed on an "AS IS" BASIS,
+ # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ ##
+
 from pycylon.csv import csv_reader
 from pycylon import Table
 from pycylon import CylonContext
@@ -69,7 +83,7 @@ def multi_process():
     configs = {'join_type': 'inner', 'algorithm': 'sort', 'left_col': 0,
                'right_col': 0}
 
-    tb3: Table = tb1.distributed_join(ctx, table=tb2,
+    tb3: Table = tb1.distributed_join(table=tb2,
                                       join_type=configs['join_type'],
                                       algorithm=configs['algorithm'],
                                       left_on=[0],
@@ -78,7 +92,7 @@ def multi_process():
 
     tb3.show()
 
-    tb4: Table = tb1.distributed_join(ctx, table=tb2,
+    tb4: Table = tb1.distributed_join(table=tb2,
                                       join_type=configs['join_type'],
                                       algorithm=configs['algorithm'],
                                       left_on=['use_id'],
@@ -87,7 +101,7 @@ def multi_process():
 
     tb4.show()
 
-    tb4: Table = tb1.distributed_join(ctx, table=tb2,
+    tb4: Table = tb1.distributed_join(table=tb2,
                                       join_type=configs['join_type'],
                                       algorithm=configs['algorithm'],
                                       on=['use_id']

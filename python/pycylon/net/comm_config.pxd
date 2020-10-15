@@ -12,9 +12,12 @@
  # limitations under the License.
  ##
 
-from pycylon.net.comm_type import CommType
+from pycylon.net.comm_type cimport CCommType
 
-assert CommType.LOCAL.value == 0
-assert CommType.MPI.value == 1
-assert CommType.TCP.value == 2
-assert CommType.UCX.value == 3
+cdef extern from "../../../cpp/src/cylon/net/comm_config.hpp" namespace "cylon::net":
+    cdef cppclass CCommConfig "cylon::net::CommConfig":
+        CCommType Type()
+
+cdef class CommConfig:
+    cdef:
+        CCommConfig *thisPtr
