@@ -67,8 +67,23 @@ pdf = pd.DataFrame(dict1)
 
 # df, Schema schema=None, preserve_index=None, nthreads=None, columns=None, bool safe=True
 
-ar_tb4: pa.Table = pa.Table.from_pandas(df=df, schema=schema, preserve_index=True,
-                                        nthreads=nthreads, columns=columns, safe=safe)
+cn_tb4: cn.Table = cn.Table.from_pandas(ctx, pdf)
 
-print(ar_tb4)
+cn_tb4.show()
 
+print(cn_tb4.to_pandas())
+
+dict2 = {'col1': [1, 2], 'col2': [2, 4]}
+
+cn_tb5: cn.Table = cn.Table.from_pydict(ctx, dict2)
+
+npy = cn_tb5.to_numpy()
+print(npy, npy.dtype)
+
+dict3 = cn_tb5.to_pydict()
+
+print(dict3)
+
+print(cn_tb5.schema)
+
+print(cn_tb5.column_names)
