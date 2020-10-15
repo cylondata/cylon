@@ -26,19 +26,20 @@ cylon::Status CreateTable(std::shared_ptr<cylon::CylonContext> &ctx, int rows,
   std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t >>();
 
   for (int i = 0; i < rows; i++) {
-    col0->push_back(i);
+    col0->push_back((int32_t)i);
     col1->push_back((double_t) i + 10.0);
   }
 
   auto c0 = cylon::VectorColumn<int32_t>::Make("col0", cylon::Int32(), col0);
-  auto c1 = cylon::VectorColumn<double>::Make("col1", cylon::Double(), col1);
+  auto c1 = cylon::VectorColumn<double_t>::Make("col1", cylon::Double(), col1);
 
   return cylon::Table::FromColumns(ctx, {c0, c1}, output);
 }
 
 int main() {
   cylon::Status status;
-  const int rows = 12;
+  const int rows = 4;
+  int32_t agg_index = 1;
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
@@ -49,13 +50,13 @@ int main() {
   status = CreateTable(ctx, rows, &table);
 
   if ((status.is_ok() && table->Columns() == 2 && table->Rows() == rows)) {
-    table->Print(0, 2, 0, 2);
+    table->Print();
   } else {
     std::cout << "table creation failed! " << status.get_msg() << std::endl;
     return 1;
   }
 
-  if ((status = cylon::compute::Sum(table, 1, &result)).is_ok()) {
+  if ((status = cylon::compute::Sum(table, agg_index, &result)).is_ok()) {
     const std::shared_ptr<arrow::DoubleScalar>
         &aa = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
     std::cout << "sum " << aa->value << " " << status.get_code() << std::endl;
@@ -63,26 +64,53 @@ int main() {
     std::cout << "sum failed! " << status.get_msg() << std::endl;
   }
 
-  if ((status = cylon::compute::Count(table, 1, &result)).is_ok()) {
-    const auto &aa = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
+  if ((status = cylon::compute::Count(table, agg_index, &result)).is_ok()) {
+    const auto &aa = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
     std::cout << "count " << aa->value << " " << status.get_code() << std::endl;
   } else {
     std::cout << "count failed! " << status.get_msg() << std::endl;
   }
 
-  if ((status = cylon::compute::Min(table, 1, &result)).is_ok()) {
+  if ((status = cylon::compute::Min(table, agg_index, &result)).is_ok()) {
     const auto &aa = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
     std::cout << "min " << aa->value << " " << status.get_code() << std::endl;
   } else {
     std::cout << "min failed! " << status.get_msg() << std::endl;
   }
 
-  if ((status = cylon::compute::Max(table, 1, &result)).is_ok()) {
+  if ((status = cylon::compute::Max(table, agg_index, &result)).is_ok()) {
     const std::shared_ptr<arrow::DoubleScalar>
         &aa = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
     std::cout << "max " << aa->value << " " << status.get_code() << std::endl;
   } else {
     std::cout << "max failed! " << status.get_msg() << std::endl;
+  }
+
+  // Adding Python funcs
+  std::shared_ptr<cylon::Table> output;
+
+  if ((status = cylon::compute::Sum(table, agg_index, output)).is_ok()) {
+    output->Print();
+  } else {
+    std::cout << "Table: sum failed! " << status.get_msg() << std::endl;
+  }
+
+  if ((status = cylon::compute::Count(table, agg_index, output)).is_ok()) {
+    output->Print();
+  } else {
+    std::cout << "Table: count failed! " << status.get_msg() << std::endl;
+  }
+
+  if ((status = cylon::compute::Max(table, agg_index, output)).is_ok()) {
+    output->Print();
+  } else {
+    std::cout << "Table: max failed! " << status.get_msg() << std::endl;
+  }
+
+  if ((status = cylon::compute::Min(table, agg_index, output)).is_ok()) {
+    output->Print();
+  } else {
+    std::cout << "Table: min failed! " << status.get_msg() << std::endl;
   }
 
   ctx->Finalize();
