@@ -103,7 +103,7 @@ cdef class Table:
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
-            raise Exception("Table couldn't be sorted")
+            raise Exception(f"Table couldn't be sorted: {status.get_msg().decode()}")
 
     def clear(self):
         """
@@ -145,7 +145,7 @@ cdef class Table:
             if status.is_ok():
                 return pycylon_wrap_table(output)
             else:
-                raise Exception("Tables couldn't be merged")
+                raise Exception(f"Tables couldn't be merged: {status.get_msg().decode()}")
         else:
             raise ValueError("Tables are not parsed for merge")
 
@@ -327,7 +327,7 @@ cdef class Table:
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
-            raise ValueError(f"{op_name} operation failed!")
+            raise ValueError(f"{op_name} operation failed: : {status.get_msg().decode()}")
 
     cdef _get_ra_response(self, table, ra_op_name):
         cdef shared_ptr[CTable] output
@@ -351,7 +351,7 @@ cdef class Table:
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
-            raise ValueError(f"{ra_op_name} operation failed!")
+            raise ValueError(f"{ra_op_name} operation failed : {status.get_msg().decode()}")
 
     def join(self, table: Table, join_type: str,
              algorithm: str, **kwargs) -> Table:
@@ -458,7 +458,7 @@ cdef class Table:
                 if status.is_ok():
                     return pycylon_wrap_table(output)
                 else:
-                    raise ValueError("Project operation failed!")
+                    raise ValueError(f"Project operation failed : {status.get_msg().decode()}")
             else:
                 raise ValueError("Invalid column list, it must be column names in string or "
                                  "column indices in int")
@@ -480,7 +480,8 @@ cdef class Table:
         if status.is_ok():
             return pycylon_wrap_table(cn_table)
         else:
-            raise Exception("Table couldn't be created from PyArrow Table")
+            raise Exception(
+                f"Table couldn't be created from PyArrow Table: {status.get_msg().decode()}")
 
     @staticmethod
     def from_csv(context, path, csv_read_options) -> Table:
@@ -498,7 +499,7 @@ cdef class Table:
         if status.is_ok():
             return pycylon_wrap_table(cn_table)
         else:
-            raise Exception("Table couldn't be created from CSV")
+            raise Exception(f"Table couldn't be created from CSV: {status.get_msg().decode()}")
 
     @staticmethod
     def from_numpy(context: CylonContext, col_names: List[str], ar_list: List[np.ndarray]) -> Table:
@@ -610,7 +611,8 @@ cdef class Table:
         if status.is_ok():
             return pyarrow_wrap_table(converted_tb)
         else:
-            raise Exception("Table couldn't be converted to a PyArrow Table")
+            raise Exception(
+                f"Table couldn't be converted to a PyArrow Table : {status.get_msg().decode()}")
 
     @property
     def column_names(self):

@@ -30,3 +30,10 @@ cdef extern from "../../../cpp/src/cylon/status.hpp" namespace "cylon":
         int get_code()
         bool is_ok()
         string get_msg()
+
+cdef class Status:
+    cdef:
+        CStatus *thisptr
+        CCode _code
+        string msg
+        int code

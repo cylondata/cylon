@@ -19,10 +19,6 @@ from pycylon.common.status cimport CStatus
 
 
 cdef class Status:
-    cdef CStatus *thisptr
-    cdef CCode _code
-    cdef string msg
-    cdef int code
 
     def __cinit__(self, int code, string msg, CCode _code):
         '''
@@ -37,22 +33,26 @@ cdef class Status:
             self.thisptr = new CStatus(_code)
             self._code = _code
 
-        if msg.size() != 0 and code != -1:
+        elif msg.size() != 0 and code != -1:
             #print("Status(code, msg)")
             self.thisptr = new CStatus(code, msg)
             self.msg = msg
             self.code = code
 
-        if msg.size() == 0 and _code == -1 and code != -1:
+        elif msg.size() == 0 and _code == -1 and code != -1:
             #print("Status(code)")
             self.thisptr = new CStatus(code)
             self.code = code
 
-        if msg.size() != 0 and _code != -1 and code == -1:
+        elif msg.size() != 0 and _code != -1 and code == -1:
             #print("Status(_Code, msg)")
             self.thisptr = new CStatus(_code, msg)
             self._code = _code
             self.msg = msg
+        else:
+            # non arg constructor used for wrapping CStatus to Status
+            pass
+
 
     def get_code(self):
         '''
@@ -73,4 +73,4 @@ cdef class Status:
 
         :return: Message from Status
         '''
-        return self.thisptr.get_msg()
+        return self.thisptr.get_msg().decode()
