@@ -87,3 +87,7 @@ print(dict3)
 print(cn_tb5.schema)
 
 print(cn_tb5.column_names)
+
+print(ar_tb2)
+
+print(cn_tb5.to_numpy())

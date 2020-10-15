@@ -574,7 +574,7 @@ cdef class Table:
          """
         ar_lst = []
         _dtype = None
-        for col in self.to_arrow().columns:
+        for col in self.to_arrow().combine_chunks().columns:
             npr = col.chunks[0].to_numpy()
             if None == _dtype:
                 _dtype = npr.dtype
@@ -624,13 +624,13 @@ cdef class Table:
         """
         return self.to_arrow().column_names
 
-    @property
-    def schema(self):
-        """
-        Produces schema from PyCylon Table
-        @return: schema
-        """
-        return self.to_arrow().schema
+    # @property
+    # def schema(self):
+    #     """
+    #     Produces schema from PyCylon Table
+    #     @return: schema
+    #     """
+    #     pass
 
     # def __getitem__(self, key):
     #     py_arrow_table = self.to_arrow()
