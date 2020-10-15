@@ -13,17 +13,21 @@
  ##
 
 
-
+from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
-from pycylon.net.comm_type cimport _CommType
+from pycylon.net.comm_type cimport CCommType
 from pycylon.net.comm_type import CommType
-
+from pycylon.net.comm_config cimport CCommConfig
+from pycylon.net.comm_config import CommConfig
+from pycylon.net.comm_config cimport CommConfig
+from pycylon.net.mpi_config cimport CMPIConfig
 '''
 MPIConfig Type mapping from libCylon to PyCylon
 '''
 
-cdef extern from "../../../cpp/src/cylon/net/mpi/mpi_communicator.hpp" namespace "cylon::net":
-    cdef cppclass CMPIConfig "cylon::MPIConfig":
-        _CommType Type()
+cdef class MPIConfig(CommConfig):
+
+    def __cinit__(self, config=None):
+        self.mpi_config_shd_ptr = CMPIConfig.Make()

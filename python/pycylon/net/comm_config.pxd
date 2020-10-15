@@ -12,16 +12,12 @@
  # limitations under the License.
  ##
 
-'''
-libCylon mapping for All To ALl Communication.
-'''
+from pycylon.net.comm_type cimport CCommType
 
-from libcpp.vector cimport vector
+cdef extern from "../../../cpp/src/cylon/net/comm_config.hpp" namespace "cylon::net":
+    cdef cppclass CCommConfig "cylon::net::CommConfig":
+        CCommType Type()
 
-cdef extern from "../../../cpp/src/cylon/python/net/comm/all_to_all_wrap.h" namespace "cylon::net::comm":
-    cdef cppclass CAll_to_all_wrap "cylon::net::comm::all_to_all_wrap":
-        CAll_to_all_wrap();
-        CAll_to_all_wrap(int worker_id, const vector[int] &source, const vector[int] &targets, int edgeId);
-        void insert(void *buffer, int length, int target, int *header, int headerLength);
-        void wait();
-        void finish();
+cdef class CommConfig:
+    cdef:
+        CCommConfig *thisPtr

@@ -12,9 +12,11 @@
  # limitations under the License.
  ##
 
-from pycylon.net.comm_type import CommType
 
-assert CommType.LOCAL.value == 0
-assert CommType.MPI.value == 1
-assert CommType.TCP.value == 2
-assert CommType.UCX.value == 3
+from pycylon.net.communicator cimport CMPICommunicator
+
+
+cdef class MPICommunicator:
+
+    def __cinit__(self):
+        pass

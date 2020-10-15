@@ -53,15 +53,12 @@ void MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   MPI_Initialized(&initialized);
   if (!initialized) {
     MPI_Init(nullptr, nullptr);
-  } else {
-    LOG(INFO) << "MPI is already initialized";
   }
 
   MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
   MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
 }
 void MPICommunicator::Finalize() {
-  LOG(INFO) << "Finalizing MPI";
   MPI_Finalize();
 }
 void MPICommunicator::Barrier() {

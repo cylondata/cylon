@@ -108,25 +108,6 @@ target_link_libraries(cylon ${PYTHON_LIBRARIES})
 target_link_libraries(cylon Threads::Threads)
 target_compile_options(cylon PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
 
-if(${PYCYLON_BUILD})
-    add_library(cylon_python SHARED
-            python/cylon_context_wrap.h python/cylon_context_wrap.cpp
-            python/table_cython.h python/table_cython.cpp
-            python/net/distributed.h python/net/distributed.cpp
-            python/net/comm/all_to_all_wrap.h python/net/comm/all_to_all_wrap.cpp
-            python/net/comm/callback.h python/net/comm/callback.cpp)
-
-    target_link_libraries(cylon_python ${MPI_LIBRARIES})
-    target_link_libraries(cylon_python ${GLOG_LIBRARIES})
-    target_link_libraries(cylon_python ${ARROW_LIB})
-    target_link_libraries(cylon_python ${ARROW_PYTHON})
-    target_link_libraries(cylon_python ${PYTHON_LIBRARIES})
-    target_link_libraries(cylon_python cylon)
-    add_subdirectory(python)
-else()
-    message("Skip Building Cylon Cython-CPP")
-endif()
-
 cylon_install_all_headers("cylon")
 
 add_subdirectory(util)

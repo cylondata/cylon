@@ -16,19 +16,17 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
 from pycylon.net.comm_type import CommType
-from pycylon.net.comm_type cimport _CommType
+from pycylon.net.comm_config cimport CCommConfig
 
 '''
 Communication Config Mapping from Cylon C++ 
 '''
 
-cdef extern from "../../../cpp/src/cylon/net/comm_config.hpp" namespace "cylon::net":
-    cdef cppclass CCommConfig "cylon::net::CommConfig":
-        _CommType Type()
-
 
 cdef class CommConfig:
-    cdef CCommConfig *thisPtr
+
+    def __cinit__(self):
+        pass
 
     def type(self):
         return self.thisPtr.Type()

@@ -13,22 +13,33 @@
 ##
 
 from libcpp.string cimport string
-from pycylon.common.status cimport _Status
+from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 from pycylon.common.join_config cimport CJoinType
 from pycylon.common.join_config cimport CJoinAlgorithm
 from pycylon.common.join_config cimport CJoinConfig
 from pycylon.common.join_config import PJoinType
 from pycylon.common.join_config import PJoinAlgorithm
-from pyarrow.lib cimport CTable
-from pyarrow.lib cimport pyarrow_unwrap_table
-from pyarrow.lib cimport pyarrow_wrap_table
-from libcpp.memory cimport shared_ptr
+from pycylon.io.csv_read_config cimport CCSVReadOptions
+from pycylon.io.csv_read_config import CSVReadOptions
+from pycylon.io.csv_read_config cimport CSVReadOptions
+from pycylon.io.csv_write_config cimport CCSVWriteOptions
+from pycylon.io.csv_write_config import CSVWriteOptions
+from pycylon.io.csv_write_config cimport CSVWriteOptions
 
-from pycylon.ctx.context cimport CCylonContextWrap
+from pyarrow.lib cimport CTable as CArrowTable
+from pycylon.data.table cimport CTable
+from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table)
+from libcpp.memory cimport shared_ptr, make_shared
+
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
-from pycylon.api.lib cimport pycylon_unwrap_context
+from pycylon.api.lib cimport (pycylon_wrap_context,
+pycylon_unwrap_context,
+pycylon_unwrap_table,
+pycylon_wrap_table,
+pycylon_unwrap_csv_read_options,
+pycylon_unwrap_csv_write_options)
 
 import pyarrow as pa
 import numpy as np
@@ -41,14 +52,209 @@ Cylon Table definition mapping
 '''
 
 cdef class Table:
-    def __cinit__(self, string id, context):
+    def __cinit__(self, pyarrow_table=None, context=None, columns=None):
+        """
+        PyClon constructor
+        @param pyarrow_table: PyArrow Table
+        @param context: PyCylon Context
+        @param columns: columns TODO: add support
+        """
+        cdef shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
+        if self._is_pycylon_context(context) and self._is_pyarrow_table(pyarrow_table):
+            c_arrow_tb_shd_ptr = pyarrow_unwrap_table(pyarrow_table)
+            self.sp_context = pycylon_unwrap_context(context)
+            self.table_shd_ptr = make_shared[CTable](c_arrow_tb_shd_ptr, self.sp_context)
+
+    cdef void init(self, const shared_ptr[CTable]& table):
+        self.table_shd_ptr = table
+
+    @staticmethod
+    def _is_pyarrow_table(pyarrow_table):
+        return isinstance(pyarrow_table, pa.Table)
+
+    @staticmethod
+    def _is_pycylon_context(context):
+        return isinstance(context, CylonContext)
+
+    def show(self, row1=-1, row2=-1, col1=-1, col2=-1):
         '''
-        Initializes the PyCylon Table
-        :param id: unique id for the Table
-        :return: None
+            prints the table in console from the Cylon C++ Table API
+            uses row range and column range
+            :param row1: starting row number as int
+            :param row2: ending row number as int
+            :param col1: starting column number as int
+            :param col2: ending column number as int
+            :return: None
         '''
-        self.thisPtr = new CxTable(id)
-        self.ctx = context
+        if row1 == -1 and row2 == -1 and col1 == -1 and col2 == -1:
+            self.table_shd_ptr.get().Print()
+        else:
+            self.table_shd_ptr.get().Print(row1, row2, col1, col2)
+
+    def sort(self, index) -> Table:
+        cdef shared_ptr[CTable] output
+        sort_index = -1
+        if isinstance(index, str):
+            sort_index = self._resolve_column_index_from_column_name(index)
+        else:
+            sort_index = index
+
+        cdef CStatus status = self.table_shd_ptr.get().Sort(sort_index, output)
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise Exception(f"Table couldn't be sorted: {status.get_msg().decode()}")
+
+    def clear(self):
+        """
+        Clear PyCylon table
+        """
+        self.table_shd_ptr.get().Clear()
+
+    def retain_memory(self, retain):
+        """
+        Retain  memory for PyCylon table
+        @param retain: bool
+        """
+        self.table_shd_ptr.get().retainMemory(retain)
+
+    def is_retain(self) -> bool:
+        """
+        Checks if memory is retained in PyCylon Table
+        """
+        self.table_shd_ptr.get().IsRetain()
+
+    @staticmethod
+    def merge(ctx, tables: List[Table]) -> Table:
+        """
+        Merging Two PyCylon tables
+        @param ctx: PyCylon context
+        @param tables: PyCylon table
+        @return: PyCylon table
+        """
+        cdef vector[shared_ptr[CTable]] ctables
+        cdef shared_ptr[CTable] curTable
+        cdef shared_ptr[CTable] output
+        cdef CStatus status
+        cdef shared_ptr[CCylonContext] sp_ctx = pycylon_unwrap_context(ctx)
+        if tables:
+            for table in tables:
+                curTable = pycylon_unwrap_table(table)
+                ctables.push_back(curTable)
+            status = CTable.Merge(sp_ctx, ctables, output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"Tables couldn't be merged: {status.get_msg().decode()}")
+        else:
+            raise ValueError("Tables are not parsed for merge")
+
+    @property
+    def column_names(self):
+        """
+        Produces column names for PyCylon Table
+        @return:
+        """
+        return pyarrow_wrap_table(pyarrow_unwrap_table(self.to_arrow())).column_names
+
+    def _resolve_column_index_from_column_name(self, column_name) -> int:
+        index = None
+        for idx, col_name in enumerate(self.column_names):
+            if column_name == col_name:
+                return idx
+        if index is None:
+            raise ValueError(f"Column {column_name} does not exist in the table")
+
+    @property
+    def column_count(self) -> int:
+        """
+        Produces column count
+        @return: int
+        """
+        return self.table_shd_ptr.get().Columns()
+
+    @property
+    def row_count(self) -> int:
+        """
+        Produces row count
+        @return: int
+        """
+        return self.table_shd_ptr.get().Rows()
+
+    @property
+    def context(self) -> CylonContext:
+        """
+        Get the CylonContext from PyCylon Table
+        @rtype: CylonContext
+        """
+        return pycylon_wrap_context(self.table_shd_ptr.get().GetContext())
+
+    @property
+    def column_names(self) -> List[str]:
+        """
+        Produces column names
+        @return: list
+        """
+        column_names = []
+        cdef vector[string] c_column_names = self.table_shd_ptr.get().ColumnNames()
+        for col_name in c_column_names:
+            column_names.append(col_name.decode())
+        return column_names
+
+    def _resolve_join_column_indices_from_column_names(self, column_names: List[
+        str], op_column_names: List[str]) -> List[int]:
+        resolve_col_ids = []
+        for op_col_id, op_column_name in enumerate(op_column_names):
+            for col_id, column_name in enumerate(column_names):
+                if op_column_name == column_name:
+                    resolve_col_ids.append(col_id)
+        return resolve_col_ids
+
+    def _get_join_column_indices(self, table: Table, **kwargs):
+        ## Check if Passed values are based on left and right column names or indices
+        left_cols = kwargs.get('left_on')
+        right_cols = kwargs.get('right_on')
+        column_names = kwargs.get('on')
+
+        table_col_names_list = [self.column_names, table.column_names]
+
+        if left_cols and right_cols and isinstance(left_cols, List) and isinstance(right_cols,
+                                                                                   List):
+            if isinstance(left_cols[0], str) and isinstance(right_cols[0], str):
+                left_cols = self._resolve_join_column_indices_from_column_names(self.column_names,
+                                                                                left_cols)
+                right_cols = self._resolve_join_column_indices_from_column_names(table.column_names,
+                                                                                 right_cols)
+                self._check_column_names_viable(left_cols, right_cols)
+
+                return left_cols, right_cols
+            elif isinstance(left_cols[0], int) and isinstance(right_cols[0], int):
+                return left_cols, right_cols
+        ## Check if Passed values are based on common column names in two tables
+        elif column_names and isinstance(column_names, List):
+            if isinstance(column_names[0], str):
+                left_cols = self._resolve_join_column_indices_from_column_names(self.column_names,
+                                                                                column_names)
+                right_cols = self._resolve_join_column_indices_from_column_names(table.column_names,
+                                                                                 column_names)
+                self._check_column_names_viable(left_cols, right_cols)
+                return left_cols, right_cols
+            if isinstance(column_names[0], int):
+                return column_names, column_names
+        else:
+            raise TypeError("kwargs 'on' or 'left_on' and 'right_on' must be provided")
+
+        if not (left_cols and isinstance(left_cols[0], int)) and not (right_cols and isinstance(
+                right_cols[0], int)):
+            raise TypeError("kwargs 'on' or 'left_on' and 'right_on' must be type List and contain "
+                            "int type or str type and cannot be None")
+
+    def _is_column_indices_viable(self, left_cols, right_cols):
+        return left_cols and right_cols
+
+    def _check_column_names_viable(self, left_cols, right_cols):
+        if not self._is_column_indices_viable(left_cols, right_cols):
+            raise ValueError("Provided Column Names or Column Indices not valid.")
 
     def __get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
                           right_column_index: int):
@@ -106,121 +312,50 @@ cdef class Table:
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
 
-    @property
-    def id(self) -> str:
-        '''
-        Table Id is extracted from the Cylon C++ API
-        :return: table id
-        '''
-        return self.thisPtr.get_id().decode()
+    cdef shared_ptr[CTable] init_join_ra_params(self, table, join_type, algorithm, kwargs):
+        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
 
-    @property
-    def columns(self) -> int:
-        '''
-        Column count is extracted from the Cylon C++ Table API
-        :return: number of columns in PyCylon table
-        '''
-        return self.thisPtr.columns()
+        # Cylon only supports join by one column and retrieve first left and right column when
+        # resolving join configs
+        self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
+                               left_column_index=left_cols[0],
+                               right_column_index=right_cols[0])
+        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
+        return right
 
-    @property
-    def rows(self) -> int:
-        '''
-        Rows count is extracted from the Cylon C++ Table API
-        :return: number of rows in PyCylon table
-        '''
-        return self.thisPtr.rows()
-
-    @property
-    def context(self) -> CylonContext:
-        return self.ctx
-
-    def show(self):
-        '''
-        prints the table in console from the Cylon C++ Table API
-        :return: None
-        '''
-        self.thisPtr.show()
-
-    def show_by_range(self, row1: int, row2: int, col1: int, col2: int):
-        '''
-        prints the table in console from the Cylon C++ Table API
-        uses row range and column range
-        :param row1: starting row number as int
-        :param row2: ending row number as int
-        :param col1: starting column number as int
-        :param col2: ending column number as int
-        :return: None
-        '''
-        self.thisPtr.show(row1, row2, col1, col2)
-
-    def to_csv(self, path: str) -> Status:
-        '''
-        writes a PyCylon table to CSV file
-        :param path: passed as a str, the path of the csv file
-        :return: Status of the process (SUCCESS or FAILURE)
-        '''
-        cdef _Status status = self.thisPtr.to_csv(path.encode())
-        s = Status(status.get_code(), b"", -1)
-        return s
-
-    def _is_pycylon_table(self, obj):
-        return isinstance(obj, Table)
-
-    def _resolve_column_indices_from_column_names(self, column_names: List[
-        str], op_column_names: List[str]) -> List[int]:
-        resolve_col_ids = []
-        for op_col_id, op_column_name in enumerate(op_column_names):
-            for col_id, column_name in enumerate(column_names):
-                if op_column_name == column_name:
-                    resolve_col_ids.append(col_id)
-        return resolve_col_ids
-
-    def _get_join_column_indices(self, table: Table, **kwargs):
-        ## Check if Passed values are based on left and right column names or indices
-        left_cols = kwargs.get('left_on')
-        right_cols = kwargs.get('right_on')
-        column_names = kwargs.get('on')
-
-        table_col_names_list = [self.column_names, table.column_names]
-
-        if left_cols and right_cols and isinstance(left_cols, List) and isinstance(right_cols,
-                                                                                   List):
-            if isinstance(left_cols[0], str) and isinstance(right_cols[0], str):
-                left_cols = self._resolve_column_indices_from_column_names(self.column_names,
-                                                                           left_cols)
-                right_cols = self._resolve_column_indices_from_column_names(table.column_names,
-                                                                            right_cols)
-                self._check_column_names_viable(left_cols, right_cols)
-
-                return left_cols, right_cols
-            elif isinstance(left_cols[0], int) and isinstance(right_cols[0], int):
-                return left_cols, right_cols
-        ## Check if Passed values are based on common column names in two tables
-        elif column_names and isinstance(column_names, List):
-            if isinstance(column_names[0], str):
-                left_cols = self._resolve_column_indices_from_column_names(self.column_names,
-                                                                           column_names)
-                right_cols = self._resolve_column_indices_from_column_names(table.column_names,
-                                                                            column_names)
-                self._check_column_names_viable(left_cols, right_cols)
-                return left_cols, right_cols
-            if isinstance(column_names[0], int):
-                return column_names, column_names
+    cdef _get_join_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status):
+        if status.is_ok():
+            return pycylon_wrap_table(output)
         else:
-            raise TypeError("kwargs 'on' or 'left_on' and 'right_on' must be provided")
+            raise ValueError(f"{op_name} operation failed: : {status.get_msg().decode()}")
 
-        if not (left_cols and isinstance(left_cols[0], int)) and not (right_cols and isinstance(
-                right_cols[0], int)):
-            raise TypeError("kwargs 'on' or 'left_on' and 'right_on' must be type List and contain "
-                            "int type or str type and cannot be None")
-    def _is_column_indices_viable(self, left_cols, right_cols):
-        return left_cols and right_cols
+    cdef _get_ra_response(self, table, ra_op_name):
+        cdef shared_ptr[CTable] output
+        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
+        cdef CStatus status
+        # TODO: add callable for Cython functions via FPointers
 
-    def _check_column_names_viable(self, left_cols, right_cols):
-        if not self._is_column_indices_viable(left_cols, right_cols):
-                    raise ValueError("Provided Column Names or Column Indices not valid.")
+        if ra_op_name == 'union':
+            status = CTable.Union(self.table_shd_ptr, right, output)
+        elif ra_op_name == 'distributed_union':
+            status = CTable.DistributedUnion(self.table_shd_ptr, right, output)
+        elif ra_op_name == 'intersect':
+            status = CTable.Intersect(self.table_shd_ptr, right, output)
+        elif ra_op_name == 'distributed_intersect':
+            status = CTable.DistributedIntersect(self.table_shd_ptr, right, output)
+        elif ra_op_name == 'subtract':
+            status = CTable.Subtract(self.table_shd_ptr, right, output)
+        elif ra_op_name == 'distributed_subtract':
+            status = CTable.DistributedSubtract(self.table_shd_ptr, right, output)
+        else:
+            raise ValueError(f"Unsupported relational algebra operator: {ra_op_name}")
 
-    def join(self, ctx: CylonContext, table: Table, join_type: str,
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise ValueError(f"{ra_op_name} operation failed : {status.get_msg().decode()}")
+
+    def join(self, table: Table, join_type: str,
              algorithm: str, **kwargs) -> Table:
         '''
         Joins two PyCylon tables
@@ -232,25 +367,17 @@ cdef class Table:
         both tables as a List[int] or List[str].
         :return: Joined PyCylon table
         '''
-
-        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
-
-        # Cylon only supports join by one column and retrieve first left and right column when
-        # resolving join configs
-        self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
-                               left_column_index=left_cols[0],
-                               right_column_index=right_cols[0])
+        cdef shared_ptr[CTable] output
+        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
+                                                                 kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
-        cdef string table_out_id = self.thisPtr.join(pycylon_unwrap_context(ctx), table.id.encode(),
-                                                     jc1[0])
-        if table_out_id.size() == 0:
-            raise Exception("Join Failed !!!")
-        return Table(table_out_id, ctx)
+        cdef CStatus status = CTable.Join(self.table_shd_ptr, right, jc1[0], &output)
+        return self._get_join_ra_response("Join", output, status)
 
-    def distributed_join(self, ctx: CylonContext, table: Table, join_type: str,
+    def distributed_join(self, table: Table, join_type: str,
                          algorithm: str, **kwargs) -> Table:
         '''
-        Joins two PyCylon tables
+         Joins two PyCylon tables in distributed memory
         :param table: PyCylon table on which the join is performed (becomes the left table)
         :param join_type: Join Type as str ["inner", "left", "right", "outer"]
         :param algorithm: Join Algorithm as str ["hash", "sort"]
@@ -259,156 +386,195 @@ cdef class Table:
         both tables as a List[int] or List[str].
         :return: Joined PyCylon table
         '''
-
-        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
-
-        # Cylon only supports join by one column and retrieve first left and right column when
-        # resolving join configs
-        self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
-                               left_column_index=left_cols[0],
-                               right_column_index=right_cols[0])
+        cdef shared_ptr[CTable] output
+        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
+                                                                 kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
-        cdef string table_out_id = self.thisPtr.distributed_join(pycylon_unwrap_context(ctx),
-                                                                 table.id.encode(),
-                                                                 jc1[0])
-        if table_out_id.size() == 0:
-            raise Exception("Join Failed !!!")
-        return Table(table_out_id, ctx)
+        cdef CStatus status = CTable.DistributedJoin(self.table_shd_ptr, right, jc1[0], &output)
+        return self._get_join_ra_response("Distributed Join", output, status)
 
-    def union(self, ctx: CylonContext, table: Table) -> Table:
+    def union(self, table: Table) -> Table:
         '''
         Union two PyCylon tables
-        :param table: PyCylon table on which the join is performed (becomes the left table)
-        :return: Union PyCylon table
-        '''
-        cdef string table_out_id = self.thisPtr.Union(pycylon_unwrap_context(ctx),
-                                                      table.id.encode())
-        if table_out_id.size() == 0:
-            raise Exception("Union Failed !!!")
-        return Table(table_out_id, ctx)
-
-    def distributed_union(self, ctx: CylonContext, table: Table) -> Table:
-        '''
-        Union two PyCylon tables
-        :param table: PyCylon table on which the join is performed (becomes the left table)
-        :return: Union PyCylon table
-        '''
-        cdef string table_out_id = self.thisPtr.DistributedUnion(pycylon_unwrap_context(ctx),
-                                                                 table.id.encode())
-        if table_out_id.size() == 0:
-            raise Exception("Distributed Union Failed !!!")
-        return Table(table_out_id, ctx)
-
-    def intersect(self, ctx: CylonContext, table: Table) -> Table:
-        '''
-        Union two PyCylon tables
-        :param table: PyCylon table on which the join is performed (becomes the left table)
-        :return: Intersect PyCylon table
-        '''
-        cdef string table_out_id = self.thisPtr.Intersect(pycylon_unwrap_context(ctx),
-                                                          table.id.encode())
-        if table_out_id.size() == 0:
-            raise Exception("Intersect Failed !!!")
-        return Table(table_out_id, ctx)
-
-    def distributed_intersect(self, ctx: CylonContext, table: Table) -> Table:
-        '''
-        Union two PyCylon tables
-        :param table: PyCylon table on which the join is performed (becomes the left table)
-        :return: Intersect PyCylon table
-        '''
-        cdef string table_out_id = self.thisPtr.DistributedIntersect(pycylon_unwrap_context(ctx),
-                                                                     table.id.encode())
-        if table_out_id.size() == 0:
-            raise Exception("Distributed Union Failed !!!")
-        return Table(table_out_id, ctx)
-
-    def subtract(self, ctx: CylonContext, table: Table) -> Table:
-        '''
-        Union two PyCylon tables
-        :param table: PyCylon table on which the join is performed (becomes the left table)
-        :return: Subtract PyCylon table
-        '''
-        cdef string table_out_id = self.thisPtr.Subtract(pycylon_unwrap_context(ctx),
-                                                         table.id.encode())
-        if table_out_id.size() == 0:
-            raise Exception("Subtract Failed !!!")
-        return Table(table_out_id, ctx)
-
-    def distributed_subtract(self, ctx: CylonContext, table: Table) -> Table:
-        '''
-        Union two PyCylon tables
-        :param table: PyCylon table on which the join is performed (becomes the left table)
-        :return: Subtract PyCylon table
-        '''
-
-        cdef string table_out_id = self.thisPtr.DistributedSubtract(pycylon_unwrap_context(ctx),
-                                                                    table.id.encode())
-        if table_out_id.size() == 0:
-            raise Exception("Distributed Subtract Failed !!!")
-        return Table(table_out_id, ctx)
-
-    @staticmethod
-    def from_arrow(obj, ctx: CylonContext) -> Table:
-        '''
-        creating a PyCylon table from PyArrow Table
-        :param obj: PyArrow table
+        :param table: PyCylon table on which the union is performed (becomes the left table)
         :return: PyCylon table
         '''
-        cdef shared_ptr[CTable] artb = pyarrow_unwrap_table(obj)
-        cdef string table_id
-        if artb.get() == NULL:
-            raise TypeError("not an table")
-        if ctx.get_config() == ''.encode():
-            table_id = from_pyarrow_table(pycylon_unwrap_context(ctx), artb)
+        return self._get_ra_response(table, 'union')
+
+    def distributed_union(self, table: Table) -> Table:
+        '''
+        Union two PyCylon tables in distributed memory
+        :param table: PyCylon table on which the union is performed (becomes the left table)
+        :return: PyCylon table
+        '''
+        return self._get_ra_response(table, 'distributed_union')
+
+    def subtract(self, table: Table) -> Table:
+        '''
+        Subtract two PyCylon tables
+        :param table: PyCylon table on which the subtract is performed (becomes the left table)
+        :return: PyCylon table
+        '''
+        return self._get_ra_response(table, 'subtract')
+
+    def distributed_subtract(self, table: Table) -> Table:
+        '''
+        Subtract two PyCylon tables in distributed memory
+        :param table: PyCylon table on which the subtract is performed (becomes the left table)
+        :return: PyCylon table
+        '''
+        return self._get_ra_response(table, 'distributed_subtract')
+
+    def intersect(self, table: Table) -> Table:
+        '''
+        Intersect two PyCylon tables
+        :param table: PyCylon table on which the intersect is performed (becomes the left table)
+        :return: PyCylon table
+        '''
+        return self._get_ra_response(table, 'intersect')
+
+    def distributed_intersect(self, table: Table) -> Table:
+        '''
+        Intersect two PyCylon tables in distributed memory
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :return: PyCylon table
+        '''
+        return self._get_ra_response(table, 'distributed_intersect')
+
+    def project(self, columns: List):
+        '''
+        Project a PyCylon table
+        :param columns: List of columns to be projected
+        :return: PyCylon table
+        '''
+        cdef vector[long] c_columns
+        cdef shared_ptr[CTable] output
+        cdef CStatus status
+        if columns:
+            if isinstance(columns[0], int) or isinstance(columns[0], str):
+                for column in columns:
+                    if isinstance(column, str):
+                        column = self._resolve_column_index_from_column_name(column)
+                    c_columns.push_back(column)
+                status = self.table_shd_ptr.get().Project(c_columns, output)
+                if status.is_ok():
+                    return pycylon_wrap_table(output)
+                else:
+                    raise ValueError(f"Project operation failed : {status.get_msg().decode()}")
+            else:
+                raise ValueError("Invalid column list, it must be column names in string or "
+                                 "column indices in int")
         else:
-            table_id = from_pyarrow_table(pycylon_unwrap_context(ctx), artb)
-        return Table(table_id, ctx)
+            raise ValueError("Columns not passed.")
 
-    # @staticmethod
-    # def from_pandas(obj, ctx: CylonContext) -> Table:
-    #     """
-    #     creating a PyCylon table from Pandas DataFrame
-    #     :param obj: Pandas DataFrame
-    #     :rtype: PyCylon Table
-    #     """
-    #     table = pa.Table.from_pandas(obj)
-    #     return Table.from_arrow(table, ctx)
-
-    def to_arrow(self) -> pa.Table:
+    @staticmethod
+    def from_arrow(context, pyarrow_table) -> Table:
         '''
-        creating PyArrow Table from PyCylon table
-        :param self: PyCylon Table
-        :return: PyArrow Table
+            creating a PyCylon table from PyArrow Table
+            :param obj: PyArrow table
+            :return: PyCylon table
         '''
-        table = to_pyarrow_table(self.id.encode())
-        py_arrow_table = pyarrow_wrap_table(table)
-        return py_arrow_table
+        cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
+        cdef shared_ptr[CArrowTable] arw_table = pyarrow_unwrap_table(pyarrow_table)
+        cdef shared_ptr[CTable] cn_table
+        cdef CStatus status = CTable.FromArrowTable(ctx, arw_table, &cn_table)
 
-    def to_pandas(self) -> pd.DataFrame:
-        """
-        creating Pandas Dataframe from PyCylon Table
-        :param self:
-        :return: a Pandas DataFrame
-        """
-        table = to_pyarrow_table(self.id.encode())
-        py_arrow_table = pyarrow_wrap_table(table)
-        return py_arrow_table.to_pandas()
+        if status.is_ok():
+            return pycylon_wrap_table(cn_table)
+        else:
+            raise Exception(
+                f"Table couldn't be created from PyArrow Table: {status.get_msg().decode()}")
 
-    def to_numpy(self, order='F') -> np.ndarray:
+    @staticmethod
+    def from_csv(context, path, csv_read_options) -> Table:
+        '''
+            loading data from a csv file
+            :param context: CylonContext
+            :param path: Path to csv file
+            :param csv_read_options: CSVReadOptions object
+        '''
+        cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
+        cdef string cpath = path.encode()
+        cdef CCSVReadOptions c_csv_read_options = pycylon_unwrap_csv_read_options(csv_read_options)
+        cdef shared_ptr[CTable] cn_table
+        cdef CStatus status = CTable.FromCSV(ctx, cpath, cn_table, c_csv_read_options)
+        if status.is_ok():
+            return pycylon_wrap_table(cn_table)
+        else:
+            raise Exception(f"Table couldn't be created from CSV: {status.get_msg().decode()}")
+
+    @staticmethod
+    def from_numpy(context: CylonContext, col_names: List[str], ar_list: List[np.ndarray]) -> Table:
         """
-        [Experimental]
-        This method converts a Cylon Table to a 2D numpy array.
-        In the conversion we stack each column in the Table and create a numpy array.
-        For Heterogeneous Tables, use the generated array with Caution.
-        :param order: numpy array order. 'F': Fortran Style F_Contiguous or 'C' C Style C_Contiguous
-        :return: ndarray
+        creating a PyCylon table from numpy arrays
+        @param context: CylonContext
+        @param col_names: Column names
+        @param ar_list: numpy arrays as a list to form the column data of all columns
+        @return: PyCylon table
         """
-        table = to_pyarrow_table(self.id.encode())
-        py_arrow_table = pyarrow_wrap_table(table)
+        return Table.from_arrow(context, pa.Table.from_arrays(ar_list, names=col_names))
+
+    @staticmethod
+    def from_list(context: CylonContext, col_names: List[str], data_list: List) -> Table:
+        """
+        creating a PyCylon table from a list
+        @param context: CylonContext
+        @param col_names: Column names
+        @param data_list: data as a list
+        @return: PyCylon table
+        """
+        ar_list = []
+        if len(col_names) == len(data_list):
+            for data in data_list:
+                ar_list.append(data)
+            return Table.from_arrow(context, pa.Table.from_arrays(ar_list, names=col_names))
+        else:
+            raise ValueError("Column Names count doesn't match data columns count")
+
+    @staticmethod
+    def from_pydict(context: CylonContext, dictionary: dict) -> Table:
+        """
+        creating a PyCylon table from a dictionary
+        @param context: CylonContext
+        @param dictionary: dict with table data
+        @return: PyCylon table
+        """
+        return Table.from_arrow(context, pa.Table.from_pydict(dictionary))
+
+    @staticmethod
+    def from_pandas(context: CylonContext = None, df: pd.DataFrame = None, preserve_index=False,
+                    nthreads=None, columns=None, safe=False) -> Table:
+        """
+            creating a PyCylon table from Pandas DataFrame
+            :param obj: Pandas DataFrame
+            :rtype: PyCylon Table
+        """
+        return Table.from_arrow(context,
+                                pa.Table.from_pandas(df=df, schema=None,
+                                                     preserve_index=preserve_index,
+                                                     nthreads=nthreads, columns=columns, safe=safe)
+                                )
+
+    def to_pandas(self):
+        """
+         creating Pandas Dataframe from PyCylon Table
+         :param self:
+         :return: a Pandas DataFrame
+         """
+        return self.to_arrow().to_pandas()
+
+    def to_numpy(self, order: str = 'F'):
+        """
+         [Experimental]
+         This method converts a Cylon Table to a 2D numpy array.
+         In the conversion we stack each column in the Table and create a numpy array.
+         For Heterogeneous Tables, use the generated array with Caution.
+         :param order: numpy array order. 'F': Fortran Style F_Contiguous or 'C' C Style C_Contiguous
+         :return: ndarray
+         """
         ar_lst = []
         _dtype = None
-        for col in py_arrow_table.columns:
+        for col in self.to_arrow().combine_chunks().columns:
             npr = col.chunks[0].to_numpy()
             if None == _dtype:
                 _dtype = npr.dtype
@@ -418,31 +584,59 @@ cdef class Table:
             ar_lst.append(npr)
         return np.array(ar_lst, order=order).T
 
+    def to_pydict(self):
+        """
+        creating a dictionary from PyCylon table
+        @return: dict
+        """
+        return self.to_arrow().to_pydict()
+
+    def to_csv(self, path, csv_write_options):
+        """
+        creating a csv file with PyCylon table data
+        @param path: str
+        @param csv_write_options: CSVWriteOptions
+        """
+        cdef string cpath = path.encode()
+        cdef CCSVWriteOptions c_csv_write_options = pycylon_unwrap_csv_write_options(
+            csv_write_options)
+        self.table_shd_ptr.get().WriteCSV(cpath, c_csv_write_options)
+
+    def to_arrow(self) -> pa.Table:
+        '''
+         creating PyArrow Table from PyCylon table
+         :param self: PyCylon Table
+         :return: PyArrow Table
+         '''
+        cdef shared_ptr[CArrowTable] converted_tb
+        cdef CStatus status = self.table_shd_ptr.get().ToArrowTable(converted_tb)
+        if status.is_ok():
+            return pyarrow_wrap_table(converted_tb)
+        else:
+            raise Exception(
+                f"Table couldn't be converted to a PyArrow Table : {status.get_msg().decode()}")
+
     @property
     def column_names(self):
-        table = to_pyarrow_table(self.id.encode())
-        py_arrow_table = pyarrow_wrap_table(table)
-        return py_arrow_table.column_names
+        """
+        Produces column names from PyCylon Table
+        @return: list
+        """
+        return self.to_arrow().column_names
 
-    @property
-    def schema(self):
-        table = to_pyarrow_table(self.id.encode())
-        py_arrow_table = pyarrow_wrap_table(table)
-        return py_arrow_table.schema
+    # @property
+    # def schema(self):
+    #     """
+    #     Produces schema from PyCylon Table
+    #     @return: schema
+    #     """
+    #     pass
 
-    def __getitem__(self, key):
-        table = to_pyarrow_table(self.id.encode())
-        py_arrow_table = pyarrow_wrap_table(table)
-        if isinstance(key, slice):
-            start, stop, step = key.indices(self.columns)
-            return self.from_arrow(py_arrow_table.slice(start, stop),
-                                   self.context)
-        else:
-            return self.from_arrow(py_arrow_table.slice(key, 1), self.context)
-
-    def __repr__(self):
-        table = to_pyarrow_table(self.id.encode())
-        py_arrow_table = pyarrow_wrap_table(table)
-        table_str = ''
-        for i in range(self.rows):
-            row = py_arrow_table.slice(i, 1)
+    # def __getitem__(self, key):
+    #     py_arrow_table = self.to_arrow()
+    #     if isinstance(key, slice):
+    #         start, stop, step = key.indices(py_arrow_table.columns)
+    #         return self.from_arrow(py_arrow_table.slice(start, stop),
+    #                                self.context)
+    #     else:
+    #         return self.from_arrow(py_arrow_table.slice(key, 1), self.context)
