@@ -71,7 +71,7 @@ library_directories = [cylon_library_directory,
                        get_python_lib(),
                        os.path.join(os.sys.prefix, "lib")]
 
-libraries = ["arrow", "cylon", "cylon_python", "glog"]
+libraries = ["arrow", "cylon", "glog"]
 
 _include_dirs = ["../cpp/src/cylon/python",
                  "../cpp/src/cylon/lib",
