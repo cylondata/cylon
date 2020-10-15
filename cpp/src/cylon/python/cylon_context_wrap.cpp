@@ -46,7 +46,7 @@ std::shared_ptr<cylon::CylonContext> cylon::python::cylon_context_wrap::getConte
 }
 
 void cylon::python::cylon_context_wrap::Barrier() {
-  this->context->GetCommunicator()->Barrier();
+  this->context->Barrier();
 }
 
 std::shared_ptr<net::Communicator> cylon::python::cylon_context_wrap::GetCommunicator() const {

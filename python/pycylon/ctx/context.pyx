@@ -23,7 +23,7 @@ from pycylon.ctx.context cimport CCylonContextWrap
 
 cdef class CylonContext:
 
-    def __cinit__(self, config):
+    def __cinit__(self, config=None):
         '''
         Initializing the Cylon Context based on the distributed or non-distributed context
         :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
