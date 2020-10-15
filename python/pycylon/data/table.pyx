@@ -334,17 +334,18 @@ cdef class Table:
         cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
         cdef CStatus status
         # TODO: add callable for Cython functions via FPointers
+
         if ra_op_name == 'union':
             status = CTable.Union(self.table_shd_ptr, right, output)
-        if ra_op_name == 'distributed_union':
+        elif ra_op_name == 'distributed_union':
             status = CTable.DistributedUnion(self.table_shd_ptr, right, output)
-        if ra_op_name == 'intersect':
+        elif ra_op_name == 'intersect':
             status = CTable.Intersect(self.table_shd_ptr, right, output)
-        if ra_op_name == 'distributed_intersect':
+        elif ra_op_name == 'distributed_intersect':
             status = CTable.DistributedIntersect(self.table_shd_ptr, right, output)
-        if ra_op_name == 'subtract':
+        elif ra_op_name == 'subtract':
             status = CTable.Subtract(self.table_shd_ptr, right, output)
-        if ra_op_name == 'distributed_subtract':
+        elif ra_op_name == 'distributed_subtract':
             status = CTable.DistributedSubtract(self.table_shd_ptr, right, output)
 
         if status.is_ok():
