@@ -333,7 +333,7 @@ cdef class Table:
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
         cdef CStatus status
-
+        # TODO: add callable for Cython functions via FPointers
         if ra_op_name == 'union':
             status = CTable.Union(self.table_shd_ptr, right, output)
         if ra_op_name == 'distributed_union':
