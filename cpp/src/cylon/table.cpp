@@ -646,10 +646,10 @@ Status Table::Select(const std::function<bool(cylon::Row)> &selector, std::share
   arrow::compute::FunctionContext func_ctx;
   status = arrow::compute::Filter(&func_ctx, *table_, *mask, &out_table);
   if (!status.ok()) {
-	out = std::make_shared<cylon::Table>(out_table, this->ctx);
-	return Status(UnknownError, status.message());
+    return Status(UnknownError, status.message());
   }
-  return Status::OK();
+  out = std::make_shared<cylon::Table>(out_table, this->ctx);
+  return Status::OK();;
 }
 
 Status Table::Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
