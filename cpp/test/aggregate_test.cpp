@@ -23,6 +23,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
 
   cylon::Status status;
   std::shared_ptr<cylon::Table> table;
+  std::shared_ptr<cylon::Table> output;
   std::shared_ptr<cylon::compute::Result> result;
   status = cylon::test::CreateTable(ctx, rows, &table);
 
@@ -62,4 +63,49 @@ TEST_CASE("aggregate testing", "[aggregates]") {
     auto res_scalar = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
     REQUIRE(res_scalar->value == 10.0 + (double) (rows - 1));
   }
+
+  // Adding Table output based Aggregates
+
+  SECTION("testing table:sum") {
+    status = cylon::compute::Sum(table, 1, output);
+    REQUIRE(status.is_ok());
+
+    auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
+    auto val = std::static_pointer_cast<arrow::NumericArray<arrow::DoubleType>>(array)->Value(0);
+
+    REQUIRE(val == ((double) (rows * (rows - 1) / 2.0) + 10.0 * rows) * ctx->GetWorldSize());
+  }
+
+  SECTION("testing table:count") {
+    status = cylon::compute::Count(table, 1, output);
+    REQUIRE(status.is_ok());
+
+    auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
+    auto val = std::static_pointer_cast<arrow::NumericArray<arrow::Int64Type>>(array)->Value(0);
+
+    REQUIRE(val == rows * ctx->GetWorldSize());
+  }
+
+  SECTION("testing table:min") {
+    status = cylon::compute::Min(table, 1, output);
+    REQUIRE(status.is_ok());
+
+    auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
+    auto val = std::static_pointer_cast<arrow::NumericArray<arrow::DoubleType>>(array)->Value(0);
+
+    REQUIRE(val == 10.0);
+  }
+
+  SECTION("testing max") {
+    status = cylon::compute::Max(table, 1, output);
+    REQUIRE(status.is_ok());
+
+    auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
+    auto val = std::static_pointer_cast<arrow::NumericArray<arrow::DoubleType>>(array)->Value(0);
+
+    REQUIRE(val == 10.0 + (double) (rows - 1));
+  }
+
+
+
 }

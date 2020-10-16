@@ -12,6 +12,7 @@
  # limitations under the License.
  ##
 
+# TODO: this test_class will be used to test the magic functions of Table API
 # from pycylon import Table
 # from pycylon.csv import csv_reader
 # from pycylon import CylonContext
@@ -40,9 +41,9 @@
 #
 # print(tb[0:5].to_pandas())
 
-ctx.finalize()
+#ctx.finalize()
 
-import pyarrow as pa
+#import pyarrow as pa
 
-arw_table: pa.Table = tb.to_arrow()
+#arw_table: pa.Table = tb.to_arrow()
 
