@@ -26,7 +26,7 @@ cylon::Status CreateTable(std::shared_ptr<cylon::CylonContext> &ctx, int rows,
   std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t >>();
 
   for (int i = 0; i < rows; i++) {
-    col0->push_back((int32_t)i);
+    col0->push_back((int32_t) i);
     col1->push_back((double_t) i + 10.0);
   }
 
@@ -65,7 +65,7 @@ int main() {
   }
 
   if ((status = cylon::compute::Count(table, agg_index, &result)).is_ok()) {
-    const auto &aa = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
+    const auto &aa = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
     std::cout << "count " << aa->value << " " << status.get_code() << std::endl;
   } else {
     std::cout << "count failed! " << status.get_msg() << std::endl;
@@ -91,6 +91,10 @@ int main() {
 
   if ((status = cylon::compute::Sum(table, agg_index, output)).is_ok()) {
     output->Print();
+    auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
+    auto val = std::static_pointer_cast<arrow::NumericArray<arrow::DoubleType>>(array)->Value(0);
+    std::cout << "tsum:type " << array->type()->ToString() << ", value = " << val << " " << status.get_code() << std::endl;
+
   } else {
     std::cout << "Table: sum failed! " << status.get_msg() << std::endl;
   }
