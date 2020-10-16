@@ -32,7 +32,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
   }
 
   SECTION("testing sum") {
-    status = cylon::compute::Sum(table, 1, &result);
+    status = cylon::compute::Sum(table, 1, result);
     REQUIRE(status.is_ok());
 
     auto res_scalar = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
@@ -41,7 +41,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
   }
 
   SECTION("testing count") {
-    status = cylon::compute::Count(table, 1, &result);
+    status = cylon::compute::Count(table, 1, result);
     REQUIRE(status.is_ok());
 
     auto res_scalar = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
@@ -49,7 +49,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
   }
 
   SECTION("testing min") {
-    status = cylon::compute::Min(table, 1, &result);
+    status = cylon::compute::Min(table, 1, result);
     REQUIRE(status.is_ok());
 
     auto res_scalar = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
@@ -57,7 +57,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
   }
 
   SECTION("testing max") {
-    status = cylon::compute::Max(table, 1, &result);
+    status = cylon::compute::Max(table, 1, result);
     REQUIRE(status.is_ok());
 
     auto res_scalar = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());

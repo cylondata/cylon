@@ -69,13 +69,13 @@ TEST_CASE("groupby testing", "[groupby]") {
     status = HashCylonGroupBy(table, output1);
     REQUIRE(status.is_ok());
 
-    status = cylon::compute::Sum(output1, 0, &sum);
+    status = cylon::compute::Sum(output1, 0, sum);
     REQUIRE(status.is_ok());
     auto idx_sum = std::static_pointer_cast<arrow::Int64Scalar>(sum->GetResult().scalar());
     std::cout << "idx_sum " << idx_sum->value << std::endl;
     REQUIRE(idx_sum->value == 10); // 4* 5/ 2
 
-    status = cylon::compute::Sum(output1, 1, &sum);
+    status = cylon::compute::Sum(output1, 1, sum);
     REQUIRE(status.is_ok());
     auto val_sum = std::static_pointer_cast<arrow::DoubleScalar>(sum->GetResult().scalar());
     std::cout << "val_sum " << val_sum->value << std::endl;
@@ -90,13 +90,13 @@ TEST_CASE("groupby testing", "[groupby]") {
     status = PipelineCylonGroupBy(output1, output2);
     REQUIRE(status.is_ok());
 
-    status = cylon::compute::Sum(output2, 0, &sum);
+    status = cylon::compute::Sum(output2, 0, sum);
     REQUIRE(status.is_ok());
     auto idx_sum = std::static_pointer_cast<arrow::Int64Scalar>(sum->GetResult().scalar());
     std::cout << "idx_sum " << idx_sum->value << std::endl;
     REQUIRE(idx_sum->value == 10); // 4* 5/ 2
 
-    status = cylon::compute::Sum(output2, 1, &sum);
+    status = cylon::compute::Sum(output2, 1, sum);
     REQUIRE(status.is_ok());
     auto val_sum = std::static_pointer_cast<arrow::DoubleScalar>(sum->GetResult().scalar());
     std::cout << "val_sum " << val_sum->value << std::endl;
