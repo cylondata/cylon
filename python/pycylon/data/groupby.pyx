@@ -12,12 +12,6 @@
 # limitations under the License.
 ##
 
-from pycylon.data.aggregates cimport CGroupByAggregationOp
+from pycylon.data.groupby cimport *
 
-
-cpdef enum AggregationOp:
-    SUM = CGroupByAggregationOp.CSUM
-    COUNT = CGroupByAggregationOp.CCOUNT
-    MIN = CGroupByAggregationOp.CMIN
-    MAX = CGroupByAggregationOp.CMAX
-
+# TODO: add custom groupby ops here

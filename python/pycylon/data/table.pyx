@@ -42,6 +42,9 @@ pycylon_unwrap_csv_read_options,
 pycylon_unwrap_csv_write_options)
 
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
+from pycylon.data.aggregates cimport CGroupByAggregationOp
+from pycylon.data.aggregates import AggregationOp
+from pycylon.data.groupby cimport (GroupBy, PipelineGroupBy)
 
 import pyarrow as pa
 import numpy as np
@@ -469,7 +472,7 @@ cdef class Table:
         else:
             raise ValueError("Columns not passed.")
 
-    def _agg_op(self, column, op_name):
+    def _agg_op(self, column, op):
         cdef shared_ptr[CTable] output
         cdef CStatus status
         agg_index = -1
@@ -480,34 +483,65 @@ cdef class Table:
         else:
             raise ValueError("column must be str or int")
 
-        if op_name == 'sum':
+        if op == AggregationOp.SUM:
             status = Sum(self.table_shd_ptr, agg_index, output)
-        elif op_name == 'count':
+        elif op == AggregationOp.COUNT:
             status = Count(self.table_shd_ptr, agg_index, output)
-        elif op_name == 'min':
+        elif op == AggregationOp.MIN:
             status = Min(self.table_shd_ptr, agg_index, output)
-        elif op_name == 'max':
+        elif op == AggregationOp.MAX:
             status = Max(self.table_shd_ptr, agg_index, output)
         else:
-            raise ValueError(f"Unsupported aggregation type {op_name}")
+            raise ValueError(f"Unsupported aggregation type {op}")
 
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
-            raise Exception(f"Aggregate op {op_name} failed: {status.get_msg().decode()}")
+            raise Exception(f"Aggregate op {op.name} failed: {status.get_msg().decode()}")
 
     def sum(self, column):
-        return self._agg_op(column, "sum")
+        return self._agg_op(column, AggregationOp.SUM)
 
     def count(self, column):
-        return self._agg_op(column, "count")
+        return self._agg_op(column, AggregationOp.COUNT)
 
     def min(self, column):
-        return self._agg_op(column, "min")
+        return self._agg_op(column, AggregationOp.MIN)
 
     def max(self, column):
-        return self._agg_op(column, "max")
+        return self._agg_op(column, AggregationOp.MAX)
 
+    def groupby(self, index_col: int, aggregate_cols: List,
+                aggregate_ops: List[AggregationOp]):
+        cdef CStatus status
+        cdef shared_ptr[CTable] output
+        cdef vector[long] caggregate_cols
+        cdef vector[CGroupByAggregationOp] caggregate_ops
+
+        if not aggregate_cols and not aggregate_ops:
+            raise ValueError("Aggregate columns and Aggregate operations cannot be empty")
+        else:
+            # set aggregate col to c-vector
+            for aggregate_col in aggregate_cols:
+                col_idx = -1
+                if isinstance(aggregate_col, str):
+                    col_idx = self._resolve_column_index_from_column_name(aggregate_col)
+                elif isinstance(aggregate_col, int):
+                    col_idx = aggregate_col
+                else:
+                    raise ValueError("Aggregate column must be either column name (str) or column "
+                                     "index (int)")
+                caggregate_cols.push_back(col_idx)
+
+            for aggregate_op in aggregate_ops:
+                caggregate_ops.push_back(aggregate_op)
+
+            status = GroupBy(self.table_shd_ptr, index_col, caggregate_cols, caggregate_ops,
+                              output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"Groupby operation failed {status.get_msg().decode()}")
 
 
     @staticmethod
