@@ -67,7 +67,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
   // Adding Table output based Aggregates
 
   SECTION("testing table:sum") {
-    status = cylon::compute::Sum(table, 1, &output)
+    status = cylon::compute::Sum(table, 1, output)
     REQUIRE(status.is_ok());
 
     auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
@@ -77,7 +77,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
   }
 
   SECTION("testing table:count") {
-    status = cylon::compute::Count(table, 1, &output)
+    status = cylon::compute::Count(table, 1, output)
     REQUIRE(status.is_ok());
 
     auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
@@ -97,7 +97,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
   }
 
   SECTION("testing max") {
-    status = cylon::compute::Max(table, 1, &output);
+    status = cylon::compute::Max(table, 1, output);
     REQUIRE(status.is_ok());
 
     auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
