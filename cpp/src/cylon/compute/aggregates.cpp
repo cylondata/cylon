@@ -166,7 +166,6 @@ cylon::Status DoAllReduce(std::shared_ptr<cylon::CylonContext> &ctx,
   }
 }
 
-
 cylon::Status Sum(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output) {
   auto ctx = table->GetContext();
   const std::shared_ptr<Column> &col = table->GetColumn(col_idx); // cylon column object
@@ -251,6 +250,188 @@ cylon::Status Min(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, s
 
 cylon::Status Max(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> *output) {
   return MinMax<1>(table, col_idx, output);
+}
+
+template<typename ARROW_TYPE, typename = typename std::enable_if<arrow::is_number_type<ARROW_TYPE>::value
+                                                                     | arrow::is_boolean_type<ARROW_TYPE>::value>::type>
+arrow::Status ResolveTableFromScalar(arrow::MemoryPool *pool,
+                                     std::shared_ptr<cylon::CylonContext> &ctx,
+                                     int32_t col_idx,
+                                     const std::shared_ptr<cylon::compute::Result> &result,
+                                     const std::shared_ptr<cylon::Table> input,
+                                     std::shared_ptr<cylon::Table> &output) {
+  using SCALAR_TYPE = typename arrow::TypeTraits<ARROW_TYPE>::ScalarType;
+  using IDX_BUILDER_T = typename arrow::TypeTraits<ARROW_TYPE>::BuilderType;
+
+  arrow::Status s;
+  std::vector<std::shared_ptr<arrow::Array>> out_vectors;
+  IDX_BUILDER_T idx_builder(pool);
+  std::shared_ptr<arrow::Array> out_idx;
+  if (!(s = idx_builder.Reserve(1)).ok()) {
+    return s;
+  }
+  std::shared_ptr<SCALAR_TYPE>
+      &&cast_sclr = std::static_pointer_cast<SCALAR_TYPE>(result->GetResult().scalar());
+
+  idx_builder.UnsafeAppend(cast_sclr->value);
+
+  if (!(s = idx_builder.Finish(&out_idx)).ok()) {
+    return s;
+  }
+
+  out_vectors.push_back(out_idx);
+
+  std::shared_ptr<arrow::Table> arw_table;
+  input->ToArrowTable(arw_table);
+
+  auto out_a_table = arrow::Table::Make(arrow::schema({arw_table->schema()->field(col_idx)}), {out_vectors});
+
+  Status status = cylon::Table::FromArrowTable(ctx, out_a_table, &output);
+
+  if (status.is_ok()) {
+    return arrow::Status().OK();
+  } else {
+    return arrow::Status::ExecutionError("Table resolution failed in aggregation");
+  }
+}
+
+arrow::Status CreateTableFromScalar(arrow::MemoryPool *pool,
+                                    std::shared_ptr<cylon::CylonContext> &ctx,
+                                    int32_t col_idx,
+                                    const std::shared_ptr<cylon::compute::Result> &result,
+                                    const std::shared_ptr<cylon::Table> input,
+                                    std::shared_ptr<cylon::Table> &output) {
+
+  switch (result->GetResult().scalar()->type->id()) {
+
+    case arrow::Type::NA: break;
+    case arrow::Type::BOOL: {
+      return ResolveTableFromScalar<arrow::BooleanType>(pool, ctx, col_idx, result, input, output);
+    }
+    case arrow::Type::UINT8: {
+      return ResolveTableFromScalar<arrow::UInt8Type>(pool, ctx, col_idx, result, input, output);
+    }
+    case arrow::Type::INT8: {
+      return ResolveTableFromScalar<arrow::Int8Type>(pool, ctx, col_idx, result, input, output);
+    }
+    case arrow::Type::UINT16: {
+      return ResolveTableFromScalar<arrow::UInt16Type>(pool, ctx, col_idx, result, input, output);
+    }
+    case arrow::Type::INT16: {
+      return ResolveTableFromScalar<arrow::Int16Type>(pool, ctx, col_idx, result, input, output);
+    }
+    case arrow::Type::UINT32: {
+      return ResolveTableFromScalar<arrow::UInt32Type>(pool, ctx, col_idx, result, input, output);
+    }
+    case arrow::Type::INT32: {
+      return ResolveTableFromScalar<arrow::Int32Type>(pool, ctx, col_idx, result, input, output);
+    }
+    case arrow::Type::UINT64: {
+      return ResolveTableFromScalar<arrow::UInt64Type>(pool, ctx, col_idx, result, input, output);
+    }
+    case arrow::Type::INT64: {
+      return ResolveTableFromScalar<arrow::Int64Type>(pool, ctx, col_idx, result, input, output);
+    }
+    case arrow::Type::FLOAT: {
+      return ResolveTableFromScalar<arrow::FloatType>(pool, ctx, col_idx, result, input, output);
+    }
+    case arrow::Type::DOUBLE: {
+      return ResolveTableFromScalar<arrow::DoubleType>(pool, ctx, col_idx, result, input, output);
+    }
+    case arrow::Type::HALF_FLOAT:break;
+    case arrow::Type::STRING:break;
+    case arrow::Type::BINARY:break;
+    case arrow::Type::FIXED_SIZE_BINARY:break;
+    case arrow::Type::DATE32:break;
+    case arrow::Type::DATE64:break;
+    case arrow::Type::TIMESTAMP:break;
+    case arrow::Type::TIME32:break;
+    case arrow::Type::TIME64:break;
+    case arrow::Type::INTERVAL:break;
+    case arrow::Type::DECIMAL:break;
+    case arrow::Type::LIST:break;
+    case arrow::Type::STRUCT:break;
+    case arrow::Type::UNION:break;
+    case arrow::Type::DICTIONARY:break;
+    case arrow::Type::MAP:break;
+    case arrow::Type::EXTENSION:break;
+    case arrow::Type::FIXED_SIZE_LIST:break;
+    case arrow::Type::DURATION:break;
+    case arrow::Type::LARGE_STRING:break;
+    case arrow::Type::LARGE_BINARY:break;
+    case arrow::Type::LARGE_LIST:break;
+  }
+
+  return arrow::Status().TypeError("Not Supported Type. ");
+}
+
+cylon::Status GenTable(std::shared_ptr<cylon::CylonContext> &ctx,
+                       int32_t col_idx,
+                       std::shared_ptr<cylon::compute::Result> &result,
+                       std::shared_ptr<cylon::Table> input,
+                       std::shared_ptr<cylon::Table> &output) {
+  arrow::Status aStatus;
+  arrow::MemoryPool *memory_pool = cylon::ToArrowPool(ctx);
+  aStatus = CreateTableFromScalar(memory_pool, ctx, col_idx, result, input, output);
+  if (aStatus.ok()) {
+    return cylon::Status::OK();
+  } else {
+    return cylon::Status(cylon::Code::ExecutionError, "Error occured in creating table from aggregation operation");
+  }
+}
+
+cylon::Status Sum(const std::shared_ptr<cylon::Table> &table,
+                  int32_t col_idx,
+                  std::shared_ptr<cylon::Table> &output) {
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::compute::Result> result;
+  std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
+
+  if ((status = cylon::compute::Sum(table, col_idx, &result)).is_ok()) {
+    return GenTable(ctx, col_idx, result, table, output);
+  }
+  return status;
+}
+
+cylon::Status Count(const std::shared_ptr<cylon::Table> &table,
+                    int32_t col_idx,
+                    std::shared_ptr<cylon::Table> &output) {
+  cylon::Status status;
+  std::shared_ptr<cylon::compute::Result> result;
+  std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
+
+  if ((status = cylon::compute::Count(table, col_idx, &result)).is_ok()) {
+    return GenTable(ctx, col_idx, result, table, output);
+  }
+  return status;
+}
+
+cylon::Status Min(const std::shared_ptr<cylon::Table> &table,
+                  int32_t col_idx,
+                  std::shared_ptr<cylon::Table> &output) {
+  cylon::Status status;
+  std::shared_ptr<cylon::compute::Result> result;
+  std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
+
+  if ((status = cylon::compute::Min(table, col_idx, &result)).is_ok()) {
+    return GenTable(ctx, col_idx, result, table, output);
+  }
+  return status;
+}
+
+cylon::Status Max(const std::shared_ptr<cylon::Table> &table,
+                  int32_t col_idx,
+                  std::shared_ptr<cylon::Table> &output) {
+  cylon::Status status;
+  std::shared_ptr<cylon::compute::Result> result;
+  std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
+
+  if ((status = cylon::compute::Max(table, col_idx, &result)).is_ok()) {
+    return GenTable(ctx, col_idx, result, table, output);
+  }
+  return status;
 }
 
 }  // end compute

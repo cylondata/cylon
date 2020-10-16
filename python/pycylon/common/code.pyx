@@ -12,8 +12,6 @@
  # limitations under the License.
  ##
 
-from libcpp.string cimport string
-from libcpp cimport bool
 from pycylon.common.code cimport CCode
 
 '''
