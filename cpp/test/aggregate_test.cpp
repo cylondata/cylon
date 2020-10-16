@@ -87,7 +87,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
   }
 
   SECTION("testing table:min") {
-    status = cylon::compute::Min(table, 1, &output);
+    status = cylon::compute::Min(table, 1, output);
     REQUIRE(status.is_ok());
 
     auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
