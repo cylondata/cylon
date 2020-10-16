@@ -84,10 +84,46 @@ dict3 = cn_tb5.to_pydict()
 
 print(dict3)
 
-print(cn_tb5.schema)
-
 print(cn_tb5.column_names)
 
 print(ar_tb2)
 
 print(cn_tb5.to_numpy())
+
+## Aggregate Sum
+
+cn_tb6 = cn_tb5.sum('col1')
+
+cn_tb6.show()
+
+cn_tb7 = cn_tb5.sum(0)
+
+## Aggregate Count
+
+cn_tb8 = cn_tb5.count('col1')
+
+cn_tb8.show()
+
+cn_tb9 = cn_tb5.count(0)
+
+cn_tb9.show()
+
+## Aggregate Min
+
+cn_tb10 = cn_tb5.min('col1')
+
+cn_tb10.show()
+
+cn_tb11 = cn_tb5.min(0)
+
+cn_tb11.show()
+
+## Aggregate Max
+
+cn_tb12 = cn_tb5.max('col1')
+
+cn_tb12.show()
+
+cn_tb13 = cn_tb5.max(0)
+
+cn_tb13.show()

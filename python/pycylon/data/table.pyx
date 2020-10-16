@@ -41,6 +41,8 @@ pycylon_wrap_table,
 pycylon_unwrap_csv_read_options,
 pycylon_unwrap_csv_write_options)
 
+from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
+
 import pyarrow as pa
 import numpy as np
 import pandas as pd
@@ -466,6 +468,47 @@ cdef class Table:
                                  "column indices in int")
         else:
             raise ValueError("Columns not passed.")
+
+    def _agg_op(self, column, op_name):
+        cdef shared_ptr[CTable] output
+        cdef CStatus status
+        agg_index = -1
+        if isinstance(column, str):
+            agg_index = self._resolve_column_index_from_column_name(column)
+        elif isinstance(column, int):
+            agg_index = column
+        else:
+            raise ValueError("column must be str or int")
+
+        if op_name == 'sum':
+            status = Sum(self.table_shd_ptr, agg_index, output)
+        elif op_name == 'count':
+            status = Count(self.table_shd_ptr, agg_index, output)
+        elif op_name == 'min':
+            status = Min(self.table_shd_ptr, agg_index, output)
+        elif op_name == 'max':
+            status = Max(self.table_shd_ptr, agg_index, output)
+        else:
+            raise ValueError(f"Unsupported aggregation type {op_name}")
+
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise Exception(f"Aggregate op {op_name} failed: {status.get_msg().decode()}")
+
+    def sum(self, column):
+        return self._agg_op(column, "sum")
+
+    def count(self, column):
+        return self._agg_op(column, "count")
+
+    def min(self, column):
+        return self._agg_op(column, "min")
+
+    def max(self, column):
+        return self._agg_op(column, "max")
+
+
 
     @staticmethod
     def from_arrow(context, pyarrow_table) -> Table:
