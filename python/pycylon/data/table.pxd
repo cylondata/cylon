@@ -40,50 +40,9 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         CStatus ToArrowTable(shared_ptr[CArrowTable] &output)
 
-        @staticmethod
-        CStatus FromCSV(shared_ptr[CCylonContext] &ctx, const string &path, shared_ptr[CTable]
-                        &tableOut, const CCSVReadOptions &options)
-
         CStatus WriteCSV(const string &path, const CCSVWriteOptions &options)
 
         CStatus Sort(int sort_column, shared_ptr[CTable] &output)
-
-        @staticmethod
-        CStatus Merge(shared_ptr[CCylonContext] &ctx, vector[shared_ptr[CTable]] &tables,
-                      shared_ptr[CTable] output)
-
-        @staticmethod
-        CStatus Join(shared_ptr[CTable] &left, shared_ptr[CTable] &right,  CJoinConfig
-        join_config, shared_ptr[CTable] *output)
-
-        @staticmethod
-        CStatus DistributedJoin(shared_ptr[CTable] &left, shared_ptr[CTable] &right,  CJoinConfig
-        join_config, shared_ptr[CTable] *output);
-
-        @staticmethod
-        CStatus Union(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[CTable]
-        &output)
-
-        @staticmethod
-        CStatus DistributedUnion(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[
-                CTable]
-        &output)
-
-        @staticmethod
-        CStatus Subtract(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[CTable]
-        &output)
-
-        @staticmethod
-        CStatus DistributedSubtract(shared_ptr[CTable] &first, shared_ptr[CTable] &second,
-                                   shared_ptr[CTable] &output)
-
-        @staticmethod
-        CStatus Intersect(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[CTable]
-        &output)
-
-        @staticmethod
-        CStatus DistributedIntersect(shared_ptr[CTable] &first, shared_ptr[CTable] &second,
-                                   shared_ptr[CTable] &output)
 
         @staticmethod
         CStatus Project(const vector[long] &project_columns, shared_ptr[CTable] &output)
@@ -105,6 +64,40 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
         void retainMemory(bool retain)
 
         bool IsRetain() const
+
+
+cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
+
+    CStatus FromCSV(shared_ptr[CCylonContext] &ctx, const string &path, shared_ptr[CTable]
+                        &tableOut, const CCSVReadOptions &options)
+
+    CStatus Merge(shared_ptr[CCylonContext] &ctx, vector[shared_ptr[CTable]] &tables,
+                  shared_ptr[CTable] output)
+
+    CStatus Join(shared_ptr[CTable] &left, shared_ptr[CTable] &right,  CJoinConfig
+    join_config, shared_ptr[CTable] *output)
+
+    CStatus DistributedJoin(shared_ptr[CTable] &left, shared_ptr[CTable] &right,  CJoinConfig
+    join_config, shared_ptr[CTable] *output);
+
+    CStatus Union(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[CTable]
+    &output)
+
+    CStatus DistributedUnion(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[
+            CTable]
+    &output)
+
+    CStatus Subtract(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[CTable]
+    &output)
+
+    CStatus DistributedSubtract(shared_ptr[CTable] &first, shared_ptr[CTable] &second,
+                               shared_ptr[CTable] &output)
+
+    CStatus Intersect(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[CTable]
+    &output)
+
+    CStatus DistributedIntersect(shared_ptr[CTable] &first, shared_ptr[CTable] &second,
+                               shared_ptr[CTable] &output)
 
 
 cdef class Table:

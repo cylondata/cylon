@@ -12,28 +12,30 @@
  # limitations under the License.
  ##
 
-from pycylon.csv import csv_reader
 from pycylon import Table
 from pycylon import CylonContext
-import argparse
+from pycylon.io import CSVReadOptions
+from pycylon.net import MPIConfig
 
 table1_path = '/tmp/user_device_tm_1.csv'
 table2_path = '/tmp/user_usage_tm_1.csv'
 
 
 def single_process():
-    ctx: CylonContext = CylonContext(config=None)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-    tb1: Table = csv_reader.read(ctx, table1_path, ',')
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-    tb2: Table = csv_reader.read(ctx, table2_path, ',')
+    tb1: Table = Table.from_csv(ctx, table1_path, csv_read_options)
+
+    tb2: Table = Table.from_csv(ctx, table2_path, csv_read_options)
 
     print(tb1.column_names)
     print(tb2.column_names)
 
     configs = {'join_type': 'inner', 'algorithm': 'sort'}
 
-    tb3: Table = tb1.join(ctx, table=tb2,
+    tb3: Table = tb1.join(table=tb2,
                           join_type=configs['join_type'],
                           algorithm=configs['algorithm'],
                           left_on=[0],
@@ -42,7 +44,7 @@ def single_process():
 
     tb3.show()
 
-    tb4: Table = tb1.join(ctx, table=tb2,
+    tb4: Table = tb1.join(table=tb2,
                           join_type=configs['join_type'],
                           algorithm=configs['algorithm'],
                           left_on=['use_id'],
@@ -51,7 +53,7 @@ def single_process():
 
     tb4.show()
 
-    tb4: Table = tb1.join(ctx, table=tb2,
+    tb4: Table = tb1.join(table=tb2,
                           join_type=configs['join_type'],
                           algorithm=configs['algorithm'],
                           on=['use_id']
@@ -71,11 +73,14 @@ def single_process():
 
 
 def multi_process():
-    ctx: CylonContext = CylonContext(config='mpi')
+    mpi_config = MPIConfig()
+    ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
 
-    tb1: Table = csv_reader.read(ctx, table1_path, ',')
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-    tb2: Table = csv_reader.read(ctx, table2_path, ',')
+    tb1: Table = Table.from_csv(ctx, table1_path, csv_read_options)
+
+    tb2: Table = Table.from_csv(ctx, table2_path, csv_read_options)
 
     print(tb1.column_names)
     print(tb2.column_names)
