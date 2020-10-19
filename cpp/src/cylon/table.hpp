@@ -175,6 +175,10 @@ class Table {
     retain_ = retain;
   }
 
+  /**
+   * Returns if this table retains data after any operation performed on it
+   * @return
+   */
   bool IsRetain() const;
 
   /**
@@ -234,6 +238,7 @@ Status Merge(std::shared_ptr<cylon::CylonContext> &ctx,
 
 /**
    * Do the join with the right table
+   * @param left the left table
    * @param right the right table
    * @param joinConfig the join configurations
    * @param output the final table
@@ -245,6 +250,7 @@ Status Join(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
 
 /**
  * Similar to local join, but performs the join in a distributed fashion
+ * @param left
  * @param right
  * @param join_config
  * @param output
@@ -256,8 +262,9 @@ Status DistributedJoin(std::shared_ptr<Table> &left, std::shared_ptr<Table> &rig
 
 /**
  * Performs union with the passed table
- * @param other right table
- * @param output output table
+ * @param first
+ * @param second
+ * @param output
  * @return <cylon::Status>
  */
 Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
@@ -265,17 +272,19 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
 
 /**
  * Similar to local union, but performs the union in a distributed fashion
- * @param other
+ * @param first
+ * @param second
  * @param output
- * @return
+ * @return <cylon::Status>
  */
-Status DistributedUnion(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
+Status DistributedUnion(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
                         std::shared_ptr<Table> &out);
 
 /**
  * Performs subtract/difference with the passed table
- * @param right right table
- * @param output output table
+ * @param first
+ * @param second
+ * @param output
  * @return <cylon::Status>
  */
 Status Subtract(std::shared_ptr<Table> &first,
@@ -283,17 +292,19 @@ Status Subtract(std::shared_ptr<Table> &first,
 
 /**
  * Similar to local subtract/difference, but performs in a distributed fashion
- * @param other
+ * @param first
+ * @param second
  * @param output
- * @return
+ * @return <cylon::Status>
  */
 Status DistributedSubtract(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
                            std::shared_ptr<Table> &out);
 
 /**
  * Performs intersection with the passed table
- * @param other right table
- * @param output output table
+ * @param first
+ * @param second
+ * @param output
  * @return <cylon::Status>
  */
 Status Intersect(std::shared_ptr<Table> &first,
@@ -301,22 +312,30 @@ Status Intersect(std::shared_ptr<Table> &first,
 
 /**
  * Similar to local intersection, but performs in a distributed fashion
- * @param other
+ * @param first
+ * @param second
  * @param output
- * @return
+ * @return <cylon::Status>
  */
 Status DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
                             std::shared_ptr<Table> &out);
 
-Status Shuffle(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_columns,
+/**
+ * Shuffles a table based on hashes
+ * @param table
+ * @param hash_col_idx vector of column indicies that needs to be hashed
+ * @param output
+ * @return
+ */
+Status Shuffle(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_col_idx,
                std::shared_ptr<cylon::Table> &output);
 
 /**
-   * Partition the table based on the hash
-   * @param hash_columns the columns use for has
-   * @param no_of_partitions number partitions
-   * @return new set of tables each with the new partition
-   */
+ * Partition the table based on the hash
+ * @param hash_columns the columns use for has
+ * @param no_of_partitions number partitions
+ * @return new set of tables each with the new partition
+ */
 Status HashPartition(std::shared_ptr<cylon::Table> &table,
                      const std::vector<int> &hash_columns,
                      int no_of_partitions,
@@ -332,6 +351,7 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_p
 
 /**
  * Filters out rows based on the selector function
+ * @param table
  * @param selector lambda function returning a bool
  * @param output
  * @return
@@ -340,6 +360,7 @@ Status Select(std::shared_ptr<cylon::Table> &table, const std::function<bool(cyl
 
 /**
  * Creates a View of an existing table by dropping one or more columns
+ * @param table
  * @param project_columns
  * @param output
  * @return

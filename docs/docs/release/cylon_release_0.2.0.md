@@ -4,13 +4,16 @@ title: Cylon Release 0.2.0
 sidebar_label: Cylon Release 0.2.0
 ---
 
-Cylon 0.2.0 adds the following features
+Cylon 0.2.0 adds the following features. Please note that this release may not be backward
+ compatible with v0.1.0. 
 
 ## Major Features 
 
 ### C++ 
 
 - Adding aggregates and group-by API 
+- Creating tables using `std::vector`s or `cylon::Column`s
+- C++ API refactoring 
 - Major performance improvements in the existing C++ API
 
 ### Python (pycylon)
