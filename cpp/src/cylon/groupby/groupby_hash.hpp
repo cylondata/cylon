@@ -355,7 +355,7 @@ cylon::Status LocalHashGroupBy(const std::shared_ptr<cylon::Table> &table,
 
   auto out_a_table = arrow::Table::Make(a_table->schema(), out_vectors);
 
-  return cylon::Table::FromArrowTable(ctx, out_a_table, &output);
+  return cylon::Table::FromArrowTable(ctx, out_a_table, output);
 }
 
 }

@@ -241,7 +241,7 @@ Status LocalPipelinedGroupBy(const std::shared_ptr<cylon::Table> &table,
 
    std::shared_ptr<arrow::Table> a_output = arrow::Table::Make(a_table->schema(), out_arrays);
 
-  return cylon::Table::FromArrowTable(ctx, a_output, &output);
+  return cylon::Table::FromArrowTable(ctx, a_output, output);
 }
 
 }

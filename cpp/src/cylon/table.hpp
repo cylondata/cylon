@@ -67,7 +67,7 @@ class Table {
    */
   static Status FromArrowTable(std::shared_ptr<cylon::CylonContext> &ctx,
                                std::shared_ptr<arrow::Table> &table,
-                               std::shared_ptr<Table> *tableOut);
+                               std::shared_ptr<Table> &tableOut);
 
   /**
    * Create a table from cylon columns

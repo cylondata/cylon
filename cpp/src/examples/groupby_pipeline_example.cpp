@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   std::shared_ptr<cylon::Table> first_table;
-  auto status = cylon::Table::FromArrowTable(ctx, left_table, &first_table);
+  auto status = cylon::Table::FromArrowTable(ctx, left_table, first_table);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[1];
     ctx->Finalize();

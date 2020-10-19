@@ -372,12 +372,12 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &pat
 
 Status Table::FromArrowTable(std::shared_ptr<cylon::CylonContext> &ctx,
 							 std::shared_ptr<arrow::Table> &table,
-							 std::shared_ptr<Table> *tableOut) {
+							 std::shared_ptr<Table> &tableOut) {
   if (!cylon::tarrow::validateArrowTableTypes(table)) {
 	LOG(FATAL) << "Types not supported";
 	return Status(cylon::Invalid, "This type not supported");
   }
-  *tableOut = std::make_shared<Table>(table, ctx);
+  tableOut = std::make_shared<Table>(table, ctx);
   return Status(cylon::OK, "Loaded Successfully");
 }
 
@@ -474,7 +474,7 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_p
   arrow::Status status = cylon::util::SortTable(table_, sort_column, &sorted_table,
                                                 cylon::ToArrowPool(ctx));
   if (status.ok()) {
-    return Table::FromArrowTable(ctx, sorted_table, &out);
+    return Table::FromArrowTable(ctx, sorted_table, out);
   } else {
     return Status(static_cast<int>(status.code()), status.message());
   }
@@ -1098,6 +1098,6 @@ Status Shuffle(std::shared_ptr<cylon::Table> &table,
     return status;
   }
 
-  return cylon::Table::FromArrowTable(ctx_, table_out, &output);
+  return cylon::Table::FromArrowTable(ctx_, table_out, output);
 }
 }  // namespace cylon
