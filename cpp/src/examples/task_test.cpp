@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
       // todo this can be a mistake
       auto ctx_non_shared = std::make_shared<cylon::CylonContext>(*ctx);
-      cylon::Table::FromCSV(ctx_non_shared, argv[1], table);
+      cylon::FromCSV(ctx_non_shared, argv[1], table);
       LOG(INFO) << "Read table with rows " << table->Rows();
 
       std::shared_ptr<arrow::Table> arTable;

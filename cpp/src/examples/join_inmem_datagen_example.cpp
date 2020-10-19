@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 
   first_table->retainMemory(false);
   second_table->retainMemory(false);
-  status = cylon::Table::DistributedJoin(first_table, second_table,
+  status = cylon::DistributedJoin(first_table, second_table,
 										 cylon::join::config::JoinConfig::InnerJoin(0, 0), &joined);
   if (!status.is_ok()) {
 	LOG(INFO) << "Table join failed ";

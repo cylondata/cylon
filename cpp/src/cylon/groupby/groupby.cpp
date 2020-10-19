@@ -121,7 +121,7 @@ cylon::Status GroupBy(const std::shared_ptr<Table> &table,
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
-    if (!(status = cylon::Table::Shuffle(local_table, {0}, local_table)).is_ok()) {
+    if (!(status = cylon::Shuffle(local_table, {0}, local_table)).is_ok()) {
       LOG(FATAL) << " table shuffle failed! " << status.get_msg();
       return status;
     }
@@ -166,7 +166,7 @@ Status PipelineGroupBy(const std::shared_ptr<Table> &table,
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
-    if (!(status = cylon::Table::Shuffle(local_table, {0}, local_table)).is_ok()) {
+    if (!(status = cylon::Shuffle(local_table, {0}, local_table)).is_ok()) {
       LOG(FATAL) << " table shuffle failed! " << status.get_msg();
       return status;
     }

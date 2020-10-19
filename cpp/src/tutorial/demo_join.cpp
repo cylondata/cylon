@@ -37,14 +37,14 @@ int main() {
   std::shared_ptr<cylon::Table> first_table, second_table, joined_table;
   cylon::Status status;
 
-  status = cylon::Table::FromCSV(ctx, csv1, first_table);
+  status = cylon::FromCSV(ctx, csv1, first_table);
   CHECK_STATUS(status, "Reading csv1 failed!")
 
-  status = cylon::Table::FromCSV(ctx, csv2, second_table);
+  status = cylon::FromCSV(ctx, csv2, second_table);
   CHECK_STATUS(status, "Reading csv2 failed!")
 
   auto join_config = cylon::join::config::JoinConfig::InnerJoin(0, 3);
-  status = cylon::Table::DistributedJoin(first_table, second_table, join_config, &joined_table);
+  status = cylon::DistributedJoin(first_table, second_table, join_config, &joined_table);
   CHECK_STATUS(status, "Join failed!")
 
   LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "

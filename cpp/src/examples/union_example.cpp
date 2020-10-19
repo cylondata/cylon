@@ -37,14 +37,14 @@ int main(int argc, char *argv[]) {
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
-  auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
+  auto status = cylon::FromCSV(ctx, argv[1], first_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[1];
     ctx->Finalize();
     return 1;
   }
   // read second table
-  status = cylon::Table::FromCSV(ctx, argv[2], second_table, read_options);
+  status = cylon::FromCSV(ctx, argv[2], second_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[2];
     ctx->Finalize();
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
   auto union_start_time = std::chrono::steady_clock::now();
   // apply union operation
-  status = cylon::Table::DistributedUnion(first_table, second_table, unioned_table);
+  status = cylon::DistributedUnion(first_table, second_table, unioned_table);
   if (!status.is_ok()) {
     LOG(INFO) << "Union failed " << status.get_msg();
     ctx->Finalize();

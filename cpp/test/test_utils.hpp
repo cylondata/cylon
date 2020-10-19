@@ -36,7 +36,7 @@ static int Verify(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<Tab
 
   LOG(INFO) << "expected:" << expected_result->Rows() << " found:" << result->Rows();
 
-  if (!(status = cylon::Table::Subtract(result, expected_result, verification)).is_ok()) {
+  if (!(status = cylon::Subtract(result, expected_result, verification)).is_ok()) {
     LOG(ERROR) << "subtract FAIL! " << status.get_msg();
     return 1;
   } else if (verification->Rows()) {
@@ -70,7 +70,7 @@ int TestSetOperation(fun_ptr fn,
   Status status;
   auto start_start = std::chrono::steady_clock::now();
 
-  status = cylon::Table::FromCSV(ctx,
+  status = cylon::FromCSV(ctx,
 #if EXECUTE
                                  std::vector<std::string>{path1, path2, out_path},
                                  std::vector<std::shared_ptr<Table> *>{&table1, &table2,
@@ -128,7 +128,7 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   auto start_start = std::chrono::steady_clock::now();
 
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false);
-  status = cylon::Table::FromCSV(ctx,
+  status = cylon::FromCSV(ctx,
 #if EXECUTE
                                  std::vector<std::string>{path1, path2, out_path},
                                  std::vector<std::shared_ptr<Table> *>{&table1, &table2,
@@ -151,7 +151,7 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
                 .count()
             << "[ms]";
 
-  status = cylon::Table::DistributedJoin(table1, table2, join_config, &joined);
+  status = cylon::DistributedJoin(table1, table2, join_config, &joined);
   if (!status.is_ok()) {
     LOG(INFO) << "Table join failed ";
     return 1;

@@ -25,14 +25,14 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<cylon::Table> first_table, second_table, result;
 
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-  auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
+  auto status = cylon::FromCSV(ctx, argv[1], first_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[1];
     ctx->Finalize();
     return 1;
   }
 
-  status = cylon::Table::FromCSV(ctx, argv[2], second_table, read_options);
+  status = cylon::FromCSV(ctx, argv[2], second_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[2];
     ctx->Finalize();
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  status = cylon::Table::DistributedSubtract(first_table, second_table, result);
+  status = cylon::DistributedSubtract(first_table, second_table, result);
   if (!status.is_ok()) {
     LOG(INFO) << "Table intersection failed";
     ctx->Finalize();
