@@ -19,11 +19,12 @@ Run test:
 >>> python python/test/test_table.py --table_path /tmp/user_device_tm_1.csv
 """
 
-from pyarrow.csv import read_csv
+from pyarrow.csv import read_csv as pyarrow_read_csv
 from pycylon import Table
 from pycylon import CylonContext
 from pycylon.io import CSVReadOptions
 from pycylon.io import CSVWriteOptions
+from pycylon.io import read_csv
 import argparse
 
 ctx: CylonContext = CylonContext(config=None, distributed=False)
@@ -33,7 +34,7 @@ parser.add_argument('--table_path', type=str, help='Path to table csv')
 
 args = parser.parse_args()
 
-pyarrow_table = read_csv(args.table_path)
+pyarrow_table = pyarrow_read_csv(args.table_path)
 
 print(pyarrow_table)
 
@@ -49,7 +50,7 @@ print(f"Tb2 : Rows={tb2.row_count}, Columns={tb2.column_count}")
 
 csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-tb3 = Table.from_csv(ctx, args.table_path, csv_read_options)
+tb3 = read_csv(ctx, args.table_path, csv_read_options)
 
 print(f"Tb3 : Rows={tb3.row_count}, Columns={tb3.column_count}")
 

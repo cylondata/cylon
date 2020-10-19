@@ -285,7 +285,7 @@ cylon::Status ResolveTableFromScalar(const std::shared_ptr<cylon::Table> &input,
 
   auto out_a_table = arrow::Table::Make(arrow::schema({arw_table->schema()->field(col_idx)}), {out_vectors});
 
-  return cylon::Table::FromArrowTable(ctx, out_a_table, &output);
+  return cylon::Table::FromArrowTable(ctx, out_a_table, output);
 }
 
 cylon::Status CreateTableFromScalar(const std::shared_ptr<cylon::Table> &input,

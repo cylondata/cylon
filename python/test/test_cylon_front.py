@@ -21,6 +21,7 @@ from pycylon import Table
 from pycylon import CylonContext
 from pycylon.net import MPIConfig
 from pycylon.io import CSVReadOptions
+from pycylon.io import read_csv
 import argparse
 
 mpi_config = MPIConfig()
@@ -34,9 +35,9 @@ args = parser.parse_args()
 
 csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-tb1: Table = Table.from_csv(ctx, args.table1_path, csv_read_options)
+tb1: Table = read_csv(ctx, args.table1_path, csv_read_options)
 
-tb2: Table = Table.from_csv(ctx, args.table2_path, csv_read_options)
+tb2: Table = read_csv(ctx, args.table2_path, csv_read_options)
 
 configs = {'join_type': 'inner', 'algorithm': 'sort'}
 
@@ -48,8 +49,5 @@ tb3: Table = tb1.distributed_join(table=tb2,
                       )
 
 tb3.show()
-
-print(tb1.context.get_rank(), tb1.context.get_world_size(), tb3.context.get_rank(),
-      tb3.context.get_world_size())
 
 ctx.finalize()

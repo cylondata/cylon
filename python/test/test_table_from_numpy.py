@@ -165,3 +165,10 @@ cn_tb_gb_res.show()
 cn_tb_gb_res1 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.SUM]).sort(0)
 
 cn_tb_gb_res1.show()
+
+cn_tb_gb_res1 = cn_tb_gb.groupby(0, ['Max Speed', 'Max Speed', 'Max Speed'], [AggregationOp.SUM,
+                                                                              AggregationOp.MIN,
+                                                                              AggregationOp.MAX])\
+                                                                              .sort(0)
+
+cn_tb_gb_res1.show()

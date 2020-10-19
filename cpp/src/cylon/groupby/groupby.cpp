@@ -93,7 +93,7 @@ LocalGroupByFptr PickLocalPipelineGroupByFptr(const std::shared_ptr<cylon::DataT
   return nullptr;
 }
 
-cylon::Status GroupBy(const std::shared_ptr<Table> &table,
+cylon::Status GroupBy(std::shared_ptr<Table> &table,
                       int64_t index_col,
                       const std::vector<int64_t> &aggregate_cols,
                       const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
@@ -107,7 +107,7 @@ cylon::Status GroupBy(const std::shared_ptr<Table> &table,
   project_cols.insert(project_cols.end(), aggregate_cols.begin(), aggregate_cols.end());
 
   std::shared_ptr<Table> projected_table;
-  if (!(status = table->Project(project_cols, projected_table)).is_ok()) {
+  if (!(status = cylon::Project(table, project_cols, projected_table)).is_ok()) {
     LOG(FATAL) << "table projection failed! " << status.get_msg();
     return status;
   }
@@ -121,7 +121,7 @@ cylon::Status GroupBy(const std::shared_ptr<Table> &table,
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
-    if (!(status = cylon::Table::Shuffle(local_table, {0}, local_table)).is_ok()) {
+    if (!(status = cylon::Shuffle(local_table, {0}, local_table)).is_ok()) {
       LOG(FATAL) << " table shuffle failed! " << status.get_msg();
       return status;
     }
@@ -138,7 +138,7 @@ cylon::Status GroupBy(const std::shared_ptr<Table> &table,
   return Status::OK();
 }
 
-Status PipelineGroupBy(const std::shared_ptr<Table> &table,
+Status PipelineGroupBy(std::shared_ptr<Table> &table,
                        int64_t index_col,
                        const std::vector<int64_t> &aggregate_cols,
                        const std::vector<GroupByAggregationOp> &aggregate_ops,
@@ -152,7 +152,7 @@ Status PipelineGroupBy(const std::shared_ptr<Table> &table,
   project_cols.insert(project_cols.end(), aggregate_cols.begin(), aggregate_cols.end());
 
   std::shared_ptr<Table> projected_table;
-  if (!(status = table->Project(project_cols, projected_table)).is_ok()) {
+  if (!(status = cylon::Project(table, project_cols, projected_table)).is_ok()) {
     LOG(FATAL) << "table projection failed! " << status.get_msg();
     return status;
   }
@@ -166,7 +166,7 @@ Status PipelineGroupBy(const std::shared_ptr<Table> &table,
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
-    if (!(status = cylon::Table::Shuffle(local_table, {0}, local_table)).is_ok()) {
+    if (!(status = cylon::Shuffle(local_table, {0}, local_table)).is_ok()) {
       LOG(FATAL) << " table shuffle failed! " << status.get_msg();
       return status;
     }

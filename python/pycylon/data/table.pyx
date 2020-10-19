@@ -29,6 +29,7 @@ from pycylon.io.csv_write_config cimport CSVWriteOptions
 
 from pyarrow.lib cimport CTable as CArrowTable
 from pycylon.data.table cimport CTable
+from pycylon.data.table cimport *
 from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table)
 from libcpp.memory cimport shared_ptr, make_shared
 
@@ -104,7 +105,7 @@ cdef class Table:
         else:
             sort_index = index
 
-        cdef CStatus status = self.table_shd_ptr.get().Sort(sort_index, output)
+        cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output)
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
@@ -146,7 +147,7 @@ cdef class Table:
             for table in tables:
                 curTable = pycylon_unwrap_table(table)
                 ctables.push_back(curTable)
-            status = CTable.Merge(sp_ctx, ctables, output)
+            status = Merge(sp_ctx, ctables, output)
             if status.is_ok():
                 return pycylon_wrap_table(output)
             else:
@@ -341,17 +342,17 @@ cdef class Table:
         # TODO: add callable for Cython functions via FPointers
 
         if ra_op_name == 'union':
-            status = CTable.Union(self.table_shd_ptr, right, output)
+            status = Union(self.table_shd_ptr, right, output)
         elif ra_op_name == 'distributed_union':
-            status = CTable.DistributedUnion(self.table_shd_ptr, right, output)
+            status = DistributedUnion(self.table_shd_ptr, right, output)
         elif ra_op_name == 'intersect':
-            status = CTable.Intersect(self.table_shd_ptr, right, output)
+            status = Intersect(self.table_shd_ptr, right, output)
         elif ra_op_name == 'distributed_intersect':
-            status = CTable.DistributedIntersect(self.table_shd_ptr, right, output)
+            status = DistributedIntersect(self.table_shd_ptr, right, output)
         elif ra_op_name == 'subtract':
-            status = CTable.Subtract(self.table_shd_ptr, right, output)
+            status = Subtract(self.table_shd_ptr, right, output)
         elif ra_op_name == 'distributed_subtract':
-            status = CTable.DistributedSubtract(self.table_shd_ptr, right, output)
+            status = DistributedSubtract(self.table_shd_ptr, right, output)
         else:
             raise ValueError(f"Unsupported relational algebra operator: {ra_op_name}")
 
@@ -376,7 +377,7 @@ cdef class Table:
         cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
                                                                  kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
-        cdef CStatus status = CTable.Join(self.table_shd_ptr, right, jc1[0], &output)
+        cdef CStatus status = Join(self.table_shd_ptr, right, jc1[0], output)
         return self._get_join_ra_response("Join", output, status)
 
     def distributed_join(self, table: Table, join_type: str,
@@ -395,7 +396,7 @@ cdef class Table:
         cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
                                                                  kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
-        cdef CStatus status = CTable.DistributedJoin(self.table_shd_ptr, right, jc1[0], &output)
+        cdef CStatus status = DistributedJoin(self.table_shd_ptr, right, jc1[0], output)
         return self._get_join_ra_response("Distributed Join", output, status)
 
     def union(self, table: Table) -> Table:
@@ -461,7 +462,7 @@ cdef class Table:
                     if isinstance(column, str):
                         column = self._resolve_column_index_from_column_name(column)
                     c_columns.push_back(column)
-                status = self.table_shd_ptr.get().Project(c_columns, output)
+                status = Project(self.table_shd_ptr, c_columns, output)
                 if status.is_ok():
                     return pycylon_wrap_table(output)
                 else:
@@ -554,31 +555,13 @@ cdef class Table:
         cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
         cdef shared_ptr[CArrowTable] arw_table = pyarrow_unwrap_table(pyarrow_table)
         cdef shared_ptr[CTable] cn_table
-        cdef CStatus status = CTable.FromArrowTable(ctx, arw_table, &cn_table)
+        cdef CStatus status = CTable.FromArrowTable(ctx, arw_table, cn_table)
 
         if status.is_ok():
             return pycylon_wrap_table(cn_table)
         else:
             raise Exception(
                 f"Table couldn't be created from PyArrow Table: {status.get_msg().decode()}")
-
-    @staticmethod
-    def from_csv(context, path, csv_read_options) -> Table:
-        '''
-            loading data from a csv file
-            :param context: CylonContext
-            :param path: Path to csv file
-            :param csv_read_options: CSVReadOptions object
-        '''
-        cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
-        cdef string cpath = path.encode()
-        cdef CCSVReadOptions c_csv_read_options = pycylon_unwrap_csv_read_options(csv_read_options)
-        cdef shared_ptr[CTable] cn_table
-        cdef CStatus status = CTable.FromCSV(ctx, cpath, cn_table, c_csv_read_options)
-        if status.is_ok():
-            return pycylon_wrap_table(cn_table)
-        else:
-            raise Exception(f"Table couldn't be created from CSV: {status.get_msg().decode()}")
 
     @staticmethod
     def from_numpy(context: CylonContext, col_names: List[str], ar_list: List[np.ndarray]) -> Table:

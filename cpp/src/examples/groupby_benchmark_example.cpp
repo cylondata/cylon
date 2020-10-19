@@ -106,7 +106,7 @@ void HashArrowGroupBy(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Tabl
 
   std::shared_ptr<arrow::Table> a_output = arrow::Table::Make(table->schema(), {out_idx, out_val});
   auto ctx = ctable->GetContext();
-  cylon::Table::FromArrowTable(ctx, a_output, &output);
+  cylon::Table::FromArrowTable(ctx, a_output, output);
 
   auto t3 = std::chrono::steady_clock::now();
   std::cout << "hash_arrow " << output->Rows()
@@ -171,7 +171,7 @@ void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
 
   std::shared_ptr<arrow::Table> a_output = arrow::Table::Make(table->schema(), {out_idx, out_val});
   auto ctx = ctable->GetContext();
-  cylon::Table::FromArrowTable(ctx, a_output, &output);
+  cylon::Table::FromArrowTable(ctx, a_output, output);
 
   auto t3 = std::chrono::steady_clock::now();
   std::cout << "hash_group " << output->Rows()
@@ -180,7 +180,7 @@ void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
             << std::endl;
 }
 
-void HashCylonGroupBy(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Table> &ctable,
+void HashCylonGroupBy(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ctable,
                       std::shared_ptr<cylon::Table> &output) {
   auto t1 = std::chrono::steady_clock::now();
 
@@ -203,10 +203,10 @@ void HashCylonGroupBy(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Tabl
             << std::endl;
 }
 
-void ArrowGroupBy(const std::shared_ptr<cylon::Table> &ctable, std::shared_ptr<cylon::Table> &output) {
+void ArrowGroupBy(std::shared_ptr<cylon::Table> &ctable, std::shared_ptr<cylon::Table> &output) {
   std::shared_ptr<cylon::Table> sorted_table;
   auto t1 = std::chrono::steady_clock::now();
-  ctable->Sort(0, sorted_table);
+  cylon::Sort(ctable, 0, sorted_table);
   auto t2 = std::chrono::steady_clock::now();
 
   const std::shared_ptr<arrow::Table> &table = sorted_table->get_table();
@@ -257,7 +257,7 @@ void ArrowGroupBy(const std::shared_ptr<cylon::Table> &ctable, std::shared_ptr<c
   sorted_table.reset(); // release the sorted table
 
   auto ctx = ctable->GetContext();
-  cylon::Table::FromArrowTable(ctx, a_output, &output);
+  cylon::Table::FromArrowTable(ctx, a_output, output);
 
   auto t3 = std::chrono::steady_clock::now();
 
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   std::shared_ptr<cylon::Table> first_table;
-  auto status = cylon::Table::FromArrowTable(ctx, left_table, &first_table);
+  auto status = cylon::Table::FromArrowTable(ctx, left_table, first_table);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[1];
     ctx->Finalize();

@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 
     std::shared_ptr<cylon::Table> first_table, output;
     auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-    auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
+    auto status = cylon::FromCSV(ctx, argv[1], first_table, read_options);
     if (!status.is_ok()) {
         LOG(INFO) << "Table reading failed " << argv[1];
         ctx->Finalize();
