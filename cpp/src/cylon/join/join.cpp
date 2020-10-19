@@ -23,6 +23,7 @@
 #include "arrow/compute/api.h"
 #include "join_utils.hpp"
 #include "../util/arrow_utils.hpp"
+#include "join_utils.hpp"
 
 namespace cylon {
 namespace join {
@@ -550,11 +551,7 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
   arrow::Type::type kType = left_tab->column(left_join_column_idx)->chunk(0)->type()->id();
   switch (join_algorithm) {
     case cylon::join::config::SORT:
-      if (kType == arrow::Type::UINT8 || kType == arrow::Type::INT8 ||
-          kType == arrow::Type::UINT16 || kType == arrow::Type::INT16 ||
-          kType == arrow::Type::UINT32 || kType == arrow::Type::INT32 ||
-          kType == arrow::Type::UINT64 || kType == arrow::Type::INT64 ||
-          kType == arrow::Type::FLOAT || kType == arrow::Type::DOUBLE) {
+      if (cylon::join::util::is_inplace_join_possible(kType)) {
         return do_inplace_sorted_join<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(left_tab,
                                                                       right_tab,
                                                                       left_join_column_idx,
