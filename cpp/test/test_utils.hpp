@@ -55,7 +55,7 @@ typedef Status(*fun_ptr)(std::shared_ptr<Table> &,
                          std::shared_ptr<Table> &);
 
 int TestSetOperation(fun_ptr fn,
-					 std::shared_ptr<cylon::CylonContext> &ctx,
+                     std::shared_ptr<cylon::CylonContext> &ctx,
                      const std::string &path1,
                      const std::string &path2,
                      const std::string &out_path) {
@@ -72,14 +72,14 @@ int TestSetOperation(fun_ptr fn,
 
   status = cylon::FromCSV(ctx,
 #if EXECUTE
-                                 std::vector<std::string>{path1, path2, out_path},
-                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2,
-                                                                       &result_expected},
+                          std::vector<std::string>{path1, path2, out_path},
+                          std::vector<std::shared_ptr<Table> *>{&table1, &table2,
+                                                                &result_expected},
 #else
       std::vector<std::string>{path1, path2},
       std::vector<std::shared_ptr<Table> *>{&table1, &table2},
 #endif
-                                 read_options);
+                          read_options);
 
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << status.get_msg();
@@ -118,7 +118,7 @@ int TestSetOperation(fun_ptr fn,
 }
 
 int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
-					  std::shared_ptr<cylon::CylonContext> &ctx,
+                      std::shared_ptr<cylon::CylonContext> &ctx,
                       const std::string &path1,
                       const std::string &path2,
                       const std::string &out_path) {
@@ -130,14 +130,14 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false);
   status = cylon::FromCSV(ctx,
 #if EXECUTE
-                                 std::vector<std::string>{path1, path2, out_path},
-                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2,
-                                                                       &joined_expected},
+                          std::vector<std::string>{path1, path2, out_path},
+                          std::vector<std::shared_ptr<Table> *>{&table1, &table2,
+                                                                &joined_expected},
 #else
       std::vector<std::string>{path1, path2},
       std::vector<std::shared_ptr<Table> *>{&table1, &table2},
 #endif
-                                 read_options);
+                          read_options);
 
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << status.get_msg();
