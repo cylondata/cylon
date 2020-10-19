@@ -42,11 +42,6 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         CStatus WriteCSV(const string &path, const CCSVWriteOptions &options)
 
-        CStatus Sort(int sort_column, shared_ptr[CTable] &output)
-
-        @staticmethod
-        CStatus Project(const vector[long] &project_columns, shared_ptr[CTable] &output)
-
         int Columns()
 
         int Rows()
@@ -67,6 +62,11 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
+
+    CStatus Sort(shared_ptr[CTable] &table, int sort_column, shared_ptr[CTable] &output)
+
+    CStatus Project(shared_ptr[CTable] &table, const vector[long] &project_columns, shared_ptr[
+            CTable] &output)
 
     CStatus Merge(shared_ptr[CCylonContext] &ctx, vector[shared_ptr[CTable]] &tables,
                   shared_ptr[CTable] output)

@@ -22,10 +22,10 @@ from pycylon.data.aggregates cimport CGroupByAggregationOp
 
 cdef extern from "../../../cpp/src/cylon/groupby/groupby.hpp" namespace "cylon":
 
-    CStatus GroupBy(const shared_ptr[CTable] &table, int index_col, const vector[long]
+    CStatus GroupBy(shared_ptr[CTable] &table, int index_col, const vector[long]
                      &aggregate_cols, const vector[CGroupByAggregationOp] &aggregate_ops,
                      shared_ptr[CTable] &output)
 
-    CStatus PipelineGroupBy(const shared_ptr[CTable] &table, int index_col, const vector[long]
+    CStatus PipelineGroupBy(shared_ptr[CTable] &table, int index_col, const vector[long]
                              &aggregate_cols, const vector[CGroupByAggregationOp] &aggregate_ops,
                              shared_ptr[CTable] &output)

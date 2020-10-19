@@ -105,7 +105,7 @@ cdef class Table:
         else:
             sort_index = index
 
-        cdef CStatus status = self.table_shd_ptr.get().Sort(sort_index, output)
+        cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output)
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
@@ -462,7 +462,7 @@ cdef class Table:
                     if isinstance(column, str):
                         column = self._resolve_column_index_from_column_name(column)
                     c_columns.push_back(column)
-                status = self.table_shd_ptr.get().Project(c_columns, output)
+                status = Project(self.table_shd_ptr, c_columns, output)
                 if status.is_ok():
                     return pycylon_wrap_table(output)
                 else:
