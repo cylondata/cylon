@@ -377,7 +377,7 @@ cdef class Table:
         cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
                                                                  kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
-        cdef CStatus status = Join(self.table_shd_ptr, right, jc1[0], &output)
+        cdef CStatus status = Join(self.table_shd_ptr, right, jc1[0], output)
         return self._get_join_ra_response("Join", output, status)
 
     def distributed_join(self, table: Table, join_type: str,
@@ -396,7 +396,7 @@ cdef class Table:
         cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
                                                                  kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
-        cdef CStatus status = DistributedJoin(self.table_shd_ptr, right, jc1[0], &output)
+        cdef CStatus status = DistributedJoin(self.table_shd_ptr, right, jc1[0], output)
         return self._get_join_ra_response("Distributed Join", output, status)
 
     def union(self, table: Table) -> Table:
@@ -555,7 +555,7 @@ cdef class Table:
         cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
         cdef shared_ptr[CArrowTable] arw_table = pyarrow_unwrap_table(pyarrow_table)
         cdef shared_ptr[CTable] cn_table
-        cdef CStatus status = CTable.FromArrowTable(ctx, arw_table, &cn_table)
+        cdef CStatus status = CTable.FromArrowTable(ctx, arw_table, cn_table)
 
         if status.is_ok():
             return pycylon_wrap_table(cn_table)

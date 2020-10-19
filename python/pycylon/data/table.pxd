@@ -36,7 +36,7 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         @staticmethod
         CStatus FromArrowTable(shared_ptr[CCylonContext] &ctx, shared_ptr[CArrowTable] &table,
-                               shared_ptr[CTable] *tableOut)
+                               shared_ptr[CTable] &tableOut)
 
         CStatus ToArrowTable(shared_ptr[CArrowTable] &output)
 
@@ -72,10 +72,10 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
                   shared_ptr[CTable] output)
 
     CStatus Join(shared_ptr[CTable] &left, shared_ptr[CTable] &right,  CJoinConfig
-    join_config, shared_ptr[CTable] *output)
+    join_config, shared_ptr[CTable] &output)
 
     CStatus DistributedJoin(shared_ptr[CTable] &left, shared_ptr[CTable] &right,  CJoinConfig
-    join_config, shared_ptr[CTable] *output);
+    join_config, shared_ptr[CTable] &output);
 
     CStatus Union(shared_ptr[CTable] &first, shared_ptr[CTable] &second, shared_ptr[CTable]
     &output)
