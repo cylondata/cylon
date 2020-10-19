@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <arrow/compute/api.h>
 #include <future>
+#include <join/join_utils.hpp>
 
 #include "table_api_extended.hpp"
 #include "io/arrow_io.hpp"
@@ -566,7 +567,54 @@ Status Table::Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::T
 
 	left->ToArrowTable(left_table);
 	right->ToArrowTable(right_table);
-	arrow::Status status = join::joinTables(
+	// if it is a sort algorithm and certian key types, we are going to do an in-place sort
+    if (join_config.GetAlgorithm() == cylon::join::config::SORT) {
+      size_t lIndex = join_config.GetLeftColumnIdx();
+      size_t rIndex = join_config.GetRightColumnIdx();
+      auto left_type = left_table->column(lIndex)->type()->id();
+      if (cylon::join::util::is_inplace_join_possible(left_type)) {
+        // now create a copy
+        std::vector<std::shared_ptr<arrow::ChunkedArray>> nl_vectors;
+        std::vector<std::shared_ptr<arrow::ChunkedArray>> nr_vectors;
+        const std::vector<std::shared_ptr<arrow::ChunkedArray>> &lVector = left_table->columns();
+        // we don't have to copy if the table is freed
+        if (!left->IsRetain()) {
+          for (size_t i = 0; i < lVector.size(); i++) {
+            if (i != lIndex) {
+              nl_vectors.push_back(lVector[i]);
+            } else {
+              std::shared_ptr<arrow::ChunkedArray> new_c_array;
+              arrow::Status st = cylon::util::duplicate(lVector[i],
+                                                        left_table->schema()->fields()[i],
+                                                        cylon::ToArrowPool(left->ctx),
+                                                        new_c_array);
+              nl_vectors.push_back(new_c_array);
+            }
+          }
+          left_table = arrow::Table::Make(left_table->schema(), nl_vectors);
+        }
+
+        // we don't have to copy if the table is freed
+        if (!right->IsRetain()) {
+          const std::vector<std::shared_ptr<arrow::ChunkedArray>> &rVector = right_table->columns();
+          for (size_t i = 0; i < rVector.size(); i++) {
+            if (i != rIndex) {
+              nr_vectors.push_back(rVector[i]);
+            } else {
+              std::shared_ptr<arrow::ChunkedArray> new_c_array;
+              arrow::Status st = cylon::util::duplicate(rVector[i],
+                                                        right_table->schema()->fields()[i],
+                                                        cylon::ToArrowPool(right->ctx),
+                                                        new_c_array);
+              nr_vectors.push_back(new_c_array);
+            }
+          }
+          right_table = arrow::Table::Make(right_table->schema(), nr_vectors);
+        }
+      }
+    }
+
+    arrow::Status status = join::joinTables(
 		left_table,
 		right_table,
 		join_config,

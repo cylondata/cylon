@@ -193,5 +193,36 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table) {
   return arrow::Status::OK();
 }
 
+arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray>& cArr,
+    const std::shared_ptr<arrow::Field>& field, arrow::MemoryPool *pool,
+                        std::shared_ptr<arrow::ChunkedArray>& out) {
+  size_t size = cArr->chunks().size();
+  std::vector<std::shared_ptr<arrow::Array>> arrays;
+  for (size_t arrayIndex = 0; arrayIndex < size; arrayIndex++) {
+    std::shared_ptr<arrow::Array> arr = cArr->chunk(arrayIndex);
+    std::shared_ptr<arrow::ArrayData> data = arr->data();
+    std::vector<std::shared_ptr<arrow::Buffer>> buffers;
+    size_t length = cArr->length();
+    for (size_t bufferIndex = 0; bufferIndex < data->buffers.size(); bufferIndex++) {
+      std::shared_ptr<arrow::Buffer> buf = data->buffers[bufferIndex];
+      std::shared_ptr<arrow::Buffer> new_buf;
+      arrow::Status st = arrow::AllocateBuffer(pool, length, &new_buf);
+      if (st.ok()) {
+        st = buf->Copy(0l, buf->size(), pool, &new_buf);
+      } else {
+        LOG(FATAL) << "Insufficient memory";
+        return arrow::Status::CapacityError("Insufficient memory");
+      }
+    }
+    // lets send this buffer, we need to send the length at this point
+    std::shared_ptr<arrow::ArrayData> new_data = arrow::ArrayData::Make(
+        field->type(), length, buffers);
+    std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
+    arrays.push_back(array);
+  }
+  out = std::make_shared<arrow::ChunkedArray>(arrays, field->type());
+  return arrow::Status::OK();
+}
+
 }  // namespace util
 }  // namespace cylon
