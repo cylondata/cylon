@@ -100,7 +100,7 @@ Status PrepareArray(std::shared_ptr<cylon::CylonContext> &ctx,
 
 Status HashPartitionTable(std::shared_ptr<cylon::CylonContext> &ctx, const std::shared_ptr<arrow::Table> &table,
 						  int hash_column, int no_of_partitions,
-						  std::unordered_map<int, std::shared_ptr<cylon::Table>> *out) {
+						  std::unordered_map<int, std::shared_ptr<cylon::Table>> &out) {
   // keep arrays for each target, these arrays are used for creating the table
   std::unordered_map<int, std::shared_ptr<std::vector<std::shared_ptr<arrow::Array>>>> data_arrays;
   std::vector<int> partitions;
@@ -153,7 +153,7 @@ Status HashPartitionTable(std::shared_ptr<cylon::CylonContext> &ctx, const std::
   for (const auto &x : data_arrays) {
 	std::shared_ptr<arrow::Table> t = arrow::Table::Make(table->schema(), *x.second);
 	std::shared_ptr<cylon::Table> kY = std::make_shared<cylon::Table>(t, ctx);
-	out->insert(std::pair<int, std::shared_ptr<cylon::Table>>(x.first, kY));
+	out.insert(std::pair<int, std::shared_ptr<cylon::Table>>(x.first, kY));
   }
   return Status::OK();
 }
@@ -166,7 +166,7 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
   std::unordered_map<int, std::shared_ptr<cylon::Table>> partitioned_tables{};
   // partition the tables locally
   HashPartitionTable(ctx, table->get_table(), hash_column, ctx->GetWorldSize(),
-					 &partitioned_tables);
+					 partitioned_tables);
   std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
   // we are going to free if retain is set to false
   if (!table->IsRetain()) {
@@ -557,7 +557,7 @@ Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int
 
 Status Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &right,
 				   cylon::join::config::JoinConfig join_config,
-				   std::shared_ptr<cylon::Table> *out) {
+				   std::shared_ptr<cylon::Table> &out) {
   if (left == NULLPTR) {
 	return Status(Code::KeyError, "Couldn't find the left table");
   } else if (right == NULLPTR) {
@@ -576,7 +576,7 @@ Status Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &
 		&table,
 		cylon::ToArrowPool(ctx));
 	if (status == arrow::Status::OK()) {
-	  *out = std::make_shared<cylon::Table>(table, ctx);
+	  out = std::make_shared<cylon::Table>(table, ctx);
 	}
 	return Status(static_cast<int>(status.code()), status.message());
   }
@@ -590,7 +590,7 @@ Status Table::ToArrowTable(std::shared_ptr<arrow::Table> &out) {
 Status DistributedJoin(std::shared_ptr<cylon::Table> &left,
 							  std::shared_ptr<cylon::Table> &right,
 							  cylon::join::config::JoinConfig join_config,
-							  std::shared_ptr<cylon::Table> *out) {
+							  std::shared_ptr<cylon::Table> &out) {
   // check whether the world size is 1
   std::shared_ptr<cylon::CylonContext> ctx = left->GetContext();
   if (ctx->GetWorldSize() == 1) {
@@ -622,7 +622,7 @@ Status DistributedJoin(std::shared_ptr<cylon::Table> &left,
 		join_config,
 		&table,
 		cylon::ToArrowPool(ctx));
-	*out = std::make_shared<cylon::Table>(table, ctx);
+	out = std::make_shared<cylon::Table>(table, ctx);
 	return Status(static_cast<int>(status.code()), status.message());
   } else {
 	return shuffle_status;

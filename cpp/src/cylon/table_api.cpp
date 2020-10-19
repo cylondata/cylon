@@ -126,7 +126,7 @@ Status DistributedJoinTables(std::shared_ptr<CylonContext> &ctx,
 
   std::shared_ptr<cylon::Table> out;
   cylon::Status status = DistributedJoin(left,
-      right, join_config, &out);
+      right, join_config, out);
   if (status.is_ok()) {
     PutTable(dest_id, out);
   }
@@ -145,7 +145,7 @@ Status JoinTables(std::shared_ptr<CylonContext> &ctx,
   cylon::Status status = Join(left,
                                            right,
                                            join_config,
-                                           &out);
+                                           out);
   if (status.is_ok()) {
     PutTable(dest_id, out);
   }

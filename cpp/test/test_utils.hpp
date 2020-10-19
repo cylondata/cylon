@@ -151,7 +151,7 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
                 .count()
             << "[ms]";
 
-  status = cylon::DistributedJoin(table1, table2, join_config, &joined);
+  status = cylon::DistributedJoin(table1, table2, join_config, joined);
   if (!status.is_ok()) {
     LOG(INFO) << "Table join failed ";
     return 1;
