@@ -26,6 +26,7 @@ from pyarrow import Table as PyArrowTable
 from pycylon.net import MPIConfig
 from pycylon import CylonContext
 from pycylon.io import CSVReadOptions
+from pycylon.io import read_csv
 
 
 mpi_config = MPIConfig()
@@ -39,9 +40,9 @@ args = parser.parse_args()
 
 csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-tb1: Table = Table.from_csv(ctx, args.table1_path, csv_read_options)
+tb1: Table = read_csv(ctx, args.table1_path, csv_read_options)
 
-tb2: Table = Table.from_csv(ctx, args.table2_path, csv_read_options)
+tb2: Table = read_csv(ctx, args.table2_path, csv_read_options)
 
 tb1.show()
 

@@ -25,17 +25,17 @@ running test case
 
 
 parser = argparse.ArgumentParser(description='PyCylon Table Conversion')
-parser.add_argument('--table1_path', type=str, help='Path to table 1 csv')
+parser.add_argument('--table_path', type=str, help='Path to table 1 csv')
 
 args = parser.parse_args()
 
 ctx: CylonContext = CylonContext(config=None)
 
-tb = csv.read_csv(args.table1_path)
+tb = csv.read_csv(args.table_path)
 
 print(tb)
 
-tb = Table.from_arrow(tb, ctx)
+tb = Table.from_arrow(ctx, tb)
 
 print(ctx.get_world_size())
 

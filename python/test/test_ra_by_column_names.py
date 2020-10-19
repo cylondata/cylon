@@ -15,6 +15,7 @@
 from pycylon import Table
 from pycylon import CylonContext
 from pycylon.io import CSVReadOptions
+from pycylon.io import read_csv
 from pycylon.net import MPIConfig
 
 table1_path = '/tmp/user_device_tm_1.csv'
@@ -26,9 +27,9 @@ def single_process():
 
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-    tb1: Table = Table.from_csv(ctx, table1_path, csv_read_options)
+    tb1: Table = read_csv(ctx, table1_path, csv_read_options)
 
-    tb2: Table = Table.from_csv(ctx, table2_path, csv_read_options)
+    tb2: Table = read_csv(ctx, table2_path, csv_read_options)
 
     print(tb1.column_names)
     print(tb2.column_names)
@@ -78,9 +79,9 @@ def multi_process():
 
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-    tb1: Table = Table.from_csv(ctx, table1_path, csv_read_options)
+    tb1: Table = read_csv(ctx, table1_path, csv_read_options)
 
-    tb2: Table = Table.from_csv(ctx, table2_path, csv_read_options)
+    tb2: Table = read_csv(ctx, table2_path, csv_read_options)
 
     print(tb1.column_names)
     print(tb2.column_names)

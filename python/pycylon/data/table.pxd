@@ -68,9 +68,6 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
-    CStatus FromCSV(shared_ptr[CCylonContext] &ctx, const string &path, shared_ptr[CTable]
-                        &tableOut, const CCSVReadOptions &options)
-
     CStatus Merge(shared_ptr[CCylonContext] &ctx, vector[shared_ptr[CTable]] &tables,
                   shared_ptr[CTable] output)
 

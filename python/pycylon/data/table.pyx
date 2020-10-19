@@ -564,24 +564,6 @@ cdef class Table:
                 f"Table couldn't be created from PyArrow Table: {status.get_msg().decode()}")
 
     @staticmethod
-    def from_csv(context, path, csv_read_options) -> Table:
-        '''
-            loading data from a csv file
-            :param context: CylonContext
-            :param path: Path to csv file
-            :param csv_read_options: CSVReadOptions object
-        '''
-        cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
-        cdef string cpath = path.encode()
-        cdef CCSVReadOptions c_csv_read_options = pycylon_unwrap_csv_read_options(csv_read_options)
-        cdef shared_ptr[CTable] cn_table
-        cdef CStatus status = FromCSV(ctx, cpath, cn_table, c_csv_read_options)
-        if status.is_ok():
-            return pycylon_wrap_table(cn_table)
-        else:
-            raise Exception(f"Table couldn't be created from CSV: {status.get_msg().decode()}")
-
-    @staticmethod
     def from_numpy(context: CylonContext, col_names: List[str], ar_list: List[np.ndarray]) -> Table:
         """
         creating a PyCylon table from numpy arrays
