@@ -44,6 +44,15 @@ arrow::Status CombineChunks(const std::shared_ptr<arrow::Table> &table,
                             int64_t col_index,
                             std::shared_ptr<arrow::Table> &output_table,
                             arrow::MemoryPool *memory_pool);
+
+inline bool is_inplace_join_possible(arrow::Type::type kType) {
+  return kType == arrow::Type::UINT8 || kType == arrow::Type::INT8 ||
+      kType == arrow::Type::UINT16 || kType == arrow::Type::INT16 ||
+      kType == arrow::Type::UINT32 || kType == arrow::Type::INT32 ||
+      kType == arrow::Type::UINT64 || kType == arrow::Type::INT64 ||
+      kType == arrow::Type::FLOAT || kType == arrow::Type::DOUBLE;
+}
+
 }
 }
 }
