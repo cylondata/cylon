@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << "Read table in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_time).count() << "[ms]";
-  status = table->Select([](cylon::Row row) {
+  status = Select(table, [](cylon::Row row) {
     return row.GetInt64(0) % 2 == 0;
   }, select);
   auto select_end_time = std::chrono::steady_clock::now();

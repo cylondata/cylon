@@ -32,7 +32,7 @@ void create_table(char *const *argv,
                   arrow::MemoryPool *pool,
                   std::shared_ptr<arrow::Table> &left_table);
 
-void CylonPipelineGroupBy(const std::shared_ptr<cylon::Table> &ctable,
+void CylonPipelineGroupBy(std::shared_ptr<cylon::Table> &ctable,
                           std::shared_ptr<cylon::Table> &output) {
   auto t1 = std::chrono::steady_clock::now();
 
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<cylon::Table> sorted_table;
   auto t1 = std::chrono::steady_clock::now();
-  first_table->Sort(0, sorted_table);
+  Sort(first_table, 0, sorted_table);
   auto t2 = std::chrono::steady_clock::now();
 
 //  sorted_table->Print();

@@ -28,7 +28,7 @@ TEST_CASE("table ops testing", "[table_ops]") {
   }
 
   SECTION("testing select") {
-    status = input->Select([](cylon::Row row) {
+    status = Select(input, [](cylon::Row row) {
       return row.GetInt32(0) % 2 == 0;
     }, select);
 

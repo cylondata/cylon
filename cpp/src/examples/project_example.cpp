@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  status = table->Project({0}, project);
+  status = cylon::Project(table, {0}, project);
   if (!status.is_ok()) {
     LOG(INFO) << "Project failed  : " << status.get_msg();
     ctx->Finalize();

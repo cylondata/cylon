@@ -42,20 +42,20 @@ class Table {
    * Tables can only be created using the factory methods, so the constructor is private
    */
   Table(std::shared_ptr<arrow::Table> &tab, std::shared_ptr<cylon::CylonContext> &ctx)
-	  : ctx(ctx), table_(tab),
-		columns_(std::vector<std::shared_ptr<Column>>(tab->num_columns())) {
-	const int num_cols = table_->num_columns();
-	for (int i = 0; i < num_cols; i++) {
-	  const auto f = table_->field(i);
-	  columns_.at(i) =
-		  cylon::Column::Make(f->name(), cylon::tarrow::ToCylonType(f->type()), table_->column(i));
-	}
+      : ctx(ctx), table_(tab),
+        columns_(std::vector<std::shared_ptr<Column>>(tab->num_columns())) {
+    const int num_cols = table_->num_columns();
+    for (int i = 0; i < num_cols; i++) {
+      const auto f = table_->field(i);
+      columns_.at(i) =
+          cylon::Column::Make(f->name(), cylon::tarrow::ToCylonType(f->type()), table_->column(i));
+    }
   }
 
   Table(std::shared_ptr<arrow::Table> &tab, std::shared_ptr<cylon::CylonContext> &ctx,
-		const std::vector<std::shared_ptr<Column>> &cols)
-	  : ctx(ctx), table_(tab) {
-	this->columns_ = cols;
+        const std::vector<std::shared_ptr<Column>> &cols)
+      : ctx(ctx), table_(tab) {
+    this->columns_ = cols;
   }
 
   virtual ~Table();
@@ -66,8 +66,8 @@ class Table {
    * @return
    */
   static Status FromArrowTable(std::shared_ptr<cylon::CylonContext> &ctx,
-							   std::shared_ptr<arrow::Table> &table,
-							   std::shared_ptr<Table> *tableOut);
+                               std::shared_ptr<arrow::Table> &table,
+                               std::shared_ptr<Table> *tableOut);
 
   /**
    * Create a table from cylon columns
@@ -77,8 +77,8 @@ class Table {
    * @return
    */
   static Status FromColumns(std::shared_ptr<cylon::CylonContext> &ctx,
-							std::vector<std::shared_ptr<Column>> &&columns,
-							std::shared_ptr<Table> *tableOut);
+                            std::vector<std::shared_ptr<Column>> &&columns,
+                            std::shared_ptr<Table> *tableOut);
 
   /**
    * Write the table as a CSV
@@ -86,7 +86,7 @@ class Table {
    * @return the status of the operation
    */
   Status WriteCSV(const std::string &path,
-				  const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
+                  const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
 
   /**
    * Create a arrow table from this data structure
@@ -94,40 +94,6 @@ class Table {
    * @return the status of the operation
    */
   Status ToArrowTable(std::shared_ptr<arrow::Table> &output);
-
-  /**
-   * Partition the table based on the hash
-   * @param hash_columns the columns use for has
-   * @param no_of_partitions number partitions
-   * @return new set of tables each with the new partition
-   */
-  Status HashPartition(const std::vector<int> &hash_columns,
-					   int no_of_partitions,
-					   std::unordered_map<int, std::shared_ptr<cylon::Table>> *output);
-
-  /**
-   * Sort the table according to the given column, this is a local sort (if the table has chunked columns, they will
-   * be merged in the output table)
-   * @param sort_column
-   * @return new table sorted according to the sort column
-   */
-  Status Sort(int sort_column, std::shared_ptr<Table> &output);
-
-  /**
-   * Filters out rows based on the selector function
-   * @param selector lambda function returning a bool
-   * @param output
-   * @return
-   */
-  Status Select(const std::function<bool(cylon::Row)> &selector, std::shared_ptr<Table> &output);
-
-  /**
-   * Creates a View of an existing table by dropping one or more columns
-   * @param project_columns
-   * @param output
-   * @return
-   */
-  Status Project(const std::vector<int64_t> &project_columns, std::shared_ptr<Table> &output);
 
   /**
    * Print the col range and row range
@@ -142,14 +108,14 @@ class Table {
    * @return true if print is successful
    */
   Status PrintToOStream(
-	  int col1,
-	  int col2,
-	  int row1,
-	  int row2,
-	  std::ostream &out,
-	  char delimiter = ',',
-	  bool use_custom_header = false,
-	  const std::vector<std::string> &headers = {});
+      int col1,
+      int col2,
+      int row1,
+      int row2,
+      std::ostream &out,
+      char delimiter = ',',
+      bool use_custom_header = false,
+      const std::vector<std::string> &headers = {});
 
   /*END OF TRANSFORMATION FUNCTIONS*/
 
@@ -206,7 +172,7 @@ class Table {
    * Set to true to free the memory of this table when it is not needed
    */
   void retainMemory(bool retain) {
-	retain_ = retain;
+    retain_ = retain;
   }
 
   bool IsRetain() const;
@@ -241,8 +207,8 @@ class Table {
    * @return a pointer to the table
    */
 Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
-                      std::shared_ptr<Table> &tableOut,
-                      const cylon::io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
+               std::shared_ptr<Table> &tableOut,
+               const cylon::io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
 
 /**
  * Read multiple CSV files into multiple tables. If threading is enabled, the tables will be read
@@ -254,8 +220,8 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &pat
  * @return
  */
 Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
-                      const std::vector<std::shared_ptr<Table> *> &tableOuts,
-                      io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
+               const std::vector<std::shared_ptr<Table> *> &tableOuts,
+               io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 
 /**
    * Merge the set of tables to create a single table
@@ -263,8 +229,8 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std:
    * @return new merged table
    */
 Status Merge(std::shared_ptr<cylon::CylonContext> &ctx,
-                    const std::vector<std::shared_ptr<cylon::Table>> &tables,
-                    std::shared_ptr<Table> &tableOut);
+             const std::vector<std::shared_ptr<cylon::Table>> &tables,
+             std::shared_ptr<Table> &tableOut);
 
 /**
    * Do the join with the right table
@@ -274,8 +240,8 @@ Status Merge(std::shared_ptr<cylon::CylonContext> &ctx,
    * @return success
    */
 Status Join(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-                   cylon::join::config::JoinConfig join_config,
-                   std::shared_ptr<Table> *output);
+            cylon::join::config::JoinConfig join_config,
+            std::shared_ptr<Table> *output);
 
 /**
  * Similar to local join, but performs the join in a distributed fashion
@@ -285,8 +251,8 @@ Status Join(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
  * @return <cylon::Status>
  */
 Status DistributedJoin(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-                              cylon::join::config::JoinConfig join_config,
-                              std::shared_ptr<Table> *output);
+                       cylon::join::config::JoinConfig join_config,
+                       std::shared_ptr<Table> *output);
 
 /**
  * Performs union with the passed table
@@ -295,7 +261,7 @@ Status DistributedJoin(std::shared_ptr<Table> &left, std::shared_ptr<Table> &rig
  * @return <cylon::Status>
  */
 Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
-                    std::shared_ptr<Table> &output);
+             std::shared_ptr<Table> &output);
 
 /**
  * Similar to local union, but performs the union in a distributed fashion
@@ -304,7 +270,7 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
  * @return
  */
 Status DistributedUnion(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-                               std::shared_ptr<Table> &out);
+                        std::shared_ptr<Table> &out);
 
 /**
  * Performs subtract/difference with the passed table
@@ -313,7 +279,7 @@ Status DistributedUnion(std::shared_ptr<Table> &left, std::shared_ptr<Table> &ri
  * @return <cylon::Status>
  */
 Status Subtract(std::shared_ptr<Table> &first,
-                       std::shared_ptr<Table> &second, std::shared_ptr<Table> &out);
+                std::shared_ptr<Table> &second, std::shared_ptr<Table> &out);
 
 /**
  * Similar to local subtract/difference, but performs in a distributed fashion
@@ -322,7 +288,7 @@ Status Subtract(std::shared_ptr<Table> &first,
  * @return
  */
 Status DistributedSubtract(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-                                  std::shared_ptr<Table> &out);
+                           std::shared_ptr<Table> &out);
 
 /**
  * Performs intersection with the passed table
@@ -331,7 +297,7 @@ Status DistributedSubtract(std::shared_ptr<Table> &left, std::shared_ptr<Table> 
  * @return <cylon::Status>
  */
 Status Intersect(std::shared_ptr<Table> &first,
-                        std::shared_ptr<Table> &second, std::shared_ptr<Table> &output);
+                 std::shared_ptr<Table> &second, std::shared_ptr<Table> &output);
 
 /**
  * Similar to local intersection, but performs in a distributed fashion
@@ -340,10 +306,45 @@ Status Intersect(std::shared_ptr<Table> &first,
  * @return
  */
 Status DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-                                   std::shared_ptr<Table> &out);
+                            std::shared_ptr<Table> &out);
 
 Status Shuffle(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_columns,
-                      std::shared_ptr<cylon::Table> &output);
+               std::shared_ptr<cylon::Table> &output);
+
+/**
+   * Partition the table based on the hash
+   * @param hash_columns the columns use for has
+   * @param no_of_partitions number partitions
+   * @return new set of tables each with the new partition
+   */
+Status HashPartition(std::shared_ptr<cylon::Table> &table,
+                     const std::vector<int> &hash_columns,
+                     int no_of_partitions,
+                     std::unordered_map<int, std::shared_ptr<cylon::Table>> *output);
+
+/**
+ * Sort the table according to the given column, this is a local sort (if the table has chunked columns, they will
+ * be merged in the output table)
+ * @param sort_column
+ * @return new table sorted according to the sort column
+ */
+Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_ptr<Table> &output);
+
+/**
+ * Filters out rows based on the selector function
+ * @param selector lambda function returning a bool
+ * @param output
+ * @return
+ */
+Status Select(std::shared_ptr<cylon::Table> &table, const std::function<bool(cylon::Row)> &selector, std::shared_ptr<Table> &output);
+
+/**
+ * Creates a View of an existing table by dropping one or more columns
+ * @param project_columns
+ * @param output
+ * @return
+ */
+Status Project(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &project_columns, std::shared_ptr<Table> &output);
 
 }  // namespace cylon
 

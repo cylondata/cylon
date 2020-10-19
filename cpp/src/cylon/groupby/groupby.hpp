@@ -24,13 +24,13 @@
 
 namespace cylon {
 
-Status GroupBy(const std::shared_ptr<Table> &table,
+Status GroupBy(std::shared_ptr<Table> &table,
                int64_t index_col,
                const std::vector<int64_t> &aggregate_cols,
                const std::vector<GroupByAggregationOp> &aggregate_ops,
                std::shared_ptr<Table> &output);
 
-Status PipelineGroupBy(const std::shared_ptr<Table> &table,
+Status PipelineGroupBy(std::shared_ptr<Table> &table,
                int64_t index_col,
                const std::vector<int64_t> &aggregate_cols,
                const std::vector<GroupByAggregationOp> &aggregate_ops,

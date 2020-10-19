@@ -203,7 +203,7 @@ Status SortTable(std::shared_ptr<cylon::CylonContext> &ctx,
   }
 
   std::shared_ptr<cylon::Table> out;
-  Status status = table->Sort(columnIndex, out);
+  Status status = Sort(table, columnIndex, out);
   if (status.is_ok()) {
     PutTable(sortedTableId, out);
   }
@@ -217,7 +217,7 @@ Status HashPartition(std::shared_ptr<cylon::CylonContext> &ctx,
                      std::unordered_map<int, std::string> *out) {
   std::shared_ptr<cylon::Table> left_tab = GetTable(id);
   std::unordered_map<int, std::shared_ptr<cylon::Table>> tables;
-  Status status = left_tab->HashPartition(hash_columns, no_of_partitions, &tables);
+  Status status = HashPartition(left_tab, hash_columns, no_of_partitions, &tables);
   if (!status.is_ok()) {
     LOG(FATAL) << "Failed to partition : " << status.get_msg();
     return status;
@@ -336,7 +336,7 @@ Status Select(std::shared_ptr<cylon::CylonContext> &ctx,
               const std::string &dest_id) {
   auto src_table = GetTable(id);
   std::shared_ptr<cylon::Table> out_table;
-  cylon::Status status = src_table->Select(selector, out_table);
+  cylon::Status status = Select(src_table, selector, out_table);
   if (status.is_ok()) {
     PutTable(dest_id, out_table);
   }
@@ -347,7 +347,7 @@ Status Project(const std::string &id, const std::vector<int64_t> &project_column
     const std::string &dest_id) {
   auto table = GetTable(id);
   std::shared_ptr<cylon::Table> out_table;
-  auto status = table->Project(project_columns, out_table);
+  auto status = Project(table, project_columns, out_table);
   if (status.is_ok()) {
     PutTable(dest_id, out_table);
   }

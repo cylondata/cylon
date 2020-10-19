@@ -35,7 +35,7 @@ Status create_table(std::shared_ptr<cylon::Table> &table) {
   return cylon::Table::FromColumns(ctx, {c0, c1}, &table);
 }
 
-Status HashCylonGroupBy(const std::shared_ptr<cylon::Table> &ctable,
+Status HashCylonGroupBy(std::shared_ptr<cylon::Table> &ctable,
                         std::shared_ptr<cylon::Table> &output) {
 
   cylon::Status s =
@@ -45,7 +45,7 @@ Status HashCylonGroupBy(const std::shared_ptr<cylon::Table> &ctable,
   return s;
 }
 
-Status PipelineCylonGroupBy(const std::shared_ptr<cylon::Table> &ctable,
+Status PipelineCylonGroupBy(std::shared_ptr<cylon::Table> &ctable,
                             std::shared_ptr<cylon::Table> &output) {
 
   cylon::Status s =
@@ -84,7 +84,7 @@ TEST_CASE("groupby testing", "[groupby]") {
   }
 
   SECTION("testing hash group by") {
-    status = table->Sort(0, output1);
+    status = Sort(table, 0, output1);
     REQUIRE(status.is_ok());
 
     status = PipelineCylonGroupBy(output1, output2);
