@@ -21,7 +21,7 @@ TEST_CASE("table ops testing", "[table_ops]") {
   cylon::Status status;
   const int size = 12;
   std::shared_ptr<cylon::Table> input, select;
-  status = cylon::test::CreateTable(ctx, size, &input);
+  status = cylon::test::CreateTable(ctx, size, input);
 
   SECTION("table creation") {
     REQUIRE((status.is_ok() && input->Columns() == 2 && input->Rows() == size));

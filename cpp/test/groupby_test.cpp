@@ -32,7 +32,7 @@ Status create_table(std::shared_ptr<cylon::Table> &table) {
 
   auto c0 = cylon::VectorColumn<int64_t>::Make("col0", cylon::Int64(), std::make_shared<std::vector<int64_t>>(col0));
   auto c1 = cylon::VectorColumn<double>::Make("col1", cylon::Double(), std::make_shared<std::vector<double>>(col1));
-  return cylon::Table::FromColumns(ctx, {c0, c1}, &table);
+  return cylon::Table::FromColumns(ctx, {c0, c1}, table);
 }
 
 Status HashCylonGroupBy(std::shared_ptr<cylon::Table> &ctable,

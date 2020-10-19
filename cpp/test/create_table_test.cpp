@@ -23,7 +23,7 @@ TEST_CASE("create table from columns testing", "[columns]") {
 
   SECTION("testing create table") {
     std::shared_ptr<cylon::Table> output;
-    status = cylon::test::CreateTable(ctx, size, &output);
+    status = cylon::test::CreateTable(ctx, size, output);
 
     REQUIRE((status.is_ok() && output->Columns() == 2 && output->Rows() == size));
 

@@ -383,7 +383,7 @@ Status Table::FromArrowTable(std::shared_ptr<cylon::CylonContext> &ctx,
 
 Status Table::FromColumns(std::shared_ptr<cylon::CylonContext> &ctx,
 						  std::vector<std::shared_ptr<Column>> &&columns,
-						  std::shared_ptr<Table> *tableOut) {
+						  std::shared_ptr<Table> &tableOut) {
   arrow::Status status;
   arrow::SchemaBuilder schema_builder;
   std::vector<std::shared_ptr<arrow::ChunkedArray>> col_arrays;
@@ -406,7 +406,7 @@ Status Table::FromColumns(std::shared_ptr<cylon::CylonContext> &ctx,
 	LOG(FATAL) << "Types not supported";
 	return Status(cylon::Invalid, "This type not supported");
   }
-  *tableOut = std::make_shared<Table>(arrow_table, ctx, columns);
+  tableOut = std::make_shared<Table>(arrow_table, ctx, columns);
 
   return Status(cylon::OK, "Loaded Successfully");
 }

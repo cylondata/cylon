@@ -25,7 +25,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
   std::shared_ptr<cylon::Table> table;
   std::shared_ptr<cylon::Table> output;
   std::shared_ptr<cylon::compute::Result> result;
-  status = cylon::test::CreateTable(ctx, rows, &table);
+  status = cylon::test::CreateTable(ctx, rows, table);
 
   SECTION("table creation") {
     REQUIRE((status.is_ok() && table->Columns() == 2 && table->Rows() == rows));

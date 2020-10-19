@@ -21,7 +21,7 @@
 #include <compute/aggregates.hpp>
 
 cylon::Status CreateTable(std::shared_ptr<cylon::CylonContext> &ctx, int rows,
-                          std::shared_ptr<cylon::Table> *output) {
+                          std::shared_ptr<cylon::Table> &output) {
   std::shared_ptr<std::vector<int32_t>> col0 = std::make_shared<std::vector<int32_t >>();
   std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t >>();
 
@@ -47,7 +47,7 @@ int main() {
   std::shared_ptr<cylon::Table> table;
   std::shared_ptr<cylon::compute::Result> result;
 
-  status = CreateTable(ctx, rows, &table);
+  status = CreateTable(ctx, rows, table);
 
   if ((status.is_ok() && table->Columns() == 2 && table->Rows() == rows)) {
     table->Print();

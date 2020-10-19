@@ -78,7 +78,7 @@ class Table {
    */
   static Status FromColumns(std::shared_ptr<cylon::CylonContext> &ctx,
                             std::vector<std::shared_ptr<Column>> &&columns,
-                            std::shared_ptr<Table> *tableOut);
+                            std::shared_ptr<Table> &tableOut);
 
   /**
    * Write the table as a CSV
