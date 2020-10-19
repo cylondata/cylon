@@ -206,12 +206,10 @@ arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray>& cArr,
     for (size_t bufferIndex = 0; bufferIndex < data->buffers.size(); bufferIndex++) {
       std::shared_ptr<arrow::Buffer> buf = data->buffers[bufferIndex];
       std::shared_ptr<arrow::Buffer> new_buf;
-      arrow::Status st = arrow::AllocateBuffer(pool, length, &new_buf);
-      if (st.ok()) {
-        st = buf->Copy(0l, buf->size(), pool, &new_buf);
-      } else {
+      arrow::Status st = buf->Copy(0l, buf->size(), pool, &new_buf);
+      if (!st.ok()) {
         LOG(FATAL) << "Insufficient memory";
-        return arrow::Status::CapacityError("Insufficient memory");
+        return st;
       }
     }
     // lets send this buffer, we need to send the length at this point

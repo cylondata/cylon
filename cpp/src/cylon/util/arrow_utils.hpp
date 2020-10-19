@@ -38,6 +38,9 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>>&
  */
 arrow::Status free_table(const std::shared_ptr<arrow::Table> &table);
 
+/**
+ * Create a duplicate of the current array
+ */
 arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray>& cArr,
                                         const std::shared_ptr<arrow::Field>& field,
                                         arrow::MemoryPool *pool,

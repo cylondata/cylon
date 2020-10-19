@@ -553,6 +553,30 @@ Status Table::HashPartition(const std::vector<int> &hash_columns, int no_of_part
   return Status::OK();
 }
 
+arrow::Status create_table_with_duplicate_index(arrow::MemoryPool *pool,
+                                  std::shared_ptr<arrow::Table> &table,
+                                  size_t index_column,
+                                  std::vector<std::shared_ptr<arrow::ChunkedArray>>& nl_vectors) {
+  const std::vector<std::shared_ptr<arrow::ChunkedArray>> &chunk_arrays = table->columns();
+  for (size_t i = 0; i < chunk_arrays.size(); i++) {
+    if (i != index_column) {
+      nl_vectors.push_back(chunk_arrays[i]);
+    } else {
+      std::shared_ptr<arrow::ChunkedArray> new_c_array;
+      arrow::Status st = cylon::util::duplicate(chunk_arrays[i],
+                                                table->schema()->fields()[i],
+                                                pool,
+                                                new_c_array);
+      if (st != arrow::Status::OK()) {
+        return st;
+      }
+      nl_vectors.push_back(new_c_array);
+    }
+  }
+  table = arrow::Table::Make(table->schema(), nl_vectors);
+  return arrow::Status::OK();
+}
+
 Status Table::Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &right,
 				   cylon::join::config::JoinConfig join_config,
 				   std::shared_ptr<cylon::Table> *out) {
@@ -576,40 +600,20 @@ Status Table::Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::T
         // now create a copy
         std::vector<std::shared_ptr<arrow::ChunkedArray>> nl_vectors;
         std::vector<std::shared_ptr<arrow::ChunkedArray>> nr_vectors;
-        const std::vector<std::shared_ptr<arrow::ChunkedArray>> &lVector = left_table->columns();
         // we don't have to copy if the table is freed
         if (!left->IsRetain()) {
-          for (size_t i = 0; i < lVector.size(); i++) {
-            if (i != lIndex) {
-              nl_vectors.push_back(lVector[i]);
-            } else {
-              std::shared_ptr<arrow::ChunkedArray> new_c_array;
-              arrow::Status st = cylon::util::duplicate(lVector[i],
-                                                        left_table->schema()->fields()[i],
-                                                        cylon::ToArrowPool(left->ctx),
-                                                        new_c_array);
-              nl_vectors.push_back(new_c_array);
-            }
+          arrow::Status st = create_table_with_duplicate_index(cylon::ToArrowPool(left->ctx),
+              left_table, lIndex, nl_vectors);
+          if (st != arrow::Status::OK()) {
+            return Status(static_cast<int>(st.code()), st.message());
           }
-          left_table = arrow::Table::Make(left_table->schema(), nl_vectors);
         }
-
-        // we don't have to copy if the table is freed
         if (!right->IsRetain()) {
-          const std::vector<std::shared_ptr<arrow::ChunkedArray>> &rVector = right_table->columns();
-          for (size_t i = 0; i < rVector.size(); i++) {
-            if (i != rIndex) {
-              nr_vectors.push_back(rVector[i]);
-            } else {
-              std::shared_ptr<arrow::ChunkedArray> new_c_array;
-              arrow::Status st = cylon::util::duplicate(rVector[i],
-                                                        right_table->schema()->fields()[i],
-                                                        cylon::ToArrowPool(right->ctx),
-                                                        new_c_array);
-              nr_vectors.push_back(new_c_array);
-            }
+          arrow::Status st = create_table_with_duplicate_index(cylon::ToArrowPool(left->ctx),
+                                                               right_table, rIndex, nr_vectors);
+          if (st != arrow::Status::OK()) {
+            return Status(static_cast<int>(st.code()), st.message());
           }
-          right_table = arrow::Table::Make(right_table->schema(), nr_vectors);
         }
       }
     }
