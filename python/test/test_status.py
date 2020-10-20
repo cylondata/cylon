@@ -12,8 +12,8 @@
  # limitations under the License.
  ##
 
-from pycylon.common.code import Code
-from pycylon.common.status import Status
+from pycylon.commons import Code
+from pycylon.commons import Status
 
 #print(Code.OK.value, Code.KeyError.value, Code.IOError.value, Code.AlreadyExists.value)
 

@@ -12,45 +12,49 @@
  * limitations under the License.
  */
 
-#include "cylon_context.hpp"
-
+#include <glog/logging.h>
 #include <utility>
 #include <vector>
 
+#include "cylon_context.hpp"
 #include "arrow/memory_pool.h"
 #include "../net/mpi/mpi_communicator.hpp"
 
 namespace cylon {
 
-CylonContext *CylonContext::Init() {
-  return new CylonContext(false);
+std::shared_ptr<CylonContext> CylonContext::Init() {
+  return std::make_shared<CylonContext>(false);
 }
 CylonContext::CylonContext(bool distributed) {
-  this->distributed = distributed;
+  this->is_distributed = distributed;
 }
 
-CylonContext *CylonContext::InitDistributed(net::CommConfig *config) {
+std::shared_ptr<CylonContext> CylonContext::InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config) {
   if (config->Type() == net::CommType::MPI) {
-    auto ctx = new CylonContext(true);
-    ctx->communicator = new net::MPICommunicator();
+    auto ctx = std::make_shared<CylonContext>(true);
+    ctx->communicator = std::make_shared<net::MPICommunicator>();
     ctx->communicator->Init(config);
-    ctx->distributed = true;
+    ctx->is_distributed = true;
     return ctx;
   } else {
     throw "Unsupported communication type";
   }
   return nullptr;
 }
-net::Communicator *CylonContext::GetCommunicator() const {
+std::shared_ptr<net::Communicator> CylonContext::GetCommunicator() const {
+  if (!is_distributed) {
+    LOG(FATAL) << "No communicator available for local mode!";
+    return nullptr;
+  }
   return this->communicator;
 }
 
-void CylonContext::setCommunicator(net::Communicator *communicator1) {
+void CylonContext::setCommunicator(const std::shared_ptr<cylon::net::Communicator> &communicator1) {
   this->communicator = communicator1;
 }
 
 void CylonContext::setDistributed(bool distributed) {
-  this->distributed = distributed;
+  this->is_distributed = distributed;
 }
 
 void CylonContext::AddConfig(const std::string &key, const std::string &value) {
@@ -64,24 +68,24 @@ std::string CylonContext::GetConfig(const std::string &key, const std::string &d
   return find->second;
 }
 int CylonContext::GetRank() {
-  if (this->distributed) {
+  if (this->is_distributed) {
     return this->communicator->GetRank();
   }
   return 0;
 }
 int CylonContext::GetWorldSize() {
-  if (this->distributed) {
+  if (this->is_distributed) {
     return this->communicator->GetWorldSize();
   }
   return 1;
 }
 void CylonContext::Finalize() {
-  if (this->distributed) {
+  if (this->is_distributed) {
     this->communicator->Finalize();
   }
 }
-vector<int> CylonContext::GetNeighbours(bool include_self) {
-  vector<int> neighbours{};
+std::vector<int> CylonContext::GetNeighbours(bool include_self) {
+  std::vector<int> neighbours{};
   neighbours.reserve(this->GetWorldSize());
   for (int i = 0; i < this->GetWorldSize(); i++) {
     if (i == this->GetRank() && !include_self) {
@@ -101,5 +105,12 @@ void CylonContext::SetMemoryPool(cylon::MemoryPool *mem_pool) {
 }
 int32_t CylonContext::GetNextSequence() {
   return this->sequence_no++;
+}
+
+bool CylonContext::IsDistributed() const {
+  return is_distributed;
+}
+cylon::net::CommType CylonContext::GetCommType() {
+  return is_distributed ? this->communicator->GetCommType() : net::CommType::LOCAL;
 }
 }  // namespace cylon

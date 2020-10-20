@@ -17,6 +17,7 @@
 
 #include "comm_config.hpp"
 #include "channel.hpp"
+
 namespace cylon {
 namespace net {
 
@@ -26,12 +27,13 @@ class Communicator {
   int rank = -1;
   int world_size = -1;
  public:
-  virtual void Init(CommConfig *config) = 0;
+  virtual void Init(const std::shared_ptr<CommConfig> &config) = 0;
   virtual Channel *CreateChannel() = 0;
   virtual int GetRank() = 0;
   virtual int GetWorldSize() = 0;
   virtual void Finalize() = 0;
   virtual void Barrier() = 0;
+  virtual CommType GetCommType() = 0;
 };
 }
 }

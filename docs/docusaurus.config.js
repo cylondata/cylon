@@ -10,13 +10,12 @@ module.exports = {
         googleAnalytics: {
             trackingID: 'UA-173169112-1'
         },
-        disableDarkMode: true,
         navbar: {
             logo: {
                 alt: 'Cylon',
                 src: 'img/logo.png',
             },
-            links: [
+            items: [
                 {
                     to: 'docs/',
                     activeBasePath: 'docs',

@@ -14,9 +14,12 @@
 
 #include <mpi.h>
 
+#include <memory>
+
 #include "net/communicator.hpp"
 #include "mpi_communicator.hpp"
 #include "mpi_channel.hpp"
+#include "mpi_operations.hpp"
 
 namespace cylon {
 namespace net {
@@ -31,6 +34,9 @@ int MPIConfig::GetDummyConfig() {
 CommType MPIConfig::Type() {
   return CommType::MPI;
 }
+std::shared_ptr<MPIConfig> MPIConfig::Make() {
+  return std::make_shared<MPIConfig>();
+}
 
 Channel *MPICommunicator::CreateChannel() {
   return new MPIChannel();
@@ -42,24 +48,25 @@ int MPICommunicator::GetRank() {
 int MPICommunicator::GetWorldSize() {
   return this->world_size;
 }
-void MPICommunicator::Init(CommConfig *config) {
+void MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   int initialized;
   MPI_Initialized(&initialized);
   if (!initialized) {
     MPI_Init(nullptr, nullptr);
-  } else {
-    LOG(INFO) << "MPI is already initialized";
   }
 
   MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
   MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
 }
 void MPICommunicator::Finalize() {
-  LOG(INFO) << "Finalizing MPI";
   MPI_Finalize();
 }
 void MPICommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);
+}
+
+CommType MPICommunicator::GetCommType() {
+  return MPI;
 }
 }  // namespace net
 }  // namespace cylon

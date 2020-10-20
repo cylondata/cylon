@@ -9,9 +9,6 @@ import org.cylondata.cylon.CylonContext;
 import org.cylondata.cylon.NativeLoader;
 import org.cylondata.cylon.Table;
 import org.cylondata.cylon.arrow.ArrowTable;
-import org.cylondata.cylon.ops.Filter;
-import org.cylondata.cylon.ops.Row;
-import org.cylondata.cylon.ops.Selector;
 
 public class ArrowTableSimpleExample {
 
@@ -46,7 +43,6 @@ public class ArrowTableSimpleExample {
     intVector.setValueCount(200);
     float8Vector.setValueCount(200);
     stringVector.setValueCount(200);
-
 
     // convert to Cylon
 

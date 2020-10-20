@@ -12,30 +12,28 @@
  # limitations under the License.
  ##
 
-from libcpp.string cimport string
-from libcpp cimport bool
-from pycylon.common.code cimport _Code
+from pycylon.common.code cimport CCode
 
 '''
 Cylon C++ Error Tracing is done with the following enums. 
 '''
 
 cpdef enum Code:
-    OK = _Code._OK
-    OutOfMemory = _Code._OutOfMemory
-    KeyError = _Code._KeyError
-    TypeError = _Code._TypeError
-    Invalid = _Code._Invalid
-    IOError = _Code._IOError
-    CapacityError = _Code._CapacityError
-    IndexError = _Code._IndexError
-    UnknownError = _Code._UnknownError
-    NotImplemented = _Code._NotImplemented
-    SerializationError = _Code._SerializationError
-    RError = _Code._RError
-    CodeGenError = _Code._CodeGenError
-    ExpressionValidationError = _Code._ExpressionValidationError
-    ExecutionError = _Code._ExecutionError
-    AlreadyExists = _Code._AlreadyExists
+    OK = CCode._OK
+    OutOfMemory = CCode._OutOfMemory
+    KeyError = CCode._KeyError
+    TypeError = CCode._TypeError
+    Invalid = CCode._Invalid
+    IOError = CCode._IOError
+    CapacityError = CCode._CapacityError
+    IndexError = CCode._IndexError
+    UnknownError = CCode._UnknownError
+    NotImplemented = CCode._NotImplemented
+    SerializationError = CCode._SerializationError
+    RError = CCode._RError
+    CodeGenError = CCode._CodeGenError
+    ExpressionValidationError = CCode._ExpressionValidationError
+    ExecutionError = CCode._ExecutionError
+    AlreadyExists = CCode._AlreadyExists
 
 

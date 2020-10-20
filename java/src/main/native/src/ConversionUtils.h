@@ -5,7 +5,7 @@
 #include "ctx/cylon_context.hpp"
 #include "join/join_config.hpp"
 
-extern std::unordered_map<int32_t, cylon::CylonContext *> contexts;
+extern std::unordered_map<int32_t, std::shared_ptr<cylon::CylonContext>> contexts;
 
 extern std::unordered_map<std::string, cylon::join::config::JoinAlgorithm> join_algorithms;
 

@@ -104,18 +104,22 @@ do the following,
 ./build.sh -pyenv /home/<username>/cylon/ENV -bpath /home/<username>/cylon/build --python
 ```
 
+Note: You only need to do `--python` just once after the initial C++ build. If you develop the
+Cython or Python APIs, use `--cython` flag instead.
+
 ### Example
 
 Before running the code in the base path of the cloned repo
 run the following command. Or add this to your `bashrc`.
 
 ```bash
-export LD_LIBRARY_PATH=/home/<username>/twisterx/build/arrow/install/lib:/home/<username>/twisterx/build/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/home/<username>/cylon/build/arrow/install/lib:/home/<username>/twisterx
+/build/lib:$LD_LIBRARY_PATH
 ```
 
 4. Test Python API
 
 
 ```bash
-python3 python/test/test_pytwisterx.py
+python3 python/test/test_pycylon.py
 ```

@@ -12,9 +12,11 @@
  # limitations under the License.
  ##
 
-from pycylon.ctx.context import CylonContext
+from pycylon.net.mpi_config import MPIConfig
+from pycylon import CylonContext
 
-ctx: CylonContext = CylonContext("mpi")
+mpi_config = MPIConfig()
+ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
 
 print("Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
 
