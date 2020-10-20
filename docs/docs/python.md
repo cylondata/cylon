@@ -38,10 +38,10 @@ Note: In the current release, Cylon only supports MPI as a distributed backend
 Using Cylon 
 
 ```python
-from pycylon.data.table import Table
-from pycylon.data.table import csv_reader
+from pycylon Table
+from pycylon.io import read_csv
 
-tb1: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
+tb1: Table = read_csv(ctx, '/tmp/csv.csv', ',')
 ```
 
 Using PyArrow and convert to PyCylon Table
@@ -58,7 +58,7 @@ cylon_tb = Table.from_arrow(pyarrow_tb)
 Also a Cylon Table can be converted to a PyArrow Table
 
 ```python
-pyarrow_tb: PyArrowTable = Table.to_arrow(cylon_tb)
+pyarrow_tb: PyArrowTable = cylon_tb.to_arrow()
 ```
 ### Join
 
@@ -69,19 +69,27 @@ as using Python `str`.
 Sequential Join
 
 ```python
-tb1: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
-tb2: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
+csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-tb3: Table = tb1.join(ctx, table=tb2, join_type='left', algorithm='hash', left_col=0, right_col=0)
+tb1: Table = read_csv(ctx, table1_path, csv_read_options)
+
+tb2: Table = read_csv(ctx, table2_path, csv_read_options)
+
+tb3: Table = tb1.join(table=tb2, join_type='inner', algorithm='hash', left_on=[0],
+                      right_on=[0])
 ```
 
 Distributed Join
 
 ```python
-tb1: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
-tb2: Table = csv_reader.read(ctx, '/tmp/csv.csv', ',')
+csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type='left', algorithm='hash', left_col=0, right_col=0)
+tb1: Table = read_csv(ctx, table1_path, csv_read_options)
+
+tb2: Table = read_csv(ctx, table2_path, csv_read_options)
+
+tb3: Table = tb1.distributed_join(table=tb2, join_type='inner', algorithm='hash', left_on=[0],
+                                  right_on=[0])
 ```
 
 ### Union
@@ -89,13 +97,13 @@ tb3: Table = tb1.distributed_join(ctx, table=tb2, join_type='left', algorithm='h
 Sequential Union
 
 ```python
-tb4: Table = tb1.union(ctx, table=tb2)
+tb4: Table = tb1.union(tb2)
 ```
 
 Distributed Union
 
 ```python
-tb5: Table = tb1.distributed_union(ctx, table=tb2)
+tb5: Table = tb1.distributed_union(table=tb2)
 ```
 
 ### Intersect
@@ -103,13 +111,13 @@ tb5: Table = tb1.distributed_union(ctx, table=tb2)
 Sequential Intersect
 
 ```python
-tb4: Table = tb1.intersect(ctx, table=tb2)
+tb4: Table = tb1.intersect(table=tb2)
 ```
 
 Distributed Intersect
 
 ```python
-tb5: Table = tb1.distributed_intersect(ctx, table=tb2)
+tb5: Table = tb1.distributed_intersect(table=tb2)
 ```
 
 ### Subtract 
@@ -117,13 +125,13 @@ tb5: Table = tb1.distributed_intersect(ctx, table=tb2)
 Sequential Subtract
 
 ```python
-tb4: Table = tb1.subtract(ctx, table=tb2)
+tb4: Table = tb1.subtract(table=tb2)
 ```
 
 Distributed Subtract
 
 ```python
-tb5: Table = tb1.distributed_subtract(ctx, table=tb2)
+tb5: Table = tb1.distributed_subtract(table=tb2)
 ```
 
 
@@ -135,5 +143,7 @@ This is not yet supported from PyCylon API, but LibCylon supports this.
 
 ## Python Examples
 
-1. [Simple Data Loading Benchmark](https://github.com/cylondata/cylon/blob/master/python/examples/cylon_simple_dataloader.py)
-2. [Sequential MNIST with PyTorch](https://github.com/cylondata/cylon/blob/master/python/examples/cylon_sequential_mnist.py)
+1. [Relational Algebra Examples](https://github.com/cylondata/cylon/blob/master/python/examples
+/table_relational_algebra.py)
+2. [Compute Examples](https://github.com/cylondata/cylon/blob/master/python/examples
+/table_compute_examples.py)
