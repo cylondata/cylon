@@ -12,17 +12,31 @@
  # limitations under the License.
  ##
 
+'''
+Run test:
+>> pytest -q python/test/test_data_utils.py
+'''
+
+import os
 from pycylon.util.data.DataManager import LocalDataLoader
+import pyarrow
 
-base_path: str = "/home/vibhatha/data/mnist"
-train_file_name: str = "mnist_train_small.csv"
-test_file_name: str = "mnist_test.csv"
 
-dl = LocalDataLoader(source_dir=base_path, source_files=[train_file_name])
+def test_data_loading():
+    base_path = '/tmp'
 
-print(dl.source_dir, dl.source_files, dl.file_type, dl.delimiter, dl.loader_type)
+    train_file_name: str = "user_usage_tm_1.csv"
+    test_file_name: str = "user_device_tm_1.csv"
 
-dl.load()
+    assert os.path.exists(train_file_name)
+    assert os.path.exists(test_file_name)
 
-for id, dataset in enumerate(dl.dataset):
-    print(id, type(dataset), dataset.to_pandas().to_numpy().shape)
+    dl = LocalDataLoader(source_dir=base_path, source_files=[train_file_name])
+
+    print(dl.source_dir, dl.source_files, dl.file_type, dl.delimiter, dl.loader_type)
+
+    dl.load()
+
+    for id, dataset in enumerate(dl.dataset):
+        assert isinstance(dataset, pyarrow.Table)
+        assert dataset.to_pandas().to_numpy().shape == (240, 4)

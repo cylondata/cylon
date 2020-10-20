@@ -12,9 +12,15 @@
  # limitations under the License.
  ##
 
+'''
+Run test:
+>> pytest -q python/test/test_comm_type.py
+'''
+
 from pycylon.net.comm_type import CommType
 
-assert CommType.LOCAL.value == 0
-assert CommType.MPI.value == 1
-assert CommType.TCP.value == 2
-assert CommType.UCX.value == 3
+def test_types():
+    assert CommType.LOCAL.value == 0
+    assert CommType.MPI.value == 1
+    assert CommType.TCP.value == 2
+    assert CommType.UCX.value == 3

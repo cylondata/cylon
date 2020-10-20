@@ -12,30 +12,36 @@
  # limitations under the License.
  ##
 
+'''
+Run test:
+>> pytest -q python/test/test_join_config.py
+'''
+
 from pycylon.commons import JoinAlgorithm
 from pycylon.commons import JoinConfig
 from pycylon.commons import JoinType
 
-# print(JoinAlgorithm.SORT.value)
-# print(JoinAlgorithm.HASH.value)
-# print(JoinType.INNER.value)
-# print(JoinType.OUTER.value)
-# print(JoinType.LEFT.value)
-# print(JoinType.RIGHT.value)
 
+def test_join_configs():
+    assert JoinAlgorithm.SORT.value == 0
+    assert JoinAlgorithm.HASH.value == 1
+    assert JoinType.INNER.value == 0
+    assert JoinType.OUTER.value == 3
+    assert JoinType.LEFT.value == 1
+    assert JoinType.RIGHT.value == 2
 
-c = JoinType.LEFT
-a = JoinAlgorithm.HASH
+    c = JoinType.LEFT
+    a = JoinAlgorithm.HASH
 
-assert (c == JoinType.LEFT)
-assert (a != JoinAlgorithm.SORT)
-assert (a == JoinAlgorithm.HASH)
+    assert (c == JoinType.LEFT)
+    assert (a != JoinAlgorithm.SORT)
+    assert (a == JoinAlgorithm.HASH)
 
+    joinconfig = JoinConfig(join_type="left", join_algorithm="hash", left_column_index=0,
+                            right_column_index=1)
 
-joinconfig = JoinConfig(join_type="left", join_algorithm="hash", left_column_index=0, right_column_index=1)
+    assert joinconfig.left_index == 0 and joinconfig.right_index == 1
 
-print(joinconfig.left_index, joinconfig.right_index)
-
-print(joinconfig.join_type, joinconfig.join_algorithm)
+    assert joinconfig.join_type == 1 and joinconfig.join_algorithm == 1
 
 

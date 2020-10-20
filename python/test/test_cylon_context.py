@@ -12,12 +12,22 @@
  # limitations under the License.
  ##
 
-from pycylon.net.mpi_config import MPIConfig
-from pycylon import CylonContext
+"""
+Run test
+>>  mpirun -n 2 python -m pytest --with-mpi -q python/test/test_cylon_context.py
+"""
 
-mpi_config = MPIConfig()
-ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
+import pytest
 
-print("Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
+@pytest.mark.mpi
+def test_context_and_configs():
+    from pycylon.net.mpi_config import MPIConfig
+    from pycylon import CylonContext
 
-ctx.finalize()
+    mpi_config = MPIConfig()
+    ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
+
+    print("Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
+
+    # Note: Not needed when using PyTest with MPI
+    #ctx.finalize()
