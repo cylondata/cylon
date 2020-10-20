@@ -19,36 +19,28 @@
 #include <iostream>
 #include <io/csv_read_config.hpp>
 #include <chrono>
+#include <groupby/groupby.hpp>
 
 using namespace cylon;
 using namespace cylon::join::config;
 
-//template <const char* jtype>
-bool RunUnion(int rank,
-              std::shared_ptr<cylon::CylonContext> &ctx,
-              std::shared_ptr<Table> &table1,
-              std::shared_ptr<Table> &table2,
-              std::shared_ptr<Table> &output,
-              const std::string &h_out_path) {
+bool Run(int iter, int rank,
+         std::shared_ptr<Table> &table1,
+         std::shared_ptr<Table> &output) {
   Status status;
 
   auto t1 = std::chrono::high_resolution_clock::now();
-  status = cylon::DistributedUnion(table1, table2, output);
+  status = cylon::GroupBy(table1, 0, {1},{GroupByAggregationOp::SUM}, output);
   auto t2 = std::chrono::high_resolution_clock::now();
-  ctx->GetCommunicator()->Barrier(); // todo: should we take this inside the dist join?
+  table1->GetContext()->Barrier();
   auto t3 = std::chrono::high_resolution_clock::now();
 
-  if (!status.is_ok()) {
-    LOG(ERROR) << "Join failed!" << h_out_path;
-    return false;
-  }
-//    status = output->WriteCSV(h_out_path);
-//  auto t4 = std::chrono::high_resolution_clock::now();
-
   if (status.is_ok()) {
-    LOG(INFO) << rank << " j_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+    LOG(INFO) << iter << " " << rank << " groupby "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
               << " w_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
-              << " lines " << output->Rows();
+              << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
+              << " res " << output->Rows();
     output->Clear();
     return true;
   } else {
@@ -60,7 +52,7 @@ bool RunUnion(int rank,
 
 int main(int argc, char *argv[]) {
 
-  std::shared_ptr<Table> table1, table2, joined;
+  std::shared_ptr<Table> table1, out;
   Status status;
 
   auto mpi_config = cylon::net::MPIConfig::Make();
@@ -69,43 +61,35 @@ int main(int argc, char *argv[]) {
   int rank = ctx->GetRank();
   std::string srank = std::to_string(rank);
 
-  if (argc != 3) {
-    LOG(ERROR) << "src_dir and base_dir not provided! ";
+  if (argc != 4) {
+    LOG(ERROR) << "src_dir and base_dir iter not provided! ";
     return 1;
   }
 
   std::string src_dir = argv[1];
   std::string base_dir = argv[2];
+  int iter = std::stoi(argv[3]);
 
   system(("mkdir -p " + base_dir).c_str());
 
   std::string csv1 = base_dir + "/csv1_" + srank + ".csv";
-  std::string csv2 = base_dir + "/csv2_" + srank + ".csv";
 
   system(("cp " + src_dir + "/csv1_" + srank + ".csv " + csv1).c_str());
-  system(("cp " + src_dir + "/csv2_" + srank + ".csv " + csv2).c_str());
 
-  LOG(INFO) << rank << " Reading tables";
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
   if (!(status = cylon::FromCSV(ctx, csv1, table1, read_options)).is_ok()) {
     LOG(ERROR) << "File read failed! " << csv1;
     return 1;
   }
-  if (!(status = cylon::FromCSV(ctx, csv2, table2, read_options)).is_ok()) {
-    LOG(ERROR) << "File read failed! " << csv2;
-    return 1;
-  }
-  ctx->GetCommunicator()->Barrier();
-  LOG(INFO) << rank << " Done reading tables. rows " << table1->Rows() << " " << table2->Rows();
+  ctx->Barrier();
 
-  LOG(INFO) << rank << " union start";
-  RunUnion(rank, ctx, table1, table2, joined, base_dir + "/union_" + srank + ".csv");
-  LOG(INFO) << rank << " union end ----------------------------------";
+  for (int i = 0; i < iter; i++) {
+    Run(i, rank, table1, out);
+  }
 
   ctx->Finalize();
 
   system(("rm " + csv1).c_str());
-  system(("rm " + csv2).c_str());
 
   return 0;
 }

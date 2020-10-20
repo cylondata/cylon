@@ -12,3 +12,5 @@ include_directories(../cylon)
 
 tx_add_exe(table_join_dist_test)
 tx_add_exe(table_union_dist_test)
+tx_add_exe(table_agg_dist_test)
+tx_add_exe(table_grp_dist_test)
