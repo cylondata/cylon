@@ -41,7 +41,7 @@ bool RunJoin(int rank,
   auto t3 = std::chrono::high_resolution_clock::now();
 
   if (!status.is_ok()) {
-    LOG(ERROR) << "Join failed!";
+    LOG(ERROR) << "Join failed!" << h_out_path;
     return false;
   }
   //status = output->WriteCSV(h_out_path);

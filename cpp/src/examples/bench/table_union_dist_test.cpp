@@ -26,20 +26,20 @@ using namespace cylon::join::config;
 //template <const char* jtype>
 bool RunUnion(int rank,
               std::shared_ptr<cylon::CylonContext> &ctx,
-              const std::shared_ptr<Table> &table1,
-              const std::shared_ptr<Table> &table2,
+              std::shared_ptr<Table> &table1,
+              std::shared_ptr<Table> &table2,
               std::shared_ptr<Table> &output,
               const std::string &h_out_path) {
   Status status;
 
   auto t1 = std::chrono::high_resolution_clock::now();
-  status = cylon::DistributedUnion(table2, output);
+  status = cylon::DistributedUnion(table1, table2, output);
   auto t2 = std::chrono::high_resolution_clock::now();
   ctx->GetCommunicator()->Barrier(); // todo: should we take this inside the dist join?
   auto t3 = std::chrono::high_resolution_clock::now();
 
   if (!status.is_ok()) {
-    LOG(ERROR) << "Join failed!";
+    LOG(ERROR) << "Join failed!" << h_out_path;
     return false;
   }
 //    status = output->WriteCSV(h_out_path);
