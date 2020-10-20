@@ -36,7 +36,7 @@ bool Run(int iter, int rank,
   auto t3 = std::chrono::high_resolution_clock::now();
 
   if (status.is_ok()) {
-    LOG(INFO) << iter << " " << rank << " groupby "
+    LOG(INFO) << iter << " " << table1->GetContext()->GetWorldSize() << " " << rank << " groupby "
               << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
               << " w_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
               << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
