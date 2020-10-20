@@ -26,22 +26,24 @@ using namespace cylon::join::config;
 
 bool Run(int iter, int rank,
          std::shared_ptr<Table> &table1,
-         std::shared_ptr<cylon::compute::Result> &output,
-         int idx) {
+         std::shared_ptr<cylon::compute::Result> &output) {
   Status status;
 
   auto t1 = std::chrono::high_resolution_clock::now();
-  status = cylon::compute::Sum(table1, idx, output);
+  status = cylon::compute::Sum(table1, 1, output);
   auto t2 = std::chrono::high_resolution_clock::now();
   table1->GetContext()->Barrier();
   auto t3 = std::chrono::high_resolution_clock::now();
+
+  const std::shared_ptr<arrow::DoubleScalar>
+      &aa = std::static_pointer_cast<arrow::DoubleScalar>(output->GetResult().scalar());
 
   if (status.is_ok()) {
     LOG(INFO) << iter << " " << rank << " sum_t "
               << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
               << " w_t " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
               << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
-              << " res " << output->GetResult().scalar()->ToString();
+              << " res " << aa->value;
     return true;
   } else {
     LOG(ERROR) << "Join write failed!";
@@ -84,7 +86,7 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<compute::Result> res;
   for (int i = 0; i < iter; i++) {
-    Run(i, rank, table1, res, 1);
+    Run(i, rank, table1, res);
   }
 
   ctx->Finalize();
