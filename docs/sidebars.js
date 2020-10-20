@@ -4,5 +4,6 @@ module.exports = {
     "Architecture": ['arch'],
     "Develop": ['cpp', 'python', "java"],
     "Running Examples": ['mpi'],
+    "Publications": ['pub'],
   },
 };
