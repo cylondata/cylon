@@ -19,7 +19,7 @@ if __name__ == "__main__":
     procs = int(math.ceil(w / TOTAL_NODES))
     print("procs per worker", procs, " iter ", it, flush=True)
 
-#     assert procs <= 16
+    assert procs <= 16
 
     spark = SparkSession.builder \
         .appName(f"Spark join {w}") \
@@ -37,12 +37,12 @@ if __name__ == "__main__":
 
     df_l = sqlContext.read.format('com.databricks.spark.csv') \
         .options(header='true', inferschema='true') \
-        .load(input_dir + "/csv1_*").repartition(w).cache()
+        .load(input_dir + "/csv1_*").toDF("0", "1").repartition(w).cache()
     print(f"#### spark left {df_l.count()}")
 
     df_r = sqlContext.read.format('com.databricks.spark.csv') \
-        .options(header='true', inferschema='true') \
-        .load(input_dir + "/csv2_*").repartition(w).cache()
+        .options(header='true', inferschema='false') \
+        .load(input_dir + "/csv2_*").toDF("0", "1").repartition(w).cache()
     print(f"#### spark right {df_r.count()}")
 
     for i in range(it):
