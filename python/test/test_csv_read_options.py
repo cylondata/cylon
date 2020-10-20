@@ -14,3 +14,6 @@
 
 from pycylon.io.csv_read_config import CSVReadOptions
 
+csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+
+

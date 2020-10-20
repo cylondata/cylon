@@ -42,7 +42,7 @@ class AllToAllCallback : public ArrowCallback {
    * @param table the table
    * @return true if the table is accepted
    */
-  bool onReceive(int source, std::shared_ptr<arrow::Table> table) override;
+  bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override;
  private:
   std::vector<std::shared_ptr<arrow::Table>> *tables_;
 };
@@ -55,7 +55,7 @@ class ArrowJoin {
      * @param all_workers
      * @return
      */
-  ArrowJoin(cylon::CylonContext *ctx,
+  ArrowJoin(std::shared_ptr<cylon::CylonContext> &ctx,
             const std::vector<int> &source,
             const std::vector<int> &targets,
             int leftEdgeId,
@@ -73,7 +73,7 @@ class ArrowJoin {
    * @return true if the buffer is accepted
    */
   int leftInsert(const std::shared_ptr<arrow::Table> &table, int target) {
-	return leftAllToAll_->insert(table, target);
+    return leftAllToAll_->insert(table, target);
   }
 
   /**
@@ -83,7 +83,7 @@ class ArrowJoin {
    * @return
    */
   int rightInsert(const std::shared_ptr<arrow::Table> &table, int target) {
-	return rightAllToAll_->insert(table, target);
+    return rightAllToAll_->insert(table, target);
   }
 
   /**
@@ -97,16 +97,16 @@ class ArrowJoin {
    * @return
    */
   void finish() {
-	leftAllToAll_->finish();
-	rightAllToAll_->finish();
+    leftAllToAll_->finish();
+    rightAllToAll_->finish();
   }
 
   /*
    * Close the operation
    */
   void close() {
-	leftAllToAll_->close();
-	rightAllToAll_->close();
+    leftAllToAll_->close();
+    rightAllToAll_->close();
   }
 
  private:
@@ -128,7 +128,7 @@ class ArrowJoinWithPartition {
    * @param all_workers
    * @return
    */
-  ArrowJoinWithPartition(cylon::CylonContext *ctx,
+  ArrowJoinWithPartition(std::shared_ptr<cylon::CylonContext> &ctx,
                          const std::vector<int> &source,
                          const std::vector<int> &targets,
                          int leftEdgeId,
@@ -148,8 +148,8 @@ class ArrowJoinWithPartition {
    * @return true if the buffer is accepted
    */
   int leftInsert(const std::shared_ptr<arrow::Table> &table) {
-	leftUnPartitionedTables_.push(table);
-	return 1;
+    leftUnPartitionedTables_.push(table);
+    return 1;
   }
 
   /**
@@ -159,7 +159,7 @@ class ArrowJoinWithPartition {
    * @return
    */
   int rightInsert(const std::shared_ptr<arrow::Table> &table) {
-	rightUnPartitionedTables_.push(table);
+    rightUnPartitionedTables_.push(table);
     return 1;
   }
 
@@ -174,14 +174,14 @@ class ArrowJoinWithPartition {
    * @return
    */
   void finish() {
-	finished_ = true;
+    finished_ = true;
   }
 
   /*
    * Close the operation
    */
   void close() {
-	join_->close();
+    join_->close();
   }
  private:
   // keep track of the un partitioned tables

@@ -12,9 +12,9 @@
  # limitations under the License.
  ##
 
-from pycylon.common.join_config import JoinAlgorithm
-from pycylon.common.join_config import JoinConfig
-from pycylon.common.join_config import JoinType
+from pycylon.commons import JoinAlgorithm
+from pycylon.commons import JoinConfig
+from pycylon.commons import JoinType
 
 # print(JoinAlgorithm.SORT.value)
 # print(JoinAlgorithm.HASH.value)

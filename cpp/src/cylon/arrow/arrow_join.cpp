@@ -24,7 +24,7 @@
 
 namespace cylon {
 
-ArrowJoin::ArrowJoin(cylon::CylonContext *ctx,
+ArrowJoin::ArrowJoin(std::shared_ptr<cylon::CylonContext> &ctx,
                      const std::vector<int> &source,
                      const std::vector<int> &targets,
                      int leftEdgeId,
@@ -37,11 +37,9 @@ ArrowJoin::ArrowJoin(cylon::CylonContext *ctx,
   leftCallBack_ = std::make_shared<AllToAllCallback>(&leftTables_);
   rightCallBack_ = std::make_shared<AllToAllCallback>(&rightTables_);
   leftAllToAll_ =
-      std::make_shared<ArrowAllToAll>(ctx, source, targets, leftEdgeId, leftCallBack_, schema,
-                                      pool);
+      std::make_shared<ArrowAllToAll>(ctx, source, targets, leftEdgeId, leftCallBack_, schema);
   rightAllToAll_ =
-      std::make_shared<ArrowAllToAll>(ctx, source, targets, rightEdgeId, rightCallBack_, schema,
-                                      pool);
+      std::make_shared<ArrowAllToAll>(ctx, source, targets, rightEdgeId, rightCallBack_, schema);
 }
 
 bool ArrowJoin::isComplete() {
@@ -73,12 +71,12 @@ AllToAllCallback::AllToAllCallback(std::vector<std::shared_ptr<arrow::Table>> *t
   tables_ = table;
 }
 
-bool AllToAllCallback::onReceive(int source, std::shared_ptr<arrow::Table> table) {
+bool AllToAllCallback::onReceive(int source, const std::shared_ptr<arrow::Table>& table, int reference) {
   tables_->push_back(table);
   return true;
 }
 
-ArrowJoinWithPartition::ArrowJoinWithPartition(cylon::CylonContext *ctx,
+ArrowJoinWithPartition::ArrowJoinWithPartition(std::shared_ptr<cylon::CylonContext> &ctx,
                                                const std::vector<int> &source,
                                                const std::vector<int> &targets, int leftEdgeId,
                                                int rightEdgeId,

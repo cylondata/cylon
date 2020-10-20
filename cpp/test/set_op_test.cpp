@@ -25,19 +25,19 @@ TEST_CASE("Set operation testing", "[set_op]") {
   SECTION("testing union") {
     out_path =
         "../data/output/union_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
-    REQUIRE(test::TestSetOperation(&Table::DistributedUnion, ctx, path1, path2, out_path) == 0);
+    REQUIRE(test::TestSetOperation(&DistributedUnion, ctx, path1, path2, out_path) == 0);
   }
 
   SECTION("testing subtract") {
     out_path =
         "../data/output/subtract_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
-    REQUIRE(test::TestSetOperation(&Table::DistributedSubtract, ctx, path1, path2, out_path) == 0);
+    REQUIRE(test::TestSetOperation(&DistributedSubtract, ctx, path1, path2, out_path) == 0);
   }
 
   SECTION("testing subtract") {
     out_path =
         "../data/output/intersect_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK)
             + ".csv";
-    REQUIRE(test::TestSetOperation(&Table::DistributedIntersect, ctx, path1, path2, out_path) == 0);
+    REQUIRE(test::TestSetOperation(&DistributedIntersect, ctx, path1, path2, out_path) == 0);
   }
 }

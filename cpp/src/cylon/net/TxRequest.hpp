@@ -16,7 +16,6 @@
 #define CYLON_TXREQUEST_H
 
 #include "iostream"
-using namespace std;
 
 namespace cylon {
 class TxRequest {
@@ -36,7 +35,7 @@ class TxRequest {
 
   ~TxRequest();
 
-  void to_string(string dataType, int bufDepth);
+  void to_string(std::string dataType, int bufDepth);
 };
 }  // namespace cylon
 

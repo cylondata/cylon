@@ -24,19 +24,19 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   auto start_time = std::chrono::steady_clock::now();
-  auto mpi_config = new cylon::net::MPIConfig();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::shared_ptr<cylon::Table> first_table, second_table, result_table;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-  auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
+  auto status = cylon::FromCSV(ctx, argv[1], first_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[1];
     ctx->Finalize();
     return 1;
   }
 
-  status = cylon::Table::FromCSV(ctx, argv[2], second_table, read_options);
+  status = cylon::FromCSV(ctx, argv[2], second_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[2];
     ctx->Finalize();
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_time).count() << "[ms]";
 
-  status = cylon::Table::DistributedIntersect(first_table, second_table, result_table);
+  status = cylon::DistributedIntersect(first_table, second_table, result_table);
   if (!status.is_ok()) {
     LOG(INFO) << "Table intersection failed";
     ctx->Finalize();

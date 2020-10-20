@@ -13,12 +13,13 @@
  ##
 
 '''
-Mapping TwisterX C++ Comm Type with PyTwisterX CommType
+Mapping Cylon C++ Comm Type with PyCylon CommType
 '''
 
-from pycylon.net.comm_type cimport _CommType
+from pycylon.net.comm_type cimport CCommType
 
 cpdef enum CommType:
-    MPI = _CommType._MPI
-    TCP = _CommType._TCP
-    UCX = _CommType._UCX
+    LOCAL = CCommType._LOCAL
+    MPI = CCommType._MPI
+    TCP = CCommType._TCP
+    UCX = CCommType._UCX

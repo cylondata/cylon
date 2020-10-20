@@ -14,4 +14,7 @@
 
 from pycylon.net.comm_type import CommType
 
-print(CommType.MPI.value, CommType.UCX.value, CommType.TCP.value)
+assert CommType.LOCAL.value == 0
+assert CommType.MPI.value == 1
+assert CommType.TCP.value == 2
+assert CommType.UCX.value == 3

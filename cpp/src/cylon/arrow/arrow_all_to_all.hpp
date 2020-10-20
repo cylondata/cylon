@@ -37,10 +37,12 @@ enum ArrowHeader {
 struct PendingSendTable {
   // the target
   int target{};
-  // pending tables to be sent
-  std::queue<std::shared_ptr<arrow::Table>> pending;
-  // keep the current table
-  std::shared_ptr<arrow::Table> currentTable{};
+  // pending tables to be sent with it's reference
+  std::queue<std::pair<std::shared_ptr<arrow::Table>, int32_t>> pending{};
+
+  // keep the current table, reference pair
+  std::pair<std::shared_ptr<arrow::Table>, int32_t> currentTable{};
+
   // state of the send
   ArrowHeader status = ARROW_HEADER_INIT;
   // the current column we are sending
@@ -64,6 +66,8 @@ struct PendingReceiveTable {
   int noArray{};
   // the length of the current array data
   int length{};
+  // the reference
+  int reference{};
   // keep the current columns
   std::vector<std::shared_ptr<arrow::ChunkedArray>> currentArrays;
   // keep the current buffers
@@ -79,22 +83,23 @@ class ArrowCallback {
    * @param source the source
    * @param buffer the buffer allocated by the system, we need to free this
    * @param length the length of the buffer
+   * @param reference reference sent by the sender
    * @return true if we accept this buffer
    */
-  virtual bool onReceive(int source, std::shared_ptr<arrow::Table> table) = 0;
+  virtual bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference = 0) = 0;
 };
 
 /**
  * Arrow table specific buffer
  */
 class ArrowBuffer : public Buffer {
-public:
-  explicit ArrowBuffer(shared_ptr<arrow::Buffer> buf);
+ public:
+  explicit ArrowBuffer(std::shared_ptr<arrow::Buffer> buf);
   int64_t GetLength() override;
   uint8_t *GetByteBuffer() override;
 
-  shared_ptr<arrow::Buffer> getBuf() const;
-private:
+  std::shared_ptr<arrow::Buffer> getBuf() const;
+ private:
   std::shared_ptr<arrow::Buffer> buf;
 };
 
@@ -102,11 +107,12 @@ private:
  * Arrow table specific allocator
  */
 class ArrowAllocator : public Allocator {
-public:
+ public:
   explicit ArrowAllocator(arrow::MemoryPool *pool);
+  virtual ~ArrowAllocator();
 
   Status Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) override;
-private:
+ private:
   arrow::MemoryPool *pool;
 };
 
@@ -121,13 +127,12 @@ class ArrowAllToAll : public ReceiveCallback {
    * @param all_workers
    * @return
    */
-  ArrowAllToAll(cylon::CylonContext *ctx,
+  ArrowAllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
                 const std::vector<int> &source,
                 const std::vector<int> &targets,
                 int edgeId,
                 std::shared_ptr<ArrowCallback> callback,
-                std::shared_ptr<arrow::Schema> schema,
-                arrow::MemoryPool *pool);
+                std::shared_ptr<arrow::Schema> schema);
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true
@@ -137,7 +142,18 @@ class ArrowAllToAll : public ReceiveCallback {
    * @param target the target to send the message
    * @return true if the buffer is accepted
    */
-  int insert(const std::shared_ptr<arrow::Table> &arrow, int target);
+  int insert(const std::shared_ptr<arrow::Table> &arrow, int32_t target);
+
+  /**
+   * Insert a buffer to be sent, if the buffer is accepted return true
+   *
+   * @param buffer the buffer to send
+   * @param length the length of the message
+   * @param target the target to send the message
+   * @param reference a reference that can be sent in the header
+   * @return true if the buffer is accepted
+   */
+  int insert(std::shared_ptr<arrow::Table> arrow, int32_t target, int32_t reference);
 
   /**
    * Check weather the operation is complete, this method needs to be called until the operation is complete
