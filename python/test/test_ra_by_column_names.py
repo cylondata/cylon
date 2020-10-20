@@ -14,11 +14,10 @@
 
 '''
 Run test
->> mpirun -n 4 python -m pytest --with-mpi -q python/test/test_ra_by_column_names.py
+>> pytest -q python/test/test_ra_by_column_names.py
 '''
 
 import os
-import pytest
 from pycylon import Table
 from pycylon import CylonContext
 from pycylon.io import CSVReadOptions
@@ -33,6 +32,8 @@ def test_single_process():
 
     table1_path = '/tmp/user_device_tm_1.csv'
     table2_path = '/tmp/user_usage_tm_1.csv'
+
+    assert os.path.exists(table1_path) and os.path.exists(table2_path)
 
     tb1: Table = read_csv(ctx, table1_path, csv_read_options)
 
@@ -72,73 +73,3 @@ def test_single_process():
     assert tb3.row_count == tb4.row_count == tb5.row_count and tb3.column_count == \
            tb4.column_count == tb5.column_count
     ctx.finalize()
-
-
-@pytest.mark.mpi
-def test_multi_process():
-    mpi_config = MPIConfig()
-    ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
-
-    rank, size = ctx.get_rank(), ctx.get_world_size()
-
-    assert size == 4
-
-    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-
-    table1_path = f'/tmp/user_device_tm_{rank + 1}.csv'
-    table2_path = f'/tmp/user_usage_tm_{rank + 1}.csv'
-
-    tb1: Table = read_csv(ctx, table1_path, csv_read_options)
-
-    tb2: Table = read_csv(ctx, table2_path, csv_read_options)
-
-    print(tb1.column_names)
-    print(tb2.column_names)
-
-    configs = {'join_type': 'inner', 'algorithm': 'sort', 'left_col': 0,
-               'right_col': 0}
-
-    tb3: Table = tb1.distributed_join(table=tb2,
-                                      join_type=configs['join_type'],
-                                      algorithm=configs['algorithm'],
-                                      left_on=[0],
-                                      right_on=[3]
-                                      )
-
-    tb4: Table = tb1.distributed_join(table=tb2,
-                                      join_type=configs['join_type'],
-                                      algorithm=configs['algorithm'],
-                                      left_on=['use_id'],
-                                      right_on=['use_id']
-                                      )
-
-    tb5: Table = tb1.distributed_join(table=tb2,
-                                      join_type=configs['join_type'],
-                                      algorithm=configs['algorithm'],
-                                      on=['use_id']
-                                      )
-
-    assert tb3.column_count == tb4.column_count == tb4.column_count == 8
-
-    if rank == 0:
-        assert tb3.row_count == tb4.row_count == tb5.row_count == 736
-    if rank == 1:
-        assert tb3.row_count == tb4.row_count == tb5.row_count == 592
-    if rank == 2:
-        assert tb3.row_count == tb4.row_count == tb5.row_count == 528
-    if rank == 3:
-        assert tb3.row_count == tb4.row_count == tb5.row_count == 688
-
-    # tb5: Table = tb1.distributed_join(ctx, table=tb2,
-    #                       join_type=configs['join_type'],
-    #                       algorithm=configs['algorithm'],
-    #                       on=[0]
-    #                       )
-    #
-    # tb5.show()
-
-    #ctx.finalize()
-
-test_single_process()
-
-test_multi_process()

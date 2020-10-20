@@ -12,6 +12,10 @@
 # limitations under the License.
 ##
 
+'''
+Run test:
+>> pytest -q python/test/test_aggregate.py
+'''
 
 import numpy as np
 import pyarrow as pa

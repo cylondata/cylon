@@ -17,8 +17,6 @@ Run test:
 >> pytest -q python/test/test_build_arrow.py
 '''
 
-
-
 import os
 import sys
 import pyarrow

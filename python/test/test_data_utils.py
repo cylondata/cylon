@@ -28,8 +28,8 @@ def test_data_loading():
     train_file_name: str = "user_usage_tm_1.csv"
     test_file_name: str = "user_device_tm_1.csv"
 
-    assert os.path.exists(train_file_name)
-    assert os.path.exists(test_file_name)
+    assert os.path.exists(os.path.join(base_path, train_file_name))
+    assert os.path.exists(os.path.join(base_path, test_file_name))
 
     dl = LocalDataLoader(source_dir=base_path, source_files=[train_file_name])
 

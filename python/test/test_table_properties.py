@@ -12,38 +12,55 @@
  # limitations under the License.
  ##
 
+"""
+Run test:
+>> pytest -q python/test/test_table_properties.py
+"""
+
+import os
+from pycylon import Table
+from pycylon import CylonContext
+from pycylon.io import CSVReadOptions
+from pycylon.io import read_csv
+
+
 # TODO: this test_class will be used to test the magic functions of Table API
-# from pycylon import Table
-# from pycylon.csv import csv_reader
-# from pycylon import CylonContext
-#
-# ctx: CylonContext = CylonContext(config=None)
-#
-# tb: Table = csv_reader.read(ctx, '/tmp/user_usage_tm_1.csv', ',')
-#
-# print("Table Column Names")
-# print(tb.column_names)
-#
-# print("Table Schema")
-# print(tb.schema)
-#
-# print(tb[0].to_pandas())
-#
-# print(tb[0:5].to_pandas())
-#
-# print(tb[2:5].to_pandas())
-#
-# print(tb[5].to_pandas())
-#
-# print(tb[7].to_pandas())
-#
-# tb.show_by_range(0, 4, 0, 4)
-#
-# print(tb[0:5].to_pandas())
 
-#ctx.finalize()
+def test_properties():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-#import pyarrow as pa
+    table1_path = '/tmp/user_usage_tm_1.csv'
+    table2_path = '/tmp/user_usage_tm_2.csv'
 
-#arw_table: pa.Table = tb.to_arrow()
+    assert os.path.exists(table1_path) and os.path.exists(table2_path)
+
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+
+    tb1: Table = read_csv(ctx, table1_path, csv_read_options)
+    #
+    # print("Table Column Names")
+    # print(tb.column_names)
+    #
+    # print("Table Schema")
+    # print(tb.schema)
+    #
+    # print(tb[0].to_pandas())
+    #
+    # print(tb[0:5].to_pandas())
+    #
+    # print(tb[2:5].to_pandas())
+    #
+    # print(tb[5].to_pandas())
+    #
+    # print(tb[7].to_pandas())
+    #
+    # tb.show_by_range(0, 4, 0, 4)
+    #
+    # print(tb[0:5].to_pandas())
+
+    # ctx.finalize()
+
+    # import pyarrow as pa
+
+    # arw_table: pa.Table = tb.to_arrow()
 
