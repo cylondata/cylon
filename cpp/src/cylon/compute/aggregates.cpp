@@ -175,10 +175,20 @@ cylon::Status Sum(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, s
   // do local operation
   arrow::compute::FunctionContext fn_ctx(cylon::ToArrowPool(ctx));
   arrow::compute::Datum local_result;
+
+  auto t1 = std::chrono::high_resolution_clock::now();
   arrow::Status status = arrow::compute::Sum(&fn_ctx, input, &local_result);
+  auto t2 = std::chrono::high_resolution_clock::now();
 
   if (status.ok()) {
-    return DoAllReduce(ctx, local_result, output, data_type, cylon::net::ReduceOp::SUM);
+    auto cstatus = DoAllReduce(ctx, local_result, output, data_type, cylon::net::ReduceOp::SUM);
+    auto t3 = std::chrono::high_resolution_clock::now();
+
+    LOG(INFO) << ctx->GetRank() << " local op time: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+              << " comm time: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
+    return cstatus;
   } else {
     LOG(ERROR) << "Local aggregation failed! " << status.message();
     return cylon::Status(Code::ExecutionError, status.message());
