@@ -1,5 +1,8 @@
 # Cylon
 
+[![Build Status](https://travis-ci.org/cylondata/cylon.svg?branch=master)](https://travis-ci.org/cylondata/cylon)
+[![License](http://img.shields.io/:license-Apache%202-blue.svg)](https://github.com/cylondata/cylon/blob/master/LICENSE)
+
 Cylon is a fast, scalable distributed memory data parallel library
 for processing structured data. Cylon implements a set of relational operators to process data.
 While ”Core  Cylon” is implemented using system level C/C++, multiple language interfaces
