@@ -26,16 +26,16 @@ using namespace cylon;
 using namespace cylon::join::config;
 
 bool RunJoin(int rank,
-             cylon::CylonContext *ctx,
+             std::shared_ptr<cylon::CylonContext> &ctx,
              const JoinConfig &jc,
-             const std::shared_ptr<Table> &table1,
-             const std::shared_ptr<Table> &table2,
+             std::shared_ptr<Table> &table1,
+             std::shared_ptr<Table> &table2,
              std::shared_ptr<Table> &output,
-             const string &h_out_path) {
+             const std::string &h_out_path) {
   Status status;
 
   auto t1 = std::chrono::high_resolution_clock::now();
-  status = table1->DistributedJoin(table2, jc, &output);
+  status = cylon::DistributedJoin(table1, table2, jc, output);
   auto t2 = std::chrono::high_resolution_clock::now();
   ctx->GetCommunicator()->Barrier(); // todo: should we take this inside the dist join?
   auto t3 = std::chrono::high_resolution_clock::now();
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<Table> table1, table2, joined;
   Status status;
 
-  auto mpi_config = new cylon::net::MPIConfig();
+  auto mpi_config = cylon::net::MPIConfig::Make();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   int rank = ctx->GetRank();
@@ -91,11 +91,11 @@ int main(int argc, char *argv[]) {
 
   LOG(INFO) << rank << " Reading tables";
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-  if (!(status = Table::FromCSV(ctx, csv1, table1, read_options)).is_ok()) {
+  if (!(status = cylon::FromCSV(ctx, csv1, table1, read_options)).is_ok()) {
     LOG(ERROR) << "File read failed! " << csv1;
     return 1;
   }
-  if (!(status = Table::FromCSV(ctx, csv2, table2, read_options)).is_ok()) {
+  if (!(status = cylon::FromCSV(ctx, csv2, table2, read_options)).is_ok()) {
     LOG(ERROR) << "File read failed! " << csv2;
     return 1;
   }
