@@ -20,11 +20,11 @@ def test_pyarrow_installation_test():
     assert responses[-1] == 0
 
 
-# def test_fake():
-#     # NOTE: To Test the Test Framework
-#     print("Fake Test")
-#     responses.append(os.system("pytest -q python/test/test_fake.py"))
-#     assert responses[-1] == 0
+def test_fake():
+    # NOTE: To Test the Test Framework
+    print("Fake Test")
+    responses.append(os.system("pytest -q python/test/test_fake.py"))
+    assert responses[-1] == 0
 
 def test_cylon_context():
     print("3. CylonContext Test")
