@@ -998,7 +998,7 @@ void Table::Clear() {
 }
 
 Table::~Table() {
-  LOG(INFO) << "table destructor " << this->id_;
+//  LOG(INFO) << "table destructor " << this->id_;
   this->Clear();
 }
 
