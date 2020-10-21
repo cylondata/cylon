@@ -138,16 +138,18 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
     auto t5 = std::chrono::high_resolution_clock::now();
 
     LOG(INFO) << "groupby times "
-              << "p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-              << "l " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
-              << "s " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count()
-              << "l " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t4).count();
+              << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+              << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+              << " s " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count()
+              << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t4).count()
+              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t1).count();
   } else {
     output = local_table;
     LOG(INFO) << "groupby times "
-              << "p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-              << "l " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
-              << "s 0 l 0";
+              << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+              << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+              << " s 0 l 0"
+              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count();
   }
 
   return Status::OK();
