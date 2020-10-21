@@ -97,7 +97,7 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
                       int64_t index_col,
                       const std::vector<int64_t> &aggregate_cols,
                       const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
-                      std::shared_ptr<Table> &output) {
+                      std::shared_ptr<Table> &local_table) {
   auto t0 = std::chrono::high_resolution_clock::now();
 
   LocalGroupByFptr
@@ -110,33 +110,35 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
   project_cols.insert(project_cols.end(), aggregate_cols.begin(), aggregate_cols.end());
 
 //  std::shared_ptr<Table> projected_table;
-  std::shared_ptr<Table> local_table;
+//  std::shared_ptr<Table> local_table;
   auto t1 = std::chrono::high_resolution_clock::now();
   if (!(status = cylon::Project(table, project_cols, local_table)).is_ok()) {
-    LOG(FATAL) << "table projection failed! " << status.get_msg();
+    LOG(ERROR) << "table projection failed! " << status.get_msg();
     return status;
   }
   auto t2 = std::chrono::high_resolution_clock::now();
 
   // do local group by
 //  std::shared_ptr<Table> local_table;
-  if (!(status = group_by_fptr(local_table, aggregate_ops, local_table)).is_ok()) {
-    LOG(FATAL) << "Local group by failed! " << status.get_msg();
-    return status;
+  if (table->GetContext()->GetWorldSize() == 1) {
+    if (!(status = group_by_fptr(local_table, aggregate_ops, local_table)).is_ok()) {
+      LOG(ERROR) << "Local group by failed! " << status.get_msg();
+      return status;
+    }
   }
   auto t3 = std::chrono::high_resolution_clock::now();
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
     if (!(status = cylon::Shuffle(local_table, {0}, local_table)).is_ok()) {
-      LOG(FATAL) << " table shuffle failed! " << status.get_msg();
+      LOG(ERROR) << " table shuffle failed! " << status.get_msg();
       return status;
     }
     auto t4 = std::chrono::high_resolution_clock::now();
 
     // do local distribute again
-    if (!(status = group_by_fptr(local_table, aggregate_ops, output)).is_ok()) {
-      LOG(FATAL) << "Local group by failed! " << status.get_msg();
+    if (!(status = group_by_fptr(local_table, aggregate_ops, local_table)).is_ok()) {
+      LOG(ERROR) << "Local group by failed! " << status.get_msg();
       return status;
     }
     auto t5 = std::chrono::high_resolution_clock::now();
@@ -149,7 +151,7 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
               << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t4).count()
               << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t0).count();
   } else {
-    output = std::move(local_table);
+//    output = std::move(local_table);
     auto t4 = std::chrono::high_resolution_clock::now();
     LOG(INFO) << "groupby times "
               << " i " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
@@ -178,34 +180,34 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
 
   std::shared_ptr<Table> projected_table;
   if (!(status = cylon::Project(table, project_cols, projected_table)).is_ok()) {
-    LOG(FATAL) << "table projection failed! " << status.get_msg();
+    LOG(ERROR) << "table projection failed! " << status.get_msg();
     return status;
   }
 
   // do local group by
   std::shared_ptr<Table> local_table;
   if (!(status = group_by_fptr(projected_table, aggregate_ops, local_table)).is_ok()) {
-    LOG(FATAL) << "Local group by failed! " << status.get_msg();
+    LOG(ERROR) << "Local group by failed! " << status.get_msg();
     return status;
   }
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
     if (!(status = cylon::Shuffle(local_table, {0}, local_table)).is_ok()) {
-      LOG(FATAL) << " table shuffle failed! " << status.get_msg();
+      LOG(ERROR) << " table shuffle failed! " << status.get_msg();
       return status;
     }
 
 //    // need to perform a sort to rearrange the shuffled table
 //    if (!(status = local_table->Sort(0, local_table)).is_ok()) {
-//      LOG(FATAL) << " table sort failed! " << status.get_msg();
+//      LOG(ERROR) << " table sort failed! " << status.get_msg();
 //      return status;
 //    }
     // use hash groupby now, because the idx rows may loose order
     group_by_fptr = PickLocalHashGroupByFptr(table->GetColumn(index_col)->GetDataType());
     // do local group by again
     if (!(status = group_by_fptr(local_table, aggregate_ops, output)).is_ok()) {
-      LOG(FATAL) << "Local group by failed! " << status.get_msg();
+      LOG(ERROR) << "Local group by failed! " << status.get_msg();
       return status;
     }
   } else {

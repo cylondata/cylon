@@ -30,7 +30,7 @@
 #include <groupby/groupby.hpp>
 
 
-void create_table(char *const *argv,
+void create_table(std::shared_ptr<cylon::CylonContext> &ctx, char *const *argv,
                   arrow::MemoryPool *pool,
                   std::shared_ptr<arrow::Table> &left_table);
 
@@ -198,8 +198,10 @@ void HashCylonGroupBy(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ct
       cylon::GroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
 
   auto t3 = std::chrono::steady_clock::now();
-  std::cout << "hash_group3 " << output->Rows()
-            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
+  LOG(INFO) << "hash_group3 rank " << ctable->GetContext()->GetRank()
+            << " world " << ctable->GetContext()->GetWorldSize()
+            << " res " << output->Rows()
+            << " time " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
             << std::endl;
 }
 
@@ -280,7 +282,7 @@ int main(int argc, char *argv[]) {
   arrow::MemoryPool *pool = arrow::default_memory_pool();
   std::shared_ptr<arrow::Table> left_table;
 //  create_binary_table(argv, ctx, pool, left_table, right_table);
-  create_table(argv, pool, left_table);
+  create_table(ctx, argv, pool, left_table);
   MPI_Barrier(MPI_COMM_WORLD);
 
   std::shared_ptr<cylon::Table> first_table;
@@ -296,7 +298,7 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
 
-  first_table->WriteCSV("/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
+//  first_table->WriteCSV("/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
 
   std::shared_ptr<cylon::Table> output;
 
@@ -319,7 +321,7 @@ int main(int argc, char *argv[]) {
 
   HashCylonGroupBy(pool, first_table, output);
 //  output->Print();
-  output->WriteCSV("/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
+//  output->WriteCSV("/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
   output.reset();
   std::cout << "++++++++++++++++++++++++++" << std::endl;
 
@@ -333,19 +335,20 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void create_table(char *const *argv,
+void create_table(std::shared_ptr<cylon::CylonContext> &ctx, char *const *argv,
                   arrow::MemoryPool *pool,
                   std::shared_ptr<arrow::Table> &left_table) {
   arrow::Int64Builder left_id_builder(pool);
   arrow::DoubleBuilder cost_builder(pool);
-  uint64_t count = std::stoull(argv[1]);
-  double dup = std::stod(argv[2]);
+  const uint64_t rows = std::stoull(argv[1]);
+  const uint64_t count = rows / ctx->GetWorldSize();
+  const double dup = std::stod(argv[2]);
 
-  std::cout << "#### lines " << count << " dup " << dup << std::endl;
+  LOG(INFO) << "#### lines " << rows << " lines/core " << count << " dup " << dup << std::endl;
 
   std::random_device rd;
   std::mt19937_64 gen(rd());
-  std::uniform_int_distribution<int64_t> distrib(0, (int64_t) (count * dup));
+  std::uniform_int_distribution<int64_t> distrib(0, (int64_t) (rows * dup));
 
   std::mt19937_64 gen1(rd());
   std::uniform_real_distribution<double> distrib1;

@@ -348,7 +348,7 @@ cylon::Status LocalHashGroupBy(const std::shared_ptr<cylon::Table> &table,
     }
 
     if (!a_status.ok()) {
-      LOG(FATAL) << "Aggregation failed!";
+      LOG(ERROR) << "Aggregation failed!";
       return cylon::Status(static_cast<int>(a_status.code()), a_status.message());
     }
   }

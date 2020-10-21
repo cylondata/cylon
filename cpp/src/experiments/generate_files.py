@@ -25,7 +25,8 @@ base_dir = args["base_dir"]
 print(f"base dir {base_dir}", flush=True)
 os.system(f"mkdir -p {base_dir}")
 
-csvs = ["BASE/csv1_RANK.csv", "BASE/csv2_RANK.csv"]
+# csvs = ["BASE/csv1_RANK.csv", "BASE/csv2_RANK.csv"]
+csvs = ["BASE/csv1_RANK.csv"]
 cols = args['cols']
 key_duplication_ratio = 0.99  # on avg there will be rows/key_range_ratio num of duplicate keys
 
