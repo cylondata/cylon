@@ -106,17 +106,18 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
   std::vector<int64_t> project_cols = {index_col};
   project_cols.insert(project_cols.end(), aggregate_cols.begin(), aggregate_cols.end());
 
-  std::shared_ptr<Table> projected_table;
+//  std::shared_ptr<Table> projected_table;
+  std::shared_ptr<Table> local_table;
   auto t1 = std::chrono::high_resolution_clock::now();
-  if (!(status = cylon::Project(table, project_cols, projected_table)).is_ok()) {
+  if (!(status = cylon::Project(table, project_cols, local_table)).is_ok()) {
     LOG(FATAL) << "table projection failed! " << status.get_msg();
     return status;
   }
   auto t2 = std::chrono::high_resolution_clock::now();
 
   // do local group by
-  std::shared_ptr<Table> local_table;
-  if (!(status = group_by_fptr(projected_table, aggregate_ops, local_table)).is_ok()) {
+//  std::shared_ptr<Table> local_table;
+  if (!(status = group_by_fptr(local_table, aggregate_ops, local_table)).is_ok()) {
     LOG(FATAL) << "Local group by failed! " << status.get_msg();
     return status;
   }
@@ -144,7 +145,7 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
               << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t4).count()
               << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t1).count();
   } else {
-    output = local_table;
+    output = std::move(local_table);
     auto t4 = std::chrono::high_resolution_clock::now();
     LOG(INFO) << "groupby times "
               << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
