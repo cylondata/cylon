@@ -98,7 +98,10 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
                       const std::vector<int64_t> &aggregate_cols,
                       const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
                       std::shared_ptr<Table> &output) {
-  LocalGroupByFptr group_by_fptr = PickLocalHashGroupByFptr(table->GetColumn(index_col)->GetDataType());
+  auto t0 = std::chrono::high_resolution_clock::now();
+
+  LocalGroupByFptr
+      group_by_fptr = PickLocalHashGroupByFptr(table->GetColumn(index_col)->GetDataType());
 
   Status status;
 
@@ -139,20 +142,22 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
     auto t5 = std::chrono::high_resolution_clock::now();
 
     LOG(INFO) << "groupby times "
+              << " i " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
               << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
               << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
               << " s " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count()
               << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t4).count()
-              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t1).count();
+              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t0).count();
   } else {
     output = std::move(local_table);
     auto t4 = std::chrono::high_resolution_clock::now();
     LOG(INFO) << "groupby times "
+              << " i " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
               << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
               << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
               << " s 0"
               << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count()
-              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t1).count();
+              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t0).count();
   }
 
   return Status::OK();
