@@ -99,7 +99,7 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
                       const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
                       std::shared_ptr<Table> &local_table,
                       bool use_local_combine) {
-  auto t0 = std::chrono::high_resolution_clock::now();
+  auto t2 = std::chrono::high_resolution_clock::now();
 
   LocalGroupByFptr
       group_by_fptr = PickLocalHashGroupByFptr(table->GetColumn(index_col)->GetDataType());
@@ -110,12 +110,12 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
   std::vector<int64_t> project_cols = {index_col};
   project_cols.insert(project_cols.end(), aggregate_cols.begin(), aggregate_cols.end());
 
-  auto t1 = std::chrono::high_resolution_clock::now();
+//  auto t1 = std::chrono::high_resolution_clock::now();
   if (!(status = cylon::Project(table, project_cols, local_table)).is_ok()) {
     LOG(ERROR) << "table projection failed! " << status.get_msg();
     return status;
   }
-  auto t2 = std::chrono::high_resolution_clock::now();
+//  auto t2 = std::chrono::high_resolution_clock::now();
 
   // do local group by
   if (table->GetContext()->GetWorldSize() == 1 || use_local_combine) {
@@ -141,21 +141,23 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
     }
     auto t5 = std::chrono::high_resolution_clock::now();
 
-    LOG(INFO) << "groupby times "
-              << " i " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
-              << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+    LOG(INFO) << "hash_groupby_times "
+              << " r " << table->GetContext()->GetRank() << " w " <<  table->GetContext()->GetWorldSize()
+//              << " i " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
+//              << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
               << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
               << " s " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count()
               << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t4).count()
-              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t0).count();
+              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t2).count();
   } else {
     LOG(INFO) << "groupby times "
-              << " i " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
-              << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+              << " r 0 w 1"
+//              << " i " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
+//              << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
               << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
               << " s 0"
               << " l 0"
-              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t0).count();
+              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
   }
 
   return Status::OK();
@@ -166,6 +168,8 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
                        const std::vector<int64_t> &aggregate_cols,
                        const std::vector<GroupByAggregationOp> &aggregate_ops,
                        std::shared_ptr<Table> &output) {
+  auto t2 = std::chrono::high_resolution_clock::now();
+
   LocalGroupByFptr group_by_fptr = PickLocalPipelineGroupByFptr(table->GetColumn(index_col)->GetDataType());
 
   Status status;
@@ -187,18 +191,25 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
     return status;
   }
 
+  auto t3 = std::chrono::high_resolution_clock::now();
+
+
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
     if (!(status = cylon::Shuffle(local_table, {0}, local_table)).is_ok()) {
       LOG(ERROR) << " table shuffle failed! " << status.get_msg();
       return status;
     }
+    auto t4 = std::chrono::high_resolution_clock::now();
 
     // need to perform a sort to rearrange the shuffled table
     if (!(status = cylon::Sort(local_table, 0, local_table)).is_ok()) {
       LOG(ERROR) << " table sort failed! " << status.get_msg();
       return status;
     }
+
+    auto t5 = std::chrono::high_resolution_clock::now();
+
     // use hash groupby now, because the idx rows may loose order
 //    group_by_fptr = PickLocalHashGroupByFptr(table->GetColumn(index_col)->GetDataType());
     // do local group by again
@@ -206,8 +217,31 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
       LOG(ERROR) << "Local group by failed! " << status.get_msg();
       return status;
     }
+
+    auto t6 = std::chrono::high_resolution_clock::now();
+
+    LOG(INFO) << "sort_groupby_times "
+              << " r " << table->GetContext()->GetRank() << " w " <<  table->GetContext()->GetWorldSize()
+              //              << " i " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
+              //              << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+              << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+              << " s " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count()
+              << " s " << std::chrono::duration_cast<std::chrono::milliseconds>(t5 - t4).count()
+              << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t6 - t5).count()
+              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t6 - t2).count();
+
   } else {
     output = local_table;
+
+    LOG(INFO) << "sort_groupby_times "
+              << " r 0 w 1"
+              //              << " i " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
+              //              << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+              << " l " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+              << " s 0"
+              << " s 0"
+              << " l 0"
+              << " t " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
   }
 
   return Status::OK();}
