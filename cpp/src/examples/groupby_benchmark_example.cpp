@@ -202,6 +202,7 @@ void HashCylonGroupBy(int i, arrow::MemoryPool *pool, std::shared_ptr<cylon::Tab
   LOG(INFO) << "hash_group3 iter "<< i << " rank " << ctable->GetContext()->GetRank()
             << " world " << ctable->GetContext()->GetWorldSize()
             << " res " << output->Rows()
+            << " local " << local_combine
             << " time " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
             << std::endl;
 }
