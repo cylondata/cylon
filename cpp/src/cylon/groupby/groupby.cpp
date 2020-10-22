@@ -194,13 +194,13 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
       return status;
     }
 
-//    // need to perform a sort to rearrange the shuffled table
-//    if (!(status = local_table->Sort(0, local_table)).is_ok()) {
-//      LOG(ERROR) << " table sort failed! " << status.get_msg();
-//      return status;
-//    }
+    // need to perform a sort to rearrange the shuffled table
+    if (!(status = cylon::Sort(local_table, 0, local_table)).is_ok()) {
+      LOG(ERROR) << " table sort failed! " << status.get_msg();
+      return status;
+    }
     // use hash groupby now, because the idx rows may loose order
-    group_by_fptr = PickLocalHashGroupByFptr(table->GetColumn(index_col)->GetDataType());
+//    group_by_fptr = PickLocalHashGroupByFptr(table->GetColumn(index_col)->GetDataType());
     // do local group by again
     if (!(status = group_by_fptr(local_table, aggregate_ops, output)).is_ok()) {
       LOG(ERROR) << "Local group by failed! " << status.get_msg();
