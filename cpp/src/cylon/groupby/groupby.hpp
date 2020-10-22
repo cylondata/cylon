@@ -28,7 +28,8 @@ Status GroupBy(std::shared_ptr<Table> &table,
                int64_t index_col,
                const std::vector<int64_t> &aggregate_cols,
                const std::vector<GroupByAggregationOp> &aggregate_ops,
-               std::shared_ptr<Table> &output);
+               std::shared_ptr<Table> &output,
+               bool use_local_combine = false);
 
 Status PipelineGroupBy(std::shared_ptr<Table> &table,
                int64_t index_col,

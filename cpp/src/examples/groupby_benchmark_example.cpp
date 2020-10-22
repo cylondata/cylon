@@ -180,8 +180,8 @@ void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
             << std::endl;
 }
 
-void HashCylonGroupBy(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ctable,
-                      std::shared_ptr<cylon::Table> &output) {
+void HashCylonGroupBy(int i, arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ctable,
+                      std::shared_ptr<cylon::Table> &output, bool local_combine) {
   auto t1 = std::chrono::steady_clock::now();
 
 /* // using hashgroup by template function
@@ -195,10 +195,11 @@ void HashCylonGroupBy(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ct
   cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);*/
 
   cylon::Status s =
-      cylon::GroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
+      cylon::GroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output,
+                     local_combine);
 
   auto t3 = std::chrono::steady_clock::now();
-  LOG(INFO) << "hash_group3 rank " << ctable->GetContext()->GetRank()
+  LOG(INFO) << "hash_group3 iter "<< i << " rank " << ctable->GetContext()->GetRank()
             << " world " << ctable->GetContext()->GetWorldSize()
             << " res " << output->Rows()
             << " time " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
@@ -270,8 +271,8 @@ void ArrowGroupBy(std::shared_ptr<cylon::Table> &ctable, std::shared_ptr<cylon::
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 3) {
-    LOG(ERROR) << "There should be 2 args. count, duplication factor";
+  if (argc < 5) {
+    LOG(ERROR) << "There should be 4 args. count, duplication factor, use_local_combine, iter";
     return 1;
   }
 
@@ -319,10 +320,14 @@ int main(int argc, char *argv[]) {
   output.reset();
    std::cout << "++++++++++++++++++++++++++" <<  std::endl;*/
 
-  HashCylonGroupBy(pool, first_table, output);
+  bool use_local = std::stoi(argv[3]);
+
+  for (int i = 0; i < std::stoi(argv[4]); ++i){
+    HashCylonGroupBy(i, pool, first_table, output, use_local);
+    output.reset();
+  }
 //  output->Print();
 //  output->WriteCSV("/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
-  output.reset();
   std::cout << "++++++++++++++++++++++++++" << std::endl;
 
   /*// hash arrow group by
