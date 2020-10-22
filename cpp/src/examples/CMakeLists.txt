@@ -21,6 +21,7 @@ tx_add_exe(join_inmem_datagen_example)
 tx_add_exe(table_from_vectors_example)
 tx_add_exe(compute_example)
 tx_add_exe(groupby_benchmark_example)
+tx_add_exe(groupby_benchmark_example2)
 tx_add_exe(groupby_pipeline_example)
 tx_add_exe(groupby_example)
 
