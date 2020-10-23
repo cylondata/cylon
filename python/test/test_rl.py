@@ -14,13 +14,10 @@
 
 '''
 Run this file:
->>> python python/test/test_rl.py \
-    --table1_path /tmp/user_usage_tm_1.csv \
-    --table2_path /tmp/user_usage_tm_2.csv
+>> pytest -q python/test/test_rl.py
 '''
 
-import time
-import argparse
+import os
 from pycylon import Table
 from pyarrow import Table as PyArrowTable
 from pycylon.net import MPIConfig
@@ -28,36 +25,37 @@ from pycylon import CylonContext
 from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
 
-ctx: CylonContext = CylonContext(config=None, distributed=False)
+def test_rl():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-parser = argparse.ArgumentParser(description='PyCylon Table Conversion')
-parser.add_argument('--table1_path', type=str, help='Path to table 1 csv')
-parser.add_argument('--table2_path', type=str, help='Path to table 2 csv')
+    table1_path = '/tmp/user_usage_tm_1.csv'
+    table2_path = '/tmp/user_usage_tm_2.csv'
 
-args = parser.parse_args()
+    assert os.path.exists(table1_path) and os.path.exists(table2_path)
 
-csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-tb1: Table = read_csv(ctx, args.table1_path, csv_read_options)
+    tb1: Table = read_csv(ctx, table1_path, csv_read_options)
 
-tb2: Table = read_csv(ctx, args.table2_path, csv_read_options)
+    tb2: Table = read_csv(ctx, table2_path, csv_read_options)
 
-print("First Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
+    print("First Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
 
-tb3: Table = tb1.join(table=tb2, join_type='inner', algorithm='hash', left_on=[0],
-                      right_on=[0])
+    tb3: Table = tb1.join(table=tb2, join_type='inner', algorithm='hash', left_on=[0],
+                          right_on=[0])
 
-print(f"Join Completed : Rows={tb3.row_count}, Columns={tb3.column_count}")
+    assert tb3.row_count == 458 and tb3.column_count == 8
 
-tb4: Table = tb1.union(tb2)
+    tb4: Table = tb1.union(tb2)
 
-print(f"Union Completed : Rows={tb4.row_count}, Columns={tb4.column_count}")
+    assert tb4.row_count == 240 and tb4.column_count == 4
 
-tb5: Table = tb1.subtract(tb2)
+    tb5: Table = tb1.subtract(tb2)
 
-print(f"Subtract Completed : Rows={tb5.row_count}, Columns={tb5.column_count}")
+    assert tb5.row_count == 0 and tb5.column_count == 4
 
-tb6: Table = tb1.intersect(tb2)
+    tb6: Table = tb1.intersect(tb2)
 
-print(f"Intersect Completed : Rows={tb6.row_count}, Columns={tb6.column_count}")
+    assert tb6.row_count == 240 and tb6.column_count == 4
 
+    ctx.finalize()

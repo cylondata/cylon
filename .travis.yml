@@ -29,7 +29,7 @@ jobs:
       name: "Build CPP"
     - script:
         - python3 -m venv ENV
-        - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --python
+        - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --python --pytest
       name: "Build Python"
     - script:
         - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --java
