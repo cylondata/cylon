@@ -89,6 +89,13 @@ class Table {
                   const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
 
   /**
+    * Write the table as a parquet file
+    * @param path file path
+    * @return the status of the operation
+    */
+  Status WriteParquet(const std::string &path);
+
+  /**
    * Create a arrow table from this data structure
    * @param output arrow table
    * @return the status of the operation
@@ -226,6 +233,25 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &pat
 Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
                const std::vector<std::shared_ptr<Table> *> &tableOuts,
                io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
+/**
+* Create a table by reading a parquet file
+* @param path file path
+* @return a pointer to the table
+*/
+Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
+                          std::shared_ptr<Table> &tableOut);
+/**
+* Read multiple parquet files into multiple tables. If threading is enabled, the tables will be read
+* in parallel
+* @param ctx
+* @param paths
+* @param tableOuts
+* @param isConcurrent
+* @return
+*/
+Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
+                          const std::vector<std::shared_ptr<Table> *> &tableOuts,
+                          bool isConcurrent = true);
 
 /**
    * Merge the set of tables to create a single table

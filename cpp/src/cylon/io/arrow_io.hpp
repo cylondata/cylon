@@ -28,6 +28,11 @@ arrow::Result<std::shared_ptr<arrow::Table>> read_csv(std::shared_ptr<cylon::Cyl
                                                       const std::string &path,
                                                       cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 
+arrow::Result<std::shared_ptr<arrow::Table>> read_parquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                                                              const std::string &path);
+
+arrow::Status write_parquet(std::shared_ptr<arrow::Table> &table, const std::string &path);
+
 }  // namespace io
 }  // namespace cylon
 

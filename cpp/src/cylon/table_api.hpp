@@ -38,13 +38,24 @@ Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
 			   const std::string &id,
 			   cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 
+Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::string &path,
+                   const std::string &id);
+
 Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
 			   const std::vector<std::string> &paths,
 			   const std::vector<std::string> &ids,
 			   cylon::io::config::CSVReadOptions options);
 
+Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::vector<std::string> &paths,
+                   const std::vector<std::string> &ids,
+                   bool isConcurrent);
+
 Status WriteCSV(const std::string &id, const std::string &path,
 				const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
+
+Status WriteParquet(const std::string &id, const std::string &path);
 
 Status JoinTables(std::shared_ptr<cylon::CylonContext> &ctx,
 				  const std::string &table_left,
