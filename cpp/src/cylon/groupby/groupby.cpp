@@ -220,7 +220,7 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
 
     auto t6 = std::chrono::high_resolution_clock::now();
 
-    LOG(INFO) << "hash_groupby_times "
+    LOG(INFO) << "sort_groupby_times "
               << " r " << table->GetContext()->GetRank() << " w " <<  table->GetContext()->GetWorldSize()
               //              << " i " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
               //              << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
@@ -233,7 +233,7 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
   } else {
     output = local_table;
 
-    LOG(INFO) << "hash_groupby_times "
+    LOG(INFO) << "sort_groupby_times "
               << " r 0 w 1"
               //              << " i " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count()
               //              << " p " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
