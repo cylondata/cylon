@@ -12,33 +12,40 @@
  # limitations under the License.
  ##
 
-import argparse
+import os
 import pyarrow as pa
 from pyarrow import csv
 from pycylon import Table
+from pycylon.net import MPIConfig
 from pycylon import CylonContext
+from pycylon.io import CSVReadOptions
+from pycylon.io import read_csv
 
 '''
 running test case 
->>> python test/test_pyarrow.py --table_path /tmp/csv.csv 
+>>  pytest -q python/test/test_pyarrow.py 
 '''
 
+def test_arrow_cylon():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-parser = argparse.ArgumentParser(description='PyCylon Table Conversion')
-parser.add_argument('--table_path', type=str, help='Path to table 1 csv')
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-args = parser.parse_args()
+    table_path = '/tmp/user_device_tm_1.csv'
 
-ctx: CylonContext = CylonContext(config=None)
+    assert os.path.exists(table_path)
 
-tb = csv.read_csv(args.table_path)
+    tb: pa.Table = csv.read_csv(table_path)
 
-print(tb)
+    arrow_columns = len(tb.columns)
+    arrow_rows = tb.num_rows
 
-tb = Table.from_arrow(ctx, tb)
+    tbc = Table.from_arrow(ctx, tb)
 
-print(ctx.get_world_size())
+    cylon_rows = tbc.row_count
+    cylon_columns = tbc.column_count
 
-tb.show()
+    assert arrow_columns == cylon_columns
+    assert arrow_rows == cylon_rows
 
-ctx.finalize()
+    ctx.finalize()

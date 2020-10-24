@@ -12,13 +12,19 @@
  # limitations under the License.
  ##
 
-no_cylon = False
-try:
-    import pycylon
-except ImportError:
-    no_cylon = True
+'''
+running test case
+>>  pytest -q python/test/test_pycylon.py
+'''
 
-if no_cylon:
-    print("No PyCylon installation found!")
-else:
-    print("PyCylon Installed!")
+def test_cylon_install():
+    no_cylon = False
+    try:
+        import pycylon
+    except ImportError:
+        no_cylon = True
+
+    if no_cylon:
+        print("No PyCylon installation found!")
+    else:
+        print("PyCylon Installed!")

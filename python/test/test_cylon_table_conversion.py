@@ -13,13 +13,12 @@
 ##
 
 """
-Running the test
-
-mpirun -n 2 python python/test/test_cylon_table_conversion.py \
-      --table1_path /tmp/user_usage_tm_1.csv \
-      --table2_path /tmp/user_device_tm_1.csv
+Run test:
+>> mpirun -n 2 python -m pytest --with-mpi -q python/test/test_cylon_table_conversion.py
 """
 
+import os
+import pytest
 from pycylon.io import read_csv
 from pycylon import Table
 from pycylon.net import MPIConfig
@@ -28,43 +27,47 @@ from pycylon.io import CSVReadOptions
 import pandas as pd
 import numpy as np
 
-import argparse
 
-mpi_config = MPIConfig()
-ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
+@pytest.mark.mpi
+def test_conversion_check():
+    mpi_config = MPIConfig()
+    ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
 
-parser = argparse.ArgumentParser(description='PyCylon Table Conversion')
-parser.add_argument('--table1_path', type=str, help='Path to table 1 csv')
-parser.add_argument('--table2_path', type=str, help='Path to table 2 csv')
+    rank, size = ctx.get_rank(), ctx.get_world_size()
 
-args = parser.parse_args()
+    assert size == 2
 
-csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table1_path = f'/tmp/user_usage_tm_{rank + 1}.csv'
+    table2_path = f'/tmp/user_device_tm_{rank + 1}.csv'
 
-tb1: Table = read_csv(ctx, args.table1_path, csv_read_options)
+    assert os.path.exists(table1_path)
+    assert os.path.exists(table2_path)
 
-tb2: Table = read_csv(ctx, args.table2_path, csv_read_options)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-print("First Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
+    tb1: Table = read_csv(ctx, table1_path, csv_read_options)
 
-tb3: Table = tb1.distributed_join(table=tb2, join_type='inner', algorithm='sort', left_on=[3],
-                                  right_on=[0])
+    tb2: Table = read_csv(ctx, table2_path, csv_read_options)
 
-#pdf: pd.DataFrame = tb3.to_pandas()
-npy: np.ndarray = tb3.to_numpy(order='C')
+    tb3: Table = tb1.distributed_join(table=tb2, join_type='inner', algorithm='sort', left_on=[3],
+                                      right_on=[0])
 
-# Cylon table rows must be equal to the rows of pandas dataframe extracted from the table
-#assert tb3.rows == pdf.shape[0]
-# Cylon table columns must be equal to the columns of pandas dataframe extracted from the table
-#assert tb3.columns == pdf.shape[1]
-# Cylon table rows must be equal to the rows of numpy ndarray extracted from the table
-assert tb3.row_count == npy.shape[0]
-# Cylon table columns must be equal to the columns of numpy ndarray extracted from the table
-assert tb3.column_count == npy.shape[1]
+    # pdf: pd.DataFrame = tb3.to_pandas()
+    npy: np.ndarray = tb3.to_numpy(order='C')
 
-print(f"Rank[{ctx.get_rank()}]: Table.Rows={tb3.row_count}, Table.Columns={tb3.column_count}, "
-      f"Numpy Array Shape = {npy.shape}")
+    # Cylon table rows must be equal to the rows of pandas dataframe extracted from the table
+    # assert tb3.rows == pdf.shape[0]
+    # Cylon table columns must be equal to the columns of pandas dataframe extracted from the table
+    # assert tb3.columns == pdf.shape[1]
+    # Cylon table rows must be equal to the rows of numpy ndarray extracted from the table
+    assert tb3.row_count == npy.shape[0]
+    # Cylon table columns must be equal to the columns of numpy ndarray extracted from the table
+    assert tb3.column_count == npy.shape[1]
 
-print(f"Array Config Rank[{ctx.get_rank()}], {npy.flags} {npy.dtype}")
+    print(f"Rank[{ctx.get_rank()}]: Table.Rows={tb3.row_count}, Table.Columns={tb3.column_count}, "
+          f"Numpy Array Shape = {npy.shape}")
 
-ctx.finalize()
+    print(f"Array Config Rank[{ctx.get_rank()}], {npy.flags} {npy.dtype}")
+
+    # Note: Not needed when using PyTest with MPI
+    # ctx.finalize()

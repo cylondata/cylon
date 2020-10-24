@@ -16,7 +16,7 @@
 """
 Run test:
 
->>> python python/test/test_table.py --table_path /tmp/user_device_tm_1.csv
+>>> pytest -q python/test/test_table.py
 """
 
 from pyarrow.csv import read_csv as pyarrow_read_csv
@@ -25,69 +25,73 @@ from pycylon import CylonContext
 from pycylon.io import CSVReadOptions
 from pycylon.io import CSVWriteOptions
 from pycylon.io import read_csv
-import argparse
+import pyarrow as pa
 
-ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-parser = argparse.ArgumentParser(description='PyCylon Table')
-parser.add_argument('--table_path', type=str, help='Path to table csv')
+def test_table():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-args = parser.parse_args()
+    table_path = '/tmp/user_device_tm_1.csv'
 
-pyarrow_table = pyarrow_read_csv(args.table_path)
+    pyarrow_table = pyarrow_read_csv(table_path)
 
-print(pyarrow_table)
+    tb = Table(pyarrow_table, ctx)
 
-tb = Table(pyarrow_table, ctx)
+    assert isinstance(tb, Table)
 
-ar_tb2 = tb.to_arrow()
+    ar_tb2 = tb.to_arrow()
 
-print("Arrow Table Info \n", ar_tb2)
+    assert isinstance(ar_tb2, pa.Table)
 
-tb2 = Table.from_arrow(ctx, pyarrow_table)
+    tb2 = Table.from_arrow(ctx, pyarrow_table)
 
-print(f"Tb2 : Rows={tb2.row_count}, Columns={tb2.column_count}")
+    assert tb2.row_count == 272 and tb2.column_count == 4
 
-csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-tb3 = read_csv(ctx, args.table_path, csv_read_options)
+    tb3 = read_csv(ctx, table_path, csv_read_options)
 
-print(f"Tb3 : Rows={tb3.row_count}, Columns={tb3.column_count}")
+    assert tb3.row_count == 272 and tb3.column_count == 4
 
-csv_write_options = CSVWriteOptions().with_delimiter(',')
+    csv_write_options = CSVWriteOptions().with_delimiter(',')
 
-tb3.to_csv('/tmp/temp.csv', csv_write_options)
+    tb3.to_csv('/tmp/temp_record.csv', csv_write_options)
 
-tb4 = tb3.sort(1)
+    tb4 = tb3.sort(1)
 
-print(tb4.column_names)
+    col_names = ['use_id', 'user_id', 'platform_version', 'use_type_id']
 
-print(f"Sort Tb 1: Rows={tb4.row_count}, Columns={tb4.column_count}")
+    for idx, col in enumerate(col_names):
+        assert tb4.column_names[idx] == col
 
-tb5 = tb3.sort('use_type_id')
+    assert tb4.row_count == 272 and tb4.column_count == 4
 
-print(f"Sort Tb 2: Rows={tb5.row_count}, Columns={tb5.column_count}")
+    tb5 = tb3.sort('use_type_id')
 
-print(tb5.column_names)
+    assert tb5.row_count == 272 and tb5.column_count == 4
 
-tb6 = Table.merge(ctx, [tb4, tb4])
+    for idx, col in enumerate(col_names):
+        assert tb5.column_names[idx] == col
 
-print(f"Merge Tb: Rows={tb6.row_count}, Columns={tb6.column_count}")
+    tb6 = Table.merge(ctx, [tb4, tb4])
 
-tb7 = tb6
+    assert tb6.row_count == 544 and tb6.column_count == 4
 
-print(f"Copy Tb: Rows={tb7.row_count}, Columns={tb7.column_count}")
+    tb7 = tb6
 
-tb8 = tb3.project([0, 1])
+    assert tb7.row_count == 544 and tb7.column_count == 4
 
-print(f"Project Tb: Rows={tb8.row_count}, Columns={tb8.column_count}")
+    tb8 = tb3.project([0, 1])
 
-tb9 = tb3.project(['use_id', 'platform_version'])
+    assert tb8.row_count == 272 and tb8.column_count == 2
 
-print(f"Project Tb By Columns: Rows={tb9.row_count}, Columns={tb9.column_count}")
+    tb9 = tb3.project(['use_id', 'platform_version'])
 
-print(tb9.column_names)
+    assert tb9.row_count == 272 and tb9.column_count == 2
 
-tb9.show(row1=0, row2=5, col1=0, col2=2)
+    project_col_names = ['use_id', 'platform_version']
 
-ctx.finalize()
+    for idx, col in enumerate(project_col_names):
+        assert tb9.column_names[idx] == col
+
+    ctx.finalize()
