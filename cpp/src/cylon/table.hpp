@@ -21,6 +21,7 @@
 #include <vector>
 #include <glog/logging.h>
 #include "io/csv_read_config.hpp"
+#include "io/parquet_config.hpp"
 
 #include "status.hpp"
 #include "util/uuid.hpp"
@@ -93,7 +94,9 @@ class Table {
     * @param path file path
     * @return the status of the operation
     */
-  Status WriteParquet(const std::string &path);
+  Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                      const std::string &path,
+                      const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
 
   /**
    * Create a arrow table from this data structure
@@ -246,12 +249,12 @@ Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string 
 * @param ctx
 * @param paths
 * @param tableOuts
-* @param isConcurrent
+* @param options
 * @return
 */
 Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
                           const std::vector<std::shared_ptr<Table> *> &tableOuts,
-                          bool isConcurrent = true);
+                          io::config::ParquetOptions options = cylon::io::config::ParquetOptions());
 
 /**
    * Merge the set of tables to create a single table

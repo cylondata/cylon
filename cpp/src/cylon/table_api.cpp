@@ -105,12 +105,12 @@ Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
 Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                    const std::vector<std::string> &paths,
                    const std::vector<std::string> &ids,
-                   bool isConcurrent) {
+                   cylon::io::config::ParquetOptions &options) {
     if (paths.size() != ids.size()) {
         return Status(cylon::Invalid, "Size of paths and ids mismatch.");
     }
     std::vector<std::shared_ptr<Table> *> tableOuts;
-    Status status = FromParquet(ctx, paths, tableOuts, isConcurrent);
+    Status status = FromParquet(ctx, paths, tableOuts, options);
     if (status.is_ok()) {
         for (size_t i = 0; i < ids.size(); i++) {
             PutTable(ids[i], *tableOuts[i]);
@@ -125,9 +125,10 @@ Status WriteCSV(const std::string &id, const std::string &path,
   return table->WriteCSV(path, options);
 }
 
-Status WriteParquet(const std::string &id, const std::string &path) {
+Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &id, const std::string &path,
+                    const cylon::io::config::ParquetOptions &options) {
     auto table = GetTable(id);
-    return table->WriteParquet(path);
+    return table->WriteParquet(ctx, path, options);
 }
 
 Status Print(const std::string &table_id, int col1, int col2, int row1, int row2) {

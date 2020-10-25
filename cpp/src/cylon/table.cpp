@@ -373,7 +373,7 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &pat
 
 Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
                           std::shared_ptr<Table> &tableOut) {
-    arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::read_parquet(ctx, path);
+    arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::ReadParquet(ctx, path);
     if (result.ok()) {
         std::shared_ptr<arrow::Table> table = *result;
         LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
@@ -443,21 +443,15 @@ Status Table::WriteCSV(const std::string &path, const cylon::io::config::CSVWrit
   return status;
 }
 
-Status Table::WriteParquet(const std::string &path) {
-    arrow::Status writefile_result = cylon::io::write_parquet(table_,path);
+Status Table::WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx_,
+                           const std::string &path, const cylon::io::config::ParquetOptions &options) {
+    arrow::Status writefile_result = cylon::io::WriteParquet( ctx_,
+                                                              table_, path, options);
     if (!writefile_result.ok()) {
         return Status(Code::IOError, writefile_result.message());
     }
 
     return Status(Code::OK);
-
-//    std::shared_ptr<arrow::io::FileOutputStream> outfile;
-//    PARQUET_ASSIGN_OR_THROW(
-//            outfile,
-//            arrow::io::FileOutputStream::Open(path));
-//
-//    PARQUET_THROW_NOT_OK(
-//            parquet::arrow::WriteTable(*table_, arrow::default_memory_pool(), outfile, 3));
 }
 
 int Table::Columns() {
@@ -1094,8 +1088,8 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std:
 
 Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
                           const std::vector<std::shared_ptr<Table> *> &tableOuts,
-                          bool isConcurrent) {
-    if (isConcurrent) {
+                          io::config::ParquetOptions options) {
+    if (options.IsConcurrentFileReads()) {
         std::vector<std::pair<std::future<Status>, std::thread>> futures;
         futures.reserve(paths.size());
         for (uint64_t kI = 0; kI < paths.size(); ++kI) {

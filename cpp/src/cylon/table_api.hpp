@@ -22,6 +22,7 @@
 #include "join/join_config.hpp"
 #include "io/csv_read_config.hpp"
 #include "io/csv_write_config.hpp"
+#include "io/parquet_config.hpp"
 #include "ctx/cylon_context.hpp"
 #include "row.hpp"
 
@@ -50,12 +51,15 @@ Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
 Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                    const std::vector<std::string> &paths,
                    const std::vector<std::string> &ids,
-                   bool isConcurrent);
+                   cylon::io::config::ParquetOptions options);
 
 Status WriteCSV(const std::string &id, const std::string &path,
 				const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
 
-Status WriteParquet(const std::string &id, const std::string &path);
+Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                    const std::string &id,
+                    const std::string &path,
+                    const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
 
 Status JoinTables(std::shared_ptr<cylon::CylonContext> &ctx,
 				  const std::string &table_left,
