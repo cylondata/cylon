@@ -19,7 +19,6 @@
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
 
-
 /**
  * This example reads two csv files and does a union on them.
  */

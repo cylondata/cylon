@@ -16,35 +16,35 @@
 #include <net/mpi/mpi_communicator.hpp>
 
 int main(int argc, char *argv[]) {
-    auto start_start = std::chrono::steady_clock::now();
-    auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-    auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  auto start_start = std::chrono::steady_clock::now();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-    std::string cmakePath = EXAMPLE_CMAKE_DIR;
-    std::string pathFromSrc = "/../../../data/input/parquet1_0.parquet";
-    std::string pathToOutput = "/../../../data/input/parquet1_0_1.parquet";
-    std::string fullSrcPath = cmakePath + pathFromSrc;
-    std::string fullOutputPath = cmakePath + pathToOutput;
+  std::string cmakePath = EXAMPLE_CMAKE_DIR;
+  std::string pathFromSrc = "/../../../data/input/parquet1_0.parquet";
+  std::string pathToOutput = "/../../../data/input/parquet1_0_1.parquet";
+  std::string fullSrcPath = cmakePath + pathFromSrc;
+  std::string fullOutputPath = cmakePath + pathToOutput;
 
-    std::shared_ptr<cylon::Table> first_table;
-    auto status = cylon::FromParquet(ctx, fullSrcPath, first_table);
-    if (!status.is_ok()) {
-        LOG(INFO) << "Table reading failed " << status.get_msg();
-        ctx->Finalize();
-        return 1;
-    }
+  std::shared_ptr<cylon::Table> first_table;
+  auto status = cylon::FromParquet(ctx, fullSrcPath, first_table);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading failed " << status.get_msg();
+    ctx->Finalize();
+    return 1;
+  }
 
-    auto read_end_time = std::chrono::steady_clock::now();
+  auto read_end_time = std::chrono::steady_clock::now();
 
-    LOG(INFO) << "Read tables in "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(
-                      read_end_time - start_start).count() << "[ms]";
+  LOG(INFO) << "Read tables in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - start_start).count() << "[ms]";
 
-    LOG(INFO) << "Table Data";
+  LOG(INFO) << "Table Data";
 
-    first_table->Print();
+  first_table->Print();
 
-    auto parquetOptions = cylon::io::config::ParquetOptions().ChunkSize(5);
-    first_table->WriteParquet(ctx, fullOutputPath, parquetOptions);
-    return 0;
+  auto parquetOptions = cylon::io::config::ParquetOptions().ChunkSize(5);
+  first_table->WriteParquet(ctx, fullOutputPath, parquetOptions);
+  return 0;
 }

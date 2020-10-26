@@ -35,18 +35,18 @@ namespace cylon {
 void RemoveTable(const std::string &id);
 
 Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
-			   const std::string &path,
-			   const std::string &id,
-			   cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
+               const std::string &path,
+               const std::string &id,
+               cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 
 Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                    const std::string &path,
                    const std::string &id);
 
 Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
-			   const std::vector<std::string> &paths,
-			   const std::vector<std::string> &ids,
-			   cylon::io::config::CSVReadOptions options);
+               const std::vector<std::string> &paths,
+               const std::vector<std::string> &ids,
+               cylon::io::config::CSVReadOptions options);
 
 Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                    const std::vector<std::string> &paths,
@@ -54,7 +54,7 @@ Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                    cylon::io::config::ParquetOptions options);
 
 Status WriteCSV(const std::string &id, const std::string &path,
-				const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
+                const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
 
 Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                     const std::string &id,
@@ -62,53 +62,53 @@ Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                     const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
 
 Status JoinTables(std::shared_ptr<cylon::CylonContext> &ctx,
-				  const std::string &table_left,
-				  const std::string &table_right,
-				  cylon::join::config::JoinConfig join_config,
-				  const std::string &dest_id);
+                  const std::string &table_left,
+                  const std::string &table_right,
+                  cylon::join::config::JoinConfig join_config,
+                  const std::string &dest_id);
 
 Status DistributedJoinTables(
-	std::shared_ptr<cylon::CylonContext> &ctx,
-	const std::string &table_left,
-	const std::string &table_right,
-	cylon::join::config::JoinConfig join_config,
-	const std::string &dest_id
+    std::shared_ptr<cylon::CylonContext> &ctx,
+    const std::string &table_left,
+    const std::string &table_right,
+    cylon::join::config::JoinConfig join_config,
+    const std::string &dest_id
 );
 
 Status Union(std::shared_ptr<cylon::CylonContext> &ctx,
-			 const std::string &table_left,
-			 const std::string &table_right,
-			 const std::string &dest_id);
+             const std::string &table_left,
+             const std::string &table_right,
+             const std::string &dest_id);
 
 Status DistributedUnion(
-	std::shared_ptr<cylon::CylonContext> &ctx,
-	const std::string &table_left,
-	const std::string &table_right,
-	const std::string &dest_id
+    std::shared_ptr<cylon::CylonContext> &ctx,
+    const std::string &table_left,
+    const std::string &table_right,
+    const std::string &dest_id
 );
 
 Status Subtract(std::shared_ptr<cylon::CylonContext> &ctx,
-				const std::string &table_left,
-				const std::string &table_right,
-				const std::string &dest_id);
+                const std::string &table_left,
+                const std::string &table_right,
+                const std::string &dest_id);
 
 Status DistributedSubtract(
-	std::shared_ptr<cylon::CylonContext> &ctx,
-	const std::string &table_left,
-	const std::string &table_right,
-	const std::string &dest_id
+    std::shared_ptr<cylon::CylonContext> &ctx,
+    const std::string &table_left,
+    const std::string &table_right,
+    const std::string &dest_id
 );
 
 Status Intersect(std::shared_ptr<cylon::CylonContext> &ctx,
-				 const std::string &table_left,
-				 const std::string &table_right,
-				 const std::string &dest_id);
+                 const std::string &table_left,
+                 const std::string &table_right,
+                 const std::string &dest_id);
 
 Status DistributedIntersect(
-	std::shared_ptr<cylon::CylonContext> &ctx,
-	const std::string &table_left,
-	const std::string &table_right,
-	const std::string &dest_id
+    std::shared_ptr<cylon::CylonContext> &ctx,
+    const std::string &table_left,
+    const std::string &table_right,
+    const std::string &dest_id
 );
 
 int ColumnCount(const std::string &id);
@@ -129,14 +129,14 @@ std::vector<std::string> ColumnNames(const std::string &id);
 Status Print(const std::string &table_id, int col1, int col2, int row1, int row2);
 
 Status PrintToOStream(const std::string &table_id,
-					  int col1,
-					  int col2,
-					  int row1,
-					  int row2,
-					  std::ostream &out,
-					  char delimiter = ',',
-					  bool use_custom_header = false,
-					  const std::vector<std::string> &headers = {});
+                      int col1,
+                      int col2,
+                      int row1,
+                      int row2,
+                      std::ostream &out,
+                      char delimiter = ',',
+                      bool use_custom_header = false,
+                      const std::vector<std::string> &headers = {});
 
 /**
  * Merge the set of tables into a single table, each table should have the same schema
@@ -146,8 +146,8 @@ Status PrintToOStream(const std::string &table_id,
  * @return the status of the merge
  */
 Status Merge(std::shared_ptr<cylon::CylonContext> &ctx,
-			 std::vector<std::string> table_ids,
-			 const std::string &merged_tab);
+             std::vector<std::string> table_ids,
+             const std::string &merged_tab);
 
 /**
  * Sort the table with the given identifier
@@ -156,9 +156,9 @@ Status Merge(std::shared_ptr<cylon::CylonContext> &ctx,
  * @return the status of the merge
  */
 Status SortTable(std::shared_ptr<cylon::CylonContext> &ctx,
-				 const std::string &tableId,
-				 const std::string &sortTableId,
-				 int columnIndex);
+                 const std::string &tableId,
+                 const std::string &sortTableId,
+                 int columnIndex);
 
 /**
  * Partition the table into multiple tables using a hash function, hash will be applied to the bytes of the data
@@ -170,10 +170,10 @@ Status SortTable(std::shared_ptr<cylon::CylonContext> &ctx,
  * @return the status of the partition operation
  */
 Status HashPartition(std::shared_ptr<cylon::CylonContext> &ctx,
-					 const std::string &id,
-					 const std::vector<int> &hash_columns,
-					 int no_of_partitions,
-					 std::unordered_map<int, std::string> *out);
+                     const std::string &id,
+                     const std::vector<int> &hash_columns,
+                     int no_of_partitions,
+                     std::unordered_map<int, std::string> *out);
 
 /**
  * Select a set of rows based on the selector condition
@@ -183,9 +183,9 @@ Status HashPartition(std::shared_ptr<cylon::CylonContext> &ctx,
  * @return the status of the partition operation
  */
 Status Select(std::shared_ptr<cylon::CylonContext> &ctx,
-			  const std::string &id,
-			  const std::function<bool(cylon::Row)> &selector,
-			  const std::string &dest_id);
+              const std::string &id,
+              const std::function<bool(cylon::Row)> &selector,
+              const std::string &dest_id);
 
 Status Project(const std::string &id, const std::vector<int64_t> &project_columns, const std::string &dest_id);
 }  // namespace cylon

@@ -17,43 +17,43 @@
 #include "parquet_config.hpp"
 
 namespace cylon {
-    namespace io {
-        namespace config {
-            ParquetOptions ParquetOptions::ConcurrentFileReads(bool file_reads) {
-                this->concurrent_file_reads = file_reads;
-                return *this;
-            }
-            bool ParquetOptions::IsConcurrentFileReads() {
-                return this->concurrent_file_reads;
-            }
+namespace io {
+namespace config {
+ParquetOptions ParquetOptions::ConcurrentFileReads(bool file_reads) {
+  this->concurrent_file_reads = file_reads;
+  return *this;
+}
+bool ParquetOptions::IsConcurrentFileReads() {
+  return this->concurrent_file_reads;
+}
 
-            ParquetOptions ParquetOptions::ChunkSize(int64_t chunk_size_) {
-                this->chunk_size = chunk_size_;
-                return *this;
-            }
-            int64_t ParquetOptions::GetChunkSize() {
-                return this->chunk_size;
-            }
+ParquetOptions ParquetOptions::ChunkSize(int64_t chunk_size_) {
+  this->chunk_size = chunk_size_;
+  return *this;
+}
+int64_t ParquetOptions::GetChunkSize() {
+  return this->chunk_size;
+}
 
-            ParquetOptions ParquetOptions::WriterProperties(std::shared_ptr<parquet::WriterProperties> &writer_properties_){
-                this->writer_properties = writer_properties_;
-                return *this;
-            }
-            std::shared_ptr<parquet::WriterProperties> ParquetOptions::GetWriterProperties() {
-                return this->writer_properties;
-            }
+ParquetOptions ParquetOptions::WriterProperties(std::shared_ptr<parquet::WriterProperties> &writer_properties_) {
+  this->writer_properties = writer_properties_;
+  return *this;
+}
+std::shared_ptr<parquet::WriterProperties> ParquetOptions::GetWriterProperties() {
+  return this->writer_properties;
+}
 
-            ParquetOptions ParquetOptions::ArrowWriterProperties(
-                    std::shared_ptr<parquet::ArrowWriterProperties> &arrow_writer_properties_){
-                this->arrow_writer_properties = arrow_writer_properties_;
-                return *this;
-            }
-            std::shared_ptr<parquet::ArrowWriterProperties> ParquetOptions::GetArrowWriterProperties() {
-                return this->arrow_writer_properties;
-            }
+ParquetOptions ParquetOptions::ArrowWriterProperties(
+    std::shared_ptr<parquet::ArrowWriterProperties> &arrow_writer_properties_) {
+  this->arrow_writer_properties = arrow_writer_properties_;
+  return *this;
+}
+std::shared_ptr<parquet::ArrowWriterProperties> ParquetOptions::GetArrowWriterProperties() {
+  return this->arrow_writer_properties;
+}
 
-            ParquetOptions::ParquetOptions() {
-            }
-        }  // namespace config
-    }  // namespace io
+ParquetOptions::ParquetOptions() {
+}
+}  // namespace config
+}  // namespace io
 }  // namespace cylon
