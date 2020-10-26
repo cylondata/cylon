@@ -46,7 +46,9 @@ from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
 from pycylon.data.aggregates import AggregationOp
 from pycylon.data.groupby cimport (GroupBy, PipelineGroupBy)
+from pycylon.data.compute cimport (c_filter)
 
+import math
 import pyarrow as pa
 import numpy as np
 import pandas as pd
@@ -77,6 +79,10 @@ cdef class Table:
     @staticmethod
     def _is_pyarrow_table(pyarrow_table):
         return isinstance(pyarrow_table, pa.Table)
+
+    @staticmethod
+    def _is_pycylon_table(pycylon_table):
+        return isinstance(pycylon_table, Table)
 
     @staticmethod
     def _is_pycylon_context(context):
@@ -538,12 +544,11 @@ cdef class Table:
                 caggregate_ops.push_back(aggregate_op)
 
             status = GroupBy(self.table_shd_ptr, index_col, caggregate_cols, caggregate_ops,
-                              output)
+                             output)
             if status.is_ok():
                 return pycylon_wrap_table(output)
             else:
                 raise Exception(f"Groupby operation failed {status.get_msg().decode()}")
-
 
     @staticmethod
     def from_arrow(context, pyarrow_table) -> Table:
@@ -691,12 +696,60 @@ cdef class Table:
     #     @return: schema
     #     """
     #     pass
+    def filter(self, op):
+        c_filter(self, op)
 
-    # def __getitem__(self, key):
-    #     py_arrow_table = self.to_arrow()
-    #     if isinstance(key, slice):
-    #         start, stop, step = key.indices(py_arrow_table.columns)
-    #         return self.from_arrow(py_arrow_table.slice(start, stop),
-    #                                self.context)
-    #     else:
-    #         return self.from_arrow(py_arrow_table.slice(key, 1), self.context)
+    def _table_from_mask(self, mask: Table) -> Table:
+        mask_dict = mask.to_pydict()
+        list_of_mask_values = list(mask_dict.values())
+        if len(list_of_mask_values) == 1:
+            # Handle when masking is done based on a single column data
+            filter_row_indices = []
+            for idx, mask_value in enumerate(list_of_mask_values[0]):
+                if mask_value:
+                    filter_row_indices.append(idx)
+            filtered_rows = []
+            for row_id in filter_row_indices:
+                filtered_rows.append(self[row_id])
+            return Table.merge(self.context, filtered_rows)
+        else:
+            # Handle when masking is done on whole table
+            filtered_all_data = []
+            table_dict = self.to_pydict()
+            list_of_table_values = list(table_dict.values())
+            for mask_col_data,  table_col_data in zip(list_of_mask_values, list_of_table_values):
+                filtered_data = []
+                for mask_value, table_value in zip(mask_col_data, table_col_data):
+                    if mask_value:
+                        filtered_data.append(table_value)
+                    else:
+                        filtered_data.append(math.nan)
+                filtered_all_data.append(filtered_data)
+            return Table.from_list(self.context, self.column_names, filtered_all_data)
+
+
+    def __getitem__(self, key) -> Table:
+        py_arrow_table = self.to_arrow().combine_chunks()
+        if isinstance(key, slice):
+            return self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
+        elif isinstance(key, int):
+            return self.from_arrow(self.context, py_arrow_table.slice(key, 1))
+        elif isinstance(key, str):
+            index = self._resolve_column_index_from_column_name(key)
+            chunked_arr = py_arrow_table.column(index)
+            return self.from_arrow(self.context, pa.Table.from_arrays([chunked_arr.chunk(0)],
+                                                                      [key]))
+        elif self._is_pycylon_table(key):
+            return self._table_from_mask(key)
+        else:
+            raise ValueError(f"Unsupported Key Type in __getitem__ {type(key)}")
+
+    def __eq__(self, other) -> Table:
+        selected_data = []
+        for col in self.to_arrow().combine_chunks().columns:
+            col_data = []
+            for val in col.chunks[0]:
+                col_data.append(val == other)
+            selected_data.append(col_data)
+        return Table.from_list(self.context, self.column_names, selected_data)
+
