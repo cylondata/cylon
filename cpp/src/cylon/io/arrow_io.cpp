@@ -17,6 +17,8 @@
 #include <arrow/api.h>
 #include <arrow/io/api.h>
 #include <arrow/csv/api.h>
+#include <parquet/arrow/reader.h>
+#include <parquet/arrow/writer.h>
 #include <memory>
 
 #include "csv_read_config_holder.hpp"
@@ -26,12 +28,12 @@
 namespace cylon {
 namespace io {
 
-arrow::Result <std::shared_ptr<arrow::Table>> read_csv(std::shared_ptr<cylon::CylonContext> &ctx,
-                                                       const std::string &path,
-                                                       cylon::io::config::CSVReadOptions options) {
+arrow::Result<std::shared_ptr<arrow::Table>> read_csv(std::shared_ptr<cylon::CylonContext> &ctx,
+                                                      const std::string &path,
+                                                      cylon::io::config::CSVReadOptions options) {
   arrow::Status st;
   auto *pool = cylon::ToArrowPool(ctx);
-  arrow::Result <std::shared_ptr<arrow::io::MemoryMappedFile>> mmap_result =
+  arrow::Result<std::shared_ptr<arrow::io::MemoryMappedFile>> mmap_result =
       arrow::io::MemoryMappedFile::Open(path, arrow::io::FileMode::READ);
   if (!mmap_result.status().ok()) {
     return mmap_result.status();
@@ -45,15 +47,64 @@ arrow::Result <std::shared_ptr<arrow::Table>> read_csv(std::shared_ptr<cylon::Cy
       config::CSVConfigHolder::GetCastedHolder(options));
 
   // Instantiate TableReader from input stream and options
-  arrow::Result <std::shared_ptr<arrow::csv::TableReader>> reader =
+  arrow::Result<std::shared_ptr<arrow::csv::TableReader>> reader =
       arrow::csv::TableReader::Make(pool, *mmap_result, *read_options,
                                     *parse_options, *convert_options);
   if (!reader.ok()) {
-    return arrow::Result < std::shared_ptr < arrow::Table >> (reader.status());
+    return arrow::Result<std::shared_ptr<arrow::Table >>(reader.status());
   }
 
   // Read table from CSV file
   return (*reader)->Read();
+}
+
+// Read Parquet
+arrow::Result<std::shared_ptr<arrow::Table>> ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                                                         const std::string &path) {
+  arrow::Status st;
+  auto *pool = cylon::ToArrowPool(ctx);
+  arrow::Result<std::shared_ptr<arrow::io::MemoryMappedFile>> mmapResult =
+      arrow::io::MemoryMappedFile::Open(path, arrow::io::FileMode::READ);
+  if (!mmapResult.status().ok()) {
+    return mmapResult.status();
+  }
+
+  std::unique_ptr<parquet::arrow::FileReader> arrowReader;
+  st = parquet::arrow::OpenFile(*mmapResult, pool, &arrowReader);
+  if (!st.ok()) {
+    // Handle error instantiating file reader...
+    return st;
+  }
+
+  // Read entire file as a single Arrow table
+  std::shared_ptr<arrow::Table> table;
+  st = arrowReader->ReadTable(&table);
+  if (!st.ok()) {
+    // Handle error reading Parquet data...
+    return st;
+  }
+
+  return table;
+}
+
+//Write Parquet
+arrow::Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<arrow::Table> &table,
+                           const std::string &path, cylon::io::config::ParquetOptions options) {
+  auto *pool = cylon::ToArrowPool(ctx);
+  arrow::Result<std::shared_ptr<arrow::io::FileOutputStream>> outfileResult =
+      arrow::io::FileOutputStream::Open(path);
+  if (!outfileResult.status().ok()) {
+    return outfileResult.status();
+  }
+
+  arrow::Status writefileResult =
+      parquet::arrow::WriteTable(*table, pool, *outfileResult,
+                                 options.GetChunkSize(), options.GetWriterProperties(),
+                                 options.GetArrowWriterProperties());
+  if (!writefileResult.ok()) {
+    return writefileResult;
+  }
+  return (*outfileResult)->Close();
 }
 
 }  // namespace io
