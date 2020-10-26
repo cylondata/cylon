@@ -22,12 +22,38 @@ from pycylon import Table
 from pycylon import CylonContext
 from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
+from pycylon.data import ComparisonOp
 from pandas import DataFrame
 import pyarrow as pa
+from typing import Tuple
 
 '''
 Run test:
 >> pytest -q python/test/test_table_properties.py
+'''
+
+'''
+Test Cases for Comparison Operations
+-------------------------------------
+
+Comparison on DataFrame
+------------------------
+
+Case 1: Compare based on a column (each value in a column is checked against the comparison 
+value)
+Case 2: Compare based on the whole table (all values in the table is checked against the 
+comparison value)
+
+Comparison Operators
+--------------------
+
+1. ==   -> ComparisonOp.EQ
+2. !=   -> ComparisonOp.NE    
+3. <    -> ComparisonOp.LT
+4. >    -> ComparisonOp.GT
+5. <=   -> ComparisonOp.LE
+6. >=   -> ComparisonOp.GE
+
 '''
 
 
@@ -45,39 +71,81 @@ def test_properties():
 
     pdf = tb.to_pandas()
 
-    # Test Columb based filter on EQ
-    tb_filter = tb["monthly_mb"] == 519.12
+    def generate_filter_and_result(op: ComparisonOp, column: str, input, comparison_value):
+        if op == ComparisonOp.EQ:
+            if column:
+                filter = input[column] == comparison_value
+                return filter, input[filter]
+            else:
+                filter = input == comparison_value
+                return filter, input[filter]
 
-    pdf_filter = pdf["monthly_mb"] == 519.12
+        elif op == ComparisonOp.NE:
+            if column:
+                filter = input[column] != comparison_value
+                return filter, input[filter]
+            else:
+                filter = input != comparison_value
+                return filter, input[filter]
 
-    filtered_pdf = pdf[pdf_filter]
+        elif op == ComparisonOp.LT:
+            if column:
+                filter = input[column] < comparison_value
+                return filter, input[filter]
+            else:
+                filter = input < comparison_value
+                return filter, input[filter]
 
-    filtered_tb = tb[tb_filter]
+        elif op == ComparisonOp.GT:
+            if column:
+                filter = input[column] > comparison_value
+                return filter, input[filter]
+            else:
+                filter = input > comparison_value
+                return filter, input[filter]
 
-    tb_filter_pdf = tb_filter.to_pandas()
+        elif op == ComparisonOp.LE:
+            if column:
+                filter = input[column] <= comparison_value
+                return filter, input[filter]
+            else:
+                filter = input <= comparison_value
+                return filter, input[filter]
 
-    filtered_tb_pdf = filtered_tb.to_pandas()
+        elif op == ComparisonOp.GE:
+            if column:
+                filter = input[column] >= comparison_value
+                return filter, input[filter]
+            else:
+                filter = input >= comparison_value
+                return filter, input[filter]
+        else:
+            raise ValueError("Unsupported Comparison Operation")
 
-    assert tb_filter_pdf.values.flatten().tolist() == pdf_filter.values.flatten().tolist()
+    def do_comparison_on_pdf_and_tb(tb_filter: Table, tb_result: Table, pdf_filter: DataFrame,
+                                    pdf_result: DataFrame, is_full_table=False):
 
-    assert filtered_tb_pdf.values.tolist() == filtered_pdf.values.tolist()
+        if is_full_table:
+            assert tb_filter.to_pandas().values.tolist() == pdf_filter.values.tolist()
+            assert tb_result.to_pandas().fillna(0).values.tolist() == pdf_result.fillna(
+                0).values.tolist()
+        else:
+            assert tb_filter.to_pandas().values.flatten().tolist() == pdf_filter.values.tolist()
+            assert tb_result.to_pandas().values.tolist() == pdf_result.values.tolist()
 
-    # Test Table based filter on EQ
+    ops = [ComparisonOp.EQ, ComparisonOp.NE, ComparisonOp.LT, ComparisonOp.GT, ComparisonOp.LE,
+           ComparisonOp.GE]
+    value = 519.12
+    columns = ['monthly_mb', None]
+    is_full_table_flags = [False, True]
 
-    tb_filter_all = tb == 519.12
-    all_filtered_tb = tb[tb_filter_all]
+    for column, is_full_table in zip(columns, is_full_table_flags):
+        for op in ops:
+            tb_filter_all, tb_filter_all_result = generate_filter_and_result(op, column, tb, value)
 
-    pdf_filter_all = pdf == 519.12
-    all_filtered_pdf = pdf[pdf_filter_all]
+            pdf_filter_all, pdf_filter_all_result = generate_filter_and_result(op, column, pdf,
+                                                                               value)
 
-    tb_filter_all_pdf = tb_filter_all.to_pandas()
-
-    assert tb_filter_all_pdf.values.tolist() == pdf_filter_all.values.tolist()
-
-    all_filtered_tb_pdf = all_filtered_tb.to_pandas()
-
-    assert all_filtered_tb_pdf.fillna(0).values.tolist() == all_filtered_pdf.fillna(
-        0).values.tolist()
-
-
-test_properties()
+            do_comparison_on_pdf_and_tb(tb_filter=tb_filter_all, tb_result=tb_filter_all_result,
+                                        pdf_filter=pdf_filter_all, pdf_result=pdf_filter_all_result,
+                                        is_full_table=is_full_table)
