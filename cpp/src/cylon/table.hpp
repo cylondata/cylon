@@ -21,6 +21,7 @@
 #include <vector>
 #include <glog/logging.h>
 #include "io/csv_read_config.hpp"
+#include "io/parquet_config.hpp"
 
 #include "status.hpp"
 #include "util/uuid.hpp"
@@ -87,6 +88,15 @@ class Table {
    */
   Status WriteCSV(const std::string &path,
                   const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
+
+  /**
+    * Write the table as a parquet file
+    * @param path file path
+    * @return the status of the operation
+    */
+  Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                      const std::string &path,
+                      const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
 
   /**
    * Create a arrow table from this data structure
@@ -226,6 +236,25 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &pat
 Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
                const std::vector<std::shared_ptr<Table> *> &tableOuts,
                io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
+/**
+* Create a table by reading a parquet file
+* @param path file path
+* @return a pointer to the table
+*/
+Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
+                   std::shared_ptr<Table> &tableOut);
+/**
+* Read multiple parquet files into multiple tables. If threading is enabled, the tables will be read
+* in parallel
+* @param ctx
+* @param paths
+* @param tableOuts
+* @param options
+* @return
+*/
+Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
+                   const std::vector<std::shared_ptr<Table> *> &tableOuts,
+                   io::config::ParquetOptions options = cylon::io::config::ParquetOptions());
 
 /**
    * Merge the set of tables to create a single table
@@ -356,7 +385,9 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_p
  * @param output
  * @return
  */
-Status Select(std::shared_ptr<cylon::Table> &table, const std::function<bool(cylon::Row)> &selector, std::shared_ptr<Table> &output);
+Status Select(std::shared_ptr<cylon::Table> &table,
+              const std::function<bool(cylon::Row)> &selector,
+              std::shared_ptr<Table> &output);
 
 /**
  * Creates a View of an existing table by dropping one or more columns
@@ -365,7 +396,9 @@ Status Select(std::shared_ptr<cylon::Table> &table, const std::function<bool(cyl
  * @param output
  * @return
  */
-Status Project(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &project_columns, std::shared_ptr<Table> &output);
+Status Project(std::shared_ptr<cylon::Table> &table,
+               const std::vector<int64_t> &project_columns,
+               std::shared_ptr<Table> &output);
 
 }  // namespace cylon
 

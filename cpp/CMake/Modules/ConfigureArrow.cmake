@@ -5,9 +5,9 @@ message("Python Executable Path ${PYTHON_EXEC_PATH}")
 
 set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_WITH_ZSTD=OFF"
-        " -DARROW_WITH_BROTLI=OFF"
-        " -DARROW_WITH_SNAPPY=OFF"
-        " -DARROW_WITH_ZLIB=OFF"
+        " -DARROW_WITH_BROTLI=ON"
+        " -DARROW_WITH_SNAPPY=ON"
+        " -DARROW_WITH_ZLIB=ON"
         " -DARROW_BUILD_STATIC=ON"
         " -DARROW_BUILD_SHARED=ON"
         " -DARROW_BUILD_TESTS=OFF"
@@ -28,6 +28,7 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_DATASET=OFF"
         " -DARROW_CSV=ON"
         " -DARROW_JSON=ON"
+        " -DARROW_PARQUET=ON"
 	    " -DARROW_BOOST_USE_SHARED=OFF"
         )
 
@@ -91,5 +92,7 @@ set(FLATBUFFERS_ROOT "${ARROW_ROOT}/build/flatbuffers_ep-prefix/src/flatbuffers_
 message(STATUS "FlatBuffers installed here: " ${FLATBUFFERS_ROOT})
 set(FLATBUFFERS_INCLUDE_DIR "${FLATBUFFERS_ROOT}/include")
 set(FLATBUFFERS_LIBRARY_DIR "${FLATBUFFERS_ROOT}/lib")
+
+set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.so)
 
 add_definitions(-DARROW_METADATA_V4)

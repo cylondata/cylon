@@ -74,6 +74,17 @@ Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
   return status;
 }
 
+Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::string &path,
+                   const std::string &id) {
+  std::shared_ptr<cylon::Table> table;
+  cylon::Status status = FromParquet(ctx, path, table);
+  if (status.is_ok()) {
+    PutTable(id, table);
+  }
+  return status;
+}
+
 Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
                const std::vector<std::string> &paths,
                const std::vector<std::string> &ids,
@@ -91,10 +102,33 @@ Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
   return status;
 }
 
+Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::vector<std::string> &paths,
+                   const std::vector<std::string> &ids,
+                   cylon::io::config::ParquetOptions &options) {
+  if (paths.size() != ids.size()) {
+    return Status(cylon::Invalid, "Size of paths and ids mismatch.");
+  }
+  std::vector<std::shared_ptr<Table> *> tableOuts;
+  Status status = FromParquet(ctx, paths, tableOuts, options);
+  if (status.is_ok()) {
+    for (size_t i = 0; i < ids.size(); i++) {
+      PutTable(ids[i], *tableOuts[i]);
+    }
+  }
+  return status;
+}
+
 Status WriteCSV(const std::string &id, const std::string &path,
                 const cylon::io::config::CSVWriteOptions &options) {
   auto table = GetTable(id);
   return table->WriteCSV(path, options);
+}
+
+Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &id, const std::string &path,
+                    const cylon::io::config::ParquetOptions &options) {
+  auto table = GetTable(id);
+  return table->WriteParquet(ctx, path, options);
 }
 
 Status Print(const std::string &table_id, int col1, int col2, int row1, int row2) {
@@ -112,21 +146,21 @@ Status PrintToOStream(const std::string &table_id,
                       const std::vector<std::string> &headers) {
   auto table = GetTable(table_id);
   return table->PrintToOStream(col1, col2, row1, row2, out,
-      delimiter, use_custom_header, headers);
+                               delimiter, use_custom_header, headers);
 }
 
 Status DistributedJoinTables(std::shared_ptr<CylonContext> &ctx,
-							 const std::string &table_left,
-							 const std::string &table_right,
-							 cylon::join::config::JoinConfig join_config,
-							 const std::string &dest_id) {
+                             const std::string &table_left,
+                             const std::string &table_right,
+                             cylon::join::config::JoinConfig join_config,
+                             const std::string &dest_id) {
   // extract the tables out
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
 
   std::shared_ptr<cylon::Table> out;
   cylon::Status status = DistributedJoin(left,
-      right, join_config, out);
+                                         right, join_config, out);
   if (status.is_ok()) {
     PutTable(dest_id, out);
   }
@@ -134,18 +168,18 @@ Status DistributedJoinTables(std::shared_ptr<CylonContext> &ctx,
 }
 
 Status JoinTables(std::shared_ptr<CylonContext> &ctx,
-				  const std::string &table_left,
-				  const std::string &table_right,
-				  cylon::join::config::JoinConfig join_config,
-				  const std::string &dest_id) {
+                  const std::string &table_left,
+                  const std::string &table_right,
+                  cylon::join::config::JoinConfig join_config,
+                  const std::string &dest_id) {
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
   std::string uuid = cylon::util::generate_uuid_v4();
   std::shared_ptr<cylon::Table> out;
   cylon::Status status = Join(left,
-                                           right,
-                                           join_config,
-                                           out);
+                              right,
+                              join_config,
+                              out);
   if (status.is_ok()) {
     PutTable(dest_id, out);
   }
@@ -178,8 +212,8 @@ int64_t RowCount(const std::string &id) {
 }
 
 Status CMerge(std::shared_ptr<cylon::CylonContext> &ctx,
-             std::vector<std::string> table_ids,
-             const std::string &merged_tab) {
+              std::vector<std::string> table_ids,
+              const std::string &merged_tab) {
   std::vector<std::shared_ptr<cylon::Table>> tables(table_ids.size());
   for (auto it = table_ids.begin(); it < table_ids.end(); it++) {
     tables.push_back(GetTable(*it));
@@ -230,26 +264,25 @@ Status HashPartition(std::shared_ptr<cylon::CylonContext> &ctx,
 }
 
 Status VerifyTableSchema(const std::shared_ptr<arrow::Table> &ltab,
-    const std::shared_ptr<arrow::Table> &rtab) {
+                         const std::shared_ptr<arrow::Table> &rtab) {
   // manual field check. todo check why  ltab->schema()->Equals(rtab->schema(), false) doesn't work
   if (ltab->num_columns() != rtab->num_columns()) {
     return Status(cylon::Invalid,
-        "The no of columns of two tables are not similar. Can't perform union.");
+                  "The no of columns of two tables are not similar. Can't perform union.");
   }
   for (int fd = 0; fd < ltab->num_columns(); ++fd) {
     if (!ltab->field(fd)->type()->Equals(rtab->field(fd)->type())) {
       return Status(cylon::Invalid,
-          "The fields of two tables are not similar. Can't perform union.");
+                    "The fields of two tables are not similar. Can't perform union.");
     }
   }
   return Status::OK();
 }
 
-
 Status Union(std::shared_ptr<cylon::CylonContext> &ctx,
-			 const std::string &table_left,
-			 const std::string &table_right,
-			 const std::string &dest_id) {
+             const std::string &table_left,
+             const std::string &table_right,
+             const std::string &dest_id) {
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out;
@@ -261,9 +294,9 @@ Status Union(std::shared_ptr<cylon::CylonContext> &ctx,
 }
 
 Status Subtract(std::shared_ptr<cylon::CylonContext> &ctx,
-				const std::string &table_left,
-				const std::string &table_right,
-				const std::string &dest_id) {
+                const std::string &table_left,
+                const std::string &table_right,
+                const std::string &dest_id) {
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out;
@@ -275,9 +308,9 @@ Status Subtract(std::shared_ptr<cylon::CylonContext> &ctx,
 }
 
 Status Intersect(std::shared_ptr<cylon::CylonContext> &ctx,
-				 const std::string &table_left,
-				 const std::string &table_right,
-				 const std::string &dest_id) {
+                 const std::string &table_left,
+                 const std::string &table_right,
+                 const std::string &dest_id) {
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out;
@@ -289,9 +322,9 @@ Status Intersect(std::shared_ptr<cylon::CylonContext> &ctx,
 }
 
 Status DistributedUnion(std::shared_ptr<cylon::CylonContext> &ctx,
-						const std::string &table_left,
-						const std::string &table_right,
-						const std::string &dest_id) {
+                        const std::string &table_left,
+                        const std::string &table_right,
+                        const std::string &dest_id) {
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out;
@@ -303,9 +336,9 @@ Status DistributedUnion(std::shared_ptr<cylon::CylonContext> &ctx,
 }
 
 Status DistributedSubtract(std::shared_ptr<cylon::CylonContext> &ctx,
-						   const std::string &table_left,
-						   const std::string &table_right,
-						   const std::string &dest_id) {
+                           const std::string &table_left,
+                           const std::string &table_right,
+                           const std::string &dest_id) {
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out;
@@ -317,9 +350,9 @@ Status DistributedSubtract(std::shared_ptr<cylon::CylonContext> &ctx,
 }
 
 Status DistributedIntersect(std::shared_ptr<cylon::CylonContext> &ctx,
-							const std::string &table_left,
-							const std::string &table_right,
-							const std::string &dest_id) {
+                            const std::string &table_left,
+                            const std::string &table_right,
+                            const std::string &dest_id) {
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out_table;
@@ -344,7 +377,7 @@ Status Select(std::shared_ptr<cylon::CylonContext> &ctx,
 }
 
 Status Project(const std::string &id, const std::vector<int64_t> &project_columns,
-    const std::string &dest_id) {
+               const std::string &dest_id) {
   auto table = GetTable(id);
   std::shared_ptr<cylon::Table> out_table;
   auto status = Project(table, project_columns, out_table);
