@@ -708,7 +708,8 @@ cdef class Table:
     #     """
     #     pass
     def filter(self, op):
-        c_filter(self, op)
+        # TODO: Supported Added via: https://github.com/cylondata/cylon/issues/211
+        raise NotImplemented("Filter method not implemented")
 
     def _table_from_mask(self, mask: Table) -> Table:
         mask_dict = mask.to_pydict()
