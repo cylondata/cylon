@@ -17,15 +17,14 @@ Run test:
 >> pytest -q python/test/test_table_properties.py
 """
 
+import operator
 import os
-from pycylon import Table
+
+from pandas import DataFrame
 from pycylon import CylonContext
+from pycylon import Table
 from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
-from pycylon.data import ComparisonOp
-from pandas import DataFrame
-import pyarrow as pa
-from typing import Tuple
 
 '''
 Run test:
@@ -47,12 +46,12 @@ comparison value)
 Comparison Operators
 --------------------
 
-1. ==   -> ComparisonOp.EQ
-2. !=   -> ComparisonOp.NE    
-3. <    -> ComparisonOp.LT
-4. >    -> ComparisonOp.GT
-5. <=   -> ComparisonOp.LE
-6. >=   -> ComparisonOp.GE
+1. ==   -> operator.__eq__
+2. !=   -> operator.__ne__    
+3. <    -> operator.__lt__
+4. >    -> operator.__gt__
+5. <=   -> operator.__le__
+6. >=   -> operator.__ge__
 
 '''
 
@@ -71,59 +70,16 @@ def test_properties():
 
     pdf = tb.to_pandas()
 
-    def generate_filter_and_result(op: ComparisonOp, column: str, input, comparison_value):
-        if op == ComparisonOp.EQ:
-            if column:
-                filter = input[column] == comparison_value
-                return filter, input[filter]
-            else:
-                filter = input == comparison_value
-                return filter, input[filter]
-
-        elif op == ComparisonOp.NE:
-            if column:
-                filter = input[column] != comparison_value
-                return filter, input[filter]
-            else:
-                filter = input != comparison_value
-                return filter, input[filter]
-
-        elif op == ComparisonOp.LT:
-            if column:
-                filter = input[column] < comparison_value
-                return filter, input[filter]
-            else:
-                filter = input < comparison_value
-                return filter, input[filter]
-
-        elif op == ComparisonOp.GT:
-            if column:
-                filter = input[column] > comparison_value
-                return filter, input[filter]
-            else:
-                filter = input > comparison_value
-                return filter, input[filter]
-
-        elif op == ComparisonOp.LE:
-            if column:
-                filter = input[column] <= comparison_value
-                return filter, input[filter]
-            else:
-                filter = input <= comparison_value
-                return filter, input[filter]
-
-        elif op == ComparisonOp.GE:
-            if column:
-                filter = input[column] >= comparison_value
-                return filter, input[filter]
-            else:
-                filter = input >= comparison_value
-                return filter, input[filter]
+    def generate_filter_and_result(op, column: str, input, comparison_value):
+        if column:
+            filter = op(input[column], comparison_value)
+            return filter, input[filter]
         else:
-            raise ValueError("Unsupported Comparison Operation")
+            filter = op(input, comparison_value)
+            return filter, input[filter]
 
     def do_comparison_on_pdf_and_tb(tb_filter: Table, tb_result: Table, pdf_filter: DataFrame,
-                                    pdf_result: DataFrame, is_full_table=False):
+                                    pdf_result: DataFrame, is_full_table):
 
         if is_full_table:
             assert tb_filter.to_pandas().values.tolist() == pdf_filter.values.tolist()
@@ -133,8 +89,8 @@ def test_properties():
             assert tb_filter.to_pandas().values.flatten().tolist() == pdf_filter.values.tolist()
             assert tb_result.to_pandas().values.tolist() == pdf_result.values.tolist()
 
-    ops = [ComparisonOp.EQ, ComparisonOp.NE, ComparisonOp.LT, ComparisonOp.GT, ComparisonOp.LE,
-           ComparisonOp.GE]
+    ops = [operator.__eq__, operator.__ne__, operator.__lt__, operator.__gt__, operator.__le__,
+           operator.__ge__]
     value = 519.12
     columns = ['monthly_mb', None]
     is_full_table_flags = [False, True]
@@ -149,3 +105,6 @@ def test_properties():
             do_comparison_on_pdf_and_tb(tb_filter=tb_filter_all, tb_result=tb_filter_all_result,
                                         pdf_filter=pdf_filter_all, pdf_result=pdf_filter_all_result,
                                         is_full_table=is_full_table)
+
+
+test_properties()

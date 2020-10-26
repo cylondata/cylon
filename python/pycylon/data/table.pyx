@@ -54,20 +54,12 @@ import numpy as np
 import pandas as pd
 from typing import List
 import warnings
+import operator
 from enum import Enum
 
 '''
 Cylon Table definition mapping 
 '''
-
-
-class ComparisonOp(Enum):
-    EQ = 'eq'
-    NE = 'ne'
-    LT = 'lt'
-    GT = 'gt'
-    LE = 'le'
-    GE = 'ge'
 
 
 cdef class Table:
@@ -757,44 +749,31 @@ cdef class Table:
             raise ValueError(f"Unsupported Key Type in __getitem__ {type(key)}")
 
 
-    def _comparison_operation(self, other, op: ComparisonOp):
+    def _comparison_operation(self, other, op):
         selected_data = []
         for col in self.to_arrow().combine_chunks().columns:
             col_data = []
             for val in col.chunks[0]:
-                if op == ComparisonOp.EQ:
-                    col_data.append(val.as_py() == other)
-                elif op == ComparisonOp.NE:
-                    col_data.append(val.as_py() != other)
-                elif op == ComparisonOp.LT:
-                    col_data.append(val.as_py() < other)
-                elif op == ComparisonOp.GT:
-                    col_data.append(val.as_py() > other)
-                elif op == ComparisonOp.LE:
-                    col_data.append(val.as_py() <= other)
-                elif op == ComparisonOp.GE:
-                    col_data.append(val.as_py() >= other)
-                else:
-                    raise ValueError(f"Unsupported comparison op {op}")
+                col_data.append(op(val.as_py(), other))
             selected_data.append(col_data)
         return Table.from_list(self.context, self.column_names, selected_data)
 
 
     def __eq__(self, other) -> Table:
-        return self._comparison_operation(other, ComparisonOp.EQ)
+        return self._comparison_operation(other, operator.__eq__)
 
     def __ne__(self, other) -> Table:
-        return self._comparison_operation(other, ComparisonOp.NE)
+        return self._comparison_operation(other, operator.__ne__)
 
     def __lt__(self, other) -> Table:
-        return self._comparison_operation(other, ComparisonOp.LT)
+        return self._comparison_operation(other, operator.__lt__)
 
     def __gt__(self, other) -> Table:
-        return self._comparison_operation(other, ComparisonOp.GT)
+        return self._comparison_operation(other, operator.__gt__)
 
     def __le__(self, other) -> Table:
-        return self._comparison_operation(other, ComparisonOp.LE)
+        return self._comparison_operation(other, operator.__le__)
 
     def __ge__(self, other) -> Table:
-        return self._comparison_operation(other, ComparisonOp.GE)
+        return self._comparison_operation(other, operator.__ge__)
 
