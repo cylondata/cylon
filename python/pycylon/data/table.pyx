@@ -699,9 +699,10 @@ cdef class Table:
     #     @return: schema
     #     """
     #     pass
-    def filter(self, op):
+    def filter(self, statement):
         # TODO: Supported Added via: https://github.com/cylondata/cylon/issues/211
-        raise NotImplemented("Filter method not implemented")
+        return statement
+
 
     def _table_from_mask(self, mask: Table) -> Table:
         mask_dict = mask.to_pydict()
@@ -776,4 +777,15 @@ cdef class Table:
 
     def __ge__(self, other) -> Table:
         return self._comparison_operation(other, operator.__ge__)
+
+    def __or__(self, other) -> Table:
+        print("OR: ", other, type(other))
+        print("self")
+        print(self.to_pandas())
+        print("others")
+        print(other.to_pandas())
+        return self.union(other)
+
+    def __and__(self, other) -> Table:
+        print("AND: ", other, type(other))
 

@@ -107,4 +107,41 @@ def test_properties():
                                         is_full_table=is_full_table)
 
 
-test_properties()
+def test_filter():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+
+    table1_path = '/tmp/user_usage_tm_1.csv'
+    table2_path = '/tmp/user_usage_tm_2.csv'
+
+    assert os.path.exists(table1_path) and os.path.exists(table2_path)
+
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+
+    tb: Table = read_csv(ctx, table1_path, csv_read_options)
+
+    # pdf = tb[0:10].to_pandas()
+    #
+    # tb = Table.from_pandas(ctx, pdf)
+
+    tb_1 = tb[tb['monthly_mb'] < 600]
+    tb_2 = tb[tb['monthly_mb'] > 5000.0]
+    tb_3 = tb[tb['monthly_mb'] > 15000.0]
+
+    exp = tb_1 | tb_2 | tb_3
+
+    print(exp.sort('monthly_mb').to_pandas())
+
+    tb_cond_1 = tb['monthly_mb'] < 600
+    tb_cond_2 = tb['monthly_mb'] > 5000.0
+    tb_cond_3 = tb['monthly_mb'] > 15000.0
+
+
+    #exp = tb[(tb['monthly_mb'] < 600) | (tb['monthly_mb'] > 5000.0)]
+
+
+
+
+    # print(tb[filter_exp].to_pandas())
+
+
+test_filter()
