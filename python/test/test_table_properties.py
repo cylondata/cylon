@@ -119,29 +119,39 @@ def test_filter():
 
     tb: Table = read_csv(ctx, table1_path, csv_read_options)
 
-    # pdf = tb[0:10].to_pandas()
-    #
-    # tb = Table.from_pandas(ctx, pdf)
+    column_name = 'monthly_mb'
 
-    tb_1 = tb[tb['monthly_mb'] < 600]
-    tb_2 = tb[tb['monthly_mb'] > 5000.0]
-    tb_3 = tb[tb['monthly_mb'] > 15000.0]
+    ops = [operator.__or__, operator.__and__]
+    or_limits = [600, 5000, 15000]
+    and_limits = [0, 5000, 1000]
+    comp_op_or = [operator.__gt__, operator.__le__, operator.__gt__]
+    comp_op_and = [operator.__gt__, operator.__le__, operator.__gt__]
+    limits = [or_limits, and_limits]
+    comp_ops = [comp_op_or, comp_op_and]
 
-    exp = tb_1 | tb_2 | tb_3
+    for op, limit, comp_op in zip(ops, limits, comp_ops):
+        print("Op ", op)
+        tb_cond_1 = comp_op[0](tb[column_name], limit[0])
+        tb_cond_2 = comp_op[1](tb[column_name], limit[1])
+        tb_cond_3 = comp_op[2](tb[column_name], limit[2])
 
-    print(exp.sort('monthly_mb').to_pandas())
+        res_1_op = op(tb_cond_1, tb_cond_2)
+        res_2_op = op(res_1_op, tb_cond_3)
 
-    tb_cond_1 = tb['monthly_mb'] < 600
-    tb_cond_2 = tb['monthly_mb'] > 5000.0
-    tb_cond_3 = tb['monthly_mb'] > 15000.0
+        res_1 = tb[res_1_op]
+        res_2 = tb[res_2_op]
 
+        column_pdf_1 = res_1[column_name].to_pandas()
+        column_pdf_2 = res_2[column_name].to_pandas()
 
-    #exp = tb[(tb['monthly_mb'] < 600) | (tb['monthly_mb'] > 5000.0)]
+        column_1 = column_pdf_1[column_name]
+        for col in column_1:
+            assert op(comp_op[0](col, limit[0]), comp_op[1](col, limit[1]))
 
-
-
-
-    # print(tb[filter_exp].to_pandas())
+        column_2 = column_pdf_2[column_name]
+        for col in column_2:
+            assert op(op(comp_op[0](col, limit[0]), comp_op[1](col, limit[1])),
+                      comp_op[2](col, limit[2]))
 
 
 test_filter()

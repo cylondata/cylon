@@ -733,6 +733,19 @@ cdef class Table:
             return Table.from_list(self.context, self.column_names, filtered_all_data)
 
 
+    def _aggregate_filters(self, filter: Table, op) -> Table:
+        filter1_dict = filter.to_pydict()
+        filter2_dict = self.to_pydict()
+        aggregated_filter_response = []
+        for key1, key2 in zip(filter1_dict, filter2_dict):
+            values1, values2 = filter1_dict[key1], filter2_dict[key2]
+            column_data = []
+            for value1, value2 in zip(values1, values2):
+                column_data.append(op(value1, value2))
+            aggregated_filter_response.append(column_data)
+        return Table.from_list(self.context, self.column_names, aggregated_filter_response)
+
+
     def __getitem__(self, key) -> Table:
         py_arrow_table = self.to_arrow().combine_chunks()
         if isinstance(key, slice):
@@ -779,13 +792,7 @@ cdef class Table:
         return self._comparison_operation(other, operator.__ge__)
 
     def __or__(self, other) -> Table:
-        print("OR: ", other, type(other))
-        print("self")
-        print(self.to_pandas())
-        print("others")
-        print(other.to_pandas())
-        return self.union(other)
+        return self._aggregate_filters(other, operator.__or__)
 
     def __and__(self, other) -> Table:
-        print("AND: ", other, type(other))
-
+        return self._aggregate_filters(other, operator.__and__)
