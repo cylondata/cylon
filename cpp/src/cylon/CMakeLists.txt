@@ -18,6 +18,14 @@
 find_package(Threads REQUIRED)
 
 set_source_files_properties(util/murmur3.cpp util/murmur3.hpp PROPERTIES COMPILE_FLAGS -Wno-implicit-fallthrough)
+if (CYLON_PARQUET)
+    set(PARQUET_CYLON_IO
+            io/parquet_config.hpp
+            io/parquet_config.cpp
+            )
+else (CYLON_PARQUET)
+    set(PARQUET_CYLON_IO)
+endif (CYLON_PARQUET)
 
 add_library(cylon SHARED
         net/ops/all_to_all.cpp
@@ -96,8 +104,7 @@ add_library(cylon SHARED
         groupby/groupby_aggregate_ops.hpp
         groupby/groupby.hpp
         groupby/groupby.cpp
-        io/parquet_config.hpp
-        io/parquet_config.cpp
+        ${PARQUET_CYLON_IO}
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
@@ -106,10 +113,13 @@ include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(cylon ${MPI_LIBRARIES})
 target_link_libraries(cylon ${GLOG_LIBRARIES})
 target_link_libraries(cylon ${ARROW_LIB})
-target_link_libraries(cylon ${PARQUET_LIB})
 target_link_libraries(cylon ${PYTHON_LIBRARIES})
 target_link_libraries(cylon Threads::Threads)
 target_compile_options(cylon PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
+
+if (CYLON_PARQUET)
+    target_link_libraries(cylon ${PARQUET_LIB})
+endif ()
 
 cylon_install_all_headers("cylon")
 

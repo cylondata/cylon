@@ -30,9 +30,9 @@ project(CYLON)
 set(CYLON_VERSION 0.1.0)
 
 ## defaults to release build
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
-endif()
+endif ()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 
@@ -42,12 +42,12 @@ if (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "DEBUG")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer ")
-elseif(UPPERCASE_CMAKE_BUILD_TYPE MATCHES "RELEASE")
+elseif (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "RELEASE")
     message("Running on Release mode...")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-else()
+else ()
     message(FATAL_ERROR "Unknown CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE}! Exiting...")
-endif()
+endif ()
 
 ## PyCylon build
 if (PYCYLON_BUILD)
@@ -108,6 +108,12 @@ else ()
 endif (ARROW_FOUND)
 include_directories(SYSTEM "${ARROW_INCLUDE_DIR}")
 
+# parquet
+option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
+if (CYLON_PARQUET)
+    add_definitions(-DBUILD_CYLON_PARQUET)
+endif (CYLON_PARQUET)
+
 ## Find Python
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
@@ -128,4 +134,4 @@ if (CYLON_WITH_TEST)
     message("Tests enabled!")
     enable_testing()
     add_subdirectory(test)
-endif()
+endif ()
