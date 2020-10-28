@@ -67,7 +67,6 @@ bool validateArrowTableTypes(const std::shared_ptr <arrow::Table> &table) {
       case arrow::Type::NA:
         break;
       case arrow::Type::BOOL:
-        break;
       case arrow::Type::UINT8:
       case arrow::Type::INT8:
       case arrow::Type::UINT16:
@@ -101,6 +100,7 @@ bool validateArrowTableTypes(const std::shared_ptr <arrow::Table> &table) {
       case arrow::Type::LIST: {
         auto t_value = std::static_pointer_cast<arrow::ListType>(t->type());
         switch (t_value->value_type()->id()) {
+          case arrow::Type::BOOL:
           case arrow::Type::UINT8:
           case arrow::Type::INT8:
           case arrow::Type::UINT16:
