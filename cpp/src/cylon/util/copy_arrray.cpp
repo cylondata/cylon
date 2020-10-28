@@ -137,7 +137,7 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> 
                                     arrow::MemoryPool *memory_pool) {
   switch (data_array->type()->id()) {
     case arrow::Type::BOOL:
-      return do_copy_numeric_array<arrow::UInt8Type>(indices,
+      return do_copy_numeric_array<arrow::BooleanType>(indices,
                                                      data_array,
                                                      copied_array,
                                                      memory_pool);
@@ -215,7 +215,7 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> 
       auto t_value = std::static_pointer_cast<arrow::ListType>(data_array->type());
       switch (t_value->value_type()->id()) {
         case arrow::Type::BOOL:
-          return do_copy_numeric_list<arrow::UInt8Type>(indices,
+          return do_copy_numeric_list<arrow::BooleanType>(indices,
                                                         data_array,
                                                         copied_array,
                                                         memory_pool);
