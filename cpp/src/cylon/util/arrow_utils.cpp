@@ -211,11 +211,12 @@ arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray>& cArr,
         LOG(FATAL) << "Insufficient memory";
         return st;
       }
+      buffers.push_back(new_buf);
     }
-    // lets send this buffer, we need to send the length at this point
+    // create the array with the new buffers
     std::shared_ptr<arrow::ArrayData> new_data = arrow::ArrayData::Make(
         field->type(), length, buffers);
-    std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
+    std::shared_ptr<arrow::Array> array = arrow::MakeArray(new_data);
     arrays.push_back(array);
   }
   out = std::make_shared<arrow::ChunkedArray>(arrays, field->type());
