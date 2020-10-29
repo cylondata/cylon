@@ -20,6 +20,7 @@
 #include <arrow/compute/api.h>
 #include <future>
 #include <join/join_utils.hpp>
+#include <Python.h>
 
 #include "table_api_extended.hpp"
 #include "io/arrow_io.hpp"
@@ -221,11 +222,14 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
   if (concat_tables.ok()) {
     auto final_table = concat_tables.ValueOrDie();
     LOG(INFO) << "Done concatenating tables, rows :  " << final_table->num_rows();
-    auto status = final_table->CombineChunks(cylon::ToArrowPool(ctx), table_out);
-    return Status(static_cast<int>(status.code()), status.message());
+
+    arrow::Result<std::shared_ptr<arrow::Table>> res = final_table->CombineChunks(cylon::ToArrowPool(ctx));
+    if (res.ok()) {
+      *table_out = res.ValueOrDie();
+    }
+    return Status(static_cast<int>(res.status().code()), res.status().message());
   } else {
-    return Status(static_cast<int>(concat_tables.status().code()),
-                  concat_tables.status().message());
+    return Status(static_cast<int>(concat_tables.status().code()), concat_tables.status().message());
   }
 }
 
@@ -290,8 +294,15 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
   if (concat_tables.ok()) {
     auto final_table = concat_tables.ValueOrDie();
     LOG(INFO) << "Done concatenating tables, rows :  " << final_table->num_rows();
-    auto status = final_table->CombineChunks(cylon::ToArrowPool(ctx), table_out);
-    return Status(static_cast<int>(status.code()), status.message());
+    arrow::Result<std::shared_ptr<arrow::Table>> concat_res = final_table->CombineChunks(cylon::ToArrowPool(ctx));
+
+    if (!concat_res.ok()){
+      const auto& status = concat_res.status();
+      return Status(static_cast<int>(status.code()), status.message());
+    }
+    *table_out = concat_res.ValueOrDie();
+
+    return Status::OK();
   } else {
     return Status(static_cast<int>(concat_tables.status().code()),
                   concat_tables.status().message());
@@ -357,16 +368,18 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &pat
                const cylon::io::config::CSVReadOptions &options) {
   arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::read_csv(ctx, path, options);
   if (result.ok()) {
-    std::shared_ptr<arrow::Table> table = *result;
+    std::shared_ptr<arrow::Table> table = result.ValueOrDie();
     LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
     if (table->column(0)->chunks().size() > 1) {
-      auto status = table->CombineChunks(ToArrowPool(ctx), &table);
-      if (!status.ok()) {
-        return Status(Code::IOError, status.message());
+      auto combine_res = table->CombineChunks(ToArrowPool(ctx));
+      if (!combine_res.ok()) {
+        return Status(static_cast<int>(combine_res.status().code()), combine_res.status().message());
       }
+      tableOut = std::make_shared<Table>(combine_res.ValueOrDie(), ctx);
+    } else {
+      tableOut = std::make_shared<Table>(table, ctx);
     }
-    tableOut = std::make_shared<Table>(table, ctx);
-    return Status(Code::OK, result.status().message());
+    return Status::OK();
   }
   return Status(Code::IOError, result.status().message());
 }
@@ -375,18 +388,21 @@ Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string 
                    std::shared_ptr<Table> &tableOut) {
   arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::ReadParquet(ctx, path);
   if (result.ok()) {
-    std::shared_ptr<arrow::Table> table = *result;
+    std::shared_ptr<arrow::Table> table = result.ValueOrDie();
     LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
     if (table->column(0)->chunks().size() > 1) {
-      auto status = table->CombineChunks(ToArrowPool(ctx), &table);
-      if (!status.ok()) {
-        return Status(Code::IOError, status.message());
+      auto combine_res = table->CombineChunks(ToArrowPool(ctx));
+      if (!combine_res.ok()) {
+        return Status(static_cast<int>(combine_res.status().code()), combine_res.status().message());
       }
+      tableOut = std::make_shared<Table>(combine_res.ValueOrDie(), ctx);
+    } else {
+      tableOut = std::make_shared<Table>(table, ctx);
     }
-    tableOut = std::make_shared<Table>(table, ctx);
-    return Status(Code::OK, result.status().message());
+    return Status::OK();
   }
-  return Status(Code::IOError, result.status().message());
+
+  return Status(static_cast<int>(result.status().code()), result.status().message());
 }
 
 Status Table::FromArrowTable(std::shared_ptr<cylon::CylonContext> &ctx,
@@ -483,17 +499,17 @@ Status Merge(std::shared_ptr<cylon::CylonContext> &ctx,
     (*it)->ToArrowTable(arrow);
     tables.push_back(arrow);
   }
-  arrow::Result<std::shared_ptr<arrow::Table>> result = arrow::ConcatenateTables(tables);
-  if (result.status() == arrow::Status::OK()) {
-    std::shared_ptr<arrow::Table> combined;
-    arrow::Status status = result.ValueOrDie()->CombineChunks(cylon::ToArrowPool(ctx), &combined);
-    if (status != arrow::Status::OK()) {
-      return Status(Code::OutOfMemory);
+  arrow::Result<std::shared_ptr<arrow::Table>> concat_res = arrow::ConcatenateTables(tables);
+  if (concat_res.ok()) {
+    arrow::Result<std::shared_ptr<arrow::Table>>
+        combined_res = concat_res.ValueOrDie()->CombineChunks(cylon::ToArrowPool(ctx));
+    if (!combined_res.ok()) {
+      return Status(static_cast<int>(combined_res.status().code()), combined_res.status().message());
     }
-    tableOut = std::make_shared<cylon::Table>(combined, ctx);
+    tableOut = std::make_shared<cylon::Table>(combined_res.ValueOrDie(), ctx);
     return Status::OK();
   } else {
-    return Status(static_cast<int>(result.status().code()), result.status().message());
+    return Status(static_cast<int>(concat_res.status().code()), concat_res.status().message());
   }
 }
 
@@ -730,12 +746,13 @@ Status Select(std::shared_ptr<cylon::Table> &table,
   if (!status.ok()) {
     return Status(UnknownError, status.message());
   }
-  std::shared_ptr<arrow::Table> out_table;
-  arrow::compute::FunctionContext func_ctx;
-  status = arrow::compute::Filter(&func_ctx, *table_, *mask, &out_table);
-  if (!status.ok()) {
-    return Status(UnknownError, status.message());
+
+  arrow::Result<arrow::Datum> filter_res = arrow::compute::Filter(arrow::Datum(table_), arrow::Datum(mask));
+  if (!filter_res.ok()) {
+    status = filter_res.status();
+    return Status(static_cast<int>(status.code()), status.message());
   }
+  std::shared_ptr<arrow::Table> out_table = filter_res.ValueOrDie().table();
   out = std::make_shared<cylon::Table>(out_table, ctx);
   return Status::OK();;
 }
@@ -799,11 +816,11 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
   }
   // create final table
   std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
-  auto merge_status = table->CombineChunks(cylon::ToArrowPool(ctx), &table);
-  if (!merge_status.ok()) {
-    return Status(static_cast<int>(merge_status.code()), merge_status.message());
+  arrow::Result<std::shared_ptr<arrow::Table>> merge_res = table->CombineChunks(cylon::ToArrowPool(ctx));
+  if (!merge_res.ok()) {
+    return Status(static_cast<int>(merge_res.status().code()), merge_res.status().message());
   }
-  out = std::make_shared<cylon::Table>(table, ctx);
+  out = std::make_shared<cylon::Table>(merge_res.ValueOrDie(), ctx);
   return Status::OK();
 }
 

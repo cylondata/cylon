@@ -165,11 +165,15 @@ class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
 	const T *left_data = array->raw_values();
 	std::shared_ptr<arrow::Buffer> indices_buf;
 	int64_t buf_size = values->length() * sizeof(uint64_t);
-	arrow::Status status = AllocateBuffer(pool_, buf_size + 1, &indices_buf);
-	if (status != arrow::Status::OK()) {
+
+    arrow::Result<std::unique_ptr<arrow::Buffer>> result = AllocateBuffer(buf_size + 1, pool_);
+	const arrow::Status &status = result.status();
+	if (!status.ok()) {
 	  LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
 	  return -1;
 	}
+	indices_buf = std::move(result.ValueOrDie());
+
 	auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
 	for (int64_t i = 0; i < values->length(); i++) {
 	  indices_begin[i] = i;
@@ -237,11 +241,15 @@ class ArrowArrayInplaceNumericSortKernel : public ArrowArrayInplaceSortKernel {
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t length = values->length();
     int64_t buf_size = length * sizeof(uint64_t);
-    arrow::Status status = AllocateBuffer(pool_, buf_size + 1, &indices_buf);
-    if (status != arrow::Status::OK()) {
+
+    arrow::Result<std::unique_ptr<arrow::Buffer>> result = AllocateBuffer(buf_size + 1, pool_);
+    const arrow::Status &status = result.status();
+    if (!status.ok()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
       return -1;
     }
+    indices_buf = std::move(result.ValueOrDie());
+
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
     for (int64_t i = 0; i < length; i++) {
       indices_begin[i] = i;

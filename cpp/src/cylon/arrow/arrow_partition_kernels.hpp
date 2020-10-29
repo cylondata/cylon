@@ -19,6 +19,7 @@
 #include <vector>
 #include <arrow/api.h>
 #include <glog/logging.h>
+#include <cmath>
 
 #include "../util/murmur3.hpp"
 #include "../status.hpp"

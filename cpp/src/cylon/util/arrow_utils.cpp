@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-#include <arrow/compute/api.h>
 #include <arrow/api.h>
 #include <glog/logging.h>
 
@@ -122,11 +121,9 @@ arrow::Status SortColumn(const std::shared_ptr<arrow::Array> &data_column,
     case arrow::Type::TIMESTAMP:break;
     case arrow::Type::TIME32:break;
     case arrow::Type::TIME64:break;
-    case arrow::Type::INTERVAL:break;
     case arrow::Type::DECIMAL:break;
     case arrow::Type::LIST:break;
     case arrow::Type::STRUCT:break;
-    case arrow::Type::UNION:break;
     case arrow::Type::DICTIONARY:break;
     case arrow::Type::MAP:break;
     case arrow::Type::EXTENSION:break;
@@ -135,6 +132,11 @@ arrow::Status SortColumn(const std::shared_ptr<arrow::Array> &data_column,
     case arrow::Type::LARGE_STRING:break;
     case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
+    case arrow::Type::INTERVAL_MONTHS:break;
+    case arrow::Type::INTERVAL_DAY_TIME:break;
+    case arrow::Type::SPARSE_UNION:break;
+    case arrow::Type::DENSE_UNION:break;
+    case arrow::Type::MAX_ID:break;
   }
   return arrow::Status::OK();
 }
@@ -144,7 +146,11 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort
   std::shared_ptr<arrow::Table> tab_to_process; // table referenced
   // combine chunks if multiple chunks are available
   if (table->column(sort_column_index)->num_chunks() > 1) {
-    arrow::Status left_combine_stat = table->CombineChunks(memory_pool, &tab_to_process);
+    arrow::Result<std::shared_ptr<arrow::Table>> left_combine_res = table->CombineChunks(memory_pool);
+    if(!left_combine_res.ok()){
+      return left_combine_res.status();
+    }
+    tab_to_process = left_combine_res.ValueOrDie();
   } else {
     tab_to_process = table;
   }
@@ -203,19 +209,19 @@ arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray>& cArr,
     std::shared_ptr<arrow::ArrayData> data = arr->data();
     std::vector<std::shared_ptr<arrow::Buffer>> buffers;
     size_t length = cArr->length();
-    for (size_t bufferIndex = 0; bufferIndex < data->buffers.size(); bufferIndex++) {
-      std::shared_ptr<arrow::Buffer> buf = data->buffers[bufferIndex];
-      std::shared_ptr<arrow::Buffer> new_buf;
-      arrow::Status st = buf->Copy(0l, buf->size(), pool, &new_buf);
-      if (!st.ok()) {
+    for (const auto& buf : data->buffers) {
+      arrow::Result<std::shared_ptr<arrow::Buffer>> res = buf->CopySlice(0l, buf->size(), pool);
+
+      if (!res.ok()) {
         LOG(FATAL) << "Insufficient memory";
-        return st;
+        return res.status();
       }
+      buffers.push_back(res.ValueOrDie());
     }
     // lets send this buffer, we need to send the length at this point
     std::shared_ptr<arrow::ArrayData> new_data = arrow::ArrayData::Make(
         field->type(), length, buffers);
-    std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
+    std::shared_ptr<arrow::Array> array = arrow::MakeArray(new_data);
     arrays.push_back(array);
   }
   out = std::make_shared<arrow::ChunkedArray>(arrays, field->type());
