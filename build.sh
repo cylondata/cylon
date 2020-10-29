@@ -14,6 +14,7 @@ STYLE_CHECK="OFF"
 CYLON_PARQUET="OFF"
 INSTALL_PATH=
 BUILD_PATH=$(pwd)/build
+CMAKE_FLAGS=
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -46,7 +47,7 @@ case $key in
     PYTHON_BUILD="ON"
     shift # past argument
     ;;
-    --cython)    
+    --cython)
     CYTHON_BUILD="ON"
     shift # past argument
     ;;
@@ -85,6 +86,11 @@ case $key in
     --parquet)
     CYLON_PARQUET="ON"
     shift # past argument
+    ;;
+    --cmake-flags)
+    CMAKE_FLAGS="$2"
+    shift # past argument
+    shift # past value
     ;;
     *)    # unknown option
     POSITIONAL+=("$1") # save it in an array for later
@@ -155,7 +161,7 @@ build_cpp(){
   export ARROW_HOME=${BUILD_PATH}/arrow/install
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
       -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $CPPLINT_CMD $INSTALL_CMD \
-      -DCYLON_PARQUET=${CYLON_PARQUET} \
+      -DCYLON_PARQUET=${CYLON_PARQUET} "${CMAKE_FLAGS}" \
        ${SOURCE_DIR} || exit 1
   make -j 4 || exit 1
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
