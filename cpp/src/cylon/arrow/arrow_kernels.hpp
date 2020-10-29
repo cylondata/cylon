@@ -163,7 +163,6 @@ class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
 		   std::shared_ptr<arrow::Array> *offsets) override {
 	auto array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
 	const T *left_data = array->raw_values();
-	std::shared_ptr<arrow::Buffer> indices_buf;
 	int64_t buf_size = values->length() * sizeof(uint64_t);
 
     arrow::Result<std::unique_ptr<arrow::Buffer>> result = AllocateBuffer(buf_size + 1, pool_);
@@ -172,7 +171,7 @@ class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
 	  LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
 	  return -1;
 	}
-	indices_buf = std::move(result.ValueOrDie());
+    std::shared_ptr<arrow::Buffer> indices_buf = std::move(result.ValueOrDie());
 
 	auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
 	for (int64_t i = 0; i < values->length(); i++) {
@@ -238,7 +237,6 @@ class ArrowArrayInplaceNumericSortKernel : public ArrowArrayInplaceSortKernel {
     std::shared_ptr<arrow::ArrayData> data = array->data();
     // get the first buffer as a mutable buffer
     T *left_data = data->GetMutableValues<T>(1);
-    std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t length = values->length();
     int64_t buf_size = length * sizeof(uint64_t);
 
@@ -248,7 +246,7 @@ class ArrowArrayInplaceNumericSortKernel : public ArrowArrayInplaceSortKernel {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
       return -1;
     }
-    indices_buf = std::move(result.ValueOrDie());
+    std::shared_ptr<arrow::Buffer> indices_buf = std::move(result.ValueOrDie());
 
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
     for (int64_t i = 0; i < length; i++) {

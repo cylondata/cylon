@@ -224,10 +224,13 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
     LOG(INFO) << "Done concatenating tables, rows :  " << final_table->num_rows();
 
     arrow::Result<std::shared_ptr<arrow::Table>> res = final_table->CombineChunks(cylon::ToArrowPool(ctx));
-    if (res.ok()) {
-      *table_out = res.ValueOrDie();
+
+    if (!res.ok()) {
+      const auto &status = res.status();
+      return Status(static_cast<int>(status.code()), status.message());
     }
-    return Status(static_cast<int>(res.status().code()), res.status().message());
+    *table_out = res.ValueOrDie();
+    return Status::OK();
   } else {
     return Status(static_cast<int>(concat_tables.status().code()), concat_tables.status().message());
   }
@@ -301,7 +304,6 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
       return Status(static_cast<int>(status.code()), status.message());
     }
     *table_out = concat_res.ValueOrDie();
-
     return Status::OK();
   } else {
     return Status(static_cast<int>(concat_tables.status().code()),
