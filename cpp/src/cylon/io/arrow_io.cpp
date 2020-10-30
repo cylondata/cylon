@@ -17,9 +17,12 @@
 #include <arrow/api.h>
 #include <arrow/io/api.h>
 #include <arrow/csv/api.h>
+#include <memory>
+
+#ifdef BUILD_CYLON_PARQUET
 #include <parquet/arrow/reader.h>
 #include <parquet/arrow/writer.h>
-#include <memory>
+#endif
 
 #include "csv_read_config_holder.hpp"
 #include "../ctx/cylon_context.hpp"
@@ -58,6 +61,7 @@ arrow::Result<std::shared_ptr<arrow::Table>> read_csv(std::shared_ptr<cylon::Cyl
   return (*reader)->Read();
 }
 
+#ifdef BUILD_CYLON_PARQUET
 // Read Parquet
 arrow::Result<std::shared_ptr<arrow::Table>> ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                                                          const std::string &path) {
@@ -106,6 +110,7 @@ arrow::Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx, std::share
   }
   return (*outfileResult)->Close();
 }
+#endif
 
 }  // namespace io
 }  // namespace cylon
