@@ -28,6 +28,9 @@
 #include "util/uuid.hpp"
 
 #include "table.hpp"
+#ifdef BUILD_CYLON_PARQUET
+#include "parquet.hpp"
+#endif
 
 namespace cylon {
 // todo make this un ordered
@@ -73,17 +76,6 @@ Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
   return status;
 }
 
-Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
-                   const std::string &path,
-                   const std::string &id) {
-  std::shared_ptr<cylon::Table> table;
-  cylon::Status status = FromParquet(ctx, path, table);
-  if (status.is_ok()) {
-    PutTable(id, table);
-  }
-  return status;
-}
-
 Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
                const std::vector<std::string> &paths,
                const std::vector<std::string> &ids,
@@ -101,33 +93,10 @@ Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
   return status;
 }
 
-Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
-                   const std::vector<std::string> &paths,
-                   const std::vector<std::string> &ids,
-                   cylon::io::config::ParquetOptions &options) {
-  if (paths.size() != ids.size()) {
-    return Status(cylon::Invalid, "Size of paths and ids mismatch.");
-  }
-  std::vector<std::shared_ptr<Table> *> tableOuts;
-  Status status = FromParquet(ctx, paths, tableOuts, options);
-  if (status.is_ok()) {
-    for (size_t i = 0; i < ids.size(); i++) {
-      PutTable(ids[i], *tableOuts[i]);
-    }
-  }
-  return status;
-}
-
 Status WriteCSV(const std::string &id, const std::string &path,
                 const cylon::io::config::CSVWriteOptions &options) {
   auto table = GetTable(id);
   return table->WriteCSV(path, options);
-}
-
-Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &id, const std::string &path,
-                    const cylon::io::config::ParquetOptions &options) {
-  auto table = GetTable(id);
-  return table->WriteParquet(ctx, path, options);
 }
 
 Status Print(const std::string &table_id, int col1, int col2, int row1, int row2) {
@@ -385,4 +354,40 @@ Status Project(const std::string &id, const std::vector<int64_t> &project_column
   }
   return status;
 }
+
+#ifdef BUILD_CYLON_PARQUET
+Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::string &path,
+                   const std::string &id) {
+  std::shared_ptr<cylon::Table> table;
+  cylon::Status status = FromParquet(ctx, path, table);
+  if (status.is_ok()) {
+    PutTable(id, table);
+  }
+  return status;
+}
+
+Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::vector<std::string> &paths,
+                   const std::vector<std::string> &ids,
+                   cylon::io::config::ParquetOptions &options) {
+  if (paths.size() != ids.size()) {
+    return Status(cylon::Invalid, "Size of paths and ids mismatch.");
+  }
+  std::vector<std::shared_ptr<Table> *> tableOuts;
+  Status status = FromParquet(ctx, paths, tableOuts, options);
+  if (status.is_ok()) {
+    for (size_t i = 0; i < ids.size(); i++) {
+      PutTable(ids[i], *tableOuts[i]);
+    }
+  }
+  return status;
+}
+
+Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &id, const std::string &path,
+                    const cylon::io::config::ParquetOptions &options) {
+  auto table = GetTable(id);
+  return table->WriteParquet(ctx, path, options);
+}
+#endif
 }  // namespace cylon

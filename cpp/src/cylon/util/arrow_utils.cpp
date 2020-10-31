@@ -221,7 +221,7 @@ arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray>& cArr,
     // lets send this buffer, we need to send the length at this point
     std::shared_ptr<arrow::ArrayData> new_data = arrow::ArrayData::Make(
         field->type(), length, buffers);
-    std::shared_ptr<arrow::Array> array = arrow::MakeArray(new_data);
+    std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
     arrays.push_back(array);
   }
   out = std::make_shared<arrow::ChunkedArray>(arrays, field->type());

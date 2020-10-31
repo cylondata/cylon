@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include <table.hpp>
+#include <parquet.hpp>
 #include <net/mpi/mpi_communicator.hpp>
 
 int main(int argc, char *argv[]) {
