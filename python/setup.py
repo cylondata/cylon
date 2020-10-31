@@ -126,7 +126,7 @@ setup(
     install_requires=[
         'numpy',
         'cython',
-        'pyarrow==0.16.0'
+        'pyarrow==2.0.0'
     ],
     zip_safe=False,
 )
