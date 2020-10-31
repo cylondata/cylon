@@ -22,9 +22,12 @@
 #include "join/join_config.hpp"
 #include "io/csv_read_config.hpp"
 #include "io/csv_write_config.hpp"
-#include "io/parquet_config.hpp"
 #include "ctx/cylon_context.hpp"
 #include "row.hpp"
+
+#ifdef BUILD_CYLON_PARQUET
+#include "io/parquet_config.hpp"
+#endif
 
 /**
  * This file shouldn't have an arrow dependency. Use the table_api_extended to define
@@ -39,27 +42,13 @@ Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
                const std::string &id,
                cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 
-Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
-                   const std::string &path,
-                   const std::string &id);
-
 Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
                const std::vector<std::string> &paths,
                const std::vector<std::string> &ids,
                cylon::io::config::CSVReadOptions options);
 
-Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
-                   const std::vector<std::string> &paths,
-                   const std::vector<std::string> &ids,
-                   cylon::io::config::ParquetOptions options);
-
 Status WriteCSV(const std::string &id, const std::string &path,
                 const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
-
-Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
-                    const std::string &id,
-                    const std::string &path,
-                    const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
 
 Status JoinTables(std::shared_ptr<cylon::CylonContext> &ctx,
                   const std::string &table_left,
@@ -188,5 +177,22 @@ Status Select(std::shared_ptr<cylon::CylonContext> &ctx,
               const std::string &dest_id);
 
 Status Project(const std::string &id, const std::vector<int64_t> &project_columns, const std::string &dest_id);
+
+#ifdef BUILD_CYLON_PARQUET
+Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::string &path,
+                   const std::string &id);
+
+Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::vector<std::string> &paths,
+                   const std::vector<std::string> &ids,
+                   cylon::io::config::ParquetOptions options);
+
+Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                    const std::string &id,
+                    const std::string &path,
+                    const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
+#endif
+
 }  // namespace cylon
 #endif //CYLON_SRC_IO_TABLE_API_H_
