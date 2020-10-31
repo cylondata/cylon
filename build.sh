@@ -130,6 +130,15 @@ read_python_requirements(){
   done < "$input"
 }
 
+check_python_pre_requisites(){
+  echo "Checking Python Pre_-requisites"
+  response=$(python3 -c \
+    "import numpy; print('Numpy Installation');\
+    print('Version {}'.format(numpy.__version__));\
+    print('Library Installation Path {}'.format(numpy.get_include()))")
+  echo "${response}"
+}
+
 INSTALL_CMD=
 if [ -z "$INSTALL_PATH" ]
 then
@@ -247,15 +256,6 @@ build_java(){
   mvn clean install -Dcylon.core.libs=$BUILD_PATH/lib -Dcylon.arrow.dir=$BUILD_PATH/arrow/install || exit 1
   echo "Cylon Java built Successufully!"
   cd ../
-}
-
-check_python_pre_requisites(){
-  echo "Checking Python Pre_-requisites"
-  response=$(python3 -c \
-    "import numpy; print('Numpy Installation');\
-    print('Version {}'.format(numpy.__version__));\
-    print('Library Installation Path {}'.format(numpy.get_include()))")
-  echo "${response}"
 }
 
 ####################################################################################################
