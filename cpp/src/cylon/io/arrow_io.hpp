@@ -19,8 +19,11 @@
 #include <string>
 
 #include "csv_read_config.hpp"
-#include "parquet_config.hpp"
 #include "../ctx/cylon_context.hpp"
+
+#ifdef BUILD_CYLON_PARQUET
+#include "parquet_config.hpp"
+#endif
 
 namespace cylon {
 namespace io {
@@ -29,12 +32,14 @@ arrow::Result<std::shared_ptr<arrow::Table>> read_csv(std::shared_ptr<cylon::Cyl
                                                       const std::string &path,
                                                       cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 
+#ifdef BUILD_CYLON_PARQUET
 arrow::Result<std::shared_ptr<arrow::Table>> ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                                                          const std::string &path);
 
 arrow::Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<arrow::Table> &table,
                            const std::string &path,
                            cylon::io::config::ParquetOptions options = cylon::io::config::ParquetOptions());
+#endif
 
 }  // namespace io
 }  // namespace cylon
