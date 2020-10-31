@@ -25,6 +25,7 @@ from pycylon import CylonContext
 from pycylon import Table
 from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
+from pyarrow import Table as PTable
 
 '''
 Run test:
@@ -154,4 +155,24 @@ def test_filter():
                       comp_op[2](col, limit[2]))
 
 
-test_filter()
+def test_additional_properties():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+
+    table1_path = '/tmp/user_usage_tm_1.csv'
+
+    assert os.path.exists(table1_path)
+
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+
+    tb: Table = read_csv(ctx, table1_path, csv_read_options)
+
+    tb_new = tb.drop(['outgoing_sms_per_month'])
+
+    print(tb_new)
+
+
+
+
+
+
+test_additional_properties()

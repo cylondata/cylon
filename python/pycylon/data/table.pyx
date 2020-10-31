@@ -61,7 +61,6 @@ from enum import Enum
 Cylon Table definition mapping 
 '''
 
-
 cdef class Table:
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
         """
@@ -703,7 +702,6 @@ cdef class Table:
         # TODO: Supported Added via: https://github.com/cylondata/cylon/issues/211
         return statement
 
-
     def _table_from_mask(self, mask: Table) -> Table:
         mask_dict = mask.to_pydict()
         list_of_mask_values = list(mask_dict.values())
@@ -722,7 +720,7 @@ cdef class Table:
             filtered_all_data = []
             table_dict = self.to_pydict()
             list_of_table_values = list(table_dict.values())
-            for mask_col_data,  table_col_data in zip(list_of_mask_values, list_of_table_values):
+            for mask_col_data, table_col_data in zip(list_of_mask_values, list_of_table_values):
                 filtered_data = []
                 for mask_value, table_value in zip(mask_col_data, table_col_data):
                     if mask_value:
@@ -731,7 +729,6 @@ cdef class Table:
                         filtered_data.append(math.nan)
                 filtered_all_data.append(filtered_data)
             return Table.from_list(self.context, self.column_names, filtered_all_data)
-
 
     def _aggregate_filters(self, filter: Table, op) -> Table:
         filter1_dict = filter.to_pydict()
@@ -744,7 +741,6 @@ cdef class Table:
                 column_data.append(op(value1, value2))
             aggregated_filter_response.append(column_data)
         return Table.from_list(self.context, self.column_names, aggregated_filter_response)
-
 
     def __getitem__(self, key) -> Table:
         py_arrow_table = self.to_arrow().combine_chunks()
@@ -762,7 +758,6 @@ cdef class Table:
         else:
             raise ValueError(f"Unsupported Key Type in __getitem__ {type(key)}")
 
-
     def _comparison_operation(self, other, op):
         selected_data = []
         for col in self.to_arrow().combine_chunks().columns:
@@ -771,7 +766,6 @@ cdef class Table:
                 col_data.append(op(val.as_py(), other))
             selected_data.append(col_data)
         return Table.from_list(self.context, self.column_names, selected_data)
-
 
     def __eq__(self, other) -> Table:
         return self._comparison_operation(other, operator.__eq__)
@@ -796,3 +790,38 @@ cdef class Table:
 
     def __and__(self, other) -> Table:
         return self._aggregate_filters(other, operator.__and__)
+
+    def to_string(self, row_limit:int =10):
+        # TODO: Need to improve this method with more features:
+        #  https://github.com/cylondata/cylon/issues/219
+
+        row_limit = row_limit if row_limit % 2 ==0 else row_limit + 1
+        str1 = self.to_pandas().to_string()
+        if self.row_count > row_limit:
+            printable_rows = []
+            rows = str1.split("\n")
+            len_mid_line = len(rows[self.row_count])
+            dot_line = ""
+            for i in range(len_mid_line):
+                dot_line += "."
+            dot_line += "\n"
+            printable_rows = rows[:row_limit//2] + [dot_line] +  rows[-row_limit//2:]
+            row_strs = ""
+            len_row = 0
+            for row_id, row_str in enumerate(printable_rows):
+                row_strs += row_str + "\n"
+            return row_strs
+        else:
+            return str1
+
+    def __repr__(self):
+        return self.to_string()
+
+    def drop(self, column_names:List[str]):
+        return self.from_arrow(self.context, self.to_arrow().drop(column_names))
+
+
+
+
+
+
