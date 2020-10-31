@@ -102,8 +102,10 @@ bool ArrowAllToAll::isComplete() {
             hdr[4] = data->length;
             hdr[5] = t.second->currentTable.second;
             // lets send this buffer, we need to send the length at this point
-            bool accept = all_->insert(buf->mutable_data(),
-                                       static_cast<int>(buf->size()), t.first, hdr, 6);
+            bool accept = (buf == nullptr) ?
+                          all_->insert(nullptr, 0, t.first, hdr, 6) :
+                          all_->insert(buf->mutable_data(), static_cast<int>(buf->size()), t.first, hdr, 6);
+
             if (!accept) {
               canContinue = false;
               break;
