@@ -110,7 +110,7 @@ packages = find_packages(include=["pycylon", "pycylon.*"])
 setup(
     name="pycylon",
     packages=packages,
-    version='0.1.0',
+    version='0.3.0',
     setup_requires=["cython",
                     "setuptools",
                     "numpy",
@@ -125,8 +125,7 @@ setup(
     python_requires='>=3.7',
     install_requires=[
         'numpy',
-        'cython',
-        'pyarrow==2.0.0'
+        'cython'
     ],
     zip_safe=False,
 )
