@@ -34,7 +34,7 @@ class Result {
    * move the ownership of the arrow datum result to Result container
    * @param result
    */
-  explicit Result(arrow::compute::Datum result) : result(std::move(result)) {
+  explicit Result(arrow::Datum result) : result(std::move(result)) {
 
   }
 
@@ -42,12 +42,12 @@ class Result {
    * Return a const reference to the underlying datum object
    * @return
    */
-  const arrow::compute::Datum &GetResult() const {
+  const arrow::Datum &GetResult() const {
     return result;
   }
 
  private:
-  const arrow::compute::Datum result;
+  const arrow::Datum result;
 };
 
 /**

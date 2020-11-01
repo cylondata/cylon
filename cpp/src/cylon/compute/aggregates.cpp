@@ -13,7 +13,6 @@
  */
 
 #include <glog/logging.h>
-#include <arrow/compute/kernels/minmax.h> // minmax kernel is not included in the arrrow/compute/api.h
 
 #include <status.hpp>
 #include <table.hpp>
@@ -40,7 +39,7 @@ template<typename NUM_ARROW_T,
     typename = typename std::enable_if<
         arrow::is_number_type<NUM_ARROW_T>::value | arrow::is_boolean_type<NUM_ARROW_T>::value>::type>
 cylon::Status AllReduce(cylon::net::CommType comm_type,
-                        const arrow::compute::Datum &send,
+                        const arrow::Datum &send,
                         std::shared_ptr<Result> &output,
                         const std::shared_ptr<DataType> &data_type,
                         cylon::net::ReduceOp reduce_op) {
@@ -62,7 +61,7 @@ cylon::Status AllReduce(cylon::net::CommType comm_type,
                                                    reduce_op);
       // build the output datum 
       if (status.is_ok()) {
-        arrow::compute::Datum global_result(recv_scalar);
+        arrow::Datum global_result(recv_scalar);
         output = std::make_shared<Result>(global_result);
       }
 
@@ -75,139 +74,76 @@ cylon::Status AllReduce(cylon::net::CommType comm_type,
 }
 
 cylon::Status DoAllReduce(std::shared_ptr<cylon::CylonContext> &ctx,
-                          const arrow::compute::Datum &send,
-                          std::shared_ptr<Result> &receive,
-                          const std::shared_ptr<DataType> &data_type,
-                          cylon::net::ReduceOp reduce_op) {
+                          const arrow::Datum &snd,
+                          std::shared_ptr<Result> &rcv,
+                          const std::shared_ptr<DataType> &dtype,
+                          cylon::net::ReduceOp red_op) {
   auto comm_type = ctx->GetCommType();
-  switch (data_type->getType()) {
-    case Type::BOOL:
-      return cylon::compute::AllReduce<arrow::BooleanType>(comm_type,
-                                                           send,
-                                                           receive,
-                                                           data_type,
-                                                           reduce_op);
-    case Type::UINT8:
-      return cylon::compute::AllReduce<arrow::UInt8Type>(comm_type,
-                                                         send,
-                                                         receive,
-                                                         data_type,
-                                                         reduce_op);
-    case Type::INT8:
-      return cylon::compute::AllReduce<arrow::Int8Type>(comm_type,
-                                                        send,
-                                                        receive,
-                                                        data_type,
-                                                        reduce_op);
-    case Type::UINT16:
-      return cylon::compute::AllReduce<arrow::UInt16Type>(comm_type,
-                                                          send,
-                                                          receive,
-                                                          data_type,
-                                                          reduce_op);
-    case Type::INT16:
-      return cylon::compute::AllReduce<arrow::Int16Type>(comm_type,
-                                                         send,
-                                                         receive,
-                                                         data_type,
-                                                         reduce_op);
-    case Type::UINT32:
-      return cylon::compute::AllReduce<arrow::UInt32Type>(comm_type,
-                                                          send,
-                                                          receive,
-                                                          data_type,
-                                                          reduce_op);
-    case Type::INT32:
-      return cylon::compute::AllReduce<arrow::Int32Type>(comm_type,
-                                                         send,
-                                                         receive,
-                                                         data_type,
-                                                         reduce_op);
-    case Type::UINT64:
-      return cylon::compute::AllReduce<arrow::UInt64Type>(comm_type,
-                                                          send,
-                                                          receive,
-                                                          data_type,
-                                                          reduce_op);
-    case Type::INT64:
-      return cylon::compute::AllReduce<arrow::Int64Type>(comm_type,
-                                                         send,
-                                                         receive,
-                                                         data_type,
-                                                         reduce_op);
-    case Type::FLOAT:
-      return cylon::compute::AllReduce<arrow::FloatType>(comm_type,
-                                                         send,
-                                                         receive,
-                                                         data_type,
-                                                         reduce_op);
-    case Type::DOUBLE:
-      return cylon::compute::AllReduce<arrow::DoubleType>(comm_type,
-                                                          send,
-                                                          receive,
-                                                          data_type,
-                                                          reduce_op);
-    case Type::HALF_FLOAT:
-    case Type::STRING:
-    case Type::BINARY:
-    case Type::FIXED_SIZE_BINARY:
-    case Type::DATE32:
-    case Type::DATE64:
-    case Type::TIMESTAMP:
-    case Type::TIME32:
-    case Type::TIME64:
-    case Type::INTERVAL:
-    case Type::DECIMAL:
-    case Type::LIST:
-    case Type::EXTENSION:
-    case Type::FIXED_SIZE_LIST:
-    case Type::DURATION:
-    default: return cylon::Status(cylon::Code::Invalid, "data type not supported!");
+  switch (dtype->getType()) {
+    case Type::BOOL:return cylon::compute::AllReduce<arrow::BooleanType>(comm_type, snd, rcv, dtype, red_op);
+    case Type::UINT8:return cylon::compute::AllReduce<arrow::UInt8Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::INT8:return cylon::compute::AllReduce<arrow::Int8Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::UINT16:return cylon::compute::AllReduce<arrow::UInt16Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::INT16:return cylon::compute::AllReduce<arrow::Int16Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::UINT32:return cylon::compute::AllReduce<arrow::UInt32Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::INT32:return cylon::compute::AllReduce<arrow::Int32Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::UINT64:return cylon::compute::AllReduce<arrow::UInt64Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::INT64:return cylon::compute::AllReduce<arrow::Int64Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::FLOAT:return cylon::compute::AllReduce<arrow::FloatType>(comm_type, snd, rcv, dtype, red_op);
+    case Type::DOUBLE:return cylon::compute::AllReduce<arrow::DoubleType>(comm_type, snd, rcv, dtype, red_op);
+    case Type::HALF_FLOAT:break;
+    case Type::STRING:break;
+    case Type::BINARY:break;
+    case Type::FIXED_SIZE_BINARY:break;
+    case Type::DATE32:break;
+    case Type::DATE64:break;
+    case Type::TIMESTAMP:break;
+    case Type::TIME32:break;
+    case Type::TIME64:break;
+    case Type::INTERVAL:break;
+    case Type::DECIMAL:break;
+    case Type::LIST:break;
+    case Type::EXTENSION:break;
+    case Type::FIXED_SIZE_LIST:break;
+    case Type::DURATION:break;
   }
+  return cylon::Status(cylon::Code::Invalid, "data type not supported!");
 }
 
 cylon::Status Sum(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output) {
   auto ctx = table->GetContext();
   const std::shared_ptr<Column> &col = table->GetColumn(col_idx); // cylon column object
   const std::shared_ptr<DataType> &data_type = col->GetDataType();
-  const arrow::compute::Datum input(col->GetColumnData()); // input datum
+  const arrow::Datum input(col->GetColumnData()); // input datum
 
   // do local operation
-  arrow::compute::FunctionContext fn_ctx(cylon::ToArrowPool(ctx));
-  arrow::compute::Datum local_result;
-  arrow::Status status = arrow::compute::Sum(&fn_ctx, input, &local_result);
+  arrow::compute::ExecContext exec_ctx(cylon::ToArrowPool(ctx));
+  arrow::Result<arrow::Datum> sum_res = arrow::compute::Sum(input, &exec_ctx);
 
-  if (status.ok()) {
-    return DoAllReduce(ctx, local_result, output, data_type, cylon::net::ReduceOp::SUM);
+  if (sum_res.ok()) {
+    return DoAllReduce(ctx, sum_res.ValueOrDie(), output, data_type, cylon::net::ReduceOp::SUM);
   } else {
+    const auto& status = sum_res.status();
     LOG(ERROR) << "Local aggregation failed! " << status.message();
     return cylon::Status(Code::ExecutionError, status.message());
   }
 }
 
 cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output) {
-  arrow::Status status;
   auto ctx = table->GetContext();
 
   const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
   const std::shared_ptr<DataType> &data_type = cylon::Int64();
+  const arrow::Datum input(col->GetColumnData()); // input datum
 
-  // count currently requires a single array (not a chunked array). So, merge arrays
-  std::shared_ptr<arrow::Array> combined_input;
-  if (!(arrow::Concatenate(col->GetColumnData()->chunks(), cylon::ToArrowPool(ctx), &combined_input)).ok()) {
-    LOG(ERROR) << "Array concatenation failed! " << status.message();
-    return cylon::Status(Code::ExecutionError, status.message());
-  }
-  const arrow::compute::Datum input(combined_input);
+  arrow::compute::ExecContext exec_ctx(cylon::ToArrowPool(ctx));
+  arrow::compute::CountOptions options(arrow::compute::CountOptions::COUNT_NON_NULL);
+  const arrow::Result<arrow::Datum> &count_res = arrow::compute::Count(input, options, &exec_ctx);
 
-  arrow::compute::FunctionContext fn_ctx(cylon::ToArrowPool(ctx));
-  arrow::compute::CountOptions options(arrow::compute::CountOptions::COUNT_ALL);
-  arrow::compute::Datum local_result;
-  status = arrow::compute::Count(&fn_ctx, options, input, &local_result);
-
-  if (status.ok()) {
-    return DoAllReduce(ctx, local_result, output, data_type, cylon::net::ReduceOp::SUM);
+  if (count_res.ok()) {
+    return DoAllReduce(ctx, count_res.ValueOrDie(), output, data_type, cylon::net::ReduceOp::SUM);
   } else {
+    const auto& status = count_res.status();
     LOG(ERROR) << "Local aggregation failed! " << status.message();
     return cylon::Status(Code::ExecutionError, status.message());
   }
@@ -228,17 +164,19 @@ cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table, int32_t col_idx
 
   const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
   const std::shared_ptr<DataType> &data_type = col->GetDataType();
-  const arrow::compute::Datum input(col->GetColumnData());
+  const arrow::Datum input(col->GetColumnData());
 
-  arrow::compute::FunctionContext fn_ctx(cylon::ToArrowPool(ctx));
-  arrow::compute::MinMaxOptions options;
-  arrow::compute::Datum local_result; // minmax returns a vector<Datum>{min, max}
-  arrow::Status status = arrow::compute::MinMax(&fn_ctx, options, input, &local_result);
+  arrow::compute::ExecContext exec_context(cylon::ToArrowPool(ctx));
+  arrow::compute::MinMaxOptions options(arrow::compute::MinMaxOptions::SKIP);
+  const arrow::Result<arrow::Datum> &result = arrow::compute::MinMax(input, options, &exec_context);
 
-  if (status.ok()) {
-    return DoAllReduce(ctx, local_result.collection().at(minMax), output, data_type,
+  if (result.ok()) {
+    const arrow::Datum& local_result = result.ValueOrDie(); // minmax returns a structscalar 
+    const auto& struct_scalar = local_result.scalar_as<arrow::StructScalar>();
+    return DoAllReduce(ctx, arrow::Datum(struct_scalar.value.at(minMax)), output, data_type,
                        minMax ? cylon::net::ReduceOp::MIN : cylon::net::ReduceOp::MAX);
   } else {
+    const auto& status = result.status();
     LOG(ERROR) << "Local aggregation failed! " << status.message();
     return cylon::Status(Code::ExecutionError, status.message());
   }
@@ -294,7 +232,6 @@ cylon::Status CreateTableFromScalar(const std::shared_ptr<cylon::Table> &input,
                                     std::shared_ptr<cylon::Table> &output) {
 
   switch (result->GetResult().scalar()->type->id()) {
-
     case arrow::Type::NA: break;
     case arrow::Type::BOOL: {
       return ResolveTableFromScalar<arrow::BooleanType>(input, col_idx, result, output);
@@ -338,11 +275,9 @@ cylon::Status CreateTableFromScalar(const std::shared_ptr<cylon::Table> &input,
     case arrow::Type::TIMESTAMP:break;
     case arrow::Type::TIME32:break;
     case arrow::Type::TIME64:break;
-    case arrow::Type::INTERVAL:break;
     case arrow::Type::DECIMAL:break;
     case arrow::Type::LIST:break;
     case arrow::Type::STRUCT:break;
-    case arrow::Type::UNION:break;
     case arrow::Type::DICTIONARY:break;
     case arrow::Type::MAP:break;
     case arrow::Type::EXTENSION:break;
@@ -351,6 +286,11 @@ cylon::Status CreateTableFromScalar(const std::shared_ptr<cylon::Table> &input,
     case arrow::Type::LARGE_STRING:break;
     case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
+    case arrow::Type::INTERVAL_MONTHS:break;
+    case arrow::Type::INTERVAL_DAY_TIME:break;
+    case arrow::Type::SPARSE_UNION:break;
+    case arrow::Type::DENSE_UNION:break;
+    case arrow::Type::MAX_ID:break;
   }
   return cylon::Status(Code::NotImplemented, "Not Supported Type");
 }

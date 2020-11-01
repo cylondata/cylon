@@ -14,7 +14,6 @@
 
 #include "table_api.hpp"
 
-#include <arrow/compute/context.h>
 #include <glog/logging.h>
 
 #include <chrono>

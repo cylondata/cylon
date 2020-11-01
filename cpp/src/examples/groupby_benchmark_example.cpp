@@ -84,14 +84,15 @@ void HashArrowGroupBy(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Tabl
   s = idx_builder.Reserve(groups);
   s = val_builder.Reserve(groups);
 
-  arrow::compute::FunctionContext fn_ctx;
-  arrow::compute::Datum res;
+  arrow::compute::ExecContext fn_ctx(pool);
+  arrow::Datum res;
 
   for (auto &p:  map) {
     idx_builder.UnsafeAppend(p.first);
 
     s = p.second->Finish(&temp);
-    s = arrow::compute::Sum(&fn_ctx, temp, &res);
+    const arrow::Result<arrow::Datum> &result = arrow::compute::Sum(arrow::Datum(temp), &fn_ctx);
+    res = result.ValueOrDie();
     p.second->Reset();
     temp.reset();
 
@@ -241,11 +242,13 @@ void ArrowGroupBy(std::shared_ptr<cylon::Table> &ctable, std::shared_ptr<cylon::
   s = val_builder.Reserve(boundaries.size());
   std::shared_ptr<arrow::Array> out_val;
 
-  arrow::compute::FunctionContext fn_ctx;
-  arrow::compute::Datum res;
+  arrow::compute::ExecContext fn_ctx;
+  arrow::Datum res;
   int64_t start = 0;
   for (auto &end: boundaries) {
-    s = arrow::compute::Sum(&fn_ctx, val_col->Slice(start, end - start), &res);
+    const arrow::Result<arrow::Datum>
+        &result = arrow::compute::Sum(arrow::Datum(val_col->Slice(start, end - start)), &fn_ctx);
+    res = result.ValueOrDie();
     start = end;
 
     val_builder.UnsafeAppend(std::static_pointer_cast<arrow::DoubleScalar>(res.scalar())->value);
