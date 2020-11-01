@@ -130,6 +130,15 @@ read_python_requirements(){
   done < "$input"
 }
 
+check_python_pre_requisites(){
+  echo "Checking Python Pre_-requisites"
+  response=$(python3 -c \
+    "import numpy; print('Numpy Installation');\
+    print('Version {}'.format(numpy.__version__));\
+    print('Library Installation Path {}'.format(numpy.get_include()))")
+  echo "${response}"
+}
+
 INSTALL_CMD=
 if [ -z "$INSTALL_PATH" ]
 then
@@ -173,6 +182,7 @@ build_pyarrow(){
   popd || exit
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
+  check_python_pre_requisites
   pushd ${BUILD_PATH}/arrow/arrow/python || exit 1
   PYARROW_CMAKE_OPTIONS="-DCMAKE_MODULE_PATH=${ARROW_HOME}/lib/cmake/arrow" python3 setup.py install || exit 1
   popd || exit 1
@@ -187,6 +197,7 @@ build_python() {
   # shellcheck disable=SC1090
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
+  check_python_pre_requisites
   pushd python || exit 1
   pip3 uninstall -y pycylon
   make clean
@@ -203,6 +214,7 @@ release_python() {
   echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
   source "${PYTHON_ENV_PATH}"/bin/activate
   read_python_requirements
+  check_python_pre_requisites
   pushd python || exit 1
   pip3 uninstall -y pycylon
   make clean

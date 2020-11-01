@@ -144,11 +144,15 @@ class ArrowStringSortKernel : public ArrowArraySortKernel {
     auto array = std::static_pointer_cast<arrow::StringArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(int64_t);
-    arrow::Status status = AllocateBuffer(pool_, buf_size, &indices_buf);
-    if (status != arrow::Status::OK()) {
+
+    arrow::Result<std::unique_ptr<arrow::Buffer>> result = AllocateBuffer(buf_size + 1, pool_);
+    const arrow::Status &status = result.status();
+    if (!status.ok()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
       return -1;
     }
+    indices_buf = std::move(result.ValueOrDie());
+
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
     for (int64_t i = 0; i < values->length(); i++) {
       indices_begin[i] = i;
@@ -174,12 +178,13 @@ class ArrowFixedSizeBinarySortKernel : public ArrowArraySortKernel {
     auto array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
-    arrow::Status status = AllocateBuffer(pool_,
-                                          buf_size + 1, &indices_buf);
-    if (status != arrow::Status::OK()) {
+    arrow::Result<std::unique_ptr<arrow::Buffer>> result = AllocateBuffer(buf_size + 1, pool_);
+    const arrow::Status &status = result.status();
+    if (!status.ok()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
       return -1;
     }
+    indices_buf = std::move(result.ValueOrDie());
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
     for (int64_t i = 0; i < values->length(); i++) {
       indices_begin[i] = i;
@@ -204,12 +209,13 @@ class ArrowBinarySortKernel : public ArrowArraySortKernel {
     auto array = std::static_pointer_cast<arrow::BinaryArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
-    arrow::Status status = AllocateBuffer(pool_,
-        buf_size + 1, &indices_buf);
-    if (status != arrow::Status::OK()) {
+    arrow::Result<std::unique_ptr<arrow::Buffer>> result = AllocateBuffer(buf_size + 1, pool_);
+    const arrow::Status &status = result.status();
+    if (!status.ok()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
       return -1;
     }
+    indices_buf = std::move(result.ValueOrDie());
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
     for (int64_t i = 0; i < values->length(); i++) {
       indices_begin[i] = i;

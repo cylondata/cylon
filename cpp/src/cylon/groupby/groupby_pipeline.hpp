@@ -20,40 +20,48 @@
 #include <table.hpp>
 #include <ctx/arrow_memory_pool_utils.hpp>
 #include <arrow/compute/api.h>
-#include <arrow/compute/kernels/minmax.h> // minmax kernel is not included in the arrrow/compute/api.h
 
 #include "groupby_aggregate_ops.hpp"
 
 namespace cylon {
 
 typedef
-arrow::Status (*AggregateFptr)(const std::shared_ptr<arrow::Array> &array,
-                               arrow::compute::FunctionContext *fn_ctx,
-                               arrow::compute::Datum *res);
+arrow::Status (*AggregateFptr)(const arrow::Datum &array,
+                               arrow::compute::ExecContext *fn_ctx,
+                               arrow::Datum *res);
 
-inline arrow::Status Sum(const std::shared_ptr<arrow::Array> &array,
-                         arrow::compute::FunctionContext *fn_ctx,
-                         arrow::compute::Datum *res) {
-  return arrow::compute::Sum(fn_ctx, array, res);
+inline arrow::Status Sum(const arrow::Datum &array, arrow::compute::ExecContext *fn_ctx, arrow::Datum *res) {
+  auto result = arrow::compute::Sum(array, fn_ctx);
+  if (result.ok()) {
+    *res = result.ValueOrDie();
+  }
+  return result.status();
 }
 
-inline arrow::Status Count(const std::shared_ptr<arrow::Array> &array,
-                           arrow::compute::FunctionContext *fn_ctx,
-                           arrow::compute::Datum *res) {
-  static const arrow::compute::CountOptions options(arrow::compute::CountOptions::COUNT_ALL);
-  return arrow::compute::Count(fn_ctx, options, array, res);
+inline arrow::Status Count(const arrow::Datum &array,
+                           arrow::compute::ExecContext *fn_ctx,
+                           arrow::Datum *res) {
+  auto result = arrow::compute::Count(array, arrow::compute::CountOptions::Defaults(), fn_ctx);
+
+  if (result.ok()) {
+    *res = result.ValueOrDie();
+  }
+  return result.status();
 }
 
 template<bool minMax>
-inline arrow::Status MinMax(const std::shared_ptr<arrow::Array> &array,
-                            arrow::compute::FunctionContext *fn_ctx,
-                            arrow::compute::Datum *res) {
-  static const arrow::compute::MinMaxOptions options;
-  arrow::compute::Datum local_result; // minmax returns a std::vector<Datum>{min, max}
-  auto status = arrow::compute::MinMax(fn_ctx, options, array, &local_result);
+inline arrow::Status MinMax(const arrow::Datum &array,
+                            arrow::compute::ExecContext *fn_ctx,
+                            arrow::Datum *res) {
+  auto result = arrow::compute::MinMax(array, arrow::compute::MinMaxOptions::Defaults(), fn_ctx);
 
-  *res = local_result.collection().at(minMax);
-  return status;
+  if (result.ok()) {
+    arrow::Datum local_result = result.ValueOrDie(); // minmax returns a structscalar{min, max}
+    const auto &struct_scalar = local_result.scalar_as<arrow::StructScalar>();
+    *res = arrow::Datum(struct_scalar.value.at(minMax));
+  }
+
+  return result.status();
 }
 
 inline AggregateFptr PickAggregareFptr(const cylon::GroupByAggregationOp aggregation_op) {
@@ -90,13 +98,13 @@ arrow::Status AggregateArray(arrow::MemoryPool *pool,
     return s;
   }
 
-  arrow::compute::FunctionContext fn_ctx;
-  arrow::compute::Datum res;
+  arrow::compute::ExecContext exec_ctx(pool);
+  arrow::Datum res;
 
   AggregateFptr aggregate_fptr = PickAggregareFptr(aggregate_op);
   int64_t start = 0;
   for (auto &end: boundaries) {
-    s = aggregate_fptr(array->Slice(start, end - start), &fn_ctx, &res);
+    s = aggregate_fptr(arrow::Datum(array->Slice(start, end - start)), &exec_ctx, &res);
     if (!s.ok()) {
       return s;
     }
