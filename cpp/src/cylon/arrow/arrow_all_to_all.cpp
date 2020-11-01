@@ -102,8 +102,10 @@ bool ArrowAllToAll::isComplete() {
             hdr[4] = data->length;
             hdr[5] = t.second->currentTable.second;
             // lets send this buffer, we need to send the length at this point
-            bool accept = all_->insert(buf->mutable_data(),
-                                       static_cast<int>(buf->size()), t.first, hdr, 6);
+            bool accept = (buf == nullptr) ?
+                          all_->insert(nullptr, 0, t.first, hdr, 6) :
+                          all_->insert(buf->mutable_data(), static_cast<int>(buf->size()), t.first, hdr, 6);
+
             if (!accept) {
               canContinue = false;
               break;
@@ -161,11 +163,11 @@ void ArrowAllToAll::close() {
   delete allocator_;
 }
 
-void debug(int thisWorker, std::string &msg) {
+/*void debug(int thisWorker, std::string &msg) {
   if (thisWorker == -1) {
     LOG(INFO) << msg;
   }
-}
+}*/
 
 bool ArrowAllToAll::onReceive(int source, std::shared_ptr<Buffer> buffer, int length) {
   std::shared_ptr<PendingReceiveTable> table = receives_[source];
@@ -230,13 +232,16 @@ bool ArrowAllToAll::onSendComplete(int target, void *buffer, int length) {
 }
 
 Status ArrowAllocator::Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) {
-  std::shared_ptr<arrow::Buffer> buf;
-  arrow::Status status = arrow::AllocateBuffer(pool, length, &buf);
-  if (status != arrow::Status::OK()) {
+  arrow::Result<std::unique_ptr<arrow::Buffer>> result = arrow::AllocateBuffer(length, pool);
+  const arrow::Status &status = result.status();
+
+  if (!status.ok()) {
     return Status(static_cast<int>(status.code()), status.message());
+  } else {
+    std::shared_ptr<arrow::Buffer> buf = std::move(result.ValueOrDie());
+    *buffer = std::make_shared<ArrowBuffer>(buf);
+    return Status::OK();
   }
-  *buffer = std::make_shared<ArrowBuffer>(buf);
-  return Status::OK();
 }
 
 ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}

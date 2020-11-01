@@ -201,7 +201,11 @@ arrow::Status CombineChunks(const std::shared_ptr<arrow::Table> &table,
                             arrow::MemoryPool *memory_pool) {
   if (table->column(col_index)->num_chunks() > 1) {
     LOG(INFO) << "Combining chunks " << table->column(col_index)->num_chunks();
-    return table->CombineChunks(memory_pool, &output_table);
+    arrow::Result<std::shared_ptr<arrow::Table>> result = table->CombineChunks(memory_pool);
+    if (result.ok()) {
+      output_table = result.ValueOrDie();
+    }
+    return result.status();
   } else {
     output_table = table;
     return arrow::Status::OK();
