@@ -703,46 +703,52 @@ cdef class Table:
         return statement
 
     def _table_from_mask(self, mask: Table) -> Table:
-        mask_dict = mask.to_pydict()
-        list_of_mask_values = list(mask_dict.values())
-        if len(list_of_mask_values) == 1:
+        mask_batches = mask.to_arrow().combine_chunks().to_batches()
+
+        if mask.column_count == 1:
             # Handle when masking is done based on a single column data
-            filter_row_indices = []
-            for idx, mask_value in enumerate(list_of_mask_values[0]):
-                if mask_value:
-                    filter_row_indices.append(idx)
-            filtered_rows = []
-            for row_id in filter_row_indices:
-                filtered_rows.append(self[row_id])
-            return Table.merge(self.context, filtered_rows)
+            return self.from_arrow(self.context, self.to_arrow().filter(mask_batches[0][0]))
         else:
             # Handle when masking is done on whole table
             filtered_all_data = []
-            table_dict = self.to_pydict()
-            list_of_table_values = list(table_dict.values())
-            for mask_col_data, table_col_data in zip(list_of_mask_values, list_of_table_values):
+            table_record_batches = self.to_arrow().combine_chunks().to_batches()
+            for mask_batch, table_batch in zip(mask_batches[0], table_record_batches[0]):
                 filtered_data = []
-                for mask_value, table_value in zip(mask_col_data, table_col_data):
-                    if mask_value:
-                        filtered_data.append(table_value)
+                for mask_value, table_value in zip(mask_batch, table_batch):
+                    if mask_value.as_py():
+                        filtered_data.append(table_value.as_py())
                     else:
                         filtered_data.append(math.nan)
                 filtered_all_data.append(filtered_data)
             return Table.from_list(self.context, self.column_names, filtered_all_data)
 
     def _aggregate_filters(self, filter: Table, op) -> Table:
-        filter1_dict = filter.to_pydict()
-        filter2_dict = self.to_pydict()
+        import time
+        t1 = time.time()
+        # filter1_dict = filter.to_pydict()
+        # filter2_dict = self.to_pydict()
+        # print("Agg Filters : Dic conversion time : ", time.time() - t1)
         aggregated_filter_response = []
-        for key1, key2 in zip(filter1_dict, filter2_dict):
-            values1, values2 = filter1_dict[key1], filter2_dict[key2]
+        for column1, column2 in zip(filter.to_arrow().combine_chunks().columns, self.to_arrow(
+                                    ).combine_chunks().columns):
             column_data = []
-            for value1, value2 in zip(values1, values2):
-                column_data.append(op(value1, value2))
+            for value1, value2 in zip(column1.chunks[0], column2.chunks[0]):
+                column_data.append(op(value1.as_py(), value2.as_py()))
             aggregated_filter_response.append(column_data)
-        return Table.from_list(self.context, self.column_names, aggregated_filter_response)
+        tb_new = Table.from_list(self.context, self.column_names, aggregated_filter_response)
+        # for key1, key2 in zip(filter1_dict, filter2_dict):
+        #     values1, values2 = filter1_dict[key1], filter2_dict[key2]
+        #     column_data = []
+        #     for value1, value2 in zip(values1, values2):
+        #         column_data.append(op(value1, value2))
+        #     aggregated_filter_response.append(column_data)
+        # tb_new = Table.from_list(self.context, self.column_names, aggregated_filter_response)
+        print("Aggregate Filter Time : ", time.time() - t1)
+        return tb_new
 
     def __getitem__(self, key) -> Table:
+        import time
+        t1 = time.time()
         py_arrow_table = self.to_arrow().combine_chunks()
         if isinstance(key, slice):
             return self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
@@ -751,8 +757,25 @@ cdef class Table:
         elif isinstance(key, str):
             index = self._resolve_column_index_from_column_name(key)
             chunked_arr = py_arrow_table.column(index)
-            return self.from_arrow(self.context, pa.Table.from_arrays([chunked_arr.chunk(0)],
-                                                                      [key]))
+            tb_filtered = self.from_arrow(self.context, pa.Table.from_arrays([chunked_arr.chunk(0)],
+                                                                             [key]))
+            print("\t Column By Extract time: ", time.time() - t1)
+            return tb_filtered
+        elif isinstance(key, List):
+            chunked_arrays = []
+            selected_columns = []
+            column_headers = self.column_names
+            for column_name in key:
+                index = -1
+                if isinstance(column_name, str):
+                    index = self._resolve_column_index_from_column_name(key)
+                elif isinstance(column_name, int):
+                    index = key
+                    chunked_arrays.append(py_arrow_table.column(index).chunk(0))
+                selected_columns.append(column_headers[index])
+            return self.from_arrow(self.context, pa.Table.from_arrays(chunked_arrays,
+                                                                      selected_columns))
+
         elif self._is_pycylon_table(key):
             return self._table_from_mask(key)
         else:
@@ -760,12 +783,23 @@ cdef class Table:
 
     def _comparison_operation(self, other, op):
         selected_data = []
-        for col in self.to_arrow().combine_chunks().columns:
+        if self.column_count == 1:
+            column_data = self.to_arrow().combine_chunks().columns[0]
             col_data = []
-            for val in col.chunks[0]:
+            for val in column_data.chunks[0]:
                 col_data.append(op(val.as_py(), other))
             selected_data.append(col_data)
-        return Table.from_list(self.context, self.column_names, selected_data)
+            tb_new = Table.from_list(self.context, self.column_names, selected_data)
+            return tb_new
+        else:
+            for col in self.to_arrow().combine_chunks().columns:
+                col_data = []
+                for val in col.chunks[0]:
+                    col_data.append(op(val.as_py(), other))
+                selected_data.append(col_data)
+            tb_new = Table.from_list(self.context, self.column_names, selected_data)
+            print("Comparison Operator Time 2: ", time.time() - t1)
+            return tb_new
 
     def __eq__(self, other) -> Table:
         return self._comparison_operation(other, operator.__eq__)
@@ -791,11 +825,11 @@ cdef class Table:
     def __and__(self, other) -> Table:
         return self._aggregate_filters(other, operator.__and__)
 
-    def to_string(self, row_limit:int =10):
+    def to_string(self, row_limit: int = 10):
         # TODO: Need to improve this method with more features:
         #  https://github.com/cylondata/cylon/issues/219
 
-        row_limit = row_limit if row_limit % 2 ==0 else row_limit + 1
+        row_limit = row_limit if row_limit % 2 == 0 else row_limit + 1
         str1 = self.to_pandas().to_string()
         if self.row_count > row_limit:
             printable_rows = []
@@ -805,7 +839,7 @@ cdef class Table:
             for i in range(len_mid_line):
                 dot_line += "."
             dot_line += "\n"
-            printable_rows = rows[:row_limit//2] + [dot_line] +  rows[-row_limit//2:]
+            printable_rows = rows[:row_limit // 2] + [dot_line] + rows[-row_limit // 2:]
             row_strs = ""
             len_row = 0
             for row_id, row_str in enumerate(printable_rows):
@@ -817,11 +851,33 @@ cdef class Table:
     def __repr__(self):
         return self.to_string()
 
-    def drop(self, column_names:List[str]):
+    def drop(self, column_names: List[str]):
         return self.from_arrow(self.context, self.to_arrow().drop(column_names))
 
+    def fillna(self, fill_value):
+        # Note: Supports numeric types only
+        filtered_arrays = []
+        for col in self.to_arrow().combine_chunks().columns:
+            for val in col.chunks:
+                filtered_arrays.append(val.fill_null(fill_value))
+        return self.from_arrow(self.context,
+                               pa.Table.from_arrays(filtered_arrays, self.column_names))
 
+    def where(self, condition not None, other=None):
+        filtered_all_data = []
+        list_of_mask_values = list(condition.to_pydict().values())
+        table_dict = self.to_pydict()
+        list_of_table_values = list(table_dict.values())
+        for mask_col_data, table_col_data in zip(list_of_mask_values, list_of_table_values):
+            filtered_data = []
+            for mask_value, table_value in zip(mask_col_data, table_col_data):
+                if mask_value:
+                    filtered_data.append(table_value)
+                else:
+                    if other:
+                        filtered_data.append(other)
+                    else:
+                        filtered_data.append(math.nan)
 
-
-
-
+            filtered_all_data.append(filtered_data)
+        return Table.from_list(self.context, self.column_names, filtered_all_data)

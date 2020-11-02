@@ -25,7 +25,7 @@ from pycylon import CylonContext
 from pycylon import Table
 from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
-from pyarrow import Table as PTable
+import pyarrow as pa
 
 '''
 Run test:
@@ -155,7 +155,7 @@ def test_filter():
                       comp_op[2](col, limit[2]))
 
 
-def test_additional_properties():
+def test_drop():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
     table1_path = '/tmp/user_usage_tm_1.csv'
@@ -166,13 +166,40 @@ def test_additional_properties():
 
     tb: Table = read_csv(ctx, table1_path, csv_read_options)
 
-    tb_new = tb.drop(['outgoing_sms_per_month'])
+    drop_column = 'outgoing_sms_per_month'
 
-    print(tb_new)
+    tb_new = tb.drop([drop_column])
 
-
-
-
+    assert not tb_new.column_names.__contains__(drop_column)
 
 
-test_additional_properties()
+def test_fillna():
+    col_names = ['col1', 'col2']
+    data_list_numeric = [[1, 2, None, 4, 5], [6, 7, 8, 9, None]]
+    fill_value = 0
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb_numeric = Table.from_list(ctx, col_names, data_list_numeric)
+
+    cn_tb_numeric_fillna = cn_tb_numeric.fillna(fill_value)
+
+    data_list = list(cn_tb_numeric_fillna.to_pydict().values())
+    for col in data_list:
+        assert not col.__contains__(None)
+        assert col.__contains__(fill_value)
+
+
+def test_where():
+    col_names = ['col1', 'col2']
+    data_list_numeric = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb = Table.from_list(ctx, col_names, data_list_numeric)
+
+    cn_tb_where = cn_tb.where(cn_tb > 3)
+
+    print(cn_tb_where)
+
+    cn_tb_where_with_other = cn_tb.where(cn_tb > 3, 100)
+
+    print(cn_tb_where_with_other)
+
+    print(cn_tb > 3)
