@@ -16,7 +16,7 @@
 #include "union.hpp"
 #include "row_comparator.hpp"
 
-void cylon::kernel::Union::InsertTable(std::shared_ptr<cylon::Table> table) {
+void cylon::kernel::Union::InsertTable(const std::shared_ptr<cylon::Table> &table) {
   std::shared_ptr<arrow::Table> arrow_table;
   table->ToArrowTable(arrow_table);
 
@@ -51,21 +51,22 @@ cylon::Status cylon::kernel::Union::Finalize(std::shared_ptr<cylon::Table> &resu
   }
   // create final table
   std::shared_ptr<arrow::Table> table = arrow::Table::Make(this->schema, final_data_arrays);
-  auto merge_status = table->CombineChunks(cylon::ToArrowPool(&*this->ctx), &table);
+  auto merge_result = table->CombineChunks(cylon::ToArrowPool(this->ctx));
+  const auto &merge_status = merge_result.status();
   if (!merge_status.ok()) {
     return Status(static_cast<int>(merge_status.code()), merge_status.message());
   }
-  result = std::make_shared<cylon::Table>(table, &*this->ctx);
+  result = std::make_shared<cylon::Table>(merge_result.ValueOrDie(), this->ctx);
   return cylon::Status::OK();
 }
 
-cylon::kernel::Union::Union(std::shared_ptr<cylon::CylonContext> ctx,
-                            std::shared_ptr<arrow::Schema> schema,
+cylon::kernel::Union::Union(const std::shared_ptr<CylonContext> &ctx,
+                            const std::shared_ptr<arrow::Schema> &schema,
                             int64_t expected_rows) {
   this->ctx = ctx;
-  auto row_comparator = cylon::kernel::RowComparator(ctx,
-                                                     std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>>(&this->tables),
-                                                     schema);
+  std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>>
+      tables_ptr = std::make_shared<std::vector<std::shared_ptr<arrow::Table>>>(this->tables);
+  auto row_comparator = cylon::kernel::RowComparator(ctx, tables_ptr, schema);
   this->rows_set = new std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>
       (expected_rows, row_comparator, row_comparator);
   this->schema = schema;

@@ -29,10 +29,11 @@ class DisUnionOp : public RootOp {
   std::shared_ptr<DisUnionOpConfig> config;
 
  public:
-  DisUnionOp(std::shared_ptr<cylon::CylonContext> ctx, std::shared_ptr<arrow::Schema> schema,
+  DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
+             const std::shared_ptr<arrow::Schema> &schema,
              int id,
-             std::shared_ptr<ResultsCallback> callback,
-             std::shared_ptr<DisUnionOpConfig> config);
+             std::shared_ptr<ResultsCallback> &callback,
+             std::shared_ptr<DisUnionOpConfig> &config);
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_

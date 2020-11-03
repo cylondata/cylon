@@ -30,7 +30,7 @@ class SplitOpConfig {
 
  public:
   SplitOpConfig(int no_of_partitions, std::shared_ptr<std::vector<int>> hash_columns);
-  int NoOfPartitions();
+  int NoOfPartitions() const;
   std::shared_ptr<std::vector<int>> HashColumns();
 
   static std::shared_ptr<SplitOpConfig> Make(int no_partitions, const std::vector<int> &hash_cols);
@@ -54,7 +54,7 @@ class SplitOp : public Op {
           const std::shared_ptr<ResultsCallback> &callback,
           const std::shared_ptr<SplitOpConfig> &cfg);
 
-  bool Execute(int tag, std::shared_ptr<Table> table) override;
+  bool Execute(int tag, std::shared_ptr<Table> &table) override;
 
   void OnParentsFinalized() override;
 

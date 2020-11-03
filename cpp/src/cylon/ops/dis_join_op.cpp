@@ -18,7 +18,7 @@
 #include "merge_op.hpp"
 #include "split_op.hpp"
 
-cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
+cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
                             const std::shared_ptr<arrow::Schema> &schema,
                             int id,
                             const std::shared_ptr<ResultsCallback> &callback,
@@ -69,7 +69,7 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<cylon::CylonContext>& ctx,
   execution->AddJoin(join_op);
 }
 
-bool cylon::DisJoinOP::Execute(int tag, shared_ptr<Table> table) {
+bool cylon::DisJoinOP::Execute(int tag, std::shared_ptr<Table> &table) {
   if (tag != LEFT_RELATION && tag != RIGHT_RELATION) {
     LOG(INFO) << "Unknown tag";
     return false;

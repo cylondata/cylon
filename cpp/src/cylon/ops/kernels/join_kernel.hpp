@@ -40,7 +40,7 @@ class JoinKernel {
   JoinKernel(const std::shared_ptr<cylon::CylonContext> &ctx,
              const std::shared_ptr<arrow::Schema> &schema,
              const std::shared_ptr<cylon::join::config::JoinConfig> &join_config);
-  void InsertTable(int tag, std::shared_ptr<cylon::Table> table);
+  void InsertTable(int tag, const std::shared_ptr<cylon::Table> &table);
   cylon::Status Finalize(std::shared_ptr<cylon::Table> &result);
 };
 }

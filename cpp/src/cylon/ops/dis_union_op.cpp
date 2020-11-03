@@ -17,15 +17,14 @@
 #include "all_to_all_op.hpp"
 #include "union_op.hpp"
 
-cylon::DisUnionOp::DisUnionOp(std::shared_ptr<cylon::CylonContext> ctx,
-                              std::shared_ptr<arrow::Schema> schema,
+cylon::DisUnionOp::DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
+                              const std::shared_ptr<arrow::Schema> &schema,
                               int id,
-                              shared_ptr<ResultsCallback> callback,
-                              shared_ptr<DisUnionOpConfig> config) : RootOp(ctx, schema, id, callback) {
+                              std::shared_ptr<ResultsCallback> &callback,
+                              std::shared_ptr<DisUnionOpConfig> &config) : RootOp(ctx, schema, id, callback) {
   auto execution = new RoundRobinExecution();
   execution->AddOp(this);
   this->SetExecution(execution);
-
 
   const int32_t PARTITION_OP_ID = 0;
   const int32_t SHUFFLE_OP_ID = 1;
@@ -33,12 +32,14 @@ cylon::DisUnionOp::DisUnionOp(std::shared_ptr<cylon::CylonContext> ctx,
 
   // create graph
   std::vector<int> part_cols{};
+  part_cols.reserve(schema->num_fields());
   for (int c = 0; c < schema->num_fields(); c++) {
     part_cols.push_back(c);
   }
   auto partition_op = new PartitionOp(ctx, schema, PARTITION_OP_ID, callback,
                                       std::make_shared<PartitionOpConfig>(ctx->GetWorldSize(),
-                                                                          std::make_shared<std::vector<int>>(std::move(part_cols))));
+                                                                          std::make_shared<std::vector<int>>(std::move(
+                                                                              part_cols))));
 
   this->AddChild(partition_op);
   execution->AddOp(partition_op);
@@ -47,7 +48,8 @@ cylon::DisUnionOp::DisUnionOp(std::shared_ptr<cylon::CylonContext> ctx,
   partition_op->AddChild(shuffle_op);
   execution->AddOp(shuffle_op);
 
-  auto union_op = new UnionOp(ctx, schema, UNION_OP_ID, callback, std::make_shared<UnionOpConfig>());
+  std::shared_ptr<UnionOpConfig> union_op_config = std::make_shared<UnionOpConfig>();
+  auto union_op = new UnionOp(ctx, schema, UNION_OP_ID, callback, union_op_config);
   shuffle_op->AddChild(union_op);
   execution->AddOp(union_op);
   // done creating graph

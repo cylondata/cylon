@@ -122,7 +122,7 @@ class Op {
    * @param tag
    * @param table
    */
-  void InsertTable(int tag, std::shared_ptr<cylon::Table> table);
+  void InsertTable(int tag, std::shared_ptr<Table> &table);
 
   /**
    * This function defines the execution logic of this op. It can be either a computation or a communication
@@ -131,7 +131,7 @@ class Op {
    * @return True if this table has been processed, False if this table is partially processed. If True is returned,
    * same table will be sent in the next iteration. State can be saved local to the Op, if partially processed.
    */
-  virtual bool Execute(int tag, std::shared_ptr<Table> table) = 0;
+  virtual bool Execute(int tag, std::shared_ptr<Table> &table) = 0;
 
   /**
    * This is where this Op get's CPU time. Progress will do following things in order.
@@ -180,7 +180,7 @@ class RootOp : public Op {
          const std::shared_ptr<ResultsCallback> &callback);
   bool Finalize() override;
   void OnParentsFinalized() override;
-  bool Execute(int tag, std::shared_ptr<Table> table) override;
+  bool Execute(int tag, std::shared_ptr<Table> &table) override;
   Execution *GetExecution();
   void WaitForCompletion();
 };

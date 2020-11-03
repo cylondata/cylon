@@ -162,8 +162,8 @@ void create_int64_table(char *const *argv,
   arrow::Int64Builder right_id_builder(pool);
   arrow::Int64Builder cost_builder(pool);
 
-  std::mt19937_64 gen (std::random_device{}());
-  uint64_t count = stoull(argv[1]);
+  std::mt19937_64 gen(std::random_device{}());
+  uint64_t count = std::stoull(argv[1]);
   uint64_t range = count * ctx->GetWorldSize();
   srand(time(NULL) + ctx->GetRank());
 

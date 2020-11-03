@@ -41,7 +41,7 @@ class JoinOp : public Op {
          const std::shared_ptr<ResultsCallback> &callback,
          const std::shared_ptr<cylon::join::config::JoinConfig> &config);
 
-  bool Execute(int tag, std::shared_ptr<Table> table) override;
+  bool Execute(int tag, std::shared_ptr<Table> &table) override;
 
   void OnParentsFinalized() override;
 

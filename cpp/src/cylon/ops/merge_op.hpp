@@ -24,14 +24,14 @@
 namespace cylon {
 class MergeOp : public Op {
  private:
-  std::unordered_map<int32_t, vector<std::shared_ptr<arrow::Table>>> received_tables_;
+  std::unordered_map<int32_t, std::vector<std::shared_ptr<arrow::Table>>> received_tables_;
  public:
   MergeOp(const std::shared_ptr<CylonContext> &ctx,
           const std::shared_ptr<arrow::Schema> &schema,
           int32_t id,
           const std::shared_ptr<ResultsCallback> &callback);
 
-  bool Execute(int tag, std::shared_ptr<Table> table) override;
+  bool Execute(int tag, std::shared_ptr<Table> &table) override;
 
   void OnParentsFinalized() override;
 

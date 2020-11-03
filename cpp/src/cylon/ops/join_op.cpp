@@ -29,7 +29,7 @@ cylon::JoinOp::JoinOp(const std::shared_ptr<CylonContext> &ctx,
   join_kernel_ = new cylon::kernel::JoinKernel(ctx, schema, config);
 }
 
-bool cylon::JoinOp::Execute(int tag, std::shared_ptr<Table> table) {
+bool cylon::JoinOp::Execute(int tag, std::shared_ptr<Table> &table) {
   // do join
   join_kernel_->InsertTable(tag, table);
   return true;

@@ -40,7 +40,7 @@ cylon::PartitionOp::PartitionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
                                 const std::shared_ptr<PartitionOpConfig> &config) :
                                 Op(ctx, schema, id, callback), config(config) {}
 
-bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
+bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> &table) {
   if (!started_time) {
     start = std::chrono::high_resolution_clock::now();
     started_time = true;
@@ -50,10 +50,10 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> table) {
   // todo pass ctx as a shared pointer
   std::shared_ptr<std::vector<int>> kPtr = this->config->HashColumns();
   if (kPtr->size() > 1) {
-    cylon::kernel::HashPartition(&*this->ctx_, table, *kPtr,
-                                   this->config->NoOfPartitions(), &out);
+    cylon::kernel::HashPartition(this->ctx_, table, *kPtr,
+                                 this->config->NoOfPartitions(), &out);
   } else {
-    cylon::kernel::HashPartition(&*this->ctx_, table, kPtr->at(0),
+    cylon::kernel::HashPartition(this->ctx_, table, kPtr->at(0),
                                  this->config->NoOfPartitions(), &out);
   }
   for (auto const &tab:out) {

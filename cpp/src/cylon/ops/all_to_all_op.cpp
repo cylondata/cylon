@@ -14,18 +14,18 @@
 
 #include "all_to_all_op.hpp"
 
-cylon::AllToAllOp::AllToAllOp(const std::shared_ptr<cylon::CylonContext> &ctx,
+cylon::AllToAllOp::AllToAllOp(const std::shared_ptr<CylonContext> &ctx,
                               const std::shared_ptr<arrow::Schema> &schema,
                               int id,
                               const std::shared_ptr<ResultsCallback> &callback,
-                              const std::shared_ptr<AllToAllOpConfig> &config) :
-                                Op(ctx, schema, id, callback) {
+                              const std::shared_ptr<AllToAllOpConfig> &config)
+    : Op(ctx, schema, id, callback) {
   class AllToAllListener : public cylon::ArrowCallback {
     AllToAllOp *shuffle_op;
-    cylon::CylonContext *ctx;
+    std::shared_ptr<CylonContext> ctx;
 
    public:
-    explicit AllToAllListener(cylon::CylonContext *ctx, AllToAllOp *shuffle_op) {
+    explicit AllToAllListener(const std::shared_ptr<CylonContext> &ctx, AllToAllOp *shuffle_op) {
       this->shuffle_op = shuffle_op;
       this->ctx = ctx;
     }
@@ -39,12 +39,14 @@ cylon::AllToAllOp::AllToAllOp(const std::shared_ptr<cylon::CylonContext> &ctx,
     };
   };
   this->finish_called_ = false;
-  this->all_to_all_ = new cylon::ArrowAllToAll(ctx.get(), ctx->GetNeighbours(true),
-                                           ctx->GetNeighbours(true), id,
-                                           std::make_shared<AllToAllListener>(&*ctx, this), schema);
+  std::shared_ptr<AllToAllListener> all_to_all_listener = std::make_shared<AllToAllListener>(ctx, this);
+  this->all_to_all_ = new cylon::ArrowAllToAll(const_cast<std::shared_ptr<CylonContext> &>(ctx),
+                                               ctx->GetNeighbours(true),
+                                               ctx->GetNeighbours(true), id,
+                                               all_to_all_listener, schema);
 }
 
-bool cylon::AllToAllOp::Execute(int tag, shared_ptr<Table> table) {
+bool cylon::AllToAllOp::Execute(int tag, std::shared_ptr<Table> &table) {
   if (!started_time) {
     start = std::chrono::high_resolution_clock::now();
     started_time = true;
@@ -59,7 +61,6 @@ bool cylon::AllToAllOp::Execute(int tag, shared_ptr<Table> table) {
   }
   auto t2 = std::chrono::high_resolution_clock::now();
   exec_time += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  return true;
   return true;
 }
 

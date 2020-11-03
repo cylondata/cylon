@@ -40,13 +40,15 @@ cylon::SplitOp::SplitOp(const std::shared_ptr<CylonContext> &ctx,
   std::iota (std::begin(hash_targets), std::end(hash_targets), 0);
   for (int i = 0; i < schema->num_fields(); i++) {
     std::shared_ptr<ArrowArrayStreamingSplitKernel> splitKernel;
-    Status status = CreateStreamingSplitter(schema->fields()[i]->type(), targets,
-        cylon::ToArrowPool(ctx.get()), &splitKernel);
+    Status status = CreateStreamingSplitter(schema->fields()[i]->type(),
+                                            targets,
+                                            cylon::ToArrowPool(const_cast<std::shared_ptr<cylon::CylonContext> &>(ctx)),
+                                            &splitKernel);
     received_tables_.push_back(splitKernel);
   }
 }
 
-bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> cy_table) {
+bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> &cy_table) {
   if (!started_time) {
     start = std::chrono::high_resolution_clock::now();
     started_time = true;
@@ -62,7 +64,7 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> cy_table) {
   std::vector<uint32_t> cnts(kI * size, 0);
   std::vector<int64_t> outPartitions;
   outPartitions.reserve(length);
-  Status status = HashPartitionArray(cylon::ToArrowPool(ctx_.get()), arr,
+  Status status = HashPartitionArray(cylon::ToArrowPool(ctx_), arr,
                                      hash_targets, &outPartitions, cnts);
   std::string s = " ";
   for (int i = 0; i < length; i++) {
@@ -123,7 +125,7 @@ bool cylon::SplitOp::Finalize() {
 
   for (int i = 0; i < kI; i++) {
     std::shared_ptr<arrow::Table> t = arrow::Table::Make(schema, *data_arrays[i]);
-    std::shared_ptr<cylon::Table> kY = std::make_shared<cylon::Table>(t, ctx_.get());
+    std::shared_ptr<cylon::Table> kY = std::make_shared<cylon::Table>(t, ctx_);
     kY->retainMemory(false);
     this->InsertToAllChildren(id, kY);
   }
@@ -145,7 +147,7 @@ SplitOpConfig::SplitOpConfig(int no_of_partitions, std::shared_ptr<std::vector<i
   LOG(INFO) << "Done creating split config";
 }
 
-int SplitOpConfig::NoOfPartitions() {
+int SplitOpConfig::NoOfPartitions() const {
   return no_of_partitions;
 }
 

@@ -35,12 +35,12 @@ class UnionOp : public Op {
   cylon::kernel::Union *union_kernel;
 
  public:
-  UnionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
+  UnionOp(const std::shared_ptr<CylonContext> &ctx,
           const std::shared_ptr<arrow::Schema> &schema,
           int id,
           const std::shared_ptr<ResultsCallback> &callback,
           const std::shared_ptr<UnionOpConfig> &config);
-  bool Execute(int tag, std::shared_ptr<Table> table) override;
+  bool Execute(int tag, std::shared_ptr<Table> &table) override;
 
   void OnParentsFinalized() override;
   bool Finalize() override;

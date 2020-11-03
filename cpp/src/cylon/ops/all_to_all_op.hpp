@@ -25,13 +25,13 @@ class AllToAllOpConfig {
 class AllToAllOp : public Op {
 
  private:
-  cylon::ArrowAllToAll *all_to_all_;
+  cylon::ArrowAllToAll *all_to_all_{};
   bool finish_called_;
   std::chrono::high_resolution_clock::time_point start;
   bool started_time = false;
   long exec_time = 0;
  public:
-  AllToAllOp(const std::shared_ptr<cylon::CylonContext> &ctx,
+  AllToAllOp(const std::shared_ptr<CylonContext> &ctx,
              const std::shared_ptr<arrow::Schema> &schema,
              int id,
              const std::shared_ptr<ResultsCallback> &callback,
@@ -39,7 +39,7 @@ class AllToAllOp : public Op {
 
   bool IsComplete() override;
 
-  bool Execute(int tag, std::shared_ptr<Table> table) override;
+  bool Execute(int tag, std::shared_ptr<Table> &table) override;
 
   bool Finalize() override;
 

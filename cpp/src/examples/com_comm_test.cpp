@@ -19,37 +19,37 @@
 
 int main(int argc, char *argv[]) {
 
-  auto mpi_config = new cylon::net::MPIConfig();
+  auto mpi_config = cylon::net::MPIConfig::Make();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  shared_ptr<cylon::Table> table1, table2, out;
-  cylon::Table::FromCSV(ctx, argv[1], table1);
-  cylon::Table::FromCSV(ctx, argv[2], table2);
+  std::shared_ptr<cylon::Table> table1, table2, out;
+  cylon::FromCSV(ctx, argv[1], table1);
+  cylon::FromCSV(ctx, argv[2], table2);
 
-  shared_ptr<arrow::Table> table1_arr, table2_arr;
+  std::shared_ptr<arrow::Table> table1_arr, table2_arr;
   table1->ToArrowTable(table1_arr);
   table2->ToArrowTable(table2_arr);
 
   LOG(INFO) << "read table";
   class Cb : public cylon::ResultsCallback {
    public:
-    virtual void OnResult(int tag, std::shared_ptr<cylon::Table> table) {
+    void OnResult(int tag, std::shared_ptr<cylon::Table> table) override {
       LOG(INFO) << "Result received " << table->Rows();
     }
   };
 
-  auto cb = std::make_shared<Cb>();
+  std::shared_ptr<cylon::ResultsCallback> cb = std::make_shared<Cb>();
 
-  auto union_config = std::make_shared<cylon::DisUnionOpConfig>();
+  std::shared_ptr<cylon::DisUnionOpConfig> union_config = std::make_shared<cylon::DisUnionOpConfig>();
 
-  auto union_op = cylon::DisUnionOp(std::shared_ptr<cylon::CylonContext>(ctx),
-                                    table1_arr->schema(), 0, cb, union_config);
+  auto union_op = cylon::DisUnionOp(ctx, table1_arr->schema(), 0, cb,
+                                    union_config);
   LOG(INFO) << "Created  op";
 
-  LOG(INFO) << "Adding a table with "<< table1->Rows();
+  LOG(INFO) << "Adding a table with " << table1->Rows();
   union_op.InsertTable(0, table1);
 
-  LOG(INFO) << "Adding a table with "<< table2->Rows();
+  LOG(INFO) << "Adding a table with " << table2->Rows();
   union_op.InsertTable(1, table2);
 
   auto execution = union_op.GetExecution();

@@ -42,7 +42,7 @@ cylon::Op::Op(const std::shared_ptr<cylon::CylonContext> &ctx,
   this->schema = schema;
 }
 
-void cylon::Op::InsertTable(int tag, std::shared_ptr<cylon::Table> table) {
+void cylon::Op::InsertTable(int tag, std::shared_ptr<Table> &table) {
   if (queues.find(tag) == queues.end()) {
     queues.insert(std::make_pair<>(tag, new std::queue<std::shared_ptr<cylon::Table>>()));
   }
@@ -150,7 +150,7 @@ void cylon::RootOp::OnParentsFinalized() {
   // do nothing
 }
 
-bool cylon::RootOp::Execute(int tag, shared_ptr<Table> table) {
+bool cylon::RootOp::Execute(int tag, std::shared_ptr<Table> &table) {
   this->InsertToAllChildren(tag, table);
   return true;
 }

@@ -22,7 +22,7 @@ cylon::MergeOp::MergeOp(const std::shared_ptr<CylonContext> &ctx,
     Op(ctx, schema, id, callback) {
 }
 
-bool cylon::MergeOp::Execute(int tag, std::shared_ptr<Table> table) {
+bool cylon::MergeOp::Execute(int tag, std::shared_ptr<Table> &table) {
   // do join
   if (received_tables_.find(tag) == received_tables_.end()) {
     received_tables_.insert(std::make_pair(tag, std::vector<std::shared_ptr<arrow::Table>>()));
@@ -40,21 +40,23 @@ bool cylon::MergeOp::Finalize() {
   // now we have the final set of tables
   std::vector<int32_t> to_remove;
 
-  for (auto tab = received_tables_.begin(); tab != received_tables_.end(); tab++ ){
+  for (auto &received_table : received_tables_) {
     arrow::Result<std::shared_ptr<arrow::Table>> concat_tables =
-        arrow::ConcatenateTables(tab->second);
+        arrow::ConcatenateTables(received_table.second);
 
     if (concat_tables.ok()) {
       auto final_table = concat_tables.ValueOrDie();
       LOG(INFO) << "Done concatenating tables, rows :  " << final_table->num_rows();
-      std::shared_ptr<arrow::Table> table_out;
-      auto status = final_table->CombineChunks(cylon::ToArrowPool(this->ctx_.get()), &table_out);
-      std::shared_ptr<cylon::Table> t;
-      cylon::Table::FromArrowTable(this->ctx_.get(), table_out, &t);
-      this->InsertToAllChildren(tab->first, t);
+
+      arrow::Result<std::shared_ptr<arrow::Table>> result = final_table->CombineChunks(cylon::ToArrowPool(this->ctx_));
+      if (result.ok()) { // todo nothing can be done when this fails!
+        std::shared_ptr<cylon::Table> t;
+        cylon::Table::FromArrowTable(this->ctx_, result.ValueOrDie(), t);
+        this->InsertToAllChildren(received_table.first, t);
+      }
 
       // remove this group
-      to_remove.push_back(tab->first);
+      to_remove.push_back(received_table.first);
     } else {
       LOG(FATAL) << "Failed to concat the tables";
     }

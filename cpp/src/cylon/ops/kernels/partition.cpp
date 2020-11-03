@@ -18,7 +18,7 @@
 
 namespace cylon {
 namespace kernel {
-Status HashPartition(cylon::CylonContext *ctx, const std::shared_ptr<cylon::Table> table,
+Status HashPartition(std::shared_ptr<CylonContext> &ctx, const std::shared_ptr<Table> &table,
                      const std::vector<int> &hash_columns, int no_of_partitions,
                      std::unordered_map<int, std::shared_ptr<cylon::Table>> *out) {
   std::shared_ptr<arrow::Table> table_;
@@ -90,7 +90,7 @@ Status HashPartition(cylon::CylonContext *ctx, const std::shared_ptr<cylon::Tabl
   return Status::OK();
 }
 
-Status HashPartition(cylon::CylonContext *ctx, const std::shared_ptr<cylon::Table> table,
+Status HashPartition(std::shared_ptr<CylonContext> &ctx, const std::shared_ptr<Table> &table,
                      int hash_column, int no_of_partitions,
                      std::unordered_map<int, std::shared_ptr<cylon::Table>> *out) {
   std::shared_ptr<arrow::Table> table_;
