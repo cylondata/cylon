@@ -1,78 +1,75 @@
 ##
- # Licensed under the Apache License, Version 2.0 (the "License");
- # you may not use this file except in compliance with the License.
- # You may obtain a copy of the License at
- #
- # http://www.apache.org/licenses/LICENSE-2.0
- #
- # Unless required by applicable law or agreed to in writing, software
- # distributed under the License is distributed on an "AS IS" BASIS,
- # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- # See the License for the specific language governing permissions and
- # limitations under the License.
- ##
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##
 
+from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
 from cython.operator cimport dereference as deref
-from pycylon.net.comm_type import CommType
-from pycylon.net.comm_type cimport _CommType
 from pycylon.ctx.context cimport CCylonContext
-from pycylon.ctx.context cimport CCylonContextWrap
+from pycylon.api.lib cimport pycylon_unwrap_mpi_config
+from pycylon.net.mpi_config cimport CMPIConfig
+from pycylon.net.mpi_config import MPIConfig
+from pycylon.net.comm_config cimport CCommConfig
+from pycylon.net.comm_config import CommConfig
+from pycylon.net.comm_config cimport CommConfig
+
 
 cdef class CylonContext:
-    cdef CCylonContextWrap* thisPtr;
-    cdef string config;
 
-    def __cinit__(self, config):
+
+    def __cinit__(self, config=None, distributed=None):
         '''
         Initializing the Cylon Context based on the distributed or non-distributed context
         :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
         :return: None
         '''
-        if config is None:
-            print("Single Thread Config Loaded")
-            self.config = ''.encode()
-            self.thisPtr = new CCylonContextWrap()
-        else:
-            self.config = config.encode()
-            print("Distributed Config Loaded")
-            self.thisPtr = new CCylonContextWrap(config.encode())
+
+        if not distributed and config is None:
+            self.ctx_shd_ptr = CCylonContext.Init()
+        if distributed and config is not None:
+            self.ctx_shd_ptr = CCylonContext.InitDistributed(self.init_dist(config))
+
+    cdef void init(self, const shared_ptr[CCylonContext] &ctx):
+        self.ctx_shd_ptr = ctx
+
+    cdef shared_ptr[CCommConfig] init_dist(self, config):
+        return <shared_ptr[CCommConfig]> pycylon_unwrap_mpi_config(config)
 
     def get_rank(self) -> int:
         '''
         this is the process id (unique per process)
         :return: an int as the rank (0 for non distributed mode)
         '''
-        return self.thisPtr.GetRank()
+        return self.ctx_shd_ptr.get().GetRank()
 
     def get_world_size(self) -> int:
         '''
         this is the total number of processes joined for the distributed task
         :return: an int as the world size  (1 for non distributed mode)
         '''
-        return self.thisPtr.GetWorldSize()
+        return self.ctx_shd_ptr.get().GetWorldSize()
 
     def finalize(self):
         '''
         gracefully shuts down the context by closing any distributed processes initialization ,etc
         :return: None
         '''
-        self.thisPtr.Finalize()
+        self.ctx_shd_ptr.get().Finalize()
 
     def barrier(self):
         '''
         calling barrier to sync workers
         '''
-        self.thisPtr.Barrier()
-    
-    def get_config(self):
-        return self.config
-
-
-
-
-
-
-
+        self.ctx_shd_ptr.get().Barrier()

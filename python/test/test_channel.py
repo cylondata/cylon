@@ -12,5 +12,11 @@
  # limitations under the License.
  ##
 
-from pycylon.net.channel import ChannelSendCallback
-from pycylon.net.channel import ChannelReceiveCallback
+'''
+Run test:
+>> pytest -q python/test/test_channel.py
+'''
+
+def test_channel_imports():
+    from pycylon.net.channel import ChannelSendCallback
+    from pycylon.net.channel import ChannelReceiveCallback

@@ -41,14 +41,14 @@ int main() {
   auto cy_col1 = cylon::VectorColumn<double>::Make("col1", cylon::Double(), col1);
 
   std::shared_ptr<cylon::Table> output;
-  status = cylon::Table::FromColumns(ctx, {cy_col0, cy_col1}, &output);
+  status = cylon::Table::FromColumns(ctx, {cy_col0, cy_col1}, output);
 
   if ((status.is_ok() && output->Columns() == 2 && output->Rows() == size)) {
     output->Print();
   }
 
   std::shared_ptr<arrow::DoubleArray>
-      c = static_pointer_cast<arrow::DoubleArray>(output->GetColumn(1)->GetColumnData()->chunk(0));
+      c = std::static_pointer_cast<arrow::DoubleArray>(output->GetColumn(1)->GetColumnData()->chunk(0));
 
   for (int i = 0; i < c->length(); i++) {
     std::cout << c->Value(i) << " ";

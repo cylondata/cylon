@@ -64,8 +64,11 @@ cylon::Status HashPartitionArray(arrow::MemoryPool *pool,
                                  std::vector<int64_t> *outPartitions,
                                  std::vector<uint32_t> &counts) {
   std::shared_ptr<ArrowPartitionKernel> kernel = GetPartitionKernel(pool, values);
-  kernel->Partition(values, targets, outPartitions, counts);
-  return cylon::Status::OK();
+  if (kernel->Partition(values, targets, outPartitions, counts) == 0){
+    return cylon::Status::OK();
+  } else {
+    return cylon::Status(cylon::Code::ExecutionError, "Hash partition returned non-zero!");
+  }
 }
 
 cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,

@@ -3,15 +3,24 @@ set(ARROW_ROOT ${CMAKE_BINARY_DIR}/arrow)
 
 message("Python Executable Path ${PYTHON_EXEC_PATH}")
 
+if (CYLON_PARQUET)
+    set(PARQUET_ARGS " -DARROW_WITH_BROTLI=ON"
+            " -DARROW_WITH_SNAPPY=ON"
+            " -DARROW_WITH_ZLIB=ON"
+            " -DARROW_PARQUET=ON")
+else (CYLON_PARQUET)
+    set(PARQUET_ARGS " -DARROW_WITH_BROTLI=OFF"
+            " -DARROW_WITH_SNAPPY=OFF"
+            " -DARROW_WITH_ZLIB=OFF"
+            " -DARROW_PARQUET=OFF")
+endif (CYLON_PARQUET)
+
 set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_WITH_ZSTD=OFF"
-        " -DARROW_WITH_BROTLI=OFF"
-        " -DARROW_WITH_SNAPPY=OFF"
-        " -DARROW_WITH_ZLIB=OFF"
         " -DARROW_BUILD_STATIC=ON"
         " -DARROW_BUILD_SHARED=ON"
         " -DARROW_BUILD_TESTS=OFF"
-        " -DARROW_TEST_LINKAGE=OFF"
+        " -DARROW_TEST_LINKAGE=shared"
         " -DARROW_TEST_MEMCHECK=OFF"
         " -DARROW_BUILD_BENCHMARKS=OFF"
         " -DARROW_IPC=ON"
@@ -28,13 +37,14 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_DATASET=OFF"
         " -DARROW_CSV=ON"
         " -DARROW_JSON=ON"
-	    " -DARROW_BOOST_USE_SHARED=OFF"
+        " -DARROW_BOOST_USE_SHARED=OFF"
+        ${PARQUET_ARGS}
         )
 
 if (PYCYLON_BUILD)
     list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
-        " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/bin/python3"
-        )
+            " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/bin/python3"
+            )
 endif (PYCYLON_BUILD)
 
 message("CMake Source Dir :")
@@ -50,24 +60,24 @@ execute_process(
         RESULT_VARIABLE ARROW_CONFIG
         WORKING_DIRECTORY ${ARROW_ROOT})
 
-if(ARROW_CONFIG)
+if (ARROW_CONFIG)
     message(FATAL_ERROR "Configuring Arrow failed: " ${ARROW_CONFIG})
-endif(ARROW_CONFIG)
+endif (ARROW_CONFIG)
 
 set(PARALLEL_BUILD -j)
-if($ENV{PARALLEL_LEVEL})
+if ($ENV{PARALLEL_LEVEL})
     set(NUM_JOBS $ENV{PARALLEL_LEVEL})
     set(PARALLEL_BUILD "${PARALLEL_BUILD}${NUM_JOBS}")
-endif($ENV{PARALLEL_LEVEL})
+endif ($ENV{PARALLEL_LEVEL})
 
 execute_process(
         COMMAND ${CMAKE_COMMAND} --build .. -- -j 2
         RESULT_VARIABLE ARROW_BUILD
         WORKING_DIRECTORY ${ARROW_ROOT}/build)
 
-if(ARROW_BUILD)
+if (ARROW_BUILD)
     message(FATAL_ERROR "Building Arrow failed: " ${ARROW_BUILD})
-endif(ARROW_BUILD)
+endif (ARROW_BUILD)
 
 message(STATUS "Arrow installed here: " ${ARROW_ROOT}/install)
 set(ARROW_LIBRARY_DIR "${ARROW_ROOT}/install/lib")
@@ -81,15 +91,19 @@ find_library(ARROW_PYTHON arrow_python
         NO_DEFAULT_PATH
         HINTS "${ARROW_LIBRARY_DIR}")
 
-if(ARROW_LIB)
+if (ARROW_LIB)
     message(STATUS "Arrow library: " ${ARROW_LIB})
     set(ARROW_FOUND TRUE)
-endif(ARROW_LIB)
+endif (ARROW_LIB)
 
 set(FLATBUFFERS_ROOT "${ARROW_ROOT}/build/flatbuffers_ep-prefix/src/flatbuffers_ep-install")
 
 message(STATUS "FlatBuffers installed here: " ${FLATBUFFERS_ROOT})
 set(FLATBUFFERS_INCLUDE_DIR "${FLATBUFFERS_ROOT}/include")
 set(FLATBUFFERS_LIBRARY_DIR "${FLATBUFFERS_ROOT}/lib")
+
+if (CYLON_PARQUET)
+    set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.so)
+endif (CYLON_PARQUET)
 
 add_definitions(-DARROW_METADATA_V4)

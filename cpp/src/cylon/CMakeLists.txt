@@ -18,6 +18,16 @@
 find_package(Threads REQUIRED)
 
 set_source_files_properties(util/murmur3.cpp util/murmur3.hpp PROPERTIES COMPILE_FLAGS -Wno-implicit-fallthrough)
+if (CYLON_PARQUET)
+    set(PARQUET_CYLON_FILES
+            io/parquet_config.hpp
+            io/parquet_config.cpp
+            parquet.hpp
+            parquet.cpp
+            )
+else (CYLON_PARQUET)
+    set(PARQUET_CYLON_FILES)
+endif (CYLON_PARQUET)
 
 add_library(cylon SHARED
         net/ops/all_to_all.cpp
@@ -40,7 +50,6 @@ add_library(cylon SHARED
         join/join_utils.cpp
         arrow/arrow_join.cpp
         arrow/arrow_join.hpp
-        util/sort_indices.cpp
         io/arrow_io.cpp
         io/arrow_io.hpp
         table_api.hpp
@@ -121,7 +130,14 @@ add_library(cylon SHARED
         compute/aggregates.cpp
         net/comm_operations.hpp
         net/mpi/mpi_operations.cpp
-        net/mpi/mpi_operations.hpp)
+        net/mpi/mpi_operations.hpp
+        groupby/groupby_hash.hpp
+        groupby/groupby_pipeline.hpp
+        groupby/groupby_aggregate_ops.hpp
+        groupby/groupby.hpp
+        groupby/groupby.cpp
+        ${PARQUET_CYLON_FILES}
+        )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
 
@@ -133,24 +149,9 @@ target_link_libraries(cylon ${PYTHON_LIBRARIES})
 target_link_libraries(cylon Threads::Threads)
 target_compile_options(cylon PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
 
-if(${PYCYLON_BUILD})
-    add_library(cylon_python SHARED
-            python/cylon_context_wrap.h python/cylon_context_wrap.cpp
-            python/table_cython.h python/table_cython.cpp
-            python/net/distributed.h python/net/distributed.cpp
-            python/net/comm/all_to_all_wrap.h python/net/comm/all_to_all_wrap.cpp
-            python/net/comm/callback.h python/net/comm/callback.cpp)
-
-    target_link_libraries(cylon_python ${MPI_LIBRARIES})
-    target_link_libraries(cylon_python ${GLOG_LIBRARIES})
-    target_link_libraries(cylon_python ${ARROW_LIB})
-    target_link_libraries(cylon_python ${ARROW_PYTHON})
-    target_link_libraries(cylon_python ${PYTHON_LIBRARIES})
-    target_link_libraries(cylon_python cylon)
-    add_subdirectory(python)
-else()
-    message("Skip Building Cylon Cython-CPP")
-endif()
+if (CYLON_PARQUET)
+    target_link_libraries(cylon ${PARQUET_LIB})
+endif ()
 
 cylon_install_all_headers("cylon")
 

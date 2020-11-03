@@ -15,9 +15,8 @@
 #include <cstdint>
 #include <ctx/cylon_context.hpp>
 #include <join/join_config.hpp>
-#include "ConversionUtils.h"
 
-std::unordered_map<int32_t, cylon::CylonContext *> contexts{};
+std::unordered_map<int32_t, std::shared_ptr<cylon::CylonContext>> contexts{};
 
 std::unordered_map<std::string, cylon::join::config::JoinAlgorithm> join_algorithms{
     std::pair<std::string, cylon::join::config::JoinAlgorithm>("HASH", cylon::join::config::JoinAlgorithm::HASH),

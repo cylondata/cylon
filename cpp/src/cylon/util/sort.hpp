@@ -15,6 +15,7 @@
 #define CYLON_SRC_CYLON_UTIL_SORT_H_
 
 #include <glog/logging.h>
+#include <cmath>
 
 namespace cylon {
 namespace util {

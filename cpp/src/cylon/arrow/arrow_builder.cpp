@@ -59,11 +59,9 @@ std::shared_ptr<arrow::DataType> GetArrowType(int8_t type) {
     case arrow::Type::TIMESTAMP:break;
     case arrow::Type::TIME32:break;
     case arrow::Type::TIME64:break;
-    case arrow::Type::INTERVAL:break;
     case arrow::Type::DECIMAL:break;
     case arrow::Type::LIST:break;
     case arrow::Type::STRUCT:break;
-    case arrow::Type::UNION:break;
     case arrow::Type::DICTIONARY:break;
     case arrow::Type::MAP:break;
     case arrow::Type::EXTENSION:break;
@@ -72,6 +70,7 @@ std::shared_ptr<arrow::DataType> GetArrowType(int8_t type) {
     case arrow::Type::LARGE_STRING:break;
     case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
+    default: break;
   }
   return nullptr;
 }
@@ -132,7 +131,8 @@ cylon::Status cylon::cyarrow::FinishTable(const std::string &table_id) {
   // building the table
   auto table = arrow::Table::Make(schema_result.ValueOrDie(), *columns.find(table_id)->second);
   // todo, there sould be a contex
-  cylon::PutTable(table_id, std::make_shared<cylon::Table>(table, nullptr));
+  auto ctx = std::make_shared<cylon::CylonContext>(false);
+  cylon::PutTable(table_id, std::make_shared<cylon::Table>(table, ctx));
   return cylon::Status::OK();
 }
 

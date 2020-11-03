@@ -26,19 +26,19 @@ int main(int argc, char *argv[]) {
   }
 
   auto start_start = std::chrono::steady_clock::now();
-  auto mpi_config = new cylon::net::MPIConfig();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::shared_ptr<cylon::Table> first_table, second_table, joined;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-  auto status = cylon::Table::FromCSV(ctx, argv[1], first_table, read_options);
+  auto status = cylon::FromCSV(ctx, argv[1], first_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[1];
     ctx->Finalize();
     return 1;
   }
 
-  status = cylon::Table::FromCSV(ctx, argv[2], second_table, read_options);
+  status = cylon::FromCSV(ctx, argv[2], second_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[2];
     ctx->Finalize();
@@ -50,8 +50,9 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
 
-  status = cylon::Table::DistributedJoin(first_table, second_table,
-                              cylon::join::config::JoinConfig::InnerJoin(0, 0), &joined);
+  status = cylon::DistributedJoin(first_table, second_table,
+                              cylon::join::config::JoinConfig::InnerJoin(0, 0), joined);
+
   if (!status.is_ok()) {
     LOG(INFO) << "Table join failed ";
     ctx->Finalize();
@@ -64,6 +65,7 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << "Join done in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 join_end_time - read_end_time).count() << "[ms]";
+
   ctx->Finalize();
   return 0;
 }

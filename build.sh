@@ -8,10 +8,12 @@ BUILD_MODE=Release
 BUILD_MODE_DEBUG="OFF"
 BUILD_MODE_RELEASE="OFF"
 PYTHON_RELEASE="OFF"
-RUN_TESTS="OFF"
+RUN_CPP_TESTS="OFF"
+RUN_PYTHON_TESTS="OFF"
 STYLE_CHECK="OFF"
 INSTALL_PATH=
 BUILD_PATH=$(pwd)/build
+CMAKE_FLAGS=""
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -44,7 +46,7 @@ case $key in
     PYTHON_BUILD="ON"
     shift # past argument
     ;;
-    --cython)    
+    --cython)
     CYTHON_BUILD="ON"
     shift # past argument
     ;;
@@ -64,7 +66,11 @@ case $key in
     shift # past argument
     ;;
     --test)
-    RUN_TESTS="ON"
+    RUN_CPP_TESTS="ON"
+    shift # past argument
+    ;;
+    --pytest)
+    RUN_PYTHON_TESTS="ON"
     shift # past argument
     ;;
     --style-check)
@@ -76,6 +82,11 @@ case $key in
     CPP_BUILD="OFF"
     shift # past argument
     ;;
+    --cmake-flags)
+    CMAKE_FLAGS="$2"
+    shift # past argument
+    shift # past value
+    ;;
     *)    # unknown option
     POSITIONAL+=("$1") # save it in an array for later
     shift # past argument
@@ -84,15 +95,17 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-echo "PYTHON ENV PATH    = ${PYTHON_ENV_PATH}"
-echo "BUILD PATH         = ${BUILD_PATH}"
-echo "FLAG CPP BUILD     = ${CPP_BUILD}"
-echo "FLAG PYTHON BUILD  = ${PYTHON_BUILD}"
-echo "FLAG BUILD ALL     = ${BUILD_ALL}"
-echo "FLAG BUILD DEBUG   = ${BUILD_MODE_DEBUG}"
-echo "FLAG BUILD RELEASE = ${BUILD_MODE_RELEASE}"
-echo "FLAG RUN TEST      = ${RUN_TESTS}"
-echo "FLAG STYLE CHECK   = ${STYLE_CHECK}"
+echo "PYTHON ENV PATH       = ${PYTHON_ENV_PATH}"
+echo "BUILD PATH            = ${BUILD_PATH}"
+echo "FLAG CPP BUILD        = ${CPP_BUILD}"
+echo "FLAG PYTHON BUILD     = ${PYTHON_BUILD}"
+echo "FLAG BUILD ALL        = ${BUILD_ALL}"
+echo "FLAG BUILD DEBUG      = ${BUILD_MODE_DEBUG}"
+echo "FLAG BUILD RELEASE    = ${BUILD_MODE_RELEASE}"
+echo "FLAG RUN CPP TEST     = ${RUN_CPP_TESTS}"
+echo "FLAG RUN PYTHON TEST  = ${RUN_PYTHON_TESTS}"
+echo "FLAG STYLE CHECK      = ${STYLE_CHECK}"
+echo "ADDITIONAL CMAKE FLAGS= ${CMAKE_FLAGS}"
 
 if [[ -n $1 ]]; then
     echo "Last line of file specified as non-opt/last argument:"
@@ -115,6 +128,15 @@ read_python_requirements(){
   do
     pip3 install "$line"
   done < "$input"
+}
+
+check_python_pre_requisites(){
+  echo "Checking Python Pre_-requisites"
+  response=$(python3 -c \
+    "import numpy; print('Numpy Installation');\
+    print('Version {}'.format(numpy.__version__));\
+    print('Library Installation Path {}'.format(numpy.get_include()))")
+  echo "${response}"
 }
 
 INSTALL_CMD=
@@ -142,7 +164,8 @@ build_cpp(){
   pushd ${BUILD_PATH} || exit 1
   export ARROW_HOME=${BUILD_PATH}/arrow/install
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
-      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_TESTS} $CPPLINT_CMD $INSTALL_CMD \
+      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $CPPLINT_CMD $INSTALL_CMD \
+      ${CMAKE_FLAGS} \
       ${SOURCE_DIR} || exit 1
   make -j 4 || exit 1
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
@@ -159,6 +182,7 @@ build_pyarrow(){
   popd || exit
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
+  check_python_pre_requisites
   pushd ${BUILD_PATH}/arrow/arrow/python || exit 1
   PYARROW_CMAKE_OPTIONS="-DCMAKE_MODULE_PATH=${ARROW_HOME}/lib/cmake/arrow" python3 setup.py install || exit 1
   popd || exit 1
@@ -173,6 +197,7 @@ build_python() {
   # shellcheck disable=SC1090
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
+  check_python_pre_requisites
   pushd python || exit 1
   pip3 uninstall -y pycylon
   make clean
@@ -189,6 +214,7 @@ release_python() {
   echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
   source "${PYTHON_ENV_PATH}"/bin/activate
   read_python_requirements
+  check_python_pre_requisites
   pushd python || exit 1
   pip3 uninstall -y pycylon
   make clean
@@ -218,6 +244,10 @@ check_pyarrow_installation(){
 check_pycylon_installation(){
   response=$(python3 python/test/test_pycylon.py)
   echo "${response}"
+}
+
+python_test(){
+  python3 -m pytest python/test/test_all.py
 }
 
 build_java(){
@@ -273,9 +303,14 @@ if [ "${PYTHON_RELEASE}" = "ON" ]; then
 	release_python
 fi
 
-if [ "${RUN_TESTS}" = "ON" ]; then
-	echo "Running tests"
+if [ "${RUN_CPP_TESTS}" = "ON" ]; then
+	echo "Running CPP tests"
 	CTEST_OUTPUT_ON_FAILURE=1 make -C "$BUILD_PATH" test
+fi
+
+if [ "${RUN_PYTHON_TESTS}" = "ON" ]; then
+	echo "Running Python tests"
+	python_test
 fi
 
 

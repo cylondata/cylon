@@ -23,6 +23,7 @@
 #include "arrow/compute/api.h"
 #include "join_utils.hpp"
 #include "../util/arrow_utils.hpp"
+#include "join_utils.hpp"
 
 namespace cylon {
 namespace join {
@@ -543,11 +544,7 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
   arrow::Type::type kType = left_tab->column(left_join_column_idx)->chunk(0)->type()->id();
   switch (join_algorithm) {
     case cylon::join::config::SORT:
-      if (kType == arrow::Type::UINT8 || kType == arrow::Type::INT8 ||
-          kType == arrow::Type::UINT16 || kType == arrow::Type::INT16 ||
-          kType == arrow::Type::UINT32 || kType == arrow::Type::INT32 ||
-          kType == arrow::Type::UINT64 || kType == arrow::Type::INT64 ||
-          kType == arrow::Type::FLOAT || kType == arrow::Type::DOUBLE) {
+      if (cylon::join::util::is_inplace_join_possible(kType)) {
         return do_inplace_sorted_join<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(left_tab,
                                                                       right_tab,
                                                                       left_join_column_idx,
@@ -579,40 +576,43 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
                          std::shared_ptr<arrow::Table> *joined_table,
                          arrow::MemoryPool *memory_pool) {
   std::shared_ptr<arrow::Table> left_tab = arrow::ConcatenateTables(left_tabs,
-      arrow::ConcatenateTablesOptions::Defaults(),
-      memory_pool).ValueOrDie();
+                                                                    arrow::ConcatenateTablesOptions::Defaults(),
+                                                                    memory_pool).ValueOrDie();
   std::shared_ptr<arrow::Table> right_tab = arrow::ConcatenateTables(right_tabs,
-      arrow::ConcatenateTablesOptions::Defaults(),
-      memory_pool).ValueOrDie();
-  std::shared_ptr<arrow::Table> left_tab_combined;
-  std::shared_ptr<arrow::Table> right_tab_combined;
+                                                                     arrow::ConcatenateTablesOptions::Defaults(),
+                                                                     memory_pool).ValueOrDie();
 
-  arrow::Status left_combine_stat = left_tab->CombineChunks(memory_pool, &left_tab_combined);
-  if (left_combine_stat != arrow::Status::OK()) {
-    LOG(FATAL) << "Error in combining table chunks of left table." << left_combine_stat.ToString();
+  arrow::Result<std::shared_ptr<arrow::Table>> left_combine_res = left_tab->CombineChunks(memory_pool);
+  const arrow::Status &left_combine_stat = left_combine_res.status();
+  if (!left_combine_stat.ok()) {
+    LOG(FATAL) << "Error in combining table chunks of left table." << left_combine_stat.message();
     return left_combine_stat;
   }
+  const std::shared_ptr<arrow::Table>& left_tab_combined = left_combine_res.ValueOrDie();
+  
   if (left_tabs.size() > 1) {
     for (const auto &t : left_tabs) {
       arrow::Status status = cylon::util::free_table(t);
-      if (status != arrow::Status::OK()) {
-        LOG(FATAL) << "Failed to free table" << status.ToString();
+      if (!status.ok()) {
+        LOG(FATAL) << "Failed to free table" << status.message();
         return status;
       }
     }
   }
 
-  arrow::Status right_combine_stat = right_tab->CombineChunks(memory_pool, &right_tab_combined);
-  if (right_combine_stat != arrow::Status::OK()) {
-    LOG(FATAL) << "Error in combining table chunks of right table." << left_combine_stat.ToString();
+  arrow::Result<std::shared_ptr<arrow::Table>> right_combine_res = right_tab->CombineChunks(memory_pool);
+  const arrow::Status& right_combine_stat = right_combine_res.status();
+  if (!right_combine_stat.ok()) {
+    LOG(FATAL) << "Error in combining table chunks of right table." << right_combine_stat.message();
     return right_combine_stat;
   }
+  const std::shared_ptr<arrow::Table>& right_tab_combined = right_combine_res.ValueOrDie();
 
   if (right_tabs.size() > 1) {
     for (const auto& t : right_tabs) {
       arrow::Status status = cylon::util::free_table(t);
-      if (status != arrow::Status::OK()) {
-        LOG(FATAL) << "Failed to free table" << status.ToString();
+      if (!status.ok()) {
+        LOG(FATAL) << "Failed to free table" << status.message();
         return status;
       }
     }
@@ -772,11 +772,9 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
     case arrow::Type::TIMESTAMP:break;
     case arrow::Type::TIME32:break;
     case arrow::Type::TIME64:break;
-    case arrow::Type::INTERVAL:break;
     case arrow::Type::DECIMAL:break;
     case arrow::Type::LIST:break;
     case arrow::Type::STRUCT:break;
-    case arrow::Type::UNION:break;
     case arrow::Type::DICTIONARY:break;
     case arrow::Type::MAP:break;
     case arrow::Type::EXTENSION:break;
@@ -785,6 +783,11 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
     case arrow::Type::LARGE_STRING:break;
     case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
+    case arrow::Type::INTERVAL_MONTHS:break;
+    case arrow::Type::INTERVAL_DAY_TIME:break;
+    case arrow::Type::SPARSE_UNION:break;
+    case arrow::Type::DENSE_UNION:break;
+    case arrow::Type::MAX_ID:break;
   }
   return arrow::Status::Invalid("Un-supported type");
 }

@@ -12,5 +12,13 @@
  # limitations under the License.
  ##
 
-from pycylon.io.csv_read_config import CSVReadOptions
+'''
+Run test:
+>> pytest -q python/test/test_csv_read_options.py
+'''
+
+def test_check_csv_read_opts():
+    from pycylon.io.csv_read_config import CSVReadOptions
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+
 

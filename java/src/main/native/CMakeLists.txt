@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(CYLON_JNI)
 set(CYLON_VERSION 0.0)
 
@@ -46,7 +46,14 @@ include_directories("include"
         "${JNI_INCLUDE_DIRS}" ${CYLON_INCLUDE} "${CYLON_ARROW_DIR}/include")
 
 set(SOURCE_FILES
-        src/Table.cpp src/TwisterXContext.cpp src/ConversionUtils.h src/ConversionUtils.cpp src/ArrowTable.cpp src/Utils.hpp src/Row.cpp src/Utils.cpp)
+        src/Table.cpp
+        src/TwisterXContext.cpp
+        src/ConversionUtils.h
+        src/ConversionUtils.cpp
+        src/ArrowTable.cpp
+        src/Utils.hpp
+        src/Row.cpp
+        src/Utils.cpp)
 add_library(cylonjni SHARED ${SOURCE_FILES})
 
 include_directories(${MPI_INCLUDE_PATH})

@@ -23,25 +23,25 @@ namespace cylon {
 class LogicalTaskPlan {
 
  private:
-  std::shared_ptr<vector<int>> task_source;
-  std::shared_ptr<vector<int>> task_targets;
-  std::shared_ptr<vector<int>> worker_sources;
-  std::shared_ptr<vector<int>> worker_targets;
+  std::shared_ptr<std::vector<int>> task_source;
+  std::shared_ptr<std::vector<int>> task_targets;
+  std::shared_ptr<std::vector<int>> worker_sources;
+  std::shared_ptr<std::vector<int>> worker_targets;
   std::shared_ptr<std::unordered_map<int, int>> task_to_worker;
 
  public:
-  LogicalTaskPlan(std::shared_ptr<vector<int>> task_source,
-                  std::shared_ptr<vector<int>> task_targets,
-                  std::shared_ptr<vector<int>> worker_sources,
-                  std::shared_ptr<vector<int>> worker_targets,
-                  std::shared_ptr<unordered_map<int,
+  LogicalTaskPlan(std::shared_ptr<std::vector<int>> task_source,
+                  std::shared_ptr<std::vector<int>> task_targets,
+                  std::shared_ptr<std::vector<int>> worker_sources,
+                  std::shared_ptr<std::vector<int>> worker_targets,
+                  std::shared_ptr<std::unordered_map<int,
                                                 int>> task_to_worker);
 
-  const shared_ptr<vector<int>> &GetTaskSource() const;
-  const shared_ptr<vector<int>> &GetTaskTargets() const;
-  const shared_ptr<vector<int>> &GetWorkerSources() const;
-  const shared_ptr<vector<int>> &GetWorkerTargets() const;
-  const shared_ptr<std::unordered_map<int, int>> &GetTaskToWorker() const;
+  const std::shared_ptr<std::vector<int>> &GetTaskSource() const;
+  const std::shared_ptr<std::vector<int>> &GetTaskTargets() const;
+  const std::shared_ptr<std::vector<int>> &GetWorkerSources() const;
+  const std::shared_ptr<std::vector<int>> &GetWorkerTargets() const;
+  const std::shared_ptr<std::unordered_map<int, int>> &GetTaskToWorker() const;
 };
 
 class ArrowTaskCallBack : public ArrowCallback {
@@ -57,7 +57,7 @@ class ArrowTaskAllToAll : public ArrowAllToAll {
   const LogicalTaskPlan &plan;
 
  public:
-  ArrowTaskAllToAll(cylon::CylonContext *ctx,
+  ArrowTaskAllToAll(std::shared_ptr<cylon::CylonContext> ctx,
                     const LogicalTaskPlan &plan,
                     int edgeId,
                     const std::shared_ptr<ArrowTaskCallBack> &callback,

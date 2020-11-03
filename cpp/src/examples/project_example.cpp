@@ -28,13 +28,13 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   auto start_time = std::chrono::steady_clock::now();
-  auto mpi_config = new cylon::net::MPIConfig();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::shared_ptr<cylon::Table> table, project;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
-  auto status = cylon::Table::FromCSV(ctx, argv[1], table, read_options);
+  auto status = cylon::FromCSV(ctx, argv[1], table, read_options);
   auto read_end_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Read table in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  status = table->Project({0}, project);
+  status = cylon::Project(table, {0}, project);
   if (!status.is_ok()) {
     LOG(INFO) << "Project failed  : " << status.get_msg();
     ctx->Finalize();

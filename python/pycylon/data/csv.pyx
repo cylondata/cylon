@@ -13,38 +13,38 @@
  ##
 
 from libcpp.string cimport string
-from pycylon.common.status cimport _Status
-import uuid
-
-
-from pycylon import Table
-from pycylon.ctx.context cimport CCylonContextWrap
+from libcpp cimport bool
+from pycylon.common.status cimport CStatus
+from pycylon.common.status import Status
+from pycylon.io.csv_read_config cimport CCSVReadOptions
+from pycylon.io.csv_write_config cimport CCSVWriteOptions
+from pyarrow.lib cimport CTable as CArrowTable
+from libcpp.memory cimport shared_ptr
+from libcpp.vector cimport vector
+from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
+from pycylon.data.table cimport CTable
+from pycylon.data.table cimport Table
+from pycylon.data.table import Table
+from pycylon.api.lib cimport (pycylon_unwrap_context,
+pycylon_wrap_table,
+pycylon_unwrap_csv_read_options,
+pycylon_unwrap_csv_write_options)
 
 
-'''
-Cylon CSV Utils 
-'''
-
-cdef extern from "../../../cpp/src/cylon/python/table_cython.h" namespace "cylon::python::table::CxTable":
-    cdef extern _Status from_csv(CCylonContextWrap *ctx_wrap, const string, const char, const string)
-
-cdef class csv_reader:
-
-    @staticmethod
-    def read(ctx: CylonContext, path: str, delimiter: str) -> Table:
-        cdef string spath = path.encode()
-        cdef string sdelm = delimiter.encode()
-        id = uuid.uuid4()
-        id_str = id.__str__()
-        id_buf = id_str.encode()
-        # this condition is checked with the initialization in csv.pyx for None config
-        if ctx.get_config() is ''.encode():
-            from_csv(new CCylonContextWrap(), spath, sdelm[0], id_buf)
+def read_csv(context, path, csv_read_options) -> Table:
+        '''
+            loading data from a csv file
+            :param context: CylonContext
+            :param path: Path to csv file
+            :param csv_read_options: CSVReadOptions object
+        '''
+        cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
+        cdef string cpath = path.encode()
+        cdef CCSVReadOptions c_csv_read_options = pycylon_unwrap_csv_read_options(csv_read_options)
+        cdef shared_ptr[CTable] cn_table
+        cdef CStatus status = FromCSV(ctx, cpath, cn_table, c_csv_read_options)
+        if status.is_ok():
+            return pycylon_wrap_table(cn_table)
         else:
-            from_csv(new CCylonContextWrap(ctx.get_config()), spath, sdelm[0], id_buf)
-        id_buf = id_str.encode()
-        return Table(id_buf)
-
-
-
+            raise Exception(f"Table couldn't be created from CSV: {status.get_msg().decode()}")

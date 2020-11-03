@@ -22,9 +22,9 @@ namespace util {
 
 class FunctionContext;
 
-arrow::Status sort_table(std::shared_ptr<arrow::Table> tab, int64_t sort_column_index,
-                         std::shared_ptr<arrow::Table> *sorted_table,
-                         arrow::MemoryPool *memory_pool = arrow::default_memory_pool());
+arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort_column_index,
+                        std::shared_ptr<arrow::Table> *sorted_table,
+                        arrow::MemoryPool *memory_pool = arrow::default_memory_pool());
 
 arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>>& indices,
                                     const std::shared_ptr<arrow::Array>& source_array,
@@ -38,8 +38,14 @@ arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>>&
  */
 arrow::Status free_table(const std::shared_ptr<arrow::Table> &table);
 
-arrow::Status SortToIndices(arrow::compute::FunctionContext *ctx, const arrow::Array &values,
-                            std::shared_ptr<arrow::Array> *offsets);
+/**
+ * Create a duplicate of the current array
+ */
+arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray>& cArr,
+                                        const std::shared_ptr<arrow::Field>& field,
+                                        arrow::MemoryPool *pool,
+                                        std::shared_ptr<arrow::ChunkedArray>& out);
+
 }  // namespace util
 }  // namespace cylon
 #endif //CYLON_SRC_UTIL_ARROW_UTILS_HPP_

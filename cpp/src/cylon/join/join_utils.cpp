@@ -43,6 +43,7 @@ arrow::Status build_final_table_inplace_index(
                 left_tab->schema()->fields().end());
   fields.insert(fields.end(), right_tab->schema()->fields().begin(),
                 right_tab->schema()->fields().end());
+  // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
   std::string left_tb_prefix = "lt-";
   std::string right_tb_prefix = "rt-";
   std::string prefix = left_tb_prefix;
@@ -54,7 +55,7 @@ arrow::Status build_final_table_inplace_index(
                                                         fields.at(i)->type(),
                                                         fields.at(i)->nullable()));
   }
-  auto schema = arrow::schema(new_fields);
+  auto schema = arrow::schema(fields);
 
   std::shared_ptr<std::vector<int64_t>> indices_indexed = std::make_shared<std::vector<int64_t>>();
   indices_indexed->reserve(left_indices->size());
@@ -141,6 +142,8 @@ arrow::Status build_final_table(const std::shared_ptr<std::vector<int64_t>> &lef
                 left_tab->schema()->fields().end());
   fields.insert(fields.end(), right_tab->schema()->fields().begin(),
                 right_tab->schema()->fields().end());
+
+  // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
   std::string left_tb_prefix = "lt-";
   std::string right_tb_prefix = "rt-";
   std::string prefix = left_tb_prefix;
@@ -152,7 +155,8 @@ arrow::Status build_final_table(const std::shared_ptr<std::vector<int64_t>> &lef
                                                         fields.at(i)->type(),
                                                         fields.at(i)->nullable()));
   }
-  auto schema = arrow::schema(new_fields);
+
+  auto schema = arrow::schema(fields);
 
   std::vector<std::shared_ptr<arrow::Array>> data_arrays;
 
@@ -197,7 +201,11 @@ arrow::Status CombineChunks(const std::shared_ptr<arrow::Table> &table,
                             arrow::MemoryPool *memory_pool) {
   if (table->column(col_index)->num_chunks() > 1) {
     LOG(INFO) << "Combining chunks " << table->column(col_index)->num_chunks();
-    return table->CombineChunks(memory_pool, &output_table);
+    arrow::Result<std::shared_ptr<arrow::Table>> result = table->CombineChunks(memory_pool);
+    if (result.ok()) {
+      output_table = result.ValueOrDie();
+    }
+    return result.status();
   } else {
     output_table = table;
     return arrow::Status::OK();

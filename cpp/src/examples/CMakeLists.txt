@@ -1,3 +1,5 @@
+add_definitions(-DEXAMPLE_CMAKE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
+
 #build a binary
 macro(tx_add_exe EXENAME)
     add_executable(${EXENAME} ${EXENAME}.cpp)
@@ -22,6 +24,14 @@ tx_add_exe(com_comm_test)
 tx_add_exe(table_from_vectors_example)
 tx_add_exe(join_op_example)
 tx_add_exe(compute_example)
+tx_add_exe(groupby_benchmark_example)
+tx_add_exe(groupby_pipeline_example)
+tx_add_exe(groupby_example)
+
+if (CYLON_PARQUET)
+    tx_add_exe(parquet_test)
+    tx_add_exe(parquet_union_example)
+endif (CYLON_PARQUET)
 
 
 #macro(tx_add_test_exe EXENAME)

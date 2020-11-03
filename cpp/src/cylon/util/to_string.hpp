@@ -52,11 +52,9 @@ std::string array_to_string(const std::shared_ptr<arrow::Array> &array, int inde
     case arrow::Type::TIMESTAMP:break;
     case arrow::Type::TIME32:break;
     case arrow::Type::TIME64:break;
-    case arrow::Type::INTERVAL:break;
     case arrow::Type::DECIMAL:break;
     case arrow::Type::LIST:break;
     case arrow::Type::STRUCT:break;
-    case arrow::Type::UNION:break;
     case arrow::Type::DICTIONARY:break;
     case arrow::Type::MAP:break;
     case arrow::Type::EXTENSION:break;
@@ -65,6 +63,11 @@ std::string array_to_string(const std::shared_ptr<arrow::Array> &array, int inde
     case arrow::Type::LARGE_STRING:break;
     case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
+    case arrow::Type::INTERVAL_MONTHS:break;
+    case arrow::Type::INTERVAL_DAY_TIME:break;
+    case arrow::Type::SPARSE_UNION:break;
+    case arrow::Type::DENSE_UNION:break;
+    case arrow::Type::MAX_ID:break;
   }
   return "NA";
 }

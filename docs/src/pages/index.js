@@ -205,7 +205,7 @@ function Home() {
                                             <SyntaxHighlighter language="cpp" style={docco} showLineNumbers={true}>
                                                 {`int main(int argc, char *argv[]) {
 
-  auto mpi_config = new MPIConfig();
+  auto mpi_config = cylon::net::MPIConfig::Make();
   auto ctx = CylonContext::InitDistributed(mpi_config);
   std::shared_ptr<Table> table1, table2, joined;
 
@@ -216,7 +216,7 @@ function Home() {
   }, {table1, table2}, read_options);
 
   auto join_config = JoinConfig::InnerJoin(0, 0);
-  table1->DistributedJoin(table2, join_config, &joined);
+  cylon::DistributedJoin(table1, table2, join_config, joined);
   
   joined->Print();
   
@@ -251,14 +251,17 @@ public class DistributedJoinExample {
                                         </TabPanel>
                                         <TabPanel>
                                             <SyntaxHighlighter language="python" style={docco} showLineNumbers={true}>
-                                                {`from pycylon.data.table import csv_reader
-from pycylon.data.table import Table
-from pycylon.ctx.context import CylonContext
+                                                {`from pycylon import Table, CylonContext
+from pycylon.io import read_csv, CSVReadOptions
+from pycylon.net import MPIConfig
 
-ctx: CylonContext = CylonContext("mpi")
+config: MPIConfig = MPIConfig()
+ctx: CylonContext = CylonContext(config=config, distributed=True)
 
-tb1: Table = csv_reader.read(ctx, '/tmp/csv1.csv', ',')
-tb2: Table = csv_reader.read(ctx, '/tmp/csv2.csv', ',')
+csv_read_options = CSVReadOptions().use_threads(True)
+
+tb1: Table = read_csv(ctx, '/tmp/csv1.csv', csv_read_options)
+tb2: Table = read_csv(ctx, '/tmp/csv2.csv', csv_read_options)
 
 configs = {'join_type':'left', 'algorithm':'hash', 
                 'left_col':0, 'right_col':0}
