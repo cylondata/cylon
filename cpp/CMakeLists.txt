@@ -27,14 +27,25 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(CYLON)
 
-set(CYLON_VERSION 0.1.0)
+set(CYLON_VERSION 0.2.0)
 
 ## defaults to release build
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif ()
 
+# cmake modules directories
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
+list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
+
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+
+set("CYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
+
+# Add common flags
+include(SetupCxxFlags)
+message("CXX_COMMON_FLAGS: ${CXX_COMMON_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMMON_FLAGS}")
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPERCASE_CMAKE_BUILD_TYPE)
 if (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "DEBUG")
@@ -64,10 +75,6 @@ else ()
     set(PYTHON_EXEC_PATH /usr)
     message("Python Executable Path ${PYTHON_EXEC_PATH}")
 endif ()
-
-# cmake modules directories
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
-list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
 # C++ standard
 SET(CMAKE_CXX_STANDARD 14)
@@ -127,7 +134,7 @@ add_subdirectory(src/tutorial)
 
 ## installing arrow files
 install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION include)
-install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.16.0.0 DESTINATION lib)
+install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so DESTINATION lib)
 install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
 
 if (CYLON_WITH_TEST)
