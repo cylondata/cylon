@@ -55,11 +55,12 @@ import pandas as pd
 from typing import List
 import warnings
 import operator
-from enum import Enum
+from cython.parallel import prange
 
 '''
 Cylon Table definition mapping 
 '''
+
 
 cdef class Table:
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
@@ -630,7 +631,7 @@ cdef class Table:
          """
         return self.to_arrow().to_pandas()
 
-    def to_numpy(self, order: str = 'F'):
+    def to_numpy(self, order: str = 'F', zero_copy_only: bool = True, writable: bool = False):
         """
          [Experimental]
          This method converts a Cylon Table to a 2D numpy array.
@@ -642,7 +643,7 @@ cdef class Table:
         ar_lst = []
         _dtype = None
         for col in self.to_arrow().combine_chunks().columns:
-            npr = col.chunks[0].to_numpy()
+            npr = col.chunks[0].to_numpy(zero_copy_only=zero_copy_only, writable=writable)
             if None == _dtype:
                 _dtype = npr.dtype
             if _dtype != npr.dtype:
@@ -723,32 +724,16 @@ cdef class Table:
             return Table.from_list(self.context, self.column_names, filtered_all_data)
 
     def _aggregate_filters(self, filter: Table, op) -> Table:
-        import time
-        t1 = time.time()
-        # filter1_dict = filter.to_pydict()
-        # filter2_dict = self.to_pydict()
-        # print("Agg Filters : Dic conversion time : ", time.time() - t1)
         aggregated_filter_response = []
         for column1, column2 in zip(filter.to_arrow().combine_chunks().columns, self.to_arrow(
-                                    ).combine_chunks().columns):
+        ).combine_chunks().columns):
             column_data = []
             for value1, value2 in zip(column1.chunks[0], column2.chunks[0]):
                 column_data.append(op(value1.as_py(), value2.as_py()))
             aggregated_filter_response.append(column_data)
-        tb_new = Table.from_list(self.context, self.column_names, aggregated_filter_response)
-        # for key1, key2 in zip(filter1_dict, filter2_dict):
-        #     values1, values2 = filter1_dict[key1], filter2_dict[key2]
-        #     column_data = []
-        #     for value1, value2 in zip(values1, values2):
-        #         column_data.append(op(value1, value2))
-        #     aggregated_filter_response.append(column_data)
-        # tb_new = Table.from_list(self.context, self.column_names, aggregated_filter_response)
-        print("Aggregate Filter Time : ", time.time() - t1)
-        return tb_new
+        return Table.from_list(self.context, self.column_names, aggregated_filter_response)
 
     def __getitem__(self, key) -> Table:
-        import time
-        t1 = time.time()
         py_arrow_table = self.to_arrow().combine_chunks()
         if isinstance(key, slice):
             return self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
@@ -759,7 +744,6 @@ cdef class Table:
             chunked_arr = py_arrow_table.column(index)
             tb_filtered = self.from_arrow(self.context, pa.Table.from_arrays([chunked_arr.chunk(0)],
                                                                              [key]))
-            print("\t Column By Extract time: ", time.time() - t1)
             return tb_filtered
         elif isinstance(key, List):
             chunked_arrays = []
@@ -775,7 +759,6 @@ cdef class Table:
                 selected_columns.append(column_headers[index])
             return self.from_arrow(self.context, pa.Table.from_arrays(chunked_arrays,
                                                                       selected_columns))
-
         elif self._is_pycylon_table(key):
             return self._table_from_mask(key)
         else:
@@ -785,21 +768,20 @@ cdef class Table:
         selected_data = []
         if self.column_count == 1:
             column_data = self.to_arrow().combine_chunks().columns[0]
-            col_data = []
-            for val in column_data.chunks[0]:
-                col_data.append(op(val.as_py(), other))
-            selected_data.append(col_data)
-            tb_new = Table.from_list(self.context, self.column_names, selected_data)
-            return tb_new
+            array = column_data.chunks[0].to_numpy()
+            return self._comparison_compute_operation(array, other, op)
         else:
             for col in self.to_arrow().combine_chunks().columns:
                 col_data = []
                 for val in col.chunks[0]:
                     col_data.append(op(val.as_py(), other))
                 selected_data.append(col_data)
-            tb_new = Table.from_list(self.context, self.column_names, selected_data)
-            print("Comparison Operator Time 2: ", time.time() - t1)
-            return tb_new
+            return Table.from_list(self.context, self.column_names, selected_data)
+
+    def _comparison_compute_operation(self, array,  other, op):
+        from pycylon.data.compute import comparison_compute_op
+        result = comparison_compute_op(array, other, op)
+        return Table.from_numpy(self.context, self.column_names, [result])
 
     def __eq__(self, other) -> Table:
         return self._comparison_operation(other, operator.__eq__)
@@ -864,6 +846,7 @@ cdef class Table:
                                pa.Table.from_arrays(filtered_arrays, self.column_names))
 
     def where(self, condition not None, other=None):
+        # TODO: need to improve and overlap with filter functions
         filtered_all_data = []
         list_of_mask_values = list(condition.to_pydict().values())
         table_dict = self.to_pydict()
@@ -878,6 +861,5 @@ cdef class Table:
                         filtered_data.append(other)
                     else:
                         filtered_data.append(math.nan)
-
             filtered_all_data.append(filtered_data)
         return Table.from_list(self.context, self.column_names, filtered_all_data)
