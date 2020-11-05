@@ -47,7 +47,7 @@ from pycylon.data.aggregates cimport CGroupByAggregationOp
 from pycylon.data.aggregates import AggregationOp
 from pycylon.data.groupby cimport (GroupBy, PipelineGroupBy)
 from pycylon.data.compute import (comparison_compute_op_iter, comparison_compute_np_op,
-                                  table_compute_ar_op)
+                                  table_compute_ar_op, is_null, invert)
 
 import math
 import pyarrow as pa
@@ -745,10 +745,10 @@ cdef class Table:
             for column_name in key:
                 index = -1
                 if isinstance(column_name, str):
-                    index = self._resolve_column_index_from_column_name(key)
+                    index = self._resolve_column_index_from_column_name(column_name)
                 elif isinstance(column_name, int):
                     index = key
-                    chunked_arrays.append(py_arrow_table.column(index).chunk(0))
+                chunked_arrays.append(py_arrow_table.column(index).chunk(0))
                 selected_columns.append(column_headers[index])
             return self.from_arrow(self.context, pa.Table.from_arrays(chunked_arrays,
                                                                       selected_columns))
@@ -783,6 +783,9 @@ cdef class Table:
 
     def __and__(self, other) -> Table:
         return self._aggregate_filters(other, operator.__and__)
+
+    def __invert__(self):
+        return invert(self)
 
     def to_string(self, row_limit: int = 10):
         # TODO: Need to improve this method with more features:
@@ -840,3 +843,7 @@ cdef class Table:
                         filtered_data.append(math.nan)
             filtered_all_data.append(filtered_data)
         return Table.from_list(self.context, self.column_names, filtered_all_data)
+
+    def isnull(self):
+        return is_null(self)
+

@@ -3,10 +3,14 @@ import numpy as np
 cimport cython
 from libcpp cimport bool
 import pyarrow as pa
-from pyarrow.compute import greater, less, less_equal, greater_equal, equal, not_equal, or_, and_
+from pyarrow.compute import (greater, less, less_equal, greater_equal, equal, not_equal, or_,
+                             and_)
+from pyarrow import compute
 from pycylon.data.table cimport CTable
 from pycylon.data.table import Table
 import numbers
+
+
 
 cdef api c_filter(tb: Table, op):
     # TODO: Supported Added via: https://github.com/cylondata/cylon/issues/211
@@ -101,3 +105,22 @@ cpdef table_compute_ar_op(table: Table, other, op):
     else:
         raise ValueError(f"Comparison Operator not supported for type {type(other)}. Only Table "
                          f"and numbers are supported!")
+
+
+
+cpdef is_null(table:Table):
+    ar_tb = table.to_arrow().combine_chunks()
+    is_null_values = []
+    for chunk_ar in ar_tb.itercolumns():
+        is_null_values.append(compute.is_null(chunk_ar))
+    return Table.from_arrow(table.context, pa.Table.from_arrays(is_null_values,
+                                                                   names=table.column_names))
+
+cpdef invert(table:Table):
+    ar_tb = table.to_arrow().combine_chunks()
+    is_null_values = []
+    for chunk_ar in ar_tb.itercolumns():
+        is_null_values.append(compute.invert(chunk_ar))
+    return Table.from_arrow(table.context, pa.Table.from_arrays(is_null_values,
+                                                                   names=table.column_names))
+
