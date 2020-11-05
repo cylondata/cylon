@@ -26,6 +26,7 @@ from pycylon import Table
 from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
 import pyarrow as pa
+import numpy as np
 
 '''
 Run test:
@@ -242,3 +243,13 @@ def test_invert():
     invert_pdf = ~pdf
 
     assert invert_cn_tb.to_pandas().values.tolist() == invert_pdf.values.tolist()
+
+
+def test_neg():
+    npr = np.array([[1, 2, 3, 4, 5, -6, -7], [-1, -2, -3, -4, -5, 6, 7]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+    neg_cn_tb: Table = -cn_tb
+    neg_pdf = -pdf
+    assert neg_cn_tb.to_pandas().values.tolist() == neg_pdf.values.tolist()

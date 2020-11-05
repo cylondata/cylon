@@ -47,7 +47,7 @@ from pycylon.data.aggregates cimport CGroupByAggregationOp
 from pycylon.data.aggregates import AggregationOp
 from pycylon.data.groupby cimport (GroupBy, PipelineGroupBy)
 from pycylon.data.compute import (comparison_compute_op_iter, comparison_compute_np_op,
-                                  table_compute_ar_op, is_null, invert)
+                                  table_compute_ar_op, is_null, invert, neg)
 
 import math
 import pyarrow as pa
@@ -692,6 +692,10 @@ cdef class Table:
         """
         return self.to_arrow().column_names
 
+    @property
+    def shape(self):
+        return self.to_arrow().shape
+
     # @property
     # def schema(self):
     #     """
@@ -786,6 +790,9 @@ cdef class Table:
 
     def __invert__(self):
         return invert(self)
+
+    def __neg__(self):
+        return neg(self)
 
     def to_string(self, row_limit: int = 10):
         # TODO: Need to improve this method with more features:

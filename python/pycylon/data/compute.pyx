@@ -9,6 +9,7 @@ from pyarrow import compute
 from pycylon.data.table cimport CTable
 from pycylon.data.table import Table
 import numbers
+from operator import neg as py_neg
 
 
 
@@ -124,5 +125,18 @@ cpdef invert(table:Table):
         invert_values.append(compute.invert(chunk_ar))
     return Table.from_arrow(table.context, pa.Table.from_arrays(invert_values,
                                                                    names=table.column_names))
+
+cpdef neg(table:Table):
+    # NOTE: PyArrow API doesn't provide a neg operator.
+    ar_tb = table.to_arrow().combine_chunks()
+    neg_array = []
+    for chunk_arr in ar_tb.itercolumns():
+        updated_col_array = []
+        for val in chunk_arr:
+            updated_col_array.append(py_neg(val.as_py()))
+        neg_array.append(updated_col_array)
+    return Table.from_arrow(table.context, pa.Table.from_arrays(neg_array,
+                                                                   names=table.column_names))
+
 
 
