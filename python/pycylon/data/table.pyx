@@ -847,3 +847,27 @@ cdef class Table:
     def isnull(self):
         return is_null(self)
 
+    def rename(self, column_names):
+        if isinstance(column_names, dict):
+            table_col_names = self.column_names
+            for key in column_names.keys():
+              if key not in table_col_names:
+                raise ValueError("Column name doesn't exist in the table")
+              else:
+                table_col_names[table_col_names.index(key)] = column_names[key]
+            return Table.from_arrow(self.context, self.to_arrow().rename_columns(table_col_names))
+        elif isinstance(column_names, list):
+            if len(column_names) == self.column_count:
+                return Table.from_arrow(self.context, self.to_arrow().rename_columns(column_names))
+        else:
+            raise ValueError("Input Column names must be a dictionary or list")
+
+
+
+
+
+
+
+
+
+

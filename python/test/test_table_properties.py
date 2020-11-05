@@ -203,3 +203,42 @@ def test_where():
     print(cn_tb_where_with_other)
 
     print(cn_tb > 3)
+
+
+def test_rename():
+    col_names = ['col1', 'col2', 'col3', 'col4']
+    data_list_numeric = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13, 14, 15],
+                         [16, 17, 18, 19, 20]]
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb = Table.from_list(ctx, col_names, data_list_numeric)
+
+    # with dictionary
+    columns = {'col1': 'col-1', 'col3': 'col-3'}
+    cn_tb_new = cn_tb.rename(columns)
+
+    prev_col_names = cn_tb.column_names
+    new_col_names = cn_tb_new.column_names
+
+    for key in columns:
+        value = columns[key]
+        assert prev_col_names.index(key) == new_col_names.index(value)
+
+    # with list
+    new_column_names = ['col-1', 'col-2', 'col-3', 'col-4']
+    cn_tb_new = cn_tb.rename(new_col_names)
+
+    assert cn_tb_new.column_names == new_col_names
+
+
+def test_invert():
+    # Bool Invert Test
+
+    data_list = [[False, True, False, True, True], [False, True, False, True, True]]
+    pdf = DataFrame(data_list)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb = Table.from_pandas(ctx, pdf)
+
+    invert_cn_tb = ~cn_tb
+    invert_pdf = ~pdf
+
+    assert invert_cn_tb.to_pandas().values.tolist() == invert_pdf.values.tolist()

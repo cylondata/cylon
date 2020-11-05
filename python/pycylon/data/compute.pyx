@@ -117,10 +117,12 @@ cpdef is_null(table:Table):
                                                                    names=table.column_names))
 
 cpdef invert(table:Table):
+    # NOTE: Only Bool invert is supported by PyArrow APIs
     ar_tb = table.to_arrow().combine_chunks()
-    is_null_values = []
+    invert_values = []
     for chunk_ar in ar_tb.itercolumns():
-        is_null_values.append(compute.invert(chunk_ar))
-    return Table.from_arrow(table.context, pa.Table.from_arrays(is_null_values,
+        invert_values.append(compute.invert(chunk_ar))
+    return Table.from_arrow(table.context, pa.Table.from_arrays(invert_values,
                                                                    names=table.column_names))
+
 

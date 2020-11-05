@@ -12,8 +12,8 @@ ctx: CylonContext = CylonContext(config=None, distributed=False)
 
 
 def load_aggregated_single_response_pandas(target='AUC', min_r2_fit=0.3, max_ec50_se=3.0,
-                                           combo_format=False,
-                                           rename=True):
+                                           combo_format=True,
+                                           rename=False):
     url = "https://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/combo/combined_single_response_agg"
     output_combined_single_response = \
         "/home/vibhatha/data/uno/Pilot1/workload_1/combined_single_response_agg"
@@ -39,6 +39,21 @@ def load_aggregated_single_response_pandas(target='AUC', min_r2_fit=0.3, max_ec5
         df = df[['SOURCE', 'CELL', 'DRUG', target, 'STUDY']]
         df = df[~df[target].isnull()]
         print("After not and null check ", df.shape)
+
+        if combo_format:
+            df = df.rename(columns={'DRUG': 'DRUG1'})
+            df['DRUG2'] = np.nan
+            df['DRUG2'] = df['DRUG2'].astype(object)
+            df = df[['SOURCE', 'CELL', 'DRUG1', 'DRUG2', target, 'STUDY']]
+            if rename:
+                df = df.rename(columns={'SOURCE': 'Source', 'CELL': 'Sample',
+                                        'DRUG1': 'Drug1', 'DRUG2': 'Drug2', 'STUDY': 'Study'})
+        else:
+            if rename:
+                df = df.rename(columns={'SOURCE': 'Source', 'CELL': 'Sample',
+                                        'DRUG': 'Drug', 'STUDY': 'Study'})
+
+        print("DF New", df.shape, df.columns)
 
 
 def load_aggregated_single_response_cylon(target='AUC', min_r2_fit=0.3, max_ec50_se=3.0,
@@ -68,7 +83,20 @@ def load_aggregated_single_response_cylon(target='AUC', min_r2_fit=0.3, max_ec50
 
         print("Cylon Data Loading Time: ", table_read_time)
         print("Cylon Data Filter Time: ", filter_time)
+        if combo_format:
+            tb = tb.rename(columns={'DRUG': 'DRUG1'})
+            tb['DRUG2'] = np.nan
+            #tb['DRUG2'] = tb['DRUG2'].astype(object)
+            tb = tb[['SOURCE', 'CELL', 'DRUG1', 'DRUG2', target, 'STUDY']]
+            if rename:
+                tb = tb.rename(columns={'SOURCE': 'Source', 'CELL': 'Sample',
+                                        'DRUG1': 'Drug1', 'DRUG2': 'Drug2', 'STUDY': 'Study'})
+        else:
+            if rename:
+                tb = tb.rename(columns={'SOURCE': 'Source', 'CELL': 'Sample',
+                                        'DRUG': 'Drug', 'STUDY': 'Study'})
+
 
 
 load_aggregated_single_response_pandas()
-load_aggregated_single_response_cylon()
+#load_aggregated_single_response_cylon()
