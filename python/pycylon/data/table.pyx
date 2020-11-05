@@ -46,7 +46,8 @@ from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
 from pycylon.data.aggregates import AggregationOp
 from pycylon.data.groupby cimport (GroupBy, PipelineGroupBy)
-from pycylon.data.compute cimport (c_filter)
+from pycylon.data.compute import (comparison_compute_op_iter, comparison_compute_np_op,
+                                  table_compute_ar_op)
 
 import math
 import pyarrow as pa
@@ -60,7 +61,6 @@ from cython.parallel import prange
 '''
 Cylon Table definition mapping 
 '''
-
 
 cdef class Table:
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
@@ -724,14 +724,7 @@ cdef class Table:
             return Table.from_list(self.context, self.column_names, filtered_all_data)
 
     def _aggregate_filters(self, filter: Table, op) -> Table:
-        aggregated_filter_response = []
-        for column1, column2 in zip(filter.to_arrow().combine_chunks().columns, self.to_arrow(
-        ).combine_chunks().columns):
-            column_data = []
-            for value1, value2 in zip(column1.chunks[0], column2.chunks[0]):
-                column_data.append(op(value1.as_py(), value2.as_py()))
-            aggregated_filter_response.append(column_data)
-        return Table.from_list(self.context, self.column_names, aggregated_filter_response)
+        return table_compute_ar_op(self, filter, op)
 
     def __getitem__(self, key) -> Table:
         py_arrow_table = self.to_arrow().combine_chunks()
@@ -765,23 +758,7 @@ cdef class Table:
             raise ValueError(f"Unsupported Key Type in __getitem__ {type(key)}")
 
     def _comparison_operation(self, other, op):
-        selected_data = []
-        if self.column_count == 1:
-            column_data = self.to_arrow().combine_chunks().columns[0]
-            array = column_data.chunks[0].to_numpy()
-            return self._comparison_compute_operation(array, other, op)
-        else:
-            for col in self.to_arrow().combine_chunks().columns:
-                col_data = []
-                for val in col.chunks[0]:
-                    col_data.append(op(val.as_py(), other))
-                selected_data.append(col_data)
-            return Table.from_list(self.context, self.column_names, selected_data)
-
-    def _comparison_compute_operation(self, array,  other, op):
-        from pycylon.data.compute import comparison_compute_op
-        result = comparison_compute_op(array, other, op)
-        return Table.from_numpy(self.context, self.column_names, [result])
+        return table_compute_ar_op(self, other, op)
 
     def __eq__(self, other) -> Table:
         return self._comparison_operation(other, operator.__eq__)
