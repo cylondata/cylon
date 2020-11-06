@@ -86,7 +86,7 @@ def load_aggregated_single_response_cylon(target='AUC', min_r2_fit=0.3, max_ec50
         if combo_format:
             tb = tb.rename(columns={'DRUG': 'DRUG1'})
             tb['DRUG2'] = np.nan
-            #tb['DRUG2'] = tb['DRUG2'].astype(object)
+            # tb['DRUG2'] = tb['DRUG2'].astype(object)
             tb = tb[['SOURCE', 'CELL', 'DRUG1', 'DRUG2', target, 'STUDY']]
             if rename:
                 tb = tb.rename(columns={'SOURCE': 'Source', 'CELL': 'Sample',
@@ -116,9 +116,15 @@ def load_single_dose_response_pandas(combo_format=False, fraction=True):
                                 'LOG_CONCENTRATION': np.float32,
                                 'EXPID': str, 'GROWTH': np.float32})
         t2 = time.time()
-        print(df.shape, t2-t1)
-        print("Schema : ", df.dtypes)
+        print(df.shape, t2 - t1)
+        print("Schema : ", df.dtypes, df.shape)
+        df['DOSE'] = -df['LOG_CONCENTRATION']
+        print("New Schema : ", df.dtypes, df.shape)
+        df = df.rename(columns={'CELLNAME': 'CELL', 'DRUG_ID': 'DRUG', 'EXPID': 'STUDY'})
+        df = df[['SOURCE', 'CELL', 'DRUG', 'DOSE', 'GROWTH', 'STUDY']]
+        print("Rename and Update : ", df.dtypes, df.shape)
         print("----------------------------------------------")
+
 
 def load_single_dose_response_cylon(combo_format=False, fraction=True):
     url = "https://ftp.mcs.anl.gov/pub/candle/public/benchmarks/Pilot1/combo/rescaled_combined_single_drug_growth"
@@ -135,11 +141,16 @@ def load_single_dose_response_cylon(combo_format=False, fraction=True):
         t1 = time.time()
         tb: Table = read_csv(ctx, rescaled_combined_single_drug_growth, csv_read_options)
         t2 = time.time()
-        print(tb.shape, t2-t1)
+        print(tb.shape, t2 - t1)
         print("Schema: ", tb.to_arrow().schema)
+        tb['DOSE'] = -tb['LOG_CONCENTRATION']
+        print("New Schema : ", tb.to_arrow().schema, tb.shape)
+        columns = {'CELLNAME': 'CELL', 'DRUG_ID': 'DRUG', 'EXPID': 'STUDY'}
+        tb.rename(columns)
+        tb = tb[['SOURCE', 'CELL', 'DRUG', 'DOSE', 'GROWTH', 'STUDY']]
+        print("Rename and Filter : ", tb.to_arrow().schema, tb.shape)
         print("----------------------------------------------")
 
 
 load_single_dose_response_pandas()
 load_single_dose_response_cylon()
-
