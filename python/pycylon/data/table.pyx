@@ -63,6 +63,9 @@ Cylon Table definition mapping
 '''
 
 cdef class Table:
+    def __init__(self, pyarrow_table=None, context=None):
+        self.initialize(pyarrow_table, context)
+
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
         """
         PyClon constructor
@@ -70,6 +73,9 @@ cdef class Table:
         @param context: PyCylon Context
         @param columns: columns TODO: add support
         """
+        self.initialize(pyarrow_table, context)
+
+    def initialize(self, pyarrow_table=None, context=None):
         cdef shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
         if self._is_pycylon_context(context) and self._is_pyarrow_table(pyarrow_table):
             c_arrow_tb_shd_ptr = pyarrow_unwrap_table(pyarrow_table)
@@ -761,6 +767,20 @@ cdef class Table:
         else:
             raise ValueError(f"Unsupported Key Type in __getitem__ {type(key)}")
 
+    def __setitem__(self, key, value):
+        if isinstance(key, str) and isinstance(value, Table):
+            index = self._resolve_column_index_from_column_name(key)
+
+            # A new Column is replacing an existing column
+            if value.column_count == 1:
+                print("__setitem__")
+                value_arrow_table = value.to_arrow().combine_chunks()
+                chunk_arr = value_arrow_table.columns[0].chunks[0]
+                current_ar_table = self.to_arrow()
+                field = current_ar_table.field(0)
+                self.initialize(current_ar_table.set_column(index, field, chunk_arr), self.context)
+
+
     def _comparison_operation(self, other, op):
         return table_compute_ar_op(self, other, op)
 
@@ -858,23 +878,13 @@ cdef class Table:
         if isinstance(column_names, dict):
             table_col_names = self.column_names
             for key in column_names.keys():
-              if key not in table_col_names:
-                raise ValueError("Column name doesn't exist in the table")
-              else:
-                table_col_names[table_col_names.index(key)] = column_names[key]
-            return Table.from_arrow(self.context, self.to_arrow().rename_columns(table_col_names))
+                if key not in table_col_names:
+                    raise ValueError("Column name doesn't exist in the table")
+                else:
+                    table_col_names[table_col_names.index(key)] = column_names[key]
+            self.initialize(self.to_arrow().rename_columns(table_col_names), self.context)
         elif isinstance(column_names, list):
             if len(column_names) == self.column_count:
-                return Table.from_arrow(self.context, self.to_arrow().rename_columns(column_names))
+                self.initialize(self.to_arrow().rename_columns(column_names), self.context)
         else:
             raise ValueError("Input Column names must be a dictionary or list")
-
-
-
-
-
-
-
-
-
-

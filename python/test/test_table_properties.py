@@ -213,22 +213,25 @@ def test_rename():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     cn_tb = Table.from_list(ctx, col_names, data_list_numeric)
 
+    prev_col_names = cn_tb.column_names
     # with dictionary
     columns = {'col1': 'col-1', 'col3': 'col-3'}
-    cn_tb_new = cn_tb.rename(columns)
+    cn_tb.rename(columns)
 
-    prev_col_names = cn_tb.column_names
-    new_col_names = cn_tb_new.column_names
+
+    new_col_names = cn_tb.column_names
 
     for key in columns:
         value = columns[key]
         assert prev_col_names.index(key) == new_col_names.index(value)
 
     # with list
+    cn_tb_list = Table.from_list(ctx, col_names, data_list_numeric)
+    prev_col_names = cn_tb_list.column_names
     new_column_names = ['col-1', 'col-2', 'col-3', 'col-4']
-    cn_tb_new = cn_tb.rename(new_col_names)
+    cn_tb_list.rename(new_column_names)
 
-    assert cn_tb_new.column_names == new_col_names
+    assert cn_tb_list.column_names == new_column_names
 
 
 def test_invert():
@@ -253,3 +256,13 @@ def test_neg():
     neg_cn_tb: Table = -cn_tb
     neg_pdf = -pdf
     assert neg_cn_tb.to_pandas().values.tolist() == neg_pdf.values.tolist()
+
+
+def test_setitem():
+    npr = np.array([[1, 2, 3, 4, 5], [-1, -2, -3, -4, -5]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+    cn_tb['0'] = cn_tb['4']
+
+    assert cn_tb['0'].to_pandas().values.tolist() == cn_tb['4'].to_pandas().values.tolist()
