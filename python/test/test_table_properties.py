@@ -263,6 +263,42 @@ def test_setitem():
     pdf = DataFrame(npr)
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     cn_tb: Table = Table.from_pandas(ctx, pdf)
+    # replacing an existing column
     cn_tb['0'] = cn_tb['4']
-
     assert cn_tb['0'].to_pandas().values.tolist() == cn_tb['4'].to_pandas().values.tolist()
+    # adding a new column at the end
+    cn_tb['5'] = cn_tb['4']
+    assert cn_tb['5'].to_pandas().values.tolist() == cn_tb['4'].to_pandas().values.tolist()
+
+
+def test_math_ops_for_scalar():
+    npr = np.array([[20, 2, 3, 4, 5], [10, -20, -30, -40, -50], [10.2, 13.2, 16.4, 12.2, 10.8]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+
+    from operator import add, sub, mul, truediv
+    ops = [add, sub, mul, truediv]
+
+    for op in ops:
+        cn_tb_1 = cn_tb
+        pdf_1 = pdf
+        # test column division
+        cn_tb_1['0'] = op(cn_tb_1['0'], 2)
+        pdf_1[0] = op(pdf_1[0], 2)
+
+        assert pdf_1.values.tolist() == cn_tb_1.to_pandas().values.tolist()
+
+        # test table division
+        cn_tb_2 = cn_tb
+        pdf_2 = pdf
+
+        cn_tb_2 = op(cn_tb_2, 2)
+        pdf_2 = op(pdf, 2)
+
+        assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
+
+
+test_math_ops_for_scalar()
+
+

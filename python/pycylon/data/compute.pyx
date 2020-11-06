@@ -5,6 +5,8 @@ from libcpp cimport bool
 import pyarrow as pa
 from pyarrow.compute import (greater, less, less_equal, greater_equal, equal, not_equal, or_,
                              and_)
+from pyarrow.compute import add as a_add, subtract as a_subtract, multiply as a_multiply, \
+    divide as a_divide
 from pyarrow import compute
 from pycylon.data.table cimport CTable
 from pycylon.data.table import Table
@@ -107,6 +109,8 @@ cpdef table_compute_ar_op(table: Table, other, op):
         raise ValueError(f"Comparison Operator not supported for type {type(other)}. Only Table "
                          f"and numbers are supported!")
 
+cdef _is_division(op):
+    return op.__name__ == 'divide'
 
 
 cpdef is_null(table:Table):
@@ -138,5 +142,40 @@ cpdef neg(table:Table):
     return Table.from_arrow(table.context, pa.Table.from_arrays(neg_array,
                                                                    names=table.column_names))
 
+cpdef division_op(table:Table, op, value):
+    ar_tb = table.to_arrow().combine_chunks()
+    res_array = []
+    if not isinstance(value, numbers.Number):
+        raise ValueError("Math operation value must be numerical")
+    cast_type = pa.float64()
+    for chunk_arr in ar_tb.itercolumns():
+        chunk_arr = chunk_arr.cast(cast_type)
+        value = cast_scalar(value, cast_type.id)
+        res_array.append(op(chunk_arr, value))
+    return Table.from_arrow(table.context, pa.Table.from_arrays(res_array,
+                                                                   names=table.column_names))
 
 
+cpdef math_op(table:Table, op, value):
+    ar_tb = table.to_arrow().combine_chunks()
+    res_array = []
+    if not isinstance(value, numbers.Number) or isinstance(value, Table):
+        raise ValueError("Math operation value must be numerical or a Numeric Table")
+    for chunk_arr in ar_tb.itercolumns():
+        if isinstance(value, numbers.Number):
+            value = cast_scalar(value, chunk_arr.type.id)
+        res_array.append(op(chunk_arr, value))
+    return Table.from_arrow(table.context, pa.Table.from_arrays(res_array,
+                                                                   names=table.column_names))
+
+cpdef add(table:Table, value):
+    return math_op(table, a_add, value)
+
+cpdef subtract(table:Table, value):
+    return math_op(table, a_subtract, value)
+
+cpdef multiply(table:Table, value):
+    return math_op(table, a_multiply, value)
+
+cpdef divide(table:Table, value):
+    return division_op(table, a_divide, value)

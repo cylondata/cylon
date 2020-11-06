@@ -47,7 +47,8 @@ from pycylon.data.aggregates cimport CGroupByAggregationOp
 from pycylon.data.aggregates import AggregationOp
 from pycylon.data.groupby cimport (GroupBy, PipelineGroupBy)
 from pycylon.data.compute import (comparison_compute_op_iter, comparison_compute_np_op,
-                                  table_compute_ar_op, is_null, invert, neg)
+                                  table_compute_ar_op, is_null, invert, neg, add, subtract,
+                                  multiply, divide)
 
 import math
 import pyarrow as pa
@@ -769,17 +770,18 @@ cdef class Table:
 
     def __setitem__(self, key, value):
         if isinstance(key, str) and isinstance(value, Table):
-            index = self._resolve_column_index_from_column_name(key)
-
-            # A new Column is replacing an existing column
             if value.column_count == 1:
-                print("__setitem__")
                 value_arrow_table = value.to_arrow().combine_chunks()
                 chunk_arr = value_arrow_table.columns[0].chunks[0]
                 current_ar_table = self.to_arrow()
-                field = current_ar_table.field(0)
-                self.initialize(current_ar_table.set_column(index, field, chunk_arr), self.context)
-
+                if key in self.column_names:
+                    index = self._resolve_column_index_from_column_name(key)
+                    # A new Column is replacing an existing column
+                    self.initialize(current_ar_table.set_column(index, key, chunk_arr),
+                                    self.context)
+                else:
+                    self.initialize(current_ar_table.append_column(key, chunk_arr),
+                                    self.context)
 
     def _comparison_operation(self, other, op):
         return table_compute_ar_op(self, other, op)
@@ -813,6 +815,22 @@ cdef class Table:
 
     def __neg__(self):
         return neg(self)
+
+    def __add__(self, other):
+        return add(self, other)
+
+    def __sub__(self, other):
+        return subtract(self, other)
+
+    def __mul__(self, other):
+        return multiply(self, other)
+
+    def __truediv__(self, other):
+        return divide(self, other)
+
+    def __itruediv__(self, other):
+        pass
+
 
     def to_string(self, row_limit: int = 10):
         # TODO: Need to improve this method with more features:
