@@ -320,11 +320,41 @@ def test_math_i_ops_for_scalar():
 
     assert pdf_1.values.tolist() == cn_tb_1.to_pandas().values.tolist()
 
+    cn_tb_1['0'] -= 2
+    pdf_1[0] -= 2
+
+    assert pdf_1.values.tolist() == cn_tb_1.to_pandas().values.tolist()
+
+    cn_tb_1['0'] *= 2
+    pdf_1[0] *= 2
+
+    assert pdf_1.values.tolist() == cn_tb_1.to_pandas().values.tolist()
+
+    cn_tb_1['0'] /= 2
+    pdf_1[0] /= 2
+
+    assert pdf_1.values.tolist() == cn_tb_1.to_pandas().values.tolist()
+
     # test table division
     cn_tb_2 = cn_tb
     pdf_2 = pdf
 
     cn_tb_2 += 2
     pdf += 2
+
+    assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
+
+    cn_tb_2 -= 2
+    pdf -= 2
+
+    assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
+
+    cn_tb_2 *= 2
+    pdf *= 2
+
+    assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
+
+    cn_tb_2 /= 2
+    pdf /= 2
 
     assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()

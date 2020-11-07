@@ -770,8 +770,6 @@ cdef class Table:
 
     def __setitem__(self, key, value):
         if isinstance(key, str) and isinstance(value, Table):
-            print(
-                f"__setitem__ key={key}, self.col={self.column_names}, value.col={value.column_names}")
             if value.column_count == 1:
                 value_arrow_table = value.to_arrow().combine_chunks()
                 chunk_arr = value_arrow_table.columns[0].chunks[0]
@@ -832,9 +830,6 @@ cdef class Table:
 
     def __truediv__(self, other):
         return divide(self, other)
-
-    def __itruediv__(self, other):
-        pass
 
     def __repr__(self):
         return self.to_string()
