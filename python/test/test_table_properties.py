@@ -218,7 +218,6 @@ def test_rename():
     columns = {'col1': 'col-1', 'col3': 'col-3'}
     cn_tb.rename(columns)
 
-
     new_col_names = cn_tb.column_names
 
     for key in columns:
@@ -299,6 +298,33 @@ def test_math_ops_for_scalar():
         assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
 
 
-test_math_ops_for_scalar()
+def test_math_i_ops_for_scalar():
+    """
+    TODO: Enhance Test case and functionality
+        Check the following case : https://github.com/cylondata/cylon/issues/229
+    >>> from operator import __iadd__
+    >>> assert __iadd__(cylon_table, value) == (cylon_table += value)
+    >>> Failure ...
+    """
+    npr = np.array([[20, 2, 3, 4, 5], [10, -20, -30, -40, -50], [12.2, 13.2, 16.4, 12.2, 10.8]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
 
+    cn_tb_1 = cn_tb
+    pdf_1 = pdf
+    # test column addition
 
+    cn_tb_1['0'] += 2
+    pdf_1[0] += 2
+
+    assert pdf_1.values.tolist() == cn_tb_1.to_pandas().values.tolist()
+
+    # test table division
+    cn_tb_2 = cn_tb
+    pdf_2 = pdf
+
+    cn_tb_2 += 2
+    pdf += 2
+
+    assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()

@@ -770,6 +770,8 @@ cdef class Table:
 
     def __setitem__(self, key, value):
         if isinstance(key, str) and isinstance(value, Table):
+            print(
+                f"__setitem__ key={key}, self.col={self.column_names}, value.col={value.column_names}")
             if value.column_count == 1:
                 value_arrow_table = value.to_arrow().combine_chunks()
                 chunk_arr = value_arrow_table.columns[0].chunks[0]
@@ -782,6 +784,9 @@ cdef class Table:
                 else:
                     self.initialize(current_ar_table.append_column(key, chunk_arr),
                                     self.context)
+        else:
+            raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
+                             f"value type {type(value)}")
 
     def _comparison_operation(self, other, op):
         return table_compute_ar_op(self, other, op)
@@ -831,6 +836,8 @@ cdef class Table:
     def __itruediv__(self, other):
         pass
 
+    def __repr__(self):
+        return self.to_string()
 
     def to_string(self, row_limit: int = 10):
         # TODO: Need to improve this method with more features:
@@ -854,9 +861,6 @@ cdef class Table:
             return row_strs
         else:
             return str1
-
-    def __repr__(self):
-        return self.to_string()
 
     def drop(self, column_names: List[str]):
         return self.from_arrow(self.context, self.to_arrow().drop(column_names))
