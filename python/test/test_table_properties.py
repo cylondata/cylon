@@ -358,3 +358,39 @@ def test_math_i_ops_for_scalar():
     pdf /= 2
 
     assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
+
+
+def test_i_bitwise_ops():
+    # TODO: Improve test and functionality: https://github.com/cylondata/cylon/issues/229
+    npr = np.array([[20, 2, 3, 4, 5], [10, -20, -30, -40, -50], [36.2, 13.2, 16.4, 12.2, 10.8]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+
+    a = cn_tb['0'] > 10
+    b = cn_tb['1'] > 2
+    a_pdf = pdf[0] > 10
+    b_pdf = pdf[1] > 2
+
+    d = a & b
+    a &= b
+    d_pdf = a_pdf & b_pdf
+    a_pdf &= b_pdf
+
+    assert d.to_pandas().values.tolist() == a.to_pandas().values.tolist()
+    assert a.to_pandas().values.flatten().tolist() == a_pdf.values.tolist()
+
+    ## OR
+
+    a = cn_tb['0'] > 10
+    b = cn_tb['1'] > 2
+    a_pdf = pdf[0] > 10
+    b_pdf = pdf[1] > 2
+
+    d = a | b
+    a |= b
+    d_pdf = a_pdf | b_pdf
+    a_pdf |= b_pdf
+
+    assert d.to_pandas().values.tolist() == a.to_pandas().values.tolist()
+    assert a.to_pandas().values.flatten().tolist() == a_pdf.values.tolist()
