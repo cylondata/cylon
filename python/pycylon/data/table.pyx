@@ -905,3 +905,11 @@ cdef class Table:
                 self.initialize(self.to_arrow().rename_columns(column_names), self.context)
         else:
             raise ValueError("Input Column names must be a dictionary or list")
+
+    def add_prefix(self, prefix:str) -> Table:
+        new_column_names = [prefix + col for col in self.column_names]
+        return Table.from_arrow(self.context, self.to_arrow().rename_columns(new_column_names))
+
+    def add_suffix(self, suffix:str) -> Table:
+        new_column_names = [col + suffix for col in self.column_names]
+        return Table.from_arrow(self.context, self.to_arrow().rename_columns(new_column_names))

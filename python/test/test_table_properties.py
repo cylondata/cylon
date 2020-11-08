@@ -394,3 +394,30 @@ def test_i_bitwise_ops():
 
     assert d.to_pandas().values.tolist() == a.to_pandas().values.tolist()
     assert a.to_pandas().values.flatten().tolist() == a_pdf.values.tolist()
+
+
+def test_add_prefix():
+    npr = np.array([[20.2, 2.0, 3.2, 4.3, 5.5], [10, -20, -30, -40, -50], [36.2, 13.2, 16.4, 12.2,
+                                                                           10.8]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+    prefix = "item_"
+    cn_tb_with_prefix = cn_tb.add_prefix(prefix)
+    pdf_with_prefix = pdf.add_prefix(prefix)
+
+    assert pdf_with_prefix.columns.tolist() == cn_tb_with_prefix.column_names
+
+
+def test_add_suffix():
+    npr = np.array([[20.2, 2.0, 3.2, 4.3, 5.5], [10, -20, -30, -40, -50], [36.8, 13.2, 16.4, 12.2,
+                                                                           10.8]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+    suffix = "item_"
+    cn_tb_with_suffix = cn_tb.add_suffix(suffix)
+    pdf_with_suffix = pdf.add_suffix(suffix)
+
+    assert pdf_with_suffix.columns.tolist() == cn_tb_with_suffix.column_names
+
