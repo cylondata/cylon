@@ -179,3 +179,18 @@ cpdef multiply(table:Table, value):
 
 cpdef divide(table:Table, value):
     return division_op(table, a_divide, value)
+
+cpdef unique(table:Table):
+    # TODO: axis=1 implementation (row-wise comparison)
+    artb = table.to_arrow().combine_chunks()
+    res_array = []
+    for chunk_ar in artb.itercolumns():
+        res_array.append(len(unique(chunk_ar)))
+    return Table.from_arrow(table.context, pa.Table.from_arrays(res_array,
+                                                                   names=table.column_names))
+
+cpdef nunique(table:Table):
+    pass
+
+
+

@@ -20,9 +20,6 @@ from pycylon.common.join_config cimport CJoinAlgorithm
 from pycylon.common.join_config cimport CJoinConfig
 from pycylon.common.join_config import PJoinType
 from pycylon.common.join_config import PJoinAlgorithm
-from pycylon.io.csv_read_config cimport CCSVReadOptions
-from pycylon.io.csv_read_config import CSVReadOptions
-from pycylon.io.csv_read_config cimport CSVReadOptions
 from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pycylon.io.csv_write_config import CSVWriteOptions
 from pycylon.io.csv_write_config cimport CSVWriteOptions
@@ -46,9 +43,7 @@ from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
 from pycylon.data.aggregates import AggregationOp
 from pycylon.data.groupby cimport (GroupBy, PipelineGroupBy)
-from pycylon.data.compute import (comparison_compute_op_iter, comparison_compute_np_op,
-                                  table_compute_ar_op, is_null, invert, neg, add, subtract,
-                                  multiply, divide)
+from pycylon.data import compute
 
 import math
 import pyarrow as pa
@@ -57,7 +52,6 @@ import pandas as pd
 from typing import List
 import warnings
 import operator
-from cython.parallel import prange
 
 '''
 Cylon Table definition mapping 
@@ -735,7 +729,7 @@ cdef class Table:
             return Table.from_list(self.context, self.column_names, filtered_all_data)
 
     def _aggregate_filters(self, filter: Table, op) -> Table:
-        return table_compute_ar_op(self, filter, op)
+        return compute.table_compute_ar_op(self, filter, op)
 
     def __getitem__(self, key) -> Table:
         py_arrow_table = self.to_arrow().combine_chunks()
@@ -787,7 +781,7 @@ cdef class Table:
                              f"value type {type(value)}")
 
     def _comparison_operation(self, other, op):
-        return table_compute_ar_op(self, other, op)
+        return compute.table_compute_ar_op(self, other, op)
 
     def __eq__(self, other) -> Table:
         return self._comparison_operation(other, operator.__eq__)
@@ -814,22 +808,22 @@ cdef class Table:
         return self._aggregate_filters(other, operator.__and__)
 
     def __invert__(self):
-        return invert(self)
+        return compute.invert(self)
 
     def __neg__(self):
-        return neg(self)
+        return compute.neg(self)
 
     def __add__(self, other):
-        return add(self, other)
+        return compute.add(self, other)
 
     def __sub__(self, other):
-        return subtract(self, other)
+        return compute.subtract(self, other)
 
     def __mul__(self, other):
-        return multiply(self, other)
+        return compute.multiply(self, other)
 
     def __truediv__(self, other):
-        return divide(self, other)
+        return compute.divide(self, other)
 
     def __repr__(self):
         return self.to_string()
@@ -889,7 +883,7 @@ cdef class Table:
         return Table.from_list(self.context, self.column_names, filtered_all_data)
 
     def isnull(self):
-        return is_null(self)
+        return compute.is_null(self)
 
     def rename(self, column_names):
         if isinstance(column_names, dict):
@@ -906,10 +900,35 @@ cdef class Table:
         else:
             raise ValueError("Input Column names must be a dictionary or list")
 
-    def add_prefix(self, prefix:str) -> Table:
+    def add_prefix(self, prefix: str) -> Table:
         new_column_names = [prefix + col for col in self.column_names]
         return Table.from_arrow(self.context, self.to_arrow().rename_columns(new_column_names))
 
-    def add_suffix(self, suffix:str) -> Table:
+    def add_suffix(self, suffix: str) -> Table:
         new_column_names = [col + suffix for col in self.column_names]
         return Table.from_arrow(self.context, self.to_arrow().rename_columns(new_column_names))
+
+    @property
+    def index(self):
+        return self.index
+
+    @index.setter
+    def index(self, key) -> Table:
+        if isinstance(key, List):
+            if len(key) != self.row_count:
+                raise ValueError("Index length must be equal to number of rows in the table")
+            else:
+                self.index = key
+        else:
+            self.index = range(0, self.row_count)
+
+    def reset_index(self, key) -> Table:
+        pass
+
+    def loc(self, key) -> Table:
+        pass
+
+    def iloc(self, key) -> Table:
+        pass
+
+
