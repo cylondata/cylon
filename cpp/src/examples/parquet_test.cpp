@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
 
   std::string cmakePath = EXAMPLE_CMAKE_DIR;
   std::string pathFromSrc = "/../../../data/input/parquet1_0.parquet";
-  std::string pathToOutput = "/../../../data/input/parquet1_0_1.parquet";
+  std::string pathToOutput = "/../../../data/output/parquet1_0_1.parquet";
   std::string fullSrcPath = cmakePath + pathFromSrc;
   std::string fullOutputPath = cmakePath + pathToOutput;
 
