@@ -29,3 +29,6 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
     CStatus FromCSV(shared_ptr[CCylonContext] &ctx, const string &path, shared_ptr[CTable]
                         &tableOut, const CCSVReadOptions &options)
+
+    CStatus WriteCSV(shared_ptr[CTable] &table, const string &path, 
+                        const CCSVWriteOptions &options)

@@ -28,9 +28,6 @@
 #include "util/uuid.hpp"
 
 #include "table.hpp"
-#ifdef BUILD_CYLON_PARQUET
-#include "parquet.hpp"
-#endif
 
 namespace cylon {
 // todo make this un ordered
@@ -384,10 +381,12 @@ Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
   return status;
 }
 
-Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &id, const std::string &path,
+Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                    const std::string &id,
+                    const std::string &path,
                     const cylon::io::config::ParquetOptions &options) {
   auto table = GetTable(id);
-  return table->WriteParquet(ctx, path, options);
+  return cylon::WriteParquet(table, ctx, path, options);
 }
 #endif
 }  // namespace cylon

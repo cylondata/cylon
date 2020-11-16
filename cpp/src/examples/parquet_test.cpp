@@ -11,9 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <parquet.hpp>
 #include <net/mpi/mpi_communicator.hpp>
+#include <table.hpp>
 
 int main(int argc, char *argv[]) {
   auto start_start = std::chrono::steady_clock::now();
@@ -45,6 +44,6 @@ int main(int argc, char *argv[]) {
   first_table->Print();
 
   auto parquetOptions = cylon::io::config::ParquetOptions().ChunkSize(5);
-  first_table->WriteParquet(ctx, fullOutputPath, parquetOptions);
+  cylon::WriteParquet(first_table, ctx, fullOutputPath, parquetOptions);
   return 0;
 }

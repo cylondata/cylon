@@ -55,7 +55,7 @@ def test_table():
 
     csv_write_options = CSVWriteOptions().with_delimiter(',')
 
-    tb3.to_csv('/tmp/temp_record.csv', csv_write_options)
+    to_csv(tb3, '/tmp/temp_record.csv', csv_write_options)
 
     tb4 = tb3.sort(1)
 

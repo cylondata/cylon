@@ -48,3 +48,15 @@ def read_csv(context, path, csv_read_options) -> Table:
             return pycylon_wrap_table(cn_table)
         else:
             raise Exception(f"Table couldn't be created from CSV: {status.get_msg().decode()}")
+
+def to_csv(table, path, csv_write_options):
+        """
+        creating a csv file with PyCylon table data
+        @param table: shared_ptr[CTable]
+        @param path: str
+        @param csv_write_options: CSVWriteOptions
+        """
+        cdef string cpath = path.encode()
+        cdef CCSVWriteOptions c_csv_write_options = pycylon_unwrap_csv_write_options(
+            csv_write_options)
+        WriteCSV(pycylon_unwrap_table(table), cpath, c_csv_write_options)
