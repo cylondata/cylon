@@ -172,7 +172,67 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   }
 #else
   auto write_options = io::config::CSVWriteOptions().ColumnNames(joined->ColumnNames());
-  WriteCSV(joined, out_path, write_options);
+  cylon::WriteCSV(joined, out_path, write_options);
+#endif
+  return 0;
+}
+
+int TestParquetJoinOperation(const cylon::join::config::JoinConfig &join_config,
+                      std::shared_ptr<cylon::CylonContext> &ctx,
+                      const std::string &path1,
+                      const std::string &path2,
+                      const std::string &out_path) {
+  Status status;
+  std::shared_ptr<cylon::Table> table1, table2, joined_expected, joined, verification;
+
+  auto start_start = std::chrono::steady_clock::now();
+
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false);
+  status = cylon::FromParquet(ctx,
+#if EXECUTE
+                          std::vector<std::string>{path1, path2, out_path},
+                          std::vector<std::shared_ptr<Table> *>{&table1, &table2,
+                                                                &joined_expected}
+#else
+      std::vector<std::string>{path1, path2},
+      std::vector<std::shared_ptr<Table> *>{&table1, &table2}
+#endif
+                          );
+
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading failed " << status.get_msg();
+    return 1;
+  }
+
+  auto read_end_time = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Read tables in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start)
+                .count()
+            << "[ms]";
+
+  status = cylon::DistributedJoin(table1, table2, join_config, joined);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table join failed ";
+    return 1;
+  }
+  auto join_end_time = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "First table had : " << table1->Rows() << " and Second table had : "
+            << table2->Rows() << ", Joined has : " << joined->Rows();
+  LOG(INFO) << "Join done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time)
+                .count()
+            << "[ms]";
+
+#if EXECUTE
+  if (test::Verify(ctx, joined, joined_expected)) {
+    LOG(ERROR) << "join failed!";
+    return 1;
+  }
+#else
+  auto parquetOptions = cylon::io::config::ParquetOptions().ChunkSize(5);
+  cylon::WriteParquet(joined, ctx, out_path, parquetOptions);
 #endif
   return 0;
 }
