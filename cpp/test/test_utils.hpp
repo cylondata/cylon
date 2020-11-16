@@ -112,7 +112,7 @@ int TestSetOperation(fun_ptr fn,
   return test::Verify(ctx, result, result_expected);
 #else
   auto write_options = io::config::CSVWriteOptions().ColumnNames(result->ColumnNames());
-  result->WriteCSV(out_path, write_options);
+  WriteCSV(result, out_path, write_options);
   return 0;
 #endif
 }
@@ -172,7 +172,7 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   }
 #else
   auto write_options = io::config::CSVWriteOptions().ColumnNames(joined->ColumnNames());
-  joined->WriteCSV(out_path, write_options);
+  WriteCSV(joined, out_path, write_options);
 #endif
   return 0;
 }

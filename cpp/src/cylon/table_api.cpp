@@ -93,7 +93,7 @@ Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
 Status WriteCSV(const std::string &id, const std::string &path,
                 const cylon::io::config::CSVWriteOptions &options) {
   auto table = GetTable(id);
-  return table->WriteCSV(path, options);
+  return WriteCSV(table, path, options);
 }
 
 Status Print(const std::string &table_id, int col1, int col2, int row1, int row2) {

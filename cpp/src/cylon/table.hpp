@@ -85,14 +85,6 @@ class Table {
                             std::shared_ptr<Table> &tableOut);
 
   /**
-   * Write the table as a CSV
-   * @param path file path
-   * @return the status of the operation
-   */
-  Status WriteCSV(const std::string &path,
-                  const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
-
-  /**
    * Create a arrow table from this data structure
    * @param output arrow table
    * @return the status of the operation
@@ -230,6 +222,16 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &pat
 Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
                const std::vector<std::shared_ptr<Table> *> &tableOuts,
                io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
+
+/**
+ * Write the table as a CSV
+ * @param table shared pointer to the cylon table
+ * @param path file path
+ * @return the status of the operation
+ */
+Status WriteCSV(std::shared_ptr<cylon::Table> &table,
+                const std::string &path,
+                const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
 
 /**
    * Merge the set of tables to create a single table

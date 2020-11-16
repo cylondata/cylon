@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     auto join_config = JoinConfig::InnerJoin(0, 0);
     auto join_status = table1->DistributedJoin(table2, join_config, &joined);
     if (join_status.is_ok()) { // writing the partition of this worker back to the disk
-      joined->WriteCSV("/path/to/out.csv");
+      WriteCSV(joined, "/path/to/out.csv");
     } else {
       // failed
     }
