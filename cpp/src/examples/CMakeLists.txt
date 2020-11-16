@@ -29,6 +29,7 @@ tx_add_exe(groupby_example)
 if (CYLON_PARQUET)
     tx_add_exe(parquet_test)
     tx_add_exe(parquet_union_example)
+    tx_add_exe(parquet_join_example)
 endif (CYLON_PARQUET)
 
 
