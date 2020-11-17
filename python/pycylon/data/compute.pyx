@@ -13,6 +13,16 @@ from pycylon.data.table import Table
 import numbers
 from operator import neg as py_neg
 
+from cpython.object cimport (
+    Py_EQ,
+    Py_GE,
+    Py_GT,
+    Py_LE,
+    Py_LT,
+    Py_NE,
+    PyObject_RichCompareBool,
+)
+
 
 
 cdef api c_filter(tb: Table, op):

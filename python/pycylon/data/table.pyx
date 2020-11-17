@@ -45,6 +45,8 @@ from pycylon.data.aggregates import AggregationOp
 from pycylon.data.groupby cimport (GroupBy, PipelineGroupBy)
 from pycylon.data import compute
 
+from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
+
 import math
 import pyarrow as pa
 import numpy as np
@@ -60,6 +62,7 @@ Cylon Table definition mapping
 cdef class Table:
     def __init__(self, pyarrow_table=None, context=None):
         self.initialize(pyarrow_table, context)
+        self._index = None
 
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
         """
@@ -69,6 +72,7 @@ cdef class Table:
         @param columns: columns TODO: add support
         """
         self.initialize(pyarrow_table, context)
+        self._index = None
 
     def initialize(self, pyarrow_table=None, context=None):
         cdef shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
@@ -79,6 +83,7 @@ cdef class Table:
 
     cdef void init(self, const shared_ptr[CTable]& table):
         self.table_shd_ptr = table
+        self._index = None
 
     @staticmethod
     def _is_pyarrow_table(pyarrow_table):
@@ -908,19 +913,63 @@ cdef class Table:
         new_column_names = [col + suffix for col in self.column_names]
         return Table.from_arrow(self.context, self.to_arrow().rename_columns(new_column_names))
 
+    def _is_index_and_range_validity(self, index_range):
+        if isinstance(index_range, range):
+            if range_calculator(index_range) == self.row_count:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def _is_index_list_and_valid(self, index):
+        if isinstance(index, List):
+            if len(index) == self.row_count:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def _is_index_list_of_columns(self, index):
+        for index_item in index:
+            if index_item not in self.column_names:
+                return False
+        return True
+
+    def _get_index_list_from_columns(self, index):
+        # multi-column indexing
+        index_columns = []
+        ar_tb = self.to_arrow().combine_chunks()
+        if isinstance(index, List):
+            for index_item in index:
+                index_columns.append(ar_tb.column(index_item))
+            return index_columns
+        elif isinstance(index, str):
+            index_columns.append(ar_tb.column(index))
+            return index_columns
+        else:
+            return NotImplemented("Not Supported index pattern")
+
+    def _is_index_str_and_valid(self, index):
+        if isinstance(index, str):
+            if index in self.column_names:
+                return True
+        return False
+
+    def _get_column_by_name(self, column_name):
+        artb = self.to_arrow().combine_chunks()
+        return artb.column(column_name)
+
     @property
     def index(self):
-        return self.index
+        if self._index == None:
+            self._index = RangeIndex(range(0, self.row_count))
+        return self._index
 
-    @index.setter
-    def index(self, key) -> Table:
-        if isinstance(key, List):
-            if len(key) != self.row_count:
-                raise ValueError("Index length must be equal to number of rows in the table")
-            else:
-                self.index = key
-        else:
-            self.index = range(0, self.row_count)
+    def set_index(self, key):
+        # TODO: Multi-Indexing support: https://github.com/cylondata/cylon/issues/233
+        self._index = process_index_by_value(key, self)
 
     def reset_index(self, key) -> Table:
         pass
@@ -930,5 +979,3 @@ cdef class Table:
 
     def iloc(self, key) -> Table:
         pass
-
-
