@@ -202,5 +202,8 @@ cpdef unique(table:Table):
 cpdef nunique(table:Table):
     pass
 
+cpdef is_in(table:Table, comparison_values):
+    pass
+
 
 

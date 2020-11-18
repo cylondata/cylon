@@ -51,7 +51,7 @@ import math
 import pyarrow as pa
 import numpy as np
 import pandas as pd
-from typing import List
+from typing import List, Any
 import warnings
 import operator
 
@@ -890,6 +890,15 @@ cdef class Table:
     def isnull(self):
         return compute.is_null(self)
 
+    def isna(self):
+        return compute.is_null(self)
+
+    def notnull(self):
+        return ~compute.is_null(self)
+
+    def notna(self):
+        return ~compute.is_null(self)
+
     def rename(self, column_names):
         if isinstance(column_names, dict):
             table_col_names = self.column_names
@@ -972,10 +981,7 @@ cdef class Table:
         self._index = process_index_by_value(key, self)
 
     def reset_index(self, key) -> Table:
-        pass
+        self._index = RangeIndex(range(0, self.row_count))
 
-    def loc(self, key) -> Table:
-        pass
-
-    def iloc(self, key) -> Table:
-        pass
+    def isna(self) -> Table:
+        return compute.is_na(self)

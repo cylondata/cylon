@@ -1,17 +1,17 @@
 from pycylon.data.table import Table
-from pycylon.index import Index, RangeIndex, NumericIndex
+from pycylon.index import Index, RangeIndex, NumericIndex, ColumnIndex, CategoricalIndex
 
-cdef class IndexEngine:
+cdef class _LocIndexer:
 
-    def __cinit__(self, index: Index=None, n=0):
+    def __cinit__(self, data_object: Table=None):
         """
         Initializes the IndexEngine
         Args:
-            index: Index of the table which can be (Index, RangeIndex, NumericIndex)
-            n: number of rows in the table. If index is not set, this will be used.
+            data_object: table which contain index of types (Index, RangeIndex, NumericIndex,
+            CategoricalIndex, ColumnIndex
+            )
         """
-        self._index_object = index
-        self.n = n
+        self._data_object = data_object
 
     def get_loc(self, key):
         """
@@ -20,18 +20,8 @@ cdef class IndexEngine:
             boolean condition/s, slice,
         Returns: A single value, a set of values or a Cylon Table
         """
-        if self._index_object:
-            if isinstance(self._index_object, RangeIndex):
-                pass
-            elif isinstance(self._index_object, NumericIndex):
-                pass
-            else:
-                raise NotImplemented(f"The Index type {self._index_object} not supported.")
-        elif self.n > 0:
-            pass
-        else:
-            raise NotImplemented("Get location cannot be called because bad IndexEngine "
-                                 "initialization. Initialize with Index or number of rows")
+        pass
+
 
     def get_dis_loc(self,key):
         """
@@ -44,5 +34,26 @@ cdef class IndexEngine:
         Returns: Cylon Table
 
         """
+        pass
+
+
+cdef class LocIndexr(_LocIndexer):
+
+    def __cinit__(self, data_object: Table=None):
+        super().__cinit__(data_object)
+
+    def get_loc(self, key):
+        index_object = self._data_object.index
+        if index_object:
+            if isinstance(index_object, RangeIndex):
+                pass
+            elif isinstance(index_object, NumericIndex):
+                pass
+            else:
+                raise NotImplemented(f"The Index type {index_object} not supported.")
+        else:
+            pass
+
+    def get_dis_loc(self,key):
         return NotImplemented
 

@@ -151,6 +151,13 @@ def test_index():
     assert responses[-1] == 0
 
 
+def test_compute():
+    print("23. Compute Test")
+    responses.append(
+        os.system("pytest -q python/test/test_compute.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)

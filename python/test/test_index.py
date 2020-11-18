@@ -104,3 +104,15 @@ def test_set_index():
     for col_index_value, ar in zip(col_index_values, ars):
         assert col_index_value == ar
 
+
+def test_loc():
+    df = pd.DataFrame([[1, 2], [4, 5], [7, 8]], index=['cobra', 'viper', 'sidewinder'],
+                      columns=['max_speed', 'shield'])
+
+    print(df)
+    ld = df.loc['viper']
+
+    print(type(ld))
+
+
+test_loc()
