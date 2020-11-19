@@ -24,7 +24,7 @@ from pycylon import Table
 from pycylon import CylonContext
 from pycylon.io import CSVReadOptions
 from pycylon.io import CSVWriteOptions
-from pycylon.io import read_csv
+from pycylon.io import read_csv, to_csv
 import pyarrow as pa
 
 
