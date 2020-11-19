@@ -421,3 +421,16 @@ def test_add_suffix():
 
     assert pdf_with_suffix.columns.tolist() == cn_tb_with_suffix.column_names
 
+
+def test_empty_table():
+    from pycylon.data.table import EmptyTable
+    from pycylon.index import RangeIndex
+    import pandas as pd
+    import pandas as pd
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    empt_tb = EmptyTable(ctx, RangeIndex(data=range(0, 0)))
+
+    assert empt_tb.to_pandas().values.tolist() == pd.DataFrame().values.tolist()
+
+
+

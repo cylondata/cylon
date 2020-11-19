@@ -985,3 +985,26 @@ cdef class Table:
 
     def isna(self) -> Table:
         return compute.is_na(self)
+
+    def dropna(self, axis=0, how='any', inplace=False):
+        new_tb = compute.drop_na(self, how, axis)
+        if inplace:
+            self.initialize(new_tb.to_arrow(), self.context)
+        else:
+            return new_tb
+
+
+class EmptyTable(Table):
+
+    def __init__(self, context: CylonContext, index: RangeIndex):
+        self.ctx = context
+        self.idx = index
+        self._empty_initialize()
+        self.set_index(index)
+
+    def _empty_initialize(self):
+        empty_data = []
+
+        self.initialize(pa.Table.from_arrays([], []), self.ctx)
+
+

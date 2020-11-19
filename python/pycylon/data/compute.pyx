@@ -7,9 +7,10 @@ from pyarrow.compute import (greater, less, less_equal, greater_equal, equal, no
                              and_)
 from pyarrow.compute import add as a_add, subtract as a_subtract, multiply as a_multiply, \
     divide as a_divide
-from pyarrow import compute
+from pyarrow import compute as a_compute
 from pycylon.data.table cimport CTable
 from pycylon.data.table import Table
+from pycylon.api.types import FilterType
 import numbers
 from operator import neg as py_neg
 
@@ -22,7 +23,7 @@ from cpython.object cimport (
     Py_NE,
     PyObject_RichCompareBool,
 )
-
+from typing import Any
 
 
 cdef api c_filter(tb: Table, op):
@@ -35,6 +36,7 @@ ctypedef fused CDType:
     double
     float
     long long
+
 
 cdef cast_scalar(scalar_value, dtype_id):
     if dtype_id == pa.float16().id or dtype_id == pa.float32().id or dtype_id == pa.float64().id:
@@ -127,7 +129,7 @@ cpdef is_null(table:Table):
     ar_tb = table.to_arrow().combine_chunks()
     is_null_values = []
     for chunk_ar in ar_tb.itercolumns():
-        is_null_values.append(compute.is_null(chunk_ar))
+        is_null_values.append(a_compute.is_null(chunk_ar))
     return Table.from_arrow(table.context, pa.Table.from_arrays(is_null_values,
                                                                    names=table.column_names))
 
@@ -136,7 +138,7 @@ cpdef invert(table:Table):
     ar_tb = table.to_arrow().combine_chunks()
     invert_values = []
     for chunk_ar in ar_tb.itercolumns():
-        invert_values.append(compute.invert(chunk_ar))
+        invert_values.append(a_compute.invert(chunk_ar))
     return Table.from_arrow(table.context, pa.Table.from_arrays(invert_values,
                                                                    names=table.column_names))
 
@@ -204,6 +206,72 @@ cpdef nunique(table:Table):
 
 cpdef is_in(table:Table, comparison_values):
     pass
+
+cpdef drop_na(table:Table, how:str, axis=0):
+    ar_tb = table.to_arrow().combine_chunks()
+    if axis == 0:
+        """
+        Column-wise computation
+        """
+        is_null_values = []
+        column_names = ar_tb.column_names
+        drop_columns = []
+        for col_id, chunk_ar in enumerate(ar_tb.itercolumns()):
+            res = a_compute.cast(a_compute.is_null(chunk_ar), pa.int32())
+            sum_val = a_compute.sum(res).as_py()
+            if sum_val > 0 and how == FilterType.ANY.value:
+                drop_columns.append(column_names[col_id])
+            elif sum_val == len(res) and how == FilterType.ALL.value:
+                drop_columns.append(column_names[col_id])
+        return Table.from_arrow(table.context, ar_tb.drop(drop_columns))
+    elif axis == 1:
+        """
+        Row-wise computation
+        """
+        is_null_responses = []
+        for chunk_ar in ar_tb.itercolumns():
+            is_null_responses.append(a_compute.is_null(chunk_ar))
+        '''
+        Here the row-major Null check has to be done. 
+        Column-wise null check is done and the obtained boolean array
+        is then casted to int32 array and sum of all columns is taken. 
+        
+        Heuristic 1: 
+        
+        If the resultant sum-array contains an element with value equals to
+        0. It implies that all elements in that row are not None. 
+        
+        Heuristic 2:
+        
+        If the resultant sum-array contains an element with value equals to
+        the number of columns. It implies that all elements in that row are None.
+        
+        Selection Criterion:
+        
+        For the criteria on how the dropping is done, when 'any' is selected, the
+        sum-array value in corresponding row is greater than 0 that row will be dropped.
+        For 'all' criteria that value has to be equal to the number of columns. 
+        '''
+        column_count = len(is_null_responses)
+        sum_res = a_compute.cast(is_null_responses[0], pa.int32())
+
+        for i in range(1, column_count):
+            sum_res = a_compute.add(sum_res, a_compute.cast(is_null_responses[i], pa.int32()))
+
+        filtered_indices = []
+
+        for index, value in enumerate(sum_res):
+            if value.as_py() == 0 and how == FilterType.ANY.value:
+                filtered_indices.append(index)
+            elif value.as_py() != column_count and how == FilterType.ALL.value:
+                filtered_indices.append(index)
+
+        if filtered_indices:
+            return Table.from_arrow(table.context, ar_tb.take(filtered_indices))
+        else:
+            return None
+    else:
+        raise ValueError(f"Invalid index {axis}, it must be 0 or 1 !")
 
 
 
