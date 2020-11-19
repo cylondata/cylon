@@ -28,6 +28,7 @@ from pycylon.data.table cimport Table
 from pycylon.data.table import Table
 from pycylon.api.lib cimport (pycylon_unwrap_context,
 pycylon_wrap_table,
+pycylon_unwrap_table,
 pycylon_unwrap_csv_read_options,
 pycylon_unwrap_csv_write_options)
 
