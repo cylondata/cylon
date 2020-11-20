@@ -17,40 +17,24 @@
 namespace cylon {
 
 std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
-                                              const std::shared_ptr<arrow::DataType> &data_type) {
+                                                         const std::shared_ptr<arrow::DataType> &data_type) {
   std::shared_ptr<ArrowPartitionKernel> kernel;
   switch (data_type->id()) {
-    case arrow::Type::UINT8:kernel = std::make_shared<UInt8ArrayHashPartitioner>(pool);
-      break;
-    case arrow::Type::INT8:kernel = std::make_shared<Int8ArrayHashPartitioner>(pool);
-      break;
-    case arrow::Type::UINT16:kernel = std::make_shared<UInt16ArrayHashPartitioner>(pool);
-      break;
-    case arrow::Type::INT16:kernel = std::make_shared<Int16ArrayHashPartitioner>(pool);
-      break;
-    case arrow::Type::UINT32:kernel = std::make_shared<UInt32ArrayHashPartitioner>(pool);
-      break;
-    case arrow::Type::INT32:kernel = std::make_shared<Int32ArrayHashPartitioner>(pool);
-      break;
-    case arrow::Type::UINT64:kernel = std::make_shared<UInt64ArrayHashPartitioner>(pool);
-      break;
-    case arrow::Type::INT64:kernel = std::make_shared<Int64ArrayHashPartitioner>(pool);
-      break;
-    case arrow::Type::FLOAT:kernel = std::make_shared<FloatArrayHashPartitioner>(pool);
-      break;
-    case arrow::Type::DOUBLE:kernel = std::make_shared<DoubleArrayHashPartitioner>(pool);
-      break;
-    case arrow::Type::STRING:kernel = std::make_shared<StringHashPartitioner>(pool);
-      break;
-    case arrow::Type::BINARY:kernel = std::make_shared<BinaryHashPartitionKernel>(pool);
-      break;
-    case arrow::Type::FIXED_SIZE_BINARY:
-      kernel = std::make_shared<FixedSizeBinaryHashPartitionKernel>(pool);
-      break;
-    default:LOG(FATAL) << "Un-known type";
-      return NULLPTR;
+    case arrow::Type::UINT8:return std::make_shared<UInt8ArrayHashPartitioner>(pool);
+    case arrow::Type::INT8:return std::make_shared<Int8ArrayHashPartitioner>(pool);
+    case arrow::Type::UINT16:return std::make_shared<UInt16ArrayHashPartitioner>(pool);
+    case arrow::Type::INT16:return std::make_shared<Int16ArrayHashPartitioner>(pool);
+    case arrow::Type::UINT32:return std::make_shared<UInt32ArrayHashPartitioner>(pool);
+    case arrow::Type::INT32:return std::make_shared<Int32ArrayHashPartitioner>(pool);
+    case arrow::Type::UINT64:return std::make_shared<UInt64ArrayHashPartitioner>(pool);
+    case arrow::Type::INT64:return std::make_shared<Int64ArrayHashPartitioner>(pool);
+    case arrow::Type::FLOAT:return std::make_shared<FloatArrayHashPartitioner>(pool);
+    case arrow::Type::DOUBLE:return std::make_shared<DoubleArrayHashPartitioner>(pool);
+    case arrow::Type::STRING:return std::make_shared<StringHashPartitioner>(pool);
+    case arrow::Type::BINARY:return std::make_shared<BinaryHashPartitionKernel>(pool);
+    case arrow::Type::FIXED_SIZE_BINARY:return std::make_shared<FixedSizeBinaryHashPartitionKernel>(pool);
+    default: return NULLPTR;
   }
-  return kernel;
 }
 
 std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,

@@ -107,6 +107,9 @@ add_library(cylon SHARED
         groupby/groupby.hpp
         groupby/groupby.cpp
         ${PARQUET_CYLON_FILES}
+        partition/partition.hpp
+        partition/partition.cpp
+        util/macros.hpp
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
