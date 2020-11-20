@@ -60,4 +60,5 @@ def to_csv(table, path, csv_write_options):
         cdef string cpath = path.encode()
         cdef CCSVWriteOptions c_csv_write_options = pycylon_unwrap_csv_write_options(
             csv_write_options)
-        WriteCSV(pycylon_unwrap_table(table), cpath, c_csv_write_options)
+        cdef shared_ptr[CTable] cn_table = pycylon_unwrap_table(table)
+        WriteCSV(cn_table, cpath, c_csv_write_options)
