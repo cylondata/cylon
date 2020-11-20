@@ -299,7 +299,7 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
     arrow::Result<std::shared_ptr<arrow::Table>> concat_res = final_table->CombineChunks(cylon::ToArrowPool(ctx));
 
     if (!concat_res.ok()) {
-      const auto &status = concat_res.status();
+      const auto& status = concat_res.status();
       return Status(static_cast<int>(status.code()), status.message());
     }
     *table_out = concat_res.ValueOrDie();
@@ -428,16 +428,16 @@ Status Table::FromColumns(std::shared_ptr<cylon::CylonContext> &ctx,
 }
 
 Status WriteCSV(std::shared_ptr<cylon::Table> &table,
-                       const std::string &path,
-                       const cylon::io::config::CSVWriteOptions &options) {
+                const std::string &path,
+                const cylon::io::config::CSVWriteOptions &options) {
   std::ofstream out_csv;
   out_csv.open(path);
   Status status = table->PrintToOStream(0, table->get_table()->num_columns(),
-                                 0, table->get_table()->num_rows(),
-                                 out_csv,
-                                 options.GetDelimiter(),
-                                 options.IsOverrideColumnNames(),
-                                 options.GetColumnNames());
+                                        0, table->get_table()->num_rows(),
+                                        out_csv,
+                                        options.GetDelimiter(),
+                                        options.IsOverrideColumnNames(),
+                                        options.GetColumnNames());
   out_csv.close();
   return status;
 }

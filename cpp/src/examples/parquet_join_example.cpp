@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
                 read_end_time - start_start).count() << "[ms]";
 
   status = cylon::DistributedJoin(first_table, second_table,
-                              cylon::join::config::JoinConfig::InnerJoin(0, 0), joined);
+                                  cylon::join::config::JoinConfig::InnerJoin(0, 0), joined);
 
   if (!status.is_ok()) {
     LOG(INFO) << "Table join failed ";
