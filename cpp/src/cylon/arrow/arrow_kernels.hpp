@@ -45,8 +45,8 @@ class ArrowArraySplitKernel {
                     std::vector<uint32_t> &counts) = 0;
 
   virtual Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-                       const std::vector<int32_t> &target_partitions,
-                       int32_t num_partitions,
+                       const std::vector<uint32_t> &target_partitions,
+                       uint32_t num_partitions,
                        const std::vector<uint32_t> &counts,
                        std::vector<std::shared_ptr<arrow::Array>> &output) = 0;
 
@@ -92,8 +92,8 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
   }
 
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-               const std::vector<int32_t> &target_partitions,
-               int32_t num_partitions,
+               const std::vector<uint32_t> &target_partitions,
+               uint32_t num_partitions,
                const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override {
 
@@ -103,7 +103,7 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
 
     std::vector<std::unique_ptr<ARROW_BUILDER_T>> builders;
     builders.reserve(num_partitions);
-    for (int32_t i = 0; i < num_partitions; i++) {
+    for (uint32_t i = 0; i < num_partitions; i++) {
       builders.emplace_back(new ARROW_BUILDER_T(pool_));
       const auto &status = builders.back()->Reserve(counts[i]);
       RETURN_IF_ARROW_STATUS_FAILED(status)
@@ -120,7 +120,7 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
     }
 
     output.reserve(num_partitions);
-    for (int32_t i = 0; i < num_partitions; i++) {
+    for (uint32_t i = 0; i < num_partitions; i++) {
       std::shared_ptr<arrow::Array> array;
       const auto &status = builders[i]->Finish(&array);
       RETURN_IF_ARROW_STATUS_FAILED(status)
@@ -143,8 +143,8 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
             std::vector<uint32_t> &counts) override;
 
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-               const std::vector<int32_t> &target_partitions,
-               int32_t num_partitions,
+               const std::vector<uint32_t> &target_partitions,
+               uint32_t num_partitions,
                const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override;
 };
@@ -158,8 +158,8 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
   explicit BinaryArraySplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {}
 
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-               const std::vector<int32_t> &target_partitions,
-               int32_t num_partitions,
+               const std::vector<uint32_t> &target_partitions,
+               uint32_t num_partitions,
                const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override {
     return Status::OK();

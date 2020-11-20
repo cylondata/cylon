@@ -36,6 +36,14 @@ void create_table(char *const *argv,
                   arrow::MemoryPool *pool,
                   std::shared_ptr<arrow::Table> &left_table);
 
+template<typename T>
+void print_vec(std::vector<T> vec) {
+  for (auto a: vec) {
+    std::cout << a << " ";
+  }
+  std::cout << std::endl;
+}
+
 int main(int argc, char *argv[]) {
   if (argc < 3) {
     LOG(ERROR) << "There should be 2 args. count, duplication factor";
@@ -69,18 +77,37 @@ int main(int argc, char *argv[]) {
 
 //  std::shared_ptr<cylon::Table> output;
 
-  int num_partitions = 8;
-  std::vector<int32_t> target_partitions;
+  int num_partitions = 256;
+  std::vector<uint32_t> target_partitions;
   target_partitions.reserve(arrow_table->num_rows());
-  std::vector<uint32_t> counts(num_partitions, 0);
-  for (const auto &arr: arrow_table->column(0)->chunks()) {
-    const std::shared_ptr<arrow::Int64Array> &carr = std::static_pointer_cast<arrow::Int64Array>(arr);
-    for(int64_t i = 0; i < carr->length(); i++){
-      int32_t p = carr->Value(i) % num_partitions;
-      target_partitions.push_back(p);
-      counts[p]++;
-    }
+  std::vector<uint32_t> counts;
+//  std::vector<uint32_t> counts(num_partitions, 0);
+//  for (const auto &arr: arrow_table->column(0)->chunks()) {
+//    const std::shared_ptr<arrow::Int64Array> &carr = std::static_pointer_cast<arrow::Int64Array>(arr);
+//    for(int64_t i = 0; i < carr->length(); i++){
+//      int32_t p = carr->Value(i) % num_partitions;
+//      target_partitions.push_back(p);
+//      counts[p]++;
+//    }
+//  }
+//  cylon::ModuloPartitionKernel<arrow::Int64Type> kern(num_partitions);
+//  for (int i = 0; i < 8; i++) {
+//    target_partitions.clear();
+//    counts.clear();
+//    auto s = kern.Partition(arrow_table->column(0), target_partitions, counts);
+//    if (!s.is_ok()) return 1;
+//  }
+
+  for (int i = 0; i < 4; i++) {
+    target_partitions.clear();
+    counts.clear();
+    auto s = cylon::ModuloPartition(table, 0, num_partitions, target_partitions, counts);
+    if (!s.is_ok()) return 1;
   }
+
+//  print_vec(target_partitions);
+//  print_vec(counts);
+
 
 /*  std::vector<std::shared_ptr<arrow::Array>> out;
   std::shared_ptr<cylon::ArrowArraySplitKernel> kern;
@@ -99,11 +126,11 @@ int main(int argc, char *argv[]) {
   cylon::Split(table, target_partitions, num_partitions, output, &counts);
 
   std::cout << "original" << std::endl;
-  table->Print();
+//  table->Print();
 
   for (int i = 0; i < num_partitions; i++){
-    std::cout << "partition " << i << std::endl;
-    output[i]->Print();
+    std::cout << "partition " << i <<  " " << output[i]->Rows() << std::endl;
+//    output[i]->Print();
   }
 
   ctx->Finalize();

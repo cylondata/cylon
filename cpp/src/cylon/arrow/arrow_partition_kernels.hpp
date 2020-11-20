@@ -224,6 +224,79 @@ class RowHashingKernel {
                    arrow::MemoryPool *memory_pool);
   int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
 };
+
+class ArrowPartitionKernel2 {
+ public:
+  explicit ArrowPartitionKernel2(uint32_t num_partitions) : num_partitions(num_partitions) {}
+
+  virtual Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
+                           std::vector<uint32_t> &target_partitions,
+                           std::vector<uint32_t> &partition_histogram) = 0;
+
+//  virtual Status Partition(const std::shared_ptr<arrow::Table> &table,
+//                           const std::vector<int32_t> &idx_cols,
+//                           std::vector<int32_t> &target_partitions,
+//                           std::vector<uint32_t> &partition_histogram) = 0;
+
+  const uint32_t num_partitions;
+};
+
+template<typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+static inline bool if_power2(T v) {
+  return v && !(v & (v - 1));
+}
+
+template<typename ARROW_T,
+    typename = typename std::enable_if<
+        arrow::is_integer_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
+class ModuloPartitionKernel : public ArrowPartitionKernel2 {
+  using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
+  using ARROW_CTYPE = typename arrow::TypeTraits<ARROW_T>::CType;
+
+ public:
+  explicit ModuloPartitionKernel(uint32_t num_partitions) : ArrowPartitionKernel2(num_partitions) {
+    if (if_power2(num_partitions)) {
+      partitioner = [num_partitions](void *val) {
+        return *(reinterpret_cast<uint32_t *>(val)) & (num_partitions - 1);
+      };
+    } else {
+      partitioner = [num_partitions](void *val) {
+        return *(reinterpret_cast<uint32_t *>(val)) % num_partitions;
+      };
+    }
+  }
+
+  Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
+                   std::vector<uint32_t> &target_partitions,
+                   std::vector<uint32_t> &partition_histogram) override {
+
+    if (!partition_histogram.empty() || !target_partitions.empty()) {
+      return Status(Code::Invalid, "target partitions or histogram not empty!");
+    }
+
+    // initialize the histogram
+    partition_histogram.reserve(num_partitions);
+    for (uint32_t i = 0; i < num_partitions; i++) {
+      partition_histogram.push_back(0);
+    }
+
+    target_partitions.reserve(idx_col->length());
+    for (const auto &arr: idx_col->chunks()) {
+      const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
+      for (int64_t i = 0; i < carr->length(); i++) {
+        int32_t p = partitioner((void *) &carr->Value(i));
+        target_partitions.push_back(p);
+        partition_histogram[p]++;
+      }
+    }
+
+    return Status::OK();
+
+  }
+
+  std::function<uint32_t(void *)> partitioner;
+};
+
 }  // namespace cylon
 
 #endif //CYLON_ARROW_PARTITION_KERNELS_H

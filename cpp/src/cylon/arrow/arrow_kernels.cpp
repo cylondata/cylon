@@ -93,8 +93,8 @@ int FixedBinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,
 }
 
 Status FixedBinaryArraySplitKernel::Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-                                          const std::vector<int32_t> &target_partitions,
-                                          int32_t num_partitions,
+                                          const std::vector<uint32_t> &target_partitions,
+                                          uint32_t num_partitions,
                                           const std::vector<uint32_t> &counts,
                                           std::vector<std::shared_ptr<arrow::Array>> &output) {
   // todo implement this
