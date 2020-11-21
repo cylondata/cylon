@@ -21,14 +21,14 @@ namespace cylon {
  */
 Status HashPartition(const std::shared_ptr<Table> &table,
                      int32_t hash_column_idx,
-                     int32_t num_partitions,
-                     std::vector<int32_t> &target_partitions,
+                     uint32_t num_partitions,
+                     std::vector<uint32_t> &target_partitions,
                      std::vector<uint32_t> &partition_histogram);
 
 Status HashPartition(const std::shared_ptr<Table> &table,
                      const std::vector<int32_t> &hash_column_idx,
-                     int32_t num_partitions,
-                     std::vector<int32_t> &target_partitions,
+                     uint32_t num_partitions,
+                     std::vector<uint32_t> &target_partitions,
                      std::vector<uint32_t> &partition_histogram);
 
 Status ModuloPartition(const std::shared_ptr<Table> &table,

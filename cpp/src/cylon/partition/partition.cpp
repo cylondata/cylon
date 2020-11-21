@@ -167,6 +167,49 @@ Status ModuloPartition(const std::shared_ptr<Table> &table,
   return status;
 }
 
+Status HashPartition(const std::shared_ptr<Table> &table,
+                     int32_t hash_column_idx,
+                     uint32_t num_partitions,
+                     std::vector<uint32_t> &target_partitions,
+                     std::vector<uint32_t> &partition_hist) {
+  auto t1 = std::chrono::high_resolution_clock::now();
+  const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
+  std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(hash_column_idx);
+
+  std::unique_ptr<ArrowPartitionKernel2> kern;
+  switch (idx_col->type()->id()) {
+    case arrow::Type::BOOL:kern = std::make_unique<HashPartitionKernel<arrow::BooleanType>>(num_partitions);
+      break;
+    case arrow::Type::UINT8:kern = std::make_unique<HashPartitionKernel<arrow::UInt8Type>>(num_partitions);
+      break;
+    case arrow::Type::INT8:kern = std::make_unique<HashPartitionKernel<arrow::Int8Type>>(num_partitions);
+      break;
+    case arrow::Type::UINT16:kern = std::make_unique<HashPartitionKernel<arrow::UInt16Type>>(num_partitions);
+      break;
+    case arrow::Type::INT16:kern = std::make_unique<HashPartitionKernel<arrow::Int16Type>>(num_partitions);
+      break;
+    case arrow::Type::UINT32:kern = std::make_unique<HashPartitionKernel<arrow::UInt32Type>>(num_partitions);
+      break;
+    case arrow::Type::INT32:kern = std::make_unique<HashPartitionKernel<arrow::Int32Type>>(num_partitions);
+      break;
+    case arrow::Type::UINT64:kern = std::make_unique<HashPartitionKernel<arrow::UInt64Type>>(num_partitions);
+      break;
+    case arrow::Type::INT64:kern = std::make_unique<HashPartitionKernel<arrow::Int64Type>>(num_partitions);
+      break;
+    case arrow::Type::FLOAT:kern = std::make_unique<HashPartitionKernel<arrow::FloatType>>(num_partitions);
+      break;
+    case arrow::Type::DOUBLE:kern = std::make_unique<HashPartitionKernel<arrow::DoubleType>>(num_partitions);
+      break;
+    default:LOG_AND_RETURN_ERROR(Code::Invalid, "modulo partition works only for integer values")
+  }
+
+  const Status &status = kern->Partition(idx_col, target_partitions, partition_hist);
+  auto t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Modulo partition time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  return status;
+}
+
 Status ModuloPartition(const std::shared_ptr<Table> &table,
                        std::vector<int32_t> &hash_column_idx,
                        int32_t num_partitions,

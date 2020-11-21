@@ -78,9 +78,9 @@ int main(int argc, char *argv[]) {
 //  std::shared_ptr<cylon::Table> output;
 
   int num_partitions = 256;
-  std::vector<uint32_t> target_partitions;
-  target_partitions.reserve(arrow_table->num_rows());
-  std::vector<uint32_t> counts;
+  std::vector<uint32_t> target_partitions(arrow_table->num_rows(), 0);
+//  target_partitions.reserve(arrow_table->num_rows());
+  std::vector<uint32_t> counts(num_partitions, 0);
 //  std::vector<uint32_t> counts(num_partitions, 0);
 //  for (const auto &arr: arrow_table->column(0)->chunks()) {
 //    const std::shared_ptr<arrow::Int64Array> &carr = std::static_pointer_cast<arrow::Int64Array>(arr);
