@@ -212,18 +212,114 @@ cdef _is_in_array_like(table: Table, cmp_val, skip_null):
         is_in_res.append(a_compute.is_in(chunk_ar, options=lookup_opts))
     return Table.from_arrow(table.context, pa.Table.from_arrays(is_in_res, ar_tb.column_names))
 
+def compare_array_like_values(l_org_ar, l_cmp_ar, skip_null=True):
+    s = a_compute.SetLookupOptions(value_set=l_cmp_ar, skip_null=skip_null)
+    return a_compute.is_in(l_org_ar, options=s)
+
+cdef _broadcast(ar, broadcast_coefficient=1):
+    bcast_ar = []
+    for elem in ar:
+        bcast_elems = []
+        for i in range(broadcast_coefficient):
+            bcast_elems.append(elem.as_py())
+        bcast_ar.append(pa.array(bcast_elems))
+    return bcast_ar
+
+cdef _compare_two_arrays(l_ar, r_ar):
+    return a_compute.and_(l_ar, r_ar)
+
+cdef _compare_row_and_column(row, columns):
+    comp_res = []
+    for column in columns:
+        comp_res.append(_compare_two_arrays(l_ar=row, r_ar=column))
+    return comp_res
+
+cdef _populate_column_with_single_value(value, row_count):
+    column_values = []
+    for i in range(row_count):
+        column_values.append(value)
+    return column_values
+
+cdef _tb_compare_dict_values(tb, tb_cmp, skip_null=True):
+    return _tb_compare_values(tb, tb_cmp, skip_null=skip_null, index_check=False)
+
+cdef _tb_compare_values(tb, tb_cmp, skip_null=True, index_check=True):
+
+    col_names = tb.column_names
+    comp_col_names = tb_cmp.column_names
+
+    row_indices = tb.index.index_values
+    row_indices_cmp = tb_cmp.index.index_values
+
+    rows = tb.row_count
+    '''
+    Compare table column name against comparison-table column names
+    '''
+    col_comp_res = compare_array_like_values(l_org_ar=pa.array(col_names), l_cmp_ar=pa.array(
+        comp_col_names))
+    '''
+    Compare table row-indices against comparison-table row-indices
+    '''
+    row_comp_res = compare_array_like_values(l_org_ar=pa.array(row_indices), l_cmp_ar=pa.array(
+        row_indices_cmp))
+    '''
+    broadcast column data to match with row data size to do vectorized array comparisons
+    Here the is_in only validates if the row-indices and column-indices are matching in both tables.
+    The & operation between row validity vs column_broadcasted validity gives the resultant 
+    validity. With this resultant validity the data validity is compared to get the final validity. 
+    '''
+    bcast_col_comp_res = _broadcast(ar=col_comp_res, broadcast_coefficient=rows)
+
+    tb_ar = tb.to_arrow().combine_chunks()
+    tb_cmp_ar = tb_cmp.to_arrow().combine_chunks()
+    col_data_map = {}
+
+    if index_check:
+        '''
+        For tabular data comparison
+        '''
+        row_col_comp = _compare_row_and_column(row=row_comp_res, columns=bcast_col_comp_res)
+
+        for col_name, validity, row_col_validity in zip(col_names, col_comp_res, row_col_comp):
+            if validity.as_py():
+                chunk_ar_org = tb_ar.column(col_name)
+                chunk_ar_cmp = tb_cmp_ar.column(col_name)
+                s = a_compute.SetLookupOptions(value_set=chunk_ar_cmp, skip_null=skip_null)
+                col_data_map[col_name] = _compare_two_arrays(a_compute.is_in(chunk_ar_org,
+                                                                             options=s), row_col_validity)
+            else:
+                col_data_map[col_name] = pa.array(_populate_column_with_single_value(False, rows))
+
+        is_in_values = list(col_data_map.values())
+        return Table.from_list(tb.context, col_names, is_in_values)
+
+    else:
+        '''
+        For dictionary comparison
+        Note: In dictionary comparison index validity is not required. 
+        '''
+        for col_name, validity in zip(col_names, col_comp_res):
+            if validity.as_py():
+                chunk_ar_org = tb_ar.column(col_name)
+                chunk_ar_cmp = tb_cmp_ar.column(col_name)
+                s = a_compute.SetLookupOptions(value_set=chunk_ar_cmp, skip_null=skip_null)
+                col_data_map[col_name] = a_compute.is_in(chunk_ar_org, options=s)
+            else:
+                col_data_map[col_name] = pa.array(_populate_column_with_single_value(False, rows))
+
+        is_in_values = list(col_data_map.values())
+        return Table.from_list(tb.context, col_names, is_in_values)
+
+
 cpdef is_in(table:Table, comparison_values, skip_null):
     if isinstance(comparison_values, List):
         cmp_val = pa.array(comparison_values)
         return _is_in_array_like(table, cmp_val, skip_null)
-    elif isinstance(comparison_values, pa.array):
-        cmp_val = comparison_values
-        return _is_in_array_like(table, cmp_val, skip_null)
     elif isinstance(comparison_values, dict):
-        cmp_val = pa.array(list(comparison_values.values())[0])
-        return _is_in_array_like(table, cmp_val, skip_null)
+        tb_cmp = Table.from_pydict(table.context, comparison_values)
+        return _tb_compare_dict_values(table, tb_cmp, skip_null)
     elif isinstance(comparison_values, Table):
-        pass
+        return _tb_compare_values(table, comparison_values, skip_null)
     else:
         raise ValueError(f'Unsupported comparison value type {type(comparison_values)}')
 
@@ -293,6 +389,3 @@ cpdef drop_na(table:Table, how:str, axis=0):
             return None
     else:
         raise ValueError(f"Invalid index {axis}, it must be 0 or 1 !")
-
-
-

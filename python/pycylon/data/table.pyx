@@ -993,8 +993,8 @@ cdef class Table:
         else:
             return new_tb
 
-    def isin(self, value) -> Table:
-        pass
+    def isin(self, value, skip_null=True) -> Table:
+        return compute.is_in(self, value, skip_null)
 
 
 class EmptyTable(Table):

@@ -88,42 +88,33 @@ def test_dropna():
 
 
 def test_isin():
-    import pyarrow as pa
-    from pyarrow.compute import is_in
-    from pyarrow.compute import SetLookupOptions
-
-    s = SetLookupOptions(value_set=pa.array(["a", "c"]), skip_null=True)
-    res = is_in(pa.array(["a", "b", "c", "d"]), options=s)
-    print(res, type(res))
     dict_elems = {'num_legs': [2, 4], 'num_wings': [2, 0]}
-    dict_comp_elements = {'num_legs': [8, 2], 'num_wings': [0, 2]}
-    comp_values = {'num_legs': [2, 0]}
-    df = pd.DataFrame(dict_elems, index=['falcon', 'dog'])
+
+    indices = ['falcon', 'dog']
+    indices_cmp = ['spider', 'falcon']
+    df = pd.DataFrame(dict_elems, index=indices)
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     cn_tb = cn.Table.from_pydict(ctx, dict_elems)
-    cn_tb.set_index(['falcon', 'dog'])
-    cn_tb_other = cn.Table.from_pydict(ctx, dict_comp_elements)
-    cn_tb_other.set_index(['spider', 'falcon'])
-    other = pd.DataFrame(dict_comp_elements, index=['spider', 'falcon'])
+    cn_tb.set_index(indices)
 
     ########
-    tb_index_values = cn_tb.index.index_values
-    tb_comp_values = cn_tb_other.index.index_values
 
-    #
-    #
-    ar_tb = cn_tb.to_arrow().combine_chunks()
-    ar_tb_other = cn_tb_other.to_arrow().combine_chunks()
-    res_is_in = []
-    for ar_tb_other_ca in ar_tb_other.itercolumns():
-        for ar_tb_ca in ar_tb.itercolumns():
-            s = SetLookupOptions(value_set=ar_tb_other_ca, skip_null=True)
-            res = is_in(ar_tb_ca, options=s)
+    list_comp_values = [2, 0]
+    dict_comp_values = {'num_legs': [2, 0]}
+    dict_comp_elements = {'num_legs': [8, 2], 'num_wings': [0, 2]}
+    cn_tb_other = cn.Table.from_pydict(ctx, dict_comp_elements)
+    cn_tb_other.set_index(indices_cmp)
+    other = pd.DataFrame(dict_comp_elements, index=indices_cmp)
+
+    comp_values = [list_comp_values, dict_comp_values]
+
+    for comp_val in comp_values:
+        assert df.isin(comp_val).values.tolist() == cn_tb.isin(comp_val).to_pandas().values.tolist()
+
+    assert df.isin(other).values.tolist() == cn_tb.isin(cn_tb_other).to_pandas().values.tolist()
 
 
-# test_isin()
-
-def test_array_bool_ops_1():
+def test_table_is_in_dev():
     from typing import List
     from pyarrow.compute import and_
     from pyarrow import compute as a_compute
@@ -192,31 +183,25 @@ def test_array_bool_ops_1():
         tb_ar = tb.to_arrow().combine_chunks()
         tb_cmp_ar = tb_cmp.to_arrow().combine_chunks()
 
-        print("Column Compare response ", col_comp_res)
-        print("Row Compare response ", row_comp_res)
-        print("Bcast Column Compare response ", bcast_col_comp_res)
-        print("Row-v-Column Compare response ", row_col_comp, type(row_col_comp),
-              type(row_col_comp[0]))
         col_data_map = {}
-        for col_name, validity in zip(col_names, col_comp_res):
-            print(col_name, validity, type(validity))
+        for col_name, validity, row_col_validity in zip(col_names, col_comp_res, row_col_comp):
             if validity.as_py():
                 chunk_ar_org = tb_ar.column(col_name)
                 chunk_ar_cmp = tb_cmp_ar.column(col_name)
                 s = a_compute.SetLookupOptions(value_set=chunk_ar_cmp, skip_null=skip_null)
-                col_data_map[col_name] = a_compute.is_in(chunk_ar_org, options=s)
+                data_cmp_res = a_compute.is_in(chunk_ar_org, options=s)
+                print(data_cmp_res, row_col_validity)
+                col_data_map[col_name] = compare_two_arrays(data_cmp_res, row_col_validity)
             else:
-                col_data_map[col_name] = pa.array(populate_column_with_single_value(False, tb.row_count))
+                col_data_map[col_name] = pa.array(
+                    populate_column_with_single_value(False, tb.row_count))
 
         is_in_values = list(col_data_map.values())
         return cn.Table.from_list(tb.context, col_names, is_in_values)
-
-        # print(tb)
-
-        # print(tb_cmp)
 
     new_tb = tb_compare_values(tb, tb_cmp)
     print(new_tb)
 
 
-test_array_bool_ops_1()
+#test_table_is_in_dev()
+test_isin()
