@@ -23,7 +23,7 @@ from cpython.object cimport (
     Py_NE,
     PyObject_RichCompareBool,
 )
-from typing import Any
+from typing import Any, List
 
 
 cdef api c_filter(tb: Table, op):
@@ -204,8 +204,29 @@ cpdef unique(table:Table):
 cpdef nunique(table:Table):
     pass
 
-cpdef is_in(table:Table, comparison_values):
-    pass
+cdef _is_in_array_like(table: Table, cmp_val, skip_null):
+    ar_tb = table.to_arrow().combine_chunks()
+    lookup_opts = a_compute.SetLookupOptions(value_set=cmp_val, skip_null=skip_null)
+    is_in_res = []
+    for chunk_ar in ar_tb.itercolumns():
+        is_in_res.append(a_compute.is_in(chunk_ar, options=lookup_opts))
+    return Table.from_arrow(table.context, pa.Table.from_arrays(is_in_res, ar_tb.column_names))
+
+cpdef is_in(table:Table, comparison_values, skip_null):
+    if isinstance(comparison_values, List):
+        cmp_val = pa.array(comparison_values)
+        return _is_in_array_like(table, cmp_val, skip_null)
+    elif isinstance(comparison_values, pa.array):
+        cmp_val = comparison_values
+        return _is_in_array_like(table, cmp_val, skip_null)
+    elif isinstance(comparison_values, dict):
+        cmp_val = pa.array(list(comparison_values.values())[0])
+        return _is_in_array_like(table, cmp_val, skip_null)
+    elif isinstance(comparison_values, Table):
+        pass
+    else:
+        raise ValueError(f'Unsupported comparison value type {type(comparison_values)}')
+
 
 cpdef drop_na(table:Table, how:str, axis=0):
     ar_tb = table.to_arrow().combine_chunks()

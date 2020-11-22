@@ -993,6 +993,9 @@ cdef class Table:
         else:
             return new_tb
 
+    def isin(self, value) -> Table:
+        pass
+
 
 class EmptyTable(Table):
 
@@ -1004,7 +1007,6 @@ class EmptyTable(Table):
 
     def _empty_initialize(self):
         empty_data = []
-
         self.initialize(pa.Table.from_arrays([], []), self.ctx)
 
 
