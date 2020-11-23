@@ -188,6 +188,12 @@ def process_index_by_value(key, table):
     elif _is_index_list_of_columns(table, key):
         # scenario-2: key is a list of columns in the table
         index = ColumnIndex(_get_index_list_from_columns(table, key))
+    elif isinstance(key, range):
+        range_index = RangeIndex(key)
+        process_index_by_value(range_index, table)
+    elif isinstance(key, CategoricalIndex):
+        if _is_index_list_and_valid(table, key.index_values):
+            index = key
     elif isinstance(key, NumericIndex) or isinstance(key, RangeIndex):
         # scenario-3 key is a Index which can be a Numerical or RangeIndex
         if _is_index_list_and_valid(table, key.index_values):

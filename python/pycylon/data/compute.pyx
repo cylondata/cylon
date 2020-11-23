@@ -210,7 +210,9 @@ cdef _is_in_array_like(table: Table, cmp_val, skip_null):
     is_in_res = []
     for chunk_ar in ar_tb.itercolumns():
         is_in_res.append(a_compute.is_in(chunk_ar, options=lookup_opts))
-    return Table.from_arrow(table.context, pa.Table.from_arrays(is_in_res, ar_tb.column_names))
+    tb_new = Table.from_arrow(table.context, pa.Table.from_arrays(is_in_res, ar_tb.column_names))
+    tb_new.set_index(table.index)
+    return tb_new
 
 def compare_array_like_values(l_org_ar, l_cmp_ar, skip_null=True):
     s = a_compute.SetLookupOptions(value_set=l_cmp_ar, skip_null=skip_null)
@@ -218,12 +220,22 @@ def compare_array_like_values(l_org_ar, l_cmp_ar, skip_null=True):
 
 cdef _broadcast(ar, broadcast_coefficient=1):
     bcast_ar = []
+    cdef int i
+    cdef int bc = broadcast_coefficient
     for elem in ar:
         bcast_elems = []
-        for i in range(broadcast_coefficient):
+        for i in range(bc):
             bcast_elems.append(elem.as_py())
         bcast_ar.append(pa.array(bcast_elems))
     return bcast_ar
+
+cdef _compare_row_vector_and_column_vector(col_vector, row_vector):
+    row_col = []
+    for col in col_vector:
+        row = a_compute.cast(row_vector, pa.int32())
+        col = a_compute.cast(col, pa.int32())
+        row_col.append(a_compute.cast(a_compute.multiply(row, col), pa.bool_()))
+    return row_col
 
 cdef _compare_two_arrays(l_ar, r_ar):
     return a_compute.and_(l_ar, r_ar)
@@ -236,15 +248,57 @@ cdef _compare_row_and_column(row, columns):
 
 cdef _populate_column_with_single_value(value, row_count):
     column_values = []
-    for i in range(row_count):
+    cdef int i
+    cdef int rc = row_count
+    for i in range(rc):
         column_values.append(value)
     return column_values
 
 cdef _tb_compare_dict_values(tb, tb_cmp, skip_null=True):
-    return _tb_compare_values(tb, tb_cmp, skip_null=skip_null, index_check=False)
+    # Similar in functionality table compare method internal row-col validation logic is not same
+    col_names = tb.column_names
+    comp_col_names = tb_cmp.column_names
+
+    row_indices = tb.index.index_values
+    row_indices_cmp = row_indices
+
+    rows = tb.row_count
+    '''
+    Compare table column name against comparison-table column names
+    '''
+    col_comp_res = compare_array_like_values(l_org_ar=pa.array(col_names), l_cmp_ar=pa.array(
+        comp_col_names))
+    '''
+    Compare table row-indices against comparison-table row-indices
+    '''
+    row_comp_res = compare_array_like_values(l_org_ar=pa.array(row_indices), l_cmp_ar=pa.array(
+        row_indices_cmp))
+
+    tb_ar = tb.to_arrow().combine_chunks()
+    tb_cmp_ar = tb_cmp.to_arrow().combine_chunks()
+    col_data_map = {}
+
+    # Pyarrow compute API doesn't have broadcast enabled computations
+    # Here the row-col validity vectors are casted to int32 and a multiply
+    # operation is done to get the equivalent response and cast back to boolean
+    row = a_compute.cast(row_comp_res, pa.int32())
+
+    for col_name, col_validity in zip(col_names, col_comp_res):
+        col = a_compute.cast(col_validity, pa.int32())
+        row_col_validity = a_compute.cast(a_compute.multiply(row, col), pa.bool_())
+        if col_validity.as_py():
+            chunk_ar_org = tb_ar.column(col_name)
+            chunk_ar_cmp = tb_cmp_ar.column(col_name)
+            s = a_compute.SetLookupOptions(value_set=chunk_ar_cmp, skip_null=skip_null)
+            col_data_map[col_name] = _compare_two_arrays(a_compute.is_in(chunk_ar_org,
+                                                                         options=s), row_col_validity)
+        else:
+            col_data_map[col_name] = row_col_validity
+    tb_new = Table.from_pydict(tb.context, col_data_map)
+    tb_new.set_index(tb.index)
+    return tb_new
 
 cdef _tb_compare_values(tb, tb_cmp, skip_null=True, index_check=True):
-
     col_names = tb.column_names
     comp_col_names = tb_cmp.column_names
 
@@ -262,54 +316,26 @@ cdef _tb_compare_values(tb, tb_cmp, skip_null=True, index_check=True):
     '''
     row_comp_res = compare_array_like_values(l_org_ar=pa.array(row_indices), l_cmp_ar=pa.array(
         row_indices_cmp))
-    '''
-    broadcast column data to match with row data size to do vectorized array comparisons
-    Here the is_in only validates if the row-indices and column-indices are matching in both tables.
-    The & operation between row validity vs column_broadcasted validity gives the resultant 
-    validity. With this resultant validity the data validity is compared to get the final validity. 
-    '''
-    bcast_col_comp_res = _broadcast(ar=col_comp_res, broadcast_coefficient=rows)
 
     tb_ar = tb.to_arrow().combine_chunks()
     tb_cmp_ar = tb_cmp.to_arrow().combine_chunks()
     col_data_map = {}
 
-    if index_check:
-        '''
-        For tabular data comparison
-        '''
-        row_col_comp = _compare_row_and_column(row=row_comp_res, columns=bcast_col_comp_res)
-
-        for col_name, validity, row_col_validity in zip(col_names, col_comp_res, row_col_comp):
-            if validity.as_py():
-                chunk_ar_org = tb_ar.column(col_name)
-                chunk_ar_cmp = tb_cmp_ar.column(col_name)
-                s = a_compute.SetLookupOptions(value_set=chunk_ar_cmp, skip_null=skip_null)
-                col_data_map[col_name] = _compare_two_arrays(a_compute.is_in(chunk_ar_org,
-                                                                             options=s), row_col_validity)
-            else:
-                col_data_map[col_name] = pa.array(_populate_column_with_single_value(False, rows))
-
-        is_in_values = list(col_data_map.values())
-        return Table.from_list(tb.context, col_names, is_in_values)
-
-    else:
-        '''
-        For dictionary comparison
-        Note: In dictionary comparison index validity is not required. 
-        '''
-        for col_name, validity in zip(col_names, col_comp_res):
-            if validity.as_py():
-                chunk_ar_org = tb_ar.column(col_name)
-                chunk_ar_cmp = tb_cmp_ar.column(col_name)
-                s = a_compute.SetLookupOptions(value_set=chunk_ar_cmp, skip_null=skip_null)
-                col_data_map[col_name] = a_compute.is_in(chunk_ar_org, options=s)
-            else:
-                col_data_map[col_name] = pa.array(_populate_column_with_single_value(False, rows))
-
-        is_in_values = list(col_data_map.values())
-        return Table.from_list(tb.context, col_names, is_in_values)
-
+    '''
+    For tabular data comparison
+    '''
+    row = a_compute.cast(row_comp_res, pa.int32())
+    for col_name, col in zip(col_names, col_comp_res):
+        col = a_compute.cast(col, pa.int32())
+        row_col_validity = a_compute.cast(a_compute.multiply(row, col), pa.bool_())
+        chunk_ar_org = tb_ar.column(col_name)
+        chunk_ar_cmp = tb_cmp_ar.column(col_name)
+        s = a_compute.SetLookupOptions(value_set=chunk_ar_cmp, skip_null=skip_null)
+        col_data_map[col_name] = _compare_two_arrays(a_compute.is_in(chunk_ar_org,
+                                                                     options=s), row_col_validity)
+    tb_new = Table.from_pydict(tb.context, col_data_map)
+    tb_new.set_index(tb.index)
+    return tb_new
 
 cpdef is_in(table:Table, comparison_values, skip_null):
     if isinstance(comparison_values, List):

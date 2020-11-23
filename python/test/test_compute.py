@@ -109,7 +109,8 @@ def test_isin():
     comp_values = [list_comp_values, dict_comp_values]
 
     for comp_val in comp_values:
-        assert df.isin(comp_val).values.tolist() == cn_tb.isin(comp_val).to_pandas().values.tolist()
+        assert df.isin(comp_val).values.tolist() == cn_tb.isin(comp_val).to_pandas(
+        ).values.tolist()
 
     assert df.isin(other).values.tolist() == cn_tb.isin(cn_tb_other).to_pandas().values.tolist()
 
@@ -203,5 +204,4 @@ def test_table_is_in_dev():
     print(new_tb)
 
 
-#test_table_is_in_dev()
 test_isin()
