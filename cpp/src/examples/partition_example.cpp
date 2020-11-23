@@ -99,10 +99,14 @@ int main(int argc, char *argv[]) {
 //  }
 
   for (int i = 0; i < 4; i++) {
-    target_partitions.clear();
-    counts.clear();
-    auto s = cylon::ModuloPartition(table, 0, num_partitions, target_partitions, counts);
-    if (!s.is_ok()) return 1;
+    std::fill(target_partitions.begin(), target_partitions.end(), 0);
+    std::fill(counts.begin(), counts.end(), 0);
+
+    auto s = cylon::Partition(table, {3, 2, 1, 0}, num_partitions, target_partitions, counts);
+    if (!s.is_ok()) {
+      std::cout << "ERROR " << s.get_msg() << std::endl;
+      return 1;
+    }
   }
 
 //  print_vec(target_partitions);
@@ -140,44 +144,63 @@ int main(int argc, char *argv[]) {
 void create_table(char *const *argv,
                   arrow::MemoryPool *pool,
                   std::shared_ptr<arrow::Table> &left_table) {
-  arrow::Int64Builder left_id_builder(pool);
-  arrow::DoubleBuilder cost_builder(pool);
+  arrow::Int64Builder longb(pool);
+  arrow::Int32Builder intb(pool);
+  arrow::DoubleBuilder doubleb(pool);
+  arrow::FloatBuilder floatb(pool);
   uint64_t count = std::stoull(argv[1]);
   double dup = std::stod(argv[2]);
 
   std::cout << "#### lines " << count << " dup " << dup << std::endl;
 
   std::random_device rd;
-  std::mt19937_64 gen(rd());
-  std::uniform_int_distribution<int64_t> distrib(0, (int64_t) (count * dup));
+  std::mt19937_64 gen64(rd());
+  std::mt19937 gen32(rd());
+  std::uniform_int_distribution<int64_t> longd(0, (int64_t) (count * dup));
+  std::uniform_int_distribution<int32_t> intd(0, (int32_t) (count * dup));
 
-  std::mt19937_64 gen1(rd());
-  std::uniform_real_distribution<double> distrib1;
+  std::uniform_real_distribution<double> doubled;
+  std::uniform_real_distribution<float> floatd;
 
-  arrow::Status st = left_id_builder.Reserve(count);
-  st = cost_builder.Reserve(count);
+  arrow::Status st = longb.Reserve(count);
+  st = doubleb.Reserve(count);
+  st = intb.Reserve(count);
+  st = floatb.Reserve(count);
+
   for (uint64_t i = 0; i < count; i++) {
-    int64_t l = distrib(gen);
-    double v = distrib1(gen1);
-    left_id_builder.UnsafeAppend(l);
-    cost_builder.UnsafeAppend(v);
+    int64_t vl = longd(gen64);
+    int32_t vi = intd(gen32);
+    double vd = doubled(gen64);
+    float vf = floatd(gen32);
+
+    longb.UnsafeAppend(vl);
+    intb.UnsafeAppend(vi);
+    doubleb.UnsafeAppend(vd);
+    floatb.UnsafeAppend(vf);
   }
 
-  std::shared_ptr<arrow::Array> left_id_array;
-  std::shared_ptr<arrow::Array> cost_array;
+  std::shared_ptr<arrow::Array> arr0, arr1, arr2, arr3;
 
-  st = left_id_builder.Finish(&left_id_array);
-  st = cost_builder.Finish(&cost_array);
+  st = longb.Finish(&arr0);
+  st = doubleb.Finish(&arr1);
+  st = intb.Finish(&arr2);
+  st = floatb.Finish(&arr3);
 
   std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
       arrow::field("first", arrow::int64()),
-      arrow::field("second", arrow::float64())};
+      arrow::field("second", arrow::float64()),
+      arrow::field("third", arrow::int32()),
+      arrow::field("fourth", arrow::float32())};
   auto schema = std::make_shared<arrow::Schema>(schema_vector);
 
-  arrow::ArrayVector av1 = {left_id_array, left_id_array};
-  arrow::ArrayVector av2 = {cost_array, cost_array};
+  arrow::ArrayVector av1 = {arr0, arr0};
+  arrow::ArrayVector av2 = {arr1, arr1};
+  arrow::ArrayVector av3 = {arr2, arr2};
+  arrow::ArrayVector av4 = {arr3, arr3};
   const std::shared_ptr<arrow::ChunkedArray> &ca1 = std::make_shared<arrow::ChunkedArray>(av1);
   const std::shared_ptr<arrow::ChunkedArray> &ca2 = std::make_shared<arrow::ChunkedArray>(av2);
-  left_table = arrow::Table::Make(schema, {ca1, ca2});
+  const std::shared_ptr<arrow::ChunkedArray> &ca3 = std::make_shared<arrow::ChunkedArray>(av3);
+  const std::shared_ptr<arrow::ChunkedArray> &ca4 = std::make_shared<arrow::ChunkedArray>(av4);
+  left_table = arrow::Table::Make(schema, {ca1, ca2, ca3, ca4});
 
 }

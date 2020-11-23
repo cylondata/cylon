@@ -19,6 +19,13 @@ namespace cylon {
  * @param partition_histogram
  * @return
  */
+
+Status Partition(const std::shared_ptr<Table> &table,
+                 const std::vector<int32_t> &hash_column_idx,
+                 uint32_t num_partitions,
+                 std::vector<uint32_t> &target_partitions,
+                 std::vector<uint32_t> &partition_histogram);
+
 Status HashPartition(const std::shared_ptr<Table> &table,
                      int32_t hash_column_idx,
                      uint32_t num_partitions,

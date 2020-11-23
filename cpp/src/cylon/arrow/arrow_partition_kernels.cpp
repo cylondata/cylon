@@ -84,6 +84,85 @@ cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
   return cylon::Status::OK();
 }
 
+template<template<typename T> class PART_KERNEL>
+static Status create_partition_kernel(const std::shared_ptr<arrow::DataType> &data_type,
+                                      uint32_t num_partitions,
+                                      std::unique_ptr<ArrowPartitionKernel2> &kern) {
+  switch (data_type->id()) {
+    case arrow::Type::BOOL:kern = std::make_unique<PART_KERNEL<arrow::BooleanType>>(num_partitions);
+      break;
+    case arrow::Type::UINT8:kern = std::make_unique<PART_KERNEL<arrow::UInt8Type>>(num_partitions);
+      break;
+    case arrow::Type::INT8:kern = std::make_unique<PART_KERNEL<arrow::Int8Type>>(num_partitions);
+      break;
+    case arrow::Type::UINT16:
+      kern = std::make_unique<PART_KERNEL<arrow::UInt16Type>>(num_partitions);
+      break;
+    case arrow::Type::INT16:kern = std::make_unique<PART_KERNEL<arrow::Int16Type>>(num_partitions);
+      break;
+    case arrow::Type::UINT32:
+      kern = std::make_unique<PART_KERNEL<arrow::UInt32Type>>(num_partitions);
+      break;
+    case arrow::Type::INT32:kern = std::make_unique<PART_KERNEL<arrow::Int32Type>>(num_partitions);
+      break;
+    case arrow::Type::UINT64:
+      kern = std::make_unique<PART_KERNEL<arrow::UInt64Type>>(num_partitions);
+      break;
+    case arrow::Type::INT64:kern = std::make_unique<PART_KERNEL<arrow::Int64Type>>(num_partitions);
+      break;
+    case arrow::Type::FLOAT:kern = std::make_unique<PART_KERNEL<arrow::FloatType>>(num_partitions);
+      break;
+    case arrow::Type::DOUBLE:
+      kern = std::make_unique<PART_KERNEL<arrow::DoubleType>>(num_partitions);
+      break;
+    default:LOG_AND_RETURN_ERROR(Code::Invalid, "modulo partition works only for integer values")
+  } 
+  return Status::OK();
+};
+
+Status CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
+                                 uint32_t num_partitions,
+                                 std::unique_ptr<ArrowPartitionKernel2> &kern) {
+//  switch (data_type->id()) {
+//    case arrow::Type::BOOL:
+//      kern = std::make_unique<HashPartitionKernel<arrow::BooleanType>>(num_partitions);
+//      break;
+//    case arrow::Type::UINT8:
+//      kern = std::make_unique<HashPartitionKernel<arrow::UInt8Type>>(num_partitions);
+//      break;
+//    case arrow::Type::INT8:
+//      kern = std::make_unique<HashPartitionKernel<arrow::Int8Type>>(num_partitions);
+//      break;
+//    case arrow::Type::UINT16:
+//      kern = std::make_unique<HashPartitionKernel<arrow::UInt16Type>>(num_partitions);
+//      break;
+//    case arrow::Type::INT16:
+//      kern = std::make_unique<HashPartitionKernel<arrow::Int16Type>>(num_partitions);
+//      break;
+//    case arrow::Type::UINT32:
+//      kern = std::make_unique<HashPartitionKernel<arrow::UInt32Type>>(num_partitions);
+//      break;
+//    case arrow::Type::INT32:
+//      kern = std::make_unique<HashPartitionKernel<arrow::Int32Type>>(num_partitions);
+//      break;
+//    case arrow::Type::UINT64:
+//      kern = std::make_unique<HashPartitionKernel<arrow::UInt64Type>>(num_partitions);
+//      break;
+//    case arrow::Type::INT64:
+//      kern = std::make_unique<HashPartitionKernel<arrow::Int64Type>>(num_partitions);
+//      break;
+//    case arrow::Type::FLOAT:
+//      kern = std::make_unique<HashPartitionKernel<arrow::FloatType>>(num_partitions);
+//      break;
+//    case arrow::Type::DOUBLE:
+//      kern = std::make_unique<HashPartitionKernel<arrow::DoubleType>>(num_partitions);
+//      break;
+//    default:LOG_AND_RETURN_ERROR(Code::Invalid, "modulo partition works only for integer values")
+//  }
+  return create_partition_kernel<HashPartitionKernel>(data_type, num_partitions, kern);
+//  return Status::OK();
+}
+
 RowHashingKernel::RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields,
                                    arrow::MemoryPool *memory_pool) {
   for (auto const &field : fields) {

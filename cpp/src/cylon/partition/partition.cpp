@@ -177,95 +177,75 @@ Status HashPartition(const std::shared_ptr<Table> &table,
   std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(hash_column_idx);
 
   std::unique_ptr<ArrowPartitionKernel2> kern;
-  switch (idx_col->type()->id()) {
-    case arrow::Type::BOOL:kern = std::make_unique<HashPartitionKernel<arrow::BooleanType>>(num_partitions);
-      break;
-    case arrow::Type::UINT8:kern = std::make_unique<HashPartitionKernel<arrow::UInt8Type>>(num_partitions);
-      break;
-    case arrow::Type::INT8:kern = std::make_unique<HashPartitionKernel<arrow::Int8Type>>(num_partitions);
-      break;
-    case arrow::Type::UINT16:kern = std::make_unique<HashPartitionKernel<arrow::UInt16Type>>(num_partitions);
-      break;
-    case arrow::Type::INT16:kern = std::make_unique<HashPartitionKernel<arrow::Int16Type>>(num_partitions);
-      break;
-    case arrow::Type::UINT32:kern = std::make_unique<HashPartitionKernel<arrow::UInt32Type>>(num_partitions);
-      break;
-    case arrow::Type::INT32:kern = std::make_unique<HashPartitionKernel<arrow::Int32Type>>(num_partitions);
-      break;
-    case arrow::Type::UINT64:kern = std::make_unique<HashPartitionKernel<arrow::UInt64Type>>(num_partitions);
-      break;
-    case arrow::Type::INT64:kern = std::make_unique<HashPartitionKernel<arrow::Int64Type>>(num_partitions);
-      break;
-    case arrow::Type::FLOAT:kern = std::make_unique<HashPartitionKernel<arrow::FloatType>>(num_partitions);
-      break;
-    case arrow::Type::DOUBLE:kern = std::make_unique<HashPartitionKernel<arrow::DoubleType>>(num_partitions);
-      break;
-    default:LOG_AND_RETURN_ERROR(Code::Invalid, "modulo partition works only for integer values")
-  }
+  Status status = CreateHashPartitionKernel(idx_col->type(), num_partitions, kern);
+  RETURN_IF_STATUS_FAILED(status)
 
-  const Status &status = kern->Partition(idx_col, target_partitions, partition_hist);
+  // initialize vectors
+  std::fill(target_partitions.begin(), target_partitions.end(), 0);
+  std::fill(partition_hist.begin(), partition_hist.end(), 0);
+  target_partitions.resize(idx_col->length(), 0);
+  partition_hist.resize(num_partitions, 0);
+
+  status = kern->Partition(idx_col, target_partitions, partition_hist);
   auto t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Modulo partition time : "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   return status;
 }
 
-Status ModuloPartition(const std::shared_ptr<Table> &table,
-                       std::vector<int32_t> &hash_column_idx,
-                       int32_t num_partitions,
-                       std::vector<int32_t> &target_partitions,
-                       std::vector<uint32_t> &partition_histogram) {
-  return Status();
+Status Partition(const std::shared_ptr<Table> &table,
+                 const std::vector<int32_t> &hash_column_idx,
+                 uint32_t num_partitions,
+                 std::vector<uint32_t> &target_partitions,
+                 std::vector<uint32_t> &partition_hist) {
+
+  auto t1 = std::chrono::high_resolution_clock::now();
+  Status status;
+  const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
+
+  std::vector<std::unique_ptr<ArrowPartitionKernel2>> partition_kernels(hash_column_idx.size());
+//  std::vector<std::shared_ptr<ArrowArraySplitKernel>> split_kernels(hash_column_idx.size());
+
+  std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
+
+  const std::vector<std::shared_ptr<arrow::Field>> &fields = arrow_table->schema()->fields();
+  for (size_t i = 0; i < hash_column_idx.size(); i++) {
+    const std::shared_ptr<arrow::DataType> &type = fields[hash_column_idx[i]]->type();
+
+    status = CreateHashPartitionKernel(type, num_partitions, partition_kernels[i]);
+    RETURN_IF_STATUS_FAILED(status)
+
+//    status = CreateSplitter(type, pool, &split_kernels[i]); // todo: change this to unique ptr
+//    RETURN_IF_STATUS_FAILED(status)
+  }
+
+  // initialize vectors
+  std::fill(target_partitions.begin(), target_partitions.end(), 0);
+  target_partitions.resize(arrow_table->num_rows(), 0);
+  std::fill(partition_hist.begin(), partition_hist.end(), 0);
+  partition_hist.resize(num_partitions, 0);
+
+  // building hash without the last hash_column_idx
+  for (size_t i = 0; i < hash_column_idx.size() - 1; i++) {
+    auto t11 = std::chrono::high_resolution_clock::now();
+    status =
+        partition_kernels[i]->BuildHash(arrow_table->column(hash_column_idx[i]), target_partitions);
+    auto t12 = std::chrono::high_resolution_clock::now();
+
+    LOG(INFO) << "building hash (idx " << hash_column_idx[i] << ") time : "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t12 - t11).count();
+    RETURN_IF_STATUS_FAILED(status)
+  }
+
+  // build hash from the last hash_column_idx
+  status = partition_kernels.back()->Partition(arrow_table->column(hash_column_idx.back()),
+                                               target_partitions, partition_hist);
+  RETURN_IF_STATUS_FAILED(status)
+  auto t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Partition time : "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
+  return Status::OK();
 }
 
 }
-
-
-/*
-     case arrow::Type::BOOL:
-      return modulo_parition_impl<arrow::BooleanType>(idx_col,
-                                                      num_partitions,
-                                                      target_partitions,
-                                                      partition_hist);
-    case arrow::Type::UINT8:
-      return modulo_parition_impl<arrow::UInt8Type>(idx_col,
-                                                    num_partitions,
-                                                    target_partitions,
-                                                    partition_hist);
-
-    case arrow::Type::INT8:
-      return modulo_parition_impl<arrow::Int8Type>(idx_col,
-                                                   num_partitions,
-                                                   target_partitions,
-                                                   partition_hist);
-    case arrow::Type::UINT16:
-      return modulo_parition_impl<arrow::UInt16Type>(idx_col,
-                                                     num_partitions,
-                                                     target_partitions,
-                                                     partition_hist);
-    case arrow::Type::INT16:
-      return modulo_parition_impl<arrow::Int16Type>(idx_col,
-                                                    num_partitions,
-                                                    target_partitions,
-                                                    partition_hist);
-    case arrow::Type::UINT32:
-      return modulo_parition_impl<arrow::UInt32Type>(idx_col,
-                                                     num_partitions,
-                                                     target_partitions,
-                                                     partition_hist);
-    case arrow::Type::INT32:
-      return modulo_parition_impl<arrow::Int32Type>(idx_col,
-                                                    num_partitions,
-                                                    target_partitions,
-                                                    partition_hist);
-    case arrow::Type::UINT64:
-      return modulo_parition_impl<arrow::UInt64Type>(idx_col,
-                                                     num_partitions,
-                                                     target_partitions,
-                                                     partition_hist);
-    case arrow::Type::INT64:
-      return modulo_parition_impl<arrow::Int64Type>(idx_col,
-                                                    num_partitions,
-                                                    target_partitions,
-                                                    partition_hist);
- */
