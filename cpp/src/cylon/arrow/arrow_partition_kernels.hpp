@@ -376,6 +376,25 @@ Status CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_ty
                                  uint32_t num_partitions,
                                  std::unique_ptr<ArrowPartitionKernel2> &kern);
 
+
+template<typename ARROW_T>
+class RangePartitionKernel : public ArrowPartitionKernel2{
+ public:
+  RangePartitionKernel(uint32_t num_partitions) : ArrowPartitionKernel2(num_partitions) {};
+
+  Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
+                   std::vector<uint32_t> &target_partitions,
+                   std::vector<uint32_t> &partition_histogram) override {
+
+    return Status();
+  }
+
+  Status BuildHash(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
+                   std::vector<uint32_t> &target_partitions) override {
+    return Status();
+  }
+};
+
 }  // namespace cylon
 
 #endif //CYLON_ARROW_PARTITION_KERNELS_H
