@@ -96,6 +96,9 @@ cylon::Status Min(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, s
  */
 cylon::Status Max(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output);
 
+cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output);
+
+
 cylon::Status Sum(const std::shared_ptr<cylon::Table> &table,
                   int32_t col_idx,
                   std::shared_ptr<cylon::Table> &output);
