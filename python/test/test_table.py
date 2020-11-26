@@ -24,7 +24,7 @@ from pycylon import Table
 from pycylon import CylonContext
 from pycylon.io import CSVReadOptions
 from pycylon.io import CSVWriteOptions
-from pycylon.io import read_csv, to_csv
+from pycylon.io import read_csv
 import pyarrow as pa
 
 
@@ -55,7 +55,7 @@ def test_table():
 
     csv_write_options = CSVWriteOptions().with_delimiter(',')
 
-    to_csv(tb3, '/tmp/temp_record.csv', csv_write_options)
+    tb3.to_csv('/tmp/temp_record.csv', csv_write_options)
 
     tb4 = tb3.sort(1)
 

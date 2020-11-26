@@ -17,7 +17,6 @@ from libcpp cimport bool
 from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 from pycylon.io.csv_read_config cimport CCSVReadOptions
-from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pyarrow.lib cimport CTable as CArrowTable
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
@@ -28,9 +27,7 @@ from pycylon.data.table cimport Table
 from pycylon.data.table import Table
 from pycylon.api.lib cimport (pycylon_unwrap_context,
 pycylon_wrap_table,
-pycylon_unwrap_table,
-pycylon_unwrap_csv_read_options,
-pycylon_unwrap_csv_write_options)
+pycylon_unwrap_csv_read_options)
 
 
 def read_csv(context, path, csv_read_options) -> Table:
@@ -49,16 +46,3 @@ def read_csv(context, path, csv_read_options) -> Table:
             return pycylon_wrap_table(cn_table)
         else:
             raise Exception(f"Table couldn't be created from CSV: {status.get_msg().decode()}")
-
-def to_csv(table, path, csv_write_options):
-        """
-        creating a csv file with PyCylon table data
-        @param table: shared_ptr[CTable]
-        @param path: str
-        @param csv_write_options: CSVWriteOptions
-        """
-        cdef string cpath = path.encode()
-        cdef CCSVWriteOptions c_csv_write_options = pycylon_unwrap_csv_write_options(
-            csv_write_options)
-        cdef shared_ptr[CTable] cn_table = pycylon_unwrap_table(table)
-        WriteCSV(cn_table, cpath, c_csv_write_options)
