@@ -85,14 +85,6 @@ class Table {
                             std::shared_ptr<Table> &tableOut);
 
   /**
-   * Write the table as a CSV
-   * @param path file path
-   * @return the status of the operation
-   */
-  Status WriteCSV(const std::string &path,
-                  const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
-
-  /**
    * Create a arrow table from this data structure
    * @param output arrow table
    * @return the status of the operation
@@ -198,17 +190,6 @@ class Table {
    */
   std::vector<std::shared_ptr<cylon::Column>> GetColumns() const;
 
-#ifdef BUILD_CYLON_PARQUET
-  /**
-  * Write the table as a parquet file
-  * @param path file path
-  * @return the status of the operation
-  */
-  Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
-                      const std::string &path,
-                      const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
-#endif
-
  private:
   /**
    * Every table should have an unique id
@@ -241,6 +222,16 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &pat
 Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
                const std::vector<std::shared_ptr<Table> *> &tableOuts,
                io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
+
+/**
+ * Write the table as a CSV
+ * @param table shared pointer to the cylon table
+ * @param path file path
+ * @return the status of the operation
+ */
+Status WriteCSV(std::shared_ptr<cylon::Table> &table,
+                const std::string &path,
+                const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
 
 /**
    * Merge the set of tables to create a single table
@@ -385,6 +376,39 @@ Status Select(std::shared_ptr<cylon::Table> &table,
 Status Project(std::shared_ptr<cylon::Table> &table,
                const std::vector<int64_t> &project_columns,
                std::shared_ptr<Table> &output);
+
+#ifdef BUILD_CYLON_PARQUET
+/**
+* Create a table by reading a parquet file
+* @param path file path
+* @return a pointer to the table
+*/
+Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::string &path,
+                   std::shared_ptr<Table> &tableOut);
+/**
+* Read multiple parquet files into multiple tables. If threading is enabled, the tables will be read
+* in parallel
+* @param ctx
+* @param paths
+* @param tableOuts
+* @param options
+* @return
+*/
+Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::vector<std::string> &paths,
+                   const std::vector<std::shared_ptr<Table> *> &tableOuts,
+                   io::config::ParquetOptions options = cylon::io::config::ParquetOptions());
+/**
+* Write the table as a parquet file
+* @param path file path
+* @return the status of the operation
+*/
+Status WriteParquet(std::shared_ptr<cylon::Table> &table,
+                    std::shared_ptr<cylon::CylonContext> &ctx,
+                    const std::string &path,
+                    const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
+#endif //BUILD_CYLON_PARQUET
 
 }  // namespace cylon
 
