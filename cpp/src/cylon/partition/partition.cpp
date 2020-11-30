@@ -27,11 +27,11 @@ static Status split_impl(const std::shared_ptr<Table> &table,
   for (const auto &col:arrow_table->columns()) {
     std::shared_ptr<ArrowArraySplitKernel> splitKernel;
     status = CreateSplitter(col->type(), pool, &splitKernel);
-    RETURN_IF_STATUS_FAILED(status)
+    RETURN_CYLON_STATUS_IF_FAILED(status)
 
     std::vector<std::shared_ptr<arrow::Array>> split_arrays;
     status = splitKernel->Split(col, target_partitions, num_partitions, *partition_hist_ptr, split_arrays);
-    RETURN_IF_STATUS_FAILED(status)
+    RETURN_CYLON_STATUS_IF_FAILED(status)
 
     for (size_t i = 0; i < split_arrays.size(); i++) {
       data_arrays[i].push_back(split_arrays[i]);
@@ -43,7 +43,7 @@ static Status split_impl(const std::shared_ptr<Table> &table,
     std::shared_ptr<arrow::Table> arrow_table_out = arrow::Table::Make(arrow_table->schema(), arr_vec);
     std::shared_ptr<Table> cylon_table_out;
     status = cylon::Table::FromArrowTable(ctx, arrow_table_out, cylon_table_out);
-    RETURN_IF_STATUS_FAILED(status)
+    RETURN_CYLON_STATUS_IF_FAILED(status)
     output.push_back(std::move(cylon_table_out));
   }
 
@@ -84,49 +84,6 @@ static inline int32_t modulus(const uint64_t val, const uint32_t div) {
 static inline int32_t modulus_div_power2(const uint64_t val, const uint32_t div) {
   return val & (div - 1);
 }
-//
-//template<typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
-//static inline bool if_power2(T v) {
-//  return v && !(v & (v - 1));
-//}
-
-/*template<typename TYPE>
-static Status modulo_parition_impl(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
-                                   int32_t num_partitions,
-                                   std::vector<int32_t> &target_partitions,
-                                   std::vector<uint32_t> &partition_histogram) {
-  using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
-
-  auto t1 = std::chrono::high_resolution_clock::now();
-
-  if (!partition_histogram.empty() || !target_partitions.empty()) {
-    return Status(Code::Invalid, "target partitions or histogram not empty!");
-  }
-
-  // initialize the histogram
-  partition_histogram.reserve(num_partitions);
-  for (int i = 0; i < num_partitions; i++) {
-    partition_histogram.push_back(0);
-  }
-
-  std::function<int32_t(const uint64_t, const uint32_t)>
-      fptr = if_power2(num_partitions) ? &modulus_div_power2 : &modulus;
-
-  target_partitions.reserve(idx_col->length());
-  for (const auto &arr: idx_col->chunks()) {
-    const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
-    for (int64_t i = 0; i < carr->length(); i++) {
-      int32_t p = fptr(carr->Value(i), num_partitions);
-      target_partitions.push_back(p);
-      partition_histogram[p]++;
-    }
-  }
-
-  auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Modulo partition time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  return Status::OK();
-}*/
 
 Status ModuloPartition(const std::shared_ptr<Table> &table,
                        int32_t hash_column_idx,
@@ -178,7 +135,7 @@ Status HashPartition(const std::shared_ptr<Table> &table,
 
   std::unique_ptr<ArrowPartitionKernel2> kern;
   Status status = CreateHashPartitionKernel(idx_col->type(), num_partitions, kern);
-  RETURN_IF_STATUS_FAILED(status)
+  RETURN_CYLON_STATUS_IF_FAILED(status)
 
   // initialize vectors
   std::fill(target_partitions.begin(), target_partitions.end(), 0);
@@ -193,30 +150,24 @@ Status HashPartition(const std::shared_ptr<Table> &table,
   return status;
 }
 
-Status Partition(const std::shared_ptr<Table> &table,
-                 const std::vector<int32_t> &hash_column_idx,
-                 uint32_t num_partitions,
-                 std::vector<uint32_t> &target_partitions,
-                 std::vector<uint32_t> &partition_hist) {
+Status ApplyPartition(const std::shared_ptr<Table> &table,
+                      const std::vector<int32_t> &hash_column_idx,
+                      uint32_t num_partitions,
+                      std::vector<uint32_t> &target_partitions,
+                      std::vector<uint32_t> &partition_hist) {
 
   auto t1 = std::chrono::high_resolution_clock::now();
   Status status;
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
-
-  std::vector<std::unique_ptr<ArrowPartitionKernel2>> partition_kernels(hash_column_idx.size());
-//  std::vector<std::shared_ptr<ArrowArraySplitKernel>> split_kernels(hash_column_idx.size());
-
   std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
 
+  std::vector<std::unique_ptr<ArrowPartitionKernel2>> partition_kernels(hash_column_idx.size());
   const std::vector<std::shared_ptr<arrow::Field>> &fields = arrow_table->schema()->fields();
   for (size_t i = 0; i < hash_column_idx.size(); i++) {
     const std::shared_ptr<arrow::DataType> &type = fields[hash_column_idx[i]]->type();
 
     status = CreateHashPartitionKernel(type, num_partitions, partition_kernels[i]);
-    RETURN_IF_STATUS_FAILED(status)
-
-//    status = CreateSplitter(type, pool, &split_kernels[i]); // todo: change this to unique ptr
-//    RETURN_IF_STATUS_FAILED(status)
+    RETURN_CYLON_STATUS_IF_FAILED(status)
   }
 
   // initialize vectors
@@ -234,13 +185,13 @@ Status Partition(const std::shared_ptr<Table> &table,
 
     LOG(INFO) << "building hash (idx " << hash_column_idx[i] << ") time : "
               << std::chrono::duration_cast<std::chrono::milliseconds>(t12 - t11).count();
-    RETURN_IF_STATUS_FAILED(status)
+    RETURN_CYLON_STATUS_IF_FAILED(status)
   }
 
   // build hash from the last hash_column_idx
   status = partition_kernels.back()->Partition(arrow_table->column(hash_column_idx.back()),
                                                target_partitions, partition_hist);
-  RETURN_IF_STATUS_FAILED(status)
+  RETURN_CYLON_STATUS_IF_FAILED(status)
   auto t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Partition time : "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();

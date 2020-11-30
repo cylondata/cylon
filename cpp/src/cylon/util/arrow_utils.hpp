@@ -41,10 +41,19 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table);
 /**
  * Create a duplicate of the current array
  */
-arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray>& cArr,
-                                        const std::shared_ptr<arrow::Field>& field,
-                                        arrow::MemoryPool *pool,
-                                        std::shared_ptr<arrow::ChunkedArray>& out);
+arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr,
+                        const std::shared_ptr<arrow::Field> &field,
+                        arrow::MemoryPool *pool,
+                        std::shared_ptr<arrow::ChunkedArray> &out);
+
+arrow::Status SampleTable(std::shared_ptr<arrow::Table> &table,
+                          int32_t idx,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out);
+
+arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &array,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out);
 
 }  // namespace util
 }  // namespace cylon

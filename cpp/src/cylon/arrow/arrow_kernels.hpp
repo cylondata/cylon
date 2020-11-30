@@ -106,7 +106,7 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
     for (uint32_t i = 0; i < num_partitions; i++) {
       builders.emplace_back(new ARROW_BUILDER_T(pool_));
       const auto &status = builders.back()->Reserve(counts[i]);
-      RETURN_IF_ARROW_STATUS_FAILED(status)
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
     }
 
     size_t offset = 0;
@@ -123,7 +123,7 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
     for (uint32_t i = 0; i < num_partitions; i++) {
       std::shared_ptr<arrow::Array> array;
       const auto &status = builders[i]->Finish(&array);
-      RETURN_IF_ARROW_STATUS_FAILED(status)
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
       output.push_back(array);
     }
 

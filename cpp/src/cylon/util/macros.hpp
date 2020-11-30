@@ -9,15 +9,20 @@
   LOG(ERROR) << msg ; \
   return cylon::Status(code, msg);
 
-#define RETURN_IF_STATUS_FAILED(status) \
+#define RETURN_CYLON_STATUS_IF_FAILED(status) \
   if (!status.is_ok()) { \
     return status; \
   };
 
 
-#define RETURN_IF_ARROW_STATUS_FAILED(status) \
+#define RETURN_CYLON_STATUS_IF_ARROW_FAILED(status) \
   if (!status.ok()) { \
     return cylon::Status(static_cast<int>(status.code()), status.message()); \
+  };
+
+#define RETURN_ARROW_STATUS_IF_FAILED(status) \
+  if (!status.ok()) { \
+    return status; \
   };
 
 #endif //CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_

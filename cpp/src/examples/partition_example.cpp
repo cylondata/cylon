@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     std::fill(target_partitions.begin(), target_partitions.end(), 0);
     std::fill(counts.begin(), counts.end(), 0);
 
-    auto s = cylon::Partition(table, {3, 2, 1, 0}, num_partitions, target_partitions, counts);
+    auto s = cylon::ApplyPartition(table, {3, 2, 1, 0}, num_partitions, target_partitions, counts);
     if (!s.is_ok()) {
       std::cout << "ERROR " << s.get_msg() << std::endl;
       return 1;

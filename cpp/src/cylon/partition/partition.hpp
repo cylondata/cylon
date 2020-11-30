@@ -20,11 +20,11 @@ namespace cylon {
  * @return
  */
 
-Status Partition(const std::shared_ptr<Table> &table,
-                 const std::vector<int32_t> &hash_column_idx,
-                 uint32_t num_partitions,
-                 std::vector<uint32_t> &target_partitions,
-                 std::vector<uint32_t> &partition_histogram);
+Status ApplyPartition(const std::shared_ptr<Table> &table,
+                      const std::vector<int32_t> &hash_column_idx,
+                      uint32_t num_partitions,
+                      std::vector<uint32_t> &target_partitions,
+                      std::vector<uint32_t> &partition_histogram);
 
 Status HashPartition(const std::shared_ptr<Table> &table,
                      int32_t hash_column_idx,
@@ -52,9 +52,11 @@ Status ModuloPartition(const std::shared_ptr<Table> &table,
 
 Status RangePartition(const std::shared_ptr<Table> &table,
                       const std::vector<int32_t> &hash_column_idx,
-                      int32_t num_partitions,
-                      std::vector<int32_t> &target_partitions,
-                      std::vector<uint32_t> &partition_histogram);
+                      uint32_t num_partitions,
+                      std::vector<uint32_t> &target_partitions,
+                      std::vector<uint32_t> &partition_histogram,
+                      uint32_t num_samples = 0,
+                      uint32_t num_bins = 0);
 
 /**
  * split a table based on the @param target_partitions vector. target_partition elements [0, num_partitions).
@@ -82,7 +84,8 @@ struct PartitionSplitter {
 
   }
 
-  virtual Status Partition(std::vector<int32_t> &target_partitions, std::vector<uint32_t> &partition_hist) = 0;
+  virtual Status Partition(std::vector<int32_t> &target_partitions,
+                           std::vector<uint32_t> &partition_hist) = 0;
 
   virtual Status Split(std::vector<std::shared_ptr<Table>> &output,
                        const std::vector<uint32_t> *partition_hist_ptr) = 0;
@@ -92,6 +95,15 @@ struct PartitionSplitter {
   const int32_t num_partitions;
   std::vector<cylon::ArrowArraySplitKernel> split_kernels;
 };
+
+template<typename T>
+struct Histogram {
+  uint32_t num_bins;
+  std::vector<T> bin_boundaries; // lower bound of boundaries
+  std::vector<float_t> frequencies; // frequencies can be decimals
+};
+
+
 
 }
 

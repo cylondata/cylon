@@ -21,8 +21,10 @@
 #include <glog/logging.h>
 #include <cmath>
 #include <util/macros.hpp>
+#include <ctx/cylon_context.hpp>
 
 #include "../util/murmur3.hpp"
+#include "../util/arrow_utils.hpp"
 #include "../status.hpp"
 
 namespace cylon {
@@ -378,9 +380,21 @@ Status CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_ty
 
 
 template<typename ARROW_T>
-class RangePartitionKernel : public ArrowPartitionKernel2{
+class RangePartitionKernel : public ArrowPartitionKernel2 {
+  using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
+  using ARROW_CTYPE = typename arrow::TypeTraits<ARROW_T>::CType;
+
  public:
-  RangePartitionKernel(uint32_t num_partitions) : ArrowPartitionKernel2(num_partitions) {};
+  RangePartitionKernel(std::shared_ptr<CylonContext> &ctx,
+                       uint64_t num_samples,
+                       uint32_t num_partitions,
+                       uint32_t num_bins) :
+      ArrowPartitionKernel2(num_partitions),
+      num_bins(num_bins),
+      num_samples(num_samples),
+      ctx(ctx) {
+    counts.resize(num_bins + 2, 0);
+  };
 
   Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                    std::vector<uint32_t> &target_partitions,
@@ -391,8 +405,27 @@ class RangePartitionKernel : public ArrowPartitionKernel2{
 
   Status BuildHash(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                    std::vector<uint32_t> &target_partitions) override {
-    return Status();
+    return Status(Code::Invalid, "Range partition does not build hash");
   }
+
+  Status inline build_dist_histogram(const std::shared_ptr<arrow::ChunkedArray> &idx_col) {
+    std::shared_ptr<arrow::Array> array;
+    auto a_status = util::SampleArray(idx_col, num_samples, array);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(a_status)
+
+    const std::shared_ptr<ARROW_ARRAY_T>
+        &casted_arr = std::static_pointer_cast<ARROW_ARRAY_T>(array);
+  }
+
+  inline size_t get_bin_pos(ARROW_CTYPE val){
+    return
+  }
+
+  uint32_t num_bins;
+  uint64_t num_samples;
+  std::shared_ptr<CylonContext> ctx; // todo dont need a copy here
+  std::vector<uint64_t> counts;
+  ARROW_CTYPE min, max;
 };
 
 }  // namespace cylon
