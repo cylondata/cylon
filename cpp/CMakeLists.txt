@@ -114,7 +114,7 @@ endif (CYLON_PARQUET)
 include(Build)
 
 if (NOT ARROW_BUILD_TYPE)
-    set(ARROW_BUILD "SOURCE")
+    set(ARROW_BUILD_TYPE "SOURCE")
 endif()
 
 if (${ARROW_BUILD_TYPE} STREQUAL "SYSTEM")
