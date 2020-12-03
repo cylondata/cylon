@@ -85,45 +85,43 @@ enum MinMaxOpts {
 
 template<MinMaxOpts minMaxOpts>
 cylon::Status static inline min_max_impl(std::shared_ptr<CylonContext> &ctx,
-                                         const std::shared_ptr<arrow::ChunkedArray> &col,
+                                         const arrow::Datum &input,
                                          const std::shared_ptr<cylon::DataType> &data_type,
                                          std::shared_ptr<Result> &output) {
-  const arrow::Datum input(col);
+  if (!input.is_arraylike()) {
+    LOG_AND_RETURN_ERROR(Code::Invalid, "input should be array like")
+  }
 
   arrow::compute::ExecContext exec_context(cylon::ToArrowPool(ctx));
   arrow::compute::MinMaxOptions options(arrow::compute::MinMaxOptions::SKIP);
   const arrow::Result<arrow::Datum> &result = arrow::compute::MinMax(input, options, &exec_context);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status())
 
-  if (result.ok()) {
-    const arrow::Datum &local_result = result.ValueOrDie(); // minmax returns a structscalar
-    const auto &struct_scalar = local_result.scalar_as<arrow::StructScalar>();
+  const arrow::Datum &local_result = result.ValueOrDie(); // minmax returns a structscalar
+  const auto &struct_scalar = local_result.scalar_as<arrow::StructScalar>();
 
-    switch (minMaxOpts) {
-      case min:
-        return DoAllReduce(ctx,
-                           arrow::Datum(struct_scalar.value.at(0)),
-                           output,
-                           data_type,
-                           cylon::net::ReduceOp::MIN);
-      case max:
-        return DoAllReduce(ctx,
-                           arrow::Datum(struct_scalar.value.at(1)),
-                           output,
-                           data_type,
-                           cylon::net::ReduceOp::MAX);
-      case minmax:
-        return DoAllReduce<std::vector<cylon::net::ReduceOp>>(ctx,
-                                                              local_result,
-                                                              output,
-                                                              data_type,
-                                                              {cylon::net::ReduceOp::MIN,
-                                                               cylon::net::ReduceOp::MAX});
-    }
-  } else {
-    const auto& status = result.status();
-    LOG(ERROR) << "Local aggregation failed! " << status.message();
-    return cylon::Status(Code::ExecutionError, status.message());
+  switch (minMaxOpts) {
+    case min:
+      return DoAllReduce(ctx,
+                         arrow::Datum(struct_scalar.value.at(0)),
+                         output,
+                         data_type,
+                         cylon::net::ReduceOp::MIN);
+    case max:
+      return DoAllReduce(ctx,
+                         arrow::Datum(struct_scalar.value.at(1)),
+                         output,
+                         data_type,
+                         cylon::net::ReduceOp::MAX);
+    case minmax:
+      return DoAllReduce<std::vector<cylon::net::ReduceOp>>(ctx,
+                                                            local_result,
+                                                            output,
+                                                            data_type,
+                                                            {cylon::net::ReduceOp::MIN,
+                                                             cylon::net::ReduceOp::MAX});
   }
+  return Status(); // this would never reach
 }
 
 cylon::Status Min(const std::shared_ptr<cylon::Table> &table,
@@ -150,22 +148,8 @@ cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table,
   return min_max_impl<MinMaxOpts::minmax>(ctx, col->GetColumnData(), col->GetDataType(), output);
 }
 
-cylon::Status Min(std::shared_ptr<CylonContext> &ctx,
-                  const std::shared_ptr<arrow::ChunkedArray> &array,
-                  const std::shared_ptr<cylon::DataType> &datatype,
-                  std::shared_ptr<Result> &output) {
-  return min_max_impl<MinMaxOpts::min>(ctx, array, datatype, output);
-}
-
-cylon::Status Max(std::shared_ptr<CylonContext> &ctx,
-                  const std::shared_ptr<arrow::ChunkedArray> &array,
-                  const std::shared_ptr<cylon::DataType> &datatype,
-                  std::shared_ptr<Result> &output) {
-  return min_max_impl<MinMaxOpts::max>(ctx, array, datatype, output);
-}
-
 cylon::Status MinMax(std::shared_ptr<CylonContext> &ctx,
-                     const std::shared_ptr<arrow::ChunkedArray> &array,
+                     const arrow::Datum &array,
                      const std::shared_ptr<cylon::DataType> &datatype,
                      std::shared_ptr<Result> &output) {
   return min_max_impl<MinMaxOpts::minmax>(ctx, array, datatype, output);

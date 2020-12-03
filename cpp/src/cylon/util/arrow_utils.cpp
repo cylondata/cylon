@@ -238,7 +238,7 @@ static arrow::Status sample_array(const std::shared_ptr<arrow::ChunkedArray> &ar
 
   std::random_device rd;
   std::mt19937_64 gen(rd());
-  std::uniform_int_distribution<int64_t> distrib(0, array->length());
+  std::uniform_int_distribution<int64_t> distrib(0, array->length() - 1);
 
   std::shared_ptr<arrow::Array> concat_arr;
   if (array->num_chunks() > 1) {

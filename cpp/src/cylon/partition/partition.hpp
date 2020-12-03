@@ -20,12 +20,6 @@ namespace cylon {
  * @return
  */
 
-Status ApplyPartition(const std::shared_ptr<Table> &table,
-                      const std::vector<int32_t> &hash_column_idx,
-                      uint32_t num_partitions,
-                      std::vector<uint32_t> &target_partitions,
-                      std::vector<uint32_t> &partition_histogram);
-
 Status HashPartition(const std::shared_ptr<Table> &table,
                      int32_t hash_column_idx,
                      uint32_t num_partitions,
@@ -38,25 +32,31 @@ Status HashPartition(const std::shared_ptr<Table> &table,
                      std::vector<uint32_t> &target_partitions,
                      std::vector<uint32_t> &partition_histogram);
 
-Status ModuloPartition(const std::shared_ptr<Table> &table,
-                       const std::vector<int32_t> &hash_column_idx,
-                       int32_t num_partitions,
-                       std::vector<int32_t> &target_partitions,
-                       std::vector<uint32_t> &partition_histogram);
-
-Status ModuloPartition(const std::shared_ptr<Table> &table,
-                       int32_t hash_column_idx,
-                       uint32_t num_partitions,
-                       std::vector<uint32_t> &target_partitions,
-                       std::vector<uint32_t> &partition_hist);
-
-Status RangePartition(const std::shared_ptr<Table> &table,
-                      const std::vector<int32_t> &hash_column_idx,
-                      uint32_t num_partitions,
-                      std::vector<uint32_t> &target_partitions,
-                      std::vector<uint32_t> &partition_histogram,
-                      uint32_t num_samples = 0,
-                      uint32_t num_bins = 0);
+/**
+ * Sorted partitioning of the distributed table
+ * @param table
+ * @param idx_col
+ * @param num_partitions
+ * @param target_partitions
+ * @param partition_histogram
+ * @param ascending (optional) ascending/ descending
+ * @param num_samples (optional) number of samples
+ * @param num_bins (optional) number of bins
+ * @return
+ */
+Status SortPartition(const std::shared_ptr<Table> &table,
+                     int32_t idx_col,
+                     uint32_t num_partitions,
+                     std::vector<uint32_t> &target_partitions,
+                     std::vector<uint32_t> &partition_histogram);
+Status SortPartition(const std::shared_ptr<Table> &table,
+                     int32_t idx_col,
+                     uint32_t num_partitions,
+                     std::vector<uint32_t> &target_partitions,
+                     std::vector<uint32_t> &partition_histogram,
+                     bool ascending,
+                     uint64_t num_samples,
+                     uint32_t num_bins);
 
 /**
  * split a table based on the @param target_partitions vector. target_partition elements [0, num_partitions).
@@ -70,10 +70,15 @@ Status RangePartition(const std::shared_ptr<Table> &table,
  * @return
  */
 Status Split(const std::shared_ptr<Table> &table,
-             const std::vector<uint32_t> &target_partitions,
              uint32_t num_partitions,
-             std::vector<std::shared_ptr<Table>> &output,
-             const std::vector<uint32_t> *partition_hist_ptr = nullptr);
+             const std::vector<uint32_t> &target_partitions,
+             std::vector<std::shared_ptr<Table>> &output);
+
+Status Split(const std::shared_ptr<Table> &table,
+             uint32_t num_partitions,
+             const std::vector<uint32_t> &target_partitions,
+             const std::vector<uint32_t> &partition_hist_ptr,
+             std::vector<std::shared_ptr<Table>> &output);
 
 struct PartitionSplitter {
 

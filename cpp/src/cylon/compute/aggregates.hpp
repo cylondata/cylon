@@ -102,16 +102,8 @@ cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table,
                      int32_t col_idx,
                      std::shared_ptr<Result> &output);
 
-cylon::Status Min(std::shared_ptr<CylonContext> &ctx,
-                  const std::shared_ptr<arrow::ChunkedArray> &array,
-                  const std::shared_ptr<cylon::DataType> &datatype,
-                  std::shared_ptr<Result> &output);
-cylon::Status Max(std::shared_ptr<CylonContext> &ctx,
-                  const std::shared_ptr<arrow::ChunkedArray> &array,
-                  const std::shared_ptr<cylon::DataType> &datatype,
-                  std::shared_ptr<Result> &output);
 cylon::Status MinMax(std::shared_ptr<CylonContext> &ctx,
-                     const std::shared_ptr<arrow::ChunkedArray> &array,
+                     const arrow::Datum &array,
                      const std::shared_ptr<cylon::DataType> &datatype,
                      std::shared_ptr<Result> &output);
 

@@ -29,7 +29,7 @@
 #include <util/arrow_utils.hpp>
 #include <groupby/groupby.hpp>
 
-#include <arrow/arrow_kernels.hpp>
+#include <arrow/arrow_partition_kernels.hpp>
 #include <partition/partition.hpp>
 
 void create_table(char *const *argv,
@@ -98,22 +98,39 @@ int main(int argc, char *argv[]) {
 //    if (!s.is_ok()) return 1;
 //  }
 
-  for (int i = 0; i < 4; i++) {
-    std::fill(target_partitions.begin(), target_partitions.end(), 0);
-    std::fill(counts.begin(), counts.end(), 0);
+//  for (int i = 0; i < 4; i++) {
+//    std::fill(target_partitions.begin(), target_partitions.end(), 0);
+//    std::fill(counts.begin(), counts.end(), 0);
+//
+//    auto s = cylon::ApplyPartition(table, {3, 2, 1, 0}, num_partitions, target_partitions, counts);
+//    if (!s.is_ok()) {
+//      std::cout << "ERROR " << s.get_msg() << std::endl;
+//      return 1;
+//    }
+//  }
 
-    auto s = cylon::ApplyPartition(table, {3, 2, 1, 0}, num_partitions, target_partitions, counts);
-    if (!s.is_ok()) {
-      std::cout << "ERROR " << s.get_msg() << std::endl;
-      return 1;
-    }
-  }
-
-//  print_vec(target_partitions);
+//  cylon::RangePartitionKernel<arrow::Int64Type> kern(ctx,
+//                                                     num_partitions,
+//                                                     arrow_table->num_rows() * 0.1,
+//                                                     num_partitions * 16);
+//
+//
+//  kern.Partition(arrow_table->column(0), target_partitions, counts);
+//
+////  print_vec(target_partitions);
+//  sleep(ctx->GetRank());
 //  print_vec(counts);
 
+  cylon::SortPartition(table,
+                       0,
+                       num_partitions,
+                       target_partitions,
+                       counts,
+                       true,
+                       arrow_table->num_rows() * 0.01,
+                       num_partitions * 16);
 
-/*  std::vector<std::shared_ptr<arrow::Array>> out;
+  std::vector<std::shared_ptr<arrow::Array>> out;
   std::shared_ptr<cylon::ArrowArraySplitKernel> kern;
 
   cylon::CreateSplitter(arrow::int64(), pool, &kern);
@@ -121,20 +138,22 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<arrow::ChunkedArray> col = arrow_table->column(0);
   kern->Split(col, target_partitions, num_partitions, counts, out);
 
-  for(int i = 0; i< num_partitions; i++){
-    std::cout << i << " count " << counts[i] << " out " << out[i]->length() << std::endl;
-  }*/
+//  for (int i = 0; i < num_partitions; i++) {
+//    std::cout << i << " count " << counts[i] << " out " << out[i]->length() << std::endl;
+//  }
 
   std::vector<std::shared_ptr<cylon::Table>> output;
 
-  cylon::Split(table, target_partitions, num_partitions, output, &counts);
+  cylon::Split(table, num_partitions, target_partitions, counts, output);
 
   std::cout << "original" << std::endl;
 //  table->Print();
 
-  for (int i = 0; i < num_partitions; i++){
-    std::cout << "partition " << i <<  " " << output[i]->Rows() << std::endl;
+  if (ctx->GetRank() == 0) {
+    for (int i = 0; i < num_partitions; i++) {
+      std::cout << "partition " << i << " " << output[i]->Rows() << std::endl;
 //    output[i]->Print();
+    }
   }
 
   ctx->Finalize();
