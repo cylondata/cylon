@@ -102,96 +102,6 @@ std::unique_ptr<ArrowPartitionKernel2> CreateHashPartitionKernel(const std::shar
   }
 }
 
-Status CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
-                                  uint32_t num_partitions,
-                                  std::shared_ptr<CylonContext> &ctx,
-                                  bool ascending,
-                                  uint64_t num_samples,
-                                  uint32_t num_bins,
-                                  std::unique_ptr<ArrowPartitionKernel2> &kern) {
-  switch (data_type->id()) {
-    case arrow::Type::BOOL:
-      kern = std::make_unique<RangePartitionKernel<arrow::BooleanType>>(num_partitions,
-                                                                        ctx,
-                                                                        ascending,
-                                                                        num_samples,
-                                                                        num_bins);
-      break;
-    case arrow::Type::UINT8:
-      kern = std::make_unique<RangePartitionKernel<arrow::UInt8Type>>(num_partitions,
-                                                                      ctx,
-                                                                      ascending,
-                                                                      num_samples,
-                                                                      num_bins);
-      break;
-    case arrow::Type::INT8:
-      kern = std::make_unique<RangePartitionKernel<arrow::Int8Type>>(num_partitions,
-                                                                     ctx,
-                                                                     ascending,
-                                                                     num_samples,
-                                                                     num_bins);
-      break;
-    case arrow::Type::UINT16:
-      kern = std::make_unique<RangePartitionKernel<arrow::UInt16Type>>(num_partitions,
-                                                                       ctx,
-                                                                       ascending,
-                                                                       num_samples,
-                                                                       num_bins);
-      break;
-    case arrow::Type::INT16:
-      kern = std::make_unique<RangePartitionKernel<arrow::Int16Type>>(num_partitions,
-                                                                      ctx,
-                                                                      ascending,
-                                                                      num_samples,
-                                                                      num_bins);
-      break;
-    case arrow::Type::UINT32:
-      kern = std::make_unique<RangePartitionKernel<arrow::UInt32Type>>(num_partitions,
-                                                                       ctx,
-                                                                       ascending,
-                                                                       num_samples,
-                                                                       num_bins);
-      break;
-    case arrow::Type::INT32:
-      kern = std::make_unique<RangePartitionKernel<arrow::Int32Type>>(num_partitions,
-                                                                      ctx,
-                                                                      ascending,
-                                                                      num_samples,
-                                                                      num_bins);
-      break;
-    case arrow::Type::UINT64:
-      kern = std::make_unique<RangePartitionKernel<arrow::UInt64Type>>(num_partitions,
-                                                                       ctx,
-                                                                       ascending,
-                                                                       num_samples,
-                                                                       num_bins);
-      break;
-    case arrow::Type::INT64:
-      kern = std::make_unique<RangePartitionKernel<arrow::Int64Type>>(num_partitions,
-                                                                      ctx,
-                                                                      ascending,
-                                                                      num_samples,
-                                                                      num_bins);
-      break;
-    case arrow::Type::FLOAT:
-      kern = std::make_unique<RangePartitionKernel<arrow::FloatType>>(num_partitions,
-                                                                      ctx,
-                                                                      ascending,
-                                                                      num_samples,
-                                                                      num_bins);
-      break;
-    case arrow::Type::DOUBLE:
-      kern = std::make_unique<RangePartitionKernel<arrow::DoubleType>>(num_partitions,
-                                                                       ctx,
-                                                                       ascending,
-                                                                       num_samples,
-                                                                       num_bins);
-      break;
-    default:LOG_AND_RETURN_ERROR(Code::Invalid, "modulo partition works only for integer values")
-  }
-  return Status::OK();
-}
-
 std::unique_ptr<ArrowPartitionKernel2> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
                                                                   uint32_t num_partitions,
                                                                   std::shared_ptr<CylonContext> &ctx,
@@ -200,80 +110,37 @@ std::unique_ptr<ArrowPartitionKernel2> CreateRangePartitionKernel(const std::sha
                                                                   uint32_t num_bins) {
   switch (data_type->id()) {
     case arrow::Type::BOOL:
-      return std::make_unique<RangePartitionKernel<arrow::BooleanType>>(num_partitions,
-                                                                        ctx,
-                                                                        ascending,
-                                                                        num_samples,
+      return std::make_unique<RangePartitionKernel<arrow::BooleanType>>(num_partitions, ctx, ascending, num_samples,
                                                                         num_bins);
-
     case arrow::Type::UINT8:
-      return std::make_unique<RangePartitionKernel<arrow::UInt8Type>>(num_partitions,
-                                                                      ctx,
-                                                                      ascending,
-                                                                      num_samples,
+      return std::make_unique<RangePartitionKernel<arrow::UInt8Type>>(num_partitions, ctx, ascending, num_samples,
                                                                       num_bins);
-
     case arrow::Type::INT8:
-      return std::make_unique<RangePartitionKernel<arrow::Int8Type>>(num_partitions,
-                                                                     ctx,
-                                                                     ascending,
-                                                                     num_samples,
+      return std::make_unique<RangePartitionKernel<arrow::Int8Type>>(num_partitions, ctx, ascending, num_samples,
                                                                      num_bins);
-
     case arrow::Type::UINT16:
-      return std::make_unique<RangePartitionKernel<arrow::UInt16Type>>(num_partitions,
-                                                                       ctx,
-                                                                       ascending,
-                                                                       num_samples,
+      return std::make_unique<RangePartitionKernel<arrow::UInt16Type>>(num_partitions, ctx, ascending, num_samples,
                                                                        num_bins);
-
     case arrow::Type::INT16:
-      return std::make_unique<RangePartitionKernel<arrow::Int16Type>>(num_partitions,
-                                                                      ctx,
-                                                                      ascending,
-                                                                      num_samples,
+      return std::make_unique<RangePartitionKernel<arrow::Int16Type>>(num_partitions, ctx, ascending, num_samples,
                                                                       num_bins);
-
     case arrow::Type::UINT32:
-      return std::make_unique<RangePartitionKernel<arrow::UInt32Type>>(num_partitions,
-                                                                       ctx,
-                                                                       ascending,
-                                                                       num_samples,
+      return std::make_unique<RangePartitionKernel<arrow::UInt32Type>>(num_partitions, ctx, ascending, num_samples,
                                                                        num_bins);
-
     case arrow::Type::INT32:
-      return std::make_unique<RangePartitionKernel<arrow::Int32Type>>(num_partitions,
-                                                                      ctx,
-                                                                      ascending,
-                                                                      num_samples,
+      return std::make_unique<RangePartitionKernel<arrow::Int32Type>>(num_partitions, ctx, ascending, num_samples,
                                                                       num_bins);
-
     case arrow::Type::UINT64:
-      return std::make_unique<RangePartitionKernel<arrow::UInt64Type>>(num_partitions,
-                                                                       ctx,
-                                                                       ascending,
-                                                                       num_samples,
+      return std::make_unique<RangePartitionKernel<arrow::UInt64Type>>(num_partitions, ctx, ascending, num_samples,
                                                                        num_bins);
-
     case arrow::Type::INT64:
-      return std::make_unique<RangePartitionKernel<arrow::Int64Type>>(num_partitions,
-                                                                      ctx,
-                                                                      ascending,
-                                                                      num_samples,
+      return std::make_unique<RangePartitionKernel<arrow::Int64Type>>(num_partitions, ctx, ascending, num_samples,
                                                                       num_bins);
-
     case arrow::Type::FLOAT:
-      return std::make_unique<RangePartitionKernel<arrow::FloatType>>(num_partitions,
-                                                                      ctx,
-                                                                      ascending,
-                                                                      num_samples,
+      return std::make_unique<RangePartitionKernel<arrow::FloatType>>(num_partitions, ctx, ascending, num_samples,
                                                                       num_bins);
-
     case arrow::Type::DOUBLE:
-      return std::make_unique<RangePartitionKernel<arrow::DoubleType>>(num_partitions,
-                                                                       ctx,
-                                                                       ascending,
-                                                                       num_samples,
+      return std::make_unique<RangePartitionKernel<arrow::DoubleType>>(num_partitions, ctx, ascending, num_samples,
                                                                        num_bins);
     default:return nullptr;
   }

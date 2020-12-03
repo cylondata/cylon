@@ -525,14 +525,6 @@ class RangePartitionKernel : public ArrowPartitionKernel2 {
   ARROW_C_T min, max, range_per_bin;
 };
 
-Status CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
-                                  uint32_t num_partitions,
-                                  std::shared_ptr<CylonContext> &ctx,
-                                  bool ascending,
-                                  uint64_t num_samples,
-                                  uint32_t num_bins,
-                                  std::unique_ptr<ArrowPartitionKernel2> &kern);
-
 std::unique_ptr<ArrowPartitionKernel2> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
                                                                   uint32_t num_partitions,
                                                                   std::shared_ptr<CylonContext> &ctx,
