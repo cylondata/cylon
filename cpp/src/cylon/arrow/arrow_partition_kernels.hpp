@@ -384,7 +384,6 @@ class HashPartitionKernel : public ArrowPartitionKernel2, public WithDefaultPart
 std::unique_ptr<ArrowPartitionKernel2> CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
                                                                  uint32_t num_partitions);
 
-#define DEBUG 1
 
 template<typename ARROW_T, typename = typename std::enable_if<
     arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
@@ -491,10 +490,8 @@ class RangePartitionKernel : public ArrowPartitionKernel2 {
 
     float_t quantile = 1.0 / num_partitions, prefix_sum = 0;
 
-#ifdef DEBUG
     LOG(INFO) << "len=" << idx_col->length() << " min=" << min << " max=" << max << " range per bin=" <<
               range_per_bin << " num bins=" << num_bins << " quantile=" << quantile;
-#endif
 
     // divide global histogram into quantiles
     const uint64_t total_samples = ctx->GetWorldSize() * num_samples;
@@ -530,6 +527,16 @@ class RangePartitionKernel : public ArrowPartitionKernel2 {
   ARROW_C_T min, max, range_per_bin;
 };
 
+/**
+ * create range partition
+ * @param data_type
+ * @param num_partitions
+ * @param ctx
+ * @param ascending
+ * @param num_samples
+ * @param num_bins
+ * @return
+ */
 std::unique_ptr<ArrowPartitionKernel2> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
                                                                   uint32_t num_partitions,
                                                                   std::shared_ptr<CylonContext> &ctx,
