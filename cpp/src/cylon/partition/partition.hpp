@@ -50,7 +50,7 @@ Status SortPartition(const std::shared_ptr<Table> &table,
                      std::vector<uint32_t> &target_partitions,
                      std::vector<uint32_t> &partition_histogram);
 Status SortPartition(const std::shared_ptr<Table> &table,
-                     int32_t idx_col,
+                     int32_t column_idx,
                      uint32_t num_partitions,
                      std::vector<uint32_t> &target_partitions,
                      std::vector<uint32_t> &partition_histogram,

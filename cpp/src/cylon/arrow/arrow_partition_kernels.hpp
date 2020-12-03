@@ -271,9 +271,8 @@ struct WithDefaultPartitioner {
   };
 };
 
-template<typename ARROW_T,
-    typename = typename std::enable_if<
-        arrow::is_integer_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
+template<typename ARROW_T, typename = typename std::enable_if<
+    arrow::is_integer_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
 class ModuloPartitionKernel : public ArrowPartitionKernel2, public WithDefaultPartitioner {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using ARROW_CTYPE = typename arrow::TypeTraits<ARROW_T>::CType;
@@ -324,7 +323,8 @@ class ModuloPartitionKernel : public ArrowPartitionKernel2, public WithDefaultPa
   }
 };
 
-template<typename ARROW_T>
+template<typename ARROW_T, typename = typename std::enable_if<
+    arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
 class HashPartitionKernel : public ArrowPartitionKernel2, public WithDefaultPartitioner {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using ARROW_CTYPE = typename arrow::TypeTraits<ARROW_T>::CType;
@@ -386,7 +386,8 @@ std::unique_ptr<ArrowPartitionKernel2> CreateHashPartitionKernel(const std::shar
 
 #define DEBUG 1
 
-template<typename ARROW_T>
+template<typename ARROW_T, typename = typename std::enable_if<
+    arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
 class RangePartitionKernel : public ArrowPartitionKernel2 {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using ARROW_SCALAR_T = typename arrow::TypeTraits<ARROW_T>::ScalarType;
@@ -456,7 +457,11 @@ class RangePartitionKernel : public ArrowPartitionKernel2 {
     const auto &struct_scalar = minmax->GetResult().scalar_as<arrow::StructScalar>();
     min = std::static_pointer_cast<ARROW_SCALAR_T>(struct_scalar.value[0])->value;
     max = std::static_pointer_cast<ARROW_SCALAR_T>(struct_scalar.value[1])->value;
-    range_per_bin = (max - min + num_bins - 1) / num_bins; // upper bound of the division
+    if (arrow::is_integer_type<ARROW_T>()) {
+      range_per_bin = (max - min + num_bins - 1) / num_bins; // upper bound of the division
+    } else {
+      range_per_bin = (max - min) / num_bins; // upper bound of the division
+    }
     max = min + range_per_bin * num_bins; // update max
 
     // create sample histogram

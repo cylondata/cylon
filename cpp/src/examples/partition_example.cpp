@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
 //  std::shared_ptr<cylon::Table> output;
 
   int num_partitions = 256;
+  int idx_col = 1;
   std::vector<uint32_t> target_partitions(arrow_table->num_rows(), 0);
 //  target_partitions.reserve(arrow_table->num_rows());
   std::vector<uint32_t> counts(num_partitions, 0);
@@ -122,21 +123,21 @@ int main(int argc, char *argv[]) {
 //  print_vec(counts);
 
   cylon::SortPartition(table,
-                       0,
+                       idx_col,
                        num_partitions,
                        target_partitions,
                        counts,
                        true,
                        arrow_table->num_rows() * 0.01,
-                       num_partitions * 16);
+                       num_partitions * 8);
 
-  std::vector<std::shared_ptr<arrow::Array>> out;
-  std::shared_ptr<cylon::ArrowArraySplitKernel> kern;
-
-  cylon::CreateSplitter(arrow::int64(), pool, &kern);
-
-  std::shared_ptr<arrow::ChunkedArray> col = arrow_table->column(0);
-  kern->Split(col, target_partitions, num_partitions, counts, out);
+//  std::vector<std::shared_ptr<arrow::Array>> out;
+//  std::shared_ptr<cylon::ArrowArraySplitKernel> kern;
+//
+//  cylon::CreateSplitter(arrow::int64(), pool, &kern);
+//
+//  std::shared_ptr<arrow::ChunkedArray> col = arrow_table->column(2);
+//  kern->Split(col, target_partitions, num_partitions, counts, out);
 
 //  for (int i = 0; i < num_partitions; i++) {
 //    std::cout << i << " count " << counts[i] << " out " << out[i]->length() << std::endl;
@@ -176,9 +177,11 @@ void create_table(char *const *argv,
   std::mt19937_64 gen64(rd());
   std::mt19937 gen32(rd());
   std::uniform_int_distribution<int64_t> longd(0, (int64_t) (count * dup));
+//  std::uniform_int_distribution<int64_t> longd(0, (int64_t) (count * dup));
   std::uniform_int_distribution<int32_t> intd(0, (int32_t) (count * dup));
 
-  std::uniform_real_distribution<double> doubled;
+//  std::uniform_real_distribution<double> doubled(0, count * dup);
+  std::normal_distribution<double> doubled;
   std::uniform_real_distribution<float> floatd;
 
   arrow::Status st = longb.Reserve(count);

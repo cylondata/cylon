@@ -166,7 +166,7 @@ inline Status SortPartition(const std::shared_ptr<Table> &table,
 }
 
 Status SortPartition(const std::shared_ptr<Table> &table,
-                     int32_t hash_column_idx,
+                     int32_t column_idx,
                      uint32_t num_partitions,
                      std::vector<uint32_t> &target_partitions,
                      std::vector<uint32_t> &partition_hist,
@@ -176,14 +176,10 @@ Status SortPartition(const std::shared_ptr<Table> &table,
   auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<CylonContext> ctx = table->GetContext();
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
-  std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(std::abs(hash_column_idx));
+  std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(column_idx);
 
-  std::unique_ptr<ArrowPartitionKernel2> kern = CreateRangePartitionKernel(idx_col->type(),
-                                                                           num_partitions,
-                                                                           ctx,
-                                                                           ascending,
-                                                                           num_samples,
-                                                                           num_bins);
+  std::unique_ptr<ArrowPartitionKernel2> kern = CreateRangePartitionKernel(idx_col->type(), num_partitions,
+                                                                           ctx, ascending, num_samples, num_bins);
   if (kern == nullptr) {
     LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel");
   }
