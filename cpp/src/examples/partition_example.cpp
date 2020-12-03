@@ -128,8 +128,8 @@ int main(int argc, char *argv[]) {
                        target_partitions,
                        counts,
                        true,
-                       arrow_table->num_rows() * 0.01,
-                       num_partitions * 8);
+                       arrow_table->num_rows() * 0.1,
+                       num_partitions * 1000);
 
 //  std::vector<std::shared_ptr<arrow::Array>> out;
 //  std::shared_ptr<cylon::ArrowArraySplitKernel> kern;
@@ -181,7 +181,7 @@ void create_table(char *const *argv,
   std::uniform_int_distribution<int32_t> intd(0, (int32_t) (count * dup));
 
 //  std::uniform_real_distribution<double> doubled(0, count * dup);
-  std::normal_distribution<double> doubled;
+  std::chi_squared_distribution<double> doubled;
   std::uniform_real_distribution<float> floatd;
 
   arrow::Status st = longb.Reserve(count);

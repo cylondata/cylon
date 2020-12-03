@@ -140,8 +140,9 @@ class BinaryHashPartitionKernel : public ArrowPartitionKernel {
   }
 };
 
-template<typename TYPE, typename CTYPE>
+template<typename TYPE>
 class NumericHashPartitionKernel : public ArrowPartitionKernel {
+  using CTYPE = typename arrow::TypeTraits<TYPE>::CType;
  public:
   explicit NumericHashPartitionKernel(arrow::MemoryPool *pool) : ArrowPartitionKernel(pool) {}
 
@@ -190,25 +191,25 @@ class NumericHashPartitionKernel : public ArrowPartitionKernel {
   }
 };
 
-using UInt8ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt8Type, uint8_t>;
-using UInt16ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt16Type, uint16_t>;
-using UInt32ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt32Type, uint32_t>;
-using UInt64ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt64Type, uint64_t>;
-using Int8ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int8Type, int8_t>;
-using Int16ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int16Type, int16_t>;
-using Int32ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int32Type, int32_t>;
-using Int64ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int64Type, int64_t>;
-using HalfFloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::HalfFloatType, float_t>;
-using FloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::FloatType, float_t>;
-using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType, double_t>;
+using UInt8ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt8Type>;
+using UInt16ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt16Type>;
+using UInt32ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt32Type>;
+using UInt64ArrayHashPartitioner = NumericHashPartitionKernel<arrow::UInt64Type>;
+using Int8ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int8Type>;
+using Int16ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int16Type>;
+using Int32ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int32Type>;
+using Int64ArrayHashPartitioner = NumericHashPartitionKernel<arrow::Int64Type>;
+using HalfFloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::HalfFloatType>;
+using FloatArrayHashPartitioner = NumericHashPartitionKernel<arrow::FloatType>;
+using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType>;
 using StringHashPartitioner = BinaryHashPartitionKernel;
 using BinaryHashPartitioner = BinaryHashPartitionKernel;
 
 std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
-                                 const std::shared_ptr<arrow::Array> &values);
+                                                         const std::shared_ptr<arrow::Array> &values);
 
 std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
-                                 const std::shared_ptr<arrow::DataType> &data_type);
+                                                         const std::shared_ptr<arrow::DataType> &data_type);
 
 cylon::Status HashPartitionArray(arrow::MemoryPool *pool,
                                  const std::shared_ptr<arrow::Array> &values,
