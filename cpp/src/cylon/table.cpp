@@ -33,6 +33,7 @@
 #include "arrow/arrow_comparator.hpp"
 #include "ctx/arrow_memory_pool_utils.hpp"
 #include "arrow/arrow_types.hpp"
+#include "partition/partition.hpp"
 
 namespace cylon {
 
@@ -493,6 +494,54 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_p
   } else {
     return Status(static_cast<int>(status.code()), status.message());
   }
+}
+
+Status DistributedSort(std::shared_ptr<cylon::Table> &table,
+                       int sort_column,
+                       const SortOptions &sort_options,
+                       std::shared_ptr<Table> &output) {
+  auto ctx = table->GetContext();
+  int world_sz = ctx->GetWorldSize();
+  if (world_sz > 1){
+    std::vector<uint32_t> target_partitions, partition_hist;
+    std::vector<std::shared_ptr<Table>> split_tables;
+    std::vector<std::shared_ptr<Table>> received_tables;
+
+    Status status = SortPartition(table,
+                                  sort_column,
+                                  world_sz,
+                                  target_partitions,
+                                  partition_hist,
+                                  sort_options.ascending,
+                                  sort_options.num_samples,
+                                  sort_options.num_bins);
+    RETURN_CYLON_STATUS_IF_FAILED(status)
+
+    status = Split(table, world_sz, target_partitions, partition_hist, split_tables);
+    RETURN_CYLON_STATUS_IF_FAILED(status)
+
+    class AllToAllListener : public cylon::ArrowCallback {
+      std::vector<std::shared_ptr<arrow::Table>> *tabs;
+
+     public:
+      explicit AllToAllListener(std::vector<std::shared_ptr<arrow::Table>> *tabs, int workerId) {
+        this->tabs = tabs;
+      }
+
+      bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override {
+        tabs.push_back(table);
+        return true;
+      };
+    };
+
+    auto neighbours = ctx->GetNeighbours(true);
+    cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, ctx->GetNextSequence(),
+                                    std::make_shared<AllToAllListener>(&received_tables,
+                                                                       ctx->GetRank()),
+                                                                       schema);
+  }
+
+  return Status();
 }
 
 Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_columns, int no_of_partitions,

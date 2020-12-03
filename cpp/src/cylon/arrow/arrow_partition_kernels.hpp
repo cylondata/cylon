@@ -408,10 +408,9 @@ class RangePartitionKernel : public ArrowPartitionKernel2 {
   Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                    std::vector<uint32_t> &target_partitions,
                    std::vector<uint32_t> &partition_histogram) override {
-    if (partition_histogram.size() != num_partitions
-        || target_partitions.size() != (size_t) idx_col->length()) {
-      return Status(Code::Invalid, "target partitions or histogram not initialized!");
-    }
+    // resize vectors
+    partition_histogram.resize(num_partitions, 0);
+    target_partitions.resize(idx_col->length());
 
     auto status = build_bin_to_partition(idx_col);
     RETURN_CYLON_STATUS_IF_FAILED(status)
