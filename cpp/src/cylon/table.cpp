@@ -298,7 +298,7 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
     LOG(INFO) << "Done concatenating tables, rows :  " << final_table->num_rows();
     arrow::Result<std::shared_ptr<arrow::Table>> concat_res = final_table->CombineChunks(cylon::ToArrowPool(ctx));
 
-    if (!concat_res.ok()){
+    if (!concat_res.ok()) {
       const auto& status = concat_res.status();
       return Status(static_cast<int>(status.code()), status.message());
     }
@@ -364,7 +364,8 @@ Status ShuffleTwoTables(std::shared_ptr<cylon::CylonContext> &ctx,
   return status;
 }
 
-Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
+Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx,
+               const std::string &path,
                std::shared_ptr<Table> &tableOut,
                const cylon::io::config::CSVReadOptions &options) {
   arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::read_csv(ctx, path, options);
@@ -426,15 +427,17 @@ Status Table::FromColumns(std::shared_ptr<cylon::CylonContext> &ctx,
   return Status(cylon::OK, "Loaded Successfully");
 }
 
-Status Table::WriteCSV(const std::string &path, const cylon::io::config::CSVWriteOptions &options) {
+Status WriteCSV(std::shared_ptr<cylon::Table> &table,
+                const std::string &path,
+                const cylon::io::config::CSVWriteOptions &options) {
   std::ofstream out_csv;
   out_csv.open(path);
-  Status status = PrintToOStream(0,
-                                 table_->num_columns(), 0,
-                                 table_->num_rows(), out_csv,
-                                 options.GetDelimiter(),
-                                 options.IsOverrideColumnNames(),
-                                 options.GetColumnNames());
+  Status status = table->PrintToOStream(0, table->get_table()->num_columns(),
+                                        0, table->get_table()->num_rows(),
+                                        out_csv,
+                                        options.GetDelimiter(),
+                                        options.IsOverrideColumnNames(),
+                                        options.GetColumnNames());
   out_csv.close();
   return status;
 }
@@ -1173,10 +1176,82 @@ Status Shuffle(std::shared_ptr<cylon::Table> &table,
 }
 
 #ifdef BUILD_CYLON_PARQUET
-Status Table::WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx_,
-                           const std::string &path, const cylon::io::config::ParquetOptions &options) {
+Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::string &path,
+                   std::shared_ptr<Table> &tableOut) {
+  arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::ReadParquet(ctx, path);
+  if (result.ok()) {
+    std::shared_ptr<arrow::Table> table = result.ValueOrDie();
+    LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
+    if (table->column(0)->chunks().size() > 1) {
+      auto combine_res = table->CombineChunks(ToArrowPool(ctx));
+      if (!combine_res.ok()) {
+        return Status(static_cast<int>(combine_res.status().code()), combine_res.status().message());
+      }
+      tableOut = std::make_shared<Table>(combine_res.ValueOrDie(), ctx);
+    } else {
+      tableOut = std::make_shared<Table>(table, ctx);
+    }
+    return Status::OK();
+  }
+  return Status(Code::IOError, result.status().message());
+}
+
+void ReadParquetThread(const std::shared_ptr<CylonContext> &ctx,
+                       const std::string &path,
+                       std::shared_ptr<cylon::Table> *table,
+                       const std::shared_ptr<std::promise<Status>> &status_promise) {
+  std::shared_ptr<CylonContext> ctx_ = ctx; // make a copy of the shared ptr
+  status_promise->set_value(FromParquet(ctx_,
+                                        path,
+                                        *table));
+}
+
+Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx,
+                   const std::vector<std::string> &paths,
+                   const std::vector<std::shared_ptr<Table> *> &tableOuts,
+                   io::config::ParquetOptions options) {
+  if (options.IsConcurrentFileReads()) {
+    std::vector<std::pair<std::future<Status>, std::thread>> futures;
+    futures.reserve(paths.size());
+    for (uint64_t kI = 0; kI < paths.size(); ++kI) {
+      auto read_promise = std::make_shared<std::promise<Status>>();
+      futures.emplace_back(read_promise->get_future(),
+                           std::thread(
+                               ReadParquetThread,
+                               ctx,
+                               paths[kI],
+                               tableOuts[kI],
+                               read_promise)
+      );
+    }
+    bool all_passed = true;
+    for (auto &future : futures) {
+      auto status = future.first.get();
+      all_passed &= status.is_ok();
+      future.second.join();
+    }
+    return all_passed ? Status::OK() : Status(cylon::IOError, "Failed to read the parquet files");
+  } else {
+    auto status = Status::OK();
+    for (std::size_t kI = 0; kI < paths.size(); ++kI) {
+      status = FromParquet(ctx, paths[kI], *tableOuts[kI]);
+      if (!status.is_ok()) {
+        return status;
+      }
+    }
+    return status;
+  }
+}
+
+Status WriteParquet(std::shared_ptr<cylon::Table> &table,
+                    std::shared_ptr<cylon::CylonContext> &ctx_,
+                    const std::string &path,
+                    const cylon::io::config::ParquetOptions &options) {
   arrow::Status writefile_result = cylon::io::WriteParquet(ctx_,
-                                                           table_, path, options);
+                                                           table,
+                                                           path,
+                                                           options);
   if (!writefile_result.ok()) {
     return Status(Code::IOError, writefile_result.message());
   }

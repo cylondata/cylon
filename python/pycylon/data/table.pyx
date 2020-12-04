@@ -668,13 +668,14 @@ cdef class Table:
     def to_csv(self, path, csv_write_options):
         """
         creating a csv file with PyCylon table data
+        @param table: shared_ptr[CTable]
         @param path: str
         @param csv_write_options: CSVWriteOptions
         """
         cdef string cpath = path.encode()
         cdef CCSVWriteOptions c_csv_write_options = pycylon_unwrap_csv_write_options(
             csv_write_options)
-        self.table_shd_ptr.get().WriteCSV(cpath, c_csv_write_options)
+        WriteCSV(self.table_shd_ptr, cpath, c_csv_write_options)
 
     def to_arrow(self) -> pa.Table:
         '''
