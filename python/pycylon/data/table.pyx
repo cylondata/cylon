@@ -978,6 +978,7 @@ cdef class Table:
 
     def set_index(self, key):
         # TODO: Multi-Indexing support: https://github.com/cylondata/cylon/issues/233
+        # TODO: Enhancing: https://github.com/cylondata/cylon/issues/235
         self._index = process_index_by_value(key, self)
 
     def reset_index(self, key) -> Table:
