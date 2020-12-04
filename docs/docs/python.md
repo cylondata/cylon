@@ -60,6 +60,7 @@ Also a Cylon Table can be converted to a PyArrow Table
 ```python
 pyarrow_tb: PyArrowTable = cylon_tb.to_arrow()
 ```
+
 ### Join
 
 Join API supports `left, right, inner, outer' joins` with
@@ -143,7 +144,5 @@ This is not yet supported from PyCylon API, but LibCylon supports this.
 
 ## Python Examples
 
-1. [Relational Algebra Examples](https://github.com/cylondata/cylon/blob/master/python/examples
-/table_relational_algebra.py)
-2. [Compute Examples](https://github.com/cylondata/cylon/blob/master/python/examples
-/table_compute_examples.py)
+1. [Relational Algebra Examples](https://github.com/cylondata/cylon/blob/master/python/examples/table_relational_algebra.py)
+2. [Compute Examples](https://github.com/cylondata/cylon/blob/master/python/examples/table_compute_examples.py)

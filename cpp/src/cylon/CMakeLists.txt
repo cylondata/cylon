@@ -22,8 +22,6 @@ if (CYLON_PARQUET)
     set(PARQUET_CYLON_FILES
             io/parquet_config.hpp
             io/parquet_config.cpp
-            parquet.hpp
-            parquet.cpp
             )
 else (CYLON_PARQUET)
     set(PARQUET_CYLON_FILES)

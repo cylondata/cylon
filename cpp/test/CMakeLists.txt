@@ -51,6 +51,13 @@ cylon_add_test(join_test 1)
 cylon_add_test(join_test 2)
 cylon_add_test(join_test 4)
 
+if (CYLON_PARQUET)
+  # join parquet tests
+  cylon_add_test(parquet_join_test 1)
+  cylon_add_test(parquet_join_test 2)
+  cylon_add_test(parquet_join_test 4)
+endif (CYLON_PARQUET)
+
 # set operation tests
 cylon_add_test(set_op_test 1)
 cylon_add_test(set_op_test 2)

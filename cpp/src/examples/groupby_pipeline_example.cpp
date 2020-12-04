@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
 
-  first_table->WriteCSV("/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
+  WriteCSV(first_table, "/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
 //  first_table->Print();
   std::cout << "++++++++++++++++++++++++++" << std::endl;
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 
   CylonPipelineGroupBy(sorted_table, output);
 //  output->Print();
-  output->WriteCSV("/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
+  WriteCSV(output, "/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
   output.reset();
   std::cout << "++++++++++++++++++++++++++" << std::endl;
 

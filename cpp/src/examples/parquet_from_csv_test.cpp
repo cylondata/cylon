@@ -20,13 +20,14 @@ int main(int argc, char *argv[]) {
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::string cmakePath = EXAMPLE_CMAKE_DIR;
-  std::string pathFromSrc = "/../../../data/input/parquet1_0.parquet";
-  std::string pathToOutput = "/../../../data/output/parquet1_0_1.parquet";
+  std::string pathFromSrc = "/../../../data/input/csv1_0.csv";
+  std::string pathToOutput = "/../../../data/input/parquet1_0.parquet";
   std::string fullSrcPath = cmakePath + pathFromSrc;
   std::string fullOutputPath = cmakePath + pathToOutput;
 
-  std::shared_ptr<cylon::Table> first_table;
-  auto status = cylon::FromParquet(ctx, fullSrcPath, first_table);
+  std::shared_ptr<cylon::Table> source_table;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+  auto status = cylon::FromCSV(ctx, fullSrcPath, source_table, read_options);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << status.get_msg();
     ctx->Finalize();
@@ -41,9 +42,9 @@ int main(int argc, char *argv[]) {
 
   LOG(INFO) << "Table Data";
 
-  first_table->Print();
+  source_table->Print();
 
   auto parquetOptions = cylon::io::config::ParquetOptions().ChunkSize(5);
-  cylon::WriteParquet(first_table, ctx, fullOutputPath, parquetOptions);
+  cylon::WriteParquet(source_table, ctx, fullOutputPath, parquetOptions);
   return 0;
 }
