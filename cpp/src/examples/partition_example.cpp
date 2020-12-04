@@ -81,8 +81,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   std::cout << "sorted table " << ctx->GetRank() << " " << output->Rows() << std::endl;
-  table->WriteCSV("/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
-  output->WriteCSV("/tmp/output" + std::to_string(ctx->GetRank()) + ".txt");
+  cylon::WriteCSV(table, "/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
+  cylon::WriteCSV(output, "/tmp/output" + std::to_string(ctx->GetRank()) + ".txt");
 
   ctx->Finalize();
   return 0;
