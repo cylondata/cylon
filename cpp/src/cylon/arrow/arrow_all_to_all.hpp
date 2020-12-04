@@ -153,7 +153,7 @@ class ArrowAllToAll : public ReceiveCallback {
    * @param reference a reference that can be sent in the header
    * @return true if the buffer is accepted
    */
-  int insert(std::shared_ptr<arrow::Table> arrow, int32_t target, int32_t reference); // todo: check this!
+  int insert(const std::shared_ptr<arrow::Table> &arrow, int32_t target, int32_t reference); // todo: check this!
 
   /**
    * Check weather the operation is complete, this method needs to be called until the operation is complete

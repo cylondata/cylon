@@ -45,11 +45,6 @@ Status HashPartition(const std::shared_ptr<Table> &table,
  * @return
  */
 Status SortPartition(const std::shared_ptr<Table> &table,
-                     int32_t idx_col,
-                     uint32_t num_partitions,
-                     std::vector<uint32_t> &target_partitions,
-                     std::vector<uint32_t> &partition_histogram);
-Status SortPartition(const std::shared_ptr<Table> &table,
                      int32_t column_idx,
                      uint32_t num_partitions,
                      std::vector<uint32_t> &target_partitions,
@@ -72,13 +67,13 @@ Status SortPartition(const std::shared_ptr<Table> &table,
 Status Split(const std::shared_ptr<Table> &table,
              uint32_t num_partitions,
              const std::vector<uint32_t> &target_partitions,
-             std::vector<std::shared_ptr<Table>> &output);
+             std::vector<std::shared_ptr<arrow::Table>> &output);
 
 Status Split(const std::shared_ptr<Table> &table,
              uint32_t num_partitions,
              const std::vector<uint32_t> &target_partitions,
              const std::vector<uint32_t> &partition_hist_ptr,
-             std::vector<std::shared_ptr<Table>> &output);
+             std::vector<std::shared_ptr<arrow::Table>> &output);
 
 struct PartitionSplitter {
 

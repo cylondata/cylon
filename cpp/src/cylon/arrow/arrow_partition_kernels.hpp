@@ -408,12 +408,12 @@ class RangePartitionKernel : public ArrowPartitionKernel2 {
   Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                    std::vector<uint32_t> &target_partitions,
                    std::vector<uint32_t> &partition_histogram) override {
+    auto status = build_bin_to_partition(idx_col);
+    RETURN_CYLON_STATUS_IF_FAILED(status)
+
     // resize vectors
     partition_histogram.resize(num_partitions, 0);
     target_partitions.resize(idx_col->length());
-
-    auto status = build_bin_to_partition(idx_col);
-    RETURN_CYLON_STATUS_IF_FAILED(status)
 
     size_t offset = 0;
     for (const auto &chunk:idx_col->chunks()) {

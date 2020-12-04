@@ -73,89 +73,16 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
 
-//  first_table->WriteCSV("/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
+  std::shared_ptr<cylon::Table> output;
 
-//  std::shared_ptr<cylon::Table> output;
-
-  int num_partitions = 256;
-  int idx_col = 1;
-  std::vector<uint32_t> target_partitions(arrow_table->num_rows(), 0);
-//  target_partitions.reserve(arrow_table->num_rows());
-  std::vector<uint32_t> counts(num_partitions, 0);
-//  std::vector<uint32_t> counts(num_partitions, 0);
-//  for (const auto &arr: arrow_table->column(0)->chunks()) {
-//    const std::shared_ptr<arrow::Int64Array> &carr = std::static_pointer_cast<arrow::Int64Array>(arr);
-//    for(int64_t i = 0; i < carr->length(); i++){
-//      int32_t p = carr->Value(i) % num_partitions;
-//      target_partitions.push_back(p);
-//      counts[p]++;
-//    }
-//  }
-//  cylon::ModuloPartitionKernel<arrow::Int64Type> kern(num_partitions);
-//  for (int i = 0; i < 8; i++) {
-//    target_partitions.clear();
-//    counts.clear();
-//    auto s = kern.Partition(arrow_table->column(0), target_partitions, counts);
-//    if (!s.is_ok()) return 1;
-//  }
-
-//  for (int i = 0; i < 4; i++) {
-//    std::fill(target_partitions.begin(), target_partitions.end(), 0);
-//    std::fill(counts.begin(), counts.end(), 0);
-//
-//    auto s = cylon::ApplyPartition(table, {3, 2, 1, 0}, num_partitions, target_partitions, counts);
-//    if (!s.is_ok()) {
-//      std::cout << "ERROR " << s.get_msg() << std::endl;
-//      return 1;
-//    }
-//  }
-
-//  cylon::RangePartitionKernel<arrow::Int64Type> kern(ctx,
-//                                                     num_partitions,
-//                                                     arrow_table->num_rows() * 0.1,
-//                                                     num_partitions * 16);
-//
-//
-//  kern.Partition(arrow_table->column(0), target_partitions, counts);
-//
-////  print_vec(target_partitions);
-//  sleep(ctx->GetRank());
-//  print_vec(counts);
-
-  cylon::SortPartition(table,
-                       idx_col,
-                       num_partitions,
-                       target_partitions,
-                       counts,
-                       true,
-                       arrow_table->num_rows() * 0.1,
-                       num_partitions * 1000);
-
-//  std::vector<std::shared_ptr<arrow::Array>> out;
-//  std::shared_ptr<cylon::ArrowArraySplitKernel> kern;
-//
-//  cylon::CreateSplitter(arrow::int64(), pool, &kern);
-//
-//  std::shared_ptr<arrow::ChunkedArray> col = arrow_table->column(2);
-//  kern->Split(col, target_partitions, num_partitions, counts, out);
-
-//  for (int i = 0; i < num_partitions; i++) {
-//    std::cout << i << " count " << counts[i] << " out " << out[i]->length() << std::endl;
-//  }
-
-  std::vector<std::shared_ptr<cylon::Table>> output;
-
-  cylon::Split(table, num_partitions, target_partitions, counts, output);
-
-  std::cout << "original" << std::endl;
-//  table->Print();
-
-  if (ctx->GetRank() == 0) {
-    for (int i = 0; i < num_partitions; i++) {
-      std::cout << "partition " << i << " " << output[i]->Rows() << std::endl;
-//    output[i]->Print();
-    }
+  auto s = cylon::DistributedSort(table, 1, output);
+  if (!s.is_ok()) {
+    std::cout << "dist sort failed " << s.get_msg() << std::endl;
+    return 1;
   }
+  std::cout << "sorted table " << ctx->GetRank() << " " << output->Rows() << std::endl;
+  table->WriteCSV("/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
+  output->WriteCSV("/tmp/output" + std::to_string(ctx->GetRank()) + ".txt");
 
   ctx->Finalize();
   return 0;

@@ -15,7 +15,7 @@ static inline Status split_impl(const std::shared_ptr<Table> &table,
                                 uint32_t num_partitions,
                                 const std::vector<uint32_t> &target_partitions,
                                 const std::vector<uint32_t> &partition_hist,
-                                std::vector<std::shared_ptr<Table>> &output) {
+                                std::vector<std::shared_ptr<arrow::Table>> &output) {
   auto t1 = std::chrono::high_resolution_clock::now();
   Status status;
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
@@ -40,11 +40,7 @@ static inline Status split_impl(const std::shared_ptr<Table> &table,
 
   output.reserve(num_partitions);
   for (const auto &arr_vec: data_arrays) {
-    std::shared_ptr<arrow::Table> arrow_table_out = arrow::Table::Make(arrow_table->schema(), arr_vec);
-    std::shared_ptr<Table> cylon_table_out;
-    status = cylon::Table::FromArrowTable(ctx, arrow_table_out, cylon_table_out);
-    RETURN_CYLON_STATUS_IF_FAILED(status)
-    output.push_back(std::move(cylon_table_out));
+    output.push_back(arrow::Table::Make(arrow_table->schema(), arr_vec));
   }
 
   auto t2 = std::chrono::high_resolution_clock::now();
@@ -57,7 +53,7 @@ static inline Status split_impl(const std::shared_ptr<Table> &table,
 Status Split(const std::shared_ptr<Table> &table,
              uint32_t num_partitions,
              const std::vector<uint32_t> &target_partitions,
-             std::vector<std::shared_ptr<Table>> &output) {
+             std::vector<std::shared_ptr<arrow::Table>> &output) {
   if ((size_t) table->Rows() != target_partitions.size()) {
     LOG_AND_RETURN_ERROR(Code::ExecutionError, "tables rows != target_partitions length")
   }
@@ -72,7 +68,7 @@ Status Split(const std::shared_ptr<Table> &table,
              uint32_t num_partitions,
              const std::vector<uint32_t> &target_partitions,
              const std::vector<uint32_t> &partition_hist_ptr,
-             std::vector<std::shared_ptr<Table>> &output) {
+             std::vector<std::shared_ptr<arrow::Table>> &output) {
   if ((size_t) table->Rows() != target_partitions.size()) {
     LOG_AND_RETURN_ERROR(Code::ExecutionError, "tables rows != target_partitions length")
   }
@@ -154,17 +150,6 @@ Status HashPartition(const std::shared_ptr<Table> &table,
   return Status::OK();
 }
 
-inline Status SortPartition(const std::shared_ptr<Table> &table,
-                            int32_t hash_column_idx,
-                            uint32_t num_partitions,
-                            std::vector<uint32_t> &target_partitions,
-                            std::vector<uint32_t> &partition_hist) {
-  return SortPartition(table, hash_column_idx, num_partitions, target_partitions, partition_hist,
-                       true,
-                       std::min((int64_t) (table->Rows() * 0.01), table->Rows()),
-                       num_partitions * 16);
-}
-
 Status SortPartition(const std::shared_ptr<Table> &table,
                      int32_t column_idx,
                      uint32_t num_partitions,
@@ -177,6 +162,9 @@ Status SortPartition(const std::shared_ptr<Table> &table,
   std::shared_ptr<CylonContext> ctx = table->GetContext();
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(column_idx);
+
+  if (num_samples == 0) num_samples = std::min((int64_t) (table->Rows() * 0.01), table->Rows());
+  if (num_bins == 0) num_bins = num_partitions * 16;
 
   std::unique_ptr<ArrowPartitionKernel2> kern = CreateRangePartitionKernel(idx_col->type(), num_partitions,
                                                                            ctx, ascending, num_samples, num_bins);

@@ -375,11 +375,16 @@ struct SortOptions {
   bool ascending;
   uint32_t num_bins;
   uint64_t num_samples;
+
+  static SortOptions Defaults() {
+    return {true, 0, 0};
+  }
 };
+
 Status DistributedSort(std::shared_ptr<cylon::Table> &table,
                        int sort_column,
-                       const SortOptions &sort_options,
-                       std::shared_ptr<Table> &output);
+                       std::shared_ptr<Table> &output,
+                       SortOptions sort_options = SortOptions::Defaults());
 
 /**
  * Filters out rows based on the selector function

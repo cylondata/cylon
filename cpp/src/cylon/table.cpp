@@ -498,14 +498,18 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_p
 
 Status DistributedSort(std::shared_ptr<cylon::Table> &table,
                        int sort_column,
-                       const SortOptions &sort_options,
-                       std::shared_ptr<Table> &output) {
+                       std::shared_ptr<Table> &output,
+                       SortOptions sort_options) {
   auto ctx = table->GetContext();
   int world_sz = ctx->GetWorldSize();
-  if (world_sz > 1){
+
+  std::shared_ptr<arrow::Table> arrow_table, sorted_table;
+  // first do distributed sort partitioning
+  if (world_sz == 1) {
+    arrow_table = table->get_table();
+  } else {
     std::vector<uint32_t> target_partitions, partition_hist;
-    std::vector<std::shared_ptr<Table>> split_tables;
-    std::vector<std::shared_ptr<Table>> received_tables;
+    std::vector<std::shared_ptr<arrow::Table>> split_tables, received_tables;
 
     Status status = SortPartition(table,
                                   sort_column,
@@ -524,24 +528,52 @@ Status DistributedSort(std::shared_ptr<cylon::Table> &table,
       std::vector<std::shared_ptr<arrow::Table>> *tabs;
 
      public:
-      explicit AllToAllListener(std::vector<std::shared_ptr<arrow::Table>> *tabs, int workerId) {
+      explicit AllToAllListener(std::vector<std::shared_ptr<arrow::Table>> *tabs) {
         this->tabs = tabs;
       }
 
-      bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override {
-        tabs.push_back(table);
+      bool onReceive(int source,
+                     const std::shared_ptr<arrow::Table> &table,
+                     int reference) override {
+        tabs->push_back(table);
         return true;
       };
     };
 
     auto neighbours = ctx->GetNeighbours(true);
     cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, ctx->GetNextSequence(),
-                                    std::make_shared<AllToAllListener>(&received_tables,
-                                                                       ctx->GetRank()),
-                                                                       schema);
+                                    std::make_shared<AllToAllListener>(&received_tables),
+                                    table->get_table()->schema());
+
+    for (size_t i = 0; i < split_tables.size(); i++) {
+      if (i != (size_t) ctx->GetRank()) {
+        all_to_all.insert(split_tables[i], i);
+      } else {
+        received_tables.push_back(split_tables[i]);
+      }
+    }
+
+    // now complete the communication
+    all_to_all.finish();
+    while (!all_to_all.isComplete()) {}
+    all_to_all.close();
+
+    // now clear locally partitioned tables
+    split_tables.clear();
+
+    // now we have the final set of tables
+    arrow::Result<std::shared_ptr<arrow::Table>> concat_tables = arrow::ConcatenateTables(received_tables);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(concat_tables.status())
+
+    arrow_table = concat_tables.ValueOrDie();
+    LOG(INFO) << "Done concatenating tables, rows :  " << arrow_table->num_rows();
   }
 
-  return Status();
+  //then do a local sort
+  auto astatus = util::SortTable(arrow_table, sort_column, &sorted_table, ToArrowPool(ctx));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(astatus)
+
+  return Table::FromArrowTable(ctx, sorted_table, output);
 }
 
 Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_columns, int no_of_partitions,
