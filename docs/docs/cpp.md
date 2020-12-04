@@ -128,7 +128,7 @@ A `cylon::Table` can be written to a CSV file as follows,
 std::shared_ptr<cylon::Table> table1; 
 ...
 auto write_options = cylon::io::config::CSVWriteOptions();
-auto status = table1->WriteCSV("/path/to/csv", write_options);
+auto status = WriteCSV(table1, "/path/to/csv", write_options);
 ```
 
 A `cylon::Table` can be coverted into an `arrow::Table` by simply, 
