@@ -19,29 +19,25 @@
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
 
-/**
- * This example reads two csv files and does a union on them.
- */
 int main(int argc, char *argv[]) {
   if (argc < 3) {
     LOG(ERROR) << "There should be two arguments with paths to csv files";
     return 1;
   }
 
-  auto start_time = std::chrono::steady_clock::now();
+  auto start_start = std::chrono::steady_clock::now();
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<cylon::Table> first_table, second_table, unioned_table;
+  std::shared_ptr<cylon::Table> first_table, second_table, joined;
 
-  // read first table
   auto status = cylon::FromParquet(ctx, argv[1], first_table);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[1];
     ctx->Finalize();
     return 1;
   }
-  // read second table
+
   status = cylon::FromParquet(ctx, argv[2], second_table);
   if (!status.is_ok()) {
     LOG(INFO) << "Table reading failed " << argv[2];
@@ -49,31 +45,27 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   auto read_end_time = std::chrono::steady_clock::now();
-  LOG(INFO) << "Read all in " << std::chrono::duration_cast<std::chrono::milliseconds>(
-      read_end_time - start_time).count() << "[ms]";
 
-  auto union_start_time = std::chrono::steady_clock::now();
-  // apply union operation
-  status = cylon::DistributedUnion(first_table, second_table, unioned_table);
+  LOG(INFO) << "Read tables in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - start_start).count() << "[ms]";
+
+  status = cylon::DistributedJoin(first_table, second_table,
+                                  cylon::join::config::JoinConfig::InnerJoin(0, 0), joined);
+
   if (!status.is_ok()) {
-    LOG(INFO) << "Union failed " << status.get_msg();
+    LOG(INFO) << "Table join failed ";
     ctx->Finalize();
     return 1;
   }
-  read_end_time = std::chrono::steady_clock::now();
+  auto join_end_time = std::chrono::steady_clock::now();
 
   LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
-            << second_table->Rows() << ", Union has : "
-            << unioned_table->Rows() << " rows";
-  LOG(INFO) << "Union done in "
+            << second_table->Rows() << ", Joined has : " << joined->Rows();
+  LOG(INFO) << "Join done in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
-                read_end_time - union_start_time).count()
-            << "[ms]";
+                join_end_time - read_end_time).count() << "[ms]";
 
   ctx->Finalize();
-  auto end_time = std::chrono::steady_clock::now();
-  LOG(INFO) << "Operation took : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                end_time - start_time).count() << "[ms]";
   return 0;
 }

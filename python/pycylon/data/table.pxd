@@ -40,8 +40,6 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         CStatus ToArrowTable(shared_ptr[CArrowTable] &output)
 
-        CStatus WriteCSV(const string &path, const CCSVWriteOptions &options)
-
         int Columns()
 
         int Rows()
@@ -62,6 +60,8 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
+    CStatus WriteCSV(shared_ptr[CTable] &table, const string &path,
+                    const CCSVWriteOptions &options)
 
     CStatus Sort(shared_ptr[CTable] &table, int sort_column, shared_ptr[CTable] &output)
 

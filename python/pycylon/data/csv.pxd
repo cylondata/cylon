@@ -17,7 +17,6 @@ from libcpp cimport bool
 from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 from pycylon.io.csv_read_config cimport CCSVReadOptions
-from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pyarrow.lib cimport CTable as CArrowTable
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
@@ -29,3 +28,4 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
     CStatus FromCSV(shared_ptr[CCylonContext] &ctx, const string &path, shared_ptr[CTable]
                         &tableOut, const CCSVReadOptions &options)
+
