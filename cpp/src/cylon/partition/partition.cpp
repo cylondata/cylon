@@ -1,6 +1,16 @@
-//
-// Created by niranda on 11/19/20.
-//
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include <glog/logging.h>
 #include <ctx/arrow_memory_pool_utils.hpp>
@@ -75,11 +85,11 @@ Status Split(const std::shared_ptr<Table> &table,
   return split_impl(table, num_partitions, target_partitions, partition_hist_ptr, output);
 }
 
-Status HashPartition(const std::shared_ptr<Table> &table,
-                     int32_t hash_column_idx,
-                     uint32_t num_partitions,
-                     std::vector<uint32_t> &target_partitions,
-                     std::vector<uint32_t> &partition_hist) {
+Status PartitionByHashing(const std::shared_ptr<Table> &table,
+                          int32_t hash_column_idx,
+                          uint32_t num_partitions,
+                          std::vector<uint32_t> &target_partitions,
+                          std::vector<uint32_t> &partition_hist) {
   auto t1 = std::chrono::high_resolution_clock::now();
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(hash_column_idx);
@@ -101,11 +111,11 @@ Status HashPartition(const std::shared_ptr<Table> &table,
   return status;
 }
 
-Status HashPartition(const std::shared_ptr<Table> &table,
-                     const std::vector<int32_t> &hash_column_idx,
-                     uint32_t num_partitions,
-                     std::vector<uint32_t> &target_partitions,
-                     std::vector<uint32_t> &partition_hist) {
+Status PartitionByHashing(const std::shared_ptr<Table> &table,
+                          const std::vector<int32_t> &hash_column_idx,
+                          uint32_t num_partitions,
+                          std::vector<uint32_t> &target_partitions,
+                          std::vector<uint32_t> &partition_hist) {
   auto t1 = std::chrono::high_resolution_clock::now();
   Status status;
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
@@ -150,14 +160,14 @@ Status HashPartition(const std::shared_ptr<Table> &table,
   return Status::OK();
 }
 
-Status SortPartition(const std::shared_ptr<Table> &table,
-                     int32_t column_idx,
-                     uint32_t num_partitions,
-                     std::vector<uint32_t> &target_partitions,
-                     std::vector<uint32_t> &partition_hist,
-                     bool ascending,
-                     uint64_t num_samples,
-                     uint32_t num_bins) {
+Status PartitionBySorting(const std::shared_ptr<Table> &table,
+                          int32_t column_idx,
+                          uint32_t num_partitions,
+                          std::vector<uint32_t> &target_partitions,
+                          std::vector<uint32_t> &partition_hist,
+                          bool ascending,
+                          uint64_t num_samples,
+                          uint32_t num_bins) {
   auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<CylonContext> ctx = table->GetContext();
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
