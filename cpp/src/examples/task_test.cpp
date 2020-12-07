@@ -33,22 +33,10 @@ int main(int argc, char *argv[]) {
   auto plan = cylon::LogicalTaskPlan(tasks_sources,
                                      tasks_targets, worker_sources, worker_targets, task_to_worker);
 
-  class CallBack : public cylon::ArrowTaskCallBack {
-
-    std::shared_ptr<cylon::CylonContext> ctx;
-
-   public:
-    explicit CallBack(std::shared_ptr<cylon::CylonContext> ctx) : ctx(ctx) {
-
-    }
-
-    bool onReceive(const std::shared_ptr<arrow::Table> &table, int target) override {
-      LOG(INFO) << this->ctx->GetRank() << " received a table to target " << target;
-      return true;
-    }
+  cylon::ArrowTaskCallBack cb = [&ctx](const std::shared_ptr<arrow::Table> &table, int target) {
+    LOG(INFO) << ctx->GetRank() << " received a table to target " << target;
+    return true;
   };
-
-  auto cb = std::make_shared<CallBack>(ctx);
 
   arrow::SchemaBuilder builder;
   auto status = builder.AddField(std::make_shared<arrow::Field>("col1", arrow::int64()));

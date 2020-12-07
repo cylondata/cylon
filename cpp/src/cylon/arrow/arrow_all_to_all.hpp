@@ -104,6 +104,16 @@ class ArrowBuffer : public Buffer {
 };
 
 /**
+ * This function is called when a data is received
+ * @param source the source
+ * @param buffer the buffer allocated by the system, we need to free this
+ * @param length the length of the buffer
+ * @param reference reference sent by the sender
+ * @return true if we accept this buffer
+ */
+using ArrowCallback = std::function<bool(int source, const std::shared_ptr<arrow::Table> &table, int reference)>;
+
+/**
  * Arrow table specific allocator
  */
 class ArrowAllocator : public Allocator {

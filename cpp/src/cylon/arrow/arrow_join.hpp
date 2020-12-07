@@ -61,7 +61,7 @@ class ArrowJoin {
             int leftEdgeId,
             int rightEdgeId,
             JoinCallback *callback,
-            std::shared_ptr<arrow::Schema> schema,
+            std::shared_ptr<arrow::Schema> &schema,
             arrow::MemoryPool *pool);
 
   /**

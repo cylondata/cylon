@@ -30,7 +30,7 @@ ArrowJoin::ArrowJoin(std::shared_ptr<cylon::CylonContext> &ctx,
                      int leftEdgeId,
                      int rightEdgeId,
                      cylon::JoinCallback *callback,
-                     std::shared_ptr<arrow::Schema> schema,
+                     std::shared_ptr<arrow::Schema> &schema,
                      arrow::MemoryPool *pool) {
   joinCallBack_ = callback;
   workerId_ = ctx->GetRank();
