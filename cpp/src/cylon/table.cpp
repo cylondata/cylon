@@ -514,14 +514,14 @@ Status DistributedSort(std::shared_ptr<cylon::Table> &table,
     std::vector<uint32_t> target_partitions, partition_hist;
     std::vector<std::shared_ptr<arrow::Table>> split_tables, received_tables;
 
-    Status status = SortPartition(table,
-                                  sort_column,
-                                  world_sz,
-                                  target_partitions,
-                                  partition_hist,
-                                  sort_options.ascending,
-                                  sort_options.num_samples,
-                                  sort_options.num_bins);
+    Status status = PartitionBySorting(table,
+                                       sort_column,
+                                       world_sz,
+                                       target_partitions,
+                                       partition_hist,
+                                       sort_options.ascending,
+                                       sort_options.num_samples,
+                                       sort_options.num_bins);
     RETURN_CYLON_STATUS_IF_FAILED(status)
 
     status = Split(table, world_sz, target_partitions, partition_hist, split_tables);

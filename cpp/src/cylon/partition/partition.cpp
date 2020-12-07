@@ -85,11 +85,11 @@ Status Split(const std::shared_ptr<Table> &table,
   return split_impl(table, num_partitions, target_partitions, partition_hist_ptr, output);
 }
 
-Status HashPartition(const std::shared_ptr<Table> &table,
-                     int32_t hash_column_idx,
-                     uint32_t num_partitions,
-                     std::vector<uint32_t> &target_partitions,
-                     std::vector<uint32_t> &partition_hist) {
+Status PartitionByHashing(const std::shared_ptr<Table> &table,
+                          int32_t hash_column_idx,
+                          uint32_t num_partitions,
+                          std::vector<uint32_t> &target_partitions,
+                          std::vector<uint32_t> &partition_hist) {
   auto t1 = std::chrono::high_resolution_clock::now();
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(hash_column_idx);
@@ -111,11 +111,11 @@ Status HashPartition(const std::shared_ptr<Table> &table,
   return status;
 }
 
-Status HashPartition(const std::shared_ptr<Table> &table,
-                     const std::vector<int32_t> &hash_column_idx,
-                     uint32_t num_partitions,
-                     std::vector<uint32_t> &target_partitions,
-                     std::vector<uint32_t> &partition_hist) {
+Status PartitionByHashing(const std::shared_ptr<Table> &table,
+                          const std::vector<int32_t> &hash_column_idx,
+                          uint32_t num_partitions,
+                          std::vector<uint32_t> &target_partitions,
+                          std::vector<uint32_t> &partition_hist) {
   auto t1 = std::chrono::high_resolution_clock::now();
   Status status;
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
@@ -160,14 +160,14 @@ Status HashPartition(const std::shared_ptr<Table> &table,
   return Status::OK();
 }
 
-Status SortPartition(const std::shared_ptr<Table> &table,
-                     int32_t column_idx,
-                     uint32_t num_partitions,
-                     std::vector<uint32_t> &target_partitions,
-                     std::vector<uint32_t> &partition_hist,
-                     bool ascending,
-                     uint64_t num_samples,
-                     uint32_t num_bins) {
+Status PartitionBySorting(const std::shared_ptr<Table> &table,
+                          int32_t column_idx,
+                          uint32_t num_partitions,
+                          std::vector<uint32_t> &target_partitions,
+                          std::vector<uint32_t> &partition_hist,
+                          bool ascending,
+                          uint64_t num_samples,
+                          uint32_t num_bins) {
   auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<CylonContext> ctx = table->GetContext();
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();

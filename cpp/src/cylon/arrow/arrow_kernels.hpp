@@ -155,13 +155,28 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
   using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
 
-  explicit BinaryArraySplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {}
+  explicit BinaryArraySplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {
+    std::function<>
+  }
 
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
                const std::vector<uint32_t> &target_partitions,
                uint32_t num_partitions,
                const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override {
+
+    if ((size_t) values->length() != target_partitions.size()) {
+      return Status(Code::ExecutionError, "values rows != target_partitions length");
+    }
+
+    std::vector<std::unique_ptr<ARROW_BUILDER_T>> builders;
+    builders.reserve(num_partitions);
+    for (uint32_t i = 0; i < num_partitions; i++) {
+      builders.emplace_back(new ARROW_BUILDER_T(pool_));
+      const auto &status = builders.back()->Reserve(counts[i]);
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+    }
+
     return Status::OK();
   }
 

@@ -233,7 +233,7 @@ class RowHashingKernel {
   int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
 };
 
-class ArrowPartitionKernel2 {
+class ArrowPartitionKernel2 { // todo: change this
  public:
   explicit ArrowPartitionKernel2(uint32_t num_partitions) : num_partitions(num_partitions) {}
   virtual ~ArrowPartitionKernel2() = default;
@@ -243,7 +243,7 @@ class ArrowPartitionKernel2 {
                            std::vector<uint32_t> &partition_histogram) = 0;
 
   virtual Status UpdateHash(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
-                            std::vector<uint32_t> &target_partitions) = 0;
+                            std::vector<uint32_t> &partial_hashes) = 0;
 
   const uint32_t num_partitions;
 };
