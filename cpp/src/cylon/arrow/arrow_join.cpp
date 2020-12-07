@@ -34,8 +34,17 @@ ArrowJoin::ArrowJoin(std::shared_ptr<cylon::CylonContext> &ctx,
                      arrow::MemoryPool *pool) {
   joinCallBack_ = callback;
   workerId_ = ctx->GetRank();
-  leftCallBack_ = std::make_shared<AllToAllCallback>(&leftTables_);
-  rightCallBack_ = std::make_shared<AllToAllCallback>(&rightTables_);
+  ArrowCallback
+      leftCallBack_ = [this](int source, const std::shared_ptr<arrow::Table> &table, int reference) {
+    this->leftTables_.push_back(table);
+    return true;
+  };
+
+  ArrowCallback
+      rightCallBack_ = [this](int source, const std::shared_ptr<arrow::Table> &table, int reference) {
+    this->rightTables_.push_back(table);
+    return true;
+  };
   leftAllToAll_ =
       std::make_shared<ArrowAllToAll>(ctx, source, targets, leftEdgeId, leftCallBack_, schema);
   rightAllToAll_ =

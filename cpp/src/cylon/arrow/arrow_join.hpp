@@ -33,7 +33,7 @@ class JoinCallback {
   virtual bool onJoin(std::shared_ptr<arrow::Table> table) = 0;
 };
 
-class AllToAllCallback : public ArrowCallback {
+class AllToAllCallback {
  public:
   explicit AllToAllCallback(std::vector<std::shared_ptr<arrow::Table>> *table);
   /**
@@ -42,7 +42,7 @@ class AllToAllCallback : public ArrowCallback {
    * @param table the table
    * @return true if the table is accepted
    */
-  bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override;
+  bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference);
  private:
   std::vector<std::shared_ptr<arrow::Table>> *tables_;
 };
@@ -114,8 +114,8 @@ class ArrowJoin {
   std::shared_ptr<ArrowAllToAll> rightAllToAll_;
   std::vector<std::shared_ptr<arrow::Table>> leftTables_;
   std::vector<std::shared_ptr<arrow::Table>> rightTables_;
-  std::shared_ptr<AllToAllCallback> leftCallBack_;
-  std::shared_ptr<AllToAllCallback> rightCallBack_;
+//  std::shared_ptr<AllToAllCallback> leftCallBack_;
+//  std::shared_ptr<AllToAllCallback> rightCallBack_;
   cylon::JoinCallback *joinCallBack_;
   int workerId_;
 };

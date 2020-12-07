@@ -25,7 +25,7 @@ ArrowAllToAll::ArrowAllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
                              const std::vector<int> &source,
                              const std::vector<int> &targets,
                              int edgeId,
-                             std::shared_ptr<ArrowCallback> callback,
+                             ArrowCallback callback,
                              std::shared_ptr<arrow::Schema> schema) :
     targets_(targets), // todo: do we need these 2 vectors?
     srcs_(source),
@@ -198,7 +198,7 @@ bool ArrowAllToAll::onReceive(int source, std::shared_ptr<Buffer> buffer, int le
         std::shared_ptr<arrow::Table> tablePtr = arrow::Table::Make(schema_, table->currentArrays);
         // clear the current array
         table->currentArrays.clear();
-        recv_callback_->onReceive(source, tablePtr, table->reference);
+        recv_callback_(source, tablePtr, table->reference);
       }
     }
   }

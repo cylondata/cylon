@@ -76,19 +76,6 @@ struct PendingReceiveTable {
   std::vector<std::shared_ptr<arrow::Array>> arrays;
 };
 
-class ArrowCallback {
- public:
-  /**
-   * This function is called when a data is received
-   * @param source the source
-   * @param buffer the buffer allocated by the system, we need to free this
-   * @param length the length of the buffer
-   * @param reference reference sent by the sender
-   * @return true if we accept this buffer
-   */
-  virtual bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) = 0;
-};
-
 /**
  * Arrow table specific buffer
  */
@@ -141,7 +128,7 @@ class ArrowAllToAll : public ReceiveCallback {
                 const std::vector<int> &source,
                 const std::vector<int> &targets,
                 int edgeId,
-                std::shared_ptr<ArrowCallback> callback,
+                ArrowCallback callback,
                 std::shared_ptr<arrow::Schema> schema);
 
   /**
@@ -227,7 +214,7 @@ class ArrowAllToAll : public ReceiveCallback {
   /**
    * Adding receive callback
    */
-  std::shared_ptr<ArrowCallback> recv_callback_;
+  ArrowCallback recv_callback_;
 
   /**
    * The schema of the arrow

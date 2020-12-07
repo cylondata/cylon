@@ -176,27 +176,17 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
   }
   auto neighbours = ctx->GetNeighbours(true);
   std::vector<std::shared_ptr<arrow::Table>> received_tables;
+
   // define call back to catch the receiving tables
-  class AllToAllListener : public cylon::ArrowCallback {
-    std::vector<std::shared_ptr<arrow::Table>> *tabs;
-    int workerId;
-
-   public:
-    explicit AllToAllListener(std::vector<std::shared_ptr<arrow::Table>> *tabs, int workerId) {
-      this->tabs = tabs;
-      this->workerId = workerId;
-    }
-
-    bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override {
-      this->tabs->push_back(table);
-      return true;
-    };
+  ArrowCallback
+      arrow_callback = [&received_tables](int source, const std::shared_ptr<arrow::Table> &table, int reference) {
+    received_tables.push_back(table);
+    return true;
   };
 
   // doing all to all communication to exchange tables
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
-                                  std::make_shared<AllToAllListener>(&received_tables,
-                                                                     ctx->GetRank()), schema);
+                                  arrow_callback, schema);
 
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
@@ -251,27 +241,17 @@ cylon::Status Shuffle(std::shared_ptr<cylon::CylonContext> &ctx,
   }
   auto neighbours = ctx->GetNeighbours(true);
   std::vector<std::shared_ptr<arrow::Table>> received_tables;
+
   // define call back to catch the receiving tables
-  class AllToAllListener : public cylon::ArrowCallback {
-    std::vector<std::shared_ptr<arrow::Table>> *tabs;
-    int workerId;
-
-   public:
-    explicit AllToAllListener(std::vector<std::shared_ptr<arrow::Table>> *tabs, int workerId) {
-      this->tabs = tabs;
-      this->workerId = workerId;
-    }
-
-    bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference) override {
-      this->tabs->push_back(table);
-      return true;
-    };
+  ArrowCallback
+      arrow_callback = [&received_tables](int source, const std::shared_ptr<arrow::Table> &table, int reference) {
+    received_tables.push_back(table);
+    return true;
   };
 
   // doing all to all communication to exchange tables
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id,
-                                  std::make_shared<AllToAllListener>(&received_tables,
-                                                                     ctx->GetRank()), schema);
+                                  arrow_callback, schema);
 
   for (auto &partitioned_table : partitioned_tables) {
     if (partitioned_table.first != ctx->GetRank()) {
@@ -527,25 +507,15 @@ Status DistributedSort(std::shared_ptr<cylon::Table> &table,
     status = Split(table, world_sz, target_partitions, partition_hist, split_tables);
     RETURN_CYLON_STATUS_IF_FAILED(status)
 
-    class AllToAllListener : public cylon::ArrowCallback {
-      std::vector<std::shared_ptr<arrow::Table>> *tabs;
-
-     public:
-      explicit AllToAllListener(std::vector<std::shared_ptr<arrow::Table>> *tabs) {
-        this->tabs = tabs;
-      }
-
-      bool onReceive(int source,
-                     const std::shared_ptr<arrow::Table> &table,
-                     int reference) override {
-        tabs->push_back(table);
-        return true;
-      };
+    ArrowCallback
+        arrow_callback = [&received_tables](int source, const std::shared_ptr<arrow::Table> &table, int reference) {
+      received_tables.push_back(table);
+      return true;
     };
 
     auto neighbours = ctx->GetNeighbours(true);
     cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, ctx->GetNextSequence(),
-                                    std::make_shared<AllToAllListener>(&received_tables),
+                                    arrow_callback,
                                     table->get_table()->schema());
 
     for (size_t i = 0; i < split_tables.size(); i++) {
