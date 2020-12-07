@@ -1559,8 +1559,28 @@ cdef class Table:
 
         Examples
         --------
+        >>> tb
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
 
+        >>> tb.rename({'col-1': 'col_1'})
+               col_1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb.rename(['c1', 'c2', 'c3'])
+               c1  c2  c3
+            0   1   5   9
+            1   2   6  10
+            2   3   7  11
+            3   4   8  12
         '''
+
         if isinstance(column_names, dict):
             table_col_names = self.column_names
             for key in column_names.keys():
@@ -1576,10 +1596,60 @@ cdef class Table:
             raise ValueError("Input Column names must be a dictionary or list")
 
     def add_prefix(self, prefix: str) -> Table:
+        '''
+        Adding a prefix to column names
+        Args:
+            prefix: str
+
+        Returns: PyCylon Table with prefix updated
+
+        Examples
+        --------
+
+        >>> tb
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb.add_prefix('old_')
+               old_c1  old_c2  old_c3
+            0       1       5       9
+            1       2       6      10
+            2       3       7      11
+            3       4       8      12
+
+        '''
         new_column_names = [prefix + col for col in self.column_names]
         return Table.from_arrow(self.context, self.to_arrow().rename_columns(new_column_names))
 
     def add_suffix(self, suffix: str) -> Table:
+        '''
+        Adding a prefix to column names
+        Args:
+            prefix: str
+
+        Returns: PyCylon Table with prefix updated
+
+        Examples
+        --------
+
+        >>> tb
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb.add_suffix('_old')
+               c1_old  c2_old  c3_old
+            0       1       5       9
+            1       2       6      10
+            2       3       7      11
+            3       4       8      12
+
+        '''
         new_column_names = [col + suffix for col in self.column_names]
         return Table.from_arrow(self.context, self.to_arrow().rename_columns(new_column_names))
 
@@ -1627,19 +1697,122 @@ cdef class Table:
 
     @property
     def index(self):
+        '''
+        Retrieve index if exists or provide a range index as default
+        Returns: Index object
+
+        Examples:
+
+        >>> tb.index
+            <pycylon.index.RangeIndex object at 0x7f58bde8e040>
+
+        '''
         if self._index == None:
             self._index = RangeIndex(range(0, self.row_count))
         return self._index
 
     def set_index(self, key):
+        '''
+        Set Index
+        Args:
+            key: pycylon.Index Object or an object extended from pycylon.Index
+
+        Returns: None
+
+        Examples
+        --------
+
+        >>> tb
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+
+        >>> tb.set_index(['a', 'b', 'c', 'd'])
+
+        >>> tb.index
+            <pycylon.index.CategoricalIndex object at 0x7fa72c2b6ca0>
+
+        >>> tb.index.index_values
+            ['a', 'b', 'c', 'd']
+        '''
+
         # TODO: Multi-Indexing support: https://github.com/cylondata/cylon/issues/233
         # TODO: Enhancing: https://github.com/cylondata/cylon/issues/235
         self._index = process_index_by_value(key, self)
 
     def reset_index(self, key) -> Table:
+        # TODO: Enhance to support move existing index to data column and drop
         self._index = RangeIndex(range(0, self.row_count))
 
     def dropna(self, axis=0, how='any', inplace=False):
+        '''
+        Drop not applicable values from a Table
+        Args:
+            axis: 0 for column and 1 for row and only do dropping on the specified axis
+            how: any or all, any refers to drop if any value is NA and drop only if all values
+            are NA in the considered axis
+            inplace: do the operation on the existing Table itself when set to True, the default
+            is False and it produces a new Table with the drop update
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> tb
+               col-1  col-2  col-3
+            0    1.0      5    9.0
+            1    NaN      6   10.0
+            2    3.0      7   11.0
+            3    4.0      8    NaN
+
+        >>> tb_na.dropna(how='any')
+               col-2
+            0      5
+            1      6
+            2      7
+            3      8
+
+        >>> tb_na.dropna(how='all')
+               col-1  col-2  col-3
+            0    1.0      5    9.0
+            1    NaN      6   10.0
+            2    3.0      7   11.0
+            3    4.0      8    NaN
+
+        >>> tb_na.dropna(axis=1, how='any')
+               col-1  col-2  col-3
+            0      1      5      9
+            1      3      7     11
+
+        >>> tb_na.dropna(axis=1, how='all')
+               col-1  col-2  col-3
+            0    1.0      5    9.0
+            1    NaN      6   10.0
+            2    3.0      7   11.0
+            3    4.0      8    NaN
+
+        >>> tb_na
+               col-1  col-2  col-3
+            0    1.0      5    9.0
+            1    NaN      6   10.0
+            2    3.0      7   11.0
+            3    4.0      8    NaN
+
+        >>> tb_na.dropna(axis=1, how='any', inplace=True)
+               col-1  col-2  col-3
+            0      1      5      9
+            1      3      7     11
+
+        >>> tb_na
+               col-1  col-2  col-3
+            0      1      5      9
+            1      3      7     11
+        '''
+
         new_tb = compute.drop_na(self, how, axis)
         if inplace:
             self.initialize(new_tb.to_arrow(), self.context)
@@ -1651,6 +1824,12 @@ cdef class Table:
 
 
 class EmptyTable(Table):
+    '''
+    Empty Table definition required in returning an Empty Table when an operation reduces a None
+    object after an operation on a Table. As a standard, we return an Empty Table to symbolize
+    this. This helps to validate an operation followed by this.
+    TODO: Add validity for checking Empty Table when executing ops
+    '''
 
     def __init__(self, context: CylonContext, index: RangeIndex):
         self.ctx = context
