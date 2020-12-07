@@ -39,6 +39,15 @@ ctypedef fused CDType:
 
 
 cdef cast_scalar(scalar_value, dtype_id):
+    """
+    This method casts a Arrow scalar value into a Python scalar value
+    Args:
+        scalar_value: Arrow Scalar
+        dtype_id: Arrow data type
+
+    Returns: Python scalar
+
+    """
     if dtype_id == pa.float16().id or dtype_id == pa.float32().id or dtype_id == pa.float64().id:
         return float(scalar_value)
     elif dtype_id == pa.int16().id or dtype_id == pa.int32().id or dtype_id == pa.int64().id:
@@ -51,7 +60,17 @@ cdef cast_scalar(scalar_value, dtype_id):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef comparison_compute_op_iter(CDType[:] array, CDType other, op):
+    """
+    This is a helper function for comparison op using Cythonized approach
+    Used as an customizable feature based on use-cases
+    Args:
+        array: Typed array of CDType
+        other: comparison value of type CDType
+        op: comparison operator, i.e <,>,<=,>=,!=
 
+    Returns: NdArray
+
+    """
     if CDType is int:
         dtype = np.intc
     elif CDType is double:
@@ -97,6 +116,17 @@ cdef _resolve_arrow_op(op):
 
 
 cpdef table_compute_ar_op(table: Table, other, op):
+    """
+    This method compare a PyCylon table with a scalar or with another PyCylon table and returns 
+    filtered values in bool
+    Args:
+        table: PyCylon table
+        other: comparison value, a scalar or a PyCylon table
+        op: comparison operation, i.e <,>,<=,>=,!=
+
+    Returns: PyCylon table with bool values
+
+    """
     arrow_op = _resolve_arrow_op(op)
     if isinstance(other, Table):
         arrays = []
@@ -126,6 +156,14 @@ cdef _is_division(op):
 
 
 cpdef is_null(table:Table):
+    """
+    Compute function to check if null values are present in a PyCylon Table
+    Args:
+        table: PyCylon Table
+
+    Returns: PyCylon table with bool values. True for null and False for not null values
+
+    """
     ar_tb = table.to_arrow().combine_chunks()
     is_null_values = []
     for chunk_ar in ar_tb.itercolumns():
@@ -134,15 +172,35 @@ cpdef is_null(table:Table):
                                                                    names=table.column_names))
 
 cpdef invert(table:Table):
-    # NOTE: Only Bool invert is supported by PyArrow APIs
+    """
+    Inverts a bool array. Other types are not supported.
+    NOTE: Only Bool invert is supported by PyArrow APIs
+    Args:
+        table: PyCylon table
+
+    Returns: Bool valued PyCylon table
+
+    """
     ar_tb = table.to_arrow().combine_chunks()
     invert_values = []
     for chunk_ar in ar_tb.itercolumns():
-        invert_values.append(a_compute.invert(chunk_ar))
+        if chunk_ar.type == pa.bool_():
+            invert_values.append(a_compute.invert(chunk_ar))
+        else:
+            raise ValueError(f"Invert only support for bool types, but found {chunk_ar.type}")
     return Table.from_arrow(table.context, pa.Table.from_arrays(invert_values,
                                                                    names=table.column_names))
 
 cpdef neg(table:Table):
+    """
+    Negative operation over a PyCylon Table. 
+    Note: Only support numeric tables
+    Args:
+        table: PyCylon Table
+
+    Returns: PyCylon Table
+
+    """
     # NOTE: PyArrow API doesn't provide a neg operator.
     ar_tb = table.to_arrow().combine_chunks()
     neg_array = []
@@ -155,10 +213,22 @@ cpdef neg(table:Table):
                                                                    names=table.column_names))
 
 cpdef division_op(table:Table, op, value):
+    """
+    Division by scalar on a PyCylon Table
+    Args:
+        table: PyCylon table
+        op: division op
+        value: division value (scalar numeric)
+
+    Returns: PyCylon table
+
+    """
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
     if not isinstance(value, numbers.Number):
         raise ValueError("Math operation value must be numerical")
+    # Special casting check needed for division compared to other operators when dividing
+    # integers by integers
     cast_type = pa.float64()
     for chunk_arr in ar_tb.itercolumns():
         chunk_arr = chunk_arr.cast(cast_type)
@@ -167,8 +237,19 @@ cpdef division_op(table:Table, op, value):
     return Table.from_arrow(table.context, pa.Table.from_arrays(res_array,
                                                                    names=table.column_names))
 
-
 cpdef math_op(table:Table, op, value):
+    """
+    Math operations for PyCylon table against a scalar value. 
+    Generic function to execute addition, subtraction and multiplication.
+    
+    Args:
+        table: PyCylon table
+        op: math operator (except division)
+        value: scalar value 
+
+    Returns:
+
+    """
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
     if not isinstance(value, numbers.Number) or isinstance(value, Table):
@@ -193,7 +274,7 @@ cpdef divide(table:Table, value):
     return division_op(table, a_divide, value)
 
 cpdef unique(table:Table):
-    # TODO: axis=1 implementation (row-wise comparison)
+    # TODO: axis=1 implementation (row-wise comparison), Requires distributed function
     artb = table.to_arrow().combine_chunks()
     res_array = []
     for chunk_ar in artb.itercolumns():
@@ -205,6 +286,17 @@ cpdef nunique(table:Table):
     pass
 
 cdef _is_in_array_like(table: Table, cmp_val, skip_null):
+    '''
+    Isin helper function for array-like comparisons, where a table is compared against a list of 
+    values. 
+    Args:
+        table: PyCylon table
+        cmp_val: comparison value set 
+        skip_null: skip null value option for PyArrow compute kernel
+
+    Returns: PyCylon Table
+
+    '''
     ar_tb = table.to_arrow().combine_chunks()
     lookup_opts = a_compute.SetLookupOptions(value_set=cmp_val, skip_null=skip_null)
     is_in_res = []
@@ -215,10 +307,31 @@ cdef _is_in_array_like(table: Table, cmp_val, skip_null):
     return tb_new
 
 def compare_array_like_values(l_org_ar, l_cmp_ar, skip_null=True):
+    '''
+    Compare array like values
+    Args:
+        l_org_ar: PyArrow array
+        l_cmp_ar: PyArrow array
+        skip_null: skip_null option for isin check in PyArrow compute isin
+
+    Returns: PyArrow array
+
+    '''
     s = a_compute.SetLookupOptions(value_set=l_cmp_ar, skip_null=skip_null)
     return a_compute.is_in(l_org_ar, options=s)
 
+
 cdef _broadcast(ar, broadcast_coefficient=1):
+    # TODO: this method must be efficiently written using Cython
+    '''
+    A compute helper function to broadcast an array into expected dimensionality
+    Args:
+        ar: PyArrow array
+        broadcast_coefficient: expected broadcast size 
+
+    Returns: PyArrow array
+
+    '''
     bcast_ar = []
     cdef int i
     cdef int bc = broadcast_coefficient
@@ -229,7 +342,16 @@ cdef _broadcast(ar, broadcast_coefficient=1):
         bcast_ar.append(pa.array(bcast_elems))
     return bcast_ar
 
-cdef _compare_row_vector_and_column_vector(col_vector, row_vector):
+cdef _compare_row_vector_and_column_vectors(col_vector, row_vector):
+    '''
+    Helper compute function to compare a vector against a set of vectors
+    Args:
+        col_vector: list of PyArrow arrays
+        row_vector: PyArrow array
+
+    Returns: List of PyArrow arrays
+
+    '''
     row_col = []
     for col in col_vector:
         row = a_compute.cast(row_vector, pa.int32())
@@ -238,15 +360,42 @@ cdef _compare_row_vector_and_column_vector(col_vector, row_vector):
     return row_col
 
 cdef _compare_two_arrays(l_ar, r_ar):
+    '''
+    Compare two arrays for and operation. 
+    Args:
+        l_ar: PyArrow array
+        r_ar: PyArrow array
+
+    Returns: PyArrow array bool array
+
+    '''
     return a_compute.and_(l_ar, r_ar)
 
 cdef _compare_row_and_column(row, columns):
+    '''
+    Helper function to compare row and column
+    Args:
+        row: Pyarrow array
+        columns: Pyarrow array 
+
+    Returns: Pyarrow array of type bool
+
+    '''
     comp_res = []
     for column in columns:
         comp_res.append(_compare_two_arrays(l_ar=row, r_ar=column))
     return comp_res
 
 cdef _populate_column_with_single_value(value, row_count):
+    '''
+    Helper function to populate a column with a single value
+    Args:
+        value: Python scalar value
+        row_count: number of rows
+
+    Returns: List
+
+    '''
     column_values = []
     cdef int i
     cdef int rc = row_count
@@ -338,6 +487,16 @@ cdef _tb_compare_values(tb, tb_cmp, skip_null=True, index_check=True):
     return tb_new
 
 cpdef is_in(table:Table, comparison_values, skip_null):
+    '''
+    PyCylon Tabular is_in function abstraction using PyArrow is_in compute
+    Args:
+        table: PyCylon table
+        comparison_values: comparison values as a List
+        skip_null: skip null values upon user response (required for a_compute.isin)
+
+    Returns: PyCylon table of type bool
+
+    '''
     if isinstance(comparison_values, List):
         cmp_val = pa.array(comparison_values)
         return _is_in_array_like(table, cmp_val, skip_null)
@@ -351,6 +510,17 @@ cpdef is_in(table:Table, comparison_values, skip_null):
 
 
 cpdef drop_na(table:Table, how:str, axis=0):
+    '''
+    Drops not applicable values like nan, None
+    Args:
+        table: PyCylon table
+        how: 'any' or 'all', i.e drop the column or row based on any or all not applicable value 
+        presence.
+        axis: 0 for column and 1 for row. 
+
+    Returns: PyCylon table
+
+    '''
     ar_tb = table.to_arrow().combine_chunks()
     if axis == 0:
         """

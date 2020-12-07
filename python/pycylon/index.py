@@ -125,13 +125,9 @@ def range_calculator(rg: range):
 
 def _is_index_and_range_validity(table, index_range):
     if isinstance(index_range, range):
-        if range_calculator(index_range) == table.row_count:
-            return True
-        else:
-            return False
+        return range_calculator(index_range) == table.row_count
     else:
         return False
-
 
 def _is_index_list_and_valid(table, index):
     if isinstance(index, List):

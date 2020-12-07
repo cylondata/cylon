@@ -925,21 +925,15 @@ cdef class Table:
 
     def _is_index_and_range_validity(self, index_range):
         if isinstance(index_range, range):
-            if range_calculator(index_range) == self.row_count:
-                return True
-            else:
-                return False
+            return range_calculator(index_range) == self.row_count
         else:
-            return False
+            raise ValueError("Invalid object, expected range")
 
     def _is_index_list_and_valid(self, index):
         if isinstance(index, List):
-            if len(index) == self.row_count:
-                return True
-            else:
-                return False
+            return len(index) == self.row_count
         else:
-            return False
+            raise ValueError("Invalid object, expected List")
 
     def _is_index_list_of_columns(self, index):
         for index_item in index:
