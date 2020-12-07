@@ -715,6 +715,14 @@ cdef class Table:
         return statement
 
     def _table_from_mask(self, mask: Table) -> Table:
+        '''
+        Creates a PyCylon Table from a mask of type PyCylon Table.
+        Args:
+            mask: PyCylon Table
+
+        Returns: PyCylon Table
+
+        '''
         mask_batches = mask.to_arrow().combine_chunks().to_batches()
 
         if mask.column_count == 1:
@@ -738,6 +746,65 @@ cdef class Table:
         return compute.table_compute_ar_op(self, filter, op)
 
     def __getitem__(self, key) -> Table:
+        """
+        This method allows to retrieve a subset of a Table by means of a key
+        Args:
+            key: a key can be the following
+                 1. slice i.e table[1:5], rows 1:5
+                 2. int i.e a row index
+                 3. str i.e extract the data column-wise by column-name
+                 4. List of columns are extracted
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> ctx: CylonContext = CylonContext(config=None, distributed=False)
+        >>> data = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]
+        >>> columns = ['col-1', 'col-2', 'col-3']
+
+        >>> tb: Table = Table.from_list(ctx, columns, data)
+
+        >>> tb1 = tb[1:3]
+            col-1  col-2  col-3
+                0      2      6     10
+                1      3      7     11
+                2      4      8     12
+
+        >>> tb2 = tb['col-1']
+               col-1
+            0      1
+            1      2
+            2      3
+            3      4
+
+        >>> tb3 = tb[['col-1', 'col-2']]
+               col-1  col-2
+            0      1      5
+            1      2      6
+            2      3      7
+            3      4      8
+
+        >>> tb4 = tb > 3
+                 col-1  col-2  col-3
+            0    False   True   True
+            1    False   True   True
+            2    False   True   True
+            3     True   True   True
+
+        >>> tb5 = tb[tb4]
+                col-1  col-2  col-3
+            0    NaN      5      9
+            1    NaN      6     10
+            2    NaN      7     11
+            3    4.0      8     12
+
+        >>> tb8 = tb['col-1'] > 2
+               col-1  col-2  col-3
+            0      3      7     11
+            1      4      8     12
+
+        """
         py_arrow_table = self.to_arrow().combine_chunks()
         if isinstance(key, slice):
             return self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
@@ -769,6 +836,39 @@ cdef class Table:
             raise ValueError(f"Unsupported Key Type in __getitem__ {type(key)}")
 
     def __setitem__(self, key, value):
+        '''
+        Sets values for a existing table by means of a column
+        Args:
+            key: (str) column-name
+            value: (Table) data as a single column table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+
+        >>> tb['col-3'] = Table.from_list(ctx, ['x'], [[90, 100, 110, 120]])
+               col-1  col-2  col-3
+            0      1      5     90
+            1      2      6    100
+            2      3      7    110
+            3      4      8    120
+
+        >>> tb['col-4'] = Table.from_list(ctx, ['x'], [[190, 1100, 1110, 1120]])
+                col-1  col-2  col-3  col-4
+            0      1      5     90    190
+            1      2      6    100   1100
+            2      3      7    110   1110
+            3      4      8    120   1120
+        '''
+
         if isinstance(key, str) and isinstance(value, Table):
             if value.column_count == 1:
                 value_arrow_table = value.to_arrow().combine_chunks()
@@ -790,45 +890,432 @@ cdef class Table:
         return compute.table_compute_ar_op(self, other, op)
 
     def __eq__(self, other) -> Table:
+        '''
+        Equal operator for Table
+        Args:
+            other: can be a numeric scalar or a Table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> tb
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb['col-1'] == 2
+               col-1
+            0  False
+            1   True
+            2  False
+            3  False
+
+        >>> tb == 2
+               col-1  col-2  col-3
+            0  False  False  False
+            1   True  False  False
+            2  False  False  False
+            3  False  False  False
+
+        '''
         return self._comparison_operation(other, operator.__eq__)
 
     def __ne__(self, other) -> Table:
+        '''
+        Not equal operator for Table
+        Args:
+            other: can be a numeric scalar or Table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb3 = tb['col-1'] != 2
+               col-1
+            0   True
+            1  False
+            2   True
+            3   True
+
+        >>> tb4 = tb != 2
+               col-1  col-2  col-3
+            0   True   True   True
+            1  False   True   True
+            2   True   True   True
+            3   True   True   True
+        '''
+
         return self._comparison_operation(other, operator.__ne__)
 
     def __lt__(self, other) -> Table:
+        '''
+        Lesser than operator for Table
+        Args:
+            other: can be a numeric scalar or Table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb3 = tb['col-1'] < 2
+               col-1
+            0   True
+            1  False
+            2  False
+            3  False
+
+        >>> tb4 = tb < 2
+               col-1  col-2  col-3
+            0   True  False  False
+            1  False  False  False
+            2  False  False  False
+            3  False  False  False
+        '''
+
         return self._comparison_operation(other, operator.__lt__)
 
     def __gt__(self, other) -> Table:
+        '''
+        Greater than operator for Table
+        Args:
+            other: can be a numeric scalar or Table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb3 = tb['col-1'] > 2
+                col-1
+            0  False
+            1  False
+            2   True
+            3   True
+
+        >>> tb4 = tb > 2
+               col-1  col-2  col-3
+            0  False   True   True
+            1  False   True   True
+            2   True   True   True
+            3   True   True   True
+        '''
+
         return self._comparison_operation(other, operator.__gt__)
 
     def __le__(self, other) -> Table:
+        '''
+        Lesser than or equal operator for Table
+        Args:
+            other: can be a numeric scalar or Table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb3 = tb['col-1'] <= 2
+                col-1
+            0   True
+            1   True
+            2  False
+            3  False
+
+        >>> tb4 = tb <= 2
+               col-1  col-2  col-3
+            0   True  False  False
+            1   True  False  False
+            2  False  False  False
+            3  False  False  False
+        '''
         return self._comparison_operation(other, operator.__le__)
 
     def __ge__(self, other) -> Table:
+        '''
+        Greater than or equal operator for Table
+        Args:
+            other: can be a numeric scalar or Table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+
+        >>> tb3 = tb['col-1'] >= 2
+               col-1
+            0  False
+            1   True
+            2   True
+            3   True
+
+        >>> tb4 = tb >= 2
+               col-1  col-2  col-3
+            0  False   True   True
+            1   True   True   True
+            2   True   True   True
+            3   True   True   True
+        '''
+
         return self._comparison_operation(other, operator.__ge__)
 
     def __or__(self, other) -> Table:
+        '''
+        Or operator for Table
+        Args:
+            other: PyCylon Table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb1
+               col-1  col-2
+            0  False   True
+            1   True   True
+            2  False  False
+            3   True  False
+
+        >>> tb2
+                col-1  col-2
+            0   True  False
+            1   True   True
+            2  False  False
+            3  False   True
+
+        >>> tb_or = tb1 | tb2
+               col-1  col-2
+            0   True   True
+            1   True   True
+            2  False  False
+            3   True   True
+        '''
+
         return self._aggregate_filters(other, operator.__or__)
 
     def __and__(self, other) -> Table:
+        '''
+        And operator for Table
+        Args:
+            other: PyCylon Table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb1
+               col-1  col-2
+            0  False   True
+            1   True   True
+            2  False  False
+            3   True  False
+
+        >>> tb2
+                col-1  col-2
+            0   True  False
+            1   True   True
+            2  False  False
+            3  False   True
+
+        >>> tb_or = tb1 & tb2
+               col-1  col-2
+            0  False  False
+            1   True   True
+            2  False  False
+            3  False  False
+        '''
+
         return self._aggregate_filters(other, operator.__and__)
 
     def __invert__(self):
+        '''
+         Invert operator for Table
+
+         Returns: PyCylon Table
+
+         Examples
+         --------
+         >>> tb
+                col-1  col-2
+            0  False   True
+            1   True   True
+            2  False  False
+            3   True  False
+
+        >>> ~tb
+               col-1  col-2
+            0   True  False
+            1  False  False
+            2   True   True
+            3  False   True
+         '''
+
         return compute.invert(self)
 
     def __neg__(self):
+        '''
+         Negation operator for Table
+
+         Returns: PyCylon Table
+
+         Examples
+         --------
+         >>> tb
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+         >>> -tb
+               col-1  col-2  col-3
+            0     -1     -5     -9
+            1     -2     -6    -10
+            2     -3     -7    -11
+            3     -4     -8    -12
+         '''
+
         return compute.neg(self)
 
     def __add__(self, other):
+        '''
+         Add operator for Table
+         Args:
+             other: scalar numeric
+
+         Returns: PyCylon Table
+
+         Examples
+         --------
+        >>> tb
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb + 2
+               col-1  col-2  col-3
+            0      3      7     11
+            1      4      8     12
+            2      5      9     13
+            3      6     10     14
+         '''
         return compute.add(self, other)
 
     def __sub__(self, other):
+        '''
+         Subtract operator for Table
+         Args:
+             other: scalar numeric
+
+         Returns: PyCylon Table
+
+         Examples
+         --------
+        >>> tb
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb - 2
+               col-1  col-2  col-3
+            0     -1      3      7
+            1      0      4      8
+            2      1      5      9
+            3      2      6     10
+         '''
         return compute.subtract(self, other)
 
     def __mul__(self, other):
+        '''
+         Multiply operator for Table
+         Args:
+             other: scalar numeric
+
+         Returns: PyCylon Table
+
+         Examples
+         --------
+        >>> tb
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb * 2
+               col-1  col-2  col-3
+            0      2     10     18
+            1      4     12     20
+            2      6     14     22
+            3      8     16     24
+         '''
+
         return compute.multiply(self, other)
 
     def __truediv__(self, other):
+        '''
+         Element-wise division operator for Table
+         Args:
+             other: scalar numeric
+
+         Returns: PyCylon Table
+
+         Examples
+         --------
+        >>> tb
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb / 2
+               col-1  col-2  col-3
+            0    0.5    2.5    4.5
+            1    1.0    3.0    5.0
+            2    1.5    3.5    5.5
+            3    2.0    4.0    6.0
+         '''
+
         return compute.divide(self, other)
 
     def __repr__(self):
@@ -858,9 +1345,53 @@ cdef class Table:
             return str1
 
     def drop(self, column_names: List[str]):
+        '''
+        drop a column or list of columns from a Table
+        Args:
+            column_names: List[str]
+
+        Returns: PyCylon Table
+        >>> tb
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb.drop(['col-1'])
+               col-2  col-3
+            0      5      9
+            1      6     10
+            2      7     11
+            3      8     12
+        '''
+
         return self.from_arrow(self.context, self.to_arrow().drop(column_names))
 
     def fillna(self, fill_value):
+        '''
+        Fill not applicable values with a given value
+        Args:
+            fill_value: scalar
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0    1.0    5.0    9.0
+            1    NaN    6.0   10.0
+            2    3.0    NaN   11.0
+            3    4.0    8.0    NaN
+
+        >>> tb.fillna(0)
+               col-1  col-2  col-3
+            0      1      5      9
+            1      0      6     10
+            2      3      0     11
+            3      4      8      0
+        '''
         # Note: Supports numeric types only
         filtered_arrays = []
         for col in self.to_arrow().combine_chunks().columns:
@@ -870,6 +1401,38 @@ cdef class Table:
                                pa.Table.from_arrays(filtered_arrays, self.column_names))
 
     def where(self, condition not None, other=None):
+        '''
+        Experimental version of Where operation.
+        Replace values where condition is False
+        Args:
+            condition: bool Table
+            other: Scalar
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb.where(tb > 2)
+                col-1  col-2  col-3
+            0    NaN      5      9
+            1    NaN      6     10
+            2    3.0      7     11
+            3    4.0      8     12
+
+        >>> tb.where(tb > 2, 10)
+               col-1  col-2  col-3
+            0     10      5      9
+            1     10      6     10
+            2      3      7     11
+            3      4      8     12
+        '''
         # TODO: need to improve and overlap with filter functions
         filtered_all_data = []
         list_of_mask_values = list(condition.to_pydict().values())
@@ -889,18 +1452,115 @@ cdef class Table:
         return Table.from_list(self.context, self.column_names, filtered_all_data)
 
     def isnull(self):
+        '''
+        Checks for null elements and returns a bool Table
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> tb
+               col-1  col-2  col-3
+            0    1.0    5.0    9.0
+            1    NaN    6.0   10.0
+            2    3.0    NaN   11.0
+            3    4.0    8.0    NaN
+
+        >>> tb.isnull()
+                col-1  col-2  col-3
+            0  False  False  False
+            1   True  False  False
+            2  False   True  False
+            3  False  False   True
+
+        '''
         return compute.is_null(self)
 
     def isna(self):
+        '''
+        Check for not applicable values and returns a bool Table
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0    1.0    5.0    9.0
+            1    NaN    6.0   10.0
+            2    3.0    NaN   11.0
+            3    4.0    8.0    NaN
+
+        >>> tb.isna()
+                col-1  col-2  col-3
+            0  False  False  False
+            1   True  False  False
+            2  False   True  False
+            3  False  False   True
+
+
+
+        '''
         return compute.is_null(self)
 
     def notnull(self):
+        '''
+        Check the not null values and returns a bool Table
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0    1.0    5.0    9.0
+            1    NaN    6.0   10.0
+            2    3.0    NaN   11.0
+            3    4.0    8.0    NaN
+
+        >>> tb.notnull()
+               col-1  col-2  col-3
+            0   True   True   True
+            1  False   True   True
+            2   True  False   True
+            3   True   True  False
+
+        '''
+
         return ~compute.is_null(self)
 
     def notna(self):
+        '''
+        Checks for not NA values and returns a bool Table
+        Returns: PyCylon Table
+
+        >>> tb
+                col-1  col-2  col-3
+            0    1.0    5.0    9.0
+            1    NaN    6.0   10.0
+            2    3.0    NaN   11.0
+            3    4.0    8.0    NaN
+
+        >>> tb.notna()
+               col-1  col-2  col-3
+            0   True   True   True
+            1  False   True   True
+            2   True  False   True
+            3   True   True  False
+        '''
+
         return ~compute.is_null(self)
 
     def rename(self, column_names):
+        '''
+        Rename a Table with a column name or column names
+        Args:
+            column_names: dictionary or full list of new column names
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        '''
         if isinstance(column_names, dict):
             table_col_names = self.column_names
             for key in column_names.keys():
@@ -979,9 +1639,6 @@ cdef class Table:
     def reset_index(self, key) -> Table:
         self._index = RangeIndex(range(0, self.row_count))
 
-    def isna(self) -> Table:
-        return compute.is_na(self)
-
     def dropna(self, axis=0, how='any', inplace=False):
         new_tb = compute.drop_na(self, how, axis)
         if inplace:
@@ -1004,5 +1661,3 @@ class EmptyTable(Table):
     def _empty_initialize(self):
         empty_data = []
         self.initialize(pa.Table.from_arrays([], []), self.ctx)
-
-
