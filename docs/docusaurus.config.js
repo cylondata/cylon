@@ -46,17 +46,13 @@ module.exports = {
                     items: [
                         {
                             label: 'Mailing List',
-                            href: 'cylondata@googlegroups.com',
+                            href: 'mailto:cylondata@googlegroups.com',
                         },
                     ],
                 },
                 {
                     title: 'More',
                     items: [
-                        {
-                            label: 'Blog',
-                            to: 'blog',
-                        },
                         {
                             label: 'GitHub',
                             href: 'https://github.com/cylondata/cylon',
@@ -95,7 +91,6 @@ module.exports = {
     stylesheets: [
         'https://cdn.jsdelivr.net/gh/konpa/devicon@master/devicon.min.css',
     ],
-    plugins: ['@docusaurus/plugin-google-analytics'],
     customFields: {
         twitterImage: "img/wheel.png",
     }
