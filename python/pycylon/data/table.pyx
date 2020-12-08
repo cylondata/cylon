@@ -562,10 +562,29 @@ cdef class Table:
     @staticmethod
     def from_arrow(context, pyarrow_table) -> Table:
         '''
-            creating a PyCylon table from PyArrow Table
-            :param obj: PyArrow table
-            :return: PyCylon table
+        Creating a PyCylon table from PyArrow Table
+        Args:
+            context: pycylon.CylonContext
+            pyarrow_table: PyArrow Table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+        >>> atb
+            pyarrow.Table
+            col-1: int64
+            col-2: int64
+            col-3: int64
+
+        >>> Table.from_arrow(ctx, atb)
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
         '''
+
         cdef shared_ptr[CCylonContext] ctx = pycylon_unwrap_context(context)
         cdef shared_ptr[CArrowTable] arw_table = pyarrow_unwrap_table(pyarrow_table)
         cdef shared_ptr[CTable] cn_table
@@ -579,24 +598,49 @@ cdef class Table:
 
     @staticmethod
     def from_numpy(context: CylonContext, col_names: List[str], ar_list: List[np.ndarray]) -> Table:
-        """
-        creating a PyCylon table from numpy arrays
-        @param context: CylonContext
-        @param col_names: Column names
-        @param ar_list: numpy arrays as a list to form the column data of all columns
-        @return: PyCylon table
-        """
+        '''
+        Creating a PyCylon table from numpy arrays
+        Args:
+            context: pycylon.CylonContext
+            col_names: column names as a List
+            ar_list: Numpy ndarrays as a list (one 1D array per column)
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> Table.from_numpy(ctx, ['c1', 'c2', 'c3'], [np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8]), np.array([9, 10, 11, 12])])
+               c1  c2  c3
+            0   1   5   9
+            1   2   6  10
+            2   3   7  11
+            3   4   8  12
+        '''
+
         return Table.from_arrow(context, pa.Table.from_arrays(ar_list, names=col_names))
 
     @staticmethod
     def from_list(context: CylonContext, col_names: List[str], data_list: List) -> Table:
-        """
-        creating a PyCylon table from a list
-        @param context: CylonContext
-        @param col_names: Column names
-        @param data_list: data as a list
-        @return: PyCylon table
-        """
+        '''
+        Creating a PyCylon table from a list
+        Args:
+            context: pycylon.CylonContext
+            col_names: Column names as a List[str]
+            data_list: data as a List of List, (List per column)
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> Table.from_list(ctx, ['col-1', 'col-2', 'col-3'], [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+        '''
         ar_list = []
         if len(col_names) == len(data_list):
             for data in data_list:
@@ -607,22 +651,52 @@ cdef class Table:
 
     @staticmethod
     def from_pydict(context: CylonContext, dictionary: dict) -> Table:
-        """
-        creating a PyCylon table from a dictionary
-        @param context: CylonContext
-        @param dictionary: dict with table data
-        @return: PyCylon table
-        """
+        '''
+        Creating a PyCylon table from a dictionary
+        Args:
+            context: pycylon.CylonContext
+            dictionary: dict object with key as column names and values as a List
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> Table.from_pydict(ctx, {'col-1': [1, 2, 3, 4], 'col-2': [5, 6, 7, 8], 'col-3': [9, 10, 11, 12]})
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        '''
         return Table.from_arrow(context, pa.Table.from_pydict(dictionary))
 
     @staticmethod
     def from_pandas(context: CylonContext = None, df: pd.DataFrame = None, preserve_index=False,
                     nthreads=None, columns=None, safe=False) -> Table:
-        """
-            creating a PyCylon table from Pandas DataFrame
-            :param obj: Pandas DataFrame
-            :rtype: PyCylon Table
-        """
+        '''
+        Creating a PyCylon table from Pandas DataFrame
+        Args:
+            context: cylon.CylonContext
+            df: pd.DataFrame
+            preserve_index: keep indexes as same as in original DF
+            nthreads: number of threads for the operation
+            columns: column names, if updated
+            safe: safe operation
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> Table.from_pandas(ctx, df)
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+        '''
         return Table.from_arrow(context,
                                 pa.Table.from_pandas(df=df, schema=None,
                                                      preserve_index=preserve_index,
@@ -630,22 +704,27 @@ cdef class Table:
                                 )
 
     def to_pandas(self):
-        """
-         creating Pandas Dataframe from PyCylon Table
-         :param self:
-         :return: a Pandas DataFrame
-         """
+        '''
+        Creating Pandas Dataframe from PyCylon Table
+        Returns: pd.DataFrame
+
+        '''
         return self.to_arrow().to_pandas()
 
     def to_numpy(self, order: str = 'F', zero_copy_only: bool = True, writable: bool = False):
-        """
-         [Experimental]
+        '''
+        [Experimental]
          This method converts a Cylon Table to a 2D numpy array.
          In the conversion we stack each column in the Table and create a numpy array.
          For Heterogeneous Tables, use the generated array with Caution.
-         :param order: numpy array order. 'F': Fortran Style F_Contiguous or 'C' C Style C_Contiguous
-         :return: ndarray
-         """
+         :param order:
+        Args:
+            order: numpy array order. 'F': Fortran Style F_Contiguous or 'C' C Style C_Contiguous
+            zero_copy_only: bool to enable zero copy, and default is True
+            writable: config writable
+
+        Returns: Numpy NDArray
+        '''
         ar_lst = []
         _dtype = None
         for col in self.to_arrow().combine_chunks().columns:
@@ -661,19 +740,30 @@ cdef class Table:
         return array
 
     def to_pydict(self):
-        """
-        creating a dictionary from PyCylon table
-        @return: dict
-        """
+        '''
+        Creating a dictionary from PyCylon table
+        Returns: dict object
+
+        '''
         return self.to_arrow().to_pydict()
 
     def to_csv(self, path, csv_write_options):
-        """
-        creating a csv file with PyCylon table data
-        @param table: shared_ptr[CTable]
-        @param path: str
-        @param csv_write_options: CSVWriteOptions
-        """
+        '''
+        Creating a csv file with PyCylon table data
+        Args:
+            path: path to file
+            csv_write_options: pycylon.io.CSVWriteOptions
+
+        Returns: None
+
+        Examples
+        --------
+        >>> from pycylon.io import CSVWriteOptions
+        >>> csv_write_options = CSVWriteOptions().with_delimiter(',')
+        >>> tb.to_csv('/tmp/data.csv', csv_write_options)
+
+
+        '''
         cdef string cpath = path.encode()
         cdef CCSVWriteOptions c_csv_write_options = pycylon_unwrap_csv_write_options(
             csv_write_options)
@@ -681,7 +771,7 @@ cdef class Table:
 
     def to_arrow(self) -> pa.Table:
         '''
-         creating PyArrow Table from PyCylon table
+         Creating PyArrow Table from PyCylon table
          :param self: PyCylon Table
          :return: PyArrow Table
          '''
@@ -1353,6 +1443,10 @@ cdef class Table:
             column_names: List[str]
 
         Returns: PyCylon Table
+
+        Examples
+        --------
+
         >>> tb
                 col-1  col-2  col-3
             0      1      5      9
@@ -1524,7 +1618,6 @@ cdef class Table:
             1  False   True   True
             2   True  False   True
             3   True   True  False
-
         '''
 
         return ~compute.is_null(self)
