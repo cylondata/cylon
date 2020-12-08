@@ -38,7 +38,7 @@ static inline constexpr bool if_power2(T v) {
   return v && !(v & (v - 1));
 }
 
-class ArrowPartitionKernel { // todo: change this
+class ArrowPartitionKernel {
  public:
   virtual ~ArrowPartitionKernel() = default;
 
