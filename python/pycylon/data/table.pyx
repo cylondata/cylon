@@ -656,7 +656,9 @@ cdef class Table:
                 warnings.warn(
                     "Heterogeneous Cylon Table Detected!. Use Numpy operations with Caution.")
             ar_lst.append(npr)
-        return np.array(ar_lst, order=order).T
+        npy = np.array(ar_lst).T
+        array = np.asfortranarray(npy) if order == 'F' else np.ascontiguousarray(npy)
+        return array
 
     def to_pydict(self):
         """
