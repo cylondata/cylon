@@ -49,7 +49,7 @@ title: PyCylon Table Docs
     col-2: int64
     col-3: int64
 
->>> tb: Table = Table.from_arrow(ctx, atb)
+>>> Table.from_arrow(ctx, atb)
        col-1  col-2  col-3
     0      1      5      9
     1      2      6     10
@@ -212,4 +212,127 @@ to `False`.
 ```
 
 ## Relational Algebra Operators
+
+```python
+>>> tb = Table.from_pydict(ctx, {'keyA': ['K0', 'K1', 'K2', 'K3', 'K4', 'K5'],
+                                    'A': ['A0', 'A1', 'A2', 'A3', 'A4', 'A5']})
+      keyA   A
+    0   K0  A0
+    1   K1  A1
+    2   K2  A2
+    3   K3  A3
+    4   K4  A4
+    5   K5  A5
+>>> other = Table.from_pydict(ctx, {'keyB': ['K0', 'K1', 'K2'],
+                                       'B': ['B0', 'B1', 'B2']})
+      keyB   B
+    0   K0  B0
+    1   K1  B1
+    2   K2  B2
+```
+
+### Join
+
+1. Join type can be : `join_type` => 'left', 'right', 'inner', 'outer'
+2. Join algorithm can be : `algorithm` => 'hash', 'sort'
+3. Join on, 'on' when common column is there, otherwise 'left_on' and 'right_on'
+
+Note: The print methods are work in progress to provide similar output as Pandas
+
+In sequential setting use `join` and in distributed setting use `distributed_join` upon the
+use-case.
+
+```python
+>>> tb.join(table=other, join_type='left', algorithm='sort', left_on=['keyA'], right_on=[
+    'keyB'])
+      keyA   A keyB   B
+    0   K0  A0   K0  B0
+    1   K1  A1   K1  B1
+    2   K2  A2   K2  B2
+    3   K3  A3
+    4   K4  A4
+    5   K5  A5
+```
+
+### Subtract (Difference)
+
+For distributed operations use `distributed_subtract` instead of `subtract`.
+
+```python
+>>> tb = Table.from_pydict(ctx, {'keyA': ['K0', 'K1', 'K2', 'K3', 'K4', 'K5'],
+                                    'A': ['A0', 'A1', 'A2', 'A3', 'A4', 'A5']})
+      keyA   A
+    0   K0  A0
+    1   K1  A1
+    2   K2  A2
+    3   K3  A3
+    4   K4  A4
+
+>>> other = other: Table = Table.from_pydict(ctx, {'keyB': ['K0', 'K1', 'K2'],
+                                       'B': ['A0', 'A1', 'A2']})
+      keyB   B
+    0   K0  A0
+    1   K1  A1
+    2   K2  A2
+
+>>> tb.subtract(other)
+      keyA   A
+    0   K5  A5
+    1   K4  A4
+    2   K3  A3
+```
+
+### Intersect
+
+For distributed operations use `distributed_intersect` instead of `intersect`.
+
+```python
+>>> tb = Table.from_pydict(ctx, {'keyA': ['K0', 'K1', 'K2', 'K3', 'K4', 'K5'],
+                                    'A': ['A0', 'A1', 'A2', 'A3', 'A4', 'A5']})
+      keyA   A
+    0   K0  A0
+    1   K1  A1
+    2   K2  A2
+    3   K3  A3
+    4   K4  A4
+
+>>> other = other: Table = Table.from_pydict(ctx, {'keyB': ['K0', 'K1', 'K2'],
+                                       'B': ['A0', 'A1', 'A2']})
+      keyB   B
+    0   K0  A0
+    1   K1  A1
+    2   K2  A2
+
+>>> tb.intersect(other)
+      keyA   A
+    0   K2  A2
+    1   K1  A1
+    2   K0  A0
+```
+
+### Project
+
+For distributed operations and sequential operations `project` can be used.
+
+```python
+>>> tb = Table.from_pydict(ctx, {'keyA': ['K0', 'K1', 'K2', 'K3', 'K4', 'K5'],
+                                    'A': ['A0', 'A1', 'A2', 'A3', 'A4', 'A5']})
+      keyA   A
+    0   K0  A0
+    1   K1  A1
+    2   K2  A2
+    3   K3  A3
+    4   K4  A4
+
+>>> tb.project(['A'])
+        A
+    0  A0
+    1  A1
+    2  A2
+    3  A3
+    4  A4
+    5  A5
+```
+
+
 
