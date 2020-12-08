@@ -3,39 +3,39 @@ id: python
 title: PyCylon
 ---
 
-PyCylon is the Python binding for LibCylon (C++ Cylon). The uniqueness of PyCylon 
+PyCylon is the Python binding for LibCylon (C++ Cylon). The uniqueness of PyCylon
 is that it can be used as a library or a framework. As a library, PyCylon seamlessly
-integrates with PyArrow. This brings us the capability of providing the user the 
-compatibility with Pandas, Numpy and Tensors. As a framework we support distributed 
-relational algebra operations using MPI as the distributed backend. 
+integrates with PyArrow. This brings us the capability of providing the user the
+compatibility with Pandas, Numpy and Tensors. As a framework we support distributed
+relational algebra operations using MPI as the distributed backend.
 
 ## Table
 
-PyCylon Table API currently offers a set of relational algebra operators to 
-preprocess the data. 
+PyCylon Table API currently offers a set of relational algebra operators to
+preprocess the data.
 
 ### Initialize
 
-In a Cylon programme, if you use Cylon with `MPI` backend, the initialization 
+In a Cylon programme, if you use Cylon with `MPI` backend, the initialization
 must be done as follows;
 
 ```python
 ctx: CylonContext = CylonContext("mpi")
 ```
 
-Without MPI, 
+Without MPI,
 
 ```python
 ctx: CylonContext = CylonContext()
 ```
 
 ```txt
-Note: In the current release, Cylon only supports MPI as a distributed backend 
+Note: In the current release, Cylon only supports MPI as a distributed backend
 ```
 
 ### Load a Table
 
-Using Cylon 
+Using Cylon
 
 ```python
 from pycylon Table
@@ -65,7 +65,7 @@ pyarrow_tb: PyArrowTable = cylon_tb.to_arrow()
 
 Join API supports `left, right, inner, outer' joins` with
 `Hash` or `Sort` algorithms. User can specify these configs
-as using Python `str`. 
+as using Python `str`.
 
 Sequential Join
 
@@ -121,7 +121,7 @@ Distributed Intersect
 tb5: Table = tb1.distributed_intersect(table=tb2)
 ```
 
-### Subtract 
+### Subtract
 
 Sequential Subtract
 
@@ -134,7 +134,6 @@ Distributed Subtract
 ```python
 tb5: Table = tb1.distributed_subtract(table=tb2)
 ```
-
 
 ### Select
 
@@ -156,3 +155,9 @@ This is not yet supported from PyCylon API, but LibCylon supports this.
 10. [Table Compute Benchmarks](https://github.com/cylondata/cylon/blob/master/python/examples/op_benchmark/compute_benchmark.py)
 11. [Table Filter Benchmarks](https://github.com/cylondata/cylon/blob/master/python/examples/op_benchmark/filter_benchmark.py)
 12. [Table Distributed Join Experiments](https://github.com/cylondata/cylon/blob/master/python/examples/experiments/table_join_dist_test.py)
+
+## Python API docs
+
+Use blow link to navigate to the PyCylon API docs.
+
+<a href="/docs/python_api_docs">Python API docs</a>
