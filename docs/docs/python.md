@@ -9,7 +9,7 @@ integrates with PyArrow. This brings us the capability of providing the user the
 compatibility with Pandas, Numpy and Tensors. As a framework we support distributed 
 relational algebra operations using MPI as the distributed backend. 
 
-## Table API
+## Table
 
 PyCylon Table API currently offers a set of relational algebra operators to 
 preprocess the data. 
@@ -146,3 +146,13 @@ This is not yet supported from PyCylon API, but LibCylon supports this.
 
 1. [Relational Algebra Examples](https://github.com/cylondata/cylon/blob/master/python/examples/table_relational_algebra.py)
 2. [Compute Examples](https://github.com/cylondata/cylon/blob/master/python/examples/table_compute_examples.py)
+3. [Table Initialization](https://github.com/cylondata/cylon/blob/master/python/examples/table_initialization.py)
+4. [Table Conditional Comparator](https://github.com/cylondata/cylon/blob/master/python/examples/table_comparator_ops.py)
+5. [Table Logical Comparators](https://github.com/cylondata/cylon/blob/master/python/examples/table_logical_operators.py)
+6. [Table Math Operators](https://github.com/cylondata/cylon/blob/master/python/examples/table_math_operators.py)
+7. [Table Data Manipulation](https://github.com/cylondata/cylon/blob/master/python/examples/table_data_setget.py)
+8. [Table Util Operators](https://github.com/cylondata/cylon/blob/master/python/examples/table_util_operators.py)
+9. [Table Conversions](https://github.com/cylondata/cylon/blob/master/python/examples/table_conversions.py)
+10. [Table Compute Benchmarks](https://github.com/cylondata/cylon/blob/master/python/examples/op_benchmark/compute_benchmark.py)
+11. [Table Filter Benchmarks](https://github.com/cylondata/cylon/blob/master/python/examples/op_benchmark/filter_benchmark.py)
+12. [Table Distributed Join Experiments](https://github.com/cylondata/cylon/blob/master/python/examples/experiments/table_join_dist_test.py)

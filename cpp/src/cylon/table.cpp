@@ -704,13 +704,13 @@ Status Select(std::shared_ptr<cylon::Table> &table,
   // boolean builder to hold the mask
   auto ctx = table->GetContext();
   auto table_ = table->get_table();
+  auto row = cylon::Row(table_);
   arrow::BooleanBuilder boolean_builder(cylon::ToArrowPool(ctx));
-  for (int64_t row_index = 0; row_index < table->Rows(); row_index++) {
-    auto row = cylon::Row(table_, row_index);
-    arrow::Status status = boolean_builder.Append(selector(row));
-    if (!status.ok()) {
-      return Status(UnknownError, status.message());
-    }
+  auto kI = table->Rows();
+  boolean_builder.Reserve(kI);
+  for (int64_t row_index = 0; row_index < kI; row_index++) {
+    row.SetIndex(row_index);
+    boolean_builder.UnsafeAppend(selector(row));
   }
   // building the mask
   std::shared_ptr<arrow::Array> mask;

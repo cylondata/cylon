@@ -125,7 +125,7 @@ setup(
     python_requires='>=3.7',
     install_requires=[
         'numpy',
-        'cython'
+        'cython',
     ],
     zip_safe=False,
 )
