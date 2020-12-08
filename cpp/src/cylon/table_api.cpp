@@ -213,7 +213,7 @@ Status HashPartition(std::shared_ptr<cylon::CylonContext> &ctx,
                      const std::string &id,
                      const std::vector<int> &hash_columns,
                      int no_of_partitions,
-                     std::unordered_map<int, std::string> *out) {
+                     std::unordered_map<int, std::string> *out) { // todo change this to use a vector
   std::shared_ptr<cylon::Table> left_tab = GetTable(id);
   std::unordered_map<int, std::shared_ptr<cylon::Table>> tables;
   Status status = HashPartition(left_tab, hash_columns, no_of_partitions, &tables);

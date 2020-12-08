@@ -27,10 +27,10 @@
 #endif
 
 #include "status.hpp"
+#include "ctx/cylon_context.hpp"
 #include "util/uuid.hpp"
 #include "column.hpp"
 #include "join/join_config.hpp"
-#include "arrow/arrow_join.hpp"
 #include "join/join.hpp"
 #include "io/csv_write_config.hpp"
 #include "row.hpp"

@@ -46,8 +46,6 @@ add_library(cylon SHARED
         util/copy_arrray.cpp
         join/join_utils.hpp
         join/join_utils.cpp
-        arrow/arrow_join.cpp
-        arrow/arrow_join.hpp
         io/arrow_io.cpp
         io/arrow_io.hpp
         table_api.hpp

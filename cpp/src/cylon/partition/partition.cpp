@@ -85,6 +85,15 @@ Status Split(const std::shared_ptr<Table> &table,
   return split_impl(table, num_partitions, target_partitions, partition_hist_ptr, output);
 }
 
+#define CONCAT_CHUNKED_ARRAY(col, out) \
+  if (col->num_chunks() > 1) { \
+    auto res = arrow::Concatenate(col->chunks()); \
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status()) \
+    out = res.ValueOrDie(); \
+  } else { \
+    out = col->chunk(0); \
+  }
+
 Status PartitionByHashing(const std::shared_ptr<Table> &table,
                           int32_t hash_column_idx,
                           uint32_t num_partitions,
@@ -94,9 +103,9 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(hash_column_idx);
 
-  std::unique_ptr<ArrowPartitionKernel2> kern = CreateHashPartitionKernel(idx_col->type(), num_partitions);
+  std::unique_ptr<ArrowPartitionKernel> kern = CreateHashPartitionKernel(idx_col->type());
   if (kern == nullptr) {
-    LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create hash partition kernel");
+    LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create hash partition kernel")
   }
   // initialize vectors
   std::fill(target_partitions.begin(), target_partitions.end(), 0);
@@ -104,12 +113,16 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   target_partitions.resize(idx_col->length(), 0);
   partition_hist.resize(num_partitions, 0);
 
-  const auto &status = kern->Partition(idx_col, target_partitions, partition_hist);
+  std::shared_ptr<arrow::Array> array;
+  CONCAT_CHUNKED_ARRAY(idx_col, array)
+
+  Status status = kern->Partition(array, num_partitions, target_partitions, partition_hist);
+
   auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Hash partition time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Hash partition time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   return status;
 }
+
 
 Status PartitionByHashing(const std::shared_ptr<Table> &table,
                           const std::vector<int32_t> &hash_column_idx,
@@ -121,13 +134,13 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
 
-  std::vector<std::unique_ptr<ArrowPartitionKernel2>> partition_kernels;
+  std::vector<std::unique_ptr<ArrowHashPartitionKernel>> partition_kernels;
   const std::vector<std::shared_ptr<arrow::Field>> &fields = arrow_table->schema()->fields();
   for (int i : hash_column_idx) {
     const std::shared_ptr<arrow::DataType> &type = fields[i]->type();
-    auto kern = CreateHashPartitionKernel(type, num_partitions);
+    auto kern = CreateHashPartitionKernel(type);
     if (kern == nullptr) {
-      LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel");
+      LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel")
     }
     partition_kernels.push_back(std::move(kern));
   }
@@ -139,25 +152,28 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   partition_hist.resize(num_partitions, 0);
 
   // building hash without the last hash_column_idx
+  std::shared_ptr<arrow::Array> array;
   for (size_t i = 0; i < hash_column_idx.size() - 1; i++) {
     auto t11 = std::chrono::high_resolution_clock::now();
-    status = partition_kernels[i]->UpdateHash(arrow_table->column(hash_column_idx[i]), target_partitions);
+
+    CONCAT_CHUNKED_ARRAY(arrow_table->column(hash_column_idx[i]), array)
+
+    status = partition_kernels[i]->UpdateHash(array, target_partitions);
+    RETURN_CYLON_STATUS_IF_FAILED(status)
     auto t12 = std::chrono::high_resolution_clock::now();
 
     LOG(INFO) << "building hash (idx " << hash_column_idx[i] << ") time : "
               << std::chrono::duration_cast<std::chrono::milliseconds>(t12 - t11).count();
-    RETURN_CYLON_STATUS_IF_FAILED(status)
   }
 
-  // build hash from the last hash_column_idx
-  status = partition_kernels.back()->Partition(arrow_table->column(hash_column_idx.back()),
-                                               target_partitions, partition_hist);
-  RETURN_CYLON_STATUS_IF_FAILED(status)
-  auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Partition time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  CONCAT_CHUNKED_ARRAY(arrow_table->column(hash_column_idx.back()), array)
 
-  return Status::OK();
+  // build hash from the last hash_column_idx
+  status = partition_kernels.back()->Partition(array, num_partitions, target_partitions, partition_hist);
+
+  const auto &t2 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "Partition time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  return status;
 }
 
 Status PartitionBySorting(const std::shared_ptr<Table> &table,
@@ -176,20 +192,22 @@ Status PartitionBySorting(const std::shared_ptr<Table> &table,
   if (num_samples == 0) num_samples = std::min((int64_t) (table->Rows() * 0.01), table->Rows());
   if (num_bins == 0) num_bins = num_partitions * 16;
 
-  std::unique_ptr<ArrowPartitionKernel2> kern = CreateRangePartitionKernel(idx_col->type(), num_partitions,
-                                                                           ctx, ascending, num_samples, num_bins);
+  std::unique_ptr<ArrowPartitionKernel> kern = CreateRangePartitionKernel(idx_col->type(),
+                                                                          ctx, ascending, num_samples, num_bins);
   if (kern == nullptr) {
-    LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel");
+    LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel")
   }
 
   // initialize vectors
   target_partitions.resize(idx_col->length(), 0);
   partition_hist.resize(num_partitions, 0);
 
-  auto status = kern->Partition(idx_col, target_partitions, partition_hist);
+  std::shared_ptr<arrow::Array> array;
+  CONCAT_CHUNKED_ARRAY(idx_col, array)
+
+  const auto &status = kern->Partition(array, num_partitions, target_partitions, partition_hist);
   auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Sort partition time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Sort partition time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   return status;
 }
 

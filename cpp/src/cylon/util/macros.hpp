@@ -24,6 +24,11 @@
     return status; \
   };
 
+#define LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(status) \
+  if (!status.is_ok()) { \
+    LOG(ERROR) << status.get_msg() ; \
+    return status; \
+  };
 
 #define RETURN_CYLON_STATUS_IF_ARROW_FAILED(status) \
   if (!status.ok()) { \

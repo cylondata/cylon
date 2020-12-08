@@ -156,7 +156,7 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
   using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
 
   explicit BinaryArraySplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {
-    std::function<>
+//    std::function<>
   }
 
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,

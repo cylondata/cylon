@@ -33,161 +33,266 @@
 
 namespace cylon {
 
-class ArrowPartitionKernel {
+template<typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+static inline constexpr bool if_power2(T v) {
+  return v && !(v & (v - 1));
+}
+
+class ArrowPartitionKernel { // todo: change this
  public:
-  explicit ArrowPartitionKernel(
-      arrow::MemoryPool *pool) : pool_(pool) {}
+  virtual ~ArrowPartitionKernel() = default;
 
-  /**
-   * We partition the table and return the indexes as an array
-   * @param ctx
-   * @param values
-   * @param out
-   * @return
-   */
-  virtual int Partition(const std::shared_ptr<arrow::Array> &values,
-                        const std::vector<int> &targets,
-                        std::vector<int64_t> *partitions,
-                        std::vector<uint32_t> &counts) = 0;
+  virtual Status Partition(const std::shared_ptr<arrow::Array> &idx_col,
+                           uint32_t num_partitions,
+                           std::vector<uint32_t> &target_partitions,
+                           std::vector<uint32_t> &partition_histogram) = 0;
 
-  virtual uint32_t ToHash(const std::shared_ptr<arrow::Array> &values,
-                          int64_t index) = 0;
- protected:
-  arrow::MemoryPool *pool_;
 };
 
-class FixedSizeBinaryHashPartitionKernel : public ArrowPartitionKernel {
+class ArrowHashPartitionKernel : public ArrowPartitionKernel {
  public:
-  explicit FixedSizeBinaryHashPartitionKernel(arrow::MemoryPool *pool) :
-           ArrowPartitionKernel(pool) {}
+  using Partitioner = std::function<uint32_t(uint64_t)>;
+
+  virtual Status UpdateHash(const std::shared_ptr<arrow::Array> &idx_col, std::vector<uint32_t> &partial_hashes) = 0;
+
+  virtual inline uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) = 0;
+
+  static inline Partitioner get_partitioner(uint32_t num_partitions) {
+    if (if_power2(num_partitions)) {
+      return [num_partitions](uint32_t val) {
+        return val & (num_partitions - 1);
+      };
+    } else {
+      return [num_partitions](uint32_t val) {
+        return val % num_partitions;
+      };
+    }
+  }
+};
+
+template<typename ARROW_T, typename = typename std::enable_if<
+    arrow::is_integer_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
+class ModuloPartitionKernel : public ArrowHashPartitionKernel {
+  using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
+  using ARROW_CTYPE = typename arrow::TypeTraits<ARROW_T>::CType;
+
+ public:
+  Status Partition(const std::shared_ptr<arrow::Array> &idx_col,
+                   uint32_t num_partitions,
+                   std::vector<uint32_t> &target_partitions,
+                   std::vector<uint32_t> &partition_histogram) override {
+    if (partition_histogram.size() != num_partitions
+        || target_partitions.size() != (size_t) idx_col->length()) {
+      return Status(Code::Invalid, "target partitions or histogram not initialized!");
+    }
+
+    Partitioner partitioner = get_partitioner(num_partitions);
+    const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(idx_col);
+    for (int64_t i = 0; i < carr->length(); i++) {
+      // update the hash
+      uint32_t pseudo_hash = 31 * target_partitions[i] + static_cast<uint32_t>(carr->Value(i));
+      uint32_t p = partitioner(pseudo_hash);
+      target_partitions[i] = p;
+      partition_histogram[p]++;
+    }
+
+    return Status::OK();
+  }
+
+  Status UpdateHash(const std::shared_ptr<arrow::Array> &idx_col,
+                    std::vector<uint32_t> &partial_hashes) override {
+    if (partial_hashes.size() != (size_t) idx_col->length()) {
+      return Status(Code::Invalid, "partial hashes size != idx col length!");
+    }
+
+    const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(idx_col);
+    for (int64_t i = 0; i < carr->length(); i++) {
+      // for integers, value itself can be its hash
+      partial_hashes[i] = 31 * partial_hashes[i] + static_cast<uint32_t>(carr->Value(i));
+    }
+
+    return Status::OK();
+  }
+
+  inline uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) override {
+    const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(values);
+    return static_cast<uint32_t>(carr->Value(index));
+  }
+};
+
+template<typename ARROW_T, typename = typename std::enable_if<
+    arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
+class NumericHashPartitionKernel : public ArrowHashPartitionKernel {
+  using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
+  using ARROW_CTYPE = typename arrow::TypeTraits<ARROW_T>::CType;
+
+ public:
+  Status Partition(const std::shared_ptr<arrow::Array> &idx_col,
+                   uint32_t num_partitions,
+                   std::vector<uint32_t> &target_partitions,
+                   std::vector<uint32_t> &partition_histogram) override {
+    if (partition_histogram.size() != num_partitions
+        || target_partitions.size() != (size_t) idx_col->length()) {
+      return Status(Code::Invalid, "target partitions or histogram not initialized!");
+    }
+
+    Partitioner partitioner = get_partitioner(num_partitions);
+    const int len = sizeof(ARROW_CTYPE);
+    const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(idx_col);
+    for (int64_t i = 0; i < carr->length(); i++) {
+      ARROW_CTYPE val = carr->Value(i);
+      uint32_t hash = 0;
+      util::MurmurHash3_x86_32(&val, len, 0, &hash);
+      hash += 31 * target_partitions[i];
+      uint32_t p = partitioner(hash);
+      target_partitions[i] = p;
+      partition_histogram[p]++;
+    }
+
+    return Status::OK();
+  }
+
+  Status UpdateHash(const std::shared_ptr<arrow::Array> &idx_col,
+                    std::vector<uint32_t> &partial_hashes) override {
+    if (partial_hashes.size() != (size_t) idx_col->length()) {
+      return Status(Code::Invalid, "partial hashes size != idx col length!");
+    }
+    const int len = sizeof(ARROW_CTYPE);
+    const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(idx_col);
+    for (int64_t i = 0; i < carr->length(); i++) {
+      ARROW_CTYPE val = carr->Value(i);
+      uint32_t hash = 0;
+      util::MurmurHash3_x86_32(&val, len, 0, &hash);
+      hash += 31 * partial_hashes[i];
+      partial_hashes[i] = hash;
+    }
+    return Status::OK();
+  }
 
   uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) override {
-    auto reader = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
     if (values->IsNull(index)) {
       return 0;
     } else {
-      auto val = reader->GetValue(index);
+      auto reader = std::static_pointer_cast<ARROW_ARRAY_T>(values);
+      ARROW_CTYPE lValue = reader->Value(index);
       uint32_t hash = 0;
-      uint32_t seed = 0;
-      // do the hash as we know the bit width
-      cylon::util::MurmurHash3_x86_32(val, reader->byte_width(), seed, &hash);
+      cylon::util::MurmurHash3_x86_32(&lValue, sizeof(ARROW_CTYPE), 0, &hash);
       return hash;
     }
   }
-
-  int Partition(const std::shared_ptr<arrow::Array> &values,
-                const std::vector<int> &targets,
-                std::vector<int64_t> *partitions,
-                std::vector<uint32_t> &counts) override {
-    auto reader = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
-    int64_t kI = reader->length();
-    unsigned long target_size = targets.size();
-    int32_t byte_width = reader->byte_width();
-    for (int64_t i = 0; i < kI; i++) {
-      auto lValue = reader->GetValue(i);
-      uint32_t hash = 0;
-      uint32_t seed = 0;
-      // do the hash as we know the bit width
-      cylon::util::MurmurHash3_x86_32(lValue, byte_width, seed, &hash);
-      int kX = targets.at(hash % target_size);
-      partitions->push_back(kX);
-      counts[kX]++;
-    }
-    // now build the
-    return 0;
-  }
 };
 
-class BinaryHashPartitionKernel : public ArrowPartitionKernel {
+class FixedSizeBinaryHashPartitionKernel : public ArrowHashPartitionKernel {
  public:
-  explicit BinaryHashPartitionKernel(arrow::MemoryPool *pool) : ArrowPartitionKernel(pool) {}
-
   uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) override {
-    auto reader = std::static_pointer_cast<arrow::BinaryArray>(values);
     if (values->IsNull(index)) {
       return 0;
     } else {
-      int length = 0;
-      auto val = reader->GetValue(index, &length);
+      auto reader = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
       uint32_t hash = 0;
-      uint32_t seed = 0;
-      // do the hash as we know the bit width
-      cylon::util::MurmurHash3_x86_32(val, length, seed, &hash);
+      cylon::util::MurmurHash3_x86_32(reader->GetValue(index), reader->byte_width(), 0, &hash);
       return hash;
     }
   }
 
-  int Partition(const std::shared_ptr<arrow::Array> &values,
-                const std::vector<int> &targets,
-                std::vector<int64_t> *partitions,
-                std::vector<uint32_t> &counts) override {
-    auto reader = std::static_pointer_cast<arrow::BinaryArray>(values);
-    int64_t reader_len = reader->length();
-    unsigned long target_size = targets.size();
-    for (int64_t i = 0; i < reader_len; i++) {
-      int length = 0;
-      auto lValue = reader->GetValue(i, &length);
-      uint32_t hash = 0;
-      uint32_t seed = 0;
-      // do the hash as we know the bit width
-      cylon::util::MurmurHash3_x86_32(lValue, length, seed, &hash);
-      int kX = targets.at(hash % target_size);
-      partitions->push_back(kX);
-      counts[kX]++;
+  Status Partition(const std::shared_ptr<arrow::Array> &idx_col,
+                   uint32_t num_partitions,
+                   std::vector<uint32_t> &target_partitions,
+                   std::vector<uint32_t> &partition_histogram) override {
+    if (partition_histogram.size() != num_partitions
+        || target_partitions.size() != (size_t) idx_col->length()) {
+      return Status(Code::Invalid, "target partitions or histogram not initialized!");
     }
-    // now build the
-    return 0;
+
+    Partitioner partitioner = get_partitioner(num_partitions);
+    const auto &carr = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(idx_col);
+    const int32_t byte_width = carr->byte_width();
+    for (int64_t i = 0; i < carr->length(); i++) {
+      uint32_t hash = 0;
+      util::MurmurHash3_x86_32(carr->GetValue(i), byte_width, 0, &hash);
+      hash += 31 * target_partitions[i];
+      uint32_t p = partitioner(hash);
+      target_partitions[i] = p;
+      partition_histogram[p]++;
+    }
+
+    return Status::OK();
+  }
+
+  Status UpdateHash(const std::shared_ptr<arrow::Array> &idx_col, std::vector<uint32_t> &partial_hashes) override {
+    if (partial_hashes.size() != (size_t) idx_col->length()) {
+      return Status(Code::Invalid, "partial hashes size != idx col length!");
+    }
+
+    const auto &carr = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(idx_col);
+    const int32_t byte_width = carr->byte_width();
+    for (int64_t i = 0; i < carr->length(); i++) {
+      uint32_t hash = 0;
+      util::MurmurHash3_x86_32(carr->GetValue(i), byte_width, 0, &hash);
+      hash += 31 * partial_hashes[i];
+      partial_hashes[i] = hash;
+    }
+
+    return Status::OK();
   }
 };
 
-template<typename TYPE>
-class NumericHashPartitionKernel : public ArrowPartitionKernel {
-  using CTYPE = typename arrow::TypeTraits<TYPE>::CType;
+class BinaryHashPartitionKernel : public ArrowHashPartitionKernel {
  public:
-  explicit NumericHashPartitionKernel(arrow::MemoryPool *pool) : ArrowPartitionKernel(pool) {}
-
-  uint32_t ToHash(const std::shared_ptr<arrow::Array> &values,
-                  int64_t index) override {
-    auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-    auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
-    int bitWidth = type->bit_width();
+  uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) override {
     if (values->IsNull(index)) {
       return 0;
     } else {
-      CTYPE lValue = reader->Value(index);
-
+      auto reader = std::static_pointer_cast<arrow::BinaryArray>(values);
+      int length = 0;
+      const uint8_t *val = reader->GetValue(index, &length);
       uint32_t hash = 0;
-      uint32_t seed = 0;
-      void *val = (void *) &(lValue);
-      // do the hash as we know the bit width
-      cylon::util::MurmurHash3_x86_32(val, bitWidth / 8, seed, &hash);
+      cylon::util::MurmurHash3_x86_32(val, length, 0, &hash);
       return hash;
     }
-
   }
 
-  int Partition(const std::shared_ptr<arrow::Array> &values,
-                const std::vector<int> &targets,
-                std::vector<int64_t> *partitions,
-                std::vector<uint32_t> &counts) override {
-    auto reader = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-    auto type = std::static_pointer_cast<arrow::FixedWidthType>(values->type());
-    int bitWidth = type->bit_width() / 8;
-    unsigned long target_size = targets.size();
-    int64_t length = reader->length();
-    for (int64_t i = 0; i < length; i++) {
-      auto lValue = reader->Value(i);
-      void *val = (void *) &(lValue);
-      uint32_t hash = 0;
-      uint32_t seed = 0;
-      // do the hash as we know the bit width
-      cylon::util::MurmurHash3_x86_32(val, bitWidth, seed, &hash);
-      int kX = targets[hash % target_size];
-      partitions->push_back(kX);
-      counts[kX]++;
+  Status Partition(const std::shared_ptr<arrow::Array> &idx_col,
+                   uint32_t num_partitions,
+                   std::vector<uint32_t> &target_partitions,
+                   std::vector<uint32_t> &partition_histogram) override {
+    if (partition_histogram.size() != num_partitions
+        || target_partitions.size() != (size_t) idx_col->length()) {
+      return Status(Code::Invalid, "target partitions or histogram not initialized!");
     }
-    // now build the
-    return 0;
+
+    Partitioner partitioner = get_partitioner(num_partitions);
+    const auto &carr = std::static_pointer_cast<arrow::BinaryArray>(idx_col);
+    for (int64_t i = 0; i < carr->length(); i++) {
+      int32_t byte_width = 0;
+      uint32_t hash = 0;
+      const uint8_t *val = carr->GetValue(i, &byte_width);
+      util::MurmurHash3_x86_32(val, byte_width, 0, &hash);
+      hash += 31 * target_partitions[i];
+      uint32_t p = partitioner(hash);
+      target_partitions[i] = p;
+      partition_histogram[p]++;
+    }
+
+    return Status::OK();
+  }
+
+  Status UpdateHash(const std::shared_ptr<arrow::Array> &idx_col, std::vector<uint32_t> &partial_hashes) override {
+    if (partial_hashes.size() != (size_t) idx_col->length()) {
+      return Status(Code::Invalid, "partial hashes size != idx col length!");
+    }
+
+    const auto &carr = std::static_pointer_cast<arrow::BinaryArray>(idx_col);
+    for (int64_t i = 0; i < carr->length(); i++) {
+      int32_t byte_width = 0;
+      uint32_t hash = 0;
+      const uint8_t *val = carr->GetValue(i, &byte_width);
+      util::MurmurHash3_x86_32(val, byte_width, 0, &hash);
+      hash += 31 * partial_hashes[i];
+      partial_hashes[i] = hash;
+    }
+
+    return Status::OK();
   }
 };
 
@@ -205,252 +310,94 @@ using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType>
 using StringHashPartitioner = BinaryHashPartitionKernel;
 using BinaryHashPartitioner = BinaryHashPartitionKernel;
 
-std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
-                                                         const std::shared_ptr<arrow::Array> &values);
+//std::unique_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
+//                                                         const std::shared_ptr<arrow::Array> &values);
+//
+//std::unique_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
+//                                                         const std::shared_ptr<arrow::DataType> &data_type);
 
-std::shared_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
-                                                         const std::shared_ptr<arrow::DataType> &data_type);
+std::unique_ptr<ArrowHashPartitionKernel> CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type);
 
-cylon::Status HashPartitionArray(arrow::MemoryPool *pool,
-                                 const std::shared_ptr<arrow::Array> &values,
-                                 const std::vector<int> &targets,
-                                 std::vector<int64_t> *outPartitions,
-                                 std::vector<uint32_t> &counts);
 
-cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
-                                  const std::vector<std::shared_ptr<arrow::Array>> &values,
-                                  int64_t length,
-                                  const std::vector<int> &targets,
-                                  std::vector<int64_t> *outPartitions,
-                                  std::vector<uint32_t> &counts);
+//cylon::Status HashPartitionArray(arrow::MemoryPool *pool,
+//                                 const std::shared_ptr<arrow::Array> &values,
+//                                 const std::vector<int> &targets,
+//                                 std::vector<int64_t> *outPartitions,
+//                                 std::vector<uint32_t> &counts);
+//
+//cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
+//                                  const std::vector<std::shared_ptr<arrow::Array>> &values,
+//                                  int64_t length,
+//                                  const std::vector<int> &targets,
+//                                  std::vector<int64_t> *outPartitions,
+//                                  std::vector<uint32_t> &counts);
 
 class RowHashingKernel {
  private:
-  std::vector<std::shared_ptr<ArrowPartitionKernel>> hash_kernels;
+  std::vector<std::unique_ptr<ArrowHashPartitionKernel>> hash_kernels;
  public:
-  RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &vector,
-                   arrow::MemoryPool *memory_pool);
+  explicit RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields);
+
   int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
 };
 
-class ArrowPartitionKernel2 { // todo: change this
- public:
-  explicit ArrowPartitionKernel2(uint32_t num_partitions) : num_partitions(num_partitions) {}
-  virtual ~ArrowPartitionKernel2() = default;
-
-  virtual Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
-                           std::vector<uint32_t> &target_partitions,
-                           std::vector<uint32_t> &partition_histogram) = 0;
-
-  virtual Status UpdateHash(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
-                            std::vector<uint32_t> &partial_hashes) = 0;
-
-  const uint32_t num_partitions;
-};
-
-template<typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
-static inline bool if_power2(T v) {
-  return v && !(v & (v - 1));
-}
-
-struct WithDefaultPartitioner {
- public:
-  virtual ~WithDefaultPartitioner() = default;
-
-  std::function<uint32_t(uint64_t)> partitioner;
-
-  explicit WithDefaultPartitioner(uint32_t num_partitions) {
-    if (if_power2(num_partitions)) {
-      partitioner = [num_partitions](uint32_t val) {
-        return val & (num_partitions - 1);
-      };
-    } else {
-      partitioner = [num_partitions](uint32_t val) {
-        return val % num_partitions;
-      };
-    }
-  };
-};
-
-template<typename ARROW_T, typename = typename std::enable_if<
-    arrow::is_integer_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
-class ModuloPartitionKernel : public ArrowPartitionKernel2, public WithDefaultPartitioner {
-  using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
-  using ARROW_CTYPE = typename arrow::TypeTraits<ARROW_T>::CType;
-
- public:
-  explicit ModuloPartitionKernel(uint32_t num_partitions)
-      : ArrowPartitionKernel2(num_partitions), WithDefaultPartitioner(num_partitions) {
-  }
-
-  Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
-                   std::vector<uint32_t> &target_partitions,
-                   std::vector<uint32_t> &partition_histogram) override {
-    if (partition_histogram.size() != num_partitions
-        || target_partitions.size() != (size_t) idx_col->length()) {
-      return Status(Code::Invalid, "target partitions or histogram not initialized!");
-    }
-
-    size_t offset = 0;
-    for (const auto &arr: idx_col->chunks()) {
-      const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
-      for (int64_t i = 0; i < carr->length(); i++, offset++) {
-        // update the hash
-        uint32_t hash = 31 * target_partitions[offset] + static_cast<uint32_t>(carr->Value(i));
-        uint32_t p = partitioner(hash);
-        target_partitions[offset] = p;
-        partition_histogram[p]++;
-      }
-    }
-    return Status::OK();
-  }
-
-  Status UpdateHash(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
-                    std::vector<uint32_t> &partial_hashes) override {
-    if (partial_hashes.size() != (size_t) idx_col->length()) {
-      return Status(Code::Invalid, "partial hashes size != idx col length!");
-    }
-
-    size_t offset = 0;
-    for (const auto &arr: idx_col->chunks()) {
-      const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
-      for (int64_t i = 0; i < carr->length(); i++, offset++) {
-        // for integers, value itself can be its hash
-        partial_hashes[offset] =
-            31 * partial_hashes[offset] + static_cast<uint32_t>(carr->Value(i));
-      }
-    }
-    return Status::OK();
-  }
-};
-
-template<typename ARROW_T, typename = typename std::enable_if<
-    arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
-class HashPartitionKernel : public ArrowPartitionKernel2, public WithDefaultPartitioner {
-  using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
-  using ARROW_CTYPE = typename arrow::TypeTraits<ARROW_T>::CType;
-
- public:
-  explicit HashPartitionKernel(uint32_t num_partitions) :
-      ArrowPartitionKernel2(num_partitions), WithDefaultPartitioner(num_partitions) {
-  }
-
-  Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
-                   std::vector<uint32_t> &target_partitions,
-                   std::vector<uint32_t> &partition_histogram) override {
-    if (partition_histogram.size() != num_partitions
-        || target_partitions.size() != (size_t) idx_col->length()) {
-      return Status(Code::Invalid, "target partitions or histogram not initialized!");
-    }
-
-    const int len = sizeof(ARROW_CTYPE);
-    size_t offset = 0;
-    for (const auto &arr: idx_col->chunks()) {
-      const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
-      for (int64_t i = 0; i < carr->length(); i++, offset++) {
-        ARROW_CTYPE val = carr->Value(i);
-        uint32_t hash = 0;
-        util::MurmurHash3_x86_32(&val, len, 0, &hash);
-        hash += 31 * target_partitions[offset];
-        uint32_t p = partitioner(hash);
-        target_partitions[offset] = p;
-        partition_histogram[p]++;
-      }
-    }
-
-    return Status::OK();
-  }
-
-  Status UpdateHash(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
-                    std::vector<uint32_t> &partial_hashes) override {
-    if (partial_hashes.size() != (size_t) idx_col->length()) {
-      return Status(Code::Invalid, "partial hashes size != idx col length!");
-    }
-    const int len = sizeof(ARROW_CTYPE);
-    size_t offset = 0;
-    for (const auto &arr: idx_col->chunks()) {
-      const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
-      for (int64_t i = 0; i < carr->length(); i++, offset++) {
-        ARROW_CTYPE val = carr->Value(i);
-        uint32_t hash = 0;
-        util::MurmurHash3_x86_32(&val, len, 0, &hash);
-        hash += 31 * partial_hashes[offset];
-        partial_hashes[offset] = hash;
-      }
-    }
-    return Status::OK();
-  }
-};
-
-std::unique_ptr<ArrowPartitionKernel2> CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
-                                                                 uint32_t num_partitions);
 
 
 template<typename ARROW_T, typename = typename std::enable_if<
     arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
-class RangePartitionKernel : public ArrowPartitionKernel2 {
+class RangePartitionKernel : public ArrowPartitionKernel {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using ARROW_SCALAR_T = typename arrow::TypeTraits<ARROW_T>::ScalarType;
   using ARROW_C_T = typename arrow::TypeTraits<ARROW_T>::CType;
 
  public:
-  RangePartitionKernel(uint32_t num_partitions,
-                       std::shared_ptr<CylonContext> &ctx,
+  RangePartitionKernel(std::shared_ptr<CylonContext> &ctx,
                        bool ascending,
                        uint64_t num_samples,
-                       uint32_t num_bins) : ArrowPartitionKernel2(num_partitions),
+                       uint32_t num_bins) : ArrowPartitionKernel(),
                                             ascending(ascending),
                                             num_bins(num_bins),
                                             num_samples(num_samples),
                                             ctx(ctx) {
   };
 
-  Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
+  Status Partition(const std::shared_ptr<arrow::Array> &idx_col,
+                   uint32_t num_partitions,
                    std::vector<uint32_t> &target_partitions,
                    std::vector<uint32_t> &partition_histogram) override {
-    auto status = build_bin_to_partition(idx_col);
+    auto status = build_bin_to_partition(idx_col, num_partitions);
     RETURN_CYLON_STATUS_IF_FAILED(status)
 
     // resize vectors
     partition_histogram.resize(num_partitions, 0);
     target_partitions.resize(idx_col->length());
 
-    size_t offset = 0;
-    for (const auto &chunk:idx_col->chunks()) {
-      const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(chunk);
-      for (int64_t i = 0; i < carr->length(); i++, offset++) {
-        ARROW_C_T val = carr->Value(i);
-        uint32_t p = ascending ?
-                     bin_to_partition[get_bin_pos(val)] : num_partitions - 1 - bin_to_partition[get_bin_pos(val)];
-        target_partitions[offset] = p;
-        partition_histogram[p]++;
-      }
+    const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(idx_col);
+    for (int64_t i = 0; i < carr->length(); i++) {
+      ARROW_C_T val = carr->Value(i);
+      uint32_t p = ascending ?
+                   bin_to_partition[get_bin_pos(val)] : num_partitions - 1 - bin_to_partition[get_bin_pos(val)];
+      target_partitions[i] = p;
+      partition_histogram[p]++;
     }
     return Status::OK();
   }
 
-  Status UpdateHash(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
-                    std::vector<uint32_t> &target_partitions) override {
-    return Status(Code::Invalid, "Range partition does not build hash");
-  }
-
  private:
-  Status inline build_bin_to_partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col) {
+  Status inline build_bin_to_partition(const std::shared_ptr<arrow::Array> &idx_col, uint32_t num_partitions) {
     const std::shared_ptr<DataType> &data_type = tarrow::ToCylonType(idx_col->type());
-    std::shared_ptr<arrow::ChunkedArray> sampled_chunk_array;
+    std::shared_ptr<arrow::Array> sampled_array;
 
     if ((uint64_t) idx_col->length() == num_samples) { // if len == num_samples, dont sample, just use idx col as it is!
-      sampled_chunk_array = idx_col;
+      sampled_array = idx_col;
     } else { // else, sample idx_col for num_samples
-      std::shared_ptr<arrow::Array> sampled_array;
       auto a_status = util::SampleArray(idx_col, num_samples, sampled_array);
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(a_status)
-      sampled_chunk_array = std::make_shared<arrow::ChunkedArray>(sampled_array); // create a single chunk array
     }
 
     // calculate minmax of the sample
     std::shared_ptr<compute::Result> minmax;
-    Status status = compute::MinMax(ctx, sampled_chunk_array, data_type, minmax);
+    Status status = compute::MinMax(ctx, sampled_array, data_type, minmax);
     RETURN_CYLON_STATUS_IF_FAILED(status)
 
     const auto &struct_scalar = minmax->GetResult().scalar_as<arrow::StructScalar>();
@@ -465,15 +412,11 @@ class RangePartitionKernel : public ArrowPartitionKernel2 {
 
     // create sample histogram
     std::vector<uint64_t> local_counts(num_bins + 2, 0);
-    for (const auto &chunk:sampled_chunk_array->chunks()) {
-      const std::shared_ptr<ARROW_ARRAY_T> &casted_arr = std::static_pointer_cast<ARROW_ARRAY_T>(chunk);
-      for (int64_t i = 0; i < casted_arr->length(); i++) {
-        ARROW_C_T val = casted_arr->Value(i);
-        local_counts[get_bin_pos(val)]++;
-      }
+    const std::shared_ptr<ARROW_ARRAY_T> &casted_arr = std::static_pointer_cast<ARROW_ARRAY_T>(sampled_array);
+    for (int64_t i = 0; i < casted_arr->length(); i++) {
+      ARROW_C_T val = casted_arr->Value(i);
+      local_counts[get_bin_pos(val)]++;
     }
-
-    sampled_chunk_array.reset();
 
     // all reduce local sample histograms
     std::vector<uint64_t> global_counts, *global_counts_ptr;
@@ -537,12 +480,11 @@ class RangePartitionKernel : public ArrowPartitionKernel2 {
  * @param num_bins
  * @return
  */
-std::unique_ptr<ArrowPartitionKernel2> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
-                                                                  uint32_t num_partitions,
-                                                                  std::shared_ptr<CylonContext> &ctx,
-                                                                  bool ascending,
-                                                                  uint64_t num_samples,
-                                                                  uint32_t num_bins);
+std::unique_ptr<ArrowPartitionKernel> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
+                                                                 std::shared_ptr<CylonContext> &ctx,
+                                                                 bool ascending,
+                                                                 uint64_t num_samples,
+                                                                 uint32_t num_bins);
 
 }  // namespace cylon
 

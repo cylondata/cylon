@@ -230,9 +230,9 @@ arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray>& cArr,
 }
 
 template<typename TYPE>
-static arrow::Status sample_array(const std::shared_ptr<arrow::ChunkedArray> &array,
-                                  uint64_t num_samples,
-                                  std::shared_ptr<arrow::Array> &out) {
+static inline arrow::Status sample_array(const std::shared_ptr<arrow::Array> &array,
+                                         uint64_t num_samples,
+                                         std::shared_ptr<arrow::Array> &out) {
   using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
 
@@ -240,20 +240,11 @@ static arrow::Status sample_array(const std::shared_ptr<arrow::ChunkedArray> &ar
   std::mt19937_64 gen(rd());
   std::uniform_int_distribution<int64_t> distrib(0, array->length() - 1);
 
-  std::shared_ptr<arrow::Array> concat_arr;
-  if (array->num_chunks() > 1) {
-    const arrow::Result<std::shared_ptr<arrow::Array>> &res = arrow::Concatenate(array->chunks());
-    RETURN_ARROW_STATUS_IF_FAILED(res.status())
-    concat_arr = res.ValueOrDie();
-  } else {
-    concat_arr = array->chunk(0);
-  }
-
   ARROW_BUILDER_T builder;
   auto a_status = builder.Reserve(num_samples);
   RETURN_ARROW_STATUS_IF_FAILED(a_status)
 
-  auto casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(concat_arr);
+  auto casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
   for (uint64_t i = 0; i < num_samples; i++) {
     int64_t idx = distrib(gen);
     builder.UnsafeAppend(casted_array->Value(idx));
@@ -270,6 +261,18 @@ arrow::Status SampleTable(std::shared_ptr<arrow::Table> &table,
 }
 
 arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &arr,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out) {
+  if (arr->num_chunks() > 1) {
+    const arrow::Result<std::shared_ptr<arrow::Array>> &res = arrow::Concatenate(arr->chunks());
+    RETURN_ARROW_STATUS_IF_FAILED(res.status())
+    return SampleArray(res.ValueOrDie(), num_samples, out);
+  } else {
+    return SampleArray(arr->chunk(0), num_samples, out);
+  }
+}
+
+arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &arr,
                           uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out) {
   switch (arr->type()->id()) {

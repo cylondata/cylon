@@ -51,6 +51,10 @@ arrow::Status SampleTable(std::shared_ptr<arrow::Table> &table,
                           uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out);
 
+arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out);
+
 arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &array,
                           uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out);
