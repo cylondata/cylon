@@ -35,9 +35,8 @@ static inline Status split_impl(const std::shared_ptr<Table> &table,
   std::vector<arrow::ArrayVector> data_arrays(num_partitions); // size num_partitions
 
   for (const auto &col:arrow_table->columns()) {
-    std::shared_ptr<ArrowArraySplitKernel> splitKernel;
-    status = CreateSplitter(col->type(), pool, &splitKernel);
-    RETURN_CYLON_STATUS_IF_FAILED(status)
+    std::unique_ptr<ArrowArraySplitKernel> splitKernel = CreateSplitter(col->type(), pool);
+    if (splitKernel == nullptr) return Status(Code::NotImplemented, "splitter not implemented");
 
     std::vector<std::shared_ptr<arrow::Array>> split_arrays;
     status = splitKernel->Split(col, num_partitions, target_partitions, partition_hist, split_arrays);

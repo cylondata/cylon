@@ -128,7 +128,6 @@ class ArrowHashJoinKernel {
 
     for (int64_t i = 0; i < reader0->length(); i++) {
       auto val = reader0->GetView(i);
-//      auto val = (CTYPE) lValue;
       smaller_idx_map.insert(std::make_pair(val, i));
       smaller_key_set.emplace(val);
     }

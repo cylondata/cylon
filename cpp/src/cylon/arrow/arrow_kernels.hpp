@@ -174,9 +174,8 @@ using HalfFloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::HalfFloatType
 using FloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::FloatType>;
 using DoubleArraySplitter = ArrowArrayNumericSplitKernel<arrow::DoubleType>;
 
-cylon::Status CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
-                             arrow::MemoryPool *pool,
-                             std::shared_ptr<ArrowArraySplitKernel> *out);
+std::unique_ptr<ArrowArraySplitKernel> CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
+                                                      arrow::MemoryPool *pool);
 
 class ArrowArraySortKernel {
  public:
@@ -197,7 +196,8 @@ class ArrowArraySortKernel {
   arrow::MemoryPool *pool_;
 };
 
-template<typename TYPE>
+template<typename TYPE, typename = typename std::enable_if<
+    arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value>::type>
 class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
  public:
   using T = typename TYPE::c_type;
@@ -205,9 +205,9 @@ class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
   explicit ArrowArrayNumericSortKernel(arrow::MemoryPool *pool) : ArrowArraySortKernel(pool) {}
 
   int Sort(std::shared_ptr<arrow::Array> values,
-		   std::shared_ptr<arrow::Array> *offsets) override {
-	auto array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-	const T *left_data = array->raw_values();
+           std::shared_ptr<arrow::Array> *offsets) override {
+    auto array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
+    const T *left_data = array->raw_values();
 	int64_t buf_size = values->length() * sizeof(uint64_t);
 
     arrow::Result<std::unique_ptr<arrow::Buffer>> result = AllocateBuffer(buf_size + 1, pool_);
@@ -264,7 +264,8 @@ class ArrowArrayInplaceSortKernel {
   arrow::MemoryPool *pool_;
 };
 
-template<typename TYPE>
+template<typename TYPE, typename = typename std::enable_if<
+    arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value>::type>
 class ArrowArrayInplaceNumericSortKernel : public ArrowArrayInplaceSortKernel {
  public:
   using T = typename TYPE::c_type;

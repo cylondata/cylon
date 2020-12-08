@@ -21,39 +21,24 @@
 #include <memory>
 
 namespace cylon {
-cylon::Status CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
-                             arrow::MemoryPool *pool,
-                             std::shared_ptr<ArrowArraySplitKernel> *out) {
+std::unique_ptr<ArrowArraySplitKernel> CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
+                                                      arrow::MemoryPool *pool) {
   switch (type->id()) {
-    case arrow::Type::UINT8:*out = std::make_shared<UInt8ArraySplitter>(pool);
-      break;
-    case arrow::Type::INT8:*out = std::make_shared<Int8ArraySplitter>(pool);
-      break;
-    case arrow::Type::UINT16:*out = std::make_shared<UInt16ArraySplitter>(pool);
-      break;
-    case arrow::Type::INT16:*out = std::make_shared<Int16ArraySplitter>(pool);
-      break;
-    case arrow::Type::UINT32:*out = std::make_shared<UInt32ArraySplitter>(pool);
-      break;
-    case arrow::Type::INT32:*out = std::make_shared<Int32ArraySplitter>(pool);
-      break;
-    case arrow::Type::UINT64:*out = std::make_shared<UInt64ArraySplitter>(pool);
-      break;
-    case arrow::Type::INT64:*out = std::make_shared<Int64ArraySplitter>(pool);
-      break;
-    case arrow::Type::FLOAT:*out = std::make_shared<FloatArraySplitter>(pool);
-      break;
-    case arrow::Type::DOUBLE:*out = std::make_shared<DoubleArraySplitter>(pool);
-      break;
-    case arrow::Type::FIXED_SIZE_BINARY:*out = std::make_shared<FixedBinaryArraySplitKernel>(pool);
-      break;
-    case arrow::Type::STRING:*out = std::make_shared<BinaryArraySplitKernel<arrow::StringType>>(pool);
-      break;
-    case arrow::Type::BINARY:*out = std::make_shared<BinaryArraySplitKernel<arrow::BinaryType>>(pool);
-      break;
-    default:LOG_AND_RETURN_ERROR(Code::NotImplemented, std::string("Un-known type " + type->name()))
+    case arrow::Type::UINT8:return std::make_unique<UInt8ArraySplitter>(pool);
+    case arrow::Type::INT8:return std::make_unique<Int8ArraySplitter>(pool);
+    case arrow::Type::UINT16:return std::make_unique<UInt16ArraySplitter>(pool);
+    case arrow::Type::INT16:return std::make_unique<Int16ArraySplitter>(pool);
+    case arrow::Type::UINT32:return std::make_unique<UInt32ArraySplitter>(pool);
+    case arrow::Type::INT32:return std::make_unique<Int32ArraySplitter>(pool);
+    case arrow::Type::UINT64:return std::make_unique<UInt64ArraySplitter>(pool);
+    case arrow::Type::INT64:return std::make_unique<Int64ArraySplitter>(pool);
+    case arrow::Type::FLOAT:return std::make_unique<FloatArraySplitter>(pool);
+    case arrow::Type::DOUBLE:return std::make_unique<DoubleArraySplitter>(pool);
+    case arrow::Type::FIXED_SIZE_BINARY:return std::make_unique<FixedBinaryArraySplitKernel>(pool);
+    case arrow::Type::STRING:return std::make_unique<BinaryArraySplitKernel<arrow::StringType>>(pool);
+    case arrow::Type::BINARY:return std::make_unique<BinaryArraySplitKernel<arrow::BinaryType>>(pool);
+    default: return nullptr;
   }
-  return cylon::Status::OK();
 }
 
 Status FixedBinaryArraySplitKernel::Split(const std::shared_ptr<arrow::ChunkedArray> &values,
