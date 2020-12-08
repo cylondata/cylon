@@ -772,7 +772,6 @@ cdef class Table:
     def to_arrow(self) -> pa.Table:
         '''
          Creating PyArrow Table from PyCylon table
-         :param self: PyCylon Table
          :return: PyArrow Table
          '''
         cdef shared_ptr[CArrowTable] converted_tb

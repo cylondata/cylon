@@ -195,6 +195,9 @@ Creating a PyCylon table from Pandas DataFrame
 
 ### To a PyArrow Table
 
+Creating PyArrow Table from PyCylon table
+         Return: PyArrow Table
+
 ```python
 >>> tb.to_arrow()
 pyarrow.Table
@@ -232,6 +235,9 @@ to `False`.
 ```
 
 ### To Dictionary
+
+Creating a dictionary from PyCylon table
+        Returns: dict object
 
 ```python
 >>> tb.to_pydict()
@@ -337,9 +343,14 @@ Creating a csv file with PyCylon table data
 
 ### Join
 
-1. Join type can be : `join_type` => 'left', 'right', 'inner', 'outer'
-2. Join algorithm can be : `algorithm` => 'hash', 'sort'
-3. Join on, 'on' when common column is there, otherwise 'left_on' and 'right_on'
+Joins two PyCylon tables
+        :param table: PyCylon table on which the join is performed (becomes the left table)
+        :param join_type: Join Type as str ["inner", "left", "right", "outer"]
+        :param algorithm: Join Algorithm as str ["hash", "sort"]
+        :kwargs left_on: Join column of the left table as List[int] or List[str], right_on:
+        Join column of the right table as List[int] or List[str], on: Join column in common with
+        both tables as a List[int] or List[str].
+        Return: Joined PyCylon table
 
 Note: The print methods are work in progress to provide similar output as Pandas
 
