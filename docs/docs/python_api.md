@@ -1,6 +1,6 @@
 ---
-id: python_table_docs
-title: PyCylon Table Docs
+id: python_api_docs
+title: PyCylon API Docs
 ---
 
 ## Imports
