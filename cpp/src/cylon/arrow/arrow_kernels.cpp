@@ -56,95 +56,44 @@ cylon::Status CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
   return cylon::Status::OK();
 }
 
-int FixedBinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,
-                                       const std::vector<int64_t> &partitions,
-                                       const std::vector<int32_t> &targets,
-                                       std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-                                       std::vector<uint32_t> &counts) {
-  auto reader = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
-  std::unordered_map<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>> builders;
-
-  for (size_t i = 0; i < targets.size(); i++) {
-    int target = targets[i];
-    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b =
-        std::make_shared<arrow::FixedSizeBinaryBuilder>(values->type(), pool_);
-    arrow::Status st = b->Reserve(counts[i]);
-    builders.insert(std::pair<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>>(target, b));
-  }
-
-  for (size_t i = 0; i < partitions.size(); i++) {
-    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders[partitions.at(i)];
-    if (b->Append(reader->Value(i)) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
-      return -1;
-    }
-  }
-
-  for (int it : targets) {
-    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders[it];
-    std::shared_ptr<arrow::Array> array;
-    if (b->Finish(&array) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
-      return -1;
-    }
-    out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(it, array));
-  }
-  return 0;
-}
-
 Status FixedBinaryArraySplitKernel::Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-                                          const std::vector<uint32_t> &target_partitions,
                                           uint32_t num_partitions,
+                                          const std::vector<uint32_t> &target_partitions,
                                           const std::vector<uint32_t> &counts,
                                           std::vector<std::shared_ptr<arrow::Array>> &output) {
-  // todo implement this
-  return Status();
-}
-
-/*int BinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,
-                                  const std::vector<int64_t> &partitions,
-                                  const std::vector<int32_t> &targets,
-                                  std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-                                  std::vector<uint32_t> &counts) {
-  auto reader =
-      std::static_pointer_cast<arrow::BinaryArray>(values);
-  std::unordered_map<int, std::shared_ptr<arrow::BinaryBuilder>> builders;
-
-  for (int it : targets) {
-    std::shared_ptr<arrow::BinaryBuilder> b = std::make_shared<arrow::BinaryBuilder>(type_, pool_);
-    builders.insert(std::pair<int, std::shared_ptr<arrow::BinaryBuilder>>(it, b));
+  if ((size_t) values->length() != target_partitions.size()) {
+    return Status(Code::ExecutionError, "values rows != target_partitions length");
   }
 
-  for (size_t i = 0; i < partitions.size(); i++) {
-    std::shared_ptr<arrow::BinaryBuilder> b = builders[partitions.at(i)];
-    int length = 0;
-    const uint8_t *value = reader->GetValue(i, &length);
-    if (b->Append(value, length) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
-      return -1;
+  std::vector<std::unique_ptr<ARROW_BUILDER_T>> builders;
+  builders.reserve(num_partitions);
+  for (uint32_t i = 0; i < num_partitions; i++) {
+    builders.emplace_back(new ARROW_BUILDER_T(values->type(), pool_));
+    const auto &status = builders.back()->Reserve(counts[i]);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+  }
+
+  size_t offset = 0;
+  for (const auto &array:values->chunks()) {
+    std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
+    const int64_t arr_len = array->length();
+    for (int64_t i = 0; i < arr_len; i++, offset++) {
+      const auto &a_status = builders[target_partitions[offset]]->Append(casted_array->Value(i));
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(a_status)
     }
   }
 
-  for (int it : targets) {
-    std::shared_ptr<arrow::BinaryBuilder> b = builders[it];
+  output.reserve(num_partitions);
+  for (uint32_t i = 0; i < num_partitions; i++) {
     std::shared_ptr<arrow::Array> array;
-    if (b->Finish(&array) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
-      return -1;
-    }
-    out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(it, array));
+    const auto &status = builders[i]->Finish(&array);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+    output.push_back(array);
   }
-  return 0;
+
+  return Status::OK();
 }
 
-Status BinaryArraySplitKernel::Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-                                     const std::vector<int32_t> &target_partitions,
-                                     int32_t num_partitions,
-                                     const std::vector<uint32_t> &counts,
-                                     std::vector<std::shared_ptr<arrow::Array>> &output) {
-  // todo implement this
-  return Status();
-}*/
 
 class ArrowStringSortKernel : public ArrowArraySortKernel {
  public:

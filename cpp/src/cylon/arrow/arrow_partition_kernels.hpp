@@ -310,27 +310,8 @@ using DoubleArrayHashPartitioner = NumericHashPartitionKernel<arrow::DoubleType>
 using StringHashPartitioner = BinaryHashPartitionKernel;
 using BinaryHashPartitioner = BinaryHashPartitionKernel;
 
-//std::unique_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
-//                                                         const std::shared_ptr<arrow::Array> &values);
-//
-//std::unique_ptr<ArrowPartitionKernel> GetPartitionKernel(arrow::MemoryPool *pool,
-//                                                         const std::shared_ptr<arrow::DataType> &data_type);
-
 std::unique_ptr<ArrowHashPartitionKernel> CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type);
 
-
-//cylon::Status HashPartitionArray(arrow::MemoryPool *pool,
-//                                 const std::shared_ptr<arrow::Array> &values,
-//                                 const std::vector<int> &targets,
-//                                 std::vector<int64_t> *outPartitions,
-//                                 std::vector<uint32_t> &counts);
-//
-//cylon::Status HashPartitionArrays(arrow::MemoryPool *pool,
-//                                  const std::vector<std::shared_ptr<arrow::Array>> &values,
-//                                  int64_t length,
-//                                  const std::vector<int> &targets,
-//                                  std::vector<int64_t> *outPartitions,
-//                                  std::vector<uint32_t> &counts);
 
 class RowHashingKernel {
  private:
@@ -340,7 +321,6 @@ class RowHashingKernel {
 
   int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
 };
-
 
 
 template<typename ARROW_T, typename = typename std::enable_if<

@@ -200,24 +200,26 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table) {
   return arrow::Status::OK();
 }
 
-arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray>& cArr,
-    const std::shared_ptr<arrow::Field>& field, arrow::MemoryPool *pool,
-                        std::shared_ptr<arrow::ChunkedArray>& out) {
+arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr,
+                        const std::shared_ptr<arrow::Field> &field,
+                        arrow::MemoryPool *pool,
+                        std::shared_ptr<arrow::ChunkedArray> &out) {
   size_t size = cArr->chunks().size();
   std::vector<std::shared_ptr<arrow::Array>> arrays;
   for (size_t arrayIndex = 0; arrayIndex < size; arrayIndex++) {
     std::shared_ptr<arrow::Array> arr = cArr->chunk(arrayIndex);
     std::shared_ptr<arrow::ArrayData> data = arr->data();
     std::vector<std::shared_ptr<arrow::Buffer>> buffers;
+    buffers.reserve(data->buffers.size());
     size_t length = cArr->length();
-    for (const auto& buf : data->buffers) {
-      arrow::Result<std::shared_ptr<arrow::Buffer>> res = buf->CopySlice(0l, buf->size(), pool);
-
-      if (!res.ok()) {
-        LOG(FATAL) << "Insufficient memory";
-        return res.status();
+    for (const auto &buf : data->buffers) {
+      if (buf != nullptr){
+        arrow::Result<std::shared_ptr<arrow::Buffer>> res = buf->CopySlice(0l, buf->size(), pool);
+        RETURN_ARROW_STATUS_IF_FAILED(res.status())
+        buffers.push_back(res.ValueOrDie());
+      } else {
+        buffers.push_back(nullptr);
       }
-      buffers.push_back(res.ValueOrDie());
     }
     // lets send this buffer, we need to send the length at this point
     std::shared_ptr<arrow::ArrayData> new_data = arrow::ArrayData::Make(

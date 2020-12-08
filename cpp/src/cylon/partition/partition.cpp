@@ -40,7 +40,7 @@ static inline Status split_impl(const std::shared_ptr<Table> &table,
     RETURN_CYLON_STATUS_IF_FAILED(status)
 
     std::vector<std::shared_ptr<arrow::Array>> split_arrays;
-    status = splitKernel->Split(col, target_partitions, num_partitions, partition_hist, split_arrays);
+    status = splitKernel->Split(col, num_partitions, target_partitions, partition_hist, split_arrays);
     RETURN_CYLON_STATUS_IF_FAILED(status)
 
     for (size_t i = 0; i < split_arrays.size(); i++) {

@@ -116,6 +116,7 @@ static Status shuffle_table_by_hashing(std::shared_ptr<CylonContext> &ctx,
   status = Split(table, no_of_partitions, outPartitions, counts, partitioned_tables);
   LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(status)
 
+  std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
   // we are going to free if retain is set to false
   if (!table->IsRetain()) {
     table.reset();
@@ -125,13 +126,12 @@ static Status shuffle_table_by_hashing(std::shared_ptr<CylonContext> &ctx,
 
   // define call back to catch the receiving tables
   ArrowCallback arrow_callback =
-      [&received_tables](int source, const std::shared_ptr<arrow::Table> &table, int reference) {
-        received_tables.push_back(table);
+      [&received_tables](int source, const std::shared_ptr<arrow::Table> &table_, int reference) {
+        received_tables.push_back(table_);
         return true;
       };
 
   // doing all to all communication to exchange tables
-  std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, edge_id, arrow_callback, schema);
 
   for (size_t i = 0; i < partitioned_tables.size(); i++) {

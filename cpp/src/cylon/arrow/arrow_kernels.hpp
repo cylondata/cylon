@@ -38,15 +38,9 @@ class ArrowArraySplitKernel {
    * @param out
    * @return
    */
-  virtual int Split(std::shared_ptr<arrow::Array> &values,
-                    const std::vector<int64_t> &partitions,
-                    const std::vector<int32_t> &targets,
-                    std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-                    std::vector<uint32_t> &counts) = 0;
-
   virtual Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-                       const std::vector<uint32_t> &target_partitions,
                        uint32_t num_partitions,
+                       const std::vector<uint32_t> &target_partitions,
                        const std::vector<uint32_t> &counts,
                        std::vector<std::shared_ptr<arrow::Array>> &output) = 0;
 
@@ -54,7 +48,8 @@ class ArrowArraySplitKernel {
   arrow::MemoryPool *pool_;
 };
 
-template<typename TYPE>
+template<typename TYPE, typename = typename std::enable_if<
+    arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value>::type>
 class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
  public:
   explicit ArrowArrayNumericSplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {}
@@ -62,38 +57,9 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
   using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
 
-  int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t> &partitions,
-            const std::vector<int32_t> &targets,
-            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-            std::vector<uint32_t> &counts) override {
-    auto reader = std::static_pointer_cast<ARROW_ARRAY_T>(values);
-    std::vector<std::shared_ptr<ARROW_BUILDER_T>> builders;
-
-    for (size_t i = 0; i < targets.size(); i++) {
-      std::shared_ptr<ARROW_BUILDER_T> b = std::make_shared<ARROW_BUILDER_T>(pool_);
-      b->Reserve(counts[i]);
-      builders.push_back(b);
-    }
-
-    size_t kI = partitions.size();
-    for (size_t i = 0; i < kI; i++) {
-      const std::shared_ptr<ARROW_BUILDER_T> &b = builders[partitions[i]];
-      b->UnsafeAppend(reader->Value(i));
-    }
-
-    for (long target : targets) {
-      const std::shared_ptr<ARROW_BUILDER_T> &b = builders[target];
-      std::shared_ptr<arrow::Array> array;
-      b->Finish(&array);
-      out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(target, array));
-    }
-    return 0;
-  }
-
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-               const std::vector<uint32_t> &target_partitions,
                uint32_t num_partitions,
+               const std::vector<uint32_t> &target_partitions,
                const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override {
 
@@ -113,10 +79,9 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
     for (const auto &array:values->chunks()) {
       std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
       const int64_t arr_len = array->length();
-      for (int64_t i = 0; i < arr_len; i++) {
-        builders[target_partitions[offset + i]]->UnsafeAppend(casted_array->Value(i));
+      for (int64_t i = 0; i < arr_len; i++, offset++) {
+        builders[target_partitions[offset]]->UnsafeAppend(casted_array->Value(i));
       }
-      offset += arr_len;
     }
 
     output.reserve(num_partitions);
@@ -131,20 +96,16 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
   }
 };
 
-// todo: this can be replaced by numeric kernel ( )
 class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
  public:
+  using ARROW_ARRAY_T = arrow::FixedSizeBinaryArray;
+  using ARROW_BUILDER_T = arrow::FixedSizeBinaryBuilder;
+
   explicit FixedBinaryArraySplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {}
 
-  int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t> &partitions,
-            const std::vector<int32_t> &targets,
-            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-            std::vector<uint32_t> &counts) override;
-
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-               const std::vector<uint32_t> &target_partitions,
                uint32_t num_partitions,
+               const std::vector<uint32_t> &target_partitions,
                const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override;
 };
@@ -154,14 +115,14 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
  public:
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
   using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
+  using ARROW_OFFSET_T = typename TYPE::offset_type;
 
   explicit BinaryArraySplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {
-//    std::function<>
   }
 
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-               const std::vector<uint32_t> &target_partitions,
                uint32_t num_partitions,
+               const std::vector<uint32_t> &target_partitions,
                const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override {
 
@@ -173,46 +134,29 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
     builders.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
       builders.emplace_back(new ARROW_BUILDER_T(pool_));
-      const auto &status = builders.back()->Reserve(counts[i]);
+    }
+
+    size_t offset = 0;
+    for (const auto &array:values->chunks()) {
+      std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
+      const int64_t arr_len = array->length();
+      for (int64_t i = 0; i < arr_len; i++, offset++) {
+        ARROW_OFFSET_T length = 0;
+        const uint8_t *value = casted_array->GetValue(i, &length);
+        const auto &a_status = builders[target_partitions[offset]]->Append(value, length);
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(a_status)
+      }
+    }
+
+    output.reserve(num_partitions);
+    for (uint32_t i = 0; i < num_partitions; i++) {
+      std::shared_ptr<arrow::Array> array;
+      const auto &status = builders[i]->Finish(&array);
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      output.push_back(array);
     }
 
     return Status::OK();
-  }
-
-  int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t> &partitions,
-            const std::vector<int32_t> &targets,
-            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-            std::vector<uint32_t> &counts) override {
-    auto reader = std::static_pointer_cast<ARROW_ARRAY_T>(values);
-    std::unordered_map<int, std::shared_ptr<ARROW_BUILDER_T>> builders;
-
-    for (int it : targets) {
-      std::shared_ptr<ARROW_BUILDER_T> b = std::make_shared<ARROW_BUILDER_T>(pool_);
-      builders.insert(std::pair<int, std::shared_ptr<ARROW_BUILDER_T>>(it, b));
-    }
-
-    for (size_t i = 0; i < partitions.size(); i++) {
-      const std::shared_ptr<ARROW_BUILDER_T> &b = builders[partitions.at(i)];
-      int length = 0;
-      const uint8_t *value = reader->GetValue(i, &length);
-      if (b->Append(value, length) != arrow::Status::OK()) {
-        LOG(FATAL) << "Failed to merge";
-        return -1;
-      }
-    }
-
-    for (int it : targets) {
-      const std::shared_ptr<ARROW_BUILDER_T> &b = builders[it];
-      std::shared_ptr<arrow::Array> array;
-      if (b->Finish(&array) != arrow::Status::OK()) {
-        LOG(FATAL) << "Failed to merge";
-        return -1;
-      }
-      out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(it, array));
-    }
-    return 0;
   }
 };
 
