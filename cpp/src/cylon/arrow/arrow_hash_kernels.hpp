@@ -30,21 +30,20 @@ namespace cylon {
  * Kernel to join indices using hashing
  * @tparam ARROW_ARRAY_TYPE arrow array type to be used for static type casting
  */
-template<class ARROW_ARRAY_TYPE, typename CTYPE>
-class ArrowArrayIdxHashJoinKernel {
- public:
-  using ARROW_TYPE = typename ARROW_ARRAY_TYPE::TypeClass;
+template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
+class ArrowHashJoinKernel {
+  using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
-
+ public:
   /**
-   * perform index hash join
-   * @param left_idx_col
-   * @param right_idx_col
-   * @param join_type
-   * @param left_table_indices row indices of the left table
-   * @param right_table_indices row indices of the right table
-   * @return 0 if success; non-zero otherwise
-   */
+    * perform index hash join
+    * @param left_idx_col
+    * @param right_idx_col
+    * @param join_type
+    * @param left_table_indices row indices of the left table
+    * @param right_table_indices row indices of the right table
+    * @return 0 if success; non-zero otherwise
+    */
   int IdxHashJoin(const std::shared_ptr<arrow::Array> &left_idx_col,
                   const std::shared_ptr<arrow::Array> &right_idx_col,
                   const cylon::join::config::JoinType join_type,
@@ -104,7 +103,6 @@ class ArrowArrayIdxHashJoinKernel {
     }
     return 0;
   }
-
  private:
   // build hashmap
   void BuildPhase(const std::shared_ptr<arrow::Array> &smaller_idx_col,
@@ -129,8 +127,7 @@ class ArrowArrayIdxHashJoinKernel {
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(smaller_idx_col);
 
     for (int64_t i = 0; i < reader0->length(); i++) {
-      auto lValue = reader0->GetView(i);
-      auto val = (CTYPE) lValue;
+      auto val = reader0->GetView(i);
       smaller_idx_map.insert(std::make_pair(val, i));
       smaller_key_set.emplace(val);
     }

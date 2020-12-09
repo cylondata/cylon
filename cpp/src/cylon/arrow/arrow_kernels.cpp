@@ -21,123 +21,69 @@
 #include <memory>
 
 namespace cylon {
-cylon::Status CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
-                             arrow::MemoryPool *pool,
-                             std::shared_ptr<ArrowArraySplitKernel> *out) {
-  ArrowArraySplitKernel *kernel;
+std::unique_ptr<ArrowArraySplitKernel> CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
+                                                      arrow::MemoryPool *pool) {
   switch (type->id()) {
-    case arrow::Type::UINT8:kernel = new UInt8ArraySplitter(type, pool);
-      break;
-    case arrow::Type::INT8:kernel = new Int8ArraySplitter(type, pool);
-      break;
-    case arrow::Type::UINT16:kernel = new UInt16ArraySplitter(type, pool);
-      break;
-    case arrow::Type::INT16:kernel = new Int16ArraySplitter(type, pool);
-      break;
-    case arrow::Type::UINT32:kernel = new UInt32ArraySplitter(type, pool);
-      break;
-    case arrow::Type::INT32:kernel = new Int32ArraySplitter(type, pool);
-      break;
-    case arrow::Type::UINT64:kernel = new UInt64ArraySplitter(type, pool);
-      break;
-    case arrow::Type::INT64:kernel = new Int64ArraySplitter(type, pool);
-      break;
-    case arrow::Type::FLOAT:kernel = new FloatArraySplitter(type, pool);
-      break;
-    case arrow::Type::DOUBLE:kernel = new DoubleArraySplitter(type, pool);
-      break;
-    case arrow::Type::FIXED_SIZE_BINARY:kernel = new FixedBinaryArraySplitKernel(type, pool);
-      break;
-    case arrow::Type::STRING:kernel = new BinaryArraySplitKernel(type, pool);
-      break;
-    case arrow::Type::BINARY:kernel = new BinaryArraySplitKernel(type, pool);
-      break;
-    default:
-      LOG(FATAL) << "Un-known type " << type->name();
-      return cylon::Status(cylon::NotImplemented, "This type not implemented");
+    case arrow::Type::UINT8:return std::make_unique<UInt8ArraySplitter>(pool);
+    case arrow::Type::INT8:return std::make_unique<Int8ArraySplitter>(pool);
+    case arrow::Type::UINT16:return std::make_unique<UInt16ArraySplitter>(pool);
+    case arrow::Type::INT16:return std::make_unique<Int16ArraySplitter>(pool);
+    case arrow::Type::UINT32:return std::make_unique<UInt32ArraySplitter>(pool);
+    case arrow::Type::INT32:return std::make_unique<Int32ArraySplitter>(pool);
+    case arrow::Type::UINT64:return std::make_unique<UInt64ArraySplitter>(pool);
+    case arrow::Type::INT64:return std::make_unique<Int64ArraySplitter>(pool);
+    case arrow::Type::FLOAT:return std::make_unique<FloatArraySplitter>(pool);
+    case arrow::Type::DOUBLE:return std::make_unique<DoubleArraySplitter>(pool);
+    case arrow::Type::FIXED_SIZE_BINARY:return std::make_unique<FixedBinaryArraySplitKernel>(pool);
+    case arrow::Type::STRING:return std::make_unique<BinaryArraySplitKernel<arrow::StringType>>(pool);
+    case arrow::Type::BINARY:return std::make_unique<BinaryArraySplitKernel<arrow::BinaryType>>(pool);
+    default: return nullptr;
   }
-  out->reset(kernel);
-  return cylon::Status::OK();
 }
 
-int FixedBinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,
-                                       const std::vector<int64_t> &partitions,
-                                       const std::vector<int32_t> &targets,
-                                       std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-                                       std::vector<uint32_t> &counts) {
-  auto reader =
-      std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
-  std::unordered_map<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>> builders;
-
-  for (size_t i = 0; i < targets.size(); i++) {
-    int target = targets[i];
-    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b =
-        std::make_shared<arrow::FixedSizeBinaryBuilder>(type_, pool_);
-    arrow::Status st = b->Reserve(counts[i]);
-    builders.insert(std::pair<int, std::shared_ptr<arrow::FixedSizeBinaryBuilder>>(target, b));
+Status FixedBinaryArraySplitKernel::Split(const std::shared_ptr<arrow::ChunkedArray> &values,
+                                          uint32_t num_partitions,
+                                          const std::vector<uint32_t> &target_partitions,
+                                          const std::vector<uint32_t> &counts,
+                                          std::vector<std::shared_ptr<arrow::Array>> &output) {
+  if ((size_t) values->length() != target_partitions.size()) {
+    return Status(Code::ExecutionError, "values rows != target_partitions length");
   }
 
-  for (size_t i = 0; i < partitions.size(); i++) {
-    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders[partitions.at(i)];
-    if (b->Append(reader->Value(i)) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
-      return -1;
+  std::vector<std::unique_ptr<ARROW_BUILDER_T>> builders;
+  builders.reserve(num_partitions);
+  for (uint32_t i = 0; i < num_partitions; i++) {
+    builders.emplace_back(new ARROW_BUILDER_T(values->type(), pool_));
+    const auto &status = builders.back()->Reserve(counts[i]);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+  }
+
+  size_t offset = 0;
+  for (const auto &array:values->chunks()) {
+    std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
+    const int64_t arr_len = array->length();
+    for (int64_t i = 0; i < arr_len; i++, offset++) {
+      const auto &a_status = builders[target_partitions[offset]]->Append(casted_array->Value(i));
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(a_status)
     }
   }
 
-  for (int it : targets) {
-    std::shared_ptr<arrow::FixedSizeBinaryBuilder> b = builders[it];
+  output.reserve(num_partitions);
+  for (uint32_t i = 0; i < num_partitions; i++) {
     std::shared_ptr<arrow::Array> array;
-    if (b->Finish(&array) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
-      return -1;
-    }
-    out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(it, array));
+    const auto &status = builders[i]->Finish(&array);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+    output.push_back(array);
   }
-  return 0;
+
+  return Status::OK();
 }
 
-int BinaryArraySplitKernel::Split(std::shared_ptr<arrow::Array> &values,
-                                  const std::vector<int64_t> &partitions,
-                                  const std::vector<int32_t> &targets,
-                                  std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-                                  std::vector<uint32_t> &counts) {
-  auto reader =
-      std::static_pointer_cast<arrow::BinaryArray>(values);
-  std::unordered_map<int, std::shared_ptr<arrow::BinaryBuilder>> builders;
-
-  for (int it : targets) {
-    std::shared_ptr<arrow::BinaryBuilder> b = std::make_shared<arrow::BinaryBuilder>(type_, pool_);
-    builders.insert(std::pair<int, std::shared_ptr<arrow::BinaryBuilder>>(it, b));
-  }
-
-  for (size_t i = 0; i < partitions.size(); i++) {
-    std::shared_ptr<arrow::BinaryBuilder> b = builders[partitions.at(i)];
-    int length = 0;
-    const uint8_t *value = reader->GetValue(i, &length);
-    if (b->Append(value, length) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
-      return -1;
-    }
-  }
-
-  for (int it : targets) {
-    std::shared_ptr<arrow::BinaryBuilder> b = builders[it];
-    std::shared_ptr<arrow::Array> array;
-    if (b->Finish(&array) != arrow::Status::OK()) {
-      LOG(FATAL) << "Failed to merge";
-      return -1;
-    }
-    out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(it, array));
-  }
-  return 0;
-}
 
 class ArrowStringSortKernel : public ArrowArraySortKernel {
  public:
-  explicit ArrowStringSortKernel(std::shared_ptr<arrow::DataType> type,
-                                 arrow::MemoryPool *pool) :
-      ArrowArraySortKernel(type, pool) {}
+  explicit ArrowStringSortKernel(arrow::MemoryPool *pool) :
+      ArrowArraySortKernel(pool) {}
 
   int Sort(std::shared_ptr<arrow::Array> values,
            std::shared_ptr<arrow::Array> *offsets) override {
@@ -169,9 +115,8 @@ class ArrowStringSortKernel : public ArrowArraySortKernel {
 
 class ArrowFixedSizeBinarySortKernel : public ArrowArraySortKernel {
  public:
-  explicit ArrowFixedSizeBinarySortKernel(std::shared_ptr<arrow::DataType> type,
-                                 arrow::MemoryPool *pool) :
-      ArrowArraySortKernel(std::move(type), pool) {}
+  explicit ArrowFixedSizeBinarySortKernel(arrow::MemoryPool *pool) :
+      ArrowArraySortKernel(pool) {}
 
   int Sort(std::shared_ptr<arrow::Array> values,
            std::shared_ptr<arrow::Array> *offsets) override {
@@ -200,9 +145,8 @@ class ArrowFixedSizeBinarySortKernel : public ArrowArraySortKernel {
 
 class ArrowBinarySortKernel : public ArrowArraySortKernel {
  public:
-  explicit ArrowBinarySortKernel(std::shared_ptr<arrow::DataType> type,
-                                 arrow::MemoryPool *pool) :
-      ArrowArraySortKernel(std::move(type), pool) {}
+  explicit ArrowBinarySortKernel(arrow::MemoryPool *pool) :
+      ArrowArraySortKernel(pool) {}
 
   int Sort(std::shared_ptr<arrow::Array> values,
            std::shared_ptr<arrow::Array> *offsets) override {
@@ -229,89 +173,89 @@ class ArrowBinarySortKernel : public ArrowArraySortKernel {
   }
 };
 
-int CreateSorter(std::shared_ptr<arrow::DataType> type,
+int CreateSorter(const std::shared_ptr<arrow::DataType> &type,
                  arrow::MemoryPool *pool,
                  std::shared_ptr<ArrowArraySortKernel> *out) {
-  ArrowArraySortKernel *kernel;
   switch (type->id()) {
-    case arrow::Type::UINT8:kernel = new UInt8ArraySorter(type, pool);
+    case arrow::Type::UINT8:*out = std::make_shared<UInt8ArraySorter>(pool);
       break;
-    case arrow::Type::INT8:kernel = new Int8ArraySorter(type, pool);
+    case arrow::Type::INT8:*out = std::make_shared<Int8ArraySorter>(pool);
       break;
-    case arrow::Type::UINT16:kernel = new UInt16ArraySorter(type, pool);
+    case arrow::Type::UINT16:*out = std::make_shared<UInt16ArraySorter>(pool);
       break;
-    case arrow::Type::INT16:kernel = new Int16ArraySorter(type, pool);
+    case arrow::Type::INT16:*out = std::make_shared<Int16ArraySorter>(pool);
       break;
-    case arrow::Type::UINT32:kernel = new UInt32ArraySorter(type, pool);
+    case arrow::Type::UINT32:*out = std::make_shared<UInt32ArraySorter>(pool);
       break;
-    case arrow::Type::INT32:kernel = new Int32ArraySorter(type, pool);
+    case arrow::Type::INT32:*out = std::make_shared<Int32ArraySorter>(pool);
       break;
-    case arrow::Type::UINT64:kernel = new UInt64ArraySorter(type, pool);
+    case arrow::Type::UINT64:*out = std::make_shared<UInt64ArraySorter>(pool);
       break;
-    case arrow::Type::INT64:kernel = new Int64ArraySorter(type, pool);
+    case arrow::Type::INT64:*out = std::make_shared<Int64ArraySorter>(pool);
       break;
-    case arrow::Type::FLOAT:kernel = new FloatArraySorter(type, pool);
+    case arrow::Type::FLOAT:*out = std::make_shared<FloatArraySorter>(pool);
       break;
-    case arrow::Type::DOUBLE:kernel = new DoubleArraySorter(type, pool);
+    case arrow::Type::DOUBLE:*out = std::make_shared<DoubleArraySorter>(pool);
       break;
-    case arrow::Type::STRING:kernel = new ArrowStringSortKernel(type, pool);
+    case arrow::Type::STRING:*out = std::make_shared<ArrowStringSortKernel>(pool);
       break;
-    case arrow::Type::BINARY:kernel = new ArrowBinarySortKernel(type, pool);
+    case arrow::Type::BINARY:*out = std::make_shared<ArrowBinarySortKernel>(pool);
       break;
-    case arrow::Type::FIXED_SIZE_BINARY:kernel = new ArrowFixedSizeBinarySortKernel(type, pool);
+    case arrow::Type::FIXED_SIZE_BINARY:*out = std::make_shared<ArrowFixedSizeBinarySortKernel>(pool);
       break;
     default:LOG(FATAL) << "Un-known type";
       return -1;
   }
-  out->reset(kernel);
   return 0;
 }
 
-arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> values,
+arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> &values,
                           std::shared_ptr<arrow::Array> *offsets) {
   std::shared_ptr<ArrowArraySortKernel> out;
-  CreateSorter(values->type(), memory_pool, &out);
+  if (CreateSorter(values->type(), memory_pool, &out) != 0) {
+    return arrow::Status(arrow::StatusCode::NotImplemented, "unknown type " + values->type()->ToString());
+  }
   out->Sort(values, offsets);
   return arrow::Status::OK();
 }
 
-int CreateInplaceSorter(std::shared_ptr<arrow::DataType> type,
+int CreateInplaceSorter(const std::shared_ptr<arrow::DataType> &type,
                         arrow::MemoryPool *pool,
                         std::shared_ptr<ArrowArrayInplaceSortKernel> *out) {
-  ArrowArrayInplaceSortKernel *kernel;
   switch (type->id()) {
-    case arrow::Type::UINT8:kernel = new UInt8ArrayInplaceSorter(type, pool);
+    case arrow::Type::UINT8:*out = std::make_shared<UInt8ArrayInplaceSorter>(pool);
       break;
-    case arrow::Type::INT8:kernel = new Int8ArrayInplaceSorter(type, pool);
+    case arrow::Type::INT8:*out = std::make_shared<Int8ArrayInplaceSorter>(pool);
       break;
-    case arrow::Type::UINT16:kernel = new UInt16ArrayInplaceSorter(type, pool);
+    case arrow::Type::UINT16:*out = std::make_shared<UInt16ArrayInplaceSorter>(pool);
       break;
-    case arrow::Type::INT16:kernel = new Int16ArrayInplaceSorter(type, pool);
+    case arrow::Type::INT16:*out = std::make_shared<Int16ArrayInplaceSorter>(pool);
       break;
-    case arrow::Type::UINT32:kernel = new UInt32ArrayInplaceSorter(type, pool);
+    case arrow::Type::UINT32:*out = std::make_shared<UInt32ArrayInplaceSorter>(pool);
       break;
-    case arrow::Type::INT32:kernel = new Int32ArrayInplaceSorter(type, pool);
+    case arrow::Type::INT32:*out = std::make_shared<Int32ArrayInplaceSorter>(pool);
       break;
-    case arrow::Type::UINT64:kernel = new UInt64ArrayInplaceSorter(type, pool);
+    case arrow::Type::UINT64:*out = std::make_shared<UInt64ArrayInplaceSorter>(pool);
       break;
-    case arrow::Type::INT64:kernel = new Int64ArrayInplaceSorter(type, pool);
+    case arrow::Type::INT64:*out = std::make_shared<Int64ArrayInplaceSorter>(pool);
       break;
-    case arrow::Type::FLOAT:kernel = new FloatArrayInplaceSorter(type, pool);
+    case arrow::Type::FLOAT:*out = std::make_shared<FloatArrayInplaceSorter>(pool);
       break;
-    case arrow::Type::DOUBLE:kernel = new DoubleArrayInplaceSorter(type, pool);
+    case arrow::Type::DOUBLE:*out = std::make_shared<DoubleArrayInplaceSorter>(pool);
       break;
     default:LOG(FATAL) << "Un-known type";
       return -1;
   }
-  out->reset(kernel);
   return 0;
 }
 
 arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
-                                 std::shared_ptr<arrow::Array> values,
+                                 std::shared_ptr<arrow::Array> &values,
                                  std::shared_ptr<arrow::UInt64Array> *offsets) {
   std::shared_ptr<ArrowArrayInplaceSortKernel> out;
-  CreateInplaceSorter(values->type(), memory_pool, &out);
+  if (CreateInplaceSorter(values->type(), memory_pool, &out) != 0) {
+    return arrow::Status(arrow::StatusCode::NotImplemented, "unknown type " + values->type()->ToString());
+  }
   out->Sort(values, offsets);
   return arrow::Status::OK();
 }
