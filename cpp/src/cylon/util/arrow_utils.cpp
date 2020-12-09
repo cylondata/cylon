@@ -231,29 +231,6 @@ arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr,
   return arrow::Status::OK();
 }
 
-template<typename TYPE>
-static inline arrow::Status sample_array(const std::shared_ptr<arrow::Array> &array,
-                                         uint64_t num_samples,
-                                         std::shared_ptr<arrow::Array> &out) {
-  using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
-  using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
-
-  std::random_device rd;
-  std::mt19937_64 gen(rd());
-  std::uniform_int_distribution<int64_t> distrib(0, array->length() - 1);
-
-  ARROW_BUILDER_T builder;
-  auto a_status = builder.Reserve(num_samples);
-  RETURN_ARROW_STATUS_IF_FAILED(a_status)
-
-  auto casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
-  for (uint64_t i = 0; i < num_samples; i++) {
-    int64_t idx = distrib(gen);
-    builder.UnsafeAppend(casted_array->Value(idx));
-  }
-
-  return builder.Finish(&out);
-}
 
 template<typename TYPE>
 static inline arrow::Status sample_array(const std::shared_ptr<arrow::ChunkedArray> &ch_array,
@@ -319,20 +296,7 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &arr,
 arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &arr,
                           uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out) {
-  switch (arr->type()->id()) {
-    case arrow::Type::BOOL: return sample_array<arrow::BooleanType>(arr, num_samples, out);
-    case arrow::Type::UINT8:return sample_array<arrow::UInt8Type>(arr, num_samples, out);
-    case arrow::Type::INT8:return sample_array<arrow::Int8Type>(arr, num_samples, out);
-    case arrow::Type::UINT16:return sample_array<arrow::UInt16Type>(arr, num_samples, out);
-    case arrow::Type::INT16:return sample_array<arrow::Int16Type>(arr, num_samples, out);
-    case arrow::Type::UINT32:return sample_array<arrow::UInt32Type>(arr, num_samples, out);
-    case arrow::Type::INT32:return sample_array<arrow::Int32Type>(arr, num_samples, out);
-    case arrow::Type::UINT64:return sample_array<arrow::UInt32Type>(arr, num_samples, out);
-    case arrow::Type::INT64:return sample_array<arrow::Int64Type>(arr, num_samples, out);
-    case arrow::Type::FLOAT:return sample_array<arrow::FloatType>(arr, num_samples, out);
-    case arrow::Type::DOUBLE:return sample_array<arrow::DoubleType>(arr, num_samples, out);
-    default: return arrow::Status(arrow::StatusCode::Invalid, "unsupported type");
-  }
+  return SampleArray(std::make_shared<arrow::ChunkedArray>(arr), num_samples, out);
 }
 
 }  // namespace util

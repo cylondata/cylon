@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-//  auto start_start = std::chrono::steady_clock::now();
+  auto start_start = std::chrono::steady_clock::now();
   auto mpi_config = cylon::net::MPIConfig::Make();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
@@ -67,26 +67,20 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-//  std::shared_ptr<arrow::Array> array;
-//  auto stat = cylon::util::sample_array<arrow::Int64Type>(table->get_table()->column(0), table->Rows() * 0.1, array);
-//
-//  std::cout << "res " << stat.ok() << " " << table->Rows() * 0.1 << " " << array->length() << std::endl;
+  auto read_end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Read tables in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
 
-//  auto read_end_time = std::chrono::steady_clock::now();
-//  LOG(INFO) << "Read tables in "
-//            << std::chrono::duration_cast<std::chrono::milliseconds>(
-//                read_end_time - start_start).count() << "[ms]";
-//
-//  std::shared_ptr<cylon::Table> output;
-//
-//  auto s = cylon::DistributedSort(table, 1, output);
-//  if (!s.is_ok()) {
-//    std::cout << "dist sort failed " << s.get_msg() << std::endl;
-//    return 1;
-//  }
-//  std::cout << "sorted table " << ctx->GetRank() << " " << output->Rows() << std::endl;
-//  cylon::WriteCSV(table, "/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
-//  cylon::WriteCSV(output, "/tmp/output" + std::to_string(ctx->GetRank()) + ".txt");
+  std::shared_ptr<cylon::Table> output;
+
+  auto s = cylon::DistributedSort(table, 1, output);
+  if (!s.is_ok()) {
+    std::cout << "dist sort failed " << s.get_msg() << std::endl;
+    return 1;
+  }
+  std::cout << "sorted table " << ctx->GetRank() << " " << output->Rows() << std::endl;
+  cylon::WriteCSV(table, "/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
+  cylon::WriteCSV(output, "/tmp/output" + std::to_string(ctx->GetRank()) + ".txt");
 
   ctx->Finalize();
   return 0;
