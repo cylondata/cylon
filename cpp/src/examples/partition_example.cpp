@@ -58,7 +58,6 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<arrow::Table> arrow_table;
 //  create_binary_table(argv, ctx, pool, left_table, right_table);
   create_table(argv, pool, arrow_table);
-  MPI_Barrier(MPI_COMM_WORLD);
 
   std::shared_ptr<cylon::Table> table;
   auto status = cylon::Table::FromArrowTable(ctx, arrow_table, table);
@@ -70,8 +69,7 @@ int main(int argc, char *argv[]) {
 
   auto read_end_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                read_end_time - start_start).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
 
   std::shared_ptr<cylon::Table> output;
 
