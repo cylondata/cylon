@@ -59,6 +59,7 @@ static inline Status split_impl(const std::shared_ptr<Table> &table,
   return Status::OK();
 }
 
+
 Status Split(const std::shared_ptr<Table> &table,
              uint32_t num_partitions,
              const std::vector<uint32_t> &target_partitions,
@@ -73,6 +74,7 @@ Status Split(const std::shared_ptr<Table> &table,
   return split_impl(table, num_partitions, target_partitions, partition_hist, output);
 }
 
+
 Status Split(const std::shared_ptr<Table> &table,
              uint32_t num_partitions,
              const std::vector<uint32_t> &target_partitions,
@@ -84,14 +86,6 @@ Status Split(const std::shared_ptr<Table> &table,
   return split_impl(table, num_partitions, target_partitions, partition_hist_ptr, output);
 }
 
-#define CONCAT_CHUNKED_ARRAY(col, out) \
-  if (col->num_chunks() > 1) { \
-    auto res = arrow::Concatenate(col->chunks()); \
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status()) \
-    out = res.ValueOrDie(); \
-  } else { \
-    out = col->chunk(0); \
-  }
 
 Status PartitionByHashing(const std::shared_ptr<Table> &table,
                           int32_t hash_column_idx,
@@ -112,10 +106,7 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   target_partitions.resize(idx_col->length(), 0);
   partition_hist.resize(num_partitions, 0);
 
-  std::shared_ptr<arrow::Array> array;
-  CONCAT_CHUNKED_ARRAY(idx_col, array)
-
-  Status status = kern->Partition(array, num_partitions, target_partitions, partition_hist);
+  Status status = kern->Partition(idx_col, num_partitions, target_partitions, partition_hist);
 
   auto t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Hash partition time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -151,13 +142,10 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   partition_hist.resize(num_partitions, 0);
 
   // building hash without the last hash_column_idx
-  std::shared_ptr<arrow::Array> array;
   for (size_t i = 0; i < hash_column_idx.size() - 1; i++) {
     auto t11 = std::chrono::high_resolution_clock::now();
 
-    CONCAT_CHUNKED_ARRAY(arrow_table->column(hash_column_idx[i]), array)
-
-    status = partition_kernels[i]->UpdateHash(array, target_partitions);
+    status = partition_kernels[i]->UpdateHash(arrow_table->column(hash_column_idx[i]), target_partitions);
     RETURN_CYLON_STATUS_IF_FAILED(status)
     auto t12 = std::chrono::high_resolution_clock::now();
 
@@ -165,15 +153,17 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
               << std::chrono::duration_cast<std::chrono::milliseconds>(t12 - t11).count();
   }
 
-  CONCAT_CHUNKED_ARRAY(arrow_table->column(hash_column_idx.back()), array)
-
   // build hash from the last hash_column_idx
-  status = partition_kernels.back()->Partition(array, num_partitions, target_partitions, partition_hist);
+  status = partition_kernels.back()->Partition(arrow_table->column(hash_column_idx.back()),
+                                               num_partitions,
+                                               target_partitions,
+                                               partition_hist);
 
   const auto &t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Partition time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   return status;
 }
+
 
 Status PartitionBySorting(const std::shared_ptr<Table> &table,
                           int32_t column_idx,
@@ -201,10 +191,7 @@ Status PartitionBySorting(const std::shared_ptr<Table> &table,
   target_partitions.resize(idx_col->length(), 0);
   partition_hist.resize(num_partitions, 0);
 
-  std::shared_ptr<arrow::Array> array;
-  CONCAT_CHUNKED_ARRAY(idx_col, array)
-
-  const auto &status = kern->Partition(array, num_partitions, target_partitions, partition_hist);
+  const auto &status = kern->Partition(idx_col, num_partitions, target_partitions, partition_hist);
   auto t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Sort partition time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   return status;
