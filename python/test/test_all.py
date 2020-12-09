@@ -144,6 +144,20 @@ def test_dist_rl_col():
     assert responses[-1] == 0
 
 
+def test_index():
+    print("22. Index Test")
+    responses.append(
+        os.system("pytest -q python/test/test_index.py"))
+    assert responses[-1] == 0
+
+
+def test_compute():
+    print("23. Compute Test")
+    responses.append(
+        os.system("pytest -q python/test/test_compute.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)

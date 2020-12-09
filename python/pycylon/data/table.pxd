@@ -32,7 +32,7 @@ from pycylon.ctx.context import CylonContext
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CTable "cylon::Table":
-        CTable(shared_ptr[CArrowTable] &tab, shared_ptr[CCylonContext] &ctx)
+        CTable(shared_ptr[CArrowTable] & tab, shared_ptr[CCylonContext] & ctx)
 
         @staticmethod
         CStatus FromArrowTable(shared_ptr[CCylonContext] &ctx, shared_ptr[CArrowTable] &table,

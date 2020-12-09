@@ -76,20 +76,20 @@ def test_distributed_ra():
     if rank == 0:
         assert join_row_count == 1424 and join_column_count == 8
         assert subtract_row_count == 0 and subtract_column_count == 4
-        assert union_row_count == 112 and union_column_count == 4
-        assert intersect_row_count == 112 and intersect_column_count == 4
+        assert union_row_count == 124 and union_column_count == 4
+        assert intersect_row_count == 124 and intersect_column_count == 4
 
     if rank == 1:
         assert join_row_count == 1648 and join_column_count == 8
         assert subtract_row_count == 0 and subtract_column_count == 4
-        assert union_row_count == 122 and union_column_count == 4
-        assert intersect_row_count == 122 and intersect_column_count == 4
+        assert union_row_count == 106 and union_column_count == 4
+        assert intersect_row_count == 106 and intersect_column_count == 4
 
     if rank == 2:
         assert join_row_count == 2704 and join_column_count == 8
         assert subtract_row_count == 0 and subtract_column_count == 4
-        assert union_row_count == 102 and union_column_count == 4
-        assert intersect_row_count == 102 and intersect_column_count == 4
+        assert union_row_count == 106 and union_column_count == 4
+        assert intersect_row_count == 106 and intersect_column_count == 4
 
     if rank == 3:
         assert join_row_count == 1552 and join_column_count == 8

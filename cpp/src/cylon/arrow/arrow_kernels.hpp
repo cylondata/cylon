@@ -18,15 +18,16 @@
 #include <arrow/api.h>
 #include <arrow/compute/kernel.h>
 #include <glog/logging.h>
+#include <iostream>
 #include "../status.hpp"
 #include "util/sort.hpp"
+#include "util/macros.hpp"
 
 namespace cylon {
 
 class ArrowArraySplitKernel {
  public:
-  explicit ArrowArraySplitKernel(std::shared_ptr<arrow::DataType> type,
-								 arrow::MemoryPool *pool) : type_(type), pool_(pool) {}
+  explicit ArrowArraySplitKernel(arrow::MemoryPool *pool) : pool_(pool) {}
 
   /**
    * Merge the values in the column and return an array
@@ -37,78 +38,126 @@ class ArrowArraySplitKernel {
    * @param out
    * @return
    */
-  virtual int Split(std::shared_ptr<arrow::Array> &values,
-                    const std::vector<int64_t> &partitions,
-                    const std::vector<int32_t> &targets,
-                    std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-                    std::vector<uint32_t> &counts) = 0;
+  virtual Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
+                       uint32_t num_partitions,
+                       const std::vector<uint32_t> &target_partitions,
+                       const std::vector<uint32_t> &counts,
+                       std::vector<std::shared_ptr<arrow::Array>> &output) = 0;
+
  protected:
-  std::shared_ptr<arrow::DataType> type_;
   arrow::MemoryPool *pool_;
 };
 
-template<typename TYPE>
+template<typename TYPE, typename = typename std::enable_if<
+    arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value>::type>
 class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
  public:
-  explicit ArrowArrayNumericSplitKernel(std::shared_ptr<arrow::DataType> type,
-										arrow::MemoryPool *pool) :
-	  ArrowArraySplitKernel(type, pool) {}
+  explicit ArrowArrayNumericSplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {}
 
-  int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t> &partitions,
-            const std::vector<int32_t> &targets,
-            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-            std::vector<uint32_t> &counts) override {
-	auto reader =
-		std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-	std::vector<std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders;
+  using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
+  using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
 
-    for (size_t i = 0; i < targets.size(); i++) {
-	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = std::make_shared<arrow::NumericBuilder<TYPE>>(type_, pool_);
-      b->Reserve(counts[i]);
-	  builders.push_back(b);
-	}
+  Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
+               uint32_t num_partitions,
+               const std::vector<uint32_t> &target_partitions,
+               const std::vector<uint32_t> &counts,
+               std::vector<std::shared_ptr<arrow::Array>> &output) override {
 
-    size_t kI = partitions.size();
-    for (size_t i = 0; i < kI; i++) {
-	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[partitions[i]];
-	  b->UnsafeAppend(reader->Value(i));
-	}
+    if ((size_t) values->length() != target_partitions.size()) {
+      return Status(Code::ExecutionError, "values rows != target_partitions length");
+    }
 
-	for (long target : targets) {
-	  std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders[target];
-	  std::shared_ptr<arrow::Array> array;
-	  b->Finish(&array);
-	  out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(target, array));
-	}
-	return 0;
+    std::vector<std::unique_ptr<ARROW_BUILDER_T>> builders;
+    builders.reserve(num_partitions);
+    for (uint32_t i = 0; i < num_partitions; i++) {
+      builders.emplace_back(new ARROW_BUILDER_T(pool_));
+      const auto &status = builders.back()->Reserve(counts[i]);
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+    }
+
+    size_t offset = 0;
+    for (const auto &array:values->chunks()) {
+      std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
+      const int64_t arr_len = array->length();
+      for (int64_t i = 0; i < arr_len; i++, offset++) {
+        builders[target_partitions[offset]]->UnsafeAppend(casted_array->Value(i));
+      }
+    }
+
+    output.reserve(num_partitions);
+    for (uint32_t i = 0; i < num_partitions; i++) {
+      std::shared_ptr<arrow::Array> array;
+      const auto &status = builders[i]->Finish(&array);
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      output.push_back(array);
+    }
+
+    return Status::OK();
   }
 };
 
 class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
  public:
-  explicit FixedBinaryArraySplitKernel(std::shared_ptr<arrow::DataType> type,
-									   arrow::MemoryPool *pool) :
-	  ArrowArraySplitKernel(type, pool) {}
+  using ARROW_ARRAY_T = arrow::FixedSizeBinaryArray;
+  using ARROW_BUILDER_T = arrow::FixedSizeBinaryBuilder;
 
-  int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t> &partitions,
-            const std::vector<int32_t> &targets,
-            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-            std::vector<uint32_t> &counts) override;
+  explicit FixedBinaryArraySplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {}
+
+  Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
+               uint32_t num_partitions,
+               const std::vector<uint32_t> &target_partitions,
+               const std::vector<uint32_t> &counts,
+               std::vector<std::shared_ptr<arrow::Array>> &output) override;
 };
 
+template<typename TYPE>
 class BinaryArraySplitKernel : public ArrowArraySplitKernel {
  public:
-  explicit BinaryArraySplitKernel(std::shared_ptr<arrow::DataType> type,
-								  arrow::MemoryPool *pool) :
-	  ArrowArraySplitKernel(type, pool) {}
+  using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
+  using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
+  using ARROW_OFFSET_T = typename TYPE::offset_type;
 
-  int Split(std::shared_ptr<arrow::Array> &values,
-            const std::vector<int64_t> &partitions,
-            const std::vector<int32_t> &targets,
-            std::unordered_map<int, std::shared_ptr<arrow::Array>> &out,
-            std::vector<uint32_t> &counts) override;
+  explicit BinaryArraySplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {
+  }
+
+  Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
+               uint32_t num_partitions,
+               const std::vector<uint32_t> &target_partitions,
+               const std::vector<uint32_t> &counts,
+               std::vector<std::shared_ptr<arrow::Array>> &output) override {
+
+    if ((size_t) values->length() != target_partitions.size()) {
+      return Status(Code::ExecutionError, "values rows != target_partitions length");
+    }
+
+    std::vector<std::unique_ptr<ARROW_BUILDER_T>> builders;
+    builders.reserve(num_partitions);
+    for (uint32_t i = 0; i < num_partitions; i++) {
+      builders.emplace_back(new ARROW_BUILDER_T(pool_));
+    }
+
+    size_t offset = 0;
+    for (const auto &array:values->chunks()) {
+      std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
+      const int64_t arr_len = array->length();
+      for (int64_t i = 0; i < arr_len; i++, offset++) {
+        ARROW_OFFSET_T length = 0;
+        const uint8_t *value = casted_array->GetValue(i, &length);
+        const auto &a_status = builders[target_partitions[offset]]->Append(value, length);
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(a_status)
+      }
+    }
+
+    output.reserve(num_partitions);
+    for (uint32_t i = 0; i < num_partitions; i++) {
+      std::shared_ptr<arrow::Array> array;
+      const auto &status = builders[i]->Finish(&array);
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      output.push_back(array);
+    }
+
+    return Status::OK();
+  }
 };
 
 using UInt8ArraySplitter = ArrowArrayNumericSplitKernel<arrow::UInt8Type>;
@@ -125,14 +174,12 @@ using HalfFloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::HalfFloatType
 using FloatArraySplitter = ArrowArrayNumericSplitKernel<arrow::FloatType>;
 using DoubleArraySplitter = ArrowArrayNumericSplitKernel<arrow::DoubleType>;
 
-cylon::Status CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
-                             arrow::MemoryPool *pool,
-                             std::shared_ptr<ArrowArraySplitKernel> *out);
+std::unique_ptr<ArrowArraySplitKernel> CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
+                                                      arrow::MemoryPool *pool);
 
 class ArrowArraySortKernel {
  public:
-  explicit ArrowArraySortKernel(std::shared_ptr<arrow::DataType> type,
-								arrow::MemoryPool *pool) : type_(type), pool_(pool) {}
+  explicit ArrowArraySortKernel(arrow::MemoryPool *pool) : pool_(pool) {}
 
   /**
    * Sort the values in the column and return an array with the indices
@@ -143,26 +190,24 @@ class ArrowArraySortKernel {
    * @param out
    * @return
    */
-  virtual int Sort(std::shared_ptr<arrow::Array> values,
-				   std::shared_ptr<arrow::Array> *out) = 0;
+  virtual int Sort(std::shared_ptr<arrow::Array> values, std::shared_ptr<arrow::Array> *out) = 0;
+
  protected:
-  std::shared_ptr<arrow::DataType> type_;
   arrow::MemoryPool *pool_;
 };
 
-template<typename TYPE>
+template<typename TYPE, typename = typename std::enable_if<
+    arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value>::type>
 class ArrowArrayNumericSortKernel : public ArrowArraySortKernel {
  public:
   using T = typename TYPE::c_type;
 
-  explicit ArrowArrayNumericSortKernel(std::shared_ptr<arrow::DataType> type,
-									   arrow::MemoryPool *pool) :
-	  ArrowArraySortKernel(type, pool) {}
+  explicit ArrowArrayNumericSortKernel(arrow::MemoryPool *pool) : ArrowArraySortKernel(pool) {}
 
   int Sort(std::shared_ptr<arrow::Array> values,
-		   std::shared_ptr<arrow::Array> *offsets) override {
-	auto array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-	const T *left_data = array->raw_values();
+           std::shared_ptr<arrow::Array> *offsets) override {
+    auto array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
+    const T *left_data = array->raw_values();
 	int64_t buf_size = values->length() * sizeof(uint64_t);
 
     arrow::Result<std::unique_ptr<arrow::Buffer>> result = AllocateBuffer(buf_size + 1, pool_);
@@ -198,13 +243,12 @@ using HalfFloatArraySorter = ArrowArrayNumericSortKernel<arrow::HalfFloatType>;
 using FloatArraySorter = ArrowArrayNumericSortKernel<arrow::FloatType>;
 using DoubleArraySorter = ArrowArrayNumericSortKernel<arrow::DoubleType>;
 
-arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> values,
-						  std::shared_ptr<arrow::Array> *offsets);
+arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> &values,
+                          std::shared_ptr<arrow::Array> *offsets);
 
 class ArrowArrayInplaceSortKernel {
  public:
-  explicit ArrowArrayInplaceSortKernel(std::shared_ptr<arrow::DataType> type,
-                                       arrow::MemoryPool *pool) : type_(type), pool_(pool) {}
+  explicit ArrowArrayInplaceSortKernel(arrow::MemoryPool *pool) : pool_(pool) {}
 
   /**
    * Sort the values in the column and return an array with the indices
@@ -215,21 +259,19 @@ class ArrowArrayInplaceSortKernel {
    * @param out
    * @return
    */
-  virtual int Sort(std::shared_ptr<arrow::Array> values,
-                   std::shared_ptr<arrow::UInt64Array> *out) = 0;
+  virtual int Sort(std::shared_ptr<arrow::Array> values, std::shared_ptr<arrow::UInt64Array> *out) = 0;
  protected:
-  std::shared_ptr<arrow::DataType> type_;
   arrow::MemoryPool *pool_;
 };
 
-template<typename TYPE>
+template<typename TYPE, typename = typename std::enable_if<
+    arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value>::type>
 class ArrowArrayInplaceNumericSortKernel : public ArrowArrayInplaceSortKernel {
  public:
   using T = typename TYPE::c_type;
 
-  explicit ArrowArrayInplaceNumericSortKernel(std::shared_ptr<arrow::DataType> type,
-                                              arrow::MemoryPool *pool) :
-      ArrowArrayInplaceSortKernel(type, pool) {}
+  explicit ArrowArrayInplaceNumericSortKernel(arrow::MemoryPool *pool) :
+      ArrowArrayInplaceSortKernel(pool) {}
 
   int Sort(std::shared_ptr<arrow::Array> values,
            std::shared_ptr<arrow::UInt64Array> *offsets) override {
@@ -271,7 +313,7 @@ using FloatArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::FloatT
 using DoubleArrayInplaceSorter = ArrowArrayInplaceNumericSortKernel<arrow::DoubleType>;
 
 arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
-                                 std::shared_ptr<arrow::Array> values,
+                                 std::shared_ptr<arrow::Array> &values,
                                  std::shared_ptr<arrow::UInt64Array> *offsets);
 
 }
