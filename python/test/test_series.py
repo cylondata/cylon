@@ -7,20 +7,46 @@ from pycylon.data.data_type import Layout
 from pycylon.data.column import Column
 from pycylon.data.series import Series
 
-d = DataType(Type.INT32, Layout.FIXED_WIDTH)
-data = pa.array([1, 2, 3])
-col = Column('id', d, data)
 
-print("id: ", col.id)
-print("dtype: ", col.dtype, col.dtype.type)
-print("data: ", col.data)
+def test_column():
+    col_id = 'id'
+    dtype = DataType(Type.INT32, Layout.FIXED_WIDTH)
+    data = pa.array([1, 2, 3])
+    col = Column(col_id, dtype, data)
 
-col1 = Column('id1', cn.int32(), pa.array([1, 2, 3]))
+    assert col_id == col.id
+    assert dtype.type == col.dtype.type
+    assert data == col.data
 
-print("id: ", col1.id)
-print("dtype: ", col1.dtype, col1.dtype.type)
-print("data: ", col1.data)
 
-s = Series('s1', [1, 2, 3, 4], cn.int32())
+def test_series_with_list():
+    ld = [1, 2, 3, 4]
+    id = 's1'
+    dtype = cn.int32()
+    s = Series(id, ld, dtype)
 
-print(s[2])
+    assert s.id == id
+    assert s.data == pa.array(ld)
+    assert s.dtype.type == dtype.type
+
+
+def test_series_with_numpy():
+    ld = np.array([1, 2, 3, 4])
+    id = 's1'
+    dtype = cn.int32()
+    s = Series(id, ld, dtype)
+
+    assert s.id == id
+    assert s.data == pa.array(ld)
+    assert s.dtype.type == dtype.type
+
+
+def test_series_with_pyarrow():
+    ld = pa.array([1, 2, 3, 4])
+    id = 's1'
+    dtype = cn.int32()
+    s = Series(id, ld, dtype)
+
+    assert s.id == id
+    assert s.data == ld
+    assert s.dtype.type == dtype.type
