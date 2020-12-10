@@ -96,7 +96,7 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(hash_column_idx);
 
-  std::unique_ptr<ArrowPartitionKernel> kern = CreateHashPartitionKernel(idx_col->type());
+  std::unique_ptr<PartitionKernel> kern = CreateHashPartitionKernel(idx_col->type());
   if (kern == nullptr) {
     LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create hash partition kernel")
   }
@@ -124,7 +124,7 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
 
-  std::vector<std::unique_ptr<ArrowHashPartitionKernel>> partition_kernels;
+  std::vector<std::unique_ptr<HashPartitionKernel>> partition_kernels;
   const std::vector<std::shared_ptr<arrow::Field>> &fields = arrow_table->schema()->fields();
   for (int i : hash_column_idx) {
     const std::shared_ptr<arrow::DataType> &type = fields[i]->type();
@@ -181,8 +181,8 @@ Status PartitionBySorting(const std::shared_ptr<Table> &table,
   if (num_samples == 0) num_samples = std::min((int64_t) (table->Rows() * 0.01), table->Rows());
   if (num_bins == 0) num_bins = num_partitions * 16;
 
-  std::unique_ptr<ArrowPartitionKernel> kern = CreateRangePartitionKernel(idx_col->type(),
-                                                                          ctx, ascending, num_samples, num_bins);
+  std::unique_ptr<PartitionKernel> kern = CreateRangePartitionKernel(idx_col->type(),
+                                                                     ctx, ascending, num_samples, num_bins);
   if (kern == nullptr) {
     LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel")
   }

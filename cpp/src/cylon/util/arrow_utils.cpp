@@ -54,10 +54,7 @@ arrow::Status SortColumn(const std::shared_ptr<arrow::Array> &data_column,
   // todo support non numeric types
   switch (data_column->type()->id()) {
     case arrow::Type::UINT8:
-      return SortNumericColumn<arrow::UInt8Type>(data_column,
-                                                 sorted_indices,
-                                                 sorted_column_array,
-                                                 memory_pool);
+      return SortNumericColumn<arrow::UInt8Type>(data_column, sorted_indices, sorted_column_array, memory_pool);
     case arrow::Type::NA:break;
     case arrow::Type::BOOL:
       return SortNumericColumn<arrow::BooleanType>(data_column,
@@ -142,13 +139,15 @@ arrow::Status SortColumn(const std::shared_ptr<arrow::Array> &data_column,
   return arrow::Status::OK();
 }
 
-arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort_column_index,
-                        std::shared_ptr<arrow::Table> *sorted_table, arrow::MemoryPool *memory_pool) {
+arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table,
+                        int64_t sort_column_index,
+                        arrow::MemoryPool *memory_pool,
+                        std::shared_ptr<arrow::Table> &sorted_table) {
   std::shared_ptr<arrow::Table> tab_to_process; // table referenced
   // combine chunks if multiple chunks are available
   if (table->column(sort_column_index)->num_chunks() > 1) {
     arrow::Result<std::shared_ptr<arrow::Table>> left_combine_res = table->CombineChunks(memory_pool);
-    if(!left_combine_res.ok()){
+    if (!left_combine_res.ok()) {
       return left_combine_res.status();
     }
     tab_to_process = left_combine_res.ValueOrDie();
@@ -159,7 +158,7 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort
 
   // sort to indices
   std::shared_ptr<arrow::Array> sorted_column_index;
-  arrow::Status status = cylon::SortIndices(memory_pool, column_to_sort, &sorted_column_index);
+  arrow::Status status = cylon::SortIndices(memory_pool, column_to_sort, sorted_column_index);
   if (!status.ok()) {
     LOG(FATAL) << "Failed to sort column to indices" << status.ToString();
     return status;
@@ -180,7 +179,7 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort
     }
     sorted_columns.push_back(sorted_array);
   }
-  *sorted_table = arrow::Table::Make(table->schema(), sorted_columns);
+  sorted_table = arrow::Table::Make(table->schema(), sorted_columns);
   return arrow::Status::OK();
 }
 

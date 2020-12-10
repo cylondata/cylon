@@ -108,8 +108,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
 
   auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
-  auto status = SortIndicesInPlace(memory_pool, left_join_column, &left_index_sorted_column);
-  if (status != arrow::Status::OK()) {
+  auto status = SortIndicesInPlace(memory_pool, left_join_column, left_index_sorted_column);
+  if (!status.ok()) {
     LOG(FATAL) << "Failed when sorting left table to indices. " << status.ToString();
     return status;
   }
@@ -119,8 +119,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
 
   t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> right_index_sorted_column;
-  status = SortIndicesInPlace(memory_pool, right_join_column, &right_index_sorted_column);
-  if (status != arrow::Status::OK()) {
+  status = SortIndicesInPlace(memory_pool, right_join_column, right_index_sorted_column);
+  if (!status.ok()) {
     LOG(FATAL) << "Failed when sorting right table to indices. " << status.ToString();
     return status;
   }
@@ -135,13 +135,14 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
 
   t1 = std::chrono::high_resolution_clock::now();
 
-  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
-  std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>();
+  std::vector<int64_t> left_indices, right_indices;
   int64_t init_vec_size = std::min(left_join_column->length(), right_join_column->length());
-  left_indices->reserve(init_vec_size);
-  right_indices->reserve(init_vec_size);
+  left_indices.reserve(init_vec_size);
+  right_indices.reserve(init_vec_size);
+
   int64_t col_length = left_join_column->length();
   int64_t right_col_length = right_join_column->length();
+
   advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
                                                         &left_current_index,
                                                         left_join_column,
@@ -157,8 +158,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
     if (left_key == right_key) {  // use a key comparator
       for (int64_t left_idx : left_subset) {
         for (int64_t right_idx : right_subset) {
-          left_indices->push_back(left_idx);
-          right_indices->push_back(right_idx);
+          left_indices.push_back(left_idx);
+          right_indices.push_back(right_idx);
         }
       }
       // advance
@@ -177,8 +178,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       // if this is a left join, this is the time to include them all in the result set
       if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
         for (int64_t left_idx : left_subset) {
-          left_indices->push_back(left_idx);
-          right_indices->push_back(-1);
+          left_indices.push_back(left_idx);
+          right_indices.push_back(-1);
         }
       }
 
@@ -191,8 +192,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       // if this is a right join, this is the time to include them all in the result set
       if (join_type == cylon::join::config::RIGHT || join_type == cylon::join::config::FULL_OUTER) {
         for (int64_t right_idx : right_subset) {
-          left_indices->push_back(-1);
-          right_indices->push_back(right_idx);
+          left_indices.push_back(-1);
+          right_indices.push_back(right_idx);
         }
       }
 
@@ -208,8 +209,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
   if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
     while (!left_subset.empty()) {
       for (int64_t left_idx : left_subset) {
-        left_indices->push_back(left_idx);
-        right_indices->push_back(-1);
+        left_indices.push_back(left_idx);
+        right_indices.push_back(-1);
       }
       advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
                                                             &left_current_index,
@@ -222,8 +223,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
   if (join_type == cylon::join::config::RIGHT || join_type == cylon::join::config::FULL_OUTER) {
     while (!right_subset.empty()) {
       for (int64_t right_idx : right_subset) {
-        left_indices->push_back(-1);
-        right_indices->push_back(right_idx);
+        left_indices.push_back(-1);
+        right_indices.push_back(right_idx);
       }
       advance_inplace_array<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
                                                             &right_current_index,
@@ -234,9 +235,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
   }
 
   t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Index join time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Building final table with number of tuples - " << left_indices->size();
+  LOG(INFO) << "Index join time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Building final table with number of tuples - " << left_indices.size();
 
   t1 = std::chrono::high_resolution_clock::now();
   // build final table
@@ -250,11 +250,9 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       joined_table,
       memory_pool);
   t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Built final table in : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Done and produced : " << left_indices->size();
-  left_indices->clear();
-  right_indices->clear();
+  LOG(INFO) << "Built final table in : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Done and produced : " << left_indices.size();
+
   return status;
 }
 
@@ -273,10 +271,8 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   arrow::Status lstatus, rstatus;
   auto t11 = std::chrono::high_resolution_clock::now();
 
-  lstatus = cylon::join::util::CombineChunks(left_tab, left_join_column_idx,
-                                             left_tab_comb, memory_pool);
-  rstatus = cylon::join::util::CombineChunks(right_tab, right_join_column_idx,
-                                             right_tab_comb, memory_pool);
+  lstatus = cylon::join::util::CombineChunks(left_tab, left_join_column_idx, left_tab_comb, memory_pool);
+  rstatus = cylon::join::util::CombineChunks(right_tab, right_join_column_idx, right_tab_comb, memory_pool);
 
   auto t22 = std::chrono::high_resolution_clock::now();
 
@@ -285,8 +281,7 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
     return arrow::Status::Invalid("Sort join failed!");
   }
 
-  LOG(INFO) << "Combine chunks time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
+  LOG(INFO) << "Combine chunks time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
 
   // sort columns
   auto left_join_column = left_tab_comb->column(left_join_column_idx)->chunk(0);
@@ -294,8 +289,8 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
 
   auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::Array> left_index_sorted_column;
-  auto status = SortIndices(memory_pool, left_join_column, &left_index_sorted_column);
-  if (status != arrow::Status::OK()) {
+  auto status = SortIndices(memory_pool, left_join_column, left_index_sorted_column);
+  if (!status.ok()) {
     LOG(FATAL) << "Failed when sorting left table to indices. " << status.ToString();
     return status;
   }
@@ -305,14 +300,13 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
 
   t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::Array> right_index_sorted_column;
-  status = SortIndices(memory_pool, right_join_column, &right_index_sorted_column);
-  if (status != arrow::Status::OK()) {
+  status = SortIndices(memory_pool, right_join_column, right_index_sorted_column);
+  if (!status.ok()) {
     LOG(FATAL) << "Failed when sorting right table to indices. " << status.ToString();
     return status;
   }
   t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "right sorting time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "right sorting time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   CPP_KEY_TYPE left_key, right_key;
   std::vector<int64_t> left_subset, right_subset;
@@ -321,29 +315,28 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
 
   t1 = std::chrono::high_resolution_clock::now();
 
-  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
-  std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>();
+  std::vector<int64_t> left_indices, right_indices;
   int64_t init_vec_size = std::min(left_join_column->length(), right_join_column->length());
-  left_indices->reserve(init_vec_size);
-  right_indices->reserve(init_vec_size);
+  left_indices.reserve(init_vec_size);
+  right_indices.reserve(init_vec_size);
 
   advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
-      std::static_pointer_cast<arrow::Int64Array>(left_index_sorted_column),
-      &left_current_index,
-      left_join_column,
-      &left_key);
+                                          std::static_pointer_cast<arrow::Int64Array>(left_index_sorted_column),
+                                          &left_current_index,
+                                          left_join_column,
+                                          &left_key);
 
   advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
-      std::static_pointer_cast<arrow::Int64Array>(right_index_sorted_column),
-      &right_current_index,
-      right_join_column,
-      &right_key);
+                                          std::static_pointer_cast<arrow::Int64Array>(right_index_sorted_column),
+                                          &right_current_index,
+                                          right_join_column,
+                                          &right_key);
   while (!left_subset.empty() && !right_subset.empty()) {
     if (left_key == right_key) {  // use a key comparator
       for (int64_t left_idx : left_subset) {
         for (int64_t right_idx : right_subset) {
-          left_indices->push_back(left_idx);
-          right_indices->push_back(right_idx);
+          left_indices.push_back(left_idx);
+          right_indices.push_back(right_idx);
         }
       }
       // advance
@@ -364,8 +357,8 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
       // if this is a left join, this is the time to include them all in the result set
       if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
         for (int64_t left_idx : left_subset) {
-          left_indices->push_back(left_idx);
-          right_indices->push_back(-1);
+          left_indices.push_back(left_idx);
+          right_indices.push_back(-1);
         }
       }
 
@@ -379,8 +372,8 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
       // if this is a right join, this is the time to include them all in the result set
       if (join_type == cylon::join::config::RIGHT || join_type == cylon::join::config::FULL_OUTER) {
         for (int64_t right_idx : right_subset) {
-          left_indices->push_back(-1);
-          right_indices->push_back(right_idx);
+          left_indices.push_back(-1);
+          right_indices.push_back(right_idx);
         }
       }
 
@@ -397,8 +390,8 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
     while (!left_subset.empty()) {
       for (int64_t left_idx : left_subset) {
-        left_indices->push_back(left_idx);
-        right_indices->push_back(-1);
+        left_indices.push_back(left_idx);
+        right_indices.push_back(-1);
       }
       advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
                                               std::static_pointer_cast<arrow::Int64Array>(
@@ -412,12 +405,11 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   if (join_type == cylon::join::config::RIGHT || join_type == cylon::join::config::FULL_OUTER) {
     while (!right_subset.empty()) {
       for (int64_t right_idx : right_subset) {
-        left_indices->push_back(-1);
-        right_indices->push_back(right_idx);
+        left_indices.push_back(-1);
+        right_indices.push_back(right_idx);
       }
       advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
-                                              std::static_pointer_cast<arrow::Int64Array>(
-                                                  right_index_sorted_column),
+                                              std::static_pointer_cast<arrow::Int64Array>(right_index_sorted_column),
                                               &right_current_index,
                                               right_join_column,
                                               &right_key);
@@ -428,26 +420,16 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   left_index_sorted_column.reset();
   right_index_sorted_column.reset();
   t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Index join time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Building final table with number of tuples - " << left_indices->size();
+  LOG(INFO) << "Index join time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Building final table with number of tuples - " << left_indices.size();
 
   t1 = std::chrono::high_resolution_clock::now();
   // build final table
-  status = cylon::join::util::build_final_table(
-      left_indices, right_indices,
-      left_tab_comb,
-      right_tab_comb,
-      joined_table,
-      memory_pool);
+  status = cylon::join::util::build_final_table(left_indices, right_indices, left_tab_comb, right_tab_comb,
+                                                joined_table, memory_pool);
   t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Built final table in : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Done and produced : " << left_indices->size();
-  left_indices->clear();
-  right_indices->clear();
-  left_indices.reset();
-  right_indices.reset();
+  LOG(INFO) << "Built final table in : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Done and produced : " << left_indices.size();
   return status;
 }
 
@@ -492,52 +474,40 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
             << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
 
   // sort columns
-  std::shared_ptr<arrow::Array> left_idx_column = left_tab_comb->column(
-      left_join_column_idx)->chunk(0);
-  std::shared_ptr<arrow::Array> right_idx_column = right_tab_comb->column(
-      right_join_column_idx)->chunk(0);
+  const std::shared_ptr<arrow::Array> &left_idx_column = left_tab_comb->column(left_join_column_idx)->chunk(0);
+  const std::shared_ptr<arrow::Array> &right_idx_column = right_tab_comb->column(right_join_column_idx)->chunk(0);
 
-  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
-  std::shared_ptr<std::vector<int64_t>> right_indices = std::make_shared<std::vector<int64_t>>();
+  std::vector<int64_t> left_indices, right_indices;
 
   int64_t init_vec_size = std::min(left_idx_column->length(), right_idx_column->length());
-  left_indices->reserve(init_vec_size);
-  right_indices->reserve(init_vec_size);
+  left_indices.reserve(init_vec_size);
+  right_indices.reserve(init_vec_size);
 
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  auto result = ArrowHashJoinKernel<ARROW_T, CPP_KEY_TYPE>()
-      .IdxHashJoin(left_idx_column, right_idx_column, join_type, left_indices, right_indices);
-//  left_indices->shrink_to_fit();
-//  right_indices->shrink_to_fit();
+  HashJoinKernel<ARROW_T, CPP_KEY_TYPE> kernel;
+  const arrow::Status &result
+      = kernel.IdxHashJoin(left_idx_column, right_idx_column, join_type, left_indices, right_indices);
+
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  if (result) {
+  if (!result.ok()) {
     LOG(ERROR) << "Index join failed!";
-    return arrow::Status::Invalid("Index join failed!");
+    return result;
   }
 
-  LOG(INFO) << "Index join time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Building final table with number of tuples - " << left_indices->size();
+  LOG(INFO) << "Index join time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Building final table with number of tuples - " << left_indices.size();
 
   t1 = std::chrono::high_resolution_clock::now();
 
-  auto status = cylon::join::util::build_final_table(
-      left_indices, right_indices,
-      left_tab_comb,
-      right_tab_comb,
-      joined_table,
-      memory_pool);
+  auto status = cylon::join::util::build_final_table(left_indices, right_indices,
+                                                     left_tab_comb, right_tab_comb, joined_table, memory_pool);
 
   t2 = std::chrono::high_resolution_clock::now();
 
-  LOG(INFO) << "Built final table in : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Done and produced : " << left_indices->size();
-
-  left_indices.reset();
-  right_indices.reset();
+  LOG(INFO) << "Built final table in : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+  LOG(INFO) << "Done and produced : " << left_indices.size();
 
   return arrow::Status::OK();
 }
@@ -620,11 +590,7 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
     }
   }
 
-  return cylon::join::joinTables(left_tab_combined,
-                                 right_tab_combined,
-                                 join_config,
-                                 joined_table,
-                                 memory_pool);
+  return cylon::join::joinTables(left_tab_combined, right_tab_combined, join_config, joined_table, memory_pool);
 }
 
 arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
