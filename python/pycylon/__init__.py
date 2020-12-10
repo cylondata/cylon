@@ -14,3 +14,4 @@
 
 from pycylon.data.table import Table
 from pycylon.ctx.context import CylonContext
+from pycylon.data.types import (int8, int16, int32, int64)
