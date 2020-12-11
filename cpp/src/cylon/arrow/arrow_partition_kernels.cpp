@@ -16,7 +16,7 @@
 
 namespace cylon {
 
-std::unique_ptr<ArrowHashPartitionKernel> CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type) {
+std::unique_ptr<HashPartitionKernel> CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type) {
   switch (data_type->id()) {
     case arrow::Type::BOOL:return std::make_unique<ModuloPartitionKernel<arrow::BooleanType>>();
     case arrow::Type::UINT8:return std::make_unique<ModuloPartitionKernel<arrow::UInt8Type>>();
@@ -36,11 +36,11 @@ std::unique_ptr<ArrowHashPartitionKernel> CreateHashPartitionKernel(const std::s
   }
 }
 
-std::unique_ptr<ArrowPartitionKernel> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
-                                                                 std::shared_ptr<CylonContext> &ctx,
-                                                                 bool ascending,
-                                                                 uint64_t num_samples,
-                                                                 uint32_t num_bins) {
+std::unique_ptr<PartitionKernel> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
+                                                            std::shared_ptr<CylonContext> &ctx,
+                                                            bool ascending,
+                                                            uint64_t num_samples,
+                                                            uint32_t num_bins) {
   switch (data_type->id()) {
     case arrow::Type::BOOL:
       return std::make_unique<RangePartitionKernel<arrow::BooleanType>>(ctx,
