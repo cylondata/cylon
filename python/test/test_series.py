@@ -5,7 +5,7 @@ from pycylon.data.data_type import DataType
 from pycylon.data.data_type import Type
 from pycylon.data.data_type import Layout
 from pycylon.data.column import Column
-from pycylon.data.series import Series
+from pycylon import Series
 
 
 def test_column():

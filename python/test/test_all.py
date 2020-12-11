@@ -29,7 +29,8 @@ def test_pyarrow_installation_test():
 def test_cylon_context():
     print("3. CylonContext Test")
     responses.append(
-        os.system("mpirun --oversubscribe -n 2 python -m pytest --with-mpi -q python/test/test_cylon_context.py"))
+        os.system(
+            "mpirun --oversubscribe -n 2 python -m pytest --with-mpi -q python/test/test_cylon_context.py"))
     assert responses[-1] == 0
 
 
@@ -155,6 +156,13 @@ def test_compute():
     print("23. Compute Test")
     responses.append(
         os.system("pytest -q python/test/test_compute.py"))
+    assert responses[-1] == 0
+
+
+def test_series():
+    print("24. Series Test")
+    responses.append(
+        os.system("pytest -q python/test/test_series.py"))
     assert responses[-1] == 0
 
 
