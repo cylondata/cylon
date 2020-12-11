@@ -70,9 +70,9 @@ static inline Partitioner get_partitioner(uint32_t num_partitions) {
 }
 
 
-class ArrowPartitionKernel {
+class PartitionKernel {
  public:
-  virtual ~ArrowPartitionKernel() = default;
+  virtual ~PartitionKernel() = default;
 
   Status Partition(const std::shared_ptr<arrow::Array> &idx_col,
                    uint32_t num_partitions,
@@ -90,8 +90,7 @@ class ArrowPartitionKernel {
                            std::vector<uint32_t> &partition_histogram) = 0;
 };
 
-
-class ArrowHashPartitionKernel : public ArrowPartitionKernel {
+class HashPartitionKernel : public PartitionKernel {
  public:
   Status UpdateHash(const std::shared_ptr<arrow::Array> &idx_col, std::vector<uint32_t> &partial_hashes) {
     return UpdateHash(std::make_shared<arrow::ChunkedArray>(idx_col), partial_hashes);
@@ -106,7 +105,7 @@ class ArrowHashPartitionKernel : public ArrowPartitionKernel {
 
 template<typename ARROW_T, typename = typename std::enable_if<
     arrow::is_integer_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
-class ModuloPartitionKernel : public ArrowHashPartitionKernel {
+class ModuloPartitionKernel : public HashPartitionKernel {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using ARROW_CTYPE = typename arrow::TypeTraits<ARROW_T>::CType;
 
@@ -160,7 +159,7 @@ class ModuloPartitionKernel : public ArrowHashPartitionKernel {
 
 template<typename ARROW_T, typename = typename std::enable_if<
     arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
-class NumericHashPartitionKernel : public ArrowHashPartitionKernel {
+class NumericHashPartitionKernel : public HashPartitionKernel {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using ARROW_CTYPE = typename arrow::TypeTraits<ARROW_T>::CType;
 
@@ -224,8 +223,7 @@ class NumericHashPartitionKernel : public ArrowHashPartitionKernel {
   }
 };
 
-
-class FixedSizeBinaryHashPartitionKernel : public ArrowHashPartitionKernel {
+class FixedSizeBinaryHashPartitionKernel : public HashPartitionKernel {
  public:
   uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) override {
     if (values->IsNull(index)) {
@@ -285,8 +283,7 @@ class FixedSizeBinaryHashPartitionKernel : public ArrowHashPartitionKernel {
   }
 };
 
-
-class BinaryHashPartitionKernel : public ArrowHashPartitionKernel {
+class BinaryHashPartitionKernel : public HashPartitionKernel {
  public:
   uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) override {
     if (values->IsNull(index)) {
@@ -369,12 +366,12 @@ using BinaryHashPartitioner = BinaryHashPartitionKernel;
  * @param data_type
  * @return
  */
-std::unique_ptr<ArrowHashPartitionKernel> CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type);
+std::unique_ptr<HashPartitionKernel> CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type);
 
 
 class RowHashingKernel {
  private:
-  std::vector<std::unique_ptr<ArrowHashPartitionKernel>> hash_kernels;
+  std::vector<std::unique_ptr<HashPartitionKernel>> hash_kernels;
  public:
   explicit RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields);
 
@@ -384,7 +381,7 @@ class RowHashingKernel {
 
 template<typename ARROW_T, typename = typename std::enable_if<
     arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
-class RangePartitionKernel : public ArrowPartitionKernel {
+class RangePartitionKernel : public PartitionKernel {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using ARROW_SCALAR_T = typename arrow::TypeTraits<ARROW_T>::ScalarType;
   using ARROW_C_T = typename arrow::TypeTraits<ARROW_T>::CType;
@@ -393,7 +390,7 @@ class RangePartitionKernel : public ArrowPartitionKernel {
   RangePartitionKernel(std::shared_ptr<CylonContext> &ctx,
                        bool ascending,
                        uint64_t num_samples,
-                       uint32_t num_bins) : ArrowPartitionKernel(),
+                       uint32_t num_bins) : PartitionKernel(),
                                             ascending(ascending),
                                             num_bins(num_bins),
                                             num_samples(num_samples),
@@ -516,7 +513,6 @@ class RangePartitionKernel : public ArrowPartitionKernel {
   ARROW_C_T min, max, range_per_bin;
 };
 
-
 /**
  * create range partition
  * @param data_type
@@ -527,11 +523,11 @@ class RangePartitionKernel : public ArrowPartitionKernel {
  * @param num_bins
  * @return
  */
-std::unique_ptr<ArrowPartitionKernel> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
-                                                                 std::shared_ptr<CylonContext> &ctx,
-                                                                 bool ascending,
-                                                                 uint64_t num_samples,
-                                                                 uint32_t num_bins);
+std::unique_ptr<PartitionKernel> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
+                                                            std::shared_ptr<CylonContext> &ctx,
+                                                            bool ascending,
+                                                            uint64_t num_samples,
+                                                            uint32_t num_bins);
 
 }  // namespace cylon
 

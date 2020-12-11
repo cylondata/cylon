@@ -87,7 +87,7 @@ Status PrepareArray(std::shared_ptr<cylon::CylonContext> &ctx,
                     const std::shared_ptr<std::vector<int64_t>> &row_indices,
                     arrow::ArrayVector &array_vector) {
   std::shared_ptr<arrow::Array> destination_col_array;
-  arrow::Status ar_status = cylon::util::copy_array_by_indices(row_indices,
+  arrow::Status ar_status = cylon::util::copy_array_by_indices(*row_indices,
                                                                table->column(col_idx)->chunk(0),
                                                                &destination_col_array, cylon::ToArrowPool(ctx));
   if (ar_status != arrow::Status::OK()) {
@@ -315,8 +315,7 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_p
   std::shared_ptr<arrow::Table> sorted_table;
   auto table_ = table->get_table();
   auto ctx = table->GetContext();
-  arrow::Status status = cylon::util::SortTable(table_, sort_column, &sorted_table,
-                                                cylon::ToArrowPool(ctx));
+  arrow::Status status = cylon::util::SortTable(table_, sort_column, cylon::ToArrowPool(ctx), sorted_table);
   if (status.ok()) {
     return Table::FromArrowTable(ctx, sorted_table, out);
   } else {
@@ -388,7 +387,7 @@ Status DistributedSort(std::shared_ptr<cylon::Table> &table,
   }
 
   //then do a local sort
-  auto astatus = util::SortTable(arrow_table, sort_column, &sorted_table, ToArrowPool(ctx));
+  auto astatus = util::SortTable(arrow_table, sort_column, ToArrowPool(ctx), sorted_table);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(astatus)
 
   return Table::FromArrowTable(ctx, sorted_table, output);
