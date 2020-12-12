@@ -30,10 +30,6 @@ Cylon 0.3.0 adds the following features. Please note that this release may not b
 - Adding new examples for updated operations. (https://github.com/cylondata/cylon/tree/master/python/examples)
 
 
-### Java (JCylon)
-
-- Performance improvements
-
 You can download source code from [Github](https://github.com/cylondata/cylon/releases)
 
 ## Examples
