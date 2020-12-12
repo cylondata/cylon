@@ -489,7 +489,24 @@ cdef class Table:
         else:
             raise ValueError("Columns not passed.")
 
-    def distributed_sort(self, sort_column=None, sort_options: SortOptions=None)-> Table:
+    def distributed_sort(self, sort_column=None, sort_options: SortOptions = None)-> Table:
+        '''
+        Does a distributed sort on the table by re-partitioning the data to maintain the sort
+        order across all processes
+        Args:
+            sort_column: str or int
+            sort_options: SortOption
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> from pycylon.data.table import SortOptions
+        >>> s = SortOptions(ascending=True, num_bins=0, num_samples=0)
+        >>> tb1.distributed_sort(sort_column='use_id', sort_options=s)
+
+        '''
         cdef shared_ptr[CTable] output
         cdef CSortOptions *csort_options
         col_index = 0
@@ -1960,7 +1977,20 @@ class EmptyTable(Table):
 
 
 cdef class SortOptions:
-    def __cinit__(self, ascending: bool = False, num_bins=0, num_samples=0):
+    '''
+    Sort Operations for Distribtued Sort
+    '''
+    def __cinit__(self, ascending: bool = True, num_bins: int=0, num_samples: int=0):
+        '''
+        Initializes the CSortOptions struct
+        Args:
+            ascending: bool
+            num_bins: int
+            num_samples: int
+
+        Returns: None
+
+        '''
         self.thisPtr = new CSortOptions()
         self.thisPtr.ascending = ascending
         self.thisPtr.num_bins = num_bins
