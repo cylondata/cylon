@@ -98,4 +98,39 @@ def test_distributed_ra():
         assert intersect_row_count == 144 and intersect_column_count == 4
 
     # Note: Not needed when using PyTest with MPI
-    #ctx.finalize()
+    # ctx.finalize()
+
+
+@pytest.mark.mpi
+def test_distributed_sort():
+    import numpy as np
+    mpi_config = MPIConfig()
+    ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
+
+    rank = ctx.get_rank()
+    size = ctx.get_world_size()
+
+    assert size == 4
+
+    table1_path = f'/tmp/user_usage_tm_{rank + 1}.csv'
+
+    assert os.path.exists(table1_path)
+
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+
+    tb1: Table = read_csv(ctx, table1_path, csv_read_options)
+
+    print(tb1)
+
+    tb2 = tb1.distributed_sort(sort_column='use_id')
+
+    col_data = tb2['use_id'].to_numpy()
+    col_data = np.reshape(col_data, (col_data.shape[0]))
+
+    def is_sort_array(array):
+        for i in range(array.shape[0]-1):
+            if array[i] > array[i+1]:
+                return False
+        return True
+
+    assert is_sort_array(col_data)
