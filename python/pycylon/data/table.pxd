@@ -96,6 +96,22 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus DistributedIntersect(shared_ptr[CTable] &first, shared_ptr[CTable] &second,
                                shared_ptr[CTable] &output)
 
+    CStatus DistributedSort(shared_ptr[CTable] &table, int sort_column, shared_ptr[CTable]
+                            &output, CSortOptions sort_options)
+
+cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
+    cdef cppclass CSortOptions "cylon::SortOptions":
+        bool ascending
+        int num_bins
+        long num_samples
+        @staticmethod
+        CSortOptions Defaults()
+
+
+cdef class SortOptions:
+    cdef:
+        CSortOptions *thisPtr
+        void init(self, CSortOptions *csort_options)
 
 cdef class Table:
     cdef:
