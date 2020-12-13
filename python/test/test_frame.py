@@ -3,65 +3,42 @@ import pandas as pd
 import pycylon as cn
 import pyarrow as pa
 from pycylon import Series
+from pycylon import DataFrame
 
-a = np.array([1, 2, 3, 4, 5, 6])
-b = [1, 2, 3, 4, 5]
 
-b = a.copy()
+def test_initialization_1():
+    d1 = [[1, 2, 3], [4, 5, 6]]
+    d2 = [np.array([1, 2, 3]), np.array([4, 5, 6])]
+    d3 = {'0': [1, 2, 3], '1': [4, 5, 6]}
+    d4 = pd.DataFrame(d3)
+    d5 = pa.Table.from_pydict(d3)
 
-a = a * 2
+    cdf1 = DataFrame(d1)
+    cdf2 = DataFrame(d2)
+    cdf3 = DataFrame(d3)
+    cdf4 = DataFrame(d4)
+    cdf5 = DataFrame(d5)
 
-print(b)
-print(a)
+    assert cdf1.shape == cdf2.shape == cdf3.shape == cdf4.shape == cdf5.shape
 
-s = Series('id1', [[1, 2, 3, 4], [3, 4, 5, 6]], cn.int32())
 
-print(s)
+def test_get_set_item():
+    d1 = [[1, 2, 3], [4, 5, 6]]
+    cdf1 = DataFrame(d1)
+    print(cdf1)
 
-print(s.shape)
+    print(cdf1.columns)
 
-ps = pd.Series([[1, 2, 3, 4]])
+    c1 = cdf1['0']
+    print(c1.shape)
+    d1 = DataFrame([[10, 20, 30]])
 
-print(ps.shape)
+    print(d1.shape)
+    print(cdf1)
+    cdf1['0'] = d1
 
-a = pa.array([1, 2, 3])
+    print(cdf1)
 
-from copy import copy
 
-b = copy(a)
 
-from pyarrow.compute import add
 
-a = add(a, 1)
-
-print("#############")
-print(a)
-print("------------")
-print(b)
-
-from pycylon.util.pandas.utils import rename_with_new_column_names
-
-pdf = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
-
-pdf = rename_with_new_column_names(pdf, ['a', 'b', 'c'])
-
-print(pdf)
-
-# with distributed(num_workers=2) as dist:
-#     print("This computes in Parallel")
-#     with distributed(num_workers=1) as seq:
-#         print("This executes sequentially")
-
-from pycylon.frame import DataFrame
-
-d1 = [[1, 2, 3], [4, 5, 6]]
-d2 = [np.array([1, 2, 3]), np.array([4, 5, 6])]
-d3 = pd.DataFrame([[1, 4], [2, 5], [3, 6]])
-d4 = {'0': [1, 2, 3], '1': [4, 5, 6]}
-d5 = pa.Table.from_pydict(d4)
-
-cdf1 = DataFrame(d1)
-cdf2 = DataFrame(d2)
-cdf3 = DataFrame(d3)
-cdf4 = DataFrame(d4)
-cdf5 = DataFrame(d5)
