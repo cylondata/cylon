@@ -1272,3 +1272,20 @@ Drop not applicable values from a Table
     0      1      5      9
     1      3      7     11
 ```
+
+## Distributed Sort
+
+Does a distributed sort on the table by re-partitioning the data to maintain the sort
+        order across all processes
+        Args:
+            sort_column: str or int
+            sort_options: SortOption
+
+        Returns: PyCylon Table
+
+
+```python
+>>> from pycylon.data.table import SortOptions
+>>> s = SortOptions(ascending=True, num_bins=0, num_samples=0)
+>>> tb1.distributed_sort(sort_column='use_id', sort_options=s)
+```
