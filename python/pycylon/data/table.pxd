@@ -32,15 +32,13 @@ from pycylon.ctx.context import CylonContext
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CTable "cylon::Table":
-        CTable(shared_ptr[CArrowTable] &tab, shared_ptr[CCylonContext] &ctx)
+        CTable(shared_ptr[CArrowTable] & tab, shared_ptr[CCylonContext] & ctx)
 
         @staticmethod
         CStatus FromArrowTable(shared_ptr[CCylonContext] &ctx, shared_ptr[CArrowTable] &table,
                                shared_ptr[CTable] &tableOut)
 
         CStatus ToArrowTable(shared_ptr[CArrowTable] &output)
-
-        CStatus WriteCSV(const string &path, const CCSVWriteOptions &options)
 
         int Columns()
 
@@ -62,6 +60,8 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
+    CStatus WriteCSV(shared_ptr[CTable] &table, const string &path,
+                    const CCSVWriteOptions &options)
 
     CStatus Sort(shared_ptr[CTable] &table, int sort_column, shared_ptr[CTable] &output)
 
@@ -96,6 +96,22 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus DistributedIntersect(shared_ptr[CTable] &first, shared_ptr[CTable] &second,
                                shared_ptr[CTable] &output)
 
+    CStatus DistributedSort(shared_ptr[CTable] &table, int sort_column, shared_ptr[CTable]
+                            &output, CSortOptions sort_options)
+
+cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
+    cdef cppclass CSortOptions "cylon::SortOptions":
+        bool ascending
+        int num_bins
+        long num_samples
+        @staticmethod
+        CSortOptions Defaults()
+
+
+cdef class SortOptions:
+    cdef:
+        CSortOptions *thisPtr
+        void init(self, CSortOptions *csort_options)
 
 cdef class Table:
     cdef:

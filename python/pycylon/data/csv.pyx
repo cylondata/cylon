@@ -17,7 +17,6 @@ from libcpp cimport bool
 from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 from pycylon.io.csv_read_config cimport CCSVReadOptions
-from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pyarrow.lib cimport CTable as CArrowTable
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
@@ -28,8 +27,7 @@ from pycylon.data.table cimport Table
 from pycylon.data.table import Table
 from pycylon.api.lib cimport (pycylon_unwrap_context,
 pycylon_wrap_table,
-pycylon_unwrap_csv_read_options,
-pycylon_unwrap_csv_write_options)
+pycylon_unwrap_csv_read_options)
 
 
 def read_csv(context, path, csv_read_options) -> Table:

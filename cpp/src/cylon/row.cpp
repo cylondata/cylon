@@ -26,9 +26,12 @@ auto get_numeric(const std::shared_ptr<arrow::Table>& table, int64_t col_index, 
   return numeric_array->Value(row_index);
 }
 
-Row::Row(std::shared_ptr<arrow::Table> tab, int64_t row_index) {
+Row::Row(std::shared_ptr<arrow::Table> tab) {
   this->table = tab;
-  this->row_index = row_index;
+}
+
+void Row::SetIndex(int64_t index) {
+  this->row_index = index;
 }
 
 int8_t Row::GetInt8(int64_t col_index) {

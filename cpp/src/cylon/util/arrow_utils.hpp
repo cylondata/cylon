@@ -22,12 +22,13 @@ namespace util {
 
 class FunctionContext;
 
-arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort_column_index,
-                        std::shared_ptr<arrow::Table> *sorted_table,
-                        arrow::MemoryPool *memory_pool = arrow::default_memory_pool());
+arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table,
+                        int64_t sort_column_index,
+                        arrow::MemoryPool *memory_pool,
+                        std::shared_ptr<arrow::Table> &sorted_table);
 
-arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>>& indices,
-                                    const std::shared_ptr<arrow::Array>& source_array,
+arrow::Status copy_array_by_indices(const std::vector<int64_t> &indices,
+                                    const std::shared_ptr<arrow::Array> &source_array,
                                     std::shared_ptr<arrow::Array> *copied_array,
                                     arrow::MemoryPool *memory_pool = arrow::default_memory_pool());
 
@@ -41,10 +42,23 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table);
 /**
  * Create a duplicate of the current array
  */
-arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray>& cArr,
-                                        const std::shared_ptr<arrow::Field>& field,
-                                        arrow::MemoryPool *pool,
-                                        std::shared_ptr<arrow::ChunkedArray>& out);
+arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr,
+                        const std::shared_ptr<arrow::Field> &field,
+                        arrow::MemoryPool *pool,
+                        std::shared_ptr<arrow::ChunkedArray> &out);
+
+arrow::Status SampleTable(std::shared_ptr<arrow::Table> &table,
+                          int32_t idx,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out);
+
+arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out);
+
+arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &array,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out);
 
 }  // namespace util
 }  // namespace cylon

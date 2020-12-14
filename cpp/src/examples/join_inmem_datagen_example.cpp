@@ -35,22 +35,6 @@ void create_int64_table(char *const *argv,
                         std::shared_ptr<arrow::Table> &left_table,
                         std::shared_ptr<arrow::Table> &right_table);
 
-uint64_t next_random() {
-  uint64_t randnumber = 0;
-  for (int i = 19; i >= 1; i--) {
-    uint64_t power = pow(10, i - 1);
-    if (power % 2 != 0 && power != 1) {
-      power++;
-    }
-    randnumber += power * (rand() % 10);
-  }
-  return randnumber;
-}
-
-uint64_t next_random_mt(std::mt19937_64 &gen) {
-  return gen();
-}
-
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     LOG(ERROR) << "There should be one argument with count";
@@ -120,15 +104,18 @@ void create_binary_table(char *const *argv,
 
   uint64_t count = std::stoull(argv[1]);
   uint64_t range = count * ctx->GetWorldSize();
-  srand(time(NULL) + ctx->GetRank());
+
+  std::random_device rd;
+  std::mt19937_64 gen(rd());
+  std::uniform_int_distribution<uint64_t> distrib(0, range);
 
   arrow::Status st = left_id_builder.Reserve(count);
   st = right_id_builder.Reserve(count);
   st = cost_builder.Reserve(count);
   for (uint64_t i = 0; i < count; i++) {
-    uint64_t l = next_random() % range;
-    uint64_t r = next_random() % range;
-    uint64_t v = next_random() % range;
+    uint64_t l = distrib(gen);
+    uint64_t r = distrib(gen);
+    uint64_t v = distrib(gen);
     left_id_builder.UnsafeAppend((uint8_t *) (&l));
     right_id_builder.UnsafeAppend((uint8_t *) (&r));
     cost_builder.UnsafeAppend((uint8_t *) (&v));
@@ -162,18 +149,20 @@ void create_int64_table(char *const *argv,
   arrow::Int64Builder right_id_builder(pool);
   arrow::Int64Builder cost_builder(pool);
 
-  std::mt19937_64 gen(std::random_device{}());
   uint64_t count = std::stoull(argv[1]);
   uint64_t range = count * ctx->GetWorldSize();
-  srand(time(NULL) + ctx->GetRank());
+
+  std::random_device rd;
+  std::mt19937_64 gen(rd());
+  std::uniform_int_distribution<int64_t> distrib(0, range);
 
   arrow::Status st = left_id_builder.Reserve(count);
   st = right_id_builder.Reserve(count);
   st = cost_builder.Reserve(count);
   for (uint64_t i = 0; i < count; i++) {
-    int64_t l = next_random_mt(gen) % range;
-    int64_t r = next_random_mt(gen) % range;
-    int64_t v = next_random_mt(gen) % range;
+    int64_t l = distrib(gen);
+    int64_t r = distrib(gen);
+    int64_t v = distrib(gen);
     left_id_builder.UnsafeAppend(l);
     right_id_builder.UnsafeAppend(r);
     cost_builder.UnsafeAppend(v);

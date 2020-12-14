@@ -63,6 +63,8 @@ hs_err_pid*
 
 #sphinx created files
 docs/_build
+docs/.docusaurus
+docs/node_modules
 
 # ignore the tmp dir
 tmp/

@@ -22,8 +22,6 @@ if (CYLON_PARQUET)
     set(PARQUET_CYLON_FILES
             io/parquet_config.hpp
             io/parquet_config.cpp
-            parquet.hpp
-            parquet.cpp
             )
 else (CYLON_PARQUET)
     set(PARQUET_CYLON_FILES)
@@ -48,8 +46,6 @@ add_library(cylon SHARED
         util/copy_arrray.cpp
         join/join_utils.hpp
         join/join_utils.cpp
-        arrow/arrow_join.cpp
-        arrow/arrow_join.hpp
         io/arrow_io.cpp
         io/arrow_io.hpp
         table_api.hpp
@@ -128,6 +124,7 @@ add_library(cylon SHARED
         arrow/arrow_builder.cpp
         compute/aggregates.hpp
         compute/aggregates.cpp
+        compute/aggregate_utils.hpp
         net/comm_operations.hpp
         net/mpi/mpi_operations.cpp
         net/mpi/mpi_operations.hpp
@@ -137,6 +134,9 @@ add_library(cylon SHARED
         groupby/groupby.hpp
         groupby/groupby.cpp
         ${PARQUET_CYLON_FILES}
+        partition/partition.hpp
+        partition/partition.cpp
+        util/macros.hpp
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
