@@ -885,7 +885,7 @@ cdef class Table:
                  2. int i.e a row index
                  3. str i.e extract the data column-wise by column-name
                  4. List of columns are extracted
-
+                 5. PyCylon Table
         Returns: PyCylon Table
 
         Examples

@@ -166,6 +166,13 @@ def test_series():
     assert responses[-1] == 0
 
 
+def test_frame():
+    print("25. DataFrame Test")
+    responses.append(
+        os.system("pytest -q python/test/test_frame.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)

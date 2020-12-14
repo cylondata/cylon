@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import List, Dict
 from copy import copy
 from collections.abc import Iterable
@@ -92,8 +93,8 @@ class DataFrame(object):
             return cn.Table.from_arrow(self.context, data)
         elif isinstance(data, Series):
             # load from PyCylon Series
-            #cols, rows = data.shape
-            #columns = self._initialize_columns(cols=cols, columns=columns)
+            # cols, rows = data.shape
+            # columns = self._initialize_columns(cols=cols, columns=columns)
             return NotImplemented
         elif isinstance(data, cn.Table):
             if columns:
@@ -160,12 +161,406 @@ class DataFrame(object):
     def to_csv(self, path, csv_write_options: CSVWriteOptions):
         self._table.to_csv(path=path, csv_write_options=csv_write_options)
 
-    def __getitem__(self, item):
-        return DataFrame(self._table.__getitem__(item))
+    def __getitem__(self, item) -> DataFrame:
+        """
+            This method allows to retrieve a subset of a DataFrane by means of a key
+            Args:
+                key: a key can be the following
+                     1. slice i.e dataframe[1:5], rows 1:5
+                     2. int i.e a row index
+                     3. str i.e extract the data column-wise by column-name
+                     4. List of columns are extracted
+                     5. PyCylon DataFrame
+            Returns: PyCylon DataFrame
+
+            Examples
+            --------
+            >>> data = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]
+            >>> df: DataFrame = DataFrame(data)
+
+            >>> df1 = df[1:3]
+                col-1  col-2  col-3
+                    0      2      6     10
+                    1      3      7     11
+                    2      4      8     12
+
+            >>> df2 = df['col-1']
+                   col-1
+                0      1
+                1      2
+                2      3
+                3      4
+
+            >>> df3 = df[['col-1', 'col-2']]
+                   col-1  col-2
+                0      1      5
+                1      2      6
+                2      3      7
+                3      4      8
+
+            >>> df4 = df > 3
+                     col-1  col-2  col-3
+                0    False   True   True
+                1    False   True   True
+                2    False   True   True
+                3     True   True   True
+
+            >>> df5 = df[tb4]
+                    col-1  col-2  col-3
+                0    NaN      5      9
+                1    NaN      6     10
+                2    NaN      7     11
+                3    4.0      8     12
+
+            >>> df8 = df['col-1'] > 2
+                   col-1  col-2  col-3
+                0      3      7     11
+                1      4      8     12
+
+        """
+        if isinstance(item, slice) or isinstance(item, int) or isinstance(item, str) or \
+                isinstance(item, List):
+            return DataFrame(self._table.__getitem__(item))
+        elif isinstance(item, DataFrame):
+            return DataFrame(self._table.__getitem__(item.to_table()))
 
     def __setitem__(self, key, value):
+        '''
+            Sets values for a existing dataframe by means of a column
+            Args:
+                key: (str) column-name
+                value: (DataFrame) data as a single column table
+
+            Returns: PyCylon DataFrame
+
+            Examples
+            --------
+            >>> df
+                   col-1  col-2  col-3
+                0      1      5      9
+                1      2      6     10
+                2      3      7     11
+                3      4      8     12
+
+
+            >>> df['col-3'] = DataFrame([[90, 100, 110, 120]])
+                   col-1  col-2  col-3
+                0      1      5     90
+                1      2      6    100
+                2      3      7    110
+                3      4      8    120
+
+            >>> df['col-4'] = DataFrame([190, 1100, 1110, 1120]])
+                    col-1  col-2  col-3  col-4
+                0      1      5     90    190
+                1      2      6    100   1100
+                2      3      7    110   1110
+                3      4      8    120   1120
+        '''
+
         if isinstance(key, str) and isinstance(value, DataFrame):
             self._table.__setitem__(key, value.to_table())
+        else:
+            raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
+                             f"value type {type(value)}")
 
     def __repr__(self):
         return self._table.__repr__()
+
+    def __eq__(self, other) -> DataFrame:
+        '''
+                Equal operator for DataFrame
+                Args:
+                    other: can be a numeric scalar or a DataFrame
+
+                Returns: PyCylon DataFrame
+
+                Examples
+                --------
+
+                >>> df
+                       col-1  col-2  col-3
+                    0      1      5      9
+                    1      2      6     10
+                    2      3      7     11
+                    3      4      8     12
+
+                >>> df['col-1'] == 2
+                       col-1
+                    0  False
+                    1   True
+                    2  False
+                    3  False
+
+                >>> df == 2
+                       col-1  col-2  col-3
+                    0  False  False  False
+                    1   True  False  False
+                    2  False  False  False
+                    3  False  False  False
+
+                '''
+        return DataFrame(self._table.__eq__(other))
+
+    def __ne__(self, other) -> DataFrame:
+        '''
+        Not equal operator for DataFrame
+        Args:
+            other: can be a numeric scalar or DataFrame
+
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> df
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df3 = df['col-1'] != 2
+               col-1
+            0   True
+            1  False
+            2   True
+            3   True
+
+        >>> df4 = df != 2
+               col-1  col-2  col-3
+            0   True   True   True
+            1  False   True   True
+            2   True   True   True
+            3   True   True   True
+        '''
+
+        return DataFrame(self._table.__ne__(other))
+
+    def __lt__(self, other) -> DataFrame:
+        '''
+        Lesser than operator for DataFrame
+        Args:
+            other: can be a numeric scalar or DataFrame
+
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> tb3 = tb['col-1'] < 2
+               col-1
+            0   True
+            1  False
+            2  False
+            3  False
+
+        >>> tb4 = tb < 2
+               col-1  col-2  col-3
+            0   True  False  False
+            1  False  False  False
+            2  False  False  False
+            3  False  False  False
+        '''
+
+        return DataFrame(self._table.__lt__(other))
+
+    def __gt__(self, other) -> DataFrame:
+        '''
+        Greater than operator for DataFrame
+        Args:
+            other: can be a numeric scalar or DataFrame
+
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> df
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df3 = df['col-1'] > 2
+                col-1
+            0  False
+            1  False
+            2   True
+            3   True
+
+        >>> df4 = df > 2
+               col-1  col-2  col-3
+            0  False   True   True
+            1  False   True   True
+            2   True   True   True
+            3   True   True   True
+        '''
+
+        return DataFrame(self._table.__gt__(other))
+
+    def __le__(self, other) -> DataFrame:
+        '''
+        Lesser than or equal operator for DataFrame
+        Args:
+            other: can be a numeric scalar or DataFrame
+
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> tb
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df3 = df['col-1'] <= 2
+                col-1
+            0   True
+            1   True
+            2  False
+            3  False
+
+        >>> df4 = df <= 2
+               col-1  col-2  col-3
+            0   True  False  False
+            1   True  False  False
+            2  False  False  False
+            3  False  False  False
+        '''
+        return DataFrame(self._table.__le__(other))
+
+    def __ge__(self, other) -> DataFrame:
+        '''
+        Greater than or equal operator for DataFrame
+        Args:
+            other: can be a numeric scalar or DataFrame
+
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> df
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+
+        >>> df3 = df['col-1'] >= 2
+               col-1
+            0  False
+            1   True
+            2   True
+            3   True
+
+        >>> df4 = df >= 2
+               col-1  col-2  col-3
+            0  False   True   True
+            1   True   True   True
+            2   True   True   True
+            3   True   True   True
+        '''
+
+        return DataFrame(self._table.__ge__(other))
+
+    def __or__(self, other) -> DataFrame:
+        '''
+        Or operator for DataFrame
+        Args:
+            other: PyCylon DataFrame
+
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> df1
+               col-1  col-2
+            0  False   True
+            1   True   True
+            2  False  False
+            3   True  False
+
+        >>> df2
+                col-1  col-2
+            0   True  False
+            1   True   True
+            2  False  False
+            3  False   True
+
+        >>> df_or = df1 | df2
+               col-1  col-2
+            0   True   True
+            1   True   True
+            2  False  False
+            3   True   True
+        '''
+
+        return DataFrame(self._table.__or__(other.to_table()))
+
+    def __and__(self, other) -> DataFrame:
+        '''
+        And operator for DataFrame
+        Args:
+            other: PyCylon DataFrame
+
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> df1
+               col-1  col-2
+            0  False   True
+            1   True   True
+            2  False  False
+            3   True  False
+
+        >>> df2
+                col-1  col-2
+            0   True  False
+            1   True   True
+            2  False  False
+            3  False   True
+
+        >>> df_or = df1 & df2
+               col-1  col-2
+            0  False  False
+            1   True   True
+            2  False  False
+            3  False  False
+        '''
+
+        return DataFrame(self._table.__and__(other.to_table()))
+
+    def __invert__(self) -> DataFrame:
+        '''
+         Invert operator for DataFrame
+
+         Returns: PyCylon DataFrame
+
+         Examples
+         --------
+         >>> df
+                col-1  col-2
+            0  False   True
+            1   True   True
+            2  False  False
+            3   True  False
+
+        >>> ~df
+               col-1  col-2
+            0   True  False
+            1  False  False
+            2   True   True
+            3  False   True
+         '''
+
+        return DataFrame(self._table.__invert__())
