@@ -696,3 +696,59 @@ class DataFrame(object):
 
         return DataFrame(self._table.__truediv__(other))
 
+    def drop(self, column_names: List[str]) -> DataFrame:
+        '''
+        drop a column or list of columns from a DataFrame
+        Args:
+            column_names: List[str]
+
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+
+        >>> df
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df.drop(['col-1'])
+               col-2  col-3
+            0      5      9
+            1      6     10
+            2      7     11
+            3      8     12
+        '''
+
+        return DataFrame(self._table.drop(column_names))
+
+    def fillna(self, fill_value) -> DataFrame:
+        '''
+        Fill not applicable values with a given value
+        Args:
+            fill_value: scalar
+
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> df
+               col-1  col-2  col-3
+            0    1.0    5.0    9.0
+            1    NaN    6.0   10.0
+            2    3.0    NaN   11.0
+            3    4.0    8.0    NaN
+
+        >>> df.fillna(0)
+               col-1  col-2  col-3
+            0      1      5      9
+            1      0      6     10
+            2      3      0     11
+            3      4      8      0
+        '''
+        # Note: Supports numeric types only
+        return DataFrame(self._table.fillna(fill_value))
+
+

@@ -154,3 +154,126 @@ def test_math_ops_for_scalar():
 
         assert pdf_2.values.tolist() == cdf_2.to_pandas().values.tolist()
 
+
+def test_i_bitwise_ops():
+    # TODO: Improve test and functionality: https://github.com/cylondata/cylon/issues/229
+    npr = np.array([[20, 2, 3, 4, 5], [10, -20, -30, -40, -50], [36.2, 13.2, 16.4, 12.2, 10.8]])
+    pdf = pd.DataFrame(npr)
+    cdf = DataFrame(pdf)
+
+    a = cdf['0'] > 10
+    b = cdf['1'] > 2
+    a_pdf = pdf[0] > 10
+    b_pdf = pdf[1] > 2
+
+    d = a & b
+    a &= b
+    d_pdf = a_pdf & b_pdf
+    a_pdf &= b_pdf
+
+    assert d.to_pandas().values.tolist() == a.to_pandas().values.tolist()
+    assert a.to_pandas().values.flatten().tolist() == a_pdf.values.tolist()
+
+    ## OR
+
+    a = cdf['0'] > 10
+    b = cdf['1'] > 2
+    a_pdf = pdf[0] > 10
+    b_pdf = pdf[1] > 2
+
+    d = a | b
+    a |= b
+    d_pdf = a_pdf | b_pdf
+    a_pdf |= b_pdf
+
+    assert d.to_pandas().values.tolist() == a.to_pandas().values.tolist()
+    assert a.to_pandas().values.flatten().tolist() == a_pdf.values.tolist()
+
+
+def test_math_i_ops_for_scalar():
+    npr = np.array([[20, 2, 3, 4, 5], [10, -20, -30, -40, -50], [12.2, 13.2, 16.4, 12.2, 10.8]])
+    pdf = pd.DataFrame(npr)
+    cdf = DataFrame(pdf)
+
+    cdf_1 = cdf
+    pdf_1 = pdf
+    # test column addition
+
+    cdf_1['0'] += 2
+    pdf_1[0] += 2
+
+    assert pdf_1.values.tolist() == cdf_1.to_pandas().values.tolist()
+
+    cdf_1['0'] -= 2
+    pdf_1[0] -= 2
+
+    assert pdf_1.values.tolist() == cdf_1.to_pandas().values.tolist()
+
+    cdf_1['0'] *= 2
+    pdf_1[0] *= 2
+
+    assert pdf_1.values.tolist() == cdf_1.to_pandas().values.tolist()
+
+    cdf_1['0'] /= 2
+    pdf_1[0] /= 2
+
+    assert pdf_1.values.tolist() == cdf_1.to_pandas().values.tolist()
+
+    # test table division
+    cdf_2 = cdf_1
+    pdf_2 = pdf
+
+    cdf_2 += 2
+    pdf += 2
+
+    assert pdf_2.values.tolist() == cdf_2.to_pandas().values.tolist()
+
+    cdf_2 -= 2
+    pdf -= 2
+
+    assert pdf_2.values.tolist() == cdf_2.to_pandas().values.tolist()
+
+    cdf_2 *= 2
+    pdf *= 2
+
+    assert pdf_2.values.tolist() == cdf_2.to_pandas().values.tolist()
+
+    cdf_2 /= 2
+    pdf /= 2
+
+    assert pdf_2.values.tolist() == cdf_2.to_pandas().values.tolist()
+
+
+def test_drop():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+
+    table1_path = '/tmp/user_usage_tm_1.csv'
+
+    assert os.path.exists(table1_path)
+
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+
+    tb: Table = read_csv(ctx, table1_path, csv_read_options)
+    cdf = DataFrame(tb)
+
+    drop_column = 'outgoing_sms_per_month'
+
+    cdf_new = cdf.drop([drop_column])
+
+    assert not cdf_new.columns.__contains__(drop_column)
+
+
+def test_fillna():
+    data_list_numeric = [[1, 2, None, 4, 5], [6, 7, 8, 9, None]]
+    fill_value = 0
+
+    cdf_numeric = DataFrame(data_list_numeric)
+
+    cn_tb_numeric_fillna = cdf_numeric.fillna(fill_value)
+
+    data_list = list(cn_tb_numeric_fillna.to_dict().values())
+    for col in data_list:
+        assert not col.__contains__(None)
+        assert col.__contains__(fill_value)
+
+
