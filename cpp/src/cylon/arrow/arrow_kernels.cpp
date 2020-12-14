@@ -80,13 +80,11 @@ Status FixedBinaryArraySplitKernel::Split(const std::shared_ptr<arrow::ChunkedAr
 }
 
 
-class ArrowStringSortKernel : public ArrowArraySortKernel {
+class ArrowStringSortKernel : public IndexSortKernel {
  public:
-  explicit ArrowStringSortKernel(arrow::MemoryPool *pool) :
-      ArrowArraySortKernel(pool) {}
+  explicit ArrowStringSortKernel(arrow::MemoryPool *pool) : IndexSortKernel(pool) {}
 
-  int Sort(std::shared_ptr<arrow::Array> values,
-           std::shared_ptr<arrow::Array> *offsets) override {
+  arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::Array> &offsets) override {
     auto array = std::static_pointer_cast<arrow::StringArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(int64_t);
@@ -95,7 +93,7 @@ class ArrowStringSortKernel : public ArrowArraySortKernel {
     const arrow::Status &status = result.status();
     if (!status.ok()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
-      return -1;
+      return status;
     }
     indices_buf = std::move(result.ValueOrDie());
 
@@ -108,18 +106,16 @@ class ArrowStringSortKernel : public ArrowArraySortKernel {
     std::sort(indices_begin, indices_end, [array](int64_t left, int64_t right) {
       return array->GetView(left).compare(array->GetView(right)) < 0;
     });
-    *offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
-    return 0;
+    offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
+    return arrow::Status::OK();
   }
 };
 
-class ArrowFixedSizeBinarySortKernel : public ArrowArraySortKernel {
+class ArrowFixedSizeBinarySortKernel : public IndexSortKernel {
  public:
-  explicit ArrowFixedSizeBinarySortKernel(arrow::MemoryPool *pool) :
-      ArrowArraySortKernel(pool) {}
+  explicit ArrowFixedSizeBinarySortKernel(arrow::MemoryPool *pool) : IndexSortKernel(pool) {}
 
-  int Sort(std::shared_ptr<arrow::Array> values,
-           std::shared_ptr<arrow::Array> *offsets) override {
+  arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::Array> &offsets) override {
     auto array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
@@ -127,7 +123,7 @@ class ArrowFixedSizeBinarySortKernel : public ArrowArraySortKernel {
     const arrow::Status &status = result.status();
     if (!status.ok()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
-      return -1;
+      return status;
     }
     indices_buf = std::move(result.ValueOrDie());
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
@@ -138,18 +134,17 @@ class ArrowFixedSizeBinarySortKernel : public ArrowArraySortKernel {
     std::sort(indices_begin, indices_end, [array](uint64_t left, uint64_t right) {
       return array->GetView(left).compare(array->GetView(right)) < 0;
     });
-    *offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
-    return 0;
+    offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
+    return arrow::Status::OK();
   }
 };
 
-class ArrowBinarySortKernel : public ArrowArraySortKernel {
+class ArrowBinarySortKernel : public IndexSortKernel {
  public:
   explicit ArrowBinarySortKernel(arrow::MemoryPool *pool) :
-      ArrowArraySortKernel(pool) {}
+      IndexSortKernel(pool) {}
 
-  int Sort(std::shared_ptr<arrow::Array> values,
-           std::shared_ptr<arrow::Array> *offsets) override {
+  arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::Array> &offsets) override {
     auto array = std::static_pointer_cast<arrow::BinaryArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
@@ -157,7 +152,7 @@ class ArrowBinarySortKernel : public ArrowArraySortKernel {
     const arrow::Status &status = result.status();
     if (!status.ok()) {
       LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
-      return -1;
+      return status;
     }
     indices_buf = std::move(result.ValueOrDie());
     auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
@@ -168,96 +163,65 @@ class ArrowBinarySortKernel : public ArrowArraySortKernel {
     std::sort(indices_begin, indices_end, [array](uint64_t left, uint64_t right) {
       return array->GetView(left).compare(array->GetView(right)) < 0;
     });
-    *offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
-    return 0;
+    offsets = std::make_shared<arrow::UInt64Array>(values->length(), indices_buf);
+    return arrow::Status::OK();
   }
 };
 
-int CreateSorter(const std::shared_ptr<arrow::DataType> &type,
-                 arrow::MemoryPool *pool,
-                 std::shared_ptr<ArrowArraySortKernel> *out) {
+std::unique_ptr<IndexSortKernel> CreateSorter(const std::shared_ptr<arrow::DataType> &type,
+                                              arrow::MemoryPool *pool) {
   switch (type->id()) {
-    case arrow::Type::UINT8:*out = std::make_shared<UInt8ArraySorter>(pool);
-      break;
-    case arrow::Type::INT8:*out = std::make_shared<Int8ArraySorter>(pool);
-      break;
-    case arrow::Type::UINT16:*out = std::make_shared<UInt16ArraySorter>(pool);
-      break;
-    case arrow::Type::INT16:*out = std::make_shared<Int16ArraySorter>(pool);
-      break;
-    case arrow::Type::UINT32:*out = std::make_shared<UInt32ArraySorter>(pool);
-      break;
-    case arrow::Type::INT32:*out = std::make_shared<Int32ArraySorter>(pool);
-      break;
-    case arrow::Type::UINT64:*out = std::make_shared<UInt64ArraySorter>(pool);
-      break;
-    case arrow::Type::INT64:*out = std::make_shared<Int64ArraySorter>(pool);
-      break;
-    case arrow::Type::FLOAT:*out = std::make_shared<FloatArraySorter>(pool);
-      break;
-    case arrow::Type::DOUBLE:*out = std::make_shared<DoubleArraySorter>(pool);
-      break;
-    case arrow::Type::STRING:*out = std::make_shared<ArrowStringSortKernel>(pool);
-      break;
-    case arrow::Type::BINARY:*out = std::make_shared<ArrowBinarySortKernel>(pool);
-      break;
-    case arrow::Type::FIXED_SIZE_BINARY:*out = std::make_shared<ArrowFixedSizeBinarySortKernel>(pool);
-      break;
-    default:LOG(FATAL) << "Un-known type";
-      return -1;
+    case arrow::Type::UINT8:return std::make_unique<UInt8ArraySorter>(pool);
+    case arrow::Type::INT8:return std::make_unique<Int8ArraySorter>(pool);
+    case arrow::Type::UINT16:return std::make_unique<UInt16ArraySorter>(pool);
+    case arrow::Type::INT16:return std::make_unique<Int16ArraySorter>(pool);
+    case arrow::Type::UINT32:return std::make_unique<UInt32ArraySorter>(pool);
+    case arrow::Type::INT32:return std::make_unique<Int32ArraySorter>(pool);
+    case arrow::Type::UINT64:return std::make_unique<UInt64ArraySorter>(pool);
+    case arrow::Type::INT64:return std::make_unique<Int64ArraySorter>(pool);
+    case arrow::Type::FLOAT:return std::make_unique<FloatArraySorter>(pool);
+    case arrow::Type::DOUBLE:return std::make_unique<DoubleArraySorter>(pool);
+    case arrow::Type::STRING:return std::make_unique<ArrowStringSortKernel>(pool);
+    case arrow::Type::BINARY:return std::make_unique<ArrowBinarySortKernel>(pool);
+    case arrow::Type::FIXED_SIZE_BINARY:return std::make_unique<ArrowFixedSizeBinarySortKernel>(pool);
+    default: return nullptr;
   }
-  return 0;
 }
 
 arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> &values,
-                          std::shared_ptr<arrow::Array> *offsets) {
-  std::shared_ptr<ArrowArraySortKernel> out;
-  if (CreateSorter(values->type(), memory_pool, &out) != 0) {
+                          std::shared_ptr<arrow::Array> &offsets) {
+  std::unique_ptr<IndexSortKernel> out = CreateSorter(values->type(), memory_pool);
+  if (out == nullptr) {
     return arrow::Status(arrow::StatusCode::NotImplemented, "unknown type " + values->type()->ToString());
   }
-  out->Sort(values, offsets);
-  return arrow::Status::OK();
+  return out->Sort(values, offsets);
 }
 
-int CreateInplaceSorter(const std::shared_ptr<arrow::DataType> &type,
-                        arrow::MemoryPool *pool,
-                        std::shared_ptr<ArrowArrayInplaceSortKernel> *out) {
+std::unique_ptr<InplaceIndexSortKernel> CreateInplaceSorter(const std::shared_ptr<arrow::DataType> &type,
+                                                            arrow::MemoryPool *pool) {
   switch (type->id()) {
-    case arrow::Type::UINT8:*out = std::make_shared<UInt8ArrayInplaceSorter>(pool);
-      break;
-    case arrow::Type::INT8:*out = std::make_shared<Int8ArrayInplaceSorter>(pool);
-      break;
-    case arrow::Type::UINT16:*out = std::make_shared<UInt16ArrayInplaceSorter>(pool);
-      break;
-    case arrow::Type::INT16:*out = std::make_shared<Int16ArrayInplaceSorter>(pool);
-      break;
-    case arrow::Type::UINT32:*out = std::make_shared<UInt32ArrayInplaceSorter>(pool);
-      break;
-    case arrow::Type::INT32:*out = std::make_shared<Int32ArrayInplaceSorter>(pool);
-      break;
-    case arrow::Type::UINT64:*out = std::make_shared<UInt64ArrayInplaceSorter>(pool);
-      break;
-    case arrow::Type::INT64:*out = std::make_shared<Int64ArrayInplaceSorter>(pool);
-      break;
-    case arrow::Type::FLOAT:*out = std::make_shared<FloatArrayInplaceSorter>(pool);
-      break;
-    case arrow::Type::DOUBLE:*out = std::make_shared<DoubleArrayInplaceSorter>(pool);
-      break;
-    default:LOG(FATAL) << "Un-known type";
-      return -1;
+    case arrow::Type::UINT8:return std::make_unique<UInt8ArrayInplaceSorter>(pool);
+    case arrow::Type::INT8:return std::make_unique<Int8ArrayInplaceSorter>(pool);
+    case arrow::Type::UINT16:return std::make_unique<UInt16ArrayInplaceSorter>(pool);
+    case arrow::Type::INT16:return std::make_unique<Int16ArrayInplaceSorter>(pool);
+    case arrow::Type::UINT32:return std::make_unique<UInt32ArrayInplaceSorter>(pool);
+    case arrow::Type::INT32:return std::make_unique<Int32ArrayInplaceSorter>(pool);
+    case arrow::Type::UINT64:return std::make_unique<UInt64ArrayInplaceSorter>(pool);
+    case arrow::Type::INT64:return std::make_unique<Int64ArrayInplaceSorter>(pool);
+    case arrow::Type::FLOAT:return std::make_unique<FloatArrayInplaceSorter>(pool);
+    case arrow::Type::DOUBLE:return std::make_unique<DoubleArrayInplaceSorter>(pool);
+    default: return nullptr;
   }
-  return 0;
 }
 
 arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
                                  std::shared_ptr<arrow::Array> &values,
-                                 std::shared_ptr<arrow::UInt64Array> *offsets) {
-  std::shared_ptr<ArrowArrayInplaceSortKernel> out;
-  if (CreateInplaceSorter(values->type(), memory_pool, &out) != 0) {
+                                 std::shared_ptr<arrow::UInt64Array> &offsets) {
+  std::unique_ptr<InplaceIndexSortKernel> out = CreateInplaceSorter(values->type(), memory_pool);
+  if (out == nullptr) {
     return arrow::Status(arrow::StatusCode::NotImplemented, "unknown type " + values->type()->ToString());
   }
-  out->Sort(values, offsets);
-  return arrow::Status::OK();
+  return out->Sort(values, offsets);
 }
 
 }  // namespace cylon

@@ -22,23 +22,23 @@ namespace cylon {
 namespace join {
 namespace util {
 
-arrow::Status build_final_table(const std::shared_ptr<std::vector<int64_t>> &left_indices,
-                                const std::shared_ptr<std::vector<int64_t>> &right_indices,
+arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
+                                const std::vector<int64_t> &right_indices,
                                 const std::shared_ptr<arrow::Table> &left_tab,
                                 const std::shared_ptr<arrow::Table> &right_tab,
                                 std::shared_ptr<arrow::Table> *final_table,
                                 arrow::MemoryPool *memory_pool);
 
 arrow::Status build_final_table_inplace_index(
-                                size_t left_inplace_column, size_t right_inplace_column,
-                                const std::shared_ptr<std::vector<int64_t>> &left_indices,
-                                const std::shared_ptr<std::vector<int64_t>> &right_indices,
-                                std::shared_ptr<arrow::UInt64Array> &left_index_sorted_column,
-                                std::shared_ptr<arrow::UInt64Array> &right_index_sorted_column,
-                                const std::shared_ptr<arrow::Table> &left_tab,
-                                const std::shared_ptr<arrow::Table> &right_tab,
-                                std::shared_ptr<arrow::Table> *final_table,
-                                arrow::MemoryPool *memory_pool);
+    size_t left_inplace_column, size_t right_inplace_column,
+    const std::vector<int64_t> &left_indices,
+    const std::vector<int64_t> &right_indices,
+    std::shared_ptr<arrow::UInt64Array> &left_index_sorted_column,
+    std::shared_ptr<arrow::UInt64Array> &right_index_sorted_column,
+    const std::shared_ptr<arrow::Table> &left_tab,
+    const std::shared_ptr<arrow::Table> &right_tab,
+    std::shared_ptr<arrow::Table> *final_table,
+    arrow::MemoryPool *memory_pool);
 
 arrow::Status CombineChunks(const std::shared_ptr<arrow::Table> &table,
                             int64_t col_index,
