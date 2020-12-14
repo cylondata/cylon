@@ -1293,7 +1293,7 @@ cdef class Table:
 
         return self._aggregate_filters(other, operator.__and__)
 
-    def __invert__(self):
+    def __invert__(self) -> Table:
         '''
          Invert operator for Table
 
@@ -1318,7 +1318,7 @@ cdef class Table:
 
         return compute.invert(self)
 
-    def __neg__(self):
+    def __neg__(self) -> Table:
         '''
          Negation operator for Table
 
@@ -1343,7 +1343,7 @@ cdef class Table:
 
         return compute.neg(self)
 
-    def __add__(self, other):
+    def __add__(self, other) -> Table:
         '''
          Add operator for Table
          Args:
@@ -1369,7 +1369,7 @@ cdef class Table:
          '''
         return compute.add(self, other)
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> Table:
         '''
          Subtract operator for Table
          Args:
@@ -1395,7 +1395,7 @@ cdef class Table:
          '''
         return compute.subtract(self, other)
 
-    def __mul__(self, other):
+    def __mul__(self, other) -> Table:
         '''
          Multiply operator for Table
          Args:
@@ -1422,7 +1422,7 @@ cdef class Table:
 
         return compute.multiply(self, other)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other) -> Table:
         '''
          Element-wise division operator for Table
          Args:

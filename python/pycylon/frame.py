@@ -564,3 +564,135 @@ class DataFrame(object):
          '''
 
         return DataFrame(self._table.__invert__())
+
+    def __neg__(self) -> DataFrame:
+        '''
+         Negation operator for DataFrame
+
+         Returns: PyCylon DataFrame
+
+         Examples
+         --------
+         >>> df
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+         >>> -df
+               col-1  col-2  col-3
+            0     -1     -5     -9
+            1     -2     -6    -10
+            2     -3     -7    -11
+            3     -4     -8    -12
+         '''
+
+        return DataFrame(self._table.__neg__())
+
+    def __add__(self, other) -> DataFrame:
+        '''
+         Add operator for DataFrame
+         Args:
+             other: scalar numeric
+
+         Returns: PyCylon DataFrame
+
+         Examples
+         --------
+        >>> df
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df + 2
+               col-1  col-2  col-3
+            0      3      7     11
+            1      4      8     12
+            2      5      9     13
+            3      6     10     14
+         '''
+        return DataFrame(self._table.__add__(other))
+
+    def __sub__(self, other) -> DataFrame:
+        '''
+         Subtract operator for DataFrame
+         Args:
+             other: scalar numeric
+
+         Returns: PyCylon DataFrame
+
+         Examples
+         --------
+        >>> df
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df - 2
+               col-1  col-2  col-3
+            0     -1      3      7
+            1      0      4      8
+            2      1      5      9
+            3      2      6     10
+         '''
+        return DataFrame(self._table.__sub__(other))
+
+    def __mul__(self, other) -> DataFrame:
+        '''
+         Multiply operator for DataFrame
+         Args:
+             other: scalar numeric
+
+         Returns: PyCylon DataFrame
+
+         Examples
+         --------
+        >>> df
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df * 2
+               col-1  col-2  col-3
+            0      2     10     18
+            1      4     12     20
+            2      6     14     22
+            3      8     16     24
+         '''
+
+        return DataFrame(self._table.__mul__(other))
+
+    def __truediv__(self, other) -> DataFrame:
+        '''
+         Element-wise division operator for DataFrame
+         Args:
+             other: scalar numeric
+
+         Returns: PyCylon DataFrame
+
+         Examples
+         --------
+        >>> df
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df / 2
+               col-1  col-2  col-3
+            0    0.5    2.5    4.5
+            1    1.0    3.0    5.0
+            2    1.5    3.5    5.5
+            3    2.0    4.0    6.0
+         '''
+
+        return DataFrame(self._table.__truediv__(other))
+

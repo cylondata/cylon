@@ -104,3 +104,53 @@ def test_invert():
     invert_pdf = ~pdf
 
     assert invert_cdf.to_pandas().values.tolist() == invert_pdf.values.tolist()
+
+
+def test_neg():
+    npr = np.array([[1, 2, 3, 4, 5, -6, -7], [-1, -2, -3, -4, -5, 6, 7]])
+    pdf = pd.DataFrame(npr)
+    cdf = DataFrame(pdf)
+    neg_cdf = -cdf
+    neg_pdf = -pdf
+    assert neg_cdf.to_pandas().values.tolist() == neg_pdf.values.tolist()
+
+
+def test_setitem():
+    npr = np.array([[1, 2, 3, 4, 5], [-1, -2, -3, -4, -5]])
+    pdf = pd.DataFrame(npr)
+
+    cdf = DataFrame(pdf)
+    # replacing an existing column
+    cdf['0'] = cdf['4']
+    assert cdf['0'].to_pandas().values.tolist() == cdf['4'].to_pandas().values.tolist()
+    # adding a new column at the end
+    cdf['5'] = cdf['4']
+    assert cdf['5'].to_pandas().values.tolist() == cdf['4'].to_pandas().values.tolist()
+
+
+def test_math_ops_for_scalar():
+    npr = np.array([[20, 2, 3, 4, 5], [10, -20, -30, -40, -50], [10.2, 13.2, 16.4, 12.2, 10.8]])
+    pdf = pd.DataFrame(npr)
+    cdf = DataFrame(pdf)
+
+    from operator import add, sub, mul, truediv
+    ops = [add, sub, mul, truediv]
+
+    for op in ops:
+        cdf_1 = cdf
+        pdf_1 = pdf
+        # test column division
+        cdf_1['0'] = op(cdf_1['0'], 2)
+        pdf_1[0] = op(pdf_1[0], 2)
+
+        assert pdf_1.values.tolist() == cdf_1.to_pandas().values.tolist()
+
+        # test table division
+        cdf_2 = cdf
+        pdf_2 = pdf
+
+        cdf_2 = op(cdf_2, 2)
+        pdf_2 = op(pdf, 2)
+
+        assert pdf_2.values.tolist() == cdf_2.to_pandas().values.tolist()
+
