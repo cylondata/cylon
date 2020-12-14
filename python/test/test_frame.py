@@ -277,3 +277,88 @@ def test_fillna():
         assert col.__contains__(fill_value)
 
 
+def test_isin():
+    df = pd.DataFrame({'num_legs': [2, 4], 'num_wings': [2, 0]}, index=['falcon', 'dog'])
+    arw_tb = pa.Table.from_pandas(df)
+    arw_ar: pa.array = pa.array([[2, 4], [2, 0]])
+    print(df)
+
+
+def test_isna():
+    columns = ['col1', 'col2']
+    data = [[1, 2, 3, 4, 5, None], [None, 7, 8, 9, 10, 11]]
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb = cn.Table.from_list(ctx, columns, data)
+    df = cn_tb.to_pandas()
+
+    assert df.isna().values.tolist() == cn_tb.isna().to_pandas().values.tolist()
+
+
+def test_isnull():
+    columns = ['col1', 'col2']
+    data = [[1, 2, 3, 4, 5, None], [None, 7, 8, 9, 10, 11]]
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb = cn.Table.from_list(ctx, columns, data)
+    df = cn_tb.to_pandas()
+
+    assert df.isnull().values.tolist() == cn_tb.isnull().to_pandas().values.tolist()
+
+
+def test_notna():
+    data = [[1, 2, 3, 4, 5, None], [None, 7, 8, 9, 10, 11]]
+    cdf = DataFrame(data)
+    df = cdf.to_pandas()
+
+    assert df.notna().values.tolist() == cdf.notna().to_pandas().values.tolist()
+
+
+def test_notnull():
+    data = [[1, 2, 3, 4, 5, None], [None, 7, 8, 9, 10, 11]]
+    cdf = DataFrame(data)
+    df = cdf.to_pandas()
+
+    assert df.notnull().values.tolist() == cdf.notnull().to_pandas().values.tolist()
+
+
+def test_isna():
+    data = [[1, 2, 3, 4, 5, None], [None, 7, 8, 9, 10, 11]]
+    cdf = DataFrame(data)
+    df = cdf.to_pandas()
+
+    assert df.isna().values.tolist() == cdf.isna().to_pandas().values.tolist()
+
+
+def test_isnull():
+    data = [[1, 2, 3, 4, 5, None], [None, 7, 8, 9, 10, 11]]
+    cdf = DataFrame(data)
+    df = cdf.to_pandas()
+
+    assert df.isnull().values.tolist() == cdf.isnull().to_pandas().values.tolist()
+
+
+def test_rename():
+    col_names = ['col1', 'col2', 'col3', 'col4']
+    data_list_numeric = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13, 14, 15],
+                         [16, 17, 18, 19, 20]]
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb = cn.Table.from_list(ctx, col_names, data_list_numeric)
+    cdf = DataFrame(cn_tb)
+    prev_col_names = cn_tb.column_names
+    # with dictionary
+    columns = {'col1': 'col-1', 'col3': 'col-3'}
+    cdf.rename(columns)
+
+    new_col_names = cdf.columns
+
+    for key in columns:
+        value = columns[key]
+        assert prev_col_names.index(key) == new_col_names.index(value)
+
+    # with list
+    cn_tb_list = cn.Table.from_list(ctx, col_names, data_list_numeric)
+    cdf_list = DataFrame(cn_tb_list)
+    prev_col_names = cdf_list.columns
+    new_column_names = ['col-1', 'col-2', 'col-3', 'col-4']
+    cdf_list.rename(new_column_names)
+
+    assert cdf_list.columns == new_column_names

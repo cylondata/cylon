@@ -751,4 +751,168 @@ class DataFrame(object):
         # Note: Supports numeric types only
         return DataFrame(self._table.fillna(fill_value))
 
+    def where(self, condition: DataFrame = None, other=None) -> DataFrame:
+        '''
+        Experimental version of Where operation.
+        Replace values where condition is False
+        Args:
+            condition: bool DataFrame
+            other: Scalar
 
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> df
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df.where(df > 2)
+                col-1  col-2  col-3
+            0    NaN      5      9
+            1    NaN      6     10
+            2    3.0      7     11
+            3    4.0      8     12
+
+        >>> df.where(df > 2, 10)
+               col-1  col-2  col-3
+            0     10      5      9
+            1     10      6     10
+            2      3      7     11
+            3      4      8     12
+        '''
+        if condition is None:
+            raise ValueError("Condition must be provided")
+        return DataFrame(self._table.where(condition, other))
+
+    def isnull(self) -> DataFrame:
+        '''
+        Checks for null elements and returns a bool DataFrame
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+
+        >>> df
+               col-1  col-2  col-3
+            0    1.0    5.0    9.0
+            1    NaN    6.0   10.0
+            2    3.0    NaN   11.0
+            3    4.0    8.0    NaN
+
+        >>> df.isnull()
+                col-1  col-2  col-3
+            0  False  False  False
+            1   True  False  False
+            2  False   True  False
+            3  False  False   True
+
+        '''
+        return DataFrame(self._table.isnull())
+
+    def isna(self) -> DataFrame:
+        '''
+        Check for not applicable values and returns a bool DataFrame
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> df
+               col-1  col-2  col-3
+            0    1.0    5.0    9.0
+            1    NaN    6.0   10.0
+            2    3.0    NaN   11.0
+            3    4.0    8.0    NaN
+
+        >>> df.isna()
+                col-1  col-2  col-3
+            0  False  False  False
+            1   True  False  False
+            2  False   True  False
+            3  False  False   True
+        '''
+        return DataFrame(self._table.isnull())
+
+    def notnull(self) -> DataFrame:
+        '''
+        Check the not null values and returns a bool DataFrame
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> df
+               col-1  col-2  col-3
+            0    1.0    5.0    9.0
+            1    NaN    6.0   10.0
+            2    3.0    NaN   11.0
+            3    4.0    8.0    NaN
+
+        >>> df.notnull()
+               col-1  col-2  col-3
+            0   True   True   True
+            1  False   True   True
+            2   True  False   True
+            3   True   True  False
+        '''
+
+        return ~self.isnull()
+
+    def notna(self) -> DataFrame:
+        '''
+        Checks for not NA values and returns a bool DataFrame
+        Returns: PyCylon DataFrame
+
+        Examples
+        --------
+        >>> df
+               col-1  col-2  col-3
+            0    1.0    5.0    9.0
+            1    NaN    6.0   10.0
+            2    3.0    NaN   11.0
+            3    4.0    8.0    NaN
+
+        >>> df.notna()
+               col-1  col-2  col-3
+            0   True   True   True
+            1  False   True   True
+            2   True  False   True
+            3   True   True  False
+        '''
+
+        return ~self.isnull()
+
+    def rename(self, column_names):
+        '''
+        Rename a DataFrame with a column name or column names
+        Args:
+            column_names: dictionary or full list of new column names
+
+        Returns: None
+
+        Examples
+        --------
+        >>> df
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df.rename({'col-1': 'col_1'})
+               col_1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df.rename(['c1', 'c2', 'c3'])
+               c1  c2  c3
+            0   1   5   9
+            1   2   6  10
+            2   3   7  11
+            3   4   8  12
+        '''
+        self._table.rename(column_names)

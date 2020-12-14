@@ -1631,9 +1631,6 @@ cdef class Table:
             1   True  False  False
             2  False   True  False
             3  False  False   True
-
-
-
         '''
         return compute.is_null(self)
 
@@ -1689,7 +1686,7 @@ cdef class Table:
         Args:
             column_names: dictionary or full list of new column names
 
-        Returns: PyCylon Table
+        Returns: None
 
         Examples
         --------
