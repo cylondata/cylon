@@ -916,3 +916,32 @@ class DataFrame(object):
             3   4   8  12
         '''
         self._table.rename(column_names)
+
+    def add_prefix(self, prefix: str) -> DataFrame:
+        '''
+        Adding a prefix to column names
+        Args:
+            prefix: str
+
+        Returns: PyCylon DataFrame with prefix updated
+
+        Examples
+        --------
+
+        >>> df
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+
+        >>> df.add_prefix('old_')
+               old_c1  old_c2  old_c3
+            0       1       5       9
+            1       2       6      10
+            2       3       7      11
+            3       4       8      12
+
+        '''
+
+        return DataFrame(self._table.add_prefix(prefix))
