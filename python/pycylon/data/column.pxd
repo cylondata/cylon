@@ -40,7 +40,7 @@ cdef extern from "../../../cpp/src/cylon/column.hpp" namespace "cylon":
 
         shared_ptr[ArrowCChunkedAarray] GetColumnData() const
 
-        string GetId() const
+        string GetID() const
 
         shared_ptr[CDataType] GetDataType() const
 

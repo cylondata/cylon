@@ -885,7 +885,7 @@ cdef class Table:
                  2. int i.e a row index
                  3. str i.e extract the data column-wise by column-name
                  4. List of columns are extracted
-
+                 5. PyCylon Table
         Returns: PyCylon Table
 
         Examples
@@ -1293,7 +1293,7 @@ cdef class Table:
 
         return self._aggregate_filters(other, operator.__and__)
 
-    def __invert__(self):
+    def __invert__(self) -> Table:
         '''
          Invert operator for Table
 
@@ -1318,7 +1318,7 @@ cdef class Table:
 
         return compute.invert(self)
 
-    def __neg__(self):
+    def __neg__(self) -> Table:
         '''
          Negation operator for Table
 
@@ -1343,7 +1343,7 @@ cdef class Table:
 
         return compute.neg(self)
 
-    def __add__(self, other):
+    def __add__(self, other) -> Table:
         '''
          Add operator for Table
          Args:
@@ -1369,7 +1369,7 @@ cdef class Table:
          '''
         return compute.add(self, other)
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> Table:
         '''
          Subtract operator for Table
          Args:
@@ -1395,7 +1395,7 @@ cdef class Table:
          '''
         return compute.subtract(self, other)
 
-    def __mul__(self, other):
+    def __mul__(self, other) -> Table:
         '''
          Multiply operator for Table
          Args:
@@ -1422,7 +1422,7 @@ cdef class Table:
 
         return compute.multiply(self, other)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other) -> Table:
         '''
          Element-wise division operator for Table
          Args:
@@ -1631,9 +1631,6 @@ cdef class Table:
             1   True  False  False
             2  False   True  False
             3  False  False   True
-
-
-
         '''
         return compute.is_null(self)
 
@@ -1689,7 +1686,7 @@ cdef class Table:
         Args:
             column_names: dictionary or full list of new column names
 
-        Returns: PyCylon Table
+        Returns: None
 
         Examples
         --------
