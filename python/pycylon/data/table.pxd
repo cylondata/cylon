@@ -99,6 +99,9 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus DistributedSort(shared_ptr[CTable] &table, int sort_column, shared_ptr[CTable]
                             &output, CSortOptions sort_options)
 
+    CStatus Shuffle(shared_ptr[CTable] &table, const vector[int] &hash_columns, shared_ptr[CTable]
+                            &output)
+
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CSortOptions "cylon::SortOptions":
         bool ascending
