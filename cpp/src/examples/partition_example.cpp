@@ -21,27 +21,19 @@
 #include <arrow/api.h>
 #include <arrow/array.h>
 #include <random>
-#include <partition/partition.hpp>
-#include <arrow/compute/api.h>
-#include <ctx/arrow_memory_pool_utils.hpp>
-
 #include <util/arrow_utils.hpp>
-#include <groupby/groupby.hpp>
-
-#include <arrow/arrow_partition_kernels.hpp>
-#include <partition/partition.hpp>
 
 void create_table(char *const *argv,
                   arrow::MemoryPool *pool,
                   std::shared_ptr<arrow::Table> &left_table);
 
-template<typename T>
+/*template<typename T>
 void print_vec(std::vector<T> vec) {
   for (auto a: vec) {
     std::cout << a << " ";
   }
   std::cout << std::endl;
-}
+}*/
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -72,55 +64,14 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<cylon::Table> output;
 
-  std::vector<uint32_t> outp, cnts;
-  auto s = cylon::PartitionByHashing(table, {0}, ctx->GetWorldSize(), outp, cnts);
+  auto s = cylon::DistributedSort(table, 1, output);
   if (!s.is_ok()) {
     std::cout << "dist sort failed " << s.get_msg() << std::endl;
     return 1;
   }
-
-  std::vector<std::shared_ptr<arrow::Table>> outs;
-  s = cylon::Split(table, ctx->GetWorldSize(), outp, cnts, outs);
-  if (!s.is_ok()) {
-    std::cout << "dist sort failed " << s.get_msg() << std::endl;
-    return 1;
-  }
-
-  s = cylon::Shuffle(table, {0}, output);
-  if (!s.is_ok()) {
-    std::cout << "dist sort failed " << s.get_msg() << std::endl;
-    return 1;
-  }
-
-  sleep(ctx->GetRank());
-  std::cout << "YYYY " << std::endl;
-  print_vec(outp);
-  print_vec(cnts);
-
-  for (auto &&t:outs) {
-    std::shared_ptr<cylon::Table> ct;
-    cylon::Table::FromArrowTable(ctx, t, ct);
-    ct->Print();
-    std::cout << "--------------- " << std::endl;
-  }
-  std::cout << "+++++++++++++++++++ " << std::endl;
-  output->Print();
-  std::cout << "##############" << std::endl;
-
-  auto arr = std::static_pointer_cast<arrow::DoubleArray>(output->get_table()->column(1)->chunk(0));
-  for (int i = 0; i < arr->length(); i++) {
-    std::cout << arr->Value(i) << " ";
-  }
-  std::cout << output->get_table()->schema()->ToString() << std::endl;
-
-//  auto s = cylon::DistributedSort(table, 1, output);
-//  if (!s.is_ok()) {
-//    std::cout << "dist sort failed " << s.get_msg() << std::endl;
-//    return 1;
-//  }
-//  std::cout << "sorted table " << ctx->GetRank() << " " << output->Rows() << std::endl;
-//  cylon::WriteCSV(table, "/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
-//  cylon::WriteCSV(output, "/tmp/output" + std::to_string(ctx->GetRank()) + ".txt");
+  std::cout << "sorted table " << ctx->GetRank() << " " << output->Rows() << std::endl;
+  cylon::WriteCSV(table, "/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
+  cylon::WriteCSV(output, "/tmp/output" + std::to_string(ctx->GetRank()) + ".txt");
 
   ctx->Finalize();
   return 0;
