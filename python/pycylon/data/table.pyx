@@ -1954,6 +1954,31 @@ cdef class Table:
         return compute.is_in(self, value, skip_null)
 
     def applymap(self, func) -> Table:
+        '''
+        Applies an element-wise map function
+        Args:
+            func: lambda or a map function
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> tb
+                     c1       c2
+            0     Rayan  Cameron
+            1  Reynolds   Selena
+            2      Jack    Roger
+            3       Mat   Murphy
+
+        >>> tb.applymap(lambda x: "Hello, " + x)
+                            c1              c2
+            0     Hello, Rayan  Hello, Cameron
+            1  Hello, Reynolds   Hello, Selena
+            2      Hello, Jack    Hello, Roger
+            3       Hello, Mat   Hello, Murphy
+
+        '''
         new_chunks = []
         artb = self.to_arrow().combine_chunks()
         for chunk_array in artb.itercolumns():
