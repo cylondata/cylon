@@ -1953,6 +1953,16 @@ cdef class Table:
     def isin(self, value, skip_null=True) -> Table:
         return compute.is_in(self, value, skip_null)
 
+    def applymap(self, func) -> Table:
+        new_chunks = []
+        artb = self.to_arrow().combine_chunks()
+        for chunk_array in artb.itercolumns():
+            npr = chunk_array.to_numpy()
+            new_ca = list(map(func, npr))
+            new_chunks.append(pa.array(new_ca))
+        return Table.from_arrow(self.context,
+                                pa.Table.from_arrays(new_chunks, self.column_names))
+
 
 class EmptyTable(Table):
     '''
@@ -1977,7 +1987,7 @@ cdef class SortOptions:
     '''
     Sort Operations for Distribtued Sort
     '''
-    def __cinit__(self, ascending: bool = True, num_bins: int=0, num_samples: int=0):
+    def __cinit__(self, ascending: bool = True, num_bins: int = 0, num_samples: int = 0):
         '''
         Initializes the CSortOptions struct
         Args:
