@@ -15,6 +15,8 @@
 #include "test_header.hpp"
 #include "test_utils.hpp"
 
+#include <compute/aggregates.hpp>
+
 using namespace cylon;
 
 TEST_CASE("table ops testing", "[table_ops]") {
@@ -32,6 +34,17 @@ TEST_CASE("table ops testing", "[table_ops]") {
       return row.GetInt32(0) % 2 == 0;
     }, select);
 
-    REQUIRE((status.is_ok() && select->Columns() == 2 && select->Rows() == size/2));
+    REQUIRE((status.is_ok() && select->Columns() == 2 && select->Rows() == size / 2));
   }
+
+  SECTION("testing shuffle") {
+    status = Shuffle(input, {0}, select);
+    REQUIRE((status.is_ok() && select->Columns() == 2));
+
+    std::shared_ptr<compute::Result> result;
+    status = compute::Count(select, 0, result);
+    auto s = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
+    REQUIRE((status.is_ok() && s->value == size * WORLD_SZ));
+  }
+
 }
