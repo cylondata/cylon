@@ -43,7 +43,7 @@ class TableRowComparator {
   int compare(const std::shared_ptr<arrow::Table> &table1,
               int64_t index1,
               const std::shared_ptr<arrow::Table> &table2,
-              int64_t index2);
+              int64_t index2) const;
 };
 
 }  // namespace cylon

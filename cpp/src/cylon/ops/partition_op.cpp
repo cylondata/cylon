@@ -46,16 +46,14 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> &table) {
     started_time = true;
   }
   auto t1 = std::chrono::high_resolution_clock::now();
-  std::unordered_map<int, std::shared_ptr<Table>> out;
-  // todo pass ctx as a shared pointer
-  std::shared_ptr<std::vector<int>> kPtr = this->config->HashColumns();
-  if (kPtr->size() > 1) {
-    cylon::kernel::HashPartition(this->ctx_, table, *kPtr,
-                                 this->config->NoOfPartitions(), &out);
-  } else {
-    cylon::kernel::HashPartition(this->ctx_, table, kPtr->at(0),
-                                 this->config->NoOfPartitions(), &out);
+  std::unordered_map<int, std::shared_ptr<cylon::Table>> out; // todo use a vector here.
+
+  Status status = HashPartition(table, *this->config->HashColumns(), this->config->NoOfPartitions(), &out);
+  if (!status.is_ok()){
+    LOG(ERROR) << "hash partition failed: " << status.get_msg();
+    return false;
   }
+
   for (auto const &tab:out) {
     this->InsertToAllChildren(tab.first, tab.second);
   }

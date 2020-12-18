@@ -123,7 +123,7 @@ TableRowComparator::TableRowComparator(const std::vector<std::shared_ptr<arrow::
 int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1,
                                 int64_t index1,
                                 const std::shared_ptr<arrow::Table> &table2,
-                                int64_t index2) {
+                                int64_t index2) const {
   // not doing schema validations here due to performance overheads. Don't expect users to use
   // this function before calling this function from an internal cylon function,
   // schema validation should be done to make sure

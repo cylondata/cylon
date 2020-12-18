@@ -107,7 +107,7 @@ RowHashingKernel::RowHashingKernel(const std::vector<std::shared_ptr<arrow::Fiel
   }
 }
 
-int32_t RowHashingKernel::Hash(const std::shared_ptr<arrow::Table> &table, int64_t row) {
+int32_t RowHashingKernel::Hash(const std::shared_ptr<arrow::Table> &table, int64_t row) const {
   int64_t hash_code = 1;
   for (int c = 0; c < table->num_columns(); ++c) {
     hash_code = 31 * hash_code + this->hash_kernels[c]->ToHash(table->column(c)->chunk(0), row);

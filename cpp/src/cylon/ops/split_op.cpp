@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <memory>
 #include <table.hpp>
+#include <partition/partition.hpp>
 
 namespace cylon {
 
@@ -62,7 +63,7 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> &cy_table) {
   size_t size = ctx_->GetWorldSize();
   size_t kI = config_->NoOfPartitions();
   std::vector<uint32_t> cnts(kI * size, 0);
-  std::vector<int64_t> outPartitions;
+  std::vector<uint32_t> outPartitions;
   outPartitions.reserve(length);
   Status status = HashPartitionArray(cylon::ToArrowPool(ctx_), arr,
                                      hash_targets, &outPartitions, cnts);
