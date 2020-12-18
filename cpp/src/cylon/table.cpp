@@ -368,6 +368,7 @@ Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int
   LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(status)
 
   auto ctx = table->GetContext();
+  out->reserve(no_of_partitions);
   for (int i = 0; i < no_of_partitions; i++) {
     out->insert(std::make_pair(i, std::make_shared<Table>(partitioned_tables[i], ctx)));
   }

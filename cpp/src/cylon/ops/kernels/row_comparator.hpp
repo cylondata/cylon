@@ -29,9 +29,12 @@ class RowComparator {
   std::shared_ptr<cylon::TableRowComparator> comparator;
   std::shared_ptr<cylon::RowHashingKernel> row_hashing_kernel;
 
+//  std::vector<std::shared_ptr<arrow::Table>> tables;
+//  TableRowComparator comparator;
+//  RowHashingKernel row_hashing_kernel;
+
  public:
-  RowComparator(const std::shared_ptr<CylonContext> &ctx,
-                const std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>> &tables,
+  RowComparator(const std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>> &tables,
                 const std::shared_ptr<arrow::Schema> &schema);
 
   // equality

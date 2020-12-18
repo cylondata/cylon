@@ -11,6 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
 
 #include <ctx/arrow_memory_pool_utils.hpp>
 #include <arrow/arrow_partition_kernels.hpp>
@@ -152,4 +153,4 @@ Status HashPartition(std::shared_ptr<CylonContext> &ctx, const std::shared_ptr<T
   return Status::OK();
 }
 }
-}
+}*/

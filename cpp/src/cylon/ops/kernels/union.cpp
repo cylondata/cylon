@@ -20,27 +20,28 @@ void cylon::kernel::Union::InsertTable(const std::shared_ptr<cylon::Table> &tabl
   std::shared_ptr<arrow::Table> arrow_table;
   table->ToArrowTable(arrow_table);
 
-  this->tables.push_back(arrow_table);
-  this->indices_from_tabs.push_back(std::make_shared<std::vector<int64_t>>());
+  this->tables->push_back(arrow_table);
 
-  auto const table_index = this->tables.size() - 1;
+  auto const table_index = this->tables->size() - 1;
   for (int64_t i = 0; i < arrow_table->num_rows(); i++) {
     this->rows_set->insert(std::pair<int8_t, int64_t>(table_index, i));
   }
 }
 
 cylon::Status cylon::kernel::Union::Finalize(std::shared_ptr<cylon::Table> &result) {
+  std::vector<int64_t> indices_from_tabs[this->tables->size()];
+
   for (auto const &pr : *this->rows_set) {
-    this->indices_from_tabs[pr.first]->push_back(pr.second);
+    indices_from_tabs[pr.first].push_back(pr.second);
   }
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
   // prepare final arrays
   for (int32_t col_idx = 0; col_idx < this->schema->num_fields(); col_idx++) {
     arrow::ArrayVector array_vector;
-    for (size_t tab_idx = 0; tab_idx < this->tables.size(); tab_idx++) {
+    for (size_t tab_idx = 0; tab_idx < this->tables->size(); tab_idx++) {
       auto status = cylon::kernel::PrepareArray(this->ctx,
-                                                tables[tab_idx],
+                                                (*tables)[tab_idx],
                                                 col_idx,
                                                 indices_from_tabs[tab_idx],
                                                 array_vector);
@@ -62,16 +63,19 @@ cylon::Status cylon::kernel::Union::Finalize(std::shared_ptr<cylon::Table> &resu
 
 cylon::kernel::Union::Union(const std::shared_ptr<CylonContext> &ctx,
                             const std::shared_ptr<arrow::Schema> &schema,
-                            int64_t expected_rows) {
-  this->ctx = ctx;
-  std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>>
-      tables_ptr = std::make_shared<std::vector<std::shared_ptr<arrow::Table>>>(this->tables);
-  auto row_comparator = cylon::kernel::RowComparator(ctx, tables_ptr, schema);
-  this->rows_set = new std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>
-      (expected_rows, row_comparator, row_comparator);
-  this->schema = schema;
+                            int64_t expected_rows) :
+    tables(std::make_shared<std::vector<std::shared_ptr<arrow::Table>>>()),
+    schema(schema),
+    ctx(ctx) {
+//  this->ctx = ctx;
+//  std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>>
+//      tables_ptr = std::make_shared<std::vector<std::shared_ptr<arrow::Table>>>(this->tables);
+  RowComparator row_comparator(tables, schema);
+  this->rows_set =
+      std::make_shared<std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>>(expected_rows,
+                                                                                                     row_comparator,
+                                                                                                     row_comparator);
+//  this->schema = schema;
 }
 
-cylon::kernel::Union::~Union() {
-  //delete this->rows_set;
-}
+cylon::kernel::Union::~Union() = default;

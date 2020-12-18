@@ -15,7 +15,10 @@
 #ifndef CYLON_SRC_CYLON_OPS_KERNELS_SHUFFLE_H_
 #define CYLON_SRC_CYLON_OPS_KERNELS_SHUFFLE_H_
 
+#include <arrow/arrow_all_to_all.hpp>
+
 #include "parallel_op.hpp"
+
 namespace cylon {
 
 class AllToAllOpConfig {
