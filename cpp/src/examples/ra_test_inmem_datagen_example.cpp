@@ -35,61 +35,11 @@ void create_int64_table(char *const *argv,
                         std::shared_ptr<arrow::Table> &left_table,
                         std::shared_ptr<arrow::Table> &right_table);
 
+int shuffle_example(int argc, char *argv[]);
+int join_example(int argc, char *argv[]);
+
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    LOG(ERROR) << "There should be one argument with count";
-    return 1;
-  }
-
-  auto start_start = std::chrono::steady_clock::now();
-  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
-
-  arrow::MemoryPool *pool = arrow::default_memory_pool();
-  std::shared_ptr<arrow::Table> left_table;
-  std::shared_ptr<arrow::Table> right_table;
-//  create_binary_table(argv, ctx, pool, left_table, right_table);
-  create_int64_table(argv, ctx, pool, left_table, right_table);
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  std::shared_ptr<cylon::Table> first_table, second_table, joined;
-  auto status = cylon::Table::FromArrowTable(ctx, left_table, first_table);
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table reading failed " << argv[1];
-    ctx->Finalize();
-    return 1;
-  }
-
-  status = cylon::Table::FromArrowTable(ctx, right_table, second_table);
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table reading failed " << argv[2];
-    ctx->Finalize();
-    return 1;
-  }
-  right_table.reset();
-  left_table.reset();
-
-  auto read_end_time = std::chrono::steady_clock::now();
-  LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                read_end_time - start_start).count() << "[ms]";
-
-  first_table->retainMemory(false);
-  second_table->retainMemory(false);
-  status = cylon::DistributedJoin(first_table, second_table,
-                                  cylon::join::config::JoinConfig::InnerJoin(0, 0), joined);
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table join failed ";
-    ctx->Finalize();
-    return 1;
-  }
-  auto join_end_time = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "Joined has : " << joined->Rows();
-  LOG(INFO) << "Join done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                join_end_time - read_end_time).count() << "[ms]";
-  ctx->Finalize();
+  shuffle_example(argc, argv);
   return 0;
 }
 
@@ -185,4 +135,96 @@ void create_int64_table(char *const *argv,
                                   {std::move(left_id_array), cost_array});
   right_table = arrow::Table::Make(schema,
                                    {std::move(right_id_array), std::move(cost_array)});
+}
+
+int shuffle_example(int argc, char *argv[]) {
+  if (argc < 2) {
+    LOG(ERROR) << "There should be one argument with count";
+    return 1;
+  }
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  arrow::MemoryPool *pool = arrow::default_memory_pool();
+
+  std::shared_ptr<arrow::Table> orig_table1, orig_table2;
+  create_int64_table(argv, ctx, pool, orig_table1, orig_table2);
+  std::shared_ptr<cylon::Table> corig_table1, corig_table2;
+
+  auto status = cylon::Table::FromArrowTable(ctx, orig_table1, corig_table1);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error in Table Conversion to Cylon";
+    return 1;
+  }
+
+  std::vector<int> colidx = {0};
+  std::shared_ptr<cylon::Table> shuffle_output;
+  cylon::Shuffle(corig_table1, colidx, shuffle_output);
+  std::cout << "=================" << ctx->GetRank() << ": Original Table Rows : " << corig_table1->Rows()
+            << ", Shuffled Table Rows: " << shuffle_output->Rows() << std::endl;
+
+  shuffle_output->Print();
+
+  return 0;
+}
+
+int join_example(int argc, char *argv[]) {
+  if (argc < 2) {
+    LOG(ERROR) << "There should be one argument with count";
+    return 1;
+  }
+
+  auto start_start = std::chrono::steady_clock::now();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  arrow::MemoryPool *pool = arrow::default_memory_pool();
+  std::shared_ptr<arrow::Table> left_table;
+  std::shared_ptr<arrow::Table> right_table;
+//  create_binary_table(argv, ctx, pool, left_table, right_table);
+  create_int64_table(argv, ctx, pool, left_table, right_table);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  std::shared_ptr<cylon::Table> first_table, second_table, joined;
+  auto status = cylon::Table::FromArrowTable(ctx, left_table, first_table);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading failed " << argv[1];
+    ctx->Finalize();
+    return 1;
+  }
+
+  status = cylon::Table::FromArrowTable(ctx, right_table, second_table);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading failed " << argv[2];
+    ctx->Finalize();
+    return 1;
+  }
+  right_table.reset();
+  left_table.reset();
+
+  auto read_end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Read tables in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - start_start).count() << "[ms]";
+
+  first_table->retainMemory(false);
+  second_table->retainMemory(false);
+  status = cylon::DistributedJoin(first_table, second_table,
+                                  cylon::join::config::JoinConfig::InnerJoin(0, 0), joined);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table join failed ";
+    ctx->Finalize();
+    return 1;
+  }
+  auto join_end_time = std::chrono::steady_clock::now();
+
+  LOG(INFO) << ">>>>>>>>>>>" << ctx->GetRank() << ": Joined has : " << joined->Rows();
+  LOG(INFO) << "Join done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                join_end_time - read_end_time).count() << "[ms]";
+
+  ctx->Finalize();
+
+  return 0;
 }

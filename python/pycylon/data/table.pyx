@@ -528,6 +528,36 @@ cdef class Table:
         else:
             raise ValueError(f"Operation failed: : {status.get_msg().decode()}")
 
+
+    def shuffle(self, hash_columns:List=None):
+        '''
+
+        Args:
+            hash_columns:
+
+        Returns:
+
+        '''
+        cdef shared_ptr[CTable] output
+        cdef vector[int] c_hash_columns
+        cdef CStatus status
+
+        if hash_columns:
+            if isinstance(hash_columns[0], int) or isinstance(hash_columns[0], str):
+                for column in hash_columns:
+                    if isinstance(column, str):
+                        column = self._resolve_column_index_from_column_name(column)
+                    c_hash_columns.push_back(column)
+                status = Shuffle(self.table_shd_ptr, c_hash_columns, output)
+                if status.is_ok():
+                    return pycylon_wrap_table(output)
+                else:
+                    raise ValueError(f"Shuffle operation failed : {status.get_msg().decode()}")
+            else:
+                raise ValueError('Hash columns must be a List of integers or strings')
+        else:
+            raise ValueError('Hash columns are not provided')
+
     def _agg_op(self, column, op):
         cdef shared_ptr[CTable] output
         cdef CStatus status
