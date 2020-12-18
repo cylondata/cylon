@@ -1,6 +1,7 @@
 import pycylon as cn
 from pycylon.net import MPIConfig
 
+
 def test_shuffle():
     mpi_config = MPIConfig()
 
