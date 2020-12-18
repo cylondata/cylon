@@ -994,9 +994,9 @@ Status Shuffle(std::shared_ptr<cylon::Table> &table,
                std::shared_ptr<cylon::Table> &output) {
   auto ctx_ = table->GetContext();
   std::shared_ptr<arrow::Table> table_out;
-  cylon::Status status;
+  cylon::Status status = shuffle_table_by_hashing(ctx_, table, hash_columns, ctx_->GetNextSequence(), table_out);
 
-  if (!(status = shuffle_table_by_hashing(ctx_, table, hash_columns, ctx_->GetNextSequence(), table_out)).is_ok()) {
+  if (!status.is_ok()) {
     LOG(FATAL) << "table shuffle failed!";
     return status;
   }

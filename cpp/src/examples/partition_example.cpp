@@ -21,28 +21,19 @@
 #include <arrow/api.h>
 #include <arrow/array.h>
 #include <random>
-#include <mpi.h>
-
-#include <arrow/compute/api.h>
-#include <ctx/arrow_memory_pool_utils.hpp>
-
 #include <util/arrow_utils.hpp>
-#include <groupby/groupby.hpp>
-
-#include <arrow/arrow_partition_kernels.hpp>
-#include <partition/partition.hpp>
 
 void create_table(char *const *argv,
                   arrow::MemoryPool *pool,
                   std::shared_ptr<arrow::Table> &left_table);
 
-template<typename T>
+/*template<typename T>
 void print_vec(std::vector<T> vec) {
   for (auto a: vec) {
     std::cout << a << " ";
   }
   std::cout << std::endl;
-}
+}*/
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
