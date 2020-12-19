@@ -444,12 +444,7 @@ class RangePartitionKernel : public PartitionKernel {
     const auto &struct_scalar = minmax->GetResult().scalar_as<arrow::StructScalar>();
     min = std::static_pointer_cast<ARROW_SCALAR_T>(struct_scalar.value[0])->value;
     max = std::static_pointer_cast<ARROW_SCALAR_T>(struct_scalar.value[1])->value;
-    if (arrow::is_integer_type<ARROW_T>()) {
-      range_per_bin = (max - min + num_bins - 1) / num_bins; // upper bound of the division
-    } else {
-      range_per_bin = (max - min) / num_bins; // upper bound of the division
-    }
-    max = min + range_per_bin * num_bins; // update max
+    range = max - min;
 
     // create sample histogram
     std::vector<uint64_t> local_counts(num_bins + 2, 0);
@@ -476,8 +471,8 @@ class RangePartitionKernel : public PartitionKernel {
 
     float_t quantile = 1.0 / num_partitions, prefix_sum = 0;
 
-    LOG(INFO) << "len=" << idx_col->length() << " min=" << min << " max=" << max << " range per bin=" <<
-              range_per_bin << " num bins=" << num_bins << " quantile=" << quantile;
+    LOG(INFO) << "len=" << idx_col->length() << " min=" << min << " max=" << max << " range=" <<
+              range << " num bins=" << num_bins << " quantile=" << quantile;
 
     // divide global histogram into quantiles
     const uint64_t total_samples = ctx->GetWorldSize() * num_samples;
@@ -501,7 +496,7 @@ class RangePartitionKernel : public PartitionKernel {
 
   inline constexpr size_t get_bin_pos(ARROW_C_T val) {
     return (val >= min)
-        + ((val >= min) & (val < max)) * ((val - min) / range_per_bin)
+        + ((val >= min) & (val < max)) * ((val - min) * num_bins / range)
         + (val >= max) * num_bins;
   }
 
@@ -510,7 +505,7 @@ class RangePartitionKernel : public PartitionKernel {
   const uint64_t num_samples;
   std::shared_ptr<CylonContext> ctx; // todo dont need a copy here
   std::vector<uint32_t> bin_to_partition;
-  ARROW_C_T min, max, range_per_bin;
+  ARROW_C_T min, max, range;
 };
 
 /**
