@@ -399,7 +399,13 @@ Status Project(std::shared_ptr<cylon::Table> &table,
                const std::vector<int64_t> &project_columns,
                std::shared_ptr<Table> &output);
 
-Status Unique(std::shared_ptr<Table> &first, std::shared_ptr<Table> &out);
+struct UniqueOptions{
+  bool first = false;
+  bool last = true;
+};
+
+Status Unique(std::shared_ptr<Table> &in, std::vector<int> &cols, std::shared_ptr<Table> &out);
+
 
 #ifdef BUILD_CYLON_PARQUET
 /**

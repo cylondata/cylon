@@ -82,8 +82,7 @@ std::shared_ptr<ArrowComparator> GetComparator(const std::shared_ptr<arrow::Data
     case arrow::Type::INT32:return std::make_shared<NumericArrowComparator<arrow::Int16Type>>();
     case arrow::Type::UINT64:return std::make_shared<NumericArrowComparator<arrow::UInt64Type>>();
     case arrow::Type::INT64:return std::make_shared<NumericArrowComparator<arrow::Int64Type>>();
-    case arrow::Type::HALF_FLOAT:
-      return std::make_shared<NumericArrowComparator<arrow::HalfFloatType>>();
+    case arrow::Type::HALF_FLOAT:return std::make_shared<NumericArrowComparator<arrow::HalfFloatType>>();
     case arrow::Type::FLOAT:return std::make_shared<NumericArrowComparator<arrow::FloatType>>();
     case arrow::Type::DOUBLE:return std::make_shared<NumericArrowComparator<arrow::DoubleType>>();
     case arrow::Type::STRING:return std::make_shared<BinaryArrowComparator>();
@@ -135,4 +134,30 @@ int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1,
   }
   return 0;
 }
+
+PartialTableRowComparator::PartialTableRowComparator(const std::vector<std::shared_ptr<arrow::Field>> &fields,
+                                                     const std::vector<int> &cols) {
+  for (const auto &field : fields) {
+    this->comparators.push_back(GetComparator(field->type()));
+  }
+  this->columns = cols;
+}
+
+int PartialTableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1,
+                                       int64_t index1,
+                                       const std::shared_ptr<arrow::Table> &table2,
+                                       int64_t index2) {
+  // not doing schema validations here due to performance overheads. Don't expect users to use
+  // this function before calling this function from an internal cylon function,
+  // schema validation should be done to make sure
+  // table1 and table2 has the same schema.
+
+  for (size_t c = 0; c < this->columns.size(); ++c) {
+    int comparision = this->comparators[c]->compare(table1->column(c)->chunk(0), index1,
+                                                    table2->column(c)->chunk(0), index2);
+    if (comparision) return comparision;
+  }
+  return 0;
+}
+
 }  // namespace cylon

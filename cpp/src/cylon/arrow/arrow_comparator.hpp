@@ -46,6 +46,19 @@ class TableRowComparator {
               int64_t index2);
 };
 
+class PartialTableRowComparator {
+ private:
+  std::vector<std::shared_ptr<ArrowComparator>> comparators;
+  std::vector<int> columns;
+ public:
+  explicit PartialTableRowComparator(const std::vector<std::shared_ptr<arrow::Field>> &vector,
+                                     const std::vector<int> &cols);
+  int compare(const std::shared_ptr<arrow::Table> &table1,
+              int64_t index1,
+              const std::shared_ptr<arrow::Table> &table2,
+              int64_t index2);
+};
+
 }  // namespace cylon
 
 #endif //CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_HPP_

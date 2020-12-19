@@ -72,6 +72,48 @@ class RowComparator {
   }
 };
 
+class PartialRowComparator {
+ private:
+  const std::shared_ptr<arrow::Table> *tables;
+  std::shared_ptr<cylon::PartialTableRowComparator> comparator;
+  std::shared_ptr<cylon::PartialRowHashingKernel> row_hashing_kernel;
+  int64_t *eq, *hs;
+
+ public:
+  PartialRowComparator(std::shared_ptr<cylon::CylonContext> &ctx,
+                       const std::shared_ptr<arrow::Table> *tables,
+                       std::vector<int> &cols,
+                       int64_t *eq,
+                       int64_t *hs) {
+    auto fields = tables[0]->fields();
+    std::vector<std::shared_ptr<arrow::Field>> sub_fields;
+    for (size_t i = 0; i < cols.size(); i++) {
+      sub_fields.push_back(fields.at(i));
+    }
+
+    this->tables = tables;
+    this->comparator = std::make_shared<cylon::PartialTableRowComparator>(sub_fields, cols);
+    this->row_hashing_kernel = std::make_shared<cylon::PartialRowHashingKernel>(sub_fields, cols);
+    this->eq = eq;
+    this->hs = hs;
+  }
+
+  // equality
+  bool operator()(const std::pair<int8_t, int64_t> &record1,
+                  const std::pair<int8_t, int64_t> &record2) const {
+    (*this->eq)++;
+    return this->comparator->compare(this->tables[record1.first], record1.second,
+                                     this->tables[record2.first], record2.second) == 0;
+  }
+
+  // hashing
+  size_t operator()(const std::pair<int8_t, int64_t> &record) const {
+    (*this->hs)++;
+    size_t hash = this->row_hashing_kernel->Hash(this->tables[record.first], record.second);
+    return hash;
+  }
+};
+
 /**
  * creates an Arrow array based on col_idx, filtered by row_indices
  * @param ctx
@@ -1004,26 +1046,24 @@ Status Shuffle(std::shared_ptr<cylon::Table> &table,
   return cylon::Table::FromArrowTable(ctx_, table_out, output);
 }
 
-Status Unique(std::shared_ptr<Table> &first, std::shared_ptr<Table> &out) {
-  std::shared_ptr<arrow::Table> ltab = first->get_table();
-
+Status Unique(std::shared_ptr<Table> &in, std::vector<int> &cols, std::shared_ptr<Table> &out) {
+  std::shared_ptr<arrow::Table> ltab = in->get_table();
   std::shared_ptr<arrow::Table> tables[1] = {ltab};
   int64_t eq_calls = 0, hash_calls = 0;
-  auto ctx = first->GetContext();
-  auto row_comp = RowComparator(ctx, tables, &eq_calls, &hash_calls);
+  auto ctx = in->GetContext();
+  auto row_comp = PartialRowComparator(ctx, tables, cols, &eq_calls, &hash_calls);
   auto buckets_pre_alloc = (ltab->num_rows());
   LOG(INFO) << "Buckets : " << buckets_pre_alloc;
-  std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>
+  std::unordered_set<std::pair<int8_t, int64_t>, PartialRowComparator, PartialRowComparator>
       rows_set(buckets_pre_alloc, row_comp, row_comp);
+
   const int64_t max = ltab->num_rows();
   const int8_t table0 = 0;
 
   const int64_t print_threshold = max / 10;
-  for (int64_t row = 0; row < max; ++row) {
-    if (row < ltab->num_rows()) {
-      rows_set.insert(std::pair<int8_t, int64_t>(table0, row));
-    }
 
+  for (int64_t row = 0; row < max; ++row) {
+    rows_set.insert(std::pair<int8_t, int64_t>(table0, row));
     if (row % print_threshold == 0) {
       LOG(INFO) << "Done " << (row + 1) * 100 / max << "%" << " N : "
                 << row << ", Eq : " << eq_calls << ", Hs : "
@@ -1031,26 +1071,21 @@ Status Unique(std::shared_ptr<Table> &first, std::shared_ptr<Table> &out) {
     }
   }
 
-  std::shared_ptr<std::vector<int64_t>> indices_from_tabs[1] = {
-      std::make_shared<std::vector<int64_t>>(),
-  };
+  std::shared_ptr<std::vector<int64_t>> indices_from_tab = std::make_shared<std::vector<int64_t>>();
 
   for (auto const &pr : rows_set) {
-    indices_from_tabs[pr.first]->push_back(pr.second);
+    indices_from_tab->push_back(pr.second);
   }
   std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
   // prepare final arrays
   for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
     arrow::ArrayVector array_vector;
-    for (int tab_idx = 0; tab_idx < 1; tab_idx++) {
-      Status status = PrepareArray(ctx,
-                            tables[tab_idx],
-                            col_idx,
-                            indices_from_tabs[tab_idx],
-                            array_vector);
-
-      if (!status.is_ok()) return status;
-    }
+    Status status = PrepareArray(ctx,
+                                 tables[0],
+                                 col_idx,
+                                 indices_from_tab,//indices_from_tabs[tab_idx],
+                                 array_vector);
+    if (!status.is_ok()) return status;
     final_data_arrays.push_back(std::make_shared<arrow::ChunkedArray>(array_vector));
   }
   // create final table

@@ -378,6 +378,16 @@ class RowHashingKernel {
   int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
 };
 
+class PartialRowHashingKernel {
+ private:
+  std::vector<std::unique_ptr<HashPartitionKernel>> hash_kernels;
+  std::vector<int> columns;
+ public:
+  explicit PartialRowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields, const std::vector<int> &cols);
+
+  int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
+};
+
 
 template<typename ARROW_T, typename = typename std::enable_if<
     arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>

@@ -19,12 +19,11 @@
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
 
-
 /**
  * This example reads two csv files and does a union on them.
  */
 int main(int argc, char *argv[]) {
-  if (argc < 3) {
+  if (argc < 2) {
     LOG(ERROR) << "There should be two arguments with paths to csv files";
     return 1;
   }
@@ -33,7 +32,7 @@ int main(int argc, char *argv[]) {
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<cylon::Table> first_table, unioned_table;
+  std::shared_ptr<cylon::Table> first_table, unique_table;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -49,10 +48,11 @@ int main(int argc, char *argv[]) {
       read_end_time - start_time).count() << "[ms]";
 
   auto union_start_time = std::chrono::steady_clock::now();
-  // apply union operation
-  status = cylon::Unique(first_table, unioned_table);
+  // apply unique operation
+  std::vector<int> cols = {0, 1};
+  status = cylon::Unique(first_table, cols, unique_table);
   if (!status.is_ok()) {
-    LOG(INFO) << "Union failed " << status.get_msg();
+    LOG(INFO) << "Unique failed " << status.get_msg();
     ctx->Finalize();
     return 1;
   }
@@ -60,8 +60,8 @@ int main(int argc, char *argv[]) {
 
   LOG(INFO) << "First table had : " << first_table->Rows()
             << ", Union has : "
-            << unioned_table->Rows() << " rows";
-  LOG(INFO) << "Union done in "
+            << unique_table->Rows() << " rows";
+  LOG(INFO) << "Unique done in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - union_start_time).count()
             << "[ms]";
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 
   std::cout << " Unique Data" << std::endl;
 
-  unioned_table->Print();
+  unique_table->Print();
 
   return 0;
 }
