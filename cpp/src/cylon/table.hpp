@@ -399,6 +399,8 @@ Status Project(std::shared_ptr<cylon::Table> &table,
                const std::vector<int64_t> &project_columns,
                std::shared_ptr<Table> &output);
 
+Status Unique(std::shared_ptr<Table> &first, std::shared_ptr<Table> &out);
+
 #ifdef BUILD_CYLON_PARQUET
 /**
 * Create a table by reading a parquet file

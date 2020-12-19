@@ -26,6 +26,7 @@ tx_add_exe(groupby_benchmark_example)
 tx_add_exe(groupby_pipeline_example)
 tx_add_exe(groupby_example)
 tx_add_exe(partition_example)
+tx_add_exe(unique_example)
 
 if (CYLON_PARQUET)
     tx_add_exe(parquet_test)
