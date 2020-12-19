@@ -423,7 +423,7 @@ class RangePartitionKernel : public PartitionKernel {
   }
 
  private:
-  Status inline build_bin_to_partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col, uint32_t num_partitions) {
+  inline Status build_bin_to_partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col, uint32_t num_partitions) {
     const std::shared_ptr<DataType> &data_type = tarrow::ToCylonType(idx_col->type());
     std::shared_ptr<arrow::ChunkedArray> sampled_array;
 
