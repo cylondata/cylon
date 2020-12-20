@@ -526,16 +526,16 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
   if (!status.is_ok()) return status;
   int64_t eq_calls = 0, hash_calls = 0;
   auto ctx = first->GetContext();
-//  std::shared_ptr<arrow::Table> tables[2] = {ltab, second->get_table()};
-//  auto row_comp = RowComparator(ctx, tables, &eq_calls, &hash_calls);
-  std::vector<std::shared_ptr<arrow::Table>> tables{ltab, second->get_table()};
-  MultiTableRowIndexComparator row_comp(tables);
-  MultiTableRowIndexHash row_hash(tables);
+  std::shared_ptr<arrow::Table> tables[2] = {ltab, second->get_table()};
+  RowComparator row_comp(ctx, tables, &eq_calls, &hash_calls);
+//  std::vector<std::shared_ptr<arrow::Table>> tables{ltab, second->get_table()};
+//  MultiTableRowIndexComparator row_comp(tables);
+//  MultiTableRowIndexHash row_hash(tables);
 
   auto buckets_pre_alloc = (ltab->num_rows() + rtab->num_rows());
   LOG(INFO) << "Buckets : " << buckets_pre_alloc;
-  std::unordered_set<std::pair<int8_t, int64_t>, MultiTableRowIndexHash, MultiTableRowIndexComparator>
-      rows_set(buckets_pre_alloc, row_hash, row_comp);
+  std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>
+      rows_set(buckets_pre_alloc, row_comp, row_comp);
   const int64_t max = std::max(ltab->num_rows(), rtab->num_rows());
   const int8_t table0 = 0;
   const int8_t table1 = 1;
