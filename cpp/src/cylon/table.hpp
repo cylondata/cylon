@@ -404,7 +404,7 @@ struct UniqueOptions{
   bool last = true;
 };
 
-Status Unique(std::shared_ptr<Table> &in, std::vector<int> &cols, std::shared_ptr<Table> &out);
+Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols, std::shared_ptr<Table> &out);
 
 
 #ifdef BUILD_CYLON_PARQUET

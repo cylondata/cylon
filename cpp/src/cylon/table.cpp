@@ -963,23 +963,23 @@ Status Shuffle(std::shared_ptr<cylon::Table> &table,
   return cylon::Table::FromArrowTable(ctx_, table_out, output);
 }
 
-Status Unique(std::shared_ptr<Table> &in, std::vector<int> &cols, std::shared_ptr<Table> &out) {
+
+Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols, std::shared_ptr<Table> &out) {
   std::shared_ptr<arrow::Table> ltab = in->get_table();
   int64_t eq_calls = 0, hash_calls = 0;
   auto ctx = in->GetContext();
-  auto row_comp = TableRowIndexComparator(ltab, cols);
+  TableRowIndexComparator row_comp(ltab, cols);
+  TableRowIndexHash row_hash(ltab, cols);
   auto buckets_pre_alloc = (ltab->num_rows());
   LOG(INFO) << "Buckets : " << buckets_pre_alloc;
-  std::unordered_set<std::pair<int8_t, int64_t>, TableRowIndexComparator, TableRowIndexComparator>
-      rows_set(buckets_pre_alloc, row_comp, row_comp);
+  std::unordered_set<int64_t, TableRowIndexHash, TableRowIndexComparator>
+      rows_set(buckets_pre_alloc, row_hash, row_comp);
 
   const int64_t max = ltab->num_rows();
-  const int8_t table0 = 0;
-
   const int64_t print_threshold = max / 10;
 
   for (int64_t row = 0; row < max; ++row) {
-    rows_set.insert(std::pair<int8_t, int64_t>(table0, row));
+    rows_set.insert(row);
     if (row % print_threshold == 0) {
       LOG(INFO) << "Done " << (row + 1) * 100 / max << "%" << " N : "
                 << row << ", Eq : " << eq_calls << ", Hs : "
@@ -987,11 +987,10 @@ Status Unique(std::shared_ptr<Table> &in, std::vector<int> &cols, std::shared_pt
     }
   }
 
-  std::shared_ptr<std::vector<int64_t>> indices_from_tab = std::make_shared<std::vector<int64_t>>();
+  LOG(INFO) << "Table Rows: " << max << ", Row Set Size : " << rows_set.size();
 
-  for (auto const &pr : rows_set) {
-    indices_from_tab->push_back(pr.second);
-  }
+  std::shared_ptr<std::vector<int64_t>> indices_from_tab = std::make_shared<std::vector<int64_t>>(rows_set.begin(), rows_set.end());
+
   std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
   // prepare final arrays
   for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
