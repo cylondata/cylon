@@ -118,6 +118,46 @@ class TableRowIndexHash {
   std::shared_ptr<std::vector<uint32_t>> hashes_ptr;
 };
 
+class MultiTableRowIndexHash {
+ public:
+  explicit MultiTableRowIndexHash(const std::vector<std::shared_ptr<arrow::Table>> &tables)
+      : hashes_ptr(std::make_shared<std::vector<TableRowIndexHash>>()) {
+    for (const auto &t:tables) {
+      std::vector<int> cols(t->num_columns());
+      std::iota(cols.begin(), cols.end(), 0);
+      hashes_ptr->emplace_back(t, cols);
+    }
+  }
+
+  void InsertTable(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids) {
+    hashes_ptr->emplace_back(table, col_ids);
+  }
+
+  // hashing
+  size_t operator()(const std::pair<int8_t, int64_t> &record) const {
+    return hashes_ptr->at(record.first)(record.second);
+  }
+
+ private:
+  // this class gets copied to std container, so we don't want to copy these vectors.
+  std::shared_ptr<std::vector<TableRowIndexHash>> hashes_ptr;
+};
+
+class MultiTableRowIndexComparator {
+ public:
+  explicit MultiTableRowIndexComparator(const std::vector<std::shared_ptr<arrow::Table>> &tables)
+      : tables(tables), comparator(std::make_shared<TableRowComparator>(tables[0]->fields())) {}
+
+  bool operator()(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const {
+    return this->comparator->compare(this->tables[record1.first], record1.second,
+                                     this->tables[record2.first], record2.second) == 0;
+  }
+
+ private:
+  const std::vector<std::shared_ptr<arrow::Table>> &tables;
+  std::shared_ptr<TableRowComparator> comparator;
+};
+
 /**
  * creates an Arrow array based on col_idx, filtered by row_indices
  * @param ctx
@@ -606,14 +646,18 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
   std::shared_ptr<arrow::Table> rtab = second->get_table();
   Status status = VerifyTableSchema(ltab, second->get_table());
   if (!status.is_ok()) return status;
-  std::shared_ptr<arrow::Table> tables[2] = {ltab, second->get_table()};
   int64_t eq_calls = 0, hash_calls = 0;
   auto ctx = first->GetContext();
-  auto row_comp = RowComparator(ctx, tables, &eq_calls, &hash_calls);
+//  std::shared_ptr<arrow::Table> tables[2] = {ltab, second->get_table()};
+//  auto row_comp = RowComparator(ctx, tables, &eq_calls, &hash_calls);
+  std::vector<std::shared_ptr<arrow::Table>> tables{ltab, second->get_table()};
+  MultiTableRowIndexComparator row_comp(tables);
+  MultiTableRowIndexHash row_hash(tables);
+
   auto buckets_pre_alloc = (ltab->num_rows() + rtab->num_rows());
   LOG(INFO) << "Buckets : " << buckets_pre_alloc;
-  std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>
-      rows_set(buckets_pre_alloc, row_comp, row_comp);
+  std::unordered_set<std::pair<int8_t, int64_t>, MultiTableRowIndexHash, MultiTableRowIndexComparator>
+      rows_set(buckets_pre_alloc, row_hash, row_comp);
   const int64_t max = std::max(ltab->num_rows(), rtab->num_rows());
   const int8_t table0 = 0;
   const int8_t table1 = 1;

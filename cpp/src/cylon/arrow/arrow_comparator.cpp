@@ -21,52 +21,32 @@ namespace cylon {
 
 template<typename ARROW_TYPE>
 class NumericArrowComparator : public ArrowComparator {
-  int compare(std::shared_ptr<arrow::Array> array1,
-              int64_t index1,
-              std::shared_ptr<arrow::Array> array2,
-              int64_t index2) override {
+  int compare(const std::shared_ptr<arrow::Array> &array1, int64_t index1,
+              const std::shared_ptr<arrow::Array> &array2, int64_t index2) override {
     auto reader1 = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(array1);
     auto reader2 = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(array2);
 
-    auto value1 = reader1->Value(index1);
-    auto value2 = reader2->Value(index2);
-
-    if (value1 < value2) {
-      return -1;
-    } else if (value1 > value2) {
-      return 1;
-    }
-    return 0;
+    return (int) (reader1->Value(index1) - reader2->Value(index2));
   }
 };
 
 class BinaryArrowComparator : public ArrowComparator {
-  int compare(std::shared_ptr<arrow::Array> array1,
-              int64_t index1,
-              std::shared_ptr<arrow::Array> array2,
-              int64_t index2) override {
+  int compare(const std::shared_ptr<arrow::Array> &array1, int64_t index1,
+              const std::shared_ptr<arrow::Array> &array2, int64_t index2) override {
     auto reader1 = std::static_pointer_cast<arrow::BinaryArray>(array1);
     auto reader2 = std::static_pointer_cast<arrow::BinaryArray>(array2);
 
-    auto value1 = reader1->GetString(index1);
-    auto value2 = reader2->GetString(index2);
-
-    return value1.compare(value2);
+    return reader1->GetString(index1).compare(reader2->GetString(index2));
   }
 };
 
 class FixedSizeBinaryArrowComparator : public ArrowComparator {
-  int compare(std::shared_ptr<arrow::Array> array1,
-              int64_t index1,
-              std::shared_ptr<arrow::Array> array2,
-              int64_t index2) override {
+  int compare(const std::shared_ptr<arrow::Array> &array1, int64_t index1,
+              const std::shared_ptr<arrow::Array> &array2, int64_t index2) override {
     auto reader1 = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(array1);
     auto reader2 = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(array2);
 
-    auto value1 = reader1->GetString(index1);
-    auto value2 = reader2->GetString(index2);
-
-    return value1.compare(value2);
+    return reader1->GetString(index1).compare(reader2->GetString(index2));
   }
 };
 
@@ -120,10 +100,8 @@ TableRowComparator::TableRowComparator(const std::vector<std::shared_ptr<arrow::
   }
 }
 
-int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1,
-                                int64_t index1,
-                                const std::shared_ptr<arrow::Table> &table2,
-                                int64_t index2) {
+int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1, int64_t index1,
+                                const std::shared_ptr<arrow::Table> &table2, int64_t index2) {
   // not doing schema validations here due to performance overheads. Don't expect users to use
   // this function before calling this function from an internal cylon function,
   // schema validation should be done to make sure

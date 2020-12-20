@@ -23,10 +23,8 @@
 namespace cylon {
 class ArrowComparator {
  public:
-  virtual int compare(std::shared_ptr<arrow::Array> array1,
-                      int64_t index1,
-                      std::shared_ptr<arrow::Array> array2,
-                      int64_t index2) = 0;
+  virtual int compare(const std::shared_ptr<arrow::Array> &array1, int64_t index1,
+                      const std::shared_ptr<arrow::Array> &array2, int64_t index2) = 0;
 };
 
 std::shared_ptr<ArrowComparator> GetComparator(const std::shared_ptr<arrow::DataType> &type);
@@ -42,10 +40,8 @@ class TableRowComparator {
   std::vector<std::shared_ptr<ArrowComparator>> comparators;
  public:
   explicit TableRowComparator(const std::vector<std::shared_ptr<arrow::Field>> &vector);
-  int compare(const std::shared_ptr<arrow::Table> &table1,
-              int64_t index1,
-              const std::shared_ptr<arrow::Table> &table2,
-              int64_t index2);
+  int compare(const std::shared_ptr<arrow::Table> &table1, int64_t index1,
+              const std::shared_ptr<arrow::Table> &table2, int64_t index2);
 };
 
 class ArrayIndexComparator {
@@ -54,9 +50,6 @@ class ArrayIndexComparator {
 };
 
 std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array);
-
-std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array1,
-                                                                 const std::shared_ptr<arrow::Array> &array2);
 
 }  // namespace cylon
 
