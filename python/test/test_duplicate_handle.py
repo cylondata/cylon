@@ -30,3 +30,5 @@ def test_shuffle():
     print(rank, "\n>>>", tb)
 
     ctx.finalize()
+
+test_shuffle()
