@@ -44,7 +44,7 @@ endfunction(cylon_add_test)
 # macro to run executable
 function(cylon_run_test TESTNAME no_mpi_proc)
   set(exec_name "${TESTNAME}_${no_mpi_proc}")
-  set(test_params --oversubscribe -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}")
+  set(test_params --allow-run-as-root --oversubscribe -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}")
   add_test(NAME ${exec_name} COMMAND ${MPI_RUN_CMD} ${test_params})
 endfunction(cylon_run_test)
 
