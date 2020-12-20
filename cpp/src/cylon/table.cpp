@@ -27,7 +27,6 @@
 #include  "util/to_string.hpp"
 #include "iostream"
 #include "util/arrow_utils.hpp"
-#include "arrow/arrow_partition_kernels.hpp"
 #include "util/uuid.hpp"
 #include "arrow/arrow_all_to_all.hpp"
 #include "arrow/arrow_comparator.hpp"
@@ -36,41 +35,6 @@
 #include "partition/partition.hpp"
 
 namespace cylon {
-
-class RowComparator {
- private:
-  const std::shared_ptr<arrow::Table> *tables;
-  std::shared_ptr<cylon::TableRowComparator> comparator;
-  std::shared_ptr<cylon::RowHashingKernel> row_hashing_kernel;
-  int64_t *eq, *hs;
-
- public:
-  RowComparator(std::shared_ptr<cylon::CylonContext> &ctx,
-                const std::shared_ptr<arrow::Table> *tables,
-                int64_t *eq,
-                int64_t *hs) {
-    this->tables = tables;
-    this->comparator = std::make_shared<cylon::TableRowComparator>(tables[0]->fields());
-    this->row_hashing_kernel = std::make_shared<cylon::RowHashingKernel>(tables[0]->fields());
-    this->eq = eq;
-    this->hs = hs;
-  }
-
-  // equality
-  bool operator()(const std::pair<int8_t, int64_t> &record1,
-                  const std::pair<int8_t, int64_t> &record2) const {
-    (*this->eq)++;
-    return this->comparator->compare(this->tables[record1.first], record1.second,
-                                     this->tables[record2.first], record2.second) == 0;
-  }
-
-  // hashing
-  size_t operator()(const std::pair<int8_t, int64_t> &record) const {
-    (*this->hs)++;
-    size_t hash = this->row_hashing_kernel->Hash(this->tables[record.first], record.second);
-    return hash;
-  }
-};
 
 /**
  * creates an Arrow array based on col_idx, filtered by row_indices
@@ -560,10 +524,14 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
   std::shared_ptr<arrow::Table> rtab = second->get_table();
   Status status = VerifyTableSchema(ltab, second->get_table());
   if (!status.is_ok()) return status;
-  std::shared_ptr<arrow::Table> tables[2] = {ltab, second->get_table()};
   int64_t eq_calls = 0, hash_calls = 0;
   auto ctx = first->GetContext();
-  auto row_comp = RowComparator(ctx, tables, &eq_calls, &hash_calls);
+  std::shared_ptr<arrow::Table> tables[2] = {ltab, second->get_table()};
+  RowComparator row_comp(ctx, tables, &eq_calls, &hash_calls);
+//  std::vector<std::shared_ptr<arrow::Table>> tables{ltab, second->get_table()};
+//  MultiTableRowIndexComparator row_comp(tables);
+//  MultiTableRowIndexHash row_hash(tables);
+
   auto buckets_pre_alloc = (ltab->num_rows() + rtab->num_rows());
   LOG(INFO) << "Buckets : " << buckets_pre_alloc;
   std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>
