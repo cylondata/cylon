@@ -135,4 +135,67 @@ int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1,
   }
   return 0;
 }
+
+template<typename TYPE>
+class NumericRowIndexComparator : public ArrayIndexComparator {
+  using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
+
+ public:
+  explicit NumericRowIndexComparator(const std::shared_ptr<arrow::Array> &array) :
+      casted_arr(std::static_pointer_cast<ARROW_ARRAY_T>(array)) {}
+
+  int compare(int64_t index1, int64_t index2) override {
+    return (int) (casted_arr->Value(index1) - casted_arr->Value(index2));
+  }
+
+ private:
+  std::shared_ptr<ARROW_ARRAY_T> casted_arr;
+};
+
+class BinaryRowIndexComparator : public ArrayIndexComparator {
+ public:
+  explicit BinaryRowIndexComparator(const std::shared_ptr<arrow::Array> &array) :
+      casted_arr(std::static_pointer_cast<arrow::BinaryArray>(array)) {}
+
+  int compare(int64_t index1, int64_t index2) override {
+    return casted_arr->GetString(index1).compare(casted_arr->GetString(index2));
+  }
+
+ private:
+  std::shared_ptr<arrow::BinaryArray> casted_arr;
+};
+
+class FixedSizeBinaryRowIndexComparator : public ArrayIndexComparator {
+ public:
+  explicit FixedSizeBinaryRowIndexComparator(const std::shared_ptr<arrow::Array> &array) :
+      casted_arr(std::static_pointer_cast<arrow::FixedSizeBinaryArray>(array)) {}
+
+  int compare(int64_t index1, int64_t index2) override {
+    return casted_arr->GetString(index1).compare(casted_arr->GetString(index2));
+  }
+
+ private:
+  std::shared_ptr<arrow::FixedSizeBinaryArray> casted_arr;
+};
+
+std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array) {
+  switch (array->type_id()) {
+    case arrow::Type::UINT8:return std::make_shared<NumericRowIndexComparator<arrow::UInt8Type>>(array);
+    case arrow::Type::INT8:return std::make_shared<NumericRowIndexComparator<arrow::Int8Type>>(array);
+    case arrow::Type::UINT16:return std::make_shared<NumericRowIndexComparator<arrow::UInt16Type>>(array);
+    case arrow::Type::INT16:return std::make_shared<NumericRowIndexComparator<arrow::Int16Type>>(array);
+    case arrow::Type::UINT32:return std::make_shared<NumericRowIndexComparator<arrow::UInt32Type>>(array);
+    case arrow::Type::INT32:return std::make_shared<NumericRowIndexComparator<arrow::Int16Type>>(array);
+    case arrow::Type::UINT64:return std::make_shared<NumericRowIndexComparator<arrow::UInt64Type>>(array);
+    case arrow::Type::INT64:return std::make_shared<NumericRowIndexComparator<arrow::Int64Type>>(array);
+    case arrow::Type::HALF_FLOAT: return std::make_shared<NumericRowIndexComparator<arrow::HalfFloatType>>(array);
+    case arrow::Type::FLOAT:return std::make_shared<NumericRowIndexComparator<arrow::FloatType>>(array);
+    case arrow::Type::DOUBLE:return std::make_shared<NumericRowIndexComparator<arrow::DoubleType>>(array);
+    case arrow::Type::STRING:return std::make_shared<BinaryRowIndexComparator>(array);
+    case arrow::Type::BINARY:return std::make_shared<BinaryRowIndexComparator>(array);
+    case arrow::Type::FIXED_SIZE_BINARY:return std::make_shared<FixedSizeBinaryRowIndexComparator>(array);
+    default:return nullptr;
+  }
+}
+
 }  // namespace cylon

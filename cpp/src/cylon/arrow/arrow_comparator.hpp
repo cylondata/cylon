@@ -16,6 +16,8 @@
 #define CYLON_SRC_CYLON_ARROW_ARROW_COMPARATOR_HPP_
 
 #include <arrow/api.h>
+
+#include <utility>
 #include "../status.hpp"
 
 namespace cylon {
@@ -45,6 +47,16 @@ class TableRowComparator {
               const std::shared_ptr<arrow::Table> &table2,
               int64_t index2);
 };
+
+class ArrayIndexComparator {
+ public:
+  virtual int compare(int64_t index1, int64_t index2) = 0;
+};
+
+std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array);
+
+std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array1,
+                                                                 const std::shared_ptr<arrow::Array> &array2);
 
 }  // namespace cylon
 

@@ -72,6 +72,52 @@ class RowComparator {
   }
 };
 
+class TableRowIndexComparator {
+ public:
+  TableRowIndexComparator(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids)
+      : idx_comparators_ptr(std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>(col_ids.size())) {
+    for (int c:col_ids) {
+      const std::shared_ptr<arrow::Array> &array = table->column(c)->chunk(0);
+      idx_comparators_ptr->at(c) = CreateArrayIndexComparator(array);
+    }
+  }
+
+  // equality
+  bool operator()(const int64_t &record1, const int64_t &record2) const {
+    bool res = true;
+    for (auto &&comp:*idx_comparators_ptr) {
+      res &= (bool) comp->compare(record1, record2);
+    }
+    return res;
+  }
+
+ private:
+  // this class gets copied to std container, so we don't want to copy these vectors.
+  // hence they are wrapped around smart pointers
+  std::shared_ptr<std::vector<std::shared_ptr<ArrayIndexComparator>>> idx_comparators_ptr;
+};
+
+class TableRowIndexHash {
+ public:
+  TableRowIndexHash(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids)
+      : hashes_ptr(std::make_shared<std::vector<uint32_t>>(table->num_rows(), 0)) {
+    for (auto &&c:col_ids) {
+      const std::unique_ptr<HashPartitionKernel> &hash_kernel = CreateHashPartitionKernel(table->field(c)->type());
+      hash_kernel->UpdateHash(table->column(c), *hashes_ptr); // update the hashes
+    }
+  }
+
+  // hashing
+  size_t operator()(const int64_t &record) const {
+    return hashes_ptr->at(record);
+  }
+
+ private:
+  // this class gets copied to std container, so we don't want to copy these vectors.
+  // hence they are wrapped around smart pointers
+  std::shared_ptr<std::vector<uint32_t>> hashes_ptr;
+};
+
 /**
  * creates an Arrow array based on col_idx, filtered by row_indices
  * @param ctx
