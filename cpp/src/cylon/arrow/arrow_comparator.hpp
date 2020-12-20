@@ -127,6 +127,12 @@ class TableRowIndexHash {
     return hashes_ptr->at(record);
   }
 
+  static std::shared_ptr<arrow::UInt32Array> GetHashArray(const TableRowIndexHash &hasher) {
+    const auto &buf = arrow::Buffer::Wrap(*hasher.hashes_ptr);
+    const auto &data = arrow::ArrayData::Make(arrow::uint32(), hasher.hashes_ptr->size(), {nullptr, buf});
+    return std::make_shared<arrow::UInt32Array>(data);
+  }
+
  private:
   // this class gets copied to std container, so we don't want to copy these vectors.
   // hence they are wrapped around smart pointers
@@ -142,10 +148,6 @@ class MultiTableRowIndexHash {
       std::iota(cols.begin(), cols.end(), 0);
       hashes_ptr->emplace_back(t, cols);
     }
-  }
-
-  void InsertTable(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids) {
-    hashes_ptr->emplace_back(table, col_ids);
   }
 
   // hashing
