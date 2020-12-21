@@ -49,7 +49,7 @@ int main() {
       read_end_time - start_time).count() << "[ms]";
 
   auto union_start_time = std::chrono::steady_clock::now();
-  std::vector<int> cols = {0, 1};
+  std::vector<int> cols = {1, 2};
 
   if (ctx->GetWorldSize() == 1) {
     sequential(first_table, unique_table, cols);

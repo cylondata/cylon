@@ -91,8 +91,8 @@ class TableRowIndexComparator {
  public:
   TableRowIndexComparator(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids)
       : idx_comparators_ptr(std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>(col_ids.size())) {
-    for (int c:col_ids) {
-      const std::shared_ptr<arrow::Array> &array = table->column(c)->chunk(0);
+    for (size_t c=0; c < col_ids.size(); c++) {
+      const std::shared_ptr<arrow::Array> &array = table->column(col_ids.at(c))->chunk(0);
       idx_comparators_ptr->at(c) = CreateArrayIndexComparator(array);
     }
   }
