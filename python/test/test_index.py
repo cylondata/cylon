@@ -1,6 +1,8 @@
+import numpy as np
 import pandas as pd
 from pycylon.index import Index, RangeIndex, NumericIndex, CategoricalIndex, ColumnIndex, \
     range_calculator
+import pycylon as cn
 from pycylon import Table
 from pycylon import CylonContext
 import pyarrow as pa
@@ -115,4 +117,20 @@ def test_loc():
     print(type(ld))
 
 
-test_loc()
+def test_indexing_1():
+    dates = pd.date_range('1/1/2000', periods=8)
+    df = pd.DataFrame(np.random.randn(8, 4), index=dates, columns=['A', 'B', 'C', 'D'])
+    print(df)
+    df1 = df.loc['2000-01-01':'2000-01-05']
+    print(df1)
+
+    df2 = df.loc['2000-01-03']
+    print(df2)
+
+
+def test_indexing_2():
+    x = pd.DataFrame({'x': [1, 2, 3], 'y': [3, 4, 5]})
+    print(x)
+
+
+test_indexing_2()
