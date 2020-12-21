@@ -399,13 +399,22 @@ Status Project(std::shared_ptr<cylon::Table> &table,
                const std::vector<int64_t> &project_columns,
                std::shared_ptr<Table> &output);
 
-struct UniqueOptions{
-  bool first = false;
-  bool last = true;
-};
+/**
+ * Creates a new table by dropping the duplicated elements column-wise
+ * @param table
+ * @param cols
+ * @param out
+ * @return Status
+ */
+Status Unique(std::shared_ptr<cylon::Table> &in,
+              const std::vector<int> &cols,
+              std::shared_ptr<cylon::Table> &out,
+              bool first = true);
 
-Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols, std::shared_ptr<Table> &out);
-
+Status DistributedUnique(std::shared_ptr<cylon::Table> &in,
+                         const std::vector<int> &cols,
+                         std::shared_ptr<cylon::Table> &out
+);
 
 #ifdef BUILD_CYLON_PARQUET
 /**

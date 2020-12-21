@@ -963,8 +963,10 @@ Status Shuffle(std::shared_ptr<cylon::Table> &table,
   return cylon::Table::FromArrowTable(ctx_, table_out, output);
 }
 
-
-Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols, std::shared_ptr<Table> &out) {
+Status Unique(std::shared_ptr<cylon::Table> &in,
+              const std::vector<int> &cols,
+              std::shared_ptr<cylon::Table> &out,
+              bool first) {
   std::shared_ptr<arrow::Table> ltab = in->get_table();
   int64_t eq_calls = 0, hash_calls = 0;
   auto ctx = in->GetContext();
@@ -975,21 +977,31 @@ Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols, st
   std::unordered_set<int64_t, TableRowIndexHash, TableRowIndexComparator>
       rows_set(buckets_pre_alloc, row_hash, row_comp);
 
-  const int64_t max = ltab->num_rows();
-  const int64_t print_threshold = max / 10;
+  const int64_t num_rows = ltab->num_rows();
+  const int64_t print_threshold = num_rows / 10;
 
-  for (int64_t row = 0; row < max; ++row) {
-    rows_set.insert(row);
-    if (row % print_threshold == 0) {
-      LOG(INFO) << "Done " << (row + 1) * 100 / max << "%" << " N : "
-                << row << ", Eq : " << eq_calls << ", Hs : "
-                << hash_calls;
+  if (first) {
+    for (int64_t row = 0; row < num_rows; ++row) {
+      rows_set.insert(row);
+      if (row % print_threshold == 0) {
+        LOG(INFO) << "Done " << (row + 1) * 100 / num_rows << "%" << " N : "
+                  << row << ", Eq : " << eq_calls << ", Hs : "
+                  << hash_calls;
+      }
+    }
+  } else {
+    for (int64_t row = num_rows - 1; row > 0; --row) {
+      rows_set.insert(row);
+      if (row % print_threshold == 0) {
+        LOG(INFO) << "Done " << (row + 1) * 100 / num_rows << "%" << " N : "
+                  << row << ", Eq : " << eq_calls << ", Hs : "
+                  << hash_calls;
+      }
     }
   }
 
-  LOG(INFO) << "Table Rows: " << max << ", Row Set Size : " << rows_set.size();
-
-  std::shared_ptr<std::vector<int64_t>> indices_from_tab = std::make_shared<std::vector<int64_t>>(rows_set.begin(), rows_set.end());
+  std::shared_ptr<std::vector<int64_t>>
+      indices_from_tab = std::make_shared<std::vector<int64_t>>(rows_set.begin(), rows_set.end());
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
   // prepare final arrays
@@ -1011,6 +1023,24 @@ Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols, st
   }
   out = std::make_shared<cylon::Table>(merge_res.ValueOrDie(), ctx);
   return Status::OK();
+}
+
+Status DistributedUnique(std::shared_ptr<cylon::Table> &in,
+                         const std::vector<int> &cols,
+                         std::shared_ptr<cylon::Table> &out) {
+  auto ctx = in->GetContext();
+  if (ctx->GetWorldSize() == 1) {
+    return Unique(in, cols, out);
+  }
+
+  std::shared_ptr<cylon::Table> shuffle_out;
+  auto shuffle_status = cylon::Shuffle(in, cols, shuffle_out);
+  if (!shuffle_status.is_ok()) {
+    LOG(ERROR) << "Shuffle Failed!";
+    return shuffle_status;
+  }
+
+  return Unique(shuffle_out, cols, out);
 }
 
 #ifdef BUILD_CYLON_PARQUET

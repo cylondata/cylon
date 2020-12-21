@@ -19,14 +19,13 @@
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
 
+int sequential(std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::Table> &out, const std::vector<int> &cols);
+int distributed(std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::Table> &out, const std::vector<int> &cols);
+
 /**
  * This example reads two csv files and does a union on them.
  */
-int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    LOG(ERROR) << "There should be two arguments with paths to csv files";
-    return 1;
-  }
+int main() {
 
   auto start_time = std::chrono::steady_clock::now();
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
@@ -36,9 +35,11 @@ int main(int argc, char *argv[]) {
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
-  auto status = cylon::FromCSV(ctx, argv[1], first_table, read_options);
+  std::string file_path = "/tmp/sub_unique_" + std::to_string(ctx->GetRank()) + ".csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << file_path << std::endl;
+  auto status = cylon::FromCSV(ctx, file_path, first_table, read_options);
   if (!status.is_ok()) {
-    LOG(INFO) << "Table reading failed " << argv[1];
+    LOG(INFO) << "Table reading failed " << file_path;
     ctx->Finalize();
     return 1;
   }
@@ -48,14 +49,14 @@ int main(int argc, char *argv[]) {
       read_end_time - start_time).count() << "[ms]";
 
   auto union_start_time = std::chrono::steady_clock::now();
-  // apply unique operation
   std::vector<int> cols = {0, 1};
-  status = cylon::Unique(first_table, cols, unique_table);
-  if (!status.is_ok()) {
-    LOG(INFO) << "Unique failed " << status.get_msg();
-    ctx->Finalize();
-    return 1;
+
+  if (ctx->GetWorldSize() == 1) {
+    sequential(first_table, unique_table, cols);
+  } else {
+    distributed(first_table, unique_table, cols);
   }
+
   read_end_time = std::chrono::steady_clock::now();
 
   LOG(INFO) << "First table had : " << first_table->Rows()
@@ -80,5 +81,32 @@ int main(int argc, char *argv[]) {
 
   unique_table->Print();
 
+  return 0;
+}
+
+int sequential(std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::Table> &out, const std::vector<int> &cols) {
+  // apply unique operation
+  auto ctx = table->GetContext();
+  auto status = cylon::Unique(table, cols, out, true);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Unique failed " << status.get_msg();
+    ctx->Finalize();
+    return 1;
+  }
+  return 0;
+}
+
+int distributed(std::shared_ptr<cylon::Table> &table,
+                std::shared_ptr<cylon::Table> &out,
+                const std::vector<int> &cols) {
+  auto ctx = table->GetContext();
+  auto status = cylon::DistributedUnique(table, cols, out);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Distributed Unique failed " << status.get_msg();
+    ctx->Finalize();
+    return 1;
+  }
+  auto write_opts = cylon::io::config::CSVWriteOptions().WithDelimiter(',');
+  cylon::WriteCSV(out, "/tmp/dist_unique_" + std::to_string(ctx->GetRank()), write_opts);
   return 0;
 }
