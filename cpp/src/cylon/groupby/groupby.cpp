@@ -12,8 +12,6 @@
  * limitations under the License.
  */
 
-#include <util/arrow_utils.hpp>
-
 #include "groupby_hash.hpp"
 #include "groupby_pipeline.hpp"
 #include "groupby.hpp"

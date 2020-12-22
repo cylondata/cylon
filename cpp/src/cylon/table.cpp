@@ -1003,9 +1003,9 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
   }
   auto p3 = std::chrono::high_resolution_clock::now();
 
-  std::shared_ptr<std::vector<int64_t>>
-      indices_from_tab = std::make_shared<std::vector<int64_t>>(rows_set.size());
-  std::copy(rows_set.begin(), rows_set.end(), indices_from_tab->begin());
+//  std::shared_ptr<std::vector<int64_t>>
+//      indices_from_tab = std::make_shared<std::vector<int64_t>>(rows_set.size());
+//  std::copy(rows_set.begin(), rows_set.end(), indices_from_tab->begin());
 
   auto p4 = std::chrono::high_resolution_clock::now();
 
@@ -1013,11 +1013,13 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
   // prepare final arrays
   for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
     arrow::ArrayVector array_vector;
-    Status status = PrepareArray(ctx,
-                                 ltab,
-                                 col_idx,
-                                 indices_from_tab,//indices_from_tabs[tab_idx],
-                                 array_vector);
+    Status status = prepare_array(ctx,
+                                  ltab,
+                                  col_idx,
+                                  rows_set.begin(),
+                                  rows_set.end(),
+                                  rows_set.size(),
+                                  array_vector);
     if (!status.is_ok()) return status;
     final_data_arrays.push_back(std::make_shared<arrow::ChunkedArray>(array_vector));
   }

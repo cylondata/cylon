@@ -5,7 +5,7 @@ import numpy as np
 
 dataset = []
 cols = ['a', 'b', 'c', 'd']
-records = 50_000_000
+records = 10_000_000
 duplicate_factor = 0.9
 gen_record_size = int(records * duplicate_factor)
 
@@ -26,7 +26,7 @@ t2 = time.time()
 pdf2 = pdf.drop_duplicates(subset=['a', 'b'], inplace=False)
 t3 = time.time()
 
-print(t2-t1, t3-t2)
+print(t2-t1, t3-t2, tb2.row_count, len(pdf2))
 
 
 
