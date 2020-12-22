@@ -278,5 +278,108 @@ arrow::Status copy_array_by_indices(const std::vector<int64_t> &indices,
   }
 }
 
+/*template<typename ITER, typename TYPE>
+arrow::Status do_copy_numeric_array(const ITER &indices_begin,
+                                    const ITER &indices_end,
+                                    int64_t size,
+                                    const std::shared_ptr<arrow::Array> &data_array,
+                                    std::shared_ptr<arrow::Array> &copied_array,
+                                    arrow::MemoryPool *memory_pool) {
+  arrow::NumericBuilder<TYPE> array_builder(memory_pool);
+  arrow::Status status = array_builder.Reserve(size);
+  if (!status.ok()) {
+    LOG(FATAL) << "Failed to reserve memory when re arranging the array based on indices. " << status.ToString();
+    return status;
+  }
+
+  auto casted_array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(data_array);
+  for (auto index = indices_begin; index < indices_end; index++) {
+    // handle -1 index : comes in left, right joins
+    if (*index == -1) {
+      array_builder.UnsafeAppendNull();
+      continue;
+    }
+
+    if (casted_array->length() <= *index) {
+      LOG(FATAL) << "INVALID INDEX " << *index << " LENGTH " << casted_array->length();
+    }
+    array_builder.UnsafeAppend(casted_array->Value(*index));
+  }
+  return array_builder.Finish(&copied_array);
+}
+
+template<typename ITER>
+arrow::Status copy_array_by_indices(const ITER &indices_begin,
+                                    const ITER &indices_end,
+                                    int64_t size,
+                                    const std::shared_ptr<arrow::Array> &data_array,
+                                    std::shared_ptr<arrow::Array> &copied_array,
+                                    arrow::MemoryPool *memory_pool) {
+  switch (data_array->type()->id()) {
+    case arrow::Type::BOOL:
+      return do_copy_numeric_array<arrow::BooleanType>(indices_begin, indices_end, size,
+                                                       data_array,
+                                                       copied_array,
+                                                       memory_pool);
+    case arrow::Type::UINT8:
+      return do_copy_numeric_array<arrow::UInt8Type>(indices_begin, indices_end, size,
+                                                     data_array,
+                                                     copied_array,
+                                                     memory_pool);
+    case arrow::Type::INT8:
+      return do_copy_numeric_array<arrow::Int8Type>(indices_begin, indices_end, size,
+                                                    data_array,
+                                                    copied_array,
+                                                    memory_pool);
+    case arrow::Type::UINT16:
+      return do_copy_numeric_array<arrow::UInt16Type>(indices_begin, indices_end, size,
+                                                      data_array,
+                                                      copied_array,
+                                                      memory_pool);
+    case arrow::Type::INT16:
+      return do_copy_numeric_array<arrow::Int16Type>(indices_begin, indices_end, size,
+                                                     data_array,
+                                                     copied_array,
+                                                     memory_pool);
+    case arrow::Type::UINT32:
+      return do_copy_numeric_array<arrow::UInt32Type>(indices_begin, indices_end, size,
+                                                      data_array,
+                                                      copied_array,
+                                                      memory_pool);
+    case arrow::Type::INT32:
+      return do_copy_numeric_array<arrow::Int32Type>(indices_begin, indices_end, size,
+                                                     data_array,
+                                                     copied_array,
+                                                     memory_pool);
+    case arrow::Type::UINT64:
+      return do_copy_numeric_array<arrow::UInt64Type>(indices_begin, indices_end, size,
+                                                      data_array,
+                                                      copied_array,
+                                                      memory_pool);
+    case arrow::Type::INT64:
+      return do_copy_numeric_array<arrow::Int64Type>(indices_begin, indices_end, size,
+                                                     data_array,
+                                                     copied_array,
+                                                     memory_pool);
+    case arrow::Type::HALF_FLOAT:
+      return do_copy_numeric_array<arrow::HalfFloatType>(indices_begin, indices_end, size,
+                                                         data_array,
+                                                         copied_array,
+                                                         memory_pool);
+    case arrow::Type::FLOAT:
+      return do_copy_numeric_array<arrow::FloatType>(indices_begin, indices_end, size,
+                                                     data_array,
+                                                     copied_array,
+                                                     memory_pool);
+    case arrow::Type::DOUBLE:
+      return do_copy_numeric_array<arrow::DoubleType>(indices_begin, indices_end, size,
+                                                      data_array,
+                                                      copied_array,
+                                                      memory_pool);
+
+    default:return arrow::Status::Invalid("Un-supported type");
+  }
+}*/
+
 }  // namespace util
 }  // namespace cylon
