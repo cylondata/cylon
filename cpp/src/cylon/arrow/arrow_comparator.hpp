@@ -99,11 +99,10 @@ class TableRowIndexComparator {
 
   // equality
   bool operator()(const int64_t &record1, const int64_t &record2) const {
-    bool res = true;
     for (auto &&comp:*idx_comparators_ptr) {
-      res &= !((bool) comp->compare(record1, record2));
+      if (comp->compare(record1, record2)) return false;
     }
-    return res;
+    return true;
   }
 
  private:
