@@ -20,6 +20,8 @@
 namespace cylon {
 namespace util {
 
+class FunctionContext;
+
 arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table,
                         int64_t sort_column_index,
                         arrow::MemoryPool *memory_pool,
