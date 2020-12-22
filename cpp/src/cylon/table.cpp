@@ -967,8 +967,9 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
               const std::vector<int> &cols,
               std::shared_ptr<cylon::Table> &out,
               bool first) {
+  auto p1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::Table> ltab = in->get_table();
-  int64_t eq_calls = 0, hash_calls = 0;
+  //int64_t eq_calls = 0, hash_calls = 0;
   auto ctx = in->GetContext();
   TableRowIndexComparator row_comp(ltab, cols);
   TableRowIndexHash row_hash(ltab, cols);
@@ -978,30 +979,35 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
       rows_set(buckets_pre_alloc, row_hash, row_comp);
 
   const int64_t num_rows = ltab->num_rows();
-  const int64_t print_threshold = num_rows / 10;
+  //const int64_t print_threshold = num_rows / 10;
+  auto p2 = std::chrono::high_resolution_clock::now();
 
   if (first) {
     for (int64_t row = 0; row < num_rows; ++row) {
       rows_set.insert(row);
-      if (row % print_threshold == 0) {
-        LOG(INFO) << "Done " << (row + 1) * 100 / num_rows << "%" << " N : "
-                  << row << ", Eq : " << eq_calls << ", Hs : "
-                  << hash_calls;
-      }
+//      if (row % print_threshold == 0) {
+//        LOG(INFO) << "Done " << (row + 1) * 100 / num_rows << "%" << " N : "
+//                  << row << ", Eq : " << eq_calls << ", Hs : "
+//                  << hash_calls;
+//      }
     }
   } else {
     for (int64_t row = num_rows - 1; row > 0; --row) {
       rows_set.insert(row);
-      if (row % print_threshold == 0) {
-        LOG(INFO) << "Done " << (row + 1) * 100 / num_rows << "%" << " N : "
-                  << row << ", Eq : " << eq_calls << ", Hs : "
-                  << hash_calls;
-      }
+//      if (row % print_threshold == 0) {
+//        LOG(INFO) << "Done " << (row + 1) * 100 / num_rows << "%" << " N : "
+//                  << row << ", Eq : " << eq_calls << ", Hs : "
+//                  << hash_calls;
+//      }
     }
   }
+  auto p3 = std::chrono::high_resolution_clock::now();
 
   std::shared_ptr<std::vector<int64_t>>
-      indices_from_tab = std::make_shared<std::vector<int64_t>>(rows_set.begin(), rows_set.end());
+      indices_from_tab = std::make_shared<std::vector<int64_t>>(rows_set.size());
+  std::copy(rows_set.begin(), rows_set.end(), indices_from_tab->begin());
+
+  auto p4 = std::chrono::high_resolution_clock::now();
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
   // prepare final arrays
@@ -1022,6 +1028,20 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
     return Status(static_cast<int>(merge_res.status().code()), merge_res.status().message());
   }
   out = std::make_shared<cylon::Table>(merge_res.ValueOrDie(), ctx);
+  auto p5 = std::chrono::high_resolution_clock::now();
+
+  LOG(INFO) << ">>>>>P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(
+      p2 - p1).count() << "[s]";
+
+  LOG(INFO) << ">>>>>P2 " << std::chrono::duration_cast<std::chrono::milliseconds>(
+      p3 - p2).count() << "[s]";
+
+  LOG(INFO) << ">>>>>P3 " << std::chrono::duration_cast<std::chrono::milliseconds>(
+      p4 - p3).count() << "[s]";
+
+  LOG(INFO) << ">>>>>P4 " << std::chrono::duration_cast<std::chrono::milliseconds>(
+      p5 - p4).count() << "[s]";
+
   return Status::OK();
 }
 

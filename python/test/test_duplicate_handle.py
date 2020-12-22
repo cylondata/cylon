@@ -1,6 +1,8 @@
+import pandas as pd
 import pycylon as cn
 from pycylon.net import MPIConfig
-
+from pycylon.io import CSVReadOptions
+from pycylon.io import read_csv
 
 def test_shuffle():
     mpi_config = MPIConfig()
@@ -31,4 +33,25 @@ def test_shuffle():
 
     ctx.finalize()
 
-test_shuffle()
+
+def test_unique():
+
+    ctx = cn.CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: cn.Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+
+    expected_indices_of_sort_col = [1, 2, 3, 4, 5, 7, 10, 12, 13, 14, 15]
+
+    tb2 = tb1.unique(columns=['a', 'b'], keep='first')
+    pdf2 = pdf.drop_duplicates(subset=['a', 'b'])
+
+    sort_col = tb2.sort(3).to_pydict()['d']
+
+    assert sort_col == expected_indices_of_sort_col
+
+    assert pdf2['d'].values.tolist() == sort_col
+
+
+test_unique()
