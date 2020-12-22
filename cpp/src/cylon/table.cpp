@@ -48,10 +48,10 @@ namespace cylon {
 Status PrepareArray(std::shared_ptr<cylon::CylonContext> &ctx,
                     const std::shared_ptr<arrow::Table> &table,
                     const int32_t col_idx,
-                    const std::shared_ptr<std::vector<int64_t>> &row_indices,
+                    const std::vector<int64_t> &row_indices,
                     arrow::ArrayVector &array_vector) {
   std::shared_ptr<arrow::Array> destination_col_array;
-  arrow::Status ar_status = cylon::util::copy_array_by_indices(*row_indices,
+  arrow::Status ar_status = cylon::util::copy_array_by_indices(row_indices,
                                                                table->column(col_idx)->chunk(0),
                                                                &destination_col_array, cylon::ToArrowPool(ctx));
   if (ar_status != arrow::Status::OK()) {
@@ -556,13 +556,12 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
     }
   }
 
-  std::shared_ptr<std::vector<int64_t>> indices_from_tabs[2] = {
-      std::make_shared<std::vector<int64_t>>(),
-      std::make_shared<std::vector<int64_t>>()
-  };
+  std::vector<int64_t> indices_from_tabs[2] {{}, {}};
+  indices_from_tabs[0].reserve(first->Rows());
+  indices_from_tabs[1].reserve(second->Rows());
 
   for (auto const &pr : rows_set) {
-    indices_from_tabs[pr.first]->push_back(pr.second);
+    indices_from_tabs[pr.first].push_back(pr.second);
   }
   std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
   // prepare final arrays
@@ -631,10 +630,10 @@ Status Subtract(std::shared_ptr<Table> &first,
   auto t2 = std::chrono::steady_clock::now();
   LOG(INFO) << "Adding to Set took "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms";
-  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
-  left_indices->reserve(left_row_set.size());  // reserve space for vec
+  std::vector<int64_t> left_indices;
+  left_indices.reserve(left_row_set.size());  // reserve space for vec
   for (auto const &pr : left_row_set) {
-    left_indices->push_back(pr.second);
+    left_indices.push_back(pr.second);
   }
   std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
   t1 = std::chrono::steady_clock::now();
@@ -704,10 +703,10 @@ Status Intersect(std::shared_ptr<Table> &first,
     }
   }
   // convert set to vector todo: find a better way to do this inplace!
-  std::shared_ptr<std::vector<int64_t>> left_indices = std::make_shared<std::vector<int64_t>>();
-  left_indices->reserve(left_indices_set.size() / 2);
-  left_indices->assign(left_indices_set.begin(), left_indices_set.end());
-  left_indices->shrink_to_fit();
+  std::vector<int64_t> left_indices;
+  left_indices.reserve(left_indices_set.size() / 2);
+  left_indices.assign(left_indices_set.begin(), left_indices_set.end());
+  left_indices.shrink_to_fit();
   auto t2 = std::chrono::steady_clock::now();
   LOG(INFO) << "Adding to Set took "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms";
@@ -1003,9 +1002,8 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
   }
   auto p3 = std::chrono::high_resolution_clock::now();
 
-  std::shared_ptr<std::vector<int64_t>>
-      indices_from_tab = std::make_shared<std::vector<int64_t>>(rows_set.size());
-  std::copy(rows_set.begin(), rows_set.end(), indices_from_tab->begin());
+  std::vector<int64_t> indices_from_tab(rows_set.size());
+  std::move(rows_set.begin(), rows_set.end(), indices_from_tab.begin());
 
   auto p4 = std::chrono::high_resolution_clock::now();
 
