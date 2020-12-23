@@ -629,13 +629,55 @@ cdef class Table:
                 raise Exception(f"Groupby operation failed {status.get_msg().decode()}")
 
     def unique(self, columns: List = None, keep: str = 'first', inplace=False) -> Table:
-        import time
+        '''
+        Removes duplicates and returns a table with unique values
+        TODO: Fix the order of the records for time series.
+        Args:
+            columns: list of columns for which the unique operation applies
+            keep: 'first' or 'last', 'first' keeps the first record and drops the rest or the
+            opposite for 'last'.
+            inplace: default is False, if set to True, returns a copy of the unique table
+
+        Returns: PyCylon Table
+
+        Examples
+        ----------
+        >>> tb
+            a,b,c,d
+            4,5,6,1
+            1,2,3,2
+            7,8,9,3
+            10,11,12,4
+            15,20,21,5
+            10,11,24,6
+            27,23,24,7
+            1,2,13,8
+            4,5,21,9
+            39,23,24,10
+            10,11,13,11
+            123,11,12,12
+            25,13,12,13
+            30,21,22,14
+            35,1,2,15
+
+        >>> tb.unique(columns=['a', 'b'], keep='first')
+            25,13,12,13
+            39,23,24,10
+            15,20,21,5
+            35,1,2,15
+            10,11,12,4
+            7,8,9,3
+            30,21,22,14
+            123,11,12,12
+            1,2,3,2
+            27,23,24,7
+            4,5,6,1
+        '''
         cdef CStatus status
         cdef shared_ptr[CArrowTable] aoutput
         cdef shared_ptr[CTable] output
         cdef vector[int] c_cols
         cdef bool c_first = False
-        t1 = time.time()
         if keep == 'first':
             c_first = True
         if columns:
@@ -651,15 +693,52 @@ cdef class Table:
             for col in self.column_names:
                 col_idx = self._resolve_column_index_from_column_name(col)
                 c_cols.push_back(col_idx)
-        t2 = time.time()
         status = Unique(self.table_shd_ptr, c_cols, output, c_first)
-        t3 = time.time()
         if status.is_ok():
             cylon_table = pycylon_wrap_table(output)
-            t4 = time.time()
-            print(f"P1 >>> {(t2-t1) * 1000}")
-            print(f"P2 >>> {(t3-t2) * 1000}")
-            print(f"P3 >>> {(t4-t3) * 1000}")
+            if inplace:
+                self.initialize(cylon_table.to_arrow(), self.context)
+            else:
+                return cylon_table
+        else:
+            raise Exception(f"Unique operation failed {status.get_msg().decode()}")
+
+    def distributed_unique(self, columns: List = None, inplace=False):
+        '''
+        Removes duplicates and returns a table with unique values
+        TODO: Fix the order of the records for time series.
+        Args:
+            columns: list of columns for which the unique operation applies
+            inplace: default is False, if set to True, returns a copy of the unique table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> tb = tb.distributed_unique(['c1', 'c2', 'c3'])
+
+        '''
+        cdef CStatus status
+        cdef shared_ptr[CArrowTable] aoutput
+        cdef shared_ptr[CTable] output
+        cdef vector[int] c_cols
+        if columns:
+            for col in columns:
+                if isinstance(col, str):
+                    col_idx = self._resolve_column_index_from_column_name(col)
+                    c_cols.push_back(col_idx)
+                elif isinstance(col, int):
+                    c_cols.push_back(col)
+                else:
+                    raise ValueError(f"columns must be str or int, provided {columns}")
+        else:
+            for col in self.column_names:
+                col_idx = self._resolve_column_index_from_column_name(col)
+                c_cols.push_back(col_idx)
+        status = DistributedUnique(self.table_shd_ptr, c_cols, output)
+        if status.is_ok():
+            cylon_table = pycylon_wrap_table(output)
             if inplace:
                 self.initialize(cylon_table.to_arrow(), self.context)
             else:
