@@ -47,7 +47,7 @@ class TableRowComparator {
 
 class ArrayIndexComparator {
  public:
-  virtual int compare(int64_t index1, int64_t index2) = 0;
+  virtual int compare(int64_t index1, int64_t index2) const = 0;
 };
 
 std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array);
@@ -99,11 +99,10 @@ class TableRowIndexComparator {
 
   // equality
   bool operator()(const int64_t &record1, const int64_t &record2) const {
-    bool res = true;
     for (auto &&comp:*idx_comparators_ptr) {
-      res &= !((bool) comp->compare(record1, record2));
+      if (comp->compare(record1, record2)) return false;
     }
-    return res;
+    return true;
   }
 
  private:
