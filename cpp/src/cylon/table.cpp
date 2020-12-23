@@ -970,6 +970,13 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
   std::shared_ptr<arrow::Table> ltab = in->get_table();
   //int64_t eq_calls = 0, hash_calls = 0;
   auto ctx = in->GetContext();
+
+  if (ltab->column(0)->num_chunks() > 1) {
+    const arrow::Result<std::shared_ptr<arrow::Table>> &res = ltab->CombineChunks(cylon::ToArrowPool(ctx));
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
+    ltab = res.ValueOrDie();
+  }
+
   TableRowIndexComparator row_comp(ltab, cols);
   TableRowIndexHash row_hash(ltab, cols);
   auto buckets_pre_alloc = (ltab->num_rows());
