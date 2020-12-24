@@ -64,16 +64,20 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<cylon::Table> output;
 
-  auto t1 = std::chrono::high_resolution_clock::now();
-  auto s = cylon::Unique(table, {0, 1}, output);
-  auto t2 = std::chrono::high_resolution_clock::now();
+  for (int i = 0; i < 5; i++) {
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto s = cylon::Unique(table, {0, 2}, output);
+    auto t2 = std::chrono::high_resolution_clock::now();
 
-  if (!s.is_ok()) {
-    std::cout << "dist sort failed " << s.get_msg() << std::endl;
-    return 1;
+    if (!s.is_ok()) {
+      std::cout << "dist sort failed " << s.get_msg() << std::endl;
+      return 1;
+    }
+    std::cout << "sorted table " << ctx->GetRank() << " " << output->Rows() << " "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << std::endl;
+    output.reset();
   }
-  std::cout << "sorted table " << ctx->GetRank() << " " << output->Rows() << " "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << std::endl;
+
 //  cylon::WriteCSV(table, "/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
 //  cylon::WriteCSV(output, "/tmp/output" + std::to_string(ctx->GetRank()) + ".txt");
 
@@ -85,7 +89,7 @@ void create_table(char *const *argv,
                   arrow::MemoryPool *pool,
                   std::shared_ptr<arrow::Table> &left_table) {
   arrow::Int64Builder longb(pool);
-  arrow::Int32Builder intb(pool);
+  arrow::Int64Builder intb(pool);
   arrow::DoubleBuilder doubleb(pool);
   arrow::FloatBuilder floatb(pool);
   uint64_t count = std::stoull(argv[1]);
@@ -131,7 +135,7 @@ void create_table(char *const *argv,
   std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
       arrow::field("first", arrow::int64()),
       arrow::field("second", arrow::float64()),
-      arrow::field("third", arrow::int32()),
+      arrow::field("third", arrow::int64()),
       arrow::field("fourth", arrow::float32())};
   auto schema = std::make_shared<arrow::Schema>(schema_vector);
 
