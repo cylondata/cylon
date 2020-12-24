@@ -657,9 +657,7 @@ cdef class Table:
         if status.is_ok():
             cylon_table = pycylon_wrap_table(output)
             t4 = time.time()
-            print(f"P1 >>> {(t2-t1) * 1000}")
-            print(f"P2 >>> {(t3-t2) * 1000}")
-            print(f"P3 >>> {(t4-t3) * 1000}")
+            print(f">>> P1 {(t2-t1) * 1000}", f"P2 {(t3-t2) * 1000}", f"P3 {(t4-t3) * 1000}")
             if inplace:
                 self.initialize(cylon_table.to_arrow(), self.context)
             else:
