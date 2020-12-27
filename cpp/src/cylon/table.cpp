@@ -966,7 +966,6 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
               const std::vector<int> &cols,
               std::shared_ptr<cylon::Table> &out,
               bool first) {
-  auto p1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::Table> ltab = in->get_table();
   //int64_t eq_calls = 0, hash_calls = 0;
   auto ctx = in->GetContext();
@@ -980,13 +979,13 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
   TableRowIndexComparator row_comp(ltab, cols);
   TableRowIndexHash row_hash(ltab, cols);
   auto buckets_pre_alloc = (ltab->num_rows());
-//  LOG(INFO) << "Buckets : " << buckets_pre_alloc;
+  LOG(INFO) << "Buckets : " << buckets_pre_alloc;
   std::unordered_set<int64_t, TableRowIndexHash, TableRowIndexComparator>
       rows_set(buckets_pre_alloc, row_hash, row_comp);
 
   const int64_t num_rows = ltab->num_rows();
-  //const int64_t print_threshold = num_rows / 10;
-  auto p2 = std::chrono::high_resolution_clock::now();
+  const int64_t print_threshold = num_rows / 10;
+
 
   arrow::BooleanBuilder filter;
   auto astatus = filter.Reserve(num_rows);
@@ -1003,7 +1002,6 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
       filter.UnsafeAppend(res.second);
     }
   }
-  auto p3 = std::chrono::high_resolution_clock::now();
 
   std::shared_ptr<arrow::BooleanArray> filter_arr;
   astatus = filter.Finish(&filter_arr);
@@ -1013,13 +1011,6 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
   std::shared_ptr<arrow::Table> atable = res.ValueOrDie().table();
   out = std::make_shared<Table>(atable, ctx);
-
-  auto p4 = std::chrono::high_resolution_clock::now();
-
-  LOG(INFO) << ">>>>>P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(p2 - p1).count()
-            << " P2 " << std::chrono::duration_cast<std::chrono::milliseconds>(p3 - p2).count()
-            << " P3 " << std::chrono::duration_cast<std::chrono::milliseconds>(p4 - p3).count()
-            << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(p4 - p1).count();
 
   return Status::OK();
 }
