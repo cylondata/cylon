@@ -192,7 +192,7 @@ def test_duplicate():
     print("26. Duplicate Handling")
     responses.append(
         os.system(
-            "mpirun -n 2 python -m pytest --with-mpi -q python/test/test_duplicate_handle.py"))
+            "mpirun --oversubscribe -n 2 python -m pytest --with-mpi -q python/test/test_duplicate_handle.py"))
     assert responses[-1] == 0
 
 
