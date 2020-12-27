@@ -146,16 +146,15 @@ class ArrowArrayStreamingSplitKernel {
 template<typename TYPE>
 class ArrowArrayStreamingNumericSplitKernel : public ArrowArrayStreamingSplitKernel {
  private:
-  std::vector<std::shared_ptr<arrow::NumericBuilder<TYPE>>> builders_;
+  std::vector<arrow::NumericBuilder<TYPE>> builders_;
  public:
   explicit ArrowArrayStreamingNumericSplitKernel(const std::shared_ptr<arrow::DataType> &type,
                                                  const std::vector<int32_t> &targets,
                                                  arrow::MemoryPool *pool) :
       ArrowArrayStreamingSplitKernel(type, targets, pool) {
+    builders_.reserve(targets.size());
     for (size_t i = 0; i < targets.size(); i++) {
-      std::shared_ptr<arrow::NumericBuilder<TYPE>> b =
-          std::make_shared<arrow::NumericBuilder<TYPE>>(type_, pool_);
-      builders_.push_back(b);
+      builders_.emplace_back(type, pool);
     }
   }
 
@@ -170,17 +169,15 @@ class ArrowArrayStreamingNumericSplitKernel : public ArrowArrayStreamingSplitKer
 //    }
 
     for (size_t i = 0; i < kI; i++) {
-      std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders_[partitions[i]];
-      b->Append(reader->Value(i));
+      builders_[partitions[i]].Append(reader->Value(i));
     }
     return 0;
   }
 
   int finish(std::unordered_map<int, std::shared_ptr<arrow::Array>> &out) override {
     for (long target : targets_) {
-      std::shared_ptr<arrow::NumericBuilder<TYPE>> b = builders_[target];
       std::shared_ptr<arrow::Array> array;
-      b->Finish(&array);
+      builders_[target].Finish(&array);
       out.insert(std::pair<int, std::shared_ptr<arrow::Array>>(target, array));
     }
     return 0;
