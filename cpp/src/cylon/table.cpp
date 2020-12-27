@@ -980,7 +980,7 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
   TableRowIndexComparator row_comp(ltab, cols);
   TableRowIndexHash row_hash(ltab, cols);
   auto buckets_pre_alloc = (ltab->num_rows());
-  LOG(INFO) << "Buckets : " << buckets_pre_alloc;
+//  LOG(INFO) << "Buckets : " << buckets_pre_alloc;
   std::unordered_set<int64_t, TableRowIndexHash, TableRowIndexComparator>
       rows_set(buckets_pre_alloc, row_hash, row_comp);
 
@@ -988,64 +988,38 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
   //const int64_t print_threshold = num_rows / 10;
   auto p2 = std::chrono::high_resolution_clock::now();
 
+  arrow::BooleanBuilder filter;
+  auto astatus = filter.Reserve(num_rows);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(astatus)
+
   if (first) {
     for (int64_t row = 0; row < num_rows; ++row) {
-      rows_set.insert(row);
-//      if (row % print_threshold == 0) {
-//        LOG(INFO) << "Done " << (row + 1) * 100 / num_rows << "%" << " N : "
-//                  << row << ", Eq : " << eq_calls << ", Hs : "
-//                  << hash_calls;
-//      }
+      const auto &res = rows_set.insert(row);
+      filter.UnsafeAppend(res.second);
     }
   } else {
     for (int64_t row = num_rows - 1; row > 0; --row) {
-      rows_set.insert(row);
-//      if (row % print_threshold == 0) {
-//        LOG(INFO) << "Done " << (row + 1) * 100 / num_rows << "%" << " N : "
-//                  << row << ", Eq : " << eq_calls << ", Hs : "
-//                  << hash_calls;
-//      }
+      const auto &res = rows_set.insert(row);
+      filter.UnsafeAppend(res.second);
     }
   }
   auto p3 = std::chrono::high_resolution_clock::now();
 
-  std::vector<int64_t> indices_from_tab(rows_set.size());
-  std::move(rows_set.begin(), rows_set.end(), indices_from_tab.begin());
+  std::shared_ptr<arrow::BooleanArray> filter_arr;
+  astatus = filter.Finish(&filter_arr);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(astatus)
+
+  const arrow::Result<arrow::Datum> &res = arrow::compute::Filter(ltab, filter_arr);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
+  std::shared_ptr<arrow::Table> atable = res.ValueOrDie().table();
+  out = std::make_shared<Table>(atable, ctx);
 
   auto p4 = std::chrono::high_resolution_clock::now();
 
-  std::vector<std::shared_ptr<arrow::ChunkedArray>> final_data_arrays;
-  // prepare final arrays
-  for (int32_t col_idx = 0; col_idx < ltab->num_columns(); col_idx++) {
-    arrow::ArrayVector array_vector;
-    Status status = PrepareArray(ctx,
-                                 ltab,
-                                 col_idx,
-                                 indices_from_tab,//indices_from_tabs[tab_idx],
-                                 array_vector);
-    if (!status.is_ok()) return status;
-    final_data_arrays.push_back(std::make_shared<arrow::ChunkedArray>(array_vector));
-  }
-  // create final table
-  std::shared_ptr<arrow::Table> table = arrow::Table::Make(ltab->schema(), final_data_arrays);
-  arrow::Result<std::shared_ptr<arrow::Table>> merge_res = table->CombineChunks(cylon::ToArrowPool(ctx));
-  if (!merge_res.ok()) {
-    return Status(static_cast<int>(merge_res.status().code()), merge_res.status().message());
-  }
-  out = std::make_shared<cylon::Table>(merge_res.ValueOrDie(), ctx);
-  auto p5 = std::chrono::high_resolution_clock::now();
-
-  LOG(INFO) << ">>>>>P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(
-      p2 - p1).count() << "[s]";
-
-  LOG(INFO) << ">>>>>P2 " << std::chrono::duration_cast<std::chrono::milliseconds>(
-      p3 - p2).count() << "[s]";
-
-  LOG(INFO) << ">>>>>P3 " << std::chrono::duration_cast<std::chrono::milliseconds>(
-      p4 - p3).count() << "[s]";
-
-  LOG(INFO) << ">>>>>P4 " << std::chrono::duration_cast<std::chrono::milliseconds>(
-      p5 - p4).count() << "[s]";
+  LOG(INFO) << ">>>>>P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(p2 - p1).count()
+            << " P2 " << std::chrono::duration_cast<std::chrono::milliseconds>(p3 - p2).count()
+            << " P3 " << std::chrono::duration_cast<std::chrono::milliseconds>(p4 - p3).count()
+            << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(p4 - p1).count();
 
   return Status::OK();
 }

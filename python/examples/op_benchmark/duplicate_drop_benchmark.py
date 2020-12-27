@@ -24,10 +24,17 @@ for _ in range(5):
     t1 = time.time()
     tb2 = tb.unique(columns=['a', 'b'], keep='first')
     t2 = time.time()
+    print(t2-t1, tb2.row_count)
+    del tb2
+    time.sleep(1)
+
+for _ in range(5):
+    t2 = time.time()
     pdf2 = pdf.drop_duplicates(subset=['a', 'b'], inplace=False)
     t3 = time.time()
-
-    print(t2-t1, t3-t2, tb2.row_count, len(pdf2))
+    print(t3-t2, len(pdf2))
+    del pdf2
+    time.sleep(1)
 
 
 
