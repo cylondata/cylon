@@ -984,8 +984,6 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
       rows_set(buckets_pre_alloc, row_hash, row_comp);
 
   const int64_t num_rows = ltab->num_rows();
-  const int64_t print_threshold = num_rows / 10;
-
 
   arrow::BooleanBuilder filter;
   auto astatus = filter.Reserve(num_rows);
