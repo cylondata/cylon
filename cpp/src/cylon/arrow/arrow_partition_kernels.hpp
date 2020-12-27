@@ -99,7 +99,7 @@ class HashPartitionKernel : public PartitionKernel {
   virtual Status UpdateHash(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                             std::vector<uint32_t> &partial_hashes) = 0;
 
-  virtual inline uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) = 0;
+  virtual uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) = 0;
 };
 
 
