@@ -33,6 +33,7 @@
 #include "ctx/arrow_memory_pool_utils.hpp"
 #include "arrow/arrow_types.hpp"
 #include "partition/partition.hpp"
+#include "thridparty/flat_hash_map/bytell_hash_map.hpp"
 
 namespace cylon {
 
@@ -966,6 +967,9 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
               const std::vector<int> &cols,
               std::shared_ptr<cylon::Table> &out,
               bool first) {
+#ifdef CYLON_DEBUG
+  auto p1 = std::chrono::high_resolution_clock::now();
+#endif
   std::shared_ptr<arrow::Table> ltab = in->get_table();
   //int64_t eq_calls = 0, hash_calls = 0;
   auto ctx = in->GetContext();
@@ -979,12 +983,14 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
   TableRowIndexComparator row_comp(ltab, cols);
   TableRowIndexHash row_hash(ltab, cols);
   const int64_t num_rows = ltab->num_rows();
-  std::unordered_set<int64_t, TableRowIndexHash, TableRowIndexComparator> rows_set(num_rows, row_hash, row_comp);
+  ska::bytell_hash_set<int64_t, TableRowIndexHash, TableRowIndexComparator> rows_set(num_rows, row_hash, row_comp);
 
   arrow::BooleanBuilder filter;
   auto astatus = filter.Reserve(num_rows);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(astatus)
-
+#ifdef CYLON_DEBUG
+  auto p2 = std::chrono::high_resolution_clock::now();
+#endif
   if (first) {
     for (int64_t row = 0; row < num_rows; ++row) {
       const auto &res = rows_set.insert(row);
@@ -996,9 +1002,12 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
       filter.UnsafeAppend(res.second);
     }
   }
+#ifdef CYLON_DEBUG
+  auto p3 = std::chrono::high_resolution_clock::now();
 
-  rows_set.clear();
-
+//  rows_set.clear();
+  auto p4 = std::chrono::high_resolution_clock::now();
+#endif
   std::shared_ptr<arrow::BooleanArray> filter_arr;
   astatus = filter.Finish(&filter_arr);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(astatus)
@@ -1008,6 +1017,14 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
   std::shared_ptr<arrow::Table> atable = res.ValueOrDie().table();
   out = std::make_shared<Table>(atable, ctx);
 
+#ifdef CYLON_DEBUG
+  auto p5 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(p2 - p1).count()
+            << " P2 " << std::chrono::duration_cast<std::chrono::milliseconds>(p3 - p2).count()
+            << " P3 " << std::chrono::duration_cast<std::chrono::milliseconds>(p4 - p3).count()
+            << " P4 " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p4).count()
+            << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p1).count();
+#endif
   return Status::OK();
 }
 
