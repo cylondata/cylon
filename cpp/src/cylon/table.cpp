@@ -978,12 +978,8 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
 
   TableRowIndexComparator row_comp(ltab, cols);
   TableRowIndexHash row_hash(ltab, cols);
-  auto buckets_pre_alloc = (ltab->num_rows());
-  LOG(INFO) << "Buckets : " << buckets_pre_alloc;
-  std::unordered_set<int64_t, TableRowIndexHash, TableRowIndexComparator>
-      rows_set(buckets_pre_alloc, row_hash, row_comp);
-
   const int64_t num_rows = ltab->num_rows();
+  std::unordered_set<int64_t, TableRowIndexHash, TableRowIndexComparator> rows_set(num_rows, row_hash, row_comp);
 
   arrow::BooleanBuilder filter;
   auto astatus = filter.Reserve(num_rows);
@@ -1000,6 +996,8 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
       filter.UnsafeAppend(res.second);
     }
   }
+
+  rows_set.clear();
 
   std::shared_ptr<arrow::BooleanArray> filter_arr;
   astatus = filter.Finish(&filter_arr);
