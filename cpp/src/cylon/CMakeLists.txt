@@ -107,6 +107,9 @@ add_library(cylon SHARED
         partition/partition.hpp
         partition/partition.cpp
         util/macros.hpp
+        thridparty/flat_hash_map/unordered_map.hpp
+        thridparty/flat_hash_map/flat_hash_map.hpp
+        thridparty/flat_hash_map/bytell_hash_map.hpp
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
