@@ -18,6 +18,16 @@
 
 namespace cylon {
 
+/**
+ * create unique group IDs based on set of columns.
+ * @param pool
+ * @param atable
+ * @param idx_cols
+ * @param group_ids
+ * @param group_filter
+ * @param unique_groups
+ * @return
+ */
 static Status make_groups(arrow::MemoryPool *pool,
                           const std::shared_ptr<arrow::Table> &atable,
                           const std::vector<int> &idx_cols,
@@ -54,8 +64,8 @@ static Status make_groups(arrow::MemoryPool *pool,
 }
 
 
-static AggregationOp pick_aggregation_op(const std::shared_ptr<arrow::DataType> &val_data_type,
-                                         const cylon::compute::AggregationOp op) {
+static AggregationFn pick_aggregation_op(const std::shared_ptr<arrow::DataType> &val_data_type,
+                                         const cylon::compute::AggregationOpId op) {
   switch (val_data_type->id()) {
     case arrow::Type::BOOL: return resolve_op<arrow::BooleanType>(op);
     case arrow::Type::UINT8: return resolve_op<arrow::UInt8Type>(op);
@@ -74,7 +84,7 @@ static AggregationOp pick_aggregation_op(const std::shared_ptr<arrow::DataType> 
 
 Status HashGroupBy(const std::shared_ptr<Table> &table,
                    const std::vector<int32_t> &idx_cols,
-                   const std::vector<std::pair<int64_t, compute::AggregationOp>> &aggregate_cols,
+                   const std::vector<std::pair<int64_t, compute::AggregationOpId>> &aggregate_cols,
                    std::shared_ptr<Table> &output) {
   std::vector<int64_t> group_ids;
   int64_t unique_groups;
@@ -109,15 +119,16 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   for (auto &&p: aggregate_cols) {
     std::shared_ptr<arrow::Array> new_arr;
     std::shared_ptr<arrow::Field> new_field;
-    const AggregationOp &agg_op = pick_aggregation_op(atable->field(p.first)->type(), p.second);
+    const AggregationFn &agg_fn = pick_aggregation_op(atable->field(p.first)->type(), p.second);
 
-    RETURN_CYLON_STATUS_IF_FAILED(agg_op(pool,
+    RETURN_CYLON_STATUS_IF_FAILED(agg_fn(pool,
                                          atable->column(p.first)->chunk(0),
                                          atable->field(p.first),
                                          group_ids,
                                          unique_groups,
                                          new_arr,
-                                         new_field))
+                                         new_field,
+                                         nullptr))
     new_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(new_arr)));
     new_fields.push_back(std::move(new_field));
   }

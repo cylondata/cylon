@@ -95,7 +95,7 @@ add_library(cylon SHARED
         compute/aggregates.hpp
         compute/aggregates.cpp
         compute/aggregate_utils.hpp
-        compute/compute_kernels.hpp
+        compute/aggregate_kernels.hpp
         net/comm_operations.hpp
         net/mpi/mpi_operations.cpp
         net/mpi/mpi_operations.hpp

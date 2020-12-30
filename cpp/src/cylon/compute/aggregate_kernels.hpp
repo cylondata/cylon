@@ -12,83 +12,112 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_CPP_SRC_CYLON_COMPUTE_COMPUTE_KERNELS_HPP_
-#define CYLON_CPP_SRC_CYLON_COMPUTE_COMPUTE_KERNELS_HPP_
+#ifndef CYLON_CPP_SRC_CYLON_COMPUTE_AGGREGATE_KERNELS_HPP_
+#define CYLON_CPP_SRC_CYLON_COMPUTE_AGGREGATE_KERNELS_HPP_
 
 namespace cylon {
 namespace compute {
 
-enum AggregationOp {
+enum AggregationOpId {
   SUM,
   MIN,
   MAX,
   COUNT,
   MEAN,
+  VAR
 };
 
-template<AggregationOp op, typename T>
+template<AggregationOpId op, typename T>
 struct KernelTraits {};
 
+struct KernelOptions {};
+
+struct EmptyKernelOptions : public KernelOptions {};
+
 template<typename T>
-struct KernelTraits<AggregationOp::SUM, T> {
+struct KernelTraits<AggregationOpId::SUM, T> {
   using State = std::tuple<T>;
   using ResultT = T;
+  using Options = EmptyKernelOptions;
   static constexpr const char *name() {
     return "sum_";
   }
 };
 
 template<typename T>
-struct KernelTraits<AggregationOp::MEAN, T> {
-  using State = std::tuple<T, int64_t>;
+struct KernelTraits<AggregationOpId::MEAN, T> {
+  using State = std::tuple<T, int64_t>; // <sum, count>
   using ResultT = T;
+  using Options = EmptyKernelOptions;
   static constexpr const char *name() {
     return "mean_";
   }
 };
 
+struct VarKernelOptions : public KernelOptions {
+  int ddof = 0;
+};
+
 template<typename T>
-struct KernelTraits<AggregationOp::COUNT, T> {
+struct KernelTraits<AggregationOpId::VAR, T> {
+  using State = std::tuple<T, T, int64_t>; // <sum of squares, sum, count>
+  using ResultT = double_t;
+  using Options = VarKernelOptions;
+  static constexpr const char *name() {
+    return "var_";
+  }
+};
+
+template<typename T>
+struct KernelTraits<AggregationOpId::COUNT, T> {
   using State = std::tuple<int64_t>;
   using ResultT = int64_t;
+  using Options = EmptyKernelOptions;
   static constexpr const char *name() {
     return "count_";
   }
 };
 
 template<typename T>
-struct KernelTraits<AggregationOp::MIN, T> {
+struct KernelTraits<AggregationOpId::MIN, T> {
   using State = std::tuple<T>;
   using ResultT = T;
+  using Options = EmptyKernelOptions;
   static constexpr const char *name() {
     return "min_";
   }
 };
 
 template<typename T>
-struct KernelTraits<AggregationOp::MAX, T> {
+struct KernelTraits<AggregationOpId::MAX, T> {
   using State = std::tuple<T>;
   using ResultT = T;
+  using Options = EmptyKernelOptions;
   static constexpr const char *name() {
     return "max_";
   }
 };
 
 struct Kernel {
-  virtual void Init(void *state) = 0;
+  virtual void Setup(KernelOptions *options) = 0;
+  virtual void InitializeState(void *state) = 0;
   virtual void Update(const void *value, void *state) = 0;
   virtual void Finalize(const void *state, void *result) = 0;
 };
 
-template<AggregationOp op, typename T, typename State = typename KernelTraits<op, T>::State,
-    typename ResultT = typename KernelTraits<op, T>::ResultT>
+template<AggregationOpId op, typename T, typename State = typename KernelTraits<op, T>::State,
+    typename ResultT = typename KernelTraits<op, T>::ResultT, typename Options = typename KernelTraits<op, T>::Options>
 struct TypedKernel : Kernel {
-  virtual void Init(State *state) = 0;
+  virtual void Setup(Options *options) {}; // default implementation
+  virtual void InitializeState(State *state) = 0;
   virtual void Update(const T *value, State *state) = 0;
   virtual void Finalize(const State *state, ResultT *result) = 0;
 
-  inline void Init(void *state) override {
-    return Init(static_cast<State *> (state));
+  inline void Setup(KernelOptions *options) override {
+    return Setup(static_cast<Options *> (options));
+  }
+  inline void InitializeState(void *state) override {
+    return InitializeState(static_cast<State *> (state));
   }
   inline void Update(const void *value, void *state) override {
     return Update(static_cast<const T *>(value), static_cast<State *>(state));
@@ -99,9 +128,9 @@ struct TypedKernel : Kernel {
 };
 
 template<typename T>
-class MeanKernel : public TypedKernel<AggregationOp::MEAN, T> {
+class MeanKernel : public TypedKernel<AggregationOpId::MEAN, T> {
  public:
-  inline void Init(std::tuple<T, int64_t> *state) override {
+  inline void InitializeState(std::tuple<T, int64_t> *state) override {
     *state = {0, 0};
   }
   inline void Update(const T *value, std::tuple<T, int64_t> *state) override {
@@ -109,13 +138,44 @@ class MeanKernel : public TypedKernel<AggregationOp::MEAN, T> {
     std::get<1>(*state) += 1;
   }
   inline void Finalize(const std::tuple<T, int64_t> *state, T *result) override {
-    *result = std::get<0>(*state) / std::get<1>(*state);
+    if (std::get<1>(*state) != 0) {
+      *result = std::get<0>(*state) / std::get<1>(*state);
+    }
   }
 };
 
 template<typename T>
-struct SumKernel : public TypedKernel<AggregationOp::SUM, T> {
-  inline void Init(std::tuple<T> *state) override {
+class VarianceKernel : public TypedKernel<AggregationOpId::VAR, T> {
+ public:
+  void Setup(VarKernelOptions *options) override {
+    ddof = options->ddof;
+  }
+
+  inline void InitializeState(std::tuple<T, T, int64_t> *state) override {
+    *state = {0, 0, 0};
+  }
+  inline void Update(const T *value, std::tuple<T, T, int64_t> *state) override {
+    std::get<0>(*state) += (*value) * (*value);
+    std::get<1>(*state) += *value;
+    std::get<2>(*state) += 1;
+  }
+  inline void Finalize(const std::tuple<T, T, int64_t> *state, double *result) override {
+    if (std::get<2>(*state) == 1) {
+      *result = 0;
+    } else if (std::get<2>(*state) != 0) {
+      double div = std::get<2>(*state) - ddof;
+      double mean = static_cast<double>(std::get<1>(*state)) / div;
+      *result = static_cast<double>(std::get<0>(*state)) / div - mean * mean;
+    }
+  };
+
+ private:
+  int ddof;
+};
+
+template<typename T>
+struct SumKernel : public TypedKernel<AggregationOpId::SUM, T> {
+  inline void InitializeState(std::tuple<T> *state) override {
     *state = {0};
   }
   inline void Update(const T *value, std::tuple<T> *state) override {
@@ -127,8 +187,8 @@ struct SumKernel : public TypedKernel<AggregationOp::SUM, T> {
 };
 
 template<typename T>
-struct CountKernel : public TypedKernel<AggregationOp::COUNT, T> {
-  inline void Init(std::tuple<int64_t> *state) override {
+struct CountKernel : public TypedKernel<AggregationOpId::COUNT, T> {
+  inline void InitializeState(std::tuple<int64_t> *state) override {
     *state = {0};
   }
   inline void Update(const T *value, std::tuple<int64_t> *state) override {
@@ -140,8 +200,8 @@ struct CountKernel : public TypedKernel<AggregationOp::COUNT, T> {
 };
 
 template<typename T>
-struct MinKernel : public TypedKernel<AggregationOp::MIN, T> {
-  inline void Init(std::tuple<T> *state) override {
+struct MinKernel : public TypedKernel<AggregationOpId::MIN, T> {
+  inline void InitializeState(std::tuple<T> *state) override {
     *state = {std::numeric_limits<T>::max()};
   }
   inline void Update(const T *value, std::tuple<T> *state) override {
@@ -153,8 +213,8 @@ struct MinKernel : public TypedKernel<AggregationOp::MIN, T> {
 };
 
 template<typename T>
-struct MaxKernel : public TypedKernel<AggregationOp::MAX, T> {
-  inline void Init(std::tuple<T> *state) override {
+struct MaxKernel : public TypedKernel<AggregationOpId::MAX, T> {
+  inline void InitializeState(std::tuple<T> *state) override {
     *state = {std::numeric_limits<T>::min()};
   }
   inline void Update(const T *value, std::tuple<T> *state) override {
@@ -165,7 +225,7 @@ struct MaxKernel : public TypedKernel<AggregationOp::MAX, T> {
   }
 };
 
-template<AggregationOp op, typename T>
+template<AggregationOpId op, typename T>
 std::unique_ptr<Kernel> CreateAggregateKernel() {
   switch (op) {
     case SUM: return std::make_unique<SumKernel<T>>();
@@ -173,10 +233,11 @@ std::unique_ptr<Kernel> CreateAggregateKernel() {
     case MAX:return std::make_unique<MaxKernel<T>>();
     case COUNT:return std::make_unique<CountKernel<T>>();
     case MEAN:return std::make_unique<MeanKernel<T>>();
+    case VAR:return std::make_unique<VarianceKernel<T>>();
   }
 }
 
 }
 }
 
-#endif //CYLON_CPP_SRC_CYLON_COMPUTE_COMPUTE_KERNELS_HPP_
+#endif //CYLON_CPP_SRC_CYLON_COMPUTE_AGGREGATE_KERNELS_HPP_

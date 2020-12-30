@@ -220,7 +220,7 @@ void HashCylonGroupBy1(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &c
   cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);*/
 
   cylon::Status s =
-      cylon::HashGroupBy(ctable, {0}, {{1, cylon::compute::AggregationOp::SUM}}, output);
+      cylon::HashGroupBy(ctable, {0}, {{1, cylon::compute::AggregationOpId::SUM}}, output);
 
   auto t3 = std::chrono::steady_clock::now();
   std::cout << "hash_group4 " << output->Rows()
