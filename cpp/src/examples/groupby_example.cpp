@@ -18,10 +18,10 @@
 #include <net/mpi/mpi_communicator.hpp>
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
-#include <groupby/groupby.hpp>
+#include <groupby/hash_groupby.hpp>
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) {
+    if (argc < 2) {
         LOG(ERROR) << "There should be two arguments with paths to csv files";
         return 1;
     }
@@ -49,8 +49,10 @@ int main(int argc, char *argv[]) {
 
     first_table->Print();
 
+    std::cout << "-----------------------" << std::endl;
+
     cylon::Status s =
-            cylon::GroupBy(first_table, 3, {1}, {cylon::GroupByAggregationOp::SUM}, output);
+            cylon::HashGroupBy(first_table, {1,2}, {{0, cylon::compute::MIN}}, output);
 
     if (!status.is_ok()) {
         LOG(INFO) << "Table GroupBy failed ";
@@ -60,13 +62,15 @@ int main(int argc, char *argv[]) {
     auto join_end_time = std::chrono::steady_clock::now();
 
     LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
-              << output->Rows() << ", Joined has : " << output->Rows();
-    LOG(INFO) << "Join done in "
+              << output->Rows() << ", group_by has : " << output->Rows();
+    LOG(INFO) << "group_by done in "
               << std::chrono::duration_cast<std::chrono::milliseconds>(
                       join_end_time - read_end_time).count() << "[ms]";
     LOG(INFO) << "Output of GroupBy Operation" ;
 
     output->Print();
+
+    LOG(INFO) << "schema" << '\n' <<  output->get_table()->schema()->ToString();
 
     ctx->Finalize();
     return 0;
