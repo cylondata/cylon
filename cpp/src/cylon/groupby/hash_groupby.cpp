@@ -18,12 +18,12 @@
 
 namespace cylon {
 
-static Status make_groups(const std::shared_ptr<Table> &table,
+static Status make_groups(arrow::MemoryPool *pool,
+                          const std::shared_ptr<arrow::Table> &atable,
                           const std::vector<int> &idx_cols,
                           std::vector<int64_t> &group_ids,
                           std::shared_ptr<arrow::Array> &group_filter,
                           int64_t *unique_groups) {
-  const std::shared_ptr<arrow::Table> &atable = table->get_table();
   TableRowIndexHash hash(atable, idx_cols);
   TableRowIndexComparator comp(atable, idx_cols);
 
@@ -32,9 +32,8 @@ static Status make_groups(const std::shared_ptr<Table> &table,
   ska::bytell_hash_map<int64_t, int64_t, TableRowIndexHash, TableRowIndexComparator>
       hash_map(num_rows, hash, comp);
 
-  std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
   group_ids.reserve(num_rows);
-  arrow::BooleanBuilder filter_build(ToArrowPool(ctx));
+  arrow::BooleanBuilder filter_build(pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Reserve(num_rows)))
 
   int64_t unique = 0;
@@ -80,9 +79,17 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   std::vector<int64_t> group_ids;
   int64_t unique_groups;
   std::shared_ptr<arrow::Array> group_filter;
-  RETURN_CYLON_STATUS_IF_FAILED(make_groups(table, idx_cols, group_ids, group_filter, &unique_groups))
+  auto ctx = table->GetContext();
+  arrow::MemoryPool *pool = ToArrowPool(ctx);
 
-  const std::shared_ptr<arrow::Table> &atable = table->get_table();
+  std::shared_ptr<arrow::Table> atable = table->get_table();
+  if (atable->column(0)->num_chunks() > 1) { // todo: make this work with chunked arrays
+    const auto &res = atable->CombineChunks(pool);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
+    atable = res.ValueOrDie();
+  }
+
+  RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, group_filter, &unique_groups))
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> new_arrays;
   std::vector<std::shared_ptr<arrow::Field>> new_fields;
@@ -99,8 +106,6 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   }
 
   // then aggregate other cols
-  auto ctx = table->GetContext();
-  arrow::MemoryPool *pool = ToArrowPool(ctx);
   for (auto &&p: aggregate_cols) {
     std::shared_ptr<arrow::Array> new_arr;
     std::shared_ptr<arrow::Field> new_field;
