@@ -131,6 +131,72 @@ def test_indexing_1():
 def test_indexing_2():
     x = pd.DataFrame({'x': [1, 2, 3], 'y': [3, 4, 5]})
     print(x)
+    x.iloc[1] = {'x': 9, 'y': 99}
+    print(x)
 
 
-test_indexing_2()
+def test_basic_indexing_scheme():
+    from collections import defaultdict
+    import time
+    records = 10_000_000
+    duplicate_factor = 0.1
+    gen_record_size = int(records * duplicate_factor)
+    df = pd.DataFrame({'x': np.random.randint(gen_record_size, size=records),
+                       'y': np.random.randint(gen_record_size, size=records),
+                       'a': np.random.randint(gen_record_size, size=records),
+                       'b': np.random.randint(gen_record_size, size=records)
+                       })
+    index_column = df['x']
+
+    df_list = df.values.tolist()
+
+    def generate_hash_index(value):
+        return hash(value)
+
+    def generate_index(index_column):
+        hash_table = defaultdict(list)
+        for idx, val in enumerate(index_column):
+            hash_val = generate_hash_index(val)
+            hash_table[hash_val].append(idx)
+        return hash_table
+
+    def loc(value, df_list, index):
+        hash_val = generate_hash_index(value)
+        indices = index.get(hash_val)
+        records = []
+        if indices:
+            if len(indices) > 0:
+                for ix in indices:
+                    records.append(df_list[ix])
+        return records
+
+    th1 = time.time()
+    ht = generate_index(index_column)
+    th2 = time.time()
+
+    t1 = time.time()
+    vals = loc(50785, df_list, ht)
+    t2 = time.time()
+
+    tx1 = time.time()
+    df.set_index(['x'])
+    tx2 = time.time()
+
+    t3 = time.time()
+    val2 = df.loc[lambda df: df['x'] == 50785]
+    t4 = time.time()
+
+    print(f"Total Records {records}, Duplication Factor {duplicate_factor}")
+    print("Pandas Indexing Time: ", tx2 - tx1)
+    print("Naive Indexing Time: ", th2 - th1)
+
+    print("Pandas Search Time: ", t4 - t3)
+    print("Naive Search Time: ", t2 - t1)
+    print(f"Naive Search is Faster : {(t4 - t3) // (t2 - t1)} times")
+
+    print(vals)
+    print("------------")
+    print(val2.values.tolist())
+
+
+test_basic_indexing_scheme()
