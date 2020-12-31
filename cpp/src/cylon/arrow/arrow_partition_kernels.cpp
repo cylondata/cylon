@@ -114,4 +114,22 @@ int32_t RowHashingKernel::Hash(const std::shared_ptr<arrow::Table> &table, int64
   }
   return hash_code;
 }
+
+PartialRowHashingKernel::PartialRowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields,
+                                                 const std::vector<int> &cols) {
+  for (auto const &field : fields) {
+    this->hash_kernels.push_back(CreateHashPartitionKernel(field->type()));
+  }
+  this->columns = cols;
+}
+
+int32_t PartialRowHashingKernel::Hash(const std::shared_ptr<arrow::Table> &table,
+                                      int64_t row) {
+  int64_t hash_code = 1;
+  for (size_t c = 0; c < columns.size(); ++c) {
+    hash_code = 31 * hash_code + this->hash_kernels[c]->ToHash(table->column(c)->chunk(0), row);
+  }
+  return hash_code;
+}
+
 }  // namespace cylon

@@ -122,7 +122,7 @@ class NumericRowIndexComparator : public ArrayIndexComparator {
   explicit NumericRowIndexComparator(const std::shared_ptr<arrow::Array> &array) :
       casted_arr(std::static_pointer_cast<ARROW_ARRAY_T>(array)) {}
 
-  int compare(int64_t index1, int64_t index2) override {
+  int compare(int64_t index1, int64_t index2) const override {
     return (int) (casted_arr->Value(index1) - casted_arr->Value(index2));
   }
 
@@ -135,7 +135,7 @@ class BinaryRowIndexComparator : public ArrayIndexComparator {
   explicit BinaryRowIndexComparator(const std::shared_ptr<arrow::Array> &array) :
       casted_arr(std::static_pointer_cast<arrow::BinaryArray>(array)) {}
 
-  int compare(int64_t index1, int64_t index2) override {
+  int compare(int64_t index1, int64_t index2) const override {
     return casted_arr->GetString(index1).compare(casted_arr->GetString(index2));
   }
 
@@ -148,7 +148,7 @@ class FixedSizeBinaryRowIndexComparator : public ArrayIndexComparator {
   explicit FixedSizeBinaryRowIndexComparator(const std::shared_ptr<arrow::Array> &array) :
       casted_arr(std::static_pointer_cast<arrow::FixedSizeBinaryArray>(array)) {}
 
-  int compare(int64_t index1, int64_t index2) override {
+  int compare(int64_t index1, int64_t index2) const override {
     return casted_arr->GetString(index1).compare(casted_arr->GetString(index2));
   }
 

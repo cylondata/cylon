@@ -47,7 +47,7 @@ class TableRowComparator {
 
 class ArrayIndexComparator {
  public:
-  virtual int compare(int64_t index1, int64_t index2) = 0;
+  virtual int compare(int64_t index1, int64_t index2) const = 0;
 };
 
 std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array);
@@ -91,19 +91,18 @@ class TableRowIndexComparator {
  public:
   TableRowIndexComparator(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids)
       : idx_comparators_ptr(std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>(col_ids.size())) {
-    for (int c:col_ids) {
-      const std::shared_ptr<arrow::Array> &array = table->column(c)->chunk(0);
+    for (size_t c=0; c < col_ids.size(); c++) {
+      const std::shared_ptr<arrow::Array> &array = table->column(col_ids.at(c))->chunk(0);
       idx_comparators_ptr->at(c) = CreateArrayIndexComparator(array);
     }
   }
 
   // equality
   bool operator()(const int64_t &record1, const int64_t &record2) const {
-    bool res = true;
     for (auto &&comp:*idx_comparators_ptr) {
-      res &= (bool) comp->compare(record1, record2);
+      if (comp->compare(record1, record2)) return false;
     }
-    return res;
+    return true;
   }
 
  private:
@@ -173,6 +172,19 @@ class MultiTableRowIndexComparator {
  private:
   const std::vector<std::shared_ptr<arrow::Table>> &tables;
   std::shared_ptr<TableRowComparator> comparator;
+};
+
+class PartialTableRowComparator {
+ private:
+  std::vector<std::shared_ptr<ArrowComparator>> comparators;
+  std::vector<int> columns;
+ public:
+  explicit PartialTableRowComparator(const std::vector<std::shared_ptr<arrow::Field>> &vector,
+                                     const std::vector<int> &cols);
+  int compare(const std::shared_ptr<arrow::Table> &table1,
+              int64_t index1,
+              const std::shared_ptr<arrow::Table> &table2,
+              int64_t index2);
 };
 
 }  // namespace cylon

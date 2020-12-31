@@ -37,7 +37,7 @@ arrow::Status do_copy_numeric_array(const std::vector<int64_t> &indices,
   for (auto &index : indices) {
     // handle -1 index : comes in left, right joins
     if (index == -1) {
-      array_builder.UnsafeAppendNull();
+//      array_builder.UnsafeAppendNull();
       continue;
     }
 
