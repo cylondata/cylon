@@ -102,6 +102,12 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus Shuffle(shared_ptr[CTable] &table, const vector[int] &hash_columns, shared_ptr[CTable]
                             &output)
 
+    CStatus Unique(shared_ptr[CTable] &input_table, const vector[int] &columns, shared_ptr[CTable]
+                            &output, bool first)
+
+    CStatus DistributedUnique(shared_ptr[CTable] &input_table, const vector[int] &columns,
+                           shared_ptr[CTable]&output)
+
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CSortOptions "cylon::SortOptions":
         bool ascending

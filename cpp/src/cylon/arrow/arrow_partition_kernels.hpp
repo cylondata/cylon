@@ -99,7 +99,7 @@ class HashPartitionKernel : public PartitionKernel {
   virtual Status UpdateHash(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                             std::vector<uint32_t> &partial_hashes) = 0;
 
-  virtual inline uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) = 0;
+  virtual uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) = 0;
 };
 
 
@@ -374,6 +374,16 @@ class RowHashingKernel {
   std::vector<std::unique_ptr<HashPartitionKernel>> hash_kernels;
  public:
   explicit RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields);
+
+  int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
+};
+
+class PartialRowHashingKernel {
+ private:
+  std::vector<std::unique_ptr<HashPartitionKernel>> hash_kernels;
+  std::vector<int> columns;
+ public:
+  explicit PartialRowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields, const std::vector<int> &cols);
 
   int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row);
 };
