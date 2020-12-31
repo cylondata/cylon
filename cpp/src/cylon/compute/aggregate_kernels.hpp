@@ -18,6 +18,7 @@
 namespace cylon {
 namespace compute {
 
+// aggregation operation IDs
 enum AggregationOpId {
   SUM,
   MIN,
@@ -27,12 +28,55 @@ enum AggregationOpId {
   VAR
 };
 
-template<AggregationOpId op, typename T>
-struct KernelTraits {};
-
-struct KernelOptions {};
+// kernel options
+struct KernelOptions {
+  virtual ~KernelOptions() = default;
+};
 
 struct EmptyKernelOptions : public KernelOptions {};
+
+struct VarKernelOptions : public KernelOptions {
+  explicit VarKernelOptions(int ddof) : ddof(ddof) {}
+  VarKernelOptions() : VarKernelOptions(0) {}
+
+  int ddof;
+};
+
+// aggregation ops
+struct AggregationOp {
+  explicit AggregationOp(AggregationOpId id) : id(id), options(nullptr) {}
+  AggregationOp(AggregationOpId id, std::unique_ptr<KernelOptions> options) : id(id), options(std::move(options)) {}
+
+  AggregationOpId id;
+  std::unique_ptr<KernelOptions> options;
+};
+
+template<AggregationOpId ID>
+struct BaseAggregationOp : public AggregationOp {
+  BaseAggregationOp() : AggregationOp(ID, std::make_unique<EmptyKernelOptions>()) {}
+
+  static inline std::unique_ptr<AggregationOp> Make() {
+    return std::make_unique<BaseAggregationOp<ID>>();
+  }
+};
+
+struct SumOp : public BaseAggregationOp<SUM> {};
+struct MinOp : public BaseAggregationOp<MIN> {};
+struct MaxOp : public BaseAggregationOp<MAX> {};
+struct CountOp : public BaseAggregationOp<COUNT> {};
+struct MeanOp : public BaseAggregationOp<MEAN> {};
+
+struct VarOp : public AggregationOp {
+  explicit VarOp(int ddof) : AggregationOp(VAR, std::make_unique<VarKernelOptions>(ddof)) {}
+
+  static inline std::unique_ptr<AggregationOp> Make(int ddof = 0) {
+    return std::make_unique<VarOp>(ddof);
+  }
+};
+
+// kernel traits
+template<AggregationOpId op, typename T>
+struct KernelTraits {};
 
 template<typename T>
 struct KernelTraits<AggregationOpId::SUM, T> {
@@ -52,10 +96,6 @@ struct KernelTraits<AggregationOpId::MEAN, T> {
   static constexpr const char *name() {
     return "mean_";
   }
-};
-
-struct VarKernelOptions : public KernelOptions {
-  int ddof = 0;
 };
 
 template<typename T>
@@ -99,6 +139,7 @@ struct KernelTraits<AggregationOpId::MAX, T> {
 };
 
 struct Kernel {
+  virtual ~Kernel() = default;
   virtual void Setup(KernelOptions *options) = 0;
   virtual void InitializeState(void *state) = 0;
   virtual void Update(const void *value, void *state) = 0;
@@ -108,6 +149,7 @@ struct Kernel {
 template<AggregationOpId op, typename T, typename State = typename KernelTraits<op, T>::State,
     typename ResultT = typename KernelTraits<op, T>::ResultT, typename Options = typename KernelTraits<op, T>::Options>
 struct TypedKernel : Kernel {
+  ~TypedKernel() override = default;
   virtual void Setup(Options *options) {}; // default implementation
   virtual void InitializeState(State *state) = 0;
   virtual void Update(const T *value, State *state) = 0;

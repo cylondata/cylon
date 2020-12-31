@@ -12,9 +12,12 @@
  * limitations under the License.
  */
 
-#include "hash_groupby.hpp"
+#include <status.hpp>
+#include <table.hpp>
 #include <arrow/arrow_comparator.hpp>
-#include "thridparty/flat_hash_map/bytell_hash_map.hpp"
+#include <thridparty/flat_hash_map/bytell_hash_map.hpp>
+
+#include "hash_groupby.hpp"
 
 namespace cylon {
 
@@ -63,6 +66,101 @@ static Status make_groups(arrow::MemoryPool *pool,
   return Status::OK();
 }
 
+/**
+ * aggregate operation.
+ * @tparam aggOp
+ * @tparam ARROW_T
+ * @param pool
+ * @param arr
+ * @param field
+ * @param group_ids
+ * @param unique_groups
+ * @param agg_array
+ * @param agg_field
+ * @return
+ */
+template<compute::AggregationOpId aggOp, typename ARROW_T, typename = typename std::enable_if<
+    arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
+static Status aggregate(arrow::MemoryPool *pool,
+                        const std::shared_ptr<arrow::Array> &arr,
+                        const std::shared_ptr<arrow::Field> &field,
+                        const std::vector<int64_t> &group_ids,
+                        int64_t unique_groups,
+                        std::shared_ptr<arrow::Array> &agg_array,
+                        std::shared_ptr<arrow::Field> &agg_field,
+                        compute::KernelOptions *options = nullptr) {
+  if (arr->length() != (int64_t) group_ids.size()) {
+    return Status(Code::Invalid, "group IDs != array length");
+  }
+
+  using C_TYPE = typename ARROW_T::c_type;
+  using ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
+
+  using State = typename compute::KernelTraits<aggOp, C_TYPE>::State;
+  using ResultT = typename compute::KernelTraits<aggOp, C_TYPE>::ResultT;
+  using Options = typename compute::KernelTraits<aggOp, C_TYPE>::Options;
+  const std::unique_ptr<compute::Kernel> &op = compute::CreateAggregateKernel<aggOp, C_TYPE>();
+
+  if (options != nullptr) {
+    op->Setup(options);
+  } else {
+    Options opt;
+    op->Setup(&opt);
+  }
+
+  State state;
+  op->InitializeState(&state); // initialize state
+
+  std::vector<State> agg_results(unique_groups, state); // initialize aggregates
+  const std::shared_ptr<ARRAY_T> &carr = std::static_pointer_cast<ARRAY_T>(arr);
+  for (int64_t i = 0; i < arr->length(); i++) {
+    auto val = carr->Value(i);
+    op->Update(&val, &agg_results[group_ids[i]]);
+  }
+
+  // need to create a builder from the ResultT, which is a C type
+  using BUILDER_T = typename arrow::TypeTraits<typename arrow::CTypeTraits<ResultT>::ArrowType>::BuilderType;
+  BUILDER_T builder(pool);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(unique_groups))
+  for (int64_t i = 0; i < unique_groups; i++) {
+    ResultT res;
+    op->Finalize(&agg_results[i], &res);
+    builder.UnsafeAppend(res);
+  }
+
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&agg_array))
+
+  const char *prefix = compute::KernelTraits<aggOp, C_TYPE>::name();
+  agg_field = field->WithName(std::string(prefix) + field->name());
+
+  return Status::OK();
+}
+
+/**
+ * Aggregation operation lambda
+ */
+using AggregationFn = std::function<Status(arrow::MemoryPool *pool,
+                                           const std::shared_ptr<arrow::Array> &arr,
+                                           const std::shared_ptr<arrow::Field> &field,
+                                           const std::vector<int64_t> &group_ids,
+                                           int64_t unique_groups,
+                                           std::shared_ptr<arrow::Array> &agg_array,
+                                           std::shared_ptr<arrow::Field> &agg_field,
+                                           compute::KernelOptions *options)>;
+
+template<typename ARROW_T, typename = typename std::enable_if<
+    arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
+static inline AggregationFn resolve_op(const compute::AggregationOpId &aggOp) {
+  switch (aggOp) {
+    case compute::SUM: return &aggregate<compute::SUM, ARROW_T>;
+    case compute::COUNT: return &aggregate<compute::COUNT, ARROW_T>;
+    case compute::MIN:return &aggregate<compute::MIN, ARROW_T>;
+    case compute::MAX: return &aggregate<compute::MAX, ARROW_T>;
+    case compute::MEAN: return &aggregate<compute::MEAN, ARROW_T>;
+    case compute::VAR: return &aggregate<compute::VAR, ARROW_T>;
+    default: return nullptr;
+  }
+}
 
 static AggregationFn pick_aggregation_op(const std::shared_ptr<arrow::DataType> &val_data_type,
                                          const cylon::compute::AggregationOpId op) {
@@ -84,7 +182,7 @@ static AggregationFn pick_aggregation_op(const std::shared_ptr<arrow::DataType> 
 
 Status HashGroupBy(const std::shared_ptr<Table> &table,
                    const std::vector<int32_t> &idx_cols,
-                   const std::vector<std::pair<int64_t, compute::AggregationOpId>> &aggregate_cols,
+                   const std::vector<std::pair<int64_t, std::shared_ptr<compute::AggregationOp>>> &aggregations,
                    std::shared_ptr<Table> &output) {
   std::vector<int64_t> group_ids;
   int64_t unique_groups;
@@ -103,7 +201,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> new_arrays;
   std::vector<std::shared_ptr<arrow::Field>> new_fields;
-  int new_cols = (int) (idx_cols.size() + aggregate_cols.size());
+  int new_cols = (int) (idx_cols.size() + aggregations.size());
   new_arrays.reserve(new_cols);
   new_fields.reserve(new_cols);
 
@@ -116,10 +214,10 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   }
 
   // then aggregate other cols
-  for (auto &&p: aggregate_cols) {
+  for (auto &&p: aggregations) {
     std::shared_ptr<arrow::Array> new_arr;
     std::shared_ptr<arrow::Field> new_field;
-    const AggregationFn &agg_fn = pick_aggregation_op(atable->field(p.first)->type(), p.second);
+    const AggregationFn &agg_fn = pick_aggregation_op(atable->field(p.first)->type(), p.second->id);
 
     RETURN_CYLON_STATUS_IF_FAILED(agg_fn(pool,
                                          atable->column(p.first)->chunk(0),
@@ -128,7 +226,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
                                          unique_groups,
                                          new_arr,
                                          new_field,
-                                         nullptr))
+                                         p.second->options.get()))
     new_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(new_arr)));
     new_fields.push_back(std::move(new_field));
   }
@@ -138,6 +236,37 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
 
   output = std::make_shared<Table>(agg_table, ctx);
   return Status::OK();
+}
+
+Status HashGroupBy(const std::shared_ptr<Table> &table,
+                   const std::vector<int32_t> &idx_cols,
+                   const std::vector<std::pair<int64_t, compute::AggregationOpId>> &aggregate_cols,
+                   std::shared_ptr<Table> &output) {
+  std::vector<std::pair<int64_t, std::shared_ptr<compute::AggregationOp>>> aggregations;
+  aggregations.reserve(aggregate_cols.size());
+  for (auto &&p:aggregate_cols) {
+    aggregations.emplace_back(p.first, std::make_shared<compute::AggregationOp>(p.second));
+  }
+
+  return HashGroupBy(table, idx_cols, aggregations, output);
+}
+
+Status HashGroupBy(std::shared_ptr<Table> &table,
+                   const std::vector<int32_t> &idx_cols,
+                   const std::vector<int32_t> &aggregate_cols,
+                   const std::vector<compute::AggregationOpId> &aggregate_ops,
+                   std::shared_ptr<Table> &output) {
+  if (aggregate_cols.size() != aggregate_ops.size()) {
+    return Status(Code::Invalid, "aggregate_cols size != aggregate_ops size");
+  }
+
+  std::vector<std::pair<int64_t, std::shared_ptr<compute::AggregationOp>>> aggregations;
+  aggregations.reserve(aggregate_cols.size());
+  for (size_t i = 0; i < aggregate_cols.size(); i++) {
+    aggregations.emplace_back(aggregate_cols[i], std::make_shared<compute::AggregationOp>(aggregate_ops[i]));
+  }
+
+  return HashGroupBy(table, idx_cols, aggregations, output);
 }
 
 }
