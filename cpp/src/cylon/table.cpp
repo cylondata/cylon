@@ -35,6 +35,7 @@
 #include "partition/partition.hpp"
 #include "thridparty/flat_hash_map/bytell_hash_map.hpp"
 
+
 namespace cylon {
 
 /**
@@ -239,6 +240,11 @@ Status Table::FromColumns(std::shared_ptr<cylon::CylonContext> &ctx,
 
   return Status(cylon::OK, "Loaded Successfully");
 }
+
+
+
+
+
 
 Status WriteCSV(std::shared_ptr<cylon::Table> &table,
                 const std::string &path,
@@ -557,7 +563,7 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
     }
   }
 
-  std::vector<int64_t> indices_from_tabs[2] {{}, {}};
+  std::vector<int64_t> indices_from_tabs[2]{{}, {}};
   indices_from_tabs[0].reserve(first->Rows());
   indices_from_tabs[1].reserve(second->Rows());
 
@@ -948,6 +954,29 @@ std::vector<std::shared_ptr<cylon::Column>> Table::GetColumns() const {
   return this->columns_;
 }
 
+Status Table::CreateIndex(std::shared_ptr<cylon::Table> &in,
+                          const std::vector<int> &cols,
+                          std::shared_ptr<cylon::Table> &out
+                          ) {
+  std::shared_ptr<arrow::Table> ltab = in->get_table();
+  //int64_t eq_calls = 0, hash_calls = 0;
+
+  if (ltab->column(0)->num_chunks() > 1) {
+    const arrow::Result<std::shared_ptr<arrow::Table>> &res = ltab->CombineChunks(cylon::ToArrowPool(ctx));
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
+    ltab = res.ValueOrDie();
+  }
+
+  TableRowIndexComparator row_comp(ltab, cols);
+  TableRowIndexHash row_hash(ltab, cols);
+  const int64_t num_rows = ltab->num_rows();
+  std::unordered_set<int64_t, TableRowIndexHash, TableRowIndexComparator> rows_set(num_rows, row_hash, row_comp);
+  //index = std::make_shared<Index>(rows_set);
+
+  return Status::OK();
+}
+
+
 Status Shuffle(std::shared_ptr<cylon::Table> &table,
                const std::vector<int> &hash_columns,
                std::shared_ptr<cylon::Table> &output) {
@@ -1045,6 +1074,7 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in,
 
   return Unique(shuffle_out, cols, out);
 }
+
 
 #ifdef BUILD_CYLON_PARQUET
 Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx,

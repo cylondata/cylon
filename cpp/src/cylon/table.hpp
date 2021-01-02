@@ -26,6 +26,7 @@
 #include "io/parquet_config.hpp"
 #endif
 
+
 #include "status.hpp"
 #include "ctx/cylon_context.hpp"
 #include "util/uuid.hpp"
@@ -34,6 +35,8 @@
 #include "join/join.hpp"
 #include "io/csv_write_config.hpp"
 #include "row.hpp"
+#include "indexing/index.hpp"
+
 
 namespace cylon {
 
@@ -190,6 +193,11 @@ class Table {
    */
   std::vector<std::shared_ptr<cylon::Column>> GetColumns() const;
 
+  Status CreateIndex(std::shared_ptr<cylon::Table> &in,
+                     const std::vector<int> &cols,
+                     std::shared_ptr<cylon::Table> &out
+  );
+
  private:
   /**
    * Every table should have an unique id
@@ -199,6 +207,7 @@ class Table {
   std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
   std::vector<std::shared_ptr<cylon::Column>> columns_;
+  //
 };
 
 /**
@@ -448,6 +457,8 @@ Status WriteParquet(std::shared_ptr<cylon::Table> &table,
                     const std::string &path,
                     const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
 #endif //BUILD_CYLON_PARQUET
+
+
 
 }  // namespace cylon
 

@@ -106,6 +106,8 @@ add_library(cylon SHARED
         ${PARQUET_CYLON_FILES}
         partition/partition.hpp
         partition/partition.cpp
+        indexing/index.hpp
+        indexing/index.cpp
         util/macros.hpp
         thridparty/flat_hash_map/unordered_map.hpp
         thridparty/flat_hash_map/flat_hash_map.hpp
