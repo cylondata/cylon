@@ -22,7 +22,57 @@
 namespace cylon {
 
 /**
- * create unique group IDs based on set of columns.
+ * Hash group-by implementation
+ *
+ * Implemented in 2 stages.
+ *
+ *  1. Create groups - assigns a unique ID (int64) to groups derived from index columns, and keep group IDs in a vector
+ *
+ *  2. Aggregate values based on the group ID
+ */
+
+// -----------------------------------------------------------------------------
+
+/**
+ * create unique group IDs based on index columns of a table
+ *
+ * algorithm - Use a hash map of <row index(int64), group ID(int64)> to assign unique IDs. Make a composite hash using
+ * index columns and use this composite hashes as a custom hash function to the hash map (cylon::TableRowIndexHash).
+ * If there are hash conflicts, iterate through the row and determine the equality (cylon::TableRowIndexComparator).
+ *
+ * Hash map insertion result outputs a <iterator,bool> pair. If the key is unique, the iterator would return the
+ * position at which it was inserted and a bool true. If the key is already in the map, the iterator would indicate the
+ * position of the existing key and a bool false.
+ * So, if by looking at the bool, we can determine if the current index's values constitute a unique group. If we keep a
+ * unique_groups counter and insert its value to the map as the group ID and increment it when we receive a true from the
+ * insertion result.
+ *
+ * Following is an example of this logic
+ *
+ * row_idx, A, B, C
+ * 0, 20, 20, x
+ * 1, 10, 10, y
+ * 2, 20, 10, z
+ * 3, 10, 10, x
+ * 4, 20, 20, y
+ * 5, 30, 20, z
+ *
+ * grouping by [A, B]
+ *
+ * then,
+ * row_idx, group_id
+ * 0, 0
+ * 1, 1
+ * 2, 2
+ * 3, 1
+ * 4, 0
+ * 5, 3
+ * unique_groups = 4
+ *
+ *
+ * Additionally, we create an arrow::BooleanArray filter to filter out the values of the unique groups
+ * todo: use arrow::Take instead of arrow::Filter
+ *
  * @param pool
  * @param atable
  * @param idx_cols
@@ -31,6 +81,7 @@ namespace cylon {
  * @param unique_groups
  * @return
  */
+// todo handle chunked arrays
 static Status make_groups(arrow::MemoryPool *pool,
                           const std::shared_ptr<arrow::Table> &atable,
                           const std::vector<int> &idx_cols,
@@ -67,20 +118,22 @@ static Status make_groups(arrow::MemoryPool *pool,
 }
 
 /**
- * aggregate operation.
- * @tparam aggOp
+ * aggregate operation execution based on the unique group IDs.
+ * @tparam aggOp AggregationOpId
  * @tparam ARROW_T
  * @param pool
  * @param arr
  * @param field
  * @param group_ids
  * @param unique_groups
- * @param agg_array
- * @param agg_field
- * @return
+ * @param agg_array aggregated arrow::Array
+ * @param agg_field aggregated arrow::Array schema field
+ * @return Status
  */
-template<compute::AggregationOpId aggOp, typename ARROW_T, typename = typename std::enable_if<
-    arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
+// todo handle chunked arrays
+template<compute::AggregationOpId aggOp, typename ARROW_T,
+    typename = typename std::enable_if<
+        arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
 static Status aggregate(arrow::MemoryPool *pool,
                         const std::shared_ptr<arrow::Array> &arr,
                         const std::shared_ptr<arrow::Field> &field,
@@ -99,23 +152,24 @@ static Status aggregate(arrow::MemoryPool *pool,
   using State = typename compute::KernelTraits<aggOp, C_TYPE>::State;
   using ResultT = typename compute::KernelTraits<aggOp, C_TYPE>::ResultT;
   using Options = typename compute::KernelTraits<aggOp, C_TYPE>::Options;
-  const std::unique_ptr<compute::Kernel> &op = compute::CreateAggregateKernel<aggOp, C_TYPE>();
+  const std::unique_ptr<compute::AggregationKernel> &kernel = compute::CreateAggregateKernel<aggOp, C_TYPE>();
 
   if (options != nullptr) {
-    op->Setup(options);
+    kernel->Setup(options);
   } else {
     Options opt;
-    op->Setup(&opt);
+    kernel->Setup(&opt);
   }
 
-  State state;
-  op->InitializeState(&state); // initialize state
+  State initial_state;
+  kernel->InitializeState(&initial_state); // initialize state
 
-  std::vector<State> agg_results(unique_groups, state); // initialize aggregates
+  // initialize aggregate states by copying initial state
+  std::vector<State> agg_states(unique_groups, initial_state);
   const std::shared_ptr<ARRAY_T> &carr = std::static_pointer_cast<ARRAY_T>(arr);
   for (int64_t i = 0; i < arr->length(); i++) {
     auto val = carr->Value(i);
-    op->Update(&val, &agg_results[group_ids[i]]);
+    kernel->Update(&val, &agg_states[group_ids[i]]);
   }
 
   // need to create a builder from the ResultT, which is a C type
@@ -124,7 +178,7 @@ static Status aggregate(arrow::MemoryPool *pool,
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(unique_groups))
   for (int64_t i = 0; i < unique_groups; i++) {
     ResultT res;
-    op->Finalize(&agg_results[i], &res);
+    kernel->Finalize(&agg_states[i], &res);
     builder.UnsafeAppend(res);
   }
 
@@ -245,6 +299,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   std::vector<std::pair<int64_t, std::shared_ptr<compute::AggregationOp>>> aggregations;
   aggregations.reserve(aggregate_cols.size());
   for (auto &&p:aggregate_cols) {
+    // create AggregationOp with nullptr options
     aggregations.emplace_back(p.first, std::make_shared<compute::AggregationOp>(p.second));
   }
 

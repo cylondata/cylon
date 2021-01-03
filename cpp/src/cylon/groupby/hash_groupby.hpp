@@ -20,7 +20,7 @@
 namespace cylon {
 
 /**
- * Hash group-by
+ * Hash group-by operation by using <col_index, AggregationOpId> pairs
  * @param table
  * @param idx_cols
  * @param aggregate_cols
@@ -31,11 +31,27 @@ Status HashGroupBy(const std::shared_ptr<Table> &table, const std::vector<int32_
                    const std::vector<std::pair<int64_t, compute::AggregationOpId>> &aggregate_cols,
                    std::shared_ptr<Table> &output);
 
+/**
+ * Hash group-by operation by using <col_index, AggregationOp> pairs
+ * @param table
+ * @param idx_cols
+ * @param aggregations
+ * @param output
+ * @return
+ */
 Status HashGroupBy(const std::shared_ptr<Table> &table,
                    const std::vector<int32_t> &idx_cols,
                    const std::vector<std::pair<int64_t, std::shared_ptr<compute::AggregationOp>>> &aggregations,
                    std::shared_ptr<Table> &output);
-
+/**
+ * Hash group-by operation by using AggregationOpId vector
+ * @param table
+ * @param idx_cols
+ * @param aggregate_cols
+ * @param aggregate_ops
+ * @param output
+ * @return
+ */
 Status HashGroupBy(std::shared_ptr<Table> &table,
                    const std::vector<int32_t> &idx_cols,
                    const std::vector<int32_t> &aggregate_cols,
