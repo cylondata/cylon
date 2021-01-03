@@ -193,10 +193,13 @@ class Table {
    */
   std::vector<std::shared_ptr<cylon::Column>> GetColumns() const;
 
-  Status CreateIndex(std::shared_ptr<cylon::Table> &in,
-                     const std::vector<int> &cols,
+  Status CreateIndex(const std::vector<int> &cols,
                      std::shared_ptr<cylon::Table> &out
   );
+
+  Status Find(void* value);
+
+  const std::shared_ptr<Index> &GetIndex() const;
 
  private:
   /**
@@ -207,7 +210,7 @@ class Table {
   std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
   std::vector<std::shared_ptr<cylon::Column>> columns_;
-  //
+  std::shared_ptr<Index> index_;
 };
 
 /**

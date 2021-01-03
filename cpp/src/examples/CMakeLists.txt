@@ -28,6 +28,8 @@ tx_add_exe(groupby_example)
 tx_add_exe(partition_example)
 tx_add_exe(unique_example)
 tx_add_exe(unique_bench_example)
+tx_add_exe(indexing_example)
+
 
 if (CYLON_PARQUET)
     tx_add_exe(parquet_test)

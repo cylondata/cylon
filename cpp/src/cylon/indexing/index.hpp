@@ -7,12 +7,15 @@
 namespace cylon{
 
 class Index {
-// public:
-//
-//
-// private:
-//  std::unordered_set<int64_t, TableRowIndexHash, TableRowIndexComparator> index_set;
+ public:
+  Index(const std::unordered_multiset<int64_t, TableRowIndexHash, TableRowIndexComparator> &index_set, const std::vector<int> &col_ids);
 
+ private:
+  std::unordered_multiset<int64_t, TableRowIndexHash, TableRowIndexComparator> index_set_;
+  std::vector<int> col_ids_;
+ public:
+  const std::unordered_multiset<int64_t, TableRowIndexHash, TableRowIndexComparator> &GetIndexSet() const;
+  const std::vector<int> &GetColIds() const;
 };
 
 }
