@@ -65,7 +65,7 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
     CStatus Sort(shared_ptr[CTable] &table, int sort_column, shared_ptr[CTable] &output)
 
-    CStatus Project(shared_ptr[CTable] &table, const vector[long] &project_columns, shared_ptr[
+    CStatus Project(shared_ptr[CTable] &table, const vector[int] &project_columns, shared_ptr[
             CTable] &output)
 
     CStatus Merge(shared_ptr[CCylonContext] &ctx, vector[shared_ptr[CTable]] &tables,
