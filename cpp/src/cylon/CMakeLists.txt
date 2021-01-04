@@ -99,13 +99,12 @@ add_library(cylon SHARED
         net/comm_operations.hpp
         net/mpi/mpi_operations.cpp
         net/mpi/mpi_operations.hpp
-        groupby/groupby_hash.hpp
-        groupby/groupby_pipeline.hpp
-        groupby/groupby_aggregate_ops.hpp
-        groupby/hash_groupby.hpp
-        groupby/hash_groupby.cpp
         groupby/groupby.hpp
         groupby/groupby.cpp
+        groupby/pipeline_groupby.hpp
+        groupby/pipeline_groupby.cpp
+        groupby/hash_groupby.hpp
+        groupby/hash_groupby.cpp
         ${PARQUET_CYLON_FILES}
         partition/partition.hpp
         partition/partition.cpp

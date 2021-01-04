@@ -16,6 +16,7 @@
 #define CYLON_CPP_SRC_CYLON_GROUPBY_HASH_GROUPBY_HPP_
 
 #include <compute/aggregate_kernels.hpp>
+#include "table.hpp"
 
 namespace cylon {
 
@@ -27,8 +28,9 @@ namespace cylon {
  * @param output
  * @return
  */
-Status HashGroupBy(const std::shared_ptr<Table> &table, const std::vector<int32_t> &idx_cols,
-                   const std::vector<std::pair<int64_t, compute::AggregationOpId>> &aggregate_cols,
+Status HashGroupBy(const std::shared_ptr<Table> &table,
+                   const std::vector<int32_t> &idx_cols,
+                   const std::vector<std::pair<int32_t, compute::AggregationOpId>> &aggregate_cols,
                    std::shared_ptr<Table> &output);
 
 /**
@@ -41,7 +43,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table, const std::vector<int32_
  */
 Status HashGroupBy(const std::shared_ptr<Table> &table,
                    const std::vector<int32_t> &idx_cols,
-                   const std::vector<std::pair<int64_t, std::shared_ptr<compute::AggregationOp>>> &aggregations,
+                   const std::vector<std::pair<int32_t, std::shared_ptr<compute::AggregationOp>>> &aggregations,
                    std::shared_ptr<Table> &output);
 /**
  * Hash group-by operation by using AggregationOpId vector
@@ -54,6 +56,11 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
  */
 Status HashGroupBy(std::shared_ptr<Table> &table,
                    const std::vector<int32_t> &idx_cols,
+                   const std::vector<int32_t> &aggregate_cols,
+                   const std::vector<compute::AggregationOpId> &aggregate_ops,
+                   std::shared_ptr<Table> &output);
+Status HashGroupBy(std::shared_ptr<Table> &table,
+                   int32_t idx_col,
                    const std::vector<int32_t> &aggregate_cols,
                    const std::vector<compute::AggregationOpId> &aggregate_ops,
                    std::shared_ptr<Table> &output);

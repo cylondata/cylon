@@ -855,7 +855,7 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std:
 }
 
 Status Project(std::shared_ptr<cylon::Table> &table,
-               const std::vector<int64_t> &project_columns,
+               const std::vector<int32_t> &project_columns,
                std::shared_ptr<Table> &out) {
   std::vector<std::shared_ptr<arrow::Field>> schema_vector;
   std::vector<std::shared_ptr<arrow::ChunkedArray>> column_arrays;

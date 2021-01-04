@@ -18,7 +18,7 @@
 #include <net/mpi/mpi_communicator.hpp>
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
-#include <groupby/hash_groupby.hpp>
+#include <groupby/groupby.hpp>
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   std::cout << "-----------------------" << std::endl;
 //  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VAR}}, output);
 //  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VarOp::Make()}}, output);
-  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::VAR}, output);
+  cylon::Status s = cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::VAR}, output);
 
   if (!status.is_ok()) {
     LOG(INFO) << "Table GroupBy failed ";

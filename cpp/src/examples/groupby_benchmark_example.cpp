@@ -28,7 +28,7 @@
 
 #include <util/arrow_utils.hpp>
 #include <groupby/groupby.hpp>
-#include <groupby/hash_groupby.hpp>
+#include <groupby/groupby.hpp>
 
 
 void create_table(char *const *argv,
@@ -182,11 +182,11 @@ void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
             << std::endl;
 }
 
-void HashCylonGroupBy(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ctable,
+/*void HashCylonGroupBy(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ctable,
                       std::shared_ptr<cylon::Table> &output) {
   auto t1 = std::chrono::steady_clock::now();
 
-/* // using hashgroup by template function
+*//* // using hashgroup by template function
   const std::shared_ptr<arrow::Table> &table = ctable->get_table();
   std::vector<shared_ptr<arrow::Array>> cols;
 
@@ -194,7 +194,7 @@ void HashCylonGroupBy(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ct
       (pool, table->column(0), table->column(1), cols);
 
   std::shared_ptr<Table> a_output = Table::Make(table->schema(), cols);
-  cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);*/
+  cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);*//*
 
   cylon::Status s =
       cylon::GroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
@@ -203,7 +203,7 @@ void HashCylonGroupBy(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ct
   std::cout << "hash_group3 " << output->Rows()
             << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
             << std::endl;
-}
+}*/
 
 void HashCylonGroupBy1(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ctable,
                       std::shared_ptr<cylon::Table> &output) {
@@ -220,7 +220,7 @@ void HashCylonGroupBy1(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &c
   cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);*/
 
   cylon::Status s =
-      cylon::HashGroupBy(ctable, {0}, {{1, cylon::compute::SUM}}, output);
+      cylon::DistributedHashGroupBy(ctable, 0, {1}, {cylon::compute::SUM}, output);
 
   auto t3 = std::chrono::steady_clock::now();
   std::cout << "hash_group4 " << output->Rows()
@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
   output.reset();
    std::cout << "++++++++++++++++++++++++++" <<  std::endl;*/
 
-  HashCylonGroupBy(pool, first_table, output);
+//  HashCylonGroupBy(pool, first_table, output);
   HashCylonGroupBy1(pool, first_table, output);
 
 //  output->Print();

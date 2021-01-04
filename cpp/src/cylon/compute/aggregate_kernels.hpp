@@ -15,6 +15,8 @@
 #ifndef CYLON_CPP_SRC_CYLON_COMPUTE_AGGREGATE_KERNELS_HPP_
 #define CYLON_CPP_SRC_CYLON_COMPUTE_AGGREGATE_KERNELS_HPP_
 
+#include <cmath>
+
 namespace cylon {
 namespace compute {
 
@@ -391,6 +393,18 @@ struct MaxKernel : public TypedAggregationKernel<AggregationOpId::MAX, T> {
 template<AggregationOpId OP_ID, typename T>
 std::unique_ptr<AggregationKernel> CreateAggregateKernel() {
   switch (OP_ID) {
+    case SUM: return std::make_unique<SumKernel<T>>();
+    case MIN:return std::make_unique<MinKernel<T>>();
+    case MAX:return std::make_unique<MaxKernel<T>>();
+    case COUNT:return std::make_unique<CountKernel<T>>();
+    case MEAN:return std::make_unique<MeanKernel<T>>();
+    case VAR:return std::make_unique<VarianceKernel<T>>();
+  }
+}
+
+template<typename T>
+std::unique_ptr<AggregationKernel> CreateAggregateKernel(AggregationOpId op_id) {
+  switch (op_id) {
     case SUM: return std::make_unique<SumKernel<T>>();
     case MIN:return std::make_unique<MinKernel<T>>();
     case MAX:return std::make_unique<MaxKernel<T>>();

@@ -12,17 +12,18 @@
  * limitations under the License.
  */
 
-#include <status.hpp>
-#include <table.hpp>
 #include <arrow/arrow_comparator.hpp>
 #include <thridparty/flat_hash_map/bytell_hash_map.hpp>
+
+#include <status.hpp>
+#include <table.hpp>
 
 #include "hash_groupby.hpp"
 
 namespace cylon {
 
 /**
- * Hash group-by implementation
+ * Local hash group-by implementation
  *
  * Implemented in 2 stages.
  *
@@ -236,11 +237,8 @@ static AggregationFn pick_aggregation_op(const std::shared_ptr<arrow::DataType> 
 
 Status HashGroupBy(const std::shared_ptr<Table> &table,
                    const std::vector<int32_t> &idx_cols,
-                   const std::vector<std::pair<int64_t, std::shared_ptr<compute::AggregationOp>>> &aggregations,
+                   const std::vector<std::pair<int32_t, std::shared_ptr<compute::AggregationOp>>> &aggregations,
                    std::shared_ptr<Table> &output) {
-  std::vector<int64_t> group_ids;
-  int64_t unique_groups;
-  std::shared_ptr<arrow::Array> group_filter;
   auto ctx = table->GetContext();
   arrow::MemoryPool *pool = ToArrowPool(ctx);
 
@@ -251,6 +249,9 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
     atable = res.ValueOrDie();
   }
 
+  std::vector<int64_t> group_ids;
+  int64_t unique_groups;
+  std::shared_ptr<arrow::Array> group_filter;
   RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, group_filter, &unique_groups))
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> new_arrays;
@@ -294,9 +295,9 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
 
 Status HashGroupBy(const std::shared_ptr<Table> &table,
                    const std::vector<int32_t> &idx_cols,
-                   const std::vector<std::pair<int64_t, compute::AggregationOpId>> &aggregate_cols,
+                   const std::vector<std::pair<int32_t, compute::AggregationOpId>> &aggregate_cols,
                    std::shared_ptr<Table> &output) {
-  std::vector<std::pair<int64_t, std::shared_ptr<compute::AggregationOp>>> aggregations;
+  std::vector<std::pair<int32_t, std::shared_ptr<compute::AggregationOp>>> aggregations;
   aggregations.reserve(aggregate_cols.size());
   for (auto &&p:aggregate_cols) {
     // create AggregationOp with nullptr options
@@ -315,13 +316,21 @@ Status HashGroupBy(std::shared_ptr<Table> &table,
     return Status(Code::Invalid, "aggregate_cols size != aggregate_ops size");
   }
 
-  std::vector<std::pair<int64_t, std::shared_ptr<compute::AggregationOp>>> aggregations;
+  std::vector<std::pair<int32_t, std::shared_ptr<compute::AggregationOp>>> aggregations;
   aggregations.reserve(aggregate_cols.size());
   for (size_t i = 0; i < aggregate_cols.size(); i++) {
     aggregations.emplace_back(aggregate_cols[i], std::make_shared<compute::AggregationOp>(aggregate_ops[i]));
   }
 
   return HashGroupBy(table, idx_cols, aggregations, output);
+}
+
+Status HashGroupBy(std::shared_ptr<Table> &table,
+                   int32_t idx_col,
+                   const std::vector<int32_t> &aggregate_cols,
+                   const std::vector<compute::AggregationOpId> &aggregate_ops,
+                   std::shared_ptr<Table> &output) {
+  return HashGroupBy(table, std::vector<int32_t>{idx_col}, aggregate_cols, aggregate_ops, output);
 }
 
 }
