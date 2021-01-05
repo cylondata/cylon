@@ -199,4 +199,14 @@ def test_basic_indexing_scheme():
     print(val2.values.tolist())
 
 
-test_basic_indexing_scheme()
+
+def test_indexing_with_table():
+
+    index_id = [0, 1, 2]
+
+    index_vals = [[1, 2, 3], [0], [2, 3, 4, 5]]
+
+
+
+
+

@@ -1,20 +1,29 @@
 
-#include <unordered_set>
 #include "index.hpp"
 
 namespace cylon {
 
-Index::Index(const std::unordered_multiset<int64_t, TableRowIndexHash, TableRowIndexComparator> &index_set, const std::vector<int> &col_ids) : index_set_(
-    index_set), col_ids_(0) {
-  for(auto col_id: col_ids){
-    col_ids_.push_back(col_id);
+std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column) {
+  switch (input_table->column(index_column)->chunk(0)->type()->id()) {
+
+    case arrow::Type::NA:return nullptr;
+    case arrow::Type::BOOL:return nullptr;
+    case arrow::Type::UINT8:return nullptr;
+    case arrow::Type::INT8:return nullptr;
+    case arrow::Type::UINT16:return nullptr;
+    case arrow::Type::INT16:return nullptr;
+    case arrow::Type::UINT32:return nullptr;
+    case arrow::Type::INT32:return nullptr;
+    case arrow::Type::UINT64:return nullptr;
+    case arrow::Type::INT64: return std::make_unique<Int64HashIndexKernel>();
+    case arrow::Type::HALF_FLOAT:return nullptr;
+    case arrow::Type::FLOAT:return nullptr;
+    case arrow::Type::DOUBLE:return nullptr;
+    case arrow::Type::STRING:return nullptr;
+    case arrow::Type::BINARY:return nullptr;
+    default: return nullptr;
   }
-  std::cout << "Size of MultiSet " << index_set_.size() << std::endl;
-}
-const std::unordered_multiset<int64_t, TableRowIndexHash, TableRowIndexComparator> &Index::GetIndexSet() const {
-  return index_set_;
-}
-const std::vector<int32_t> &Index::GetColIds() const {
-  return col_ids_;
+  //TODO : returning nullptr issue
+  return std::unique_ptr<IndexKernel>();
 }
 }

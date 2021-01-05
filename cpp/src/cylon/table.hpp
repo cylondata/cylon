@@ -26,7 +26,6 @@
 #include "io/parquet_config.hpp"
 #endif
 
-
 #include "status.hpp"
 #include "ctx/cylon_context.hpp"
 #include "util/uuid.hpp"
@@ -36,7 +35,6 @@
 #include "io/csv_write_config.hpp"
 #include "row.hpp"
 #include "indexing/index.hpp"
-
 
 namespace cylon {
 
@@ -193,13 +191,82 @@ class Table {
    */
   std::vector<std::shared_ptr<cylon::Column>> GetColumns() const;
 
-  Status CreateIndex(const std::vector<int> &cols,
-                     std::shared_ptr<cylon::Table> &out
-  );
+  Status Set_Index(const int index_column, std::shared_ptr<cylon::Table> &out);
 
-  Status Find(void* value);
+  Status Find(void* value, std::shared_ptr<cylon::Table> &out);
 
-  const std::shared_ptr<Index> &GetIndex() const;
+
+
+//
+//  template<typename ARROW_T, typename CPP_KEY_TYPE = typename ARROW_T::c_type>
+//  Status CreateIndexByType(const int index_column,
+//                           const std::shared_ptr<arrow::Table> &input_table
+//                           ) {
+//    //using MMAP_TYPE = typename std::unordered_multimap<CPP_KEY_TYPE, int64_t>;
+//    HashIndexingKernel<ARROW_T, CPP_KEY_TYPE> kernel;
+//    const std::shared_ptr<arrow::Array> &idx_column = input_table->column(index_column)->chunk(0);
+//    std::shared_ptr<BaseIndex> index = kernel.BuildIndex(idx_column);
+//
+//    return Status::OK();
+//  }
+//
+//
+//  Status Set_Index(const int index_column,
+//                   std::shared_ptr<cylon::Table> &out,
+//                   std::shared_ptr<cylon::BaseIndex> &index
+//  ) {
+//    auto input_table = table_;
+//    auto left_type = input_table->column(index_column)->type()->id();
+//
+//    switch (left_type) {
+//      case arrow::Type::NA:break;
+//      case arrow::Type::BOOL:break;
+//      case arrow::Type::UINT8: break;
+//      case arrow::Type::INT8: break;
+//      case arrow::Type::UINT16: break;
+//      case arrow::Type::INT16: break;
+//      case arrow::Type::UINT32: break;
+//      case arrow::Type::INT32: break;
+//      case arrow::Type::UINT64: break;
+//      case arrow::Type::INT64: {
+//        return CreateIndexByType<arrow::Int64Type>(index_column, input_table);
+//      }
+//      case arrow::Type::HALF_FLOAT: break;
+//      case arrow::Type::FLOAT: break;
+//      case arrow::Type::DOUBLE: break;
+//      case arrow::Type::STRING: break;
+//
+//      case arrow::Type::BINARY: break;
+//
+//      case arrow::Type::FIXED_SIZE_BINARY: break;
+//
+//      case arrow::Type::DATE32:break;
+//      case arrow::Type::DATE64:break;
+//      case arrow::Type::TIMESTAMP:break;
+//      case arrow::Type::TIME32:break;
+//      case arrow::Type::TIME64:break;
+//      case arrow::Type::DECIMAL:break;
+//      case arrow::Type::LIST:break;
+//      case arrow::Type::STRUCT:break;
+//      case arrow::Type::DICTIONARY:break;
+//      case arrow::Type::MAP:break;
+//      case arrow::Type::EXTENSION:break;
+//      case arrow::Type::FIXED_SIZE_LIST:break;
+//      case arrow::Type::DURATION:break;
+//      case arrow::Type::LARGE_STRING:break;
+//      case arrow::Type::LARGE_BINARY:break;
+//      case arrow::Type::LARGE_LIST:break;
+//      case arrow::Type::INTERVAL_MONTHS:break;
+//      case arrow::Type::INTERVAL_DAY_TIME:break;
+//      case arrow::Type::SPARSE_UNION:break;
+//      case arrow::Type::DENSE_UNION:break;
+//      case arrow::Type::MAX_ID:break;
+//    }
+//    return Status::OK();
+//  }
+//
+//  template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
+//  Status Find(std::shared_ptr<cylon::Table> &find_table, std::shared_ptr<cylon::Index<ARROW_T, CTYPE>> &index);
 
  private:
   /**
@@ -210,7 +277,7 @@ class Table {
   std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
   std::vector<std::shared_ptr<cylon::Column>> columns_;
-  std::shared_ptr<Index> index_;
+  std::shared_ptr<cylon::BaseIndex> base_index_ = nullptr;
 };
 
 /**
@@ -460,8 +527,6 @@ Status WriteParquet(std::shared_ptr<cylon::Table> &table,
                     const std::string &path,
                     const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
 #endif //BUILD_CYLON_PARQUET
-
-
 
 }  // namespace cylon
 

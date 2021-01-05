@@ -65,13 +65,18 @@ int dummy_test() {
 
   cylon::Status status;
 
-  std::shared_ptr<cylon::Table> input1, output, sort_table;
+  std::shared_ptr<cylon::Table> input1, find_table, output, sort_table;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
   std::string test_file = "/tmp/duplicate_data_0.csv";
   std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
   status = cylon::FromCSV(ctx, test_file, input1, read_options);
+
+  // find table
+  std::string find_file = "/tmp/find_data.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, find_file, find_table, read_options);
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Table Creation Failed";
@@ -81,9 +86,12 @@ int dummy_test() {
 
   input1->Print();
 
-  input1->CreateIndex({0}, output);
+  //const int column_id = 0;
 
 
+
+//  int x = 4;
+//  output->Find(find_table, index);
 
   return 0;
 }

@@ -947,54 +947,113 @@ std::shared_ptr<Column> Table::GetColumn(int32_t index) const {
 std::vector<std::shared_ptr<cylon::Column>> Table::GetColumns() const {
   return this->columns_;
 }
-
-Status Table::CreateIndex(const std::vector<int> &cols,
-                          std::shared_ptr<cylon::Table> &out
-) {
-
-  std::shared_ptr<arrow::Table> ltab = table_;
-  //int64_t eq_calls = 0, hash_calls = 0;
-
-  if (ltab->column(0)->num_chunks() > 1) {
-    const arrow::Result<std::shared_ptr<arrow::Table>> &res = ltab->CombineChunks(cylon::ToArrowPool(ctx));
+Status Table::Set_Index(const int index_column, std::shared_ptr<cylon::Table> &out) {
+  std::shared_ptr<arrow::Table> input_table = table_;
+  if (input_table->column(0)->num_chunks() > 1) {
+    const arrow::Result<std::shared_ptr<arrow::Table>> &res = input_table->CombineChunks(cylon::ToArrowPool(ctx));
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
-    ltab = res.ValueOrDie();
+    input_table = res.ValueOrDie();
   }
 
-  TableRowIndexComparator row_comp(ltab, cols);
-  TableRowIndexHash row_hash(ltab, cols);
-  const int64_t num_rows = ltab->num_rows();
+  CreateHashIndexKernel(input_table, index_column);
 
-  std::unordered_multiset<int64_t, TableRowIndexHash, TableRowIndexComparator> rows_set(num_rows, row_hash, row_comp);
-  for (int64_t row = 0; row < num_rows; ++row) {
-    rows_set.insert(row);
-  }
-
-
-  auto idx = std::make_shared<Index>(rows_set, cols);
-  index_ = std::move(idx);
-
-  arrow::Result<std::shared_ptr<arrow::Table>> res;
-  for (auto col: cols) {
-    res = table_->RemoveColumn(col);
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
-    table_ = res.ValueOrDie();
-  }
-
-  cylon::Table::FromArrowTable(ctx, table_, out);
-
-  return Status::OK();
-}
-
-const std::shared_ptr<Index> &Table::GetIndex() const {
-  return index_;
-}
-
-Status Table::Find(void *value) {
-  // TODO
 
   return Status();
 }
+
+
+
+
+//template<typename ARROW_T, typename CPP_KEY_TYPE = typename ARROW_T::c_type>
+//Status CreateIndexByType(const int index_column,
+//                         const std::shared_ptr<arrow::Table> &input_table,
+//                         std::shared_ptr<cylon::Table> &out,
+//                         std::shared_ptr<cylon::Index<ARROW_T, CPP_KEY_TYPE>> &index) {
+//
+//  HashIndexingKernel<ARROW_T, CPP_KEY_TYPE> kernel;
+//  const std::shared_ptr<arrow::Array> &idx_column = input_table->column(index_column)->chunk(0);
+//  arrow::Status result = kernel.BuildIndex(idx_column, index);
+//  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result)
+//  return Status::OK();
+//}
+//
+//template<typename ARROW_T, typename CTYPE>
+//Status Table::Set_Index(const int index_column,
+//                 std::shared_ptr<cylon::Table> &out,
+//                 std::shared_ptr<Index<ARROW_T, CTYPE>> &index
+//) {
+//
+//  auto input_table = table_;
+//  auto left_type = input_table->column(index_column)->type()->id();
+//
+//  switch (left_type) {
+//    case arrow::Type::NA:break;
+//    case arrow::Type::BOOL:break;
+//    case arrow::Type::UINT8: break;
+//    case arrow::Type::INT8: break;
+//    case arrow::Type::UINT16: break;
+//    case arrow::Type::INT16: break;
+//    case arrow::Type::UINT32: break;
+//    case arrow::Type::INT32: break;
+//    case arrow::Type::UINT64: break;
+//    case arrow::Type::INT64: {
+//      return CreateIndexByType<arrow::Int64Type>(index_column, input_table, out, index);
+//    }
+//    case arrow::Type::HALF_FLOAT: break;
+//    case arrow::Type::FLOAT: break;
+//    case arrow::Type::DOUBLE: break;
+//    case arrow::Type::STRING: break;
+//
+//    case arrow::Type::BINARY: break;
+//
+//    case arrow::Type::FIXED_SIZE_BINARY: break;
+//
+//    case arrow::Type::DATE32:break;
+//    case arrow::Type::DATE64:break;
+//    case arrow::Type::TIMESTAMP:break;
+//    case arrow::Type::TIME32:break;
+//    case arrow::Type::TIME64:break;
+//    case arrow::Type::DECIMAL:break;
+//    case arrow::Type::LIST:break;
+//    case arrow::Type::STRUCT:break;
+//    case arrow::Type::DICTIONARY:break;
+//    case arrow::Type::MAP:break;
+//    case arrow::Type::EXTENSION:break;
+//    case arrow::Type::FIXED_SIZE_LIST:break;
+//    case arrow::Type::DURATION:break;
+//    case arrow::Type::LARGE_STRING:break;
+//    case arrow::Type::LARGE_BINARY:break;
+//    case arrow::Type::LARGE_LIST:break;
+//    case arrow::Type::INTERVAL_MONTHS:break;
+//    case arrow::Type::INTERVAL_DAY_TIME:break;
+//    case arrow::Type::SPARSE_UNION:break;
+//    case arrow::Type::DENSE_UNION:break;
+//    case arrow::Type::MAX_ID:break;
+//  }
+//  return Status::OK();
+//
+//}
+//
+//
+//
+//template<class ARROW_T, typename CTYPE>
+//Status Table::Find(std::shared_ptr<cylon::Table> &find_table, std::shared_ptr<cylon::Index<ARROW_T, CTYPE>> &index) {
+//
+//  auto index_set = index->GetIndexSet();
+//
+//  std::cout << "Index Size : " << index_set->size() << std::endl;
+//
+//
+//  return Status();
+//}
+//template<class ARROW_T, typename CTYPE>
+//Status Table::Set_Index(const int index_column,
+//                        std::shared_ptr<cylon::Table> &out,
+//                        std::shared_ptr<cylon::Index<ARROW_T, CTYPE>> &index) {
+//  return Status();
+//}
+
+
 
 Status Shuffle(std::shared_ptr<cylon::Table> &table,
                const std::vector<int> &hash_columns,
