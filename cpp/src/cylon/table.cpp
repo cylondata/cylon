@@ -948,6 +948,7 @@ std::vector<std::shared_ptr<cylon::Column>> Table::GetColumns() const {
   return this->columns_;
 }
 Status Table::Set_Index(const int index_column, std::shared_ptr<cylon::Table> &out) {
+  std::shared_ptr<arrow::Table> arrow_out;
   std::shared_ptr<arrow::Table> input_table = table_;
   if (input_table->column(0)->num_chunks() > 1) {
     const arrow::Result<std::shared_ptr<arrow::Table>> &res = input_table->CombineChunks(cylon::ToArrowPool(ctx));
@@ -955,8 +956,8 @@ Status Table::Set_Index(const int index_column, std::shared_ptr<cylon::Table> &o
     input_table = res.ValueOrDie();
   }
 
-  CreateHashIndexKernel(input_table, index_column);
-
+  std::shared_ptr<cylon::IndexKernel> kernel = CreateHashIndexKernel(input_table, index_column);
+  kernel->BuildIndex(input_table, 0, false, arrow_out);
 
   return Status();
 }
