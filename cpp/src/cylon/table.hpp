@@ -193,6 +193,8 @@ class Table {
 
   Status Set_Index(const int index_column, std::shared_ptr<cylon::Table> &out);
 
+  std::shared_ptr<BaseIndex> GetIndex();
+
   Status Find(void* value, std::shared_ptr<cylon::Table> &out);
 
 

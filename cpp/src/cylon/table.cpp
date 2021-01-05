@@ -957,11 +957,21 @@ Status Table::Set_Index(const int index_column, std::shared_ptr<cylon::Table> &o
   }
 
   std::shared_ptr<cylon::IndexKernel> kernel = CreateHashIndexKernel(input_table, index_column);
-  kernel->BuildIndex(input_table, 0, false, arrow_out);
-
+  std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(input_table, 0, false, arrow_out);
+  base_index_ = std::move(bi);
   return Status();
 }
 
+std::shared_ptr<BaseIndex> Table::GetIndex() {
+  return base_index_;
+}
+
+Status Table::Find(void *value, std::shared_ptr<cylon::Table> &out) {
+  std::shared_ptr<arrow::Table> ar_out;
+  base_index_->Find(value, ar_out);
+
+  return Status();
+}
 
 
 

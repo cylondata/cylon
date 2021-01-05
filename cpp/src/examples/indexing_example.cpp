@@ -86,7 +86,11 @@ int dummy_test() {
 
   input1->Print();
 
-  //const int column_id = 0;
+  input1->Set_Index(0, output);
+
+  int search_val = 1;
+
+  input1->Find(&search_val, output);
 
 
 

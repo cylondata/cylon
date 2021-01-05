@@ -18,6 +18,8 @@ class BaseIndex {
   //virtual void SetIndex(void *index_object) = 0;
   //virtual void *GetIndexSet() = 0;
 
+  virtual void Find(void* search_param, std::shared_ptr<arrow::Table> &output) = 0;
+
  private:
   int col_id_;
   int size_;
@@ -32,15 +34,10 @@ class Index : public BaseIndex {
     map_ = map;
   };
 
+  void Find(void *search_param, std::shared_ptr<arrow::Table> &output) override {
+    std::cout << "Search Param : " << &search_param << std::endl;
+  }
 
-
-//  void SetIndex(MMAP_TYPE map) override {
-//    index_set_ = map;
-//  }
-
-//  const MMAP_TYPE &GetIndexSet() const  override  {
-//    return index_set_;
-//  };
  private:
   int col_ids_;
   int size_;
