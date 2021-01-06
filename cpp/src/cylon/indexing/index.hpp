@@ -15,6 +15,8 @@ class BaseIndex {
     col_id_ = col_id;
     size_ = size;
   };
+
+  // TODO: virtual destructor
   //virtual void SetIndex(void *index_object) = 0;
   //virtual void *GetIndexSet() = 0;
 
@@ -33,7 +35,7 @@ class Index : public BaseIndex {
   explicit Index(int col_ids, int size, MMAP_TYPE map) : BaseIndex(col_ids, size) {
     map_ = map;
   };
-
+  // TODO: add return type for Find func to handle error.
   void Find(void *search_param, std::shared_ptr<arrow::Table> &output) override {
     std::cout << "Search Param : " << &search_param << std::endl;
   }
@@ -61,7 +63,8 @@ class HashIndexKernel : public IndexKernel {
 
  public:
   explicit HashIndexKernel() : IndexKernel() {}
-
+  // TODO: move like the following way
+  // using CTYPE = typename ARROW_T::c_type;
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
 
