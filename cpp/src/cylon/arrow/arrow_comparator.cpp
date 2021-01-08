@@ -14,9 +14,6 @@
 
 #include "arrow_comparator.hpp"
 
-#include <memory>
-#include <vector>
-
 namespace cylon {
 
 template<typename ARROW_TYPE>
@@ -174,6 +171,83 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shar
     case arrow::Type::FIXED_SIZE_BINARY:return std::make_shared<FixedSizeBinaryRowIndexComparator>(array);
     default:return nullptr;
   }
+}
+
+RowComparator::RowComparator(std::shared_ptr<cylon::CylonContext> &ctx,
+                             const std::shared_ptr<arrow::Table> *tables,
+                             int64_t *eq,
+                             int64_t *hs) {
+  this->tables = tables;
+  this->comparator = std::make_shared<cylon::TableRowComparator>(tables[0]->fields());
+  this->row_hashing_kernel = std::make_shared<cylon::RowHashingKernel>(tables[0]->fields());
+  this->eq = eq;
+  this->hs = hs;
+}
+bool RowComparator::operator()(const std::pair<int8_t, int64_t> &record1,
+                               const std::pair<int8_t, int64_t> &record2) const {
+  (*this->eq)++;
+  return this->comparator->compare(this->tables[record1.first], record1.second,
+                                   this->tables[record2.first], record2.second) == 0;
+
+}
+
+// hashing
+size_t RowComparator::operator()(const std::pair<int8_t, int64_t> &record) const {
+  (*this->hs)++;
+  size_t hash = this->row_hashing_kernel->Hash(this->tables[record.first], record.second);
+  return hash;
+}
+
+TableRowIndexComparator::TableRowIndexComparator(const std::shared_ptr<arrow::Table> &table,
+                                                 const std::vector<int> &col_ids)
+    : idx_comparators_ptr(std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>(col_ids.size())) {
+  for (size_t c = 0; c < col_ids.size(); c++) {
+    const std::shared_ptr<arrow::Array> &array = table->column(col_ids.at(c))->chunk(0);
+    this->idx_comparators_ptr->at(c) = CreateArrayIndexComparator(array);
+  }
+}
+bool TableRowIndexComparator::operator()(const int64_t &record1, const int64_t &record2) const {
+  for (auto &&comp:*idx_comparators_ptr) {
+    if (comp->compare(record1, record2)) return false;
+  }
+  return true;
+}
+
+TableRowIndexHash::TableRowIndexHash(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids)
+    : hashes_ptr(std::make_shared<std::vector<uint32_t>>(table->num_rows(), 0)) {
+  for (auto &&c:col_ids) {
+    const std::unique_ptr<HashPartitionKernel> &hash_kernel = CreateHashPartitionKernel(table->field(c)->type());
+    hash_kernel->UpdateHash(table->column(c), *hashes_ptr); // update the hashes
+  }
+}
+size_t TableRowIndexHash::operator()(const int64_t &record) const {
+  return hashes_ptr->at(record);
+}
+
+std::shared_ptr<arrow::UInt32Array> TableRowIndexHash::GetHashArray(const TableRowIndexHash &hasher) {
+  const auto &buf = arrow::Buffer::Wrap(*hasher.hashes_ptr);
+  const auto &data = arrow::ArrayData::Make(arrow::uint32(), hasher.hashes_ptr->size(), {nullptr, buf});
+  return std::make_shared<arrow::UInt32Array>(data);
+}
+
+MultiTableRowIndexHash::MultiTableRowIndexHash(const std::vector<std::shared_ptr<arrow::Table>> &tables) : hashes_ptr(
+    std::make_shared<std::vector<TableRowIndexHash>>()) {
+  for (const auto &t:tables) {
+    std::vector<int> cols(t->num_columns());
+    std::iota(cols.begin(), cols.end(), 0);
+    hashes_ptr->emplace_back(t, cols);
+  }
+}
+size_t MultiTableRowIndexHash::operator()(const std::pair<int8_t, int64_t> &record) const {
+  return hashes_ptr->at(record.first)(record.second);
+}
+
+MultiTableRowIndexComparator::MultiTableRowIndexComparator(const std::vector<std::shared_ptr<arrow::Table>> &tables)
+    : tables(tables), comparator(std::make_shared<TableRowComparator>(tables[0]->fields())) {}
+bool MultiTableRowIndexComparator::operator()(const std::pair<int8_t, int64_t> &record1,
+                                              const std::pair<int8_t, int64_t> &record2) const {
+  return this->comparator->compare(this->tables[record1.first], record1.second,
+                                   this->tables[record2.first], record2.second) == 0;
 }
 
 }  // namespace cylon

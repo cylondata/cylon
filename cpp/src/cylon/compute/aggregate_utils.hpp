@@ -15,6 +15,8 @@
 #ifndef CYLON_CPP_SRC_CYLON_COMPUTE_AGGREGATE_UTILS_HPP_
 #define CYLON_CPP_SRC_CYLON_COMPUTE_AGGREGATE_UTILS_HPP_
 
+#include "../net/mpi/mpi_operations.hpp"
+
 namespace cylon {
 namespace compute {
 

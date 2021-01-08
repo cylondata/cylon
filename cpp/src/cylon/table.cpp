@@ -22,6 +22,7 @@
 #include <join/join_utils.hpp>
 
 #include "table_api_extended.hpp"
+#include "util/macros.hpp"
 #include "io/arrow_io.hpp"
 #include "join/join.hpp"
 #include  "util/to_string.hpp"

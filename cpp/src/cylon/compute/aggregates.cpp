@@ -14,14 +14,10 @@
 
 #include <glog/logging.h>
 
-#include <status.hpp>
-#include <table.hpp>
-#include <ctx/arrow_memory_pool_utils.hpp>
-#include <net/comm_operations.hpp>
-#include <net/mpi/mpi_operations.hpp>
+#include "../net/comm_operations.hpp"
+#include "../util/macros.hpp"
 
-#include "compute/aggregates.hpp"
-#include "util/macros.hpp"
+#include "aggregates.hpp"
 #include "aggregate_utils.hpp"
 
 namespace cylon {
