@@ -396,7 +396,7 @@ Status Select(std::shared_ptr<cylon::Table> &table,
  * @return
  */
 Status Project(std::shared_ptr<cylon::Table> &table,
-               const std::vector<int64_t> &project_columns,
+               const std::vector<int32_t> &project_columns,
                std::shared_ptr<Table> &output);
 
 /**

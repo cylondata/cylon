@@ -43,7 +43,7 @@ pycylon_unwrap_sort_options)
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
 from pycylon.data.aggregates import AggregationOp
-from pycylon.data.groupby cimport (GroupBy, PipelineGroupBy)
+from pycylon.data.groupby cimport (DistributedHashGroupBy, DistributedPipelineGroupBy)
 from pycylon.data import compute
 
 from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
@@ -469,7 +469,7 @@ cdef class Table:
         :param columns: List of columns to be projected
         :return: PyCylon table
         '''
-        cdef vector[long] c_columns
+        cdef vector[int] c_columns
         cdef shared_ptr[CTable] output
         cdef CStatus status
         if columns:
@@ -600,7 +600,7 @@ cdef class Table:
                 aggregate_ops: List[AggregationOp]):
         cdef CStatus status
         cdef shared_ptr[CTable] output
-        cdef vector[long] caggregate_cols
+        cdef vector[int] caggregate_cols
         cdef vector[CGroupByAggregationOp] caggregate_ops
 
         if not aggregate_cols and not aggregate_ops:
@@ -621,7 +621,7 @@ cdef class Table:
             for aggregate_op in aggregate_ops:
                 caggregate_ops.push_back(aggregate_op)
 
-            status = GroupBy(self.table_shd_ptr, index_col, caggregate_cols, caggregate_ops,
+            status = DistributedHashGroupBy(self.table_shd_ptr, index_col, caggregate_cols, caggregate_ops,
                              output)
             if status.is_ok():
                 return pycylon_wrap_table(output)

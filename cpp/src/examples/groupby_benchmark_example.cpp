@@ -28,6 +28,7 @@
 
 #include <util/arrow_utils.hpp>
 #include <groupby/groupby.hpp>
+#include <groupby/groupby.hpp>
 
 
 void create_table(char *const *argv,
@@ -181,7 +182,30 @@ void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
             << std::endl;
 }
 
-void HashCylonGroupBy(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ctable,
+/*void HashCylonGroupBy(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ctable,
+                      std::shared_ptr<cylon::Table> &output) {
+  auto t1 = std::chrono::steady_clock::now();
+
+*//* // using hashgroup by template function
+  const std::shared_ptr<arrow::Table> &table = ctable->get_table();
+  std::vector<shared_ptr<arrow::Array>> cols;
+
+  cylon::Status s = cylon::HashGroupBy<arrow::Int64Type, arrow::DoubleType, cylon::GroupByAggregationOp::MEAN>
+      (pool, table->column(0), table->column(1), cols);
+
+  std::shared_ptr<Table> a_output = Table::Make(table->schema(), cols);
+  cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);*//*
+
+  cylon::Status s =
+      cylon::GroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
+
+  auto t3 = std::chrono::steady_clock::now();
+  std::cout << "hash_group3 " << output->Rows()
+            << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
+            << std::endl;
+}*/
+
+void HashCylonGroupBy1(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ctable,
                       std::shared_ptr<cylon::Table> &output) {
   auto t1 = std::chrono::steady_clock::now();
 
@@ -196,10 +220,10 @@ void HashCylonGroupBy(arrow::MemoryPool *pool, std::shared_ptr<cylon::Table> &ct
   cylon::Table::FromArrowTable(ctable->GetContext(), a_output, &output);*/
 
   cylon::Status s =
-      cylon::GroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
+      cylon::DistributedHashGroupBy(ctable, 0, {1}, {cylon::compute::SUM}, output);
 
   auto t3 = std::chrono::steady_clock::now();
-  std::cout << "hash_group3 " << output->Rows()
+  std::cout << "hash_group4 " << output->Rows()
             << " " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count()
             << std::endl;
 }
@@ -299,7 +323,7 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
 
-  WriteCSV(first_table, "/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
+//  WriteCSV(first_table, "/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
 
   std::shared_ptr<cylon::Table> output;
 
@@ -320,9 +344,11 @@ int main(int argc, char *argv[]) {
   output.reset();
    std::cout << "++++++++++++++++++++++++++" <<  std::endl;*/
 
-  HashCylonGroupBy(pool, first_table, output);
+//  HashCylonGroupBy(pool, first_table, output);
+  HashCylonGroupBy1(pool, first_table, output);
+
 //  output->Print();
-  WriteCSV(output, "/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
+//  WriteCSV(output, "/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
   output.reset();
   std::cout << "++++++++++++++++++++++++++" << std::endl;
 
