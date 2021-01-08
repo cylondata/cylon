@@ -15,11 +15,8 @@
 #ifndef CYLON_CPP_SRC_CYLON_GROUPBY_GROUPBY_HPP_
 #define CYLON_CPP_SRC_CYLON_GROUPBY_GROUPBY_HPP_
 
-#include <status.hpp>
-#include <table.hpp>
-
-#include <compute/aggregates.hpp>
-#include <compute/aggregate_kernels.hpp>
+#include "../table.hpp"
+#include "../compute/aggregate_kernels.hpp"
 
 namespace cylon {
 

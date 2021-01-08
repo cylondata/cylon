@@ -17,10 +17,8 @@
 
 #include <arrow/compute/api.h>
 
-#include <utility>
-#include <status.hpp>
-#include <table.hpp>
-#include <ctx/arrow_memory_pool_utils.hpp>
+#include "../table.hpp"
+#include "../ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
 namespace compute {
