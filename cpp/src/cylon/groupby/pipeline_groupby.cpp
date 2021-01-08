@@ -18,9 +18,8 @@
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
 
-#include <status.hpp>
-#include <table.hpp>
-#include <ctx/arrow_memory_pool_utils.hpp>
+#include "../util/macros.hpp"
+#include "../ctx/arrow_memory_pool_utils.hpp"
 
 #include "pipeline_groupby.hpp"
 
