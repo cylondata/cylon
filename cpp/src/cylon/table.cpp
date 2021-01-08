@@ -970,6 +970,8 @@ Status Table::Find(void *value, std::shared_ptr<cylon::Table> &out) {
   std::shared_ptr<arrow::Table> ar_out;
   base_index_->Find(value, ar_out);
 
+
+
   return Status();
 }
 

@@ -37,7 +37,8 @@ class Index : public BaseIndex {
   };
   // TODO: add return type for Find func to handle error.
   void Find(void *search_param, std::shared_ptr<arrow::Table> &output) override {
-    std::cout << "Search Param : " << &search_param << std::endl;
+    CTYPE val = *static_cast<CTYPE*>(search_param);
+    std::cout << "Search Param : " << val << std::endl;
   }
 
  private:
