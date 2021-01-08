@@ -558,7 +558,7 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
     }
   }
 
-  std::vector<int64_t> indices_from_tabs[2] {{}, {}};
+  std::vector<int64_t> indices_from_tabs[2]{{}, {}};
   indices_from_tabs[0].reserve(first->Rows());
   indices_from_tabs[1].reserve(second->Rows());
 
@@ -1045,6 +1045,31 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in,
   }
 
   return Unique(shuffle_out, cols, out);
+}
+
+Status Table::Set_Index(const int index_column, std::shared_ptr<cylon::Table> &out) {
+  std::shared_ptr<arrow::Table> arrow_out;
+  std::shared_ptr<arrow::Table> input_table = table_;
+  if (input_table->column(0)->num_chunks() > 1) {
+    const arrow::Result<std::shared_ptr<arrow::Table>> &res = input_table->CombineChunks(cylon::ToArrowPool(ctx));
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
+    input_table = res.ValueOrDie();
+  }
+
+  std::shared_ptr<cylon::IndexKernel> kernel = CreateHashIndexKernel(input_table, index_column);
+  std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(input_table, 0, false, arrow_out);
+  base_index_ = std::move(bi);
+  return Status();
+}
+
+std::shared_ptr<BaseIndex> Table::GetIndex() {
+  return base_index_;
+}
+
+Status Table::Find(void *value, std::shared_ptr<cylon::Table> &out) {
+  std::shared_ptr<arrow::Table> ar_out;
+  base_index_->Find(value, ar_out);
+  return Status::OK();
 }
 
 #ifdef BUILD_CYLON_PARQUET
