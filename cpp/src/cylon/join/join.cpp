@@ -14,26 +14,23 @@
 #include "join.hpp"
 
 #include <glog/logging.h>
-
 #include <chrono>
-#include <vector>
-#include <memory>
 #include <string>
 
-#include "arrow/compute/api.h"
 #include "join_utils.hpp"
 #include "../util/arrow_utils.hpp"
-#include "join_utils.hpp"
+#include "../arrow/arrow_kernels.hpp"
+#include "../arrow/arrow_hash_kernels.hpp"
 
 namespace cylon {
 namespace join {
 
 template<typename ARROW_ARRAY_TYPE, typename CPP_KEY_TYPE>
 inline void advance(std::vector<int64_t> *subset,
-             const std::shared_ptr<arrow::Int64Array> &sorted_indices,  // this is always Int64Array
-             int64_t *current_index,  // always int64_t
-             std::shared_ptr<arrow::Array> data_column,
-             CPP_KEY_TYPE *key) {
+                    const std::shared_ptr<arrow::Int64Array> &sorted_indices,  // this is always Int64Array
+                    int64_t *current_index,  // always int64_t
+                    std::shared_ptr<arrow::Array> data_column,
+                    CPP_KEY_TYPE *key) {
   subset->clear();
   if (*current_index == sorted_indices->length()) {
     return;
@@ -42,7 +39,7 @@ inline void advance(std::vector<int64_t> *subset,
   int64_t data_index = sorted_indices->Value(*current_index);
   *key = data_column_casted->GetView(data_index);
   while (*current_index < sorted_indices->length() &&
-         data_column_casted->GetView(data_index) == *key) {
+      data_column_casted->GetView(data_index) == *key) {
     subset->push_back(data_index);
     (*current_index)++;
     if (*current_index == sorted_indices->length()) {

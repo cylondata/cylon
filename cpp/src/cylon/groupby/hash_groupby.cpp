@@ -15,8 +15,13 @@
 #include <arrow/arrow_comparator.hpp>
 #include <thridparty/flat_hash_map/bytell_hash_map.hpp>
 
-#include <status.hpp>
-#include <table.hpp>
+#include <arrow/api.h>
+#include <arrow/compute/api.h>
+
+#include "../table.hpp"
+#include "../ctx/arrow_memory_pool_utils.hpp"
+#include "../util/arrow_utils.hpp"
+#include "../util/macros.hpp"
 
 #include "hash_groupby.hpp"
 

@@ -21,6 +21,7 @@
 #include <random>
 
 #include "arrow_utils.hpp"
+#include "macros.hpp"
 
 namespace cylon {
 namespace util {
