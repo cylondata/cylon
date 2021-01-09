@@ -38,6 +38,11 @@ class Index : public BaseIndex {
   void Find(void *search_param, std::shared_ptr<arrow::Table> &output) override {
     CTYPE val = *static_cast<CTYPE*>(search_param);
     std::cout << "Search Param : " << val << std::endl;
+    auto ret = map_.equal_range(val);
+    for (auto it=ret.first; it!=ret.second; ++it)
+      std::cout << ' ' << it->second;
+    std::cout << '\n';
+
   }
 
  private:
@@ -78,8 +83,8 @@ class HashIndexKernel : public IndexKernel {
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(idx_column);
     for (int64_t i = 0; i < reader0->length(); i++) {
       auto val = reader0->GetView(i);
+      //std::cout << "(" << val << "," << i << ")" << std::endl;
       out_umm_ptr.insert(std::make_pair(val, i));
-      out_umm_ptr.emplace(std::make_pair(val, i));
     }
     auto index = std::make_shared<Index<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), out_umm_ptr);
     return index;

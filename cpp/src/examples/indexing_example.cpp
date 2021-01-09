@@ -88,7 +88,7 @@ int dummy_test() {
 
   input1->Set_Index(0, output);
 
-  long search_val = 1;
+  long search_val = 123;
 
   input1->Find(&search_val, output);
 
