@@ -1,9 +1,16 @@
 #ifndef CYLON_SRC_CYLON_INDEXING_INDEX_H_
 #define CYLON_SRC_CYLON_INDEXING_INDEX_H_
 
+#include <arrow/table.h>
 #include <arrow/api.h>
+#include <arrow/compute/api.h>
 #include <arrow/compute/kernel.h>
 #include <arrow/arrow_comparator.hpp>
+#include "index.hpp"
+#include "util/macros.hpp"
+#include "status.hpp"
+#include "ctx/cylon_context.hpp"
+#include "ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
 
@@ -19,7 +26,10 @@ class BaseIndex {
   //virtual void SetIndex(void *index_object) = 0;
   //virtual void *GetIndexSet() = 0;
 
-  virtual void Find(void* search_param, std::shared_ptr<arrow::Table> &output) = 0;
+  virtual Status Find(void *search_param,
+                    std::shared_ptr<cylon::CylonContext> &ctx,
+                    std::shared_ptr<arrow::Table> &input,
+                    std::shared_ptr<arrow::Table> &output) = 0;
 
  private:
   int col_id_;
@@ -34,21 +44,38 @@ class Index : public BaseIndex {
   explicit Index(int col_ids, int size, MMAP_TYPE map) : BaseIndex(col_ids, size) {
     map_ = map;
   };
-  // TODO: add return type for Find func to handle error.
-  void Find(void *search_param, std::shared_ptr<arrow::Table> &output) override {
-    CTYPE val = *static_cast<CTYPE*>(search_param);
-    std::cout << "Search Param : " << val << std::endl;
-    auto ret = map_.equal_range(val);
-    for (auto it=ret.first; it!=ret.second; ++it)
-      std::cout << ' ' << it->second;
-    std::cout << '\n';
 
+  Status Find(void *search_param,
+              std::shared_ptr<cylon::CylonContext> &ctx,
+              std::shared_ptr<arrow::Table> &input,
+              std::shared_ptr<arrow::Table> &output) override {
+
+    arrow::Status arrow_status;
+    std::shared_ptr<arrow::Array> out_idx;
+    CTYPE val = *static_cast<CTYPE *>(search_param);
+    auto ret = map_.equal_range(val);
+    auto pool = cylon::ToArrowPool(ctx);
+    arrow::compute::ExecContext fn_ctx(pool);
+    arrow::Int64Builder idx_builder(pool);
+    const arrow::Datum input_table(input);
+    std::vector<int64_t> filter_vals;
+    for (auto it = ret.first; it != ret.second; ++it) {
+      filter_vals.push_back(it->second);
+    }
+    idx_builder.AppendValues(filter_vals);
+    arrow_status = idx_builder.Finish(&out_idx);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+    const arrow::Datum filter_indices(out_idx);
+    arrow::Result<arrow::Datum> result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+    output = result.ValueOrDie().table();
+    return Status::OK();
   }
 
  private:
   int col_ids_;
   int size_;
-  MMAP_TYPE  map_;
+  MMAP_TYPE map_;
 
 };
 

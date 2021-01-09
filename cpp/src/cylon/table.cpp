@@ -1068,7 +1068,8 @@ std::shared_ptr<BaseIndex> Table::GetIndex() {
 
 Status Table::Find(void *value, std::shared_ptr<cylon::Table> &out) {
   std::shared_ptr<arrow::Table> ar_out;
-  base_index_->Find(value, ar_out);
+  base_index_->Find(value, ctx, table_, ar_out);
+  cylon::Table::FromArrowTable(ctx, ar_out, out);
   return Status::OK();
 }
 

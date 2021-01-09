@@ -22,16 +22,18 @@
 
 class Hasher {
  public:
-  size_t operator() (std::string const& key) const {     // the parameter type should be the same as the type of key of unordered_map
+  size_t operator()(std::string const &key) const {     // the parameter type should be the same as the type of key of unordered_map
     size_t hash = 0;
-    for(size_t i = 0; i < key.size(); i++) {
+    for (size_t i = 0; i < key.size(); i++) {
       hash += key[i] % 7;
     }
     return hash;
   }
 };
 
-int dummy_test();
+int arrow_take_test();
+
+int indexing_simple_example();
 /**
  * This example reads two csv files and does a union on them.
  * $ ./unique_example data.csv
@@ -55,10 +57,45 @@ int dummy_test();
  */
 
 int main(int argc, char *argv[]) {
-  dummy_test();
+  indexing_simple_example();
 }
 
-int dummy_test() {
+
+int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
+
+  std::cout << "Arrow Take Test" << std::endl;
+
+  std::shared_ptr<arrow::Array> out_idx;
+  arrow::Status arrow_status;
+  auto pool = cylon::ToArrowPool(ctx);
+  arrow::compute::ExecContext fn_ctx(pool);
+  arrow::Int64Builder idx_builder(pool);
+  const arrow::Datum input_table(input1->get_table());
+
+  idx_builder.AppendValues({0, 1, 3});
+  arrow_status = idx_builder.Finish(&out_idx);
+
+  const arrow::Datum filter_indices(out_idx);
+
+  arrow::Result<arrow::Datum>
+      result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+
+  std::shared_ptr<arrow::Table> filter_table;
+  std::shared_ptr<cylon::Table> ftb;
+  filter_table = result.ValueOrDie().table();
+  if(result.status() != arrow::Status::OK()){
+    std::cout << "Error occured in Find" << std::endl;
+  } else{
+    std::cout << "Find Succeeded" << std::endl;
+  }
+  cylon::Table::FromArrowTable(ctx, filter_table, ftb);
+
+  ftb->Print();
+
+  return 0;
+}
+
+int indexing_simple_example() {
   std::cout << "Dummy Test" << std::endl;
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
@@ -90,12 +127,17 @@ int dummy_test() {
 
   long search_val = 123;
 
+  std::cout << "Find Result" << std::endl;
+
   input1->Find(&search_val, output);
 
+  std::cout << "============================" << std::endl;
 
+  output->Print();
 
-//  int x = 4;
-//  output->Find(find_table, index);
+  std::cout << "============================" << std::endl;
+
+  //arrow_take_test(ctx, input1);
 
   return 0;
 }
