@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
   indexing_simple_example();
 }
 
-
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
 
   std::cout << "Arrow Take Test" << std::endl;
@@ -77,7 +76,6 @@ int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<c
   idx_builder.AppendValues({0, 1, 3});
   arrow_status = idx_builder.Finish(&out_idx);
 
-
   const arrow::Datum filter_indices(out_idx);
 
   arrow::Result<arrow::Datum>
@@ -86,9 +84,9 @@ int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<c
   std::shared_ptr<arrow::Table> filter_table;
   std::shared_ptr<cylon::Table> ftb;
   filter_table = result.ValueOrDie().table();
-  if(result.status() != arrow::Status::OK()){
+  if (result.status() != arrow::Status::OK()) {
     std::cout << "Error occured in Find" << std::endl;
-  } else{
+  } else {
     std::cout << "Find Succeeded" << std::endl;
   }
   cylon::Table::FromArrowTable(ctx, filter_table, ftb);
@@ -129,6 +127,7 @@ int indexing_simple_example() {
   const int index_column = 0;
   bool drop_index = true;
 
+  //
   input1->Set_Index(index_column, drop_index, output);
 
   long search_val = 4;
@@ -145,14 +144,19 @@ int indexing_simple_example() {
 
   //arrow_take_test(ctx, input1);
 
-  input1->GetIndex()->GetIndex();
+  std::shared_ptr<arrow::Array> arr = input1->GetIndex()->GetIndex();
+  std::cout << "Index Values" << std::endl;
+
+  for (int64_t i = 0; i < arr->length(); i++) {
+    std::cout << arr->GetScalar(i).ValueOrDie()->ToString() << std::endl;
+  }
 
   vector_populate();
 
   return 0;
 }
 
-int vector_populate(){
+int vector_populate() {
   auto start_start = std::chrono::steady_clock::now();
   int size = 10;
   std::vector<int64_t> vec(size, 1);
@@ -163,7 +167,7 @@ int vector_populate(){
                 end_start - start_start).count() << "[ms]";
 
   auto p1 = std::chrono::steady_clock::now();
-  for(int idx=0; idx< vec.size(); idx++) {
+  for (int idx = 0; idx < vec.size(); idx++) {
     vec[idx] = idx;
   }
   auto p2 = std::chrono::steady_clock::now();
@@ -172,10 +176,12 @@ int vector_populate(){
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 p2 - p1).count() << "[ms]";
 
-  for(int idx=0; idx< vec.size(); idx++) {
-   std::cout << vec[idx] << " ";
+  for (int idx = 0; idx < vec.size(); idx++) {
+    std::cout << vec[idx] << " ";
   }
   std::cout << std::endl;
+
+
   return 0;
 }
 

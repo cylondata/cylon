@@ -17,9 +17,10 @@ namespace cylon {
 class BaseIndex {
 
  public:
-  explicit BaseIndex(int col_id, int size) {
+  explicit BaseIndex(int col_id, int size, std::shared_ptr<cylon::CylonContext> &ctx) {
     col_id_ = col_id;
     size_ = size;
+    ctx_ = ctx;
   };
 
   // TODO: virtual destructor
@@ -39,17 +40,22 @@ class BaseIndex {
   int GetSize() const {
     return size_;
   }
+
+  const std::shared_ptr<cylon::CylonContext> &GetContext() const {
+    return ctx_;
+  }
+
  private:
   int size_;
   int col_id_;
+  std::shared_ptr<cylon::CylonContext> ctx_;
 };
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
 class Index : public BaseIndex {
  public:
-  using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
-  explicit Index(int col_ids, int size, MMAP_TYPE map) : BaseIndex(col_ids, size) {
+  explicit Index(int col_ids, int size, std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<MMAP_TYPE> map) : BaseIndex(col_ids, size, ctx) {
     map_ = map;
   };
 
@@ -61,7 +67,7 @@ class Index : public BaseIndex {
     arrow::Status arrow_status;
     std::shared_ptr<arrow::Array> out_idx;
     CTYPE val = *static_cast<CTYPE *>(search_param);
-    auto ret = map_.equal_range(val);
+    auto ret = map_->equal_range(val);
     auto pool = cylon::ToArrowPool(ctx);
     arrow::compute::ExecContext fn_ctx(pool);
     arrow::Int64Builder idx_builder(pool);
@@ -88,6 +94,7 @@ class Index : public BaseIndex {
     arrow::Status arrow_status;
 
     // TODO :: add ctx to Index
+    auto ctx = GetContext();
     auto pool = cylon::ToArrowPool(ctx);
     ARROW_BUILDER_T builder(pool);
 
@@ -96,13 +103,13 @@ class Index : public BaseIndex {
     std::vector<CTYPE> vec(GetSize(), 1);
     LOG(INFO) << "Get Index :: " << GetSize();
 
-    for(const auto &x: map_){
+    for(const auto &x: *map_){
       std::cout<< x.first <<":"<< x.second << std::endl;
       vec[x.second] = x.first;
     }
 
-    builders.AppendValues(vec);
-    arrow_status = builders.Finish(&index_array);
+    builder.AppendValues(vec);
+    arrow_status = builder.Finish(&index_array);
     if(!arrow_status.ok()) {
       LOG(ERROR) << "Error occurred in retrieving index";
       return nullptr;
@@ -114,7 +121,7 @@ class Index : public BaseIndex {
  private:
   int col_ids_;
   int size_;
-  MMAP_TYPE map_;
+  std::shared_ptr<MMAP_TYPE> map_;
 
 };
 
@@ -123,7 +130,8 @@ class IndexKernel {
   explicit IndexKernel() {
 
   }
-  virtual std::shared_ptr<BaseIndex> BuildIndex(std::shared_ptr<arrow::Table> &input_table,
+  virtual std::shared_ptr<BaseIndex> BuildIndex(std::shared_ptr<cylon::CylonContext> &ctx,
+                                                std::shared_ptr<arrow::Table> &input_table,
                                                 const int index_column,
                                                 bool index_drop,
                                                 std::shared_ptr<arrow::Table> &output_table) = 0;
@@ -139,19 +147,20 @@ class HashIndexKernel : public IndexKernel {
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
 
-  std::shared_ptr<BaseIndex> BuildIndex(std::shared_ptr<arrow::Table> &input_table,
+  std::shared_ptr<BaseIndex> BuildIndex(std::shared_ptr<cylon::CylonContext> &ctx,
+                                        std::shared_ptr<arrow::Table> &input_table,
                                         const int index_column,
                                         bool index_drop,
                                         std::shared_ptr<arrow::Table> &output_table) override {
 
     const std::shared_ptr<arrow::Array> &idx_column = input_table->column(index_column)->chunk(0);
-    MMAP_TYPE out_umm_ptr = MMAP_TYPE(idx_column->length());
+    std::shared_ptr<MMAP_TYPE> out_umm_ptr = std::make_shared<MMAP_TYPE>(idx_column->length());
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(idx_column);
     for (int64_t i = 0; i < reader0->length(); i++) {
       auto val = reader0->GetView(i);
-      out_umm_ptr.insert(std::make_pair(val, i));
+      out_umm_ptr->insert(std::make_pair(val, i));
     }
-    auto index = std::make_shared<Index<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), out_umm_ptr);
+    auto index = std::make_shared<Index<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), ctx, out_umm_ptr);
 
     arrow::Result<std::shared_ptr<arrow::Table>> result = input_table->RemoveColumn(0);
 

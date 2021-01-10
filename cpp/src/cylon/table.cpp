@@ -1058,7 +1058,7 @@ Status Table::Set_Index(const int index_column, bool drop_index, std::shared_ptr
   }
 
   std::shared_ptr<cylon::IndexKernel> kernel = CreateHashIndexKernel(input_table, index_column);
-  std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(input_table, index_column, drop_index, arrow_out);
+  std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(ctx, input_table, index_column, drop_index, arrow_out);
   table_ = std::move(arrow_out);
   base_index_ = std::move(bi);
   return Status();
