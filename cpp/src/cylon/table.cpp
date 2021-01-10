@@ -1047,9 +1047,10 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in,
   return Unique(shuffle_out, cols, out);
 }
 
-Status Table::Set_Index(const int index_column, std::shared_ptr<cylon::Table> &out) {
+Status Table::Set_Index(const int index_column, bool drop_index, std::shared_ptr<cylon::Table> &out) {
   std::shared_ptr<arrow::Table> arrow_out;
   std::shared_ptr<arrow::Table> input_table = table_;
+
   if (input_table->column(0)->num_chunks() > 1) {
     const arrow::Result<std::shared_ptr<arrow::Table>> &res = input_table->CombineChunks(cylon::ToArrowPool(ctx));
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
@@ -1057,7 +1058,8 @@ Status Table::Set_Index(const int index_column, std::shared_ptr<cylon::Table> &o
   }
 
   std::shared_ptr<cylon::IndexKernel> kernel = CreateHashIndexKernel(input_table, index_column);
-  std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(input_table, 0, false, arrow_out);
+  std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(input_table, index_column, drop_index, arrow_out);
+  table_ = std::move(arrow_out);
   base_index_ = std::move(bi);
   return Status();
 }
@@ -1066,10 +1068,14 @@ std::shared_ptr<BaseIndex> Table::GetIndex() {
   return base_index_;
 }
 
-Status Table::Find(void *value, std::shared_ptr<cylon::Table> &out) {
+Status Table::Find_From_Index(void *value, int index_column, std::shared_ptr<cylon::Table> &out) {
   std::shared_ptr<arrow::Table> ar_out;
-  base_index_->Find(value, ctx, table_, ar_out);
-  cylon::Table::FromArrowTable(ctx, ar_out, out);
+  if(base_index_ != nullptr && base_index_->GetColId() == index_column) {
+    base_index_->Find(value, ctx, table_, ar_out);
+    cylon::Table::FromArrowTable(ctx, ar_out, out);
+  } else {
+    LOG(ERROR) << "Index column doesn't match the provided column";
+  }
   return Status::OK();
 }
 

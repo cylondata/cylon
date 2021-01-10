@@ -191,11 +191,11 @@ class Table {
    */
   std::vector<std::shared_ptr<cylon::Column>> GetColumns() const;
 
-  Status Set_Index(const int index_column, std::shared_ptr<cylon::Table> &out);
+  Status Set_Index(const int index_column, bool drop_index, std::shared_ptr<cylon::Table> &out);
 
   std::shared_ptr<BaseIndex> GetIndex();
 
-  Status Find(void* value, std::shared_ptr<cylon::Table> &out);
+  Status Find_From_Index(void* value, int index_column, std::shared_ptr<cylon::Table> &out);
 
  private:
   /**

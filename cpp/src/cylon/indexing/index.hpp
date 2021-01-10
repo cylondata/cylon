@@ -31,9 +31,17 @@ class BaseIndex {
                     std::shared_ptr<arrow::Table> &input,
                     std::shared_ptr<arrow::Table> &output) = 0;
 
+  virtual std::shared_ptr<arrow::Array> GetIndex() = 0;
+
+  int GetColId() const {
+    return col_id_;
+  }
+  int GetSize() const {
+    return size_;
+  }
  private:
-  int col_id_;
   int size_;
+  int col_id_;
 };
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
@@ -70,6 +78,37 @@ class Index : public BaseIndex {
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
     output = result.ValueOrDie().table();
     return Status::OK();
+  }
+
+  std::shared_ptr<arrow::Array> GetIndex() override {
+
+    using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
+    using ARROW_BUILDER_T = typename arrow::TypeTraits<ARROW_T>::BuilderType;
+
+    arrow::Status arrow_status;
+
+    // TODO :: add ctx to Index
+    auto pool = cylon::ToArrowPool(ctx);
+    ARROW_BUILDER_T builder(pool);
+
+    std::shared_ptr<ARROW_ARRAY_T> index_array;
+
+    std::vector<CTYPE> vec(GetSize(), 1);
+    LOG(INFO) << "Get Index :: " << GetSize();
+
+    for(const auto &x: map_){
+      std::cout<< x.first <<":"<< x.second << std::endl;
+      vec[x.second] = x.first;
+    }
+
+    builders.AppendValues(vec);
+    arrow_status = builders.Finish(&index_array);
+    if(!arrow_status.ok()) {
+      LOG(ERROR) << "Error occurred in retrieving index";
+      return nullptr;
+    }
+
+    return index_array;
   }
 
  private:
@@ -110,10 +149,17 @@ class HashIndexKernel : public IndexKernel {
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(idx_column);
     for (int64_t i = 0; i < reader0->length(); i++) {
       auto val = reader0->GetView(i);
-      //std::cout << "(" << val << "," << i << ")" << std::endl;
       out_umm_ptr.insert(std::make_pair(val, i));
     }
     auto index = std::make_shared<Index<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), out_umm_ptr);
+
+    arrow::Result<std::shared_ptr<arrow::Table>> result = input_table->RemoveColumn(0);
+
+    if(result.status()!= arrow::Status::OK()) {
+      LOG(ERROR) << "Column removal failed ";
+      return nullptr;
+    }
+    output_table = std::move(result.ValueOrDie());
     return index;
   };
 

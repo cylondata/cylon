@@ -33,6 +33,8 @@ class Hasher {
 
 int arrow_take_test();
 
+int vector_populate();
+
 int indexing_simple_example();
 /**
  * This example reads two csv files and does a union on them.
@@ -74,6 +76,7 @@ int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<c
 
   idx_builder.AppendValues({0, 1, 3});
   arrow_status = idx_builder.Finish(&out_idx);
+
 
   const arrow::Datum filter_indices(out_idx);
 
@@ -123,13 +126,16 @@ int indexing_simple_example() {
 
   input1->Print();
 
-  input1->Set_Index(0, output);
+  const int index_column = 0;
+  bool drop_index = true;
 
-  long search_val = 123;
+  input1->Set_Index(index_column, drop_index, output);
+
+  long search_val = 4;
 
   std::cout << "Find Result" << std::endl;
 
-  input1->Find(&search_val, output);
+  input1->Find_From_Index(&search_val, index_column, output);
 
   std::cout << "============================" << std::endl;
 
@@ -139,6 +145,37 @@ int indexing_simple_example() {
 
   //arrow_take_test(ctx, input1);
 
+  input1->GetIndex()->GetIndex();
+
+  vector_populate();
+
+  return 0;
+}
+
+int vector_populate(){
+  auto start_start = std::chrono::steady_clock::now();
+  int size = 10;
+  std::vector<int64_t> vec(size, 1);
+  auto end_start = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Vector Generation time "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                end_start - start_start).count() << "[ms]";
+
+  auto p1 = std::chrono::steady_clock::now();
+  for(int idx=0; idx< vec.size(); idx++) {
+    vec[idx] = idx;
+  }
+  auto p2 = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Vector Repopulate time "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                p2 - p1).count() << "[ms]";
+
+  for(int idx=0; idx< vec.size(); idx++) {
+   std::cout << vec[idx] << " ";
+  }
+  std::cout << std::endl;
   return 0;
 }
 
