@@ -202,6 +202,3 @@ def test_table_is_in_dev():
 
     new_tb = tb_compare_values(tb, tb_cmp)
     print(new_tb)
-
-
-test_isin()

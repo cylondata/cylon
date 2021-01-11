@@ -43,7 +43,7 @@ pycylon_unwrap_sort_options)
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
 from pycylon.data.aggregates import AggregationOp
-from pycylon.data.groupby cimport (GroupBy, PipelineGroupBy)
+from pycylon.data.groupby cimport (DistributedHashGroupBy, DistributedPipelineGroupBy)
 from pycylon.data import compute
 
 from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
@@ -469,7 +469,7 @@ cdef class Table:
         :param columns: List of columns to be projected
         :return: PyCylon table
         '''
-        cdef vector[long] c_columns
+        cdef vector[int] c_columns
         cdef shared_ptr[CTable] output
         cdef CStatus status
         if columns:
@@ -528,6 +528,35 @@ cdef class Table:
         else:
             raise ValueError(f"Operation failed: : {status.get_msg().decode()}")
 
+    def shuffle(self, hash_columns: List = None):
+        '''
+
+        Args:
+            hash_columns:
+
+        Returns:
+
+        '''
+        cdef shared_ptr[CTable] output
+        cdef vector[int] c_hash_columns
+        cdef CStatus status
+
+        if hash_columns:
+            if isinstance(hash_columns[0], int) or isinstance(hash_columns[0], str):
+                for column in hash_columns:
+                    if isinstance(column, str):
+                        column = self._resolve_column_index_from_column_name(column)
+                    c_hash_columns.push_back(column)
+                status = Shuffle(self.table_shd_ptr, c_hash_columns, output)
+                if status.is_ok():
+                    return pycylon_wrap_table(output)
+                else:
+                    raise ValueError(f"Shuffle operation failed : {status.get_msg().decode()}")
+            else:
+                raise ValueError('Hash columns must be a List of integers or strings')
+        else:
+            raise ValueError('Hash columns are not provided')
+
     def _agg_op(self, column, op):
         cdef shared_ptr[CTable] output
         cdef CStatus status
@@ -571,7 +600,7 @@ cdef class Table:
                 aggregate_ops: List[AggregationOp]):
         cdef CStatus status
         cdef shared_ptr[CTable] output
-        cdef vector[long] caggregate_cols
+        cdef vector[int] caggregate_cols
         cdef vector[CGroupByAggregationOp] caggregate_ops
 
         if not aggregate_cols and not aggregate_ops:
@@ -592,12 +621,130 @@ cdef class Table:
             for aggregate_op in aggregate_ops:
                 caggregate_ops.push_back(aggregate_op)
 
-            status = GroupBy(self.table_shd_ptr, index_col, caggregate_cols, caggregate_ops,
+            status = DistributedHashGroupBy(self.table_shd_ptr, index_col, caggregate_cols, caggregate_ops,
                              output)
             if status.is_ok():
                 return pycylon_wrap_table(output)
             else:
                 raise Exception(f"Groupby operation failed {status.get_msg().decode()}")
+
+    def unique(self, columns: List = None, keep: str = 'first', inplace=False) -> Table:
+        '''
+        Removes duplicates and returns a table with unique values
+        TODO: Fix the order of the records for time series.
+        Args:
+            columns: list of columns for which the unique operation applies
+            keep: 'first' or 'last', 'first' keeps the first record and drops the rest or the
+            opposite for 'last'.
+            inplace: default is False, if set to True, returns a copy of the unique table
+
+        Returns: PyCylon Table
+
+        Examples
+        ----------
+        >>> tb
+            a,b,c,d
+            4,5,6,1
+            1,2,3,2
+            7,8,9,3
+            10,11,12,4
+            15,20,21,5
+            10,11,24,6
+            27,23,24,7
+            1,2,13,8
+            4,5,21,9
+            39,23,24,10
+            10,11,13,11
+            123,11,12,12
+            25,13,12,13
+            30,21,22,14
+            35,1,2,15
+
+        >>> tb.unique(columns=['a', 'b'], keep='first')
+            25,13,12,13
+            39,23,24,10
+            15,20,21,5
+            35,1,2,15
+            10,11,12,4
+            7,8,9,3
+            30,21,22,14
+            123,11,12,12
+            1,2,3,2
+            27,23,24,7
+            4,5,6,1
+        '''
+        cdef CStatus status
+        cdef shared_ptr[CArrowTable] aoutput
+        cdef shared_ptr[CTable] output
+        cdef vector[int] c_cols
+        cdef bool c_first = False
+        if keep == 'first':
+            c_first = True
+        if columns:
+            for col in columns:
+                if isinstance(col, str):
+                    col_idx = self._resolve_column_index_from_column_name(col)
+                    c_cols.push_back(col_idx)
+                elif isinstance(col, int):
+                    c_cols.push_back(col)
+                else:
+                    raise ValueError(f"columns must be str or int, provided {columns}")
+        else:
+            for col in self.column_names:
+                col_idx = self._resolve_column_index_from_column_name(col)
+                c_cols.push_back(col_idx)
+        status = Unique(self.table_shd_ptr, c_cols, output, c_first)
+        if status.is_ok():
+            cylon_table = pycylon_wrap_table(output)
+            if inplace:
+                self.initialize(cylon_table.to_arrow(), self.context)
+            else:
+                return cylon_table
+        else:
+            raise Exception(f"Unique operation failed {status.get_msg().decode()}")
+
+    def distributed_unique(self, columns: List = None, inplace=False):
+        '''
+        Removes duplicates and returns a table with unique values
+        TODO: Fix the order of the records for time series.
+        Args:
+            columns: list of columns for which the unique operation applies
+            inplace: default is False, if set to True, returns a copy of the unique table
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> tb = tb.distributed_unique(['c1', 'c2', 'c3'])
+
+        '''
+        cdef CStatus status
+        cdef shared_ptr[CArrowTable] aoutput
+        cdef shared_ptr[CTable] output
+        cdef vector[int] c_cols
+        if columns:
+            for col in columns:
+                if isinstance(col, str):
+                    col_idx = self._resolve_column_index_from_column_name(col)
+                    c_cols.push_back(col_idx)
+                elif isinstance(col, int):
+                    c_cols.push_back(col)
+                else:
+                    raise ValueError(f"columns must be str or int, provided {columns}")
+        else:
+            for col in self.column_names:
+                col_idx = self._resolve_column_index_from_column_name(col)
+                c_cols.push_back(col_idx)
+        status = DistributedUnique(self.table_shd_ptr, c_cols, output)
+        if status.is_ok():
+            cylon_table = pycylon_wrap_table(output)
+            if inplace:
+                self.initialize(cylon_table.to_arrow(), self.context)
+            else:
+                return cylon_table
+        else:
+            raise Exception(f"Unique operation failed {status.get_msg().decode()}")
 
     @staticmethod
     def from_arrow(context, pyarrow_table) -> Table:
@@ -885,7 +1032,7 @@ cdef class Table:
                  2. int i.e a row index
                  3. str i.e extract the data column-wise by column-name
                  4. List of columns are extracted
-
+                 5. PyCylon Table
         Returns: PyCylon Table
 
         Examples
@@ -1293,7 +1440,7 @@ cdef class Table:
 
         return self._aggregate_filters(other, operator.__and__)
 
-    def __invert__(self):
+    def __invert__(self) -> Table:
         '''
          Invert operator for Table
 
@@ -1318,7 +1465,7 @@ cdef class Table:
 
         return compute.invert(self)
 
-    def __neg__(self):
+    def __neg__(self) -> Table:
         '''
          Negation operator for Table
 
@@ -1343,7 +1490,7 @@ cdef class Table:
 
         return compute.neg(self)
 
-    def __add__(self, other):
+    def __add__(self, other) -> Table:
         '''
          Add operator for Table
          Args:
@@ -1369,7 +1516,7 @@ cdef class Table:
          '''
         return compute.add(self, other)
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> Table:
         '''
          Subtract operator for Table
          Args:
@@ -1395,7 +1542,7 @@ cdef class Table:
          '''
         return compute.subtract(self, other)
 
-    def __mul__(self, other):
+    def __mul__(self, other) -> Table:
         '''
          Multiply operator for Table
          Args:
@@ -1422,7 +1569,7 @@ cdef class Table:
 
         return compute.multiply(self, other)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other) -> Table:
         '''
          Element-wise division operator for Table
          Args:
@@ -1631,9 +1778,6 @@ cdef class Table:
             1   True  False  False
             2  False   True  False
             3  False  False   True
-
-
-
         '''
         return compute.is_null(self)
 
@@ -1689,7 +1833,7 @@ cdef class Table:
         Args:
             column_names: dictionary or full list of new column names
 
-        Returns: PyCylon Table
+        Returns: None
 
         Examples
         --------
@@ -1956,6 +2100,41 @@ cdef class Table:
     def isin(self, value, skip_null=True) -> Table:
         return compute.is_in(self, value, skip_null)
 
+    def applymap(self, func) -> Table:
+        '''
+        Applies an element-wise map function
+        Args:
+            func: lambda or a map function
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> tb
+                     c1       c2
+            0     Rayan  Cameron
+            1  Reynolds   Selena
+            2      Jack    Roger
+            3       Mat   Murphy
+
+        >>> tb.applymap(lambda x: "Hello, " + x)
+                            c1              c2
+            0     Hello, Rayan  Hello, Cameron
+            1  Hello, Reynolds   Hello, Selena
+            2      Hello, Jack    Hello, Roger
+            3       Hello, Mat   Hello, Murphy
+
+        '''
+        new_chunks = []
+        artb = self.to_arrow().combine_chunks()
+        for chunk_array in artb.itercolumns():
+            npr = chunk_array.to_numpy()
+            new_ca = list(map(func, npr))
+            new_chunks.append(pa.array(new_ca))
+        return Table.from_arrow(self.context,
+                                pa.Table.from_arrays(new_chunks, self.column_names))
+
 
 class EmptyTable(Table):
     '''
@@ -1980,7 +2159,7 @@ cdef class SortOptions:
     '''
     Sort Operations for Distribtued Sort
     '''
-    def __cinit__(self, ascending: bool = True, num_bins: int=0, num_samples: int=0):
+    def __cinit__(self, ascending: bool = True, num_bins: int = 0, num_samples: int = 0):
         '''
         Initializes the CSortOptions struct
         Args:

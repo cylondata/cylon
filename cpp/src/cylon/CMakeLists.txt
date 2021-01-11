@@ -125,18 +125,23 @@ add_library(cylon SHARED
         compute/aggregates.hpp
         compute/aggregates.cpp
         compute/aggregate_utils.hpp
+        compute/aggregate_kernels.hpp
         net/comm_operations.hpp
         net/mpi/mpi_operations.cpp
         net/mpi/mpi_operations.hpp
-        groupby/groupby_hash.hpp
-        groupby/groupby_pipeline.hpp
-        groupby/groupby_aggregate_ops.hpp
         groupby/groupby.hpp
         groupby/groupby.cpp
+        groupby/pipeline_groupby.hpp
+        groupby/pipeline_groupby.cpp
+        groupby/hash_groupby.hpp
+        groupby/hash_groupby.cpp
         ${PARQUET_CYLON_FILES}
         partition/partition.hpp
         partition/partition.cpp
         util/macros.hpp
+        thridparty/flat_hash_map/unordered_map.hpp
+        thridparty/flat_hash_map/flat_hash_map.hpp
+        thridparty/flat_hash_map/bytell_hash_map.hpp
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")

@@ -65,7 +65,7 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
     CStatus Sort(shared_ptr[CTable] &table, int sort_column, shared_ptr[CTable] &output)
 
-    CStatus Project(shared_ptr[CTable] &table, const vector[long] &project_columns, shared_ptr[
+    CStatus Project(shared_ptr[CTable] &table, const vector[int] &project_columns, shared_ptr[
             CTable] &output)
 
     CStatus Merge(shared_ptr[CCylonContext] &ctx, vector[shared_ptr[CTable]] &tables,
@@ -98,6 +98,15 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
     CStatus DistributedSort(shared_ptr[CTable] &table, int sort_column, shared_ptr[CTable]
                             &output, CSortOptions sort_options)
+
+    CStatus Shuffle(shared_ptr[CTable] &table, const vector[int] &hash_columns, shared_ptr[CTable]
+                            &output)
+
+    CStatus Unique(shared_ptr[CTable] &input_table, const vector[int] &columns, shared_ptr[CTable]
+                            &output, bool first)
+
+    CStatus DistributedUnique(shared_ptr[CTable] &input_table, const vector[int] &columns,
+                           shared_ptr[CTable]&output)
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CSortOptions "cylon::SortOptions":

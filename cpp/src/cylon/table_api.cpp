@@ -345,7 +345,8 @@ Status Project(const std::string &id, const std::vector<int64_t> &project_column
                const std::string &dest_id) {
   auto table = GetTable(id);
   std::shared_ptr<cylon::Table> out_table;
-  auto status = Project(table, project_columns, out_table);
+  std::vector<int32_t> proj_cols(project_columns.begin(), project_columns.end());
+  auto status = Project(table, proj_cols, out_table);
   if (status.is_ok()) {
     PutTable(dest_id, out_table);
   }

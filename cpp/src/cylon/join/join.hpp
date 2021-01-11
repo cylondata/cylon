@@ -15,9 +15,8 @@
 #ifndef CYLON_TX_JOIN_H
 #define CYLON_TX_JOIN_H
 
-#include <arrow/table.h>
-#include "../arrow/arrow_kernels.hpp"
-#include "../arrow/arrow_hash_kernels.hpp"
+#include <arrow/api.h>
+
 #include "join_config.hpp"
 
 namespace cylon {

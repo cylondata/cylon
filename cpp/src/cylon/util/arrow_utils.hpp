@@ -14,13 +14,12 @@
 
 #ifndef CYLON_SRC_UTIL_ARROW_UTILS_HPP_
 #define CYLON_SRC_UTIL_ARROW_UTILS_HPP_
+
 #include <arrow/table.h>
 #include <arrow/compute/kernel.h>
 
 namespace cylon {
 namespace util {
-
-class FunctionContext;
 
 arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table,
                         int64_t sort_column_index,
