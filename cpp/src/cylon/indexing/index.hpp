@@ -17,10 +17,10 @@ namespace cylon {
 class BaseIndex {
 
  public:
-  explicit BaseIndex(int col_id, int size, std::shared_ptr<cylon::CylonContext> &ctx) {
+  explicit BaseIndex(int col_id, int size, arrow::MemoryPool *pool) {
     col_id_ = col_id;
     size_ = size;
-    ctx_ = ctx;
+    pool_ = pool;
   };
 
   // TODO: virtual destructor
@@ -28,9 +28,9 @@ class BaseIndex {
   //virtual void *GetIndexSet() = 0;
 
   virtual Status Find(void *search_param,
-                    std::shared_ptr<cylon::CylonContext> &ctx,
-                    std::shared_ptr<arrow::Table> &input,
-                    std::shared_ptr<arrow::Table> &output) = 0;
+                      arrow::MemoryPool *pool,
+                      std::shared_ptr<arrow::Table> &input,
+                      std::shared_ptr<arrow::Table> &output) = 0;
 
   virtual std::shared_ptr<arrow::Array> GetIndex() = 0;
 
@@ -41,26 +41,27 @@ class BaseIndex {
     return size_;
   }
 
-  const std::shared_ptr<cylon::CylonContext> &GetContext() const {
-    return ctx_;
+  arrow::MemoryPool *GetPool() const {
+    return pool_;
   }
 
  private:
   int size_;
   int col_id_;
-  std::shared_ptr<cylon::CylonContext> ctx_;
+  arrow::MemoryPool * pool_;
 };
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
 class Index : public BaseIndex {
  public:
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
-  explicit Index(int col_ids, int size, std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<MMAP_TYPE> map) : BaseIndex(col_ids, size, ctx) {
+  explicit Index(int col_ids, int size, arrow::MemoryPool *pool, std::shared_ptr<MMAP_TYPE> map)
+      : BaseIndex(col_ids, size, pool) {
     map_ = map;
   };
 
   Status Find(void *search_param,
-              std::shared_ptr<cylon::CylonContext> &ctx,
+              arrow::MemoryPool *pool,
               std::shared_ptr<arrow::Table> &input,
               std::shared_ptr<arrow::Table> &output) override {
 
@@ -68,7 +69,6 @@ class Index : public BaseIndex {
     std::shared_ptr<arrow::Array> out_idx;
     CTYPE val = *static_cast<CTYPE *>(search_param);
     auto ret = map_->equal_range(val);
-    auto pool = cylon::ToArrowPool(ctx);
     arrow::compute::ExecContext fn_ctx(pool);
     arrow::Int64Builder idx_builder(pool);
     const arrow::Datum input_table(input);
@@ -80,7 +80,8 @@ class Index : public BaseIndex {
     arrow_status = idx_builder.Finish(&out_idx);
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
     const arrow::Datum filter_indices(out_idx);
-    arrow::Result<arrow::Datum> result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+    arrow::Result<arrow::Datum>
+        result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
     output = result.ValueOrDie().table();
     return Status::OK();
@@ -94,8 +95,7 @@ class Index : public BaseIndex {
     arrow::Status arrow_status;
 
     // TODO :: add ctx to Index
-    auto ctx = GetContext();
-    auto pool = cylon::ToArrowPool(ctx);
+    auto pool = GetPool();
     ARROW_BUILDER_T builder(pool);
 
     std::shared_ptr<ARROW_ARRAY_T> index_array;
@@ -103,14 +103,14 @@ class Index : public BaseIndex {
     std::vector<CTYPE> vec(GetSize(), 1);
     LOG(INFO) << "Get Index :: " << GetSize();
 
-    for(const auto &x: *map_){
-      std::cout<< x.first <<":"<< x.second << std::endl;
+    for (const auto &x: *map_) {
+      std::cout << x.first << ":" << x.second << std::endl;
       vec[x.second] = x.first;
     }
 
     builder.AppendValues(vec);
     arrow_status = builder.Finish(&index_array);
-    if(!arrow_status.ok()) {
+    if (!arrow_status.ok()) {
       LOG(ERROR) << "Error occurred in retrieving index";
       return nullptr;
     }
@@ -130,7 +130,7 @@ class IndexKernel {
   explicit IndexKernel() {
 
   }
-  virtual std::shared_ptr<BaseIndex> BuildIndex(std::shared_ptr<cylon::CylonContext> &ctx,
+  virtual std::shared_ptr<BaseIndex> BuildIndex(arrow::MemoryPool *pool,
                                                 std::shared_ptr<arrow::Table> &input_table,
                                                 const int index_column,
                                                 bool index_drop,
@@ -147,7 +147,7 @@ class HashIndexKernel : public IndexKernel {
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
 
-  std::shared_ptr<BaseIndex> BuildIndex(std::shared_ptr<cylon::CylonContext> &ctx,
+  std::shared_ptr<BaseIndex> BuildIndex(arrow::MemoryPool *pool,
                                         std::shared_ptr<arrow::Table> &input_table,
                                         const int index_column,
                                         bool index_drop,
@@ -160,11 +160,11 @@ class HashIndexKernel : public IndexKernel {
       auto val = reader0->GetView(i);
       out_umm_ptr->insert(std::make_pair(val, i));
     }
-    auto index = std::make_shared<Index<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), ctx, out_umm_ptr);
+    auto index = std::make_shared<Index<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), pool, out_umm_ptr);
 
     arrow::Result<std::shared_ptr<arrow::Table>> result = input_table->RemoveColumn(0);
 
-    if(result.status()!= arrow::Status::OK()) {
+    if (result.status() != arrow::Status::OK()) {
       LOG(ERROR) << "Column removal failed ";
       return nullptr;
     }
