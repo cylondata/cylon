@@ -14,9 +14,7 @@ class IndexUtil {
  public:
   static Status Build(std::shared_ptr<cylon::BaseIndex> &index,
                       std::shared_ptr<cylon::Table> &input,
-                      int index_column,
-                      bool drop_index,
-                      std::shared_ptr<cylon::Table> &output);
+                      int index_column);
 
   static Status Find(std::shared_ptr<cylon::BaseIndex> &index,
                      std::shared_ptr<cylon::Table> &find_table,

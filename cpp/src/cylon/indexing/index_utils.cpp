@@ -4,9 +4,7 @@
 
 cylon::Status cylon::IndexUtil::Build(std::shared_ptr<cylon::BaseIndex> &index,
                                       std::shared_ptr<cylon::Table> &input,
-                                      int index_column,
-                                      bool drop_index,
-                                      std::shared_ptr<cylon::Table> &output) {
+                                      int index_column) {
 
   std::shared_ptr<arrow::Table> arrow_out;
 
@@ -22,8 +20,7 @@ cylon::Status cylon::IndexUtil::Build(std::shared_ptr<cylon::BaseIndex> &index,
   auto pool = cylon::ToArrowPool(ctx);
 
   std::shared_ptr<cylon::IndexKernel> kernel = CreateHashIndexKernel(table_, index_column);
-  std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(pool, table_, index_column, drop_index, arrow_out);
-  cylon::Table::FromArrowTable(ctx, arrow_out, output);
+  std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(pool, table_, index_column);
   index = std::move(bi);
   return cylon::Status::OK();
 }

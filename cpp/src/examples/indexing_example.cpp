@@ -158,10 +158,7 @@ int indexing_simple_example() {
 
     long search_value = 4;
 
-    cylon::IndexUtil::Build(index, input1, index_column, drop_index, indexed_table);
-
-    LOG(INFO) << "Testing IndexUtils ";
-    find_table->Print();
+    cylon::IndexUtil::Build(index, input1, index_column);
 
     LOG(INFO) << "Testing Table Properties and Functions";
 

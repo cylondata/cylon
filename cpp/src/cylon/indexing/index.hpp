@@ -132,9 +132,7 @@ class IndexKernel {
   }
   virtual std::shared_ptr<BaseIndex> BuildIndex(arrow::MemoryPool *pool,
                                                 std::shared_ptr<arrow::Table> &input_table,
-                                                const int index_column,
-                                                bool index_drop,
-                                                std::shared_ptr<arrow::Table> &output_table) = 0;
+                                                const int index_column) = 0;
 };
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
@@ -149,9 +147,7 @@ class HashIndexKernel : public IndexKernel {
 
   std::shared_ptr<BaseIndex> BuildIndex(arrow::MemoryPool *pool,
                                         std::shared_ptr<arrow::Table> &input_table,
-                                        const int index_column,
-                                        bool index_drop,
-                                        std::shared_ptr<arrow::Table> &output_table) override {
+                                        const int index_column) override {
 
     const std::shared_ptr<arrow::Array> &idx_column = input_table->column(index_column)->chunk(0);
     std::shared_ptr<MMAP_TYPE> out_umm_ptr = std::make_shared<MMAP_TYPE>(idx_column->length());
@@ -161,18 +157,6 @@ class HashIndexKernel : public IndexKernel {
       out_umm_ptr->insert(std::make_pair(val, i));
     }
     auto index = std::make_shared<Index<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), pool, out_umm_ptr);
-
-    if (index_drop) {
-      arrow::Result<std::shared_ptr<arrow::Table>> result = input_table->RemoveColumn(index_column);
-
-      if (result.status() != arrow::Status::OK()) {
-        LOG(ERROR) << "Column removal failed ";
-        return nullptr;
-      }
-      output_table = std::move(result.ValueOrDie());
-    } else {
-      output_table = input_table;
-    }
 
     return index;
   };
