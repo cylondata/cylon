@@ -26,14 +26,12 @@ class BaseIndex {
   };
 
   // TODO: virtual destructor
-  //virtual void SetIndex(void *index_object) = 0;
-  //virtual void *GetIndexSet() = 0;
 
   virtual Status Find(void *search_param,
                       std::shared_ptr<arrow::Table> &input,
                       std::shared_ptr<arrow::Table> &output) = 0;
 
-  virtual std::shared_ptr<arrow::Array> GetIndex() = 0;
+  virtual std::shared_ptr<arrow::Array> GetIndexAsArray() = 0;
 
   int GetColId() const {
     return col_id_;
@@ -87,24 +85,21 @@ class Index : public BaseIndex {
     return Status::OK();
   }
 
-  std::shared_ptr<arrow::Array> GetIndex() override {
+  std::shared_ptr<arrow::Array> GetIndexAsArray() override {
 
     using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
     using ARROW_BUILDER_T = typename arrow::TypeTraits<ARROW_T>::BuilderType;
 
     arrow::Status arrow_status;
-
-    // TODO :: add ctx to Index
     auto pool = GetPool();
+
     ARROW_BUILDER_T builder(pool);
 
     std::shared_ptr<ARROW_ARRAY_T> index_array;
 
     std::vector<CTYPE> vec(GetSize(), 1);
-    LOG(INFO) << "Get Index :: " << GetSize();
 
     for (const auto &x: *map_) {
-      std::cout << x.first << ":" << x.second << std::endl;
       vec[x.second] = x.first;
     }
 
@@ -140,8 +135,7 @@ class HashIndexKernel : public IndexKernel {
 
  public:
   explicit HashIndexKernel() : IndexKernel() {}
-  // TODO: move like the following way
-  // using CTYPE = typename ARROW_T::c_type;
+
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
 
@@ -163,7 +157,20 @@ class HashIndexKernel : public IndexKernel {
 
 };
 
+using BoolHashIndexKernel = HashIndexKernel<arrow::BooleanType>;
+using UInt8HashIndexKernel = HashIndexKernel<arrow::UInt8Type>;
+using Int8HashIndexKernel = HashIndexKernel<arrow::Int8Type>;
+using UInt16HashIndexKernel = HashIndexKernel<arrow::UInt16Type>;
+using Int16HashIndexKernel = HashIndexKernel<arrow::Int16Type>;
+using UInt32HashIndexKernel = HashIndexKernel<arrow::UInt32Type>;
+using Int32HashIndexKernel = HashIndexKernel<arrow::Int32Type>;
+using UInt64HashIndexKernel = HashIndexKernel<arrow::UInt64Type>;
 using Int64HashIndexKernel = HashIndexKernel<arrow::Int64Type>;
+using HalfFloatHashIndexKernel = HashIndexKernel<arrow::HalfFloatType>;
+using FloatHashIndexKernel = HashIndexKernel<arrow::FloatType>;
+using DoubleHashIndexKernel = HashIndexKernel<arrow::DoubleType>;
+//using StringHashIndexKernel = HashIndexKernel<arrow::StringType>;
+//using BinaryHashIndexKernel = HashIndexKernel<arrow::BinaryType>;
 
 std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column);
 

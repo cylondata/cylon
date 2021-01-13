@@ -22,20 +22,7 @@
 
 #include "indexing/index_utils.hpp"
 
-class Hasher {
- public:
-  size_t operator()(std::string const &key) const {     // the parameter type should be the same as the type of key of unordered_map
-    size_t hash = 0;
-    for (size_t i = 0; i < key.size(); i++) {
-      hash += key[i] % 7;
-    }
-    return hash;
-  }
-};
-
 int arrow_take_test();
-
-int vector_populate();
 
 int indexing_simple_example();
 /**
@@ -129,79 +116,24 @@ int indexing_simple_example() {
   const int index_column = 0;
   bool drop_index = true;
 
-  //
-//  input1->Set_Index(index_column, drop_index, output);
-//
-//  long search_val = 4;
-//
-//  std::cout << "Find Result" << std::endl;
-//
-//  input1->Find_From_Index(&search_val, index_column, output);
-//
-//  std::cout << "============================" << std::endl;
-//
-//  output->Print();
-//
-//  std::cout << "============================" << std::endl;
-//
-//  //arrow_take_test(ctx, input1);
-//
-//  std::shared_ptr<arrow::Array> arr = input1->GetIndex()->GetIndex();
-//  std::cout << "Index Values" << std::endl;
-//
-//  for (int64_t i = 0; i < arr->length(); i++) {
-//    std::cout << arr->GetScalar(i).ValueOrDie()->ToString() << std::endl;
-//  }
+  std::shared_ptr<cylon::BaseIndex> index;
+  std::shared_ptr<cylon::Table> indexed_table;
 
-    std::shared_ptr<cylon::BaseIndex> index;
-    std::shared_ptr<cylon::Table> indexed_table;
+  long search_value = 4;
 
-    long search_value = 4;
+  cylon::IndexUtil::Build(index, input1, index_column);
 
-    cylon::IndexUtil::Build(index, input1, index_column);
+  LOG(INFO) << "Testing Table Properties and Functions";
 
-    LOG(INFO) << "Testing Table Properties and Functions";
+  input1->Set_Index(index, drop_index);
 
-    input1->Set_Index(index, drop_index);
+  input1->Find(&search_value, find_table);
 
-    input1->Find(&search_value, find_table);
-
-    find_table->Print();
-
-
-
+  find_table->Print();
 
   return 0;
 }
 
-int vector_populate() {
-  auto start_start = std::chrono::steady_clock::now();
-  int size = 10;
-  std::vector<int64_t> vec(size, 1);
-  auto end_start = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "Vector Generation time "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                end_start - start_start).count() << "[ms]";
-
-  auto p1 = std::chrono::steady_clock::now();
-  for (int idx = 0; idx < vec.size(); idx++) {
-    vec[idx] = idx;
-  }
-  auto p2 = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "Vector Repopulate time "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                p2 - p1).count() << "[ms]";
-
-  for (int idx = 0; idx < vec.size(); idx++) {
-    std::cout << vec[idx] << " ";
-  }
-  std::cout << std::endl;
-
-
-  return 0;
-}
 
 
 
