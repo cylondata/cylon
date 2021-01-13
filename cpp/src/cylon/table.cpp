@@ -1046,36 +1046,36 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in,
   return Unique(shuffle_out, cols, out);
 }
 
-Status Table::Set_Index(const int index_column, bool drop_index, std::shared_ptr<cylon::Table> &out) {
-  std::shared_ptr<arrow::Table> arrow_out;
-
-  if (table_->column(0)->num_chunks() > 1) {
-    const arrow::Result<std::shared_ptr<arrow::Table>> &res = table_->CombineChunks(cylon::ToArrowPool(ctx));
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
-    table_ = res.ValueOrDie();
-  }
-
-  auto pool = cylon::ToArrowPool(ctx);
-
-  std::shared_ptr<cylon::IndexKernel> kernel = CreateHashIndexKernel(table_, index_column);
-  std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(pool, table_, index_column, drop_index, arrow_out);
-  table_ = std::move(arrow_out);
-  base_index_ = std::move(bi);
-  return Status::OK();
-}
-
 std::shared_ptr<BaseIndex> Table::GetIndex() {
   return base_index_;
 }
+Status Table::Set_Index(std::shared_ptr<cylon::BaseIndex> &index, bool drop_index) {
+  base_index_ = index;
+  if (drop_index) {
+    arrow::Result<std::shared_ptr<arrow::Table>> result = table_->RemoveColumn(base_index_->GetColId());
+    if (result.status() != arrow::Status::OK()) {
+      LOG(ERROR) << "Column removal failed ";
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+    }
+    table_ = std::move(result.ValueOrDie());
+  }
 
-Status Table::Find_From_Index(void *value, int index_column, std::shared_ptr<cylon::Table> &out) {
-  std::shared_ptr<arrow::Table> ar_out;
-  auto pool = cylon::ToArrowPool(ctx);
-  if(base_index_ != nullptr && base_index_->GetColId() == index_column) {
-    base_index_->Find(value, pool, table_, ar_out);
-    cylon::Table::FromArrowTable(ctx, ar_out, out);
+  return Status::OK();
+}
+Status Table::Find(void *search_value, std::shared_ptr<cylon::Table> &result) {
+  std::shared_ptr<arrow::Table> arrow_result;
+  Status find_status;
+  if (base_index_) {
+    find_status = base_index_->Find(search_value, table_, arrow_result);
+    if (!find_status.is_ok()) {
+      LOG(ERROR) << "Find Failed!";
+      return find_status;
+    }
+    cylon::Table::FromArrowTable(ctx, arrow_result, result);
+
   } else {
-    LOG(ERROR) << "Index column doesn't match the provided column";
+    // TODO: implement default search
+    LOG(ERROR) << "Not Implemented !!!";
   }
   return Status::OK();
 }

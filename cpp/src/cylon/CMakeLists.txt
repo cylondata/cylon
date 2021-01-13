@@ -114,6 +114,8 @@ add_library(cylon SHARED
         thridparty/flat_hash_map/bytell_hash_map.hpp
         indexing/index.hpp
         indexing/index.cpp
+        indexing/index_utils.hpp
+        indexing/index_utils.cpp
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")

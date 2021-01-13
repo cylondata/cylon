@@ -1,4 +1,5 @@
 #include "index.hpp"
+#include "table.hpp"
 
 namespace cylon {
 
@@ -25,4 +26,8 @@ std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table>
   //TODO : returning nullptr issue
   return std::unique_ptr<IndexKernel>();
 }
+
 }
+
+
+

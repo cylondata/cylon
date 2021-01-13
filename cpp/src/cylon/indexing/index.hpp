@@ -1,16 +1,18 @@
 #ifndef CYLON_SRC_CYLON_INDEXING_INDEX_H_
 #define CYLON_SRC_CYLON_INDEXING_INDEX_H_
 
+#include "index.hpp"
+
+#include "status.hpp"
+#include "ctx/cylon_context.hpp"
+#include "ctx/arrow_memory_pool_utils.hpp"
+#include "util/macros.hpp"
+
 #include <arrow/table.h>
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
 #include <arrow/compute/kernel.h>
 #include <arrow/arrow_comparator.hpp>
-#include "index.hpp"
-#include "util/macros.hpp"
-#include "status.hpp"
-#include "ctx/cylon_context.hpp"
-#include "ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
 
@@ -28,7 +30,6 @@ class BaseIndex {
   //virtual void *GetIndexSet() = 0;
 
   virtual Status Find(void *search_param,
-                      arrow::MemoryPool *pool,
                       std::shared_ptr<arrow::Table> &input,
                       std::shared_ptr<arrow::Table> &output) = 0;
 
@@ -48,7 +49,7 @@ class BaseIndex {
  private:
   int size_;
   int col_id_;
-  arrow::MemoryPool * pool_;
+  arrow::MemoryPool *pool_;
 };
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
@@ -61,7 +62,6 @@ class Index : public BaseIndex {
   };
 
   Status Find(void *search_param,
-              arrow::MemoryPool *pool,
               std::shared_ptr<arrow::Table> &input,
               std::shared_ptr<arrow::Table> &output) override {
 
@@ -69,8 +69,8 @@ class Index : public BaseIndex {
     std::shared_ptr<arrow::Array> out_idx;
     CTYPE val = *static_cast<CTYPE *>(search_param);
     auto ret = map_->equal_range(val);
-    arrow::compute::ExecContext fn_ctx(pool);
-    arrow::Int64Builder idx_builder(pool);
+    arrow::compute::ExecContext fn_ctx(GetPool());
+    arrow::Int64Builder idx_builder(GetPool());
     const arrow::Datum input_table(input);
     std::vector<int64_t> filter_vals;
     for (auto it = ret.first; it != ret.second; ++it) {
@@ -162,13 +162,18 @@ class HashIndexKernel : public IndexKernel {
     }
     auto index = std::make_shared<Index<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), pool, out_umm_ptr);
 
-    arrow::Result<std::shared_ptr<arrow::Table>> result = input_table->RemoveColumn(0);
+    if (index_drop) {
+      arrow::Result<std::shared_ptr<arrow::Table>> result = input_table->RemoveColumn(index_column);
 
-    if (result.status() != arrow::Status::OK()) {
-      LOG(ERROR) << "Column removal failed ";
-      return nullptr;
+      if (result.status() != arrow::Status::OK()) {
+        LOG(ERROR) << "Column removal failed ";
+        return nullptr;
+      }
+      output_table = std::move(result.ValueOrDie());
+    } else {
+      output_table = input_table;
     }
-    output_table = std::move(result.ValueOrDie());
+
     return index;
   };
 

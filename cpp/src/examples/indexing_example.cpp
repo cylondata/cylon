@@ -20,6 +20,8 @@
 #include <table.hpp>
 #include <ctx/arrow_memory_pool_utils.hpp>
 
+#include "indexing/index_utils.hpp"
+
 class Hasher {
  public:
   size_t operator()(std::string const &key) const {     // the parameter type should be the same as the type of key of unordered_map
@@ -128,30 +130,49 @@ int indexing_simple_example() {
   bool drop_index = true;
 
   //
-  input1->Set_Index(index_column, drop_index, output);
+//  input1->Set_Index(index_column, drop_index, output);
+//
+//  long search_val = 4;
+//
+//  std::cout << "Find Result" << std::endl;
+//
+//  input1->Find_From_Index(&search_val, index_column, output);
+//
+//  std::cout << "============================" << std::endl;
+//
+//  output->Print();
+//
+//  std::cout << "============================" << std::endl;
+//
+//  //arrow_take_test(ctx, input1);
+//
+//  std::shared_ptr<arrow::Array> arr = input1->GetIndex()->GetIndex();
+//  std::cout << "Index Values" << std::endl;
+//
+//  for (int64_t i = 0; i < arr->length(); i++) {
+//    std::cout << arr->GetScalar(i).ValueOrDie()->ToString() << std::endl;
+//  }
 
-  long search_val = 4;
+    std::shared_ptr<cylon::BaseIndex> index;
+    std::shared_ptr<cylon::Table> indexed_table;
 
-  std::cout << "Find Result" << std::endl;
+    long search_value = 4;
 
-  input1->Find_From_Index(&search_val, index_column, output);
+    cylon::IndexUtil::Build(index, input1, index_column, drop_index, indexed_table);
 
-  std::cout << "============================" << std::endl;
+    LOG(INFO) << "Testing IndexUtils ";
+    find_table->Print();
 
-  output->Print();
+    LOG(INFO) << "Testing Table Properties and Functions";
 
-  std::cout << "============================" << std::endl;
+    input1->Set_Index(index, drop_index);
 
-  //arrow_take_test(ctx, input1);
+    input1->Find(&search_value, find_table);
 
-  std::shared_ptr<arrow::Array> arr = input1->GetIndex()->GetIndex();
-  std::cout << "Index Values" << std::endl;
+    find_table->Print();
 
-  for (int64_t i = 0; i < arr->length(); i++) {
-    std::cout << arr->GetScalar(i).ValueOrDie()->ToString() << std::endl;
-  }
 
-  vector_populate();
+
 
   return 0;
 }
