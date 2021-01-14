@@ -116,10 +116,6 @@ add_library(cylon SHARED
         indexing/index.cpp
         indexing/index_utils.hpp
         indexing/index_utils.cpp
-        indexing/loc_indexer.hpp
-        indexing/loc_indexer.cpp
-        indexing/iloc_indexer.hpp
-        indexing/iloc_indexer.cpp
         indexing/indexer.hpp
         indexing/indexer.cpp
         )
