@@ -113,6 +113,10 @@ int indexing_simple_example() {
 
   input1->Print();
 
+  // Create HashIndex
+
+  std::cout << "Create Hash Index " << std::endl;
+
   const int index_column = 0;
   bool drop_index = true;
 
@@ -130,6 +134,22 @@ int indexing_simple_example() {
   input1->Find(&search_value, find_table);
 
   find_table->Print();
+
+  // Create Range Index
+
+  std::cout << "Create Range Index " << std::endl;
+
+  std::shared_ptr<cylon::RangeIndex> range_index;
+  std::shared_ptr<cylon::BaseIndex> bindex;
+  std::shared_ptr<cylon::Table> range_indexed_table;
+
+  cylon::IndexUtil::Build(bindex, input1, -1);
+
+  range_index = std::dynamic_pointer_cast<cylon::RangeIndex>(bindex);
+
+  std::cout << "Start : " << range_index->GetStart() << std::endl;
+  std::cout << "Step : " << range_index->GetStep() << std::endl;
+  std::cout << "Stop : " << range_index->GetAnEnd() << std::endl;
 
   return 0;
 }

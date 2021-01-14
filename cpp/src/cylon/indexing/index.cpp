@@ -21,16 +21,75 @@ std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table>
     case arrow::Type::DOUBLE:return std::make_unique<DoubleHashIndexKernel>();
     case arrow::Type::STRING:return nullptr;
     case arrow::Type::BINARY:return nullptr;
-    default: return nullptr;
+    default: return std::make_unique<GenericRangeIndexKernel>();
   }
 
-  //TODO : returning nullptr issue
-  return std::unique_ptr<IndexKernel>();
-
-
+}
+std::unique_ptr<IndexKernel> CreateIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column) {
+  if (index_column == -1) {
+    return std::make_unique<GenericRangeIndexKernel>();
+  } else {
+    return CreateHashIndexKernel(input_table, index_column);
+  }
+}
+cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *pool) : BaseIndex(0, size, pool) {
+  start_ = start;
+  end_ = size;
+  step_ = step;
+}
+Status RangeIndex::Find(void *search_param,
+                        std::shared_ptr<arrow::Table> &input,
+                        std::shared_ptr<arrow::Table> &output) {
+  LOG(ERROR) << "Not Implemented!";
+  return Status::OK();
 }
 
+std::shared_ptr<arrow::Array> RangeIndex::GetIndexAsArray() {
+  return std::shared_ptr<arrow::Array>();
 }
+int RangeIndex::GetColId() const {
+  return BaseIndex::GetColId();
+}
+int RangeIndex::GetSize() const {
+  return BaseIndex::GetSize();
+}
+arrow::MemoryPool *RangeIndex::GetPool() const {
+  return BaseIndex::GetPool();
+}
+int RangeIndex::GetStart() const {
+  return start_;
+}
+int RangeIndex::GetAnEnd() const {
+  return end_;
+}
+int RangeIndex::GetStep() const {
+  return step_;
+}
+
+RangeIndexKernel::RangeIndexKernel() {}
+
+std::shared_ptr<BaseIndex> RangeIndexKernel::BuildIndex(arrow::MemoryPool *pool,
+                                                        std::shared_ptr<arrow::Table> &input_table,
+                                                        const int index_column) {
+  std::shared_ptr<RangeIndex> range_index;
+
+  range_index = std::make_shared<RangeIndex>(0, input_table->num_rows(), 1, pool);
+
+  return range_index;
+}
+
+int BaseIndex::GetColId() const {
+  return col_id_;
+}
+int BaseIndex::GetSize() const {
+  return size_;
+}
+arrow::MemoryPool *BaseIndex::GetPool() const {
+  return pool_;
+}
+}
+
+
 
 
 

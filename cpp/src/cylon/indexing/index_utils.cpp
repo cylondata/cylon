@@ -1,5 +1,3 @@
-
-
 #include "index_utils.hpp"
 
 cylon::Status cylon::IndexUtil::Build(std::shared_ptr<cylon::BaseIndex> &index,
@@ -19,11 +17,12 @@ cylon::Status cylon::IndexUtil::Build(std::shared_ptr<cylon::BaseIndex> &index,
 
   auto pool = cylon::ToArrowPool(ctx);
 
-  std::shared_ptr<cylon::IndexKernel> kernel = CreateHashIndexKernel(table_, index_column);
+  std::shared_ptr<cylon::IndexKernel> kernel = CreateIndexKernel(table_, index_column);
   std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(pool, table_, index_column);
   index = std::move(bi);
   return cylon::Status::OK();
 }
+
 
 cylon::Status cylon::IndexUtil::Find(std::shared_ptr<cylon::BaseIndex> &index,
                                      std::shared_ptr<cylon::Table> &find_table,
@@ -41,3 +40,8 @@ cylon::Status cylon::IndexUtil::Find(std::shared_ptr<cylon::BaseIndex> &index,
   }
   return cylon::Status::OK();
 }
+
+
+
+
+

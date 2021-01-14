@@ -33,16 +33,11 @@ class BaseIndex {
 
   virtual std::shared_ptr<arrow::Array> GetIndexAsArray() = 0;
 
-  int GetColId() const {
-    return col_id_;
-  }
-  int GetSize() const {
-    return size_;
-  }
+  virtual int GetColId() const;
 
-  arrow::MemoryPool *GetPool() const {
-    return pool_;
-  }
+  virtual int GetSize() const;
+
+  virtual arrow::MemoryPool *GetPool() const;
 
  private:
   int size_;
@@ -54,7 +49,7 @@ template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
 class Index : public BaseIndex {
  public:
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
-  explicit Index(int col_ids, int size, arrow::MemoryPool *pool, std::shared_ptr<MMAP_TYPE> map)
+  Index(int col_ids, int size, arrow::MemoryPool *pool, std::shared_ptr<MMAP_TYPE> map)
       : BaseIndex(col_ids, size, pool) {
     map_ = map;
   };
@@ -113,10 +108,39 @@ class Index : public BaseIndex {
     return index_array;
   }
 
+  int GetColId() const override {
+    return BaseIndex::GetColId();
+  }
+  int GetSize() const override {
+    return BaseIndex::GetSize();
+  }
+  arrow::MemoryPool *GetPool() const override {
+    return BaseIndex::GetPool();
+  }
+
  private:
-  int col_ids_;
-  int size_;
   std::shared_ptr<MMAP_TYPE> map_;
+
+};
+
+class RangeIndex : public BaseIndex {
+ public:
+  RangeIndex(int start, int size, int step, arrow::MemoryPool *pool);
+  Status Find(void *search_param, std::shared_ptr<arrow::Table> &input, std::shared_ptr<arrow::Table> &output) override;
+  std::shared_ptr<arrow::Array> GetIndexAsArray() override;
+
+  int GetColId() const override;
+  int GetSize() const override;
+  arrow::MemoryPool *GetPool() const override;
+
+  int GetStart() const;
+  int GetAnEnd() const;
+  int GetStep() const;
+
+ private:
+  int start_ = 0;
+  int end_ = 0;
+  int step_ = 1;
 
 };
 
@@ -128,6 +152,16 @@ class IndexKernel {
   virtual std::shared_ptr<BaseIndex> BuildIndex(arrow::MemoryPool *pool,
                                                 std::shared_ptr<arrow::Table> &input_table,
                                                 const int index_column) = 0;
+};
+
+class RangeIndexKernel : public IndexKernel {
+ public:
+  RangeIndexKernel();
+
+  std::shared_ptr<BaseIndex> BuildIndex(arrow::MemoryPool *pool,
+                                        std::shared_ptr<arrow::Table> &input_table,
+                                        const int index_column) override;
+
 };
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
@@ -171,8 +205,11 @@ using FloatHashIndexKernel = HashIndexKernel<arrow::FloatType>;
 using DoubleHashIndexKernel = HashIndexKernel<arrow::DoubleType>;
 //using StringHashIndexKernel = HashIndexKernel<arrow::StringType>;
 //using BinaryHashIndexKernel = HashIndexKernel<arrow::BinaryType>;
+using GenericRangeIndexKernel = RangeIndexKernel;
 
 std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column);
+
+std::unique_ptr<IndexKernel> CreateIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column);
 
 }
 
