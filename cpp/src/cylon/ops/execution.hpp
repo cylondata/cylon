@@ -8,6 +8,7 @@ namespace cylon {
 
 class Op;
 
+// todo keep these in a tree structure rather than adhoc vectors and attach it to cylon::Op::AddChild methods
 class Execution {
  public:
   virtual bool IsComplete() = 0;
@@ -23,33 +24,33 @@ class Execution {
  */
 class RoundRobinExecution : public Execution {
  private:
-  std::vector<cylon::Op *> ops;
-  std::vector<std::size_t> indices;
-  std::size_t current_index{};
+  std::vector<Op *> ops;
+  std::vector<size_t> indices;
+  size_t current_index{};
  public:
-  void AddOp(cylon::Op *op);
+  void AddOp(Op *op);
   bool IsComplete() override;
 };
 
 class JoinExecution : public Execution {
 private:
-  std::vector<cylon::Op *> p_ops;
-  std::vector<cylon::Op *> s_ops;
-  cylon::Op *join;
-  std::vector<std::size_t> p_indices;
-  std::vector<std::size_t> s_indices;
+  std::vector<Op *> p_ops;
+  std::vector<Op *> s_ops;
+  Op *join;
+  std::vector<size_t> p_indices;
+  std::vector<size_t> s_indices;
   std::size_t current_index{};
   int state = 0;
 public:
-  void AddP(cylon::Op *op) {
+  void AddP(Op *op) {
     p_ops.push_back(op);
-    this->p_indices.push_back(this->p_ops.size() - 1);
+    p_indices.push_back(p_ops.size() - 1);
   }
-  void AddS(cylon::Op *op) {
+  void AddS(Op *op) {
     s_ops.push_back(op);
-    this->s_indices.push_back(this->s_ops.size() - 1);
+    s_indices.push_back(s_ops.size() - 1);
   }
-  void AddJoin(cylon::Op *op) {
+  void AddJoin(Op *op) {
     join = op;
   }
   bool IsComplete() override;

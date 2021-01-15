@@ -26,24 +26,27 @@
  * todo some functions can be final. Couldn't find a alternative for Java's final methods yet
  */
 namespace cylon {
-class ResultsCallback {
- public:
-  virtual void OnResult(int tag, std::shared_ptr<cylon::Table> table) = 0;
-};
+
+//class ResultsCallback {
+// public:
+//  virtual void OnResult(int tag, std::shared_ptr<Table> &table) = 0;
+//};
+
+using ResultsCallback = std::function<void(int tag, const std::shared_ptr<Table> &table)>;
 
 class Op {
  private:
-  std::unordered_map<int, std::queue<std::shared_ptr<cylon::Table>> *> queues{};
+  std::unordered_map<int, std::queue<std::shared_ptr<Table>> *> queues{};
 
   // this count should be increased when adding table to the queues,
   // and should be decrease when removing a table from the queue
   int inputs_count = 0;
-  std::unordered_map<int, cylon::Op *> children{};
-  std::shared_ptr<ResultsCallback> callback;
-  std::function<int(int)> router;
+  std::unordered_map<int, Op *> children{};
+  ResultsCallback callback;
+//  std::function<int(int)> router;
 
-  std::queue<std::shared_ptr<cylon::Table>> *GetQueue(int tag);
-  Op *GetChild(int tag);
+//  std::queue<std::shared_ptr<Table>> *GetQueue(int tag);
+//  Op *GetChild(int tag);
 
   // capturing the parent status
   int32_t parents = 0;
@@ -62,14 +65,12 @@ class Op {
    * @param table pointer to the table
    * @return true if this op is a leaf, false otherwise
    */
-  bool TerminalCheck(int tag, std::shared_ptr<cylon::Table> table);
+  bool TerminalCheck(int tag, std::shared_ptr<Table> &table);
 
  protected:
-  std::shared_ptr<arrow::Schema> schema;
-
   int id;
-
   std::shared_ptr<cylon::CylonContext> ctx_;
+  std::shared_ptr<arrow::Schema> schema;
 
   /**
    * Parent Op will call this method on (this)child when this has been added a child to the parent Op
@@ -94,7 +95,7 @@ class Op {
   * @param tag tag of the table
   * @param table pointer to the table
   */
-  void InsertToAllChildren(int tag, std::shared_ptr<cylon::Table> table);
+  void InsertToAllChildren(int tag, std::shared_ptr<Table> &table);
 
   /**
    * Inserts the table to the input queue of a specific child todo this is a util, possible to move outside the class
@@ -102,13 +103,14 @@ class Op {
    * @param child target child ID
    * @param table pointer to the table
    */
-  void InsertToChild(int tag, int child, std::shared_ptr<cylon::Table> table);
+  void InsertToChild(int tag, int child, std::shared_ptr<Table> &table);
 
  public:
   Op(const std::shared_ptr<cylon::CylonContext> &ctx,
      const std::shared_ptr<arrow::Schema> &schema,
      int id,
-     const std::shared_ptr<ResultsCallback> &callback, bool root_op = false);
+     ResultsCallback callback,
+     bool root_op = false);
 
   /**
    * This function can be used to link a child Op to parent Op
@@ -149,7 +151,7 @@ class Op {
    */
   virtual bool IsComplete();
 
-  bool DidSomeWork();
+  bool DidSomeWork() const;
 
   /**
    * This function will be called when no more inputs will be received to this Op, ie parents have been finalized
@@ -164,25 +166,26 @@ class Op {
 
   int GetId() const;
 
-  ~Op();
+  virtual ~Op();
 };
 
 class RootOp : public Op {
- private:
-  Execution *execution_;
- protected:
-  void SetExecution(Execution *execution);
-
  public:
   RootOp(const std::shared_ptr<cylon::CylonContext> &ctx,
          const std::shared_ptr<arrow::Schema> &schema,
          int id,
-         const std::shared_ptr<ResultsCallback> &callback);
+         const ResultsCallback &callback);
   bool Finalize() override;
   void OnParentsFinalized() override;
   bool Execute(int tag, std::shared_ptr<Table> &table) override;
   Execution *GetExecution();
   void WaitForCompletion();
+
+ protected:
+  void SetExecution(Execution *execution);
+
+ private:
+  Execution *execution_ = nullptr;
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_PARALLEL_OP_HPP_

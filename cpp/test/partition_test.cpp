@@ -31,7 +31,7 @@ TEST_CASE("Partition testing", "[join]") {
 
   SECTION("modulo partition test") {
     std::vector<uint32_t> partitions, count;
-    status = cylon::PartitionByHashing(table, 0, WORLD_SZ, partitions, count);
+    status = cylon::MapToHashPartitions(table, 0, WORLD_SZ, partitions, count);
     REQUIRE((status.is_ok() && (partitions.size() == rows) && (count.size() == (size_t) WORLD_SZ)));
 
     const std::shared_ptr<arrow::Int32Array> &arr
@@ -54,7 +54,7 @@ TEST_CASE("Partition testing", "[join]") {
 
   SECTION("hash partition test") {
     std::vector<uint32_t> partitions, count;
-    status = cylon::PartitionByHashing(table, 1, WORLD_SZ, partitions, count);
+    status = cylon::MapToHashPartitions(table, 1, WORLD_SZ, partitions, count);
     REQUIRE((status.is_ok() && (partitions.size() == rows) && (count.size() == (size_t) WORLD_SZ)));
 
     const std::shared_ptr<arrow::DoubleArray> &arr
@@ -80,7 +80,7 @@ TEST_CASE("Partition testing", "[join]") {
 
   SECTION("range partition test") {
     std::vector<uint32_t> partitions, count;
-    status = cylon::PartitionBySorting(table, 0, WORLD_SZ, partitions, count, true, table->Rows(), WORLD_SZ);
+    status = cylon::MapToSortPartitions(table, 0, WORLD_SZ, partitions, count, true, table->Rows(), WORLD_SZ);
     REQUIRE((status.is_ok() && (partitions.size() == rows) && (count.size() == (size_t) WORLD_SZ)));
 
     for (int i = 0; i < table->Rows() - 1; i++) {

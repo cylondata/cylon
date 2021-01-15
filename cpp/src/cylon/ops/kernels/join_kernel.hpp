@@ -20,7 +20,6 @@
 #include <vector>
 #include <queue>
 #include <table.hpp>
-#include <ops/kernels/row_comparator.hpp>
 
 namespace cylon {
 namespace kernel {
@@ -28,9 +27,9 @@ class JoinKernel {
  private:
   std::queue<std::shared_ptr<arrow::Table >> left_tables{};
   std::queue<std::shared_ptr<arrow::Table >> right_tables{};
-  std::shared_ptr<arrow::Schema> schema;
   std::shared_ptr<CylonContext> ctx;
-  std::shared_ptr<cylon::join::config::JoinConfig> join_config;
+  std::shared_ptr<arrow::Schema> schema;
+  const cylon::join::config::JoinConfig* join_config;
 
  public:
   ~JoinKernel() {
@@ -39,7 +38,7 @@ class JoinKernel {
 
   JoinKernel(const std::shared_ptr<cylon::CylonContext> &ctx,
              const std::shared_ptr<arrow::Schema> &schema,
-             const std::shared_ptr<cylon::join::config::JoinConfig> &join_config);
+             const cylon::join::config::JoinConfig* join_config);
   void InsertTable(int tag, const std::shared_ptr<cylon::Table> &table);
   cylon::Status Finalize(std::shared_ptr<cylon::Table> &result);
 };

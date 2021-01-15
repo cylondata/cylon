@@ -89,28 +89,16 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << "Read tables in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
-  class Cb : public cylon::ResultsCallback {
-   public:
-    int r;
-    Cb(int rank) : r(rank) {}
-   public:
-    virtual void OnResult(int tag, std::shared_ptr<cylon::Table> table) {
-      LOG(INFO) << "Result received " << table->Rows();
-    }
+
+  const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr<cylon::Table> &table) {
+    LOG(INFO) << tag << " Result received " << table->Rows();
   };
-  auto cb = std::make_shared<Cb>(ctx->GetRank());
-  std::shared_ptr<std::vector<int>> hash_cols = std::make_shared<std::vector<int>>();
-  hash_cols->push_back(0);
-  auto jc = cylon::join::config::JoinConfig::InnerJoin(0, 0);
-  cylon::PartitionOpConfig *kP = new cylon::PartitionOpConfig(ctx->GetWorldSize(), hash_cols);
-  std::shared_ptr<cylon::PartitionOpConfig> kArgs = std::shared_ptr<cylon::PartitionOpConfig>(kP);
-  std::shared_ptr<cylon::join::config::JoinConfig>
-      kPtr = std::shared_ptr<cylon::join::config::JoinConfig>(&jc);
-  auto cfg = std::make_shared<cylon::DisJoinOpConfig>(kArgs,
-                                                      kPtr);
-  std::shared_ptr<cylon::CylonContext> kCtx = std::shared_ptr<cylon::CylonContext>(ctx);
-  auto op = cylon::DisJoinOP(kCtx,
-                             first_table->get_table()->schema(), 0, cb, cfg);
+
+  const cylon::join::config::JoinConfig &join_config = cylon::join::config::JoinConfig::InnerJoin(0, 0);
+  const cylon::PartitionOpConfig &part_config = cylon::PartitionOpConfig(ctx->GetWorldSize(), {0});
+  const cylon::DisJoinOpConfig &dist_join_config = cylon::DisJoinOpConfig(part_config, join_config);
+
+  auto op = cylon::DisJoinOP(ctx, first_table->get_table()->schema(), 0, callback, dist_join_config);
 
   op.InsertTable(100, first_table);
   op.InsertTable(200, second_table);

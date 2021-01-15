@@ -18,29 +18,9 @@
 cylon::AllToAllOp::AllToAllOp(const std::shared_ptr<CylonContext> &ctx,
                               const std::shared_ptr<arrow::Schema> &schema,
                               int id,
-                              const std::shared_ptr<ResultsCallback> &callback,
-                              const std::shared_ptr<AllToAllOpConfig> &config)
+                              const ResultsCallback &callback,
+                              const AllToAllOpConfig &config)
     : Op(ctx, schema, id, callback) {
-/*  class AllToAllListener : public cylon::ArrowCallback {
-    AllToAllOp *shuffle_op;
-    std::shared_ptr<CylonContext> ctx;
-
-   public:
-    explicit AllToAllListener(const std::shared_ptr<CylonContext> &ctx, AllToAllOp *shuffle_op) {
-      this->shuffle_op = shuffle_op;
-      this->ctx = ctx;
-    }
-
-    bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int tag) override {
-      // todo check whether the const cast is appropriate
-      auto tab = std::make_shared<cylon::Table>(const_cast<std::shared_ptr<arrow::Table> &>(table), ctx);
-      this->shuffle_op->InsertToAllChildren(tag, tab);
-      return true;
-    };
-  };
-    std::shared_ptr<AllToAllListener> all_to_all_listener = std::make_shared<AllToAllListener>(ctx, this);
-  */
-
   std::shared_ptr<CylonContext> ctx_cp = ctx;
   ArrowCallback all_to_all_listener = [&](int source, const std::shared_ptr<arrow::Table> &table, int tag) {
     auto tab = std::make_shared<cylon::Table>(const_cast<std::shared_ptr<arrow::Table> &>(table), ctx_cp);

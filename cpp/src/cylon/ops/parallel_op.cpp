@@ -14,39 +14,39 @@
 
 #include "parallel_op.hpp"
 
-cylon::Op *cylon::Op::GetChild(int tag) {
-  return this->children.find(tag)->second;
-}
+#include <utility>
+
+//cylon::Op *cylon::Op::GetChild(int tag) {
+//  return this->children.at(tag);
+//}
 
 void cylon::Op::DrainQueueToChild(int queue, int child, int tag) {
-  auto q = GetQueue(queue);
-  auto c = GetChild(child);
+  const auto &q = this->queues.at(queue);
+  const auto &c = this->children.at(child);
   while (!q->empty()) {
     c->InsertTable(tag, q->front());
     q->pop();
   }
 }
 
-std::queue<std::shared_ptr<cylon::Table>> *cylon::Op::GetQueue(int tag) {
-  return this->queues.find(tag)->second;
-}
+//std::queue<std::shared_ptr<cylon::Table>> *cylon::Op::GetQueue(int tag) {
+//  return this->queues.at(tag);
+//}
 
 cylon::Op::Op(const std::shared_ptr<cylon::CylonContext> &ctx,
               const std::shared_ptr<arrow::Schema> &schema,
               int id,
-              const std::shared_ptr<ResultsCallback> &callback, bool root_op) :
-                all_parents_finalized(root_op) {
-  this->ctx_ = ctx;
-  this->id = id;
-  this->callback = callback;
-  this->schema = schema;
+              ResultsCallback callback,
+              bool root_op)
+    : callback(std::move(callback)), all_parents_finalized(root_op), id(id), ctx_(ctx), schema(schema) {
 }
 
 void cylon::Op::InsertTable(int tag, std::shared_ptr<Table> &table) {
-  if (queues.find(tag) == queues.end()) {
-    queues.insert(std::make_pair<>(tag, new std::queue<std::shared_ptr<cylon::Table>>()));
+  auto q_iter = queues.find(tag);
+  if (q_iter == queues.end()) { // if tag not found -> create queue for tag
+    q_iter = queues.emplace(tag, new std::queue<std::shared_ptr<cylon::Table>>()).first;
   }
-  this->queues.find(tag)->second->push(table);
+  q_iter->second->push(table);
   this->inputs_count++;
 }
 
@@ -78,7 +78,7 @@ bool cylon::Op::IsComplete() {
   if (!this->finalized && this->inputs_count == 0 && this->all_parents_finalized) {
     // try to finalize this Op
     if (this->Finalize()) {
-      for (auto child: children) {
+      for (const auto &child: children) {
         child.second->ReportParentCompleted();
       }
       this->finalized = true;
@@ -89,26 +89,32 @@ bool cylon::Op::IsComplete() {
 }
 
 cylon::Op::~Op() {
+  // delete queues
   for (auto p: queues) {
+    delete p.second;
+  }
+
+  // delete children
+  for (auto p: children) {
     delete p.second;
   }
 }
 
 cylon::Op *cylon::Op::AddChild(cylon::Op *child) {
-  this->children.insert(std::make_pair(child->id, child));
+  children.emplace(child->id, child);
   child->IncrementParentsCount();
   return this;
 }
 
-bool cylon::Op::TerminalCheck(int tag, std::shared_ptr<cylon::Table> table) {
-  if (this->children.empty()) {
-    this->callback->OnResult(tag, table);
+bool cylon::Op::TerminalCheck(int tag, std::shared_ptr<Table> &table) {
+  if (children.empty()) {
+    callback(tag, table);
     return true;
   }
   return false;
 }
 
-void cylon::Op::InsertToAllChildren(int tag, std::shared_ptr<cylon::Table> table) {
+void cylon::Op::InsertToAllChildren(int tag, std::shared_ptr<Table> &table) {
   if (!this->TerminalCheck(tag, table)) {
     for (auto const &child:this->children) {
       child.second->InsertTable(tag, table);
@@ -116,9 +122,9 @@ void cylon::Op::InsertToAllChildren(int tag, std::shared_ptr<cylon::Table> table
   }
 }
 
-void cylon::Op::InsertToChild(int tag, int child, std::shared_ptr<cylon::Table> table) {
+void cylon::Op::InsertToChild(int tag, int child, std::shared_ptr<Table> &table) {
   if (!this->TerminalCheck(tag, table)) {
-    this->children.find(child)->second->InsertTable(tag, table);
+    this->children.at(child)->InsertTable(tag, table);
   }
 }
 
@@ -134,13 +140,19 @@ void cylon::Op::ReportParentCompleted() {
   }
 }
 
-bool cylon::Op::DidSomeWork() {
+bool cylon::Op::DidSomeWork() const {
   return this->did_work;
 }
 
 int cylon::Op::GetId() const {
   return id;
 }
+
+cylon::RootOp::RootOp(const std::shared_ptr<cylon::CylonContext> &ctx,
+                      const std::shared_ptr<arrow::Schema> &schema,
+                      int id, const ResultsCallback &callback)
+    : Op(ctx, schema, id, callback, true) {}
+
 
 bool cylon::RootOp::Finalize() {
   return true;
@@ -163,14 +175,6 @@ cylon::Execution *cylon::RootOp::GetExecution() {
   return this->execution_;
 }
 
-cylon::RootOp::RootOp(const std::shared_ptr<cylon::CylonContext> &ctx,
-                      const std::shared_ptr<arrow::Schema> &schema,
-                      int id,
-                      const std::shared_ptr<ResultsCallback> &callback) :
-                      Op(ctx, schema, id, callback, true) {
-
-}
-
 void cylon::RootOp::WaitForCompletion() {
-  this->execution_->WaitForCompletion();
+  execution_->WaitForCompletion();
 }

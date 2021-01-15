@@ -89,12 +89,11 @@ Status Split(const std::shared_ptr<Table> &table,
   return split_impl(table, num_partitions, target_partitions, partition_hist_ptr, output);
 }
 
-
-Status PartitionByHashing(const std::shared_ptr<Table> &table,
-                          int32_t hash_column_idx,
-                          uint32_t num_partitions,
-                          std::vector<uint32_t> &target_partitions,
-                          std::vector<uint32_t> &partition_hist) {
+Status MapToHashPartitions(const std::shared_ptr<Table> &table,
+                           int32_t hash_column_idx,
+                           uint32_t num_partitions,
+                           std::vector<uint32_t> &target_partitions,
+                           std::vector<uint32_t> &partition_hist) {
   auto t1 = std::chrono::high_resolution_clock::now();
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(hash_column_idx);
@@ -116,12 +115,11 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   return status;
 }
 
-
-Status PartitionByHashing(const std::shared_ptr<Table> &table,
-                          const std::vector<int32_t> &hash_column_idx,
-                          uint32_t num_partitions,
-                          std::vector<uint32_t> &target_partitions,
-                          std::vector<uint32_t> &partition_hist) {
+Status MapToHashPartitions(const std::shared_ptr<Table> &table,
+                           const std::vector<int32_t> &hash_column_idx,
+                           uint32_t num_partitions,
+                           std::vector<uint32_t> &target_partitions,
+                           std::vector<uint32_t> &partition_hist) {
   auto t1 = std::chrono::high_resolution_clock::now();
   Status status;
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
@@ -167,15 +165,14 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   return status;
 }
 
-
-Status PartitionBySorting(const std::shared_ptr<Table> &table,
-                          int32_t column_idx,
-                          uint32_t num_partitions,
-                          std::vector<uint32_t> &target_partitions,
-                          std::vector<uint32_t> &partition_hist,
-                          bool ascending,
-                          uint64_t num_samples,
-                          uint32_t num_bins) {
+Status MapToSortPartitions(const std::shared_ptr<Table> &table,
+                           int32_t column_idx,
+                           uint32_t num_partitions,
+                           std::vector<uint32_t> &target_partitions,
+                           std::vector<uint32_t> &partition_hist,
+                           bool ascending,
+                           uint64_t num_samples,
+                           uint32_t num_bins) {
   auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<CylonContext> ctx = table->GetContext();
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
@@ -198,6 +195,25 @@ Status PartitionBySorting(const std::shared_ptr<Table> &table,
   auto t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Sort partition time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   return status;
+}
+
+Status PartitionByHashing(const std::shared_ptr<Table> &table,
+                          const std::vector<int32_t> &hash_cols,
+                          uint32_t num_partitions,
+                          std::vector<std::shared_ptr<Table>> &partitions) {
+  // partition the tables locally
+  std::vector<uint32_t> outPartitions, counts;
+  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(MapToHashPartitions(table, hash_cols, num_partitions, outPartitions, counts))
+
+  std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;
+  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(split_impl(table, num_partitions, outPartitions, counts, partitioned_tables))
+  
+  partitions.reserve(num_partitions);
+  std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
+  for (auto &&atable:partitioned_tables){
+    partitions.emplace_back(std::make_shared<Table>(atable, ctx));
+  }
+  return Status();
 }
 
 }
