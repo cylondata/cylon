@@ -180,7 +180,7 @@ class HashIndexKernel : public IndexKernel {
     const std::shared_ptr<arrow::Array> &idx_column = input_table->column(index_column)->chunk(0);
     std::shared_ptr<MMAP_TYPE> out_umm_ptr = std::make_shared<MMAP_TYPE>(idx_column->length());
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(idx_column);
-    for (int64_t i = 0; i < reader0->length(); i++) {
+    for (int64_t i = reader0->length(); i >= 0; --i) {
       auto val = reader0->GetView(i);
       out_umm_ptr->insert(std::make_pair(val, i));
     }
