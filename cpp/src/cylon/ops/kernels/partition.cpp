@@ -239,5 +239,5 @@ cylon::Status cylon::kernel::StreamingHashPartitionKernel::Finish(std::vector<st
     partitioned_tables.emplace_back(std::make_shared<Table>(a_table, ctx));
   }
 
-  return cylon::Status();
+  return cylon::Status::OK();
 }

@@ -143,9 +143,9 @@ bool cylon::SplitOp::Finalize() {
     return false;
   }
 
-  for (size_t i = 0; i < partitions.size(); i++) {
-    partitions[i]->retainMemory(false);
-    InsertToAllChildren(i, partitions[i]);
+  for (auto & partition : partitions) {
+    partition->retainMemory(false);
+    InsertToAllChildren(id, partition);
   }
 
   auto t2 = std::chrono::high_resolution_clock::now();

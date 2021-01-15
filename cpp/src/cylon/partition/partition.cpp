@@ -213,7 +213,7 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   for (auto &&atable:partitioned_tables){
     partitions.emplace_back(std::make_shared<Table>(atable, ctx));
   }
-  return Status();
+  return Status::OK();
 }
 
 }
