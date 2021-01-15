@@ -40,6 +40,8 @@ class ArrowArraySplitKernel {
                        const std::vector<uint32_t> &counts,
                        std::vector<std::shared_ptr<arrow::Array>> &output) = 0;
 
+  virtual ~ArrowArraySplitKernel() = default;
+
  protected:
   arrow::MemoryPool *pool_;
 };
@@ -63,6 +65,8 @@ class IndexSortKernel {
    * @return
    */
   virtual arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::Array> &out) = 0;
+
+  virtual ~IndexSortKernel() = default;
 
  protected:
   arrow::MemoryPool *pool_;
@@ -94,6 +98,9 @@ class InplaceIndexSortKernel {
    * @return
    */
   virtual arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::UInt64Array> &out) = 0;
+
+  virtual ~InplaceIndexSortKernel() = default;
+
  protected:
   arrow::MemoryPool *pool_;
 };
@@ -133,6 +140,8 @@ class StreamingSplitKernel {
    * @return
    */
   virtual Status Finish(std::vector<std::shared_ptr<arrow::Array>> &out) = 0;
+
+  virtual ~StreamingSplitKernel() = default;
 };
 
 std::unique_ptr<StreamingSplitKernel> CreateStreamingSplitter(const std::shared_ptr<arrow::DataType> &type,
