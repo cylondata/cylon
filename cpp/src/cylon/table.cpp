@@ -136,7 +136,7 @@ static inline Status shuffle_table_by_hashing(std::shared_ptr<CylonContext> &ctx
   // partition the tables locally
   std::vector<uint32_t> outPartitions, counts;
   int no_of_partitions = ctx->GetWorldSize();
-  auto status = PartitionByHashing(table, hash_column, no_of_partitions, outPartitions, counts);
+  auto status = MapToHashPartitions(table, hash_column, no_of_partitions, outPartitions, counts);
   LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(status)
 
   std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;
@@ -326,14 +326,14 @@ Status DistributedSort(std::shared_ptr<cylon::Table> &table,
     std::vector<uint32_t> target_partitions, partition_hist;
     std::vector<std::shared_ptr<arrow::Table>> split_tables;
 
-    Status status = PartitionBySorting(table,
-                                       sort_column,
-                                       world_sz,
-                                       target_partitions,
-                                       partition_hist,
-                                       sort_options.ascending,
-                                       sort_options.num_samples,
-                                       sort_options.num_bins);
+    Status status = MapToSortPartitions(table,
+                                        sort_column,
+                                        world_sz,
+                                        target_partitions,
+                                        partition_hist,
+                                        sort_options.ascending,
+                                        sort_options.num_samples,
+                                        sort_options.num_bins);
     RETURN_CYLON_STATUS_IF_FAILED(status)
 
     status = Split(table, world_sz, target_partitions, partition_hist, split_tables);
@@ -360,7 +360,7 @@ Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int
                      std::unordered_map<int, std::shared_ptr<cylon::Table>> *out) {
   // keep arrays for each target, these arrays are used for creating the table
   std::vector<uint32_t> outPartitions, counts;
-  auto status = PartitionByHashing(table, hash_columns, no_of_partitions, outPartitions, counts);
+  auto status = MapToHashPartitions(table, hash_columns, no_of_partitions, outPartitions, counts);
   LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(status)
 
   std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;

@@ -31,19 +31,14 @@ int main(int argc, char *argv[]) {
   table2->ToArrowTable(table2_arr);
 
   LOG(INFO) << "read table";
-  class Cb : public cylon::ResultsCallback {
-   public:
-    void OnResult(int tag, std::shared_ptr<cylon::Table> table) override {
+
+  cylon::ResultsCallback cb = [&](int tag, const std::shared_ptr<cylon::Table> &table){
       LOG(INFO) << "Result received " << table->Rows();
-    }
   };
 
-  std::shared_ptr<cylon::ResultsCallback> cb = std::make_shared<Cb>();
+//  std::shared_ptr<cylon::DisUnionOpConfig> union_config = std::make_shared<cylon::DisUnionOpConfig>();
 
-  std::shared_ptr<cylon::DisUnionOpConfig> union_config = std::make_shared<cylon::DisUnionOpConfig>();
-
-  auto union_op = cylon::DisUnionOp(ctx, table1_arr->schema(), 0, cb,
-                                    union_config);
+  auto union_op = cylon::DisUnionOp(ctx, table1_arr->schema(), 0, cb, {});
   LOG(INFO) << "Created  op";
 
   LOG(INFO) << "Adding a table with " << table1->Rows();

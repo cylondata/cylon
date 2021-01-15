@@ -29,7 +29,7 @@ class MergeOp : public Op {
   MergeOp(const std::shared_ptr<CylonContext> &ctx,
           const std::shared_ptr<arrow::Schema> &schema,
           int32_t id,
-          const std::shared_ptr<ResultsCallback> &callback);
+          const ResultsCallback &callback);
 
   bool Execute(int tag, std::shared_ptr<Table> &table) override;
 

@@ -12,8 +12,9 @@
  * limitations under the License.
  */
 
+#include "partition/partition.hpp"
+
 #include "partition_op.hpp"
-#include <ops/kernels/partition.hpp>
 #include <iomanip>
 
 template<typename Clock, typename Duration>
@@ -36,40 +37,42 @@ std::ostream &operator<<(std::ostream &stream,
 cylon::PartitionOp::PartitionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
                                 const std::shared_ptr<arrow::Schema> &schema,
                                 int id,
-                                const std::shared_ptr<ResultsCallback> &callback,
-                                const std::shared_ptr<PartitionOpConfig> &config) :
-                                Op(ctx, schema, id, callback), config(config) {}
+                                const ResultsCallback &callback,
+                                const PartitionOpConfig &config)
+    : Op(ctx, schema, id, callback), config(config) {}
 
 bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> &table) {
   if (!started_time) {
     start = std::chrono::high_resolution_clock::now();
     started_time = true;
   }
-  auto t1 = std::chrono::high_resolution_clock::now();
-  std::unordered_map<int, std::shared_ptr<cylon::Table>> out; // todo use a vector here.
+//  auto t1 = std::chrono::high_resolution_clock::now();
+  std::vector<std::shared_ptr<cylon::Table>> out;
 
-  Status status = HashPartition(table, *this->config->HashColumns(), this->config->NoOfPartitions(), &out);
-  if (!status.is_ok()){
+  const auto &status = PartitionByHashing(table, config.hash_columns, config.num_partitions, out);
+  if (!status.is_ok()) {
     LOG(ERROR) << "hash partition failed: " << status.get_msg();
     return false;
   }
 
-  for (auto const &tab:out) {
-    this->InsertToAllChildren(tab.first, tab.second);
+  for (int i = 0; i < config.num_partitions; i++) {
+    this->InsertToAllChildren(i, out[i]);
   }
   out.clear();
+
   // we are going to free if retain is set to false
   if (!table->IsRetain()) {
     table.reset();
   }
-  auto t2 = std::chrono::high_resolution_clock::now();
-  exec_time += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+//  auto t2 = std::chrono::high_resolution_clock::now();
+//  exec_time += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
   return true;
 }
 
 bool cylon::PartitionOp::Finalize() {
   auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << ctx_->GetRank()   << "Partition start: " << start << " time: "
+  LOG(INFO) << ctx_->GetRank() << "Partition start: " << start << " time: "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - start).count();
   return true;
 }
@@ -78,17 +81,5 @@ void cylon::PartitionOp::OnParentsFinalized() {
   // do nothing
 }
 
-cylon::PartitionOpConfig::PartitionOpConfig(int no_of_partitions,
-                                            std::shared_ptr<std::vector<int>> hash_columns)
-    : no_of_partitions(no_of_partitions),
-      hash_columns(hash_columns) {
 
-}
 
-int cylon::PartitionOpConfig::NoOfPartitions() {
-  return this->no_of_partitions;
-}
-
-std::shared_ptr<std::vector<int>> cylon::PartitionOpConfig::HashColumns() {
-  return this->hash_columns;
-}

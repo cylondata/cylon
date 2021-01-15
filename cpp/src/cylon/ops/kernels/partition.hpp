@@ -15,11 +15,10 @@
 #ifndef CYLON_SRC_CYLON_OPS_KERNELS_PARTITION_HPP_
 #define CYLON_SRC_CYLON_OPS_KERNELS_PARTITION_HPP_
 
-#include <status.hpp>
-#include <vector>
-#include <unordered_map>
-#include <memory>
+#include <arrow/arrow_partition_kernels.hpp>
+#include <arrow/arrow_kernels.hpp>
 #include <table.hpp>
+
 namespace cylon {
 namespace kernel {
 //Status HashPartition(std::shared_ptr<CylonContext> &ctx, const std::shared_ptr<Table> &table,
@@ -29,6 +28,28 @@ namespace kernel {
 //Status HashPartition(std::shared_ptr<CylonContext> &ctx, const std::shared_ptr<Table> &table,
 //                     int hash_column, int no_of_partitions,
 //                     std::unordered_map<int, std::shared_ptr<cylon::Table>> *out);
+
+class StreamingHashPartitionKernel {
+ public:
+  StreamingHashPartitionKernel(const std::shared_ptr<CylonContext> &ctx,
+                               const std::shared_ptr<arrow::Schema> &schema,
+                               int num_partitions,
+                               const std::vector<int> &hash_columns);
+
+  Status Process(int tag, const std::shared_ptr<Table> &table);
+
+  Status Finish(std::vector<std::shared_ptr<Table>> &partitioned_tables);
+
+ private:
+  int num_partitions;
+  std::vector<int> hash_columns;
+  std::shared_ptr<arrow::Schema> schema;
+  std::shared_ptr<CylonContext> ctx;
+
+  std::vector<std::unique_ptr<HashPartitionKernel>> partition_kernels = {};
+  std::vector<std::unique_ptr<StreamingSplitKernel>> split_kernels = {};
+  std::vector<uint32_t> temp_partitions = {}, temp_partition_hist = {};
+};
 }
 }
 

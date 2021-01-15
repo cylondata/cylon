@@ -29,17 +29,17 @@ namespace cylon {
  * @return
  */
 
-Status PartitionByHashing(const std::shared_ptr<Table> &table,
-                          int32_t hash_column_idx,
-                          uint32_t num_partitions,
-                          std::vector<uint32_t> &target_partitions,
-                          std::vector<uint32_t> &partition_histogram);
+Status MapToHashPartitions(const std::shared_ptr<Table> &table,
+                           int32_t hash_column_idx,
+                           uint32_t num_partitions,
+                           std::vector<uint32_t> &target_partitions,
+                           std::vector<uint32_t> &partition_histogram);
 
-Status PartitionByHashing(const std::shared_ptr<Table> &table,
-                          const std::vector<int32_t> &hash_column_idx,
-                          uint32_t num_partitions,
-                          std::vector<uint32_t> &target_partitions,
-                          std::vector<uint32_t> &partition_histogram);
+Status MapToHashPartitions(const std::shared_ptr<Table> &table,
+                           const std::vector<int32_t> &hash_column_idx,
+                           uint32_t num_partitions,
+                           std::vector<uint32_t> &target_partitions,
+                           std::vector<uint32_t> &partition_histogram);
 
 /**
  * Sorted partitioning of the distributed table
@@ -53,14 +53,14 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
  * @param num_bins (optional) number of bins
  * @return
  */
-Status PartitionBySorting(const std::shared_ptr<Table> &table,
-                          int32_t column_idx,
-                          uint32_t num_partitions,
-                          std::vector<uint32_t> &target_partitions,
-                          std::vector<uint32_t> &partition_histogram,
-                          bool ascending,
-                          uint64_t num_samples,
-                          uint32_t num_bins);
+Status MapToSortPartitions(const std::shared_ptr<Table> &table,
+                           int32_t column_idx,
+                           uint32_t num_partitions,
+                           std::vector<uint32_t> &target_partitions,
+                           std::vector<uint32_t> &partition_histogram,
+                           bool ascending,
+                           uint64_t num_samples,
+                           uint32_t num_bins);
 
 /**
  * split a table based on the @param target_partitions vector. target_partition elements [0, num_partitions).
@@ -83,6 +83,11 @@ Status Split(const std::shared_ptr<Table> &table,
              const std::vector<uint32_t> &target_partitions,
              const std::vector<uint32_t> &partition_hist_ptr,
              std::vector<std::shared_ptr<arrow::Table>> &output);
+
+Status PartitionByHashing(const std::shared_ptr<Table> &table,
+                          const std::vector<int32_t> &hash_cols,
+                          uint32_t num_partitions,
+                          std::vector<std::shared_ptr<Table>> &partitions);
 
 }
 

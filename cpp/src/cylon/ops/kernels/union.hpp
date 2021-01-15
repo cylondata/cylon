@@ -18,6 +18,7 @@
 #include <vector>
 #include <table.hpp>
 #include <ops/kernels/row_comparator.hpp>
+#include <unordered_set>
 
 namespace cylon {
 namespace kernel {

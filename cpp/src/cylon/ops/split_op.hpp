@@ -18,31 +18,30 @@
 #include <vector>
 #include <map>
 
+#include "../arrow/arrow_kernels.hpp"
+
 #include "parallel_op.hpp"
 #include "partition_op.hpp"
 
 namespace cylon {
 
-class SplitOpConfig {
- private:
-  int no_of_partitions;
-  std::shared_ptr<std::vector<int>> hash_columns;
-
+struct SplitOpConfig {
  public:
-  SplitOpConfig(int no_of_partitions, std::shared_ptr<std::vector<int>> hash_columns);
-  int NoOfPartitions() const;
-  std::shared_ptr<std::vector<int>> HashColumns();
+  SplitOpConfig(int num_partitions, std::vector<int> hash_columns)
+      : num_partitions(num_partitions), hash_columns(std::move(hash_columns)) {}
 
-  static std::shared_ptr<SplitOpConfig> Make(int no_partitions, const std::vector<int> &hash_cols);
+  static std::shared_ptr<SplitOpConfig> Make(int no_partitions, const std::vector<int> &hash_cols){
+    return std::make_shared<SplitOpConfig>(no_partitions, hash_cols);
+  }
+
+  int num_partitions;
+  std::vector<int> hash_columns;
 };
 
+// todo this op is so similar to partition. may be call repartition/ streaming repartition
 class SplitOp : public Op {
  private:
-  std::vector<std::shared_ptr<ArrowArrayStreamingSplitKernel>> received_tables_;
-  std::shared_ptr<SplitOpConfig> config_;
-  int hash_column_;
-  std::vector<int> targets;
-  std::vector<int> hash_targets;
+  kernel::StreamingHashPartitionKernel partition_kernel;
   std::chrono::high_resolution_clock::time_point start;
   bool started_time = false;
   long exec_time = 0;
@@ -51,8 +50,8 @@ class SplitOp : public Op {
   SplitOp(const std::shared_ptr<CylonContext> &ctx,
           const std::shared_ptr<arrow::Schema> &schema,
           int32_t id,
-          const std::shared_ptr<ResultsCallback> &callback,
-          const std::shared_ptr<SplitOpConfig> &cfg);
+          const ResultsCallback &callback,
+          const SplitOpConfig &cfg);
 
   bool Execute(int tag, std::shared_ptr<Table> &table) override;
 

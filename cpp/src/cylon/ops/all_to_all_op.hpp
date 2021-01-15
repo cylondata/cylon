@@ -16,6 +16,7 @@
 #define CYLON_SRC_CYLON_OPS_KERNELS_SHUFFLE_H_
 
 #include <arrow/arrow_all_to_all.hpp>
+#include <chrono>
 
 #include "parallel_op.hpp"
 
@@ -37,8 +38,8 @@ class AllToAllOp : public Op {
   AllToAllOp(const std::shared_ptr<CylonContext> &ctx,
              const std::shared_ptr<arrow::Schema> &schema,
              int id,
-             const std::shared_ptr<ResultsCallback> &callback,
-             const std::shared_ptr<AllToAllOpConfig> &config);
+             const ResultsCallback &callback,
+             const AllToAllOpConfig &config);
 
   bool IsComplete() override;
 

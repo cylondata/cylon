@@ -21,25 +21,24 @@
 
 namespace cylon {
 
-class JoinOpConfig {
- private:
-  int32_t join_column;
-
- public:
-  JoinOpConfig(int32_t join_column);
-  int32_t GetJoinColumn() const;
-};
+//class JoinOpConfig {
+// private:
+//  int32_t join_column;
+//
+// public:
+//  JoinOpConfig(int32_t join_column);
+//  int32_t GetJoinColumn() const;
+//};
 
 class JoinOp : public Op {
  private:
-  std::shared_ptr<cylon::join::config::JoinConfig> config;
   cylon::kernel::JoinKernel *join_kernel_;
  public:
   JoinOp(const std::shared_ptr<CylonContext> &ctx,
          const std::shared_ptr<arrow::Schema> &schema,
          int32_t  id,
-         const std::shared_ptr<ResultsCallback> &callback,
-         const std::shared_ptr<cylon::join::config::JoinConfig> &config);
+         const ResultsCallback &callback,
+         const cylon::join::config::JoinConfig &config);
 
   bool Execute(int tag, std::shared_ptr<Table> &table) override;
 

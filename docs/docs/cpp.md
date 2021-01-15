@@ -402,12 +402,12 @@ Status Shuffle(std::shared_ptr<cylon::Table> &table, const std::vector<int> &has
 /**
  * Partition the table based on the hash
  * @param hash_columns the columns use for has
- * @param no_of_partitions number partitions
+ * @param num_partitions number partitions
  * @return new set of tables each with the new partition
  */
 Status HashPartition(std::shared_ptr<cylon::Table> &table,
                      const std::vector<int> &hash_columns,
-                     int no_of_partitions,
+                     int num_partitions,
                      std::unordered_map<int, std::shared_ptr<cylon::Table>> *output);
 
 /**
