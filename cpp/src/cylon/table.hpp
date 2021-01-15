@@ -195,7 +195,7 @@ class Table {
 
   std::shared_ptr<BaseIndex> GetIndex();
 
-  Status Find(void * search_value, std::shared_ptr<cylon::Table> &result);
+  Status FindAll(void * search_value, std::shared_ptr<cylon::Table> &result);
 
 
  private:

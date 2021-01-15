@@ -19,12 +19,15 @@
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
 #include <ctx/arrow_memory_pool_utils.hpp>
+#include <map>
 
 #include "indexing/index_utils.hpp"
 
 int arrow_take_test();
 
 int indexing_simple_example();
+
+int test_multi_map();
 /**
  * This example reads two csv files and does a union on them.
  * $ ./unique_example data.csv
@@ -49,6 +52,7 @@ int indexing_simple_example();
 
 int main(int argc, char *argv[]) {
   indexing_simple_example();
+  test_multi_map();
 }
 
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
@@ -123,7 +127,7 @@ int indexing_simple_example() {
   std::shared_ptr<cylon::BaseIndex> index;
   std::shared_ptr<cylon::Table> indexed_table;
 
-  long search_value = 4;
+  long search_value = 400;
 
   cylon::IndexUtil::Build(index, input1, index_column);
 
@@ -131,7 +135,7 @@ int indexing_simple_example() {
 
   input1->Set_Index(index, drop_index);
 
-  input1->Find(&search_value, find_table);
+  input1->FindAll(&search_value, find_table);
 
   find_table->Print();
 
@@ -154,6 +158,28 @@ int indexing_simple_example() {
   return 0;
 }
 
+int test_multi_map(){
+  std::unordered_multimap<char,int> mymm;
+
+  mymm.insert (std::make_pair('x',10));
+  mymm.insert (std::make_pair('y',20));
+  mymm.insert (std::make_pair('z',30));
+  mymm.insert (std::make_pair('y',22));
+  mymm.insert (std::make_pair('z',40));
+  mymm.insert (std::make_pair('x',101));
+
+  // print content:
+  std::cout << "elements in mymm:" << '\n';
+  std::cout << "y => " << mymm.find('y')->first << ":" << mymm.find('y')->second << '\n';
+  std::cout << "z => " <<  mymm.find('z')->first << ":" <<  mymm.find('z')->second << '\n';
+
+  auto ret = mymm.find('z');
+
+
+
+
+  return 0;
+}
 
 
 

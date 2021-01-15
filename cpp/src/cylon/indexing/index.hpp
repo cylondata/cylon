@@ -26,6 +26,11 @@ class BaseIndex {
   };
 
   // TODO: virtual destructor
+  virtual Status Find(void *search_param,
+                      std::shared_ptr<arrow::Table> &input,
+                      std::vector<int64_t> &find_index) = 0;
+
+  virtual Status Find(void *search_param, std::shared_ptr<arrow::Table> &input, int64_t &find_index) = 0;
 
   virtual Status Find(void *search_param,
                       std::shared_ptr<arrow::Table> &input,
@@ -60,15 +65,13 @@ class Index : public BaseIndex {
 
     arrow::Status arrow_status;
     std::shared_ptr<arrow::Array> out_idx;
-    CTYPE val = *static_cast<CTYPE *>(search_param);
-    auto ret = map_->equal_range(val);
     arrow::compute::ExecContext fn_ctx(GetPool());
     arrow::Int64Builder idx_builder(GetPool());
     const arrow::Datum input_table(input);
     std::vector<int64_t> filter_vals;
-    for (auto it = ret.first; it != ret.second; ++it) {
-      filter_vals.push_back(it->second);
-    }
+
+    Find(search_param, input, filter_vals);
+
     idx_builder.AppendValues(filter_vals);
     arrow_status = idx_builder.Finish(&out_idx);
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
@@ -78,6 +81,26 @@ class Index : public BaseIndex {
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
     output = result.ValueOrDie().table();
     return Status::OK();
+  }
+
+  Status Find(void *search_param, std::shared_ptr<arrow::Table> &input, std::vector<int64_t> &find_index) override {
+
+    CTYPE val = *static_cast<CTYPE *>(search_param);
+    auto ret = map_->equal_range(val);
+    for (auto it = ret.first; it != ret.second; ++it) {
+      find_index.push_back(it->second);
+    }
+    return Status::OK();
+  }
+
+  Status Find(void *search_param, std::shared_ptr<arrow::Table> &input, int64_t &find_index) override {
+    CTYPE val = *static_cast<CTYPE *>(search_param);
+    auto ret = map_->find(val);
+    if (ret != map_->end()) {
+      find_index = ret->second;
+      return Status::OK();
+    }
+    return Status(cylon::Code::IndexError);
   }
 
   std::shared_ptr<arrow::Array> GetIndexAsArray() override {
@@ -127,6 +150,8 @@ class RangeIndex : public BaseIndex {
  public:
   RangeIndex(int start, int size, int step, arrow::MemoryPool *pool);
   Status Find(void *search_param, std::shared_ptr<arrow::Table> &input, std::shared_ptr<arrow::Table> &output) override;
+  Status Find(void *search_param, std::shared_ptr<arrow::Table> &input, std::vector<int64_t> &find_index) override;
+  Status Find(void *search_param, std::shared_ptr<arrow::Table> &input, int64_t &find_index) override;
   std::shared_ptr<arrow::Array> GetIndexAsArray() override;
 
   int GetColId() const override;

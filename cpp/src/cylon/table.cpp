@@ -1062,7 +1062,7 @@ Status Table::Set_Index(std::shared_ptr<cylon::BaseIndex> &index, bool drop_inde
 
   return Status::OK();
 }
-Status Table::Find(void *search_value, std::shared_ptr<cylon::Table> &result) {
+Status Table::FindAll(void *search_value, std::shared_ptr<cylon::Table> &result) {
   std::shared_ptr<arrow::Table> arrow_result;
   Status find_status;
   if (base_index_) {
