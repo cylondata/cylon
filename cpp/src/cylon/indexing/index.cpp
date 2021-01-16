@@ -65,11 +65,11 @@ int RangeIndex::GetAnEnd() const {
 int RangeIndex::GetStep() const {
   return step_;
 }
-Status RangeIndex::Find(void *search_param, std::shared_ptr<arrow::Table> &input, std::vector<int64_t> &find_index) {
-  return Status::OK();
+Status RangeIndex::Find(void *search_param, std::vector<int64_t> &find_index) {
+  return Status();
 }
-Status RangeIndex::Find(void *search_param, std::shared_ptr<arrow::Table> &input, int64_t &find_index) {
-  return Status::OK();
+Status RangeIndex::Find(void *search_param, int64_t &find_index) {
+  return Status();
 }
 
 RangeIndexKernel::RangeIndexKernel() {}

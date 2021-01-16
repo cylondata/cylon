@@ -22,6 +22,7 @@
 #include <map>
 
 #include "indexing/index_utils.hpp"
+#include "indexing/indexer.hpp"
 
 int arrow_take_test();
 
@@ -154,6 +155,15 @@ int indexing_simple_example() {
   std::cout << "Start : " << range_index->GetStart() << std::endl;
   std::cout << "Step : " << range_index->GetStep() << std::endl;
   std::cout << "Stop : " << range_index->GetAnEnd() << std::endl;
+
+  // loc mode 1
+  long start_index = 4;
+  long end_index = 27;
+  int column = 0;
+  std::shared_ptr<cylon::Table> loc_tb1;
+  cylon::BaseIndexer::loc(&start_index, &end_index, column, index, input1, loc_tb1);
+
+  loc_tb1->Print();
 
   return 0;
 }

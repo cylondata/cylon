@@ -33,8 +33,14 @@ class BaseIndexer {
                     std::shared_ptr<cylon::Table> &input_table,
                     std::shared_ptr<cylon::Table> &output);
 
-  static Status loc(std::vector<void *> &indices,
+  static Status loc(void *indices,
                     int column_index,
+                    std::shared_ptr<BaseIndex> &index,
+                    std::shared_ptr<cylon::Table> &input_table,
+                    std::shared_ptr<cylon::Table> &output);
+
+  static Status loc(void *indices,
+                    std::vector<int> &columns,
                     std::shared_ptr<BaseIndex> &index,
                     std::shared_ptr<cylon::Table> &input_table,
                     std::shared_ptr<cylon::Table> &output);
@@ -53,12 +59,6 @@ class BaseIndexer {
                     std::shared_ptr<cylon::Table> &output);
 
 };
-
-template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
-class Indexer {
-
-};
-
 }
 
 #endif //CYLON_SRC_CYLON_INDEXING_INDEXER_H_
