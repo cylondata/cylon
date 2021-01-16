@@ -16,8 +16,7 @@ cylon::Status GetFilterIndices(void *start_index,
     LOG(ERROR) << "Error occurred in extracting indices!";
     return cylon::Status(cylon::Code::IndexError);
   }
-  // to include last index to the result
-  e_index++;
+
   return cylon::Status::OK();
 }
 
@@ -32,8 +31,8 @@ cylon::Status SliceTableByRange(int64_t start_index,
 
   auto artb = input_table->get_table();
   auto ctx = input_table->GetContext();
-
-  out_artb = artb->Slice(start_index, end_index);
+  // + 1 added include the end boundary
+  out_artb = artb->Slice(start_index, (end_index - start_index + 1));
 
   arrow::Result<std::shared_ptr<arrow::Table>> result = out_artb->SelectColumns(filter_columns);
 
@@ -95,9 +94,9 @@ cylon::Status cylon::BaseIndexer::loc(void *start_index,
   }
 
   // filter columns include both boundaries
-  std::vector<int> filter_columns(end_column_index - start_column_index + 1);
+  std::vector<int> filter_columns;
 
-  for (int s = s_index; s <= e_index; s++) {
+  for (int s = start_column_index; s <= end_column_index; s++) {
     filter_columns.push_back(s);
   }
 
@@ -139,6 +138,30 @@ cylon::Status cylon::BaseIndexer::loc(void *indices,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
 
+  Status status_build;
+  auto ctx = input_table->GetContext();
+  auto input_artb = input_table->get_table();
+  std::shared_ptr<arrow::Table> out_arrow;
+  status_build = index->Find(indices, input_artb, out_arrow);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in retrieving indices!";
+    return status_build;
+  }
+
+  arrow::Result<std::shared_ptr<arrow::Table>> result = out_arrow->SelectColumns({column_index});
+
+  if (!result.status().ok()) {
+    LOG(ERROR) << "Column selection failed in loc operation!";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+  }
+
+  status_build = cylon::Table::FromArrowTable(ctx, result.ValueOrDie(), output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table!";
+    return status_build;
+  }
 
   return cylon::Status::OK();
 }

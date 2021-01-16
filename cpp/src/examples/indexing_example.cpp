@@ -28,6 +28,8 @@ int arrow_take_test();
 
 int indexing_simple_example();
 
+void separator(std::string &statement);
+
 int test_multi_map();
 /**
  * This example reads two csv files and does a union on them.
@@ -53,7 +55,6 @@ int test_multi_map();
 
 int main(int argc, char *argv[]) {
   indexing_simple_example();
-  test_multi_map();
 }
 
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
@@ -163,33 +164,82 @@ int indexing_simple_example() {
   std::shared_ptr<cylon::Table> loc_tb1;
   cylon::BaseIndexer::loc(&start_index, &end_index, column, index, input1, loc_tb1);
 
+  std::string statement_loc1 = "Loc 1";
+
+  separator(statement_loc1);
+
   loc_tb1->Print();
+
+  // loc mode 2
+  long start_index_1 = 10;
+  long end_index_1 = 123;
+  int start_column_index = 0;
+  int end_column_index = 1;
+  std::shared_ptr<cylon::Table> loc_tb2;
+
+  cylon::BaseIndexer::loc(&start_index_1, &end_index_1, start_column_index, end_column_index, index, input1, loc_tb2);
+
+  std::string statement_loc2 = "Loc 2";
+
+  separator(statement_loc2);
+
+  loc_tb2->Print();
+
+
+  // loc mode 3
+  long start_index_2 = 27;
+  long end_index_2 = 123;
+  std::vector<int> cols = {0, 2};
+  std::shared_ptr<cylon::Table> loc_tb3;
+
+  cylon::BaseIndexer::loc(&start_index_2, &end_index_2, cols, index, input1, loc_tb3);
+
+  std::string statement_loc3 = "Loc 3";
+
+  separator(statement_loc3);
+
+  loc_tb3->Print();
+
+  // loc mode 4
+
+  long start_index_3 = 10;
+  int select_column = 1;
+  std::shared_ptr<cylon::Table> loc_tb4;
+
+  cylon::BaseIndexer::loc(&start_index_3, select_column, index, input1, loc_tb3);
+
+  std::string statement_loc4 = "Loc 4";
+
+  separator(statement_loc3);
+
+  loc_tb3->Print();
 
   return 0;
 }
 
-int test_multi_map(){
-  std::unordered_multimap<char,int> mymm;
+int test_multi_map() {
+  std::unordered_multimap<char, int> mymm;
 
-  mymm.insert (std::make_pair('x',10));
-  mymm.insert (std::make_pair('y',20));
-  mymm.insert (std::make_pair('z',30));
-  mymm.insert (std::make_pair('y',22));
-  mymm.insert (std::make_pair('z',40));
-  mymm.insert (std::make_pair('x',101));
+  mymm.insert(std::make_pair('x', 10));
+  mymm.insert(std::make_pair('y', 20));
+  mymm.insert(std::make_pair('z', 30));
+  mymm.insert(std::make_pair('y', 22));
+  mymm.insert(std::make_pair('z', 40));
+  mymm.insert(std::make_pair('x', 101));
 
   // print content:
   std::cout << "elements in mymm:" << '\n';
   std::cout << "y => " << mymm.find('y')->first << ":" << mymm.find('y')->second << '\n';
-  std::cout << "z => " <<  mymm.find('z')->first << ":" <<  mymm.find('z')->second << '\n';
+  std::cout << "z => " << mymm.find('z')->first << ":" << mymm.find('z')->second << '\n';
 
   auto ret = mymm.find('z');
-
-
-
 
   return 0;
 }
 
-
+void separator(std::string &statement){
+  std::cout << "===============================================" << std::endl;
+  std::cout << statement << std::endl;
+  std::cout << "===============================================" << std::endl;
+}
 
