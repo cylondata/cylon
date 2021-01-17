@@ -440,7 +440,7 @@ cylon::Status cylon::BaseIndexer::loc(void *indices,
   return cylon::Status::OK();
 
 }
-cylon::Status cylon::BaseIndexer::loc(std::vector<void *> &indices,
+cylon::Status cylon::BaseIndexer::loc1(std::vector<void *> &indices,
                                       int column,
                                       std::shared_ptr<BaseIndex> &index,
                                       std::shared_ptr<cylon::Table> &input_table,
