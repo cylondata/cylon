@@ -7,7 +7,7 @@ cylon::Status GetFilterIndices(void *start_index,
                                int64_t &e_index,
                                std::shared_ptr<cylon::BaseIndex> &index) {
   cylon::Status status1, status2, status_build;
-  std::shared_ptr<arrow::Table> out_artb, out_artb_res;
+  std::shared_ptr<arrow::Table> out_artb;
 
   status1 = index->Find(start_index, s_index);
   status2 = index->Find(end_index, e_index);
@@ -22,26 +22,18 @@ cylon::Status GetFilterIndices(void *start_index,
 
 cylon::Status SliceTableByRange(int64_t start_index,
                                 int64_t end_index,
-                                std::vector<int> &filter_columns,
                                 std::shared_ptr<cylon::Table> &input_table,
                                 std::shared_ptr<cylon::Table> &output) {
 
   cylon::Status status_build;
-  std::shared_ptr<arrow::Table> out_artb, out_artb_res;
+  std::shared_ptr<arrow::Table> out_artb;
 
   auto artb = input_table->get_table();
   auto ctx = input_table->GetContext();
   // + 1 added include the end boundary
   out_artb = artb->Slice(start_index, (end_index - start_index + 1));
 
-  arrow::Result<std::shared_ptr<arrow::Table>> result = out_artb->SelectColumns(filter_columns);
-
-  if (!result.status().ok()) {
-    LOG(ERROR) << "Column selection failed in loc operation!";
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-  }
-
-  status_build = cylon::Table::FromArrowTable(ctx, result.ValueOrDie(), output);
+  status_build = cylon::Table::FromArrowTable(ctx, out_artb, output);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in creating loc output table";
@@ -65,9 +57,9 @@ cylon::Status GetColumnIndicesFromLimits(int &start_column, int &end_column, std
   return cylon::Status::OK();
 }
 
-cylon::Status FilterColumnsFromArrowTable(std::shared_ptr<cylon::Table> &input_table,
-                                          std::vector<int> &filter_columns,
-                                          std::shared_ptr<cylon::Table> &output) {
+cylon::Status FilterColumnsFromTable(std::shared_ptr<cylon::Table> &input_table,
+                                     std::vector<int> &filter_columns,
+                                     std::shared_ptr<cylon::Table> &output) {
 
   cylon::Status status_build;
   auto ctx = input_table->GetContext();
@@ -147,6 +139,32 @@ cylon::Status GetTableFromIndices(std::shared_ptr<cylon::Table> &input_table,
   return cylon::Status::OK();
 }
 
+cylon::Status GetTableByIndex(void *indices,
+                              std::shared_ptr<cylon::Table> &input_table,
+                              std::shared_ptr<cylon::BaseIndex> &index,
+                              std::shared_ptr<cylon::Table> &output) {
+
+  cylon::Status status_build;
+  auto ctx = input_table->GetContext();
+  auto input_artb = input_table->get_table();
+  std::shared_ptr<arrow::Table> out_arrow;
+  status_build = index->Find(indices, input_artb, out_arrow);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in retrieving indices!";
+    return status_build;
+  }
+
+  status_build = cylon::Table::FromArrowTable(ctx, out_arrow, output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error creating Table";
+    return status_build;
+  }
+
+  return cylon::Status::OK();
+}
+
 cylon::Status cylon::BaseIndexer::loc(void *start_index,
                                       void *end_index,
                                       int column_index,
@@ -155,18 +173,28 @@ cylon::Status cylon::BaseIndexer::loc(void *start_index,
                                       std::shared_ptr<cylon::Table> &output) {
 
   Status status_build;
+  std::shared_ptr<cylon::Table> temp_output;
   int64_t s_index, e_index = -1;
 
   status_build = GetFilterIndices(start_index, end_index, s_index, e_index, index);
 
   if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering indices from table";
     return status_build;
   }
   std::vector<int> filter_columns = {column_index};
 
-  status_build = SliceTableByRange(s_index, e_index, filter_columns, input_table, output);
+  status_build = SliceTableByRange(s_index, e_index, input_table, temp_output);
 
   if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering indices from table";
+    return status_build;
+  }
+
+  status_build = FilterColumnsFromTable(temp_output, filter_columns, output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering columns from table";
     return status_build;
   }
 
@@ -181,6 +209,7 @@ cylon::Status cylon::BaseIndexer::loc(void *start_index,
                                       std::shared_ptr<cylon::Table> &output) {
 
   Status status_build;
+  std::shared_ptr<cylon::Table> temp_output;
   int64_t s_index, e_index = -1;
 
   status_build = GetFilterIndices(start_index, end_index, s_index, e_index, index);
@@ -199,9 +228,17 @@ cylon::Status cylon::BaseIndexer::loc(void *start_index,
     return status_build;
   }
 
-  status_build = SliceTableByRange(s_index, e_index, filter_columns, input_table, output);
+  status_build = SliceTableByRange(s_index, e_index, input_table, temp_output);
 
   if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering indices from table";
+    return status_build;
+  }
+
+  status_build = FilterColumnsFromTable(temp_output, filter_columns, output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering columns from table";
     return status_build;
   }
 
@@ -215,6 +252,7 @@ cylon::Status cylon::BaseIndexer::loc(void *start_index,
                                       std::shared_ptr<cylon::Table> &output) {
 
   Status status_build;
+  std::shared_ptr<cylon::Table> temp_output;
   int64_t s_index, e_index = -1;
 
   status_build = GetFilterIndices(start_index, end_index, s_index, e_index, index);
@@ -223,9 +261,17 @@ cylon::Status cylon::BaseIndexer::loc(void *start_index,
     return status_build;
   }
 
-  status_build = SliceTableByRange(s_index, e_index, columns, input_table, output);
+  status_build = SliceTableByRange(s_index, e_index, input_table, temp_output);
 
   if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering indices from table";
+    return status_build;
+  }
+
+  status_build = FilterColumnsFromTable(temp_output, columns, output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering columns from table";
     return status_build;
   }
 
@@ -238,24 +284,18 @@ cylon::Status cylon::BaseIndexer::loc(void *indices,
                                       std::shared_ptr<cylon::Table> &output) {
 
   Status status_build;
-  auto ctx = input_table->GetContext();
-  auto input_artb = input_table->get_table();
-  std::shared_ptr<arrow::Table> out_arrow;
-  status_build = index->Find(indices, input_artb, out_arrow);
+  std::shared_ptr<cylon::Table> temp_output;
+
+  status_build = GetTableByIndex(indices, input_table, index, temp_output);
 
   if (!status_build.is_ok()) {
-    LOG(ERROR) << "Error occurred in retrieving indices!";
+    LOG(ERROR) << "Error occurred in creating table by index!";
     return status_build;
   }
 
-  arrow::Result<std::shared_ptr<arrow::Table>> result = out_arrow->SelectColumns({column_index});
+  std::vector<int> filter_columns = {column_index};
 
-  if (!result.status().ok()) {
-    LOG(ERROR) << "Column selection failed in loc operation!";
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-  }
-
-  status_build = cylon::Table::FromArrowTable(ctx, result.ValueOrDie(), output);
+  status_build = FilterColumnsFromTable(temp_output, filter_columns, output);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in creating table!";
@@ -297,7 +337,7 @@ cylon::Status cylon::BaseIndexer::loc(std::vector<void *> &indices,
     return status;
   }
 
-  status = FilterColumnsFromArrowTable(temp_table, filter_columns, output);
+  status = FilterColumnsFromTable(temp_table, filter_columns, output);
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating table from selected columns";
@@ -311,7 +351,33 @@ cylon::Status cylon::BaseIndexer::loc(std::vector<void *> &indices,
                                       std::shared_ptr<BaseIndex> &index,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  return cylon::Status();
+
+  Status status;
+  std::vector<int64_t> filter_indices;
+  std::shared_ptr<cylon::Table> temp_table;
+
+  status = ResolveIndices(indices, index, filter_indices);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in resolving indices for table filtering";
+    return status;
+  }
+
+  status = GetTableFromIndices(input_table, filter_indices, temp_table);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table from filter indices";
+    return status;
+  }
+
+  status = FilterColumnsFromTable(temp_table, columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table from selected columns";
+    return status;
+  }
+
+  return cylon::Status::OK();
 }
 
 cylon::Status cylon::BaseIndexer::loc(void *indices,
@@ -319,5 +385,22 @@ cylon::Status cylon::BaseIndexer::loc(void *indices,
                                       std::shared_ptr<BaseIndex> &index,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  return cylon::Status();
+  Status status_build;
+  std::shared_ptr<cylon::Table> temp_output;
+
+  status_build = GetTableByIndex(indices, input_table, index, temp_output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table by index!";
+    return status_build;
+  }
+
+  status_build = FilterColumnsFromTable(temp_output, columns, output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering columns from Table!";
+    return status_build;
+  }
+
+  return cylon::Status::OK();
 }
