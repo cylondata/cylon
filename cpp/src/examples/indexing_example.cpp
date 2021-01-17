@@ -299,7 +299,7 @@ int indexing_simple_example() {
 
   std::shared_ptr<cylon::Table> loc_tb9;
 
-  cylon::BaseIndexer::loc1(output_items1, column_9, index, input1, loc_tb9);
+  cylon::BaseIndexer::loc(output_items1, column_9, index, input1, loc_tb9);
 
   std::string statement_loc9 = "Loc 9";
 
