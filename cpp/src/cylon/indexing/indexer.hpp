@@ -40,7 +40,20 @@ class BaseIndexer {
                     std::shared_ptr<cylon::Table> &output);
 
   static Status loc(void *indices,
+                    int start_column,
+                    int end_column,
+                    std::shared_ptr<BaseIndex> &index,
+                    std::shared_ptr<cylon::Table> &input_table,
+                    std::shared_ptr<cylon::Table> &output);
+
+  static Status loc(void *indices,
                     std::vector<int> &columns,
+                    std::shared_ptr<BaseIndex> &index,
+                    std::shared_ptr<cylon::Table> &input_table,
+                    std::shared_ptr<cylon::Table> &output);
+
+  static Status loc(std::vector<void *> &indices,
+                    int column,
                     std::shared_ptr<BaseIndex> &index,
                     std::shared_ptr<cylon::Table> &input_table,
                     std::shared_ptr<cylon::Table> &output);

@@ -404,3 +404,74 @@ cylon::Status cylon::BaseIndexer::loc(void *indices,
 
   return cylon::Status::OK();
 }
+cylon::Status cylon::BaseIndexer::loc(void *indices,
+                                      int start_column,
+                                      int end_column,
+                                      std::shared_ptr<BaseIndex> &index,
+                                      std::shared_ptr<cylon::Table> &input_table,
+                                      std::shared_ptr<cylon::Table> &output) {
+
+  Status status_build;
+  std::shared_ptr<cylon::Table> temp_output;
+
+  status_build = GetTableByIndex(indices, input_table, index, temp_output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table by index!";
+    return status_build;
+  }
+
+  std::vector<int> columns;
+
+  status_build = GetColumnIndicesFromLimits(start_column, end_column, columns);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating filter columns from boundaries!";
+    return status_build;
+  }
+
+  status_build = FilterColumnsFromTable(temp_output, columns, output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering columns from Table!";
+    return status_build;
+  }
+
+  return cylon::Status::OK();
+
+}
+cylon::Status cylon::BaseIndexer::loc(std::vector<void *> &indices,
+                                      int column,
+                                      std::shared_ptr<BaseIndex> &index,
+                                      std::shared_ptr<cylon::Table> &input_table,
+                                      std::shared_ptr<cylon::Table> &output) {
+  Status status;
+  std::vector<int64_t> filter_indices;
+  std::shared_ptr<cylon::Table> temp_table;
+
+  status = ResolveIndices(indices, index, filter_indices);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in resolving indices for table filtering";
+    return status;
+  }
+
+  status = GetTableFromIndices(input_table, filter_indices, temp_table);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table from filter indices";
+    return status;
+  }
+
+  std::vector<int> columns = {column};
+
+  status = FilterColumnsFromTable(temp_table, columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table from selected columns";
+    return status;
+  }
+
+  return cylon::Status::OK();
+}
+

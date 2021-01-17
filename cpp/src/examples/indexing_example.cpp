@@ -216,13 +216,13 @@ int indexing_simple_example() {
 
   // loc mode 5
 
-  typedef std::vector <void *> vector_void_star;
+  typedef std::vector<void *> vector_void_star;
 
-  vector_void_star  output_items;
+  vector_void_star output_items;
 
   std::vector<long> start_indices_5 = {4, 1};
 
-  for(size_t tx=0; tx < start_indices_5.size(); tx++) {
+  for (size_t tx = 0; tx < start_indices_5.size(); tx++) {
     output_items.push_back(reinterpret_cast<void *const>(start_indices_5.at(tx)));
   }
 
@@ -240,11 +240,11 @@ int indexing_simple_example() {
 
   // loc mode 6
 
-  vector_void_star  output_items1;
+  vector_void_star output_items1;
 
   std::vector<long> start_indices_6 = {4, 1};
 
-  for(size_t tx=0; tx < start_indices_6.size(); tx++) {
+  for (size_t tx = 0; tx < start_indices_6.size(); tx++) {
     output_items1.push_back(reinterpret_cast<void *const>(start_indices_6.at(tx)));
   }
   std::vector<int> columns = {1, 2};
@@ -275,6 +275,38 @@ int indexing_simple_example() {
 
   loc_tb7->Print();
 
+
+  // loc mode 8
+
+  long start_index_8 = 4;
+
+  int start_column_8 = 1;
+  int end_column_8 = 2;
+
+  std::shared_ptr<cylon::Table> loc_tb8;
+
+  cylon::BaseIndexer::loc(&start_index_8, start_column_8, end_column_8, index, input1, loc_tb8);
+
+  std::string statement_loc8 = "Loc 8";
+
+  separator(statement_loc8);
+
+  loc_tb8->Print();
+
+  // loc mode 9
+
+  int column_9 = 1;
+
+  std::shared_ptr<cylon::Table> loc_tb9;
+
+  cylon::BaseIndexer::loc(&output_items1, column_9, index, input1, loc_tb9);
+
+  std::string statement_loc9 = "Loc 9";
+
+  separator(statement_loc9);
+
+  loc_tb9->Print();
+
   return 0;
 }
 
@@ -298,7 +330,7 @@ int test_multi_map() {
   return 0;
 }
 
-void separator(std::string &statement){
+void separator(std::string &statement) {
   std::cout << "===============================================" << std::endl;
   std::cout << statement << std::endl;
   std::cout << "===============================================" << std::endl;
