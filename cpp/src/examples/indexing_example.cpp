@@ -206,13 +206,38 @@ int indexing_simple_example() {
   int select_column = 1;
   std::shared_ptr<cylon::Table> loc_tb4;
 
-  cylon::BaseIndexer::loc(&start_index_3, select_column, index, input1, loc_tb3);
+  cylon::BaseIndexer::loc(&start_index_3, select_column, index, input1, loc_tb4);
 
   std::string statement_loc4 = "Loc 4";
 
-  separator(statement_loc3);
+  separator(statement_loc4);
 
-  loc_tb3->Print();
+  loc_tb4->Print();
+
+  // loc mode 5
+
+  typedef std::vector <void *> vector_void_star;
+
+  vector_void_star  output_items;
+
+  std::vector<long> start_indices_5 = {4, 1};
+
+  for(size_t tx=0; tx < start_indices_5.size(); tx++) {
+    output_items.push_back(reinterpret_cast<void *const>(start_indices_5.at(tx)));
+  }
+
+  int start_column_5 = 1;
+  int end_column_5 = 2;
+  std::shared_ptr<cylon::Table> loc_tb5;
+
+  cylon::BaseIndexer::loc(output_items, start_column_5, end_column_5, index, input1, loc_tb5);
+
+  std::string statement_loc5 = "Loc 5";
+
+  separator(statement_loc5);
+
+  loc_tb5->Print();
+
 
   return 0;
 }

@@ -51,6 +51,102 @@ cylon::Status SliceTableByRange(int64_t start_index,
   return cylon::Status::OK();
 }
 
+cylon::Status GetColumnIndicesFromLimits(int &start_column, int &end_column, std::vector<int> &selected_columns) {
+
+  if (start_column > end_column) {
+    LOG(ERROR) << "Invalid column boundaries";
+    return cylon::Status(cylon::Code::Invalid);
+  }
+
+  for (int s = start_column; s <= end_column; s++) {
+    selected_columns.push_back(s);
+  }
+
+  return cylon::Status::OK();
+}
+
+cylon::Status FilterColumnsFromArrowTable(std::shared_ptr<cylon::Table> &input_table,
+                                          std::vector<int> &filter_columns,
+                                          std::shared_ptr<cylon::Table> &output) {
+
+  cylon::Status status_build;
+  auto ctx = input_table->GetContext();
+  arrow::Result<std::shared_ptr<arrow::Table>> result = input_table->get_table()->SelectColumns(filter_columns);
+
+  if (!result.status().ok()) {
+    LOG(ERROR) << "Column selection failed in loc operation!";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+  }
+
+  status_build = cylon::Table::FromArrowTable(ctx, result.ValueOrDie(), output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating Cylon Table from Arrow Table";
+    return status_build;
+  }
+
+  return cylon::Status::OK();
+}
+
+cylon::Status ResolveIndices(std::vector<void *> &input_indices,
+                             std::shared_ptr<cylon::BaseIndex> &index,
+                             std::vector<int64_t> &output_indices) {
+  cylon::Status status;
+  for (size_t ix = 0; ix < input_indices.size(); ix++) {
+    std::vector<int64_t> filter_ix;
+    void *val = input_indices.at(ix);
+
+    status = index->Find(&val, filter_ix);
+    if (!status.is_ok()) {
+      LOG(ERROR) << "Error in retrieving indices!";
+      return status;
+    }
+    for (size_t iy = 0; iy < filter_ix.size(); iy++) {
+      output_indices.push_back(filter_ix.at(iy));
+    }
+  }
+  return cylon::Status::OK();
+}
+
+cylon::Status GetTableFromIndices(std::shared_ptr<cylon::Table> &input_table,
+                                  std::vector<int64_t> &filter_indices,
+                                  std::shared_ptr<cylon::Table> &output) {
+
+  std::shared_ptr<arrow::Array> out_idx;
+  arrow::Status arrow_status;
+  auto ctx = input_table->GetContext();
+  auto pool = cylon::ToArrowPool(ctx);
+  arrow::compute::ExecContext fn_ctx(pool);
+  arrow::Int64Builder idx_builder(pool);
+  const arrow::Datum input_table_datum(input_table->get_table());
+
+  idx_builder.AppendValues(filter_indices);
+  arrow_status = idx_builder.Finish(&out_idx);
+
+  if (!arrow_status.ok()) {
+    LOG(ERROR) << "Error occurred in creating Arrow filter indices";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+  }
+
+  const arrow::Datum filter_indices_datum(out_idx);
+
+  arrow::Result<arrow::Datum> result = arrow::compute::Take(input_table_datum,
+                                                            filter_indices_datum,
+                                                            arrow::compute::TakeOptions::Defaults(),
+                                                            &fn_ctx);
+
+  std::shared_ptr<arrow::Table> filter_table;
+  filter_table = result.ValueOrDie().table();
+  if (!result.status().ok()) {
+    LOG(ERROR) << "Error occurred in subset retrieval from table";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+  }
+
+  cylon::Table::FromArrowTable(ctx, filter_table, output);
+
+  return cylon::Status::OK();
+}
+
 cylon::Status cylon::BaseIndexer::loc(void *start_index,
                                       void *end_index,
                                       int column_index,
@@ -96,8 +192,11 @@ cylon::Status cylon::BaseIndexer::loc(void *start_index,
   // filter columns include both boundaries
   std::vector<int> filter_columns;
 
-  for (int s = start_column_index; s <= end_column_index; s++) {
-    filter_columns.push_back(s);
+  status_build = GetColumnIndicesFromLimits(start_column_index, end_column_index, filter_columns);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred building column indices from boundaries";
+    return status_build;
   }
 
   status_build = SliceTableByRange(s_index, e_index, filter_columns, input_table, output);
@@ -171,7 +270,41 @@ cylon::Status cylon::BaseIndexer::loc(std::vector<void *> &indices,
                                       std::shared_ptr<BaseIndex> &index,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  return cylon::Status();
+  Status status;
+  std::vector<int64_t> filter_indices;
+  std::shared_ptr<cylon::Table> temp_table;
+
+  status = ResolveIndices(indices, index, filter_indices);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in resolving indices for table filtering";
+    return status;
+  }
+
+  status = GetTableFromIndices(input_table, filter_indices, temp_table);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table from filter indices";
+    return status;
+  }
+
+  std::vector<int> filter_columns;
+
+  status = GetColumnIndicesFromLimits(start_column_index, end_column_index, filter_columns);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in getting column indices from boundaries";
+    return status;
+  }
+
+  status = FilterColumnsFromArrowTable(temp_table, filter_columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table from selected columns";
+    return status;
+  }
+
+  return cylon::Status::OK();
 }
 cylon::Status cylon::BaseIndexer::loc(std::vector<void *> &indices,
                                       std::vector<int> &columns,
