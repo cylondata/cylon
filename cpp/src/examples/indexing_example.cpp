@@ -171,7 +171,7 @@ int indexing_simple_example() {
   long end_index = 27;
   int column = 0;
   std::shared_ptr<cylon::Table> loc_tb1;
-  base_indexer->loc(&start_index, &end_index, column, index, input1, loc_tb1);
+  base_indexer->loc(&start_index, &end_index, column, input1, loc_tb1);
 
   std::string statement_loc1 = "Loc 1";
 
@@ -186,7 +186,7 @@ int indexing_simple_example() {
   int end_column_index = 1;
   std::shared_ptr<cylon::Table> loc_tb2;
 
-  base_indexer->loc(&start_index_1, &end_index_1, start_column_index, end_column_index, index, input1, loc_tb2);
+  base_indexer->loc(&start_index_1, &end_index_1, start_column_index, end_column_index, input1, loc_tb2);
 
   std::string statement_loc2 = "Loc 2";
 
@@ -200,7 +200,7 @@ int indexing_simple_example() {
   std::vector<int> cols = {0, 2};
   std::shared_ptr<cylon::Table> loc_tb3;
 
-  base_indexer->loc(&start_index_2, &end_index_2, cols, index, input1, loc_tb3);
+  base_indexer->loc(&start_index_2, &end_index_2, cols, input1, loc_tb3);
 
   std::string statement_loc3 = "Loc 3";
 
@@ -214,7 +214,7 @@ int indexing_simple_example() {
   int select_column = 1;
   std::shared_ptr<cylon::Table> loc_tb4;
 
-  base_indexer->loc(&start_index_3, select_column, index, input1, loc_tb4);
+  base_indexer->loc(&start_index_3, select_column, input1, loc_tb4);
 
   std::string statement_loc4 = "Loc 4";
 
@@ -238,7 +238,7 @@ int indexing_simple_example() {
   int end_column_5 = 2;
   std::shared_ptr<cylon::Table> loc_tb5;
 
-  base_indexer->loc(output_items, start_column_5, end_column_5, index, input1, loc_tb5);
+  base_indexer->loc(output_items, start_column_5, end_column_5, input1, loc_tb5);
 
   std::string statement_loc5 = "Loc 5";
 
@@ -259,7 +259,7 @@ int indexing_simple_example() {
 
   std::shared_ptr<cylon::Table> loc_tb6;
 
-  base_indexer->loc(output_items1, columns, index, input1, loc_tb6);
+  base_indexer->loc(output_items1, columns, input1, loc_tb6);
 
   std::string statement_loc6 = "Loc 6";
 
@@ -275,7 +275,7 @@ int indexing_simple_example() {
 
   std::shared_ptr<cylon::Table> loc_tb7;
 
-  base_indexer->loc(&start_index_7, columns, index, input1, loc_tb7);
+  base_indexer->loc(&start_index_7, columns, input1, loc_tb7);
 
   std::string statement_loc7 = "Loc 7";
 
@@ -293,7 +293,7 @@ int indexing_simple_example() {
 
   std::shared_ptr<cylon::Table> loc_tb8;
 
-  base_indexer->loc(&start_index_8, start_column_8, end_column_8, index, input1, loc_tb8);
+  base_indexer->loc(&start_index_8, start_column_8, end_column_8, input1, loc_tb8);
 
   std::string statement_loc8 = "Loc 8";
 
@@ -307,7 +307,7 @@ int indexing_simple_example() {
 
   std::shared_ptr<cylon::Table> loc_tb9;
 
-  base_indexer->loc(output_items1, column_9, index, input1, loc_tb9);
+  base_indexer->loc(output_items1, column_9, input1, loc_tb9);
 
   std::string statement_loc9 = "Loc 9";
 
@@ -325,7 +325,7 @@ int indexing_simple_example() {
 
   int s_column = 0;
   std::shared_ptr<cylon::Table> loc_s_tb1;
-  base_indexer->loc(&s_start_index, &s_end_index, s_column, index_str, input2, loc_s_tb1);
+  base_indexer->loc(&s_start_index, &s_end_index, s_column, input2, loc_s_tb1);
 
   std::string statement_s_loc1 = "Loc S 1";
 
