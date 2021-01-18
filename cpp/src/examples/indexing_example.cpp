@@ -91,6 +91,8 @@ int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<c
   return 0;
 }
 
+int arrow_stringify(void *search_param);
+
 int indexing_simple_example() {
   std::cout << "Dummy Test" << std::endl;
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
@@ -98,13 +100,17 @@ int indexing_simple_example() {
 
   cylon::Status status;
 
-  std::shared_ptr<cylon::Table> input1, find_table, output, sort_table;
+  std::shared_ptr<cylon::Table> input1, input2, find_table, output, sort_table;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
   std::string test_file = "/tmp/duplicate_data_0.csv";
   std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
   status = cylon::FromCSV(ctx, test_file, input1, read_options);
+
+  std::string test_file2 = "/tmp/duplicate_str_data_0.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file2, input2, read_options);
 
   // find table
   std::string find_file = "/tmp/find_data.csv";
@@ -126,20 +132,21 @@ int indexing_simple_example() {
   const int index_column = 0;
   bool drop_index = true;
 
-  std::shared_ptr<cylon::BaseIndex> index;
+  std::shared_ptr<cylon::BaseIndex> index, index_str;
   std::shared_ptr<cylon::Table> indexed_table;
 
   long search_value = 400;
 
   cylon::IndexUtil::Build(index, input1, index_column);
 
+  cylon::IndexUtil::Build(index_str, input2, index_column);
+
   LOG(INFO) << "Testing Table Properties and Functions";
 
   input1->Set_Index(index, drop_index);
 
-  input1->FindAll(&search_value, find_table);
+  input2->Set_Index(index_str, drop_index);
 
-  find_table->Print();
 
   // Create Range Index
 
@@ -151,13 +158,13 @@ int indexing_simple_example() {
 
   cylon::IndexUtil::Build(bindex, input1, -1);
 
-  range_index = std::dynamic_pointer_cast<cylon::RangeIndex>(bindex);
+  range_index = std::static_pointer_cast<cylon::RangeIndex>(bindex);
 
   std::cout << "Start : " << range_index->GetStart() << std::endl;
   std::cout << "Step : " << range_index->GetStep() << std::endl;
   std::cout << "Stop : " << range_index->GetAnEnd() << std::endl;
 
-  // loc mode 1
+//  // loc mode 1
   long start_index = 4;
   long end_index = 27;
   int column = 0;
@@ -185,8 +192,7 @@ int indexing_simple_example() {
 
   loc_tb2->Print();
 
-
-  // loc mode 3
+//  // loc mode 3
   long start_index_2 = 27;
   long end_index_2 = 123;
   std::vector<int> cols = {0, 2};
@@ -199,9 +205,9 @@ int indexing_simple_example() {
   separator(statement_loc3);
 
   loc_tb3->Print();
-
-  // loc mode 4
-
+//
+//  // loc mode 4
+//
   long start_index_3 = 10;
   int select_column = 1;
   std::shared_ptr<cylon::Table> loc_tb4;
@@ -213,9 +219,9 @@ int indexing_simple_example() {
   separator(statement_loc4);
 
   loc_tb4->Print();
-
-  // loc mode 5
-
+//
+//  // loc mode 5
+//
   typedef std::vector<void *> vector_void_star;
 
   vector_void_star output_items;
@@ -237,12 +243,12 @@ int indexing_simple_example() {
   separator(statement_loc5);
 
   loc_tb5->Print();
-
-  // loc mode 6
-
+//
+//  // loc mode 6
+//
   vector_void_star output_items1;
 
-  std::vector<long> start_indices_6 = {4, 1};
+  std::vector<long> start_indices_6{4, 1};
 
   for (size_t tx = 0; tx < start_indices_6.size(); tx++) {
     output_items1.push_back(reinterpret_cast<void *const>(start_indices_6.at(tx)));
@@ -258,9 +264,9 @@ int indexing_simple_example() {
   separator(statement_loc6);
 
   loc_tb6->Print();
-
-  // loc mode 7
-
+//
+//  // loc mode 7
+//
   long start_index_7 = 4;
 
   std::vector<int> columns_7 = {1, 2};
@@ -274,10 +280,10 @@ int indexing_simple_example() {
   separator(statement_loc7);
 
   loc_tb7->Print();
-
-
-  // loc mode 8
-
+//
+//
+//  // loc mode 8
+//
   long start_index_8 = 4;
 
   int start_column_8 = 1;
@@ -292,9 +298,9 @@ int indexing_simple_example() {
   separator(statement_loc8);
 
   loc_tb8->Print();
-
-  // loc mode 9
-
+//
+//  // loc mode 9
+//
   int column_9 = 1;
 
   std::shared_ptr<cylon::Table> loc_tb9;
@@ -307,27 +313,43 @@ int indexing_simple_example() {
 
   loc_tb9->Print();
 
+  /**
+   * For string data
+   * */
+
+  //loc mode 1
+  std::string s_start_index("e");
+  std::string s_end_index("j");
+
+  int s_column = 0;
+  std::shared_ptr<cylon::Table> loc_s_tb1;
+  cylon::BaseIndexer::loc(&s_start_index, &s_end_index, s_column, index_str, input2, loc_s_tb1);
+
+  std::string statement_s_loc1 = "Loc S 1";
+
+  separator(statement_s_loc1);
+
+  loc_s_tb1->Print();
+
+  std::shared_ptr<arrow::Array> arr = index_str->GetIndexAsArray();
+
+  for (int64_t xi = 0; xi < arr->length(); xi++) {
+    auto result = arr->GetScalar(xi);
+    std::cout << " " << result.ValueOrDie()->ToString();
+  }
+  std::cout << std::endl;
+
   return 0;
 }
 
-int test_multi_map() {
-  std::unordered_multimap<char, int> mymm;
+int arrow_stringify(void *search_param) {
+  std::string *sp = static_cast<std::string *>(search_param);
+  arrow::util::string_view s(*sp);
+  std::vector<std::string> vec(1, "");
+  vec[0] = s.to_string();
 
-  mymm.insert(std::make_pair('x', 10));
-  mymm.insert(std::make_pair('y', 20));
-  mymm.insert(std::make_pair('z', 30));
-  mymm.insert(std::make_pair('y', 22));
-  mymm.insert(std::make_pair('z', 40));
-  mymm.insert(std::make_pair('x', 101));
+  arrow::StringBuilder builder;
 
-  // print content:
-  std::cout << "elements in mymm:" << '\n';
-  std::cout << "y => " << mymm.find('y')->first << ":" << mymm.find('y')->second << '\n';
-  std::cout << "z => " << mymm.find('z')->first << ":" << mymm.find('z')->second << '\n';
-
-  auto ret = mymm.find('z');
-
-  return 0;
 }
 
 void separator(std::string &statement) {

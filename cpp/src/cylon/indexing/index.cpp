@@ -19,8 +19,8 @@ std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table>
     case arrow::Type::HALF_FLOAT:return std::make_unique<HalfFloatHashIndexKernel>();
     case arrow::Type::FLOAT:return std::make_unique<FloatHashIndexKernel>();
     case arrow::Type::DOUBLE:return std::make_unique<DoubleHashIndexKernel>();
-    case arrow::Type::STRING:return nullptr;
-    case arrow::Type::BINARY:return nullptr;
+    case arrow::Type::STRING:return std::make_unique<StringHashIndexKernel>();
+    case arrow::Type::BINARY:return nullptr;//std::make_unique<BinaryHashIndexKernel>();
     default: return std::make_unique<GenericRangeIndexKernel>();
   }
 
@@ -32,10 +32,11 @@ std::unique_ptr<IndexKernel> CreateIndexKernel(std::shared_ptr<arrow::Table> inp
     return CreateHashIndexKernel(input_table, index_column);
   }
 }
-cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *pool) : BaseIndex(0, size, pool) {
-  start_ = start;
-  end_ = size;
-  step_ = step;
+cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *pool) : BaseIndex(0, size, pool),
+                                                                                        start_(start),
+                                                                                        end_(size),
+                                                                                        step_(step) {
+
 }
 Status RangeIndex::Find(void *search_param,
                         std::shared_ptr<arrow::Table> &input,
@@ -44,9 +45,6 @@ Status RangeIndex::Find(void *search_param,
   return Status::OK();
 }
 
-std::shared_ptr<arrow::Array> RangeIndex::GetIndexAsArray() {
-  return std::shared_ptr<arrow::Array>();
-}
 int RangeIndex::GetColId() const {
   return BaseIndex::GetColId();
 }
@@ -70,6 +68,9 @@ Status RangeIndex::Find(void *search_param, std::vector<int64_t> &find_index) {
 }
 Status RangeIndex::Find(void *search_param, int64_t &find_index) {
   return Status();
+}
+std::shared_ptr<arrow::Array> RangeIndex::GetIndexAsArray() {
+  return std::shared_ptr<arrow::Array>();
 }
 
 RangeIndexKernel::RangeIndexKernel() {}

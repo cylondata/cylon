@@ -35,6 +35,9 @@ class BaseIndex {
                       std::shared_ptr<arrow::Table> &input,
                       std::shared_ptr<arrow::Table> &output) = 0;
 
+  /**
+   * TODO: Function to retrieve index values as a column
+   * */
   virtual std::shared_ptr<arrow::Array> GetIndexAsArray() = 0;
 
   virtual int GetColId() const;
@@ -102,6 +105,7 @@ class Index : public BaseIndex {
     return Status(cylon::Code::IndexError);
   }
 
+
   std::shared_ptr<arrow::Array> GetIndexAsArray() override {
 
     using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
@@ -122,6 +126,7 @@ class Index : public BaseIndex {
 
     builder.AppendValues(vec);
     arrow_status = builder.Finish(&index_array);
+
     if (!arrow_status.ok()) {
       LOG(ERROR) << "Error occurred in retrieving index";
       return nullptr;
@@ -144,6 +149,103 @@ class Index : public BaseIndex {
   std::shared_ptr<MMAP_TYPE> map_;
 
 };
+
+template<>
+class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
+ public:
+  using MMAP_TYPE = typename std::unordered_multimap<arrow::util::string_view, int64_t>;
+  Index(int col_ids, int size, arrow::MemoryPool *pool, std::shared_ptr<MMAP_TYPE> map)
+      : BaseIndex(col_ids, size, pool) {
+    map_ = map;
+  };
+
+  Status Find(void *search_param, std::shared_ptr<arrow::Table> &input, std::shared_ptr<arrow::Table> &output) override {
+    LOG(INFO) << "Extract table for a given index";
+    arrow::Status arrow_status;
+    std::shared_ptr<arrow::Array> out_idx;
+    arrow::compute::ExecContext fn_ctx(GetPool());
+    arrow::Int64Builder idx_builder(GetPool());
+    const arrow::Datum input_table(input);
+    std::vector<int64_t> filter_vals;
+
+    Find(search_param, filter_vals);
+
+    idx_builder.AppendValues(filter_vals);
+    arrow_status = idx_builder.Finish(&out_idx);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+    const arrow::Datum filter_indices(out_idx);
+    arrow::Result<arrow::Datum>
+        result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+    output = result.ValueOrDie().table();
+    return Status::OK();
+  };
+
+  Status Find(void *search_param, std::vector<int64_t> &find_index) override {
+    LOG(INFO) << "Finding row ids for a given index";
+    std::string *sp = static_cast<std::string*>(search_param);
+    arrow::util::string_view search_param_sv(*sp);
+    auto ret = map_->equal_range(search_param_sv);
+    for (auto it = ret.first; it != ret.second; ++it) {
+      find_index.push_back(it->second);
+    }
+    return Status::OK();
+  };
+
+  Status Find(void *search_param, int64_t &find_index) override {
+    LOG(INFO) << "Finding row id for a given index";
+    std::string *sp = static_cast<std::string*>(search_param);
+    arrow::util::string_view search_param_sv(*sp);
+    auto ret = map_->find(search_param_sv);
+    if (ret != map_->end()) {
+      find_index = ret->second;
+      return Status::OK();
+    }
+    return Status(cylon::Code::IndexError);
+  };
+
+  std::shared_ptr<arrow::Array> GetIndexAsArray() override {
+
+    arrow::Status arrow_status;
+    auto pool = GetPool();
+
+    arrow::StringBuilder builder(pool);
+
+    std::shared_ptr<arrow::StringArray> index_array;
+
+    std::vector<std::string> vec(GetSize(), "");
+
+    for (const auto &x: *map_) {
+      vec[x.second] = x.first.to_string();
+    }
+
+    builder.AppendValues(vec);
+    arrow_status = builder.Finish(&index_array);
+
+    if (!arrow_status.ok()) {
+      LOG(ERROR) << "Error occurred in retrieving index";
+      return nullptr;
+    }
+
+    return index_array;
+  }
+
+  int GetColId() const override {
+    return BaseIndex::GetColId();
+  }
+  int GetSize() const override {
+    return BaseIndex::GetSize();
+  }
+  arrow::MemoryPool *GetPool() const override {
+    return BaseIndex::GetPool();
+  }
+
+ private:
+  std::shared_ptr<MMAP_TYPE> map_;
+
+
+};
+
 
 class RangeIndex : public BaseIndex {
  public:
@@ -204,10 +306,11 @@ class HashIndexKernel : public IndexKernel {
     const std::shared_ptr<arrow::Array> &idx_column = input_table->column(index_column)->chunk(0);
     std::shared_ptr<MMAP_TYPE> out_umm_ptr = std::make_shared<MMAP_TYPE>(idx_column->length());
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(idx_column);
-    for (int64_t i = reader0->length(); i >= 0; --i) {
+    for (int64_t i = reader0->length() - 1; i >= 0; --i) {
       auto val = reader0->GetView(i);
-      out_umm_ptr->insert(std::make_pair(val, i));
+      out_umm_ptr->emplace(val, i);
     }
+    std::cout << std::endl;
     auto index = std::make_shared<Index<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), pool, out_umm_ptr);
 
     return index;
@@ -227,8 +330,8 @@ using Int64HashIndexKernel = HashIndexKernel<arrow::Int64Type>;
 using HalfFloatHashIndexKernel = HashIndexKernel<arrow::HalfFloatType>;
 using FloatHashIndexKernel = HashIndexKernel<arrow::FloatType>;
 using DoubleHashIndexKernel = HashIndexKernel<arrow::DoubleType>;
-//using StringHashIndexKernel = HashIndexKernel<arrow::StringType>;
-//using BinaryHashIndexKernel = HashIndexKernel<arrow::BinaryType>;
+using StringHashIndexKernel = HashIndexKernel<arrow::StringType, arrow::util::string_view>;
+using BinaryHashIndexKernel = HashIndexKernel<arrow::BinaryType, arrow::util::string_view>;
 using GenericRangeIndexKernel = RangeIndexKernel;
 
 std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column);
