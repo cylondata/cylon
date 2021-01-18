@@ -26,18 +26,16 @@ class BaseIndex {
   };
 
   // TODO: virtual destructor
-  virtual Status Find(void *search_param,
-                      std::vector<int64_t> &find_index) = 0;
+  virtual Status LocationByValue(void *search_param,
+                                 std::vector<int64_t> &find_index) = 0;
 
-  virtual Status Find(void *search_param, int64_t &find_index) = 0;
+  virtual Status LocationByValue(void *search_param, int64_t &find_index) = 0;
 
-  virtual Status Find(void *search_param,
-                      std::shared_ptr<arrow::Table> &input,
-                      std::shared_ptr<arrow::Table> &output) = 0;
+  virtual Status LocationByValue(void *search_param,
+                                 std::shared_ptr<arrow::Table> &input,
+                                 std::shared_ptr<arrow::Table> &output) = 0;
 
-  /**
-   * TODO: Function to retrieve index values as a column
-   * */
+
   virtual std::shared_ptr<arrow::Array> GetIndexAsArray() = 0;
 
   virtual int GetColId() const;
@@ -61,9 +59,9 @@ class Index : public BaseIndex {
     map_ = map;
   };
 
-  Status Find(void *search_param,
-              std::shared_ptr<arrow::Table> &input,
-              std::shared_ptr<arrow::Table> &output) override {
+  Status LocationByValue(void *search_param,
+                         std::shared_ptr<arrow::Table> &input,
+                         std::shared_ptr<arrow::Table> &output) override {
 
     arrow::Status arrow_status;
     std::shared_ptr<arrow::Array> out_idx;
@@ -72,7 +70,7 @@ class Index : public BaseIndex {
     const arrow::Datum input_table(input);
     std::vector<int64_t> filter_vals;
 
-    Find(search_param, filter_vals);
+    LocationByValue(search_param, filter_vals);
 
     idx_builder.AppendValues(filter_vals);
     arrow_status = idx_builder.Finish(&out_idx);
@@ -85,7 +83,7 @@ class Index : public BaseIndex {
     return Status::OK();
   }
 
-  Status Find(void *search_param, std::vector<int64_t> &find_index) override {
+  Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
 
     CTYPE val = *static_cast<CTYPE *>(search_param);
     auto ret = map_->equal_range(val);
@@ -95,7 +93,7 @@ class Index : public BaseIndex {
     return Status::OK();
   }
 
-  Status Find(void *search_param, int64_t &find_index) override {
+  Status LocationByValue(void *search_param, int64_t &find_index) override {
     CTYPE val = *static_cast<CTYPE *>(search_param);
     auto ret = map_->find(val);
     if (ret != map_->end()) {
@@ -159,7 +157,7 @@ class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
     map_ = map;
   };
 
-  Status Find(void *search_param, std::shared_ptr<arrow::Table> &input, std::shared_ptr<arrow::Table> &output) override {
+  Status LocationByValue(void *search_param, std::shared_ptr<arrow::Table> &input, std::shared_ptr<arrow::Table> &output) override {
     LOG(INFO) << "Extract table for a given index";
     arrow::Status arrow_status;
     std::shared_ptr<arrow::Array> out_idx;
@@ -168,7 +166,7 @@ class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
     const arrow::Datum input_table(input);
     std::vector<int64_t> filter_vals;
 
-    Find(search_param, filter_vals);
+    LocationByValue(search_param, filter_vals);
 
     idx_builder.AppendValues(filter_vals);
     arrow_status = idx_builder.Finish(&out_idx);
@@ -181,7 +179,7 @@ class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
     return Status::OK();
   };
 
-  Status Find(void *search_param, std::vector<int64_t> &find_index) override {
+  Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
     LOG(INFO) << "Finding row ids for a given index";
     std::string *sp = static_cast<std::string*>(search_param);
     arrow::util::string_view search_param_sv(*sp);
@@ -192,7 +190,7 @@ class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
     return Status::OK();
   };
 
-  Status Find(void *search_param, int64_t &find_index) override {
+  Status LocationByValue(void *search_param, int64_t &find_index) override {
     LOG(INFO) << "Finding row id for a given index";
     std::string *sp = static_cast<std::string*>(search_param);
     arrow::util::string_view search_param_sv(*sp);
@@ -250,9 +248,9 @@ class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
 class RangeIndex : public BaseIndex {
  public:
   RangeIndex(int start, int size, int step, arrow::MemoryPool *pool);
-  Status Find(void *search_param, std::shared_ptr<arrow::Table> &input, std::shared_ptr<arrow::Table> &output) override;
-  Status Find(void *search_param, std::vector<int64_t> &find_index) override;
-  Status Find(void *search_param, int64_t &find_index) override;
+  Status LocationByValue(void *search_param, std::shared_ptr<arrow::Table> &input, std::shared_ptr<arrow::Table> &output) override;
+  Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override;
+  Status LocationByValue(void *search_param, int64_t &find_index) override;
   std::shared_ptr<arrow::Array> GetIndexAsArray() override;
 
   int GetColId() const override;

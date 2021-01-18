@@ -80,9 +80,9 @@ int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<c
   std::shared_ptr<cylon::Table> ftb;
   filter_table = result.ValueOrDie().table();
   if (result.status() != arrow::Status::OK()) {
-    std::cout << "Error occured in Find" << std::endl;
+    std::cout << "Error occured in LocationByValue" << std::endl;
   } else {
-    std::cout << "Find Succeeded" << std::endl;
+    std::cout << "LocationByValue Succeeded" << std::endl;
   }
   cylon::Table::FromArrowTable(ctx, filter_table, ftb);
 

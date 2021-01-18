@@ -9,8 +9,8 @@ cylon::Status GetLocFilterIndices(void *start_index,
   cylon::Status status1, status2, status_build;
   std::shared_ptr<arrow::Table> out_artb;
 
-  status1 = index->Find(start_index, s_index);
-  status2 = index->Find(end_index, e_index);
+  status1 = index->LocationByValue(start_index, s_index);
+  status2 = index->LocationByValue(end_index, e_index);
 
   if (!(status1.is_ok() and status2.is_ok())) {
     LOG(ERROR) << "Error occurred in extracting indices!";
@@ -88,7 +88,7 @@ cylon::Status ResolveLocIndices(std::vector<void *> &input_indices,
     std::vector<int64_t> filter_ix;
     void *val = input_indices.at(ix);
 
-    status = index->Find(&val, filter_ix);
+    status = index->LocationByValue(&val, filter_ix);
     if (!status.is_ok()) {
       LOG(ERROR) << "Error in retrieving indices!";
       return status;
@@ -148,7 +148,7 @@ cylon::Status GetTableByLocIndex(void *indices,
   auto ctx = input_table->GetContext();
   auto input_artb = input_table->get_table();
   std::shared_ptr<arrow::Table> out_arrow;
-  status_build = index->Find(indices, input_artb, out_arrow);
+  status_build = index->LocationByValue(indices, input_artb, out_arrow);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in retrieving indices!";
@@ -480,8 +480,10 @@ cylon::Status cylon::ILocIndexer::loc(void *start_index,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
 
-  auto index = input_table->GetIndex();
-
+//  auto index = input_table->GetIndex();
+//
+//  int64_t s_index = reinterpret_cast<int64_t>(start_index);
+//  int64_t e_index = reinterpret_cast<int64_t>(end_index);
 
   return Status::OK();
 }

@@ -38,9 +38,9 @@ cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *
                                                                                         step_(step) {
 
 }
-Status RangeIndex::Find(void *search_param,
-                        std::shared_ptr<arrow::Table> &input,
-                        std::shared_ptr<arrow::Table> &output) {
+Status RangeIndex::LocationByValue(void *search_param,
+                                   std::shared_ptr<arrow::Table> &input,
+                                   std::shared_ptr<arrow::Table> &output) {
   LOG(ERROR) << "Not Implemented!";
   return Status::OK();
 }
@@ -63,12 +63,12 @@ int RangeIndex::GetAnEnd() const {
 int RangeIndex::GetStep() const {
   return step_;
 }
-Status RangeIndex::Find(void *search_param, std::vector<int64_t> &find_index) {
+Status RangeIndex::LocationByValue(void *search_param, std::vector<int64_t> &find_index) {
   int64_t val = *static_cast<int64_t *>(search_param);
   find_index.push_back(val);
   return Status::OK();
 }
-Status RangeIndex::Find(void *search_param, int64_t &find_index) {
+Status RangeIndex::LocationByValue(void *search_param, int64_t &find_index) {
   find_index = *static_cast<int64_t *>(search_param);
   return Status::OK();
 }
