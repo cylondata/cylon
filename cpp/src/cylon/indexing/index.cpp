@@ -64,13 +64,38 @@ int RangeIndex::GetStep() const {
   return step_;
 }
 Status RangeIndex::Find(void *search_param, std::vector<int64_t> &find_index) {
-  return Status();
+  int64_t val = *static_cast<int64_t *>(search_param);
+  find_index.push_back(val);
+  return Status::OK();
 }
 Status RangeIndex::Find(void *search_param, int64_t &find_index) {
-  return Status();
+  find_index = *static_cast<int64_t *>(search_param);
+  return Status::OK();
 }
 std::shared_ptr<arrow::Array> RangeIndex::GetIndexAsArray() {
-  return std::shared_ptr<arrow::Array>();
+
+  arrow::Status arrow_status;
+  auto pool = GetPool();
+
+  arrow::Int64Builder builder(pool);
+
+  std::shared_ptr<arrow::Int64Array> index_array;
+
+  std::vector<int64_t> vec(GetSize(), 1);
+
+  for (int64_t ix=0; ix < GetSize(); ix+=GetStep()) {
+    vec[ix] = ix;
+  }
+
+  builder.AppendValues(vec);
+  arrow_status = builder.Finish(&index_array);
+
+  if (!arrow_status.ok()) {
+    LOG(ERROR) << "Error occurred in retrieving index";
+    return nullptr;
+  }
+
+  return index_array;
 }
 
 RangeIndexKernel::RangeIndexKernel() {}
