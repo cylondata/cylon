@@ -38,6 +38,9 @@ from pycylon.data.data_type cimport DataType
 from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 from pycylon.common.status cimport Status
+from pycylon.data.table cimport CSortOptions
+from pycylon.data.table import SortOptions
+from pycylon.data.table cimport SortOptions
 
 
 cdef api bint pyclon_is_context(object context):
@@ -63,6 +66,10 @@ cdef api bint pyclon_is_layout(object layout):
 
 cdef api bint pyclon_is_data_type(object data_type):
     return isinstance(data_type, DataType)
+
+cdef api bint pyclon_is_sort_options(object sort_options):
+    return isinstance(sort_options, SortOptions)
+
 
 cdef api shared_ptr[CCylonContext] pycylon_unwrap_context(object context):
     cdef CylonContext ctx
@@ -111,10 +118,21 @@ cdef api shared_ptr[CDataType] pycylon_unwrap_data_type (object data_type):
     else:
         raise ValueError('Passed object is not an instance of DataType')
 
+
+cdef api CSortOptions* pycylon_unwrap_sort_options (object sort_options):
+    cdef SortOptions so
+    if pyclon_is_sort_options(sort_options):
+        so = <SortOptions> sort_options
+        return so.thisPtr
+    else:
+        raise ValueError('Passed object is not an instance of DataType')
+
+
+
 cdef api CType pycylon_unwrap_type(object type):
     pass
 
-cdef api CLayout pycylon_unwrap_layout(object layout):\
+cdef api CLayout pycylon_unwrap_layout(object layout):
     pass
 
 cdef api object pycylon_wrap_table(const shared_ptr[CTable]& ctable):
@@ -137,3 +155,9 @@ cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] &cdata_type):
     cdef DataType data_type = DataType.__new__(DataType)
     data_type.init(cdata_type)
     return data_type
+
+cdef api object pycylon_wrap_sort_options(CSortOptions *csort_options):
+    cdef SortOptions sort_options = SortOptions.__new__(SortOptions)
+    sort_options.init(csort_options)
+    return sort_options
+

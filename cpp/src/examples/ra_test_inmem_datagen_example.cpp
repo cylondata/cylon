@@ -35,19 +35,141 @@ void create_int64_table(char *const *argv,
                         std::shared_ptr<arrow::Table> &left_table,
                         std::shared_ptr<arrow::Table> &right_table);
 
-uint64_t next_random() {
-  uint64_t randnumber = 0;
-  for (int i = 19; i >= 1; i--) {
-    uint64_t power = pow(10, i - 1);
-    if (power % 2 != 0 && power != 1) {
-      power++;
-    }
-    randnumber += power * (rand() % 10);
-  }
-  return randnumber;
-}
+int shuffle_example(int argc, char *argv[]);
+int join_example(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
+  shuffle_example(argc, argv);
+  return 0;
+}
+
+void create_binary_table(char *const *argv,
+                         std::shared_ptr<cylon::CylonContext> &ctx,
+                         arrow::MemoryPool *pool,
+                         std::shared_ptr<arrow::Table> &left_table,
+                         std::shared_ptr<arrow::Table> &right_table) {
+  arrow::FixedSizeBinaryBuilder left_id_builder(arrow::fixed_size_binary(8), pool);
+  arrow::FixedSizeBinaryBuilder right_id_builder(arrow::fixed_size_binary(8), pool);
+  arrow::FixedSizeBinaryBuilder cost_builder(arrow::fixed_size_binary(8), pool);
+
+  uint64_t count = std::stoull(argv[1]);
+  uint64_t range = count * ctx->GetWorldSize();
+
+  std::random_device rd;
+  std::mt19937_64 gen(rd());
+  std::uniform_int_distribution<uint64_t> distrib(0, range);
+
+  arrow::Status st = left_id_builder.Reserve(count);
+  st = right_id_builder.Reserve(count);
+  st = cost_builder.Reserve(count);
+  for (uint64_t i = 0; i < count; i++) {
+    uint64_t l = distrib(gen);
+    uint64_t r = distrib(gen);
+    uint64_t v = distrib(gen);
+    left_id_builder.UnsafeAppend((uint8_t *) (&l));
+    right_id_builder.UnsafeAppend((uint8_t *) (&r));
+    cost_builder.UnsafeAppend((uint8_t *) (&v));
+  }
+
+  std::shared_ptr<arrow::Array> left_id_array;
+  std::shared_ptr<arrow::Array> right_id_array;
+  std::shared_ptr<arrow::Array> cost_array;
+
+  st = left_id_builder.Finish(&left_id_array);
+  st = right_id_builder.Finish(&right_id_array);
+  st = cost_builder.Finish(&cost_array);
+
+  std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
+      arrow::field("first", arrow::fixed_size_binary(8)),
+      arrow::field("second", arrow::fixed_size_binary(8))};
+  auto schema = std::make_shared<arrow::Schema>(schema_vector);
+
+  left_table = arrow::Table::Make(schema,
+                                  {std::move(left_id_array), cost_array});
+  right_table = arrow::Table::Make(schema,
+                                   {std::move(right_id_array), std::move(cost_array)});
+}
+
+void create_int64_table(char *const *argv,
+                        std::shared_ptr<cylon::CylonContext> &ctx,
+                        arrow::MemoryPool *pool,
+                        std::shared_ptr<arrow::Table> &left_table,
+                        std::shared_ptr<arrow::Table> &right_table) {
+  arrow::Int64Builder left_id_builder(pool);
+  arrow::Int64Builder right_id_builder(pool);
+  arrow::Int64Builder cost_builder(pool);
+
+  uint64_t count = std::stoull(argv[1]);
+  uint64_t range = count * ctx->GetWorldSize();
+
+  std::random_device rd;
+  std::mt19937_64 gen(rd());
+  std::uniform_int_distribution<int64_t> distrib(0, range);
+
+  arrow::Status st = left_id_builder.Reserve(count);
+  st = right_id_builder.Reserve(count);
+  st = cost_builder.Reserve(count);
+  for (uint64_t i = 0; i < count; i++) {
+    int64_t l = distrib(gen);
+    int64_t r = distrib(gen);
+    int64_t v = distrib(gen);
+    left_id_builder.UnsafeAppend(l);
+    right_id_builder.UnsafeAppend(r);
+    cost_builder.UnsafeAppend(v);
+  }
+
+  std::shared_ptr<arrow::Array> left_id_array;
+  std::shared_ptr<arrow::Array> right_id_array;
+  std::shared_ptr<arrow::Array> cost_array;
+
+  st = left_id_builder.Finish(&left_id_array);
+  st = right_id_builder.Finish(&right_id_array);
+  st = cost_builder.Finish(&cost_array);
+
+  std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
+      arrow::field("first", arrow::int64()),
+      arrow::field("second", arrow::int64())};
+  auto schema = std::make_shared<arrow::Schema>(schema_vector);
+
+  left_table = arrow::Table::Make(schema,
+                                  {std::move(left_id_array), cost_array});
+  right_table = arrow::Table::Make(schema,
+                                   {std::move(right_id_array), std::move(cost_array)});
+}
+
+int shuffle_example(int argc, char *argv[]) {
+  if (argc < 2) {
+    LOG(ERROR) << "There should be one argument with count";
+    return 1;
+  }
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  arrow::MemoryPool *pool = arrow::default_memory_pool();
+
+  std::shared_ptr<arrow::Table> orig_table1, orig_table2;
+  create_int64_table(argv, ctx, pool, orig_table1, orig_table2);
+  std::shared_ptr<cylon::Table> corig_table1, corig_table2;
+
+  auto status = cylon::Table::FromArrowTable(ctx, orig_table1, corig_table1);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error in Table Conversion to Cylon";
+    return 1;
+  }
+
+  std::vector<int> colidx = {0};
+  std::shared_ptr<cylon::Table> shuffle_output;
+  cylon::Shuffle(corig_table1, colidx, shuffle_output);
+  std::cout << "=================" << ctx->GetRank() << ": Original Table Rows : " << corig_table1->Rows()
+            << ", Shuffled Table Rows: " << shuffle_output->Rows() << std::endl;
+
+  shuffle_output->Print();
+
+  return 0;
+}
+
+int join_example(int argc, char *argv[]) {
   if (argc < 2) {
     LOG(ERROR) << "There should be one argument with count";
     return 1;
@@ -97,98 +219,12 @@ int main(int argc, char *argv[]) {
   }
   auto join_end_time = std::chrono::steady_clock::now();
 
-  LOG(INFO) << "Joined has : " << joined->Rows();
+  LOG(INFO) << ">>>>>>>>>>>" << ctx->GetRank() << ": Joined has : " << joined->Rows();
   LOG(INFO) << "Join done in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 join_end_time - read_end_time).count() << "[ms]";
+
   ctx->Finalize();
+
   return 0;
-}
-
-void create_binary_table(char *const *argv,
-                         std::shared_ptr<cylon::CylonContext> &ctx,
-                         arrow::MemoryPool *pool,
-                         std::shared_ptr<arrow::Table> &left_table,
-                         std::shared_ptr<arrow::Table> &right_table) {
-  arrow::FixedSizeBinaryBuilder left_id_builder(arrow::fixed_size_binary(8), pool);
-  arrow::FixedSizeBinaryBuilder right_id_builder(arrow::fixed_size_binary(8), pool);
-  arrow::FixedSizeBinaryBuilder cost_builder(arrow::fixed_size_binary(8), pool);
-
-  uint64_t count = std::stoull(argv[1]);
-  uint64_t range = count * ctx->GetWorldSize();
-  srand(time(NULL) + ctx->GetRank());
-
-  arrow::Status st = left_id_builder.Reserve(count);
-  st = right_id_builder.Reserve(count);
-  st = cost_builder.Reserve(count);
-  for (uint64_t i = 0; i < count; i++) {
-    uint64_t l = next_random() % range;
-    uint64_t r = next_random() % range;
-    uint64_t v = next_random() % range;
-    left_id_builder.UnsafeAppend((uint8_t *) (&l));
-    right_id_builder.UnsafeAppend((uint8_t *) (&r));
-    cost_builder.UnsafeAppend((uint8_t *) (&v));
-  }
-
-  std::shared_ptr<arrow::Array> left_id_array;
-  std::shared_ptr<arrow::Array> right_id_array;
-  std::shared_ptr<arrow::Array> cost_array;
-
-  st = left_id_builder.Finish(&left_id_array);
-  st = right_id_builder.Finish(&right_id_array);
-  st = cost_builder.Finish(&cost_array);
-
-  std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
-      arrow::field("first", arrow::fixed_size_binary(8)),
-      arrow::field("second", arrow::fixed_size_binary(8))};
-  auto schema = std::make_shared<arrow::Schema>(schema_vector);
-
-  left_table = arrow::Table::Make(schema,
-                                  {std::move(left_id_array), cost_array});
-  right_table = arrow::Table::Make(schema,
-                                   {std::move(right_id_array), std::move(cost_array)});
-}
-
-void create_int64_table(char *const *argv,
-                        std::shared_ptr<cylon::CylonContext> &ctx,
-                        arrow::MemoryPool *pool,
-                        std::shared_ptr<arrow::Table> &left_table,
-                        std::shared_ptr<arrow::Table> &right_table) {
-  arrow::Int64Builder left_id_builder(pool);
-  arrow::Int64Builder right_id_builder(pool);
-  arrow::Int64Builder cost_builder(pool);
-
-  uint64_t count = std::stoull(argv[1]);
-  uint64_t range = count * ctx->GetWorldSize();
-  srand(time(NULL) + ctx->GetRank());
-
-  arrow::Status st = left_id_builder.Reserve(count);
-  st = right_id_builder.Reserve(count);
-  st = cost_builder.Reserve(count);
-  for (uint64_t i = 0; i < count; i++) {
-    int64_t l = next_random() % range;
-    int64_t r = next_random() % range;
-    int64_t v = next_random() % range;
-    left_id_builder.UnsafeAppend(l);
-    right_id_builder.UnsafeAppend(r);
-    cost_builder.UnsafeAppend(v);
-  }
-
-  std::shared_ptr<arrow::Array> left_id_array;
-  std::shared_ptr<arrow::Array> right_id_array;
-  std::shared_ptr<arrow::Array> cost_array;
-
-  st = left_id_builder.Finish(&left_id_array);
-  st = right_id_builder.Finish(&right_id_array);
-  st = cost_builder.Finish(&cost_array);
-
-  std::vector<std::shared_ptr<arrow::Field>> schema_vector = {
-      arrow::field("first", arrow::int64()),
-      arrow::field("second", arrow::int64())};
-  auto schema = std::make_shared<arrow::Schema>(schema_vector);
-
-  left_table = arrow::Table::Make(schema,
-                                  {std::move(left_id_array), cost_array});
-  right_table = arrow::Table::Make(schema,
-                                   {std::move(right_id_array), std::move(cost_array)});
 }

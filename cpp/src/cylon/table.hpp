@@ -27,10 +27,10 @@
 #endif
 
 #include "status.hpp"
+#include "ctx/cylon_context.hpp"
 #include "util/uuid.hpp"
 #include "column.hpp"
 #include "join/join_config.hpp"
-#include "arrow/arrow_join.hpp"
 #include "join/join.hpp"
 #include "io/csv_write_config.hpp"
 #include "row.hpp"
@@ -356,6 +356,28 @@ Status HashPartition(std::shared_ptr<cylon::Table> &table,
 Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_ptr<Table> &output);
 
 /**
+ * Sort the table according to the given column, this is a local sort (if the table has chunked columns, they will
+ * be merged in the output table)
+ * @param sort_column
+ * @return new table sorted according to the sort column
+ */
+
+struct SortOptions {
+  bool ascending;
+  uint32_t num_bins;
+  uint64_t num_samples;
+
+  static SortOptions Defaults() {
+    return {true, 0, 0};
+  }
+};
+
+Status DistributedSort(std::shared_ptr<cylon::Table> &table,
+                       int sort_column,
+                       std::shared_ptr<Table> &output,
+                       SortOptions sort_options = SortOptions::Defaults());
+
+/**
  * Filters out rows based on the selector function
  * @param table
  * @param selector lambda function returning a bool
@@ -374,8 +396,25 @@ Status Select(std::shared_ptr<cylon::Table> &table,
  * @return
  */
 Status Project(std::shared_ptr<cylon::Table> &table,
-               const std::vector<int64_t> &project_columns,
+               const std::vector<int32_t> &project_columns,
                std::shared_ptr<Table> &output);
+
+/**
+ * Creates a new table by dropping the duplicated elements column-wise
+ * @param table
+ * @param cols
+ * @param out
+ * @return Status
+ */
+Status Unique(std::shared_ptr<cylon::Table> &in,
+              const std::vector<int> &cols,
+              std::shared_ptr<cylon::Table> &out,
+              bool first = true);
+
+Status DistributedUnique(std::shared_ptr<cylon::Table> &in,
+                         const std::vector<int> &cols,
+                         std::shared_ptr<cylon::Table> &out
+);
 
 #ifdef BUILD_CYLON_PARQUET
 /**

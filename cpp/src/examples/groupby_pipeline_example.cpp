@@ -37,7 +37,7 @@ void CylonPipelineGroupBy(std::shared_ptr<cylon::Table> &ctable,
   auto t1 = std::chrono::steady_clock::now();
 
   cylon::Status s =
-      cylon::PipelineGroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
+      cylon::DistributedPipelineGroupBy(ctable, 0, {1}, {cylon::compute::SUM}, output);
 
   if (!s.is_ok()) {
     std::cout << " status " << s.get_code() << " " << s.get_msg() << std::endl;
