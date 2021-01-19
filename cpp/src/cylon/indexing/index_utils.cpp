@@ -52,7 +52,9 @@ cylon::Status cylon::IndexUtil::BuildFromVector(std::shared_ptr<arrow::Array> &i
     case arrow::Type::UINT16:break;
     case arrow::Type::INT16:break;
     case arrow::Type::UINT32:break;
-    case arrow::Type::INT32: return cylon::IndexUtil::BuildIndexFromVector<arrow::Int32Type>(index_values, pool, index);
+    case arrow::Type::INT32: return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::Int32Type>(index_values,
+                                                                                                 pool,
+                                                                                                 index);
     case arrow::Type::UINT64:break;
     case arrow::Type::INT64:break;
     case arrow::Type::HALF_FLOAT:break;

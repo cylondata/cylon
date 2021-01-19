@@ -23,9 +23,9 @@ class IndexUtil {
                      std::shared_ptr<cylon::Table> &out);
 
   template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
-  static Status BuildIndexFromVector(std::shared_ptr<arrow::Array> &index_values,
-                                     arrow::MemoryPool *pool,
-                                     std::shared_ptr<cylon::BaseIndex> &index) {
+  static Status BuildIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
+                                         arrow::MemoryPool *pool,
+                                         std::shared_ptr<cylon::BaseIndex> &index) {
     using SCALAR_T = typename arrow::TypeTraits<ARROW_T>::ScalarType;
 
     using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
