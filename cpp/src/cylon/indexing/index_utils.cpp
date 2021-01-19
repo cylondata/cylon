@@ -46,20 +46,54 @@ cylon::Status cylon::IndexUtil::BuildFromVector(std::shared_ptr<arrow::Array> &i
   switch (index_values->type()->id()) {
 
     case arrow::Type::NA:break;
-    case arrow::Type::BOOL:break;
-    case arrow::Type::UINT8:break;
-    case arrow::Type::INT8:break;
-    case arrow::Type::UINT16:break;
-    case arrow::Type::INT16:break;
-    case arrow::Type::UINT32:break;
-    case arrow::Type::INT32: return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::Int32Type>(index_values,
-                                                                                                 pool,
-                                                                                                 index);
-    case arrow::Type::UINT64:break;
-    case arrow::Type::INT64:break;
-    case arrow::Type::HALF_FLOAT:break;
-    case arrow::Type::FLOAT:break;
-    case arrow::Type::DOUBLE:break;
+    case arrow::Type::BOOL:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::BooleanType>(index_values,
+                                                                            pool,
+                                                                            index);
+    case arrow::Type::UINT8:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::UInt8Type>(index_values,
+                                                                          pool,
+                                                                          index);
+    case arrow::Type::INT8:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::Int8Type>(index_values,
+                                                                         pool,
+                                                                         index);
+    case arrow::Type::UINT16:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::UInt16Type>(index_values,
+                                                                           pool,
+                                                                           index);
+    case arrow::Type::INT16:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::Int16Type>(index_values,
+                                                                          pool,
+                                                                          index);
+    case arrow::Type::UINT32:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::UInt32Type>(index_values,
+                                                                           pool,
+                                                                           index);
+    case arrow::Type::INT32:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::Int32Type>(index_values,
+                                                                          pool,
+                                                                          index);
+    case arrow::Type::UINT64:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::UInt64Type>(index_values,
+                                                                           pool,
+                                                                           index);
+    case arrow::Type::INT64:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::Int64Type>(index_values,
+                                                                          pool,
+                                                                          index);
+    case arrow::Type::HALF_FLOAT:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::HalfFloatType>(index_values,
+                                                                              pool,
+                                                                              index);
+    case arrow::Type::FLOAT:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::FloatType>(index_values,
+                                                                          pool,
+                                                                          index);
+    case arrow::Type::DOUBLE:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::DoubleType>(index_values,
+                                                                           pool,
+                                                                           index);
     case arrow::Type::STRING:break;
     case arrow::Type::BINARY:break;
     case arrow::Type::FIXED_SIZE_BINARY:break;
