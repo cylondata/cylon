@@ -23,6 +23,7 @@
 
 #include "indexing/index_utils.hpp"
 #include "indexing/indexer.hpp"
+#include <typeinfo>
 
 int arrow_take_test();
 
@@ -31,6 +32,9 @@ int indexing_simple_example();
 void separator(std::string &statement);
 
 int test_multi_map();
+
+int build_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx);
+
 /**
  * This example reads two csv files and does a union on them.
  * $ ./unique_example data.csv
@@ -341,15 +345,26 @@ int indexing_simple_example() {
   }
   std::cout << std::endl;
 
+  build_index_from_values(ctx);
+
   return 0;
 }
 
 int arrow_stringify(void *search_param) {
-  std::string *sp = static_cast<std::string *>(search_param);
-  arrow::util::string_view s(*sp);
-  std::vector<std::string> vec(1, "");
-  vec[0] = s.to_string();
 
+  std::unordered_multimap<std::string, int> map;
+  map.emplace("a", 1);
+  map.emplace("b", 2);
+  map.emplace("c", 3);
+  map.emplace("d", 4);
+  map.emplace("e", 5);
+  map.emplace("f", 6);
+  map.emplace("g", 7);
+
+  std::vector<int> s;
+
+  bool val = typeid(int) == typeid(s);
+  std::cout << val << std::endl;
 
   return 0;
 }
@@ -360,3 +375,36 @@ void separator(std::string &statement) {
   std::cout << "===============================================" << std::endl;
 }
 
+int build_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
+  arrow::Status arrow_status;
+
+  std::shared_ptr<cylon::BaseIndex> custom_index;
+  std::shared_ptr<arrow::Array> index_values;
+  std::vector<int32_t> ix_vals = {1, 2, 3, 4, 11};
+  auto pool = cylon::ToArrowPool(ctx);
+  arrow::Int32Builder int_32_builder(pool);
+
+  int_32_builder.AppendValues(ix_vals);
+  arrow_status = int_32_builder.Finish(&index_values);
+
+  if (!arrow_status.ok()) {
+    return -1;
+  }
+
+  cylon::IndexUtil::BuildFromVector(index_values, pool, custom_index);
+
+  std::shared_ptr<arrow::Array> arr = custom_index->GetIndexAsArray();
+  std::shared_ptr<arrow::Int32Scalar> int_32_scalar;
+
+  for (int64_t xi = 0; xi < arr->length(); xi++) {
+    auto result = arr->GetScalar(xi);
+    if (!result.ok()) {
+      return -1;
+    }
+    auto scalar = result.ValueOrDie();
+    int_32_scalar = std::static_pointer_cast<arrow::Int32Scalar>(scalar);
+    std::cout << " " << int_32_scalar->value;
+  }
+  std::cout << std::endl;
+  return 0;
+}

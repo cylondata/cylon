@@ -35,7 +35,6 @@ class BaseIndex {
                                  std::shared_ptr<arrow::Table> &input,
                                  std::shared_ptr<arrow::Table> &output) = 0;
 
-
   virtual std::shared_ptr<arrow::Array> GetIndexAsArray() = 0;
 
   virtual int GetColId() const;
@@ -308,7 +307,6 @@ class HashIndexKernel : public IndexKernel {
       auto val = reader0->GetView(i);
       out_umm_ptr->emplace(val, i);
     }
-    std::cout << std::endl;
     auto index = std::make_shared<Index<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), pool, out_umm_ptr);
 
     return index;
