@@ -33,7 +33,9 @@ void separator(std::string &statement);
 
 int test_multi_map();
 
-int build_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx);
+int build_int_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx);
+
+int build_str_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx);
 
 /**
  * This example reads two csv files and does a union on them.
@@ -95,7 +97,7 @@ int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<c
   return 0;
 }
 
-int arrow_stringify(void *search_param);
+int arrow_stringify();
 
 int indexing_simple_example() {
   std::cout << "Dummy Test" << std::endl;
@@ -345,14 +347,18 @@ int indexing_simple_example() {
   }
   std::cout << std::endl;
 
-  build_index_from_values(ctx);
+  build_int_index_from_values(ctx);
+  build_str_index_from_values(ctx);
+
+  arrow_stringify();
 
   return 0;
 }
 
-int arrow_stringify(void *search_param) {
+int arrow_stringify() {
 
-  std::unordered_multimap<std::string, int> map;
+  std::unordered_multimap<arrow::util::string_view , int64_t> map;
+
   map.emplace("a", 1);
   map.emplace("b", 2);
   map.emplace("c", 3);
@@ -361,10 +367,9 @@ int arrow_stringify(void *search_param) {
   map.emplace("f", 6);
   map.emplace("g", 7);
 
-  std::vector<int> s;
-
-  bool val = typeid(int) == typeid(s);
-  std::cout << val << std::endl;
+//  for (const auto &x: map) {
+//    std::cout << x.first << "," << x.second << std::endl;
+//  }
 
   return 0;
 }
@@ -375,7 +380,7 @@ void separator(std::string &statement) {
   std::cout << "===============================================" << std::endl;
 }
 
-int build_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
+int build_int_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
   arrow::Status arrow_status;
 
   std::shared_ptr<cylon::BaseIndex> custom_index;
@@ -404,6 +409,40 @@ int build_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
     auto scalar = result.ValueOrDie();
     int_32_scalar = std::static_pointer_cast<arrow::Int32Scalar>(scalar);
     std::cout << " " << int_32_scalar->value;
+  }
+  std::cout << std::endl;
+  return 0;
+}
+
+int build_str_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
+  arrow::Status arrow_status;
+
+  std::shared_ptr<cylon::BaseIndex> custom_index;
+  std::shared_ptr<arrow::Array> index_values;
+  std::vector<std::string> ix_vals = {"xp", "xq", "xr", "xs", "xt"};
+  auto pool = cylon::ToArrowPool(ctx);
+  arrow::StringBuilder string_builder(pool);
+
+  string_builder.AppendValues(ix_vals);
+  arrow_status = string_builder.Finish(&index_values);
+
+  if (!arrow_status.ok()) {
+    return -1;
+  }
+
+  cylon::IndexUtil::BuildFromVector(index_values, pool, custom_index);
+
+  std::shared_ptr<arrow::Array> arr = custom_index->GetIndexAsArray();
+  std::shared_ptr<arrow::StringScalar> string_scalar;
+  std::cout << "Str Array Index length : " << arr->length() << std::endl;
+  for (int64_t xi = 0; xi < arr->length(); xi++) {
+    auto result = arr->GetScalar(xi);
+    if (!result.ok()) {
+      return -1;
+    }
+    auto scalar = result.ValueOrDie();
+    string_scalar = std::static_pointer_cast<arrow::StringScalar>(scalar);
+    std::cout << " " << string_scalar->value->ToString();
   }
   std::cout << std::endl;
   return 0;

@@ -27,17 +27,15 @@ class IndexUtil {
                                          arrow::MemoryPool *pool,
                                          std::shared_ptr<cylon::BaseIndex> &index) {
     using SCALAR_T = typename arrow::TypeTraits<ARROW_T>::ScalarType;
-
+    using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
     using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
     Status s;
     std::shared_ptr<MMAP_TYPE> out_umm_ptr = std::make_shared<MMAP_TYPE>(index_values->length());
     std::shared_ptr<SCALAR_T> scalar_val;
-    for (int64_t i = index_values->length() - 1; i >= 0; --i) {
-      auto result = index_values->GetScalar(i);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-      auto scalar = result.ValueOrDie();
-      scalar_val = std::static_pointer_cast<SCALAR_T>(scalar);
-      out_umm_ptr->emplace(scalar_val->value, i);
+    auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_values);
+    for (int64_t i = reader0->length() - 1; i >= 0; --i) {
+        auto val = reader0->GetView(i);
+        out_umm_ptr->emplace(val, i);
     }
     index = std::make_shared<Index<ARROW_T, CTYPE>>(0, index_values->length(), pool, out_umm_ptr);
     return Status::OK();
@@ -48,7 +46,6 @@ class IndexUtil {
                                 std::shared_ptr<cylon::BaseIndex> &index);
 
 };
-
 }
 
 #endif //CYLON_SRC_CYLON_INDEXING_BUILDER_H_

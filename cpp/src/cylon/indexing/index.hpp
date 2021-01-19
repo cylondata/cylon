@@ -215,6 +215,7 @@ class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
     for (const auto &x: *map_) {
       vec[x.second] = x.first.to_string();
     }
+    std::cout << std::endl;
 
     builder.AppendValues(vec);
     arrow_status = builder.Finish(&index_array);

@@ -39,6 +39,7 @@ cylon::Status cylon::IndexUtil::Find(std::shared_ptr<cylon::BaseIndex> &index,
   }
   return cylon::Status::OK();
 }
+
 cylon::Status cylon::IndexUtil::BuildFromVector(std::shared_ptr<arrow::Array> &index_values,
                                                 arrow::MemoryPool *pool,
                                                 std::shared_ptr<cylon::BaseIndex> &index) {
@@ -94,7 +95,10 @@ cylon::Status cylon::IndexUtil::BuildFromVector(std::shared_ptr<arrow::Array> &i
       return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::DoubleType>(index_values,
                                                                            pool,
                                                                            index);
-    case arrow::Type::STRING:break;
+    case arrow::Type::STRING:
+      return cylon::IndexUtil::BuildIndexFromArrowArray<arrow::StringType, arrow::util::string_view>(index_values,
+                                                                                              pool,
+                                                                                              index);;
     case arrow::Type::BINARY:break;
     case arrow::Type::FIXED_SIZE_BINARY:break;
     case arrow::Type::DATE32:break;
