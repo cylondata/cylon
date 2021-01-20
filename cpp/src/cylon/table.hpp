@@ -195,9 +195,6 @@ class Table {
 
   std::shared_ptr<BaseIndex> GetIndex();
 
-  Status FindAll(void * search_value, std::shared_ptr<cylon::Table> &result);
-
-
  private:
   /**
    * Every table should have an unique id

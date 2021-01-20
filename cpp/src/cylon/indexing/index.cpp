@@ -40,6 +40,7 @@ cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *
 }
 Status RangeIndex::LocationByValue(void *search_param,
                                    std::shared_ptr<arrow::Table> &input,
+                                   std::vector<int64_t> &filter_locations,
                                    std::shared_ptr<arrow::Table> &output) {
   LOG(ERROR) << "Not Implemented!";
   return Status::OK();

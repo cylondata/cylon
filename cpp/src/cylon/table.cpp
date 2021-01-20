@@ -1070,23 +1070,6 @@ Status Table::Set_Index(std::shared_ptr<cylon::BaseIndex> &index, bool drop_inde
 
   return Status::OK();
 }
-Status Table::FindAll(void *search_value, std::shared_ptr<cylon::Table> &result) {
-  std::shared_ptr<arrow::Table> arrow_result;
-  Status find_status;
-  if (base_index_) {
-    find_status = base_index_->LocationByValue(search_value, table_, arrow_result);
-    if (!find_status.is_ok()) {
-      LOG(ERROR) << "LocationByValue Failed!";
-      return find_status;
-    }
-    cylon::Table::FromArrowTable(ctx, arrow_result, result);
-
-  } else {
-    // TODO: implement default search
-    LOG(ERROR) << "Not Implemented !!!";
-  }
-  return Status::OK();
-}
 
 #ifdef BUILD_CYLON_PARQUET
 Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx,

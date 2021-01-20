@@ -5,6 +5,7 @@
 cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> &index,
                                               std::vector<int64_t> &sub_index_locations,
                                               std::shared_ptr<cylon::Table> &output) {
+
   std::shared_ptr<cylon::BaseIndex> loc_index;
   std::shared_ptr<arrow::Array> sub_index_pos_arr;
   std::shared_ptr<arrow::Array> sub_index_arr;
@@ -34,7 +35,7 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(datum.status());
   }
 
-  sub_index_arr = datum.ValueOrDie().chunked_array()->chunk(0);
+  sub_index_arr = datum.ValueOrDie().make_array();
 
   cylon::IndexUtil::BuildFromArrowArray(sub_index_arr, pool, loc_index);
   output->Set_Index(loc_index, false);
@@ -204,13 +205,14 @@ cylon::Status GetTableFromIndices(std::shared_ptr<cylon::Table> &input_table,
 cylon::Status GetTableByLocIndex(void *indices,
                                  std::shared_ptr<cylon::Table> &input_table,
                                  std::shared_ptr<cylon::BaseIndex> &index,
-                                 std::shared_ptr<cylon::Table> &output) {
-
+                                 std::shared_ptr<cylon::Table> &output,
+                                 std::vector<int64_t> &filter_indices) {
+  LOG(INFO) << "GetTableByLocIndex";
   cylon::Status status_build;
   auto ctx = input_table->GetContext();
   auto input_artb = input_table->get_table();
   std::shared_ptr<arrow::Table> out_arrow;
-  status_build = index->LocationByValue(indices, input_artb, out_arrow);
+  status_build = index->LocationByValue(indices, input_artb, filter_indices, out_arrow);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in retrieving indices!";
@@ -367,7 +369,8 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
   Status status_build;
   std::shared_ptr<cylon::Table> temp_output;
   auto index = input_table->GetIndex();
-  status_build = GetTableByLocIndex(indices, input_table, index, temp_output);
+  std::vector<int64_t> filter_indices;
+  status_build = GetTableByLocIndex(indices, input_table, index, temp_output, filter_indices);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in creating table by index!";
@@ -382,6 +385,8 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
     LOG(ERROR) << "Error occurred in creating table!";
     return status_build;
   }
+
+  status_build = SetIndexForLocResultTable(index, filter_indices, output);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -429,6 +434,8 @@ cylon::Status cylon::LocIndexer::loc(std::vector<void *> &indices,
     return status;
   }
 
+  status = SetIndexForLocResultTable(index, filter_indices, output);
+
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
     return status;
@@ -466,6 +473,8 @@ cylon::Status cylon::LocIndexer::loc(std::vector<void *> &indices,
     return status;
   }
 
+  status = SetIndexForLocResultTable(index, filter_indices, output);
+
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
     return status;
@@ -481,7 +490,8 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
   Status status_build;
   std::shared_ptr<cylon::Table> temp_output;
   auto index = input_table->GetIndex();
-  status_build = GetTableByLocIndex(indices, input_table, index, temp_output);
+  std::vector<int64_t> filter_indices;
+  status_build = GetTableByLocIndex(indices, input_table, index, temp_output, filter_indices);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in creating table by index!";
@@ -494,6 +504,8 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
     LOG(ERROR) << "Error occurred in filtering columns from Table!";
     return status_build;
   }
+
+  status_build = SetIndexForLocResultTable(index, filter_indices, output);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -511,7 +523,8 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
   Status status_build;
   std::shared_ptr<cylon::Table> temp_output;
   auto index = input_table->GetIndex();
-  status_build = GetTableByLocIndex(indices, input_table, index, temp_output);
+  std::vector<int64_t> filter_indices;
+  status_build = GetTableByLocIndex(indices, input_table, index, temp_output, filter_indices);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in creating table by index!";
@@ -533,6 +546,8 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
     LOG(ERROR) << "Error occurred in filtering columns from Table!";
     return status_build;
   }
+
+  status_build = SetIndexForLocResultTable(index, filter_indices, output);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -572,6 +587,8 @@ cylon::Status cylon::LocIndexer::loc(std::vector<void *> &indices,
     LOG(ERROR) << "Error occurred in creating table from selected columns";
     return status;
   }
+
+  status = SetIndexForLocResultTable(index, filter_indices, output);
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";

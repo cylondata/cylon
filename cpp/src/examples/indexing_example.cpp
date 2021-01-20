@@ -43,6 +43,8 @@ int indexing_benchmark();
 
 int test_hash_indexing();
 
+int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
+
 /**
  * This example reads two csv files and does a union on them.
  * $ ./unique_example data.csv
@@ -66,7 +68,7 @@ int test_hash_indexing();
  */
 
 int main(int argc, char *argv[]) {
-  //indexing_simple_example();
+  indexing_simple_example();
   test_hash_indexing();
 }
 
@@ -103,8 +105,6 @@ int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<c
 
   return 0;
 }
-
-
 
 int indexing_simple_example() {
   std::cout << "Dummy Test" << std::endl;
@@ -167,7 +167,7 @@ int indexing_simple_example() {
   std::shared_ptr<cylon::BaseIndex> bindex;
   std::shared_ptr<cylon::Table> range_indexed_table;
 
-  cylon::IndexUtil::Build(bindex, input1, -1);
+  cylon::IndexUtil::Build(bindex, input1, 0);
 
   range_index = std::static_pointer_cast<cylon::RangeIndex>(bindex);
 
@@ -192,6 +192,10 @@ int indexing_simple_example() {
 
   loc_tb1->Print();
 
+  LOG(INFO) << "Index of loc[1] table";
+  auto loc_index_arr_1 = loc_tb1->GetIndex()->GetIndexArray();
+  print_arrow_array(loc_index_arr_1);
+
   // loc mode 2
   long start_index_1 = 10;
   long end_index_1 = 123;
@@ -207,6 +211,10 @@ int indexing_simple_example() {
 
   loc_tb2->Print();
 
+  LOG(INFO) << "Index of loc[2] table";
+  auto loc_index_arr_2 = loc_tb2->GetIndex()->GetIndexArray();
+  print_arrow_array(loc_index_arr_2);
+
 //  // loc mode 3
   long start_index_2 = 27;
   long end_index_2 = 123;
@@ -220,6 +228,11 @@ int indexing_simple_example() {
   separator(statement_loc3);
 
   loc_tb3->Print();
+
+  LOG(INFO) << "Index of loc[3] table";
+  auto loc_index_arr_3 = loc_tb3->GetIndex()->GetIndexArray();
+  print_arrow_array(loc_index_arr_3);
+
 //
 //  // loc mode 4
 //
@@ -234,6 +247,10 @@ int indexing_simple_example() {
   separator(statement_loc4);
 
   loc_tb4->Print();
+
+  LOG(INFO) << "Index of loc[4] table";
+  auto loc_index_arr_4 = loc_tb4->GetIndex()->GetIndexArray();
+  print_arrow_array(loc_index_arr_4);
 //
 //  // loc mode 5
 //
@@ -258,6 +275,11 @@ int indexing_simple_example() {
   separator(statement_loc5);
 
   loc_tb5->Print();
+
+  LOG(INFO) << "Index of loc[5] table";
+  auto loc_index_arr_5 = loc_tb5->GetIndex()->GetIndexArray();
+  print_arrow_array(loc_index_arr_5);
+
 //
 //  // loc mode 6
 //
@@ -279,6 +301,10 @@ int indexing_simple_example() {
   separator(statement_loc6);
 
   loc_tb6->Print();
+
+  LOG(INFO) << "Index of loc[6] table";
+  auto loc_index_arr_6 = loc_tb6->GetIndex()->GetIndexArray();
+  print_arrow_array(loc_index_arr_6);
 //
 //  // loc mode 7
 //
@@ -295,6 +321,10 @@ int indexing_simple_example() {
   separator(statement_loc7);
 
   loc_tb7->Print();
+
+  LOG(INFO) << "Index of loc[7] table";
+  auto loc_index_arr_7 = loc_tb7->GetIndex()->GetIndexArray();
+  print_arrow_array(loc_index_arr_7);
 //
 //
 //  // loc mode 8
@@ -313,6 +343,10 @@ int indexing_simple_example() {
   separator(statement_loc8);
 
   loc_tb8->Print();
+
+  LOG(INFO) << "Index of loc[8] table";
+  auto loc_index_arr_8 = loc_tb8->GetIndex()->GetIndexArray();
+  print_arrow_array(loc_index_arr_8);
 //
 //  // loc mode 9
 //
@@ -328,6 +362,9 @@ int indexing_simple_example() {
 
   loc_tb9->Print();
 
+  LOG(INFO) << "Index of loc[9] table";
+  auto loc_index_arr_9 = loc_tb9->GetIndex()->GetIndexArray();
+  print_arrow_array(loc_index_arr_9);
   /**
    * For string data
    * */
@@ -353,6 +390,10 @@ int indexing_simple_example() {
     std::cout << " " << result.ValueOrDie()->ToString();
   }
   std::cout << std::endl;
+
+  LOG(INFO) << "Index of loc[str] table";
+  auto loc_index_arr_str = loc_s_tb1->GetIndex()->GetIndexArray();
+  print_arrow_array(loc_index_arr_str);
 
   build_array_from_vector(ctx);
 
@@ -501,7 +542,6 @@ int build_array_from_vector(std::shared_ptr<cylon::CylonContext> &ctx) {
   std::vector<double_t> index_vector3{1, 2, 3, 4, 5};
   std::vector<float_t> index_vector4{1, 2, 3, 4, 5};
 
-
   std::shared_ptr<cylon::BaseIndex> index;
   auto pool = cylon::ToArrowPool(ctx);
   cylon::IndexUtil::BuildIndexFromVector(index_vector3, pool, index);
@@ -525,7 +565,7 @@ int build_array_from_vector(std::shared_ptr<cylon::CylonContext> &ctx) {
   return 0;
 }
 
-int test_hash_indexing(){
+int test_hash_indexing() {
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
@@ -540,7 +580,7 @@ int test_hash_indexing(){
   std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
   status = cylon::FromCSV(ctx, test_file, input, read_options);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating table";
     return -1;
   }
@@ -577,12 +617,16 @@ int test_hash_indexing(){
 
   LOG(INFO) << "Loc Table Index";
 
+  print_arrow_array(arr);
+
+  return 0;
+}
+
+int print_arrow_array(std::shared_ptr<arrow::Array> &arr) {
   for (int64_t xi = 0; xi < arr->length(); xi++) {
     auto result = arr->GetScalar(xi);
     std::cout << " " << result.ValueOrDie()->ToString();
   }
   std::cout << std::endl;
-
-
   return 0;
 }

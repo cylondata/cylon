@@ -35,6 +35,7 @@ class BaseIndex {
 
   virtual Status LocationByValue(void *search_param,
                                  std::shared_ptr<arrow::Table> &input,
+                                 std::vector<int64_t> &filter_location,
                                  std::shared_ptr<arrow::Table> &output) = 0;
 
   virtual std::shared_ptr<arrow::Array> GetIndexAsArray() = 0;
@@ -67,6 +68,7 @@ class Index : public BaseIndex {
 
   Status LocationByValue(void *search_param,
                          std::shared_ptr<arrow::Table> &input,
+                         std::vector<int64_t> &filter_locations,
                          std::shared_ptr<arrow::Table> &output) override {
 
     arrow::Status arrow_status;
@@ -74,11 +76,10 @@ class Index : public BaseIndex {
     arrow::compute::ExecContext fn_ctx(GetPool());
     arrow::Int64Builder idx_builder(GetPool());
     const arrow::Datum input_table(input);
-    std::vector<int64_t> filter_vals;
 
-    LocationByValue(search_param, filter_vals);
+    LocationByValue(search_param, filter_locations);
 
-    idx_builder.AppendValues(filter_vals);
+    idx_builder.AppendValues(filter_locations);
     arrow_status = idx_builder.Finish(&out_idx);
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
     const arrow::Datum filter_indices(out_idx);
@@ -172,6 +173,7 @@ class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
 
   Status LocationByValue(void *search_param,
                          std::shared_ptr<arrow::Table> &input,
+                         std::vector<int64_t> &filter_locations,
                          std::shared_ptr<arrow::Table> &output) override {
     LOG(INFO) << "Extract table for a given index";
     arrow::Status arrow_status;
@@ -273,6 +275,7 @@ class RangeIndex : public BaseIndex {
   RangeIndex(int start, int size, int step, arrow::MemoryPool *pool);
   Status LocationByValue(void *search_param,
                          std::shared_ptr<arrow::Table> &input,
+                         std::vector<int64_t> &filter_locations,
                          std::shared_ptr<arrow::Table> &output) override;
   Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override;
   Status LocationByValue(void *search_param, int64_t &find_index) override;
