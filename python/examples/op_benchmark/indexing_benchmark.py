@@ -35,12 +35,13 @@ def do_indexing():
 
     t1 = time.time()
     pdf1 = pdf.set_index('a')
+    print(type(pdf1.index))
     t2 = time.time()
     df1 = pdf1.loc[237250, 'b' : 'd']
     t3 = time.time()
     print(t2-t1, t3-t2, df1.shape)
 
-    print(df1)
+    #print(df1)
 
 
 #generate_data()

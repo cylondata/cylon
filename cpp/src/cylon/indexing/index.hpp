@@ -39,6 +39,10 @@ class BaseIndex {
 
   virtual std::shared_ptr<arrow::Array> GetIndexAsArray() = 0;
 
+  virtual void SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) = 0;
+
+  virtual std::shared_ptr<arrow::Array> GetIndexArray() = 0;
+
   virtual int GetColId() const;
 
   virtual int GetSize() const;
@@ -49,6 +53,7 @@ class BaseIndex {
   int size_;
   int col_id_;
   arrow::MemoryPool *pool_;
+  std::shared_ptr<arrow::Array> index_arr;
 };
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
@@ -104,7 +109,6 @@ class Index : public BaseIndex {
     return Status(cylon::Code::IndexError);
   }
 
-
   std::shared_ptr<arrow::Array> GetIndexAsArray() override {
 
     using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
@@ -144,9 +148,17 @@ class Index : public BaseIndex {
     return BaseIndex::GetPool();
   }
 
+  void SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) override {
+    index_arr_ = index_arr;
+  }
+
+  std::shared_ptr<arrow::Array> GetIndexArray() override {
+    return index_arr_;
+  }
+
  private:
   std::shared_ptr<MMAP_TYPE> map_;
-
+  std::shared_ptr<arrow::Array> index_arr_;
 };
 
 template<>
@@ -158,7 +170,9 @@ class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
     map_ = map;
   };
 
-  Status LocationByValue(void *search_param, std::shared_ptr<arrow::Table> &input, std::shared_ptr<arrow::Table> &output) override {
+  Status LocationByValue(void *search_param,
+                         std::shared_ptr<arrow::Table> &input,
+                         std::shared_ptr<arrow::Table> &output) override {
     LOG(INFO) << "Extract table for a given index";
     arrow::Status arrow_status;
     std::shared_ptr<arrow::Array> out_idx;
@@ -182,7 +196,7 @@ class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
 
   Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
     LOG(INFO) << "Finding row ids for a given index";
-    std::string *sp = static_cast<std::string*>(search_param);
+    std::string *sp = static_cast<std::string *>(search_param);
     arrow::util::string_view search_param_sv(*sp);
     auto ret = map_->equal_range(search_param_sv);
     for (auto it = ret.first; it != ret.second; ++it) {
@@ -193,7 +207,7 @@ class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
 
   Status LocationByValue(void *search_param, int64_t &find_index) override {
     LOG(INFO) << "Finding row id for a given index";
-    std::string *sp = static_cast<std::string*>(search_param);
+    std::string *sp = static_cast<std::string *>(search_param);
     arrow::util::string_view search_param_sv(*sp);
     auto ret = map_->find(search_param_sv);
     if (ret != map_->end()) {
@@ -240,20 +254,31 @@ class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
     return BaseIndex::GetPool();
   }
 
+  void SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) override {
+    index_arr_ = index_arr;
+  }
+
+  std::shared_ptr<arrow::Array> GetIndexArray() override {
+    return index_arr_;
+  }
+
  private:
   std::shared_ptr<MMAP_TYPE> map_;
-
+  std::shared_ptr<arrow::Array> index_arr_;
 
 };
-
 
 class RangeIndex : public BaseIndex {
  public:
   RangeIndex(int start, int size, int step, arrow::MemoryPool *pool);
-  Status LocationByValue(void *search_param, std::shared_ptr<arrow::Table> &input, std::shared_ptr<arrow::Table> &output) override;
+  Status LocationByValue(void *search_param,
+                         std::shared_ptr<arrow::Table> &input,
+                         std::shared_ptr<arrow::Table> &output) override;
   Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override;
   Status LocationByValue(void *search_param, int64_t &find_index) override;
   std::shared_ptr<arrow::Array> GetIndexAsArray() override;
+  void SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) override;
+  std::shared_ptr<arrow::Array> GetIndexArray() override;
 
   int GetColId() const override;
   int GetSize() const override;
@@ -267,6 +292,7 @@ class RangeIndex : public BaseIndex {
   int start_ = 0;
   int end_ = 0;
   int step_ = 1;
+  std::shared_ptr<arrow::Array> index_arr_;
 
 };
 

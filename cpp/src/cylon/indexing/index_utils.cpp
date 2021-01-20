@@ -20,6 +20,8 @@ cylon::Status cylon::IndexUtil::Build(std::shared_ptr<cylon::BaseIndex> &index,
   std::shared_ptr<cylon::IndexKernel> kernel = CreateIndexKernel(table_, index_column);
   std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(pool, table_, index_column);
   index = std::move(bi);
+  auto index_array = table_->column(index_column)->chunk(0);
+  index->SetIndexArray(index_array);
   return cylon::Status::OK();
 }
 
@@ -40,9 +42,9 @@ cylon::Status cylon::IndexUtil::Find(std::shared_ptr<cylon::BaseIndex> &index,
   return cylon::Status::OK();
 }
 
-cylon::Status cylon::IndexUtil::BuildFromVector(std::shared_ptr<arrow::Array> &index_values,
-                                                arrow::MemoryPool *pool,
-                                                std::shared_ptr<cylon::BaseIndex> &index) {
+cylon::Status cylon::IndexUtil::BuildFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
+                                                    arrow::MemoryPool *pool,
+                                                    std::shared_ptr<cylon::BaseIndex> &index) {
   Status s;
   switch (index_values->type()->id()) {
 

@@ -83,7 +83,7 @@ std::shared_ptr<arrow::Array> RangeIndex::GetIndexAsArray() {
 
   std::vector<int64_t> vec(GetSize(), 1);
 
-  for (int64_t ix=0; ix < GetSize(); ix+=GetStep()) {
+  for (int64_t ix = 0; ix < GetSize(); ix += GetStep()) {
     vec[ix] = ix;
   }
 
@@ -96,6 +96,12 @@ std::shared_ptr<arrow::Array> RangeIndex::GetIndexAsArray() {
   }
 
   return index_array;
+}
+void RangeIndex::SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) {
+  index_arr_ = index_arr;
+}
+std::shared_ptr<arrow::Array> RangeIndex::GetIndexArray() {
+  return index_arr_;
 }
 
 RangeIndexKernel::RangeIndexKernel() {}

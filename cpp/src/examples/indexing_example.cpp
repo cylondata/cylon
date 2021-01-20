@@ -39,14 +39,9 @@ int build_str_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx);
 
 int build_array_from_vector(std::shared_ptr<cylon::CylonContext> &ctx);
 
-template<typename T, typename ARROW_T>
-int build_index_from_vector(std::vector<T> &index_values, std::unordered_multimap<T, int64_t> &map);
+int indexing_benchmark();
 
-template<typename T>
-int build_index(std::vector<T> &index_values, std::unordered_multimap<T, int64_t> &map);
-
-template<typename T>
-int show_map(std::unordered_multimap<T, int64_t> &map);
+int test_hash_indexing();
 
 /**
  * This example reads two csv files and does a union on them.
@@ -71,7 +66,8 @@ int show_map(std::unordered_multimap<T, int64_t> &map);
  */
 
 int main(int argc, char *argv[]) {
-  indexing_simple_example();
+  //indexing_simple_example();
+  test_hash_indexing();
 }
 
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
@@ -108,7 +104,7 @@ int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<c
   return 0;
 }
 
-int indexing_benchmark();
+
 
 int indexing_simple_example() {
   std::cout << "Dummy Test" << std::endl;
@@ -443,7 +439,7 @@ int build_int_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
     return -1;
   }
 
-  cylon::IndexUtil::BuildFromVector(index_values, pool, custom_index);
+  cylon::IndexUtil::BuildFromArrowArray(index_values, pool, custom_index);
 
   std::shared_ptr<arrow::Array> arr = custom_index->GetIndexAsArray();
   std::shared_ptr<arrow::Int32Scalar> int_32_scalar;
@@ -477,7 +473,7 @@ int build_str_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
     return -1;
   }
 
-  cylon::IndexUtil::BuildFromVector(index_values, pool, custom_index);
+  cylon::IndexUtil::BuildFromArrowArray(index_values, pool, custom_index);
 
   std::shared_ptr<arrow::Array> arr = custom_index->GetIndexAsArray();
   std::shared_ptr<arrow::StringScalar> string_scalar;
@@ -498,70 +494,95 @@ int build_str_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
 int build_array_from_vector(std::shared_ptr<cylon::CylonContext> &ctx) {
 
   LOG(INFO) << "Build index from vector";
-  std::vector<int16_t> index_vector({1, 2, 3, 4, 5});
-  std::vector<int32_t> index_vector1({1, 2, 3, 4, 5});
-  std::vector<int64_t> index_vector2({1, 2, 3, 4, 5});
-  std::vector<double_t> index_vector3({1, 2, 3, 4, 5});
-  std::vector<float_t> index_vector4({1, 2, 3, 4, 5});
+  std::vector<int> index_vector0{1, 2, 3, 4, 5};
+  std::vector<int16_t> index_vector{1, 2, 3, 4, 5};
+  std::vector<int32_t> index_vector1{1, 2, 3, 4, 5};
+  std::vector<int64_t> index_vector2{1, 2, 3, 4, 5};
+  std::vector<double_t> index_vector3{1, 2, 3, 4, 5};
+  std::vector<float_t> index_vector4{1, 2, 3, 4, 5};
 
-  std::unordered_multimap<int16_t, int64_t> map;
-  std::unordered_multimap<int32_t, int64_t> map1;
-  std::unordered_multimap<int64_t, int64_t> map2;
-  std::unordered_multimap<double_t, int64_t> map3;
-  std::unordered_multimap<float_t, int64_t> map4;
 
-  build_index_from_vector<int16_t, arrow::Int16Type>(index_vector, map);
-  build_index_from_vector<int32_t, arrow::Int32Type>(index_vector1, map1);
-  build_index_from_vector<int64_t, arrow::Int64Type>(index_vector2, map2);
-  build_index_from_vector<double_t, arrow::DoubleType>(index_vector3, map3);
-  build_index_from_vector<float_t, arrow::FloatType>(index_vector4, map4);
+  std::shared_ptr<cylon::BaseIndex> index;
+  auto pool = cylon::ToArrowPool(ctx);
+  cylon::IndexUtil::BuildIndexFromVector(index_vector3, pool, index);
 
-  std::cout << "Show Map 1" << std::endl;
-  show_map(map1);
+  auto arr = index->GetIndexAsArray();
+  LOG(INFO) << "Array length : " << arr->length();
+
+  std::shared_ptr<arrow::DoubleScalar> int_32_scalar;
+
+  for (int64_t xi = 0; xi < arr->length(); xi++) {
+    auto result = arr->GetScalar(xi);
+    if (!result.ok()) {
+      return -1;
+    }
+    auto scalar = result.ValueOrDie();
+    int_32_scalar = std::static_pointer_cast<arrow::DoubleScalar>(scalar);
+    std::cout << " " << int_32_scalar->value;
+  }
+  std::cout << std::endl;
 
   return 0;
 }
 
-template<typename T, typename ARROW_T>
-int build_index_from_vector(std::vector<T> &index_values, std::unordered_multimap<T, int64_t> &map) {
+int test_hash_indexing(){
 
-  if (typeid(T) == typeid(int16_t)) {
-    LOG(INFO) << "Int16 building index";
-    build_index(index_values, map);
-  } else if (typeid(T) == typeid(int32_t)) {
-    LOG(INFO) << "Int32 building index";
-    build_index(index_values, map);
-  } else if (typeid(T) == typeid(int64_t)) {
-    LOG(INFO) << "Int64 building index";
-    build_index(index_values, map);
-  } else if (typeid(T) == typeid(double_t)) {
-    LOG(INFO) << "double building index";
-    build_index(index_values, map);
-  } else if (typeid(T) == typeid(float_t)) {
-    LOG(INFO) << "float building index";
-    build_index(index_values, map);
-  } else {
-    LOG(ERROR) << "Invalid data type";
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/duplicate_data_0.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table";
+    return -1;
   }
 
-  return 0;
-}
+  LOG(INFO) << "Original Data";
 
-template<typename T>
-int build_index(std::vector<T> &index_values, std::unordered_multimap<T, int64_t> &map) {
-  LOG(INFO) << "Start building index";
-  for (int64_t i = 0; i < index_values.size(); i++) {
-    T val = static_cast<T>(index_values.at(i));
-    map.template emplace(val, i);
-  }
-  LOG(INFO) << "Finished building index";
-  return 0;
-}
+  input->Print();
 
-template<typename T>
-int show_map(std::unordered_multimap<T, int64_t> &map) {
-  for (const auto &x: map) {
-    std::cout << x.first << "," << x.second << std::endl;
+  long start_index = 27;
+  long end_index = 123;
+  int64_t index_column = 0;
+  bool drop_index = true;
+
+  std::shared_ptr<cylon::BaseIndex> index, loc_index;
+  cylon::IndexUtil::Build(index, input, index_column);
+
+  LOG(INFO) << "[Before Index] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
+
+  input->Set_Index(index, drop_index);
+
+  LOG(INFO) << "[After Index] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
+
+  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>();
+
+  base_indexer->loc(&start_index, &end_index, index_column, input, output);
+
+  LOG(INFO) << "Loc Result";
+
+  output->Print();
+
+  loc_index = output->GetIndex();
+
+  auto arr = loc_index->GetIndexArray();
+
+  LOG(INFO) << "Loc Table Index";
+
+  for (int64_t xi = 0; xi < arr->length(); xi++) {
+    auto result = arr->GetScalar(xi);
+    std::cout << " " << result.ValueOrDie()->ToString();
   }
+  std::cout << std::endl;
+
+
   return 0;
 }

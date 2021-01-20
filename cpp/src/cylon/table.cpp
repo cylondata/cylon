@@ -1050,7 +1050,15 @@ std::shared_ptr<BaseIndex> Table::GetIndex() {
   return base_index_;
 }
 Status Table::Set_Index(std::shared_ptr<cylon::BaseIndex> &index, bool drop_index) {
+
+  if (table_->column(0)->num_chunks() > 1) {
+    const arrow::Result<std::shared_ptr<arrow::Table>> &res = table_->CombineChunks(cylon::ToArrowPool(ctx));
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
+    table_ = res.ValueOrDie();
+  }
+
   base_index_ = index;
+
   if (drop_index) {
     arrow::Result<std::shared_ptr<arrow::Table>> result = table_->RemoveColumn(base_index_->GetColId());
     if (result.status() != arrow::Status::OK()) {

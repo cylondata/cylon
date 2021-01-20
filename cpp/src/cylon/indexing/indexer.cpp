@@ -1,5 +1,67 @@
 
 #include "indexer.hpp"
+#include "index_utils.hpp"
+
+cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> &index,
+                                              std::vector<int64_t> &sub_index_locations,
+                                              std::shared_ptr<cylon::Table> &output) {
+  std::shared_ptr<cylon::BaseIndex> loc_index;
+  std::shared_ptr<arrow::Array> sub_index_pos_arr;
+  std::shared_ptr<arrow::Array> sub_index_arr;
+  arrow::Status status;
+  auto index_arr = index->GetIndexArray();
+  auto ctx = output->GetContext();
+  auto pool = cylon::ToArrowPool(ctx);
+  arrow::Int64Builder builder(pool);
+  status = builder.AppendValues(sub_index_locations);
+
+  if (!status.ok()) {
+    LOG(ERROR) << "Index array builder append failed!";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
+  }
+
+  status = builder.Finish(&sub_index_pos_arr);
+
+  if (!status.ok()) {
+    LOG(ERROR) << "Index array builder finish failed!";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
+  }
+
+  arrow::Result<arrow::Datum> datum = arrow::compute::Take(index_arr, sub_index_pos_arr);
+
+  if (!datum.status().ok()) {
+    LOG(ERROR) << "Sub Index array creation failed!";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(datum.status());
+  }
+
+  sub_index_arr = datum.ValueOrDie().chunked_array()->chunk(0);
+
+  cylon::IndexUtil::BuildFromArrowArray(sub_index_arr, pool, loc_index);
+  output->Set_Index(loc_index, false);
+  return cylon::Status::OK();
+}
+
+cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> &index,
+                                             int64_t &start_pos,
+                                             int64_t &end_pos,
+                                             std::shared_ptr<cylon::Table> &output) {
+  std::shared_ptr<cylon::BaseIndex> loc_index;
+  std::shared_ptr<arrow::Array> sub_index_arr;
+  auto index_arr = index->GetIndexArray();
+
+  sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
+
+  std::cout << std::endl;
+
+  auto ctx = output->GetContext();
+  auto pool = cylon::ToArrowPool(ctx);
+
+  cylon::IndexUtil::BuildFromArrowArray(sub_index_arr, pool, loc_index);
+
+  output->Set_Index(loc_index, false);
+
+  return cylon::Status::OK();
+}
 
 cylon::Status GetLocFilterIndices(void *start_index,
                                   void *end_index,
@@ -198,6 +260,13 @@ cylon::Status cylon::LocIndexer::loc(void *start_index,
     return status_build;
   }
 
+  status_build = SetIndexForLocResultTable(index, s_index, e_index, output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in setting index for output table";
+    return status_build;
+  }
+
   return cylon::Status::OK();
 }
 cylon::Status cylon::LocIndexer::loc(void *start_index,
@@ -242,6 +311,13 @@ cylon::Status cylon::LocIndexer::loc(void *start_index,
     return status_build;
   }
 
+  status_build = SetIndexForLocResultTable(index, s_index, e_index, output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in setting index for output table";
+    return status_build;
+  }
+
   return cylon::Status::OK();
 }
 cylon::Status cylon::LocIndexer::loc(void *start_index,
@@ -274,6 +350,13 @@ cylon::Status cylon::LocIndexer::loc(void *start_index,
     return status_build;
   }
 
+  status_build = SetIndexForLocResultTable(index, s_index, e_index, output);
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in setting index for output table";
+    return status_build;
+  }
+
   return cylon::Status::OK();
 }
 cylon::Status cylon::LocIndexer::loc(void *indices,
@@ -297,6 +380,11 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in creating table!";
+    return status_build;
+  }
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in setting index for output table";
     return status_build;
   }
 
@@ -341,6 +429,11 @@ cylon::Status cylon::LocIndexer::loc(std::vector<void *> &indices,
     return status;
   }
 
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in setting index for output table";
+    return status;
+  }
+
   return cylon::Status::OK();
 }
 cylon::Status cylon::LocIndexer::loc(std::vector<void *> &indices,
@@ -373,6 +466,11 @@ cylon::Status cylon::LocIndexer::loc(std::vector<void *> &indices,
     return status;
   }
 
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in setting index for output table";
+    return status;
+  }
+
   return cylon::Status::OK();
 }
 
@@ -394,6 +492,11 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in filtering columns from Table!";
+    return status_build;
+  }
+
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in setting index for output table";
     return status_build;
   }
 
@@ -431,6 +534,11 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
     return status_build;
   }
 
+  if (!status_build.is_ok()) {
+    LOG(ERROR) << "Error occurred in setting index for output table";
+    return status_build;
+  }
+
   return cylon::Status::OK();
 
 }
@@ -462,6 +570,11 @@ cylon::Status cylon::LocIndexer::loc(std::vector<void *> &indices,
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating table from selected columns";
+    return status;
+  }
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in setting index for output table";
     return status;
   }
 
