@@ -1070,6 +1070,34 @@ Status Table::Set_Index(std::shared_ptr<cylon::BaseIndex> &index, bool drop_inde
 
   return Status::OK();
 }
+Status Table::ResetIndex(bool drop) {
+  if (base_index_) {
+    if (typeid(base_index_) == typeid(cylon::RangeIndex)) {
+      LOG(INFO) << "Table contains a range index";
+    } else {
+      LOG(INFO) << "Table contains a non-range index";
+      auto index_arr = base_index_->GetIndexArray();
+      auto pool = cylon::ToArrowPool(ctx);
+      base_index_ = std::make_shared<cylon::RangeIndex>(0, table_->num_rows(), 1, pool);
+      AddColumn(0, "index", index_arr);
+    }
+  }
+  return Status::OK();
+}
+Status Table::AddColumn(int64_t position, std::string column_name, std::shared_ptr<arrow::Array> &input_column) {
+  if (input_column->length() != table_->num_rows()) {
+    LOG(ERROR) << "New column length must match the number of rows in the table";
+    return Status(cylon::Code::CapacityError);
+  }
+  std::shared_ptr<arrow::Field> field = std::make_shared<arrow::Field>(column_name, input_column->type());
+  auto chunked_array = std::make_shared<arrow::ChunkedArray>(input_column);
+  auto result = table_->AddColumn(position, field, chunked_array);
+  if (!result.status().ok()) {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+  }
+  table_ = result.ValueOrDie();
+  return Status::OK();
+}
 
 #ifdef BUILD_CYLON_PARQUET
 Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx,

@@ -619,6 +619,10 @@ int test_hash_indexing() {
 
   print_arrow_array(arr);
 
+  output->ResetIndex();
+
+  output->Print();
+
   return 0;
 }
 
