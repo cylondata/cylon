@@ -20,7 +20,7 @@ import numpy as np
 
 dataset = []
 cols = ['a', 'b', 'c', 'd']
-records = 10_000_000
+records = 1_000_000
 duplicate_factor = 0.9
 gen_record_size = int(records * duplicate_factor)
 

@@ -37,6 +37,17 @@ int build_int_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx);
 
 int build_str_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx);
 
+int build_array_from_vector(std::shared_ptr<cylon::CylonContext> &ctx);
+
+template<typename T, typename ARROW_T>
+int build_index_from_vector(std::vector<T> &index_values, std::unordered_multimap<T, int64_t> &map);
+
+template<typename T>
+int build_index(std::vector<T> &index_values, std::unordered_multimap<T, int64_t> &map);
+
+template<typename T>
+int show_map(std::unordered_multimap<T, int64_t> &map);
+
 /**
  * This example reads two csv files and does a union on them.
  * $ ./unique_example data.csv
@@ -97,7 +108,7 @@ int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<c
   return 0;
 }
 
-int arrow_stringify();
+int indexing_benchmark();
 
 int indexing_simple_example() {
   std::cout << "Dummy Test" << std::endl;
@@ -347,29 +358,65 @@ int indexing_simple_example() {
   }
   std::cout << std::endl;
 
-  build_int_index_from_values(ctx);
-  build_str_index_from_values(ctx);
-
-  arrow_stringify();
+  build_array_from_vector(ctx);
 
   return 0;
 }
 
-int arrow_stringify() {
+int indexing_benchmark() {
 
-  std::unordered_multimap<arrow::util::string_view , int64_t> map;
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  map.emplace("a", 1);
-  map.emplace("b", 2);
-  map.emplace("c", 3);
-  map.emplace("d", 4);
-  map.emplace("e", 5);
-  map.emplace("f", 6);
-  map.emplace("g", 7);
+  cylon::Status status;
 
-//  for (const auto &x: map) {
-//    std::cout << x.first << "," << x.second << std::endl;
-//  }
+  std::shared_ptr<cylon::Table> input, output;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/indexing_10000000_0.1.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  const int index_column = 0;
+  bool drop_index = true;
+
+  std::shared_ptr<cylon::BaseIndex> index, index_str;
+  std::shared_ptr<cylon::Table> indexed_table;
+
+  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>();
+
+  auto start_start = std::chrono::steady_clock::now();
+
+  cylon::IndexUtil::Build(index, input, index_column);
+
+  auto read_end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Indexing table in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - start_start).count() << "[ms]";
+
+  input->Set_Index(index, drop_index);
+
+  long value = 237250;
+  int start_column = 1;
+  int end_column = 2;
+
+  auto start_start_i = std::chrono::steady_clock::now();
+  base_indexer->loc(&value, start_column, end_column, input, output);
+  auto end_start_i = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Loc table in "
+            << std::chrono::duration_cast<std::chrono::nanoseconds>(
+                end_start_i - start_start_i).count() << "[ns]";
+
+  auto start_start_j = std::chrono::steady_clock::now();
+  auto index_arr = index->GetIndexAsArray();
+  auto end_start_j = std::chrono::steady_clock::now();
+  LOG(INFO) << "Get Index Arr table in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                end_start_j - start_start_j).count() << "[ms]";
+
+  output->Print();
 
   return 0;
 }
@@ -445,5 +492,76 @@ int build_str_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
     std::cout << " " << string_scalar->value->ToString();
   }
   std::cout << std::endl;
+  return 0;
+}
+
+int build_array_from_vector(std::shared_ptr<cylon::CylonContext> &ctx) {
+
+  LOG(INFO) << "Build index from vector";
+  std::vector<int16_t> index_vector({1, 2, 3, 4, 5});
+  std::vector<int32_t> index_vector1({1, 2, 3, 4, 5});
+  std::vector<int64_t> index_vector2({1, 2, 3, 4, 5});
+  std::vector<double_t> index_vector3({1, 2, 3, 4, 5});
+  std::vector<float_t> index_vector4({1, 2, 3, 4, 5});
+
+  std::unordered_multimap<int16_t, int64_t> map;
+  std::unordered_multimap<int32_t, int64_t> map1;
+  std::unordered_multimap<int64_t, int64_t> map2;
+  std::unordered_multimap<double_t, int64_t> map3;
+  std::unordered_multimap<float_t, int64_t> map4;
+
+  build_index_from_vector<int16_t, arrow::Int16Type>(index_vector, map);
+  build_index_from_vector<int32_t, arrow::Int32Type>(index_vector1, map1);
+  build_index_from_vector<int64_t, arrow::Int64Type>(index_vector2, map2);
+  build_index_from_vector<double_t, arrow::DoubleType>(index_vector3, map3);
+  build_index_from_vector<float_t, arrow::FloatType>(index_vector4, map4);
+
+  std::cout << "Show Map 1" << std::endl;
+  show_map(map1);
+
+  return 0;
+}
+
+template<typename T, typename ARROW_T>
+int build_index_from_vector(std::vector<T> &index_values, std::unordered_multimap<T, int64_t> &map) {
+
+  if (typeid(T) == typeid(int16_t)) {
+    LOG(INFO) << "Int16 building index";
+    build_index(index_values, map);
+  } else if (typeid(T) == typeid(int32_t)) {
+    LOG(INFO) << "Int32 building index";
+    build_index(index_values, map);
+  } else if (typeid(T) == typeid(int64_t)) {
+    LOG(INFO) << "Int64 building index";
+    build_index(index_values, map);
+  } else if (typeid(T) == typeid(double_t)) {
+    LOG(INFO) << "double building index";
+    build_index(index_values, map);
+  } else if (typeid(T) == typeid(float_t)) {
+    LOG(INFO) << "float building index";
+    build_index(index_values, map);
+  } else {
+    LOG(ERROR) << "Invalid data type";
+  }
+
+  return 0;
+}
+
+template<typename T>
+int build_index(std::vector<T> &index_values, std::unordered_multimap<T, int64_t> &map) {
+  LOG(INFO) << "Start building index";
+  for (int64_t i = 0; i < index_values.size(); i++) {
+    T val = static_cast<T>(index_values.at(i));
+    map.template emplace(val, i);
+  }
+  LOG(INFO) << "Finished building index";
+  return 0;
+}
+
+template<typename T>
+int show_map(std::unordered_multimap<T, int64_t> &map) {
+  for (const auto &x: map) {
+    std::cout << x.first << "," << x.second << std::endl;
+  }
   return 0;
 }
