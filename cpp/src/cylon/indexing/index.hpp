@@ -308,16 +308,48 @@ class LinearIndex : public BaseIndex {
   }
 
   Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
-    return Status();
+    CTYPE search_val = *static_cast<CTYPE *>(search_param);
+    for (int64_t ix = 0; ix < index_array_->length(); ix++) {
+      CTYPE val = index_array_->GetView(ix);
+      if (search_val == val) {
+        find_index.push_back(ix);
+      }
+    }
+    return Status::OK();
   }
+
   Status LocationByValue(void *search_param, int64_t &find_index) override {
-    return Status();
+    CTYPE search_val = *static_cast<CTYPE *>(search_param);
+    for (int64_t ix = 0; ix < index_array_->length(); ix++) {
+      CTYPE val = index_array_->GetView(ix);
+      if (search_val == val) {
+        find_index = ix;
+        break;
+      }
+    }
+    return Status::OK();
   }
   Status LocationByValue(void *search_param,
                          std::shared_ptr<arrow::Table> &input,
                          std::vector<int64_t> &filter_location,
                          std::shared_ptr<arrow::Table> &output) override {
-    return Status();
+    arrow::Status arrow_status;
+    std::shared_ptr<arrow::Array> out_idx;
+    arrow::compute::ExecContext fn_ctx(GetPool());
+    arrow::Int64Builder idx_builder(GetPool());
+    const arrow::Datum input_table(input);
+
+    LocationByValue(search_param, filter_location);
+
+    idx_builder.AppendValues(filter_location);
+    arrow_status = idx_builder.Finish(&out_idx);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+    const arrow::Datum filter_indices(out_idx);
+    arrow::Result<arrow::Datum>
+        result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+    output = result.ValueOrDie().table();
+    return Status::OK();
   }
   std::shared_ptr<arrow::Array> GetIndexAsArray() override {
     // TODO: determine to keep or remove
@@ -352,16 +384,51 @@ class LinearIndex<arrow::StringType, arrow::util::string_view> : public BaseInde
   }
 
   Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
-    return Status();
+    std::string *sp = static_cast<std::string *>(search_param);
+    arrow::util::string_view search_param_sv(*sp);
+    for (int64_t ix = 0; ix < index_array_->length(); ix++) {
+      arrow::util::string_view val = index_array_->GetView(ix);
+      if (search_param_sv == val) {
+        find_index.push_back(ix);
+      }
+    }
+    return Status::OK();
   }
   Status LocationByValue(void *search_param, int64_t &find_index) override {
-    return Status();
+    std::string *sp = static_cast<std::string *>(search_param);
+    arrow::util::string_view search_param_sv(*sp);
+    for (int64_t ix = 0; ix < index_array_->length(); ix++) {
+      arrow::util::string_view val = index_array_->GetView(ix);
+      if (search_param_sv == val) {
+        find_index = ix;
+        break;
+      }
+    }
+    return Status::OK();
   }
   Status LocationByValue(void *search_param,
                          std::shared_ptr<arrow::Table> &input,
                          std::vector<int64_t> &filter_location,
                          std::shared_ptr<arrow::Table> &output) override {
-    return Status();
+    LOG(INFO) << "Extract table for a given index";
+    arrow::Status arrow_status;
+    std::shared_ptr<arrow::Array> out_idx;
+    arrow::compute::ExecContext fn_ctx(GetPool());
+    arrow::Int64Builder idx_builder(GetPool());
+    const arrow::Datum input_table(input);
+    std::vector<int64_t> filter_vals;
+
+    LocationByValue(search_param, filter_vals);
+
+    idx_builder.AppendValues(filter_vals);
+    arrow_status = idx_builder.Finish(&out_idx);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+    const arrow::Datum filter_indices(out_idx);
+    arrow::Result<arrow::Datum>
+        result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+    output = result.ValueOrDie().table();
+    return Status::OK();
   }
   std::shared_ptr<arrow::Array> GetIndexAsArray() override {
     // TODO: determine to keep or remove

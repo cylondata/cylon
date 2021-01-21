@@ -74,7 +74,6 @@ int main(int argc, char *argv[]) {
   test_hash_indexing();
   test_linear_indexing();
 
-
 }
 
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
@@ -670,6 +669,15 @@ int test_linear_indexing() {
   auto arr = index->GetIndexArray();
 
   print_arrow_array(arr);
+
+  auto cast_index_arr = std::static_pointer_cast<arrow::Int64Array>(arr);
+
+  for (int64_t ix = 0; ix < cast_index_arr->length(); ix++) {
+    int64_t val = cast_index_arr->GetView(ix);
+    if(val == start_index) {
+      std::cout << "Value Found and Index is : " << ix << std::endl;
+    }
+  }
 
   return 0;
 }
