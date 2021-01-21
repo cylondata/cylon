@@ -58,10 +58,10 @@ class BaseIndex {
 };
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
-class Index : public BaseIndex {
+class HashIndex : public BaseIndex {
  public:
   using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
-  Index(int col_ids, int size, arrow::MemoryPool *pool, std::shared_ptr<MMAP_TYPE> map)
+  HashIndex(int col_ids, int size, arrow::MemoryPool *pool, std::shared_ptr<MMAP_TYPE> map)
       : BaseIndex(col_ids, size, pool) {
     map_ = map;
   };
@@ -163,10 +163,10 @@ class Index : public BaseIndex {
 };
 
 template<>
-class Index<arrow::StringType, arrow::util::string_view> : public BaseIndex {
+class HashIndex<arrow::StringType, arrow::util::string_view> : public BaseIndex {
  public:
   using MMAP_TYPE = typename std::unordered_multimap<arrow::util::string_view, int64_t>;
-  Index(int col_ids, int size, arrow::MemoryPool *pool, std::shared_ptr<MMAP_TYPE> map)
+  HashIndex(int col_ids, int size, arrow::MemoryPool *pool, std::shared_ptr<MMAP_TYPE> map)
       : BaseIndex(col_ids, size, pool) {
     map_ = map;
   };
@@ -343,7 +343,7 @@ class HashIndexKernel : public IndexKernel {
     LOG(INFO) << "Pure Indexing creation in "
               << std::chrono::duration_cast<std::chrono::milliseconds>(
                   end_time - start_start).count() << "[ms]";
-    auto index = std::make_shared<Index<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), pool, out_umm_ptr);
+    auto index = std::make_shared<HashIndex<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), pool, out_umm_ptr);
 
     return index;
   };

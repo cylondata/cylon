@@ -12,9 +12,9 @@ namespace cylon {
 class IndexUtil {
 
  public:
-  static Status Build(std::shared_ptr<cylon::BaseIndex> &index,
-                      std::shared_ptr<cylon::Table> &input,
-                      int index_column);
+  static Status BuildHashIndex(std::shared_ptr<cylon::BaseIndex> &index,
+                               std::shared_ptr<cylon::Table> &input,
+                               int index_column);
 
   static Status Find(std::shared_ptr<cylon::BaseIndex> &index,
                      std::shared_ptr<cylon::Table> &find_table,
@@ -23,9 +23,9 @@ class IndexUtil {
                      std::shared_ptr<cylon::Table> &out);
 
   template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
-  static Status BuildIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
-                                         arrow::MemoryPool *pool,
-                                         std::shared_ptr<cylon::BaseIndex> &index) {
+  static Status BuildHashIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
+                                             arrow::MemoryPool *pool,
+                                             std::shared_ptr<cylon::BaseIndex> &index) {
     using SCALAR_T = typename arrow::TypeTraits<ARROW_T>::ScalarType;
     using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
     using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
@@ -37,19 +37,19 @@ class IndexUtil {
       auto val = reader0->GetView(i);
       out_umm_ptr->emplace(val, i);
     }
-    index = std::make_shared<Index<ARROW_T, CTYPE>>(0, index_values->length(), pool, out_umm_ptr);
+    index = std::make_shared<HashIndex<ARROW_T, CTYPE>>(0, index_values->length(), pool, out_umm_ptr);
     index->SetIndexArray(index_values);
     return Status::OK();
   }
 
-  static Status BuildFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
-                                    arrow::MemoryPool *pool,
-                                    std::shared_ptr<cylon::BaseIndex> &index);
+  static Status BuildHashIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
+                                        arrow::MemoryPool *pool,
+                                        std::shared_ptr<cylon::BaseIndex> &index);
 
   template<typename CTYPE, typename ARROW_T=typename arrow::CTypeTraits<CTYPE>::ArrowType>
-  static Status BuildIndexFromVector(std::vector<CTYPE> &index_values,
-                                     arrow::MemoryPool *pool,
-                                     std::shared_ptr<cylon::BaseIndex> &index) {
+  static Status BuildHashIndexFromVector(std::vector<CTYPE> &index_values,
+                                         arrow::MemoryPool *pool,
+                                         std::shared_ptr<cylon::BaseIndex> &index) {
     using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
     std::shared_ptr<MMAP_TYPE> map = std::make_shared<MMAP_TYPE>(index_values.size());
     LOG(INFO) << "Start building index";
@@ -57,7 +57,7 @@ class IndexUtil {
       map->template emplace(index_values.at(i), i);
     }
     LOG(INFO) << "Finished building index";
-    index = std::make_shared<Index<ARROW_T, CTYPE>>(0, index_values.size(), pool, map);
+    index = std::make_shared<HashIndex<ARROW_T, CTYPE>>(0, index_values.size(), pool, map);
     return Status::OK();
   }
 

@@ -140,7 +140,7 @@ int indexing_simple_example() {
 
   // Create HashIndex
 
-  std::cout << "Create Hash Index " << std::endl;
+  std::cout << "Create Hash HashIndex " << std::endl;
 
   const int index_column = 0;
   bool drop_index = true;
@@ -148,9 +148,9 @@ int indexing_simple_example() {
   std::shared_ptr<cylon::BaseIndex> index, index_str;
   std::shared_ptr<cylon::Table> indexed_table;
 
-  cylon::IndexUtil::Build(index, input1, index_column);
+  cylon::IndexUtil::BuildHashIndex(index, input1, index_column);
 
-  cylon::IndexUtil::Build(index_str, input2, index_column);
+  cylon::IndexUtil::BuildHashIndex(index_str, input2, index_column);
 
   LOG(INFO) << "Testing Table Properties and Functions";
 
@@ -159,15 +159,15 @@ int indexing_simple_example() {
   input2->Set_Index(index_str, drop_index);
 
 
-  // Create Range Index
+  // Create Range HashIndex
 
-  std::cout << "Create Range Index " << std::endl;
+  std::cout << "Create Range HashIndex " << std::endl;
 
   std::shared_ptr<cylon::RangeIndex> range_index;
   std::shared_ptr<cylon::BaseIndex> bindex;
   std::shared_ptr<cylon::Table> range_indexed_table;
 
-  cylon::IndexUtil::Build(bindex, input1, 0);
+  cylon::IndexUtil::BuildHashIndex(bindex, input1, 0);
 
   range_index = std::static_pointer_cast<cylon::RangeIndex>(bindex);
 
@@ -177,7 +177,7 @@ int indexing_simple_example() {
 
   // BaseIndexer
 
-  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>();
+  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocHashIndexer>();
 
 //  // loc mode 1
   long start_index = 4;
@@ -192,7 +192,7 @@ int indexing_simple_example() {
 
   loc_tb1->Print();
 
-  LOG(INFO) << "Index of loc[1] table";
+  LOG(INFO) << "HashIndex of loc[1] table";
   auto loc_index_arr_1 = loc_tb1->GetIndex()->GetIndexArray();
   print_arrow_array(loc_index_arr_1);
 
@@ -211,7 +211,7 @@ int indexing_simple_example() {
 
   loc_tb2->Print();
 
-  LOG(INFO) << "Index of loc[2] table";
+  LOG(INFO) << "HashIndex of loc[2] table";
   auto loc_index_arr_2 = loc_tb2->GetIndex()->GetIndexArray();
   print_arrow_array(loc_index_arr_2);
 
@@ -229,7 +229,7 @@ int indexing_simple_example() {
 
   loc_tb3->Print();
 
-  LOG(INFO) << "Index of loc[3] table";
+  LOG(INFO) << "HashIndex of loc[3] table";
   auto loc_index_arr_3 = loc_tb3->GetIndex()->GetIndexArray();
   print_arrow_array(loc_index_arr_3);
 
@@ -248,7 +248,7 @@ int indexing_simple_example() {
 
   loc_tb4->Print();
 
-  LOG(INFO) << "Index of loc[4] table";
+  LOG(INFO) << "HashIndex of loc[4] table";
   auto loc_index_arr_4 = loc_tb4->GetIndex()->GetIndexArray();
   print_arrow_array(loc_index_arr_4);
 //
@@ -276,7 +276,7 @@ int indexing_simple_example() {
 
   loc_tb5->Print();
 
-  LOG(INFO) << "Index of loc[5] table";
+  LOG(INFO) << "HashIndex of loc[5] table";
   auto loc_index_arr_5 = loc_tb5->GetIndex()->GetIndexArray();
   print_arrow_array(loc_index_arr_5);
 
@@ -302,7 +302,7 @@ int indexing_simple_example() {
 
   loc_tb6->Print();
 
-  LOG(INFO) << "Index of loc[6] table";
+  LOG(INFO) << "HashIndex of loc[6] table";
   auto loc_index_arr_6 = loc_tb6->GetIndex()->GetIndexArray();
   print_arrow_array(loc_index_arr_6);
 //
@@ -322,7 +322,7 @@ int indexing_simple_example() {
 
   loc_tb7->Print();
 
-  LOG(INFO) << "Index of loc[7] table";
+  LOG(INFO) << "HashIndex of loc[7] table";
   auto loc_index_arr_7 = loc_tb7->GetIndex()->GetIndexArray();
   print_arrow_array(loc_index_arr_7);
 //
@@ -344,7 +344,7 @@ int indexing_simple_example() {
 
   loc_tb8->Print();
 
-  LOG(INFO) << "Index of loc[8] table";
+  LOG(INFO) << "HashIndex of loc[8] table";
   auto loc_index_arr_8 = loc_tb8->GetIndex()->GetIndexArray();
   print_arrow_array(loc_index_arr_8);
 //
@@ -362,7 +362,7 @@ int indexing_simple_example() {
 
   loc_tb9->Print();
 
-  LOG(INFO) << "Index of loc[9] table";
+  LOG(INFO) << "HashIndex of loc[9] table";
   auto loc_index_arr_9 = loc_tb9->GetIndex()->GetIndexArray();
   print_arrow_array(loc_index_arr_9);
   /**
@@ -391,7 +391,7 @@ int indexing_simple_example() {
   }
   std::cout << std::endl;
 
-  LOG(INFO) << "Index of loc[str] table";
+  LOG(INFO) << "HashIndex of loc[str] table";
   auto loc_index_arr_str = loc_s_tb1->GetIndex()->GetIndexArray();
   print_arrow_array(loc_index_arr_str);
 
@@ -421,11 +421,11 @@ int indexing_benchmark() {
   std::shared_ptr<cylon::BaseIndex> index, index_str;
   std::shared_ptr<cylon::Table> indexed_table;
 
-  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>();
+  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocHashIndexer>();
 
   auto start_start = std::chrono::steady_clock::now();
 
-  cylon::IndexUtil::Build(index, input, index_column);
+  cylon::IndexUtil::BuildHashIndex(index, input, index_column);
 
   auto read_end_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Indexing table in "
@@ -449,7 +449,7 @@ int indexing_benchmark() {
   auto start_start_j = std::chrono::steady_clock::now();
   auto index_arr = index->GetIndexAsArray();
   auto end_start_j = std::chrono::steady_clock::now();
-  LOG(INFO) << "Get Index Arr table in "
+  LOG(INFO) << "Get HashIndex Arr table in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 end_start_j - start_start_j).count() << "[ms]";
 
@@ -480,7 +480,7 @@ int build_int_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
     return -1;
   }
 
-  cylon::IndexUtil::BuildFromArrowArray(index_values, pool, custom_index);
+  cylon::IndexUtil::BuildHashIndexFromArray(index_values, pool, custom_index);
 
   std::shared_ptr<arrow::Array> arr = custom_index->GetIndexAsArray();
   std::shared_ptr<arrow::Int32Scalar> int_32_scalar;
@@ -514,11 +514,11 @@ int build_str_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
     return -1;
   }
 
-  cylon::IndexUtil::BuildFromArrowArray(index_values, pool, custom_index);
+  cylon::IndexUtil::BuildHashIndexFromArray(index_values, pool, custom_index);
 
   std::shared_ptr<arrow::Array> arr = custom_index->GetIndexAsArray();
   std::shared_ptr<arrow::StringScalar> string_scalar;
-  std::cout << "Str Array Index length : " << arr->length() << std::endl;
+  std::cout << "Str Array HashIndex length : " << arr->length() << std::endl;
   for (int64_t xi = 0; xi < arr->length(); xi++) {
     auto result = arr->GetScalar(xi);
     if (!result.ok()) {
@@ -534,7 +534,7 @@ int build_str_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
 
 int build_array_from_vector(std::shared_ptr<cylon::CylonContext> &ctx) {
 
-  LOG(INFO) << "Build index from vector";
+  LOG(INFO) << "BuildHashIndex index from vector";
   std::vector<int> index_vector0{1, 2, 3, 4, 5};
   std::vector<int16_t> index_vector{1, 2, 3, 4, 5};
   std::vector<int32_t> index_vector1{1, 2, 3, 4, 5};
@@ -544,7 +544,7 @@ int build_array_from_vector(std::shared_ptr<cylon::CylonContext> &ctx) {
 
   std::shared_ptr<cylon::BaseIndex> index;
   auto pool = cylon::ToArrowPool(ctx);
-  cylon::IndexUtil::BuildIndexFromVector(index_vector3, pool, index);
+  cylon::IndexUtil::BuildHashIndexFromVector(index_vector3, pool, index);
 
   auto arr = index->GetIndexAsArray();
   LOG(INFO) << "Array length : " << arr->length();
@@ -595,15 +595,15 @@ int test_hash_indexing() {
   bool drop_index = true;
 
   std::shared_ptr<cylon::BaseIndex> index, loc_index;
-  cylon::IndexUtil::Build(index, input, index_column);
+  cylon::IndexUtil::BuildHashIndex(index, input, index_column);
 
-  LOG(INFO) << "[Before Index] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
+  LOG(INFO) << "[Before HashIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
 
   input->Set_Index(index, drop_index);
 
-  LOG(INFO) << "[After Index] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
+  LOG(INFO) << "[After HashIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
 
-  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>();
+  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocHashIndexer>();
 
   base_indexer->loc(&start_index, &end_index, index_column, input, output);
 
@@ -615,7 +615,7 @@ int test_hash_indexing() {
 
   auto arr = loc_index->GetIndexArray();
 
-  LOG(INFO) << "Loc Table Index";
+  LOG(INFO) << "Loc Table HashIndex";
 
   print_arrow_array(arr);
 
