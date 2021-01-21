@@ -122,7 +122,7 @@ void cylon::Op::InsertToAllChildren(int tag, std::shared_ptr<Table> &table) {
   }
 }
 
-void cylon::Op::InsertToChild(int tag, int child, std::shared_ptr<Table> &table) {
+void cylon::Op::InsertToChild(int child, int tag, std::shared_ptr<Table> &table) {
   if (!this->TerminalCheck(tag, table)) {
     this->children.at(child)->InsertTable(tag, table);
   }
