@@ -2,14 +2,27 @@
 #include "indexer.hpp"
 #include "index_utils.hpp"
 
+cylon::Status BuildIndexFromArrayByKernel(cylon::IndexingSchema indexing_schema,
+                                          std::shared_ptr<arrow::Array> &sub_index_arr,
+                                          arrow::MemoryPool *pool,
+                                          std::shared_ptr<cylon::BaseIndex> &loc_index) {
+  if (indexing_schema == cylon::IndexingSchema::Hash) {
+    return cylon::IndexUtil::BuildHashIndexFromArray(sub_index_arr, pool, loc_index);
+  } else {
+    return cylon::Status::OK();
+  }
+}
+
 cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> &index,
-                                              std::vector<int64_t> &sub_index_locations,
-                                              std::shared_ptr<cylon::Table> &output) {
+                                        std::vector<int64_t> &sub_index_locations,
+                                        std::shared_ptr<cylon::Table> &output,
+                                        cylon::IndexingSchema indexing_schema) {
 
   std::shared_ptr<cylon::BaseIndex> loc_index;
   std::shared_ptr<arrow::Array> sub_index_pos_arr;
   std::shared_ptr<arrow::Array> sub_index_arr;
   arrow::Status status;
+  cylon::Status cylon_status;
   auto index_arr = index->GetIndexArray();
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
@@ -37,15 +50,22 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
 
   sub_index_arr = datum.ValueOrDie().make_array();
 
-  cylon::IndexUtil::BuildHashIndexFromArray(sub_index_arr, pool, loc_index);
+  cylon_status = BuildIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
+
+  if(!cylon_status.is_ok()) {
+    LOG(ERROR) << "Error occurred in resolving kernel for index array building";
+    return cylon_status;
+  }
+
   output->Set_Index(loc_index, false);
   return cylon::Status::OK();
 }
 
 cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> &index,
-                                             int64_t &start_pos,
-                                             int64_t &end_pos,
-                                             std::shared_ptr<cylon::Table> &output) {
+                                        int64_t &start_pos,
+                                        int64_t &end_pos,
+                                        std::shared_ptr<cylon::Table> &output,
+                                        cylon::IndexingSchema indexing_schema) {
   std::shared_ptr<cylon::BaseIndex> loc_index;
   std::shared_ptr<arrow::Array> sub_index_arr;
   auto index_arr = index->GetIndexArray();
@@ -262,7 +282,7 @@ cylon::Status cylon::LocIndexer::loc(void *start_index,
     return status_build;
   }
 
-  status_build = SetIndexForLocResultTable(index, s_index, e_index, output);
+  status_build = SetIndexForLocResultTable(index, s_index, e_index, output, indexing_schema_);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -313,7 +333,7 @@ cylon::Status cylon::LocIndexer::loc(void *start_index,
     return status_build;
   }
 
-  status_build = SetIndexForLocResultTable(index, s_index, e_index, output);
+  status_build = SetIndexForLocResultTable(index, s_index, e_index, output, indexing_schema_);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -352,7 +372,7 @@ cylon::Status cylon::LocIndexer::loc(void *start_index,
     return status_build;
   }
 
-  status_build = SetIndexForLocResultTable(index, s_index, e_index, output);
+  status_build = SetIndexForLocResultTable(index, s_index, e_index, output, indexing_schema_);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -386,7 +406,7 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
     return status_build;
   }
 
-  status_build = SetIndexForLocResultTable(index, filter_indices, output);
+  status_build = SetIndexForLocResultTable(index, filter_indices, output, indexing_schema_);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -434,7 +454,7 @@ cylon::Status cylon::LocIndexer::loc(std::vector<void *> &indices,
     return status;
   }
 
-  status = SetIndexForLocResultTable(index, filter_indices, output);
+  status = SetIndexForLocResultTable(index, filter_indices, output, indexing_schema_);
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -473,7 +493,7 @@ cylon::Status cylon::LocIndexer::loc(std::vector<void *> &indices,
     return status;
   }
 
-  status = SetIndexForLocResultTable(index, filter_indices, output);
+  status = SetIndexForLocResultTable(index, filter_indices, output, indexing_schema_);
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -505,7 +525,7 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
     return status_build;
   }
 
-  status_build = SetIndexForLocResultTable(index, filter_indices, output);
+  status_build = SetIndexForLocResultTable(index, filter_indices, output, indexing_schema_);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -547,7 +567,7 @@ cylon::Status cylon::LocIndexer::loc(void *indices,
     return status_build;
   }
 
-  status_build = SetIndexForLocResultTable(index, filter_indices, output);
+  status_build = SetIndexForLocResultTable(index, filter_indices, output, indexing_schema_);
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -588,7 +608,7 @@ cylon::Status cylon::LocIndexer::loc(std::vector<void *> &indices,
     return status;
   }
 
-  status = SetIndexForLocResultTable(index, filter_indices, output);
+  status = SetIndexForLocResultTable(index, filter_indices, output, indexing_schema_);
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in setting index for output table";
@@ -596,6 +616,10 @@ cylon::Status cylon::LocIndexer::loc(std::vector<void *> &indices,
   }
 
   return cylon::Status::OK();
+}
+
+cylon::IndexingSchema cylon::LocIndexer::GetIndexingSchema() {
+  return indexing_schema_;
 }
 
 /**
@@ -669,6 +693,9 @@ cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
   return Status();
+}
+cylon::IndexingSchema cylon::ILocIndexer::GetIndexingSchema() {
+  return indexing_schema_;
 }
 
 

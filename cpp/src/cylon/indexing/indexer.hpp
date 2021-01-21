@@ -7,16 +7,19 @@
 
 namespace cylon {
 
+enum IndexingSchema {
+  Linear = 0,
+  Hash = 1,
+  BinaryTree = 2,
+  BTree = 3,
+};
+
 class BaseIndexer {
 
  public:
-  explicit BaseIndexer() {
+  explicit BaseIndexer()  {
 
   }
-
-  /**
-   * Loc operations
-   * */
 
   virtual Status loc(void *start_index,
                      void *end_index,
@@ -69,17 +72,19 @@ class BaseIndexer {
                      std::shared_ptr<cylon::Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
-  /**
-   * iLoc operations
-   * */
+  virtual IndexingSchema GetIndexingSchema() = 0;
 
 };
+
+/**
+ * Loc operations
+ * */
 
 
 class LocIndexer : public BaseIndexer {
 
  public:
-  LocIndexer() : BaseIndexer() {
+  LocIndexer(IndexingSchema indexing_schema) : BaseIndexer(), indexing_schema_(indexing_schema) {
 
   };
 
@@ -125,12 +130,21 @@ class LocIndexer : public BaseIndexer {
              std::vector<int> &columns,
              std::shared_ptr<cylon::Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
+
+  IndexingSchema GetIndexingSchema() override;
+
+ private:
+  IndexingSchema indexing_schema_;
 
 };
 
-class ILocIndexer : public BaseIndexer{
+/**
+ * iLoc operations
+ * */
+
+class ILocIndexer : public BaseIndexer {
  public:
-  ILocIndexer() : BaseIndexer() {
+  ILocIndexer(IndexingSchema indexing_schema) : BaseIndexer(), indexing_schema_(indexing_schema) {
 
   };
 
@@ -176,6 +190,11 @@ class ILocIndexer : public BaseIndexer{
              std::vector<int> &columns,
              std::shared_ptr<cylon::Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
+
+  IndexingSchema GetIndexingSchema() override;
+
+ private:
+  IndexingSchema indexing_schema_;
 };
 
 }
