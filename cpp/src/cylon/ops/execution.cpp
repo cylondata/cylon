@@ -52,11 +52,22 @@ bool JoinExecution::IsComplete() {
         current_index = 0;
       }
       break;
-    case 2:
-      return join->IsComplete();
+    case 2:return join->IsComplete();
   }
   return false;
 }
+
+//JoinExecution::~JoinExecution() {
+//  for (auto &&o:p_ops) {
+//    delete o;
+//  }
+//
+//  for (auto &&o:s_ops) {
+//    delete o;
+//  }
+//
+//  delete join;
+//}
 
 void RoundRobinExecution::AddOp(cylon::Op *op) {
   this->ops.push_back(op);

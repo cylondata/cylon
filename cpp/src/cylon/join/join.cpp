@@ -38,8 +38,7 @@ inline void advance(std::vector<int64_t> *subset,
   auto data_column_casted = std::static_pointer_cast<ARROW_ARRAY_TYPE>(data_column);
   int64_t data_index = sorted_indices->Value(*current_index);
   *key = data_column_casted->GetView(data_index);
-  while (*current_index < sorted_indices->length() &&
-      data_column_casted->GetView(data_index) == *key) {
+  while (*current_index < sorted_indices->length() && data_column_casted->GetView(data_index) == *key) {
     subset->push_back(data_index);
     (*current_index)++;
     if (*current_index == sorted_indices->length()) {
@@ -61,8 +60,7 @@ inline void advance_inplace_array(std::vector<int64_t> *subset,
   }
   auto data_column_casted = std::static_pointer_cast<ARROW_ARRAY_TYPE>(data_column);
   *key = data_column_casted->GetView(*current_index);
-  while (*current_index < length &&
-      data_column_casted->GetView(*current_index) == *key) {
+  while (*current_index < length && data_column_casted->GetView(*current_index) == *key) {
     subset->push_back(*current_index);
     (*current_index)++;
     if (*current_index == length) {

@@ -174,7 +174,9 @@ class RootOp : public Op {
   RootOp(const std::shared_ptr<cylon::CylonContext> &ctx,
          const std::shared_ptr<arrow::Schema> &schema,
          int id,
-         const ResultsCallback &callback);
+         const ResultsCallback &callback)
+      : Op(ctx, schema, id, callback, true) {}
+
   bool Finalize() override;
   void OnParentsFinalized() override;
   bool Execute(int tag, std::shared_ptr<Table> &table) override;

@@ -241,7 +241,7 @@ Status Table::FromColumns(std::shared_ptr<cylon::CylonContext> &ctx,
   return Status(cylon::OK, "Loaded Successfully");
 }
 
-Status WriteCSV(std::shared_ptr<cylon::Table> &table,
+Status WriteCSV(const std::shared_ptr<Table> &table,
                 const std::string &path,
                 const cylon::io::config::CSVWriteOptions &options) {
   std::ofstream out_csv;

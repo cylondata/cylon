@@ -42,6 +42,8 @@ private:
   std::size_t current_index{};
   int state = 0;
 public:
+//  virtual ~JoinExecution();
+
   void AddP(Op *op) {
     p_ops.push_back(op);
     p_indices.push_back(p_ops.size() - 1);
