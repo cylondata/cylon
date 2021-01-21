@@ -148,12 +148,6 @@ int cylon::Op::GetId() const {
   return id;
 }
 
-cylon::RootOp::RootOp(const std::shared_ptr<cylon::CylonContext> &ctx,
-                      const std::shared_ptr<arrow::Schema> &schema,
-                      int id, const ResultsCallback &callback)
-    : Op(ctx, schema, id, callback, true) {}
-
-
 bool cylon::RootOp::Finalize() {
   return true;
 }

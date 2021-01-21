@@ -37,7 +37,7 @@ arrow::Status do_copy_numeric_array(const std::vector<int64_t> &indices,
   for (auto &index : indices) {
     // handle -1 index : comes in left, right joins
     if (index == -1) {
-//      array_builder.UnsafeAppendNull();
+      array_builder.UnsafeAppendNull();
       continue;
     }
 
@@ -63,9 +63,18 @@ arrow::Status do_copy_binary_array(const std::vector<int64_t> &indices,
     if (casted_array->length() <= index) {
       LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
     }
+
+    if (index == -1) {
+      const auto &status = binary_builder.AppendNull();
+      if (!status.ok()) {
+        return status;
+      } else {
+        continue;
+      }
+    }
     int32_t out;
     const uint8_t *data = casted_array->GetValue(index, &out);
-    auto status = binary_builder.Append(data, out);
+    const auto &status = binary_builder.Append(data, out);
     if (!status.ok()) {
       LOG(FATAL) << "Failed to append rearranged data points to the array builder. "
                  << status.ToString();
@@ -89,6 +98,10 @@ arrow::Status do_copy_fixed_binary_array(const std::vector<int64_t> &indices,
   for (auto &index : indices) {
     if (casted_array->length() <= index) {
       LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
+    }
+    if (index == -1) {
+      binary_builder.UnsafeAppendNull();
+      continue;
     }
     const uint8_t *data = casted_array->GetValue(index);
     binary_builder.UnsafeAppend(data);

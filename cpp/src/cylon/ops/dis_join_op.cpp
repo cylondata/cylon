@@ -31,38 +31,43 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
   const int32_t JOIN_OP_ID = 4;
 //  const int32_t MERGE_OP_ID = 5;
   // create graph
-  // local join
-  auto join_op = new JoinOp(ctx, schema, JOIN_OP_ID, callback, config.join_config);
+  Op *partition_op, *shuffle_op, *split_op, *join_op;
 
-  for (int32_t relation_id:PARTITION_IDS) {
-    // todo in here, LEFT and RIGH col_idx should be equal
-    auto partition_op = new PartitionOp(ctx, schema, relation_id, callback,
-                                        {ctx->GetWorldSize(), {config.join_config.GetLeftColumnIdx()}});
-    this->AddChild(partition_op);
-    if (relation_id == LEFT_RELATION) {
-      execution->AddP(partition_op);
-    } else {
-      execution->AddS(partition_op);
-    }
-    auto shuffle_op = new AllToAllOp(ctx, schema, relation_id, callback, {});
-    partition_op->AddChild(shuffle_op);
-    if (relation_id == LEFT_RELATION) {
-      execution->AddP(shuffle_op);
-    } else {
-      execution->AddS(shuffle_op);
-    }
-//    auto merge_op = new MergeOp(ctx, schema, MERGE_OP_ID, callback);
-    SplitOpConfig kPtr{100, {0}};
-    auto split_op = new SplitOp(ctx, schema, relation_id, callback, kPtr);
-    shuffle_op->AddChild(split_op);
-    if (relation_id == LEFT_RELATION) {
-      execution->AddP(split_op);
-    } else {
-      execution->AddS(split_op);
-    }
-    split_op->AddChild(join_op);
-  }
+  // build left sub tree
+  partition_op = new PartitionOp(ctx, schema, LEFT_RELATION, callback,
+                                 {ctx->GetWorldSize(), {config.join_config.GetLeftColumnIdx()}});
+  this->AddChild(partition_op);
+  execution->AddP(partition_op);
+
+  shuffle_op = new AllToAllOp(ctx, schema, LEFT_RELATION, callback, {});
+  partition_op->AddChild(shuffle_op);
+  execution->AddP(shuffle_op);
+
+  split_op = new SplitOp(ctx, schema, LEFT_RELATION, callback, {100, {config.join_config.GetLeftColumnIdx()}});
+  shuffle_op->AddChild(split_op);
+  execution->AddP(split_op);
+
+  // add join op
+  join_op = new JoinOp(ctx, schema, JOIN_OP_ID, callback, config.join_config);
+  split_op->AddChild(join_op);
   execution->AddJoin(join_op);
+
+
+  // build right sub tree
+  partition_op = new PartitionOp(ctx, schema, RIGHT_RELATION, callback,
+                                 {ctx->GetWorldSize(), {config.join_config.GetLeftColumnIdx()}});
+  this->AddChild(partition_op);
+  execution->AddS(partition_op);
+
+  shuffle_op = new AllToAllOp(ctx, schema, RIGHT_RELATION, callback, {});
+  partition_op->AddChild(shuffle_op);
+  execution->AddS(shuffle_op);
+
+  split_op = new SplitOp(ctx, schema, RIGHT_RELATION, callback, {100, {config.join_config.GetRightColumnIdx()}});
+  shuffle_op->AddChild(split_op);
+  execution->AddS(split_op);
+
+  split_op->AddChild(join_op); // join_op is already initialized
 }
 
 bool cylon::DisJoinOP::Execute(int tag, std::shared_ptr<Table> &table) {

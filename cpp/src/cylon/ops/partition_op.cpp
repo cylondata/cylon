@@ -57,6 +57,11 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> &table) {
 
   for (int i = 0; i < config.num_partitions; i++) {
     this->InsertToAllChildren(i, out[i]);
+
+    sleep(ctx_->GetRank());
+    std::cout << "****from " << ctx_->GetRank() << " to " << i << std::endl;
+    out[i]->Print();
+    std::cout << "-------------------------------" << std::endl;
   }
   out.clear();
 
@@ -72,7 +77,7 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> &table) {
 
 bool cylon::PartitionOp::Finalize() {
   auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << ctx_->GetRank() << "Partition start: " << start << " time: "
+  LOG(INFO) << ctx_->GetRank() << " Partition start: " << start << " time: "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - start).count();
   return true;
 }
