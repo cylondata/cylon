@@ -25,7 +25,33 @@ std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table>
   }
 
 }
+
+std::unique_ptr<IndexKernel> CreateLinearIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column) {
+  switch (input_table->column(index_column)->chunk(0)->type()->id()) {
+
+    case arrow::Type::NA:return nullptr;
+    case arrow::Type::BOOL:return std::make_unique<BoolLinearIndexKernel>();
+    case arrow::Type::UINT8:return std::make_unique<UInt8LinearIndexKernel>();
+    case arrow::Type::INT8:return std::make_unique<Int8LinearIndexKernel>();
+    case arrow::Type::UINT16:return std::make_unique<UInt16LinearIndexKernel>();
+    case arrow::Type::INT16:return std::make_unique<Int16LinearIndexKernel>();
+    case arrow::Type::UINT32:return std::make_unique<UInt32LinearIndexKernel>();
+    case arrow::Type::INT32:return std::make_unique<Int32LinearIndexKernel>();
+    case arrow::Type::UINT64:return std::make_unique<UInt64LinearIndexKernel>();
+    case arrow::Type::INT64: return std::make_unique<Int64LinearIndexKernel>();
+    case arrow::Type::HALF_FLOAT:return std::make_unique<HalfFloatLinearIndexKernel>();
+    case arrow::Type::FLOAT:return std::make_unique<FloatLinearIndexKernel>();
+    case arrow::Type::DOUBLE:return std::make_unique<DoubleLinearIndexKernel>();
+    case arrow::Type::STRING:return std::make_unique<StringLinearIndexKernel>();
+    case arrow::Type::BINARY:return nullptr;//std::make_unique<BinaryLinearIndexKernel>();
+    default: return std::make_unique<GenericRangeIndexKernel>();
+  }
+
+}
+
+
 std::unique_ptr<IndexKernel> CreateIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column) {
+  // TODO: fix the criterion to check the kernel creation method
   if (index_column == -1) {
     return std::make_unique<GenericRangeIndexKernel>();
   } else {
@@ -126,6 +152,9 @@ int BaseIndex::GetSize() const {
 arrow::MemoryPool *BaseIndex::GetPool() const {
   return pool_;
 }
+
+
+
 }
 
 

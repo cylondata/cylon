@@ -16,6 +16,10 @@ class IndexUtil {
                                std::shared_ptr<cylon::Table> &input,
                                int index_column);
 
+  static Status BuildLinearIndex(std::shared_ptr<cylon::BaseIndex> &index,
+                               std::shared_ptr<cylon::Table> &input,
+                               int index_column);
+
   static Status Find(std::shared_ptr<cylon::BaseIndex> &index,
                      std::shared_ptr<cylon::Table> &find_table,
                      void *value,

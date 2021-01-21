@@ -299,6 +299,95 @@ class RangeIndex : public BaseIndex {
 
 };
 
+template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
+class LinearIndex : public BaseIndex {
+ public:
+  using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
+  LinearIndex(int col_id, int size, arrow::MemoryPool *pool, std::shared_ptr<ARROW_ARRAY_TYPE> &index_array)
+      : BaseIndex(col_id, size, pool), index_array_(index_array) {
+  }
+
+  Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
+    return Status();
+  }
+  Status LocationByValue(void *search_param, int64_t &find_index) override {
+    return Status();
+  }
+  Status LocationByValue(void *search_param,
+                         std::shared_ptr<arrow::Table> &input,
+                         std::vector<int64_t> &filter_location,
+                         std::shared_ptr<arrow::Table> &output) override {
+    return Status();
+  }
+  std::shared_ptr<arrow::Array> GetIndexAsArray() override {
+    // TODO: determine to keep or remove
+    return index_array_;
+  }
+  void SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) override {
+    index_array_ = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_arr);
+  }
+  std::shared_ptr<arrow::Array> GetIndexArray() override {
+    return index_array_;
+  }
+  int GetColId() const override {
+    return BaseIndex::GetColId();
+  }
+  int GetSize() const override {
+    return BaseIndex::GetSize();
+  }
+  arrow::MemoryPool *GetPool() const override {
+    return BaseIndex::GetPool();
+  }
+
+ private:
+  std::shared_ptr<ARROW_ARRAY_TYPE> index_array_;
+
+};
+
+template<>
+class LinearIndex<arrow::StringType, arrow::util::string_view> : public BaseIndex {
+ public:
+  LinearIndex(int col_id, int size, arrow::MemoryPool *pool, std::shared_ptr<arrow::StringArray> &index_array)
+      : BaseIndex(col_id, size, pool), index_array_(index_array) {
+  }
+
+  Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
+    return Status();
+  }
+  Status LocationByValue(void *search_param, int64_t &find_index) override {
+    return Status();
+  }
+  Status LocationByValue(void *search_param,
+                         std::shared_ptr<arrow::Table> &input,
+                         std::vector<int64_t> &filter_location,
+                         std::shared_ptr<arrow::Table> &output) override {
+    return Status();
+  }
+  std::shared_ptr<arrow::Array> GetIndexAsArray() override {
+    // TODO: determine to keep or remove
+    return index_array_;
+  }
+  void SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) override {
+    index_array_ = std::static_pointer_cast<arrow::StringArray>(index_arr);
+  }
+  std::shared_ptr<arrow::Array> GetIndexArray() override {
+    return index_array_;
+  }
+  int GetColId() const override {
+    return BaseIndex::GetColId();
+  }
+  int GetSize() const override {
+    return BaseIndex::GetSize();
+  }
+  arrow::MemoryPool *GetPool() const override {
+    return BaseIndex::GetPool();
+  }
+
+ private:
+  std::shared_ptr<arrow::StringArray> index_array_;
+
+};
+
 class IndexKernel {
  public:
   explicit IndexKernel() {
@@ -350,6 +439,41 @@ class HashIndexKernel : public IndexKernel {
 
 };
 
+template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
+class LinearIndexKernel : public IndexKernel {
+ public:
+  LinearIndexKernel() : IndexKernel() {
+
+  };
+
+  using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
+
+  std::shared_ptr<BaseIndex> BuildIndex(arrow::MemoryPool *pool,
+                                        std::shared_ptr<arrow::Table> &input_table,
+                                        const int index_column) override {
+    std::shared_ptr<arrow::Array> index_array;
+
+    if (input_table->column(0)->num_chunks() > 1) {
+      const arrow::Result<std::shared_ptr<arrow::Table>> &res = input_table->CombineChunks(pool);
+      if (!res.status().ok()) {
+        LOG(ERROR) << "Error occurred in combining chunks in table";
+      }
+      input_table = res.ValueOrDie();
+    }
+
+    index_array = input_table->column(index_column)->chunk(0);
+    auto cast_index_array = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_array);
+    auto
+        index =
+        std::make_shared<LinearIndex<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), pool, cast_index_array);
+
+    return index;
+  }
+};
+
+/**
+ * Hash Indexing Kernels
+ * */
 using BoolHashIndexKernel = HashIndexKernel<arrow::BooleanType>;
 using UInt8HashIndexKernel = HashIndexKernel<arrow::UInt8Type>;
 using Int8HashIndexKernel = HashIndexKernel<arrow::Int8Type>;
@@ -364,9 +488,34 @@ using FloatHashIndexKernel = HashIndexKernel<arrow::FloatType>;
 using DoubleHashIndexKernel = HashIndexKernel<arrow::DoubleType>;
 using StringHashIndexKernel = HashIndexKernel<arrow::StringType, arrow::util::string_view>;
 using BinaryHashIndexKernel = HashIndexKernel<arrow::BinaryType, arrow::util::string_view>;
+
+/**
+ * Range Indexing Kernel
+ * */
 using GenericRangeIndexKernel = RangeIndexKernel;
 
+/*
+ * Linear Indexing Kernel
+ * **/
+
+using BoolLinearIndexKernel = LinearIndexKernel<arrow::BooleanType>;
+using UInt8LinearIndexKernel = LinearIndexKernel<arrow::UInt8Type>;
+using Int8LinearIndexKernel = LinearIndexKernel<arrow::Int8Type>;
+using UInt16LinearIndexKernel = LinearIndexKernel<arrow::UInt16Type>;
+using Int16LinearIndexKernel = LinearIndexKernel<arrow::Int16Type>;
+using UInt32LinearIndexKernel = LinearIndexKernel<arrow::UInt32Type>;
+using Int32LinearIndexKernel = LinearIndexKernel<arrow::Int32Type>;
+using UInt64LinearIndexKernel = LinearIndexKernel<arrow::UInt64Type>;
+using Int64LinearIndexKernel = LinearIndexKernel<arrow::Int64Type>;
+using HalfFloatLinearIndexKernel = LinearIndexKernel<arrow::HalfFloatType>;
+using FloatLinearIndexKernel = LinearIndexKernel<arrow::FloatType>;
+using DoubleLinearIndexKernel = LinearIndexKernel<arrow::DoubleType>;
+using StringLinearIndexKernel = LinearIndexKernel<arrow::StringType, arrow::util::string_view>;
+using BinaryLinearIndexKernel = LinearIndexKernel<arrow::BinaryType, arrow::util::string_view>;
+
 std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column);
+
+std::unique_ptr<IndexKernel> CreateLinearIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column);
 
 std::unique_ptr<IndexKernel> CreateIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column);
 

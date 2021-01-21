@@ -43,6 +43,8 @@ int indexing_benchmark();
 
 int test_hash_indexing();
 
+int test_linear_indexing();
+
 int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
 
 /**
@@ -70,6 +72,9 @@ int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
 int main(int argc, char *argv[]) {
   indexing_simple_example();
   test_hash_indexing();
+  test_linear_indexing();
+
+
 }
 
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
@@ -622,6 +627,49 @@ int test_hash_indexing() {
   output->ResetIndex();
 
   output->Print();
+
+  return 0;
+}
+
+int test_linear_indexing() {
+  LOG(INFO) << "Testing Linear Indexing";
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/duplicate_data_0.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table";
+    return -1;
+  }
+
+  LOG(INFO) << "Original Data";
+
+  input->Print();
+
+  long start_index = 27;
+  long end_index = 123;
+  int64_t index_column = 0;
+  bool drop_index = true;
+
+  std::shared_ptr<cylon::BaseIndex> index, loc_index;
+  cylon::IndexUtil::BuildLinearIndex(index, input, index_column);
+
+  LOG(INFO) << "[Before LinearIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
+
+  input->Set_Index(index, drop_index);
+
+  auto arr = index->GetIndexArray();
+
+  print_arrow_array(arr);
 
   return 0;
 }
