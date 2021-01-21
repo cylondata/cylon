@@ -103,7 +103,7 @@ class Op {
    * @param child target child ID
    * @param table pointer to the table
    */
-  void InsertToChild(int tag, int child, std::shared_ptr<Table> &table);
+  void InsertToChild(int child, int tag, std::shared_ptr<Table> &table);
 
  public:
   Op(const std::shared_ptr<cylon::CylonContext> &ctx,
