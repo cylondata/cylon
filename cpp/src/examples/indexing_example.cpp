@@ -181,7 +181,7 @@ int indexing_simple_example() {
 
   // BaseIndexer
 
-  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocHashIndexer>();
+  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>();
 
 //  // loc mode 1
   long start_index = 4;
@@ -425,7 +425,7 @@ int indexing_benchmark() {
   std::shared_ptr<cylon::BaseIndex> index, index_str;
   std::shared_ptr<cylon::Table> indexed_table;
 
-  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocHashIndexer>();
+  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>();
 
   auto start_start = std::chrono::steady_clock::now();
 
@@ -607,7 +607,7 @@ int test_hash_indexing() {
 
   LOG(INFO) << "[After HashIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
 
-  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocHashIndexer>();
+  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>();
 
   base_indexer->loc(&start_index, &end_index, index_column, input, output);
 

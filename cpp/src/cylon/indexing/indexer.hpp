@@ -75,10 +75,11 @@ class BaseIndexer {
 
 };
 
-class LocHashIndexer : public BaseIndexer {
+
+class LocIndexer : public BaseIndexer {
 
  public:
-  LocHashIndexer() : BaseIndexer() {
+  LocIndexer() : BaseIndexer() {
 
   };
 
@@ -127,9 +128,9 @@ class LocHashIndexer : public BaseIndexer {
 
 };
 
-class ILocHashIndexer : public BaseIndexer{
+class ILocIndexer : public BaseIndexer{
  public:
-  ILocHashIndexer() : BaseIndexer() {
+  ILocIndexer() : BaseIndexer() {
 
   };
 
