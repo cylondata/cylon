@@ -8,8 +8,14 @@ cylon::Status BuildIndexFromArrayByKernel(cylon::IndexingSchema indexing_schema,
                                           std::shared_ptr<cylon::BaseIndex> &loc_index) {
   if (indexing_schema == cylon::IndexingSchema::Hash) {
     return cylon::IndexUtil::BuildHashIndexFromArray(sub_index_arr, pool, loc_index);
+  } else if (indexing_schema == cylon::IndexingSchema::Linear) {
+    return cylon::IndexUtil::BuildLinearIndexFromArray(sub_index_arr, pool, loc_index);
+  } else if(indexing_schema == cylon::IndexingSchema::BinaryTree) {
+    return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
+  } else if(indexing_schema == cylon::IndexingSchema::BTree) {
+    return cylon::Status(cylon::Code::NotImplemented, "B-Tree Indexing not implemented!");
   } else {
-    return cylon::Status::OK();
+    return cylon::Status(cylon::Code::TypeError, "Unknown indexing scheme.");
   }
 }
 

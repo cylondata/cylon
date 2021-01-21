@@ -70,9 +70,10 @@ int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
  */
 
 int main(int argc, char *argv[]) {
-  indexing_simple_example();
-  test_hash_indexing();
+  //indexing_simple_example();
+  //test_hash_indexing();
   test_linear_indexing();
+  //indexing_benchmark();
 
 }
 
@@ -415,7 +416,7 @@ int indexing_benchmark() {
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
-  std::string test_file = "/tmp/indexing_10000000_0.1.csv";
+  std::string test_file = "/tmp/indexing_10000000_0.9.csv";
   std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
   status = cylon::FromCSV(ctx, test_file, input, read_options);
 
@@ -429,7 +430,7 @@ int indexing_benchmark() {
 
   auto start_start = std::chrono::steady_clock::now();
 
-  cylon::IndexUtil::BuildHashIndex(index, input, index_column);
+  cylon::IndexUtil::BuildLinearIndex(index, input, index_column);
 
   auto read_end_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Indexing table in "
@@ -447,8 +448,8 @@ int indexing_benchmark() {
   auto end_start_i = std::chrono::steady_clock::now();
 
   LOG(INFO) << "Loc table in "
-            << std::chrono::duration_cast<std::chrono::nanoseconds>(
-                end_start_i - start_start_i).count() << "[ns]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                end_start_i - start_start_i).count() << "[ms]";
 
   auto start_start_j = std::chrono::steady_clock::now();
   auto index_arr = index->GetIndexAsArray();
@@ -678,6 +679,17 @@ int test_linear_indexing() {
       std::cout << "Value Found and Index is : " << ix << std::endl;
     }
   }
+
+  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>(cylon::IndexingSchema::Hash);
+
+  base_indexer->loc(&start_index, &end_index, index_column, input, output);
+
+  LOG(INFO) << "Index Tables ";
+  output->Print();
+
+  auto ixs = output->GetIndex()->GetIndexArray();
+  LOG(INFO) << "Index Values ";
+  print_arrow_array(ixs);
 
   return 0;
 }

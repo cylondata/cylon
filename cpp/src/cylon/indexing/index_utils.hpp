@@ -17,8 +17,8 @@ class IndexUtil {
                                int index_column);
 
   static Status BuildLinearIndex(std::shared_ptr<cylon::BaseIndex> &index,
-                               std::shared_ptr<cylon::Table> &input,
-                               int index_column);
+                                 std::shared_ptr<cylon::Table> &input,
+                                 int index_column);
 
   static Status Find(std::shared_ptr<cylon::BaseIndex> &index,
                      std::shared_ptr<cylon::Table> &find_table,
@@ -46,9 +46,23 @@ class IndexUtil {
     return Status::OK();
   }
 
+  template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
+  static Status BuildLinearIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
+                                               arrow::MemoryPool *pool,
+                                               std::shared_ptr<cylon::BaseIndex> &index) {
+    using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
+    auto cast_index_array = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_values);
+    index = std::make_shared<LinearIndex<ARROW_T, CTYPE>>(0, index_values->length(), pool, cast_index_array);
+    return Status::OK();
+  }
+
   static Status BuildHashIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
                                         arrow::MemoryPool *pool,
                                         std::shared_ptr<cylon::BaseIndex> &index);
+
+  static Status BuildLinearIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
+                                          arrow::MemoryPool *pool,
+                                          std::shared_ptr<cylon::BaseIndex> &index);
 
   template<typename CTYPE, typename ARROW_T=typename arrow::CTypeTraits<CTYPE>::ArrowType>
   static Status BuildHashIndexFromVector(std::vector<CTYPE> &index_values,

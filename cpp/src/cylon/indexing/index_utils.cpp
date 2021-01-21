@@ -25,8 +25,6 @@ cylon::Status cylon::IndexUtil::BuildHashIndex(std::shared_ptr<cylon::BaseIndex>
   return cylon::Status::OK();
 }
 
-
-
 cylon::Status cylon::IndexUtil::Find(std::shared_ptr<cylon::BaseIndex> &index,
                                      std::shared_ptr<cylon::Table> &find_table,
                                      void *value,
@@ -129,7 +127,7 @@ cylon::Status cylon::IndexUtil::BuildHashIndexFromArray(std::shared_ptr<arrow::A
     case arrow::Type::MAX_ID:break;
   }
 
-  return cylon::Status();
+  return cylon::Status::OK();
 }
 cylon::Status cylon::IndexUtil::BuildLinearIndex(std::shared_ptr<cylon::BaseIndex> &index,
                                                  std::shared_ptr<cylon::Table> &input,
@@ -146,6 +144,94 @@ cylon::Status cylon::IndexUtil::BuildLinearIndex(std::shared_ptr<cylon::BaseInde
   index = std::move(bi);
   return cylon::Status::OK();
 }
+
+cylon::Status cylon::IndexUtil::BuildLinearIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
+                                                          arrow::MemoryPool *pool,
+                                                          std::shared_ptr<cylon::BaseIndex> &index) {
+  Status s;
+  switch (index_values->type()->id()) {
+
+    case arrow::Type::NA:break;
+    case arrow::Type::BOOL:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::BooleanType>(index_values,
+                                                                                  pool,
+                                                                                  index);
+    case arrow::Type::UINT8:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::UInt8Type>(index_values,
+                                                                                pool,
+                                                                                index);
+    case arrow::Type::INT8:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::Int8Type>(index_values,
+                                                                               pool,
+                                                                               index);
+    case arrow::Type::UINT16:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::UInt16Type>(index_values,
+                                                                                 pool,
+                                                                                 index);
+    case arrow::Type::INT16:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::Int16Type>(index_values,
+                                                                                pool,
+                                                                                index);
+    case arrow::Type::UINT32:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::UInt32Type>(index_values,
+                                                                                 pool,
+                                                                                 index);
+    case arrow::Type::INT32:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::Int32Type>(index_values,
+                                                                                pool,
+                                                                                index);
+    case arrow::Type::UINT64:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::UInt64Type>(index_values,
+                                                                                 pool,
+                                                                                 index);
+    case arrow::Type::INT64:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::Int64Type>(index_values,
+                                                                                pool,
+                                                                                index);
+    case arrow::Type::HALF_FLOAT:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::HalfFloatType>(index_values,
+                                                                                    pool,
+                                                                                    index);
+    case arrow::Type::FLOAT:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::FloatType>(index_values,
+                                                                                pool,
+                                                                                index);
+    case arrow::Type::DOUBLE:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::DoubleType>(index_values,
+                                                                                 pool,
+                                                                                 index);
+    case arrow::Type::STRING:
+      return cylon::IndexUtil::BuildLinearIndexFromArrowArray<arrow::StringType, arrow::util::string_view>(index_values,
+                                                                                                           pool,
+                                                                                                           index);;
+    case arrow::Type::BINARY:break;
+    case arrow::Type::FIXED_SIZE_BINARY:break;
+    case arrow::Type::DATE32:break;
+    case arrow::Type::DATE64:break;
+    case arrow::Type::TIMESTAMP:break;
+    case arrow::Type::TIME32:break;
+    case arrow::Type::TIME64:break;
+    case arrow::Type::INTERVAL_MONTHS:break;
+    case arrow::Type::INTERVAL_DAY_TIME:break;
+    case arrow::Type::DECIMAL:break;
+    case arrow::Type::LIST:break;
+    case arrow::Type::STRUCT:break;
+    case arrow::Type::SPARSE_UNION:break;
+    case arrow::Type::DENSE_UNION:break;
+    case arrow::Type::DICTIONARY:break;
+    case arrow::Type::MAP:break;
+    case arrow::Type::EXTENSION:break;
+    case arrow::Type::FIXED_SIZE_LIST:break;
+    case arrow::Type::DURATION:break;
+    case arrow::Type::LARGE_STRING:break;
+    case arrow::Type::LARGE_BINARY:break;
+    case arrow::Type::LARGE_LIST:break;
+    case arrow::Type::MAX_ID:break;
+  }
+
+  return cylon::Status::OK();
+}
+
 
 
 

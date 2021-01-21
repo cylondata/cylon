@@ -27,7 +27,7 @@ def generate_data():
 
 
 def do_indexing():
-    index_file = "/tmp/indexing_10000000_0.1.csv"
+    index_file = "/tmp/indexing_10000000_0.9.csv"
 
     pdf = pd.read_csv(index_file)
 
