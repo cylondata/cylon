@@ -41,6 +41,8 @@ class AllToAllOp : public Op {
              const ResultsCallback &callback,
              const AllToAllOpConfig &config);
 
+  ~AllToAllOp() override;
+
   bool IsComplete() override;
 
   bool Execute(int tag, std::shared_ptr<Table> &table) override;

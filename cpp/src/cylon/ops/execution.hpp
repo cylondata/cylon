@@ -11,6 +11,8 @@ class Op;
 // todo keep these in a tree structure rather than adhoc vectors and attach it to cylon::Op::AddChild methods
 class Execution {
  public:
+  virtual ~Execution() = default;
+
   virtual bool IsComplete() = 0;
   void WaitForCompletion() {
     while (!this->IsComplete()) {
@@ -28,6 +30,7 @@ class RoundRobinExecution : public Execution {
   std::vector<size_t> indices;
   size_t current_index{};
  public:
+  ~RoundRobinExecution() override;
   void AddOp(Op *op);
   bool IsComplete() override;
 };
@@ -42,7 +45,7 @@ private:
   std::size_t current_index{};
   int state = 0;
 public:
-//  virtual ~JoinExecution();
+  ~JoinExecution() override;
 
   void AddP(Op *op) {
     p_ops.push_back(op);
@@ -68,7 +71,11 @@ class PriorityExecution : public Execution {
 
  public:
   explicit PriorityExecution();
+
+  ~PriorityExecution() override;
+
   void AddOp(cylon::Op *op, int32_t priority);
+
   bool IsComplete() override;
 };
 
@@ -79,7 +86,10 @@ class SequentialExecution : public Execution {
  private:
   std::queue<cylon::Op *> ops;
  public:
+  SequentialExecution() : ops(std::queue<cylon::Op *>()) {}
+
   void AddOp(cylon::Op *op);
+
   bool IsComplete() override;
 };
 }

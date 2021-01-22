@@ -19,9 +19,8 @@ bool RoundRobinExecution::IsComplete() {
 
 bool JoinExecution::IsComplete() {
   bool completed;
-  switch(state) {
-    case 0:
-      completed = p_ops[p_indices[current_index]]->IsComplete();
+  switch (state) {
+    case 0:completed = p_ops[p_indices[current_index]]->IsComplete();
       if (completed) {
         p_indices.erase(p_indices.begin() + current_index);
       } else {
@@ -36,8 +35,7 @@ bool JoinExecution::IsComplete() {
         current_index = 0;
       }
       break;
-    case 1:
-      completed = s_ops[s_indices[current_index]]->IsComplete();
+    case 1:completed = s_ops[s_indices[current_index]]->IsComplete();
       if (completed) {
         s_indices.erase(s_indices.begin() + current_index);
       } else {
@@ -57,21 +55,31 @@ bool JoinExecution::IsComplete() {
   return false;
 }
 
-//JoinExecution::~JoinExecution() {
-//  for (auto &&o:p_ops) {
-//    delete o;
-//  }
-//
-//  for (auto &&o:s_ops) {
-//    delete o;
-//  }
-//
-//  delete join;
-//}
+JoinExecution::~JoinExecution() {
+  // NOTE: p_ops[0] is the head op which holds this execution object.
+  // So, don't delete that!
+  for (size_t i = 1; i < p_ops.size(); i++) {
+    delete p_ops[i];
+  }
+
+  for (auto &&o:s_ops) {
+    delete o;
+  }
+
+  delete join;
+}
 
 void RoundRobinExecution::AddOp(cylon::Op *op) {
   this->ops.push_back(op);
   this->indices.push_back(this->ops.size() - 1);
+}
+
+RoundRobinExecution::~RoundRobinExecution() {
+  // NOTE: p_ops[0] is the head op which holds this execution object.
+  // So, don't delete that!
+  for (size_t i = 1; i < ops.size(); i++) {
+    delete ops[i];
+  }
 }
 
 PriorityExecution::PriorityExecution() {
@@ -88,16 +96,20 @@ void PriorityExecution::AddOp(cylon::Op *op, int32_t priority) {
   }
 }
 
+PriorityExecution::~PriorityExecution() {
+  delete round_robin_execution_;
+}
+
 void SequentialExecution::AddOp(cylon::Op *op) {
   this->ops.push(op);
 }
 
 bool SequentialExecution::IsComplete() {
   cylon::Op *op = this->ops.front();
-  if(op->IsComplete()){
+  if (op->IsComplete()) {
     this->ops.pop();
   }
   return this->ops.empty();
 }
-}
 
+}

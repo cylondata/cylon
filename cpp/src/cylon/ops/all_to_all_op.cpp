@@ -76,4 +76,7 @@ bool cylon::AllToAllOp::Finalize() {
 
 void cylon::AllToAllOp::OnParentsFinalized() {
 }
+cylon::AllToAllOp::~AllToAllOp() {
+  delete all_to_all_;
+}
 

@@ -21,14 +21,6 @@
 
 namespace cylon {
 namespace kernel {
-//Status HashPartition(std::shared_ptr<CylonContext> &ctx, const std::shared_ptr<Table> &table,
-//                     const std::vector<int> &hash_columns, int no_of_partitions,
-//                     std::vector<std::shared_ptr<Table>> &out);
-//
-//Status HashPartition(std::shared_ptr<CylonContext> &ctx, const std::shared_ptr<Table> &table,
-//                     int hash_column, int no_of_partitions,
-//                     std::unordered_map<int, std::shared_ptr<cylon::Table>> *out);
-
 class StreamingHashPartitionKernel {
  public:
   StreamingHashPartitionKernel(const std::shared_ptr<CylonContext> &ctx,

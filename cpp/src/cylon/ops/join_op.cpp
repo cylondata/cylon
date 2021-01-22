@@ -14,9 +14,7 @@
 
 #include "join_op.hpp"
 
-#include <utility>
 #include <chrono>
-#include "partition_op.hpp"
 
 cylon::JoinOp::JoinOp(const std::shared_ptr<CylonContext> &ctx,
                       const std::shared_ptr<arrow::Schema> &schema,
@@ -48,6 +46,10 @@ bool cylon::JoinOp::Finalize() {
   LOG(INFO) << "Join time : "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   return true;
+}
+
+cylon::JoinOp::~JoinOp() {
+  delete join_kernel_;
 }
 
 //int32_t cylon::JoinOpConfig::GetJoinColumn() const {

@@ -21,7 +21,8 @@ UnionOp::UnionOp(const std::shared_ptr<CylonContext> &ctx,
                  int id,
                  const ResultsCallback &callback,
                  const UnionOpConfig &config)
-    : Op(ctx, schema, id, callback), union_kernel(new cylon::kernel::Union(ctx, schema, config.expected_rows)) {}
+    : Op(ctx, schema, id, callback),
+      union_kernel(new cylon::kernel::Union(ctx, schema, config.expected_rows)) {}
 
 bool UnionOp::Execute(int tag, std::shared_ptr<Table> &table) {
   LOG(INFO) << "Executing local union";
@@ -38,5 +39,9 @@ bool UnionOp::Finalize() {
 
 void UnionOp::OnParentsFinalized() {
   // do nothing
+}
+
+UnionOp::~UnionOp() {
+  delete union_kernel;
 }
 }

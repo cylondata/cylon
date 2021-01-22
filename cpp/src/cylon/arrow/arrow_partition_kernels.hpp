@@ -16,7 +16,6 @@
 #define CYLON_ARROW_PARTITION_KERNELS_H
 
 #include <arrow/api.h>
-#include <glog/logging.h>
 
 #include "../ctx/cylon_context.hpp"
 

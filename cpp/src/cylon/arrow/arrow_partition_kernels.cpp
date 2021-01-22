@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
+
 #include "../util/murmur3.hpp"
 #include "../util/macros.hpp"
 #include "../util/arrow_utils.hpp"

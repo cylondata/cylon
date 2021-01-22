@@ -93,11 +93,6 @@ cylon::Op::~Op() {
   for (auto p: queues) {
     delete p.second;
   }
-
-  // delete children
-  for (auto p: children) {
-    delete p.second;
-  }
 }
 
 cylon::Op *cylon::Op::AddChild(cylon::Op *child) {
@@ -171,4 +166,8 @@ cylon::Execution *cylon::RootOp::GetExecution() {
 
 void cylon::RootOp::WaitForCompletion() {
   execution_->WaitForCompletion();
+}
+
+cylon::RootOp::~RootOp() {
+  delete execution_;
 }
