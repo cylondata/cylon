@@ -16,9 +16,8 @@
 #define CYLON_SRC_CYLON_OPS_KERNELS_SHUFFLE_H_
 
 #include <arrow/arrow_all_to_all.hpp>
-#include <chrono>
 
-#include "parallel_op.hpp"
+#include "ops/api/parallel_op.hpp"
 
 namespace cylon {
 

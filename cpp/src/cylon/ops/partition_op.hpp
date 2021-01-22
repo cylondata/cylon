@@ -19,7 +19,7 @@
 #include <arrow/arrow_partition_kernels.hpp>
 
 #include "kernels/partition.hpp"
-#include "parallel_op.hpp"
+#include "ops/api/parallel_op.hpp"
 
 namespace cylon {
 

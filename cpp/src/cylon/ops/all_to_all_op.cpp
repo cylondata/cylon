@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 
+#include <chrono>
+
 #include "all_to_all_op.hpp"
 #include "table.hpp"
 

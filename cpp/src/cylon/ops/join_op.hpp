@@ -15,7 +15,7 @@
 #ifndef CYLON_SRC_CYLON_OPS_JOIN_OP_HPP_
 #define CYLON_SRC_CYLON_OPS_JOIN_OP_HPP_
 
-#include "parallel_op.hpp"
+#include "ops/api/parallel_op.hpp"
 #include "ops/kernels/join_kernel.hpp"
 
 namespace cylon {

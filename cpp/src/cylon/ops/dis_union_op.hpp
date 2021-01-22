@@ -15,7 +15,7 @@
 #ifndef CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_
 #define CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_
 
-#include "parallel_op.hpp"
+#include "ops/api/parallel_op.hpp"
 
 namespace cylon {
 
