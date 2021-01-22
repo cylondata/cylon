@@ -35,6 +35,8 @@ class UnionOp : public Op {
           const ResultsCallback &callback,
           const UnionOpConfig &config);
 
+  ~UnionOp() override;
+
   bool Execute(int tag, std::shared_ptr<Table> &table) override;
 
   void OnParentsFinalized() override;

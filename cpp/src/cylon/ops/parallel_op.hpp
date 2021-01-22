@@ -176,7 +176,7 @@ class RootOp : public Op {
          int id,
          const ResultsCallback &callback)
       : Op(ctx, schema, id, callback, true) {}
-
+  ~RootOp() override;
   bool Finalize() override;
   void OnParentsFinalized() override;
   bool Execute(int tag, std::shared_ptr<Table> &table) override;

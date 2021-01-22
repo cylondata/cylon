@@ -12,9 +12,11 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
+
+#include "table.hpp"
 #include "ctx/arrow_memory_pool_utils.hpp"
 #include "ops/kernels/join_kernel.hpp"
-
 
 namespace cylon {
 namespace kernel {
