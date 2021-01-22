@@ -91,9 +91,9 @@ add_library(cylon SHARED
         arrow/arrow_builder.cpp
         arrow/arrow_task_all_to_all.h
         arrow/arrow_task_all_to_all.cpp
-        ops/parallel_op.hpp
+        ops/api/parallel_op.hpp
         ops/join_op.hpp
-        ops/parallel_op.cpp
+        ops/api/parallel_op.cpp
         ops/join_op.cpp
         ops/partition_op.hpp
         ops/partition_op.cpp

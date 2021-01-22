@@ -16,11 +16,10 @@
 #define CYLON_SRC_CYLON_OPS_SPLIT_OP_H_
 
 #include <vector>
-#include <map>
 
 #include "../arrow/arrow_kernels.hpp"
 
-#include "parallel_op.hpp"
+#include "ops/api/parallel_op.hpp"
 #include "partition_op.hpp"
 
 namespace cylon {

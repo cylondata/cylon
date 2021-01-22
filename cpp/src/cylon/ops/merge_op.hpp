@@ -15,10 +15,9 @@
 #ifndef CYLON_SRC_CYLON_OPS_MERGE_OP_H_
 #define CYLON_SRC_CYLON_OPS_MERGE_OP_H_
 
-#include <vector>
 #include <map>
 
-#include "parallel_op.hpp"
+#include "ops/api/parallel_op.hpp"
 #include "partition_op.hpp"
 
 namespace cylon {

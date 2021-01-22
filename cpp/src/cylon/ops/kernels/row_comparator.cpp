@@ -28,9 +28,4 @@ cylon::kernel::RowComparator::RowComparator(const std::shared_ptr<std::vector<st
                                             const std::shared_ptr<arrow::Schema> &schema)
     : tables(tables),
       comparator(std::make_shared<TableRowComparator>(schema->fields())),
-      row_hashing_kernel(std::make_shared<RowHashingKernel>(schema->fields())) {
-//  this->tables = tables;
-//  this->comparator = std::make_shared<cylon::TableRowComparator>(schema->fields());
-//  this->row_hashing_kernel = std::make_shared<cylon::RowHashingKernel>(schema->fields());
-
-}
+      row_hashing_kernel(std::make_shared<RowHashingKernel>(schema->fields())) {}

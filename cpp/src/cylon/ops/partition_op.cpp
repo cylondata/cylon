@@ -48,7 +48,6 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> &table) {
   }
 //  auto t1 = std::chrono::high_resolution_clock::now();
   std::vector<std::shared_ptr<cylon::Table>> out;
-
   const auto &status = PartitionByHashing(table, config.hash_columns, config.num_partitions, out);
   if (!status.is_ok()) {
     LOG(ERROR) << "hash partition failed: " << status.get_msg();
@@ -57,11 +56,12 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> &table) {
 
   for (int i = 0; i < config.num_partitions; i++) {
     this->InsertToAllChildren(i, out[i]);
-
+#if CYLON_DEBUG
     sleep(ctx_->GetRank());
     std::cout << "****from " << ctx_->GetRank() << " to " << i << std::endl;
     out[i]->Print();
     std::cout << "-------------------------------" << std::endl;
+#endif
   }
   out.clear();
 

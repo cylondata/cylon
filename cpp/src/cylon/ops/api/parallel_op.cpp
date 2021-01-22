@@ -16,9 +16,6 @@
 
 #include <utility>
 
-//cylon::Op *cylon::Op::GetChild(int tag) {
-//  return this->children.at(tag);
-//}
 
 void cylon::Op::DrainQueueToChild(int queue, int child, int tag) {
   const auto &q = this->queues.at(queue);
@@ -28,10 +25,6 @@ void cylon::Op::DrainQueueToChild(int queue, int child, int tag) {
     q->pop();
   }
 }
-
-//std::queue<std::shared_ptr<cylon::Table>> *cylon::Op::GetQueue(int tag) {
-//  return this->queues.at(tag);
-//}
 
 cylon::Op::Op(const std::shared_ptr<cylon::CylonContext> &ctx,
               const std::shared_ptr<arrow::Schema> &schema,

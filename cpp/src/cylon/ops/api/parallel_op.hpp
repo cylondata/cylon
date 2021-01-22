@@ -27,11 +27,6 @@
  */
 namespace cylon {
 
-//class ResultsCallback {
-// public:
-//  virtual void OnResult(int tag, std::shared_ptr<Table> &table) = 0;
-//};
-
 using ResultsCallback = std::function<void(int tag, const std::shared_ptr<Table> &table)>;
 
 class Op {
@@ -44,9 +39,6 @@ class Op {
   std::unordered_map<int, Op *> children{};
   ResultsCallback callback;
 //  std::function<int(int)> router;
-
-//  std::queue<std::shared_ptr<Table>> *GetQueue(int tag);
-//  Op *GetChild(int tag);
 
   // capturing the parent status
   int32_t parents = 0;

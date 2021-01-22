@@ -13,6 +13,7 @@
  */
 
 #include <ops/kernels/prepare_array.hpp>
+#include <ctx/arrow_memory_pool_utils.hpp>
 #include "union.hpp"
 #include "row_comparator.hpp"
 
@@ -67,15 +68,9 @@ cylon::kernel::Union::Union(const std::shared_ptr<CylonContext> &ctx,
     tables(std::make_shared<std::vector<std::shared_ptr<arrow::Table>>>()),
     schema(schema),
     ctx(ctx) {
-//  this->ctx = ctx;
-//  std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>>
-//      tables_ptr = std::make_shared<std::vector<std::shared_ptr<arrow::Table>>>(this->tables);
   RowComparator row_comparator(tables, schema);
-  this->rows_set =
+  rows_set =
       std::make_shared<std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>>(expected_rows,
                                                                                                      row_comparator,
                                                                                                      row_comparator);
-//  this->schema = schema;
 }
-
-cylon::kernel::Union::~Union() = default;
