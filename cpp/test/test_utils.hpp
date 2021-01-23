@@ -265,7 +265,7 @@ int TestIndexBuildOperation(std::string &input_file_path) {
   cylon::Status status;
 
   std::shared_ptr<cylon::Table> input1, output;
-  std::shared_ptr<cylon::BaseIndex> index;
+  std::shared_ptr<cylon::BaseIndex> hash_index, linear_index, range_index;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -275,14 +275,16 @@ int TestIndexBuildOperation(std::string &input_file_path) {
   const int index_column = 0;
   bool drop_index = true;
 
-  cylon::IndexUtil::BuildHashIndex(index, input1, index_column);
-  input1->Set_Index(index, drop_index);
-  bool valid_index_capacity = input1->Rows() == index->GetIndexArray()->length();
-  if (!valid_index_capacity) {
+  cylon::IndexUtil::BuildIndex(cylon::IndexingSchema::Hash, input1, index_column, hash_index);
+  cylon::IndexUtil::BuildIndex(cylon::IndexingSchema::Linear, input1, index_column, linear_index);
+  cylon::IndexUtil::BuildIndex(cylon::IndexingSchema::Range, input1, index_column, range_index);
+
+  bool valid_hash_index_capacity = input1->Rows() == hash_index->GetIndexArray()->length();
+  bool valid_linear_index_capacity = input1->Rows() == linear_index->GetIndexArray()->length();
+  bool valid_range_index_capacity = input1->Rows() == range_index->GetSize();
+  if (!(valid_hash_index_capacity && valid_range_index_capacity && valid_linear_index_capacity)) {
     return 1;
   };
-
-
   return 0;
 }
 
