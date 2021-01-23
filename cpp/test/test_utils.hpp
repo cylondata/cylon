@@ -282,6 +282,7 @@ int TestIndexBuildOperation(std::string &input_file_path) {
   bool valid_hash_index_capacity = input1->Rows() == hash_index->GetIndexArray()->length();
   bool valid_linear_index_capacity = input1->Rows() == linear_index->GetIndexArray()->length();
   bool valid_range_index_capacity = input1->Rows() == range_index->GetSize();
+
   if (!(valid_hash_index_capacity && valid_range_index_capacity && valid_linear_index_capacity)) {
     return 1;
   };
