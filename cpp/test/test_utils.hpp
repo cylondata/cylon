@@ -21,6 +21,9 @@
 #include <table.hpp>
 #include <chrono>
 
+#include "indexing/index_utils.hpp"
+#include "indexing/indexer.hpp"
+
 // this is a toggle to generate test files. Set execute to 0 then, it will generate the expected
 // output files
 #define EXECUTE 1
@@ -253,6 +256,36 @@ int TestParquetJoinOperation(const cylon::join::config::JoinConfig &join_config,
   return 0;
 }
 #endif
+
+
+int TestIndexBuildOperation(std::string &input_file_path) {
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input1, output;
+  std::shared_ptr<cylon::BaseIndex> index;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << input_file_path << std::endl;
+  status = cylon::FromCSV(ctx, input_file_path, input1, read_options);
+
+  const int index_column = 0;
+  bool drop_index = true;
+
+  cylon::IndexUtil::BuildHashIndex(index, input1, index_column);
+  input1->Set_Index(index, drop_index);
+  bool valid_index_capacity = input1->Rows() == index->GetIndexArray()->length();
+  if (!valid_index_capacity) {
+    return 1;
+  };
+
+
+  return 0;
+}
+
 
 }
 }
