@@ -12,6 +12,11 @@ namespace cylon {
 class IndexUtil {
 
  public:
+  static Status BuildIndex(cylon::IndexingSchema schema,
+                           std::shared_ptr<cylon::Table> &input,
+                           int index_column,
+                           std::shared_ptr<cylon::BaseIndex> &index);
+
   static Status BuildHashIndex(std::shared_ptr<cylon::BaseIndex> &index,
                                std::shared_ptr<cylon::Table> &input,
                                int index_column);
@@ -19,6 +24,9 @@ class IndexUtil {
   static Status BuildLinearIndex(std::shared_ptr<cylon::BaseIndex> &index,
                                  std::shared_ptr<cylon::Table> &input,
                                  int index_column);
+
+  static Status BuildRangeIndex(std::shared_ptr<cylon::BaseIndex> &index,
+                                std::shared_ptr<cylon::Table> &input);
 
   static Status Find(std::shared_ptr<cylon::BaseIndex> &index,
                      std::shared_ptr<cylon::Table> &find_table,
@@ -57,8 +65,8 @@ class IndexUtil {
   }
 
   static Status BuildRangeIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
-                                               arrow::MemoryPool *pool,
-                                               std::shared_ptr<cylon::BaseIndex> &index) {
+                                         arrow::MemoryPool *pool,
+                                         std::shared_ptr<cylon::BaseIndex> &index) {
 
     index = std::make_shared<RangeIndex>(0, index_values->length(), 1, pool);
     return Status::OK();

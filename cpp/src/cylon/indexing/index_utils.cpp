@@ -231,6 +231,32 @@ cylon::Status cylon::IndexUtil::BuildLinearIndexFromArray(std::shared_ptr<arrow:
 
   return cylon::Status::OK();
 }
+cylon::Status cylon::IndexUtil::BuildRangeIndex(std::shared_ptr<cylon::BaseIndex> &index,
+                                                std::shared_ptr<cylon::Table> &input) {
+  auto ctx = input->GetContext();
+  auto pool = cylon::ToArrowPool(ctx);
+  auto table_ = input->get_table();
+
+  std::shared_ptr<cylon::IndexKernel> kernel = std::make_unique<GenericRangeIndexKernel>();
+  std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(pool, table_, 0);
+  index = std::move(bi);
+  return cylon::Status::OK();
+}
+cylon::Status cylon::IndexUtil::BuildIndex(cylon::IndexingSchema schema,
+                                           std::shared_ptr<cylon::Table> &input,
+                                           int index_column,
+                                           std::shared_ptr<cylon::BaseIndex> &index) {
+  switch (schema) {
+
+    case Range: return BuildRangeIndex(index, input);
+    case Linear: return BuildLinearIndex(index, input, index_column);
+    case Hash: return BuildHashIndex(index, input, index_column);
+    case BinaryTree:break;
+    case BTree:break;
+    default: return BuildRangeIndex(index, input);
+  }
+  return cylon::Status(cylon::Code::Invalid, "Invalid indexing schema");
+}
 
 
 

@@ -18,6 +18,14 @@
 
 namespace cylon {
 
+enum IndexingSchema {
+  Range = 0,
+  Linear = 1,
+  Hash = 2,
+  BinaryTree = 3,
+  BTree = 4,
+};
+
 class BaseIndex {
 
  public:

@@ -63,14 +63,6 @@ cylon::Status CheckIsIndexValueUnique(void *index_value,
                                       std::shared_ptr<cylon::BaseIndex> &index,
                                       bool &is_unique);
 
-enum IndexingSchema {
-  Range = 0,
-  Linear = 1,
-  Hash = 2,
-  BinaryTree = 3,
-  BTree = 4,
-};
-
 class BaseIndexer {
 
  public:
