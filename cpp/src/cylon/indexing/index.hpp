@@ -295,7 +295,7 @@ class RangeIndex : public BaseIndex {
   int start_ = 0;
   int end_ = 0;
   int step_ = 1;
-  std::shared_ptr<arrow::Array> index_arr_;
+  std::shared_ptr<arrow::Array> index_arr_ = nullptr;
 
 };
 

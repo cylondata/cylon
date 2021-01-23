@@ -49,7 +49,6 @@ std::unique_ptr<IndexKernel> CreateLinearIndexKernel(std::shared_ptr<arrow::Tabl
 
 }
 
-
 std::unique_ptr<IndexKernel> CreateIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column) {
   // TODO: fix the criterion to check the kernel creation method
   if (index_column == -1) {
@@ -68,7 +67,24 @@ Status RangeIndex::LocationByValue(void *search_param,
                                    std::shared_ptr<arrow::Table> &input,
                                    std::vector<int64_t> &filter_locations,
                                    std::shared_ptr<arrow::Table> &output) {
-  LOG(ERROR) << "Not Implemented!";
+  LOG(INFO) << "Extract table for a given index";
+  arrow::Status arrow_status;
+  std::shared_ptr<arrow::Array> out_idx;
+  arrow::compute::ExecContext fn_ctx(GetPool());
+  arrow::Int64Builder idx_builder(GetPool());
+  const arrow::Datum input_table(input);
+  std::vector<int64_t> filter_vals;
+
+  LocationByValue(search_param, filter_vals);
+
+  idx_builder.AppendValues(filter_vals);
+  arrow_status = idx_builder.Finish(&out_idx);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+  const arrow::Datum filter_indices(out_idx);
+  arrow::Result<arrow::Datum>
+      result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+  output = result.ValueOrDie().table();
   return Status::OK();
 }
 
@@ -92,11 +108,20 @@ int RangeIndex::GetStep() const {
 }
 Status RangeIndex::LocationByValue(void *search_param, std::vector<int64_t> &find_index) {
   int64_t val = *static_cast<int64_t *>(search_param);
+  if (!(val > start_ && val < end_)) {
+    LOG(ERROR) << "Invalid Key, it must be in the range of 0, num of records";
+    return Status(cylon::Code::KeyError);
+  }
   find_index.push_back(val);
   return Status::OK();
 }
 Status RangeIndex::LocationByValue(void *search_param, int64_t &find_index) {
-  find_index = *static_cast<int64_t *>(search_param);
+  int64_t val = *static_cast<int64_t *>(search_param);
+  if (!(val > start_ && val < end_)) {
+    LOG(ERROR) << "Invalid Key, it must be in the range of 0, num of records";
+    return Status(cylon::Code::KeyError);
+  }
+  find_index = val;
   return Status::OK();
 }
 std::shared_ptr<arrow::Array> RangeIndex::GetIndexAsArray() {
@@ -152,8 +177,6 @@ int BaseIndex::GetSize() const {
 arrow::MemoryPool *BaseIndex::GetPool() const {
   return pool_;
 }
-
-
 
 }
 

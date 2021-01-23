@@ -45,7 +45,13 @@ int test_hash_indexing();
 
 int test_linear_indexing();
 
+int test_range_indexing();
+
 int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
+
+
+//template<typename Base, typename T>
+//inline bool instanceof(const T*);
 
 /**
  * This example reads two csv files and does a union on them.
@@ -69,13 +75,22 @@ int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
     35,1,2,15
  */
 
+
+
+
+
 int main(int argc, char *argv[]) {
   //indexing_simple_example();
-  //test_hash_indexing();
+  test_hash_indexing();
   test_linear_indexing();
   //indexing_benchmark();
-
+  test_range_indexing();
 }
+
+//template<typename Base, typename T>
+//inline bool instanceof(const T*) {
+//  return std::is_base_of<Base, T>::value;
+//}
 
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
 
@@ -680,7 +695,7 @@ int test_linear_indexing() {
     }
   }
 
-  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>(cylon::IndexingSchema::Hash);
+  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>(cylon::IndexingSchema::Linear);
 
   base_indexer->loc(&start_index, &end_index, index_column, input, output);
 
@@ -690,6 +705,83 @@ int test_linear_indexing() {
   auto ixs = output->GetIndex()->GetIndexArray();
   LOG(INFO) << "Index Values ";
   print_arrow_array(ixs);
+
+  return 0;
+}
+
+int test_range_indexing() {
+  LOG(INFO) << "Testing Linear Indexing";
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output, output1;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/duplicate_data_0.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table";
+    return -1;
+  }
+
+  LOG(INFO) << "Original Data";
+
+  input->Print();
+
+  long start_index = 6;
+  long end_index = 11;
+  int64_t index_column = 0;
+  bool drop_index = true;
+
+  std::shared_ptr<cylon::BaseIndex> index, loc_index;
+
+  LOG(INFO) << "[Before LinearIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
+
+  index = input->GetIndex();
+
+  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
+    std::cout << "Range Index : " << rx->GetStart() << ", " << rx->GetSize() << ", " << rx->GetStep();
+  } else {
+    std::cout << typeid(index).name() << std::endl;
+  }
+  std::cout << std::endl;
+
+  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>(cylon::IndexingSchema::Range);
+
+  base_indexer->loc(&start_index, &end_index, index_column, input, output);
+
+  LOG(INFO) << "Range Index Table 1 ";
+  output->Print();
+
+  auto loc_output_index = output->GetIndex();
+
+  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(loc_output_index)) {
+    std::cout << "Range Index : " << rx->GetStart() << ", " << rx->GetSize() << ", " << rx->GetStep();
+  } else {
+    std::cout << typeid(index).name() << std::endl;
+  }
+  std::cout << std::endl;
+
+  base_indexer->loc(&start_index, index_column, input, output1);
+
+  LOG(INFO) << "Range Index Table 2 ";
+  output1->Print();
+
+  auto loc_output_index1 = output1->GetIndex();
+
+  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(loc_output_index1)) {
+    std::cout << "Range Index : " << rx->GetStart() << ", " << rx->GetSize() << ", " << rx->GetStep();
+  } else {
+    std::cout << typeid(index).name() << std::endl;
+  }
+  std::cout << std::endl;
+
+
 
   return 0;
 }

@@ -56,6 +56,14 @@ class IndexUtil {
     return Status::OK();
   }
 
+  static Status BuildRangeIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
+                                               arrow::MemoryPool *pool,
+                                               std::shared_ptr<cylon::BaseIndex> &index) {
+
+    index = std::make_shared<RangeIndex>(0, index_values->length(), 1, pool);
+    return Status::OK();
+  }
+
   static Status BuildHashIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
                                         arrow::MemoryPool *pool,
                                         std::shared_ptr<cylon::BaseIndex> &index);

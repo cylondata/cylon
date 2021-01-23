@@ -7,11 +7,17 @@
 
 namespace cylon {
 
+template<typename Base, typename T>
+inline bool instanceof(const T*) {
+  return std::is_base_of<Base, T>::value;
+}
+
 enum IndexingSchema {
-  Linear = 0,
-  Hash = 1,
-  BinaryTree = 2,
-  BTree = 3,
+  Range = 0,
+  Linear = 1,
+  Hash = 2,
+  BinaryTree = 3,
+  BTree = 4,
 };
 
 class BaseIndexer {

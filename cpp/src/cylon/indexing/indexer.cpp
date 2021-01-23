@@ -2,6 +2,17 @@
 #include "indexer.hpp"
 #include "index_utils.hpp"
 
+bool IsValidColumnRange(int &column_id, std::shared_ptr<cylon::Table> &input_table) {
+  return (column_id < input_table->Rows() and column_id >= 0);
+}
+
+bool IsRangeIndex(std::shared_ptr<cylon::BaseIndex> &index) {
+  if (std::shared_ptr<cylon::RangeIndex> r = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
+    return true;
+  }
+  return false;
+}
+
 cylon::Status BuildIndexFromArrayByKernel(cylon::IndexingSchema indexing_schema,
                                           std::shared_ptr<arrow::Array> &sub_index_arr,
                                           arrow::MemoryPool *pool,
@@ -10,9 +21,11 @@ cylon::Status BuildIndexFromArrayByKernel(cylon::IndexingSchema indexing_schema,
     return cylon::IndexUtil::BuildHashIndexFromArray(sub_index_arr, pool, loc_index);
   } else if (indexing_schema == cylon::IndexingSchema::Linear) {
     return cylon::IndexUtil::BuildLinearIndexFromArray(sub_index_arr, pool, loc_index);
-  } else if(indexing_schema == cylon::IndexingSchema::BinaryTree) {
+  } else if (indexing_schema == cylon::IndexingSchema::Range) {
+    return cylon::IndexUtil::BuildRangeIndexFromArray(sub_index_arr, pool, loc_index);
+  } else if (indexing_schema == cylon::IndexingSchema::BinaryTree) {
     return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
-  } else if(indexing_schema == cylon::IndexingSchema::BTree) {
+  } else if (indexing_schema == cylon::IndexingSchema::BTree) {
     return cylon::Status(cylon::Code::NotImplemented, "B-Tree Indexing not implemented!");
   } else {
     return cylon::Status(cylon::Code::TypeError, "Unknown indexing scheme.");
@@ -29,38 +42,45 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
   std::shared_ptr<arrow::Array> sub_index_arr;
   arrow::Status status;
   cylon::Status cylon_status;
-  auto index_arr = index->GetIndexArray();
+
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
-  arrow::Int64Builder builder(pool);
-  status = builder.AppendValues(sub_index_locations);
+  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
+    LOG(INFO) << "Set Index for location output with RangeIndex";
+    loc_index = std::make_shared<cylon::RangeIndex>(0, sub_index_locations.size(), 1, pool);
+  } else {
+    LOG(INFO) << "Set Index for location output with Non-RangeIndex";
+    auto index_arr = index->GetIndexArray();
+    arrow::Int64Builder builder(pool);
+    status = builder.AppendValues(sub_index_locations);
 
-  if (!status.ok()) {
-    LOG(ERROR) << "HashIndex array builder append failed!";
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
-  }
+    if (!status.ok()) {
+      LOG(ERROR) << "HashIndex array builder append failed!";
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
+    }
 
-  status = builder.Finish(&sub_index_pos_arr);
+    status = builder.Finish(&sub_index_pos_arr);
 
-  if (!status.ok()) {
-    LOG(ERROR) << "HashIndex array builder finish failed!";
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
-  }
+    if (!status.ok()) {
+      LOG(ERROR) << "HashIndex array builder finish failed!";
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
+    }
 
-  arrow::Result<arrow::Datum> datum = arrow::compute::Take(index_arr, sub_index_pos_arr);
+    arrow::Result<arrow::Datum> datum = arrow::compute::Take(index_arr, sub_index_pos_arr);
 
-  if (!datum.status().ok()) {
-    LOG(ERROR) << "Sub HashIndex array creation failed!";
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(datum.status());
-  }
+    if (!datum.status().ok()) {
+      LOG(ERROR) << "Sub HashIndex array creation failed!";
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(datum.status());
+    }
 
-  sub_index_arr = datum.ValueOrDie().make_array();
+    sub_index_arr = datum.ValueOrDie().make_array();
 
-  cylon_status = BuildIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
+    cylon_status = BuildIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
 
-  if(!cylon_status.is_ok()) {
-    LOG(ERROR) << "Error occurred in resolving kernel for index array building";
-    return cylon_status;
+    if (!cylon_status.is_ok()) {
+      LOG(ERROR) << "Error occurred in resolving kernel for index array building";
+      return cylon_status;
+    }
   }
 
   output->Set_Index(loc_index, false);
@@ -74,16 +94,18 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
                                         cylon::IndexingSchema indexing_schema) {
   std::shared_ptr<cylon::BaseIndex> loc_index;
   std::shared_ptr<arrow::Array> sub_index_arr;
-  auto index_arr = index->GetIndexArray();
-
-  sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
-
-  std::cout << std::endl;
-
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
 
-  cylon::IndexUtil::BuildHashIndexFromArray(sub_index_arr, pool, loc_index);
+  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
+    LOG(INFO) << "Set Index for location output with RangeIndex";
+    loc_index = std::make_shared<cylon::RangeIndex>(0, end_pos - start_pos, 1, pool);
+  } else {
+    LOG(INFO) << "Set Index for location output with Non-RangeIndex";
+    auto index_arr = index->GetIndexArray();
+    sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
+    BuildIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
+  }
 
   output->Set_Index(loc_index, false);
 
