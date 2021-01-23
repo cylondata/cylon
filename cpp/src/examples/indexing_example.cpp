@@ -767,7 +767,17 @@ int test_range_indexing() {
   }
   std::cout << std::endl;
 
-  base_indexer->loc(&start_index, index_column, input, output1);
+  typedef std::vector<void *> vector_void_star;
+
+  vector_void_star output_items;
+
+  std::vector<int64_t> start_indices_5 = {4, 1};
+
+  for (size_t tx = 0; tx < start_indices_5.size(); tx++) {
+    output_items.push_back(reinterpret_cast<void *const>(start_indices_5.at(tx)));
+  }
+
+  base_indexer->loc(output_items, index_column, input, output1);
 
   LOG(INFO) << "Range Index Table 2 ";
   output1->Print();

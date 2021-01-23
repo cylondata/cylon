@@ -67,7 +67,7 @@ Status RangeIndex::LocationByValue(void *search_param,
                                    std::shared_ptr<arrow::Table> &input,
                                    std::vector<int64_t> &filter_locations,
                                    std::shared_ptr<arrow::Table> &output) {
-  LOG(INFO) << "Extract table for a given index";
+  LOG(INFO) << "Extract From Range Index";
   arrow::Status arrow_status;
   std::shared_ptr<arrow::Array> out_idx;
   arrow::compute::ExecContext fn_ctx(GetPool());
@@ -107,18 +107,18 @@ int RangeIndex::GetStep() const {
   return step_;
 }
 Status RangeIndex::LocationByValue(void *search_param, std::vector<int64_t> &find_index) {
-  int64_t val = *static_cast<int64_t *>(search_param);
-  if (!(val > start_ && val < end_)) {
-    LOG(ERROR) << "Invalid Key, it must be in the range of 0, num of records";
+  int64_t val = *((int64_t *) search_param);
+  if (!(val >= start_ && val < end_)) {
+    LOG(ERROR) << "0:Invalid Key, it must be in the range of 0, num of records: " << val << "," << start_ << "," << end_;
     return Status(cylon::Code::KeyError);
   }
   find_index.push_back(val);
   return Status::OK();
 }
 Status RangeIndex::LocationByValue(void *search_param, int64_t &find_index) {
-  int64_t val = *static_cast<int64_t *>(search_param);
-  if (!(val > start_ && val < end_)) {
-    LOG(ERROR) << "Invalid Key, it must be in the range of 0, num of records";
+  int64_t val = *((int64_t *) search_param);
+  if (!(val >= start_ && val < end_)) {
+    LOG(ERROR) << "1:Invalid Key, it must be in the range of 0, num of records";
     return Status(cylon::Code::KeyError);
   }
   find_index = val;
