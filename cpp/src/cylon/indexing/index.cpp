@@ -57,6 +57,20 @@ std::unique_ptr<IndexKernel> CreateIndexKernel(std::shared_ptr<arrow::Table> inp
     return CreateHashIndexKernel(input_table, index_column);
   }
 }
+cylon::Status CompareArraysForUniqueness(std::shared_ptr<arrow::Array> &index_arr, bool &is_unique) {
+  Status s;
+  auto result = arrow::compute::Unique(index_arr);
+
+  if(!result.ok()) {
+    LOG(ERROR) << "Error occurred in unique operation on index array";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+  }
+  auto unique_arr = result.ValueOrDie();
+
+  is_unique = unique_arr->length() == index_arr->length();
+
+  return cylon::Status::OK();
+}
 cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *pool) : BaseIndex(0, size, pool),
                                                                                         start_(start),
                                                                                         end_(size),
@@ -154,6 +168,9 @@ void RangeIndex::SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) {
 }
 std::shared_ptr<arrow::Array> RangeIndex::GetIndexArray() {
   return index_arr_;
+}
+bool RangeIndex::IsUnique() {
+  return true;
 }
 
 RangeIndexKernel::RangeIndexKernel() {}

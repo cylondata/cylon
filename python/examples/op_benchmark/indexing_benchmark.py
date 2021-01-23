@@ -44,5 +44,15 @@ def do_indexing():
     #print(df1)
 
 
+def check_indexing_validity():
+    pdf = pd.read_csv('/tmp/duplicate_data_0.csv')
+    pdf = pdf.set_index('a')
+
+    print(pdf)
+
+    df1 = pdf.loc[4:1]
+    print(df1)
+
 #generate_data()
-do_indexing()
+#do_indexing()
+check_indexing_validity()

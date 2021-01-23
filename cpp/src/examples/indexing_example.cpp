@@ -81,10 +81,10 @@ int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
 
 int main(int argc, char *argv[]) {
   //indexing_simple_example();
-  test_hash_indexing();
+  //test_hash_indexing();
   test_linear_indexing();
   //indexing_benchmark();
-  test_range_indexing();
+  //test_range_indexing();
 }
 
 //template<typename Base, typename T>
@@ -670,13 +670,17 @@ int test_linear_indexing() {
 
   input->Print();
 
-  long start_index = 27;
-  long end_index = 123;
+  long start_index = 4;
+  long end_index = 27;
   int64_t index_column = 0;
   bool drop_index = true;
 
   std::shared_ptr<cylon::BaseIndex> index, loc_index;
-  cylon::IndexUtil::BuildLinearIndex(index, input, index_column);
+  status = cylon::IndexUtil::BuildLinearIndex(index, input, index_column);
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in building index";
+    return -1;
+  }
 
   LOG(INFO) << "[Before LinearIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
 
@@ -697,7 +701,12 @@ int test_linear_indexing() {
 
   std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>(cylon::IndexingSchema::Linear);
 
-  base_indexer->loc(&start_index, &end_index, index_column, input, output);
+  status = base_indexer->loc(&start_index, &end_index, index_column, input, output);
+
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in loc index";
+    return -1;
+  }
 
   LOG(INFO) << "Index Tables ";
   output->Print();
@@ -738,7 +747,10 @@ int test_range_indexing() {
   int64_t index_column = 0;
   bool drop_index = true;
 
-  std::shared_ptr<cylon::BaseIndex> index, loc_index;
+  std::shared_ptr<cylon::BaseIndex> index, loc_index, hash_index, linear_index;
+
+  cylon::IndexUtil::BuildHashIndex(hash_index, input, 0);
+  cylon::IndexUtil::BuildLinearIndex(linear_index, input, 0);
 
   LOG(INFO) << "[Before LinearIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
 
@@ -791,10 +803,30 @@ int test_range_indexing() {
   }
   std::cout << std::endl;
 
+  auto hash_index_arr = hash_index->GetIndexArray();
+  auto linear_index_arr = linear_index->GetIndexArray();
 
+  auto result_hash = arrow::compute::Unique(hash_index_arr);
+  auto result_linear = arrow::compute::Unique(linear_index_arr);
+
+  if(!result_hash.ok()) {
+    return -1;
+  }
+
+  if(!result_linear.ok()) {
+    return -1;
+  }
+
+  auto hash_index_uq_ar = result_hash.ValueOrDie();
+  auto linear_index_uq_ar = result_linear.ValueOrDie();
+
+  std::cout << "hash Uq comparison " << hash_index_arr->length() << ", " << hash_index_uq_ar->length() << std::endl;
+  std::cout << "LInear Uq comparison " << linear_index_arr->length() << ", " << linear_index_uq_ar->length() << std::endl;
 
   return 0;
 }
+
+
 
 int print_arrow_array(std::shared_ptr<arrow::Array> &arr) {
   for (int64_t xi = 0; xi < arr->length(); xi++) {

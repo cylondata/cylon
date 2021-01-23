@@ -50,12 +50,17 @@ class BaseIndex {
 
   virtual arrow::MemoryPool *GetPool() const;
 
+  virtual bool IsUnique() = 0;
+
  private:
   int size_;
   int col_id_;
   arrow::MemoryPool *pool_;
   std::shared_ptr<arrow::Array> index_arr;
+
 };
+
+cylon::Status CompareArraysForUniqueness(std::shared_ptr<arrow::Array> &index_arr, bool &is_unique);
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
 class HashIndex : public BaseIndex {
@@ -155,6 +160,16 @@ class HashIndex : public BaseIndex {
 
   std::shared_ptr<arrow::Array> GetIndexArray() override {
     return index_arr_;
+  }
+
+  bool IsUnique() override {
+    bool is_unique = false;
+    auto index_arr = GetIndexArray();
+    auto status = CompareArraysForUniqueness(index_arr, is_unique);
+    if (!status.is_ok()) {
+      LOG(ERROR) << "Error occurred in is unique operation";
+    }
+    return is_unique;
   }
 
  private:
@@ -264,6 +279,16 @@ class HashIndex<arrow::StringType, arrow::util::string_view> : public BaseIndex 
     return index_arr_;
   }
 
+  bool IsUnique() override {
+    bool is_unique = false;
+    auto index_arr = GetIndexArray();
+    auto status = CompareArraysForUniqueness(index_arr, is_unique);
+    if (!status.is_ok()) {
+      LOG(ERROR) << "Error occurred in is unique operation";
+    }
+    return is_unique;
+  }
+
  private:
   std::shared_ptr<MMAP_TYPE> map_;
   std::shared_ptr<arrow::Array> index_arr_;
@@ -282,6 +307,7 @@ class RangeIndex : public BaseIndex {
   std::shared_ptr<arrow::Array> GetIndexAsArray() override;
   void SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) override;
   std::shared_ptr<arrow::Array> GetIndexArray() override;
+  bool IsUnique() override;
 
   int GetColId() const override;
   int GetSize() const override;
@@ -371,6 +397,16 @@ class LinearIndex : public BaseIndex {
     return BaseIndex::GetPool();
   }
 
+  bool IsUnique() override {
+    bool is_unique = false;
+    auto index_arr = GetIndexArray();
+    auto status = CompareArraysForUniqueness(index_arr, is_unique);
+    if (!status.is_ok()) {
+      LOG(ERROR) << "Error occurred in is unique operation";
+    }
+    return is_unique;
+  }
+
  private:
   std::shared_ptr<ARROW_ARRAY_TYPE> index_array_;
 
@@ -448,6 +484,16 @@ class LinearIndex<arrow::StringType, arrow::util::string_view> : public BaseInde
   }
   arrow::MemoryPool *GetPool() const override {
     return BaseIndex::GetPool();
+  }
+
+  bool IsUnique() override {
+    bool is_unique = false;
+    auto index_arr = GetIndexArray();
+    auto status = CompareArraysForUniqueness(index_arr, is_unique);
+    if (!status.is_ok()) {
+      LOG(ERROR) << "Error occurred in is unique operation";
+    }
+    return is_unique;
   }
 
  private:

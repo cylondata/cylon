@@ -119,6 +119,18 @@ cylon::Status GetLocFilterIndices(void *start_index,
                                   std::shared_ptr<cylon::BaseIndex> &index) {
   cylon::Status status1, status2, status_build;
   std::shared_ptr<arrow::Table> out_artb;
+  bool is_index_unique;
+
+  cylon::CheckIsIndexValueUnique(start_index, index, is_index_unique);
+  if(!is_index_unique) {
+    LOG(ERROR) << "Index value must be unique";
+    return cylon::Status(cylon::Code::KeyError);
+  }
+  cylon::CheckIsIndexValueUnique(end_index, index, is_index_unique);
+  if(!is_index_unique) {
+    LOG(ERROR) << "Index value must be unique";
+    return cylon::Status(cylon::Code::KeyError);
+  }
 
   status1 = index->LocationByValue(start_index, s_index);
   status2 = index->LocationByValue(end_index, e_index);
@@ -726,4 +738,52 @@ cylon::IndexingSchema cylon::ILocIndexer::GetIndexingSchema() {
   return indexing_schema_;
 }
 
+cylon::Status cylon::CheckIsIndexValueUnique(void *index_value,
+                                             std::shared_ptr<cylon::BaseIndex> &index,
+                                             bool &is_unique) {
+  auto index_arr = index->GetIndexArray();
+  switch (index_arr->type()->id()) {
 
+    case arrow::Type::NA:break;
+    case arrow::Type::BOOL:break;
+    case arrow::Type::UINT8: return IsIndexValueUnique<arrow::UInt8Type>(index_value, index, is_unique);
+    case arrow::Type::INT8: return IsIndexValueUnique<arrow::Int8Type>(index_value, index, is_unique);
+    case arrow::Type::UINT16:return IsIndexValueUnique<arrow::UInt16Type>(index_value, index, is_unique);
+    case arrow::Type::INT16:return IsIndexValueUnique<arrow::Int16Type>(index_value, index, is_unique);
+    case arrow::Type::UINT32:return IsIndexValueUnique<arrow::UInt32Type>(index_value, index, is_unique);
+    case arrow::Type::INT32:return IsIndexValueUnique<arrow::Int32Type>(index_value, index, is_unique);
+    case arrow::Type::UINT64:return IsIndexValueUnique<arrow::UInt64Type>(index_value, index, is_unique);
+    case arrow::Type::INT64:return IsIndexValueUnique<arrow::Int64Type>(index_value, index, is_unique);
+    case arrow::Type::HALF_FLOAT:return IsIndexValueUnique<arrow::HalfFloatType>(index_value, index, is_unique);
+    case arrow::Type::FLOAT:return IsIndexValueUnique<arrow::FloatType>(index_value, index, is_unique);
+    case arrow::Type::DOUBLE:return IsIndexValueUnique<arrow::DoubleType>(index_value, index, is_unique);
+    case arrow::Type::STRING:
+      return IsIndexValueUnique<arrow::StringType, arrow::util::string_view>(index_value,
+                                                                            index,
+                                                                            is_unique);
+    case arrow::Type::BINARY:break;
+    case arrow::Type::FIXED_SIZE_BINARY:break;
+    case arrow::Type::DATE32:break;
+    case arrow::Type::DATE64:break;
+    case arrow::Type::TIMESTAMP:break;
+    case arrow::Type::TIME32:break;
+    case arrow::Type::TIME64:break;
+    case arrow::Type::INTERVAL_MONTHS:break;
+    case arrow::Type::INTERVAL_DAY_TIME:break;
+    case arrow::Type::DECIMAL:break;
+    case arrow::Type::LIST:break;
+    case arrow::Type::STRUCT:break;
+    case arrow::Type::SPARSE_UNION:break;
+    case arrow::Type::DENSE_UNION:break;
+    case arrow::Type::DICTIONARY:break;
+    case arrow::Type::MAP:break;
+    case arrow::Type::EXTENSION:break;
+    case arrow::Type::FIXED_SIZE_LIST:break;
+    case arrow::Type::DURATION:break;
+    case arrow::Type::LARGE_STRING:break;
+    case arrow::Type::LARGE_BINARY:break;
+    case arrow::Type::LARGE_LIST:break;
+    case arrow::Type::MAX_ID:break;
+  }
+  return cylon::Status();
+}
