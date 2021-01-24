@@ -60,8 +60,11 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
   indices_indexed.reserve(left_indices.size());
 
   for (long v : left_indices) {
-    unsigned long kX = left_index_sorted_column->Value(v);
-    indices_indexed.push_back(kX);
+    if (v < 0){
+      indices_indexed.push_back(v);
+    } else {
+      indices_indexed.push_back(left_index_sorted_column->Value(v));
+    }
   }
   left_index_sorted_column.reset();
   std::vector<std::shared_ptr<arrow::Array>> data_arrays;
@@ -93,8 +96,11 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
   indices_indexed.clear();
   indices_indexed.reserve(right_indices.size());
   for (long v : right_indices) {
-    unsigned long kX = right_index_sorted_column->Value(v);
-    indices_indexed.push_back(kX);
+    if (v < 0){
+      indices_indexed.push_back(v);
+    } else {
+      indices_indexed.push_back(right_index_sorted_column->Value(v));
+    }
   }
   right_index_sorted_column.reset();
   // build arrays for right tab
@@ -103,7 +109,7 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
     std::shared_ptr<arrow::ChunkedArray> ca = rvector[i];
     std::shared_ptr<arrow::Array> destination_col_array;
     arrow::Status status;
-    if (i == left_inplace_column) {
+    if (i == right_inplace_column) {
       status = cylon::util::copy_array_by_indices(right_indices,
                                                   ca->chunk(0),
                                                   &destination_col_array,
