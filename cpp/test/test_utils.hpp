@@ -281,11 +281,8 @@ int TestIndexBuildOperation(std::string &input_file_path, cylon::IndexingSchema 
   }
 
   bool valid_index = false;
-  if (indexing_schema == cylon::IndexingSchema::Range) {
-    valid_index = input1->Rows() == index->GetSize();
-  } else {
-    valid_index = input1->Rows() == index->GetIndexArray()->length();
-  }
+
+  valid_index = input1->Rows() == index->GetIndexArray()->length();
 
   if (!valid_index) {
     return 1;
