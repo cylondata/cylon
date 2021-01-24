@@ -276,7 +276,7 @@ int TestIndexBuildOperation(std::string &input_file_path, cylon::IndexingSchema 
 
   status = cylon::IndexUtil::BuildIndex(indexing_schema, input1, index_column, index);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     return 1;
   }
 
@@ -291,19 +291,31 @@ int TestIndexBuildOperation(std::string &input_file_path, cylon::IndexingSchema 
   return 0;
 }
 
-int TestIndexLocOperation1(std::string &input_file_path, cylon::IndexingSchema indexing_schema) {
+int TestIndexLocOperation1(std::string &input_file_path,
+                           cylon::IndexingSchema indexing_schema,
+                           std::string &output_file_path) {
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
-  std::shared_ptr<cylon::Table> input1, output, loc_output;
+  std::shared_ptr<cylon::Table> input1, expected_output, result;
   std::shared_ptr<cylon::BaseIndex> index;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
   std::cout << "Reading File [" << ctx->GetRank() << "] : " << input_file_path << std::endl;
   status = cylon::FromCSV(ctx, input_file_path, input1, read_options);
+
+  if(!status.is_ok()) {
+    return 1;
+  }
+
+  status = cylon::FromCSV(ctx, output_file_path, expected_output, read_options);
+
+  if(!status.is_ok()) {
+    return 1;
+  }
 
   long start_index = 0;
   long end_index = 5;
@@ -312,7 +324,7 @@ int TestIndexLocOperation1(std::string &input_file_path, cylon::IndexingSchema i
 
   status = cylon::IndexUtil::BuildIndex(indexing_schema, input1, index_column, index);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     return 1;
   }
 
@@ -329,7 +341,7 @@ int TestIndexLocOperation1(std::string &input_file_path, cylon::IndexingSchema i
 
   status = input1->Set_Index(index, drop_index);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     return 1;
   }
 
@@ -337,13 +349,13 @@ int TestIndexLocOperation1(std::string &input_file_path, cylon::IndexingSchema i
 
   std::shared_ptr<cylon::BaseIndexer> indexer = std::make_shared<cylon::LocIndexer>(indexing_schema);
 
-  status = indexer->loc(&start_index, &end_index, column, input1, loc_output);
+  status = indexer->loc(&start_index, &end_index, column, input1, result);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     return -1;
   }
 
-  return 0;
+  return Verify(ctx, result, expected_output);
 }
 
 }
