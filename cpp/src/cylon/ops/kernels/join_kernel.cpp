@@ -12,19 +12,19 @@
  * limitations under the License.
  */
 
-#include <glog/logging.h>
-
-#include "table.hpp"
-#include "ctx/arrow_memory_pool_utils.hpp"
 #include "ops/kernels/join_kernel.hpp"
+
 
 namespace cylon {
 namespace kernel {
 
 JoinKernel::JoinKernel(const std::shared_ptr<cylon::CylonContext> &ctx,
-                       const std::shared_ptr<arrow::Schema> &schema,
-                       const cylon::join::config::JoinConfig *join_config)
-    : ctx(ctx), schema(schema), join_config(join_config) {}
+           const std::shared_ptr<arrow::Schema> &schema,
+           const std::shared_ptr<cylon::join::config::JoinConfig> &join_config) {
+  this->ctx = ctx;
+  this->schema = schema;
+  this->join_config = join_config;
+}
 
 void JoinKernel::InsertTable(int tag, const std::shared_ptr<cylon::Table> &table) {
   if (tag == 100) {

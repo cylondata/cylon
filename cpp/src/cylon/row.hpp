@@ -25,8 +25,7 @@ class Row {
   std::shared_ptr<arrow::Table> table;
   int64_t row_index;
  public:
-  Row(std::shared_ptr<arrow::Table> table);
-  void SetIndex(int64_t index);
+  Row(std::shared_ptr<arrow::Table> table, int64_t row_index);
 
   int64_t RowIndex();
   int8_t GetInt8(int64_t col_index);

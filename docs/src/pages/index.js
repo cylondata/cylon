@@ -177,7 +177,7 @@ function Home() {
                         <div className="container">
                             <div className="row">
                                 {features.map((props, idx) => (
-                                    <Feature key={idx} {...props} fixedWidth={true} />
+                                    <Feature key={idx} {...props} />
                                 ))}
                             </div>
                         </div>

@@ -25,6 +25,7 @@
 #endif
 
 #include "csv_read_config_holder.hpp"
+#include "../ctx/cylon_context.hpp"
 #include "../ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
@@ -91,10 +92,8 @@ arrow::Result<std::shared_ptr<arrow::Table>> ReadParquet(std::shared_ptr<cylon::
 }
 
 //Write Parquet
-arrow::Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
-                           std::shared_ptr<cylon::Table> &table,
-                           const std::string &path,
-                           cylon::io::config::ParquetOptions options) {
+arrow::Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<arrow::Table> &table,
+                           const std::string &path, cylon::io::config::ParquetOptions options) {
   auto *pool = cylon::ToArrowPool(ctx);
   arrow::Result<std::shared_ptr<arrow::io::FileOutputStream>> outfileResult =
       arrow::io::FileOutputStream::Open(path);
@@ -103,11 +102,8 @@ arrow::Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
   }
 
   arrow::Status writefileResult =
-      parquet::arrow::WriteTable(*table->get_table(),
-                                 pool,
-                                 *outfileResult,
-                                 options.GetChunkSize(),
-                                 options.GetWriterProperties(),
+      parquet::arrow::WriteTable(*table, pool, *outfileResult,
+                                 options.GetChunkSize(), options.GetWriterProperties(),
                                  options.GetArrowWriterProperties());
   if (!writefileResult.ok()) {
     return writefileResult;

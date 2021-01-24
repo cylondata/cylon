@@ -1,6 +1,5 @@
 numpy
 cython
-wheel
 pandas
 pytest
 pytest-mpi

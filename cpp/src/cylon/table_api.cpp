@@ -28,6 +28,9 @@
 #include "util/uuid.hpp"
 
 #include "table.hpp"
+#ifdef BUILD_CYLON_PARQUET
+#include "parquet.hpp"
+#endif
 
 namespace cylon {
 // todo make this un ordered
@@ -93,7 +96,7 @@ Status ReadCSV(std::shared_ptr<cylon::CylonContext> &ctx,
 Status WriteCSV(const std::string &id, const std::string &path,
                 const cylon::io::config::CSVWriteOptions &options) {
   auto table = GetTable(id);
-  return WriteCSV(table, path, options);
+  return table->WriteCSV(path, options);
 }
 
 Status Print(const std::string &table_id, int col1, int col2, int row1, int row2) {
@@ -213,7 +216,7 @@ Status HashPartition(std::shared_ptr<cylon::CylonContext> &ctx,
                      const std::string &id,
                      const std::vector<int> &hash_columns,
                      int no_of_partitions,
-                     std::unordered_map<int, std::string> *out) { // todo change this to use a vector
+                     std::unordered_map<int, std::string> *out) {
   std::shared_ptr<cylon::Table> left_tab = GetTable(id);
   std::unordered_map<int, std::shared_ptr<cylon::Table>> tables;
   Status status = HashPartition(left_tab, hash_columns, no_of_partitions, &tables);
@@ -345,8 +348,7 @@ Status Project(const std::string &id, const std::vector<int64_t> &project_column
                const std::string &dest_id) {
   auto table = GetTable(id);
   std::shared_ptr<cylon::Table> out_table;
-  std::vector<int32_t> proj_cols(project_columns.begin(), project_columns.end());
-  auto status = Project(table, proj_cols, out_table);
+  auto status = Project(table, project_columns, out_table);
   if (status.is_ok()) {
     PutTable(dest_id, out_table);
   }
@@ -382,12 +384,10 @@ Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
   return status;
 }
 
-Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
-                    const std::string &id,
-                    const std::string &path,
+Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &id, const std::string &path,
                     const cylon::io::config::ParquetOptions &options) {
   auto table = GetTable(id);
-  return cylon::WriteParquet(table, ctx, path, options);
+  return table->WriteParquet(ctx, path, options);
 }
 #endif
 }  // namespace cylon

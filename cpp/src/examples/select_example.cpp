@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<cylon::Table> table, select;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(
-      false).BlockSize(1 << 30).WithDelimiter('\t');
+      false).BlockSize(1 << 30);
 
   auto status = cylon::FromCSV(ctx, argv[1], table, read_options);
   auto read_end_time = std::chrono::steady_clock::now();
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_time).count() << "[ms]";
   status = Select(table, [](cylon::Row row) {
-    return (row.GetDouble(8)  >= 0.3);
+    return row.GetInt64(0) % 2 == 0;
   }, select);
   auto select_end_time = std::chrono::steady_clock::now();
   if (!status.is_ok()) {
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << "Table had : " << table->Rows() << ", Select has : " << select->Rows();
   LOG(INFO) << "Select done in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
-                select_end_time - read_end_time).count()
+                read_end_time - select_end_time).count()
             << "[ms]";
   ctx->Finalize();
   LOG(INFO) << "Operation took : "

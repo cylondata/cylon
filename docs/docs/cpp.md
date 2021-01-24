@@ -95,25 +95,21 @@ Distributed initialization
 ## `cylon::Table` 
 
 ### Reading tables 
-
 A `cylon::Table` can be created from a csv file as follows. 
-
 ```cpp
 std::shared_ptr<cylon::Table> table1;
 auto read_options = CSVReadOptions();
 auto status = cylon::FromCSV(ctx, "/path/to/csv", table1, read_options))
 ```
 
-Read a set of tables using threads,
-
+Read a set of tables using threads, 
 ```cpp
 std::shared_ptr<cylon::Table> table1, table2;
 auto read_options = CSVReadOptions().UseThreads(true);
 auto status = cylon::FromCSV(ctx, {"/path/to/csv1.csv", "/path/to/csv2.csv"}, {table1, table2}, read_options);
 ```
 
-An `arrow::Table` can be imported as follows,
-
+An `arrow::Table` can be imported as follows, 
 ```cpp
 std::shared_ptr<cylon::Table> table1;
 std::shared_ptr<arrow::Table> some_arrow_table = ...;
@@ -121,18 +117,15 @@ auto status = cylon::Table::FromArrowTable(ctx, some_arrow_table, table1);
 ```
 
 ### Writing tables 
-
 A `cylon::Table` can be written to a CSV file as follows, 
-
 ```cpp
 std::shared_ptr<cylon::Table> table1; 
 ...
 auto write_options = cylon::io::config::CSVWriteOptions();
-auto status = WriteCSV(table1, "/path/to/csv", write_options);
+auto status = table1->WriteCSV("/path/to/csv", write_options);
 ```
 
 A `cylon::Table` can be coverted into an `arrow::Table` by simply, 
-
 ```cpp
 std::shared_ptr<arrow::Table> some_arrow_table;
 std::shared_ptr<cylon::Table> table1; 
@@ -402,12 +395,12 @@ Status Shuffle(std::shared_ptr<cylon::Table> &table, const std::vector<int> &has
 /**
  * Partition the table based on the hash
  * @param hash_columns the columns use for has
- * @param num_partitions number partitions
+ * @param no_of_partitions number partitions
  * @return new set of tables each with the new partition
  */
 Status HashPartition(std::shared_ptr<cylon::Table> &table,
                      const std::vector<int> &hash_columns,
-                     int num_partitions,
+                     int no_of_partitions,
                      std::unordered_map<int, std::shared_ptr<cylon::Table>> *output);
 
 /**
@@ -417,23 +410,6 @@ Status HashPartition(std::shared_ptr<cylon::Table> &table,
  * @return new table sorted according to the sort column
  */
 Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_ptr<Table> &output);
-
-/**
- * Distributed sort the table according to the given column
- * @param sort_column
- * @return new table sorted according to the sort column
- */
-struct SortOptions {
-  bool ascending;
-  uint32_t num_bins;
-  uint64_t num_samples;
-  
-  static SortOptions Defaults();
-};
-Status DistributedSort(std::shared_ptr<cylon::Table> &table,
-                       int sort_column,
-                       std::shared_ptr<Table> &output,
-                       SortOptions sort_options = SortOptions::Defaults());
 
 /**
  * Filters out rows based on the selector function

@@ -15,10 +15,11 @@
 #ifndef CYLON_SRC_CYLON_OPS_KERNELS_UTILS_ROWCOMPARATOR_HPP_
 #define CYLON_SRC_CYLON_OPS_KERNELS_UTILS_ROWCOMPARATOR_HPP_
 
-#include <arrow/api.h>
+#include <arrow/table.h>
 #include <arrow/arrow_comparator.hpp>
 #include <arrow/arrow_partition_kernels.hpp>
 #include <ctx/cylon_context.hpp>
+#include <ctx/arrow_memory_pool_utils.hpp>
 
 namespace cylon {
 namespace kernel {
@@ -29,7 +30,8 @@ class RowComparator {
   std::shared_ptr<cylon::RowHashingKernel> row_hashing_kernel;
 
  public:
-  RowComparator(const std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>> &tables,
+  RowComparator(const std::shared_ptr<CylonContext> &ctx,
+                const std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>> &tables,
                 const std::shared_ptr<arrow::Schema> &schema);
 
   // equality

@@ -32,70 +32,45 @@ macro(tx_add_exe EXENAME)
   add_executable(${EXENAME} ${EXENAME}.cpp)
 endmacro(tx_add_exe)
 
-# macro to add a test
-function(cylon_add_test TESTNAME)
-  set(exec_name "${TESTNAME}")
+#a macro to add a test
+function(cylon_add_test TESTNAME no_mpi_proc)
+  set(exec_name "${TESTNAME}_${no_mpi_proc}")
   add_executable(${exec_name} ${TESTNAME}.cpp test_utils.hpp)
   target_link_libraries(${exec_name} ${MPI_LIBRARIES})
   target_link_libraries(${exec_name} cylon)
   target_link_libraries(${exec_name} ${ARROW_LIB})
-endfunction(cylon_add_test)
-
-# macro to run executable
-function(cylon_run_test TESTNAME no_mpi_proc)
-  set(exec_name "${TESTNAME}_${no_mpi_proc}")
-  set(test_params --allow-run-as-root --oversubscribe -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}")
+  set(test_params --oversubscribe -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${exec_name}")
   add_test(NAME ${exec_name} COMMAND ${MPI_RUN_CMD} ${test_params})
-endfunction(cylon_run_test)
+endfunction(cylon_add_test)
 
 #Add tests as follows ...
 # param 1 -- name of the test, param 2 -- number of processes
 
 # join tests
-cylon_add_test(join_test)
-cylon_run_test(join_test 1)
-cylon_run_test(join_test 2)
-cylon_run_test(join_test 4)
-
-if (CYLON_PARQUET)
-  # join parquet tests
-  cylon_add_test(parquet_join_test)
-  cylon_run_test(parquet_join_test 1)
-  cylon_run_test(parquet_join_test 2)
-  cylon_run_test(parquet_join_test 4)
-endif (CYLON_PARQUET)
+cylon_add_test(join_test 1)
+cylon_add_test(join_test 2)
+cylon_add_test(join_test 4)
 
 # set operation tests
-cylon_add_test(set_op_test)
-cylon_run_test(set_op_test 1)
-cylon_run_test(set_op_test 2)
-cylon_run_test(set_op_test 4)
+cylon_add_test(set_op_test 1)
+cylon_add_test(set_op_test 2)
+cylon_add_test(set_op_test 4)
 
 # create table test
-cylon_add_test(create_table_test)
-cylon_run_test(create_table_test 1)
+cylon_add_test(create_table_test 1)
 
 # aggergate tests
-cylon_add_test(aggregate_test)
-cylon_run_test(aggregate_test 1)
-cylon_run_test(aggregate_test 2)
-cylon_run_test(aggregate_test 4)
+cylon_add_test(aggregate_test 1)
+cylon_add_test(aggregate_test 2)
+cylon_add_test(aggregate_test 4)
 
 #groupby tests
-cylon_add_test(groupby_test)
-cylon_run_test(groupby_test 1)
-cylon_run_test(groupby_test 2)
-cylon_run_test(groupby_test 4)
+cylon_add_test(groupby_test 1)
+cylon_add_test(groupby_test 2)
+cylon_add_test(groupby_test 4)
 
 #table op tests
-cylon_add_test(table_op_test)
-cylon_run_test(table_op_test 1)
-cylon_run_test(table_op_test 2)
-cylon_run_test(table_op_test 4)
-
-#partition tests
-cylon_add_test(partition_test)
-cylon_run_test(partition_test 1)
-cylon_run_test(partition_test 2)
-cylon_run_test(partition_test 4)
+cylon_add_test(table_op_test 1)
+cylon_add_test(table_op_test 2)
+cylon_add_test(table_op_test 4)
 

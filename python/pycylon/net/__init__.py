@@ -13,4 +13,3 @@
  ##
 
 from pycylon.net.mpi_config import MPIConfig
-from pycylon.net.comm_config import CommConfig

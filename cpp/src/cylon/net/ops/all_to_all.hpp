@@ -26,8 +26,6 @@
 namespace cylon {
 class ReceiveCallback {
  public:
-  virtual ~ReceiveCallback() = default;
-
   /**
    * This function is called when a data is received
    * @param source the source

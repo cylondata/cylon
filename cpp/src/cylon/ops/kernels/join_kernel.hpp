@@ -15,25 +15,31 @@
 #ifndef CYLON_SRC_CYLON_OPS_KERNELS_JOIN_H_
 #define CYLON_SRC_CYLON_OPS_KERNELS_JOIN_H_
 
-#include <arrow/api.h>
-#include <queue>
+#include <glog/logging.h>
 
-#include "ctx/cylon_context.hpp"
+#include <vector>
+#include <queue>
+#include <table.hpp>
+#include <ops/kernels/row_comparator.hpp>
 
 namespace cylon {
 namespace kernel {
 class JoinKernel {
  private:
-  std::shared_ptr<CylonContext> ctx;
+  std::queue<std::shared_ptr<arrow::Table >> left_tables{};
+  std::queue<std::shared_ptr<arrow::Table >> right_tables{};
   std::shared_ptr<arrow::Schema> schema;
-  const cylon::join::config::JoinConfig *join_config;
-  std::queue<std::shared_ptr<arrow::Table>> left_tables{};
-  std::queue<std::shared_ptr<arrow::Table>> right_tables{};
+  std::shared_ptr<CylonContext> ctx;
+  std::shared_ptr<cylon::join::config::JoinConfig> join_config;
 
  public:
+  ~JoinKernel() {
+    LOG(INFO) << "Deleting join KERNEL";
+  };
+
   JoinKernel(const std::shared_ptr<cylon::CylonContext> &ctx,
              const std::shared_ptr<arrow::Schema> &schema,
-             const cylon::join::config::JoinConfig *join_config);
+             const std::shared_ptr<cylon::join::config::JoinConfig> &join_config);
   void InsertTable(int tag, const std::shared_ptr<cylon::Table> &table);
   cylon::Status Finalize(std::shared_ptr<cylon::Table> &result);
 };

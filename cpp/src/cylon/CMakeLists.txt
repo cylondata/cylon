@@ -22,6 +22,8 @@ if (CYLON_PARQUET)
     set(PARQUET_CYLON_FILES
             io/parquet_config.hpp
             io/parquet_config.cpp
+            parquet.hpp
+            parquet.cpp
             )
 else (CYLON_PARQUET)
     set(PARQUET_CYLON_FILES)
@@ -46,6 +48,8 @@ add_library(cylon SHARED
         util/copy_arrray.cpp
         join/join_utils.hpp
         join/join_utils.cpp
+        arrow/arrow_join.cpp
+        arrow/arrow_join.hpp
         io/arrow_io.cpp
         io/arrow_io.hpp
         table_api.hpp
@@ -91,9 +95,9 @@ add_library(cylon SHARED
         arrow/arrow_builder.cpp
         arrow/arrow_task_all_to_all.h
         arrow/arrow_task_all_to_all.cpp
-        ops/api/parallel_op.hpp
+        ops/parallel_op.hpp
         ops/join_op.hpp
-        ops/api/parallel_op.cpp
+        ops/parallel_op.cpp
         ops/join_op.cpp
         ops/partition_op.hpp
         ops/partition_op.cpp
@@ -113,8 +117,8 @@ add_library(cylon SHARED
         ops/dis_union_op.cpp
         ops/dis_join_op.cpp
         ops/dis_join_op.hpp
-        ops/execution/execution.hpp
-        ops/execution/execution.cpp
+        ops/execution.hpp
+        ops/execution.cpp
         ops/kernels/join_kernel.hpp
         ops/kernels/join_kernel.cpp
         ops/merge_op.cpp
@@ -124,24 +128,15 @@ add_library(cylon SHARED
         arrow/arrow_builder.cpp
         compute/aggregates.hpp
         compute/aggregates.cpp
-        compute/aggregate_utils.hpp
-        compute/aggregate_kernels.hpp
         net/comm_operations.hpp
         net/mpi/mpi_operations.cpp
         net/mpi/mpi_operations.hpp
+        groupby/groupby_hash.hpp
+        groupby/groupby_pipeline.hpp
+        groupby/groupby_aggregate_ops.hpp
         groupby/groupby.hpp
         groupby/groupby.cpp
-        groupby/pipeline_groupby.hpp
-        groupby/pipeline_groupby.cpp
-        groupby/hash_groupby.hpp
-        groupby/hash_groupby.cpp
         ${PARQUET_CYLON_FILES}
-        partition/partition.hpp
-        partition/partition.cpp
-        util/macros.hpp
-        thridparty/flat_hash_map/unordered_map.hpp
-        thridparty/flat_hash_map/flat_hash_map.hpp
-        thridparty/flat_hash_map/bytell_hash_map.hpp
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")

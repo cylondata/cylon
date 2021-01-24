@@ -38,7 +38,7 @@ cdef class CSVReadOptions:
         return self
 
     def with_delimiter(self, delimiter: str) -> CSVReadOptions:
-        cdef char c_delimiter = delimiter.encode()[0]
+        cdef char c_delimiter = delimiter
         self.thisPtr.WithDelimiter(c_delimiter)
         return self
 

@@ -25,17 +25,17 @@ ArrowAllToAll::ArrowAllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
                              const std::vector<int> &source,
                              const std::vector<int> &targets,
                              int edgeId,
-                             ArrowCallback callback,
-                             std::shared_ptr<arrow::Schema> schema) :
-    targets_(targets), // todo: do we need these 2 vectors?
-    srcs_(source),
-    recv_callback_(std::move(callback)),
-    schema_(std::move(schema)),
-    receivedBuffers_(0),
-    workerId_(ctx->GetRank()),
-    pool_(cylon::ToArrowPool(ctx)),
-    completed_(false),
-    finishCalled_(false) {
+                             std::shared_ptr<ArrowCallback> callback,
+                             std::shared_ptr<arrow::Schema> schema) {
+  targets_ = targets;
+  srcs_ = source;
+  recv_callback_ = std::move(callback);
+  schema_ = std::move(schema);
+  receivedBuffers_ = 0;
+  workerId_ = ctx->GetRank();
+  pool_ = cylon::ToArrowPool(ctx);
+  completed_ = false;
+  finishCalled_ = false;
   allocator_ = new ArrowAllocator(pool_);
 
   // we need to pass the correct arguments
@@ -43,11 +43,13 @@ ArrowAllToAll::ArrowAllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
 
   // add the trackers for sending
   for (auto t : targets) {
-    inputs_.insert(std::make_pair(t, std::make_shared<PendingSendTable>()));
+    inputs_.insert(std::pair<int, std::shared_ptr<PendingSendTable>>(t,
+                                                                     std::make_shared<PendingSendTable>()));
   }
 
   for (auto t : source) {
-    receives_.insert(std::make_pair(t, std::make_shared<PendingReceiveTable>()));
+    receives_.insert(std::pair<int, std::shared_ptr<PendingReceiveTable>>(t,
+                                                                          std::make_shared<PendingReceiveTable>()));
   }
 }
 
@@ -55,9 +57,7 @@ int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow, int32_t ta
   return insert(arrow, target, -1);
 }
 
-int ArrowAllToAll::insert(const std::shared_ptr<arrow::Table> &arrow,
-                          int32_t target,
-                          int32_t reference) {
+int ArrowAllToAll::insert(std::shared_ptr<arrow::Table> arrow, int32_t target, int32_t reference) {
   // todo: check weather we have enough memory
   // lets save the table into pending and move on
   std::shared_ptr<PendingSendTable> st = inputs_[target];
@@ -178,12 +178,8 @@ bool ArrowAllToAll::onReceive(int source, std::shared_ptr<Buffer> buffer, int le
   // now check weather we have the expected number of buffers received
   if (table->noBuffers == table->bufferIndex + 1) {
     // okay we are done with this array
-    const std::shared_ptr<arrow::DataType> &type = schema_->field(table->columnIndex)->type();
-    if (table->buffers[0]->size() == 0 && arrow::internal::HasValidityBitmap(type->id())) {
-      table->buffers[0] = nullptr;
-    }
-    const std::shared_ptr<arrow::ArrayData> &data = arrow::ArrayData::Make(type, table->length, table->buffers);
-
+    std::shared_ptr<arrow::ArrayData> data = arrow::ArrayData::Make(
+        schema_->field(table->columnIndex)->type(), table->length, table->buffers);
     // clears the buffers
     table->buffers.clear();
     // create an array
@@ -202,7 +198,7 @@ bool ArrowAllToAll::onReceive(int source, std::shared_ptr<Buffer> buffer, int le
         std::shared_ptr<arrow::Table> tablePtr = arrow::Table::Make(schema_, table->currentArrays);
         // clear the current array
         table->currentArrays.clear();
-        recv_callback_(source, tablePtr, table->reference);
+        recv_callback_->onReceive(source, tablePtr, table->reference);
       }
     }
   }

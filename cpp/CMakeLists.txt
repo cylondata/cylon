@@ -111,31 +111,15 @@ if (CYLON_PARQUET)
     add_definitions(-DBUILD_CYLON_PARQUET)
 endif (CYLON_PARQUET)
 
+# arrow
+include(ConfigureArrow)
 include(Build)
-
-if (NOT ARROW_BUILD_TYPE)
-    set(ARROW_BUILD_TYPE "SOURCE")
-endif()
-
-if (${ARROW_BUILD_TYPE} STREQUAL "SYSTEM")
-    find_package(Arrow REQUIRED)
-    set(ARROW_LIB libarrow.so)
-elseif (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
-    include(ConfigureArrow)
-    include_directories(SYSTEM "${ARROW_INCLUDE_DIR}")
-elseif (${ARROW_BUILD_TYPE} STREQUAL "CUSTOM")
-    if (NOT ARROW_LIB_DIR)
-        message(FATAL_ERROR "ARROW_BUILD_TYPE is set to CUSTOM, ARROW_LIB_DIR should be set")
-    endif()
-
-    if (NOT ARROW_INCLUDE_DIR)
-        message(FATAL_ERROR "ARROW_BUILD_TYPE is set to CUSTOM, ARROW_INCLUDE_DIR should be set")
-    endif()
-    set(ARROW_LIB ${ARROW_LIB_DIR}/libarrow.so)
-    include_directories(SYSTEM ${ARROW_INCLUDE_DIR})
+if (ARROW_FOUND)
+    message(STATUS "Apache Arrow found in ${ARROW_INCLUDE_DIR}")
 else ()
-    message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM or SOURCE")
-endif()
+    message(FATAL_ERROR "Apache Arrow not found, please check your settings.")
+endif (ARROW_FOUND)
+include_directories(SYSTEM "${ARROW_INCLUDE_DIR}")
 
 ## Find Python
 find_package(PythonLibs REQUIRED)

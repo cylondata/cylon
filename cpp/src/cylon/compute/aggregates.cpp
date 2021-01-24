@@ -14,18 +14,103 @@
 
 #include <glog/logging.h>
 
-#include "../net/comm_operations.hpp"
-#include "../util/macros.hpp"
+#include <status.hpp>
+#include <table.hpp>
+#include <ctx/arrow_memory_pool_utils.hpp>
+#include <net/comm_operations.hpp>
+#include <net/mpi/mpi_operations.hpp>
 
-#include "aggregates.hpp"
-#include "aggregate_utils.hpp"
+#include "compute/aggregates.hpp"
 
 namespace cylon {
 namespace compute {
 
-cylon::Status Sum(const std::shared_ptr<cylon::Table> &table,
-                  int32_t col_idx,
-                  std::shared_ptr<Result> &output) {
+/**
+ * All reduce for numeric types
+ * @tparam NUM_ARROW_T arrow numeric type
+ * @param comm_type
+ * @param send sending container
+ * @param output output result
+ * @param data_type
+ * @param reduce_op
+ * @return
+ */
+template<typename NUM_ARROW_T,
+    typename = typename std::enable_if<
+        arrow::is_number_type<NUM_ARROW_T>::value | arrow::is_boolean_type<NUM_ARROW_T>::value>::type>
+cylon::Status AllReduce(cylon::net::CommType comm_type,
+                        const arrow::Datum &send,
+                        std::shared_ptr<Result> &output,
+                        const std::shared_ptr<DataType> &data_type,
+                        cylon::net::ReduceOp reduce_op) {
+  using NUM_ARROW_SCALAR_T = typename arrow::TypeTraits<NUM_ARROW_T>::ScalarType;
+
+  const std::shared_ptr<NUM_ARROW_SCALAR_T> &send_scalar = std::static_pointer_cast<NUM_ARROW_SCALAR_T>(send.scalar());
+  std::shared_ptr<NUM_ARROW_SCALAR_T> recv_scalar = std::make_shared<NUM_ARROW_SCALAR_T>();
+
+  switch (comm_type) {
+    case net::LOCAL: {
+      output = std::make_shared<Result>(send);
+      return cylon::Status::OK();
+    }
+    case cylon::net::CommType::MPI: {
+      cylon::Status status = cylon::mpi::AllReduce(&(send_scalar->value),
+                                                   &(recv_scalar->value),
+                                                   send.length(),
+                                                   data_type,
+                                                   reduce_op);
+      // build the output datum 
+      if (status.is_ok()) {
+        arrow::Datum global_result(recv_scalar);
+        output = std::make_shared<Result>(global_result);
+      }
+
+      return status;
+    }
+    case net::TCP: // fall through
+    case net::UCX: // fall through
+    default: return cylon::Status(cylon::Code::NotImplemented, "Mode is not supported!");
+  }
+}
+
+cylon::Status DoAllReduce(std::shared_ptr<cylon::CylonContext> &ctx,
+                          const arrow::Datum &snd,
+                          std::shared_ptr<Result> &rcv,
+                          const std::shared_ptr<DataType> &dtype,
+                          cylon::net::ReduceOp red_op) {
+  auto comm_type = ctx->GetCommType();
+  switch (dtype->getType()) {
+    case Type::BOOL:return cylon::compute::AllReduce<arrow::BooleanType>(comm_type, snd, rcv, dtype, red_op);
+    case Type::UINT8:return cylon::compute::AllReduce<arrow::UInt8Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::INT8:return cylon::compute::AllReduce<arrow::Int8Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::UINT16:return cylon::compute::AllReduce<arrow::UInt16Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::INT16:return cylon::compute::AllReduce<arrow::Int16Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::UINT32:return cylon::compute::AllReduce<arrow::UInt32Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::INT32:return cylon::compute::AllReduce<arrow::Int32Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::UINT64:return cylon::compute::AllReduce<arrow::UInt64Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::INT64:return cylon::compute::AllReduce<arrow::Int64Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::FLOAT:return cylon::compute::AllReduce<arrow::FloatType>(comm_type, snd, rcv, dtype, red_op);
+    case Type::DOUBLE:return cylon::compute::AllReduce<arrow::DoubleType>(comm_type, snd, rcv, dtype, red_op);
+    case Type::HALF_FLOAT:break;
+    case Type::STRING:break;
+    case Type::BINARY:break;
+    case Type::FIXED_SIZE_BINARY:break;
+    case Type::DATE32:break;
+    case Type::DATE64:break;
+    case Type::TIMESTAMP:break;
+    case Type::TIME32:break;
+    case Type::TIME64:break;
+    case Type::INTERVAL:break;
+    case Type::DECIMAL:break;
+    case Type::LIST:break;
+    case Type::EXTENSION:break;
+    case Type::FIXED_SIZE_LIST:break;
+    case Type::DURATION:break;
+  }
+  return cylon::Status(cylon::Code::Invalid, "data type not supported!");
+}
+
+cylon::Status Sum(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output) {
   auto ctx = table->GetContext();
   const std::shared_ptr<Column> &col = table->GetColumn(col_idx); // cylon column object
   const std::shared_ptr<DataType> &data_type = col->GetDataType();
@@ -73,87 +158,40 @@ cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx,
  * @param output
  * @return
  */
-enum MinMaxOpts {
-  min = 0,
-  max,
-  minmax
-};
+template<bool minMax>
+cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output) {
+  auto ctx = table->GetContext();
 
-template<MinMaxOpts minMaxOpts>
-cylon::Status static inline min_max_impl(std::shared_ptr<CylonContext> &ctx,
-                                         const arrow::Datum &input,
-                                         const std::shared_ptr<cylon::DataType> &data_type,
-                                         std::shared_ptr<Result> &output) {
-  if (!input.is_arraylike()) {
-    LOG_AND_RETURN_ERROR(Code::Invalid, "input should be array like")
-  }
+  const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
+  const std::shared_ptr<DataType> &data_type = col->GetDataType();
+  const arrow::Datum input(col->GetColumnData());
 
   arrow::compute::ExecContext exec_context(cylon::ToArrowPool(ctx));
   arrow::compute::MinMaxOptions options(arrow::compute::MinMaxOptions::SKIP);
   const arrow::Result<arrow::Datum> &result = arrow::compute::MinMax(input, options, &exec_context);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status())
 
-  const arrow::Datum &local_result = result.ValueOrDie(); // minmax returns a structscalar
-  const auto &struct_scalar = local_result.scalar_as<arrow::StructScalar>();
-
-  switch (minMaxOpts) {
-    case min:
-      return DoAllReduce(ctx,
-                         arrow::Datum(struct_scalar.value.at(0)),
-                         output,
-                         data_type,
-                         cylon::net::ReduceOp::MIN);
-    case max:
-      return DoAllReduce(ctx,
-                         arrow::Datum(struct_scalar.value.at(1)),
-                         output,
-                         data_type,
-                         cylon::net::ReduceOp::MAX);
-    case minmax:
-      return DoAllReduce<std::vector<cylon::net::ReduceOp>>(ctx,
-                                                            local_result,
-                                                            output,
-                                                            data_type,
-                                                            {cylon::net::ReduceOp::MIN,
-                                                             cylon::net::ReduceOp::MAX});
+  if (result.ok()) {
+    const arrow::Datum& local_result = result.ValueOrDie(); // minmax returns a structscalar 
+    const auto& struct_scalar = local_result.scalar_as<arrow::StructScalar>();
+    return DoAllReduce(ctx, arrow::Datum(struct_scalar.value.at(minMax)), output, data_type,
+                       minMax ? cylon::net::ReduceOp::MIN : cylon::net::ReduceOp::MAX);
+  } else {
+    const auto& status = result.status();
+    LOG(ERROR) << "Local aggregation failed! " << status.message();
+    return cylon::Status(Code::ExecutionError, status.message());
   }
-  return Status(); // this would never reach
 }
 
-cylon::Status Min(const std::shared_ptr<cylon::Table> &table,
-                  int32_t col_idx,
-                  std::shared_ptr<Result> &output) {
-  auto ctx = table->GetContext();
-  const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
-  return min_max_impl<MinMaxOpts::min>(ctx, col->GetColumnData(), col->GetDataType(), output);
+cylon::Status Min(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output) {
+  return MinMax<0>(table, col_idx, output);
 }
 
-cylon::Status Max(const std::shared_ptr<cylon::Table> &table,
-                  int32_t col_idx,
-                  std::shared_ptr<Result> &output) {
-  auto ctx = table->GetContext();
-  const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
-  return min_max_impl<MinMaxOpts::max>(ctx, col->GetColumnData(), col->GetDataType(), output);
+cylon::Status Max(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output) {
+  return MinMax<1>(table, col_idx, output);
 }
 
-cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table,
-                     int32_t col_idx,
-                     std::shared_ptr<Result> &output) {
-  auto ctx = table->GetContext();
-  const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
-  return min_max_impl<MinMaxOpts::minmax>(ctx, col->GetColumnData(), col->GetDataType(), output);
-}
-
-cylon::Status MinMax(std::shared_ptr<CylonContext> &ctx,
-                     const arrow::Datum &array,
-                     const std::shared_ptr<cylon::DataType> &datatype,
-                     std::shared_ptr<Result> &output) {
-  return min_max_impl<MinMaxOpts::minmax>(ctx, array, datatype, output);
-}
-
-template<typename ARROW_TYPE, typename = typename std::enable_if<
-    arrow::is_number_type<ARROW_TYPE>::value
-        | arrow::is_boolean_type<ARROW_TYPE>::value>::type>
+template<typename ARROW_TYPE, typename = typename std::enable_if<arrow::is_number_type<ARROW_TYPE>::value
+                                                                     | arrow::is_boolean_type<ARROW_TYPE>::value>::type>
 cylon::Status ResolveTableFromScalar(const std::shared_ptr<cylon::Table> &input, int32_t col_idx,
                                      const std::shared_ptr<cylon::compute::Result> &result,
                                      std::shared_ptr<cylon::Table> &output) {

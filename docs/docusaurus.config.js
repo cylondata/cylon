@@ -46,13 +46,17 @@ module.exports = {
                     items: [
                         {
                             label: 'Mailing List',
-                            href: 'mailto:cylondata@googlegroups.com',
+                            href: 'cylondata@googlegroups.com',
                         },
                     ],
                 },
                 {
                     title: 'More',
                     items: [
+                        {
+                            label: 'Blog',
+                            to: 'blog',
+                        },
                         {
                             label: 'GitHub',
                             href: 'https://github.com/cylondata/cylon',
@@ -74,13 +78,15 @@ module.exports = {
                     // It is recommended to set document id as docs home page (`docs/` path).
                     homePageId: 'compile',
                     sidebarPath: require.resolve('./sidebars.js'),
+                    // Please change this to your repo.
                     editUrl:
-                        'https://github.com/cylondata/cylon/edit/master/docs/',
+                        'https://github.com/facebook/docusaurus/edit/master/website/',
                 },
                 blog: {
                     showReadingTime: true,
+                    // Please change this to your repo.
                     editUrl:
-                        'https://github.com/cylondata/cylon/edit/master/blog/',
+                        'https://github.com/facebook/docusaurus/edit/master/website/blog/',
                 },
                 theme: {
                     customCss: require.resolve('./src/css/custom.css'),
@@ -91,6 +97,7 @@ module.exports = {
     stylesheets: [
         'https://cdn.jsdelivr.net/gh/konpa/devicon@master/devicon.min.css',
     ],
+    plugins: ['@docusaurus/plugin-google-analytics'],
     customFields: {
         twitterImage: "img/wheel.png",
     }

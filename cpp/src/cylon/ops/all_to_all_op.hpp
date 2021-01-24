@@ -15,10 +15,7 @@
 #ifndef CYLON_SRC_CYLON_OPS_KERNELS_SHUFFLE_H_
 #define CYLON_SRC_CYLON_OPS_KERNELS_SHUFFLE_H_
 
-#include <arrow/arrow_all_to_all.hpp>
-
-#include "ops/api/parallel_op.hpp"
-
+#include "parallel_op.hpp"
 namespace cylon {
 
 class AllToAllOpConfig {
@@ -37,10 +34,8 @@ class AllToAllOp : public Op {
   AllToAllOp(const std::shared_ptr<CylonContext> &ctx,
              const std::shared_ptr<arrow::Schema> &schema,
              int id,
-             const ResultsCallback &callback,
-             const AllToAllOpConfig &config);
-
-  ~AllToAllOp() override;
+             const std::shared_ptr<ResultsCallback> &callback,
+             const std::shared_ptr<AllToAllOpConfig> &config);
 
   bool IsComplete() override;
 

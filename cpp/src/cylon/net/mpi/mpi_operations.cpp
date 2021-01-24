@@ -34,7 +34,7 @@ MPI_Datatype cylon::mpi::GetMPIDataType(const std::shared_ptr<DataType> &data_ty
     case Type::INT16:return MPI_INT16_T;
     case Type::UINT32:return MPI_UINT32_T;
     case Type::INT32:return MPI_INT32_T;
-    case Type::UINT64:return MPI_UINT64_T;
+    case Type::UINT64:return MPI_UINT32_T;
     case Type::INT64:return MPI_INT64_T;
     case Type::FLOAT:return MPI_FLOAT;
     case Type::DOUBLE:return MPI_DOUBLE;

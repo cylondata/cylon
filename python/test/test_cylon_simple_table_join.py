@@ -59,11 +59,11 @@ def test_distributed_run():
 
     rank = ctx.get_rank()
     if rank == 0:
-        assert row_count == 640
+        assert row_count == 736
     elif rank == 1:
-        assert row_count == 624
-    elif rank == 2:
         assert row_count == 592
+    elif rank == 2:
+        assert row_count == 528
     elif rank == 3:
         assert row_count == 688
     else:

@@ -24,13 +24,3 @@ year={2020}
   year={2020}
 }
 ```
-
-- A Fast, Scalable, Universal Approach For Distributed Data Reductions
-```
-@article{perera2020fast,
-  title={A Fast, Scalable, Universal Approach For Distributed Data Reductions},
-  author={Perera, Niranda and Abeykoon, Vibhatha and Widanage, Chathura and Kamburugamuve, Supun and Kanewala, Thejaka Amila and Wickramasinghe, Pulasthi and Uyar, Ahmet and Maithree, Hasara and Lenadora, Damitha and Fox, Geoffrey},
-  journal={arXiv preprint arXiv:2010.14596},
-  year={2020}
-}
-```

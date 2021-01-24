@@ -30,25 +30,26 @@ namespace cylon {
  * Kernel to join indices using hashing
  * @tparam ARROW_ARRAY_TYPE arrow array type to be used for static type casting
  */
-template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
-class HashJoinKernel {
-  using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
-  using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
+template<class ARROW_ARRAY_TYPE, typename CTYPE>
+class ArrowArrayIdxHashJoinKernel {
  public:
+  using ARROW_TYPE = typename ARROW_ARRAY_TYPE::TypeClass;
+  using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
+
   /**
-    * perform index hash join
-    * @param left_idx_col
-    * @param right_idx_col
-    * @param join_type
-    * @param left_table_indices row indices of the left table
-    * @param right_table_indices row indices of the right table
-    * @return 0 if success; non-zero otherwise
-    */
-  arrow::Status IdxHashJoin(const std::shared_ptr<arrow::Array> &left_idx_col,
-                            const std::shared_ptr<arrow::Array> &right_idx_col,
-                            const cylon::join::config::JoinType join_type,
-                            std::vector<int64_t> &left_table_indices,
-                            std::vector<int64_t> &right_table_indices) {
+   * perform index hash join
+   * @param left_idx_col
+   * @param right_idx_col
+   * @param join_type
+   * @param left_table_indices row indices of the left table
+   * @param right_table_indices row indices of the right table
+   * @return 0 if success; non-zero otherwise
+   */
+  int IdxHashJoin(const std::shared_ptr<arrow::Array> &left_idx_col,
+                  const std::shared_ptr<arrow::Array> &right_idx_col,
+                  const cylon::join::config::JoinType join_type,
+                  std::shared_ptr<std::vector<int64_t>> &left_table_indices,
+                  std::shared_ptr<std::vector<int64_t>> &right_table_indices) {
     switch (join_type) {
       case cylon::join::config::JoinType::RIGHT: {
         // build hashmap using left col idx
@@ -96,9 +97,14 @@ class HashJoinKernel {
         }
         break;
       }
+      default: {
+        LOG(ERROR) << "not implemented!";
+        return 1;
+      }
     }
-    return arrow::Status::OK();
+    return 0;
   }
+
  private:
   // build hashmap
   void BuildPhase(const std::shared_ptr<arrow::Array> &smaller_idx_col,
@@ -111,7 +117,8 @@ class HashJoinKernel {
       smaller_idx_map.insert(std::make_pair(val, i));
     }
     auto t2 = std::chrono::high_resolution_clock::now();
-    LOG(INFO) << "build_phase " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    LOG(INFO) << "build_phase " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1)
+        .count();
   }
 
   // builds hashmap as well as populate keyset
@@ -122,31 +129,33 @@ class HashJoinKernel {
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(smaller_idx_col);
 
     for (int64_t i = 0; i < reader0->length(); i++) {
-      auto val = reader0->GetView(i);
+      auto lValue = reader0->GetView(i);
+      auto val = (CTYPE) lValue;
       smaller_idx_map.insert(std::make_pair(val, i));
       smaller_key_set.emplace(val);
     }
     auto t2 = std::chrono::high_resolution_clock::now();
-    LOG(INFO) << "build_phase " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    LOG(INFO) << "build_phase " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1)
+        .count();
   }
 
   // probes hashmap and fill -1 for no matches
   void ProbePhase(const MMAP_TYPE &smaller_idx_map,
                   const std::shared_ptr<arrow::Array> &larger_idx_col,
-                  std::vector<int64_t> &smaller_output,
-                  std::vector<int64_t> &larger_output) {
+                  std::shared_ptr<std::vector<int64_t>> &smaller_output,
+                  std::shared_ptr<std::vector<int64_t>> &larger_output) {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto reader1 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(larger_idx_col);
     for (int64_t i = 0; i < reader1->length(); ++i) {
       auto val = (CTYPE) reader1->GetView(i);
       const auto range = smaller_idx_map.equal_range(val);
       if (range.first == range.second) {
-        smaller_output.push_back(-1);
-        larger_output.push_back(i);
+        smaller_output->push_back(-1);
+        larger_output->push_back(i);
       } else {
         for (auto it = range.first; it != range.second; it++) {
-          smaller_output.push_back(it->second);
-          larger_output.push_back(i);
+          smaller_output->push_back(it->second);
+          larger_output->push_back(i);
         }
       }
     }
@@ -158,16 +167,16 @@ class HashJoinKernel {
   // probes hashmap with no filling
   void ProbePhaseNoFill(const MMAP_TYPE &smaller_idx_map,
                         const std::shared_ptr<arrow::Array> &larger_idx_col,
-                        std::vector<int64_t> &smaller_table_indices,
-                        std::vector<int64_t> &larger_table_indices) {
+                        std::shared_ptr<std::vector<int64_t>> &smaller_table_indices,
+                        std::shared_ptr<std::vector<int64_t>> &larger_table_indices) {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto reader1 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(larger_idx_col);
     for (int64_t i = 0; i < reader1->length(); ++i) {
       auto val = (CTYPE) reader1->GetView(i);
       auto range = smaller_idx_map.equal_range(val);
       for (auto it = range.first; it != range.second; it++) {
-        smaller_table_indices.push_back(it->second);
-        larger_table_indices.push_back(i);
+        smaller_table_indices->push_back(it->second);
+        larger_table_indices->push_back(i);
       }
     }
     auto t2 = std::chrono::high_resolution_clock::now();
@@ -181,21 +190,21 @@ class HashJoinKernel {
   void ProbePhaseOuter(const MMAP_TYPE &smaller_idx_map,
                        const std::shared_ptr<arrow::Array> &larger_idx_col,
                        std::unordered_set<CTYPE> &smaller_key_set,
-                       std::vector<int64_t> &smaller_table_indices,
-                       std::vector<int64_t> &larger_table_indices) {
+                       std::shared_ptr<std::vector<int64_t>> &smaller_table_indices,
+                       std::shared_ptr<std::vector<int64_t>> &larger_table_indices) {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto reader1 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(larger_idx_col);
     for (int64_t i = 0; i < reader1->length(); ++i) {
       auto val = (CTYPE) reader1->GetView(i);
       auto range = smaller_idx_map.equal_range(val);
       if (range.first == range.second) {
-        smaller_table_indices.push_back(-1);
-        larger_table_indices.push_back(i);
+        smaller_table_indices->push_back(-1);
+        larger_table_indices->push_back(i);
       } else {
         for (auto it = range.first; it != range.second; it++) {
           smaller_key_set.erase(it->first); // todo: this erase would be inefficient
-          smaller_table_indices.push_back(it->second);
-          larger_table_indices.push_back(i);
+          smaller_table_indices->push_back(it->second);
+          larger_table_indices->push_back(i);
         }
       }
     }
@@ -205,12 +214,13 @@ class HashJoinKernel {
     for (auto it = smaller_key_set.begin(); it != smaller_key_set.end(); it++) {
       auto range = smaller_idx_map.equal_range(*it);
       for (auto it2 = range.first; it2 != range.second; it2++) {
-        smaller_table_indices.push_back(it2->second);
-        larger_table_indices.push_back(-1);
+        smaller_table_indices->push_back(it2->second);
+        larger_table_indices->push_back(-1);
       }
     }
     auto t2 = std::chrono::high_resolution_clock::now();
-    LOG(INFO) << "probe_phase " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    LOG(INFO) << "probe_phase " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1)
+        .count();
   }
 };
 }  // namespace cylon
