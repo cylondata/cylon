@@ -19,21 +19,22 @@ namespace cylon {
 UnionOp::UnionOp(const std::shared_ptr<CylonContext> &ctx,
                  const std::shared_ptr<arrow::Schema> &schema,
                  int id,
-                 const ResultsCallback &callback,
-                 const UnionOpConfig &config)
-    : Op(ctx, schema, id, callback),
-      union_kernel(new cylon::kernel::Union(ctx, schema, config.expected_rows)) {}
+                 const std::shared_ptr<ResultsCallback> &callback,
+                 const std::shared_ptr<UnionOpConfig> &config) :
+    Op(ctx, schema, id, callback), config(config) {
+  this->union_kernel = new cylon::kernel::Union(ctx, schema, config->GetExpectedRows());
+}
 
 bool UnionOp::Execute(int tag, std::shared_ptr<Table> &table) {
   LOG(INFO) << "Executing local union";
-  union_kernel->InsertTable(table);
+  this->union_kernel->InsertTable(table);
   return true;
 }
 
 bool UnionOp::Finalize() {
   std::shared_ptr<cylon::Table> final_result;
-  union_kernel->Finalize(final_result);
-  InsertToAllChildren(0, final_result);
+  this->union_kernel->Finalize(final_result);
+  this->InsertToAllChildren(0, final_result);
   return true;
 }
 
@@ -41,7 +42,11 @@ void UnionOp::OnParentsFinalized() {
   // do nothing
 }
 
-UnionOp::~UnionOp() {
-  delete union_kernel;
+int64_t UnionOpConfig::GetExpectedRows() const {
+  return expected_rows;
+}
+
+void UnionOpConfig::SetExpectedRows(int64_t expected_final_rows) {
+  UnionOpConfig::expected_rows = expected_final_rows;
 }
 }

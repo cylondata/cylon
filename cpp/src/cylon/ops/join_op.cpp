@@ -14,16 +14,19 @@
 
 #include "join_op.hpp"
 
+#include <utility>
 #include <chrono>
+#include "partition_op.hpp"
 
 cylon::JoinOp::JoinOp(const std::shared_ptr<CylonContext> &ctx,
                       const std::shared_ptr<arrow::Schema> &schema,
-                      int32_t id,
-                      const ResultsCallback &callback,
-                      const cylon::join::config::JoinConfig &config)
-    : Op(ctx, schema, id, callback) {
+                      int32_t  id,
+                      const std::shared_ptr<ResultsCallback> &callback,
+                      const std::shared_ptr<cylon::join::config::JoinConfig> &config) :
+                                         Op(ctx, schema, id, callback) {
+  this->config = config;
   // initialize join kernel
-  join_kernel_ = new cylon::kernel::JoinKernel(ctx, schema, &config);
+  join_kernel_ = new cylon::kernel::JoinKernel(ctx, schema, config);
 }
 
 bool cylon::JoinOp::Execute(int tag, std::shared_ptr<Table> &table) {
@@ -48,10 +51,6 @@ bool cylon::JoinOp::Finalize() {
   return true;
 }
 
-cylon::JoinOp::~JoinOp() {
-  delete join_kernel_;
+int32_t cylon::JoinOpConfig::GetJoinColumn() const {
+  return join_column;
 }
-
-//int32_t cylon::JoinOpConfig::GetJoinColumn() const {
-//  return join_column;
-//}

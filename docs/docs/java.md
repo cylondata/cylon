@@ -61,4 +61,4 @@ mpirun -np 4 <CYLON_HOME>/bin/join_example /path/to/csv1 /path/to/csv2
 
 Use blow link to navigate to the JCylon javadocs.
 
-<a href="/javadocs/index.html" target="_blank">Javadocs</a>
+<a href="../javadocs/index.html" target="_blank">Javadocs</a>

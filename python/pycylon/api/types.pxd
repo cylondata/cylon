@@ -1,2 +1,0 @@
-# cdef enum CFilterType:
-#     pass

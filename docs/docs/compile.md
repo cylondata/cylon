@@ -12,7 +12,7 @@ Here are the prerequisites for compiling Cylon.
 
 1. CMake 3.16.5
 2. OpenMPI 4.0.1 or higher
-3. Python 3.7 or higher
+3. Python 3.6 or higher
 4. C++ 14 or higher
 
 ## Python Environment

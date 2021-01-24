@@ -17,13 +17,13 @@ from pycylon.common.status cimport CStatus
 from pycylon.data.table cimport CTable
 from libcpp.memory cimport shared_ptr, make_shared
 
-cdef extern from "../../../cpp/src/cylon/compute/aggregate_kernels.hpp" namespace "cylon":
+cdef extern from "../../../cpp/src/cylon/groupby/groupby_aggregate_ops.hpp" namespace "cylon":
 
-    cdef enum CGroupByAggregationOp 'cylon::compute::AggregationOpId':
-        CSUM 'cylon::compute::SUM'
-        CCOUNT 'cylon::compute::COUNT'
-        CMIN 'cylon::compute::MIN'
-        CMAX 'cylon::compute::MAX'
+    cdef enum CGroupByAggregationOp 'cylon::GroupByAggregationOp':
+        CSUM 'cylon::GroupByAggregationOp::SUM'
+        CCOUNT 'cylon::GroupByAggregationOp::COUNT'
+        CMIN 'cylon::GroupByAggregationOp::MIN'
+        CMAX 'cylon::GroupByAggregationOp::MAX'
 
 
 cdef extern from "../../../cpp/src/cylon/compute/aggregates.hpp" namespace "cylon::compute":

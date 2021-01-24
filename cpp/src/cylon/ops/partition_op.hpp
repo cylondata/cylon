@@ -14,36 +14,33 @@
 
 #ifndef CYLON_SRC_CYLON_OPS_PARTITION_OP_HPP_
 #define CYLON_SRC_CYLON_OPS_PARTITION_OP_HPP_
-#include <chrono>
-
-#include <arrow/arrow_partition_kernels.hpp>
-
-#include "kernels/partition.hpp"
-#include "ops/api/parallel_op.hpp"
+#include "parallel_op.hpp"
 
 namespace cylon {
 
 class PartitionOpConfig {
- public:
-  PartitionOpConfig(int num_partitions, std::vector<int> hash_columns)
-      : num_partitions(num_partitions), hash_columns(std::move(hash_columns)) {}
+ private:
+  int no_of_partitions;
+  std::shared_ptr<std::vector<int>> hash_columns;
 
-  int num_partitions;
-  std::vector<int> hash_columns;
+ public:
+  PartitionOpConfig(int no_of_partitions, std::shared_ptr<std::vector<int>> hash_columns);
+  int NoOfPartitions();
+  std::shared_ptr<std::vector<int>> HashColumns();
 };
 
 class PartitionOp : public Op {
  private:
+  std::shared_ptr<PartitionOpConfig> config;
   std::chrono::high_resolution_clock::time_point start;
   bool started_time = false;
-
-  PartitionOpConfig config;
+  long exec_time = 0;
  public:
   PartitionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
               const std::shared_ptr<arrow::Schema> &schema,
               int id,
-              const ResultsCallback &callback,
-              const PartitionOpConfig &config);
+              const std::shared_ptr<ResultsCallback> &callback,
+              const std::shared_ptr<PartitionOpConfig> &config);
   bool Execute(int tag, std::shared_ptr<Table> &table) override;
   void OnParentsFinalized() override;
   bool Finalize() override;

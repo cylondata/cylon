@@ -18,8 +18,8 @@
 cylon::MergeOp::MergeOp(const std::shared_ptr<CylonContext> &ctx,
                         const std::shared_ptr<arrow::Schema> &schema,
                         int32_t id,
-                        const ResultsCallback &callback)
-    : Op(ctx, schema, id, callback) {
+                        const std::shared_ptr<ResultsCallback> &callback) :
+    Op(ctx, schema, id, callback) {
 }
 
 bool cylon::MergeOp::Execute(int tag, std::shared_ptr<Table> &table) {

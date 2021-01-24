@@ -22,19 +22,20 @@ namespace cylon {
 namespace util {
 
 template<typename TYPE>
-arrow::Status do_copy_numeric_array(const std::vector<int64_t> &indices,
+arrow::Status do_copy_numeric_array(const std::shared_ptr<std::vector<int64_t>> &indices,
                                     const std::shared_ptr<arrow::Array> &data_array,
                                     std::shared_ptr<arrow::Array> *copied_array,
                                     arrow::MemoryPool *memory_pool) {
   arrow::NumericBuilder<TYPE> array_builder(memory_pool);
-  arrow::Status status = array_builder.Reserve(indices.size());
-  if (!status.ok()) {
-    LOG(FATAL) << "Failed to reserve memory when re arranging the array based on indices. " << status.ToString();
+  arrow::Status status = array_builder.Reserve(indices->size());
+  if (status != arrow::Status::OK()) {
+    LOG(FATAL) << "Failed to reserve memory when re arranging the array based on indices. "
+               << status.ToString();
     return status;
   }
 
   auto casted_array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(data_array);
-  for (auto &index : indices) {
+  for (auto &index : *indices) {
     // handle -1 index : comes in left, right joins
     if (index == -1) {
       array_builder.UnsafeAppendNull();
@@ -50,7 +51,7 @@ arrow::Status do_copy_numeric_array(const std::vector<int64_t> &indices,
 }
 
 template<typename TYPE>
-arrow::Status do_copy_binary_array(const std::vector<int64_t> &indices,
+arrow::Status do_copy_binary_array(const std::shared_ptr<std::vector<int64_t>> &indices,
                                    const std::shared_ptr<arrow::Array> &data_array,
                                    std::shared_ptr<arrow::Array> *copied_array,
                                    arrow::MemoryPool *memory_pool) {
@@ -59,23 +60,14 @@ arrow::Status do_copy_binary_array(const std::vector<int64_t> &indices,
 
   BUILDER_TYPE binary_builder(memory_pool);
   auto casted_array = std::static_pointer_cast<ARRAY_TYPE>(data_array);
-  for (auto &index : indices) {
+  for (auto &index : *indices) {
     if (casted_array->length() <= index) {
       LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
     }
-
-    if (index == -1) {
-      const auto &status = binary_builder.AppendNull();
-      if (!status.ok()) {
-        return status;
-      } else {
-        continue;
-      }
-    }
     int32_t out;
     const uint8_t *data = casted_array->GetValue(index, &out);
-    const auto &status = binary_builder.Append(data, out);
-    if (!status.ok()) {
+    auto status = binary_builder.Append(data, out);
+    if (status != arrow::Status::OK()) {
       LOG(FATAL) << "Failed to append rearranged data points to the array builder. "
                  << status.ToString();
       return status;
@@ -84,24 +76,22 @@ arrow::Status do_copy_binary_array(const std::vector<int64_t> &indices,
   return binary_builder.Finish(copied_array);
 }
 
-arrow::Status do_copy_fixed_binary_array(const std::vector<int64_t> &indices,
+arrow::Status do_copy_fixed_binary_array(const std::shared_ptr<std::vector<int64_t>> &indices,
                                          const std::shared_ptr<arrow::Array> &data_array,
                                          std::shared_ptr<arrow::Array> *copied_array,
                                          arrow::MemoryPool *memory_pool) {
   arrow::FixedSizeBinaryBuilder binary_builder(data_array->type(), memory_pool);
-  arrow::Status st = binary_builder.Reserve(indices.size());
+  std::shared_ptr<arrow::FixedSizeBinaryType> t =
+      std::static_pointer_cast<arrow::FixedSizeBinaryType>(data_array->type());
+  arrow::Status st = binary_builder.Reserve(indices->size());
   if (st != arrow::Status::OK()) {
     LOG(FATAL) << "Cannot reserve enough memory";
     return st;
   }
   auto casted_array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(data_array);
-  for (auto &index : indices) {
+  for (auto &index : *indices) {
     if (casted_array->length() <= index) {
       LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
-    }
-    if (index == -1) {
-      binary_builder.UnsafeAppendNull();
-      continue;
     }
     const uint8_t *data = casted_array->GetValue(index);
     binary_builder.UnsafeAppend(data);
@@ -110,7 +100,7 @@ arrow::Status do_copy_fixed_binary_array(const std::vector<int64_t> &indices,
 }
 
 template<typename TYPE>
-arrow::Status do_copy_numeric_list(const std::vector<int64_t> &indices,
+arrow::Status do_copy_numeric_list(const std::shared_ptr<std::vector<int64_t>> &indices,
                                    const std::shared_ptr<arrow::Array> &data_array,
                                    std::shared_ptr<arrow::Array> *copied_array,
                                    arrow::MemoryPool *memory_pool) {
@@ -119,10 +109,11 @@ arrow::Status do_copy_numeric_list(const std::vector<int64_t> &indices,
   arrow::NumericBuilder<TYPE> &value_builder =
       *(static_cast<arrow::NumericBuilder<TYPE> *>(list_builder.value_builder()));
   auto casted_array = std::static_pointer_cast<arrow::ListArray>(data_array);
-  for (auto &index : indices) {
+  for (auto &index : *indices) {
     arrow::Status status = list_builder.Append();
-    if (!status.ok()) {
-      LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
+    if (status != arrow::Status::OK()) {
+      LOG(FATAL) << "Failed to append rearranged data points to the array builder. "
+                 << status.ToString();
       return status;
     }
     auto numericArray = std::static_pointer_cast<arrow::NumericArray<TYPE>>(
@@ -130,8 +121,9 @@ arrow::Status do_copy_numeric_list(const std::vector<int64_t> &indices,
 
     for (int64_t n = 0; n < numericArray->length(); n++) {
       status = value_builder.Append(numericArray->Value(n));
-      if (!status.ok()) {
-        LOG(FATAL) << "Failed to append rearranged data points to the array builder. " << status.ToString();
+      if (status != arrow::Status::OK()) {
+        LOG(FATAL) << "Failed to append rearranged data points to the array builder. "
+                   << status.ToString();
         return status;
       }
     }
@@ -139,16 +131,16 @@ arrow::Status do_copy_numeric_list(const std::vector<int64_t> &indices,
   return list_builder.Finish(copied_array);
 }
 
-arrow::Status copy_array_by_indices(const std::vector<int64_t> &indices,
+arrow::Status copy_array_by_indices(const std::shared_ptr<std::vector<int64_t>> &indices,
                                     const std::shared_ptr<arrow::Array> &data_array,
                                     std::shared_ptr<arrow::Array> *copied_array,
                                     arrow::MemoryPool *memory_pool) {
   switch (data_array->type()->id()) {
     case arrow::Type::BOOL:
       return do_copy_numeric_array<arrow::BooleanType>(indices,
-                                                       data_array,
-                                                       copied_array,
-                                                       memory_pool);
+                                                     data_array,
+                                                     copied_array,
+                                                     memory_pool);
     case arrow::Type::UINT8:
       return do_copy_numeric_array<arrow::UInt8Type>(indices,
                                                      data_array,

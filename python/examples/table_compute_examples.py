@@ -153,6 +153,7 @@ ar_tb_gb = pa.Table.from_pandas(df)
 
 cn_tb_gb = cn.Table.from_arrow(ctx, ar_tb_gb)
 
+
 pdf1 = df.groupby(['AnimalId']).sum()
 
 print(pdf1)
@@ -167,65 +168,7 @@ cn_tb_gb_res1.show()
 
 cn_tb_gb_res1 = cn_tb_gb.groupby(0, ['Max Speed', 'Max Speed', 'Max Speed'], [AggregationOp.SUM,
                                                                               AggregationOp.MIN,
-                                                                              AggregationOp.MAX]) \
-    .sort(0)
+                                                                              AggregationOp.MAX])\
+                                                                              .sort(0)
 
 cn_tb_gb_res1.show()
-
-## Drop
-
-from pycylon import Table
-from pycylon import CylonContext
-
-ctx: CylonContext = CylonContext(config=None, distributed=False)
-
-data = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]
-columns = ['col-1', 'col-2', 'col-3']
-
-tb: Table = Table.from_list(ctx, columns, data)
-print("Full Dataset")
-print(tb)
-
-print("Drop")
-
-tbx = tb.drop(['col-1'])
-
-print(tbx)
-
-tbx = tb.drop(['col-1', 'col-3'])
-
-print(tbx)
-
-data1 = [[1, None, 3, 4], [5, 6, None, 8], [9, 10, 11, None]]
-columns1 = ['col-1', 'col-2', 'col-3']
-
-tb_na: Table = Table.from_list(ctx, columns1, data1)
-
-print("Fillna")
-print(tb_na)
-
-tb1 = tb_na.fillna(0)
-
-print(tb1)
-
-## Where
-print("Where")
-print(tb)
-
-tbx_where = tb.where(tb > 2)
-print(tbx_where)
-
-tbx_where_val = tb.where(tb > 2, 10)
-print(tbx_where_val)
-
-print("Is Null")
-print(tb_na.isnull())
-
-print("Is NA")
-print(tb_na.isna())
-
-print("Is NotNull")
-print(tb_na.notnull())
-
-print("Is NotNA")
-print(tb_na.notna())

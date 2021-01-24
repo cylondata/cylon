@@ -35,7 +35,7 @@ class LogicalTaskPlan {
                   std::shared_ptr<std::vector<int>> worker_sources,
                   std::shared_ptr<std::vector<int>> worker_targets,
                   std::shared_ptr<std::unordered_map<int,
-                                                     int>> task_to_worker);
+                                                int>> task_to_worker);
 
   const std::shared_ptr<std::vector<int>> &GetTaskSource() const;
   const std::shared_ptr<std::vector<int>> &GetTaskTargets() const;
@@ -44,13 +44,11 @@ class LogicalTaskPlan {
   const std::shared_ptr<std::unordered_map<int, int>> &GetTaskToWorker() const;
 };
 
-//class ArrowTaskCallBack : public ArrowCallback {
-//  bool onReceive(int worker_source, const std::shared_ptr<arrow::Table> &table, int target_task) override;
-//
-//  virtual bool onReceive(const std::shared_ptr<arrow::Table> &table, int target) = 0;
-//};
+class ArrowTaskCallBack : public ArrowCallback {
+  bool onReceive(int worker_source, const std::shared_ptr<arrow::Table> &table, int target_task) override;
 
-using ArrowTaskCallBack = std::function<bool(const std::shared_ptr<arrow::Table> &table, int target)>;
+  virtual bool onReceive(const std::shared_ptr<arrow::Table> &table, int target) = 0;
+};
 
 class ArrowTaskAllToAll : public ArrowAllToAll {
 
@@ -62,10 +60,10 @@ class ArrowTaskAllToAll : public ArrowAllToAll {
   ArrowTaskAllToAll(std::shared_ptr<cylon::CylonContext> ctx,
                     const LogicalTaskPlan &plan,
                     int edgeId,
-                    ArrowTaskCallBack callback,
+                    const std::shared_ptr<ArrowTaskCallBack> &callback,
                     const std::shared_ptr<arrow::Schema> &schema);
 
-  int InsertTable(std::shared_ptr<arrow::Table> &arrow, int32_t task_target);
+  int InsertTable(std::shared_ptr<arrow::Table> arrow, int32_t task_target);
 
   bool IsComplete();
 

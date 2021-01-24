@@ -76,6 +76,19 @@ struct PendingReceiveTable {
   std::vector<std::shared_ptr<arrow::Array>> arrays;
 };
 
+class ArrowCallback {
+ public:
+  /**
+   * This function is called when a data is received
+   * @param source the source
+   * @param buffer the buffer allocated by the system, we need to free this
+   * @param length the length of the buffer
+   * @param reference reference sent by the sender
+   * @return true if we accept this buffer
+   */
+  virtual bool onReceive(int source, const std::shared_ptr<arrow::Table> &table, int reference = 0) = 0;
+};
+
 /**
  * Arrow table specific buffer
  */
@@ -89,16 +102,6 @@ class ArrowBuffer : public Buffer {
  private:
   std::shared_ptr<arrow::Buffer> buf;
 };
-
-/**
- * This function is called when a data is received
- * @param source the source
- * @param buffer the buffer allocated by the system, we need to free this
- * @param length the length of the buffer
- * @param reference reference sent by the sender
- * @return true if we accept this buffer
- */
-using ArrowCallback = std::function<bool(int source, const std::shared_ptr<arrow::Table> &table, int reference)>;
 
 /**
  * Arrow table specific allocator
@@ -128,7 +131,7 @@ class ArrowAllToAll : public ReceiveCallback {
                 const std::vector<int> &source,
                 const std::vector<int> &targets,
                 int edgeId,
-                ArrowCallback callback,
+                std::shared_ptr<ArrowCallback> callback,
                 std::shared_ptr<arrow::Schema> schema);
 
   /**
@@ -150,7 +153,7 @@ class ArrowAllToAll : public ReceiveCallback {
    * @param reference a reference that can be sent in the header
    * @return true if the buffer is accepted
    */
-  int insert(const std::shared_ptr<arrow::Table> &arrow, int32_t target, int32_t reference); // todo: check this!
+  int insert(std::shared_ptr<arrow::Table> arrow, int32_t target, int32_t reference); // todo: check this!
 
   /**
    * Check weather the operation is complete, this method needs to be called until the operation is complete
@@ -214,7 +217,7 @@ class ArrowAllToAll : public ReceiveCallback {
   /**
    * Adding receive callback
    */
-  ArrowCallback recv_callback_;
+  std::shared_ptr<ArrowCallback> recv_callback_;
 
   /**
    * The schema of the arrow

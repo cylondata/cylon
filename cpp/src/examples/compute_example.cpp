@@ -25,10 +25,9 @@ cylon::Status CreateTable(std::shared_ptr<cylon::CylonContext> &ctx, int rows,
   std::shared_ptr<std::vector<int32_t>> col0 = std::make_shared<std::vector<int32_t >>();
   std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t >>();
 
-  int rank = ctx->GetRank() + 1;
   for (int i = 0; i < rows; i++) {
-    col0->push_back((int32_t) i * rank);
-    col1->push_back((double_t) i * rank + 10.0);
+    col0->push_back((int32_t) i);
+    col1->push_back((double_t) i + 10.0);
   }
 
   auto c0 = cylon::VectorColumn<int32_t>::Make("col0", cylon::Int32(), col0);
@@ -85,17 +84,6 @@ int main() {
     std::cout << "max " << aa->value << " " << status.get_code() << std::endl;
   } else {
     std::cout << "max failed! " << status.get_msg() << std::endl;
-  }
-
-  if ((status = cylon::compute::MinMax(table, agg_index, result)).is_ok()) {
-    const auto &struct_scalar = result->GetResult().scalar_as<arrow::StructScalar>();
-
-    const auto &aa = std::static_pointer_cast<arrow::DoubleScalar>(struct_scalar.value[0]);
-    const auto &aa1 = std::static_pointer_cast<arrow::DoubleScalar>(struct_scalar.value[1]);
-    std::cout << "min " << aa->value << " max " << aa1->value << " " << status.get_code()
-              << std::endl;
-  } else {
-    std::cout << "minmax failed! " << status.get_msg() << std::endl;
   }
 
   // Adding Python funcs

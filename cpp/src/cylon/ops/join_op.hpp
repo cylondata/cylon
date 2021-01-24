@@ -15,22 +15,31 @@
 #ifndef CYLON_SRC_CYLON_OPS_JOIN_OP_HPP_
 #define CYLON_SRC_CYLON_OPS_JOIN_OP_HPP_
 
-#include "ops/api/parallel_op.hpp"
+#include "parallel_op.hpp"
+#include "partition_op.hpp"
 #include "ops/kernels/join_kernel.hpp"
 
 namespace cylon {
 
+class JoinOpConfig {
+ private:
+  int32_t join_column;
+
+ public:
+  JoinOpConfig(int32_t join_column);
+  int32_t GetJoinColumn() const;
+};
+
 class JoinOp : public Op {
  private:
+  std::shared_ptr<cylon::join::config::JoinConfig> config;
   cylon::kernel::JoinKernel *join_kernel_;
  public:
   JoinOp(const std::shared_ptr<CylonContext> &ctx,
          const std::shared_ptr<arrow::Schema> &schema,
          int32_t  id,
-         const ResultsCallback &callback,
-         const cylon::join::config::JoinConfig &config);
-
-  ~JoinOp() override;
+         const std::shared_ptr<ResultsCallback> &callback,
+         const std::shared_ptr<cylon::join::config::JoinConfig> &config);
 
   bool Execute(int tag, std::shared_ptr<Table> &table) override;
 

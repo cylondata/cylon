@@ -17,7 +17,7 @@
 
 #include <net/mpi/mpi_communicator.hpp>
 #include <ctx/cylon_context.hpp>
-#include <table.hpp>
+#include <parquet.hpp>
 
 /**
  * This example reads two csv files and does a union on them.

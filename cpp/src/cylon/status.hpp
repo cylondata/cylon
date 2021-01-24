@@ -41,23 +41,23 @@ public:
     this->msg = msg;
   }
 
-  int get_code() const {
-    return code;
+  int get_code() {
+    return this->code;
   }
 
-  bool is_ok() const {
-    return code == Code::OK;
+  bool is_ok() {
+    return this->get_code() == Code::OK;
   }
 
   static Status OK() {
     return cylon::Status(Code::OK);
   }
 
-  const std::string &get_msg() const {
-    return msg;
+  std::string get_msg() {
+    return this->msg;
   }
 
- private:
+private:
   int code;
   std::string msg;
 };

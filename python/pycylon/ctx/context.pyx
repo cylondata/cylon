@@ -32,24 +32,8 @@ cdef class CylonContext:
     def __cinit__(self, config=None, distributed=None):
         '''
         Initializing the Cylon Context based on the distributed or non-distributed context
-        Args:
-            config: an object extended from pycylon.net.CommConfig, pycylon.net.MPIConfig for MPI
-            backend
-            distributed: bool to set distributed setting True or False
-        Returns: None
-
-        Examples
-
-        Sequential Programming
-
-        >>> ctx: CylonContext = CylonContext(config=None, distributed=False)
-
-        Distributed Programming
-
-        >>> from pycylon.net import MPIConfig
-        >>> mpi_config = MPIConfig()
-        >>> ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
-
+        :param config: passed as a str => "mpi" (currently MPI is the only supported distributed backend)
+        :return: None
         '''
 
         if not distributed and config is None:
@@ -65,52 +49,27 @@ cdef class CylonContext:
 
     def get_rank(self) -> int:
         '''
-        This is the process id (unique per process)
+        this is the process id (unique per process)
         :return: an int as the rank (0 for non distributed mode)
-
-        Examples
-        --------
-
-        >>> ctx.get_rank()
-            1
-
         '''
         return self.ctx_shd_ptr.get().GetRank()
 
     def get_world_size(self) -> int:
         '''
-        This is the total number of processes joined for the distributed task
+        this is the total number of processes joined for the distributed task
         :return: an int as the world size  (1 for non distributed mode)
-
-        Examples
-        --------
-
-        >>> ctx.get_world_size()
-            4
-
         '''
         return self.ctx_shd_ptr.get().GetWorldSize()
 
     def finalize(self):
         '''
-        Gracefully shuts down the context by closing any distributed processes initialization ,etc
+        gracefully shuts down the context by closing any distributed processes initialization ,etc
         :return: None
-
-        Examples
-        --------
-
-        >>> ctx.finalize()
-
         '''
         self.ctx_shd_ptr.get().Finalize()
 
     def barrier(self):
         '''
-        Calling barrier to sync workers
-
-        Examples
-        --------
-
-        >>> ctx.barrier()
+        calling barrier to sync workers
         '''
         self.ctx_shd_ptr.get().Barrier()

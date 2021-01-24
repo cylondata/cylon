@@ -75,11 +75,11 @@ def test_multi_process():
     assert tb3.column_count == tb4.column_count == tb4.column_count == 8
 
     if rank == 0:
-        assert tb3.row_count == tb4.row_count == tb5.row_count == 640
+        assert tb3.row_count == tb4.row_count == tb5.row_count == 736
     if rank == 1:
-        assert tb3.row_count == tb4.row_count == tb5.row_count == 624
-    if rank == 2:
         assert tb3.row_count == tb4.row_count == tb5.row_count == 592
+    if rank == 2:
+        assert tb3.row_count == tb4.row_count == tb5.row_count == 528
     if rank == 3:
         assert tb3.row_count == tb4.row_count == tb5.row_count == 688
 

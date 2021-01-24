@@ -36,9 +36,7 @@ from pycylon.data.data_type import DataType
 from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 from pycylon.common.status cimport Status
-from pycylon.data.table cimport CSortOptions
-from pycylon.data.table import SortOptions
-from pycylon.data.table cimport SortOptions
+
 
 
 cdef api bint pyclon_is_context(object context)
@@ -57,8 +55,6 @@ cdef api CCSVReadOptions pycylon_unwrap_csv_read_options(object csv_read_options
 
 cdef api CCSVWriteOptions pycylon_unwrap_csv_write_options(object csv_write_options)
 
-cdef api CSortOptions* pycylon_unwrap_sort_options(object sort_options)
-
 cdef api CType pycylon_unwrap_type(object type)
 
 cdef api CLayout pycylon_unwrap_layout(object layout)
@@ -72,8 +68,6 @@ cdef api object pycylon_wrap_type(const CType &type)
 cdef api object pycylon_wrap_layout(const CLayout &layout)
 
 cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] &data_type)
-
-cdef api object pycylon_wrap_sort_options(CSortOptions *sort_options)
 
 
 

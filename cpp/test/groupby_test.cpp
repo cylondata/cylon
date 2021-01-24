@@ -23,7 +23,6 @@
 
 #include <util/arrow_utils.hpp>
 #include <groupby/groupby.hpp>
-#include <compute/aggregates.hpp>
 
 #include "test_header.hpp"
 
@@ -40,7 +39,7 @@ Status HashCylonGroupBy(std::shared_ptr<cylon::Table> &ctable,
                         std::shared_ptr<cylon::Table> &output) {
 
   cylon::Status s =
-      cylon::DistributedHashGroupBy(ctable, 0, {1}, {cylon::compute::SUM}, output);
+      cylon::GroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
 
   LOG(INFO) << "hash_group " << output->Rows();
   return s;
@@ -50,7 +49,7 @@ Status PipelineCylonGroupBy(std::shared_ptr<cylon::Table> &ctable,
                             std::shared_ptr<cylon::Table> &output) {
 
   cylon::Status s =
-      cylon::DistributedPipelineGroupBy(ctable, 0, {1}, {cylon::compute::SUM}, output);
+      cylon::PipelineGroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
 
   LOG(INFO) << "pipe_group " << output->Rows();
   return s;
