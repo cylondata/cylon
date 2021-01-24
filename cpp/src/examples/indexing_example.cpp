@@ -270,6 +270,10 @@ int indexing_simple_example() {
 
   separator(statement_loc4);
 
+  std::string x = "l";
+
+  x = x + std::to_string(cylon::IndexingSchema::Range);
+
   loc_tb4->Print();
 
   LOG(INFO) << "HashIndex of loc[4] table";

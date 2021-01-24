@@ -31,15 +31,15 @@ std::vector<cylon::IndexingSchema> indexing_schemas = {cylon::IndexingSchema::Ha
                                                        cylon::IndexingSchema::Range};
 
 SECTION("testing build index") {
-for(auto schema : indexing_schemas) {
-REQUIRE(test::TestIndexBuildOperation(path1, schema) == 0);
-}
+  for(auto schema : indexing_schemas) {
+    REQUIRE(test::TestIndexBuildOperation(path1, schema) == 0);
+  }
 }
 SECTION("testing loc index 1") {
 for(size_t i=0; i < output_files.size(); i++) {
   auto schema = indexing_schemas.at(i);
   auto output_file = output_files.at(i);
-REQUIRE(test::TestIndexLocOperation1(path1, schema, output_file) == 0);
+  REQUIRE(test::TestIndexLocOperation1(path1, schema, output_file) == 0);
 }
 
 SECTION("testing loc index 2") {
@@ -50,13 +50,63 @@ for(size_t i = 0; i<output_files.size(); i++) {
 }
 }
 
-SECTION("testing loc index 2") {
+SECTION("testing loc index 3") {
+  for(size_t i = 0; i<output_files.size(); i++) {
+    auto schema = indexing_schemas.at(i);
+    auto output_file = output_files.at(i);
+    REQUIRE(test::TestIndexLocOperation3(path1, schema, output_file) == 0);
+  }
+}
+
+SECTION("testing loc index 4") {
+  for(size_t i = 0; i<output_files.size(); i++) {
+    auto schema = indexing_schemas.at(i);
+    auto output_file = output_files.at(i);
+    REQUIRE(test::TestIndexLocOperation4(path1, schema, output_file) == 0);
+  }
+}
+
+SECTION("testing loc index 5") {
+  for(size_t i = 0; i<output_files.size(); i++) {
+    auto schema = indexing_schemas.at(i);
+    auto output_file = output_files.at(i);
+    REQUIRE(test::TestIndexLocOperation5(path1, schema, output_file) == 0);
+  }
+}
+
+SECTION("testing loc index 6") {
+  for(size_t i = 0; i<output_files.size(); i++) {
+    auto schema = indexing_schemas.at(i);
+    auto output_file = output_files.at(i);
+    REQUIRE(test::TestIndexLocOperation6(path1, schema, output_file) == 0);
+  }
+}
+
+SECTION("testing loc index 7") {
+  for(size_t i = 0; i<output_files.size(); i++) {
+    auto schema = indexing_schemas.at(i);
+    auto output_file = output_files.at(i);
+    REQUIRE(test::TestIndexLocOperation7(path1, schema, output_file) == 0);
+  }
+}
+
+SECTION("testing loc index 8") {
+  for(size_t i = 0; i<output_files.size(); i++) {
+    auto schema = indexing_schemas.at(i);
+    auto output_file = output_files.at(i);
+    REQUIRE(test::TestIndexLocOperation8(path1, schema, output_file) == 0);
+  }
+}
+
+SECTION("testing loc index 9") {
 for(size_t i = 0; i<output_files.size(); i++) {
-auto schema = indexing_schemas.at(i);
-auto output_file = output_files.at(i);
-REQUIRE(test::TestIndexLocOperation3(path1, schema, output_file) == 0);
+  auto schema = indexing_schemas.at(i);
+  auto output_file = output_files.at(i);
+  REQUIRE(test::TestIndexLocOperation9(path1, schema, output_file) == 0);
 }
 }
+
+
 
 }
 
