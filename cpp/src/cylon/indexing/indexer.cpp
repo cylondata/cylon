@@ -120,13 +120,21 @@ cylon::Status GetLocFilterIndices(void *start_index,
   cylon::Status status1, status2, status_build;
   std::shared_ptr<arrow::Table> out_artb;
   bool is_index_unique;
+  status_build = cylon::CheckIsIndexValueUnique(start_index, index, is_index_unique);
 
-  cylon::CheckIsIndexValueUnique(start_index, index, is_index_unique);
+  if(!status_build.is_ok()) {
+    std::string error_msg = "Error occurred in checking uniqueness of index value";
+    LOG(ERROR) << error_msg;
+    return cylon::Status(cylon::Code::IndexError, error_msg);
+  }
+
   if(!is_index_unique) {
     LOG(ERROR) << "Index value must be unique";
     return cylon::Status(cylon::Code::KeyError);
   }
+
   cylon::CheckIsIndexValueUnique(end_index, index, is_index_unique);
+
   if(!is_index_unique) {
     LOG(ERROR) << "Index value must be unique";
     return cylon::Status(cylon::Code::KeyError);
@@ -743,7 +751,6 @@ cylon::Status cylon::CheckIsIndexValueUnique(void *index_value,
                                              bool &is_unique) {
   auto index_arr = index->GetIndexArray();
   switch (index_arr->type()->id()) {
-
     case arrow::Type::NA:break;
     case arrow::Type::BOOL:break;
     case arrow::Type::UINT8: return IsIndexValueUnique<arrow::UInt8Type>(index_value, index, is_unique);

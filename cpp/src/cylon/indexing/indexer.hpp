@@ -14,6 +14,14 @@ inline bool instanceof(const T *) {
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
 cylon::Status IsIndexValueUnique(void *index_value, std::shared_ptr<cylon::BaseIndex> &index, bool &is_unique) {
+  if (std::shared_ptr<cylon::RangeIndex> r = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
+    LOG(INFO) << "Range Index detected";
+    is_unique = true;
+    return cylon::Status::OK();
+  }
+
+  LOG(INFO) << "Non-Range Index detected";
+
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   auto index_arr = index->GetIndexArray();
   is_unique = true;
@@ -30,7 +38,6 @@ cylon::Status IsIndexValueUnique(void *index_value, std::shared_ptr<cylon::BaseI
       break;
     }
   }
-  std::cout << index_val << ":: Find count : " << find_cout << "," << is_unique << std::endl;
   return cylon::Status::OK();
 }
 
@@ -38,6 +45,10 @@ template<>
 cylon::Status IsIndexValueUnique<arrow::StringType, arrow::util::string_view>(void *index_value,
                                                                               std::shared_ptr<cylon::BaseIndex> &index,
                                                                               bool &is_unique) {
+  if (std::shared_ptr<cylon::RangeIndex> r = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
+    is_unique = true;
+    return cylon::Status::OK();
+  }
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<arrow::StringType>::ArrayType;
   auto index_arr = index->GetIndexArray();
   is_unique = true;

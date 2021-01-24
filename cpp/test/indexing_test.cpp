@@ -14,14 +14,26 @@
 
 #include "test_header.hpp"
 #include "test_utils.hpp"
+#include "indexing/index.hpp"
 
 using namespace cylon;
 
 TEST_CASE("Index testing", "[indexing]") {
 std::string path1 = "../data/input/indexing_data.csv";
 std::string out_path = "../data/output/indexing_config_1.csv";
+std::vector<cylon::IndexingSchema> indexing_schemas = {cylon::IndexingSchema::Hash,
+                                                       cylon::IndexingSchema::Linear,
+                                                       cylon::IndexingSchema::Range};
 
 SECTION("testing build index") {
-REQUIRE(test::TestIndexBuildOperation(path1) == 0);
+for(auto schema : indexing_schemas) {
+REQUIRE(test::TestIndexBuildOperation(path1, schema) == 0);
+}
+}
+SECTION("testing loc index 1") {
+for(auto schema : indexing_schemas) {
+REQUIRE(test::TestIndexLocOperation1(path1, schema) == 0);
+}
+
 }
 }

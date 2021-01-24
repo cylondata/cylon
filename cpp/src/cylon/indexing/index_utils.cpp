@@ -233,12 +233,34 @@ cylon::Status cylon::IndexUtil::BuildLinearIndexFromArray(std::shared_ptr<arrow:
 }
 cylon::Status cylon::IndexUtil::BuildRangeIndex(std::shared_ptr<cylon::BaseIndex> &index,
                                                 std::shared_ptr<cylon::Table> &input) {
+  arrow::Status ar_status;
   auto ctx = input->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
   auto table_ = input->get_table();
 
   std::shared_ptr<cylon::IndexKernel> kernel = std::make_unique<GenericRangeIndexKernel>();
   std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(pool, table_, 0);
+  // providing similar functionality as Pandas
+  std::vector<int64_t> range_index_values;
+  std::shared_ptr<arrow::Array> index_arr;
+  for (int i = 0; i < input->Rows(); ++i) {
+    range_index_values.push_back(i);
+  }
+  arrow::Int64Builder builder(pool);
+  ar_status = builder.AppendValues(range_index_values);
+
+  if (!ar_status.ok()) {
+    LOG(ERROR) << "Error occurred in creating range index value array";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(ar_status);
+  }
+
+  ar_status = builder.Finish(&index_arr);
+
+  if (!ar_status.ok()) {
+    LOG(ERROR) << "Error occurred in finalizing range index value array";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(ar_status);
+  }
+  bi->SetIndexArray(index_arr);
   index = std::move(bi);
   return cylon::Status::OK();
 }
@@ -247,7 +269,6 @@ cylon::Status cylon::IndexUtil::BuildIndex(cylon::IndexingSchema schema,
                                            int index_column,
                                            std::shared_ptr<cylon::BaseIndex> &index) {
   switch (schema) {
-
     case Range: return BuildRangeIndex(index, input);
     case Linear: return BuildLinearIndex(index, input, index_column);
     case Hash: return BuildHashIndex(index, input, index_column);

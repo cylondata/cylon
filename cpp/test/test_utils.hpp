@@ -257,15 +257,14 @@ int TestParquetJoinOperation(const cylon::join::config::JoinConfig &join_config,
 }
 #endif
 
-
-int TestIndexBuildOperation(std::string &input_file_path) {
+int TestIndexBuildOperation(std::string &input_file_path, cylon::IndexingSchema indexing_schema) {
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
   std::shared_ptr<cylon::Table> input1, output;
-  std::shared_ptr<cylon::BaseIndex> hash_index, linear_index, range_index;
+  std::shared_ptr<cylon::BaseIndex> index;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -275,20 +274,80 @@ int TestIndexBuildOperation(std::string &input_file_path) {
   const int index_column = 0;
   bool drop_index = true;
 
-  cylon::IndexUtil::BuildIndex(cylon::IndexingSchema::Hash, input1, index_column, hash_index);
-  cylon::IndexUtil::BuildIndex(cylon::IndexingSchema::Linear, input1, index_column, linear_index);
-  cylon::IndexUtil::BuildIndex(cylon::IndexingSchema::Range, input1, index_column, range_index);
+  status = cylon::IndexUtil::BuildIndex(indexing_schema, input1, index_column, index);
 
-  bool valid_hash_index_capacity = input1->Rows() == hash_index->GetIndexArray()->length();
-  bool valid_linear_index_capacity = input1->Rows() == linear_index->GetIndexArray()->length();
-  bool valid_range_index_capacity = input1->Rows() == range_index->GetSize();
+  if(!status.is_ok()) {
+    return 1;
+  }
 
-  if (!(valid_hash_index_capacity && valid_range_index_capacity && valid_linear_index_capacity)) {
+  bool valid_index = false;
+  if (indexing_schema == cylon::IndexingSchema::Range) {
+    valid_index = input1->Rows() == index->GetSize();
+  } else {
+    valid_index = input1->Rows() == index->GetIndexArray()->length();
+  }
+
+  if (!valid_index) {
     return 1;
   };
+
   return 0;
 }
 
+int TestIndexLocOperation1(std::string &input_file_path, cylon::IndexingSchema indexing_schema) {
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input1, output, loc_output;
+  std::shared_ptr<cylon::BaseIndex> index;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << input_file_path << std::endl;
+  status = cylon::FromCSV(ctx, input_file_path, input1, read_options);
+
+  long start_index = 0;
+  long end_index = 5;
+  const int index_column = 0;
+  bool drop_index = true;
+
+  status = cylon::IndexUtil::BuildIndex(indexing_schema, input1, index_column, index);
+
+  if(!status.is_ok()) {
+    return 1;
+  }
+
+  bool valid_index = false;
+  if (indexing_schema == cylon::IndexingSchema::Range) {
+    valid_index = input1->Rows() == index->GetSize();
+  } else {
+    valid_index = input1->Rows() == index->GetIndexArray()->length();
+  }
+
+  if (!valid_index) {
+    return 1;
+  };
+
+  status = input1->Set_Index(index, drop_index);
+
+  if(!status.is_ok()) {
+    return 1;
+  }
+
+  int column = 0;
+
+  std::shared_ptr<cylon::BaseIndexer> indexer = std::make_shared<cylon::LocIndexer>(indexing_schema);
+
+  status = indexer->loc(&start_index, &end_index, column, input1, loc_output);
+
+  if(!status.is_ok()) {
+    return -1;
+  }
+
+  return 0;
+}
 
 }
 }

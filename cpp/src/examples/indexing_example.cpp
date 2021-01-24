@@ -82,9 +82,9 @@ int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
 int main(int argc, char *argv[]) {
   //indexing_simple_example();
   //test_hash_indexing();
-  test_linear_indexing();
+  //test_linear_indexing();
   //indexing_benchmark();
-  //test_range_indexing();
+  test_range_indexing();
 }
 
 //template<typename Base, typename T>
@@ -204,7 +204,11 @@ int indexing_simple_example() {
   long end_index = 27;
   int column = 0;
   std::shared_ptr<cylon::Table> loc_tb1;
-  base_indexer->loc(&start_index, &end_index, column, input1, loc_tb1);
+  status = base_indexer->loc(&start_index, &end_index, column, input1, loc_tb1);
+
+  if(!status.is_ok()) {
+    return 1;
+  }
 
   std::string statement_loc1 = "Loc 1";
 
@@ -729,7 +733,7 @@ int test_range_indexing() {
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
-  std::string test_file = "/tmp/duplicate_data_0.csv";
+  std::string test_file = "/tmp/indexing_data.csv";
   std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
   status = cylon::FromCSV(ctx, test_file, input, read_options);
 
@@ -742,21 +746,30 @@ int test_range_indexing() {
 
   input->Print();
 
-  long start_index = 6;
-  long end_index = 11;
+  long start_index = 0;
+  long end_index = 5;
   int64_t index_column = 0;
   bool drop_index = true;
 
-  std::shared_ptr<cylon::BaseIndex> index, loc_index, hash_index, linear_index;
+  std::shared_ptr<cylon::BaseIndex> index, loc_index, hash_index, linear_index, range_index;
 
-  cylon::IndexUtil::BuildHashIndex(hash_index, input, 0);
-  cylon::IndexUtil::BuildLinearIndex(linear_index, input, 0);
+  status = cylon::IndexUtil::BuildIndex(cylon::IndexingSchema::Range, input, 0, range_index);
+
+  if(!status.is_ok()) {
+    return -1;
+  }
+
+  status = input->Set_Index(range_index, drop_index);
+
+  if(!status.is_ok()) {
+    return -1;
+  }
 
   LOG(INFO) << "[Before LinearIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
 
-  index = input->GetIndex();
+  range_index = input->GetIndex();
 
-  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
+  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(range_index)) {
     std::cout << "Range Index : " << rx->GetStart() << ", " << rx->GetSize() << ", " << rx->GetStep();
   } else {
     std::cout << typeid(index).name() << std::endl;
@@ -765,63 +778,68 @@ int test_range_indexing() {
 
   std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>(cylon::IndexingSchema::Range);
 
-  base_indexer->loc(&start_index, &end_index, index_column, input, output);
+  status = base_indexer->loc(&start_index, &end_index, index_column, input, output);
+
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in loc operation for range";
+    return 1;
+  }
 
   LOG(INFO) << "Range Index Table 1 ";
   output->Print();
 
   auto loc_output_index = output->GetIndex();
 
-  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(loc_output_index)) {
-    std::cout << "Range Index : " << rx->GetStart() << ", " << rx->GetSize() << ", " << rx->GetStep();
-  } else {
-    std::cout << typeid(index).name() << std::endl;
-  }
-  std::cout << std::endl;
-
-  typedef std::vector<void *> vector_void_star;
-
-  vector_void_star output_items;
-
-  std::vector<int64_t> start_indices_5 = {4, 1};
-
-  for (size_t tx = 0; tx < start_indices_5.size(); tx++) {
-    output_items.push_back(reinterpret_cast<void *const>(start_indices_5.at(tx)));
-  }
-
-  base_indexer->loc(output_items, index_column, input, output1);
-
-  LOG(INFO) << "Range Index Table 2 ";
-  output1->Print();
-
-  auto loc_output_index1 = output1->GetIndex();
-
-  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(loc_output_index1)) {
-    std::cout << "Range Index : " << rx->GetStart() << ", " << rx->GetSize() << ", " << rx->GetStep();
-  } else {
-    std::cout << typeid(index).name() << std::endl;
-  }
-  std::cout << std::endl;
-
-  auto hash_index_arr = hash_index->GetIndexArray();
-  auto linear_index_arr = linear_index->GetIndexArray();
-
-  auto result_hash = arrow::compute::Unique(hash_index_arr);
-  auto result_linear = arrow::compute::Unique(linear_index_arr);
-
-  if(!result_hash.ok()) {
-    return -1;
-  }
-
-  if(!result_linear.ok()) {
-    return -1;
-  }
-
-  auto hash_index_uq_ar = result_hash.ValueOrDie();
-  auto linear_index_uq_ar = result_linear.ValueOrDie();
-
-  std::cout << "hash Uq comparison " << hash_index_arr->length() << ", " << hash_index_uq_ar->length() << std::endl;
-  std::cout << "LInear Uq comparison " << linear_index_arr->length() << ", " << linear_index_uq_ar->length() << std::endl;
+//  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(loc_output_index)) {
+//    std::cout << "Range Index : " << rx->GetStart() << ", " << rx->GetSize() << ", " << rx->GetStep();
+//  } else {
+//    std::cout << typeid(index).name() << std::endl;
+//  }
+//  std::cout << std::endl;
+//
+//  typedef std::vector<void *> vector_void_star;
+//
+//  vector_void_star output_items;
+//
+//  std::vector<int64_t> start_indices_5 = {4, 1};
+//
+//  for (size_t tx = 0; tx < start_indices_5.size(); tx++) {
+//    output_items.push_back(reinterpret_cast<void *const>(start_indices_5.at(tx)));
+//  }
+//
+//  base_indexer->loc(output_items, index_column, input, output1);
+//
+//  LOG(INFO) << "Range Index Table 2 ";
+//  output1->Print();
+//
+//  auto loc_output_index1 = output1->GetIndex();
+//
+//  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(loc_output_index1)) {
+//    std::cout << "Range Index : " << rx->GetStart() << ", " << rx->GetSize() << ", " << rx->GetStep();
+//  } else {
+//    std::cout << typeid(index).name() << std::endl;
+//  }
+//  std::cout << std::endl;
+//
+//  auto hash_index_arr = hash_index->GetIndexArray();
+//  auto linear_index_arr = linear_index->GetIndexArray();
+//
+//  auto result_hash = arrow::compute::Unique(hash_index_arr);
+//  auto result_linear = arrow::compute::Unique(linear_index_arr);
+//
+//  if(!result_hash.ok()) {
+//    return -1;
+//  }
+//
+//  if(!result_linear.ok()) {
+//    return -1;
+//  }
+//
+//  auto hash_index_uq_ar = result_hash.ValueOrDie();
+//  auto linear_index_uq_ar = result_linear.ValueOrDie();
+//
+//  std::cout << "hash Uq comparison " << hash_index_arr->length() << ", " << hash_index_uq_ar->length() << std::endl;
+//  std::cout << "LInear Uq comparison " << linear_index_arr->length() << ", " << linear_index_uq_ar->length() << std::endl;
 
   return 0;
 }
