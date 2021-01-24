@@ -37,7 +37,7 @@ void CylonPipelineGroupBy(std::shared_ptr<cylon::Table> &ctable,
   auto t1 = std::chrono::steady_clock::now();
 
   cylon::Status s =
-      cylon::PipelineGroupBy(ctable, 0, {1}, {cylon::GroupByAggregationOp::SUM}, output);
+      cylon::DistributedPipelineGroupBy(ctable, 0, {1}, {cylon::compute::SUM}, output);
 
   if (!s.is_ok()) {
     std::cout << " status " << s.get_code() << " " << s.get_msg() << std::endl;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
 
-  first_table->WriteCSV("/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
+  WriteCSV(first_table, "/tmp/source" + std::to_string(ctx->GetRank()) + ".txt");
 //  first_table->Print();
   std::cout << "++++++++++++++++++++++++++" << std::endl;
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 
   CylonPipelineGroupBy(sorted_table, output);
 //  output->Print();
-  output->WriteCSV("/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
+  WriteCSV(output, "/tmp/out" + std::to_string(ctx->GetRank()) + ".txt");
   output.reset();
   std::cout << "++++++++++++++++++++++++++" << std::endl;
 

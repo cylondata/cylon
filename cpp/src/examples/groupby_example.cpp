@@ -21,53 +21,56 @@
 #include <groupby/groupby.hpp>
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) {
-        LOG(ERROR) << "There should be two arguments with paths to csv files";
-        return 1;
-    }
+  if (argc < 2) {
+    LOG(ERROR) << "There should be two arguments with paths to csv files";
+    return 1;
+  }
 
-    auto start_start = std::chrono::steady_clock::now();
-    auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-    auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  auto start_start = std::chrono::steady_clock::now();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-    std::shared_ptr<cylon::Table> first_table, output;
-    auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-    auto status = cylon::FromCSV(ctx, argv[1], first_table, read_options);
-    if (!status.is_ok()) {
-        LOG(INFO) << "Table reading failed " << argv[1];
-        ctx->Finalize();
-        return 1;
-    }
-
-    auto read_end_time = std::chrono::steady_clock::now();
-
-    LOG(INFO) << "Read tables in "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(
-                      read_end_time - start_start).count() << "[ms]";
-
-    LOG(INFO) << "Table Data";
-
-    first_table->Print();
-
-    cylon::Status s =
-            cylon::GroupBy(first_table, 3, {1}, {cylon::GroupByAggregationOp::SUM}, output);
-
-    if (!status.is_ok()) {
-        LOG(INFO) << "Table GroupBy failed ";
-        ctx->Finalize();
-        return 1;
-    }
-    auto join_end_time = std::chrono::steady_clock::now();
-
-    LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
-              << output->Rows() << ", Joined has : " << output->Rows();
-    LOG(INFO) << "Join done in "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(
-                      join_end_time - read_end_time).count() << "[ms]";
-    LOG(INFO) << "Output of GroupBy Operation" ;
-
-    output->Print();
-
+  std::shared_ptr<cylon::Table> first_table, output;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+  auto status = cylon::FromCSV(ctx, argv[1], first_table, read_options);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading failed " << argv[1];
     ctx->Finalize();
-    return 0;
+    return 1;
+  }
+
+  auto read_end_time = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Read tables in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
+
+  LOG(INFO) << "Table Data";
+
+  first_table->Print();
+
+  std::cout << "-----------------------" << std::endl;
+//  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VAR}}, output);
+//  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VarOp::Make()}}, output);
+  cylon::Status s = cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::VAR}, output);
+
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table GroupBy failed ";
+    ctx->Finalize();
+    return 1;
+  }
+  auto join_end_time = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
+            << output->Rows() << ", group_by has : " << output->Rows();
+  LOG(INFO) << "group_by done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                join_end_time - read_end_time).count() << "[ms]";
+  LOG(INFO) << "Output of GroupBy Operation";
+
+  output->Print();
+
+  LOG(INFO) << "schema" << '\n' << output->get_table()->schema()->ToString();
+
+  ctx->Finalize();
+  return 0;
 }

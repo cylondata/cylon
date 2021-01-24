@@ -15,6 +15,8 @@
 #include "test_utils.hpp"
 #include "test_header.hpp"
 
+#include "compute/aggregates.hpp"
+
 using namespace cylon;
 
 TEST_CASE("Set operation testing", "[set_op]") {
@@ -26,6 +28,40 @@ TEST_CASE("Set operation testing", "[set_op]") {
     out_path =
         "../data/output/union_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
     REQUIRE(test::TestSetOperation(&DistributedUnion, ctx, path1, path2, out_path) == 0);
+  }
+
+  SECTION("testing union itself") {
+    std::shared_ptr<Table> t, local, dist;
+    auto s = FromCSV(ctx, "../data/input/csv1_0.csv", t);
+    REQUIRE(s.is_ok());
+
+    s = Union(t, t, local);
+    REQUIRE(s.is_ok());
+
+    s = DistributedUnion(t, t, dist);
+    REQUIRE(s.is_ok());
+
+    std::shared_ptr<compute::Result> res;
+    s = compute::Count(dist, 0, res);
+    REQUIRE((s.is_ok()
+        && std::static_pointer_cast<arrow::Int64Scalar>(res->GetResult().scalar())->value == local->Rows()));
+  }
+
+  SECTION("testing intersection itself") {
+    std::shared_ptr<Table> t, local, dist;
+    auto s = FromCSV(ctx, "../data/input/csv1_0.csv", t);
+    REQUIRE(s.is_ok());
+
+    s = Intersect(t, t, local);
+    REQUIRE(s.is_ok());
+
+    s = DistributedIntersect(t, t, dist);
+    REQUIRE(s.is_ok());
+
+    std::shared_ptr<compute::Result> res;
+    s = compute::Count(dist, 0, res);
+    REQUIRE((s.is_ok()
+        && std::static_pointer_cast<arrow::Int64Scalar>(res->GetResult().scalar())->value == local->Rows()));
   }
 
   SECTION("testing subtract") {
