@@ -14,28 +14,22 @@
 
 #ifndef CYLON_SRC_CYLON_OPS_DIS_JOIN_OP_HPP_
 #define CYLON_SRC_CYLON_OPS_DIS_JOIN_OP_HPP_
-#include "parallel_op.hpp"
+#include "ops/api/parallel_op.hpp"
 #include "partition_op.hpp"
 #include "join_op.hpp"
 
 namespace cylon {
 
 class DisJoinOpConfig {
- private:
-  std::shared_ptr<PartitionOpConfig> partition_config;
-  std::shared_ptr<cylon::join::config::JoinConfig> join_config;
-
  public:
-  DisJoinOpConfig(std::shared_ptr<PartitionOpConfig> partition_config,
-      std::shared_ptr<cylon::join::config::JoinConfig> join_config);
+  DisJoinOpConfig(PartitionOpConfig partition_config, join::config::JoinConfig join_config)
+      : partition_config(std::move(partition_config)), join_config(join_config) {}
 
-  std::shared_ptr<PartitionOpConfig> GetPartitionConfig();
-  const std::shared_ptr<cylon::join::config::JoinConfig> &GetJoinConfig() const;
+  PartitionOpConfig partition_config;
+  join::config::JoinConfig join_config;
 };
 
 class DisJoinOP : public RootOp {
- private:
-  std::shared_ptr<DisJoinOpConfig> config;
  public:
   const static int32_t LEFT_RELATION = 100;
   const static int32_t RIGHT_RELATION = 200;
@@ -43,12 +37,10 @@ class DisJoinOP : public RootOp {
   DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
             const std::shared_ptr<arrow::Schema> &schema,
             int id,
-            const std::shared_ptr<ResultsCallback> &callback,
-            const std::shared_ptr<DisJoinOpConfig> &config);
+            const ResultsCallback &callback,
+            const DisJoinOpConfig &config);
 
   bool Execute(int tag, std::shared_ptr<Table> &table) override;
-  void OnParentsFinalized() override;
-  bool Finalize() override;
 };
 }
 

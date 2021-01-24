@@ -17,10 +17,8 @@
 
 #include <arrow/compute/api.h>
 
-#include <utility>
-#include <status.hpp>
-#include <table.hpp>
-#include <ctx/arrow_memory_pool_utils.hpp>
+#include "../table.hpp"
+#include "../ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
 namespace compute {
@@ -94,7 +92,18 @@ cylon::Status Min(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, s
  * @param output
  * @return
  */
-cylon::Status Max(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output);
+cylon::Status Max(const std::shared_ptr<cylon::Table> &table,
+                  int32_t col_idx,
+                  std::shared_ptr<Result> &output);
+
+cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table,
+                     int32_t col_idx,
+                     std::shared_ptr<Result> &output);
+
+cylon::Status MinMax(std::shared_ptr<CylonContext> &ctx,
+                     const arrow::Datum &array,
+                     const std::shared_ptr<cylon::DataType> &datatype,
+                     std::shared_ptr<Result> &output);
 
 cylon::Status Sum(const std::shared_ptr<cylon::Table> &table,
                   int32_t col_idx,

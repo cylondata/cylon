@@ -25,6 +25,8 @@ from pycylon import CylonContext
 from pycylon import Table
 from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
+import pyarrow as pa
+import numpy as np
 
 '''
 Run test:
@@ -154,4 +156,281 @@ def test_filter():
                       comp_op[2](col, limit[2]))
 
 
-test_filter()
+def test_drop():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+
+    table1_path = '/tmp/user_usage_tm_1.csv'
+
+    assert os.path.exists(table1_path)
+
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+
+    tb: Table = read_csv(ctx, table1_path, csv_read_options)
+
+    drop_column = 'outgoing_sms_per_month'
+
+    tb_new = tb.drop([drop_column])
+
+    assert not tb_new.column_names.__contains__(drop_column)
+
+
+def test_fillna():
+    col_names = ['col1', 'col2']
+    data_list_numeric = [[1, 2, None, 4, 5], [6, 7, 8, 9, None]]
+    fill_value = 0
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb_numeric = Table.from_list(ctx, col_names, data_list_numeric)
+
+    cn_tb_numeric_fillna = cn_tb_numeric.fillna(fill_value)
+
+    data_list = list(cn_tb_numeric_fillna.to_pydict().values())
+    for col in data_list:
+        assert not col.__contains__(None)
+        assert col.__contains__(fill_value)
+
+
+def test_where():
+    col_names = ['col1', 'col2']
+    data_list_numeric = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb = Table.from_list(ctx, col_names, data_list_numeric)
+
+    cn_tb_where = cn_tb.where(cn_tb > 3)
+
+    print(cn_tb_where)
+
+    cn_tb_where_with_other = cn_tb.where(cn_tb > 3, 100)
+
+    print(cn_tb_where_with_other)
+
+    print(cn_tb > 3)
+
+
+def test_rename():
+    col_names = ['col1', 'col2', 'col3', 'col4']
+    data_list_numeric = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13, 14, 15],
+                         [16, 17, 18, 19, 20]]
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb = Table.from_list(ctx, col_names, data_list_numeric)
+
+    prev_col_names = cn_tb.column_names
+    # with dictionary
+    columns = {'col1': 'col-1', 'col3': 'col-3'}
+    cn_tb.rename(columns)
+
+    new_col_names = cn_tb.column_names
+
+    for key in columns:
+        value = columns[key]
+        assert prev_col_names.index(key) == new_col_names.index(value)
+
+    # with list
+    cn_tb_list = Table.from_list(ctx, col_names, data_list_numeric)
+    prev_col_names = cn_tb_list.column_names
+    new_column_names = ['col-1', 'col-2', 'col-3', 'col-4']
+    cn_tb_list.rename(new_column_names)
+
+    assert cn_tb_list.column_names == new_column_names
+
+
+def test_invert():
+    # Bool Invert Test
+
+    data_list = [[False, True, False, True, True], [False, True, False, True, True]]
+    pdf = DataFrame(data_list)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb = Table.from_pandas(ctx, pdf)
+
+    invert_cn_tb = ~cn_tb
+    invert_pdf = ~pdf
+
+    assert invert_cn_tb.to_pandas().values.tolist() == invert_pdf.values.tolist()
+
+
+def test_neg():
+    npr = np.array([[1, 2, 3, 4, 5, -6, -7], [-1, -2, -3, -4, -5, 6, 7]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+    neg_cn_tb: Table = -cn_tb
+    neg_pdf = -pdf
+    assert neg_cn_tb.to_pandas().values.tolist() == neg_pdf.values.tolist()
+
+
+def test_setitem():
+    npr = np.array([[1, 2, 3, 4, 5], [-1, -2, -3, -4, -5]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+    # replacing an existing column
+    cn_tb['0'] = cn_tb['4']
+    assert cn_tb['0'].to_pandas().values.tolist() == cn_tb['4'].to_pandas().values.tolist()
+    # adding a new column at the end
+    cn_tb['5'] = cn_tb['4']
+    assert cn_tb['5'].to_pandas().values.tolist() == cn_tb['4'].to_pandas().values.tolist()
+
+
+def test_math_ops_for_scalar():
+    npr = np.array([[20, 2, 3, 4, 5], [10, -20, -30, -40, -50], [10.2, 13.2, 16.4, 12.2, 10.8]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+
+    from operator import add, sub, mul, truediv
+    ops = [add, sub, mul, truediv]
+
+    for op in ops:
+        cn_tb_1 = cn_tb
+        pdf_1 = pdf
+        # test column division
+        cn_tb_1['0'] = op(cn_tb_1['0'], 2)
+        pdf_1[0] = op(pdf_1[0], 2)
+
+        assert pdf_1.values.tolist() == cn_tb_1.to_pandas().values.tolist()
+
+        # test table division
+        cn_tb_2 = cn_tb
+        pdf_2 = pdf
+
+        cn_tb_2 = op(cn_tb_2, 2)
+        pdf_2 = op(pdf, 2)
+
+        assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
+
+
+def test_math_i_ops_for_scalar():
+    """
+    TODO: Enhance Test case and functionality
+        Check the following case : https://github.com/cylondata/cylon/issues/229
+    >>> from operator import __iadd__
+    >>> assert __iadd__(cylon_table, value) == (cylon_table += value)
+    >>> Failure ...
+    """
+    npr = np.array([[20, 2, 3, 4, 5], [10, -20, -30, -40, -50], [12.2, 13.2, 16.4, 12.2, 10.8]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+
+    cn_tb_1 = cn_tb
+    pdf_1 = pdf
+    # test column addition
+
+    cn_tb_1['0'] += 2
+    pdf_1[0] += 2
+
+    assert pdf_1.values.tolist() == cn_tb_1.to_pandas().values.tolist()
+
+    cn_tb_1['0'] -= 2
+    pdf_1[0] -= 2
+
+    assert pdf_1.values.tolist() == cn_tb_1.to_pandas().values.tolist()
+
+    cn_tb_1['0'] *= 2
+    pdf_1[0] *= 2
+
+    assert pdf_1.values.tolist() == cn_tb_1.to_pandas().values.tolist()
+
+    cn_tb_1['0'] /= 2
+    pdf_1[0] /= 2
+
+    assert pdf_1.values.tolist() == cn_tb_1.to_pandas().values.tolist()
+
+    # test table division
+    cn_tb_2 = cn_tb
+    pdf_2 = pdf
+
+    cn_tb_2 += 2
+    pdf += 2
+
+    assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
+
+    cn_tb_2 -= 2
+    pdf -= 2
+
+    assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
+
+    cn_tb_2 *= 2
+    pdf *= 2
+
+    assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
+
+    cn_tb_2 /= 2
+    pdf /= 2
+
+    assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
+
+
+def test_i_bitwise_ops():
+    # TODO: Improve test and functionality: https://github.com/cylondata/cylon/issues/229
+    npr = np.array([[20, 2, 3, 4, 5], [10, -20, -30, -40, -50], [36.2, 13.2, 16.4, 12.2, 10.8]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+
+    a = cn_tb['0'] > 10
+    b = cn_tb['1'] > 2
+    a_pdf = pdf[0] > 10
+    b_pdf = pdf[1] > 2
+
+    d = a & b
+    a &= b
+    d_pdf = a_pdf & b_pdf
+    a_pdf &= b_pdf
+
+    assert d.to_pandas().values.tolist() == a.to_pandas().values.tolist()
+    assert a.to_pandas().values.flatten().tolist() == a_pdf.values.tolist()
+
+    ## OR
+
+    a = cn_tb['0'] > 10
+    b = cn_tb['1'] > 2
+    a_pdf = pdf[0] > 10
+    b_pdf = pdf[1] > 2
+
+    d = a | b
+    a |= b
+    d_pdf = a_pdf | b_pdf
+    a_pdf |= b_pdf
+
+    assert d.to_pandas().values.tolist() == a.to_pandas().values.tolist()
+    assert a.to_pandas().values.flatten().tolist() == a_pdf.values.tolist()
+
+
+def test_add_prefix():
+    npr = np.array([[20.2, 2.0, 3.2, 4.3, 5.5], [10, -20, -30, -40, -50], [36.2, 13.2, 16.4, 12.2,
+                                                                           10.8]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+    prefix = "item_"
+    cn_tb_with_prefix = cn_tb.add_prefix(prefix)
+    pdf_with_prefix = pdf.add_prefix(prefix)
+
+    assert pdf_with_prefix.columns.tolist() == cn_tb_with_prefix.column_names
+
+
+def test_add_suffix():
+    npr = np.array([[20.2, 2.0, 3.2, 4.3, 5.5], [10, -20, -30, -40, -50], [36.8, 13.2, 16.4, 12.2,
+                                                                           10.8]])
+    pdf = DataFrame(npr)
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+    suffix = "item_"
+    cn_tb_with_suffix = cn_tb.add_suffix(suffix)
+    pdf_with_suffix = pdf.add_suffix(suffix)
+
+    assert pdf_with_suffix.columns.tolist() == cn_tb_with_suffix.column_names
+
+
+def test_empty_table():
+    from pycylon.data.table import EmptyTable
+    from pycylon.index import RangeIndex
+    import pandas as pd
+    import pandas as pd
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    empt_tb = EmptyTable(ctx, RangeIndex(data=range(0, 0)))
+
+    assert empt_tb.to_pandas().values.tolist() == pd.DataFrame().values.tolist()
+
+
+

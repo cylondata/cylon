@@ -12,125 +12,52 @@
  * limitations under the License.
  */
 
-#include <util/arrow_utils.hpp>
+#include "../util/arrow_utils.hpp"
+#include "../util/macros.hpp"
 
-#include "groupby_hash.hpp"
-#include "groupby_pipeline.hpp"
+#include "hash_groupby.hpp"
+#include "pipeline_groupby.hpp"
 #include "groupby.hpp"
 
 namespace cylon {
 
-/**
- * Pick a local group by function based on the index column data type
- * @param idx_data_type 
- * @return 
- */
-typedef Status
-(*LocalGroupByFptr)(const std::shared_ptr<Table> &table,
-                    const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
-                    std::shared_ptr<Table> &output);
-LocalGroupByFptr PickLocalHashGroupByFptr(const std::shared_ptr<cylon::DataType> &idx_data_type) {
-  switch (idx_data_type->getType()) {
-    case Type::BOOL: return &LocalHashGroupBy<arrow::BooleanType>;
-    case Type::UINT8: return &LocalHashGroupBy<arrow::UInt8Type>;
-    case Type::INT8: return &LocalHashGroupBy<arrow::Int8Type>;
-    case Type::UINT16: return &LocalHashGroupBy<arrow::UInt16Type>;
-    case Type::INT16: return &LocalHashGroupBy<arrow::Int16Type>;
-    case Type::UINT32: return &LocalHashGroupBy<arrow::UInt32Type>;
-    case Type::INT32: return &LocalHashGroupBy<arrow::Int32Type>;
-    case Type::UINT64: return &LocalHashGroupBy<arrow::UInt64Type>;
-    case Type::INT64: return &LocalHashGroupBy<arrow::Int64Type>;
-    case Type::FLOAT: return &LocalHashGroupBy<arrow::FloatType>;
-    case Type::DOUBLE: return &LocalHashGroupBy<arrow::DoubleType>;
-    case Type::HALF_FLOAT:break;
-    case Type::STRING:break;
-    case Type::BINARY:break;
-    case Type::FIXED_SIZE_BINARY:break;
-    case Type::DATE32:break;
-    case Type::DATE64:break;
-    case Type::TIMESTAMP:break;
-    case Type::TIME32:break;
-    case Type::TIME64:break;
-    case Type::INTERVAL:break;
-    case Type::DECIMAL:break;
-    case Type::LIST:break;
-    case Type::EXTENSION:break;
-    case Type::FIXED_SIZE_LIST:break;
-    case Type::DURATION:break;
+Status DistributedHashGroupBy(std::shared_ptr<Table> &table,
+                              const std::vector<int32_t> &index_cols,
+                              const std::vector<int32_t> &aggregate_cols,
+                              const std::vector<compute::AggregationOpId> &aggregate_ops,
+                              std::shared_ptr<Table> &output) {
+  if (aggregate_cols.size() != aggregate_ops.size()) {
+    return Status(Code::Invalid, "aggregate_cols size != aggregate_ops size");
   }
-  return nullptr;
-}
 
-LocalGroupByFptr PickLocalPipelineGroupByFptr(const std::shared_ptr<cylon::DataType> &idx_data_type) {
-  switch (idx_data_type->getType()) {
-    case Type::BOOL: return &LocalPipelinedGroupBy<arrow::BooleanType>;
-    case Type::UINT8: return &LocalPipelinedGroupBy<arrow::UInt8Type>;
-    case Type::INT8: return &LocalPipelinedGroupBy<arrow::Int8Type>;
-    case Type::UINT16: return &LocalPipelinedGroupBy<arrow::UInt16Type>;
-    case Type::INT16: return &LocalPipelinedGroupBy<arrow::Int16Type>;
-    case Type::UINT32: return &LocalPipelinedGroupBy<arrow::UInt32Type>;
-    case Type::INT32: return &LocalPipelinedGroupBy<arrow::Int32Type>;
-    case Type::UINT64: return &LocalPipelinedGroupBy<arrow::UInt64Type>;
-    case Type::INT64: return &LocalPipelinedGroupBy<arrow::Int64Type>;
-    case Type::FLOAT: return &LocalPipelinedGroupBy<arrow::FloatType>;
-    case Type::DOUBLE: return &LocalPipelinedGroupBy<arrow::DoubleType>;
-    case Type::HALF_FLOAT:break;
-    case Type::STRING:break;
-    case Type::BINARY:break;
-    case Type::FIXED_SIZE_BINARY:break;
-    case Type::DATE32:break;
-    case Type::DATE64:break;
-    case Type::TIMESTAMP:break;
-    case Type::TIME32:break;
-    case Type::TIME64:break;
-    case Type::INTERVAL:break;
-    case Type::DECIMAL:break;
-    case Type::LIST:break;
-    case Type::EXTENSION:break;
-    case Type::FIXED_SIZE_LIST:break;
-    case Type::DURATION:break;
-  }
-  return nullptr;
-}
-
-cylon::Status GroupBy(std::shared_ptr<Table> &table,
-                      int64_t index_col,
-                      const std::vector<int64_t> &aggregate_cols,
-                      const std::vector<cylon::GroupByAggregationOp> &aggregate_ops,
-                      std::shared_ptr<Table> &output) {
-  LocalGroupByFptr group_by_fptr = PickLocalHashGroupByFptr(table->GetColumn(index_col)->GetDataType());
-
-  Status status;
-
-  // first filter aggregation cols
-  std::vector<int64_t> project_cols = {index_col};
+  // first filter index + aggregation cols
+  std::vector<int32_t> project_cols(index_cols);
   project_cols.insert(project_cols.end(), aggregate_cols.begin(), aggregate_cols.end());
-
   std::shared_ptr<Table> projected_table;
-  if (!(status = cylon::Project(table, project_cols, projected_table)).is_ok()) {
-    LOG(FATAL) << "table projection failed! " << status.get_msg();
-    return status;
+  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Project(table, project_cols, projected_table))
+
+  // adjust local column indices for aggregations
+  std::vector<int32_t> indices_after_project(index_cols.size());
+  std::iota(indices_after_project.begin(), indices_after_project.end(), 0);
+
+  std::vector<std::pair<int32_t, compute::AggregationOpId>> agg_after_projection;
+  for (size_t i = 0; i < aggregate_cols.size(); i++) {
+    agg_after_projection.emplace_back(index_cols.size() + i, aggregate_ops[i]);
   }
 
   // do local group by
   std::shared_ptr<Table> local_table;
-  if (!(status = group_by_fptr(projected_table, aggregate_ops, local_table)).is_ok()) {
-    LOG(FATAL) << "Local group by failed! " << status.get_msg();
-    return status;
-  }
+  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(HashGroupBy(projected_table,
+                                                    indices_after_project,
+                                                    agg_after_projection,
+                                                    local_table))
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
-    if (!(status = cylon::Shuffle(local_table, {0}, local_table)).is_ok()) {
-      LOG(FATAL) << " table shuffle failed! " << status.get_msg();
-      return status;
-    }
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Shuffle(local_table, indices_after_project, local_table))
 
     // do local distribute again
-    if (!(status = group_by_fptr(local_table, aggregate_ops, output)).is_ok()) {
-      LOG(FATAL) << "Local group by failed! " << status.get_msg();
-      return status;
-    }
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(HashGroupBy(local_table, indices_after_project, agg_after_projection, output))
   } else {
     output = local_table;
   }
@@ -138,54 +65,53 @@ cylon::Status GroupBy(std::shared_ptr<Table> &table,
   return Status::OK();
 }
 
-Status PipelineGroupBy(std::shared_ptr<Table> &table,
-                       int64_t index_col,
-                       const std::vector<int64_t> &aggregate_cols,
-                       const std::vector<GroupByAggregationOp> &aggregate_ops,
-                       std::shared_ptr<Table> &output) {
-  LocalGroupByFptr group_by_fptr = PickLocalPipelineGroupByFptr(table->GetColumn(index_col)->GetDataType());
+Status DistributedHashGroupBy(std::shared_ptr<Table> &table,
+                              int32_t index_col,
+                              const std::vector<int32_t> &aggregate_cols,
+                              const std::vector<compute::AggregationOpId> &aggregate_ops,
+                              std::shared_ptr<Table> &output) {
+  return DistributedHashGroupBy(table, std::vector<int32_t>{index_col}, aggregate_cols, aggregate_ops, output);
+}
 
-  Status status;
+Status DistributedPipelineGroupBy(std::shared_ptr<Table> &table,
+                                  int32_t index_col,
+                                  const std::vector<int32_t> &aggregate_cols,
+                                  const std::vector<compute::AggregationOpId> &aggregate_ops,
+                                  std::shared_ptr<Table> &output) {
 
-  // first filter aggregation cols
-  std::vector<int64_t> project_cols = {index_col};
+  if (aggregate_cols.size() != aggregate_ops.size()) {
+    return Status(Code::Invalid, "aggregate_cols size != aggregate_ops size");
+  }
+
+  // first filter index + aggregation cols
+  std::vector<int32_t> project_cols{index_col};
   project_cols.insert(project_cols.end(), aggregate_cols.begin(), aggregate_cols.end());
-
   std::shared_ptr<Table> projected_table;
-  if (!(status = cylon::Project(table, project_cols, projected_table)).is_ok()) {
-    LOG(FATAL) << "table projection failed! " << status.get_msg();
-    return status;
+  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Project(table, project_cols, projected_table))
+
+  // adjust local column indices for aggregations
+  std::vector<std::pair<int32_t, compute::AggregationOpId>> agg_after_projection;
+  for (size_t i = 0; i < aggregate_cols.size(); i++) {
+    agg_after_projection.emplace_back(1 + i, aggregate_ops[i]);
   }
 
   // do local group by
   std::shared_ptr<Table> local_table;
-  if (!(status = group_by_fptr(projected_table, aggregate_ops, local_table)).is_ok()) {
-    LOG(FATAL) << "Local group by failed! " << status.get_msg();
-    return status;
-  }
+  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(PipelineGroupBy(projected_table, 0, agg_after_projection, local_table))
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
-    if (!(status = cylon::Shuffle(local_table, {0}, local_table)).is_ok()) {
-      LOG(FATAL) << " table shuffle failed! " << status.get_msg();
-      return status;
-    }
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Shuffle(local_table, {0}, local_table))
 
-//    // need to perform a sort to rearrange the shuffled table
-//    if (!(status = local_table->Sort(0, local_table)).is_ok()) {
-//      LOG(FATAL) << " table sort failed! " << status.get_msg();
-//      return status;
-//    }
-    // use hash groupby now, because the idx rows may loose order
-    group_by_fptr = PickLocalHashGroupByFptr(table->GetColumn(index_col)->GetDataType());
-    // do local group by again
-    if (!(status = group_by_fptr(local_table, aggregate_ops, output)).is_ok()) {
-      LOG(FATAL) << "Local group by failed! " << status.get_msg();
-      return status;
-    }
+    // sort the table after the shuffle
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Sort(local_table, 0, local_table))
+
+    // do local distribute again.
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(PipelineGroupBy(local_table, 0, agg_after_projection, output))
   } else {
     output = local_table;
   }
+  return Status::OK();
+}
 
-  return Status::OK();}
 }

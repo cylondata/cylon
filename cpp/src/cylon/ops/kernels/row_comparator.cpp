@@ -16,22 +16,16 @@
 
 bool cylon::kernel::RowComparator::operator()(const std::pair<int32_t, int64_t> &record1,
                                               const std::pair<int32_t, int64_t> &record2) const {
-  bool x = this->comparator->compare(this->tables->at(record1.first), record1.second,
-                                     this->tables->at(record2.first), record2.second) == 0;
-  return x;
+  return comparator->compare(tables->at(record1.first), record1.second,
+                            tables->at(record2.first), record2.second) == 0;
 }
 
 size_t cylon::kernel::RowComparator::operator()(const std::pair<int32_t, int64_t> &record) const {
-  size_t hash = this->row_hashing_kernel->Hash(this->tables->at(record.first), record.second);
-  return hash;
+  return row_hashing_kernel->Hash(tables->at(record.first), record.second);
 }
 
-cylon::kernel::RowComparator::RowComparator(const std::shared_ptr<CylonContext> &ctx,
-                                            const std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>> &tables,
-                                            const std::shared_ptr<arrow::Schema> &schema) {
-  this->tables = tables;
-  this->comparator = std::make_shared<cylon::TableRowComparator>(schema->fields());
-  this->row_hashing_kernel = std::make_shared<cylon::RowHashingKernel>(schema->fields(),
-                                                                       cylon::ToArrowPool(const_cast<std::shared_ptr<
-                                                                           cylon::CylonContext> &>(ctx)));
-}
+cylon::kernel::RowComparator::RowComparator(const std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>> &tables,
+                                            const std::shared_ptr<arrow::Schema> &schema)
+    : tables(tables),
+      comparator(std::make_shared<TableRowComparator>(schema->fields())),
+      row_hashing_kernel(std::make_shared<RowHashingKernel>(schema->fields())) {}

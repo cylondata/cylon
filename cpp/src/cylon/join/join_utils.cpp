@@ -25,16 +25,15 @@ namespace cylon {
 namespace join {
 namespace util {
 
-arrow::Status build_final_table_inplace_index(
-    size_t left_inplace_column, size_t right_inplace_column,
-    const std::shared_ptr<std::vector<int64_t>> &left_indices,
-    const std::shared_ptr<std::vector<int64_t>> &right_indices,
-    std::shared_ptr<arrow::UInt64Array> &left_index_sorted_column,
-    std::shared_ptr<arrow::UInt64Array> &right_index_sorted_column,
-    const std::shared_ptr<arrow::Table> &left_tab,
-    const std::shared_ptr<arrow::Table> &right_tab,
-    std::shared_ptr<arrow::Table> *final_table,
-    arrow::MemoryPool *memory_pool) {
+arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t right_inplace_column,
+                                              const std::vector<int64_t> &left_indices,
+                                              const std::vector<int64_t> &right_indices,
+                                              std::shared_ptr<arrow::UInt64Array> &left_index_sorted_column,
+                                              std::shared_ptr<arrow::UInt64Array> &right_index_sorted_column,
+                                              const std::shared_ptr<arrow::Table> &left_tab,
+                                              const std::shared_ptr<arrow::Table> &right_tab,
+                                              std::shared_ptr<arrow::Table> *final_table,
+                                              arrow::MemoryPool *memory_pool) {
   // creating joined schema
   std::vector<std::shared_ptr<arrow::Field>> fields;
   std::vector<std::shared_ptr<arrow::Field>> new_fields;
@@ -57,13 +56,15 @@ arrow::Status build_final_table_inplace_index(
   }
   auto schema = arrow::schema(fields);
 
-  std::shared_ptr<std::vector<int64_t>> indices_indexed = std::make_shared<std::vector<int64_t>>();
-  indices_indexed->reserve(left_indices->size());
+  std::vector<int64_t> indices_indexed;
+  indices_indexed.reserve(left_indices.size());
 
-  for (size_t i = 0; i < left_indices->size(); i++) {
-    int64_t v = (*left_indices)[i];
-    unsigned long kX = left_index_sorted_column->Value(v);
-    indices_indexed->push_back(kX);
+  for (long v : left_indices) {
+    if (v < 0){
+      indices_indexed.push_back(v);
+    } else {
+      indices_indexed.push_back(left_index_sorted_column->Value(v));
+    }
   }
   left_index_sorted_column.reset();
   std::vector<std::shared_ptr<arrow::Array>> data_arrays;
@@ -92,12 +93,14 @@ arrow::Status build_final_table_inplace_index(
     data_arrays.push_back(destination_col_array);
   }
 
-  indices_indexed->clear();
-  indices_indexed->reserve(right_indices->size());
-  for (size_t i = 0; i < right_indices->size(); i++) {
-    int64_t v = (*right_indices)[i];
-    unsigned long kX = right_index_sorted_column->Value(v);
-    indices_indexed->push_back(kX);
+  indices_indexed.clear();
+  indices_indexed.reserve(right_indices.size());
+  for (long v : right_indices) {
+    if (v < 0){
+      indices_indexed.push_back(v);
+    } else {
+      indices_indexed.push_back(right_index_sorted_column->Value(v));
+    }
   }
   right_index_sorted_column.reset();
   // build arrays for right tab
@@ -106,7 +109,7 @@ arrow::Status build_final_table_inplace_index(
     std::shared_ptr<arrow::ChunkedArray> ca = rvector[i];
     std::shared_ptr<arrow::Array> destination_col_array;
     arrow::Status status;
-    if (i == left_inplace_column) {
+    if (i == right_inplace_column) {
       status = cylon::util::copy_array_by_indices(right_indices,
                                                   ca->chunk(0),
                                                   &destination_col_array,
@@ -128,8 +131,8 @@ arrow::Status build_final_table_inplace_index(
   return arrow::Status::OK();
 }
 
-arrow::Status build_final_table(const std::shared_ptr<std::vector<int64_t>> &left_indices,
-                                const std::shared_ptr<std::vector<int64_t>> &right_indices,
+arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
+                                const std::vector<int64_t> &right_indices,
                                 const std::shared_ptr<arrow::Table> &left_tab,
                                 const std::shared_ptr<arrow::Table> &right_tab,
                                 std::shared_ptr<arrow::Table> *final_table,

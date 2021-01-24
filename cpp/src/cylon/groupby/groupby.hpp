@@ -15,26 +15,28 @@
 #ifndef CYLON_CPP_SRC_CYLON_GROUPBY_GROUPBY_HPP_
 #define CYLON_CPP_SRC_CYLON_GROUPBY_GROUPBY_HPP_
 
-#include <status.hpp>
-#include <table.hpp>
-#include <compute/aggregates.hpp>
-#include <map>
-
-#include "groupby_aggregate_ops.hpp"
+#include "../table.hpp"
+#include "../compute/aggregate_kernels.hpp"
 
 namespace cylon {
 
-Status GroupBy(std::shared_ptr<Table> &table,
-               int64_t index_col,
-               const std::vector<int64_t> &aggregate_cols,
-               const std::vector<GroupByAggregationOp> &aggregate_ops,
-               std::shared_ptr<Table> &output);
+Status DistributedHashGroupBy(std::shared_ptr<Table> &table,
+                              const std::vector<int32_t> &index_cols,
+                              const std::vector<int32_t> &aggregate_cols,
+                              const std::vector<compute::AggregationOpId> &aggregate_ops,
+                              std::shared_ptr<Table> &output);
 
-Status PipelineGroupBy(std::shared_ptr<Table> &table,
-               int64_t index_col,
-               const std::vector<int64_t> &aggregate_cols,
-               const std::vector<GroupByAggregationOp> &aggregate_ops,
-               std::shared_ptr<Table> &output);
+Status DistributedHashGroupBy(std::shared_ptr<Table> &table,
+                              int32_t index_col,
+                              const std::vector<int32_t> &aggregate_cols,
+                              const std::vector<compute::AggregationOpId> &aggregate_ops,
+                              std::shared_ptr<Table> &output);
+
+Status DistributedPipelineGroupBy(std::shared_ptr<Table> &table,
+                                  int32_t index_col,
+                                  const std::vector<int32_t> &aggregate_cols,
+                                  const std::vector<compute::AggregationOpId> &aggregate_ops,
+                                  std::shared_ptr<Table> &output);
 
 }
 

@@ -15,7 +15,7 @@
 #ifndef CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_
 #define CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_
 
-#include "parallel_op.hpp"
+#include "ops/api/parallel_op.hpp"
 
 namespace cylon {
 
@@ -26,14 +26,14 @@ class DisUnionOpConfig {
 class DisUnionOp : public RootOp {
 
  private:
-  std::shared_ptr<DisUnionOpConfig> config;
+  DisUnionOpConfig config;
 
  public:
   DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
              const std::shared_ptr<arrow::Schema> &schema,
              int id,
-             std::shared_ptr<ResultsCallback> &callback,
-             std::shared_ptr<DisUnionOpConfig> &config);
+             const ResultsCallback &callback,
+             const DisUnionOpConfig &config);
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_
