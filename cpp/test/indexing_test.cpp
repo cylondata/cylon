@@ -20,9 +20,15 @@ using namespace cylon;
 
 TEST_CASE("Index testing", "[indexing]") {
 std::string path1 = "../data/input/indexing_data.csv";
-std::vector<std::string> output_files {"../data/output/indexing_loc_1_hl.csv",
+
+std::vector<std::string> output_files_loc_1 {"../data/output/indexing_loc_1_hl.csv",
                                        "../data/output/indexing_loc_1_hl.csv",
                                        "../data/output/indexing_loc_1_r.csv"};
+
+std::vector<std::string> output_files_loc_2 {"../data/output/indexing_loc_2_hl.csv",
+                                             "../data/output/indexing_loc_2_hl.csv",
+                                             "../data/output/indexing_loc_2_r.csv"};
+
 std::vector<cylon::IndexingSchema> indexing_schemas = {cylon::IndexingSchema::Hash,
                                                        cylon::IndexingSchema::Linear,
                                                        cylon::IndexingSchema::Range};
@@ -33,11 +39,20 @@ REQUIRE(test::TestIndexBuildOperation(path1, schema) == 0);
 }
 }
 SECTION("testing loc index 1") {
-for(int64_t i=0; i < output_files.size(); i++) {
+for(size_t i=0; i < output_files_loc_1.size(); i++) {
   auto schema = indexing_schemas.at(i);
-  auto output_file = output_files.at(i);
+  auto output_file = output_files_loc_1.at(i);
 REQUIRE(test::TestIndexLocOperation1(path1, schema, output_file) == 0);
 }
 
+SECTION("testing loc index 2") {
+for(size_t i = 0; i<output_files_loc_2.size(); i++) {
+  auto schema = indexing_schemas.at(i);
+  auto output_file = output_files_loc_2.at(i);
+  REQUIRE(test::TestIndexLocOperation2(path1, schema, output_file) == 0);
 }
+}
+
+}
+
 }
