@@ -96,10 +96,6 @@ int main(int argc, char *argv[]) {
 
   test_iloc_operations();
 
-//  const void * ptr = "st1";
-//
-//  const std::string *sptr = static_cast<const std::string*>(ptr);
-
 }
 
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
