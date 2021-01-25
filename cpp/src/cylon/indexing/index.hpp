@@ -36,13 +36,13 @@ class BaseIndex {
   };
 
   // TODO: virtual destructor
-  virtual Status LocationByValue(void *search_param,
+  virtual Status LocationByValue(const void *search_param,
                                  std::vector<int64_t> &find_index) = 0;
 
-  virtual Status LocationByValue(void *search_param, int64_t &find_index) = 0;
+  virtual Status LocationByValue(const void *search_param, int64_t &find_index) = 0;
 
-  virtual Status LocationByValue(void *search_param,
-                                 std::shared_ptr<arrow::Table> &input,
+  virtual Status LocationByValue(const void *search_param,
+                                 const std::shared_ptr<arrow::Table> &input,
                                  std::vector<int64_t> &filter_location,
                                  std::shared_ptr<arrow::Table> &output) = 0;
 
@@ -79,8 +79,8 @@ class HashIndex : public BaseIndex {
     map_ = map;
   };
 
-  Status LocationByValue(void *search_param,
-                         std::shared_ptr<arrow::Table> &input,
+  Status LocationByValue(const void *search_param,
+                         const std::shared_ptr<arrow::Table> &input,
                          std::vector<int64_t> &filter_locations,
                          std::shared_ptr<arrow::Table> &output) override {
 
@@ -125,9 +125,9 @@ class HashIndex : public BaseIndex {
     return Status::OK();
   }
 
-  Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
+  Status LocationByValue(const void *search_param, std::vector<int64_t> &find_index) override {
 
-    CTYPE val = *static_cast<CTYPE *>(search_param);
+    const CTYPE val = *static_cast<const CTYPE *>(search_param);
     auto ret = map_->equal_range(val);
     for (auto it = ret.first; it != ret.second; ++it) {
       find_index.push_back(it->second);
@@ -135,8 +135,8 @@ class HashIndex : public BaseIndex {
     return Status::OK();
   }
 
-  Status LocationByValue(void *search_param, int64_t &find_index) override {
-    CTYPE val = *static_cast<CTYPE *>(search_param);
+  Status LocationByValue(const void *search_param, int64_t &find_index) override {
+    const CTYPE val = *static_cast<const CTYPE *>(search_param);
     auto ret = map_->find(val);
     if (ret != map_->end()) {
       find_index = ret->second;
@@ -216,8 +216,8 @@ class HashIndex<arrow::StringType, arrow::util::string_view> : public BaseIndex 
     map_ = map;
   };
 
-  Status LocationByValue(void *search_param,
-                         std::shared_ptr<arrow::Table> &input,
+  Status LocationByValue(const void *search_param,
+                         const std::shared_ptr<arrow::Table> &input,
                          std::vector<int64_t> &filter_locations,
                          std::shared_ptr<arrow::Table> &output) override {
     LOG(INFO) << "Extract table for a given index";
@@ -260,9 +260,9 @@ class HashIndex<arrow::StringType, arrow::util::string_view> : public BaseIndex 
     return Status::OK();
   };
 
-  Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
+  Status LocationByValue(const void *search_param, std::vector<int64_t> &find_index) override {
     LOG(INFO) << "Finding row ids for a given index";
-    std::string *sp = static_cast<std::string *>(search_param);
+    const std::string *sp = static_cast<const std::string *>(search_param);
     arrow::util::string_view search_param_sv(*sp);
     auto ret = map_->equal_range(search_param_sv);
     for (auto it = ret.first; it != ret.second; ++it) {
@@ -271,9 +271,9 @@ class HashIndex<arrow::StringType, arrow::util::string_view> : public BaseIndex 
     return Status::OK();
   };
 
-  Status LocationByValue(void *search_param, int64_t &find_index) override {
+  Status LocationByValue(const void *search_param, int64_t &find_index) override {
     LOG(INFO) << "Finding row id for a given index";
-    std::string *sp = static_cast<std::string *>(search_param);
+    const std::string *sp = static_cast<const std::string *>(search_param);
     arrow::util::string_view search_param_sv(*sp);
     auto ret = map_->find(search_param_sv);
     if (ret != map_->end()) {
@@ -347,12 +347,12 @@ class HashIndex<arrow::StringType, arrow::util::string_view> : public BaseIndex 
 class RangeIndex : public BaseIndex {
  public:
   RangeIndex(int start, int size, int step, arrow::MemoryPool *pool);
-  Status LocationByValue(void *search_param,
-                         std::shared_ptr<arrow::Table> &input,
+  Status LocationByValue(const void *search_param,
+                         const std::shared_ptr<arrow::Table> &input,
                          std::vector<int64_t> &filter_locations,
                          std::shared_ptr<arrow::Table> &output) override;
-  Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override;
-  Status LocationByValue(void *search_param, int64_t &find_index) override;
+  Status LocationByValue(const void *search_param, std::vector<int64_t> &find_index) override;
+  Status LocationByValue(const void *search_param, int64_t &find_index) override;
   std::shared_ptr<arrow::Array> GetIndexAsArray() override;
   void SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) override;
   std::shared_ptr<arrow::Array> GetIndexArray() override;
@@ -382,8 +382,8 @@ class LinearIndex : public BaseIndex {
       : BaseIndex(col_id, size, pool), index_array_(index_array) {
   }
 
-  Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
-    CTYPE search_val = *static_cast<CTYPE *>(search_param);
+  Status LocationByValue(const void *search_param, std::vector<int64_t> &find_index) override {
+    const CTYPE search_val = *static_cast<const CTYPE *>(search_param);
     for (int64_t ix = 0; ix < index_array_->length(); ix++) {
       CTYPE val = index_array_->GetView(ix);
       if (search_val == val) {
@@ -393,8 +393,8 @@ class LinearIndex : public BaseIndex {
     return Status::OK();
   }
 
-  Status LocationByValue(void *search_param, int64_t &find_index) override {
-    CTYPE search_val = *static_cast<CTYPE *>(search_param);
+  Status LocationByValue(const void *search_param, int64_t &find_index) override {
+    const CTYPE search_val = *static_cast<const CTYPE *>(search_param);
     for (int64_t ix = 0; ix < index_array_->length(); ix++) {
       CTYPE val = index_array_->GetView(ix);
       if (search_val == val) {
@@ -404,8 +404,8 @@ class LinearIndex : public BaseIndex {
     }
     return Status::OK();
   }
-  Status LocationByValue(void *search_param,
-                         std::shared_ptr<arrow::Table> &input,
+  Status LocationByValue(const void *search_param,
+                         const std::shared_ptr<arrow::Table> &input,
                          std::vector<int64_t> &filter_location,
                          std::shared_ptr<arrow::Table> &output) override {
     arrow::Status arrow_status;
@@ -490,8 +490,8 @@ class LinearIndex<arrow::StringType, arrow::util::string_view> : public BaseInde
       : BaseIndex(col_id, size, pool), index_array_(index_array) {
   }
 
-  Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
-    std::string &sp = *(static_cast<std::string *>(search_param));
+  Status LocationByValue(const void *search_param, std::vector<int64_t> &find_index) override {
+    const std::string &sp = *(static_cast<const std::string *>(search_param));
     arrow::util::string_view search_param_sv(sp);
     for (int64_t ix = 0; ix < index_array_->length(); ix++) {
       arrow::util::string_view val = index_array_->GetView(ix);
@@ -501,8 +501,8 @@ class LinearIndex<arrow::StringType, arrow::util::string_view> : public BaseInde
     }
     return Status::OK();
   }
-  Status LocationByValue(void *search_param, int64_t &find_index) override {
-    std::string *sp = static_cast<std::string *>(search_param);
+  Status LocationByValue(const void *search_param, int64_t &find_index) override {
+    const std::string *sp = static_cast<const std::string *>(search_param);
     arrow::util::string_view search_param_sv(*sp);
     for (int64_t ix = 0; ix < index_array_->length(); ix++) {
       arrow::util::string_view val = index_array_->GetView(ix);
@@ -513,8 +513,8 @@ class LinearIndex<arrow::StringType, arrow::util::string_view> : public BaseInde
     }
     return Status::OK();
   }
-  Status LocationByValue(void *search_param,
-                         std::shared_ptr<arrow::Table> &input,
+  Status LocationByValue(const void *search_param,
+                         const std::shared_ptr<arrow::Table> &input,
                          std::vector<int64_t> &filter_location,
                          std::shared_ptr<arrow::Table> &output) override {
     LOG(INFO) << "Extract table for a given index";
