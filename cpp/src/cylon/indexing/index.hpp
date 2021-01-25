@@ -430,6 +430,7 @@ class LinearIndex<arrow::StringType, arrow::util::string_view> : public BaseInde
   Status LocationByValue(void *search_param, std::vector<int64_t> &find_index) override {
     std::string *sp = static_cast<std::string *>(search_param);
     arrow::util::string_view search_param_sv(*sp);
+    std::cout << "Loc search Param : " << *sp << "," << search_param_sv << std::endl;
     for (int64_t ix = 0; ix < index_array_->length(); ix++) {
       arrow::util::string_view val = index_array_->GetView(ix);
       if (search_param_sv == val) {

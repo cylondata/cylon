@@ -45,6 +45,12 @@ int test_hash_indexing();
 
 int test_linear_indexing();
 
+int test_iloc_operations();
+
+int test_loc_operations(cylon::IndexingSchema schema);
+
+int test_str_loc_operations(cylon::IndexingSchema schema);
+
 int test_range_indexing();
 
 int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
@@ -76,21 +82,32 @@ int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
  */
 
 
-
-
-
 int main(int argc, char *argv[]) {
   //indexing_simple_example();
   //test_hash_indexing();
   //test_linear_indexing();
   //indexing_benchmark();
-  test_range_indexing();
-}
+  //test_range_indexing();
+  std::vector<cylon::IndexingSchema> schemas{cylon::IndexingSchema::Range, cylon::IndexingSchema::Linear, cylon::Hash};
+//  for(auto schema : schemas) {
+//    test_loc_operations(schema);
+//  }
+//  for(size_t i=1; i < schemas.size() - 1; i++) {
+//    test_str_loc_operations(schemas.at(i));
+//  }
+  //test_iloc_operations();
 
-//template<typename Base, typename T>
-//inline bool instanceof(const T*) {
-//  return std::is_base_of<Base, T>::value;
-//}
+  typedef std::vector<void *> vector_void_star;
+
+  vector_void_star output_items;
+
+  std::vector<std::string> start_indices{"e", "k"};
+
+  for (size_t tx = 0; tx < start_indices.size(); tx++) {
+    std::string sval = start_indices.at(tx);
+    output_items.push_back(static_cast<void*>(&sval));
+  }
+}
 
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
 
@@ -206,7 +223,7 @@ int indexing_simple_example() {
   std::shared_ptr<cylon::Table> loc_tb1;
   status = base_indexer->loc(&start_index, &end_index, column, input1, loc_tb1);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     return 1;
   }
 
@@ -535,7 +552,12 @@ int build_str_index_from_values(std::shared_ptr<cylon::CylonContext> &ctx) {
   auto pool = cylon::ToArrowPool(ctx);
   arrow::StringBuilder string_builder(pool);
 
-  string_builder.AppendValues(ix_vals);
+  arrow_status = string_builder.AppendValues(ix_vals);
+
+  if (!arrow_status.ok()) {
+    return -1;
+  }
+
   arrow_status = string_builder.Finish(&index_values);
 
   if (!arrow_status.ok()) {
@@ -593,18 +615,22 @@ int build_array_from_vector(std::shared_ptr<cylon::CylonContext> &ctx) {
   return 0;
 }
 
-int test_hash_indexing() {
 
+
+int test_loc_operations(cylon::IndexingSchema schema) {
+  std::string func_title = "Testing Indexing Schema " + std::to_string(schema);
+  separator(func_title);
+  LOG(INFO) << "Testing Indexing Schema " << schema;
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
-  std::shared_ptr<cylon::Table> input, output;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
-  std::string test_file = "/tmp/duplicate_data_0.csv";
+  std::string test_file = "/tmp/indexing_data.csv";
   std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
   status = cylon::FromCSV(ctx, test_file, input, read_options);
 
@@ -617,55 +643,112 @@ int test_hash_indexing() {
 
   input->Print();
 
-  long start_index = 27;
-  long end_index = 123;
-  int64_t index_column = 0;
+  long start_index = 0;
+  long end_index = 5;
+  int64_t column = 0;
+  int start_column = 0;
+  int end_column = 1;
+  std::vector<int> columns = {0, 1};
+  typedef std::vector<void *> vector_void_star;
+
+  vector_void_star output_items;
+
+  std::vector<long> start_indices = {4, 1};
+
+  for (size_t tx = 0; tx < start_indices.size(); tx++) {
+    output_items.push_back(reinterpret_cast<void *const>(start_indices.at(tx)));
+  }
   bool drop_index = true;
 
-  std::shared_ptr<cylon::BaseIndex> index, loc_index;
-  cylon::IndexUtil::BuildHashIndex(index, input, index_column);
+  std::shared_ptr<cylon::BaseIndex> index;
 
-  LOG(INFO) << "[Before HashIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
+  status = cylon::IndexUtil::BuildIndex(schema, input, 0, index);
 
-  input->Set_Index(index, drop_index);
+  if (!status.is_ok()) {
+    return -1;
+  }
 
-  LOG(INFO) << "[After HashIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
+  status = input->Set_Index(index, drop_index);
 
-  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>(cylon::IndexingSchema::Hash);
+  if (!status.is_ok()) {
+    return -1;
+  }
 
-  base_indexer->loc(&start_index, &end_index, index_column, input, output);
+  LOG(INFO) << "[RangeIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
 
-  LOG(INFO) << "Loc Result";
+  std::shared_ptr<cylon::BaseIndexer> loc_indexer = std::make_shared<cylon::LocIndexer>(schema);
+
+  LOG(INFO) << "LOC Mode 1 Example";
+
+  loc_indexer->loc(&start_index, &end_index, column, input, output);
 
   output->Print();
 
-  loc_index = output->GetIndex();
+  LOG(INFO) << "LOC Mode 2 Example";
 
-  auto arr = loc_index->GetIndexArray();
+  loc_indexer->loc(&start_index, &end_index, start_column, end_column, input, output);
 
-  LOG(INFO) << "Loc Table HashIndex";
+  output->Print();
 
-  print_arrow_array(arr);
+  LOG(INFO) << "LOC Mode 3 Example";
 
-  output->ResetIndex();
+  loc_indexer->loc(&start_index, &end_index, columns, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 4 Example";
+
+  loc_indexer->loc(&start_index, column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 5 Example";
+
+  loc_indexer->loc(&start_index, start_column, end_column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 6 Example";
+
+  loc_indexer->loc(&start_index, columns, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 7 Example";
+
+  loc_indexer->loc(output_items, column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 8 Example";
+
+  loc_indexer->loc(output_items, start_column, end_column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 9 Example";
+
+  loc_indexer->loc(output_items, columns, input, output);
 
   output->Print();
 
   return 0;
 }
 
-int test_linear_indexing() {
-  LOG(INFO) << "Testing Linear Indexing";
+int test_str_loc_operations(cylon::IndexingSchema schema) {
+  std::string func_title = "[String]Testing Indexing Schema " + std::to_string(schema);
+  separator(func_title);
+  LOG(INFO) << "Testing Indexing Schema " << schema;
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
-  std::shared_ptr<cylon::Table> input, output;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
-  std::string test_file = "/tmp/duplicate_data_0.csv";
+  std::string test_file = "/home/vibhatha/build/cylon/data/input/indexing_str_data.csv";
   std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
   status = cylon::FromCSV(ctx, test_file, input, read_options);
 
@@ -678,55 +761,113 @@ int test_linear_indexing() {
 
   input->Print();
 
-  long start_index = 4;
-  long end_index = 27;
-  int64_t index_column = 0;
+  std::string start_index = "f";
+  std::string end_index = "m";
+  int64_t column = 0;
+  int start_column = 0;
+  int end_column = 1;
+  std::vector<int> columns = {0, 1};
+  typedef std::vector<void *> vector_void_star;
+
+  vector_void_star output_items;
+
+  std::vector<std::string> start_indices = {"e", "k"};
+
+  for (size_t tx = 0; tx < start_indices.size(); tx++) {
+    std::string sval = start_indices.at(tx);
+    output_items.push_back(static_cast<void*>(&sval));
+  }
   bool drop_index = true;
 
-  std::shared_ptr<cylon::BaseIndex> index, loc_index;
-  status = cylon::IndexUtil::BuildLinearIndex(index, input, index_column);
-  if(!status.is_ok()) {
-    LOG(ERROR) << "Error occurred in building index";
+  std::shared_ptr<cylon::BaseIndex> index;
+
+  status = cylon::IndexUtil::BuildIndex(schema, input, 0, index);
+
+  if (!status.is_ok()) {
     return -1;
   }
 
-  LOG(INFO) << "[Before LinearIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
+  status = input->Set_Index(index, drop_index);
 
-  input->Set_Index(index, drop_index);
-
-  auto arr = index->GetIndexArray();
-
-  print_arrow_array(arr);
-
-  auto cast_index_arr = std::static_pointer_cast<arrow::Int64Array>(arr);
-
-  for (int64_t ix = 0; ix < cast_index_arr->length(); ix++) {
-    int64_t val = cast_index_arr->GetView(ix);
-    if (val == start_index) {
-      std::cout << "Value Found and Index is : " << ix << std::endl;
-    }
-  }
-
-  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>(cylon::IndexingSchema::Linear);
-
-  status = base_indexer->loc(&start_index, &end_index, index_column, input, output);
-
-  if(!status.is_ok()) {
-    LOG(ERROR) << "Error occurred in loc index";
+  if (!status.is_ok()) {
     return -1;
   }
 
-  LOG(INFO) << "Index Tables ";
+  LOG(INFO) << "[RangeIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
+
+  std::shared_ptr<cylon::BaseIndexer> loc_indexer = std::make_shared<cylon::LocIndexer>(schema);
+
+  LOG(INFO) << "LOC Mode 1 Example";
+
+  loc_indexer->loc(&start_index, &end_index, column, input, output);
+
   output->Print();
 
-  auto ixs = output->GetIndex()->GetIndexArray();
-  LOG(INFO) << "Index Values ";
-  print_arrow_array(ixs);
+  LOG(INFO) << "LOC Mode 2 Example";
+
+  loc_indexer->loc(&start_index, &end_index, start_column, end_column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 3 Example";
+
+  loc_indexer->loc(&start_index, &end_index, columns, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 4 Example";
+
+  loc_indexer->loc(&start_index, column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 5 Example";
+
+  loc_indexer->loc(&start_index, start_column, end_column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 6 Example";
+
+  loc_indexer->loc(&start_index, columns, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 7 Example";
+
+  status = loc_indexer->loc(output_items, column, input, output);
+
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in operation LOC Mode 7";
+  }
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 8 Example";
+
+  status = loc_indexer->loc(output_items, start_column, end_column, input, output);
+
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in operation LOC Mode 8";
+  }
+
+  output->Print();
+
+  LOG(INFO) << "LOC Mode 9 Example";
+
+  status = loc_indexer->loc(output_items, columns, input, output);
+
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in operation LOC Mode 9";
+  }
+
+  output->Print();
 
   return 0;
 }
 
-int test_range_indexing() {
+
+int test_iloc_operations() {
   LOG(INFO) << "Testing Linear Indexing";
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
@@ -752,98 +893,93 @@ int test_range_indexing() {
 
   long start_index = 0;
   long end_index = 5;
-  int64_t index_column = 0;
+  int64_t column = 0;
+  int start_column = 0;
+  int end_column = 1;
+  std::vector<int> columns = {0, 1};
+  typedef std::vector<void *> vector_void_star;
+
+  vector_void_star output_items;
+
+  std::vector<long> start_indices = {4, 1};
+
+  for (size_t tx = 0; tx < start_indices.size(); tx++) {
+    output_items.push_back(reinterpret_cast<void *const>(start_indices.at(tx)));
+  }
   bool drop_index = true;
 
-  std::shared_ptr<cylon::BaseIndex> index, loc_index, hash_index, linear_index, range_index;
+  std::shared_ptr<cylon::BaseIndex> index, loc_index, range_index;
 
   status = cylon::IndexUtil::BuildIndex(cylon::IndexingSchema::Range, input, 0, range_index);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     return -1;
   }
 
   status = input->Set_Index(range_index, drop_index);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     return -1;
   }
 
-  LOG(INFO) << "[Before LinearIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
+  LOG(INFO) << "[RangeIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
 
-  range_index = input->GetIndex();
+  std::shared_ptr<cylon::BaseIndexer> loc_indexer = std::make_shared<cylon::ILocIndexer>(cylon::IndexingSchema::Range);
 
-  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(range_index)) {
-    std::cout << "Range Index : " << rx->GetStart() << ", " << rx->GetSize() << ", " << rx->GetStep();
-  } else {
-    std::cout << typeid(index).name() << std::endl;
-  }
-  std::cout << std::endl;
 
-  std::shared_ptr<cylon::BaseIndexer> base_indexer = std::make_shared<cylon::LocIndexer>(cylon::IndexingSchema::Range);
+  LOG(INFO) << "iLOC Mode 1 Example";
 
-  status = base_indexer->loc(&start_index, &end_index, index_column, input, output);
+  loc_indexer->loc(&start_index, &end_index, column, input, output);
 
-  if(!status.is_ok()) {
-    LOG(ERROR) << "Error occurred in loc operation for range";
-    return 1;
-  }
-
-  LOG(INFO) << "Range Index Table 1 ";
   output->Print();
 
-  auto loc_output_index = output->GetIndex();
+  LOG(INFO) << "iLOC Mode 2 Example";
 
-//  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(loc_output_index)) {
-//    std::cout << "Range Index : " << rx->GetStart() << ", " << rx->GetSize() << ", " << rx->GetStep();
-//  } else {
-//    std::cout << typeid(index).name() << std::endl;
-//  }
-//  std::cout << std::endl;
-//
-//  typedef std::vector<void *> vector_void_star;
-//
-//  vector_void_star output_items;
-//
-//  std::vector<int64_t> start_indices_5 = {4, 1};
-//
-//  for (size_t tx = 0; tx < start_indices_5.size(); tx++) {
-//    output_items.push_back(reinterpret_cast<void *const>(start_indices_5.at(tx)));
-//  }
-//
-//  base_indexer->loc(output_items, index_column, input, output1);
-//
-//  LOG(INFO) << "Range Index Table 2 ";
-//  output1->Print();
-//
-//  auto loc_output_index1 = output1->GetIndex();
-//
-//  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(loc_output_index1)) {
-//    std::cout << "Range Index : " << rx->GetStart() << ", " << rx->GetSize() << ", " << rx->GetStep();
-//  } else {
-//    std::cout << typeid(index).name() << std::endl;
-//  }
-//  std::cout << std::endl;
-//
-//  auto hash_index_arr = hash_index->GetIndexArray();
-//  auto linear_index_arr = linear_index->GetIndexArray();
-//
-//  auto result_hash = arrow::compute::Unique(hash_index_arr);
-//  auto result_linear = arrow::compute::Unique(linear_index_arr);
-//
-//  if(!result_hash.ok()) {
-//    return -1;
-//  }
-//
-//  if(!result_linear.ok()) {
-//    return -1;
-//  }
-//
-//  auto hash_index_uq_ar = result_hash.ValueOrDie();
-//  auto linear_index_uq_ar = result_linear.ValueOrDie();
-//
-//  std::cout << "hash Uq comparison " << hash_index_arr->length() << ", " << hash_index_uq_ar->length() << std::endl;
-//  std::cout << "LInear Uq comparison " << linear_index_arr->length() << ", " << linear_index_uq_ar->length() << std::endl;
+  loc_indexer->loc(&start_index, &end_index, start_column, end_column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "iLOC Mode 3 Example";
+
+  loc_indexer->loc(&start_index, &end_index, columns, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "iLOC Mode 4 Example";
+
+  loc_indexer->loc(&start_index, column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "iLOC Mode 5 Example";
+
+  loc_indexer->loc(&start_index, start_column, end_column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "iLOC Mode 6 Example";
+
+  loc_indexer->loc(&start_index, columns, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "iLOC Mode 7 Example";
+
+  loc_indexer->loc(output_items, column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "iLOC Mode 8 Example";
+
+  loc_indexer->loc(output_items, start_column, end_column, input, output);
+
+  output->Print();
+
+  LOG(INFO) << "iLOC Mode 9 Example";
+
+  loc_indexer->loc(output_items, columns, input, output);
+
+  output->Print();
 
   return 0;
 }
@@ -858,3 +994,4 @@ int print_arrow_array(std::shared_ptr<arrow::Array> &arr) {
   std::cout << std::endl;
   return 0;
 }
+

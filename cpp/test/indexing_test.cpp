@@ -106,8 +106,6 @@ for(size_t i = 0; i<output_files.size(); i++) {
 }
 }
 
-
-
 }
 
 }

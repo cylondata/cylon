@@ -45,6 +45,7 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
 
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
+  // TODO : check if this statement can be replaced.
   if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
     LOG(INFO) << "Set Index for location output with RangeIndex";
     loc_index = std::make_shared<cylon::RangeIndex>(0, sub_index_locations.size(), 1, pool);
@@ -96,7 +97,7 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
   std::shared_ptr<arrow::Array> sub_index_arr;
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
-
+  // TODO : check if this statement can be replaced.
   if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
     LOG(INFO) << "Set Index for location output with RangeIndex";
     loc_index = std::make_shared<cylon::RangeIndex>(0, end_pos - start_pos, 1, pool);
@@ -122,20 +123,20 @@ cylon::Status GetLocFilterIndices(void *start_index,
   bool is_index_unique;
   status_build = cylon::CheckIsIndexValueUnique(start_index, index, is_index_unique);
 
-  if(!status_build.is_ok()) {
+  if (!status_build.is_ok()) {
     std::string error_msg = "Error occurred in checking uniqueness of index value";
     LOG(ERROR) << error_msg;
     return cylon::Status(cylon::Code::IndexError, error_msg);
   }
 
-  if(!is_index_unique) {
+  if (!is_index_unique) {
     LOG(ERROR) << "Index value must be unique";
     return cylon::Status(cylon::Code::KeyError);
   }
 
   cylon::CheckIsIndexValueUnique(end_index, index, is_index_unique);
 
-  if(!is_index_unique) {
+  if (!is_index_unique) {
     LOG(ERROR) << "Index value must be unique";
     return cylon::Status(cylon::Code::KeyError);
   }
@@ -211,6 +212,19 @@ cylon::Status FilterColumnsFromTable(std::shared_ptr<cylon::Table> &input_table,
   return cylon::Status::OK();
 }
 
+static cylon::Status ResolveILocIndices(std::vector<void *> &input_indices,
+                                        std::vector<int64_t> &output_indices) {
+  cylon::Status status;
+  for (size_t ix = 0; ix < input_indices.size(); ix++) {
+    std::vector<int64_t> filter_ix;
+    void * ix_val = input_indices.at(ix);
+    int64_t* ix_p_val = ((int64_t *) &ix_val);
+    int64_t val = *ix_p_val;
+    output_indices.push_back(val);
+  }
+  return cylon::Status::OK();
+}
+
 cylon::Status ResolveLocIndices(std::vector<void *> &input_indices,
                                 std::shared_ptr<cylon::BaseIndex> &index,
                                 std::vector<int64_t> &output_indices) {
@@ -243,7 +257,13 @@ cylon::Status GetTableFromIndices(std::shared_ptr<cylon::Table> &input_table,
   arrow::Int64Builder idx_builder(pool);
   const arrow::Datum input_table_datum(input_table->get_table());
 
-  idx_builder.AppendValues(filter_indices);
+  arrow_status = idx_builder.AppendValues(filter_indices);
+
+  if (!arrow_status.ok()) {
+    LOG(ERROR) << "Error occurred in appending filter indices";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+  }
+
   arrow_status = idx_builder.Finish(&out_idx);
 
   if (!arrow_status.ok()) {
@@ -674,6 +694,39 @@ cylon::IndexingSchema cylon::LocIndexer::GetIndexingSchema() {
  * ILocIndexer implementations
  * */
 
+//static cylon::Status CreateRangeIndexForIloc(std::shared_ptr<cylon::BaseIndex> &index,
+//                                             std::shared_ptr<cylon::Table> &table) {
+//  cylon::Status status;
+//  if (std::shared_ptr<cylon::RangeIndex> r = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
+//    index = r;
+//  } else {
+//    status = cylon::IndexUtil::BuildRangeIndex(index, table);
+//    if (!status.is_ok()) {
+//      LOG(ERROR) << "Error occurred in adding Range index in iloc operation";
+//      return status;
+//    }
+//  }
+//  return cylon::Status::OK();
+//}
+
+/**
+   * Implementation Note for feature enhancement
+   *
+   * When multi-indexing is supported. We can keep a range-index and any user provided multi-index schemas
+   * In such a scenario ILoc operations can be faciliated by calling the super class (LocIndexer) as ILocIndexer
+   * is extended from it. Here multi-indexing handling must be done
+   *
+   *    Example
+   *    -------
+   *    LOG(INFO) << "Calling ILoc operation mode 1";
+   *    status = cylon::LocIndexer::loc(start_index, end_index, start_column_index, end_column_index, input_table, output);
+   *
+   *    if (!status.is_ok()) {
+   *      LOG(ERROR) << "Error occurred in iloc operation";
+   *      return status;
+   *    }
+   *
+   * */
 
 
 cylon::Status cylon::ILocIndexer::loc(void *start_index,
@@ -681,11 +734,34 @@ cylon::Status cylon::ILocIndexer::loc(void *start_index,
                                       int column_index,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
+  LOG(INFO) << "ILOC Mode 1";
+  cylon::Status status;
+  std::shared_ptr<cylon::BaseIndex> range_index;
+  std::shared_ptr<cylon::Table> temp_out;
+  int64_t start_index_pos = *((int64_t *) start_index);
+  int64_t end_index_pos = *((int64_t *) end_index);
 
-//  auto index = input_table->GetIndex();
-//
-//  int64_t s_index = reinterpret_cast<int64_t>(start_index);
-//  int64_t e_index = reinterpret_cast<int64_t>(end_index);
+  status = SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on index range";
+    return status;
+  }
+  std::vector<int> filter_columns = {column_index};
+
+  status = FilterColumnsFromTable(temp_out, filter_columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on index range";
+    return status;
+  }
+  // default of ILocIndex based operation is a range index
+  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating range index for output table";
+    return status;
+  }
 
   return Status::OK();
 }
@@ -695,52 +771,332 @@ cylon::Status cylon::ILocIndexer::loc(void *start_index,
                                       int end_column_index,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  return Status();
+
+  LOG(INFO) << "ILOC Mode 2";
+  cylon::Status status;
+  std::shared_ptr<cylon::BaseIndex> range_index;
+  std::shared_ptr<cylon::Table> temp_out;
+  int64_t start_index_pos = *((int64_t *) start_index);
+  int64_t end_index_pos = *((int64_t *) end_index);
+
+  status = SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on index range";
+    return status;
+  }
+
+  // filter columns include both boundaries
+  std::vector<int> filter_columns;
+
+  status = GetColumnIndicesFromLimits(start_column_index, end_column_index, filter_columns);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating column range based column filter";
+    return status;
+  }
+
+  status = FilterColumnsFromTable(temp_out, filter_columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on index range";
+    return status;
+  }
+  // default of ILocIndex based operation is a range index
+  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating range index for output table";
+    return status;
+  }
+
+  return Status::OK();
 }
 cylon::Status cylon::ILocIndexer::loc(void *start_index,
                                       void *end_index,
                                       std::vector<int> &columns,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  return Status();
+  LOG(INFO) << "ILOC Mode 3";
+  cylon::Status status;
+  std::shared_ptr<cylon::BaseIndex> range_index;
+  std::shared_ptr<cylon::Table> temp_out;
+  int64_t start_index_pos = *((int64_t *) start_index);
+  int64_t end_index_pos = *((int64_t *) end_index);
+
+  status = SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on index range";
+    return status;
+  }
+
+  status = FilterColumnsFromTable(temp_out, columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on columns";
+    return status;
+  }
+  // default of ILocIndex based operation is a range index
+  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating range index for output table";
+    return status;
+  }
+
+  return Status::OK();
 }
 cylon::Status cylon::ILocIndexer::loc(void *indices,
                                       int column_index,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  return Status();
+  LOG(INFO) << "ILOC Mode 4";
+  cylon::Status status;
+  std::shared_ptr<cylon::BaseIndex> range_index;
+  std::shared_ptr<cylon::Table> temp_out;
+
+  int64_t index_pos = *((int64_t *) indices);
+
+  std::vector<int64_t> filter_indices;
+  filter_indices.push_back(index_pos);
+
+  status = GetTableFromIndices(input_table, filter_indices, temp_out);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Filtering table from indices failed!";
+    return status;
+  }
+
+  std::vector<int> columns = {column_index};
+
+  status = FilterColumnsFromTable(temp_out, columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on columns";
+    return status;
+  }
+  // default of ILocIndex based operation is a range index
+  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating range index for output table";
+    return status;
+  }
+
+  return Status::OK();
+
 }
 cylon::Status cylon::ILocIndexer::loc(void *indices,
                                       int start_column,
                                       int end_column,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  return Status();
+  LOG(INFO) << "ILOC Mode 5";
+  cylon::Status status;
+  std::shared_ptr<cylon::BaseIndex> range_index;
+  std::shared_ptr<cylon::Table> temp_out;
+
+  int64_t index_pos = *((int64_t *) indices);
+
+  std::vector<int64_t> filter_indices;
+  filter_indices.push_back(index_pos);
+
+  status = GetTableFromIndices(input_table, filter_indices, temp_out);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Filtering table from indices failed!";
+    return status;
+  }
+
+  // filter columns include both boundaries
+  std::vector<int> filter_columns;
+
+  status = GetColumnIndicesFromLimits(start_column, end_column, filter_columns);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating column range based column filter";
+    return status;
+  }
+
+  status = FilterColumnsFromTable(temp_out, filter_columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on index range";
+    return status;
+  }
+  // default of ILocIndex based operation is a range index
+  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating range index for output table";
+    return status;
+  }
+
+  return Status::OK();
 }
 cylon::Status cylon::ILocIndexer::loc(void *indices,
                                       std::vector<int> &columns,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  return Status();
+  LOG(INFO) << "ILOC Mode 6";
+  cylon::Status status;
+  std::shared_ptr<cylon::BaseIndex> range_index;
+  std::shared_ptr<cylon::Table> temp_out;
+
+  int64_t index_pos = *((int64_t *) indices);
+
+  std::vector<int64_t> filter_indices;
+  filter_indices.push_back(index_pos);
+
+  status = GetTableFromIndices(input_table, filter_indices, temp_out);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Filtering table from indices failed!";
+    return status;
+  }
+
+  status = FilterColumnsFromTable(temp_out, columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on index range";
+    return status;
+  }
+  // default of ILocIndex based operation is a range index
+  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating range index for output table";
+    return status;
+  }
+
+  return Status::OK();
 }
 cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
                                       int column,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  return Status();
+  LOG(INFO) << "ILoc Mode 7";
+  Status status;
+  std::shared_ptr<cylon::BaseIndex> range_index;
+  std::vector<int64_t> i_indices;
+  std::shared_ptr<cylon::Table> temp_out;
+  status = ResolveILocIndices(indices, i_indices);
+
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in iloc index resolving";
+  }
+
+  status = GetTableFromIndices(input_table, i_indices, temp_out);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Filtering table from indices failed!";
+    return status;
+  }
+
+  std::vector<int> columns{column};
+
+  status = FilterColumnsFromTable(temp_out, columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on index range";
+    return status;
+  }
+  // default of ILocIndex based operation is a range index
+  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating range index for output table";
+    return status;
+  }
+
+  return Status::OK();
 }
 cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
                                       int start_column_index,
                                       int end_column_index,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  return Status();
+  LOG(INFO) << "ILOC Mode 8";
+  Status status;
+  std::shared_ptr<cylon::BaseIndex> range_index;
+  std::vector<int64_t> i_indices;
+  std::shared_ptr<cylon::Table> temp_out;
+  status = ResolveILocIndices(indices, i_indices);
+
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in iloc index resolving";
+  }
+
+  status = GetTableFromIndices(input_table, i_indices, temp_out);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Filtering table from indices failed!";
+    return status;
+  }
+
+  std::vector<int> filter_columns;
+
+  status = GetColumnIndicesFromLimits(start_column_index, end_column_index, filter_columns);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating column range based column filter";
+    return status;
+  }
+
+  status = FilterColumnsFromTable(temp_out, filter_columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on index range";
+    return status;
+  }
+  // default of ILocIndex based operation is a range index
+  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating range index for output table";
+    return status;
+  }
+
+  return Status::OK();
 }
 cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
                                       std::vector<int> &columns,
                                       std::shared_ptr<cylon::Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  return Status();
+  LOG(INFO) << "ILOC Mode 9";
+  Status status;
+  std::shared_ptr<cylon::BaseIndex> range_index;
+  std::vector<int64_t> i_indices;
+  std::shared_ptr<cylon::Table> temp_out;
+  status = ResolveILocIndices(indices, i_indices);
+
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in iloc index resolving";
+  }
+
+  status = GetTableFromIndices(input_table, i_indices, temp_out);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Filtering table from indices failed!";
+    return status;
+  }
+
+  status = FilterColumnsFromTable(temp_out, columns, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in filtering table based on index range";
+    return status;
+  }
+  // default of ILocIndex based operation is a range index
+  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating range index for output table";
+    return status;
+  }
+
+  return Status::OK();
 }
 cylon::IndexingSchema cylon::ILocIndexer::GetIndexingSchema() {
   return indexing_schema_;
@@ -766,8 +1122,8 @@ cylon::Status cylon::CheckIsIndexValueUnique(void *index_value,
     case arrow::Type::DOUBLE:return IsIndexValueUnique<arrow::DoubleType>(index_value, index, is_unique);
     case arrow::Type::STRING:
       return IsIndexValueUnique<arrow::StringType, arrow::util::string_view>(index_value,
-                                                                            index,
-                                                                            is_unique);
+                                                                             index,
+                                                                             is_unique);
     case arrow::Type::BINARY:break;
     case arrow::Type::FIXED_SIZE_BINARY:break;
     case arrow::Type::DATE32:break;

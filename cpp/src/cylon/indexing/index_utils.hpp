@@ -69,6 +69,7 @@ class IndexUtil {
                                          std::shared_ptr<cylon::BaseIndex> &index) {
 
     index = std::make_shared<RangeIndex>(0, index_values->length(), 1, pool);
+    index->SetIndexArray(index_values);
     return Status::OK();
   }
 

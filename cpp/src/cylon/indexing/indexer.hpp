@@ -202,9 +202,9 @@ class LocIndexer : public BaseIndexer {
  * iLoc operations
  * */
 
-class ILocIndexer : public BaseIndexer {
+class ILocIndexer : public LocIndexer {
  public:
-  ILocIndexer(IndexingSchema indexing_schema) : BaseIndexer(), indexing_schema_(indexing_schema) {
+  ILocIndexer(IndexingSchema indexing_schema) : LocIndexer(indexing_schema), indexing_schema_(indexing_schema) {
 
   };
 
