@@ -46,43 +46,44 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
   // TODO : check if this statement can be replaced.
-  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
-    LOG(INFO) << "Set Index for location output with RangeIndex";
-    loc_index = std::make_shared<cylon::RangeIndex>(0, sub_index_locations.size(), 1, pool);
-  } else {
-    LOG(INFO) << "Set Index for location output with Non-RangeIndex";
-    auto index_arr = index->GetIndexArray();
-    arrow::Int64Builder builder(pool);
-    status = builder.AppendValues(sub_index_locations);
+//  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
+//    LOG(INFO) << "Set Index for location output with RangeIndex";
+//    loc_index = std::make_shared<cylon::RangeIndex>(0, sub_index_locations.size(), 1, pool);
+//  }
+//  else {
+  LOG(INFO) << "Set Index for location output with Non-RangeIndex";
+  auto index_arr = index->GetIndexArray();
+  arrow::Int64Builder builder(pool);
+  status = builder.AppendValues(sub_index_locations);
 
-    if (!status.ok()) {
-      LOG(ERROR) << "HashIndex array builder append failed!";
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
-    }
-
-    status = builder.Finish(&sub_index_pos_arr);
-
-    if (!status.ok()) {
-      LOG(ERROR) << "HashIndex array builder finish failed!";
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
-    }
-
-    arrow::Result<arrow::Datum> datum = arrow::compute::Take(index_arr, sub_index_pos_arr);
-
-    if (!datum.status().ok()) {
-      LOG(ERROR) << "Sub HashIndex array creation failed!";
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(datum.status());
-    }
-
-    sub_index_arr = datum.ValueOrDie().make_array();
-
-    cylon_status = BuildIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
-
-    if (!cylon_status.is_ok()) {
-      LOG(ERROR) << "Error occurred in resolving kernel for index array building";
-      return cylon_status;
-    }
+  if (!status.ok()) {
+    LOG(ERROR) << "HashIndex array builder append failed!";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
   }
+
+  status = builder.Finish(&sub_index_pos_arr);
+
+  if (!status.ok()) {
+    LOG(ERROR) << "HashIndex array builder finish failed!";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
+  }
+
+  arrow::Result<arrow::Datum> datum = arrow::compute::Take(index_arr, sub_index_pos_arr);
+
+  if (!datum.status().ok()) {
+    LOG(ERROR) << "Sub HashIndex array creation failed!";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(datum.status());
+  }
+
+  sub_index_arr = datum.ValueOrDie().make_array();
+
+  cylon_status = BuildIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
+
+  if (!cylon_status.is_ok()) {
+    LOG(ERROR) << "Error occurred in resolving kernel for index array building";
+    return cylon_status;
+  }
+//  }
 
   output->Set_Index(loc_index, false);
   return cylon::Status::OK();
@@ -98,15 +99,16 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
   // TODO : check if this statement can be replaced.
-  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
-    LOG(INFO) << "Set Index for location output with RangeIndex";
-    loc_index = std::make_shared<cylon::RangeIndex>(0, end_pos - start_pos, 1, pool);
-  } else {
+//  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
+//    LOG(INFO) << "Set Index for location output with RangeIndex";
+//    loc_index = std::make_shared<cylon::RangeIndex>(0, end_pos - start_pos, 1, pool);
+//  }
+//  else {
     LOG(INFO) << "Set Index for location output with Non-RangeIndex";
     auto index_arr = index->GetIndexArray();
     sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
     BuildIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
-  }
+//  }
 
   output->Set_Index(loc_index, false);
 
@@ -216,10 +218,7 @@ static cylon::Status ResolveILocIndices(std::vector<void *> &input_indices,
                                         std::vector<int64_t> &output_indices) {
   cylon::Status status;
   for (size_t ix = 0; ix < input_indices.size(); ix++) {
-    std::vector<int64_t> filter_ix;
-    void * ix_val = input_indices.at(ix);
-    int64_t* ix_p_val = ((int64_t *) &ix_val);
-    int64_t val = *ix_p_val;
+    int64_t val = *static_cast<int64_t *>(input_indices.at(ix));
     output_indices.push_back(val);
   }
   return cylon::Status::OK();
@@ -983,7 +982,7 @@ cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
   std::shared_ptr<cylon::Table> temp_out;
   status = ResolveILocIndices(indices, i_indices);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in iloc index resolving";
   }
 
@@ -1024,7 +1023,7 @@ cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
   std::shared_ptr<cylon::Table> temp_out;
   status = ResolveILocIndices(indices, i_indices);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in iloc index resolving";
   }
 
@@ -1071,7 +1070,7 @@ cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
   std::shared_ptr<cylon::Table> temp_out;
   status = ResolveILocIndices(indices, i_indices);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in iloc index resolving";
   }
 

@@ -66,7 +66,6 @@ cylon::Status IsIndexValueUnique<arrow::StringType, arrow::util::string_view>(vo
       break;
     }
   }
-  std::cout << search_param_sv << ":: Find count : " << find_cout << "," << is_unique << std::endl;
   return cylon::Status::OK();
 }
 
