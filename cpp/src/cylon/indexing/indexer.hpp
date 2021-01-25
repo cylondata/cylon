@@ -104,31 +104,31 @@ class BaseIndexer {
                      const std::shared_ptr<Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
-  virtual Status loc(void *indices,
-                     int start_column,
-                     int end_column,
-                     std::shared_ptr<cylon::Table> &input_table,
+  virtual Status loc(const void *indices,
+                     const int start_column,
+                     const int end_column,
+                     const std::shared_ptr<Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
-  virtual Status loc(void *indices,
-                     std::vector<int> &columns,
-                     std::shared_ptr<cylon::Table> &input_table,
+  virtual Status loc(const void *indices,
+                     const std::vector<int> &columns,
+                     const std::shared_ptr<Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
-  virtual Status loc(std::vector<void *> &indices,
-                     int column,
-                     std::shared_ptr<cylon::Table> &input_table,
+  virtual Status loc(const std::vector<void *> &indices,
+                     const int column,
+                     const std::shared_ptr<Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
-  virtual Status loc(std::vector<void *> &indices,
-                     int start_column_index,
-                     int end_column_index,
-                     std::shared_ptr<cylon::Table> &input_table,
+  virtual Status loc(const std::vector<void *> &indices,
+                     const int start_column_index,
+                     const int end_column_index,
+                     const std::shared_ptr<Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
-  virtual Status loc(std::vector<void *> &indices,
-                     std::vector<int> &columns,
-                     std::shared_ptr<cylon::Table> &input_table,
+  virtual Status loc(const std::vector<void *> &indices,
+                     const std::vector<int> &columns,
+                     const std::shared_ptr<Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
   virtual IndexingSchema GetIndexingSchema() = 0;
@@ -167,27 +167,27 @@ class LocIndexer : public BaseIndexer {
              const int column_index,
              const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(void *indices,
-             int start_column,
-             int end_column,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *indices,
+             const int start_column,
+             const int end_column,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(void *indices,
-             std::vector<int> &columns,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *indices,
+             const std::vector<int> &columns,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(std::vector<void *> &indices,
-             int column,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const std::vector<void *> &indices,
+             const int column,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(std::vector<void *> &indices,
-             int start_column_index,
-             int end_column_index,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const std::vector<void *> &indices,
+             const int start_column_index,
+             const int end_column_index,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(std::vector<void *> &indices,
-             std::vector<int> &columns,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const std::vector<void *> &indices,
+             const std::vector<int> &columns,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
 
   IndexingSchema GetIndexingSchema() override;
@@ -227,27 +227,27 @@ class ILocIndexer : public LocIndexer {
              const int column_index,
              const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(void *indices,
-             int start_column,
-             int end_column,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *indices,
+             const int start_column,
+             const int end_column,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(void *indices,
-             std::vector<int> &columns,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *indices,
+             const std::vector<int> &columns,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(std::vector<void *> &indices,
-             int column,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const std::vector<void *> &indices,
+             const int column,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(std::vector<void *> &indices,
-             int start_column_index,
-             int end_column_index,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const std::vector<void *> &indices,
+             const int start_column_index,
+             const int end_column_index,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(std::vector<void *> &indices,
-             std::vector<int> &columns,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const std::vector<void *> &indices,
+             const std::vector<int> &columns,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
 
   IndexingSchema GetIndexingSchema() override;
