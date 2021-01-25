@@ -45,12 +45,7 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
 
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
-  // TODO : check if this statement can be replaced.
-//  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
-//    LOG(INFO) << "Set Index for location output with RangeIndex";
-//    loc_index = std::make_shared<cylon::RangeIndex>(0, sub_index_locations.size(), 1, pool);
-//  }
-//  else {
+
   LOG(INFO) << "Set Index for location output with Non-RangeIndex";
   auto index_arr = index->GetIndexArray();
   arrow::Int64Builder builder(pool);
@@ -83,7 +78,6 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
     LOG(ERROR) << "Error occurred in resolving kernel for index array building";
     return cylon_status;
   }
-//  }
 
   output->Set_Index(loc_index, false);
   return cylon::Status::OK();
@@ -98,17 +92,11 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
   std::shared_ptr<arrow::Array> sub_index_arr;
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
-  // TODO : check if this statement can be replaced.
-//  if (std::shared_ptr<cylon::RangeIndex> rx = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
-//    LOG(INFO) << "Set Index for location output with RangeIndex";
-//    loc_index = std::make_shared<cylon::RangeIndex>(0, end_pos - start_pos, 1, pool);
-//  }
-//  else {
-    LOG(INFO) << "Set Index for location output with Non-RangeIndex";
-    auto index_arr = index->GetIndexArray();
-    sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
-    BuildIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
-//  }
+
+  LOG(INFO) << "Set Index for location output with Non-RangeIndex";
+  auto index_arr = index->GetIndexArray();
+  sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
+  BuildIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
 
   output->Set_Index(loc_index, false);
 
@@ -757,6 +745,8 @@ cylon::Status cylon::ILocIndexer::loc(void *start_index,
   // default of ILocIndex based operation is a range index
   status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
 
+  output->Set_Index(range_index, false);
+
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating range index for output table";
     return status;
@@ -804,6 +794,8 @@ cylon::Status cylon::ILocIndexer::loc(void *start_index,
   // default of ILocIndex based operation is a range index
   status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
 
+  output->Set_Index(range_index, false);
+
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating range index for output table";
     return status;
@@ -838,6 +830,8 @@ cylon::Status cylon::ILocIndexer::loc(void *start_index,
   }
   // default of ILocIndex based operation is a range index
   status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  output->Set_Index(range_index, false);
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating range index for output table";
@@ -877,6 +871,8 @@ cylon::Status cylon::ILocIndexer::loc(void *indices,
   }
   // default of ILocIndex based operation is a range index
   status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  output->Set_Index(range_index, false);
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating range index for output table";
@@ -927,6 +923,8 @@ cylon::Status cylon::ILocIndexer::loc(void *indices,
   // default of ILocIndex based operation is a range index
   status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
 
+  output->Set_Index(range_index, false);
+
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating range index for output table";
     return status;
@@ -963,6 +961,8 @@ cylon::Status cylon::ILocIndexer::loc(void *indices,
   }
   // default of ILocIndex based operation is a range index
   status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  output->Set_Index(range_index, false);
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating range index for output table";
@@ -1003,6 +1003,8 @@ cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
   }
   // default of ILocIndex based operation is a range index
   status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+
+  output->Set_Index(range_index, false);
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating range index for output table";
@@ -1052,6 +1054,8 @@ cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
   // default of ILocIndex based operation is a range index
   status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
 
+  output->Set_Index(range_index, false);
+
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating range index for output table";
     return status;
@@ -1094,6 +1098,8 @@ cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
     LOG(ERROR) << "Error occurred in creating range index for output table";
     return status;
   }
+
+  output->Set_Index(range_index, false);
 
   return Status::OK();
 }
@@ -1147,5 +1153,5 @@ cylon::Status cylon::CheckIsIndexValueUnique(void *index_value,
     case arrow::Type::LARGE_LIST:break;
     case arrow::Type::MAX_ID:break;
   }
-  return cylon::Status();
+  return cylon::Status(cylon::Code::Invalid, "Invalid arrow data type");
 }

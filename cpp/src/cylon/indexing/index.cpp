@@ -61,7 +61,7 @@ cylon::Status CompareArraysForUniqueness(std::shared_ptr<arrow::Array> &index_ar
   Status s;
   auto result = arrow::compute::Unique(index_arr);
 
-  if(!result.ok()) {
+  if (!result.ok()) {
     LOG(ERROR) << "Error occurred in unique operation on index array";
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
   }
@@ -87,17 +87,28 @@ Status RangeIndex::LocationByValue(void *search_param,
   arrow::compute::ExecContext fn_ctx(GetPool());
   arrow::Int64Builder idx_builder(GetPool());
   const arrow::Datum input_table(input);
-  std::vector<int64_t> filter_vals;
 
-  LocationByValue(search_param, filter_vals);
+  LocationByValue(search_param, filter_locations);
 
-  idx_builder.AppendValues(filter_vals);
+  arrow_status = idx_builder.AppendValues(filter_locations);
+  if (!arrow_status.ok()) {
+    LOG(ERROR) << "Failed appending filter locations";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+  }
+
   arrow_status = idx_builder.Finish(&out_idx);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+
+  if (!arrow_status.ok()) {
+    LOG(ERROR) << "Failed index array builder finish";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+  }
   const arrow::Datum filter_indices(out_idx);
   arrow::Result<arrow::Datum>
       result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+  if (!result.ok()) {
+    LOG(ERROR) << "Failed in filtering table by filter indices";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+  }
   output = result.ValueOrDie().table();
   return Status::OK();
 }
@@ -123,7 +134,8 @@ int RangeIndex::GetStep() const {
 Status RangeIndex::LocationByValue(void *search_param, std::vector<int64_t> &find_index) {
   int64_t val = *((int64_t *) search_param);
   if (!(val >= start_ && val < end_)) {
-    LOG(ERROR) << "0:Invalid Key, it must be in the range of 0, num of records: " << val << "," << start_ << "," << end_;
+    LOG(ERROR) << "0:Invalid Key, it must be in the range of 0, num of records: " << val << "," << start_ << ","
+               << end_;
     return Status(cylon::Code::KeyError);
   }
   find_index.push_back(val);
