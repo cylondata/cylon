@@ -241,7 +241,7 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std:
  * @param path file path
  * @return the status of the operation
  */
-Status WriteCSV(std::shared_ptr<cylon::Table> &table,
+Status WriteCSV(const std::shared_ptr<Table> &table,
                 const std::string &path,
                 const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
 

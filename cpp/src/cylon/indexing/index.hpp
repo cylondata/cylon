@@ -7,7 +7,7 @@
 #include "ctx/cylon_context.hpp"
 #include "ctx/arrow_memory_pool_utils.hpp"
 #include "util/macros.hpp"
-
+#include <glog/logging.h>
 #include <arrow/table.h>
 #include <arrow/api.h>
 #include <arrow/compute/api.h>

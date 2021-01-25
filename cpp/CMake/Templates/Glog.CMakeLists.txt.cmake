@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-
+project(GlogModule)
 include(ExternalProject)
 
 ExternalProject_Add(glog
