@@ -1,8 +1,8 @@
 #include "index_utils.hpp"
 
-cylon::Status cylon::IndexUtil::BuildHashIndex(std::shared_ptr<cylon::BaseIndex> &index,
-                                               std::shared_ptr<cylon::Table> &input,
-                                               int index_column) {
+cylon::Status cylon::IndexUtil::BuildHashIndex(const std::shared_ptr<Table> &input,
+                                        const int index_column,
+                                        std::shared_ptr<cylon::BaseIndex> &index) {
 
   std::shared_ptr<arrow::Table> arrow_out;
 
@@ -129,9 +129,9 @@ cylon::Status cylon::IndexUtil::BuildHashIndexFromArray(std::shared_ptr<arrow::A
 
   return cylon::Status::OK();
 }
-cylon::Status cylon::IndexUtil::BuildLinearIndex(std::shared_ptr<cylon::BaseIndex> &index,
-                                                 std::shared_ptr<cylon::Table> &input,
-                                                 int index_column) {
+cylon::Status cylon::IndexUtil::BuildLinearIndex(const std::shared_ptr<Table> &input,
+                                          const int index_column,
+                                          std::shared_ptr<cylon::BaseIndex> &index) {
   std::shared_ptr<arrow::Table> arrow_out;
 
   auto table_ = input->get_table();
@@ -231,8 +231,8 @@ cylon::Status cylon::IndexUtil::BuildLinearIndexFromArray(std::shared_ptr<arrow:
 
   return cylon::Status::OK();
 }
-cylon::Status cylon::IndexUtil::BuildRangeIndex(std::shared_ptr<cylon::BaseIndex> &index,
-                                                std::shared_ptr<cylon::Table> &input) {
+cylon::Status cylon::IndexUtil::BuildRangeIndex(const std::shared_ptr<Table> &input,
+                                         std::shared_ptr<cylon::BaseIndex> &index) {
   arrow::Status ar_status;
   auto ctx = input->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
@@ -264,17 +264,17 @@ cylon::Status cylon::IndexUtil::BuildRangeIndex(std::shared_ptr<cylon::BaseIndex
   index = std::move(bi);
   return cylon::Status::OK();
 }
-cylon::Status cylon::IndexUtil::BuildIndex(cylon::IndexingSchema schema,
-                                           std::shared_ptr<cylon::Table> &input,
-                                           int index_column,
+cylon::Status cylon::IndexUtil::BuildIndex(const IndexingSchema schema,
+                                           const std::shared_ptr<Table> &input,
+                                           const int index_column,
                                            std::shared_ptr<cylon::BaseIndex> &index) {
   switch (schema) {
-    case Range: return BuildRangeIndex(index, input);
-    case Linear: return BuildLinearIndex(index, input, index_column);
-    case Hash: return BuildHashIndex(index, input, index_column);
+    case Range: return BuildRangeIndex(input, index);
+    case Linear: return BuildLinearIndex(input, index_column, index);
+    case Hash: return BuildHashIndex(input, index_column, index);
     case BinaryTree:break;
     case BTree:break;
-    default: return BuildRangeIndex(index, input);
+    default: return BuildRangeIndex(input, index);
   }
   return cylon::Status(cylon::Code::Invalid, "Invalid indexing schema");
 }

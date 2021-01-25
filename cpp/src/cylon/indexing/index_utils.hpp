@@ -12,21 +12,20 @@ namespace cylon {
 class IndexUtil {
 
  public:
-  static Status BuildIndex(cylon::IndexingSchema schema,
-                           std::shared_ptr<cylon::Table> &input,
-                           int index_column,
+  static Status BuildIndex(const IndexingSchema schema,
+                           const std::shared_ptr<Table> &input,
+                           const int index_column,
                            std::shared_ptr<cylon::BaseIndex> &index);
 
-  static Status BuildHashIndex(std::shared_ptr<cylon::BaseIndex> &index,
-                               std::shared_ptr<cylon::Table> &input,
-                               int index_column);
+  static Status BuildHashIndex(const std::shared_ptr<Table> &input,
+                               const int index_column,
+                               std::shared_ptr<cylon::BaseIndex> &index);
 
-  static Status BuildLinearIndex(std::shared_ptr<cylon::BaseIndex> &index,
-                                 std::shared_ptr<cylon::Table> &input,
-                                 int index_column);
+  static Status BuildLinearIndex(const std::shared_ptr<Table> &input,
+                                 const int index_column,
+                                 std::shared_ptr<cylon::BaseIndex> &index);
 
-  static Status BuildRangeIndex(std::shared_ptr<cylon::BaseIndex> &index,
-                                std::shared_ptr<cylon::Table> &input);
+  static Status BuildRangeIndex(const std::shared_ptr<Table> &input, std::shared_ptr<cylon::BaseIndex> &index);
 
   static Status Find(std::shared_ptr<cylon::BaseIndex> &index,
                      std::shared_ptr<cylon::Table> &find_table,

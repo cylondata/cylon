@@ -743,7 +743,7 @@ cylon::Status cylon::ILocIndexer::loc(void *start_index,
     return status;
   }
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+  status = cylon::IndexUtil::BuildRangeIndex(output, range_index);
 
   output->Set_Index(range_index, false);
 
@@ -792,7 +792,7 @@ cylon::Status cylon::ILocIndexer::loc(void *start_index,
     return status;
   }
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+  status = cylon::IndexUtil::BuildRangeIndex(output, range_index);
 
   output->Set_Index(range_index, false);
 
@@ -829,7 +829,7 @@ cylon::Status cylon::ILocIndexer::loc(void *start_index,
     return status;
   }
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+  status = cylon::IndexUtil::BuildRangeIndex(output, range_index);
 
   output->Set_Index(range_index, false);
 
@@ -870,7 +870,7 @@ cylon::Status cylon::ILocIndexer::loc(void *indices,
     return status;
   }
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+  status = cylon::IndexUtil::BuildRangeIndex(output, range_index);
 
   output->Set_Index(range_index, false);
 
@@ -921,7 +921,7 @@ cylon::Status cylon::ILocIndexer::loc(void *indices,
     return status;
   }
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+  status = cylon::IndexUtil::BuildRangeIndex(output, range_index);
 
   output->Set_Index(range_index, false);
 
@@ -960,7 +960,7 @@ cylon::Status cylon::ILocIndexer::loc(void *indices,
     return status;
   }
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+  status = cylon::IndexUtil::BuildRangeIndex(output, range_index);
 
   output->Set_Index(range_index, false);
 
@@ -1002,7 +1002,7 @@ cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
     return status;
   }
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+  status = cylon::IndexUtil::BuildRangeIndex(output, range_index);
 
   output->Set_Index(range_index, false);
 
@@ -1052,7 +1052,7 @@ cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
     return status;
   }
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+  status = cylon::IndexUtil::BuildRangeIndex(output, range_index);
 
   output->Set_Index(range_index, false);
 
@@ -1092,7 +1092,7 @@ cylon::Status cylon::ILocIndexer::loc(std::vector<void *> &indices,
     return status;
   }
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildRangeIndex(range_index, output);
+  status = cylon::IndexUtil::BuildRangeIndex(output, range_index);
 
   if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in creating range index for output table";
