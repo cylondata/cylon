@@ -89,24 +89,17 @@ int main(int argc, char *argv[]) {
   //indexing_benchmark();
   //test_range_indexing();
   std::vector<cylon::IndexingSchema> schemas{cylon::IndexingSchema::Range, cylon::IndexingSchema::Linear, cylon::Hash};
-//  for(auto schema : schemas) {
-//    test_loc_operations(schema);
-//  }
-//  for(size_t i=1; i < schemas.size() - 1; i++) {
-//    test_str_loc_operations(schemas.at(i));
-//  }
-  //test_iloc_operations();
-
-  typedef std::vector<void *> vector_void_star;
-
-  vector_void_star output_items;
-
-  std::vector<std::string> start_indices{"e", "k"};
-
-  for (size_t tx = 0; tx < start_indices.size(); tx++) {
-    std::string sval = start_indices.at(tx);
-    output_items.push_back(static_cast<void*>(&sval));
+  for (auto schema : schemas) {
+    test_loc_operations(schema);
   }
+
+  for (size_t i = 1; i < schemas.size(); i++) {
+    test_str_loc_operations(schemas.at(i));
+  }
+
+  test_iloc_operations();
+
+
 }
 
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
@@ -615,10 +608,8 @@ int build_array_from_vector(std::shared_ptr<cylon::CylonContext> &ctx) {
   return 0;
 }
 
-
-
 int test_loc_operations(cylon::IndexingSchema schema) {
-  std::string func_title = "Testing Indexing Schema " + std::to_string(schema);
+  std::string func_title = "[Numeric] Testing Indexing Schema " + std::to_string(schema);
   separator(func_title);
   LOG(INFO) << "Testing Indexing Schema " << schema;
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
@@ -656,7 +647,8 @@ int test_loc_operations(cylon::IndexingSchema schema) {
   std::vector<long> start_indices = {4, 1};
 
   for (size_t tx = 0; tx < start_indices.size(); tx++) {
-    output_items.push_back(reinterpret_cast<void *const>(start_indices.at(tx)));
+    long *val = new long(start_indices.at(tx));
+    output_items.push_back(static_cast<void *>(val));
   }
   bool drop_index = true;
 
@@ -736,7 +728,7 @@ int test_loc_operations(cylon::IndexingSchema schema) {
 }
 
 int test_str_loc_operations(cylon::IndexingSchema schema) {
-  std::string func_title = "[String]Testing Indexing Schema " + std::to_string(schema);
+  std::string func_title = "[String] Testing Indexing Schema " + std::to_string(schema);
   separator(func_title);
   LOG(INFO) << "Testing Indexing Schema " << schema;
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
@@ -772,10 +764,17 @@ int test_str_loc_operations(cylon::IndexingSchema schema) {
   vector_void_star output_items;
 
   std::vector<std::string> start_indices = {"e", "k"};
-
+  LOG(INFO) << "Filling";
   for (size_t tx = 0; tx < start_indices.size(); tx++) {
-    std::string sval = start_indices.at(tx);
-    output_items.push_back(static_cast<void*>(&sval));
+    std::string *sval = new std::string(start_indices.at(tx));
+    std::cout << *sval << ":" << sval << std::endl;
+    output_items.push_back(static_cast<void *>(sval));
+  }
+  LOG(INFO) << "Loading";
+  for (size_t i = 0; i < output_items.size(); i++) {
+    void *pStr = output_items.at(i);
+    std::string &s = *(static_cast<std::string *>(pStr));
+    std::cout << s << ":" << &s << std::endl;
   }
   bool drop_index = true;
 
@@ -837,7 +836,7 @@ int test_str_loc_operations(cylon::IndexingSchema schema) {
 
   status = loc_indexer->loc(output_items, column, input, output);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in operation LOC Mode 7";
   }
 
@@ -847,7 +846,7 @@ int test_str_loc_operations(cylon::IndexingSchema schema) {
 
   status = loc_indexer->loc(output_items, start_column, end_column, input, output);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in operation LOC Mode 8";
   }
 
@@ -857,7 +856,7 @@ int test_str_loc_operations(cylon::IndexingSchema schema) {
 
   status = loc_indexer->loc(output_items, columns, input, output);
 
-  if(!status.is_ok()) {
+  if (!status.is_ok()) {
     LOG(ERROR) << "Error occurred in operation LOC Mode 9";
   }
 
@@ -866,9 +865,10 @@ int test_str_loc_operations(cylon::IndexingSchema schema) {
   return 0;
 }
 
-
 int test_iloc_operations() {
-  LOG(INFO) << "Testing Linear Indexing";
+  std::string func_title = "Testing ILoc ";
+  separator(func_title);
+  LOG(INFO) << func_title;
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
@@ -926,7 +926,6 @@ int test_iloc_operations() {
 
   std::shared_ptr<cylon::BaseIndexer> loc_indexer = std::make_shared<cylon::ILocIndexer>(cylon::IndexingSchema::Range);
 
-
   LOG(INFO) << "iLOC Mode 1 Example";
 
   loc_indexer->loc(&start_index, &end_index, column, input, output);
@@ -983,8 +982,6 @@ int test_iloc_operations() {
 
   return 0;
 }
-
-
 
 int print_arrow_array(std::shared_ptr<arrow::Array> &arr) {
   for (int64_t xi = 0; xi < arr->length(); xi++) {

@@ -525,7 +525,8 @@ int TestIndexLocOperation5(std::string &input_file_path,
   int end_column = 2;
 
   for (size_t tx = 0; tx < start_indices.size(); tx++) {
-    output_items.push_back(reinterpret_cast<void *const>(start_indices.at(tx)));
+    long *val = new long(start_indices.at(tx));
+    output_items.push_back(static_cast<void *>(val));
   }
 
   std::shared_ptr<cylon::BaseIndexer> indexer = std::make_shared<cylon::LocIndexer>(indexing_schema);
@@ -568,7 +569,8 @@ int TestIndexLocOperation6(std::string &input_file_path,
   std::vector<int> columns = {0, 2};
 
   for (size_t tx = 0; tx < start_indices.size(); tx++) {
-    output_items.push_back(reinterpret_cast<void *const>(start_indices.at(tx)));
+    long *val = new long(start_indices.at(tx));
+    output_items.push_back(static_cast<void *>(val));
   }
 
   std::shared_ptr<cylon::BaseIndexer> indexer = std::make_shared<cylon::LocIndexer>(indexing_schema);
@@ -685,7 +687,8 @@ int TestIndexLocOperation9(std::string &input_file_path,
   int column = 0;
 
   for (size_t tx = 0; tx < start_indices.size(); tx++) {
-    output_items.push_back(reinterpret_cast<void *const>(start_indices.at(tx)));
+    long *val = new long(start_indices.at(tx));
+    output_items.push_back(static_cast<void *>(val));
   }
 
   std::shared_ptr<cylon::BaseIndexer> indexer = std::make_shared<cylon::LocIndexer>(indexing_schema);

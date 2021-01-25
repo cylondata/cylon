@@ -233,7 +233,7 @@ cylon::Status ResolveLocIndices(std::vector<void *> &input_indices,
     std::vector<int64_t> filter_ix;
     void *val = input_indices.at(ix);
 
-    status = index->LocationByValue(&val, filter_ix);
+    status = index->LocationByValue(val, filter_ix);
     if (!status.is_ok()) {
       LOG(ERROR) << "Error in retrieving indices!";
       return status;
