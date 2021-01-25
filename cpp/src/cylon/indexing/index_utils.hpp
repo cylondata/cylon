@@ -27,11 +27,6 @@ class IndexUtil {
 
   static Status BuildRangeIndex(const std::shared_ptr<Table> &input, std::shared_ptr<cylon::BaseIndex> &index);
 
-  static Status Find(std::shared_ptr<cylon::BaseIndex> &index,
-                     std::shared_ptr<cylon::Table> &find_table,
-                     void *value,
-                     int index_column,
-                     std::shared_ptr<cylon::Table> &out);
 
   template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
   static Status BuildHashIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,

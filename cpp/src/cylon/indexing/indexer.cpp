@@ -103,8 +103,8 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
   return cylon::Status::OK();
 }
 
-cylon::Status GetLocFilterIndices(void *start_index,
-                                  void *end_index,
+cylon::Status GetLocFilterIndices(const void *start_index,
+                                  const void *end_index,
                                   int64_t &s_index,
                                   int64_t &e_index,
                                   std::shared_ptr<cylon::BaseIndex> &index) {
@@ -142,9 +142,9 @@ cylon::Status GetLocFilterIndices(void *start_index,
   return cylon::Status::OK();
 }
 
-cylon::Status SliceTableByRange(int64_t start_index,
-                                int64_t end_index,
-                                std::shared_ptr<cylon::Table> &input_table,
+cylon::Status SliceTableByRange(const int64_t start_index,
+                                const int64_t end_index,
+                                const std::shared_ptr<cylon::Table> &input_table,
                                 std::shared_ptr<cylon::Table> &output) {
 
   cylon::Status status_build;
@@ -304,10 +304,10 @@ cylon::Status GetTableByLocIndex(void *indices,
   return cylon::Status::OK();
 }
 
-cylon::Status cylon::LocIndexer::loc(void *start_index,
-                                     void *end_index,
-                                     int column_index,
-                                     std::shared_ptr<cylon::Table> &input_table,
+cylon::Status cylon::LocIndexer::loc(const void *start_index,
+                                     const void *end_index,
+                                     const int column_index,
+                                     const std::shared_ptr<Table> &input_table,
                                      std::shared_ptr<cylon::Table> &output) {
 
   Status status_build;
@@ -716,10 +716,10 @@ cylon::IndexingSchema cylon::LocIndexer::GetIndexingSchema() {
    * */
 
 
-cylon::Status cylon::ILocIndexer::loc(void *start_index,
-                                      void *end_index,
-                                      int column_index,
-                                      std::shared_ptr<cylon::Table> &input_table,
+cylon::Status cylon::ILocIndexer::loc(const void *start_index,
+                                      const void *end_index,
+                                      const int column_index,
+                                      const std::shared_ptr<Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
   LOG(INFO) << "ILOC Mode 1";
   cylon::Status status;
@@ -1107,7 +1107,7 @@ cylon::IndexingSchema cylon::ILocIndexer::GetIndexingSchema() {
   return indexing_schema_;
 }
 
-cylon::Status cylon::CheckIsIndexValueUnique(void *index_value,
+cylon::Status cylon::CheckIsIndexValueUnique(const void *index_value,
                                              std::shared_ptr<cylon::BaseIndex> &index,
                                              bool &is_unique) {
   auto index_arr = index->GetIndexArray();

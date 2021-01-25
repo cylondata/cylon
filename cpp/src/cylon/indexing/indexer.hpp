@@ -13,7 +13,7 @@ inline bool instanceof(const T *) {
 }
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
-cylon::Status IsIndexValueUnique(void *index_value, std::shared_ptr<cylon::BaseIndex> &index, bool &is_unique) {
+cylon::Status IsIndexValueUnique(const void *index_value, std::shared_ptr<cylon::BaseIndex> &index, bool &is_unique) {
   if (std::shared_ptr<cylon::RangeIndex> r = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
     LOG(INFO) << "Range Index detected";
     is_unique = true;
@@ -25,7 +25,7 @@ cylon::Status IsIndexValueUnique(void *index_value, std::shared_ptr<cylon::BaseI
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   auto index_arr = index->GetIndexArray();
   is_unique = true;
-  CTYPE index_val = *static_cast<CTYPE *>(index_value);
+  const CTYPE index_val = *static_cast<const CTYPE *>(index_value);
   int64_t find_cout = 0;
   auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_arr);
   for (int64_t ix = 0; ix < reader0->length(); ix++) {
@@ -42,7 +42,7 @@ cylon::Status IsIndexValueUnique(void *index_value, std::shared_ptr<cylon::BaseI
 }
 
 template<>
-cylon::Status IsIndexValueUnique<arrow::StringType, arrow::util::string_view>(void *index_value,
+cylon::Status IsIndexValueUnique<arrow::StringType, arrow::util::string_view>(const void *index_value,
                                                                               std::shared_ptr<cylon::BaseIndex> &index,
                                                                               bool &is_unique) {
   if (std::shared_ptr<cylon::RangeIndex> r = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
@@ -52,7 +52,7 @@ cylon::Status IsIndexValueUnique<arrow::StringType, arrow::util::string_view>(vo
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<arrow::StringType>::ArrayType;
   auto index_arr = index->GetIndexArray();
   is_unique = true;
-  std::string *sp = static_cast<std::string *>(index_value);
+  const std::string *sp = static_cast<const std::string *>(index_value);
   arrow::util::string_view search_param_sv(*sp);
   int64_t find_cout = 0;
   auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_arr);
@@ -69,7 +69,7 @@ cylon::Status IsIndexValueUnique<arrow::StringType, arrow::util::string_view>(vo
   return cylon::Status::OK();
 }
 
-cylon::Status CheckIsIndexValueUnique(void *index_value,
+cylon::Status CheckIsIndexValueUnique(const void *index_value,
                                       std::shared_ptr<cylon::BaseIndex> &index,
                                       bool &is_unique);
 
@@ -80,10 +80,10 @@ class BaseIndexer {
 
   }
 
-  virtual Status loc(void *start_index,
-                     void *end_index,
-                     int column_index,
-                     std::shared_ptr<cylon::Table> &input_table,
+  virtual Status loc(const void *start_index,
+                     const void *end_index,
+                     const int column_index,
+                     const std::shared_ptr<Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
   virtual Status loc(void *start_index,
@@ -147,10 +147,10 @@ class LocIndexer : public BaseIndexer {
 
   };
 
-  Status loc(void *start_index,
-             void *end_index,
-             int column_index,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *start_index,
+             const void *end_index,
+             const int column_index,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
   Status loc(void *start_index,
              void *end_index,
@@ -207,10 +207,10 @@ class ILocIndexer : public LocIndexer {
 
   };
 
-  Status loc(void *start_index,
-             void *end_index,
-             int column_index,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *start_index,
+             const void *end_index,
+             const int column_index,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
   Status loc(void *start_index,
              void *end_index,

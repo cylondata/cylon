@@ -25,24 +25,6 @@ cylon::Status cylon::IndexUtil::BuildHashIndex(const std::shared_ptr<Table> &inp
   return cylon::Status::OK();
 }
 
-cylon::Status cylon::IndexUtil::Find(std::shared_ptr<cylon::BaseIndex> &index,
-                                     std::shared_ptr<cylon::Table> &find_table,
-                                     void *value,
-                                     int index_column,
-                                     std::shared_ptr<cylon::Table> &out) {
-  std::shared_ptr<arrow::Table> ar_out;
-  auto table_ = find_table->get_table();
-  auto ctx = find_table->GetContext();
-  std::vector<int64_t> filter_locations;
-  if (index != nullptr && index->GetColId() == index_column) {
-    index->LocationByValue(value, table_, filter_locations, ar_out);
-    cylon::Table::FromArrowTable(ctx, ar_out, out);
-  } else {
-    LOG(ERROR) << "HashIndex column doesn't match the provided column";
-  }
-  return cylon::Status::OK();
-}
-
 cylon::Status cylon::IndexUtil::BuildHashIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
                                                         arrow::MemoryPool *pool,
                                                         std::shared_ptr<cylon::BaseIndex> &index) {
