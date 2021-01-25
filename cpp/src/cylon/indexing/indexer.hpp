@@ -13,7 +13,7 @@ inline bool instanceof(const T *) {
 }
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
-cylon::Status IsIndexValueUnique(const void *index_value, std::shared_ptr<cylon::BaseIndex> &index, bool &is_unique) {
+cylon::Status IsIndexValueUnique(const void *index_value, const std::shared_ptr<BaseIndex> &index, bool &is_unique) {
   if (std::shared_ptr<cylon::RangeIndex> r = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
     LOG(INFO) << "Range Index detected";
     is_unique = true;
@@ -43,7 +43,7 @@ cylon::Status IsIndexValueUnique(const void *index_value, std::shared_ptr<cylon:
 
 template<>
 cylon::Status IsIndexValueUnique<arrow::StringType, arrow::util::string_view>(const void *index_value,
-                                                                              std::shared_ptr<cylon::BaseIndex> &index,
+                                                                              const std::shared_ptr<BaseIndex> &index,
                                                                               bool &is_unique) {
   if (std::shared_ptr<cylon::RangeIndex> r = std::dynamic_pointer_cast<cylon::RangeIndex>(index)) {
     is_unique = true;
@@ -70,7 +70,7 @@ cylon::Status IsIndexValueUnique<arrow::StringType, arrow::util::string_view>(co
 }
 
 cylon::Status CheckIsIndexValueUnique(const void *index_value,
-                                      std::shared_ptr<cylon::BaseIndex> &index,
+                                      const std::shared_ptr<BaseIndex> &index,
                                       bool &is_unique);
 
 class BaseIndexer {
@@ -86,22 +86,22 @@ class BaseIndexer {
                      const std::shared_ptr<Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
-  virtual Status loc(void *start_index,
-                     void *end_index,
-                     int start_column_index,
-                     int end_column_index,
-                     std::shared_ptr<cylon::Table> &input_table,
+  virtual Status loc(const void *start_index,
+                     const void *end_index,
+                     const int start_column_index,
+                     const int end_column_index,
+                     const std::shared_ptr<Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
-  virtual Status loc(void *start_index,
-                     void *end_index,
-                     std::vector<int> &columns,
-                     std::shared_ptr<cylon::Table> &input_table,
+  virtual Status loc(const void *start_index,
+                     const void *end_index,
+                     const std::vector<int> &columns,
+                     const std::shared_ptr<Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
-  virtual Status loc(void *indices,
-                     int column_index,
-                     std::shared_ptr<cylon::Table> &input_table,
+  virtual Status loc(const void *indices,
+                     const int column_index,
+                     const std::shared_ptr<Table> &input_table,
                      std::shared_ptr<cylon::Table> &output) = 0;
 
   virtual Status loc(void *indices,
@@ -152,20 +152,20 @@ class LocIndexer : public BaseIndexer {
              const int column_index,
              const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(void *start_index,
-             void *end_index,
-             int start_column_index,
-             int end_column_index,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *start_index,
+             const void *end_index,
+             const int start_column_index,
+             const int end_column_index,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(void *start_index,
-             void *end_index,
-             std::vector<int> &columns,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *start_index,
+             const void *end_index,
+             const std::vector<int> &columns,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(void *indices,
-             int column_index,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *indices,
+             const int column_index,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
   Status loc(void *indices,
              int start_column,
@@ -212,20 +212,20 @@ class ILocIndexer : public LocIndexer {
              const int column_index,
              const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(void *start_index,
-             void *end_index,
-             int start_column_index,
-             int end_column_index,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *start_index,
+             const void *end_index,
+             const int start_column_index,
+             const int end_column_index,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(void *start_index,
-             void *end_index,
-             std::vector<int> &columns,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *start_index,
+             const void *end_index,
+             const std::vector<int> &columns,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
-  Status loc(void *indices,
-             int column_index,
-             std::shared_ptr<cylon::Table> &input_table,
+  Status loc(const void *indices,
+             const int column_index,
+             const std::shared_ptr<Table> &input_table,
              std::shared_ptr<cylon::Table> &output) override;
   Status loc(void *indices,
              int start_column,
