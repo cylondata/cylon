@@ -8,7 +8,7 @@ addons:
       - wget
       - pkg-config
 
-jdk: openjdk9
+jdk: openjdk10
 
 cache:
   directories:
