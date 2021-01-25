@@ -52,6 +52,8 @@ int test_str_loc_operations(cylon::IndexingSchema schema);
 
 int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
 
+int print_index_output(std::shared_ptr<cylon::Table> &output, std::string &message);
+
 
 //template<typename Base, typename T>
 //inline bool instanceof(const T*);
@@ -81,12 +83,14 @@ int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
 
 int main(int argc, char *argv[]) {
 
-  std::vector<cylon::IndexingSchema> schemas{cylon::IndexingSchema::Range, cylon::IndexingSchema::Linear, cylon::Hash};
+  std::vector<cylon::IndexingSchema> schemas{cylon::IndexingSchema::Range,
+                                             cylon::IndexingSchema::Linear,
+                                             cylon::IndexingSchema::Hash};
   for (auto schema : schemas) {
     test_loc_operations(schema);
   }
 
-  for (size_t i = 1; i < schemas.size(); i++) {
+  for (size_t i = 1; i < schemas.size() ; i++) {
     test_str_loc_operations(schemas.at(i));
   }
 
@@ -127,7 +131,6 @@ int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<c
 
   return 0;
 }
-
 
 void separator(std::string &statement) {
   std::cout << "===============================================" << std::endl;
@@ -300,6 +303,8 @@ int test_loc_operations(cylon::IndexingSchema schema) {
     return -1;
   }
 
+  std::string loc_output_msg;
+
   LOG(INFO) << "[RangeIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
 
   std::shared_ptr<cylon::BaseIndexer> loc_indexer = std::make_shared<cylon::LocIndexer>(schema);
@@ -308,58 +313,64 @@ int test_loc_operations(cylon::IndexingSchema schema) {
 
   loc_indexer->loc(&start_index, &end_index, column, input, output);
 
-  output->Print();
-
-  index_arr = output->GetIndex()->GetIndexArray();
-  print_arrow_array(index_arr);
+  loc_output_msg = " LOC 1 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 2 Example";
 
   loc_indexer->loc(&start_index, &end_index, start_column, end_column, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 2 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 3 Example";
 
   loc_indexer->loc(&start_index, &end_index, columns, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 3 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 4 Example";
 
   loc_indexer->loc(&start_index, column, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 4 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 5 Example";
 
   loc_indexer->loc(&start_index, start_column, end_column, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 5 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 6 Example";
 
   loc_indexer->loc(&start_index, columns, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 6 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 7 Example";
 
   loc_indexer->loc(output_items, column, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 7 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 8 Example";
 
   loc_indexer->loc(output_items, start_column, end_column, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 8 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 9 Example";
 
   loc_indexer->loc(output_items, columns, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 9 ";
+  print_index_output(output, loc_output_msg);
 
   return 0;
 }
@@ -429,6 +440,8 @@ int test_str_loc_operations(cylon::IndexingSchema schema) {
     return -1;
   }
 
+  std::string loc_output_msg;
+
   LOG(INFO) << "[RangeIndex] Records in Table Rows: " << input->Rows() << ", Columns: " << input->Columns();
 
   std::shared_ptr<cylon::BaseIndexer> loc_indexer = std::make_shared<cylon::LocIndexer>(schema);
@@ -437,37 +450,43 @@ int test_str_loc_operations(cylon::IndexingSchema schema) {
 
   loc_indexer->loc(&start_index, &end_index, column, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 1 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 2 Example";
 
   loc_indexer->loc(&start_index, &end_index, start_column, end_column, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 2 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 3 Example";
 
   loc_indexer->loc(&start_index, &end_index, columns, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 3 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 4 Example";
 
   loc_indexer->loc(&start_index, column, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 4 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 5 Example";
 
   loc_indexer->loc(&start_index, start_column, end_column, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 5 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 6 Example";
 
   loc_indexer->loc(&start_index, columns, input, output);
 
-  output->Print();
+  loc_output_msg = " LOC 6 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 7 Example";
 
@@ -477,7 +496,8 @@ int test_str_loc_operations(cylon::IndexingSchema schema) {
     LOG(ERROR) << "Error occurred in operation LOC Mode 7";
   }
 
-  output->Print();
+  loc_output_msg = " LOC 7 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 8 Example";
 
@@ -487,7 +507,8 @@ int test_str_loc_operations(cylon::IndexingSchema schema) {
     LOG(ERROR) << "Error occurred in operation LOC Mode 8";
   }
 
-  output->Print();
+  loc_output_msg = " LOC 8 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 9 Example";
 
@@ -497,7 +518,8 @@ int test_str_loc_operations(cylon::IndexingSchema schema) {
     LOG(ERROR) << "Error occurred in operation LOC Mode 9";
   }
 
-  output->Print();
+  loc_output_msg = " LOC 9 ";
+  print_index_output(output, loc_output_msg);
 
   return 0;
 }
@@ -545,6 +567,7 @@ int test_iloc_operations() {
     output_items.push_back(static_cast<void *>(val));
   }
   bool drop_index = true;
+  std::string loc_output_msg;
 
   std::shared_ptr<cylon::BaseIndex> index, loc_index, range_index;
 
@@ -568,55 +591,64 @@ int test_iloc_operations() {
 
   loc_indexer->loc(&start_index, &end_index, column, input, output);
 
-  output->Print();
+  loc_output_msg = " iLOC 1 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "iLOC Mode 2 Example";
 
   loc_indexer->loc(&start_index, &end_index, start_column, end_column, input, output);
 
-  output->Print();
+  loc_output_msg = " iLOC 1 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "iLOC Mode 3 Example";
 
   loc_indexer->loc(&start_index, &end_index, columns, input, output);
 
-  output->Print();
+  loc_output_msg = " iLOC 1 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "iLOC Mode 4 Example";
 
   loc_indexer->loc(&start_index, column, input, output);
 
-  output->Print();
+  loc_output_msg = " iLOC 1 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "iLOC Mode 5 Example";
 
   loc_indexer->loc(&start_index, start_column, end_column, input, output);
 
-  output->Print();
+  loc_output_msg = " iLOC 1 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "iLOC Mode 6 Example";
 
   loc_indexer->loc(&start_index, columns, input, output);
 
-  output->Print();
+  loc_output_msg = " iLOC 1 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "iLOC Mode 7 Example";
 
   loc_indexer->loc(output_items, column, input, output);
 
-  output->Print();
+  loc_output_msg = " iLOC 1 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "iLOC Mode 8 Example";
 
   loc_indexer->loc(output_items, start_column, end_column, input, output);
 
-  output->Print();
+  loc_output_msg = " iLOC 1 ";
+  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "iLOC Mode 9 Example";
 
   loc_indexer->loc(output_items, columns, input, output);
 
-  output->Print();
+  loc_output_msg = " iLOC 1 ";
+  print_index_output(output, loc_output_msg);
 
   return 0;
 }
@@ -630,3 +662,12 @@ int print_arrow_array(std::shared_ptr<arrow::Array> &arr) {
   return 0;
 }
 
+int print_index_output(std::shared_ptr<cylon::Table> &output, std::string &message) {
+  LOG(INFO) << message;
+  LOG(INFO) << "Loc operation Table";
+  output->Print();
+  LOG(INFO) << "Resultant Index";
+  auto index_arr = output->GetIndex()->GetIndexArray();
+  print_arrow_array(index_arr);
+  return 0;
+}

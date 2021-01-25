@@ -83,12 +83,18 @@ Status RangeIndex::LocationByValue(void *search_param,
                                    std::shared_ptr<arrow::Table> &output) {
   LOG(INFO) << "Extract From Range Index";
   arrow::Status arrow_status;
+  cylon::Status status;
   std::shared_ptr<arrow::Array> out_idx;
   arrow::compute::ExecContext fn_ctx(GetPool());
   arrow::Int64Builder idx_builder(GetPool());
   const arrow::Datum input_table(input);
 
-  LocationByValue(search_param, filter_locations);
+  status = LocationByValue(search_param, filter_locations);
+
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in obtaining filter indices by index value";
+    return status;
+  }
 
   arrow_status = idx_builder.AppendValues(filter_locations);
   if (!arrow_status.ok()) {
