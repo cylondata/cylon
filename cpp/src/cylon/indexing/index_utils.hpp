@@ -12,6 +12,18 @@ namespace cylon {
 class IndexUtil {
 
  public:
+
+  static Status BuildIndexFromArray(const IndexingSchema schema,
+                                    const std::shared_ptr<Table> &input,
+                                    const std::shared_ptr<arrow::Array> &index_array,
+                                    std::shared_ptr<Table> &output);
+
+  static Status BuildIndex(const IndexingSchema schema,
+                           const std::shared_ptr<Table> &input,
+                           const int index_column,
+                           const bool drop,
+                           std::shared_ptr<Table> &output);
+
   static Status BuildIndex(const IndexingSchema schema,
                            const std::shared_ptr<Table> &input,
                            const int index_column,

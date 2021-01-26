@@ -115,4 +115,8 @@ def test_loc():
     print(type(ld))
 
 
-test_loc()
+def test_cylon_cpp_indexing():
+    from pycylon.indexing.index import IndexingSchema
+    print(IndexingSchema.HASH.value)
+
+test_cylon_cpp_indexing()

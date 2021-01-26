@@ -1,8 +1,8 @@
 #include "index_utils.hpp"
 
 cylon::Status cylon::IndexUtil::BuildHashIndex(const std::shared_ptr<Table> &input,
-                                        const int index_column,
-                                        std::shared_ptr<cylon::BaseIndex> &index) {
+                                               const int index_column,
+                                               std::shared_ptr<cylon::BaseIndex> &index) {
 
   std::shared_ptr<arrow::Table> arrow_out;
 
@@ -112,8 +112,8 @@ cylon::Status cylon::IndexUtil::BuildHashIndexFromArray(std::shared_ptr<arrow::A
   return cylon::Status::OK();
 }
 cylon::Status cylon::IndexUtil::BuildLinearIndex(const std::shared_ptr<Table> &input,
-                                          const int index_column,
-                                          std::shared_ptr<cylon::BaseIndex> &index) {
+                                                 const int index_column,
+                                                 std::shared_ptr<cylon::BaseIndex> &index) {
   std::shared_ptr<arrow::Table> arrow_out;
 
   auto table_ = input->get_table();
@@ -214,7 +214,7 @@ cylon::Status cylon::IndexUtil::BuildLinearIndexFromArray(std::shared_ptr<arrow:
   return cylon::Status::OK();
 }
 cylon::Status cylon::IndexUtil::BuildRangeIndex(const std::shared_ptr<Table> &input,
-                                         std::shared_ptr<cylon::BaseIndex> &index) {
+                                                std::shared_ptr<cylon::BaseIndex> &index) {
   arrow::Status ar_status;
   auto ctx = input->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
@@ -260,6 +260,67 @@ cylon::Status cylon::IndexUtil::BuildIndex(const IndexingSchema schema,
   }
   return cylon::Status(cylon::Code::Invalid, "Invalid indexing schema");
 }
+
+cylon::Status cylon::IndexUtil::BuildIndex(const cylon::IndexingSchema schema,
+                                           const std::shared_ptr<Table> &input,
+                                           const int index_column,
+                                           const bool drop,
+                                           std::shared_ptr<Table> &output) {
+
+  cylon::Status status;
+  std::shared_ptr<cylon::BaseIndex> index;
+  status = BuildIndex(schema, input, index_column, index);
+
+  if (!status.is_ok()) {
+    std::string error_msg = "Error occurred in creating the index";
+    LOG(ERROR) << error_msg;
+    return cylon::Status(cylon::Code::IndexError, error_msg);
+  }
+
+  input->Set_Index(index, drop);
+  output = std::move(input);
+  return cylon::Status::OK();
+}
+
+cylon::Status cylon::IndexUtil::BuildIndexFromArray(const cylon::IndexingSchema schema,
+                                                    const std::shared_ptr<Table> &input,
+                                                    const std::shared_ptr<arrow::Array> &index_array,
+                                                    std::shared_ptr<Table> &output) {
+  cylon::Status status;
+  std::shared_ptr<cylon::BaseIndex> index;
+  auto ctx = input->GetContext();
+  auto pool = cylon::ToArrowPool(ctx);
+  if (schema == cylon::IndexingSchema::Range) {
+    status = BuildRangeIndexFromArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array), pool, index);
+  } else if (schema == cylon::IndexingSchema::Linear) {
+    status = BuildLinearIndexFromArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array), pool, index);
+  } else if (schema == cylon::IndexingSchema::Hash) {
+    status = BuildLinearIndexFromArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array), pool, index);
+  } else if (schema == cylon::IndexingSchema::BinaryTree) {
+    status =  cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
+  } else if (schema == cylon::IndexingSchema::BTree) {
+    status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
+  } else {
+    status = cylon::Status(cylon::Code::Invalid, "Invalid schema");
+  }
+
+  if (!status.is_ok()) {
+    std::string error_msg = "Error occurred in building index from array";
+    return cylon::Status(cylon::Code::IndexError, error_msg);
+  }
+
+  status = input->Set_Index(index, false);
+
+  if (!status.is_ok()) {
+    std::string error_msg = "Error occurred in setting index to Table";
+    return cylon::Status(cylon::Code::IndexError, error_msg);
+  }
+
+  output = std::move(input);
+
+  return cylon::Status::OK();
+}
+
 
 
 

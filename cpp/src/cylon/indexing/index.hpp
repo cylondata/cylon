@@ -29,6 +29,11 @@ enum IndexingSchema {
 class BaseIndex {
 
  public:
+
+  explicit BaseIndex(int col_id, int size, std::shared_ptr<CylonContext> &ctx) : size_(size), col_id_(col_id) {
+    pool_ = cylon::ToArrowPool(ctx);
+  };
+
   explicit BaseIndex(int col_id, int size, arrow::MemoryPool *pool) {
     col_id_ = col_id;
     size_ = size;
