@@ -58,9 +58,17 @@ cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon"
         CStatus loc(const void *start_index, const void *end_index, const int column_index,
                     const shared_ptr[CTable] &input_table, shared_ptr[CTable] &output)
 
+cdef class PyObjectToCObject:
+    cdef:
+        dict __dict__
+        void * c_ptr
+        void * get_ptr(self)
 
 cdef class LocIndexer:
 
     cdef:
         shared_ptr[CLocIndexer] indexer_shd_ptr
         CIndexingSchema c_indexing_schema
+
+        void resolve_ctype_from_python_object(self, py_object, index, void* c_ptr)
+

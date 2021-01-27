@@ -133,20 +133,22 @@ def test_cylon_cpp_indexing():
     print(output)
 
     loc_ix = LocIndexer(indexing_schema)
-    start_index:int  = 1
-    end_index:int = 7
+    start_index: int = 1
+    end_index: int = 7
     column_index = 0
-#
+    #
     loc_out = loc_ix.loc(start_index, end_index, column_index, output)
-#
+    #
     print(loc_out)
 
     print(loc_out.to_arrow())
 
-    index  = loc_out.get_index()
+    index = loc_out.get_index()
 
     print(index)
 
     print(index.get_index_array())
+
+
 #
 test_cylon_cpp_indexing()

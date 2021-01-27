@@ -98,6 +98,10 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Data Type : " << arrow::Int32Type::CTypeImpl::type_id << std::endl;
 
+  long value = 5;
+  void * ptr = static_cast<void*> (&value);
+  long * cast_value = static_cast<long*>(ptr);
+  std::cout << "Value : " << ptr << ", " <<  *cast_value << std::endl;
 
 }
 
@@ -314,7 +318,7 @@ int test_loc_operations(cylon::IndexingSchema schema) {
 
   LOG(INFO) << "LOC Mode 1 Example";
 
-  loc_indexer->loc(&start_index, &end_index, column, input, output);
+  loc_indexer->loc(ptr, &end_index, column, input, output);
 
   loc_output_msg = " LOC 1 ";
   print_index_output(output, loc_output_msg);
