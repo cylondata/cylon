@@ -20,6 +20,7 @@ from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.vector cimport vector
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
+from pycylon.data.table cimport CTable
 
 
 cdef extern from "../../../cpp/src/cylon/indexing/index.hpp" namespace "cylon":
@@ -46,3 +47,20 @@ cdef class BaseIndex:
         int column_id
         int size
         dict __dict__
+
+        void init(self, const shared_ptr[CBaseIndex]& index)
+
+
+cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon":
+    cdef cppclass CLocIndexer "cylon::LocIndexer":
+        CLocIndexer(CIndexingSchema indexing_schema)
+
+        CStatus loc(const void *start_index, const void *end_index, const int column_index,
+                    const shared_ptr[CTable] &input_table, shared_ptr[CTable] &output)
+
+
+cdef class LocIndexer:
+
+    cdef:
+        shared_ptr[CLocIndexer] indexer_shd_ptr
+        CIndexingSchema c_indexing_schema

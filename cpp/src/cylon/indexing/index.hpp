@@ -61,6 +61,8 @@ class BaseIndex {
 
   virtual int GetSize() const;
 
+
+
   virtual arrow::MemoryPool *GetPool() const;
 
   virtual bool IsUnique() = 0;
@@ -400,6 +402,7 @@ class LinearIndex : public BaseIndex {
 
   Status LocationByValue(const void *search_param, int64_t &find_index) override {
     const CTYPE search_val = *static_cast<const CTYPE *>(search_param);
+    std::cout << "Search Value : " << search_val << std::endl;
     for (int64_t ix = 0; ix < index_array_->length(); ix++) {
       CTYPE val = index_array_->GetView(ix);
       if (search_val == val) {

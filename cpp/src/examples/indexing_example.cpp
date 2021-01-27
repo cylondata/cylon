@@ -96,6 +96,9 @@ int main(int argc, char *argv[]) {
 
   test_iloc_operations();
 
+  std::cout << "Data Type : " << arrow::Int32Type::CTypeImpl::type_id << std::endl;
+
+
 }
 
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {

@@ -25,10 +25,13 @@ from pycylon.common.join_config import PJoinAlgorithm
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pyarrow.lib cimport CTable as CArrowTable
+from pyarrow.lib cimport CArray as CArrowArray
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
+
+
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CTable "cylon::Table":

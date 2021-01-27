@@ -74,6 +74,3 @@ cdef api object pycylon_wrap_layout(const CLayout &layout)
 cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] &data_type)
 
 cdef api object pycylon_wrap_sort_options(CSortOptions *sort_options)
-
-
-

@@ -313,9 +313,12 @@ cylon::Status cylon::LocIndexer::loc(const void *start_index,
   Status status_build;
   auto index = input_table->GetIndex();
   std::shared_ptr<cylon::Table> temp_output;
-  int64_t s_index, e_index = -1;
+  int64_t s_index = -1;
+  int64_t e_index = -1;
 
   status_build = GetLocFilterIndices(start_index, end_index, index, s_index, e_index);
+
+  std::cout << ">>>>>" << s_index << ", " << e_index << ", index_size: " << index->GetIndexArray()->length() << std::endl;
 
   if (!status_build.is_ok()) {
     LOG(ERROR) << "Error occurred in filtering indices from table";

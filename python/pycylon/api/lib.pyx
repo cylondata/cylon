@@ -70,7 +70,6 @@ cdef api bint pyclon_is_data_type(object data_type):
 cdef api bint pyclon_is_sort_options(object sort_options):
     return isinstance(sort_options, SortOptions)
 
-
 cdef api shared_ptr[CCylonContext] pycylon_unwrap_context(object context):
     cdef CylonContext ctx
     if pyclon_is_context(context):
@@ -127,8 +126,6 @@ cdef api CSortOptions* pycylon_unwrap_sort_options (object sort_options):
     else:
         raise ValueError('Passed object is not an instance of DataType')
 
-
-
 cdef api CType pycylon_unwrap_type(object type):
     pass
 
@@ -160,4 +157,3 @@ cdef api object pycylon_wrap_sort_options(CSortOptions *csort_options):
     cdef SortOptions sort_options = SortOptions.__new__(SortOptions)
     sort_options.init(csort_options)
     return sort_options
-

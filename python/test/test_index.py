@@ -117,6 +117,30 @@ def test_loc():
 
 def test_cylon_cpp_indexing():
     from pycylon.indexing.index import IndexingSchema
-    print(IndexingSchema.HASH.value)
+    from pycylon.indexing.index_utils import IndexUtil
+    from pycylon.indexing.index import LocIndexer
 
+    pdf = pd.DataFrame([[1, 2], [4, 5], [7, 8], [10, 11], [20, 22], [23, 25], [10, 12]])
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+    indexing_schema = IndexingSchema.LINEAR
+
+    print("Input Table")
+    print(cn_tb)
+
+    output = IndexUtil.build_index(indexing_schema, cn_tb, 0, False)
+    print("Output Table")
+    print(output)
+
+    loc_ix = LocIndexer(indexing_schema)
+    start_index:int  = 1
+    end_index:int = 7
+    column_index = 0
+#
+    loc_out = loc_ix.loc(start_index, end_index, column_index, output)
+#
+    print(loc_out)
+
+    print(loc_out.to_arrow())
+#
 test_cylon_cpp_indexing()

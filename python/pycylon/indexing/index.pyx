@@ -15,12 +15,20 @@
 from libcpp.memory cimport shared_ptr, make_shared
 from pyarrow.lib cimport CArray as CArrowArray
 from pycylon.indexing.index cimport CIndexingSchema
+from pycylon.indexing.index cimport CLocIndexer
 from pycylon.indexing.index cimport CBaseIndex
 from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table, pyarrow_wrap_array)
 
 from pycylon.api.lib cimport (pycylon_wrap_context, pycylon_unwrap_context, pycylon_unwrap_table,
                                 pycylon_wrap_table)
 
+from pycylon.data.table cimport CTable
+from pycylon.data.table import Table
+from pycylon.ctx.context cimport CCylonContext
+from pycylon.ctx.context import CylonContext
+import pyarrow as pa
+
+from cpython.ref cimport PyObject
 '''
 Cylon Indexing is done with the following enums. 
 '''
@@ -31,5 +39,34 @@ cpdef enum IndexingSchema:
     HASH = CIndexingSchema.CHASH
     BINARYTREE = CIndexingSchema.CBINARYTREE
     BTREE = CIndexingSchema.CBTREE
+
+
+cdef class BaseIndex:
+
+    cdef void init(self, const shared_ptr[CBaseIndex]& index):
+        self.bindex_shd_ptr = index
+
+cdef class LocIndexer:
+
+    def __cinit__(self, CIndexingSchema indexing_schema):
+        self.indexer_shd_ptr = make_shared[CLocIndexer](indexing_schema)
+
+    def loc(self, start_index, end_index, column_index, table):
+
+        cdef shared_ptr[CTable] output
+        cdef long a = <long> start_index
+        cdef long b = <long> end_index
+        #cdef const void* c_start_index = <const void *> a
+        #cdef const void* c_end_index = <const void *> b
+        cdef int c_column_index = <int>column_index
+        cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
+
+
+
+
+
+        self.indexer_shd_ptr.get().loc(&a, &b, c_column_index, input,
+                                       output)
+        return pycylon_wrap_table(output)
 
 
