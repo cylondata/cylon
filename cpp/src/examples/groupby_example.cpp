@@ -19,6 +19,7 @@
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
 #include <groupby/groupby.hpp>
+#include <groupby/hash_groupby.hpp>
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -51,17 +52,18 @@ int main(int argc, char *argv[]) {
   std::cout << "-----------------------" << std::endl;
 //  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VAR}}, output);
 //  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VarOp::Make()}}, output);
-  cylon::Status s = cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::VAR}, output);
+//  cylon::Status s = cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::VAR}, output);
+//  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::NUNIQUE}}, output);
+  status = cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::COUNT}, output);
 
   if (!status.is_ok()) {
-    LOG(INFO) << "Table GroupBy failed ";
+    LOG(INFO) << "Table GroupBy failed " << status.get_msg();
     ctx->Finalize();
     return 1;
   }
   auto join_end_time = std::chrono::steady_clock::now();
 
-  LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
-            << output->Rows() << ", group_by has : " << output->Rows();
+  LOG(INFO) << "table had : " << first_table->Rows() << ", group_by has : " << output->Rows();
   LOG(INFO) << "group_by done in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 join_end_time - read_end_time).count() << "[ms]";
