@@ -128,7 +128,7 @@ def test_cylon_cpp_indexing():
     print("Input Table")
     print(cn_tb)
 
-    output = IndexUtil.build_index(indexing_schema, cn_tb, 0, False)
+    output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
     print("Output Table")
     print(output)
 
@@ -142,5 +142,11 @@ def test_cylon_cpp_indexing():
     print(loc_out)
 
     print(loc_out.to_arrow())
+
+    index  = loc_out.get_index()
+
+    print(index)
+
+    print(index.get_index_array())
 #
 test_cylon_cpp_indexing()

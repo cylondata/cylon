@@ -38,7 +38,9 @@ pycylon_unwrap_table,
 pycylon_wrap_table,
 pycylon_unwrap_csv_read_options,
 pycylon_unwrap_csv_write_options,
-pycylon_unwrap_sort_options)
+pycylon_unwrap_sort_options,
+pycylon_wrap_base_index,
+pycylon_unwrap_base_index)
 
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
@@ -47,6 +49,9 @@ from pycylon.data.groupby cimport (DistributedHashGroupBy, DistributedPipelineGr
 from pycylon.data import compute
 
 from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
+
+from pycylon.indexing.index cimport CBaseIndex
+from pycylon.indexing.index import BaseIndex
 
 import math
 import pyarrow as pa
@@ -2134,6 +2139,11 @@ cdef class Table:
             new_chunks.append(pa.array(new_ca))
         return Table.from_arrow(self.context,
                                 pa.Table.from_arrays(new_chunks, self.column_names))
+
+    def get_index(self) -> BaseIndex:
+        cdef shared_ptr[CBaseIndex] c_index = self.table_shd_ptr.get().GetIndex()
+        return pycylon_wrap_base_index(c_index)
+
 
 
 class EmptyTable(Table):

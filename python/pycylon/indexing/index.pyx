@@ -17,7 +17,8 @@ from pyarrow.lib cimport CArray as CArrowArray
 from pycylon.indexing.index cimport CIndexingSchema
 from pycylon.indexing.index cimport CLocIndexer
 from pycylon.indexing.index cimport CBaseIndex
-from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table, pyarrow_wrap_array)
+from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table, pyarrow_wrap_array,
+pyarrow_unwrap_array)
 
 from pycylon.api.lib cimport (pycylon_wrap_context, pycylon_unwrap_context, pycylon_unwrap_table,
                                 pycylon_wrap_table)
@@ -45,6 +46,11 @@ cdef class BaseIndex:
 
     cdef void init(self, const shared_ptr[CBaseIndex]& index):
         self.bindex_shd_ptr = index
+
+    def get_index_array(self) -> pa.array:
+        cdef shared_ptr[CArrowArray] index_arr = self.bindex_shd_ptr.get().GetIndexArray()
+        py_arw_index_arr = pyarrow_wrap_array(index_arr)
+        return py_arw_index_arr
 
 cdef class LocIndexer:
 
