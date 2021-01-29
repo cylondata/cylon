@@ -197,6 +197,16 @@ class LocIndexer : public BaseIndexer {
 
 };
 
+//template<typename CTYPE>
+//class TLocIndexer : public LocIndexer{
+// public:
+//  TLocIndexer(IndexingSchema indexing_schema) : LocIndexer(indexing_schema) {
+//
+//  }
+//
+//};
+
+
 /**
  * iLoc operations
  * */
@@ -255,6 +265,8 @@ class ILocIndexer : public LocIndexer {
  private:
   IndexingSchema indexing_schema_;
 };
+
+
 
 }
 

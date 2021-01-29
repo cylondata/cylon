@@ -13,6 +13,7 @@
 ##
 
 from libcpp.memory cimport shared_ptr, make_shared
+from libcpp.vector cimport vector
 from pyarrow.lib cimport CArray as CArrowArray
 from pycylon.indexing.index cimport CIndexingSchema
 from pycylon.indexing.index cimport CLocIndexer
@@ -28,12 +29,20 @@ from pycylon.data.table import Table
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 import pyarrow as pa
+import numpy as np
 
 from cpython.ref cimport PyObject
+from cython.operator cimport dereference as deref, preincrement as inc
+
+from typing import List
 
 '''
 Cylon Indexing is done with the following enums. 
 '''
+ctypedef long LONG
+ctypedef double DOUBLE
+ctypedef float FLOAT
+ctypedef int INT
 
 cpdef enum IndexingSchema:
     RANGE = CIndexingSchema.CRANGE
@@ -51,51 +60,138 @@ cdef class BaseIndex:
         py_arw_index_arr = pyarrow_wrap_array(index_arr)
         return py_arw_index_arr
 
-cdef class PyObjectToCObject:
 
-    def __cinit__(self, py_object, arrow_type):
+cdef vector[void*] _get_void_vec_from_pylist(py_list, arrow_type):
+    if arrow_type == pa.int64():
+        return _get_long_vector_from_pylist(py_list)
+
+
+cdef vector[void*] _get_long_vector_from_pylist(py_list):
+    cdef vector[long] vec = range(len(py_list))
+    cdef vector[void*] void_vec
+
+    cdef int i = 0
+    cdef int j = 0
+    #cdef void* element
+    #cdef long c_element
+
+    for _ in range(len(py_list)):
+        print("Values: ", _, <long>py_list[j])
+        vec[j] = <long>py_list[j]
+        j = j + 1
+
+    # cdef vector[long].iterator it = vec.begin()
+    #
+    # while it != vec.end():
+    #     print("c_element: ", deref(it))
+    #     void_vec.push_back(deref(it)) #it #it[0]
+    #     inc(it)
+
+    for _ in range(len(py_list)):
+        print("long vec values, ", _, vec.at(i))
+        void_vec.push_back(&vec.at(i))
+        i = i + 1
+
+    return void_vec
+
+cdef long get_long_value_from_pyobject(py_object):
+    cdef long cast_value = <long> py_object
+    return cast_value
+
+
+cdef class PyObjectToCObject:
+    def __cinit__(self, arrow_type):
+        self.c_ptr = NULL
+        self._arrow_type = arrow_type
+
+    cdef void *get_cptr_from_object(self, py_object):
         cdef long l_cval
-        if(arrow_type == pa.int64()):
+        cdef void* c_ptr
+        if (self._arrow_type == pa.int64()):
             print("condition match")
             l_cval = <long> py_object
-            self.c_ptr = <void *> l_cval
+            c_ptr = <void *> l_cval
+        return c_ptr
 
-    cdef void * get_ptr(self):
-        return self.c_ptr
+    cdef long to_long(self, py_object):
+        cdef long res = <long> py_object
+        return res
+
+
+    cdef vector[void*] get_vector_ptrs_from_list(self, py_list):
+
+        cdef vector[void*] c_vec
+        cdef void *c_ptr
+        cdef PyObject obj
+
+        return c_vec
 
 cdef class LocIndexer:
+
+
+
     def __cinit__(self, CIndexingSchema indexing_schema):
         self.indexer_shd_ptr = make_shared[CLocIndexer](indexing_schema)
 
-    cdef void resolve_ctype_from_python_object(self, py_object, index,  void *c_ptr):
-        print("resolve_ctype_from_python_object")
-        index_arr = index.get_index_array()
-        cdef long c_value
-        cdef void * cptr
-        cdef long * res
-        if (index_arr.type == pa.int64()):
-            print("long selected")
-            c_value = <long> py_object
-            print("casted value : ", c_value)
-            cptr = <void *> &c_value
+    # def loc(self, index, column, table):
+    #
+    #     index = table.get_index()
+    #     arrow_type = index.get_index_array().type
+    #
+    #     if isinstance(index, slice):
+    #         pass
+    #     elif isinstance(index, List):
+    #         pass
+    #     elif np.isscalar(index):
+    #         pass
 
-    def loc(self, start_index, end_index, column_index, table):
+
+    def loc(self, indices, column_index, table):
+
         cdef shared_ptr[CTable] output
-        cdef long a = <long>start_index
-        cdef long b = <long>end_index
-        cdef void* c_start_index #= <void*> &a
-        cdef void* c_end_index #= <void*> &b
+        cdef void* c_start_index  #= <void*> &a
+        cdef void* c_end_index
         cdef int c_column_index = <int> column_index
+
         index = table.get_index()
+        arrow_type = index.get_index_array().type
+        ctx = table.context
 
-        #self.resolve_ctype_from_python_object(start_index, index, c_start_index)
-        #self.resolve_ctype_from_python_object(end_index, index, c_end_index)
-        cdef PyObjectToCObject p2c_s = PyObjectToCObject(start_index, index.get_index_array().type)
-        cdef PyObjectToCObject p2c_e = PyObjectToCObject(end_index, index.get_index_array().type)
+        cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
+        intermediate_tables = []
 
-        c_start_index = p2c_s.get_ptr()
-        c_end_index = p2c_e.get_ptr()
+        if isinstance(indices, List):
+            print("select set of indices")
+            for index in indices:
+                if arrow_type == pa.int64():
+                    c_start_index = <void*>p2c.to_long(index)
+                # TODO: resolve for other types
 
-        self.indexer_shd_ptr.get().loc(&c_start_index, &c_end_index, c_column_index, input, output)
-        return pycylon_wrap_table(output)
+                self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
+                intermediate_tables.append(pycylon_wrap_table(output))
+
+            return Table.merge(ctx, intermediate_tables)
+
+        if np.isscalar(indices):
+            print("select a single index")
+            if arrow_type == pa.int64():
+                c_start_index = <void*> p2c.to_long(indices)
+
+            self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
+            return pycylon_wrap_table(output)
+
+        if isinstance(indices, slice):
+            print("select a range of index")
+            # assume step = 1
+            # TODO: generalize for slice with multi-steps then resolve index list
+            start_index = indices.start
+            end_index = indices.stop
+            if arrow_type == pa.int64():
+                c_start_index = <void*> p2c.to_long(start_index)
+                c_end_index = <void*> p2c.to_long(end_index)
+
+            self.indexer_shd_ptr.get().loc(&c_start_index, &c_end_index, c_column_index, input,
+                                           output)
+            return pycylon_wrap_table(output)
+

@@ -23,6 +23,7 @@
 
 #include "indexing/index_utils.hpp"
 #include "indexing/indexer.hpp"
+#include "Python.h"
 
 int arrow_take_test();
 
@@ -90,18 +91,18 @@ int main(int argc, char *argv[]) {
     test_loc_operations(schema);
   }
 
-  for (size_t i = 1; i < schemas.size() ; i++) {
-    test_str_loc_operations(schemas.at(i));
-  }
-
-  test_iloc_operations();
-
-  std::cout << "Data Type : " << arrow::Int32Type::CTypeImpl::type_id << std::endl;
-
-  long value = 5;
-  void * ptr = static_cast<void*> (&value);
-  long * cast_value = static_cast<long*>(ptr);
-  std::cout << "Value : " << ptr << ", " <<  *cast_value << std::endl;
+//  for (size_t i = 1; i < schemas.size() ; i++) {
+//    test_str_loc_operations(schemas.at(i));
+//  }
+//
+//  test_iloc_operations();
+//
+//  std::cout << "Data Type : " << arrow::Int32Type::CTypeImpl::type_id << std::endl;
+//
+//  long value = 5;
+//  void * ptr = static_cast<void*> (&value);
+//  long * cast_value = static_cast<long*>(ptr);
+//  std::cout << "Value : " << ptr << ", " <<  *cast_value << std::endl;
 
 }
 
@@ -286,13 +287,18 @@ int test_loc_operations(cylon::IndexingSchema schema) {
   typedef std::vector<void *> vector_void_star;
 
   vector_void_star output_items;
-
+  long a = 4;
+  long b = 5;
   std::vector<long> start_indices = {4, 1};
+  std::shared_ptr<arrow::Int64Array> arr;
+  arrow::Int64Builder builder;
+  builder.AppendValues(start_indices);
+  builder.Finish(&arr);
 
   for (size_t tx = 0; tx < start_indices.size(); tx++) {
-    long *val = new long(start_indices.at(tx));
-    output_items.push_back(static_cast<void *>(val));
+    output_items.push_back(&start_indices.at(tx));
   }
+
   bool drop_index = true;
   std::shared_ptr<arrow::Array> index_arr;
 
@@ -316,68 +322,68 @@ int test_loc_operations(cylon::IndexingSchema schema) {
 
   std::shared_ptr<cylon::BaseIndexer> loc_indexer = std::make_shared<cylon::LocIndexer>(schema);
 
-  LOG(INFO) << "LOC Mode 1 Example";
-
-  loc_indexer->loc(ptr, &end_index, column, input, output);
-
-  loc_output_msg = " LOC 1 ";
-  print_index_output(output, loc_output_msg);
-
-  LOG(INFO) << "LOC Mode 2 Example";
-
-  loc_indexer->loc(&start_index, &end_index, start_column, end_column, input, output);
-
-  loc_output_msg = " LOC 2 ";
-  print_index_output(output, loc_output_msg);
-
-  LOG(INFO) << "LOC Mode 3 Example";
-
-  loc_indexer->loc(&start_index, &end_index, columns, input, output);
-
-  loc_output_msg = " LOC 3 ";
-  print_index_output(output, loc_output_msg);
-
-  LOG(INFO) << "LOC Mode 4 Example";
-
-  loc_indexer->loc(&start_index, column, input, output);
-
-  loc_output_msg = " LOC 4 ";
-  print_index_output(output, loc_output_msg);
-
-  LOG(INFO) << "LOC Mode 5 Example";
-
-  loc_indexer->loc(&start_index, start_column, end_column, input, output);
-
-  loc_output_msg = " LOC 5 ";
-  print_index_output(output, loc_output_msg);
-
-  LOG(INFO) << "LOC Mode 6 Example";
-
-  loc_indexer->loc(&start_index, columns, input, output);
-
-  loc_output_msg = " LOC 6 ";
-  print_index_output(output, loc_output_msg);
+//  LOG(INFO) << "LOC Mode 1 Example";
+//
+//  loc_indexer->loc(&start_index, &end_index, column, input, output);
+//
+//  loc_output_msg = " LOC 1 ";
+//  print_index_output(output, loc_output_msg);
+//
+//  LOG(INFO) << "LOC Mode 2 Example";
+//
+//  loc_indexer->loc(&start_index, &end_index, start_column, end_column, input, output);
+//
+//  loc_output_msg = " LOC 2 ";
+//  print_index_output(output, loc_output_msg);
+//
+//  LOG(INFO) << "LOC Mode 3 Example";
+//
+//  loc_indexer->loc(&start_index, &end_index, columns, input, output);
+//
+//  loc_output_msg = " LOC 3 ";
+//  print_index_output(output, loc_output_msg);
+//
+//  LOG(INFO) << "LOC Mode 4 Example";
+//
+//  loc_indexer->loc(&start_index, column, input, output);
+//
+//  loc_output_msg = " LOC 4 ";
+//  print_index_output(output, loc_output_msg);
+//
+//  LOG(INFO) << "LOC Mode 5 Example";
+//
+//  loc_indexer->loc(&start_index, start_column, end_column, input, output);
+//
+//  loc_output_msg = " LOC 5 ";
+//  print_index_output(output, loc_output_msg);
+//
+//  LOG(INFO) << "LOC Mode 6 Example";
+//
+//  loc_indexer->loc(&start_index, columns, input, output);
+//
+//  loc_output_msg = " LOC 6 ";
+//  print_index_output(output, loc_output_msg);
 
   LOG(INFO) << "LOC Mode 7 Example";
-
-  loc_indexer->loc(output_items, column, input, output);
+  std::vector<void *> tvec{(void*)(arr->raw_values()), (void*)(arr->raw_values() + 1)};
+  loc_indexer->loc(tvec, column, input, output);
 
   loc_output_msg = " LOC 7 ";
   print_index_output(output, loc_output_msg);
 
-  LOG(INFO) << "LOC Mode 8 Example";
-
-  loc_indexer->loc(output_items, start_column, end_column, input, output);
-
-  loc_output_msg = " LOC 8 ";
-  print_index_output(output, loc_output_msg);
-
-  LOG(INFO) << "LOC Mode 9 Example";
-
-  loc_indexer->loc(output_items, columns, input, output);
-
-  loc_output_msg = " LOC 9 ";
-  print_index_output(output, loc_output_msg);
+//  LOG(INFO) << "LOC Mode 8 Example";
+//
+//  loc_indexer->loc(output_items, start_column, end_column, input, output);
+//
+//  loc_output_msg = " LOC 8 ";
+//  print_index_output(output, loc_output_msg);
+//
+//  LOG(INFO) << "LOC Mode 9 Example";
+//
+//  loc_indexer->loc(output_items, columns, input, output);
+//
+//  loc_output_msg = " LOC 9 ";
+//  print_index_output(output, loc_output_msg);
 
   return 0;
 }
@@ -423,7 +429,7 @@ int test_str_loc_operations(cylon::IndexingSchema schema) {
   for (size_t tx = 0; tx < start_indices.size(); tx++) {
     std::string *sval = new std::string(start_indices.at(tx));
     std::cout << *sval << ":" << sval << std::endl;
-    output_items.push_back(static_cast<void *>(sval));
+    output_items.push_back(static_cast<void *>(&start_indices.at(tx)));
   }
   LOG(INFO) << "Loading";
   for (size_t i = 0; i < output_items.size(); i++) {

@@ -133,7 +133,6 @@ class HashIndex : public BaseIndex {
   }
 
   Status LocationByValue(const void *search_param, std::vector<int64_t> &find_index) override {
-
     const CTYPE val = *static_cast<const CTYPE *>(search_param);
     auto ret = map_->equal_range(val);
     for (auto it = ret.first; it != ret.second; ++it) {
@@ -391,6 +390,7 @@ class LinearIndex : public BaseIndex {
 
   Status LocationByValue(const void *search_param, std::vector<int64_t> &find_index) override {
     const CTYPE search_val = *static_cast<const CTYPE *>(search_param);
+    std::cout << "1.Search Value : " << search_val << std::endl;
     for (int64_t ix = 0; ix < index_array_->length(); ix++) {
       CTYPE val = index_array_->GetView(ix);
       if (search_val == val) {
@@ -402,7 +402,7 @@ class LinearIndex : public BaseIndex {
 
   Status LocationByValue(const void *search_param, int64_t &find_index) override {
     const CTYPE search_val = *static_cast<const CTYPE *>(search_param);
-    std::cout << "Search Value : " << search_val << std::endl;
+    std::cout << "2.Search Value : " << search_val << std::endl;
     for (int64_t ix = 0; ix < index_array_->length(); ix++) {
       CTYPE val = index_array_->GetView(ix);
       if (search_val == val) {

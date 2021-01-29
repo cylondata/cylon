@@ -4,6 +4,7 @@ from pycylon.index import Index, RangeIndex, NumericIndex, CategoricalIndex, Col
 from pycylon import Table
 from pycylon import CylonContext
 import pyarrow as pa
+import numpy as np
 
 
 def test_with_pandas():
@@ -137,7 +138,7 @@ def test_cylon_cpp_indexing():
     end_index: int = 7
     column_index = 0
     #
-    loc_out = loc_ix.loc(start_index, end_index, column_index, output)
+    loc_out = loc_ix.loc(slice(start_index, end_index), column_index, output)
     #
     print(loc_out)
 
@@ -148,6 +149,20 @@ def test_cylon_cpp_indexing():
     print(index)
 
     print(index.get_index_array())
+
+    indices = [100, 4, 7, 23, 20]
+
+    loc_out2 = loc_ix.loc(indices, column_index, output)
+
+    print(loc_out2)
+
+    loc_index:int = 10
+    loc_out3 = loc_ix.loc(loc_index, column_index, output)
+
+    print(loc_out3)
+
+    pdf.loc
+
 
 
 #
