@@ -444,5 +444,5 @@ def test_cylon_cpp_str_range_column_indexing():
 # test_cylon_cpp_multi_column_indexing()
 # test_cylon_cpp_str_multi_column_indexing()
 
-test_cylon_cpp_range_column_indexing()
-test_cylon_cpp_str_range_column_indexing()
+#test_cylon_cpp_range_column_indexing()
+#test_cylon_cpp_str_range_column_indexing()
