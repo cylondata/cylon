@@ -14,6 +14,7 @@
 
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.vector cimport vector
+from libcpp.string cimport string
 from pyarrow.lib cimport CArray as CArrowArray
 from pycylon.indexing.index cimport CIndexingSchema
 from pycylon.indexing.index cimport CLocIndexer
@@ -35,6 +36,7 @@ from cpython.ref cimport PyObject
 from cython.operator cimport dereference as deref, preincrement as inc
 
 from typing import List
+
 
 '''
 Cylon Indexing is done with the following enums. 
@@ -113,8 +115,60 @@ cdef class PyObjectToCObject:
             c_ptr = <void *> l_cval
         return c_ptr
 
+    cdef bool to_bool(self, py_object):
+        cdef bool res = <bool> py_object
+        return res
+
+    cdef signed char to_int8(self, py_object):
+        cdef signed char res = <signed char> py_object
+        return res
+
+    cdef signed short to_int16(self, py_object):
+        cdef signed short res = <signed short> py_object
+        return res
+
+    cdef signed int to_int32(self, py_object):
+        cdef int res = <int> py_object
+        return res
+
+    cdef signed long long to_int64(self, py_object):
+        cdef signed long long res = <signed long long> py_object
+        return res
+
+    cdef unsigned char to_uint8(self, py_object):
+        cdef unsigned char res = <unsigned char> py_object
+        return res
+
+    cdef unsigned short to_uint16(self, py_object):
+        cdef unsigned short res = <unsigned short> py_object
+        return res
+
+    cdef unsigned int to_uint32(self, py_object):
+        cdef unsigned int res = <unsigned int> py_object
+        return res
+
+    cdef unsigned long long to_uint64(self, py_object):
+        cdef unsigned long long res = <unsigned long long> py_object
+        return res
+
     cdef long to_long(self, py_object):
         cdef long res = <long> py_object
+        return res
+
+    cdef float to_float(self, py_object):
+        cdef float res = <float> py_object
+        return res
+
+    cdef double to_double(self, py_object):
+        cdef double res = <double> py_object
+        return res
+
+    cdef unsigned short to_half_float(self, py_object):
+        cdef unsigned short res = <unsigned short> py_object
+        return res
+
+    cdef string to_string(self, py_object):
+        cdef string res = <string> py_object
         return res
 
 
@@ -133,25 +187,24 @@ cdef class LocIndexer:
     def __cinit__(self, CIndexingSchema indexing_schema):
         self.indexer_shd_ptr = make_shared[CLocIndexer](indexing_schema)
 
-    # def loc(self, index, column, table):
-    #
-    #     index = table.get_index()
-    #     arrow_type = index.get_index_array().type
-    #
-    #     if isinstance(index, slice):
-    #         pass
-    #     elif isinstance(index, List):
-    #         pass
-    #     elif np.isscalar(index):
-    #         pass
+    def loc_with_multi_column(self, indices, column_list, table):
+        pass
 
+    def loc_with_column_range(self, indices, column_range, table):
+        pass
 
-    def loc(self, indices, column_index, table):
+    def loc_with_single_column(self, indices, column_index, table):
 
         cdef shared_ptr[CTable] output
         cdef void* c_start_index  #= <void*> &a
         cdef void* c_end_index
         cdef int c_column_index = <int> column_index
+        cdef string cs_start_index
+        cdef string cs_end_index
+        cdef float cf_start_index
+        cdef float cf_end_index
+        cdef double cd_start_index
+        cdef double cd_end_index
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
@@ -163,22 +216,85 @@ cdef class LocIndexer:
 
         if isinstance(indices, List):
             print("select set of indices")
-            for index in indices:
-                if arrow_type == pa.int64():
-                    c_start_index = <void*>p2c.to_long(index)
-                # TODO: resolve for other types
 
-                self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
-                intermediate_tables.append(pycylon_wrap_table(output))
+            for index in indices:
+                if arrow_type == pa.bool_():
+                    c_start_index = <void*> p2c.to_bool(index)
+                elif arrow_type == pa.uint8():
+                    c_start_index = <void*> p2c.to_uint8(index)
+                elif arrow_type == pa.int8():
+                    c_start_index = <void*> p2c.to_int8(index)
+                elif arrow_type == pa.uint16():
+                    c_start_index = <void*> p2c.to_uint16(index)
+                elif arrow_type == pa.int16():
+                    c_start_index = <void*> p2c.to_int16(index)
+                elif arrow_type == pa.uint32():
+                    c_start_index = <void*> p2c.to_uint32(index)
+                elif arrow_type == pa.int32():
+                    c_start_index = <void*> p2c.to_int32(index)
+                elif arrow_type == pa.uint64():
+                    c_start_index = <void*> p2c.to_uint64(index)
+                elif arrow_type == pa.int64():
+                    c_start_index = <void*>p2c.to_long(index)
+                elif arrow_type == pa.float16():
+                    c_start_index = <void*>p2c.to_half_float(index)
+                elif arrow_type == pa.float32():
+                    cf_start_index = p2c.to_float(index)
+                    self.indexer_shd_ptr.get().loc(&cf_start_index, c_column_index, input, output)
+                    intermediate_tables.append(pycylon_wrap_table(output))
+                elif arrow_type == pa.float64():
+                    cd_start_index = p2c.to_double(index)
+                    self.indexer_shd_ptr.get().loc(&cd_start_index, c_column_index, input, output)
+                    intermediate_tables.append(pycylon_wrap_table(output))
+                elif arrow_type == pa.string():
+                    cs_start_index = p2c.to_string(index)
+                    self.indexer_shd_ptr.get().loc(&cs_start_index, c_column_index, input, output)
+                    intermediate_tables.append(pycylon_wrap_table(output))
+                else:
+                    raise ValueError("Unsupported data type")
+
+                if arrow_type != pa.string() and arrow_type != pa.float32() and arrow_type != \
+                        pa.float64():
+                    self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
+                    intermediate_tables.append(pycylon_wrap_table(output))
 
             return Table.merge(ctx, intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")
+            if arrow_type == pa.bool_():
+                c_start_index = <void*> p2c.to_bool(indices)
+            if arrow_type == pa.uint8():
+                c_start_index = <void*> p2c.to_uint8(indices)
+            if arrow_type == pa.int8():
+                c_start_index = <void*> p2c.to_int8(indices)
+            if arrow_type == pa.uint16():
+                c_start_index = <void*> p2c.to_uint16(indices)
+            if arrow_type == pa.int16():
+                c_start_index = <void*> p2c.to_int16(indices)
+            if arrow_type == pa.uint32():
+                c_start_index = <void*> p2c.to_uint32(indices)
+            if arrow_type == pa.int32():
+                c_start_index = <void*> p2c.to_int32(indices)
+            if arrow_type == pa.uint64():
+                c_start_index = <void*> p2c.to_uint64(indices)
             if arrow_type == pa.int64():
                 c_start_index = <void*> p2c.to_long(indices)
+            if arrow_type == pa.float16():
+                c_start_index = <void*> p2c.to_half_float(indices)
+            if arrow_type == pa.float32():
+                cf_start_index = p2c.to_float(indices)
+                self.indexer_shd_ptr.get().loc(&cf_start_index, c_column_index, input, output)
+            if arrow_type == pa.float64():
+                cd_start_index = p2c.to_double(indices)
+                self.indexer_shd_ptr.get().loc(&cd_start_index, c_column_index, input, output)
+            if arrow_type == pa.string():
+                cs_start_index = p2c.to_string(indices)
+                self.indexer_shd_ptr.get().loc(&cs_start_index, c_column_index, input, output)
+            if arrow_type != pa.string() and arrow_type != pa.float32() and arrow_type != \
+                    pa.float64():
+                self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
 
-            self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
             return pycylon_wrap_table(output)
 
         if isinstance(indices, slice):
@@ -187,11 +303,55 @@ cdef class LocIndexer:
             # TODO: generalize for slice with multi-steps then resolve index list
             start_index = indices.start
             end_index = indices.stop
+            if arrow_type == pa.bool_():
+                c_start_index = <void*> p2c.to_bool(start_index)
+                c_end_index = <void*> p2c.to_bool(end_index)
+            if arrow_type == pa.uint8():
+                c_start_index = <void*> p2c.to_uint8(start_index)
+                c_end_index = <void*> p2c.to_uint8(end_index)
+            if arrow_type == pa.int8():
+                c_start_index = <void*> p2c.to_int8(start_index)
+                c_end_index = <void*> p2c.to_int8(end_index)
+            if arrow_type == pa.uint16():
+                c_start_index = <void*> p2c.to_uint16(start_index)
+                c_end_index = <void*> p2c.to_uint16(end_index)
+            if arrow_type == pa.int16():
+                c_start_index = <void*> p2c.to_int16(start_index)
+                c_end_index = <void*> p2c.to_int16(end_index)
+            if arrow_type == pa.uint32():
+                c_start_index = <void*> p2c.to_uint32(start_index)
+                c_end_index = <void*> p2c.to_uint32(end_index)
+            if arrow_type == pa.int32():
+                c_start_index = <void*> p2c.to_int32(start_index)
+                c_end_index = <void*> p2c.to_int32(end_index)
+            if arrow_type == pa.uint64():
+                c_start_index = <void*> p2c.to_uint64(start_index)
+                c_end_index = <void*> p2c.to_uint64(end_index)
             if arrow_type == pa.int64():
                 c_start_index = <void*> p2c.to_long(start_index)
                 c_end_index = <void*> p2c.to_long(end_index)
+            if arrow_type == pa.float16():
+                c_start_index = <void*> p2c.to_half_float(start_index)
+                c_end_index = <void*> p2c.to_half_float(end_index)
+            if arrow_type == pa.float32():
+                cf_start_index = p2c.to_float(start_index)
+                cf_end_index = p2c.to_float(end_index)
+                self.indexer_shd_ptr.get().loc(&cf_start_index, &cf_end_index, c_column_index,
+                                               input, output)
+            if arrow_type == pa.float64():
+                cd_start_index = p2c.to_double(start_index)
+                cd_end_index = p2c.to_double(end_index)
+                self.indexer_shd_ptr.get().loc(&cd_start_index, &cd_end_index, c_column_index, \
+                                                                             input, output)
+            if arrow_type == pa.string():
+                cs_start_index = p2c.to_string(start_index)
+                cs_end_index = p2c.to_string(end_index)
+                self.indexer_shd_ptr.get().loc(&cs_start_index, &cs_end_index, c_column_index,
+                                               input, output)
 
-            self.indexer_shd_ptr.get().loc(&c_start_index, &c_end_index, c_column_index, input,
-                                           output)
+            if arrow_type != pa.string() and arrow_type != pa.float32() and arrow_type != \
+                    pa.float64():
+                self.indexer_shd_ptr.get().loc(&c_start_index, &c_end_index, c_column_index,
+                                               input, output)
             return pycylon_wrap_table(output)
 

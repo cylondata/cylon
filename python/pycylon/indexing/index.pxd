@@ -71,6 +71,24 @@ cdef class PyObjectToCObject:
         void * get_cptr_from_object(self, py_object)
         vector[void*] get_vector_ptrs_from_list(self, py_list)
         long to_long(self, py_object)
+        bool to_bool(self, py_object)
+        signed char to_int8(self, py_object)
+        signed short to_int16(self, py_object)
+        signed int to_int32(self, py_object)
+        signed long long to_int64(self, py_object)
+        unsigned char to_uint8(self, py_object)
+        unsigned short to_uint16(self, py_object)
+        unsigned int to_uint32(self, py_object)
+        unsigned long long to_uint64(self, py_object)
+        long to_long(self, py_object)
+        float to_float(self, py_object)
+        double to_double(self, py_object)
+        unsigned short to_half_float(self, py_object)
+        string to_string(self, py_object)
+
+
+
+
 
 cdef class LocIndexer:
 
