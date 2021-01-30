@@ -329,8 +329,120 @@ def test_cylon_cpp_str_multi_column_indexing():
     print(loc_out3)
 
 
+def test_cylon_cpp_range_column_indexing():
+    from pycylon.indexing.index import IndexingSchema
+    from pycylon.indexing.index_utils import IndexUtil
+    from pycylon.indexing.index import LocIndexer
+
+    pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
+                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+                              'c': pd.Series([11, 12, 14, 15, 16, 17, 18], dtype='int')
+                              })
+    pdf = pd.DataFrame([[1, 2, 11], [4, 5, 12], [7, 8, 14], [10, 11, 15], [20, 22, 16], [23, 25,
+                                                                                         17],
+                        [10, 12, 18]])
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+    indexing_schema = IndexingSchema.LINEAR
+
+    print("Input Table")
+    print(cn_tb)
+    print(cn_tb.to_arrow())
+
+    output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
+    print("Output Indexed Table")
+    print(output)
+
+    loc_ix = LocIndexer(indexing_schema)
+    start_index = 1
+    end_index = 7
+    column_index = slice(0, 1)
+
+    loc_out = loc_ix.loc_with_range_column(slice(start_index, end_index), column_index, output)
+    #
+    print(loc_out)
+
+    print(loc_out.to_arrow())
+
+    index = loc_out.get_index()
+
+    print(index)
+
+    print(index.get_index_array())
+
+    indices = [4, 7, 23, 20]
+
+    loc_out2 = loc_ix.loc_with_range_column(indices, column_index, output)
+
+    print(loc_out2)
+
+    loc_index = 10
+    loc_out3 = loc_ix.loc_with_range_column(loc_index, column_index, output)
+
+    print(loc_out3)
+
+
+def test_cylon_cpp_str_range_column_indexing():
+    from pycylon.indexing.index import IndexingSchema
+    from pycylon.indexing.index_utils import IndexUtil
+    from pycylon.indexing.index import LocIndexer
+
+    pdf_str = pd.DataFrame([["1", 2, 3], ["4", 5, 4], ["7", 8, 10], ["10", 11, 12], ["20", 22, 20],
+                            ["23", 25, 20], ["10", 12, 35]])
+    pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
+                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+                              'c': pd.Series([3, 4, 10, 12, 20, 20, 35], dtype='int')})
+    pdf = pd.DataFrame([[1, 2], [4, 5], [7, 8], [10, 11], [20, 22], [23, 25], [10, 12]])
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf_str)
+    indexing_schema = IndexingSchema.LINEAR
+
+    print("Input Table")
+    print(cn_tb)
+    print(cn_tb.to_arrow())
+
+    output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
+    print("Output Indexed Table")
+    print(output)
+
+    loc_ix = LocIndexer(indexing_schema)
+    start_index = b"1"
+    end_index = b"7"
+    column_index = slice(0, 1)
+
+    loc_out = loc_ix.loc_with_range_column(slice(start_index, end_index), column_index, output)
+
+    print(loc_out)
+
+    print(loc_out.to_arrow())
+
+    index = loc_out.get_index()
+
+    print(index)
+
+    print(index.get_index_array())
+
+    indices = ["100", "4", "7", "23", "20"]
+
+    indices = [b'4']
+
+    # indices = [4, 7]
+
+    loc_out2 = loc_ix.loc_with_range_column(indices, column_index, output)
+
+    print(loc_out2)
+
+    loc_index = b'10'
+    loc_out3 = loc_ix.loc_with_range_column(loc_index, column_index, output)
+
+    print(loc_out3)
+
+
 # test_cylon_cpp_single_column_indexing()
 # test_cylon_cpp_str_single_column_indexing()
 
-#test_cylon_cpp_multi_column_indexing()
-#test_cylon_cpp_str_multi_column_indexing()
+# test_cylon_cpp_multi_column_indexing()
+# test_cylon_cpp_str_multi_column_indexing()
+
+test_cylon_cpp_range_column_indexing()
+test_cylon_cpp_str_range_column_indexing()

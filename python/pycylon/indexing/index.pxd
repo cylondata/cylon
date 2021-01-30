@@ -58,6 +58,10 @@ cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon"
         CStatus loc(const void *start_index, const void *end_index, const int column_index,
                     const shared_ptr[CTable] &input_table, shared_ptr[CTable] &output)
 
+        CStatus loc(const void *start_index, const void *end_index, const int start_column_index,
+                    const int end_column_index, const shared_ptr[CTable] & input_table, \
+            shared_ptr[CTable] & output)
+
         CStatus loc(const void *start_index, const void *end_index, const vector[int]
                     &column_indices, const shared_ptr[CTable] & input_table,
                     shared_ptr[CTable] & output)
@@ -65,8 +69,14 @@ cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon"
         CStatus loc(const void *index, const int column_index,
                     const shared_ptr[CTable] & input_table, shared_ptr[CTable] &output)
 
+        CStatus loc(const void *index, const int start_column_index, const int end_column_index,
+                    const shared_ptr[CTable] & input_table, shared_ptr[CTable] & output)
+
         CStatus loc(const void *index, const vector[int] &column_indices,
                     const shared_ptr[CTable] & input_table, shared_ptr[CTable] & output)
+
+
+        # Not used in the experimental indexing API
 
         CStatus loc(const vector[void*] &indices, const int column,
                     const shared_ptr[CTable] & input_table, shared_ptr[CTable] & output)
