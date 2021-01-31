@@ -38,6 +38,7 @@ cdef extern from "../../../cpp/src/cylon/indexing/index.hpp" namespace "cylon":
         CBaseIndex (int col_id, int size, shared_ptr[CCylonContext] & ctx)
 
         shared_ptr[CArrowArray] GetIndexArray()
+        CIndexingSchema GetSchema()
 
 
 cdef class BaseIndex:

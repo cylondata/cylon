@@ -61,6 +61,9 @@ cdef class BaseIndex:
         py_arw_index_arr = pyarrow_wrap_array(index_arr)
         return py_arw_index_arr
 
+    def get_schema(self) -> IndexingSchema:
+        return IndexingSchema(self.bindex_shd_ptr.get().GetSchema())
+
 cdef vector[void*] _get_void_vec_from_pylist(py_list, arrow_type):
     if arrow_type == pa.int64():
         return _get_long_vector_from_pylist(py_list)
@@ -712,7 +715,7 @@ class PyLocIndexer:
                     column_index = self._resolve_column_index_from_column_name(column_values)
                 if isinstance(column_values, int):
                     column_index = column_values
-
+                #loc_ix.loc_with_single_column(index_values, column_index, output)
 
             if isinstance(column_values, slice):
                 start_column = column_values.start

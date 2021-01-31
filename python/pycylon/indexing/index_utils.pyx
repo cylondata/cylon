@@ -38,4 +38,6 @@ cdef class IndexUtil:
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
         CIndexUtil.BuildIndex(indexing_schema, input, column, drop, output)
-        return pycylon_wrap_table(output)
+        cn_table = pycylon_wrap_table(output)
+        cn_table.indexing_schema = indexing_schema
+        return cn_table

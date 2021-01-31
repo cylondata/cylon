@@ -190,6 +190,9 @@ std::shared_ptr<arrow::Array> RangeIndex::GetIndexArray() {
 bool RangeIndex::IsUnique() {
   return true;
 }
+IndexingSchema RangeIndex::GetSchema() {
+  return Range;
+}
 
 RangeIndexKernel::RangeIndexKernel() {}
 

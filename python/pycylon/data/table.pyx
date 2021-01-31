@@ -71,6 +71,7 @@ cdef class Table:
     def __init__(self, pyarrow_table=None, context=None):
         self.initialize(pyarrow_table, context)
         self._index = None
+        self._indexing_schema = IndexingSchema.RANGE
 
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
         """
@@ -81,6 +82,7 @@ cdef class Table:
         """
         self.initialize(pyarrow_table, context)
         self._index = None
+        self._indexing_schema = IndexingSchema.RANGE
 
     def initialize(self, pyarrow_table=None, context=None):
         cdef shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
@@ -2154,9 +2156,19 @@ cdef class Table:
         return pycylon_wrap_base_index(c_index)
 
     @property
+    def indexing_schema(self):
+        return self._indexing_schema
+
+    @indexing_schema.setter
+    def indexing_schema(self, schema):
+        self._indexing_schema = schema
+
+    @property
     def loc(self) -> PyLocIndexer:
 
         return PyLocIndexer(self)
+
+
 
 
 class EmptyTable(Table):

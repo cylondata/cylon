@@ -61,7 +61,7 @@ class BaseIndex {
 
   virtual int GetSize() const;
 
-
+  virtual IndexingSchema GetSchema() = 0;
 
   virtual arrow::MemoryPool *GetPool() const;
 
@@ -208,6 +208,10 @@ class HashIndex : public BaseIndex {
     return is_unique;
   }
 
+  IndexingSchema GetSchema() override {
+    return IndexingSchema::Hash;
+  }
+
  private:
   std::shared_ptr<MMAP_TYPE> map_;
   std::shared_ptr<arrow::Array> index_arr_;
@@ -344,10 +348,14 @@ class HashIndex<arrow::StringType, arrow::util::string_view> : public BaseIndex 
     return is_unique;
   }
 
+  IndexingSchema GetSchema() override {
+    return IndexingSchema::Hash;
+  }
+
+
  private:
   std::shared_ptr<MMAP_TYPE> map_;
   std::shared_ptr<arrow::Array> index_arr_;
-
 };
 
 class RangeIndex : public BaseIndex {
@@ -371,6 +379,8 @@ class RangeIndex : public BaseIndex {
   int GetStart() const;
   int GetAnEnd() const;
   int GetStep() const;
+
+  IndexingSchema GetSchema() override;
 
  private:
   int start_ = 0;
@@ -484,6 +494,10 @@ class LinearIndex : public BaseIndex {
     return is_unique;
   }
 
+  IndexingSchema GetSchema() override {
+    return Linear;
+  }
+
  private:
   std::shared_ptr<ARROW_ARRAY_TYPE> index_array_;
 
@@ -591,6 +605,10 @@ class LinearIndex<arrow::StringType, arrow::util::string_view> : public BaseInde
       LOG(ERROR) << "Error occurred in is unique operation";
     }
     return is_unique;
+  }
+
+  IndexingSchema GetSchema() override {
+    return Linear;
   }
 
  private:

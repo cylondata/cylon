@@ -137,6 +137,8 @@ def test_cylon_set_index_from_column():
     print("After Indexing")
     assert cn_tb.column_names == ['a']
 
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+
 
 def test_reset_index():
     from pycylon.indexing.index import IndexingSchema
@@ -151,17 +153,16 @@ def test_reset_index():
     indexing_schema = IndexingSchema.LINEAR
     drop_index = True
 
-    print("Before Indexing")
-    print(cn_tb)
-
     cn_tb.set_index('a', indexing_schema, drop_index)
+
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
 
     rest_drop_index = False
     cn_tb.reset_index(rest_drop_index)
 
     assert cn_tb.column_names == ['index', 'b']
 
-
+    assert cn_tb.get_index().get_schema() == IndexingSchema.RANGE
 
 
 def test_cylon_cpp_single_column_indexing():
@@ -497,7 +498,7 @@ def test_pdf_op():
     cn_tb.loc[0:10, 1:10]
 
 
-#test_pdf_op()
+# test_pdf_op()
 # test_cylon_cpp_single_column_indexing()
 # test_cylon_cpp_str_single_column_indexing()
 
