@@ -691,6 +691,7 @@ class PyLocIndexer:
 
     def __init__(self, cn_table):
         self._cn_table = cn_table
+        self._loc_indexer = LocIndexer(cn_table.get_index().get_schema())
 
     def _resolve_column_index_from_column_name(self, column_name) -> int:
         index = None
@@ -713,23 +714,66 @@ class PyLocIndexer:
             if np.isscalar(column_values):
                 if isinstance(column_values, str):
                     column_index = self._resolve_column_index_from_column_name(column_values)
-                if isinstance(column_values, int):
+                elif isinstance(column_values, int):
                     column_index = column_values
-                #loc_ix.loc_with_single_column(index_values, column_index, output)
-
-            if isinstance(column_values, slice):
+                else:
+                    raise ValueError("Column names must be str or int")
+                return self._loc_indexer.loc_with_single_column(index_values, column_index,
+                                                                self._cn_table)
+            elif isinstance(column_values, slice):
                 start_column = column_values.start
                 end_column = column_values.stop
+                print("S, E", start_column, end_column)
+                col_int_slice = None
+                if isinstance(start_column, str) and isinstance(end_column, str):
+                    col_int_slice = slice(self._resolve_column_index_from_column_name(
+                        start_column), self._resolve_column_index_from_column_name(end_column))
+                elif isinstance(start_column, int) and isinstance(end_column, int):
+                    col_int_slice = slice(start_column, end_column)
+                elif start_column is None and end_column is None:
+                    col_int_slice = slice(0, self._cn_table.column_count - 1)
+                elif start_column is None and end_column:
+                    if isinstance(end_column, str):
+                        col_int_slice = slice(0, self._resolve_column_index_from_column_name(
+                            end_column))
+                    elif isinstance(end_column, int):
+                        col_int_slice = slice(0, end_column)
+                    else:
+                        raise ValueError("Unsupported column index type")
+                elif start_column and end_column is None:
+                    if isinstance(start_column, str):
+                        col_int_slice = slice(self._resolve_column_index_from_column_name(
+                            start_column), self._cn_table.column_count - 1)
+                    elif isinstance(start_column, int):
+                        col_int_slice = slice(start_column, self._cn_table.column_count - 1)
+                    else:
+                        raise ValueError("Unsupported column index type")
+                else:
+                    raise ValueError("Invalid column range type for loc operation")
+                return self._loc_indexer.loc_with_range_column(index_values, col_int_slice,
+                                                               self._cn_table)
 
-
-            if isinstance(column_values, List):
-                pass
+            elif isinstance(column_values, List):
+                int_column_values = []
+                for column_name in column_values:
+                    if isinstance(column_name, str):
+                        int_column_values.append(
+                            self._resolve_column_index_from_column_name(column_name))
+                    elif isinstance(column_name, int):
+                        int_column_values.append(column_name)
+                    else:
+                        raise ValueError("Column names must be either str or int")
+                return self._loc_indexer.loc_with_multi_column(index_values, int_column_values,
+                                                               self._cn_table)
+            else:
+                raise ValueError("Column names must be a single value, range or a list of values "
+                                 "of type int or str")
 
         elif np.isscalar(item):
-                if isinstance(item, str):
-                    column_index = self._resolve_column_index_from_column_name(item)
-                if isinstance(item, int):
-                    column_index = item
+            if isinstance(item, str):
+                column_index = self._resolve_column_index_from_column_name(item)
+            if isinstance(item, int):
+                column_index = item
 
         elif isinstance(item, slice):
             start_column = item.start

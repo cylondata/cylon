@@ -498,6 +498,51 @@ def test_pdf_op():
     cn_tb.loc[0:10, 1:10]
 
 
+def test_loc_op_mode_1():
+    from pycylon.indexing.index import IndexingSchema
+    from pycylon.indexing.index_utils import IndexUtil
+    from pycylon.indexing.index import LocIndexer
+
+    pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.int64()),
+                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+                              'c': pd.Series([12, 15, 18, 111, 122, 125, 112], dtype='int'),
+                              'd': pd.Series([212, 215, 218, 211, 222, 225, 312], dtype='int'),
+                              'e': pd.Series([1121, 12151, 12181, 12111, 12221, 12251, 13121],
+                                             dtype='int')})
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf_float)
+    indexing_schema = IndexingSchema.LINEAR
+    drop_index = True
+
+    print("Before Indexing")
+    print(cn_tb)
+
+    cn_tb.set_index('a', indexing_schema, drop_index)
+
+    pdf_float = pdf_float.set_index('a')
+
+    print("After Indexing")
+    assert cn_tb.column_names == ['b', 'c', 'd', 'e']
+
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+
+    loc_cn_1 = cn_tb.loc[7:20, 'c':'e']
+    loc_pd_1 = pdf_float.loc[7:20, 'c':'e']
+
+    assert loc_cn_1.get_index().get_index_array() == pa.array([7, 10, 20])
+
+    assert loc_pd_1.values.tolist() == loc_cn_1.to_pandas().values.tolist()
+
+    assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
+
+    loc_cn_2 = cn_tb.loc[7:20, 2:]
+    loc_pd_2 = pdf_float.loc[7:20, 'd':]
+
+    assert loc_pd_2.values.tolist() == loc_cn_2.to_pandas().values.tolist()
+
+    assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
+
+
 # test_pdf_op()
 # test_cylon_cpp_single_column_indexing()
 # test_cylon_cpp_str_single_column_indexing()
@@ -508,4 +553,4 @@ def test_pdf_op():
 # test_cylon_cpp_range_column_indexing()
 # test_cylon_cpp_str_range_column_indexing()
 
-test_reset_index()
+test_loc_op_mode_1()

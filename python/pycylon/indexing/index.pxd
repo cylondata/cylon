@@ -110,9 +110,6 @@ cdef class PyObjectToCObject:
         string to_string(self, py_object)
 
 
-
-
-
 cdef class LocIndexer:
 
     cdef:
