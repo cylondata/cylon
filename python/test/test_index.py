@@ -137,6 +137,7 @@ def test_cylon_set_index_from_column():
     print("After Indexing")
     assert cn_tb.column_names == ['a']
 
+
 def test_reset_index():
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
@@ -158,7 +159,7 @@ def test_reset_index():
     rest_drop_index = False
     cn_tb.reset_index(rest_drop_index)
 
-    print(cn_tb)
+    assert cn_tb.column_names == ['index', 'b']
 
 
 

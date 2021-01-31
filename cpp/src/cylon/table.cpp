@@ -1077,15 +1077,12 @@ Status Table::ResetIndex(bool drop) {
       LOG(INFO) << "Table contains a range index";
     } else {
       LOG(INFO) << "Table contains a non-range index";
+      auto index_arr = base_index_->GetIndexArray();
+      auto pool = cylon::ToArrowPool(ctx);
+      base_index_ = std::make_shared<cylon::RangeIndex>(0, table_->num_rows(), 1, pool);
       if (!drop) {
         LOG(INFO) << "Reset Index Drop case";
-        auto index_arr = base_index_->GetIndexArray();
-        std::cout << ">>> Index Arr : " << index_arr->length() << std::endl;
-        auto pool = cylon::ToArrowPool(ctx);
-        base_index_ = std::make_shared<cylon::RangeIndex>(0, table_->num_rows(), 1, pool);
         AddColumn(0, "index", index_arr);
-      } else {
-        // reset to a range index
       }
     }
   }
