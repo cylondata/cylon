@@ -21,6 +21,15 @@
 
 namespace cylon {
 
+static const std::vector<compute::AggregationOpId>
+    ASSOCIATIVE_OPS{compute::SUM, compute::MIN, compute::MAX};
+
+static inline bool is_associative(const std::vector<compute::AggregationOpId> &aggregate_ops) {
+  return std::all_of(aggregate_ops.begin(), aggregate_ops.end(), [](const compute::AggregationOpId &op) {
+    return std::find(ASSOCIATIVE_OPS.begin(), ASSOCIATIVE_OPS.end(), op) != ASSOCIATIVE_OPS.end();
+  });
+}
+
 Status DistributedHashGroupBy(std::shared_ptr<Table> &table,
                               const std::vector<int32_t> &index_cols,
                               const std::vector<int32_t> &aggregate_cols,
@@ -45,12 +54,17 @@ Status DistributedHashGroupBy(std::shared_ptr<Table> &table,
     agg_after_projection.emplace_back(index_cols.size() + i, aggregate_ops[i]);
   }
 
-  // do local group by
+  // do local group by if world_sz is 1 or if all agg ops are associative
+  // todo: find a better way to do this, rather than checking the associativity
   std::shared_ptr<Table> local_table;
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(HashGroupBy(projected_table,
-                                                    indices_after_project,
-                                                    agg_after_projection,
-                                                    local_table))
+  if (table->GetContext()->GetWorldSize() == 1 || is_associative(aggregate_ops)) {
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(HashGroupBy(projected_table,
+                                                      indices_after_project,
+                                                      agg_after_projection,
+                                                      local_table))
+  } else {
+    local_table = std::move(projected_table);
+  }
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
@@ -97,7 +111,12 @@ Status DistributedPipelineGroupBy(std::shared_ptr<Table> &table,
 
   // do local group by
   std::shared_ptr<Table> local_table;
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(PipelineGroupBy(projected_table, 0, agg_after_projection, local_table))
+  // todo: find a better way to do this, rather than checking the associativity
+  if (table->GetContext()->GetWorldSize() == 1 || is_associative(aggregate_ops)) {
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(PipelineGroupBy(projected_table, 0, agg_after_projection, local_table))
+  } else {
+    local_table = std::move(projected_table);
+  }
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
