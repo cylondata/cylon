@@ -197,7 +197,7 @@ class Table {
 
   std::shared_ptr<BaseIndex> GetIndex();
 
-  Status ResetIndex(bool drop = false);
+  Status ResetIndex(bool drop=false);
 
   Status AddColumn(int64_t position, std::string column_name, std::shared_ptr<arrow::Array> &input_column);
 

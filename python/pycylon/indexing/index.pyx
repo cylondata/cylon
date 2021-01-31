@@ -35,7 +35,7 @@ import numpy as np
 from cpython.ref cimport PyObject
 from cython.operator cimport dereference as deref, preincrement as inc
 
-from typing import List
+from typing import List, Tuple
 
 '''
 Cylon Indexing is done with the following enums. 
@@ -682,3 +682,58 @@ cdef class LocIndexer:
                                                input, output)
 
             return pycylon_wrap_table(output)
+
+
+class PyLocIndexer:
+
+    def __init__(self, cn_table):
+        self._cn_table = cn_table
+
+    def _resolve_column_index_from_column_name(self, column_name) -> int:
+        index = None
+        for idx, col_name in enumerate(self._cn_table.column_names):
+            if column_name == col_name:
+                return idx
+        if index is None:
+            raise ValueError(f"Column {column_name} does not exist in the table")
+
+    def __getitem__(self, item):
+        print("Item : ", item)
+        if isinstance(item, Tuple):
+            # with both column and index option
+            if len(item) != 2:
+                raise ValueError("Invalid number of arguments for LocIndexer, expected 2")
+
+            index_values, column_values = item[0], item[1]
+            column_index = None
+
+            if np.isscalar(column_values):
+                if isinstance(column_values, str):
+                    column_index = self._resolve_column_index_from_column_name(column_values)
+                if isinstance(column_values, int):
+                    column_index = column_values
+
+
+            if isinstance(column_values, slice):
+                start_column = column_values.start
+                end_column = column_values.stop
+
+
+            if isinstance(column_values, List):
+                pass
+
+        elif np.isscalar(item):
+                if isinstance(item, str):
+                    column_index = self._resolve_column_index_from_column_name(item)
+                if isinstance(item, int):
+                    column_index = item
+
+        elif isinstance(item, slice):
+            start_column = item.start
+            end_column = item.stop
+
+        elif isinstance(item, List):
+            pass
+
+        else:
+            raise ValueError("Invalid indexing option")

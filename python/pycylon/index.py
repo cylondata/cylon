@@ -17,6 +17,10 @@ from pycylon.data.table import Table
 from typing import List
 from numbers import Number
 import warnings
+import numpy as np
+from pycylon.util.TableUtils import resolve_column_index_from_column_name
+from pycylon.indexing.index import IndexingSchema
+from pycylon.indexing.index_utils import IndexUtil
 
 
 class Index(object):
@@ -144,6 +148,7 @@ def _is_index_and_range_validity(table, index_range):
     else:
         return False
 
+
 def _is_index_list_and_valid(table, index):
     if isinstance(index, List):
         if len(index) == table.row_count:
@@ -191,7 +196,23 @@ def _get_column_by_name(table, column_name):
     return artb.column(column_name)
 
 
-def process_index_by_value(key, table):
+def process_index_by_value(key, table, index_schema, drop_index):
+    if np.isscalar(key):
+        column_index = None
+        if isinstance(key, str):
+            column_index = resolve_column_index_from_column_name(key, table)
+        elif isinstance(key, int):
+            column_index = key
+        output = IndexUtil.build_index(index_schema, table, column_index, drop_index)
+        return output
+    elif isinstance(key, List):
+        raise NotImplemented("Index build by list not Implemented")
+    else:
+        raise ValueError("Unexpected value")
+
+
+def _process_index_by_value(key, table):
+    # TODO: Indexing Python enhancement for Indexing Dev Stage 2
     index = None
     if _is_index_list_and_valid(table, key):
         # scenario-1: key is a list of row_indices

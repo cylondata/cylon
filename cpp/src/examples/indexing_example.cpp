@@ -47,6 +47,8 @@ int test_linear_indexing();
 
 int test_iloc_operations();
 
+int test_reset_index();
+
 int test_loc_operations(cylon::IndexingSchema schema);
 
 int test_str_loc_operations(cylon::IndexingSchema schema);
@@ -104,6 +106,89 @@ int main(int argc, char *argv[]) {
 //  long * cast_value = static_cast<long*>(ptr);
 //  std::cout << "Value : " << ptr << ", " <<  *cast_value << std::endl;
 
+
+  test_reset_index();
+
+}
+
+int test_reset_index() {
+
+  std::string func_title = "Rest Index";
+  separator(func_title);
+
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output, output1;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/indexing_data.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if (!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in creating table";
+    return -1;
+  }
+
+  LOG(INFO) << "Original Data";
+
+  input->Print();
+
+  long start_index = 0;
+  long end_index = 5;
+  int64_t column = 0;
+  int start_column = 0;
+  int end_column = 1;
+  std::vector<int> columns = {0, 1};
+  typedef std::vector<void *> vector_void_star;
+
+  vector_void_star output_items;
+  long a = 4;
+  long b = 5;
+  std::vector<long> start_indices = {4, 1};
+  std::shared_ptr<arrow::Int64Array> arr;
+  arrow::Int64Builder builder;
+  builder.AppendValues(start_indices);
+  builder.Finish(&arr);
+
+  for (size_t tx = 0; tx < start_indices.size(); tx++) {
+    output_items.push_back(&start_indices.at(tx));
+  }
+
+  bool drop_index = true;
+  std::shared_ptr<arrow::Array> index_arr;
+
+  std::shared_ptr<cylon::BaseIndex> index;
+
+
+  status = cylon::IndexUtil::BuildIndex(cylon::IndexingSchema::Linear, input, 0, index);
+
+  if (!status.is_ok()) {
+    return -1;
+  }
+
+  status = input->Set_Index(index, drop_index);
+
+  if (!status.is_ok()) {
+    return -1;
+  }
+
+  LOG(INFO) << "After Setting Index";
+
+  input->Print();
+
+  input->ResetIndex(false);
+
+  LOG(INFO) << "After Resetting Index";
+
+  input->Print();
+
+
+  return 0;
 }
 
 int arrow_take_test(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &input1) {
