@@ -1996,9 +1996,7 @@ cdef class Table:
             <pycylon.index.RangeIndex object at 0x7f58bde8e040>
 
         '''
-        if self._index == None:
-            self._index = RangeIndex(range(0, self.row_count))
-        return self._index
+        return self.get_index()
 
     def set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
                   drop: bool = False):
@@ -2032,10 +2030,16 @@ cdef class Table:
         # TODO: Multi-Indexing support: https://github.com/cylondata/cylon/issues/233
         # TODO: Enhancing: https://github.com/cylondata/cylon/issues/235
         cdef shared_ptr[CTable] indexed_cylon_table
-        indexed_table = process_index_by_value(key=key, table=self, index_schema=indexing_schema,
-                                               drop_index=drop)
-        indexed_cylon_table = pycylon_unwrap_table(indexed_table)
-        self.init(indexed_cylon_table)
+        cdef shared_ptr[CBaseIndex] c_base_index
+
+        if isinstance(key, BaseIndex):
+            c_base_index = pycylon_unwrap_base_index(key)
+            self.table_shd_ptr.get().Set_Index(c_base_index, False)
+        else:
+            indexed_table = process_index_by_value(key=key, table=self, index_schema=indexing_schema,
+                                                       drop_index=drop)
+            indexed_cylon_table = pycylon_unwrap_table(indexed_table)
+            self.init(indexed_cylon_table)
 
     def reset_index(self, drop_index:bool=False) -> Table:
         cdef bool c_drop_index = drop_index

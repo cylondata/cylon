@@ -64,6 +64,10 @@ cdef class BaseIndex:
     def get_schema(self) -> IndexingSchema:
         return IndexingSchema(self.bindex_shd_ptr.get().GetSchema())
 
+    @property
+    def index_values(self):
+        return self.get_index_array().tolist()
+
 cdef vector[void*] _get_void_vec_from_pylist(py_list, arrow_type):
     if arrow_type == pa.int64():
         return _get_long_vector_from_pylist(py_list)

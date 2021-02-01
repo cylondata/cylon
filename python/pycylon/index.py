@@ -19,7 +19,7 @@ from numbers import Number
 import warnings
 import numpy as np
 from pycylon.util.TableUtils import resolve_column_index_from_column_name
-from pycylon.indexing.index import IndexingSchema
+from pycylon.indexing.index import IndexingSchema, BaseIndex
 from pycylon.indexing.index_utils import IndexUtil
 
 
@@ -203,10 +203,9 @@ def process_index_by_value(key, table, index_schema, drop_index):
             column_index = resolve_column_index_from_column_name(key, table)
         elif isinstance(key, int):
             column_index = key
-        output = IndexUtil.build_index(index_schema, table, column_index, drop_index)
-        return output
+        return IndexUtil.build_index(index_schema, table, column_index, drop_index)
     elif isinstance(key, List):
-        raise NotImplemented("Index build by list not Implemented")
+        return IndexUtil.build_index_from_list(index_schema, table, key)
     else:
         raise ValueError("Unexpected value")
 

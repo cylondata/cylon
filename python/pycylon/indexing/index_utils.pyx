@@ -29,7 +29,9 @@ from pycylon.indexing.index_utils cimport CIndexUtil
 
 from pycylon.api.lib cimport (pycylon_wrap_context, pycylon_unwrap_context, pycylon_unwrap_table,
                                 pycylon_wrap_table)
-
+from pyarrow.lib cimport (pyarrow_wrap_array, pyarrow_unwrap_array)
+from typing import List
+import pyarrow as pa
 
 cdef class IndexUtil:
 
@@ -39,5 +41,14 @@ cdef class IndexUtil:
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
         CIndexUtil.BuildIndex(indexing_schema, input, column, drop, output)
         cn_table = pycylon_wrap_table(output)
-        cn_table.indexing_schema = indexing_schema
+        #cn_table.indexing_schema = indexing_schema
         return cn_table
+
+    @staticmethod
+    def build_index_from_list(indexing_schema: IndexingSchema, table: Table, index_arr:List):
+        cdef shared_ptr[CTable] output
+        cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
+        arrow_index_array = pa.array(index_arr)
+        cdef shared_ptr[CArrowArray] c_index_array = pyarrow_unwrap_array(arrow_index_array)
+        CIndexUtil.BuildIndexFromArray(indexing_schema, input, c_index_array, output)
+        return pycylon_wrap_table(output)
