@@ -801,18 +801,10 @@ class PyLocIndexer:
                 raise ValueError("Column names must be a single value, range or a list of values "
                                  "of type int or str")
 
-        elif np.isscalar(item):
-            if isinstance(item, str):
-                column_index = self._resolve_column_index_from_column_name(item)
-            if isinstance(item, int):
-                column_index = item
-
-        elif isinstance(item, slice):
-            start_column = item.start
-            end_column = item.stop
-
-        elif isinstance(item, List):
-            pass
-
+        elif item:
+            return self._loc_indexer.loc_with_range_column(item,
+                                                           slice(0,
+                                                           self._cn_table.column_count - 1),
+                                                           self._cn_table)
         else:
-            raise ValueError("Invalid indexing option")
+            raise ValueError("No values passed for loc operation")

@@ -61,17 +61,6 @@ def test_range_count():
         assert range_calculator(rg) == calculate_range_size_manual(rg)
 
 
-
-def test_loc():
-    df = pd.DataFrame([[1, 2], [4, 5], [7, 8]], index=['cobra', 'viper', 'sidewinder'],
-                      columns=['max_speed', 'shield'])
-
-    print(df)
-    ld = df.loc['viper']
-
-    print(type(ld))
-
-
 def test_cylon_set_index_from_column():
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
@@ -560,3 +549,55 @@ def test_loc_op_mode_2():
     assert loc_pd_5.values.tolist() == loc_cn_5.to_pandas().values.tolist()
     assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
 
+
+def test_loc_op_mode_3():
+    from pycylon.indexing.index import IndexingSchema
+    from pycylon.indexing.index_utils import IndexUtil
+    from pycylon.indexing.index import LocIndexer
+
+    pdf_float = pd.DataFrame({'a': pd.Series(["1", "4", "7", "10", "20", "23", "11"]),
+                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+                              'c': pd.Series([12, 15, 18, 111, 122, 125, 112], dtype='int'),
+                              'd': pd.Series([212, 215, 218, 211, 222, 225, 312], dtype='int'),
+                              'e': pd.Series([1121, 12151, 12181, 12111, 12221, 12251, 13121],
+                                             dtype='int')})
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf_float)
+    indexing_schema = IndexingSchema.LINEAR
+    drop_index = True
+
+    print("Before Indexing")
+    print(cn_tb)
+
+    cn_tb.set_index('a', indexing_schema, drop_index)
+
+    pdf_float = pdf_float.set_index('a')
+
+    print("After Indexing")
+    assert cn_tb.column_names == ['b', 'c', 'd', 'e']
+
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+
+    loc_cn_1 = cn_tb.loc["7":"20"]
+    loc_pd_1 = pdf_float.loc["7":"20"]
+
+    assert loc_pd_1.values.tolist() == loc_cn_1.to_pandas().values.tolist()
+    assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
+
+    loc_cn_2 = cn_tb.loc["7":]
+    loc_pd_2 = pdf_float.loc["7":]
+
+    assert loc_pd_2.values.tolist() == loc_cn_2.to_pandas().values.tolist()
+    assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
+
+    loc_cn_3 = cn_tb.loc[:"7"]
+    loc_pd_3 = pdf_float.loc[:"7"]
+
+    assert loc_pd_3.values.tolist() == loc_cn_3.to_pandas().values.tolist()
+    assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
+
+    loc_cn_4 = cn_tb.loc[:]
+    loc_pd_4 = pdf_float.loc[:]
+
+    assert loc_pd_4.values.tolist() == loc_cn_4.to_pandas().values.tolist()
+    assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
