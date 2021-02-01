@@ -181,6 +181,17 @@ cdef class LocIndexer:
     def __cinit__(self, CIndexingSchema indexing_schema):
         self.indexer_shd_ptr = make_shared[CLocIndexer](indexing_schema)
 
+    def _fix_partial_slice_inidices(self, start_index, end_index, index):
+        if start_index is None and end_index is None:
+            start_index = index.get_index_array()[0].as_py()  # first element of index
+            end_index = index.get_index_array()[-1].as_py()  # last element of the index
+        elif start_index and end_index is None:
+            end_index = index.get_index_array()[-1].as_py()  # last element of the index
+        elif start_index is None and end_index:
+            start_index = index.get_index_array()[0].as_py()  # first element of index
+        print("Fixed S, E", start_index, end_index)
+        return start_index, end_index
+
     def loc_with_multi_column(self, indices, column_list, table):
         cdef shared_ptr[CTable] output
         cdef void*c_start_index
@@ -293,6 +304,9 @@ cdef class LocIndexer:
             # TODO: generalize for slice with multi-steps then resolve index list
             start_index = indices.start
             end_index = indices.stop
+
+            start_index, end_index = self._fix_partial_slice_inidices(start_index, end_index, index)
+
             if arrow_type == pa.bool_():
                 c_start_index = <void*> p2c.to_bool(start_index)
                 c_end_index = <void*> p2c.to_bool(end_index)
@@ -468,6 +482,9 @@ cdef class LocIndexer:
             # TODO: generalize for slice with multi-steps then resolve index list
             start_index = indices.start
             end_index = indices.stop
+
+            start_index, end_index = self._fix_partial_slice_inidices(start_index, end_index, index)
+
             if arrow_type == pa.bool_():
                 c_start_index = <void*> p2c.to_bool(start_index)
                 c_end_index = <void*> p2c.to_bool(end_index)
@@ -633,6 +650,18 @@ cdef class LocIndexer:
             # TODO: generalize for slice with multi-steps then resolve index list
             start_index = indices.start
             end_index = indices.stop
+
+            start_index, end_index = self._fix_partial_slice_inidices(start_index, end_index, index)
+
+            # check index slice sub cases
+            if start_index is None and end_index is None:
+                start_index = index.get_index_array()[0].as_py()  # first element of index
+                end_index = index.get_index_array()[-1].as_py()  # last element of the index
+            elif start_index and end_index is None:
+                end_index = index.get_index_array()[-1].as_py()  # last element of the index
+            elif start_index is None and end_index:
+                start_index = index.get_index_array()[0].as_py()  # first element of index
+
             if arrow_type == pa.bool_():
                 c_start_index = <void*> p2c.to_bool(start_index)
                 c_end_index = <void*> p2c.to_bool(end_index)
