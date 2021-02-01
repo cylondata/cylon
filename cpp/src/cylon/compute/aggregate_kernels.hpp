@@ -150,10 +150,10 @@ struct QuantileOp : public AggregationOp {
   /**
    * @param quantile
    */
-  explicit QuantileOp(double quantile) : AggregationOp(VAR, std::make_unique<QuantileKernelOptions>(quantile)) {}
+  explicit QuantileOp(double quantile) : AggregationOp(QUANTILE, std::make_unique<QuantileKernelOptions>(quantile)) {}
 
   static inline std::unique_ptr<AggregationOp> Make(double quantile = 0.5) {
-    return std::make_unique<VarOp>(quantile);
+    return std::make_unique<QuantileOp>(quantile);
   }
 };
 
