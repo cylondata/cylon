@@ -179,7 +179,8 @@ static Status aggregate(arrow::MemoryPool *pool,
   }
 
   // need to create a builder from the ResultT, which is a C type
-  using BUILDER_T = typename arrow::TypeTraits<typename arrow::CTypeTraits<ResultT>::ArrowType>::BuilderType;
+  using RESULT_ARROW_T = typename arrow::CTypeTraits<ResultT>::ArrowType;
+  using BUILDER_T = typename arrow::TypeTraits<RESULT_ARROW_T>::BuilderType;
   BUILDER_T builder(pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(unique_groups))
   for (int64_t i = 0; i < unique_groups; i++) {
@@ -191,8 +192,8 @@ static Status aggregate(arrow::MemoryPool *pool,
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&agg_array))
 
   const char *prefix = compute::KernelTraits<aggOp, C_TYPE>::name();
-  agg_field = field->WithName(std::string(prefix) + field->name());
-
+  agg_field = std::make_shared<arrow::Field>(std::string(prefix) + field->name(),
+                                             arrow::TypeTraits<RESULT_ARROW_T>::type_singleton());
   return Status::OK();
 }
 
@@ -218,6 +219,7 @@ static inline AggregationFn resolve_op(const compute::AggregationOpId &aggOp) {
     case compute::MAX: return &aggregate<compute::MAX, ARROW_T>;
     case compute::MEAN: return &aggregate<compute::MEAN, ARROW_T>;
     case compute::VAR: return &aggregate<compute::VAR, ARROW_T>;
+    case compute::NUNIQUE: return &aggregate<compute::NUNIQUE, ARROW_T>;
     default: return nullptr;
   }
 }
@@ -278,6 +280,8 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
     std::shared_ptr<arrow::Array> new_arr;
     std::shared_ptr<arrow::Field> new_field;
     const AggregationFn &agg_fn = pick_aggregation_op(atable->field(p.first)->type(), p.second->id);
+
+    if (agg_fn == nullptr) return Status(Code::ExecutionError, "unable to find aggregation fn");
 
     RETURN_CYLON_STATUS_IF_FAILED(agg_fn(pool,
                                          atable->column(p.first)->chunk(0),

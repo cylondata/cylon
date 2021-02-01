@@ -16,6 +16,7 @@
 #define CYLON_CPP_SRC_CYLON_COMPUTE_AGGREGATE_KERNELS_HPP_
 
 #include <cmath>
+#include <unordered_set>
 
 namespace cylon {
 namespace compute {
@@ -41,7 +42,8 @@ enum AggregationOpId {
   MAX,
   COUNT,
   MEAN,
-  VAR
+  VAR,
+  NUNIQUE
 };
 
 /**
@@ -87,6 +89,8 @@ struct AggregationOp {
    */
   explicit AggregationOp(AggregationOpId id) : id(id), options(nullptr) {}
 
+  virtual ~AggregationOp() = default;
+
   AggregationOpId id;
   std::unique_ptr<KernelOptions> options;
 };
@@ -112,6 +116,7 @@ struct MinOp : public BaseAggregationOp<MIN> {};
 struct MaxOp : public BaseAggregationOp<MAX> {};
 struct CountOp : public BaseAggregationOp<COUNT> {};
 struct MeanOp : public BaseAggregationOp<MEAN> {};
+struct NUniqueOp : public BaseAggregationOp<NUNIQUE> {};
 
 /**
  * Var op
@@ -193,6 +198,14 @@ struct KernelTraits<AggregationOpId::MAX, T> {
   using ResultT = T;
   using Options = DefaultKernelOptions;
   static constexpr const char *name() { return "max_"; }
+};
+
+template<typename T>
+struct KernelTraits<AggregationOpId::NUNIQUE, T> {
+  using State = std::unordered_set<T>;
+  using ResultT = int64_t;
+  using Options = DefaultKernelOptions;
+  static constexpr const char *name() { return "nunique_"; }
 };
 
 // -----------------------------------------------------------------------------
@@ -382,6 +395,20 @@ struct MaxKernel : public TypedAggregationKernel<AggregationOpId::MAX, T> {
   }
 };
 
+template<typename T>
+struct NUniqueKernel : public TypedAggregationKernel<AggregationOpId::NUNIQUE, T> {
+  void InitializeState(std::unordered_set<T> *state) override {
+    *state = {};
+  }
+  void Update(const T *value, std::unordered_set<T> *state) override {
+    state->emplace(*value);
+  }
+  void Finalize(const std::unordered_set<T> *state, long *result) override {
+    *result = state->size();
+    const_cast<std::unordered_set<T> *>(state)->clear();
+  }
+};
+
 // -----------------------------------------------------------------------------
 
 /**
@@ -399,6 +426,8 @@ std::unique_ptr<AggregationKernel> CreateAggregateKernel() {
     case COUNT:return std::make_unique<CountKernel<T>>();
     case MEAN:return std::make_unique<MeanKernel<T>>();
     case VAR:return std::make_unique<VarianceKernel<T>>();
+    case NUNIQUE:return std::make_unique<NUniqueKernel<T>>();
+    default:return nullptr;
   }
 }
 
@@ -411,6 +440,8 @@ std::unique_ptr<AggregationKernel> CreateAggregateKernel(AggregationOpId op_id) 
     case COUNT:return std::make_unique<CountKernel<T>>();
     case MEAN:return std::make_unique<MeanKernel<T>>();
     case VAR:return std::make_unique<VarianceKernel<T>>();
+    case NUNIQUE:return std::make_unique<NUniqueKernel<T>>();
+    default:return nullptr;
   }
 }
 
