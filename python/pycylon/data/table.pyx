@@ -2165,10 +2165,11 @@ cdef class Table:
 
     @property
     def loc(self) -> PyLocIndexer:
+        return PyLocIndexer(self, "loc")
 
-        return PyLocIndexer(self)
-
-
+    @property
+    def iloc(self) -> PyLocIndexer:
+        return PyLocIndexer(self, "iloc")
 
 
 class EmptyTable(Table):

@@ -656,15 +656,6 @@ cdef class LocIndexer:
 
             start_index, end_index = self._fix_partial_slice_inidices(start_index, end_index, index)
 
-            # check index slice sub cases
-            if start_index is None and end_index is None:
-                start_index = index.get_index_array()[0].as_py()  # first element of index
-                end_index = index.get_index_array()[-1].as_py()  # last element of the index
-            elif start_index and end_index is None:
-                end_index = index.get_index_array()[-1].as_py()  # last element of the index
-            elif start_index is None and end_index:
-                start_index = index.get_index_array()[0].as_py()  # first element of index
-
             if arrow_type == pa.bool_():
                 c_start_index = <void*> p2c.to_bool(start_index)
                 c_end_index = <void*> p2c.to_bool(end_index)
@@ -719,11 +710,218 @@ cdef class LocIndexer:
             return pycylon_wrap_table(output)
 
 
+
+cdef class ILocIndexer:
+    def __cinit__(self, CIndexingSchema indexing_schema):
+        self.indexer_shd_ptr = make_shared[CILocIndexer](indexing_schema)
+
+    def _is_valid_index_value(self, index_value):
+        if not isinstance(index_value, int):
+            raise ValueError("Iloc operation requires position as integers")
+        return True
+
+    def _fix_partial_slice_inidices(self, start_index, end_index, index):
+        if start_index and end_index:
+            return start_index, end_index
+        elif start_index is None and end_index is None:
+            start_index = 0
+            end_index = len(index.get_index_array())
+        elif start_index and end_index is None:
+            end_index = len(index.get_index_array())
+        elif start_index is None and end_index:
+            start_index = 0
+        print("Fixed S, E", start_index, end_index)
+        return start_index, end_index
+
+    def loc_with_multi_column(self, indices, column_list, table):
+        cdef shared_ptr[CTable] output
+        cdef void*c_start_index
+        cdef void*c_end_index
+        cdef vector[int] c_column_index
+
+
+        index = table.get_index()
+        arrow_type = index.get_index_array().type
+        ctx = table.context
+
+        for col_idx in column_list:
+            c_column_index.push_back(col_idx)
+
+        cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
+        cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
+        intermediate_tables = []
+
+        if isinstance(indices, List):
+            print("select set of indices")
+
+            for index in indices:
+                if self._is_valid_index_value(index):
+                    c_start_index = <void*> p2c.to_uint64(index)
+                    self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
+                    intermediate_tables.append(pycylon_wrap_table(output))
+
+            return Table.merge(ctx, intermediate_tables)
+
+        if np.isscalar(indices):
+            print("select a single index")
+            if self._is_valid_index_value(indices):
+                c_start_index = <void*> p2c.to_uint64(indices)
+
+            self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
+            return pycylon_wrap_table(output)
+
+        if isinstance(indices, slice):
+            print("select a range of index")
+            # assume step = 1
+            # TODO: generalize for slice with multi-steps then resolve index list
+            start_index = indices.start
+            end_index = indices.stop
+
+            start_index, end_index = self._fix_partial_slice_inidices(start_index, end_index, index)
+
+            self._is_valid_index_value(start_index)
+            self._is_valid_index_value(end_index)
+
+            # NOTE: pandas iloc and loc semantics considers the edge boundary differently
+            end_index = end_index - 1 # match to pandas definition of range for iloc
+
+            c_start_index = <void*> p2c.to_long(start_index)
+            c_end_index = <void*> p2c.to_long(end_index)
+
+            self.indexer_shd_ptr.get().loc(&c_start_index, &c_end_index, c_column_index,
+                                           input, output)
+
+            return pycylon_wrap_table(output)
+
+    def loc_with_range_column(self, indices, column_range, table):
+        cdef shared_ptr[CTable] output
+        cdef void*c_start_index
+        cdef void*c_end_index
+        cdef int c_start_column_index
+        cdef int c_end_column_index
+
+        c_start_column_index = column_range.start
+        c_end_column_index = column_range.stop
+
+        index = table.get_index()
+        arrow_type = index.get_index_array().type
+        ctx = table.context
+
+        cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
+        cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
+        intermediate_tables = []
+
+        if isinstance(indices, List):
+            print("select set of indices")
+
+            for index in indices:
+                self._is_valid_index_value(index)
+                c_start_index = <void*> p2c.to_long(index)
+
+                self.indexer_shd_ptr.get().loc(&c_start_index, c_start_column_index,
+                                                   c_end_column_index, input, output)
+                intermediate_tables.append(pycylon_wrap_table(output))
+
+            return Table.merge(ctx, intermediate_tables)
+
+        if np.isscalar(indices):
+            print("select a single index")
+
+            c_start_index = <void*> p2c.to_long(indices)
+            self.indexer_shd_ptr.get().loc(&c_start_index, c_start_column_index,
+                                               c_end_column_index, input, output)
+            return pycylon_wrap_table(output)
+
+        if isinstance(indices, slice):
+            print("select a range of index")
+            # assume step = 1
+            # TODO: generalize for slice with multi-steps then resolve index list
+            start_index = indices.start
+            end_index = indices.stop
+
+            start_index, end_index = self._fix_partial_slice_inidices(start_index, end_index, index)
+
+            self._is_valid_index_value(start_index)
+            self._is_valid_index_value(end_index)
+
+            # NOTE: pandas iloc and loc semantics considers the edge boundary differently
+            end_index = end_index - 1  # match to pandas definition of range for iloc
+
+            c_start_index = <void*> p2c.to_long(start_index)
+            c_end_index = <void*> p2c.to_long(end_index)
+
+            self.indexer_shd_ptr.get().loc(&c_start_index, &c_end_index, c_start_column_index,
+                                               c_end_column_index,
+                                               input, output)
+            return pycylon_wrap_table(output)
+
+    def loc_with_single_column(self, indices, column_index, table):
+
+        cdef shared_ptr[CTable] output
+        cdef void*c_start_index
+        cdef void*c_end_index
+        cdef int c_column_index = <int> column_index
+
+
+        index = table.get_index()
+        arrow_type = index.get_index_array().type
+        ctx = table.context
+
+        cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
+        cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
+        intermediate_tables = []
+
+        if isinstance(indices, List):
+            print("select set of indices")
+
+            for index in indices:
+                self._is_valid_index_value(index)
+                c_start_index = <void*> p2c.to_long(index)
+
+                self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
+                intermediate_tables.append(pycylon_wrap_table(output))
+
+            return Table.merge(ctx, intermediate_tables)
+
+        if np.isscalar(indices):
+            print("select a single index")
+            self._is_valid_index_value(indices)
+            c_start_index = <void*> p2c.to_long(indices)
+
+            self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
+
+            return pycylon_wrap_table(output)
+
+        if isinstance(indices, slice):
+            print("select a range of index")
+            # TODO: generalize for slice with multi-steps then resolve index list
+            start_index = indices.start
+            end_index = indices.stop
+
+            start_index, end_index = self._fix_partial_slice_inidices(start_index, end_index, index)
+
+            self._is_valid_index_value(start_index)
+            self._is_valid_index_value(end_index)
+
+            # NOTE: pandas iloc and loc semantics considers the edge boundary differently
+            end_index = end_index - 1  # match to pandas definition of range for iloc
+
+            c_start_index = <void*> p2c.to_long(start_index)
+            c_end_index = <void*> p2c.to_long(end_index)
+
+            self.indexer_shd_ptr.get().loc(&c_start_index, &c_end_index, c_column_index,
+                                               input, output)
+            return pycylon_wrap_table(output)
+
+
 class PyLocIndexer:
 
-    def __init__(self, cn_table):
+    def __init__(self, cn_table, mode):
         self._cn_table = cn_table
-        self._loc_indexer = LocIndexer(cn_table.get_index().get_schema())
+        if mode == "loc":
+            self._loc_indexer = LocIndexer(cn_table.get_index().get_schema())
+        elif mode == "iloc":
+            self._loc_indexer = ILocIndexer(cn_table.get_index().get_schema())
 
     def _resolve_column_index_from_column_name(self, column_name) -> int:
         index = None
@@ -804,7 +1002,7 @@ class PyLocIndexer:
         elif item:
             return self._loc_indexer.loc_with_range_column(item,
                                                            slice(0,
-                                                           self._cn_table.column_count - 1),
+                                                                 self._cn_table.column_count - 1),
                                                            self._cn_table)
         else:
             raise ValueError("No values passed for loc operation")

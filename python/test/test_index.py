@@ -601,3 +601,63 @@ def test_loc_op_mode_3():
 
     assert loc_pd_4.values.tolist() == loc_cn_4.to_pandas().values.tolist()
     assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
+
+
+def test_iloc_op_mode_1():
+    from pycylon.indexing.index import IndexingSchema
+    from pycylon.indexing.index_utils import IndexUtil
+    from pycylon.indexing.index import LocIndexer
+
+    pdf_float = pd.DataFrame({'a': pd.Series(["1", "4", "7", "10", "20", "23", "11"]),
+                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+                              'c': pd.Series([12, 15, 18, 111, 122, 125, 112], dtype='int'),
+                              'd': pd.Series([212, 215, 218, 211, 222, 225, 312], dtype='int'),
+                              'e': pd.Series([1121, 12151, 12181, 12111, 12221, 12251, 13121],
+                                             dtype='int')})
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf_float)
+    indexing_schema = IndexingSchema.LINEAR
+    drop_index = True
+
+    print("Before Indexing")
+    print(cn_tb)
+
+    cn_tb.set_index('a', indexing_schema, drop_index)
+
+    pdf_float = pdf_float.set_index('a')
+
+    print("After Indexing")
+    assert cn_tb.column_names == ['b', 'c', 'd', 'e']
+
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+
+    iloc_cn_1 = cn_tb.iloc[3:5, 1:3]
+    iloc_pd_1 = pdf_float.iloc[3:5, 1:4]
+
+    print(iloc_cn_1)
+    print(iloc_pd_1)
+
+    assert iloc_pd_1.values.tolist() == iloc_cn_1.to_pandas().values.tolist()
+
+    iloc_cn_2 = cn_tb.iloc[3:5, 1:]
+    iloc_pd_2 = pdf_float.iloc[3:5, 1:]
+
+    assert iloc_pd_2.values.tolist() == iloc_cn_2.to_pandas().values.tolist()
+
+
+    iloc_cn_3 = cn_tb.iloc[3:, 1:]
+    iloc_pd_3 = pdf_float.iloc[3:, 1:]
+
+    assert iloc_pd_3.values.tolist() == iloc_cn_3.to_pandas().values.tolist()
+
+
+    iloc_cn_4 = cn_tb.iloc[:3, 1:]
+    iloc_pd_4 = pdf_float.iloc[:3, 1:]
+
+    assert iloc_pd_4.values.tolist() == iloc_cn_4.to_pandas().values.tolist()
+
+
+    iloc_cn_5 = cn_tb.iloc[:, :]
+    iloc_pd_5 = pdf_float.iloc[:, :]
+
+    assert iloc_pd_5.values.tolist() == iloc_cn_5.to_pandas().values.tolist()
