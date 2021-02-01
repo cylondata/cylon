@@ -91,6 +91,36 @@ add_library(cylon SHARED
         arrow/arrow_builder.cpp
         arrow/arrow_task_all_to_all.h
         arrow/arrow_task_all_to_all.cpp
+        ops/api/parallel_op.hpp
+        ops/join_op.hpp
+        ops/api/parallel_op.cpp
+        ops/join_op.cpp
+        ops/partition_op.hpp
+        ops/partition_op.cpp
+        ops/kernels/partition.hpp
+        ops/kernels/partition.cpp
+        ops/union_op.hpp
+        ops/union_op.cpp
+        ops/kernels/union.cpp
+        ops/kernels/union.hpp
+        ops/kernels/row_comparator.cpp
+        ops/kernels/row_comparator.hpp
+        ops/kernels/prepare_array.hpp
+        ops/kernels/prepare_array.cpp
+        ops/all_to_all_op.hpp
+        ops/all_to_all_op.cpp
+        ops/dis_union_op.hpp
+        ops/dis_union_op.cpp
+        ops/dis_join_op.cpp
+        ops/dis_join_op.hpp
+        ops/execution/execution.hpp
+        ops/execution/execution.cpp
+        ops/kernels/join_kernel.hpp
+        ops/kernels/join_kernel.cpp
+        ops/merge_op.cpp
+        ops/merge_op.hpp
+        ops/split_op.cpp
+        ops/split_op.hpp
         arrow/arrow_builder.cpp
         compute/aggregates.hpp
         compute/aggregates.cpp
