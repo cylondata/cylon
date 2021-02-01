@@ -54,7 +54,8 @@ int main(int argc, char *argv[]) {
 //  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VarOp::Make()}}, output);
 //  cylon::Status s = cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::VAR}, output);
 //  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::NUNIQUE}}, output);
-  status = cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::COUNT}, output);
+  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::QUANTILE}}, output);
+//  status = cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::COUNT}, output);
 
   if (!status.is_ok()) {
     LOG(INFO) << "Table GroupBy failed " << status.get_msg();

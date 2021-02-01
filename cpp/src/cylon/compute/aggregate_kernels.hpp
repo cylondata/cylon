@@ -43,7 +43,8 @@ enum AggregationOpId {
   COUNT,
   MEAN,
   VAR,
-  NUNIQUE
+  NUNIQUE,
+  QUANTILE
 };
 
 /**
@@ -69,6 +70,16 @@ struct VarKernelOptions : public KernelOptions {
   VarKernelOptions() : VarKernelOptions(0) {}
 
   int ddof;
+};
+
+struct QuantileKernelOptions : public KernelOptions {
+  /**
+   * @param quantile quantile
+   */
+  explicit QuantileKernelOptions(double quantile) : quantile(quantile) {}
+  QuantileKernelOptions() : QuantileKernelOptions(0.5) {}
+
+  double quantile;
 };
 
 // -----------------------------------------------------------------------------
@@ -129,6 +140,20 @@ struct VarOp : public AggregationOp {
 
   static inline std::unique_ptr<AggregationOp> Make(int ddof = 0) {
     return std::make_unique<VarOp>(ddof);
+  }
+};
+
+/**
+ * Var op
+ */
+struct QuantileOp : public AggregationOp {
+  /**
+   * @param quantile
+   */
+  explicit QuantileOp(double quantile) : AggregationOp(VAR, std::make_unique<QuantileKernelOptions>(quantile)) {}
+
+  static inline std::unique_ptr<AggregationOp> Make(double quantile = 0.5) {
+    return std::make_unique<VarOp>(quantile);
   }
 };
 
@@ -206,6 +231,14 @@ struct KernelTraits<AggregationOpId::NUNIQUE, T> {
   using ResultT = int64_t;
   using Options = DefaultKernelOptions;
   static constexpr const char *name() { return "nunique_"; }
+};
+
+template<typename T>
+struct KernelTraits<AggregationOpId::QUANTILE, T> {
+  using State = std::vector<T>; // <running sum, running count>
+  using ResultT = double_t;
+  using Options = QuantileKernelOptions;
+  static constexpr const char *name() { return "quantile_"; }
 };
 
 // -----------------------------------------------------------------------------
@@ -409,6 +442,38 @@ struct NUniqueKernel : public TypedAggregationKernel<AggregationOpId::NUNIQUE, T
   }
 };
 
+template<typename T>
+struct QuantileKernel : public TypedAggregationKernel<AggregationOpId::QUANTILE, T> {
+  void Setup(QuantileKernelOptions *options) override {
+    quantile = options->quantile;
+  }
+  void InitializeState(std::vector<T> *state) override {}
+  void Update(const T *value, std::vector<T> *state) override {
+    state->emplace_back(*value);
+  }
+  void Finalize(const std::vector<T> *state, double *result) override {
+    // ref: https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/quantile using type 2
+    double np = state->size() * quantile, j = floor(np), g = np - j;
+    const auto pos = static_cast<size_t>(j);
+
+    auto *mutable_state = const_cast<std::vector<T> *>(state); // make state mutable
+
+    // partition vector around pos'th element
+    std::nth_element(mutable_state->begin(), mutable_state->begin() + pos, mutable_state->end());
+
+    if (g == 0) {
+      *result =
+          0.5 * (*std::max_element(mutable_state->begin(), mutable_state->begin() + pos) + mutable_state->at(pos));
+    } else {
+      *result = static_cast<double>(mutable_state->at(pos));
+    }
+
+    mutable_state->clear();
+  }
+
+  double quantile;
+};
+
 // -----------------------------------------------------------------------------
 
 /**
@@ -427,6 +492,7 @@ std::unique_ptr<AggregationKernel> CreateAggregateKernel() {
     case MEAN:return std::make_unique<MeanKernel<T>>();
     case VAR:return std::make_unique<VarianceKernel<T>>();
     case NUNIQUE:return std::make_unique<NUniqueKernel<T>>();
+    case QUANTILE:return std::make_unique<QuantileKernel<T>>();
     default:return nullptr;
   }
 }
@@ -441,6 +507,7 @@ std::unique_ptr<AggregationKernel> CreateAggregateKernel(AggregationOpId op_id) 
     case MEAN:return std::make_unique<MeanKernel<T>>();
     case VAR:return std::make_unique<VarianceKernel<T>>();
     case NUNIQUE:return std::make_unique<NUniqueKernel<T>>();
+    case QUANTILE:return std::make_unique<QuantileKernel<T>>();
     default:return nullptr;
   }
 }
