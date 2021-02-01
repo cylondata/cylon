@@ -2002,8 +2002,9 @@ cdef class Table:
                   drop: bool = False):
         '''
         Set Index
+        Operation takes place inplace.
         Args:
-            key: pycylon.Index Object or an object extended from pycylon.Index
+            key: pycylon.indexing.index.BaseIndex
 
         Returns: None
 
@@ -2021,10 +2022,21 @@ cdef class Table:
         >>> tb.set_index(['a', 'b', 'c', 'd'])
 
         >>> tb.index
-            <pycylon.index.CategoricalIndex object at 0x7fa72c2b6ca0>
+            <pycylon.indexing.index.BaseIndex object at 0x7fa72c2b6ca0>
 
         >>> tb.index.index_values
             ['a', 'b', 'c', 'd']
+
+        >>> tb.set_index('col-1', IndexingSchema.LINEAR, True)
+
+               col-2  col-3
+            1      5      9
+            2      6     10
+            3      7     11
+            4      8     12
+        NOTE: indexing value is not exposed to print functions
+        >>> tb.index.index_values
+            [ 1, 2, 3, 4]
         '''
 
         # TODO: Multi-Indexing support: https://github.com/cylondata/cylon/issues/233
@@ -2042,6 +2054,33 @@ cdef class Table:
             self.init(indexed_cylon_table)
 
     def reset_index(self, drop_index:bool=False) -> Table:
+        """
+        reset_index
+        Here the existing index can be removed and set back to table.
+        This operation takes place in place.
+        Args:
+            drop_index: bool, if True the column is dropped otherwise added to the table with the
+            column name "index"
+
+        Returns: None
+
+        Examples
+        --------
+
+        >>> tb
+                col-2  col-3
+            1      5      9
+            2      6     10
+            3      7     11
+            4      8     12
+
+        >>> tb.reset_index()
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+        """
         cdef bool c_drop_index = drop_index
         self.table_shd_ptr.get().ResetIndex(c_drop_index)
 
@@ -2169,10 +2208,67 @@ cdef class Table:
 
     @property
     def loc(self) -> PyLocIndexer:
+        """
+        loc
+
+        This operator finds value by key
+
+        Examples
+        --------
+
+        >>> tb
+               col-2  col-3   col-4
+            1      5      9       1
+            2      6     10      12
+            3      7     11      15
+            4      8     12      21
+
+        >>> tb.loc[2:3, 'col-2']
+                col-2
+            2      6
+            3      7
+
+        >>> tb.loc[2:3, 'col-3':'col-4']
+               col-3   col-4
+            2     10      12
+            3     11      15
+
+        Returns: PyCylon Table
+
+        """
         return PyLocIndexer(self, "loc")
 
     @property
     def iloc(self) -> PyLocIndexer:
+        """
+        loc
+
+        This operator finds value by position as an index (row index)
+
+        Examples
+        --------
+
+        >>> tb
+               col-2  col-3   col-4
+            1      5      9       1
+            2      6     10      12
+            3      7     11      15
+            4      8     12      21
+
+        >>> tb.iloc[1:3, 'col-2']
+                col-2
+            2      6
+            3      7
+
+
+        >>> tb.iloc[1:3, 'col-3':'col-4']
+               col-3   col-4
+            2     10      12
+            3     11      15
+
+        Returns: PyCylon Table
+
+        """
         return PyLocIndexer(self, "iloc")
 
 
