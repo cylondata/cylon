@@ -21,6 +21,17 @@
 #include <groupby/groupby.hpp>
 #include <groupby/hash_groupby.hpp>
 
+#define CHECK_STATUS_AND_PRINT(first_table, status, output) \
+  if (!status.is_ok()) { \
+      LOG(INFO) << "Table GroupBy failed " << status.get_msg(); \
+      return 1; \
+  }; \
+  LOG(INFO) << "table had : " << first_table->Rows() << ", group_by has : " << output->Rows(); \
+  LOG(INFO) << "Output of GroupBy Operation";     \
+  std::cout << output->get_table()->schema()->ToString() << std::endl; \
+  output->Print();                                \
+  std::cout << "-----------------------" << std::endl; \
+
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     LOG(ERROR) << "There should be two arguments with paths to csv files";
@@ -46,33 +57,32 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
 
   LOG(INFO) << "Table Data";
-
   first_table->Print();
-
   std::cout << "-----------------------" << std::endl;
-//  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VAR}}, output);
-//  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VarOp::Make()}}, output);
-//  cylon::Status s = cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::VAR}, output);
-//  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::NUNIQUE}}, output);
-  cylon::Status s = cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::QuantileOp::Make(0.2)}}, output);
-//  status = cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::COUNT}, output);
 
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table GroupBy failed " << status.get_msg();
-    ctx->Finalize();
-    return 1;
-  }
-  auto join_end_time = std::chrono::steady_clock::now();
+  CHECK_STATUS_AND_PRINT(first_table,
+                         cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VAR}}, output),
+                         output)
 
-  LOG(INFO) << "table had : " << first_table->Rows() << ", group_by has : " << output->Rows();
-  LOG(INFO) << "group_by done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                join_end_time - read_end_time).count() << "[ms]";
-  LOG(INFO) << "Output of GroupBy Operation";
+  CHECK_STATUS_AND_PRINT(first_table,
+                         cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VarOp::Make()}}, output),
+                         output)
 
-  output->Print();
+  CHECK_STATUS_AND_PRINT(first_table,
+                         cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::VAR}, output),
+                         output)
 
-  LOG(INFO) << "schema" << '\n' << output->get_table()->schema()->ToString();
+  CHECK_STATUS_AND_PRINT(first_table,
+                         cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::NUNIQUE}}, output),
+                         output)
+
+  CHECK_STATUS_AND_PRINT(first_table,
+                         cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::QuantileOp::Make(0.2)}}, output),
+                         output)
+
+  CHECK_STATUS_AND_PRINT(first_table,
+                         cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::COUNT}, output),
+                         output)
 
   ctx->Finalize();
   return 0;
