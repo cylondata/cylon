@@ -61,50 +61,6 @@ def test_range_count():
         assert range_calculator(rg) == calculate_range_size_manual(rg)
 
 
-def test_set_index():
-    pdf = pd.DataFrame([[1, 2, 3, 4, 5, 'a'], [6, 7, 8, 9, 10, 'b'], [11, 12, 13, 14, 15, 'c'],
-                        [16, 17, 18, 19, 20, 'a'], [16, 17, 18, 19, 20, 'd'],
-                        [111, 112, 113, 114, 5,
-                         'a']])
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
-    cn_tb: Table = Table.from_pandas(ctx, pdf)
-    # set index by row indices
-    row_indices = ['a', 'b', 'c', 'd', 'e', 'f']
-    cn_tb.set_index(row_indices)
-
-    assert cn_tb.row_count == len(row_indices)
-    assert isinstance(cn_tb.index, CategoricalIndex)
-    assert cn_tb.index.index_values == row_indices
-
-    print(cn_tb.column_names)
-    # set index column name
-    col_name = "0"
-    cn_tb.set_index(col_name)
-
-    col_index = cn_tb.index
-    assert isinstance(col_index, ColumnIndex)
-    col_index_values = col_index.index_values
-
-    ar_0 = pa.chunked_array([pdf[int(col_name)].values])
-    ar_1 = pa.chunked_array([pdf[1].values])
-    assert ar_0 == col_index_values
-    assert ar_1 != col_index_values
-
-    # set index by column names
-
-    col_names = ["0", "1"]
-    ars = []
-    for col_name in col_names:
-        ars.append(pa.chunked_array([pdf[int(col_name)]]))
-    cn_tb.set_index(col_names)
-
-    col_index = cn_tb.index
-    assert isinstance(col_index, ColumnIndex)
-    col_index_values = col_index.index_values
-
-    for col_index_value, ar in zip(col_index_values, ars):
-        assert col_index_value == ar
-
 
 def test_loc():
     df = pd.DataFrame([[1, 2], [4, 5], [7, 8]], index=['cobra', 'viper', 'sidewinder'],
@@ -135,7 +91,7 @@ def test_cylon_set_index_from_column():
     cn_tb.set_index('a', indexing_schema, drop_index)
 
     print("After Indexing")
-    assert cn_tb.column_names == ['a']
+    assert cn_tb.column_names == ['b']
 
     assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
 
@@ -290,8 +246,8 @@ def test_cylon_cpp_str_single_column_indexing():
     print(output)
 
     loc_ix = LocIndexer(indexing_schema)
-    start_index = b"1"
-    end_index = b"7"
+    start_index = "1"
+    end_index = "7"
     column_index = 0
 
     loc_out = loc_ix.loc_with_single_column(slice(start_index, end_index), column_index, output)
@@ -308,7 +264,7 @@ def test_cylon_cpp_str_single_column_indexing():
 
     indices = ["100", "4", "7", "23", "20"]
 
-    indices = [b'4']
+    indices = ['4']
 
     # indices = [4, 7]
 
@@ -316,7 +272,7 @@ def test_cylon_cpp_str_single_column_indexing():
 
     print(loc_out2)
 
-    loc_index = b'10'
+    loc_index = '10'
     loc_out3 = loc_ix.loc_with_single_column(loc_index, column_index, output)
 
     print(loc_out3)
@@ -346,8 +302,8 @@ def test_cylon_cpp_str_multi_column_indexing():
     print(output)
 
     loc_ix = LocIndexer(indexing_schema)
-    start_index = b"1"
-    end_index = b"7"
+    start_index = "1"
+    end_index = "7"
     column_index = [0, 1]
 
     loc_out = loc_ix.loc_with_multi_column(slice(start_index, end_index), column_index, output)
@@ -364,7 +320,7 @@ def test_cylon_cpp_str_multi_column_indexing():
 
     indices = ["100", "4", "7", "23", "20"]
 
-    indices = [b'4']
+    indices = ['4']
 
     # indices = [4, 7]
 
@@ -372,7 +328,7 @@ def test_cylon_cpp_str_multi_column_indexing():
 
     print(loc_out2)
 
-    loc_index = b'10'
+    loc_index = '10'
     loc_out3 = loc_ix.loc_with_multi_column(loc_index, column_index, output)
 
     print(loc_out3)
@@ -455,8 +411,8 @@ def test_cylon_cpp_str_range_column_indexing():
     print(output)
 
     loc_ix = LocIndexer(indexing_schema)
-    start_index = b"1"
-    end_index = b"7"
+    start_index = "1"
+    end_index = "7"
     column_index = slice(0, 1)
 
     loc_out = loc_ix.loc_with_range_column(slice(start_index, end_index), column_index, output)
@@ -473,7 +429,7 @@ def test_cylon_cpp_str_range_column_indexing():
 
     indices = ["100", "4", "7", "23", "20"]
 
-    indices = [b'4']
+    indices = ['4']
 
     # indices = [4, 7]
 
@@ -481,21 +437,10 @@ def test_cylon_cpp_str_range_column_indexing():
 
     print(loc_out2)
 
-    loc_index = b'10'
+    loc_index = '10'
     loc_out3 = loc_ix.loc_with_range_column(loc_index, column_index, output)
 
     print(loc_out3)
-
-
-def test_pdf_op():
-    pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
-                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
-                              'c': pd.Series([3, 4, 10, 12, 20, 20, 35], dtype='int')})
-
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
-    cn_tb: Table = Table.from_pandas(ctx, pdf_float)
-    pdf_float.loc
-    cn_tb.loc[0:10, 1:10]
 
 
 def test_loc_op_mode_1():
@@ -556,4 +501,62 @@ def test_loc_op_mode_1():
     assert loc_pd_5.values.tolist() == loc_cn_5.to_pandas().values.tolist()
     assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
 
+
+def test_loc_op_mode_2():
+    from pycylon.indexing.index import IndexingSchema
+    from pycylon.indexing.index_utils import IndexUtil
+    from pycylon.indexing.index import LocIndexer
+
+    pdf_float = pd.DataFrame({'a': pd.Series(["1", "4", "7", "10", "20", "23", "11"]),
+                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+                              'c': pd.Series([12, 15, 18, 111, 122, 125, 112], dtype='int'),
+                              'd': pd.Series([212, 215, 218, 211, 222, 225, 312], dtype='int'),
+                              'e': pd.Series([1121, 12151, 12181, 12111, 12221, 12251, 13121],
+                                             dtype='int')})
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf_float)
+    indexing_schema = IndexingSchema.LINEAR
+    drop_index = True
+
+    print("Before Indexing")
+    print(cn_tb)
+
+    cn_tb.set_index('a', indexing_schema, drop_index)
+
+    pdf_float = pdf_float.set_index('a')
+
+    print("After Indexing")
+    assert cn_tb.column_names == ['b', 'c', 'd', 'e']
+
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+
+    loc_cn_1 = cn_tb.loc["7":"20", 'c':'e']
+    loc_pd_1 = pdf_float.loc["7":"20", 'c':'e']
+
+    assert loc_pd_1.values.tolist() == loc_cn_1.to_pandas().values.tolist()
+    assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
+
+    loc_cn_2 = cn_tb.loc["7":"20", 'd':]
+    loc_pd_2 = pdf_float.loc["7":"20", 'd':]
+
+    assert loc_pd_2.values.tolist() == loc_cn_2.to_pandas().values.tolist()
+    assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
+
+    loc_cn_3 = cn_tb.loc["7":, 'd':]
+    loc_pd_3 = pdf_float.loc["7":, 'd':]
+
+    assert loc_pd_3.values.tolist() == loc_cn_3.to_pandas().values.tolist()
+    assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
+
+    loc_cn_4 = cn_tb.loc[:"7", 'd':]
+    loc_pd_4 = pdf_float.loc[:"7", 'd':]
+
+    assert loc_pd_4.values.tolist() == loc_cn_4.to_pandas().values.tolist()
+    assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
+
+    loc_cn_5 = cn_tb.loc[:, 'd':]
+    loc_pd_5 = pdf_float.loc[:, 'd':]
+
+    assert loc_pd_5.values.tolist() == loc_cn_5.to_pandas().values.tolist()
+    assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
 

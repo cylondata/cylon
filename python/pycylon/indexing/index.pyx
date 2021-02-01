@@ -167,6 +167,7 @@ cdef class PyObjectToCObject:
         return res
 
     cdef string to_string(self, py_object):
+        py_object = py_object.encode()
         cdef string res = <string> py_object
         return res
 
@@ -182,7 +183,9 @@ cdef class LocIndexer:
         self.indexer_shd_ptr = make_shared[CLocIndexer](indexing_schema)
 
     def _fix_partial_slice_inidices(self, start_index, end_index, index):
-        if start_index is None and end_index is None:
+        if start_index and end_index:
+            return start_index, end_index
+        elif start_index is None and end_index is None:
             start_index = index.get_index_array()[0].as_py()  # first element of index
             end_index = index.get_index_array()[-1].as_py()  # last element of the index
         elif start_index and end_index is None:
