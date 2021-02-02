@@ -83,8 +83,8 @@ namespace cylon {
  * @param atable
  * @param idx_cols
  * @param group_ids
+ * @param group_histogram
  * @param group_filter
- * @param unique_groups
  * @return
  */
 // todo handle chunked arrays
@@ -92,8 +92,8 @@ static Status make_groups(arrow::MemoryPool *pool,
                           const std::shared_ptr<arrow::Table> &atable,
                           const std::vector<int> &idx_cols,
                           std::vector<int64_t> &group_ids,
-                          std::shared_ptr<arrow::Array> &group_filter,
-                          int64_t *unique_groups) {
+                          std::vector<int64_t> &group_histogram,
+                          std::shared_ptr<arrow::Array> &group_filter) {
   TableRowIndexHash hash(atable, idx_cols);
   TableRowIndexComparator comp(atable, idx_cols);
 
@@ -106,20 +106,27 @@ static Status make_groups(arrow::MemoryPool *pool,
   arrow::BooleanBuilder filter_build(pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Reserve(num_rows)))
 
+  group_histogram.reserve(num_rows); // reserve space for group_histogram
+
   int64_t unique = 0;
   for (int64_t i = 0; i < num_rows; i++) {
-    const auto &res = hash_map.insert(std::make_pair(i, unique));
+    const auto &res = hash_map.emplace(i, unique);
     if (res.second) { // this was a unique group
       group_ids.push_back(unique);
+      group_histogram.emplace_back(1); // initialize histogram entry
       unique++;
-    } else {
-      group_ids.push_back(res.first->second);
+    } else { // group is already found! 
+      const auto &group_id = res.first->second;
+      group_ids.push_back(group_id);
+      group_histogram[group_id]++; // increment histogram
     }
-    filter_build.UnsafeAppend(res.second);
+    filter_build.UnsafeAppend(res.second); // whether this was a unique group or not
   }
 
+  group_ids.shrink_to_fit();
+  group_histogram.shrink_to_fit();
   RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Finish(&group_filter)))
-  *unique_groups = unique;
+
   return Status::OK();
 }
 
@@ -144,7 +151,7 @@ static Status aggregate(arrow::MemoryPool *pool,
                         const std::shared_ptr<arrow::Array> &arr,
                         const std::shared_ptr<arrow::Field> &field,
                         const std::vector<int64_t> &group_ids,
-                        int64_t unique_groups,
+                        const std::vector<int64_t> &unique_group_hist,
                         std::shared_ptr<arrow::Array> &agg_array,
                         std::shared_ptr<arrow::Field> &agg_field,
                         compute::KernelOptions *options = nullptr) {
@@ -167,11 +174,17 @@ static Status aggregate(arrow::MemoryPool *pool,
     kernel->Setup(&opt);
   }
 
-  State initial_state;
-  kernel->InitializeState(&initial_state); // initialize state
+  const auto &unique_group_count = unique_group_hist.size();
 
-  // initialize aggregate states by copying initial state
-  std::vector<State> agg_states(unique_groups, initial_state);
+  // initialize aggregate states
+  std::vector<State> agg_states;
+  agg_states.reserve(unique_group_count);
+  for (auto &&group_count:unique_group_hist) {
+    State init_state;
+    kernel->InitializeState(&init_state, group_count);
+    agg_states.template emplace_back(std::move(init_state));
+  }
+
   const std::shared_ptr<ARRAY_T> &carr = std::static_pointer_cast<ARRAY_T>(arr);
   for (int64_t i = 0; i < arr->length(); i++) {
     auto val = carr->Value(i);
@@ -182,8 +195,8 @@ static Status aggregate(arrow::MemoryPool *pool,
   using RESULT_ARROW_T = typename arrow::CTypeTraits<ResultT>::ArrowType;
   using BUILDER_T = typename arrow::TypeTraits<RESULT_ARROW_T>::BuilderType;
   BUILDER_T builder(pool);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(unique_groups))
-  for (int64_t i = 0; i < unique_groups; i++) {
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(unique_group_count))
+  for (size_t i = 0; i < unique_group_count; i++) {
     ResultT res;
     kernel->Finalize(&agg_states[i], &res);
     builder.UnsafeAppend(res);
@@ -204,7 +217,7 @@ using AggregationFn = std::function<Status(arrow::MemoryPool *pool,
                                            const std::shared_ptr<arrow::Array> &arr,
                                            const std::shared_ptr<arrow::Field> &field,
                                            const std::vector<int64_t> &group_ids,
-                                           int64_t unique_groups,
+                                           const std::vector<int64_t> &unique_groups,
                                            std::shared_ptr<arrow::Array> &agg_array,
                                            std::shared_ptr<arrow::Field> &agg_field,
                                            compute::KernelOptions *options)>;
@@ -220,6 +233,7 @@ static inline AggregationFn resolve_op(const compute::AggregationOpId &aggOp) {
     case compute::MEAN: return &aggregate<compute::MEAN, ARROW_T>;
     case compute::VAR: return &aggregate<compute::VAR, ARROW_T>;
     case compute::NUNIQUE: return &aggregate<compute::NUNIQUE, ARROW_T>;
+    case compute::QUANTILE: return &aggregate<compute::QUANTILE, ARROW_T>;
     default: return nullptr;
   }
 }
@@ -256,10 +270,9 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
     atable = res.ValueOrDie();
   }
 
-  std::vector<int64_t> group_ids;
-  int64_t unique_groups;
+  std::vector<int64_t> group_ids, unique_groups;
   std::shared_ptr<arrow::Array> group_filter;
-  RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, group_filter, &unique_groups))
+  RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, unique_groups, group_filter))
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> new_arrays;
   std::vector<std::shared_ptr<arrow::Field>> new_fields;

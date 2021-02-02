@@ -152,6 +152,23 @@ TEST_CASE("groupby testing", "[groupby]") {
     REQUIRE(val_sum->value == 1 * 5);
   }
 
+  SECTION("testing hash group by median") {
+    status = HashCylonGroupBy(table, cylon::compute::QUANTILE, output1);
+    REQUIRE(status.is_ok());
+
+    status = cylon::compute::Sum(output1, 0, result);
+    REQUIRE(status.is_ok());
+    auto idx_sum = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
+    std::cout << "idx_sum " << idx_sum->value << std::endl;
+    REQUIRE(idx_sum->value == 10); // 4* 5/ 2
+
+    status = cylon::compute::Sum(output1, 1, result);
+    REQUIRE(status.is_ok());
+    auto val_sum = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
+    std::cout << "val_sum " << val_sum->value << std::endl;
+    REQUIRE(val_sum->value == 10); // 0 + .. + 4
+  }
+
   SECTION("testing pipeline group by") {
     status = Sort(table, 0, output1);
     REQUIRE(status.is_ok());
