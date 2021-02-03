@@ -21,6 +21,7 @@
 #include <vector>
 #include <glog/logging.h>
 #include "io/csv_read_config.hpp"
+#include "indexing/index.hpp"
 
 #ifdef BUILD_CYLON_PARQUET
 #include "io/parquet_config.hpp"
@@ -54,6 +55,8 @@ class Table {
       columns_.at(i) =
           cylon::Column::Make(f->name(), cylon::tarrow::ToCylonType(f->type()), table_->column(i));
     }
+    auto pool = cylon::ToArrowPool(ctx);
+    base_index_ = std::make_shared<cylon::RangeIndex>(0, tab->num_rows(), 1, pool);
   }
 
   Table(std::shared_ptr<arrow::Table> &tab, std::shared_ptr<cylon::CylonContext> &ctx,
@@ -190,6 +193,14 @@ class Table {
    */
   std::vector<std::shared_ptr<cylon::Column>> GetColumns() const;
 
+  Status Set_Index(std::shared_ptr<cylon::BaseIndex> &index, bool drop_index);
+
+  std::shared_ptr<BaseIndex> GetIndex();
+
+  Status ResetIndex(bool drop=false);
+
+  Status AddColumn(int64_t position, std::string column_name, std::shared_ptr<arrow::Array> &input_column);
+
  private:
   /**
    * Every table should have an unique id
@@ -199,6 +210,7 @@ class Table {
   std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
   std::vector<std::shared_ptr<cylon::Column>> columns_;
+  std::shared_ptr<cylon::BaseIndex> base_index_ = nullptr;
 };
 
 /**

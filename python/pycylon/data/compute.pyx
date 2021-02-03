@@ -241,7 +241,7 @@ cpdef math_op(table:Table, op, value):
     """
     Math operations for PyCylon table against a scalar value. 
     Generic function to execute addition, subtraction and multiplication.
-    
+
     Args:
         table: PyCylon table
         op: math operator (except division)
@@ -548,19 +548,19 @@ cpdef drop_na(table:Table, how:str, axis=0):
         Here the row-major Null check has to be done. 
         Column-wise null check is done and the obtained boolean array
         is then casted to int32 array and sum of all columns is taken. 
-        
+
         Heuristic 1: 
-        
+
         If the resultant sum-array contains an element with value equals to
         0. It implies that all elements in that row are not None. 
-        
+
         Heuristic 2:
-        
+
         If the resultant sum-array contains an element with value equals to
         the number of columns. It implies that all elements in that row are None.
-        
+
         Selection Criterion:
-        
+
         For the criteria on how the dropping is done, when 'any' is selected, the
         sum-array value in corresponding row is greater than 0 that row will be dropped.
         For 'all' criteria that value has to be equal to the number of columns. 

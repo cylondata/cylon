@@ -39,6 +39,10 @@ from pycylon.common.status cimport Status
 from pycylon.data.table cimport CSortOptions
 from pycylon.data.table import SortOptions
 from pycylon.data.table cimport SortOptions
+from pycylon.indexing.index cimport CBaseIndex
+from pycylon.indexing.index import BaseIndex
+from pycylon.indexing.index cimport CBaseIndex
+from pycylon.indexing.index cimport BaseIndex
 
 
 cdef api bint pyclon_is_context(object context)
@@ -59,6 +63,8 @@ cdef api CCSVWriteOptions pycylon_unwrap_csv_write_options(object csv_write_opti
 
 cdef api CSortOptions* pycylon_unwrap_sort_options(object sort_options)
 
+cdef api shared_ptr[CBaseIndex] pycylon_unwrap_base_index(object base_index)
+
 cdef api CType pycylon_unwrap_type(object type)
 
 cdef api CLayout pycylon_unwrap_layout(object layout)
@@ -75,5 +81,4 @@ cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] &data_type)
 
 cdef api object pycylon_wrap_sort_options(CSortOptions *sort_options)
 
-
-
+cdef api object pycylon_wrap_base_index(const shared_ptr[CBaseIndex] &base_index)
