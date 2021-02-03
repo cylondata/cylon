@@ -17,6 +17,7 @@
 
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
+#include <chrono>
 
 #include "../table.hpp"
 #include "../ctx/arrow_memory_pool_utils.hpp"
@@ -83,8 +84,8 @@ namespace cylon {
  * @param atable
  * @param idx_cols
  * @param group_ids
- * @param group_histogram
  * @param group_filter
+ * @param unique_groups
  * @return
  */
 // todo handle chunked arrays
@@ -92,8 +93,8 @@ static Status make_groups(arrow::MemoryPool *pool,
                           const std::shared_ptr<arrow::Table> &atable,
                           const std::vector<int> &idx_cols,
                           std::vector<int64_t> &group_ids,
-                          std::vector<int64_t> &group_histogram,
-                          std::shared_ptr<arrow::Array> &group_filter) {
+                          std::shared_ptr<arrow::Array> &group_filter,
+                          int64_t *unique_groups) {
   TableRowIndexHash hash(atable, idx_cols);
   TableRowIndexComparator comp(atable, idx_cols);
 
@@ -106,27 +107,21 @@ static Status make_groups(arrow::MemoryPool *pool,
   arrow::BooleanBuilder filter_build(pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Reserve(num_rows)))
 
-  group_histogram.reserve(num_rows); // reserve space for group_histogram
-
   int64_t unique = 0;
   for (int64_t i = 0; i < num_rows; i++) {
-    const auto &res = hash_map.emplace(i, unique);
+    const auto &res = hash_map.insert(std::make_pair(i, unique));
     if (res.second) { // this was a unique group
-      group_ids.push_back(unique);
-      group_histogram.emplace_back(1); // initialize histogram entry
+      group_ids.emplace_back(unique);
       unique++;
-    } else { // group is already found! 
-      const auto &group_id = res.first->second;
-      group_ids.push_back(group_id);
-      group_histogram[group_id]++; // increment histogram
+    } else {
+      group_ids.emplace_back(res.first->second);
     }
-    filter_build.UnsafeAppend(res.second); // whether this was a unique group or not
+    filter_build.UnsafeAppend(res.second);
   }
 
   group_ids.shrink_to_fit();
-  group_histogram.shrink_to_fit();
   RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Finish(&group_filter)))
-
+  *unique_groups = unique;
   return Status::OK();
 }
 
@@ -151,7 +146,7 @@ static Status aggregate(arrow::MemoryPool *pool,
                         const std::shared_ptr<arrow::Array> &arr,
                         const std::shared_ptr<arrow::Field> &field,
                         const std::vector<int64_t> &group_ids,
-                        const std::vector<int64_t> &unique_group_hist,
+                        int64_t unique_groups,
                         std::shared_ptr<arrow::Array> &agg_array,
                         std::shared_ptr<arrow::Field> &agg_field,
                         compute::KernelOptions *options = nullptr) {
@@ -174,16 +169,11 @@ static Status aggregate(arrow::MemoryPool *pool,
     kernel->Setup(&opt);
   }
 
-  const auto &unique_group_count = unique_group_hist.size();
+  State initial_state;
+  kernel->InitializeState(&initial_state); // initialize state
 
-  // initialize aggregate states
-  std::vector<State> agg_states;
-  agg_states.reserve(unique_group_count);
-  for (auto &&group_count:unique_group_hist) {
-    State init_state;
-    kernel->InitializeState(&init_state, group_count);
-    agg_states.template emplace_back(std::move(init_state));
-  }
+  // initialize aggregate states by copying initial state
+  std::vector<State> agg_states(unique_groups, initial_state);
 
   const std::shared_ptr<ARRAY_T> &carr = std::static_pointer_cast<ARRAY_T>(arr);
   for (int64_t i = 0; i < arr->length(); i++) {
@@ -195,8 +185,8 @@ static Status aggregate(arrow::MemoryPool *pool,
   using RESULT_ARROW_T = typename arrow::CTypeTraits<ResultT>::ArrowType;
   using BUILDER_T = typename arrow::TypeTraits<RESULT_ARROW_T>::BuilderType;
   BUILDER_T builder(pool);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(unique_group_count))
-  for (size_t i = 0; i < unique_group_count; i++) {
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(unique_groups))
+  for (int64_t i = 0; i < unique_groups; i++) {
     ResultT res;
     kernel->Finalize(&agg_states[i], &res);
     builder.UnsafeAppend(res);
@@ -217,7 +207,7 @@ using AggregationFn = std::function<Status(arrow::MemoryPool *pool,
                                            const std::shared_ptr<arrow::Array> &arr,
                                            const std::shared_ptr<arrow::Field> &field,
                                            const std::vector<int64_t> &group_ids,
-                                           const std::vector<int64_t> &unique_groups,
+                                           int64_t unique_groups,
                                            std::shared_ptr<arrow::Array> &agg_array,
                                            std::shared_ptr<arrow::Field> &agg_field,
                                            compute::KernelOptions *options)>;
@@ -260,6 +250,8 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
                    const std::vector<int32_t> &idx_cols,
                    const std::vector<std::pair<int32_t, std::shared_ptr<compute::AggregationOp>>> &aggregations,
                    std::shared_ptr<Table> &output) {
+  auto t1 = std::chrono::steady_clock::now();
+
   auto ctx = table->GetContext();
   arrow::MemoryPool *pool = ToArrowPool(ctx);
 
@@ -269,10 +261,14 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
     atable = res.ValueOrDie();
   }
+  auto t2 = std::chrono::steady_clock::now();
 
-  std::vector<int64_t> group_ids, unique_groups;
+  std::vector<int64_t> group_ids;
+  int64_t unique_groups;
   std::shared_ptr<arrow::Array> group_filter;
-  RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, unique_groups, group_filter))
+  RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, group_filter, &unique_groups))
+
+  auto t3 = std::chrono::steady_clock::now();
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> new_arrays;
   std::vector<std::shared_ptr<arrow::Field>> new_fields;
@@ -312,6 +308,13 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   std::shared_ptr<arrow::Table> agg_table = arrow::Table::Make(schema, new_arrays);
 
   output = std::make_shared<Table>(agg_table, ctx);
+  auto t4 = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "hash groupby setup:" << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            << " make_groups:" << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+            << " aggregate:" << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count()
+            << " total:" << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t1).count();
+
   return Status::OK();
 }
 
