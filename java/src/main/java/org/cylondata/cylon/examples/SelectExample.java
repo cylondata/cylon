@@ -13,7 +13,7 @@ public class SelectExample {
     // create a table from csv
     Table srcTable = Table.fromCSV(ctx, tablePath);
 
-    final long somethingOutside = 4;
+    final long somethingOutside = 7;
 
     // applying select operation
     Table select = srcTable.select((row) -> row.getInt64(0) == somethingOutside);
