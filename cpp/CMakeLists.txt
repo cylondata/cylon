@@ -95,7 +95,7 @@ SET(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
 # root include directory
 include_directories(src/cylon)
 
-# Find MPI
+# LocationByValue MPI
 find_package(MPI REQUIRED)
 include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
 
@@ -137,7 +137,7 @@ else ()
     message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM or SOURCE")
 endif()
 
-## Find Python
+## LocationByValue Python
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 

@@ -25,10 +25,15 @@ from pycylon.common.join_config import PJoinAlgorithm
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pyarrow.lib cimport CTable as CArrowTable
+from pyarrow.lib cimport CArray as CArrowArray
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
+from pycylon.indexing.index cimport CBaseIndex
+from pycylon.indexing.index import BaseIndex
+
+
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CTable "cylon::Table":
@@ -57,6 +62,14 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
         void retainMemory(bool retain)
 
         bool IsRetain() const
+
+        CStatus Set_Index(shared_ptr[CBaseIndex] &index, bool drop)
+
+        shared_ptr[CBaseIndex] GetIndex()
+
+        CStatus ResetIndex(bool drop)
+
+        CStatus AddColumn(long position, string column_name, shared_ptr[CArrowArray] &input_column)
 
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":

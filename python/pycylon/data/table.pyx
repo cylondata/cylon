@@ -38,7 +38,9 @@ pycylon_unwrap_table,
 pycylon_wrap_table,
 pycylon_unwrap_csv_read_options,
 pycylon_unwrap_csv_write_options,
-pycylon_unwrap_sort_options)
+pycylon_unwrap_sort_options,
+pycylon_wrap_base_index,
+pycylon_unwrap_base_index)
 
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
@@ -47,6 +49,11 @@ from pycylon.data.groupby cimport (DistributedHashGroupBy, DistributedPipelineGr
 from pycylon.data import compute
 
 from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
+
+from pycylon.indexing.index cimport CBaseIndex
+from pycylon.indexing.index import BaseIndex
+from pycylon.indexing.index import IndexingSchema
+from pycylon.indexing.index import PyLocIndexer
 
 import math
 import pyarrow as pa
@@ -64,6 +71,7 @@ cdef class Table:
     def __init__(self, pyarrow_table=None, context=None):
         self.initialize(pyarrow_table, context)
         self._index = None
+        self._indexing_schema = IndexingSchema.RANGE
 
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
         """
@@ -74,6 +82,7 @@ cdef class Table:
         """
         self.initialize(pyarrow_table, context)
         self._index = None
+        self._indexing_schema = IndexingSchema.RANGE
 
     def initialize(self, pyarrow_table=None, context=None):
         cdef shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
@@ -81,6 +90,7 @@ cdef class Table:
             c_arrow_tb_shd_ptr = pyarrow_unwrap_table(pyarrow_table)
             self.sp_context = pycylon_unwrap_context(context)
             self.table_shd_ptr = make_shared[CTable](c_arrow_tb_shd_ptr, self.sp_context)
+
 
     cdef void init(self, const shared_ptr[CTable]& table):
         self.table_shd_ptr = table
@@ -621,8 +631,9 @@ cdef class Table:
             for aggregate_op in aggregate_ops:
                 caggregate_ops.push_back(aggregate_op)
 
-            status = DistributedHashGroupBy(self.table_shd_ptr, index_col, caggregate_cols, caggregate_ops,
-                             output)
+            status = DistributedHashGroupBy(self.table_shd_ptr, index_col, caggregate_cols,
+                                            caggregate_ops,
+                                            output)
             if status.is_ok():
                 return pycylon_wrap_table(output)
             else:
@@ -1985,15 +1996,15 @@ cdef class Table:
             <pycylon.index.RangeIndex object at 0x7f58bde8e040>
 
         '''
-        if self._index == None:
-            self._index = RangeIndex(range(0, self.row_count))
-        return self._index
+        return self.get_index()
 
-    def set_index(self, key):
+    def set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
+                  drop: bool = False):
         '''
         Set Index
+        Operation takes place inplace.
         Args:
-            key: pycylon.Index Object or an object extended from pycylon.Index
+            key: pycylon.indexing.index.BaseIndex
 
         Returns: None
 
@@ -2011,19 +2022,67 @@ cdef class Table:
         >>> tb.set_index(['a', 'b', 'c', 'd'])
 
         >>> tb.index
-            <pycylon.index.CategoricalIndex object at 0x7fa72c2b6ca0>
+            <pycylon.indexing.index.BaseIndex object at 0x7fa72c2b6ca0>
 
         >>> tb.index.index_values
             ['a', 'b', 'c', 'd']
+
+        >>> tb.set_index('col-1', IndexingSchema.LINEAR, True)
+
+               col-2  col-3
+            1      5      9
+            2      6     10
+            3      7     11
+            4      8     12
+        NOTE: indexing value is not exposed to print functions
+        >>> tb.index.index_values
+            [ 1, 2, 3, 4]
         '''
 
         # TODO: Multi-Indexing support: https://github.com/cylondata/cylon/issues/233
         # TODO: Enhancing: https://github.com/cylondata/cylon/issues/235
-        self._index = process_index_by_value(key, self)
+        cdef shared_ptr[CTable] indexed_cylon_table
+        cdef shared_ptr[CBaseIndex] c_base_index
 
-    def reset_index(self, key) -> Table:
-        # TODO: Enhance to support move existing index to data column and drop
-        self._index = RangeIndex(range(0, self.row_count))
+        if isinstance(key, BaseIndex):
+            c_base_index = pycylon_unwrap_base_index(key)
+            self.table_shd_ptr.get().Set_Index(c_base_index, False)
+        else:
+            indexed_table = process_index_by_value(key=key, table=self, index_schema=indexing_schema,
+                                                       drop_index=drop)
+            indexed_cylon_table = pycylon_unwrap_table(indexed_table)
+            self.init(indexed_cylon_table)
+
+    def reset_index(self, drop_index:bool=False) -> Table:
+        """
+        reset_index
+        Here the existing index can be removed and set back to table.
+        This operation takes place in place.
+        Args:
+            drop_index: bool, if True the column is dropped otherwise added to the table with the
+            column name "index"
+
+        Returns: None
+
+        Examples
+        --------
+
+        >>> tb
+                col-2  col-3
+            1      5      9
+            2      6     10
+            3      7     11
+            4      8     12
+
+        >>> tb.reset_index()
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+        """
+        cdef bool c_drop_index = drop_index
+        self.table_shd_ptr.get().ResetIndex(c_drop_index)
 
     def dropna(self, axis=0, how='any', inplace=False):
         '''
@@ -2135,6 +2194,83 @@ cdef class Table:
         return Table.from_arrow(self.context,
                                 pa.Table.from_arrays(new_chunks, self.column_names))
 
+    def get_index(self) -> BaseIndex:
+        cdef shared_ptr[CBaseIndex] c_index = self.table_shd_ptr.get().GetIndex()
+        return pycylon_wrap_base_index(c_index)
+
+    @property
+    def indexing_schema(self):
+        return self._indexing_schema
+
+    @indexing_schema.setter
+    def indexing_schema(self, schema):
+        self._indexing_schema = schema
+
+    @property
+    def loc(self) -> PyLocIndexer:
+        """
+        loc
+
+        This operator finds value by key
+
+        Examples
+        --------
+
+        >>> tb
+               col-2  col-3   col-4
+            1      5      9       1
+            2      6     10      12
+            3      7     11      15
+            4      8     12      21
+
+        >>> tb.loc[2:3, 'col-2']
+                col-2
+            2      6
+            3      7
+
+        >>> tb.loc[2:3, 'col-3':'col-4']
+               col-3   col-4
+            2     10      12
+            3     11      15
+
+        Returns: PyCylon Table
+
+        """
+        return PyLocIndexer(self, "loc")
+
+    @property
+    def iloc(self) -> PyLocIndexer:
+        """
+        loc
+
+        This operator finds value by position as an index (row index)
+
+        Examples
+        --------
+
+        >>> tb
+               col-2  col-3   col-4
+            1      5      9       1
+            2      6     10      12
+            3      7     11      15
+            4      8     12      21
+
+        >>> tb.iloc[1:3, 'col-2']
+                col-2
+            2      6
+            3      7
+
+
+        >>> tb.iloc[1:3, 'col-3':'col-4']
+               col-3   col-4
+            2     10      12
+            3     11      15
+
+        Returns: PyCylon Table
+
+        """
+        return PyLocIndexer(self, "iloc")
+
 
 class EmptyTable(Table):
     '''
@@ -2148,7 +2284,6 @@ class EmptyTable(Table):
         self.ctx = context
         self.idx = index
         self._empty_initialize()
-        self.set_index(index)
 
     def _empty_initialize(self):
         empty_data = []

@@ -99,3 +99,6 @@ cylon_run_test(partition_test 1)
 cylon_run_test(partition_test 2)
 cylon_run_test(partition_test 4)
 
+#indexing tests
+cylon_add_test(indexing_test)
+cylon_run_test(indexing_test 1)
