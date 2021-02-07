@@ -56,7 +56,7 @@ namespace cylon {
         std::shared_ptr<Buffer> *buffer) override {
       auto *b = new uint8_t[length];
       *buffer = std::make_shared<DefaultBuffer>(b, length);
-      return Status();
+      return Status::OK();
     }
   };
 }  // namespace cylon
