@@ -35,7 +35,7 @@ endmacro(tx_add_exe)
 # macro to add a test
 function(cylon_add_test TESTNAME)
   set(exec_name "${TESTNAME}")
-  add_executable(${exec_name} ${TESTNAME}.cpp test_utils.hpp)
+  add_executable(${exec_name} ${TESTNAME}.cpp test_utils.hpp test_index_utils.hpp)
   target_link_libraries(${exec_name} ${MPI_LIBRARIES})
   target_link_libraries(${exec_name} cylon)
   target_link_libraries(${exec_name} ${ARROW_LIB})
