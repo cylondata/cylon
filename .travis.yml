@@ -25,11 +25,11 @@ jobs:
   include:
     - stage: "Build Stages"
       script:
-        - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp --release --test --style-check
+        - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp --release --test --style-check --cmake-flags -DCYLON_PARQUET=ON
       name: "Build CPP"
     - script:
         - python3 -m venv ENV
-        - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --python --pytest
+        - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --python --pytest --cmake-flags -DCYLON_PARQUET=ON
       name: "Build Python"
     - script:
         - ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --java

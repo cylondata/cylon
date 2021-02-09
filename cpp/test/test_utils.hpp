@@ -21,8 +21,12 @@
 #include <table.hpp>
 #include <chrono>
 
-#include "indexing/index_utils.hpp"
-#include "indexing/indexer.hpp"
+#define LOG_AND_RETURN_INT_IF_FAILED(status) \
+  if (!status.is_ok()) { \
+    LOG(ERROR) << status.get_msg() ; \
+    return status.get_code(); \
+  };
+
 
 // this is a toggle to generate test files. Set execute to 0 then, it will generate the expected
 // output files
@@ -36,7 +40,6 @@ static int Verify(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<Tab
   std::shared_ptr<Table> verification;
 
   LOG(INFO) << "starting verification...";
-
   LOG(INFO) << "expected:" << expected_result->Rows() << " found:" << result->Rows();
 
   if (!(status = cylon::Subtract(result, expected_result, verification)).is_ok()) {
@@ -83,12 +86,7 @@ int TestSetOperation(fun_ptr fn,
       std::vector<std::shared_ptr<Table> *>{&table1, &table2},
 #endif
                           read_options);
-
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table reading failed " << status.get_msg();
-    ctx->Finalize();
-    return 1;
-  }
+  LOG_AND_RETURN_INT_IF_FAILED(status)
 
   auto read_end_time = std::chrono::steady_clock::now();
 
@@ -97,11 +95,8 @@ int TestSetOperation(fun_ptr fn,
                 .count()
             << "[ms]";
   status = fn(table1, table2, result);
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table op failed ";
-    ctx->Finalize();
-    return 1;
-  }
+  LOG_AND_RETURN_INT_IF_FAILED(status)
+
   auto op_end_time = std::chrono::steady_clock::now();
 
   LOG(INFO) << "First table had : " << table1->Rows() << " and Second table had : "
@@ -115,7 +110,7 @@ int TestSetOperation(fun_ptr fn,
   return test::Verify(ctx, result, result_expected);
 #else
   auto write_options = io::config::CSVWriteOptions().ColumnNames(result->ColumnNames());
-  WriteCSV(result, out_path, write_options);
+  LOG_AND_RETURN_INT_IF_FAILED(WriteCSV(result, out_path, write_options))
   return 0;
 #endif
 }
@@ -141,11 +136,7 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
       std::vector<std::shared_ptr<Table> *>{&table1, &table2},
 #endif
                           read_options);
-
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table reading failed " << status.get_msg();
-    return 1;
-  }
+  LOG_AND_RETURN_INT_IF_FAILED(status)
 
   auto read_end_time = std::chrono::steady_clock::now();
 
@@ -155,10 +146,8 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
             << "[ms]";
 
   status = cylon::DistributedJoin(table1, table2, join_config, joined);
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table join failed ";
-    return 1;
-  }
+  LOG_AND_RETURN_INT_IF_FAILED(status)
+
   auto join_end_time = std::chrono::steady_clock::now();
 
   LOG(INFO) << "First table had : " << table1->Rows() << " and Second table had : "
@@ -169,15 +158,12 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
             << "[ms]";
 
 #if EXECUTE
-  if (test::Verify(ctx, joined, joined_expected)) {
-    LOG(ERROR) << "join failed!";
-    return 1;
-  }
+  return test::Verify(ctx, joined, joined_expected);
 #else
   auto write_options = io::config::CSVWriteOptions().ColumnNames(joined->ColumnNames());
-  cylon::WriteCSV(joined, out_path, write_options);
-#endif
+  LOG_AND_RETURN_INT_IF_FAILED(cylon::WriteCSV(joined, out_path, write_options));
   return 0;
+#endif
 }
 
 cylon::Status CreateTable(std::shared_ptr<cylon::CylonContext> &ctx, int rows, std::shared_ptr<cylon::Table> &output) {
@@ -217,11 +203,7 @@ int TestParquetJoinOperation(const cylon::join::config::JoinConfig &join_config,
       std::vector<std::shared_ptr<Table> *>{&table1, &table2}
 #endif
                           );
-
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table reading failed " << status.get_msg();
-    return 1;
-  }
+  LOG_AND_RETURN_INT_IF_FAILED(status)
 
   auto read_end_time = std::chrono::steady_clock::now();
 
@@ -231,10 +213,8 @@ int TestParquetJoinOperation(const cylon::join::config::JoinConfig &join_config,
             << "[ms]";
 
   status = cylon::DistributedJoin(table1, table2, join_config, joined);
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table join failed ";
-    return 1;
-  }
+  LOG_AND_RETURN_INT_IF_FAILED(status)
+
   auto join_end_time = std::chrono::steady_clock::now();
 
   LOG(INFO) << "First table had : " << table1->Rows() << " and Second table had : "
@@ -245,15 +225,12 @@ int TestParquetJoinOperation(const cylon::join::config::JoinConfig &join_config,
             << "[ms]";
 
 #if EXECUTE
-  if (test::Verify(ctx, joined, joined_expected)) {
-    LOG(ERROR) << "join failed!";
-    return 1;
-  }
+  return test::Verify(ctx, joined, joined_expected);
 #else
-  auto parquetOptions = cylon::io::config::ParquetOptions().ChunkSize(5);
-  cylon::WriteParquet(joined, ctx, out_path, parquetOptions);
-#endif
+  auto parquetOptions = cylon::io::config::ParquetOptions();
+  LOG_AND_RETURN_INT_IF_FAILED(cylon::WriteParquet(joined, ctx, out_path, parquetOptions))
   return 0;
+#endif
 }
 #endif
 

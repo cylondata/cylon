@@ -13,7 +13,7 @@
  */
 
 #include "test_header.hpp"
-#include "test_utils.hpp"
+
 #include "indexing/index.hpp"
 #include "test_index_utils.hpp"
 
