@@ -43,7 +43,8 @@ enum AggregationOpId {
   COUNT,
   MEAN,
   VAR,
-  NUNIQUE
+  NUNIQUE,
+  QUANTILE
 };
 
 /**
@@ -69,6 +70,16 @@ struct VarKernelOptions : public KernelOptions {
   VarKernelOptions() : VarKernelOptions(0) {}
 
   int ddof;
+};
+
+struct QuantileKernelOptions : public KernelOptions {
+  /**
+   * @param quantile quantile
+   */
+  explicit QuantileKernelOptions(double quantile) : quantile(quantile) {}
+  QuantileKernelOptions() : QuantileKernelOptions(0.5) {}
+
+  double quantile;
 };
 
 // -----------------------------------------------------------------------------
@@ -129,6 +140,20 @@ struct VarOp : public AggregationOp {
 
   static inline std::unique_ptr<AggregationOp> Make(int ddof = 0) {
     return std::make_unique<VarOp>(ddof);
+  }
+};
+
+/**
+ * Var op
+ */
+struct QuantileOp : public AggregationOp {
+  /**
+   * @param quantile
+   */
+  explicit QuantileOp(double quantile) : AggregationOp(QUANTILE, std::make_unique<QuantileKernelOptions>(quantile)) {}
+
+  static inline std::unique_ptr<AggregationOp> Make(double quantile = 0.5) {
+    return std::make_unique<QuantileOp>(quantile);
   }
 };
 
@@ -208,6 +233,14 @@ struct KernelTraits<AggregationOpId::NUNIQUE, T> {
   static constexpr const char *name() { return "nunique_"; }
 };
 
+template<typename T>
+struct KernelTraits<AggregationOpId::QUANTILE, T> {
+  using State = std::vector<T>; // <running sum, running count>
+  using ResultT = double_t;
+  using Options = QuantileKernelOptions;
+  static constexpr const char *name() { return "quantile_"; }
+};
+
 // -----------------------------------------------------------------------------
 
 /**
@@ -215,8 +248,6 @@ struct KernelTraits<AggregationOpId::NUNIQUE, T> {
  */
 
 struct AggregationKernel {
-  // destructor defined virtual so that the derived AggregationKernels would be deleted properly
-  // https://www.geeksforgeeks.org/virtual-destructor/
   virtual ~AggregationKernel() = default;
 
   /**
@@ -228,6 +259,7 @@ struct AggregationKernel {
   /**
    * Initializes a state object
    * @param state
+   * @param num_elements number of possible elements to aggregate
    */
   virtual void InitializeState(void *state) = 0;
 
@@ -247,35 +279,44 @@ struct AggregationKernel {
 };
 
 /**
- * Adapter class that would apply type information to the AggregationKernel
- * @tparam OP_ID AggregationOpId
+ * CRTP based AggregationKernel impl with types (for static polymorphism)
+ * ref: https://www.modernescpp.com/index.php/c-is-still-lazy
+ * @tparam DERIVED derived class
  * @tparam T
  * @tparam State - state type derived from KernelTraits
  * @tparam ResultT - result type derived from KernelTraits
  * @tparam Options - options type derived from KernelTraits
+ *
+ *  every derived class needs to implement the following methods
+ *  1. void InitializeState(State *state)
+ *  2. void Update(const T *value, State *state)
+ *  3. void Finalize(const State *state, ResultT *result)
+ *
+ *  Optionally following setup method can be used to ingest kernel options,
+ *  void Setup(Options *options)
  */
-template<AggregationOpId OP_ID, typename T,
-    typename State = typename KernelTraits<OP_ID, T>::State,
-    typename ResultT = typename KernelTraits<OP_ID, T>::ResultT,
-    typename Options = typename KernelTraits<OP_ID, T>::Options>
-struct TypedAggregationKernel : AggregationKernel {
+template<typename DERIVED, typename T, typename State, typename ResultT, typename Options>
+struct TypedAggregationKernel : public AggregationKernel {
+  // destructor for runtime polymorphism
   ~TypedAggregationKernel() override = default;
-  virtual void Setup(Options *options) {};
-  virtual void InitializeState(State *state) = 0;
-  virtual void Update(const T *value, State *state) = 0;
-  virtual void Finalize(const State *state, ResultT *result) = 0;
+
+  // base setup implementation for CRTP (if derived classes have not implemented setup, this impl will be used!)
+  void Setup(Options *options) {};
 
   inline void Setup(KernelOptions *options) override {
-    return Setup(static_cast<Options *> (options));
+    return static_cast<DERIVED &>(*this).Setup(static_cast<Options *> (options));
   }
+
   inline void InitializeState(void *state) override {
-    return InitializeState(static_cast<State *> (state));
+    return static_cast<DERIVED &>(*this).InitializeState(static_cast<State *> (state));
   }
+
   inline void Update(const void *value, void *state) override {
-    return Update(static_cast<const T *>(value), static_cast<State *>(state));
+    return static_cast<DERIVED &>(*this).Update(static_cast<const T *>(value), static_cast<State *>(state));
   };
+
   inline void Finalize(const void *state, void *result) override {
-    return Finalize(static_cast<const State *>(state), static_cast<ResultT *>(result));
+    return static_cast<DERIVED &>(*this).Finalize(static_cast<const State *>(state), static_cast<ResultT *>(result));
   }
 };
 
@@ -283,16 +324,20 @@ struct TypedAggregationKernel : AggregationKernel {
  * Mean kernel
  */
 template<typename T>
-class MeanKernel : public TypedAggregationKernel<AggregationOpId::MEAN, T> {
+class MeanKernel : public TypedAggregationKernel<MeanKernel<T>,
+                                                 T,
+                                                 typename KernelTraits<MEAN, T>::State,
+                                                 typename KernelTraits<MEAN, T>::ResultT,
+                                                 typename KernelTraits<MEAN, T>::Options> {
  public:
-  inline void InitializeState(std::tuple<T, int64_t> *state) override {
+  void InitializeState(std::tuple<T, int64_t> *state) {
     *state = {0, 0};
   }
-  inline void Update(const T *value, std::tuple<T, int64_t> *state) override {
+  void Update(const T *value, std::tuple<T, int64_t> *state) {
     std::get<0>(*state) += *value;
     std::get<1>(*state) += 1;
   }
-  inline void Finalize(const std::tuple<T, int64_t> *state, T *result) override {
+  void Finalize(const std::tuple<T, int64_t> *state, T *result) {
     if (std::get<1>(*state) != 0) {
       *result = std::get<0>(*state) / std::get<1>(*state);
     }
@@ -303,21 +348,25 @@ class MeanKernel : public TypedAggregationKernel<AggregationOpId::MEAN, T> {
  * Variance kernel
  */
 template<typename T>
-class VarianceKernel : public TypedAggregationKernel<AggregationOpId::VAR, T> {
+class VarianceKernel : public TypedAggregationKernel<VarianceKernel<T>,
+                                                     T,
+                                                     typename KernelTraits<VAR, T>::State,
+                                                     typename KernelTraits<VAR, T>::ResultT,
+                                                     typename KernelTraits<VAR, T>::Options> {
  public:
-  void Setup(VarKernelOptions *options) override {
+  void Setup(VarKernelOptions *options) {
     ddof = options->ddof;
   }
 
-  inline void InitializeState(std::tuple<T, T, int64_t> *state) override {
+  inline void InitializeState(std::tuple<T, T, int64_t> *state) {
     *state = {0, 0, 0};
   }
-  inline void Update(const T *value, std::tuple<T, T, int64_t> *state) override {
+  inline void Update(const T *value, std::tuple<T, T, int64_t> *state) {
     std::get<0>(*state) += (*value) * (*value);
     std::get<1>(*state) += *value;
     std::get<2>(*state) += 1;
   }
-  inline void Finalize(const std::tuple<T, T, int64_t> *state, double *result) override {
+  inline void Finalize(const std::tuple<T, T, int64_t> *state, double *result) {
     if (std::get<2>(*state) == 1) {
       *result = 0;
     } else if (std::get<2>(*state) != 0) {
@@ -335,14 +384,18 @@ class VarianceKernel : public TypedAggregationKernel<AggregationOpId::VAR, T> {
  * Sum kernel
  */
 template<typename T>
-struct SumKernel : public TypedAggregationKernel<AggregationOpId::SUM, T> {
-  inline void InitializeState(std::tuple<T> *state) override {
+struct SumKernel : public TypedAggregationKernel<SumKernel<T>,
+                                                 T,
+                                                 typename KernelTraits<SUM, T>::State,
+                                                 typename KernelTraits<SUM, T>::ResultT,
+                                                 typename KernelTraits<SUM, T>::Options> {
+  inline void InitializeState(std::tuple<T> *state) {
     *state = {0};
   }
-  inline void Update(const T *value, std::tuple<T> *state) override {
+  inline void Update(const T *value, std::tuple<T> *state) {
     std::get<0>(*state) += *value;
   }
-  inline void Finalize(const std::tuple<T> *state, T *result) override {
+  inline void Finalize(const std::tuple<T> *state, T *result) {
     *result = std::get<0>(*state);
   }
 };
@@ -351,14 +404,18 @@ struct SumKernel : public TypedAggregationKernel<AggregationOpId::SUM, T> {
  * Count kernel
  */
 template<typename T>
-struct CountKernel : public TypedAggregationKernel<AggregationOpId::COUNT, T> {
-  inline void InitializeState(std::tuple<int64_t> *state) override {
+struct CountKernel : public TypedAggregationKernel<CountKernel<T>,
+                                                   T,
+                                                   typename KernelTraits<COUNT, T>::State,
+                                                   typename KernelTraits<COUNT, T>::ResultT,
+                                                   typename KernelTraits<COUNT, T>::Options> {
+  inline void InitializeState(std::tuple<int64_t> *state) {
     *state = {0};
   }
-  inline void Update(const T *value, std::tuple<int64_t> *state) override {
+  inline void Update(const T *value, std::tuple<int64_t> *state) {
     std::get<0>(*state) += 1;
   }
-  inline void Finalize(const std::tuple<int64_t> *state, long *result) override {
+  inline void Finalize(const std::tuple<int64_t> *state, long *result) {
     *result = std::get<0>(*state);
   }
 };
@@ -367,14 +424,18 @@ struct CountKernel : public TypedAggregationKernel<AggregationOpId::COUNT, T> {
  * Min kernel
  */
 template<typename T>
-struct MinKernel : public TypedAggregationKernel<AggregationOpId::MIN, T> {
-  inline void InitializeState(std::tuple<T> *state) override {
+struct MinKernel : public TypedAggregationKernel<MinKernel<T>,
+                                                 T,
+                                                 typename KernelTraits<MIN, T>::State,
+                                                 typename KernelTraits<MIN, T>::ResultT,
+                                                 typename KernelTraits<MIN, T>::Options> {
+  inline void InitializeState(std::tuple<T> *state) {
     *state = {std::numeric_limits<T>::max()};
   }
-  inline void Update(const T *value, std::tuple<T> *state) override {
+  inline void Update(const T *value, std::tuple<T> *state) {
     std::get<0>(*state) = std::min(*value, std::get<0>(*state));
   }
-  inline void Finalize(const std::tuple<T> *state, T *result) override {
+  inline void Finalize(const std::tuple<T> *state, T *result) {
     *result = std::get<0>(*state);
   }
 };
@@ -383,30 +444,72 @@ struct MinKernel : public TypedAggregationKernel<AggregationOpId::MIN, T> {
  * Max kernel
  */
 template<typename T>
-struct MaxKernel : public TypedAggregationKernel<AggregationOpId::MAX, T> {
-  inline void InitializeState(std::tuple<T> *state) override {
+struct MaxKernel : public TypedAggregationKernel<MaxKernel<T>,
+                                                 T,
+                                                 typename KernelTraits<MAX, T>::State,
+                                                 typename KernelTraits<MAX, T>::ResultT,
+                                                 typename KernelTraits<MAX, T>::Options> {
+  inline void InitializeState(std::tuple<T> *state) {
     *state = {std::numeric_limits<T>::min()};
   }
-  inline void Update(const T *value, std::tuple<T> *state) override {
+  inline void Update(const T *value, std::tuple<T> *state) {
     std::get<0>(*state) = std::max(*value, std::get<0>(*state));
   }
-  inline void Finalize(const std::tuple<T> *state, T *result) override {
+  inline void Finalize(const std::tuple<T> *state, T *result) {
     *result = std::get<0>(*state);
   }
 };
 
 template<typename T>
-struct NUniqueKernel : public TypedAggregationKernel<AggregationOpId::NUNIQUE, T> {
-  void InitializeState(std::unordered_set<T> *state) override {
-    *state = {};
-  }
-  void Update(const T *value, std::unordered_set<T> *state) override {
+struct NUniqueKernel : public TypedAggregationKernel<NUniqueKernel<T>,
+                                                     T,
+                                                     typename KernelTraits<NUNIQUE, T>::State,
+                                                     typename KernelTraits<NUNIQUE, T>::ResultT,
+                                                     typename KernelTraits<NUNIQUE, T>::Options> {
+  inline void InitializeState(std::unordered_set<T> *state) {}
+  inline void Update(const T *value, std::unordered_set<T> *state) {
     state->emplace(*value);
   }
-  void Finalize(const std::unordered_set<T> *state, long *result) override {
+  inline void Finalize(const std::unordered_set<T> *state, long *result) {
     *result = state->size();
     const_cast<std::unordered_set<T> *>(state)->clear();
   }
+};
+
+template<typename T>
+struct QuantileKernel : public TypedAggregationKernel<QuantileKernel<T>,
+                                                      T,
+                                                      typename KernelTraits<QUANTILE, T>::State,
+                                                      typename KernelTraits<QUANTILE, T>::ResultT,
+                                                      typename KernelTraits<QUANTILE, T>::Options> {
+  inline void Setup(QuantileKernelOptions *options) {
+    quantile = options->quantile;
+  }
+  inline void InitializeState(std::vector<T> *state) {}
+  inline void Update(const T *value, std::vector<T> *state) {
+    state->emplace_back(*value);
+  }
+  inline void Finalize(const std::vector<T> *state, double *result) {
+    // ref: https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/quantile using type 2
+    double np = state->size() * quantile, j = floor(np), g = np - j;
+    const auto pos = static_cast<size_t>(j);
+
+    auto *mutable_state = const_cast<std::vector<T> *>(state); // make state mutable
+
+    // partition vector around pos'th element
+    std::nth_element(mutable_state->begin(), mutable_state->begin() + pos, mutable_state->end());
+
+    if (g == 0) {
+      *result =
+          0.5 * (*std::max_element(mutable_state->begin(), mutable_state->begin() + pos) + mutable_state->at(pos));
+    } else {
+      *result = static_cast<double>(mutable_state->at(pos));
+    }
+
+    mutable_state->clear();
+  }
+
+  double quantile;
 };
 
 // -----------------------------------------------------------------------------
@@ -427,6 +530,7 @@ std::unique_ptr<AggregationKernel> CreateAggregateKernel() {
     case MEAN:return std::make_unique<MeanKernel<T>>();
     case VAR:return std::make_unique<VarianceKernel<T>>();
     case NUNIQUE:return std::make_unique<NUniqueKernel<T>>();
+    case QUANTILE:return std::make_unique<QuantileKernel<T>>();
     default:return nullptr;
   }
 }
@@ -441,6 +545,7 @@ std::unique_ptr<AggregationKernel> CreateAggregateKernel(AggregationOpId op_id) 
     case MEAN:return std::make_unique<MeanKernel<T>>();
     case VAR:return std::make_unique<VarianceKernel<T>>();
     case NUNIQUE:return std::make_unique<NUniqueKernel<T>>();
+    case QUANTILE:return std::make_unique<QuantileKernel<T>>();
     default:return nullptr;
   }
 }

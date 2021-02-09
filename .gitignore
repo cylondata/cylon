@@ -68,3 +68,7 @@ docs/node_modules
 
 # ignore the tmp dir
 tmp/
+
+# java
+java/target
+java/src/main/native/include

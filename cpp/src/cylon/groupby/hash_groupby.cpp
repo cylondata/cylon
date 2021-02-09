@@ -17,6 +17,7 @@
 
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
+#include <chrono>
 
 #include "../table.hpp"
 #include "../ctx/arrow_memory_pool_utils.hpp"
@@ -110,14 +111,15 @@ static Status make_groups(arrow::MemoryPool *pool,
   for (int64_t i = 0; i < num_rows; i++) {
     const auto &res = hash_map.insert(std::make_pair(i, unique));
     if (res.second) { // this was a unique group
-      group_ids.push_back(unique);
+      group_ids.emplace_back(unique);
       unique++;
     } else {
-      group_ids.push_back(res.first->second);
+      group_ids.emplace_back(res.first->second);
     }
     filter_build.UnsafeAppend(res.second);
   }
 
+  group_ids.shrink_to_fit();
   RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Finish(&group_filter)))
   *unique_groups = unique;
   return Status::OK();
@@ -172,6 +174,7 @@ static Status aggregate(arrow::MemoryPool *pool,
 
   // initialize aggregate states by copying initial state
   std::vector<State> agg_states(unique_groups, initial_state);
+
   const std::shared_ptr<ARRAY_T> &carr = std::static_pointer_cast<ARRAY_T>(arr);
   for (int64_t i = 0; i < arr->length(); i++) {
     auto val = carr->Value(i);
@@ -220,6 +223,7 @@ static inline AggregationFn resolve_op(const compute::AggregationOpId &aggOp) {
     case compute::MEAN: return &aggregate<compute::MEAN, ARROW_T>;
     case compute::VAR: return &aggregate<compute::VAR, ARROW_T>;
     case compute::NUNIQUE: return &aggregate<compute::NUNIQUE, ARROW_T>;
+    case compute::QUANTILE: return &aggregate<compute::QUANTILE, ARROW_T>;
     default: return nullptr;
   }
 }
@@ -246,6 +250,8 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
                    const std::vector<int32_t> &idx_cols,
                    const std::vector<std::pair<int32_t, std::shared_ptr<compute::AggregationOp>>> &aggregations,
                    std::shared_ptr<Table> &output) {
+  auto t1 = std::chrono::steady_clock::now();
+
   auto ctx = table->GetContext();
   arrow::MemoryPool *pool = ToArrowPool(ctx);
 
@@ -255,11 +261,14 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
     atable = res.ValueOrDie();
   }
+  auto t2 = std::chrono::steady_clock::now();
 
   std::vector<int64_t> group_ids;
   int64_t unique_groups;
   std::shared_ptr<arrow::Array> group_filter;
   RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, group_filter, &unique_groups))
+
+  auto t3 = std::chrono::steady_clock::now();
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> new_arrays;
   std::vector<std::shared_ptr<arrow::Field>> new_fields;
@@ -299,6 +308,13 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   std::shared_ptr<arrow::Table> agg_table = arrow::Table::Make(schema, new_arrays);
 
   output = std::make_shared<Table>(agg_table, ctx);
+  auto t4 = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "hash groupby setup:" << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            << " make_groups:" << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+            << " aggregate:" << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count()
+            << " total:" << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t1).count();
+
   return Status::OK();
 }
 

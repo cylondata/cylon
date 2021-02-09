@@ -1289,3 +1289,113 @@ Does a distributed sort on the table by re-partitioning the data to maintain the
 >>> s = SortOptions(ascending=True, num_bins=0, num_samples=0)
 >>> tb1.distributed_sort(sort_column='use_id', sort_options=s)
 ```
+
+### Set Index
+
+Operation takes place inplace.
+Args:
+    key: pycylon.indexing.index.BaseIndex
+
+Returns: None
+
+```python
+>>> tb
+       col-1  col-2  col-3
+    0      1      5      9
+    1      2      6     10
+    2      3      7     11
+    3      4      8     12
+
+
+>>> tb.set_index(['a', 'b', 'c', 'd'])
+
+>>> tb.index
+    <pycylon.indexing.index.BaseIndex object at 0x7fa72c2b6ca0>
+
+>>> tb.index.index_values
+    ['a', 'b', 'c', 'd']
+
+>>> tb.set_index('col-1', IndexingSchema.LINEAR, True)
+
+       col-2  col-3
+    1      5      9
+    2      6     10
+    3      7     11
+    4      8     12
+NOTE: indexing value is not exposed to print functions
+>>> tb.index.index_values
+    [ 1, 2, 3, 4]
+```
+
+## Reset Index
+
+Here the existing index can be removed and set back to table.
+This operation takes place in place.
+Args:
+    drop_index: bool, if True the column is dropped otherwise added to the table with the
+    column name "index"
+
+Returns: None
+
+```python
+>>> tb
+        col-2  col-3
+    1      5      9
+    2      6     10
+    3      7     11
+    4      8     12
+
+>>> tb.reset_index()
+        col-1  col-2  col-3
+    0      1      5      9
+    1      2      6     10
+    2      3      7     11
+    3      4      8     12
+```
+
+## Loc
+
+This operator finds value by key
+
+```python
+>>> tb
+   col-2  col-3   col-4
+1      5      9       1
+2      6     10      12
+3      7     11      15
+4      8     12      21
+
+>>> tb.loc[2:3, 'col-2']
+    col-2
+2      6
+3      7
+
+>>> tb.loc[2:3, 'col-3':'col-4']
+   col-3   col-4
+2     10      12
+3     11      15
+```
+
+## ILoc
+
+This operator finds value by position as an index (row index)
+
+```python
+>>> tb
+   col-2  col-3   col-4
+1      5      9       1
+2      6     10      12
+3      7     11      15
+4      8     12      21
+
+>>> tb.iloc[1:3, 'col-2']
+    col-2
+2      6
+3      7
+
+
+>>> tb.iloc[1:3, 'col-3':'col-4']
+   col-3   col-4
+2     10      12
+3     11      15
+```
