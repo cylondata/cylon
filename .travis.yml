@@ -7,6 +7,10 @@ addons:
     packages:
       - wget
       - pkg-config
+      - g++-9
+
+env:
+  - COMPILER="g++-9"
 
 jdk: openjdk10
 
