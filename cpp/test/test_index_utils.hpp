@@ -9,6 +9,7 @@
 
 #include "indexing/index_utils.hpp"
 #include "indexing/indexer.hpp"
+#include "test_utils.hpp"
 
 namespace cylon{
 namespace test{
