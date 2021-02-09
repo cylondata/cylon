@@ -247,7 +247,7 @@ check_pycylon_installation(){
 }
 
 python_test(){
-  python3 -m pytest python/test/test_all.py
+  python3 -m pytest python/test/test_all.py || exit 1
 }
 
 build_java(){
@@ -305,7 +305,7 @@ fi
 
 if [ "${RUN_CPP_TESTS}" = "ON" ]; then
 	echo "Running CPP tests"
-	CTEST_OUTPUT_ON_FAILURE=1 make -C "$BUILD_PATH" test
+	CTEST_OUTPUT_ON_FAILURE=1 make -C "$BUILD_PATH" test || exit 1
 fi
 
 if [ "${RUN_PYTHON_TESTS}" = "ON" ]; then
