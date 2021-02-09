@@ -28,12 +28,13 @@ SET(CMAKE_CXX_EXTENSIONS OFF)
 message("${PROJECT_SOURCE_DIR}/../../../../cpp/src")
 set(CYLON_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src/cylon")
 find_library(CYLON_LIBRARY "cylon" "${CYLON_CORE_LIBS}")
-find_library(ARROW_LIBRARY "arrow" "${CYLON_ARROW_DIR}/lib")
+find_library(ARROW_LIBRARY "arrow" "${CYLON_ARROW_DIR}/build/release")
 message(STATUS "CYLON_LIBRARY set to ${CYLON_LIBRARY}")
+message(STATUS "ARROW_LIBRARY set to ${ARROW_LIBRARY}")
+
 add_library(cylon SHARED IMPORTED ${CYLON_LIBRARY})
 add_library(arrow SHARED IMPORTED ${ARROW_LIBRARY})
 set_target_properties(cylon PROPERTIES IMPORTED_LOCATION ${CYLON_LIBRARY})
-
 
 find_package(JNI REQUIRED)
 if (JNI_FOUND)
@@ -42,8 +43,9 @@ else ()
     message(FATAL_ERROR "JDK with JNI not found, please check your settings.")
 endif (JNI_FOUND)
 
+message(STATUS "Inclduing ${CYLON_ARROW_DIR}/install/include/")
 include_directories("include"
-        "${JNI_INCLUDE_DIRS}" ${CYLON_INCLUDE} "${CYLON_ARROW_DIR}/include")
+        "${JNI_INCLUDE_DIRS}" ${CYLON_INCLUDE} "${CYLON_ARROW_DIR}/install/include/")
 
 set(SOURCE_FILES
         src/Table.cpp
