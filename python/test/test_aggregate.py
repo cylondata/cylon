@@ -23,6 +23,7 @@ import pandas as pd
 import pycylon as cn
 from pycylon import CylonContext
 
+
 def test_aggregate():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
@@ -177,3 +178,38 @@ def test_aggregate():
     for val1, val2 in zip(cn_tb_gb_res3.to_pydict()['Max Speed'],
                           pdf3.to_dict()['Max Speed'].values()):
         assert val1 == val2
+
+
+def test_aggregate_addons():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+
+    from pycylon.data.aggregates import AggregationOp
+
+    df = pd.DataFrame({'AnimalId': [1, 1, 1, 2, 2, 2, 3, 4, 4, 3, 3, 4],
+                       'Max Speed': [380., 370., 320, 24., 26., 25., 23.1, 300.1, 310.2, 25.2,
+                                     25.3, 305.3]})
+
+    df_unq = pd.DataFrame({'AnimalId': [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 4, 4, 3, 3, 4],
+                           'AreaId': [21, 231, 211, 11, 12, 32, 42, 22, 23, 13, 44, 24, 34, 13, 13,
+                                      41],
+                           'Max Speed': [370., 370., 320, 320, 24., 26., 25., 24., 23.1, 23.1,
+                                         300.1,
+                                         310.2,
+                                         310.2,
+                                         25.2,
+                                         25.2, 305.3]})
+
+    cn_tb = cn.Table.from_pandas(ctx, df)
+
+    cn_tb_unq = cn.Table.from_pandas(ctx, df_unq)
+
+    cn_tb_mean = cn_tb.groupby(0, ['Max Speed'], [AggregationOp.MEAN])
+
+    cn_tb_nunique = cn_tb_unq.groupby(0, ['Max Speed'], [AggregationOp.NUNIQUE])
+
+    print(cn_tb_mean)
+
+    print(cn_tb_nunique)
+
+
+test_aggregate_addons()

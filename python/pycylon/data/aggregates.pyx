@@ -20,4 +20,8 @@ cpdef enum AggregationOp:
     COUNT = CGroupByAggregationOp.CCOUNT
     MIN = CGroupByAggregationOp.CMIN
     MAX = CGroupByAggregationOp.CMAX
+    VAR = CGroupByAggregationOp.CVAR
+    NUNIQUE = CGroupByAggregationOp.CNUNIQUE
+    MEAN = CGroupByAggregationOp.CMEAN
+    QUANTILE = CGroupByAggregationOp.CQUANTILE
 
