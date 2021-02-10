@@ -23,6 +23,7 @@ import pandas as pd
 import pycylon as cn
 from pycylon import CylonContext
 
+
 def test_aggregate():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
@@ -177,3 +178,47 @@ def test_aggregate():
     for val1, val2 in zip(cn_tb_gb_res3.to_pydict()['Max Speed'],
                           pdf3.to_dict()['Max Speed'].values()):
         assert val1 == val2
+
+
+def test_aggregate_addons():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+
+    from pycylon.data.aggregates import AggregationOp
+
+    df_unq = pd.DataFrame({'AnimalId': [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 4, 4, 3, 3, 4],
+                           'AreaId': [21, 231, 211, 11, 12, 32, 42, 22, 23, 13, 44, 24, 34, 13, 13,
+                                      41],
+                           'Max Speed': [370., 370., 320, 320, 24., 26., 25., 24., 23.1, 23.1,
+                                         300.1,
+                                         310.2,
+                                         310.2,
+                                         25.2,
+                                         25.2, 305.3],
+                           'Avg Acceleration': [21, 21, 24, 11, 12, 32, 42, 22, 23, 13, 44, 24,
+                                                34, 13, 13, 41],
+                           'Avg Speed': [360., 330., 321, 310, 22., 23., 22., 21., 22.1, 21.1,
+                                         300.0,
+                                         305.2,
+                                         303.2,
+                                         25.0,
+                                         25.1, 301.3]
+                           })
+
+    cn_tb_unq = cn.Table.from_pandas(ctx, df_unq)
+
+    cn_tb_mul = cn_tb_unq.groupby(0, ['Max Speed', 'Avg Acceleration', 'Avg Speed'],
+                                  [AggregationOp.NUNIQUE, AggregationOp.COUNT,
+                                   AggregationOp.MEAN]).sort(0)
+
+    cn_tb_mul.set_index('AnimalId', drop=True)
+
+    pdf_mul_grp = df_unq.groupby('AnimalId')
+
+    pdf_mul = pdf_mul_grp.agg({'Max Speed': 'nunique', 'Avg Acceleration':
+        'count', 'Avg Speed': 'mean'})
+
+    assert cn_tb_mul.index.index_values == list(pdf_mul_grp.groups.keys())
+
+    assert cn_tb_mul.to_pandas().values.tolist() == pdf_mul.values.tolist()
+
+
