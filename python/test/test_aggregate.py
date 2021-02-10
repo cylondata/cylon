@@ -185,10 +185,6 @@ def test_aggregate_addons():
 
     from pycylon.data.aggregates import AggregationOp
 
-    df = pd.DataFrame({'AnimalId': [1, 1, 1, 2, 2, 2, 3, 4, 4, 3, 3, 4],
-                       'Max Speed': [380., 370., 320, 24., 26., 25., 23.1, 300.1, 310.2, 25.2,
-                                     25.3, 305.3]})
-
     df_unq = pd.DataFrame({'AnimalId': [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 4, 4, 3, 3, 4],
                            'AreaId': [21, 231, 211, 11, 12, 32, 42, 22, 23, 13, 44, 24, 34, 13, 13,
                                       41],
@@ -197,19 +193,32 @@ def test_aggregate_addons():
                                          310.2,
                                          310.2,
                                          25.2,
-                                         25.2, 305.3]})
-
-    cn_tb = cn.Table.from_pandas(ctx, df)
+                                         25.2, 305.3],
+                           'Avg Acceleration': [21, 21, 24, 11, 12, 32, 42, 22, 23, 13, 44, 24,
+                                                34, 13, 13, 41],
+                           'Avg Speed': [360., 330., 321, 310, 22., 23., 22., 21., 22.1, 21.1,
+                                         300.0,
+                                         305.2,
+                                         303.2,
+                                         25.0,
+                                         25.1, 301.3]
+                           })
 
     cn_tb_unq = cn.Table.from_pandas(ctx, df_unq)
 
-    cn_tb_mean = cn_tb.groupby(0, ['Max Speed'], [AggregationOp.MEAN])
+    cn_tb_mul = cn_tb_unq.groupby(0, ['Max Speed', 'Avg Acceleration', 'Avg Speed'],
+                                  [AggregationOp.NUNIQUE, AggregationOp.COUNT,
+                                   AggregationOp.MEAN]).sort(0)
 
-    cn_tb_nunique = cn_tb_unq.groupby(0, ['Max Speed'], [AggregationOp.NUNIQUE])
+    cn_tb_mul.set_index('AnimalId', drop=True)
 
-    print(cn_tb_mean)
+    pdf_mul_grp = df_unq.groupby('AnimalId')
 
-    print(cn_tb_nunique)
+    pdf_mul = pdf_mul_grp.agg({'Max Speed': 'nunique', 'Avg Acceleration':
+        'count', 'Avg Speed': 'mean'})
+
+    assert cn_tb_mul.index.index_values == list(pdf_mul_grp.groups.keys())
+
+    assert cn_tb_mul.to_pandas().values.tolist() == pdf_mul.values.tolist()
 
 
-test_aggregate_addons()
