@@ -36,25 +36,15 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
                                               arrow::MemoryPool *memory_pool) {
   // creating joined schema
   std::vector<std::shared_ptr<arrow::Field>> fields;
-  std::vector<std::shared_ptr<arrow::Field>> new_fields;
-  uint64_t left_table_columns = left_tab->schema()->num_fields();
-  fields.insert(fields.end(), left_tab->schema()->fields().begin(),
-                left_tab->schema()->fields().end());
-  fields.insert(fields.end(), right_tab->schema()->fields().begin(),
-                right_tab->schema()->fields().end());
   // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
-  std::string left_tb_prefix = "lt-";
-  std::string right_tb_prefix = "rt-";
-  std::string prefix = left_tb_prefix;
-  for (size_t i = 0; i < fields.size(); i++) {
-    if (i >= left_table_columns) {
-      prefix = right_tb_prefix;
+  std::string  prefix = "lt-";
+  for(const auto &t: {left_tab, right_tab}){
+    for (const auto &field: t->schema()->fields()){
+      fields.emplace_back(field->WithName(prefix + field->name()));
     }
-    new_fields.push_back(std::make_shared<arrow::Field>(prefix + std::to_string(i),
-                                                        fields.at(i)->type(),
-                                                        fields.at(i)->nullable()));
+    prefix = "rt-";
   }
-  auto schema = arrow::schema(fields);
+  const auto &schema = arrow::schema(fields);
 
   std::vector<int64_t> indices_indexed;
   indices_indexed.reserve(left_indices.size());
@@ -139,27 +129,15 @@ arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
                                 arrow::MemoryPool *memory_pool) {
   // creating joined schema
   std::vector<std::shared_ptr<arrow::Field>> fields;
-  std::vector<std::shared_ptr<arrow::Field>> new_fields;
-  uint64_t left_table_columns = left_tab->schema()->num_fields();
-  fields.insert(fields.end(), left_tab->schema()->fields().begin(),
-                left_tab->schema()->fields().end());
-  fields.insert(fields.end(), right_tab->schema()->fields().begin(),
-                right_tab->schema()->fields().end());
-
   // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
-  std::string left_tb_prefix = "lt-";
-  std::string right_tb_prefix = "rt-";
-  std::string prefix = left_tb_prefix;
-  for (size_t i = 0; i < fields.size(); i++) {
-    if (i >= left_table_columns) {
-      prefix = right_tb_prefix;
+  std::string  prefix = "lt-";
+  for(const auto &t: {left_tab, right_tab}){
+    for (const auto &field: t->schema()->fields()){
+      fields.emplace_back(field->WithName(prefix + field->name()));
     }
-    new_fields.push_back(std::make_shared<arrow::Field>(prefix + std::to_string(i),
-                                                        fields.at(i)->type(),
-                                                        fields.at(i)->nullable()));
+    prefix = "rt-";
   }
-
-  auto schema = arrow::schema(fields);
+  const auto &schema = arrow::schema(fields);
 
   std::vector<std::shared_ptr<arrow::Array>> data_arrays;
 
