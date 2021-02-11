@@ -434,3 +434,4 @@ def test_empty_table():
 
 
 
+test_math_ops_for_scalar()

@@ -252,26 +252,42 @@ cpdef math_op(table:Table, op, value):
     """
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
-    if not isinstance(value, numbers.Number) or isinstance(value, Table):
-        raise ValueError("Math operation value must be numerical or a Numeric Table")
+    if isinstance(value, Table):
+        pass
+    elif np.isscalar(value) and not isinstance(value, numbers.Number):
+        for chunk_arr in ar_tb.itercolumns():
+            np_ar = chunk_arr.to_numpy()
+            res_array.append(op())
+
+
+
+cpdef math_op_arrow(table:Table, op, value):
+    ar_tb = table.to_arrow().combine_chunks()
+    res_array = []
     for chunk_arr in ar_tb.itercolumns():
-        if isinstance(value, numbers.Number):
-            value = cast_scalar(value, chunk_arr.type.id)
+        value = cast_scalar(value, chunk_arr.type.id)
         res_array.append(op(chunk_arr, value))
     return Table.from_arrow(table.context, pa.Table.from_arrays(res_array,
-                                                                   names=table.column_names))
+                                                                names=table.column_names))
 
 cpdef add(table:Table, value):
-    return math_op(table, a_add, value)
+    if np.isscalar(value) and isinstance(value, numbers.Number):
+        return math_op_arrow(table, a_add, value)
+    else:
+        from operator import add
+        return math_op(table, add, value)
 
 cpdef subtract(table:Table, value):
-    return math_op(table, a_subtract, value)
+    if np.isscalar(value) and isinstance(value, numbers.Number):
+        return math_op_arrow(table, a_subtract, value)
 
 cpdef multiply(table:Table, value):
-    return math_op(table, a_multiply, value)
+    if np.isscalar(value) and isinstance(value, numbers.Number):
+        return math_op_arrow(table, a_multiply, value)
 
 cpdef divide(table:Table, value):
-    return division_op(table, a_divide, value)
+    if np.isscalar(value) and isinstance(value, numbers.Number):
+        return math_op_arrow(table, a_divide, value)
 
 cpdef unique(table:Table):
     # TODO: axis=1 implementation (row-wise comparison), Requires distributed function
