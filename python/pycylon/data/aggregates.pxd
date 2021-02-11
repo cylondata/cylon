@@ -24,7 +24,10 @@ cdef extern from "../../../cpp/src/cylon/compute/aggregate_kernels.hpp" namespac
         CCOUNT 'cylon::compute::COUNT'
         CMIN 'cylon::compute::MIN'
         CMAX 'cylon::compute::MAX'
-
+        CMEAN 'cylon::compute::MEAN'
+        CVAR 'cylon::compute::VAR'
+        CNUNIQUE 'cylon::compute::NUNIQUE'
+        CQUANTILE 'cylon::compute::QUANTILE'
 
 cdef extern from "../../../cpp/src/cylon/compute/aggregates.hpp" namespace "cylon::compute":
 
