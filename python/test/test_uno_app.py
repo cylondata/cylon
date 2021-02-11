@@ -78,7 +78,7 @@ def test_str_ops():
 
     from operator import add
 
-    print(tb)
+    print(tb['col-1'] + "_" + tb['col-3'] )
 
 
 

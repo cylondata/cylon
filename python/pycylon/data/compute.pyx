@@ -239,7 +239,7 @@ cpdef division_op(table:Table, op, value):
 
 cpdef math_op(table:Table, op, value):
     """
-    Math operations for PyCylon table against a scalar value. 
+    Math operations for PyCylon table against a non-scalar value (including strings). 
     Generic function to execute addition, subtraction and multiplication.
 
     Args:
@@ -253,15 +253,35 @@ cpdef math_op(table:Table, op, value):
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
     if isinstance(value, Table):
-        pass
+        value_tb = value.to_arrow().combine_chunks()
+        for chunk_arr_1 in ar_tb.itercolumns():
+            for chunk_arr_2 in value_tb.itercolumns():
+                np_ar_1 = chunk_arr_1.to_numpy()
+                np_ar_2 = chunk_arr_2.to_numpy()
+                res_array.append(op(np_ar_1, np_ar_2))
+        return Table.from_numpy(table.context, table.column_names, res_array)
     elif np.isscalar(value) and not isinstance(value, numbers.Number):
         for chunk_arr in ar_tb.itercolumns():
             np_ar = chunk_arr.to_numpy()
-            res_array.append(op())
+            res_array.append(op(np_ar, value))
+        return Table.from_numpy(table.context, table.column_names, res_array)
 
 
 
 cpdef math_op_arrow(table:Table, op, value):
+    """
+    Math operations for PyCylon table against a scalar value (exclude strings).
+    Note: Arrow doesn't support operators on strings (concat ==> +) 
+    Generic function to execute addition, subtraction and multiplication.
+
+    Args:
+        table: PyCylon table
+        op: math operator (except division)
+        value: scalar value 
+
+    Returns:
+
+    """
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
     for chunk_arr in ar_tb.itercolumns():
