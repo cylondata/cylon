@@ -94,6 +94,7 @@ def test_request():
 def test_pycylon_pyarrow():
     print("11. PyArrow/PyCylon Test")
     responses.append(os.system("pytest -q python/test/test_pyarrow.py"))
+    assert responses[-1] == 0
 
 
 def test_table_conversion():
@@ -106,6 +107,7 @@ def test_table_conversion():
 def test_table_operation():
     print("13. Table Operation Test")
     responses.append(os.system("pytest -q python/test/test_table.py"))
+    assert responses[-1] == 0
 
 
 def test_table_properties():
@@ -117,7 +119,7 @@ def test_table_properties():
 def test_aggregate():
     print("15. Aggregate Test")
     responses.append(os.system("pytest -q python/test/test_aggregate.py"))
-
+    assert responses[-1] == 0
 
 def test_join_config():
     print("16. Join Config Test")

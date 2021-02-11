@@ -153,13 +153,16 @@ def test_aggregate():
 
     cn_tb_gb_res = cn_tb_gb.groupby(0, [1], [AggregationOp.SUM]).sort(0)
 
-    for val1, val2 in zip(cn_tb_gb_res.to_pydict()['Max Speed'],
+    print(cn_tb_gb_res)
+    print(pdf1)
+
+    for val1, val2 in zip(cn_tb_gb_res.to_pydict()['sum_Max Speed'],
                           pdf1.to_dict()['Max Speed'].values()):
         assert val1 == val2
 
     cn_tb_gb_res1 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.SUM]).sort(0)
 
-    for val1, val2 in zip(cn_tb_gb_res1.to_pydict()['Max Speed'],
+    for val1, val2 in zip(cn_tb_gb_res1.to_pydict()['sum_Max Speed'],
                           pdf1.to_dict()['Max Speed'].values()):
         assert val1 == val2
 
@@ -167,15 +170,15 @@ def test_aggregate():
 
     cn_tb_gb_res2 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.MIN]).sort(0)
 
-    for val1, val2 in zip(cn_tb_gb_res2.to_pydict()['Max Speed'],
+    for val1, val2 in zip(cn_tb_gb_res2.to_pydict()['min_Max Speed'],
                           pdf2.to_dict()['Max Speed'].values()):
         assert val1 == val2
 
     pdf3 = df.groupby(['AnimalId']).max()
 
     cn_tb_gb_res3 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.MAX]).sort(0)
-
-    for val1, val2 in zip(cn_tb_gb_res3.to_pydict()['Max Speed'],
+    print(pdf)
+    for val1, val2 in zip(cn_tb_gb_res3.to_pydict()['max_Max Speed'],
                           pdf3.to_dict()['Max Speed'].values()):
         assert val1 == val2
 
@@ -222,3 +225,4 @@ def test_aggregate_addons():
     assert cn_tb_mul.to_pandas().values.tolist() == pdf_mul.values.tolist()
 
 
+test_aggregate()
