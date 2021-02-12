@@ -974,13 +974,29 @@ cdef class Table:
         array = np.asfortranarray(npy) if order == 'F' else np.ascontiguousarray(npy)
         return array
 
-    def to_pydict(self):
+    def to_pydict(self, with_index=False):
         '''
+        Args:
+            with_index: bool value which includes or excludes index values to dictionary
         Creating a dictionary from PyCylon table
         Returns: dict object
 
         '''
-        return self.to_arrow().to_pydict()
+        cdef int col_idx
+        cdef int idx
+        if with_index:
+            ar_tb = self.to_arrow().combine_chunks()
+            cn_index = self.index.index_values
+            cn_column_names = self.column_names
+            pydict = {}
+            for col_idx, chunk_arr in enumerate(ar_tb.itercolumns()):
+                column_dict = {}
+                for idx, value in enumerate(chunk_arr):
+                    column_dict[cn_index[idx]] = value.as_py()
+                pydict[cn_column_names[col_idx]] = column_dict
+            return pydict
+        else:
+            return self.to_arrow().to_pydict()
 
     def to_csv(self, path, csv_write_options):
         '''

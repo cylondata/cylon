@@ -48,10 +48,9 @@ def test_default_indexing():
     tb = Table.from_pandas(ctx, pdf)
 
     tb_idx_values = tb.index.index_values
-    pdf_idx_values = pdf.index.values
+    pdf_idx_values = pdf.index.values.tolist()
 
-    print(tb_idx_values)
-    print(pdf_idx_values)
+    assert tb_idx_values == pdf_idx_values
 
 
 def test_str_ops():
@@ -70,15 +69,10 @@ def test_str_ops():
 
     tb = Table.from_pandas(ctx, pdf)
 
-    print(tb)
+    pdf_str_val = pdf['col-1'] + "_" + pdf['col-3']
+    tb_str_val = tb['col-1'] + "_" + tb['col-3']
 
-    import pyarrow as pa
-
-    from operator import add
-
-    print(tb['col-1'] + "_" + tb['col-3'])
-
-    print(tb['col-1'] < tb['col-3'])
+    assert pdf_str_val.values.tolist() == tb_str_val.to_pandas().values.flatten().tolist()
 
 
 def test_pdf_to_pdf_assign():
@@ -114,4 +108,48 @@ def test_pdf_to_pdf_assign():
     print(gp)
 
 
-test_default_indexing()
+def test_tb_to_pydict_with_index():
+    from pycylon import Table
+    from pycylon import CylonContext
+    import pandas as pd
+    import numpy as np
+
+    ctx = CylonContext(config=None, distributed=False)
+
+    pdf = pd.DataFrame(
+        {'idx': ['x', 'y', 'z'], 'col-1': ["a", "b", "c"], 'col-2': [10, 20, 30], 'col-3': [
+            'Y',
+            'N',
+            'Y']})
+    records = 1_000_000
+    values = []
+    for col in range(0, 3):
+        values.append(np.random.random(records))
+    pdf_t = pd.DataFrame(values)
+
+    tb = Table.from_pandas(ctx, pdf)
+    tb_t = Table.from_pandas(ctx, pdf_t)
+
+    ar_tb = tb.to_arrow().combine_chunks()
+    cn_index = tb.index.index_values
+    cn_column_names = tb.column_names
+    pydict = {}
+    for col_idx, chunk_arr in enumerate(ar_tb.itercolumns()):
+        column_dict = {}
+        for idx, value in enumerate(chunk_arr):
+            column_dict[cn_index[idx]] = value.as_py()
+        pydict[cn_column_names[col_idx]] = column_dict
+
+    assert pydict == pdf.to_dict()
+
+    import time
+    t1 = time.time()
+    pdf_t.to_dict()
+    t2 = time.time()
+    tb_t.to_pydict(with_index=True)
+    t3 = time.time()
+
+    print(t2-t1, t3-t2)
+
+test_tb_to_pydict_with_index()
+
