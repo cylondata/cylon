@@ -114,4 +114,4 @@ def test_pdf_to_pdf_assign():
     print(gp)
 
 
-test_pdf_to_pdf_assign()
+test_default_indexing()
