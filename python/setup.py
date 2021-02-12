@@ -49,6 +49,7 @@ cython_files = ["pycylon/*/*.pyx"]
 if not CYLON_PREFIX:
     raise ValueError("CYLON_PREFIX not set")
 
+std_version = '-std=c++14'
 additional_compile_args = [std_version,
                            '-DARROW_METADATA_V4 -DNEED_EXCLUSIVE_SCAN']
 arrow_lib_include_dir = None
@@ -66,7 +67,6 @@ else:
     if not os.path.exists(arrow_library_directory):
         arrow_library_directory = os.path.join(ARROW_PREFIX, "lib64")
 
-std_version = '-std=c++14'
 pyarrow_include_dir = os.path.join(pyarrow_location, 'include')
 extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
