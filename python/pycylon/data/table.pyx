@@ -606,12 +606,48 @@ cdef class Table:
     def max(self, column):
         return self._agg_op(column, AggregationOp.MAX)
 
-    def groupby(self, index_col: int, aggregate_cols: List,
+    def groupby(self, index_col, aggregate_cols: List,
                 aggregate_ops: List[AggregationOp]):
+        '''
+
+        Args:
+            index_col: groupby column as str or int
+            aggregate_cols: aggregate column names (str) or column indices (int)
+            aggregate_ops: from pycylon.data.aggregates.AggregationOp
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> tb
+               AnimalId  AreaId  Max Speed  Avg Acceleration  Avg Speed
+            0         1     231      370.0                21      330.0
+            1         1     211      320.0                24      321.0
+            2         1      11      320.0                11      310.0
+            3         2      12       24.0                12       22.0
+            4         2      32       26.0                32       23.0
+
+        >>> tb.groupby('AnimalId', ['Max Speed', 'Avg Acceleration', 'Avg Speed'],
+                                  [AggregationOp.NUNIQUE, AggregationOp.COUNT,
+                                   AggregationOp.MEAN]).sort(0)
+
+               nunique_Max Speed  count_Avg Acceleration  mean_Avg Speed
+            0                  2                       3      320.333333
+            1                  2                       2       22.500000
+
+        '''
         cdef CStatus status
         cdef shared_ptr[CTable] output
         cdef vector[int] caggregate_cols
         cdef vector[CGroupByAggregationOp] caggregate_ops
+
+        if isinstance(index_col, str):
+            index_col = self._resolve_column_index_from_column_name(index_col)
+        elif isinstance(index_col, int):
+            index_col = index_col
+        else:
+            raise ValueError('Index column must be column name as str or column index as int')
 
         if not aggregate_cols and not aggregate_ops:
             raise ValueError("Aggregate columns and Aggregate operations cannot be empty")
@@ -1171,6 +1207,10 @@ cdef class Table:
                 else:
                     self.initialize(current_ar_table.append_column(key, chunk_arr),
                                     self.context)
+        elif isinstance(key, Table) and isinstance(value, Table):
+            pass
+            # TODO: add table assignment
+            #  When the table shapes mismatch, the values are added by considering matching index
         else:
             raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
                              f"value type {type(value)}")

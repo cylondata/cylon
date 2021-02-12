@@ -47,13 +47,11 @@ def test_default_indexing():
 
     tb = Table.from_pandas(ctx, pdf)
 
-
     tb_idx_values = tb.index.index_values
     pdf_idx_values = pdf.index.values
 
     print(tb_idx_values)
     print(pdf_idx_values)
-
 
 
 def test_str_ops():
@@ -78,9 +76,42 @@ def test_str_ops():
 
     from operator import add
 
-    print(tb['col-1'] + "_" + tb['col-3'] )
+    print(tb['col-1'] + "_" + tb['col-3'])
+
+    print(tb['col-1'] < tb['col-3'])
 
 
+def test_pdf_to_pdf_assign():
+    import pandas as pd
+    pdf1 = pd.DataFrame({'a': [1, 2, 3, 4, 5, 110, 111, 112, 113], 'b': [10, 11, 12, 13, 14, 5, 4,
+                                                                         3, 2]}, index=[0, 1, 2,
+                                                                                        3, 4, 5,
+                                                                                        6, 7, 8])
+
+    pdf2 = pd.DataFrame({'a': [10, 20, 30, 40, 50], 'b': [100, 101, 102, 103, 104]}, index=[0, 1,
+                                                                                            2, 3,
+                                                                                            4])
+
+    pdf3 = pd.DataFrame({'a': [1, 2, 3, 4, 5, 110, 111, 112, 113], 'b': [1110, 1111, 1112, 1113,
+                                                                         1114,
+                                                                         115, 114,
+                                                                         113, 112]}, index=[10, 11,
+                                                                                            12, 13,
+                                                                                            14, 15,
+                                                                                            16, 17,
+                                                                                            18])
+
+    print(pdf1)
+    print("-----------")
+    print(pdf2)
+    print("-----------")
+    gp = pdf1['b']
+    #print(pdf1['b'] < 6)
+    print(gp[pdf1['b'] < 6])
+    print(gp)
+    print("-----------")
+    gp[pdf1['b'] < 6] = pdf3['b']
+    print(gp)
 
 
-test_str_ops()
+test_pdf_to_pdf_assign()

@@ -209,7 +209,7 @@ def test_aggregate_addons():
 
     cn_tb_unq = cn.Table.from_pandas(ctx, df_unq)
 
-    cn_tb_mul = cn_tb_unq.groupby(0, ['Max Speed', 'Avg Acceleration', 'Avg Speed'],
+    cn_tb_mul = cn_tb_unq.groupby('AnimalId', ['Max Speed', 'Avg Acceleration', 'Avg Speed'],
                                   [AggregationOp.NUNIQUE, AggregationOp.COUNT,
                                    AggregationOp.MEAN]).sort(0)
 
@@ -223,6 +223,3 @@ def test_aggregate_addons():
     assert cn_tb_mul.index.index_values == list(pdf_mul_grp.groups.keys())
 
     assert cn_tb_mul.to_pandas().values.tolist() == pdf_mul.values.tolist()
-
-
-test_aggregate()
