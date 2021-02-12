@@ -75,6 +75,25 @@ def test_str_ops():
     assert pdf_str_val.values.tolist() == tb_str_val.to_pandas().values.flatten().tolist()
 
 
+def test_tb_to_pydict_with_index():
+    from pycylon import Table
+    from pycylon import CylonContext
+    import pandas as pd
+    import numpy as np
+
+    ctx = CylonContext(config=None, distributed=False)
+
+    pdf = pd.DataFrame(
+        {'idx': ['x', 'y', 'z'], 'col-1': ["a", "b", "c"], 'col-2': [10, 20, 30], 'col-3': [
+            'Y',
+            'N',
+            'Y']})
+
+    tb = Table.from_pandas(ctx, pdf)
+
+    assert tb.to_pydict(with_index=True) == pdf.to_dict()
+
+
 def test_pdf_to_pdf_assign():
     import pandas as pd
     pdf1 = pd.DataFrame({'a': [1, 2, 3, 4, 5, 110, 111, 112, 113], 'b': [10, 11, 12, 13, 14, 5, 4,
@@ -100,56 +119,11 @@ def test_pdf_to_pdf_assign():
     print(pdf2)
     print("-----------")
     gp = pdf1['b']
-    #print(pdf1['b'] < 6)
+    # print(pdf1['b'] < 6)
     print(gp[pdf1['b'] < 6])
     print(gp)
     print("-----------")
     gp[pdf1['b'] < 6] = pdf3['b']
     print(gp)
 
-
-def test_tb_to_pydict_with_index():
-    from pycylon import Table
-    from pycylon import CylonContext
-    import pandas as pd
-    import numpy as np
-
-    ctx = CylonContext(config=None, distributed=False)
-
-    pdf = pd.DataFrame(
-        {'idx': ['x', 'y', 'z'], 'col-1': ["a", "b", "c"], 'col-2': [10, 20, 30], 'col-3': [
-            'Y',
-            'N',
-            'Y']})
-    records = 1_000_000
-    values = []
-    for col in range(0, 3):
-        values.append(np.random.random(records))
-    pdf_t = pd.DataFrame(values)
-
-    tb = Table.from_pandas(ctx, pdf)
-    tb_t = Table.from_pandas(ctx, pdf_t)
-
-    ar_tb = tb.to_arrow().combine_chunks()
-    cn_index = tb.index.index_values
-    cn_column_names = tb.column_names
-    pydict = {}
-    for col_idx, chunk_arr in enumerate(ar_tb.itercolumns()):
-        column_dict = {}
-        for idx, value in enumerate(chunk_arr):
-            column_dict[cn_index[idx]] = value.as_py()
-        pydict[cn_column_names[col_idx]] = column_dict
-
-    assert pydict == pdf.to_dict()
-
-    import time
-    t1 = time.time()
-    pdf_t.to_dict()
-    t2 = time.time()
-    tb_t.to_pydict(with_index=True)
-    t3 = time.time()
-
-    print(t2-t1, t3-t2)
-
-test_tb_to_pydict_with_index()
 

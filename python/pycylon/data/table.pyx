@@ -1228,6 +1228,7 @@ cdef class Table:
             pass
             # TODO: add table assignment
             #  When the table shapes mismatch, the values are added by considering matching index
+
         else:
             raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
                              f"value type {type(value)}")
