@@ -151,16 +151,13 @@ def test_aggregate():
 
     pdf1 = df.groupby(['AnimalId']).sum()
 
-    cn_tb_gb_res = cn_tb_gb.groupby(0, [1], [AggregationOp.SUM]).sort(0)
-
-    print(cn_tb_gb_res)
-    print(pdf1)
+    cn_tb_gb_res = cn_tb_gb.groupby(0, [1], [AggregationOp.SUM])
 
     for val1, val2 in zip(cn_tb_gb_res.to_pydict()['sum_Max Speed'],
                           pdf1.to_dict()['Max Speed'].values()):
         assert val1 == val2
 
-    cn_tb_gb_res1 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.SUM]).sort(0)
+    cn_tb_gb_res1 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.SUM])
 
     for val1, val2 in zip(cn_tb_gb_res1.to_pydict()['sum_Max Speed'],
                           pdf1.to_dict()['Max Speed'].values()):
@@ -168,7 +165,7 @@ def test_aggregate():
 
     pdf2 = df.groupby(['AnimalId']).min()
 
-    cn_tb_gb_res2 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.MIN]).sort(0)
+    cn_tb_gb_res2 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.MIN])
 
     for val1, val2 in zip(cn_tb_gb_res2.to_pydict()['min_Max Speed'],
                           pdf2.to_dict()['Max Speed'].values()):
@@ -176,7 +173,7 @@ def test_aggregate():
 
     pdf3 = df.groupby(['AnimalId']).max()
 
-    cn_tb_gb_res3 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.MAX]).sort(0)
+    cn_tb_gb_res3 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.MAX])
     print(pdf)
     for val1, val2 in zip(cn_tb_gb_res3.to_pydict()['max_Max Speed'],
                           pdf3.to_dict()['Max Speed'].values()):
@@ -211,9 +208,7 @@ def test_aggregate_addons():
 
     cn_tb_mul = cn_tb_unq.groupby('AnimalId', ['Max Speed', 'Avg Acceleration', 'Avg Speed'],
                                   [AggregationOp.NUNIQUE, AggregationOp.COUNT,
-                                   AggregationOp.MEAN]).sort(0)
-
-    cn_tb_mul.set_index('AnimalId', drop=True)
+                                   AggregationOp.MEAN])
 
     pdf_mul_grp = df_unq.groupby('AnimalId')
 

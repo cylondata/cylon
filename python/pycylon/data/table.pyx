@@ -672,7 +672,9 @@ cdef class Table:
                                             caggregate_ops,
                                             output)
             if status.is_ok():
-                return pycylon_wrap_table(output)
+                cn_tb = pycylon_wrap_table(output)
+                cn_tb.set_index(index_col, IndexingSchema.LINEAR, True)
+                return cn_tb
             else:
                 raise Exception(f"Groupby operation failed {status.get_msg().decode()}")
 
@@ -1228,6 +1230,9 @@ cdef class Table:
             pass
             # TODO: add table assignment
             #  When the table shapes mismatch, the values are added by considering matching index
+            key_index = key.index.index_values
+            value_index = value.index.index_values
+
 
         else:
             raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
