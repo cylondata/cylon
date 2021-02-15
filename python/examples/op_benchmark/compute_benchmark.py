@@ -33,26 +33,22 @@ rb = pa.record_batch(df)
 t = pa.Table.from_pandas(df)
 
 ct = Table.from_pandas(ctx, df)
-ct.set_index(range(0, num_rows))
+
 ##
-cmp_num_rows = 10_000
+cmp_num_rows = 1_000
 cmp_data = np.random.randn(cmp_num_rows)
 
-cmp_df = pd.DataFrame({'data{}'.format(i): cmp_data
-                       for i in range(100)})
+cmp_data = cmp_data.tolist()
 
-cmp_df['key'] = np.random.randint(0, 100, size=cmp_num_rows)
-cmp_ct = Table.from_pandas(ctx, cmp_df)
-cmp_ct.set_index(range(0, cmp_num_rows))
 
-cmp_list_vals = {'data1': list(range(0, 10_000))}
 
 t1 = time.time()
-df.isin(cmp_df)
+df.isin(cmp_data)
 t2 = time.time()
 
 t3 = time.time()
-ct.isin(cmp_ct)
+ct.isin(cmp_data)
 t4 = time.time()
 
-print(t2 - t1, t4 - t3)
+print(f"Pandas isin time : {t2-t1} s")
+print(f"PyCylon isin time : {t4-t3} s")

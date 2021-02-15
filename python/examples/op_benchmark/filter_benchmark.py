@@ -35,21 +35,21 @@ t = pa.Table.from_pandas(df)
 
 ct = Table.from_pandas(ctx, df)
 
-print(ct.shape, ct.column_names)
+print(ct.shape, df.shape)
 pdf_time = []
 ct_time = []
 rep = 1
-for i in range(rep):
-    t1 = time.time()
-    ct[ct['key'] == 5]
-    t2 = time.time()
-    df[df.key == 5]
-    t3 = time.time()
-    ct_time.append(t2-t1)
-    pdf_time.append(t3-t2)
 
-print(f"PDF : Mean {sum(pdf_time)/rep}")
-print(f"CT : Mean {sum(ct_time)/rep}")
+t1 = time.time()
+ct['key'] > 5
+t2 = time.time()
+df['key'] > 5
+t3 = time.time()
+
+
+
+print(f"PDF : {t3-t2} s")
+print(f"CT :  {t2-t1} s")
 
 
 

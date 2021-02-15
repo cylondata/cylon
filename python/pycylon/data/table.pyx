@@ -1226,14 +1226,6 @@ cdef class Table:
                 else:
                     self.initialize(current_ar_table.append_column(key, chunk_arr),
                                     self.context)
-        elif isinstance(key, Table) and isinstance(value, Table):
-            pass
-            # TODO: add table assignment
-            #  When the table shapes mismatch, the values are added by considering matching index
-            key_index = key.index.index_values
-            value_index = value.index.index_values
-
-
         else:
             raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
                              f"value type {type(value)}")
