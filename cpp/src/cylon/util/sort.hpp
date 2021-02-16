@@ -93,12 +93,14 @@ void heapify(T *arr, int n, int i, T2 *t2) {
 }
 
 template <typename T, typename  T2>
-void heap_sort(T *arr, int length, T *t2) {
-  for (int i = length / 2 - 1; i >= 0; i--)
-    heapify(arr, length, i);
+void heap_sort(T *arr, int length, T2 *t2) {
+  for (int i = length / 2 - 1; i >= 0; i--) {
+      heapify(arr, length, i, t2);
+  }
 
   for (int i=length-1; i>0; i--) {
-    std::swap(&arr[0], &arr[i]);
+    std::swap(arr[0], arr[i]);
+    std::swap(t2[0], t2[i]);
     heapify(arr, i, 0, t2);
   }
 }
@@ -121,15 +123,15 @@ int64_t partition(T *t, T2 *t2, int start, int end) {
 }
 
 template <typename T, typename  T2>
-void introsort_impl(T *t, T2 *t2, int64_t start, int64_t end, int maxdepth) {
+void introsort_impl(T *t, T2 *t2, int start, int end, int maxdepth) {
   if (end - start < 32) {
-    insertion_sort(t, start, end);
+    insertion_sort(t, t2, start, end);
   } else if (maxdepth == 0) {
-    heap_sort(t, start, end);
+    heap_sort(t, end - start, t2);
   } else {
     int64_t p = partition(t, t2, start, end);
-    introsort_impl(t, start, p - 1, maxdepth - 1);
-    introsort_impl(t, p + 1, end, maxdepth - 1);
+    introsort_impl(t, t2, start, p - 1, maxdepth - 1);
+    introsort_impl(t, t2, p + 1, end, maxdepth - 1);
   }
 }
 

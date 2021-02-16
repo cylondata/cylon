@@ -394,7 +394,7 @@ class NumericInplaceIndexSortKernel : public InplaceIndexSortKernel {
     for (int64_t i = 0; i < length; i++) {
       indices_begin[i] = i;
     }
-    cylon::util::quicksort(left_data, 0, length, indices_begin);
+    cylon::util::introsort(left_data, indices_begin, length);
     offsets = std::make_shared<arrow::UInt64Array>(length, indices_buf);
     return arrow::Status::OK();
   }
