@@ -64,6 +64,8 @@ from typing import List, Any
 import warnings
 import operator
 
+
+
 '''
 Cylon Table definition mapping 
 '''
@@ -2246,14 +2248,20 @@ cdef class Table:
             3       Hello, Mat   Hello, Murphy
 
         '''
+        print(">>> applymap....")
+        import time
+        t1 = time.time()
+        compute.infer_map(self, func)
+        t2 = time.time()
+        print(">>> Infermap time : ", t2-t1)
         new_chunks = []
         artb = self.to_arrow().combine_chunks()
         for chunk_array in artb.itercolumns():
             npr = chunk_array.to_numpy()
-            new_ca = list(map(func, npr))
-            new_chunks.append(pa.array(new_ca))
+            new_chunks.append(func(npr))
         return Table.from_arrow(self.context,
                                 pa.Table.from_arrays(new_chunks, self.column_names))
+
 
     def get_index(self) -> BaseIndex:
         cdef shared_ptr[CBaseIndex] c_index = self.table_shd_ptr.get().GetIndex()

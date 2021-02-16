@@ -23,6 +23,11 @@ from cpython.object cimport (
     Py_NE,
     PyObject_RichCompareBool,
 )
+cimport numpy as cnp
+from cython import Py_ssize_t
+from numpy cimport ndarray
+cnp.import_array()
+
 from typing import Any, List
 
 
@@ -623,3 +628,27 @@ cpdef drop_na(table:Table, how:str, axis=0):
             return None
     else:
         raise ValueError(f"Invalid index {axis}, it must be 0 or 1 !")
+
+
+cpdef infer_map(table, func):
+    cdef:
+        Py_ssize_t n, i
+        ndarray[object] result
+        object val
+    n = table.column_count
+    print("N : ", n, i)
+    ar_list = []
+    i = 0
+    result = np.empty(n, dtype=object)
+    artb = table.to_arrow().combine_chunks()
+    for chunk_array in artb.itercolumns():
+        npr = chunk_array.to_numpy()
+        val = func(npr)
+        result[i] = val
+        i = i + 1
+    i = 0
+    for i in range(n):
+        ar_list.append(result[:][i])
+
+    return Table.from_arrow(table.context,
+                            pa.Table.from_arrays(ar_list, table.column_names))

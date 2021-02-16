@@ -21,7 +21,7 @@ from pycylon import Table
 from pycylon import CylonContext
 
 
-def benchmark_conversions():
+def benchmark_array_conversions():
     N = 10_000_000
 
     t1 = time.time()
@@ -37,15 +37,70 @@ def benchmark_conversions():
     print(f"Arrow to Numpy Conversion Time: {t4 - t3} s")
 
 
-def benchmark_map_numeric():
+def benchmark_table_conversion():
     N = 1_000_000
+    a_rand = np.random.random(size=N)
+
+    num_cols = 100
+    data = []
+    col_names = []
+    for i in range(num_cols):
+        data.append(a_rand)
+        col_names.append('c_' + str(i))
+
+    a = pa.array(a_rand)
+
+
+    tb = pa.Table.from_arrays(data, col_names)
+    pdf: pd.DataFrame = tb.to_pandas()
+
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cntb: Table = Table.from_arrow(ctx, tb)
+
+    print(pdf.shape, cntb.shape)
+
+    t1 = time.time()
+    npr_cn = cntb.to_numpy()
+    t2 = time.time()
+    npr_df = pdf.to_numpy()
+    t3 = time.time()
+
+    def map_func(x):
+        return x + 1
+    t4 = time.time()
+    npr_map = map_func(npr_df)
+    t5 = time.time()
+    pdf_map = pdf.applymap(map_func)
+    t6 = time.time()
+    cn_map = cntb.applymap(map_func)
+    t7 = time.time()
+
+    print(f"PyCylon Time to table to Numpy {t2 - t1} s")
+    print(f"Pandas Time to table to Numpy {t3 - t2} s")
+
+    print(f"Numpy virtual map time : {t5-t4} s")
+    print(f"Pandas map time : {t6 - t5} s")
+    print(f"PyCylon map time : {t7 - t6} s")
+
+    print(npr_map.shape)
+    lst = []
+    tx=time.time()
+    for i in range(npr_map.shape[1]):
+        lst.append(npr_map[:][i])
+    ty = time.time()
+    print(ty-tx)
+
+
+
+def benchmark_map_numeric():
+    N = 10_000_000
     a_rand = np.random.random(size=N)
     b_rand = np.random.random(size=N)
 
     a = pa.array(a_rand)
     b = pa.array(b_rand)
 
-    tb = pa.Table.from_arrays([a], ['c1'])
+    tb = pa.Table.from_arrays([a, b], ['c1', 'c2'])
     pdf: pd.DataFrame = tb.to_pandas()
 
     ctx: CylonContext = CylonContext(config=None, distributed=False)
@@ -61,11 +116,9 @@ def benchmark_map_numeric():
     new_pdf = pdf.applymap(map_func)
     t3 = time.time()
 
-
-
     print(f"Time for Cylon Apply Map {t2 - t1} s")
     print(f"Time for Pandas Apply Map {t3 - t2} s")
 
-
-#benchmark_conversions()
-benchmark_map_numeric()
+# benchmark_conversions()
+#benchmark_map_numeric()
+benchmark_table_conversion()

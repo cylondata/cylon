@@ -245,9 +245,19 @@ def test_column_str_ops():
 
     df['d'] = df['d'].str.replace('-', '')
     print(df)
-    tb_cn['d'] = tb_cn['d'].applymap(lambda x: x.replace('-',''))
+    tb_cn['d'] = tb_cn['d'].applymap(lambda x: x.replace('-', ''))
 
     print(tb_cn)
 
 
+def test_filter():
+    npr = np.array([1, 2, 3, 4, 5])
 
+    def map_func(x):
+        return x + 1
+
+    npr_map = map_func(npr)
+    print(npr_map)
+
+
+test_filter()
