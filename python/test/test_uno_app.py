@@ -250,4 +250,4 @@ def test_column_str_ops():
     print(tb_cn)
 
 
-test_column_str_ops()
+

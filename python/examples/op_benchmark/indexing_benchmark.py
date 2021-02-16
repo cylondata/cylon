@@ -4,6 +4,7 @@ import numpy as np
 import pycylon as cn
 from pycylon import Table
 from pycylon.io import CSVWriteOptions
+from pycylon.indexing.index import IndexingSchema
 
 ctx = cn.CylonContext(config=None, distributed=False)
 
@@ -34,7 +35,7 @@ def do_indexing():
     ct = Table.from_pandas(ctx, pdf)
 
     t0 = time.time()
-    ct.set_index('a')
+    ct.set_index('a', IndexingSchema.HASH)
     t1 = time.time()
     pdf1 = pdf.set_index('a')
     t2 = time.time()

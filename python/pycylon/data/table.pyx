@@ -1067,6 +1067,7 @@ cdef class Table:
         Returns: PyCylon Table
 
         '''
+
         mask_batches = mask.to_arrow().combine_chunks().to_batches()
 
         if mask.column_count == 1:
@@ -1212,10 +1213,12 @@ cdef class Table:
             2      3      7    110   1110
             3      4      8    120   1120
         '''
-
+        import time
         if isinstance(key, str) and isinstance(value, Table):
             if value.column_count == 1:
+                t1 = time.time()
                 value_arrow_table = value.to_arrow().combine_chunks()
+                t2 = time.time()
                 chunk_arr = value_arrow_table.columns[0].chunks[0]
                 current_ar_table = self.to_arrow()
                 if key in self.column_names:
@@ -1226,6 +1229,9 @@ cdef class Table:
                 else:
                     self.initialize(current_ar_table.append_column(key, chunk_arr),
                                     self.context)
+                t3 = time.time()
+                print(f"Combine Chunk time: {t2 - t1} s")
+                print(f"Insert time: {t3-t2} s")
         else:
             raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
                              f"value type {type(value)}")

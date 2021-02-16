@@ -114,6 +114,8 @@ cdef _resolve_arrow_op(op):
         raise ValueError(f"Not Implemented Operator {op.__name__}")
     return arrow_op
 
+cpdef table_compute_np_op(table: Table, other, op):
+    pass
 
 cpdef table_compute_ar_op(table: Table, other, op):
     """

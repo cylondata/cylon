@@ -38,7 +38,7 @@ def benchmark_conversions():
 
 
 def benchmark_map_numeric():
-    N = 10_000_000
+    N = 1_000_000
     a_rand = np.random.random(size=N)
     b_rand = np.random.random(size=N)
 
@@ -67,5 +67,5 @@ def benchmark_map_numeric():
     print(f"Time for Pandas Apply Map {t3 - t2} s")
 
 
-benchmark_conversions()
-#benchmark_map_numeric()
+#benchmark_conversions()
+benchmark_map_numeric()
