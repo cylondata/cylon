@@ -13,7 +13,7 @@
  */
 
 #include <arrow/api.h>
-#include <glog/logging.h>
+#include <arrow/compute/api.h>
 
 #include <vector>
 #include <memory>
@@ -26,160 +26,43 @@
 namespace cylon {
 namespace util {
 
-template<typename TYPE>
-arrow::Status SortNumericColumn(const std::shared_ptr<arrow::Array> &data_column,
-                                const std::shared_ptr<arrow::Int64Array> &sorted_indices,
-                                std::shared_ptr<arrow::Array> *sorted_array,
-                                arrow::MemoryPool *memory_pool) {
-  const int64_t length = sorted_indices->length();
-
-  using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
-  using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
-
-  ARROW_BUILDER_T array_builder(memory_pool);
-  arrow::Status reserveStatus = array_builder.Reserve(length);
-
-  auto data_array_values = std::static_pointer_cast<ARROW_ARRAY_T>(data_column);
-  auto sorted_idx_values = sorted_indices->raw_values();
-  for (int64_t index = 0; index < length; ++index) {
-    int64_t current_index = sorted_idx_values[index];
-    array_builder.UnsafeAppend(data_array_values->Value(current_index));
-  }
-  return array_builder.Finish(sorted_array);
-}
-
-arrow::Status SortColumn(const std::shared_ptr<arrow::Array> &data_column,
-                         const std::shared_ptr<arrow::Int64Array> &sorted_indices,
-                         std::shared_ptr<arrow::Array> *sorted_column_array,
-                         arrow::MemoryPool *memory_pool) {
-  // todo support non numeric types
-  switch (data_column->type()->id()) {
-    case arrow::Type::UINT8:
-      return SortNumericColumn<arrow::UInt8Type>(data_column, sorted_indices, sorted_column_array, memory_pool);
-    case arrow::Type::NA:break;
-    case arrow::Type::BOOL:
-      return SortNumericColumn<arrow::BooleanType>(data_column,
-                                                   sorted_indices,
-                                                   sorted_column_array,
-                                                   memory_pool);
-    case arrow::Type::INT8:
-      return SortNumericColumn<arrow::Int8Type>(data_column,
-                                                sorted_indices,
-                                                sorted_column_array,
-                                                memory_pool);
-    case arrow::Type::UINT16:
-      return SortNumericColumn<arrow::UInt16Type>(data_column,
-                                                  sorted_indices,
-                                                  sorted_column_array,
-                                                  memory_pool);
-    case arrow::Type::INT16:
-      return SortNumericColumn<arrow::Int16Type>(data_column,
-                                                 sorted_indices,
-                                                 sorted_column_array,
-                                                 memory_pool);
-    case arrow::Type::UINT32:
-      return SortNumericColumn<arrow::UInt32Type>(data_column,
-                                                  sorted_indices,
-                                                  sorted_column_array,
-                                                  memory_pool);
-    case arrow::Type::INT32:
-      return SortNumericColumn<arrow::Int32Type>(data_column,
-                                                 sorted_indices,
-                                                 sorted_column_array,
-                                                 memory_pool);
-    case arrow::Type::UINT64:
-      return SortNumericColumn<arrow::UInt64Type>(data_column,
-                                                  sorted_indices,
-                                                  sorted_column_array,
-                                                  memory_pool);
-    case arrow::Type::INT64:
-      return SortNumericColumn<arrow::Int64Type>(data_column,
-                                                 sorted_indices,
-                                                 sorted_column_array,
-                                                 memory_pool);
-    case arrow::Type::HALF_FLOAT:
-      return SortNumericColumn<arrow::HalfFloatType>(data_column,
-                                                     sorted_indices,
-                                                     sorted_column_array,
-                                                     memory_pool);
-    case arrow::Type::FLOAT:
-      return SortNumericColumn<arrow::FloatType>(data_column,
-                                                 sorted_indices,
-                                                 sorted_column_array,
-                                                 memory_pool);
-    case arrow::Type::DOUBLE:
-      return SortNumericColumn<arrow::DoubleType>(data_column,
-                                                  sorted_indices,
-                                                  sorted_column_array,
-                                                  memory_pool);
-    case arrow::Type::STRING:break;
-    case arrow::Type::BINARY:break;
-    case arrow::Type::FIXED_SIZE_BINARY:break;
-    case arrow::Type::DATE32:break;
-    case arrow::Type::DATE64:break;
-    case arrow::Type::TIMESTAMP:break;
-    case arrow::Type::TIME32:break;
-    case arrow::Type::TIME64:break;
-    case arrow::Type::DECIMAL:break;
-    case arrow::Type::LIST:break;
-    case arrow::Type::STRUCT:break;
-    case arrow::Type::DICTIONARY:break;
-    case arrow::Type::MAP:break;
-    case arrow::Type::EXTENSION:break;
-    case arrow::Type::FIXED_SIZE_LIST:break;
-    case arrow::Type::DURATION:break;
-    case arrow::Type::LARGE_STRING:break;
-    case arrow::Type::LARGE_BINARY:break;
-    case arrow::Type::LARGE_LIST:break;
-    case arrow::Type::INTERVAL_MONTHS:break;
-    case arrow::Type::INTERVAL_DAY_TIME:break;
-    case arrow::Type::SPARSE_UNION:break;
-    case arrow::Type::DENSE_UNION:break;
-    case arrow::Type::MAX_ID:break;
-  }
-  return arrow::Status::OK();
-}
-
 arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table,
                         int64_t sort_column_index,
                         arrow::MemoryPool *memory_pool,
-                        std::shared_ptr<arrow::Table> &sorted_table) {
+                        std::shared_ptr<arrow::Table> &sorted_table,
+                        bool ascending) {
   std::shared_ptr<arrow::Table> tab_to_process; // table referenced
   // combine chunks if multiple chunks are available
   if (table->column(sort_column_index)->num_chunks() > 1) {
-    arrow::Result<std::shared_ptr<arrow::Table>> left_combine_res = table->CombineChunks(memory_pool);
-    if (!left_combine_res.ok()) {
-      return left_combine_res.status();
-    }
-    tab_to_process = left_combine_res.ValueOrDie();
+    const auto &res = table->CombineChunks(memory_pool);
+    RETURN_ARROW_STATUS_IF_FAILED(res.status())
+    tab_to_process = res.ValueOrDie();
   } else {
     tab_to_process = table;
   }
-  auto column_to_sort = tab_to_process->column(sort_column_index)->chunk(0);
+  const std::shared_ptr<arrow::Array> &column_to_sort = tab_to_process->column(sort_column_index)->chunk(0);
 
   // sort to indices
-  std::shared_ptr<arrow::Array> sorted_column_index;
-  arrow::Status status = cylon::SortIndices(memory_pool, column_to_sort, sorted_column_index);
-  if (!status.ok()) {
-    LOG(FATAL) << "Failed to sort column to indices" << status.ToString();
-    return status;
-  }
-
-  auto index_lookup = std::static_pointer_cast<arrow::Int64Array>(sorted_column_index);
+  std::shared_ptr<arrow::UInt64Array> sorted_column_index;
+  RETURN_ARROW_STATUS_IF_FAILED(cylon::SortIndices(memory_pool, column_to_sort, sorted_column_index, ascending))
 
   // now sort everything based on sorted index
   arrow::ArrayVector sorted_columns;
-  const int64_t no_of_columns = tab_to_process->num_columns();
-  for (int64_t col_index = 0; col_index < no_of_columns; ++col_index) {
-    std::shared_ptr<arrow::Array> sorted_array;
-    status = SortColumn(tab_to_process->column(col_index)->chunk(0),
-                        index_lookup, &sorted_array, memory_pool);
-    if (!status.ok()) {
-      LOG(FATAL) << "Failed to sort column based on indices. " << status.ToString();
-      return status;
-    }
-    sorted_columns.push_back(sorted_array);
+  sorted_columns.reserve(table->num_columns());
+
+  arrow::compute::ExecContext exec_context(memory_pool);
+  // no bounds check is needed as indices are guaranteed to be within range
+  const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::NoBoundsCheck();
+
+  for (int64_t col_index = 0; col_index < tab_to_process->num_columns(); ++col_index) {
+    const arrow::Result<arrow::Datum> &res = arrow::compute::Take(tab_to_process->column(col_index)->chunk(0),
+                                                                  sorted_column_index,
+                                                                  take_options,
+                                                                  &exec_context);
+    RETURN_ARROW_STATUS_IF_FAILED(res.status())
+    sorted_columns.emplace_back(res.ValueOrDie().make_array());
   }
+
   sorted_table = arrow::Table::Make(table->schema(), sorted_columns);
   return arrow::Status::OK();
 }
