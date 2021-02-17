@@ -29,7 +29,6 @@ cylon_add_exe(partition_example)
 cylon_add_exe(unique_example)
 cylon_add_exe(unique_bench_example)
 cylon_add_exe(indexing_example)
-cylon_add_exe(sort_test)
 
 if (CYLON_PARQUET)
     cylon_add_exe(parquet_test)
