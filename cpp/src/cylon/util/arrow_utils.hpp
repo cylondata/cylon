@@ -24,7 +24,7 @@ namespace util {
 arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table,
                         int64_t sort_column_index,
                         arrow::MemoryPool *memory_pool,
-                        std::shared_ptr<arrow::Table> &sorted_table);
+                        std::shared_ptr<arrow::Table> &sorted_table, bool ascending = true);
 
 arrow::Status copy_array_by_indices(const std::vector<int64_t> &indices,
                                     const std::shared_ptr<arrow::Array> &source_array,

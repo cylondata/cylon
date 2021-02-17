@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
   first_table->Print();
   std::cout << "-----------------------" << std::endl;
 
-  status = cylon::Sort(first_table, 1, output);
+  status = cylon::Sort(first_table, 0, output);
 
   if (status.is_ok()) {
     output->Print();

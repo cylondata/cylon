@@ -29,7 +29,8 @@ namespace util {
 arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table,
                         int64_t sort_column_index,
                         arrow::MemoryPool *memory_pool,
-                        std::shared_ptr<arrow::Table> &sorted_table) {
+                        std::shared_ptr<arrow::Table> &sorted_table,
+                        bool ascending) {
   std::shared_ptr<arrow::Table> tab_to_process; // table referenced
   // combine chunks if multiple chunks are available
   if (table->column(sort_column_index)->num_chunks() > 1) {
@@ -43,7 +44,7 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table,
 
   // sort to indices
   std::shared_ptr<arrow::UInt64Array> sorted_column_index;
-  RETURN_ARROW_STATUS_IF_FAILED(cylon::SortIndices(memory_pool, column_to_sort, sorted_column_index))
+  RETURN_ARROW_STATUS_IF_FAILED(cylon::SortIndices(memory_pool, column_to_sort, sorted_column_index, ascending))
 
   // now sort everything based on sorted index
   arrow::ArrayVector sorted_columns;
