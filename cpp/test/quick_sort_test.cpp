@@ -21,17 +21,17 @@ TEST_CASE("Testing introsort", "[util]") {
   SECTION("testing introsort") {
     std::random_device rd;
     std::mt19937_64 gen(rd());
-    std::uniform_int_distribution<uint64_t> distrib(0, 1000);
-
-    int64_t *index = new int64_t[1000];
-    int64_t *value = new int64_t[1000];
-    for (int i = 0; i < 1000; i++) {
+    int elements = 10000;
+    std::uniform_int_distribution<uint64_t> distrib(0, elements);
+    int64_t *index = new int64_t[elements];
+    int64_t *value = new int64_t[elements];
+    for (int i = 0; i < elements; i++) {
       index[i] = i;
       value[i] = distrib(gen);
     }
-    cylon::util::introsort(value, index, 1000);
+    cylon::util::introsort(value, index, elements);
     bool sorted = true;
-    for (int i = 0; i < 1000 - 1; i++) {
+    for (int i = 0; i < elements - 1; i++) {
       if (value[i] > value[i + 1]) {
         sorted = false;
       }
@@ -42,8 +42,8 @@ TEST_CASE("Testing introsort", "[util]") {
   SECTION("testing introsort") {
     std::random_device rd;
     std::mt19937_64 gen(rd());
-    std::uniform_int_distribution<uint64_t> distrib(0, 1000);
     int elements = 1000000;
+    std::uniform_int_distribution<uint64_t> distrib(0, elements);
     int64_t *index = new int64_t[elements];
     int64_t *value = new int64_t[elements];
     for (int i = 0; i < elements; i++) {
