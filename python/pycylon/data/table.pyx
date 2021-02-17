@@ -91,7 +91,6 @@ cdef class Table:
             self.sp_context = pycylon_unwrap_context(context)
             self.table_shd_ptr = make_shared[CTable](c_arrow_tb_shd_ptr, self.sp_context)
 
-
     cdef void init(self, const shared_ptr[CTable]& table):
         self.table_shd_ptr = table
         self._index = None
@@ -123,7 +122,7 @@ cdef class Table:
         else:
             self.table_shd_ptr.get().Print(row1, row2, col1, col2)
 
-    def sort(self, index) -> Table:
+    def sort(self, index, ascending: bool = True) -> Table:
         cdef shared_ptr[CTable] output
         sort_index = -1
         if isinstance(index, str):
@@ -131,7 +130,7 @@ cdef class Table:
         else:
             sort_index = index
 
-        cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output)
+        cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output, ascending)
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
@@ -2048,12 +2047,13 @@ cdef class Table:
             c_base_index = pycylon_unwrap_base_index(key)
             self.table_shd_ptr.get().Set_Index(c_base_index, False)
         else:
-            indexed_table = process_index_by_value(key=key, table=self, index_schema=indexing_schema,
-                                                       drop_index=drop)
+            indexed_table = process_index_by_value(key=key, table=self,
+                                                   index_schema=indexing_schema,
+                                                   drop_index=drop)
             indexed_cylon_table = pycylon_unwrap_table(indexed_table)
             self.init(indexed_cylon_table)
 
-    def reset_index(self, drop_index:bool=False) -> Table:
+    def reset_index(self, drop_index: bool = False) -> Table:
         """
         reset_index
         Here the existing index can be removed and set back to table.

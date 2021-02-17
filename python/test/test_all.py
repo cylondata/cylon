@@ -196,6 +196,12 @@ def test_duplicate():
     assert responses[-1] == 0
 
 
+def test_sorting():
+    print("27. Sorting")
+    responses.append(os.system("pytest -q python/test/test_sorting.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)
