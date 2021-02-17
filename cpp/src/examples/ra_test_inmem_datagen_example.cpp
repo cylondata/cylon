@@ -39,7 +39,7 @@ int shuffle_example(int argc, char *argv[]);
 int join_example(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
-  shuffle_example(argc, argv);
+  join_example(argc, argv);
   return 0;
 }
 
