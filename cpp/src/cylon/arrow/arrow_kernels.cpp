@@ -204,7 +204,8 @@ class ArrowStringSortKernel : public IndexSortKernel {
  public:
   explicit ArrowStringSortKernel(arrow::MemoryPool *pool) : IndexSortKernel(pool) {}
 
-  arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::Array> &offsets) override {
+  arrow::Status Sort(const std::shared_ptr<arrow::Array> &values,
+                     std::shared_ptr<arrow::UInt64Array> &offsets) override {
     auto array = std::static_pointer_cast<arrow::StringArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(int64_t);
@@ -235,7 +236,8 @@ class ArrowFixedSizeBinarySortKernel : public IndexSortKernel {
  public:
   explicit ArrowFixedSizeBinarySortKernel(arrow::MemoryPool *pool) : IndexSortKernel(pool) {}
 
-  arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::Array> &offsets) override {
+  arrow::Status Sort(const std::shared_ptr<arrow::Array> &values,
+                     std::shared_ptr<arrow::UInt64Array> &offsets) override {
     auto array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
@@ -264,7 +266,8 @@ class ArrowBinarySortKernel : public IndexSortKernel {
   explicit ArrowBinarySortKernel(arrow::MemoryPool *pool) :
       IndexSortKernel(pool) {}
 
-  arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::Array> &offsets) override {
+  arrow::Status Sort(const std::shared_ptr<arrow::Array> &values,
+                     std::shared_ptr<arrow::UInt64Array> &offsets) override {
     auto array = std::static_pointer_cast<arrow::BinaryArray>(values);
     std::shared_ptr<arrow::Buffer> indices_buf;
     int64_t buf_size = values->length() * sizeof(uint64_t);
@@ -296,7 +299,8 @@ class NumericIndexSortKernel : public IndexSortKernel {
 
   explicit NumericIndexSortKernel(arrow::MemoryPool *pool) : IndexSortKernel(pool) {}
 
-  arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::Array> &offsets) override {
+  arrow::Status Sort(const std::shared_ptr<arrow::Array> &values,
+                     std::shared_ptr<arrow::UInt64Array> &offsets) override {
     auto array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
     const T *left_data = array->raw_values();
     int64_t buf_size = values->length() * sizeof(uint64_t);
@@ -354,8 +358,8 @@ std::unique_ptr<IndexSortKernel> CreateSorter(const std::shared_ptr<arrow::DataT
   }
 }
 
-arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> &values,
-                          std::shared_ptr<arrow::Array> &offsets) {
+arrow::Status SortIndices(arrow::MemoryPool *memory_pool, const std::shared_ptr<arrow::Array> &values,
+                          std::shared_ptr<arrow::UInt64Array> &offsets) {
   std::unique_ptr<IndexSortKernel> out = CreateSorter(values->type(), memory_pool);
   if (out == nullptr) {
     return arrow::Status(arrow::StatusCode::NotImplemented, "unknown type " + values->type()->ToString());

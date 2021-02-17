@@ -106,3 +106,7 @@ cylon_run_test(partition_test 4)
 #indexing tests
 cylon_add_test(indexing_test)
 cylon_run_test(indexing_test 1)
+
+# create table test
+cylon_add_test(sorting_test)
+cylon_run_test(sorting_test 1)

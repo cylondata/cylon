@@ -303,7 +303,7 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_p
   std::shared_ptr<arrow::Table> sorted_table;
   auto table_ = table->get_table();
   auto ctx = table->GetContext();
-  arrow::Status status = cylon::util::SortTable(table_, sort_column, cylon::ToArrowPool(ctx), sorted_table);
+  const arrow::Status &status = cylon::util::SortTable(table_, sort_column, cylon::ToArrowPool(ctx), sorted_table);
   if (status.ok()) {
     return Table::FromArrowTable(ctx, sorted_table, out);
   } else {

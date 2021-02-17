@@ -64,7 +64,7 @@ class IndexSortKernel {
    * @param out
    * @return
    */
-  virtual arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::Array> &out) = 0;
+  virtual arrow::Status Sort(const std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::UInt64Array> &out) = 0;
 
   virtual ~IndexSortKernel() = default;
 
@@ -79,8 +79,8 @@ class IndexSortKernel {
  * @param offsets
  * @return
  */
-arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> &values,
-                          std::shared_ptr<arrow::Array> &offsets);
+arrow::Status SortIndices(arrow::MemoryPool *memory_pool, const std::shared_ptr<arrow::Array> &values,
+                          std::shared_ptr<arrow::UInt64Array> &offsets);
 
 // -----------------------------------------------------------------------------
 
