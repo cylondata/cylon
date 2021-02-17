@@ -40,10 +40,7 @@ TEST_CASE("Testing introsort", "[util]") {
   }
 
   SECTION("testing introsort") {
-    std::random_device rd;
-    std::mt19937_64 gen(rd());
     int elements = 1000000;
-    std::uniform_int_distribution<uint64_t> distrib(0, elements);
     int64_t *index = new int64_t[elements];
     int64_t *value = new int64_t[elements];
     for (int i = 0; i < elements; i++) {
