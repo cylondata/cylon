@@ -44,7 +44,7 @@ pycylon_unwrap_base_index)
 
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
-from pycylon.data.aggregates import AggregationOp
+from pycylon.data.aggregates import AggregationOp, AggregationOpString
 from pycylon.data.groupby cimport (DistributedHashGroupBy, DistributedPipelineGroupBy)
 from pycylon.data import compute
 
@@ -605,34 +605,63 @@ cdef class Table:
     def max(self, column):
         return self._agg_op(column, AggregationOp.MAX)
 
-    def groupby(self, index_col: int, aggregate_cols: List,
-                aggregate_ops: List[AggregationOp]):
+    def groupby(self, index, agg: dict):
         cdef CStatus status
         cdef shared_ptr[CTable] output
+        cdef vector[int] cindex_cols
         cdef vector[int] caggregate_cols
         cdef vector[CGroupByAggregationOp] caggregate_ops
 
-        if not aggregate_cols and not aggregate_ops:
-            raise ValueError("Aggregate columns and Aggregate operations cannot be empty")
+        if not agg or not isinstance(agg, dict):
+            raise ValueError("agg should be non-empty and dict type")
         else:
             # set aggregate col to c-vector
-            for aggregate_col in aggregate_cols:
-                col_idx = -1
-                if isinstance(aggregate_col, str):
-                    col_idx = self._resolve_column_index_from_column_name(aggregate_col)
-                elif isinstance(aggregate_col, int):
-                    col_idx = aggregate_col
+            for agg_pair in agg.items():
+                if isinstance(agg_pair[0], str):
+                    col_idx = self._resolve_column_index_from_column_name(agg_pair[0])
+                elif isinstance(agg_pair[0], int):
+                    col_idx = agg_pair[0]
                 else:
-                    raise ValueError("Aggregate column must be either column name (str) or column "
+                    raise ValueError("Agg column must be either column name (str) or column "
                                      "index (int)")
-                caggregate_cols.push_back(col_idx)
 
-            for aggregate_op in aggregate_ops:
-                caggregate_ops.push_back(aggregate_op)
+                if isinstance(agg_pair[1], str):
+                    caggregate_cols.push_back(col_idx)
+                    caggregate_ops.push_back(AggregationOpString[agg_pair[1]])
+                elif isinstance(agg_pair[1], AggregationOp):
+                    caggregate_cols.push_back(col_idx)
+                    caggregate_ops.push_back(agg_pair[1])
+                elif isinstance(agg_pair[1], list):
+                    for op in agg_pair[1]:
+                        caggregate_cols.push_back(col_idx)
+                        if isinstance(op, str):
+                            caggregate_ops.push_back(AggregationOpString[op])
+                        elif isinstance(op, AggregationOp):
+                            caggregate_ops.push_back(op)
+                else:
+                    raise ValueError("Agg op must be either op name (str) or AggregationOp enum or "
+                                     "a list of either of those")
 
-            status = DistributedHashGroupBy(self.table_shd_ptr, index_col, caggregate_cols,
-                                            caggregate_ops,
-                                            output)
+            if isinstance(index, str):
+                cindex_cols.push_back(self._resolve_column_index_from_column_name(index))
+            elif isinstance(index, int):
+                cindex_cols.push_back(index)
+            elif isinstance(index, list):
+                for i in index:
+                    if isinstance(i, str):
+                        col_idx = self._resolve_column_index_from_column_name(i)
+                    elif isinstance(i, int):
+                        col_idx = i
+                    else:
+                        raise ValueError("Index column must be either column name (str) or column "
+                                         "index (int)")
+                    cindex_cols.push_back(col_idx)
+            else:
+                raise ValueError("Index column must be either column name (str) or column "
+                                 "index (int)")
+
+            status = DistributedHashGroupBy(self.table_shd_ptr, cindex_cols, caggregate_cols,
+                                            caggregate_ops, output)
             if status.is_ok():
                 return pycylon_wrap_table(output)
             else:
