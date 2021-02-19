@@ -1059,9 +1059,6 @@ cdef class Table:
                 filtered_all_data.append(filtered_data)
             return Table.from_list(self.context, self.column_names, filtered_all_data)
 
-    def _aggregate_filters(self, filter: Table, op) -> Table:
-        return compute.table_compute_ar_op(self, filter, op)
-
     def __getitem__(self, key) -> Table:
         """
         This method allows to retrieve a subset of a Table by means of a key
@@ -1203,9 +1200,6 @@ cdef class Table:
             raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
                              f"value type {type(value)}")
 
-    def _comparison_operation(self, other, op):
-        return compute.table_compute_ar_op(self, other, op)
-
     def __eq__(self, other) -> Table:
         '''
         Equal operator for Table
@@ -1239,7 +1233,7 @@ cdef class Table:
             3  False  False  False
 
         '''
-        return self._comparison_operation(other, operator.__eq__)
+        return compute.table_compute_ar_op(self, other, operator.__eq__)
 
     def __ne__(self, other) -> Table:
         '''
@@ -1273,7 +1267,7 @@ cdef class Table:
             3   True   True   True
         '''
 
-        return self._comparison_operation(other, operator.__ne__)
+        return compute.table_compute_ar_op(self, other, operator.__ne__)
 
     def __lt__(self, other) -> Table:
         '''
@@ -1307,7 +1301,7 @@ cdef class Table:
             3  False  False  False
         '''
 
-        return self._comparison_operation(other, operator.__lt__)
+        return compute.table_compute_ar_op(self, other, operator.__lt__)
 
     def __gt__(self, other) -> Table:
         '''
@@ -1341,7 +1335,7 @@ cdef class Table:
             3   True   True   True
         '''
 
-        return self._comparison_operation(other, operator.__gt__)
+        return compute.table_compute_ar_op(self, other, operator.__gt__)
 
     def __le__(self, other) -> Table:
         '''
@@ -1374,7 +1368,7 @@ cdef class Table:
             2  False  False  False
             3  False  False  False
         '''
-        return self._comparison_operation(other, operator.__le__)
+        return compute.table_compute_ar_op(self, other, operator.__le__)
 
     def __ge__(self, other) -> Table:
         '''
@@ -1409,7 +1403,7 @@ cdef class Table:
             3   True   True   True
         '''
 
-        return self._comparison_operation(other, operator.__ge__)
+        return compute.table_compute_ar_op(self, other, operator.__ge__)
 
     def __or__(self, other) -> Table:
         '''
@@ -1443,7 +1437,7 @@ cdef class Table:
             3   True   True
         '''
 
-        return self._aggregate_filters(other, operator.__or__)
+        return compute.table_compute_ar_op(self, other, operator.__or__)
 
     def __and__(self, other) -> Table:
         '''
@@ -1477,7 +1471,7 @@ cdef class Table:
             3  False  False
         '''
 
-        return self._aggregate_filters(other, operator.__and__)
+        return compute.table_compute_ar_op(self, other, operator.__and__)
 
     def __invert__(self) -> Table:
         '''

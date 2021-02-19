@@ -1,4 +1,6 @@
 # cython: infer_types=True
+import operator
+
 import numpy as np
 cimport cython
 from libcpp cimport bool
@@ -54,6 +56,8 @@ cdef cast_scalar(scalar_value, dtype_id):
         return int(scalar_value)
     elif dtype_id == pa.int8().id:
         return bytes(scalar_value)
+    elif dtype_id == pa.string().id:
+        return str(scalar_value)
     else:
         raise ValueError(f"Unsupported Scalar Type {type(scalar_value)}")
 
@@ -138,7 +142,7 @@ cpdef table_compute_ar_op(table: Table, other, op):
             arrays.append(arrow_op(l_array, r_array))
         return Table.from_arrow(table.context, pa.Table.from_arrays(arrays,
                                                                    names=table.column_names))
-    elif isinstance(other, numbers.Number):
+    elif np.isscalar(other):
         arrays = []
         ar_table = table.to_arrow().combine_chunks()
         for col in ar_table.columns:
