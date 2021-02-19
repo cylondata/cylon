@@ -96,28 +96,17 @@ cpdef comparison_compute_op_iter(CDType[:] array, CDType other, op):
 cpdef comparison_compute_np_op(array, other, op):
     return op(array, other)
 
-cdef _resolve_arrow_op(op):
-    arrow_op = None
-    if op.__name__ == 'gt':
-        arrow_op = greater
-    elif op.__name__ == 'lt':
-        arrow_op = less
-    elif op.__name__ == 'eq':
-        arrow_op = equal
-    elif op.__name__ == 'ge':
-        arrow_op = greater_equal
-    elif op.__name__ == 'le':
-        arrow_op = less_equal
-    elif op.__name__ == 'ne':
-        arrow_op = not_equal
-    elif op.__name__ == 'or_':
-        arrow_op = or_
-    elif op.__name__ == 'and_':
-        arrow_op = and_
-    else:
-        raise ValueError(f"Not Implemented Operator {op.__name__}")
-    return arrow_op
 
+_resolve_arrow_op = {
+    operator.__gt__: greater,
+     operator.__lt__ : less,
+     operator.__eq__ : equal,
+     operator.__ge__ : greater_equal,
+     operator.__le__ : less_equal,
+     operator.__ne__ : not_equal,
+     operator.__or__ : or_,
+     operator.__and__ :and_
+}
 
 cpdef table_compute_ar_op(table: Table, other, op):
     """
@@ -131,7 +120,7 @@ cpdef table_compute_ar_op(table: Table, other, op):
     Returns: PyCylon table with bool values
 
     """
-    arrow_op = _resolve_arrow_op(op)
+    arrow_op = _resolve_arrow_op[op]
     if isinstance(other, Table):
         arrays = []
         l_table = table.to_arrow().combine_chunks()
