@@ -2248,12 +2248,6 @@ cdef class Table:
             3       Hello, Mat   Hello, Murphy
 
         '''
-        print(">>> applymap....")
-        import time
-        t1 = time.time()
-        compute.infer_map(self, func)
-        t2 = time.time()
-        print(">>> Infermap time : ", t2-t1)
         new_chunks = []
         artb = self.to_arrow().combine_chunks()
         for chunk_array in artb.itercolumns():

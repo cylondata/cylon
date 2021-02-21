@@ -38,18 +38,15 @@ def benchmark_array_conversions():
 
 
 def benchmark_table_conversion():
-    N = 1_000_000
+    N = 10_000
     a_rand = np.random.random(size=N)
 
-    num_cols = 100
+    num_cols = 10_000
     data = []
     col_names = []
     for i in range(num_cols):
         data.append(a_rand)
         col_names.append('c_' + str(i))
-
-    a = pa.array(a_rand)
-
 
     tb = pa.Table.from_arrays(data, col_names)
     pdf: pd.DataFrame = tb.to_pandas()
