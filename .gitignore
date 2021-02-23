@@ -75,6 +75,7 @@ java/src/main/native/include
 
 # IDEs
 .vscode
+.editorconfig
 
 # Python env
 env/

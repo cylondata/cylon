@@ -129,6 +129,21 @@ arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
                                  std::shared_ptr<arrow::Array> &values,
                                  std::shared_ptr<arrow::UInt64Array> &offsets);
 
+
+template<typename TYPE, bool ASCENDING>
+class NumericComparator{
+  using T = typename TYPE::c_type;
+  std::shared_ptr<arrow::NumericArray<TYPE>> &values;
+  typename _compare = std::conditional<ASCENDING,[]()->{},[]()->{}>
+
+  public:
+  NumericComparator(const std::shared_ptr<arrow::Array> &values):values(std::static_pointer_cast<arrow::NumericArray<TYPE>>(values)){
+    
+  }
+
+  int compare(int64_t idx1, int64_t idx2);
+};
+
 // -----------------------------------------------------------------------------
 
 class StreamingSplitKernel {

@@ -21,6 +21,8 @@
 
 namespace cylon {
 
+// SPLITTING -----------------------------------------------------------------------------
+
 template<typename TYPE, typename = typename std::enable_if<
     arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value>::type>
 class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
@@ -198,7 +200,7 @@ std::unique_ptr<ArrowArraySplitKernel> CreateSplitter(const std::shared_ptr<arro
   }
 }
 
-// -----------------------------------------------------------------------------
+// SORTING -----------------------------------------------------------------------------
 
 template<typename ARROW_T>
 class ArrowBinarySortKernel : public IndexSortKernel {
@@ -239,6 +241,7 @@ class NumericIndexSortKernel : public IndexSortKernel {
   arrow::Status Sort(const std::shared_ptr<arrow::Array> &values,
                      std::shared_ptr<arrow::UInt64Array> &offsets) const override {
     auto array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
+    array->GetView(0);
     const T *left_data = array->raw_values();
 
     if (ascending) {
@@ -302,9 +305,6 @@ arrow::Status SortIndices(arrow::MemoryPool *memory_pool, const std::shared_ptr<
   }
   return out->Sort(values, offsets);
 }
-
-// -----------------------------------------------------------------------------
-
 
 template<typename TYPE, typename = typename std::enable_if<
     arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value>::type>
@@ -379,7 +379,46 @@ arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
   return out->Sort(values, offsets);
 }
 
-// -----------------------------------------------------------------------------
+arrow::Status IndexSortKernel::DoSort(const std::function<bool(int64_t, int64_t)> &comp,
+                                      int64_t len, arrow::MemoryPool *pool,
+                                      std::shared_ptr<arrow::UInt64Array> &offsets) {
+  int64_t buf_size = len * sizeof(int64_t);
+
+  arrow::Result<std::unique_ptr<arrow::Buffer>> result = arrow::AllocateBuffer(buf_size + 1, pool);
+  const arrow::Status &status = result.status();
+  if (!status.ok()) {
+    LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
+    return status;
+  }
+  std::shared_ptr<arrow::Buffer> indices_buf(std::move(result.ValueOrDie()));
+
+  auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
+  for (int64_t i = 0; i < len; i++) {
+    indices_begin[i] = i;
+  }
+
+  int64_t *indices_end = indices_begin + len;
+  std::sort(indices_begin, indices_end, comp);
+  offsets = std::make_shared<arrow::UInt64Array>(len, indices_buf);
+  return arrow::Status::OK();
+}
+
+template<typename TYPE, bool ASCENDING>
+class NumericComparator{
+  using T = typename TYPE::c_type;
+  std::shared_ptr<arrow::NumericArray<TYPE>> &values;
+
+  public:
+  NumericComparator(const std::shared_ptr<arrow::Array> &values):values(std::static_pointer_cast<arrow::NumericArray<TYPE>>(values)){
+    
+  }
+
+  int compare(int64_t idx1, int64_t idx2){
+    return this->values->GetView(idx1) - this->values->GetView(idx2);
+  }
+};
+
+// STREAMING SPLIT-----------------------------------------------------------------------------
 
 
 template<typename TYPE>
@@ -539,29 +578,5 @@ std::unique_ptr<StreamingSplitKernel> CreateStreamingSplitter(const std::shared_
     default:LOG(FATAL) << "Un-known type " << type->name();
       return nullptr;
   }
-}
-
-arrow::Status IndexSortKernel::DoSort(const std::function<bool(int64_t, int64_t)> &comp,
-                                      int64_t len, arrow::MemoryPool *pool,
-                                      std::shared_ptr<arrow::UInt64Array> &offsets) {
-  int64_t buf_size = len * sizeof(int64_t);
-
-  arrow::Result<std::unique_ptr<arrow::Buffer>> result = arrow::AllocateBuffer(buf_size + 1, pool);
-  const arrow::Status &status = result.status();
-  if (!status.ok()) {
-    LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
-    return status;
-  }
-  std::shared_ptr<arrow::Buffer> indices_buf(std::move(result.ValueOrDie()));
-
-  auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
-  for (int64_t i = 0; i < len; i++) {
-    indices_begin[i] = i;
-  }
-
-  int64_t *indices_end = indices_begin + len;
-  std::sort(indices_begin, indices_end, comp);
-  offsets = std::make_shared<arrow::UInt64Array>(len, indices_buf);
-  return arrow::Status::OK();
 }
 }  // namespace cylon
