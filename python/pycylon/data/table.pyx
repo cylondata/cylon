@@ -44,7 +44,7 @@ pycylon_unwrap_base_index)
 
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
-from pycylon.data.aggregates import AggregationOp
+from pycylon.data.aggregates import AggregationOp, AggregationOpString
 from pycylon.data.groupby cimport (DistributedHashGroupBy, DistributedPipelineGroupBy)
 from pycylon.data import compute
 
@@ -91,7 +91,6 @@ cdef class Table:
             self.sp_context = pycylon_unwrap_context(context)
             self.table_shd_ptr = make_shared[CTable](c_arrow_tb_shd_ptr, self.sp_context)
 
-
     cdef void init(self, const shared_ptr[CTable]& table):
         self.table_shd_ptr = table
         self._index = None
@@ -123,7 +122,7 @@ cdef class Table:
         else:
             self.table_shd_ptr.get().Print(row1, row2, col1, col2)
 
-    def sort(self, index) -> Table:
+    def sort(self, index, ascending: bool = True) -> Table:
         cdef shared_ptr[CTable] output
         sort_index = -1
         if isinstance(index, str):
@@ -131,7 +130,7 @@ cdef class Table:
         else:
             sort_index = index
 
-        cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output)
+        cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output, ascending)
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
@@ -606,34 +605,63 @@ cdef class Table:
     def max(self, column):
         return self._agg_op(column, AggregationOp.MAX)
 
-    def groupby(self, index_col: int, aggregate_cols: List,
-                aggregate_ops: List[AggregationOp]):
+    def groupby(self, index, agg: dict):
         cdef CStatus status
         cdef shared_ptr[CTable] output
+        cdef vector[int] cindex_cols
         cdef vector[int] caggregate_cols
         cdef vector[CGroupByAggregationOp] caggregate_ops
 
-        if not aggregate_cols and not aggregate_ops:
-            raise ValueError("Aggregate columns and Aggregate operations cannot be empty")
+        if not agg or not isinstance(agg, dict):
+            raise ValueError("agg should be non-empty and dict type")
         else:
             # set aggregate col to c-vector
-            for aggregate_col in aggregate_cols:
-                col_idx = -1
-                if isinstance(aggregate_col, str):
-                    col_idx = self._resolve_column_index_from_column_name(aggregate_col)
-                elif isinstance(aggregate_col, int):
-                    col_idx = aggregate_col
+            for agg_pair in agg.items():
+                if isinstance(agg_pair[0], str):
+                    col_idx = self._resolve_column_index_from_column_name(agg_pair[0])
+                elif isinstance(agg_pair[0], int):
+                    col_idx = agg_pair[0]
                 else:
-                    raise ValueError("Aggregate column must be either column name (str) or column "
+                    raise ValueError("Agg column must be either column name (str) or column "
                                      "index (int)")
-                caggregate_cols.push_back(col_idx)
 
-            for aggregate_op in aggregate_ops:
-                caggregate_ops.push_back(aggregate_op)
+                if isinstance(agg_pair[1], str):
+                    caggregate_cols.push_back(col_idx)
+                    caggregate_ops.push_back(AggregationOpString[agg_pair[1]])
+                elif isinstance(agg_pair[1], AggregationOp):
+                    caggregate_cols.push_back(col_idx)
+                    caggregate_ops.push_back(agg_pair[1])
+                elif isinstance(agg_pair[1], list):
+                    for op in agg_pair[1]:
+                        caggregate_cols.push_back(col_idx)
+                        if isinstance(op, str):
+                            caggregate_ops.push_back(AggregationOpString[op])
+                        elif isinstance(op, AggregationOp):
+                            caggregate_ops.push_back(op)
+                else:
+                    raise ValueError("Agg op must be either op name (str) or AggregationOp enum or "
+                                     "a list of either of those")
 
-            status = DistributedHashGroupBy(self.table_shd_ptr, index_col, caggregate_cols,
-                                            caggregate_ops,
-                                            output)
+            if isinstance(index, str):
+                cindex_cols.push_back(self._resolve_column_index_from_column_name(index))
+            elif isinstance(index, int):
+                cindex_cols.push_back(index)
+            elif isinstance(index, list):
+                for i in index:
+                    if isinstance(i, str):
+                        col_idx = self._resolve_column_index_from_column_name(i)
+                    elif isinstance(i, int):
+                        col_idx = i
+                    else:
+                        raise ValueError("Index column must be either column name (str) or column "
+                                         "index (int)")
+                    cindex_cols.push_back(col_idx)
+            else:
+                raise ValueError("Index column must be either column name (str) or column "
+                                 "index (int)")
+
+            status = DistributedHashGroupBy(self.table_shd_ptr, cindex_cols, caggregate_cols,
+                                            caggregate_ops, output)
             if status.is_ok():
                 return pycylon_wrap_table(output)
             else:
@@ -1031,9 +1059,6 @@ cdef class Table:
                 filtered_all_data.append(filtered_data)
             return Table.from_list(self.context, self.column_names, filtered_all_data)
 
-    def _aggregate_filters(self, filter: Table, op) -> Table:
-        return compute.table_compute_ar_op(self, filter, op)
-
     def __getitem__(self, key) -> Table:
         """
         This method allows to retrieve a subset of a Table by means of a key
@@ -1175,9 +1200,6 @@ cdef class Table:
             raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
                              f"value type {type(value)}")
 
-    def _comparison_operation(self, other, op):
-        return compute.table_compute_ar_op(self, other, op)
-
     def __eq__(self, other) -> Table:
         '''
         Equal operator for Table
@@ -1211,7 +1233,7 @@ cdef class Table:
             3  False  False  False
 
         '''
-        return self._comparison_operation(other, operator.__eq__)
+        return compute.table_compute_ar_op(self, other, operator.__eq__)
 
     def __ne__(self, other) -> Table:
         '''
@@ -1245,7 +1267,7 @@ cdef class Table:
             3   True   True   True
         '''
 
-        return self._comparison_operation(other, operator.__ne__)
+        return compute.table_compute_ar_op(self, other, operator.__ne__)
 
     def __lt__(self, other) -> Table:
         '''
@@ -1279,7 +1301,7 @@ cdef class Table:
             3  False  False  False
         '''
 
-        return self._comparison_operation(other, operator.__lt__)
+        return compute.table_compute_ar_op(self, other, operator.__lt__)
 
     def __gt__(self, other) -> Table:
         '''
@@ -1313,7 +1335,7 @@ cdef class Table:
             3   True   True   True
         '''
 
-        return self._comparison_operation(other, operator.__gt__)
+        return compute.table_compute_ar_op(self, other, operator.__gt__)
 
     def __le__(self, other) -> Table:
         '''
@@ -1346,7 +1368,7 @@ cdef class Table:
             2  False  False  False
             3  False  False  False
         '''
-        return self._comparison_operation(other, operator.__le__)
+        return compute.table_compute_ar_op(self, other, operator.__le__)
 
     def __ge__(self, other) -> Table:
         '''
@@ -1381,7 +1403,7 @@ cdef class Table:
             3   True   True   True
         '''
 
-        return self._comparison_operation(other, operator.__ge__)
+        return compute.table_compute_ar_op(self, other, operator.__ge__)
 
     def __or__(self, other) -> Table:
         '''
@@ -1415,7 +1437,7 @@ cdef class Table:
             3   True   True
         '''
 
-        return self._aggregate_filters(other, operator.__or__)
+        return compute.table_compute_ar_op(self, other, operator.__or__)
 
     def __and__(self, other) -> Table:
         '''
@@ -1449,7 +1471,7 @@ cdef class Table:
             3  False  False
         '''
 
-        return self._aggregate_filters(other, operator.__and__)
+        return compute.table_compute_ar_op(self, other, operator.__and__)
 
     def __invert__(self) -> Table:
         '''
@@ -2048,12 +2070,13 @@ cdef class Table:
             c_base_index = pycylon_unwrap_base_index(key)
             self.table_shd_ptr.get().Set_Index(c_base_index, False)
         else:
-            indexed_table = process_index_by_value(key=key, table=self, index_schema=indexing_schema,
-                                                       drop_index=drop)
+            indexed_table = process_index_by_value(key=key, table=self,
+                                                   index_schema=indexing_schema,
+                                                   drop_index=drop)
             indexed_cylon_table = pycylon_unwrap_table(indexed_table)
             self.init(indexed_cylon_table)
 
-    def reset_index(self, drop_index:bool=False) -> Table:
+    def reset_index(self, drop_index: bool = False) -> Table:
         """
         reset_index
         Here the existing index can be removed and set back to table.

@@ -141,7 +141,7 @@ dict3 = {'col1': [1, 2, 3, 4, 5, 1, 3, 6, 8, 1, 9, 10], 'col2': [2, 4, 0, 1, 5, 
 
 cn_tb14: cn.Table = cn.Table.from_pydict(ctx, dict3)
 
-cn_tb14.groupby(0, [0], [AggregationOp.COUNT])
+cn_tb14.groupby(0, {0: AggregationOp.COUNT})
 
 cn_tb14.show()
 
@@ -157,18 +157,16 @@ pdf1 = df.groupby(['AnimalId']).sum()
 
 print(pdf1)
 
-cn_tb_gb_res = cn_tb_gb.groupby(0, [1], [AggregationOp.SUM]).sort(0)
+cn_tb_gb_res = cn_tb_gb.groupby(0, {1: AggregationOp.SUM}).sort(0)
 
 cn_tb_gb_res.show()
 
-cn_tb_gb_res1 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.SUM]).sort(0)
+cn_tb_gb_res1 = cn_tb_gb.groupby(0, {'Max Speed': AggregationOp.SUM}).sort(0)
 
 cn_tb_gb_res1.show()
 
-cn_tb_gb_res1 = cn_tb_gb.groupby(0, ['Max Speed', 'Max Speed', 'Max Speed'], [AggregationOp.SUM,
-                                                                              AggregationOp.MIN,
-                                                                              AggregationOp.MAX]) \
-    .sort(0)
+cn_tb_gb_res1 = cn_tb_gb.groupby(0, {
+    'Max Speed': [AggregationOp.SUM, AggregationOp.MIN, AggregationOp.MAX]}).sort(0)
 
 cn_tb_gb_res1.show()
 

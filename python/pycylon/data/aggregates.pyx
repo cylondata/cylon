@@ -14,7 +14,6 @@
 
 from pycylon.data.aggregates cimport CGroupByAggregationOp
 
-
 cpdef enum AggregationOp:
     SUM = CGroupByAggregationOp.CSUM
     COUNT = CGroupByAggregationOp.CCOUNT
@@ -25,3 +24,13 @@ cpdef enum AggregationOp:
     MEAN = CGroupByAggregationOp.CMEAN
     QUANTILE = CGroupByAggregationOp.CQUANTILE
 
+AggregationOpString = {
+    'sum': CGroupByAggregationOp.CSUM,
+    'cnt': CGroupByAggregationOp.CCOUNT,
+    'min': CGroupByAggregationOp.CMIN,
+    'max': CGroupByAggregationOp.CMAX,
+    'var': CGroupByAggregationOp.CVAR,
+    'nunique': CGroupByAggregationOp.CNUNIQUE,
+    'mean': CGroupByAggregationOp.CMEAN,
+    'quantile': CGroupByAggregationOp.CQUANTILE,
+}

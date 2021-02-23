@@ -53,7 +53,7 @@ std::unique_ptr<ArrowArraySplitKernel> CreateSplitter(const std::shared_ptr<arro
 
 class IndexSortKernel {
  public:
-  explicit IndexSortKernel(arrow::MemoryPool *pool) : pool_(pool) {}
+  IndexSortKernel(arrow::MemoryPool *pool, bool ascending) : pool_(pool), ascending(ascending) {}
 
   /**
    * Sort the values in the column and return an array with the indices
@@ -64,12 +64,25 @@ class IndexSortKernel {
    * @param out
    * @return
    */
-  virtual arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::Array> &out) = 0;
+  virtual arrow::Status Sort(const std::shared_ptr<arrow::Array> &values,
+                             std::shared_ptr<arrow::UInt64Array> &out) const = 0;
 
   virtual ~IndexSortKernel() = default;
 
  protected:
+  /**
+   * Runs the sorting operation based on the comparator lambda
+   * @param comp
+   * @param len
+   * @param pool
+   * @param offsets
+   * @return
+   */
+  static arrow::Status DoSort(const std::function<bool(int64_t, int64_t)> &comp, int64_t len, arrow::MemoryPool *pool,
+                              std::shared_ptr<arrow::UInt64Array> &offsets);
+
   arrow::MemoryPool *pool_;
+  bool ascending;
 };
 
 /**
@@ -79,8 +92,8 @@ class IndexSortKernel {
  * @param offsets
  * @return
  */
-arrow::Status SortIndices(arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Array> &values,
-                          std::shared_ptr<arrow::Array> &offsets);
+arrow::Status SortIndices(arrow::MemoryPool *memory_pool, const std::shared_ptr<arrow::Array> &values,
+                          std::shared_ptr<arrow::UInt64Array> &offsets, bool ascending = true);
 
 // -----------------------------------------------------------------------------
 
@@ -115,6 +128,21 @@ class InplaceIndexSortKernel {
 arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
                                  std::shared_ptr<arrow::Array> &values,
                                  std::shared_ptr<arrow::UInt64Array> &offsets);
+
+
+template<typename TYPE, bool ASCENDING>
+class NumericComparator{
+  using T = typename TYPE::c_type;
+  std::shared_ptr<arrow::NumericArray<TYPE>> &values;
+  typename _compare = std::conditional<ASCENDING,[]()->{},[]()->{}>
+
+  public:
+  NumericComparator(const std::shared_ptr<arrow::Array> &values):values(std::static_pointer_cast<arrow::NumericArray<TYPE>>(values)){
+    
+  }
+
+  int compare(int64_t idx1, int64_t idx2);
+};
 
 // -----------------------------------------------------------------------------
 

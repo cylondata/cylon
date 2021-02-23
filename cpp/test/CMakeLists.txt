@@ -75,6 +75,10 @@ cylon_run_test(set_op_test 4)
 cylon_add_test(create_table_test)
 cylon_run_test(create_table_test 1)
 
+#util tests
+cylon_add_test(quick_sort_test)
+cylon_run_test(quick_sort_test 1)
+
 # aggergate tests
 cylon_add_test(aggregate_test)
 cylon_run_test(aggregate_test 1)
@@ -102,3 +106,7 @@ cylon_run_test(partition_test 4)
 #indexing tests
 cylon_add_test(indexing_test)
 cylon_run_test(indexing_test 1)
+
+# create table test
+cylon_add_test(sorting_test)
+cylon_run_test(sorting_test 1)
