@@ -129,6 +129,12 @@
                                     </includes>
                                 </resource>
                                 <resource>
+                                    <directory>${cylon.arrow.dir}/install/lib</directory>
+                                    <includes>
+                                        <include>libarrow.so</include>
+                                    </includes>
+                                </resource>
+                                <resource>
                                     <directory>${cylon.core.libs}</directory>
                                     <includes>
                                         <include>libcylon.so</include>

@@ -72,3 +72,5 @@ tmp/
 # java
 java/target
 java/src/main/native/include
+
+env/
