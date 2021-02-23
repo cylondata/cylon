@@ -129,20 +129,9 @@ arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
                                  std::shared_ptr<arrow::Array> &values,
                                  std::shared_ptr<arrow::UInt64Array> &offsets);
 
-
-template<typename TYPE, bool ASCENDING>
-class NumericComparator{
-  using T = typename TYPE::c_type;
-  std::shared_ptr<arrow::NumericArray<TYPE>> &values;
-  typename _compare = std::conditional<ASCENDING,[]()->{},[]()->{}>
-
-  public:
-  NumericComparator(const std::shared_ptr<arrow::Array> &values):values(std::static_pointer_cast<arrow::NumericArray<TYPE>>(values)){
-    
-  }
-
-  int compare(int64_t idx1, int64_t idx2);
-};
+arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool, const std::shared_ptr<arrow::Table> &table,
+                                      const std::vector<int64_t> &columns,
+                                      std::shared_ptr<arrow::UInt64Array> &offsets, bool ascending);
 
 // -----------------------------------------------------------------------------
 
@@ -159,7 +148,7 @@ class StreamingSplitKernel {
    */
   virtual Status Split(const std::shared_ptr<arrow::Array> &values,
                        const std::vector<uint32_t> &partitions,
-                       const std::vector<uint32_t> &counts) = 0; // todo make count int64_t
+                       const std::vector<uint32_t> &counts) = 0;  // todo make count int64_t
 
   /**
    * Finish the split
@@ -176,6 +165,6 @@ std::unique_ptr<StreamingSplitKernel> CreateStreamingSplitter(const std::shared_
                                                               int32_t targets,
                                                               arrow::MemoryPool *pool);
 
-}
+}  // namespace cylon
 
-#endif //CYLON_ARROW_KERNELS_H
+#endif  //CYLON_ARROW_KERNELS_H
