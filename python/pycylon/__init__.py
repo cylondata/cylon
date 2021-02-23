@@ -24,3 +24,7 @@ from pycylon.types import (int8, int16, int32, int64,
                            )
 from pycylon.series import Series
 from pycylon.frame import DataFrame
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions

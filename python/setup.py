@@ -24,14 +24,19 @@ from distutils.sysconfig import get_python_lib
 import pyarrow as pa
 import numpy as np
 
+import versioneer
 from Cython.Build import cythonize
 from setuptools import find_packages, setup
 from setuptools.extension import Extension
 
+version = versioneer.get_version(),
+cmdclass = versioneer.get_cmdclass(),
+
 # os.environ["CXX"] = "mpic++"
 pyarrow_location = os.path.dirname(pa.__file__)
 
-ARROW_HOME = os.environ.get('ARROW_HOME')
+CYLON_PREFIX = os.environ.get('CYLON_PREFIX')
+ARROW_PREFIX = os.environ.get('ARROW_PREFIX')
 
 try:
     nthreads = int(os.environ.get("PARALLEL_LEVEL", "0") or "0")
@@ -41,29 +46,38 @@ except Exception:
 compiler_directives = {"language_level": 3, "embedsignature": True}
 cython_files = ["pycylon/*/*.pyx"]
 
-if not ARROW_HOME:
-    raise ValueError("ARROW_HOME not set")
-
-# For now, assume that we build against bundled pyarrow releases.
+if not CYLON_PREFIX:
+    raise ValueError("CYLON_PREFIX not set")
 
 std_version = '-std=c++14'
+additional_compile_args = [std_version,
+                           '-DARROW_METADATA_V4 -DNEED_EXCLUSIVE_SCAN']
+arrow_lib_include_dir = None
+arrow_library_directory = None
+if not ARROW_PREFIX:
+    arrow_lib_include_dir = os.path.join(pyarrow_location, "include")
+    arrow_library_directory = pyarrow_location
+    additional_compile_args = additional_compile_args + ['-D_GLIBCXX_USE_CXX11_ABI=0']
+    if not os.path.exists(arrow_library_directory):
+        arrow_library_directory = os.path.join(pyarrow_location, "lib64")
+else:
+    arrow_lib_include_dir = os.path.join(ARROW_PREFIX, "include")
+    arrow_library_directory = os.path.join(ARROW_PREFIX, "lib")
+
+    if not os.path.exists(arrow_library_directory):
+        arrow_library_directory = os.path.join(ARROW_PREFIX, "lib64")
+
 pyarrow_include_dir = os.path.join(pyarrow_location, 'include')
 extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
-additional_compile_args = [std_version,
-                           '-DARROW_METADATA_V4 -DNEED_EXCLUSIVE_SCAN']
 extra_compile_args = extra_link_args + additional_compile_args
 extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 
-glob_library_directory = os.path.join(ARROW_HOME, "glog", "install", "lib")
-arrow_library_directory = os.path.join(ARROW_HOME, "arrow", "install", "lib")
+glob_library_directory = os.path.join(CYLON_PREFIX, "glog", "install", "lib")
 
-if not os.path.exists(arrow_library_directory):
-    arrow_library_directory = os.path.join(ARROW_HOME, "arrow", "install", "lib64")
 
-arrow_lib_include_dir = os.path.join(ARROW_HOME, "arrow", "install", "include")
-glog_lib_include_dir = os.path.join(ARROW_HOME, "glog", "install", "include")
-cylon_library_directory = os.path.join(ARROW_HOME, "lib")
+glog_lib_include_dir = os.path.join(CYLON_PREFIX, "glog", "install", "include")
+cylon_library_directory = os.path.join(CYLON_PREFIX, "lib")
 
 library_directories = [cylon_library_directory,
                        arrow_library_directory,
@@ -81,7 +95,6 @@ _include_dirs = ["../cpp/src/cylon/python",
                  "../cpp/src/cylon/io",
                  "../cpp/src/cylon/join",
                  "../cpp/src/cylon/util",
-                 arrow_library_directory,
                  arrow_lib_include_dir,
                  glog_lib_include_dir,
                  pyarrow_include_dir,
@@ -110,7 +123,7 @@ packages = find_packages(include=["pycylon", "pycylon.*"])
 setup(
     name="pycylon",
     packages=packages,
-    version='0.3.0',
+    version=versioneer.get_version(),
     setup_requires=["cython",
                     "setuptools",
                     "numpy",
@@ -125,6 +138,7 @@ setup(
     python_requires='>=3.7',
     install_requires=[
         'numpy',
+        'pyarrow==2.0.0',
         'cython',
     ],
     zip_safe=False,
