@@ -364,8 +364,12 @@ fi
 
 
 if [ "${CYTHON_BUILD}" = "ON" ]; then
-	export_info	
-	build_python
+	export_info
+	if [ "${PYTHON_WITH_PYARROW_BUILD}" = "ON" ]; then
+	  build_python_pyarrow
+	else
+	  build_python
+	fi
 	check_pycylon_installation
 fi
 
