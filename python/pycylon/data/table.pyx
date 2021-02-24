@@ -1187,18 +1187,22 @@ cdef class Table:
             if value.column_count == 1:
                 value_arrow_table = value.to_arrow().combine_chunks()
                 chunk_arr = value_arrow_table.columns[0].chunks[0]
-                current_ar_table = self.to_arrow()
-                if key in self.column_names:
-                    index = self._resolve_column_index_from_column_name(key)
-                    # A new Column is replacing an existing column
-                    self.initialize(current_ar_table.set_column(index, key, chunk_arr),
-                                    self.context)
-                else:
-                    self.initialize(current_ar_table.append_column(key, chunk_arr),
-                                    self.context)
+            else:
+                raise ValueError("Given table has more than 1 columns")
+        elif isinstance(key, str) and np.isscalar(value):
+            chunk_arr = pa.array(np.full(self.row_count, value))
         else:
             raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
                              f"value type {type(value)}")
+
+        current_ar_table = self.to_arrow()
+        if key in self.column_names:
+            index = self._resolve_column_index_from_column_name(key)
+            # A new Column is replacing an existing column
+            self.initialize(current_ar_table.set_column(index, key, chunk_arr),
+                            self.context)
+        else:
+            self.initialize(current_ar_table.append_column(key, chunk_arr), self.context)
 
     def __eq__(self, other) -> Table:
         '''
