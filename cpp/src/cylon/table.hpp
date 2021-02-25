@@ -15,26 +15,28 @@
 #ifndef CYLON_SRC_IO_TABLE_H_
 #define CYLON_SRC_IO_TABLE_H_
 
+#include <glog/logging.h>
+
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <glog/logging.h>
-#include "io/csv_read_config.hpp"
+
 #include "indexing/index.hpp"
+#include "io/csv_read_config.hpp"
 
 #ifdef BUILD_CYLON_PARQUET
 #include "io/parquet_config.hpp"
 #endif
 
-#include "status.hpp"
-#include "ctx/cylon_context.hpp"
-#include "util/uuid.hpp"
 #include "column.hpp"
-#include "join/join_config.hpp"
-#include "join/join.hpp"
+#include "ctx/cylon_context.hpp"
 #include "io/csv_write_config.hpp"
+#include "join/join.hpp"
+#include "join/join_config.hpp"
 #include "row.hpp"
+#include "status.hpp"
+#include "util/uuid.hpp"
 
 namespace cylon {
 
@@ -47,8 +49,7 @@ class Table {
    * Tables can only be created using the factory methods, so the constructor is private
    */
   Table(std::shared_ptr<arrow::Table> &tab, std::shared_ptr<cylon::CylonContext> &ctx)
-      : ctx(ctx), table_(tab),
-        columns_(std::vector<std::shared_ptr<Column>>(tab->num_columns())) {
+      : ctx(ctx), table_(tab), columns_(std::vector<std::shared_ptr<Column>>(tab->num_columns())) {
     const int num_cols = table_->num_columns();
     for (int i = 0; i < num_cols; i++) {
       const auto f = table_->field(i);
@@ -197,7 +198,7 @@ class Table {
 
   std::shared_ptr<BaseIndex> GetIndex();
 
-  Status ResetIndex(bool drop=false);
+  Status ResetIndex(bool drop = false);
 
   Status AddColumn(int64_t position, std::string column_name, std::shared_ptr<arrow::Array> &input_column);
 
@@ -371,6 +372,14 @@ Status Sort(std::shared_ptr<cylon::Table> &table,
             bool ascending = true);
 
 /**
+ * Sort the table according to the given set of columns, this is a local sort (if the table has chunked columns, they will
+ * be merged in the output table)
+ * @param sort_column
+ * @return new table sorted according to the sort columns
+ */
+Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &sort_columns, std::shared_ptr<cylon::Table> &out, bool ascending);
+
+/**
  * Sort the table according to the given column, this is a local sort (if the table has chunked columns, they will
  * be merged in the output table)
  * @param sort_column
@@ -428,8 +437,7 @@ Status Unique(std::shared_ptr<cylon::Table> &in,
 
 Status DistributedUnique(std::shared_ptr<cylon::Table> &in,
                          const std::vector<int> &cols,
-                         std::shared_ptr<cylon::Table> &out
-);
+                         std::shared_ptr<cylon::Table> &out);
 
 #ifdef BUILD_CYLON_PARQUET
 /**
@@ -462,10 +470,8 @@ Status WriteParquet(std::shared_ptr<cylon::Table> &table,
                     std::shared_ptr<cylon::CylonContext> &ctx,
                     const std::string &path,
                     const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
-#endif //BUILD_CYLON_PARQUET
+#endif  //BUILD_CYLON_PARQUET
 
 }  // namespace cylon
 
-
-
-#endif //CYLON_SRC_IO_TABLE_H_
+#endif  //CYLON_SRC_IO_TABLE_H_
