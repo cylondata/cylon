@@ -260,4 +260,75 @@ def test_filter():
     print(npr_map)
 
 
-test_filter()
+def test_unique():
+
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+
+    expected_indices_of_sort_col = [1, 2, 3, 4, 5, 7, 10, 12, 13, 14, 15]
+
+    print("Original Data")
+    print(pdf)
+
+    tb2 = tb1['b'].unique()
+    pdf2 = pdf['b'].unique()
+    tb2.show()
+
+    print("Unique Pdf")
+    print(pdf2)
+    print(type(pdf2))
+
+    print("Unique Cylon")
+    print(tb2)
+
+    tb3_list = list(tb2.to_pydict().items())[0][1]
+    pdf3_list = pdf2.tolist()
+
+    assert tb3_list == pdf3_list
+
+    set_pdf4 = set(pdf2)
+    set_tb4 = set(tb3_list)
+
+    assert set_tb4 == set_pdf4
+
+    ctx.finalize()
+
+
+def test_series_tolist():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+
+    series = pdf[pdf.columns[0]]
+
+    print(type(series))
+
+    lst = series.tolist()
+    npy = series.to_numpy()
+
+    print(lst)
+    idx = series.index.values
+    print(type(idx), idx)
+
+
+def test_set_list_conv():
+    lst = [i for i in range(1_000_000)]
+    ar = np.array(lst)
+    t1 = time.time()
+    st = set(ar)
+    t2 = time.time()
+    lst = list(st)
+    t3 = time.time()
+
+    print(t2-t1, t3-t2)
+
+
+
+
+
+test_set_list_conv()

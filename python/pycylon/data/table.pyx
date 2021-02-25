@@ -2252,7 +2252,7 @@ cdef class Table:
         artb = self.to_arrow().combine_chunks()
         for chunk_array in artb.itercolumns():
             npr = chunk_array.to_numpy()
-            new_chunks.append(func(npr))
+            new_chunks.append(pa.array(list(map(func, npr))))
         return Table.from_arrow(self.context,
                                 pa.Table.from_arrays(new_chunks, self.column_names))
 
