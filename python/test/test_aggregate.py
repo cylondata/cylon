@@ -151,13 +151,13 @@ def test_aggregate():
 
     pdf1 = df.groupby(['AnimalId']).sum()
 
-    cn_tb_gb_res = cn_tb_gb.groupby(0, [1], [AggregationOp.SUM])
+    cn_tb_gb_res = cn_tb_gb.groupby('AnimalId', {'Max Speed': AggregationOp.SUM}).sort(0)
 
     for val1, val2 in zip(cn_tb_gb_res.to_pydict()['sum_Max Speed'],
                           pdf1.to_dict()['Max Speed'].values()):
         assert val1 == val2
 
-    cn_tb_gb_res1 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.SUM])
+    cn_tb_gb_res1 = cn_tb_gb.groupby(0, {'Max Speed': 'sum'}).sort(0)
 
     for val1, val2 in zip(cn_tb_gb_res1.to_pydict()['sum_Max Speed'],
                           pdf1.to_dict()['Max Speed'].values()):
@@ -165,7 +165,7 @@ def test_aggregate():
 
     pdf2 = df.groupby(['AnimalId']).min()
 
-    cn_tb_gb_res2 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.MIN])
+    cn_tb_gb_res2 = cn_tb_gb.groupby(0, {'Max Speed': 'min'}).sort(0)
 
     for val1, val2 in zip(cn_tb_gb_res2.to_pydict()['min_Max Speed'],
                           pdf2.to_dict()['Max Speed'].values()):
@@ -173,8 +173,8 @@ def test_aggregate():
 
     pdf3 = df.groupby(['AnimalId']).max()
 
-    cn_tb_gb_res3 = cn_tb_gb.groupby(0, ['Max Speed'], [AggregationOp.MAX])
-    print(pdf)
+    cn_tb_gb_res3 = cn_tb_gb.groupby(0, {'Max Speed': AggregationOp.MAX}).sort(0)
+
     for val1, val2 in zip(cn_tb_gb_res3.to_pydict()['max_Max Speed'],
                           pdf3.to_dict()['Max Speed'].values()):
         assert val1 == val2
@@ -206,9 +206,11 @@ def test_aggregate_addons():
 
     cn_tb_unq = cn.Table.from_pandas(ctx, df_unq)
 
-    cn_tb_mul = cn_tb_unq.groupby('AnimalId', ['Max Speed', 'Avg Acceleration', 'Avg Speed'],
-                                  [AggregationOp.NUNIQUE, AggregationOp.COUNT,
-                                   AggregationOp.MEAN])
+    cn_tb_mul = cn_tb_unq.groupby(0, {'Max Speed': AggregationOp.NUNIQUE,
+                                      'Avg Acceleration': AggregationOp.COUNT,
+                                      'Avg Speed': AggregationOp.MEAN}).sort(0)
+
+    cn_tb_mul.set_index('AnimalId', drop=True)
 
     pdf_mul_grp = df_unq.groupby('AnimalId')
 

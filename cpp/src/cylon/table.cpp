@@ -299,11 +299,12 @@ Status Merge(std::shared_ptr<cylon::CylonContext> &ctx,
   }
 }
 
-Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_ptr<cylon::Table> &out) {
+Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_ptr<cylon::Table> &out, bool ascending) {
   std::shared_ptr<arrow::Table> sorted_table;
   auto table_ = table->get_table();
   auto ctx = table->GetContext();
-  arrow::Status status = cylon::util::SortTable(table_, sort_column, cylon::ToArrowPool(ctx), sorted_table);
+  const arrow::Status
+      &status = cylon::util::SortTable(table_, sort_column, cylon::ToArrowPool(ctx), sorted_table, ascending);
   if (status.ok()) {
     return Table::FromArrowTable(ctx, sorted_table, out);
   } else {
@@ -350,7 +351,7 @@ Status DistributedSort(std::shared_ptr<cylon::Table> &table,
   }
 
   //then do a local sort
-  auto astatus = util::SortTable(arrow_table, sort_column, ToArrowPool(ctx), sorted_table);
+  auto astatus = util::SortTable(arrow_table, sort_column, ToArrowPool(ctx), sorted_table, sort_options.ascending);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(astatus)
 
   return Table::FromArrowTable(ctx, sorted_table, output);

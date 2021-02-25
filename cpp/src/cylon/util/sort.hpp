@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <arrow/api.h>
+#include <glog/logging.h>
 
 namespace cylon {
 namespace util {
@@ -58,19 +59,19 @@ using FloatSwapFunction = NumericSwapFunction<arrow::FloatType>;
 using DoubleSwapFunction = NumericSwapFunction<arrow::DoubleType>;
 
 template <typename T, typename  T2>
-void insertion_sort(T *t, T2 *t2, int start, int end) {
-  for (int i = start + 1; i <= end; i++) {
+void insertion_sort(T *t, T2 *t2, int length) {
+  for (int i = 1; i < length; i++) {
     T value = t[i];
     T value2 = t2[i];
-    int j = i;
+    int j = i - 1;
 
-    while (j > start && t[j - 1] > value) {
-      t[j] = t[j - 1];
-      t2[j] = t2[j - 1];
+    while (j >= 0 && t[j] > value) {
+      t[j + 1] = t[j];
+      t2[j + 1] = t2[j];
       j--;
     }
-    t[j] = value;
-    t2[j] = value2;
+    t[j + 1] = value;
+    t2[j + 1] = value2;
   }
 }
 
@@ -93,12 +94,14 @@ void heapify(T *arr, int n, int i, T2 *t2) {
 }
 
 template <typename T, typename  T2>
-void heap_sort(T *arr, int length, T *t2) {
-  for (int i = length / 2 - 1; i >= 0; i--)
-    heapify(arr, length, i);
+void heap_sort(T *arr, int length, T2 *t2) {
+  for (int i = length / 2; i >= 0; i--) {
+      heapify(arr, length, i, t2);
+  }
 
-  for (int i=length-1; i>0; i--) {
-    std::swap(&arr[0], &arr[i]);
+  for (int i = length - 1; i > 0; i--) {
+    std::swap(arr[0], arr[i]);
+    std::swap(t2[0], t2[i]);
     heapify(arr, i, 0, t2);
   }
 }
@@ -121,15 +124,17 @@ int64_t partition(T *t, T2 *t2, int start, int end) {
 }
 
 template <typename T, typename  T2>
-void introsort_impl(T *t, T2 *t2, int64_t start, int64_t end, int maxdepth) {
+void introsort_impl(T *t, T2 *t2, int start, int end, int maxdepth) {
   if (end - start < 32) {
-    insertion_sort(t, start, end);
+    insertion_sort(t + start, t2 + start, end - start + 1);
   } else if (maxdepth == 0) {
-    heap_sort(t, start, end);
+    heap_sort(t + start, end - start + 1, t2 + start);
   } else {
-    int64_t p = partition(t, t2, start, end);
-    introsort_impl(t, start, p - 1, maxdepth - 1);
-    introsort_impl(t, p + 1, end, maxdepth - 1);
+    if (start < end) {
+      int64_t p = partition(t, t2, start, end);
+      introsort_impl(t, t2, start, p - 1, maxdepth - 1);
+      introsort_impl(t, t2, p + 1, end, maxdepth - 1);
+    }
   }
 }
 

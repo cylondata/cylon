@@ -27,7 +27,7 @@ namespace join {
 
 template<typename ARROW_ARRAY_TYPE, typename CPP_KEY_TYPE>
 inline void advance(std::vector<int64_t> *subset,
-                    const std::shared_ptr<arrow::Int64Array> &sorted_indices,  // this is always Int64Array
+                    const std::shared_ptr<arrow::UInt64Array> &sorted_indices,  // this is always UInt64Array
                     int64_t *current_index,  // always int64_t
                     std::shared_ptr<arrow::Array> data_column,
                     CPP_KEY_TYPE *key) {
@@ -283,7 +283,7 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   auto right_join_column = right_tab_comb->column(right_join_column_idx)->chunk(0);
 
   auto t1 = std::chrono::high_resolution_clock::now();
-  std::shared_ptr<arrow::Array> left_index_sorted_column;
+  std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
   auto status = SortIndices(memory_pool, left_join_column, left_index_sorted_column);
   if (!status.ok()) {
     LOG(FATAL) << "Failed when sorting left table to indices. " << status.ToString();
@@ -294,7 +294,7 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   t1 = std::chrono::high_resolution_clock::now();
-  std::shared_ptr<arrow::Array> right_index_sorted_column;
+  std::shared_ptr<arrow::UInt64Array> right_index_sorted_column;
   status = SortIndices(memory_pool, right_join_column, right_index_sorted_column);
   if (!status.ok()) {
     LOG(FATAL) << "Failed when sorting right table to indices. " << status.ToString();
@@ -316,13 +316,13 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   right_indices.reserve(init_vec_size);
 
   advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
-                                          std::static_pointer_cast<arrow::Int64Array>(left_index_sorted_column),
+                                          left_index_sorted_column,
                                           &left_current_index,
                                           left_join_column,
                                           &left_key);
 
   advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
-                                          std::static_pointer_cast<arrow::Int64Array>(right_index_sorted_column),
+                                          right_index_sorted_column,
                                           &right_current_index,
                                           right_join_column,
                                           &right_key);
@@ -336,15 +336,13 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
       }
       // advance
       advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
-                                              std::static_pointer_cast<arrow::Int64Array>(
-                                                  left_index_sorted_column),
+                                              left_index_sorted_column,
                                               &left_current_index,
                                               left_join_column,
                                               &left_key);
 
       advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
-                                              std::static_pointer_cast<arrow::Int64Array>(
-                                                  right_index_sorted_column),
+                                              right_index_sorted_column,
                                               &right_current_index,
                                               right_join_column,
                                               &right_key);
@@ -358,8 +356,7 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
       }
 
       advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
-                                              std::static_pointer_cast<arrow::Int64Array>(
-                                                  left_index_sorted_column),
+                                              left_index_sorted_column,
                                               &left_current_index,
                                               left_join_column,
                                               &left_key);
@@ -373,8 +370,7 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
       }
 
       advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
-                                              std::static_pointer_cast<arrow::Int64Array>(
-                                                  right_index_sorted_column),
+                                              right_index_sorted_column,
                                               &right_current_index,
                                               right_join_column,
                                               &right_key);
@@ -389,8 +385,7 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
         right_indices.push_back(-1);
       }
       advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&left_subset,
-                                              std::static_pointer_cast<arrow::Int64Array>(
-                                                  left_index_sorted_column),
+                                              left_index_sorted_column,
                                               &left_current_index,
                                               left_join_column,
                                               &left_key);
@@ -404,7 +399,7 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
         right_indices.push_back(right_idx);
       }
       advance<ARROW_ARRAY_TYPE, CPP_KEY_TYPE>(&right_subset,
-                                              std::static_pointer_cast<arrow::Int64Array>(right_index_sorted_column),
+                                              right_index_sorted_column,
                                               &right_current_index,
                                               right_join_column,
                                               &right_key);
