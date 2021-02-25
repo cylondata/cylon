@@ -73,8 +73,8 @@ tmp/
 java/target
 java/src/main/native/include
 
-# IDEs
-.vscode
+# vscode
+**/.vscode
 .editorconfig
 
 # Python env
