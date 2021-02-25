@@ -313,6 +313,15 @@ def test_setitem():
     cn_tb['5'] = cn_tb['4']
     assert cn_tb['5'].to_pandas().values.tolist() == cn_tb['4'].to_pandas().values.tolist()
 
+    cn_tb['6'] = 1  # create new column
+    assert np.array_equal(cn_tb['6'].to_pandas().values.flatten(), np.full(cn_tb.row_count, 1))
+
+    cn_tb['6'] = 1.0  # replace column
+    assert np.array_equal(cn_tb['6'].to_pandas().values.flatten(), np.full(cn_tb.row_count, 1.0))
+
+    cn_tb['6'] = 'aaa'  # replace column
+    assert np.array_equal(cn_tb['6'].to_pandas().values.flatten(), np.full(cn_tb.row_count, 'aaa'))
+
 
 def test_math_ops_for_scalar():
     npr = np.array([[20, 2, 3, 4, 5], [10, -20, -30, -40, -50], [10.2, 13.2, 16.4, 12.2, 10.8]])
