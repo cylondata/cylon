@@ -2299,6 +2299,17 @@ cdef class Table:
         return PyLocIndexer(self, "iloc")
 
 
+    def iterrows(self):
+        data_dict = self.to_pydict()
+        index_values = self.index.index_values
+        for index_id in range(self.row_count):
+            row = []
+            for column in data_dict:
+                row.append(data_dict[column][index_id])
+            yield index_values[index_id], np.array(row)
+
+
+
 class EmptyTable(Table):
     '''
     Empty Table definition required in returning an Empty Table when an operation reduces a None
