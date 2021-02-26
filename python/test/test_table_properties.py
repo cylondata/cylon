@@ -109,6 +109,50 @@ def test_properties():
                                         is_full_table=is_full_table)
 
 
+def test_string_type_filters():
+    ctx: CylonContext = CylonContext()
+
+    tb: Table = Table.from_pydict(ctx, {"A": ['a', 'b', 'c', 'ab', 'a'],
+                                        "B": [1, 2, 3, 4, 5]})
+    pdf = tb.to_pandas()
+
+    def generate_filter_and_result(op, column: str, input, comparison_value):
+        if column:
+            filter = op(input[column], comparison_value)
+            return filter, input[filter]
+        else:
+            filter = op(input, comparison_value)
+            return filter, input[filter]
+
+    def do_comparison_on_pdf_and_tb(tb_filter: Table, tb_result: Table, pdf_filter: DataFrame,
+                                    pdf_result: DataFrame, is_full_table):
+
+        if is_full_table:
+            assert tb_filter.to_pandas().values.tolist() == pdf_filter.values.tolist()
+            assert tb_result.to_pandas().fillna(0).values.tolist() == pdf_result.fillna(
+                0).values.tolist()
+        else:
+            assert tb_filter.to_pandas().values.flatten().tolist() == pdf_filter.values.tolist()
+            assert tb_result.to_pandas().values.tolist() == pdf_result.values.tolist()
+
+    ops = [operator.__eq__, operator.__ne__, operator.__lt__, operator.__gt__, operator.__le__,
+           operator.__ge__]
+    value = "a"
+    columns = ["A"]
+    is_full_table_flags = [False]
+
+    for column, is_full_table in zip(columns, is_full_table_flags):
+        for op in ops:
+            tb_filter_all, tb_filter_all_result = generate_filter_and_result(op, column, tb, value)
+
+            pdf_filter_all, pdf_filter_all_result = generate_filter_and_result(op, column, pdf,
+                                                                               value)
+
+            do_comparison_on_pdf_and_tb(tb_filter=tb_filter_all, tb_result=tb_filter_all_result,
+                                        pdf_filter=pdf_filter_all, pdf_result=pdf_filter_all_result,
+                                        is_full_table=is_full_table)
+
+
 def test_filter():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
@@ -268,6 +312,15 @@ def test_setitem():
     # adding a new column at the end
     cn_tb['5'] = cn_tb['4']
     assert cn_tb['5'].to_pandas().values.tolist() == cn_tb['4'].to_pandas().values.tolist()
+
+    cn_tb['6'] = 1  # create new column
+    assert np.array_equal(cn_tb['6'].to_pandas().values.flatten(), np.full(cn_tb.row_count, 1))
+
+    cn_tb['6'] = 1.0  # replace column
+    assert np.array_equal(cn_tb['6'].to_pandas().values.flatten(), np.full(cn_tb.row_count, 1.0))
+
+    cn_tb['6'] = 'aaa'  # replace column
+    assert np.array_equal(cn_tb['6'].to_pandas().values.flatten(), np.full(cn_tb.row_count, 'aaa'))
 
 
 def test_math_ops_for_scalar():
@@ -431,6 +484,3 @@ def test_empty_table():
     empt_tb = EmptyTable(ctx, RangeIndex(data=range(0, 0)))
 
     assert empt_tb.to_pandas().values.tolist() == pd.DataFrame().values.tolist()
-
-
-

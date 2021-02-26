@@ -94,6 +94,7 @@ def test_request():
 def test_pycylon_pyarrow():
     print("11. PyArrow/PyCylon Test")
     responses.append(os.system("pytest -q python/test/test_pyarrow.py"))
+    assert responses[-1] == 0
 
 
 def test_table_conversion():
@@ -106,6 +107,7 @@ def test_table_conversion():
 def test_table_operation():
     print("13. Table Operation Test")
     responses.append(os.system("pytest -q python/test/test_table.py"))
+    assert responses[-1] == 0
 
 
 def test_table_properties():
@@ -117,6 +119,7 @@ def test_table_properties():
 def test_aggregate():
     print("15. Aggregate Test")
     responses.append(os.system("pytest -q python/test/test_aggregate.py"))
+    assert responses[-1] == 0
 
 
 def test_join_config():
@@ -196,6 +199,12 @@ def test_duplicate():
     assert responses[-1] == 0
 
 
+def test_sorting():
+    print("27. Sorting")
+    responses.append(os.system("pytest -q python/test/test_sorting.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)
@@ -203,5 +212,6 @@ def test_all():
 
     if failed_count > 0:
         print(f"{failed_count} of {total}  Tests Failed !!!")
+        assert False
     else:
         print("All Tests Passed!")

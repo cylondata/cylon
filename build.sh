@@ -1,9 +1,9 @@
 SOURCE_DIR=$(pwd)/cpp
 CPP_BUILD="OFF"
 PYTHON_BUILD="OFF"
+PYTHON_WITH_PYARROW_BUILD="OFF"
 CYTHON_BUILD="OFF"
 JAVA_BUILD="OFF"
-BUILD_ALL="OFF"
 BUILD_MODE=Release
 BUILD_MODE_DEBUG="OFF"
 BUILD_MODE_RELEASE="OFF"
@@ -44,6 +44,10 @@ case $key in
     --python)
     CPP_BUILD="ON"
     PYTHON_BUILD="ON"
+    shift # past argument
+    ;;
+    --python_with_pyarrow)
+    PYTHON_WITH_PYARROW_BUILD="ON"
     shift # past argument
     ;;
     --cython)
@@ -99,7 +103,6 @@ echo "PYTHON ENV PATH       = ${PYTHON_ENV_PATH}"
 echo "BUILD PATH            = ${BUILD_PATH}"
 echo "FLAG CPP BUILD        = ${CPP_BUILD}"
 echo "FLAG PYTHON BUILD     = ${PYTHON_BUILD}"
-echo "FLAG BUILD ALL        = ${BUILD_ALL}"
 echo "FLAG BUILD DEBUG      = ${BUILD_MODE_DEBUG}"
 echo "FLAG BUILD RELEASE    = ${BUILD_MODE_RELEASE}"
 echo "FLAG RUN CPP TEST     = ${RUN_CPP_TESTS}"
@@ -174,6 +177,36 @@ build_cpp(){
   print_line
 }
 
+build_cpp_with_custom_arrow(){
+  print_line
+  echo "Building CPP in ${BUILD_MODE} mode"
+  print_line
+  source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
+  read_python_requirements
+  ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))')
+  ARROW_INC=$(python3 -c 'import pyarrow as pa; import os; print(os.path.join(os.path.dirname(pa.__file__), "include"))')
+  echo "#####################################################" $ARROW_LIB
+  echo "#####################################################" $ARROW_INC
+  CPPLINT_CMD=" "
+  if [ "${STYLE_CHECK}" = "ON" ]; then
+    CPPLINT_CMD=${CPPLINT_COMMAND}
+  fi
+  echo "*************************************" ${SOURCE_DIR}
+  mkdir ${BUILD_PATH}
+  pushd ${BUILD_PATH} || exit 1
+  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
+      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $CPPLINT_CMD $INSTALL_CMD \
+      -DARROW_BUILD_TYPE="CUSTOM" -DARROW_LIB_DIR=${ARROW_LIB} -DARROW_INCLUDE_DIR=${ARROW_INC} -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+      ${CMAKE_FLAGS} \
+      ${SOURCE_DIR} \
+      || exit 1
+  make -j 4 || exit 1
+  printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
+  printf "Cylon CPP Built Successufully!"
+  popd || exit 1
+  print_line
+}
+
 build_pyarrow(){
   print_line
   echo "Building PyArrow"
@@ -185,6 +218,22 @@ build_pyarrow(){
   check_python_pre_requisites
   pushd ${BUILD_PATH}/arrow/arrow/python || exit 1
   PYARROW_CMAKE_OPTIONS="-DCMAKE_MODULE_PATH=${ARROW_HOME}/lib/cmake/arrow" python3 setup.py install || exit 1
+  popd || exit 1
+  print_line
+}
+
+build_python_pyarrow() {
+  print_line
+  echo "Building Python"
+  # shellcheck disable=SC1090
+  source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
+  read_python_requirements
+  pip install pyarrow==2.0.0 || exit 1
+  check_python_pre_requisites
+  pushd python || exit 1
+  pip3 uninstall -y pycylon
+  make clean
+  CYLON_PREFIX=${BUILD_PATH}  python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
@@ -201,7 +250,7 @@ build_python() {
   pushd python || exit 1
   pip3 uninstall -y pycylon
   make clean
-  ARROW_HOME=${BUILD_PATH} python3 setup.py install || exit 1
+  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PATH}/arrow/install python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
@@ -286,6 +335,13 @@ if [ "${PYTHON_BUILD}" = "ON" ]; then
 	build_python
 	check_pycylon_installation
 fi
+
+if [ "${PYTHON_WITH_PYARROW_BUILD}" = "ON" ]; then
+	export_info
+	build_cpp_with_custom_arrow
+	build_python_pyarrow
+fi
+
 
 if [ "${CYTHON_BUILD}" = "ON" ]; then
 	export_info	

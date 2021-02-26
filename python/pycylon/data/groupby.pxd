@@ -21,17 +21,15 @@ from pycylon.data.aggregates cimport CGroupByAggregationOp
 
 
 cdef extern from "../../../cpp/src/cylon/groupby/groupby.hpp" namespace "cylon":
-    CStatus DistributedHashGroupBy(shared_ptr[CTable] & table, int index_col,
-                                   const vector[int]
-                                   & aggregate_cols,
-                                   const vector[
-                                           CGroupByAggregationOp] & aggregate_ops,
+    CStatus DistributedHashGroupBy(shared_ptr[CTable] & table,
+                                   const vector[int] index_col,
+                                   const vector[int] & aggregate_cols,
+                                   const vector[CGroupByAggregationOp] & aggregate_ops,
                                    shared_ptr[CTable] & output)
 
     CStatus DistributedPipelineGroupBy(shared_ptr[CTable] & table,
                                        int index_col,
                                        const vector[int]
                                        & aggregate_cols,
-                                       const vector[
-                                               CGroupByAggregationOp] & aggregate_ops,
+                                       const vector[CGroupByAggregationOp] & aggregate_ops,
                                        shared_ptr[CTable] & output)

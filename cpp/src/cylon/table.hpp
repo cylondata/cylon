@@ -365,7 +365,10 @@ Status HashPartition(std::shared_ptr<cylon::Table> &table,
  * @param sort_column
  * @return new table sorted according to the sort column
  */
-Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_ptr<Table> &output);
+Status Sort(std::shared_ptr<cylon::Table> &table,
+            int sort_column,
+            std::shared_ptr<Table> &output,
+            bool ascending = true);
 
 /**
  * Sort the table according to the given column, this is a local sort (if the table has chunked columns, they will
