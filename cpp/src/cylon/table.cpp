@@ -306,11 +306,17 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column,
 
 Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &sort_columns,
             std::shared_ptr<cylon::Table> &out, bool ascending) {
+  const std::vector<bool> sort_direction = {ascending};
+  return Sort(table, sort_columns, out, sort_direction);
+}
+
+Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &sort_columns,
+            std::shared_ptr<cylon::Table> &out, const std::vector<bool> &sort_direction) {
   std::shared_ptr<arrow::Table> sorted_table;
   auto table_ = table->get_table();
   auto ctx = table->GetContext();
   const arrow::Status &status = cylon::util::SortTableMultiColumns(
-      table_, sort_columns, cylon::ToArrowPool(ctx), sorted_table, ascending);
+      table_, sort_columns, cylon::ToArrowPool(ctx), sorted_table, sort_direction);
   if (status.ok()) {
     return Table::FromArrowTable(ctx, sorted_table, out);
   } else {

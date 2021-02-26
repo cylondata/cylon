@@ -40,16 +40,19 @@ int main(int argc, char *argv[]) {
 
   auto read_end_time = std::chrono::steady_clock::now();
 
-  LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
+  LOG(INFO)
+      << "Read tables in "
+      << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count()
+      << "[ms]";
 
   LOG(INFO) << "Table Data";
   first_table->Print();
   std::cout << "-----------------------" << std::endl;
 
   std::vector<int64_t> sort_columns = {0, 1};
+  std::vector<bool> sort_directions = {true, false};
 
-  status = cylon::Sort(first_table, sort_columns, output, false);
+  status = cylon::Sort(first_table, sort_columns, output, sort_directions);
 
   if (status.is_ok()) {
     output->Print();

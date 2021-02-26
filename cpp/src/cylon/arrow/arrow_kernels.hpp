@@ -34,8 +34,7 @@ class ArrowArraySplitKernel {
    * @param out
    * @return
    */
-  virtual Status Split(const std::shared_ptr<arrow::ChunkedArray> &values,
-                       uint32_t num_partitions,
+  virtual Status Split(const std::shared_ptr<arrow::ChunkedArray> &values, uint32_t num_partitions,
                        const std::vector<uint32_t> &target_partitions,
                        const std::vector<uint32_t> &counts,
                        std::vector<std::shared_ptr<arrow::Array>> &output) = 0;
@@ -78,7 +77,8 @@ class IndexSortKernel {
    * @param offsets
    * @return
    */
-  static arrow::Status DoSort(const std::function<bool(int64_t, int64_t)> &comp, int64_t len, arrow::MemoryPool *pool,
+  static arrow::Status DoSort(const std::function<bool(int64_t, int64_t)> &comp, int64_t len,
+                              arrow::MemoryPool *pool,
                               std::shared_ptr<arrow::UInt64Array> &offsets);
 
   arrow::MemoryPool *pool_;
@@ -92,7 +92,8 @@ class IndexSortKernel {
  * @param offsets
  * @return
  */
-arrow::Status SortIndices(arrow::MemoryPool *memory_pool, const std::shared_ptr<arrow::Array> &values,
+arrow::Status SortIndices(arrow::MemoryPool *memory_pool,
+                          const std::shared_ptr<arrow::Array> &values,
                           std::shared_ptr<arrow::UInt64Array> &offsets, bool ascending = true);
 
 // -----------------------------------------------------------------------------
@@ -110,7 +111,8 @@ class InplaceIndexSortKernel {
    * @param out
    * @return
    */
-  virtual arrow::Status Sort(std::shared_ptr<arrow::Array> &values, std::shared_ptr<arrow::UInt64Array> &out) = 0;
+  virtual arrow::Status Sort(std::shared_ptr<arrow::Array> &values,
+                             std::shared_ptr<arrow::UInt64Array> &out) = 0;
 
   virtual ~InplaceIndexSortKernel() = default;
 
@@ -129,9 +131,11 @@ arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
                                  std::shared_ptr<arrow::Array> &values,
                                  std::shared_ptr<arrow::UInt64Array> &offsets);
 
-arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool, const std::shared_ptr<arrow::Table> &table,
+arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
+                                      const std::shared_ptr<arrow::Table> &table,
                                       const std::vector<int64_t> &columns,
-                                      std::shared_ptr<arrow::UInt64Array> &offsets, bool ascending);
+                                      std::shared_ptr<arrow::UInt64Array> &offsets,
+                                      const std::vector<bool> &ascending);
 
 // -----------------------------------------------------------------------------
 
@@ -161,10 +165,9 @@ class StreamingSplitKernel {
   virtual ~StreamingSplitKernel() = default;
 };
 
-std::unique_ptr<StreamingSplitKernel> CreateStreamingSplitter(const std::shared_ptr<arrow::DataType> &type,
-                                                              int32_t targets,
-                                                              arrow::MemoryPool *pool);
+std::unique_ptr<StreamingSplitKernel> CreateStreamingSplitter(
+    const std::shared_ptr<arrow::DataType> &type, int32_t targets, arrow::MemoryPool *pool);
 
 }  // namespace cylon
 
-#endif  //CYLON_ARROW_KERNELS_H
+#endif  // CYLON_ARROW_KERNELS_H

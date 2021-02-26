@@ -441,11 +441,18 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
                                       const std::shared_ptr<arrow::Table> &table,
                                       const std::vector<int64_t> &columns,
                                       std::shared_ptr<arrow::UInt64Array> &offsets,
-                                      bool ascending) {
+                                      const std::vector<bool> &ascending) {
+  if (columns.size() != ascending.size()) {
+    return arrow::Status(arrow::StatusCode::Invalid,
+                         "No of sort columns and no of sort direction indicators mismatch");
+  }
+  
   std::vector<std::shared_ptr<ArrayIndexComparator>> comparators;
   comparators.reserve(columns.size());
+  int64_t i = 0;
   for (auto idx : columns) {
-    comparators.push_back(CreateArrayIndexComparator(table->column(idx)->chunk(0), ascending));
+    comparators.push_back(
+        CreateArrayIndexComparator(table->column(idx)->chunk(0), ascending.at(i++)));
   }
 
   int64_t buf_size = table->num_rows() * sizeof(int64_t);
