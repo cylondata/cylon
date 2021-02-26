@@ -386,7 +386,7 @@ def test_df_iterrows():
         row2 = composite[1].tolist()
         assert index1 == index2
         assert row1 == row2
-        #print(type(index1), index1, type(index2), index2, type(row1), row1, type(row2), row2)
+        # print(type(index1), index1, type(index2), index2, type(row1), row1, type(row2), row2)
 
 
 def test_df_perf_iterrows():
@@ -428,6 +428,22 @@ def test_df_perf_iterrows():
     print(t2 - t1, t3 - t2)
 
 
+def test_read_partition_from_csv():
+    file_name = '/tmp/multi_data.csv'
+    RECORDS = 12
+    num_processes = 4
+    RECORDS_PER_PROC = RECORDS // num_processes
+    OFFSET = -RECORDS_PER_PROC
+    LIMIT = RECORDS_PER_PROC
+
+    for i in range(num_processes):
+        print(f"Process [{i}]")
+        OFFSET = OFFSET + RECORDS_PER_PROC
+        reader = pd.read_csv(file_name, sep=',',
+                             header=None,
+                             skiprows=lambda idx: idx < OFFSET,  # Skip lines
+                             nrows=LIMIT)
+        print(reader)
 
 
-test_df_iterrows()
+test_read_partition_from_csv()
