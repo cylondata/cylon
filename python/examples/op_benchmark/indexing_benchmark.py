@@ -8,6 +8,7 @@ from pycylon.indexing.index import IndexingSchema
 
 ctx = cn.CylonContext(config=None, distributed=False)
 
+
 def generate_data():
     dataset = []
     cols = ['a', 'b', 'c', 'd']
@@ -34,14 +35,17 @@ def do_indexing():
     pdf = pd.read_csv(index_file)
     ct = Table.from_pandas(ctx, pdf)
 
+    # NOTE: make sure this value exist in the generated data file
+    search_value = 3458646
+
     t0 = time.time()
-    ct.set_index('a', IndexingSchema.HASH)
+    ct.set_index('a', IndexingSchema.LINEAR)
     t1 = time.time()
     pdf1 = pdf.set_index('a')
     t2 = time.time()
-    df1 = pdf1.loc[6645159, 'b' : 'd']
+    df1 = pdf1.loc[search_value, 'b' : 'd']
     t3 = time.time()
-    tb1 = ct.loc[6645159, 'b': 'd']
+    tb1 = ct.loc[search_value, 'b': 'd']
     t4 = time.time()
     cn_indexing_time = t1-t0
     pd_indexing_time = t2-t1
@@ -63,5 +67,5 @@ def check_indexing_validity():
     print(df1)
 
 #generate_data()
-do_indexing()
+#do_indexing()
 #check_indexing_validity()

@@ -261,7 +261,6 @@ def test_filter():
 
 
 def test_unique():
-
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
     table_path = '/tmp/duplicate_data_0.csv'
@@ -325,10 +324,110 @@ def test_set_list_conv():
     lst = list(st)
     t3 = time.time()
 
-    print(t2-t1, t3-t2)
+    print(t2 - t1, t3 - t2)
+
+
+def test_df_with_index():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+
+    print(pdf.columns[0])
+    pdf1 = pdf[[pdf.columns[0]]]
+
+    print(pdf)
+
+    print(pdf1)
+
+    pdf3 = pdf.set_index(pdf.columns[0], drop=True)
+
+    print(pdf3)
+
+    artb = pa.Table.from_pandas(df=pdf3, schema=None,
+                                preserve_index=True,
+                                nthreads=None, columns=None, safe=False)
+
+    print(artb)
+
+
+def test_df_iterrows():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+
+    tb1.set_index(tb1.column_names[0], drop=True)
+    pdf.set_index(pdf.columns[0], drop=True, inplace=True)
+    num_records = tb1.row_count
+    print(pdf)
+
+    for idx, row in pdf.iterrows():
+        print(idx)
+        print(row)
+
+    dict = tb1.to_pydict(with_index=False)
+    indices = tb1.index.index_values
+    rows = []
+
+    for index_id, index in enumerate(indices):
+        row = []
+        for col in dict:
+            row.append(dict[col][index_id])
+        rows.append(row)
+
+    for index, row in zip(indices, rows):
+        print(index, row)
+
+    for index1, row1, composite in zip(indices, rows, pdf.iterrows()):
+        index2 = composite[0]
+        row2 = composite[1].tolist()
+        assert index1 == index2
+        assert row1 == row2
+        #print(type(index1), index1, type(index2), index2, type(row1), row1, type(row2), row2)
+
+
+def test_df_perf_iterrows():
+    ctx = CylonContext(config=None, distributed=False)
+
+    dataset = []
+    num_rows = 100_000
+    num_columns = 2
+
+    data = np.random.randn(num_rows)
+
+    pdf = pd.DataFrame({'data{}'.format(i): data
+                        for i in range(num_columns)})
+
+    tb1 = Table.from_pandas(ctx, pdf)
+
+    tb1.set_index(tb1.column_names[0], drop=True)
+    pdf.set_index(pdf.columns[0], drop=True, inplace=True)
+
+    print(pdf)
+    t1 = time.time()
+    for idx, row in pdf.iterrows():
+        idx = idx
+        row = row
+    t2 = time.time()
+    dict = tb1.to_pydict(with_index=True)
+    indices = tb1.index.index_values
+    rows = []
+    for index in indices:
+        row = []
+        for col in dict:
+            row.append(dict[col][index])
+        rows.append(row)
+
+    for index, row in zip(indices, rows):
+        index = index
+        row = row
+    t3 = time.time()
+    print(t2 - t1, t3 - t2)
 
 
 
 
-
-test_set_list_conv()
+test_df_iterrows()

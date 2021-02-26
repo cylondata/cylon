@@ -141,7 +141,13 @@ cpdef table_compute_ar_op(table: Table, other, op):
         ar_table = table.to_arrow().combine_chunks()
         for col in ar_table.columns:
           ar_array = col.chunks[0]
-          r = arrow_op(ar_array, cast_scalar(other, col.type.id))
+          np_array = None
+          try:
+            np_array = ar_array.to_numpy()
+          except ValueError:
+            np_array = ar_array.to_numpy(zero_copy_only=False)
+          #r = arrow_op(ar_array, cast_scalar(other, col.type.id))
+          r = op(np_array, other)
           arrays.append(r)
         return Table.from_arrow(table.context, pa.Table.from_arrays(arrays,
                                                                    names=table.column_names))

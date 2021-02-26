@@ -734,7 +734,6 @@ cdef class ILocIndexer:
             end_index = len(index.get_index_array())
         elif start_index is None and end_index:
             start_index = 0
-        print("Fixed S, E", start_index, end_index)
         return start_index, end_index
 
     def loc_with_multi_column(self, indices, column_list, table):
@@ -756,8 +755,6 @@ cdef class ILocIndexer:
         intermediate_tables = []
 
         if isinstance(indices, List):
-            print("select set of indices")
-
             for index in indices:
                 if self._is_valid_index_value(index):
                     c_start_index = <void*> p2c.to_uint64(index)
@@ -767,7 +764,6 @@ cdef class ILocIndexer:
             return Table.merge(ctx, intermediate_tables)
 
         if np.isscalar(indices):
-            print("select a single index")
             if self._is_valid_index_value(indices):
                 c_start_index = <void*> p2c.to_uint64(indices)
 
@@ -775,7 +771,6 @@ cdef class ILocIndexer:
             return pycylon_wrap_table(output)
 
         if isinstance(indices, slice):
-            print("select a range of index")
             # assume step = 1
             # TODO: generalize for slice with multi-steps then resolve index list
             start_index = indices.start
@@ -816,8 +811,6 @@ cdef class ILocIndexer:
         intermediate_tables = []
 
         if isinstance(indices, List):
-            print("select set of indices")
-
             for index in indices:
                 self._is_valid_index_value(index)
                 c_start_index = <void*> p2c.to_long(index)
@@ -829,15 +822,12 @@ cdef class ILocIndexer:
             return Table.merge(ctx, intermediate_tables)
 
         if np.isscalar(indices):
-            print("select a single index")
-
             c_start_index = <void*> p2c.to_long(indices)
             self.indexer_shd_ptr.get().loc(&c_start_index, c_start_column_index,
                                                c_end_column_index, input, output)
             return pycylon_wrap_table(output)
 
         if isinstance(indices, slice):
-            print("select a range of index")
             # assume step = 1
             # TODO: generalize for slice with multi-steps then resolve index list
             start_index = indices.start
@@ -876,7 +866,6 @@ cdef class ILocIndexer:
         intermediate_tables = []
 
         if isinstance(indices, List):
-            print("select set of indices")
 
             for index in indices:
                 self._is_valid_index_value(index)
@@ -888,7 +877,6 @@ cdef class ILocIndexer:
             return Table.merge(ctx, intermediate_tables)
 
         if np.isscalar(indices):
-            print("select a single index")
             self._is_valid_index_value(indices)
             c_start_index = <void*> p2c.to_long(indices)
 
@@ -897,7 +885,6 @@ cdef class ILocIndexer:
             return pycylon_wrap_table(output)
 
         if isinstance(indices, slice):
-            print("select a range of index")
             # TODO: generalize for slice with multi-steps then resolve index list
             start_index = indices.start
             end_index = indices.stop
@@ -936,7 +923,6 @@ class PyLocIndexer:
             raise ValueError(f"Column {column_name} does not exist in the table")
 
     def __getitem__(self, item):
-        print("Item : ", item)
         if isinstance(item, Tuple):
             # with both column and index option
             if len(item) != 2:
@@ -957,7 +943,6 @@ class PyLocIndexer:
             elif isinstance(column_values, slice):
                 start_column = column_values.start
                 end_column = column_values.stop
-                print("S, E", start_column, end_column)
                 col_int_slice = None
                 if isinstance(start_column, str) and isinstance(end_column, str):
                     col_int_slice = slice(self._resolve_column_index_from_column_name(
