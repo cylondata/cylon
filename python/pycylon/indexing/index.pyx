@@ -36,6 +36,7 @@ from cpython.ref cimport PyObject
 from cython.operator cimport dereference as deref, preincrement as inc
 
 from typing import List, Tuple
+from pycylon.data.compute import compare_array_like_values
 
 '''
 Cylon Indexing is done with the following enums. 
@@ -67,6 +68,25 @@ cdef class BaseIndex:
     @property
     def index_values(self):
         return self.get_index_array().tolist()
+
+    @property
+    def values(self):
+        npr = None
+        try:
+            npr = self.get_index_array().to_numpy()
+        except ValueError:
+            npr = self.get_index_array().to_numpy(zero_copy_only=False)
+        return npr
+
+    def isin(self, values, skip_null=True, zero_copy_only=False):
+        res_isin = None
+        if isinstance(values, List) or isinstance(values, np.ndarray):
+            values_arw_ar = pa.array(values)
+            res_isin = compare_array_like_values(self.get_index_array(), values_arw_ar, skip_null)
+            return res_isin.to_numpy(zero_copy_only=zero_copy_only)
+        else:
+            raise ValueError("values must be List or np.ndarray")
+
 
 cdef vector[void*] _get_void_vec_from_pylist(py_list, arrow_type):
     if arrow_type == pa.int64():
