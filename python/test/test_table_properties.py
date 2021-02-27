@@ -535,24 +535,24 @@ def test_concat_table():
     print("axis=1")
     print("=" * 80)
     res_pdf_1 = pd.concat([pdf1, pdf2], join='inner', axis=1)
-    print("-" * 80)
     print(res_pdf_1)
-    res_pdf_2 = pd.concat([pdf1, pdf3], join='inner', axis=1)
     print("-" * 80)
+    res_pdf_2 = pd.concat([pdf1, pdf3], join='inner', axis=1)
     print(res_pdf_2)
+    print("-" * 80)
 
     print("=" * 80)
     print("axis=0")
     print("=" * 80)
     res_pdf_1 = pd.concat([pdf1, pdf2], join='inner', axis=0)
-    print("-" * 80)
     print(res_pdf_1)
+    print("-" * 80)
     res_pdf_2 = pd.concat([pdf1, pdf3], join='inner', axis=0)
+    print(res_pdf_2)
     print("-" * 80)
     res_pdf_3 = pd.concat([pdf1, pdf4], join='inner', axis=0)
-    print("-" * 80)
     print(res_pdf_3)
-
+    print("-" * 80)
     """
     For Cylon concat operation:
     
