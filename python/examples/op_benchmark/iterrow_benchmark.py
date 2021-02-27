@@ -62,7 +62,7 @@ def perf_test():
     t2 = time.time()
     for idx, row in tb1.iterrows():
         idx_t = idx + 1
-        row_t = row // 2
+        row_t = np.array(row) // 2
     t3 = time.time()
     print(f"Pandas Iterrow Time : {t2 - t1}")
     print(f"PyClon Iterrow Time : {t3 - t2}")

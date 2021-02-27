@@ -480,7 +480,6 @@ def test_empty_table():
     from pycylon.data.table import EmptyTable
     from pycylon.index import RangeIndex
     import pandas as pd
-    import pandas as pd
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     empt_tb = EmptyTable(ctx, RangeIndex(data=range(0, 0)))
 
@@ -501,9 +500,6 @@ def test_iterrows():
         idx_p = p[0]
         row_p = p[1].tolist()
         idx_c = c[0]
-        row_c = c[1].tolist()
+        row_c = c[1]
         assert idx_p == idx_c
         assert row_p == row_c
-
-
-test_iterrows()

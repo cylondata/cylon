@@ -2306,7 +2306,7 @@ cdef class Table:
             row = []
             for column in data_dict:
                 row.append(data_dict[column][index_id])
-            yield index_values[index_id], np.array(row)
+            yield index_values[index_id], row
 
 
 
