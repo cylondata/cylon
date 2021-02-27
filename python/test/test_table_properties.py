@@ -27,6 +27,7 @@ from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
 import pyarrow as pa
 import numpy as np
+import pandas as pd
 
 '''
 Run test:
@@ -479,8 +480,26 @@ def test_empty_table():
     from pycylon.data.table import EmptyTable
     from pycylon.index import RangeIndex
     import pandas as pd
-    import pandas as pd
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     empt_tb = EmptyTable(ctx, RangeIndex(data=range(0, 0)))
 
     assert empt_tb.to_pandas().values.tolist() == pd.DataFrame().values.tolist()
+
+
+def test_iterrows():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+
+    tb1.set_index(tb1.column_names[0], drop=True)
+    pdf.set_index(pdf.columns[0], drop=True, inplace=True)
+
+    for p, c in zip(pdf.iterrows(), tb1.iterrows()):
+        idx_p = p[0]
+        row_p = p[1].tolist()
+        idx_c = c[0]
+        row_c = c[1]
+        assert idx_p == idx_c
+        assert row_p == row_c
