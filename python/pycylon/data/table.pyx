@@ -2298,6 +2298,57 @@ cdef class Table:
         """
         return PyLocIndexer(self, "iloc")
 
+    @staticmethod
+    def concat(tables: List[Table], axis: int = 0, join: str = 'inner', algorithm: str = 'sort'):
+        """
+        Algorithm
+        =========
+
+        axis=1 (regular join op considering a column)
+        ----------------------------------------------
+
+        1. If indexed or not, do a reset_index op (which will add the new column as 'index' in both
+        tables)
+        2. Do the regular join by considering the 'index' column
+        3. Set the index by 'index' in the resultant table
+
+        axis=0 (stacking tables or similar to merge function)
+        -----------------------------------------------------
+        assert: column count must match
+        the two tables are stacked upon each other in order
+        The index is created by concatenating two indices
+        Args:
+            tables:
+            axis:
+            join:
+            algorithm:
+
+        Returns: PyCylon Table
+
+        """
+        if axis == 0:
+            pass
+        elif axis == 1:
+            if not isinstance(tables[0], Table):
+                raise ValueError(f"Invalid object {tables[0]}, Table expected")
+            ctx = tables[0].context
+            res_table = tables[0]
+            for i in range(1, len(tables)):
+                tb1 = tables[i]
+                tb1.reset_index()
+                res_table.reset_index()
+                if ctx.get_world_size() > 1:
+                    pass
+                else:
+                    res_table = res_table.join(table=tb1, join_type=join, algorithm=algorithm,
+                                             left_on=[res_table.column_names[0]],
+                                               right_on=[tb1.column_names[0]])
+                    res_table.set_index(res_table.column_names[0], drop=True)
+                    res_table = res_table.drop([tb1.column_names[0]])
+            return res_table
+        else:
+            raise ValueError(f"Invalid axis {axis}, must 0 or 1")
+
 
 class EmptyTable(Table):
     '''

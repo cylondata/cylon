@@ -37,12 +37,12 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
   // creating joined schema
   std::vector<std::shared_ptr<arrow::Field>> fields;
   // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
-  std::string  prefix = "lt-";
+  std::string  prefix = "";//"lt-";
   for(const auto &t: {left_tab, right_tab}){
     for (const auto &field: t->schema()->fields()){
       fields.emplace_back(field->WithName(prefix + field->name()));
     }
-    prefix = "rt-";
+    prefix = "";//"rt-";
   }
   const auto &schema = arrow::schema(fields);
 
