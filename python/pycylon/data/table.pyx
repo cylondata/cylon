@@ -1684,7 +1684,6 @@ cdef class Table:
             2      7     11
             3      8     12
         '''
-
         return self.from_arrow(self.context, self.to_arrow().drop(column_names))
 
     def fillna(self, fill_value):
@@ -2341,10 +2340,12 @@ cdef class Table:
                     pass
                 else:
                     res_table = res_table.join(table=tb1, join_type=join, algorithm=algorithm,
-                                             left_on=[res_table.column_names[0]],
+                                               left_on=[res_table.column_names[0]],
                                                right_on=[tb1.column_names[0]])
                     res_table.set_index(res_table.column_names[0], drop=True)
-                    res_table = res_table.drop([tb1.column_names[0]])
+                index_values = res_table.index.index_values
+                res_table = res_table.drop([tb1.column_names[0]])
+                res_table.set_index(index_values)
             return res_table
         else:
             raise ValueError(f"Invalid axis {axis}, must 0 or 1")

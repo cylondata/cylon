@@ -634,36 +634,15 @@ def test_concat_op():
     res_pdf_1 = pd.concat([pdf1, pdf2], join='inner', axis=1)
     print(res_pdf_1)
     print("-" * 80)
-
-    # res_tb_1 = Table.concat([tb1, tb2], join='inner', axis=1)
-    tables = [tb1, tb2]
-    res_table = tables[0]
-    join = 'inner'
-    algorithm = 'sort'
-    print(res_table)
-
-    for i in range(1, len(tables)):
-        tb1 = tables[i]
-        tb1.reset_index()
-        res_table.reset_index()
-        if ctx.get_world_size() > 1:
-            pass
-        else:
-            print(res_table.column_names, tb1.column_names)
-            res_table = res_table.join(table=tb1, join_type=join, algorithm=algorithm,
-                                       left_on=[res_table.column_names[0]],
-                                       right_on=[tb1.column_names[0]])
-            res_table.set_index(res_table.column_names[0], drop=True)
-            print(res_table.index.index_values)
-            res_table = res_table.drop([tb1.column_names[0]])
-            print(res_table.index.index_values)
-            print(res_table.column_names, tb1.column_names)
-
-    print(res_table)
-    print(res_table.index.index_values)
+    res_tb_1 = Table.concat([tb1, tb2], join='inner', axis=1)
+    print(res_tb_1)
+    print("-" * 80)
     res_pdf_2 = pd.concat([pdf1, pdf2], join='inner', axis=1)
     print(res_pdf_2)
+    assert res_pdf_2.values.tolist() == res_tb_1.to_pandas().values.tolist()
+    assert res_tb_1.index.index_values == res_pdf_2.index.values.tolist()
     print("-" * 80)
+
 
 
 
