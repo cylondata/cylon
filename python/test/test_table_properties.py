@@ -27,6 +27,7 @@ from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
 import pyarrow as pa
 import numpy as np
+import pandas as pd
 
 '''
 Run test:
@@ -479,8 +480,77 @@ def test_empty_table():
     from pycylon.data.table import EmptyTable
     from pycylon.index import RangeIndex
     import pandas as pd
-    import pandas as pd
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     empt_tb = EmptyTable(ctx, RangeIndex(data=range(0, 0)))
 
     assert empt_tb.to_pandas().values.tolist() == pd.DataFrame().values.tolist()
+
+
+def test_concat_table():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    columns = ['c1', 'c2', 'c3']
+    dataset_1 = [[1, 2, 3, 4, 5], [20, 30, 40, 50, 51], [33, 43, 53, 63, 73]]
+    dataset_2 = [[1, 20, 3, 4, 50], [20, 30, 40, 50, 51], [33, 43, 53, 63, 73]]
+    dataset_3 = [[1, 20, 3, 40, 50, 60], [21, 31, 41, 51, 50, 70], [32, 42, 52, 62, 72, 82]]
+
+    tb1 = Table.from_list(ctx, columns, dataset_1)
+    tb1 = tb1.add_prefix('d1_')
+
+    tb2 = Table.from_list(ctx, columns, dataset_2)
+    tb2 = tb2.add_prefix('d2_')
+
+    tb3 = Table.from_list(ctx, columns, dataset_3)
+    tb3 = tb3.add_prefix('d3_')
+
+    pdf1 = tb1.to_pandas()
+    pdf2 = tb2.to_pandas()
+    pdf3 = tb3.to_pandas()
+
+    print(tb1)
+    print("-" * 80)
+    print(tb2)
+
+    tb1.set_index(tb1.column_names[0], drop=True)
+    tb2.set_index(tb2.column_names[0], drop=True)
+    tb3.set_index(tb3.column_names[0], drop=True)
+
+    print("*" * 80)
+    print("Indexed table")
+    print(tb1)
+    print("*" * 80)
+    print("Reset_Index table")
+    tb1.reset_index()
+    print(tb1)
+    print("*" * 80)
+
+    pdf1.set_index(pdf1.columns[0], drop=True, inplace=True)
+    pdf2.set_index(pdf2.columns[0], drop=True, inplace=True)
+    pdf3.set_index(pdf3.columns[0], drop=True, inplace=True)
+
+    res_pdf_1 = pd.concat([pdf1, pdf2], join='inner', axis=1)
+    print("-" * 80)
+    print(res_pdf_1)
+    res_pdf_2 = pd.concat([pdf1, pdf3], join='inner', axis=1)
+    print("-" * 80)
+    print(res_pdf_2)
+
+    """
+    For Cylon concat operation:
+    
+    We can check for indexing column if default the index array contains [0,num_records-1)
+    If indexed, the indexed column will be compared. 
+    
+    We can use existing join ops. 
+    
+    Algorithm
+    ---------
+    
+    1. If indexed or not, do a reset_index op (which will add the new column as 'index' in both 
+    tables)
+    2. Do the regular join by considering the 'index' column
+    3. Set the index by 'index' in the resultant table
+    
+    """
+
+
+test_concat_table()
