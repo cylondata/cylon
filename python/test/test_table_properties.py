@@ -502,9 +502,13 @@ def test_concat_table():
     tb3 = Table.from_list(ctx, columns, dataset_3)
     tb3 = tb3.add_prefix('d3_')
 
+    tb4 = Table.from_list(ctx, columns, dataset_3)
+    tb4 = tb4.add_prefix('d1_')
+
     pdf1 = tb1.to_pandas()
     pdf2 = tb2.to_pandas()
     pdf3 = tb3.to_pandas()
+    pdf4 = tb4.to_pandas()
 
     print(tb1)
     print("-" * 80)
@@ -527,12 +531,27 @@ def test_concat_table():
     pdf2.set_index(pdf2.columns[0], drop=True, inplace=True)
     pdf3.set_index(pdf3.columns[0], drop=True, inplace=True)
 
+    print("=" * 80)
+    print("axis=1")
+    print("=" * 80)
     res_pdf_1 = pd.concat([pdf1, pdf2], join='inner', axis=1)
     print("-" * 80)
     print(res_pdf_1)
     res_pdf_2 = pd.concat([pdf1, pdf3], join='inner', axis=1)
     print("-" * 80)
     print(res_pdf_2)
+
+    print("=" * 80)
+    print("axis=0")
+    print("=" * 80)
+    res_pdf_1 = pd.concat([pdf1, pdf2], join='inner', axis=0)
+    print("-" * 80)
+    print(res_pdf_1)
+    res_pdf_2 = pd.concat([pdf1, pdf3], join='inner', axis=0)
+    print("-" * 80)
+    res_pdf_3 = pd.concat([pdf1, pdf4], join='inner', axis=0)
+    print("-" * 80)
+    print(res_pdf_3)
 
     """
     For Cylon concat operation:
@@ -543,13 +562,21 @@ def test_concat_table():
     We can use existing join ops. 
     
     Algorithm
-    ---------
+    =========
+    
+    axis=1 (regular join op considering a column)
+    ----------------------------------------------
     
     1. If indexed or not, do a reset_index op (which will add the new column as 'index' in both 
     tables)
     2. Do the regular join by considering the 'index' column
     3. Set the index by 'index' in the resultant table
     
+    axis=0 (stacking tables or similar to merge function)
+    -----------------------------------------------------
+    assert: column count must match
+    the two tables are stacked upon each other in order
+    The index is created by concatenating two indices         
     """
 
 
