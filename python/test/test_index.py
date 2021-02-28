@@ -5,6 +5,8 @@ from pycylon import Table
 from pycylon import CylonContext
 import pyarrow as pa
 import numpy as np
+from pycylon.io import CSVReadOptions
+from pycylon.io import read_csv
 
 
 def test_with_pandas():
@@ -644,20 +646,37 @@ def test_iloc_op_mode_1():
 
     assert iloc_pd_2.values.tolist() == iloc_cn_2.to_pandas().values.tolist()
 
-
     iloc_cn_3 = cn_tb.iloc[3:, 1:]
     iloc_pd_3 = pdf_float.iloc[3:, 1:]
 
     assert iloc_pd_3.values.tolist() == iloc_cn_3.to_pandas().values.tolist()
-
 
     iloc_cn_4 = cn_tb.iloc[:3, 1:]
     iloc_pd_4 = pdf_float.iloc[:3, 1:]
 
     assert iloc_pd_4.values.tolist() == iloc_cn_4.to_pandas().values.tolist()
 
-
     iloc_cn_5 = cn_tb.iloc[:, :]
     iloc_pd_5 = pdf_float.iloc[:, :]
 
     assert iloc_pd_5.values.tolist() == iloc_cn_5.to_pandas().values.tolist()
+
+
+def test_isin():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb.to_pandas()
+
+    tb.set_index(tb.column_names[0], drop=True)
+    pdf.set_index(pdf.columns[0], drop=True, inplace=True)
+
+    assert tb.index.values.tolist() == pdf.index.values.tolist()
+
+    compare_values = [4, 1, 10, 100, 150]
+
+    tb_res_isin = tb.index.isin(compare_values)
+    pdf_res_isin = pdf.index.isin(compare_values)
+
+    assert tb_res_isin.tolist() == pdf_res_isin.tolist()
