@@ -257,7 +257,8 @@ def test_rename():
                          [16, 17, 18, 19, 20]]
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     cn_tb = Table.from_list(ctx, col_names, data_list_numeric)
-
+    index_values = [0, 1, 2, 3, 4]
+    cn_tb.set_index(index_values)
     prev_col_names = cn_tb.column_names
     # with dictionary
     columns = {'col1': 'col-1', 'col3': 'col-3'}
@@ -271,6 +272,7 @@ def test_rename():
 
     # with list
     cn_tb_list = Table.from_list(ctx, col_names, data_list_numeric)
+    cn_tb_list.set_index(index_values)
     prev_col_names = cn_tb_list.column_names
     new_column_names = ['col-1', 'col-2', 'col-3', 'col-4']
     cn_tb_list.rename(new_column_names)
@@ -657,6 +659,14 @@ def test_concat_op():
 
     #res_tb_2 = Table.concat([tb1, tb2], join='inner', axis=0)
     #print(res_tb_2)
+
+    print(tb1)
+    print(tb1.index.index_values)
+
+    tb1.rename(['c1', 'c2'])
+
+    print(tb1)
+    print(tb1.index.index_values)
 
 
 

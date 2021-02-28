@@ -1901,7 +1901,7 @@ cdef class Table:
             2   3   7  11
             3   4   8  12
         '''
-
+        index_values = self.index.index_values
         if isinstance(column_names, dict):
             table_col_names = self.column_names
             for key in column_names.keys():
@@ -1915,6 +1915,7 @@ cdef class Table:
                 self.initialize(self.to_arrow().rename_columns(column_names), self.context)
         else:
             raise ValueError("Input Column names must be a dictionary or list")
+        self.set_index(index_values)
 
     def add_prefix(self, prefix: str) -> Table:
         '''
@@ -2337,6 +2338,11 @@ cdef class Table:
             if not isinstance(res_table, Table):
                 raise ValueError(f"Invalid object {res_table}, expected Table")
             ctx = res_table.context
+            formatted_tables = []
+            new_column_names = res_table.column_names
+            for tb_idx in range(len(tables)):
+                tb1 = tables[tb_idx]
+
             return Table.merge(ctx, tables)
         elif axis == 1:
             if not isinstance(tables[0], Table):
