@@ -122,7 +122,7 @@ cdef class Table:
         else:
             self.table_shd_ptr.get().Print(row1, row2, col1, col2)
 
-    def sort(self, by, ascending) -> Table:
+    def sort(self, by, ascending = True) -> Table:
         cdef shared_ptr[CTable] output
         cdef vector[long] sort_index
         cdef vector[bool] order_directions
