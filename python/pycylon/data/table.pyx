@@ -2310,7 +2310,6 @@ cdef class Table:
         """
         Algorithm
         =========
-
         axis=1 (regular join op considering a column)
         ----------------------------------------------
 
@@ -2325,11 +2324,10 @@ cdef class Table:
         the two tables are stacked upon each other in order
         The index is created by concatenating two indices
         Args:
-            tables:
-            axis:
-            join:
-            algorithm:
-
+            tables: List of PyCylon Tables
+            axis: 0:row-wise 1:column-wise
+            join: 'inner' and 'outer'
+            algorithm: 'sort' or 'hash'
         Returns: PyCylon Table
 
         """
