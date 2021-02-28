@@ -122,15 +122,36 @@ cdef class Table:
         else:
             self.table_shd_ptr.get().Print(row1, row2, col1, col2)
 
-    def sort(self, index, ascending: bool = True) -> Table:
+    def sort(self, by, ascending) -> Table:
         cdef shared_ptr[CTable] output
-        sort_index = -1
-        if isinstance(index, str):
-            sort_index = self._resolve_column_index_from_column_name(index)
+        cdef vector[long] sort_index
+        cdef vector[bool] order_directions
+        if isinstance(by, str):
+            sort_index.push_back(self._resolve_column_index_from_column_name(by))
+        elif isinstance(by, int):
+            sort_index.push_back(by)
+        elif isinstance(by, list):
+            for b in by:
+                if isinstance(b, str):
+                    sort_index.push_back(self._resolve_column_index_from_column_name(b))
+                elif isinstance(b, int):
+                    sort_index.push_back(b)
+                else:
+                    raise Exception('Unsupported type used to specify the sort by columns. Expected column name or index')
         else:
-            sort_index = index
+            raise Exception('Unsupported type used to specify the sort by columns. Expected column name or index')
 
-        cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output, ascending)
+        
+        if type(ascending) ==type(True):
+            for i in range(0, sort_index.size()):
+                order_directions.push_back(ascending)
+        elif isinstance(ascending, list):
+            for i in range(0, sort_index.size()):
+                order_directions.push_back(ascending[i])
+        else:
+            raise Exception('Unsupported format for ascending/descending order indication. Expected a boolean or a list of booleans')
+
+        cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output, order_directions)
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
