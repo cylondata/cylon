@@ -2342,8 +2342,13 @@ cdef class Table:
             new_column_names = res_table.column_names
             for tb_idx in range(len(tables)):
                 tb1 = tables[tb_idx]
-
-            return Table.merge(ctx, tables)
+                tb1.reset_index()
+            res_table = Table.merge(ctx, tables)
+            res_table.set_index(res_table.column_names[0], drop=True)
+            for tb_idx in range(len(tables)):
+                tb1 = tables[tb_idx]
+                tb1.set_index(tb1.column_names[0], drop=True)
+            return res_table
         elif axis == 1:
             if not isinstance(tables[0], Table):
                 raise ValueError(f"Invalid object {tables[0]}, Table expected")

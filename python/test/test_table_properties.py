@@ -619,16 +619,17 @@ def test_concat_op():
     tb1.set_index(tb1.column_names[0], drop=True)
     tb2.set_index(tb2.column_names[0], drop=True)
     tb3.set_index(tb3.column_names[0], drop=True)
+    tb4.set_index(tb4.column_names[0], drop=True)
 
     print("*" * 80)
     print("Indexed table")
     print(tb1)
     print("*" * 80)
 
-
     pdf1.set_index(pdf1.columns[0], drop=True, inplace=True)
     pdf2.set_index(pdf2.columns[0], drop=True, inplace=True)
     pdf3.set_index(pdf3.columns[0], drop=True, inplace=True)
+    pdf4.set_index(pdf4.columns[0], drop=True, inplace=True)
 
     print("=" * 80)
     print("axis=1")
@@ -647,29 +648,24 @@ def test_concat_op():
     assert res_pdf_2.values.tolist() == res_tb_1.to_pandas().values.tolist()
     assert res_tb_1.index.index_values == res_pdf_2.index.values.tolist()
     print("-" * 80)
-    print("=" * 80)
-    print("axis=0")
-    print("=" * 80)
     print(tb1.to_arrow())
     print(tb2.to_arrow())
     print(tb1.index.index_values, tb1_index_values)
     print(tb2.index.index_values, tb2_index_values)
     assert tb1.index.index_values.sort() == tb1_index_values.sort()
     assert tb2.index.index_values.sort() == tb2_index_values.sort()
-
-    #res_tb_2 = Table.concat([tb1, tb2], join='inner', axis=0)
-    #print(res_tb_2)
-
-    print(tb1)
-    print(tb1.index.index_values)
-
-    tb1.rename(['c1', 'c2'])
-
-    print(tb1)
-    print(tb1.index.index_values)
-
-
-
+    print("=" * 80)
+    print("axis=0")
+    print("=" * 80)
+    res_pdf_3 = pd.concat([pdf1, pdf4], join='inner', axis=0)
+    print(tb1.column_names, tb4.column_names)
+    res_tb_2 = Table.concat([tb1, tb4], join='inner', axis=0)
+    print(res_tb_2)
+    print(res_tb_2.index.index_values)
+    print(res_pdf_3)
+    print(res_pdf_3.index.values.tolist())
+    assert res_pdf_3.values.tolist() == res_tb_2.to_pandas().values.tolist()
+    assert res_tb_2.index.index_values == res_pdf_3.index.values.tolist()
 
 
 test_concat_op()
