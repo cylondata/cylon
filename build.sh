@@ -1,3 +1,5 @@
+#!/bin/bash
+
 SOURCE_DIR=$(pwd)/cpp
 CPP_BUILD="OFF"
 PYTHON_BUILD="OFF"
@@ -126,11 +128,7 @@ echo "=================================================================";
 }
 
 read_python_requirements(){
-  input="requirements.txt"
-  while IFS= read -r line
-  do
-    pip3 install "$line"
-  done < "$input"
+  pip3 install -r requirements.txt || exit 1
 }
 
 check_python_pre_requisites(){
@@ -172,7 +170,7 @@ build_cpp(){
       ${SOURCE_DIR} || exit 1
   make -j 4 || exit 1
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
-  printf "Cylon CPP Built Successufully!"
+  printf "Cylon CPP Built Successfully!"
   popd || exit 1
   print_line
 }
@@ -183,15 +181,25 @@ build_cpp_with_custom_arrow(){
   print_line
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
-  ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))')
-  ARROW_INC=$(python3 -c 'import pyarrow as pa; import os; print(os.path.join(os.path.dirname(pa.__file__), "include"))')
-  echo "#####################################################" $ARROW_LIB
-  echo "#####################################################" $ARROW_INC
+  ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
+  ARROW_INC=$(python3 -c 'import pyarrow as pa; import os; print(os.path.join(os.path.dirname(pa.__file__), "include"))')  || exit 1
+  echo "ARROW_LIB: $ARROW_LIB"
+  echo "ARROW_INC: $ARROW_INC"
+
+# sometimes pip pyarrow installation does not contain a libarrow.so file, but only libarrow.so.xxx.
+# then, create a symlink libarrow.so -->  libarrow.so.xxx
+  for SO_FILE in "${ARROW_LIB}/libarrow.so" "${ARROW_LIB}/libarrow_python.so"; do
+  if [ ! -f "$SO_FILE" ]; then
+    echo "$SO_FILE does not exist! Trying to create a symlink"
+    ln -sf "$(ls "$SO_FILE".*)" "$SO_FILE" || exit 1
+  fi
+  done
+
   CPPLINT_CMD=" "
   if [ "${STYLE_CHECK}" = "ON" ]; then
     CPPLINT_CMD=${CPPLINT_COMMAND}
   fi
-  echo "*************************************" ${SOURCE_DIR}
+  echo "SOURCE_DIR: ${SOURCE_DIR}"
   mkdir ${BUILD_PATH}
   pushd ${BUILD_PATH} || exit 1
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
@@ -202,7 +210,7 @@ build_cpp_with_custom_arrow(){
       || exit 1
   make -j 4 || exit 1
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
-  printf "Cylon CPP Built Successufully!"
+  printf "Cylon CPP Built Successfully!"
   popd || exit 1
   print_line
 }
@@ -225,10 +233,14 @@ build_pyarrow(){
 build_python_pyarrow() {
   print_line
   echo "Building Python"
-  # shellcheck disable=SC1090
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
   pip install pyarrow==2.0.0 || exit 1
+
+  ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
+  export LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
+  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+
   check_python_pre_requisites
   pushd python || exit 1
   pip3 uninstall -y pycylon
@@ -277,7 +289,11 @@ release_python() {
 export_info(){
   print_line
   echo "Add the following to your LD_LIBRARY_PATH";
-  echo "export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:"\$"LD_LIBRARY_PATH";
+  if [ "${PYTHON_WITH_PYARROW_BUILD}" = "ON" ]; then
+    echo "export LD_LIBRARY_PATH=${BUILD_PATH}/lib:\$LD_LIBRARY_PATH";
+  else
+    echo "export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:\$LD_LIBRARY_PATH";
+  fi
   print_line
 }
 
@@ -296,6 +312,10 @@ check_pycylon_installation(){
 }
 
 python_test(){
+  ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
+  export LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
+  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+
   python3 -m pytest python/test/test_all.py || exit 1
 }
 
@@ -344,8 +364,12 @@ fi
 
 
 if [ "${CYTHON_BUILD}" = "ON" ]; then
-	export_info	
-	build_python
+	export_info
+	if [ "${PYTHON_WITH_PYARROW_BUILD}" = "ON" ]; then
+	  build_python_pyarrow
+	else
+	  build_python
+	fi
 	check_pycylon_installation
 fi
 
