@@ -634,7 +634,10 @@ def test_concat_op():
     res_pdf_1 = pd.concat([pdf1, pdf2], join='inner', axis=1)
     print(res_pdf_1)
     print("-" * 80)
-    res_tb_1 = Table.concat([tb1, tb2], join='inner', axis=1)
+    tables = [tb1, tb2]
+    tb1_index_values = tb1.index.index_values
+    tb2_index_values = tb2.index.index_values
+    res_tb_1 = Table.concat(tables, join='inner', axis=1)
     print(res_tb_1)
     print("-" * 80)
     res_pdf_2 = pd.concat([pdf1, pdf2], join='inner', axis=1)
@@ -642,6 +645,19 @@ def test_concat_op():
     assert res_pdf_2.values.tolist() == res_tb_1.to_pandas().values.tolist()
     assert res_tb_1.index.index_values == res_pdf_2.index.values.tolist()
     print("-" * 80)
+    print("=" * 80)
+    print("axis=0")
+    print("=" * 80)
+    print(tb1.to_arrow())
+    print(tb2.to_arrow())
+    print(tb1.index.index_values, tb1_index_values)
+    print(tb2.index.index_values, tb2_index_values)
+    assert tb1.index.index_values.sort() == tb1_index_values.sort()
+    assert tb2.index.index_values.sort() == tb2_index_values.sort()
+
+    #res_tb_2 = Table.concat([tb1, tb2], join='inner', axis=0)
+    #print(res_tb_2)
+
 
 
 

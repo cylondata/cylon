@@ -62,6 +62,7 @@ import pandas as pd
 from typing import List, Any
 import warnings
 import operator
+import copy
 
 '''
 Cylon Table definition mapping 
@@ -1659,7 +1660,7 @@ cdef class Table:
         else:
             return str1
 
-    def drop(self, column_names: List[str]):
+    def drop(self, column_names: List[str], inplace=False):
         '''
         drop a column or list of columns from a Table
         Args:
@@ -1684,7 +1685,13 @@ cdef class Table:
             2      7     11
             3      8     12
         '''
-        return self.from_arrow(self.context, self.to_arrow().drop(column_names))
+        if inplace:
+            index = self.index.index_values
+            artb = self.to_arrow().drop(column_names)
+            self.initialize(artb, self.context)
+            self.set_index(index)
+        else:
+            return self.from_arrow(self.context, self.to_arrow().drop(column_names))
 
     def fillna(self, fill_value):
         '''
@@ -2326,7 +2333,11 @@ cdef class Table:
 
         """
         if axis == 0:
-            pass
+            res_table = tables[0]
+            if not isinstance(res_table, Table):
+                raise ValueError(f"Invalid object {res_table}, expected Table")
+            ctx = res_table.context
+            return Table.merge(ctx, tables)
         elif axis == 1:
             if not isinstance(tables[0], Table):
                 raise ValueError(f"Invalid object {tables[0]}, Table expected")
@@ -2334,18 +2345,24 @@ cdef class Table:
             res_table = tables[0]
             for i in range(1, len(tables)):
                 tb1 = tables[i]
+                if not isinstance(tb1, Table):
+                    raise ValueError(f"Invalid object {tb1}, expected Table")
                 tb1.reset_index()
                 res_table.reset_index()
                 if ctx.get_world_size() > 1:
-                    pass
+                    res_table = res_table.distributed_join(table=tb1, join_type=join,
+                                                      algorithm=algorithm,
+                                               left_on=[res_table.column_names[0]],
+                                               right_on=[tb1.column_names[0]])
                 else:
                     res_table = res_table.join(table=tb1, join_type=join, algorithm=algorithm,
                                                left_on=[res_table.column_names[0]],
                                                right_on=[tb1.column_names[0]])
-                    res_table.set_index(res_table.column_names[0], drop=True)
+                res_table.set_index(res_table.column_names[0], drop=True)
                 index_values = res_table.index.index_values
-                res_table = res_table.drop([tb1.column_names[0]])
-                res_table.set_index(index_values)
+                res_table.drop([tb1.column_names[0]], inplace=True)
+                tb1.set_index(tb1.column_names[0], drop=True)
+            tables[0].set_index(tables[0].column_names[0], drop=True)
             return res_table
         else:
             raise ValueError(f"Invalid axis {axis}, must 0 or 1")
