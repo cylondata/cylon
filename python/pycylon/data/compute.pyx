@@ -360,7 +360,6 @@ def compare_array_like_values(l_org_ar, l_cmp_ar, skip_null=True):
     s = a_compute.SetLookupOptions(value_set=l_cmp_ar, skip_null=skip_null)
     return a_compute.is_in(l_org_ar, options=s)
 
-
 cdef _broadcast(ar, broadcast_coefficient=1):
     # TODO: this method must be efficiently written using Cython
     '''
