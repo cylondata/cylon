@@ -250,9 +250,7 @@ Status WriteCSV(const std::shared_ptr<Table> &table,
    * @param tables
    * @return new merged table
    */
-Status Merge(std::shared_ptr<cylon::CylonContext> &ctx,
-             const std::vector<std::shared_ptr<cylon::Table>> &tables,
-             std::shared_ptr<Table> &tableOut);
+Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &tables, std::shared_ptr<Table> &tableOut);
 
 /**
    * Do the join with the right table

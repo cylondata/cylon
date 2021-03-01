@@ -156,7 +156,7 @@ cdef class Table:
         self.table_shd_ptr.get().IsRetain()
 
     @staticmethod
-    def merge(ctx, tables: List[Table]) -> Table:
+    def merge(tables: List[Table]) -> Table:
         """
         Merging Two PyCylon tables
         @param ctx: PyCylon context
@@ -167,12 +167,11 @@ cdef class Table:
         cdef shared_ptr[CTable] curTable
         cdef shared_ptr[CTable] output
         cdef CStatus status
-        cdef shared_ptr[CCylonContext] sp_ctx = pycylon_unwrap_context(ctx)
         if tables:
             for table in tables:
                 curTable = pycylon_unwrap_table(table)
                 ctables.push_back(curTable)
-            status = Merge(sp_ctx, ctables, output)
+            status = Merge(ctables, output)
             if status.is_ok():
                 return pycylon_wrap_table(output)
             else:
