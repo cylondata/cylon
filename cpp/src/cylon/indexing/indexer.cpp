@@ -46,7 +46,7 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
 
-  LOG(INFO) << "Set Index for location output with Non-RangeIndex";
+  //LOG(INFO) << "Set Index for location output with Non-RangeIndex";
   auto index_arr = index->GetIndexArray();
   arrow::Int64Builder builder(pool);
   status = builder.AppendValues(sub_index_locations);
@@ -282,7 +282,7 @@ cylon::Status GetTableByLocIndex(const void *indices,
                                  std::shared_ptr<cylon::BaseIndex> &index,
                                  std::shared_ptr<cylon::Table> &output,
                                  std::vector<int64_t> &filter_indices) {
-  LOG(INFO) << "GetTableByLocIndex";
+  //LOG(INFO) << "GetTableByLocIndex";
   cylon::Status status_build;
   auto ctx = input_table->GetContext();
   auto input_artb = input_table->get_table();

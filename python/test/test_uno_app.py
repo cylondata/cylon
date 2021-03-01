@@ -446,4 +446,59 @@ def test_read_partition_from_csv():
         print(reader)
 
 
-test_read_partition_from_csv()
+def test_isin_column():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+
+    tb1.set_index(tb1.column_names[0], drop=True)
+    pdf.set_index(pdf.columns[0], drop=True, inplace=True)
+
+    print(tb1)
+    print(pdf)
+
+    isin_values = [10, 20, 30, 5, 2, 8]
+
+    tbx = tb1['b'].isin(isin_values)
+    pdfx = pdf['b'].isin(isin_values)
+
+    print(tbx)
+
+    print(pdfx)
+
+    tb_list = tbx.to_pandas().values.flatten().tolist()
+    pd_list = pdfx.values.tolist()
+
+    assert tb_list == pd_list
+
+    print(tb_list)
+    print(pd_list)
+
+
+def test_loc_with_list():
+    ctx = CylonContext(config=None, distributed=False)
+
+    dataset = []
+    num_rows = 1_000_000
+    num_columns = 2
+    filter_size = 100_000
+
+    data = np.random.randn(num_rows)
+    filter_vals = np.random.randn(filter_size).tolist()
+
+    pdf = pd.DataFrame({'data{}'.format(i): data
+                        for i in range(num_columns)})
+
+    tb1 = Table.from_pandas(ctx, pdf)
+
+    tb1.set_index(tb1.column_names[0], drop=True)
+    pdf.set_index(pdf.columns[0], drop=True, inplace=True)
+
+    print(tb1.shape, pdf.shape)
+
+    tb1.loc[filter_vals]
+
+
+test_loc_with_list()
