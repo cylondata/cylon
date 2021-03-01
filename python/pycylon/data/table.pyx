@@ -1136,6 +1136,7 @@ cdef class Table:
             1      4      8     12
 
         """
+        # TODO: Indexes must be handled
         py_arrow_table = self.to_arrow().combine_chunks()
         if isinstance(key, slice):
             return self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
@@ -1151,6 +1152,7 @@ cdef class Table:
             chunked_arrays = []
             selected_columns = []
             column_headers = self.column_names
+            index_values = self.index.index_values
             for column_name in key:
                 index = -1
                 if isinstance(column_name, str):
@@ -1159,8 +1161,10 @@ cdef class Table:
                     index = key
                 chunked_arrays.append(py_arrow_table.column(index).chunk(0))
                 selected_columns.append(column_headers[index])
-            return self.from_arrow(self.context, pa.Table.from_arrays(chunked_arrays,
+            new_table = self.from_arrow(self.context, pa.Table.from_arrays(chunked_arrays,
                                                                       selected_columns))
+            new_table.set_index(index_values)
+            return new_table
         elif self._is_pycylon_table(key):
             return self._table_from_mask(key)
         else:
