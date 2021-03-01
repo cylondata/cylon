@@ -82,8 +82,7 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus Project(shared_ptr[CTable] & table, const vector[int] & project_columns, shared_ptr[
             CTable] & output)
 
-    CStatus Merge(shared_ptr[CCylonContext] & ctx, vector[shared_ptr[CTable]] & tables,
-                  shared_ptr[CTable] output)
+    CStatus Merge(vector[shared_ptr[CTable]] & tables, shared_ptr[CTable] output)
 
     CStatus Join(shared_ptr[CTable] & left, shared_ptr[CTable] & right, CJoinConfig
     join_config, shared_ptr[CTable] & output)

@@ -184,7 +184,7 @@ Status CMerge(std::shared_ptr<cylon::CylonContext> &ctx,
     tables.push_back(GetTable(*it));
   }
   std::shared_ptr<cylon::Table> out;
-  cylon::Status status = Merge(ctx, tables, out);
+  cylon::Status status = Merge(tables, out);
   if (status.is_ok()) {
     PutTable(merged_tab, out);
   }
