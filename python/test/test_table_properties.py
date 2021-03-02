@@ -352,6 +352,30 @@ def test_math_ops_for_scalar():
         assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
 
 
+def test_math_ops_for_table_values():
+    pdf = DataFrame({'0': [1, 2, 3, 4], '1': [5, 6, 7, 9], '2': [1., 2., 3., 4.]})
+    ctx: CylonContext = CylonContext()
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+
+    from operator import add, sub, mul, truediv
+    ops = [add, sub, mul, truediv]
+
+    for op in ops:
+        # test column division
+        cn_res = op(cn_tb['0'], cn_tb['0'])
+        pd_res = op(pdf['0'], pdf['0'])
+
+        # pandas series.values returns an array, whereas dataframe.values list of lists. Hence it
+        # needs to be flattened to compare
+        assert pd_res.values.tolist() == cn_res.to_pandas().values.flatten().tolist()
+
+        # test table division
+        cn_res2 = op(cn_tb, cn_tb['0'])
+        pd_res2 = getattr(pdf, op.__name__)(pdf['0'], axis=0)
+
+        assert pd_res2.values.tolist() == cn_res2.to_pandas().values.tolist()
+
+
 def test_math_i_ops_for_scalar():
     """
     TODO: Enhance Test case and functionality
