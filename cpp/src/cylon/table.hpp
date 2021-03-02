@@ -15,26 +15,28 @@
 #ifndef CYLON_SRC_IO_TABLE_H_
 #define CYLON_SRC_IO_TABLE_H_
 
+#include <glog/logging.h>
+
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <glog/logging.h>
-#include "io/csv_read_config.hpp"
+
 #include "indexing/index.hpp"
+#include "io/csv_read_config.hpp"
 
 #ifdef BUILD_CYLON_PARQUET
 #include "io/parquet_config.hpp"
 #endif
 
-#include "status.hpp"
-#include "ctx/cylon_context.hpp"
-#include "util/uuid.hpp"
 #include "column.hpp"
-#include "join/join_config.hpp"
-#include "join/join.hpp"
+#include "ctx/cylon_context.hpp"
 #include "io/csv_write_config.hpp"
+#include "join/join.hpp"
+#include "join/join_config.hpp"
 #include "row.hpp"
+#include "status.hpp"
+#include "util/uuid.hpp"
 
 namespace cylon {
 
@@ -47,8 +49,7 @@ class Table {
    * Tables can only be created using the factory methods, so the constructor is private
    */
   Table(std::shared_ptr<arrow::Table> &tab, std::shared_ptr<cylon::CylonContext> &ctx)
-      : ctx(ctx), table_(tab),
-        columns_(std::vector<std::shared_ptr<Column>>(tab->num_columns())) {
+      : ctx(ctx), table_(tab), columns_(std::vector<std::shared_ptr<Column>>(tab->num_columns())) {
     const int num_cols = table_->num_columns();
     for (int i = 0; i < num_cols; i++) {
       const auto f = table_->field(i);
@@ -106,15 +107,9 @@ class Table {
    * @param headers the names of custom header
    * @return true if print is successful
    */
-  Status PrintToOStream(
-      int col1,
-      int col2,
-      int row1,
-      int row2,
-      std::ostream &out,
-      char delimiter = ',',
-      bool use_custom_header = false,
-      const std::vector<std::string> &headers = {});
+  Status PrintToOStream(int col1, int col2, int row1, int row2, std::ostream &out,
+                        char delimiter = ',', bool use_custom_header = false,
+                        const std::vector<std::string> &headers = {});
 
   /*END OF TRANSFORMATION FUNCTIONS*/
 
@@ -170,9 +165,7 @@ class Table {
   /**
    * Set to true to free the memory of this table when it is not needed
    */
-  void retainMemory(bool retain) {
-    retain_ = retain;
-  }
+  void retainMemory(bool retain) { retain_ = retain; }
 
   /**
    * Returns if this table retains data after any operation performed on it
@@ -197,9 +190,10 @@ class Table {
 
   std::shared_ptr<BaseIndex> GetIndex();
 
-  Status ResetIndex(bool drop=false);
+  Status ResetIndex(bool drop = false);
 
-  Status AddColumn(int64_t position, std::string column_name, std::shared_ptr<arrow::Array> &input_column);
+  Status AddColumn(int64_t position, std::string column_name,
+                   std::shared_ptr<arrow::Array> &input_column);
 
  private:
   /**
@@ -214,13 +208,14 @@ class Table {
 };
 
 /**
-   * Create a table by reading a csv file
-   * @param path file path
-   * @return a pointer to the table
-   */
-Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
-               std::shared_ptr<Table> &tableOut,
-               const cylon::io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
+ * Create a table by reading a csv file
+ * @param path file path
+ * @return a pointer to the table
+ */
+Status FromCSV(
+    std::shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
+    std::shared_ptr<Table> &tableOut,
+    const cylon::io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
 
 /**
  * Read multiple CSV files into multiple tables. If threading is enabled, the tables will be read
@@ -241,9 +236,9 @@ Status FromCSV(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std:
  * @param path file path
  * @return the status of the operation
  */
-Status WriteCSV(const std::shared_ptr<Table> &table,
-                const std::string &path,
-                const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
+Status WriteCSV(
+    const std::shared_ptr<Table> &table, const std::string &path,
+    const cylon::io::config::CSVWriteOptions &options = cylon::io::config::CSVWriteOptions());
 
 /**
    * Merge the set of tables to create a single table
@@ -253,16 +248,15 @@ Status WriteCSV(const std::shared_ptr<Table> &table,
 Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &tables, std::shared_ptr<Table> &tableOut);
 
 /**
-   * Do the join with the right table
-   * @param left the left table
-   * @param right the right table
-   * @param joinConfig the join configurations
-   * @param output the final table
-   * @return success
-   */
+ * Do the join with the right table
+ * @param left the left table
+ * @param right the right table
+ * @param joinConfig the join configurations
+ * @param output the final table
+ * @return success
+ */
 Status Join(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-            cylon::join::config::JoinConfig join_config,
-            std::shared_ptr<Table> &output);
+            cylon::join::config::JoinConfig join_config, std::shared_ptr<Table> &output);
 
 /**
  * Similar to local join, but performs the join in a distributed fashion
@@ -273,8 +267,7 @@ Status Join(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
  * @return <cylon::Status>
  */
 Status DistributedJoin(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-                       cylon::join::config::JoinConfig join_config,
-                       std::shared_ptr<Table> &output);
+                       cylon::join::config::JoinConfig join_config, std::shared_ptr<Table> &output);
 
 /**
  * Performs union with the passed table
@@ -303,8 +296,8 @@ Status DistributedUnion(std::shared_ptr<Table> &first, std::shared_ptr<Table> &s
  * @param output
  * @return <cylon::Status>
  */
-Status Subtract(std::shared_ptr<Table> &first,
-                std::shared_ptr<Table> &second, std::shared_ptr<Table> &out);
+Status Subtract(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
+                std::shared_ptr<Table> &out);
 
 /**
  * Similar to local subtract/difference, but performs in a distributed fashion
@@ -323,8 +316,8 @@ Status DistributedSubtract(std::shared_ptr<Table> &left, std::shared_ptr<Table> 
  * @param output
  * @return <cylon::Status>
  */
-Status Intersect(std::shared_ptr<Table> &first,
-                 std::shared_ptr<Table> &second, std::shared_ptr<Table> &output);
+Status Intersect(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
+                 std::shared_ptr<Table> &output);
 
 /**
  * Similar to local intersection, but performs in a distributed fashion
@@ -352,25 +345,42 @@ Status Shuffle(std::shared_ptr<cylon::Table> &table, const std::vector<int> &has
  * @param no_of_partitions number partitions
  * @return new set of tables each with the new partition
  */
-Status HashPartition(std::shared_ptr<cylon::Table> &table,
-                     const std::vector<int> &hash_columns,
+Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_columns,
                      int no_of_partitions,
                      std::unordered_map<int, std::shared_ptr<cylon::Table>> *output);
 
 /**
- * Sort the table according to the given column, this is a local sort (if the table has chunked columns, they will
- * be merged in the output table)
+ * Sort the table according to the given column, this is a local sort (if the table has chunked
+ * columns, they will be merged in the output table)
  * @param sort_column
  * @return new table sorted according to the sort column
  */
-Status Sort(std::shared_ptr<cylon::Table> &table,
-            int sort_column,
-            std::shared_ptr<Table> &output,
+Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_ptr<Table> &output,
             bool ascending = true);
 
 /**
- * Sort the table according to the given column, this is a local sort (if the table has chunked columns, they will
- * be merged in the output table)
+ * Sort the table according to the given set of columns, this is a local sort (if the table has
+ * chunked columns, they will be merged in the output table)
+ * @param sort_column
+ * @return new table sorted according to the sort columns
+ */
+Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &sort_columns,
+            std::shared_ptr<cylon::Table> &out, bool ascending);
+
+/**
+ * Sort the table according to the given set of columns and respective ordering direction, this is a
+ * local sort (if the table has chunked columns, they will be merged in the output table).
+ *
+ * Sort direction 'true' indicates ascending ordering and false indicate descending ordering.
+ * @param sort_column
+ * @return new table sorted according to the sort columns
+ */
+Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &sort_columns,
+            std::shared_ptr<cylon::Table> &out, const std::vector<bool> &sort_direction);
+
+/**
+ * Sort the table according to the given column, this is a local sort (if the table has chunked
+ * columns, they will be merged in the output table)
  * @param sort_column
  * @return new table sorted according to the sort column
  */
@@ -380,13 +390,10 @@ struct SortOptions {
   uint32_t num_bins;
   uint64_t num_samples;
 
-  static SortOptions Defaults() {
-    return {true, 0, 0};
-  }
+  static SortOptions Defaults() { return {true, 0, 0}; }
 };
 
-Status DistributedSort(std::shared_ptr<cylon::Table> &table,
-                       int sort_column,
+Status DistributedSort(std::shared_ptr<cylon::Table> &table, int sort_column,
                        std::shared_ptr<Table> &output,
                        SortOptions sort_options = SortOptions::Defaults());
 
@@ -397,8 +404,7 @@ Status DistributedSort(std::shared_ptr<cylon::Table> &table,
  * @param output
  * @return
  */
-Status Select(std::shared_ptr<cylon::Table> &table,
-              const std::function<bool(cylon::Row)> &selector,
+Status Select(std::shared_ptr<cylon::Table> &table, const std::function<bool(cylon::Row)> &selector,
               std::shared_ptr<Table> &output);
 
 /**
@@ -408,8 +414,7 @@ Status Select(std::shared_ptr<cylon::Table> &table,
  * @param output
  * @return
  */
-Status Project(std::shared_ptr<cylon::Table> &table,
-               const std::vector<int32_t> &project_columns,
+Status Project(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &project_columns,
                std::shared_ptr<Table> &output);
 
 /**
@@ -419,51 +424,43 @@ Status Project(std::shared_ptr<cylon::Table> &table,
  * @param out
  * @return Status
  */
-Status Unique(std::shared_ptr<cylon::Table> &in,
-              const std::vector<int> &cols,
-              std::shared_ptr<cylon::Table> &out,
-              bool first = true);
+Status Unique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
+              std::shared_ptr<cylon::Table> &out, bool first = true);
 
-Status DistributedUnique(std::shared_ptr<cylon::Table> &in,
-                         const std::vector<int> &cols,
-                         std::shared_ptr<cylon::Table> &out
-);
+Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
+                         std::shared_ptr<cylon::Table> &out);
 
 #ifdef BUILD_CYLON_PARQUET
 /**
-* Create a table by reading a parquet file
-* @param path file path
-* @return a pointer to the table
-*/
-Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx,
-                   const std::string &path,
+ * Create a table by reading a parquet file
+ * @param path file path
+ * @return a pointer to the table
+ */
+Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
                    std::shared_ptr<Table> &tableOut);
 /**
-* Read multiple parquet files into multiple tables. If threading is enabled, the tables will be read
-* in parallel
-* @param ctx
-* @param paths
-* @param tableOuts
-* @param options
-* @return
-*/
-Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx,
-                   const std::vector<std::string> &paths,
+ * Read multiple parquet files into multiple tables. If threading is enabled, the tables will be
+ * read in parallel
+ * @param ctx
+ * @param paths
+ * @param tableOuts
+ * @param options
+ * @return
+ */
+Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
                    const std::vector<std::shared_ptr<Table> *> &tableOuts,
                    io::config::ParquetOptions options = cylon::io::config::ParquetOptions());
 /**
-* Write the table as a parquet file
-* @param path file path
-* @return the status of the operation
-*/
-Status WriteParquet(std::shared_ptr<cylon::Table> &table,
-                    std::shared_ptr<cylon::CylonContext> &ctx,
-                    const std::string &path,
-                    const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
-#endif //BUILD_CYLON_PARQUET
+ * Write the table as a parquet file
+ * @param path file path
+ * @return the status of the operation
+ */
+Status WriteParquet(
+    std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::CylonContext> &ctx,
+    const std::string &path,
+    const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
+#endif  // BUILD_CYLON_PARQUET
 
 }  // namespace cylon
 
-
-
-#endif //CYLON_SRC_IO_TABLE_H_
+#endif  // CYLON_SRC_IO_TABLE_H_

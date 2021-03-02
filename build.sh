@@ -154,6 +154,7 @@ build_cpp(){
   echo "Building CPP in ${BUILD_MODE} mode"
   print_line
   if [ "${PYTHON_BUILD}" = "ON" ]; then
+    echo "Using Python environment at [${PYTHON_ENV_PATH}]"
     source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
     read_python_requirements
   fi

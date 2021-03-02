@@ -15,8 +15,8 @@
 #ifndef CYLON_SRC_UTIL_ARROW_UTILS_HPP_
 #define CYLON_SRC_UTIL_ARROW_UTILS_HPP_
 
-#include <arrow/table.h>
 #include <arrow/compute/kernel.h>
+#include <arrow/table.h>
 
 namespace cylon {
 namespace util {
@@ -25,6 +25,12 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table,
                         int64_t sort_column_index,
                         arrow::MemoryPool *memory_pool,
                         std::shared_ptr<arrow::Table> &sorted_table, bool ascending = true);
+
+arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
+                                    const std::vector<int64_t> &sort_column_indices,
+                                    arrow::MemoryPool *memory_pool,
+                                    std::shared_ptr<arrow::Table> &sorted_table,
+                                    const std::vector<bool> &sort_column_directions);
 
 arrow::Status copy_array_by_indices(const std::vector<int64_t> &indices,
                                     const std::shared_ptr<arrow::Array> &source_array,
@@ -61,4 +67,4 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &array,
 
 }  // namespace util
 }  // namespace cylon
-#endif //CYLON_SRC_UTIL_ARROW_UTILS_HPP_
+#endif  //CYLON_SRC_UTIL_ARROW_UTILS_HPP_

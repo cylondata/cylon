@@ -72,3 +72,14 @@ tmp/
 # java
 java/target
 java/src/main/native/include
+
+# vscode
+**/.vscode
+.editorconfig
+
+# Python env
+env/
+
+# Pycylon
+python/pycylon/**/*.cpp
+python/pycylon/**/*.h

@@ -18,6 +18,8 @@ Run test:
 """
 
 import pyarrow as pa
+import pandas as pd
+import numpy as np
 
 import pycylon as cn
 from pycylon import CylonContext
@@ -30,14 +32,15 @@ def test_sorting():
     ar2 = pa.array(['ad', 'ac', 'ac', 'ab', 'a'])
     ar3 = pa.array([4., 2., 1., 4., 3.])
 
-    pa_t: pa.Table = pa.Table.from_arrays([ar1, ar2, ar3], names=['col1', 'col2', 'col3'])
+    pa_t: pa.Table = pa.Table.from_arrays(
+        [ar1, ar2, ar3], names=['col1', 'col2', 'col3'])
 
     cn_t = cn.Table.from_arrow(ctx, pa_t)
 
     def do_sort(col, ascending):
         srt = cn_t.sort(col, ascending)
         arr = srt.to_pydict()[col]
-        print(srt.to_pydict())
+        print(srt)
         for i in range(len(arr) - 1):
             if ascending:
                 assert arr[i] <= arr[i + 1]
@@ -49,3 +52,32 @@ def test_sorting():
             do_sort(c, asc)
 
 
+def test_multicol():
+    # cylon
+    ctx: CylonContext = CylonContext()
+
+    c1 = np.random.randint(10, size=100)
+    c2 = np.random.randint(10, size=100)
+
+    ar1 = pa.array(c1)
+    ar2 = pa.array(c2)
+
+    pa_t: pa.Table = pa.Table.from_arrays(
+        [ar1, ar2], names=['col1', 'col2'])
+
+    cn_t = cn.Table.from_arrow(ctx, pa_t)
+
+    cn_srt = cn_t.sort(by=['col1', 'col2'], ascending=[True, False])
+
+    # pandas 
+
+    df = pd.DataFrame({
+        'col1': c1,
+        'col2': c2
+    }, columns=['col1', 'col2'])
+
+    df = df.sort_values(by=['col1', 'col2'], ascending=[True, False])
+
+    for i in range(cn_srt.row_count):
+        for j in range(cn_srt.column_count):
+            assert cn_srt[i][j] == df.loc[i][j]

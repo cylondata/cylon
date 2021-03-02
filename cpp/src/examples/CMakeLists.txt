@@ -30,6 +30,7 @@ cylon_add_exe(unique_example)
 cylon_add_exe(unique_bench_example)
 cylon_add_exe(indexing_example)
 cylon_add_exe(sorting_example)
+cylon_add_exe(multicolumn_sorting_example)
 
 if (CYLON_PARQUET)
     cylon_add_exe(parquet_test)
