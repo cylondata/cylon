@@ -491,7 +491,7 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
                                       const std::shared_ptr<arrow::Table> &table,
                                       const std::vector<int64_t> &columns,
                                       std::shared_ptr<arrow::UInt64Array> &offsets) {
-  SortIndicesMultiColumns(memory_pool, table, columns, offsets,
+  return SortIndicesMultiColumns(memory_pool, table, columns, offsets,
                           std::vector<bool>(columns.size(), true));
 }
 
