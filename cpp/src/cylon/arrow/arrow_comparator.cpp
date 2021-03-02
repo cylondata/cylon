@@ -23,6 +23,8 @@ class NumericArrowComparator : public ArrowComparator {
     auto reader1 = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(array1);
     auto reader2 = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(array2);
     auto diff = reader1->Value(index1) - reader2->Value(index2);
+
+    // source : https://graphics.stanford.edu/~seander/bithacks.html#CopyIntegerSign
     return (diff > 0) - (diff < 0);
   }
 };
@@ -259,6 +261,7 @@ RowComparator::RowComparator(std::shared_ptr<cylon::CylonContext> &ctx,
   this->eq = eq;
   this->hs = hs;
 }
+
 bool RowComparator::operator()(const std::pair<int8_t, int64_t> &record1,
                                const std::pair<int8_t, int64_t> &record2) const {
   (*this->eq)++;

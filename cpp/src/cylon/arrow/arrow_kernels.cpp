@@ -252,7 +252,7 @@ class NumericIndexSortKernel : public IndexSortKernel {
   arrow::Status Sort(const std::shared_ptr<arrow::Array> &values,
                      std::shared_ptr<arrow::UInt64Array> &offsets) const override {
     auto array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(values);
-    array->GetView(0);
+
     const T *left_data = array->raw_values();
 
     if (ascending) {
@@ -446,7 +446,7 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
     return arrow::Status(arrow::StatusCode::Invalid,
                          "No of sort columns and no of sort direction indicators mismatch");
   }
-  
+
   std::vector<std::shared_ptr<ArrayIndexComparator>> comparators;
   comparators.reserve(columns.size());
   int64_t i = 0;
@@ -485,6 +485,14 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
 
   offsets = std::make_shared<arrow::UInt64Array>(table->num_rows(), indices_buf);
   return arrow::Status::OK();
+}
+
+arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
+                                      const std::shared_ptr<arrow::Table> &table,
+                                      const std::vector<int64_t> &columns,
+                                      std::shared_ptr<arrow::UInt64Array> &offsets) {
+  SortIndicesMultiColumns(memory_pool, table, columns, offsets,
+                          std::vector<bool>(columns.size(), true));
 }
 
 // STREAMING SPLIT-----------------------------------------------------------------------------
