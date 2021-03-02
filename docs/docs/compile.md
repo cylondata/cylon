@@ -25,7 +25,7 @@ the path if you're installing in the system path.
 ### Create a virtual environment
 
 ```
-cd  /home/<username>/cylon
+cd  $HOME/cylon
 python3 -m venv ENV
 source ENV/bin/activate
 ```
@@ -33,7 +33,7 @@ source ENV/bin/activate
 Here after we assume your Python ENV path is,
 
 ```bash
- /home/<username>/cylon/ENV
+ $HOME/cylon/ENV
 ```
 
 ```txt
@@ -70,29 +70,32 @@ Uninstall it before running the setup.
   ```
 ### Installing with package manager
 
+```bash
 sudo apt install libopenmpi-dev
+```
 
-## Building C++
+## Building Cylon From Source
 
 We have provided a build script to make the build process easier. It is found in Cylon source root directory.
+Please note that Cylon will build Apache Arrow (both `libarrow` and `pyarrow`) alongside Cylon.  
 
-## Build C++, Python Cylon APIs
+### Build C++ APIs
 
 ```bash
-./build.sh -pyenv <path to your environment> -bpath <path to the cmake build directory> [--release | --debug]
+./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --cpp [--release | --debug]
 ```
 
 Example:
 
 ```bash
-./build.sh -pyenv /home/<username>/cylon/ENV -bpath /home/<username>/cylon/build --cpp --release
+./build.sh -pyenv $HOME/cylon/ENV -bpath $HOME/cylon/build --cpp --release
 ```
 
 ```txt
-Note: The default build mode is debug
+Note: The default build mode is release 
 ```
 
-## Python Support
+### Build Python APIs
 
 Cylon provides Python APIs with Cython.
 
@@ -101,25 +104,46 @@ If you'have already built cpp and want to compile the your changes to the API,
 do the following,
 
 ```bash
-./build.sh -pyenv /home/<username>/cylon/ENV -bpath /home/<username>/cylon/build --python
+./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --python
 ```
 
 Note: You only need to do `--python` just once after the initial C++ build. If you develop the
 Cython or Python APIs, use `--cython` flag instead.
 
-### Example
+### Updating `LD_LIBRARY_PATH`
 
 Before running the code in the base path of the cloned repo
 run the following command. Or add this to your `bashrc`.
 
 ```bash
-export LD_LIBRARY_PATH=/home/<username>/cylon/build/arrow/install/lib:/home/<username>/twisterx
-/build/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=<path to cmake build dir>/arrow/install/lib:<path to cmake build dir>/lib:$LD_LIBRARY_PATH
 ```
 
-4. Test Python API
+### Running Tests 
 
+You can run Cylon tests as follows. 
+
+For C++ tests 
+```bash
+./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --cpp --test
+```
+
+For Python tests 
+```bash
+./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --python --pytest
+```
+
+## Building Cylon using PyArrow from Python-pip
+
+Instead of building Cylon and Apache Arrow together, you can use [`pyarrow` distribution from`pip`](https://pypi.org/project/pyarrow/) as follows.
+This will build Cylon C++ and Python APIs.
 
 ```bash
-python3 python/test/test_pycylon.py
+python3 -m venv <path to your env>
+source <path to your env>/bin/activate 
+pip install pyarrow==2.0.0
+
+cd <cylon source dir>
+./build.sh -pyenv <path to your env> -bpath <path to cmake build dir> --python_with_pyarrow  [--test | --pytest]
 ```
+

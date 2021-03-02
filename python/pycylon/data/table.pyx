@@ -177,7 +177,7 @@ cdef class Table:
         self.table_shd_ptr.get().IsRetain()
 
     @staticmethod
-    def merge(ctx, tables: List[Table]) -> Table:
+    def merge(tables: List[Table]) -> Table:
         """
         Merging Two PyCylon tables
         @param ctx: PyCylon context
@@ -188,12 +188,11 @@ cdef class Table:
         cdef shared_ptr[CTable] curTable
         cdef shared_ptr[CTable] output
         cdef CStatus status
-        cdef shared_ptr[CCylonContext] sp_ctx = pycylon_unwrap_context(ctx)
         if tables:
             for table in tables:
                 curTable = pycylon_unwrap_table(table)
                 ctables.push_back(curTable)
-            status = Merge(sp_ctx, ctables, output)
+            status = Merge(ctables, output)
             if status.is_ok():
                 return pycylon_wrap_table(output)
             else:
@@ -2318,6 +2317,17 @@ cdef class Table:
 
         """
         return PyLocIndexer(self, "iloc")
+
+
+    def iterrows(self):
+        data_dict = self.to_pydict()
+        index_values = self.index.index_values
+        for index_id in range(self.row_count):
+            row = []
+            for column in data_dict:
+                row.append(data_dict[column][index_id])
+            yield index_values[index_id], row
+
 
 
 class EmptyTable(Table):

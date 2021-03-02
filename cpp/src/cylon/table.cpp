@@ -266,27 +266,27 @@ void Table::Print(int row1, int row2, int col1, int col2) {
   PrintToOStream(col1, col2, row1, row2, std::cout);
 }
 
-Status Merge(std::shared_ptr<cylon::CylonContext> &ctx,
-             const std::vector<std::shared_ptr<cylon::Table>> &ctables,
-             std::shared_ptr<Table> &tableOut) {
-  std::vector<std::shared_ptr<arrow::Table>> tables;
-  for (auto it = ctables.begin(); it < ctables.end(); it++) {
-    std::shared_ptr<arrow::Table> arrow;
-    (*it)->ToArrowTable(arrow);
-    tables.push_back(arrow);
-  }
-  arrow::Result<std::shared_ptr<arrow::Table>> concat_res = arrow::ConcatenateTables(tables);
-  if (concat_res.ok()) {
-    arrow::Result<std::shared_ptr<arrow::Table>> combined_res =
-        concat_res.ValueOrDie()->CombineChunks(cylon::ToArrowPool(ctx));
-    if (!combined_res.ok()) {
-      return Status(static_cast<int>(combined_res.status().code()),
-                    combined_res.status().message());
+Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &ctables, std::shared_ptr<Table> &tableOut) {
+  if (!ctables.empty()) {
+    std::vector<std::shared_ptr<arrow::Table>> tables;
+    tables.reserve(ctables.size());
+    for (const auto &t:ctables) {
+      std::shared_ptr<arrow::Table> arrow;
+      t->ToArrowTable(arrow);
+      tables.push_back(arrow);
     }
+
+    auto ctx = ctables[0]->GetContext();
+    const auto &concat_res = arrow::ConcatenateTables(tables);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(concat_res.status())
+
+    auto combined_res = concat_res.ValueOrDie()->CombineChunks(cylon::ToArrowPool(ctx));
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(combined_res.status())
+
     tableOut = std::make_shared<cylon::Table>(combined_res.ValueOrDie(), ctx);
     return Status::OK();
   } else {
-    return Status(static_cast<int>(concat_res.status().code()), concat_res.status().message());
+    return Status(Code::Invalid, "empty vector passed onto merge");
   }
 }
 
