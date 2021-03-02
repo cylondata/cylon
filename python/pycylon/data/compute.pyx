@@ -228,6 +228,8 @@ cpdef division_op(table:Table, op, value):
             # scalar casting is inexpensive, hence there's no check!
             res_array.append(op(chunk_arr.cast(pa.float64()), pa.scalar(value, pa.float64())))
     elif isinstance(value, Table):
+        if value.row_count != table.row_count:
+            raise ValueError("Math operation table lengths do not match")
         value_col = value.to_arrow()[0]  # get first column
         for chunk_arr in ar_tb.itercolumns():
             res_array.append(op(chunk_arr.cast(pa.float64()), value_col.cast(pa.float64())))
@@ -259,6 +261,8 @@ cpdef math_op(table:Table, op, value):
             # scalar casting is inexpensive, hence there's no check!
             res_array.append(op(chunk_arr, pa.scalar(value, chunk_arr.type)))
     elif isinstance(value, Table):
+        if value.row_count != table.row_count:
+            raise ValueError("Math operation table lengths do not match")
         value_col = value.to_arrow()[0]  # get first column
         for chunk_arr in ar_tb.itercolumns():
             if value_col.type.id != chunk_arr.type.id:
