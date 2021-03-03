@@ -31,6 +31,12 @@ arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
                                     std::shared_ptr<arrow::Table> &sorted_table,
                                     const std::vector<bool> &sort_column_directions);
 
+arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
+                                    const std::vector<int64_t> &sort_column_indices,
+                                    arrow::MemoryPool *memory_pool,
+                                    std::shared_ptr<arrow::Table> &sorted_table,
+                                    const std::vector<bool> &sort_column_directions);
+
 arrow::Status copy_array_by_indices(const std::vector<int64_t> &indices,
                                     const std::shared_ptr<arrow::Array> &source_array,
                                     std::shared_ptr<arrow::Array> *copied_array,
