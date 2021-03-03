@@ -293,7 +293,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
     if (agg_fn == nullptr) return Status(Code::ExecutionError, "unable to find aggregation fn");
 
     RETURN_CYLON_STATUS_IF_FAILED(agg_fn(pool,
-                                         atable->column(p.first)->chunk(0),
+                                         cylon::util::GetChunkOrEmptyArray(atable->column(p.first), 0),
                                          atable->field(p.first),
                                          group_ids,
                                          unique_groups,

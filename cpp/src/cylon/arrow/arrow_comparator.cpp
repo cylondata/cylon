@@ -14,6 +14,8 @@
 
 #include "arrow_comparator.hpp"
 
+#include <glog/logging.h>
+
 namespace cylon {
 
 template <typename ARROW_TYPE>
@@ -188,6 +190,13 @@ class BinaryRowIndexComparator : public ArrayIndexComparator {
   std::shared_ptr<arrow::BinaryArray> casted_arr;
 };
 
+class EmptyIndexComparator : public ArrayIndexComparator {
+ public:
+  explicit EmptyIndexComparator() {}
+
+  int compare(int64_t index1, int64_t index2) const override { return 0; }
+};
+
 template <bool ASC>
 class FixedSizeBinaryRowIndexComparator : public ArrayIndexComparator {
  public:
@@ -281,8 +290,12 @@ TableRowIndexComparator::TableRowIndexComparator(const std::shared_ptr<arrow::Ta
     : idx_comparators_ptr(
           std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>(col_ids.size())) {
   for (size_t c = 0; c < col_ids.size(); c++) {
-    const std::shared_ptr<arrow::Array> &array = table->column(col_ids.at(c))->chunk(0);
-    this->idx_comparators_ptr->at(c) = CreateArrayIndexComparator(array);
+    if (table->column(col_ids.at(c))->num_chunks() == 0) {
+      this->idx_comparators_ptr->at(c) = std::make_shared<EmptyIndexComparator>();
+    } else {
+      const std::shared_ptr<arrow::Array> &array = table->column(col_ids.at(c))->chunk(0);
+      this->idx_comparators_ptr->at(c) = CreateArrayIndexComparator(array);
+    }
   }
 }
 bool TableRowIndexComparator::operator()(const int64_t &record1, const int64_t &record2) const {

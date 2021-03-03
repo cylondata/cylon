@@ -228,5 +228,15 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &arr, uint64_t num
   return SampleArray(std::make_shared<arrow::ChunkedArray>(arr), num_samples, out);
 }
 
+std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(
+    const std::shared_ptr<arrow::ChunkedArray> &column, int64_t chunk) {
+  if (column->num_chunks() > 0) {
+    return column->chunk(chunk);
+  }
+  std::shared_ptr<arrow::Array> out;
+  SampleArray(column, 0, out);
+  return out;
+}
+
 }  // namespace util
 }  // namespace cylon
