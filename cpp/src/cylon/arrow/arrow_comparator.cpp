@@ -13,6 +13,7 @@
  */
 
 #include "arrow_comparator.hpp"
+#include "util/arrow_utils.hpp"
 
 #include <glog/logging.h>
 
@@ -144,8 +145,8 @@ int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1, int
   // schema validation should be done to make sure
   // table1 and table2 has the same schema.
   for (int c = 0; c < table1->num_columns(); ++c) {
-    int comparision = this->comparators[c]->compare(table1->column(c)->chunk(0), index1,
-                                                    table2->column(c)->chunk(0), index2);
+    int comparision = this->comparators[c]->compare(cylon::util::GetChunkOrEmptyArray(table1->column(c), 0), index1,
+                                                    cylon::util::GetChunkOrEmptyArray(table2->column(c), 0), index2);
     if (comparision) return comparision;
   }
   return 0;
@@ -293,7 +294,7 @@ TableRowIndexComparator::TableRowIndexComparator(const std::shared_ptr<arrow::Ta
     if (table->column(col_ids.at(c))->num_chunks() == 0) {
       this->idx_comparators_ptr->at(c) = std::make_shared<EmptyIndexComparator>();
     } else {
-      const std::shared_ptr<arrow::Array> &array = table->column(col_ids.at(c))->chunk(0);
+      const std::shared_ptr<arrow::Array> &array = cylon::util::GetChunkOrEmptyArray(table->column(col_ids.at(c)), 0);
       this->idx_comparators_ptr->at(c) = CreateArrayIndexComparator(array);
     }
   }

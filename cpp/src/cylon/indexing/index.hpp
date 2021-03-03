@@ -7,6 +7,7 @@
 #include "ctx/cylon_context.hpp"
 #include "ctx/arrow_memory_pool_utils.hpp"
 #include "util/macros.hpp"
+#include "util/arrow_utils.hpp"
 #include <glog/logging.h>
 #include <arrow/table.h>
 #include <arrow/api.h>
@@ -648,7 +649,7 @@ class HashIndexKernel : public IndexKernel {
                                         std::shared_ptr<arrow::Table> &input_table,
                                         const int index_column) override {
 
-    const std::shared_ptr<arrow::Array> &idx_column = input_table->column(index_column)->chunk(0);
+    const std::shared_ptr<arrow::Array> &idx_column = cylon::util::GetChunkOrEmptyArray(input_table->column(index_column), 0);
     std::shared_ptr<MMAP_TYPE> out_umm_ptr = std::make_shared<MMAP_TYPE>(idx_column->length());
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(idx_column);
     auto start_start = std::chrono::steady_clock::now();
@@ -689,7 +690,7 @@ class LinearIndexKernel : public IndexKernel {
       input_table = res.ValueOrDie();
     }
 
-    index_array = input_table->column(index_column)->chunk(0);
+    index_array = cylon::util::GetChunkOrEmptyArray(input_table->column(index_column), 0);
     auto cast_index_array = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_array);
     auto
         index =

@@ -53,7 +53,7 @@ Status PrepareArray(std::shared_ptr<cylon::CylonContext> &ctx,
                     const std::vector<int64_t> &row_indices, arrow::ArrayVector &array_vector) {
   std::shared_ptr<arrow::Array> destination_col_array;
   arrow::Status ar_status =
-      cylon::util::copy_array_by_indices(row_indices, table->column(col_idx)->chunk(0),
+      cylon::util::copy_array_by_indices(row_indices, cylon::util::GetChunkOrEmptyArray(table->column(col_idx), 0),
                                          &destination_col_array, cylon::ToArrowPool(ctx));
   if (ar_status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed while copying a column to the final table from tables."

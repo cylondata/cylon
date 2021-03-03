@@ -19,6 +19,7 @@
 #include <arrow/compute/api.h>
 
 #include "../util/macros.hpp"
+#include "../util/arrow_utils.hpp"
 #include "../ctx/arrow_memory_pool_utils.hpp"
 
 #include "pipeline_groupby.hpp"
@@ -219,7 +220,7 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
 
   MakeBoundariesFn make_boundaries_fn = pick_make_boundaries_fn(idx_col->type());
   RETURN_CYLON_STATUS_IF_FAILED(make_boundaries_fn(pool,
-                                                   idx_col->chunk(0),
+                                                   cylon::util::GetChunkOrEmptyArray(idx_col, 0),
                                                    group_boundaries,
                                                    out_idx_col,
                                                    &unique_groups))
@@ -237,7 +238,7 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
     const std::shared_ptr<arrow::ChunkedArray> &agg_col = a_table->column(agg_op.first);
     AggregateArrayFn aggregate_array_fn = PickAggregateArrayFptr(agg_col->type());
     std::shared_ptr<arrow::Array> new_arr;
-    RETURN_CYLON_STATUS_IF_FAILED(aggregate_array_fn(pool, agg_col->chunk(0), agg_op.second, group_boundaries, new_arr))
+    RETURN_CYLON_STATUS_IF_FAILED(aggregate_array_fn(pool, cylon::util::GetChunkOrEmptyArray(agg_col, 0), agg_op.second, group_boundaries, new_arr))
 
     new_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(new_arr)));
     new_fields.push_back(a_table->field(agg_op.first)); // todo: prefix name

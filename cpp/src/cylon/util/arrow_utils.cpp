@@ -40,7 +40,7 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort
     tab_to_process = table;
   }
   const std::shared_ptr<arrow::Array> &column_to_sort =
-      tab_to_process->column(sort_column_index)->chunk(0);
+      cylon::util::GetChunkOrEmptyArray(tab_to_process->column(sort_column_index), 0);
 
   // sort to indices
   std::shared_ptr<arrow::UInt64Array> sorted_column_index;
@@ -57,7 +57,7 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort
 
   for (int64_t col_index = 0; col_index < tab_to_process->num_columns(); ++col_index) {
     const arrow::Result<arrow::Datum> &res =
-        arrow::compute::Take(tab_to_process->column(col_index)->chunk(0), sorted_column_index,
+        arrow::compute::Take(cylon::util::GetChunkOrEmptyArray(tab_to_process->column(col_index), 0), sorted_column_index,
                              take_options, &exec_context);
     RETURN_ARROW_STATUS_IF_FAILED(res.status())
     sorted_columns.emplace_back(res.ValueOrDie().make_array());
@@ -97,7 +97,7 @@ arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
 
   for (int64_t col_index = 0; col_index < tab_to_process->num_columns(); ++col_index) {
     const arrow::Result<arrow::Datum> &res =
-        arrow::compute::Take(tab_to_process->column(col_index)->chunk(0), sorted_column_index,
+        arrow::compute::Take(cylon::util::GetChunkOrEmptyArray(tab_to_process->column(col_index), 0), sorted_column_index,
                              take_options, &exec_context);
     RETURN_ARROW_STATUS_IF_FAILED(res.status())
     sorted_columns.emplace_back(res.ValueOrDie().make_array());
