@@ -224,6 +224,7 @@ static inline AggregationFn resolve_op(const compute::AggregationOpId &aggOp) {
     case compute::VAR: return &aggregate<compute::VAR, ARROW_T>;
     case compute::NUNIQUE: return &aggregate<compute::NUNIQUE, ARROW_T>;
     case compute::QUANTILE: return &aggregate<compute::QUANTILE, ARROW_T>;
+    case compute::STDDEV: return &aggregate<compute::STDDEV, ARROW_T>;
     default: return nullptr;
   }
 }

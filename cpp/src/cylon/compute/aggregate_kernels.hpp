@@ -44,7 +44,8 @@ enum AggregationOpId {
   MEAN,
   VAR,
   NUNIQUE,
-  QUANTILE
+  QUANTILE,
+  STDDEV
 };
 
 /**
@@ -143,6 +144,14 @@ struct VarOp : public AggregationOp {
   }
 };
 
+struct StdDevOp : public AggregationOp {
+  explicit StdDevOp(int ddof) : AggregationOp(STDDEV, std::make_unique<VarKernelOptions>(ddof)) {}
+
+  static inline std::unique_ptr<AggregationOp> Make(int ddof = 0) {
+    return std::make_unique<StdDevOp>(ddof);
+  }
+};
+
 /**
  * Var op
  */
@@ -199,6 +208,14 @@ struct KernelTraits<AggregationOpId::VAR, T> {
   using ResultT = double_t;
   using Options = VarKernelOptions;
   static constexpr const char *name() { return "var_"; }
+};
+
+template<typename T>
+struct KernelTraits<AggregationOpId::STDDEV, T> {
+  using State = std::tuple<T, T, int64_t>; // <running sum of squares, running sum, running count>
+  using ResultT = double_t;
+  using Options = VarKernelOptions;
+  static constexpr const char *name() { return "std_"; }
 };
 
 template<typename T>
@@ -347,7 +364,7 @@ class MeanKernel : public TypedAggregationKernel<MeanKernel<T>,
 /**
  * Variance kernel
  */
-template<typename T>
+template<typename T, bool DO_STD = false>
 class VarianceKernel : public TypedAggregationKernel<VarianceKernel<T>,
                                                      T,
                                                      typename KernelTraits<VAR, T>::State,
@@ -372,7 +389,11 @@ class VarianceKernel : public TypedAggregationKernel<VarianceKernel<T>,
     } else if (std::get<2>(*state) != 0) {
       double div = std::get<2>(*state) - ddof;
       double mean = static_cast<double>(std::get<1>(*state)) / div;
-      *result = static_cast<double>(std::get<0>(*state)) / div - mean * mean;
+      if (DO_STD) {
+        *result = sqrt(static_cast<double>(std::get<0>(*state)) / div - mean * mean);
+      } else {
+        *result = static_cast<double>(std::get<0>(*state)) / div - mean * mean;
+      }
     }
   };
 
@@ -531,6 +552,7 @@ std::unique_ptr<AggregationKernel> CreateAggregateKernel() {
     case VAR:return std::make_unique<VarianceKernel<T>>();
     case NUNIQUE:return std::make_unique<NUniqueKernel<T>>();
     case QUANTILE:return std::make_unique<QuantileKernel<T>>();
+    case STDDEV: return std::make_unique<VarianceKernel<T, true>>();
     default:return nullptr;
   }
 }
@@ -546,6 +568,7 @@ std::unique_ptr<AggregationKernel> CreateAggregateKernel(AggregationOpId op_id) 
     case VAR:return std::make_unique<VarianceKernel<T>>();
     case NUNIQUE:return std::make_unique<NUniqueKernel<T>>();
     case QUANTILE:return std::make_unique<QuantileKernel<T>>();
+    case STDDEV: return std::make_unique<VarianceKernel<T, true>>();
     default:return nullptr;
   }
 }
