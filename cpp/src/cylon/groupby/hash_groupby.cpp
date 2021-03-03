@@ -265,7 +265,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   auto t2 = std::chrono::steady_clock::now();
 
   std::vector<int64_t> group_ids;
-  int64_t unique_groups;
+  int64_t unique_groups = 0;
   std::shared_ptr<arrow::Array> group_filter;
   RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, group_filter, &unique_groups))
 
