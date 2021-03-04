@@ -32,17 +32,19 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
                                               std::shared_ptr<arrow::UInt64Array> &right_index_sorted_column,
                                               const std::shared_ptr<arrow::Table> &left_tab,
                                               const std::shared_ptr<arrow::Table> &right_tab,
+                                              const std::string &left_table_prefix,
+                                              const std::string &right_table_prefix,
                                               std::shared_ptr<arrow::Table> *final_table,
                                               arrow::MemoryPool *memory_pool) {
   // creating joined schema
   std::vector<std::shared_ptr<arrow::Field>> fields;
   // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
-  std::string  prefix = "";//"lt-";
+  std::string  prefix = left_table_prefix;
   for(const auto &t: {left_tab, right_tab}){
     for (const auto &field: t->schema()->fields()){
       fields.emplace_back(field->WithName(prefix + field->name()));
     }
-    prefix = "";//"rt-";
+    prefix = right_table_prefix;
   }
   const auto &schema = arrow::schema(fields);
 
@@ -125,17 +127,19 @@ arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
                                 const std::vector<int64_t> &right_indices,
                                 const std::shared_ptr<arrow::Table> &left_tab,
                                 const std::shared_ptr<arrow::Table> &right_tab,
+                                const std::string &left_table_prefix,
+                                const std::string &right_table_prefix,
                                 std::shared_ptr<arrow::Table> *final_table,
                                 arrow::MemoryPool *memory_pool) {
   // creating joined schema
   std::vector<std::shared_ptr<arrow::Field>> fields;
   // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
-  std::string  prefix = "lt-";
+  std::string  prefix = left_table_prefix;
   for(const auto &t: {left_tab, right_tab}){
     for (const auto &field: t->schema()->fields()){
       fields.emplace_back(field->WithName(prefix + field->name()));
     }
-    prefix = "rt-";
+    prefix = right_table_prefix;
   }
   const auto &schema = arrow::schema(fields);
 

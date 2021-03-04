@@ -15,6 +15,8 @@
 #ifndef CYLON_SRC_CYLON_JOIN_JOIN_CONFIG_HPP_
 #define CYLON_SRC_CYLON_JOIN_JOIN_CONFIG_HPP_
 
+#include "string"
+
 namespace cylon {
 namespace join {
 namespace config {
@@ -31,60 +33,82 @@ class JoinConfig {
   JoinType type;
   JoinAlgorithm algorithm;
   int left_column_idx, right_column_idx;
+  std::string left_table_suffix;
+  std::string right_table_suffix;
 
  public:
   JoinConfig() = delete;
 
   JoinConfig(JoinType type, int left_column_idx, int right_column_idx)
-	  : JoinConfig(type, left_column_idx, right_column_idx, SORT) {
+      : JoinConfig(type, left_column_idx, right_column_idx, SORT) {
   }
 
   JoinConfig(JoinType type, int left_column_idx, int right_column_idx, JoinAlgorithm algorithm)
-	  : type(type), algorithm(algorithm), left_column_idx(left_column_idx), right_column_idx(right_column_idx) {}
+      : type(type), algorithm(algorithm), left_column_idx(left_column_idx), right_column_idx(right_column_idx) {}
+
+  JoinConfig(JoinType type,
+             int left_column_idx,
+             int right_column_idx,
+             JoinAlgorithm algorithm,
+             std::string left_table_suffix,
+             std::string right_table_suffix)
+      : type(type),
+        algorithm(algorithm),
+        left_column_idx(left_column_idx),
+        right_column_idx(right_column_idx),
+        left_table_suffix(left_table_suffix),
+        right_table_suffix(right_table_suffix) {}
 
   static JoinConfig InnerJoin(int left_column_idx, int right_column_idx) {
-	return {INNER, left_column_idx, right_column_idx};
+    return {INNER, left_column_idx, right_column_idx};
   }
 
   static JoinConfig LeftJoin(int left_column_idx, int right_column_idx) {
-	return {LEFT, left_column_idx, right_column_idx};
+    return {LEFT, left_column_idx, right_column_idx};
   }
 
   static JoinConfig RightJoin(int left_column_idx, int right_column_idx) {
-	return {RIGHT, left_column_idx, right_column_idx};
+    return {RIGHT, left_column_idx, right_column_idx};
   }
 
   static JoinConfig FullOuterJoin(int left_column_idx, int right_column_idx) {
-	return {FULL_OUTER, left_column_idx, right_column_idx};
+    return {FULL_OUTER, left_column_idx, right_column_idx};
   }
 
   static JoinConfig InnerJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-	return {INNER, left_column_idx, right_column_idx, algorithm};
+    return {INNER, left_column_idx, right_column_idx, algorithm};
   }
 
   static JoinConfig LeftJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-	return {LEFT, left_column_idx, right_column_idx, algorithm};
+    return {LEFT, left_column_idx, right_column_idx, algorithm};
   }
 
   static JoinConfig RightJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-	return {RIGHT, left_column_idx, right_column_idx, algorithm};
+    return {RIGHT, left_column_idx, right_column_idx, algorithm};
   }
 
   static JoinConfig FullOuterJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm) {
-	return {FULL_OUTER, left_column_idx, right_column_idx, algorithm};
+    return {FULL_OUTER, left_column_idx, right_column_idx, algorithm};
   }
 
   JoinType GetType() const {
-	return type;
+    return type;
   }
   JoinAlgorithm GetAlgorithm() const {
-	return algorithm;
+    return algorithm;
   }
   int GetLeftColumnIdx() const {
-	return left_column_idx;
+    return left_column_idx;
   }
   int GetRightColumnIdx() const {
-	return right_column_idx;
+    return right_column_idx;
+  }
+
+  const std::string &GetLeftTableSuffix() const {
+    return left_table_suffix;
+  }
+  const std::string &GetRightTableSuffix() const {
+    return right_table_suffix;
   }
 };
 }  // namespace util

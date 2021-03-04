@@ -75,6 +75,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
                                      int64_t left_join_column_idx,
                                      int64_t right_join_column_idx,
                                      cylon::join::config::JoinType join_type,
+                                     std::string left_table_prefix,
+                                     std::string right_table_prefix,
                                      std::shared_ptr<arrow::Table> *joined_table,
                                      arrow::MemoryPool *memory_pool) {
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
@@ -242,6 +244,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       right_index_sorted_column,
       left_tab_comb,
       right_tab_comb,
+      left_table_prefix,
+      right_table_prefix,
       joined_table,
       memory_pool);
   t2 = std::chrono::high_resolution_clock::now();
@@ -257,6 +261,8 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
                                            int64_t left_join_column_idx,
                                            int64_t right_join_column_idx,
                                            cylon::join::config::JoinType join_type,
+                                           std::string left_table_prefix,
+                                           std::string right_table_prefix,
                                            std::shared_ptr<arrow::Table> *joined_table,
                                            arrow::MemoryPool *memory_pool) {
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
@@ -416,7 +422,7 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   t1 = std::chrono::high_resolution_clock::now();
   // build final table
   status = cylon::join::util::build_final_table(left_indices, right_indices, left_tab_comb, right_tab_comb,
-                                                joined_table, memory_pool);
+                                                left_table_prefix, right_table_prefix, joined_table, memory_pool);
   t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Built final table in : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   LOG(INFO) << "Done and produced : " << left_indices.size();
@@ -441,6 +447,8 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
                            int64_t left_join_column_idx,
                            int64_t right_join_column_idx,
                            cylon::join::config::JoinType join_type,
+                           const std::string left_table_prefix,
+                           const std::string right_table_prefix,
                            std::shared_ptr<arrow::Table> *joined_table,
                            arrow::MemoryPool *memory_pool) {
   // combine chunks if multiple chunks are available
@@ -449,9 +457,9 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
   auto t11 = std::chrono::high_resolution_clock::now();
 
   lstatus = cylon::join::util::CombineChunks(left_tab, left_join_column_idx,
-      left_tab_comb, memory_pool);
+                                             left_tab_comb, memory_pool);
   rstatus = cylon::join::util::CombineChunks(right_tab, right_join_column_idx,
-      right_tab_comb, memory_pool);
+                                             right_tab_comb, memory_pool);
 
   auto t22 = std::chrono::high_resolution_clock::now();
 
@@ -492,7 +500,9 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
   t1 = std::chrono::high_resolution_clock::now();
 
   auto status = cylon::join::util::build_final_table(left_indices, right_indices,
-                                                     left_tab_comb, right_tab_comb, joined_table, memory_pool);
+                                                     left_tab_comb, right_tab_comb,
+                                                     left_table_prefix, right_table_prefix,
+                                                     joined_table, memory_pool);
 
   t2 = std::chrono::high_resolution_clock::now();
 
@@ -509,6 +519,8 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
                       int64_t right_join_column_idx,
                       cylon::join::config::JoinType join_type,
                       cylon::join::config::JoinAlgorithm join_algorithm,
+                      const std::string left_table_prefix,
+                      const std::string right_table_prefix,
                       std::shared_ptr<arrow::Table> *joined_table,
                       arrow::MemoryPool *memory_pool) {
   switch (join_algorithm) {
@@ -519,15 +531,25 @@ arrow::Status do_join(const std::shared_ptr<arrow::Table> &left_tab,
                                                              left_join_column_idx,
                                                              right_join_column_idx,
                                                              join_type,
+                                                             left_table_prefix,
+                                                             right_table_prefix,
                                                              joined_table,
                                                              memory_pool);
       } else {
-        return do_sorted_join<ARROW_T, CPP_KEY_TYPE>(left_tab, right_tab, left_join_column_idx, right_join_column_idx,
-                                                     join_type, joined_table, memory_pool);
+        return do_sorted_join<ARROW_T, CPP_KEY_TYPE>(left_tab,
+                                                     right_tab,
+                                                     left_join_column_idx,
+                                                     right_join_column_idx,
+                                                     join_type,
+                                                     left_table_prefix,
+                                                     right_table_prefix,
+                                                     joined_table,
+                                                     memory_pool);
       }
     case cylon::join::config::HASH:
       return do_hash_join<ARROW_T, CPP_KEY_TYPE>(left_tab, right_tab, left_join_column_idx, right_join_column_idx,
-                                                 join_type, joined_table, memory_pool);
+                                                 join_type, left_table_prefix, right_table_prefix,
+                                                 joined_table, memory_pool);
   }
   return arrow::Status::OK();
 }
@@ -550,8 +572,8 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
     LOG(FATAL) << "Error in combining table chunks of left table." << left_combine_stat.message();
     return left_combine_stat;
   }
-  const std::shared_ptr<arrow::Table>& left_tab_combined = left_combine_res.ValueOrDie();
-  
+  const std::shared_ptr<arrow::Table> &left_tab_combined = left_combine_res.ValueOrDie();
+
   if (left_tabs.size() > 1) {
     for (const auto &t : left_tabs) {
       arrow::Status status = cylon::util::free_table(t);
@@ -563,15 +585,15 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
   }
 
   arrow::Result<std::shared_ptr<arrow::Table>> right_combine_res = right_tab->CombineChunks(memory_pool);
-  const arrow::Status& right_combine_stat = right_combine_res.status();
+  const arrow::Status &right_combine_stat = right_combine_res.status();
   if (!right_combine_stat.ok()) {
     LOG(FATAL) << "Error in combining table chunks of right table." << right_combine_stat.message();
     return right_combine_stat;
   }
-  const std::shared_ptr<arrow::Table>& right_tab_combined = right_combine_res.ValueOrDie();
+  const std::shared_ptr<arrow::Table> &right_tab_combined = right_combine_res.ValueOrDie();
 
   if (right_tabs.size() > 1) {
-    for (const auto& t : right_tabs) {
+    for (const auto &t : right_tabs) {
       arrow::Status status = cylon::util::free_table(t);
       if (!status.ok()) {
         LOG(FATAL) << "Failed to free table" << status.message();
@@ -606,6 +628,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                        join_config.GetRightColumnIdx(),
                                        join_config.GetType(),
                                        join_config.GetAlgorithm(),
+                                       join_config.GetLeftTableSuffix(),
+                                       join_config.GetRightTableSuffix(),
                                        joined_table,
                                        memory_pool);
     case arrow::Type::INT8:
@@ -615,6 +639,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                       join_config.GetRightColumnIdx(),
                                       join_config.GetType(),
                                       join_config.GetAlgorithm(),
+                                      join_config.GetLeftTableSuffix(),
+                                      join_config.GetRightTableSuffix(),
                                       joined_table,
                                       memory_pool);
     case arrow::Type::UINT16:
@@ -624,6 +650,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                         join_config.GetRightColumnIdx(),
                                         join_config.GetType(),
                                         join_config.GetAlgorithm(),
+                                        join_config.GetLeftTableSuffix(),
+                                        join_config.GetRightTableSuffix(),
                                         joined_table,
                                         memory_pool);
     case arrow::Type::INT16:
@@ -633,6 +661,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                        join_config.GetRightColumnIdx(),
                                        join_config.GetType(),
                                        join_config.GetAlgorithm(),
+                                       join_config.GetLeftTableSuffix(),
+                                       join_config.GetRightTableSuffix(),
                                        joined_table,
                                        memory_pool);
     case arrow::Type::UINT32:
@@ -642,6 +672,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                         join_config.GetRightColumnIdx(),
                                         join_config.GetType(),
                                         join_config.GetAlgorithm(),
+                                        join_config.GetLeftTableSuffix(),
+                                        join_config.GetRightTableSuffix(),
                                         joined_table,
                                         memory_pool);
     case arrow::Type::INT32:
@@ -651,6 +683,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                        join_config.GetRightColumnIdx(),
                                        join_config.GetType(),
                                        join_config.GetAlgorithm(),
+                                       join_config.GetLeftTableSuffix(),
+                                       join_config.GetRightTableSuffix(),
                                        joined_table,
                                        memory_pool);
     case arrow::Type::UINT64:
@@ -660,6 +694,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                         join_config.GetRightColumnIdx(),
                                         join_config.GetType(),
                                         join_config.GetAlgorithm(),
+                                        join_config.GetLeftTableSuffix(),
+                                        join_config.GetRightTableSuffix(),
                                         joined_table,
                                         memory_pool);
     case arrow::Type::INT64:
@@ -669,6 +705,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                        join_config.GetRightColumnIdx(),
                                        join_config.GetType(),
                                        join_config.GetAlgorithm(),
+                                       join_config.GetLeftTableSuffix(),
+                                       join_config.GetRightTableSuffix(),
                                        joined_table,
                                        memory_pool);;
     case arrow::Type::HALF_FLOAT:
@@ -678,6 +716,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                            join_config.GetRightColumnIdx(),
                                            join_config.GetType(),
                                            join_config.GetAlgorithm(),
+                                           join_config.GetLeftTableSuffix(),
+                                           join_config.GetRightTableSuffix(),
                                            joined_table,
                                            memory_pool);
     case arrow::Type::FLOAT:
@@ -687,6 +727,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                        join_config.GetRightColumnIdx(),
                                        join_config.GetType(),
                                        join_config.GetAlgorithm(),
+                                       join_config.GetLeftTableSuffix(),
+                                       join_config.GetRightTableSuffix(),
                                        joined_table,
                                        memory_pool);
     case arrow::Type::DOUBLE:
@@ -696,6 +738,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                         join_config.GetRightColumnIdx(),
                                         join_config.GetType(),
                                         join_config.GetAlgorithm(),
+                                        join_config.GetLeftTableSuffix(),
+                                        join_config.GetRightTableSuffix(),
                                         joined_table,
                                         memory_pool);
     case arrow::Type::STRING:
@@ -705,6 +749,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                                                   join_config.GetRightColumnIdx(),
                                                                   join_config.GetType(),
                                                                   join_config.GetAlgorithm(),
+                                                                  join_config.GetLeftTableSuffix(),
+                                                                  join_config.GetRightTableSuffix(),
                                                                   joined_table,
                                                                   memory_pool);
     case arrow::Type::BINARY:
@@ -714,6 +760,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                                                   join_config.GetRightColumnIdx(),
                                                                   join_config.GetType(),
                                                                   join_config.GetAlgorithm(),
+                                                                  join_config.GetLeftTableSuffix(),
+                                                                  join_config.GetRightTableSuffix(),
                                                                   joined_table,
                                                                   memory_pool);
     case arrow::Type::FIXED_SIZE_BINARY:
@@ -723,6 +771,8 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                                                            join_config.GetRightColumnIdx(),
                                                                            join_config.GetType(),
                                                                            join_config.GetAlgorithm(),
+                                                                           join_config.GetLeftTableSuffix(),
+                                                                           join_config.GetRightTableSuffix(),
                                                                            joined_table,
                                                                            memory_pool);
     case arrow::Type::DATE32:break;
