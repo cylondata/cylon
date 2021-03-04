@@ -99,7 +99,7 @@ Status RangeIndex::LocationByValue(const void *search_param,
                                    const std::shared_ptr<arrow::Table> &input,
                                    std::vector<int64_t> &filter_locations,
                                    std::shared_ptr<arrow::Table> &output) {
-  LOG(INFO) << "Extract From Range Index";
+  //LOG(INFO) << "Extract From Range Index";
   arrow::Status arrow_status;
   cylon::Status status;
   std::shared_ptr<arrow::Array> out_idx;

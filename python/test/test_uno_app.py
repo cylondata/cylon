@@ -481,24 +481,50 @@ def test_loc_with_list():
     ctx = CylonContext(config=None, distributed=False)
 
     dataset = []
-    num_rows = 1_000_000
+    num_rows = 10_000
     num_columns = 2
-    filter_size = 100_000
+    filter_size = 1_000
 
     data = np.random.randn(num_rows)
-    filter_vals = np.random.randn(filter_size).tolist()
+    index_vals = [i for i in range(0, num_rows)]
+    filter_vals = [i for i in range(0, filter_size)]
+
+    pdf = pd.DataFrame({'data{}'.format(i): data
+                        for i in range(num_columns)})
+    index_df_col = pd.DataFrame(index_vals)
+    pdf['index'] = index_df_col
+
+    tb1 = Table.from_pandas(ctx, pdf)
+    tb1['index'] = Table.from_pandas(ctx, index_df_col)
+    index_column = 'index'
+    tb1.set_index(index_column, drop=True)
+    pdf.set_index(index_column, drop=True, inplace=True)
+
+    print(tb1.shape, pdf.shape)
+    i0 = pdf.index.values[0]
+    print(type(i0), i0)
+
+
+def test_numpy_conversion():
+    ctx = CylonContext(config=None, distributed=False)
+
+    dataset = []
+    num_rows = 10_000_000
+    num_columns = 2
+
+    data = np.random.randn(num_rows)
 
     pdf = pd.DataFrame({'data{}'.format(i): data
                         for i in range(num_columns)})
 
     tb1 = Table.from_pandas(ctx, pdf)
 
-    tb1.set_index(tb1.column_names[0], drop=True)
-    pdf.set_index(pdf.columns[0], drop=True, inplace=True)
+    t1 = time.time()
+    np1 = tb1.to_numpy(zero_copy_only=True)
+    t2 = time.time()
+    np2 = pdf.values
+    t3 = time.time()
+    print(t2-t1, t3-t2)
 
-    print(tb1.shape, pdf.shape)
 
-    tb1.loc[filter_vals]
-
-
-test_loc_with_list()
+test_numpy_conversion()
