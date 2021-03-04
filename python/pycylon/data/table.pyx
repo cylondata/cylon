@@ -289,7 +289,7 @@ cdef class Table:
             raise ValueError("Provided Column Names or Column Indices not valid.")
 
     def __get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
-                          right_column_index: int):
+                          right_column_index: int, left_prefix:str="", right_prefix:str=""):
         if left_column_index is None or right_column_index is None:
             raise Exception("Join Column index not provided")
 
@@ -300,16 +300,20 @@ cdef class Table:
 
             if join_type == PJoinType.INNER.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH)
+                                             right_column_index, CJoinAlgorithm.CHASH,
+                                             left_prefix.encode(), right_prefix.encode())
             elif join_type == PJoinType.LEFT.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH)
+                                             right_column_index, CJoinAlgorithm.CHASH,
+                                             left_prefix.encode(), right_prefix.encode())
             elif join_type == PJoinType.RIGHT.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH)
+                                             right_column_index, CJoinAlgorithm.CHASH,
+                                             left_prefix.encode(), right_prefix.encode())
             elif join_type == PJoinType.OUTER.value:
                 self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH)
+                                             right_column_index, CJoinAlgorithm.CHASH,
+                                             left_prefix.encode(), right_prefix.encode())
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
 
@@ -317,43 +321,50 @@ cdef class Table:
 
             if join_type == PJoinType.INNER.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT)
+                                             right_column_index, CJoinAlgorithm.CSORT,
+                                             left_prefix.encode(), right_prefix.encode())
             elif join_type == PJoinType.LEFT.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT)
+                                             right_column_index, CJoinAlgorithm.CSORT,
+                                             left_prefix.encode(), right_prefix.encode())
             elif join_type == PJoinType.RIGHT.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT)
+                                             right_column_index, CJoinAlgorithm.CSORT,
+                                             left_prefix.encode(), right_prefix.encode())
             elif join_type == PJoinType.OUTER.value:
                 self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT)
+                                             right_column_index, CJoinAlgorithm.CSORT,
+                                             left_prefix.encode(), right_prefix.encode())
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
         else:
-            if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
-                                             right_column_index)
-            elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index)
-            elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
-                                             right_column_index)
-            elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
-                                             right_column_index)
-            else:
-                raise ValueError("Unsupported Join Type {}".format(join_type))
+            # if join_type == PJoinType.INNER.value:
+            #     self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
+            #                                  right_column_index)
+            # elif join_type == PJoinType.LEFT.value:
+            #     self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index)
+            # elif join_type == PJoinType.RIGHT.value:
+            #     self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
+            #                                  right_column_index)
+            # elif join_type == PJoinType.OUTER.value:
+            #     self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
+            #                                  right_column_index)
+            # else:
+            raise ValueError("Unsupported Join Algorithm {}".format(join_algorithm))
 
-    cdef shared_ptr[CTable] init_join_ra_params(self, table, join_type, algorithm, kwargs):
+    def init_join_ra_params(self, table, join_type, algorithm, kwargs):
         left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
+        left_prefix = kwargs.get('left_prefix') if kwargs.get('left_prefix') else ""
+        right_prefix = kwargs.get('right_prefix') if kwargs.get('right_prefix') else ""
+
 
         # Cylon only supports join by one column and retrieve first left and right column when
         # resolving join configs
         self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
                                left_column_index=left_cols[0],
-                               right_column_index=right_cols[0])
-        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
-        return right
+                               right_column_index=right_cols[0],
+                               left_prefix=left_prefix,
+                               right_prefix=right_prefix)
 
     cdef _get_join_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status):
         if status.is_ok():
@@ -400,8 +411,8 @@ cdef class Table:
         :return: Joined PyCylon table
         '''
         cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
-                                                                 kwargs)
+        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
+        self.init_join_ra_params(table, join_type, algorithm, kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
         cdef CStatus status = Join(self.table_shd_ptr, right, jc1[0], output)
         return self._get_join_ra_response("Join", output, status)
@@ -419,8 +430,8 @@ cdef class Table:
         :return: Joined PyCylon table
         '''
         cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
-                                                                 kwargs)
+        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
+        self.init_join_ra_params(table, join_type, algorithm, kwargs)
         cdef CJoinConfig *jc1 = self.jcPtr
         cdef CStatus status = DistributedJoin(self.table_shd_ptr, right, jc1[0], output)
         return self._get_join_ra_response("Distributed Join", output, status)
@@ -2360,9 +2371,9 @@ cdef class Table:
                 res_table.reset_index()
                 if ctx.get_world_size() > 1:
                     res_table = res_table.distributed_join(table=tb1, join_type=join,
-                                                      algorithm=algorithm,
-                                               left_on=[res_table.column_names[0]],
-                                               right_on=[tb1.column_names[0]])
+                                                           algorithm=algorithm,
+                                                           left_on=[res_table.column_names[0]],
+                                                           right_on=[tb1.column_names[0]])
                 else:
                     res_table = res_table.join(table=tb1, join_type=join, algorithm=algorithm,
                                                left_on=[res_table.column_names[0]],

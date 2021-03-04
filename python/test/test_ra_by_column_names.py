@@ -73,3 +73,73 @@ def test_single_process():
     assert tb3.row_count == tb4.row_count == tb5.row_count and tb3.column_count == \
            tb4.column_count == tb5.column_count
     ctx.finalize()
+
+
+def test_prefix_process():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+
+    table1_path = '/tmp/user_device_tm_1.csv'
+    table2_path = '/tmp/user_usage_tm_1.csv'
+
+    assert os.path.exists(table1_path) and os.path.exists(table2_path)
+
+    tb1: Table = read_csv(ctx, table1_path, csv_read_options)
+
+    tb2: Table = read_csv(ctx, table2_path, csv_read_options)
+
+    configs = {'join_type': 'inner', 'algorithm': 'sort'}
+
+    tb3: Table = tb1.join(table=tb2,
+                          join_type=configs['join_type'],
+                          algorithm=configs['algorithm'],
+                          left_on=[0],
+                          right_on=[3],
+                          left_prefix="l_",
+                          right_prefix="r_",
+                          )
+
+    print(tb3.row_count, tb3.column_count)
+
+    tb4: Table = tb1.join(table=tb2,
+                          join_type=configs['join_type'],
+                          algorithm=configs['algorithm'],
+                          left_on=['use_id'],
+                          right_on=['use_id'],
+                          left_prefix="l_1_",
+                          right_prefix="r_1_",
+                          )
+
+    tb5: Table = tb1.join(table=tb2,
+                          join_type=configs['join_type'],
+                          algorithm=configs['algorithm'],
+                          on=['use_id'],
+                          left_prefix="l_2_",
+                          right_prefix="r_2_",
+                          )
+
+    assert tb3.row_count == tb4.row_count == tb5.row_count and tb3.column_count == \
+           tb4.column_count == tb5.column_count
+    expected_column_names_1 = ['l_use_id', 'l_user_id', 'l_platform_version', 'l_use_type_id',
+                               'r_outgoing_mins_per_month', 'r_outgoing_sms_per_month',
+                               'r_monthly_mb', 'r_use_id']
+
+    expected_column_names_2 = ['l_1_use_id', 'l_1_user_id', 'l_1_platform_version',
+                               'l_1_use_type_id', 'r_1_outgoing_mins_per_month',
+                               'r_1_outgoing_sms_per_month',
+                               'r_1_monthly_mb', 'r_1_use_id']
+
+    expected_column_names_3 = ['l_2_use_id', 'l_2_user_id', 'l_2_platform_version',
+                               'l_2_use_type_id', 'r_2_outgoing_mins_per_month',
+                               'r_2_outgoing_sms_per_month',
+                               'r_2_monthly_mb', 'r_2_use_id']
+
+    assert expected_column_names_1 == tb3.column_names
+    assert expected_column_names_2 == tb4.column_names
+    assert expected_column_names_3 == tb5.column_names
+
+    ctx.finalize()
+
+
+test_prefix_process()
