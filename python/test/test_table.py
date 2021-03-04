@@ -73,7 +73,7 @@ def test_table():
     for idx, col in enumerate(col_names):
         assert tb5.column_names[idx] == col
 
-    tb6 = Table.merge(ctx, [tb4, tb4])
+    tb6 = Table.merge([tb4, tb4])
 
     assert tb6.row_count == 544 and tb6.column_count == 4
 

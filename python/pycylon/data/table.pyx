@@ -123,15 +123,36 @@ cdef class Table:
         else:
             self.table_shd_ptr.get().Print(row1, row2, col1, col2)
 
-    def sort(self, index, ascending: bool = True) -> Table:
+    def sort(self, by, ascending = True) -> Table:
         cdef shared_ptr[CTable] output
-        sort_index = -1
-        if isinstance(index, str):
-            sort_index = self._resolve_column_index_from_column_name(index)
+        cdef vector[long] sort_index
+        cdef vector[bool] order_directions
+        if isinstance(by, str):
+            sort_index.push_back(self._resolve_column_index_from_column_name(by))
+        elif isinstance(by, int):
+            sort_index.push_back(by)
+        elif isinstance(by, list):
+            for b in by:
+                if isinstance(b, str):
+                    sort_index.push_back(self._resolve_column_index_from_column_name(b))
+                elif isinstance(b, int):
+                    sort_index.push_back(b)
+                else:
+                    raise Exception('Unsupported type used to specify the sort by columns. Expected column name or index')
         else:
-            sort_index = index
+            raise Exception('Unsupported type used to specify the sort by columns. Expected column name or index')
 
-        cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output, ascending)
+        
+        if type(ascending) ==type(True):
+            for i in range(0, sort_index.size()):
+                order_directions.push_back(ascending)
+        elif isinstance(ascending, list):
+            for i in range(0, sort_index.size()):
+                order_directions.push_back(ascending[i])
+        else:
+            raise Exception('Unsupported format for ascending/descending order indication. Expected a boolean or a list of booleans')
+
+        cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output, order_directions)
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
@@ -157,7 +178,7 @@ cdef class Table:
         self.table_shd_ptr.get().IsRetain()
 
     @staticmethod
-    def merge(ctx, tables: List[Table]) -> Table:
+    def merge(tables: List[Table]) -> Table:
         """
         Merging Two PyCylon tables
         @param ctx: PyCylon context
@@ -168,12 +189,11 @@ cdef class Table:
         cdef shared_ptr[CTable] curTable
         cdef shared_ptr[CTable] output
         cdef CStatus status
-        cdef shared_ptr[CCylonContext] sp_ctx = pycylon_unwrap_context(ctx)
         if tables:
             for table in tables:
                 curTable = pycylon_unwrap_table(table)
                 ctables.push_back(curTable)
-            status = Merge(sp_ctx, ctables, output)
+            status = Merge(ctables, output)
             if status.is_ok():
                 return pycylon_wrap_table(output)
             else:
@@ -2386,6 +2406,17 @@ cdef class Table:
             return res_table
         else:
             raise ValueError(f"Invalid axis {axis}, must 0 or 1")
+
+
+    def iterrows(self):
+        data_dict = self.to_pydict()
+        index_values = self.index.index_values
+        for index_id in range(self.row_count):
+            row = []
+            for column in data_dict:
+                row.append(data_dict[column][index_id])
+            yield index_values[index_id], row
+
 
 
 class EmptyTable(Table):

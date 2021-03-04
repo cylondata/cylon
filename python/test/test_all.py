@@ -45,7 +45,8 @@ def test_cylon_context():
     print("3. CylonContext Test")
     responses.append(
         os.system(
-            "mpirun --oversubscribe -n 2 python -m pytest --with-mpi -q python/test/test_cylon_context.py"))
+            "mpirun --oversubscribe --allow-run-as-root -n 2 python -m pytest --with-mpi "
+            "-q python/test/test_cylon_context.py"))
     assert responses[-1] == 0
 
 
@@ -100,7 +101,8 @@ def test_pycylon_pyarrow():
 def test_table_conversion():
     print("12. Table Conversion Test")
     responses.append(os.system(
-        "mpirun --oversubscribe -n 2 python -m pytest --with-mpi -q python/test/test_cylon_table_conversion.py"))
+        "mpirun --oversubscribe --allow-run-as-root -n 2 python -m pytest --with-mpi "
+        "-q python/test/test_cylon_table_conversion.py"))
     assert responses[-1] == 0
 
 
@@ -131,7 +133,8 @@ def test_join_config():
 def test_simple_table_join():
     print("17. Simple Table Join Test")
     responses.append(os.system(
-        "mpirun --oversubscribe -n 4 python -m pytest --with-mpi -q python/test/test_cylon_simple_table_join.py"))
+        "mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest --with-mpi "
+        "-q python/test/test_cylon_simple_table_join.py"))
     assert responses[-1] == 0
 
 
@@ -139,7 +142,8 @@ def test_dist_rl():
     print("18. Distributed Relational Algebra Operator Test")
     responses.append(
         os.system(
-            "mpirun --oversubscribe -n 4 python -m pytest --with-mpi -q python/test/test_dist_rl.py"))
+            "mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest --with-mpi "
+            "-q python/test/test_dist_rl.py"))
     assert responses[-1] == 0
 
 
@@ -158,7 +162,7 @@ def test_rl_col():
 def test_dist_rl_col():
     print("21. Distributed Relational Algebra with Column Names Test")
     responses.append(
-        os.system("mpirun --oversubscribe -n 4 python -m pytest --with-mpi -q "
+        os.system("mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest --with-mpi -q "
                   "python/test/test_dist_ra_by_column_names.py"))
     assert responses[-1] == 0
 
@@ -195,7 +199,8 @@ def test_duplicate():
     print("26. Duplicate Handling")
     responses.append(
         os.system(
-            "mpirun --oversubscribe -n 2 python -m pytest --with-mpi -q python/test/test_duplicate_handle.py"))
+            "mpirun --oversubscribe --allow-run-as-root -n 2 python -m pytest --with-mpi "
+            "-q python/test/test_duplicate_handle.py"))
     assert responses[-1] == 0
 
 

@@ -36,6 +36,7 @@ from cpython.ref cimport PyObject
 from cython.operator cimport dereference as deref, preincrement as inc
 
 from typing import List, Tuple
+from pycylon.data.compute import compare_array_like_values
 
 '''
 Cylon Indexing is done with the following enums. 
@@ -67,6 +68,25 @@ cdef class BaseIndex:
     @property
     def index_values(self):
         return self.get_index_array().tolist()
+
+    @property
+    def values(self):
+        npr = None
+        try:
+            npr = self.get_index_array().to_numpy()
+        except ValueError:
+            npr = self.get_index_array().to_numpy(zero_copy_only=False)
+        return npr
+
+    def isin(self, values, skip_null=True, zero_copy_only=False):
+        res_isin = None
+        if isinstance(values, List) or isinstance(values, np.ndarray):
+            values_arw_ar = pa.array(values)
+            res_isin = compare_array_like_values(self.get_index_array(), values_arw_ar, skip_null)
+            return res_isin.to_numpy(zero_copy_only=zero_copy_only)
+        else:
+            raise ValueError("values must be List or np.ndarray")
+
 
 cdef vector[void*] _get_void_vec_from_pylist(py_list, arrow_type):
     if arrow_type == pa.int64():
@@ -213,7 +233,6 @@ cdef class LocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         for col_idx in column_list:
             c_column_index.push_back(col_idx)
@@ -266,7 +285,7 @@ cdef class LocIndexer:
                     self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
                     intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")
@@ -385,7 +404,6 @@ cdef class LocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
@@ -440,7 +458,7 @@ cdef class LocIndexer:
                                                    c_end_column_index, input, output)
                     intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")
@@ -563,7 +581,6 @@ cdef class LocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
@@ -613,7 +630,7 @@ cdef class LocIndexer:
                     self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
                     intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")
@@ -746,7 +763,6 @@ cdef class ILocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         for col_idx in column_list:
             c_column_index.push_back(col_idx)
@@ -764,7 +780,7 @@ cdef class ILocIndexer:
                     self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
                     intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")
@@ -809,7 +825,6 @@ cdef class ILocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
@@ -826,7 +841,7 @@ cdef class ILocIndexer:
                                                    c_end_column_index, input, output)
                 intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")
@@ -869,7 +884,6 @@ cdef class ILocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
@@ -885,7 +899,7 @@ cdef class ILocIndexer:
                 self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
                 intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")

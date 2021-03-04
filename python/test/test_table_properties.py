@@ -354,6 +354,30 @@ def test_math_ops_for_scalar():
         assert pdf_2.values.tolist() == cn_tb_2.to_pandas().values.tolist()
 
 
+def test_math_ops_for_table_values():
+    pdf = DataFrame({'0': [1, 2, 3, 4], '1': [5, 6, 7, 9], '2': [1., 2., 3., 4.]})
+    ctx: CylonContext = CylonContext()
+    cn_tb: Table = Table.from_pandas(ctx, pdf)
+
+    from operator import add, sub, mul, truediv
+    ops = [add, sub, mul, truediv]
+
+    for op in ops:
+        # test column division
+        cn_res = op(cn_tb['0'], cn_tb['0'])
+        pd_res = op(pdf['0'], pdf['0'])
+
+        # pandas series.values returns an array, whereas dataframe.values list of lists. Hence it
+        # needs to be flattened to compare
+        assert pd_res.values.tolist() == cn_res.to_pandas().values.flatten().tolist()
+
+        # test table division
+        cn_res2 = op(cn_tb, cn_tb['0'])
+        pd_res2 = getattr(pdf, op.__name__)(pdf['0'], axis=0)
+
+        assert pd_res2.values.tolist() == cn_res2.to_pandas().values.tolist()
+
+
 def test_math_i_ops_for_scalar():
     """
     TODO: Enhance Test case and functionality
@@ -486,6 +510,25 @@ def test_empty_table():
     empt_tb = EmptyTable(ctx, RangeIndex(data=range(0, 0)))
 
     assert empt_tb.to_pandas().values.tolist() == pd.DataFrame().values.tolist()
+
+
+def test_iterrows():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+
+    tb1.set_index(tb1.column_names[0], drop=True)
+    pdf.set_index(pdf.columns[0], drop=True, inplace=True)
+
+    for p, c in zip(pdf.iterrows(), tb1.iterrows()):
+        idx_p = p[0]
+        row_p = p[1].tolist()
+        idx_c = c[0]
+        row_c = c[1]
+        assert idx_p == idx_c
+        assert row_p == row_c
 
 
 def test_concat_table():

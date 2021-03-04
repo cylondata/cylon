@@ -76,14 +76,13 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus WriteCSV(shared_ptr[CTable] & table, const string & path,
                      const CCSVWriteOptions & options)
 
-    CStatus Sort(shared_ptr[CTable] & table, int sort_column, shared_ptr[CTable] & output,
-                 bool ascending)
+    CStatus Sort(shared_ptr[CTable] & table, const vector[long] sort_columns, shared_ptr[CTable] & output,
+                 const vector[bool] & sort_direction)
 
     CStatus Project(shared_ptr[CTable] & table, const vector[int] & project_columns, shared_ptr[
             CTable] & output)
 
-    CStatus Merge(shared_ptr[CCylonContext] & ctx, vector[shared_ptr[CTable]] & tables,
-                  shared_ptr[CTable] output)
+    CStatus Merge(vector[shared_ptr[CTable]] & tables, shared_ptr[CTable] output)
 
     CStatus Join(shared_ptr[CTable] & left, shared_ptr[CTable] & right, CJoinConfig
     join_config, shared_ptr[CTable] & output)
