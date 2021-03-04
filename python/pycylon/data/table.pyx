@@ -2366,13 +2366,12 @@ cdef class Table:
             res_table = tables[0]
             if not isinstance(res_table, Table):
                 raise ValueError(f"Invalid object {res_table}, expected Table")
-            ctx = res_table.context
             formatted_tables = []
             new_column_names = res_table.column_names
             for tb_idx in range(len(tables)):
                 tb1 = tables[tb_idx]
                 tb1.reset_index()
-            res_table = Table.merge(ctx, tables)
+            res_table = Table.merge(tables)
             res_table.set_index(res_table.column_names[0], drop=True)
             for tb_idx in range(len(tables)):
                 tb1 = tables[tb_idx]

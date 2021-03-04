@@ -63,13 +63,6 @@ def test_single_process():
                           on=['use_id']
                           )
 
-    # tb6: Table = tb1.join(ctx, table=tb2,
-    #                       join_type=configs['join_type'],
-    #                       algorithm=configs['algorithm'],
-    #                       on=[0]
-    #                       )
-    #
-    # tb5.show()
     assert tb3.row_count == tb4.row_count == tb5.row_count and tb3.column_count == \
            tb4.column_count == tb5.column_count
     ctx.finalize()
