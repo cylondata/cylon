@@ -47,7 +47,8 @@ cdef class JoinConfig:
     cdef CJoinType jtPtr
     cdef CJoinAlgorithm jaPtr
 
-    def __cinit__(self, join_type: str, join_algorithm: str, left_column_index: int, right_column_index: int):
+    def __cinit__(self, join_type: str, join_algorithm: str, left_column_index: int,
+                  right_column_index: int, left_table_prefix:str="", right_table_prefix:str=""):
         '''
 
         :param join_type: passed as a str from one of the ["inner","left","outer","right"]
@@ -59,10 +60,14 @@ cdef class JoinConfig:
         if join_type is not None and join_algorithm is not None and left_column_index is not None and right_column_index is not None:
             self._get_join_config(join_type=join_type, join_algorithm=join_algorithm,
                                   left_column_index=left_column_index,
-                                  right_column_index=right_column_index)
+                                  right_column_index=right_column_index,
+                                  left_table_prefix=left_table_prefix,
+                                  right_table_prefix=right_table_prefix)
 
     cdef _get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
-                          right_column_index: int):
+                          right_column_index: int, left_table_prefix:str, right_table_prefix:str):
+        cdef string l_prefix = left_table_prefix.encode()
+        cdef string r_prefix = right_table_prefix.encode()
         if left_column_index is None or right_column_index is None:
             raise Exception("Join Column index not provided")
 
@@ -73,16 +78,16 @@ cdef class JoinConfig:
 
             if join_type == PJoinType.INNER.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CHASH)
+                                             CJoinAlgorithm.CHASH, l_prefix, r_prefix)
             elif join_type == PJoinType.LEFT.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CHASH)
+                                             CJoinAlgorithm.CHASH, l_prefix, r_prefix)
             elif join_type == PJoinType.RIGHT.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CHASH)
+                                             CJoinAlgorithm.CHASH, l_prefix, r_prefix)
             elif join_type == PJoinType.OUTER.value:
                 self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CHASH)
+                                             CJoinAlgorithm.CHASH, l_prefix, r_prefix)
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
 
@@ -90,29 +95,29 @@ cdef class JoinConfig:
 
             if join_type == PJoinType.INNER.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CSORT)
+                                             CJoinAlgorithm.CSORT, l_prefix, r_prefix)
             elif join_type == PJoinType.LEFT.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CSORT)
+                                             CJoinAlgorithm.CSORT, l_prefix, r_prefix)
             elif join_type == PJoinType.RIGHT.value:
                 self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CSORT)
+                                             CJoinAlgorithm.CSORT, l_prefix, r_prefix)
             elif join_type == PJoinType.OUTER.value:
                 self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index, right_column_index,
-                                             CJoinAlgorithm.CSORT)
+                                             CJoinAlgorithm.CSORT, l_prefix, r_prefix)
             else:
                 raise ValueError("Unsupported Join Type {}".format(join_type))
         else:
-            if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index, right_column_index)
-            elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index)
-            elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index, right_column_index)
-            elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index, right_column_index)
-            else:
-                raise ValueError("Unsupported Join Type {}".format(join_type))
+            # if join_type == PJoinType.INNER.value:
+            #     self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index, right_column_index)
+            # elif join_type == PJoinType.LEFT.value:
+            #     self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index)
+            # elif join_type == PJoinType.RIGHT.value:
+            #     self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index, right_column_index)
+            # elif join_type == PJoinType.OUTER.value:
+            #     self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index, right_column_index)
+            # else:
+            raise ValueError("Unsupported Join Type {}".format(join_type))
 
     @property
     def join_type(self) -> JoinType:
@@ -147,3 +152,11 @@ cdef class JoinConfig:
         :return: index of the join column in right table
         '''
         return self.jcPtr.GetRightColumnIdx()
+
+    @property
+    def left_prefix(self) -> str:
+        return self.jcPtr.GetLeftTableSuffix().decode()
+
+    @property
+    def right_prefix(self) -> str:
+        return self.jcPtr.GetRightTableSuffix().decode()

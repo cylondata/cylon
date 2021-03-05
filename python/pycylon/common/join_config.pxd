@@ -12,8 +12,10 @@
  # limitations under the License.
  ##
 
+from libcpp.string cimport string
+
 '''
-Join Configurations in TwisterX
+Join Configurations in Cylon
 '''
 
 cdef extern from "../../../cpp/src/cylon/join/join_config.hpp" namespace "cylon::join::config":
@@ -33,6 +35,7 @@ cdef extern from "../../../cpp/src/cylon/join/join_config.hpp" namespace "cylon:
     cdef cppclass CJoinConfig "cylon::join::config::JoinConfig":
         CJoinConfig(CJoinType type, int, int)
         CJoinConfig(CJoinType, int, int, CJoinAlgorithm)
+        CJoinConfig(CJoinType, int, int, CJoinAlgorithm, string, string)
         CJoinConfig InnerJoin(int, int)
         CJoinConfig LeftJoin(int, int)
         CJoinConfig RightJoin(int, int)
@@ -45,3 +48,5 @@ cdef extern from "../../../cpp/src/cylon/join/join_config.hpp" namespace "cylon:
         CJoinAlgorithm GetAlgorithm()
         int GetLeftColumnIdx()
         int GetRightColumnIdx()
+        const string GetLeftTableSuffix()
+        const string GetRightTableSuffix()

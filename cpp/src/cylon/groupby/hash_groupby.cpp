@@ -224,6 +224,7 @@ static inline AggregationFn resolve_op(const compute::AggregationOpId &aggOp) {
     case compute::VAR: return &aggregate<compute::VAR, ARROW_T>;
     case compute::NUNIQUE: return &aggregate<compute::NUNIQUE, ARROW_T>;
     case compute::QUANTILE: return &aggregate<compute::QUANTILE, ARROW_T>;
+    case compute::STDDEV: return &aggregate<compute::STDDEV, ARROW_T>;
     default: return nullptr;
   }
 }
@@ -264,7 +265,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   auto t2 = std::chrono::steady_clock::now();
 
   std::vector<int64_t> group_ids;
-  int64_t unique_groups;
+  int64_t unique_groups = 0;
   std::shared_ptr<arrow::Array> group_filter;
   RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, group_filter, &unique_groups))
 

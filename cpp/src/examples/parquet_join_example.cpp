@@ -50,8 +50,14 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
 
-  status = cylon::DistributedJoin(first_table, second_table,
-                                  cylon::join::config::JoinConfig::InnerJoin(0, 0), joined);
+  auto join_config = cylon::join::config::JoinConfig(cylon::join::config::JoinType::INNER,
+                                                     0,
+                                                     0,
+                                                     cylon::join::config::JoinAlgorithm::SORT,
+                                                     "l_",
+                                                     "r_");
+
+  status = cylon::DistributedJoin(first_table, second_table, join_config, joined);
 
   if (!status.is_ok()) {
     LOG(INFO) << "Table join failed ";
