@@ -26,6 +26,8 @@ arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
                                 const std::vector<int64_t> &right_indices,
                                 const std::shared_ptr<arrow::Table> &left_tab,
                                 const std::shared_ptr<arrow::Table> &right_tab,
+                                const std::string &left_table_prefix,
+                                const std::string &right_table_prefix,
                                 std::shared_ptr<arrow::Table> *final_table,
                                 arrow::MemoryPool *memory_pool);
 
@@ -37,6 +39,8 @@ arrow::Status build_final_table_inplace_index(
     std::shared_ptr<arrow::UInt64Array> &right_index_sorted_column,
     const std::shared_ptr<arrow::Table> &left_tab,
     const std::shared_ptr<arrow::Table> &right_tab,
+    const std::string &left_table_prefix,
+    const std::string &right_table_prefix,
     std::shared_ptr<arrow::Table> *final_table,
     arrow::MemoryPool *memory_pool);
 

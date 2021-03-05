@@ -356,7 +356,9 @@ def test_rename():
     data_list_numeric = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13, 14, 15],
                          [16, 17, 18, 19, 20]]
     ctx: CylonContext = CylonContext(config=None, distributed=False)
+    index_values = [0, 1, 2, 3, 4]
     cn_tb = cn.Table.from_list(ctx, col_names, data_list_numeric)
+    cn_tb.set_index(index_values)
     cdf = DataFrame(cn_tb)
     prev_col_names = cn_tb.column_names
     # with dictionary
@@ -371,6 +373,7 @@ def test_rename():
 
     # with list
     cn_tb_list = cn.Table.from_list(ctx, col_names, data_list_numeric)
+    cn_tb_list.set_index(index_values)
     cdf_list = DataFrame(cn_tb_list)
     prev_col_names = cdf_list.columns
     new_column_names = ['col-1', 'col-2', 'col-3', 'col-4']
