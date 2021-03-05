@@ -141,6 +141,7 @@ cpdef table_compute_ar_op(table: Table, other, op):
         ar_table = table.to_arrow().combine_chunks()
         for col in ar_table.columns:
           ar_array = col.chunks[0]
+          r = arrow_op(ar_array, pa.scalar(other, col.type))
           np_array = None
           try:
             np_array = ar_array.to_numpy()
@@ -227,19 +228,26 @@ cpdef division_op(table:Table, op, value):
     Returns: PyCylon table
 
     """
+    if not isinstance(value, numbers.Number) and not isinstance(value,
+                                                                Table) and value.column_count() != 1:
+        raise ValueError("Div operation value must be numerical or a Numeric Table with 1 column")
+
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
-    if not isinstance(value, numbers.Number):
-        raise ValueError("Math operation value must be numerical")
-    # Special casting check needed for division compared to other operators when dividing
-    # integers by integers
-    cast_type = pa.float64()
-    for chunk_arr in ar_tb.itercolumns():
-        chunk_arr = chunk_arr.cast(cast_type)
-        value = cast_scalar(value, cast_type.id)
-        res_array.append(op(chunk_arr, value))
+
+    if isinstance(value, numbers.Number):
+        for chunk_arr in ar_tb.itercolumns():
+            # scalar casting is inexpensive, hence there's no check!
+            res_array.append(op(chunk_arr.cast(pa.float64()), pa.scalar(value, pa.float64())))
+    elif isinstance(value, Table):
+        if value.row_count != table.row_count:
+            raise ValueError("Math operation table lengths do not match")
+        value_col = value.to_arrow()[0]  # get first column
+        for chunk_arr in ar_tb.itercolumns():
+            res_array.append(op(chunk_arr.cast(pa.float64()), value_col.cast(pa.float64())))
+
     return Table.from_arrow(table.context, pa.Table.from_arrays(res_array,
-                                                                   names=table.column_names))
+                                                                names=table.column_names))
 
 cpdef math_op(table:Table, op, value):
     """
@@ -254,6 +262,9 @@ cpdef math_op(table:Table, op, value):
     Returns:
 
     """
+    if not isinstance(value, numbers.Number) and not isinstance(value, Table) and value.column_count() != 1:
+        raise ValueError("Math operation value must be numerical or a Numeric Table with 1 column")
+
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
     if isinstance(value, Table):

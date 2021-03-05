@@ -34,6 +34,7 @@ cmdclass = versioneer.get_cmdclass(),
 
 # os.environ["CXX"] = "mpic++"
 pyarrow_location = os.path.dirname(pa.__file__)
+pyarrow_version = pa.__version__
 
 CYLON_PREFIX = os.environ.get('CYLON_PREFIX')
 ARROW_PREFIX = os.environ.get('ARROW_PREFIX')
@@ -70,7 +71,7 @@ else:
 pyarrow_include_dir = os.path.join(pyarrow_location, 'include')
 extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
 extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
-extra_compile_args = extra_link_args + additional_compile_args
+extra_compile_args = extra_compile_args + extra_link_args + additional_compile_args
 extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 
 glob_library_directory = os.path.join(CYLON_PREFIX, "glog", "install", "lib")
@@ -138,7 +139,7 @@ setup(
     python_requires='>=3.7',
     install_requires=[
         'numpy',
-        'pyarrow==2.0.0',
+        f'pyarrow=={pyarrow_version}',
         'cython',
     ],
     zip_safe=False,
