@@ -56,8 +56,8 @@ class JoinConfig {
         algorithm(algorithm),
         left_column_idx(left_column_idx),
         right_column_idx(right_column_idx),
-        left_table_suffix(left_table_suffix),
-        right_table_suffix(right_table_suffix) {}
+        left_table_suffix(std::move(left_table_suffix)),
+        right_table_suffix(std::move(right_table_suffix)) {}
 
   static JoinConfig InnerJoin(int left_column_idx, int right_column_idx) {
     return {INNER, left_column_idx, right_column_idx};

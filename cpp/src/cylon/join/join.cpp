@@ -75,8 +75,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
                                      int64_t left_join_column_idx,
                                      int64_t right_join_column_idx,
                                      cylon::join::config::JoinType join_type,
-                                     std::string left_table_prefix,
-                                     std::string right_table_prefix,
+                                     const std::string &left_table_prefix,
+                                     const std::string &right_table_prefix,
                                      std::shared_ptr<arrow::Table> *joined_table,
                                      arrow::MemoryPool *memory_pool) {
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
