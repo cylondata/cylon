@@ -56,9 +56,9 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort
   const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::NoBoundsCheck();
 
   for (int64_t col_index = 0; col_index < tab_to_process->num_columns(); ++col_index) {
-    const arrow::Result<arrow::Datum> &res =
-        arrow::compute::Take(cylon::util::GetChunkOrEmptyArray(tab_to_process->column(col_index), 0), sorted_column_index,
-                             take_options, &exec_context);
+    const arrow::Result<arrow::Datum> &res = arrow::compute::Take(
+        cylon::util::GetChunkOrEmptyArray(tab_to_process->column(col_index), 0),
+        sorted_column_index, take_options, &exec_context);
     RETURN_ARROW_STATUS_IF_FAILED(res.status())
     sorted_columns.emplace_back(res.ValueOrDie().make_array());
   }
@@ -96,9 +96,9 @@ arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
   const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::NoBoundsCheck();
 
   for (int64_t col_index = 0; col_index < tab_to_process->num_columns(); ++col_index) {
-    const arrow::Result<arrow::Datum> &res =
-        arrow::compute::Take(cylon::util::GetChunkOrEmptyArray(tab_to_process->column(col_index), 0), sorted_column_index,
-                             take_options, &exec_context);
+    const arrow::Result<arrow::Datum> &res = arrow::compute::Take(
+        cylon::util::GetChunkOrEmptyArray(tab_to_process->column(col_index), 0),
+        sorted_column_index, take_options, &exec_context);
     RETURN_ARROW_STATUS_IF_FAILED(res.status())
     sorted_columns.emplace_back(res.ValueOrDie().make_array());
   }
@@ -159,30 +159,37 @@ static inline arrow::Status sample_array(const std::shared_ptr<arrow::ChunkedArr
   using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
 
-  std::random_device rd;
-  std::mt19937_64 gen(rd());
+  auto arr = arrow::Array<ARROW_ARRAY_T>();
+  
+
+  arrow::ArrayData(ch_array->type(), 0);
 
   ARROW_BUILDER_T builder;
   auto a_status = builder.Reserve(num_samples);
   RETURN_ARROW_STATUS_IF_FAILED(a_status);
 
-  int64_t completed_samples = 0, samples_for_chunk, total_len = ch_array->length();
-  for (auto &&arr : ch_array->chunks()) {
-    std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
-    samples_for_chunk =
-        (num_samples * casted_array->length() + total_len - 1) / total_len;  // upper bound
-    samples_for_chunk = std::min(samples_for_chunk, total_len - completed_samples);
+  if (num_samples > 0) {
+    static std::random_device rd;
+    static std::mt19937_64 gen(rd());
 
-    std::uniform_int_distribution<int64_t> distrib(0, casted_array->length() - 1);
-    for (int64_t i = 0; i < samples_for_chunk; i++) {
-      int64_t idx = distrib(gen);
-      builder.UnsafeAppend(casted_array->Value(idx));
+    int64_t completed_samples = 0, samples_for_chunk, total_len = ch_array->length();
+    for (auto &&arr : ch_array->chunks()) {
+      std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
+      samples_for_chunk =
+          (num_samples * casted_array->length() + total_len - 1) / total_len;  // upper bound
+      samples_for_chunk = std::min(samples_for_chunk, total_len - completed_samples);
+
+      std::uniform_int_distribution<int64_t> distrib(0, casted_array->length() - 1);
+      for (int64_t i = 0; i < samples_for_chunk; i++) {
+        int64_t idx = distrib(gen);
+        builder.UnsafeAppend(casted_array->Value(idx));
+      }
+      completed_samples += samples_for_chunk;
     }
-    completed_samples += samples_for_chunk;
-  }
 
-  if (builder.length() != (int64_t)num_samples) {
-    return arrow::Status::ExecutionError("sampling failure");
+    if (builder.length() != (int64_t)num_samples) {
+      return arrow::Status::ExecutionError("sampling failure");
+    }
   }
 
   return builder.Finish(&out);
