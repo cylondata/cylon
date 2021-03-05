@@ -159,11 +159,6 @@ static inline arrow::Status sample_array(const std::shared_ptr<arrow::ChunkedArr
   using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
 
-  auto arr = arrow::Array<ARROW_ARRAY_T>();
-  
-
-  arrow::ArrayData(ch_array->type(), 0);
-
   ARROW_BUILDER_T builder;
   auto a_status = builder.Reserve(num_samples);
   RETURN_ARROW_STATUS_IF_FAILED(a_status);
