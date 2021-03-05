@@ -315,14 +315,23 @@ cpdef add(table:Table, value):
 cpdef subtract(table:Table, value):
     if np.isscalar(value) and isinstance(value, numbers.Number):
         return math_op_arrow(table, a_subtract, value)
+    else:
+        from operator import sub
+        return math_op(table, sub, value)
 
 cpdef multiply(table:Table, value):
     if np.isscalar(value) and isinstance(value, numbers.Number):
         return math_op_arrow(table, a_multiply, value)
+    else:
+        from operator import mul
+        return math_op(table, mul, value)
 
 cpdef divide(table:Table, value):
     if np.isscalar(value) and isinstance(value, numbers.Number):
         return math_op_arrow(table, a_divide, value)
+    else:
+        from operator import truediv
+        return math_op(table, truediv, value)
 
 cpdef unique(table:Table):
     # TODO: axis=1 implementation (row-wise comparison), Requires distributed function

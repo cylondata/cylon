@@ -711,4 +711,4 @@ def test_concat_op():
     assert res_tb_2.index.index_values == res_pdf_3.index.values.tolist()
 
 
-test_concat_op()
+test_math_ops_for_table_values()

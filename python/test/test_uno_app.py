@@ -527,4 +527,17 @@ def test_numpy_conversion():
     print(t2-t1, t3-t2)
 
 
-test_numpy_conversion()
+def test_col_access():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+    print(tb1)
+    tbx = tb1[tb1.column_names[0]]
+    print(tbx)
+    npy = tbx.to_numpy().flatten().tolist()
+    print(npy)
+
+
+test_col_access()
