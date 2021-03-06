@@ -710,5 +710,3 @@ def test_concat_op():
     assert res_pdf_3.values.tolist() == res_tb_2.to_pandas().values.tolist()
     assert res_tb_2.index.index_values == res_pdf_3.index.values.tolist()
 
-
-test_math_ops_for_table_values()
