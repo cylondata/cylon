@@ -27,7 +27,7 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(CYLON)
 
-set(CYLON_VERSION 0.2.0)
+set(CYLON_VERSION 0.4.0)
 
 ## defaults to release build
 if (NOT CMAKE_BUILD_TYPE)
@@ -35,6 +35,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 # cmake modules directories
+set(CYLON_ARROW_VERSION 2.0.0)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
@@ -127,14 +128,24 @@ elseif (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
 elseif (${ARROW_BUILD_TYPE} STREQUAL "CUSTOM")
     if (NOT ARROW_LIB_DIR)
         message(FATAL_ERROR "ARROW_BUILD_TYPE is set to CUSTOM, ARROW_LIB_DIR should be set")
-    endif()
+    endif ()
 
     if (NOT ARROW_INCLUDE_DIR)
         message(FATAL_ERROR "ARROW_BUILD_TYPE is set to CUSTOM, ARROW_INCLUDE_DIR should be set")
-    endif()
+    endif ()
     add_definitions(${GCC_ABI_COMPILE_FLAGS})
-    set(ARROW_LIB arrow)
     LINK_DIRECTORIES(${ARROW_LIB_DIR})
+
+    string(REPLACE "." "" ARROW_SO_VERSION ${CYLON_ARROW_VERSION})
+    list(APPEND CMAKE_FIND_LIBRARY_SUFFIXES ".so.${ARROW_SO_VERSION}")
+    find_library(ARROW_LIB arrow REQUIRED HINTS "${ARROW_LIB_DIR}")
+    message("ARROW_LIB: ${ARROW_LIB}")
+
+    if (CYLON_PARQUET)
+        find_library(PARQUET_LIB parquet REQUIRED HINTS "${ARROW_LIB_DIR}")
+        message("PARQUET_LIB: ${PARQUET_LIB}")
+    endif ()
+
     include_directories(SYSTEM ${ARROW_INCLUDE_DIR})
 else ()
     message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM or SOURCE")
@@ -152,9 +163,11 @@ add_subdirectory(src/examples)
 add_subdirectory(src/tutorial)
 
 ## installing arrow files
-install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION include)
-install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so DESTINATION lib)
-install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
+if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
+    install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION include)
+    install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so DESTINATION lib)
+    install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
+endif ()
 
 if (CYLON_WITH_TEST)
     message("Tests enabled!")

@@ -233,7 +233,6 @@ cdef class LocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         for col_idx in column_list:
             c_column_index.push_back(col_idx)
@@ -286,7 +285,7 @@ cdef class LocIndexer:
                     self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
                     intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")
@@ -405,7 +404,6 @@ cdef class LocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
@@ -460,7 +458,7 @@ cdef class LocIndexer:
                                                    c_end_column_index, input, output)
                     intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")
@@ -583,7 +581,6 @@ cdef class LocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
@@ -633,7 +630,7 @@ cdef class LocIndexer:
                     self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
                     intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")
@@ -766,7 +763,6 @@ cdef class ILocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         for col_idx in column_list:
             c_column_index.push_back(col_idx)
@@ -784,7 +780,7 @@ cdef class ILocIndexer:
                     self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
                     intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")
@@ -829,7 +825,6 @@ cdef class ILocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
@@ -846,7 +841,7 @@ cdef class ILocIndexer:
                                                    c_end_column_index, input, output)
                 intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")
@@ -889,7 +884,6 @@ cdef class ILocIndexer:
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
-        ctx = table.context
 
         cdef PyObjectToCObject p2c = PyObjectToCObject(arrow_type)
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
@@ -905,7 +899,7 @@ cdef class ILocIndexer:
                 self.indexer_shd_ptr.get().loc(&c_start_index, c_column_index, input, output)
                 intermediate_tables.append(pycylon_wrap_table(output))
 
-            return Table.merge(ctx, intermediate_tables)
+            return Table.merge(intermediate_tables)
 
         if np.isscalar(indices):
             print("select a single index")

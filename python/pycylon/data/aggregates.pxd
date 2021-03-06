@@ -28,6 +28,7 @@ cdef extern from "../../../cpp/src/cylon/compute/aggregate_kernels.hpp" namespac
         CVAR 'cylon::compute::VAR'
         CNUNIQUE 'cylon::compute::NUNIQUE'
         CQUANTILE 'cylon::compute::QUANTILE'
+        CSTDDEV 'cylon::compute::STDDEV'
 
 cdef extern from "../../../cpp/src/cylon/compute/aggregates.hpp" namespace "cylon::compute":
 

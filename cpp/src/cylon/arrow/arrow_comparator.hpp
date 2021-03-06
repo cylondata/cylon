@@ -54,7 +54,7 @@ class ArrayIndexComparator {
   virtual int compare(int64_t index1, int64_t index2) const = 0;
 };
 
-std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array);
+std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array, bool asc = true);
 
 // -----------------------------------------------------------------------------
 
