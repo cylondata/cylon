@@ -53,7 +53,7 @@ Status PrepareArray(std::shared_ptr<cylon::CylonContext> &ctx,
                     const std::vector<int64_t> &row_indices, arrow::ArrayVector &array_vector) {
   std::shared_ptr<arrow::Array> destination_col_array;
   arrow::Status ar_status =
-      cylon::util::copy_array_by_indices(row_indices, table->column(col_idx)->chunk(0),
+      cylon::util::copy_array_by_indices(row_indices, cylon::util::GetChunkOrEmptyArray(table->column(col_idx), 0),
                                          &destination_col_array, cylon::ToArrowPool(ctx));
   if (ar_status != arrow::Status::OK()) {
     LOG(FATAL) << "Failed while copying a column to the final table from tables."
@@ -836,13 +836,14 @@ Status Project(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> 
   std::vector<std::shared_ptr<arrow::Field>> schema_vector;
   std::vector<std::shared_ptr<arrow::ChunkedArray>> column_arrays;
   schema_vector.reserve(project_columns.size());
+  column_arrays.reserve(project_columns.size());
+
   auto table_ = table->get_table();
   auto ctx = table->GetContext();
 
   for (auto const &col_index : project_columns) {
     schema_vector.push_back(table_->field(col_index));
-    auto chunked_array = std::make_shared<arrow::ChunkedArray>(table_->column(col_index)->chunks());
-    column_arrays.push_back(chunked_array);
+    column_arrays.push_back(table_->column(col_index));
   }
 
   auto schema = std::make_shared<arrow::Schema>(schema_vector);

@@ -100,8 +100,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
             << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
 
   // sort columns
-  auto left_join_column = left_tab_comb->column(left_join_column_idx)->chunk(0);
-  auto right_join_column = right_tab_comb->column(right_join_column_idx)->chunk(0);
+  auto left_join_column = cylon::util::GetChunkOrEmptyArray(left_tab_comb->column(left_join_column_idx), 0);
+  auto right_join_column = cylon::util::GetChunkOrEmptyArray(right_tab_comb->column(right_join_column_idx), 0);
 
   auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
@@ -285,8 +285,8 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   LOG(INFO) << "Combine chunks time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
 
   // sort columns
-  auto left_join_column = left_tab_comb->column(left_join_column_idx)->chunk(0);
-  auto right_join_column = right_tab_comb->column(right_join_column_idx)->chunk(0);
+  auto left_join_column = cylon::util::GetChunkOrEmptyArray(left_tab_comb->column(left_join_column_idx), 0);
+  auto right_join_column = cylon::util::GetChunkOrEmptyArray(right_tab_comb->column(right_join_column_idx), 0);
 
   auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
@@ -472,8 +472,8 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
             << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
 
   // sort columns
-  const std::shared_ptr<arrow::Array> &left_idx_column = left_tab_comb->column(left_join_column_idx)->chunk(0);
-  const std::shared_ptr<arrow::Array> &right_idx_column = right_tab_comb->column(right_join_column_idx)->chunk(0);
+  const std::shared_ptr<arrow::Array> &left_idx_column = cylon::util::GetChunkOrEmptyArray(left_tab_comb->column(left_join_column_idx), 0);
+  const std::shared_ptr<arrow::Array> &right_idx_column = cylon::util::GetChunkOrEmptyArray(right_tab_comb->column(right_join_column_idx), 0);
 
   std::vector<int64_t> left_indices, right_indices;
 

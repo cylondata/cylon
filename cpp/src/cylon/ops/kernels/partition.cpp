@@ -13,6 +13,7 @@
  */
 #include <vector>
 #include <util/macros.hpp>
+#include <util/arrow_utils.hpp>
 
 #include "ctx/arrow_memory_pool_utils.hpp"
 #include "partition.hpp"
@@ -65,7 +66,7 @@ cylon::Status cylon::kernel::StreamingHashPartitionKernel::Process(int tag, cons
   // now insert table to split_kernels
   for (int i = 0; i < arrow_table->num_columns(); i++) {
     RETURN_CYLON_STATUS_IF_FAILED(split_kernels[i]->Split(
-        arrow_table->column(i)->chunk(0), temp_partitions, temp_partition_hist))
+        cylon::util::GetChunkOrEmptyArray(arrow_table->column(i), 0), temp_partitions, temp_partition_hist))
   }
 
   return Status::OK();
