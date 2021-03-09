@@ -55,6 +55,8 @@ from pycylon.indexing.index import BaseIndex
 from pycylon.indexing.index import IndexingSchema
 from pycylon.indexing.index import PyLocIndexer
 
+from pycylon.util.type_utils import  get_arrow_type
+
 import math
 import pyarrow as pa
 import numpy as np
@@ -123,16 +125,17 @@ cdef class Table:
         else:
             self.table_shd_ptr.get().Print(row1, row2, col1, col2)
 
-    def sort(self, by, ascending = True) -> Table:
+    def sort(self, order_by, ascending=True) -> Table:
+
         cdef shared_ptr[CTable] output
         cdef vector[long] sort_index
         cdef vector[bool] order_directions
-        if isinstance(by, str):
-            sort_index.push_back(self._resolve_column_index_from_column_name(by))
-        elif isinstance(by, int):
-            sort_index.push_back(by)
-        elif isinstance(by, list):
-            for b in by:
+        if isinstance(order_by, str):
+            sort_index.push_back(self._resolve_column_index_from_column_name(order_by))
+        elif isinstance(order_by, int):
+            sort_index.push_back(order_by)
+        elif isinstance(order_by, list):
+            for b in order_by:
                 if isinstance(b, str):
                     sort_index.push_back(self._resolve_column_index_from_column_name(b))
                 elif isinstance(b, int):
@@ -2415,6 +2418,81 @@ cdef class Table:
             for column in data_dict:
                 row.append(data_dict[column][index_id])
             yield index_values[index_id], row
+
+
+    def astype(self, dtype, safe=True):
+        """
+        This cast a table into given data type
+        Args:
+            dtype: can be a dictionary or a data type
+            safe: bool  check for overflows or other unsafe conversions
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> tb
+                c2  c3
+            c1
+            1   20  33
+            2   30  43
+            3   40  53
+            4   50  63
+            5   51  73
+
+        >>> tb.astype(float)
+                  c2    c3
+            c1
+            1   20.0  33.0
+            2   30.0  43.0
+            3   40.0  53.0
+            4   50.0  63.0
+            5   51.0  73.0
+
+        >>> tb.astype({'c2': 'int32', 'c3': 'float64'})
+                c2    c3
+            c1
+            1   20  33.0
+            2   30  43.0
+            3   40  53.0
+            4   50  63.0
+            5   51  73.0
+
+
+        """
+        current_index = self.index.index_values
+        column_names = self.column_names
+        artb = self.to_arrow()
+        schema = artb.schema
+        if isinstance(dtype, dict):
+            for field_id, field in enumerate(schema):
+                try:
+                    expected_dtype = dtype[field.name]
+                except KeyError:
+                    continue
+                arrow_type = get_arrow_type(expected_dtype)
+                if arrow_type is None:
+                    raise ValueError(f"cast data type is not supported")
+                new_field = field.with_type(arrow_type)
+                schema = schema.set(field_id, new_field)
+            casted_artb = artb.cast(schema, safe)
+            new_cn_table = Table.from_arrow(self.context, casted_artb)
+            new_cn_table.set_index(current_index)
+            return new_cn_table
+        elif np.isscalar(dtype) or isinstance(dtype, type):
+            arrow_type = get_arrow_type(dtype)
+            if arrow_type is None:
+                raise ValueError(f"cast data type is not supported")
+            for field_id, field in enumerate(schema):
+                new_field = field.with_type(arrow_type)
+                schema = schema.set(field_id, new_field)
+            casted_artb = artb.cast(schema, safe)
+            new_cn_table = Table.from_arrow(self.context, casted_artb)
+            new_cn_table.set_index(current_index)
+            return new_cn_table
+        else:
+            raise ValueError("Unsupported data type representation")
 
 
 

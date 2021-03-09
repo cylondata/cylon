@@ -67,7 +67,7 @@ def test_multicol():
 
     cn_t = cn.Table.from_arrow(ctx, pa_t)
 
-    cn_srt = cn_t.sort(by=['col1', 'col2'], ascending=[True, False])
+    cn_srt = cn_t.sort(order_by=['col1', 'col2'], ascending=[True, False])
 
     # pandas 
 
