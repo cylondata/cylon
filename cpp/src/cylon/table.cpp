@@ -406,22 +406,20 @@ arrow::Status create_table_with_duplicate_index(
 }
 
 Status Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &right,
-            cylon::join::config::JoinConfig join_config, std::shared_ptr<cylon::Table> &out) {
+            const join::config::JoinConfig &join_config, std::shared_ptr<cylon::Table> &out) {
   if (left == NULLPTR) {
     return Status(Code::KeyError, "Couldn't find the left table");
   } else if (right == NULLPTR) {
     return Status(Code::KeyError, "Couldn't find the right table");
   } else {
-    std::shared_ptr<arrow::Table> table;
-    std::shared_ptr<arrow::Table> left_table;
-    std::shared_ptr<arrow::Table> right_table;
+    std::shared_ptr<arrow::Table> table, left_table, right_table;
     auto ctx = left->GetContext();
     left->ToArrowTable(left_table);
     right->ToArrowTable(right_table);
     // if it is a sort algorithm and certian key types, we are going to do an in-place sort
     if (join_config.GetAlgorithm() == cylon::join::config::SORT) {
-      size_t lIndex = join_config.GetLeftColumnIdx();
-      size_t rIndex = join_config.GetRightColumnIdx();
+      size_t lIndex = join_config.GetLeftColumnIdx()[0];
+      size_t rIndex = join_config.GetRightColumnIdx()[0];
       auto left_type = left_table->column(lIndex)->type()->id();
       if (cylon::join::util::is_inplace_join_possible(left_type)) {
         // now create a copy
@@ -445,12 +443,14 @@ Status Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &
       }
     }
 
-    arrow::Status status =
-        join::joinTables(left_table, right_table, join_config, &table, cylon::ToArrowPool(ctx));
-    if (status == arrow::Status::OK()) {
-      out = std::make_shared<cylon::Table>(table, ctx);
-    }
-    return Status(static_cast<int>(status.code()), status.message());
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::joinTables(left_table,
+                                                         right_table,
+                                                         join_config,
+                                                         &table,
+                                                         cylon::ToArrowPool(ctx)))
+    out = std::make_shared<cylon::Table>(table, ctx);
+
+    return Status::OK();
   }
 }
 
@@ -460,7 +460,7 @@ Status Table::ToArrowTable(std::shared_ptr<arrow::Table> &out) {
 }
 
 Status DistributedJoin(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &right,
-                       cylon::join::config::JoinConfig join_config,
+                       const join::config::JoinConfig &join_config,
                        std::shared_ptr<cylon::Table> &out) {
   // check whether the world size is 1
   std::shared_ptr<cylon::CylonContext> ctx = left->GetContext();
@@ -469,15 +469,13 @@ Status DistributedJoin(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylo
   }
 
   std::shared_ptr<arrow::Table> left_final_table, right_final_table;
-  auto shuffle_status = shuffle_two_tables_by_hashing(ctx, left, join_config.GetLeftColumnIdx(),
-                                                      right, join_config.GetRightColumnIdx(),
-                                                      left_final_table, right_final_table);
-  RETURN_CYLON_STATUS_IF_FAILED(shuffle_status)
+  RETURN_CYLON_STATUS_IF_FAILED(shuffle_two_tables_by_hashing(ctx, left, join_config.GetLeftColumnIdx(),
+                                                              right, join_config.GetRightColumnIdx(),
+                                                              left_final_table, right_final_table))
 
   std::shared_ptr<arrow::Table> table;
-  arrow::Status status = join::joinTables(left_final_table, right_final_table, join_config, &table,
-                                          cylon::ToArrowPool(ctx));
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::joinTables(left_final_table, right_final_table, join_config, &table,
+                                                       cylon::ToArrowPool(ctx)))
   out = std::make_shared<cylon::Table>(table, ctx);
 
   return Status::OK();
