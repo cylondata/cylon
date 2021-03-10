@@ -55,7 +55,7 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> &cy_table) {
   auto t1 = std::chrono::high_resolution_clock::now();
 /*  std::shared_ptr<arrow::Table> table = cy_table->get_table();
   // first we need to calculate the hash
-  std::shared_ptr<arrow::Array> arr = table->column(config_->HashColumns()[0])->chunk(0);
+  std::shared_ptr<arrow::Array> arr = cylon::util::GetChunkOrEmptyArray(table->column(config_->HashColumns()[0]), 0);
   int64_t length = arr->length();
   size_t size = ctx_->GetWorldSize();
   size_t kI = config_->NoOfPartitions();
@@ -83,8 +83,8 @@ bool cylon::SplitOp::Execute(int tag, std::shared_ptr<Table> &cy_table) {
   }
   // now split
   for (int i = 0; i < table->num_columns(); i++) {
-    std::shared_ptr<arrow::DataType> type = table->column(i)->chunk(0)->type();
-    std::shared_ptr<arrow::Array> array = table->column(i)->chunk(0);
+    std::shared_ptr<arrow::DataType> type = cylon::util::GetChunkOrEmptyArray(table->column(i), 0)->type();
+    std::shared_ptr<arrow::Array> array = cylon::util::GetChunkOrEmptyArray(table->column(i), 0);
 
     std::shared_ptr<StreamingSplitKernel> splitKernel = split_kernels[i];
     splitKernel->Split(array, outPartitions, cnts);
