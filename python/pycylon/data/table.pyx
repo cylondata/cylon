@@ -18,8 +18,8 @@ from pycylon.common.status import Status
 from pycylon.common.join_config cimport CJoinType
 from pycylon.common.join_config cimport CJoinAlgorithm
 from pycylon.common.join_config cimport CJoinConfig
-from pycylon.common.join_config import PJoinType
-from pycylon.common.join_config import PJoinAlgorithm
+from pycylon.common.join_config import JoinConfig, StrToJoinType, StrToJoinAlgorithm
+from pycylon.common.join_config cimport JoinConfig
 from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pycylon.io.csv_write_config import CSVWriteOptions
 from pycylon.io.csv_write_config cimport CSVWriteOptions
@@ -40,7 +40,8 @@ pycylon_unwrap_csv_read_options,
 pycylon_unwrap_csv_write_options,
 pycylon_unwrap_sort_options,
 pycylon_wrap_base_index,
-pycylon_unwrap_base_index)
+pycylon_unwrap_base_index,
+pycylon_unwrap_join_config)
 
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
@@ -55,7 +56,7 @@ from pycylon.indexing.index import BaseIndex
 from pycylon.indexing.index import IndexingSchema
 from pycylon.indexing.index import PyLocIndexer
 
-from pycylon.util.type_utils import  get_arrow_type
+from pycylon.util.type_utils import get_arrow_type
 
 import math
 import pyarrow as pa
@@ -141,19 +142,21 @@ cdef class Table:
                 elif isinstance(b, int):
                     sort_index.push_back(b)
                 else:
-                    raise Exception('Unsupported type used to specify the sort by columns. Expected column name or index')
+                    raise Exception(
+                        'Unsupported type used to specify the sort by columns. Expected column name or index')
         else:
-            raise Exception('Unsupported type used to specify the sort by columns. Expected column name or index')
+            raise Exception(
+                'Unsupported type used to specify the sort by columns. Expected column name or index')
 
-        
-        if type(ascending) ==type(True):
+        if type(ascending) == type(True):
             for i in range(0, sort_index.size()):
                 order_directions.push_back(ascending)
         elif isinstance(ascending, list):
             for i in range(0, sort_index.size()):
                 order_directions.push_back(ascending[i])
         else:
-            raise Exception('Unsupported format for ascending/descending order indication. Expected a boolean or a list of booleans')
+            raise Exception(
+                'Unsupported format for ascending/descending order indication. Expected a boolean or a list of booleans')
 
         cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output, order_directions)
         if status.is_ok():
@@ -204,14 +207,6 @@ cdef class Table:
         else:
             raise ValueError("Tables are not parsed for merge")
 
-    @property
-    def column_names(self):
-        """
-        Produces column names for PyCylon Table
-        @return:
-        """
-        return pyarrow_wrap_table(pyarrow_unwrap_table(self.to_arrow())).column_names
-
     def _resolve_column_index_from_column_name(self, column_name) -> int:
         index = None
         for idx, col_name in enumerate(self.column_names):
@@ -243,18 +238,6 @@ cdef class Table:
         @rtype: CylonContext
         """
         return pycylon_wrap_context(self.table_shd_ptr.get().GetContext())
-
-    @property
-    def column_names(self) -> List[str]:
-        """
-        Produces column names
-        @return: list
-        """
-        column_names = []
-        cdef vector[string] c_column_names = self.table_shd_ptr.get().ColumnNames()
-        for col_name in c_column_names:
-            column_names.append(col_name.decode())
-        return column_names
 
     def _resolve_join_column_indices_from_column_names(self, column_names: List[
         str], op_column_names: List[str]) -> List[int]:
@@ -311,84 +294,6 @@ cdef class Table:
         if not self._is_column_indices_viable(left_cols, right_cols):
             raise ValueError("Provided Column Names or Column Indices not valid.")
 
-    def __get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
-                          right_column_index: int, left_prefix:str="", right_prefix:str=""):
-        if left_column_index is None or right_column_index is None:
-            raise Exception("Join Column index not provided")
-
-        if join_algorithm is None:
-            join_algorithm = PJoinAlgorithm.HASH.value
-
-        if join_algorithm == PJoinAlgorithm.HASH.value:
-
-            if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH,
-                                             left_prefix.encode(), right_prefix.encode())
-            elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH,
-                                             left_prefix.encode(), right_prefix.encode())
-            elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH,
-                                             left_prefix.encode(), right_prefix.encode())
-            elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH,
-                                             left_prefix.encode(), right_prefix.encode())
-            else:
-                raise ValueError("Unsupported Join Type {}".format(join_type))
-
-        elif join_algorithm == PJoinAlgorithm.SORT.value:
-
-            if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT,
-                                             left_prefix.encode(), right_prefix.encode())
-            elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT,
-                                             left_prefix.encode(), right_prefix.encode())
-            elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT,
-                                             left_prefix.encode(), right_prefix.encode())
-            elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT,
-                                             left_prefix.encode(), right_prefix.encode())
-            else:
-                raise ValueError("Unsupported Join Type {}".format(join_type))
-        else:
-            # if join_type == PJoinType.INNER.value:
-            #     self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
-            #                                  right_column_index)
-            # elif join_type == PJoinType.LEFT.value:
-            #     self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index)
-            # elif join_type == PJoinType.RIGHT.value:
-            #     self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
-            #                                  right_column_index)
-            # elif join_type == PJoinType.OUTER.value:
-            #     self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
-            #                                  right_column_index)
-            # else:
-            raise ValueError("Unsupported Join Algorithm {}".format(join_algorithm))
-
-    def init_join_ra_params(self, table, join_type, algorithm, kwargs):
-        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
-        left_prefix = kwargs.get('left_prefix') if kwargs.get('left_prefix') else ""
-        right_prefix = kwargs.get('right_prefix') if kwargs.get('right_prefix') else ""
-
-
-        # Cylon only supports join by one column and retrieve first left and right column when
-        # resolving join configs
-        self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
-                               left_column_index=left_cols[0],
-                               right_column_index=right_cols[0],
-                               left_prefix=left_prefix,
-                               right_prefix=right_prefix)
-
     cdef _get_join_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status):
         if status.is_ok():
             return pycylon_wrap_table(output)
@@ -423,7 +328,7 @@ cdef class Table:
 
     def join(self, table: Table, join_type: str,
              algorithm: str, **kwargs) -> Table:
-        '''
+        """
         Joins two PyCylon tables
         :param table: PyCylon table on which the join is performed (becomes the left table)
         :param join_type: Join Type as str ["inner", "left", "right", "outer"]
@@ -432,17 +337,24 @@ cdef class Table:
         Join column of the right table as List[int] or List[str], on: Join column in common with
         both tables as a List[int] or List[str].
         :return: Joined PyCylon table
-        '''
+        """
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
-        self.init_join_ra_params(table, join_type, algorithm, kwargs)
-        cdef CJoinConfig *jc1 = self.jcPtr
-        cdef CStatus status = Join(self.table_shd_ptr, right, jc1[0], output)
+        cdef CJoinConfig* jcptr
+
+        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
+        left_prefix = kwargs.get('left_prefix') if 'left_prefix' in kwargs else ""
+        right_prefix = kwargs.get('right_prefix') if 'right_prefix' in kwargs else ""
+
+        pjc = JoinConfig(join_type, algorithm, left_cols, right_cols, left_prefix, right_prefix)
+        jcptr = pycylon_unwrap_join_config(pjc)
+
+        cdef CStatus status = Join(self.table_shd_ptr, right, jcptr[0], output)
         return self._get_join_ra_response("Join", output, status)
 
     def distributed_join(self, table: Table, join_type: str,
                          algorithm: str, **kwargs) -> Table:
-        '''
+        """
          Joins two PyCylon tables in distributed memory
         :param table: PyCylon table on which the join is performed (becomes the left table)
         :param join_type: Join Type as str ["inner", "left", "right", "outer"]
@@ -451,12 +363,19 @@ cdef class Table:
         Join column of the right table as List[int] or List[str], on: Join column in common with
         both tables as a List[int] or List[str].
         :return: Joined PyCylon table
-        '''
+        """
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
-        self.init_join_ra_params(table, join_type, algorithm, kwargs)
-        cdef CJoinConfig *jc1 = self.jcPtr
-        cdef CStatus status = DistributedJoin(self.table_shd_ptr, right, jc1[0], output)
+        cdef CJoinConfig* jcptr
+
+        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
+        left_prefix = kwargs.get('left_prefix') if 'left_prefix' in kwargs else ""
+        right_prefix = kwargs.get('right_prefix') if 'right_prefix' in kwargs else ""
+
+        pjc = JoinConfig(join_type, algorithm, left_cols, right_cols, left_prefix, right_prefix)
+        jcptr = pycylon_unwrap_join_config(pjc)
+
+        cdef CStatus status = DistributedJoin(self.table_shd_ptr, right, jcptr[0], output)
         return self._get_join_ra_response("Distributed Join", output, status)
 
     def union(self, table: Table) -> Table:
@@ -2409,7 +2328,6 @@ cdef class Table:
         else:
             raise ValueError(f"Invalid axis {axis}, must 0 or 1")
 
-
     def iterrows(self):
         data_dict = self.to_pydict()
         index_values = self.index.index_values
@@ -2418,7 +2336,6 @@ cdef class Table:
             for column in data_dict:
                 row.append(data_dict[column][index_id])
             yield index_values[index_id], row
-
 
     def astype(self, dtype, safe=True):
         """
@@ -2493,7 +2410,6 @@ cdef class Table:
             return new_cn_table
         else:
             raise ValueError("Unsupported data type representation")
-
 
 
 class EmptyTable(Table):
