@@ -2480,9 +2480,9 @@ cdef class Table:
 
 
         """
-        current_index = self.index.index_values
+        current_index = self.index.values.tolist()
         column_names = self.column_names
-        artb = self.to_arrow()
+        artb = self.to_arrow().combine_chunks()
         schema = artb.schema
         if isinstance(dtype, dict):
             for field_id, field in enumerate(schema):

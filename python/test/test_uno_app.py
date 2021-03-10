@@ -524,7 +524,7 @@ def test_numpy_conversion():
     t2 = time.time()
     np2 = pdf.values
     t3 = time.time()
-    print(t2-t1, t3-t2)
+    print(t2 - t1, t3 - t2)
 
 
 def test_col_access():
@@ -540,4 +540,41 @@ def test_col_access():
     print(npy)
 
 
-test_col_access()
+def test_values():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+
+    tb1.set_index(tb1.column_names[0], drop=True)
+    pdf.set_index(pdf.columns[0], drop=True, inplace=True)
+
+    print(pdf.values)
+    print(pdf.index.values)
+
+    np_df = pdf.values
+    np_tb = tb1.to_numpy()
+    print(np_df.shape, np_tb.shape)
+
+
+def test_astype():
+    num_rows = 30_000_000
+    num_columns = 2
+
+    data = np.random.randn(num_rows)
+
+    pdf = pd.DataFrame({'data{}'.format(i): data
+                        for i in range(num_columns)})
+
+    tb1 = Table.from_pandas(ctx, pdf)
+
+    t1 = time.time()
+    tb2 = tb1.astype('float32')
+    t2 = time.time()
+    pdf2 = pdf.astype(np.float64)
+    t3 = time.time()
+    print(t2 - t1, t3 - t2)
+
+
+test_values()
