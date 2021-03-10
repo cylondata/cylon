@@ -20,8 +20,6 @@ import uuid
 from pycylon.common.join_config cimport CJoinType
 from pycylon.common.join_config cimport CJoinAlgorithm
 from pycylon.common.join_config cimport CJoinConfig
-from pycylon.common.join_config import PJoinType
-from pycylon.common.join_config import PJoinAlgorithm
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pyarrow.lib cimport CTable as CArrowTable
@@ -76,7 +74,8 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus WriteCSV(shared_ptr[CTable] & table, const string & path,
                      const CCSVWriteOptions & options)
 
-    CStatus Sort(shared_ptr[CTable] & table, const vector[long] sort_columns, shared_ptr[CTable] & output,
+    CStatus Sort(shared_ptr[CTable] & table, const vector[long] sort_columns,
+                 shared_ptr[CTable] & output,
                  const vector[bool] & sort_direction)
 
     CStatus Project(shared_ptr[CTable] & table, const vector[int] & project_columns, shared_ptr[
@@ -84,11 +83,11 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
     CStatus Merge(vector[shared_ptr[CTable]] & tables, shared_ptr[CTable] output)
 
-    CStatus Join(shared_ptr[CTable] & left, shared_ptr[CTable] & right, CJoinConfig
-    join_config, shared_ptr[CTable] & output)
+    CStatus Join(shared_ptr[CTable] & left, shared_ptr[CTable] & right,
+                 const CJoinConfig& join_config, shared_ptr[CTable] & output)
 
-    CStatus DistributedJoin(shared_ptr[CTable] & left, shared_ptr[CTable] & right, CJoinConfig
-    join_config, shared_ptr[CTable] & output);
+    CStatus DistributedJoin(shared_ptr[CTable] & left, shared_ptr[CTable] & right,
+                            const CJoinConfig & join_config, shared_ptr[CTable] & output);
 
     CStatus Union(shared_ptr[CTable] & first, shared_ptr[CTable] & second, shared_ptr[CTable]
     & output)
@@ -140,7 +139,7 @@ cdef class Table:
         shared_ptr[CTable] table_shd_ptr
         shared_ptr[CTable] *table_out_shd_ptr
         shared_ptr[CCylonContext] sp_context
-        CJoinConfig *jcPtr
+
         dict __dict__
 
         void init(self, const shared_ptr[CTable]& table)

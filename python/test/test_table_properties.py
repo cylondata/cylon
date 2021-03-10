@@ -25,6 +25,7 @@ from pycylon import CylonContext
 from pycylon import Table
 from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
+import pycylon as cn
 import pyarrow as pa
 import numpy as np
 import pandas as pd
@@ -711,4 +712,88 @@ def test_concat_op():
     assert res_tb_2.index.index_values == res_pdf_3.index.values.tolist()
 
 
-test_concat_op()
+def test_astype():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    columns = ['c1', 'c2', 'c3']
+    dataset_1 = [[1, 2, 3, 4, 5], [20, 30, 40, 50, 51], [33, 43, 53, 63, 73]]
+    tb = Table.from_list(ctx, columns, dataset_1)
+    pdf: pd.DataFrame = tb.to_pandas()
+    tb.set_index('c1', drop=True)
+    pdf.set_index('c1', inplace=True)
+
+    print(tb)
+    print("-" * 80)
+    print(pdf)
+    print("-" * 80)
+
+    pdf_astype = pdf.astype(float)
+
+    tb_astype = tb.astype(float)
+
+    print(tb_astype)
+    print("-" * 80)
+    print(pdf_astype)
+
+    assert pdf_astype.values.tolist() == tb_astype.to_pandas().values.tolist()
+
+    assert pdf_astype.index.values.tolist() == tb.index.values.tolist()
+
+    map_of_types = {'c2': 'int32', 'c3': 'float64'}
+
+    pdf_astype_with_dict = pdf.astype(map_of_types)
+
+    tb_astype_with_dict = tb.astype(map_of_types)
+
+    print(tb_astype_with_dict)
+    print("-" * 80)
+    print(pdf_astype_with_dict)
+
+    assert pdf_astype_with_dict.values.tolist() == tb_astype_with_dict.to_pandas().values.tolist()
+
+    assert tb_astype_with_dict.index.values.tolist() == tb.index.values.tolist()
+
+
+def test_str_astype():
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    columns = ['c1', 'c2', 'c3']
+    dataset_1 = [[1, 2, 3, 4, 5], ['20', '30', '40', '50', '51'], [33, 43, 53, 63, 73]]
+    tb = Table.from_list(ctx, columns, dataset_1)
+    pdf: pd.DataFrame = tb.to_pandas()
+    tb.set_index('c1', drop=True)
+    pdf.set_index('c1', inplace=True)
+
+    print(tb)
+    print("-" * 80)
+    print(pdf)
+    print("-" * 80)
+
+    pdf_astype = pdf.astype(float)
+
+    tb_astype = tb.astype(float)
+
+    print(tb_astype)
+    print("-" * 80)
+    print(pdf_astype)
+
+    print(pdf_astype.values.tolist())
+    print(tb_astype.to_pandas().values.tolist())
+    assert pdf_astype.values.tolist() == tb_astype.to_pandas().values.tolist()
+
+    assert pdf_astype.index.values.tolist() == tb.index.values.tolist()
+
+    map_of_types = {'c2': 'int32', 'c3': 'float64'}
+
+    pdf_astype_with_dict = pdf.astype(map_of_types)
+
+    tb_astype_with_dict = tb.astype(map_of_types)
+
+    print(tb_astype_with_dict)
+    print("-" * 80)
+    print(pdf_astype_with_dict)
+
+    assert pdf_astype_with_dict.values.tolist() == tb_astype_with_dict.to_pandas().values.tolist()
+
+    assert tb_astype_with_dict.index.values.tolist() == tb.index.values.tolist()
+
+
+test_str_astype()
