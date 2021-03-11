@@ -736,7 +736,7 @@ def test_astype():
 
     assert pdf_astype.values.tolist() == tb_astype.to_pandas().values.tolist()
 
-    assert pdf_astype.index.values.tolist() == tb.index.values.tolist()
+    assert pdf_astype.index.values.tolist() == tb.index.values.tolist() == tb_astype.index.values.tolist()
 
     map_of_types = {'c2': 'int32', 'c3': 'float64'}
 
@@ -779,7 +779,7 @@ def test_str_astype():
     print(tb_astype.to_pandas().values.tolist())
     assert pdf_astype.values.tolist() == tb_astype.to_pandas().values.tolist()
 
-    assert pdf_astype.index.values.tolist() == tb.index.values.tolist()
+    assert pdf_astype.index.values.tolist() == tb.index.values.tolist() == tb_astype.index.values.tolist()
 
     map_of_types = {'c2': 'int32', 'c3': 'float64'}
 
