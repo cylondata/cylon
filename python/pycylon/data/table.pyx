@@ -2480,7 +2480,7 @@ cdef class Table:
 
 
         """
-        current_index = self.index.index_values
+        self.reset_index()
         column_names = self.column_names
         artb = self.to_arrow()
         schema = artb.schema
@@ -2493,22 +2493,30 @@ cdef class Table:
                 arrow_type = get_arrow_type(expected_dtype)
                 if arrow_type is None:
                     raise ValueError(f"cast data type is not supported")
-                new_field = field.with_type(arrow_type)
+                if field_id == 0:
+                    new_field = field
+                else:
+                    new_field = field.with_type(arrow_type)
                 schema = schema.set(field_id, new_field)
             casted_artb = artb.cast(schema, safe)
             new_cn_table = Table.from_arrow(self.context, casted_artb)
-            new_cn_table.set_index(current_index)
+            new_cn_table.set_index(new_cn_table.column_names[0], drop=True)
+            self.set_index(self.column_names[0], drop=True)
             return new_cn_table
         elif np.isscalar(dtype) or isinstance(dtype, type):
             arrow_type = get_arrow_type(dtype)
             if arrow_type is None:
                 raise ValueError(f"cast data type is not supported")
             for field_id, field in enumerate(schema):
-                new_field = field.with_type(arrow_type)
+                if field_id == 0:
+                    new_field = field
+                else:
+                    new_field = field.with_type(arrow_type)
                 schema = schema.set(field_id, new_field)
             casted_artb = artb.cast(schema, safe)
             new_cn_table = Table.from_arrow(self.context, casted_artb)
-            new_cn_table.set_index(current_index)
+            new_cn_table.set_index(new_cn_table.column_names[0], drop=True)
+            self.set_index(self.column_names[0], drop=True)
             return new_cn_table
         else:
             raise ValueError("Unsupported data type representation")
