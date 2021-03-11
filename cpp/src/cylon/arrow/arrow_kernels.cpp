@@ -20,6 +20,7 @@
 
 #include "../util/macros.hpp"
 #include "../util/sort.hpp"
+#include "../util/arrow_utils.hpp"
 #include "arrow_comparator.hpp"
 
 namespace cylon {
@@ -452,7 +453,7 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
   int64_t i = 0;
   for (auto idx : columns) {
     comparators.push_back(
-        CreateArrayIndexComparator(table->column(idx)->chunk(0), ascending.at(i++)));
+        CreateArrayIndexComparator(cylon::util::GetChunkOrEmptyArray(table->column(idx),0), ascending.at(i++)));
   }
 
   int64_t buf_size = table->num_rows() * sizeof(int64_t);

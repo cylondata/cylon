@@ -65,7 +65,7 @@ def test_read_csv_with_na_values():
         .use_threads(True) \
         .block_size(1 << 30) \
         .na_values(['na', 'none'])
-    table_path = '/tmp/null_data.csv'
+    table_path = 'data/input/null_data.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf = pd.read_csv(table_path, na_values=['na', 'none'])
     print(tb1)

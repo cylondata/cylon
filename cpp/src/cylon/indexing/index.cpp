@@ -4,7 +4,7 @@
 namespace cylon {
 
 std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column) {
-  switch (input_table->column(index_column)->chunk(0)->type()->id()) {
+  switch (input_table->column(index_column)->type()->id()) {
 
     case arrow::Type::NA:return nullptr;
     case arrow::Type::BOOL:return std::make_unique<BoolHashIndexKernel>();
@@ -27,7 +27,7 @@ std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table>
 }
 
 std::unique_ptr<IndexKernel> CreateLinearIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column) {
-  switch (input_table->column(index_column)->chunk(0)->type()->id()) {
+  switch (input_table->column(index_column)->type()->id()) {
 
     case arrow::Type::NA:return nullptr;
     case arrow::Type::BOOL:return std::make_unique<BoolLinearIndexKernel>();

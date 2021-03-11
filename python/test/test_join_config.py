@@ -37,10 +37,10 @@ def test_join_configs():
     assert (a != JoinAlgorithm.SORT)
     assert (a == JoinAlgorithm.HASH)
 
-    joinconfig = JoinConfig(join_type="left", join_algorithm="hash", left_column_index=0,
-                            right_column_index=1)
+    joinconfig = JoinConfig(join_type="left", join_algorithm="hash", left_column_index=[0],
+                            right_column_index=[1])
 
-    assert joinconfig.left_index == 0 and joinconfig.right_index == 1
+    assert joinconfig.left_index[0] == 0 and joinconfig.right_index[0] == 1
 
     assert joinconfig.join_type == 1 and joinconfig.join_algorithm == 1
 

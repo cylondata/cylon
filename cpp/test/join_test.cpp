@@ -1,4 +1,4 @@
-/*
+ /*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,13 +18,18 @@
 using namespace cylon;
 
 TEST_CASE("Join testing", "[join]") {
-  std::string path1 = "../data/input/csv1_" + std::to_string(RANK) + ".csv";
-  std::string path2 = "../data/input/csv2_" + std::to_string(RANK) + ".csv";
-  std::string out_path =
-      "../data/output/join_inner_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
+   std::string path1 = "../data/input/csv1_" + std::to_string(RANK) + ".csv";
+   std::string path2 = "../data/input/csv2_" + std::to_string(RANK) + ".csv";
+   std::string out_path =
+       "../data/output/join_inner_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
 
-  SECTION("testing inner joins") {
-    const join::config::JoinConfig &join_config = join::config::JoinConfig::InnerJoin(0, 0);
-    REQUIRE(test::TestJoinOperation(join_config, ctx, path1, path2, out_path) == 0);
-  }
-}
+   SECTION("testing inner joins - sort") {
+     const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::SORT);
+     REQUIRE(test::TestJoinOperation(join_config, ctx, path1, path2, out_path) == 0);
+   }
+
+   SECTION("testing inner joins - hash") {
+     const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::HASH);
+     REQUIRE(test::TestJoinOperation(join_config, ctx, path1, path2, out_path) == 0);
+   }
+ }

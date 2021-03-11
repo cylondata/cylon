@@ -13,6 +13,9 @@
  */
 
 #include "arrow_comparator.hpp"
+#include "util/arrow_utils.hpp"
+
+#include <glog/logging.h>
 
 namespace cylon {
 
@@ -142,8 +145,8 @@ int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1, int
   // schema validation should be done to make sure
   // table1 and table2 has the same schema.
   for (int c = 0; c < table1->num_columns(); ++c) {
-    int comparision = this->comparators[c]->compare(table1->column(c)->chunk(0), index1,
-                                                    table2->column(c)->chunk(0), index2);
+    int comparision = this->comparators[c]->compare(cylon::util::GetChunkOrEmptyArray(table1->column(c), 0), index1,
+                                                    cylon::util::GetChunkOrEmptyArray(table2->column(c), 0), index2);
     if (comparision) return comparision;
   }
   return 0;
@@ -186,6 +189,13 @@ class BinaryRowIndexComparator : public ArrayIndexComparator {
 
  private:
   std::shared_ptr<arrow::BinaryArray> casted_arr;
+};
+
+class EmptyIndexComparator : public ArrayIndexComparator {
+ public:
+  explicit EmptyIndexComparator() {}
+
+  int compare(int64_t index1, int64_t index2) const override { return 0; }
 };
 
 template <bool ASC>
@@ -281,8 +291,12 @@ TableRowIndexComparator::TableRowIndexComparator(const std::shared_ptr<arrow::Ta
     : idx_comparators_ptr(
           std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>(col_ids.size())) {
   for (size_t c = 0; c < col_ids.size(); c++) {
-    const std::shared_ptr<arrow::Array> &array = table->column(col_ids.at(c))->chunk(0);
-    this->idx_comparators_ptr->at(c) = CreateArrayIndexComparator(array);
+    if (table->column(col_ids.at(c))->num_chunks() == 0) {
+      this->idx_comparators_ptr->at(c) = std::make_shared<EmptyIndexComparator>();
+    } else {
+      const std::shared_ptr<arrow::Array> &array = cylon::util::GetChunkOrEmptyArray(table->column(col_ids.at(c)), 0);
+      this->idx_comparators_ptr->at(c) = CreateArrayIndexComparator(array);
+    }
   }
 }
 bool TableRowIndexComparator::operator()(const int64_t &record1, const int64_t &record2) const {

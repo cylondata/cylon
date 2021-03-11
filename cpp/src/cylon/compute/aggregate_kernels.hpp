@@ -16,6 +16,7 @@
 #define CYLON_CPP_SRC_CYLON_COMPUTE_AGGREGATE_KERNELS_HPP_
 
 #include <cmath>
+#include <math.h>
 #include <unordered_set>
 
 namespace cylon {
@@ -68,7 +69,7 @@ struct VarKernelOptions : public KernelOptions {
    * @param ddof delta degree of freedom
    */
   explicit VarKernelOptions(int ddof) : ddof(ddof) {}
-  VarKernelOptions() : VarKernelOptions(0) {}
+  VarKernelOptions() : VarKernelOptions(1) {}
 
   int ddof;
 };
@@ -364,19 +365,21 @@ class MeanKernel : public TypedAggregationKernel<MeanKernel<T>,
 /**
  * Variance kernel
  */
-template<typename T, bool DO_STD = false>
+template<typename T>
 class VarianceKernel : public TypedAggregationKernel<VarianceKernel<T>,
                                                      T,
                                                      typename KernelTraits<VAR, T>::State,
                                                      typename KernelTraits<VAR, T>::ResultT,
                                                      typename KernelTraits<VAR, T>::Options> {
  public:
+  explicit VarianceKernel(bool do_std = false) : do_std(do_std) {}
+
   void Setup(VarKernelOptions *options) {
     ddof = options->ddof;
   }
 
   inline void InitializeState(std::tuple<T, T, int64_t> *state) {
-    *state = {0, 0, 0};
+    *state = {static_cast<T>(0), static_cast<T>(0), 0};
   }
   inline void Update(const T *value, std::tuple<T, T, int64_t> *state) {
     std::get<0>(*state) += (*value) * (*value);
@@ -387,18 +390,18 @@ class VarianceKernel : public TypedAggregationKernel<VarianceKernel<T>,
     if (std::get<2>(*state) == 1) {
       *result = 0;
     } else if (std::get<2>(*state) != 0) {
-      double div = std::get<2>(*state) - ddof;
-      double mean = static_cast<double>(std::get<1>(*state)) / div;
-      if (DO_STD) {
-        *result = sqrt(static_cast<double>(std::get<0>(*state)) / div - mean * mean);
-      } else {
-        *result = static_cast<double>(std::get<0>(*state)) / div - mean * mean;
-      }
+      double mean = static_cast<double>(std::get<1>(*state)) / static_cast<double>(std::get<2>(*state));
+      double mean_sum_sq = static_cast<double>(std::get<0>(*state)) / static_cast<double>(std::get<2>(*state));
+      double
+          var = static_cast<double>(std::get<2>(*state)) * (mean_sum_sq - mean * mean) / (std::get<2>(*state) - ddof);
+
+      *result = do_std ? sqrt(var) : var;
     }
   };
 
  private:
   int ddof;
+  bool do_std;
 };
 
 /**
@@ -552,7 +555,7 @@ std::unique_ptr<AggregationKernel> CreateAggregateKernel() {
     case VAR:return std::make_unique<VarianceKernel<T>>();
     case NUNIQUE:return std::make_unique<NUniqueKernel<T>>();
     case QUANTILE:return std::make_unique<QuantileKernel<T>>();
-    case STDDEV: return std::make_unique<VarianceKernel<T, true>>();
+    case STDDEV: return std::make_unique<VarianceKernel<T>>(true);
     default:return nullptr;
   }
 }
@@ -568,7 +571,7 @@ std::unique_ptr<AggregationKernel> CreateAggregateKernel(AggregationOpId op_id) 
     case VAR:return std::make_unique<VarianceKernel<T>>();
     case NUNIQUE:return std::make_unique<NUniqueKernel<T>>();
     case QUANTILE:return std::make_unique<QuantileKernel<T>>();
-    case STDDEV: return std::make_unique<VarianceKernel<T, true>>();
+    case STDDEV: return std::make_unique<VarianceKernel<T>>(true);
     default:return nullptr;
   }
 }

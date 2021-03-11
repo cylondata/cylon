@@ -208,15 +208,18 @@ def test_aggregate_addons():
 
     cn_tb_mul = cn_tb_unq.groupby(0, {'Max Speed': AggregationOp.NUNIQUE,
                                       'Avg Acceleration': AggregationOp.COUNT,
-                                      'Avg Speed': AggregationOp.MEAN}).sort(0)
+                                      'Avg Speed': [AggregationOp.MEAN, AggregationOp.VAR,
+                                                    AggregationOp.STDDEV]}).sort(0)
 
     cn_tb_mul.set_index('AnimalId', drop=True)
 
     pdf_mul_grp = df_unq.groupby('AnimalId')
 
-    pdf_mul = pdf_mul_grp.agg({'Max Speed': 'nunique', 'Avg Acceleration':
-        'count', 'Avg Speed': 'mean'})
+    pdf_mul = pdf_mul_grp.agg({'Max Speed': 'nunique', 'Avg Acceleration': 'count',
+                               'Avg Speed': ['mean', 'var', 'std']})
 
     assert cn_tb_mul.index.index_values == list(pdf_mul_grp.groups.keys())
 
-    assert cn_tb_mul.to_pandas().values.tolist() == pdf_mul.values.tolist()
+    # round values to 8 decimal places to fix floating point round issues
+    assert np.array_equal(np.round(cn_tb_mul.to_pandas().values.tolist(), 8),
+                          np.round(pdf_mul.values.tolist(), 8))
