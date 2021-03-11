@@ -341,7 +341,7 @@ cdef class Table:
         """
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
-        cdef CJoinConfig* jcptr
+        cdef CJoinConfig*jcptr
 
         left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
         left_prefix = kwargs.get('left_prefix') if 'left_prefix' in kwargs else ""
@@ -367,7 +367,7 @@ cdef class Table:
         """
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
-        cdef CJoinConfig* jcptr
+        cdef CJoinConfig*jcptr
 
         left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
         left_prefix = kwargs.get('left_prefix') if 'left_prefix' in kwargs else ""
@@ -1011,11 +1011,16 @@ cdef class Table:
         Returns: PyCylon Table
 
         '''
+
         mask_batches = mask.to_arrow().combine_chunks().to_batches()
 
         if mask.column_count == 1:
             # Handle when masking is done based on a single column data
-            return self.from_arrow(self.context, self.to_arrow().filter(mask_batches[0][0]))
+            self.reset_index()
+            masked_table = self.from_arrow(self.context, self.to_arrow().filter(mask_batches[0][0]))
+            masked_table.set_index(masked_table.column_names[0], drop=True)
+            self.set_index(self.column_names[0], drop=True)
+            return masked_table
         else:
             # Handle when masking is done on whole table
             filtered_all_data = []
@@ -1028,7 +1033,11 @@ cdef class Table:
                     else:
                         filtered_data.append(math.nan)
                 filtered_all_data.append(filtered_data)
-            return Table.from_list(self.context, self.column_names, filtered_all_data)
+
+            col_names = self.column_names
+            print(len(col_names), len(filtered_all_data))
+            final_table = Table.from_list(self.context, col_names, filtered_all_data)
+            return final_table
 
     def __getitem__(self, key) -> Table:
         """
@@ -1090,17 +1099,24 @@ cdef class Table:
             1      4      8     12
 
         """
-        # TODO: Indexes must be handled
+        tb_index = self.index
         py_arrow_table = self.to_arrow().combine_chunks()
         if isinstance(key, slice):
-            return self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
+            new_tb = self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
+            new_index = tb_index.values[key.start: key.stop].tolist()
+            new_tb.set_index(new_index)
+            return new_tb
         elif isinstance(key, int):
-            return self.from_arrow(self.context, py_arrow_table.slice(key, 1))
+            new_tb = self.from_arrow(self.context, py_arrow_table.slice(key, 1))
+            new_index = tb_index.values[key].tolist()
+            new_tb.set_index(new_index)
+            return new_tb
         elif isinstance(key, str):
             index = self._resolve_column_index_from_column_name(key)
             chunked_arr = py_arrow_table.column(index)
             tb_filtered = self.from_arrow(self.context, pa.Table.from_arrays([chunked_arr.chunk(0)],
                                                                              [key]))
+            tb_filtered.set_index(tb_index)
             return tb_filtered
         elif isinstance(key, List):
             chunked_arrays = []
@@ -1116,7 +1132,7 @@ cdef class Table:
                 chunked_arrays.append(py_arrow_table.column(index).chunk(0))
                 selected_columns.append(column_headers[index])
             new_table = self.from_arrow(self.context, pa.Table.from_arrays(chunked_arrays,
-                                                                      selected_columns))
+                                                                           selected_columns))
             new_table.set_index(index_values)
             return new_table
         elif self._is_pycylon_table(key):
@@ -1157,7 +1173,7 @@ cdef class Table:
             2      3      7    110   1110
             3      4      8    120   1120
         '''
-
+        tb_index = self.index
         if isinstance(key, str) and isinstance(value, Table):
             if value.column_count == 1:
                 value_arrow_table = value.to_arrow().combine_chunks()
@@ -1176,8 +1192,10 @@ cdef class Table:
             # A new Column is replacing an existing column
             self.initialize(current_ar_table.set_column(index, key, chunk_arr),
                             self.context)
+            self.set_index(tb_index)
         else:
             self.initialize(current_ar_table.append_column(key, chunk_arr), self.context)
+            self.set_index(tb_index)
 
     def __eq__(self, other) -> Table:
         '''
@@ -1875,7 +1893,7 @@ cdef class Table:
             2   3   7  11
             3   4   8  12
         '''
-        index_values = self.index.index_values
+        index_values = self.index
         if isinstance(column_names, dict):
             table_col_names = self.column_names
             for key in column_names.keys():
@@ -2200,7 +2218,6 @@ cdef class Table:
             new_chunks.append(pa.array(list(map(func, npr))))
         return Table.from_arrow(self.context,
                                 pa.Table.from_arrays(new_chunks, self.column_names))
-
 
     def get_index(self) -> BaseIndex:
         cdef shared_ptr[CBaseIndex] c_index = self.table_shd_ptr.get().GetIndex()

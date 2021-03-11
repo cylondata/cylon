@@ -524,7 +524,7 @@ def test_numpy_conversion():
     t2 = time.time()
     np2 = pdf.values
     t3 = time.time()
-    print(t2-t1, t3-t2)
+    print(t2 - t1, t3 - t2)
 
 
 def test_col_access():
@@ -540,28 +540,25 @@ def test_col_access():
     print(npy)
 
 
-# def test_isin_with_index():
-#     ctx = CylonContext(config=None, distributed=False)
-#     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-#     table_path = '/tmp/duplicate_data_0.csv'
-#     tb1: Table = read_csv(ctx, table_path, csv_read_options)
-#     pdf: pd.DataFrame = tb1.to_pandas()
-#     filter_isin = [11, 20, 11, 23]
-#     print(tb1)
-#
-#     print(pdf)
-#
-#     tb1.set_index('a', drop=True)
-#     pdf.set_index('a', inplace=True)
-#
-#     tb_res = tb1['b'].isin(filter_isin)
-#     pdf_res = pdf['b'].isin(filter_isin)
-#
-#     print(tb_res)
-#     print(pdf_res)
-#
-#     print(tb_res.index.values)
-#     print(pdf_res.index.values)
+def test_isin_with_index():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+    filter_isin = [11, 20, 11, 23]
+    print(tb1)
 
+    print(pdf)
 
-test_isin_with_index()
+    tb1.set_index('a', drop=True)
+    pdf.set_index('a', inplace=True)
+
+    tb_res = tb1['b'].isin(filter_isin)
+    pdf_res = pdf['b'].isin(filter_isin)
+
+    print(tb_res)
+    print(pdf_res)
+
+    print(tb_res.index.values)
+    print(pdf_res.index.values)
