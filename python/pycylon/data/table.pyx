@@ -2175,11 +2175,13 @@ cdef class Table:
             0      1      5      9
             1      3      7     11
         '''
-
+        self.reset_index()
         new_tb = compute.drop_na(self, how, axis)
         if inplace:
             self.initialize(new_tb.to_arrow(), self.context)
+            self.set_index(self.column_names[0], drop=True)
         else:
+            new_tb.set_index(new_tb.column_names[0], drop=True)
             return new_tb
 
     def isin(self, value, skip_null=True) -> Table:
