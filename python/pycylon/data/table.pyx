@@ -932,7 +932,7 @@ cdef class Table:
         cdef int idx
         if with_index:
             ar_tb = self.to_arrow().combine_chunks()
-            cn_index = self.index.index_values
+            cn_index = self.index.values.tolist()
             cn_column_names = self.column_names
             pydict = {}
             for col_idx, chunk_arr in enumerate(ar_tb.itercolumns()):
@@ -1122,7 +1122,7 @@ cdef class Table:
             chunked_arrays = []
             selected_columns = []
             column_headers = self.column_names
-            index_values = self.index.index_values
+            index_values = self.index
             for column_name in key:
                 index = -1
                 if isinstance(column_name, str):
@@ -1677,13 +1677,16 @@ cdef class Table:
             2      7     11
             3      8     12
         '''
+        index = self.index
         if inplace:
-            index = self.index.index_values
+
             artb = self.to_arrow().drop(column_names)
             self.initialize(artb, self.context)
             self.set_index(index)
         else:
-            return self.from_arrow(self.context, self.to_arrow().drop(column_names))
+            drop_tb = self.from_arrow(self.context, self.to_arrow().drop(column_names))
+            drop_tb.set_index(index)
+            return drop_tb
 
     def fillna(self, fill_value):
         '''
@@ -2360,7 +2363,6 @@ cdef class Table:
                                                left_on=[res_table.column_names[0]],
                                                right_on=[tb1.column_names[0]])
                 res_table.set_index(res_table.column_names[0], drop=True)
-                index_values = res_table.index.index_values
                 res_table.drop([tb1.column_names[0]], inplace=True)
                 tb1.set_index(tb1.column_names[0], drop=True)
             tables[0].set_index(tables[0].column_names[0], drop=True)
@@ -2370,7 +2372,7 @@ cdef class Table:
 
     def iterrows(self):
         data_dict = self.to_pydict()
-        index_values = self.index.index_values
+        index_values = self.index.values.tolist()
         for index_id in range(self.row_count):
             row = []
             for column in data_dict:
