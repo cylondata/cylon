@@ -96,11 +96,11 @@ static Status make_groups(arrow::MemoryPool *pool,
                           std::shared_ptr<arrow::Array> &group_filter,
                           int64_t *unique_groups) {
   TableRowIndexHash hash(atable, idx_cols);
-  TableRowIndexComparator comp(atable, idx_cols);
+  TableRowIndexEqualTo comp(atable, idx_cols);
 
   const int64_t num_rows = atable->num_rows();
 
-  ska::bytell_hash_map<int64_t, int64_t, TableRowIndexHash, TableRowIndexComparator>
+  ska::bytell_hash_map<int64_t, int64_t, TableRowIndexHash, TableRowIndexEqualTo>
       hash_map(num_rows, hash, comp);
 
   group_ids.reserve(num_rows);

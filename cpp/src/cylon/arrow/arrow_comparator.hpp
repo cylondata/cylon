@@ -54,16 +54,19 @@ class ArrayIndexComparator {
   virtual int compare(int64_t index1, int64_t index2) const = 0;
 };
 
-std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array, bool asc = true);
+std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array,
+                                                                 bool asc = true);
+
+std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,
+                                                                 const std::shared_ptr<arrow::Array> &a2,
+                                                                 bool asc = true);
 
 // -----------------------------------------------------------------------------
 
-class RowComparator {
+class RowEqualTo {
  public:
-  RowComparator(std::shared_ptr<cylon::CylonContext> &ctx,
-                const std::shared_ptr<arrow::Table> *tables,
-                int64_t *eq,
-                int64_t *hs);
+  RowEqualTo(std::shared_ptr<cylon::CylonContext> &ctx, const std::shared_ptr<arrow::Table> *tables,
+             int64_t *eq, int64_t *hs);
 
   // equality
   bool operator()(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const;
@@ -83,9 +86,9 @@ class RowComparator {
 /**
  * comparator to compare indices within a table based on multiple column indices
  */
-class TableRowIndexComparator {
+class TableRowIndexEqualTo {
  public:
-  TableRowIndexComparator(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids);
+  TableRowIndexEqualTo(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids);
 
   // equality
   bool operator()(const int64_t &record1, const int64_t &record2) const;
@@ -104,7 +107,11 @@ class TableRowIndexComparator {
  */
 class TableRowIndexHash {
  public:
+  explicit TableRowIndexHash(const std::shared_ptr<arrow::Table> &table);
+
   TableRowIndexHash(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids);
+
+  explicit TableRowIndexHash(const std::vector<std::shared_ptr<arrow::Array>> &arrays);
 
   // hashing
   size_t operator()(const int64_t &record) const;
@@ -127,16 +134,39 @@ class TableRowIndexHash {
 /**
  * multi-table hashes based on a <table index, row index> pair
  */
-class MultiTableRowIndexHash {
+class TwoTableRowIndexHash {
  public:
-  explicit MultiTableRowIndexHash(const std::vector<std::shared_ptr<arrow::Table>> &tables);
+  TwoTableRowIndexHash(const std::shared_ptr<arrow::Table> &t1, const std::shared_ptr<arrow::Table> &t2);
+
+  TwoTableRowIndexHash(const std::shared_ptr<arrow::Table> &t1, const std::shared_ptr<arrow::Table> &t2,
+                       const std::vector<int> &t1_indices, const std::vector<int> &t2_indices);
 
   // hashing
-  size_t operator()(const std::pair<int8_t, int64_t> &record) const;
+  size_t operator()(int64_t idx) const;
 
  private:
   // this class gets copied to std container, so we don't want to copy these vectors.
-  std::shared_ptr<std::vector<TableRowIndexHash>> hashes_ptr;
+  std::array<std::shared_ptr<TableRowIndexHash>, 2> table_hashes;
+};
+
+// -----------------------------------------------------------------------------
+
+/**
+ * multi-table hashes based on a <table index, row index> pair
+ */
+class TwoTableRowIndexEqualTo {
+ public:
+  TwoTableRowIndexEqualTo(const std::shared_ptr<arrow::Table> &t1, const std::shared_ptr<arrow::Table> &t2);
+
+  TwoTableRowIndexEqualTo(const std::shared_ptr<arrow::Table> &t1, const std::shared_ptr<arrow::Table> &t2,
+                          const std::vector<int> &t1_indices, const std::vector<int> &t2_indices);
+
+  // hashing
+  bool operator()(const int64_t &record1, const int64_t &record2) const;
+
+ private:
+  // this class gets copied to std container, so we don't want to copy these vectors.
+  std::vector<std::shared_ptr<ArrayIndexComparator>> comparators;
 };
 
 // -----------------------------------------------------------------------------
@@ -144,11 +174,15 @@ class MultiTableRowIndexHash {
 /**
  * multi-table comparator based on a <table index, row index> pair
  */
-class MultiTableRowIndexComparator {
+class MultiTableRowIndexEqualTo {
  public:
-  explicit MultiTableRowIndexComparator(const std::vector<std::shared_ptr<arrow::Table>> &tables);
+  explicit MultiTableRowIndexEqualTo(const std::vector<std::shared_ptr<arrow::Table>> &tables)
+      : tables(tables), comparator(std::make_shared<TableRowComparator>(tables[0]->fields())) {}
 
-  bool operator()(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const;
+  bool operator()(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const {
+    return this->comparator->compare(this->tables[record1.first], record1.second,
+                                     this->tables[record2.first], record2.second) == 0;
+  }
 
  private:
   const std::vector<std::shared_ptr<arrow::Table>> &tables;

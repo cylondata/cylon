@@ -605,6 +605,66 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
   return cylon::join::joinTables(left_tab_combined, right_tab_combined, join_config, joined_table, memory_pool);
 }
 
+arrow::Status hash_join_multi_index(const std::shared_ptr<arrow::Table> &left_tab,
+                                    const std::shared_ptr<arrow::Table> &right_tab,
+                                    const config::JoinConfig &join_config,
+                                    std::shared_ptr<arrow::Table> *joined_table,
+                                    arrow::MemoryPool *memory_pool) {
+/*
+  const std::vector<int> &left_indices = join_config.GetLeftColumnIdx();
+  const std::vector<int> &right_indices = join_config.GetRightColumnIdx();
+
+  if (left_indices.size() != right_indices.size()) {
+    return arrow::Status::Invalid("left and right index sizes are not equal");
+  }
+  // let's first combine chunks in both tables
+  const auto &l_res = left_tab->CombineChunks(memory_pool);
+  if (!l_res.ok()) return l_res.status();
+  const auto &c_left_tab = l_res.ValueOrDie();
+
+  const auto &r_res = right_tab->CombineChunks(memory_pool);
+  if (!r_res.ok()) return r_res.status();
+  const auto &c_right_tab = r_res.ValueOrDie();
+
+  // let's concat chunked arrays in left and right tables vertically
+  const int64_t table_boundary = c_left_tab->num_rows();
+
+  std::vector<std::shared_ptr<arrow::Array>> concat_arrays;
+  concat_arrays.reserve(left_indices.size());
+
+  for (size_t i = 0; i < left_indices.size(); i++) {
+    arrow::ArrayVector col_arrays;
+    col_arrays.reserve(2);
+
+    concat_arrays.push_back(cylon::util::GetChunkOrEmptyArray(left_tab->column(left_indices[i]), 0));
+    concat_arrays.push_back(cylon::util::GetChunkOrEmptyArray(right_tab->column(right_indices[i]), 0));
+
+    const auto &concat_res = arrow::Concatenate(col_arrays, memory_pool);
+    if (!concat_res.ok()) return concat_res.status();
+
+    concat_arrays.emplace_back(concat_res.ValueOrDie());
+  }
+
+  TableRowIndexHash concat_hasher(concat_arrays);
+  TableRowIndexComparator left_comp(left_tab, left_indices), right_comp(right_tab, right_indices);
+
+  bool probing = false;
+
+  auto hash = [&probing, &left_hash, &right_hash](int64_t idx) {
+    return (!probing) * left_hash(idx) + probing * right_hash(idx);
+  };
+
+  auto comp = [&probing, &left_comp, &right_comp](int64_t a, int64_t b) {
+    if (probing) {
+
+    }
+  };
+*/
+
+
+  return arrow::Status::OK();
+}
+
 arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                          const std::shared_ptr<arrow::Table> &right_tab,
                          const config::JoinConfig &join_config,

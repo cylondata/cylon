@@ -132,7 +132,9 @@ std::shared_ptr<ArrowComparator> GetComparator(const std::shared_ptr<arrow::Data
   return nullptr;
 }
 
-TableRowComparator::TableRowComparator(const std::vector<std::shared_ptr<arrow::Field>> &fields) {
+TableRowComparator::TableRowComparator(const std::vector<std::shared_ptr<arrow::Field>> &fields)
+    : comparators({}) {
+  comparators.reserve(fields.size());
   for (const auto &field : fields) {
     this->comparators.push_back(GetComparator(field->type()));
   }
@@ -173,7 +175,29 @@ class NumericRowIndexComparator : public ArrayIndexComparator {
   std::shared_ptr<ARROW_ARRAY_T> casted_arr;
 };
 
-template <bool ASC>
+template<typename TYPE, bool ASC = true>
+class TwoNumericRowIndexComparator : public ArrayIndexComparator {
+  using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
+
+ public:
+  TwoNumericRowIndexComparator(const std::shared_ptr<arrow::Array> &a1, const std::shared_ptr<arrow::Array> &a2)
+      : arrays({std::static_pointer_cast<ARROW_ARRAY_T>(a1), std::static_pointer_cast<ARROW_ARRAY_T>(a2)}) {}
+
+  int compare(int64_t index1, int64_t index2) const override {
+    const auto &diff = arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
+        - arrays.at(util::CheckBit(index2))->Value(util::ClearBit(index2));
+    if (ASC) {
+      return (diff > 0) - (diff < 0);
+    } else {
+      return (diff < 0) - (diff > 0);
+    }
+  }
+
+ private:
+  std::array<std::shared_ptr<ARROW_ARRAY_T>, 2> arrays;
+};
+
+template<bool ASC>
 class BinaryRowIndexComparator : public ArrayIndexComparator {
  public:
   explicit BinaryRowIndexComparator(const std::shared_ptr<arrow::Array> &array)
@@ -193,7 +217,7 @@ class BinaryRowIndexComparator : public ArrayIndexComparator {
 
 class EmptyIndexComparator : public ArrayIndexComparator {
  public:
-  explicit EmptyIndexComparator() {}
+  explicit EmptyIndexComparator() = default;
 
   int compare(int64_t index1, int64_t index2) const override { return 0; }
 };
@@ -216,55 +240,75 @@ class FixedSizeBinaryRowIndexComparator : public ArrayIndexComparator {
   std::shared_ptr<arrow::FixedSizeBinaryArray> casted_arr;
 };
 
-template <bool ASC>
-std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(
-    const std::shared_ptr<arrow::Array> &array) {
+template<bool ASC>
+std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::shared_ptr<arrow::Array> &array) {
   switch (array->type_id()) {
-    case arrow::Type::UINT8:
-      return std::make_shared<NumericRowIndexComparator<arrow::UInt8Type, ASC>>(array);
-    case arrow::Type::INT8:
-      return std::make_shared<NumericRowIndexComparator<arrow::Int8Type, ASC>>(array);
-    case arrow::Type::UINT16:
-      return std::make_shared<NumericRowIndexComparator<arrow::UInt16Type, ASC>>(array);
-    case arrow::Type::INT16:
-      return std::make_shared<NumericRowIndexComparator<arrow::Int16Type, ASC>>(array);
-    case arrow::Type::UINT32:
-      return std::make_shared<NumericRowIndexComparator<arrow::UInt32Type, ASC>>(array);
-    case arrow::Type::INT32:
-      return std::make_shared<NumericRowIndexComparator<arrow::Int16Type, ASC>>(array);
-    case arrow::Type::UINT64:
-      return std::make_shared<NumericRowIndexComparator<arrow::UInt64Type, ASC>>(array);
-    case arrow::Type::INT64:
-      return std::make_shared<NumericRowIndexComparator<arrow::Int64Type, ASC>>(array);
-    case arrow::Type::HALF_FLOAT:
-      return std::make_shared<NumericRowIndexComparator<arrow::HalfFloatType, ASC>>(array);
-    case arrow::Type::FLOAT:
-      return std::make_shared<NumericRowIndexComparator<arrow::FloatType, ASC>>(array);
-    case arrow::Type::DOUBLE:
-      return std::make_shared<NumericRowIndexComparator<arrow::DoubleType, ASC>>(array);
-    case arrow::Type::STRING:
-      return std::make_shared<BinaryRowIndexComparator<ASC>>(array);
-    case arrow::Type::BINARY:
-      return std::make_shared<BinaryRowIndexComparator<ASC>>(array);
-    case arrow::Type::FIXED_SIZE_BINARY:
-      return std::make_shared<FixedSizeBinaryRowIndexComparator<ASC>>(array);
-    default:
-      return nullptr;
+    case arrow::Type::UINT8:return std::make_shared<NumericRowIndexComparator<arrow::UInt8Type, ASC>>(array);
+    case arrow::Type::INT8:return std::make_shared<NumericRowIndexComparator<arrow::Int8Type, ASC>>(array);
+    case arrow::Type::UINT16:return std::make_shared<NumericRowIndexComparator<arrow::UInt16Type, ASC>>(array);
+    case arrow::Type::INT16:return std::make_shared<NumericRowIndexComparator<arrow::Int16Type, ASC>>(array);
+    case arrow::Type::UINT32:return std::make_shared<NumericRowIndexComparator<arrow::UInt32Type, ASC>>(array);
+    case arrow::Type::INT32:return std::make_shared<NumericRowIndexComparator<arrow::Int16Type, ASC>>(array);
+    case arrow::Type::UINT64:return std::make_shared<NumericRowIndexComparator<arrow::UInt64Type, ASC>>(array);
+    case arrow::Type::INT64:return std::make_shared<NumericRowIndexComparator<arrow::Int64Type, ASC>>(array);
+    case arrow::Type::HALF_FLOAT:return std::make_shared<NumericRowIndexComparator<arrow::HalfFloatType, ASC>>(array);
+    case arrow::Type::FLOAT:return std::make_shared<NumericRowIndexComparator<arrow::FloatType, ASC>>(array);
+    case arrow::Type::DOUBLE:return std::make_shared<NumericRowIndexComparator<arrow::DoubleType, ASC>>(array);
+    case arrow::Type::STRING:return std::make_shared<BinaryRowIndexComparator<ASC>>(array);
+    case arrow::Type::BINARY:return std::make_shared<BinaryRowIndexComparator<ASC>>(array);
+    case arrow::Type::FIXED_SIZE_BINARY:return std::make_shared<FixedSizeBinaryRowIndexComparator<ASC>>(array);
+    default:return nullptr;
   }
 }
 
-std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(
-    const std::shared_ptr<arrow::Array> &array, bool asc) {
+template<bool ASC>
+std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::shared_ptr<arrow::Array> &a1,
+                                                                     const std::shared_ptr<arrow::Array> &a2) {
+  assert(a1->type()->Equals(a2->type()));
+
+  switch (a1->type_id()) {
+    case arrow::Type::UINT8:return std::make_shared<TwoNumericRowIndexComparator<arrow::UInt8Type, ASC>>(a1, a2);
+    case arrow::Type::INT8:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int8Type, ASC>>(a1, a2);
+    case arrow::Type::UINT16:return std::make_shared<TwoNumericRowIndexComparator<arrow::UInt16Type, ASC>>(a1, a2);
+    case arrow::Type::INT16:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int16Type, ASC>>(a1, a2);
+    case arrow::Type::UINT32:return std::make_shared<TwoNumericRowIndexComparator<arrow::UInt32Type, ASC>>(a1, a2);
+    case arrow::Type::INT32:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int16Type, ASC>>(a1, a2);
+    case arrow::Type::UINT64:return std::make_shared<TwoNumericRowIndexComparator<arrow::UInt64Type, ASC>>(a1, a2);
+    case arrow::Type::INT64:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int64Type, ASC>>(a1, a2);
+    case arrow::Type::HALF_FLOAT:
+      return std::make_shared<TwoNumericRowIndexComparator<arrow::HalfFloatType, ASC>>(a1,
+                                                                                       a2);
+    case arrow::Type::FLOAT:return std::make_shared<TwoNumericRowIndexComparator<arrow::FloatType, ASC>>(a1, a2);
+    case arrow::Type::DOUBLE:return std::make_shared<TwoNumericRowIndexComparator<arrow::DoubleType, ASC>>(a1, a2);
+    case arrow::Type::STRING:
+//      return std::make_shared<BinaryRowIndexComparator<ASC>>(array);
+    case arrow::Type::BINARY:
+//      return std::make_shared<BinaryRowIndexComparator<ASC>>(array);
+    case arrow::Type::FIXED_SIZE_BINARY:
+//      return std::make_shared<FixedSizeBinaryRowIndexComparator<ASC>>(array);
+    default:return nullptr;
+  }
+}
+
+std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array, bool asc) {
   if (asc) {
     return CreateArrayIndexComparatorUtil<true>(array);
   } else {
     return CreateArrayIndexComparatorUtil<false>(array);
   }
 }
+std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,
+                                                                 const std::shared_ptr<arrow::Array> &a2, bool asc) {
+  if (asc) {
+    return CreateArrayIndexComparatorUtil<true>(a1, a2);
+  } else {
+    return CreateArrayIndexComparatorUtil<false>(a1, a2);
+  }
+}
 
-RowComparator::RowComparator(std::shared_ptr<cylon::CylonContext> &ctx,
-                             const std::shared_ptr<arrow::Table> *tables, int64_t *eq,
-                             int64_t *hs) {
+RowEqualTo::RowEqualTo(std::shared_ptr<cylon::CylonContext> &ctx,
+                       const std::shared_ptr<arrow::Table> *tables, int64_t *eq,
+                       int64_t *hs) {
   this->tables = tables;
   this->comparator = std::make_shared<cylon::TableRowComparator>(tables[0]->fields());
   this->row_hashing_kernel = std::make_shared<cylon::RowHashingKernel>(tables[0]->fields());
@@ -272,24 +316,24 @@ RowComparator::RowComparator(std::shared_ptr<cylon::CylonContext> &ctx,
   this->hs = hs;
 }
 
-bool RowComparator::operator()(const std::pair<int8_t, int64_t> &record1,
-                               const std::pair<int8_t, int64_t> &record2) const {
+bool RowEqualTo::operator()(const std::pair<int8_t, int64_t> &record1,
+                            const std::pair<int8_t, int64_t> &record2) const {
   (*this->eq)++;
   return this->comparator->compare(this->tables[record1.first], record1.second,
                                    this->tables[record2.first], record2.second) == 0;
 }
 
 // hashing
-size_t RowComparator::operator()(const std::pair<int8_t, int64_t> &record) const {
+size_t RowEqualTo::operator()(const std::pair<int8_t, int64_t> &record) const {
   (*this->hs)++;
   size_t hash = this->row_hashing_kernel->Hash(this->tables[record.first], record.second);
   return hash;
 }
 
-TableRowIndexComparator::TableRowIndexComparator(const std::shared_ptr<arrow::Table> &table,
-                                                 const std::vector<int> &col_ids)
+TableRowIndexEqualTo::TableRowIndexEqualTo(const std::shared_ptr<arrow::Table> &table,
+                                           const std::vector<int> &col_ids)
     : idx_comparators_ptr(
-          std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>(col_ids.size())) {
+    std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>(col_ids.size())) {
   for (size_t c = 0; c < col_ids.size(); c++) {
     if (table->column(col_ids.at(c))->num_chunks() == 0) {
       this->idx_comparators_ptr->at(c) = std::make_shared<EmptyIndexComparator>();
@@ -299,22 +343,42 @@ TableRowIndexComparator::TableRowIndexComparator(const std::shared_ptr<arrow::Ta
     }
   }
 }
-bool TableRowIndexComparator::operator()(const int64_t &record1, const int64_t &record2) const {
+bool TableRowIndexEqualTo::operator()(const int64_t &record1, const int64_t &record2) const {
   for (auto &&comp : *idx_comparators_ptr) {
     if (comp->compare(record1, record2)) return false;
   }
   return true;
 }
 
-TableRowIndexHash::TableRowIndexHash(const std::shared_ptr<arrow::Table> &table,
-                                     const std::vector<int> &col_ids)
+TableRowIndexHash::TableRowIndexHash(const std::shared_ptr<arrow::Table> &table) :
+    TableRowIndexHash::TableRowIndexHash(table, {}) {}
+
+TableRowIndexHash::TableRowIndexHash(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids)
     : hashes_ptr(std::make_shared<std::vector<uint32_t>>(table->num_rows(), 0)) {
-  for (auto &&c : col_ids) {
-    const std::unique_ptr<HashPartitionKernel> &hash_kernel =
-        CreateHashPartitionKernel(table->field(c)->type());
-    hash_kernel->UpdateHash(table->column(c), *hashes_ptr);  // update the hashes
+  if (!col_ids.empty()) {
+    for (auto &&c : col_ids) {
+      const std::unique_ptr<HashPartitionKernel> &hash_kernel = CreateHashPartitionKernel(table->field(c)->type());
+      const auto &s = hash_kernel->UpdateHash(table->column(c), *hashes_ptr);  // update the hashes
+      assert(s.is_ok());
+    }
+  } else { // if col_ids is empty, use all columns
+    for (int i = 0; i < table->num_columns(); i++) {
+      const auto &hash_kernel = CreateHashPartitionKernel(table->field(i)->type());
+      const auto &s = hash_kernel->UpdateHash(table->column(i), *hashes_ptr);  // update the hashes
+      assert(s.is_ok());
+    }
   }
 }
+
+TableRowIndexHash::TableRowIndexHash(const std::vector<std::shared_ptr<arrow::Array>> &arrays)
+    : hashes_ptr(std::make_shared<std::vector<uint32_t>>(arrays[0]->length(), 0)) {
+  for (const auto &arr: arrays) {
+    const auto &hash_kernel = CreateHashPartitionKernel(arr->type());
+    const auto &s = hash_kernel->UpdateHash(arr, *hashes_ptr);  // update the hashes
+    assert(s.is_ok());
+  }
+}
+
 size_t TableRowIndexHash::operator()(const int64_t &record) const { return hashes_ptr->at(record); }
 
 std::shared_ptr<arrow::UInt32Array> TableRowIndexHash::GetHashArray(
@@ -325,26 +389,63 @@ std::shared_ptr<arrow::UInt32Array> TableRowIndexHash::GetHashArray(
   return std::make_shared<arrow::UInt32Array>(data);
 }
 
-MultiTableRowIndexHash::MultiTableRowIndexHash(
-    const std::vector<std::shared_ptr<arrow::Table>> &tables)
-    : hashes_ptr(std::make_shared<std::vector<TableRowIndexHash>>()) {
-  for (const auto &t : tables) {
-    std::vector<int> cols(t->num_columns());
-    std::iota(cols.begin(), cols.end(), 0);
-    hashes_ptr->emplace_back(t, cols);
+TwoTableRowIndexHash::TwoTableRowIndexHash(const std::shared_ptr<arrow::Table> &t1,
+                                           const std::shared_ptr<arrow::Table> &t2)
+    : table_hashes({std::make_shared<TableRowIndexHash>(t1), std::make_shared<TableRowIndexHash>(t2)}) {
+  if (t1->num_columns() != t2->num_columns()) {
+    throw "num columns of t1 and t2 are not equal!";
   }
 }
-size_t MultiTableRowIndexHash::operator()(const std::pair<int8_t, int64_t> &record) const {
-  return hashes_ptr->at(record.first)(record.second);
+
+TwoTableRowIndexHash::TwoTableRowIndexHash(const std::shared_ptr<arrow::Table> &t1,
+                                           const std::shared_ptr<arrow::Table> &t2,
+                                           const std::vector<int> &t1_indices,
+                                           const std::vector<int> &t2_indices)
+    : table_hashes({std::make_shared<TableRowIndexHash>(t1, t1_indices),
+                    std::make_shared<TableRowIndexHash>(t2, t2_indices)}) {
+  if (t1_indices.size() != t2_indices.size()) {
+    throw "sizes of indices of t1 and t2 are not equal!";
+  }
 }
 
-MultiTableRowIndexComparator::MultiTableRowIndexComparator(
-    const std::vector<std::shared_ptr<arrow::Table>> &tables)
-    : tables(tables), comparator(std::make_shared<TableRowComparator>(tables[0]->fields())) {}
-bool MultiTableRowIndexComparator::operator()(const std::pair<int8_t, int64_t> &record1,
-                                              const std::pair<int8_t, int64_t> &record2) const {
-  return this->comparator->compare(this->tables[record1.first], record1.second,
-                                   this->tables[record2.first], record2.second) == 0;
+size_t TwoTableRowIndexHash::operator()(int64_t idx) const {
+  return table_hashes.at(util::CheckBit(idx))->operator()(util::ClearBit(idx));
 }
 
+TwoTableRowIndexEqualTo::TwoTableRowIndexEqualTo(const std::shared_ptr<arrow::Table> &t1,
+                                                 const std::shared_ptr<arrow::Table> &t2,
+                                                 const std::vector<int> &t1_indices,
+                                                 const std::vector<int> &t2_indices)
+    : comparators(t1_indices.size()) {
+  if (t1_indices.size() != t2_indices.size()) {
+    throw "sizes of indices of t1 and t2 are not equal!";
+  }
+
+  for (size_t i = 0; i < t1_indices.size(); i++) {
+    const std::shared_ptr<arrow::Array> &a1 = util::GetChunkOrEmptyArray(t1->column(t1_indices[i]), 0);
+    const std::shared_ptr<arrow::Array> &a2 = util::GetChunkOrEmptyArray(t2->column(t2_indices[i]), 0);
+    comparators[i] = CreateArrayIndexComparator(a1, a2);
+  }
+}
+
+TwoTableRowIndexEqualTo::TwoTableRowIndexEqualTo(const std::shared_ptr<arrow::Table> &t1,
+                                                 const std::shared_ptr<arrow::Table> &t2)
+    : comparators(t1->num_columns()) {
+  if (t1->num_columns() != t2->num_columns()) {
+    throw "num columns of t1 and t2 are not equal!";
+  }
+
+  for (int i = 0; i < t1->num_columns(); i++) {
+    const std::shared_ptr<arrow::Array> &a1 = util::GetChunkOrEmptyArray(t1->column(i), 0);
+    const std::shared_ptr<arrow::Array> &a2 = util::GetChunkOrEmptyArray(t2->column(i), 0);
+    comparators[i] = CreateArrayIndexComparator(a1, a2);
+  }
+}
+
+bool TwoTableRowIndexEqualTo::operator()(const int64_t &record1, const int64_t &record2) const {
+  for (const auto &comp:comparators) {
+    if (comp->compare(record1, record2)) return false;
+  }
+  return true;
+}
 }  // namespace cylon
