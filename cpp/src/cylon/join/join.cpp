@@ -20,6 +20,7 @@
 #include "join_utils.hpp"
 #include "../util/arrow_utils.hpp"
 #include "../arrow/arrow_kernels.hpp"
+#include "../arrow/arrow_comparator.hpp"
 #include "../arrow/arrow_hash_kernels.hpp"
 
 namespace cylon {
@@ -447,8 +448,8 @@ arrow::Status do_hash_join(const std::shared_ptr<arrow::Table> &left_tab,
                            int64_t left_join_column_idx,
                            int64_t right_join_column_idx,
                            cylon::join::config::JoinType join_type,
-                           const std::string left_table_prefix,
-                           const std::string right_table_prefix,
+                           const std::string &left_table_prefix,
+                           const std::string &right_table_prefix,
                            std::shared_ptr<arrow::Table> *joined_table,
                            arrow::MemoryPool *memory_pool) {
   // combine chunks if multiple chunks are available
@@ -605,12 +606,44 @@ arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_
   return cylon::join::joinTables(left_tab_combined, right_tab_combined, join_config, joined_table, memory_pool);
 }
 
-arrow::Status hash_join_multi_index(const std::shared_ptr<arrow::Table> &left_tab,
-                                    const std::shared_ptr<arrow::Table> &right_tab,
-                                    const config::JoinConfig &join_config,
-                                    std::shared_ptr<arrow::Table> *joined_table,
-                                    arrow::MemoryPool *memory_pool) {
-/*
+using MMAP = typename std::unordered_multimap<int64_t, int64_t>;
+
+void probe_hash_map_no_fill(const std::shared_ptr<arrow::Table> &probe_tab,
+                            MMAP &hash_map,
+                            std::vector<int64_t> &build_tab_indices,
+                            std::vector<int64_t> &probe_tab_indices) {
+  for (int64_t i = 0; i < probe_tab->num_rows(); i++) {
+    const auto &res = hash_map.equal_range(cylon::util::SetBit(i));
+    for (auto it = res.first; it != res.second; it++) {
+      build_tab_indices.push_back(it->second); // no need to unset bit here bcs
+      probe_tab_indices.push_back(i);
+    }
+  }
+}
+
+void probe_hash_map_with_fill(const std::shared_ptr<arrow::Table> &probe_tab,
+                              MMAP &hash_map,
+                              std::vector<int64_t> &build_tab_indices,
+                              std::vector<int64_t> &probe_tab_indices) {
+  for (int64_t i = 0; i < probe_tab->num_rows(); i++) {
+    const auto &res = hash_map.equal_range(cylon::util::SetBit(i));
+    if (res.first == res.second) { // no matching rows from hashmap
+      build_tab_indices.push_back(-1);
+      probe_tab_indices.push_back(i);
+    } else {
+      for (auto it = res.first; it != res.second; it++) {
+        build_tab_indices.push_back(it->second);
+        probe_tab_indices.push_back(i);
+      }
+    }
+  }
+}
+
+static arrow::Status hash_join_multi_index(const std::shared_ptr<arrow::Table> &ltab,
+                                           const std::shared_ptr<arrow::Table> &rtab,
+                                           const config::JoinConfig &join_config,
+                                           std::shared_ptr<arrow::Table> *joined_table,
+                                           arrow::MemoryPool *memory_pool) {
   const std::vector<int> &left_indices = join_config.GetLeftColumnIdx();
   const std::vector<int> &right_indices = join_config.GetRightColumnIdx();
 
@@ -618,49 +651,42 @@ arrow::Status hash_join_multi_index(const std::shared_ptr<arrow::Table> &left_ta
     return arrow::Status::Invalid("left and right index sizes are not equal");
   }
   // let's first combine chunks in both tables
-  const auto &l_res = left_tab->CombineChunks(memory_pool);
+  const auto &l_res = ltab->CombineChunks(memory_pool);
   if (!l_res.ok()) return l_res.status();
-  const auto &c_left_tab = l_res.ValueOrDie();
+  const auto &c_ltab = l_res.ValueOrDie();
 
-  const auto &r_res = right_tab->CombineChunks(memory_pool);
+  const auto &r_res = rtab->CombineChunks(memory_pool);
   if (!r_res.ok()) return r_res.status();
-  const auto &c_right_tab = r_res.ValueOrDie();
+  const auto &c_rtab = r_res.ValueOrDie();
 
-  // let's concat chunked arrays in left and right tables vertically
-  const int64_t table_boundary = c_left_tab->num_rows();
-
-  std::vector<std::shared_ptr<arrow::Array>> concat_arrays;
-  concat_arrays.reserve(left_indices.size());
-
-  for (size_t i = 0; i < left_indices.size(); i++) {
-    arrow::ArrayVector col_arrays;
-    col_arrays.reserve(2);
-
-    concat_arrays.push_back(cylon::util::GetChunkOrEmptyArray(left_tab->column(left_indices[i]), 0));
-    concat_arrays.push_back(cylon::util::GetChunkOrEmptyArray(right_tab->column(right_indices[i]), 0));
-
-    const auto &concat_res = arrow::Concatenate(col_arrays, memory_pool);
-    if (!concat_res.ok()) return concat_res.status();
-
-    concat_arrays.emplace_back(concat_res.ValueOrDie());
+  const std::shared_ptr<arrow::Table> *build_tab;
+  const std::shared_ptr<arrow::Table> *probe_tab;
+  if (join_config.GetType() == config::LEFT) {
+    build_tab = &c_rtab;
+    probe_tab = &c_ltab;
+  } else if (join_config.GetType() == config::RIGHT) {
+    build_tab = &c_ltab;
+    probe_tab = &c_rtab;
+  } else { // inner or outer
+    if (c_ltab->num_rows() <= c_rtab->num_rows()) {
+      build_tab = &c_ltab;
+      probe_tab = &c_rtab;
+    } else {
+      build_tab = &c_rtab;
+      probe_tab = &c_ltab;
+    }
   }
 
-  TableRowIndexHash concat_hasher(concat_arrays);
-  TableRowIndexComparator left_comp(left_tab, left_indices), right_comp(right_tab, right_indices);
+  // populate left hash table
+  TwoTableRowIndexHash hash(*build_tab, *probe_tab);
+  TwoTableRowIndexEqualTo equal_to(*build_tab, *probe_tab);
 
-  bool probing = false;
+  std::unordered_multimap<int64_t, int64_t, TwoTableRowIndexHash, TwoTableRowIndexEqualTo>
+      hash_map((*build_tab)->num_rows(), hash, equal_to);
 
-  auto hash = [&probing, &left_hash, &right_hash](int64_t idx) {
-    return (!probing) * left_hash(idx) + probing * right_hash(idx);
-  };
-
-  auto comp = [&probing, &left_comp, &right_comp](int64_t a, int64_t b) {
-    if (probing) {
-
-    }
-  };
-*/
-
+  for (int64_t i = 0; i < (*build_tab)->num_rows(); i++) {
+    const auto &res = hash_map.emplace(i, i);
+  }
 
   return arrow::Status::OK();
 }
