@@ -1134,11 +1134,11 @@ cylon::Status cylon::CheckIsIndexValueUnique(const void *index_value,
                                                                              is_unique);
     case arrow::Type::BINARY:break;
     case arrow::Type::FIXED_SIZE_BINARY:break;
-    case arrow::Type::DATE32:break;
-    case arrow::Type::DATE64:break;
-    case arrow::Type::TIMESTAMP:break;
-    case arrow::Type::TIME32:break;
-    case arrow::Type::TIME64:break;
+    case arrow::Type::DATE32:return IsIndexValueUnique<arrow::Date32Type>(index_value, index, is_unique);
+    case arrow::Type::DATE64:return IsIndexValueUnique<arrow::Date64Type>(index_value, index, is_unique);
+    case arrow::Type::TIMESTAMP:return IsIndexValueUnique<arrow::TimestampType>(index_value, index, is_unique);
+    case arrow::Type::TIME32:return IsIndexValueUnique<arrow::Time32Type>(index_value, index, is_unique);
+    case arrow::Type::TIME64:return IsIndexValueUnique<arrow::Time64Type>(index_value, index, is_unique);
     case arrow::Type::INTERVAL_MONTHS:break;
     case arrow::Type::INTERVAL_DAY_TIME:break;
     case arrow::Type::DECIMAL:break;

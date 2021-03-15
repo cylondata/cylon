@@ -6,6 +6,7 @@
 #include "index.hpp"
 #include "status.hpp"
 #include "table.hpp"
+#include <util/args.h>
 
 namespace cylon {
 
