@@ -76,7 +76,6 @@ cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *
                                                                                         end_(size),
                                                                                         step_(step) {
   arrow::Status ar_status;
-  std::shared_ptr<arrow::Array> index_arr;
   arrow::Int64Builder builder(pool);
   int64_t capacity = int64_t ((end_ - start_) / step_);
   if (!(ar_status = builder.Reserve(capacity)).ok()) {
@@ -86,12 +85,12 @@ cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *
   for (int i = 0; i < end_ - start_; i=i+step_) {
     builder.UnsafeAppend(i);
   }
-  ar_status = builder.Finish(&index_arr);
+  ar_status = builder.Finish(&index_arr_);
 
   if (!ar_status.ok()) {
     LOG(ERROR) << "Error occurred in finalizing range index value array";
   }
-  index_arr_ = std::move(index_arr);
+
 }
 Status RangeIndex::LocationByValue(const void *search_param,
                                    const std::shared_ptr<arrow::Table> &input,
