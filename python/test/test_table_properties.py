@@ -633,7 +633,9 @@ def test_concat_table():
 
 
 def test_concat_op():
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    from pycylon.net import MPIConfig
+    mpi_config = MPIConfig()
+    ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
     columns = ['c1', 'c2', 'c3']
     dataset_1 = [[1, 2, 3, 4, 5], [20, 30, 40, 50, 51], [33, 43, 53, 63, 73]]
     dataset_2 = [[1, 20, 3, 4, 50], [20, 30, 40, 50, 51], [33, 43, 53, 63, 73]]
@@ -796,4 +798,179 @@ def test_str_astype():
     assert tb_astype_with_dict.index.values.tolist() == tb.index.values.tolist()
 
 
-test_str_astype()
+def test_table_initialization_with_index():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb: Table = read_csv(ctx, table_path, csv_read_options)
+    expected_index = [i for i in range(tb.row_count)]
+    expected_index_1 = [0, 1, 2]
+
+    print(tb)
+    print(tb.index.values)
+
+    assert expected_index == tb.index.values.tolist()
+
+    pd_data = [[1, 2, 3], [4, 5, 6], [6, 7, 8]]
+    cols = ['a', 'b', 'c']
+    dict_data = {'a': [1, 2, 3], 'b': [4, 5, 6], 'c': [6, 7, 8]}
+    pdf = pd.DataFrame(pd_data, columns=cols)
+    print(pdf)
+
+    tb_from_pd = Table.from_pandas(ctx, pdf)
+    print(tb_from_pd)
+
+    assert tb_from_pd.index.values.tolist() == pdf.index.values.tolist()
+
+    tb_from_list = Table.from_list(ctx, cols, pd_data)
+
+    print(tb_from_list)
+    print(tb_from_list.index.values)
+
+    assert expected_index_1 == tb_from_list.index.values.tolist()
+
+    tb_from_dict = Table.from_pydict(ctx, dict_data)
+    print(tb_from_dict)
+    print(tb_from_dict.index.values)
+
+    assert expected_index_1 == tb_from_dict.index.values.tolist()
+
+
+def test_getitem_with_index():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb.to_pandas()
+
+    print(tb)
+    print("-" * 80)
+    print(pdf)
+
+    tb.set_index('a', drop=True)
+    pdf.set_index('a', drop=True, inplace=True)
+
+    assert tb.index.values.tolist() == pdf.index.values.tolist()
+
+    tb_1 = tb['b']
+    pdf_1 = pdf['b']
+
+    print(tb_1.index.values)
+    print(pdf_1.index.values)
+
+    assert tb_1.index.values.tolist() == pdf_1.index.values.tolist()
+
+    tb_2 = tb[0:10]
+    pdf_2 = pdf[0:10]
+
+    print(tb_2.index.values)
+    print(pdf_2.index.values)
+
+    assert tb_2.index.values.tolist() == pdf_2.index.values.tolist()
+
+    tb_3 = tb[['c', 'd']]
+    pdf_3 = pdf[['c', 'd']]
+
+    print(tb_3.index.values)
+    print(pdf_3.index.values)
+
+    assert tb_3.index.values.tolist() == pdf_3.index.values.tolist()
+
+
+def test_setitem_with_index():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb.to_pandas()
+
+    print(tb)
+    print("-" * 80)
+    print(pdf)
+
+    tb.set_index('a', drop=True)
+    pdf.set_index('a', drop=True, inplace=True)
+
+    new_data = [i * 10 for i in range(tb.row_count)]
+    new_tb = Table.from_list(ctx, ['new_col'], [new_data])
+    tb['e'] = new_tb
+    pdf['e'] = pd.DataFrame(new_data)
+
+    print(tb.index.values)
+    print(pdf.index.values)
+
+    assert tb.index.values.tolist() == pdf.index.values.tolist()
+
+
+def test_isin_with_index():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb1: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb1.to_pandas()
+    filter_isin = [11, 20, 11, 23]
+    print(tb1)
+
+    print(pdf)
+
+    tb1.set_index('a', drop=True)
+    pdf.set_index('a', inplace=True)
+
+    filter_pdf: pd.DataFrame = pdf[['b', 'c']].iloc[0:5]
+
+    tb_res = tb1[tb1['b'].isin(filter_isin)]
+    pdf_res = pdf[pdf['b'].isin(filter_isin)]
+
+    print(tb_res)
+    print(pdf_res)
+
+    assert tb_res.to_pandas().values.tolist() == pdf_res.values.tolist()
+
+    print(tb_res.index.values)
+    print(pdf_res.index.values)
+
+    assert tb_res.index.values.tolist() == pdf_res.index.values.tolist()
+
+
+def test_dropna_with_index():
+    columns = ['index', 'col1', 'col2', 'col3']
+    dtype = 'int32'
+    index = ['a', 'b', 'c', 'd', 'e', 'f']
+    datum_1 = [index, [1.0, 2.0, 3.0, 4.0, 5.0, None], [None, 7.0, 8.0, 9.0, 10.0, 11.0], [12.0,
+                                                                                          13.0,
+                                                                                    14.0, 15.0,
+                                                                                    16.0, 17.0]]
+    datum_2 = [index, [1.0, 2.0, 3.0, 4.0, 5.0, None], [None, 7.0, 8.0, 9.0, 10.0, None],
+               [12.0, 13.0, None, 15.0,
+                16.0, 17.0]]
+
+
+    dataset = [datum_1, datum_2]
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+
+    ## axis=0 => column-wise
+    inplace_ops = [True, False]
+    hows = ['any', 'all']
+    axiz = [0, 1]
+    for inplace in inplace_ops:
+        for how in hows:
+            for axis in axiz:
+                for data in dataset:
+                    cn_tb = cn.Table.from_list(ctx, columns, data)
+                    df = cn_tb.to_pandas()
+                    cn_tb.set_index('index', drop=True)
+                    df.set_index('index', drop=True, inplace=True)
+                    if inplace:
+                        cn_tb.dropna(axis=axis, how=how, inplace=inplace)
+                        df.dropna(axis=1 - axis, how=how, inplace=inplace)
+                    else:
+                        cn_tb = cn_tb.dropna(axis=axis, how=how, inplace=inplace)
+                        df = df.dropna(axis=1 - axis, how=how, inplace=inplace)
+
+                    pdf_values = df.fillna(0).values.flatten().tolist()
+                    cn_tb_values = cn_tb.to_pandas().fillna(0).values.flatten().tolist()
+                    assert pdf_values == cn_tb_values
+                    assert cn_tb.index.values.tolist() == df.index.values.tolist()
+
+
+test_concat_op()

@@ -78,6 +78,4 @@ def test_multicol():
 
     df = df.sort_values(by=['col1', 'col2'], ascending=[True, False])
 
-    for i in range(cn_srt.row_count):
-        for j in range(cn_srt.column_count):
-            assert cn_srt[i][j] == df.loc[i][j]
+    assert cn_srt.to_pandas().values.tolist() == df.values.tolist()

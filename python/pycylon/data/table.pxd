@@ -32,7 +32,6 @@ from pycylon.indexing.index cimport CBaseIndex
 from pycylon.indexing.index import BaseIndex
 
 
-
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CTable "cylon::Table":
         CTable(shared_ptr[CArrowTable] & tab, shared_ptr[CCylonContext] & ctx)
