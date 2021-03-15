@@ -63,10 +63,9 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
             << second_table->Rows() << ", Joined has : " << joined->Rows();
   LOG(INFO) << "Join done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                join_end_time - read_end_time).count() << "[ms]";
+            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time).count() << "[ms]";
 
-  std::vector<std::string> column_names = joined->ColumnNames();
+  auto column_names = joined->ColumnNames();
 
   for (const auto &col_name : column_names) {
     std::cout << col_name << ", ";
