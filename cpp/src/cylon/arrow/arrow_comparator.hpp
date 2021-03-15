@@ -22,6 +22,9 @@
 
 namespace cylon {
 
+/**
+ * @deprecated
+ */
 class ArrowComparator {
  public:
   virtual int compare(const std::shared_ptr<arrow::Array> &array1, int64_t index1,
@@ -37,6 +40,8 @@ std::shared_ptr<ArrowComparator> GetComparator(const std::shared_ptr<arrow::Data
  * expect Tables to have just a single chunk in all its columns
  *
  * todo resolve single chunk expectation
+ *
+ * @deprecated
  */
 class TableRowComparator {
  private:
@@ -49,20 +54,42 @@ class TableRowComparator {
 
 // -----------------------------------------------------------------------------
 
+/**
+ * To compare indices in one/ more arrays
+ */
 class ArrayIndexComparator {
  public:
   virtual int compare(int64_t index1, int64_t index2) const = 0;
 };
 
+/**
+ * Creates a comparator for a single array
+ * @param array
+ * @param asc
+ * @return
+ */
 std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array,
                                                                  bool asc = true);
 
+/**
+ * Creates a comparator for two arrays
+ * IMPORTANT: to uniquely identify rows of arr1 and arr2, the most significant bit of index value is encoded as,
+ *  0 --> arr1
+ *  1 --> arr2
+ * @param a1
+ * @param a2
+ * @param asc
+ * @return
+ */
 std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,
                                                                  const std::shared_ptr<arrow::Array> &a2,
                                                                  bool asc = true);
 
 // -----------------------------------------------------------------------------
 
+/**
+ * @deprecated
+ */
 class RowEqualTo {
  public:
   RowEqualTo(std::shared_ptr<cylon::CylonContext> &ctx, const std::shared_ptr<arrow::Table> *tables,
@@ -105,6 +132,25 @@ class TableRowIndexEqualTo {
  * hash index within a table based on multiple column indices.
  * Note: A composite hash would be precomputed in the constructor
  */
+class ArrayIndexHash {
+ public:
+  explicit ArrayIndexHash(const std::shared_ptr<arrow::Array> &arr);
+
+  // hashing
+  size_t operator()(const int64_t &record) const;
+
+ private:
+  // this class gets copied to std container, so we don't want to copy these vectors.
+  // hence they are wrapped around smart pointers
+  std::shared_ptr<std::vector<uint32_t>> hashes_ptr;
+};
+
+// -----------------------------------------------------------------------------
+
+/**
+ * hash index within a table based on multiple column indices.
+ * Note: A composite hash would be precomputed in the constructor
+ */
 class TableRowIndexHash {
  public:
   explicit TableRowIndexHash(const std::shared_ptr<arrow::Table> &table);
@@ -132,7 +178,12 @@ class TableRowIndexHash {
 // -----------------------------------------------------------------------------
 
 /**
- * multi-table hashes based on a <table index, row index> pair
+ * Hash function for two tables, based on rows.
+ * IMPORTANT: to uniquely identify rows of t1 and t2, the most significant bit of index value is encoded as,
+ *  0 --> t1
+ *  1 --> t2
+ *
+ *  Note: A composite hash would be precomputed in the constructor for both tables
  */
 class TwoTableRowIndexHash {
  public:
@@ -152,7 +203,10 @@ class TwoTableRowIndexHash {
 // -----------------------------------------------------------------------------
 
 /**
- * multi-table hashes based on a <table index, row index> pair
+ * Equal-to function for two tables, based on the rows.
+ * IMPORTANT: to uniquely identify rows of t1 and t2, the most significant bit of index value is encoded as,
+ *  0 --> t1
+ *  1 --> t2
  */
 class TwoTableRowIndexEqualTo {
  public:
@@ -168,6 +222,50 @@ class TwoTableRowIndexEqualTo {
   // this class gets copied to std container, so we don't want to copy these vectors.
   std::vector<std::shared_ptr<ArrayIndexComparator>> comparators;
 };
+
+// -----------------------------------------------------------------------------
+
+/**
+ * Hash function for two arrays.
+ * IMPORTANT: to uniquely identify rows of arr1 and arr2, the most significant bit of index value is encoded as,
+ *  0 --> arr1
+ *  1 --> arr2
+ *
+ *  Note: A composite hash would be precomputed in the constructor for both arrays
+ */
+class TwoArrayIndexHash {
+ public:
+  TwoArrayIndexHash(const std::shared_ptr<arrow::Array> &arr1, const std::shared_ptr<arrow::Array> &arr2);
+
+  // hashing
+  size_t operator()(int64_t idx) const;
+
+ private:
+  // this class gets copied to std container, so we don't want to copy these vectors.
+  // we can use a TableRowIndexHash objects with just 1 array
+  std::array<std::shared_ptr<ArrayIndexHash>, 2> array_hashes;
+};
+
+// -----------------------------------------------------------------------------
+
+/**
+ * Equal-to function for two arrays
+ * IMPORTANT: to uniquely identify rows of arr1 and arr2, the most significant bit of index value is encoded as,
+ *  0 --> arr1
+ *  1 --> arr2
+ */
+class TwoArrayIndexEqualTo {
+ public:
+  TwoArrayIndexEqualTo(const std::shared_ptr<arrow::Array> &arr1, const std::shared_ptr<arrow::Array> &arr2);
+
+  // hashing
+  bool operator()(const int64_t &record1, const int64_t &record2) const;
+
+ private:
+  // this class gets copied to std container, so we don't want to copy these vectors.
+  std::shared_ptr<ArrayIndexComparator> comparator;
+};
+
 
 // -----------------------------------------------------------------------------
 

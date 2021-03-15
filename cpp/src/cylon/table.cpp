@@ -443,7 +443,7 @@ Status Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &
       }
     }
 
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::joinTables(left_table,
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::JoinTables(left_table,
                                                          right_table,
                                                          join_config,
                                                          &table,
@@ -474,7 +474,7 @@ Status DistributedJoin(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylo
                                                               left_final_table, right_final_table))
 
   std::shared_ptr<arrow::Table> table;
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::joinTables(left_final_table, right_final_table, join_config, &table,
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::JoinTables(left_final_table, right_final_table, join_config, &table,
                                                        cylon::ToArrowPool(ctx)))
   out = std::make_shared<cylon::Table>(table, ctx);
 

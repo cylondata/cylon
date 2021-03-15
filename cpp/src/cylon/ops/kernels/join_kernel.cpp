@@ -44,7 +44,7 @@ cylon::Status JoinKernel::Finalize(std::shared_ptr<cylon::Table> &result) {
     std::shared_ptr<arrow::Table> left_tab = left_tables.front();
     std::shared_ptr<arrow::Table> right_tab = right_tables.front();
     std::shared_ptr<arrow::Table> out;
-    arrow::Status st = cylon::join::joinTables(left_tab, right_tab, *join_config, &out, kPool);
+    arrow::Status st = cylon::join::JoinTables(left_tab, right_tab, *join_config, &out, kPool);
     left_tables.pop();
     right_tables.pop();
     joined_tables.push_back(out);
