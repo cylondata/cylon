@@ -78,16 +78,14 @@ cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *
   arrow::Status ar_status;
   std::vector<int64_t> range_index_values;
   std::shared_ptr<arrow::Array> index_arr;
-  for (int i = 0; i < end_ - start_; i=i+step_) {
-    range_index_values.push_back(i);
-  }
   arrow::Int64Builder builder(pool);
-  ar_status = builder.AppendValues(range_index_values);
-
-  if (!ar_status.ok()) {
-    LOG(ERROR) << "Error occurred in creating range index value array";
+  int64_t capacity = int64_t ((end_ - start_) / step_);
+  if (!(ar_status = builder.Reserve(capacity)).ok()) {
+    LOG(ERROR) << "Error occurred in reserving memory" << ar_status.message();
   }
-
+  for (int i = 0; i < end_ - start_; i=i+step_) {
+    builder.UnsafeAppend(i);
+  }
   ar_status = builder.Finish(&index_arr);
 
   if (!ar_status.ok()) {

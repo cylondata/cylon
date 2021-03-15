@@ -633,7 +633,9 @@ def test_concat_table():
 
 
 def test_concat_op():
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    from pycylon.net import MPIConfig
+    mpi_config = MPIConfig()
+    ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
     columns = ['c1', 'c2', 'c3']
     dataset_1 = [[1, 2, 3, 4, 5], [20, 30, 40, 50, 51], [33, 43, 53, 63, 73]]
     dataset_2 = [[1, 20, 3, 4, 50], [20, 30, 40, 50, 51], [33, 43, 53, 63, 73]]
@@ -969,3 +971,6 @@ def test_dropna_with_index():
                     cn_tb_values = cn_tb.to_pandas().fillna(0).values.flatten().tolist()
                     assert pdf_values == cn_tb_values
                     assert cn_tb.index.values.tolist() == df.index.values.tolist()
+
+
+test_concat_op()
