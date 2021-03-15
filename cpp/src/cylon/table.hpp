@@ -256,7 +256,7 @@ Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &tables, std::shar
  * @return success
  */
 Status Join(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-            cylon::join::config::JoinConfig join_config, std::shared_ptr<Table> &output);
+            const join::config::JoinConfig &join_config, std::shared_ptr<Table> &output);
 
 /**
  * Similar to local join, but performs the join in a distributed fashion
@@ -267,7 +267,7 @@ Status Join(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
  * @return <cylon::Status>
  */
 Status DistributedJoin(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-                       cylon::join::config::JoinConfig join_config, std::shared_ptr<Table> &output);
+                       const join::config::JoinConfig &join_config, std::shared_ptr<Table> &output);
 
 /**
  * Performs union with the passed table

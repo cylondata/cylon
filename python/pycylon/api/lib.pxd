@@ -43,6 +43,7 @@ from pycylon.indexing.index cimport CBaseIndex
 from pycylon.indexing.index import BaseIndex
 from pycylon.indexing.index cimport CBaseIndex
 from pycylon.indexing.index cimport BaseIndex
+from pycylon.common.join_config cimport CJoinConfig
 
 
 cdef api bint pyclon_is_context(object context)
@@ -68,6 +69,8 @@ cdef api shared_ptr[CBaseIndex] pycylon_unwrap_base_index(object base_index)
 cdef api CType pycylon_unwrap_type(object type)
 
 cdef api CLayout pycylon_unwrap_layout(object layout)
+
+cdef api CJoinConfig* pycylon_unwrap_join_config (object config)
 
 cdef api object pycylon_wrap_table(const shared_ptr[CTable] &ctable)
 

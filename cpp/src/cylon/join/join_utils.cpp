@@ -68,12 +68,12 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
     arrow::Status status;
     if (i == left_inplace_column) {
       status = cylon::util::copy_array_by_indices(left_indices,
-                                                  ca->chunk(0),
+                                                  cylon::util::GetChunkOrEmptyArray(ca, 0),
                                                   &destination_col_array,
                                                   memory_pool);
     } else {
       status = cylon::util::copy_array_by_indices(indices_indexed,
-                                                  ca->chunk(0),
+                                                  cylon::util::GetChunkOrEmptyArray(ca, 0),
                                                   &destination_col_array,
                                                   memory_pool);
     }
@@ -103,12 +103,12 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
     arrow::Status status;
     if (i == right_inplace_column) {
       status = cylon::util::copy_array_by_indices(right_indices,
-                                                  ca->chunk(0),
+                                                  cylon::util::GetChunkOrEmptyArray(ca, 0),
                                                   &destination_col_array,
                                                   memory_pool);
     } else {
       status = cylon::util::copy_array_by_indices(indices_indexed,
-                                                  ca->chunk(0),
+                                                  cylon::util::GetChunkOrEmptyArray(ca, 0),
                                                   &destination_col_array,
                                                   memory_pool);
     }
@@ -150,7 +150,7 @@ arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
     std::shared_ptr<arrow::Array> destination_col_array;
     arrow::Status
         status = cylon::util::copy_array_by_indices(left_indices,
-                                                    column->chunk(0),
+                                                    cylon::util::GetChunkOrEmptyArray(column, 0),
                                                     &destination_col_array,
                                                     memory_pool);
     if (status != arrow::Status::OK()) {
@@ -166,7 +166,7 @@ arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
     std::shared_ptr<arrow::Array> destination_col_array;
     arrow::Status
         status = cylon::util::copy_array_by_indices(right_indices,
-                                                    column->chunk(0),
+                                                    cylon::util::GetChunkOrEmptyArray(column, 0),
                                                     &destination_col_array,
                                                     memory_pool);
     if (status != arrow::Status::OK()) {

@@ -44,7 +44,9 @@ from pycylon.data.table cimport SortOptions
 from pycylon.indexing.index import BaseIndex
 from pycylon.indexing.index cimport CBaseIndex
 from pycylon.indexing.index cimport BaseIndex
-
+from pycylon.common.join_config cimport CJoinConfig
+from pycylon.common.join_config import JoinConfig
+from pycylon.common.join_config cimport JoinConfig
 
 cdef api bint pyclon_is_context(object context):
     return isinstance(context, CylonContext)
@@ -72,6 +74,9 @@ cdef api bint pyclon_is_data_type(object data_type):
 
 cdef api bint pyclon_is_sort_options(object sort_options):
     return isinstance(sort_options, SortOptions)
+
+cdef api bint pyclon_is_join_config(object config):
+    return isinstance(config, JoinConfig)
 
 cdef api bint pyclon_is_base_index(object base_index):
     return isinstance(base_index, BaseIndex)
@@ -145,6 +150,14 @@ cdef api CType pycylon_unwrap_type(object type):
 
 cdef api CLayout pycylon_unwrap_layout(object layout):
     pass
+
+cdef api CJoinConfig* pycylon_unwrap_join_config (object config):
+    cdef JoinConfig jc
+    if pyclon_is_join_config(config):
+        jc = <JoinConfig> config
+        return jc.jcPtr
+    else:
+        raise ValueError('Passed object is not an instance of JoinConfig')
 
 cdef api object pycylon_wrap_table(const shared_ptr[CTable]& ctable):
     cdef Table table = Table.__new__(Table)

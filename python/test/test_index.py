@@ -680,3 +680,47 @@ def test_isin():
     pdf_res_isin = pdf.index.isin(compare_values)
 
     assert tb_res_isin.tolist() == pdf_res_isin.tolist()
+
+
+def test_isin_with_getitem():
+    ctx = CylonContext(config=None, distributed=False)
+    csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+    table_path = '/tmp/duplicate_data_0.csv'
+    tb: Table = read_csv(ctx, table_path, csv_read_options)
+    pdf: pd.DataFrame = tb.to_pandas()
+
+    tb.set_index(tb.column_names[0], drop=True)
+    pdf.set_index(pdf.columns[0], drop=True, inplace=True)
+
+    assert tb.index.values.tolist() == pdf.index.values.tolist()
+
+    compare_values = [4, 1, 10, 100, 150]
+
+    tb_res_isin = tb.index.isin(compare_values)
+    pdf_res_isin = pdf.index.isin(compare_values)
+
+    assert tb_res_isin.tolist() == pdf_res_isin.tolist()
+
+    print(tb_res_isin)
+
+    print(pdf_res_isin)
+
+    pdf1 = pdf[pdf_res_isin]
+
+    print(pdf1)
+
+    tb_filter = Table.from_list(ctx, ['filter'], [tb_res_isin.tolist()])
+    tb1 = tb[tb_filter]
+    resultant_index = tb.index.values[tb_res_isin].tolist()
+    tb1.set_index(resultant_index)
+    print(tb1)
+
+    assert pdf1.values.tolist() == tb1.to_pandas().values.tolist()
+    assert tb1.index.values.tolist() ==  pdf1.index.values.tolist()
+
+
+
+
+
+
+test_isin_with_getitem()

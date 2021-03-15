@@ -26,30 +26,67 @@ num_rows = 10_000_000
 data = np.random.randn(num_rows)
 
 df = pd.DataFrame({'data{}'.format(i): data
-                   for i in range(100)})
+                   for i in range(2)})
 
-df['key'] = np.random.randint(0, 100, size=num_rows)
+np_key = np.random.randint(0, 100, size=num_rows)
+np_all = df.to_numpy()
+
+df['key'] = np_key
 
 rb = pa.record_batch(df)
 t = pa.Table.from_pandas(df)
 
 ct = Table.from_pandas(ctx, df)
 
-print(ct.shape, ct.column_names)
+print(ct.shape, df.shape)
 pdf_time = []
 ct_time = []
 rep = 1
-for i in range(rep):
-    t1 = time.time()
-    ct[ct['key'] == 5]
-    t2 = time.time()
-    df[df.key == 5]
-    t3 = time.time()
-    ct_time.append(t2-t1)
-    pdf_time.append(t3-t2)
 
-print(f"PDF : Mean {sum(pdf_time)/rep}")
-print(f"CT : Mean {sum(ct_time)/rep}")
+t1 = time.time()
+ct_filter = ct['key'] > 5
+t2 = time.time()
+df_filter = df['key'] > 5
+t3 = time.time()
+ct_res = ct[ct_filter]
+t4 = time.time()
+df_res = df[df_filter]
+t5 = time.time()
+np_filter = np_key > 5
+t6 = time.time()
+np_res = np_all[np_filter]
+t7 = time.time()
+
+
+print(f"PyCylon filter time :  {t2-t1} s")
+print(f"Pandas filter time: {t3-t2} s")
+print(f"Numpy filter time: {t6-t5} s")
+print(f"PyCylon assign time: {t4 -t3} s")
+print(f"Pandas assign time: {t5 -t4} s")
+print(f"Numpy assign time: {t7 -t6} s")
+
+artb = t
+
+artb_filter = ct_filter.to_arrow().combine_chunks()
+artb_array_filter = artb_filter.columns[0].chunks[0]
+t_ar_s = time.time()
+artb = artb.combine_chunks()
+from pyarrow import compute
+res = []
+for chunk_arr in artb.itercolumns():
+    res.append(chunk_arr.filter(artb_array_filter))
+t_ar_e = time.time()
+res_t = pa.Table.from_arrays(res, ct.column_names)
+t_ar_e_2 = time.time()
+print(f"PyArrow Filter Time : {t_ar_e - t_ar_s}")
+print(f"PyArrow Table Creation : {t_ar_e_2 - t_ar_e}")
+
+print(artb.shape, df_res.shape)
+
+
+
+
+
 
 
 

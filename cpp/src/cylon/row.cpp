@@ -16,13 +16,14 @@
 
 #include "row.hpp"
 #include "table_api_extended.hpp"
+#include "util/arrow_utils.hpp"
 
 namespace cylon {
 
 template<typename ARROW_TYPE>
 auto get_numeric(const std::shared_ptr<arrow::Table>& table, int64_t col_index, int64_t row_index) {
   auto numeric_array = std::static_pointer_cast<arrow::NumericArray<ARROW_TYPE>>(
-      table->column(col_index)->chunk(0));
+      cylon::util::GetChunkOrEmptyArray(table->column(col_index), 0));
   return numeric_array->Value(row_index);
 }
 
@@ -72,7 +73,7 @@ int64_t Row::RowIndex() {
 
 bool Row::GetBool(int64_t col_index) {
   auto numeric_array = std::static_pointer_cast<arrow::BooleanArray>(
-      table->column(col_index)->chunk(0));
+      cylon::util::GetChunkOrEmptyArray(table->column(col_index), 0));
   return numeric_array->Value(row_index);
 }
 
@@ -90,13 +91,13 @@ double Row::GetDouble(int64_t col_index) {
 
 std::string Row::GetString(int64_t col_index) {
   auto numeric_array = std::static_pointer_cast<arrow::StringArray>(
-      table->column(col_index)->chunk(0));
+      cylon::util::GetChunkOrEmptyArray(table->column(col_index), 0));
   return numeric_array->GetString(row_index);
 }
 
 const uint8_t *Row::GetFixedBinary(int64_t col_index) {
   auto numeric_array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(
-      table->column(col_index)->chunk(0));
+      cylon::util::GetChunkOrEmptyArray(table->column(col_index), 0));
   return numeric_array->GetValue(row_index);
 }
 
@@ -121,7 +122,7 @@ int64_t Row::Time64(int64_t col_index) {
 
 const uint8_t * Row::Decimal(int64_t col_index) {
   auto numeric_array = std::static_pointer_cast<arrow::DecimalArray>(
-      table->column(col_index)->chunk(0));
+      cylon::util::GetChunkOrEmptyArray(table->column(col_index), 0));
   return numeric_array->GetValue(row_index);
 }
 
