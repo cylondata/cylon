@@ -32,14 +32,15 @@ Run benchmark:
                                         --num_cols 2 \
                                         --filter_size 500_000 \
                                         --stats_file /tmp/isin_bench.csv \
-                                        --repetitions 1
+                                        --repetitions 1 \
+                                        --duplication_factor 0.9
 """
 
 
-def isn_in_op_bench(num_rows: int, num_cols: int, filter_size: int):
+def isn_in_op_bench(num_rows: int, num_cols: int, filter_size: int, duplication_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-    df = get_dataframe(num_rows=num_rows, num_cols=num_cols)
+    df = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
     rb = pa.record_batch(df)
     t = pa.Table.from_pandas(df)
 
@@ -59,10 +60,11 @@ def isn_in_op_bench(num_rows: int, num_cols: int, filter_size: int):
 
     print(f"Pandas isin time : {t2 - t1} s")
     print(f"PyCylon isin time : {t4 - t3} s")
-    return t2-t1, t4-t3
+    return t2 - t1, t4 - t3
 
 
-def bench_isin(start: int, end: int, step: int, num_cols: int, filter_size: int, repetitions:int , stats_file: str):
+def bench_isin(start: int, end: int, step: int, num_cols: int, filter_size: int, repetitions: int, stats_file: str,
+               duplication_factor: float):
     all_data = []
     schema = ["num_records", "num_cols", "filter_size", "pandas", "cylon", "speed up"]
     assert repetitions >= 1
@@ -74,15 +76,15 @@ def bench_isin(start: int, end: int, step: int, num_cols: int, filter_size: int,
         print(f"Isin Op : Records={records}, Columns={num_cols}, Filter Size={filter_size}")
         times = []
         for idx in range(repetitions):
-            pandas_time, cylon_time = isn_in_op_bench(num_rows=records, num_cols=num_cols, filter_size=filter_size)
+            pandas_time, cylon_time = isn_in_op_bench(num_rows=records, num_cols=num_cols, filter_size=filter_size,
+                                                      duplication_factor=duplication_factor)
             times.append([pandas_time, cylon_time])
         times = np.array(times).sum(axis=0) / repetitions
         print(times)
-        all_data.append([records, num_cols, filter_size, times[0], times[1], times[0]/times[1]])
+        all_data.append([records, num_cols, filter_size, times[0], times[1], times[0] / times[1]])
     pdf = pd.DataFrame(all_data, columns=schema)
     print(pdf)
     pdf.to_csv(stats_file)
-
 
 
 if __name__ == '__main__':
@@ -93,6 +95,9 @@ if __name__ == '__main__':
     parser.add_argument("-e", "--end_size",
                         help="end data size",
                         type=int)
+    parser.add_argument("-d", "--duplication_factor",
+                        help="random data duplication factor",
+                        type=float)
     parser.add_argument("-s", "--step_size",
                         help="Step size",
                         type=int)
@@ -113,6 +118,7 @@ if __name__ == '__main__':
     print(f"Start Data Size : {args.start_size}")
     print(f"End Data Size : {args.end_size}")
     print(f"Step Data Size : {args.step_size}")
+    print(f"Data Duplication Factor : {args.duplication_factor}")
     print(f"Number of Columns : {args.num_cols}")
     print(f"Number of Repetitions : {args.repetitions}")
     print(f"Stats File : {args.stats_file}")
@@ -122,4 +128,5 @@ if __name__ == '__main__':
                num_cols=args.num_cols,
                filter_size=args.filter_size,
                repetitions=args.repetitions,
-               stats_file=args.stats_file)
+               stats_file=args.stats_file,
+               duplication_factor=args.duplication_factor)
