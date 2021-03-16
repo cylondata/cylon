@@ -21,6 +21,7 @@
 #include "../util/arrow_utils.hpp"
 #include "../arrow/arrow_kernels.hpp"
 #include "../arrow/arrow_hash_kernels.hpp"
+#include "../arrow/arrow_comparator.hpp"
 
 namespace cylon {
 namespace join {
@@ -45,6 +46,28 @@ inline void advance(std::vector<int64_t> *subset,
       break;
     }
     data_index = sorted_indices->Value(*current_index);
+  }MultiTableRowIndexComparator
+}
+
+inline void advance2(std::vector<int64_t> *subset,
+                    const std::shared_ptr<arrow::UInt64Array> &sorted_indices,  // this is always UInt64Array
+                    int64_t *current_index,  // always int64_t
+                    cylon::TableRowIndexComparator *comp,
+                    int64_t *key_index) {
+  subset->clear();
+  if (*current_index == sorted_indices->length()) {
+    return;
+  }
+
+  int64_t data_index = sorted_indices->Value(*current_index);
+  *key_index = data_index;
+  while (*current_index < sorted_indices->length() && comp->compare(data_index, *key_index) == 0) {
+    subset->push_back(data_index);
+    (*current_index)++;
+    if (*current_index == sorted_indices->length()) {
+      break;
+    }
+    data_index = *current_index;
   }
 }
 
@@ -258,8 +281,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
 template<typename ARROW_T, typename CPP_KEY_TYPE>
 static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
                                            const std::shared_ptr<arrow::Table> &right_tab,
-                                           int64_t left_join_column_idx,
-                                           int64_t right_join_column_idx,
+                                           std::vector<int64_t> left_join_column_idxs,
+                                           std::vector<int64_t> right_join_column_idxs,
                                            cylon::join::config::JoinType join_type,
                                            std::string left_table_prefix,
                                            std::string right_table_prefix,
@@ -269,28 +292,29 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
 
   // combine chunks if multiple chunks are available
   std::shared_ptr<arrow::Table> left_tab_comb, right_tab_comb;
-  arrow::Status lstatus, rstatus;
+  arrow::Result<std::shared_ptr<Table>> lstatus, rstatus;
   auto t11 = std::chrono::high_resolution_clock::now();
 
-  lstatus = cylon::join::util::CombineChunks(left_tab, left_join_column_idx, left_tab_comb, memory_pool);
-  rstatus = cylon::join::util::CombineChunks(right_tab, right_join_column_idx, right_tab_comb, memory_pool);
+  lstatus = left_tab->CombineChunks(memory_pool);
+  rstatus = right_tab->CombineChunks(memory_pool);
 
   auto t22 = std::chrono::high_resolution_clock::now();
 
   if (!lstatus.ok() || !rstatus.ok()) {
     LOG(ERROR) << "Combining chunks failed!";
     return arrow::Status::Invalid("Sort join failed!");
+  } else {
+    left_tab_comb = lstatus->Value();
+    right_tab_comb = rstatus->Value();
   }
 
   LOG(INFO) << "Combine chunks time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
 
-  // sort columns
-  auto left_join_column = cylon::util::GetChunkOrEmptyArray(left_tab_comb->column(left_join_column_idx), 0);
-  auto right_join_column = cylon::util::GetChunkOrEmptyArray(right_tab_comb->column(right_join_column_idx), 0);
-
+  // create sorter and do index sort
   auto t1 = std::chrono::high_resolution_clock::now();
+
   std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
-  auto status = SortIndices(memory_pool, left_join_column, left_index_sorted_column);
+  auto status = cylon::SortIndicesMultiColumns(memory_pool, left_tab_comb, left_join_column_idxs, left_index_sorted_column);
   if (!status.ok()) {
     LOG(FATAL) << "Failed when sorting left table to indices. " << status.ToString();
     return status;
@@ -299,22 +323,26 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   LOG(INFO) << "Left sorting time : "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
-  t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> right_index_sorted_column;
-  status = SortIndices(memory_pool, right_join_column, right_index_sorted_column);
+  status = cylon::SortIndicesMultiColumns(memory_pool, right_tab_comb, right_join_column_idxs, right_index_sorted_column);
   if (!status.ok()) {
     LOG(FATAL) << "Failed when sorting right table to indices. " << status.ToString();
     return status;
   }
-  t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "right sorting time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
+  t1 = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "right sorting time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t2).count();
+
+  // create comparator
+  auto left_tab_index_comparator = cylon::TableRowIndexComparator(left_tab_comb, left_join_column_idxs);
+  auto right_tab_index_comparator = cylon::TableRowIndexComparator(right_tab_comb, right_join_column_idxs);
+
+  auto mult_tab_comparator = cylon::MultiTableRowIndexComparator({left_tab_comb, right_tab_comb});
 
   CPP_KEY_TYPE left_key, right_key;
   std::vector<int64_t> left_subset, right_subset;
   int64_t left_current_index = 0;
   int64_t right_current_index = 0;
-
-  t1 = std::chrono::high_resolution_clock::now();
 
   std::vector<int64_t> left_indices, right_indices;
   int64_t init_vec_size = std::min(left_join_column->length(), right_join_column->length());

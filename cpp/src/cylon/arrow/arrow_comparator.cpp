@@ -299,11 +299,23 @@ TableRowIndexComparator::TableRowIndexComparator(const std::shared_ptr<arrow::Ta
     }
   }
 }
+
 bool TableRowIndexComparator::operator()(const int64_t &record1, const int64_t &record2) const {
   for (auto &&comp : *idx_comparators_ptr) {
     if (comp->compare(record1, record2)) return false;
   }
   return true;
+}
+
+int TableRowIndexComparator::compare(const int64_t &record1, const int64_t &record2) const{
+  for (auto &&comp : *idx_comparators_ptr) {
+    if (comp->compare(record1, record2)==0) {
+      continue;
+    } else{
+      return comp->compare(record1, record2);
+    }
+  }
+  return 0;
 }
 
 TableRowIndexHash::TableRowIndexHash(const std::shared_ptr<arrow::Table> &table,
@@ -345,6 +357,11 @@ bool MultiTableRowIndexComparator::operator()(const std::pair<int8_t, int64_t> &
                                               const std::pair<int8_t, int64_t> &record2) const {
   return this->comparator->compare(this->tables[record1.first], record1.second,
                                    this->tables[record2.first], record2.second) == 0;
+}
+
+int MultiTableRowIndexComparator::compare(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const{
+  return this->comparator->compare(this->tables[record1.first], record1.second,
+                                   this->tables[record2.first], record2.second);
 }
 
 }  // namespace cylon
