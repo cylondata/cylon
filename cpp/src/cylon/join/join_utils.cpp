@@ -32,17 +32,19 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
                                               std::shared_ptr<arrow::UInt64Array> &right_index_sorted_column,
                                               const std::shared_ptr<arrow::Table> &left_tab,
                                               const std::shared_ptr<arrow::Table> &right_tab,
+                                              const std::string &left_table_prefix,
+                                              const std::string &right_table_prefix,
                                               std::shared_ptr<arrow::Table> *final_table,
                                               arrow::MemoryPool *memory_pool) {
   // creating joined schema
   std::vector<std::shared_ptr<arrow::Field>> fields;
   // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
-  std::string  prefix = "lt-";
+  std::string  prefix = left_table_prefix;
   for(const auto &t: {left_tab, right_tab}){
     for (const auto &field: t->schema()->fields()){
       fields.emplace_back(field->WithName(prefix + field->name()));
     }
-    prefix = "rt-";
+    prefix = right_table_prefix;
   }
   const auto &schema = arrow::schema(fields);
 
@@ -66,12 +68,12 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
     arrow::Status status;
     if (i == left_inplace_column) {
       status = cylon::util::copy_array_by_indices(left_indices,
-                                                  ca->chunk(0),
+                                                  cylon::util::GetChunkOrEmptyArray(ca, 0),
                                                   &destination_col_array,
                                                   memory_pool);
     } else {
       status = cylon::util::copy_array_by_indices(indices_indexed,
-                                                  ca->chunk(0),
+                                                  cylon::util::GetChunkOrEmptyArray(ca, 0),
                                                   &destination_col_array,
                                                   memory_pool);
     }
@@ -101,12 +103,12 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
     arrow::Status status;
     if (i == right_inplace_column) {
       status = cylon::util::copy_array_by_indices(right_indices,
-                                                  ca->chunk(0),
+                                                  cylon::util::GetChunkOrEmptyArray(ca, 0),
                                                   &destination_col_array,
                                                   memory_pool);
     } else {
       status = cylon::util::copy_array_by_indices(indices_indexed,
-                                                  ca->chunk(0),
+                                                  cylon::util::GetChunkOrEmptyArray(ca, 0),
                                                   &destination_col_array,
                                                   memory_pool);
     }
@@ -125,17 +127,19 @@ arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
                                 const std::vector<int64_t> &right_indices,
                                 const std::shared_ptr<arrow::Table> &left_tab,
                                 const std::shared_ptr<arrow::Table> &right_tab,
+                                const std::string &left_table_prefix,
+                                const std::string &right_table_prefix,
                                 std::shared_ptr<arrow::Table> *final_table,
                                 arrow::MemoryPool *memory_pool) {
   // creating joined schema
   std::vector<std::shared_ptr<arrow::Field>> fields;
   // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
-  std::string  prefix = "lt-";
+  std::string  prefix = left_table_prefix;
   for(const auto &t: {left_tab, right_tab}){
     for (const auto &field: t->schema()->fields()){
       fields.emplace_back(field->WithName(prefix + field->name()));
     }
-    prefix = "rt-";
+    prefix = right_table_prefix;
   }
   const auto &schema = arrow::schema(fields);
 
@@ -146,7 +150,7 @@ arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
     std::shared_ptr<arrow::Array> destination_col_array;
     arrow::Status
         status = cylon::util::copy_array_by_indices(left_indices,
-                                                    column->chunk(0),
+                                                    cylon::util::GetChunkOrEmptyArray(column, 0),
                                                     &destination_col_array,
                                                     memory_pool);
     if (status != arrow::Status::OK()) {
@@ -162,7 +166,7 @@ arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
     std::shared_ptr<arrow::Array> destination_col_array;
     arrow::Status
         status = cylon::util::copy_array_by_indices(right_indices,
-                                                    column->chunk(0),
+                                                    cylon::util::GetChunkOrEmptyArray(column, 0),
                                                     &destination_col_array,
                                                     memory_pool);
     if (status != arrow::Status::OK()) {

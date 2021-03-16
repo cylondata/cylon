@@ -23,6 +23,7 @@ cpdef enum AggregationOp:
     NUNIQUE = CGroupByAggregationOp.CNUNIQUE
     MEAN = CGroupByAggregationOp.CMEAN
     QUANTILE = CGroupByAggregationOp.CQUANTILE
+    STDDEV = CGroupByAggregationOp.CSTDDEV
 
 AggregationOpString = {
     'sum': CGroupByAggregationOp.CSUM,
@@ -33,4 +34,5 @@ AggregationOpString = {
     'nunique': CGroupByAggregationOp.CNUNIQUE,
     'mean': CGroupByAggregationOp.CMEAN,
     'quantile': CGroupByAggregationOp.CQUANTILE,
+    'std': CGroupByAggregationOp.CSTDDEV,
 }

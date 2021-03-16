@@ -1,4 +1,5 @@
 #include "index_utils.hpp"
+#include "../util/arrow_utils.hpp"
 
 cylon::Status cylon::IndexUtil::BuildHashIndex(const std::shared_ptr<Table> &input,
                                                const int index_column,
@@ -20,7 +21,7 @@ cylon::Status cylon::IndexUtil::BuildHashIndex(const std::shared_ptr<Table> &inp
   std::shared_ptr<cylon::IndexKernel> kernel = CreateIndexKernel(table_, index_column);
   std::shared_ptr<cylon::BaseIndex> bi = kernel->BuildIndex(pool, table_, index_column);
   index = std::move(bi);
-  auto index_array = table_->column(index_column)->chunk(0);
+  auto index_array = cylon::util::GetChunkOrEmptyArray(table_->column(index_column), 0);
   index->SetIndexArray(index_array);
   return cylon::Status::OK();
 }

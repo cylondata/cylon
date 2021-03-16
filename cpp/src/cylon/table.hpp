@@ -256,7 +256,7 @@ Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &tables, std::shar
  * @return success
  */
 Status Join(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-            cylon::join::config::JoinConfig join_config, std::shared_ptr<Table> &output);
+            const join::config::JoinConfig &join_config, std::shared_ptr<Table> &output);
 
 /**
  * Similar to local join, but performs the join in a distributed fashion
@@ -267,7 +267,7 @@ Status Join(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
  * @return <cylon::Status>
  */
 Status DistributedJoin(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-                       cylon::join::config::JoinConfig join_config, std::shared_ptr<Table> &output);
+                       const join::config::JoinConfig &join_config, std::shared_ptr<Table> &output);
 
 /**
  * Performs union with the passed table
@@ -364,7 +364,7 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_p
  * @param sort_column
  * @return new table sorted according to the sort columns
  */
-Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &sort_columns,
+Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &sort_columns,
             std::shared_ptr<cylon::Table> &out, bool ascending);
 
 /**
@@ -375,7 +375,7 @@ Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &so
  * @param sort_column
  * @return new table sorted according to the sort columns
  */
-Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &sort_columns,
+Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &sort_columns,
             std::shared_ptr<cylon::Table> &out, const std::vector<bool> &sort_direction);
 
 /**
@@ -386,15 +386,21 @@ Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &so
  */
 
 struct SortOptions {
-  bool ascending;
   uint32_t num_bins;
   uint64_t num_samples;
 
-  static SortOptions Defaults() { return {true, 0, 0}; }
+  static SortOptions Defaults() { return {0, 0}; }
 };
-
-Status DistributedSort(std::shared_ptr<cylon::Table> &table, int sort_column,
+Status DistributedSort(std::shared_ptr<cylon::Table> &table,
+                       int sort_column,
                        std::shared_ptr<Table> &output,
+                       bool ascending = true,
+                       SortOptions sort_options = SortOptions::Defaults());
+
+Status DistributedSort(std::shared_ptr<cylon::Table> &table,
+                       const std::vector<int> &sort_columns,
+                       std::shared_ptr<Table> &output,
+                       const std::vector<bool> &sort_direction,
                        SortOptions sort_options = SortOptions::Defaults());
 
 /**

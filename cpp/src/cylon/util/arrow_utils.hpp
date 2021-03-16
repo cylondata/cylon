@@ -21,10 +21,21 @@
 namespace cylon {
 namespace util {
 
-arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table,
-                        int64_t sort_column_index,
-                        arrow::MemoryPool *memory_pool,
-                        std::shared_ptr<arrow::Table> &sorted_table, bool ascending = true);
+arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort_column_index,
+                        arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Table> &sorted_table,
+                        bool ascending = true);
+
+arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
+                                    const std::vector<int32_t> &sort_column_indices,
+                                    arrow::MemoryPool *memory_pool,
+                                    std::shared_ptr<arrow::Table> &sorted_table,
+                                    const std::vector<bool> &sort_column_directions);
+
+arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
+                                    const std::vector<int32_t> &sort_column_indices,
+                                    arrow::MemoryPool *memory_pool,
+                                    std::shared_ptr<arrow::Table> &sorted_table,
+                                    const std::vector<bool> &sort_column_directions);
 
 arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
                                     const std::vector<int64_t> &sort_column_indices,
@@ -48,23 +59,21 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table);
  * Create a duplicate of the current array
  */
 arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr,
-                        const std::shared_ptr<arrow::Field> &field,
-                        arrow::MemoryPool *pool,
+                        const std::shared_ptr<arrow::Field> &field, arrow::MemoryPool *pool,
                         std::shared_ptr<arrow::ChunkedArray> &out);
 
-arrow::Status SampleTable(std::shared_ptr<arrow::Table> &table,
-                          int32_t idx,
-                          uint64_t num_samples,
+arrow::Status SampleTable(std::shared_ptr<arrow::Table> &table, int32_t idx, uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out);
 
-arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array,
-                          uint64_t num_samples,
+arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array, uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out);
 
-arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &array,
-                          uint64_t num_samples,
+arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &array, uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out);
+
+std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(
+    const std::shared_ptr<arrow::ChunkedArray> &column, int64_t chunk);
 
 }  // namespace util
 }  // namespace cylon
-#endif  //CYLON_SRC_UTIL_ARROW_UTILS_HPP_
+#endif  // CYLON_SRC_UTIL_ARROW_UTILS_HPP_

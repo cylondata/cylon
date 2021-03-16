@@ -18,8 +18,8 @@ from pycylon.common.status import Status
 from pycylon.common.join_config cimport CJoinType
 from pycylon.common.join_config cimport CJoinAlgorithm
 from pycylon.common.join_config cimport CJoinConfig
-from pycylon.common.join_config import PJoinType
-from pycylon.common.join_config import PJoinAlgorithm
+from pycylon.common.join_config import JoinConfig, StrToJoinType, StrToJoinAlgorithm
+from pycylon.common.join_config cimport JoinConfig
 from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pycylon.io.csv_write_config import CSVWriteOptions
 from pycylon.io.csv_write_config cimport CSVWriteOptions
@@ -40,7 +40,8 @@ pycylon_unwrap_csv_read_options,
 pycylon_unwrap_csv_write_options,
 pycylon_unwrap_sort_options,
 pycylon_wrap_base_index,
-pycylon_unwrap_base_index)
+pycylon_unwrap_base_index,
+pycylon_unwrap_join_config)
 
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
@@ -49,11 +50,14 @@ from pycylon.data.groupby cimport (DistributedHashGroupBy, DistributedPipelineGr
 from pycylon.data import compute
 
 from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
+from pycylon.indexing.index_utils import IndexUtil
 
 from pycylon.indexing.index cimport CBaseIndex
 from pycylon.indexing.index import BaseIndex
 from pycylon.indexing.index import IndexingSchema
 from pycylon.indexing.index import PyLocIndexer
+
+from pycylon.util.type_utils import get_arrow_type
 
 import math
 import pyarrow as pa
@@ -62,6 +66,7 @@ import pandas as pd
 from typing import List, Any
 import warnings
 import operator
+import copy
 
 '''
 Cylon Table definition mapping 
@@ -122,34 +127,38 @@ cdef class Table:
         else:
             self.table_shd_ptr.get().Print(row1, row2, col1, col2)
 
-    def sort(self, by, ascending = True) -> Table:
+    def sort(self, order_by, ascending=True) -> Table:
+
         cdef shared_ptr[CTable] output
-        cdef vector[long] sort_index
+        cdef vector[int] sort_index
         cdef vector[bool] order_directions
-        if isinstance(by, str):
-            sort_index.push_back(self._resolve_column_index_from_column_name(by))
-        elif isinstance(by, int):
-            sort_index.push_back(by)
-        elif isinstance(by, list):
-            for b in by:
+
+        if isinstance(order_by, str):
+            sort_index.push_back(self._resolve_column_index_from_column_name(order_by))
+        elif isinstance(order_by, int):
+            sort_index.push_back(order_by)
+        elif isinstance(order_by, list):
+            for b in order_by:
                 if isinstance(b, str):
                     sort_index.push_back(self._resolve_column_index_from_column_name(b))
                 elif isinstance(b, int):
                     sort_index.push_back(b)
                 else:
-                    raise Exception('Unsupported type used to specify the sort by columns. Expected column name or index')
+                    raise Exception(
+                        'Unsupported type used to specify the sort by columns. Expected column name or index')
         else:
-            raise Exception('Unsupported type used to specify the sort by columns. Expected column name or index')
+            raise Exception(
+                'Unsupported type used to specify the sort by columns. Expected column name or index')
 
-        
-        if type(ascending) ==type(True):
+        if type(ascending) == type(True):
             for i in range(0, sort_index.size()):
                 order_directions.push_back(ascending)
         elif isinstance(ascending, list):
             for i in range(0, sort_index.size()):
                 order_directions.push_back(ascending[i])
         else:
-            raise Exception('Unsupported format for ascending/descending order indication. Expected a boolean or a list of booleans')
+            raise Exception(
+                'Unsupported format for ascending/descending order indication. Expected a boolean or a list of booleans')
 
         cdef CStatus status = Sort(self.table_shd_ptr, sort_index, output, order_directions)
         if status.is_ok():
@@ -200,14 +209,6 @@ cdef class Table:
         else:
             raise ValueError("Tables are not parsed for merge")
 
-    @property
-    def column_names(self):
-        """
-        Produces column names for PyCylon Table
-        @return:
-        """
-        return pyarrow_wrap_table(pyarrow_unwrap_table(self.to_arrow())).column_names
-
     def _resolve_column_index_from_column_name(self, column_name) -> int:
         index = None
         for idx, col_name in enumerate(self.column_names):
@@ -239,18 +240,6 @@ cdef class Table:
         @rtype: CylonContext
         """
         return pycylon_wrap_context(self.table_shd_ptr.get().GetContext())
-
-    @property
-    def column_names(self) -> List[str]:
-        """
-        Produces column names
-        @return: list
-        """
-        column_names = []
-        cdef vector[string] c_column_names = self.table_shd_ptr.get().ColumnNames()
-        for col_name in c_column_names:
-            column_names.append(col_name.decode())
-        return column_names
 
     def _resolve_join_column_indices_from_column_names(self, column_names: List[
         str], op_column_names: List[str]) -> List[int]:
@@ -307,73 +296,6 @@ cdef class Table:
         if not self._is_column_indices_viable(left_cols, right_cols):
             raise ValueError("Provided Column Names or Column Indices not valid.")
 
-    def __get_join_config(self, join_type: str, join_algorithm: str, left_column_index: int,
-                          right_column_index: int):
-        if left_column_index is None or right_column_index is None:
-            raise Exception("Join Column index not provided")
-
-        if join_algorithm is None:
-            join_algorithm = PJoinAlgorithm.HASH.value
-
-        if join_algorithm == PJoinAlgorithm.HASH.value:
-
-            if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH)
-            elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH)
-            elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH)
-            elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CHASH)
-            else:
-                raise ValueError("Unsupported Join Type {}".format(join_type))
-
-        elif join_algorithm == PJoinAlgorithm.SORT.value:
-
-            if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT)
-            elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT)
-            elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT)
-            elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
-                                             right_column_index, CJoinAlgorithm.CSORT)
-            else:
-                raise ValueError("Unsupported Join Type {}".format(join_type))
-        else:
-            if join_type == PJoinType.INNER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CINNER, left_column_index,
-                                             right_column_index)
-            elif join_type == PJoinType.LEFT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CLEFT, left_column_index, right_column_index)
-            elif join_type == PJoinType.RIGHT.value:
-                self.jcPtr = new CJoinConfig(CJoinType.CRIGHT, left_column_index,
-                                             right_column_index)
-            elif join_type == PJoinType.OUTER.value:
-                self.jcPtr = new CJoinConfig(CJoinType.COUTER, left_column_index,
-                                             right_column_index)
-            else:
-                raise ValueError("Unsupported Join Type {}".format(join_type))
-
-    cdef shared_ptr[CTable] init_join_ra_params(self, table, join_type, algorithm, kwargs):
-        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
-
-        # Cylon only supports join by one column and retrieve first left and right column when
-        # resolving join configs
-        self.__get_join_config(join_type=join_type, join_algorithm=algorithm,
-                               left_column_index=left_cols[0],
-                               right_column_index=right_cols[0])
-        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
-        return right
-
     cdef _get_join_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status):
         if status.is_ok():
             return pycylon_wrap_table(output)
@@ -408,7 +330,7 @@ cdef class Table:
 
     def join(self, table: Table, join_type: str,
              algorithm: str, **kwargs) -> Table:
-        '''
+        """
         Joins two PyCylon tables
         :param table: PyCylon table on which the join is performed (becomes the left table)
         :param join_type: Join Type as str ["inner", "left", "right", "outer"]
@@ -417,17 +339,24 @@ cdef class Table:
         Join column of the right table as List[int] or List[str], on: Join column in common with
         both tables as a List[int] or List[str].
         :return: Joined PyCylon table
-        '''
+        """
         cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
-                                                                 kwargs)
-        cdef CJoinConfig *jc1 = self.jcPtr
-        cdef CStatus status = Join(self.table_shd_ptr, right, jc1[0], output)
+        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
+        cdef CJoinConfig*jcptr
+
+        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
+        left_prefix = kwargs.get('left_prefix') if 'left_prefix' in kwargs else ""
+        right_prefix = kwargs.get('right_prefix') if 'right_prefix' in kwargs else ""
+
+        pjc = JoinConfig(join_type, algorithm, left_cols, right_cols, left_prefix, right_prefix)
+        jcptr = pycylon_unwrap_join_config(pjc)
+
+        cdef CStatus status = Join(self.table_shd_ptr, right, jcptr[0], output)
         return self._get_join_ra_response("Join", output, status)
 
     def distributed_join(self, table: Table, join_type: str,
                          algorithm: str, **kwargs) -> Table:
-        '''
+        """
          Joins two PyCylon tables in distributed memory
         :param table: PyCylon table on which the join is performed (becomes the left table)
         :param join_type: Join Type as str ["inner", "left", "right", "outer"]
@@ -436,12 +365,19 @@ cdef class Table:
         Join column of the right table as List[int] or List[str], on: Join column in common with
         both tables as a List[int] or List[str].
         :return: Joined PyCylon table
-        '''
+        """
         cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] right = self.init_join_ra_params(table, join_type, algorithm,
-                                                                 kwargs)
-        cdef CJoinConfig *jc1 = self.jcPtr
-        cdef CStatus status = DistributedJoin(self.table_shd_ptr, right, jc1[0], output)
+        cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
+        cdef CJoinConfig*jcptr
+
+        left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
+        left_prefix = kwargs.get('left_prefix') if 'left_prefix' in kwargs else ""
+        right_prefix = kwargs.get('right_prefix') if 'right_prefix' in kwargs else ""
+
+        pjc = JoinConfig(join_type, algorithm, left_cols, right_cols, left_prefix, right_prefix)
+        jcptr = pycylon_unwrap_join_config(pjc)
+
+        cdef CStatus status = DistributedJoin(self.table_shd_ptr, right, jcptr[0], output)
         return self._get_join_ra_response("Distributed Join", output, status)
 
     def union(self, table: Table) -> Table:
@@ -518,8 +454,9 @@ cdef class Table:
         else:
             raise ValueError("Columns not passed.")
 
-    def distributed_sort(self, sort_column=None, sort_options: SortOptions = None)-> Table:
-        '''
+    def distributed_sort(self, order_by, ascending = True,
+                         sort_options: SortOptions = None)-> Table:
+        """
         Does a distributed sort on the table by re-partitioning the data to maintain the sort
         order across all processes
         Args:
@@ -532,26 +469,48 @@ cdef class Table:
         --------
 
         >>> from pycylon.data.table import SortOptions
-        >>> s = SortOptions(ascending=True, num_bins=0, num_samples=0)
-        >>> tb1.distributed_sort(sort_column='use_id', sort_options=s)
+        >>> s = SortOptions(num_bins=0, num_samples=0)
+        >>> tb1.distributed_sort(order_by='use_id', ascending=True, sort_options=s)
 
-        '''
+        """
         cdef shared_ptr[CTable] output
         cdef CSortOptions *csort_options
-        col_index = 0
-        if isinstance(sort_column, str):
-            col_index = self._resolve_column_index_from_column_name(sort_column)
-        elif isinstance(sort_column, int):
-            col_index = sort_column
+        cdef vector[int] sort_index
+        cdef vector[bool] order_directions
+
+        if isinstance(order_by, str):
+            sort_index.push_back(self._resolve_column_index_from_column_name(order_by))
+        elif isinstance(order_by, int):
+            sort_index.push_back(order_by)
+        elif isinstance(order_by, list):
+            for b in order_by:
+                if isinstance(b, str):
+                    sort_index.push_back(self._resolve_column_index_from_column_name(b))
+                elif isinstance(b, int):
+                    sort_index.push_back(b)
+                else:
+                    raise Exception(
+                        'Unsupported type used to specify the sort by columns. Expected column name or index')
         else:
-            raise ValueError("Sort column must be column index or column name")
+            raise Exception(
+                'Unsupported type used to specify the sort by columns. Expected column name or index')
+
+        if isinstance(ascending, type(True)):
+            for i in range(0, sort_index.size()):
+                order_directions.push_back(ascending)
+        elif isinstance(ascending, list):
+            for i in range(0, sort_index.size()):
+                order_directions.push_back(ascending[i])
+        else:
+            raise Exception(
+                'Unsupported format for ascending/descending order indication. Expected a boolean or a list of booleans')
 
         if sort_options:
             csort_options = pycylon_unwrap_sort_options(sort_options)
         else:
-            csort_options = pycylon_unwrap_sort_options(SortOptions(True, 0, 0))
-        cdef CStatus status = DistributedSort(self.table_shd_ptr, col_index, output,
-                                              csort_options[0])
+            csort_options = pycylon_unwrap_sort_options(SortOptions(0, 0))
+        cdef CStatus status = DistributedSort(self.table_shd_ptr, sort_index, output,
+                                              order_directions, csort_options[0])
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
@@ -985,13 +944,29 @@ cdef class Table:
         array = np.asfortranarray(npy) if order == 'F' else np.ascontiguousarray(npy)
         return array
 
-    def to_pydict(self):
+    def to_pydict(self, with_index=False):
         '''
+        Args:
+            with_index: bool value which includes or excludes index values to dictionary
         Creating a dictionary from PyCylon table
         Returns: dict object
 
         '''
-        return self.to_arrow().to_pydict()
+        cdef int col_idx
+        cdef int idx
+        if with_index:
+            ar_tb = self.to_arrow().combine_chunks()
+            cn_index = self.index.values.tolist()
+            cn_column_names = self.column_names
+            pydict = {}
+            for col_idx, chunk_arr in enumerate(ar_tb.itercolumns()):
+                column_dict = {}
+                for idx, value in enumerate(chunk_arr):
+                    column_dict[cn_index[idx]] = value.as_py()
+                pydict[cn_column_names[col_idx]] = column_dict
+            return pydict
+        else:
+            return self.to_arrow().to_pydict()
 
     def to_csv(self, path, csv_write_options):
         '''
@@ -1060,11 +1035,16 @@ cdef class Table:
         Returns: PyCylon Table
 
         '''
+
         mask_batches = mask.to_arrow().combine_chunks().to_batches()
 
         if mask.column_count == 1:
             # Handle when masking is done based on a single column data
-            return self.from_arrow(self.context, self.to_arrow().filter(mask_batches[0][0]))
+            self.reset_index()
+            masked_table = self.from_arrow(self.context, self.to_arrow().filter(mask_batches[0][0]))
+            masked_table.set_index(masked_table.column_names[0], drop=True)
+            self.set_index(self.column_names[0], drop=True)
+            return masked_table
         else:
             # Handle when masking is done on whole table
             filtered_all_data = []
@@ -1077,7 +1057,11 @@ cdef class Table:
                     else:
                         filtered_data.append(math.nan)
                 filtered_all_data.append(filtered_data)
-            return Table.from_list(self.context, self.column_names, filtered_all_data)
+
+            col_names = self.column_names
+            print(len(col_names), len(filtered_all_data))
+            final_table = Table.from_list(self.context, col_names, filtered_all_data)
+            return final_table
 
     def __getitem__(self, key) -> Table:
         """
@@ -1139,21 +1123,30 @@ cdef class Table:
             1      4      8     12
 
         """
+        tb_index = self.index
         py_arrow_table = self.to_arrow().combine_chunks()
         if isinstance(key, slice):
-            return self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
+            new_tb = self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
+            new_index = tb_index.values[key.start: key.stop].tolist()
+            new_tb.set_index(new_index)
+            return new_tb
         elif isinstance(key, int):
-            return self.from_arrow(self.context, py_arrow_table.slice(key, 1))
+            new_tb = self.from_arrow(self.context, py_arrow_table.slice(key, 1))
+            new_index = tb_index.values[key].tolist()
+            new_tb.set_index(new_index)
+            return new_tb
         elif isinstance(key, str):
             index = self._resolve_column_index_from_column_name(key)
             chunked_arr = py_arrow_table.column(index)
             tb_filtered = self.from_arrow(self.context, pa.Table.from_arrays([chunked_arr.chunk(0)],
                                                                              [key]))
+            tb_filtered.set_index(tb_index)
             return tb_filtered
         elif isinstance(key, List):
             chunked_arrays = []
             selected_columns = []
             column_headers = self.column_names
+            index_values = self.index
             for column_name in key:
                 index = -1
                 if isinstance(column_name, str):
@@ -1162,8 +1155,10 @@ cdef class Table:
                     index = key
                 chunked_arrays.append(py_arrow_table.column(index).chunk(0))
                 selected_columns.append(column_headers[index])
-            return self.from_arrow(self.context, pa.Table.from_arrays(chunked_arrays,
-                                                                      selected_columns))
+            new_table = self.from_arrow(self.context, pa.Table.from_arrays(chunked_arrays,
+                                                                           selected_columns))
+            new_table.set_index(index_values)
+            return new_table
         elif self._is_pycylon_table(key):
             return self._table_from_mask(key)
         else:
@@ -1202,7 +1197,7 @@ cdef class Table:
             2      3      7    110   1110
             3      4      8    120   1120
         '''
-
+        tb_index = self.index
         if isinstance(key, str) and isinstance(value, Table):
             if value.column_count == 1:
                 value_arrow_table = value.to_arrow().combine_chunks()
@@ -1221,8 +1216,10 @@ cdef class Table:
             # A new Column is replacing an existing column
             self.initialize(current_ar_table.set_column(index, key, chunk_arr),
                             self.context)
+            self.set_index(tb_index)
         else:
             self.initialize(current_ar_table.append_column(key, chunk_arr), self.context)
+            self.set_index(tb_index)
 
     def __eq__(self, other) -> Table:
         '''
@@ -1679,7 +1676,7 @@ cdef class Table:
         else:
             return str1
 
-    def drop(self, column_names: List[str]):
+    def drop(self, column_names: List[str], inplace=False):
         '''
         drop a column or list of columns from a Table
         Args:
@@ -1704,8 +1701,16 @@ cdef class Table:
             2      7     11
             3      8     12
         '''
+        index = self.index
+        if inplace:
 
-        return self.from_arrow(self.context, self.to_arrow().drop(column_names))
+            artb = self.to_arrow().drop(column_names)
+            self.initialize(artb, self.context)
+            self.set_index(index)
+        else:
+            drop_tb = self.from_arrow(self.context, self.to_arrow().drop(column_names))
+            drop_tb.set_index(index)
+            return drop_tb
 
     def fillna(self, fill_value):
         '''
@@ -1915,7 +1920,7 @@ cdef class Table:
             2   3   7  11
             3   4   8  12
         '''
-
+        index_values = self.index
         if isinstance(column_names, dict):
             table_col_names = self.column_names
             for key in column_names.keys():
@@ -1929,6 +1934,7 @@ cdef class Table:
                 self.initialize(self.to_arrow().rename_columns(column_names), self.context)
         else:
             raise ValueError("Input Column names must be a dictionary or list")
+        self.set_index(index_values)
 
     def add_prefix(self, prefix: str) -> Table:
         '''
@@ -2196,11 +2202,13 @@ cdef class Table:
             0      1      5      9
             1      3      7     11
         '''
-
+        self.reset_index()
         new_tb = compute.drop_na(self, how, axis)
         if inplace:
             self.initialize(new_tb.to_arrow(), self.context)
+            self.set_index(self.column_names[0], drop=True)
         else:
+            new_tb.set_index(new_tb.column_names[0], drop=True)
             return new_tb
 
     def isin(self, value, skip_null=True) -> Table:
@@ -2236,8 +2244,7 @@ cdef class Table:
         artb = self.to_arrow().combine_chunks()
         for chunk_array in artb.itercolumns():
             npr = chunk_array.to_numpy()
-            new_ca = list(map(func, npr))
-            new_chunks.append(pa.array(new_ca))
+            new_chunks.append(pa.array(list(map(func, npr))))
         return Table.from_arrow(self.context,
                                 pa.Table.from_arrays(new_chunks, self.column_names))
 
@@ -2318,16 +2325,165 @@ cdef class Table:
         """
         return PyLocIndexer(self, "iloc")
 
+    @staticmethod
+    def concat(tables: List[Table], axis: int = 0, join: str = 'inner', algorithm: str = 'sort'):
+        """
+        Algorithm
+        =========
+        axis=1 (regular join op considering a column)
+        ----------------------------------------------
+
+        1. If indexed or not, do a reset_index op (which will add the new column as 'index' in both
+        tables)
+        2. Do the regular join by considering the 'index' column
+        3. Set the index by 'index' in the resultant table
+
+        axis=0 (stacking tables or similar to merge function)
+        -----------------------------------------------------
+        assert: column count must match
+        the two tables are stacked upon each other in order
+        The index is created by concatenating two indices
+        Args:
+            tables: List of PyCylon Tables
+            axis: 0:row-wise 1:column-wise
+            join: 'inner' and 'outer'
+            algorithm: 'sort' or 'hash'
+        Returns: PyCylon Table
+
+        """
+        if axis == 0:
+            res_table = tables[0]
+            if not isinstance(res_table, Table):
+                raise ValueError(f"Invalid object {res_table}, expected Table")
+            formatted_tables = []
+            new_column_names = res_table.column_names
+            for tb_idx in range(len(tables)):
+                tb1 = tables[tb_idx]
+                tb1.reset_index()
+            res_table = Table.merge(tables)
+            res_table.set_index(res_table.column_names[0], drop=True)
+            for tb_idx in range(len(tables)):
+                tb1 = tables[tb_idx]
+                tb1.set_index(tb1.column_names[0], drop=True)
+            return res_table
+        elif axis == 1:
+            if not isinstance(tables[0], Table):
+                raise ValueError(f"Invalid object {tables[0]}, Table expected")
+            ctx = tables[0].context
+            res_table = tables[0]
+            for i in range(1, len(tables)):
+                tb1 = tables[i]
+                if not isinstance(tb1, Table):
+                    raise ValueError(f"Invalid object {tb1}, expected Table")
+                tb1.reset_index()
+                res_table.reset_index()
+                if ctx.get_world_size() > 1:
+                    res_table = res_table.distributed_join(table=tb1, join_type=join,
+                                                           algorithm=algorithm,
+                                                           left_on=[res_table.column_names[0]],
+                                                           right_on=[tb1.column_names[0]])
+                else:
+                    res_table = res_table.join(table=tb1, join_type=join, algorithm=algorithm,
+                                               left_on=[res_table.column_names[0]],
+                                               right_on=[tb1.column_names[0]])
+                res_table.set_index(res_table.column_names[0], drop=True)
+                res_table.drop([tb1.column_names[0]], inplace=True)
+                tb1.set_index(tb1.column_names[0], drop=True)
+            tables[0].set_index(tables[0].column_names[0], drop=True)
+            return res_table
+        else:
+            raise ValueError(f"Invalid axis {axis}, must 0 or 1")
 
     def iterrows(self):
         data_dict = self.to_pydict()
-        index_values = self.index.index_values
+        index_values = self.index.values.tolist()
         for index_id in range(self.row_count):
             row = []
             for column in data_dict:
                 row.append(data_dict[column][index_id])
             yield index_values[index_id], row
 
+    def astype(self, dtype, safe=True):
+        """
+        This cast a table into given data type
+        Args:
+            dtype: can be a dictionary or a data type
+            safe: bool  check for overflows or other unsafe conversions
+
+        Returns: PyCylon Table
+
+        Examples
+        --------
+
+        >>> tb
+                c2  c3
+            c1
+            1   20  33
+            2   30  43
+            3   40  53
+            4   50  63
+            5   51  73
+
+        >>> tb.astype(float)
+                  c2    c3
+            c1
+            1   20.0  33.0
+            2   30.0  43.0
+            3   40.0  53.0
+            4   50.0  63.0
+            5   51.0  73.0
+
+        >>> tb.astype({'c2': 'int32', 'c3': 'float64'})
+                c2    c3
+            c1
+            1   20  33.0
+            2   30  43.0
+            3   40  53.0
+            4   50  63.0
+            5   51  73.0
+
+
+        """
+        self.reset_index()
+        column_names = self.column_names
+        artb = self.to_arrow()
+        schema = artb.schema
+        if isinstance(dtype, dict):
+            for field_id, field in enumerate(schema):
+                try:
+                    expected_dtype = dtype[field.name]
+                except KeyError:
+                    continue
+                arrow_type = get_arrow_type(expected_dtype)
+                if arrow_type is None:
+                    raise ValueError(f"cast data type is not supported")
+                if field_id == 0:
+                    new_field = field
+                else:
+                    new_field = field.with_type(arrow_type)
+                schema = schema.set(field_id, new_field)
+            casted_artb = artb.cast(schema, safe)
+            new_cn_table = Table.from_arrow(self.context, casted_artb)
+            new_cn_table.set_index(new_cn_table.column_names[0], drop=True)
+            self.set_index(self.column_names[0], drop=True)
+            return new_cn_table
+        elif np.isscalar(dtype) or isinstance(dtype, type):
+            arrow_type = get_arrow_type(dtype)
+            if arrow_type is None:
+                raise ValueError(f"cast data type is not supported")
+            for field_id, field in enumerate(schema):
+                if field_id == 0:
+                    new_field = field
+                else:
+                    new_field = field.with_type(arrow_type)
+                schema = schema.set(field_id, new_field)
+            casted_artb = artb.cast(schema, safe)
+            new_cn_table = Table.from_arrow(self.context, casted_artb)
+            new_cn_table.set_index(new_cn_table.column_names[0], drop=True)
+            self.set_index(self.column_names[0], drop=True)
+            return new_cn_table
+        else:
+            raise ValueError("Unsupported data type representation")
 
 
 class EmptyTable(Table):
@@ -2349,14 +2505,13 @@ class EmptyTable(Table):
 
 
 cdef class SortOptions:
-    '''
-    Sort Operations for Distribtued Sort
-    '''
-    def __cinit__(self, ascending: bool = True, num_bins: int = 0, num_samples: int = 0):
+    """
+    Sort Operations for Distributed Sort
+    """
+    def __cinit__(self, num_bins: int = 0, num_samples: int = 0):
         '''
         Initializes the CSortOptions struct
         Args:
-            ascending: bool
             num_bins: int
             num_samples: int
 
@@ -2364,7 +2519,6 @@ cdef class SortOptions:
 
         '''
         self.thisPtr = new CSortOptions()
-        self.thisPtr.ascending = ascending
         self.thisPtr.num_bins = num_bins
         self.thisPtr.num_samples = num_samples
 

@@ -12,43 +12,46 @@
 # limitations under the License.
 ##
 
-import pyarrow as pa
-import numpy as np
+
 import pandas as pd
-import pycylon as cn
-from pycylon import CylonContext
+import pyarrow as pa
+import pyarrow.compute as pc
+import numpy as np
 from pycylon import Table
-from pycylon.index import RangeIndex
+from pycylon import CylonContext
 import time
 
 ctx: CylonContext = CylonContext(config=None, distributed=False)
-num_rows = 1_000_000
+num_rows = 10_000_000
 data = np.random.randn(num_rows)
 
 df = pd.DataFrame({'data{}'.format(i): data
                    for i in range(100)})
 
-df['key'] = np.random.randint(0, 100, size=num_rows)
+np_key = np.random.randint(0, 100, size=num_rows)
+np_all = df.to_numpy()
+
+df['key'] = np_key
+
 rb = pa.record_batch(df)
 t = pa.Table.from_pandas(df)
 
 ct = Table.from_pandas(ctx, df)
 
-##
-cmp_num_rows = 1_000
-cmp_data = np.random.randn(cmp_num_rows)
-
-cmp_data = cmp_data.tolist()
-
-
 
 t1 = time.time()
-df.isin(cmp_data)
+np_key + 1
 t2 = time.time()
-
+ct['key'] + 1
 t3 = time.time()
-ct.isin(cmp_data)
+df['key'] + 1
 t4 = time.time()
+artb = ct.to_arrow().combine_chunks()
+ar_key = ct['key'].to_arrow().combine_chunks().columns[0].chunks[0]
+pc.add(ar_key, 1)
+t5 = time.time()
 
-print(f"Pandas isin time : {t2-t1} s")
-print(f"PyCylon isin time : {t4-t3} s")
+print(f"Numpy Time: {t2-t1} s")
+print(f"PyCylon Time: {t3-t2} s")
+print(f"Pandas Time: {t4-t3} s")
+print(f"PyArrow Time: {t5-t4} s")

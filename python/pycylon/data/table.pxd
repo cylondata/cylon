@@ -20,8 +20,6 @@ import uuid
 from pycylon.common.join_config cimport CJoinType
 from pycylon.common.join_config cimport CJoinAlgorithm
 from pycylon.common.join_config cimport CJoinConfig
-from pycylon.common.join_config import PJoinType
-from pycylon.common.join_config import PJoinAlgorithm
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pyarrow.lib cimport CTable as CArrowTable
@@ -32,7 +30,6 @@ from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 from pycylon.indexing.index cimport CBaseIndex
 from pycylon.indexing.index import BaseIndex
-
 
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
@@ -76,19 +73,19 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus WriteCSV(shared_ptr[CTable] & table, const string & path,
                      const CCSVWriteOptions & options)
 
-    CStatus Sort(shared_ptr[CTable] & table, const vector[long] sort_columns, shared_ptr[CTable] & output,
-                 const vector[bool] & sort_direction)
+    CStatus Sort(shared_ptr[CTable] & table, const vector[int] sort_columns,
+                 shared_ptr[CTable] & output, const vector[bool] & sort_direction)
 
     CStatus Project(shared_ptr[CTable] & table, const vector[int] & project_columns, shared_ptr[
             CTable] & output)
 
     CStatus Merge(vector[shared_ptr[CTable]] & tables, shared_ptr[CTable] output)
 
-    CStatus Join(shared_ptr[CTable] & left, shared_ptr[CTable] & right, CJoinConfig
-    join_config, shared_ptr[CTable] & output)
+    CStatus Join(shared_ptr[CTable] & left, shared_ptr[CTable] & right,
+                 const CJoinConfig& join_config, shared_ptr[CTable] & output)
 
-    CStatus DistributedJoin(shared_ptr[CTable] & left, shared_ptr[CTable] & right, CJoinConfig
-    join_config, shared_ptr[CTable] & output);
+    CStatus DistributedJoin(shared_ptr[CTable] & left, shared_ptr[CTable] & right,
+                            const CJoinConfig & join_config, shared_ptr[CTable] & output);
 
     CStatus Union(shared_ptr[CTable] & first, shared_ptr[CTable] & second, shared_ptr[CTable]
     & output)
@@ -109,8 +106,9 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus DistributedIntersect(shared_ptr[CTable] & first, shared_ptr[CTable] & second,
                                  shared_ptr[CTable] & output)
 
-    CStatus DistributedSort(shared_ptr[CTable] & table, int sort_column, shared_ptr[CTable]
-    & output, CSortOptions sort_options)
+    CStatus DistributedSort(shared_ptr[CTable] & table, const vector[int] sort_columns,
+                            shared_ptr[CTable] & output, const vector[bool] & sort_direction,
+                            CSortOptions sort_options)
 
     CStatus Shuffle(shared_ptr[CTable] & table, const vector[int] & hash_columns, shared_ptr[CTable]
     & output)
@@ -123,7 +121,6 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CSortOptions "cylon::SortOptions":
-        bool ascending
         int num_bins
         long num_samples
         @ staticmethod
@@ -140,12 +137,10 @@ cdef class Table:
         shared_ptr[CTable] table_shd_ptr
         shared_ptr[CTable] *table_out_shd_ptr
         shared_ptr[CCylonContext] sp_context
-        CJoinConfig *jcPtr
+
         dict __dict__
 
         void init(self, const shared_ptr[CTable]& table)
-
-        shared_ptr[CTable] init_join_ra_params(self, table, join_type, join_algorithm, kwargs)
 
         _get_join_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status)
 

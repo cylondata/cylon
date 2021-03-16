@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   first_table->Print();
   std::cout << "-----------------------" << std::endl;
 
-  std::vector<int64_t> sort_columns = {0, 1};
+  std::vector<int> sort_columns = {0, 1};
   std::vector<bool> sort_directions = {true, false};
 
   status = cylon::Sort(first_table, sort_columns, output, sort_directions);
