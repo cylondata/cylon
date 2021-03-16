@@ -234,6 +234,17 @@ int TestParquetJoinOperation(const cylon::join::config::JoinConfig &join_config,
 }
 #endif
 
+template<typename T>
+std::shared_ptr<arrow::Array> VectorToArrowArray(const std::vector<T> &v) {
+  const auto &buf = arrow::Buffer::Wrap(v);
+  const auto
+      &data = arrow::ArrayData::Make(arrow::TypeTraits<typename arrow::CTypeTraits<T>::ArrowType>::type_singleton(),
+                                     v.size(),
+                                     {nullptr, buf});
+
+  return arrow::MakeArray(data);
+}
+
 }
 }
 
