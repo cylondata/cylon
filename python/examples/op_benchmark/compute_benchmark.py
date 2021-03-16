@@ -18,7 +18,6 @@ import pandas as pd
 import pycylon as cn
 from pycylon import CylonContext
 from pycylon import Table
-from pycylon.index import RangeIndex
 from bench_util import get_dataframe
 import time
 import argparse
@@ -37,12 +36,10 @@ Run benchmark:
 """
 
 
-def isn_in_op_bench(num_rows: int, num_cols: int, filter_size: int, duplication_factor: float):
+def isin_op(num_rows: int, num_cols: int, filter_size: int, duplication_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
     df = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
-    rb = pa.record_batch(df)
-    t = pa.Table.from_pandas(df)
 
     ct = Table.from_pandas(ctx, df)
 
@@ -50,17 +47,15 @@ def isn_in_op_bench(num_rows: int, num_cols: int, filter_size: int, duplication_
 
     cmp_data = cmp_data.tolist()
 
-    t1 = time.time()
+    pandas_time = time.time()
     df.isin(cmp_data)
-    t2 = time.time()
+    pandas_time = time.time() - pandas_time
 
-    t3 = time.time()
+    cylon_time = time.time()
     ct.isin(cmp_data)
-    t4 = time.time()
+    cylon_time = time.time() - cylon_time
 
-    print(f"Pandas isin time : {t2 - t1} s")
-    print(f"PyCylon isin time : {t4 - t3} s")
-    return t2 - t1, t4 - t3
+    return pandas_time, cylon_time
 
 
 def bench_isin(start: int, end: int, step: int, num_cols: int, filter_size: int, repetitions: int, stats_file: str,
@@ -76,11 +71,12 @@ def bench_isin(start: int, end: int, step: int, num_cols: int, filter_size: int,
         print(f"Isin Op : Records={records}, Columns={num_cols}, Filter Size={filter_size}")
         times = []
         for idx in range(repetitions):
-            pandas_time, cylon_time = isn_in_op_bench(num_rows=records, num_cols=num_cols, filter_size=filter_size,
-                                                      duplication_factor=duplication_factor)
+            pandas_time, cylon_time = isin_op(num_rows=records, num_cols=num_cols, filter_size=filter_size,
+                                              duplication_factor=duplication_factor)
             times.append([pandas_time, cylon_time])
         times = np.array(times).sum(axis=0) / repetitions
-        print(times)
+        print(f"Isin Op : Records={records}, Columns={num_cols}, Filter Size={filter_size}, "
+              f"Pandas Time : {times[0]}, Cylon Time : {times[1]}")
         all_data.append([records, num_cols, filter_size, times[0], times[1], times[0] / times[1]])
     pdf = pd.DataFrame(all_data, columns=schema)
     print(pdf)
