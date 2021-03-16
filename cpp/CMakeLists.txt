@@ -25,9 +25,7 @@
 # For more information about CMake, see http://www.cmake.org             #
 ##########################################################################
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
-project(CYLON)
-
-set(CYLON_VERSION 0.4.0)
+project(CYLON VERSION 0.4.0)
 
 ## defaults to release build
 if (NOT CMAKE_BUILD_TYPE)
@@ -47,6 +45,7 @@ set("CYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
 include(SetupCxxFlags)
 message("CXX_COMMON_FLAGS: ${CXX_COMMON_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMMON_FLAGS}")
+set(CMAKE_INSTALL_INCLUDEDIR "include")
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPERCASE_CMAKE_BUILD_TYPE)
 if (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "DEBUG")
@@ -88,6 +87,27 @@ if (NOT HAVE_EXCLUSIVE_SCAN)
     add_definitions(-DNEED_EXCLUSIVE_SCAN)
 endif ()
 
+# conda environment
+if("$ENV{CONDA_BUILD}" STREQUAL "1")
+    set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{BUILD_PREFIX};$ENV{PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
+    set(CONDA_INCLUDE_DIRS "$ENV{BUILD_PREFIX}/include" "$ENV{PREFIX}/include")
+    set(CONDA_LINK_DIRS "$ENV{BUILD_PREFIX}/lib" "$ENV{PREFIX}/lib")
+    set(ARROW_BUILD_TYPE "SYSTEM")
+#    set(ARROW_LIB_DIR "$ENV{BUILD_PREFIX}/lib")
+#    set(ARROW_INCLUDE_DIR "$ENV{BUILD_PREFIX}/include")
+    set(CMAKE_INSTALL_INCLUDEDIR "$ENV{BUILD_PREFIX}/include")
+    message(STATUS "Conda build detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
+elseif(DEFINED ENV{CONDA_PREFIX})
+    set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{CONDA_PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
+    set(CONDA_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/include")
+    set(CONDA_LINK_DIRS "$ENV{CONDA_PREFIX}/lib")
+    set(ARROW_BUILD_TYPE "SYSTEM")
+#    set(ARROW_LIB_DIR "$ENV{BUILD_PREFIX}/lib")
+#    set(ARROW_INCLUDE_DIR "$ENV{BUILD_PREFIX}/include")
+    set(CMAKE_INSTALL_INCLUDEDIR "$ENV{BUILD_PREFIX}/include")
+    message(STATUS "Conda environment detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
+endif("$ENV{CONDA_BUILD}" STREQUAL "1")
+
 # Put the libaries and binaries that get built into directories at the
 # top of the build.
 SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
@@ -96,6 +116,13 @@ SET(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
 
 # root include directory
 include_directories(src/cylon)
+if(CONDA_INCLUDE_DIRS)
+    include_directories("${CONDA_INCLUDE_DIRS}")
+endif(CONDA_INCLUDE_DIRS)
+
+if(CONDA_LINK_DIRS)
+    link_directories("${CONDA_LINK_DIRS}")
+endif(CONDA_LINK_DIRS)
 
 # LocationByValue MPI
 find_package(MPI REQUIRED)
