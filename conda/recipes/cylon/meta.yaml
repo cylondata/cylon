@@ -1,4 +1,4 @@
-{% set version = environ.get('GIT_DESCRIBE_TAG', '0.0.0.dev').lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
+{% set version = '0.4.0'.lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
 {% set minor_version =  version.split('.')[0] + '.' + version.split('.')[1] %}
 {% set cylon_version='.'.join(environ.get('CYLON_VERSION', '0.4.0').split('.')[:2]) %}
 
@@ -7,18 +7,12 @@ package:
   version: {{ version }}
 
 source:
-  path: ../../..
+  git_url: ../../..
 
 build:
   number: {{ GIT_DESCRIBE_NUMBER }}
   string: cylon{{ cylon_version }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
   script_env:
-    - CC
-    - CXX
-    - CUDAHOSTCXX
-    - PARALLEL_LEVEL
-    - VERSION_SUFFIX
-    - PROJECT_FLASH
     - CONDA_PREFIX
   run_exports:
     - {{ pin_subpackage("cylon", max_pin="x.x") }}
@@ -27,7 +21,7 @@ requirements:
   build:
     - cmake >=3.14.0
     - arrow-cpp 2.0.0
-    - glog
+    - glog 0.4.0
 
 about:
   home: http://cylondata.org/
