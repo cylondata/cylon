@@ -64,7 +64,6 @@ bool validateArrowTableTypes(const std::shared_ptr <arrow::Table> &table) {
   std::shared_ptr <arrow::Schema> schema = table->schema();
   
   for (const auto &t : schema->fields()) {
-    LOG(INFO) << "Type "<< t->type()->name();
     switch (t->type()->id()) {
       case arrow::Type::BOOL:continue;
       case arrow::Type::UINT8:continue;
