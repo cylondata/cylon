@@ -129,10 +129,14 @@ find_package(MPI REQUIRED)
 include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
 
 # glog
-option(WITH_GFLAGS "Use gflags" ON)
-SET(WITH_GFLAGS OFF)
-include(ConfigureGlog)
-include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
+if(CONDA_INCLUDE_DIRS)
+    set(GLOG_LIBRARIES glog)
+else()
+    option(WITH_GFLAGS "Use gflags" ON)
+    SET(WITH_GFLAGS OFF)
+    include(ConfigureGlog)
+    include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
+endif(CONDA_INCLUDE_DIRS)
 
 # parquet
 option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
