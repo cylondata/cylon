@@ -130,8 +130,9 @@ cdef class Table:
     def sort(self, order_by, ascending=True) -> Table:
 
         cdef shared_ptr[CTable] output
-        cdef vector[long] sort_index
+        cdef vector[int] sort_index
         cdef vector[bool] order_directions
+
         if isinstance(order_by, str):
             sort_index.push_back(self._resolve_column_index_from_column_name(order_by))
         elif isinstance(order_by, int):
@@ -453,8 +454,9 @@ cdef class Table:
         else:
             raise ValueError("Columns not passed.")
 
-    def distributed_sort(self, sort_column=None, sort_options: SortOptions = None)-> Table:
-        '''
+    def distributed_sort(self, order_by, ascending = True,
+                         sort_options: SortOptions = None)-> Table:
+        """
         Does a distributed sort on the table by re-partitioning the data to maintain the sort
         order across all processes
         Args:
@@ -467,26 +469,48 @@ cdef class Table:
         --------
 
         >>> from pycylon.data.table import SortOptions
-        >>> s = SortOptions(ascending=True, num_bins=0, num_samples=0)
-        >>> tb1.distributed_sort(sort_column='use_id', sort_options=s)
+        >>> s = SortOptions(num_bins=0, num_samples=0)
+        >>> tb1.distributed_sort(order_by='use_id', ascending=True, sort_options=s)
 
-        '''
+        """
         cdef shared_ptr[CTable] output
         cdef CSortOptions *csort_options
-        col_index = 0
-        if isinstance(sort_column, str):
-            col_index = self._resolve_column_index_from_column_name(sort_column)
-        elif isinstance(sort_column, int):
-            col_index = sort_column
+        cdef vector[int] sort_index
+        cdef vector[bool] order_directions
+
+        if isinstance(order_by, str):
+            sort_index.push_back(self._resolve_column_index_from_column_name(order_by))
+        elif isinstance(order_by, int):
+            sort_index.push_back(order_by)
+        elif isinstance(order_by, list):
+            for b in order_by:
+                if isinstance(b, str):
+                    sort_index.push_back(self._resolve_column_index_from_column_name(b))
+                elif isinstance(b, int):
+                    sort_index.push_back(b)
+                else:
+                    raise Exception(
+                        'Unsupported type used to specify the sort by columns. Expected column name or index')
         else:
-            raise ValueError("Sort column must be column index or column name")
+            raise Exception(
+                'Unsupported type used to specify the sort by columns. Expected column name or index')
+
+        if isinstance(ascending, type(True)):
+            for i in range(0, sort_index.size()):
+                order_directions.push_back(ascending)
+        elif isinstance(ascending, list):
+            for i in range(0, sort_index.size()):
+                order_directions.push_back(ascending[i])
+        else:
+            raise Exception(
+                'Unsupported format for ascending/descending order indication. Expected a boolean or a list of booleans')
 
         if sort_options:
             csort_options = pycylon_unwrap_sort_options(sort_options)
         else:
-            csort_options = pycylon_unwrap_sort_options(SortOptions(True, 0, 0))
-        cdef CStatus status = DistributedSort(self.table_shd_ptr, col_index, output,
-                                              csort_options[0])
+            csort_options = pycylon_unwrap_sort_options(SortOptions(0, 0))
+        cdef CStatus status = DistributedSort(self.table_shd_ptr, sort_index, output,
+                                              order_directions, csort_options[0])
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
@@ -2481,14 +2505,13 @@ class EmptyTable(Table):
 
 
 cdef class SortOptions:
-    '''
-    Sort Operations for Distribtued Sort
-    '''
-    def __cinit__(self, ascending: bool = True, num_bins: int = 0, num_samples: int = 0):
+    """
+    Sort Operations for Distributed Sort
+    """
+    def __cinit__(self, num_bins: int = 0, num_samples: int = 0):
         '''
         Initializes the CSortOptions struct
         Args:
-            ascending: bool
             num_bins: int
             num_samples: int
 
@@ -2496,7 +2519,6 @@ cdef class SortOptions:
 
         '''
         self.thisPtr = new CSortOptions()
-        self.thisPtr.ascending = ascending
         self.thisPtr.num_bins = num_bins
         self.thisPtr.num_samples = num_samples
 
