@@ -173,5 +173,5 @@ add_subdirectory(io)
 add_subdirectory(ctx)
 add_subdirectory(arrow)
 
-set_target_properties(cylon PROPERTIES VERSION "0.4.0")
+set_target_properties(cylon PROPERTIES VERSION ${CYLON_VERSION})
 install(TARGETS cylon DESTINATION lib)
