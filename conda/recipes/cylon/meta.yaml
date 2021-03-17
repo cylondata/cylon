@@ -22,7 +22,7 @@ requirements:
     - cmake >=3.14.0
     - arrow-cpp 2.0.0
     - glog 0.4.0
-    - openmpi 4.0.3
+    - openmpi
 
 about:
   home: http://cylondata.org/
