@@ -151,6 +151,11 @@ endif()
 if (${ARROW_BUILD_TYPE} STREQUAL "SYSTEM")
     find_package(Arrow REQUIRED)
     set(ARROW_LIB arrow_shared)
+
+    if (CYLON_PARQUET)
+        find_library(PARQUET_LIB parquet REQUIRED)
+        message("PARQUET_LIB: ${PARQUET_LIB}")
+    endif ()
 elseif (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
     include(ConfigureArrow)
     include_directories(SYSTEM "${ARROW_INCLUDE_DIR}")
@@ -179,6 +184,7 @@ elseif (${ARROW_BUILD_TYPE} STREQUAL "CUSTOM")
 else ()
     message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM or SOURCE")
 endif()
+
 
 ## LocationByValue Python
 find_package(PythonLibs REQUIRED)
