@@ -2302,7 +2302,8 @@ cdef class Table:
         return PyLocIndexer(self, "iloc")
 
     @staticmethod
-    def concat(tables: List[Table], axis: int = 0, join: str = 'inner', algorithm: str = 'sort'):
+    def concat(tables: List[Table], axis: int = 0, join: str = 'inner', algorithm: str = 'sort',
+               distributed: bool = False):
         """
         Algorithm
         =========
@@ -2353,7 +2354,7 @@ cdef class Table:
                     raise ValueError(f"Invalid object {tb1}, expected Table")
                 tb1.reset_index()
                 res_table.reset_index()
-                if ctx.get_world_size() > 1:
+                if ctx.get_world_size() > 1 and distributed:
                     res_table = res_table.distributed_join(table=tb1, join_type=join,
                                                            algorithm=algorithm,
                                                            left_on=[res_table.column_names[0]],
