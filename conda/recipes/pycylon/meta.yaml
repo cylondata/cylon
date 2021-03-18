@@ -23,12 +23,15 @@ requirements:
     - cython >=0.29,<0.30
     - setuptools
     - pyarrow 2.0.0
+    - openmpi
     - cylon {{ version }}
   run:
     - python 3.7
     - cylon {{ version }}
     - pandas >=1.0,<1.2.0dev0
     - numpy
+    - openmpi
+    - pyarrow 2.0.0
     - {{ pin_compatible('pyarrow', max_pin='x.x.x') }}
 
 about:
