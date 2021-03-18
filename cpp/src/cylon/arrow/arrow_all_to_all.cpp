@@ -230,7 +230,7 @@ bool ArrowAllToAll::onReceiveHeader(int source, int fin, int *buffer, int length
   return true;
 }
 
-bool ArrowAllToAll::onSendComplete(int target, void *buffer, int length) {
+bool ArrowAllToAll::onSendComplete(int target, const void *buffer, int length) {
 //    pool_->Free((uint8_t *)buffer, length);
   return false;
 }

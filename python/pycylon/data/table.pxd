@@ -73,9 +73,8 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus WriteCSV(shared_ptr[CTable] & table, const string & path,
                      const CCSVWriteOptions & options)
 
-    CStatus Sort(shared_ptr[CTable] & table, const vector[long] sort_columns,
-                 shared_ptr[CTable] & output,
-                 const vector[bool] & sort_direction)
+    CStatus Sort(shared_ptr[CTable] & table, const vector[int] sort_columns,
+                 shared_ptr[CTable] & output, const vector[bool] & sort_direction)
 
     CStatus Project(shared_ptr[CTable] & table, const vector[int] & project_columns, shared_ptr[
             CTable] & output)
@@ -107,8 +106,9 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus DistributedIntersect(shared_ptr[CTable] & first, shared_ptr[CTable] & second,
                                  shared_ptr[CTable] & output)
 
-    CStatus DistributedSort(shared_ptr[CTable] & table, int sort_column, shared_ptr[CTable]
-    & output, CSortOptions sort_options)
+    CStatus DistributedSort(shared_ptr[CTable] & table, const vector[int] sort_columns,
+                            shared_ptr[CTable] & output, const vector[bool] & sort_direction,
+                            CSortOptions sort_options)
 
     CStatus Shuffle(shared_ptr[CTable] & table, const vector[int] & hash_columns, shared_ptr[CTable]
     & output)
@@ -121,7 +121,6 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CSortOptions "cylon::SortOptions":
-        bool ascending
         int num_bins
         long num_samples
         @ staticmethod

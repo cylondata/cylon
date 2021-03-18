@@ -21,21 +21,21 @@
 namespace cylon {
 namespace util {
 
-void printArray(void *buf, int size, std::string dataType, int depth);
+void printArray(const void *buf, int size, std::string dataType, int depth);
 
-void printInt8Array(int8_t *buf, int size);
+void printInt8Array(const int8_t *buf, int size);
 
-void printInt16Array(int16_t *buf, int size);
+void printInt16Array(const int16_t *buf, int size);
 
-void printInt32Array(int32_t *buf, int size);
+void printInt32Array(const int32_t *buf, int size);
 
-void printInt64Array(int64_t *buf, int size);
+void printInt64Array(const int64_t *buf, int size);
 
-void printFloatArray(float *buf, int size);
+void printFloatArray(const float *buf, int size);
 
-void printDoubleArray(double *buf, int size);
+void printDoubleArray(const double *buf, int size);
 
-void printLongArray(int64_t *buf, int size);
+void printLongArray(const int64_t *buf, int size);
 }  // namespace util
 }  // namespace cylon
 
