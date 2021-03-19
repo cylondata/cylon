@@ -210,8 +210,8 @@ int join_perf(int argc, char **argv) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
 
-  first_table->retainMemory(false);
-  second_table->retainMemory(false);
+//  first_table->retainMemory(false);
+//  second_table->retainMemory(false);
   status = cylon::DistributedJoin(first_table, second_table,
                                   cylon::join::config::JoinConfig::InnerJoin(0, 0), joined);
   if (!status.is_ok()) {
@@ -221,10 +221,21 @@ int join_perf(int argc, char **argv) {
   }
   auto join_end_time = std::chrono::steady_clock::now();
 
-  LOG(INFO) << ">>>>>>>>>>>" << ctx->GetRank() << ": Joined has : " << joined->Rows();
-  LOG(INFO) << "Join done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                join_end_time - read_end_time).count() << "[ms]";
+  LOG(INFO) << " Rank " << ctx->GetRank() << " Sort Join done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time).count() << "[ms]"
+            << " Joined has : " << joined->Rows();
+
+  status = cylon::DistributedJoin(first_table, second_table,
+                                  cylon::join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::HASH), joined);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table join failed ";
+    ctx->Finalize();
+    return 1;
+  }
+
+  LOG(INFO) << " Rank " << ctx->GetRank() << " Hash Join done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - join_end_time)
+                .count() << "[ms]" << " Joined has : " << joined->Rows();
 
   ctx->Finalize();
 

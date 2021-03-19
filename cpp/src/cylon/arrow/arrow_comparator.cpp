@@ -171,6 +171,10 @@ class NumericRowIndexComparator : public ArrayIndexComparator {
     }
   }
 
+  bool equal_to(const int64_t index1, const int64_t index2) const override {
+    return casted_arr->Value(index1) == casted_arr->Value(index2);
+  }
+
  private:
   std::shared_ptr<ARROW_ARRAY_T> casted_arr;
 };
@@ -189,6 +193,10 @@ class BinaryRowIndexComparator : public ArrayIndexComparator {
     }
   }
 
+  bool equal_to(const int64_t index1, const int64_t index2) const override {
+    return casted_arr->GetView(index1).compare(casted_arr->GetView(index2));
+  }
+
  private:
   std::shared_ptr<arrow::BinaryArray> casted_arr;
 };
@@ -198,6 +206,8 @@ class EmptyIndexComparator : public ArrayIndexComparator {
   explicit EmptyIndexComparator() = default;
 
   int compare(int64_t index1, int64_t index2) const override { return 0; }
+
+  bool equal_to(const int64_t index1, const int64_t index2) const override { return true; }
 };
 
 template <bool ASC>
@@ -212,6 +222,10 @@ class FixedSizeBinaryRowIndexComparator : public ArrayIndexComparator {
     } else {
       return casted_arr->GetView(index2).compare(casted_arr->GetView(index1));
     }
+  }
+
+  bool equal_to(const int64_t index1, const int64_t index2) const override {
+    return casted_arr->GetView(index1).compare(casted_arr->GetView(index2));
   }
 
  private:
@@ -248,13 +262,18 @@ class TwoNumericRowIndexComparator : public ArrayIndexComparator {
       : arrays({std::static_pointer_cast<ARROW_ARRAY_T>(a1), std::static_pointer_cast<ARROW_ARRAY_T>(a2)}) {}
 
   int compare(int64_t index1, int64_t index2) const override {
-    const auto &diff = arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
+    auto diff = arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
         - arrays.at(util::CheckBit(index2))->Value(util::ClearBit(index2));
     if (ASC) {
       return (diff > 0) - (diff < 0);
     } else {
       return (diff < 0) - (diff > 0);
     }
+  }
+
+  bool equal_to(const int64_t index1, const int64_t index2) const override {
+    return arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
+        == arrays.at(util::CheckBit(index2))->Value(util::ClearBit(index2));
   }
 
  private:
@@ -276,6 +295,11 @@ class TwoBinaryRowIndexComparator : public ArrayIndexComparator {
       return arrays.at(util::CheckBit(index2))->GetView(util::ClearBit(index2))
           .compare(arrays.at(util::CheckBit(index1))->GetView(util::ClearBit(index1)));
     }
+  }
+
+  bool equal_to(const int64_t index1, const int64_t index2) const override {
+    return arrays.at(util::CheckBit(index1))->GetView(util::ClearBit(index1))
+        .compare(arrays.at(util::CheckBit(index2))->GetView(util::ClearBit(index2)));
   }
 
  private:
