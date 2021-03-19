@@ -57,23 +57,6 @@ arrow::Status HashJoin(const std::shared_ptr<arrow::Table> &ltab,
                        std::shared_ptr<arrow::Table> *joined_table,
                        arrow::MemoryPool *memory_pool);
 
-/**
- * Performs hash joins on two tables with multiple indices
- *
- * NOTE: Tables can NOT have chunked arrays
- * @param ltab
- * @param rtab
- * @param config
- * @param joined_table
- * @param memory_pool
- * @return
- */
-arrow::Status MultiIndexHashJoin(const std::shared_ptr<arrow::Table> &ltab,
-                                 const std::shared_ptr<arrow::Table> &rtab,
-                                 const config::JoinConfig &config,
-                                 std::shared_ptr<arrow::Table> *joined_table,
-                                 arrow::MemoryPool *memory_pool);
-
 }
 }
 

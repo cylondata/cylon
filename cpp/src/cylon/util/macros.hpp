@@ -17,7 +17,7 @@
 
 #define LOG_AND_RETURN_ERROR(code, msg) \
   LOG(ERROR) << msg ; \
-  return cylon::Status(code, msg);
+  return cylon::Status(code, msg)
 
 #define RETURN_CYLON_STATUS_IF_FAILED(expr) \
   do{                                       \
@@ -25,7 +25,7 @@
     if (!_st.is_ok()) {                     \
       return _st;                           \
     };                                      \
-  } while (0);
+  } while (0)
 
 #define LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(expr) \
   do{                               \
@@ -34,7 +34,7 @@
       LOG(ERROR) << _st.get_msg() ; \
       return _st;                   \
     };                              \
-  } while (0);
+  } while (0)
 
 #define RETURN_CYLON_STATUS_IF_ARROW_FAILED(expr) \
   do{                               \
@@ -42,7 +42,7 @@
     if (!_st.ok()) { \
       return cylon::Status(static_cast<int>(_st.code()), _st.message()); \
     };                              \
-  } while (0);
+  } while (0)
 
 #define RETURN_ARROW_STATUS_IF_FAILED(expr) \
   do{                               \
@@ -50,6 +50,6 @@
     if (!_st.ok()) {                \
       return _st;                   \
     };                              \
-  } while (0);
+  } while (0)
 
 #endif //CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_

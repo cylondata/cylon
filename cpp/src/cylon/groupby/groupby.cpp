@@ -43,7 +43,7 @@ Status DistributedHashGroupBy(std::shared_ptr<Table> &table,
   std::vector<int32_t> project_cols(index_cols);
   project_cols.insert(project_cols.end(), aggregate_cols.begin(), aggregate_cols.end());
   std::shared_ptr<Table> projected_table;
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Project(table, project_cols, projected_table))
+  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Project(table, project_cols, projected_table));
 
   // adjust local column indices for aggregations
   std::vector<int32_t> indices_after_project(index_cols.size());
@@ -61,17 +61,20 @@ Status DistributedHashGroupBy(std::shared_ptr<Table> &table,
     LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(HashGroupBy(projected_table,
                                                       indices_after_project,
                                                       agg_after_projection,
-                                                      local_table))
+                                                      local_table));
   } else {
     local_table = std::move(projected_table);
   }
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
-    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Shuffle(local_table, indices_after_project, local_table))
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Shuffle(local_table, indices_after_project, local_table));
 
     // do local distribute again
-    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(HashGroupBy(local_table, indices_after_project, agg_after_projection, output))
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(HashGroupBy(local_table,
+                                                      indices_after_project,
+                                                      agg_after_projection,
+                                                      output));
   } else {
     output = local_table;
   }
@@ -101,7 +104,7 @@ Status DistributedPipelineGroupBy(std::shared_ptr<Table> &table,
   std::vector<int32_t> project_cols{index_col};
   project_cols.insert(project_cols.end(), aggregate_cols.begin(), aggregate_cols.end());
   std::shared_ptr<Table> projected_table;
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Project(table, project_cols, projected_table))
+  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Project(table, project_cols, projected_table));
 
   // adjust local column indices for aggregations
   std::vector<std::pair<int32_t, compute::AggregationOpId>> agg_after_projection;
@@ -113,20 +116,20 @@ Status DistributedPipelineGroupBy(std::shared_ptr<Table> &table,
   std::shared_ptr<Table> local_table;
   // todo: find a better way to do this, rather than checking the associativity
   if (table->GetContext()->GetWorldSize() == 1 || is_associative(aggregate_ops)) {
-    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(PipelineGroupBy(projected_table, 0, agg_after_projection, local_table))
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(PipelineGroupBy(projected_table, 0, agg_after_projection, local_table));
   } else {
     local_table = std::move(projected_table);
   }
 
   if (table->GetContext()->GetWorldSize() > 1) {
     // shuffle
-    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Shuffle(local_table, {0}, local_table))
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Shuffle(local_table, {0}, local_table));
 
     // sort the table after the shuffle
-    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Sort(local_table, 0, local_table))
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Sort(local_table, 0, local_table));
 
     // do local distribute again.
-    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(PipelineGroupBy(local_table, 0, agg_after_projection, output))
+    LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(PipelineGroupBy(local_table, 0, agg_after_projection, output));
   } else {
     output = local_table;
   }

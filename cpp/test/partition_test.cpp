@@ -81,6 +81,7 @@ TEST_CASE("Partition testing", "[join]") {
   SECTION("range partition test") {
     std::vector<uint32_t> partitions, count;
     status = cylon::MapToSortPartitions(table, 0, WORLD_SZ, partitions, count, true, table->Rows(), WORLD_SZ);
+    LOG(INFO) << "stat " << status.get_code() << " " << status.get_msg() ;
     REQUIRE((status.is_ok() && (partitions.size() == rows) && (count.size() == (size_t) WORLD_SZ)));
 
     for (int i = 0; i < table->Rows() - 1; i++) {
