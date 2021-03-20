@@ -16,6 +16,7 @@
 #define CYLON_TX_JOIN_H
 
 #include <arrow/api.h>
+#include <memory>
 
 #include "join_config.hpp"
 
