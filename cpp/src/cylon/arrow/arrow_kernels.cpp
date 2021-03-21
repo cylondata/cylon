@@ -433,7 +433,7 @@ arrow::Status IndexSortKernel::DoSort(const std::function<bool(int64_t, int64_t)
 
 arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
                                       const std::shared_ptr<arrow::Table> &table,
-                                      const std::vector<int64_t> &columns,
+                                      const std::vector<int32_t> &columns,
                                       std::shared_ptr<arrow::UInt64Array> &offsets,
                                       const std::vector<bool> &ascending) {
   if (columns.size() != ascending.size()) {
@@ -443,16 +443,14 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
 
   std::vector<std::shared_ptr<ArrayIndexComparator>> comparators;
   comparators.reserve(columns.size());
-  int64_t i = 0;
-  for (auto idx : columns) {
-    comparators.push_back(
-        CreateArrayIndexComparator(cylon::util::GetChunkOrEmptyArray(table->column(idx),0), ascending.at(i++)));
-  }
+    for (size_t i = 0; i < columns.size(); i++) {
+      comparators.push_back(
+          CreateArrayIndexComparator(cylon::util::GetChunkOrEmptyArray(table->column(columns[i]), 0), ascending[i]));
+    }
 
   int64_t buf_size = table->num_rows() * sizeof(int64_t);
 
-  arrow::Result<std::unique_ptr<arrow::Buffer>> result =
-      arrow::AllocateBuffer(buf_size, memory_pool);
+  arrow::Result<std::unique_ptr<arrow::Buffer>> result = arrow::AllocateBuffer(buf_size, memory_pool);
   const arrow::Status &status = result.status();
   if (!status.ok()) {
     LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
@@ -483,7 +481,7 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
 
 arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
                                       const std::shared_ptr<arrow::Table> &table,
-                                      const std::vector<int64_t> &columns,
+                                      const std::vector<int32_t> &columns,
                                       std::shared_ptr<arrow::UInt64Array> &offsets) {
   return SortIndicesMultiColumns(memory_pool, table, columns, offsets,
                           std::vector<bool>(columns.size(), true));

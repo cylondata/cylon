@@ -25,6 +25,11 @@ from cpython.object cimport (
     Py_NE,
     PyObject_RichCompareBool,
 )
+cimport numpy as cnp
+from cython import Py_ssize_t
+from numpy cimport ndarray
+cnp.import_array()
+
 from typing import Any, List
 
 
@@ -137,6 +142,13 @@ cpdef table_compute_ar_op(table: Table, other, op):
         for col in ar_table.columns:
           ar_array = col.chunks[0]
           r = arrow_op(ar_array, pa.scalar(other, col.type))
+          np_array = None
+          try:
+            np_array = ar_array.to_numpy()
+          except ValueError:
+            np_array = ar_array.to_numpy(zero_copy_only=False)
+          #r = arrow_op(ar_array, cast_scalar(other, col.type.id))
+          r = op(np_array, other)
           arrays.append(r)
         return Table.from_arrow(table.context, pa.Table.from_arrays(arrays,
                                                                    names=table.column_names))
@@ -239,7 +251,7 @@ cpdef division_op(table:Table, op, value):
 
 cpdef math_op(table:Table, op, value):
     """
-    Math operations for PyCylon table against a scalar value. 
+    Math operations for PyCylon table against a non-scalar value (including strings). 
     Generic function to execute addition, subtraction and multiplication.
 
     Args:
@@ -255,35 +267,71 @@ cpdef math_op(table:Table, op, value):
 
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
-
-    if isinstance(value, numbers.Number):
+    if isinstance(value, Table):
+        value_tb = value.to_arrow().combine_chunks()
+        for chunk_arr_1 in ar_tb.itercolumns():
+            for chunk_arr_2 in value_tb.itercolumns():
+                np_ar_1 = chunk_arr_1.to_numpy()
+                np_ar_2 = chunk_arr_2.to_numpy()
+                res_array.append(op(np_ar_1, np_ar_2))
+        return Table.from_numpy(table.context, table.column_names, res_array)
+    elif np.isscalar(value) and not isinstance(value, numbers.Number):
         for chunk_arr in ar_tb.itercolumns():
-            # scalar casting is inexpensive, hence there's no check!
-            res_array.append(op(chunk_arr, pa.scalar(value, chunk_arr.type)))
-    elif isinstance(value, Table):
-        if value.row_count != table.row_count:
-            raise ValueError("Math operation table lengths do not match")
-        value_col = value.to_arrow()[0]  # get first column
-        for chunk_arr in ar_tb.itercolumns():
-            if value_col.type.id != chunk_arr.type.id:
-                res_array.append(op(chunk_arr, value_col.cast(chunk_arr.type)))
-            else:
-                res_array.append(op(chunk_arr, value_col))
+            np_ar = chunk_arr.to_numpy()
+            res_array.append(op(np_ar, value))
+        return Table.from_numpy(table.context, table.column_names, res_array)
 
+
+
+cpdef math_op_arrow(table:Table, op, value):
+    """
+    Math operations for PyCylon table against a scalar value (exclude strings).
+    Note: Arrow doesn't support operators on strings (concat ==> +) 
+    Generic function to execute addition, subtraction and multiplication.
+
+    Args:
+        table: PyCylon table
+        op: math operator (except division)
+        value: scalar value 
+
+    Returns:
+
+    """
+    ar_tb = table.to_arrow().combine_chunks()
+    res_array = []
+    for chunk_arr in ar_tb.itercolumns():
+        value = cast_scalar(value, chunk_arr.type.id)
+        res_array.append(op(chunk_arr, value))
     return Table.from_arrow(table.context, pa.Table.from_arrays(res_array,
-                                                                   names=table.column_names))
+                                                                names=table.column_names))
 
 cpdef add(table:Table, value):
-    return math_op(table, a_add, value)
+    if np.isscalar(value) and isinstance(value, numbers.Number):
+        return math_op_arrow(table, a_add, value)
+    else:
+        from operator import add
+        return math_op(table, add, value)
 
 cpdef subtract(table:Table, value):
-    return math_op(table, a_subtract, value)
+    if np.isscalar(value) and isinstance(value, numbers.Number):
+        return math_op_arrow(table, a_subtract, value)
+    else:
+        from operator import sub
+        return math_op(table, sub, value)
 
 cpdef multiply(table:Table, value):
-    return math_op(table, a_multiply, value)
+    if np.isscalar(value) and isinstance(value, numbers.Number):
+        return math_op_arrow(table, a_multiply, value)
+    else:
+        from operator import mul
+        return math_op(table, mul, value)
 
 cpdef divide(table:Table, value):
-    return division_op(table, a_divide, value)
+    if np.isscalar(value) and isinstance(value, numbers.Number):
+        return math_op_arrow(table, a_divide, value)
+    else:
+        from operator import truediv
+        return math_op(table, truediv, value)
 
 cpdef unique(table:Table):
     # TODO: axis=1 implementation (row-wise comparison), Requires distributed function
@@ -596,3 +644,27 @@ cpdef drop_na(table:Table, how:str, axis=0):
             return None
     else:
         raise ValueError(f"Invalid index {axis}, it must be 0 or 1 !")
+
+
+cpdef infer_map(table, func):
+    cdef:
+        Py_ssize_t n, i
+        ndarray[object] result
+        object val
+    n = table.column_count
+    print("N : ", n, i)
+    ar_list = []
+    i = 0
+    result = np.empty(n, dtype=object)
+    artb = table.to_arrow().combine_chunks()
+    for chunk_array in artb.itercolumns():
+        npr = chunk_array.to_numpy()
+        val = func(npr)
+        result[i] = val
+        i = i + 1
+    i = 0
+    for i in range(n):
+        ar_list.append(result[:][i])
+
+    return Table.from_arrow(table.context,
+                            pa.Table.from_arrays(ar_list, table.column_names))

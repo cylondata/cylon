@@ -24,13 +24,13 @@ cylon::TxRequest::TxRequest(int tgt) {
   target = tgt;
 }
 
-cylon::TxRequest::TxRequest(int tgt, void *buf, int len) {
+cylon::TxRequest::TxRequest(int tgt, const void *buf, int len) {
   target = tgt;
   buffer = buf;
   length = len;
 }
 
-cylon::TxRequest::TxRequest(int tgt, void *buf, int len, int *head, int hLength) {
+cylon::TxRequest::TxRequest(int tgt, const void *buf, int len, int *head, int hLength) {
   target = tgt;
   buffer = buf;
   length = len;

@@ -302,13 +302,13 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column,
   }
 }
 
-Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &sort_columns,
+Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &sort_columns,
             std::shared_ptr<cylon::Table> &out, bool ascending) {
-  const std::vector<bool> sort_direction = {ascending};
+  const std::vector<bool> sort_direction(sort_columns.size(), ascending);
   return Sort(table, sort_columns, out, sort_direction);
 }
 
-Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &sort_columns,
+Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &sort_columns,
             std::shared_ptr<cylon::Table> &out, const std::vector<bool> &sort_direction) {
   std::shared_ptr<arrow::Table> sorted_table;
   auto table_ = table->get_table();
@@ -322,8 +322,19 @@ Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int64_t> &so
   }
 }
 
-Status DistributedSort(std::shared_ptr<cylon::Table> &table, int sort_column,
-                       std::shared_ptr<Table> &output, SortOptions sort_options) {
+Status DistributedSort(std::shared_ptr<cylon::Table> &table,
+                       int sort_column,
+                       std::shared_ptr<Table> &output,
+                       bool ascending,
+                       SortOptions sort_options) {
+  return DistributedSort(table, std::vector<int>{sort_column}, output, std::vector<bool>{ascending}, sort_options);
+}
+
+Status DistributedSort(std::shared_ptr<cylon::Table> &table,
+                       const std::vector<int> &sort_columns,
+                       std::shared_ptr<Table> &output,
+                       const std::vector<bool> &sort_direction,
+                       SortOptions sort_options) {
   auto ctx = table->GetContext();
   int world_sz = ctx->GetWorldSize();
 
@@ -335,24 +346,32 @@ Status DistributedSort(std::shared_ptr<cylon::Table> &table, int sort_column,
     std::vector<uint32_t> target_partitions, partition_hist;
     std::vector<std::shared_ptr<arrow::Table>> split_tables;
 
-    RETURN_CYLON_STATUS_IF_FAILED(MapToSortPartitions(table, sort_column, world_sz, target_partitions,
-                                                      partition_hist, sort_options.ascending, sort_options.num_samples,
+    RETURN_CYLON_STATUS_IF_FAILED(MapToSortPartitions(table, sort_columns[0], world_sz, target_partitions,
+                                                      partition_hist, sort_direction[0], sort_options.num_samples,
                                                       sort_options.num_bins));
 
     RETURN_CYLON_STATUS_IF_FAILED(Split(table, world_sz, target_partitions, partition_hist, split_tables));
 
-    // we are going to free if retain is set to false
+    // we are going to free if retain is set to false. therefore, we need to make a copy of schema
     std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
-    if (!table->IsRetain()) {
-      table.reset();
-    }
+    if (!table->IsRetain()) table.reset();
 
     RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables(ctx, schema, split_tables, arrow_table));
   }
 
   // then do a local sort
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::SortTable(arrow_table, sort_column, ToArrowPool(ctx), sorted_table,
-                                                      sort_options.ascending));
+  if (sort_columns.size() == 1) {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::SortTable(arrow_table,
+                                                        sort_columns[0],
+                                                        ToArrowPool(ctx),
+                                                        sorted_table, sort_direction[0]));
+  } else {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::SortTableMultiColumns(arrow_table,
+                                                                    sort_columns,
+                                                                    ToArrowPool(ctx),
+                                                                    sorted_table,
+                                                                    sort_direction));
+  }
 
   return Table::FromArrowTable(ctx, sorted_table, output);
 }
@@ -533,8 +552,8 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second, std:
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(mask_builder.Reserve(ltab->num_rows()));
   for (int64_t i = 0; i < ltab->num_rows(); i++) {
     const auto &res = rows_set.insert(i);
-    // if res.second == true: it is a unique value 
-    // else: its already available 
+    // if res.second == true: it is a unique value
+    // else: its already available
     mask_builder.UnsafeAppend(res.second);
   }
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(mask_builder.Finish(&mask));

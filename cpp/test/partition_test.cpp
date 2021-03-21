@@ -101,7 +101,7 @@ TEST_CASE("Partition testing", "[join]") {
   }
 
   SECTION("dist sort test") {
-    status = cylon::DistributedSort(table, 0, output, {true, (uint32_t) WORLD_SZ, (uint64_t) table->Rows()});
+    status = cylon::DistributedSort(table, 0, output, true, {(uint32_t) WORLD_SZ, (uint64_t) table->Rows()});
     REQUIRE((status.is_ok()));
 
     for (auto &arr: output->get_table()->column(0)->chunks()) {
@@ -129,6 +129,25 @@ TEST_CASE("Partition testing", "[join]") {
     }
 
     status = cylon::compute::Count(output, 1, res);
+    scalar = std::static_pointer_cast<arrow::Int64Scalar>(res->GetResult().scalar());
+    REQUIRE((status.is_ok() && scalar->value == table->Rows() * WORLD_SZ));
+
+    output.reset();
+
+    status = cylon::DistributedSort(table, {0, 1}, output, {true, false},
+                                    {(uint32_t) WORLD_SZ, (uint64_t) table->Rows()});
+    REQUIRE((status.is_ok()));
+
+    for (int c = 0; c < output->get_table()->column(0)->num_chunks(); c++) {
+      const auto &carr1 = std::static_pointer_cast<arrow::Int32Array>(output->get_table()->column(0)->chunk(c));
+      const auto &carr2 = std::static_pointer_cast<arrow::DoubleArray>(output->get_table()->column(1)->chunk(c));
+      for (int i = 0; i < carr1->length() - 1; i++) {
+        REQUIRE((carr1->Value(i) <= carr1->Value(i + 1)));
+        if (carr1->Value(i) == carr1->Value(i + 1)) REQUIRE((carr2->Value(i) >= carr2->Value(i + 1)));
+      }
+    }
+
+    status = cylon::compute::Count(output, 0, res);
     scalar = std::static_pointer_cast<arrow::Int64Scalar>(res->GetResult().scalar());
     REQUIRE((status.is_ok() && scalar->value == table->Rows() * WORLD_SZ));
   }

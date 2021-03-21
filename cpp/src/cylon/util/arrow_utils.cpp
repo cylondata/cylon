@@ -68,7 +68,7 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort
 }
 
 arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
-                                    const std::vector<int64_t> &sort_column_indices,
+                                    const std::vector<int32_t> &sort_column_indices,
                                     arrow::MemoryPool *memory_pool,
                                     std::shared_ptr<arrow::Table> &sorted_table,
                                     const std::vector<bool> &sort_column_directions) {
