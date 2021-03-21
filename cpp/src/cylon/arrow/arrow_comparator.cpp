@@ -240,7 +240,7 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::
     case arrow::Type::UINT16:return std::make_shared<NumericRowIndexComparator<arrow::UInt16Type, ASC>>(array);
     case arrow::Type::INT16:return std::make_shared<NumericRowIndexComparator<arrow::Int16Type, ASC>>(array);
     case arrow::Type::UINT32:return std::make_shared<NumericRowIndexComparator<arrow::UInt32Type, ASC>>(array);
-    case arrow::Type::INT32:return std::make_shared<NumericRowIndexComparator<arrow::Int16Type, ASC>>(array);
+    case arrow::Type::INT32:return std::make_shared<NumericRowIndexComparator<arrow::Int32Type, ASC>>(array);
     case arrow::Type::UINT64:return std::make_shared<NumericRowIndexComparator<arrow::UInt64Type, ASC>>(array);
     case arrow::Type::INT64:return std::make_shared<NumericRowIndexComparator<arrow::Int64Type, ASC>>(array);
     case arrow::Type::HALF_FLOAT:return std::make_shared<NumericRowIndexComparator<arrow::HalfFloatType, ASC>>(array);
@@ -319,12 +319,11 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::
     case arrow::Type::UINT16:return std::make_shared<TwoNumericRowIndexComparator<arrow::UInt16Type, ASC>>(a1, a2);
     case arrow::Type::INT16:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int16Type, ASC>>(a1, a2);
     case arrow::Type::UINT32:return std::make_shared<TwoNumericRowIndexComparator<arrow::UInt32Type, ASC>>(a1, a2);
-    case arrow::Type::INT32:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int16Type, ASC>>(a1, a2);
+    case arrow::Type::INT32:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int32Type, ASC>>(a1, a2);
     case arrow::Type::UINT64:return std::make_shared<TwoNumericRowIndexComparator<arrow::UInt64Type, ASC>>(a1, a2);
     case arrow::Type::INT64:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int64Type, ASC>>(a1, a2);
     case arrow::Type::HALF_FLOAT:
-      return std::make_shared<TwoNumericRowIndexComparator<arrow::HalfFloatType, ASC>>(a1,
-                                                                                       a2);
+      return std::make_shared<TwoNumericRowIndexComparator<arrow::HalfFloatType, ASC>>(a1, a2);
     case arrow::Type::FLOAT:return std::make_shared<TwoNumericRowIndexComparator<arrow::FloatType, ASC>>(a1, a2);
     case arrow::Type::DOUBLE:return std::make_shared<TwoNumericRowIndexComparator<arrow::DoubleType, ASC>>(a1, a2);
     case arrow::Type::STRING:

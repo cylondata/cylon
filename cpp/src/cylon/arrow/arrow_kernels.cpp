@@ -459,7 +459,7 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
   std::shared_ptr<arrow::Buffer> indices_buf(std::move(result.ValueOrDie()));
 
   auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
-  for (i = 0; i < table->num_rows(); i++) {
+  for (int64_t i = 0; i < table->num_rows(); i++) {
     indices_begin[i] = i;
   }
 
