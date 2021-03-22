@@ -9,7 +9,7 @@ namespace join {
 
 /* SINGLE INDEX */
 
-template <typename ARROW_ARRAY_TYPE, typename CPP_KEY_TYPE>
+template<typename ARROW_ARRAY_TYPE, typename CPP_KEY_TYPE>
 inline void advance(
     std::vector<int64_t> *subset,
     const std::shared_ptr<arrow::UInt64Array> &sorted_indices,  // this is always UInt64Array
@@ -23,7 +23,7 @@ inline void advance(
   int64_t data_index = sorted_indices->Value(*current_index);
   *key = data_column_casted->GetView(data_index);
   while (*current_index < sorted_indices->length() &&
-         data_column_casted->GetView(data_index) == *key) {
+      data_column_casted->GetView(data_index) == *key) {
     subset->push_back(data_index);
     (*current_index)++;
     if (*current_index == sorted_indices->length()) {
@@ -33,12 +33,12 @@ inline void advance(
   }
 }
 
-template <typename ARROW_T, typename CPP_KEY_TYPE>
+template<typename ARROW_T, typename CPP_KEY_TYPE>
 static inline arrow::Status do_sorted_join(
     const std::shared_ptr<arrow::Table> &left_tab, const std::shared_ptr<arrow::Table> &right_tab,
     int64_t left_join_column_idx, int64_t right_join_column_idx,
-    cylon::join::config::JoinType join_type, std::string left_table_prefix,
-    std::string right_table_prefix, std::shared_ptr<arrow::Table> *joined_table,
+    cylon::join::config::JoinType join_type, const std::string &left_table_prefix,
+    const std::string &right_table_prefix, std::shared_ptr<arrow::Table> *joined_table,
     arrow::MemoryPool *memory_pool) {
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
 
@@ -191,7 +191,7 @@ static inline arrow::Status do_sorted_join(
 
 /*  SINGLE INDEX INPLACE */
 
-template <typename ARROW_ARRAY_TYPE, typename CPP_KEY_TYPE>
+template<typename ARROW_ARRAY_TYPE, typename CPP_KEY_TYPE>
 inline void advance_inplace_array(std::vector<int64_t> *subset,
                                   int64_t *current_index,  // always int64_t
                                   std::shared_ptr<arrow::Array> data_column, int64_t length,
@@ -211,7 +211,7 @@ inline void advance_inplace_array(std::vector<int64_t> *subset,
   }
 }
 
-template <typename ARROW_T, typename CPP_KEY_TYPE>
+template<typename ARROW_T, typename CPP_KEY_TYPE>
 arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
                                      const std::shared_ptr<arrow::Table> &right_tab,
                                      int64_t left_join_column_idx, int64_t right_join_column_idx,
@@ -397,7 +397,7 @@ static inline arrow::Status do_multi_index_sorted_join(
     const std::shared_ptr<arrow::Table> &left_tab, const std::shared_ptr<arrow::Table> &right_tab,
     const std::vector<int32_t> &left_join_column_indices,
     const std::vector<int32_t> &right_join_column_indices, cylon::join::config::JoinType join_type,
-    std::string left_table_prefix, std::string right_table_prefix,
+    const std::string &left_table_prefix, const std::string &right_table_prefix,
     std::shared_ptr<arrow::Table> *joined_table, arrow::MemoryPool *memory_pool) {
   // combine chunks if multiple chunks are available
   arrow::Result<std::shared_ptr<arrow::Table>> left_status, right_status;
@@ -552,21 +552,21 @@ static inline arrow::Status do_multi_index_sorted_join(
   return status;
 }
 
-template <typename ARROW_T, typename CPP_KEY_TYPE = typename ARROW_T::c_type>
+template<typename ARROW_T, typename CPP_KEY_TYPE = typename ARROW_T::c_type>
 arrow::Status do_single_column_join(const std::shared_ptr<arrow::Table> &left_tab,
-                      const std::shared_ptr<arrow::Table> &right_tab, int64_t left_join_column_idx,
-                      int64_t right_join_column_idx, cylon::join::config::JoinType join_type,
-                      cylon::join::config::JoinAlgorithm join_algorithm,
-                      const std::string left_table_prefix, const std::string right_table_prefix,
-                      std::shared_ptr<arrow::Table> *joined_table, arrow::MemoryPool *memory_pool) {
+                                    const std::shared_ptr<arrow::Table> &right_tab, int64_t left_join_column_idx,
+                                    int64_t right_join_column_idx, cylon::join::config::JoinType join_type,
+                                    cylon::join::config::JoinAlgorithm join_algorithm,
+                                    const std::string left_table_prefix, const std::string right_table_prefix,
+                                    std::shared_ptr<arrow::Table> *joined_table, arrow::MemoryPool *memory_pool) {
   if (arrow::is_number_type<ARROW_T>::value) {
     return do_inplace_sorted_join<ARROW_T, CPP_KEY_TYPE>(
         left_tab, right_tab, left_join_column_idx, right_join_column_idx, join_type,
         left_table_prefix, right_table_prefix, joined_table, memory_pool);
   } else {
     return do_sorted_join<ARROW_T, CPP_KEY_TYPE>(left_tab, right_tab, left_join_column_idx, right_join_column_idx,
-                          join_type, left_table_prefix, right_table_prefix, joined_table,
-                          memory_pool);
+                                                 join_type, left_table_prefix, right_table_prefix, joined_table,
+                                                 memory_pool);
   }
 }
 
@@ -589,10 +589,8 @@ arrow::Status SortJoin(const std::shared_ptr<arrow::Table> &left_tab,
     }
 
     switch (left_type) {
-      case arrow::Type::NA:
-        break;
-      case arrow::Type::BOOL:
-        break;
+      case arrow::Type::NA:break;
+      case arrow::Type::BOOL:break;
       case arrow::Type::UINT8:
         return do_single_column_join<arrow::UInt8Type>(
             left_tab, right_tab, left_indices[0], right_indices[0], join_config.GetType(),
@@ -632,8 +630,7 @@ arrow::Status SortJoin(const std::shared_ptr<arrow::Table> &left_tab,
         return do_single_column_join<arrow::Int64Type>(
             left_tab, right_tab, left_indices[0], right_indices[0], join_config.GetType(),
             join_config.GetAlgorithm(), join_config.GetLeftTableSuffix(),
-            join_config.GetRightTableSuffix(), joined_table, memory_pool);
-        ;
+            join_config.GetRightTableSuffix(), joined_table, memory_pool);;
       case arrow::Type::HALF_FLOAT:
         return do_single_column_join<arrow::HalfFloatType>(
             left_tab, right_tab, left_indices[0], right_indices[0], join_config.GetType(),
@@ -665,53 +662,58 @@ arrow::Status SortJoin(const std::shared_ptr<arrow::Table> &left_tab,
             join_config.GetAlgorithm(), join_config.GetLeftTableSuffix(),
             join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::DATE32:
-        break;
+        return do_single_column_join<arrow::Date32Type>(
+            left_tab, right_tab, left_indices[0], right_indices[0], join_config.GetType(),
+            join_config.GetAlgorithm(), join_config.GetLeftTableSuffix(),
+            join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::DATE64:
-        break;
+        return do_single_column_join<arrow::Date64Type>(
+            left_tab, right_tab, left_indices[0], right_indices[0], join_config.GetType(),
+            join_config.GetAlgorithm(), join_config.GetLeftTableSuffix(),
+            join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::TIMESTAMP:
-        break;
+        return do_single_column_join<arrow::TimestampType>(
+            left_tab, right_tab, left_indices[0], right_indices[0], join_config.GetType(),
+            join_config.GetAlgorithm(), join_config.GetLeftTableSuffix(),
+            join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::TIME32:
-        break;
+        return do_single_column_join<arrow::Time32Type>(
+            left_tab, right_tab, left_indices[0], right_indices[0], join_config.GetType(),
+            join_config.GetAlgorithm(), join_config.GetLeftTableSuffix(),
+            join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::TIME64:
-        break;
-      case arrow::Type::DECIMAL:
-        break;
-      case arrow::Type::LIST:
-        break;
-      case arrow::Type::STRUCT:
-        break;
-      case arrow::Type::DICTIONARY:
-        break;
-      case arrow::Type::MAP:
-        break;
-      case arrow::Type::EXTENSION:
-        break;
-      case arrow::Type::FIXED_SIZE_LIST:
-        break;
-      case arrow::Type::DURATION:
-        break;
-      case arrow::Type::LARGE_STRING:
-        break;
-      case arrow::Type::LARGE_BINARY:
-        break;
-      case arrow::Type::LARGE_LIST:
-        break;
-      case arrow::Type::INTERVAL_MONTHS:
-        break;
-      case arrow::Type::INTERVAL_DAY_TIME:
-        break;
-      case arrow::Type::SPARSE_UNION:
-        break;
-      case arrow::Type::DENSE_UNION:
-        break;
-      case arrow::Type::MAX_ID:
-        break;
+        return do_single_column_join<arrow::Time64Type>(
+            left_tab, right_tab, left_indices[0], right_indices[0], join_config.GetType(),
+            join_config.GetAlgorithm(), join_config.GetLeftTableSuffix(),
+            join_config.GetRightTableSuffix(), joined_table, memory_pool);
+      case arrow::Type::DECIMAL:break;
+      case arrow::Type::LIST:break;
+      case arrow::Type::STRUCT:break;
+      case arrow::Type::DICTIONARY:break;
+      case arrow::Type::MAP:break;
+      case arrow::Type::EXTENSION:break;
+      case arrow::Type::FIXED_SIZE_LIST:break;
+      case arrow::Type::DURATION:break;
+      case arrow::Type::LARGE_STRING:break;
+      case arrow::Type::LARGE_BINARY:break;
+      case arrow::Type::LARGE_LIST:break;
+      case arrow::Type::INTERVAL_MONTHS:break;
+      case arrow::Type::INTERVAL_DAY_TIME:break;
+      case arrow::Type::SPARSE_UNION:break;
+      case arrow::Type::DENSE_UNION:break;
+      case arrow::Type::MAX_ID:break;
     }
     return arrow::Status::Invalid("Un-supported type");
   } else {
-    return do_multi_index_sorted_join(left_tab, right_tab, left_indices, right_indices,
-                          join_config.GetType(), join_config.GetLeftTableSuffix(), join_config.GetRightTableSuffix(), joined_table,
-                          memory_pool);
+    return do_multi_index_sorted_join(left_tab,
+                                      right_tab,
+                                      left_indices,
+                                      right_indices,
+                                      join_config.GetType(),
+                                      join_config.GetLeftTableSuffix(),
+                                      join_config.GetRightTableSuffix(),
+                                      joined_table,
+                                      memory_pool);
   }
 }
 }  // namespace join

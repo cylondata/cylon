@@ -19,7 +19,7 @@
 
 namespace cylon {
 
-template <typename ARROW_TYPE>
+template<typename ARROW_TYPE>
 class NumericArrowComparator : public ArrowComparator {
   int compare(const std::shared_ptr<arrow::Array> &array1, int64_t index1,
               const std::shared_ptr<arrow::Array> &array2, int64_t index2) override {
@@ -54,80 +54,43 @@ class FixedSizeBinaryArrowComparator : public ArrowComparator {
 
 std::shared_ptr<ArrowComparator> GetComparator(const std::shared_ptr<arrow::DataType> &type) {
   switch (type->id()) {
-    case arrow::Type::NA:
-      break;
-    case arrow::Type::BOOL:
-      break;
-    case arrow::Type::UINT8:
-      return std::make_shared<NumericArrowComparator<arrow::UInt8Type>>();
-    case arrow::Type::INT8:
-      return std::make_shared<NumericArrowComparator<arrow::Int8Type>>();
-    case arrow::Type::UINT16:
-      return std::make_shared<NumericArrowComparator<arrow::UInt16Type>>();
-    case arrow::Type::INT16:
-      return std::make_shared<NumericArrowComparator<arrow::Int16Type>>();
-    case arrow::Type::UINT32:
-      return std::make_shared<NumericArrowComparator<arrow::UInt32Type>>();
-    case arrow::Type::INT32:
-      return std::make_shared<NumericArrowComparator<arrow::Int16Type>>();
-    case arrow::Type::UINT64:
-      return std::make_shared<NumericArrowComparator<arrow::UInt64Type>>();
-    case arrow::Type::INT64:
-      return std::make_shared<NumericArrowComparator<arrow::Int64Type>>();
-    case arrow::Type::HALF_FLOAT:
-      return std::make_shared<NumericArrowComparator<arrow::HalfFloatType>>();
-    case arrow::Type::FLOAT:
-      return std::make_shared<NumericArrowComparator<arrow::FloatType>>();
-    case arrow::Type::DOUBLE:
-      return std::make_shared<NumericArrowComparator<arrow::DoubleType>>();
-    case arrow::Type::STRING:
-      return std::make_shared<BinaryArrowComparator>();
-    case arrow::Type::BINARY:
-      return std::make_shared<BinaryArrowComparator>();
-    case arrow::Type::FIXED_SIZE_BINARY:
-      return std::make_shared<FixedSizeBinaryArrowComparator>();
-    case arrow::Type::DATE32:
-      break;
-    case arrow::Type::DATE64:
-      break;
-    case arrow::Type::TIMESTAMP:
-      break;
-    case arrow::Type::TIME32:
-      break;
-    case arrow::Type::TIME64:
-      break;
-    case arrow::Type::DECIMAL:
-      break;
-    case arrow::Type::LIST:
-      break;
-    case arrow::Type::STRUCT:
-      break;
-    case arrow::Type::DICTIONARY:
-      break;
-    case arrow::Type::MAP:
-      break;
-    case arrow::Type::EXTENSION:
-      break;
-    case arrow::Type::FIXED_SIZE_LIST:
-      break;
-    case arrow::Type::DURATION:
-      break;
-    case arrow::Type::LARGE_STRING:
-      break;
-    case arrow::Type::LARGE_BINARY:
-      break;
-    case arrow::Type::LARGE_LIST:
-      break;
-    case arrow::Type::INTERVAL_MONTHS:
-      break;
-    case arrow::Type::INTERVAL_DAY_TIME:
-      break;
-    case arrow::Type::SPARSE_UNION:
-      break;
-    case arrow::Type::DENSE_UNION:
-      break;
-    case arrow::Type::MAX_ID:
-      break;
+    case arrow::Type::NA:break;
+    case arrow::Type::BOOL:break;
+    case arrow::Type::UINT8:return std::make_shared<NumericArrowComparator<arrow::UInt8Type>>();
+    case arrow::Type::INT8:return std::make_shared<NumericArrowComparator<arrow::Int8Type>>();
+    case arrow::Type::UINT16:return std::make_shared<NumericArrowComparator<arrow::UInt16Type>>();
+    case arrow::Type::INT16:return std::make_shared<NumericArrowComparator<arrow::Int16Type>>();
+    case arrow::Type::UINT32:return std::make_shared<NumericArrowComparator<arrow::UInt32Type>>();
+    case arrow::Type::INT32:return std::make_shared<NumericArrowComparator<arrow::Int16Type>>();
+    case arrow::Type::UINT64:return std::make_shared<NumericArrowComparator<arrow::UInt64Type>>();
+    case arrow::Type::INT64:return std::make_shared<NumericArrowComparator<arrow::Int64Type>>();
+    case arrow::Type::HALF_FLOAT:return std::make_shared<NumericArrowComparator<arrow::HalfFloatType>>();
+    case arrow::Type::FLOAT:return std::make_shared<NumericArrowComparator<arrow::FloatType>>();
+    case arrow::Type::DOUBLE:return std::make_shared<NumericArrowComparator<arrow::DoubleType>>();
+    case arrow::Type::STRING:return std::make_shared<BinaryArrowComparator>();
+    case arrow::Type::BINARY:return std::make_shared<BinaryArrowComparator>();
+    case arrow::Type::FIXED_SIZE_BINARY:return std::make_shared<FixedSizeBinaryArrowComparator>();
+    case arrow::Type::DATE32:break;
+    case arrow::Type::DATE64:break;
+    case arrow::Type::TIMESTAMP:break;
+    case arrow::Type::TIME32:break;
+    case arrow::Type::TIME64:break;
+    case arrow::Type::DECIMAL:break;
+    case arrow::Type::LIST:break;
+    case arrow::Type::STRUCT:break;
+    case arrow::Type::DICTIONARY:break;
+    case arrow::Type::MAP:break;
+    case arrow::Type::EXTENSION:break;
+    case arrow::Type::FIXED_SIZE_LIST:break;
+    case arrow::Type::DURATION:break;
+    case arrow::Type::LARGE_STRING:break;
+    case arrow::Type::LARGE_BINARY:break;
+    case arrow::Type::LARGE_LIST:break;
+    case arrow::Type::INTERVAL_MONTHS:break;
+    case arrow::Type::INTERVAL_DAY_TIME:break;
+    case arrow::Type::SPARSE_UNION:break;
+    case arrow::Type::DENSE_UNION:break;
+    case arrow::Type::MAX_ID:break;
   }
   return nullptr;
 }
@@ -154,7 +117,7 @@ int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1, int
   return 0;
 }
 
-template <typename TYPE, bool ASC>
+template<typename TYPE, bool ASC>
 class NumericRowIndexComparator : public ArrayIndexComparator {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
 
@@ -200,7 +163,7 @@ class EmptyIndexComparator : public ArrayIndexComparator {
   int compare(int64_t index1, int64_t index2) const override { return 0; }
 };
 
-template <bool ASC>
+template<bool ASC>
 class FixedSizeBinaryRowIndexComparator : public ArrayIndexComparator {
  public:
   explicit FixedSizeBinaryRowIndexComparator(const std::shared_ptr<arrow::Array> &array)
@@ -372,12 +335,13 @@ bool TableRowIndexEqualTo::operator()(const int64_t &record1, const int64_t &rec
   return true;
 }
 
-int TableRowIndexEqualTo::compare(const int64_t &record1, const int64_t &record2) const{
+int TableRowIndexEqualTo::compare(const int64_t &record1, const int64_t &record2) const {
   for (auto &&comp : *idx_comparators_ptr) {
-    if (comp->compare(record1, record2)==0) {
+    auto res = comp->compare(record1, record2);
+    if (res == 0) {
       continue;
-    } else{
-      return comp->compare(record1, record2);
+    } else {
+      return res;
     }
   }
   return 0;
@@ -451,7 +415,8 @@ size_t TwoTableRowIndexHash::operator()(int64_t idx) const {
   return table_hashes.at(util::CheckBit(idx))->operator()(util::ClearBit(idx));
 }
 
-int MultiTableRowIndexEqualTo::compare(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const{
+int MultiTableRowIndexEqualTo::compare(const std::pair<int8_t, int64_t> &record1,
+                                       const std::pair<int8_t, int64_t> &record2) const {
   return this->comparator->compare(this->tables[record1.first], record1.second,
                                    this->tables[record2.first], record2.second);
 }
