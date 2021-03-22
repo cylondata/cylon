@@ -42,8 +42,8 @@ static inline Status split_impl(const std::shared_ptr<Table> &table,
     if (splitKernel == nullptr) return Status(Code::NotImplemented, "splitter not implemented");
 
     std::vector<std::shared_ptr<arrow::Array>> split_arrays;
-    status = splitKernel->Split(col, num_partitions, target_partitions, partition_hist, split_arrays);
-    RETURN_CYLON_STATUS_IF_FAILED(status)
+    RETURN_CYLON_STATUS_IF_FAILED(splitKernel
+                                      ->Split(col, num_partitions, target_partitions, partition_hist, split_arrays));
 
     for (size_t i = 0; i < split_arrays.size(); i++) {
       data_arrays[i].push_back(split_arrays[i]);
@@ -68,7 +68,7 @@ Status Split(const std::shared_ptr<Table> &table,
              const std::vector<uint32_t> &target_partitions,
              std::vector<std::shared_ptr<arrow::Table>> &output) {
   if ((size_t) table->Rows() != target_partitions.size()) {
-    LOG_AND_RETURN_ERROR(Code::ExecutionError, "tables rows != target_partitions length")
+    LOG_AND_RETURN_ERROR(Code::ExecutionError, "tables rows != target_partitions length");
   }
   std::vector<uint32_t> partition_hist(num_partitions, 0);
   for (const int32_t p:target_partitions) {
@@ -84,7 +84,7 @@ Status Split(const std::shared_ptr<Table> &table,
              const std::vector<uint32_t> &partition_hist_ptr,
              std::vector<std::shared_ptr<arrow::Table>> &output) {
   if ((size_t) table->Rows() != target_partitions.size()) {
-    LOG_AND_RETURN_ERROR(Code::ExecutionError, "tables rows != target_partitions length")
+    LOG_AND_RETURN_ERROR(Code::ExecutionError, "tables rows != target_partitions length");
   }
   return split_impl(table, num_partitions, target_partitions, partition_hist_ptr, output);
 }
@@ -100,7 +100,7 @@ Status MapToHashPartitions(const std::shared_ptr<Table> &table,
 
   std::unique_ptr<PartitionKernel> kern = CreateHashPartitionKernel(idx_col->type());
   if (kern == nullptr) {
-    LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create hash partition kernel")
+    LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create hash partition kernel");
   }
   // initialize vectors
   std::fill(target_partitions.begin(), target_partitions.end(), 0);
@@ -131,7 +131,7 @@ Status MapToHashPartitions(const std::shared_ptr<Table> &table,
     const std::shared_ptr<arrow::DataType> &type = fields[i]->type();
     auto kern = CreateHashPartitionKernel(type);
     if (kern == nullptr) {
-      LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel")
+      LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel");
     }
     partition_kernels.push_back(std::move(kern));
   }
@@ -146,8 +146,8 @@ Status MapToHashPartitions(const std::shared_ptr<Table> &table,
   for (size_t i = 0; i < hash_column_idx.size() - 1; i++) {
     auto t11 = std::chrono::high_resolution_clock::now();
 
-    status = partition_kernels[i]->UpdateHash(arrow_table->column(hash_column_idx[i]), target_partitions);
-    RETURN_CYLON_STATUS_IF_FAILED(status)
+    RETURN_CYLON_STATUS_IF_FAILED(partition_kernels[i]->UpdateHash(arrow_table->column(hash_column_idx[i]),
+                                                                   target_partitions));
     auto t12 = std::chrono::high_resolution_clock::now();
 
     LOG(INFO) << "building hash (idx " << hash_column_idx[i] << ") time : "
@@ -184,7 +184,7 @@ Status MapToSortPartitions(const std::shared_ptr<Table> &table,
   std::unique_ptr<PartitionKernel> kern = CreateRangePartitionKernel(idx_col->type(),
                                                                      ctx, ascending, num_samples, num_bins);
   if (kern == nullptr) {
-    LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel")
+    LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel");
   }
 
   // initialize vectors
@@ -203,14 +203,14 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
                           std::vector<std::shared_ptr<Table>> &partitions) {
   // partition the tables locally
   std::vector<uint32_t> outPartitions, counts;
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(MapToHashPartitions(table, hash_cols, num_partitions, outPartitions, counts))
+  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(MapToHashPartitions(table, hash_cols, num_partitions, outPartitions, counts));
 
   std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(split_impl(table, num_partitions, outPartitions, counts, partitioned_tables))
-  
+  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(split_impl(table, num_partitions, outPartitions, counts, partitioned_tables));
+
   partitions.reserve(num_partitions);
   std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
-  for (auto &&atable:partitioned_tables){
+  for (auto &&atable:partitioned_tables) {
     partitions.emplace_back(std::make_shared<Table>(atable, ctx));
   }
   return Status::OK();

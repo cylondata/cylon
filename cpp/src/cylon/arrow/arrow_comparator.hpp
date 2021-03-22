@@ -60,6 +60,7 @@ class TableRowComparator {
 class ArrayIndexComparator {
  public:
   virtual int compare(int64_t index1, int64_t index2) const = 0;
+  virtual bool equal_to(const int64_t index1, const int64_t index2) const = 0;
 };
 
 /**

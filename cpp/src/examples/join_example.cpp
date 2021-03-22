@@ -74,11 +74,12 @@ int main(int argc, char *argv[]) {
 
   std::vector<std::string> column_names = joined->ColumnNames();
 
-  for(auto col_name : column_names) {
+  for (auto &&col_name : column_names) {
     std::cout << col_name << ", ";
   }
   std::cout << std::endl;
-
+  joined->Print();
+  std::cout << std::endl;
 
   ctx->Finalize();
   return 0;

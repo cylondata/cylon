@@ -134,6 +134,10 @@ class NumericRowIndexComparator : public ArrayIndexComparator {
     }
   }
 
+  bool equal_to(const int64_t index1, const int64_t index2) const override {
+    return casted_arr->Value(index1) == casted_arr->Value(index2);
+  }
+
  private:
   std::shared_ptr<ARROW_ARRAY_T> casted_arr;
 };
@@ -152,6 +156,10 @@ class BinaryRowIndexComparator : public ArrayIndexComparator {
     }
   }
 
+  bool equal_to(const int64_t index1, const int64_t index2) const override {
+    return casted_arr->GetView(index1).compare(casted_arr->GetView(index2));
+  }
+
  private:
   std::shared_ptr<arrow::BinaryArray> casted_arr;
 };
@@ -161,6 +169,8 @@ class EmptyIndexComparator : public ArrayIndexComparator {
   explicit EmptyIndexComparator() = default;
 
   int compare(int64_t index1, int64_t index2) const override { return 0; }
+
+  bool equal_to(const int64_t index1, const int64_t index2) const override { return true; }
 };
 
 template<bool ASC>
@@ -177,6 +187,10 @@ class FixedSizeBinaryRowIndexComparator : public ArrayIndexComparator {
     }
   }
 
+  bool equal_to(const int64_t index1, const int64_t index2) const override {
+    return casted_arr->GetView(index1).compare(casted_arr->GetView(index2));
+  }
+
  private:
   std::shared_ptr<arrow::FixedSizeBinaryArray> casted_arr;
 };
@@ -189,7 +203,7 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::
     case arrow::Type::UINT16:return std::make_shared<NumericRowIndexComparator<arrow::UInt16Type, ASC>>(array);
     case arrow::Type::INT16:return std::make_shared<NumericRowIndexComparator<arrow::Int16Type, ASC>>(array);
     case arrow::Type::UINT32:return std::make_shared<NumericRowIndexComparator<arrow::UInt32Type, ASC>>(array);
-    case arrow::Type::INT32:return std::make_shared<NumericRowIndexComparator<arrow::Int16Type, ASC>>(array);
+    case arrow::Type::INT32:return std::make_shared<NumericRowIndexComparator<arrow::Int32Type, ASC>>(array);
     case arrow::Type::UINT64:return std::make_shared<NumericRowIndexComparator<arrow::UInt64Type, ASC>>(array);
     case arrow::Type::INT64:return std::make_shared<NumericRowIndexComparator<arrow::Int64Type, ASC>>(array);
     case arrow::Type::HALF_FLOAT:return std::make_shared<NumericRowIndexComparator<arrow::HalfFloatType, ASC>>(array);
@@ -211,13 +225,18 @@ class TwoNumericRowIndexComparator : public ArrayIndexComparator {
       : arrays({std::static_pointer_cast<ARROW_ARRAY_T>(a1), std::static_pointer_cast<ARROW_ARRAY_T>(a2)}) {}
 
   int compare(int64_t index1, int64_t index2) const override {
-    const auto &diff = arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
+    auto diff = arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
         - arrays.at(util::CheckBit(index2))->Value(util::ClearBit(index2));
     if (ASC) {
       return (diff > 0) - (diff < 0);
     } else {
       return (diff < 0) - (diff > 0);
     }
+  }
+
+  bool equal_to(const int64_t index1, const int64_t index2) const override {
+    return arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
+        == arrays.at(util::CheckBit(index2))->Value(util::ClearBit(index2));
   }
 
  private:
@@ -241,6 +260,11 @@ class TwoBinaryRowIndexComparator : public ArrayIndexComparator {
     }
   }
 
+  bool equal_to(const int64_t index1, const int64_t index2) const override {
+    return arrays.at(util::CheckBit(index1))->GetView(util::ClearBit(index1))
+        .compare(arrays.at(util::CheckBit(index2))->GetView(util::ClearBit(index2)));
+  }
+
  private:
   std::array<std::shared_ptr<ARROW_ARRAY_T>, 2> arrays;
 };
@@ -258,12 +282,11 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::
     case arrow::Type::UINT16:return std::make_shared<TwoNumericRowIndexComparator<arrow::UInt16Type, ASC>>(a1, a2);
     case arrow::Type::INT16:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int16Type, ASC>>(a1, a2);
     case arrow::Type::UINT32:return std::make_shared<TwoNumericRowIndexComparator<arrow::UInt32Type, ASC>>(a1, a2);
-    case arrow::Type::INT32:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int16Type, ASC>>(a1, a2);
+    case arrow::Type::INT32:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int32Type, ASC>>(a1, a2);
     case arrow::Type::UINT64:return std::make_shared<TwoNumericRowIndexComparator<arrow::UInt64Type, ASC>>(a1, a2);
     case arrow::Type::INT64:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int64Type, ASC>>(a1, a2);
     case arrow::Type::HALF_FLOAT:
-      return std::make_shared<TwoNumericRowIndexComparator<arrow::HalfFloatType, ASC>>(a1,
-                                                                                       a2);
+      return std::make_shared<TwoNumericRowIndexComparator<arrow::HalfFloatType, ASC>>(a1, a2);
     case arrow::Type::FLOAT:return std::make_shared<TwoNumericRowIndexComparator<arrow::FloatType, ASC>>(a1, a2);
     case arrow::Type::DOUBLE:return std::make_shared<TwoNumericRowIndexComparator<arrow::DoubleType, ASC>>(a1, a2);
     case arrow::Type::STRING:

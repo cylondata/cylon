@@ -18,16 +18,6 @@
 namespace cylon {
 namespace join {
 
-using TwoTableRowIndexHashMMap = typename std::unordered_multimap<int64_t,
-                                                                  int64_t,
-                                                                  TwoTableRowIndexHash,
-                                                                  TwoTableRowIndexEqualTo>;
-
-using TwoArrayIndexHashMMap = typename std::unordered_multimap<int64_t,
-                                                               int64_t,
-                                                               TwoArrayIndexHash,
-                                                               TwoArrayIndexEqualTo>;
-
 template<typename HASHMAP_T>
 static void probe_hash_map_no_fill(const HASHMAP_T &hash_map,
                                    const int64_t build_tab_len,
@@ -99,11 +89,11 @@ static void probe_hash_map_outer(const HASHMAP_T &hash_map,
   }
 }
 
-arrow::Status MultiIndexHashJoin(const std::shared_ptr<arrow::Table> &ltab,
-                                 const std::shared_ptr<arrow::Table> &rtab,
-                                 const config::JoinConfig &config,
-                                 std::shared_ptr<arrow::Table> *joined_table,
-                                 arrow::MemoryPool *memory_pool) {
+static arrow::Status multi_index_hash_join(const std::shared_ptr<arrow::Table> &ltab,
+                                           const std::shared_ptr<arrow::Table> &rtab,
+                                           const config::JoinConfig &config,
+                                           std::shared_ptr<arrow::Table> *joined_table,
+                                           arrow::MemoryPool *memory_pool) {
   if (ltab->column(0)->num_chunks() > 1 || rtab->column(0)->num_chunks() > 1) {
     return arrow::Status::Invalid("left or right table has chunked arrays");
   }
@@ -112,6 +102,11 @@ arrow::Status MultiIndexHashJoin(const std::shared_ptr<arrow::Table> &ltab,
   const std::array<const std::shared_ptr<arrow::Table> *, 2> tabs{&ltab, &rtab};
   const std::array<const std::vector<int> *, 2> col_indices{&config.GetLeftColumnIdx(), &config.GetRightColumnIdx()};
   std::array<std::vector<int64_t>, 2> row_indices{std::vector<int64_t>{}, std::vector<int64_t>{}};
+
+  using TwoTableRowIndexHashMMap = typename std::unordered_multimap<int64_t,
+                                                                    int64_t,
+                                                                    TwoTableRowIndexHash,
+                                                                    TwoTableRowIndexEqualTo>;
 
   void (*probe_func_ptr)(const TwoTableRowIndexHashMMap &hash_map,
                          const int64_t build_tab_len,
@@ -195,43 +190,37 @@ arrow::Status ArrayIndexHashJoin(const std::shared_ptr<arrow::Array> &left_idx_c
                                  config::JoinType join_type,
                                  std::vector<int64_t> &left_table_indices,
                                  std::vector<int64_t> &right_table_indices) {
+  auto t1 = std::chrono::high_resolution_clock::now();
 
-  // let's first combine chunks in both tables
+  if (left_idx_col->type_id() != right_idx_col->type_id()) {
+    return arrow::Status::Invalid("left and right index array types are not equal");
+  }
+
+  // arrays for house-keeping
   const std::array<const std::shared_ptr<arrow::Array> *, 2> arrays{&left_idx_col, &right_idx_col};
   const std::array<std::vector<int64_t> *, 2> row_indices{&left_table_indices, &right_table_indices};
 
-  void (*probe_func_ptr)(const TwoArrayIndexHashMMap &hash_map,
-                         const int64_t build_tab_len,
-                         const int64_t probe_tab_len,
-                         std::vector<int64_t> &build_tab_indices,
-                         std::vector<int64_t> &probe_tab_indices) = nullptr;
-  size_t init_vec_size = 0;
+  size_t init_vec_size = 0; // number of elems to be used to initialize indices vectors
   bool build_idx = false; // if 0: build from left and probe from right; else: build from right and probe from left
 
+  // set up
   switch (join_type) {
     case config::LEFT: {
       build_idx = true; // i.e. build hash map from right table, probe from left
       init_vec_size = left_idx_col->length();
-
-      probe_func_ptr = &probe_hash_map_with_fill<TwoArrayIndexHashMMap>;
       break;
     }
     case config::RIGHT: {
       build_idx = false; // i.e. build hash map from left table, probe from right
       init_vec_size = right_idx_col->length();
-
-      probe_func_ptr = &probe_hash_map_with_fill<TwoArrayIndexHashMMap>;
       break;
     }
     case config::INNER: {
       init_vec_size = std::min(left_idx_col->length(), right_idx_col->length());
-      probe_func_ptr = &probe_hash_map_no_fill<TwoArrayIndexHashMMap>;
       goto init_ptrs;
     }
     case config::FULL_OUTER: {
       init_vec_size = left_idx_col->length() + right_idx_col->length();
-      probe_func_ptr = &probe_hash_map_outer<TwoArrayIndexHashMMap>;
-
       init_ptrs:
       if (left_idx_col->length() <= right_idx_col->length()) {
         build_idx = false; // i.e. build hash map from left table, probe from right
@@ -246,20 +235,73 @@ arrow::Status ArrayIndexHashJoin(const std::shared_ptr<arrow::Array> &left_idx_c
   row_indices[0]->reserve(init_vec_size);
   row_indices[1]->reserve(init_vec_size);
 
-  // populate left hash table
-  TwoArrayIndexHash hash(*arrays[build_idx], *arrays[!build_idx]);
-  TwoArrayIndexEqualTo equal_to(*arrays[build_idx], *arrays[!build_idx]);
+  // precalculate hashes
+  const std::unique_ptr<HashPartitionKernel> &hash_kernel = CreateHashPartitionKernel(left_idx_col->type());
+  std::array<std::vector<uint32_t>, 2>
+      hashes{std::vector<uint32_t>((*arrays[build_idx])->length(), 0),
+             std::vector<uint32_t>((*arrays[!build_idx])->length(), 0)};
+  hash_kernel->UpdateHash(*arrays[build_idx], hashes[0]); // calc hashes of left array
+  hash_kernel->UpdateHash(*arrays[!build_idx], hashes[1]); // calc hashes of right array
 
+  const auto &hash = [&hashes](const int64_t idx) -> uint32_t { // hash lambda
+    return hashes.at(cylon::util::CheckBit(idx)).at(cylon::util::ClearBit(idx));
+  };
+
+  // comparator
+  const auto &comp = CreateArrayIndexComparator(*arrays[build_idx], *arrays[!build_idx]);
+  const auto &equal_to = [&comp](const int64_t idx1, const int64_t idx2) -> bool { // equal_to lambda
+    return comp->equal_to(idx1, idx2);
+  };
+
+  // define mutimap type for convenience
+  using TwoArrayIndexHashMMap = typename std::unordered_multimap<int64_t, int64_t, decltype(hash), decltype(equal_to)>;
+
+  // function ptr for probing
+  void (*probe_func_ptr)(const TwoArrayIndexHashMMap &hash_map,
+                         const int64_t build_tab_len,
+                         const int64_t probe_tab_len,
+                         std::vector<int64_t> &build_tab_indices,
+                         std::vector<int64_t> &probe_tab_indices) = nullptr;
+
+  // set up
+  switch (join_type) {
+    case config::LEFT:
+    case config::RIGHT: {
+      probe_func_ptr = &probe_hash_map_with_fill<TwoArrayIndexHashMMap>;
+      break;
+    }
+    case config::INNER: {
+      probe_func_ptr = &probe_hash_map_no_fill<TwoArrayIndexHashMMap>;
+      break;
+    }
+    case config::FULL_OUTER: {
+      probe_func_ptr = &probe_hash_map_outer<TwoArrayIndexHashMMap>;
+      break;
+    }
+  }
+
+  // populate left hash table. use build array length number of buckets in the hashmap
   TwoArrayIndexHashMMap hash_map((*arrays[build_idx])->length(), hash, equal_to);
+
+  auto t2 = std::chrono::high_resolution_clock::now();
 
   // build hashmap from corresponding table
   for (int64_t i = 0; i < (*arrays[build_idx])->length(); i++) {
     hash_map.emplace(i, i);
   }
+  hashes[0].clear(); // hashes of the building array are no longer needed
+  auto t3 = std::chrono::high_resolution_clock::now();
 
   // probe
   probe_func_ptr(hash_map, (*arrays[build_idx])->length(), (*arrays[!build_idx])->length(),
                  *row_indices[build_idx], *row_indices[!build_idx]);
+
+  auto t4 = std::chrono::high_resolution_clock::now();
+
+  LOG(INFO) << "idx hash join: setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+            << " build: " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
+            << " probe: " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count()
+            << " total: " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t1).count();
 
   return arrow::Status::OK();
 }
@@ -293,13 +335,13 @@ arrow::Status HashJoin(const std::shared_ptr<arrow::Table> &ltab,
     RETURN_ARROW_STATUS_IF_FAILED(
         ArrayIndexHashJoin(cylon::util::GetChunkOrEmptyArray(c_ltab->column(left_idx), 0),
                            cylon::util::GetChunkOrEmptyArray(c_rtab->column(right_idx), 0),
-                           config.GetType(), left_indices, right_indices))
+                           config.GetType(), left_indices, right_indices));
 
     return cylon::join::util::build_final_table(left_indices, right_indices, c_ltab, c_rtab,
                                                 config.GetLeftTableSuffix(), config.GetRightTableSuffix(),
                                                 joined_table, memory_pool);
   } else {
-    return MultiIndexHashJoin(ltab, rtab, config, joined_table, memory_pool);
+    return multi_index_hash_join(ltab, rtab, config, joined_table, memory_pool);
   }
 }
 

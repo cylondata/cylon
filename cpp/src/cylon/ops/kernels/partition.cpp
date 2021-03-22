@@ -53,7 +53,7 @@ cylon::Status cylon::kernel::StreamingHashPartitionKernel::Process(int tag, cons
   // building hash without the last hash_column_idx
   for (size_t i = 0; i < hash_columns.size() - 1; i++) {
     RETURN_CYLON_STATUS_IF_FAILED(partition_kernels[i]
-                                      ->UpdateHash(arrow_table->column(hash_columns[i]), temp_partitions))
+                                      ->UpdateHash(arrow_table->column(hash_columns[i]), temp_partitions));
   }
 
   // build hash from the last hash_column_idx
@@ -61,12 +61,12 @@ cylon::Status cylon::kernel::StreamingHashPartitionKernel::Process(int tag, cons
       arrow_table->column(hash_columns.back()),
       num_partitions,
       temp_partitions,
-      temp_partition_hist))
+      temp_partition_hist));
 
   // now insert table to split_kernels
   for (int i = 0; i < arrow_table->num_columns(); i++) {
     RETURN_CYLON_STATUS_IF_FAILED(split_kernels[i]->Split(
-        cylon::util::GetChunkOrEmptyArray(arrow_table->column(i), 0), temp_partitions, temp_partition_hist))
+        cylon::util::GetChunkOrEmptyArray(arrow_table->column(i), 0), temp_partitions, temp_partition_hist));
   }
 
   return Status::OK();
@@ -82,7 +82,7 @@ cylon::Status cylon::kernel::StreamingHashPartitionKernel::Finish(std::vector<st
 
   std::vector<std::shared_ptr<arrow::Array>> temp_split_arrays;
   for (const auto &splitKernel:split_kernels) {
-    RETURN_CYLON_STATUS_IF_FAILED(splitKernel->Finish(temp_split_arrays))
+    RETURN_CYLON_STATUS_IF_FAILED(splitKernel->Finish(temp_split_arrays));
     for (size_t i = 0; i < temp_split_arrays.size(); i++) {
       // remove the array and put it in the data arrays vector
       data_arrays[i].emplace_back(std::move(temp_split_arrays[i]));
