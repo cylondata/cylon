@@ -61,6 +61,9 @@ class ArrayIndexComparator {
  public:
   virtual int compare(int64_t index1, int64_t index2) const = 0;
   virtual bool equal_to(const int64_t index1, const int64_t index2) const = 0;
+  virtual int compare(int32_t array_index1, int64_t row_index1, int32_t array_index2, int64_t row_index2) {
+    return compare(row_index1, row_index2);
+  }
 };
 
 /**
@@ -221,6 +224,13 @@ class TwoTableRowIndexEqualTo {
 
   // hashing
   bool operator()(const int64_t &record1, const int64_t &record2) const;
+
+  int compare(const int64_t &record1, const int64_t &record2) const;
+
+  int compare(const int32_t &table1,
+              const int64_t &record1,
+              const int32_t &table2,
+              const int64_t &record2) const;
 
  private:
   // this class gets copied to std container, so we don't want to copy these vectors.

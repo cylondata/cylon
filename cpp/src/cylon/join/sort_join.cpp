@@ -389,7 +389,7 @@ inline void advance_multi_index(
     if (*current_index == sorted_indices->length()) {
       break;
     }
-    data_index = *current_index;
+    data_index = sorted_indices->Value(*current_index);
   }
 }
 
@@ -450,9 +450,12 @@ static inline arrow::Status do_multi_index_sorted_join(
   auto right_tab_index_comparator =
       cylon::TableRowIndexEqualTo(right_tab_comb, right_join_column_indices);
 
-  auto mult_tab_comparator = cylon::MultiTableRowIndexEqualTo({left_tab_comb, right_tab_comb});
+  auto mult_tab_comparator = cylon::TwoTableRowIndexEqualTo(left_tab_comb,
+                                                            right_tab_comb,
+                                                            left_join_column_indices,
+                                                            right_join_column_indices);
 
-  int64_t left_key_index, right_key_index;  // reference indices
+  int64_t left_key_index = 0, right_key_index = 0;  // reference indices
   std::vector<int64_t> left_subset, right_subset;
 
   int64_t left_current_index = 0;
@@ -470,8 +473,8 @@ static inline arrow::Status do_multi_index_sorted_join(
                       &right_tab_index_comparator, &right_key_index);
 
   while (!left_subset.empty() && !right_subset.empty()) {
-    if (mult_tab_comparator.compare({0, left_key_index}, {1, right_key_index}) ==
-        0) {  // use a key comparator
+    auto com = mult_tab_comparator.compare(0, left_key_index, 1, right_key_index);
+    if (com == 0) {  // use a key comparator
       for (int64_t left_idx : left_subset) {
         for (int64_t right_idx : right_subset) {
           left_indices.push_back(left_idx);
@@ -484,7 +487,7 @@ static inline arrow::Status do_multi_index_sorted_join(
 
       advance_multi_index(&right_subset, right_index_sorted_column, &right_current_index,
                           &right_tab_index_comparator, &right_key_index);
-    } else if (mult_tab_comparator.compare({0, left_key_index}, {1, right_key_index}) < 0) {
+    } else if (com < 0) {
       // if this is a left join, this is the time to include them all in the result set
       if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
         for (int64_t left_idx : left_subset) {

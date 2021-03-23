@@ -227,6 +227,19 @@ class TwoNumericRowIndexComparator : public ArrayIndexComparator {
   int compare(int64_t index1, int64_t index2) const override {
     auto diff = arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
         - arrays.at(util::CheckBit(index2))->Value(util::ClearBit(index2));
+    LOG(INFO) << "Comparing " << arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
+              << "[" << index1 << "]:" << arrays.at(util::CheckBit(index2))->Value(util::ClearBit(index2))
+              << "[" << index2 << "]";
+    if (ASC) {
+      return (diff > 0) - (diff < 0);
+    } else {
+      return (diff < 0) - (diff > 0);
+    }
+  }
+
+  int compare(int32_t array_index1, int64_t row_index1, int32_t array_index2, int64_t row_index2) override {
+    auto diff = arrays.at(util::CheckBit(array_index1))->Value(row_index1)
+        - arrays.at(array_index2)->Value(row_index2);
     if (ASC) {
       return (diff > 0) - (diff < 0);
     } else {
@@ -286,7 +299,8 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::
     case arrow::Type::UINT64:return std::make_shared<TwoNumericRowIndexComparator<arrow::UInt64Type, ASC>>(a1, a2);
     case arrow::Type::INT64:return std::make_shared<TwoNumericRowIndexComparator<arrow::Int64Type, ASC>>(a1, a2);
     case arrow::Type::HALF_FLOAT:
-      return std::make_shared<TwoNumericRowIndexComparator<arrow::HalfFloatType, ASC>>(a1, a2);
+      return std::make_shared<TwoNumericRowIndexComparator<arrow::HalfFloatType, ASC>>(a1,
+                                                                                       a2);
     case arrow::Type::FLOAT:return std::make_shared<TwoNumericRowIndexComparator<arrow::FloatType, ASC>>(a1, a2);
     case arrow::Type::DOUBLE:return std::make_shared<TwoNumericRowIndexComparator<arrow::DoubleType, ASC>>(a1, a2);
     case arrow::Type::STRING:
@@ -479,6 +493,33 @@ bool TwoTableRowIndexEqualTo::operator()(const int64_t &record1, const int64_t &
     if (comp->compare(record1, record2)) return false;
   }
   return true;
+}
+
+int TwoTableRowIndexEqualTo::compare(const int64_t &record1, const int64_t &record2) const {
+  for (const auto &comp:comparators) {
+    auto com = comp->compare(record1, record2);
+    if (com == 0) {
+      continue;
+    } else {
+      return com;
+    }
+  }
+  return 0;
+}
+
+int TwoTableRowIndexEqualTo::compare(const int32_t &table1,
+                                     const int64_t &record1,
+                                     const int32_t &table2,
+                                     const int64_t &record2) const {
+  for (const auto &comp:comparators) {
+    auto com = comp->compare(table1, record1, table2, record2);
+    if (com == 0) {
+      continue;
+    } else {
+      return com;
+    }
+  }
+  return 0;
 }
 
 TwoArrayIndexHash::TwoArrayIndexHash(const std::shared_ptr<arrow::Array> &arr1,

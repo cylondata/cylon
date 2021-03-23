@@ -51,8 +51,8 @@ int main(int argc, char *argv[]) {
                 read_end_time - start_start).count() << "[ms]";
 
   auto join_config = cylon::join::config::JoinConfig(cylon::join::config::JoinType::INNER,
-                                                     0,
-                                                     0,
+                                                     {0, 1},
+                                                     {0, 1},
                                                      cylon::join::config::JoinAlgorithm::SORT,
                                                      "l_",
                                                      "r_");
