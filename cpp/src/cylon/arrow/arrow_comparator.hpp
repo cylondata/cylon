@@ -121,6 +121,9 @@ class TableRowIndexEqualTo {
   // equality
   bool operator()(const int64_t &record1, const int64_t &record2) const;
 
+  // equality, less than, greater than
+  int compare(const int64_t &record1, const int64_t &record2) const;
+
  private:
   // this class gets copied to std container, so we don't want to copy these vectors.
   // hence they are wrapped around smart pointers
@@ -282,6 +285,9 @@ class MultiTableRowIndexEqualTo {
     return this->comparator->compare(this->tables[record1.first], record1.second,
                                      this->tables[record2.first], record2.second) == 0;
   }
+
+  // equality, less than, greater than
+  int compare(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const;
 
  private:
   const std::vector<std::shared_ptr<arrow::Table>> &tables;

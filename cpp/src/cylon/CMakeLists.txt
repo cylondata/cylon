@@ -41,6 +41,8 @@ add_library(cylon SHARED
         join/join.cpp
         join/hash_join.hpp
         join/hash_join.cpp
+        join/sort_join.hpp
+        join/sort_join.cpp
         util/arrow_utils.hpp
         util/arrow_utils.cpp
         arrow/arrow_kernels.cpp
