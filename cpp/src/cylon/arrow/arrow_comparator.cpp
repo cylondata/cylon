@@ -227,9 +227,6 @@ class TwoNumericRowIndexComparator : public ArrayIndexComparator {
   int compare(int64_t index1, int64_t index2) const override {
     auto diff = arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
         - arrays.at(util::CheckBit(index2))->Value(util::ClearBit(index2));
-    LOG(INFO) << "Comparing " << arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
-              << "[" << index1 << "]:" << arrays.at(util::CheckBit(index2))->Value(util::ClearBit(index2))
-              << "[" << index2 << "]";
     if (ASC) {
       return (diff > 0) - (diff < 0);
     } else {
