@@ -23,6 +23,7 @@
 
 #include "indexing/index_utils.hpp"
 #include "indexing/indexer.hpp"
+#include "indexing/arrow_indexer.hpp"
 #include "Python.h"
 
 int arrow_take_test();
@@ -56,6 +57,8 @@ int test_str_loc_operations(cylon::IndexingSchema schema);
 int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
 
 int print_index_output(std::shared_ptr<cylon::Table> &output, std::string &message);
+
+int arrow_indexer_test_1();
 
 
 //template<typename Base, typename T>
@@ -107,7 +110,7 @@ int main(int argc, char *argv[]) {
 //  std::cout << "Value : " << ptr << ", " <<  *cast_value << std::endl;
 
 
-  test_reset_index();
+  arrow_indexer_test_1();
 
 }
 
@@ -767,5 +770,76 @@ int print_index_output(std::shared_ptr<cylon::Table> &output, std::string &messa
   LOG(INFO) << "Resultant Index";
   auto index_arr = output->GetIndex()->GetIndexArray();
   print_arrow_array(index_arr);
+  return 0;
+}
+
+int arrow_indexer_test_1() {
+  std::string func_title = "Rest Index";
+  separator(func_title);
+
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output, output1;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/indexing_data_f.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating table";
+	return -1;
+  }
+
+
+
+  std::shared_ptr<cylon::Table> output_tb;
+  std::shared_ptr<arrow::Array> start_index;
+  std::shared_ptr<arrow::Array> end_index;
+
+  auto mem_pool = cylon::ToArrowPool(ctx);
+  std::shared_ptr<arrow::DoubleArray> s_ar;
+  std::shared_ptr<arrow::DoubleArray> e_ar;
+  arrow::DoubleBuilder builder_s(mem_pool);
+  arrow::DoubleBuilder  builder_e(mem_pool);
+  builder_s.Reserve(1);
+  builder_e.Reserve(1);
+  builder_s.UnsafeAppend(7);
+  builder_e.UnsafeAppend(1);
+
+  builder_s.Finish(&s_ar);
+  builder_e.Finish(&e_ar);
+
+  auto v1 = s_ar->GetView(0);
+
+  std::cout << "Main Start Index : " << v1 << std::endl;
+
+  std::shared_ptr<cylon::BaseIndex> index;
+  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  status = cylon::IndexUtil::BuildIndex(schema, input, 0, index);
+  input->Set_Index(index, true);
+  std::shared_ptr<cylon::ArrowBaseIndexer> loc_indexer = std::make_shared<cylon::ArrowLocIndexer>(cylon::IndexingSchema::Linear);
+
+  loc_indexer->loc(s_ar, e_ar, 0, input, output_tb);
+
+  arrow::Int64Scalar s1(10);
+  arrow::Int64Scalar s2(10);
+  arrow::Int32Scalar s3(10);
+
+  if(s1.Equals(s2)) {
+    std::cout << "Scalar value Match 1" << std::endl;
+  }
+
+  if(s1.Equals(s3.CastTo(s1.type).ValueOrDie())) {
+	std::cout << "Scalar value Match 2" << std::endl;
+  }
+
+  LOG(INFO) << "Original Data";
+
+  input->Print();
   return 0;
 }

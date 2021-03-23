@@ -76,6 +76,55 @@ class BaseIndex {
 
 };
 
+class BaseArrowIndex {
+
+ public:
+
+  explicit BaseArrowIndex(int col_id, int size, std::shared_ptr<CylonContext> &ctx) : size_(size), col_id_(col_id) {
+    pool_ = cylon::ToArrowPool(ctx);
+  };
+
+  explicit BaseArrowIndex(int col_id, int size, arrow::MemoryPool *pool) {
+    col_id_ = col_id;
+    size_ = size;
+    pool_ = pool;
+  };
+
+  // TODO: virtual destructor
+  virtual Status LocationByValue(const arrow::Scalar &search_param,
+                                 std::vector<int64_t> &find_index) = 0;
+
+  virtual Status LocationByValue(const arrow::Scalar &search_param, int64_t &find_index) = 0;
+
+  virtual Status LocationByValue(const arrow::Scalar &search_param,
+                                 const std::shared_ptr<arrow::Table> &input,
+                                 std::vector<int64_t> &filter_location,
+                                 std::shared_ptr<arrow::Table> &output) = 0;
+
+  virtual std::shared_ptr<arrow::Array> GetIndexAsArray() = 0;
+
+  virtual void SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) = 0;
+
+  virtual std::shared_ptr<arrow::Array> GetIndexArray() = 0;
+
+  virtual int GetColId() const;
+
+  virtual int GetSize() const;
+
+  virtual IndexingSchema GetSchema() = 0;
+
+  virtual arrow::MemoryPool *GetPool() const;
+
+  virtual bool IsUnique() = 0;
+
+ private:
+  int size_;
+  int col_id_;
+  arrow::MemoryPool *pool_;
+  std::shared_ptr<arrow::Array> index_arr;
+
+};
+
 cylon::Status CompareArraysForUniqueness(std::shared_ptr<arrow::Array> &index_arr, bool &is_unique);
 
 template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
@@ -617,6 +666,35 @@ class LinearIndex<arrow::StringType, arrow::util::string_view> : public BaseInde
 
 };
 
+class ArrowLinearIndex: public BaseArrowIndex{
+ public:
+  ArrowLinearIndex(int col_id, int size, std::shared_ptr<CylonContext> &ctx);
+  ArrowLinearIndex(int col_id, int size, arrow::MemoryPool *pool);
+  ArrowLinearIndex(int col_id, int size, arrow::MemoryPool *pool, std::shared_ptr<arrow::Array> &index_array)
+      : BaseArrowIndex(col_id, size, pool), index_array_(index_array) {
+  }
+
+  Status LocationByValue(const arrow::Scalar &search_param, std::vector<int64_t> &find_index) override;
+  Status LocationByValue(const arrow::Scalar &search_param, int64_t &find_index) override;
+  Status LocationByValue(const arrow::Scalar &search_param,
+                         const std::shared_ptr<arrow::Table> &input,
+                         std::vector<int64_t> &filter_location,
+                         std::shared_ptr<arrow::Table> &output) override;
+  std::shared_ptr<arrow::Array> GetIndexAsArray() override;
+  void SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) override;
+  std::shared_ptr<arrow::Array> GetIndexArray() override;
+  int GetColId() const override;
+  int GetSize() const override;
+  IndexingSchema GetSchema() override;
+  arrow::MemoryPool *GetPool() const override;
+  bool IsUnique() override;
+
+ private:
+  std::shared_ptr<arrow::Array> index_array_;
+
+};
+
+
 class IndexKernel {
  public:
   explicit IndexKernel() {
@@ -626,6 +704,19 @@ class IndexKernel {
                                                 std::shared_ptr<arrow::Table> &input_table,
                                                 const int index_column) = 0;
 };
+
+
+class ArrowIndexKernel {
+ public:
+  explicit ArrowIndexKernel() {
+
+  }
+  virtual std::shared_ptr<BaseArrowIndex> BuildIndex(arrow::MemoryPool *pool,
+                                                std::shared_ptr<arrow::Table> &input_table,
+                                                const int index_column) = 0;
+};
+
+
 
 class RangeIndexKernel : public IndexKernel {
  public:
@@ -699,6 +790,19 @@ class LinearIndexKernel : public IndexKernel {
     return index;
   }
 };
+
+
+class LinearArrowIndexKernel : public ArrowIndexKernel{
+
+ public:
+  LinearArrowIndexKernel();
+
+  std::shared_ptr<BaseArrowIndex> BuildIndex(arrow::MemoryPool *pool,
+                                             std::shared_ptr<arrow::Table> &input_table,
+                                             const int index_column) override;
+
+};
+
 
 /**
  * Hash Indexing Kernels

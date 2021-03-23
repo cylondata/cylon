@@ -231,6 +231,129 @@ arrow::MemoryPool *BaseIndex::GetPool() const {
   return pool_;
 }
 
+
+LinearArrowIndexKernel::LinearArrowIndexKernel() {}
+std::shared_ptr<BaseArrowIndex> LinearArrowIndexKernel::BuildIndex(arrow::MemoryPool *pool,
+																   std::shared_ptr<arrow::Table> &input_table,
+																   const int index_column) {
+
+  std::shared_ptr<arrow::Array> index_array;
+
+  if (input_table->column(0)->num_chunks() > 1) {
+	const arrow::Result<std::shared_ptr<arrow::Table>> &res = input_table->CombineChunks(pool);
+	if (!res.status().ok()) {
+	  LOG(ERROR) << "Error occurred in combining chunks in table";
+	}
+	input_table = res.ValueOrDie();
+  }
+
+  index_array = cylon::util::GetChunkOrEmptyArray(input_table->column(index_column), 0);
+  auto
+	  index =
+	  std::make_shared<ArrowLinearIndex>(index_column, input_table->num_rows(), pool, index_array);
+
+  return index;
+}
+ArrowLinearIndex::ArrowLinearIndex(int col_id, int size, std::shared_ptr<CylonContext> &ctx) : BaseArrowIndex(col_id,
+																											  size,
+																											  ctx) {}
+ArrowLinearIndex::ArrowLinearIndex(int col_id, int size, arrow::MemoryPool *pool) : BaseArrowIndex(col_id,
+																								   size,
+																								   pool) {}
+Status ArrowLinearIndex::LocationByValue(const arrow::Scalar &search_param, std::vector<int64_t> &find_index) {
+  	auto cast_val = search_param.CastTo(index_array_->type()).ValueOrDie();
+	for (int64_t ix = 0; ix < index_array_->length(); ix++) {
+	  auto val = index_array_->GetScalar(ix).ValueOrDie();
+	  if (cast_val->Equals(val)) {
+		find_index.push_back(ix);
+	  }
+	}
+	return Status::OK();
+}
+Status ArrowLinearIndex::LocationByValue(const arrow::Scalar &search_param, int64_t &find_index) {
+  	auto cast_val = search_param.CastTo(index_array_->type()).ValueOrDie();
+	for (int64_t ix = 0; ix < index_array_->length(); ix++) {
+	  auto val = index_array_->GetScalar(ix).ValueOrDie();
+	  if (cast_val->Equals(val)) {
+		find_index = ix;
+		break;
+	  }
+	}
+	return Status::OK();
+}
+Status ArrowLinearIndex::LocationByValue(const arrow::Scalar &search_param,
+										 const std::shared_ptr<arrow::Table> &input,
+										 std::vector<int64_t> &filter_location,
+										 std::shared_ptr<arrow::Table> &output) {
+  	arrow::Status arrow_status;
+	cylon::Status status;
+	std::shared_ptr<arrow::Array> out_idx;
+	arrow::compute::ExecContext fn_ctx(GetPool());
+	arrow::Int64Builder idx_builder(GetPool());
+	const arrow::Datum input_table(input);
+
+	status = LocationByValue(search_param, filter_location);
+
+	if (!status.is_ok()) {
+	  LOG(ERROR) << "Error occurred in obtaining filter indices by index value";
+	  return status;
+	}
+
+	arrow_status = idx_builder.AppendValues(filter_location);
+
+	if (!arrow_status.ok()) {
+	  LOG(ERROR) << "Error occurred in appending filter indices to builder";
+	  RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+	}
+
+	arrow_status = idx_builder.Finish(&out_idx);
+
+	if (!arrow_status.ok()) {
+	  LOG(ERROR) << "Error occurred in builder finish";
+	  RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+	}
+
+	const arrow::Datum filter_indices(out_idx);
+	arrow::Result<arrow::Datum>
+		result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+
+	if (!result.status().ok()) {
+	  LOG(ERROR) << "Error occurred in filtering table by indices";
+	  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+	}
+
+	output = result.ValueOrDie().table();
+	return Status::OK();
+}
+std::shared_ptr<arrow::Array> ArrowLinearIndex::GetIndexAsArray() {
+  return index_array_;
+}
+void ArrowLinearIndex::SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) {
+	index_array_ = index_arr;
+}
+std::shared_ptr<arrow::Array> ArrowLinearIndex::GetIndexArray() {
+  return index_array_;
+}
+int ArrowLinearIndex::GetColId() const {
+  return BaseArrowIndex::GetColId();
+}
+int ArrowLinearIndex::GetSize() const {
+  return BaseArrowIndex::GetSize();
+}
+IndexingSchema ArrowLinearIndex::GetSchema() {
+  return Linear;
+}
+arrow::MemoryPool *ArrowLinearIndex::GetPool() const {
+  return BaseArrowIndex::GetPool();
+}
+bool ArrowLinearIndex::IsUnique() {
+  	bool is_unique = false;
+	auto status = CompareArraysForUniqueness(index_array_, is_unique);
+	if (!status.is_ok()) {
+	  LOG(ERROR) << "Error occurred in is unique operation";
+	}
+	return is_unique;
+}
 }
 
 

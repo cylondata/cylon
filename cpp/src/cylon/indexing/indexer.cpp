@@ -142,6 +142,45 @@ cylon::Status GetLocFilterIndices(const void *start_index,
   return cylon::Status::OK();
 }
 
+cylon::Status GetArrowLocFilterIndices(const std::shared_ptr<arrow::Scalar> &start_index,
+								  const std::shared_ptr<arrow::Scalar> &end_index,
+								  const std::shared_ptr<cylon::BaseArrowIndex> &index,
+								  int64_t &s_index,
+								  int64_t &e_index) {
+  cylon::Status status1, status2, status_build;
+  std::shared_ptr<arrow::Table> out_artb;
+  bool is_index_unique;
+  status_build = cylon::CheckIsIndexValueUnique(start_index, index, is_index_unique);
+
+  if (!status_build.is_ok()) {
+	std::string error_msg = "Error occurred in checking uniqueness of index value";
+	LOG(ERROR) << error_msg;
+	return cylon::Status(cylon::Code::IndexError, error_msg);
+  }
+
+  if (!is_index_unique) {
+	LOG(ERROR) << "Index value must be unique";
+	return cylon::Status(cylon::Code::KeyError);
+  }
+
+  cylon::CheckIsIndexValueUnique(end_index, index, is_index_unique);
+
+  if (!is_index_unique) {
+	LOG(ERROR) << "Index value must be unique";
+	return cylon::Status(cylon::Code::KeyError);
+  }
+
+  status1 = index->LocationByValue(start_index, s_index);
+  status2 = index->LocationByValue(end_index, e_index);
+
+  if (!(status1.is_ok() and status2.is_ok())) {
+	LOG(ERROR) << "Error occurred in extracting indices!";
+	return cylon::Status(cylon::Code::IndexError);
+  }
+
+  return cylon::Status::OK();
+}
+
 cylon::Status SliceTableByRange(const int64_t start_index,
                                 const int64_t end_index,
                                 const std::shared_ptr<cylon::Table> &input_table,
@@ -1157,4 +1196,114 @@ cylon::Status cylon::CheckIsIndexValueUnique(const void *index_value,
     case arrow::Type::MAX_ID:break;
   }
   return cylon::Status(cylon::Code::Invalid, "Invalid arrow data type");
+}
+cylon::Status cylon::CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar> &index_value,
+											 const std::shared_ptr<BaseArrowIndex> &index,
+											 bool &is_unique) {
+  auto index_arr = index->GetIndexArray();
+  is_unique = true;
+  int64_t find_cout = 0;
+  for (int64_t ix = 0; ix < index_arr->length(); ix++) {
+	auto val = index_arr->GetScalar(ix).ValueOrDie();
+	auto index_value_cast = index_value->CastTo(val->type).ValueOrDie();
+	if (val == index_value_cast) {
+	  find_cout++;
+	}
+	if (find_cout > 1) {
+	  is_unique = false;
+	  break;
+	}
+  }
+  return cylon::Status::OK();
+}
+
+/*
+ * Arrow Input based Loc operators
+ *
+ * **/
+
+cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &start_index,
+										  const std::shared_ptr<arrow::Array> &end_index,
+										  const int column_index,
+										  const std::shared_ptr<Table> &input_table,
+										  std::shared_ptr<cylon::Table> &output) {
+
+  auto start_scalar = start_index->GetScalar(0).ValueOrDie();
+  auto end_scalar = end_index->GetScalar(0).ValueOrDie();
+
+  Status status_build;
+  auto index = input_table->GetIndex();
+  std::shared_ptr<cylon::Table> temp_output;
+  int64_t s_index = -1;
+  int64_t e_index = -1;
+
+  status_build = GetArrowLocFilterIndices(start_scalar, end_scalar, index, s_index, e_index);
+
+  std::cout << ">>>>>" << s_index << ", " << e_index << ", index_size: " << index->GetIndexArray()->length() << std::endl;
+
+  if (!status_build.is_ok()) {
+	LOG(ERROR) << "Error occurred in filtering indices from table";
+	return status_build;
+  }
+  std::vector<int> filter_columns = {column_index};
+
+  status_build = SliceTableByRange(s_index, e_index, input_table, temp_output);
+
+  if (!status_build.is_ok()) {
+	LOG(ERROR) << "Error occurred in filtering indices from table";
+	return status_build;
+  }
+
+  status_build = FilterColumnsFromTable(temp_output, filter_columns, output);
+
+  if (!status_build.is_ok()) {
+	LOG(ERROR) << "Error occurred in filtering columns from table";
+	return status_build;
+  }
+
+  status_build = SetIndexForLocResultTable(index, s_index, e_index, output, indexing_schema_);
+
+  if (!status_build.is_ok()) {
+	LOG(ERROR) << "Error occurred in setting index for output table";
+	return status_build;
+  }
+
+  return cylon::Status::OK();
+}
+cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &start_index,
+										  const std::shared_ptr<arrow::Array> &end_index,
+										  const int start_column_index,
+										  const int end_column_index,
+										  const std::shared_ptr<Table> &input_table,
+										  std::shared_ptr<cylon::Table> &output) {
+  return Status();
+}
+cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &start_index,
+										  const std::shared_ptr<arrow::Array> &end_index,
+										  const std::vector<int> &columns,
+										  const std::shared_ptr<Table> &input_table,
+										  std::shared_ptr<cylon::Table> &output) {
+  return Status();
+}
+cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &indices,
+										  const int column_index,
+										  const std::shared_ptr<Table> &input_table,
+										  std::shared_ptr<cylon::Table> &output) {
+  return Status();
+}
+cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &indices,
+										  const int start_column,
+										  const int end_column,
+										  const std::shared_ptr<Table> &input_table,
+										  std::shared_ptr<cylon::Table> &output) {
+  return Status();
+}
+cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &indices,
+										  const std::vector<int> &columns,
+										  const std::shared_ptr<Table> &input_table,
+										  std::shared_ptr<cylon::Table> &output) {
+  return Status();
+}
+cylon::IndexingSchema cylon::ArrowLocIndexer::GetIndexingSchema() {
+  return Linear;
 }

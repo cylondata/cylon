@@ -148,6 +148,8 @@ add_library(cylon SHARED
         indexing/index_utils.cpp
         indexing/indexer.hpp
         indexing/indexer.cpp
+        indexing/arrow_indexer.hpp
+        indexing/arrow_indexer.cpp
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
