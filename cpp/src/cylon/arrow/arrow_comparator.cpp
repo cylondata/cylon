@@ -231,7 +231,7 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(
     case arrow::Type::UINT32:
       return std::make_shared<NumericRowIndexComparator<arrow::UInt32Type, ASC>>(array);
     case arrow::Type::INT32:
-      return std::make_shared<NumericRowIndexComparator<arrow::Int16Type, ASC>>(array);
+      return std::make_shared<NumericRowIndexComparator<arrow::Int32Type, ASC>>(array);
     case arrow::Type::UINT64:
       return std::make_shared<NumericRowIndexComparator<arrow::UInt64Type, ASC>>(array);
     case arrow::Type::INT64:

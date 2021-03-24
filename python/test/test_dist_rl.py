@@ -122,7 +122,7 @@ def test_distributed_sort():
 
     print(tb1)
 
-    tb2 = tb1.distributed_sort(sort_column='use_id')
+    tb2 = tb1.distributed_sort(order_by='use_id')
 
     col_data = tb2['use_id'].to_numpy()
     col_data = np.reshape(col_data, (col_data.shape[0]))

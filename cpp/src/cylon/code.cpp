@@ -28,6 +28,7 @@ enum Code {
   UnknownError = 9,
   NotImplemented = 10,
   SerializationError = 11,
+  GpuMemoryError = 12,
   RError = 13,
   // Gandiva range of errors
   CodeGenError = 40,
