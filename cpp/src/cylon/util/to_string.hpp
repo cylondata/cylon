@@ -47,11 +47,11 @@ std::string array_to_string(const std::shared_ptr<arrow::Array> &array, int inde
     case arrow::Type::STRING:return std::static_pointer_cast<arrow::StringArray>(array)->GetString(index);
     case arrow::Type::BINARY:break;
     case arrow::Type::FIXED_SIZE_BINARY:break;
-    case arrow::Type::DATE32:break;
-    case arrow::Type::DATE64:break;
-    case arrow::Type::TIMESTAMP:break;
-    case arrow::Type::TIME32:break;
-    case arrow::Type::TIME64:break;
+    case arrow::Type::DATE32:return do_to_string_numeric<arrow::Date32Type>(array, index);
+    case arrow::Type::DATE64:return do_to_string_numeric<arrow::Date64Type>(array, index);
+    case arrow::Type::TIMESTAMP:return do_to_string_numeric<arrow::Date64Type>(array, index);
+    case arrow::Type::TIME32:return do_to_string_numeric<arrow::Time32Type>(array, index);
+    case arrow::Type::TIME64:return do_to_string_numeric<arrow::Time64Type>(array, index);
     case arrow::Type::DECIMAL:break;
     case arrow::Type::LIST:break;
     case arrow::Type::STRUCT:break;

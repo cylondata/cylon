@@ -14,6 +14,7 @@
 
 #include "arrow_types.hpp"
 #include "../data_types.hpp"
+#include "glog/logging.h"
 
 namespace cylon {
 namespace tarrow {
@@ -61,6 +62,7 @@ std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataTy
 
 bool validateArrowTableTypes(const std::shared_ptr <arrow::Table> &table) {
   std::shared_ptr <arrow::Schema> schema = table->schema();
+  
   for (const auto &t : schema->fields()) {
     switch (t->type()->id()) {
       case arrow::Type::BOOL:continue;
@@ -96,11 +98,11 @@ bool validateArrowTableTypes(const std::shared_ptr <arrow::Table> &table) {
         }
       }
       case arrow::Type::NA:return false;
-      case arrow::Type::DATE32:return false;
-      case arrow::Type::DATE64:return false;
-      case arrow::Type::TIMESTAMP:return false;
-      case arrow::Type::TIME32:return false;
-      case arrow::Type::TIME64:return false;
+      case arrow::Type::DATE32:return true;
+      case arrow::Type::DATE64:return true;
+      case arrow::Type::TIMESTAMP:return true;
+      case arrow::Type::TIME32:return true;
+      case arrow::Type::TIME64:return true;
       case arrow::Type::DECIMAL:return false;
       case arrow::Type::STRUCT:return false;
       case arrow::Type::DICTIONARY:return false;
