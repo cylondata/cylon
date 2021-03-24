@@ -248,6 +248,16 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(
       return std::make_shared<BinaryRowIndexComparator<ASC>>(array);
     case arrow::Type::FIXED_SIZE_BINARY:
       return std::make_shared<FixedSizeBinaryRowIndexComparator<ASC>>(array);
+    case arrow::Type::DATE32:
+      return std::make_shared<NumericRowIndexComparator<arrow::Date32Type, ASC>>(array);
+    case arrow::Type::DATE64:
+      return std::make_shared<NumericRowIndexComparator<arrow::Date64Type, ASC>>(array);
+    case arrow::Type::TIMESTAMP:
+      return std::make_shared<NumericRowIndexComparator<arrow::TimestampType, ASC>>(array);
+    case arrow::Type::TIME32:
+      return std::make_shared<NumericRowIndexComparator<arrow::Time32Type, ASC>>(array);
+    case arrow::Type::TIME64:
+      return std::make_shared<NumericRowIndexComparator<arrow::Time64Type, ASC>>(array);
     default:
       return nullptr;
   }
