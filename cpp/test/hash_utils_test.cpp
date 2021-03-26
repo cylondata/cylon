@@ -39,7 +39,7 @@ TEST_CASE("testing hash utils", "[utils]") {
   const std::shared_ptr<arrow::Table> &t2 = arrow::Table::Make(schema, {arr2, arr2});
 
   SECTION("testing TwoNumericRowIndexComparator") {
-    const std::shared_ptr<ArrayIndexComparator> &comp = CreateArrayIndexComparator(arr1, arr2);
+    const std::shared_ptr<TwoArrayIndexComparator> &comp = CreateTwoArrayIndexComparator(arr1, arr2);
 
     for (size_t i = 0; i < v1.size(); i++) {
       for (size_t j = 0; j < v2.size(); j++) {

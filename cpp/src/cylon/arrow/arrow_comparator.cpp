@@ -217,7 +217,7 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::
 }
 
 template<typename TYPE, bool ASC = true>
-class TwoNumericRowIndexComparator : public ArrayIndexComparator {
+class TwoNumericRowIndexComparator : public TwoArrayIndexComparator {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
 
  public:
@@ -234,9 +234,8 @@ class TwoNumericRowIndexComparator : public ArrayIndexComparator {
     }
   }
 
-  int compare(int32_t array_index1, int64_t row_index1, int32_t array_index2, int64_t row_index2) override {
-    auto diff = arrays.at(util::CheckBit(array_index1))->Value(row_index1)
-        - arrays.at(array_index2)->Value(row_index2);
+  int compare(int32_t array_index1, int64_t row_index1, int32_t array_index2, int64_t row_index2) const override {
+    auto diff = arrays.at(array_index1)->Value(row_index1) - arrays.at(array_index2)->Value(row_index2);
     if (ASC) {
       return (diff > 0) - (diff < 0);
     } else {
@@ -254,7 +253,7 @@ class TwoNumericRowIndexComparator : public ArrayIndexComparator {
 };
 
 template<typename TYPE, bool ASC>
-class TwoBinaryRowIndexComparator : public ArrayIndexComparator {
+class TwoBinaryRowIndexComparator : public TwoArrayIndexComparator {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
  public:
   explicit TwoBinaryRowIndexComparator(const std::shared_ptr<arrow::Array> &a1, const std::shared_ptr<arrow::Array> &a2)
@@ -275,13 +274,21 @@ class TwoBinaryRowIndexComparator : public ArrayIndexComparator {
         .compare(arrays.at(util::CheckBit(index2))->GetView(util::ClearBit(index2)));
   }
 
+  int compare(int32_t array_index1, int64_t row_index1, int32_t array_index2, int64_t row_index2) const override {
+    if (ASC) {
+      return arrays.at(array_index1)->GetView(row_index1).compare(arrays.at(array_index2)->GetView(row_index2));
+    } else {
+      return arrays.at(array_index2)->GetView(row_index2).compare(arrays.at(array_index1)->GetView(row_index1));
+    }
+  }
+
  private:
   std::array<std::shared_ptr<ARROW_ARRAY_T>, 2> arrays;
 };
 
 template<bool ASC>
-std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::shared_ptr<arrow::Array> &a1,
-                                                                     const std::shared_ptr<arrow::Array> &a2) {
+std::shared_ptr<TwoArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::shared_ptr<arrow::Array> &a1,
+                                                                        const std::shared_ptr<arrow::Array> &a2) {
   if (!a1->type()->Equals(a2->type())) {
     throw "array types are not equal";
   }
@@ -316,8 +323,9 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shar
     return CreateArrayIndexComparatorUtil<false>(array);
   }
 }
-std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,
-                                                                 const std::shared_ptr<arrow::Array> &a2, bool asc) {
+std::shared_ptr<TwoArrayIndexComparator> CreateTwoArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,
+                                                                       const std::shared_ptr<arrow::Array> &a2,
+                                                                       bool asc) {
   if (asc) {
     return CreateArrayIndexComparatorUtil<true>(a1, a2);
   } else {
@@ -467,7 +475,7 @@ TwoTableRowIndexEqualTo::TwoTableRowIndexEqualTo(const std::shared_ptr<arrow::Ta
   for (size_t i = 0; i < t1_indices.size(); i++) {
     const std::shared_ptr<arrow::Array> &a1 = util::GetChunkOrEmptyArray(t1->column(t1_indices[i]), 0);
     const std::shared_ptr<arrow::Array> &a2 = util::GetChunkOrEmptyArray(t2->column(t2_indices[i]), 0);
-    comparators[i] = CreateArrayIndexComparator(a1, a2);
+    comparators[i] = CreateTwoArrayIndexComparator(a1, a2);
   }
 }
 
@@ -481,7 +489,7 @@ TwoTableRowIndexEqualTo::TwoTableRowIndexEqualTo(const std::shared_ptr<arrow::Ta
   for (int i = 0; i < t1->num_columns(); i++) {
     const std::shared_ptr<arrow::Array> &a1 = util::GetChunkOrEmptyArray(t1->column(i), 0);
     const std::shared_ptr<arrow::Array> &a2 = util::GetChunkOrEmptyArray(t2->column(i), 0);
-    comparators[i] = CreateArrayIndexComparator(a1, a2);
+    comparators[i] = CreateTwoArrayIndexComparator(a1, a2);
   }
 }
 
@@ -529,7 +537,7 @@ size_t TwoArrayIndexHash::operator()(int64_t idx) const {
 
 TwoArrayIndexEqualTo::TwoArrayIndexEqualTo(const std::shared_ptr<arrow::Array> &arr1,
                                            const std::shared_ptr<arrow::Array> &arr2)
-    : comparator(CreateArrayIndexComparator(arr1, arr2)) {}
+    : comparator(CreateTwoArrayIndexComparator(arr1, arr2)) {}
 
 bool TwoArrayIndexEqualTo::operator()(const int64_t &record1, const int64_t &record2) const {
   return comparator->compare(record1, record2) == 0;

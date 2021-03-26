@@ -55,15 +55,12 @@ class TableRowComparator {
 // -----------------------------------------------------------------------------
 
 /**
- * To compare indices in one/ more arrays
+ * To compare indices in a single arrays
  */
 class ArrayIndexComparator {
  public:
   virtual int compare(int64_t index1, int64_t index2) const = 0;
-  virtual bool equal_to(const int64_t index1, const int64_t index2) const = 0;
-  virtual int compare(int32_t array_index1, int64_t row_index1, int32_t array_index2, int64_t row_index2) {
-    return compare(row_index1, row_index2);
-  }
+  virtual bool equal_to(int64_t index1, int64_t index2) const = 0;
 };
 
 /**
@@ -75,6 +72,41 @@ class ArrayIndexComparator {
 std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array,
                                                                  bool asc = true);
 
+// -----------------------------------------------------------------------------
+
+/**
+ * To compare indices in two arrays
+ */
+class TwoArrayIndexComparator {
+ public:
+  /**
+   * compare two indices.
+   * IMPORTANT: to uniquely identify arrays, the most significant bit of index value is encoded as,
+   *  0 --> array1
+   *  1 --> array2
+   * @return
+   */
+  virtual int compare(int64_t index1, int64_t index2) const = 0;
+
+  /**
+   * equal_to of two indices.
+   * IMPORTANT: to uniquely identify arrays, the most significant bit of index value is encoded as,
+   *  0 --> array1
+   *  1 --> array2
+   * @return
+   */
+  virtual bool equal_to(int64_t index1, int64_t index2) const = 0;
+
+  /**
+   * compare indices of arrays by explicitly passing which array, which index
+   * @param array_index1
+   * @param row_index1
+   * @param array_index2
+   * @param row_index2
+   * @return
+   */
+  virtual int compare(int32_t array_index1, int64_t row_index1, int32_t array_index2, int64_t row_index2) const = 0;
+};
 /**
  * Creates a comparator for two arrays
  * IMPORTANT: to uniquely identify rows of arr1 and arr2, the most significant bit of index value is encoded as,
@@ -85,9 +117,9 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shar
  * @param asc
  * @return
  */
-std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,
-                                                                 const std::shared_ptr<arrow::Array> &a2,
-                                                                 bool asc = true);
+std::shared_ptr<TwoArrayIndexComparator> CreateTwoArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,
+                                                                       const std::shared_ptr<arrow::Array> &a2,
+                                                                       bool asc = true);
 
 // -----------------------------------------------------------------------------
 
@@ -234,7 +266,7 @@ class TwoTableRowIndexEqualTo {
 
  private:
   // this class gets copied to std container, so we don't want to copy these vectors.
-  std::vector<std::shared_ptr<ArrayIndexComparator>> comparators;
+  std::vector<std::shared_ptr<TwoArrayIndexComparator>> comparators;
 };
 
 // -----------------------------------------------------------------------------
@@ -277,7 +309,7 @@ class TwoArrayIndexEqualTo {
 
  private:
   // this class gets copied to std container, so we don't want to copy these vectors.
-  std::shared_ptr<ArrayIndexComparator> comparator;
+  std::shared_ptr<TwoArrayIndexComparator> comparator;
 };
 
 

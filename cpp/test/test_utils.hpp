@@ -40,9 +40,11 @@ static int Verify(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<Tab
   std::shared_ptr<Table> verification;
 
   LOG(INFO) << "starting verification...";
-  LOG(INFO) << "expected:" << expected_result->Rows() << " found:" << result->Rows();
 
-  if (!(status = cylon::Subtract(result, expected_result, verification)).is_ok()) {
+  if (expected_result->Rows() != result->Rows()) {
+    LOG(ERROR) << "expected:" << expected_result->Rows() << " found:" << result->Rows();
+    return 1;
+  } else if (!(status = cylon::Subtract(result, expected_result, verification)).is_ok()) {
     LOG(ERROR) << "subtract FAIL! " << status.get_msg();
     return 1;
   } else if (verification->Rows()) {

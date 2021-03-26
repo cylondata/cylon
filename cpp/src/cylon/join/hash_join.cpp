@@ -248,7 +248,7 @@ arrow::Status ArrayIndexHashJoin(const std::shared_ptr<arrow::Array> &left_idx_c
   };
 
   // comparator
-  const auto &comp = CreateArrayIndexComparator(*arrays[build_idx], *arrays[!build_idx]);
+  const auto &comp = CreateTwoArrayIndexComparator(*arrays[build_idx], *arrays[!build_idx]);
   const auto &equal_to = [&comp](const int64_t idx1, const int64_t idx2) -> bool { // equal_to lambda
     return comp->equal_to(idx1, idx2);
   };
