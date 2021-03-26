@@ -14,7 +14,7 @@
 
 
 from __future__ import annotations
-from typing import List, Dict
+from typing import Hashable, List, Dict, Literal, Optional, Sequence, Union
 from copy import copy
 from collections.abc import Iterable
 import pycylon as cn
@@ -39,7 +39,11 @@ class DataFrame(object):
         self._is_distributed = distributed
         self._context = None
         self._initialize_context()
-        self._table = self._initialize_dataframe(data=data, index=index, columns=columns, copy=copy)
+        self._table = self._initialize_dataframe(
+            data=data, index=index, columns=columns, copy=copy)
+
+        # temp workaround for indexing requirement of dataframe api
+        self._index_columns = []
 
     @property
     def is_distributed(self):
@@ -48,6 +52,7 @@ class DataFrame(object):
     def distributed(self):
         self._is_distributed = True
         self._initialize_context()
+        return self
 
     @property
     def context(self):
@@ -73,21 +78,24 @@ class DataFrame(object):
                 rows = len(data[0])
                 cols = len(data)
                 if not columns:
-                    columns = self._initialize_columns(cols=cols, columns=columns)
+                    columns = self._initialize_columns(
+                        cols=cols, columns=columns)
                 return cn.Table.from_list(self.context, columns, data)
             elif isinstance(data[0], np.ndarray):
                 # load from List of np.ndarray
                 cols = len(data)
                 rows = data[0].shape[0]
                 if not columns:
-                    columns = self._initialize_columns(cols=cols, columns=columns)
+                    columns = self._initialize_columns(
+                        cols=cols, columns=columns)
                 return cn.Table.from_numpy(self.context, columns, data)
             else:
                 # load from List
                 rows = len(data)
                 cols = 1
                 if not columns:
-                    columns = self._initialize_columns(cols=cols, columns=columns)
+                    columns = self._initialize_columns(
+                        cols=cols, columns=columns)
                 return cn.Table.from_list(self.context, columns, data)
         elif isinstance(data, pd.DataFrame):
             # load from pd.DataFrame
@@ -121,7 +129,8 @@ class DataFrame(object):
             raise ValueError(f"Invalid data structure, {type(data)}")
 
     def _initialize_dtype(self, dtype):
-        raise NotImplemented("Data type forcing is not implemented, only support inferring types")
+        raise NotImplemented(
+            "Data type forcing is not implemented, only support inferring types")
 
     def _initialize_columns(self, cols, columns):
         if columns is None:
@@ -960,3 +969,213 @@ class DataFrame(object):
         '''
 
         return DataFrame(self._table.add_prefix(prefix))
+
+    # Indexing
+
+    def set_index(
+        self, keys, drop=True, append=False, inplace=False, verify_integrity=False
+    ):
+        """
+        Set the DataFrame index using existing columns.
+        Set the DataFrame index (row labels) using one or more existing
+        columns or arrays (of the correct length). The index can replace the
+        existing index or expand on it.
+        Parameters
+        ----------
+        keys : label or array-like or list of labels/arrays
+            This parameter can be either a single column key, a single array of
+            the same length as the calling DataFrame, or a list containing an
+            arbitrary combination of column keys and arrays. Here, "array"
+            encompasses :class:`Series`, :class:`Index`, ``np.ndarray``, and
+            instances of :class:`~collections.abc.Iterator`.
+        drop : bool, default True
+            Delete columns to be used as the new index.
+        append : bool, default False
+            Whether to append columns to existing index.
+        inplace : bool, default False
+            If True, modifies the DataFrame in place (do not create a new object).
+        verify_integrity : bool, default False
+            Check the new index for duplicates. Otherwise defer the check until
+            necessary. Setting to False will improve the performance of this
+            method.
+        Returns
+        -------
+        DataFrame or None
+            Changed row labels or None if ``inplace=True``.
+        See Also
+        --------
+        DataFrame.reset_index : Opposite of set_index.
+        DataFrame.reindex : Change to new indices or expand indices.
+        DataFrame.reindex_like : Change to same indices as other DataFrame.
+        Examples
+        --------
+        >>> df = pd.DataFrame({'month': [1, 4, 7, 10],
+        ...                    'year': [2012, 2014, 2013, 2014],
+        ...                    'sale': [55, 40, 84, 31]})
+        >>> df
+           month  year  sale
+        0      1  2012    55
+        1      4  2014    40
+        2      7  2013    84
+        3     10  2014    31
+        Set the index to become the 'month' column:
+        >>> df.set_index('month')
+               year  sale
+        month
+        1      2012    55
+        4      2014    40
+        7      2013    84
+        10     2014    31
+        Create a MultiIndex using columns 'year' and 'month':
+        >>> df.set_index(['year', 'month'])
+                    sale
+        year  month
+        2012  1     55
+        2014  4     40
+        2013  7     84
+        2014  10    31
+        Create a MultiIndex using an Index and a column:
+        >>> df.set_index([pd.Index([1, 2, 3, 4]), 'year'])
+                 month  sale
+           year
+        1  2012  1      55
+        2  2014  4      40
+        3  2013  7      84
+        4  2014  10     31
+        Create a MultiIndex using two Series:
+        >>> s = pd.Series([1, 2, 3, 4])
+        >>> df.set_index([s, s**2])
+              month  year  sale
+        1 1       1  2012    55
+        2 4       4  2014    40
+        3 9       7  2013    84
+        4 16     10  2014    31
+        """
+        # todo this is not a final implementation
+        self._index_columns = keys
+        self._table.set_index(keys, drop=drop)
+        return self
+
+    def reset_index(  # type: ignore[misc]
+        self,
+        level: Optional[Union[Hashable, Sequence[Hashable]]] = ...,
+        drop: bool = ...,
+        inplace: Literal[False] = ...,
+        col_level: Hashable = ...,
+        col_fill=...,
+    ) -> DataFrame:
+        # todo this is not a final implementation
+        self._index_columns = []
+        self._table.reset_index(drop=drop)
+        return self
+
+    # Combining / joining / merging
+
+    def join(self, other: DataFrame, on=None, how='left', lsuffix='', rsuffix='',
+             sort=False, algorithm="sort"):
+        """
+        Join columns with other DataFrame either on index or on a key
+        column. Efficiently Join multiple DataFrame objects by index at once by
+        passing a list.
+        Parameters
+        ----------
+        other : DataFrame, Series with name field set, or list of DataFrame
+            Index should be similar to one of the columns in this one. If a
+            Series is passed, its name attribute must be set, and that will be
+            used as the column name in the resulting joined DataFrame
+        on : column name, tuple/list of column names, or array-like
+            Column(s) in the caller to join on the index in other,
+            otherwise joins index-on-index. If multiples
+            columns given, the passed DataFrame must have a MultiIndex. Can
+            pass an array as the join key if not already contained in the
+            calling DataFrame. Like an Excel VLOOKUP operation
+        how : {'left', 'right', 'outer', 'inner'}, default: 'left'
+            How to handle the operation of the two objects.
+            * left: use calling frame's index (or column if on is specified)
+            * right: use other frame's index
+            * outer: form union of calling frame's index (or column if on is
+              specified) with other frame's index, and sort it
+              lexicographically
+            * inner: form intersection of calling frame's index (or column if
+              on is specified) with other frame's index, preserving the order
+              of the calling's one
+        lsuffix : string
+            Suffix to use from left frame's overlapping columns
+        rsuffix : string
+            Suffix to use from right frame's overlapping columns
+        sort : boolean, default False
+            Order result DataFrame lexicographically by the join key. If False,
+            the order of the join key depends on the join type (how keyword)
+        algorithm: {'sort', 'hash'}, default: 'sort'
+            The algorithm that should be used to perform the join between two tables.
+        Notes
+        -----
+        on, lsuffix, and rsuffix options are not supported when passing a list
+        of DataFrame objects
+        Examples
+        --------
+        >>> caller
+            A key
+        0  A0  K0
+        1  A1  K1
+        2  A2  K2
+        3  A3  K3
+        4  A4  K4
+        5  A5  K5
+
+        >>> other
+            B key
+        0  B0  K0
+        1  B1  K1
+        2  B2  K2
+        Join DataFrames using their indexes.
+        >>> caller.join(other, lsuffix='_caller', rsuffix='_other')
+        >>>     A key_caller    B key_other
+            0  A0         K0   B0        K0
+            1  A1         K1   B1        K1
+            2  A2         K2   B2        K2
+            3  A3         K3  NaN       NaN
+            4  A4         K4  NaN       NaN
+            5  A5         K5  NaN       NaN
+        If we want to join using the key columns, we need to set key to be
+        the index in both caller and other. The joined DataFrame will have
+        key as its index.
+        >>> caller.set_index('key').join(other.set_index('key'))
+        >>>      A    B
+            key
+            K0   A0   B0
+            K1   A1   B1
+            K2   A2   B2
+            K3   A3  NaN
+            K4   A4  NaN
+            K5   A5  NaN
+        Another option to join using the key columns is to use the on
+        parameter. DataFrame.join always uses other's index but we can use any
+        column in the caller. This method preserves the original caller's
+        index in the result.
+        >>> caller.join(other.set_index('key'), on='key')
+        >>>     A key    B
+            0  A0  K0   B0
+            1  A1  K1   B1
+            2  A2  K2   B2
+            3  A3  K3  NaN
+            4  A4  K4  NaN
+            5  A5  K5  NaN
+        See also
+        --------
+        DataFrame.merge : For column(s)-on-columns(s) operations
+        Returns
+        -------
+        joined : DataFrame
+        """
+        left_on = on
+        if left_on is None:
+            left_on = self._index_columns
+
+        right_on = other._index_columns
+
+        joined_table = self._table.join(table=other._table, join_type=how,
+                                        algorithm=algorithm,
+                                        left_on=left_on, right_on=right_on,
+                                        left_prefix=lsuffix, right_prefix=rsuffix)
+        return DataFrame(joined_table)
