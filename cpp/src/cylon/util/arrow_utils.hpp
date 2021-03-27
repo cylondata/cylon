@@ -21,6 +21,45 @@
 namespace cylon {
 namespace util {
 
+/**
+ * returns the sign bit of a number type member. returns (v<0)? 0: 1
+ * ref: https://graphics.stanford.edu/~seander/bithacks.html#CopyIntegerSign
+ * @tparam T
+ * @param v
+ * @return
+ */
+template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value>>
+static inline constexpr bool GetSignBit(const T v) {
+  return 1 ^ (static_cast<typename std::make_unsigned<T>::type>(v) >> (sizeof(T) * CHAR_BIT - 1));
+}
+
+/**
+ * take absolute value of integral types
+ * ref: https://graphics.stanford.edu/~seander/bithacks.html#IntegerAbs
+ */
+template<typename T, typename = typename std::enable_if<std::is_integral<T>::value>>
+static inline constexpr T GetAbs(const T v) {
+  const int mask = v >> (sizeof(T) * CHAR_BIT - 1);
+  return (v ^ mask) - mask;
+}
+
+/**
+ * ref: https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
+ * @tparam T
+ * @tparam BIT
+ * @param v
+ * @return
+ */
+static inline constexpr int64_t SetBit(const int64_t v) {
+  return v | 1UL << (sizeof(int64_t) * CHAR_BIT - 1);
+}
+static inline constexpr int64_t ClearBit(const int64_t v) {
+  return v & ~(1UL << (sizeof(int64_t) * CHAR_BIT - 1));
+}
+static inline constexpr size_t CheckBit(const int64_t v) {
+  return (v >> (sizeof(int64_t) * CHAR_BIT - 1)) & 1U;
+}
+
 arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort_column_index,
                         arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Table> &sorted_table,
                         bool ascending = true);
@@ -65,8 +104,7 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array, uint64_t n
 arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &array, uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out);
 
-std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(
-    const std::shared_ptr<arrow::ChunkedArray> &column, int64_t chunk);
+std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk);
 
 }  // namespace util
 }  // namespace cylon

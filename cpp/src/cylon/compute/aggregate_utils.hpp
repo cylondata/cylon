@@ -95,28 +95,23 @@ cylon::Status AllReduce(cylon::net::CommType comm_type,
       return cylon::Status::OK();
     }
     case cylon::net::CommType::MPI: {
-      cylon::Status status;
       for (size_t i = 0; i < reduce_ops.size(); i++) {
         const std::shared_ptr<NUM_ARROW_SCALAR_T>
             &send_scalar =
             std::static_pointer_cast<NUM_ARROW_SCALAR_T>(send_struct_scalar->value[i]);
         std::shared_ptr<NUM_ARROW_SCALAR_T> rcv_scalar = std::make_shared<NUM_ARROW_SCALAR_T>();
 
-        status = cylon::mpi::AllReduce(send_scalar->data(),
-                                       rcv_scalar->mutable_data(),
-                                       1,
-                                       data_type,
-                                       reduce_ops[i]);
-        RETURN_CYLON_STATUS_IF_FAILED(status)
+        RETURN_CYLON_STATUS_IF_FAILED(cylon::mpi::AllReduce(send_scalar->data(),
+                                                            rcv_scalar->mutable_data(),
+                                                            1, data_type, reduce_ops[i]));
         rcv_scalar_vector.push_back(rcv_scalar);
       }
-      std::shared_ptr<arrow::StructScalar> rcv_struct_scalar
-          = std::make_shared<arrow::StructScalar>(rcv_scalar_vector, send_struct_scalar->type);
+      auto rcv_struct_scalar = std::make_shared<arrow::StructScalar>(rcv_scalar_vector, send_struct_scalar->type);
       // build the output datum
       arrow::Datum global_result(rcv_struct_scalar);
       output = std::make_shared<Result>(global_result);
 
-      return status;
+      return Status::OK();
     }
     default: return cylon::Status(cylon::Code::NotImplemented, "Mode is not supported!");
   }

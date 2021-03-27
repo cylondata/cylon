@@ -61,7 +61,9 @@ static inline Partitioner get_partitioner(uint32_t num_partitions) {
 }
 
 template<typename ARROW_T, typename = typename std::enable_if<
-    arrow::is_integer_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
+    arrow::is_integer_type<ARROW_T>::value
+        | arrow::is_boolean_type<ARROW_T>::value
+        | arrow::is_temporal_type<ARROW_T>::value>::type>
 class ModuloPartitionKernel : public HashPartitionKernel {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
 
@@ -318,6 +320,11 @@ std::unique_ptr<HashPartitionKernel> CreateHashPartitionKernel(const std::shared
     case arrow::Type::STRING: // fall through
     case arrow::Type::BINARY:return std::make_unique<BinaryHashPartitionKernel>();
     case arrow::Type::FIXED_SIZE_BINARY:return std::make_unique<FixedSizeBinaryHashPartitionKernel>();
+    case arrow::Type::DATE32:return std::make_unique<ModuloPartitionKernel<arrow::Date32Type>>();
+    case arrow::Type::DATE64:return std::make_unique<ModuloPartitionKernel<arrow::Date64Type>>();
+    case arrow::Type::TIMESTAMP:return std::make_unique<ModuloPartitionKernel<arrow::TimestampType>>();
+    case arrow::Type::TIME32:return std::make_unique<ModuloPartitionKernel<arrow::Time32Type>>();
+    case arrow::Type::TIME64:return std::make_unique<ModuloPartitionKernel<arrow::Time64Type>>();
     default: return nullptr;
   }
 }
@@ -344,8 +351,7 @@ class RangePartitionKernel : public PartitionKernel {
                    uint32_t num_partitions,
                    std::vector<uint32_t> &target_partitions,
                    std::vector<uint32_t> &partition_histogram) override {
-    auto status = build_bin_to_partition(idx_col, num_partitions);
-    RETURN_CYLON_STATUS_IF_FAILED(status)
+    RETURN_CYLON_STATUS_IF_FAILED(build_bin_to_partition(idx_col, num_partitions));
 
     // resize vectors
     partition_histogram.resize(num_partitions, 0);
@@ -374,15 +380,13 @@ class RangePartitionKernel : public PartitionKernel {
       sampled_array = std::make_shared<arrow::ChunkedArray>(idx_col->chunks());
     } else { // else, sample idx_col for num_samples
       std::shared_ptr<arrow::Array> samples;
-      auto a_status = util::SampleArray(idx_col, num_samples, samples);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(a_status)
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::SampleArray(idx_col, num_samples, samples));
       sampled_array = std::make_shared<arrow::ChunkedArray>(samples);
     }
 
     // calculate minmax of the sample
     std::shared_ptr<compute::Result> minmax;
-    Status status = compute::MinMax(ctx, sampled_array, data_type, minmax);
-    RETURN_CYLON_STATUS_IF_FAILED(status)
+    RETURN_CYLON_STATUS_IF_FAILED(compute::MinMax(ctx, sampled_array, data_type, minmax));
 
     const auto &struct_scalar = minmax->GetResult().scalar_as<arrow::StructScalar>();
     min = std::static_pointer_cast<ARROW_SCALAR_T>(struct_scalar.value[0])->value;
@@ -403,9 +407,8 @@ class RangePartitionKernel : public PartitionKernel {
     std::vector<uint64_t> global_counts, *global_counts_ptr;
     if (ctx->GetWorldSize() > 1) { // if distributed, all-reduce all local bin counts
       global_counts.resize(num_bins + 2, 0);
-      status = cylon::mpi::AllReduce(local_counts.data(), global_counts.data(), num_bins + 2, cylon::UInt64(),
-                                     cylon::net::SUM);
-      RETURN_CYLON_STATUS_IF_FAILED(status)
+      RETURN_CYLON_STATUS_IF_FAILED(cylon::mpi::AllReduce(local_counts.data(), global_counts.data(), num_bins + 2,
+                                                          cylon::UInt64(), cylon::net::SUM));
       global_counts_ptr = &global_counts;
       local_counts.clear();
     } else { // else, just use local bin counts

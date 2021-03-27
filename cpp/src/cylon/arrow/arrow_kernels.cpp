@@ -48,8 +48,7 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
     builders.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
       builders.emplace_back(new ARROW_BUILDER_T(pool_));
-      const auto &status = builders.back()->Reserve(counts[i]);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders.back()->Reserve(counts[i]));
     }
 
     size_t offset = 0;
@@ -64,8 +63,7 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
     output.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
       std::shared_ptr<arrow::Array> array;
-      const auto &status = builders[i]->Finish(&array);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[i]->Finish(&array));
       output.push_back(array);
     }
 
@@ -91,8 +89,7 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
     builders.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
       builders.emplace_back(new ARROW_BUILDER_T(values->type(), pool_));
-      const auto &status = builders.back()->Reserve(counts[i]);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders.back()->Reserve(counts[i]));
     }
 
     size_t offset = 0;
@@ -100,16 +97,14 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
       std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
       const int64_t arr_len = array->length();
       for (int64_t i = 0; i < arr_len; i++, offset++) {
-        const auto &a_status = builders[target_partitions[offset]]->Append(casted_array->Value(i));
-        RETURN_CYLON_STATUS_IF_ARROW_FAILED(a_status)
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[target_partitions[offset]]->Append(casted_array->Value(i)));
       }
     }
 
     output.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
       std::shared_ptr<arrow::Array> array;
-      const auto &status = builders[i]->Finish(&array);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[i]->Finish(&array));
       output.push_back(array);
     }
 
@@ -146,16 +141,14 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
       for (int64_t i = 0; i < arr_len; i++, offset++) {
         ARROW_OFFSET_T length = 0;
         const uint8_t *value = casted_array->GetValue(i, &length);
-        const auto &a_status = builders[target_partitions[offset]]->Append(value, length);
-        RETURN_CYLON_STATUS_IF_ARROW_FAILED(a_status)
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[target_partitions[offset]]->Append(value, length));
       }
     }
 
     output.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
       std::shared_ptr<arrow::Array> array;
-      const auto &status = builders[i]->Finish(&array);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[i]->Finish(&array));
       output.push_back(array);
     }
 
@@ -515,7 +508,7 @@ class NumericStreamingSplitKernel : public StreamingSplitKernel {
     const auto &cast_array = std::static_pointer_cast<ARRAY_T>(values);
     // reserve additional space in the builders
     for (size_t i = 0; i < builders_.size(); i++) {
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Reserve(cnts[i]))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Reserve(cnts[i]));
     }
 
     // append the values
@@ -529,7 +522,7 @@ class NumericStreamingSplitKernel : public StreamingSplitKernel {
     out.reserve(builders_.size());
     for (size_t i = 0; i < builders_.size(); i++) {
       std::shared_ptr<arrow::Array> array;
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Finish(&array))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Finish(&array));
       out.emplace_back(std::move(array));
     }
     return Status::OK();
@@ -555,7 +548,7 @@ class FixedBinaryStreamingSplitKernel : public StreamingSplitKernel {
     const auto &reader = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
 
     for (size_t i = 0; i < builders_.size(); i++) {
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Reserve(cnts[i]))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Reserve(cnts[i]));
     }
 
     for (size_t i = 0; i < partitions.size(); i++) {
@@ -569,7 +562,7 @@ class FixedBinaryStreamingSplitKernel : public StreamingSplitKernel {
     out.reserve(builders_.size());
     for (auto &builder : builders_) {
       std::shared_ptr<arrow::Array> array;
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder->Finish(&array))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder->Finish(&array));
       out.emplace_back(std::move(array));
     }
     return Status::OK();
@@ -599,7 +592,7 @@ class BinaryStreamingSplitKernel : public StreamingSplitKernel {
     for (size_t i = 0; i < partitions.size(); i++) {
       int length = 0;
       const uint8_t *value = reader->GetValue(i, &length);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[partitions[i]]->Append(value, length))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[partitions[i]]->Append(value, length));
     }
     return Status::OK();
   }
@@ -608,7 +601,7 @@ class BinaryStreamingSplitKernel : public StreamingSplitKernel {
     out.reserve(builders_.size());
     for (size_t i = 0; i < builders_.size(); i++) {
       std::shared_ptr<arrow::Array> array;
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Finish(&array))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Finish(&array));
       out.emplace_back(std::move(array));
     }
     return Status::OK();

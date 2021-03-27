@@ -85,13 +85,13 @@ cylon::Status static inline min_max_impl(std::shared_ptr<CylonContext> &ctx,
                                          const std::shared_ptr<cylon::DataType> &data_type,
                                          std::shared_ptr<Result> &output) {
   if (!input.is_arraylike()) {
-    LOG_AND_RETURN_ERROR(Code::Invalid, "input should be array like")
+    LOG_AND_RETURN_ERROR(Code::Invalid, "input should be array like");
   }
 
   arrow::compute::ExecContext exec_context(cylon::ToArrowPool(ctx));
   arrow::compute::MinMaxOptions options(arrow::compute::MinMaxOptions::SKIP);
   const arrow::Result<arrow::Datum> &result = arrow::compute::MinMax(input, options, &exec_context);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status())
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
 
   const arrow::Datum &local_result = result.ValueOrDie(); // minmax returns a structscalar
   const auto &struct_scalar = local_result.scalar_as<arrow::StructScalar>();
