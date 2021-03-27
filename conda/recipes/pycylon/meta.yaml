@@ -25,6 +25,9 @@ requirements:
     - pyarrow 2.0.0
     - openmpi
     - cylon {{ version }}
+    - mpi4py
+    - pytest
+    - pytest-mpi
   run:
     - python 3.7
     - cylon {{ version }}
@@ -32,6 +35,9 @@ requirements:
     - numpy
     - openmpi
     - pyarrow 2.0.0
+    - mpi4py
+    - pytest
+    - pytest-mpi
     - {{ pin_compatible('pyarrow', max_pin='x.x.x') }}
 
 about:
