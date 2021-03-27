@@ -160,7 +160,7 @@ class HashIndex : public BaseIndex {
     arrow::Status arrow_status;
     auto pool = GetPool();
 
-    ARROW_BUILDER_T builder(pool);
+    ARROW_BUILDER_T builder(this->GetIndexArray()->type(), pool);
 
     std::shared_ptr<ARROW_ARRAY_T> index_array;
 

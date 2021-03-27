@@ -87,15 +87,15 @@ std::shared_ptr<ArrowComparator> GetComparator(const std::shared_ptr<arrow::Data
     case arrow::Type::FIXED_SIZE_BINARY:
       return std::make_shared<FixedSizeBinaryArrowComparator>();
     case arrow::Type::DATE32:
-      break;
+      return std::make_shared<NumericArrowComparator<arrow::Date32Type>>();
     case arrow::Type::DATE64:
-      break;
+      return std::make_shared<NumericArrowComparator<arrow::Date64Type>>();
     case arrow::Type::TIMESTAMP:
-      break;
+      return std::make_shared<NumericArrowComparator<arrow::TimestampType>>();
     case arrow::Type::TIME32:
-      break;
+      return std::make_shared<NumericArrowComparator<arrow::Time32Type>>();
     case arrow::Type::TIME64:
-      break;
+      return std::make_shared<NumericArrowComparator<arrow::Time64Type>>();
     case arrow::Type::DECIMAL:
       break;
     case arrow::Type::LIST:
@@ -248,6 +248,16 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(
       return std::make_shared<BinaryRowIndexComparator<ASC>>(array);
     case arrow::Type::FIXED_SIZE_BINARY:
       return std::make_shared<FixedSizeBinaryRowIndexComparator<ASC>>(array);
+    case arrow::Type::DATE32:
+      return std::make_shared<NumericRowIndexComparator<arrow::Date32Type, ASC>>(array);
+    case arrow::Type::DATE64:
+      return std::make_shared<NumericRowIndexComparator<arrow::Date64Type, ASC>>(array);
+    case arrow::Type::TIMESTAMP:
+      return std::make_shared<NumericRowIndexComparator<arrow::TimestampType, ASC>>(array);
+    case arrow::Type::TIME32:
+      return std::make_shared<NumericRowIndexComparator<arrow::Time32Type, ASC>>(array);
+    case arrow::Type::TIME64:
+      return std::make_shared<NumericRowIndexComparator<arrow::Time64Type, ASC>>(array);
     default:
       return nullptr;
   }

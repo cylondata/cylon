@@ -781,11 +781,61 @@ arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
                                                                              join_config.GetRightTableSuffix(),
                                                                              joined_table,
                                                                              memory_pool);
-      case arrow::Type::DATE32:break;
-      case arrow::Type::DATE64:break;
-      case arrow::Type::TIMESTAMP:break;
-      case arrow::Type::TIME32:break;
-      case arrow::Type::TIME64:break;
+      case arrow::Type::DATE32:
+        return do_join<arrow::Date32Type>(left_tab,
+                                                                    right_tab,
+                                                                    left_indices[0],
+                                                                    right_indices[0],
+                                                                    join_config.GetType(),
+                                                                    join_config.GetAlgorithm(),
+                                                                    join_config.GetLeftTableSuffix(),
+                                                                    join_config.GetRightTableSuffix(),
+                                                                    joined_table,
+                                                                    memory_pool);
+      case arrow::Type::DATE64:
+        return do_join<arrow::Date64Type>(left_tab,
+                                                                    right_tab,
+                                                                    left_indices[0],
+                                                                    right_indices[0],
+                                                                    join_config.GetType(),
+                                                                    join_config.GetAlgorithm(),
+                                                                    join_config.GetLeftTableSuffix(),
+                                                                    join_config.GetRightTableSuffix(),
+                                                                    joined_table,
+                                                                    memory_pool);
+      case arrow::Type::TIMESTAMP:
+        return do_join<arrow::TimestampType>(left_tab,
+                                                                    right_tab,
+                                                                    left_indices[0],
+                                                                    right_indices[0],
+                                                                    join_config.GetType(),
+                                                                    join_config.GetAlgorithm(),
+                                                                    join_config.GetLeftTableSuffix(),
+                                                                    join_config.GetRightTableSuffix(),
+                                                                    joined_table,
+                                                                    memory_pool);
+      case arrow::Type::TIME32:
+        return do_join<arrow::Time32Type>(left_tab,
+                                                                    right_tab,
+                                                                    left_indices[0],
+                                                                    right_indices[0],
+                                                                    join_config.GetType(),
+                                                                    join_config.GetAlgorithm(),
+                                                                    join_config.GetLeftTableSuffix(),
+                                                                    join_config.GetRightTableSuffix(),
+                                                                    joined_table,
+                                                                    memory_pool);
+      case arrow::Type::TIME64:
+        return do_join<arrow::Time64Type>(left_tab,
+                                                                    right_tab,
+                                                                    left_indices[0],
+                                                                    right_indices[0],
+                                                                    join_config.GetType(),
+                                                                    join_config.GetAlgorithm(),
+                                                                    join_config.GetLeftTableSuffix(),
+                                                                    join_config.GetRightTableSuffix(),
+                                                                    joined_table,
+                                                                    memory_pool);
       case arrow::Type::DECIMAL:break;
       case arrow::Type::LIST:break;
       case arrow::Type::STRUCT:break;
