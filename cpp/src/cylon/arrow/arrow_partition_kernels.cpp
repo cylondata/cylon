@@ -61,7 +61,9 @@ static inline Partitioner get_partitioner(uint32_t num_partitions) {
 }
 
 template<typename ARROW_T, typename = typename std::enable_if<
-    arrow::is_integer_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
+    arrow::is_integer_type<ARROW_T>::value
+        | arrow::is_boolean_type<ARROW_T>::value
+        | arrow::is_temporal_type<ARROW_T>::value>::type>
 class ModuloPartitionKernel : public HashPartitionKernel {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
 
@@ -318,6 +320,11 @@ std::unique_ptr<HashPartitionKernel> CreateHashPartitionKernel(const std::shared
     case arrow::Type::STRING: // fall through
     case arrow::Type::BINARY:return std::make_unique<BinaryHashPartitionKernel>();
     case arrow::Type::FIXED_SIZE_BINARY:return std::make_unique<FixedSizeBinaryHashPartitionKernel>();
+    case arrow::Type::DATE32:return std::make_unique<ModuloPartitionKernel<arrow::Date32Type>>();
+    case arrow::Type::DATE64:return std::make_unique<ModuloPartitionKernel<arrow::Date64Type>>();
+    case arrow::Type::TIMESTAMP:return std::make_unique<ModuloPartitionKernel<arrow::TimestampType>>();
+    case arrow::Type::TIME32:return std::make_unique<ModuloPartitionKernel<arrow::Time32Type>>();
+    case arrow::Type::TIME64:return std::make_unique<ModuloPartitionKernel<arrow::Time64Type>>();
     default: return nullptr;
   }
 }

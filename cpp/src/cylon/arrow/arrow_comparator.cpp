@@ -84,7 +84,9 @@ TableRowComparator::TableRowComparator(const std::vector<std::shared_ptr<arrow::
     : comparators({}) {
   comparators.reserve(fields.size());
   for (const auto &field : fields) {
-    this->comparators.push_back(GetComparator(field->type()));
+    std::shared_ptr<ArrowComparator> comp = GetComparator(field->type());
+    if (comp == nullptr) throw "Unable to find comparator for type " + field->type()->name();
+    this->comparators.push_back(std::move(comp));
   }
 }
 
@@ -364,6 +366,9 @@ TableRowIndexEqualTo::TableRowIndexEqualTo(const std::shared_ptr<arrow::Table> &
     } else {
       const std::shared_ptr<arrow::Array> &array = cylon::util::GetChunkOrEmptyArray(table->column(col_ids.at(c)), 0);
       this->idx_comparators_ptr->at(c) = CreateArrayIndexComparator(array);
+      if (this->idx_comparators_ptr->at(c) == nullptr) {
+        throw "Unable to find comparator for type " + array->type()->name();
+      }
     }
   }
 }
@@ -394,6 +399,9 @@ TableRowIndexHash::TableRowIndexHash(const std::shared_ptr<arrow::Table> &table,
   if (!col_ids.empty()) {
     for (auto &&c : col_ids) {
       const std::unique_ptr<HashPartitionKernel> &hash_kernel = CreateHashPartitionKernel(table->field(c)->type());
+      if (hash_kernel == nullptr) {
+        throw "Unable to find comparator for type " + table->field(c)->type()->name();
+      }
       const auto &s = hash_kernel->UpdateHash(table->column(c), *hashes_ptr);  // update the hashes
       if (!s.is_ok()) {
         throw "hash update failed!";
@@ -402,6 +410,9 @@ TableRowIndexHash::TableRowIndexHash(const std::shared_ptr<arrow::Table> &table,
   } else { // if col_ids is empty, use all columns
     for (int i = 0; i < table->num_columns(); i++) {
       const auto &hash_kernel = CreateHashPartitionKernel(table->field(i)->type());
+      if (hash_kernel == nullptr) {
+        throw "Unable to find comparator for type " + table->field(i)->type()->name();
+      }
       const auto &s = hash_kernel->UpdateHash(table->column(i), *hashes_ptr);  // update the hashes
       if (!s.is_ok()) {
         throw "hash update failed!";
@@ -414,6 +425,9 @@ TableRowIndexHash::TableRowIndexHash(const std::vector<std::shared_ptr<arrow::Ar
     : hashes_ptr(std::make_shared<std::vector<uint32_t>>(arrays[0]->length(), 0)) {
   for (const auto &arr: arrays) {
     const auto &hash_kernel = CreateHashPartitionKernel(arr->type());
+    if (hash_kernel == nullptr) {
+      throw "Unable to find comparator for type " + arr->type()->name();
+    }
     const auto &s = hash_kernel->UpdateHash(arr, *hashes_ptr);  // update the hashes
     if (!s.is_ok()) {
       throw "hash update failed!";
@@ -473,6 +487,7 @@ TwoTableRowIndexEqualTo::TwoTableRowIndexEqualTo(const std::shared_ptr<arrow::Ta
     const std::shared_ptr<arrow::Array> &a1 = util::GetChunkOrEmptyArray(t1->column(t1_indices[i]), 0);
     const std::shared_ptr<arrow::Array> &a2 = util::GetChunkOrEmptyArray(t2->column(t2_indices[i]), 0);
     comparators[i] = CreateTwoArrayIndexComparator(a1, a2);
+    if (comparators[i] == nullptr) throw "Unable to find comparator for type " + a1->type()->name();
   }
 }
 
@@ -487,6 +502,7 @@ TwoTableRowIndexEqualTo::TwoTableRowIndexEqualTo(const std::shared_ptr<arrow::Ta
     const std::shared_ptr<arrow::Array> &a1 = util::GetChunkOrEmptyArray(t1->column(i), 0);
     const std::shared_ptr<arrow::Array> &a2 = util::GetChunkOrEmptyArray(t2->column(i), 0);
     comparators[i] = CreateTwoArrayIndexComparator(a1, a2);
+    if (comparators[i] == nullptr) throw "Unable to find comparator for type " + a1->type()->name();
   }
 }
 
@@ -543,6 +559,9 @@ bool TwoArrayIndexEqualTo::operator()(const int64_t &record1, const int64_t &rec
 ArrayIndexHash::ArrayIndexHash(const std::shared_ptr<arrow::Array> &arr)
     : hashes_ptr(std::make_shared<std::vector<uint32_t>>(arr->length(), 0)) {
   const auto &hash_kernel = CreateHashPartitionKernel(arr->type());
+  if (hash_kernel == nullptr) {
+    throw "Unable to find comparator for type " + arr->type()->name();
+  }
   const auto &s = hash_kernel->UpdateHash(arr, *hashes_ptr);  // update the hashes
   if (!s.is_ok()) {
     throw "hash update failed!";
