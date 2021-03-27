@@ -4,6 +4,8 @@ SOURCE_DIR=$(pwd)/cpp
 CPP_BUILD="OFF"
 PYTHON_BUILD="OFF"
 PYTHON_WITH_PYARROW_BUILD="OFF"
+CONDA_CPP_BUILD="OFF"
+CONDA_PYTHON_BUILD="OFF"
 CYTHON_BUILD="OFF"
 JAVA_BUILD="OFF"
 BUILD_MODE=Release
@@ -46,6 +48,14 @@ case $key in
     --python)
     CPP_BUILD="ON"
     PYTHON_BUILD="ON"
+    shift # past argument
+    ;;
+    --conda_cpp)
+    CONDA_CPP_BUILD="ON"
+    shift # past argument
+    ;;
+    --conda_python)
+    CONDA_PYTHON_BUILD="ON"
     shift # past argument
     ;;
     --python_with_pyarrow)
@@ -210,7 +220,42 @@ build_cpp_with_custom_arrow(){
       ${SOURCE_DIR} \
       || exit 1
   make -j 4 || exit 1
-  printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
+  printf "Cylon CPP Built Successfully!"
+  popd || exit 1
+  print_line
+}
+
+build_cpp_conda(){
+  print_line
+  echo "Building Conda CPP in ${BUILD_MODE} mode"
+  print_line
+  ARROW_LIB=${CONDA_PREFIX}/lib
+  ARROW_INC=${CONDA_PREFIX}/include
+  echo "ARROW_LIB: $ARROW_LIB"
+  echo "ARROW_INC: $ARROW_INC"
+
+  # sometimes pip pyarrow installation does not contain a libarrow.so file, but only libarrow.so.xxx.
+  # then, create a symlink libarrow.so -->  libarrow.so.xxx
+  for SO_FILE in "${ARROW_LIB}/libarrow.so" "${ARROW_LIB}/libarrow_python.so"; do
+  if [ ! -f "$SO_FILE" ]; then
+    echo "$SO_FILE does not exist! Trying to create a symlink"
+    ln -sf "$(ls "$SO_FILE".*)" "$SO_FILE" || exit 1
+  fi
+  done
+
+  echo "SOURCE_DIR: ${SOURCE_DIR}"
+  BUILD_PATH=$(pwd)/build
+  mkdir -p ${BUILD_PATH}
+  pushd ${BUILD_PATH} || exit 1
+  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
+      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $INSTALL_CMD \
+      -DARROW_BUILD_TYPE="SYSTEM" -DARROW_LIB_DIR=${ARROW_LIB} -DARROW_INCLUDE_DIR=${ARROW_INC} \
+      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCYLON_PARQUET=ON \
+      ${CMAKE_FLAGS} \
+      ${SOURCE_DIR} \
+      || exit 1
+  make -j 4 || exit 1
+  make install || exit 1
   printf "Cylon CPP Built Successfully!"
   popd || exit 1
   print_line
@@ -247,6 +292,20 @@ build_python_pyarrow() {
   pip3 uninstall -y pycylon
   make clean
   CYLON_PREFIX=${BUILD_PATH}  python3 setup.py install || exit 1
+  popd || exit 1
+  print_line
+}
+
+build_python_conda() {
+  print_line
+  echo "Building Python"
+  ARROW_LIB=${CONDA_PREFIX}/lib
+  export LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
+  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+
+  pushd python || exit 1
+  make clean
+  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX}/lib python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
@@ -394,6 +453,15 @@ if [ "${RUN_PYTHON_TESTS}" = "ON" ]; then
 	python_test
 fi
 
+if [ "${CONDA_CPP_BUILD}" = "ON" ]; then
+	echo "Running conda build"
+	build_cpp_conda
+fi
+
+if [ "${CONDA_PYTHON_BUILD}" = "ON" ]; then
+	echo "Running conda build"
+	build_python_conda
+fi
 
 
 

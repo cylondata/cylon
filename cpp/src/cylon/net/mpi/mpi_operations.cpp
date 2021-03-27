@@ -43,11 +43,11 @@ MPI_Datatype cylon::mpi::GetMPIDataType(const std::shared_ptr<DataType> &data_ty
     case Type::FIXED_SIZE_BINARY: return MPI_BYTE;
       //todo: MPI does not support 16byte floats. We'll have to use a custom datatype for this later.
     case Type::HALF_FLOAT:
-    case Type::DATE32:
-    case Type::DATE64:
-    case Type::TIMESTAMP:
-    case Type::TIME32:
-    case Type::TIME64:
+    case Type::DATE32:return MPI_UINT32_T;
+    case Type::DATE64:return MPI_UINT64_T;
+    case Type::TIMESTAMP:return MPI_UINT64_T;
+    case Type::TIME32:return MPI_UINT32_T;
+    case Type::TIME64:return MPI_UINT64_T;
     case Type::DECIMAL:
     case Type::DURATION:
     case Type::INTERVAL:

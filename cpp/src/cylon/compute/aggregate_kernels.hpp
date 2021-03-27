@@ -349,7 +349,7 @@ class MeanKernel : public TypedAggregationKernel<MeanKernel<T>,
                                                  typename KernelTraits<MEAN, T>::Options> {
  public:
   void InitializeState(std::tuple<T, int64_t> *state) {
-    *state = {0, 0};
+    *state = std::make_tuple(0, 0);
   }
   void Update(const T *value, std::tuple<T, int64_t> *state) {
     std::get<0>(*state) += *value;
@@ -379,7 +379,7 @@ class VarianceKernel : public TypedAggregationKernel<VarianceKernel<T>,
   }
 
   inline void InitializeState(std::tuple<T, T, int64_t> *state) {
-    *state = {static_cast<T>(0), static_cast<T>(0), 0};
+    *state = std::make_tuple(static_cast<T>(0), static_cast<T>(0), 0);
   }
   inline void Update(const T *value, std::tuple<T, T, int64_t> *state) {
     std::get<0>(*state) += (*value) * (*value);
@@ -414,7 +414,7 @@ struct SumKernel : public TypedAggregationKernel<SumKernel<T>,
                                                  typename KernelTraits<SUM, T>::ResultT,
                                                  typename KernelTraits<SUM, T>::Options> {
   inline void InitializeState(std::tuple<T> *state) {
-    *state = {0};
+    *state = std::make_tuple(0);
   }
   inline void Update(const T *value, std::tuple<T> *state) {
     std::get<0>(*state) += *value;
@@ -434,7 +434,7 @@ struct CountKernel : public TypedAggregationKernel<CountKernel<T>,
                                                    typename KernelTraits<COUNT, T>::ResultT,
                                                    typename KernelTraits<COUNT, T>::Options> {
   inline void InitializeState(std::tuple<int64_t> *state) {
-    *state = {0};
+    *state = std::make_tuple(0);
   }
   inline void Update(const T *value, std::tuple<int64_t> *state) {
     std::get<0>(*state) += 1;
@@ -454,7 +454,7 @@ struct MinKernel : public TypedAggregationKernel<MinKernel<T>,
                                                  typename KernelTraits<MIN, T>::ResultT,
                                                  typename KernelTraits<MIN, T>::Options> {
   inline void InitializeState(std::tuple<T> *state) {
-    *state = {std::numeric_limits<T>::max()};
+    *state = std::make_tuple(std::numeric_limits<T>::max());
   }
   inline void Update(const T *value, std::tuple<T> *state) {
     std::get<0>(*state) = std::min(*value, std::get<0>(*state));
@@ -474,7 +474,7 @@ struct MaxKernel : public TypedAggregationKernel<MaxKernel<T>,
                                                  typename KernelTraits<MAX, T>::ResultT,
                                                  typename KernelTraits<MAX, T>::Options> {
   inline void InitializeState(std::tuple<T> *state) {
-    *state = {std::numeric_limits<T>::min()};
+    *state = std::make_tuple(std::numeric_limits<T>::min());
   }
   inline void Update(const T *value, std::tuple<T> *state) {
     std::get<0>(*state) = std::max(*value, std::get<0>(*state));

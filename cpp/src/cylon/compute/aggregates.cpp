@@ -153,7 +153,7 @@ cylon::Status MinMax(std::shared_ptr<CylonContext> &ctx,
 
 template<typename ARROW_TYPE, typename = typename std::enable_if<
     arrow::is_number_type<ARROW_TYPE>::value
-        | arrow::is_boolean_type<ARROW_TYPE>::value>::type>
+        | arrow::is_boolean_type<ARROW_TYPE>::value | arrow::is_temporal_type<ARROW_TYPE>::value>::type>
 cylon::Status ResolveTableFromScalar(const std::shared_ptr<cylon::Table> &input, int32_t col_idx,
                                      const std::shared_ptr<cylon::compute::Result> &result,
                                      std::shared_ptr<cylon::Table> &output) {
@@ -164,7 +164,12 @@ cylon::Status ResolveTableFromScalar(const std::shared_ptr<cylon::Table> &input,
 
   arrow::Status s;
   std::vector<std::shared_ptr<arrow::Array>> out_vectors;
-  BUILDER_TYPE idx_builder(cylon::ToArrowPool(ctx));
+
+  std::shared_ptr<arrow::Table> arw_table;
+  input->ToArrowTable(arw_table);
+
+  BUILDER_TYPE idx_builder(arw_table->column(col_idx)->type(), cylon::ToArrowPool(ctx));
+
   std::shared_ptr<arrow::Array> out_idx;
   if (!(s = idx_builder.Reserve(1)).ok()) {
     return cylon::Status(Code::ExecutionError, s.message());
@@ -179,9 +184,6 @@ cylon::Status ResolveTableFromScalar(const std::shared_ptr<cylon::Table> &input,
   }
 
   out_vectors.push_back(out_idx);
-
-  std::shared_ptr<arrow::Table> arw_table;
-  input->ToArrowTable(arw_table);
 
   auto out_a_table = arrow::Table::Make(arrow::schema({arw_table->schema()->field(col_idx)}), {out_vectors});
 
@@ -232,11 +234,21 @@ cylon::Status CreateTableFromScalar(const std::shared_ptr<cylon::Table> &input,
     case arrow::Type::STRING:break;
     case arrow::Type::BINARY:break;
     case arrow::Type::FIXED_SIZE_BINARY:break;
-    case arrow::Type::DATE32:break;
-    case arrow::Type::DATE64:break;
-    case arrow::Type::TIMESTAMP:break;
-    case arrow::Type::TIME32:break;
-    case arrow::Type::TIME64:break;
+    case arrow::Type::DATE32:{
+      return ResolveTableFromScalar<arrow::Date32Type>(input, col_idx, result, output);
+    }
+    case arrow::Type::DATE64:{
+      return ResolveTableFromScalar<arrow::Date64Type>(input, col_idx, result, output);
+    }
+    case arrow::Type::TIMESTAMP:{
+      return ResolveTableFromScalar<arrow::TimestampType>(input, col_idx, result, output);
+    }
+    case arrow::Type::TIME32:{
+      return ResolveTableFromScalar<arrow::Time32Type>(input, col_idx, result, output);
+    }
+    case arrow::Type::TIME64:{
+      return ResolveTableFromScalar<arrow::Time64Type>(input, col_idx, result, output);
+    }
     case arrow::Type::DECIMAL:break;
     case arrow::Type::LIST:break;
     case arrow::Type::STRUCT:break;

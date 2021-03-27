@@ -1,0 +1,37 @@
+{% set version = '0.4.0'.lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
+{% set minor_version =  version.split('.')[0] + '.' + version.split('.')[1] %}
+{% set cylon_version='.'.join(environ.get('CYLON_VERSION', '0.4.0').split('.')[:2]) %}
+
+package:
+  name: cylon
+  version: {{ version }}
+
+source:
+  git_url: ../../..
+
+build:
+  number: {{ GIT_DESCRIBE_NUMBER }}
+  string: cylon{{ cylon_version }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
+  script_env:
+    - CONDA_PREFIX
+  run_exports:
+    - {{ pin_subpackage("cylon", max_pin="x.x") }}
+
+requirements:
+  build:
+    - cmake >=3.14.0
+    - arrow-cpp 2.0.0
+    - glog 0.4.0
+    - openmpi
+  run:
+    - cmake >=3.14.0
+    - arrow-cpp 2.0.0
+    - glog 0.4.0
+    - openmpi
+
+about:
+  home: http://cylondata.org/
+  license: Apache-2.0
+  license_family: Apache
+  license_file: LICENSE
+  summary: Cylon C++ library
