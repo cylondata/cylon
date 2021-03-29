@@ -183,7 +183,7 @@ class ArrowAllToAll : public ReceiveCallback {
    */
   bool onReceiveHeader(int source, int finished, int *buffer, int length) override;
 
-  bool onSendComplete(int target, void *buffer, int length) override;
+  bool onSendComplete(int target, const void *buffer, int length) override;
 
  private:
   /**

@@ -133,13 +133,13 @@ arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
 
 arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
                                       const std::shared_ptr<arrow::Table> &table,
-                                      const std::vector<int64_t> &columns,
+                                      const std::vector<int32_t> &columns,
                                       std::shared_ptr<arrow::UInt64Array> &offsets,
                                       const std::vector<bool> &ascending);
 
 arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
                                       const std::shared_ptr<arrow::Table> &table,
-                                      const std::vector<int64_t> &columns,
+                                      const std::vector<int32_t> &columns,
                                       std::shared_ptr<arrow::UInt64Array> &offsets);
 
 // -----------------------------------------------------------------------------

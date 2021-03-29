@@ -100,6 +100,7 @@ _include_dirs = ["../cpp/src/cylon/python",
                  glog_lib_include_dir,
                  pyarrow_include_dir,
                  np.get_include(),
+                 os.path.dirname(sysconfig.get_path("include")),
                  ]
 
 # Adopted the Cudf Python Build format

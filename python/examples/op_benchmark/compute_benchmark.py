@@ -18,41 +18,111 @@ import pandas as pd
 import pycylon as cn
 from pycylon import CylonContext
 from pycylon import Table
-from pycylon.index import RangeIndex
+from bench_util import get_dataframe
 import time
+import argparse
 
-ctx: CylonContext = CylonContext(config=None, distributed=False)
-num_rows = 1_000_000
-data = np.random.randn(num_rows)
+"""
+Run benchmark:
+ 
+>>> python python/examples/op_benchmark/compute_benchmark.py --start_size 1_000_000 \
+                                        --step_size 1_000_000 \
+                                        --end_size 10_000_000 \
+                                        --num_cols 2 \
+                                        --filter_size 500_000 \
+                                        --stats_file /tmp/isin_bench.csv \
+                                        --repetitions 1 \
+                                        --duplication_factor 0.9
+"""
 
-df = pd.DataFrame({'data{}'.format(i): data
-                   for i in range(100)})
 
-df['key'] = np.random.randint(0, 100, size=num_rows)
-rb = pa.record_batch(df)
-t = pa.Table.from_pandas(df)
+def isin_op(num_rows: int, num_cols: int, filter_size: int, duplication_factor: float):
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-ct = Table.from_pandas(ctx, df)
-ct.set_index(range(0, num_rows))
-##
-cmp_num_rows = 10_000
-cmp_data = np.random.randn(cmp_num_rows)
+    df = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
 
-cmp_df = pd.DataFrame({'data{}'.format(i): cmp_data
-                       for i in range(100)})
+    ct = Table.from_pandas(ctx, df)
 
-cmp_df['key'] = np.random.randint(0, 100, size=cmp_num_rows)
-cmp_ct = Table.from_pandas(ctx, cmp_df)
-cmp_ct.set_index(range(0, cmp_num_rows))
+    cmp_data = np.random.randn(filter_size)
 
-cmp_list_vals = {'data1': list(range(0, 10_000))}
+    cmp_data = cmp_data.tolist()
 
-t1 = time.time()
-df.isin(cmp_df)
-t2 = time.time()
+    pandas_time = time.time()
+    df.isin(cmp_data)
+    pandas_time = time.time() - pandas_time
 
-t3 = time.time()
-ct.isin(cmp_ct)
-t4 = time.time()
+    cylon_time = time.time()
+    ct.isin(cmp_data)
+    cylon_time = time.time() - cylon_time
 
-print(t2 - t1, t4 - t3)
+    return pandas_time, cylon_time
+
+
+def bench_isin(start: int, end: int, step: int, num_cols: int, filter_size: int, repetitions: int, stats_file: str,
+               duplication_factor: float):
+    all_data = []
+    schema = ["num_records", "num_cols", "filter_size", "pandas", "cylon", "speed up"]
+    assert repetitions >= 1
+    assert start > 0
+    assert step > 0
+    assert num_cols > 0
+    assert filter_size > 0
+    for records in range(start, end + step, step):
+        print(f"Isin Op : Records={records}, Columns={num_cols}, Filter Size={filter_size}")
+        times = []
+        for idx in range(repetitions):
+            pandas_time, cylon_time = isin_op(num_rows=records, num_cols=num_cols, filter_size=filter_size,
+                                              duplication_factor=duplication_factor)
+            times.append([pandas_time, cylon_time])
+        times = np.array(times).sum(axis=0) / repetitions
+        print(f"Isin Op : Records={records}, Columns={num_cols}, Filter Size={filter_size}, "
+              f"Pandas Time : {times[0]}, Cylon Time : {times[1]}")
+        all_data.append([records, num_cols, filter_size, times[0], times[1], times[0] / times[1]])
+    pdf = pd.DataFrame(all_data, columns=schema)
+    print(pdf)
+    pdf.to_csv(stats_file)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--start_size",
+                        help="initial data size",
+                        type=int)
+    parser.add_argument("-e", "--end_size",
+                        help="end data size",
+                        type=int)
+    parser.add_argument("-d", "--duplication_factor",
+                        help="random data duplication factor",
+                        type=float)
+    parser.add_argument("-s", "--step_size",
+                        help="Step size",
+                        type=int)
+    parser.add_argument("-c", "--num_cols",
+                        help="number of columns",
+                        type=int)
+    parser.add_argument("-t", "--filter_size",
+                        help="number of values per filter",
+                        type=int)
+    parser.add_argument("-r", "--repetitions",
+                        help="number of experiments to be repeated",
+                        type=int)
+    parser.add_argument("-f", "--stats_file",
+                        help="stats file to be saved",
+                        type=str)
+
+    args = parser.parse_args()
+    print(f"Start Data Size : {args.start_size}")
+    print(f"End Data Size : {args.end_size}")
+    print(f"Step Data Size : {args.step_size}")
+    print(f"Data Duplication Factor : {args.duplication_factor}")
+    print(f"Number of Columns : {args.num_cols}")
+    print(f"Number of Repetitions : {args.repetitions}")
+    print(f"Stats File : {args.stats_file}")
+    bench_isin(start=args.start_size,
+               end=args.end_size,
+               step=args.step_size,
+               num_cols=args.num_cols,
+               filter_size=args.filter_size,
+               repetitions=args.repetitions,
+               stats_file=args.stats_file,
+               duplication_factor=args.duplication_factor)

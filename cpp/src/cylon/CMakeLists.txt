@@ -39,6 +39,10 @@ add_library(cylon SHARED
         arrow/arrow_all_to_all.hpp
         join/join.hpp
         join/join.cpp
+        join/hash_join.hpp
+        join/hash_join.cpp
+        join/sort_join.hpp
+        join/sort_join.cpp
         util/arrow_utils.hpp
         util/arrow_utils.cpp
         arrow/arrow_kernels.cpp
@@ -79,7 +83,6 @@ add_library(cylon SHARED
         table_api_extended.hpp
         io/csv_write_config.hpp
         io/csv_write_config.cpp
-        arrow/arrow_hash_kernels.hpp
         arrow/arrow_comparator.hpp
         arrow/arrow_comparator.cpp
         row.hpp
@@ -173,4 +176,5 @@ add_subdirectory(io)
 add_subdirectory(ctx)
 add_subdirectory(arrow)
 
+set_target_properties(cylon PROPERTIES VERSION ${CYLON_VERSION})
 install(TARGETS cylon DESTINATION lib)

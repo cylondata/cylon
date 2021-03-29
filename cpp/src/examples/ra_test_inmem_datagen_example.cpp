@@ -36,10 +36,12 @@ void create_int64_table(char *const *argv,
                         std::shared_ptr<arrow::Table> &right_table);
 
 int shuffle_example(int argc, char *argv[]);
-int join_example(int argc, char *argv[]);
+int join_perf(int argc, char **argv);
+int union_perf(int argc, char **argv);
 
 int main(int argc, char *argv[]) {
-  join_example(argc, argv);
+  join_perf(argc, argv);
+//  union_example(argc, argv);
   return 0;
 }
 
@@ -169,7 +171,7 @@ int shuffle_example(int argc, char *argv[]) {
   return 0;
 }
 
-int join_example(int argc, char *argv[]) {
+int join_perf(int argc, char **argv) {
   if (argc < 2) {
     LOG(ERROR) << "There should be one argument with count";
     return 1;
@@ -208,8 +210,8 @@ int join_example(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
 
-  first_table->retainMemory(false);
-  second_table->retainMemory(false);
+//  first_table->retainMemory(false);
+//  second_table->retainMemory(false);
   status = cylon::DistributedJoin(first_table, second_table,
                                   cylon::join::config::JoinConfig::InnerJoin(0, 0), joined);
   if (!status.is_ok()) {
@@ -219,10 +221,78 @@ int join_example(int argc, char *argv[]) {
   }
   auto join_end_time = std::chrono::steady_clock::now();
 
-  LOG(INFO) << ">>>>>>>>>>>" << ctx->GetRank() << ": Joined has : " << joined->Rows();
-  LOG(INFO) << "Join done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                join_end_time - read_end_time).count() << "[ms]";
+  LOG(INFO) << " Rank " << ctx->GetRank() << " Sort Join done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time).count() << "[ms]"
+            << " Joined has : " << joined->Rows();
+
+  status = cylon::DistributedJoin(first_table, second_table,
+                                  cylon::join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::HASH), joined);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table join failed ";
+    ctx->Finalize();
+    return 1;
+  }
+
+  LOG(INFO) << " Rank " << ctx->GetRank() << " Hash Join done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - join_end_time)
+                .count() << "[ms]" << " Joined has : " << joined->Rows();
+
+  ctx->Finalize();
+
+  return 0;
+}
+
+int union_perf(int argc, char **argv) {
+  if (argc < 2) {
+    LOG(ERROR) << "There should be one argument with count";
+    return 1;
+  }
+
+  auto start_start = std::chrono::steady_clock::now();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  arrow::MemoryPool *pool = arrow::default_memory_pool();
+  std::shared_ptr<arrow::Table> left_table;
+  std::shared_ptr<arrow::Table> right_table;
+//  create_binary_table(argv, ctx, pool, left_table, right_table);
+  create_int64_table(argv, ctx, pool, left_table, right_table);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  std::shared_ptr<cylon::Table> first_table, second_table, joined;
+  auto status = cylon::Table::FromArrowTable(ctx, left_table, first_table);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading failed " << argv[1];
+    ctx->Finalize();
+    return 1;
+  }
+
+  status = cylon::Table::FromArrowTable(ctx, right_table, second_table);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table reading failed " << argv[2];
+    ctx->Finalize();
+    return 1;
+  }
+  right_table.reset();
+  left_table.reset();
+
+  auto read_end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Read tables in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
+
+  first_table->retainMemory(false);
+  second_table->retainMemory(false);
+  status = cylon::DistributedUnion(first_table, second_table, joined);
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table join failed ";
+    ctx->Finalize();
+    return 1;
+  }
+  auto join_end_time = std::chrono::steady_clock::now();
+
+  LOG(INFO) << ">>>>>>>>>>>" << ctx->GetRank() << ": Union has : " << joined->Rows();
+  LOG(INFO) << "Union done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time).count() << "[ms]";
 
   ctx->Finalize();
 

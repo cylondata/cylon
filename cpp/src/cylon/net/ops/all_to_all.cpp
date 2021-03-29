@@ -61,7 +61,7 @@ void AllToAll::close() {
   delete channel;
 }
 
-int AllToAll::insert(void *buffer, int length, int target) {
+int AllToAll::insert(const void *buffer, int length, int target) {
   if (finishFlag) {
 	// we cannot accept further
 	return -1;
@@ -75,7 +75,7 @@ int AllToAll::insert(void *buffer, int length, int target) {
   return 1;
 }
 
-int AllToAll::insert(void *buffer, int length, int target, int *header, int headerLength) {
+int AllToAll::insert(const void *buffer, int length, int target, int *header, int headerLength) {
   if (finishFlag) {
 	// we cannot accept further
 	return -1;

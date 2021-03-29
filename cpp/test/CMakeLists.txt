@@ -110,3 +110,7 @@ cylon_run_test(indexing_test 1)
 # create table test
 cylon_add_test(sorting_test)
 cylon_run_test(sorting_test 1)
+
+# hash utils test
+cylon_add_test(hash_utils_test)
+cylon_run_test(hash_utils_test 1)

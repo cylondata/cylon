@@ -46,7 +46,7 @@ cylon::Status SetIndexForLocResultTable(const std::shared_ptr<cylon::BaseIndex> 
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
 
-  LOG(INFO) << "Set Index for location output with Non-RangeIndex";
+  //LOG(INFO) << "Set Index for location output with Non-RangeIndex";
   auto index_arr = index->GetIndexArray();
   arrow::Int64Builder builder(pool);
   status = builder.AppendValues(sub_index_locations);
@@ -282,7 +282,7 @@ cylon::Status GetTableByLocIndex(const void *indices,
                                  std::shared_ptr<cylon::BaseIndex> &index,
                                  std::shared_ptr<cylon::Table> &output,
                                  std::vector<int64_t> &filter_indices) {
-  LOG(INFO) << "GetTableByLocIndex";
+  //LOG(INFO) << "GetTableByLocIndex";
   cylon::Status status_build;
   auto ctx = input_table->GetContext();
   auto input_artb = input_table->get_table();
@@ -724,7 +724,7 @@ cylon::Status cylon::ILocIndexer::loc(const void *start_index,
                                       const int column_index,
                                       const std::shared_ptr<Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  LOG(INFO) << "ILOC Mode 1";
+  //LOG(INFO) << "ILOC Mode 1";
   cylon::Status status;
   std::shared_ptr<cylon::BaseIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
@@ -764,7 +764,7 @@ cylon::Status cylon::ILocIndexer::loc(const void *start_index,
                                       const std::shared_ptr<Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
 
-  LOG(INFO) << "ILOC Mode 2";
+  //LOG(INFO) << "ILOC Mode 2";
   cylon::Status status;
   std::shared_ptr<cylon::BaseIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
@@ -811,7 +811,7 @@ cylon::Status cylon::ILocIndexer::loc(const void *start_index,
                                       const std::vector<int> &columns,
                                       const std::shared_ptr<Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  LOG(INFO) << "ILOC Mode 3";
+  //LOG(INFO) << "ILOC Mode 3";
   cylon::Status status;
   std::shared_ptr<cylon::BaseIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
@@ -847,7 +847,7 @@ cylon::Status cylon::ILocIndexer::loc(const void *indices,
                                       const int column_index,
                                       const std::shared_ptr<Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  LOG(INFO) << "ILOC Mode 4";
+  //LOG(INFO) << "ILOC Mode 4";
   cylon::Status status;
   std::shared_ptr<cylon::BaseIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
@@ -890,7 +890,7 @@ cylon::Status cylon::ILocIndexer::loc(const void *indices,
                                       const int end_column,
                                       const std::shared_ptr<Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  LOG(INFO) << "ILOC Mode 5";
+  //LOG(INFO) << "ILOC Mode 5";
   cylon::Status status;
   std::shared_ptr<cylon::BaseIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
@@ -939,7 +939,7 @@ cylon::Status cylon::ILocIndexer::loc(const void *indices,
                                       const std::vector<int> &columns,
                                       const std::shared_ptr<Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  LOG(INFO) << "ILOC Mode 6";
+  //LOG(INFO) << "ILOC Mode 6";
   cylon::Status status;
   std::shared_ptr<cylon::BaseIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
@@ -978,7 +978,7 @@ cylon::Status cylon::ILocIndexer::loc(const std::vector<void *> &indices,
                                       const int column,
                                       const std::shared_ptr<Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  LOG(INFO) << "ILoc Mode 7";
+  //LOG(INFO) << "ILoc Mode 7";
   Status status;
   std::shared_ptr<cylon::BaseIndex> range_index;
   std::vector<int64_t> i_indices;
@@ -1021,7 +1021,7 @@ cylon::Status cylon::ILocIndexer::loc(const std::vector<void *> &indices,
                                       const int end_column_index,
                                       const std::shared_ptr<Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  LOG(INFO) << "ILOC Mode 8";
+  //LOG(INFO) << "ILOC Mode 8";
   Status status;
   std::shared_ptr<cylon::BaseIndex> range_index;
   std::vector<int64_t> i_indices;
@@ -1070,7 +1070,7 @@ cylon::Status cylon::ILocIndexer::loc(const std::vector<void *> &indices,
                                       const std::vector<int> &columns,
                                       const std::shared_ptr<Table> &input_table,
                                       std::shared_ptr<cylon::Table> &output) {
-  LOG(INFO) << "ILOC Mode 9";
+  //LOG(INFO) << "ILOC Mode 9";
   Status status;
   std::shared_ptr<cylon::BaseIndex> range_index;
   std::vector<int64_t> i_indices;

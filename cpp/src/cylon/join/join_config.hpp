@@ -65,7 +65,11 @@ class JoinConfig {
         left_column_idx(std::move(left_column_idx)),
         right_column_idx(std::move(right_column_idx)),
         left_table_suffix(std::move(left_table_suffix)),
-        right_table_suffix(std::move(right_table_suffix)) {}
+        right_table_suffix(std::move(right_table_suffix)) {
+    if (left_column_idx.size() != right_column_idx.size()) {
+      throw "left and right column indices sizes are not equal";
+    }
+  }
 
   static JoinConfig InnerJoin(int left_column_idx, int right_column_idx, JoinAlgorithm algorithm = SORT,
                               std::string left_table_suffix = "", std::string right_table_suffix = "") {
