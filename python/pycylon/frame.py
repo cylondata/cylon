@@ -1544,10 +1544,10 @@ class DataFrame(object):
             raise "objs can't be empty"
 
         if axis == 0:
-            current_table: DataFrame = objs[0]
+            current_table = objs[0]._table
             for i in range(1, len(objs)):
-                current_table = current_table._table.union(objs[i])
+                current_table = current_table.union(objs[i]._table)
 
-            return current_table
+            return DataFrame(current_table)
         else:
             raise "Unsupported operation"
