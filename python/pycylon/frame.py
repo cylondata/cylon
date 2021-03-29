@@ -1588,7 +1588,7 @@ class DataFrame(object):
         Examples
         --------
         Consider dataset containing ramen rating.
-        >>> df = pd.DataFrame({
+        >>> df = DataFrame({
         ...     'brand': ['Yum Yum', 'Yum Yum', 'Indomie', 'Indomie', 'Indomie'],
         ...     'style': ['cup', 'cup', 'cup', 'pack', 'pack'],
         ...     'rating': [4, 4, 3.5, 15, 5]
@@ -1620,3 +1620,100 @@ class DataFrame(object):
         4  Indomie  pack     5.0
         """
         return DataFrame(self._table.unique(columns=subset, keep=keep, inplace=inplace))
+
+    def sort_values(
+        self,
+        by,
+        axis=0,
+        ascending=True,
+        inplace=False,
+        kind="quicksort",
+        na_position="last",
+        ignore_index=False,
+        key=None,
+    ) -> DataFrame:
+        """
+        Sort by the values along either axis.
+        Parameters
+        ----------
+
+        axis : %(axes_single_arg)s, default 0
+             Axis to be sorted.
+        ascending : bool or list of bool, default True
+             Sort ascending vs. descending. Specify list for multiple sort
+             orders.  If this is a list of bools, must match the length of
+             the by.
+        inplace(Unsupported) : bool, default False
+             If True, perform operation in-place.
+        kind(Unsupported) : {'quicksort', 'mergesort', 'heapsort', 'stable'}, default 'quicksort'
+             Choice of sorting algorithm. See also :func:`numpy.sort` for more
+             information. `mergesort` and `stable` are the only stable algorithms. For
+             DataFrames, this option is only applied when sorting on a single
+             column or label.
+        na_position(Unsupported) : {'first', 'last'}, default 'last'
+             Puts NaNs at the beginning if `first`; `last` puts NaNs at the
+             end.
+        ignore_index(Unsupported) : bool, default False
+             If True, the resulting axis will be labeled 0, 1, …, n - 1.
+             .. versionadded:: 1.0.0
+        key(Unsupported) : callable, optional
+            Apply the key function to the values
+            before sorting. This is similar to the `key` argument in the
+            builtin :meth:`sorted` function, with the notable difference that
+            this `key` function should be *vectorized*. It should expect a
+            ``Series`` and return a Series with the same shape as the input.
+            It will be applied to each column in `by` independently.
+            .. versionadded:: 1.1.0
+        Returns
+        -------
+        DataFrame or None
+            DataFrame with sorted values or None if ``inplace=True``.
+        See Also
+        --------
+        DataFrame.sort_index : Sort a DataFrame by the index.
+        Series.sort_values : Similar method for a Series.
+        Examples
+        --------
+        >>> df = DataFrame({
+        ...     'col1': ['A', 'A', 'B', np.nan, 'D', 'C'],
+        ...     'col2': [2, 1, 9, 8, 7, 4],
+        ...     'col3': [0, 1, 9, 4, 2, 3],
+        ...     'col4': ['a', 'B', 'c', 'D', 'e', 'F']
+        ... })
+        >>> df
+          col1  col2  col3 col4
+        0    A     2     0    a
+        1    A     1     1    B
+        2    B     9     9    c
+        3  NaN     8     4    D
+        4    D     7     2    e
+        5    C     4     3    F
+        Sort by col1
+        >>> df.sort_values(by=['col1'])
+          col1  col2  col3 col4
+        0    A     2     0    a
+        1    A     1     1    B
+        2    B     9     9    c
+        5    C     4     3    F
+        4    D     7     2    e
+        3  NaN     8     4    D
+        Sort by multiple columns
+        >>> df.sort_values(by=['col1', 'col2'])
+          col1  col2  col3 col4
+        1    A     1     1    B
+        0    A     2     0    a
+        2    B     9     9    c
+        5    C     4     3    F
+        4    D     7     2    e
+        3  NaN     8     4    D
+        Sort Descending
+        >>> df.sort_values(by='col1', ascending=False)
+          col1  col2  col3 col4
+        4    D     7     2    e
+        5    C     4     3    F
+        2    B     9     9    c
+        0    A     2     0    a
+        1    A     1     1    B
+        3  NaN     8     4    D
+        """
+        return DataFrame(self._table.sort(order_by=by, ascending=ascending))
