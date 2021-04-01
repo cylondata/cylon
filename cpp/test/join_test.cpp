@@ -32,4 +32,22 @@ TEST_CASE("Join testing", "[join]") {
      const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::HASH);
      REQUIRE(test::TestJoinOperation(join_config, ctx, path1, path2, out_path) == 0);
    }
- }
+}
+
+TEST_CASE("Multi Index Join testing", "[multi_join]") {
+   std::string path1 = "../data/input/multi_join1.csv";
+   std::string path2 = "../data/input/multi_join2.csv";
+   std::string out_path = "../data/output/multi_join_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
+
+   SECTION("testing inner joins - sort") {
+     const auto &jc =
+         join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, cylon::join::config::JoinAlgorithm::SORT, "l_", "r_");
+     REQUIRE(test::TestJoinOperation(jc, ctx, path1, path2, out_path) == 0);
+   }
+
+   SECTION("testing inner joins - hash") {
+     const auto &jc =
+         join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, cylon::join::config::JoinAlgorithm::HASH, "l_", "r_");
+     REQUIRE(test::TestJoinOperation(jc, ctx, path1, path2, out_path) == 0);
+   }
+}

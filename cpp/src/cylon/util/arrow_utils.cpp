@@ -34,7 +34,7 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort
   // combine chunks if multiple chunks are available
   if (table->column(sort_column_index)->num_chunks() > 1) {
     const auto &res = table->CombineChunks(memory_pool);
-    RETURN_ARROW_STATUS_IF_FAILED(res.status())
+    RETURN_ARROW_STATUS_IF_FAILED(res.status());
     tab_to_process = res.ValueOrDie();
   } else {
     tab_to_process = table;
@@ -45,7 +45,7 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort
   // sort to indices
   std::shared_ptr<arrow::UInt64Array> sorted_column_index;
   RETURN_ARROW_STATUS_IF_FAILED(
-      cylon::SortIndices(memory_pool, column_to_sort, sorted_column_index, ascending))
+      cylon::SortIndices(memory_pool, column_to_sort, sorted_column_index, ascending));
 
   // now sort everything based on sorted index
   arrow::ArrayVector sorted_columns;
@@ -59,7 +59,7 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort
     const arrow::Result<arrow::Datum> &res = arrow::compute::Take(
         cylon::util::GetChunkOrEmptyArray(tab_to_process->column(col_index), 0),
         sorted_column_index, take_options, &exec_context);
-    RETURN_ARROW_STATUS_IF_FAILED(res.status())
+    RETURN_ARROW_STATUS_IF_FAILED(res.status());
     sorted_columns.emplace_back(res.ValueOrDie().make_array());
   }
 
@@ -76,7 +76,7 @@ arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
   // combine chunks if multiple chunks are available
   if (table->column(sort_column_indices.at(0))->num_chunks() > 1) {
     const auto &res = table->CombineChunks(memory_pool);
-    RETURN_ARROW_STATUS_IF_FAILED(res.status())
+    RETURN_ARROW_STATUS_IF_FAILED(res.status());
     tab_to_process = res.ValueOrDie();
   } else {
     tab_to_process = table;
@@ -85,7 +85,7 @@ arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
   // sort to indices
   std::shared_ptr<arrow::UInt64Array> sorted_column_index;
   RETURN_ARROW_STATUS_IF_FAILED(cylon::SortIndicesMultiColumns(
-      memory_pool, table, sort_column_indices, sorted_column_index, sort_column_directions))
+      memory_pool, table, sort_column_indices, sorted_column_index, sort_column_directions));
 
   // now sort everything based on sorted index
   arrow::ArrayVector sorted_columns;
@@ -99,7 +99,7 @@ arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
     const arrow::Result<arrow::Datum> &res = arrow::compute::Take(
         cylon::util::GetChunkOrEmptyArray(tab_to_process->column(col_index), 0),
         sorted_column_index, take_options, &exec_context);
-    RETURN_ARROW_STATUS_IF_FAILED(res.status())
+    RETURN_ARROW_STATUS_IF_FAILED(res.status());
     sorted_columns.emplace_back(res.ValueOrDie().make_array());
   }
 
@@ -137,7 +137,7 @@ arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr,
     for (const auto &buf : data->buffers) {
       if (buf != nullptr) {
         arrow::Result<std::shared_ptr<arrow::Buffer>> res = buf->CopySlice(0l, buf->size(), pool);
-        RETURN_ARROW_STATUS_IF_FAILED(res.status())
+        RETURN_ARROW_STATUS_IF_FAILED(res.status());
         buffers.push_back(res.ValueOrDie());
       } else {
         buffers.push_back(nullptr);
@@ -230,8 +230,7 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &arr, uint64_t num
   return SampleArray(std::make_shared<arrow::ChunkedArray>(arr), num_samples, out);
 }
 
-std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(
-    const std::shared_ptr<arrow::ChunkedArray> &column, int64_t chunk) {
+std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk) {
   if (column->num_chunks() > 0) {
     return column->chunk(chunk);
   }
@@ -239,6 +238,5 @@ std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(
   SampleArray(column, 0, out);
   return out;
 }
-
 }  // namespace util
 }  // namespace cylon

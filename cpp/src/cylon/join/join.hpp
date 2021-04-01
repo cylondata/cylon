@@ -16,19 +16,20 @@
 #define CYLON_TX_JOIN_H
 
 #include <arrow/api.h>
+#include <memory>
 
 #include "join_config.hpp"
 
 namespace cylon {
 namespace join {
 
-arrow::Status joinTables(const std::shared_ptr<arrow::Table> &left_tab,
+arrow::Status JoinTables(const std::shared_ptr<arrow::Table> &left_tab,
                          const std::shared_ptr<arrow::Table> &right_tab,
                          const config::JoinConfig &join_config,
                          std::shared_ptr<arrow::Table> *joined_table,
                          arrow::MemoryPool *memory_pool = arrow::default_memory_pool());
 
-arrow::Status joinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_tabs,
+arrow::Status JoinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_tabs,
                          const std::vector<std::shared_ptr<arrow::Table>> &right_tabs,
                          const config::JoinConfig &join_config,
                          std::shared_ptr<arrow::Table> *joined_table,

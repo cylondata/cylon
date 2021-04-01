@@ -93,7 +93,7 @@ Status AggregateArray(arrow::MemoryPool *pool,
   using SCALAR_T = typename arrow::TypeTraits<ARROW_T>::ScalarType;
 
   BUILDER_T builder(pool);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(boundaries.size()))
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(boundaries.size()));
 
   arrow::compute::ExecContext exec_ctx(pool);
   arrow::Datum res;
@@ -101,12 +101,12 @@ Status AggregateArray(arrow::MemoryPool *pool,
   AggregateFptr aggregate_fptr = PickAggregareFptr(aggregate_op);
   int64_t start = 0;
   for (auto &end: boundaries) {
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(aggregate_fptr(arrow::Datum(array->Slice(start, end - start)), &exec_ctx, &res))
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(aggregate_fptr(arrow::Datum(array->Slice(start, end - start)), &exec_ctx, &res));
     start = end;
     builder.UnsafeAppend(std::static_pointer_cast<SCALAR_T>(res.scalar())->value);
   }
 
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&output_array))
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&output_array));
 
   return Status::OK();
 }
@@ -147,12 +147,12 @@ Status make_boundaries(arrow::MemoryPool *pool,
 
   if (len == 0) {
     *unique_groups = 0;
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED((builder.Finish(&out_array)))
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED((builder.Finish(&out_array)));
     return Status::OK();
   }
 
   group_boundaries.reserve(len);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED((builder.Reserve(len)))
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED((builder.Reserve(len)));
 
   const std::shared_ptr<ARRAY_T> &index_arr = std::static_pointer_cast<ARRAY_T>(array);
   C_TYPE prev_v = index_arr->Value(0), curr_v;
@@ -171,7 +171,7 @@ Status make_boundaries(arrow::MemoryPool *pool,
   group_boundaries.push_back(len);
 
   group_boundaries.shrink_to_fit();
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED((builder.Finish(&out_array)))
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED((builder.Finish(&out_array)));
   *unique_groups = group_boundaries.size() - 1;
 
   return Status::OK();
@@ -223,7 +223,7 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
                                                    cylon::util::GetChunkOrEmptyArray(idx_col, 0),
                                                    group_boundaries,
                                                    out_idx_col,
-                                                   &unique_groups))
+                                                   &unique_groups));
 
   std::vector<std::shared_ptr<arrow::ChunkedArray>> new_arrays;
   std::vector<std::shared_ptr<arrow::Field>> new_fields;
@@ -238,7 +238,11 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
     const std::shared_ptr<arrow::ChunkedArray> &agg_col = a_table->column(agg_op.first);
     AggregateArrayFn aggregate_array_fn = PickAggregateArrayFptr(agg_col->type());
     std::shared_ptr<arrow::Array> new_arr;
-    RETURN_CYLON_STATUS_IF_FAILED(aggregate_array_fn(pool, cylon::util::GetChunkOrEmptyArray(agg_col, 0), agg_op.second, group_boundaries, new_arr))
+    RETURN_CYLON_STATUS_IF_FAILED(aggregate_array_fn(pool,
+                                                     cylon::util::GetChunkOrEmptyArray(agg_col, 0),
+                                                     agg_op.second,
+                                                     group_boundaries,
+                                                     new_arr));
 
     new_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(new_arr)));
     new_fields.push_back(a_table->field(agg_op.first)); // todo: prefix name

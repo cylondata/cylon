@@ -12,7 +12,7 @@ cylon::Status cylon::IndexUtil::BuildHashIndex(const std::shared_ptr<Table> &inp
 
   if (table_->column(0)->num_chunks() > 1) {
     const arrow::Result<std::shared_ptr<arrow::Table>> &res = table_->CombineChunks(cylon::ToArrowPool(ctx));
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
     table_ = res.ValueOrDie();
   }
 
