@@ -15,6 +15,7 @@ from pycylon.data.table import Table
 from pycylon.api.types import FilterType
 import numbers
 from operator import neg as py_neg
+from operator import add as py_add
 
 from cpython.object cimport (
     Py_EQ,
@@ -305,12 +306,59 @@ cpdef math_op_arrow(table:Table, op, value):
     return Table.from_arrow(table.context, pa.Table.from_arrays(res_array,
                                                                 names=table.column_names))
 
-cpdef add(table:Table, value):
-    if np.isscalar(value) and isinstance(value, numbers.Number):
-        return math_op_arrow(table, a_add, value)
-    else:
-        from operator import add
-        return math_op(table, add, value)
+cpdef math_op_numpy(table: Table, op, value):
+    cdef:
+        Py_ssize_t n, i
+        ndarray[object] result
+        object val
+    n = table.column_count
+    print("tb : ", type(table), n)
+    print("value :", type(value), n)
+    ar_list = []
+    i = 0
+    result = np.empty(n, dtype=object)
+    artb = table.to_arrow().combine_chunks()
+
+    if isinstance(value, Table):
+        if value.shape == table.shape:
+            artb_value = value.to_arrow().combine_chunks()
+            for chunk_array_l, chunk_array_r in zip(artb.itercolumns(), artb_value.itercolumns()):
+                npr_l = chunk_array_l.to_numpy()
+                npr_r = chunk_array_r.to_numpy()
+                val = op(npr_l, npr_r)
+                result[i] = val
+                i = i + 1
+        elif value.shape[1] == 1:
+            artb_value = value.to_arrow().combine_chunks()
+            for chunk_array_l in artb.itercolumns():
+                npr_l = chunk_array_l.to_numpy()
+                val = None
+                for chunk_array_r in  artb_value.itercolumns():
+                    npr_r = chunk_array_r.to_numpy()
+                    val = op(npr_l, npr_r)
+                result[i] = val
+                i = i + 1
+    elif np.isscalar(value):
+        for chunk_array in artb.itercolumns():
+            npr = chunk_array.to_numpy()
+            val = op(npr, value)
+            result[i] = val
+            i = i + 1
+    i = 0
+    for i in range(n):
+        ar_list.append(result[:][i])
+
+    return Table.from_arrow(table.context,
+                            pa.Table.from_arrays(ar_list, table.column_names))
+
+cpdef add(table:Table, value, engine='arrow'):
+    if engine == 'arrow':
+        if np.isscalar(value) and isinstance(value, numbers.Number):
+            return math_op_arrow(table, a_add, value)
+        else:
+            return math_op(table, py_add, value)
+    elif engine == 'numpy':
+        return math_op_numpy(table, py_add, value)
 
 cpdef subtract(table:Table, value):
     if np.isscalar(value) and isinstance(value, numbers.Number):
@@ -334,7 +382,7 @@ cpdef divide(table:Table, value):
         return math_op(table, truediv, value)
 
 cpdef unique(table:Table):
-    # TODO: axis=1 implementation (row-wise comparison), Requires distributed function
+    # Sequential and Distributed Kernels are written in LibCylon
     artb = table.to_arrow().combine_chunks()
     res_array = []
     for chunk_ar in artb.itercolumns():

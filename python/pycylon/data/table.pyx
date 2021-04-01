@@ -1568,7 +1568,7 @@ cdef class Table:
             2      5      9     13
             3      6     10     14
          '''
-        return compute.add(self, other)
+        return compute.add(self, other, 'numpy')
 
     def __sub__(self, other) -> Table:
         '''
