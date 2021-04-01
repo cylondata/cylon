@@ -465,14 +465,13 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
 
   int64_t *indices_end = indices_begin + table->num_rows();
   std::sort(indices_begin, indices_end, [&comparators](int64_t idx1, int64_t idx2) {
-    int8_t res = 0;
     for (auto const &comp : comparators) {
-      res = comp->compare(idx1, idx2);
+      auto res = comp->compare(idx1, idx2);
       if (res != 0) {
         return res < 0;
       }
     }
-    return res > 0;
+    return false; // if this point is reached, that means every comparison has returned 0! so, equal. i.e. NOT less
   });
 
   offsets = std::make_shared<arrow::UInt64Array>(table->num_rows(), indices_buf);
