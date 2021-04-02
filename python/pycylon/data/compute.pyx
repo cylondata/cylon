@@ -273,8 +273,8 @@ cpdef math_op_numpy(table:Table, op, value):
     Returns:
 
     """
-    if not isinstance(value, numbers.Number) and not isinstance(value, Table) and value.column_count() != 1:
-        raise ValueError("Math operation value must be numerical or a Numeric Table with 1 column")
+    # if not isinstance(value, numbers.Number) and not isinstance(value, Table) and value.column_count != 1:
+    #     raise ValueError("Math operation value must be numerical or a Numeric Table with 1 column")
 
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
@@ -325,6 +325,7 @@ cpdef math_op_arrow(table:Table, op, value):
     """
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
+    print("math_op_arrow>>>")
     for chunk_arr in ar_tb.itercolumns():
         value = cast_scalar(value, chunk_arr.type.id)
         res_array.append(op(chunk_arr, value))
@@ -404,10 +405,9 @@ cpdef math_op_c_numpy(table: Table, op, value):
 
 
 cpdef math_op(table: Table, op, value, engine):
-    print("math_op >>, ", table.shape, op, type(value), engine)
     if engine == 'arrow':
-        op = _resolve_arrow_op[op]
         if np.isscalar(value) and isinstance(value, numbers.Number):
+            op = _resolve_arrow_op[op]
             return math_op_arrow(table, op, value)
         else:
             return math_op_numpy(table, op, value)
