@@ -14,7 +14,7 @@
 
 
 from __future__ import annotations
-from typing import Hashable, List, Dict, Literal, Optional, Sequence, Union
+from typing import Hashable, List, Dict, Literal, Optional, Sequence, Union, Final
 from copy import copy
 from collections.abc import Iterable
 import pycylon as cn
@@ -27,45 +27,81 @@ from pycylon.io import CSVWriteOptions
 from pycylon.io import CSVReadOptions
 
 from pycylon import CylonContext
-from pycylon.net.mpi_config import MPIConfig
+
+DEVICE_CPU: Final = "cpu"
+
+
+class CylonEnv(object):
+
+    def __init__(self, config=None, distributed=True) -> None:
+        self._context = CylonContext(config, distributed)
+        self._distributed = distributed
+        self._finalized = False
+
+    @property
+    def context(self):
+        return self._context
+
+    @property
+    def is_distributed(self):
+        return self._distributed
+
+    def finalize(self):
+        if self._finalized == False:
+            self._finalized = True
+            self._context.finalize()
+
+    def barrier(self):
+        self._context.barrier()
+
+    def __del__(self):
+        """
+        On destruction of the application, the environment will be automatically finalized
+        """
+        self.finalize()
 
 
 class DataFrame(object):
 
-    def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False,
-                 distributed=False):
+    def __init__(self, data=None, index=None, columns=None, copy=False):
         self._index = None
         self._columns = []
-        self._is_distributed = distributed
-        self._context = None
-        self._initialize_context()
+
         self._table = self._initialize_dataframe(
             data=data, index=index, columns=columns, copy=copy)
 
         # temp workaround for indexing requirement of dataframe api
         self._index_columns = []
 
-    @property
-    def is_distributed(self):
-        return self._is_distributed
+        self._device = DEVICE_CPU
 
-    def distributed(self):
-        self._is_distributed = True
-        self._initialize_context()
-        return self
+    def to_cpu(self):
+        """
+        Move the dataframe from it's current device to random access memory
+        """
+        pass
 
-    @property
-    def context(self):
-        return self._context
+    def to_device(self, device=None):
+        """
+        Move the dataframe from it's current device to the specified device
+        """
+        pass
 
-    def _initialize_context(self):
-        if self.is_distributed:
-            mpi_config = MPIConfig()
-            self._context = CylonContext(config=mpi_config, distributed=True)
-        else:
-            self._context = CylonContext(config=None, distributed=False)
+    def is_cpu(self):
+        return self._device == DEVICE_CPU
 
-    def _initialize_dataframe(self, data=None, index=None, columns=None, copy=False):
+    def is_device(self, device):
+        return self._device == device
+
+    def _change_context(self, env: CylonEnv):
+        """
+        This is a temporary function to make the DataFrame backed by a Cylon Table with a different context.
+        This should be removed once C++ support Tables which are independent from Contexts
+        """
+        self._table = self._initialize_dataframe(
+            data=self._table.to_arrow(), index=self._index, columns=self._columns, copy=False, context=env.context)
+
+    def _initialize_dataframe(self, data=None, index=None, columns=None, copy=False, context=CylonContext(config=None, distributed=False)):
         rows = 0
         cols = 0
         self._table = None
@@ -80,7 +116,7 @@ class DataFrame(object):
                 if not columns:
                     columns = self._initialize_columns(
                         cols=cols, columns=columns)
-                return cn.Table.from_list(self.context, columns, data)
+                return cn.Table.from_list(context, columns, data)
             elif isinstance(data[0], np.ndarray):
                 # load from List of np.ndarray
                 cols = len(data)
@@ -88,7 +124,7 @@ class DataFrame(object):
                 if not columns:
                     columns = self._initialize_columns(
                         cols=cols, columns=columns)
-                return cn.Table.from_numpy(self.context, columns, data)
+                return cn.Table.from_numpy(context, columns, data)
             else:
                 # load from List
                 rows = len(data)
@@ -96,7 +132,7 @@ class DataFrame(object):
                 if not columns:
                     columns = self._initialize_columns(
                         cols=cols, columns=columns)
-                return cn.Table.from_list(self.context, columns, data)
+                return cn.Table.from_list(context, columns, data)
         elif isinstance(data, pd.DataFrame):
             # load from pd.DataFrame
             rows, cols = data.shape
@@ -104,16 +140,16 @@ class DataFrame(object):
                 from pycylon.util.pandas.utils import rename_with_new_column_names
                 columns = rename_with_new_column_names(data, columns)
                 data = data.rename(columns=columns, inplace=True)
-            return cn.Table.from_pandas(self.context, data)
+            return cn.Table.from_pandas(context, data)
         elif isinstance(data, dict):
             # load from dictionary
             _, data_items = list(data.items())[0]
             rows = len(data_items)
-            return cn.Table.from_pydict(self.context, data)
+            return cn.Table.from_pydict(context, data)
         elif isinstance(data, pa.Table):
             # load from pa.Table
             rows, cols = data.shape
-            return cn.Table.from_arrow(self.context, data)
+            return cn.Table.from_arrow(context, data)
         elif isinstance(data, Series):
             # load from PyCylon Series
             # cols, rows = data.shape
@@ -1071,8 +1107,8 @@ class DataFrame(object):
 
     # Combining / joining / merging
 
-    def join(self, other: DataFrame, on=None, how='left', lsuffix='', rsuffix='',
-             sort=False, algorithm="sort") -> DataFrame:
+    def join(self, other: DataFrame, on=None, how='left', lsuffix='l', rsuffix='r',
+             sort=False, algorithm="sort", env: CylonEnv = None) -> DataFrame:
         """
         Join columns with other DataFrame either on index or on a key
         column. Efficiently Join multiple DataFrame objects by index at once by
@@ -1175,11 +1211,30 @@ class DataFrame(object):
 
         right_on = other._index_columns
 
-        joined_table = self._table.join(table=other._table, join_type=how,
-                                        algorithm=algorithm,
-                                        left_on=left_on, right_on=right_on,
-                                        left_prefix=lsuffix, right_prefix=rsuffix)
-        return DataFrame(joined_table)
+        if left_on is None or len(left_on) == 0:
+            raise ValueError(
+                "The column to join from left relation is no specified. Either provide 'on' or set indexing")
+
+        if right_on is None or len(right_on) == 0:
+            raise ValueError(
+                "The 'other' relation doesn't have index columns specified.")
+
+        if env is None:
+            joined_table = self._table.join(table=other._table, join_type=how,
+                                            algorithm=algorithm,
+                                            left_on=left_on, right_on=right_on,
+                                            left_prefix=lsuffix, right_prefix=rsuffix)
+            return DataFrame(joined_table)
+        else:
+            # attach context
+            self._change_context(env=env)
+            other._change_context(env=env)
+
+            joined_table = self._table.distributed_join(table=other._table, join_type=how,
+                                                        algorithm=algorithm,
+                                                        left_on=left_on, right_on=right_on,
+                                                        left_prefix=lsuffix, right_prefix=rsuffix)
+            return DataFrame(joined_table)
 
     def merge(self,
               right: DataFrame,
@@ -1194,7 +1249,8 @@ class DataFrame(object):
               suffixes=("_x", "_y"),
               copy=True,
               indicator=False,
-              validate=None) -> DataFrame:
+              validate=None,
+              env: CylonEnv = None) -> DataFrame:
         """
         Merge DataFrame with a database-style join.
         The join is done on columns or indexes. If joining columns on
@@ -1387,7 +1443,8 @@ class DataFrame(object):
             right_on = right._index_columns
 
         if left_on is None or right_on is None:
-            raise "Columns to merge is not specified. Expected on or left_index/right_index. Make sure dataframes has specified index columns if using left_index/right_index"
+            raise ValueError("Columns to merge is not specified. Expected on or left_index/right_index."
+                             "Make sure dataframes has specified index columns if using left_index/right_index")
 
         joined_table = self._table.join(table=right._table, join_type=how,
                                         algorithm=algorithm,
@@ -1631,6 +1688,7 @@ class DataFrame(object):
         na_position="last",
         ignore_index=False,
         key=None,
+        env: CylonEnv = None
     ) -> DataFrame:
         """
         Sort by the values along either axis.
