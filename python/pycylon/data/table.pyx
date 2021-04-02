@@ -1568,7 +1568,8 @@ cdef class Table:
             2      5      9     13
             3      6     10     14
          '''
-        return compute.math_op(self, operator.add, other, self.context.compute_engine)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.math_op(self, operator.add, other, engine)
 
     def __sub__(self, other) -> Table:
         '''
@@ -1594,7 +1595,8 @@ cdef class Table:
             2      1      5      9
             3      2      6     10
          '''
-        return compute.math_op(self, operator.sub, other, self.context.compute_engine)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.math_op(self, operator.sub, other, engine)
 
     def __mul__(self, other) -> Table:
         '''
@@ -1620,8 +1622,8 @@ cdef class Table:
             2      6     14     22
             3      8     16     24
          '''
-
-        return compute.math_op(self, operator.mul, other, self.context.compute_engine)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.math_op(self, operator.mul, other, engine)
 
     def __truediv__(self, other) -> Table:
         '''
@@ -1647,8 +1649,8 @@ cdef class Table:
             2    1.5    3.5    5.5
             3    2.0    4.0    6.0
          '''
-
-        return compute.math_op(self, operator.truediv, other, self.context.compute_engine)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.math_op(self, operator.truediv, other, engine)
 
     def __repr__(self):
         return self.to_string()

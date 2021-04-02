@@ -275,7 +275,6 @@ cpdef math_op_numpy(table:Table, op, value):
     """
     # if not isinstance(value, numbers.Number) and not isinstance(value, Table) and value.column_count != 1:
     #     raise ValueError("Math operation value must be numerical or a Numeric Table with 1 column")
-
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
     if isinstance(value, Table):
@@ -413,6 +412,8 @@ cpdef math_op(table: Table, op, value, engine):
             return math_op_numpy(table, op, value)
     elif engine == 'numpy':
         return math_op_numpy(table, op, value)
+    else:
+        raise ValueError(f"Unsupported engine : {engine}")
 
 
 cpdef unique(table:Table):

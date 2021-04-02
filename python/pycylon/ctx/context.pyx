@@ -51,12 +51,11 @@ cdef class CylonContext:
         >>> ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
 
         '''
-
         if not distributed and config is None:
             self.ctx_shd_ptr = CCylonContext.Init()
         if distributed and config is not None:
             self.ctx_shd_ptr = CCylonContext.InitDistributed(self.init_dist(config))
-        self._compute_engine = 'arrow'
+
 
     cdef void init(self, const shared_ptr[CCylonContext] &ctx):
         self.ctx_shd_ptr = ctx
@@ -116,11 +115,8 @@ cdef class CylonContext:
         '''
         self.ctx_shd_ptr.get().Barrier()
 
+    def add_config(self, key: str, value: str):
+        self.ctx_shd_ptr.get().AddConfig(key.encode(), value.encode())
 
-    @property
-    def compute_engine(self):
-        return self._compute_engine
-
-    @compute_engine.setter
-    def compute_engine(self, compute_engine):
-        self._compute_engine = compute_engine
+    def get_config(self, key, default):
+        return self.ctx_shd_ptr.get().GetConfig(key.encode(), default.encode()).decode()
