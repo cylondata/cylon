@@ -43,6 +43,10 @@ class CylonEnv(object):
         return self._context
 
     @property
+    def rank(self):
+        return self._context.get_rank()
+
+    @property
     def is_distributed(self):
         return self._distributed
 
@@ -100,6 +104,7 @@ class DataFrame(object):
         """
         self._table = self._initialize_dataframe(
             data=self._table.to_arrow(), index=self._index, columns=self._columns, copy=False, context=env.context)
+        return self
 
     def _initialize_dataframe(self, data=None, index=None, columns=None, copy=False, context=CylonContext(config=None, distributed=False)):
         rows = 0
@@ -1624,6 +1629,7 @@ class DataFrame(object):
         keep: Union[str, bool] = "first",
         inplace: bool = False,
         ignore_index: bool = False,
+        env: CylonEnv = None
     ) -> DataFrame:
         """
         Return DataFrame with duplicate rows removed.
@@ -1685,7 +1691,10 @@ class DataFrame(object):
         2  Indomie   cup     3.5
         4  Indomie  pack     5.0
         """
-        return DataFrame(self._table.unique(columns=subset, keep=keep, inplace=inplace))
+        if env is None:
+            return DataFrame(self._table.unique(columns=subset, keep=keep, inplace=inplace))
+        else:
+            return DataFrame(self._change_context(env)._table.distributed_unique(columns=subset, inplace=inplace))
 
     def sort_values(
         self,
@@ -1783,4 +1792,7 @@ class DataFrame(object):
         1    A     1     1    B
         3  NaN     8     4    D
         """
-        return DataFrame(self._table.sort(order_by=by, ascending=ascending))
+        if env is None:
+            return DataFrame(self._table.sort(order_by=by, ascending=ascending))
+        else:
+            return DataFrame(self._change_context(env)._table.distributed_sort(order_by=by, ascending=ascending))
