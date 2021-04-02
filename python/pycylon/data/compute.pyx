@@ -184,15 +184,11 @@ cpdef table_compare_np_op(table: Table, other, op):
         return Table.from_numpy(table.context, table.column_names, arrays)
     elif np.isscalar(other):
         arrays = []
-        import time
-        t = time.time()
         ar_table = table.to_arrow().combine_chunks()
         for col in ar_table.columns:
           ar_array = col.chunks[0].to_numpy()
           r = op(ar_array, other)
           arrays.append(r)
-        t = time.time() - t
-        print(f"Computation time : {t}")
         return Table.from_numpy(table.context, table.column_names, arrays)
     else:
         raise ValueError(f"Comparison Operator not supported for type {type(other)}. Only Table "

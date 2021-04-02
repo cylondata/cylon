@@ -27,7 +27,17 @@ from pycylon.net.comm_config cimport CommConfig
 
 
 cdef class CylonContext:
+    """
+    CylonContext is the container which manages the sequential and distributed runitime information.
+    In addition to that CylonContext currently accepts a set of defined configurations which defines the
+    compute runtimes associated with Python level computations.
 
+    Configurations:
+
+    Compute Engine
+    --------------
+    key: compute_engine, value: arrow or numpy
+    """
 
     def __cinit__(self, config=None, distributed=None):
         '''
@@ -116,7 +126,24 @@ cdef class CylonContext:
         self.ctx_shd_ptr.get().Barrier()
 
     def add_config(self, key: str, value: str):
+        """
+        Adding a configuration
+        @param key: str
+        @param value: str
+
+        Example
+        -------
+
+        >>> ctx: CylonContext = CylonContext(config=None, distributed=False)
+        >>> ctx.add_config("compute_engine", "arrow")
+        """
         self.ctx_shd_ptr.get().AddConfig(key.encode(), value.encode())
 
     def get_config(self, key, default):
+        """
+        Retrieving a configuration
+        @param key: str
+        @param default: str (default value if the key is not present)
+        @return: str
+        """
         return self.ctx_shd_ptr.get().GetConfig(key.encode(), default.encode()).decode()
