@@ -124,7 +124,7 @@ _resolve_arrow_op = {
     operator.truediv: a_divide
 }
 
-cpdef table_compute_ar_op(table: Table, other, op):
+cpdef table_compare_ar_op(table: Table, other, op):
     """
     This method compare a PyCylon table with a scalar or with another PyCylon table and returns 
     filtered values in bool
@@ -153,19 +153,59 @@ cpdef table_compute_ar_op(table: Table, other, op):
         for col in ar_table.columns:
           ar_array = col.chunks[0]
           r = arrow_op(ar_array, pa.scalar(other, col.type))
-          np_array = None
-          try:
-            np_array = ar_array.to_numpy()
-          except ValueError:
-            np_array = ar_array.to_numpy(zero_copy_only=False)
-          #r = arrow_op(ar_array, cast_scalar(other, col.type.id))
-          r = op(np_array, other)
           arrays.append(r)
         return Table.from_arrow(table.context, pa.Table.from_arrays(arrays,
                                                                    names=table.column_names))
     else:
         raise ValueError(f"Comparison Operator not supported for type {type(other)}. Only Table "
                          f"and numbers are supported!")
+
+
+cpdef table_compare_np_op(table: Table, other, op):
+    """
+    This method compare a PyCylon table with a scalar or with another PyCylon table and returns 
+    filtered values in bool
+    Args:
+        table: PyCylon table
+        other: comparison value, a scalar or a PyCylon table
+        op: comparison operation, i.e <,>,<=,>=,!=
+
+    Returns: PyCylon table with bool values
+
+    """
+    if isinstance(other, Table):
+        arrays = []
+        l_table = table.to_arrow().combine_chunks()
+        r_table = other.to_arrow().combine_chunks()
+        for l_col, r_col in zip(l_table.columns, r_table.columns):
+            l_array = l_col.chunks[0].to_numpy()
+            r_array = r_col.chunks[0].to_numpy()
+            arrays.append(op(l_array, r_array))
+        return Table.from_numpy(table.context, table.column_names, arrays)
+    elif np.isscalar(other):
+        arrays = []
+        import time
+        t = time.time()
+        ar_table = table.to_arrow().combine_chunks()
+        for col in ar_table.columns:
+          ar_array = col.chunks[0].to_numpy()
+          r = op(ar_array, other)
+          arrays.append(r)
+        t = time.time() - t
+        print(f"Computation time : {t}")
+        return Table.from_numpy(table.context, table.column_names, arrays)
+    else:
+        raise ValueError(f"Comparison Operator not supported for type {type(other)}. Only Table "
+                         f"and numbers are supported!")
+
+
+cpdef table_compare_op(table: Table, other, op, engine='arrow'):
+    if engine == 'arrow':
+        return table_compare_ar_op(table, other, op)
+    elif engine == 'numpy':
+        return table_compare_np_op(table, other, op)
+    else:
+        raise ValueError(f"Unsupported engine : {engine}")
 
 cdef _is_division(op):
     return op.__name__ == 'divide'
