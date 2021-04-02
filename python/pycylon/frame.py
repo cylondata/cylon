@@ -1446,11 +1446,20 @@ class DataFrame(object):
             raise ValueError("Columns to merge is not specified. Expected on or left_index/right_index."
                              "Make sure dataframes has specified index columns if using left_index/right_index")
 
-        joined_table = self._table.join(table=right._table, join_type=how,
-                                        algorithm=algorithm,
-                                        left_on=left_on, right_on=right_on,
-                                        left_prefix=suffixes[0], right_prefix=suffixes[1])
-        return DataFrame(joined_table)
+        if env is None:
+            joined_table = self._table.join(table=right._table, join_type=how,
+                                            algorithm=algorithm,
+                                            left_on=left_on, right_on=right_on,
+                                            left_prefix=suffixes[0], right_prefix=suffixes[1])
+            return DataFrame(joined_table)
+        else:
+            self._change_context(env)
+            right._change_context(env)
+            joined_table = self._table.distributed_join(table=right._table, join_type=how,
+                                                        algorithm=algorithm,
+                                                        left_on=left_on, right_on=right_on,
+                                                        left_prefix=suffixes[0], right_prefix=suffixes[1])
+            return DataFrame(joined_table)
 
     @staticmethod
     def concat(
