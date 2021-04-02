@@ -65,3 +65,4 @@ cdef class CylonContext:
         shared_ptr[CCylonContext] ctx_shd_ptr
         void init(self, const shared_ptr[CCylonContext] &ctx)
         shared_ptr[CCommConfig] init_dist(self, config)
+        dict __dict__

@@ -1254,7 +1254,8 @@ cdef class Table:
             3  False  False  False
 
         '''
-        return compute.table_compute_ar_op(self, other, operator.__eq__)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.table_compare_op(self, other, operator.__eq__, engine)
 
     def __ne__(self, other) -> Table:
         '''
@@ -1287,8 +1288,8 @@ cdef class Table:
             2   True   True   True
             3   True   True   True
         '''
-
-        return compute.table_compute_ar_op(self, other, operator.__ne__)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.table_compare_op(self, other, operator.__ne__, engine)
 
     def __lt__(self, other) -> Table:
         '''
@@ -1321,8 +1322,8 @@ cdef class Table:
             2  False  False  False
             3  False  False  False
         '''
-
-        return compute.table_compute_ar_op(self, other, operator.__lt__)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.table_compare_op(self, other, operator.__lt__, engine)
 
     def __gt__(self, other) -> Table:
         '''
@@ -1355,8 +1356,8 @@ cdef class Table:
             2   True   True   True
             3   True   True   True
         '''
-
-        return compute.table_compute_ar_op(self, other, operator.__gt__)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.table_compare_op(self, other, operator.__gt__, engine)
 
     def __le__(self, other) -> Table:
         '''
@@ -1389,7 +1390,8 @@ cdef class Table:
             2  False  False  False
             3  False  False  False
         '''
-        return compute.table_compute_ar_op(self, other, operator.__le__)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.table_compare_op(self, other, operator.__le__, engine)
 
     def __ge__(self, other) -> Table:
         '''
@@ -1423,8 +1425,8 @@ cdef class Table:
             2   True   True   True
             3   True   True   True
         '''
-
-        return compute.table_compute_ar_op(self, other, operator.__ge__)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.table_compare_op(self, other, operator.__ge__, engine)
 
     def __or__(self, other) -> Table:
         '''
@@ -1457,8 +1459,8 @@ cdef class Table:
             2  False  False
             3   True   True
         '''
-
-        return compute.table_compute_ar_op(self, other, operator.__or__)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.table_compare_op(self, other, operator.__or__, engine)
 
     def __and__(self, other) -> Table:
         '''
@@ -1491,8 +1493,8 @@ cdef class Table:
             2  False  False
             3  False  False
         '''
-
-        return compute.table_compute_ar_op(self, other, operator.__and__)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.table_compare_op(self, other, operator.__and__, engine)
 
     def __invert__(self) -> Table:
         '''
@@ -1568,12 +1570,13 @@ cdef class Table:
             2      5      9     13
             3      6     10     14
          '''
-        return compute.add(self, other)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.math_op(self, operator.add, other, engine)
 
     def __sub__(self, other) -> Table:
         '''
          Subtract operator for Table
-         Args:
+         Args:compute.add(self, other, 'numpy')
              other: scalar numeric
 
          Returns: PyCylon Table
@@ -1594,7 +1597,8 @@ cdef class Table:
             2      1      5      9
             3      2      6     10
          '''
-        return compute.subtract(self, other)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.math_op(self, operator.sub, other, engine)
 
     def __mul__(self, other) -> Table:
         '''
@@ -1620,8 +1624,8 @@ cdef class Table:
             2      6     14     22
             3      8     16     24
          '''
-
-        return compute.multiply(self, other)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.math_op(self, operator.mul, other, engine)
 
     def __truediv__(self, other) -> Table:
         '''
@@ -1647,8 +1651,8 @@ cdef class Table:
             2    1.5    3.5    5.5
             3    2.0    4.0    6.0
          '''
-
-        return compute.divide(self, other)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.math_op(self, operator.truediv, other, engine)
 
     def __repr__(self):
         return self.to_string()

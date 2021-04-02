@@ -361,7 +361,7 @@ def test_math_ops_for_table_values():
     cn_tb: Table = Table.from_pandas(ctx, pdf)
 
     from operator import add, sub, mul, truediv
-    ops = [add, sub, mul, truediv]
+    ops = [add]#, sub, mul, truediv]
 
     for op in ops:
         # test column division
@@ -937,13 +937,12 @@ def test_dropna_with_index():
     dtype = 'int32'
     index = ['a', 'b', 'c', 'd', 'e', 'f']
     datum_1 = [index, [1.0, 2.0, 3.0, 4.0, 5.0, None], [None, 7.0, 8.0, 9.0, 10.0, 11.0], [12.0,
-                                                                                          13.0,
-                                                                                    14.0, 15.0,
-                                                                                    16.0, 17.0]]
+                                                                                           13.0,
+                                                                                           14.0, 15.0,
+                                                                                           16.0, 17.0]]
     datum_2 = [index, [1.0, 2.0, 3.0, 4.0, 5.0, None], [None, 7.0, 8.0, 9.0, 10.0, None],
                [12.0, 13.0, None, 15.0,
                 16.0, 17.0]]
-
 
     dataset = [datum_1, datum_2]
     ctx: CylonContext = CylonContext(config=None, distributed=False)
@@ -973,4 +972,4 @@ def test_dropna_with_index():
                     assert cn_tb.index.values.tolist() == df.index.values.tolist()
 
 
-test_concat_op()
+test_math_ops_for_table_values()
