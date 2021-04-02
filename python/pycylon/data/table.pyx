@@ -1568,12 +1568,12 @@ cdef class Table:
             2      5      9     13
             3      6     10     14
          '''
-        return compute.add(self, other, 'numpy')
+        return compute.math_op(self, operator.add, other, self.context.compute_engine)
 
     def __sub__(self, other) -> Table:
         '''
          Subtract operator for Table
-         Args:
+         Args:compute.add(self, other, 'numpy')
              other: scalar numeric
 
          Returns: PyCylon Table
@@ -1594,7 +1594,7 @@ cdef class Table:
             2      1      5      9
             3      2      6     10
          '''
-        return compute.subtract(self, other)
+        return compute.math_op(self, operator.sub, other, self.context.compute_engine)
 
     def __mul__(self, other) -> Table:
         '''
@@ -1621,7 +1621,7 @@ cdef class Table:
             3      8     16     24
          '''
 
-        return compute.multiply(self, other)
+        return compute.math_op(self, operator.mul, other, self.context.compute_engine)
 
     def __truediv__(self, other) -> Table:
         '''
@@ -1648,7 +1648,7 @@ cdef class Table:
             3    2.0    4.0    6.0
          '''
 
-        return compute.divide(self, other)
+        return compute.math_op(self, operator.truediv, other, self.context.compute_engine)
 
     def __repr__(self):
         return self.to_string()
