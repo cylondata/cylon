@@ -324,7 +324,6 @@ cpdef math_op_arrow(table:Table, op, value):
     """
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
-    print("math_op_arrow>>>")
     for chunk_arr in ar_tb.itercolumns():
         value = cast_scalar(value, chunk_arr.type.id)
         res_array.append(op(chunk_arr, value))
