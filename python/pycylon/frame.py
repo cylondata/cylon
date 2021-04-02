@@ -1478,6 +1478,7 @@ class DataFrame(object):
         verify_integrity: bool = False,
         sort: bool = False,
         copy: bool = True,
+        env: CylonEnv = None
     ) -> DataFrame:
         """
         Concatenate DataFrames along a particular axis with optional set logic
@@ -1615,11 +1616,20 @@ class DataFrame(object):
             raise "objs can't be empty"
 
         if axis == 0:
-            current_table = objs[0]._table
-            for i in range(1, len(objs)):
-                current_table = current_table.union(objs[i]._table)
+            if env is None:
+                current_table = objs[0]._table
+                for i in range(1, len(objs)):
+                    current_table = current_table.union(objs[i]._table)
 
-            return DataFrame(current_table)
+                return DataFrame(current_table)
+            else:
+                # todo not optimum for distributed
+                current_table = objs[0]._change_context(env)._table
+                for i in range(1, len(objs)):
+                    current_table = current_table.union(
+                        objs[i]._change_context(env)._table)
+
+                return DataFrame(current_table)
         else:
             raise "Unsupported operation"
 
