@@ -27,9 +27,9 @@ import argparse
 """
 Run benchmark:
 
->>> python python/examples/op_benchmark/join_benchmark.py --start_size 100_000_000 \
-                                        --step_size 100_000_000 \
-                                        --end_size 100_000_000 \
+>>> python python/examples/op_benchmark/join_benchmark.py --start_size 10_000_000 \
+                                        --step_size 10_000_000 \
+                                        --end_size 30_000_000 \
                                         --num_cols 2 \
                                         --stats_file /tmp/join_bench.csv \
                                         --repetitions 1 \
@@ -41,8 +41,10 @@ Run benchmark:
 def join_op(num_rows: int, num_cols: int, algorithm: str, duplication_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-    pdf_left = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
-    pdf_right = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
+    pdf_left = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor,
+                             stringify=False)
+    pdf_right = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor,
+                              stringify=False)
     tb_left = Table.from_pandas(ctx, pdf_left)
     tb_right = Table.from_pandas(ctx, pdf_right)
     join_col = tb_left.column_names[0]

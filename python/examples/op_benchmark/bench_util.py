@@ -13,7 +13,7 @@ def add_record_to_stats_file(file_path: str, record: str):
 
 
 def get_random_data_column(num_rows: int, duplication_factor: float, with_null: bool = False,
-                           null_per: float = 0.9):
+                           null_per: float = 0.9, stringify: bool = False):
     if with_null:
         null_row_count = int(num_rows * null_per)
         gen_record_size = int(num_rows * duplication_factor)
@@ -27,16 +27,23 @@ def get_random_data_column(num_rows: int, duplication_factor: float, with_null: 
 
 
 def get_dataframe(num_rows: int, num_cols: int, duplication_factor: float, with_null: bool = False,
-                  null_per: float = 0.9):
+                  null_per: float = 0.9, stringify: bool = False):
     if with_null:
         pdf = pd.DataFrame({'data{}'.format(i): get_random_data_column(num_rows=num_rows,
                                                                        duplication_factor=duplication_factor,
                                                                        with_null=with_null,
-                                                                       null_per=null_per)
+                                                                       null_per=null_per,
+                                                                       stringify=stringify)
                             for i in range(num_cols)})
         pdf = pdf.sample(frac=1)
+        if stringify:
+            return pdf.astype('str')
         return pdf
     else:
-        return pd.DataFrame({'data{}'.format(i): get_random_data_column(num_rows=num_rows,
-                                                                        duplication_factor=duplication_factor)
-                             for i in range(num_cols)})
+        pdf = pd.DataFrame({'data{}'.format(i): get_random_data_column(num_rows=num_rows,
+                                                                       duplication_factor=duplication_factor,
+                                                                       stringify=stringify)
+                            for i in range(num_cols)})
+        if stringify:
+            return pdf.astype('str')
+        return pdf
