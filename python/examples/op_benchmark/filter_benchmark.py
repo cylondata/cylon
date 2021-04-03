@@ -99,7 +99,7 @@ def fixed_filter_bench():
 
 def filter_op(num_rows: int, num_cols: int, duplication_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
-
+    ctx.add_config("compute_engine", "numpy")
     pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
     filter_column  = pdf.columns[0]
     filter_column_data = pdf[pdf.columns[0]]

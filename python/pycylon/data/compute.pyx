@@ -15,6 +15,10 @@ from pycylon.data.table import Table
 from pycylon.api.types import FilterType
 import numbers
 from operator import neg as py_neg
+from operator import add as py_add
+from operator import sub as py_sub
+from operator import mul as py_mul
+from operator import truediv as py_truediv
 
 from cpython.object cimport (
     Py_EQ,
@@ -25,12 +29,15 @@ from cpython.object cimport (
     Py_NE,
     PyObject_RichCompareBool,
 )
-cimport numpy as cnp
+cimport numpy as np
 from cython import Py_ssize_t
 from numpy cimport ndarray
-cnp.import_array()
+np.import_array()
 
 from typing import Any, List
+
+
+ctypedef np.int_t DTYPE_t
 
 
 cdef api c_filter(tb: Table, op):
@@ -110,10 +117,14 @@ _resolve_arrow_op = {
      operator.__le__ : less_equal,
      operator.__ne__ : not_equal,
      operator.__or__ : or_,
-     operator.__and__ :and_
+     operator.__and__ :and_,
+    operator.add : a_add,
+    operator.mul : a_multiply,
+    operator.sub : a_subtract,
+    operator.truediv: a_divide
 }
 
-cpdef table_compute_ar_op(table: Table, other, op):
+cpdef table_compare_ar_op(table: Table, other, op):
     """
     This method compare a PyCylon table with a scalar or with another PyCylon table and returns 
     filtered values in bool
@@ -142,19 +153,55 @@ cpdef table_compute_ar_op(table: Table, other, op):
         for col in ar_table.columns:
           ar_array = col.chunks[0]
           r = arrow_op(ar_array, pa.scalar(other, col.type))
-          np_array = None
-          try:
-            np_array = ar_array.to_numpy()
-          except ValueError:
-            np_array = ar_array.to_numpy(zero_copy_only=False)
-          #r = arrow_op(ar_array, cast_scalar(other, col.type.id))
-          r = op(np_array, other)
           arrays.append(r)
         return Table.from_arrow(table.context, pa.Table.from_arrays(arrays,
                                                                    names=table.column_names))
     else:
         raise ValueError(f"Comparison Operator not supported for type {type(other)}. Only Table "
                          f"and numbers are supported!")
+
+
+cpdef table_compare_np_op(table: Table, other, op):
+    """
+    This method compare a PyCylon table with a scalar or with another PyCylon table and returns 
+    filtered values in bool
+    Args:
+        table: PyCylon table
+        other: comparison value, a scalar or a PyCylon table
+        op: comparison operation, i.e <,>,<=,>=,!=
+
+    Returns: PyCylon table with bool values
+
+    """
+    if isinstance(other, Table):
+        arrays = []
+        l_table = table.to_arrow().combine_chunks()
+        r_table = other.to_arrow().combine_chunks()
+        for l_col, r_col in zip(l_table.columns, r_table.columns):
+            l_array = l_col.chunks[0].to_numpy()
+            r_array = r_col.chunks[0].to_numpy()
+            arrays.append(op(l_array, r_array))
+        return Table.from_numpy(table.context, table.column_names, arrays)
+    elif np.isscalar(other):
+        arrays = []
+        ar_table = table.to_arrow().combine_chunks()
+        for col in ar_table.columns:
+          ar_array = col.chunks[0].to_numpy()
+          r = op(ar_array, other)
+          arrays.append(r)
+        return Table.from_numpy(table.context, table.column_names, arrays)
+    else:
+        raise ValueError(f"Comparison Operator not supported for type {type(other)}. Only Table "
+                         f"and numbers are supported!")
+
+
+cpdef table_compare_op(table: Table, other, op, engine='arrow'):
+    if engine == 'arrow':
+        return table_compare_ar_op(table, other, op)
+    elif engine == 'numpy':
+        return table_compare_np_op(table, other, op)
+    else:
+        raise ValueError(f"Unsupported engine : {engine}")
 
 cdef _is_division(op):
     return op.__name__ == 'divide'
@@ -249,7 +296,7 @@ cpdef division_op(table:Table, op, value):
     return Table.from_arrow(table.context, pa.Table.from_arrays(res_array,
                                                                 names=table.column_names))
 
-cpdef math_op(table:Table, op, value):
+cpdef math_op_numpy(table:Table, op, value):
     """
     Math operations for PyCylon table against a non-scalar value (including strings). 
     Generic function to execute addition, subtraction and multiplication.
@@ -262,24 +309,38 @@ cpdef math_op(table:Table, op, value):
     Returns:
 
     """
-    if not isinstance(value, numbers.Number) and not isinstance(value, Table) and value.column_count() != 1:
-        raise ValueError("Math operation value must be numerical or a Numeric Table with 1 column")
-
+    # if not isinstance(value, numbers.Number) and not isinstance(value, Table) and value.column_count != 1:
+    #     raise ValueError("Math operation value must be numerical or a Numeric Table with 1 column")
     ar_tb = table.to_arrow().combine_chunks()
     res_array = []
     if isinstance(value, Table):
+        # Case Type Table Addition
         value_tb = value.to_arrow().combine_chunks()
-        for chunk_arr_1 in ar_tb.itercolumns():
-            for chunk_arr_2 in value_tb.itercolumns():
+        if value.shape == table.shape:
+            # Case 1: Adding two tables with same shape
+            for chunk_arr_1, chunk_arr_2 in zip(ar_tb.itercolumns(), value_tb.itercolumns()):
                 np_ar_1 = chunk_arr_1.to_numpy()
                 np_ar_2 = chunk_arr_2.to_numpy()
                 res_array.append(op(np_ar_1, np_ar_2))
-        return Table.from_numpy(table.context, table.column_names, res_array)
-    elif np.isscalar(value) and not isinstance(value, numbers.Number):
+            return Table.from_numpy(table.context, table.column_names, res_array)
+        elif value.shape[1] == 1:
+            # Case 2: Adding a single column to a multi-column table
+            chunk_arr_2 = next(value_tb.itercolumns())
+            for chunk_arr_1 in ar_tb.itercolumns():
+                np_ar_1 = chunk_arr_1.to_numpy()
+                np_ar_2 = chunk_arr_2.to_numpy()
+                res_array.append(op(np_ar_1, np_ar_2))
+            return Table.from_numpy(table.context, table.column_names, res_array)
+        else:
+            raise ValueError("Left Table shapes must match or right table or right table must have a single column")
+    elif np.isscalar(value):
+        # Case Type adding a scalar to a table
         for chunk_arr in ar_tb.itercolumns():
             np_ar = chunk_arr.to_numpy()
             res_array.append(op(np_ar, value))
         return Table.from_numpy(table.context, table.column_names, res_array)
+    else:
+        raise ValueError("Addition must be with either a table with matching shape or a scalar")
 
 
 
@@ -305,36 +366,93 @@ cpdef math_op_arrow(table:Table, op, value):
     return Table.from_arrow(table.context, pa.Table.from_arrays(res_array,
                                                                 names=table.column_names))
 
-cpdef add(table:Table, value):
-    if np.isscalar(value) and isinstance(value, numbers.Number):
-        return math_op_arrow(table, a_add, value)
-    else:
-        from operator import add
-        return math_op(table, add, value)
 
-cpdef subtract(table:Table, value):
-    if np.isscalar(value) and isinstance(value, numbers.Number):
-        return math_op_arrow(table, a_subtract, value)
-    else:
-        from operator import sub
-        return math_op(table, sub, value)
 
-cpdef multiply(table:Table, value):
-    if np.isscalar(value) and isinstance(value, numbers.Number):
-        return math_op_arrow(table, a_multiply, value)
-    else:
-        from operator import mul
-        return math_op(table, mul, value)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef math_op_c_numpy(table: Table, op, value):
+    # NOTE: Type aware Numpy math operations using Cython
+    # At the moment the the existing implementation using plain numpy has optimum performance
+    # Assigning types dynamically the performance could be further enhanced.
+    DTYPE = np.int
+    import time
+    tp1 = time.time()
+    cdef:
+        Py_ssize_t n, i, rows
+        ndarray[object] result
+        object val
+        ndarray[DTYPE_t] npr_l
+        ndarray[DTYPE_t] npr_r
+        int scalar_value
+    n = table.column_count
+    rows = table.row_count
+    ar_list = []
+    i = 0
+    result = np.empty(n, dtype=object)
+    npr_l = np.empty(rows, dtype=DTYPE)
+    npr_r = np.empty(rows, dtype=DTYPE)
+    artb = table.to_arrow().combine_chunks()
+    tp2 = time.time()
+    print("prep time : ", tp2-tp1)
+    if isinstance(value, Table):
+        if value.shape == table.shape:
+            artb_value = value.to_arrow().combine_chunks()
+            for chunk_array_l, chunk_array_r in zip(artb.itercolumns(), artb_value.itercolumns()):
+                npr_l = chunk_array_l.to_numpy()
+                npr_r = chunk_array_r.to_numpy()
+                val = op(npr_l, npr_r)
+                result[i] = val
+                i = i + 1
+        elif value.shape[1] == 1:
+            artb_value = value.to_arrow().combine_chunks()
+            for chunk_array_l in artb.itercolumns():
+                npr_l = chunk_array_l.to_numpy()
+                val = None
+                for chunk_array_r in  artb_value.itercolumns():
+                    npr_r = chunk_array_r.to_numpy()
+                    val = op(npr_l, npr_r)
+                result[i] = val
+                i = i + 1
+    elif np.isscalar(value):
+        scalar_value = value
+        import time
+        t1 = time.time()
+        for chunk_array in artb.itercolumns():
+            npr_l = chunk_array.to_numpy()
+            val = op(npr_l, scalar_value)
+            result[i] = val
+            i = i + 1
+        t2 = time.time()
+        print("comp time taken: ",t2-t1)
+    i = 0
+    tc1 = time.time()
+    for i in range(n):
+        ar_list.append(result[:][i])
+    tc2 = time.time()
+    print("recreation t: ", tc2 - tc1)
+    tn1 = time.time()
+    new_tb = Table.from_arrow(table.context,
+                            pa.Table.from_arrays(ar_list, table.column_names))
+    tn2 = time.time()
+    print("tb cr time : ", tn2- tn1)
+    return new_tb
 
-cpdef divide(table:Table, value):
-    if np.isscalar(value) and isinstance(value, numbers.Number):
-        return math_op_arrow(table, a_divide, value)
+
+cpdef math_op(table: Table, op, value, engine):
+    if engine == 'arrow':
+        if np.isscalar(value) and isinstance(value, numbers.Number):
+            op = _resolve_arrow_op[op]
+            return math_op_arrow(table, op, value)
+        else:
+            return math_op_numpy(table, op, value)
+    elif engine == 'numpy':
+        return math_op_numpy(table, op, value)
     else:
-        from operator import truediv
-        return math_op(table, truediv, value)
+        raise ValueError(f"Unsupported engine : {engine}")
+
 
 cpdef unique(table:Table):
-    # TODO: axis=1 implementation (row-wise comparison), Requires distributed function
+    # Sequential and Distributed Kernels are written in LibCylon
     artb = table.to_arrow().combine_chunks()
     res_array = []
     for chunk_ar in artb.itercolumns():
