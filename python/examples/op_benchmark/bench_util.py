@@ -37,6 +37,6 @@ def get_dataframe(num_rows: int, num_cols: int, duplication_factor: float, with_
         pdf = pdf.sample(frac=1)
         return pdf
     else:
-        return pd.DataFrame({'data{}'.format(i): get_random_data_column(num_rows=num_rows, num_cols=num_cols,
+        return pd.DataFrame({'data{}'.format(i): get_random_data_column(num_rows=num_rows,
                                                                         duplication_factor=duplication_factor)
                              for i in range(num_cols)})
