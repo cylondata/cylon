@@ -45,6 +45,8 @@ def join_op(num_rows: int, num_cols: int, algorithm: str, duplication_factor: fl
                              stringify=False)
     pdf_right = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor,
                               stringify=False)
+    pdf_left = pdf_left.astype('int')
+    pdf_right = pdf_right.astype('int')
     tb_left = Table.from_pandas(ctx, pdf_left)
     tb_right = Table.from_pandas(ctx, pdf_right)
     join_col = tb_left.column_names[0]
