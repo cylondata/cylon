@@ -27,60 +27,61 @@ import argparse
 """
 Run benchmark:
 
->>> python python/examples/op_benchmark/duplicate_drop_benchmark.py --start_size 1_000_000 \
-                                        --step_size 1_000_000 \
-                                        --end_size 10_000_000 \
+>>> python python/examples/op_benchmark/join_benchmark.py --start_size 100_000_000 \
+                                        --step_size 100_000_000 \
+                                        --end_size 100_000_000 \
                                         --num_cols 2 \
-                                        --filter_size 500_000 \
-                                        --stats_file /tmp/duplicate_bench.csv \
-                                        --repetitions 5 \
-                                        --duplication_factor 0.9
+                                        --stats_file /tmp/join_bench.csv \
+                                        --repetitions 1 \
+                                        --duplication_factor 0.9 \
+                                        --algorithm hash 
 """
 
 
-def duplicate_op(num_rows: int, num_cols: int, filter_size: int, duplication_factor: float):
+def join_op(num_rows: int, num_cols: int, algorithm: str, duplication_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-    pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
-    tb = Table.from_pandas(ctx, pdf)
-    filter_columns = tb.column_names[0:filter_size]
+    pdf_left = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
+    pdf_right = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
+    tb_left = Table.from_pandas(ctx, pdf_left)
+    tb_right = Table.from_pandas(ctx, pdf_right)
+    join_col = tb_left.column_names[0]
     cylon_time = time.time()
-    tb2 = tb.unique(columns=filter_columns)
+    tb2 = tb_left.join(tb_right, join_type='inner', algorithm=algorithm, on=[join_col])
     cylon_time = time.time() - cylon_time
 
     pandas_time = time.time()
-    pdf2 = pdf.drop_duplicates(subset=filter_columns)
+    pdf2 = pdf_left.join(pdf_right, how="inner", on=join_col, lsuffix="_l", rsuffix="_r")
     pandas_time = time.time() - pandas_time
 
     pandas_eval_time = time.time()
-    pdf2 = pd.eval("pdf.drop_duplicates(subset=filter_columns)")
+    pdf2 = pd.eval("pdf_left.join(pdf_right, how='inner', on=join_col, lsuffix='_l', rsuffix='_r')")
     pandas_eval_time = time.time() - pandas_eval_time
 
     return pandas_time, cylon_time, pandas_eval_time
 
 
-def bench_duplicate_op(start: int, end: int, step: int, num_cols: int, filter_size: int, repetitions: int,
-                       stats_file: str,
-                       duplication_factor: float):
+def bench_join_op(start: int, end: int, step: int, num_cols: int, algorithm: str, repetitions: int,
+                  stats_file: str,
+                  duplication_factor: float):
     all_data = []
-    schema = ["num_records", "num_cols", "filter_size", "pandas", "cylon", "pandas_eval", "speed up", "speed up (eval)"]
+    schema = ["num_records", "num_cols", "algorithm", "pandas", "cylon", "pandas_eval", "speed up", "speed up (eval)"]
     assert repetitions >= 1
     assert start > 0
     assert step > 0
     assert num_cols > 0
-    assert filter_size > 0
     for records in range(start, end + step, step):
         times = []
         for idx in range(repetitions):
-            pandas_time, cylon_time, pandas_eval_time = duplicate_op(num_rows=records, num_cols=num_cols,
-                                                                     filter_size=filter_size,
-                                                                     duplication_factor=duplication_factor)
+            pandas_time, cylon_time, pandas_eval_time = join_op(num_rows=records, num_cols=num_cols,
+                                                                algorithm=algorithm,
+                                                                duplication_factor=duplication_factor)
             times.append([pandas_time, cylon_time, pandas_eval_time])
         times = np.array(times).sum(axis=0) / repetitions
-        print(f"Duplicate Op : Records={records}, Columns={num_cols}, Filter Size={filter_size}, "
+        print(f"Join Op : Records={records}, Columns={num_cols}, "
               f"Pandas Time : {times[0]}, Cylon Time : {times[1]}, Pandas Eval Time : {times[2]}")
         all_data.append(
-            [records, num_cols, filter_size, times[0], times[1], times[2], times[0] / times[1], times[2] / times[1]])
+            [records, num_cols, algorithm, times[0], times[1], times[2], times[0] / times[1], times[2] / times[1]])
     pdf = pd.DataFrame(all_data, columns=schema)
     print(pdf)
     pdf.to_csv(stats_file)
@@ -103,9 +104,9 @@ if __name__ == '__main__':
     parser.add_argument("-c", "--num_cols",
                         help="number of columns",
                         type=int)
-    parser.add_argument("-t", "--filter_size",
-                        help="number of values per filter",
-                        type=int)
+    parser.add_argument("-a", "--algorithm",
+                        help="join algorithm [hash or sort]",
+                        type=str)
     parser.add_argument("-r", "--repetitions",
                         help="number of experiments to be repeated",
                         type=int)
@@ -120,12 +121,13 @@ if __name__ == '__main__':
     print(f"Data Duplication Factor : {args.duplication_factor}")
     print(f"Number of Columns : {args.num_cols}")
     print(f"Number of Repetitions : {args.repetitions}")
+    print(f"Join Algorithm : {args.algorithm}")
     print(f"Stats File : {args.stats_file}")
-    bench_duplicate_op(start=args.start_size,
-                       end=args.end_size,
-                       step=args.step_size,
-                       num_cols=args.num_cols,
-                       filter_size=args.filter_size,
-                       repetitions=args.repetitions,
-                       stats_file=args.stats_file,
-                       duplication_factor=args.duplication_factor)
+    bench_join_op(start=args.start_size,
+                  end=args.end_size,
+                  step=args.step_size,
+                  num_cols=args.num_cols,
+                  algorithm=args.algorithm,
+                  repetitions=args.repetitions,
+                  stats_file=args.stats_file,
+                  duplication_factor=args.duplication_factor)
