@@ -44,9 +44,12 @@ def tb_creation_op(num_rows: int, num_cols: int, duplication_factor: float):
     data_row = [np.random.randint(num_rows)] * num_rows
     # data row np array
     data_row_ar = np.array(data_row)
+    # data row pa array
+    data_row_pa_ar = pa.array(data_row)
 
     data_set = [data_row for i in range(num_cols)]
     data_set_ar = [data_row_ar for i in range(num_cols)]
+    data_set_pa_ar = [data_row_pa_ar for i in range(num_cols)]
 
     column_names = ["data_" + str(i) for i in range(num_cols)]
 
@@ -62,13 +65,20 @@ def tb_creation_op(num_rows: int, num_cols: int, duplication_factor: float):
     tb2 = Table.from_numpy(ctx, column_names, data_set_ar)
     t_numpy = time.time() - t_numpy
 
-    return t_pandas, t_numpy, t_list
+    t_arrow = time.time()
+    tb3 = pa.Table.from_arrays(data_set_pa_ar, column_names)
+    t_arrow = time.time() - t_arrow
+
+    t_cylon_from_arrow = time.time()
+    tb4 = Table.from_arrow(ctx, tb3)
+    t_cylon_from_arrow = time.time() - t_cylon_from_arrow
+    return t_pandas, t_numpy, t_list, t_arrow, t_cylon_from_arrow
 
 
 def bench_tb_creation_op(start: int, end: int, step: int, num_cols: int, repetitions: int, stats_file: str,
                          duplication_factor: float):
     all_data = []
-    schema = ["num_records", "num_cols", "from_pandas", "from_list", "from_numpy"]
+    schema = ["num_records", "num_cols", "from_pandas", "from_numpy", "from_list", "arrow_tb_cr", "t_cylon_from_arrow"]
     assert repetitions >= 1
     assert start > 0
     assert step > 0
@@ -76,16 +86,16 @@ def bench_tb_creation_op(start: int, end: int, step: int, num_cols: int, repetit
     for records in range(start, end + step, step):
         times = []
         for idx in range(repetitions):
-            t_pandas, t_numpy, t_list = tb_creation_op(
+            t_pandas, t_numpy, t_list, t_arrow, t_cylon_from_arrow = tb_creation_op(
                 num_rows=records, num_cols=num_cols,
                 duplication_factor=duplication_factor)
-            times.append([t_pandas, t_numpy, t_list])
+            times.append([t_pandas, t_numpy, t_list, t_arrow, t_cylon_from_arrow])
         times = np.array(times).sum(axis=0) / repetitions
         print(f"Table Creation Op : Records={records}, Columns={num_cols}"
-              f"From Pandas  : {times[0]}, From List : {times[1]}, "
-              f"From Numpy : {times[2]}")
+              f"From Pandas  : {times[0]}, From Numpy : {times[1]}, "
+              f"From List : {times[2]}, For Arrow: {times[3]}, From Arrow : {times[4]}")
         all_data.append(
-            [records, num_cols, times[0], times[1], times[2]])
+            [records, num_cols, times[0], times[1], times[2], times[3], times[4]])
     pdf = pd.DataFrame(all_data, columns=schema)
     print(pdf)
     pdf.to_csv(stats_file)
