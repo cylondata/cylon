@@ -75,7 +75,7 @@ def math_op_base():
 
 
 def math_op(num_rows: int, num_cols: int, duplication_factor: float, op=add):
-    ctx: CylonContext = CylonContext(config=None, distributed=False, compute_engine='numpy')
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
     ctx.add_config("compute_engine", "numpy")
 
     pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
@@ -85,18 +85,16 @@ def math_op(num_rows: int, num_cols: int, duplication_factor: float, op=add):
     math_value = filter_column_data.values[random_index]
     tb = Table.from_pandas(ctx, pdf)
 
-    print("Table Context Compute Engine: ", tb.context.compute_engine)
-
     cylon_math_op_time = time.time()
-    tb_filter = op(tb[filter_column], math_value)
+    tb_filter = op(tb, math_value)
     cylon_math_op_time = time.time() - cylon_math_op_time
 
     pandas_math_op_time = time.time()
-    pdf_filter = op(pdf[filter_column], math_value)  # pdf[filter_column] > filter_value
+    pdf_filter = op(pdf, math_value)  # pdf[filter_column] > filter_value
     pandas_math_op_time = time.time() - pandas_math_op_time
 
     pandas_eval_math_op_time = time.time()
-    pdf_filter = pd.eval("op(pdf[filter_column], math_value)")
+    pdf_filter = pd.eval("op(pdf, math_value)")
     pandas_eval_math_op_time = time.time() - pandas_eval_math_op_time
 
     return pandas_math_op_time, pandas_eval_math_op_time, cylon_math_op_time
@@ -119,7 +117,7 @@ def bench_math_op(start: int, end: int, step: int, num_cols: int, repetitions: i
                 duplication_factor=duplication_factor, op=op)
             times.append([pandas_math_op_time, pandas_eval_math_op_time, cylon_math_op_time])
         times = np.array(times).sum(axis=0) / repetitions
-        print(f"Filter Op : Records={records}, Columns={num_cols}"
+        print(f"Math Op : Records={records}, Columns={num_cols}"
               f"Pandas Math Op Time : {times[0]}, Pandas Math Op Time : {times[1]}, "
               f"PyCylon Math Op Time : {times[2]}")
         all_data.append(
