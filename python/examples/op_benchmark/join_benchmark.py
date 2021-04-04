@@ -23,13 +23,15 @@ from pycylon.index import RangeIndex
 from bench_util import get_dataframe
 import pyarrow as pa
 import argparse
+from pycylon.io import CSVReadOptions
+from pycylon.io import read_csv
 
 """
 Run benchmark:
 
->>> python python/examples/op_benchmark/join_benchmark.py --start_size 10_000_000 \
-                                        --step_size 10_000_000 \
-                                        --end_size 30_000_000 \
+>>> python python/examples/op_benchmark/join_benchmark.py --start_size 1_000_000 \
+                                        --step_size 1_000_000 \
+                                        --end_size 10_000_000 \
                                         --num_cols 2 \
                                         --stats_file /tmp/join_bench.csv \
                                         --repetitions 1 \
@@ -45,10 +47,16 @@ def join_op(num_rows: int, num_cols: int, algorithm: str, duplication_factor: fl
                              stringify=False)
     pdf_right = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor,
                               stringify=False)
-    pdf_left = pdf_left.astype('int')
-    pdf_right = pdf_right.astype('int')
-    tb_left = Table.from_pandas(ctx, pdf_left)
-    tb_right = Table.from_pandas(ctx, pdf_right)
+    # NOTE: sort join breaks when loaded data in-memory via Pandas dataframe
+    pdf_left.to_csv("/tmp/left_table.csv", index=False)
+    pdf_right.to_csv("/tmp/right_table.csv", index=False)
+
+    csv_read_options = CSVReadOptions() \
+        .use_threads(True) \
+        .block_size(1 << 30)
+
+    tb_left = read_csv(ctx, "/tmp/left_table.csv", csv_read_options)
+    tb_right = read_csv(ctx, "/tmp/right_table.csv", csv_read_options)
     join_col = tb_left.column_names[0]
     cylon_time = time.time()
     tb2 = tb_left.join(tb_right, join_type='inner', algorithm=algorithm, on=[join_col])
@@ -61,6 +69,8 @@ def join_op(num_rows: int, num_cols: int, algorithm: str, duplication_factor: fl
     pandas_eval_time = time.time()
     pdf2 = pd.eval("pdf_left.join(pdf_right, how='inner', on=join_col, lsuffix='_l', rsuffix='_r')")
     pandas_eval_time = time.time() - pandas_eval_time
+
+    ctx.finalize()
 
     return pandas_time, cylon_time, pandas_eval_time
 
