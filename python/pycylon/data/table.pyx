@@ -2216,7 +2216,8 @@ cdef class Table:
             return new_tb
 
     def isin(self, value, skip_null=True) -> Table:
-        return compute.is_in(self, value, skip_null)
+        engine = self.context.get_config("compute_engine", "arrow")
+        return compute.is_in(self, value, skip_null, engine)
 
     def applymap(self, func) -> Table:
         '''

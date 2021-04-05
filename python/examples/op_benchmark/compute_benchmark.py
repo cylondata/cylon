@@ -25,12 +25,12 @@ import argparse
 """
 Run benchmark:
 
->>> python python/examples/op_benchmark/compute_benchmark.py --start_size 1_000_000 \
-                                        --step_size 1_000_000 \
-                                        --end_size 10_000_000 \
+>>> python python/examples/op_benchmark/compute_benchmark.py --start_size 1_000_000_000 \
+                                        --step_size 10_000_000 \
+                                        --end_size 30_000_000 \
                                         --num_cols 2 \
-                                        --filter_size 500_000 \
-                                        --stats_file /tmp/isin_bench.csv \
+                                        --filter_size 1_000_000 \
+                                        --stats_file /tmp/isin_bench_v1.csv \
                                         --repetitions 1 \
                                         --duplication_factor 0.9
 """
@@ -38,7 +38,7 @@ Run benchmark:
 
 def isin_op(num_rows: int, num_cols: int, filter_size: int, duplication_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
-
+    ctx.add_config("compute_engine", "arrow")
     df = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
 
     ct = Table.from_pandas(ctx, df)
@@ -132,3 +132,4 @@ if __name__ == '__main__':
                repetitions=args.repetitions,
                stats_file=args.stats_file,
                duplication_factor=args.duplication_factor)
+

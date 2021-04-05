@@ -463,6 +463,28 @@ cpdef unique(table:Table):
 cpdef nunique(table:Table):
     pass
 
+cdef _is_in_array_like_np(table: Table, cmp_val):
+    '''
+    Isin helper function for array-like comparisons, where a table is compared against a list of 
+    values. 
+    Args:
+        table: PyCylon table
+        cmp_val: comparison value set 
+        skip_null: skip null value option for PyArrow compute kernel
+
+    Returns: PyCylon Table
+
+    '''
+    ar_tb = table.to_arrow().combine_chunks()
+    is_in_res = []
+    for chunk_ar in ar_tb.itercolumns():
+        chunk_ar_np = chunk_ar.to_numpy()
+        is_in_res.append(np.isin(chunk_ar, np.array(cmp_val)))
+    tb_new = Table.from_numpy(table.context, table.column_names, is_in_res)
+    tb_new.set_index(table.index)
+    return tb_new
+
+
 cdef _is_in_array_like(table: Table, cmp_val, skip_null):
     '''
     Isin helper function for array-like comparisons, where a table is compared against a list of 
@@ -663,7 +685,7 @@ cdef _tb_compare_values(tb, tb_cmp, skip_null=True, index_check=True):
     tb_new.set_index(tb.index)
     return tb_new
 
-cpdef is_in(table:Table, comparison_values, skip_null):
+cpdef is_in(table:Table, comparison_values, skip_null, engine):
     '''
     PyCylon Tabular is_in function abstraction using PyArrow is_in compute
     Args:
@@ -675,8 +697,11 @@ cpdef is_in(table:Table, comparison_values, skip_null):
 
     '''
     if isinstance(comparison_values, List):
-        cmp_val = pa.array(comparison_values)
-        return _is_in_array_like(table, cmp_val, skip_null)
+        if engine == "arrow":
+            cmp_val = pa.array(comparison_values)
+            return _is_in_array_like(table, cmp_val, skip_null)
+        elif engine == "numpy":
+            return _is_in_array_like_np(table, comparison_values)
     elif isinstance(comparison_values, dict):
         tb_cmp = Table.from_pydict(table.context, comparison_values)
         return _tb_compare_dict_values(table, tb_cmp, skip_null)
