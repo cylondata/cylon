@@ -211,7 +211,7 @@ class DataFrame(object):
 
     def to_numpy(self, order: str = 'F', zero_copy_only: bool = True, writable: bool = False) -> \
             np.ndarray:
-        return self._table.to_numpy(self, order=order, zero_copy_only=zero_copy_only,
+        return self._table.to_numpy(order=order, zero_copy_only=zero_copy_only,
                                     writable=writable)
 
     def to_arrow(self) -> pa.Table:
