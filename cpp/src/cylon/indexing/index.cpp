@@ -71,25 +71,29 @@ cylon::Status CompareArraysForUniqueness(std::shared_ptr<arrow::Array> &index_ar
 
   return cylon::Status::OK();
 }
+
+void BuildRangeIndexArray(int start, int end, int step, arrow::MemoryPool *pool, std::shared_ptr<arrow::Array> &index_arr){
+  arrow::Status ar_status;
+  arrow::Int64Builder builder(pool);
+  int64_t capacity = int64_t ((end - start) / step);
+  if (!(ar_status = builder.Reserve(capacity)).ok()) {
+	LOG(ERROR) << "Error occurred in reserving memory" << ar_status.message();
+	throw "Error occurred in reserving memory";
+  }
+  for (int i = 0; i < end - start; i=i+step) {
+	builder.UnsafeAppend(i);
+  }
+  ar_status = builder.Finish(&index_arr);
+
+  if (!ar_status.ok()) {
+	LOG(ERROR) << "Error occurred in finalizing range index value array";
+  }
+}
+
 cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *pool) : BaseIndex(0, size, pool),
                                                                                         start_(start),
                                                                                         end_(size),
                                                                                         step_(step) {
-  arrow::Status ar_status;
-  arrow::Int64Builder builder(pool);
-  int64_t capacity = int64_t ((end_ - start_) / step_);
-  if (!(ar_status = builder.Reserve(capacity)).ok()) {
-    LOG(ERROR) << "Error occurred in reserving memory" << ar_status.message();
-    throw "Error occurred in reserving memory";
-  }
-  for (int i = 0; i < end_ - start_; i=i+step_) {
-    builder.UnsafeAppend(i);
-  }
-  ar_status = builder.Finish(&index_arr_);
-
-  if (!ar_status.ok()) {
-    LOG(ERROR) << "Error occurred in finalizing range index value array";
-  }
 
 }
 Status RangeIndex::LocationByValue(const void *search_param,
@@ -172,34 +176,17 @@ Status RangeIndex::LocationByValue(const void *search_param, int64_t &find_index
   return Status::OK();
 }
 std::shared_ptr<arrow::Array> RangeIndex::GetIndexAsArray() {
-
-  arrow::Status arrow_status;
   auto pool = GetPool();
-
-  arrow::Int64Builder builder(pool);
-
-  std::shared_ptr<arrow::Int64Array> index_array;
-
-  std::vector<int64_t> vec(GetSize(), 1);
-
-  for (int64_t ix = 0; ix < GetSize(); ix += GetStep()) {
-    vec[ix] = ix;
-  }
-
-  builder.AppendValues(vec);
-  arrow_status = builder.Finish(&index_array);
-
-  if (!arrow_status.ok()) {
-    LOG(ERROR) << "Error occurred in retrieving index";
-    return nullptr;
-  }
-
-  return index_array;
+  BuildRangeIndexArray(start_, end_, step_, pool, index_arr_);
+  return index_arr_;
 }
 void RangeIndex::SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) {
   index_arr_ = index_arr;
 }
 std::shared_ptr<arrow::Array> RangeIndex::GetIndexArray() {
+  if(index_arr_ == nullptr) {
+    index_arr_ = GetIndexAsArray();
+  }
   return index_arr_;
 }
 bool RangeIndex::IsUnique() {
