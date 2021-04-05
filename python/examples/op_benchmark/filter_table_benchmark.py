@@ -19,32 +19,30 @@ import pyarrow.compute as pc
 import numpy as np
 from pycylon import Table
 from pycylon import CylonContext
+from bench_util import get_dataframe
 import time
 import argparse
-from bench_util import get_dataframe
-from operator import add, sub, mul, truediv
 
 """
 Run benchmark:
 
->>> python python/examples/op_benchmark/math_benchmark.py --start_size 1_000_000 \
+>>> python python/examples/op_benchmark/filter_benchmark.py --start_size 1_000_000 \
                                         --step_size 1_000_000 \
                                         --end_size 10_000_000 \
                                         --num_cols 2 \
                                         --stats_file /tmp/filter_bench.csv \
                                         --repetitions 1 \
-                                        --duplication_factor 0.9 \
-                                        --op add
+                                        --duplication_factor 0.9
 """
 
 
-def math_op_base():
+def fixed_filter_bench():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     num_rows = 10_000_000
     data = np.random.randn(num_rows)
 
     df = pd.DataFrame({'data{}'.format(i): data
-                       for i in range(100)})
+                       for i in range(2)})
 
     np_key = np.random.randint(0, 100, size=num_rows)
     np_all = df.to_numpy()
@@ -56,55 +54,83 @@ def math_op_base():
 
     ct = Table.from_pandas(ctx, df)
 
+    print(ct.shape, df.shape)
+    pdf_time = []
+    ct_time = []
+    rep = 1
+
     t1 = time.time()
-    np_key + 1
+    ct_filter = ct['key'] > 5
     t2 = time.time()
-    ct['key'] + 1
+    df_filter = df['key'] > 5
     t3 = time.time()
-    df['key'] + 1
+    ct_res = ct[ct_filter]
     t4 = time.time()
-    artb = ct.to_arrow().combine_chunks()
-    ar_key = ct['key'].to_arrow().combine_chunks().columns[0].chunks[0]
-    pc.add(ar_key, 1)
+    df_res = df[df_filter]
     t5 = time.time()
+    np_filter = np_key > 5
+    t6 = time.time()
+    np_res = np_all[np_filter]
+    t7 = time.time()
 
-    print(f"Numpy Time: {t2 - t1} s")
-    print(f"PyCylon Time: {t3 - t2} s")
-    print(f"Pandas Time: {t4 - t3} s")
-    print(f"PyArrow Time: {t5 - t4} s")
+    print(f"PyCylon filter time :  {t2 - t1} s")
+    print(f"Pandas filter time: {t3 - t2} s")
+    print(f"Numpy filter time: {t6 - t5} s")
+    print(f"PyCylon assign time: {t4 - t3} s")
+    print(f"Pandas assign time: {t5 - t4} s")
+    print(f"Numpy assign time: {t7 - t6} s")
+
+    artb = t
+
+    artb_filter = ct_filter.to_arrow().combine_chunks()
+    artb_array_filter = artb_filter.columns[0].chunks[0]
+    t_ar_s = time.time()
+    artb = artb.combine_chunks()
+    from pyarrow import compute
+    res = []
+    for chunk_arr in artb.itercolumns():
+        res.append(chunk_arr.filter(artb_array_filter))
+    t_ar_e = time.time()
+    res_t = pa.Table.from_arrays(res, ct.column_names)
+    t_ar_e_2 = time.time()
+    print(f"PyArrow Filter Time : {t_ar_e - t_ar_s}")
+    print(f"PyArrow Table Creation : {t_ar_e_2 - t_ar_e}")
 
 
-def math_op(num_rows: int, num_cols: int, duplication_factor: float, op=add):
+def filter_op(num_rows: int, num_cols: int, duplication_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     ctx.add_config("compute_engine", "numpy")
-
     pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
-    filter_column = pdf.columns[0]
+    filter_column  = pdf.columns[0]
     filter_column_data = pdf[pdf.columns[0]]
     random_index = np.random.randint(low=0, high=pdf.shape[0])
-    math_value = filter_column_data.values[random_index]
+    filter_value = filter_column_data.values[random_index]
     tb = Table.from_pandas(ctx, pdf)
 
-    cylon_math_op_time = time.time()
-    tb_filter = op(tb, math_value)
-    cylon_math_op_time = time.time() - cylon_math_op_time
+    cylon_filter_cr_time = time.time()
+    tb_filter = tb[filter_column] > filter_value
+    cylon_filter_cr_time = time.time() - cylon_filter_cr_time
 
-    pandas_math_op_time = time.time()
-    pdf_filter = op(pdf, math_value)  # pdf[filter_column] > filter_value
-    pandas_math_op_time = time.time() - pandas_math_op_time
+    cylon_filter_time = time.time()
+    tb_filtered = tb[tb_filter]
+    cylon_filter_time = time.time() - cylon_filter_time
 
-    pandas_eval_math_op_time = time.time()
-    pdf_filter = pd.eval("op(pdf, math_value)")
-    pandas_eval_math_op_time = time.time() - pandas_eval_math_op_time
+    pandas_filter_cr_time = time.time()
+    pdf_filter = pdf[filter_column] > filter_value
+    pandas_filter_cr_time = time.time() - pandas_filter_cr_time
 
-    return pandas_math_op_time, pandas_eval_math_op_time, cylon_math_op_time
+    pandas_filter_time = time.time()
+    pdf_filtered = pdf[pdf_filter]
+    pandas_filter_time = time.time() - pandas_filter_time
+
+    return pandas_filter_cr_time, pandas_filter_time, cylon_filter_cr_time, cylon_filter_time
 
 
-def bench_math_op(start: int, end: int, step: int, num_cols: int, repetitions: int, stats_file: str,
-                  duplication_factor: float, op=None):
+def bench_filter_op(start: int, end: int, step: int, num_cols: int, repetitions: int, stats_file: str,
+                    duplication_factor: float):
     all_data = []
-    schema = ["num_records", "num_cols", "pandas_math_op", "pandas_eval_math_op", "cylon_math_op",
-              "speed up math op", "speed up math op [eval]"]
+    schema = ["num_records", "num_cols", "pandas_filter_cr", "cylon_filter_cr", "pandas_filter",
+              "cylon_filter", "speed up filter cr", "speed up filter"]
     assert repetitions >= 1
     assert start > 0
     assert step > 0
@@ -112,16 +138,16 @@ def bench_math_op(start: int, end: int, step: int, num_cols: int, repetitions: i
     for records in range(start, end + step, step):
         times = []
         for idx in range(repetitions):
-            pandas_math_op_time, pandas_eval_math_op_time, cylon_math_op_time = math_op(
+            pandas_filter_cr_time, pandas_filter_time, cylon_filter_cr_time, cylon_filter_time = filter_op(
                 num_rows=records, num_cols=num_cols,
-                duplication_factor=duplication_factor, op=op)
-            times.append([pandas_math_op_time, pandas_eval_math_op_time, cylon_math_op_time])
+                duplication_factor=duplication_factor)
+            times.append([pandas_filter_cr_time, pandas_filter_time, cylon_filter_cr_time, cylon_filter_time])
         times = np.array(times).sum(axis=0) / repetitions
-        print(f"Math Op : Records={records}, Columns={num_cols}"
-              f"Pandas Math Op Time : {times[0]}, Pandas Math Op Time : {times[1]}, "
-              f"PyCylon Math Op Time : {times[2]}")
+        print(f"Filter Op : Records={records}, Columns={num_cols}"
+              f"Pandas Filter Creation Time : {times[0]}, Cylon Filter Creation Time : {times[2]}, "
+              f"Pandas Filter Time : {times[1]}, Cylon Filter Time : {times[3]}")
         all_data.append(
-            [records, num_cols, times[0], times[1], times[2], times[0] / times[2], times[1] / times[2]])
+            [records, num_cols, times[0], times[2], times[1], times[3], times[0] / times[2], times[1] / times[3]])
     pdf = pd.DataFrame(all_data, columns=schema)
     print(pdf)
     pdf.to_csv(stats_file)
@@ -144,14 +170,14 @@ if __name__ == '__main__':
     parser.add_argument("-c", "--num_cols",
                         help="number of columns",
                         type=int)
+    parser.add_argument("-t", "--filter_size",
+                        help="number of values per filter",
+                        type=int)
     parser.add_argument("-r", "--repetitions",
                         help="number of experiments to be repeated",
                         type=int)
     parser.add_argument("-f", "--stats_file",
                         help="stats file to be saved",
-                        type=str)
-    parser.add_argument("-o", "--op",
-                        help="operator",
                         type=str)
 
     args = parser.parse_args()
@@ -162,17 +188,10 @@ if __name__ == '__main__':
     print(f"Number of Columns : {args.num_cols}")
     print(f"Number of Repetitions : {args.repetitions}")
     print(f"Stats File : {args.stats_file}")
-    op_type = args.op
-
-    ops = {'add': add, 'sub': sub, 'mul': mul, 'div': truediv}
-
-    op = ops[op_type]
-
-    bench_math_op(start=args.start_size,
-                  end=args.end_size,
-                  step=args.step_size,
-                  num_cols=args.num_cols,
-                  repetitions=args.repetitions,
-                  stats_file=args.stats_file,
-                  duplication_factor=args.duplication_factor,
-                  op=op)
+    bench_filter_op(start=args.start_size,
+                    end=args.end_size,
+                    step=args.step_size,
+                    num_cols=args.num_cols,
+                    repetitions=args.repetitions,
+                    stats_file=args.stats_file,
+                    duplication_factor=args.duplication_factor)
