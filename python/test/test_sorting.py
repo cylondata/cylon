@@ -25,7 +25,6 @@ import random
 
 import pycylon as cn
 from pycylon import CylonContext
-from pycylon import DataFrame
 
 
 def test_df_sorting():
@@ -53,6 +52,7 @@ def test_df_sorting():
                     if c1!=c2 and c1!=c3 and c2!=c3:
                         do_sort([c1, c2, c3], asc)
 
+test_df_sorting()
 
 def test_sorting():
     ctx: CylonContext = CylonContext()
