@@ -24,6 +24,7 @@ We can use Conda to install and run PyCylon.
 
 ```bash
 conda create -n cylon-0.4.0 -c cylondata pycylon python=3.7
+conda activate cylon-0.4.0
 ```
 
 Now lets run our first Cylon application
@@ -47,5 +48,5 @@ Now lets run a parallel version of this program.
 
 ```
 
-# Compiling Cylon
+
 
