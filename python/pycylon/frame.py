@@ -39,19 +39,23 @@ class CylonEnv(object):
         self._finalized = False
 
     @property
-    def context(self):
+    def context(self) -> CylonContext:
         return self._context
 
     @property
-    def rank(self):
+    def rank(self) -> int:
         return self._context.get_rank()
 
     @property
-    def is_distributed(self):
+    def world_size(self) -> int:
+        return self._context.get_world_size()
+
+    @property
+    def is_distributed(self) -> bool:
         return self._distributed
 
     def finalize(self):
-        if self._finalized == False:
+        if not self._finalized:
             self._finalized = True
             self._context.finalize()
 
@@ -106,7 +110,8 @@ class DataFrame(object):
             data=self._table.to_arrow(), index=self._index, columns=self._columns, copy=False, context=env.context)
         return self
 
-    def _initialize_dataframe(self, data=None, index=None, columns=None, copy=False, context=CylonContext(config=None, distributed=False)):
+    def _initialize_dataframe(self, data=None, index=None, columns=None, copy=False,
+                              context=CylonContext(config=None, distributed=False)):
         rows = 0
         cols = 0
         self._table = None
@@ -1014,7 +1019,7 @@ class DataFrame(object):
     # Indexing
 
     def set_index(
-        self, keys, drop=True, append=False, inplace=False, verify_integrity=False
+            self, keys, drop=True, append=False, inplace=False, verify_integrity=False
     ):
         """
         Set the DataFrame index using existing columns.
@@ -1098,12 +1103,12 @@ class DataFrame(object):
         return self
 
     def reset_index(  # type: ignore[misc]
-        self,
-        level: Optional[Union[Hashable, Sequence[Hashable]]] = ...,
-        drop: bool = ...,
-        inplace: Literal[False] = ...,
-        col_level: Hashable = ...,
-        col_fill=...,
+            self,
+            level: Optional[Union[Hashable, Sequence[Hashable]]] = ...,
+            drop: bool = ...,
+            inplace: Literal[False] = ...,
+            col_level: Hashable = ...,
+            col_fill=...,
     ) -> DataFrame:
         # todo this is not a final implementation
         self._index_columns = []
@@ -1468,17 +1473,17 @@ class DataFrame(object):
 
     @staticmethod
     def concat(
-        objs: Union[Iterable["DataFrame"]],
-        axis=0,
-        join="outer",
-        ignore_index: bool = False,
-        keys=None,
-        levels=None,
-        names=None,
-        verify_integrity: bool = False,
-        sort: bool = False,
-        copy: bool = True,
-        env: CylonEnv = None
+            objs: Union[Iterable["DataFrame"]],
+            axis=0,
+            join="outer",
+            ignore_index: bool = False,
+            keys=None,
+            levels=None,
+            names=None,
+            verify_integrity: bool = False,
+            sort: bool = False,
+            copy: bool = True,
+            env: CylonEnv = None
     ) -> DataFrame:
         """
         Concatenate DataFrames along a particular axis with optional set logic
@@ -1634,12 +1639,12 @@ class DataFrame(object):
             raise "Unsupported operation"
 
     def drop_duplicates(
-        self,
-        subset: Optional[Union[Hashable, Sequence[Hashable]]] = None,
-        keep: Union[str, bool] = "first",
-        inplace: bool = False,
-        ignore_index: bool = False,
-        env: CylonEnv = None
+            self,
+            subset: Optional[Union[Hashable, Sequence[Hashable]]] = None,
+            keep: Union[str, bool] = "first",
+            inplace: bool = False,
+            ignore_index: bool = False,
+            env: CylonEnv = None
     ) -> DataFrame:
         """
         Return DataFrame with duplicate rows removed.
@@ -1707,16 +1712,16 @@ class DataFrame(object):
             return DataFrame(self._change_context(env)._table.distributed_unique(columns=subset, inplace=inplace))
 
     def sort_values(
-        self,
-        by,
-        axis=0,
-        ascending=True,
-        inplace=False,
-        kind="quicksort",
-        na_position="last",
-        ignore_index=False,
-        key=None,
-        env: CylonEnv = None
+            self,
+            by,
+            axis=0,
+            ascending=True,
+            inplace=False,
+            kind="quicksort",
+            na_position="last",
+            ignore_index=False,
+            key=None,
+            env: CylonEnv = None
     ) -> DataFrame:
         """
         Sort by the values along either axis.
