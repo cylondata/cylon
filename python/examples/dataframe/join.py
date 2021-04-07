@@ -17,13 +17,11 @@ print(df3)
 # distributed join
 env = CylonEnv(config=MPIConfig())
 
-if env.world_size > 1:
-    df1 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
-                     random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
-    df2 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
-                     random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
-    df2.set_index([0], inplace=True)
-    print("Distributed Join")
-    df3 = df1.join(other=df2, on=[0], env=env)
-    print(df3)
-
+df1 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
+                 random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
+df2 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
+                 random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
+df2.set_index([0], inplace=True)
+print("Distributed Join")
+df3 = df1.join(other=df2, on=[0], env=env)
+print(df3)
