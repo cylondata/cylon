@@ -2,8 +2,8 @@ from pycylon import DataFrame, CylonEnv
 from pycylon.net import MPIConfig
 import random
 
-df1 = DataFrame([random.sample(range(10, 30), 50),
-                 random.sample(range(10, 30), 50)])
+df1 = DataFrame([random.sample(range(10, 100), 50),
+                 random.sample(range(10, 100), 50)])
 
 
 # local sort
