@@ -26,8 +26,11 @@ def test_context_and_configs():
 
     mpi_config = MPIConfig()
     ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
+    ctx.add_config("compute_engine", "numpy")
 
     print("Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
+
+    assert ctx.get_config("compute_engine", "arrow") == 'numpy'
 
     # Note: Not needed when using PyTest with MPI
     #ctx.finalize()

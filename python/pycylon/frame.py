@@ -39,19 +39,23 @@ class CylonEnv(object):
         self._finalized = False
 
     @property
-    def context(self):
+    def context(self) -> CylonContext:
         return self._context
 
     @property
-    def rank(self):
+    def rank(self) -> int:
         return self._context.get_rank()
 
     @property
-    def is_distributed(self):
+    def world_size(self) -> int:
+        return self._context.get_world_size()
+
+    @property
+    def is_distributed(self) -> bool:
         return self._distributed
 
     def finalize(self):
-        if self._finalized == False:
+        if not self._finalized:
             self._finalized = True
             self._context.finalize()
 
@@ -1106,7 +1110,7 @@ class DataFrame(object):
             self._table.set_index(index_keys, drop=drop)
             return None
         else:
-            new_df =  DataFrame(self._table)
+            new_df = DataFrame(self._table)
             new_df._table.set_index(index_keys, drop=drop)
             new_df._index_columns = index_keys
             return new_df

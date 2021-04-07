@@ -210,6 +210,13 @@ def test_sorting():
     assert responses[-1] == 0
 
 
+def test_df_dist_sorting():
+    print("28. Sorting")
+    responses.append(os.system("mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest "
+                               "-q python/test/test_df_dist_sorting.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)

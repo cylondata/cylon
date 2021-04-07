@@ -25,7 +25,7 @@
  */
 int main() {
   cylon::Status status;
-  const int size = 12;
+  const int size = 10;
 
   auto ctx = cylon::CylonContext::Init();
 
@@ -41,7 +41,13 @@ int main() {
   auto cy_col1 = cylon::VectorColumn<double>::Make("col1", cylon::Double(), col1);
 
   std::shared_ptr<cylon::Table> output;
+  auto start = std::chrono::steady_clock::now();
   status = cylon::Table::FromColumns(ctx, {cy_col0, cy_col1}, output);
+  auto end = std::chrono::steady_clock::now();
+
+  LOG(INFO) << "Read tables in "
+			<< std::chrono::duration_cast<std::chrono::milliseconds>(
+				end - start).count() << "[ms], Row Count: " << output->Rows();
 
   if ((status.is_ok() && output->Columns() == 2 && output->Rows() == size)) {
     output->Print();
@@ -50,7 +56,7 @@ int main() {
   std::shared_ptr<arrow::DoubleArray>
       c = std::static_pointer_cast<arrow::DoubleArray>(output->GetColumn(1)->GetColumnData()->chunk(0));
 
-  for (int i = 0; i < c->length(); i++) {
+  for (int i = 0; i < c->length() ; i++) {
     std::cout << c->Value(i) << " ";
   }
   std::cout << std::endl;

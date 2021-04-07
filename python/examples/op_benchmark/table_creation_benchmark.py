@@ -13,74 +13,89 @@
 ##
 
 
-import time
 import pandas as pd
-import pycylon as cn
-import numpy as np
-from pycylon import CylonContext
-from pycylon import Table
-from pycylon.index import RangeIndex
-from bench_util import get_dataframe
 import pyarrow as pa
+import pyarrow.compute as pc
+import numpy as np
+from pycylon import Table
+from pycylon import CylonContext
+from bench_util import get_dataframe
+import time
 import argparse
 
 """
 Run benchmark:
 
->>> python python/examples/op_benchmark/duplicate_drop_benchmark.py --start_size 1_000_000 \
+>>> python python/examples/op_benchmark/table_creation_benchmark.py --start_size 1_000_000 \
                                         --step_size 1_000_000 \
                                         --end_size 10_000_000 \
                                         --num_cols 2 \
-                                        --filter_size 500_000 \
-                                        --stats_file /tmp/duplicate_bench.csv \
-                                        --repetitions 5 \
+                                        --stats_file /tmp/table_creation_bench.csv \
+                                        --repetitions 1 \
                                         --duplication_factor 0.9
 """
 
 
-def duplicate_op(num_rows: int, num_cols: int, filter_size: int, duplication_factor: float):
+def tb_creation_op(num_rows: int, num_cols: int, duplication_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
-
+    ctx.add_config("compute_engine", "numpy")
     pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
+    # data_row_list
+    data_row = [np.random.randint(num_rows)] * num_rows
+    # data row np array
+    data_row_ar = np.array(data_row)
+    # data row pa array
+    data_row_pa_ar = pa.array(data_row)
+
+    data_set = [data_row for i in range(num_cols)]
+    data_set_ar = [data_row_ar for i in range(num_cols)]
+    data_set_pa_ar = [data_row_pa_ar for i in range(num_cols)]
+
+    column_names = ["data_" + str(i) for i in range(num_cols)]
+
+    t_pandas = time.time()
     tb = Table.from_pandas(ctx, pdf)
-    filter_columns = tb.column_names[0:filter_size]
-    cylon_time = time.time()
-    tb2 = tb.unique(columns=filter_columns)
-    cylon_time = time.time() - cylon_time
+    t_pandas = time.time() - t_pandas
 
-    pandas_time = time.time()
-    pdf2 = pdf.drop_duplicates(subset=filter_columns)
-    pandas_time = time.time() - pandas_time
+    t_list = time.time()
+    tb1 = Table.from_list(ctx, column_names, data_set)
+    t_list = time.time() - t_list
 
-    pandas_eval_time = time.time()
-    pdf2 = pd.eval("pdf.drop_duplicates(subset=filter_columns)")
-    pandas_eval_time = time.time() - pandas_eval_time
+    t_numpy = time.time()
+    tb2 = Table.from_numpy(ctx, column_names, data_set_ar)
+    t_numpy = time.time() - t_numpy
 
-    return pandas_time, cylon_time, pandas_eval_time
+    t_arrow = time.time()
+    tb3 = pa.Table.from_arrays(data_set_pa_ar, column_names)
+    t_arrow = time.time() - t_arrow
+
+    t_cylon_from_arrow = time.time()
+    tb4 = Table.from_arrow(ctx, tb3)
+    t_cylon_from_arrow = time.time() - t_cylon_from_arrow
+    return t_pandas, t_numpy, t_list, t_arrow, t_cylon_from_arrow
 
 
-def bench_duplicate_op(start: int, end: int, step: int, num_cols: int, filter_size: int, repetitions: int,
-                       stats_file: str,
-                       duplication_factor: float):
+def bench_tb_creation_op(start: int, end: int, step: int, num_cols: int, repetitions: int, stats_file: str,
+                         duplication_factor: float):
     all_data = []
-    schema = ["num_records", "num_cols", "filter_size", "pandas", "cylon", "pandas_eval", "speed up", "speed up (eval)"]
+    schema = ["num_records", "num_cols", "from_pandas", "from_numpy", "from_list", "arrow_tb_cr", "t_cylon_from_arrow"]
     assert repetitions >= 1
     assert start > 0
     assert step > 0
     assert num_cols > 0
-    assert filter_size > 0
     for records in range(start, end + step, step):
         times = []
         for idx in range(repetitions):
-            pandas_time, cylon_time, pandas_eval_time = duplicate_op(num_rows=records, num_cols=num_cols,
-                                                                     filter_size=filter_size,
-                                                                     duplication_factor=duplication_factor)
-            times.append([pandas_time, cylon_time, pandas_eval_time])
+            t_pandas, t_numpy, t_list, t_arrow, t_cylon_from_arrow = tb_creation_op(
+                num_rows=records, num_cols=num_cols,
+                duplication_factor=duplication_factor)
+            times.append([t_pandas, t_numpy, t_list, t_arrow, t_cylon_from_arrow])
         times = np.array(times).sum(axis=0) / repetitions
-        print(f"Duplicate Op : Records={records}, Columns={num_cols}, Filter Size={filter_size}, "
-              f"Pandas Time : {times[0]}, Cylon Time : {times[1]}, Pandas Eval Time : {times[2]}")
+        print(f"Table Creation Op : Records={records}, Columns={num_cols}"
+              f"From Pandas  : {times[0]}, From Numpy : {times[1]}, "
+              f"From List : {times[2]}, For Arrow: {times[3]}, From Arrow : {times[4]}")
         all_data.append(
-            [records, num_cols, filter_size, times[0], times[1], times[2], times[0] / times[1], times[2] / times[1]])
+            [records, num_cols, times[0], times[1], times[2], times[3], times[4]])
     pdf = pd.DataFrame(all_data, columns=schema)
     print(pdf)
     pdf.to_csv(stats_file)
@@ -121,11 +136,10 @@ if __name__ == '__main__':
     print(f"Number of Columns : {args.num_cols}")
     print(f"Number of Repetitions : {args.repetitions}")
     print(f"Stats File : {args.stats_file}")
-    bench_duplicate_op(start=args.start_size,
-                       end=args.end_size,
-                       step=args.step_size,
-                       num_cols=args.num_cols,
-                       filter_size=args.filter_size,
-                       repetitions=args.repetitions,
-                       stats_file=args.stats_file,
-                       duplication_factor=args.duplication_factor)
+    bench_tb_creation_op(start=args.start_size,
+                         end=args.end_size,
+                         step=args.step_size,
+                         num_cols=args.num_cols,
+                         repetitions=args.repetitions,
+                         stats_file=args.stats_file,
+                         duplication_factor=args.duplication_factor)

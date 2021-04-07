@@ -129,11 +129,13 @@ class NumericRowIndexComparator : public ArrayIndexComparator {
   std::shared_ptr<ARROW_ARRAY_T> casted_arr;
 };
 
-template<bool ASC>
+template<typename TYPE, bool ASC>
 class BinaryRowIndexComparator : public ArrayIndexComparator {
+  using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
+
  public:
   explicit BinaryRowIndexComparator(const std::shared_ptr<arrow::Array> &array)
-      : casted_arr(std::static_pointer_cast<arrow::BinaryArray>(array)) {}
+      : casted_arr(std::static_pointer_cast<ARROW_ARRAY_T>(array)) {}
 
   int compare(int64_t index1, int64_t index2) const override {
     if (ASC) {
@@ -196,8 +198,8 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::
     case arrow::Type::HALF_FLOAT:return std::make_shared<NumericRowIndexComparator<arrow::HalfFloatType, ASC>>(array);
     case arrow::Type::FLOAT:return std::make_shared<NumericRowIndexComparator<arrow::FloatType, ASC>>(array);
     case arrow::Type::DOUBLE:return std::make_shared<NumericRowIndexComparator<arrow::DoubleType, ASC>>(array);
-    case arrow::Type::STRING:return std::make_shared<BinaryRowIndexComparator<ASC>>(array);
-    case arrow::Type::BINARY:return std::make_shared<BinaryRowIndexComparator<ASC>>(array);
+    case arrow::Type::STRING:return std::make_shared<BinaryRowIndexComparator<arrow::StringType, ASC>>(array);
+    case arrow::Type::BINARY:return std::make_shared<BinaryRowIndexComparator<arrow::BinaryType, ASC>>(array);
     case arrow::Type::FIXED_SIZE_BINARY:return std::make_shared<FixedSizeBinaryRowIndexComparator<ASC>>(array);
     case arrow::Type::DATE32:return std::make_shared<NumericRowIndexComparator<arrow::Date32Type, ASC>>(array);
     case arrow::Type::DATE64:return std::make_shared<NumericRowIndexComparator<arrow::Date64Type, ASC>>(array);

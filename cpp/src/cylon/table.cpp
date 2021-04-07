@@ -310,6 +310,11 @@ Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &so
 
 Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &sort_columns,
             std::shared_ptr<cylon::Table> &out, const std::vector<bool> &sort_direction) {
+  // if single index sort is passed
+  if (sort_columns.size() == 1) {
+    return Sort(table, sort_columns[0], out, sort_direction[0]);
+  }
+
   std::shared_ptr<arrow::Table> sorted_table;
   auto table_ = table->get_table();
   auto ctx = table->GetContext();
