@@ -36,19 +36,19 @@ cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingSchema indexing_sc
 											   std::shared_ptr<arrow::Array> &sub_index_arr,
 											   arrow::MemoryPool *pool,
 											   std::shared_ptr<cylon::BaseArrowIndex> &loc_index) {
-//  if (indexing_schema == cylon::IndexingSchema::Hash) {
-//	return cylon::IndexUtil::BuildHashIndexFromArray(sub_index_arr, pool, loc_index);
-//  } else if (indexing_schema == cylon::IndexingSchema::Linear) {
-//	return cylon::IndexUtil::BuildLinearIndexFromArray(sub_index_arr, pool, loc_index);
-//  } else if (indexing_schema == cylon::IndexingSchema::Range) {
-//	return cylon::IndexUtil::BuildRangeIndexFromArray(sub_index_arr, pool, loc_index);
-//  } else if (indexing_schema == cylon::IndexingSchema::BinaryTree) {
-//	return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
-//  } else if (indexing_schema == cylon::IndexingSchema::BTree) {
-//	return cylon::Status(cylon::Code::NotImplemented, "B-Tree Indexing not implemented!");
-//  } else {
-//	return cylon::Status(cylon::Code::TypeError, "Unknown indexing scheme.");
-//  }
+  if (indexing_schema == cylon::IndexingSchema::Hash) {
+	return cylon::Status::OK(); //cylon::IndexUtil::BuildHashIndexFromArray(sub_index_arr, pool, loc_index);
+  } else if (indexing_schema == cylon::IndexingSchema::Linear) {
+	return cylon::IndexUtil::BuildArrowLinearIndexFromArrowArray(sub_index_arr, pool, loc_index);
+  } else if (indexing_schema == cylon::IndexingSchema::Range) {
+	return cylon::Status::OK(); //cylon::IndexUtil::BuildRangeIndexFromArray(sub_index_arr, pool, loc_index);
+  } else if (indexing_schema == cylon::IndexingSchema::BinaryTree) {
+	return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
+  } else if (indexing_schema == cylon::IndexingSchema::BTree) {
+	return cylon::Status(cylon::Code::NotImplemented, "B-Tree Indexing not implemented!");
+  } else {
+	return cylon::Status(cylon::Code::TypeError, "Unknown indexing scheme.");
+  }
   return cylon::Status::OK();
 }
 
@@ -131,15 +131,13 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   std::shared_ptr<cylon::BaseArrowIndex> loc_index;
   std::shared_ptr<arrow::Array> sub_index_arr;
   auto ctx = output->GetContext();
-  //auto pool = cylon::ToArrowPool(ctx);
+  auto pool = cylon::ToArrowPool(ctx);
 
   LOG(INFO) << "Set Index for location output with Non-RangeIndex";
   auto index_arr = index->GetIndexArray();
   sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
-  //BuildIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
-
+  BuildArrowIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
   output->Set_ArrowIndex(loc_index, false);
-
   return cylon::Status::OK();
 }
 
@@ -1280,17 +1278,7 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
   int64_t s_index = -1;
   int64_t e_index = -1;
 
-  std::cout << "Scalar Meta : " << start_index->ToString() << ", " << end_index->ToString() << std::endl;
-
-  std::cout << "Index Info : " << index->GetSize() << ", " << index->GetSchema() << ", "
-			<< index->GetIndexArray()->length() << std::endl;
-
-  std::cout << "Before GetArrowLocFilterIndices : " << index->GetIndexAsArray()->length() << std::endl;
-
   status_build = GetArrowLocFilterIndices(start_index, end_index, index, s_index, e_index);
-
-  std::cout << ">>>>>" << s_index << ", " << e_index << ", index_size: " << index->GetIndexArray()->length()
-			<< std::endl;
 
   if (!status_build.is_ok()) {
 	LOG(ERROR) << "Error occurred in filtering indices from table";
@@ -1312,12 +1300,12 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
 	return status_build;
   }
 
-//  status_build = SetIndexForLocResultTable(index, s_index, e_index, output, indexing_schema_);
-//
-//  if (!status_build.is_ok()) {
-//	LOG(ERROR) << "Error occurred in setting index for output table";
-//	return status_build;
-//  }
+  status_build = SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_schema_);
+
+  if (!status_build.is_ok()) {
+	LOG(ERROR) << "Error occurred in setting index for output table";
+	return status_build;
+  }
 
   return cylon::Status::OK();
 }

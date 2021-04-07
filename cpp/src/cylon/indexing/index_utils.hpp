@@ -84,6 +84,14 @@ class IndexUtil {
 	return Status::OK();
   }
 
+
+  static Status BuildArrowLinearIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
+											   arrow::MemoryPool *pool,
+											   std::shared_ptr<cylon::BaseArrowIndex> &index) {
+	index = std::make_shared<ArrowLinearIndex>(0, index_values->length(), pool, index_values);
+	return Status::OK();
+  }
+
   static Status BuildRangeIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
 										 arrow::MemoryPool *pool,
 										 std::shared_ptr<cylon::BaseIndex> &index) {

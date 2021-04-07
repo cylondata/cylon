@@ -792,40 +792,16 @@ int arrow_indexer_test_1() {
   }
 
   std::shared_ptr<cylon::Table> output_tb;
-  std::shared_ptr<arrow::Array> start_index;
-  std::shared_ptr<arrow::Array> end_index;
-
-  auto mem_pool = cylon::ToArrowPool(ctx);
-  std::shared_ptr<arrow::DoubleArray> s_ar;
-  std::shared_ptr<arrow::DoubleArray> e_ar;
-  arrow::DoubleBuilder builder_s(mem_pool);
-  arrow::DoubleBuilder builder_e(mem_pool);
-  builder_s.Reserve(1);
-  builder_e.Reserve(1);
-  builder_s.UnsafeAppend(7);
-  builder_e.UnsafeAppend(1);
-
-  builder_s.Finish(&s_ar);
-  builder_e.Finish(&e_ar);
-
-  auto v1 = s_ar->GetScalar(0);
-  auto v2 = e_ar->GetScalar(0);
 
   auto start_idx = arrow::MakeScalar(7);
   auto end_idx = arrow::MakeScalar(1);
 
-//  std::shared_ptr<arrow::Scalar> start_idx = start_idx_result.ValueOrDie();
-//
-//
-//  auto end_idx_result = arrow::MakeScalar(std::shared_ptr<arrow::DoubleType>(), 1);
-//  std::shared_ptr<arrow::Scalar> end_idx = end_idx_result.ValueOrDie();
-//
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
   std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
-  //status = cylon::IndexUtil::BuildIndex(schema, input, 0, true, output);
+
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
   if (!status.is_ok()) {
@@ -836,29 +812,16 @@ int arrow_indexer_test_1() {
 			<< output1->GetArrowIndex()->GetSchema() << ", " << output1->GetArrowIndex()->GetIndexArray()->length()
 			<< std::endl;
 
-
-
   std::shared_ptr<cylon::ArrowBaseIndexer>
 	  loc_indexer = std::make_shared<cylon::ArrowLocIndexer>(cylon::IndexingSchema::Linear);
   std::cout << "Creating Arrow Loc Indexer object" << std::endl;
   loc_indexer->loc(start_idx, end_idx, 0, output1, output_tb);
 
   output_tb->Print();
-//
-//  arrow::Int64Scalar s1(10);
-//  arrow::Int64Scalar s2(10);
-//  arrow::Int32Scalar s3(10);
-//
-//  if(s1.Equals(s2)) {
-//    std::cout << "Scalar value Match 1" << std::endl;
-//  }
-//
-//  if(s1.Equals(s3.CastTo(s1.type).ValueOrDie())) {
-//	std::cout << "Scalar value Match 2" << std::endl;
-//  }
-//
-//  LOG(INFO) << "Original Data";
-//
-//  input->Print();
+
+  auto index_arr = output_tb->GetArrowIndex()->GetIndexArray();
+
+  print_arrow_array(index_arr);
+
   return 0;
 }
