@@ -1,11 +1,14 @@
 from pycylon import DataFrame, CylonEnv
 from pycylon.net import MPIConfig
+import random
 
-df1 = DataFrame([[1, 2, 3], [2, 3, 4]])
-df2 = DataFrame([[1, 1, 1], [2, 3, 4]])
+df1 = DataFrame([random.sample(range(10, 100), 50),
+                 random.sample(range(10, 100), 50)])
+df2 = DataFrame([random.sample(range(10, 100), 50),
+                 random.sample(range(10, 100), 50)])
 
 # local merge
-df3 = df1.merge(right=df2, on=[0, 1])
+df3 = df1.merge(right=df2, on=[0])
 print("Local Merge")
 print(df3)
 
@@ -13,5 +16,5 @@ print(df3)
 env = CylonEnv(config=MPIConfig())
 
 print("Distributed Merge")
-df3 = df1.merge(right=df2, on=[0, 1], env=env)
+df3 = df1.merge(right=df2, on=[0], env=env)
 print(df3)

@@ -1,10 +1,11 @@
+from typing import Union
 import pandas as pd
 import numpy as np
 
 from pycylon import DataFrame
 
 
-def create_df(data):
+def create_df(data) -> Union[DataFrame, pd.DataFrame]:
     # np.T is a temp fix to address inconsistencies
     return DataFrame(data), pd.DataFrame(np.array(data).T)
 
