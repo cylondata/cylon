@@ -58,6 +58,7 @@ class Table {
     }
     auto pool = cylon::ToArrowPool(ctx);
     base_index_ = std::make_shared<cylon::RangeIndex>(0, tab->num_rows(), 1, pool);
+    base_arrow_index_ = std::make_shared<cylon::ArrowRangeIndex>(0, tab->num_rows(), 1, pool);
   }
 
   Table(std::shared_ptr<arrow::Table> &tab, std::shared_ptr<cylon::CylonContext> &ctx,
@@ -188,7 +189,11 @@ class Table {
 
   Status Set_Index(std::shared_ptr<cylon::BaseIndex> &index, bool drop_index);
 
+  Status Set_ArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool drop_index);
+
   std::shared_ptr<BaseIndex> GetIndex();
+
+  std::shared_ptr<BaseArrowIndex> GetArrowIndex();
 
   Status ResetIndex(bool drop = false);
 
@@ -205,6 +210,7 @@ class Table {
   bool retain_ = true;
   std::vector<std::shared_ptr<cylon::Column>> columns_;
   std::shared_ptr<cylon::BaseIndex> base_index_ = nullptr;
+  std::shared_ptr<cylon::BaseArrowIndex> base_arrow_index_ = nullptr;
 };
 
 /**

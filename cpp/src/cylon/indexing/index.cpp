@@ -233,6 +233,7 @@ arrow::MemoryPool *BaseIndex::GetPool() const {
 
 
 LinearArrowIndexKernel::LinearArrowIndexKernel() {}
+
 std::shared_ptr<BaseArrowIndex> LinearArrowIndexKernel::BuildIndex(arrow::MemoryPool *pool,
 																   std::shared_ptr<arrow::Table> &input_table,
 																   const int index_column) {
@@ -260,8 +261,9 @@ ArrowLinearIndex::ArrowLinearIndex(int col_id, int size, std::shared_ptr<CylonCo
 ArrowLinearIndex::ArrowLinearIndex(int col_id, int size, arrow::MemoryPool *pool) : BaseArrowIndex(col_id,
 																								   size,
 																								   pool) {}
-Status ArrowLinearIndex::LocationByValue(const arrow::Scalar &search_param, std::vector<int64_t> &find_index) {
-  	auto cast_val = search_param.CastTo(index_array_->type()).ValueOrDie();
+Status ArrowLinearIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, std::vector<int64_t> &find_index) {
+
+  	auto cast_val = search_param->CastTo(index_array_->type()).ValueOrDie();
 	for (int64_t ix = 0; ix < index_array_->length(); ix++) {
 	  auto val = index_array_->GetScalar(ix).ValueOrDie();
 	  if (cast_val->Equals(val)) {
@@ -270,8 +272,8 @@ Status ArrowLinearIndex::LocationByValue(const arrow::Scalar &search_param, std:
 	}
 	return Status::OK();
 }
-Status ArrowLinearIndex::LocationByValue(const arrow::Scalar &search_param, int64_t &find_index) {
-  	auto cast_val = search_param.CastTo(index_array_->type()).ValueOrDie();
+Status ArrowLinearIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) {
+  	auto cast_val = search_param->CastTo(index_array_->type()).ValueOrDie();
 	for (int64_t ix = 0; ix < index_array_->length(); ix++) {
 	  auto val = index_array_->GetScalar(ix).ValueOrDie();
 	  if (cast_val->Equals(val)) {
@@ -281,7 +283,7 @@ Status ArrowLinearIndex::LocationByValue(const arrow::Scalar &search_param, int6
 	}
 	return Status::OK();
 }
-Status ArrowLinearIndex::LocationByValue(const arrow::Scalar &search_param,
+Status ArrowLinearIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
 										 const std::shared_ptr<arrow::Table> &input,
 										 std::vector<int64_t> &filter_location,
 										 std::shared_ptr<arrow::Table> &output) {
@@ -354,7 +356,62 @@ bool ArrowLinearIndex::IsUnique() {
 	}
 	return is_unique;
 }
+int BaseArrowIndex::GetColId() const {
+  return 0;
 }
+int BaseArrowIndex::GetSize() const {
+  return 0;
+}
+arrow::MemoryPool *BaseArrowIndex::GetPool() const {
+  return nullptr;
+}
+
+Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+										std::vector<int64_t> &find_index) {
+  return Status();
+}
+Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) {
+  return Status();
+}
+Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+										const std::shared_ptr<arrow::Table> &input,
+										std::vector<int64_t> &filter_location,
+										std::shared_ptr<arrow::Table> &output) {
+  return Status();
+}
+std::shared_ptr<arrow::Array> ArrowRangeIndex::GetIndexAsArray() {
+  return std::shared_ptr<arrow::Array>();
+}
+void ArrowRangeIndex::SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) {
+
+}
+std::shared_ptr<arrow::Array> ArrowRangeIndex::GetIndexArray() {
+  return std::shared_ptr<arrow::Array>();
+}
+int ArrowRangeIndex::GetColId() const {
+  return BaseArrowIndex::GetColId();
+}
+int ArrowRangeIndex::GetSize() const {
+  return BaseArrowIndex::GetSize();
+}
+IndexingSchema ArrowRangeIndex::GetSchema() {
+  return Linear;
+}
+arrow::MemoryPool *ArrowRangeIndex::GetPool() const {
+  return BaseArrowIndex::GetPool();
+}
+bool ArrowRangeIndex::IsUnique() {
+  return false;
+}
+ArrowRangeIndex::ArrowRangeIndex(int start, int size, int step, arrow::MemoryPool *pool) : BaseArrowIndex(0, size, pool),
+																						   start_(start),
+																						   end_(size),
+																						   step_(step) {
+
+};
+}
+
+
 
 
 

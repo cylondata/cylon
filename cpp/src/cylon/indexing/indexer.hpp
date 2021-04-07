@@ -278,21 +278,21 @@ class ArrowBaseIndexer {
 
   }
 
-  virtual Status loc(const std::shared_ptr<arrow::Array> &start_index,
-					 const std::shared_ptr<arrow::Array> &end_index,
+  virtual Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
+					 const std::shared_ptr<arrow::Scalar> &end_index,
 					 const int column_index,
 					 const std::shared_ptr<Table> &input_table,
 					 std::shared_ptr<cylon::Table> &output) = 0;
 
-  virtual Status loc(const std::shared_ptr<arrow::Array> &start_index,
-					 const std::shared_ptr<arrow::Array> &end_index,
+  virtual Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
+					 const std::shared_ptr<arrow::Scalar> &end_index,
 					 const int start_column_index,
 					 const int end_column_index,
 					 const std::shared_ptr<Table> &input_table,
 					 std::shared_ptr<cylon::Table> &output) = 0;
 
-  virtual Status loc(const std::shared_ptr<arrow::Array> &start_index,
-					 const std::shared_ptr<arrow::Array> &end_index,
+  virtual Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
+					 const std::shared_ptr<arrow::Scalar> &end_index,
 					 const std::vector<int> &columns,
 					 const std::shared_ptr<Table> &input_table,
 					 std::shared_ptr<cylon::Table> &output) = 0;
@@ -320,23 +320,23 @@ class ArrowBaseIndexer {
 class ArrowLocIndexer : public ArrowBaseIndexer {
 
  public:
-  ArrowLocIndexer(IndexingSchema indexing_schema) : ArrowBaseIndexer(), indexing_schema_(indexing_schema) {
+  explicit ArrowLocIndexer(IndexingSchema indexing_schema) : ArrowBaseIndexer(), indexing_schema_(indexing_schema) {
 
   };
 
-  Status loc(const std::shared_ptr<arrow::Array> &start_index,
-			 const std::shared_ptr<arrow::Array> &end_index,
+  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
+			 const std::shared_ptr<arrow::Scalar> &end_index,
 			 const int column_index,
 			 const std::shared_ptr<Table> &input_table,
 			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Array> &start_index,
-			 const std::shared_ptr<arrow::Array> &end_index,
+  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
+			 const std::shared_ptr<arrow::Scalar> &end_index,
 			 const int start_column_index,
 			 const int end_column_index,
 			 const std::shared_ptr<Table> &input_table,
 			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Array> &start_index,
-			 const std::shared_ptr<arrow::Array> &end_index,
+  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
+			 const std::shared_ptr<arrow::Scalar> &end_index,
 			 const std::vector<int> &columns,
 			 const std::shared_ptr<Table> &input_table,
 			 std::shared_ptr<cylon::Table> &output) override;
