@@ -130,12 +130,12 @@ int main(int argc, char *argv[]) {
 //  std::cout << "Value : " << ptr << ", " <<  *cast_value << std::endl;
 
 
-//  arrow_indexer_test_1();
-//  arrow_indexer_test_2();
-//  arrow_indexer_test_3();
-//  arrow_indexer_test_4();
-//  arrow_indexer_test_5();
-//  arrow_indexer_test_6();
+  arrow_indexer_test_1();
+  arrow_indexer_test_2();
+  arrow_indexer_test_3();
+  arrow_indexer_test_4();
+  arrow_indexer_test_5();
+  arrow_indexer_test_6();
 
   arrow_indexer_str_test_1();
   arrow_indexer_str_test_2();
