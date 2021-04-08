@@ -45,8 +45,8 @@ class IndexUtil {
 							   std::shared_ptr<cylon::BaseIndex> &index);
 
   static Status BuildArrowHashIndex(const std::shared_ptr<Table> &input,
-							   const int index_column,
-							   std::shared_ptr<cylon::BaseArrowIndex> &index);
+									const int index_column,
+									std::shared_ptr<cylon::BaseArrowIndex> &index);
 
   static Status BuildLinearIndex(const std::shared_ptr<Table> &input,
 								 const int index_column,
@@ -58,7 +58,8 @@ class IndexUtil {
 
   static Status BuildRangeIndex(const std::shared_ptr<Table> &input, std::shared_ptr<cylon::BaseIndex> &index);
 
-  static Status BuildArrowRangeIndex(const std::shared_ptr<Table> &input, std::shared_ptr<cylon::BaseArrowIndex> &index);
+  static Status BuildArrowRangeIndex(const std::shared_ptr<Table> &input,
+									 std::shared_ptr<cylon::BaseArrowIndex> &index);
 
   template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
   static Status BuildHashIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
@@ -90,10 +91,9 @@ class IndexUtil {
 	return Status::OK();
   }
 
-
   static Status BuildArrowLinearIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
-											   arrow::MemoryPool *pool,
-											   std::shared_ptr<cylon::BaseArrowIndex> &index) {
+													arrow::MemoryPool *pool,
+													std::shared_ptr<cylon::BaseArrowIndex> &index) {
 	index = std::make_shared<ArrowLinearIndex>(0, index_values->length(), pool, index_values);
 	return Status::OK();
   }
@@ -106,6 +106,10 @@ class IndexUtil {
 	index->SetIndexArray(index_values);
 	return Status::OK();
   }
+
+  static Status BuildArrowRangeIndexFromArray(int64_t size,
+											  arrow::MemoryPool *pool,
+											  std::shared_ptr<cylon::BaseArrowIndex> &index);
 
   static Status BuildHashIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
 										arrow::MemoryPool *pool,

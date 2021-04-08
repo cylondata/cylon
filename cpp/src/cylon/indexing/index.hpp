@@ -778,6 +778,10 @@ class ArrowRangeIndex : public BaseArrowIndex {
   arrow::MemoryPool *GetPool() const override;
   bool IsUnique() override;
 
+  int GetStart() const;
+  int GetAnEnd() const;
+  int GetStep() const;
+
  private:
   int start_ = 0;
   int end_ = 0;

@@ -800,26 +800,29 @@ int arrow_indexer_test_1() {
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
   std::shared_ptr<cylon::BaseIndex> base_index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Hash;
+  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
-  status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
+  status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
 
   if (!status.is_ok()) {
 	LOG(ERROR) << "Error occurred in creating the Arrow Index";
+  } else {
+	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Set Index Values : " << output1->GetArrowIndex()->GetSize() << ", "
-			<< output1->GetArrowIndex()->GetSchema() << ", " << output1->GetArrowIndex()->GetIndexArray()->length()
-			<< std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
-	  loc_indexer = std::make_shared<cylon::ArrowLocIndexer>(cylon::IndexingSchema::Linear);
+	  loc_indexer = std::make_shared<cylon::ArrowLocIndexer>(schema);
   std::cout << "Creating Arrow Loc Indexer object" << std::endl;
   loc_indexer->loc(start_idx, end_idx, 0, output1, output_tb);
 
   output_tb->Print();
 
   auto index_arr = output_tb->GetArrowIndex()->GetIndexArray();
+
+  std::cout << "Elements in Output Index : " << index_arr->length() << "["  << output_tb->GetArrowIndex()->GetSize() << "]" << std::endl;
 
   print_arrow_array(index_arr);
 
@@ -847,8 +850,6 @@ int arrow_indexer_test_1() {
 
   std::cout << "Search Value in C : " << casted_a->value << ", " << find_val << ", "
 			<< casted_a_s->value->ToString() << std::endl;
-
-
 
   return 0;
 }

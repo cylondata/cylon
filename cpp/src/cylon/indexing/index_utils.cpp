@@ -408,32 +408,40 @@ cylon::Status cylon::IndexUtil::BuildArrowRangeIndex(const std::shared_ptr<Table
   auto ctx = input->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
   auto table_ = input->get_table();
-
+  std::cout << "BuildArrowRangeIndex : Table rows : " << table_->num_rows() << std::endl;
   std::shared_ptr<cylon::ArrowIndexKernel> kernel = std::make_unique<ArrowRangeIndexKernel>();
   std::shared_ptr<cylon::BaseArrowIndex> bi = kernel->BuildIndex(pool, table_, 0);
   // providing similar functionality as Pandas
-  std::vector<int64_t> range_index_values;
-  std::shared_ptr<arrow::Array> index_arr;
-  for (int i = 0; i < input->Rows(); ++i) {
-	range_index_values.push_back(i);
-  }
-  arrow::Int64Builder builder(pool);
-  ar_status = builder.AppendValues(range_index_values);
-
-  if (!ar_status.ok()) {
-	LOG(ERROR) << "Error occurred in creating range index value array";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(ar_status);
-  }
-
-  ar_status = builder.Finish(&index_arr);
-
-  if (!ar_status.ok()) {
-	LOG(ERROR) << "Error occurred in finalizing range index value array";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(ar_status);
-  }
-  bi->SetIndexArray(index_arr);
+//  std::vector<int64_t> range_index_values;
+//  std::shared_ptr<arrow::Array> index_arr;
+//  for (int i = 0; i < input->Rows(); ++i) {
+//	range_index_values.push_back(i);
+//  }
+//  arrow::Int64Builder builder(pool);
+//  ar_status = builder.AppendValues(range_index_values);
+//
+//  if (!ar_status.ok()) {
+//	LOG(ERROR) << "Error occurred in creating range index value array";
+//	RETURN_CYLON_STATUS_IF_ARROW_FAILED(ar_status);
+//  }
+//
+//  ar_status = builder.Finish(&index_arr);
+//
+//  if (!ar_status.ok()) {
+//	LOG(ERROR) << "Error occurred in finalizing range index value array";
+//	RETURN_CYLON_STATUS_IF_ARROW_FAILED(ar_status);
+//  }
+//  bi->SetIndexArray(index_arr);
   index = std::move(bi);
   return cylon::Status::OK();
+}
+cylon::Status cylon::IndexUtil::BuildArrowRangeIndexFromArray(int64_t size,
+															  arrow::MemoryPool *pool,
+															  std::shared_ptr<cylon::BaseArrowIndex> &index) {
+  std::cout << "Making arrow range index start : " << size << std::endl;
+  index = std::make_shared<ArrowRangeIndex>(0, size, 1, pool);
+  std::cout << "Making arrow range index end : " << size << "," << index->GetSize() << "," << index->GetSchema() << std::endl;
+  return Status::OK();
 }
 
 

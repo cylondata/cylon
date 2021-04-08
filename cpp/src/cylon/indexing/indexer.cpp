@@ -40,8 +40,6 @@ cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingSchema indexing_sc
 	return cylon::Status::OK(); //cylon::IndexUtil::BuildHashIndexFromArray(sub_index_arr, pool, loc_index);
   } else if (indexing_schema == cylon::IndexingSchema::Linear) {
 	return cylon::IndexUtil::BuildArrowLinearIndexFromArrowArray(sub_index_arr, pool, loc_index);
-  } else if (indexing_schema == cylon::IndexingSchema::Range) {
-	return cylon::Status::OK(); //cylon::IndexUtil::BuildRangeIndexFromArray(sub_index_arr, pool, loc_index);
   } else if (indexing_schema == cylon::IndexingSchema::BinaryTree) {
 	return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
   } else if (indexing_schema == cylon::IndexingSchema::BTree) {
@@ -134,11 +132,21 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   auto pool = cylon::ToArrowPool(ctx);
 
   LOG(INFO) << "Set Index for location output with Non-RangeIndex";
-  auto index_arr = index->GetIndexArray();
-  sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
-  BuildArrowIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
-  output->Set_ArrowIndex(loc_index, false);
-  return cylon::Status::OK();
+  if (indexing_schema == cylon::IndexingSchema::Range) {
+    int64_t size = end_pos - start_pos;
+    std::cout << "Setting range index for output table : size : " << size << std::endl;
+	cylon::IndexUtil::BuildArrowRangeIndexFromArray(size, pool, loc_index);
+	std::cout << "After Setting range index for output table : size : " << loc_index->GetSize() << "," << loc_index->GetSchema() << std::endl;
+	output->Set_ArrowIndex(loc_index, false);
+	return cylon::Status::OK();
+  } else {
+	auto index_arr = index->GetIndexArray();
+	sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
+	BuildArrowIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
+	output->Set_ArrowIndex(loc_index, false);
+	return cylon::Status::OK();
+  }
+
 }
 
 cylon::Status GetLocFilterIndices(const void *start_index,
@@ -1244,22 +1252,28 @@ cylon::Status cylon::CheckIsIndexValueUnique(const void *index_value,
 cylon::Status cylon::CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar> &index_value,
 											 const std::shared_ptr<BaseArrowIndex> &index,
 											 bool &is_unique) {
-  auto index_arr = index->GetIndexArray();
+
+  std::cout << "Before Loop : " << index->GetSchema() << std::endl;
   is_unique = true;
-  int64_t find_cout = 0;
-  std::cout << "Before Loop" << std::endl;
-  for (int64_t ix = 0; ix < index_arr->length(); ix++) {
-	auto val = index_arr->GetScalar(ix).ValueOrDie();
-	auto index_value_cast = index_value->CastTo(val->type).ValueOrDie();
-	if (val == index_value_cast) {
-	  find_cout++;
+  if (index->GetSchema() == cylon::IndexingSchema::Range) {
+	return cylon::Status::OK();
+  } else {
+	auto index_arr = index->GetIndexArray();
+	int64_t find_cout = 0;
+	for (int64_t ix = 0; ix < index_arr->length(); ix++) {
+	  auto val = index_arr->GetScalar(ix).ValueOrDie();
+	  auto index_value_cast = index_value->CastTo(val->type).ValueOrDie();
+	  if (val == index_value_cast) {
+		find_cout++;
+	  }
+	  if (find_cout > 1) {
+		is_unique = false;
+		break;
+	  }
 	}
-	if (find_cout > 1) {
-	  is_unique = false;
-	  break;
-	}
+	return cylon::Status::OK();
   }
-  return cylon::Status::OK();
+
 }
 
 /*
@@ -1307,6 +1321,7 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
 	return status_build;
   }
 
+  std::cout << "Indexing Schema : " << indexing_schema_ << std::endl;
   status_build = SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_schema_);
 
   if (!status_build.is_ok()) {
