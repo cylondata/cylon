@@ -12,10 +12,11 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_UTIL_LOGGING_H_
-#define CYLON_SRC_CYLON_UTIL_LOGGING_H_
+#ifndef CYLON_SRC_CYLON_UTIL_LOGGING_HPP_
+#define CYLON_SRC_CYLON_UTIL_LOGGING_HPP_
 
+namespace cylon {
 void SetLogLevel(int level);
 void DisableLogging();
-
-#endif //CYLON_SRC_CYLON_UTIL_LOGGING_H_
+}
+#endif //CYLON_SRC_CYLON_UTIL_LOGGING_HPP_
