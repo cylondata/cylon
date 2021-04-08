@@ -793,14 +793,14 @@ int arrow_indexer_test_1() {
 
   std::shared_ptr<cylon::Table> output_tb;
 
-  auto start_idx = arrow::MakeScalar(7);
-  auto end_idx = arrow::MakeScalar(1);
+  auto start_idx = arrow::MakeScalar<int64_t>(7);
+  auto end_idx = arrow::MakeScalar<int64_t>(1);
 
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
   std::shared_ptr<cylon::BaseIndex> base_index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingSchema schema = cylon::IndexingSchema::Hash;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
@@ -822,6 +822,33 @@ int arrow_indexer_test_1() {
   auto index_arr = output_tb->GetArrowIndex()->GetIndexArray();
 
   print_arrow_array(index_arr);
+
+  std::unordered_multimap<int64_t, int64_t> map;
+
+  map.emplace(10, 0);
+  map.emplace(20, 1);
+  map.emplace(5, 2);
+  map.emplace(10, 3);
+  map.emplace(20, 4);
+
+  auto search_value = arrow::MakeScalar<int64_t>(10);
+  auto casted_a = reinterpret_cast<arrow::Int64Scalar *>(search_value.get());
+
+  auto search_value_1 = arrow::MakeScalar<int64_t>(20);
+  std::shared_ptr<arrow::Int64Scalar>
+	  casted_a_1 = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(search_value_1);
+
+  auto search_val_str = arrow::MakeScalar("100");
+  std::shared_ptr<arrow::StringScalar> casted_a_s = std::static_pointer_cast<arrow::StringScalar>(search_val_str);
+
+  //auto result = search_value->CastTo(std::shared_ptr<arrow::Int64Type>());
+
+  int64_t find_val = casted_a_1->value;
+
+  std::cout << "Search Value in C : " << casted_a->value << ", " << find_val << ", "
+			<< casted_a_s->value->ToString() << std::endl;
+
+
 
   return 0;
 }

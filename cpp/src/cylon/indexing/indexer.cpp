@@ -209,6 +209,8 @@ cylon::Status GetArrowLocFilterIndices(const std::shared_ptr<arrow::Scalar> &sta
 	return cylon::Status(cylon::Code::KeyError);
   }
 
+  std::cout << "Find Indices : " << std::endl;
+
   status1 = index->LocationByValue(start_index, s_index);
   status2 = index->LocationByValue(end_index, e_index);
 
@@ -1278,7 +1280,12 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
   int64_t s_index = -1;
   int64_t e_index = -1;
 
+  std::cout << "Start, End, Search Values : " << start_index->ToString() << ", " << end_index->ToString() << std::endl;
+
   status_build = GetArrowLocFilterIndices(start_index, end_index, index, s_index, e_index);
+
+  std::cout << "Found Start Index : " << s_index << std::endl;
+  std::cout << "Found End Index : " << e_index << std::endl;
 
   if (!status_build.is_ok()) {
 	LOG(ERROR) << "Error occurred in filtering indices from table";

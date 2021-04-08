@@ -44,6 +44,10 @@ class IndexUtil {
 							   const int index_column,
 							   std::shared_ptr<cylon::BaseIndex> &index);
 
+  static Status BuildArrowHashIndex(const std::shared_ptr<Table> &input,
+							   const int index_column,
+							   std::shared_ptr<cylon::BaseArrowIndex> &index);
+
   static Status BuildLinearIndex(const std::shared_ptr<Table> &input,
 								 const int index_column,
 								 std::shared_ptr<cylon::BaseIndex> &index);
@@ -53,6 +57,8 @@ class IndexUtil {
 									  std::shared_ptr<cylon::BaseArrowIndex> &index);
 
   static Status BuildRangeIndex(const std::shared_ptr<Table> &input, std::shared_ptr<cylon::BaseIndex> &index);
+
+  static Status BuildArrowRangeIndex(const std::shared_ptr<Table> &input, std::shared_ptr<cylon::BaseArrowIndex> &index);
 
   template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
   static Status BuildHashIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,

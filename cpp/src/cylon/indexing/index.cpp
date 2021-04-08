@@ -26,6 +26,30 @@ std::unique_ptr<IndexKernel> CreateHashIndexKernel(std::shared_ptr<arrow::Table>
 
 }
 
+std::unique_ptr<ArrowIndexKernel> CreateArrowHashIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column) {
+  switch (input_table->column(index_column)->type()->id()) {
+
+	case arrow::Type::NA:return nullptr;
+	case arrow::Type::BOOL:return std::make_unique<BoolArrowHashIndexKernel>();
+	case arrow::Type::UINT8:return std::make_unique<UInt8ArrowHashIndexKernel>();
+	case arrow::Type::INT8:return std::make_unique<Int8ArrowHashIndexKernel>();
+	case arrow::Type::UINT16:return std::make_unique<UInt16ArrowHashIndexKernel>();
+	case arrow::Type::INT16:return std::make_unique<Int16ArrowHashIndexKernel>();
+	case arrow::Type::UINT32:return std::make_unique<UInt32ArrowHashIndexKernel>();
+	case arrow::Type::INT32:return std::make_unique<Int32ArrowHashIndexKernel>();
+	case arrow::Type::UINT64:return std::make_unique<UInt64ArrowHashIndexKernel>();
+	case arrow::Type::INT64: return std::make_unique<Int64ArrowHashIndexKernel>();
+	case arrow::Type::HALF_FLOAT:return std::make_unique<HalfFloatArrowHashIndexKernel>();
+	case arrow::Type::FLOAT:return std::make_unique<FloatArrowHashIndexKernel>();
+	case arrow::Type::DOUBLE:return std::make_unique<DoubleArrowHashIndexKernel>();
+	case arrow::Type::STRING:return std::make_unique<StringArrowHashIndexKernel>();
+	case arrow::Type::BINARY:return nullptr;//std::make_unique<BinaryHashIndexKernel>();
+	default: return std::make_unique<ArrowRangeIndexKernel>();
+  }
+
+}
+
+
 std::unique_ptr<IndexKernel> CreateLinearIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column) {
   switch (input_table->column(index_column)->type()->id()) {
 
@@ -57,6 +81,17 @@ std::unique_ptr<IndexKernel> CreateIndexKernel(std::shared_ptr<arrow::Table> inp
     return CreateHashIndexKernel(input_table, index_column);
   }
 }
+
+std::unique_ptr<ArrowIndexKernel> CreateArrowIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column) {
+  // TODO: fix the criterion to check the kernel creation method
+  if (index_column == -1) {
+	return std::make_unique<ArrowRangeIndexKernel>();
+  } else {
+	return CreateArrowHashIndexKernel(input_table, index_column);
+  }
+}
+
+
 cylon::Status CompareArraysForUniqueness(std::shared_ptr<arrow::Array> &index_arr, bool &is_unique) {
   Status s;
   auto result = arrow::compute::Unique(index_arr);
@@ -409,6 +444,18 @@ ArrowRangeIndex::ArrowRangeIndex(int start, int size, int step, arrow::MemoryPoo
 																						   step_(step) {
 
 };
+ArrowRangeIndexKernel::ArrowRangeIndexKernel() {
+
+}
+std::shared_ptr<BaseArrowIndex> ArrowRangeIndexKernel::BuildIndex(arrow::MemoryPool *pool,
+																  std::shared_ptr<arrow::Table> &input_table,
+																  const int index_column) {
+  std::shared_ptr<ArrowRangeIndex> range_index;
+
+  range_index = std::make_shared<ArrowRangeIndex>(0, input_table->num_rows(), 1, pool);
+
+  return range_index;
+}
 }
 
 

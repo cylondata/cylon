@@ -26,6 +26,32 @@ cylon::Status cylon::IndexUtil::BuildHashIndex(const std::shared_ptr<Table> &inp
   return cylon::Status::OK();
 }
 
+
+cylon::Status cylon::IndexUtil::BuildArrowHashIndex(const std::shared_ptr<Table> &input,
+											   const int index_column,
+											   std::shared_ptr<cylon::BaseArrowIndex> &index) {
+
+  std::shared_ptr<arrow::Table> arrow_out;
+
+  auto table_ = input->get_table();
+  auto ctx = input->GetContext();
+
+  if (table_->column(0)->num_chunks() > 1) {
+	const arrow::Result<std::shared_ptr<arrow::Table>> &res = table_->CombineChunks(cylon::ToArrowPool(ctx));
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
+	table_ = res.ValueOrDie();
+  }
+
+  auto pool = cylon::ToArrowPool(ctx);
+
+  std::shared_ptr<cylon::ArrowIndexKernel> kernel = CreateArrowIndexKernel(table_, index_column);
+  std::shared_ptr<cylon::BaseArrowIndex> bi = kernel->BuildIndex(pool, table_, index_column);
+  index = std::move(bi);
+  auto index_array = cylon::util::GetChunkOrEmptyArray(table_->column(index_column), 0);
+  index->SetIndexArray(index_array);
+  return cylon::Status::OK();
+}
+
 cylon::Status cylon::IndexUtil::BuildHashIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
 														arrow::MemoryPool *pool,
 														std::shared_ptr<cylon::BaseIndex> &index) {
@@ -247,6 +273,7 @@ cylon::Status cylon::IndexUtil::BuildRangeIndex(const std::shared_ptr<Table> &in
   index = std::move(bi);
   return cylon::Status::OK();
 }
+
 cylon::Status cylon::IndexUtil::BuildIndex(const IndexingSchema schema,
 										   const std::shared_ptr<Table> &input,
 										   const int index_column,
@@ -258,6 +285,21 @@ cylon::Status cylon::IndexUtil::BuildIndex(const IndexingSchema schema,
 	case BinaryTree:break;
 	case BTree:break;
 	default: return BuildRangeIndex(input, index);
+  }
+  return cylon::Status(cylon::Code::Invalid, "Invalid indexing schema");
+}
+
+cylon::Status cylon::IndexUtil::BuildArrowIndex(const cylon::IndexingSchema schema,
+												const std::shared_ptr<Table> &input,
+												const int index_column,
+												std::shared_ptr<cylon::BaseArrowIndex> &index) {
+  switch (schema) {
+	case Range: return BuildArrowRangeIndex(input, index);
+	case Linear: return BuildArrowLinearIndex(input, index_column, index);
+	case Hash: return BuildArrowHashIndex(input, index_column, index);
+	case BinaryTree:break;
+	case BTree:break;
+	default: return Status::OK(); //BuildRangeIndex(input, index);
   }
   return cylon::Status(cylon::Code::Invalid, "Invalid indexing schema");
 }
@@ -342,20 +384,9 @@ cylon::Status cylon::IndexUtil::BuildArrowIndex(cylon::IndexingSchema schema,
   return cylon::Status::OK();
 }
 
-cylon::Status cylon::IndexUtil::BuildArrowIndex(const cylon::IndexingSchema schema,
-												const std::shared_ptr<Table> &input,
-												const int index_column,
-												std::shared_ptr<cylon::BaseArrowIndex> &index) {
-  switch (schema) {
-	case Range: return Status::OK();
-	case Linear: return BuildArrowLinearIndex(input, index_column, index);
-	case Hash: return Status::OK();//BuildHashIndex(input, index_column, index);
-	case BinaryTree:break;
-	case BTree:break;
-	default: return Status::OK(); //BuildRangeIndex(input, index);
-  }
-  return cylon::Status(cylon::Code::Invalid, "Invalid indexing schema");
-}
+
+
+
 cylon::Status cylon::IndexUtil::BuildArrowLinearIndex(const std::shared_ptr<Table> &input,
 													  const int index_column,
 													  std::shared_ptr<cylon::BaseArrowIndex> &index) {
@@ -368,6 +399,39 @@ cylon::Status cylon::IndexUtil::BuildArrowLinearIndex(const std::shared_ptr<Tabl
 
   std::shared_ptr<cylon::ArrowIndexKernel> kernel = std::make_shared<cylon::LinearArrowIndexKernel>();
   std::shared_ptr<cylon::BaseArrowIndex> bi = kernel->BuildIndex(pool, table_, index_column);
+  index = std::move(bi);
+  return cylon::Status::OK();
+}
+cylon::Status cylon::IndexUtil::BuildArrowRangeIndex(const std::shared_ptr<Table> &input,
+													 std::shared_ptr<cylon::BaseArrowIndex> &index) {
+  arrow::Status ar_status;
+  auto ctx = input->GetContext();
+  auto pool = cylon::ToArrowPool(ctx);
+  auto table_ = input->get_table();
+
+  std::shared_ptr<cylon::ArrowIndexKernel> kernel = std::make_unique<ArrowRangeIndexKernel>();
+  std::shared_ptr<cylon::BaseArrowIndex> bi = kernel->BuildIndex(pool, table_, 0);
+  // providing similar functionality as Pandas
+  std::vector<int64_t> range_index_values;
+  std::shared_ptr<arrow::Array> index_arr;
+  for (int i = 0; i < input->Rows(); ++i) {
+	range_index_values.push_back(i);
+  }
+  arrow::Int64Builder builder(pool);
+  ar_status = builder.AppendValues(range_index_values);
+
+  if (!ar_status.ok()) {
+	LOG(ERROR) << "Error occurred in creating range index value array";
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(ar_status);
+  }
+
+  ar_status = builder.Finish(&index_arr);
+
+  if (!ar_status.ok()) {
+	LOG(ERROR) << "Error occurred in finalizing range index value array";
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(ar_status);
+  }
+  bi->SetIndexArray(index_arr);
   index = std::move(bi);
   return cylon::Status::OK();
 }
