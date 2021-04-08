@@ -35,7 +35,7 @@ del get_versions
 
 lg_level = os.getenv('CYLON_LOG_LEVEL')
 
-if log_level is None:
+if lg_level is None:
     disable_logging()
 else:
     log_level(int(lg_level))
