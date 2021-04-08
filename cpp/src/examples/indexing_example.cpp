@@ -800,7 +800,7 @@ int arrow_indexer_test_1() {
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
   std::shared_ptr<cylon::BaseIndex> base_index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingSchema schema = cylon::IndexingSchema::Hash;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
 

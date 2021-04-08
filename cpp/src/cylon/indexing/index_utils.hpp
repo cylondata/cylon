@@ -82,6 +82,27 @@ class IndexUtil {
   }
 
   template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
+  static Status BuildArrowHashIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
+											 arrow::MemoryPool *pool,
+											 std::shared_ptr<cylon::BaseArrowIndex> &index) {
+	using SCALAR_T = typename arrow::TypeTraits<ARROW_T>::ScalarType;
+	using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
+	using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
+	Status s;
+	std::shared_ptr<MMAP_TYPE> out_umm_ptr = std::make_shared<MMAP_TYPE>(index_values->length());
+	std::shared_ptr<SCALAR_T> scalar_val;
+	auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_values);
+	for (int64_t i = reader0->length() - 1; i >= 0; --i) {
+	  auto val = reader0->GetView(i);
+	  out_umm_ptr->emplace(val, i);
+	}
+	index = std::make_shared<ArrowHashIndex<ARROW_T, CTYPE>>(0, index_values->length(), pool, out_umm_ptr);
+	index->SetIndexArray(index_values);
+	return Status::OK();
+  }
+
+
+  template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
   static Status BuildLinearIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
 											   arrow::MemoryPool *pool,
 											   std::shared_ptr<cylon::BaseIndex> &index) {
@@ -114,6 +135,10 @@ class IndexUtil {
   static Status BuildHashIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
 										arrow::MemoryPool *pool,
 										std::shared_ptr<cylon::BaseIndex> &index);
+
+  static Status BuildArrowHashIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
+										arrow::MemoryPool *pool,
+										std::shared_ptr<cylon::BaseArrowIndex> &index);
 
   static Status BuildLinearIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
 										  arrow::MemoryPool *pool,
