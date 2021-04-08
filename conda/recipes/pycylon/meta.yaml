@@ -1,0 +1,48 @@
+{% set version = '0.4.0'.lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
+{% set py_version=environ.get('CONDA_PY', 36) %}
+{% set cylon_version='.'.join(environ.get('CYLON_VERSION', '0.4.0').split('.')[:2]) %}
+
+package:
+  name: pycylon
+  version: {{ version }}
+
+source:
+  git_url: ../../..
+
+build:
+  number: {{ GIT_DESCRIBE_NUMBER }}
+  string: cylon_{{ cylon_version }}_py{{ py_version }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
+  script_env:
+    - CONDA_PREFIX
+    - PARALLEL_LEVEL
+
+requirements:
+  build:
+    - python 3.7
+    - glog 0.4.0
+    - cython >=0.29,<0.30
+    - setuptools
+    - pyarrow 2.0.0
+    - openmpi
+    - cylon {{ version }}
+    - mpi4py
+    - pytest
+    - pytest-mpi
+  run:
+    - python 3.7
+    - cylon {{ version }}
+    - pandas >=1.0,<1.2.0dev0
+    - numpy
+    - openmpi
+    - pyarrow 2.0.0
+    - mpi4py
+    - pytest
+    - pytest-mpi
+    - {{ pin_compatible('pyarrow', max_pin='x.x.x') }}
+
+about:
+  home: http://cylondata.org/
+  license: Apache-2.0
+  license_family: Apache
+  license_file: LICENSE
+  summary: Cylon DataFrame library

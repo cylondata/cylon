@@ -17,13 +17,42 @@ Run test:
 >> pytest -q python/test/test_sorting.py
 """
 
+from utils import create_df,assert_eq
 import pyarrow as pa
 import pandas as pd
 import numpy as np
+import random
 
 import pycylon as cn
 from pycylon import CylonContext
 
+
+def test_df_sorting():
+    df_c, df_p = create_df([random.sample(range(10, 300), 50),
+                            random.sample(range(10, 300), 50),
+                            random.sample(range(10, 300), 50)])
+
+    def do_sort(col, ascending):
+        srt_c = df_c.sort_values(by=col, ascending=ascending)
+        srt_p = df_p.sort_values(by=col, ascending=ascending)
+        assert_eq(srt_c, srt_p)
+
+    # single column
+    for asc in [True, False]:
+        for c in range(0, 3):
+            do_sort(c, asc)
+
+    # multi column
+    for asc in [True, False]:
+        for c1 in range(0, 3):
+            for c2 in range(0, 3):
+                if c1 != c2:
+                    do_sort([c1, c2], asc)
+                for c3 in range(0, 3):
+                    if c1!=c2 and c1!=c3 and c2!=c3:
+                        do_sort([c1, c2, c3], asc)
+
+test_df_sorting()
 
 def test_sorting():
     ctx: CylonContext = CylonContext()
@@ -69,7 +98,7 @@ def test_multicol():
 
     cn_srt = cn_t.sort(order_by=['col1', 'col2'], ascending=[True, False])
 
-    # pandas 
+    # pandas
 
     df = pd.DataFrame({
         'col1': c1,

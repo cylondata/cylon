@@ -28,8 +28,8 @@ namespace cylon {
 // SPLITTING -----------------------------------------------------------------------------
 
 template <typename TYPE,
-          typename = typename std::enable_if<arrow::is_number_type<TYPE>::value |
-                                             arrow::is_boolean_type<TYPE>::value>::type>
+    typename = typename std::enable_if<arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value
+                                           | arrow::is_temporal_type<TYPE>::value>::type>
 class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
  public:
   explicit ArrowArrayNumericSplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {}
@@ -47,9 +47,8 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
     std::vector<std::unique_ptr<ARROW_BUILDER_T>> builders;
     builders.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
-      builders.emplace_back(new ARROW_BUILDER_T(pool_));
-      const auto &status = builders.back()->Reserve(counts[i]);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      builders.push_back(std::make_unique<ARROW_BUILDER_T>(values->type(), pool_));
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders.back()->Reserve(counts[i]));
     }
 
     size_t offset = 0;
@@ -64,8 +63,7 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
     output.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
       std::shared_ptr<arrow::Array> array;
-      const auto &status = builders[i]->Finish(&array);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[i]->Finish(&array));
       output.push_back(array);
     }
 
@@ -90,9 +88,8 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
     std::vector<std::unique_ptr<ARROW_BUILDER_T>> builders;
     builders.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
-      builders.emplace_back(new ARROW_BUILDER_T(values->type(), pool_));
-      const auto &status = builders.back()->Reserve(counts[i]);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      builders.push_back(std::make_unique<ARROW_BUILDER_T>(values->type(), pool_));
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders.back()->Reserve(counts[i]));
     }
 
     size_t offset = 0;
@@ -100,16 +97,14 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
       std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
       const int64_t arr_len = array->length();
       for (int64_t i = 0; i < arr_len; i++, offset++) {
-        const auto &a_status = builders[target_partitions[offset]]->Append(casted_array->Value(i));
-        RETURN_CYLON_STATUS_IF_ARROW_FAILED(a_status)
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[target_partitions[offset]]->Append(casted_array->Value(i)));
       }
     }
 
     output.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
       std::shared_ptr<arrow::Array> array;
-      const auto &status = builders[i]->Finish(&array);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[i]->Finish(&array));
       output.push_back(array);
     }
 
@@ -136,7 +131,7 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
     std::vector<std::unique_ptr<ARROW_BUILDER_T>> builders;
     builders.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
-      builders.emplace_back(new ARROW_BUILDER_T(pool_));
+      builders.emplace_back(std::make_unique<ARROW_BUILDER_T>(pool_));
     }
 
     size_t offset = 0;
@@ -146,16 +141,14 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
       for (int64_t i = 0; i < arr_len; i++, offset++) {
         ARROW_OFFSET_T length = 0;
         const uint8_t *value = casted_array->GetValue(i, &length);
-        const auto &a_status = builders[target_partitions[offset]]->Append(value, length);
-        RETURN_CYLON_STATUS_IF_ARROW_FAILED(a_status)
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[target_partitions[offset]]->Append(value, length));
       }
     }
 
     output.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
       std::shared_ptr<arrow::Array> array;
-      const auto &status = builders[i]->Finish(&array);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(status)
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[i]->Finish(&array));
       output.push_back(array);
     }
 
@@ -179,34 +172,25 @@ using DoubleArraySplitter = ArrowArrayNumericSplitKernel<arrow::DoubleType>;
 std::unique_ptr<ArrowArraySplitKernel> CreateSplitter(const std::shared_ptr<arrow::DataType> &type,
                                                       arrow::MemoryPool *pool) {
   switch (type->id()) {
-    case arrow::Type::UINT8:
-      return std::make_unique<UInt8ArraySplitter>(pool);
-    case arrow::Type::INT8:
-      return std::make_unique<Int8ArraySplitter>(pool);
-    case arrow::Type::UINT16:
-      return std::make_unique<UInt16ArraySplitter>(pool);
-    case arrow::Type::INT16:
-      return std::make_unique<Int16ArraySplitter>(pool);
-    case arrow::Type::UINT32:
-      return std::make_unique<UInt32ArraySplitter>(pool);
-    case arrow::Type::INT32:
-      return std::make_unique<Int32ArraySplitter>(pool);
-    case arrow::Type::UINT64:
-      return std::make_unique<UInt64ArraySplitter>(pool);
-    case arrow::Type::INT64:
-      return std::make_unique<Int64ArraySplitter>(pool);
-    case arrow::Type::FLOAT:
-      return std::make_unique<FloatArraySplitter>(pool);
-    case arrow::Type::DOUBLE:
-      return std::make_unique<DoubleArraySplitter>(pool);
-    case arrow::Type::FIXED_SIZE_BINARY:
-      return std::make_unique<FixedBinaryArraySplitKernel>(pool);
-    case arrow::Type::STRING:
-      return std::make_unique<BinaryArraySplitKernel<arrow::StringType>>(pool);
-    case arrow::Type::BINARY:
-      return std::make_unique<BinaryArraySplitKernel<arrow::BinaryType>>(pool);
-    default:
-      return nullptr;
+    case arrow::Type::UINT8: return std::make_unique<UInt8ArraySplitter>(pool);
+    case arrow::Type::INT8: return std::make_unique<Int8ArraySplitter>(pool);
+    case arrow::Type::UINT16: return std::make_unique<UInt16ArraySplitter>(pool);
+    case arrow::Type::INT16: return std::make_unique<Int16ArraySplitter>(pool);
+    case arrow::Type::UINT32:return std::make_unique<UInt32ArraySplitter>(pool);
+    case arrow::Type::INT32:return std::make_unique<Int32ArraySplitter>(pool);
+    case arrow::Type::UINT64:return std::make_unique<UInt64ArraySplitter>(pool);
+    case arrow::Type::INT64:return std::make_unique<Int64ArraySplitter>(pool);
+    case arrow::Type::FLOAT:return std::make_unique<FloatArraySplitter>(pool);
+    case arrow::Type::DOUBLE:return std::make_unique<DoubleArraySplitter>(pool);
+    case arrow::Type::FIXED_SIZE_BINARY:return std::make_unique<FixedBinaryArraySplitKernel>(pool);
+    case arrow::Type::STRING:return std::make_unique<BinaryArraySplitKernel<arrow::StringType>>(pool);
+    case arrow::Type::BINARY:return std::make_unique<BinaryArraySplitKernel<arrow::BinaryType>>(pool);
+    case arrow::Type::DATE32:return std::make_unique<ArrowArrayNumericSplitKernel<arrow::Date32Type>>(pool);
+    case arrow::Type::DATE64:return std::make_unique<ArrowArrayNumericSplitKernel<arrow::Date64Type>>(pool);
+    case arrow::Type::TIMESTAMP:return std::make_unique<ArrowArrayNumericSplitKernel<arrow::TimestampType>>(pool);
+    case arrow::Type::TIME32:return std::make_unique<ArrowArrayNumericSplitKernel<arrow::Time32Type>>(pool);
+    case arrow::Type::TIME64:return std::make_unique<ArrowArrayNumericSplitKernel<arrow::Time64Type>>(pool);
+    default:return nullptr;
   }
 }
 
@@ -240,9 +224,9 @@ class ArrowBinarySortKernel : public IndexSortKernel {
   }
 };
 
-template <typename TYPE,
-          typename = typename std::enable_if<arrow::is_number_type<TYPE>::value |
-                                             arrow::is_boolean_type<TYPE>::value>::type>
+template<typename TYPE,
+    typename = typename std::enable_if<arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value
+                                           | arrow::is_temporal_type<TYPE>::value>::type>
 class NumericIndexSortKernel : public IndexSortKernel {
  public:
   using T = typename TYPE::c_type;
@@ -283,34 +267,27 @@ using DoubleArraySorter = NumericIndexSortKernel<arrow::DoubleType>;
 std::unique_ptr<IndexSortKernel> CreateSorter(const std::shared_ptr<arrow::DataType> &type,
                                               arrow::MemoryPool *pool, bool ascending) {
   switch (type->id()) {
-    case arrow::Type::UINT8:
-      return std::make_unique<UInt8ArraySorter>(pool, ascending);
-    case arrow::Type::INT8:
-      return std::make_unique<Int8ArraySorter>(pool, ascending);
-    case arrow::Type::UINT16:
-      return std::make_unique<UInt16ArraySorter>(pool, ascending);
-    case arrow::Type::INT16:
-      return std::make_unique<Int16ArraySorter>(pool, ascending);
-    case arrow::Type::UINT32:
-      return std::make_unique<UInt32ArraySorter>(pool, ascending);
-    case arrow::Type::INT32:
-      return std::make_unique<Int32ArraySorter>(pool, ascending);
-    case arrow::Type::UINT64:
-      return std::make_unique<UInt64ArraySorter>(pool, ascending);
-    case arrow::Type::INT64:
-      return std::make_unique<Int64ArraySorter>(pool, ascending);
-    case arrow::Type::FLOAT:
-      return std::make_unique<FloatArraySorter>(pool, ascending);
-    case arrow::Type::DOUBLE:
-      return std::make_unique<DoubleArraySorter>(pool, ascending);
-    case arrow::Type::STRING:
-      return std::make_unique<ArrowBinarySortKernel<arrow::StringType>>(pool, ascending);
-    case arrow::Type::BINARY:
-      return std::make_unique<ArrowBinarySortKernel<arrow::BinaryType>>(pool, ascending);
+    case arrow::Type::UINT8:return std::make_unique<UInt8ArraySorter>(pool, ascending);
+    case arrow::Type::INT8:return std::make_unique<Int8ArraySorter>(pool, ascending);
+    case arrow::Type::UINT16:return std::make_unique<UInt16ArraySorter>(pool, ascending);
+    case arrow::Type::INT16:return std::make_unique<Int16ArraySorter>(pool, ascending);
+    case arrow::Type::UINT32:return std::make_unique<UInt32ArraySorter>(pool, ascending);
+    case arrow::Type::INT32:return std::make_unique<Int32ArraySorter>(pool, ascending);
+    case arrow::Type::UINT64:return std::make_unique<UInt64ArraySorter>(pool, ascending);
+    case arrow::Type::INT64:return std::make_unique<Int64ArraySorter>(pool, ascending);
+    case arrow::Type::FLOAT:return std::make_unique<FloatArraySorter>(pool, ascending);
+    case arrow::Type::DOUBLE:return std::make_unique<DoubleArraySorter>(pool, ascending);
+    case arrow::Type::STRING:return std::make_unique<ArrowBinarySortKernel<arrow::StringType>>(pool, ascending);
+    case arrow::Type::BINARY:return std::make_unique<ArrowBinarySortKernel<arrow::BinaryType>>(pool, ascending);
     case arrow::Type::FIXED_SIZE_BINARY:
-      return std::make_unique<ArrowBinarySortKernel<arrow::FixedSizeBinaryType>>(pool, ascending);
-    default:
-      return nullptr;
+      return std::make_unique<ArrowBinarySortKernel<arrow::FixedSizeBinaryType>>(pool,
+                                                                                 ascending);
+    case arrow::Type::DATE32:return std::make_unique<NumericIndexSortKernel<arrow::Date32Type>>(pool, ascending);
+    case arrow::Type::DATE64:return std::make_unique<NumericIndexSortKernel<arrow::Date64Type>>(pool, ascending);
+    case arrow::Type::TIMESTAMP:return std::make_unique<NumericIndexSortKernel<arrow::TimestampType>>(pool, ascending);
+    case arrow::Type::TIME32:return std::make_unique<NumericIndexSortKernel<arrow::Time32Type>>(pool, ascending);
+    case arrow::Type::TIME64:return std::make_unique<NumericIndexSortKernel<arrow::Time64Type>>(pool, ascending);
+    default:return nullptr;
   }
 }
 
@@ -325,9 +302,9 @@ arrow::Status SortIndices(arrow::MemoryPool *memory_pool,
   return out->Sort(values, offsets);
 }
 
-template <typename TYPE,
-          typename = typename std::enable_if<arrow::is_number_type<TYPE>::value |
-                                             arrow::is_boolean_type<TYPE>::value>::type>
+template<typename TYPE,
+    typename = typename std::enable_if<arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value
+                                           | arrow::is_temporal_type<TYPE>::value>::type>
 class NumericInplaceIndexSortKernel : public InplaceIndexSortKernel {
  public:
   using T = typename TYPE::c_type;
@@ -376,28 +353,22 @@ using DoubleArrayInplaceSorter = NumericInplaceIndexSortKernel<arrow::DoubleType
 std::unique_ptr<InplaceIndexSortKernel> CreateInplaceSorter(
     const std::shared_ptr<arrow::DataType> &type, arrow::MemoryPool *pool) {
   switch (type->id()) {
-    case arrow::Type::UINT8:
-      return std::make_unique<UInt8ArrayInplaceSorter>(pool);
-    case arrow::Type::INT8:
-      return std::make_unique<Int8ArrayInplaceSorter>(pool);
-    case arrow::Type::UINT16:
-      return std::make_unique<UInt16ArrayInplaceSorter>(pool);
-    case arrow::Type::INT16:
-      return std::make_unique<Int16ArrayInplaceSorter>(pool);
-    case arrow::Type::UINT32:
-      return std::make_unique<UInt32ArrayInplaceSorter>(pool);
-    case arrow::Type::INT32:
-      return std::make_unique<Int32ArrayInplaceSorter>(pool);
-    case arrow::Type::UINT64:
-      return std::make_unique<UInt64ArrayInplaceSorter>(pool);
-    case arrow::Type::INT64:
-      return std::make_unique<Int64ArrayInplaceSorter>(pool);
-    case arrow::Type::FLOAT:
-      return std::make_unique<FloatArrayInplaceSorter>(pool);
-    case arrow::Type::DOUBLE:
-      return std::make_unique<DoubleArrayInplaceSorter>(pool);
-    default:
-      return nullptr;
+    case arrow::Type::UINT8: return std::make_unique<UInt8ArrayInplaceSorter>(pool);
+    case arrow::Type::INT8: return std::make_unique<Int8ArrayInplaceSorter>(pool);
+    case arrow::Type::UINT16: return std::make_unique<UInt16ArrayInplaceSorter>(pool);
+    case arrow::Type::INT16: return std::make_unique<Int16ArrayInplaceSorter>(pool);
+    case arrow::Type::UINT32: return std::make_unique<UInt32ArrayInplaceSorter>(pool);
+    case arrow::Type::INT32: return std::make_unique<Int32ArrayInplaceSorter>(pool);
+    case arrow::Type::UINT64:return std::make_unique<UInt64ArrayInplaceSorter>(pool);
+    case arrow::Type::INT64:return std::make_unique<Int64ArrayInplaceSorter>(pool);
+    case arrow::Type::FLOAT:return std::make_unique<FloatArrayInplaceSorter>(pool);
+    case arrow::Type::DOUBLE:return std::make_unique<DoubleArrayInplaceSorter>(pool);
+    case arrow::Type::DATE32:return std::make_unique<NumericInplaceIndexSortKernel<arrow::Date32Type>>(pool);
+    case arrow::Type::DATE64:return std::make_unique<NumericInplaceIndexSortKernel<arrow::Date64Type>>(pool);
+    case arrow::Type::TIMESTAMP:return std::make_unique<NumericInplaceIndexSortKernel<arrow::TimestampType>>(pool);
+    case arrow::Type::TIME32:return std::make_unique<NumericInplaceIndexSortKernel<arrow::Time32Type>>(pool);
+    case arrow::Type::TIME64:return std::make_unique<NumericInplaceIndexSortKernel<arrow::Time64Type>>(pool);
+    default:return nullptr;
   }
 }
 
@@ -472,14 +443,13 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
 
   int64_t *indices_end = indices_begin + table->num_rows();
   std::sort(indices_begin, indices_end, [&comparators](int64_t idx1, int64_t idx2) {
-    int8_t res = 0;
     for (auto const &comp : comparators) {
-      res = comp->compare(idx1, idx2);
+      auto res = comp->compare(idx1, idx2);
       if (res != 0) {
         return res < 0;
       }
     }
-    return res > 0;
+    return false; // if this point is reached, that means every comparison has returned 0! so, equal. i.e. NOT less
   });
 
   offsets = std::make_shared<arrow::UInt64Array>(table->num_rows(), indices_buf);
@@ -515,7 +485,7 @@ class NumericStreamingSplitKernel : public StreamingSplitKernel {
     const auto &cast_array = std::static_pointer_cast<ARRAY_T>(values);
     // reserve additional space in the builders
     for (size_t i = 0; i < builders_.size(); i++) {
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Reserve(cnts[i]))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Reserve(cnts[i]));
     }
 
     // append the values
@@ -529,7 +499,7 @@ class NumericStreamingSplitKernel : public StreamingSplitKernel {
     out.reserve(builders_.size());
     for (size_t i = 0; i < builders_.size(); i++) {
       std::shared_ptr<arrow::Array> array;
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Finish(&array))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Finish(&array));
       out.emplace_back(std::move(array));
     }
     return Status::OK();
@@ -555,7 +525,7 @@ class FixedBinaryStreamingSplitKernel : public StreamingSplitKernel {
     const auto &reader = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(values);
 
     for (size_t i = 0; i < builders_.size(); i++) {
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Reserve(cnts[i]))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Reserve(cnts[i]));
     }
 
     for (size_t i = 0; i < partitions.size(); i++) {
@@ -569,7 +539,7 @@ class FixedBinaryStreamingSplitKernel : public StreamingSplitKernel {
     out.reserve(builders_.size());
     for (auto &builder : builders_) {
       std::shared_ptr<arrow::Array> array;
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder->Finish(&array))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder->Finish(&array));
       out.emplace_back(std::move(array));
     }
     return Status::OK();
@@ -599,7 +569,7 @@ class BinaryStreamingSplitKernel : public StreamingSplitKernel {
     for (size_t i = 0; i < partitions.size(); i++) {
       int length = 0;
       const uint8_t *value = reader->GetValue(i, &length);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[partitions[i]]->Append(value, length))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[partitions[i]]->Append(value, length));
     }
     return Status::OK();
   }
@@ -608,7 +578,7 @@ class BinaryStreamingSplitKernel : public StreamingSplitKernel {
     out.reserve(builders_.size());
     for (size_t i = 0; i < builders_.size(); i++) {
       std::shared_ptr<arrow::Array> array;
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Finish(&array))
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Finish(&array));
       out.emplace_back(std::move(array));
     }
     return Status::OK();

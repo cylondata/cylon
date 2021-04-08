@@ -105,31 +105,35 @@ cylon::Status CompareArraysForUniqueness(std::shared_ptr<arrow::Array> &index_ar
 
   return cylon::Status::OK();
 }
-cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *pool) : BaseIndex(0, size, pool),
-																						start_(start),
-																						end_(size),
-																						step_(step) {
+
+void BuildRangeIndexArray(int start, int end, int step, arrow::MemoryPool *pool, std::shared_ptr<arrow::Array> &index_arr){
   arrow::Status ar_status;
   arrow::Int64Builder builder(pool);
-  int64_t capacity = int64_t((end_ - start_) / step_);
+  int64_t capacity = int64_t ((end - start) / step);
   if (!(ar_status = builder.Reserve(capacity)).ok()) {
 	LOG(ERROR) << "Error occurred in reserving memory" << ar_status.message();
 	throw "Error occurred in reserving memory";
   }
-  for (int i = 0; i < end_ - start_; i = i + step_) {
+  for (int i = 0; i < end - start; i=i+step) {
 	builder.UnsafeAppend(i);
   }
-  ar_status = builder.Finish(&index_arr_);
+  ar_status = builder.Finish(&index_arr);
 
   if (!ar_status.ok()) {
 	LOG(ERROR) << "Error occurred in finalizing range index value array";
   }
+}
+
+cylon::RangeIndex::RangeIndex(int start, int size, int step, arrow::MemoryPool *pool) : BaseIndex(0, size, pool),
+                                                                                        start_(start),
+                                                                                        end_(size),
+                                                                                        step_(step) {
 
 }
 Status RangeIndex::LocationByValue(const void *search_param,
-								   const std::shared_ptr<arrow::Table> &input,
-								   std::vector<int64_t> &filter_locations,
-								   std::shared_ptr<arrow::Table> &output) {
+                                   const std::shared_ptr<arrow::Table> &input,
+                                   std::vector<int64_t> &filter_locations,
+                                   std::shared_ptr<arrow::Table> &output) {
   //LOG(INFO) << "Extract From Range Index";
   arrow::Status arrow_status;
   cylon::Status status;
@@ -140,29 +144,29 @@ Status RangeIndex::LocationByValue(const void *search_param,
 
   status = LocationByValue(search_param, filter_locations);
 
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in obtaining filter indices by index value";
-	return status;
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred in obtaining filter indices by index value";
+    return status;
   }
 
   arrow_status = idx_builder.AppendValues(filter_locations);
   if (!arrow_status.ok()) {
-	LOG(ERROR) << "Failed appending filter locations";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+    LOG(ERROR) << "Failed appending filter locations";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
   }
 
   arrow_status = idx_builder.Finish(&out_idx);
 
   if (!arrow_status.ok()) {
-	LOG(ERROR) << "Failed index array builder finish";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
+    LOG(ERROR) << "Failed index array builder finish";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
   }
   const arrow::Datum filter_indices(out_idx);
   arrow::Result<arrow::Datum>
-	  result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+      result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
   if (!result.ok()) {
-	LOG(ERROR) << "Failed in filtering table by filter indices";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+    LOG(ERROR) << "Failed in filtering table by filter indices";
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
   }
   output = result.ValueOrDie().table();
   return Status::OK();
@@ -187,53 +191,36 @@ int RangeIndex::GetStep() const {
   return step_;
 }
 Status RangeIndex::LocationByValue(const void *search_param, std::vector<int64_t> &find_index) {
-  int64_t val = *((int64_t *)search_param);
+  int64_t val = *((int64_t *) search_param);
   if (!(val >= start_ && val < end_)) {
-	LOG(ERROR) << "0:Invalid Key, it must be in the range of 0, num of records: " << val << "," << start_ << ","
-			   << end_;
-	return Status(cylon::Code::KeyError);
+    LOG(ERROR) << "0:Invalid Key, it must be in the range of 0, num of records: " << val << "," << start_ << ","
+               << end_;
+    return Status(cylon::Code::KeyError);
   }
   find_index.push_back(val);
   return Status::OK();
 }
 Status RangeIndex::LocationByValue(const void *search_param, int64_t &find_index) {
-  int64_t val = *((int64_t *)search_param);
+  int64_t val = *((int64_t *) search_param);
   if (!(val >= start_ && val < end_)) {
-	LOG(ERROR) << "1:Invalid Key, it must be in the range of 0, num of records";
-	return Status(cylon::Code::KeyError);
+    LOG(ERROR) << "1:Invalid Key, it must be in the range of 0, num of records";
+    return Status(cylon::Code::KeyError);
   }
   find_index = val;
   return Status::OK();
 }
 std::shared_ptr<arrow::Array> RangeIndex::GetIndexAsArray() {
-
-  arrow::Status arrow_status;
   auto pool = GetPool();
-
-  arrow::Int64Builder builder(pool);
-
-  std::shared_ptr<arrow::Int64Array> index_array;
-
-  std::vector<int64_t> vec(GetSize(), 1);
-
-  for (int64_t ix = 0; ix < GetSize(); ix += GetStep()) {
-	vec[ix] = ix;
-  }
-
-  builder.AppendValues(vec);
-  arrow_status = builder.Finish(&index_array);
-
-  if (!arrow_status.ok()) {
-	LOG(ERROR) << "Error occurred in retrieving index";
-	return nullptr;
-  }
-
-  return index_array;
+  BuildRangeIndexArray(start_, end_, step_, pool, index_arr_);
+  return index_arr_;
 }
 void RangeIndex::SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) {
   index_arr_ = index_arr;
 }
 std::shared_ptr<arrow::Array> RangeIndex::GetIndexArray() {
+  if(index_arr_ == nullptr) {
+    index_arr_ = GetIndexAsArray();
+  }
   return index_arr_;
 }
 bool RangeIndex::IsUnique() {
@@ -246,8 +233,8 @@ IndexingSchema RangeIndex::GetSchema() {
 RangeIndexKernel::RangeIndexKernel() {}
 
 std::shared_ptr<BaseIndex> RangeIndexKernel::BuildIndex(arrow::MemoryPool *pool,
-														std::shared_ptr<arrow::Table> &input_table,
-														const int index_column) {
+                                                        std::shared_ptr<arrow::Table> &input_table,
+                                                        const int index_column) {
   std::shared_ptr<RangeIndex> range_index;
 
   range_index = std::make_shared<RangeIndex>(0, input_table->num_rows(), 1, pool);

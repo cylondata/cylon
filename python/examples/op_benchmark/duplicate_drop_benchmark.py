@@ -33,7 +33,7 @@ Run benchmark:
                                         --num_cols 2 \
                                         --filter_size 500_000 \
                                         --stats_file /tmp/duplicate_bench.csv \
-                                        --repetitions 1 \
+                                        --repetitions 5 \
                                         --duplication_factor 0.9
 """
 
@@ -52,14 +52,18 @@ def duplicate_op(num_rows: int, num_cols: int, filter_size: int, duplication_fac
     pdf2 = pdf.drop_duplicates(subset=filter_columns)
     pandas_time = time.time() - pandas_time
 
-    return pandas_time, cylon_time
+    pandas_eval_time = time.time()
+    pdf2 = pd.eval("pdf.drop_duplicates(subset=filter_columns)")
+    pandas_eval_time = time.time() - pandas_eval_time
+
+    return pandas_time, cylon_time, pandas_eval_time
 
 
 def bench_duplicate_op(start: int, end: int, step: int, num_cols: int, filter_size: int, repetitions: int,
                        stats_file: str,
                        duplication_factor: float):
     all_data = []
-    schema = ["num_records", "num_cols", "filter_size", "pandas", "cylon", "speed up"]
+    schema = ["num_records", "num_cols", "filter_size", "pandas", "cylon", "pandas_eval", "speed up", "speed up (eval)"]
     assert repetitions >= 1
     assert start > 0
     assert step > 0
@@ -68,13 +72,15 @@ def bench_duplicate_op(start: int, end: int, step: int, num_cols: int, filter_si
     for records in range(start, end + step, step):
         times = []
         for idx in range(repetitions):
-            pandas_time, cylon_time = duplicate_op(num_rows=records, num_cols=num_cols, filter_size=filter_size,
-                                                         duplication_factor=duplication_factor)
-            times.append([pandas_time, cylon_time])
+            pandas_time, cylon_time, pandas_eval_time = duplicate_op(num_rows=records, num_cols=num_cols,
+                                                                     filter_size=filter_size,
+                                                                     duplication_factor=duplication_factor)
+            times.append([pandas_time, cylon_time, pandas_eval_time])
         times = np.array(times).sum(axis=0) / repetitions
         print(f"Duplicate Op : Records={records}, Columns={num_cols}, Filter Size={filter_size}, "
-              f"Pandas Time : {times[0]}, Cylon Time : {times[1]}")
-        all_data.append([records, num_cols, filter_size, times[0], times[1], times[0] / times[1]])
+              f"Pandas Time : {times[0]}, Cylon Time : {times[1]}, Pandas Eval Time : {times[2]}")
+        all_data.append(
+            [records, num_cols, filter_size, times[0], times[1], times[2], times[0] / times[1], times[2] / times[1]])
     pdf = pd.DataFrame(all_data, columns=schema)
     print(pdf)
     pdf.to_csv(stats_file)

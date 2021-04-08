@@ -54,8 +54,8 @@ std::shared_ptr<arrow::DataType> GetArrowType(int8_t type) {
     case arrow::Type::STRING:return arrow::utf8();
     case arrow::Type::BINARY:return arrow::binary();
     case arrow::Type::FIXED_SIZE_BINARY:break;
-    case arrow::Type::DATE32:break;
-    case arrow::Type::DATE64:break;
+    case arrow::Type::DATE32:return arrow::date32();
+    case arrow::Type::DATE64:return arrow::date64();
     case arrow::Type::TIMESTAMP:break;
     case arrow::Type::TIME32:break;
     case arrow::Type::TIME64:break;

@@ -96,16 +96,16 @@ static Status make_groups(arrow::MemoryPool *pool,
                           std::shared_ptr<arrow::Array> &group_filter,
                           int64_t *unique_groups) {
   TableRowIndexHash hash(atable, idx_cols);
-  TableRowIndexComparator comp(atable, idx_cols);
+  TableRowIndexEqualTo comp(atable, idx_cols);
 
   const int64_t num_rows = atable->num_rows();
 
-  ska::bytell_hash_map<int64_t, int64_t, TableRowIndexHash, TableRowIndexComparator>
+  ska::bytell_hash_map<int64_t, int64_t, TableRowIndexHash, TableRowIndexEqualTo>
       hash_map(num_rows, hash, comp);
 
   group_ids.reserve(num_rows);
   arrow::BooleanBuilder filter_build(pool);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Reserve(num_rows)))
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Reserve(num_rows)));
 
   int64_t unique = 0;
   for (int64_t i = 0; i < num_rows; i++) {
@@ -120,7 +120,7 @@ static Status make_groups(arrow::MemoryPool *pool,
   }
 
   group_ids.shrink_to_fit();
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Finish(&group_filter)))
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Finish(&group_filter)));
   *unique_groups = unique;
   return Status::OK();
 }
@@ -185,14 +185,14 @@ static Status aggregate(arrow::MemoryPool *pool,
   using RESULT_ARROW_T = typename arrow::CTypeTraits<ResultT>::ArrowType;
   using BUILDER_T = typename arrow::TypeTraits<RESULT_ARROW_T>::BuilderType;
   BUILDER_T builder(pool);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(unique_groups))
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(unique_groups));
   for (int64_t i = 0; i < unique_groups; i++) {
     ResultT res;
     kernel->Finalize(&agg_states[i], &res);
     builder.UnsafeAppend(res);
   }
 
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&agg_array))
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&agg_array));
 
   const char *prefix = compute::KernelTraits<aggOp, C_TYPE>::name();
   agg_field = std::make_shared<arrow::Field>(std::string(prefix) + field->name(),
@@ -259,7 +259,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   std::shared_ptr<arrow::Table> atable = table->get_table();
   if (atable->column(0)->num_chunks() > 1) { // todo: make this work with chunked arrays
     const auto &res = atable->CombineChunks(pool);
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
     atable = res.ValueOrDie();
   }
   auto t2 = std::chrono::steady_clock::now();
@@ -267,7 +267,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   std::vector<int64_t> group_ids;
   int64_t unique_groups = 0;
   std::shared_ptr<arrow::Array> group_filter;
-  RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, group_filter, &unique_groups))
+  RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, group_filter, &unique_groups));
 
   auto t3 = std::chrono::steady_clock::now();
 
@@ -280,7 +280,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   //first filter idx cols
   for (auto &&i: idx_cols) {
     const arrow::Result<arrow::Datum> &res = arrow::compute::Filter(atable->column(i), group_filter);
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status())
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
     new_arrays.push_back(res.ValueOrDie().chunked_array());
     new_fields.push_back(atable->field(i));
   }
@@ -300,7 +300,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
                                          unique_groups,
                                          new_arr,
                                          new_field,
-                                         p.second->options.get()))
+                                         p.second->options.get()));
     new_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(new_arr)));
     new_fields.push_back(std::move(new_field));
   }

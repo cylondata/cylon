@@ -51,8 +51,8 @@ int main(int argc, char *argv[]) {
                 read_end_time - start_start).count() << "[ms]";
 
   auto join_config = cylon::join::config::JoinConfig(cylon::join::config::JoinType::INNER,
-                                                     0,
-                                                     0,
+                                                     {0, 1},
+                                                     {0, 1},
                                                      cylon::join::config::JoinAlgorithm::SORT,
                                                      "l_",
                                                      "r_");
@@ -74,11 +74,12 @@ int main(int argc, char *argv[]) {
 
   std::vector<std::string> column_names = joined->ColumnNames();
 
-  for(auto col_name : column_names) {
+  for (auto &&col_name : column_names) {
     std::cout << col_name << ", ";
   }
   std::cout << std::endl;
-
+  joined->Print();
+  std::cout << std::endl;
 
   ctx->Finalize();
   return 0;
