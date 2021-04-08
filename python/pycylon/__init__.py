@@ -25,7 +25,17 @@ from pycylon.types import (int8, int16, int32, int64,
 from pycylon.series import Series
 from pycylon.frame import DataFrame
 from pycylon.frame import CylonEnv
+from pycylon.util.logging import log_level, disable_logging
+
+import os
 
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
+
+lg_level = os.getenv('CYLON_LOG_LEVEL')
+
+if lg_level is None:
+    disable_logging()
+else:
+    log_level(int(lg_level))

@@ -156,6 +156,33 @@ This is not yet supported from PyCylon API, but LibCylon supports this.
 11. [Table Filter Benchmarks](https://github.com/cylondata/cylon/blob/master/python/examples/op_benchmark/filter_benchmark.py)
 12. [Table Distributed Join Experiments](https://github.com/cylondata/cylon/blob/master/python/examples/experiments/table_join_dist_test.py)
 
+## Logging
+
+PyCylon is backed by a C++ implementation to accelerate the operations. C++ implementation writes logs to the console for debugging purposes.
+By default, logging from C++ is disabled in PyCylon. However, logging can be enabled as follows by setting CYLON_LOG_LEVEL environment variable.
+
+```bash
+export CYLON_LOG_LEVEL=<log_level_flag>
+python python/examples/dataframe/join.py
+```
+
+| Log Level | Flag |
+|-----------|------|
+| INFO      | 0    |
+| WARN      | 1    |
+| ERROR     | 2    |
+| FATAL     | 3    |
+
+Additionally, this can be done programmatically as follows.
+
+```python
+from pycylon.util.logging import log_level, disable_logging
+
+
+log_level(0) # set an arbitrary log level
+disable_logging() # disable logging completely
+```
+
 ## Python API docs
 
 Use blow link to navigate to the PyCylon API docs.
