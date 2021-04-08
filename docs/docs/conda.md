@@ -4,7 +4,7 @@ title: Conda
 sidebar_label: Conda
 ---
 
-Conda is the our choice to build PyCylon. There are Conda packages for libcylon and pycylon. 
+PyCylon can be built using Conda. There are Conda packages for libcylon and pycylon. 
 
 ## Installing from Conda
 
