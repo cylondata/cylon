@@ -27,7 +27,7 @@ conda create -n cylon-0.4.0 -c cylondata pycylon python=3.7
 conda activate cylon-0.4.0
 ```
 
-Now lets run our first Cylon application
+Now lets run our first Cylon application. The following code creates two DataFrames and joins them. 
 
 ```python
 from pycylon import DataFrame, CylonEnv
@@ -42,10 +42,32 @@ print("Local Merge")
 print(df3)
 ```
 
-Now lets run a parallel version of this program.
+Now lets run a parallel version of this program. Here if we create n processes (parallelism), n instances of the
+program will run. They will each load a two DataFrames in their memory and do a distributed join among all the DataFrames.
+The results will be created in the n processes as well. 
 
 ```python
+from pycylon import DataFrame, CylonEnv
+from pycylon.net import MPIConfig
+import random
 
+# distributed join
+env = CylonEnv(config=MPIConfig())
+
+df1 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
+                 random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
+df2 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
+                 random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
+df2.set_index([0], inplace=True)
+print("Distributed Join")
+df3 = df1.join(other=df2, on=[0], env=env)
+print(df3)
+```
+
+You can run the above program in the Conda environment by
+
+```bash
+mpirun -np 2 python <name of your python file>
 ```
 
 
