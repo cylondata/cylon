@@ -80,6 +80,18 @@ int arrow_indexer_str_test_5();
 
 int arrow_indexer_str_test_6();
 
+int arrow_iloc_indexer_test_1();
+
+int arrow_iloc_indexer_test_2();
+
+int arrow_iloc_indexer_test_3();
+
+int arrow_iloc_indexer_test_4();
+
+int arrow_iloc_indexer_test_5();
+
+int arrow_iloc_indexer_test_6();
+
 
 //template<typename Base, typename T>
 //inline bool instanceof(const T*);
@@ -143,6 +155,13 @@ int main(int argc, char *argv[]) {
   arrow_indexer_str_test_4();
   arrow_indexer_str_test_5();
   arrow_indexer_str_test_6();
+
+  arrow_iloc_indexer_test_1();
+  arrow_iloc_indexer_test_2();
+  arrow_iloc_indexer_test_3();
+  arrow_iloc_indexer_test_4();
+  arrow_iloc_indexer_test_5();
+  arrow_iloc_indexer_test_6();
 
 }
 
@@ -1577,6 +1596,393 @@ int arrow_indexer_str_test_6() {
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
 	  loc_indexer = std::make_shared<cylon::ArrowLocIndexer>(schema);
+  std::cout << "Creating Arrow Loc Indexer object" << std::endl;
+  loc_indexer->loc(search_index_array, columns, output1, output_tb);
+
+  output_tb->Print();
+
+  auto index_arr = output_tb->GetArrowIndex()->GetIndexArray();
+
+  std::cout << "Elements in Output Index : " << index_arr->length() << "[" << output_tb->GetArrowIndex()->GetSize()
+			<< "]" << std::endl;
+
+  print_arrow_array(index_arr);
+
+  return 0;
+}
+
+/*
+ * Arrow ILoc Operations
+ * */
+
+
+int arrow_iloc_indexer_test_1() {
+  std::string func_title = "Arrow ILoc 1";
+  separator(func_title);
+
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output, output1;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/indexing_data.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating table";
+	return -1;
+  }
+
+  std::shared_ptr<cylon::Table> output_tb;
+
+  auto start_idx = arrow::MakeScalar<int64_t>(0);
+  auto end_idx = arrow::MakeScalar<int64_t>(5);
+
+  std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
+
+  std::shared_ptr<cylon::BaseArrowIndex> index;
+  std::shared_ptr<cylon::BaseIndex> base_index;
+  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+
+  status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating the Arrow Index";
+  } else {
+	LOG(INFO) << "Index Built Successfully!";
+  }
+
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
+
+  std::shared_ptr<cylon::ArrowBaseIndexer>
+	  loc_indexer = std::make_shared<cylon::ArrowILocIndexer>(schema);
+  std::cout << "Creating Arrow Loc Indexer object" << std::endl;
+  loc_indexer->loc(start_idx, end_idx, 0, output1, output_tb);
+
+  output_tb->Print();
+
+  auto index_arr = output_tb->GetArrowIndex()->GetIndexArray();
+
+  std::cout << "Elements in Output Index : " << index_arr->length() << "[" << output_tb->GetArrowIndex()->GetSize()
+			<< "]" << std::endl;
+
+  print_arrow_array(index_arr);
+
+  return 0;
+}
+
+
+int arrow_iloc_indexer_test_2() {
+  std::string func_title = "Arrow ILoc 2";
+  separator(func_title);
+
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output, output1;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/indexing_data.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating table";
+	return -1;
+  }
+
+  std::shared_ptr<cylon::Table> output_tb;
+
+  auto start_idx = arrow::MakeScalar<int64_t>(0);
+  auto end_idx = arrow::MakeScalar<int64_t>(5);
+
+  int start_column_idx = 0;
+  int end_column_idx = 1;
+
+  std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
+
+  std::shared_ptr<cylon::BaseArrowIndex> index;
+  std::shared_ptr<cylon::BaseIndex> base_index;
+  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+
+  status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating the Arrow Index";
+  } else {
+	LOG(INFO) << "Index Built Successfully!";
+  }
+
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
+
+  std::shared_ptr<cylon::ArrowBaseIndexer>
+	  loc_indexer = std::make_shared<cylon::ArrowILocIndexer>(schema);
+  std::cout << "Creating Arrow Loc Indexer object" << std::endl;
+  loc_indexer->loc(start_idx, end_idx, start_column_idx, end_column_idx, output1, output_tb);
+
+  output_tb->Print();
+
+  auto index_arr = output_tb->GetArrowIndex()->GetIndexArray();
+
+  std::cout << "Elements in Output Index : " << index_arr->length() << "[" << output_tb->GetArrowIndex()->GetSize()
+			<< "]" << std::endl;
+
+  print_arrow_array(index_arr);
+
+  return 0;
+}
+
+int arrow_iloc_indexer_test_3() {
+  std::string func_title = "Arrow ILoc 3";
+  separator(func_title);
+
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output, output1;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/indexing_data.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating table";
+	return -1;
+  }
+
+  std::shared_ptr<cylon::Table> output_tb;
+
+  auto start_idx = arrow::MakeScalar<int64_t>(0);
+  auto end_idx = arrow::MakeScalar<int64_t>(5);
+
+  std::vector<int> columns = {0, 1};
+
+  std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
+
+  std::shared_ptr<cylon::BaseArrowIndex> index;
+  std::shared_ptr<cylon::BaseIndex> base_index;
+  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+
+  status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating the Arrow Index";
+  } else {
+	LOG(INFO) << "Index Built Successfully!";
+  }
+
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
+
+  std::shared_ptr<cylon::ArrowBaseIndexer>
+	  loc_indexer = std::make_shared<cylon::ArrowILocIndexer>(schema);
+  std::cout << "Creating Arrow Loc Indexer object" << std::endl;
+  loc_indexer->loc(start_idx, end_idx, columns, output1, output_tb);
+
+  output_tb->Print();
+
+  auto index_arr = output_tb->GetArrowIndex()->GetIndexArray();
+
+  std::cout << "Elements in Output Index : " << index_arr->length() << "[" << output_tb->GetArrowIndex()->GetSize()
+			<< "]" << std::endl;
+
+  print_arrow_array(index_arr);
+
+  return 0;
+}
+
+
+int arrow_iloc_indexer_test_4() {
+  std::string func_title = "Arrow ILoc 4";
+  separator(func_title);
+
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output, output1;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/indexing_data.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating table";
+	return -1;
+  }
+
+  std::shared_ptr<cylon::Table> output_tb;
+  auto pool = cylon::ToArrowPool(ctx);
+  arrow::Int64Builder builder(pool);
+  std::shared_ptr<arrow::Array> search_index_array;
+  std::vector<int64_t> search_index_values = {0, 1, 2, 3, 4, 5};
+  builder.AppendValues(search_index_values);
+  builder.Finish(&search_index_array);
+
+  std::shared_ptr<cylon::BaseArrowIndex> index;
+  std::shared_ptr<cylon::BaseIndex> base_index;
+  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+
+  status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating the Arrow Index";
+  } else {
+	LOG(INFO) << "Index Built Successfully!";
+  }
+
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
+
+  std::shared_ptr<cylon::ArrowBaseIndexer>
+	  loc_indexer = std::make_shared<cylon::ArrowILocIndexer>(schema);
+  std::cout << "Creating Arrow Loc Indexer object" << std::endl;
+  loc_indexer->loc(search_index_array, 0, output1, output_tb);
+
+  output_tb->Print();
+
+  auto index_arr = output_tb->GetArrowIndex()->GetIndexArray();
+
+  std::cout << "Elements in Output Index : " << index_arr->length() << "[" << output_tb->GetArrowIndex()->GetSize()
+			<< "]" << std::endl;
+
+  print_arrow_array(index_arr);
+
+  return 0;
+}
+
+int arrow_iloc_indexer_test_5() {
+  std::string func_title = "Arrow ILoc 5";
+  separator(func_title);
+
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output, output1;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/indexing_data.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating table";
+	return -1;
+  }
+
+  std::shared_ptr<cylon::Table> output_tb;
+  auto pool = cylon::ToArrowPool(ctx);
+  arrow::Int64Builder builder(pool);
+  std::shared_ptr<arrow::Array> search_index_array;
+  std::vector<int64_t> search_index_values = {0, 1, 2, 3, 4, 5};
+  builder.AppendValues(search_index_values);
+  builder.Finish(&search_index_array);
+
+  int start_column_idx = 0;
+  int end_column_idx = 1;
+
+  std::shared_ptr<cylon::BaseArrowIndex> index;
+  std::shared_ptr<cylon::BaseIndex> base_index;
+  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+
+  status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating the Arrow Index";
+  } else {
+	LOG(INFO) << "Index Built Successfully!";
+  }
+
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
+
+  std::shared_ptr<cylon::ArrowBaseIndexer>
+	  loc_indexer = std::make_shared<cylon::ArrowILocIndexer>(schema);
+  std::cout << "Creating Arrow Loc Indexer object" << std::endl;
+  loc_indexer->loc(search_index_array, start_column_idx, end_column_idx, output1, output_tb);
+
+  output_tb->Print();
+
+  auto index_arr = output_tb->GetArrowIndex()->GetIndexArray();
+
+  std::cout << "Elements in Output Index : " << index_arr->length() << "[" << output_tb->GetArrowIndex()->GetSize()
+			<< "]" << std::endl;
+
+  print_arrow_array(index_arr);
+
+  return 0;
+}
+
+
+int arrow_iloc_indexer_test_6() {
+  std::string func_title = "Arrow ILoc 6";
+  separator(func_title);
+
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output, output1;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/indexing_data.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating table";
+	return -1;
+  }
+
+  std::shared_ptr<cylon::Table> output_tb;
+  auto pool = cylon::ToArrowPool(ctx);
+  arrow::Int64Builder builder(pool);
+  std::shared_ptr<arrow::Array> search_index_array;
+  std::vector<int64_t> search_index_values = {0, 1, 2, 3, 4, 5};
+  builder.AppendValues(search_index_values);
+  builder.Finish(&search_index_array);
+
+  std::vector<int> columns = {0, 1};
+
+  std::shared_ptr<cylon::BaseArrowIndex> index;
+  std::shared_ptr<cylon::BaseIndex> base_index;
+  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+
+  status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating the Arrow Index";
+  } else {
+	LOG(INFO) << "Index Built Successfully!";
+  }
+
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
+
+  std::shared_ptr<cylon::ArrowBaseIndexer>
+	  loc_indexer = std::make_shared<cylon::ArrowILocIndexer>(schema);
   std::cout << "Creating Arrow Loc Indexer object" << std::endl;
   loc_indexer->loc(search_index_array, columns, output1, output_tb);
 

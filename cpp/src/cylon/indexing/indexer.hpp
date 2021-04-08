@@ -361,6 +361,45 @@ class ILocIndexer : public LocIndexer {
 };
 
 
+class ArrowILocIndexer : public ArrowLocIndexer{
+ public:
+  ArrowILocIndexer(IndexingSchema indexing_schema);
+
+  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
+			 const std::shared_ptr<arrow::Scalar> &end_index,
+			 const int column_index,
+			 const std::shared_ptr<Table> &input_table,
+			 std::shared_ptr<cylon::Table> &output) override;
+  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
+			 const std::shared_ptr<arrow::Scalar> &end_index,
+			 const int start_column_index,
+			 const int end_column_index,
+			 const std::shared_ptr<Table> &input_table,
+			 std::shared_ptr<cylon::Table> &output) override;
+  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
+			 const std::shared_ptr<arrow::Scalar> &end_index,
+			 const std::vector<int> &columns,
+			 const std::shared_ptr<Table> &input_table,
+			 std::shared_ptr<cylon::Table> &output) override;
+  Status loc(const std::shared_ptr<arrow::Array> &indices,
+			 const int column_index,
+			 const std::shared_ptr<Table> &input_table,
+			 std::shared_ptr<cylon::Table> &output) override;
+  Status loc(const std::shared_ptr<arrow::Array> &indices,
+			 const int start_column,
+			 const int end_column,
+			 const std::shared_ptr<Table> &input_table,
+			 std::shared_ptr<cylon::Table> &output) override;
+  Status loc(const std::shared_ptr<arrow::Array> &indices,
+			 const std::vector<int> &columns,
+			 const std::shared_ptr<Table> &input_table,
+			 std::shared_ptr<cylon::Table> &output) override;
+  IndexingSchema GetIndexingSchema() override;
+
+ private:
+  IndexingSchema indexing_schema_;
+};
+
 
 
 }
