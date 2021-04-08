@@ -38,6 +38,8 @@ cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingSchema indexing_sc
 											   std::shared_ptr<cylon::BaseArrowIndex> &loc_index) {
   if (indexing_schema == cylon::IndexingSchema::Hash) {
 	return cylon::IndexUtil::BuildArrowHashIndexFromArray(sub_index_arr, pool, loc_index);
+  } else if (indexing_schema == cylon::IndexingSchema::Range) {
+	return cylon::IndexUtil::BuildArrowRangeIndexFromArray(sub_index_arr->length(), pool, loc_index);
   } else if (indexing_schema == cylon::IndexingSchema::Linear) {
 	return cylon::IndexUtil::BuildArrowLinearIndexFromArrowArray(sub_index_arr, pool, loc_index);
   } else if (indexing_schema == cylon::IndexingSchema::BinaryTree) {
@@ -182,24 +184,13 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
 
-  if (indexing_schema == cylon::IndexingSchema::Range) {
-	LOG(INFO) << "Set Index for location output with RangeIndex";
-	int64_t size = end_pos - start_pos;
-	std::cout << "Setting range index for output table : size : " << size << std::endl;
-	cylon::IndexUtil::BuildArrowRangeIndexFromArray(size, pool, loc_index);
-	std::cout << "After Setting range index for output table : size : " << loc_index->GetSize() << ","
-			  << loc_index->GetSchema() << std::endl;
-	output->Set_ArrowIndex(loc_index, false);
-	return cylon::Status::OK();
-  } else {
-	LOG(INFO) << "Set Index for location output with Non-RangeIndex";
-	auto index_arr = index->GetIndexArray();
-	std::cout << "Current Index array size : " << index_arr->length() << std::endl;
-	sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
-	BuildArrowIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
-	output->Set_ArrowIndex(loc_index, false);
-	return cylon::Status::OK();
-  }
+  LOG(INFO) << "Set Index for location output with Non-RangeIndex";
+  auto index_arr = index->GetIndexArray();
+  std::cout << "Current Index array size : " << index_arr->length() << std::endl;
+  sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
+  BuildArrowIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
+  output->Set_ArrowIndex(loc_index, false);
+  return cylon::Status::OK();
 
 }
 
@@ -357,7 +348,7 @@ static cylon::Status ResolveILocIndices(const std::vector<void *> &input_indices
 }
 
 static cylon::Status ResolveArrowILocIndices(const std::shared_ptr<arrow::Array> &input_indices,
-										std::vector<int64_t> &output_indices) {
+											 std::vector<int64_t> &output_indices) {
   cylon::Status status;
   std::shared_ptr<arrow::Int64Array> input_indices_ar = std::static_pointer_cast<arrow::Int64Array>(input_indices);
   for (int64_t ix = 0; ix < input_indices->length(); ix++) {
