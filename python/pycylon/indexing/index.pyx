@@ -16,11 +16,12 @@ from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from pyarrow.lib cimport CArray as CArrowArray
+from pyarrow.lib cimport CScalar as CArrowScalar
 from pycylon.indexing.index cimport CIndexingSchema
-from pycylon.indexing.index cimport CLocIndexer
-from pycylon.indexing.index cimport CBaseIndex
+from pycylon.indexing.index cimport CLocIndexer, CArrowLocIndexer
+from pycylon.indexing.index cimport CBaseIndex, CBaseArrowIndex
 from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table, pyarrow_wrap_array,
-pyarrow_unwrap_array)
+pyarrow_unwrap_array, pyarrow_wrap_scalar, pyarrow_unwrap_scalar)
 
 from pycylon.api.lib cimport (pycylon_wrap_context, pycylon_unwrap_context, pycylon_unwrap_table,
 pycylon_wrap_table)
@@ -87,6 +88,40 @@ cdef class BaseIndex:
         else:
             raise ValueError("values must be List or np.ndarray")
 
+
+cdef class BaseArrowIndex:
+    cdef void init(self, const shared_ptr[CBaseArrowIndex]& index):
+        self.bindex_shd_ptr = index
+
+    def get_index_array(self) -> pa.array:
+        cdef shared_ptr[CArrowArray] index_arr = self.bindex_shd_ptr.get().GetIndexArray()
+        py_arw_index_arr = pyarrow_wrap_array(index_arr)
+        return py_arw_index_arr
+
+    def get_schema(self) -> IndexingSchema:
+        return IndexingSchema(self.bindex_shd_ptr.get().GetSchema())
+
+    @property
+    def index_values(self):
+        return self.get_index_array().tolist()
+
+    @property
+    def values(self):
+        npr = None
+        try:
+            npr = self.get_index_array().to_numpy()
+        except ValueError:
+            npr = self.get_index_array().to_numpy(zero_copy_only=False)
+        return npr
+
+    def isin(self, values, skip_null=True, zero_copy_only=False):
+        res_isin = None
+        if isinstance(values, List) or isinstance(values, np.ndarray):
+            values_arw_ar = pa.array(values)
+            res_isin = compare_array_like_values(self.get_index_array(), values_arw_ar, skip_null)
+            return res_isin.to_numpy(zero_copy_only=zero_copy_only)
+        else:
+            raise ValueError("values must be List or np.ndarray")
 
 cdef vector[void*] _get_void_vec_from_pylist(py_list, arrow_type):
     if arrow_type == pa.int64():
@@ -201,6 +236,30 @@ cdef class PyObjectToCObject:
         cdef PyObject obj
 
         return c_vec
+
+cdef class ArrowLocIndexer:
+    def __cinit__(self, CIndexingSchema indexing_schema):
+        self.indexer_shd_ptr = make_shared[CArrowLocIndexer](indexing_schema)
+
+    def loc_with_index_range(self, start_index, end_index, column, table):
+        cdef:
+            shared_ptr[CTable] output
+            shared_ptr[CTable] input
+            shared_ptr[CArrowScalar] start
+            shared_ptr[CArrowScalar] end
+        # cast indices to appropriate scalar types
+        index_array = table.get_arrow_index().get_index_array()
+        start_scalar = pa.scalar(start_index, index_array.type)
+        end_scalar = pa.scalar(end_index, index_array.type)
+        start = pyarrow_unwrap_scalar(start_scalar)
+        end = pyarrow_unwrap_scalar(end_scalar)
+        input = pycylon_unwrap_table(table)
+        if np.isscalar(column):
+            # single column
+            self.indexer_shd_ptr.get().loc(start, end, column, input, output)
+            return pycylon_wrap_table(output)
+        else:
+            pass
 
 cdef class LocIndexer:
     def __cinit__(self, CIndexingSchema indexing_schema):
@@ -730,8 +789,6 @@ cdef class LocIndexer:
 
             return pycylon_wrap_table(output)
 
-
-
 cdef class ILocIndexer:
     def __cinit__(self, CIndexingSchema indexing_schema):
         self.indexer_shd_ptr = make_shared[CILocIndexer](indexing_schema)
@@ -758,7 +815,6 @@ cdef class ILocIndexer:
         cdef void*c_start_index
         cdef void*c_end_index
         cdef vector[int] c_column_index
-
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
@@ -798,7 +854,7 @@ cdef class ILocIndexer:
             self._is_valid_index_value(end_index)
 
             # NOTE: pandas iloc and loc semantics considers the edge boundary differently
-            end_index = end_index - 1 # match to pandas definition of range for iloc
+            end_index = end_index - 1  # match to pandas definition of range for iloc
 
             c_start_index = <void*> p2c.to_long(start_index)
             c_end_index = <void*> p2c.to_long(end_index)
@@ -831,7 +887,7 @@ cdef class ILocIndexer:
                 c_start_index = <void*> p2c.to_long(index)
 
                 self.indexer_shd_ptr.get().loc(&c_start_index, c_start_column_index,
-                                                   c_end_column_index, input, output)
+                                               c_end_column_index, input, output)
                 intermediate_tables.append(pycylon_wrap_table(output))
 
             return Table.merge(intermediate_tables)
@@ -839,7 +895,7 @@ cdef class ILocIndexer:
         if np.isscalar(indices):
             c_start_index = <void*> p2c.to_long(indices)
             self.indexer_shd_ptr.get().loc(&c_start_index, c_start_column_index,
-                                               c_end_column_index, input, output)
+                                           c_end_column_index, input, output)
             return pycylon_wrap_table(output)
 
         if isinstance(indices, slice):
@@ -860,8 +916,8 @@ cdef class ILocIndexer:
             c_end_index = <void*> p2c.to_long(end_index)
 
             self.indexer_shd_ptr.get().loc(&c_start_index, &c_end_index, c_start_column_index,
-                                               c_end_column_index,
-                                               input, output)
+                                           c_end_column_index,
+                                           input, output)
             return pycylon_wrap_table(output)
 
     def loc_with_single_column(self, indices, column_index, table):
@@ -870,7 +926,6 @@ cdef class ILocIndexer:
         cdef void*c_start_index
         cdef void*c_end_index
         cdef int c_column_index = <int> column_index
-
 
         index = table.get_index()
         arrow_type = index.get_index_array().type
@@ -915,7 +970,7 @@ cdef class ILocIndexer:
             c_end_index = <void*> p2c.to_long(end_index)
 
             self.indexer_shd_ptr.get().loc(&c_start_index, &c_end_index, c_column_index,
-                                               input, output)
+                                           input, output)
             return pycylon_wrap_table(output)
 
 

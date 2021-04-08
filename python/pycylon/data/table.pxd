@@ -28,8 +28,8 @@ from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
-from pycylon.indexing.index cimport CBaseIndex
-from pycylon.indexing.index import BaseIndex
+from pycylon.indexing.index cimport CBaseIndex, CBaseArrowIndex
+from pycylon.indexing.index import BaseIndex, BaseArrowIndex
 
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
@@ -62,7 +62,11 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         CStatus Set_Index(shared_ptr[CBaseIndex] & index, bool drop)
 
+        CStatus Set_ArrowIndex(shared_ptr[CBaseArrowIndex] & index, bool drop)
+
         shared_ptr[CBaseIndex] GetIndex()
+
+        shared_ptr[CBaseArrowIndex] GetArrowIndex()
 
         CStatus ResetIndex(bool drop)
 

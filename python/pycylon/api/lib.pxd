@@ -44,6 +44,10 @@ from pycylon.indexing.index import BaseIndex
 from pycylon.indexing.index cimport CBaseIndex
 from pycylon.indexing.index cimport BaseIndex
 from pycylon.common.join_config cimport CJoinConfig
+from pycylon.indexing.index import BaseArrowIndex
+from pycylon.indexing.index cimport CBaseArrowIndex
+from pycylon.indexing.index cimport BaseArrowIndex
+
 
 
 cdef api bint pyclon_is_context(object context)
@@ -66,6 +70,8 @@ cdef api CSortOptions* pycylon_unwrap_sort_options(object sort_options)
 
 cdef api shared_ptr[CBaseIndex] pycylon_unwrap_base_index(object base_index)
 
+cdef api shared_ptr[CBaseArrowIndex] pycylon_unwrap_base_arrow_index(object base_arrow_index)
+
 cdef api CType pycylon_unwrap_type(object type)
 
 cdef api CLayout pycylon_unwrap_layout(object layout)
@@ -85,3 +91,5 @@ cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] &data_type)
 cdef api object pycylon_wrap_sort_options(CSortOptions *sort_options)
 
 cdef api object pycylon_wrap_base_index(const shared_ptr[CBaseIndex] &base_index)
+
+cdef api object pycylon_wrap_base_arrow_index(const shared_ptr[CBaseArrowIndex] &base_arrow_index)

@@ -719,8 +719,53 @@ def test_isin_with_getitem():
     assert tb1.index.values.tolist() ==  pdf1.index.values.tolist()
 
 
+def test_arrow_index():
+    from pycylon.indexing.index import IndexingSchema
+    from pycylon.indexing.index_utils import IndexUtil
+    from pycylon.indexing.index import LocIndexer
+    from pycylon.indexing.index import ArrowLocIndexer
+
+    pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 11]),
+                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+                              'c': pd.Series([12, 15, 18, 111, 122, 125, 112], dtype='int'),
+                              'd': pd.Series([212, 215, 218, 211, 222, 225, 312], dtype='int'),
+                              'e': pd.Series([1121, 12151, 12181, 12111, 12221, 12251, 13121],
+                                             dtype='int')})
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    cn_tb: Table = Table.from_pandas(ctx, pdf_float)
+    indexing_schema = IndexingSchema.LINEAR
+    drop_index = True
+
+    print("Before Indexing")
+    print(cn_tb)
+
+    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
+
+    pdf_float = pdf_float.set_index('a')
+
+    print("After Indexing")
+    assert cn_tb.column_names == ['b', 'c', 'd', 'e']
+
+    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
+
+    print(cn_tb.get_arrow_index().values)
+
+    index_array = cn_tb.get_arrow_index().get_index_array()
+
+    print(index_array)
+
+    print(index_array.type)
+
+    scalar_value = pa.scalar(10, index_array.type)
+
+    print(scalar_value)
+
+    arrow_loc_indexer = ArrowLocIndexer(IndexingSchema.LINEAR)
+    output = arrow_loc_indexer.loc_with_index_range(4, 20, 0, cn_tb)
+
+    print(output)
+
+    print(output.get_arrow_index().values)
 
 
-
-
-test_isin_with_getitem()
+test_arrow_index()

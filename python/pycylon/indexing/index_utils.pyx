@@ -45,6 +45,15 @@ cdef class IndexUtil:
         return cn_table
 
     @staticmethod
+    def build_arrow_index(indexing_schema: IndexingSchema, table: Table, column: int, drop: bool):
+        cdef shared_ptr[CTable] output
+        cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
+        CIndexUtil.BuildArrowIndex(indexing_schema, input, column, drop, output)
+        cn_table = pycylon_wrap_table(output)
+        #cn_table.indexing_schema = indexing_schema
+        return cn_table
+
+    @staticmethod
     def build_index_from_list(indexing_schema: IndexingSchema, table: Table, index_arr:List):
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)

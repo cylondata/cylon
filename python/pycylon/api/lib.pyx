@@ -47,6 +47,10 @@ from pycylon.indexing.index cimport BaseIndex
 from pycylon.common.join_config cimport CJoinConfig
 from pycylon.common.join_config import JoinConfig
 from pycylon.common.join_config cimport JoinConfig
+from pycylon.indexing.index import BaseArrowIndex
+from pycylon.indexing.index cimport CBaseArrowIndex
+from pycylon.indexing.index cimport BaseArrowIndex
+
 
 cdef api bint pyclon_is_context(object context):
     return isinstance(context, CylonContext)
@@ -80,6 +84,9 @@ cdef api bint pyclon_is_join_config(object config):
 
 cdef api bint pyclon_is_base_index(object base_index):
     return isinstance(base_index, BaseIndex)
+
+cdef api bint pyclon_is_base_arrow_index(object base_arrow_index):
+    return isinstance(base_arrow_index, BaseArrowIndex)
 
 cdef api shared_ptr[CCylonContext] pycylon_unwrap_context(object context):
     cdef CylonContext ctx
@@ -145,6 +152,14 @@ cdef api shared_ptr[CBaseIndex] pycylon_unwrap_base_index (object base_index):
     else:
         raise ValueError('Passed object is not an instance of DataType')
 
+cdef api shared_ptr[CBaseArrowIndex] pycylon_unwrap_base_arrow_index (object base_arrow_index):
+    cdef BaseArrowIndex bi
+    if pyclon_is_base_arrow_index(base_arrow_index):
+        bi = <BaseArrowIndex> base_arrow_index
+        return bi.bindex_shd_ptr
+    else:
+        raise ValueError('Passed object is not an instance of DataType')
+
 cdef api CType pycylon_unwrap_type(object type):
     pass
 
@@ -189,3 +204,8 @@ cdef api object pycylon_wrap_base_index(const shared_ptr[CBaseIndex] &cbase_inde
     cdef BaseIndex base_index = BaseIndex.__new__(BaseIndex)
     base_index.init(cbase_index)
     return base_index
+
+cdef api object pycylon_wrap_base_arrow_index(const shared_ptr[CBaseArrowIndex] &cbase_arrow_index):
+    cdef BaseArrowIndex base_arrow_index = BaseArrowIndex.__new__(BaseArrowIndex)
+    base_arrow_index.init(cbase_arrow_index)
+    return base_arrow_index

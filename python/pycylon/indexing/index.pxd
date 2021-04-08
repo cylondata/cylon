@@ -16,6 +16,7 @@ from libcpp cimport bool
 from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 from pyarrow.lib cimport CArray as CArrowArray
+from pyarrow.lib cimport CScalar as CArrowScalar
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.vector cimport vector
 from pycylon.ctx.context cimport CCylonContext
@@ -41,6 +42,14 @@ cdef extern from "../../../cpp/src/cylon/indexing/index.hpp" namespace "cylon":
         CIndexingSchema GetSchema()
 
 
+cdef extern from "../../../cpp/src/cylon/indexing/index.hpp" namespace "cylon":
+    cdef cppclass CBaseArrowIndex "cylon::BaseArrowIndex":
+        CBaseArrowIndex (int col_id, int size, shared_ptr[CCylonContext] & ctx)
+
+        shared_ptr[CArrowArray] GetIndexArray()
+        CIndexingSchema GetSchema()
+
+
 cdef class BaseIndex:
     cdef:
         shared_ptr[CBaseIndex] bindex_shd_ptr
@@ -50,6 +59,17 @@ cdef class BaseIndex:
         dict __dict__
 
         void init(self, const shared_ptr[CBaseIndex]& index)
+
+
+cdef class BaseArrowIndex:
+    cdef:
+        shared_ptr[CBaseArrowIndex] bindex_shd_ptr
+        shared_ptr[CCylonContext] ctx_shd_ptr
+        int column_id
+        int size
+        dict __dict__
+
+        void init(self, const shared_ptr[CBaseArrowIndex]& index)
 
 
 cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon":
@@ -84,6 +104,14 @@ cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon"
 
         CStatus loc(const vector[void*] & indices, const vector[int] &column_indices,
                     const shared_ptr[CTable] & input_table, shared_ptr[CTable] & output)
+
+
+cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon":
+    cdef cppclass CArrowLocIndexer "cylon::ArrowLocIndexer":
+        CArrowLocIndexer(CIndexingSchema indexing_schema)
+
+        CStatus loc(const shared_ptr[CArrowScalar] &start_index, const shared_ptr[CArrowScalar] &end_index, const int column_index,
+                    const shared_ptr[CTable] &input_table, shared_ptr[CTable] &output)
 
 
 
@@ -139,6 +167,12 @@ cdef class LocIndexer:
 
     cdef:
         shared_ptr[CLocIndexer] indexer_shd_ptr
+        CIndexingSchema c_indexing_schema
+
+cdef class ArrowLocIndexer:
+
+    cdef:
+        shared_ptr[CArrowLocIndexer] indexer_shd_ptr
         CIndexingSchema c_indexing_schema
 
 cdef class ILocIndexer:
