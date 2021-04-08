@@ -113,6 +113,24 @@ cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon"
         CStatus loc(const shared_ptr[CArrowScalar] &start_index, const shared_ptr[CArrowScalar] &end_index, const int column_index,
                     const shared_ptr[CTable] &input_table, shared_ptr[CTable] &output)
 
+        CStatus loc(const shared_ptr[CArrowScalar] &start_index, const shared_ptr[CArrowScalar] & end_index,
+                    const int start_column_index, const int end_column_index,
+                    const shared_ptr[CTable] & input_table, shared_ptr[CTable] & output)
+
+        CStatus loc(const shared_ptr[CArrowScalar] & start_index, const shared_ptr[CArrowScalar] & end_index,
+                    const vector[int] & columns,
+                    const shared_ptr[CTable] & input_table, shared_ptr[CTable] & output)
+
+        CStatus loc(const shared_ptr[CArrowArray] &indices, const int column_index,
+                    const shared_ptr[CTable] & input_table, shared_ptr[CTable] & output)
+
+        CStatus loc(const shared_ptr[CArrowArray] &indices, const int start_column_index, const int end_column_index,
+                    const shared_ptr[CTable] & input_table, shared_ptr[CTable] & output)
+
+        CStatus loc(const shared_ptr[CArrowArray] &indices, const vector[int] & columns,
+                    const shared_ptr[CTable] & input_table, shared_ptr[CTable] & output)
+
+
 
 
 cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon":

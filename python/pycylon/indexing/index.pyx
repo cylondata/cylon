@@ -247,6 +247,7 @@ cdef class ArrowLocIndexer:
             shared_ptr[CTable] input
             shared_ptr[CArrowScalar] start
             shared_ptr[CArrowScalar] end
+            int c_column_index
         # cast indices to appropriate scalar types
         index_array = table.get_arrow_index().get_index_array()
         start_scalar = pa.scalar(start_index, index_array.type)
@@ -256,7 +257,8 @@ cdef class ArrowLocIndexer:
         input = pycylon_unwrap_table(table)
         if np.isscalar(column):
             # single column
-            self.indexer_shd_ptr.get().loc(start, end, column, input, output)
+            c_column_index = column
+            self.indexer_shd_ptr.get().loc(start, end, c_column_index, input, output)
             return pycylon_wrap_table(output)
         else:
             pass
