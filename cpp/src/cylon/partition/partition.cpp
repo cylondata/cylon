@@ -178,7 +178,7 @@ Status MapToSortPartitions(const std::shared_ptr<Table> &table,
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(column_idx);
 
-  if (num_samples == 0) num_samples = std::min((int64_t) (table->Rows() * 0.01), table->Rows());
+  if (num_samples == 0) num_samples = table->Rows();
   if (num_bins == 0) num_bins = num_partitions * 16;
 
   std::unique_ptr<PartitionKernel> kern = CreateRangePartitionKernel(idx_col->type(),

@@ -14,7 +14,7 @@
 
 
 from __future__ import annotations
-from typing import Hashable, List, Dict, Literal, Optional, Sequence, Union, Final
+from typing import Hashable, List, Dict, Optional, Sequence, Union, Final
 from copy import copy
 from collections.abc import Iterable
 import pycylon as cn
@@ -39,19 +39,23 @@ class CylonEnv(object):
         self._finalized = False
 
     @property
-    def context(self):
+    def context(self) -> CylonContext:
         return self._context
 
     @property
-    def rank(self):
+    def rank(self) -> int:
         return self._context.get_rank()
 
     @property
-    def is_distributed(self):
+    def world_size(self) -> int:
+        return self._context.get_world_size()
+
+    @property
+    def is_distributed(self) -> bool:
         return self._distributed
 
     def finalize(self):
-        if self._finalized == False:
+        if not self._finalized:
             self._finalized = True
             self._context.finalize()
 
@@ -1093,15 +1097,29 @@ class DataFrame(object):
         4 16     10  2014    31
         """
         # todo this is not a final implementation
-        self._index_columns = keys
-        self._table.set_index(keys, drop=drop)
-        return self
+        index_keys = []
+        index_keys.extend(keys)
+
+        if append:
+            for c in self._index_columns:
+                if not c in index_keys:
+                    index_keys.append(c)
+
+        if inplace:
+            self._index_columns = index_keys
+            self._table.set_index(index_keys, drop=drop)
+            return None
+        else:
+            new_df = DataFrame(self._table)
+            new_df._table.set_index(index_keys, drop=drop)
+            new_df._index_columns = index_keys
+            return new_df
 
     def reset_index(  # type: ignore[misc]
         self,
         level: Optional[Union[Hashable, Sequence[Hashable]]] = ...,
         drop: bool = ...,
-        inplace: Literal[False] = ...,
+        inplace: False = ...,
         col_level: Hashable = ...,
         col_fill=...,
     ) -> DataFrame:

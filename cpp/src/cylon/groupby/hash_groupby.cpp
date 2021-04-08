@@ -195,8 +195,12 @@ static Status aggregate(arrow::MemoryPool *pool,
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&agg_array));
 
   const char *prefix = compute::KernelTraits<aggOp, C_TYPE>::name();
-  agg_field = std::make_shared<arrow::Field>(std::string(prefix) + field->name(),
-                                             arrow::TypeTraits<RESULT_ARROW_T>::type_singleton());
+  // in dist group by, aggregate may be called multiple times on the same col. Check issue #387
+  if (field->name().find(prefix) == std::string::npos) {
+    agg_field = std::make_shared<arrow::Field>(std::string(prefix) + field->name(), arr->type());
+  } else {
+    agg_field = field;
+  }
   return Status::OK();
 }
 
