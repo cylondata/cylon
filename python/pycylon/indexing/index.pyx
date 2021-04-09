@@ -302,7 +302,7 @@ cdef class ArrowLocIndexer:
             int c_end_column_index
             vector[int] c_column_vector
         # cast indices to appropriate scalar types
-        index = table.get_arrow_index()
+        index = table.get_index()
         start_index, end_index = self._fix_partial_slice_inidices(start_index, end_index, index)
         index_array = index.get_index_array()
         start_scalar = pa.scalar(start_index, index_array.type)
@@ -340,7 +340,7 @@ cdef class ArrowLocIndexer:
             int c_end_column_index
             vector[int] c_column_vector
         # cast indices to appropriate scalar types
-        index_array = table.get_arrow_index().get_index_array()
+        index_array = table.get_index().get_index_array()
         indices_array = pa.array(indices, index_array.type)
         c_indices = pyarrow_unwrap_array(indices_array)
         input = pycylon_unwrap_table(table)
@@ -434,7 +434,7 @@ cdef class ArrowILocIndexer:
             int c_end_column_index
             vector[int] c_column_vector
         # cast indices to appropriate scalar types
-        index = table.get_arrow_index()
+        index = table.get_index()
         start_index, end_index = self._fix_partial_slice_inidices(start_index, end_index, index)
         index_array = index.get_index_array()
         start_scalar = pa.scalar(start_index, pa.int64())
@@ -472,7 +472,7 @@ cdef class ArrowILocIndexer:
             int c_end_column_index
             vector[int] c_column_vector
         # cast indices to appropriate scalar types
-        index_array = table.get_arrow_index().get_index_array()
+        index_array = table.get_index().get_index_array()
         indices_array = pa.array(indices, pa.int64())
         c_indices = pyarrow_unwrap_array(indices_array)
         input = pycylon_unwrap_table(table)
@@ -1214,9 +1214,9 @@ class PyLocIndexer:
     def __init__(self, cn_table, mode):
         self._cn_table = cn_table
         if mode == "loc":
-            self._loc_indexer = ArrowLocIndexer(cn_table.get_arrow_index().get_schema())
+            self._loc_indexer = ArrowLocIndexer(cn_table.get_index().get_schema())
         elif mode == "iloc":
-            self._loc_indexer = ArrowILocIndexer(cn_table.get_arrow_index().get_schema())
+            self._loc_indexer = ArrowILocIndexer(cn_table.get_index().get_schema())
 
     def _resolve_column_index_from_column_name(self, column_name) -> int:
         index = None

@@ -79,13 +79,13 @@ def test_cylon_set_index_from_column():
     print("Before Indexing")
     print(cn_tb)
 
-    #cn_tb.set_index('a', indexing_schema, drop_index)
-    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
+    # cn_tb.set_index('a', indexing_schema, drop_index)
+    cn_tb.set_index('a', indexing_schema, drop_index)
 
     print("After Indexing")
     assert cn_tb.column_names == ['b']
 
-    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
 
 
 def test_reset_index():
@@ -101,355 +101,359 @@ def test_reset_index():
     indexing_schema = IndexingSchema.LINEAR
     drop_index = True
 
-    #cn_tb.set_index('a', indexing_schema, drop_index)
-    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
+    # cn_tb.set_index('a', indexing_schema, drop_index)
+    cn_tb.set_index('a', indexing_schema, drop_index)
 
-    #assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+    # assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
 
-    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
 
     rest_drop_index = False
     # cn_tb.reset_index(rest_drop_index)
-    cn_tb.reset_arrow_index(rest_drop_index)
+    cn_tb.reset_index(rest_drop_index)
 
     assert cn_tb.column_names == ['index', 'b']
 
     # assert cn_tb.get_index().get_schema() == IndexingSchema.RANGE
-    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.RANGE
+    assert cn_tb.get_index().get_schema() == IndexingSchema.RANGE
 
 
 def test_cylon_cpp_single_column_indexing():
     # TODO: REMOVE
-    from pycylon.indexing.index import IndexingSchema
-    from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
-
-    pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.int64()),
-                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int')})
-    pdf = pd.DataFrame([[1, 2], [4, 5], [7, 8], [10, 11], [20, 22], [23, 25], [10, 12]])
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
-    cn_tb: Table = Table.from_pandas(ctx, pdf_float)
-    indexing_schema = IndexingSchema.LINEAR
-
-    print("Input Table")
-    print(cn_tb)
-    print(cn_tb.to_arrow())
-
-    output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
-    print("Output Indexed Table")
-    print(output)
-
-    loc_ix = LocIndexer(indexing_schema)
-    start_index = 1
-    end_index = 7
-    column_index = 0
-
-    loc_out = loc_ix.loc_with_single_column(slice(start_index, end_index), column_index, output)
+    pass
+    # from pycylon.indexing.index import IndexingSchema
+    # from pycylon.indexing.index_utils import IndexUtil
+    # from pycylon.indexing.index import LocIndexer
     #
-    print(loc_out)
-
-    print(loc_out.to_arrow())
-
-    index = loc_out.get_index()
-
-    print(index)
-
-    print(index.get_index_array())
-
-    indices = [4, 7, 23, 20]
-
-    loc_out2 = loc_ix.loc_with_single_column(indices, column_index, output)
-
-    print(loc_out2)
-
-    loc_index = 10
-    loc_out3 = loc_ix.loc_with_single_column(loc_index, column_index, output)
-
-    print(loc_out3)
+    # pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.int64()),
+    #                           'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int')})
+    # pdf = pd.DataFrame([[1, 2], [4, 5], [7, 8], [10, 11], [20, 22], [23, 25], [10, 12]])
+    # ctx: CylonContext = CylonContext(config=None, distributed=False)
+    # cn_tb: Table = Table.from_pandas(ctx, pdf_float)
+    # indexing_schema = IndexingSchema.LINEAR
+    #
+    # print("Input Table")
+    # print(cn_tb)
+    # print(cn_tb.to_arrow())
+    #
+    # output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
+    # print("Output Indexed Table")
+    # print(output)
+    #
+    # loc_ix = LocIndexer(indexing_schema)
+    # start_index = 1
+    # end_index = 7
+    # column_index = 0
+    #
+    # loc_out = loc_ix.loc_with_single_column(slice(start_index, end_index), column_index, output)
+    # #
+    # print(loc_out)
+    #
+    # print(loc_out.to_arrow())
+    #
+    # index = loc_out.get_index()
+    #
+    # print(index)
+    #
+    # print(index.get_index_array())
+    #
+    # indices = [4, 7, 23, 20]
+    #
+    # loc_out2 = loc_ix.loc_with_single_column(indices, column_index, output)
+    #
+    # print(loc_out2)
+    #
+    # loc_index = 10
+    # loc_out3 = loc_ix.loc_with_single_column(loc_index, column_index, output)
+    #
+    # print(loc_out3)
 
 
 def test_cylon_cpp_multi_column_indexing():
     # TODO REMOVE
-    from pycylon.indexing.index import IndexingSchema
-    from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
-
-    pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
-                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
-                              'c': pd.Series([11, 12, 14, 15, 16, 17, 18], dtype='int')
-                              })
-    pdf = pd.DataFrame([[1, 2, 11], [4, 5, 12], [7, 8, 14], [10, 11, 15], [20, 22, 16], [23, 25,
-                                                                                         17],
-                        [10, 12, 18]])
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
-    cn_tb: Table = Table.from_pandas(ctx, pdf)
-    indexing_schema = IndexingSchema.LINEAR
-
-    print("Input Table")
-    print(cn_tb)
-    print(cn_tb.to_arrow())
-
-    output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
-    print("Output Indexed Table")
-    print(output)
-
-    loc_ix = LocIndexer(indexing_schema)
-    start_index = 1
-    end_index = 7
-    column_index = [0, 1]
-
-    loc_out = loc_ix.loc_with_multi_column(slice(start_index, end_index), column_index, output)
+    pass
+    # from pycylon.indexing.index import IndexingSchema
+    # from pycylon.indexing.index_utils import IndexUtil
+    # from pycylon.indexing.index import LocIndexer
     #
-    print(loc_out)
-
-    print(loc_out.to_arrow())
-
-    index = loc_out.get_index()
-
-    print(index)
-
-    print(index.get_index_array())
-
-    indices = [4, 7, 23, 20]
-
-    loc_out2 = loc_ix.loc_with_multi_column(indices, column_index, output)
-
-    print(loc_out2)
-
-    loc_index = 10
-    loc_out3 = loc_ix.loc_with_multi_column(loc_index, column_index, output)
-
-    print(loc_out3)
+    # pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
+    #                           'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+    #                           'c': pd.Series([11, 12, 14, 15, 16, 17, 18], dtype='int')
+    #                           })
+    # pdf = pd.DataFrame([[1, 2, 11], [4, 5, 12], [7, 8, 14], [10, 11, 15], [20, 22, 16], [23, 25,
+    #                                                                                      17],
+    #                     [10, 12, 18]])
+    # ctx: CylonContext = CylonContext(config=None, distributed=False)
+    # cn_tb: Table = Table.from_pandas(ctx, pdf)
+    # indexing_schema = IndexingSchema.LINEAR
+    #
+    # print("Input Table")
+    # print(cn_tb)
+    # print(cn_tb.to_arrow())
+    #
+    # output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
+    # print("Output Indexed Table")
+    # print(output)
+    #
+    # loc_ix = LocIndexer(indexing_schema)
+    # start_index = 1
+    # end_index = 7
+    # column_index = [0, 1]
+    #
+    # loc_out = loc_ix.loc_with_multi_column(slice(start_index, end_index), column_index, output)
+    # #
+    # print(loc_out)
+    #
+    # print(loc_out.to_arrow())
+    #
+    # index = loc_out.get_index()
+    #
+    # print(index)
+    #
+    # print(index.get_index_array())
+    #
+    # indices = [4, 7, 23, 20]
+    #
+    # loc_out2 = loc_ix.loc_with_multi_column(indices, column_index, output)
+    #
+    # print(loc_out2)
+    #
+    # loc_index = 10
+    # loc_out3 = loc_ix.loc_with_multi_column(loc_index, column_index, output)
+    #
+    # print(loc_out3)
 
 
 def test_cylon_cpp_str_single_column_indexing():
     # TODO REMOVE
-    from pycylon.indexing.index import IndexingSchema
-    from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
-
-    pdf_str = pd.DataFrame([["1", 2], ["4", 5], ["7", 8], ["10", 11], ["20", 22], ["23", 25], ["10",
-                                                                                               12]])
-    pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
-                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int')})
-    pdf = pd.DataFrame([[1, 2], [4, 5], [7, 8], [10, 11], [20, 22], [23, 25], [10, 12]])
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
-    cn_tb: Table = Table.from_pandas(ctx, pdf_str)
-    indexing_schema = IndexingSchema.LINEAR
-
-    print("Input Table")
-    print(cn_tb)
-    print(cn_tb.to_arrow())
-
-    output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
-    print("Output Indexed Table")
-    print(output)
-
-    loc_ix = LocIndexer(indexing_schema)
-    start_index = "1"
-    end_index = "7"
-    column_index = 0
-
-    loc_out = loc_ix.loc_with_single_column(slice(start_index, end_index), column_index, output)
-
-    print(loc_out)
-
-    print(loc_out.to_arrow())
-
-    index = loc_out.get_index()
-
-    print(index)
-
-    print(index.get_index_array())
-
-    indices = ["100", "4", "7", "23", "20"]
-
-    indices = ['4']
-
-    # indices = [4, 7]
-
-    loc_out2 = loc_ix.loc_with_single_column(indices, column_index, output)
-
-    print(loc_out2)
-
-    loc_index = '10'
-    loc_out3 = loc_ix.loc_with_single_column(loc_index, column_index, output)
-
-    print(loc_out3)
+    pass
+    # from pycylon.indexing.index import IndexingSchema
+    # from pycylon.indexing.index_utils import IndexUtil
+    # from pycylon.indexing.index import LocIndexer
+    #
+    # pdf_str = pd.DataFrame([["1", 2], ["4", 5], ["7", 8], ["10", 11], ["20", 22], ["23", 25], ["10",
+    #                                                                                            12]])
+    # pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
+    #                           'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int')})
+    # pdf = pd.DataFrame([[1, 2], [4, 5], [7, 8], [10, 11], [20, 22], [23, 25], [10, 12]])
+    # ctx: CylonContext = CylonContext(config=None, distributed=False)
+    # cn_tb: Table = Table.from_pandas(ctx, pdf_str)
+    # indexing_schema = IndexingSchema.LINEAR
+    #
+    # print("Input Table")
+    # print(cn_tb)
+    # print(cn_tb.to_arrow())
+    #
+    # output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
+    # print("Output Indexed Table")
+    # print(output)
+    #
+    # loc_ix = LocIndexer(indexing_schema)
+    # start_index = "1"
+    # end_index = "7"
+    # column_index = 0
+    #
+    # loc_out = loc_ix.loc_with_single_column(slice(start_index, end_index), column_index, output)
+    #
+    # print(loc_out)
+    #
+    # print(loc_out.to_arrow())
+    #
+    # index = loc_out.get_index()
+    #
+    # print(index)
+    #
+    # print(index.get_index_array())
+    #
+    # indices = ["100", "4", "7", "23", "20"]
+    #
+    # indices = ['4']
+    #
+    # # indices = [4, 7]
+    #
+    # loc_out2 = loc_ix.loc_with_single_column(indices, column_index, output)
+    #
+    # print(loc_out2)
+    #
+    # loc_index = '10'
+    # loc_out3 = loc_ix.loc_with_single_column(loc_index, column_index, output)
+    #
+    # print(loc_out3)
 
 
 def test_cylon_cpp_str_multi_column_indexing():
     # TODO REMOVE
-    from pycylon.indexing.index import IndexingSchema
-    from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
-
-    pdf_str = pd.DataFrame([["1", 2, 3], ["4", 5, 4], ["7", 8, 10], ["10", 11, 12], ["20", 22, 20],
-                            ["23", 25, 20], ["10", 12, 35]])
-    pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
-                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
-                              'c': pd.Series([3, 4, 10, 12, 20, 20, 35], dtype='int')})
-    pdf = pd.DataFrame([[1, 2], [4, 5], [7, 8], [10, 11], [20, 22], [23, 25], [10, 12]])
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
-    cn_tb: Table = Table.from_pandas(ctx, pdf_str)
-    indexing_schema = IndexingSchema.LINEAR
-
-    print("Input Table")
-    print(cn_tb)
-    print(cn_tb.to_arrow())
-
-    output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
-    print("Output Indexed Table")
-    print(output)
-
-    loc_ix = LocIndexer(indexing_schema)
-    start_index = "1"
-    end_index = "7"
-    column_index = [0, 1]
-
-    loc_out = loc_ix.loc_with_multi_column(slice(start_index, end_index), column_index, output)
-
-    print(loc_out)
-
-    print(loc_out.to_arrow())
-
-    index = loc_out.get_index()
-
-    print(index)
-
-    print(index.get_index_array())
-
-    indices = ["100", "4", "7", "23", "20"]
-
-    indices = ['4']
-
-    # indices = [4, 7]
-
-    loc_out2 = loc_ix.loc_with_multi_column(indices, column_index, output)
-
-    print(loc_out2)
-
-    loc_index = '10'
-    loc_out3 = loc_ix.loc_with_multi_column(loc_index, column_index, output)
-
-    print(loc_out3)
+    pass
+    # from pycylon.indexing.index import IndexingSchema
+    # from pycylon.indexing.index_utils import IndexUtil
+    # from pycylon.indexing.index import LocIndexer
+    #
+    # pdf_str = pd.DataFrame([["1", 2, 3], ["4", 5, 4], ["7", 8, 10], ["10", 11, 12], ["20", 22, 20],
+    #                         ["23", 25, 20], ["10", 12, 35]])
+    # pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
+    #                           'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+    #                           'c': pd.Series([3, 4, 10, 12, 20, 20, 35], dtype='int')})
+    # pdf = pd.DataFrame([[1, 2], [4, 5], [7, 8], [10, 11], [20, 22], [23, 25], [10, 12]])
+    # ctx: CylonContext = CylonContext(config=None, distributed=False)
+    # cn_tb: Table = Table.from_pandas(ctx, pdf_str)
+    # indexing_schema = IndexingSchema.LINEAR
+    #
+    # print("Input Table")
+    # print(cn_tb)
+    # print(cn_tb.to_arrow())
+    #
+    # output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
+    # print("Output Indexed Table")
+    # print(output)
+    #
+    # loc_ix = LocIndexer(indexing_schema)
+    # start_index = "1"
+    # end_index = "7"
+    # column_index = [0, 1]
+    #
+    # loc_out = loc_ix.loc_with_multi_column(slice(start_index, end_index), column_index, output)
+    #
+    # print(loc_out)
+    #
+    # print(loc_out.to_arrow())
+    #
+    # index = loc_out.get_index()
+    #
+    # print(index)
+    #
+    # print(index.get_index_array())
+    #
+    # indices = ["100", "4", "7", "23", "20"]
+    #
+    # indices = ['4']
+    #
+    # # indices = [4, 7]
+    #
+    # loc_out2 = loc_ix.loc_with_multi_column(indices, column_index, output)
+    #
+    # print(loc_out2)
+    #
+    # loc_index = '10'
+    # loc_out3 = loc_ix.loc_with_multi_column(loc_index, column_index, output)
+    #
+    # print(loc_out3)
 
 
 def test_cylon_cpp_range_column_indexing():
     # TODO REMOVE
-    from pycylon.indexing.index import IndexingSchema
-    from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
-
-    pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
-                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
-                              'c': pd.Series([11, 12, 14, 15, 16, 17, 18], dtype='int')
-                              })
-    pdf = pd.DataFrame([[1, 2, 11], [4, 5, 12], [7, 8, 14], [10, 11, 15], [20, 22, 16], [23, 25,
-                                                                                         17],
-                        [10, 12, 18]])
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
-    cn_tb: Table = Table.from_pandas(ctx, pdf)
-    indexing_schema = IndexingSchema.LINEAR
-
-    print("Input Table")
-    print(cn_tb)
-    print(cn_tb.to_arrow())
-
-    output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
-    print("Output Indexed Table")
-    print(output)
-
-    loc_ix = LocIndexer(indexing_schema)
-    start_index = 1
-    end_index = 7
-    column_index = slice(0, 1)
-
-    loc_out = loc_ix.loc_with_range_column(slice(start_index, end_index), column_index, output)
+    pass
+    # from pycylon.indexing.index import IndexingSchema
+    # from pycylon.indexing.index_utils import IndexUtil
+    # from pycylon.indexing.index import LocIndexer
     #
-    print(loc_out)
-
-    print(loc_out.to_arrow())
-
-    index = loc_out.get_index()
-
-    print(index)
-
-    print(index.get_index_array())
-
-    indices = [4, 7, 23, 20]
-
-    loc_out2 = loc_ix.loc_with_range_column(indices, column_index, output)
-
-    print(loc_out2)
-
-    loc_index = 10
-    loc_out3 = loc_ix.loc_with_range_column(loc_index, column_index, output)
-
-    print(loc_out3)
+    # pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
+    #                           'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+    #                           'c': pd.Series([11, 12, 14, 15, 16, 17, 18], dtype='int')
+    #                           })
+    # pdf = pd.DataFrame([[1, 2, 11], [4, 5, 12], [7, 8, 14], [10, 11, 15], [20, 22, 16], [23, 25,
+    #                                                                                      17],
+    #                     [10, 12, 18]])
+    # ctx: CylonContext = CylonContext(config=None, distributed=False)
+    # cn_tb: Table = Table.from_pandas(ctx, pdf)
+    # indexing_schema = IndexingSchema.LINEAR
+    #
+    # print("Input Table")
+    # print(cn_tb)
+    # print(cn_tb.to_arrow())
+    #
+    # output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
+    # print("Output Indexed Table")
+    # print(output)
+    #
+    # loc_ix = LocIndexer(indexing_schema)
+    # start_index = 1
+    # end_index = 7
+    # column_index = slice(0, 1)
+    #
+    # loc_out = loc_ix.loc_with_range_column(slice(start_index, end_index), column_index, output)
+    # #
+    # print(loc_out)
+    #
+    # print(loc_out.to_arrow())
+    #
+    # index = loc_out.get_index()
+    #
+    # print(index)
+    #
+    # print(index.get_index_array())
+    #
+    # indices = [4, 7, 23, 20]
+    #
+    # loc_out2 = loc_ix.loc_with_range_column(indices, column_index, output)
+    #
+    # print(loc_out2)
+    #
+    # loc_index = 10
+    # loc_out3 = loc_ix.loc_with_range_column(loc_index, column_index, output)
+    #
+    # print(loc_out3)
 
 
 def test_cylon_cpp_str_range_column_indexing():
     # TODO REMOVE
-    from pycylon.indexing.index import IndexingSchema
-    from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
-
-    pdf_str = pd.DataFrame([["1", 2, 3], ["4", 5, 4], ["7", 8, 10], ["10", 11, 12], ["20", 22, 20],
-                            ["23", 25, 20], ["10", 12, 35]])
-    pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
-                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
-                              'c': pd.Series([3, 4, 10, 12, 20, 20, 35], dtype='int')})
-    pdf = pd.DataFrame([[1, 2], [4, 5], [7, 8], [10, 11], [20, 22], [23, 25], [10, 12]])
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
-    cn_tb: Table = Table.from_pandas(ctx, pdf_str)
-    indexing_schema = IndexingSchema.LINEAR
-
-    print("Input Table")
-    print(cn_tb)
-    print(cn_tb.to_arrow())
-
-    output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
-    print("Output Indexed Table")
-    print(output)
-
-    loc_ix = LocIndexer(indexing_schema)
-    start_index = "1"
-    end_index = "7"
-    column_index = slice(0, 1)
-
-    loc_out = loc_ix.loc_with_range_column(slice(start_index, end_index), column_index, output)
-
-    print(loc_out)
-
-    print(loc_out.to_arrow())
-
-    index = loc_out.get_index()
-
-    print(index)
-
-    print(index.get_index_array())
-
-    indices = ["100", "4", "7", "23", "20"]
-
-    indices = ['4']
-
-    # indices = [4, 7]
-
-    loc_out2 = loc_ix.loc_with_range_column(indices, column_index, output)
-
-    print(loc_out2)
-
-    loc_index = '10'
-    loc_out3 = loc_ix.loc_with_range_column(loc_index, column_index, output)
-
-    print(loc_out3)
+    pass
+    # from pycylon.indexing.index import IndexingSchema
+    # from pycylon.indexing.index_utils import IndexUtil
+    # from pycylon.indexing.index import LocIndexer
+    #
+    # pdf_str = pd.DataFrame([["1", 2, 3], ["4", 5, 4], ["7", 8, 10], ["10", 11, 12], ["20", 22, 20],
+    #                         ["23", 25, 20], ["10", 12, 35]])
+    # pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
+    #                           'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+    #                           'c': pd.Series([3, 4, 10, 12, 20, 20, 35], dtype='int')})
+    # pdf = pd.DataFrame([[1, 2], [4, 5], [7, 8], [10, 11], [20, 22], [23, 25], [10, 12]])
+    # ctx: CylonContext = CylonContext(config=None, distributed=False)
+    # cn_tb: Table = Table.from_pandas(ctx, pdf_str)
+    # indexing_schema = IndexingSchema.LINEAR
+    #
+    # print("Input Table")
+    # print(cn_tb)
+    # print(cn_tb.to_arrow())
+    #
+    # output = IndexUtil.build_index(indexing_schema, cn_tb, 0, True)
+    # print("Output Indexed Table")
+    # print(output)
+    #
+    # loc_ix = LocIndexer(indexing_schema)
+    # start_index = "1"
+    # end_index = "7"
+    # column_index = slice(0, 1)
+    #
+    # loc_out = loc_ix.loc_with_range_column(slice(start_index, end_index), column_index, output)
+    #
+    # print(loc_out)
+    #
+    # print(loc_out.to_arrow())
+    #
+    # index = loc_out.get_index()
+    #
+    # print(index)
+    #
+    # print(index.get_index_array())
+    #
+    # indices = ["100", "4", "7", "23", "20"]
+    #
+    # indices = ['4']
+    #
+    # # indices = [4, 7]
+    #
+    # loc_out2 = loc_ix.loc_with_range_column(indices, column_index, output)
+    #
+    # print(loc_out2)
+    #
+    # loc_index = '10'
+    # loc_out3 = loc_ix.loc_with_range_column(loc_index, column_index, output)
+    #
+    # print(loc_out3)
 
 
 def test_loc_op_mode_1():
     from pycylon.indexing.index import IndexingSchema
-    from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
 
     pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 11], dtype=np.int64()),
                               'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
@@ -465,8 +469,7 @@ def test_loc_op_mode_1():
     print("Before Indexing")
     print(cn_tb)
 
-    # cn_tb.set_index('a', indexing_schema, drop_index)
-    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
+    cn_tb.set_index('a', indexing_schema, drop_index)
 
     pdf_float = pdf_float.set_index('a')
 
@@ -474,51 +477,49 @@ def test_loc_op_mode_1():
     assert cn_tb.column_names == ['b', 'c', 'd', 'e']
 
     # assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
-    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
 
     loc_cn_1 = cn_tb.loc[7:20, 'c':'e']
     loc_pd_1 = pdf_float.loc[7:20, 'c':'e']
 
-    print(loc_cn_1.get_arrow_index().values)
+    print(loc_cn_1.get_index().values)
     print(loc_pd_1.index.values)
 
     assert loc_pd_1.values.tolist() == loc_cn_1.to_pandas().values.tolist()
-    #assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
-    assert loc_cn_1.get_arrow_index().get_index_array() == pa.array(loc_pd_1.index)
+    assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
+    # assert loc_cn_1.get_arrow_index().get_index_array() == pa.array(loc_pd_1.index)
 
     loc_cn_2 = cn_tb.loc[7:20, 'd':]
     loc_pd_2 = pdf_float.loc[7:20, 'd':]
 
     assert loc_pd_2.values.tolist() == loc_cn_2.to_pandas().values.tolist()
-    # assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
-    assert loc_cn_2.get_arrow_index().get_index_array() == pa.array(loc_pd_2.index)
+    assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
+    # assert loc_cn_2.get_arrow_index().get_index_array() == pa.array(loc_pd_2.index)
 
     loc_cn_3 = cn_tb.loc[7:, 'd':]
     loc_pd_3 = pdf_float.loc[7:, 'd':]
 
     assert loc_pd_3.values.tolist() == loc_cn_3.to_pandas().values.tolist()
-    # assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
-    assert loc_cn_3.get_arrow_index().get_index_array() == pa.array(loc_pd_3.index)
+    assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
+    # assert loc_cn_3.get_arrow_index().get_index_array() == pa.array(loc_pd_3.index)
 
     loc_cn_4 = cn_tb.loc[:7, 'd':]
     loc_pd_4 = pdf_float.loc[:7, 'd':]
 
     assert loc_pd_4.values.tolist() == loc_cn_4.to_pandas().values.tolist()
-    # assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
-    assert loc_cn_4.get_arrow_index().get_index_array() == pa.array(loc_pd_4.index)
+    assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
+    # assert loc_cn_4.get_arrow_index().get_index_array() == pa.array(loc_pd_4.index)
 
     loc_cn_5 = cn_tb.loc[:, 'd':]
     loc_pd_5 = pdf_float.loc[:, 'd':]
 
     assert loc_pd_5.values.tolist() == loc_cn_5.to_pandas().values.tolist()
-    # assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
-    assert loc_cn_5.get_arrow_index().get_index_array() == pa.array(loc_pd_5.index)
+    assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
+    # assert loc_cn_5.get_arrow_index().get_index_array() == pa.array(loc_pd_5.index)
 
 
 def test_loc_op_mode_2():
     from pycylon.indexing.index import IndexingSchema
-    from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
 
     pdf_float = pd.DataFrame({'a': pd.Series(["1", "4", "7", "10", "20", "23", "11"]),
                               'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
@@ -534,50 +535,49 @@ def test_loc_op_mode_2():
     print("Before Indexing")
     print(cn_tb)
 
-    # cn_tb.set_index('a', indexing_schema, drop_index)
-    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
+    cn_tb.set_index('a', indexing_schema, drop_index)
 
     pdf_float = pdf_float.set_index('a')
 
     print("After Indexing")
     assert cn_tb.column_names == ['b', 'c', 'd', 'e']
 
-    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
 
     loc_cn_1 = cn_tb.loc["7":"20", 'c':'e']
     loc_pd_1 = pdf_float.loc["7":"20", 'c':'e']
 
     assert loc_pd_1.values.tolist() == loc_cn_1.to_pandas().values.tolist()
-    # assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
-    assert loc_cn_1.get_arrow_index().get_index_array() == pa.array(loc_pd_1.index)
+    assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
+    # assert loc_cn_1.get_arrow_index().get_index_array() == pa.array(loc_pd_1.index)
 
     loc_cn_2 = cn_tb.loc["7":"20", 'd':]
     loc_pd_2 = pdf_float.loc["7":"20", 'd':]
 
     assert loc_pd_2.values.tolist() == loc_cn_2.to_pandas().values.tolist()
-    # assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
-    assert loc_cn_2.get_arrow_index().get_index_array() == pa.array(loc_pd_2.index)
+    assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
+    # assert loc_cn_2.get_arrow_index().get_index_array() == pa.array(loc_pd_2.index)
 
     loc_cn_3 = cn_tb.loc["7":, 'd':]
     loc_pd_3 = pdf_float.loc["7":, 'd':]
 
     assert loc_pd_3.values.tolist() == loc_cn_3.to_pandas().values.tolist()
-    # assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
-    assert loc_cn_3.get_arrow_index().get_index_array() == pa.array(loc_pd_3.index)
+    assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
+    # assert loc_cn_3.get_arrow_index().get_index_array() == pa.array(loc_pd_3.index)
 
     loc_cn_4 = cn_tb.loc[:"7", 'd':]
     loc_pd_4 = pdf_float.loc[:"7", 'd':]
 
     assert loc_pd_4.values.tolist() == loc_cn_4.to_pandas().values.tolist()
-    # assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
-    assert loc_cn_4.get_arrow_index().get_index_array() == pa.array(loc_pd_4.index)
+    assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
+    # assert loc_cn_4.get_arrow_index().get_index_array() == pa.array(loc_pd_4.index)
 
     loc_cn_5 = cn_tb.loc[:, 'd':]
     loc_pd_5 = pdf_float.loc[:, 'd':]
 
     assert loc_pd_5.values.tolist() == loc_cn_5.to_pandas().values.tolist()
-    # assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
-    assert loc_cn_5.get_arrow_index().get_index_array() == pa.array(loc_pd_5.index)
+    assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
+    # assert loc_cn_5.get_arrow_index().get_index_array() == pa.array(loc_pd_5.index)
 
 
 def test_loc_op_mode_3():
@@ -599,42 +599,41 @@ def test_loc_op_mode_3():
     print("Before Indexing")
     print(cn_tb)
 
-    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
+    cn_tb.set_index('a', indexing_schema, drop_index)
 
     pdf_float = pdf_float.set_index('a')
 
     print("After Indexing")
     assert cn_tb.column_names == ['b', 'c', 'd', 'e']
 
-    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
 
     loc_cn_1 = cn_tb.loc["7":"20"]
     loc_pd_1 = pdf_float.loc["7":"20"]
 
-    print(loc_cn_1.get_arrow_index().get_index_array())
+    print(loc_cn_1.get_index().get_index_array())
     print(loc_pd_1.index.values)
 
-
     assert loc_pd_1.values.tolist() == loc_cn_1.to_pandas().values.tolist()
-    assert loc_cn_1.get_arrow_index().get_index_array() == pa.array(loc_pd_1.index)
+    assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
 
     loc_cn_2 = cn_tb.loc["7":]
     loc_pd_2 = pdf_float.loc["7":]
 
     assert loc_pd_2.values.tolist() == loc_cn_2.to_pandas().values.tolist()
-    assert loc_cn_2.get_arrow_index().get_index_array() == pa.array(loc_pd_2.index)
+    assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
 
     loc_cn_3 = cn_tb.loc[:"7"]
     loc_pd_3 = pdf_float.loc[:"7"]
 
     assert loc_pd_3.values.tolist() == loc_cn_3.to_pandas().values.tolist()
-    assert loc_cn_3.get_arrow_index().get_index_array() == pa.array(loc_pd_3.index)
+    assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
 
     loc_cn_4 = cn_tb.loc[:]
     loc_pd_4 = pdf_float.loc[:]
 
     assert loc_pd_4.values.tolist() == loc_cn_4.to_pandas().values.tolist()
-    assert loc_cn_4.get_arrow_index().get_index_array() == pa.array(loc_pd_4.index)
+    assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
 
 
 def test_iloc_op_mode_1():
@@ -656,14 +655,14 @@ def test_iloc_op_mode_1():
     print("Before Indexing")
     print(cn_tb)
 
-    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
+    cn_tb.set_index('a', indexing_schema, drop_index)
 
     pdf_float = pdf_float.set_index('a')
 
     print("After Indexing")
     assert cn_tb.column_names == ['b', 'c', 'd', 'e']
 
-    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
 
     iloc_cn_1 = cn_tb.iloc[3:5, 1:3]
     iloc_pd_1 = pdf_float.iloc[3:5, 1:3]
@@ -759,22 +758,16 @@ def test_isin_with_getitem():
 
     print(tb1.index.values)
 
-
-
     assert pdf1.values.tolist() == tb1.to_pandas().values.tolist()
 
     print(tb1.index.values)
     print(pdf1.index.values)
 
-    assert tb1.index.values.tolist() ==  pdf1.index.values.tolist()
-
-
+    assert tb1.index.values.tolist() == pdf1.index.values.tolist()
 
 
 def test_arrow_index():
     from pycylon.indexing.index import IndexingSchema
-    from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
     from pycylon.indexing.index import ArrowLocIndexer
 
     pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 11]),
@@ -791,18 +784,18 @@ def test_arrow_index():
     print("Before Indexing")
     print(cn_tb)
 
-    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
+    cn_tb.set_index('a', indexing_schema, drop_index)
 
     pdf_float = pdf_float.set_index('a')
 
     print("After Indexing")
     assert cn_tb.column_names == ['b', 'c', 'd', 'e']
 
-    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
 
-    print(cn_tb.get_arrow_index().values)
+    print(cn_tb.get_index().values)
 
-    index_array = cn_tb.get_arrow_index().get_index_array()
+    index_array = cn_tb.get_index().get_index_array()
 
     print(index_array)
 
@@ -817,40 +810,37 @@ def test_arrow_index():
 
     print(output1)
 
-    print(output1.get_arrow_index().values)
+    print(output1.get_index().values)
 
     output2 = arrow_loc_indexer.loc_with_index_range(4, 20, slice(0, 1), cn_tb)
 
     print(output2)
 
-    print(output2.get_arrow_index().values)
+    print(output2.get_index().values)
 
     output3 = arrow_loc_indexer.loc_with_index_range(4, 20, [0, 1, 2], cn_tb)
 
     print(output3)
 
-    print(output3.get_arrow_index().values)
+    print(output3.get_index().values)
 
     output4 = arrow_loc_indexer.loc_with_indices([4], 0, cn_tb)
 
     print(output4)
 
-    print(output4.get_arrow_index().values)
+    print(output4.get_index().values)
 
     output5 = arrow_loc_indexer.loc_with_indices([4, 20], slice(0, 1), cn_tb)
 
     print(output5)
 
-    print(output5.get_arrow_index().values)
+    print(output5.get_index().values)
 
     output6 = arrow_loc_indexer.loc_with_indices([4, 20], [0, 1, 2], cn_tb)
 
     print(output6)
 
-    print(output6.get_arrow_index().values)
-
-
-
+    print(output6.get_index().values)
 
 
 test_isin_with_getitem()

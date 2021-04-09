@@ -42,6 +42,10 @@ cdef extern from "../../../cpp/src/cylon/indexing/index_utils.hpp" namespace "cy
         CStatus BuildIndexFromArray(const CIndexingSchema schema, const shared_ptr[CTable] & input,
                             const shared_ptr[CArrowArray] &index_array, shared_ptr[CTable] & output)
 
+        @ staticmethod
+        CStatus BuildArrowIndexFromArray(const CIndexingSchema schema, const shared_ptr[CTable] & input,
+                                    const shared_ptr[CArrowArray] & index_array, shared_ptr[CTable] & output)
+
 
 cdef class IndexUtil:
     cdef:

@@ -2056,7 +2056,7 @@ cdef class Table:
         '''
         return self.get_index()
 
-    def set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
+    def _set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
                   drop: bool = False):
         '''
         Set Index
@@ -2112,7 +2112,7 @@ cdef class Table:
             indexed_cylon_table = pycylon_unwrap_table(indexed_table)
             self.init(indexed_cylon_table)
 
-    def set_arrow_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
+    def set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
                         drop: bool = False):
         '''
         Set Index
@@ -2168,7 +2168,7 @@ cdef class Table:
             indexed_cylon_table = pycylon_unwrap_table(indexed_table)
             self.init(indexed_cylon_table)
 
-    def reset_index(self, drop_index: bool = False) -> Table:
+    def _reset_index(self, drop_index: bool = False) -> Table:
         """
         reset_index
         Here the existing index can be removed and set back to table.
@@ -2199,7 +2199,7 @@ cdef class Table:
         cdef bool c_drop_index = drop_index
         self.table_shd_ptr.get().ResetIndex(c_drop_index)
 
-    def reset_arrow_index(self, drop_index: bool = False) -> Table:
+    def reset_index(self, drop_index: bool = False) -> Table:
         """
         reset_index
         Here the existing index can be removed and set back to table.
@@ -2342,11 +2342,11 @@ cdef class Table:
         return Table.from_arrow(self.context,
                                 pa.Table.from_arrays(new_chunks, self.column_names))
 
-    def get_index(self) -> BaseIndex:
+    def _get_index(self) -> BaseIndex:
         cdef shared_ptr[CBaseIndex] c_index = self.table_shd_ptr.get().GetIndex()
         return pycylon_wrap_base_index(c_index)
 
-    def get_arrow_index(self) -> BaseArrowIndex:
+    def get_index(self) -> BaseArrowIndex:
         cdef shared_ptr[CBaseArrowIndex] c_index = self.table_shd_ptr.get().GetArrowIndex()
         return pycylon_wrap_base_arrow_index(c_index)
 

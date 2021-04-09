@@ -208,7 +208,10 @@ def process_index_by_value(key, table, index_schema, drop_index, method="arrow")
         elif method == "arrow":
             return IndexUtil.build_arrow_index(index_schema, table, column_index, drop_index)
     elif isinstance(key, List):
-        return IndexUtil.build_index_from_list(index_schema, table, key)
+        if method == "default":
+            return IndexUtil.build_index_from_list(index_schema, table, key)
+        elif method == "arrow":
+            return IndexUtil.build_arrow_index_from_list(index_schema, table, key)
     else:
         raise ValueError("Unexpected value")
 
