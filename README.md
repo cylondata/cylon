@@ -18,9 +18,9 @@ Email - [cylondata@googlegroups.com](mailto:cylondata@googlegroups.com)
 
 Mailing List - [Join](https://groups.google.com/forum/#!forum/cylondata/join)
 
-# First example of Cylon
+# Get Started
 
-We can use Conda to install and run PyCylon. 
+We can use Conda to install PyCylon. 
 
 ```bash
 conda create -n cylon-0.4.0 -c cylondata pycylon python=3.7
@@ -64,7 +64,7 @@ df3 = df1.join(other=df2, on=[0], env=env)
 print(df3)
 ```
 
-You can run the above program in the Conda environment by
+You can run the above program in the Conda environment by using the following command. It uses ```mpirun``` command with 2 parallel processes.  
 
 ```bash
 mpirun -np 2 python <name of your python file>

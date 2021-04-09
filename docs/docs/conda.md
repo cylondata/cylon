@@ -26,7 +26,8 @@ We need Ubuntu 16.04 or higher to build Cylon
 First download and install Conda for your Linux distribution.
 
 ```bash
-apt install wget git build-essential
+sudo apt update && sudo apt upgrade
+sudo apt install wget git build-essential
 ```
 
 Here are some commands used to install conda
@@ -35,7 +36,12 @@ Here are some commands used to install conda
 wget https://repo.anaconda.com/archive/Anaconda3-2020.11-Linux-x86_64.sh
 chmod +x Anaconda3-2020.11-Linux-x86_64.sh
 ./Anaconda3-2020.11-Linux-x86_64.sh
-eval "$(/root/anaconda3/bin/conda shell.bash hook)"
+```
+
+Activate conda environment.
+
+```python
+eval "$(~/anaconda3/bin/conda shell.bash hook)"
 conda install conda-build
 ```
 ### Build Cylon
@@ -45,8 +51,12 @@ Here are the commands to build Cylon using the conda-build
 ```bash
 git clone https://github.com/cylondata/cylon.git
 cd cylon
+
+conda create --name build_env python=3.7
+conda activate build_env
+
 conda-build conda/recipes/cylon/
-conda-build conda/recipes/cylon/
+conda-build conda/recipes/pycylon/
 ```
 
 
