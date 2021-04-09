@@ -197,6 +197,8 @@ class Table {
 
   Status ResetIndex(bool drop = false);
 
+  Status ResetArrowIndex(bool drop = false);
+
   Status AddColumn(int64_t position, std::string column_name,
                    std::shared_ptr<arrow::Array> &input_column);
 

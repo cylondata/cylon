@@ -36,6 +36,7 @@ cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingSchema indexing_sc
 											   std::shared_ptr<arrow::Array> &sub_index_arr,
 											   arrow::MemoryPool *pool,
 											   std::shared_ptr<cylon::BaseArrowIndex> &loc_index) {
+  std::cout << "BuildArrowIndexFromArrayByKernel: schema :: " << indexing_schema << std::endl;
   if (indexing_schema == cylon::IndexingSchema::Hash) {
 	return cylon::IndexUtil::BuildArrowHashIndexFromArray(sub_index_arr, pool, loc_index);
   } else if (indexing_schema == cylon::IndexingSchema::Range) {
@@ -184,7 +185,7 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
 
-  LOG(INFO) << "Set Index for location output with Non-RangeIndex";
+  LOG(INFO) << "Set Index for location output with Non-RangeIndex :: Schema :: " << indexing_schema;
   auto index_arr = index->GetIndexArray();
   std::cout << "Current Index array size : " << index_arr->length() << std::endl;
   sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));

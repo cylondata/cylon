@@ -2199,6 +2199,37 @@ cdef class Table:
         cdef bool c_drop_index = drop_index
         self.table_shd_ptr.get().ResetIndex(c_drop_index)
 
+    def reset_arrow_index(self, drop_index: bool = False) -> Table:
+        """
+        reset_index
+        Here the existing index can be removed and set back to table.
+        This operation takes place in place.
+        Args:
+            drop_index: bool, if True the column is dropped otherwise added to the table with the
+            column name "index"
+
+        Returns: None
+
+        Examples
+        --------
+
+        >>> tb
+                col-2  col-3
+            1      5      9
+            2      6     10
+            3      7     11
+            4      8     12
+
+        >>> tb.reset_index()
+                col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
+        """
+        cdef bool c_drop_index = drop_index
+        self.table_shd_ptr.get().ResetArrowIndex(c_drop_index)
+
     def dropna(self, axis=0, how='any', inplace=False):
         '''
         Drop not applicable values from a Table

@@ -79,12 +79,13 @@ def test_cylon_set_index_from_column():
     print("Before Indexing")
     print(cn_tb)
 
-    cn_tb.set_index('a', indexing_schema, drop_index)
+    #cn_tb.set_index('a', indexing_schema, drop_index)
+    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
 
     print("After Indexing")
     assert cn_tb.column_names == ['b']
 
-    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
 
 
 def test_reset_index():
@@ -100,19 +101,25 @@ def test_reset_index():
     indexing_schema = IndexingSchema.LINEAR
     drop_index = True
 
-    cn_tb.set_index('a', indexing_schema, drop_index)
+    #cn_tb.set_index('a', indexing_schema, drop_index)
+    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
 
-    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+    #assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+
+    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
 
     rest_drop_index = False
-    cn_tb.reset_index(rest_drop_index)
+    # cn_tb.reset_index(rest_drop_index)
+    cn_tb.reset_arrow_index(rest_drop_index)
 
     assert cn_tb.column_names == ['index', 'b']
 
-    assert cn_tb.get_index().get_schema() == IndexingSchema.RANGE
+    # assert cn_tb.get_index().get_schema() == IndexingSchema.RANGE
+    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.RANGE
 
 
 def test_cylon_cpp_single_column_indexing():
+    # TODO: REMOVE
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
     from pycylon.indexing.index import LocIndexer
@@ -162,6 +169,7 @@ def test_cylon_cpp_single_column_indexing():
 
 
 def test_cylon_cpp_multi_column_indexing():
+    # TODO REMOVE
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
     from pycylon.indexing.index import LocIndexer
@@ -215,6 +223,7 @@ def test_cylon_cpp_multi_column_indexing():
 
 
 def test_cylon_cpp_str_single_column_indexing():
+    # TODO REMOVE
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
     from pycylon.indexing.index import LocIndexer
@@ -270,6 +279,7 @@ def test_cylon_cpp_str_single_column_indexing():
 
 
 def test_cylon_cpp_str_multi_column_indexing():
+    # TODO REMOVE
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
     from pycylon.indexing.index import LocIndexer
@@ -326,6 +336,7 @@ def test_cylon_cpp_str_multi_column_indexing():
 
 
 def test_cylon_cpp_range_column_indexing():
+    # TODO REMOVE
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
     from pycylon.indexing.index import LocIndexer
@@ -379,6 +390,7 @@ def test_cylon_cpp_range_column_indexing():
 
 
 def test_cylon_cpp_str_range_column_indexing():
+    # TODO REMOVE
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
     from pycylon.indexing.index import LocIndexer
@@ -453,44 +465,54 @@ def test_loc_op_mode_1():
     print("Before Indexing")
     print(cn_tb)
 
-    cn_tb.set_index('a', indexing_schema, drop_index)
+    # cn_tb.set_index('a', indexing_schema, drop_index)
+    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
 
     pdf_float = pdf_float.set_index('a')
 
     print("After Indexing")
     assert cn_tb.column_names == ['b', 'c', 'd', 'e']
 
-    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+    # assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
 
     loc_cn_1 = cn_tb.loc[7:20, 'c':'e']
     loc_pd_1 = pdf_float.loc[7:20, 'c':'e']
 
+    print(loc_cn_1.get_arrow_index().values)
+    print(loc_pd_1.index.values)
+
     assert loc_pd_1.values.tolist() == loc_cn_1.to_pandas().values.tolist()
-    assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
+    #assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
+    assert loc_cn_1.get_arrow_index().get_index_array() == pa.array(loc_pd_1.index)
 
     loc_cn_2 = cn_tb.loc[7:20, 'd':]
     loc_pd_2 = pdf_float.loc[7:20, 'd':]
 
     assert loc_pd_2.values.tolist() == loc_cn_2.to_pandas().values.tolist()
-    assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
+    # assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
+    assert loc_cn_2.get_arrow_index().get_index_array() == pa.array(loc_pd_2.index)
 
     loc_cn_3 = cn_tb.loc[7:, 'd':]
     loc_pd_3 = pdf_float.loc[7:, 'd':]
 
     assert loc_pd_3.values.tolist() == loc_cn_3.to_pandas().values.tolist()
-    assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
+    # assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
+    assert loc_cn_3.get_arrow_index().get_index_array() == pa.array(loc_pd_3.index)
 
     loc_cn_4 = cn_tb.loc[:7, 'd':]
     loc_pd_4 = pdf_float.loc[:7, 'd':]
 
     assert loc_pd_4.values.tolist() == loc_cn_4.to_pandas().values.tolist()
-    assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
+    # assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
+    assert loc_cn_4.get_arrow_index().get_index_array() == pa.array(loc_pd_4.index)
 
     loc_cn_5 = cn_tb.loc[:, 'd':]
     loc_pd_5 = pdf_float.loc[:, 'd':]
 
     assert loc_pd_5.values.tolist() == loc_cn_5.to_pandas().values.tolist()
-    assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
+    # assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
+    assert loc_cn_5.get_arrow_index().get_index_array() == pa.array(loc_pd_5.index)
 
 
 def test_loc_op_mode_2():
@@ -512,44 +534,50 @@ def test_loc_op_mode_2():
     print("Before Indexing")
     print(cn_tb)
 
-    cn_tb.set_index('a', indexing_schema, drop_index)
+    # cn_tb.set_index('a', indexing_schema, drop_index)
+    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
 
     pdf_float = pdf_float.set_index('a')
 
     print("After Indexing")
     assert cn_tb.column_names == ['b', 'c', 'd', 'e']
 
-    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
 
     loc_cn_1 = cn_tb.loc["7":"20", 'c':'e']
     loc_pd_1 = pdf_float.loc["7":"20", 'c':'e']
 
     assert loc_pd_1.values.tolist() == loc_cn_1.to_pandas().values.tolist()
-    assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
+    # assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
+    assert loc_cn_1.get_arrow_index().get_index_array() == pa.array(loc_pd_1.index)
 
     loc_cn_2 = cn_tb.loc["7":"20", 'd':]
     loc_pd_2 = pdf_float.loc["7":"20", 'd':]
 
     assert loc_pd_2.values.tolist() == loc_cn_2.to_pandas().values.tolist()
-    assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
+    # assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
+    assert loc_cn_2.get_arrow_index().get_index_array() == pa.array(loc_pd_2.index)
 
     loc_cn_3 = cn_tb.loc["7":, 'd':]
     loc_pd_3 = pdf_float.loc["7":, 'd':]
 
     assert loc_pd_3.values.tolist() == loc_cn_3.to_pandas().values.tolist()
-    assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
+    # assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
+    assert loc_cn_3.get_arrow_index().get_index_array() == pa.array(loc_pd_3.index)
 
     loc_cn_4 = cn_tb.loc[:"7", 'd':]
     loc_pd_4 = pdf_float.loc[:"7", 'd':]
 
     assert loc_pd_4.values.tolist() == loc_cn_4.to_pandas().values.tolist()
-    assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
+    # assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
+    assert loc_cn_4.get_arrow_index().get_index_array() == pa.array(loc_pd_4.index)
 
     loc_cn_5 = cn_tb.loc[:, 'd':]
     loc_pd_5 = pdf_float.loc[:, 'd':]
 
     assert loc_pd_5.values.tolist() == loc_cn_5.to_pandas().values.tolist()
-    assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
+    # assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
+    assert loc_cn_5.get_arrow_index().get_index_array() == pa.array(loc_pd_5.index)
 
 
 def test_loc_op_mode_3():
@@ -571,38 +599,42 @@ def test_loc_op_mode_3():
     print("Before Indexing")
     print(cn_tb)
 
-    cn_tb.set_index('a', indexing_schema, drop_index)
+    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
 
     pdf_float = pdf_float.set_index('a')
 
     print("After Indexing")
     assert cn_tb.column_names == ['b', 'c', 'd', 'e']
 
-    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
 
     loc_cn_1 = cn_tb.loc["7":"20"]
     loc_pd_1 = pdf_float.loc["7":"20"]
 
+    print(loc_cn_1.get_arrow_index().get_index_array())
+    print(loc_pd_1.index.values)
+
+
     assert loc_pd_1.values.tolist() == loc_cn_1.to_pandas().values.tolist()
-    assert loc_cn_1.get_index().get_index_array() == pa.array(loc_pd_1.index)
+    assert loc_cn_1.get_arrow_index().get_index_array() == pa.array(loc_pd_1.index)
 
     loc_cn_2 = cn_tb.loc["7":]
     loc_pd_2 = pdf_float.loc["7":]
 
     assert loc_pd_2.values.tolist() == loc_cn_2.to_pandas().values.tolist()
-    assert loc_cn_2.get_index().get_index_array() == pa.array(loc_pd_2.index)
+    assert loc_cn_2.get_arrow_index().get_index_array() == pa.array(loc_pd_2.index)
 
     loc_cn_3 = cn_tb.loc[:"7"]
     loc_pd_3 = pdf_float.loc[:"7"]
 
     assert loc_pd_3.values.tolist() == loc_cn_3.to_pandas().values.tolist()
-    assert loc_cn_3.get_index().get_index_array() == pa.array(loc_pd_3.index)
+    assert loc_cn_3.get_arrow_index().get_index_array() == pa.array(loc_pd_3.index)
 
     loc_cn_4 = cn_tb.loc[:]
     loc_pd_4 = pdf_float.loc[:]
 
     assert loc_pd_4.values.tolist() == loc_cn_4.to_pandas().values.tolist()
-    assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
+    assert loc_cn_4.get_arrow_index().get_index_array() == pa.array(loc_pd_4.index)
 
 
 def test_iloc_op_mode_1():
@@ -707,16 +739,30 @@ def test_isin_with_getitem():
 
     pdf1 = pdf[pdf_res_isin]
 
+    print("Pandas Output")
     print(pdf1)
+    print(pdf1.index.values)
 
     tb_filter = Table.from_list(ctx, ['filter'], [tb_res_isin.tolist()])
     tb1 = tb[tb_filter]
     resultant_index = tb.index.values[tb_res_isin].tolist()
+    print(resultant_index)
     tb1.set_index(resultant_index)
+    print("PyCylon Output")
     print(tb1)
 
+    print(tb1.index.values)
+
+
+
     assert pdf1.values.tolist() == tb1.to_pandas().values.tolist()
+
+    print(tb1.index.values)
+    print(pdf1.index.values)
+
     assert tb1.index.values.tolist() ==  pdf1.index.values.tolist()
+
+
 
 
 def test_arrow_index():
@@ -779,8 +825,29 @@ def test_arrow_index():
 
     print(output3.get_arrow_index().values)
 
+    output4 = arrow_loc_indexer.loc_with_indices([4], 0, cn_tb)
+
+    print(output4)
+
+    print(output4.get_arrow_index().values)
+
+    output5 = arrow_loc_indexer.loc_with_indices([4, 20], (0, 1), cn_tb)
+
+    print(output5)
+
+    print(output5.get_arrow_index().values)
+
+    output6 = arrow_loc_indexer.loc_with_indices([4, 20], [0, 1, 2], cn_tb)
+
+    print(output6)
+
+    print(output6.get_arrow_index().values)
 
 
 
 
-test_arrow_index()
+
+#test_isin_with_getitem()
+test_loc_op_mode_1()
+#test_loc_op_mode_2()
+#test_loc_op_mode_3()
