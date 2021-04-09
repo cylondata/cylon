@@ -380,7 +380,7 @@ class RangePartitionKernel : public PartitionKernel {
       sampled_array = std::make_shared<arrow::ChunkedArray>(idx_col->chunks());
     } else { // else, sample idx_col for num_samples
       std::shared_ptr<arrow::Array> samples;
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::SampleArray(idx_col, num_samples, samples));
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::SampleArray(idx_col, num_samples, samples, ToArrowPool(ctx)));
       sampled_array = std::make_shared<arrow::ChunkedArray>(samples);
     }
 
