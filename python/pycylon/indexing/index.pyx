@@ -54,6 +54,20 @@ cpdef enum IndexingSchema:
     BINARYTREE = CIndexingSchema.CBINARYTREE
     BTREE = CIndexingSchema.CBTREE
 
+
+def _resolve_column_index_from_column_name(column_name, cn_table) -> int:
+    index = None
+    if isinstance(column_name, str):
+        for idx, col_name in enumerate(cn_table.column_names):
+            if column_name == col_name:
+                return idx
+    elif isinstance(column_name, int):
+        assert column_name < cn_table.column_count
+        return column_name
+    else:
+        raise ValueError("column_name must be str or int")
+
+
 cdef class BaseIndex:
     cdef void init(self, const shared_ptr[CBaseIndex]& index):
         self.bindex_shd_ptr = index
@@ -252,6 +266,31 @@ cdef class ArrowLocIndexer:
             start_index = index.get_index_array()[0].as_py()  # first element of index
         return start_index, end_index
 
+    def _resolve_column_indices_vector(self, columns : List, table):
+        resolved_columns = []
+        if isinstance(columns, List):
+            for column in columns:
+                resolved_columns.append(_resolve_column_index_from_column_name(column, table))
+            return resolved_columns
+        else:
+            raise ValueError("columns must be input as a List")
+
+    def _resolve_column_index_slice(self, column:slice, table):
+        if isinstance(column, slice):
+            start_col_idx, end_col_idx = column.start, column.stop
+            if start_col_idx:
+                start_col_idx = _resolve_column_index_from_column_name(start_col_idx, table)
+            else:
+                start_col_idx = 0
+            if end_col_idx:
+                end_col_idx = _resolve_column_index_from_column_name(end_col_idx, table)
+            else:
+                end_col_idx = table.column_count - 1
+        else:
+            raise ValueError("column must be passed as a slice")
+        return start_col_idx, end_col_idx
+
+
     def loc_with_index_range(self, start_index, end_index, column, table):
         cdef:
             shared_ptr[CTable] output
@@ -273,17 +312,19 @@ cdef class ArrowLocIndexer:
         input = pycylon_unwrap_table(table)
         if np.isscalar(column):
             # single column
-            c_column_index = column
+            c_column_index = self._resolve_column_indices_vector([column], table)[0]
             self.indexer_shd_ptr.get().loc(start, end, c_column_index, input, output)
             return pycylon_wrap_table(output)
-        elif isinstance(column, tuple) and len(column) == 2:
+        elif isinstance(column, slice):
             # range of columns
-            c_start_column_index = column[0]
-            c_end_column_index = column[1]
+            start_index, end_index = self._resolve_column_index_slice(column, table)
+            c_start_column_index = start_index
+            c_end_column_index = end_index
             self.indexer_shd_ptr.get().loc(start, end, c_start_column_index, c_end_column_index, input, output)
             return pycylon_wrap_table(output)
         elif isinstance(column, List):
             # list of columns
+            column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
             self.indexer_shd_ptr.get().loc(start, end, c_column_vector, input, output)
@@ -305,17 +346,19 @@ cdef class ArrowLocIndexer:
         input = pycylon_unwrap_table(table)
         if np.isscalar(column):
             # single column
-            c_column_index = column
+            c_column_index = self._resolve_column_indices_vector([column], table)[0]
             self.indexer_shd_ptr.get().loc(c_indices, c_column_index, input, output)
             return pycylon_wrap_table(output)
-        elif isinstance(column, tuple) and len(column) == 2:
+        elif isinstance(column, slice):
             # range of columns
-            c_start_column_index = column[0]
-            c_end_column_index = column[1]
+            start_index, end_index = self._resolve_column_index_slice(column, table)
+            c_start_column_index = start_index
+            c_end_column_index = end_index
             self.indexer_shd_ptr.get().loc(c_indices, c_start_column_index, c_end_column_index, input, output)
             return pycylon_wrap_table(output)
         elif isinstance(column, List):
             # list of columns
+            column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
             self.indexer_shd_ptr.get().loc(c_indices, c_column_vector, input, output)
@@ -332,11 +375,53 @@ cdef class ArrowILocIndexer:
         elif start_index is None and end_index is None:
             start_index = 0
             end_index = len(index.get_index_array()) - 1
+            return start_index, end_index
         elif start_index and end_index is None:
             end_index = len(index.get_index_array()) - 1
+            return start_index, end_index
+        elif start_index is None and end_index:
+            start_index = 0
+            end_index = end_index - 1
+            return start_index, end_index
+
+    def _fix_partial_slice_column_inidices(self, start_index, end_index, num_columns):
+        if start_index and end_index:
+            # (excluding the boundary value)
+            return start_index, end_index - 1
+        elif start_index is None and end_index is None:
+            start_index = 0
+            end_index = num_columns - 1
+        elif start_index and end_index is None:
+            end_index = num_columns - 1
         elif start_index is None and end_index:
             start_index = 0
         return start_index, end_index
+
+    def _resolve_column_indices_vector(self, columns : List, table):
+        resolved_columns = []
+        if isinstance(columns, List):
+            for column in columns:
+                resolved_columns.append(_resolve_column_index_from_column_name(column, table))
+            return resolved_columns
+        else:
+            raise ValueError("columns must be input as a List")
+
+    def _resolve_column_index_slice(self, column:slice, table):
+        if isinstance(column, slice):
+            start_col_idx, end_col_idx = column.start, column.stop
+            if start_col_idx:
+                start_col_idx = _resolve_column_index_from_column_name(start_col_idx, table)
+            else:
+                start_col_idx = 0
+            if end_col_idx:
+                end_col_idx = _resolve_column_index_from_column_name(end_col_idx, table)
+                if end_col_idx > 0:
+                    end_col_idx = end_col_idx - 1
+            else:
+                end_col_idx = table.column_count - 1
+        else:
+            raise ValueError("column must be passed as a slice")
+        return start_col_idx, end_col_idx
 
     def loc_with_index_range(self, start_index, end_index, column, table):
         cdef:
@@ -359,17 +444,19 @@ cdef class ArrowILocIndexer:
         input = pycylon_unwrap_table(table)
         if np.isscalar(column):
             # single column
-            c_column_index = column
+            c_column_index = self._resolve_column_indices_vector([column], table)[0]
             self.indexer_shd_ptr.get().loc(start, end, c_column_index, input, output)
             return pycylon_wrap_table(output)
-        elif isinstance(column, tuple) and len(column) == 2:
+        elif isinstance(column, slice):
             # range of columns
-            c_start_column_index = column[0]
-            c_end_column_index = column[1] # exclude boundary condition
+            start_index, end_index = self._resolve_column_index_slice(column, table)
+            c_start_column_index = start_index
+            c_end_column_index = end_index
             self.indexer_shd_ptr.get().loc(start, end, c_start_column_index, c_end_column_index, input, output)
             return pycylon_wrap_table(output)
         elif isinstance(column, List):
             # list of columns
+            column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
             self.indexer_shd_ptr.get().loc(start, end, c_column_vector, input, output)
@@ -391,17 +478,19 @@ cdef class ArrowILocIndexer:
         input = pycylon_unwrap_table(table)
         if np.isscalar(column):
             # single column
-            c_column_index = column
+            c_column_index = self._resolve_column_indices_vector([column], table)[0]
             self.indexer_shd_ptr.get().loc(c_indices, c_column_index, input, output)
             return pycylon_wrap_table(output)
-        elif isinstance(column, tuple) and len(column) == 2:
+        elif isinstance(column, slice):
             # range of columns
-            c_start_column_index = column[0]
-            c_end_column_index = column[1]
+            start_index, end_index = self._resolve_column_index_slice(column, table)
+            c_start_column_index = start_index
+            c_end_column_index = end_index
             self.indexer_shd_ptr.get().loc(c_indices, c_start_column_index, c_end_column_index, input, output)
             return pycylon_wrap_table(output)
         elif isinstance(column, List):
             # list of columns
+            column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
             self.indexer_shd_ptr.get().loc(c_indices, c_column_vector, input, output)
@@ -1144,102 +1233,16 @@ class PyLocIndexer:
                 raise ValueError("Invalid number of arguments for LocIndexer, expected 2")
 
             index_values, column_values = item[0], item[1]
-            column_index = None
 
-            if np.isscalar(column_values):
-                # process column values
-                if isinstance(column_values, str):
-                    column_index = self._resolve_column_index_from_column_name(column_values)
-                elif isinstance(column_values, int):
-                    column_index = column_values
-                else:
-                    raise ValueError("Column names must be str or int")
-                # process index values
-                if isinstance(index_values, slice):
-                    start_idx = index_values.start
-                    end_idx = index_values.stop
-                    return self._loc_indexer.loc_with_index_range(start_idx, end_idx, column_index,
-                                                                  self._cn_table)
-                elif isinstance(index_values, List):
-                    return self._loc_indexer.loc_with_indices(index_values, column_index, self._cn_table)
-                else:
-                    raise ValueError("Index values must be either slice or List")
-
-
-            elif isinstance(column_values, slice):
-                start_column = column_values.start
-                end_column = column_values.stop
-                col_int_slice = None
-                if isinstance(start_column, str) and isinstance(end_column, str):
-                    col_int_slice = slice(self._resolve_column_index_from_column_name(
-                        start_column), self._resolve_column_index_from_column_name(end_column))
-                elif isinstance(start_column, int) and isinstance(end_column, int):
-                    col_int_slice = slice(start_column, end_column)
-                elif start_column is None and end_column is None:
-                    col_int_slice = slice(0, self._cn_table.column_count - 1)
-                elif start_column is None and end_column:
-                    if isinstance(end_column, str):
-                        col_int_slice = slice(0, self._resolve_column_index_from_column_name(
-                            end_column))
-                    elif isinstance(end_column, int):
-                        col_int_slice = slice(0, end_column)
-                    else:
-                        raise ValueError("Unsupported column index type")
-                elif start_column and end_column is None:
-                    if isinstance(start_column, str):
-                        col_int_slice = slice(self._resolve_column_index_from_column_name(
-                            start_column), self._cn_table.column_count - 1)
-                    elif isinstance(start_column, int):
-                        col_int_slice = slice(start_column, self._cn_table.column_count - 1)
-                    else:
-                        raise ValueError("Unsupported column index type")
-                else:
-                    raise ValueError("Invalid column range type for loc operation")
-
-                # process index values
-                column_index = (col_int_slice.start, col_int_slice.stop)
-                if isinstance(index_values, slice):
-                    start_idx = index_values.start
-                    end_idx = index_values.stop
-                    return self._loc_indexer.loc_with_index_range(start_idx, end_idx, column_index,
-                                                                  self._cn_table)
-                elif isinstance(index_values, List):
-                    return self._loc_indexer.loc_with_indices(index_values, column_index, self._cn_table)
-                else:
-                    raise ValueError("Index values must be either slice or List")
-
-                # return self._loc_indexer.loc_with_range_column(index_values, col_int_slice,
-                #                                                self._cn_table)
-
-            elif isinstance(column_values, List):
-                int_column_values = []
-                for column_name in column_values:
-                    if isinstance(column_name, str):
-                        int_column_values.append(
-                            self._resolve_column_index_from_column_name(column_name))
-                    elif isinstance(column_name, int):
-                        int_column_values.append(column_name)
-                    else:
-                        raise ValueError("Column names must be either str or int")
-
-                column_index = int_column_values
-                if isinstance(index_values, slice):
-                    start_idx = index_values.start
-                    end_idx = index_values.stop
-                    return self._loc_indexer.loc_with_index_range(start_idx, end_idx, column_index,
-                                                                  self._cn_table)
-                elif isinstance(index_values, List):
-                    return self._loc_indexer.loc_with_indices(index_values, column_index, self._cn_table)
-                else:
-                    raise ValueError("Index values must be either slice or List")
-                # return self._loc_indexer.loc_with_multi_column(index_values, int_column_values,
-                #                                                self._cn_table)
-            else:
-                raise ValueError("Column names must be a single value, range or a list of values "
-                                 "of type int or str")
-
+            if isinstance(index_values, slice):
+                start_idx = index_values.start
+                end_idx = index_values.stop
+                return self._loc_indexer.loc_with_index_range(start_idx, end_idx, column_values,
+                                                              self._cn_table)
+            elif isinstance(index_values, List):
+                return self._loc_indexer.loc_with_indices(index_values, column_values, self._cn_table)
         elif item:
-            column_index = (0, self._cn_table.column_count - 1)
+            column_index = slice(None, None)
             if isinstance(item, slice):
                 start_idx = item.start
                 end_idx = item.stop
@@ -1249,9 +1252,5 @@ class PyLocIndexer:
                 return self._loc_indexer.loc_with_indices(item, column_index, self._cn_table)
             else:
                 raise ValueError("Index values must be either slice or List")
-            # return self._loc_indexer.loc_with_range_column(item,
-            # #                                                slice(0,
-            # #                                                      self._cn_table.column_count - 1),
-            # #                                                self._cn_table)
         else:
             raise ValueError("No values passed for loc operation")

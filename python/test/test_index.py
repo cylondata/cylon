@@ -665,8 +665,11 @@ def test_iloc_op_mode_1():
 
     assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
 
-    iloc_cn_1 = cn_tb.iloc[3:5, 1:4]
-    iloc_pd_1 = pdf_float.iloc[3:5, 1:4]
+    iloc_cn_1 = cn_tb.iloc[3:5, 1:3]
+    iloc_pd_1 = pdf_float.iloc[3:5, 1:3]
+
+    print(iloc_cn_1)
+    print(iloc_pd_1)
 
     assert iloc_pd_1.values.tolist() == iloc_cn_1.to_pandas().values.tolist()
 
@@ -685,6 +688,9 @@ def test_iloc_op_mode_1():
 
     iloc_cn_4 = cn_tb.iloc[:3, 1:]
     iloc_pd_4 = pdf_float.iloc[:3, 1:]
+
+    print(iloc_cn_4)
+    print(iloc_pd_4)
 
     assert iloc_pd_4.values.tolist() == iloc_cn_4.to_pandas().values.tolist()
 
@@ -813,7 +819,7 @@ def test_arrow_index():
 
     print(output1.get_arrow_index().values)
 
-    output2 = arrow_loc_indexer.loc_with_index_range(4, 20, (0, 1), cn_tb)
+    output2 = arrow_loc_indexer.loc_with_index_range(4, 20, slice(0, 1), cn_tb)
 
     print(output2)
 
@@ -831,7 +837,7 @@ def test_arrow_index():
 
     print(output4.get_arrow_index().values)
 
-    output5 = arrow_loc_indexer.loc_with_indices([4, 20], (0, 1), cn_tb)
+    output5 = arrow_loc_indexer.loc_with_indices([4, 20], slice(0, 1), cn_tb)
 
     print(output5)
 
@@ -847,9 +853,9 @@ def test_arrow_index():
 
 
 
-#test_isin_with_getitem()
-#test_loc_op_mode_1()
-#test_loc_op_mode_2()
-#test_loc_op_mode_3()
+test_isin_with_getitem()
+test_loc_op_mode_1()
+test_loc_op_mode_2()
+test_loc_op_mode_3()
 
 test_iloc_op_mode_1()
