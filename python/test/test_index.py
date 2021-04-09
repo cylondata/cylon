@@ -761,11 +761,26 @@ def test_arrow_index():
     print(scalar_value)
 
     arrow_loc_indexer = ArrowLocIndexer(IndexingSchema.LINEAR)
-    output = arrow_loc_indexer.loc_with_index_range(4, 20, 0, cn_tb)
+    output1 = arrow_loc_indexer.loc_with_index_range(4, 20, 0, cn_tb)
 
-    print(output)
+    print(output1)
 
-    print(output.get_arrow_index().values)
+    print(output1.get_arrow_index().values)
+
+    output2 = arrow_loc_indexer.loc_with_index_range(4, 20, (0, 1), cn_tb)
+
+    print(output2)
+
+    print(output2.get_arrow_index().values)
+
+    output3 = arrow_loc_indexer.loc_with_index_range(4, 20, [0, 1, 2], cn_tb)
+
+    print(output3)
+
+    print(output3.get_arrow_index().values)
+
+
+
 
 
 test_arrow_index()
