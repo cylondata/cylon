@@ -656,25 +656,25 @@ def test_iloc_op_mode_1():
     print("Before Indexing")
     print(cn_tb)
 
-    cn_tb.set_index('a', indexing_schema, drop_index)
+    cn_tb.set_arrow_index('a', indexing_schema, drop_index)
 
     pdf_float = pdf_float.set_index('a')
 
     print("After Indexing")
     assert cn_tb.column_names == ['b', 'c', 'd', 'e']
 
-    assert cn_tb.get_index().get_schema() == IndexingSchema.LINEAR
+    assert cn_tb.get_arrow_index().get_schema() == IndexingSchema.LINEAR
 
-    iloc_cn_1 = cn_tb.iloc[3:5, 1:3]
+    iloc_cn_1 = cn_tb.iloc[3:5, 1:4]
     iloc_pd_1 = pdf_float.iloc[3:5, 1:4]
-
-    print(iloc_cn_1)
-    print(iloc_pd_1)
 
     assert iloc_pd_1.values.tolist() == iloc_cn_1.to_pandas().values.tolist()
 
     iloc_cn_2 = cn_tb.iloc[3:5, 1:]
     iloc_pd_2 = pdf_float.iloc[3:5, 1:]
+
+    print(iloc_cn_2)
+    print(iloc_pd_2)
 
     assert iloc_pd_2.values.tolist() == iloc_cn_2.to_pandas().values.tolist()
 
@@ -848,6 +848,8 @@ def test_arrow_index():
 
 
 #test_isin_with_getitem()
-test_loc_op_mode_1()
+#test_loc_op_mode_1()
 #test_loc_op_mode_2()
 #test_loc_op_mode_3()
+
+test_iloc_op_mode_1()
