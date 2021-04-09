@@ -19,7 +19,7 @@ from numbers import Number
 import warnings
 import numpy as np
 from pycylon.util.TableUtils import resolve_column_index_from_column_name
-from pycylon.indexing.index import IndexingSchema, BaseIndex
+from pycylon.indexing.index import IndexingSchema
 from pycylon.indexing.index_utils import IndexUtil
 
 
@@ -196,22 +196,16 @@ def _get_column_by_name(table, column_name):
     return artb.column(column_name)
 
 
-def process_index_by_value(key, table, index_schema, drop_index, method="arrow"):
+def process_index_by_value(key, table, index_schema, drop_index):
     if np.isscalar(key):
         column_index = None
         if isinstance(key, str):
             column_index = resolve_column_index_from_column_name(key, table)
         elif isinstance(key, int):
             column_index = key
-        if method == "default":
-            return IndexUtil.build_index(index_schema, table, column_index, drop_index)
-        elif method == "arrow":
-            return IndexUtil.build_arrow_index(index_schema, table, column_index, drop_index)
+        return IndexUtil.build_arrow_index(index_schema, table, column_index, drop_index)
     elif isinstance(key, List):
-        if method == "default":
-            return IndexUtil.build_index_from_list(index_schema, table, key)
-        elif method == "arrow":
-            return IndexUtil.build_arrow_index_from_list(index_schema, table, key)
+        return IndexUtil.build_arrow_index_from_list(index_schema, table, key)
     else:
         raise ValueError("Unexpected value")
 

@@ -36,15 +36,6 @@ import pyarrow as pa
 cdef class IndexUtil:
 
     @staticmethod
-    def build_index(indexing_schema: IndexingSchema, table: Table, column: int, drop: bool):
-        cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
-        CIndexUtil.BuildIndex(indexing_schema, input, column, drop, output)
-        cn_table = pycylon_wrap_table(output)
-        #cn_table.indexing_schema = indexing_schema
-        return cn_table
-
-    @staticmethod
     def build_arrow_index(indexing_schema: IndexingSchema, table: Table, column: int, drop: bool):
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
@@ -52,15 +43,6 @@ cdef class IndexUtil:
         cn_table = pycylon_wrap_table(output)
         #cn_table.indexing_schema = indexing_schema
         return cn_table
-
-    @staticmethod
-    def build_index_from_list(indexing_schema: IndexingSchema, table: Table, index_arr:List):
-        cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
-        arrow_index_array = pa.array(index_arr)
-        cdef shared_ptr[CArrowArray] c_index_array = pyarrow_unwrap_array(arrow_index_array)
-        CIndexUtil.BuildIndexFromArray(indexing_schema, input, c_index_array, output)
-        return pycylon_wrap_table(output)
 
     @staticmethod
     def build_arrow_index_from_list(indexing_schema: IndexingSchema, table: Table, index_arr: List):

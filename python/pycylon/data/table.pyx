@@ -39,8 +39,6 @@ pycylon_wrap_table,
 pycylon_unwrap_csv_read_options,
 pycylon_unwrap_csv_write_options,
 pycylon_unwrap_sort_options,
-pycylon_wrap_base_index,
-pycylon_unwrap_base_index,
 pycylon_wrap_base_arrow_index,
 pycylon_unwrap_base_arrow_index,
 pycylon_unwrap_join_config)
@@ -54,8 +52,8 @@ from pycylon.data import compute
 from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
 from pycylon.indexing.index_utils import IndexUtil
 
-from pycylon.indexing.index cimport CBaseIndex, CBaseArrowIndex
-from pycylon.indexing.index import BaseIndex, BaseArrowIndex
+from pycylon.indexing.index cimport CBaseArrowIndex
+from pycylon.indexing.index import BaseArrowIndex
 from pycylon.indexing.index import IndexingSchema
 from pycylon.indexing.index import PyLocIndexer
 
@@ -2056,61 +2054,61 @@ cdef class Table:
         '''
         return self.get_index()
 
-    def _set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
-                  drop: bool = False):
-        '''
-        Set Index
-        Operation takes place inplace.
-        Args:
-            key: pycylon.indexing.index.BaseIndex
-
-        Returns: None
-
-        Examples
-        --------
-
-        >>> tb
-               col-1  col-2  col-3
-            0      1      5      9
-            1      2      6     10
-            2      3      7     11
-            3      4      8     12
-
-
-        >>> tb.set_index(['a', 'b', 'c', 'd'])
-
-        >>> tb.index
-            <pycylon.indexing.index.BaseIndex object at 0x7fa72c2b6ca0>
-
-        >>> tb.index.index_values
-            ['a', 'b', 'c', 'd']
-
-        >>> tb.set_index('col-1', IndexingSchema.LINEAR, True)
-
-               col-2  col-3
-            1      5      9
-            2      6     10
-            3      7     11
-            4      8     12
-        NOTE: indexing value is not exposed to print functions
-        >>> tb.index.index_values
-            [ 1, 2, 3, 4]
-        '''
-
-        # TODO: Multi-Indexing support: https://github.com/cylondata/cylon/issues/233
-        # TODO: Enhancing: https://github.com/cylondata/cylon/issues/235
-        cdef shared_ptr[CTable] indexed_cylon_table
-        cdef shared_ptr[CBaseIndex] c_base_index
-
-        if isinstance(key, BaseIndex):
-            c_base_index = pycylon_unwrap_base_index(key)
-            self.table_shd_ptr.get().Set_Index(c_base_index, False)
-        else:
-            indexed_table = process_index_by_value(key=key, table=self,
-                                                   index_schema=indexing_schema,
-                                                   drop_index=drop, method="default")
-            indexed_cylon_table = pycylon_unwrap_table(indexed_table)
-            self.init(indexed_cylon_table)
+    # def _set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
+    #               drop: bool = False):
+    #     '''
+    #     Set Index
+    #     Operation takes place inplace.
+    #     Args:
+    #         key: pycylon.indexing.index.BaseIndex
+    #
+    #     Returns: None
+    #
+    #     Examples
+    #     --------
+    #
+    #     >>> tb
+    #            col-1  col-2  col-3
+    #         0      1      5      9
+    #         1      2      6     10
+    #         2      3      7     11
+    #         3      4      8     12
+    #
+    #
+    #     >>> tb.set_index(['a', 'b', 'c', 'd'])
+    #
+    #     >>> tb.index
+    #         <pycylon.indexing.index.BaseIndex object at 0x7fa72c2b6ca0>
+    #
+    #     >>> tb.index.index_values
+    #         ['a', 'b', 'c', 'd']
+    #
+    #     >>> tb.set_index('col-1', IndexingSchema.LINEAR, True)
+    #
+    #            col-2  col-3
+    #         1      5      9
+    #         2      6     10
+    #         3      7     11
+    #         4      8     12
+    #     NOTE: indexing value is not exposed to print functions
+    #     >>> tb.index.index_values
+    #         [ 1, 2, 3, 4]
+    #     '''
+    #
+    #     # TODO: Multi-Indexing support: https://github.com/cylondata/cylon/issues/233
+    #     # TODO: Enhancing: https://github.com/cylondata/cylon/issues/235
+    #     cdef shared_ptr[CTable] indexed_cylon_table
+    #     cdef shared_ptr[CBaseIndex] c_base_index
+    #
+    #     if isinstance(key, BaseIndex):
+    #         c_base_index = pycylon_unwrap_base_index(key)
+    #         self.table_shd_ptr.get().Set_Index(c_base_index, False)
+    #     else:
+    #         indexed_table = process_index_by_value(key=key, table=self,
+    #                                                index_schema=indexing_schema,
+    #                                                drop_index=drop, method="default")
+    #         indexed_cylon_table = pycylon_unwrap_table(indexed_table)
+    #         self.init(indexed_cylon_table)
 
     def set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
                         drop: bool = False):
@@ -2164,40 +2162,40 @@ cdef class Table:
         else:
             indexed_table = process_index_by_value(key=key, table=self,
                                                    index_schema=indexing_schema,
-                                                   drop_index=drop, method="arrow")
+                                                   drop_index=drop)
             indexed_cylon_table = pycylon_unwrap_table(indexed_table)
             self.init(indexed_cylon_table)
 
-    def _reset_index(self, drop_index: bool = False) -> Table:
-        """
-        reset_index
-        Here the existing index can be removed and set back to table.
-        This operation takes place in place.
-        Args:
-            drop_index: bool, if True the column is dropped otherwise added to the table with the
-            column name "index"
-
-        Returns: None
-
-        Examples
-        --------
-
-        >>> tb
-                col-2  col-3
-            1      5      9
-            2      6     10
-            3      7     11
-            4      8     12
-
-        >>> tb.reset_index()
-                col-1  col-2  col-3
-            0      1      5      9
-            1      2      6     10
-            2      3      7     11
-            3      4      8     12
-        """
-        cdef bool c_drop_index = drop_index
-        self.table_shd_ptr.get().ResetIndex(c_drop_index)
+    # def _reset_index(self, drop_index: bool = False) -> Table:
+    #     """
+    #     reset_index
+    #     Here the existing index can be removed and set back to table.
+    #     This operation takes place in place.
+    #     Args:
+    #         drop_index: bool, if True the column is dropped otherwise added to the table with the
+    #         column name "index"
+    #
+    #     Returns: None
+    #
+    #     Examples
+    #     --------
+    #
+    #     >>> tb
+    #             col-2  col-3
+    #         1      5      9
+    #         2      6     10
+    #         3      7     11
+    #         4      8     12
+    #
+    #     >>> tb.reset_index()
+    #             col-1  col-2  col-3
+    #         0      1      5      9
+    #         1      2      6     10
+    #         2      3      7     11
+    #         3      4      8     12
+    #     """
+    #     cdef bool c_drop_index = drop_index
+    #     self.table_shd_ptr.get().ResetIndex(c_drop_index)
 
     def reset_index(self, drop_index: bool = False) -> Table:
         """
@@ -2342,9 +2340,9 @@ cdef class Table:
         return Table.from_arrow(self.context,
                                 pa.Table.from_arrays(new_chunks, self.column_names))
 
-    def _get_index(self) -> BaseIndex:
-        cdef shared_ptr[CBaseIndex] c_index = self.table_shd_ptr.get().GetIndex()
-        return pycylon_wrap_base_index(c_index)
+    # def _get_index(self) -> BaseIndex:
+    #     cdef shared_ptr[CBaseIndex] c_index = self.table_shd_ptr.get().GetIndex()
+    #     return pycylon_wrap_base_index(c_index)
 
     def get_index(self) -> BaseArrowIndex:
         cdef shared_ptr[CBaseArrowIndex] c_index = self.table_shd_ptr.get().GetArrowIndex()

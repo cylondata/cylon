@@ -66,7 +66,6 @@ def test_range_count():
 def test_cylon_set_index_from_column():
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
 
     pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.int64()),
                               'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int')})
@@ -91,7 +90,7 @@ def test_cylon_set_index_from_column():
 def test_reset_index():
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
+
 
     pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.int64()),
                               'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int')})
@@ -123,7 +122,7 @@ def test_cylon_cpp_single_column_indexing():
     pass
     # from pycylon.indexing.index import IndexingSchema
     # from pycylon.indexing.index_utils import IndexUtil
-    # from pycylon.indexing.index import LocIndexer
+    #
     #
     # pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.int64()),
     #                           'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int')})
@@ -174,7 +173,7 @@ def test_cylon_cpp_multi_column_indexing():
     pass
     # from pycylon.indexing.index import IndexingSchema
     # from pycylon.indexing.index_utils import IndexUtil
-    # from pycylon.indexing.index import LocIndexer
+    #
     #
     # pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
     #                           'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
@@ -229,7 +228,7 @@ def test_cylon_cpp_str_single_column_indexing():
     pass
     # from pycylon.indexing.index import IndexingSchema
     # from pycylon.indexing.index_utils import IndexUtil
-    # from pycylon.indexing.index import LocIndexer
+    #
     #
     # pdf_str = pd.DataFrame([["1", 2], ["4", 5], ["7", 8], ["10", 11], ["20", 22], ["23", 25], ["10",
     #                                                                                            12]])
@@ -286,7 +285,7 @@ def test_cylon_cpp_str_multi_column_indexing():
     pass
     # from pycylon.indexing.index import IndexingSchema
     # from pycylon.indexing.index_utils import IndexUtil
-    # from pycylon.indexing.index import LocIndexer
+    #
     #
     # pdf_str = pd.DataFrame([["1", 2, 3], ["4", 5, 4], ["7", 8, 10], ["10", 11, 12], ["20", 22, 20],
     #                         ["23", 25, 20], ["10", 12, 35]])
@@ -344,7 +343,7 @@ def test_cylon_cpp_range_column_indexing():
     pass
     # from pycylon.indexing.index import IndexingSchema
     # from pycylon.indexing.index_utils import IndexUtil
-    # from pycylon.indexing.index import LocIndexer
+    #
     #
     # pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.float64()),
     #                           'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
@@ -399,7 +398,7 @@ def test_cylon_cpp_str_range_column_indexing():
     pass
     # from pycylon.indexing.index import IndexingSchema
     # from pycylon.indexing.index_utils import IndexUtil
-    # from pycylon.indexing.index import LocIndexer
+    #
     #
     # pdf_str = pd.DataFrame([["1", 2, 3], ["4", 5, 4], ["7", 8, 10], ["10", 11, 12], ["20", 22, 20],
     #                         ["23", 25, 20], ["10", 12, 35]])
@@ -583,7 +582,7 @@ def test_loc_op_mode_2():
 def test_loc_op_mode_3():
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
+
 
     pdf_float = pd.DataFrame({'a': pd.Series(["1", "4", "7", "10", "20", "23", "11"]),
                               'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
@@ -639,7 +638,7 @@ def test_loc_op_mode_3():
 def test_iloc_op_mode_1():
     from pycylon.indexing.index import IndexingSchema
     from pycylon.indexing.index_utils import IndexUtil
-    from pycylon.indexing.index import LocIndexer
+
 
     pdf_float = pd.DataFrame({'a': pd.Series(["1", "4", "7", "10", "20", "23", "11"]),
                               'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
