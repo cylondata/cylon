@@ -2581,6 +2581,9 @@ cdef class Table:
         else:
             raise ValueError("Unsupported data type representation")
 
+    def __len__(self) -> int:
+        return self.row_count
+
 
 class EmptyTable(Table):
     '''

@@ -13,36 +13,40 @@ Run benchmark:
 
 >>> python python/examples/op_benchmark/indexing_benchmark.py --start_size 1_000_000 \
                                         --step_size 1_000_000 \
-                                        --end_size 20_000_000 \
+                                        --end_size 10_000_000 \
                                         --num_cols 2 \
                                         --stats_file /tmp/indexing_bench.csv \
-                                        --duplication_factor 0.9 \
+                                        --duplication_factor 0.1 \
                                         --repetitions 1
 """
 
 
 def indexing_op(num_rows: int, num_cols: int, duplication_factor: float):
+    from pycylon.indexing.index import IndexingSchema
     ctx: cn.CylonContext = cn.CylonContext(config=None, distributed=False)
     pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
     filter_column = pdf.columns[0]
     filter_column_data = pdf[pdf.columns[0]]
     random_index = np.random.randint(low=0, high=pdf.shape[0])
     filter_value = filter_column_data.values[random_index]
+    filter_values = filter_column_data.values.tolist()[0:pdf.shape[0] // 2]
     tb = Table.from_pandas(ctx, pdf)
     cylon_indexing_time = time.time()
-    tb.set_index(filter_column, drop=True)
+    tb.set_index(filter_column, indexing_schema=IndexingSchema.HASH, drop=True)
     cylon_indexing_time = time.time() - cylon_indexing_time
     pdf_indexing_time = time.time()
     pdf.set_index(filter_column, drop=True, inplace=True)
     pdf_indexing_time = time.time() - pdf_indexing_time
 
     cylon_filter_time = time.time()
-    tb_filter = tb.loc[filter_value]
+    tb_filter = tb.loc[filter_values]
     cylon_filter_time = time.time() - cylon_filter_time
 
     pandas_filter_time = time.time()
-    pdf_filtered = pdf.loc[filter_value]
+    pdf_filtered = pdf.loc[filter_values]
     pandas_filter_time = time.time() - pandas_filter_time
+
+    print(tb_filter.shape, pdf_filtered.shape)
 
     return pandas_filter_time, cylon_filter_time, pdf_indexing_time, cylon_indexing_time
 

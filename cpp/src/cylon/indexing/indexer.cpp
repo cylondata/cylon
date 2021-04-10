@@ -36,7 +36,7 @@ cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingSchema indexing_sc
 											   std::shared_ptr<arrow::Array> &sub_index_arr,
 											   arrow::MemoryPool *pool,
 											   std::shared_ptr<cylon::BaseArrowIndex> &loc_index) {
-  std::cout << "BuildArrowIndexFromArrayByKernel: schema :: " << indexing_schema << std::endl;
+
   if (indexing_schema == cylon::IndexingSchema::Hash) {
 	return cylon::IndexUtil::BuildArrowHashIndexFromArray(sub_index_arr, pool, loc_index);
   } else if (indexing_schema == cylon::IndexingSchema::Range) {
@@ -185,9 +185,9 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   auto ctx = output->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
 
-  LOG(INFO) << "Set Index for location output with Non-RangeIndex :: Schema :: " << indexing_schema;
+  //LOG(INFO) << "Set Index for location output with Non-RangeIndex :: Schema :: " << indexing_schema;
   auto index_arr = index->GetIndexArray();
-  std::cout << "Current Index array size : " << index_arr->length() << std::endl;
+
   sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
   BuildArrowIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
   output->Set_ArrowIndex(loc_index, false);
@@ -242,7 +242,6 @@ cylon::Status GetArrowLocFilterIndices(const std::shared_ptr<arrow::Scalar> &sta
   cylon::Status status1, status2, status_build;
   std::shared_ptr<arrow::Table> out_artb;
   bool is_index_unique;
-  std::cout << "Before CheckIsIndexValueUnique" << std::endl;
   status_build = cylon::CheckIsIndexValueUnique(start_index, index, is_index_unique);
 
   if (!status_build.is_ok()) {
@@ -262,8 +261,6 @@ cylon::Status GetArrowLocFilterIndices(const std::shared_ptr<arrow::Scalar> &sta
 	LOG(ERROR) << "Index value must be unique";
 	return cylon::Status(cylon::Code::KeyError);
   }
-
-  std::cout << "Find Indices : " << std::endl;
 
   status1 = index->LocationByValue(start_index, s_index);
   status2 = index->LocationByValue(end_index, e_index);
@@ -392,12 +389,10 @@ cylon::Status ResolveArrowLocIndices(const std::shared_ptr<arrow::Array> &input_
 	  LOG(ERROR) << "Error in retrieving indices!";
 	  return status;
 	}
-	std::cout << "Filtered Index List" << std::endl;
+
 	for (size_t iy = 0; iy < filter_ix.size(); iy++) {
-	  std::cout << filter_ix.at(iy) << ", ";
 	  output_indices.push_back(filter_ix.at(iy));
 	}
-	std::cout << std::endl;
   }
   return cylon::Status::OK();
 }
@@ -487,9 +482,6 @@ cylon::Status cylon::LocIndexer::loc(const void *start_index,
   int64_t e_index = -1;
 
   status_build = GetLocFilterIndices(start_index, end_index, index, s_index, e_index);
-
-  std::cout << ">>>>>" << s_index << ", " << e_index << ", index_size: " << index->GetIndexArray()->length()
-			<< std::endl;
 
   if (!status_build.is_ok()) {
 	LOG(ERROR) << "Error occurred in filtering indices from table";
@@ -1333,7 +1325,6 @@ cylon::Status cylon::CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar
 											 const std::shared_ptr<BaseArrowIndex> &index,
 											 bool &is_unique) {
 
-  std::cout << "Before Loop : " << index->GetSchema() << std::endl;
   is_unique = true;
   if (index->GetSchema() == cylon::IndexingSchema::Range) {
 	return cylon::Status::OK();
@@ -1374,12 +1365,7 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
   int64_t s_index = -1;
   int64_t e_index = -1;
 
-  std::cout << "Start, End, Search Values : " << start_index->ToString() << ", " << end_index->ToString() << std::endl;
-
   status_build = GetArrowLocFilterIndices(start_index, end_index, index, s_index, e_index);
-
-  std::cout << "Found Start Index : " << s_index << std::endl;
-  std::cout << "Found End Index : " << e_index << std::endl;
 
   if (!status_build.is_ok()) {
 	LOG(ERROR) << "Error occurred in filtering indices from table";
@@ -1401,7 +1387,6 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
 	return status_build;
   }
 
-  std::cout << "Indexing Schema : " << indexing_schema_ << std::endl;
   status_build = SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_schema_);
 
   if (!status_build.is_ok()) {
@@ -1513,14 +1498,6 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &i
 	LOG(ERROR) << "Error occurred in resolving indices for table filtering";
 	return status;
   }
-
-  std::cout << "Filter Indices" << std::endl;
-
-  for (size_t ix = 0; ix < filter_indices.size(); ix++) {
-	std::cout << filter_indices.at(ix) << ",";
-  }
-
-  std::cout << std::endl;
 
   status = GetTableFromIndices(input_table, filter_indices, temp_table);
 

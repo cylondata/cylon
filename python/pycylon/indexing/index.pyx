@@ -392,6 +392,8 @@ class PyLocIndexer:
                                                               self._cn_table)
             elif isinstance(item, List):
                 return self._loc_indexer.loc_with_indices(item, column_index, self._cn_table)
+            elif np.isscalar(item):
+                return self._loc_indexer.loc_with_indices([item], column_index, self._cn_table)
             else:
                 raise ValueError("Index values must be either slice or List")
         else:

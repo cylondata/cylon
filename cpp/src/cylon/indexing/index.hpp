@@ -340,18 +340,15 @@ class ArrowHashIndex : public BaseArrowIndex {
 	for (auto it = ret.first; it != ret.second; ++it) {
 	  find_index.push_back(it->second);
 	}
-	std::cout << "1. Location By Value Casted Value : " << val << ", arr len : " << find_index.size() << std::endl;
 	return Status::OK();
   }
 
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) override {
 	std::shared_ptr<SCALAR_TYPE> casted_value = std::static_pointer_cast<SCALAR_TYPE>(search_param);
 	const CTYPE val = casted_value->value;
-	std::cout << "2. Casted Value : " << casted_value->ToString()  << " | " << val << std::endl;
 	auto ret = map_->find(val);
 	if (ret != map_->end()) {
 	  find_index = ret->second;
-	  std::cout << "2. Location By Value Casted Value : " << val << ", index-val : " << find_index << std::endl;
 	  return Status::OK();
 	}
 	return Status(cylon::Code::IndexError);

@@ -842,9 +842,58 @@ def test_arrow_index():
     print(output6.get_index().values)
 
 
-test_isin_with_getitem()
-test_loc_op_mode_1()
-test_loc_op_mode_2()
-test_loc_op_mode_3()
+def test_index_set_index():
+    from pycylon.indexing.index import IndexingSchema
+    from pycylon.indexing.index_utils import IndexUtil
 
-test_iloc_op_mode_1()
+    pdf_float = pd.DataFrame({'a': pd.Series(["1", "4", "7", "10", "20", "23", "11"]),
+                              'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
+                              'c': pd.Series([12, 15, 18, 111, 122, 125, 112], dtype='int'),
+                              'd': pd.Series([212, 215, 218, 211, 222, 225, 312], dtype='int'),
+                              'e': pd.Series([1121, 12151, 12181, 12111, 12221, 12251, 13121],
+                                             dtype='int')})
+    ctx: CylonContext = CylonContext(config=None, distributed=False)
+    #pdf_float = pdf_float.set_index('a')
+    #pdf_float = pdf_float.reset_index()
+
+    cn_tb: Table = Table.from_pandas(ctx, pdf_float)
+    print("PyCylon Orignal Table")
+    print(cn_tb)
+    artb = cn_tb.to_arrow()
+    print("Arrow Table")
+    print(artb)
+    indexing_schema = IndexingSchema.HASH
+    drop_index = True
+
+    print("Before Indexing : ", cn_tb.column_names)
+    print("index values", cn_tb.index.values)
+    print(cn_tb)
+
+    cn_tb.set_index(key='a', indexing_schema=indexing_schema, drop=drop_index)
+
+
+    print("After Indexing : ", cn_tb.column_names)
+    print(cn_tb)
+    print(cn_tb.index.values)
+    print(pdf_float.index.values)
+    filter = [False, True, False, True, False, False, False]
+    pdf_loc = pdf_float.loc[filter]
+
+    res = cn_tb.isin([10, 20, 30])
+
+    print(res)
+
+
+
+    print(pdf_loc)
+
+
+
+
+# test_isin_with_getitem()
+# test_loc_op_mode_1()
+# test_loc_op_mode_2()
+# test_loc_op_mode_3()
+#
+# test_iloc_op_mode_1()
+test_index_set_index()
