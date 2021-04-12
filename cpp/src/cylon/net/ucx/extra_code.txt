@@ -1,0 +1,387 @@
+// TODO From ucx hpp
+void socketInit(const std::vector<int> &receives,
+                               const std::vector<int> &sendIds);
+
+
+#include <arpa/inet.h> /* inet_addr, for sockaddr_in */
+#include <thread> /* for sending the worker addresses via sockets*/
+#include <chrono> /* to state the waiting time if a connection fails*/
+
+
+// TODO Add to the main code if necessary
+//  initially used for sending the worker address when using sockets (without MPI)
+//  however you need to know the IP as well as the port
+/**
+ * @brief Send address to
+ * @param [in] addr - The worker address to be sent
+ * @param [in] addr_len - The length of the worker address to be sent
+ * @param [in] server_port - The port of the sender
+ * @param [in] target_port - The port of the receiver
+ * @param [in] receiver - The IP of the receiver
+ * @return status of process (-1 if error)
+ */
+int send_worker_address(ucp_address_t *addr,
+                        size_t addr_len,
+                        uint16_t server_port,
+                        uint16_t target_port,
+                        const char *receiver) {
+  // Socket details
+  struct sockaddr_in inaddr;
+  struct sockaddr_in recv_addr;
+  int recv_addr_len = sizeof(recv_addr);
+  int lsock = -1;
+  int dsock = -1;
+  int optval = 1;
+  int ret;
+
+  /**
+   * Create a new socket of type TYPE in domain DOMAIN, using
+   * protocol PROTOCOL.  If PROTOCOL is zero, one is chosen automatically.
+   * (int __domain, int __type, int __protocol)
+   * SOCK_STREAM -  Sequenced, reliable, connection-based byte streams.
+   */
+  lsock = socket(AF_INET, SOCK_STREAM, 0);
+  if (lsock < 0) {
+    LOG(FATAL) << "Failed to open a server socket";
+    goto err;
+  }
+
+  optval = 1;
+  /**
+   *  Set socket FD's option OPTNAME at protocol level LEVEL
+   *  to OPTVAL (which is OPTLEN bytes long).
+   *  (int __fd, int __level, int __optname,
+   *  const void *__optval, socklen_t __optlen)
+   */
+  ret = setsockopt(lsock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+  if (ret < 0) {
+    LOG(FATAL) << "Failed to set a socket's reuse address option";
+    goto err_sock;
+  }
+
+  // TODO set the details of the network (Network family, port, addresses to accept?)
+  // TODO Pass the addresses to accept as a function parameter?
+  inaddr.sin_family = AF_INET;
+  inaddr.sin_port = htons(server_port);
+  inaddr.sin_addr.s_addr = INADDR_ANY; // Accept any address
+  // TODO Padding?
+  memset(inaddr.sin_zero, 0, sizeof(inaddr.sin_zero));
+
+  /**
+   * Give the socket FD the local address ADDR (which is LEN bytes long)
+   * (int __fd, __CONST_SOCKADDR_ARG __addr, socklen_t __len)
+   */
+  ret = bind(lsock, (struct sockaddr *) &inaddr, sizeof(inaddr));
+  if (ret < 0) {
+    LOG(FATAL) << "Failed to bind server";
+    goto err_sock;
+  }
+
+  /**
+   * Prepare to accept connections on socket FD.
+   * N connection requests will be queued before further requests are refused.
+   * (int __fd, int __n)
+   * TODO Sandeepa is 0 for inf connections?
+   */
+  ret = listen(lsock, 0);
+  if (ret < 0) {
+    LOG(FATAL) << "Failed to listen server";
+    goto err_sock;
+  }
+  LOG(INFO) << "Waiting for IP " << receiver << " to send request";
+
+  /* Accept next connection */
+  /**
+   * Await a connection on socket FD.
+   */
+  recv_addr.sin_family = AF_INET;
+  // TODO Sandeepa have separate ports for connections?
+  recv_addr.sin_port = htons(target_port);
+  recv_addr.sin_addr.s_addr = inet_addr(receiver); // Accept any address
+  // TODO Padding?
+  memset(recv_addr.sin_zero, 0, sizeof(recv_addr.sin_zero));
+
+  dsock = accept(lsock, (struct sockaddr *) &recv_addr, (socklen_t *) &recv_addr_len);
+  if (ret < 0) {
+    LOG(FATAL) << "Server failed to accept";
+    goto err_sock;
+  }
+
+  /**
+   * Close the file descriptor FD.
+   */
+  ::close(lsock);
+
+  // TODO Sandeepa Add error handling when sending
+  /**
+   * Send N bytes of BUF to socket FD.  Returns the number sent or -1.
+   * (int __fd, const void *__buf, size_t __n, int __flags)
+   */
+  ret = ::send(dsock, &addr_len, sizeof(addr_len), 0);
+  if (ret != (int) sizeof(addr_len)) {
+    LOG(FATAL) << "Failure when sending the worker "
+                  "address length";
+  }
+  /**
+    * Send N bytes of BUF to socket FD.  Returns the number sent or -1.
+    * (int __fd, const void *__buf, size_t __n, int __flags)
+    */
+  ret = ::send(dsock, addr, addr_len, 0);
+  if (ret != (int) addr_len) {
+    LOG(FATAL) << "Failure when sending the worker "
+                  "address";
+  }
+
+  return 0;
+
+  err_sock:
+  ::close(lsock);
+  goto err;
+  err:
+  return -1;
+}
+
+// TODO Add to the main code if necessary
+//  initially used for receiving the worker address when using sockets (without MPI)
+//  however you need to know the IP as well as the port
+/**
+ * @brief Receive worker address sent by server (sender)
+ * @param [in] server
+ * @param [in] server_port
+ * @return UCX address of worker
+ */
+static ucx::ucxWorker *recv_worker_address(const char *server,
+                                       uint16_t server_port) {
+  struct sockaddr_in conn_addr;
+  int connfd;
+  int ret;
+  ucx::ucxWorker *ret_addr = new ucx::ucxWorker();
+
+
+  // Create a new socket of type TYPE in domain DOMAIN, using
+  // protocol PROTOCOL.  If PROTOCOL is zero, one is chosen automatically.
+  connfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (connfd < 0) {
+    LOG(FATAL) << "Failed to open a server socket";
+    goto err;
+  }
+
+  // Connection address type and port
+  conn_addr.sin_family = AF_INET;
+  conn_addr.sin_port = htons(server_port);
+  conn_addr.sin_addr.s_addr = inet_addr(server);
+  // Set (dest, val, len)
+  memset(conn_addr.sin_zero, 0, sizeof(conn_addr.sin_zero));
+
+  // TODO Sandeepa busy wait for connection.
+  //  Try to see if there is a better method
+  //  In the least add a way to count the number of retries
+  while (true) {
+    // Open a connection on socket FD to peer at ADDR
+    ret = connect(connfd, (struct sockaddr *) &conn_addr, sizeof(conn_addr));
+    if (ret < 0) {
+      LOG(INFO) << "Failed to connect client. Retrying...";
+      std::chrono::seconds dura(1);
+      std::this_thread::sleep_for(dura);
+    } else {
+      break;
+    }
+  }
+
+  /**
+  * Read N bytes into BUF from socket FD.
+  * Returns the number read or -1 for errors.
+  * (int __fd, void *__buf, size_t __n, int __flags)
+  */
+  ret = ::recv(connfd, &ret_addr->addrSize, sizeof(ret_addr->addrSize), MSG_WAITALL);
+  if (ret < 0) {
+    LOG(FATAL) << "Failed to receive address length";
+    // TODO Sandeepa add method to free resources (look at test prj)
+  }
+
+  // Allocate memory for peer address?
+  ret_addr->addr = (ucp_address_t *) malloc(ret_addr->addrSize);
+  if (ret < 0) {
+    LOG(FATAL) << "Failed to allocate memory for address";
+    // TODO Sandeepa add method to free resources (look at test prj)
+  }
+
+  /**
+    * Read N bytes into BUF from socket FD.
+    * Returns the number read or -1 for errors.
+    * (int __fd, void *__buf, size_t __n, int __flags)
+    * TODO why copy address here as well??
+    *  might need to malloc addr
+    */
+  ret = recv(connfd, ret_addr->addr, ret_addr->addrSize, MSG_WAITALL);
+  if (ret < 0) {
+    LOG(FATAL) << "Failed to receive address";
+    goto err_conn;
+    // TODO Sandeepa add method to free resources (look at test prj)
+  }
+
+  return ret_addr;
+  err_conn:
+  close(connfd);
+  err:
+  return nullptr;
+}
+
+// TODO Add to the main code if necessary
+/**
+ * @brief Convert int based ip to char*
+ * @param [in] int
+ * @return string of IP
+ */
+std::string convert_int_2_ip(unsigned int ip) {
+  unsigned char bytes[4];
+  bytes[0] = ip & 0xFF;
+  bytes[1] = (ip >> 8) & 0xFF;
+  bytes[2] = (ip >> 16) & 0xFF;
+  bytes[3] = (ip >> 24) & 0xFF;
+  std::ostringstream stringStream;
+  stringStream << bytes[3] << "." << bytes[2] << "." << bytes[1] << "." << bytes[0];
+  std::string copyOfStr = stringStream.str();
+//  return copyOfStr;
+  return "0.0.0.0";
+}
+
+// TODO Add to the main code if necessary
+void UCXChannel::socketInit(const std::vector<int> &receives,
+                            const std::vector<int> &sendIds) {
+  // Return value of functions
+  int ret;
+  // Get the rank for checking send to self, and initializations
+  MPI_Comm_rank(MPI_COMM_WORLD, &this_rank);
+
+  // TODO Sandeepa randomly generate the port
+  //  the port is only used when sending via sockets??
+  int default_port = 13337;
+  int partner_port = 13338;
+  // TODO Sandeepa handle the port creation
+  //  include some random port assignment / check
+  if (this_rank == 0) {
+    default_port = 13337;
+    partner_port = 13338;
+  } else {
+    default_port = 13338;
+    partner_port = 13337;
+  }
+
+  // UCP Context - Holds a UCP communication instance's global information.
+  ucp_context_h ucp_context;
+  //Init context
+  ret = cylon::ucx::initContext(&ucp_context, nullptr);
+  if (ret != 0) {
+    LOG(FATAL) << "Error occurred when creating UCX context";
+  }
+
+  // UCP Worker - The worker represents an instance of a local communication resource
+  // and the progress engine associated with it.
+  // Init recv worker
+  ucp_recv_worker_addr = cylon::ucx::initWorker(ucp_context,
+                                                 &ucp_recv_worker);
+  // Init send worker
+  ucp_send_worker_addr = cylon::ucx::initWorker(ucp_context,
+                                                 &ucp_send_worker);
+
+  int num_reci = (int) receives.size();
+  int num_sends = (int) sendIds.size();
+  std::vector<std::shared_ptr<std::thread>> tasks;
+
+  // Iterate and set the receives
+  for (int sIndx = 0; sIndx < num_reci; sIndx++) {
+    // TODO Sandeepa move this in or the other out
+    // TODO Sandeepa add threads
+    auto t1 = std::make_shared<std::thread>([this,
+                                                default_port,
+                                                partner_port,
+                                                sIndx,
+                                                &receives]() {
+      int ipInt = receives.at(sIndx);
+
+      if (ipInt != this_rank) {
+        int ret = 0;
+        std::string string_source = convert_int_2_ip(ipInt);
+
+        // TODO Sandeepa currently for exchanging between paris
+        ret = send_worker_address(ucp_recv_worker_addr->addr,
+                                  ucp_recv_worker_addr->addrSize,
+                                  default_port,
+                                  partner_port,
+                                  string_source.c_str());
+        if (ret < 0) {
+          LOG(FATAL) << "Error when sending worker address";
+        }
+      }
+
+      auto *buf = new PendingReceive();
+      buf->receiveId = ipInt;
+      pendingReceives.insert(std::pair<int, PendingReceive *>(ipInt, buf));
+      buf->context = UCX_IRECV(buf->headerBuf,
+                               CYLON_CHANNEL_HEADER_SIZE * sizeof(int),
+                               ipInt);
+      buf->status = RECEIVE_LENGTH_POSTED;
+    });
+    tasks.push_back(t1);
+  }
+
+  // Iterate and set the sends
+  for (int sIndx = 0; sIndx < num_sends; sIndx++) {
+    // TODO Sandeepa move this in or the other out
+    // TODO Sandeepa add threads
+    auto t2 = std::make_shared<std::thread>([this,
+                                                sIndx,
+                                                partner_port,
+                                                &sendIds]() {
+      int ipInt = sendIds.at(sIndx);
+      ucs_status_t status;
+      ucp_ep_params_t ep_params;
+      std::string string_recv = convert_int_2_ip(ipInt);
+      auto w2 = new ucx::ucxWorker();
+      sends[ipInt] = new PendingSend();
+      sends[ipInt]->wa = w2;
+
+      if (ipInt != this_rank) {
+        auto workerAddr = new ucx::ucxWorker();
+        workerAddr = recv_worker_address(string_recv.c_str(),
+                                         partner_port);
+
+        if (workerAddr == nullptr) {
+          std::cerr << "Error when receiving send worker address" << std::endl;
+          return;
+        }
+
+        w2->addr = workerAddr->addr;
+        w2->addrSize = workerAddr->addrSize;
+      } else {
+        w2->addr = ucp_recv_worker_addr->addr;
+        w2->addrSize = ucp_recv_worker_addr->addrSize;
+      }
+
+      /* Send client UCX address to server */
+      ep_params.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS |
+          UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
+      ep_params.address = w2->addr;
+      ep_params.err_mode = UCP_ERR_HANDLING_MODE_NONE;
+
+      // TODO Create an endpoint in the server
+      status = ucp_ep_create(ucp_send_worker,
+                             &ep_params,
+                             &w2->ep);
+
+      if (status != UCS_OK) {
+        std::cerr
+            << "Error when creating the endpoint."
+            << std::endl;
+      }
+    });
+    tasks.push_back(t2);
+  }
+
+  for (auto &task:tasks) {
+    task->join();
+  }
+}
+
+

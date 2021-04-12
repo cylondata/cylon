@@ -19,6 +19,7 @@
 #include "cylon_context.hpp"
 #include "arrow/memory_pool.h"
 #include "../net/mpi/mpi_communicator.hpp"
+#include "../net/ucx/ucx_communicator.hpp"
 
 namespace cylon {
 
@@ -33,6 +34,12 @@ std::shared_ptr<CylonContext> CylonContext::InitDistributed(const std::shared_pt
   if (config->Type() == net::CommType::MPI) {
     auto ctx = std::make_shared<CylonContext>(true);
     ctx->communicator = std::make_shared<net::MPICommunicator>();
+    ctx->communicator->Init(config);
+    ctx->is_distributed = true;
+    return ctx;
+  } else if (config->Type() == net::CommType::UCX) {
+    auto ctx = std::make_shared<CylonContext>(true);
+    ctx->communicator = std::make_shared<net::UCXCommunicator>();
     ctx->communicator->Init(config);
     ctx->is_distributed = true;
     return ctx;

@@ -40,6 +40,10 @@ if (CYLON_PARQUET)
     cylon_add_exe(parquet_join_example)
 endif (CYLON_PARQUET)
 
+if (CYLON_UCX)
+    cylon_add_exe(ucx_join_example)
+endif (CYLON_UCX)
+
 macro(cylon_add_exe2 DIR EXENAME)
     add_executable(${EXENAME} ${DIR}/${EXENAME}.cpp)
     target_link_libraries(${EXENAME} ${MPI_LIBRARIES})

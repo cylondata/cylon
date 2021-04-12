@@ -54,7 +54,9 @@ if (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "DEBUG")
     message("Running on debug mode...")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer ")
+#    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer ")
+    # TODO SANDEEPA REVERT!
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer ")
 elseif (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "RELEASE")
     message("Running on Release mode...")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
@@ -140,6 +142,14 @@ option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
 if (CYLON_PARQUET)
     add_definitions(-DBUILD_CYLON_PARQUET)
 endif (CYLON_PARQUET)
+
+# ucx
+option(CYLON_UCX "Build Cylon with UCX" OFF)
+if (CYLON_UCX)
+    add_definitions(-DBUILD_CYLON_UCX)
+    include(ConfigureUCX)
+    include_directories(${UCX_INSTALL}/include)
+endif (CYLON_UCX)
 
 include(Build)
 
