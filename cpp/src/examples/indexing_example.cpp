@@ -94,6 +94,13 @@ int arrow_iloc_indexer_test_6();
 
 int arrow_range_indexer_test();
 
+int arrow_filter_example();
+
+int create_int64_arrow_array(arrow::Int64Builder &builder,
+							 int64_t capacity,
+							 int64_t offset,
+							 std::shared_ptr<arrow::Int64Array> &out_array);
+
 
 //template<typename Base, typename T>
 //inline bool instanceof(const T*);
@@ -165,8 +172,8 @@ int main(int argc, char *argv[]) {
   arrow_iloc_indexer_test_5();
   arrow_iloc_indexer_test_6();
 
-
   arrow_range_indexer_test();
+  arrow_filter_example();
 
 }
 
@@ -852,6 +859,7 @@ int test_scalar_casting() {
 
   std::cout << "Search Value in C : " << casted_a->value << ", " << find_val << ", "
 			<< casted_a_s->value->ToString() << std::endl;
+
 }
 
 /*
@@ -980,7 +988,6 @@ int arrow_indexer_str_test_1() {
   return 0;
 }
 
-
 int arrow_indexer_test_2() {
   std::string func_title = "Arrow Loc 2";
   separator(func_title);
@@ -1044,7 +1051,6 @@ int arrow_indexer_test_2() {
 
   return 0;
 }
-
 
 int arrow_indexer_str_test_2() {
   std::string func_title = "Arrow Loc 2 [str]";
@@ -1424,7 +1430,6 @@ int arrow_indexer_test_5() {
   return 0;
 }
 
-
 int arrow_indexer_str_test_5() {
   std::string func_title = "Arrow Loc 5 [str]";
   separator(func_title);
@@ -1488,7 +1493,6 @@ int arrow_indexer_str_test_5() {
 
   return 0;
 }
-
 
 int arrow_indexer_test_6() {
   std::string func_title = "Arrow Loc 6";
@@ -1682,7 +1686,6 @@ int arrow_iloc_indexer_test_1() {
   return 0;
 }
 
-
 int arrow_iloc_indexer_test_2() {
   std::string func_title = "Arrow ILoc 2";
   separator(func_title);
@@ -1809,7 +1812,6 @@ int arrow_iloc_indexer_test_3() {
 
   return 0;
 }
-
 
 int arrow_iloc_indexer_test_4() {
   std::string func_title = "Arrow ILoc 4";
@@ -1938,7 +1940,6 @@ int arrow_iloc_indexer_test_5() {
   return 0;
 }
 
-
 int arrow_iloc_indexer_test_6() {
   std::string func_title = "Arrow ILoc 6";
   separator(func_title);
@@ -2003,6 +2004,189 @@ int arrow_iloc_indexer_test_6() {
   return 0;
 }
 
+int create_int64_arrow_array(arrow::Int64Builder &builder,
+							 int64_t capacity,
+							 int64_t offset,
+							 std::shared_ptr<arrow::Int64Array> &out_array) {
+
+  builder.Reserve(capacity);
+  for (int64_t ix = 0 + offset; ix < capacity + offset; ix++) {
+	builder.Append(ix);
+  }
+  builder.Finish(&out_array);
+
+  return 0;
+}
+
+int arrow_filter_example() {
+  std::string func_title = "Arrow Filter Test";
+  separator(func_title);
+
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  cylon::Status status;
+
+  std::shared_ptr<cylon::Table> input, output;
+  int64_t capacity = 10;
+  int64_t search_capacity = 4;
+  int64_t offset = 3;
+  std::shared_ptr<cylon::Table> output_tb;
+  std::shared_ptr<arrow::Int64Array> search_index_array, data_array, other_data;
+  auto pool = cylon::ToArrowPool(ctx);
+//  arrow::Int64Builder builder1(pool);
+//  arrow::Int64Builder builder2(pool);
+//  arrow::Int64Builder builder3(pool);
+
+//  create_int64_arrow_array(builder1, capacity, 0, data_array);
+//  create_int64_arrow_array(builder2, search_capacity, offset, search_index_array);
+//  create_int64_arrow_array(builder3, capacity, 100, other_data);
+//
+//  LOG(INFO) << "Data Array";
+//  auto casted_data_array = std::static_pointer_cast<arrow::Array>(data_array);
+//  print_arrow_array(casted_data_array);
+//  LOG(INFO) << "Search Array";
+//  auto casted_search_array = std::static_pointer_cast<arrow::Array>(search_index_array);
+//  print_arrow_array(casted_search_array);
+//  LOG(INFO) << "Other Array";
+//  auto casted_other_array = std::static_pointer_cast<arrow::Array>(other_data);
+//  print_arrow_array(casted_other_array);
+
+//  auto res_isin_filter = arrow::compute::IsIn(data_array, search_index_array);
+//
+//  if (res_isin_filter.ok()) {
+//	std::cout << "Successfully Filtered!!!" << std::endl;
+//  } else {
+//	std::cout << "Failed Filtering... :/" << std::endl;
+//  }
+//
+//  auto res_isin_filter_val = res_isin_filter.ValueOrDie();
+//
+//  if (res_isin_filter_val.is_array()) {
+//	std::cout << "Filter response is an array" << std::endl;
+//  } else {
+//	std::cout << "Filter response is not an array" << std::endl;
+//  }
+//
+//  std::shared_ptr<arrow::ArrayData>
+//	  filtered_isin_array = std::static_pointer_cast<arrow::ArrayData>(res_isin_filter_val.array());
+//
+//  std::shared_ptr<arrow::ChunkedArray>
+//	  cr_isin = std::make_shared<arrow::ChunkedArray>(arrow::MakeArray(filtered_isin_array));
+//
+//  std::shared_ptr<arrow::Array> arr_isin = cr_isin->chunk(0);
+//
+//  print_arrow_array(arr_isin);
+//
+//  auto filter_1 = arrow::compute::Filter(other_data, arr_isin).ValueOrDie();
+//
+//  std::shared_ptr<arrow::ArrayData> fil_res_array = std::static_pointer_cast<arrow::ArrayData>(filter_1.array());
+//
+//  std::shared_ptr<arrow::ChunkedArray> cr1 = std::make_shared<arrow::ChunkedArray>(arrow::MakeArray(fil_res_array));
+//
+//  std::shared_ptr<arrow::Array> arr1 = cr1->chunk(0);
+//
+//  print_arrow_array(arr1);
+
+  ////////////////////////
+
+  std::shared_ptr<cylon::Table> output1;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  // read first table
+  std::string test_file = "/tmp/indexing_data.csv";
+  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
+  status = cylon::FromCSV(ctx, test_file, input, read_options);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating table";
+	return -1;
+  }
+
+  arrow::Int64Builder builder(pool);
+  std::vector<int64_t> search_index_values = {7, 10};
+  builder.AppendValues(search_index_values);
+  builder.Finish(&search_index_array);
+
+  std::vector<int> columns = {0, 1};
+
+  std::shared_ptr<cylon::BaseArrowIndex> index;
+  std::shared_ptr<cylon::BaseIndex> base_index;
+  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+
+  status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
+
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred in creating the Arrow Index";
+  } else {
+	LOG(INFO) << "Index Built Successfully!";
+  }
+
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
+
+  auto index_array_ = output1->GetArrowIndex()->GetIndexArray();
+
+  auto cast_search_param_result = arrow::compute::Cast(search_index_array, index_array_->type());
+
+  std::shared_ptr<arrow::ArrayData> cast_search_param = cast_search_param_result.ValueOrDie().array();
+
+  std::shared_ptr<arrow::ChunkedArray>
+	  cast_search_param_chr = std::make_shared<arrow::ChunkedArray>(arrow::MakeArray(cast_search_param));
+
+  auto search_param_array = cast_search_param_chr->chunk(0);
+
+  auto res_isin_filter = arrow::compute::IsIn(index_array_, search_param_array);
+
+  if (res_isin_filter.ok()) {
+	std::cout << "Successfully Filtered!!!" << std::endl;
+  } else {
+	std::cout << "Failed Filtering... :/" << std::endl;
+  }
+
+  auto res_isin_filter_val = res_isin_filter.ValueOrDie();
+
+  if (res_isin_filter_val.is_array()) {
+	std::cout << "Filter response is an array" << std::endl;
+  } else {
+	std::cout << "Filter response is not an array" << std::endl;
+  }
+
+  std::shared_ptr<arrow::ArrayData>
+	  filtered_isin_array = std::static_pointer_cast<arrow::ArrayData>(res_isin_filter_val.array());
+
+  std::shared_ptr<arrow::ChunkedArray>
+	  cr_isin = std::make_shared<arrow::ChunkedArray>(arrow::MakeArray(filtered_isin_array));
+
+  std::shared_ptr<arrow::Array> arr_isin = cr_isin->chunk(0);
+
+  print_arrow_array(arr_isin);
+
+  std::shared_ptr<arrow::BooleanArray> arr_isin_bool_array = std::static_pointer_cast<arrow::BooleanArray>(arr_isin);
+
+  arrow::Int64Builder filter_index_builder(pool);
+  std::shared_ptr<arrow::Int64Array> filter_index_array;
+  filter_index_builder.Reserve(arr_isin->length());
+  auto bool_scalar_true = arrow::MakeScalar<bool>(true);
+
+  std::shared_ptr<arrow::BooleanScalar>
+	  boolean_scalar = std::static_pointer_cast<arrow::BooleanScalar>(bool_scalar_true);
+
+  std::cout << "Make Bool Scalar : " << bool_scalar_true->ToString() << std::endl;
+
+  for (int64_t ix = 0; ix < arr_isin_bool_array->length(); ix++) {
+
+	auto val = arr_isin_bool_array->Value(ix);
+	if (val) {
+	  filter_index_builder.Append(ix);
+	}
+  }
+  filter_index_builder.Finish(&filter_index_array);
+  std::shared_ptr<arrow::Array> casted_index_array = std::static_pointer_cast<arrow::Array>(filter_index_array);
+  print_arrow_array(casted_index_array);
+
+  return 0;
+}
 
 int arrow_range_indexer_test() {
   std::string func_title = "Range Test case";

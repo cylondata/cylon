@@ -380,6 +380,22 @@ cylon::Status ResolveArrowLocIndices(const std::shared_ptr<arrow::Array> &input_
 									 const std::shared_ptr<cylon::BaseArrowIndex> &index,
 									 std::vector<int64_t> &output_indices) {
   cylon::Status status;
+
+  status = index->LocationByVector(input_indices, output_indices);
+
+  if(!status.is_ok()) {
+    LOG(ERROR) << "Error occurred when retrieving output indices from index";
+  }
+
+  return cylon::Status::OK();
+}
+
+
+cylon::Status ResolveAllArrowLocIndices(const std::shared_ptr<arrow::Array> &input_indices,
+									 const std::shared_ptr<cylon::BaseArrowIndex> &index,
+									 std::vector<int64_t> &output_indices) {
+  cylon::Status status;
+
   for (int64_t ix = 0; ix < input_indices->length(); ix++) {
 	std::vector<int64_t> filter_ix;
 	auto index_val_sclr = input_indices->GetScalar(ix).ValueOrDie();
@@ -424,6 +440,36 @@ cylon::Status GetTableFromIndices(const std::shared_ptr<cylon::Table> &input_tab
   }
 
   const arrow::Datum filter_indices_datum(out_idx);
+
+  arrow::Result<arrow::Datum> result = arrow::compute::Take(input_table_datum,
+															filter_indices_datum,
+															arrow::compute::TakeOptions::Defaults(),
+															&fn_ctx);
+
+  std::shared_ptr<arrow::Table> filter_table;
+  filter_table = result.ValueOrDie().table();
+  if (!result.status().ok()) {
+	LOG(ERROR) << "Error occurred in subset retrieval from table";
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+  }
+
+  cylon::Table::FromArrowTable(ctx, filter_table, output);
+
+  return cylon::Status::OK();
+}
+
+cylon::Status GetTableFromArrayIndices(const std::shared_ptr<cylon::Table> &input_table,
+								  const std::shared_ptr<arrow::Int64Array> &filter_indices,
+								  std::shared_ptr<cylon::Table> &output) {
+
+  std::shared_ptr<arrow::Array> out_idx;
+  arrow::Status arrow_status;
+  auto ctx = input_table->GetContext();
+  auto pool = cylon::ToArrowPool(ctx);
+  arrow::compute::ExecContext fn_ctx(pool);
+  const arrow::Datum input_table_datum(input_table->get_table());
+
+  const arrow::Datum filter_indices_datum(filter_indices);
 
   arrow::Result<arrow::Datum> result = arrow::compute::Take(input_table_datum,
 															filter_indices_datum,
