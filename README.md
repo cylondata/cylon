@@ -20,7 +20,7 @@ Mailing List - [Join](https://groups.google.com/forum/#!forum/cylondata/join)
 
 # Get Started
 
-We can use Conda to install PyCylon. 
+We can use Conda to install PyCylon. At the moment Cylon only works on Linux Systems. THe Conda binaries need Ubunut 16.04 or higher. 
 
 ```bash
 conda create -n cylon-0.4.0 -c cylondata pycylon python=3.7
@@ -69,6 +69,17 @@ You can run the above program in the Conda environment by using the following co
 ```bash
 mpirun -np 2 python <name of your python file>
 ```
+
+# Compiling Cylon
+
+Refer to the documentation on how to compile Cylon
+
+[Compiling on Linux](https://cylondata.org/docs/)
+
+# Licence
+
+Cylon uses the Apache Lincense Version 2.0
+
 
 
 
