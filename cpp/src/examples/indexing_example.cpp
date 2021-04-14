@@ -896,7 +896,6 @@ int arrow_indexer_test_1() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
@@ -957,7 +956,6 @@ int arrow_indexer_str_test_1() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
@@ -1018,7 +1016,6 @@ int arrow_indexer_test_2() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   int start_column_idx = 0;
@@ -1082,7 +1079,6 @@ int arrow_indexer_str_test_2() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   int start_column_idx = 0;
@@ -1146,7 +1142,6 @@ int arrow_indexer_test_3() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   std::vector<int> columns = {0, 1};
@@ -1209,7 +1204,6 @@ int arrow_indexer_str_test_3() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   std::vector<int> columns = {0, 1};
@@ -1273,7 +1267,6 @@ int arrow_indexer_test_4() {
   builder.Finish(&search_index_array);
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
@@ -1335,7 +1328,6 @@ int arrow_indexer_str_test_4() {
   builder.Finish(&search_index_array);
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
@@ -1399,7 +1391,6 @@ int arrow_indexer_test_5() {
   int end_column_idx = 1;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
@@ -1463,7 +1454,6 @@ int arrow_indexer_str_test_5() {
   int end_column_idx = 1;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
@@ -1526,7 +1516,6 @@ int arrow_indexer_test_6() {
   std::vector<int> columns = {0, 1};
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
@@ -1589,7 +1578,6 @@ int arrow_indexer_str_test_6() {
   std::vector<int> columns = {0, 1};
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
@@ -1655,7 +1643,6 @@ int arrow_iloc_indexer_test_1() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
@@ -1719,7 +1706,6 @@ int arrow_iloc_indexer_test_2() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
@@ -1782,7 +1768,6 @@ int arrow_iloc_indexer_test_3() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
@@ -1844,7 +1829,6 @@ int arrow_iloc_indexer_test_4() {
   builder.Finish(&search_index_array);
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
@@ -1909,7 +1893,6 @@ int arrow_iloc_indexer_test_5() {
   int end_column_idx = 1;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
@@ -1973,7 +1956,6 @@ int arrow_iloc_indexer_test_6() {
   std::vector<int> columns = {0, 1};
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
@@ -2111,7 +2093,6 @@ int arrow_filter_example() {
   std::vector<int> columns = {0, 1};
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
@@ -2219,7 +2200,6 @@ int arrow_range_indexer_test() {
   builder.Finish(&search_index_array);
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  std::shared_ptr<cylon::BaseIndex> base_index;
   cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
