@@ -57,14 +57,14 @@ class ArrowBaseIndexer {
 					 const std::shared_ptr<Table> &input_table,
 					 std::shared_ptr<cylon::Table> &output) = 0;
 
-  virtual IndexingSchema GetIndexingSchema() = 0;
+  virtual IndexingType GetIndexingType() = 0;
 
 };
 
 class ArrowLocIndexer : public ArrowBaseIndexer {
 
  public:
-  explicit ArrowLocIndexer(IndexingSchema indexing_schema) : ArrowBaseIndexer(), indexing_schema_(indexing_schema) {
+  explicit ArrowLocIndexer(IndexingType indexing_type) : ArrowBaseIndexer(), indexing_type_(indexing_type) {
 
   };
 
@@ -97,10 +97,10 @@ class ArrowLocIndexer : public ArrowBaseIndexer {
 			 const std::vector<int> &columns,
 			 const std::shared_ptr<Table> &input_table,
 			 std::shared_ptr<cylon::Table> &output) override;
-  IndexingSchema GetIndexingSchema() override;
+  IndexingType GetIndexingType() override;
 
  private:
-  IndexingSchema indexing_schema_;
+  IndexingType indexing_type_;
 
 };
 
@@ -110,7 +110,7 @@ class ArrowLocIndexer : public ArrowBaseIndexer {
 
 class ArrowILocIndexer : public ArrowLocIndexer{
  public:
-  ArrowILocIndexer(IndexingSchema indexing_schema);
+  ArrowILocIndexer(IndexingType indexing_type);
 
   Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
 			 const std::shared_ptr<arrow::Scalar> &end_index,
@@ -141,10 +141,10 @@ class ArrowILocIndexer : public ArrowLocIndexer{
 			 const std::vector<int> &columns,
 			 const std::shared_ptr<Table> &input_table,
 			 std::shared_ptr<cylon::Table> &output) override;
-  IndexingSchema GetIndexingSchema() override;
+  IndexingType GetIndexingType() override;
 
  private:
-  IndexingSchema indexing_schema_;
+  IndexingType indexing_type_;
 };
 
 

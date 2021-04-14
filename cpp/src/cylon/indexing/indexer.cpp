@@ -2,20 +2,20 @@
 #include "indexer.hpp"
 #include "index_utils.hpp"
 
-cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingSchema indexing_schema,
+cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingType indexing_type,
 											   std::shared_ptr<arrow::Array> &sub_index_arr,
 											   arrow::MemoryPool *pool,
 											   std::shared_ptr<cylon::BaseArrowIndex> &loc_index) {
 
-  if (indexing_schema == cylon::IndexingSchema::Hash) {
+  if (indexing_type == cylon::IndexingType::Hash) {
 	return cylon::IndexUtil::BuildArrowHashIndexFromArray(sub_index_arr, pool, loc_index);
-  } else if (indexing_schema == cylon::IndexingSchema::Range) {
+  } else if (indexing_type == cylon::IndexingType::Range) {
 	return cylon::IndexUtil::BuildArrowRangeIndexFromArray(sub_index_arr->length(), pool, loc_index);
-  } else if (indexing_schema == cylon::IndexingSchema::Linear) {
+  } else if (indexing_type == cylon::IndexingType::Linear) {
 	return cylon::IndexUtil::BuildArrowLinearIndexFromArrowArray(sub_index_arr, pool, loc_index);
-  } else if (indexing_schema == cylon::IndexingSchema::BinaryTree) {
+  } else if (indexing_type == cylon::IndexingType::BinaryTree) {
 	return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
-  } else if (indexing_schema == cylon::IndexingSchema::BTree) {
+  } else if (indexing_type == cylon::IndexingType::BTree) {
 	return cylon::Status(cylon::Code::NotImplemented, "B-Tree Indexing not implemented!");
   } else {
 	return cylon::Status(cylon::Code::TypeError, "Unknown indexing scheme.");
@@ -25,7 +25,7 @@ cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingSchema indexing_sc
 cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseArrowIndex> &index,
 											 std::vector<int64_t> &sub_index_locations,
 											 std::shared_ptr<cylon::Table> &output,
-											 cylon::IndexingSchema indexing_schema) {
+											 cylon::IndexingType indexing_type) {
 
   std::shared_ptr<cylon::BaseArrowIndex> loc_index;
   std::shared_ptr<arrow::Array> sub_index_pos_arr;
@@ -62,7 +62,7 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
 
   sub_index_arr = datum.ValueOrDie().make_array();
 
-  cylon_status = BuildArrowIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
+  cylon_status = BuildArrowIndexFromArrayByKernel(indexing_type, sub_index_arr, pool, loc_index);
 
   if (!cylon_status.is_ok()) {
 	LOG(ERROR) << "Error occurred in resolving kernel for index array building";
@@ -77,7 +77,7 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
 											 int64_t &start_pos,
 											 int64_t &end_pos,
 											 std::shared_ptr<cylon::Table> &output,
-											 cylon::IndexingSchema indexing_schema) {
+											 cylon::IndexingType indexing_type) {
   std::shared_ptr<cylon::BaseArrowIndex> loc_index;
   std::shared_ptr<arrow::Array> sub_index_arr;
   auto ctx = output->GetContext();
@@ -85,7 +85,7 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   auto index_arr = index->GetIndexArray();
 
   sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
-  BuildArrowIndexFromArrayByKernel(indexing_schema, sub_index_arr, pool, loc_index);
+  BuildArrowIndexFromArrayByKernel(indexing_type, sub_index_arr, pool, loc_index);
   output->Set_ArrowIndex(loc_index, false);
   return cylon::Status::OK();
 
@@ -321,7 +321,7 @@ cylon::Status cylon::CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar
 											 bool &is_unique) {
 
   is_unique = true;
-  if (index->GetSchema() == cylon::IndexingSchema::Range) {
+  if (index->GetIndexingType() == cylon::IndexingType::Range) {
 	return cylon::Status::OK();
   } else {
 	auto index_arr = index->GetIndexArray();
@@ -382,7 +382,7 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
 	return status_build;
   }
 
-  status_build = SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_schema_);
+  status_build = SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_type_);
 
   if (!status_build.is_ok()) {
 	LOG(ERROR) << "Error occurred in setting index for output table";
@@ -432,7 +432,7 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
 	return status_build;
   }
 
-  status_build = SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_schema_);
+  status_build = SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_type_);
 
   if (!status_build.is_ok()) {
 	LOG(ERROR) << "Error occurred in setting index for output table";
@@ -470,7 +470,7 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
 	return status_build;
   }
 
-  status_build = SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_schema_);
+  status_build = SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_type_);
 
   if (!status_build.is_ok()) {
 	LOG(ERROR) << "Error occurred in setting index for output table";
@@ -510,7 +510,7 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &i
 	return status;
   }
 
-  status = SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_schema_);
+  status = SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_type_);
 
   if (!status.is_ok()) {
 	LOG(ERROR) << "Error occurred in setting index for output table";
@@ -558,7 +558,7 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &i
 	return status;
   }
 
-  status = SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_schema_);
+  status = SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_type_);
 
   if (!status.is_ok()) {
 	LOG(ERROR) << "Error occurred in setting index for output table";
@@ -596,7 +596,7 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &i
 	return status;
   }
 
-  status = SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_schema_);
+  status = SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_type_);
 
   if (!status.is_ok()) {
 	LOG(ERROR) << "Error occurred in setting index for output table";
@@ -605,12 +605,12 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &i
 
   return cylon::Status::OK();
 }
-cylon::IndexingSchema cylon::ArrowLocIndexer::GetIndexingSchema() {
-  return indexing_schema_;
+cylon::IndexingType cylon::ArrowLocIndexer::GetIndexingType() {
+  return indexing_type_;
 }
 
-cylon::ArrowILocIndexer::ArrowILocIndexer(cylon::IndexingSchema indexing_schema)
-	: ArrowLocIndexer(indexing_schema), indexing_schema_(indexing_schema) {}
+cylon::ArrowILocIndexer::ArrowILocIndexer(cylon::IndexingType indexing_type)
+	: ArrowLocIndexer(indexing_type), indexing_type_(indexing_type) {}
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> &start_index,
 										   const std::shared_ptr<arrow::Scalar> &end_index,
 										   const int column_index,
@@ -872,6 +872,6 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &
 
   return Status::OK();
 }
-cylon::IndexingSchema cylon::ArrowILocIndexer::GetIndexingSchema() {
-  return ArrowLocIndexer::GetIndexingSchema();
+cylon::IndexingType cylon::ArrowILocIndexer::GetIndexingType() {
+  return ArrowLocIndexer::GetIndexingType();
 }

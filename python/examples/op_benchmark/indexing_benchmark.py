@@ -4,7 +4,7 @@ import numpy as np
 import pycylon as cn
 from pycylon import Table
 from pycylon.io import CSVWriteOptions
-from pycylon.indexing.index import IndexingSchema
+from pycylon.indexing.index import IndexingType
 import argparse
 from bench_util import get_dataframe
 
@@ -22,7 +22,7 @@ Run benchmark:
 
 
 def indexing_op(num_rows: int, num_cols: int, duplication_factor: float):
-    from pycylon.indexing.index import IndexingSchema
+    from pycylon.indexing.index import IndexingType
     ctx: cn.CylonContext = cn.CylonContext(config=None, distributed=False)
     pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
     filter_column = pdf.columns[0]
@@ -32,7 +32,7 @@ def indexing_op(num_rows: int, num_cols: int, duplication_factor: float):
     filter_values = filter_column_data.values.tolist()[0:pdf.shape[0] // 2]
     tb = Table.from_pandas(ctx, pdf)
     cylon_indexing_time = time.time()
-    tb.set_index(filter_column, indexing_schema=IndexingSchema.HASH, drop=True)
+    tb.set_index(filter_column, indexing_type=IndexingType.LINEAR, drop=True)
     cylon_indexing_time = time.time() - cylon_indexing_time
     pdf_indexing_time = time.time()
     pdf.set_index(filter_column, drop=True, inplace=True)

@@ -26,7 +26,7 @@ cylon::Status cylon::IndexUtil::BuildArrowHashIndex(const std::shared_ptr<Table>
   return cylon::Status::OK();
 }
 
-cylon::Status cylon::IndexUtil::BuildArrowIndex(const cylon::IndexingSchema schema,
+cylon::Status cylon::IndexUtil::BuildArrowIndex(const cylon::IndexingType schema,
 												const std::shared_ptr<Table> &input,
 												const int index_column,
 												std::shared_ptr<cylon::BaseArrowIndex> &index) {
@@ -41,7 +41,7 @@ cylon::Status cylon::IndexUtil::BuildArrowIndex(const cylon::IndexingSchema sche
   return cylon::Status(cylon::Code::Invalid, "Invalid indexing schema");
 }
 
-cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingSchema schema,
+cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingType schema,
 													const std::shared_ptr<Table> &input,
 													const std::shared_ptr<arrow::Array> &index_array,
 													std::shared_ptr<Table> &output) {
@@ -49,15 +49,15 @@ cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingSc
   std::shared_ptr<cylon::BaseArrowIndex> index;
   auto ctx = input->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
-  if (schema == cylon::IndexingSchema::Range) {
+  if (schema == cylon::IndexingType::Range) {
 	status = BuildArrowRangeIndexFromArray(index_array->length(), pool, index);
-  } else if (schema == cylon::IndexingSchema::Linear) {
+  } else if (schema == cylon::IndexingType::Linear) {
 	status = BuildArrowLinearIndexFromArrowArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array), pool, index);
-  } else if (schema == cylon::IndexingSchema::Hash) {
+  } else if (schema == cylon::IndexingType::Hash) {
 	status = BuildArrowHashIndexFromArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array), pool, index);
-  } else if (schema == cylon::IndexingSchema::BinaryTree) {
+  } else if (schema == cylon::IndexingType::BinaryTree) {
 	status =  cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
-  } else if (schema == cylon::IndexingSchema::BTree) {
+  } else if (schema == cylon::IndexingType::BTree) {
 	status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
   } else {
 	status = cylon::Status(cylon::Code::Invalid, "Invalid schema");
@@ -81,7 +81,7 @@ cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingSc
 }
 
 
-cylon::Status cylon::IndexUtil::BuildArrowIndex(cylon::IndexingSchema schema,
+cylon::Status cylon::IndexUtil::BuildArrowIndex(cylon::IndexingType schema,
 												const std::shared_ptr<Table> &input,
 												int index_column,
 												bool drop,

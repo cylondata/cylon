@@ -19,7 +19,7 @@
 
 namespace cylon {
 
-enum IndexingSchema {
+enum IndexingType {
   Range = 0,
   Linear = 1,
   Hash = 2,
@@ -64,7 +64,7 @@ class BaseArrowIndex {
 
   virtual int GetSize() const;
 
-  virtual IndexingSchema GetSchema() = 0;
+  virtual IndexingType GetIndexingType() = 0;
 
   virtual arrow::MemoryPool *GetPool() const;
 
@@ -230,8 +230,8 @@ class ArrowHashIndex : public BaseArrowIndex {
 	return is_unique;
   }
 
-  IndexingSchema GetSchema() override {
-	return IndexingSchema::Hash;
+  IndexingType GetIndexingType() override {
+	return IndexingType::Hash;
   }
 
  private:
@@ -396,8 +396,8 @@ class ArrowHashIndex<arrow::StringType, arrow::util::string_view> : public BaseA
 	return is_unique;
   }
 
-  IndexingSchema GetSchema() override {
-	return IndexingSchema::Hash;
+  IndexingType GetIndexingType() override {
+	return IndexingType::Hash;
   }
 
  private:
@@ -431,7 +431,7 @@ class ArrowRangeIndex : public BaseArrowIndex {
   std::shared_ptr<arrow::Array> GetIndexArray() override;
   int GetColId() const override;
   int GetSize() const override;
-  IndexingSchema GetSchema() override;
+  IndexingType GetIndexingType() override;
   arrow::MemoryPool *GetPool() const override;
   bool IsUnique() override;
 
@@ -467,7 +467,7 @@ class ArrowLinearIndex : public BaseArrowIndex {
   std::shared_ptr<arrow::Array> GetIndexArray() override;
   int GetColId() const override;
   int GetSize() const override;
-  IndexingSchema GetSchema() override;
+  IndexingType GetIndexingType() override;
   arrow::MemoryPool *GetPool() const override;
   bool IsUnique() override;
 

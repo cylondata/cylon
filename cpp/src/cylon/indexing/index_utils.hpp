@@ -13,18 +13,18 @@ class IndexUtil {
 
  public:
 
-  static Status BuildArrowIndexFromArray(const IndexingSchema schema,
+  static Status BuildArrowIndexFromArray(const IndexingType schema,
 									const std::shared_ptr<Table> &input,
 									const std::shared_ptr<arrow::Array> &index_array,
 									std::shared_ptr<Table> &output);
 
-  static Status BuildArrowIndex(IndexingSchema schema,
+  static Status BuildArrowIndex(IndexingType schema,
 								const std::shared_ptr<Table> &input,
 								int index_column,
 								bool drop,
 								std::shared_ptr<Table> &output);
 
-  static Status BuildArrowIndex(const IndexingSchema schema,
+  static Status BuildArrowIndex(const IndexingType schema,
 								const std::shared_ptr<Table> &input,
 								const int index_column,
 								std::shared_ptr<cylon::BaseArrowIndex> &index);

@@ -48,9 +48,9 @@ int test_iloc_operations();
 
 int test_reset_index();
 
-int test_loc_operations(cylon::IndexingSchema schema);
+int test_loc_operations(cylon::IndexingType schema);
 
-int test_str_loc_operations(cylon::IndexingSchema schema);
+int test_str_loc_operations(cylon::IndexingType schema);
 
 int print_arrow_array(std::shared_ptr<arrow::Array> &arr);
 
@@ -130,9 +130,9 @@ int create_int64_arrow_array(arrow::Int64Builder &builder,
 
 int main(int argc, char *argv[]) {
 
-  std::vector<cylon::IndexingSchema> schemas{cylon::IndexingSchema::Range,
-											 cylon::IndexingSchema::Linear,
-											 cylon::IndexingSchema::Hash};
+  std::vector<cylon::IndexingType> schemas{cylon::IndexingType::Range,
+										   cylon::IndexingType::Linear,
+										   cylon::IndexingType::Hash};
 //  for (auto schema : schemas) {
 //    test_loc_operations(schema);
 //  }
@@ -896,7 +896,7 @@ int arrow_indexer_test_1() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
@@ -906,7 +906,7 @@ int arrow_indexer_test_1() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -956,7 +956,7 @@ int arrow_indexer_str_test_1() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
@@ -966,7 +966,7 @@ int arrow_indexer_str_test_1() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1016,7 +1016,7 @@ int arrow_indexer_test_2() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   int start_column_idx = 0;
   int end_column_idx = 1;
@@ -1029,7 +1029,7 @@ int arrow_indexer_test_2() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1079,7 +1079,7 @@ int arrow_indexer_str_test_2() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   int start_column_idx = 0;
   int end_column_idx = 1;
@@ -1092,7 +1092,7 @@ int arrow_indexer_str_test_2() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1142,7 +1142,7 @@ int arrow_indexer_test_3() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   std::vector<int> columns = {0, 1};
 
@@ -1154,7 +1154,7 @@ int arrow_indexer_test_3() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1204,7 +1204,7 @@ int arrow_indexer_str_test_3() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   std::vector<int> columns = {0, 1};
 
@@ -1216,7 +1216,7 @@ int arrow_indexer_str_test_3() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1267,7 +1267,7 @@ int arrow_indexer_test_4() {
   builder.Finish(&search_index_array);
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
@@ -1277,7 +1277,7 @@ int arrow_indexer_test_4() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1328,7 +1328,7 @@ int arrow_indexer_str_test_4() {
   builder.Finish(&search_index_array);
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
@@ -1338,7 +1338,7 @@ int arrow_indexer_str_test_4() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1391,7 +1391,7 @@ int arrow_indexer_test_5() {
   int end_column_idx = 1;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
@@ -1401,7 +1401,7 @@ int arrow_indexer_test_5() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1454,7 +1454,7 @@ int arrow_indexer_str_test_5() {
   int end_column_idx = 1;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
@@ -1464,7 +1464,7 @@ int arrow_indexer_str_test_5() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1516,7 +1516,7 @@ int arrow_indexer_test_6() {
   std::vector<int> columns = {0, 1};
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
@@ -1526,7 +1526,7 @@ int arrow_indexer_test_6() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1578,7 +1578,7 @@ int arrow_indexer_str_test_6() {
   std::vector<int> columns = {0, 1};
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
@@ -1588,7 +1588,7 @@ int arrow_indexer_str_test_6() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1643,7 +1643,7 @@ int arrow_iloc_indexer_test_1() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+  cylon::IndexingType schema = cylon::IndexingType::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
 
@@ -1653,7 +1653,7 @@ int arrow_iloc_indexer_test_1() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1706,7 +1706,7 @@ int arrow_iloc_indexer_test_2() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+  cylon::IndexingType schema = cylon::IndexingType::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
 
@@ -1716,7 +1716,7 @@ int arrow_iloc_indexer_test_2() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1768,7 +1768,7 @@ int arrow_iloc_indexer_test_3() {
   std::cout << "Main Start Index : " << start_idx->ToString() << ", " << end_idx->ToString() << std::endl;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+  cylon::IndexingType schema = cylon::IndexingType::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
 
@@ -1778,7 +1778,7 @@ int arrow_iloc_indexer_test_3() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1829,7 +1829,7 @@ int arrow_iloc_indexer_test_4() {
   builder.Finish(&search_index_array);
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+  cylon::IndexingType schema = cylon::IndexingType::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
 
@@ -1839,7 +1839,7 @@ int arrow_iloc_indexer_test_4() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1893,7 +1893,7 @@ int arrow_iloc_indexer_test_5() {
   int end_column_idx = 1;
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+  cylon::IndexingType schema = cylon::IndexingType::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
 
@@ -1903,7 +1903,7 @@ int arrow_iloc_indexer_test_5() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -1956,7 +1956,7 @@ int arrow_iloc_indexer_test_6() {
   std::vector<int> columns = {0, 1};
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+  cylon::IndexingType schema = cylon::IndexingType::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, false, output1);
 
@@ -1966,7 +1966,7 @@ int arrow_iloc_indexer_test_6() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
@@ -2093,7 +2093,7 @@ int arrow_filter_example() {
   std::vector<int> columns = {0, 1};
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Linear;
+  cylon::IndexingType schema = cylon::IndexingType::Linear;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
@@ -2103,7 +2103,7 @@ int arrow_filter_example() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
 
   auto index_array_ = output1->GetArrowIndex()->GetIndexArray();
@@ -2200,7 +2200,7 @@ int arrow_range_indexer_test() {
   builder.Finish(&search_index_array);
 
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  cylon::IndexingSchema schema = cylon::IndexingSchema::Range;
+  cylon::IndexingType schema = cylon::IndexingType::Range;
 
   status = cylon::IndexUtil::BuildArrowIndex(schema, input, 0, true, output1);
 
@@ -2210,7 +2210,7 @@ int arrow_range_indexer_test() {
 	LOG(INFO) << "Index Built Successfully!";
   }
 
-  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetSchema() << std::endl;
+  std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
   std::cout << "Output Table Array Size : " << output1->GetArrowIndex()->GetIndexArray()->length() << std::endl;
 

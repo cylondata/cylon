@@ -163,7 +163,7 @@ int ArrowLinearIndex::GetColId() const {
 int ArrowLinearIndex::GetSize() const {
   return index_array_->length();
 }
-IndexingSchema ArrowLinearIndex::GetSchema() {
+IndexingType ArrowLinearIndex::GetIndexingType() {
   return Linear;
 }
 arrow::MemoryPool *ArrowLinearIndex::GetPool() const {
@@ -311,7 +311,7 @@ int ArrowRangeIndex::GetColId() const {
 int ArrowRangeIndex::GetSize() const {
   return end_;
 }
-IndexingSchema ArrowRangeIndex::GetSchema() {
+IndexingType ArrowRangeIndex::GetIndexingType() {
   return Range;
 }
 arrow::MemoryPool *ArrowRangeIndex::GetPool() const {
