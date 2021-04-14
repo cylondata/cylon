@@ -998,32 +998,32 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<in
   return Unique(shuffle_out, cols, out);
 }
 
-std::shared_ptr<BaseIndex> Table::GetIndex() { return base_index_; }
+//std::shared_ptr<BaseIndex> Table::GetIndex() { return base_index_; }
 
 std::shared_ptr<BaseArrowIndex> Table::GetArrowIndex() { return base_arrow_index_; }
 
-Status Table::Set_Index(std::shared_ptr<cylon::BaseIndex> &index, bool drop_index) {
-  if (table_->column(0)->num_chunks() > 1) {
-	const arrow::Result<std::shared_ptr<arrow::Table>> &res =
-		table_->CombineChunks(cylon::ToArrowPool(ctx));
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-	table_ = res.ValueOrDie();
-  }
-
-  base_index_ = index;
-
-  if (drop_index) {
-	arrow::Result<std::shared_ptr<arrow::Table>> result =
-		table_->RemoveColumn(base_index_->GetColId());
-	if (result.status() != arrow::Status::OK()) {
-	  LOG(ERROR) << "Column removal failed ";
-	  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-	}
-	table_ = std::move(result.ValueOrDie());
-  }
-
-  return Status::OK();
-}
+//Status Table::Set_Index(std::shared_ptr<cylon::BaseIndex> &index, bool drop_index) {
+//  if (table_->column(0)->num_chunks() > 1) {
+//	const arrow::Result<std::shared_ptr<arrow::Table>> &res =
+//		table_->CombineChunks(cylon::ToArrowPool(ctx));
+//	RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
+//	table_ = res.ValueOrDie();
+//  }
+//
+//  base_index_ = index;
+//
+//  if (drop_index) {
+//	arrow::Result<std::shared_ptr<arrow::Table>> result =
+//		table_->RemoveColumn(base_index_->GetColId());
+//	if (result.status() != arrow::Status::OK()) {
+//	  LOG(ERROR) << "Column removal failed ";
+//	  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+//	}
+//	table_ = std::move(result.ValueOrDie());
+//  }
+//
+//  return Status::OK();
+//}
 
 Status Table::Set_ArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool drop_index) {
   if (table_->column(0)->num_chunks() > 1) {
@@ -1048,23 +1048,23 @@ Status Table::Set_ArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool
   return Status::OK();
 }
 
-Status Table::ResetIndex(bool drop) {
-  if (base_index_) {
-	if (typeid(base_index_) == typeid(cylon::RangeIndex)) {
-	  LOG(INFO) << "Table contains a range index";
-	} else {
-	  LOG(INFO) << "Table contains a non-range index";
-	  auto index_arr = base_index_->GetIndexArray();
-	  auto pool = cylon::ToArrowPool(ctx);
-	  base_index_ = std::make_shared<cylon::RangeIndex>(0, table_->num_rows(), 1, pool);
-	  if (!drop) {
-		LOG(INFO) << "Reset Index Drop case";
-		AddColumn(0, "index", index_arr);
-	  }
-	}
-  }
-  return Status::OK();
-}
+//Status Table::ResetIndex(bool drop) {
+//  if (base_index_) {
+//	if (typeid(base_index_) == typeid(cylon::RangeIndex)) {
+//	  LOG(INFO) << "Table contains a range index";
+//	} else {
+//	  LOG(INFO) << "Table contains a non-range index";
+//	  auto index_arr = base_index_->GetIndexArray();
+//	  auto pool = cylon::ToArrowPool(ctx);
+//	  base_index_ = std::make_shared<cylon::RangeIndex>(0, table_->num_rows(), 1, pool);
+//	  if (!drop) {
+//		LOG(INFO) << "Reset Index Drop case";
+//		AddColumn(0, "index", index_arr);
+//	  }
+//	}
+//  }
+//  return Status::OK();
+//}
 
 Status Table::ResetArrowIndex(bool drop) {
   if (base_arrow_index_) {

@@ -83,29 +83,29 @@ SECTION("testing loc index 6") {
   }
 }
 
-SECTION("testing loc index 7") {
-  for(size_t i = 0; i<output_files.size(); i++) {
-    auto schema = indexing_schemas.at(i);
-    auto output_file = output_files.at(i);
-    REQUIRE(test::TestIndexLocOperation7(path1, schema, output_file) == 0);
-  }
-}
-
-SECTION("testing loc index 8") {
-  for(size_t i = 0; i<output_files.size(); i++) {
-    auto schema = indexing_schemas.at(i);
-    auto output_file = output_files.at(i);
-    REQUIRE(test::TestIndexLocOperation8(path1, schema, output_file) == 0);
-  }
-}
-
-SECTION("testing loc index 9") {
-for(size_t i = 0; i<output_files.size(); i++) {
-  auto schema = indexing_schemas.at(i);
-  auto output_file = output_files.at(i);
-  REQUIRE(test::TestIndexLocOperation9(path1, schema, output_file) == 0);
-}
-}
+//SECTION("testing loc index 7") {
+//  for(size_t i = 0; i<output_files.size(); i++) {
+//    auto schema = indexing_schemas.at(i);
+//    auto output_file = output_files.at(i);
+//    REQUIRE(test::TestIndexLocOperation7(path1, schema, output_file) == 0);
+//  }
+//}
+//
+//SECTION("testing loc index 8") {
+//  for(size_t i = 0; i<output_files.size(); i++) {
+//    auto schema = indexing_schemas.at(i);
+//    auto output_file = output_files.at(i);
+//    REQUIRE(test::TestIndexLocOperation8(path1, schema, output_file) == 0);
+//  }
+//}
+//
+//SECTION("testing loc index 9") {
+//for(size_t i = 0; i<output_files.size(); i++) {
+//  auto schema = indexing_schemas.at(i);
+//  auto output_file = output_files.at(i);
+//  REQUIRE(test::TestIndexLocOperation9(path1, schema, output_file) == 0);
+//}
+//}
 
 }
 
