@@ -25,12 +25,12 @@ from pycylon.data.table cimport CTable
 
 
 cdef extern from "../../../cpp/src/cylon/indexing/index.hpp" namespace "cylon":
-    cdef enum CIndexingSchema 'cylon::IndexingSchema':
-        CRANGE 'cylon::IndexingSchema::Range'
-        CLINEAR 'cylon::IndexingSchema::Linear'
-        CHASH 'cylon::IndexingSchema::Hash'
-        CBINARYTREE 'cylon::IndexingSchema::BinaryTree'
-        CBTREE 'cylon::IndexingSchema::BTree'
+    cdef enum CIndexingType 'cylon::IndexingType':
+        CRANGE 'cylon::IndexingType::Range'
+        CLINEAR 'cylon::IndexingType::Linear'
+        CHASH 'cylon::IndexingType::Hash'
+        CBINARYTREE 'cylon::IndexingType::BinaryTree'
+        CBTREE 'cylon::IndexingType::BTree'
 
 
 cdef extern from "../../../cpp/src/cylon/indexing/index.hpp" namespace "cylon":
@@ -38,7 +38,7 @@ cdef extern from "../../../cpp/src/cylon/indexing/index.hpp" namespace "cylon":
         CBaseArrowIndex(int col_id, int size, shared_ptr[CCylonContext] & ctx)
 
         shared_ptr[CArrowArray] GetIndexArray()
-        CIndexingSchema GetSchema()
+        CIndexingType GetIndexingType()
 
 
 cdef class BaseArrowIndex:
@@ -55,7 +55,7 @@ cdef class BaseArrowIndex:
 
 cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon":
     cdef cppclass CArrowLocIndexer "cylon::ArrowLocIndexer":
-        CArrowLocIndexer(CIndexingSchema indexing_schema)
+        CArrowLocIndexer(CIndexingType indexing_type)
 
         CStatus loc(const shared_ptr[CArrowScalar] & start_index, const shared_ptr[CArrowScalar] & end_index,
                     const int column_index,
@@ -81,7 +81,7 @@ cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon"
 
 cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon":
     cdef cppclass CArrowILocIndexer "cylon::ArrowILocIndexer":
-        CArrowILocIndexer(CIndexingSchema indexing_schema)
+        CArrowILocIndexer(CIndexingType indexing_type)
 
         CStatus loc(const shared_ptr[CArrowScalar] & start_index, const shared_ptr[CArrowScalar] & end_index,
                     const int column_index,
@@ -108,10 +108,10 @@ cdef extern from "../../../cpp/src/cylon/indexing/indexer.hpp" namespace "cylon"
 cdef class ArrowLocIndexer:
     cdef:
         shared_ptr[CArrowLocIndexer] indexer_shd_ptr
-        CIndexingSchema c_indexing_schema
+        CIndexingType c_indexing_type
 
 
 cdef class ArrowILocIndexer:
     cdef:
         shared_ptr[CArrowILocIndexer] indexer_shd_ptr
-        CIndexingSchema c_indexing_schema
+        CIndexingType c_indexing_type

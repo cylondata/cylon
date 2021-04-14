@@ -54,7 +54,7 @@ from pycylon.indexing.index_utils import IndexUtil
 
 from pycylon.indexing.index cimport CBaseArrowIndex
 from pycylon.indexing.index import BaseArrowIndex
-from pycylon.indexing.index import IndexingSchema
+from pycylon.indexing.index import IndexingType
 from pycylon.indexing.index import PyLocIndexer
 
 from pycylon.util.type_utils import get_arrow_type
@@ -76,7 +76,7 @@ cdef class Table:
     def __init__(self, pyarrow_table=None, context=None):
         self.initialize(pyarrow_table, context)
         self._index = None
-        self._indexing_schema = IndexingSchema.RANGE
+        self._indexing_type = IndexingType.RANGE
 
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
         """
@@ -87,7 +87,7 @@ cdef class Table:
         """
         self.initialize(pyarrow_table, context)
         self._index = None
-        self._indexing_schema = IndexingSchema.RANGE
+        self._indexing_type = IndexingType.RANGE
 
     def initialize(self, pyarrow_table=None, context=None):
         cdef shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
@@ -2054,63 +2054,7 @@ cdef class Table:
         '''
         return self.get_index()
 
-    # def _set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
-    #               drop: bool = False):
-    #     '''
-    #     Set Index
-    #     Operation takes place inplace.
-    #     Args:
-    #         key: pycylon.indexing.index.BaseIndex
-    #
-    #     Returns: None
-    #
-    #     Examples
-    #     --------
-    #
-    #     >>> tb
-    #            col-1  col-2  col-3
-    #         0      1      5      9
-    #         1      2      6     10
-    #         2      3      7     11
-    #         3      4      8     12
-    #
-    #
-    #     >>> tb.set_index(['a', 'b', 'c', 'd'])
-    #
-    #     >>> tb.index
-    #         <pycylon.indexing.index.BaseIndex object at 0x7fa72c2b6ca0>
-    #
-    #     >>> tb.index.index_values
-    #         ['a', 'b', 'c', 'd']
-    #
-    #     >>> tb.set_index('col-1', IndexingSchema.LINEAR, True)
-    #
-    #            col-2  col-3
-    #         1      5      9
-    #         2      6     10
-    #         3      7     11
-    #         4      8     12
-    #     NOTE: indexing value is not exposed to print functions
-    #     >>> tb.index.index_values
-    #         [ 1, 2, 3, 4]
-    #     '''
-    #
-    #     # TODO: Multi-Indexing support: https://github.com/cylondata/cylon/issues/233
-    #     # TODO: Enhancing: https://github.com/cylondata/cylon/issues/235
-    #     cdef shared_ptr[CTable] indexed_cylon_table
-    #     cdef shared_ptr[CBaseIndex] c_base_index
-    #
-    #     if isinstance(key, BaseIndex):
-    #         c_base_index = pycylon_unwrap_base_index(key)
-    #         self.table_shd_ptr.get().Set_Index(c_base_index, False)
-    #     else:
-    #         indexed_table = process_index_by_value(key=key, table=self,
-    #                                                index_schema=indexing_schema,
-    #                                                drop_index=drop, method="default")
-    #         indexed_cylon_table = pycylon_unwrap_table(indexed_table)
-    #         self.init(indexed_cylon_table)
-
-    def set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
+    def set_index(self, key, indexing_type: IndexingType = IndexingType.LINEAR,
                         drop: bool = False):
         '''
         Set Index
@@ -2161,7 +2105,7 @@ cdef class Table:
             self.table_shd_ptr.get().Set_ArrowIndex(c_base_arrow_index, False)
         else:
             indexed_table = process_index_by_value(key=key, table=self,
-                                                   index_schema=indexing_schema,
+                                                   indexing_type=indexing_type,
                                                    drop_index=drop)
             indexed_cylon_table = pycylon_unwrap_table(indexed_table)
             self.init(indexed_cylon_table)
@@ -2349,12 +2293,12 @@ cdef class Table:
         return pycylon_wrap_base_arrow_index(c_index)
 
     @property
-    def indexing_schema(self):
-        return self._indexing_schema
+    def indexing_type(self):
+        return self._indexing_type
 
-    @indexing_schema.setter
-    def indexing_schema(self, schema):
-        self._indexing_schema = schema
+    @indexing_type.setter
+    def indexing_type(self, type):
+        self._indexing_type = type
 
     @property
     def loc(self) -> PyLocIndexer:

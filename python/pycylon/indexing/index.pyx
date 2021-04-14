@@ -17,7 +17,7 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string
 from pyarrow.lib cimport CArray as CArrowArray
 from pyarrow.lib cimport CScalar as CArrowScalar
-from pycylon.indexing.index cimport CIndexingSchema
+from pycylon.indexing.index cimport CIndexingType
 from pycylon.indexing.index cimport CArrowLocIndexer
 from pycylon.indexing.index cimport CBaseArrowIndex
 from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table, pyarrow_wrap_array,
@@ -47,12 +47,12 @@ ctypedef double DOUBLE
 ctypedef float FLOAT
 ctypedef int INT
 
-cpdef enum IndexingSchema:
-    RANGE = CIndexingSchema.CRANGE
-    LINEAR = CIndexingSchema.CLINEAR
-    HASH = CIndexingSchema.CHASH
-    BINARYTREE = CIndexingSchema.CBINARYTREE
-    BTREE = CIndexingSchema.CBTREE
+cpdef enum IndexingType:
+    RANGE = CIndexingType.CRANGE
+    LINEAR = CIndexingType.CLINEAR
+    HASH = CIndexingType.CHASH
+    BINARYTREE = CIndexingType.CBINARYTREE
+    BTREE = CIndexingType.CBTREE
 
 
 def _resolve_column_index_from_column_name(column_name, cn_table) -> int:
@@ -77,8 +77,8 @@ cdef class BaseArrowIndex:
         py_arw_index_arr = pyarrow_wrap_array(index_arr)
         return py_arw_index_arr
 
-    def get_schema(self) -> IndexingSchema:
-        return IndexingSchema(self.bindex_shd_ptr.get().GetSchema())
+    def get_type(self) -> IndexingType:
+        return IndexingType(self.bindex_shd_ptr.get().GetIndexingType())
 
     @property
     def index_values(self):
@@ -104,8 +104,8 @@ cdef class BaseArrowIndex:
 
 
 cdef class ArrowLocIndexer:
-    def __cinit__(self, CIndexingSchema indexing_schema):
-        self.indexer_shd_ptr = make_shared[CArrowLocIndexer](indexing_schema)
+    def __cinit__(self, CIndexingType indexing_type):
+        self.indexer_shd_ptr = make_shared[CArrowLocIndexer](indexing_type)
 
     def _fix_partial_slice_inidices(self, start_index, end_index, index):
         if start_index and end_index:
@@ -219,8 +219,8 @@ cdef class ArrowLocIndexer:
 
 
 cdef class ArrowILocIndexer:
-    def __cinit__(self, CIndexingSchema indexing_schema):
-        self.indexer_shd_ptr = make_shared[CArrowILocIndexer](indexing_schema)
+    def __cinit__(self, CIndexingType indexing_type):
+        self.indexer_shd_ptr = make_shared[CArrowILocIndexer](indexing_type)
 
     def _fix_partial_slice_inidices(self, start_index, end_index, index):
         if start_index and end_index:
@@ -356,9 +356,9 @@ class PyLocIndexer:
     def __init__(self, cn_table, mode):
         self._cn_table = cn_table
         if mode == "loc":
-            self._loc_indexer = ArrowLocIndexer(cn_table.get_index().get_schema())
+            self._loc_indexer = ArrowLocIndexer(cn_table.get_index().get_type())
         elif mode == "iloc":
-            self._loc_indexer = ArrowILocIndexer(cn_table.get_index().get_schema())
+            self._loc_indexer = ArrowILocIndexer(cn_table.get_index().get_type())
 
     def _resolve_column_index_from_column_name(self, column_name) -> int:
         index = None

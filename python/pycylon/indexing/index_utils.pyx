@@ -23,8 +23,8 @@ from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 from pycylon.data.table cimport CTable
 from pycylon.data.table import Table
-from pycylon.indexing.index cimport CIndexingSchema
-from pycylon.indexing.index import IndexingSchema
+from pycylon.indexing.index cimport CIndexingType
+from pycylon.indexing.index import IndexingType
 from pycylon.indexing.index_utils cimport CIndexUtil
 
 from pycylon.api.lib cimport (pycylon_wrap_context, pycylon_unwrap_context, pycylon_unwrap_table,
@@ -36,19 +36,19 @@ import pyarrow as pa
 cdef class IndexUtil:
 
     @staticmethod
-    def build_arrow_index(indexing_schema: IndexingSchema, table: Table, column: int, drop: bool):
+    def build_arrow_index(indexing_type: IndexingType, table: Table, column: int, drop: bool):
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
-        CIndexUtil.BuildArrowIndex(indexing_schema, input, column, drop, output)
+        CIndexUtil.BuildArrowIndex(indexing_type, input, column, drop, output)
         cn_table = pycylon_wrap_table(output)
         #cn_table.indexing_schema = indexing_schema
         return cn_table
 
     @staticmethod
-    def build_arrow_index_from_list(indexing_schema: IndexingSchema, table: Table, index_arr: List):
+    def build_arrow_index_from_list(indexing_type: IndexingType, table: Table, index_arr: List):
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
         arrow_index_array = pa.array(index_arr)
         cdef shared_ptr[CArrowArray] c_index_array = pyarrow_unwrap_array(arrow_index_array)
-        CIndexUtil.BuildArrowIndexFromArray(indexing_schema, input, c_index_array, output)
+        CIndexUtil.BuildArrowIndexFromArray(indexing_type, input, c_index_array, output)
         return pycylon_wrap_table(output)
