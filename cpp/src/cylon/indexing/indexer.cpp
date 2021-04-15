@@ -92,43 +92,26 @@ cylon::Status GetColumnIndicesFromLimits(const int &start_column,
 										 std::vector<int> &selected_columns) {
 
   if (start_column > end_column) {
-	LOG(ERROR) << "Invalid column boundaries";
-	return cylon::Status(cylon::Code::Invalid);
+	return cylon::Status(cylon::Code::Invalid, "Invalid column boundaries");
   }
-
   for (int s = start_column; s <= end_column; s++) {
 	selected_columns.push_back(s);
   }
-
   return cylon::Status::OK();
 }
 
 cylon::Status FilterColumnsFromTable(const std::shared_ptr<cylon::Table> &input_table,
 									 const std::vector<int> &filter_columns,
 									 std::shared_ptr<cylon::Table> &output) {
-
-  cylon::Status status_build;
   auto ctx = input_table->GetContext();
   arrow::Result<std::shared_ptr<arrow::Table>> result = input_table->get_table()->SelectColumns(filter_columns);
-
-  if (!result.status().ok()) {
-	LOG(ERROR) << "Column selection failed in loc operation!";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-  }
-
-  status_build = cylon::Table::FromArrowTable(ctx, result.ValueOrDie(), output);
-
-  if (!status_build.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating Cylon Table from Arrow Table";
-	return status_build;
-  }
-
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::Table::FromArrowTable(ctx, result.ValueOrDie(), output));
   return cylon::Status::OK();
 }
 
 static cylon::Status ResolveArrowILocIndices(const std::shared_ptr<arrow::Array> &input_indices,
 											 std::vector<int64_t> &output_indices) {
-  cylon::Status status;
   std::shared_ptr<arrow::Int64Array> input_indices_ar = std::static_pointer_cast<arrow::Int64Array>(input_indices);
   for (int64_t ix = 0; ix < input_indices->length(); ix++) {
 	int64_t val = input_indices_ar->Value(ix);
@@ -140,14 +123,7 @@ static cylon::Status ResolveArrowILocIndices(const std::shared_ptr<arrow::Array>
 cylon::Status ResolveArrowLocIndices(const std::shared_ptr<arrow::Array> &input_indices,
 									 const std::shared_ptr<cylon::BaseArrowIndex> &index,
 									 std::vector<int64_t> &output_indices) {
-  cylon::Status status;
-
-  status = index->LocationByVector(input_indices, output_indices);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred when retrieving output indices from index";
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(index->LocationByVector(input_indices, output_indices));
   return cylon::Status::OK();
 }
 
@@ -156,43 +132,21 @@ cylon::Status GetTableFromIndices(const std::shared_ptr<cylon::Table> &input_tab
 								  std::shared_ptr<cylon::Table> &output) {
 
   std::shared_ptr<arrow::Array> out_idx;
-  arrow::Status arrow_status;
   auto ctx = input_table->GetContext();
-  auto pool = cylon::ToArrowPool(ctx);
+  auto const pool = cylon::ToArrowPool(ctx);
   arrow::compute::ExecContext fn_ctx(pool);
   arrow::Int64Builder idx_builder(pool);
-  const arrow::Datum input_table_datum(input_table->get_table());
-
-  arrow_status = idx_builder.AppendValues(filter_indices);
-
-  if (!arrow_status.ok()) {
-	LOG(ERROR) << "Error occurred in appending filter indices";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
-  }
-
-  arrow_status = idx_builder.Finish(&out_idx);
-
-  if (!arrow_status.ok()) {
-	LOG(ERROR) << "Error occurred in creating Arrow filter indices";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
-  }
-
-  const arrow::Datum filter_indices_datum(out_idx);
-
-  arrow::Result<arrow::Datum> result = arrow::compute::Take(input_table_datum,
-															filter_indices_datum,
+  auto const arrow_table = input_table->get_table();
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.AppendValues(filter_indices));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.Finish(&out_idx));
+  arrow::Result<arrow::Datum> result = arrow::compute::Take(arrow_table,
+															out_idx,
 															arrow::compute::TakeOptions::Defaults(),
 															&fn_ctx);
-
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
   std::shared_ptr<arrow::Table> filter_table;
   filter_table = result.ValueOrDie().table();
-  if (!result.status().ok()) {
-	LOG(ERROR) << "Error occurred in subset retrieval from table";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-  }
-
-  cylon::Table::FromArrowTable(ctx, filter_table, output);
-
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::Table::FromArrowTable(ctx, filter_table, output));
   return cylon::Status::OK();
 }
 
@@ -201,28 +155,18 @@ cylon::Status GetTableFromArrayIndices(const std::shared_ptr<cylon::Table> &inpu
 									   std::shared_ptr<cylon::Table> &output) {
 
   std::shared_ptr<arrow::Array> out_idx;
-  arrow::Status arrow_status;
   auto ctx = input_table->GetContext();
-  auto pool = cylon::ToArrowPool(ctx);
+  auto const pool = cylon::ToArrowPool(ctx);
+  auto const arrow_table = input_table->get_table();
   arrow::compute::ExecContext fn_ctx(pool);
-  const arrow::Datum input_table_datum(input_table->get_table());
-
-  const arrow::Datum filter_indices_datum(filter_indices);
-
-  arrow::Result<arrow::Datum> result = arrow::compute::Take(input_table_datum,
-															filter_indices_datum,
+  arrow::Result<arrow::Datum> result = arrow::compute::Take(arrow_table,
+															filter_indices,
 															arrow::compute::TakeOptions::Defaults(),
 															&fn_ctx);
-
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
   std::shared_ptr<arrow::Table> filter_table;
   filter_table = result.ValueOrDie().table();
-  if (!result.status().ok()) {
-	LOG(ERROR) << "Error occurred in subset retrieval from table";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-  }
-
-  cylon::Table::FromArrowTable(ctx, filter_table, output);
-
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::Table::FromArrowTable(ctx, filter_table, output));
   return cylon::Status::OK();
 }
 
