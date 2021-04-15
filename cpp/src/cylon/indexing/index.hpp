@@ -401,7 +401,7 @@ class ArrowLinearIndex : public BaseArrowIndex {
  public:
   ArrowLinearIndex(int col_id, int size, std::shared_ptr<CylonContext> &ctx);
   ArrowLinearIndex(int col_id, int size, arrow::MemoryPool *pool);
-  ArrowLinearIndex(int col_id, int size, arrow::MemoryPool *pool, std::shared_ptr<arrow::Array> &index_array)
+  ArrowLinearIndex(int col_id, int size, arrow::MemoryPool *pool, const std::shared_ptr<arrow::Array> &index_array)
 	  : BaseArrowIndex(col_id, size, pool), index_array_(index_array) {
   }
 

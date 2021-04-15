@@ -111,7 +111,7 @@ cylon::Status cylon::IndexUtil::BuildArrowRangeIndexFromArray(int64_t size,
   index = std::make_shared<ArrowRangeIndex>(0, size, 1, pool);
   return Status::OK();
 }
-cylon::Status cylon::IndexUtil::BuildArrowHashIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
+cylon::Status cylon::IndexUtil::BuildArrowHashIndexFromArray(const std::shared_ptr<arrow::Array> &index_values,
 															 arrow::MemoryPool *pool,
 															 std::shared_ptr<cylon::BaseArrowIndex> &index) {
   switch (index_values->type()->id()) {
