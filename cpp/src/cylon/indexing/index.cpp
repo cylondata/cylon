@@ -88,9 +88,7 @@ Status LinearArrowIndexKernel::BuildIndex(arrow::MemoryPool *pool,
 
   if (input_table->column(0)->num_chunks() > 1) {
 	const arrow::Result<std::shared_ptr<arrow::Table>> &res = input_table->CombineChunks(pool);
-	if (!res.status().ok()) {
-	  LOG(ERROR) << "Error occurred in combining chunks in table";
-	}
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
 	input_table = res.ValueOrDie();
   }
 
@@ -383,7 +381,6 @@ Status ArrowRangeIndexKernel::BuildIndex(arrow::MemoryPool *pool,
 										 std::shared_ptr<arrow::Table> &input_table,
 										 const int index_column,
 										 std::shared_ptr<BaseArrowIndex> &base_arrow_index) {
-  std::shared_ptr<ArrowRangeIndex> range_index;
   base_arrow_index = std::make_shared<ArrowRangeIndex>(0, input_table->num_rows(), 1, pool);
   return cylon::Status::OK();
 }
