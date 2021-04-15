@@ -3,7 +3,6 @@
 
 namespace cylon {
 
-
 std::unique_ptr<ArrowIndexKernel> CreateArrowHashIndexKernel(std::shared_ptr<arrow::Table> input_table,
 															 int index_column) {
   switch (input_table->column(index_column)->type()->id()) {
@@ -39,9 +38,9 @@ std::unique_ptr<ArrowIndexKernel> CreateArrowIndexKernel(std::shared_ptr<arrow::
 
 bool CompareArraysForUniqueness(const std::shared_ptr<arrow::Array> &index_arr) {
   auto result = arrow::compute::Unique(index_arr);
-  if(!result.status().ok()) {
-    LOG(ERROR) << "Error occurred in index array unique check";
-    return false;
+  if (!result.status().ok()) {
+	LOG(ERROR) << "Error occurred in index array unique check";
+	return false;
   }
   auto unique_arr = result.ValueOrDie();
   return unique_arr->length() == index_arr->length();
@@ -215,34 +214,12 @@ Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &se
   std::shared_ptr<arrow::Array> out_idx;
   arrow::compute::ExecContext fn_ctx(GetPool());
   arrow::Int64Builder idx_builder(GetPool());
-  const arrow::Datum input_table(input);
-
-  status = LocationByValue(search_param, filter_location);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in obtaining filter indices by index value";
-	return status;
-  }
-
-  arrow_status = idx_builder.AppendValues(filter_location);
-  if (!arrow_status.ok()) {
-	LOG(ERROR) << "Failed appending filter locations";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
-  }
-
-  arrow_status = idx_builder.Finish(&out_idx);
-
-  if (!arrow_status.ok()) {
-	LOG(ERROR) << "Failed index array builder finish";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
-  }
-  const arrow::Datum filter_indices(out_idx);
+  RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(search_param, filter_location));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.AppendValues(filter_location));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.Finish(&out_idx));
   arrow::Result<arrow::Datum>
-	  result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
-  if (!result.ok()) {
-	LOG(ERROR) << "Failed in filtering table by filter indices";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-  }
+	  result = arrow::compute::Take(input, out_idx, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
   output = result.ValueOrDie().table();
   return Status::OK();
 }
@@ -252,23 +229,21 @@ std::shared_ptr<arrow::Array> ArrowRangeIndex::GetIndexAsArray() {
 
   arrow::Int64Builder builder(pool);
 
-  std::shared_ptr<arrow::Int64Array> index_array;
-
-  std::vector<int64_t> vec(GetSize(), 1);
+  std::vector<int64_t> vec(GetSize());
 
   for (int64_t ix = 0; ix < GetSize(); ix += GetStep()) {
 	vec[ix] = ix;
   }
 
   builder.AppendValues(vec);
-  arrow_status = builder.Finish(&index_array);
+  arrow_status = builder.Finish(&index_arr_);
 
   if (!arrow_status.ok()) {
 	LOG(ERROR) << "Error occurred in retrieving index";
 	return nullptr;
   }
 
-  return index_array;
+  return index_arr_;
 }
 void ArrowRangeIndex::SetIndexArray(const std::shared_ptr<arrow::Array> &index_arr) {
   index_arr_ = index_arr;
@@ -310,14 +285,11 @@ int ArrowRangeIndex::GetStep() const {
 }
 Status ArrowRangeIndex::LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
 										 std::vector<int64_t> &filter_location) {
-
   std::shared_ptr<arrow::Int64Array> cast_search_param = std::static_pointer_cast<arrow::Int64Array>(search_param);
-
-  for(int64_t ix=0; ix < cast_search_param->length() ; ix++) {
-    int64_t index_value = cast_search_param->Value(ix);
-    filter_location.push_back(index_value);
+  for (int64_t ix = 0; ix < cast_search_param->length(); ix++) {
+	int64_t index_value = cast_search_param->Value(ix);
+	filter_location.push_back(index_value);
   }
-
   return Status::OK();
 };
 ArrowRangeIndexKernel::ArrowRangeIndexKernel() {

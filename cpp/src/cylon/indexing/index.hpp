@@ -101,17 +101,12 @@ class ArrowHashIndex : public BaseArrowIndex {
 						 const std::shared_ptr<arrow::Table> &input,
 						 std::vector<int64_t> &filter_locations,
 						 std::shared_ptr<arrow::Table> &output) override {
-
-	arrow::Status arrow_status;
-	cylon::Status status;
 	std::shared_ptr<arrow::Array> out_idx;
 	arrow::compute::ExecContext fn_ctx(GetPool());
 	arrow::Int64Builder idx_builder(GetPool());
-	//const arrow::Datum input_table(input);
 	RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(search_param, filter_locations));
 	RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.AppendValues(filter_locations));
 	RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.Finish(&out_idx));
-	//const arrow::Datum filter_indices(out_idx);
 	arrow::Result<arrow::Datum>
 		result = arrow::compute::Take(input, out_idx, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
 	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
@@ -138,7 +133,7 @@ class ArrowHashIndex : public BaseArrowIndex {
 	  find_index = ret->second;
 	  return Status::OK();
 	}
-	return Status(cylon::Code::IndexError);
+	return Status(cylon::Code::IndexError, "Failed to retrieve value from index");
   }
 
   Status LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
@@ -154,7 +149,7 @@ class ArrowHashIndex : public BaseArrowIndex {
 
   std::shared_ptr<arrow::Array> GetIndexAsArray() override {
 
-	using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
+	//using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
 	using ARROW_BUILDER_T = typename arrow::TypeTraits<ARROW_T>::BuilderType;
 
 	arrow::Status arrow_status;
@@ -162,23 +157,21 @@ class ArrowHashIndex : public BaseArrowIndex {
 
 	ARROW_BUILDER_T builder(pool);
 
-	std::shared_ptr<ARROW_ARRAY_T> index_array;
-
-	std::vector<CTYPE> vec(GetSize(), 1);
+	std::vector<CTYPE> vec(GetSize());
 
 	for (const auto &x: *map_) {
 	  vec[x.second] = x.first;
 	}
 
 	builder.AppendValues(vec);
-	arrow_status = builder.Finish(&index_array);
+	arrow_status = builder.Finish(&index_arr_);
 
 	if (!arrow_status.ok()) {
 	  LOG(ERROR) << "Error occurred in retrieving index";
 	  return nullptr;
 	}
 
-	return index_array;
+	return index_arr_;
   }
 
   int GetColId() const override {
@@ -245,8 +238,6 @@ class ArrowHashIndex<arrow::StringType, arrow::util::string_view> : public BaseA
 						 const std::shared_ptr<arrow::Table> &input,
 						 std::vector<int64_t> &filter_locations,
 						 std::shared_ptr<arrow::Table> &output) override {
-	arrow::Status arrow_status;
-	cylon::Status status;
 	std::shared_ptr<arrow::Array> out_idx;
 	arrow::compute::ExecContext fn_ctx(GetPool());
 	arrow::Int64Builder idx_builder(GetPool());
@@ -263,7 +254,7 @@ class ArrowHashIndex<arrow::StringType, arrow::util::string_view> : public BaseA
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
 						 std::vector<int64_t> &find_index) override {
 	std::shared_ptr<SCALAR_TYPE> casted_value = std::static_pointer_cast<SCALAR_TYPE>(search_param);
-	const std::string val = (casted_value->value->ToString());
+	const std::string &val = (casted_value->value->ToString());
 	auto ret = map_->equal_range(val);
 	for (auto it = ret.first; it != ret.second; ++it) {
 	  find_index.push_back(it->second);
@@ -273,7 +264,7 @@ class ArrowHashIndex<arrow::StringType, arrow::util::string_view> : public BaseA
 
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) override {
 	std::shared_ptr<SCALAR_TYPE> casted_value = std::static_pointer_cast<SCALAR_TYPE>(search_param);
-	const std::string val = (casted_value->value->ToString());
+	const std::string &val = (casted_value->value->ToString());
 	auto ret = map_->find(val);
 	if (ret != map_->end()) {
 	  find_index = ret->second;
@@ -298,23 +289,21 @@ class ArrowHashIndex<arrow::StringType, arrow::util::string_view> : public BaseA
 
 	arrow::StringBuilder builder(pool);
 
-	std::shared_ptr<arrow::StringArray> index_array;
-
-	std::vector<std::string> vec(GetSize(), "");
+	std::vector<std::string> vec(GetSize());
 
 	for (const auto &x: *map_) {
 	  vec[x.second] = x.first.to_string();
 	}
 
 	builder.AppendValues(vec);
-	arrow_status = builder.Finish(&index_array);
+	arrow_status = builder.Finish(&index_arr_);
 
 	if (!arrow_status.ok()) {
 	  LOG(ERROR) << "Error occurred in retrieving index";
 	  return nullptr;
 	}
 
-	return index_array;
+	return index_arr_;
   }
 
   int GetColId() const override {
