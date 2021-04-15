@@ -22,7 +22,7 @@ std::unique_ptr<ArrowIndexKernel> CreateArrowHashIndexKernel(std::shared_ptr<arr
 	case arrow::Type::FLOAT:return std::make_unique<FloatArrowHashIndexKernel>();
 	case arrow::Type::DOUBLE:return std::make_unique<DoubleArrowHashIndexKernel>();
 	case arrow::Type::STRING:return std::make_unique<StringArrowHashIndexKernel>();
-	case arrow::Type::BINARY:return nullptr;//std::make_unique<BinaryHashIndexKernel>();
+	case arrow::Type::BINARY:return std::make_unique<StringArrowHashIndexKernel>();
 	default: return std::make_unique<ArrowRangeIndexKernel>();
   }
 
@@ -37,19 +37,24 @@ std::unique_ptr<ArrowIndexKernel> CreateArrowIndexKernel(std::shared_ptr<arrow::
   }
 }
 
-cylon::Status CompareArraysForUniqueness(std::shared_ptr<arrow::Array> &index_arr, bool &is_unique) {
-  Status s;
-  auto result = arrow::compute::Unique(index_arr);
+// TODO:: Remove commented lines
+//cylon::Status CompareArraysForUniqueness(std::shared_ptr<arrow::Array> &index_arr, bool *is_unique) {
+//
+//  auto result = arrow::compute::Unique(index_arr);
+//  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+//  auto unique_arr = result.ValueOrDie();
+//  is_unique = reinterpret_cast<bool *>(unique_arr->length() == index_arr->length());
+//  return cylon::Status::OK();
+//}
 
-  if (!result.ok()) {
-	LOG(ERROR) << "Error occurred in unique operation on index array";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+bool CompareArraysForUniqueness(const std::shared_ptr<arrow::Array> &index_arr) {
+  auto result = arrow::compute::Unique(index_arr);
+  if(!result.status().ok()) {
+    LOG(ERROR) << "Error occurred in index array unique check";
+    return false;
   }
   auto unique_arr = result.ValueOrDie();
-
-  is_unique = unique_arr->length() == index_arr->length();
-
-  return cylon::Status::OK();
+  return unique_arr->length() == index_arr->length();
 }
 
 LinearArrowIndexKernel::LinearArrowIndexKernel() {}
@@ -74,6 +79,25 @@ std::shared_ptr<BaseArrowIndex> LinearArrowIndexKernel::BuildIndex(arrow::Memory
 	  std::make_shared<ArrowLinearIndex>(index_column, input_table->num_rows(), pool, index_array);
 
   return index;
+}
+Status LinearArrowIndexKernel::BuildIndex(arrow::MemoryPool *pool,
+										  std::shared_ptr<arrow::Table> &input_table,
+										  const int index_column,
+										  std::shared_ptr<BaseArrowIndex> &base_arrow_index) {
+  std::shared_ptr<arrow::Array> index_array;
+
+  if (input_table->column(0)->num_chunks() > 1) {
+	const arrow::Result<std::shared_ptr<arrow::Table>> &res = input_table->CombineChunks(pool);
+	if (!res.status().ok()) {
+	  LOG(ERROR) << "Error occurred in combining chunks in table";
+	}
+	input_table = res.ValueOrDie();
+  }
+
+  index_array = cylon::util::GetChunkOrEmptyArray(input_table->column(index_column), 0);
+  base_arrow_index = std::make_shared<ArrowLinearIndex>(index_column, input_table->num_rows(), pool, index_array);
+
+  return cylon::Status::OK();
 }
 ArrowLinearIndex::ArrowLinearIndex(int col_id, int size, std::shared_ptr<CylonContext> &ctx) : BaseArrowIndex(col_id,
 																											  size,
@@ -151,7 +175,7 @@ Status ArrowLinearIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &s
 std::shared_ptr<arrow::Array> ArrowLinearIndex::GetIndexAsArray() {
   return index_array_;
 }
-void ArrowLinearIndex::SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) {
+void ArrowLinearIndex::SetIndexArray(const std::shared_ptr<arrow::Array> &index_arr) {
   index_array_ = index_arr;
 }
 std::shared_ptr<arrow::Array> ArrowLinearIndex::GetIndexArray() {
@@ -170,11 +194,7 @@ arrow::MemoryPool *ArrowLinearIndex::GetPool() const {
   return BaseArrowIndex::GetPool();
 }
 bool ArrowLinearIndex::IsUnique() {
-  bool is_unique = false;
-  auto status = CompareArraysForUniqueness(index_array_, is_unique);
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in is unique operation";
-  }
+  const bool is_unique = CompareArraysForUniqueness(index_array_);
   return is_unique;
 }
 Status ArrowLinearIndex::LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
@@ -299,7 +319,7 @@ std::shared_ptr<arrow::Array> ArrowRangeIndex::GetIndexAsArray() {
 
   return index_array;
 }
-void ArrowRangeIndex::SetIndexArray(std::shared_ptr<arrow::Array> &index_arr) {
+void ArrowRangeIndex::SetIndexArray(const std::shared_ptr<arrow::Array> &index_arr) {
   index_arr_ = index_arr;
 }
 std::shared_ptr<arrow::Array> ArrowRangeIndex::GetIndexArray() {
@@ -358,6 +378,14 @@ std::shared_ptr<BaseArrowIndex> ArrowRangeIndexKernel::BuildIndex(arrow::MemoryP
   std::shared_ptr<ArrowRangeIndex> range_index;
   range_index = std::make_shared<ArrowRangeIndex>(0, input_table->num_rows(), 1, pool);
   return range_index;
+}
+Status ArrowRangeIndexKernel::BuildIndex(arrow::MemoryPool *pool,
+										 std::shared_ptr<arrow::Table> &input_table,
+										 const int index_column,
+										 std::shared_ptr<BaseArrowIndex> &base_arrow_index) {
+  std::shared_ptr<ArrowRangeIndex> range_index;
+  base_arrow_index = std::make_shared<ArrowRangeIndex>(0, input_table->num_rows(), 1, pool);
+  return cylon::Status::OK();
 }
 }
 

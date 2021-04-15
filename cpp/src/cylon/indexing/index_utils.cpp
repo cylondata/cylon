@@ -6,6 +6,7 @@ cylon::Status cylon::IndexUtil::BuildArrowHashIndex(const std::shared_ptr<Table>
 											   std::shared_ptr<cylon::BaseArrowIndex> &index) {
 
   std::shared_ptr<arrow::Table> arrow_out;
+  cylon::Status status;
 
   auto table_ = input->get_table();
   auto ctx = input->GetContext();
@@ -19,10 +20,10 @@ cylon::Status cylon::IndexUtil::BuildArrowHashIndex(const std::shared_ptr<Table>
   auto pool = cylon::ToArrowPool(ctx);
 
   std::shared_ptr<cylon::ArrowIndexKernel> kernel = CreateArrowIndexKernel(table_, index_column);
-  std::shared_ptr<cylon::BaseArrowIndex> bi = kernel->BuildIndex(pool, table_, index_column);
-  index = std::move(bi);
+  status = kernel->BuildIndex(pool, table_, index_column, index);
+  RETURN_CYLON_STATUS_IF_FAILED(status);
   auto index_array = cylon::util::GetChunkOrEmptyArray(table_->column(index_column), 0);
-  index->SetIndexArray(index_array);
+  //index->SetIndexArray(index_array);
   return cylon::Status::OK();
 }
 

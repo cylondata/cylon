@@ -44,18 +44,20 @@ class IndexUtil {
   static Status BuildArrowHashIndexFromArrowArray(std::shared_ptr<arrow::Array> &index_values,
 											 arrow::MemoryPool *pool,
 											 std::shared_ptr<cylon::BaseArrowIndex> &index) {
-	using SCALAR_T = typename arrow::TypeTraits<ARROW_T>::ScalarType;
-	using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
-	using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
-	Status s;
-	std::shared_ptr<MMAP_TYPE> out_umm_ptr = std::make_shared<MMAP_TYPE>(index_values->length());
-	std::shared_ptr<SCALAR_T> scalar_val;
-	auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_values);
-	for (int64_t i = reader0->length() - 1; i >= 0; --i) {
-	  auto val = reader0->GetView(i);
-	  out_umm_ptr->emplace(val, i);
-	}
-	index = std::make_shared<ArrowHashIndex<ARROW_T, CTYPE>>(0, index_values->length(), pool, out_umm_ptr);
+
+	// TODO REMOVE the commented code
+//	// TODO:: move this chunk of code to the ArrowHashIndex
+//	using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
+//	Status s;
+//	std::shared_ptr<MMAP_TYPE> out_umm_ptr = std::make_shared<MMAP_TYPE>(index_values->length());
+//	std::shared_ptr<SCALAR_T> scalar_val;
+//	auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_values);
+//	for (int64_t i = reader0->length() - 1; i >= 0; --i) {
+//	  auto val = reader0->GetView(i);
+//	  out_umm_ptr->emplace(val, i);
+//	}
+	// TODO:: move the map inside the ArrowHashIndex
+	index = std::make_shared<ArrowHashIndex<ARROW_T, CTYPE>>(-1, index_values->length(), pool, index_values);
 	index->SetIndexArray(index_values);
 	return Status::OK();
   }
