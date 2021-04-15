@@ -36,8 +36,7 @@ cylon::Status cylon::IndexUtil::BuildArrowIndex(const cylon::IndexingType schema
 
 cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingType schema,
 														 const std::shared_ptr<Table> &input,
-														 const std::shared_ptr<arrow::Array> &index_array,
-														 std::shared_ptr<Table> &output) {
+														 const std::shared_ptr<arrow::Array> &index_array) {
   cylon::Status status;
   std::shared_ptr<cylon::BaseArrowIndex> index;
   auto ctx = input->GetContext();
@@ -60,9 +59,9 @@ cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingTy
   }
   RETURN_CYLON_STATUS_IF_FAILED(status);
   RETURN_CYLON_STATUS_IF_FAILED(input->SetArrowIndex(index, false));
-  output = std::move(input);
   return cylon::Status::OK();
 }
+
 
 cylon::Status cylon::IndexUtil::BuildArrowIndex(cylon::IndexingType schema,
 												const std::shared_ptr<Table> &input,
