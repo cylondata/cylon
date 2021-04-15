@@ -30,46 +30,17 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   std::shared_ptr<cylon::BaseArrowIndex> loc_index;
   std::shared_ptr<arrow::Array> sub_index_pos_arr;
   std::shared_ptr<arrow::Array> sub_index_arr;
-  arrow::Status status;
-  cylon::Status cylon_status;
-
   auto ctx = output->GetContext();
-  auto pool = cylon::ToArrowPool(ctx);
-
-  //LOG(INFO) << "Set Index for location output with Non-RangeIndex";
-  auto index_arr = index->GetIndexArray();
+  auto const pool = cylon::ToArrowPool(ctx);
+  auto const index_arr = index->GetIndexArray();
   arrow::Int64Builder builder(pool);
-  status = builder.AppendValues(sub_index_locations);
-
-  if (!status.ok()) {
-	LOG(ERROR) << "HashIndex array builder append failed!";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
-  }
-
-  status = builder.Finish(&sub_index_pos_arr);
-
-  if (!status.ok()) {
-	LOG(ERROR) << "HashIndex array builder finish failed!";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(status);
-  }
-
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.AppendValues(sub_index_locations));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&sub_index_pos_arr));
   arrow::Result<arrow::Datum> datum = arrow::compute::Take(index_arr, sub_index_pos_arr);
-
-  if (!datum.status().ok()) {
-	LOG(ERROR) << "Sub HashIndex array creation failed!";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(datum.status());
-  }
-
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(datum.status());
   sub_index_arr = datum.ValueOrDie().make_array();
-
-  cylon_status = BuildArrowIndexFromArrayByKernel(indexing_type, sub_index_arr, pool, loc_index);
-
-  if (!cylon_status.is_ok()) {
-	LOG(ERROR) << "Error occurred in resolving kernel for index array building";
-	return cylon_status;
-  }
-
-  output->Set_ArrowIndex(loc_index, false);
+  RETURN_CYLON_STATUS_IF_FAILED(BuildArrowIndexFromArrayByKernel(indexing_type, sub_index_arr, pool, loc_index));
+  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(loc_index, false));
   return cylon::Status::OK();
 }
 
@@ -81,13 +52,11 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   std::shared_ptr<cylon::BaseArrowIndex> loc_index;
   std::shared_ptr<arrow::Array> sub_index_arr;
   auto ctx = output->GetContext();
-  auto pool = cylon::ToArrowPool(ctx);
-  auto index_arr = index->GetIndexArray();
-
+  auto const pool = cylon::ToArrowPool(ctx);
+  auto const index_arr = index->GetIndexArray();
   sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
-  BuildArrowIndexFromArrayByKernel(indexing_type, sub_index_arr, pool, loc_index);
-  output->Set_ArrowIndex(loc_index, false);
-  return cylon::Status::OK();
+  RETURN_CYLON_STATUS_IF_FAILED(BuildArrowIndexFromArrayByKernel(indexing_type, sub_index_arr, pool, loc_index));
+  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(loc_index, false));  return cylon::Status::OK();
 
 }
 
@@ -96,37 +65,11 @@ cylon::Status GetArrowLocFilterIndices(const std::shared_ptr<arrow::Scalar> &sta
 									   const std::shared_ptr<cylon::BaseArrowIndex> &index,
 									   int64_t &s_index,
 									   int64_t &e_index) {
-  cylon::Status status1, status2, status_build;
   std::shared_ptr<arrow::Table> out_artb;
-  bool is_index_unique;
-  status_build = cylon::CheckIsIndexValueUnique(start_index, index, is_index_unique);
-
-  if (!status_build.is_ok()) {
-	std::string error_msg = "Error occurred in checking uniqueness of index value";
-	LOG(ERROR) << error_msg;
-	return cylon::Status(cylon::Code::IndexError, error_msg);
-  }
-
-  if (!is_index_unique) {
-	LOG(ERROR) << "Index value must be unique";
-	return cylon::Status(cylon::Code::KeyError);
-  }
-
-  cylon::CheckIsIndexValueUnique(end_index, index, is_index_unique);
-
-  if (!is_index_unique) {
-	LOG(ERROR) << "Index value must be unique";
-	return cylon::Status(cylon::Code::KeyError);
-  }
-
-  status1 = index->LocationByValue(start_index, s_index);
-  status2 = index->LocationByValue(end_index, e_index);
-
-  if (!(status1.is_ok() and status2.is_ok())) {
-	LOG(ERROR) << "Error occurred in extracting indices!";
-	return cylon::Status(cylon::Code::IndexError);
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::CheckIsIndexValueUnique(start_index, index));
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::CheckIsIndexValueUnique(end_index, index));
+  RETURN_CYLON_STATUS_IF_FAILED(index->LocationByValue(start_index, s_index));
+  RETURN_CYLON_STATUS_IF_FAILED(index->LocationByValue(end_index, e_index));
   return cylon::Status::OK();
 }
 
@@ -135,21 +78,12 @@ cylon::Status SliceTableByRange(const int64_t start_index,
 								const std::shared_ptr<cylon::Table> &input_table,
 								std::shared_ptr<cylon::Table> &output) {
 
-  cylon::Status status_build;
   std::shared_ptr<arrow::Table> out_artb;
-
   auto artb = input_table->get_table();
   auto ctx = input_table->GetContext();
   // + 1 added include the end boundary
   out_artb = artb->Slice(start_index, (end_index - start_index + 1));
-
-  status_build = cylon::Table::FromArrowTable(ctx, out_artb, output);
-
-  if (!status_build.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating loc output table";
-	return status_build;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::Table::FromArrowTable(ctx, out_artb, output));
   return cylon::Status::OK();
 }
 
@@ -317,10 +251,8 @@ cylon::Status GetTableFromArrayIndices(const std::shared_ptr<cylon::Table> &inpu
 
 
 cylon::Status cylon::CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar> &index_value,
-											 const std::shared_ptr<BaseArrowIndex> &index,
-											 bool &is_unique) {
+											 const std::shared_ptr<BaseArrowIndex> &index) {
 
-  is_unique = true;
   if (index->GetIndexingType() == cylon::IndexingType::Range) {
 	return cylon::Status::OK();
   } else {
@@ -333,8 +265,7 @@ cylon::Status cylon::CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar
 		find_cout++;
 	  }
 	  if (find_cout > 1) {
-		is_unique = false;
-		break;
+		return cylon::Status(cylon::Code::IndexError, "Index values are not unique.");
 	  }
 	}
 	return cylon::Status::OK();

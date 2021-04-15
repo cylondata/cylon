@@ -8,8 +8,7 @@
 namespace cylon {
 
 cylon::Status CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar> &index_value,
-									  const std::shared_ptr<BaseArrowIndex> &index,
-									  bool &is_unique);
+									  const std::shared_ptr<BaseArrowIndex> &index);
 
 /**
  * Loc operations
