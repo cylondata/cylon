@@ -48,27 +48,6 @@ bool CompareArraysForUniqueness(const std::shared_ptr<arrow::Array> &index_arr) 
 
 LinearArrowIndexKernel::LinearArrowIndexKernel() {}
 
-std::shared_ptr<BaseArrowIndex> LinearArrowIndexKernel::BuildIndex(arrow::MemoryPool *pool,
-																   std::shared_ptr<arrow::Table> &input_table,
-																   const int index_column) {
-
-  std::shared_ptr<arrow::Array> index_array;
-
-  if (input_table->column(0)->num_chunks() > 1) {
-	const arrow::Result<std::shared_ptr<arrow::Table>> &res = input_table->CombineChunks(pool);
-	if (!res.status().ok()) {
-	  LOG(ERROR) << "Error occurred in combining chunks in table";
-	}
-	input_table = res.ValueOrDie();
-  }
-
-  index_array = cylon::util::GetChunkOrEmptyArray(input_table->column(index_column), 0);
-  auto
-	  index =
-	  std::make_shared<ArrowLinearIndex>(index_column, input_table->num_rows(), pool, index_array);
-
-  return index;
-}
 Status LinearArrowIndexKernel::BuildIndex(arrow::MemoryPool *pool,
 										  std::shared_ptr<arrow::Table> &input_table,
 										  const int index_column,
@@ -226,23 +205,20 @@ Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &se
 std::shared_ptr<arrow::Array> ArrowRangeIndex::GetIndexAsArray() {
   arrow::Status arrow_status;
   auto pool = GetPool();
-
   arrow::Int64Builder builder(pool);
-
   std::vector<int64_t> vec(GetSize());
-
   for (int64_t ix = 0; ix < GetSize(); ix += GetStep()) {
 	vec[ix] = ix;
   }
-
-  builder.AppendValues(vec);
+  arrow_status = builder.AppendValues(vec);
+  if (!arrow_status.ok()) {
+    LOG(ERROR) << "Error occurred when generating range index values with array builder";
+  }
   arrow_status = builder.Finish(&index_arr_);
-
   if (!arrow_status.ok()) {
 	LOG(ERROR) << "Error occurred in retrieving index";
 	return nullptr;
   }
-
   return index_arr_;
 }
 void ArrowRangeIndex::SetIndexArray(const std::shared_ptr<arrow::Array> &index_arr) {
@@ -295,13 +271,7 @@ Status ArrowRangeIndex::LocationByVector(const std::shared_ptr<arrow::Array> &se
 ArrowRangeIndexKernel::ArrowRangeIndexKernel() {
 
 }
-std::shared_ptr<BaseArrowIndex> ArrowRangeIndexKernel::BuildIndex(arrow::MemoryPool *pool,
-																  std::shared_ptr<arrow::Table> &input_table,
-																  const int index_column) {
-  std::shared_ptr<ArrowRangeIndex> range_index;
-  range_index = std::make_shared<ArrowRangeIndex>(0, input_table->num_rows(), 1, pool);
-  return range_index;
-}
+
 Status ArrowRangeIndexKernel::BuildIndex(arrow::MemoryPool *pool,
 										 std::shared_ptr<arrow::Table> &input_table,
 										 const int index_column,

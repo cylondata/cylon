@@ -432,9 +432,9 @@ class ArrowIndexKernel {
   explicit ArrowIndexKernel() {
 
   }
-  virtual std::shared_ptr<BaseArrowIndex> BuildIndex(arrow::MemoryPool *pool,
-													 std::shared_ptr<arrow::Table> &input_table,
-													 const int index_column) = 0;
+//  virtual std::shared_ptr<BaseArrowIndex> BuildIndex(arrow::MemoryPool *pool,
+//													 std::shared_ptr<arrow::Table> &input_table,
+//													 const int index_column) = 0;
 
   virtual cylon::Status BuildIndex(arrow::MemoryPool *pool,
 								   std::shared_ptr<arrow::Table> &input_table,
@@ -446,9 +446,6 @@ class ArrowRangeIndexKernel : public ArrowIndexKernel {
  public:
   ArrowRangeIndexKernel();
 
-  std::shared_ptr<BaseArrowIndex> BuildIndex(arrow::MemoryPool *pool,
-											 std::shared_ptr<arrow::Table> &input_table,
-											 const int index_column) override;
   Status BuildIndex(arrow::MemoryPool *pool,
 					std::shared_ptr<arrow::Table> &input_table,
 					const int index_column,
@@ -461,30 +458,6 @@ class ArrowHashIndexKernel : public ArrowIndexKernel {
 
  public:
   explicit ArrowHashIndexKernel() : ArrowIndexKernel() {}
-  using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
-  using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
-
-  std::shared_ptr<BaseArrowIndex> BuildIndex(arrow::MemoryPool *pool,
-											 std::shared_ptr<arrow::Table> &input_table,
-											 const int index_column) override {
-	const std::shared_ptr<arrow::ChunkedArray> chunked_array = input_table->column(index_column);
-	const std::shared_ptr<arrow::Array> &idx_column = cylon::util::GetChunkOrEmptyArray(chunked_array, 0);
-	std::shared_ptr<MMAP_TYPE> out_umm_ptr = std::make_shared<MMAP_TYPE>(idx_column->length());
-	auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(idx_column);
-	auto start_start = std::chrono::steady_clock::now();
-	for (int64_t i = reader0->length() - 1; i >= 0; --i) {
-	  auto val = reader0->GetView(i);
-	  out_umm_ptr->emplace(val, i);
-	}
-	auto end_time = std::chrono::steady_clock::now();
-	LOG(INFO) << "Pure Indexing creation in "
-			  << std::chrono::duration_cast<std::chrono::milliseconds>(
-				  end_time - start_start).count() << "[ms]";
-	auto index =
-		std::make_shared<ArrowHashIndex<ARROW_T, CTYPE>>(index_column, input_table->num_rows(), pool, idx_column);
-
-	return index;
-  };
 
   Status BuildIndex(arrow::MemoryPool *pool,
 					std::shared_ptr<arrow::Table> &input_table,
@@ -504,10 +477,6 @@ class LinearArrowIndexKernel : public ArrowIndexKernel {
 
  public:
   LinearArrowIndexKernel();
-
-  std::shared_ptr<BaseArrowIndex> BuildIndex(arrow::MemoryPool *pool,
-											 std::shared_ptr<arrow::Table> &input_table,
-											 const int index_column) override;
 
   Status BuildIndex(arrow::MemoryPool *pool,
 					std::shared_ptr<arrow::Table> &input_table,
