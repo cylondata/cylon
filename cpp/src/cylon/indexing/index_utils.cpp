@@ -34,7 +34,7 @@ cylon::Status cylon::IndexUtil::BuildArrowIndex(const cylon::IndexingType schema
 	case Hash: return BuildArrowHashIndex(input, index_column, index);
 	case BinaryTree:break;
 	case BTree:break;
-	default: return Status::OK(); //BuildRangeIndex(input, index);
+	default: BuildArrowRangeIndex(input, index);
   }
   return cylon::Status(cylon::Code::Invalid, "Invalid indexing schema");
 }
@@ -63,21 +63,9 @@ cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingTy
 	case BTree:status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
 	  break;
   }
-
-  if (!status.is_ok()) {
-	std::string error_msg = "Error occurred in building index from array";
-	return cylon::Status(cylon::Code::IndexError, error_msg);
-  }
-
-  status = input->Set_ArrowIndex(index, false);
-
-  if (!status.is_ok()) {
-	std::string error_msg = "Error occurred in setting index to Table";
-	return cylon::Status(cylon::Code::IndexError, error_msg);
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(status);
+  RETURN_CYLON_STATUS_IF_FAILED(input->Set_ArrowIndex(index, false));
   output = std::move(input);
-
   return cylon::Status::OK();
 }
 
@@ -117,12 +105,13 @@ cylon::Status cylon::IndexUtil::BuildArrowRangeIndex(const std::shared_ptr<Table
   std::shared_ptr<cylon::ArrowIndexKernel> kernel = std::make_unique<ArrowRangeIndexKernel>();
   status = kernel->BuildIndex(pool, table_, 0, index);
   RETURN_CYLON_STATUS_IF_FAILED(status);
-  std::vector<int64_t> range_index_values;
+  std::vector<int64_t> range_index_values(input->Rows());
   std::shared_ptr<arrow::Array> index_arr;
   for (int i = 0; i < input->Rows(); ++i) {
 	range_index_values.push_back(i);
   }
   arrow::Int64Builder builder(pool);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(input->Rows()));
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.AppendValues(range_index_values));
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&index_arr));
   index->SetIndexArray(index_arr);
