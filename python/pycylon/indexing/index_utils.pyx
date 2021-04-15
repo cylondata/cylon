@@ -50,5 +50,5 @@ cdef class IndexUtil:
         cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
         arrow_index_array = pa.array(index_arr)
         cdef shared_ptr[CArrowArray] c_index_array = pyarrow_unwrap_array(arrow_index_array)
-        CIndexUtil.BuildArrowIndexFromArray(indexing_type, input, c_index_array, output)
-        return pycylon_wrap_table(output)
+        CIndexUtil.BuildArrowIndexFromArray(indexing_type, input, c_index_array)
+        return pycylon_wrap_table(input)
