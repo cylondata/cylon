@@ -33,14 +33,14 @@ cylon::Status Sum(const std::shared_ptr<cylon::Table> &table,
 
   // do local operation
   arrow::compute::ExecContext exec_ctx(cylon::ToArrowPool(ctx));
-  arrow::Result<arrow::Datum> sum_res = arrow::compute::Sum(input, &exec_ctx);
+  const arrow::Result<arrow::Datum> &sum_res = arrow::compute::Sum(input, &exec_ctx);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(sum_res.status());
 
-  if (sum_res.ok()) {
+  if (ctx->GetWorldSize() > 1) {
     return DoAllReduce(ctx, sum_res.ValueOrDie(), output, data_type, cylon::net::ReduceOp::SUM);
   } else {
-    const auto& status = sum_res.status();
-    LOG(ERROR) << "Local aggregation failed! " << status.message();
-    return cylon::Status(Code::ExecutionError, status.message());
+    output = std::make_shared<Result>(sum_res.ValueOrDie());
+    return Status::OK();
   }
 }
 
@@ -54,13 +54,13 @@ cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx,
   arrow::compute::ExecContext exec_ctx(cylon::ToArrowPool(ctx));
   arrow::compute::CountOptions options(arrow::compute::CountOptions::COUNT_NON_NULL);
   const arrow::Result<arrow::Datum> &count_res = arrow::compute::Count(input, options, &exec_ctx);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(count_res.status());
 
-  if (count_res.ok()) {
+  if (ctx->GetWorldSize() > 1) {
     return DoAllReduce(ctx, count_res.ValueOrDie(), output, data_type, cylon::net::ReduceOp::SUM);
   } else {
-    const auto& status = count_res.status();
-    LOG(ERROR) << "Local aggregation failed! " << status.message();
-    return cylon::Status(Code::ExecutionError, status.message());
+    output = std::make_shared<Result>(count_res.ValueOrDie());
+    return Status::OK();
   }
 }
 
