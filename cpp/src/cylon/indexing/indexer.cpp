@@ -323,10 +323,8 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> 
 										   std::shared_ptr<cylon::Table> &output) {
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
-  std::shared_ptr<arrow::Int64Scalar>
-	  start_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(start_index);
-  std::shared_ptr<arrow::Int64Scalar>
-	  end_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(end_index);
+  std::shared_ptr<arrow::Int64Scalar> start_index_scalar = std::static_pointer_cast<arrow::Int64Scalar>(start_index);
+  std::shared_ptr<arrow::Int64Scalar> end_index_scalar = std::static_pointer_cast<arrow::Int64Scalar>(end_index);
   int64_t start_index_pos = start_index_scalar->value;
   int64_t end_index_pos = end_index_scalar->value;
   RETURN_CYLON_STATUS_IF_FAILED(SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out));
@@ -345,10 +343,8 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> 
 										   std::shared_ptr<cylon::Table> &output) {
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
-  std::shared_ptr<arrow::Int64Scalar>
-	  start_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(start_index);
-  std::shared_ptr<arrow::Int64Scalar>
-	  end_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(end_index);
+  std::shared_ptr<arrow::Int64Scalar> start_index_scalar = std::static_pointer_cast<arrow::Int64Scalar>(start_index);
+  std::shared_ptr<arrow::Int64Scalar> end_index_scalar = std::static_pointer_cast<arrow::Int64Scalar>(end_index);
   int64_t start_index_pos = start_index_scalar->value;
   int64_t end_index_pos = end_index_scalar->value;
   RETURN_CYLON_STATUS_IF_FAILED(SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out));
@@ -368,10 +364,8 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> 
 										   std::shared_ptr<cylon::Table> &output) {
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
-  std::shared_ptr<arrow::Int64Scalar>
-	  start_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(start_index);
-  std::shared_ptr<arrow::Int64Scalar>
-	  end_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(end_index);
+  std::shared_ptr<arrow::Int64Scalar> start_index_scalar = std::static_pointer_cast<arrow::Int64Scalar>(start_index);
+  std::shared_ptr<arrow::Int64Scalar> end_index_scalar = std::static_pointer_cast<arrow::Int64Scalar>(end_index);
   int64_t start_index_pos = start_index_scalar->value;
   int64_t end_index_pos = end_index_scalar->value;
   RETURN_CYLON_STATUS_IF_FAILED(SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out));
