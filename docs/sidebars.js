@@ -1,6 +1,6 @@
 module.exports = {
   someSidebar: {
-    "Setting Up": ['compile'],
+    "Setting Up": ['compile', "conda"],
     "Architecture": ['arch'],
     "Develop": ['cpp', 'python', "java"],
     "Running Examples": ['mpi'],

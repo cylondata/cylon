@@ -283,7 +283,7 @@ Status DistributedJoin(std::shared_ptr<Table> &left, std::shared_ptr<Table> &rig
  * @param output
  * @return <cylon::Status>
  */
-Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
+Status Union(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &second,
              std::shared_ptr<Table> &output);
 
 /**
@@ -303,7 +303,7 @@ Status DistributedUnion(std::shared_ptr<Table> &first, std::shared_ptr<Table> &s
  * @param output
  * @return <cylon::Status>
  */
-Status Subtract(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
+Status Subtract(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &second,
                 std::shared_ptr<Table> &out);
 
 /**
@@ -323,7 +323,7 @@ Status DistributedSubtract(std::shared_ptr<Table> &left, std::shared_ptr<Table> 
  * @param output
  * @return <cylon::Status>
  */
-Status Intersect(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
+Status Intersect(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &second,
                  std::shared_ptr<Table> &output);
 
 /**

@@ -91,18 +91,34 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table);
 /**
  * Create a duplicate of the current array
  */
-arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr,
-                        const std::shared_ptr<arrow::Field> &field, arrow::MemoryPool *pool,
+arrow::Status Duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr, arrow::MemoryPool *pool,
                         std::shared_ptr<arrow::ChunkedArray> &out);
+arrow::Status Duplicate(const std::shared_ptr<arrow::Table> &table, arrow::MemoryPool *pool,
+                        std::shared_ptr<arrow::Table> &out);
 
-arrow::Status SampleTable(std::shared_ptr<arrow::Table> &table, int32_t idx, uint64_t num_samples,
-                          std::shared_ptr<arrow::Array> &out);
+/**
+ * Sample array
+ * @param array
+ * @param num_samples
+ * @param out
+ * @param pool
+ * @return
+ */
+arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &array,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out,
+                          arrow::MemoryPool *pool = arrow::default_memory_pool());
 
-arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array, uint64_t num_samples,
-                          std::shared_ptr<arrow::Array> &out);
+arrow::Status SampleArray(std::shared_ptr<arrow::Table> &table,
+                          int32_t idx,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out,
+                          arrow::MemoryPool *pool = arrow::default_memory_pool());
 
-arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &array, uint64_t num_samples,
-                          std::shared_ptr<arrow::Array> &out);
+arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out,
+                          arrow::MemoryPool *pool = arrow::default_memory_pool());
 
 std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk);
 

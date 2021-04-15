@@ -123,111 +123,191 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table) {
   return arrow::Status::OK();
 }
 
-arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr,
-                        const std::shared_ptr<arrow::Field> &field, arrow::MemoryPool *pool,
+arrow::Status Duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr, arrow::MemoryPool *pool,
                         std::shared_ptr<arrow::ChunkedArray> &out) {
-  size_t size = cArr->chunks().size();
+  int size = cArr->num_chunks();
   std::vector<std::shared_ptr<arrow::Array>> arrays;
-  for (size_t arrayIndex = 0; arrayIndex < size; arrayIndex++) {
-    std::shared_ptr<arrow::Array> arr = cArr->chunk(arrayIndex);
-    std::shared_ptr<arrow::ArrayData> data = arr->data();
+  arrays.reserve(size);
+  for (const auto &arr: cArr->chunks()) {
+    const std::shared_ptr<arrow::ArrayData> &data = arr->data();
     std::vector<std::shared_ptr<arrow::Buffer>> buffers;
     buffers.reserve(data->buffers.size());
-    size_t length = cArr->length();
+    int64_t length = cArr->length();
     for (const auto &buf : data->buffers) {
       if (buf != nullptr) {
-        arrow::Result<std::shared_ptr<arrow::Buffer>> res = buf->CopySlice(0l, buf->size(), pool);
+        const arrow::Result<std::shared_ptr<arrow::Buffer>> &res = buf->CopySlice(0l, buf->size(), pool);
         RETURN_ARROW_STATUS_IF_FAILED(res.status());
-        buffers.push_back(res.ValueOrDie());
+        buffers.emplace_back(res.ValueOrDie());
       } else {
         buffers.push_back(nullptr);
       }
     }
     // lets send this buffer, we need to send the length at this point
-    std::shared_ptr<arrow::ArrayData> new_data =
-        arrow::ArrayData::Make(field->type(), length, buffers);
-    std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
-    arrays.push_back(array);
+    const std::shared_ptr<arrow::ArrayData> &new_data = arrow::ArrayData::Make(cArr->type(), length, buffers);
+    arrays.push_back(arrow::MakeArray(new_data));
   }
-  out = std::make_shared<arrow::ChunkedArray>(arrays, field->type());
+  out = std::make_shared<arrow::ChunkedArray>(arrays, cArr->type());
   return arrow::Status::OK();
 }
 
-template <typename TYPE>
-static inline arrow::Status sample_array(const std::shared_ptr<arrow::ChunkedArray> &ch_array,
-                                         uint64_t num_samples, std::shared_ptr<arrow::Array> &out) {
+arrow::Status Duplicate(const std::shared_ptr<arrow::Table> &table, arrow::MemoryPool *pool,
+                        std::shared_ptr<arrow::Table> &out) {
+  std::shared_ptr<arrow::Schema> schema = table->schema();
+  std::vector<std::shared_ptr<arrow::ChunkedArray>> arrays;
+  arrays.reserve(table->num_columns());
+  for (const auto &carr: table->columns()) {
+    std::shared_ptr<arrow::ChunkedArray> new_carr;
+    RETURN_ARROW_STATUS_IF_FAILED(Duplicate(carr, pool, new_carr));
+    arrays.push_back(std::move(new_carr));
+  }
+
+  out = arrow::Table::Make(std::move(schema), std::move(arrays));
+
+  return arrow::Status::OK();
+}
+
+template<typename TYPE>
+static inline arrow::Status sample_fixed_size_array(const std::shared_ptr<arrow::ChunkedArray> &ch_array,
+                                                    uint64_t num_samples,
+                                                    std::shared_ptr<arrow::Array> &out,
+                                                    arrow::MemoryPool *pool) {
   using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
 
-  ARROW_BUILDER_T builder;
-  auto a_status = builder.Reserve(num_samples);
-  RETURN_ARROW_STATUS_IF_FAILED(a_status);
+  ARROW_BUILDER_T builder(ch_array->type(), pool);
+  RETURN_ARROW_STATUS_IF_FAILED(builder.Reserve(num_samples));
 
-  if (num_samples > 0) {
-    static std::random_device rd;
-    static std::mt19937_64 gen(rd());
+  if (num_samples == 0) {
+    return builder.Finish(&out);
+  }
 
-    int64_t completed_samples = 0, samples_for_chunk, total_len = ch_array->length();
-    for (auto &&arr : ch_array->chunks()) {
-      std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
-      samples_for_chunk =
-          (num_samples * casted_array->length() + total_len - 1) / total_len;  // upper bound
-      samples_for_chunk = std::min(samples_for_chunk, total_len - completed_samples);
-
-      std::uniform_int_distribution<int64_t> distrib(0, casted_array->length() - 1);
-      for (int64_t i = 0; i < samples_for_chunk; i++) {
-        int64_t idx = distrib(gen);
-        builder.UnsafeAppend(casted_array->Value(idx));
-      }
-      completed_samples += samples_for_chunk;
+  // if the num_samples is greater than the array length, dont sample, just return the array
+  if ((int64_t) num_samples >= ch_array->length()) {
+    if (ch_array->num_chunks() > 1) {
+      const auto &res = arrow::Concatenate(ch_array->chunks(), pool);
+      RETURN_ARROW_STATUS_IF_FAILED(res.status());
+      out = res.ValueOrDie();
+    } else {
+      out = ch_array->chunk(0);
     }
+    return arrow::Status::OK();
+  }
 
-    if (builder.length() != (int64_t)num_samples) {
-      return arrow::Status::ExecutionError("sampling failure");
+  // general case - using our own take method here because sampling in chunked arrays is not so efficient in arrow
+  static std::random_device rd;
+  static std::mt19937_64 gen(rd());
+
+  int64_t completed_samples = 0, samples_for_chunk, total_len = ch_array->length();
+  for (auto &&arr : ch_array->chunks()) {
+    std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
+    samples_for_chunk = (num_samples * casted_array->length() + total_len - 1) / total_len;  // upper bound
+    samples_for_chunk = std::min(samples_for_chunk, total_len - completed_samples);
+
+    std::uniform_int_distribution<int64_t> distrib(0, casted_array->length() - 1);
+    for (int64_t i = 0; i < samples_for_chunk; i++) {
+      builder.UnsafeAppend(casted_array->Value(distrib(gen)));
     }
+    completed_samples += samples_for_chunk;
+  }
+
+  if (builder.length() != (int64_t) num_samples) {
+    return arrow::Status::ExecutionError("sampling failure");
   }
 
   return builder.Finish(&out);
 }
 
-arrow::Status SampleTable(std::shared_ptr<arrow::Table> &table, int32_t idx, uint64_t num_samples,
-                          std::shared_ptr<arrow::Array> &out) {
-  return SampleArray(table->column(idx), num_samples, out);
+template<typename TYPE>
+static inline arrow::Status sample_binary_array(const std::shared_ptr<arrow::ChunkedArray> &ch_array,
+                                                uint64_t num_samples,
+                                                std::shared_ptr<arrow::Array> &out,
+                                                arrow::MemoryPool *pool) {
+  using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
+
+  // if num_samples == 0, just finish builder
+  if (num_samples == 0) {
+    ARROW_BUILDER_T builder(ch_array->type(), pool);
+    RETURN_ARROW_STATUS_IF_FAILED(builder.Reserve(0));
+    return builder.Finish(&out);
+  }
+
+  // if the num_samples is greater than the array length, dont sample, just return the array
+  if ((int64_t) num_samples >= ch_array->length()) {
+    if (ch_array->num_chunks() > 1) {
+      const auto &res = arrow::Concatenate(ch_array->chunks(), pool);
+      RETURN_ARROW_STATUS_IF_FAILED(res.status());
+      out = res.ValueOrDie();
+    } else {
+      out = ch_array->chunk(0);
+    }
+    return arrow::Status::OK();
+  }
+
+  // general case
+  static std::random_device rd;
+  static std::mt19937_64 gen(rd());
+  std::uniform_int_distribution<int64_t> distrib(0, ch_array->length() - 1);
+
+  arrow::Int64Builder builder(pool);
+  RETURN_ARROW_STATUS_IF_FAILED(builder.Reserve((int64_t) num_samples));
+  for (uint64_t i = 0; i < num_samples; i++) {
+    builder.UnsafeAppend(distrib(gen));
+  }
+
+  const arrow::Result<arrow::Datum>
+      &res = arrow::compute::Take(ch_array, builder.Finish().ValueOrDie(), arrow::compute::TakeOptions(false));
+  RETURN_ARROW_STATUS_IF_FAILED(res.status());
+
+  out = res.ValueOrDie().make_array();
+
+  return arrow::Status::OK();
 }
 
-arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &arr, uint64_t num_samples,
-                          std::shared_ptr<arrow::Array> &out) {
+arrow::Status SampleArray(std::shared_ptr<arrow::Table> &table,
+                          int32_t idx,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out,
+                          arrow::MemoryPool *pool) {
+  return SampleArray(table->column(idx), num_samples, out, pool);
+}
+
+arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &arr,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out,
+                          arrow::MemoryPool *pool) {
   switch (arr->type()->id()) {
-    case arrow::Type::BOOL:
-      return sample_array<arrow::BooleanType>(arr, num_samples, out);
-    case arrow::Type::UINT8:
-      return sample_array<arrow::UInt8Type>(arr, num_samples, out);
-    case arrow::Type::INT8:
-      return sample_array<arrow::Int8Type>(arr, num_samples, out);
-    case arrow::Type::UINT16:
-      return sample_array<arrow::UInt16Type>(arr, num_samples, out);
-    case arrow::Type::INT16:
-      return sample_array<arrow::Int16Type>(arr, num_samples, out);
-    case arrow::Type::UINT32:
-      return sample_array<arrow::UInt32Type>(arr, num_samples, out);
-    case arrow::Type::INT32:
-      return sample_array<arrow::Int32Type>(arr, num_samples, out);
-    case arrow::Type::UINT64:
-      return sample_array<arrow::UInt32Type>(arr, num_samples, out);
-    case arrow::Type::INT64:
-      return sample_array<arrow::Int64Type>(arr, num_samples, out);
-    case arrow::Type::FLOAT:
-      return sample_array<arrow::FloatType>(arr, num_samples, out);
-    case arrow::Type::DOUBLE:
-      return sample_array<arrow::DoubleType>(arr, num_samples, out);
-    default:
-      return arrow::Status(arrow::StatusCode::Invalid, "unsupported type");
+    case arrow::Type::BOOL:return sample_fixed_size_array<arrow::BooleanType>(arr, num_samples, out, pool);
+    case arrow::Type::UINT8:return sample_fixed_size_array<arrow::UInt8Type>(arr, num_samples, out, pool);
+    case arrow::Type::INT8:return sample_fixed_size_array<arrow::Int8Type>(arr, num_samples, out, pool);
+    case arrow::Type::UINT16:return sample_fixed_size_array<arrow::UInt16Type>(arr, num_samples, out, pool);
+    case arrow::Type::INT16:return sample_fixed_size_array<arrow::Int16Type>(arr, num_samples, out, pool);
+    case arrow::Type::UINT32:return sample_fixed_size_array<arrow::UInt32Type>(arr, num_samples, out, pool);
+    case arrow::Type::INT32:return sample_fixed_size_array<arrow::Int32Type>(arr, num_samples, out, pool);
+    case arrow::Type::UINT64:return sample_fixed_size_array<arrow::UInt32Type>(arr, num_samples, out, pool);
+    case arrow::Type::INT64:return sample_fixed_size_array<arrow::Int64Type>(arr, num_samples, out, pool);
+    case arrow::Type::FLOAT:return sample_fixed_size_array<arrow::FloatType>(arr, num_samples, out, pool);
+    case arrow::Type::DOUBLE:return sample_fixed_size_array<arrow::DoubleType>(arr, num_samples, out, pool);
+    case arrow::Type::DATE32:return sample_fixed_size_array<arrow::Date32Type>(arr, num_samples, out, pool);
+    case arrow::Type::DATE64:return sample_fixed_size_array<arrow::Date64Type>(arr, num_samples, out, pool);
+    case arrow::Type::TIMESTAMP:return sample_fixed_size_array<arrow::TimestampType>(arr, num_samples, out, pool);
+    case arrow::Type::TIME32:return sample_fixed_size_array<arrow::Time32Type>(arr, num_samples, out, pool);
+    case arrow::Type::TIME64:return sample_fixed_size_array<arrow::Time64Type>(arr, num_samples, out, pool);
+    case arrow::Type::STRING: return sample_binary_array<arrow::StringType>(arr, num_samples, out, pool);
+    case arrow::Type::BINARY:return sample_binary_array<arrow::BinaryType>(arr, num_samples, out, pool);
+    case arrow::Type::FIXED_SIZE_BINARY:
+      return sample_fixed_size_array<arrow::FixedSizeBinaryType>(arr,
+                                                                 num_samples,
+                                                                 out,
+                                                                 pool);
+    default:return arrow::Status(arrow::StatusCode::Invalid, "unsupported type");
   }
 }
 
-arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &arr, uint64_t num_samples,
-                          std::shared_ptr<arrow::Array> &out) {
-  return SampleArray(std::make_shared<arrow::ChunkedArray>(arr), num_samples, out);
+arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &arr,
+                          uint64_t num_samples,
+                          std::shared_ptr<arrow::Array> &out,
+                          arrow::MemoryPool *pool) {
+  return SampleArray(std::make_shared<arrow::ChunkedArray>(arr), num_samples, out, pool);
 }
 
 std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk) {
@@ -235,8 +315,9 @@ std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::
     return column->chunk(chunk);
   }
   std::shared_ptr<arrow::Array> out;
-  SampleArray(column, 0, out);
-  return out;
+  const arrow::Status &res = SampleArray(column, 0, out);
+
+  return res.ok() ? out : nullptr;
 }
 }  // namespace util
 }  // namespace cylon

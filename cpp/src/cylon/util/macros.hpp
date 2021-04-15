@@ -52,4 +52,13 @@
     };                              \
   } while (0)
 
+#define COMBINE_CHUNKS_RETURN_CYLON_STATUS(table, pool) \
+  do{                               \
+    if ((table)->column(0)->num_chunks() > 1){        \
+      const auto &res = (table)->CombineChunks((pool)); \
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());\
+      (table) = res.ValueOrDie();                     \
+    }                               \
+  } while (0)
+
 #endif //CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_
