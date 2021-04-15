@@ -7,19 +7,19 @@ cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingType indexing_type
 											   arrow::MemoryPool *pool,
 											   std::shared_ptr<cylon::BaseArrowIndex> &loc_index) {
 
-  if (indexing_type == cylon::IndexingType::Hash) {
-	return cylon::IndexUtil::BuildArrowHashIndexFromArray(sub_index_arr, pool, loc_index);
-  } else if (indexing_type == cylon::IndexingType::Range) {
-	return cylon::IndexUtil::BuildArrowRangeIndexFromArray(sub_index_arr->length(), pool, loc_index);
-  } else if (indexing_type == cylon::IndexingType::Linear) {
-	return cylon::IndexUtil::BuildArrowLinearIndexFromArrowArray(sub_index_arr, pool, loc_index);
-  } else if (indexing_type == cylon::IndexingType::BinaryTree) {
-	return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
-  } else if (indexing_type == cylon::IndexingType::BTree) {
-	return cylon::Status(cylon::Code::NotImplemented, "B-Tree Indexing not implemented!");
-  } else {
-	return cylon::Status(cylon::Code::TypeError, "Unknown indexing scheme.");
+  switch (indexing_type) {
+	case cylon::Range:
+	  return cylon::IndexUtil::BuildArrowRangeIndexFromArray(sub_index_arr->length(), pool, loc_index);
+	case cylon::Linear:
+	  return cylon::IndexUtil::BuildArrowLinearIndexFromArrowArray(sub_index_arr, pool, loc_index);
+	case cylon::Hash:
+	  return cylon::IndexUtil::BuildArrowHashIndexFromArray(sub_index_arr, pool, loc_index);
+	case cylon::BinaryTree:
+	  return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
+	case cylon::BTree:
+	  return cylon::Status(cylon::Code::NotImplemented, "B-Tree Indexing not implemented!");
   }
+  return cylon::Status(cylon::Code::TypeError, "Unknown indexing type.");
 }
 
 cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseArrowIndex> &index,
@@ -210,8 +210,8 @@ cylon::Status ResolveArrowLocIndices(const std::shared_ptr<arrow::Array> &input_
 
   status = index->LocationByVector(input_indices, output_indices);
 
-  if(!status.is_ok()) {
-    LOG(ERROR) << "Error occurred when retrieving output indices from index";
+  if (!status.is_ok()) {
+	LOG(ERROR) << "Error occurred when retrieving output indices from index";
   }
 
   return cylon::Status::OK();
@@ -263,8 +263,8 @@ cylon::Status GetTableFromIndices(const std::shared_ptr<cylon::Table> &input_tab
 }
 
 cylon::Status GetTableFromArrayIndices(const std::shared_ptr<cylon::Table> &input_table,
-								  const std::shared_ptr<arrow::Int64Array> &filter_indices,
-								  std::shared_ptr<cylon::Table> &output) {
+									   const std::shared_ptr<arrow::Int64Array> &filter_indices,
+									   std::shared_ptr<cylon::Table> &output) {
 
   std::shared_ptr<arrow::Array> out_idx;
   arrow::Status arrow_status;
