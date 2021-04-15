@@ -380,7 +380,7 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &
 										   const std::shared_ptr<Table> &input_table,
 										   std::shared_ptr<cylon::Table> &output) {
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
-  std::vector<int64_t> i_indices;
+  std::vector<int64_t> i_indices(indices->length());
   std::shared_ptr<cylon::Table> temp_out;
   RETURN_CYLON_STATUS_IF_FAILED(ResolveArrowILocIndices(indices, i_indices));
   RETURN_CYLON_STATUS_IF_FAILED(GetTableFromIndices(input_table, i_indices, temp_out));
@@ -397,7 +397,7 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &
 										   const std::shared_ptr<Table> &input_table,
 										   std::shared_ptr<cylon::Table> &output) {
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
-  std::vector<int64_t> i_indices;
+  std::vector<int64_t> i_indices(indices->length());
   std::shared_ptr<cylon::Table> temp_out;
   RETURN_CYLON_STATUS_IF_FAILED(ResolveArrowILocIndices(indices, i_indices));
   RETURN_CYLON_STATUS_IF_FAILED(GetTableFromIndices(input_table, i_indices, temp_out));
@@ -414,7 +414,7 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &
 										   const std::shared_ptr<Table> &input_table,
 										   std::shared_ptr<cylon::Table> &output) {
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
-  std::vector<int64_t> i_indices;
+  std::vector<int64_t> i_indices(indices->length());
   std::shared_ptr<cylon::Table> temp_out;
   RETURN_CYLON_STATUS_IF_FAILED(ResolveArrowILocIndices(indices, i_indices));
   RETURN_CYLON_STATUS_IF_FAILED(GetTableFromIndices(input_table, i_indices, temp_out));

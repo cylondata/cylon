@@ -114,7 +114,6 @@ cylon::Status cylon::IndexUtil::BuildArrowRangeIndexFromArray(int64_t size,
 cylon::Status cylon::IndexUtil::BuildArrowHashIndexFromArray(std::shared_ptr<arrow::Array> &index_values,
 															 arrow::MemoryPool *pool,
 															 std::shared_ptr<cylon::BaseArrowIndex> &index) {
-  Status s;
   switch (index_values->type()->id()) {
 
 	case arrow::Type::NA:break;
@@ -194,6 +193,7 @@ cylon::Status cylon::IndexUtil::BuildArrowHashIndexFromArray(std::shared_ptr<arr
 	case arrow::Type::LARGE_BINARY:break;
 	case arrow::Type::LARGE_LIST:break;
 	case arrow::Type::MAX_ID:break;
+	default: return cylon::Status(cylon::Code::Invalid, "Unsupported data type");
   }
   return cylon::Status(cylon::Code::Invalid, "Unsupported data type");
 }
