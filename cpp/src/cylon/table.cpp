@@ -156,12 +156,15 @@ static inline Status shuffle_table_by_hashing(std::shared_ptr<CylonContext> &ctx
   return all_to_all_arrow_tables(ctx, schema, partitioned_tables, table_out);
 }
 
-template <typename T>
+template<typename T>
 // T is int32_t or const std::vector<int32_t>&
-static inline Status shuffle_two_tables_by_hashing(
-    std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<cylon::Table> &left_table,
-    T left_hash_column, std::shared_ptr<cylon::Table> &right_table, T right_hash_column,
-    std::shared_ptr<arrow::Table> &left_table_out, std::shared_ptr<arrow::Table> &right_table_out) {
+static inline Status shuffle_two_tables_by_hashing(std::shared_ptr<cylon::CylonContext> &ctx,
+                                                   std::shared_ptr<cylon::Table> &left_table,
+                                                   T left_hash_column,
+                                                   std::shared_ptr<cylon::Table> &right_table,
+                                                   T right_hash_column,
+                                                   std::shared_ptr<arrow::Table> &left_table_out,
+                                                   std::shared_ptr<arrow::Table> &right_table_out) {
   LOG(INFO) << "Shuffling two tables with total rows : " << left_table->Rows() + right_table->Rows();
   auto t1 = std::chrono::high_resolution_clock::now();
   RETURN_CYLON_STATUS_IF_FAILED(shuffle_table_by_hashing(ctx, left_table, left_hash_column, left_table_out));
@@ -269,9 +272,11 @@ Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &ctables, std::sha
     std::vector<std::shared_ptr<arrow::Table>> tables;
     tables.reserve(ctables.size());
     for (const auto &t:ctables) {
-      std::shared_ptr<arrow::Table> arrow;
-      t->ToArrowTable(arrow);
-      tables.push_back(arrow);
+      if (t->Rows()) {
+        std::shared_ptr<arrow::Table> arrow;
+        t->ToArrowTable(arrow);
+        tables.push_back(std::move(arrow));
+      }
     }
 
     auto ctx = ctables[0]->GetContext();
@@ -291,15 +296,17 @@ Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &ctables, std::sha
 Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column,
             std::shared_ptr<cylon::Table> &out, bool ascending) {
   std::shared_ptr<arrow::Table> sorted_table;
-  auto table_ = table->get_table();
+  const auto &table_ = table->get_table();
   auto ctx = table->GetContext();
-  const arrow::Status &status =
-      cylon::util::SortTable(table_, sort_column, cylon::ToArrowPool(ctx), sorted_table, ascending);
-  if (status.ok()) {
-    return Table::FromArrowTable(ctx, sorted_table, out);
-  } else {
-    return Status(static_cast<int>(status.code()), status.message());
+  auto pool = cylon::ToArrowPool(ctx);
+
+  // if num_rows is 0 or 1, we dont need to sort
+  if (table->Rows() < 2) {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::Duplicate(table_, pool, sorted_table));
   }
+
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(cylon::util::SortTable(table_, sort_column, pool, sorted_table, ascending));
+  return Table::FromArrowTable(ctx, sorted_table, out);
 }
 
 Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &sort_columns,
@@ -318,13 +325,19 @@ Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &so
   std::shared_ptr<arrow::Table> sorted_table;
   auto table_ = table->get_table();
   auto ctx = table->GetContext();
-  const arrow::Status &status = cylon::util::SortTableMultiColumns(
-      table_, sort_columns, cylon::ToArrowPool(ctx), sorted_table, sort_direction);
-  if (status.ok()) {
-    return Table::FromArrowTable(ctx, sorted_table, out);
-  } else {
-    return Status(static_cast<int>(status.code()), status.message());
+  auto pool = cylon::ToArrowPool(ctx);
+
+  // if num_rows is 0 or 1, we dont need to sort
+  if (table->Rows() < 2) {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::Duplicate(table_, pool, sorted_table));
   }
+
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(cylon::util::SortTableMultiColumns(table_,
+                                                                         sort_columns,
+                                                                         pool,
+                                                                         sorted_table,
+                                                                         sort_direction));
+  return Table::FromArrowTable(ctx, sorted_table, out);
 }
 
 Status DistributedSort(std::shared_ptr<cylon::Table> &table,
@@ -398,7 +411,7 @@ Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int
   auto ctx = table->GetContext();
   out->reserve(no_of_partitions);
   for (int i = 0; i < no_of_partitions; i++) {
-    out->insert(std::make_pair(i, std::make_shared<Table>(partitioned_tables[i], ctx)));
+    out->emplace(i, std::make_shared<Table>(partitioned_tables[i], ctx));
   }
 
   return Status::OK();
@@ -414,7 +427,7 @@ arrow::Status create_table_with_duplicate_index(
     } else {
       std::shared_ptr<arrow::ChunkedArray> new_c_array;
       arrow::Status st =
-          cylon::util::duplicate(chunk_arrays[i], table->schema()->fields()[i], pool, new_c_array);
+          cylon::util::Duplicate(chunk_arrays[i], pool, new_c_array);
       if (st != arrow::Status::OK()) {
         return st;
       }
@@ -505,40 +518,45 @@ Status Select(std::shared_ptr<cylon::Table> &table, const std::function<bool(cyl
               std::shared_ptr<Table> &out) {
   // boolean builder to hold the mask
   auto ctx = table->GetContext();
-  auto table_ = table->get_table();
+  const auto &table_ = table->get_table();
   auto row = cylon::Row(table_);
-  arrow::BooleanBuilder boolean_builder(cylon::ToArrowPool(ctx));
+  auto pool = cylon::ToArrowPool(ctx);
+  std::shared_ptr<arrow::Table> out_table;
+
   auto kI = table->Rows();
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(boolean_builder.Reserve(kI));
+  if (kI) {
+    arrow::BooleanBuilder boolean_builder(pool);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(boolean_builder.Reserve(kI));
 
-  for (int64_t row_index = 0; row_index < kI; row_index++) {
-    row.SetIndex(row_index);
-    boolean_builder.UnsafeAppend(selector(row));
+    for (int64_t row_index = 0; row_index < kI; row_index++) {
+      row.SetIndex(row_index);
+      boolean_builder.UnsafeAppend(selector(row));
+    }
+    // building the mask
+    std::shared_ptr<arrow::Array> mask;
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(boolean_builder.Finish(&mask));
+
+    const arrow::Result<arrow::Datum> &filter_res = arrow::compute::Filter(table_, mask);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter_res.status());
+
+    out_table = filter_res.ValueOrDie().table();
+  } else {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::Duplicate(table_, pool, out_table));
   }
-  // building the mask
-  std::shared_ptr<arrow::Array> mask;
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(boolean_builder.Finish(&mask));
-
-  const arrow::Result<arrow::Datum> &filter_res =
-      arrow::compute::Filter(arrow::Datum(table_), arrow::Datum(mask));
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter_res.status());
-
-  std::shared_ptr<arrow::Table> out_table = filter_res.ValueOrDie().table();
   out = std::make_shared<cylon::Table>(out_table, ctx);
   return Status::OK();
 }
 
-Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second, std::shared_ptr<Table> &out) {
-  const std::shared_ptr<arrow::Table> &ltab = first->get_table();
-  const std::shared_ptr<arrow::Table> &rtab = second->get_table();
-
-  if (ltab->column(0)->num_chunks() != 1 || rtab->column(0)->num_chunks() != 1) {
-    return Status(Code::Invalid, "union doesnt support chunked tables");
-  }
-
-  RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(ltab, second->get_table()));
-
+Status Union(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &second, std::shared_ptr<Table> &out) {
+  std::shared_ptr<arrow::Table> ltab = first->get_table();
+  std::shared_ptr<arrow::Table> rtab = second->get_table();
   auto ctx = first->GetContext();
+  auto pool = ToArrowPool(ctx);
+
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(ltab, pool);
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(rtab, pool);
+
+  RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(ltab, rtab));
 
   TwoTableRowIndexHash hash(ltab, rtab);
   TwoTableRowIndexEqualTo equal_to(ltab, rtab);
@@ -547,7 +565,6 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second, std:
   ska::bytell_hash_set<int64_t, TwoTableRowIndexHash, TwoTableRowIndexEqualTo>
       rows_set(buckets_pre_alloc, hash, equal_to);
 
-  arrow::MemoryPool *pool = cylon::ToArrowPool(ctx);
   arrow::compute::ExecContext exec_context(pool);
 
   std::shared_ptr<arrow::Array> mask;
@@ -602,18 +619,17 @@ Status Union(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second, std:
   return Status::OK();
 }
 
-Status Subtract(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
+Status Subtract(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &second,
                 std::shared_ptr<Table> &out) {
-  const std::shared_ptr<arrow::Table> &ltab = first->get_table();
-  const std::shared_ptr<arrow::Table> &rtab = second->get_table();
-
-  if (ltab->column(0)->num_chunks() != 1 || rtab->column(0)->num_chunks() != 1) {
-    return Status(Code::Invalid, "subtract doesnt support chunked tables");
-  }
-
-  RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(ltab, second->get_table()));
-
+  std::shared_ptr<arrow::Table> ltab = first->get_table();
+  std::shared_ptr<arrow::Table> rtab = second->get_table();
   auto ctx = first->GetContext();
+  auto pool = ToArrowPool(ctx);
+
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(ltab, pool);
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(rtab, pool);
+
+  RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(ltab, rtab));
 
   TwoTableRowIndexHash hash(ltab, rtab);
   TwoTableRowIndexEqualTo equal_to(ltab, rtab);
@@ -622,7 +638,6 @@ Status Subtract(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
   ska::bytell_hash_set<int64_t, TwoTableRowIndexHash, TwoTableRowIndexEqualTo>
       rows_set(buckets_pre_alloc, hash, equal_to);
 
-  arrow::MemoryPool *pool = cylon::ToArrowPool(ctx);
   arrow::compute::ExecContext exec_context(pool);
 
   // create a bitmask
@@ -662,17 +677,19 @@ Status Subtract(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
   return Status::OK();
 }
 
-Status Intersect(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second, std::shared_ptr<Table> &out) {
-  const std::shared_ptr<arrow::Table> &ltab = first->get_table();
-  const std::shared_ptr<arrow::Table> &rtab = second->get_table();
-
-  if (ltab->column(0)->num_chunks() != 1 || rtab->column(0)->num_chunks() != 1) {
-    return Status(Code::Invalid, "intersect doesnt support chunked tables");
-  }
-
-  RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(ltab, second->get_table()));
+Status Intersect(const std::shared_ptr<Table> &first,
+                 const std::shared_ptr<Table> &second,
+                 std::shared_ptr<Table> &out) {
+  std::shared_ptr<arrow::Table> ltab = first->get_table();
+  std::shared_ptr<arrow::Table> rtab = second->get_table();
 
   auto ctx = first->GetContext();
+  auto pool = ToArrowPool(ctx);
+
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(ltab, pool);
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(rtab, pool);
+
+  RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(ltab, rtab));
 
   TwoTableRowIndexHash hash(ltab, rtab);
   TwoTableRowIndexEqualTo equal_to(ltab, rtab);
@@ -681,7 +698,6 @@ Status Intersect(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second, 
   ska::bytell_hash_set<int64_t, TwoTableRowIndexHash, TwoTableRowIndexEqualTo>
       rows_set(buckets_pre_alloc, hash, equal_to);
 
-  arrow::MemoryPool *pool = cylon::ToArrowPool(ctx);
   arrow::compute::ExecContext exec_context(pool);
 
   // insert left table to row_set
@@ -720,25 +736,22 @@ Status Intersect(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second, 
   return Status::OK();
 }
 
-typedef Status (*LocalSetOperation)(std::shared_ptr<cylon::Table> &,
-                                    std::shared_ptr<cylon::Table> &,
+typedef Status (*LocalSetOperation)(const std::shared_ptr<cylon::Table> &,
+                                    const std::shared_ptr<cylon::Table> &,
                                     std::shared_ptr<cylon::Table> &);
 
-Status DoDistributedSetOperation(LocalSetOperation local_operation,
-                                 std::shared_ptr<cylon::Table> &table_left,
-                                 std::shared_ptr<cylon::Table> &table_right,
-                                 std::shared_ptr<cylon::Table> &out) {
+static inline Status do_dist_set_op(LocalSetOperation local_operation,
+                                    std::shared_ptr<cylon::Table> &table_left,
+                                    std::shared_ptr<cylon::Table> &table_right,
+                                    std::shared_ptr<cylon::Table> &out) {
   // extract the tables out
   auto left = table_left->get_table();
   auto right = table_right->get_table();
   auto ctx = table_left->GetContext();
 
-  Status status = VerifyTableSchema(left, right);
-  if (!status.is_ok()) {
-    return status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(left, right));
 
-  if (ctx->GetWorldSize() < 2) {
+  if (ctx->GetWorldSize() == 1) {
     return local_operation(table_left, table_right, out);
   }
 
@@ -750,38 +763,32 @@ Status DoDistributedSetOperation(LocalSetOperation local_operation,
 
   std::shared_ptr<arrow::Table> left_final_table;
   std::shared_ptr<arrow::Table> right_final_table;
-  auto shuffle_status =
-      shuffle_two_tables_by_hashing(ctx, table_left, hash_columns, table_right, hash_columns,
-                                    left_final_table, right_final_table);
-  if (shuffle_status.is_ok()) {
-    std::shared_ptr<cylon::Table> left_tab = std::make_shared<cylon::Table>(left_final_table, ctx);
-    std::shared_ptr<cylon::Table> right_tab =
-        std::make_shared<cylon::Table>(right_final_table, ctx);
-    // now do the local union
-    std::shared_ptr<arrow::Table> table;
-    status = local_operation(left_tab, right_tab, out);
-    return status;
-  } else {
-    return shuffle_status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(shuffle_two_tables_by_hashing(ctx, table_left, hash_columns, table_right, hash_columns,
+                                                              left_final_table, right_final_table));
+
+  std::shared_ptr<cylon::Table> left_tab = std::make_shared<cylon::Table>(left_final_table, ctx);
+  std::shared_ptr<cylon::Table> right_tab = std::make_shared<cylon::Table>(right_final_table, ctx);
+  // now do the local union
+  std::shared_ptr<arrow::Table> table;
+  return local_operation(left_tab, right_tab, out);
 }
 
 Status DistributedUnion(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
                         std::shared_ptr<Table> &out) {
   auto ctx = left->GetContext();
-  return DoDistributedSetOperation(&Union, left, right, out);
+  return do_dist_set_op(&Union, left, right, out);
 }
 
 Status DistributedSubtract(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
                            std::shared_ptr<Table> &out) {
   auto ctx = left->GetContext();
-  return DoDistributedSetOperation(&Subtract, left, right, out);
+  return do_dist_set_op(&Subtract, left, right, out);
 }
 
 Status DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
                             std::shared_ptr<Table> &out) {
   auto ctx = left->GetContext();
-  return DoDistributedSetOperation(&Intersect, left, right, out);
+  return do_dist_set_op(&Intersect, left, right, out);
 }
 
 void Table::Clear() {}
@@ -925,51 +932,54 @@ Status Unique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
 #ifdef CYLON_DEBUG
   auto p1 = std::chrono::high_resolution_clock::now();
 #endif
-  std::shared_ptr<arrow::Table> ltab = in->get_table();
-  // int64_t eq_calls = 0, hash_calls = 0;
   auto ctx = in->GetContext();
+  auto pool = cylon::ToArrowPool(ctx);
+  std::shared_ptr<arrow::Table> out_table, in_table = in->get_table();
 
-  if (ltab->column(0)->num_chunks() > 1) {
-    const arrow::Result<std::shared_ptr<arrow::Table>> &res = ltab->CombineChunks(cylon::ToArrowPool(ctx));
+  if (in_table->num_rows() > 1) {
+    if (in_table->column(0)->num_chunks() > 1) {
+      const arrow::Result<std::shared_ptr<arrow::Table>> &res = in_table->CombineChunks(pool);
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
+      in_table = res.ValueOrDie();
+    }
+
+    TableRowIndexEqualTo row_comp(in_table, cols);
+    TableRowIndexHash row_hash(in_table, cols);
+    const int64_t num_rows = in_table->num_rows();
+    ska::bytell_hash_set<int64_t, TableRowIndexHash, TableRowIndexEqualTo> rows_set(num_rows, row_hash, row_comp);
+
+    arrow::BooleanBuilder filter(pool);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(num_rows));
+#ifdef CYLON_DEBUG
+    auto p2 = std::chrono::high_resolution_clock::now();
+#endif
+    if (first) {
+      for (int64_t row = 0; row < num_rows; ++row) {
+        const auto &res = rows_set.insert(row);
+        filter.UnsafeAppend(res.second);
+      }
+    } else {
+      for (int64_t row = num_rows - 1; row > 0; --row) {
+        const auto &res = rows_set.insert(row);
+        filter.UnsafeAppend(res.second);
+      }
+    }
+#ifdef CYLON_DEBUG
+    auto p3 = std::chrono::high_resolution_clock::now();
+
+    //  rows_set.clear();
+    auto p4 = std::chrono::high_resolution_clock::now();
+#endif
+    std::shared_ptr<arrow::BooleanArray> filter_arr;
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Finish(&filter_arr));
+
+    const arrow::Result<arrow::Datum> &res = arrow::compute::Filter(in_table, filter_arr);
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-    ltab = res.ValueOrDie();
-  }
-
-  TableRowIndexEqualTo row_comp(ltab, cols);
-  TableRowIndexHash row_hash(ltab, cols);
-  const int64_t num_rows = ltab->num_rows();
-  ska::bytell_hash_set<int64_t, TableRowIndexHash, TableRowIndexEqualTo> rows_set(num_rows, row_hash, row_comp);
-
-  arrow::BooleanBuilder filter;
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(num_rows));
-#ifdef CYLON_DEBUG
-  auto p2 = std::chrono::high_resolution_clock::now();
-#endif
-  if (first) {
-    for (int64_t row = 0; row < num_rows; ++row) {
-      const auto &res = rows_set.insert(row);
-      filter.UnsafeAppend(res.second);
-    }
+    out_table = res.ValueOrDie().table();
   } else {
-    for (int64_t row = num_rows - 1; row > 0; --row) {
-      const auto &res = rows_set.insert(row);
-      filter.UnsafeAppend(res.second);
-    }
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::Duplicate(in_table, pool, out_table));
   }
-#ifdef CYLON_DEBUG
-  auto p3 = std::chrono::high_resolution_clock::now();
-
-  //  rows_set.clear();
-  auto p4 = std::chrono::high_resolution_clock::now();
-#endif
-  std::shared_ptr<arrow::BooleanArray> filter_arr;
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Finish(&filter_arr));
-
-  const arrow::Result<arrow::Datum> &res = arrow::compute::Filter(ltab, filter_arr);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-  std::shared_ptr<arrow::Table> atable = res.ValueOrDie().table();
-  out = std::make_shared<Table>(atable, ctx);
-
+  out = std::make_shared<Table>(out_table, ctx);
 #ifdef CYLON_DEBUG
   auto p5 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(p2 - p1).count()
@@ -989,11 +999,7 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<in
   }
 
   std::shared_ptr<cylon::Table> shuffle_out;
-  auto shuffle_status = cylon::Shuffle(in, cols, shuffle_out);
-  if (!shuffle_status.is_ok()) {
-    LOG(ERROR) << "Shuffle Failed!";
-    return shuffle_status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::Shuffle(in, cols, shuffle_out));
 
   return Unique(shuffle_out, cols, out);
 }
