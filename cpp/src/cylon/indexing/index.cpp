@@ -141,8 +141,8 @@ Status ArrowLinearIndex::LocationByVector(const std::shared_ptr<arrow::Array> &s
 										  std::vector<int64_t> &filter_location) {
 
   auto cast_search_param_result = arrow::compute::Cast(search_param, index_array_->type());
-  auto search_param_array = cast_search_param_result.ValueOrDie().make_array();
-  auto res_isin_filter = arrow::compute::IsIn(index_array_, search_param_array);
+  auto const search_param_array = cast_search_param_result.ValueOrDie().make_array();
+  auto const res_isin_filter = arrow::compute::IsIn(index_array_, search_param_array);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(res_isin_filter.status());
   auto res_isin_filter_val = res_isin_filter.ValueOrDie();
   std::shared_ptr<arrow::Array> arr_isin = res_isin_filter_val.make_array();

@@ -2,8 +2,8 @@
 #include "../util/arrow_utils.hpp"
 
 cylon::Status cylon::IndexUtil::BuildArrowHashIndex(const std::shared_ptr<Table> &input,
-											   const int index_column,
-											   std::shared_ptr<cylon::BaseArrowIndex> &index) {
+													const int index_column,
+													std::shared_ptr<cylon::BaseArrowIndex> &index) {
 
   cylon::Status status;
   auto table_ = input->get_table();
@@ -40,25 +40,28 @@ cylon::Status cylon::IndexUtil::BuildArrowIndex(const cylon::IndexingType schema
 }
 
 cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingType schema,
-													const std::shared_ptr<Table> &input,
-													const std::shared_ptr<arrow::Array> &index_array,
-													std::shared_ptr<Table> &output) {
+														 const std::shared_ptr<Table> &input,
+														 const std::shared_ptr<arrow::Array> &index_array,
+														 std::shared_ptr<Table> &output) {
   cylon::Status status;
   std::shared_ptr<cylon::BaseArrowIndex> index;
   auto ctx = input->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
-  if (schema == cylon::IndexingType::Range) {
-	status = BuildArrowRangeIndexFromArray(index_array->length(), pool, index);
-  } else if (schema == cylon::IndexingType::Linear) {
-	status = BuildArrowLinearIndexFromArrowArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array), pool, index);
-  } else if (schema == cylon::IndexingType::Hash) {
-	status = BuildArrowHashIndexFromArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array), pool, index);
-  } else if (schema == cylon::IndexingType::BinaryTree) {
-	status =  cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
-  } else if (schema == cylon::IndexingType::BTree) {
-	status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
-  } else {
-	status = cylon::Status(cylon::Code::Invalid, "Invalid schema");
+  switch (schema) {
+	case Range: status = BuildArrowRangeIndexFromArray(index_array->length(), pool, index);
+	  break;
+	case Linear:
+	  status = BuildArrowLinearIndexFromArrowArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array),
+												   pool,
+												   index);
+	  break;
+	case Hash:
+	  status = BuildArrowHashIndexFromArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array), pool, index);
+	  break;
+	case BinaryTree:status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
+	  break;
+	case BTree:status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
+	  break;
   }
 
   if (!status.is_ok()) {
@@ -77,7 +80,6 @@ cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingTy
 
   return cylon::Status::OK();
 }
-
 
 cylon::Status cylon::IndexUtil::BuildArrowIndex(cylon::IndexingType schema,
 												const std::shared_ptr<Table> &input,
@@ -121,14 +123,8 @@ cylon::Status cylon::IndexUtil::BuildArrowRangeIndex(const std::shared_ptr<Table
 	range_index_values.push_back(i);
   }
   arrow::Int64Builder builder(pool);
-  ar_status = builder.AppendValues(range_index_values);
-
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(ar_status);
-
-  ar_status = builder.Finish(&index_arr);
-
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(ar_status);
-
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.AppendValues(range_index_values));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&index_arr));
   index->SetIndexArray(index_arr);
   return cylon::Status::OK();
 }
@@ -194,9 +190,10 @@ cylon::Status cylon::IndexUtil::BuildArrowHashIndexFromArray(std::shared_ptr<arr
 																					pool,
 																					index);
 	case arrow::Type::STRING:
-	  return cylon::IndexUtil::BuildArrowHashIndexFromArrowArray<arrow::StringType, arrow::util::string_view>(index_values,
-																											  pool,
-																											  index);;
+	  return cylon::IndexUtil::BuildArrowHashIndexFromArrowArray<arrow::StringType, arrow::util::string_view>(
+		  index_values,
+		  pool,
+		  index);;
 	case arrow::Type::BINARY:break;
 	case arrow::Type::FIXED_SIZE_BINARY:break;
 	case arrow::Type::DATE32:break;
@@ -221,8 +218,7 @@ cylon::Status cylon::IndexUtil::BuildArrowHashIndexFromArray(std::shared_ptr<arr
 	case arrow::Type::LARGE_LIST:break;
 	case arrow::Type::MAX_ID:break;
   }
-
-  return cylon::Status::OK();
+  return cylon::Status(cylon::Code::Invalid, "Unsupported data type");
 }
 
 
