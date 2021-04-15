@@ -180,19 +180,6 @@ cylon::Status cylon::IndexUtil::BuildArrowHashIndexFromArray(const std::shared_p
 	case arrow::Type::INTERVAL_MONTHS:break;
 	case arrow::Type::INTERVAL_DAY_TIME:break;
 	case arrow::Type::DECIMAL:break;
-	case arrow::Type::LIST:break;
-	case arrow::Type::STRUCT:break;
-	case arrow::Type::SPARSE_UNION:break;
-	case arrow::Type::DENSE_UNION:break;
-	case arrow::Type::DICTIONARY:break;
-	case arrow::Type::MAP:break;
-	case arrow::Type::EXTENSION:break;
-	case arrow::Type::FIXED_SIZE_LIST:break;
-	case arrow::Type::DURATION:break;
-	case arrow::Type::LARGE_STRING:break;
-	case arrow::Type::LARGE_BINARY:break;
-	case arrow::Type::LARGE_LIST:break;
-	case arrow::Type::MAX_ID:break;
 	default: return cylon::Status(cylon::Code::Invalid, "Unsupported data type");
   }
   return cylon::Status(cylon::Code::Invalid, "Unsupported data type");

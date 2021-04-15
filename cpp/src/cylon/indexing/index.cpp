@@ -21,7 +21,6 @@ std::unique_ptr<ArrowIndexKernel> CreateArrowHashIndexKernel(std::shared_ptr<arr
 	case arrow::Type::FLOAT:return std::make_unique<FloatArrowHashIndexKernel>();
 	case arrow::Type::DOUBLE:return std::make_unique<DoubleArrowHashIndexKernel>();
 	case arrow::Type::STRING:return std::make_unique<StringArrowHashIndexKernel>();
-	case arrow::Type::BINARY:return std::make_unique<StringArrowHashIndexKernel>();
 	default: return std::make_unique<ArrowRangeIndexKernel>();
   }
 
