@@ -8,16 +8,11 @@ cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingType indexing_type
 											   std::shared_ptr<cylon::BaseArrowIndex> &loc_index) {
 
   switch (indexing_type) {
-	case cylon::Range:
-	  return cylon::IndexUtil::BuildArrowRangeIndexFromArray(sub_index_arr->length(), pool, loc_index);
-	case cylon::Linear:
-	  return cylon::IndexUtil::BuildArrowLinearIndexFromArrowArray(sub_index_arr, pool, loc_index);
-	case cylon::Hash:
-	  return cylon::IndexUtil::BuildArrowHashIndexFromArray(sub_index_arr, pool, loc_index);
-	case cylon::BinaryTree:
-	  return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
-	case cylon::BTree:
-	  return cylon::Status(cylon::Code::NotImplemented, "B-Tree Indexing not implemented!");
+	case cylon::Range: return cylon::IndexUtil::BuildArrowRangeIndexFromArray(sub_index_arr->length(), pool, loc_index);
+	case cylon::Linear: return cylon::IndexUtil::BuildArrowLinearIndexFromArrowArray(sub_index_arr, pool, loc_index);
+	case cylon::Hash: return cylon::IndexUtil::BuildArrowHashIndexFromArray(sub_index_arr, pool, loc_index);
+	case cylon::BinaryTree: return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
+	case cylon::BTree: return cylon::Status(cylon::Code::NotImplemented, "B-Tree Indexing not implemented!");
   }
   return cylon::Status(cylon::Code::TypeError, "Unknown indexing type.");
 }
@@ -56,7 +51,8 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   auto const index_arr = index->GetIndexArray();
   sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
   RETURN_CYLON_STATUS_IF_FAILED(BuildArrowIndexFromArrayByKernel(indexing_type, sub_index_arr, pool, loc_index));
-  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(loc_index, false));  return cylon::Status::OK();
+  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(loc_index, false));
+  return cylon::Status::OK();
 
 }
 
@@ -244,48 +240,17 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
 										  const int end_column_index,
 										  const std::shared_ptr<Table> &input_table,
 										  std::shared_ptr<cylon::Table> &output) {
-  Status status_build;
   auto index = input_table->GetArrowIndex();
   std::shared_ptr<cylon::Table> temp_output;
-  int64_t s_index, e_index = -1;
-
-  status_build = GetArrowLocFilterIndices(start_index, end_index, index, s_index, e_index);
-
-  if (!status_build.is_ok()) {
-	return status_build;
-  }
-
+  int64_t s_index = -1;
+  int64_t e_index = -1;
+  RETURN_CYLON_STATUS_IF_FAILED(GetArrowLocFilterIndices(start_index, end_index, index, s_index, e_index));
   // filter columns include both boundaries
   std::vector<int> filter_columns;
-
-  status_build = GetColumnIndicesFromLimits(start_column_index, end_column_index, filter_columns);
-
-  if (!status_build.is_ok()) {
-	LOG(ERROR) << "Error occurred building column indices from boundaries";
-	return status_build;
-  }
-
-  status_build = SliceTableByRange(s_index, e_index, input_table, temp_output);
-
-  if (!status_build.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering indices from table";
-	return status_build;
-  }
-
-  status_build = FilterColumnsFromTable(temp_output, filter_columns, output);
-
-  if (!status_build.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering columns from table";
-	return status_build;
-  }
-
-  status_build = SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_type_);
-
-  if (!status_build.is_ok()) {
-	LOG(ERROR) << "Error occurred in setting index for output table";
-	return status_build;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(GetColumnIndicesFromLimits(start_column_index, end_column_index, filter_columns));
+  RETURN_CYLON_STATUS_IF_FAILED(SliceTableByRange(s_index, e_index, input_table, temp_output));
+  RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_output, filter_columns, output));
+  RETURN_CYLON_STATUS_IF_FAILED(SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_type_));
   return cylon::Status::OK();
 }
 cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &start_index,
@@ -293,77 +258,27 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
 										  const std::vector<int> &columns,
 										  const std::shared_ptr<Table> &input_table,
 										  std::shared_ptr<cylon::Table> &output) {
-  Status status_build;
   std::shared_ptr<cylon::Table> temp_output;
   int64_t s_index, e_index = -1;
   auto index = input_table->GetArrowIndex();
-  status_build = GetArrowLocFilterIndices(start_index, end_index, index, s_index, e_index);
-
-  if (!status_build.is_ok()) {
-	return status_build;
-  }
-
-  status_build = SliceTableByRange(s_index, e_index, input_table, temp_output);
-
-  if (!status_build.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering indices from table";
-	return status_build;
-  }
-
-  status_build = FilterColumnsFromTable(temp_output, columns, output);
-
-  if (!status_build.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering columns from table";
-	return status_build;
-  }
-
-  status_build = SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_type_);
-
-  if (!status_build.is_ok()) {
-	LOG(ERROR) << "Error occurred in setting index for output table";
-	return status_build;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(GetArrowLocFilterIndices(start_index, end_index, index, s_index, e_index));
+  RETURN_CYLON_STATUS_IF_FAILED(SliceTableByRange(s_index, e_index, input_table, temp_output));
+  RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_output, columns, output));
+  RETURN_CYLON_STATUS_IF_FAILED(SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_type_));
   return cylon::Status::OK();
 }
 cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &indices,
 										  const int column_index,
 										  const std::shared_ptr<Table> &input_table,
 										  std::shared_ptr<cylon::Table> &output) {
-  Status status;
   std::vector<int64_t> filter_indices;
   std::shared_ptr<cylon::Table> temp_table;
   auto index = input_table->GetArrowIndex();
-  status = ResolveArrowLocIndices(indices, index, filter_indices);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in resolving indices for table filtering";
-	return status;
-  }
-
-  status = GetTableFromIndices(input_table, filter_indices, temp_table);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating table from filter indices";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(ResolveArrowLocIndices(indices, index, filter_indices));
+  RETURN_CYLON_STATUS_IF_FAILED(GetTableFromIndices(input_table, filter_indices, temp_table));
   std::vector<int> columns = {column_index};
-
-  status = FilterColumnsFromTable(temp_table, columns, output);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating table from selected columns";
-	return status;
-  }
-
-  status = SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_type_);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in setting index for output table";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_table, columns, output));
+  RETURN_CYLON_STATUS_IF_FAILED(SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_type_));
   return cylon::Status::OK();
 }
 cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &indices,
@@ -371,85 +286,28 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &i
 										  const int end_column,
 										  const std::shared_ptr<Table> &input_table,
 										  std::shared_ptr<cylon::Table> &output) {
-  Status status;
   std::vector<int64_t> filter_indices;
   std::shared_ptr<cylon::Table> temp_table;
   auto index = input_table->GetArrowIndex();
-  status = ResolveArrowLocIndices(indices, index, filter_indices);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in resolving indices for table filtering";
-	return status;
-  }
-
-  status = GetTableFromIndices(input_table, filter_indices, temp_table);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating table from filter indices";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(ResolveArrowLocIndices(indices, index, filter_indices));
+  RETURN_CYLON_STATUS_IF_FAILED(GetTableFromIndices(input_table, filter_indices, temp_table));
   std::vector<int> filter_columns;
-
-  status = GetColumnIndicesFromLimits(start_column, end_column, filter_columns);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in getting column indices from boundaries";
-	return status;
-  }
-
-  status = FilterColumnsFromTable(temp_table, filter_columns, output);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating table from selected columns";
-	return status;
-  }
-
-  status = SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_type_);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in setting index for output table";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(GetColumnIndicesFromLimits(start_column, end_column, filter_columns));
+  RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_table, filter_columns, output));
+  RETURN_CYLON_STATUS_IF_FAILED(SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_type_));
   return cylon::Status::OK();
 }
 cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Array> &indices,
 										  const std::vector<int> &columns,
 										  const std::shared_ptr<Table> &input_table,
 										  std::shared_ptr<cylon::Table> &output) {
-  Status status;
   std::vector<int64_t> filter_indices;
   std::shared_ptr<cylon::Table> temp_table;
   auto index = input_table->GetArrowIndex();
-  status = ResolveArrowLocIndices(indices, index, filter_indices);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in resolving indices for table filtering";
-	return status;
-  }
-
-  status = GetTableFromIndices(input_table, filter_indices, temp_table);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating table from filter indices";
-	return status;
-  }
-
-  status = FilterColumnsFromTable(temp_table, columns, output);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating table from selected columns";
-	return status;
-  }
-
-  status = SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_type_);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in setting index for output table";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(ResolveArrowLocIndices(indices, index, filter_indices));
+  RETURN_CYLON_STATUS_IF_FAILED(GetTableFromIndices(input_table, filter_indices, temp_table));
+  RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_table, columns, output));
+  RETURN_CYLON_STATUS_IF_FAILED(SetArrowIndexForLocResultTable(index, filter_indices, output, indexing_type_));
   return cylon::Status::OK();
 }
 cylon::IndexingType cylon::ArrowLocIndexer::GetIndexingType() {
@@ -463,40 +321,20 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> 
 										   const int column_index,
 										   const std::shared_ptr<Table> &input_table,
 										   std::shared_ptr<cylon::Table> &output) {
-  cylon::Status status;
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
   std::shared_ptr<arrow::Int64Scalar>
 	  start_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(start_index);
   std::shared_ptr<arrow::Int64Scalar>
 	  end_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(end_index);
-  int64_t start_index_pos = start_index_scalar->value; //*((int64_t *)start_index);
-  int64_t end_index_pos = end_index_scalar->value; //*((int64_t *)end_index);
-
-  status = SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering table based on index range";
-	return status;
-  }
+  int64_t start_index_pos = start_index_scalar->value;
+  int64_t end_index_pos = end_index_scalar->value;
+  RETURN_CYLON_STATUS_IF_FAILED(SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out));
   std::vector<int> filter_columns = {column_index};
-
-  status = FilterColumnsFromTable(temp_out, filter_columns, output);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering table based on index range";
-	return status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, filter_columns, output));
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildArrowRangeIndex(output, range_index);
-
-  output->Set_ArrowIndex(range_index, false);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating range index for output table";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
+  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> &start_index,
@@ -505,49 +343,22 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> 
 										   const int end_column_index,
 										   const std::shared_ptr<Table> &input_table,
 										   std::shared_ptr<cylon::Table> &output) {
-  cylon::Status status;
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
   std::shared_ptr<arrow::Int64Scalar>
 	  start_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(start_index);
   std::shared_ptr<arrow::Int64Scalar>
 	  end_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(end_index);
-  int64_t start_index_pos = start_index_scalar->value; //*((int64_t *)start_index);
-  int64_t end_index_pos = end_index_scalar->value; //*((int64_t *)end_index);
-
-  status = SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering table based on index range";
-	return status;
-  }
-
+  int64_t start_index_pos = start_index_scalar->value;
+  int64_t end_index_pos = end_index_scalar->value;
+  RETURN_CYLON_STATUS_IF_FAILED(SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out));
   // filter columns include both boundaries
   std::vector<int> filter_columns;
-
-  status = GetColumnIndicesFromLimits(start_column_index, end_column_index, filter_columns);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating column range based column filter";
-	return status;
-  }
-
-  status = FilterColumnsFromTable(temp_out, filter_columns, output);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering table based on index range";
-	return status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(GetColumnIndicesFromLimits(start_column_index, end_column_index, filter_columns));
+  RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, filter_columns, output));
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildArrowRangeIndex(output, range_index);
-
-  output->Set_ArrowIndex(range_index, false);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating range index for output table";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
+  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> &start_index,
@@ -555,80 +366,35 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> 
 										   const std::vector<int> &columns,
 										   const std::shared_ptr<Table> &input_table,
 										   std::shared_ptr<cylon::Table> &output) {
-  cylon::Status status;
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
   std::shared_ptr<cylon::Table> temp_out;
   std::shared_ptr<arrow::Int64Scalar>
 	  start_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(start_index);
   std::shared_ptr<arrow::Int64Scalar>
 	  end_index_scalar = std::static_pointer_cast<arrow::TypeTraits<arrow::Int64Type>::ScalarType>(end_index);
-  int64_t start_index_pos = start_index_scalar->value; //*((int64_t *)start_index);
-  int64_t end_index_pos = end_index_scalar->value; //*((int64_t *)end_index);
-
-  status = SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering table based on index range";
-	return status;
-  }
-
-  status = FilterColumnsFromTable(temp_out, columns, output);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering table based on columns";
-	return status;
-  }
+  int64_t start_index_pos = start_index_scalar->value;
+  int64_t end_index_pos = end_index_scalar->value;
+  RETURN_CYLON_STATUS_IF_FAILED(SliceTableByRange(start_index_pos, end_index_pos, input_table, temp_out));
+  RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, columns, output));
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildArrowRangeIndex(output, range_index);
-
-  output->Set_ArrowIndex(range_index, false);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating range index for output table";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
+  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &indices,
 										   const int column_index,
 										   const std::shared_ptr<Table> &input_table,
 										   std::shared_ptr<cylon::Table> &output) {
-  Status status;
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
   std::vector<int64_t> i_indices;
   std::shared_ptr<cylon::Table> temp_out;
-  status = ResolveArrowILocIndices(indices, i_indices);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in iloc index resolving";
-  }
-
-  status = GetTableFromIndices(input_table, i_indices, temp_out);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Filtering table from indices failed!";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(ResolveArrowILocIndices(indices, i_indices));
+  RETURN_CYLON_STATUS_IF_FAILED(GetTableFromIndices(input_table, i_indices, temp_out));
   std::vector<int> columns{column_index};
-
-  status = FilterColumnsFromTable(temp_out, columns, output);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering table based on index range";
-	return status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, columns, output));
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildArrowRangeIndex(output, range_index);
-
-  output->Set_ArrowIndex(range_index, false);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating range index for output table";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
+  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &indices,
@@ -636,87 +402,32 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &
 										   const int end_column,
 										   const std::shared_ptr<Table> &input_table,
 										   std::shared_ptr<cylon::Table> &output) {
-  Status status;
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
   std::vector<int64_t> i_indices;
   std::shared_ptr<cylon::Table> temp_out;
-  status = ResolveArrowILocIndices(indices, i_indices);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in iloc index resolving";
-  }
-
-  status = GetTableFromIndices(input_table, i_indices, temp_out);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Filtering table from indices failed!";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(ResolveArrowILocIndices(indices, i_indices));
+  RETURN_CYLON_STATUS_IF_FAILED(GetTableFromIndices(input_table, i_indices, temp_out));
   std::vector<int> filter_columns;
-
-  status = GetColumnIndicesFromLimits(start_column, end_column, filter_columns);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating column range based column filter";
-	return status;
-  }
-
-  status = FilterColumnsFromTable(temp_out, filter_columns, output);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering table based on index range";
-	return status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(GetColumnIndicesFromLimits(start_column, end_column, filter_columns));
+  RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, filter_columns, output));
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildArrowRangeIndex(output, range_index);
-
-  output->Set_ArrowIndex(range_index, false);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating range index for output table";
-	return status;
-  }
-
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
+  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &indices,
 										   const std::vector<int> &columns,
 										   const std::shared_ptr<Table> &input_table,
 										   std::shared_ptr<cylon::Table> &output) {
-  Status status;
   std::shared_ptr<cylon::BaseArrowIndex> range_index;
   std::vector<int64_t> i_indices;
   std::shared_ptr<cylon::Table> temp_out;
-  status = ResolveArrowILocIndices(indices, i_indices);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in iloc index resolving";
-  }
-
-  status = GetTableFromIndices(input_table, i_indices, temp_out);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Filtering table from indices failed!";
-	return status;
-  }
-
-  status = FilterColumnsFromTable(temp_out, columns, output);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in filtering table based on index range";
-	return status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(ResolveArrowILocIndices(indices, i_indices));
+  RETURN_CYLON_STATUS_IF_FAILED(GetTableFromIndices(input_table, i_indices, temp_out));
+  RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, columns, output));
   // default of ILocIndex based operation is a range index
-  status = cylon::IndexUtil::BuildArrowRangeIndex(output, range_index);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in creating range index for output table";
-	return status;
-  }
-
-  output->Set_ArrowIndex(range_index, false);
-
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
+  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::IndexingType cylon::ArrowILocIndexer::GetIndexingType() {
