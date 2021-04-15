@@ -188,7 +188,7 @@ class Table {
 
   //Status Set_Index(std::shared_ptr<cylon::BaseIndex> &index, bool drop_index);
 
-  Status Set_ArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool drop_index);
+  Status SetArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool drop_index);
 
   //std::shared_ptr<BaseIndex> GetIndex();
 

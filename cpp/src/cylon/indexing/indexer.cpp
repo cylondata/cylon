@@ -35,7 +35,7 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(datum.status());
   sub_index_arr = datum.ValueOrDie().make_array();
   RETURN_CYLON_STATUS_IF_FAILED(BuildArrowIndexFromArrayByKernel(indexing_type, sub_index_arr, pool, loc_index));
-  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(loc_index, false));
+  RETURN_CYLON_STATUS_IF_FAILED(output->SetArrowIndex(loc_index, false));
   return cylon::Status::OK();
 }
 
@@ -51,7 +51,7 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   auto const index_arr = index->GetIndexArray();
   sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
   RETURN_CYLON_STATUS_IF_FAILED(BuildArrowIndexFromArrayByKernel(indexing_type, sub_index_arr, pool, loc_index));
-  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(loc_index, false));
+  RETURN_CYLON_STATUS_IF_FAILED(output->SetArrowIndex(loc_index, false));
   return cylon::Status::OK();
 
 }
@@ -334,7 +334,7 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> 
   RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, filter_columns, output));
   // default of ILocIndex based operation is a range index
   RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
-  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
+  RETURN_CYLON_STATUS_IF_FAILED(output->SetArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> &start_index,
@@ -358,7 +358,7 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> 
   RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, filter_columns, output));
   // default of ILocIndex based operation is a range index
   RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
-  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
+  RETURN_CYLON_STATUS_IF_FAILED(output->SetArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> &start_index,
@@ -378,7 +378,7 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> 
   RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, columns, output));
   // default of ILocIndex based operation is a range index
   RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
-  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
+  RETURN_CYLON_STATUS_IF_FAILED(output->SetArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &indices,
@@ -394,7 +394,7 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &
   RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, columns, output));
   // default of ILocIndex based operation is a range index
   RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
-  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
+  RETURN_CYLON_STATUS_IF_FAILED(output->SetArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &indices,
@@ -412,7 +412,7 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &
   RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, filter_columns, output));
   // default of ILocIndex based operation is a range index
   RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
-  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
+  RETURN_CYLON_STATUS_IF_FAILED(output->SetArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &indices,
@@ -427,7 +427,7 @@ cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Array> &
   RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_out, columns, output));
   // default of ILocIndex based operation is a range index
   RETURN_CYLON_STATUS_IF_FAILED(cylon::IndexUtil::BuildArrowRangeIndex(output, range_index));
-  RETURN_CYLON_STATUS_IF_FAILED(output->Set_ArrowIndex(range_index, false));
+  RETURN_CYLON_STATUS_IF_FAILED(output->SetArrowIndex(range_index, false));
   return Status::OK();
 }
 cylon::IndexingType cylon::ArrowILocIndexer::GetIndexingType() {

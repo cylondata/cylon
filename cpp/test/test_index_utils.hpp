@@ -96,7 +96,7 @@ static int set_data_for_arrow_indexing_test(std::string &input_file_path,
 	return 1;
   };
 
-  status = input->Set_ArrowIndex(index, drop_index);
+  status = input->SetArrowIndex(index, drop_index);
 
   if (!status.is_ok()) {
 	return 1;

@@ -59,7 +59,7 @@ cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingTy
 	  break;
   }
   RETURN_CYLON_STATUS_IF_FAILED(status);
-  RETURN_CYLON_STATUS_IF_FAILED(input->Set_ArrowIndex(index, false));
+  RETURN_CYLON_STATUS_IF_FAILED(input->SetArrowIndex(index, false));
   output = std::move(input);
   return cylon::Status::OK();
 }
@@ -71,7 +71,7 @@ cylon::Status cylon::IndexUtil::BuildArrowIndex(cylon::IndexingType schema,
 												std::shared_ptr<Table> &output) {
   std::shared_ptr<cylon::BaseArrowIndex> index;
   RETURN_CYLON_STATUS_IF_FAILED(BuildArrowIndex(schema, input, index_column, index));
-  RETURN_CYLON_STATUS_IF_FAILED(input->Set_ArrowIndex(index, drop));
+  RETURN_CYLON_STATUS_IF_FAILED(input->SetArrowIndex(index, drop));
   output = std::move(input);
   return cylon::Status::OK();
 }

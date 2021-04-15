@@ -60,7 +60,7 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         bool IsRetain() const
 
-        CStatus Set_ArrowIndex(shared_ptr[CBaseArrowIndex] & index, bool drop)
+        CStatus SetArrowIndex(shared_ptr[CBaseArrowIndex] & index, bool drop)
 
         shared_ptr[CBaseArrowIndex] GetArrowIndex()
 

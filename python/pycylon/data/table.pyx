@@ -2102,7 +2102,7 @@ cdef class Table:
 
         if isinstance(key, BaseArrowIndex):
             c_base_arrow_index = pycylon_unwrap_base_arrow_index(key)
-            self.table_shd_ptr.get().Set_ArrowIndex(c_base_arrow_index, False)
+            self.table_shd_ptr.get().SetArrowIndex(c_base_arrow_index, False)
         else:
             indexed_table = process_index_by_value(key=key, table=self,
                                                    indexing_type=indexing_type,

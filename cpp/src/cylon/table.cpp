@@ -1000,7 +1000,7 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<in
 
 std::shared_ptr<BaseArrowIndex> Table::GetArrowIndex() { return base_arrow_index_; }
 
-Status Table::Set_ArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool drop_index) {
+Status Table::SetArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool drop_index) {
   if (table_->column(0)->num_chunks() > 1) {
 	const arrow::Result<std::shared_ptr<arrow::Table>> &res =
 		table_->CombineChunks(cylon::ToArrowPool(ctx));
