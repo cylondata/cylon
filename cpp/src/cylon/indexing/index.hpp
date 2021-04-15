@@ -107,38 +107,14 @@ class ArrowHashIndex : public BaseArrowIndex {
 	std::shared_ptr<arrow::Array> out_idx;
 	arrow::compute::ExecContext fn_ctx(GetPool());
 	arrow::Int64Builder idx_builder(GetPool());
-	const arrow::Datum input_table(input);
-
-	status = LocationByValue(search_param, filter_locations);
-
-	if (!status.is_ok()) {
-	  LOG(ERROR) << "Error occurred in obtaining filter locations by index value";
-	  return status;
-	}
-
-	arrow_status = idx_builder.AppendValues(filter_locations);
-
-	if (!arrow_status.ok()) {
-	  LOG(ERROR) << "Error occurred in appending filter indices to builder";
-	  RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
-	}
-
-	arrow_status = idx_builder.Finish(&out_idx);
-
-	if (!arrow_status.ok()) {
-	  LOG(ERROR) << "Error occurred in builder finish";
-	  RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
-	}
-
-	const arrow::Datum filter_indices(out_idx);
+	//const arrow::Datum input_table(input);
+	RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(search_param, filter_locations));
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.AppendValues(filter_locations));
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.Finish(&out_idx));
+	//const arrow::Datum filter_indices(out_idx);
 	arrow::Result<arrow::Datum>
-		result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
-
-	if (!result.status().ok()) {
-	  LOG(ERROR) << "Error occurred in filtering table by indices";
-	  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-	}
-
+		result = arrow::compute::Take(input, out_idx, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
 	output = result.ValueOrDie().table();
 	return Status::OK();
   }
@@ -269,53 +245,25 @@ class ArrowHashIndex<arrow::StringType, arrow::util::string_view> : public BaseA
 						 const std::shared_ptr<arrow::Table> &input,
 						 std::vector<int64_t> &filter_locations,
 						 std::shared_ptr<arrow::Table> &output) override {
-	LOG(INFO) << "Extract table for a given index";
 	arrow::Status arrow_status;
 	cylon::Status status;
 	std::shared_ptr<arrow::Array> out_idx;
 	arrow::compute::ExecContext fn_ctx(GetPool());
 	arrow::Int64Builder idx_builder(GetPool());
-	const arrow::Datum input_table(input);
-
-	status = LocationByValue(search_param, filter_locations);
-
-	if (!status.is_ok()) {
-	  LOG(ERROR) << "Error occurred in filtering indices by index value";
-	  return status;
-	}
-
-	arrow_status = idx_builder.AppendValues(filter_locations);
-
-	if (!arrow_status.ok()) {
-	  LOG(ERROR) << "Error occurred in appending indices to builder";
-	  RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
-	}
-
-	arrow_status = idx_builder.Finish(&out_idx);
-
-	if (!arrow_status.ok()) {
-	  LOG(ERROR) << "Error occurred in builder finish";
-	  RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
-	}
-
-	const arrow::Datum filter_indices(out_idx);
+	RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(search_param, filter_locations));
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.AppendValues(filter_locations));
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.Finish(&out_idx));
 	arrow::Result<arrow::Datum>
-		result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
-	if (!result.status().ok()) {
-	  LOG(ERROR) << "Error occurred in filtering table by indices";
-	  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-	}
+		result = arrow::compute::Take(input, out_idx, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
 	output = result.ValueOrDie().table();
 	return Status::OK();
   };
 
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
 						 std::vector<int64_t> &find_index) override {
-	LOG(INFO) << "Finding row ids for a given index";
 	std::shared_ptr<SCALAR_TYPE> casted_value = std::static_pointer_cast<SCALAR_TYPE>(search_param);
 	const std::string val = (casted_value->value->ToString());
-	//const std::string *sp = static_cast<const std::string *>(search_param);
-	//arrow::util::string_view search_param_sv(*sp);
 	auto ret = map_->equal_range(val);
 	for (auto it = ret.first; it != ret.second; ++it) {
 	  find_index.push_back(it->second);
@@ -324,9 +272,6 @@ class ArrowHashIndex<arrow::StringType, arrow::util::string_view> : public BaseA
   };
 
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) override {
-	LOG(INFO) << "Finding row id for a given index";
-//	const std::string *sp = static_cast<const std::string *>(search_param);
-//	arrow::util::string_view search_param_sv(*sp);
 	std::shared_ptr<SCALAR_TYPE> casted_value = std::static_pointer_cast<SCALAR_TYPE>(search_param);
 	const std::string val = (casted_value->value->ToString());
 	auto ret = map_->find(val);
@@ -334,27 +279,15 @@ class ArrowHashIndex<arrow::StringType, arrow::util::string_view> : public BaseA
 	  find_index = ret->second;
 	  return Status::OK();
 	}
-	return Status(cylon::Code::IndexError);
+	return Status(cylon::Code::IndexError, "Failed to find value from index.");
   };
 
   Status LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
 						  std::vector<int64_t> &filter_location) override {
-	cylon::Status status;
 	for (int64_t ix = 0; ix < search_param->length(); ix++) {
-	  std::vector<int64_t> filter_ix;
 	  auto index_val_sclr = search_param->GetScalar(ix).ValueOrDie();
-
-	  status = LocationByValue(index_val_sclr, filter_ix);
-	  if (!status.is_ok()) {
-		LOG(ERROR) << "Error in retrieving indices!";
-		return status;
-	  }
-
-	  for (size_t iy = 0; iy < filter_ix.size(); iy++) {
-		filter_location.push_back(filter_ix.at(iy));
-	  }
+	  RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(index_val_sclr, filter_location));
 	}
-
 	return Status::OK();
   }
 

@@ -37,16 +37,6 @@ std::unique_ptr<ArrowIndexKernel> CreateArrowIndexKernel(std::shared_ptr<arrow::
   }
 }
 
-// TODO:: Remove commented lines
-//cylon::Status CompareArraysForUniqueness(std::shared_ptr<arrow::Array> &index_arr, bool *is_unique) {
-//
-//  auto result = arrow::compute::Unique(index_arr);
-//  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-//  auto unique_arr = result.ValueOrDie();
-//  is_unique = reinterpret_cast<bool *>(unique_arr->length() == index_arr->length());
-//  return cylon::Status::OK();
-//}
-
 bool CompareArraysForUniqueness(const std::shared_ptr<arrow::Array> &index_arr) {
   auto result = arrow::compute::Unique(index_arr);
   if(!result.status().ok()) {
@@ -135,38 +125,12 @@ Status ArrowLinearIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &s
   std::shared_ptr<arrow::Array> out_idx;
   arrow::compute::ExecContext fn_ctx(GetPool());
   arrow::Int64Builder idx_builder(GetPool());
-  const arrow::Datum input_table(input);
-
-  status = LocationByValue(search_param, filter_location);
-
-  if (!status.is_ok()) {
-	LOG(ERROR) << "Error occurred in obtaining filter indices by index value";
-	return status;
-  }
-
-  arrow_status = idx_builder.AppendValues(filter_location);
-
-  if (!arrow_status.ok()) {
-	LOG(ERROR) << "Error occurred in appending filter indices to builder";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
-  }
-
-  arrow_status = idx_builder.Finish(&out_idx);
-
-  if (!arrow_status.ok()) {
-	LOG(ERROR) << "Error occurred in builder finish";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(arrow_status);
-  }
-
-  const arrow::Datum filter_indices(out_idx);
+  RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(search_param, filter_location));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.AppendValues(filter_location));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.Finish(&out_idx));
   arrow::Result<arrow::Datum>
-	  result = arrow::compute::Take(input_table, filter_indices, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
-
-  if (!result.status().ok()) {
-	LOG(ERROR) << "Error occurred in filtering table by indices";
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-  }
-
+	  result = arrow::compute::Take(input, out_idx, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
   output = result.ValueOrDie().table();
   return Status::OK();
 }
@@ -199,21 +163,12 @@ Status ArrowLinearIndex::LocationByVector(const std::shared_ptr<arrow::Array> &s
 										  std::vector<int64_t> &filter_location) {
 
   auto cast_search_param_result = arrow::compute::Cast(search_param, index_array_->type());
-
   auto search_param_array = cast_search_param_result.ValueOrDie().make_array();
-
   auto res_isin_filter = arrow::compute::IsIn(index_array_, search_param_array);
-
-  if (!res_isin_filter.ok()) {
-	LOG(ERROR) << "Filtering Failed when creating resultant index bool array!!!";
-  }
-
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(res_isin_filter.status());
   auto res_isin_filter_val = res_isin_filter.ValueOrDie();
-
   std::shared_ptr<arrow::Array> arr_isin = res_isin_filter_val.make_array();
-
   std::shared_ptr<arrow::BooleanArray> arr_isin_bool_array = std::static_pointer_cast<arrow::BooleanArray>(arr_isin);
-
   for (int64_t ix = 0; ix < arr_isin_bool_array->length(); ix++) {
 	auto val = arr_isin_bool_array->Value(ix);
 	if (val) {
@@ -237,8 +192,7 @@ Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &se
   std::shared_ptr<arrow::Int64Scalar> casted_search_param = std::static_pointer_cast<arrow::Int64Scalar>(search_param);
   int64_t val = casted_search_param->value;
   if (!(val >= start_ && val < end_)) {
-	LOG(ERROR) << "1:Invalid Key, it must be in the range of 0, num of records";
-	return Status(cylon::Code::KeyError);
+	return Status(cylon::Code::KeyError, "Invalid Key, it must be in the range of 0, num of records");
   }
   find_index.push_back(val);
   return Status::OK();
@@ -247,8 +201,7 @@ Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &se
   std::shared_ptr<arrow::Int64Scalar> casted_search_param = std::static_pointer_cast<arrow::Int64Scalar>(search_param);
   int64_t val = casted_search_param->value;
   if (!(val >= start_ && val < end_)) {
-	LOG(ERROR) << "1:Invalid Key, it must be in the range of 0, num of records";
-	return Status(cylon::Code::KeyError);
+	return Status(cylon::Code::KeyError, "Invalid Key, it must be in the range of 0, num of records");
   }
   find_index = val;
   return Status::OK();
