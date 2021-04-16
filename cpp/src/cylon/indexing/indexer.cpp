@@ -111,7 +111,7 @@ static cylon::Status ResolveArrowILocIndices(const std::shared_ptr<arrow::Array>
   std::shared_ptr<arrow::Int64Array> input_indices_ar = std::static_pointer_cast<arrow::Int64Array>(input_indices);
   for (int64_t ix = 0; ix < input_indices->length(); ix++) {
 	int64_t val = input_indices_ar->Value(ix);
-	output_indices.push_back(val);
+	output_indices[ix]= val;
   }
   return cylon::Status::OK();
 }

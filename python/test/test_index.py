@@ -91,7 +91,6 @@ def test_reset_index():
     from pycylon.indexing.index import IndexingType
     from pycylon.indexing.index_utils import IndexUtil
 
-
     pdf_float = pd.DataFrame({'a': pd.Series([1, 4, 7, 10, 20, 23, 10], dtype=np.int64()),
                               'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int')})
     pdf = pd.DataFrame([[1, 2], [4, 5], [7, 8], [10, 11], [20, 22], [23, 25], [10, 12]])
@@ -516,6 +515,12 @@ def test_loc_op_mode_1():
     assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
     # assert loc_cn_5.get_arrow_index().get_index_array() == pa.array(loc_pd_5.index)
 
+    loc_cn_6 = cn_tb.loc[[7, 20], 'd':]
+    loc_pd_6 = pdf_float.loc[[7, 20], 'd':]
+
+    assert loc_pd_6.values.tolist() == loc_cn_6.to_pandas().values.tolist()
+    assert loc_cn_6.get_index().get_index_array() == pa.array(loc_pd_6.index)
+
 
 def test_loc_op_mode_2():
     from pycylon.indexing.index import IndexingType
@@ -578,11 +583,16 @@ def test_loc_op_mode_2():
     assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
     # assert loc_cn_5.get_arrow_index().get_index_array() == pa.array(loc_pd_5.index)
 
+    loc_cn_6 = cn_tb.loc[["7", "20"], 'd':]
+    loc_pd_6 = pdf_float.loc[["7", "20"], 'd':]
+
+    assert loc_pd_6.values.tolist() == loc_cn_6.to_pandas().values.tolist()
+    assert loc_cn_6.get_index().get_index_array() == pa.array(loc_pd_6.index)
+
 
 def test_loc_op_mode_3():
     from pycylon.indexing.index import IndexingType
     from pycylon.indexing.index_utils import IndexUtil
-
 
     pdf_float = pd.DataFrame({'a': pd.Series(["1", "4", "7", "10", "20", "23", "11"]),
                               'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
@@ -634,11 +644,16 @@ def test_loc_op_mode_3():
     assert loc_pd_4.values.tolist() == loc_cn_4.to_pandas().values.tolist()
     assert loc_cn_4.get_index().get_index_array() == pa.array(loc_pd_4.index)
 
+    loc_cn_5 = cn_tb.loc[["7", "20"], :]
+    loc_pd_5 = pdf_float.loc[["7", "20"], :]
+
+    assert loc_pd_5.values.tolist() == loc_cn_5.to_pandas().values.tolist()
+    assert loc_cn_5.get_index().get_index_array() == pa.array(loc_pd_5.index)
+
 
 def test_iloc_op_mode_1():
     from pycylon.indexing.index import IndexingType
     from pycylon.indexing.index_utils import IndexUtil
-
 
     pdf_float = pd.DataFrame({'a': pd.Series(["1", "4", "7", "10", "20", "23", "11"]),
                               'b': pd.Series([2, 5, 8, 11, 22, 25, 12], dtype='int'),
@@ -696,6 +711,11 @@ def test_iloc_op_mode_1():
     iloc_pd_5 = pdf_float.iloc[:, :]
 
     assert iloc_pd_5.values.tolist() == iloc_cn_5.to_pandas().values.tolist()
+
+    iloc_cn_6 = cn_tb.iloc[[0, 2, 3], :]
+    iloc_pd_6 = pdf_float.iloc[[0, 2, 3], :]
+
+    assert iloc_pd_6.values.tolist() == iloc_cn_6.to_pandas().values.tolist()
 
 
 def test_isin():
@@ -853,8 +873,8 @@ def test_index_set_index():
                               'e': pd.Series([1121, 12151, 12181, 12111, 12221, 12251, 13121],
                                              dtype='int')})
     ctx: CylonContext = CylonContext(config=None, distributed=False)
-    #pdf_float = pdf_float.set_index('a')
-    #pdf_float = pdf_float.reset_index()
+    # pdf_float = pdf_float.set_index('a')
+    # pdf_float = pdf_float.reset_index()
 
     cn_tb: Table = Table.from_pandas(ctx, pdf_float)
     print("PyCylon Orignal Table")
@@ -871,7 +891,6 @@ def test_index_set_index():
 
     cn_tb.set_index(key='a', indexing_type=indexing_type, drop=drop_index)
 
-
     print("After Indexing : ", cn_tb.column_names)
     print(cn_tb)
     print(cn_tb.index.values)
@@ -883,11 +902,7 @@ def test_index_set_index():
 
     print(res)
 
-
-
     print(pdf_loc)
-
-
 
 
 # test_isin_with_getitem()

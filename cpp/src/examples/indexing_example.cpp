@@ -810,11 +810,12 @@ int arrow_indexer_test_1() {
   std::cout << "Output Table Index Schema : " << output1->GetArrowIndex()->GetIndexingType() << std::endl;
   std::cout << "Output Table Index Size : " << output1->GetArrowIndex()->GetSize() << std::endl;
   std::cout << "Output Table Index Array Size : " << output1->GetArrowIndex()->GetIndexArray()->length() << std::endl;
-
-  auto index_as_array = output1->GetArrowIndex()->GetIndexAsArray();
-  std::cout << "Index As an Array " << std::endl;
-
-  print_arrow_array(index_as_array);
+  auto idxar = output1->GetArrowIndex()->GetIndexArray();
+  print_arrow_array(idxar);
+  //auto index_as_array = output1->GetArrowIndex()->GetIndexAsArray();
+//  std::cout << "Index As an Array " << std::endl;
+//
+//  print_arrow_array(index_as_array);
 
   std::shared_ptr<cylon::ArrowBaseIndexer>
 	  loc_indexer = std::make_shared<cylon::ArrowLocIndexer>(schema);
@@ -1923,61 +1924,6 @@ int arrow_filter_example() {
   std::shared_ptr<cylon::Table> output_tb;
   std::shared_ptr<arrow::Int64Array> search_index_array, data_array, other_data;
   auto pool = cylon::ToArrowPool(ctx);
-//  arrow::Int64Builder builder1(pool);
-//  arrow::Int64Builder builder2(pool);
-//  arrow::Int64Builder builder3(pool);
-
-//  create_int64_arrow_array(builder1, capacity, 0, data_array);
-//  create_int64_arrow_array(builder2, search_capacity, offset, search_index_array);
-//  create_int64_arrow_array(builder3, capacity, 100, other_data);
-//
-//  LOG(INFO) << "Data Array";
-//  auto casted_data_array = std::static_pointer_cast<arrow::Array>(data_array);
-//  print_arrow_array(casted_data_array);
-//  LOG(INFO) << "Search Array";
-//  auto casted_search_array = std::static_pointer_cast<arrow::Array>(search_index_array);
-//  print_arrow_array(casted_search_array);
-//  LOG(INFO) << "Other Array";
-//  auto casted_other_array = std::static_pointer_cast<arrow::Array>(other_data);
-//  print_arrow_array(casted_other_array);
-
-//  auto res_isin_filter = arrow::compute::IsIn(data_array, search_index_array);
-//
-//  if (res_isin_filter.ok()) {
-//	std::cout << "Successfully Filtered!!!" << std::endl;
-//  } else {
-//	std::cout << "Failed Filtering... :/" << std::endl;
-//  }
-//
-//  auto res_isin_filter_val = res_isin_filter.ValueOrDie();
-//
-//  if (res_isin_filter_val.is_array()) {
-//	std::cout << "Filter response is an array" << std::endl;
-//  } else {
-//	std::cout << "Filter response is not an array" << std::endl;
-//  }
-//
-//  std::shared_ptr<arrow::ArrayData>
-//	  filtered_isin_array = std::static_pointer_cast<arrow::ArrayData>(res_isin_filter_val.array());
-//
-//  std::shared_ptr<arrow::ChunkedArray>
-//	  cr_isin = std::make_shared<arrow::ChunkedArray>(arrow::MakeArray(filtered_isin_array));
-//
-//  std::shared_ptr<arrow::Array> arr_isin = cr_isin->chunk(0);
-//
-//  print_arrow_array(arr_isin);
-//
-//  auto filter_1 = arrow::compute::Filter(other_data, arr_isin).ValueOrDie();
-//
-//  std::shared_ptr<arrow::ArrayData> fil_res_array = std::static_pointer_cast<arrow::ArrayData>(filter_1.array());
-//
-//  std::shared_ptr<arrow::ChunkedArray> cr1 = std::make_shared<arrow::ChunkedArray>(arrow::MakeArray(fil_res_array));
-//
-//  std::shared_ptr<arrow::Array> arr1 = cr1->chunk(0);
-//
-//  print_arrow_array(arr1);
-
-  ////////////////////////
 
   std::shared_ptr<cylon::Table> output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
@@ -2072,6 +2018,30 @@ int arrow_filter_example() {
   filter_index_builder.Finish(&filter_index_array);
   std::shared_ptr<arrow::Array> casted_index_array = std::static_pointer_cast<arrow::Array>(filter_index_array);
   print_arrow_array(casted_index_array);
+
+  std::cout << "Int64 Array Builder" << std::endl;
+  using TYPE = arrow::Int64Type;
+  std::shared_ptr<arrow::TypeTraits<TYPE>::ArrayType> int64_array;
+  arrow::NumericBuilder<TYPE> builder1(std::shared_ptr<TYPE>(), pool);
+  std::vector<int64_t> vector{0, 1, 2};
+  std::cout << "Appending values" << std::endl;
+  auto s0 = builder1.AppendValues(vector);
+  std::cout << "Appended values" << std::endl;
+  if (!s0.ok()) {
+	LOG(ERROR) << "builder append error : " << s0.message();
+  } else {
+    LOG(INFO) << "builder append success";
+  }
+  auto s1 = builder1.Finish(&int64_array);
+  if (!s1.ok()) {
+    LOG(ERROR) << "builder finish error : " << s1.message();
+  } else {
+    LOG(INFO) << "builder finish success";
+  }
+
+  std::cout << "Build array" << std::endl;
+  auto v1 = std::static_pointer_cast<arrow::Array>(int64_array);
+  print_arrow_array(v1);
 
   return 0;
 }
