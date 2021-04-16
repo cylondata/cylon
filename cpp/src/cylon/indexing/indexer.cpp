@@ -62,8 +62,14 @@ cylon::Status GetArrowLocFilterIndices(const std::shared_ptr<arrow::Scalar> &sta
 									   int64_t *s_index,
 									   int64_t *e_index) {
   std::shared_ptr<arrow::Table> out_artb;
-  RETURN_CYLON_STATUS_IF_FAILED(cylon::CheckIsIndexValueUnique(start_index, index));
-  RETURN_CYLON_STATUS_IF_FAILED(cylon::CheckIsIndexValueUnique(end_index, index));
+  bool is_start_unique = cylon::CheckIsIndexValueUnique(start_index, index);
+  if(!is_start_unique) {
+	return cylon::Status(cylon::Code::IndexError, "Start index must be unique");
+  }
+  bool is_end_unique = cylon::CheckIsIndexValueUnique(end_index, index);
+  if(!is_end_unique) {
+	return cylon::Status(cylon::Code::IndexError, "Start index must be unique");
+  }
   RETURN_CYLON_STATUS_IF_FAILED(index->LocationByValue(start_index, s_index));
   RETURN_CYLON_STATUS_IF_FAILED(index->LocationByValue(end_index, e_index));
   return cylon::Status::OK();
@@ -190,11 +196,11 @@ cylon::Status GetTableFromArrayIndices(const std::shared_ptr<cylon::Table> &inpu
    * */
 
 
-cylon::Status cylon::CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar> &index_value,
+bool cylon::CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar> &index_value,
 											 const std::shared_ptr<BaseArrowIndex> &index) {
 
   if (index->GetIndexingType() == cylon::IndexingType::Range) {
-	return cylon::Status::OK();
+	return true;
   } else {
 	auto index_arr = index->GetIndexArray();
 	int64_t find_cout = 0;
@@ -205,10 +211,10 @@ cylon::Status cylon::CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar
 		find_cout++;
 	  }
 	  if (find_cout > 1) {
-		return cylon::Status(cylon::Code::IndexError, "Index values are not unique.");
+		return false;
 	  }
 	}
-	return cylon::Status::OK();
+	return true;
   }
 
 }

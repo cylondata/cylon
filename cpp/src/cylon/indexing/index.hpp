@@ -368,7 +368,7 @@ class ArrowBinaryHashIndex : public BaseArrowIndex {
 	auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_column);
 	auto start_start = std::chrono::steady_clock::now();
 	for (int64_t i = reader0->length() - 1; i >= 0; --i) {
-	  auto val = reader0->GetView(i);
+	  auto val = reader0->GetString(i);
 	  map_->emplace(val, i);
 	}
 	auto end_time = std::chrono::steady_clock::now();
