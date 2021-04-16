@@ -39,8 +39,8 @@ pycylon_wrap_table,
 pycylon_unwrap_csv_read_options,
 pycylon_unwrap_csv_write_options,
 pycylon_unwrap_sort_options,
-pycylon_wrap_base_index,
-pycylon_unwrap_base_index,
+pycylon_wrap_base_arrow_index,
+pycylon_unwrap_base_arrow_index,
 pycylon_unwrap_join_config)
 
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
@@ -52,9 +52,9 @@ from pycylon.data import compute
 from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
 from pycylon.indexing.index_utils import IndexUtil
 
-from pycylon.indexing.index cimport CBaseIndex
-from pycylon.indexing.index import BaseIndex
-from pycylon.indexing.index import IndexingSchema
+from pycylon.indexing.index cimport CBaseArrowIndex
+from pycylon.indexing.index import BaseArrowIndex
+from pycylon.indexing.index import IndexingType
 from pycylon.indexing.index import PyLocIndexer
 
 from pycylon.util.type_utils import get_arrow_type
@@ -76,7 +76,7 @@ cdef class Table:
     def __init__(self, pyarrow_table=None, context=None):
         self.initialize(pyarrow_table, context)
         self._index = None
-        self._indexing_schema = IndexingSchema.RANGE
+        self._indexing_type = IndexingType.RANGE
 
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
         """
@@ -87,7 +87,7 @@ cdef class Table:
         """
         self.initialize(pyarrow_table, context)
         self._index = None
-        self._indexing_schema = IndexingSchema.RANGE
+        self._indexing_type = IndexingType.RANGE
 
     def initialize(self, pyarrow_table=None, context=None):
         cdef shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
@@ -2054,8 +2054,8 @@ cdef class Table:
         '''
         return self.get_index()
 
-    def set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
-                  drop: bool = False):
+    def set_index(self, key, indexing_type: IndexingType = IndexingType.LINEAR,
+                        drop: bool = False):
         '''
         Set Index
         Operation takes place inplace.
@@ -2098,17 +2098,48 @@ cdef class Table:
         # TODO: Multi-Indexing support: https://github.com/cylondata/cylon/issues/233
         # TODO: Enhancing: https://github.com/cylondata/cylon/issues/235
         cdef shared_ptr[CTable] indexed_cylon_table
-        cdef shared_ptr[CBaseIndex] c_base_index
+        cdef shared_ptr[CBaseArrowIndex] c_base_arrow_index
 
-        if isinstance(key, BaseIndex):
-            c_base_index = pycylon_unwrap_base_index(key)
-            self.table_shd_ptr.get().Set_Index(c_base_index, False)
+        if isinstance(key, BaseArrowIndex):
+            c_base_arrow_index = pycylon_unwrap_base_arrow_index(key)
+            self.table_shd_ptr.get().SetArrowIndex(c_base_arrow_index, False)
         else:
             indexed_table = process_index_by_value(key=key, table=self,
-                                                   index_schema=indexing_schema,
+                                                   indexing_type=indexing_type,
                                                    drop_index=drop)
             indexed_cylon_table = pycylon_unwrap_table(indexed_table)
             self.init(indexed_cylon_table)
+
+    # def _reset_index(self, drop_index: bool = False) -> Table:
+    #     """
+    #     reset_index
+    #     Here the existing index can be removed and set back to table.
+    #     This operation takes place in place.
+    #     Args:
+    #         drop_index: bool, if True the column is dropped otherwise added to the table with the
+    #         column name "index"
+    #
+    #     Returns: None
+    #
+    #     Examples
+    #     --------
+    #
+    #     >>> tb
+    #             col-2  col-3
+    #         1      5      9
+    #         2      6     10
+    #         3      7     11
+    #         4      8     12
+    #
+    #     >>> tb.reset_index()
+    #             col-1  col-2  col-3
+    #         0      1      5      9
+    #         1      2      6     10
+    #         2      3      7     11
+    #         3      4      8     12
+    #     """
+    #     cdef bool c_drop_index = drop_index
+    #     self.table_shd_ptr.get().ResetIndex(c_drop_index)
 
     def reset_index(self, drop_index: bool = False) -> Table:
         """
@@ -2139,7 +2170,7 @@ cdef class Table:
             3      4      8     12
         """
         cdef bool c_drop_index = drop_index
-        self.table_shd_ptr.get().ResetIndex(c_drop_index)
+        self.table_shd_ptr.get().ResetArrowIndex(c_drop_index)
 
     def dropna(self, axis=0, how='any', inplace=False):
         '''
@@ -2253,17 +2284,21 @@ cdef class Table:
         return Table.from_arrow(self.context,
                                 pa.Table.from_arrays(new_chunks, self.column_names))
 
-    def get_index(self) -> BaseIndex:
-        cdef shared_ptr[CBaseIndex] c_index = self.table_shd_ptr.get().GetIndex()
-        return pycylon_wrap_base_index(c_index)
+    # def _get_index(self) -> BaseIndex:
+    #     cdef shared_ptr[CBaseIndex] c_index = self.table_shd_ptr.get().GetIndex()
+    #     return pycylon_wrap_base_index(c_index)
+
+    def get_index(self) -> BaseArrowIndex:
+        cdef shared_ptr[CBaseArrowIndex] c_index = self.table_shd_ptr.get().GetArrowIndex()
+        return pycylon_wrap_base_arrow_index(c_index)
 
     @property
-    def indexing_schema(self):
-        return self._indexing_schema
+    def indexing_type(self):
+        return self._indexing_type
 
-    @indexing_schema.setter
-    def indexing_schema(self, schema):
-        self._indexing_schema = schema
+    @indexing_type.setter
+    def indexing_type(self, type):
+        self._indexing_type = type
 
     @property
     def loc(self) -> PyLocIndexer:
@@ -2489,6 +2524,9 @@ cdef class Table:
             return new_cn_table
         else:
             raise ValueError("Unsupported data type representation")
+
+    def __len__(self) -> int:
+        return self.row_count
 
 
 class EmptyTable(Table):

@@ -14,7 +14,7 @@
 
 
 from __future__ import annotations
-from typing import Hashable, List, Dict, Optional, Sequence, Union, Final
+from typing import Hashable, List, Dict, Optional, Sequence, Union
 from copy import copy
 from collections.abc import Iterable
 import pycylon as cn
@@ -28,7 +28,7 @@ from pycylon.io import CSVReadOptions
 
 from pycylon import CylonContext
 
-DEVICE_CPU: Final = "cpu"
+DEVICE_CPU = "cpu"
 
 
 class CylonEnv(object):
