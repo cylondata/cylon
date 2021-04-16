@@ -101,7 +101,7 @@ class ArrowNumericHashIndex : public BaseArrowIndex {
 						arrow::MemoryPool *pool,
 						const std::shared_ptr<arrow::Array> &index_column)
 	  : BaseArrowIndex(col_ids, size, pool) {
-	Build_Hash_Index(index_column);
+	build_hash_index(index_column);
   };
 
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
@@ -157,25 +157,13 @@ class ArrowNumericHashIndex : public BaseArrowIndex {
   std::shared_ptr<arrow::Array> GetIndexAsArray() override {
 	LOG(INFO) << "NumericHashIndex GetIndexAsArray";
 	using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
-
 	arrow::Status arrow_status;
 	auto pool = GetPool();
-
-	LOG(INFO) << "Arrow Builder initializing...";
 	ARROW_BUILDER_T builder(index_arr_->type(), pool);
-	LOG(INFO) << "Arrow Builder initialized...";
-
 	std::vector<CTYPE> vec(GetSize());
-
-	LOG(INFO) << "Vector initialized...";
-
 	for (const auto &x: *map_) {
 	  vec[x.second] = x.first;
-	  std::cout << x.second << ", " << x.first << std::endl;
 	}
-
-	LOG(INFO) << "Vector filled...";
-
 	arrow_status = builder.AppendValues(vec);
 	if (!arrow_status.ok()) {
 	  LOG(ERROR) << "Error occurred in appending values to array builder";
@@ -186,7 +174,6 @@ class ArrowNumericHashIndex : public BaseArrowIndex {
 	  LOG(ERROR) << "Error occurred in array builder finish";
 	  return nullptr;
 	}
-
 	return index_arr_;
   }
 
@@ -201,7 +188,7 @@ class ArrowNumericHashIndex : public BaseArrowIndex {
   }
 
   void SetIndexArray(const std::shared_ptr<arrow::Array> &index_arr) override {
-	Build_Hash_Index(index_arr);
+	build_hash_index(index_arr);
   }
 
   std::shared_ptr<arrow::Array> GetIndexArray() override {
@@ -222,7 +209,7 @@ class ArrowNumericHashIndex : public BaseArrowIndex {
   std::shared_ptr<MMAP_TYPE> map_;
   std::shared_ptr<arrow::Array> index_arr_;
 
-  cylon::Status Build_Hash_Index(const std::shared_ptr<arrow::Array> &index_column) {
+  cylon::Status build_hash_index(const std::shared_ptr<arrow::Array> &index_column) {
 	index_arr_ = index_column;
 	map_ = std::make_shared<MMAP_TYPE>(index_column->length());
 	auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_column);
@@ -252,7 +239,7 @@ class ArrowBinaryHashIndex : public BaseArrowIndex {
 					   arrow::MemoryPool *pool,
 					   const std::shared_ptr<arrow::Array> &index_column)
 	  : BaseArrowIndex(col_ids, size, pool) {
-	Build_Hash_Index(index_column);
+	build_hash_index(index_column);
   };
 
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
@@ -341,7 +328,7 @@ class ArrowBinaryHashIndex : public BaseArrowIndex {
   }
 
   void SetIndexArray(const std::shared_ptr<arrow::Array> &index_arr) override {
-	Build_Hash_Index(index_arr);
+	build_hash_index(index_arr);
   }
 
   std::shared_ptr<arrow::Array> GetIndexArray() override {
@@ -362,7 +349,7 @@ class ArrowBinaryHashIndex : public BaseArrowIndex {
   std::shared_ptr<MMAP_TYPE> map_;
   std::shared_ptr<arrow::Array> index_arr_;
 
-  cylon::Status Build_Hash_Index(const std::shared_ptr<arrow::Array> &index_column) {
+  cylon::Status build_hash_index(const std::shared_ptr<arrow::Array> &index_column) {
 	index_arr_ = index_column;
 	map_ = std::make_shared<MMAP_TYPE>(index_column->length());
 	auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_column);
