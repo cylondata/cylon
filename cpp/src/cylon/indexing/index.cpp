@@ -88,12 +88,12 @@ Status ArrowLinearIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &s
   }
   return Status::OK();
 }
-Status ArrowLinearIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) {
+Status ArrowLinearIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t *find_index) {
   auto cast_val = search_param->CastTo(index_array_->type()).ValueOrDie();
   for (int64_t ix = 0; ix < index_array_->length(); ix++) {
 	auto val = index_array_->GetScalar(ix).ValueOrDie();
 	if (cast_val->Equals(val)) {
-	  find_index = ix;
+	  *find_index = ix;
 	  break;
 	}
   }
@@ -180,13 +180,13 @@ Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &se
   find_index.push_back(val);
   return Status::OK();
 }
-Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) {
+Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t *find_index) {
   std::shared_ptr<arrow::Int64Scalar> casted_search_param = std::static_pointer_cast<arrow::Int64Scalar>(search_param);
   int64_t val = casted_search_param->value;
   if (!(val >= start_ && val < end_)) {
 	return Status(cylon::Code::KeyError, "Invalid Key, it must be in the range of 0, num of records");
   }
-  find_index = val;
+  *find_index = val;
   return Status::OK();
 }
 Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,

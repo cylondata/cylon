@@ -44,7 +44,7 @@ class BaseArrowIndex {
   virtual Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
 								 std::vector<int64_t> &find_index) = 0;
   // TODO: remove &reference for find_index and add a pointer
-  virtual Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) = 0;
+  virtual Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t *find_index) = 0;
 
   virtual Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
 								 const std::shared_ptr<arrow::Table> &input,
@@ -132,12 +132,12 @@ class ArrowNumericHashIndex : public BaseArrowIndex {
 	return Status::OK();
   }
 
-  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) override {
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t *find_index) override {
 	std::shared_ptr<SCALAR_TYPE> casted_value = std::static_pointer_cast<SCALAR_TYPE>(search_param);
 	const CTYPE val = static_cast<const CTYPE>(casted_value->value);
 	auto ret = map_->find(val);
 	if (ret != map_->end()) {
-	  find_index = ret->second;
+	  *find_index = ret->second;
 	  return Status::OK();
 	}
 	return Status(cylon::Code::IndexError, "Failed to retrieve value from index");
@@ -283,12 +283,12 @@ class ArrowBinaryHashIndex : public BaseArrowIndex {
 	return Status::OK();
   }
 
-  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) override {
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t *find_index) override {
 	std::shared_ptr<SCALAR_TYPE> casted_value = std::static_pointer_cast<SCALAR_TYPE>(search_param);
 	auto val = casted_value->value->ToString();
 	auto ret = map_->find(val);
 	if (ret != map_->end()) {
-	  find_index = ret->second;
+	  *find_index = ret->second;
 	  return Status::OK();
 	}
 	return Status(cylon::Code::IndexError, "Failed to retrieve value from index");
@@ -393,7 +393,7 @@ class ArrowRangeIndex : public BaseArrowIndex {
   ArrowRangeIndex(int start, int size, int step, arrow::MemoryPool *pool);
 
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, std::vector<int64_t> &find_index) override;
-  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) override;
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t *find_index) override;
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
 						 const std::shared_ptr<arrow::Table> &input,
 						 std::vector<int64_t> &filter_location,
@@ -429,7 +429,7 @@ class ArrowLinearIndex : public BaseArrowIndex {
   }
 
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, std::vector<int64_t> &find_index) override;
-  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) override;
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t *find_index) override;
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
 						 const std::shared_ptr<arrow::Table> &input,
 						 std::vector<int64_t> &filter_location,

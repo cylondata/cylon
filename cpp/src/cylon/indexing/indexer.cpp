@@ -40,8 +40,8 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
 }
 
 cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseArrowIndex> &index,
-											 int64_t &start_pos,
-											 int64_t &end_pos,
+											 int64_t start_pos,
+											 int64_t end_pos,
 											 std::shared_ptr<cylon::Table> &output,
 											 cylon::IndexingType indexing_type) {
   std::shared_ptr<cylon::BaseArrowIndex> loc_index;
@@ -59,8 +59,8 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
 cylon::Status GetArrowLocFilterIndices(const std::shared_ptr<arrow::Scalar> &start_index,
 									   const std::shared_ptr<arrow::Scalar> &end_index,
 									   const std::shared_ptr<cylon::BaseArrowIndex> &index,
-									   int64_t &s_index,
-									   int64_t &e_index) {
+									   int64_t *s_index,
+									   int64_t *e_index) {
   std::shared_ptr<arrow::Table> out_artb;
   RETURN_CYLON_STATUS_IF_FAILED(cylon::CheckIsIndexValueUnique(start_index, index));
   RETURN_CYLON_STATUS_IF_FAILED(cylon::CheckIsIndexValueUnique(end_index, index));
@@ -69,8 +69,8 @@ cylon::Status GetArrowLocFilterIndices(const std::shared_ptr<arrow::Scalar> &sta
   return cylon::Status::OK();
 }
 
-cylon::Status SliceTableByRange(const int64_t start_index,
-								const int64_t end_index,
+cylon::Status SliceTableByRange(int64_t start_index,
+								int64_t end_index,
 								const std::shared_ptr<cylon::Table> &input_table,
 								std::shared_ptr<cylon::Table> &output) {
 
@@ -111,7 +111,7 @@ static cylon::Status ResolveArrowILocIndices(const std::shared_ptr<arrow::Array>
   std::shared_ptr<arrow::Int64Array> input_indices_ar = std::static_pointer_cast<arrow::Int64Array>(input_indices);
   for (int64_t ix = 0; ix < input_indices->length(); ix++) {
 	int64_t val = input_indices_ar->Value(ix);
-	output_indices[ix]= val;
+	output_indices[ix] = val;
   }
   return cylon::Status::OK();
 }
@@ -227,7 +227,7 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
   std::shared_ptr<cylon::Table> temp_output;
   int64_t s_index = -1;
   int64_t e_index = -1;
-  RETURN_CYLON_STATUS_IF_FAILED(GetArrowLocFilterIndices(start_index, end_index, index, s_index, e_index));
+  RETURN_CYLON_STATUS_IF_FAILED(GetArrowLocFilterIndices(start_index, end_index, index, &s_index, &e_index));
   std::vector<int> filter_columns = {column_index};
   RETURN_CYLON_STATUS_IF_FAILED(SliceTableByRange(s_index, e_index, input_table, temp_output));
   RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_output, filter_columns, output));
@@ -244,7 +244,7 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
   std::shared_ptr<cylon::Table> temp_output;
   int64_t s_index = -1;
   int64_t e_index = -1;
-  RETURN_CYLON_STATUS_IF_FAILED(GetArrowLocFilterIndices(start_index, end_index, index, s_index, e_index));
+  RETURN_CYLON_STATUS_IF_FAILED(GetArrowLocFilterIndices(start_index, end_index, index, &s_index, &e_index));
   // filter columns include both boundaries
   std::vector<int> filter_columns;
   RETURN_CYLON_STATUS_IF_FAILED(GetColumnIndicesFromLimits(start_column_index, end_column_index, filter_columns));
@@ -259,9 +259,10 @@ cylon::Status cylon::ArrowLocIndexer::loc(const std::shared_ptr<arrow::Scalar> &
 										  const std::shared_ptr<Table> &input_table,
 										  std::shared_ptr<cylon::Table> &output) {
   std::shared_ptr<cylon::Table> temp_output;
-  int64_t s_index, e_index = -1;
+  int64_t s_index = -1;
+  int64_t e_index = -1;
   auto index = input_table->GetArrowIndex();
-  RETURN_CYLON_STATUS_IF_FAILED(GetArrowLocFilterIndices(start_index, end_index, index, s_index, e_index));
+  RETURN_CYLON_STATUS_IF_FAILED(GetArrowLocFilterIndices(start_index, end_index, index, &s_index, &e_index));
   RETURN_CYLON_STATUS_IF_FAILED(SliceTableByRange(s_index, e_index, input_table, temp_output));
   RETURN_CYLON_STATUS_IF_FAILED(FilterColumnsFromTable(temp_output, columns, output));
   RETURN_CYLON_STATUS_IF_FAILED(SetArrowIndexForLocResultTable(index, s_index, e_index, output, indexing_type_));
