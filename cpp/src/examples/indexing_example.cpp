@@ -250,7 +250,6 @@ int print_arrow_array(std::shared_ptr<arrow::Array> &arr) {
   return 0;
 }
 
-
 int test_scalar_casting() {
   std::unordered_multimap<int64_t, int64_t> map;
 

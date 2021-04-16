@@ -475,7 +475,8 @@ class ArrowRangeIndexKernel : public ArrowIndexKernel {
 
 template<typename TYPE,
 	typename = typename std::enable_if<arrow::is_number_type<TYPE>::value
-										   | arrow::is_boolean_type<TYPE>::value | arrow::is_temporal_type<TYPE>::value>::type>
+										   | arrow::is_boolean_type<TYPE>::value
+										   | arrow::is_temporal_type<TYPE>::value>::type>
 class ArrowNumericalHashIndexKernel : public ArrowIndexKernel {
 
  public:

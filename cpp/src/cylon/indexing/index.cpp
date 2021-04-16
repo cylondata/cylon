@@ -217,7 +217,7 @@ std::shared_ptr<arrow::Array> ArrowRangeIndex::GetIndexAsArray() {
   }
   arrow_status = builder.AppendValues(vec);
   if (!arrow_status.ok()) {
-    LOG(ERROR) << "Error occurred when generating range index values with array builder";
+	LOG(ERROR) << "Error occurred when generating range index values with array builder";
   }
   arrow_status = builder.Finish(&index_arr_);
   if (!arrow_status.ok()) {

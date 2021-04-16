@@ -8,7 +8,7 @@
 namespace cylon {
 
 bool CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar> &index_value,
-									  const std::shared_ptr<BaseArrowIndex> &index);
+							 const std::shared_ptr<BaseArrowIndex> &index);
 
 /**
  * Loc operations
@@ -107,7 +107,7 @@ class ArrowLocIndexer : public ArrowBaseIndexer {
  * iLoc operations
  * */
 
-class ArrowILocIndexer : public ArrowLocIndexer{
+class ArrowILocIndexer : public ArrowLocIndexer {
  public:
   ArrowILocIndexer(IndexingType indexing_type);
 
@@ -145,8 +145,6 @@ class ArrowILocIndexer : public ArrowLocIndexer{
  private:
   IndexingType indexing_type_;
 };
-
-
 
 }
 
