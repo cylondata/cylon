@@ -25,7 +25,7 @@ import argparse
 """
 Run benchmark:
 
->>> python python/examples/op_benchmark/compute_benchmark.py --start_size 1_000_000_000 \
+>>> python python/examples/op_benchmark/compute_benchmark.py --start_size 10_000_000 \
                                         --step_size 10_000_000 \
                                         --end_size 30_000_000 \
                                         --num_cols 2 \

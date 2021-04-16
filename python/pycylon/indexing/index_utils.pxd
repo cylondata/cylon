@@ -23,7 +23,7 @@ from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 from pycylon.data.table cimport CTable
 from pycylon.data.table import Table
-from pycylon.indexing.index cimport CIndexingSchema
+from pycylon.indexing.index cimport CIndexingType
 
 
 cdef extern from "../../../cpp/src/cylon/indexing/index_utils.hpp" namespace "cylon":
@@ -31,12 +31,12 @@ cdef extern from "../../../cpp/src/cylon/indexing/index_utils.hpp" namespace "cy
     cdef cppclass CIndexUtil 'cylon::IndexUtil':
 
         @staticmethod
-        CStatus BuildIndex(const CIndexingSchema schema, const shared_ptr[CTable] &input,
-                            const int index_column, const bool drop, shared_ptr[CTable] &output)
+        CStatus BuildArrowIndex(const CIndexingType schema, const shared_ptr[CTable] & input,
+                           const int index_column, const bool drop, shared_ptr[CTable] & output)
 
-        @staticmethod
-        CStatus BuildIndexFromArray(const CIndexingSchema schema, const shared_ptr[CTable] & input,
-                            const shared_ptr[CArrowArray] &index_array, shared_ptr[CTable] & output)
+        @ staticmethod
+        CStatus BuildArrowIndexFromArray(const CIndexingType schema, const shared_ptr[CTable] & input,
+                                         const shared_ptr[CArrowArray] & index_array)
 
 
 cdef class IndexUtil:
