@@ -39,37 +39,19 @@ class IndexUtil {
   static Status BuildArrowRangeIndex(const std::shared_ptr<Table> &input,
 									 std::shared_ptr<cylon::BaseArrowIndex> &index);
 
-  template<class ARROW_T, typename CTYPE = typename ARROW_T::c_type>
-  static Status BuildArrowHashIndexFromArrowArray(const std::shared_ptr<arrow::Array> &index_values,
-												  arrow::MemoryPool *pool,
-												  std::shared_ptr<cylon::BaseArrowIndex> &index) {
-	index = std::make_shared<ArrowHashIndex<ARROW_T, CTYPE>>(-1, index_values->length(), pool, index_values);
-	index->SetIndexArray(index_values);
-	return Status::OK();
-  }
-
   template<class TYPE>
   static Status BuildArrowNumericHashIndexFromArrowArray(const std::shared_ptr<arrow::Array> &index_values,
-												  arrow::MemoryPool *pool,
-												  std::shared_ptr<cylon::BaseArrowIndex> &index) {
+														 arrow::MemoryPool *pool,
+														 std::shared_ptr<cylon::BaseArrowIndex> &index) {
 	index = std::make_shared<ArrowNumericHashIndex<TYPE>>(-1, index_values->length(), pool, index_values);
 	index->SetIndexArray(index_values);
 	return Status::OK();
   }
 
   template<class TYPE>
-  static Status BuildArrowTemporalHashIndexFromArrowArray(const std::shared_ptr<arrow::Array> &index_values,
-														 arrow::MemoryPool *pool,
-														 std::shared_ptr<cylon::BaseArrowIndex> &index) {
-	index = std::make_shared<ArrowTemporalHashIndex<TYPE>>(-1, index_values->length(), pool, index_values);
-	index->SetIndexArray(index_values);
-	return Status::OK();
-  }
-
-  template<class TYPE>
   static Status BuildArrowBinaryHashIndexFromArrowArray(const std::shared_ptr<arrow::Array> &index_values,
-														 arrow::MemoryPool *pool,
-														 std::shared_ptr<cylon::BaseArrowIndex> &index) {
+														arrow::MemoryPool *pool,
+														std::shared_ptr<cylon::BaseArrowIndex> &index) {
 	index = std::make_shared<ArrowBinaryHashIndex<TYPE>>(-1, index_values->length(), pool, index_values);
 	index->SetIndexArray(index_values);
 	return Status::OK();

@@ -180,23 +180,23 @@ cylon::Status cylon::IndexUtil::BuildArrowHashIndexFromArray(const std::shared_p
 		  pool,
 		  index);
 	case arrow::Type::DATE32:
-	  return cylon::IndexUtil::BuildArrowTemporalHashIndexFromArrowArray<arrow::Date32Type>(index_values,
+	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Date32Type>(index_values,
 																						   pool,
 																						   index);
 	case arrow::Type::DATE64:
-	  return cylon::IndexUtil::BuildArrowTemporalHashIndexFromArrowArray<arrow::Date64Type>(index_values,
+	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Date64Type>(index_values,
 																						   pool,
 																						   index);
 	case arrow::Type::TIMESTAMP:
-	  return cylon::IndexUtil::BuildArrowTemporalHashIndexFromArrowArray<arrow::TimestampType>(index_values,
+	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::TimestampType>(index_values,
 																							  pool,
 																							  index);
 	case arrow::Type::TIME32:
-	  return cylon::IndexUtil::BuildArrowTemporalHashIndexFromArrowArray<arrow::Time32Type>(index_values,
+	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Time32Type>(index_values,
 																						   pool,
 																						   index);
 	case arrow::Type::TIME64:
-	  return cylon::IndexUtil::BuildArrowTemporalHashIndexFromArrowArray<arrow::Time64Type>(index_values,
+	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Time64Type>(index_values,
 																						   pool,
 																						   index);
 	default: return cylon::Status(cylon::Code::Invalid, "Unsupported data type");
