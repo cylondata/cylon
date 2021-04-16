@@ -223,9 +223,8 @@ class ArrowHashIndex : public BaseArrowIndex {
   }
 };
 
-template<class TYPE, typename = typename std::enable_if<
-	arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value
-		| arrow::is_temporal_type<TYPE>::value>::type>
+template <typename TYPE,
+	typename = typename std::enable_if<arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value>::type>
 class ArrowNumericHashIndex : public BaseArrowIndex {
  public:
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<TYPE>::ArrayType;
@@ -292,14 +291,14 @@ class ArrowNumericHashIndex : public BaseArrowIndex {
   }
 
   std::shared_ptr<arrow::Array> GetIndexAsArray() override {
-    LOG(INFO) << "NumericHashIndex GetIndexAsArray";
+	LOG(INFO) << "NumericHashIndex GetIndexAsArray";
 	using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
 
 	arrow::Status arrow_status;
 	auto pool = GetPool();
 
 	LOG(INFO) << "Arrow Builder initializing...";
-	ARROW_BUILDER_T builder(std::shared_ptr<TYPE>(),pool);
+	ARROW_BUILDER_T builder(pool);
 	LOG(INFO) << "Arrow Builder initialized...";
 
 	std::vector<CTYPE> vec(GetSize());
@@ -376,6 +375,157 @@ class ArrowNumericHashIndex : public BaseArrowIndex {
   }
 };
 
+template <typename TYPE,
+	typename = typename std::enable_if<arrow::is_temporal_type<TYPE>::value>::type>
+class ArrowTemporalHashIndex : public BaseArrowIndex {
+ public:
+  using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<TYPE>::ArrayType;
+  using CTYPE = typename TYPE::c_type;
+  using MMAP_TYPE = typename std::unordered_multimap<CTYPE, int64_t>;
+  using SCALAR_TYPE = typename arrow::TypeTraits<TYPE>::ScalarType;
+
+  ArrowTemporalHashIndex(int col_ids,
+						 int size,
+						 arrow::MemoryPool *pool,
+						 const std::shared_ptr<arrow::Array> &index_column)
+	  : BaseArrowIndex(col_ids, size, pool) {
+	Build_Hash_Index(index_column);
+  };
+
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+						 const std::shared_ptr<arrow::Table> &input,
+						 std::vector<int64_t> &filter_locations,
+						 std::shared_ptr<arrow::Table> &output) override {
+	std::shared_ptr<arrow::Array> out_idx;
+	arrow::compute::ExecContext fn_ctx(GetPool());
+	arrow::Int64Builder idx_builder(GetPool());
+	RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(search_param, filter_locations));
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.AppendValues(filter_locations));
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.Finish(&out_idx));
+	arrow::Result<arrow::Datum>
+		result = arrow::compute::Take(input, out_idx, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
+	RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+	output = result.ValueOrDie().table();
+	return Status::OK();
+  }
+
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+						 std::vector<int64_t> &find_index) override {
+	std::shared_ptr<SCALAR_TYPE> casted_value = std::static_pointer_cast<SCALAR_TYPE>(search_param);
+	const CTYPE val = casted_value->value;
+	auto ret = map_->equal_range(val);
+	for (auto it = ret.first; it != ret.second; ++it) {
+	  find_index.push_back(it->second);
+	}
+	return Status::OK();
+  }
+
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t &find_index) override {
+	std::shared_ptr<SCALAR_TYPE> casted_value = std::static_pointer_cast<SCALAR_TYPE>(search_param);
+	const CTYPE val = static_cast<const CTYPE>(casted_value->value);
+	auto ret = map_->find(val);
+	if (ret != map_->end()) {
+	  find_index = ret->second;
+	  return Status::OK();
+	}
+	return Status(cylon::Code::IndexError, "Failed to retrieve value from index");
+  }
+
+  Status LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
+						  std::vector<int64_t> &filter_location) override {
+	cylon::Status status;
+	for (int64_t ix = 0; ix < search_param->length(); ix++) {
+	  auto index_val_sclr = search_param->GetScalar(ix).ValueOrDie();
+	  status = LocationByValue(index_val_sclr, filter_location);
+	  RETURN_CYLON_STATUS_IF_FAILED(status);
+	}
+	return Status::OK();
+  }
+
+  std::shared_ptr<arrow::Array> GetIndexAsArray() override {
+	LOG(INFO) << "TemporalHashIndex GetIndexAsArray";
+	using ARROW_BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
+
+	arrow::Status arrow_status;
+	auto pool = GetPool();
+
+	LOG(INFO) << "Arrow Builder initializing...";
+	ARROW_BUILDER_T builder(std::shared_ptr<TYPE>(), pool);
+	LOG(INFO) << "Arrow Builder initialized...";
+
+	std::vector<CTYPE> vec(GetSize());
+
+	LOG(INFO) << "Vector initialized...";
+
+	for (const auto &x: *map_) {
+	  vec[x.second] = x.first;
+	  std::cout << x.second << ", " << x.first << std::endl;
+	}
+
+	LOG(INFO) << "Vector filled...";
+
+	arrow_status = builder.AppendValues(vec);
+	if (!arrow_status.ok()) {
+	  LOG(ERROR) << "Error occurred in appending values to array builder";
+	  return nullptr;
+	}
+	arrow_status = builder.Finish(&index_arr_);
+	if (!arrow_status.ok()) {
+	  LOG(ERROR) << "Error occurred in array builder finish";
+	  return nullptr;
+	}
+
+	return index_arr_;
+  }
+
+  int GetColId() const override {
+	return BaseArrowIndex::GetColId();
+  }
+  int GetSize() const override {
+	return BaseArrowIndex::GetSize();
+  }
+  arrow::MemoryPool *GetPool() const override {
+	return BaseArrowIndex::GetPool();
+  }
+
+  void SetIndexArray(const std::shared_ptr<arrow::Array> &index_arr) override {
+	Build_Hash_Index(index_arr);
+  }
+
+  std::shared_ptr<arrow::Array> GetIndexArray() override {
+	return index_arr_;
+  }
+
+  bool IsUnique() override {
+	const auto index_arr = GetIndexArray();
+	const bool is_unique = CompareArraysForUniqueness(index_arr);
+	return is_unique;
+  }
+
+  IndexingType GetIndexingType() override {
+	return IndexingType::Hash;
+  }
+
+ private:
+  std::shared_ptr<MMAP_TYPE> map_;
+  std::shared_ptr<arrow::Array> index_arr_;
+
+  cylon::Status Build_Hash_Index(const std::shared_ptr<arrow::Array> &index_column) {
+	index_arr_ = index_column;
+	map_ = std::make_shared<MMAP_TYPE>(index_column->length());
+	auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_column);
+	auto start_start = std::chrono::steady_clock::now();
+	for (int64_t i = reader0->length() - 1; i >= 0; --i) {
+	  auto val = reader0->GetView(i);
+	  map_->emplace(val, i);
+	}
+	auto end_time = std::chrono::steady_clock::now();
+	LOG(INFO) << "Pure Indexing creation in "
+			  << std::chrono::duration_cast<std::chrono::milliseconds>(
+				  end_time - start_start).count() << "[ms]";
+	return cylon::Status::OK();
+  }
+};
 
 template<class TYPE>
 class ArrowBinaryHashIndex : public BaseArrowIndex {
@@ -386,9 +536,9 @@ class ArrowBinaryHashIndex : public BaseArrowIndex {
   using SCALAR_TYPE = typename arrow::TypeTraits<TYPE>::ScalarType;
 
   ArrowBinaryHashIndex(int col_ids,
-						int size,
-						arrow::MemoryPool *pool,
-						const std::shared_ptr<arrow::Array> &index_column)
+					   int size,
+					   arrow::MemoryPool *pool,
+					   const std::shared_ptr<arrow::Array> &index_column)
 	  : BaseArrowIndex(col_ids, size, pool) {
 	Build_Hash_Index(index_column);
   };
@@ -516,7 +666,6 @@ class ArrowBinaryHashIndex : public BaseArrowIndex {
 	return cylon::Status::OK();
   }
 };
-
 
 template<>
 class ArrowHashIndex<arrow::StringType, arrow::util::string_view> : public BaseArrowIndex {
@@ -765,9 +914,8 @@ class ArrowHashIndexKernel : public ArrowIndexKernel {
 
 };
 
-template<class TYPE, typename = typename std::enable_if<
-	arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value
-		| arrow::is_temporal_type<TYPE>::value>::type>
+template <typename TYPE,
+	typename = typename std::enable_if<arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value>::type>
 class ArrowNumericalHashIndexKernel : public ArrowIndexKernel {
 
  public:
@@ -787,6 +935,26 @@ class ArrowNumericalHashIndexKernel : public ArrowIndexKernel {
 
 };
 
+template <typename TYPE,
+	typename = typename std::enable_if<arrow::is_temporal_type<TYPE>::value>::type>
+class ArrowTemporalHashIndexKernel : public ArrowIndexKernel {
+
+ public:
+  explicit ArrowTemporalHashIndexKernel() : ArrowIndexKernel() {}
+
+  Status BuildIndex(arrow::MemoryPool *pool,
+					std::shared_ptr<arrow::Table> &input_table,
+					const int index_column,
+					std::shared_ptr<BaseArrowIndex> &base_arrow_index) override {
+	const std::shared_ptr<arrow::ChunkedArray> chunked_array = input_table->column(index_column);
+	const std::shared_ptr<arrow::Array> &idx_column = cylon::util::GetChunkOrEmptyArray(chunked_array, 0);
+	auto index =
+		std::make_shared<ArrowTemporalHashIndex<TYPE>>(index_column, input_table->num_rows(), pool, idx_column);
+	base_arrow_index = move(index);
+	return cylon::Status::OK();
+  }
+
+};
 
 template<class TYPE>
 class ArrowBinaryHashIndexKernel : public ArrowIndexKernel {
@@ -807,7 +975,6 @@ class ArrowBinaryHashIndexKernel : public ArrowIndexKernel {
   }
 
 };
-
 
 class LinearArrowIndexKernel : public ArrowIndexKernel {
 
@@ -845,13 +1012,11 @@ using FloatArrowHashIndexKernel = ArrowNumericalHashIndexKernel<arrow::FloatType
 using DoubleArrowHashIndexKernel = ArrowNumericalHashIndexKernel<arrow::DoubleType>;
 using StringArrowHashIndexKernel = ArrowBinaryHashIndexKernel<arrow::StringType>;
 using BinaryArrowHashIndexKernel = ArrowBinaryHashIndexKernel<arrow::BinaryType>;
-using Date32ArrowHashIndexKernel = ArrowNumericalHashIndexKernel<arrow::Date32Type>;
-using Date64ArrowHashIndexKernel = ArrowNumericalHashIndexKernel<arrow::Date64Type>;
-using Time32ArrowHashIndexKernel = ArrowNumericalHashIndexKernel<arrow::Time32Type>;
-using Time64ArrowHashIndexKernel = ArrowNumericalHashIndexKernel<arrow::Time64Type>;
-using TimestampArrowHashIndexKernel = ArrowNumericalHashIndexKernel<arrow::TimestampType>;
-
-
+using Date32ArrowHashIndexKernel = ArrowTemporalHashIndexKernel<arrow::Date32Type>;
+using Date64ArrowHashIndexKernel = ArrowTemporalHashIndexKernel<arrow::Date64Type>;
+using Time32ArrowHashIndexKernel = ArrowTemporalHashIndexKernel<arrow::Time32Type>;
+using Time64ArrowHashIndexKernel = ArrowTemporalHashIndexKernel<arrow::Time64Type>;
+using TimestampArrowHashIndexKernel = ArrowTemporalHashIndexKernel<arrow::TimestampType>;
 
 /**
  * Range Indexing Kernel

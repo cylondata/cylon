@@ -21,6 +21,12 @@ std::unique_ptr<ArrowIndexKernel> CreateArrowHashIndexKernel(std::shared_ptr<arr
 	case arrow::Type::FLOAT:return std::make_unique<FloatArrowHashIndexKernel>();
 	case arrow::Type::DOUBLE:return std::make_unique<DoubleArrowHashIndexKernel>();
 	case arrow::Type::STRING:return std::make_unique<StringArrowHashIndexKernel>();
+	case arrow::Type::BINARY:return std::make_unique<BinaryArrowHashIndexKernel>();
+	case arrow::Type::DATE32: return std::make_unique<Date32ArrowHashIndexKernel>();
+	case arrow::Type::DATE64: return std::make_unique<Date64ArrowHashIndexKernel>();
+	case arrow::Type::TIME32: return std::make_unique<Time32ArrowHashIndexKernel>();
+	case arrow::Type::TIME64: return std::make_unique<Time64ArrowHashIndexKernel>();
+	case arrow::Type::TIMESTAMP: return std::make_unique<TimestampArrowHashIndexKernel>();
 	default: return std::make_unique<ArrowRangeIndexKernel>();
   }
 

@@ -2022,7 +2022,8 @@ int arrow_filter_example() {
   std::cout << "Int64 Array Builder" << std::endl;
   using TYPE = arrow::Int64Type;
   std::shared_ptr<arrow::TypeTraits<TYPE>::ArrayType> int64_array;
-  arrow::NumericBuilder<TYPE> builder1(std::shared_ptr<TYPE>(), pool);
+  arrow::NumericBuilder<TYPE> builder1(int64_array->type(), pool);
+  const auto dtype = std::shared_ptr<arrow::Int64Type>();
   std::vector<int64_t> vector{0, 1, 2};
   std::cout << "Appending values" << std::endl;
   auto s0 = builder1.AppendValues(vector);
@@ -2032,16 +2033,18 @@ int arrow_filter_example() {
   } else {
     LOG(INFO) << "builder append success";
   }
-  auto s1 = builder1.Finish(&int64_array);
-  if (!s1.ok()) {
-    LOG(ERROR) << "builder finish error : " << s1.message();
+  auto result = builder1.Finish();
+  //auto s1 = builder1.Finish(&int64_array);
+  if (!result.ok()) {
+    LOG(ERROR) << "builder finish error : " << result.status().message();
   } else {
     LOG(INFO) << "builder finish success";
   }
+  auto arr = result.ValueOrDie();
 
   std::cout << "Build array" << std::endl;
-  auto v1 = std::static_pointer_cast<arrow::Array>(int64_array);
-  print_arrow_array(v1);
+  //auto v1 = std::static_pointer_cast<arrow::Array>(int64_array);
+  print_arrow_array(arr);
 
   return 0;
 }

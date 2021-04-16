@@ -58,6 +58,15 @@ class IndexUtil {
   }
 
   template<class TYPE>
+  static Status BuildArrowTemporalHashIndexFromArrowArray(const std::shared_ptr<arrow::Array> &index_values,
+														 arrow::MemoryPool *pool,
+														 std::shared_ptr<cylon::BaseArrowIndex> &index) {
+	index = std::make_shared<ArrowTemporalHashIndex<TYPE>>(-1, index_values->length(), pool, index_values);
+	index->SetIndexArray(index_values);
+	return Status::OK();
+  }
+
+  template<class TYPE>
   static Status BuildArrowBinaryHashIndexFromArrowArray(const std::shared_ptr<arrow::Array> &index_values,
 														 arrow::MemoryPool *pool,
 														 std::shared_ptr<cylon::BaseArrowIndex> &index) {
