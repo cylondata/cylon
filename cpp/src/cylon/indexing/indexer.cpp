@@ -62,12 +62,7 @@ cylon::Status GetArrowLocFilterIndices(const std::shared_ptr<arrow::Scalar> &sta
 									   int64_t *s_index,
 									   int64_t *e_index) {
   std::shared_ptr<arrow::Table> out_artb;
-  bool is_start_unique = cylon::CheckIsIndexValueUnique(start_index, index);
-  if (!is_start_unique) {
-	return cylon::Status(cylon::Code::IndexError, "Start index must be unique");
-  }
-  bool is_end_unique = cylon::CheckIsIndexValueUnique(end_index, index);
-  if (!is_end_unique) {
+  if (!cylon::CheckIsIndexValueUnique(start_index, index) || !cylon::CheckIsIndexValueUnique(end_index, index)) {
 	return cylon::Status(cylon::Code::IndexError, "Start index must be unique");
   }
   RETURN_CYLON_STATUS_IF_FAILED(index->LocationByValue(start_index, s_index));

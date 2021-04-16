@@ -286,8 +286,7 @@ class ArrowBinaryHashIndex : public BaseArrowIndex {
 	cylon::Status status;
 	for (int64_t ix = 0; ix < search_param->length(); ix++) {
 	  auto index_val_sclr = search_param->GetScalar(ix).ValueOrDie();
-	  status = LocationByValue(index_val_sclr, filter_location);
-	  RETURN_CYLON_STATUS_IF_FAILED(status);
+	  RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(index_val_sclr, filter_location));
 	}
 	return Status::OK();
   }
