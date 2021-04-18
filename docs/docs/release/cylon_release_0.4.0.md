@@ -8,32 +8,30 @@ Cylon 0.4.0 is a major release with the following features.
 
 ## Major Features
 
-### Build
-- Conda build and conda based binaries
-- Compiling using external Apache Arrow installation (local/ pip) 
-
-### C++
-- Adding distributed multi-column operations on tables for join, set operations and sort 
-- Adding improved hash operations using third part Bytell Hash Maps
-- Adding new aggregate operations for GroupBy operation (Mean, Variance, Std Dev, Quantile, NUnique, Median)
-- Implementing hash aggregate kernels using CRTP pattern
-- Adding improved C++ indexing
-- Adding Unique operator kernels
-- Adding temporal data types 
-- Performance improvements and bug fixes 
-
 ### Python
-
-- Supporting all the operators added on the C++ level
-- Adding DataFrame API similar to Pandas 
+- DataFrame API similar to Pandas supporting around 40 operators commonly used in Pandas.  
+- Conda build and conda based binaries for Linux for installing.
+- Python binding to all the operators added on the C++ level.
 - Providing compute functions with both Arrow and Numpy for filtering, math operations and comparison operators. 
-- Adding new operators for dataframe (astype, unique)
-- Adding operator benchmarks
-- Adding new options for CSV reading
+- Added operator benchmarks.
+- Added new options for CSV reading supporting all the options in PyArrow for reading CSV.
 
-### Other
+### C++ 
+- Added distributed multi-column operations on tables for join, union, intersection, set difference and sort.
+- Added improved hash operations using Bytell Hash Maps. Improved performance by 2 times for union, intersection, set difference and unique.
+- Added new aggregate operations for GroupBy operation (Mean, Variance, Std Dev, Quantile, NUnique, Median).
+- Implemented GroupBy aggregators using CRTP (Curiously recurring template pattern).
+- Improved indexing at the core by Added more types, improved performance of indexed lookups.
+- Added unique distributed operator.
+- Added temporal data types like DateTime, Date32 (seconds resolution), Date64 (milliseconds resolution) and TImestamp (with time zone information).
+- Other performance improvements and bug fixes. 
 
-- Implementing a subset of TPC-XBB queries (Queries 6, 7, 9, 14, 22, 23)
+### Build
+- Compiling using external Apache Arrow installation (local/ pip).
+
+### Applications and Benchmarks
+- Implementing a subset of TPC-XBB queries (Queries 6, 7, 9, 14, 22, 23) and the rest is ongoing.
+- Applications with connections to deep learning.
 
 You can download source code from [Github](https://github.com/cylondata/cylon/releases)
 
