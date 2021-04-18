@@ -97,11 +97,11 @@ bool checkArr(std::vector<bool> &arr){
  * @param [in] sender - MPI id of the sender
  * @return ucx::ucxContext - Used for tracking the progress of the request
  */
-struct ucx::ucxContext *UCXChannel::UCX_Irecv(void *buffer,
+ucx::ucxContext *UCXChannel::UCX_Irecv(void *buffer,
                                        size_t count,
                                        int sender) {
   // UCX context / request
-  struct ucx::ucxContext *request;
+  ucx::ucxContext *request;
 
   // UCP non-blocking tag receive
   // Inp - UCP worker, buffer, length, datatype, tag, tag mask, receive handler
@@ -133,7 +133,7 @@ struct ucx::ucxContext *UCXChannel::UCX_Irecv(void *buffer,
  * @param [in] target - MPI id of the receiver / target
  * @return ucx::ucxContext - Used for tracking the progress of the request
  */
-struct ucx::ucxContext *UCXChannel::UCX_Isend(const void *buffer,
+ucx::ucxContext *UCXChannel::UCX_Isend(const void *buffer,
                                        size_t count,
                                        ucp_ep_h ep,
                                        int target) const {
@@ -144,8 +144,10 @@ struct ucx::ucxContext *UCXChannel::UCX_Isend(const void *buffer,
 
   // Send parameters (Mask, callback, context)
   ucp_request_param_t sendParam;
+  // TODO Sandeepa force no immediate completeion?
   sendParam.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
-      UCP_OP_ATTR_FIELD_USER_DATA;
+                           UCP_OP_ATTR_FIELD_USER_DATA |
+                           UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
   sendParam.cb.send = sendHandler;
   sendParam.user_data = ctx;
 
@@ -166,9 +168,10 @@ struct ucx::ucxContext *UCXChannel::UCX_Isend(const void *buffer,
   }
   // Handle the situation where the ucp_tag_send_nbx function returns immediately
   // without calling the send handler
-  if (!UCS_PTR_IS_PTR(status)) {
-    ctx->completed = 1;
-  }
+  // TODO Sandeepa the problem is here
+//  if (!UCS_PTR_IS_PTR(status) && status == nullptr) {
+//    ctx->completed = 1;
+//  }
   return ctx;
 }
 
