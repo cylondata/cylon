@@ -53,10 +53,52 @@ from pycylon import Series
 from pycylon.index import RangeIndex, CategoricalIndex
 from pycylon.io import CSVWriteOptions
 from pycylon.io import CSVReadOptions
+import pycylon.data as pcd
 
 from pycylon import CylonContext
 
 DEVICE_CPU = &#34;cpu&#34;
+
+
+# Data loading Functions
+def read_csv(filepath:str, use_threads=True,  names=None, sep=&#34;,&#34;, block_size:int=1 &lt;&lt; 20, skiprows=0, ignore_emptylines=True, na_values=None):
+    &#34;&#34;&#34;
+    Read a comma-separated values (csv) file into DataFrame.
+
+    Parameters
+    ----------
+    filepath : A valid str path to the file
+    sep : str, default ,
+        Delimiter to use. 
+    names : array-like, optional
+        List of column names to use. If the file contains a header row,
+        then you should explicitly pass ``header=0`` to override the column names.
+        Duplicates in this list are not allowed.
+    block_size : int, default 1MB
+        Arrow block size to be used when chunking the final Cylon table
+    skiprows : int, optional, default 0
+        Line numbers to skip (0-indexed) or number of lines to skip (int)
+        at the start of the file.
+    ignore_emptylines: bool, default True
+        Whether to keep or ignore empty lines in the csv file
+    na_values : list-like, optional
+        Additional strings to recognize as NA/NaN.
+    &#34;&#34;&#34;
+    read_config = CSVReadOptions().use_threads(
+        use_threads).block_size(block_size).with_delimiter(sep).skip_rows(skiprows)
+
+    if ignore_emptylines:
+        read_config.ignore_emptylines()
+
+    if na_values is not None:
+        read_config.na_values(na_values)
+
+    if names is not None:
+        read_config.use_cols(names)
+
+    table = pcd.csv.read_csv(CylonContext(config=None, distributed=False), filepath, read_config)
+
+    return DataFrame(table)
 
 
 class CylonEnv(object):
@@ -100,6 +142,20 @@ class CylonEnv(object):
 class DataFrame(object):
 
     def __init__(self, data=None, index=None, columns=None, copy=False):
+        &#34;&#34;&#34;
+        Construct a Cylon DataFrame
+
+        Parameters
+        ----------
+        data : Python list, ndarray, Pandas Dataframe, Arrow Table or a Cylon Table
+        columns : Optional set of column names
+        copy : By default, Cylon will try not to copy data when constructing a datframe from ndarray, 
+            Pandas Dataframe, Arrow Table or a Cylon Table. This behavior can be forcefully overridden by setting this flag.
+
+        Returns
+        -------
+        DataFrame
+        &#34;&#34;&#34;
         self._index = None
         self._columns = []
 
@@ -1859,6 +1915,78 @@ class DataFrame(object):
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="frame.read_csv"><code class="name flex">
+<span>def <span class="ident">read_csv</span></span>(<span>filepath: str, use_threads=True, names=None, sep=',', block_size: int = 1048576, skiprows=0, ignore_emptylines=True, na_values=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Read a comma-separated values (csv) file into DataFrame.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>filepath</code></strong> :&ensp;<code>A valid str path to the file</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>sep</code></strong> :&ensp;<code>str</code>, default <code>,</code></dt>
+<dd>Delimiter to use.</dd>
+<dt><strong><code>names</code></strong> :&ensp;<code>array-like</code>, optional</dt>
+<dd>List of column names to use. If the file contains a header row,
+then you should explicitly pass <code>header=0</code> to override the column names.
+Duplicates in this list are not allowed.</dd>
+<dt><strong><code>block_size</code></strong> :&ensp;<code>int</code>, default <code>1MB</code></dt>
+<dd>Arrow block size to be used when chunking the final Cylon table</dd>
+<dt><strong><code>skiprows</code></strong> :&ensp;<code>int</code>, optional, default <code>0</code></dt>
+<dd>Line numbers to skip (0-indexed) or number of lines to skip (int)
+at the start of the file.</dd>
+<dt><strong><code>ignore_emptylines</code></strong> :&ensp;<code>bool</code>, default <code>True</code></dt>
+<dd>Whether to keep or ignore empty lines in the csv file</dd>
+<dt><strong><code>na_values</code></strong> :&ensp;<code>list-like</code>, optional</dt>
+<dd>Additional strings to recognize as NA/NaN.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_csv(filepath:str, use_threads=True,  names=None, sep=&#34;,&#34;, block_size:int=1 &lt;&lt; 20, skiprows=0, ignore_emptylines=True, na_values=None):
+    &#34;&#34;&#34;
+    Read a comma-separated values (csv) file into DataFrame.
+
+    Parameters
+    ----------
+    filepath : A valid str path to the file
+    sep : str, default ,
+        Delimiter to use. 
+    names : array-like, optional
+        List of column names to use. If the file contains a header row,
+        then you should explicitly pass ``header=0`` to override the column names.
+        Duplicates in this list are not allowed.
+    block_size : int, default 1MB
+        Arrow block size to be used when chunking the final Cylon table
+    skiprows : int, optional, default 0
+        Line numbers to skip (0-indexed) or number of lines to skip (int)
+        at the start of the file.
+    ignore_emptylines: bool, default True
+        Whether to keep or ignore empty lines in the csv file
+    na_values : list-like, optional
+        Additional strings to recognize as NA/NaN.
+    &#34;&#34;&#34;
+    read_config = CSVReadOptions().use_threads(
+        use_threads).block_size(block_size).with_delimiter(sep).skip_rows(skiprows)
+
+    if ignore_emptylines:
+        read_config.ignore_emptylines()
+
+    if na_values is not None:
+        read_config.na_values(na_values)
+
+    if names is not None:
+        read_config.use_cols(names)
+
+    table = pcd.csv.read_csv(CylonContext(config=None, distributed=False), filepath, read_config)
+
+    return DataFrame(table)</code></pre>
+</details>
+</dd>
+</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
@@ -1998,7 +2126,21 @@ def world_size(self) -&gt; int:
 <span>(</span><span>data=None, index=None, columns=None, copy=False)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Construct a Cylon DataFrame</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>Python list, ndarray, Pandas Dataframe, Arrow Table</code> or <code>a Cylon Table</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>columns</code></strong> :&ensp;<code>Optional set</code> of <code>column names</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>copy</code></strong> :&ensp;<code>By default, Cylon will try not to copy data when constructing a datframe from ndarray, </code></dt>
+<dd>Pandas Dataframe, Arrow Table or a Cylon Table. This behavior can be forcefully overridden by setting this flag.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="frame.DataFrame" href="#frame.DataFrame">DataFrame</a></code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -2006,6 +2148,20 @@ def world_size(self) -&gt; int:
 <pre><code class="python">class DataFrame(object):
 
     def __init__(self, data=None, index=None, columns=None, copy=False):
+        &#34;&#34;&#34;
+        Construct a Cylon DataFrame
+
+        Parameters
+        ----------
+        data : Python list, ndarray, Pandas Dataframe, Arrow Table or a Cylon Table
+        columns : Optional set of column names
+        copy : By default, Cylon will try not to copy data when constructing a datframe from ndarray, 
+            Pandas Dataframe, Arrow Table or a Cylon Table. This behavior can be forcefully overridden by setting this flag.
+
+        Returns
+        -------
+        DataFrame
+        &#34;&#34;&#34;
         self._index = None
         self._columns = []
 
@@ -5988,6 +6144,11 @@ Replace values where condition is False</p>
 <ul></ul>
 </div>
 <ul id="index">
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="frame.read_csv" href="#frame.read_csv">read_csv</a></code></li>
+</ul>
+</li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
