@@ -200,6 +200,33 @@ function Home() {
                                             <Tab><i className="devicon-java-plain"/></Tab>
                                             <Tab><i className="devicon-python-plain"/></Tab>
                                         </TabList>
+                                        <TabPanel>
+                                            <SyntaxHighlighter language="python" style={docco} showLineNumbers={true}>
+                                                {`from pycylon import Table, CylonContext
+from pycylon.io import read_csv, CSVReadOptions
+from pycylon.net import MPIConfig
+
+config: MPIConfig = MPIConfig()
+ctx: CylonContext = CylonContext(config=config, distributed=True)
+
+csv_read_options = CSVReadOptions().use_threads(True)
+
+tb1: Table = read_csv(ctx, '/tmp/csv1.csv', csv_read_options)
+tb2: Table = read_csv(ctx, '/tmp/csv2.csv', csv_read_options)
+
+configs = {'join_type':'left', 'algorithm':'hash', 
+                'left_col':0, 'right_col':0}
+                
+tb3: Table = tb1.distributed_join(ctx, table=tb2, 
+        join_type=configs['join_type'], 
+        algorithm=configs['algorithm'],
+        left_col=configs['left_col'], 
+        right_col=configs['right_col'])
+        
+tb3.show()
+ctx.finalize()`}
+                                            </SyntaxHighlighter>
+                                        </TabPanel>
 
                                         <TabPanel>
                                             <SyntaxHighlighter language="cpp" style={docco} showLineNumbers={true}>
@@ -247,33 +274,6 @@ public class DistributedJoinExample {
     ctx.finalizeCtx();
   }
 }`}
-                                            </SyntaxHighlighter>
-                                        </TabPanel>
-                                        <TabPanel>
-                                            <SyntaxHighlighter language="python" style={docco} showLineNumbers={true}>
-                                                {`from pycylon import Table, CylonContext
-from pycylon.io import read_csv, CSVReadOptions
-from pycylon.net import MPIConfig
-
-config: MPIConfig = MPIConfig()
-ctx: CylonContext = CylonContext(config=config, distributed=True)
-
-csv_read_options = CSVReadOptions().use_threads(True)
-
-tb1: Table = read_csv(ctx, '/tmp/csv1.csv', csv_read_options)
-tb2: Table = read_csv(ctx, '/tmp/csv2.csv', csv_read_options)
-
-configs = {'join_type':'left', 'algorithm':'hash', 
-                'left_col':0, 'right_col':0}
-                
-tb3: Table = tb1.distributed_join(ctx, table=tb2, 
-        join_type=configs['join_type'], 
-        algorithm=configs['algorithm'],
-        left_col=configs['left_col'], 
-        right_col=configs['right_col'])
-        
-tb3.show()
-ctx.finalize()`}
                                             </SyntaxHighlighter>
                                         </TabPanel>
                                     </Tabs>
