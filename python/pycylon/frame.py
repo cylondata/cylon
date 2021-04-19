@@ -25,10 +25,52 @@ from pycylon import Series
 from pycylon.index import RangeIndex, CategoricalIndex
 from pycylon.io import CSVWriteOptions
 from pycylon.io import CSVReadOptions
+import pycylon.data as pcd
 
 from pycylon import CylonContext
 
 DEVICE_CPU = "cpu"
+
+
+# Data loading Functions
+def read_csv(filepath:str, use_threads=True,  names=None, sep=",", block_size:int=1 << 20, skiprows=0, ignore_emptylines=True, na_values=None):
+    """
+    Read a comma-separated values (csv) file into DataFrame.
+
+    Parameters
+    ----------
+    filepath : A valid str path to the file
+    sep : str, default ,
+        Delimiter to use. 
+    names : array-like, optional
+        List of column names to use. If the file contains a header row,
+        then you should explicitly pass ``header=0`` to override the column names.
+        Duplicates in this list are not allowed.
+    block_size : int, default 1MB
+        Arrow block size to be used when chunking the final Cylon table
+    skiprows : int, optional, default 0
+        Line numbers to skip (0-indexed) or number of lines to skip (int)
+        at the start of the file.
+    ignore_emptylines: bool, default True
+        Whether to keep or ignore empty lines in the csv file
+    na_values : list-like, optional
+        Additional strings to recognize as NA/NaN.
+    """
+    read_config = CSVReadOptions().use_threads(
+        use_threads).block_size(block_size).with_delimiter(sep).skip_rows(skiprows)
+
+    if ignore_emptylines:
+        read_config.ignore_emptylines()
+
+    if na_values is not None:
+        read_config.na_values(na_values)
+
+    if names is not None:
+        read_config.use_cols(names)
+
+    table = pcd.csv.read_csv(CylonContext(config=None, distributed=False), filepath, read_config)
+
+    return DataFrame(table)
 
 
 class CylonEnv(object):
@@ -72,6 +114,20 @@ class CylonEnv(object):
 class DataFrame(object):
 
     def __init__(self, data=None, index=None, columns=None, copy=False):
+        """
+        Construct a Cylon DataFrame
+
+        Parameters
+        ----------
+        data : Python list, ndarray, Pandas Dataframe, Arrow Table or a Cylon Table
+        columns : Optional set of column names
+        copy : By default, Cylon will try not to copy data when constructing a datframe from ndarray, 
+            Pandas Dataframe, Arrow Table or a Cylon Table. This behavior can be forcefully overridden by setting this flag.
+
+        Returns
+        -------
+        DataFrame
+        """
         self._index = None
         self._columns = []
 
