@@ -1946,6 +1946,46 @@ class DataFrame(object):
             return DataFrame(self._change_context(env)._table.distributed_sort(order_by=by, ascending=ascending))
 
     def groupby(self, by: Union([int, str, List]), env: CylonEnv = None) -> GroupByDataFrame:
+        """
+        A groupby operation involves some combination of splitting the object, applying a function, and combining the results. 
+        This can be used to group large amounts of data and compute operations on these groups.
+
+        Parameters
+        ----------
+
+        by : str, int or a list of str, int.  
+            List of column(s) used for grouping.
+        
+        Returns
+        -------
+        GroupByDataFrame
+
+        Examples
+        -------
+
+        >>> df1 = DataFrame([[0, 0, 1, 1], [1, 10, 1, 5], [10, 20, 30, 40]])
+
+
+        >>> df3 = df1.groupby(by=0).agg({"1": "sum", "2": "min"})
+        >>> df3
+        0  sum_1  min_2
+        0  0     11     10
+        1  1      6     30
+
+        >>> df4 = df1.groupby(by=0).min()
+        >>> df4
+        0  min_2  min_1
+        0  0     10      1
+        1  1     30      1
+
+        >>> df5 = df1.groupby(by=[0, 1]).max()
+        >>> df5
+        0   1  max_2
+        0  0   1     10
+        1  0  10     20
+        2  1   1     30
+        3  1   5     40
+        """
         by_list = []
         if isinstance(by, int):
             by_list.append(self.columns[by])
