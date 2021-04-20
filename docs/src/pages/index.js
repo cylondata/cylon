@@ -202,29 +202,19 @@ function Home() {
                                         </TabList>
                                         <TabPanel>
                                             <SyntaxHighlighter language="python" style={docco} showLineNumbers={true}>
-                                                {`from pycylon import Table, CylonContext
-from pycylon.io import read_csv, CSVReadOptions
+                                                {`from pycylon import read_csv, DataFrame, CylonEnv
 from pycylon.net import MPIConfig
 
 config: MPIConfig = MPIConfig()
-ctx: CylonContext = CylonContext(config=config, distributed=True)
+env: CylonEnv = CylonEnv(config=config, distributed=True)
 
-csv_read_options = CSVReadOptions().use_threads(True)
-
-tb1: Table = read_csv(ctx, '/tmp/csv1.csv', csv_read_options)
-tb2: Table = read_csv(ctx, '/tmp/csv2.csv', csv_read_options)
-
-configs = {'join_type':'left', 'algorithm':'hash', 
-                'left_col':0, 'right_col':0}
+df1: DataFrame = read_csv('/tmp/csv1.csv')
+df2: DataFrame = read_csv('/tmp/csv2.csv')
                 
-tb3: Table = tb1.distributed_join(ctx, table=tb2, 
-        join_type=configs['join_type'], 
-        algorithm=configs['algorithm'],
-        left_col=configs['left_col'], 
-        right_col=configs['right_col'])
+df3: Table = df1.join(other=df2, on=[0], algorithm="hash, env=env)
         
-tb3.show()
-ctx.finalize()`}
+print(df3)
+`}
                                             </SyntaxHighlighter>
                                         </TabPanel>
 
