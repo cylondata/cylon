@@ -211,7 +211,7 @@ env: CylonEnv = CylonEnv(config=config, distributed=True)
 df1: DataFrame = read_csv('/tmp/csv1.csv')
 df2: DataFrame = read_csv('/tmp/csv2.csv')
                 
-df3: Table = df1.join(other=df2, on=[0], algorithm="hash, env=env)
+df3: Table = df1.join(other=df2, on=[0], algorithm="hash", env=env)
         
 print(df3)
 `}
