@@ -131,7 +131,6 @@ arrow::Status Duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr, arrow:
     const std::shared_ptr<arrow::ArrayData> &data = arr->data();
     std::vector<std::shared_ptr<arrow::Buffer>> buffers;
     buffers.reserve(data->buffers.size());
-    int64_t length = cArr->length();
     for (const auto &buf : data->buffers) {
       if (buf != nullptr) {
         const arrow::Result<std::shared_ptr<arrow::Buffer>> &res = buf->CopySlice(0l, buf->size(), pool);
@@ -143,7 +142,7 @@ arrow::Status Duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr, arrow:
     }
     // lets send this buffer, we need to send the length at this point
     const std::shared_ptr<arrow::ArrayData>
-        &new_data = arrow::ArrayData::Make(cArr->type(), length, std::move(buffers));
+        &new_data = arrow::ArrayData::Make(cArr->type(), arr->length(), std::move(buffers));
     arrays.push_back(arrow::MakeArray(new_data));
   }
   out = std::make_shared<arrow::ChunkedArray>(std::move(arrays), cArr->type());

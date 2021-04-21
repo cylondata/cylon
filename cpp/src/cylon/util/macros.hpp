@@ -15,19 +15,13 @@
 #ifndef CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_
 #define CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_
 
+#include <glog/logging.h>
+
 #define LOG_AND_RETURN_ERROR(code, msg) \
   LOG(ERROR) << msg ; \
   return cylon::Status(code, msg)
 
 #define RETURN_CYLON_STATUS_IF_FAILED(expr) \
-  do{                                       \
-    const auto& _st = (expr);               \
-    if (!_st.is_ok()) {                     \
-      return _st;                           \
-    };                                      \
-  } while (0)
-
-#define LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(expr) \
   do{                               \
     const auto& _st = (expr);       \
     if (!_st.is_ok()) {             \
@@ -39,7 +33,8 @@
 #define RETURN_CYLON_STATUS_IF_ARROW_FAILED(expr) \
   do{                               \
     const auto& _st = (expr);       \
-    if (!_st.ok()) { \
+    if (!_st.ok()) {                \
+      LOG(ERROR) << _st.ToString(); \
       return cylon::Status(static_cast<int>(_st.code()), _st.message()); \
     };                              \
   } while (0)
@@ -48,17 +43,30 @@
   do{                               \
     const auto& _st = (expr);       \
     if (!_st.ok()) {                \
+      LOG(ERROR) << _st.ToString(); \
       return _st;                   \
     };                              \
   } while (0)
 
-#define COMBINE_CHUNKS_RETURN_CYLON_STATUS(table, pool) \
-  do{                               \
-    if ((table)->column(0)->num_chunks() > 1){        \
-      const auto &res = (table)->CombineChunks((pool)); \
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());\
-      (table) = res.ValueOrDie();                     \
-    }                               \
+#define COMBINE_CHUNKS_RETURN_CYLON_STATUS(arrow_table, pool)   \
+  do{                                                           \
+    if ((arrow_table)->column(0)->num_chunks() > 1){            \
+      const auto &res = (arrow_table)->CombineChunks((pool));   \
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());        \
+      (arrow_table) = res.ValueOrDie();                         \
+    }                                                           \
+  } while (0)
+
+#define COMBINE_CHUNKS_RETURN_ARROW_STATUS(arrow_table, pool) \
+  do{                                                         \
+    if ((arrow_table)->column(0)->num_chunks() > 1){          \
+      const auto &res = (arrow_table)->CombineChunks((pool)); \
+      if (!res.ok()) {                                        \
+        LOG(ERROR) << res.status().ToString();                         \
+        return res.status();                                  \
+      }                                                       \
+      (arrow_table) = res.ValueOrDie();                       \
+    }                                                         \
   } while (0)
 
 #endif //CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_
