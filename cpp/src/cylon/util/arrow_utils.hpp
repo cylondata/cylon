@@ -15,7 +15,7 @@
 #ifndef CYLON_SRC_UTIL_ARROW_UTILS_HPP_
 #define CYLON_SRC_UTIL_ARROW_UTILS_HPP_
 
-#include <arrow/compute/kernel.h>
+#include <arrow/api.h>
 #include <arrow/table.h>
 
 namespace cylon {
@@ -121,6 +121,13 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array,
                           arrow::MemoryPool *pool = arrow::default_memory_pool());
 
 std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk);
+
+inline bool IsMutable(const std::shared_ptr<arrow::Array> &array) {
+  for (auto &&buff: array->data()->buffers) {
+    if (buff != nullptr && !buff->is_mutable()) return false;
+  }
+  return true;
+}
 
 }  // namespace util
 }  // namespace cylon
