@@ -461,37 +461,38 @@ class DataFrame(object):
 
     def __eq__(self, other) -> DataFrame:
         '''
-                Equal operator for DataFrame
-                Args:
-                    other: can be a numeric scalar or a DataFrame
+        Equal operator for DataFrame
+        Args:
+            other: can be a numeric scalar or a DataFrame
 
-                Returns: PyCylon DataFrame
+        Returns: PyCylon DataFrame
 
-                Examples
-                --------
+        Examples
+        --------
 
-                >>> df
-                       col-1  col-2  col-3
-                    0      1      5      9
-                    1      2      6     10
-                    2      3      7     11
-                    3      4      8     12
+        >>> df
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
 
-                >>> df['col-1'] == 2
-                       col-1
-                    0  False
-                    1   True
-                    2  False
-                    3  False
+        >>> df['col-1'] == 2
+               col-1
+            0  False
+            1   True
+            2  False
+            3  False
 
-                >>> df == 2
-                       col-1  col-2  col-3
-                    0  False  False  False
-                    1   True  False  False
-                    2  False  False  False
-                    3  False  False  False
+        >>> df == 2
+               col-1  col-2  col-3
+            0  False  False  False
+            1   True  False  False
+            2  False  False  False
+            3  False  False  False
 
-                '''
+        '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__eq__(other))
 
     def __ne__(self, other) -> DataFrame:
@@ -525,7 +526,7 @@ class DataFrame(object):
             2   True   True   True
             3   True   True   True
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__ne__(other))
 
     def __lt__(self, other) -> DataFrame:
@@ -559,7 +560,7 @@ class DataFrame(object):
             2  False  False  False
             3  False  False  False
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__lt__(other))
 
     def __gt__(self, other) -> DataFrame:
@@ -593,7 +594,7 @@ class DataFrame(object):
             2   True   True   True
             3   True   True   True
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__gt__(other))
 
     def __le__(self, other) -> DataFrame:
@@ -627,6 +628,7 @@ class DataFrame(object):
             2  False  False  False
             3  False  False  False
         '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__le__(other))
 
     def __ge__(self, other) -> DataFrame:
@@ -661,7 +663,7 @@ class DataFrame(object):
             2   True   True   True
             3   True   True   True
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__ge__(other))
 
     def __or__(self, other) -> DataFrame:
@@ -695,8 +697,8 @@ class DataFrame(object):
             2  False  False
             3   True   True
         '''
-
-        return DataFrame(self._table.__or__(other.to_table()))
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
+        return DataFrame(self._table.__or__(other))
 
     def __and__(self, other) -> DataFrame:
         '''
@@ -729,8 +731,8 @@ class DataFrame(object):
             2  False  False
             3  False  False
         '''
-
-        return DataFrame(self._table.__and__(other.to_table()))
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
+        return DataFrame(self._table.__and__(other))
 
     def __invert__(self) -> DataFrame:
         '''
@@ -806,6 +808,7 @@ class DataFrame(object):
             2      5      9     13
             3      6     10     14
          '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__add__(other))
 
     def __sub__(self, other) -> DataFrame:
@@ -832,6 +835,7 @@ class DataFrame(object):
             2      1      5      9
             3      2      6     10
          '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__sub__(other))
 
     def __mul__(self, other) -> DataFrame:
@@ -858,7 +862,7 @@ class DataFrame(object):
             2      6     14     22
             3      8     16     24
          '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__mul__(other))
 
     def __truediv__(self, other) -> DataFrame:
@@ -885,7 +889,7 @@ class DataFrame(object):
             2    1.5    3.5    5.5
             3    2.0    4.0    6.0
          '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__truediv__(other))
 
     def drop(self, column_names: List[str]) -> DataFrame:
@@ -1754,7 +1758,7 @@ class DataFrame(object):
         """
 
         if len(objs) == 0:
-            raise "objs can't be empty"
+            raise ValueError("objs can't be empty")
 
         if axis == 0:
             if env is None:
@@ -1772,7 +1776,7 @@ class DataFrame(object):
 
                 return DataFrame(current_table)
         else:
-            raise "Unsupported operation"
+            raise NotImplementedError("Unsupported operation")
 
     def drop_duplicates(
         self,
@@ -1845,7 +1849,8 @@ class DataFrame(object):
         if env is None:
             return DataFrame(self._table.unique(columns=subset, keep=keep, inplace=inplace))
         else:
-            return DataFrame(self._change_context(env)._table.distributed_unique(columns=subset, inplace=inplace))
+            return DataFrame(self._change_context(env)._table.distributed_unique(columns=subset,
+                                                                                 inplace=inplace))
 
     def sort_values(
         self,
