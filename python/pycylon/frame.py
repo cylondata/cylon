@@ -456,6 +456,9 @@ class DataFrame(object):
     def __repr__(self):
         return self._table.__repr__()
 
+    def __len__(self) -> int:
+        return len(self._table)
+
     def __eq__(self, other) -> DataFrame:
         '''
                 Equal operator for DataFrame
