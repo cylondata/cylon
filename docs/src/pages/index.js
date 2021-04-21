@@ -196,9 +196,9 @@ function Home() {
                                 <div className={clsx('col col--8', styles.feature)}>
                                     <Tabs>
                                         <TabList>
+                                            <Tab><i className="devicon-python-plain"/></Tab>
                                             <Tab><i className="devicon-cplusplus-plain"/></Tab>
                                             <Tab><i className="devicon-java-plain"/></Tab>
-                                            <Tab><i className="devicon-python-plain"/></Tab>
                                         </TabList>
                                         <TabPanel>
                                             <SyntaxHighlighter language="python" style={docco} showLineNumbers={true}>

@@ -101,6 +101,7 @@ print(df3)
 3. [Join](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/join.py)
 4. [Merge](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/merge.py)
 5. [Sort](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/sort.py)
+5. [Group By](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/groupby.py)
 
 ## Logging
 
