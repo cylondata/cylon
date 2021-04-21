@@ -217,10 +217,10 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
                           std::vector<std::shared_ptr<Table>> &partitions) {
   // partition the tables locally
   std::vector<uint32_t> outPartitions, counts;
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(MapToHashPartitions(table, hash_cols, num_partitions, outPartitions, counts));
+  RETURN_CYLON_STATUS_IF_FAILED(MapToHashPartitions(table, hash_cols, num_partitions, outPartitions, counts));
 
   std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(split_impl(table, num_partitions, outPartitions, counts, partitioned_tables));
+  RETURN_CYLON_STATUS_IF_FAILED(split_impl(table, num_partitions, outPartitions, counts, partitioned_tables));
 
   partitions.reserve(num_partitions);
   std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();

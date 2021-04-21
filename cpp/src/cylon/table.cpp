@@ -138,14 +138,14 @@ static inline Status shuffle_table_by_hashing(std::shared_ptr<CylonContext> &ctx
   // partition the tables locally
   std::vector<uint32_t> outPartitions, counts;
   int no_of_partitions = ctx->GetWorldSize();
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(MapToHashPartitions(table,
-															hash_column,
-															no_of_partitions,
-															outPartitions,
-															counts));
+  RETURN_CYLON_STATUS_IF_FAILED(MapToHashPartitions(table,
+                                                    hash_column,
+                                                    no_of_partitions,
+                                                    outPartitions,
+                                                    counts));
 
   std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Split(table, no_of_partitions, outPartitions, counts, partitioned_tables));
+  RETURN_CYLON_STATUS_IF_FAILED(Split(table, no_of_partitions, outPartitions, counts, partitioned_tables));
 
   std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
   // we are going to free if retain is set to false
@@ -399,14 +399,14 @@ Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int
 					 std::unordered_map<int, std::shared_ptr<cylon::Table>> *out) {
   // keep arrays for each target, these arrays are used for creating the table
   std::vector<uint32_t> outPartitions, counts;
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(MapToHashPartitions(table,
-															hash_columns,
-															no_of_partitions,
-															outPartitions,
-															counts));
+  RETURN_CYLON_STATUS_IF_FAILED(MapToHashPartitions(table,
+                                                    hash_columns,
+                                                    no_of_partitions,
+                                                    outPartitions,
+                                                    counts));
 
   std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;
-  LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(Split(table, no_of_partitions, outPartitions, counts, partitioned_tables));
+  RETURN_CYLON_STATUS_IF_FAILED(Split(table, no_of_partitions, outPartitions, counts, partitioned_tables));
 
   auto ctx = table->GetContext();
   out->reserve(no_of_partitions);

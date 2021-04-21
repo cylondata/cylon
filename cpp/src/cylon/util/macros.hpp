@@ -15,19 +15,13 @@
 #ifndef CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_
 #define CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_
 
+#include <glog/logging.h>
+
 #define LOG_AND_RETURN_ERROR(code, msg) \
   LOG(ERROR) << msg ; \
   return cylon::Status(code, msg)
 
 #define RETURN_CYLON_STATUS_IF_FAILED(expr) \
-  do{                                       \
-    const auto& _st = (expr);               \
-    if (!_st.is_ok()) {                     \
-      return _st;                           \
-    };                                      \
-  } while (0)
-
-#define LOG_AND_RETURN_CYLON_STATUS_IF_FAILED(expr) \
   do{                               \
     const auto& _st = (expr);       \
     if (!_st.is_ok()) {             \
@@ -39,7 +33,8 @@
 #define RETURN_CYLON_STATUS_IF_ARROW_FAILED(expr) \
   do{                               \
     const auto& _st = (expr);       \
-    if (!_st.ok()) { \
+    if (!_st.ok()) {                \
+      LOG(ERROR) << _st.ToString(); \
       return cylon::Status(static_cast<int>(_st.code()), _st.message()); \
     };                              \
   } while (0)
@@ -48,6 +43,7 @@
   do{                               \
     const auto& _st = (expr);       \
     if (!_st.ok()) {                \
+      LOG(ERROR) << _st.ToString(); \
       return _st;                   \
     };                              \
   } while (0)
