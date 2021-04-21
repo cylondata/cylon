@@ -25,10 +25,53 @@ from pycylon import Series
 from pycylon.index import RangeIndex, CategoricalIndex
 from pycylon.io import CSVWriteOptions
 from pycylon.io import CSVReadOptions
+import pycylon.data as pcd
 
 from pycylon import CylonContext
 
 DEVICE_CPU = "cpu"
+
+
+# Data loading Functions
+def read_csv(filepath: str, use_threads=True,  names=None, sep=",", block_size: int = 1 << 20, skiprows=0, ignore_emptylines=True, na_values=None):
+    """
+    Read a comma-separated values (csv) file into DataFrame.
+
+    Parameters
+    ----------
+    filepath : A valid str path to the file
+    sep : str, default ,
+        Delimiter to use. 
+    names : array-like, optional
+        List of column names to use. If the file contains a header row,
+        then you should explicitly pass ``header=0`` to override the column names.
+        Duplicates in this list are not allowed.
+    block_size : int, default 1MB
+        Arrow block size to be used when chunking the final Cylon table
+    skiprows : int, optional, default 0
+        Line numbers to skip (0-indexed) or number of lines to skip (int)
+        at the start of the file.
+    ignore_emptylines: bool, default True
+        Whether to keep or ignore empty lines in the csv file
+    na_values : list-like, optional
+        Additional strings to recognize as NA/NaN.
+    """
+    read_config = CSVReadOptions().use_threads(
+        use_threads).block_size(block_size).with_delimiter(sep).skip_rows(skiprows)
+
+    if ignore_emptylines:
+        read_config.ignore_emptylines()
+
+    if na_values is not None:
+        read_config.na_values(na_values)
+
+    if names is not None:
+        read_config.use_cols(names)
+
+    table = pcd.csv.read_csv(CylonContext(
+        config=None, distributed=False), filepath, read_config)
+
+    return DataFrame(table)
 
 
 class CylonEnv(object):
@@ -69,9 +112,86 @@ class CylonEnv(object):
         self.finalize()
 
 
+class GroupByDataFrame(object):
+    def __init__(self, df: DataFrame, by=None) -> None:
+        super().__init__()
+        self.df = df
+        self.by = by
+        self.by_diff = set(df.columns) - set(by)
+
+    def __do_groupby(self, op_dict) -> DataFrame:
+        return DataFrame(self.df.to_table().groupby(self.by, op_dict))
+
+    def __apply_on_remaining_columns(self, op: str) -> DataFrame:
+        op_dict = {}
+        for c in self.by_diff:
+            op_dict[c] = op
+        return self.__do_groupby(op_dict)
+
+    def min(self) -> DataFrame:
+        """
+        Apply min operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("min")
+
+    def max(self) -> DataFrame:
+        """
+        Apply max operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("max")
+
+    def sum(self) -> DataFrame:
+        """
+        Apply sum operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("sum")
+
+    def count(self) -> DataFrame:
+        """
+        Apply count operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("count")
+
+    def mean(self) -> DataFrame:
+        """
+        Apply mean operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("mean")
+
+    def std(self) -> DataFrame:
+        """
+        Apply standard deviation operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("std")
+
+    def agg(self, dic: dict) -> DataFrame:
+        """
+        Apply different aggregation operations on each remainign column
+        which has not been used for grouping
+
+        Args:
+            dic : A dictionary specifying aggregation operation for each column
+        """
+        return self.__do_groupby(dic)
+
+
 class DataFrame(object):
 
     def __init__(self, data=None, index=None, columns=None, copy=False):
+        """
+        Construct a Cylon DataFrame
+
+        Parameters
+        ----------
+        data : Python list, ndarray, Pandas Dataframe, Arrow Table or a Cylon Table
+        columns : Optional set of column names
+        copy : By default, Cylon will try not to copy data when constructing a datframe from ndarray, 
+            Pandas Dataframe, Arrow Table or a Cylon Table. This behavior can be forcefully overridden by setting this flag.
+
+        Returns
+        -------
+        DataFrame
+        """
         self._index = None
         self._columns = []
 
@@ -336,39 +456,43 @@ class DataFrame(object):
     def __repr__(self):
         return self._table.__repr__()
 
+    def __len__(self) -> int:
+        return len(self._table)
+
     def __eq__(self, other) -> DataFrame:
         '''
-                Equal operator for DataFrame
-                Args:
-                    other: can be a numeric scalar or a DataFrame
+        Equal operator for DataFrame
+        Args:
+            other: can be a numeric scalar or a DataFrame
 
-                Returns: PyCylon DataFrame
+        Returns: PyCylon DataFrame
 
-                Examples
-                --------
+        Examples
+        --------
 
-                >>> df
-                       col-1  col-2  col-3
-                    0      1      5      9
-                    1      2      6     10
-                    2      3      7     11
-                    3      4      8     12
+        >>> df
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
 
-                >>> df['col-1'] == 2
-                       col-1
-                    0  False
-                    1   True
-                    2  False
-                    3  False
+        >>> df['col-1'] == 2
+               col-1
+            0  False
+            1   True
+            2  False
+            3  False
 
-                >>> df == 2
-                       col-1  col-2  col-3
-                    0  False  False  False
-                    1   True  False  False
-                    2  False  False  False
-                    3  False  False  False
+        >>> df == 2
+               col-1  col-2  col-3
+            0  False  False  False
+            1   True  False  False
+            2  False  False  False
+            3  False  False  False
 
-                '''
+        '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__eq__(other))
 
     def __ne__(self, other) -> DataFrame:
@@ -402,7 +526,7 @@ class DataFrame(object):
             2   True   True   True
             3   True   True   True
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__ne__(other))
 
     def __lt__(self, other) -> DataFrame:
@@ -436,7 +560,7 @@ class DataFrame(object):
             2  False  False  False
             3  False  False  False
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__lt__(other))
 
     def __gt__(self, other) -> DataFrame:
@@ -470,7 +594,7 @@ class DataFrame(object):
             2   True   True   True
             3   True   True   True
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__gt__(other))
 
     def __le__(self, other) -> DataFrame:
@@ -504,6 +628,7 @@ class DataFrame(object):
             2  False  False  False
             3  False  False  False
         '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__le__(other))
 
     def __ge__(self, other) -> DataFrame:
@@ -538,7 +663,7 @@ class DataFrame(object):
             2   True   True   True
             3   True   True   True
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__ge__(other))
 
     def __or__(self, other) -> DataFrame:
@@ -572,8 +697,8 @@ class DataFrame(object):
             2  False  False
             3   True   True
         '''
-
-        return DataFrame(self._table.__or__(other.to_table()))
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
+        return DataFrame(self._table.__or__(other))
 
     def __and__(self, other) -> DataFrame:
         '''
@@ -606,8 +731,8 @@ class DataFrame(object):
             2  False  False
             3  False  False
         '''
-
-        return DataFrame(self._table.__and__(other.to_table()))
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
+        return DataFrame(self._table.__and__(other))
 
     def __invert__(self) -> DataFrame:
         '''
@@ -683,6 +808,7 @@ class DataFrame(object):
             2      5      9     13
             3      6     10     14
          '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__add__(other))
 
     def __sub__(self, other) -> DataFrame:
@@ -709,6 +835,7 @@ class DataFrame(object):
             2      1      5      9
             3      2      6     10
          '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__sub__(other))
 
     def __mul__(self, other) -> DataFrame:
@@ -735,7 +862,7 @@ class DataFrame(object):
             2      6     14     22
             3      8     16     24
          '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__mul__(other))
 
     def __truediv__(self, other) -> DataFrame:
@@ -762,7 +889,7 @@ class DataFrame(object):
             2    1.5    3.5    5.5
             3    2.0    4.0    6.0
          '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__truediv__(other))
 
     def drop(self, column_names: List[str]) -> DataFrame:
@@ -1631,7 +1758,7 @@ class DataFrame(object):
         """
 
         if len(objs) == 0:
-            raise "objs can't be empty"
+            raise ValueError("objs can't be empty")
 
         if axis == 0:
             if env is None:
@@ -1649,7 +1776,7 @@ class DataFrame(object):
 
                 return DataFrame(current_table)
         else:
-            raise "Unsupported operation"
+            raise NotImplementedError("Unsupported operation")
 
     def drop_duplicates(
         self,
@@ -1722,7 +1849,8 @@ class DataFrame(object):
         if env is None:
             return DataFrame(self._table.unique(columns=subset, keep=keep, inplace=inplace))
         else:
-            return DataFrame(self._change_context(env)._table.distributed_unique(columns=subset, inplace=inplace))
+            return DataFrame(self._change_context(env)._table.distributed_unique(columns=subset,
+                                                                                 inplace=inplace))
 
     def sort_values(
         self,
@@ -1824,3 +1952,71 @@ class DataFrame(object):
             return DataFrame(self._table.sort(order_by=by, ascending=ascending))
         else:
             return DataFrame(self._change_context(env)._table.distributed_sort(order_by=by, ascending=ascending))
+
+    def groupby(self, by: Union([int, str, List]), env: CylonEnv = None) -> GroupByDataFrame:
+        """
+        A groupby operation involves some combination of splitting the object, applying a function, and combining the results. 
+        This can be used to group large amounts of data and compute operations on these groups.
+
+        Parameters
+        ----------
+
+        by : str, int or a list of str, int.  
+            List of column(s) used for grouping.
+        
+        Returns
+        -------
+        GroupByDataFrame
+
+        Examples
+        -------
+
+        >>> df1 = DataFrame([[0, 0, 1, 1], [1, 10, 1, 5], [10, 20, 30, 40]])
+
+
+        >>> df3 = df1.groupby(by=0).agg({"1": "sum", "2": "min"})
+        >>> df3
+        0  sum_1  min_2
+        0  0     11     10
+        1  1      6     30
+
+        >>> df4 = df1.groupby(by=0).min()
+        >>> df4
+        0  min_2  min_1
+        0  0     10      1
+        1  1     30      1
+
+        >>> df5 = df1.groupby(by=[0, 1]).max()
+        >>> df5
+        0   1  max_2
+        0  0   1     10
+        1  0  10     20
+        2  1   1     30
+        3  1   5     40
+        """
+        by_list = []
+        if isinstance(by, int):
+            by_list.append(self.columns[by])
+        elif isinstance(by, str):
+            if by not in self.columns:
+                raise ValueError(
+                    str+" is not a column of this table. Expected one of "+str(by))
+            by_list.append(by)
+        elif isinstance(by, list):
+            if len(by) == 0:
+                raise ValueError("Group by columns should be specified.")
+
+            for b in by:
+                if isinstance(b, str):
+                    by_list.append(b)
+                elif isinstance(b, int):
+                    by_list.append(self.columns[b])
+                else:
+                    raise ValueError(
+                        "Unsupported column specification. Expected column index or name")
+        else:
+            raise ValueError("Unknown value for by")
+        if env is None:
+            return GroupByDataFrame(self, by_list)
+        else:
+            return GroupByDataFrame(self._change_context(env), by_list)

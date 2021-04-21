@@ -18,16 +18,16 @@ Email - [cylondata@googlegroups.com](mailto:cylondata@googlegroups.com)
 
 Mailing List - [Join](https://groups.google.com/forum/#!forum/cylondata/join)
 
-# Get Started
+# Getting Started
 
-We can use Conda to install PyCylon. At the moment Cylon only works on Linux Systems. THe Conda binaries need Ubunut 16.04 or higher. 
+We can use Conda to install PyCylon. At the moment Cylon only works on Linux Systems. The Conda binaries need Ubuntu 16.04 or higher. 
 
 ```bash
 conda create -n cylon-0.4.0 -c cylondata pycylon python=3.7
 conda activate cylon-0.4.0
 ```
 
-Now lets run our first Cylon application. The following code creates two DataFrames and joins them. 
+Now lets run our first Cylon application inside the Conda environment. The following code creates two DataFrames and joins them. 
 
 ```python
 from pycylon import DataFrame, CylonEnv

@@ -45,7 +45,7 @@ arrow::Status build_final_table_inplace_index(
     arrow::MemoryPool *memory_pool);
 
 arrow::Status CombineChunks(const std::shared_ptr<arrow::Table> &table,
-                            int64_t col_index,
+                            int col_index,
                             std::shared_ptr<arrow::Table> &output_table,
                             arrow::MemoryPool *memory_pool);
 

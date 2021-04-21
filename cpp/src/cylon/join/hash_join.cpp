@@ -313,18 +313,10 @@ arrow::Status HashJoin(const std::shared_ptr<arrow::Table> &ltab,
                        arrow::MemoryPool *memory_pool) {
   // let's first combine chunks in both tables
   std::shared_ptr<arrow::Table> c_ltab(ltab);
-  if (ltab->column(0)->num_chunks() > 1) {
-    const auto &l_res = ltab->CombineChunks(memory_pool);
-    if (!l_res.ok()) return l_res.status();
-    c_ltab = l_res.ValueOrDie();
-  }
+  COMBINE_CHUNKS_RETURN_ARROW_STATUS(c_ltab, memory_pool);
 
   std::shared_ptr<arrow::Table> c_rtab(rtab);
-  if (rtab->column(0)->num_chunks() > 1) {
-    const auto &r_res = rtab->CombineChunks(memory_pool);
-    if (!r_res.ok()) return r_res.status();
-    c_rtab = r_res.ValueOrDie();
-  }
+  COMBINE_CHUNKS_RETURN_ARROW_STATUS(c_rtab, memory_pool);
 
   if (config.GetLeftColumnIdx().size() == config.GetRightColumnIdx().size() && config.GetLeftColumnIdx().size() == 1) {
     int left_idx = config.GetLeftColumnIdx()[0];
@@ -332,16 +324,15 @@ arrow::Status HashJoin(const std::shared_ptr<arrow::Table> &ltab,
 
     std::vector<int64_t> left_indices, right_indices;
 
-    RETURN_ARROW_STATUS_IF_FAILED(
-        ArrayIndexHashJoin(cylon::util::GetChunkOrEmptyArray(c_ltab->column(left_idx), 0),
-                           cylon::util::GetChunkOrEmptyArray(c_rtab->column(right_idx), 0),
-                           config.GetType(), left_indices, right_indices));
+    RETURN_ARROW_STATUS_IF_FAILED(ArrayIndexHashJoin(cylon::util::GetChunkOrEmptyArray(c_ltab->column(left_idx), 0),
+                                                     cylon::util::GetChunkOrEmptyArray(c_rtab->column(right_idx), 0),
+                                                     config.GetType(), left_indices, right_indices));
 
     return cylon::join::util::build_final_table(left_indices, right_indices, c_ltab, c_rtab,
                                                 config.GetLeftTableSuffix(), config.GetRightTableSuffix(),
                                                 joined_table, memory_pool);
   } else {
-    return multi_index_hash_join(ltab, rtab, config, joined_table, memory_pool);
+    return multi_index_hash_join(c_ltab, c_rtab, config, joined_table, memory_pool);
   }
 }
 

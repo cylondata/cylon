@@ -180,6 +180,10 @@ class JoinConfig {
     return right_table_suffix;
   }
 
+  bool IsMultiColumn() const {
+    return left_column_idx.size() > 1 || right_column_idx.size() > 1;
+  }
+
  private:
   JoinType type;
   JoinAlgorithm algorithm;
