@@ -341,7 +341,7 @@ arrow::Status HashJoin(const std::shared_ptr<arrow::Table> &ltab,
                                                 config.GetLeftTableSuffix(), config.GetRightTableSuffix(),
                                                 joined_table, memory_pool);
   } else {
-    return multi_index_hash_join(ltab, rtab, config, joined_table, memory_pool);
+    return multi_index_hash_join(c_ltab, c_rtab, config, joined_table, memory_pool);
   }
 }
 
