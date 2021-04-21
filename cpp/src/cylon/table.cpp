@@ -417,24 +417,22 @@ Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int
   return Status::OK();
 }
 
-arrow::Status create_table_with_duplicate_index(
-	arrow::MemoryPool *pool, std::shared_ptr<arrow::Table> &table, size_t index_column,
-	std::vector<std::shared_ptr<arrow::ChunkedArray>> &nl_vectors) {
+arrow::Status create_table_with_duplicate_index(arrow::MemoryPool *pool,
+                                                std::shared_ptr<arrow::Table> &table,
+                                                size_t index_column) {
   const std::vector<std::shared_ptr<arrow::ChunkedArray>> &chunk_arrays = table->columns();
+  std::vector<std::shared_ptr<arrow::ChunkedArray>> new_arrays;
+  new_arrays.reserve(chunk_arrays.size());
   for (size_t i = 0; i < chunk_arrays.size(); i++) {
-	if (i != index_column) {
-	  nl_vectors.push_back(chunk_arrays[i]);
-	} else {
-	  std::shared_ptr<arrow::ChunkedArray> new_c_array;
-	  arrow::Status st =
-		  cylon::util::Duplicate(chunk_arrays[i], pool, new_c_array);
-	  if (st != arrow::Status::OK()) {
-		return st;
-	  }
-	  nl_vectors.push_back(new_c_array);
-	}
+    if (i != index_column) {
+      new_arrays.push_back(chunk_arrays[i]);
+    } else {
+      std::shared_ptr<arrow::ChunkedArray> new_c_array;
+      RETURN_ARROW_STATUS_IF_FAILED(cylon::util::Duplicate(chunk_arrays[i], pool, new_c_array));
+      new_arrays.emplace_back(std::move(new_c_array));
+    }
   }
-  table = arrow::Table::Make(table->schema(), nl_vectors);
+  table = arrow::Table::Make(table->schema(), std::move(new_arrays));
   return arrow::Status::OK();
 }
 
@@ -445,45 +443,32 @@ Status Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &
   } else if (right == NULLPTR) {
 	return Status(Code::KeyError, "Couldn't find the right table");
   } else {
-	std::shared_ptr<arrow::Table> table, left_table, right_table;
-	auto ctx = left->GetContext();
-	left->ToArrowTable(left_table);
-	right->ToArrowTable(right_table);
-	// if it is a sort algorithm and certian key types, we are going to do an in-place sort
-	if (join_config.GetAlgorithm() == cylon::join::config::SORT) {
-	  size_t lIndex = join_config.GetLeftColumnIdx()[0];
-	  size_t rIndex = join_config.GetRightColumnIdx()[0];
-	  auto left_type = left_table->column(lIndex)->type()->id();
-	  if (cylon::join::util::is_inplace_join_possible(left_type)) {
-		// now create a copy
-		std::vector<std::shared_ptr<arrow::ChunkedArray>> nl_vectors;
-		std::vector<std::shared_ptr<arrow::ChunkedArray>> nr_vectors;
-		// we don't have to copy if the table is freed
-		if (!left->IsRetain()) {
-		  arrow::Status st = create_table_with_duplicate_index(cylon::ToArrowPool(ctx), left_table,
-															   lIndex, nl_vectors);
-		  if (st != arrow::Status::OK()) {
-			return Status(static_cast<int>(st.code()), st.message());
-		  }
-		}
-		if (!right->IsRetain()) {
-		  arrow::Status st = create_table_with_duplicate_index(cylon::ToArrowPool(ctx), right_table,
-															   rIndex, nr_vectors);
-		  if (st != arrow::Status::OK()) {
-			return Status(static_cast<int>(st.code()), st.message());
-		  }
-		}
-	  }
-	}
+    std::shared_ptr<arrow::Table> table, left_table, right_table;
+    auto ctx = left->GetContext();
+    auto pool = cylon::ToArrowPool(ctx);
 
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::JoinTables(left_table,
-														 right_table,
-														 join_config,
-														 &table,
-														 cylon::ToArrowPool(ctx)));
-	out = std::make_shared<cylon::Table>(table, ctx);
+    left->ToArrowTable(left_table);
+    right->ToArrowTable(right_table);
+    // if it is a sort algorithm and certain key types, we are going to do an in-place sort
+    if (join_config.GetAlgorithm() == cylon::join::config::SORT) {
+      int lIndex = join_config.GetLeftColumnIdx()[0];
+      int rIndex = join_config.GetRightColumnIdx()[0];
+      auto left_type = left_table->column(lIndex)->type()->id();
+      if (cylon::join::util::is_inplace_join_possible(left_type)) {
+        // we don't have to copy if the table is freed
+        if (left->IsRetain()) {
+          RETURN_CYLON_STATUS_IF_ARROW_FAILED(create_table_with_duplicate_index(pool, left_table, lIndex));
+        }
+        if (right->IsRetain()) {
+          RETURN_CYLON_STATUS_IF_ARROW_FAILED(create_table_with_duplicate_index(pool, right_table, rIndex));
+        }
+      }
+    }
 
-	return Status::OK();
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::JoinTables(left_table, right_table, join_config, &table, pool));
+    out = std::make_shared<cylon::Table>(table, ctx);
+
+    return Status::OK();
   }
 }
 
