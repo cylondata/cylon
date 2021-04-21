@@ -33,7 +33,7 @@ DEVICE_CPU = "cpu"
 
 
 # Data loading Functions
-def read_csv(filepath:str, use_threads=True,  names=None, sep=",", block_size:int=1 << 20, skiprows=0, ignore_emptylines=True, na_values=None):
+def read_csv(filepath: str, use_threads=True,  names=None, sep=",", block_size: int = 1 << 20, skiprows=0, ignore_emptylines=True, na_values=None):
     """
     Read a comma-separated values (csv) file into DataFrame.
 
@@ -68,7 +68,8 @@ def read_csv(filepath:str, use_threads=True,  names=None, sep=",", block_size:in
     if names is not None:
         read_config.use_cols(names)
 
-    table = pcd.csv.read_csv(CylonContext(config=None, distributed=False), filepath, read_config)
+    table = pcd.csv.read_csv(CylonContext(
+        config=None, distributed=False), filepath, read_config)
 
     return DataFrame(table)
 
@@ -109,6 +110,69 @@ class CylonEnv(object):
         On destruction of the application, the environment will be automatically finalized
         """
         self.finalize()
+
+
+class GroupByDataFrame(object):
+    def __init__(self, df: DataFrame, by=None) -> None:
+        super().__init__()
+        self.df = df
+        self.by = by
+        self.by_diff = set(df.columns) - set(by)
+
+    def __do_groupby(self, op_dict) -> DataFrame:
+        return DataFrame(self.df.to_table().groupby(self.by, op_dict))
+
+    def __apply_on_remaining_columns(self, op: str) -> DataFrame:
+        op_dict = {}
+        for c in self.by_diff:
+            op_dict[c] = op
+        return self.__do_groupby(op_dict)
+
+    def min(self) -> DataFrame:
+        """
+        Apply min operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("min")
+
+    def max(self) -> DataFrame:
+        """
+        Apply max operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("max")
+
+    def sum(self) -> DataFrame:
+        """
+        Apply sum operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("sum")
+
+    def count(self) -> DataFrame:
+        """
+        Apply count operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("count")
+
+    def mean(self) -> DataFrame:
+        """
+        Apply mean operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("mean")
+
+    def std(self) -> DataFrame:
+        """
+        Apply standard deviation operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("std")
+
+    def agg(self, dic: dict) -> DataFrame:
+        """
+        Apply different aggregation operations on each remainign column
+        which has not been used for grouping
+
+        Args:
+            dic : A dictionary specifying aggregation operation for each column
+        """
+        return self.__do_groupby(dic)
 
 
 class DataFrame(object):
@@ -1880,3 +1944,71 @@ class DataFrame(object):
             return DataFrame(self._table.sort(order_by=by, ascending=ascending))
         else:
             return DataFrame(self._change_context(env)._table.distributed_sort(order_by=by, ascending=ascending))
+
+    def groupby(self, by: Union([int, str, List]), env: CylonEnv = None) -> GroupByDataFrame:
+        """
+        A groupby operation involves some combination of splitting the object, applying a function, and combining the results. 
+        This can be used to group large amounts of data and compute operations on these groups.
+
+        Parameters
+        ----------
+
+        by : str, int or a list of str, int.  
+            List of column(s) used for grouping.
+        
+        Returns
+        -------
+        GroupByDataFrame
+
+        Examples
+        -------
+
+        >>> df1 = DataFrame([[0, 0, 1, 1], [1, 10, 1, 5], [10, 20, 30, 40]])
+
+
+        >>> df3 = df1.groupby(by=0).agg({"1": "sum", "2": "min"})
+        >>> df3
+        0  sum_1  min_2
+        0  0     11     10
+        1  1      6     30
+
+        >>> df4 = df1.groupby(by=0).min()
+        >>> df4
+        0  min_2  min_1
+        0  0     10      1
+        1  1     30      1
+
+        >>> df5 = df1.groupby(by=[0, 1]).max()
+        >>> df5
+        0   1  max_2
+        0  0   1     10
+        1  0  10     20
+        2  1   1     30
+        3  1   5     40
+        """
+        by_list = []
+        if isinstance(by, int):
+            by_list.append(self.columns[by])
+        elif isinstance(by, str):
+            if by not in self.columns:
+                raise ValueError(
+                    str+" is not a column of this table. Expected one of "+str(by))
+            by_list.append(by)
+        elif isinstance(by, list):
+            if len(by) == 0:
+                raise ValueError("Group by columns should be specified.")
+
+            for b in by:
+                if isinstance(b, str):
+                    by_list.append(b)
+                elif isinstance(b, int):
+                    by_list.append(self.columns[b])
+                else:
+                    raise ValueError(
+                        "Unsupported column specification. Expected column index or name")
+        else:
+            raise ValueError("Unknown value for by")
+        if env is None:
+            return GroupByDataFrame(self, by_list)
+        else:
+            return GroupByDataFrame(self._change_context(env), by_list)
