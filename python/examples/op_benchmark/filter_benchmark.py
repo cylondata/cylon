@@ -26,12 +26,12 @@ import argparse
 """
 Run benchmark:
 
->>> python python/examples/op_benchmark/filter_benchmark.py --start_size 1_000_000 \
-                                        --step_size 1_000_000 \
-                                        --end_size 10_000_000 \
+>>> python python/examples/op_benchmark/filter_benchmark.py --start_size 10_000_000 \
+                                        --step_size 10_000_000 \
+                                        --end_size 100_000_000 \
                                         --num_cols 2 \
                                         --stats_file /tmp/filter_bench.csv \
-                                        --repetitions 1 \
+                                        --repetitions 2 \
                                         --duplication_factor 0.9
 """
 

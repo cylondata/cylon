@@ -9,24 +9,19 @@ integrates with PyArrow. This brings us the capability of providing the user the
 compatibility with Pandas, Numpy and Tensors. As a framework we support distributed
 relational algebra operations using MPI as the distributed backend.
 
-## Table
+## Dataframe
 
-PyCylon Table API currently offers a set of relational algebra operators to
-preprocess the data.
+PyCylon API is a Pandas like Dataframe API which supports fast, scalable, distributed memory, parallel operations.
 
 ### Initialize
 
-In a Cylon programme, if you use Cylon with `MPI` backend, the initialization
-must be done as follows;
+In a Cylon programme, if you use Cylon with `MPI` backend, the distributed envrionment
+must be initialized as follows;
 
 ```python
-ctx: CylonContext = CylonContext("mpi")
-```
-
-Without MPI,
-
-```python
-ctx: CylonContext = CylonContext()
+from pycylon import DataFrame, CylonEnv
+from pycylon.net import MPIConfig
+env = CylonEnv(config=MPIConfig())
 ```
 
 ```txt
@@ -38,123 +33,75 @@ Note: In the current release, Cylon only supports MPI as a distributed backend
 Using Cylon
 
 ```python
-from pycylon Table
-from pycylon.io import read_csv
-
-tb1: Table = read_csv(ctx, '/tmp/csv.csv', ',')
+from pycylon import DataFrame, read_csv
+df = read_csv('path/to/csv')
 ```
 
-Using PyArrow and convert to PyCylon Table
+Using Pandas and convert to PyCylon Table
 
 ```python
-from pyarrow import csv
-from pycylon.data.table import Table
-from pyarrow import Table as PyArrowTable
-
-pyarrow_tb: PyArrowTable = csv.read_csv('/tmp/csv.csv')
-cylon_tb = Table.from_arrow(pyarrow_tb)
+from pycylon import DataFrame, read_csv
+import pandas as pd
+df = DataFrame(pd.read_csv("http://path/to/csv"))
 ```
 
-Also a Cylon Table can be converted to a PyArrow Table
+Cylon Table can be converted to a PyArrow Table, Pandas Dataframe or a Numpy Array
 
 ```python
-pyarrow_tb: PyArrowTable = cylon_tb.to_arrow()
+pyarrow_tb = cylon_tb.to_arrow()
+pandas_df = cylon_tb.to_pandas()
+numpy_arr = cylon_tb.to_numpy()
 ```
 
-### Join
+### PyCylon Operations
 
-Join API supports `left, right, inner, outer' joins` with
-`Hash` or `Sort` algorithms. User can specify these configs
-as using Python `str`.
+Local Operations
 
-Sequential Join
+Local operations of PyCylon are backed by a high performance C++ core and 
+can be simply executed as follows.
 
 ```python
-csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+from pycylon import DataFrame
+df1 = DataFrame([random.sample(range(10, 100), 50),
+                 random.sample(range(10, 100), 50)])
+df2 = DataFrame([random.sample(range(10, 100), 50),
+                 random.sample(range(10, 100), 50)])
+df2.set_index([0], inplace=True)
 
-tb1: Table = read_csv(ctx, table1_path, csv_read_options)
-
-tb2: Table = read_csv(ctx, table2_path, csv_read_options)
-
-tb3: Table = tb1.join(table=tb2, join_type='inner', algorithm='hash', left_on=[0],
-                      right_on=[0])
+df3 = df1.join(other=df2, on=[0])
+print(df3)
 ```
 
-Distributed Join
+Distributed Operations
+
+Same operations can be executed ina distributed environment 
+by simply passing the CylonEnv to the same function.
 
 ```python
-csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
+from pycylon import DataFrame, CylonEnv
+from pycylon.net import MPIConfig
 
-tb1: Table = read_csv(ctx, table1_path, csv_read_options)
+env = CylonEnv(config=MPIConfig())
 
-tb2: Table = read_csv(ctx, table2_path, csv_read_options)
+df1 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
+                 random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
+df2 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
+                 random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
 
-tb3: Table = tb1.distributed_join(table=tb2, join_type='inner', algorithm='hash', left_on=[0],
-                                  right_on=[0])
+df2.set_index([0], inplace=True)
+
+df3 = df1.join(other=df2, on=[0], env=env)
+print(df3)
 ```
 
-### Union
+## PyCylon Examples
 
-Sequential Union
-
-```python
-tb4: Table = tb1.union(tb2)
-```
-
-Distributed Union
-
-```python
-tb5: Table = tb1.distributed_union(table=tb2)
-```
-
-### Intersect
-
-Sequential Intersect
-
-```python
-tb4: Table = tb1.intersect(table=tb2)
-```
-
-Distributed Intersect
-
-```python
-tb5: Table = tb1.distributed_intersect(table=tb2)
-```
-
-### Subtract
-
-Sequential Subtract
-
-```python
-tb4: Table = tb1.subtract(table=tb2)
-```
-
-Distributed Subtract
-
-```python
-tb5: Table = tb1.distributed_subtract(table=tb2)
-```
-
-### Select
-
-```Note
-This is not yet supported from PyCylon API, but LibCylon supports this.
-```
-
-## Python Examples
-
-1. [Relational Algebra Examples](https://github.com/cylondata/cylon/blob/master/python/examples/table_relational_algebra.py)
-2. [Compute Examples](https://github.com/cylondata/cylon/blob/master/python/examples/table_compute_examples.py)
-3. [Table Initialization](https://github.com/cylondata/cylon/blob/master/python/examples/table_initialization.py)
-4. [Table Conditional Comparator](https://github.com/cylondata/cylon/blob/master/python/examples/table_comparator_ops.py)
-5. [Table Logical Comparators](https://github.com/cylondata/cylon/blob/master/python/examples/table_logical_operators.py)
-6. [Table Math Operators](https://github.com/cylondata/cylon/blob/master/python/examples/table_math_operators.py)
-7. [Table Data Manipulation](https://github.com/cylondata/cylon/blob/master/python/examples/table_data_setget.py)
-8. [Table Util Operators](https://github.com/cylondata/cylon/blob/master/python/examples/table_util_operators.py)
-9. [Table Conversions](https://github.com/cylondata/cylon/blob/master/python/examples/table_conversions.py)
-10. [Table Compute Benchmarks](https://github.com/cylondata/cylon/blob/master/python/examples/op_benchmark/compute_benchmark.py)
-11. [Table Filter Benchmarks](https://github.com/cylondata/cylon/blob/master/python/examples/op_benchmark/filter_benchmark.py)
-12. [Table Distributed Join Experiments](https://github.com/cylondata/cylon/blob/master/python/examples/experiments/table_join_dist_test.py)
+1. [Data Loading](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/data_loading.py)
+2. [Concat](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/concat.py)
+3. [Join](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/join.py)
+4. [Merge](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/merge.py)
+5. [Sort](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/sort.py)
+5. [Group By](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/groupby.py)
 
 ## Logging
 
@@ -167,7 +114,7 @@ python python/examples/dataframe/join.py
 ```
 
 | Log Level | Flag |
-|-----------|------|
+| --------- | ---- |
 | INFO      | 0    |
 | WARN      | 1    |
 | ERROR     | 2    |
@@ -187,4 +134,4 @@ disable_logging() # disable logging completely
 
 Use blow link to navigate to the PyCylon API docs.
 
-<a href="/docs/python_api_docs">Python API docs</a>
+<a href="/pydocs/frame.html">Python API docs</a>

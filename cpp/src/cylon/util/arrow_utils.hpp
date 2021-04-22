@@ -15,7 +15,7 @@
 #ifndef CYLON_SRC_UTIL_ARROW_UTILS_HPP_
 #define CYLON_SRC_UTIL_ARROW_UTILS_HPP_
 
-#include <arrow/compute/kernel.h>
+#include <arrow/api.h>
 #include <arrow/table.h>
 
 namespace cylon {
@@ -91,9 +91,10 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table);
 /**
  * Create a duplicate of the current array
  */
-arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr,
-                        const std::shared_ptr<arrow::Field> &field, arrow::MemoryPool *pool,
+arrow::Status Duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr, arrow::MemoryPool *pool,
                         std::shared_ptr<arrow::ChunkedArray> &out);
+arrow::Status Duplicate(const std::shared_ptr<arrow::Table> &table, arrow::MemoryPool *pool,
+                        std::shared_ptr<arrow::Table> &out);
 
 /**
  * Sample array
@@ -120,6 +121,13 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array,
                           arrow::MemoryPool *pool = arrow::default_memory_pool());
 
 std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk);
+
+inline bool IsMutable(const std::shared_ptr<arrow::Array> &array) {
+  for (auto &&buff: array->data()->buffers) {
+    if (buff != nullptr && !buff->is_mutable()) return false;
+  }
+  return true;
+}
 
 }  // namespace util
 }  // namespace cylon

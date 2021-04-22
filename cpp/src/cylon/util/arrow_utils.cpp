@@ -95,7 +95,7 @@ arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
   // no bounds check is needed as indices are guaranteed to be within range
   const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::NoBoundsCheck();
 
-  for (int64_t col_index = 0; col_index < tab_to_process->num_columns(); ++col_index) {
+  for (int col_index = 0; col_index < tab_to_process->num_columns(); ++col_index) {
     const arrow::Result<arrow::Datum> &res = arrow::compute::Take(
         cylon::util::GetChunkOrEmptyArray(tab_to_process->column(col_index), 0),
         sorted_column_index, take_options, &exec_context);
@@ -123,33 +123,45 @@ arrow::Status free_table(const std::shared_ptr<arrow::Table> &table) {
   return arrow::Status::OK();
 }
 
-arrow::Status duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr,
-                        const std::shared_ptr<arrow::Field> &field, arrow::MemoryPool *pool,
+arrow::Status Duplicate(const std::shared_ptr<arrow::ChunkedArray> &cArr, arrow::MemoryPool *pool,
                         std::shared_ptr<arrow::ChunkedArray> &out) {
-  size_t size = cArr->chunks().size();
   std::vector<std::shared_ptr<arrow::Array>> arrays;
-  for (size_t arrayIndex = 0; arrayIndex < size; arrayIndex++) {
-    std::shared_ptr<arrow::Array> arr = cArr->chunk(arrayIndex);
-    std::shared_ptr<arrow::ArrayData> data = arr->data();
+  arrays.reserve(cArr->num_chunks());
+  for (const auto &arr: cArr->chunks()) {
+    const std::shared_ptr<arrow::ArrayData> &data = arr->data();
     std::vector<std::shared_ptr<arrow::Buffer>> buffers;
     buffers.reserve(data->buffers.size());
-    size_t length = cArr->length();
     for (const auto &buf : data->buffers) {
       if (buf != nullptr) {
-        arrow::Result<std::shared_ptr<arrow::Buffer>> res = buf->CopySlice(0l, buf->size(), pool);
+        const arrow::Result<std::shared_ptr<arrow::Buffer>> &res = buf->CopySlice(0l, buf->size(), pool);
         RETURN_ARROW_STATUS_IF_FAILED(res.status());
-        buffers.push_back(res.ValueOrDie());
+        buffers.emplace_back(res.ValueOrDie());
       } else {
         buffers.push_back(nullptr);
       }
     }
     // lets send this buffer, we need to send the length at this point
-    std::shared_ptr<arrow::ArrayData> new_data =
-        arrow::ArrayData::Make(field->type(), length, buffers);
-    std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
-    arrays.push_back(array);
+    const std::shared_ptr<arrow::ArrayData>
+        &new_data = arrow::ArrayData::Make(cArr->type(), arr->length(), std::move(buffers));
+    arrays.push_back(arrow::MakeArray(new_data));
   }
-  out = std::make_shared<arrow::ChunkedArray>(arrays, field->type());
+  out = std::make_shared<arrow::ChunkedArray>(std::move(arrays), cArr->type());
+  return arrow::Status::OK();
+}
+
+arrow::Status Duplicate(const std::shared_ptr<arrow::Table> &table, arrow::MemoryPool *pool,
+                        std::shared_ptr<arrow::Table> &out) {
+  std::shared_ptr<arrow::Schema> schema = table->schema();
+  std::vector<std::shared_ptr<arrow::ChunkedArray>> arrays;
+  arrays.reserve(table->num_columns());
+  for (const auto &carr: table->columns()) {
+    std::shared_ptr<arrow::ChunkedArray> new_carr;
+    RETURN_ARROW_STATUS_IF_FAILED(Duplicate(carr, pool, new_carr));
+    arrays.push_back(std::move(new_carr));
+  }
+
+  out = arrow::Table::Make(std::move(schema), std::move(arrays));
+
   return arrow::Status::OK();
 }
 

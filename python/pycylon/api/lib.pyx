@@ -41,12 +41,13 @@ from pycylon.common.status cimport Status
 from pycylon.data.table cimport CSortOptions
 from pycylon.data.table import SortOptions
 from pycylon.data.table cimport SortOptions
-from pycylon.indexing.index import BaseIndex
-from pycylon.indexing.index cimport CBaseIndex
-from pycylon.indexing.index cimport BaseIndex
 from pycylon.common.join_config cimport CJoinConfig
 from pycylon.common.join_config import JoinConfig
 from pycylon.common.join_config cimport JoinConfig
+from pycylon.indexing.index import BaseArrowIndex
+from pycylon.indexing.index cimport CBaseArrowIndex
+from pycylon.indexing.index cimport BaseArrowIndex
+
 
 cdef api bint pyclon_is_context(object context):
     return isinstance(context, CylonContext)
@@ -78,8 +79,8 @@ cdef api bint pyclon_is_sort_options(object sort_options):
 cdef api bint pyclon_is_join_config(object config):
     return isinstance(config, JoinConfig)
 
-cdef api bint pyclon_is_base_index(object base_index):
-    return isinstance(base_index, BaseIndex)
+cdef api bint pyclon_is_base_arrow_index(object base_arrow_index):
+    return isinstance(base_arrow_index, BaseArrowIndex)
 
 cdef api shared_ptr[CCylonContext] pycylon_unwrap_context(object context):
     cdef CylonContext ctx
@@ -137,10 +138,10 @@ cdef api CSortOptions* pycylon_unwrap_sort_options (object sort_options):
     else:
         raise ValueError('Passed object is not an instance of DataType')
 
-cdef api shared_ptr[CBaseIndex] pycylon_unwrap_base_index (object base_index):
-    cdef BaseIndex bi
-    if pyclon_is_base_index(base_index):
-        bi = <BaseIndex> base_index
+cdef api shared_ptr[CBaseArrowIndex] pycylon_unwrap_base_arrow_index (object base_arrow_index):
+    cdef BaseArrowIndex bi
+    if pyclon_is_base_arrow_index(base_arrow_index):
+        bi = <BaseArrowIndex> base_arrow_index
         return bi.bindex_shd_ptr
     else:
         raise ValueError('Passed object is not an instance of DataType')
@@ -185,7 +186,7 @@ cdef api object pycylon_wrap_sort_options(CSortOptions *csort_options):
     sort_options.init(csort_options)
     return sort_options
 
-cdef api object pycylon_wrap_base_index(const shared_ptr[CBaseIndex] &cbase_index):
-    cdef BaseIndex base_index = BaseIndex.__new__(BaseIndex)
-    base_index.init(cbase_index)
-    return base_index
+cdef api object pycylon_wrap_base_arrow_index(const shared_ptr[CBaseArrowIndex] &cbase_arrow_index):
+    cdef BaseArrowIndex base_arrow_index = BaseArrowIndex.__new__(BaseArrowIndex)
+    base_arrow_index.init(cbase_arrow_index)
+    return base_arrow_index
