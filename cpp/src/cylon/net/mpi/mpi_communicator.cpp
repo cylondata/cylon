@@ -63,7 +63,7 @@ void MPICommunicator::Finalize() {
   MPI_Finalized(&finalized);
   if (!finalized) {
 	MPI_Finalize();
-  }
+  } 
 }
 void MPICommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);
