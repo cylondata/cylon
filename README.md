@@ -43,8 +43,8 @@ print(df3)
 ```
 
 Now lets run a parallel version of this program. Here if we create n processes (parallelism), n instances of the
-program will run. They will each load a two DataFrames in their memory and do a distributed join among all the DataFrames.
-The results will be created in the n processes as well. 
+program will run. They will each load two DataFrames in their memory and do a distributed join among the DataFrames.
+The results will be created in the parallel processes as well. 
 
 ```python
 from pycylon import DataFrame, CylonEnv
