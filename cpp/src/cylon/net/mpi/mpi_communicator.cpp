@@ -59,7 +59,11 @@ void MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
 }
 void MPICommunicator::Finalize() {
-  MPI_Finalize();
+  int finalized;
+  MPI_Finalized(&finalized);
+  if (!finalized) {
+	MPI_Finalize();
+  }
 }
 void MPICommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);

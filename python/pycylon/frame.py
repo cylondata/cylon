@@ -33,7 +33,8 @@ DEVICE_CPU = "cpu"
 
 
 # Data loading Functions
-def read_csv(filepath: str, use_threads=True,  names=None, sep=",", block_size: int = 1 << 20, skiprows=0, ignore_emptylines=True, na_values=None):
+def read_csv(filepath: str, use_threads=True, names=None, sep=",", block_size: int = 1 << 20, skiprows=0,
+             ignore_emptylines=True, na_values=None):
     """
     Read a comma-separated values (csv) file into DataFrame.
 
@@ -104,12 +105,6 @@ class CylonEnv(object):
 
     def barrier(self):
         self._context.barrier()
-
-    def __del__(self):
-        """
-        On destruction of the application, the environment will be automatically finalized
-        """
-        self.finalize()
 
 
 class GroupByDataFrame(object):
@@ -230,7 +225,8 @@ class DataFrame(object):
             data=self._table.to_arrow(), index=self._index, columns=self._columns, copy=False, context=env.context)
         return self
 
-    def _initialize_dataframe(self, data=None, index=None, columns=None, copy=False, context=CylonContext(config=None, distributed=False)):
+    def _initialize_dataframe(self, data=None, index=None, columns=None, copy=False,
+                              context=CylonContext(config=None, distributed=False)):
         rows = 0
         cols = 0
         self._table = None
@@ -1145,7 +1141,7 @@ class DataFrame(object):
     # Indexing
 
     def set_index(
-        self, keys, drop=True, append=False, inplace=False, verify_integrity=False
+            self, keys, drop=True, append=False, inplace=False, verify_integrity=False
     ):
         """
         Set the DataFrame index using existing columns.
@@ -1243,12 +1239,12 @@ class DataFrame(object):
             return new_df
 
     def reset_index(  # type: ignore[misc]
-        self,
-        level: Optional[Union[Hashable, Sequence[Hashable]]] = ...,
-        drop: bool = ...,
-        inplace: False = ...,
-        col_level: Hashable = ...,
-        col_fill=...,
+            self,
+            level: Optional[Union[Hashable, Sequence[Hashable]]] = ...,
+            drop: bool = ...,
+            inplace: False = ...,
+            col_level: Hashable = ...,
+            col_fill=...,
     ) -> DataFrame:
         # todo this is not a final implementation
         self._index_columns = []
@@ -1613,17 +1609,17 @@ class DataFrame(object):
 
     @staticmethod
     def concat(
-        objs: Union[Iterable["DataFrame"]],
-        axis=0,
-        join="outer",
-        ignore_index: bool = False,
-        keys=None,
-        levels=None,
-        names=None,
-        verify_integrity: bool = False,
-        sort: bool = False,
-        copy: bool = True,
-        env: CylonEnv = None
+            objs: Union[Iterable["DataFrame"]],
+            axis=0,
+            join="outer",
+            ignore_index: bool = False,
+            keys=None,
+            levels=None,
+            names=None,
+            verify_integrity: bool = False,
+            sort: bool = False,
+            copy: bool = True,
+            env: CylonEnv = None
     ) -> DataFrame:
         """
         Concatenate DataFrames along a particular axis with optional set logic
@@ -1779,12 +1775,12 @@ class DataFrame(object):
             raise NotImplementedError("Unsupported operation")
 
     def drop_duplicates(
-        self,
-        subset: Optional[Union[Hashable, Sequence[Hashable]]] = None,
-        keep: Union[str, bool] = "first",
-        inplace: bool = False,
-        ignore_index: bool = False,
-        env: CylonEnv = None
+            self,
+            subset: Optional[Union[Hashable, Sequence[Hashable]]] = None,
+            keep: Union[str, bool] = "first",
+            inplace: bool = False,
+            ignore_index: bool = False,
+            env: CylonEnv = None
     ) -> DataFrame:
         """
         Return DataFrame with duplicate rows removed.
@@ -1853,16 +1849,16 @@ class DataFrame(object):
                                                                                  inplace=inplace))
 
     def sort_values(
-        self,
-        by,
-        axis=0,
-        ascending=True,
-        inplace=False,
-        kind="quicksort",
-        na_position="last",
-        ignore_index=False,
-        key=None,
-        env: CylonEnv = None
+            self,
+            by,
+            axis=0,
+            ascending=True,
+            inplace=False,
+            kind="quicksort",
+            na_position="last",
+            ignore_index=False,
+            key=None,
+            env: CylonEnv = None
     ) -> DataFrame:
         """
         Sort by the values along either axis.
@@ -2000,7 +1996,7 @@ class DataFrame(object):
         elif isinstance(by, str):
             if by not in self.columns:
                 raise ValueError(
-                    str+" is not a column of this table. Expected one of "+str(by))
+                    str + " is not a column of this table. Expected one of " + str(by))
             by_list.append(by)
         elif isinstance(by, list):
             if len(by) == 0:
