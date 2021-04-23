@@ -59,6 +59,7 @@ static void sendHandler(void *request,
                          void *ctx) {
   auto *context = (ucx::ucxContext *) ctx;
   context->completed = 1;
+  LOG(INFO) << "THIS DOES GET CALLED +++++++++++++++++++++++++ " << (status == UCS_OK);
   // TODO Sandeepa message to handle send completion
 }
 
@@ -148,6 +149,8 @@ ucx::ucxContext *UCXChannel::UCX_Isend(const void *buffer,
   sendParam.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
                            UCP_OP_ATTR_FIELD_USER_DATA |
                            UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
+//  sendParam.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
+//                           UCP_OP_ATTR_FIELD_USER_DATA;
   sendParam.cb.send = sendHandler;
   sendParam.user_data = ctx;
 
@@ -169,9 +172,9 @@ ucx::ucxContext *UCXChannel::UCX_Isend(const void *buffer,
   // Handle the situation where the ucp_tag_send_nbx function returns immediately
   // without calling the send handler
   // TODO Sandeepa the problem is here
-//  if (!UCS_PTR_IS_PTR(status) && status == nullptr) {
-//    ctx->completed = 1;
-//  }
+  if (!UCS_PTR_IS_PTR(status) && status == nullptr) {
+    ctx->completed = 1;
+  }
   return ctx;
 }
 
@@ -206,124 +209,161 @@ void UCXChannel::MPIInit(const std::vector<int> &receives,
   cylon::ucx::initWorker(ucpContext,
                          &ucpSendWorker);
 
+  // Get the number of receives and sends to be used in iterations
   int numReci = (int) receives.size();
   int numSends = (int) sendIds.size();
+  // Int variable used when iterating
   int sIndx;
 
   // Iterate and set the receives
   for (sIndx = 0; sIndx < numReci; sIndx++) {
-    int ipInt = receives.at(sIndx);
+    // Rank of the node receiving from
+    int recvRank = receives.at(sIndx);
+    // Init a new pending receive for the request
     auto *buf = new PendingReceive();
 
-    if (ipInt != rank) {
+    // If receiver is not self, then send the UCP Worker address
+    if (recvRank != rank) {
       MPI_Isend(ucpRecvWorkerAddr->addr,
                 (int)ucpRecvWorkerAddr->addrSize,
                 MPI_BYTE,
-                ipInt,
+                recvRank,
                 edge,
                 MPI_COMM_WORLD,
                 &(buf->request));
     }
-    buf->receiveId = ipInt;
-    pendingReceives.insert(std::pair<int, PendingReceive *>(ipInt, buf));
+    // TODO Sandeepa remove ipInt allocation since it's not used anywhere
+    buf->receiveId = recvRank;
+    // Add to pendingReceive object to pendingReceives map
+    pendingReceives.insert(std::pair<int, PendingReceive *>(recvRank, buf));
+    // Receive for the initial header buffer
     buf->context = UCX_Irecv(buf->headerBuf,
                              CYLON_CHANNEL_HEADER_SIZE * sizeof(int),
-                             ipInt);
+                             recvRank);
+    // Init status of the receive
     buf->status = RECEIVE_LENGTH_POSTED;
   }
 
 
   // Iterate and set the sends
   for (sIndx = 0; sIndx < numSends; sIndx++) {
-    int ipInt = sendIds.at(sIndx);
-    auto w2 = new ucx::ucxWorker();
+    // Rank of the node sending to
+    int sendRank = sendIds.at(sIndx);
 
-    sends[ipInt] = new PendingSend();
-    // TODO Sandeepa remove
-//    std::cout << "Send size: " << sends[ipInt]->pendingData.size() << std::endl;
+    // Init a new pending send for the request
+    sends[sendRank] = new PendingSend();
+    // Init worker details object to store details on the node to send
+    sends[sendRank]->wa = new ucx::ucxWorker();
+    // TODO Sandeepa would this create a problem?
+    // Set the worker address size based on the local receiver worker address
+    sends[sendRank]->wa->addrSize = ucpRecvWorkerAddr->addrSize;
 
-    sends[ipInt]->wa = w2;
-    w2->addrSize = ucpRecvWorkerAddr->addrSize;
-
-    if (ipInt != rank) {
-      w2->addr = (ucp_address_t*)malloc(ucpRecvWorkerAddr->addrSize);
-      // TODO Sandeepa length is set based on the local address set
-      MPI_Irecv(w2->addr,
-                (int)w2->addrSize,
+    // If sender is not self, then receive the UCP Worker address
+    if (sendRank != rank) {
+      // Allocate memory for the address
+      sends[sendRank]->wa->addr = (ucp_address_t*)malloc(ucpRecvWorkerAddr->addrSize);
+      MPI_Irecv(sends[sendRank]->wa->addr,
+                (int)sends[sendRank]->wa->addrSize,
                 MPI_BYTE,
-                ipInt,
+                sendRank,
                 edge,
                 MPI_COMM_WORLD,
-                &(sends[ipInt]->request));
+                &(sends[sendRank]->request));
     }
   }
 
+  // Vectors to hold the status of the MPI sends and receives for checking
   std::vector<bool> finRecv (numReci, false);
   std::vector<bool> finSend (numSends, false);
 
+  // Init variables for checks
   int flag;
-  int ipInt;
+  int checkRank;
   MPI_Status status;
 
+  // Iterate till all the MPI sends and receives are done for UCX Init
   while (true){
+    // Iterate through the receives
     for (sIndx = 0; sIndx < numReci; sIndx++) {
-      ipInt = receives.at(sIndx);
+      // Skip check if already completed
+      if(finRecv[sIndx]){
+        continue;
+      }
+
+      // Assign values for variables used in checks
+      checkRank = receives.at(sIndx);
       flag = 0;
       status = {};
 
-      if (ipInt != rank) {
-        MPI_Test(&(pendingReceives[ipInt]->request), &flag, &status);
+      // If not self, then set flag based on MPI_TEST else, set flag to complete (1)
+      if (checkRank != rank) {
+        // Check if the MPI send completed
+        MPI_Test(&(pendingReceives[checkRank]->request), &flag, &status);
+        if (flag) {
+          finRecv[sIndx]=true;
+        }
       } else {
-        flag = 1;
-      }
-      if (!finRecv[sIndx] && flag) {
         finRecv[sIndx]=true;
       }
     }
 
     for (sIndx = 0; sIndx < numSends; sIndx++) {
-      ipInt = receives.at(sIndx);
+      if(finSend[sIndx]){
+        continue;
+      }
+
+      // Assign values for variables used in checks
+      checkRank = receives.at(sIndx);
       flag = 0;
       status = {};
-      if (ipInt != rank) {
-        MPI_Test(&(sends[ipInt]->request), &flag, &status);
+
+      // If not self, then set flag based on MPI_TEST else, set flag to complete (1)
+      if (checkRank != rank) {
+        MPI_Test(&(sends[checkRank]->request), &flag, &status);
       } else {
         flag = 1;
       }
 
-      if (!finSend[sIndx] && flag) {
+      // If receive is complete then create an endpoint and put to the relevant pendingSend
+      if (flag) {
+        // Init ucx status and endpoint
         ucs_status_t ucxStatus;
         ucp_ep_params_t epParams;
 
-        if (ipInt != rank) {
-          if (sends[ipInt]->wa->addr == nullptr) {
-            std::cerr << "Error when receiving send worker address" << std::endl;
+        // If not self, then check if the worker address has been received.
+        //  If self,then assign local worker
+        if (checkRank != rank) {
+          if (sends[checkRank]->wa->addr == nullptr) {
+            LOG(FATAL) << "Error when receiving send worker address";
             return;
           }
         } else {
-          sends[ipInt]->wa->addr = ucpRecvWorkerAddr->addr;
-          sends[ipInt]->wa->addrSize = ucpRecvWorkerAddr->addrSize;
+          sends[checkRank]->wa->addr = ucpRecvWorkerAddr->addr;
+          sends[checkRank]->wa->addrSize = ucpRecvWorkerAddr->addrSize;
         }
 
-        /* Send client UCX address to server */
+        // Set params for the endpoint
         epParams.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS |
-            UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
-        epParams.address = sends[ipInt]->wa->addr;
+                              UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
+        epParams.address = sends[checkRank]->wa->addr;
         epParams.err_mode = UCP_ERR_HANDLING_MODE_NONE;
 
+        // Create an endpoint
         ucxStatus = ucp_ep_create(ucpSendWorker,
                                   &epParams,
-                                  &sends[ipInt]->wa->ep);
+                                  &sends[checkRank]->wa->ep);
 
+        // Check if the endpoint was created properly
         if (ucxStatus != UCS_OK) {
-          std::cerr
-              << "Error when creating the endpoint."
-              << std::endl;
+          LOG(FATAL)
+              << "Error when creating the endpoint.";
         }
+        // Set as complete
         finSend[sIndx]=true;
       }
     }
 
+    // If all are complete then break the loop
     if(checkArr(finRecv) && checkArr(finSend)){
       break;
     }
@@ -391,112 +431,79 @@ int UCXChannel::sendFin(std::shared_ptr<TxRequest> request) {
 }
 
 void UCXChannel::progressReceives() {
+  // Progress the ucp receive worker
   ucp_worker_progress(ucpRecvWorker);
 
-  // Iterate through the pending recvs
+  // Iterate through the pending receives
   for (auto x : pendingReceives) {
-    // check if the buffer is posted
+    // Check if the buffer is posted
     if (x.second->status == RECEIVE_LENGTH_POSTED) {
       // If completed request is completed
       if (x.second->context->completed == 1) {
-//        x.second->context = new ucx::ucxContext();
-        // TODO destroy existing context object
-//        ucp_request_release(x.second->context);
+        // Release the existing context
         if (x.second->context != nullptr){
           ucp_request_release(x.second->context);
         }
 
-        // TODO Sandeepa remove mpi request release
-//        x.second->request = {};
-
-        // TODO Sandeepa find out what count is used for
+        // TODO Sandeepa is the count check necessary
+        //  Can be done by ucp_tag_probe_nb?
         // The number of received elements
-        int count = 8;
-
-        // TODO Sandeepa get count how?
-//        MPI_Get_count(&status, MPI_INT, &count);
+//        int count = 8;
 
         // Get data from the header
         // read the length from the header
         int length = x.second->headerBuf[0];
         int finFlag = x.second->headerBuf[1];
 
-        // check weather we are at the end
-        // TODO Sandeepa ^ end as in currently progressing the data rather than the header which was sent earlier?
+        // Check weather we are at the end
         if (finFlag != CYLON_MSG_FIN) {
           // If not at the end
 
-          // Check if the header size is exceeded
-          // TODO Sandeepa check count somehow?
-//          if (count > 8) {
-//            LOG(FATAL) << "Un-expected number of bytes expected: 8 or less "
-//                       << " received: " << count;
-//          }
-
-          // malloc a buffer
+          // Malloc a buffer
           Status stat = allocator->Allocate(length, &x.second->data);
           if (!stat.is_ok()) {
             LOG(FATAL) << "Failed to allocate buffer with length " << length;
           }
 
-          // TODO Sandeepa the length wasn't specified earlier?
+          // Set the length
           x.second->length = length;
-
-          // TODO Sandeepa why create a new receive request here? Does CYLON_MSG_FIN mean that the buffer was posted?
+          // UCX receive
           x.second->context = UCX_Irecv(x.second->data->GetByteBuffer(), length, x.first);
-
-          // set the flag to true so we can identify later which buffers are posted
+          // Set the flag to true so we can identify later which buffers are posted
           x.second->status = RECEIVE_POSTED;
 
-          // TODO Sandeepa why was the buffer reduced by 2? Does the header when putting in receivedHeader
           // copy the count - 2 to the buffer
           int *header = nullptr;
-          if (count > 2) {
-            header = new int[count - 2];
-            memcpy(header, &(x.second->headerBuf[2]), (count - 2) * sizeof(int));
-          }
+          header = new int[6];
+          memcpy(header, &(x.second->headerBuf[2]), 6 * sizeof(int));
 
           // Notify the receiver that the destination received the header
-          rcv_fn->receivedHeader(x.first, finFlag, header, count - 2);
+          rcv_fn->receivedHeader(x.first, finFlag, header, 6);
         } else {
-          // TODO Sandeepa is header count only 2 if data or the end of data?
-//          if (count != 2) {
-//            LOG(FATAL) << "Un-expected number of bytes expected: 2 " << " received: " << count;
-//          }
-          // we are not expecting to receive any more
+          // We are not expecting to receive any more
           x.second->status = RECEIVED_FIN;
-          // notify the receiver
+          // Notify the receiver
           rcv_fn->receivedHeader(x.first, finFlag, nullptr, 0);
         }
       }
     } else if (x.second->status == RECEIVE_POSTED) {
       // if request completed
       if (x.second->context->completed == 1) {
-        // The number of received elements
-//        int count = 0;
-//        MPI_Get_count(&status, MPI_BYTE, &count);
+        // Release the existing context
+        if (x.second->context != nullptr){
+          ucp_request_release(x.second->context);
+        }
 
-        // Check if the count is the number specified
-        // TODO Sandeepa why is this check not used earlier? Is the length not set there?
-        // TODO is this why length is set later on?
-//        if (count != x.second->length) {
-//          LOG(FATAL) << "Un-expected number of bytes expected:" << x.second->length
-//                     << " received: " << count;
-//        }
-
-        // Reset request
-//        x.second->request = {};
-        // TODO Sandeepa check if this is valid at this point
-        // TODO Sandeepa re-init request?
-        x.second->context = new ucx::ucxContext();
-        // TODO destroy existing context object
-//        ucp_request_release(x.second->context);
-        // clear the headerBuffer array
+        // Fill header buffer
         std::fill_n(x.second->headerBuf, CYLON_CHANNEL_HEADER_SIZE, 0);
 
-        x.second->context = UCX_Irecv(x.second->headerBuf, CYLON_CHANNEL_HEADER_SIZE * sizeof(int), x.first);
+        // UCX receive
+        x.second->context = UCX_Irecv(x.second->headerBuf,
+                                      CYLON_CHANNEL_HEADER_SIZE * sizeof(int),
+                                      x.first);
+        // Set state
         x.second->status = RECEIVE_LENGTH_POSTED;
-        // call the back end
+        // Call the back end
         rcv_fn->receivedData(x.first, x.second->data, x.second->length);
       }
       // TODO Sandeepa would a early return have any advantages? (There would be a string of jumps or a single jump?)
@@ -507,107 +514,78 @@ void UCXChannel::progressReceives() {
 }
 
 void UCXChannel::progressSends() {
-  // TODO Sandeepa uh?
-  // lets send values
-  // Iterate through the sends
+  // Progress the ucp send worker
   ucp_worker_progress(ucpSendWorker);
-  for (auto x : sends) {
 
+  // Iterate through the sends
+  for (auto x : sends) {
     // If currently in the length posted stage of the send
     if (x.second->status == SEND_LENGTH_POSTED) {
-      // Tests for the completion of a request
-      // true if operation completed and its status
-
-      // if completed
+      // If completed
       if (x.second->context->completed == 1) {
-
-        // TODO Sandeepa re-init request?
-        x.second->context = new ucx::ucxContext();
-        // TODO destroy existing context object
-//        ucp_request_release(x.second->context);
-
-
+        // Destroy context object
+        //  NOTE can't use ucp_request_release here cuz we actually init our own UCX context here
+        if (x.second->context != nullptr){
+         delete x.second->context;
+        }
         // Post the actual send
-        // TODO Sandeepa pendingData is a queue of TxReqs (Check a place that it is created)
         std::shared_ptr<TxRequest> r = x.second->pendingData.front();
         // Send the message
-        x.second->context = UCX_Isend(r->buffer, r->length, x.second->wa->ep, x.first);
+        x.second->context = UCX_Isend(r->buffer,
+                                      r->length,
+                                      x.second->wa->ep,
+                                      x.first);
 
         // Update status
         x.second->status = SEND_POSTED;
+
+        // We set to the current send and pop it
         x.second->pendingData.pop();
-        // we set to the current send and pop it
         // The update the current send in the queue of sends
         x.second->currentSend = r;
       }
     } else if (x.second->status == SEND_INIT) {
-      // TODO Sandeepa
-      //  When the status is SEND_INIT
-
-      x.second->request = {};
-
-      // TODO Sandeepa give back to if
-      bool stat = x.second->pendingData.empty();
       // Send header if no pending data
-      if (!stat) {
+      if (!x.second->pendingData.empty()) {
         sendHeader(x);
       } else if (finishRequests.find(x.first) != finishRequests.end()) {
-        // TODO Sandeepa send the finished requests? When the status is SEND_INIT?
         // If there are finish requests lets send them
         sendFinishHeader(x);
       }
     } else if (x.second->status == SEND_POSTED) {
-      // TODO Sandeepa this is during the data transfers
-
-      // Tests for the completion of a request
-      // true if operation completed and its status
-
       // If completed
       if (x.second->context->completed == 1) {
-        // TODO Sandeepa re-init request?
-        x.second->request = {};
-        // if there are more data to post, post the length buffer now
-
-        // Send header if no pending data
+        // If there are more data to post, post the length buffer now
         if (!x.second->pendingData.empty()) {
-          // If the pending data is not empty??
+          // If the pending data is not empty
           sendHeader(x);
-          // we need to notify about the send completion
-          // TODO Sandeepa Callback for completing
+          // We need to notify about the send completion
           send_comp_fn->sendComplete(x.second->currentSend);
           x.second->currentSend = {};
         } else {
           // If pending data is empty
-
           // Notify about send completion
           send_comp_fn->sendComplete(x.second->currentSend);
           x.second->currentSend = {};
 
           // Check if request is in finish
           if (finishRequests.find(x.first) != finishRequests.end()) {
-            // TODO Sandeepa WTH is the difference between sendFinishHeader and sendComplete
             sendFinishHeader(x);
           } else {
-            // TODO Sandeepa why re-init the send?
-            // If req is not in finish then re-init?
+            // If req is not in finish then re-init
             x.second->status = SEND_INIT;
           }
         }
       }
     } else if (x.second->status == SEND_FINISH) {
-      // TODO Sandeepa What is this state?
-
       if (x.second->context->completed == 1) {
-        // we are going to send complete
+        // We are going to send complete
         std::shared_ptr<TxRequest> finReq = finishRequests[x.first];
-        // TODO Sandeepa Another finish? orz
         send_comp_fn->sendFinishComplete(finReq);
         x.second->status = SEND_DONE;
       }
     } else if (x.second->status != SEND_DONE) {
       // If an unknown state
-
-      // TODO Sandeepa Exception not thrown?
       // Throw an exception and log
       LOG(FATAL) << "At an un-expected state " << x.second->status;
     }
@@ -622,27 +600,28 @@ void UCXChannel::sendHeader(const std::pair<const int, PendingSend *> &x) const 
   // Get the request
   std::shared_ptr<TxRequest> r = x.second->pendingData.front();
   // Put the length to the buffer
-  // TODO Sandeepa Get data from something and update the orignial source with the copy??
   // TODO Sandeepa Is it possible to reduce the headers?
   x.second->headerBuf[0] = r->length;
   x.second->headerBuf[1] = 0;
 
-  // Copy the memory of the header
-  // TODO Sandeepa copy data from TxRequest header to the PendingSend header
+  // Copy data from TxRequest header to the PendingSend header
   if (r->headerLength > 0) {
-    memcpy(&(x.second->headerBuf[2]), &(r->header[0]), r->headerLength * sizeof(int));
+    memcpy(&(x.second->headerBuf[2]),
+           &(r->header[0]),
+           r->headerLength * sizeof(int));
   }
+  // UCX send of the header
   x.second->context = UCX_Isend(x.second->headerBuf,
                                 (2 + r->headerLength) * sizeof(int),
                                 x.second->wa->ep,
                                 x.first);
+  // Update status
   x.second->status = SEND_LENGTH_POSTED;
 }
 
 /**
  * Send the length
  * @param x the target, pendingSend pair
- * TODO Sandeepa the function called when finishing the send?
  */
 void UCXChannel::sendFinishHeader(const std::pair<const int, PendingSend *> &x) const {
   // for the last header we always send only the first 2 integers
