@@ -170,6 +170,10 @@ class UCXChannel : public Channel {
   ucx::ucxContext* UCX_Irecv(void *buffer,
                              size_t count,
                              int source);
+//   void UCX_Irecv(void *buffer,
+//                  size_t count,
+//                  int source,
+//                  ucx::ucxContext* request);
 
   /**
    * UCX Send
@@ -180,10 +184,15 @@ class UCXChannel : public Channel {
    * @param [in] target - MPI id of the receiver / target
    * @return ucx::ucxContext - Used for tracking the progress of the request
    */
-  ucx::ucxContext* UCX_Isend(const void *buffer,
-                             size_t  count,
-                             ucp_ep_h ep,
-                             int target) const;
+//  ucx::ucxContext* UCX_Isend(const void *buffer,
+//                             size_t  count,
+//                             ucp_ep_h ep,
+//                             int target) const;
+  void UCX_Isend(const void *buffer,
+                 size_t  count,
+                 ucp_ep_h ep,
+                 int target,
+                 ucx::ucxContext* request) const;
   /**
    * Initialize the UCX network by sending / receiving the UCX worker addresses via MPI
    * @param [in] receives - MPI IDs of the nodes to receive from

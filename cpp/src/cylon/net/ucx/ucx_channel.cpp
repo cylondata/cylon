@@ -59,7 +59,6 @@ static void sendHandler(void *request,
                          void *ctx) {
   auto *context = (ucx::ucxContext *) ctx;
   context->completed = 1;
-  LOG(INFO) << "THIS DOES GET CALLED +++++++++++++++++++++++++ " << (status == UCS_OK);
   // TODO Sandeepa message to handle send completion
 }
 
@@ -132,30 +131,27 @@ ucx::ucxContext *UCXChannel::UCX_Irecv(void *buffer,
  * @param [in] count - Size of the receiving data
  * @param [in] ep - Endpoint to send the data to
  * @param [in] target - MPI id of the receiver / target
- * @return ucx::ucxContext - Used for tracking the progress of the request
+ * @param [out] ctx - Used for tracking the progress of the request
  */
-ucx::ucxContext *UCXChannel::UCX_Isend(const void *buffer,
+void UCXChannel::UCX_Isend(const void *buffer,
                                        size_t count,
                                        ucp_ep_h ep,
-                                       int target) const {
-  // A new context to handle the current send
-  auto *ctx = new ucx::ucxContext();
+                                       int target,
+                                       ucx::ucxContext* ctx) const {
+  ctx->completed = 1;
   // To hold the status of operations
   ucs_status_ptr_t status;
 
   // Send parameters (Mask, callback, context)
   ucp_request_param_t sendParam;
-  // TODO Sandeepa force no immediate completeion?
   sendParam.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
-                           UCP_OP_ATTR_FIELD_USER_DATA |
-                           UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
-//  sendParam.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
-//                           UCP_OP_ATTR_FIELD_USER_DATA;
+      UCP_OP_ATTR_FIELD_USER_DATA |
+      UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
   sendParam.cb.send = sendHandler;
   sendParam.user_data = ctx;
 
   // Init completed
-  ctx->completed = 0;
+  ctx->completed = 1;
   // UCP non-blocking tag send
   // Inp - Endpoint, buffer, length, tag, send parameters
   status = ucp_tag_send_nbx(ep,
@@ -163,19 +159,15 @@ ucx::ucxContext *UCXChannel::UCX_Isend(const void *buffer,
                             count,
                             getTag(edge, target, rank),
                             &sendParam);
-
   // Check if there is an error in the request
   if (UCS_PTR_IS_ERR(status)) {
     LOG(FATAL) << "Error in sending message via UCX";
-    return nullptr;
   }
   // Handle the situation where the ucp_tag_send_nbx function returns immediately
   // without calling the send handler
-  // TODO Sandeepa the problem is here
   if (!UCS_PTR_IS_PTR(status) && status == nullptr) {
     ctx->completed = 1;
   }
-  return ctx;
 }
 
 /**
@@ -441,9 +433,9 @@ void UCXChannel::progressReceives() {
       // If completed request is completed
       if (x.second->context->completed == 1) {
         // Release the existing context
-        if (x.second->context != nullptr){
-          ucp_request_release(x.second->context);
-        }
+//        if (x.second->context != nullptr){
+//          ucp_request_release(x.second->context);
+//        }
 
         // TODO Sandeepa is the count check necessary
         //  Can be done by ucp_tag_probe_nb?
@@ -490,9 +482,9 @@ void UCXChannel::progressReceives() {
       // if request completed
       if (x.second->context->completed == 1) {
         // Release the existing context
-        if (x.second->context != nullptr){
-          ucp_request_release(x.second->context);
-        }
+//        if (x.second->context != nullptr){
+//          ucp_request_release(x.second->context);
+//        }
 
         // Fill header buffer
         std::fill_n(x.second->headerBuf, CYLON_CHANNEL_HEADER_SIZE, 0);
@@ -525,16 +517,17 @@ void UCXChannel::progressSends() {
       if (x.second->context->completed == 1) {
         // Destroy context object
         //  NOTE can't use ucp_request_release here cuz we actually init our own UCX context here
-        if (x.second->context != nullptr){
-         delete x.second->context;
-        }
+        delete x.second->context;
+
         // Post the actual send
         std::shared_ptr<TxRequest> r = x.second->pendingData.front();
         // Send the message
-        x.second->context = UCX_Isend(r->buffer,
-                                      r->length,
-                                      x.second->wa->ep,
-                                      x.first);
+        x.second->context =  new ucx::ucxContext();
+        UCX_Isend(r->buffer,
+                  r->length,
+                  x.second->wa->ep,
+                  x.first,
+                  x.second->context);
 
         // Update status
         x.second->status = SEND_POSTED;
@@ -610,11 +603,14 @@ void UCXChannel::sendHeader(const std::pair<const int, PendingSend *> &x) const 
            &(r->header[0]),
            r->headerLength * sizeof(int));
   }
+  delete x.second->context;
   // UCX send of the header
-  x.second->context = UCX_Isend(x.second->headerBuf,
-                                (2 + r->headerLength) * sizeof(int),
-                                x.second->wa->ep,
-                                x.first);
+  x.second->context =  new ucx::ucxContext();
+  UCX_Isend(x.second->headerBuf,
+            (2 + r->headerLength) * sizeof(int),
+            x.second->wa->ep,
+            x.first,
+            x.second->context);
   // Update status
   x.second->status = SEND_LENGTH_POSTED;
 }
@@ -628,10 +624,13 @@ void UCXChannel::sendFinishHeader(const std::pair<const int, PendingSend *> &x) 
   x.second->headerBuf[0] = 0;
   x.second->headerBuf[1] = CYLON_MSG_FIN;
   // TODO Sandeepa count was 2, changed to 8 since 8 is hardcoded atm
-  x.second->context = UCX_Isend(x.second->headerBuf,
-                                8 * sizeof(int),
-                                x.second->wa->ep,
-                                x.first);
+  delete x.second->context;
+  x.second->context =  new ucx::ucxContext();
+  UCX_Isend(x.second->headerBuf,
+            8 * sizeof(int),
+            x.second->wa->ep,
+            x.first,
+            x.second->context);
   x.second->status = SEND_FINISH;
 }
 
