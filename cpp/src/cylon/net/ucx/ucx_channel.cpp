@@ -638,6 +638,7 @@ void UCXChannel::sendFinishHeader(const std::pair<const int, PendingSend *> &x) 
  * Close the channel and clear any allocated memory by the channel
  */
 void UCXChannel::close() {
+  // TODO Sandeepa add all cleanups
   // Clear pending receives
   for (auto &pendingReceive : pendingReceives) {
     delete (pendingReceive.second);

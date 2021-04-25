@@ -60,6 +60,7 @@ void UCXCommunicator::Finalize() {
   // TODO Sandeepa get UCP context somewhere
 //  ucp_context_h dummy_context;
 //  ucp_cleanup(dummy_context);
+  MPI_Finalize();
 }
 void UCXCommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);
