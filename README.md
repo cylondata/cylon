@@ -76,7 +76,7 @@ Refer to the documentation on how to compile Cylon
 
 [Compiling on Linux](https://cylondata.org/docs/)
 
-# Licence
+# License
 
 Cylon uses the Apache Lincense Version 2.0
 
