@@ -16,12 +16,13 @@
 Run test:
 >> mpirun -n 4 python -m pytest -q python/test/test_df_dist_sorting.py
 """
-
+import pytest
 from pycylon import DataFrame, CylonEnv
 from pycylon.net import MPIConfig
 import random
 
 
+@pytest.mark.mpi
 def test_df_dist_sorting():
     df1 = DataFrame([random.sample(range(10, 30), 5),
                      random.sample(range(10, 30), 5)])
@@ -42,7 +43,7 @@ def test_df_dist_sorting():
     check_sort(df, '0', False)
 
     # distributed sort
-    env = CylonEnv(config=MPIConfig())
+    env = CylonEnv(config=MPIConfig(), distributed=True)
 
     print("Distributed Sort", env.rank, env.world_size)
 
