@@ -26,11 +26,11 @@ import argparse
 """
 Run benchmark:
 
->>> python python/examples/op_benchmark/null_handling_benchmark.py --start_size 10_000_000 \
+>>> python python/examples/op_benchmark/dropna_benchmark.py --start_size 10_000_000 \
                                         --step_size 10_000_000 \
                                         --end_size 50_000_000 \
                                         --num_cols 3 \
-                                        --stats_file /tmp/null_handling_bench.csv \
+                                        --stats_file /tmp/dropna_bench.csv \
                                         --repetitions 1 \
                                         --unique_factor 1.0
 """
@@ -49,15 +49,15 @@ def null_handling_op(num_rows: int, num_cols: int, unique_factor: float):
     ct.set_index(index_column, indexing_type=IndexingType.LINEAR, drop=True)
 
     pandas_time = time.time()
-    df_isna = df.isna()
+    df_isna = df.dropna(axis=1)
     pandas_time = time.time() - pandas_time
 
     cylon_time = time.time()
-    ct_isna = ct.isna()
+    ct_isna = ct.dropna(axis=0)
     cylon_time = time.time() - cylon_time
 
     pandas_eval_time = time.time()
-    pd.eval('df.isna()')
+    pd.eval('df.dropna(axis=1)')
     pandas_eval_time = time.time() - pandas_eval_time
     print(df_isna.shape, ct_isna.shape)
     return pandas_time, cylon_time, pandas_eval_time
