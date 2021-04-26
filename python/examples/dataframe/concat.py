@@ -17,13 +17,14 @@ print(df4)
 # distributed unique
 env = CylonEnv(config=MPIConfig())
 
-
-df1 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
-                 random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
-df2 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
-                 random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
-df3 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
-                 random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
+df1 = DataFrame([random.sample(range(10 * env.rank, 15 * (env.rank + 1)), 5),
+                 random.sample(range(10 * env.rank, 15 * (env.rank + 1)), 5)])
+df2 = DataFrame([random.sample(range(10 * env.rank, 15 * (env.rank + 1)), 5),
+                 random.sample(range(10 * env.rank, 15 * (env.rank + 1)), 5)])
+df3 = DataFrame([random.sample(range(10 * env.rank, 15 * (env.rank + 1)), 5),
+                 random.sample(range(10 * env.rank, 15 * (env.rank + 1)), 5)])
 print("Distributed Unique", env.rank)
 df4 = df1.concat(axis=0, objs=[df2, df3], env=env)
 print(df4)
+
+env.finalize()
