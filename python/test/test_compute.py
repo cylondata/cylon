@@ -113,7 +113,7 @@ def test_isin():
         assert df.isin(comp_val).values.tolist() == cn_tb.isin(comp_val).to_pandas(
         ).values.tolist()
 
-    #assert df.isin(other).values.tolist() == cn_tb.isin(cn_tb_other).to_pandas().values.tolist()
+    # assert df.isin(other).values.tolist() == cn_tb.isin(cn_tb_other).to_pandas().values.tolist()
 
 
 def test_table_is_in_dev():
@@ -131,7 +131,7 @@ def test_table_is_in_dev():
     row_indices_cmp_ = ['1', '21', '3', '41']
 
     data = [[2, 4, 3, 1], [0, 2, 1, 2]]
-    cmp_data = [[12, 4, 13, 1], [10, 2, 12, 2]]
+    cmp_data = [[12, 4, 13, 1], [10, 2, 12, 3]]
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     tb = cn.Table.from_list(ctx, col_names_, data)
     tb.set_index(row_indices_)
@@ -139,8 +139,7 @@ def test_table_is_in_dev():
     tb_cmp.set_index(row_indices_cmp_)
 
     def compare_array_like_values(l_org_ar, l_cmp_ar, skip_null=True):
-        s = a_compute.SetLookupOptions(value_set=l_cmp_ar, skip_null=skip_null)
-        return a_compute.is_in(l_org_ar, options=s)
+        return a_compute.is_in(l_org_ar, value_set=l_cmp_ar, skip_nulls=skip_null)
 
     def broadcast(ar, broadcast_coefficient=1):
         bcast_ar = []
@@ -190,8 +189,8 @@ def test_table_is_in_dev():
             if validity.as_py():
                 chunk_ar_org = tb_ar.column(col_name)
                 chunk_ar_cmp = tb_cmp_ar.column(col_name)
-                s = a_compute.SetLookupOptions(value_set=chunk_ar_cmp, skip_null=skip_null)
-                data_cmp_res = a_compute.is_in(chunk_ar_org, options=s)
+                data_cmp_res = a_compute.is_in(chunk_ar_org, value_set=chunk_ar_cmp,
+                                               skip_nulls=skip_null)
                 print(data_cmp_res, row_col_validity)
                 col_data_map[col_name] = compare_two_arrays(data_cmp_res, row_col_validity)
             else:

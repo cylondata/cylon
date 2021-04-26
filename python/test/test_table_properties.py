@@ -908,7 +908,7 @@ def test_isin_with_index():
     table_path = '/tmp/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb1.to_pandas()
-    filter_isin = [11, 20, 11, 23]
+    filter_isin = [20, 11, 23]
     print(tb1)
 
     print(pdf)
