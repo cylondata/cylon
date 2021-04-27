@@ -38,7 +38,7 @@ arrow::Result<std::shared_ptr<arrow::Table>> read_csv(std::shared_ptr<cylon::Cyl
     return mmap_result.status();
   }
 
-  auto *read_options = dynamic_cast<arrow::csv::ReadOptions *>(
+  auto read_options = dynamic_cast<arrow::csv::ReadOptions *>(
       config::CSVConfigHolder::GetCastedHolder(options));
   auto parse_options = dynamic_cast<arrow::csv::ParseOptions *>(
       config::CSVConfigHolder::GetCastedHolder(options));
