@@ -138,7 +138,6 @@ void UCXChannel::UCX_Isend(const void *buffer,
                                        ucp_ep_h ep,
                                        int target,
                                        ucx::ucxContext* ctx) const {
-  ctx->completed = 1;
   // To hold the status of operations
   ucs_status_ptr_t status;
 
@@ -151,7 +150,7 @@ void UCXChannel::UCX_Isend(const void *buffer,
   sendParam.user_data = ctx;
 
   // Init completed
-  ctx->completed = 1;
+  ctx->completed = 0;
   // UCP non-blocking tag send
   // Inp - Endpoint, buffer, length, tag, send parameters
   status = ucp_tag_send_nbx(ep,

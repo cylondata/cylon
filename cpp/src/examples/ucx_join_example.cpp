@@ -20,15 +20,6 @@
 #include <table.hpp>
 
 int main(int argc, char *argv[]) {
-  // TODO Sandeepa remove this
-//  char* tst = "Hellloo";
-//  void* pnt = (void *)tst;
-//  std::cout << pnt << " | " << (char*)pnt << std::endl;
-  std::cout << "UCX Process started" << std::endl;
-//  int i = 0;
-//  while(0==i)
-//    sleep(5);
-
   if (argc < 3) {
     LOG(ERROR) << "There should be two arguments with paths to csv files";
     return 1;
@@ -59,8 +50,14 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
 
-  status = cylon::DistributedJoin(first_table, second_table,
-                              cylon::join::config::JoinConfig::InnerJoin(0, 0), joined);
+  auto join_config = cylon::join::config::JoinConfig(cylon::join::config::JoinType::INNER,
+                                                     {0, 1},
+                                                     {0, 1},
+                                                     cylon::join::config::JoinAlgorithm::SORT,
+                                                     "l_",
+                                                     "r_");
+
+  status = cylon::DistributedJoin(first_table, second_table, join_config, joined);
 
   if (!status.is_ok()) {
     LOG(INFO) << "Table join failed ";
@@ -68,16 +65,12 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   auto join_end_time = std::chrono::steady_clock::now();
-  std::shared_ptr<arrow::Table> arr_table;
 
   LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
             << second_table->Rows() << ", Joined has : " << joined->Rows();
   LOG(INFO) << "Join done in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 join_end_time - read_end_time).count() << "[ms]";
-
-  joined->ToArrowTable(arr_table);
-//  LOG(INFO) <<  arr_table->ToString();
 
   ctx->Finalize();
   return 0;

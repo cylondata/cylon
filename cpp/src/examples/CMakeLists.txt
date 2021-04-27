@@ -42,6 +42,7 @@ endif (CYLON_PARQUET)
 
 if (CYLON_UCX)
     cylon_add_exe(ucx_join_example)
+    cylon_add_exe(ucx_ra_test_inmem_datagen_example)
 endif (CYLON_UCX)
 
 macro(cylon_add_exe2 DIR EXENAME)
