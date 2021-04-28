@@ -258,7 +258,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
 #ifdef CYLON_DEBUG
   auto t1 = std::chrono::steady_clock::now();
 #endif
-  auto ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
   arrow::MemoryPool *pool = ToArrowPool(ctx);
 
   std::shared_ptr<arrow::Table> atable = table->get_table();
@@ -310,7 +310,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   const auto &schema = std::make_shared<arrow::Schema>(new_fields);
   std::shared_ptr<arrow::Table> agg_table = arrow::Table::Make(schema, new_arrays);
 
-  output = std::make_shared<Table>(agg_table, ctx);
+  output = std::make_shared<Table>(ctx, agg_table);
 #ifdef CYLON_DEBUG
   auto t4 = std::chrono::steady_clock::now();
   LOG(INFO) << "hash groupby setup:" << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()

@@ -83,12 +83,14 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
    * @param all_workers
    * @return
    */
-  AllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
+  AllToAll(const std::shared_ptr<cylon::CylonContext> &ctx,
            const std::vector<int> &source,
            const std::vector<int> &targets,
            int edgeId,
            ReceiveCallback *callback,
            Allocator *alloc);
+
+  virtual ~AllToAll() = default;
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true

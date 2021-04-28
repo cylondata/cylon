@@ -29,7 +29,7 @@
 namespace cylon {
 namespace io {
 
-arrow::Result<std::shared_ptr<arrow::Table>> read_csv(std::shared_ptr<cylon::CylonContext> &ctx,
+arrow::Result<std::shared_ptr<arrow::Table>> read_csv(const std::shared_ptr<CylonContext> &ctx,
                                                       const std::string &path,
                                                       cylon::io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
 

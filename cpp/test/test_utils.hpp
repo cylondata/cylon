@@ -34,7 +34,7 @@
 
 namespace cylon {
 namespace test {
-static int Verify(std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<Table> &result,
+static int Verify(const std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<Table> &result,
                   std::shared_ptr<Table> &expected_result) {
   Status status;
   std::shared_ptr<Table> verification;
@@ -118,7 +118,7 @@ int TestSetOperation(fun_ptr fn,
 }
 
 int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
-                      std::shared_ptr<cylon::CylonContext> &ctx,
+                      const std::shared_ptr<cylon::CylonContext> &ctx,
                       const std::string &path1,
                       const std::string &path2,
                       const std::string &out_path) {
@@ -168,7 +168,7 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
 #endif
 }
 
-cylon::Status CreateTable(std::shared_ptr<cylon::CylonContext> &ctx, int rows, std::shared_ptr<cylon::Table> &output) {
+cylon::Status CreateTable(const std::shared_ptr<cylon::CylonContext> &ctx, int rows, std::shared_ptr<cylon::Table> &output) {
   std::shared_ptr<std::vector<int32_t>> col0 = std::make_shared<std::vector<int32_t >>();
   std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t >>();
 

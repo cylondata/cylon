@@ -6,7 +6,7 @@ cylon::Status cylon::IndexUtil::BuildArrowHashIndex(const std::shared_ptr<Table>
 													std::shared_ptr<cylon::BaseArrowIndex> &index) {
 
   auto table_ = input->get_table();
-  auto ctx = input->GetContext();
+  const auto& ctx = input->GetContext();
   if (table_->column(0)->num_chunks() > 1) {
 	const arrow::Result<std::shared_ptr<arrow::Table>> &res = table_->CombineChunks(cylon::ToArrowPool(ctx));
 	RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
@@ -39,7 +39,7 @@ cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingTy
 														 const std::shared_ptr<arrow::Array> &index_array) {
   cylon::Status status;
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  auto ctx = input->GetContext();
+  const auto& ctx = input->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
   switch (schema) {
 	case Range: status = BuildArrowRangeIndexFromArray(index_array->length(), pool, index);
@@ -78,7 +78,7 @@ cylon::Status cylon::IndexUtil::BuildArrowLinearIndex(const std::shared_ptr<Tabl
 													  const int index_column,
 													  std::shared_ptr<cylon::BaseArrowIndex> &index) {
   auto table_ = input->get_table();
-  auto ctx = input->GetContext();
+  const auto& ctx = input->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
   std::shared_ptr<cylon::ArrowIndexKernel> kernel = std::make_shared<cylon::LinearArrowIndexKernel>();
   RETURN_CYLON_STATUS_IF_FAILED(kernel->BuildIndex(pool, table_, index_column, index));
@@ -87,7 +87,7 @@ cylon::Status cylon::IndexUtil::BuildArrowLinearIndex(const std::shared_ptr<Tabl
 cylon::Status cylon::IndexUtil::BuildArrowRangeIndex(const std::shared_ptr<Table> &input,
 													 std::shared_ptr<cylon::BaseArrowIndex> &index) {
 
-  auto ctx = input->GetContext();
+  const auto& ctx = input->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
   auto table_ = input->get_table();
   std::shared_ptr<cylon::ArrowIndexKernel> kernel = std::make_unique<ArrowRangeIndexKernel>();

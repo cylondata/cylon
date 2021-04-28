@@ -58,7 +58,7 @@ cylon::Status cylon::kernel::Union::Finalize(std::shared_ptr<cylon::Table> &resu
   if (!merge_status.ok()) {
     return Status(static_cast<int>(merge_status.code()), merge_status.message());
   }
-  result = std::make_shared<cylon::Table>(merge_result.ValueOrDie(), this->ctx);
+  result = std::make_shared<cylon::Table>(ctx, merge_result.ValueOrDie());
   return cylon::Status::OK();
 }
 
