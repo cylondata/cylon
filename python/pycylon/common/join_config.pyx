@@ -36,7 +36,8 @@ StrToJoinType = {
     'inner': CJoinType.CINNER,
     'left': CJoinType.CLEFT,
     'right': CJoinType.CRIGHT,
-    'fullouter': CJoinType.COUTER
+    'fullouter': CJoinType.COUTER,
+    'outer': CJoinType.COUTER
 }
 
 cdef class JoinConfig:

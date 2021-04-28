@@ -63,10 +63,9 @@ import math
 import pyarrow as pa
 import numpy as np
 import pandas as pd
-from typing import List, Any
+from typing import List
 import warnings
 import operator
-import copy
 
 '''
 Cylon Table definition mapping 
@@ -342,7 +341,7 @@ cdef class Table:
         """
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
-        cdef CJoinConfig*jcptr
+        cdef CJoinConfig *jcptr
 
         left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
         left_prefix = kwargs.get('left_prefix') if 'left_prefix' in kwargs else ""
@@ -368,7 +367,7 @@ cdef class Table:
         """
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
-        cdef CJoinConfig*jcptr
+        cdef CJoinConfig *jcptr
 
         left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
         left_prefix = kwargs.get('left_prefix') if 'left_prefix' in kwargs else ""
@@ -2055,7 +2054,7 @@ cdef class Table:
         return self.get_index()
 
     def set_index(self, key, indexing_type: IndexingType = IndexingType.LINEAR,
-                        drop: bool = False):
+                  drop: bool = False):
         '''
         Set Index
         Operation takes place inplace.
@@ -2366,7 +2365,7 @@ cdef class Table:
         return PyLocIndexer(self, "iloc")
 
     @staticmethod
-    def concat(tables: List[Table], axis: int = 0, join: str = 'inner', algorithm: str = 'sort', distributed=False):
+    def concat(tables: List[Table], axis: int = 0, join: str = 'inner', algorithm: str = 'sort'):
         """
         Algorithm
         =========
@@ -2417,7 +2416,7 @@ cdef class Table:
                     raise ValueError(f"Invalid object {tb1}, expected Table")
                 tb1.reset_index()
                 res_table.reset_index()
-                if ctx.get_world_size() > 1 and distributed:
+                if ctx.get_world_size() > 1:
                     res_table = res_table.distributed_join(table=tb1, join_type=join,
                                                            algorithm=algorithm,
                                                            left_on=[res_table.column_names[0]],
