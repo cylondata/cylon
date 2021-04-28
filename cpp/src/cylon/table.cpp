@@ -35,7 +35,6 @@
 #include "util/arrow_utils.hpp"
 #include "util/macros.hpp"
 #include "util/to_string.hpp"
-#include "util/uuid.hpp"
 
 namespace cylon {
 
@@ -763,7 +762,7 @@ void ReadCSVThread(const std::shared_ptr<CylonContext> &ctx, const std::string &
 
 Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::vector<std::string> &paths,
                const std::vector<std::shared_ptr<Table> *> &tableOuts,
-               io::config::CSVReadOptions options) {
+               const io::config::CSVReadOptions &options) {
   if (options.IsConcurrentFileReads()) {
     std::vector<std::pair<std::future<Status>, std::thread>> futures;
     futures.reserve(paths.size());
@@ -999,21 +998,21 @@ Status Table::ResetArrowIndex(bool drop) {
 	} else {
 	  LOG(INFO) << "Table contains a non-range index";
 	  auto index_arr = base_arrow_index_->GetIndexArray();
-	  auto pool = cylon::ToArrowPool(ctx);
-	  base_arrow_index_ = std::make_shared<cylon::ArrowRangeIndex>(0, table_->num_rows(), 1, pool);
-	  if (!drop) {
-		LOG(INFO) << "Reset Index Drop case";
-		AddColumn(0, "index", index_arr);
-	  }
-	}
+      auto pool = cylon::ToArrowPool(ctx);
+      base_arrow_index_ = std::make_shared<cylon::ArrowRangeIndex>(0, table_->num_rows(), 1, pool);
+      if (!drop) {
+        LOG(INFO) << "Reset Index Drop case";
+        AddColumn(0, "index", index_arr);
+      }
+    }
   }
   return Status::OK();
 }
-Status Table::AddColumn(int64_t position, std::string column_name,
-						std::shared_ptr<arrow::Array> &input_column) {
+Status Table::AddColumn(int64_t position, const std::string &column_name,
+                        std::shared_ptr<arrow::Array> &input_column) {
   if (input_column->length() != table_->num_rows()) {
-	LOG(ERROR) << "New column length must match the number of rows in the table";
-	return Status(cylon::Code::CapacityError);
+    LOG(ERROR) << "New column length must match the number of rows in the table";
+    return Status(cylon::Code::CapacityError);
   }
   std::shared_ptr<arrow::Field> field =
       std::make_shared<arrow::Field>(column_name, input_column->type());
@@ -1097,7 +1096,7 @@ void ReadParquetThread(const std::shared_ptr<CylonContext> &ctx, const std::stri
 
 Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
                    const std::vector<std::shared_ptr<Table> *> &tableOuts,
-                   io::config::ParquetOptions options) {
+                   const io::config::ParquetOptions &options) {
   if (options.IsConcurrentFileReads()) {
     std::vector<std::pair<std::future<Status>, std::thread>> futures;
     futures.reserve(paths.size());

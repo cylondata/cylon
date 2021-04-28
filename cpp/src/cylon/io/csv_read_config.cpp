@@ -123,7 +123,7 @@ CSVReadOptions CSVReadOptions::ConcurrentFileReads(bool file_reads) {
   this->concurrent_file_reads = file_reads;
   return *this;
 }
-bool CSVReadOptions::IsConcurrentFileReads() {
+bool CSVReadOptions::IsConcurrentFileReads() const {
   return this->concurrent_file_reads;
 }
 }  // namespace config

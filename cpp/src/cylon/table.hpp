@@ -109,7 +109,7 @@ class Table {
 
   /**
    * Get the number of columns in the table
-   * @return numbre of columns
+   * @return number of columns
    */
   int32_t Columns();
 
@@ -168,7 +168,7 @@ class Table {
   bool IsRetain() const;
 
   /**
-   * Get the i'th column from the table
+   * Get a cylon::Column from the table
    * @param index
    * @return
    */
@@ -178,7 +178,6 @@ class Table {
    * Get the column vector of the table
    * @return
    */
-//  std::vector<std::shared_ptr<cylon::Column>> GetColumns() const;
   const std::vector<std::shared_ptr<cylon::Column>> &GetColumns() const;
 
   Status SetArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool drop_index);
@@ -187,7 +186,7 @@ class Table {
 
   Status ResetArrowIndex(bool drop = false);
 
-  Status AddColumn(int64_t position, std::string column_name, std::shared_ptr<arrow::Array> &input_column);
+  Status AddColumn(int64_t position, const std::string& column_name, std::shared_ptr<arrow::Array> &input_column);
 
  private:
   /**
@@ -220,7 +219,7 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
  */
 Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::vector<std::string> &paths,
                const std::vector<std::shared_ptr<Table> *> &tableOuts,
-               io::config::CSVReadOptions options = cylon::io::config::CSVReadOptions());
+               const io::config::CSVReadOptions &options = cylon::io::config::CSVReadOptions());
 
 /**
  * Write the table as a CSV
@@ -323,7 +322,7 @@ Status DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table>
 /**
  * Shuffles a table based on hashes
  * @param table
- * @param hash_col_idx vector of column indicies that needs to be hashed
+ * @param hash_col_idx vector of column indices that needs to be hashed
  * @param output
  * @return
  */
@@ -446,7 +445,7 @@ Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string 
  */
 Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
 				   const std::vector<std::shared_ptr<Table> *> &tableOuts,
-				   io::config::ParquetOptions options = cylon::io::config::ParquetOptions());
+				   const io::config::ParquetOptions& options = cylon::io::config::ParquetOptions());
 /**
  * Write the table as a parquet file
  * @param path file path
