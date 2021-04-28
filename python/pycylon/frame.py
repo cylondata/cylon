@@ -14,20 +14,23 @@
 
 
 from __future__ import annotations
-from typing import Hashable, List, Dict, Optional, Sequence, Union
-from copy import copy
+
 from collections.abc import Iterable
-import pycylon as cn
+from copy import copy
+from typing import Hashable, List, Dict, Optional, Sequence, Union
+
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-from pycylon import Series
-from pycylon.index import RangeIndex, CategoricalIndex
-from pycylon.io import CSVWriteOptions
-from pycylon.io import CSVReadOptions
-import pycylon.data as pcd
 
+import pycylon as cn
+import pycylon.data as pcd
 from pycylon import CylonContext
+from pycylon import Series
+from pycylon.data.table import SortOptions
+from pycylon.index import RangeIndex, CategoricalIndex
+from pycylon.io import CSVReadOptions
+from pycylon.io import CSVWriteOptions
 
 DEVICE_CPU = "cpu"
 
@@ -216,7 +219,7 @@ class DataFrame(object):
     def is_device(self, device):
         return self._device == device
 
-    def _change_context(self, env: CylonEnv):
+    def _change_context(self, env: CylonEnv) -> DataFrame:
         """
         This is a temporary function to make the DataFrame backed by a Cylon Table with a different context.
         This should be removed once C++ support Tables which are independent from Contexts
@@ -1608,19 +1611,7 @@ class DataFrame(object):
             return DataFrame(joined_table)
 
     @staticmethod
-    def concat(
-            objs: Union[Iterable["DataFrame"]],
-            axis=0,
-            join="outer",
-            ignore_index: bool = False,
-            keys=None,
-            levels=None,
-            names=None,
-            verify_integrity: bool = False,
-            sort: bool = False,
-            copy: bool = True,
-            env: CylonEnv = None
-    ) -> DataFrame:
+    def concat(objs: Union[Iterable["DataFrame"]], axis=0, join="outer", env: CylonEnv = None) -> DataFrame:
         """
         Concatenate DataFrames along a particular axis with optional set logic
         along the other axes.
@@ -1639,34 +1630,9 @@ class DataFrame(object):
             they are all None in which case a ValueError will be raised.
         axis : {0/'index', 1/'columns' (Unsupported)}, default 0
             The axis to concatenate along.
-        join(Unsupported) : {'inner', 'outer'}, default 'outer'
+        join : {'inner', 'outer'}, default 'outer'
             How to handle indexes on other axis (or axes).
-        ignore_index(Unsupported) : bool, default False
-            If True, do not use the index values along the concatenation axis. The
-            resulting axis will be labeled 0, ..., n - 1. This is useful if you are
-            concatenating objects where the concatenation axis does not have
-            meaningful indexing information. Note the index values on the other
-            axes are still respected in the join.
-        keys(Unsupported) : sequence, default None
-            If multiple levels passed, should contain tuples. Construct
-            hierarchical index using the passed keys as the outermost level.
-        levels(Unsupported) : list of sequences, default None
-            Specific levels (unique values) to use for constructing a
-            MultiIndex. Otherwise they will be inferred from the keys.
-        names(Unsupported) : list, default None
-            Names for the levels in the resulting hierarchical index.
-        verify_integrity(Unsupported) : bool, default False
-            Check whether the new concatenated axis contains duplicates. This can
-            be very expensive relative to the actual data concatenation.
-        sort(Unsupported) : bool, default False
-            Sort non-concatenation axis if it is not already aligned when `join`
-            is 'outer'.
-            This has no effect when ``join='inner'``, which already preserves
-            the order of the non-concatenation axis.
-            .. versionchanged:: 1.0.0
-            Changed to not sort by default.
-        copy(Unsupported) : bool, default True
-            If False, do not copy data unnecessarily.
+        env: Execution environment used to distinguish between distributed and local operations. default None (local env)
         Returns
         -------
         object, type of objs
@@ -1707,7 +1673,7 @@ class DataFrame(object):
         letter  number animal
         0      c       3    cat
         1      d       4    dog
-        >>> DataFrame.concat([df1, df3], sort=False)
+        >>> DataFrame.concat([df1, df3])
         letter  number animal
         0      a       1    NaN
         1      b       2    NaN
@@ -1718,7 +1684,7 @@ class DataFrame(object):
         and return only those that are shared by passing ``inner`` to
         the ``join`` keyword argument.
 
-        >>> DataFrame.concat([df1, df3], join="inner")
+        >>> DataFrame.concat([df1, df3],join="inner")
         letter  number
         0      a       1
         1      b       2
@@ -1730,7 +1696,7 @@ class DataFrame(object):
 
         >>> df4 = DataFrame([['bird', 'polly'], ['monkey', 'george']],
         ...                    columns=['animal', 'name'])
-        >>> DataFrame.concat([df1, df4], axis=1)
+        >>> DataFrame.concat([df1, df4],axis=1)
 
         letter  number  animal    name
         0      a       1    bird   polly
@@ -1747,41 +1713,33 @@ class DataFrame(object):
         >>> df6
         0
         a  2
-        >>> DataFrame.concat([df5, df6], verify_integrity=True)
+        >>> DataFrame.concat([df5, df6])
         Traceback (most recent call last):
             ...
         ValueError: Indexes have overlapping values: ['a']
         """
+        # ignore_index: bool = False,
+        # keys=None,
+        # levels=None,
+        # names=None,
+        # verify_integrity: bool = False,
+        # sort: bool = False,
+        # copy: bool = True,
 
         if len(objs) == 0:
             raise ValueError("objs can't be empty")
 
-        if axis == 0:
-            if env is None:
-                current_table = objs[0]._table
-                for i in range(1, len(objs)):
-                    current_table = current_table.union(objs[i]._table)
-
-                return DataFrame(current_table)
-            else:
-                # todo not optimum for distributed
-                current_table = objs[0]._change_context(env)._table
-                for i in range(1, len(objs)):
-                    current_table = current_table.union(
-                        objs[i]._change_context(env)._table)
-
-                return DataFrame(current_table)
+        if env is None:
+            res_table = cn.Table.concat(tables=[df.to_table() for df in objs], axis=axis, join=join)
         else:
-            raise NotImplementedError("Unsupported operation")
+            res_table = cn.Table.concat(tables=[df._change_context(env).to_table() for df in objs],
+                                        axis=axis, join=join)
 
-    def drop_duplicates(
-            self,
-            subset: Optional[Union[Hashable, Sequence[Hashable]]] = None,
-            keep: Union[str, bool] = "first",
-            inplace: bool = False,
-            ignore_index: bool = False,
-            env: CylonEnv = None
-    ) -> DataFrame:
+        return DataFrame(res_table)
+
+    def drop_duplicates(self, subset: Optional[Union[Hashable, Sequence[Hashable]]] = None,
+                        keep: Union[str, bool] = "first", inplace: bool = False, ignore_index: bool = False,
+                        env: CylonEnv = None) -> DataFrame:
         """
         Return DataFrame with duplicate rows removed.
         Considering certain columns is optional. Indexes, including time indexes
@@ -1800,7 +1758,7 @@ class DataFrame(object):
             Whether to drop duplicates in place or to return a copy.
         ignore_index (Unsupported) : bool, default False
             If True, the resulting axis will be labeled 0, 1, …, n - 1.
-            .. versionadded:: 1.0.0
+        env: Execution environment used to distinguish between distributed and local operations. default None (local env)
         Returns
         -------
         DataFrame or None
@@ -1858,6 +1816,7 @@ class DataFrame(object):
             na_position="last",
             ignore_index=False,
             key=None,
+            sort_options: Dict = None,
             env: CylonEnv = None
     ) -> DataFrame:
         """
@@ -1892,6 +1851,9 @@ class DataFrame(object):
             ``Series`` and return a Series with the same shape as the input.
             It will be applied to each column in `by` independently.
             .. versionadded:: 1.1.0
+        sort_options: a dict of sort options. Refer Table.SortOptions. Only applicable for distributed sort
+        env: Execution environment used to distinguish between distributed and local operations. default None (local env)
+
         Returns
         -------
         DataFrame or None
@@ -1947,9 +1909,11 @@ class DataFrame(object):
         if env is None:
             return DataFrame(self._table.sort(order_by=by, ascending=ascending))
         else:
-            return DataFrame(self._change_context(env)._table.distributed_sort(order_by=by, ascending=ascending))
+            sort_opts = SortOptions(**sort_options) if sort_options is not None else None
+            return DataFrame(self._change_context(env)._table.distributed_sort(order_by=by, ascending=ascending,
+                                                                               sort_options=sort_opts))
 
-    def groupby(self, by: Union([int, str, List]), env: CylonEnv = None) -> GroupByDataFrame:
+    def groupby(self, by: Union[int, str, List], env: CylonEnv = None) -> GroupByDataFrame:
         """
         A groupby operation involves some combination of splitting the object, applying a function, and combining the results. 
         This can be used to group large amounts of data and compute operations on these groups.
