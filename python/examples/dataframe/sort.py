@@ -23,7 +23,7 @@ print(df3)
 # distributed sort
 print("Distributed Sort with sort options", env.rank)
 bins = env.world_size * 2
-df3 = df1.sort_values(by=[0], sort_options={'num_bins': bins, 'num_samples': bins}, env=env)
+df3 = df1.sort_values(by=[0], num_bins=bins, num_samples=bins, env=env)
 print(df3)
 
 env.finalize()
