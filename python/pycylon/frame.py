@@ -1610,133 +1610,6 @@ class DataFrame(object):
                                                         left_prefix=suffixes[0], right_prefix=suffixes[1])
             return DataFrame(joined_table)
 
-    @staticmethod
-    def concat(objs: Union[Iterable["DataFrame"]], axis=0, join="outer", env: CylonEnv = None) -> DataFrame:
-        """
-        Concatenate DataFrames along a particular axis with optional set logic
-        along the other axes.
-        Can also add a layer of hierarchical indexing on the concatenation axis,
-        which may be useful if the labels are the same (or overlapping) on
-        the passed axis number.
-
-        Cylon currently support concat along axis=0, for DataFrames having the same schema(Union). 
-
-        Parameters
-        ----------
-        objs : a sequence or mapping of Series or DataFrame objects
-            If a mapping is passed, the sorted keys will be used as the `keys`
-            argument, unless it is passed, in which case the values will be
-            selected (see below). Any None objects will be dropped silently unless
-            they are all None in which case a ValueError will be raised.
-        axis : {0/'index', 1/'columns' (Unsupported)}, default 0
-            The axis to concatenate along.
-        join : {'inner', 'outer'}, default 'outer'
-            How to handle indexes on other axis (or axes).
-        env: Execution environment used to distinguish between distributed and local operations. default None (local env)
-        Returns
-        -------
-        object, type of objs
-            When concatenating along
-            the columns (axis=1) or rows (axis=0), a ``DataFrame`` is returned.
-
-        Examples
-        --------
-
-        Combine two ``DataFrame`` objects with identical columns.
-
-        >>> df1 = DataFrame([['a', 1], ['b', 2]],
-        ...                    columns=['letter', 'number'])
-        >>> df1
-        letter  number
-        0      a       1
-        1      b       2
-        >>> df2 = DataFrame([['c', 3], ['d', 4]],
-        ...                    columns=['letter', 'number'])
-        >>> df2
-        letter  number
-        0      c       3
-        1      d       4
-        >>> DataFrame.concat([df1, df2])
-        letter  number
-        0      a       1
-        1      b       2
-        0      c       3
-        1      d       4
-
-        (Unsupported) Combine ``DataFrame`` objects with overlapping columns
-        and return everything. Columns outside the intersection will
-        be filled with ``NaN`` values.
-
-        >>> df3 = DataFrame([['c', 3, 'cat'], ['d', 4, 'dog']],
-        ...                    columns=['letter', 'number', 'animal'])
-        >>> df3
-        letter  number animal
-        0      c       3    cat
-        1      d       4    dog
-        >>> DataFrame.concat([df1, df3])
-        letter  number animal
-        0      a       1    NaN
-        1      b       2    NaN
-        0      c       3    cat
-        1      d       4    dog
-
-        (Unsupported) Combine ``DataFrame`` objects with overlapping columns
-        and return only those that are shared by passing ``inner`` to
-        the ``join`` keyword argument.
-
-        >>> DataFrame.concat([df1, df3],join="inner")
-        letter  number
-        0      a       1
-        1      b       2
-        0      c       3
-        1      d       4
-
-        (Unsupported) Combine ``DataFrame`` objects horizontally along the x axis by
-        passing in ``axis=1``.
-
-        >>> df4 = DataFrame([['bird', 'polly'], ['monkey', 'george']],
-        ...                    columns=['animal', 'name'])
-        >>> DataFrame.concat([df1, df4],axis=1)
-
-        letter  number  animal    name
-        0      a       1    bird   polly
-        1      b       2  monkey  george
-
-        (Unsupported) Prevent the result from including duplicate index values with the
-        ``verify_integrity`` option.
-
-        >>> df5 = DataFrame([1], index=['a'])
-        >>> df5
-        0
-        a  1
-        >>> df6 = DataFrame([2], index=['a'])
-        >>> df6
-        0
-        a  2
-        >>> DataFrame.concat([df5, df6])
-        Traceback (most recent call last):
-            ...
-        ValueError: Indexes have overlapping values: ['a']
-        """
-        # ignore_index: bool = False,
-        # keys=None,
-        # levels=None,
-        # names=None,
-        # verify_integrity: bool = False,
-        # sort: bool = False,
-        # copy: bool = True,
-
-        if len(objs) == 0:
-            raise ValueError("objs can't be empty")
-
-        if env is None:
-            res_table = cn.Table.concat(tables=[df.to_table() for df in objs], axis=axis, join=join)
-        else:
-            res_table = cn.Table.concat(tables=[df._change_context(env).to_table() for df in objs],
-                                        axis=axis, join=join)
-
-        return DataFrame(res_table)
-
     def drop_duplicates(self, subset: Optional[Union[Hashable, Sequence[Hashable]]] = None,
                         keep: Union[str, bool] = "first", inplace: bool = False, ignore_index: bool = False,
                         env: CylonEnv = None) -> DataFrame:
@@ -1980,3 +1853,131 @@ class DataFrame(object):
             return GroupByDataFrame(self, by_list)
         else:
             return GroupByDataFrame(self._change_context(env), by_list)
+
+
+# -------------------- staticmethods ---------------------------
+
+def concat(objs: Union[Iterable["DataFrame"]], axis=0, join="outer", env: CylonEnv = None) -> DataFrame:
+    """
+    Concatenate DataFrames along a particular axis with optional set logic
+    along the other axes.
+    Can also add a layer of hierarchical indexing on the concatenation axis,
+    which may be useful if the labels are the same (or overlapping) on
+    the passed axis number.
+
+    Cylon currently support concat along axis=0, for DataFrames having the same schema(Union).
+
+    Parameters
+    ----------
+    objs : a sequence or mapping of Series or DataFrame objects
+        If a mapping is passed, the sorted keys will be used as the `keys`
+        argument, unless it is passed, in which case the values will be
+        selected (see below). Any None objects will be dropped silently unless
+        they are all None in which case a ValueError will be raised.
+    axis : {0/'index', 1/'columns' (Unsupported)}, default 0
+        The axis to concatenate along.
+    join : {'inner', 'outer'}, default 'outer'
+        How to handle indexes on other axis (or axes).
+    env: Execution environment used to distinguish between distributed and local operations. default None (local env)
+    Returns
+    -------
+    object, type of objs
+        When concatenating along
+        the columns (axis=1) or rows (axis=0), a ``DataFrame`` is returned.
+
+    Examples
+    --------
+
+    Combine two ``DataFrame`` objects with identical columns.
+
+    >>> df1 = DataFrame([['a', 1], ['b', 2]],
+    ...                    columns=['letter', 'number'])
+    >>> df1
+    letter  number
+    0      a       1
+    1      b       2
+    >>> df2 = DataFrame([['c', 3], ['d', 4]],
+    ...                    columns=['letter', 'number'])
+    >>> df2
+    letter  number
+    0      c       3
+    1      d       4
+    >>> DataFrame.concat([df1, df2])
+    letter  number
+    0      a       1
+    1      b       2
+    0      c       3
+    1      d       4
+
+    (Unsupported) Combine ``DataFrame`` objects with overlapping columns
+    and return everything. Columns outside the intersection will
+    be filled with ``NaN`` values.
+
+    >>> df3 = DataFrame([['c', 3, 'cat'], ['d', 4, 'dog']],
+    ...                    columns=['letter', 'number', 'animal'])
+    >>> df3
+    letter  number animal
+    0      c       3    cat
+    1      d       4    dog
+    >>> DataFrame.concat([df1, df3])
+    letter  number animal
+    0      a       1    NaN
+    1      b       2    NaN
+    0      c       3    cat
+    1      d       4    dog
+
+    (Unsupported) Combine ``DataFrame`` objects with overlapping columns
+    and return only those that are shared by passing ``inner`` to
+    the ``join`` keyword argument.
+
+    >>> DataFrame.concat([df1, df3],join="inner")
+    letter  number
+    0      a       1
+    1      b       2
+    0      c       3
+    1      d       4
+
+    (Unsupported) Combine ``DataFrame`` objects horizontally along the x axis by
+    passing in ``axis=1``.
+
+    >>> df4 = DataFrame([['bird', 'polly'], ['monkey', 'george']],
+    ...                    columns=['animal', 'name'])
+    >>> DataFrame.concat([df1, df4],axis=1)
+
+    letter  number  animal    name
+    0      a       1    bird   polly
+    1      b       2  monkey  george
+
+    (Unsupported) Prevent the result from including duplicate index values with the
+    ``verify_integrity`` option.
+
+    >>> df5 = DataFrame([1], index=['a'])
+    >>> df5
+    0
+    a  1
+    >>> df6 = DataFrame([2], index=['a'])
+    >>> df6
+    0
+    a  2
+    >>> DataFrame.concat([df5, df6])
+    Traceback (most recent call last):
+        ...
+    ValueError: Indexes have overlapping values: ['a']
+    """
+    # ignore_index: bool = False,
+    # keys=None,
+    # levels=None,
+    # names=None,
+    # verify_integrity: bool = False,
+    # sort: bool = False,
+    # copy: bool = True,
+
+    if len(objs) == 0:
+        raise ValueError("objs can't be empty")
+
+    if env is None:
+        res_table = cn.Table.concat(tables=[df.to_table() for df in objs], axis=axis, join=join)
+    else:
+        res_table = cn.Table.distributed_concat(tables=[df._change_context(env).to_table() for df in objs],
+                                                axis=axis, join=join)
+    return DataFrame(res_table)
