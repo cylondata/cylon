@@ -147,8 +147,29 @@ endif (CYLON_PARQUET)
 option(CYLON_UCX "Build Cylon with UCX" OFF)
 if (CYLON_UCX)
     add_definitions(-DBUILD_CYLON_UCX)
-    include(ConfigureUCX)
-    include_directories(${UCX_INSTALL}/include)
+
+#    # Code for UCX code setup from github
+#    include(ConfigureUCX)
+#    include_directories(${UCX_INSTALL}/include)
+
+    # TODO Sandeepa How to get the include directories?
+    string(REPLACE ":" ";" LIBRARY_DIRS $ENV{LD_LIBRARY_PATH})
+    set(UCX_LIBRARY_DIR "$ENV{UCX_ROOT}/install/lib")
+    set(UCX_INCLUDE_DIR "$ENV{UCX_ROOT}/install/include")
+    include_directories(${UCX_INCLUDE_DIR})
+    # Set UCX found as true
+    set(UCX_FOUND TRUE)
+    # Specify the libraries of UCX
+#    find_library (UCX_LIBRARIES
+#            NAMES ucx/libuct_cma.so ucx/libuct_ib.so libuct.so libucs.so libucm.so libucp.so
+#            PATHS ${LIBRARY_DIRS})
+    set(UCX_LIBRARIES
+            ${UCX_LIBRARY_DIR}/ucx/libuct_cma.so
+            ${UCX_LIBRARY_DIR}/ucx/libuct_ib.so
+            ${UCX_LIBRARY_DIR}/libuct.so
+            ${UCX_LIBRARY_DIR}/libucs.so
+            ${UCX_LIBRARY_DIR}/libucm.so
+            ${UCX_LIBRARY_DIR}/libucp.so)
 endif (CYLON_UCX)
 
 include(Build)
