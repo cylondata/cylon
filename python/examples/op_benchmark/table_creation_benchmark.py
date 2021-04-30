@@ -32,14 +32,14 @@ Run benchmark:
                                         --num_cols 2 \
                                         --stats_file /tmp/table_creation_bench.csv \
                                         --repetitions 1 \
-                                        --duplication_factor 0.9
+                                        --unique_factor 0.9
 """
 
 
 def tb_creation_op(num_rows: int, num_cols: int, duplication_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     ctx.add_config("compute_engine", "numpy")
-    pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
+    pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, unique_factor=duplication_factor)
     # data_row_list
     data_row = [np.random.randint(num_rows)] * num_rows
     # data row np array

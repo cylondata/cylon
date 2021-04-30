@@ -25,3 +25,5 @@ df2.set_index([0], inplace=True)
 print("Distributed Join")
 df3 = df1.join(other=df2, on=[0], env=env)
 print(df3)
+
+env.finalize()
