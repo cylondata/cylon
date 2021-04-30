@@ -31,9 +31,9 @@ Run benchmark:
                                         --step_size 1_000_000 \
                                         --end_size 10_000_000 \
                                         --num_cols 2 \
-                                        --stats_file /tmp/filter_bench.csv \
+                                        --stats_file /tmp/math_bench.csv \
                                         --repetitions 1 \
-                                        --duplication_factor 0.9 \
+                                        --unique_factor 0.1 \
                                         --op add
 """
 
@@ -74,11 +74,11 @@ def math_op_base():
     print(f"PyArrow Time: {t5 - t4} s")
 
 
-def math_op(num_rows: int, num_cols: int, duplication_factor: float, op=add):
+def math_op(num_rows: int, num_cols: int, unique_factor: float, op=add):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     ctx.add_config("compute_engine", "numpy")
 
-    pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
+    pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, unique_factor=unique_factor)
     filter_column = pdf.columns[0]
     filter_column_data = pdf[pdf.columns[0]]
     random_index = np.random.randint(low=0, high=pdf.shape[0])
@@ -101,7 +101,7 @@ def math_op(num_rows: int, num_cols: int, duplication_factor: float, op=add):
 
 
 def bench_math_op(start: int, end: int, step: int, num_cols: int, repetitions: int, stats_file: str,
-                  duplication_factor: float, op=None):
+                  unique_factor: float, op=None):
     all_data = []
     schema = ["num_records", "num_cols", "pandas_math_op", "pandas_eval_math_op", "cylon_math_op",
               "speed up math op", "speed up math op [eval]"]
@@ -114,7 +114,7 @@ def bench_math_op(start: int, end: int, step: int, num_cols: int, repetitions: i
         for idx in range(repetitions):
             pandas_math_op_time, pandas_eval_math_op_time, cylon_math_op_time = math_op(
                 num_rows=records, num_cols=num_cols,
-                duplication_factor=duplication_factor, op=op)
+                unique_factor=unique_factor, op=op)
             times.append([pandas_math_op_time, pandas_eval_math_op_time, cylon_math_op_time])
         times = np.array(times).sum(axis=0) / repetitions
         print(f"Math Op : Records={records}, Columns={num_cols}"
@@ -135,8 +135,8 @@ if __name__ == '__main__':
     parser.add_argument("-e", "--end_size",
                         help="end data size",
                         type=int)
-    parser.add_argument("-d", "--duplication_factor",
-                        help="random data duplication factor",
+    parser.add_argument("-d", "--unique_factor",
+                        help="random data unique factor",
                         type=float)
     parser.add_argument("-s", "--step_size",
                         help="Step size",
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     print(f"Start Data Size : {args.start_size}")
     print(f"End Data Size : {args.end_size}")
     print(f"Step Data Size : {args.step_size}")
-    print(f"Data Duplication Factor : {args.duplication_factor}")
+    print(f"Data Unique Factor : {args.unique_factor}")
     print(f"Number of Columns : {args.num_cols}")
     print(f"Number of Repetitions : {args.repetitions}")
     print(f"Stats File : {args.stats_file}")
@@ -174,5 +174,5 @@ if __name__ == '__main__':
                   num_cols=args.num_cols,
                   repetitions=args.repetitions,
                   stats_file=args.stats_file,
-                  duplication_factor=args.duplication_factor,
+                  unique_factor=args.unique_factor,
                   op=op)
