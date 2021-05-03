@@ -1168,7 +1168,7 @@ cdef class Table:
         Sets values for a existing table by means of a column
         Args:
             key: (str) column-name
-            value: (Table) data as a single column table
+            value: (Table) data as a single column table or a scalar
 
         Returns: PyCylon Table
 
