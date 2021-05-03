@@ -36,7 +36,8 @@ DEVICE_CPU = "cpu"
 
 
 # Data loading Functions
-def read_csv(filepath: str, use_threads=True, names=None, sep=",", block_size: int = 1 << 20, skiprows=0,
+def read_csv(filepath: str, use_threads=True, names=None, sep=",", block_size: int = 1 << 20,
+             skiprows=0,
              ignore_emptylines=True, na_values=None):
     """
     Read a comma-separated values (csv) file into DataFrame.
@@ -225,7 +226,8 @@ class DataFrame(object):
         This should be removed once C++ support Tables which are independent from Contexts
         """
         self._table = self._initialize_dataframe(
-            data=self._table.to_arrow(), index=self._index, columns=self._columns, copy=False, context=env.context)
+            data=self._table.to_arrow(), index=self._index, columns=self._columns, copy=False,
+            context=env.context)
         return self
 
     def _initialize_dataframe(self, data=None, index=None, columns=None, copy=False,
@@ -417,7 +419,7 @@ class DataFrame(object):
             Sets values for a existing dataframe by means of a column
             Args:
                 key: (str) column-name
-                value: (DataFrame) data as a single column table
+                value: (DataFrame) data as a single column table or a scalar
 
             Returns: PyCylon DataFrame
 
@@ -446,8 +448,11 @@ class DataFrame(object):
                 3      4      8    120   1120
         '''
 
-        if isinstance(key, str) and isinstance(value, DataFrame):
-            self._table.__setitem__(key, value.to_table())
+        if isinstance(key, str) :
+            if isinstance(value, DataFrame):
+                self._table.__setitem__(key, value.to_table())
+            elif np.isscalar(value):
+                self._table.__setitem__(key, value)
         else:
             raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
                              f"value type {type(value)}")
@@ -1367,8 +1372,9 @@ class DataFrame(object):
             return DataFrame(self._table.sort(order_by=by, ascending=ascending))
         else:
             sort_opts = SortOptions(num_bins=num_bins, num_samples=num_samples)
-            return DataFrame(self._change_context(env)._table.distributed_sort(order_by=by, ascending=ascending,
-                                                                               sort_options=sort_opts))
+            return DataFrame(
+                self._change_context(env)._table.distributed_sort(order_by=by, ascending=ascending,
+                                                                  sort_options=sort_opts))
 
     def join(self, other: DataFrame, on=None, how='left', lsuffix='l', rsuffix='r',
              sort=False, algorithm="sort", env: CylonEnv = None) -> DataFrame:
@@ -1706,8 +1712,9 @@ class DataFrame(object):
             right_on = right._index_columns
 
         if left_on is None or right_on is None:
-            raise ValueError("Columns to merge is not specified. Expected on or left_index/right_index."
-                             "Make sure dataframes has specified index columns if using left_index/right_index")
+            raise ValueError(
+                "Columns to merge is not specified. Expected on or left_index/right_index."
+                "Make sure dataframes has specified index columns if using left_index/right_index")
 
         if env is None:
             joined_table = self._table.join(table=right._table, join_type=how,
@@ -1721,11 +1728,13 @@ class DataFrame(object):
             joined_table = self._table.distributed_join(table=right._table, join_type=how,
                                                         algorithm=algorithm,
                                                         left_on=left_on, right_on=right_on,
-                                                        left_prefix=suffixes[0], right_prefix=suffixes[1])
+                                                        left_prefix=suffixes[0],
+                                                        right_prefix=suffixes[1])
             return DataFrame(joined_table)
 
     def drop_duplicates(self, subset: Optional[Union[Hashable, Sequence[Hashable]]] = None,
-                        keep: Union[str, bool] = "first", inplace: bool = False, ignore_index: bool = False,
+                        keep: Union[str, bool] = "first", inplace: bool = False,
+                        ignore_index: bool = False,
                         env: CylonEnv = None) -> DataFrame:
         """
         Return DataFrame with duplicate rows removed.
@@ -1864,7 +1873,8 @@ class DataFrame(object):
 
 # -------------------- staticmethods ---------------------------
 
-def concat(objs: Union[Iterable["DataFrame"]], axis=0, join="outer", env: CylonEnv = None) -> DataFrame:
+def concat(objs: Union[Iterable["DataFrame"]], axis=0, join="outer",
+           env: CylonEnv = None) -> DataFrame:
     """
     Concatenate DataFrames along a particular axis with optional set logic
     along the other axes.
@@ -1985,6 +1995,7 @@ def concat(objs: Union[Iterable["DataFrame"]], axis=0, join="outer", env: CylonE
     if env is None:
         res_table = cn.Table.concat(tables=[df.to_table() for df in objs], axis=axis, join=join)
     else:
-        res_table = cn.Table.distributed_concat(tables=[df._change_context(env).to_table() for df in objs],
-                                                axis=axis, join=join)
+        res_table = cn.Table.distributed_concat(
+            tables=[df._change_context(env).to_table() for df in objs],
+            axis=axis, join=join)
     return DataFrame(res_table)
