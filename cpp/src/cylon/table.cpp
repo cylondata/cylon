@@ -464,20 +464,20 @@ Status Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &
 
     left->ToArrowTable(left_table);
     right->ToArrowTable(right_table);
-// if it is a sort algorithm and certain key types, we are going to do an in-place sort
+    // if it is a sort algorithm and certain key types, we are going to do an in-place sort
+
     if (!join_config.IsMultiColumn() && join_config.GetAlgorithm() == cylon::join::config::SORT) {
       int lIndex = join_config.GetLeftColumnIdx()[0];
       int rIndex = join_config.GetRightColumnIdx()[0];
       auto left_type = left_table->column(lIndex)->type()->id();
       if (cylon::join::util::is_inplace_join_possible(left_type)) {
-// we don't have to copy if the table is freed
+        // we don't have to copy if the table is freed
         if (left->IsRetain()) {
-          RETURN_CYLON_STATUS_IF_ARROW_FAILED(
-              create_table_with_duplicate_index(pool, left_table, lIndex));
+          RETURN_CYLON_STATUS_IF_ARROW_FAILED(create_table_with_duplicate_index(pool, left_table, lIndex));
         }
         if (right->IsRetain()) {
-          RETURN_CYLON_STATUS_IF_ARROW_FAILED(
-              create_table_with_duplicate_index(pool, right_table, rIndex));
+          RETURN_CYLON_STATUS_IF_ARROW_FAILED(create_table_with_duplicate_index(pool, right_table, rIndex));
+
         }
       }
     }
