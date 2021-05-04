@@ -13,7 +13,6 @@
  */
 
 #include <memory>
-//#include <ucp/api/ucp.h>
 
 #include "net/communicator.hpp"
 #include "ucx_communicator.hpp"
@@ -38,7 +37,9 @@ std::shared_ptr<UCXConfig> UCXConfig::Make() {
 }
 
 Channel *UCXCommunicator::CreateChannel() {
-  return new UCXChannel();
+  auto newChannel = new UCXChannel();
+  newChannel->linkCommunicator(this);
+  return newChannel;
 }
 
 int UCXCommunicator::GetRank() {

@@ -23,6 +23,7 @@
 #include <ucp/api/ucp.h>
 #include <glog/logging.h>
 #include "ucx_operations.hpp"
+#include "ucx_communicator.hpp"
 
 #include "../buffer.hpp"
 
@@ -132,6 +133,8 @@ class UCXChannel : public Channel {
 
   void close() override;
 
+  void linkCommunicator(net::UCXCommunicator* com);
+
  private:
   int edge;
   // keep track of the length buffers for each receiver
@@ -148,6 +151,8 @@ class UCXChannel : public Channel {
   Allocator *allocator;
   // mpi rank
   int rank;
+  // mpi world size
+  int worldSize;
 
   // # UCX specific attributes
   // The worker for receiving
@@ -158,6 +163,8 @@ class UCXChannel : public Channel {
   ucp_worker_h  ucpSendWorker;
   // Tag mask used to match UCX send / receives
   ucp_tag_t tagMask = UINT64_MAX;
+  // UCX Cylon Communicator
+  net::UCXCommunicator* ucxCom;
 
   /**
    * UCX Receive

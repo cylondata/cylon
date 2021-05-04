@@ -181,6 +181,7 @@ void UCXChannel::MPIInit(const std::vector<int> &receives,
   int ret;
   // Get the rank for checking send to self, and initializations
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &worldSize);
 
   // UCP Context - Holds a UCP communication instance's global information.
   ucp_context_h ucpContext;
@@ -206,23 +207,21 @@ void UCXChannel::MPIInit(const std::vector<int> &receives,
   // Int variable used when iterating
   int sIndx;
 
+  auto allAddresses = (ucp_address_t *)malloc(ucpRecvWorkerAddr->addrSize*worldSize);
+  MPI_Allgather(ucpRecvWorkerAddr->addr,
+                (int)ucpRecvWorkerAddr->addrSize,
+                MPI_BYTE,
+                allAddresses,
+                (int)ucpRecvWorkerAddr->addrSize,
+                MPI_BYTE,
+                MPI_COMM_WORLD);
+
   // Iterate and set the receives
   for (sIndx = 0; sIndx < numReci; sIndx++) {
     // Rank of the node receiving from
     int recvRank = receives.at(sIndx);
     // Init a new pending receive for the request
     auto *buf = new PendingReceive();
-
-    // If receiver is not self, then send the UCP Worker address
-    if (recvRank != rank) {
-      MPI_Isend(ucpRecvWorkerAddr->addr,
-                (int)ucpRecvWorkerAddr->addrSize,
-                MPI_BYTE,
-                recvRank,
-                edge,
-                MPI_COMM_WORLD,
-                &(buf->request));
-    }
     // TODO Sandeepa remove ipInt allocation since it's not used anywhere
     buf->receiveId = recvRank;
     // Add to pendingReceive object to pendingReceives map
@@ -245,120 +244,41 @@ void UCXChannel::MPIInit(const std::vector<int> &receives,
     sends[sendRank] = new PendingSend();
     // Init worker details object to store details on the node to send
     sends[sendRank]->wa = new ucx::ucxWorker();
-    // TODO Sandeepa would this create a problem?
-    // Set the worker address size based on the local receiver worker address
+    ucs_status_t ucxStatus;
+    ucp_ep_params_t epParams;
+
+    // If not self, then check if the worker address has been received.
+    //  If self,then assign local worker
+    if (sendRank != rank) {
+      char *p = (char*)allAddresses;
+      p+=sendRank*ucpRecvWorkerAddr->addrSize;
+      sends[sendRank]->wa->addr = (ucp_address_t*)p;
+    } else {
+      sends[sendRank]->wa->addr = ucpRecvWorkerAddr->addr;
+    }
     sends[sendRank]->wa->addrSize = ucpRecvWorkerAddr->addrSize;
 
-    // If sender is not self, then receive the UCP Worker address
-    if (sendRank != rank) {
-      // Allocate memory for the address
-      sends[sendRank]->wa->addr = (ucp_address_t*)malloc(ucpRecvWorkerAddr->addrSize);
-      MPI_Irecv(sends[sendRank]->wa->addr,
-                (int)sends[sendRank]->wa->addrSize,
-                MPI_BYTE,
-                sendRank,
-                edge,
-                MPI_COMM_WORLD,
-                &(sends[sendRank]->request));
+    // Set params for the endpoint
+    epParams.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS |
+                          UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
+    epParams.address = sends[sendRank]->wa->addr;
+    epParams.err_mode = UCP_ERR_HANDLING_MODE_NONE;
+
+    // Create an endpoint
+    ucxStatus = ucp_ep_create(ucpSendWorker,
+                              &epParams,
+                              &sends[sendRank]->wa->ep);
+
+    // Check if the endpoint was created properly
+    if (ucxStatus != UCS_OK) {
+      LOG(FATAL)
+          << "Error when creating the endpoint.";
     }
   }
+}
 
-  // Vectors to hold the status of the MPI sends and receives for checking
-  std::vector<bool> finRecv (numReci, false);
-  std::vector<bool> finSend (numSends, false);
-
-  // Init variables for checks
-  int flag;
-  int checkRank;
-  MPI_Status status;
-
-  // Iterate till all the MPI sends and receives are done for UCX Init
-  while (true){
-    // Iterate through the receives
-    for (sIndx = 0; sIndx < numReci; sIndx++) {
-      // Skip check if already completed
-      if(finRecv[sIndx]){
-        continue;
-      }
-
-      // Assign values for variables used in checks
-      checkRank = receives.at(sIndx);
-      flag = 0;
-      status = {};
-
-      // If not self, then set flag based on MPI_TEST else, set flag to complete (1)
-      if (checkRank != rank) {
-        // Check if the MPI send completed
-        MPI_Test(&(pendingReceives[checkRank]->request), &flag, &status);
-        if (flag) {
-          finRecv[sIndx]=true;
-        }
-      } else {
-        finRecv[sIndx]=true;
-      }
-    }
-
-    for (sIndx = 0; sIndx < numSends; sIndx++) {
-      if(finSend[sIndx]){
-        continue;
-      }
-
-      // Assign values for variables used in checks
-      checkRank = receives.at(sIndx);
-      flag = 0;
-      status = {};
-
-      // If not self, then set flag based on MPI_TEST else, set flag to complete (1)
-      if (checkRank != rank) {
-        MPI_Test(&(sends[checkRank]->request), &flag, &status);
-      } else {
-        flag = 1;
-      }
-
-      // If receive is complete then create an endpoint and put to the relevant pendingSend
-      if (flag) {
-        // Init ucx status and endpoint
-        ucs_status_t ucxStatus;
-        ucp_ep_params_t epParams;
-
-        // If not self, then check if the worker address has been received.
-        //  If self,then assign local worker
-        if (checkRank != rank) {
-          if (sends[checkRank]->wa->addr == nullptr) {
-            LOG(FATAL) << "Error when receiving send worker address";
-            return;
-          }
-        } else {
-          sends[checkRank]->wa->addr = ucpRecvWorkerAddr->addr;
-          sends[checkRank]->wa->addrSize = ucpRecvWorkerAddr->addrSize;
-        }
-
-        // Set params for the endpoint
-        epParams.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS |
-                              UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
-        epParams.address = sends[checkRank]->wa->addr;
-        epParams.err_mode = UCP_ERR_HANDLING_MODE_NONE;
-
-        // Create an endpoint
-        ucxStatus = ucp_ep_create(ucpSendWorker,
-                                  &epParams,
-                                  &sends[checkRank]->wa->ep);
-
-        // Check if the endpoint was created properly
-        if (ucxStatus != UCS_OK) {
-          LOG(FATAL)
-              << "Error when creating the endpoint.";
-        }
-        // Set as complete
-        finSend[sIndx]=true;
-      }
-    }
-
-    // If all are complete then break the loop
-    if(checkArr(finRecv) && checkArr(finSend)){
-      break;
-    }
-  }
+void UCXChannel::linkCommunicator(net::UCXCommunicator *com) {
+  this->ucxCom = com;
 }
 
 // *********************** Implementations of UCX Channel ***********************
