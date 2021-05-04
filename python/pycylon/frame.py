@@ -20,6 +20,7 @@ from copy import copy
 from typing import Hashable, List, Dict, Optional, Sequence, Union
 
 import numpy as np
+import pandas
 import pandas as pd
 import pyarrow as pa
 
@@ -448,7 +449,7 @@ class DataFrame(object):
                 3      4      8    120   1120
         '''
 
-        if isinstance(key, str) :
+        if isinstance(key, str):
             if isinstance(value, DataFrame):
                 self._table.__setitem__(key, value.to_table())
             elif np.isscalar(value):
@@ -1869,6 +1870,27 @@ class DataFrame(object):
             return GroupByDataFrame(self, by_list)
         else:
             return GroupByDataFrame(self._change_context(env), by_list)
+
+    def isin(self, values: Union[List, Dict, cn.Table], skip_null: bool = True) -> DataFrame:
+        """
+        Whether each element in the DataFrame is contained in values
+
+        Parameters
+        ----------
+        values: list, dict or cylon
+        skip_null:
+
+        Returns
+        ----------
+        DataFrame
+
+        """
+        if isinstance(values, (List, Dict)):
+            return DataFrame(self._table.isin(values, skip_null=skip_null))
+        elif isinstance(values, DataFrame):
+            return DataFrame(self._table.isin(values._table, skip_null=skip_null))
+        else:
+            raise ValueError("Unsupported type for values" + type(values))
 
 
 # -------------------- staticmethods ---------------------------

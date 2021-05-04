@@ -292,33 +292,6 @@ def test_fillna():
         assert col.__contains__(fill_value)
 
 
-def test_isin():
-    df = pd.DataFrame({'num_legs': [2, 4], 'num_wings': [2, 0]}, index=['falcon', 'dog'])
-    arw_tb = pa.Table.from_pandas(df)
-    arw_ar: pa.array = pa.array([[2, 4], [2, 0]])
-    print(df)
-
-
-def test_isna():
-    columns = ['col1', 'col2']
-    data = [[1, 2, 3, 4, 5, None], [None, 7, 8, 9, 10, 11]]
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
-    cn_tb = cn.Table.from_list(ctx, columns, data)
-    df = cn_tb.to_pandas()
-
-    assert df.isna().values.tolist() == cn_tb.isna().to_pandas().values.tolist()
-
-
-def test_isnull():
-    columns = ['col1', 'col2']
-    data = [[1, 2, 3, 4, 5, None], [None, 7, 8, 9, 10, 11]]
-    ctx: CylonContext = CylonContext(config=None, distributed=False)
-    cn_tb = cn.Table.from_list(ctx, columns, data)
-    df = cn_tb.to_pandas()
-
-    assert df.isnull().values.tolist() == cn_tb.isnull().to_pandas().values.tolist()
-
-
 def test_notna():
     data = [[1, 2, 3, 4, 5, None], [None, 7, 8, 9, 10, 11]]
     cdf = DataFrame(data)
@@ -333,6 +306,14 @@ def test_notnull():
     df = cdf.to_pandas()
 
     assert df.notnull().values.tolist() == cdf.notnull().to_pandas().values.tolist()
+
+
+def test_isin():
+    pdf = pd.DataFrame({'num_legs': [2, 4], 'num_wings': [2, 0]})
+    cdf = DataFrame(pdf)
+
+    arr = [0, 2]
+    assert (pdf.isin(arr).values.tolist() == cdf.isin(arr).to_pandas().values.tolist())
 
 
 def test_isna():
