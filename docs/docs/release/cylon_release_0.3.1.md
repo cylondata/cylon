@@ -1,10 +1,10 @@
 ---
-id: 0.4.1
-title: Cylon Release 0.4.1
-sidebar_label: Cylon Release 0.4.1
+id: 0.3.1
+title: Cylon Release 0.3.1
+sidebar_label: Cylon Release 0.3.1
 ---
 
-Cylon 0.4.1 is a bug fix release. 
+Cylon 0.3.1 is a bug fix release. 
 
 You can download source code from [Github](https://github.com/cylondata/cylon/releases)
 
