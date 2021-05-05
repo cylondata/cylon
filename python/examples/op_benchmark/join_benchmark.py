@@ -35,18 +35,16 @@ Run benchmark:
                                         --num_cols 2 \
                                         --stats_file /tmp/join_bench.csv \
                                         --repetitions 1 \
-                                        --duplication_factor 0.9 \
+                                        --unique_factor 0.1 \
                                         --algorithm hash 
 """
 
 
-def join_op(num_rows: int, num_cols: int, algorithm: str, duplication_factor: float):
+def join_op(num_rows: int, num_cols: int, algorithm: str, unique_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-    pdf_left = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor,
-                             stringify=False)
-    pdf_right = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor,
-                              stringify=False)
+    pdf_left = get_dataframe(num_rows=num_rows, num_cols=num_cols, unique_factor=unique_factor, stringify=False)
+    pdf_right = get_dataframe(num_rows=num_rows, num_cols=num_cols, unique_factor=unique_factor, stringify=False)
     # NOTE: sort join breaks when loaded data in-memory via Pandas dataframe
     pdf_left.to_csv("/tmp/left_table.csv", index=False)
     pdf_right.to_csv("/tmp/right_table.csv", index=False)
@@ -77,7 +75,7 @@ def join_op(num_rows: int, num_cols: int, algorithm: str, duplication_factor: fl
 
 def bench_join_op(start: int, end: int, step: int, num_cols: int, algorithm: str, repetitions: int,
                   stats_file: str,
-                  duplication_factor: float):
+                  unique_factor: float):
     all_data = []
     schema = ["num_records", "num_cols", "algorithm", "pandas", "cylon", "pandas_eval", "speed up", "speed up (eval)"]
     assert repetitions >= 1
@@ -89,7 +87,7 @@ def bench_join_op(start: int, end: int, step: int, num_cols: int, algorithm: str
         for idx in range(repetitions):
             pandas_time, cylon_time, pandas_eval_time = join_op(num_rows=records, num_cols=num_cols,
                                                                 algorithm=algorithm,
-                                                                duplication_factor=duplication_factor)
+                                                                unique_factor=unique_factor)
             times.append([pandas_time, cylon_time, pandas_eval_time])
         times = np.array(times).sum(axis=0) / repetitions
         print(f"Join Op : Records={records}, Columns={num_cols}, "
@@ -109,8 +107,8 @@ if __name__ == '__main__':
     parser.add_argument("-e", "--end_size",
                         help="end data size",
                         type=int)
-    parser.add_argument("-d", "--duplication_factor",
-                        help="random data duplication factor",
+    parser.add_argument("-d", "--unique_factor",
+                        help="random data unique factor",
                         type=float)
     parser.add_argument("-s", "--step_size",
                         help="Step size",
@@ -132,7 +130,7 @@ if __name__ == '__main__':
     print(f"Start Data Size : {args.start_size}")
     print(f"End Data Size : {args.end_size}")
     print(f"Step Data Size : {args.step_size}")
-    print(f"Data Duplication Factor : {args.duplication_factor}")
+    print(f"Data Unique Factor : {args.unique_factor}")
     print(f"Number of Columns : {args.num_cols}")
     print(f"Number of Repetitions : {args.repetitions}")
     print(f"Join Algorithm : {args.algorithm}")
@@ -144,4 +142,4 @@ if __name__ == '__main__':
                   algorithm=args.algorithm,
                   repetitions=args.repetitions,
                   stats_file=args.stats_file,
-                  duplication_factor=args.duplication_factor)
+                  unique_factor=args.unique_factor)
