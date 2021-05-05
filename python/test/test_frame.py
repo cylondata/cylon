@@ -361,3 +361,13 @@ def test_rename():
     cdf_list.rename(new_column_names)
 
     assert cdf_list.columns == new_column_names
+
+
+def test_applymap():
+    pdf = pd.DataFrame([[1, 2.12], [3.356, 4.567]])
+    cdf = DataFrame(pdf)
+
+    print(cdf.applymap(lambda x: len(str(x))))
+
+    assert (pdf.applymap(lambda x: len(str(x))).values.tolist() == cdf.applymap(
+        lambda x: len(str(x))).to_pandas().values.tolist())
