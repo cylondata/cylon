@@ -387,7 +387,7 @@ Status WriteParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                     const std::string &path,
                     const cylon::io::config::ParquetOptions &options) {
   auto table = GetTable(id);
-  return cylon::WriteParquet(table, ctx, path, options);
+  return cylon::WriteParquet(ctx, table, path, options);
 }
 #endif
 }  // namespace cylon

@@ -1066,7 +1066,7 @@ Table::Table(const std::shared_ptr<cylon::CylonContext> &ctx, std::vector<std::s
 }
 
 #ifdef BUILD_CYLON_PARQUET
-Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
+Status FromParquet(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
                    std::shared_ptr<Table> &tableOut) {
   arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::ReadParquet(ctx, path);
   if (result.ok()) {
@@ -1090,11 +1090,10 @@ Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string 
 void ReadParquetThread(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
                        std::shared_ptr<cylon::Table> *table,
                        const std::shared_ptr<std::promise<Status>> &status_promise) {
-  std::shared_ptr<CylonContext> ctx_ = ctx;  // make a copy of the shared ptr
-  status_promise->set_value(FromParquet(ctx_, path, *table));
+  status_promise->set_value(FromParquet(ctx, path, *table));
 }
 
-Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
+Status FromParquet(const std::shared_ptr<CylonContext> &ctx, const std::vector<std::string> &paths,
                    const std::vector<std::shared_ptr<Table> *> &tableOuts,
                    const io::config::ParquetOptions &options) {
   if (options.IsConcurrentFileReads()) {
@@ -1104,7 +1103,7 @@ Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<
       auto read_promise = std::make_shared<std::promise<Status>>();
       futures.emplace_back(
           read_promise->get_future(),
-          std::thread(ReadParquetThread, ctx, paths[kI], tableOuts[kI], read_promise));
+          std::thread(ReadParquetThread, std::cref(ctx), std::cref(paths[kI]), tableOuts[kI], read_promise));
     }
     bool all_passed = true;
     for (auto &future : futures) {
@@ -1125,9 +1124,10 @@ Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<
   }
 }
 
-Status WriteParquet(std::shared_ptr<cylon::Table> &table,
-                    std::shared_ptr<cylon::CylonContext> &ctx_, const std::string &path,
-                    const cylon::io::config::ParquetOptions &options) {
+Status WriteParquet(const std::shared_ptr<cylon::CylonContext> &ctx_,
+                    std::shared_ptr<cylon::Table> &table,
+                    const std::string &path,
+                    const io::config::ParquetOptions &options) {
   arrow::Status writefile_result = cylon::io::WriteParquet(ctx_, table, path, options);
   if (!writefile_result.ok()) {
     return Status(Code::IOError, writefile_result.message());

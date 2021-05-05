@@ -432,8 +432,8 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<in
  * @param path file path
  * @return a pointer to the table
  */
-Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string &path,
-				   std::shared_ptr<Table> &tableOut);
+Status FromParquet(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
+                   std::shared_ptr<Table> &tableOut);
 /**
  * Read multiple parquet files into multiple tables. If threading is enabled, the tables will be
  * read in parallel
@@ -443,18 +443,18 @@ Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::string 
  * @param options
  * @return
  */
-Status FromParquet(std::shared_ptr<cylon::CylonContext> &ctx, const std::vector<std::string> &paths,
-				   const std::vector<std::shared_ptr<Table> *> &tableOuts,
-				   const io::config::ParquetOptions& options = cylon::io::config::ParquetOptions());
+Status FromParquet(const std::shared_ptr<CylonContext> &ctx, const std::vector<std::string> &paths,
+                   const std::vector<std::shared_ptr<Table> *> &tableOuts,
+                   const io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
 /**
  * Write the table as a parquet file
  * @param path file path
  * @return the status of the operation
  */
-Status WriteParquet(
-	std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::CylonContext> &ctx,
-	const std::string &path,
-	const cylon::io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
+Status WriteParquet(const std::shared_ptr<cylon::CylonContext> &ctx,
+                    std::shared_ptr<cylon::Table> &table,
+                    const std::string &path,
+                    const io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
 #endif  // BUILD_CYLON_PARQUET
 
 }  // namespace cylon
