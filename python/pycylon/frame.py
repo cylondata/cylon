@@ -462,7 +462,7 @@ class DataFrame(object):
         return self._table.__repr__()
 
     def __len__(self) -> int:
-        return len(self._table)
+        return self._table.row_count
 
     def __eq__(self, other) -> DataFrame:
         '''
@@ -1151,7 +1151,7 @@ class DataFrame(object):
 
     def set_index(
             self, keys, drop=True, append=False, inplace=False, verify_integrity=False
-    ):
+    ) -> DataFrame:
         """
         Set the DataFrame index using existing columns.
         Set the DataFrame index (row labels) using one or more existing
