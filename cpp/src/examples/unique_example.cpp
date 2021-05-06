@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
 int sequential(std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::Table> &out, const std::vector<int> &cols) {
   // apply unique operation
-  auto ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
   auto status = cylon::Unique(table, cols, out, true);
   if (!status.is_ok()) {
     LOG(INFO) << "Unique failed " << status.get_msg();
@@ -68,7 +68,7 @@ int sequential(std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::Tabl
 int distributed(std::shared_ptr<cylon::Table> &table,
                 std::shared_ptr<cylon::Table> &out,
                 const std::vector<int> &cols) {
-  auto ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
   auto status = cylon::DistributedUnique(table, cols, out);
   if (!status.is_ok()) {
     LOG(INFO) << "Distributed Unique failed " << status.get_msg();

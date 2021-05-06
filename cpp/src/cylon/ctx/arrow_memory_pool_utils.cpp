@@ -14,9 +14,6 @@
 
 #include "arrow_memory_pool_utils.hpp"
 
-arrow::Status cylon::ArrowStatus(cylon::Status status) {
-  return arrow::Status(static_cast<arrow::StatusCode>(status.get_code()), status.get_msg());
-}
 arrow::MemoryPool *cylon::ToArrowPool(const std::shared_ptr<cylon::CylonContext> &ctx) {
   if (ctx->GetMemoryPool() == nullptr) {
     return arrow::default_memory_pool();

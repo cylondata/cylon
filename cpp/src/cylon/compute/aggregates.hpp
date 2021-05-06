@@ -100,7 +100,7 @@ cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table,
                      int32_t col_idx,
                      std::shared_ptr<Result> &output);
 
-cylon::Status MinMax(std::shared_ptr<CylonContext> &ctx,
+cylon::Status MinMax(const std::shared_ptr<CylonContext> &ctx,
                      const arrow::Datum &array,
                      const std::shared_ptr<cylon::DataType> &datatype,
                      std::shared_ptr<Result> &output);

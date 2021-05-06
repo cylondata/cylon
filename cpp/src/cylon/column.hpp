@@ -30,14 +30,14 @@ namespace cylon {
 
 class Column {
  public:
-  Column(const std::string &id, const std::shared_ptr<DataType> &type,
-         const std::shared_ptr<arrow::ChunkedArray> &data_)
-      : id(id), type(type), data_array(data_) {
+  Column(std::string id, std::shared_ptr<DataType> type,
+         std::shared_ptr<arrow::ChunkedArray> data_)
+      : id(std::move(id)), type(std::move(type)), data_array(std::move(data_)) {
   }
 
-  Column(const std::string &id, const std::shared_ptr<DataType> &type,
+  Column(std::string id, std::shared_ptr<DataType> type,
          const std::shared_ptr<arrow::Array> &data_)
-      : id(id), type(type),
+      : id(std::move(id)), type(std::move(type)),
         data_array(std::make_shared<arrow::ChunkedArray>(data_)) {
   }
 

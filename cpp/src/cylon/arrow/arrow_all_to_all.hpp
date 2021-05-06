@@ -124,7 +124,7 @@ class ArrowAllToAll : public ReceiveCallback {
    * @param all_workers
    * @return
    */
-  ArrowAllToAll(std::shared_ptr<cylon::CylonContext> &ctx,
+  ArrowAllToAll(const std::shared_ptr<cylon::CylonContext> &ctx,
                 const std::vector<int> &source,
                 const std::vector<int> &targets,
                 int edgeId,
