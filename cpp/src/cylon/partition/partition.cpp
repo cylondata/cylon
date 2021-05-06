@@ -33,7 +33,7 @@ static inline Status split_impl(const std::shared_ptr<Table> &table,
   auto t1 = std::chrono::high_resolution_clock::now();
 #endif
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
-  std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
   arrow::MemoryPool *pool = cylon::ToArrowPool(ctx);
 
   std::vector<arrow::ArrayVector> data_arrays(num_partitions); // size num_partitions
@@ -129,7 +129,6 @@ Status MapToHashPartitions(const std::shared_ptr<Table> &table,
   auto t1 = std::chrono::high_resolution_clock::now();
 #endif
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
-  std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
 
   std::vector<std::unique_ptr<HashPartitionKernel>> partition_kernels;
   const std::vector<std::shared_ptr<arrow::Field>> &fields = arrow_table->schema()->fields();
@@ -185,7 +184,7 @@ Status MapToSortPartitions(const std::shared_ptr<Table> &table,
 #ifdef CYLON_DEBUG
   auto t1 = std::chrono::high_resolution_clock::now();
 #endif
-  std::shared_ptr<CylonContext> ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(column_idx);
 
@@ -223,9 +222,9 @@ Status PartitionByHashing(const std::shared_ptr<Table> &table,
   RETURN_CYLON_STATUS_IF_FAILED(split_impl(table, num_partitions, outPartitions, counts, partitioned_tables));
 
   partitions.reserve(num_partitions);
-  std::shared_ptr<cylon::CylonContext> ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
   for (auto &&a_table:partitioned_tables) {
-    partitions.emplace_back(std::make_shared<Table>(a_table, ctx));
+    partitions.emplace_back(std::make_shared<Table>(ctx, a_table));
   }
   return Status::OK();
 }

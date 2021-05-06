@@ -34,10 +34,10 @@ from pycylon.indexing.index import BaseArrowIndex
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CTable "cylon::Table":
-        CTable(shared_ptr[CArrowTable] & tab, shared_ptr[CCylonContext] & ctx)
+        CTable(const shared_ptr[CCylonContext] & ctx, shared_ptr[CArrowTable] tab)
 
         @ staticmethod
-        CStatus FromArrowTable(shared_ptr[CCylonContext] & ctx, shared_ptr[CArrowTable] & table,
+        CStatus FromArrowTable(const shared_ptr[CCylonContext] & ctx, const shared_ptr[CArrowTable] & table,
                                shared_ptr[CTable] & tableOut)
 
         CStatus ToArrowTable(shared_ptr[CArrowTable] & output)
@@ -52,7 +52,7 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         void Clear()
 
-        shared_ptr[CCylonContext] GetContext()
+        const shared_ptr[CCylonContext] & GetContext()
 
         vector[string] ColumnNames()
 

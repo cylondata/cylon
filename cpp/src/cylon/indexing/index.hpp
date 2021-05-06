@@ -70,6 +70,8 @@ class BaseArrowIndex {
 
   virtual bool IsUnique() = 0;
 
+  virtual ~BaseArrowIndex() = default;
+
  private:
   int size_;
   int col_id_;

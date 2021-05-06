@@ -732,7 +732,7 @@ cpdef drop_na(table:Table, how:str, axis=0):
         column_names = ar_tb.column_names
         drop_columns = []
         for col_id, chunk_ar in enumerate(ar_tb.itercolumns()):
-            res = a_compute.cast(a_compute.is_null(chunk_ar), pa.int32())
+            res = a_compute.is_null(chunk_ar)
             sum_val = a_compute.sum(res).as_py()
             if sum_val > 0 and how == FilterType.ANY.value:
                 drop_columns.append(column_names[col_id])
@@ -772,7 +772,6 @@ cpdef drop_na(table:Table, how:str, axis=0):
 
         for i in range(1, column_count):
             sum_res = a_compute.add(sum_res, a_compute.cast(is_null_responses[i], pa.int32()))
-
         filtered_indices = []
 
         for index, value in enumerate(sum_res):

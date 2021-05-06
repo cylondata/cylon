@@ -204,7 +204,7 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
                        int32_t index_col,
                        const std::vector<std::pair<int32_t, compute::AggregationOpId>> &aggregations,
                        std::shared_ptr<Table> &output) {
-  auto ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
   arrow::MemoryPool *pool = ToArrowPool(ctx);
 
   const std::shared_ptr<arrow::Table> &a_table = table->get_table();
@@ -251,7 +251,7 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
   const auto &schema = std::make_shared<arrow::Schema>(new_fields);
   std::shared_ptr<arrow::Table> agg_table = arrow::Table::Make(schema, new_arrays);
 
-  output = std::make_shared<Table>(agg_table, ctx);
+  output = std::make_shared<Table>(ctx, agg_table);
   return Status::OK();
 }
 

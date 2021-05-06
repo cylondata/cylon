@@ -44,6 +44,6 @@ int main(int argc, char *argv[]) {
   first_table->Print();
 
   auto parquetOptions = cylon::io::config::ParquetOptions().ChunkSize(5);
-  cylon::WriteParquet(first_table, ctx, fullOutputPath, parquetOptions);
+  cylon::WriteParquet(ctx, first_table, fullOutputPath, parquetOptions);
   return 0;
 }

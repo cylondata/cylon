@@ -132,7 +132,7 @@ cylon::Status cylon::cyarrow::FinishTable(const std::string &table_id) {
   auto table = arrow::Table::Make(schema_result.ValueOrDie(), *columns.find(table_id)->second);
   // todo, there sould be a contex
   auto ctx = std::make_shared<cylon::CylonContext>(false);
-  cylon::PutTable(table_id, std::make_shared<cylon::Table>(table, ctx));
+  cylon::PutTable(table_id, std::make_shared<cylon::Table>(ctx, table));
   return cylon::Status::OK();
 }
 

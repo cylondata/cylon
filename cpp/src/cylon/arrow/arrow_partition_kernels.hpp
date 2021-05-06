@@ -108,7 +108,7 @@ class RowHashingKernel {
  * @return
  */
 std::unique_ptr<PartitionKernel> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
-                                                            std::shared_ptr<CylonContext> &ctx,
+                                                            const std::shared_ptr<CylonContext> &ctx,
                                                             bool ascending,
                                                             uint64_t num_samples,
                                                             uint32_t num_bins);
