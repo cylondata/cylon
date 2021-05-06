@@ -27,6 +27,7 @@ namespace cylon {
  */
 class ArrowComparator {
  public:
+  virtual ~ArrowComparator() = default;
   virtual int compare(const std::shared_ptr<arrow::Array> &array1, int64_t index1,
                       const std::shared_ptr<arrow::Array> &array2, int64_t index2) = 0;
 };
@@ -59,6 +60,7 @@ class TableRowComparator {
  */
 class ArrayIndexComparator {
  public:
+  virtual  ~ArrayIndexComparator() = default;
   virtual int compare(int64_t index1, int64_t index2) const = 0;
   virtual bool equal_to(int64_t index1, int64_t index2) const = 0;
 };
@@ -79,6 +81,8 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparator(const std::shar
  */
 class TwoArrayIndexComparator {
  public:
+  virtual  ~TwoArrayIndexComparator() = default;
+
   /**
    * compare two indices.
    * IMPORTANT: to uniquely identify arrays, the most significant bit of index value is encoded as,

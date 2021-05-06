@@ -68,6 +68,7 @@ std::string array_to_string(const std::shared_ptr<arrow::Array> &array, int inde
     case arrow::Type::SPARSE_UNION:break;
     case arrow::Type::DENSE_UNION:break;
     case arrow::Type::MAX_ID:break;
+    case arrow::Type::DECIMAL256:break;
   }
   return "NA";
 }

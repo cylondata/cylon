@@ -265,6 +265,7 @@ cylon::Status CreateTableFromScalar(const std::shared_ptr<cylon::Table> &input,
     case arrow::Type::SPARSE_UNION:break;
     case arrow::Type::DENSE_UNION:break;
     case arrow::Type::MAX_ID:break;
+    case arrow::Type::DECIMAL256:break;
   }
   return cylon::Status(Code::NotImplemented, "Not Supported Type");
 }
