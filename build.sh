@@ -175,7 +175,6 @@ build_cpp(){
   mkdir ${BUILD_PATH}
   pushd ${BUILD_PATH} || exit 1
   export ARROW_HOME=${BUILD_PATH}/arrow/install
-  export ARROW_BOOST_URL="https://sourceforge.net/projects/boost/files/boost/1.72.0/boost_1_72_0.tar.gz/download"
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
       -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $CPPLINT_CMD $INSTALL_CMD \
       ${CMAKE_FLAGS} \
@@ -267,7 +266,6 @@ build_pyarrow(){
   echo "Building PyArrow"
   pushd ${BUILD_PATH} || exit 1
   export ARROW_HOME=${BUILD_PATH}/arrow/install
-  export ARROW_BOOST_URL="https://sourceforge.net/projects/boost/files/boost/1.72.0/boost_1_72_0.tar.gz/download"
   popd || exit
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements

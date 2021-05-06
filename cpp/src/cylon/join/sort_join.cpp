@@ -777,6 +777,7 @@ arrow::Status SortJoin(const std::shared_ptr<arrow::Table> &left_tab,
       case arrow::Type::SPARSE_UNION:break;
       case arrow::Type::DENSE_UNION:break;
       case arrow::Type::MAX_ID:break;
+      case arrow::Type::DECIMAL256:break;
     }
     return arrow::Status::Invalid("Un-supported type");
   } else {

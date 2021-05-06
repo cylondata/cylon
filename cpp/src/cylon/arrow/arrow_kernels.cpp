@@ -320,14 +320,7 @@ class NumericInplaceIndexSortKernel : public InplaceIndexSortKernel {
       return arrow::Status::ExecutionError("inplace sort called on an array with immutable buffers");
     }
 
-    T *left_data;
-    // todo: this is a temp fix for arrow bug #ARROW-12495 (https://issues.apache.org/jira/browse/ARROW-12495)
-    // todo: remove this once the #ARROW-1245 is fixed
-    if (data->buffers[1]->mutable_data() == nullptr) {
-      left_data = reinterpret_cast<T *>(const_cast<uint8_t *>(data->buffers[1]->data()));
-    } else {
-      left_data = data->template GetMutableValues<T>(1);
-    }
+    T *left_data = data->template GetMutableValues<T>(1);
     int64_t length = values->length();
     int64_t buf_size = length * sizeof(uint64_t);
 
