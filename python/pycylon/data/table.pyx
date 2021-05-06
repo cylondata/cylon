@@ -93,7 +93,7 @@ cdef class Table:
         if self._is_pycylon_context(context) and self._is_pyarrow_table(pyarrow_table):
             c_arrow_tb_shd_ptr = pyarrow_unwrap_table(pyarrow_table)
             self.sp_context = pycylon_unwrap_context(context)
-            self.table_shd_ptr = make_shared[CTable](c_arrow_tb_shd_ptr, self.sp_context)
+            self.table_shd_ptr = make_shared[CTable](self.sp_context, c_arrow_tb_shd_ptr)
 
     cdef void init(self, const shared_ptr[CTable]& table):
         self.table_shd_ptr = table

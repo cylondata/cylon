@@ -26,7 +26,7 @@ namespace compute {
 cylon::Status Sum(const std::shared_ptr<cylon::Table> &table,
                   int32_t col_idx,
                   std::shared_ptr<Result> &output) {
-  auto ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
   const std::shared_ptr<Column> &col = table->GetColumn(col_idx); // cylon column object
   const std::shared_ptr<DataType> &data_type = col->GetDataType();
   const arrow::Datum input(col->GetColumnData()); // input datum
@@ -45,7 +45,7 @@ cylon::Status Sum(const std::shared_ptr<cylon::Table> &table,
 }
 
 cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output) {
-  auto ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
 
   const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
   const std::shared_ptr<DataType> &data_type = cylon::Int64();
@@ -80,7 +80,7 @@ enum MinMaxOpts {
 };
 
 template<MinMaxOpts minMaxOpts>
-cylon::Status static inline min_max_impl(std::shared_ptr<CylonContext> &ctx,
+cylon::Status static inline min_max_impl(const std::shared_ptr<CylonContext> &ctx,
                                          const arrow::Datum &input,
                                          const std::shared_ptr<cylon::DataType> &data_type,
                                          std::shared_ptr<Result> &output) {
@@ -123,7 +123,7 @@ cylon::Status static inline min_max_impl(std::shared_ptr<CylonContext> &ctx,
 cylon::Status Min(const std::shared_ptr<cylon::Table> &table,
                   int32_t col_idx,
                   std::shared_ptr<Result> &output) {
-  auto ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
   const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
   return min_max_impl<MinMaxOpts::min>(ctx, col->GetColumnData(), col->GetDataType(), output);
 }
@@ -131,7 +131,7 @@ cylon::Status Min(const std::shared_ptr<cylon::Table> &table,
 cylon::Status Max(const std::shared_ptr<cylon::Table> &table,
                   int32_t col_idx,
                   std::shared_ptr<Result> &output) {
-  auto ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
   const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
   return min_max_impl<MinMaxOpts::max>(ctx, col->GetColumnData(), col->GetDataType(), output);
 }
@@ -139,12 +139,12 @@ cylon::Status Max(const std::shared_ptr<cylon::Table> &table,
 cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table,
                      int32_t col_idx,
                      std::shared_ptr<Result> &output) {
-  auto ctx = table->GetContext();
+  const auto& ctx = table->GetContext();
   const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
   return min_max_impl<MinMaxOpts::minmax>(ctx, col->GetColumnData(), col->GetDataType(), output);
 }
 
-cylon::Status MinMax(std::shared_ptr<CylonContext> &ctx,
+cylon::Status MinMax(const std::shared_ptr<CylonContext> &ctx,
                      const arrow::Datum &array,
                      const std::shared_ptr<cylon::DataType> &datatype,
                      std::shared_ptr<Result> &output) {
@@ -160,7 +160,7 @@ cylon::Status ResolveTableFromScalar(const std::shared_ptr<cylon::Table> &input,
   using SCALAR_TYPE = typename arrow::TypeTraits<ARROW_TYPE>::ScalarType;
   using BUILDER_TYPE = typename arrow::TypeTraits<ARROW_TYPE>::BuilderType;
 
-  std::shared_ptr<cylon::CylonContext> ctx = input->GetContext();
+  const auto& ctx = input->GetContext();
 
   arrow::Status s;
   std::vector<std::shared_ptr<arrow::Array>> out_vectors;

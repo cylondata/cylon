@@ -37,7 +37,7 @@ class CSVReadOptions {
   /*cylon specific options*/
 
   CSVReadOptions ConcurrentFileReads(bool concurrent_file_reads);
-  bool IsConcurrentFileReads();
+  bool IsConcurrentFileReads() const;
 
   /*End of cylon specific options*/
 

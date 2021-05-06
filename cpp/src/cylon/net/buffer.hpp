@@ -24,6 +24,7 @@ namespace cylon {
    */
   class Buffer {
   public:
+    virtual ~Buffer() = default;
     virtual int64_t GetLength() = 0;
     virtual uint8_t * GetByteBuffer() = 0;
   };

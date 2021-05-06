@@ -93,7 +93,7 @@ cylon::Status cylon::kernel::StreamingHashPartitionKernel::Finish(std::vector<st
   partitioned_tables.reserve(num_partitions);
   for (const auto &arr_vec: data_arrays) {
     auto a_table = arrow::Table::Make(schema, arr_vec);
-    partitioned_tables.emplace_back(std::make_shared<Table>(a_table, ctx));
+    partitioned_tables.emplace_back(std::make_shared<Table>(ctx, a_table));
   }
 
   return cylon::Status::OK();

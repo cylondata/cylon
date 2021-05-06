@@ -20,12 +20,11 @@
 
 namespace cylon {
 
-arrow::Status ArrowStatus(cylon::Status status);
+inline arrow::Status ArrowStatus(const cylon::Status &status) {
+  return arrow::Status(static_cast<arrow::StatusCode>(status.get_code()), status.get_msg());
+}
 
 class ProxyMemoryPool : public arrow::MemoryPool {
-
- private:
-  cylon::MemoryPool *tx_memory;
  public:
   explicit ProxyMemoryPool(cylon::MemoryPool *tx_memory) {
     this->tx_memory = tx_memory;
@@ -58,6 +57,9 @@ class ProxyMemoryPool : public arrow::MemoryPool {
   std::string backend_name() const override {
     return this->tx_memory->backend_name();
   }
+
+ private:
+  cylon::MemoryPool *tx_memory;
 };
 
 arrow::MemoryPool *ToArrowPool(const std::shared_ptr<cylon::CylonContext> &ctx);

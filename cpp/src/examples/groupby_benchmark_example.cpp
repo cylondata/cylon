@@ -107,7 +107,7 @@ void HashArrowGroupBy(arrow::MemoryPool *pool, const std::shared_ptr<cylon::Tabl
   s = val_builder.Finish(&out_val);
 
   std::shared_ptr<arrow::Table> a_output = arrow::Table::Make(table->schema(), {out_idx, out_val});
-  auto ctx = ctable->GetContext();
+  const auto& ctx = ctable->GetContext();
   cylon::Table::FromArrowTable(ctx, a_output, output);
 
   auto t3 = std::chrono::steady_clock::now();
@@ -172,7 +172,7 @@ void HashNaiveGroupBy(const std::shared_ptr<cylon::Table> &ctable,
   s = val_builder.Finish(&out_val);
 
   std::shared_ptr<arrow::Table> a_output = arrow::Table::Make(table->schema(), {out_idx, out_val});
-  auto ctx = ctable->GetContext();
+  const auto& ctx = ctable->GetContext();
   cylon::Table::FromArrowTable(ctx, a_output, output);
 
   auto t3 = std::chrono::steady_clock::now();
@@ -283,7 +283,7 @@ void ArrowGroupBy(std::shared_ptr<cylon::Table> &ctable, std::shared_ptr<cylon::
 
   sorted_table.reset(); // release the sorted table
 
-  auto ctx = ctable->GetContext();
+  const auto& ctx = ctable->GetContext();
   cylon::Table::FromArrowTable(ctx, a_output, output);
 
   auto t3 = std::chrono::steady_clock::now();

@@ -25,7 +25,7 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
   std::shared_ptr<cylon::BaseArrowIndex> loc_index;
   std::shared_ptr<arrow::Array> sub_index_pos_arr;
   std::shared_ptr<arrow::Array> sub_index_arr;
-  auto ctx = output->GetContext();
+  const auto& ctx = output->GetContext();
   auto const pool = cylon::ToArrowPool(ctx);
   auto const index_arr = index->GetIndexArray();
   arrow::Int64Builder builder(pool);
@@ -46,7 +46,7 @@ cylon::Status SetArrowIndexForLocResultTable(const std::shared_ptr<cylon::BaseAr
 											 cylon::IndexingType indexing_type) {
   std::shared_ptr<cylon::BaseArrowIndex> loc_index;
   std::shared_ptr<arrow::Array> sub_index_arr;
-  auto ctx = output->GetContext();
+  const auto& ctx = output->GetContext();
   auto const pool = cylon::ToArrowPool(ctx);
   auto const index_arr = index->GetIndexArray();
   sub_index_arr = index_arr->Slice(start_pos, (end_pos - start_pos + 1));
@@ -77,7 +77,7 @@ cylon::Status SliceTableByRange(int64_t start_index,
 
   std::shared_ptr<arrow::Table> out_artb;
   auto artb = input_table->get_table();
-  auto ctx = input_table->GetContext();
+  const auto& ctx = input_table->GetContext();
   // + 1 added include the end boundary
   out_artb = artb->Slice(start_index, (end_index - start_index + 1));
   RETURN_CYLON_STATUS_IF_FAILED(cylon::Table::FromArrowTable(ctx, out_artb, output));
@@ -100,7 +100,7 @@ cylon::Status GetColumnIndicesFromLimits(const int &start_column,
 cylon::Status FilterColumnsFromTable(const std::shared_ptr<cylon::Table> &input_table,
 									 const std::vector<int> &filter_columns,
 									 std::shared_ptr<cylon::Table> &output) {
-  auto ctx = input_table->GetContext();
+  const auto& ctx = input_table->GetContext();
   arrow::Result<std::shared_ptr<arrow::Table>> result = input_table->get_table()->SelectColumns(filter_columns);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
   RETURN_CYLON_STATUS_IF_FAILED(cylon::Table::FromArrowTable(ctx, result.ValueOrDie(), output));
@@ -129,7 +129,7 @@ cylon::Status GetTableFromIndices(const std::shared_ptr<cylon::Table> &input_tab
 								  std::shared_ptr<cylon::Table> &output) {
 
   std::shared_ptr<arrow::Array> out_idx;
-  auto ctx = input_table->GetContext();
+  const auto& ctx = input_table->GetContext();
   auto const pool = cylon::ToArrowPool(ctx);
   arrow::compute::ExecContext fn_ctx(pool);
   arrow::Int64Builder idx_builder(pool);
@@ -152,7 +152,7 @@ cylon::Status GetTableFromArrayIndices(const std::shared_ptr<cylon::Table> &inpu
 									   std::shared_ptr<cylon::Table> &output) {
 
   std::shared_ptr<arrow::Array> out_idx;
-  auto ctx = input_table->GetContext();
+  const auto& ctx = input_table->GetContext();
   auto const pool = cylon::ToArrowPool(ctx);
   auto const arrow_table = input_table->get_table();
   arrow::compute::ExecContext fn_ctx(pool);
