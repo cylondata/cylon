@@ -20,6 +20,7 @@ from copy import copy
 from typing import Hashable, List, Dict, Optional, Sequence, Union
 
 import numpy as np
+import pandas
 import pandas as pd
 import pyarrow as pa
 
@@ -448,7 +449,7 @@ class DataFrame(object):
                 3      4      8    120   1120
         '''
 
-        if isinstance(key, str) :
+        if isinstance(key, str):
             if isinstance(value, DataFrame):
                 self._table.__setitem__(key, value.to_table())
             elif np.isscalar(value):
@@ -461,7 +462,7 @@ class DataFrame(object):
         return self._table.__repr__()
 
     def __len__(self) -> int:
-        return len(self._table)
+        return self._table.row_count
 
     def __eq__(self, other) -> DataFrame:
         '''
@@ -1150,7 +1151,7 @@ class DataFrame(object):
 
     def set_index(
             self, keys, drop=True, append=False, inplace=False, verify_integrity=False
-    ):
+    ) -> DataFrame:
         """
         Set the DataFrame index using existing columns.
         Set the DataFrame index (row labels) using one or more existing
@@ -1869,6 +1870,78 @@ class DataFrame(object):
             return GroupByDataFrame(self, by_list)
         else:
             return GroupByDataFrame(self._change_context(env), by_list)
+
+    def isin(self, values: Union[List, Dict, cn.Table], skip_null: bool = True) -> DataFrame:
+        """
+        Whether each element in the DataFrame is contained in values
+
+        Parameters
+        ----------
+        values: list, dict or cylon
+        skip_null:
+
+        Returns
+        ----------
+        DataFrame
+
+        """
+        if isinstance(values, (List, Dict)):
+            return DataFrame(self._table.isin(values, skip_null=skip_null))
+        elif isinstance(values, DataFrame):
+            return DataFrame(self._table.isin(values._table, skip_null=skip_null))
+        else:
+            raise ValueError("Unsupported type for values" + type(values))
+
+    def applymap(self, func, na_action=None) -> DataFrame:
+        """
+        Apply a function to a Dataframe elementwise.
+        This method applies a function that accepts and returns a scalar
+        to every element of a DataFrame.
+        Parameters
+        ----------
+        func : callable
+            Python function, returns a single value from a single value.
+        na_action :  (Unsupported) {None, 'ignore'}, default None
+            If ‘ignore’, propagate NaN values, without passing them to func.
+
+        Returns
+        -------
+        DataFrame
+            Transformed DataFrame.
+        See Also
+        --------
+        DataFrame.apply : Apply a function along input axis of DataFrame.
+        Examples
+        --------
+        >>> df = pd.DataFrame([[1, 2.12], [3.356, 4.567]])
+        >>> df
+               0      1
+        0  1.000  2.120
+        1  3.356  4.567
+        >>> df.applymap(lambda x: len(str(x)))
+           0  1
+        0  3  4
+        1  5  5
+        (Unsupported) Like Series.map, NA values can be ignored:
+        >>> df_copy = df.copy()
+        >>> df_copy.iloc[0, 0] = pd.NA
+        >>> df_copy.applymap(lambda x: len(str(x)), na_action='ignore')
+              0  1
+        0  <NA>  4
+        1     5  5
+        Note that a vectorized version of `func` often exists, which will
+        be much faster. You could square each number elementwise.
+        >>> df.applymap(lambda x: x**2)
+                   0          1
+        0   1.000000   4.494400
+        1  11.262736  20.857489
+        (Unsupported) But it's better to avoid applymap in that case.
+        >>> df ** 2
+                   0          1
+        0   1.000000   4.494400
+        1  11.262736  20.857489
+        """
+        return DataFrame(self._table.applymap(func))
 
 
 # -------------------- staticmethods ---------------------------
