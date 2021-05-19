@@ -31,6 +31,10 @@ cdef extern from "../../../cpp/src/cylon/io/csv_read_config.hpp" namespace "cylo
 
         bool IsConcurrentFileReads()
 
+        CCSVReadOptions Slice(bool slice)
+
+        bool IsSlice()
+
         CCSVReadOptions UseThreads(bool use_threads)
 
         CCSVReadOptions WithDelimiter(char delimiter)

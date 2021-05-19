@@ -39,7 +39,7 @@ DEVICE_CPU = "cpu"
 # Data loading Functions
 def read_csv(filepath: str, use_threads=True, names=None, sep=",", block_size: int = 1 << 20,
              skiprows=0,
-             ignore_emptylines=True, na_values=None):
+             ignore_emptylines=True, na_values=None, slice=False, env=None):
     """
     Read a comma-separated values (csv) file into DataFrame.
 
@@ -63,7 +63,7 @@ def read_csv(filepath: str, use_threads=True, names=None, sep=",", block_size: i
         Additional strings to recognize as NA/NaN.
     """
     read_config = CSVReadOptions().use_threads(
-        use_threads).block_size(block_size).with_delimiter(sep).skip_rows(skiprows)
+        use_threads).block_size(block_size).with_delimiter(sep).skip_rows(skiprows).slice(slice)
 
     if ignore_emptylines:
         read_config.ignore_emptylines()
@@ -74,8 +74,13 @@ def read_csv(filepath: str, use_threads=True, names=None, sep=",", block_size: i
     if names is not None:
         read_config.use_cols(names)
 
-    table = pcd.csv.read_csv(CylonContext(
-        config=None, distributed=False), filepath, read_config)
+    ctx = CylonContext(
+        config=None, distributed=False)
+
+    if env is not None:
+        ctx = env.context
+
+    table = pcd.csv.read_csv(ctx, filepath, read_config)
 
     return DataFrame(table)
 
@@ -1813,7 +1818,7 @@ class DataFrame(object):
 
         by : str, int or a list of str, int.  
             List of column(s) used for grouping.
-        
+
         Returns
         -------
         GroupByDataFrame
@@ -2066,7 +2071,8 @@ def concat(objs: Union[Iterable["DataFrame"]], axis=0, join="outer",
         raise ValueError("objs can't be empty")
 
     if env is None:
-        res_table = cn.Table.concat(tables=[df.to_table() for df in objs], axis=axis, join=join)
+        res_table = cn.Table.concat(
+            tables=[df.to_table() for df in objs], axis=axis, join=join)
     else:
         res_table = cn.Table.distributed_concat(
             tables=[df._change_context(env).to_table() for df in objs],

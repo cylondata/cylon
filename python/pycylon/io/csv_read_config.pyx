@@ -32,6 +32,10 @@ cdef class CSVReadOptions:
         self.thisPtr.UseThreads(use_thread)
         return self
 
+    def slice(self, slice: bool)->CSVReadOptions:
+        self.thisPtr.Slice(slice)
+        return self
+
     def block_size(self, block_size: int) -> CSVReadOptions:
         self.thisPtr.BlockSize(block_size)
         return self
