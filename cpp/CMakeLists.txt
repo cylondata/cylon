@@ -153,23 +153,24 @@ if (CYLON_UCX)
 #    include_directories(${UCX_INSTALL}/include)
 
     # TODO Sandeepa How to get the include directories?
-    string(REPLACE ":" ";" LIBRARY_DIRS $ENV{LD_LIBRARY_PATH})
-    set(UCX_LIBRARY_DIR "$ENV{UCX_ROOT}/install/lib")
-    set(UCX_INCLUDE_DIR "$ENV{UCX_ROOT}/install/include")
-    include_directories(${UCX_INCLUDE_DIR})
+#    string(REPLACE ":" ";" LIBRARY_DIRS $ENV{LD_LIBRARY_PATH})
+
+#    set(UCX_LIBRARY_DIR "$ENV{UCX_ROOT}/install/lib")
+#    set(UCX_INCLUDE_DIR "$ENV{UCX_ROOT}/install/include")
+#    include_directories(${UCX_INCLUDE_DIR})
+
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(UCX REQUIRED ucx)
+    include_directories(${UCX_INCLUDEDIR})
     # Set UCX found as true
     set(UCX_FOUND TRUE)
-    # Specify the libraries of UCX
-#    find_library (UCX_LIBRARIES
-#            NAMES ucx/libuct_cma.so ucx/libuct_ib.so libuct.so libucs.so libucm.so libucp.so
-#            PATHS ${LIBRARY_DIRS})
     set(UCX_LIBRARIES
-            ${UCX_LIBRARY_DIR}/ucx/libuct_cma.so
-            ${UCX_LIBRARY_DIR}/ucx/libuct_ib.so
-            ${UCX_LIBRARY_DIR}/libuct.so
-            ${UCX_LIBRARY_DIR}/libucs.so
-            ${UCX_LIBRARY_DIR}/libucm.so
-            ${UCX_LIBRARY_DIR}/libucp.so)
+            ${UCX_LIBDIR}/ucx/libuct_cma.so
+            ${UCX_LIBDIR}/ucx/libuct_ib.so
+            ${UCX_LIBDIR}/libuct.so
+            ${UCX_LIBDIR}/libucs.so
+            ${UCX_LIBDIR}/libucm.so
+            ${UCX_LIBDIR}/libucp.so)
 endif (CYLON_UCX)
 
 include(Build)

@@ -16,6 +16,7 @@
 #define CYLON_CPP_SRC_CYLON_NET_UCX_UCX_OPERATIONS_HPP_
 
 #include <mpi.h>
+#include <ucp/api/ucp.h>
 #include <net/comm_operations.hpp>
 
 // TODO Sandeepa may need to move these to a separate file?
@@ -35,21 +36,29 @@ struct ucxContext {
  * Hold the data related to a communication endpoint
  * addr - the address of the ucp worker
  * addrSize - the size of the worker address
- * ep - the associated endpoint (used when sending) of the worker
  */
-struct ucxWorker {
+struct ucxWorkerAddr {
   ucp_address_t *addr;
   size_t addrSize;
-  ucp_ep_h ep;
+//  ucp_ep_h ep;
 };
 
+///**
+// * Create a UCP worker on the given UCP context.
+// * @param [in] ucpContext - The context to be passed to init the worker
+// * @param [out] ucpWorker - The UCP worker
+// * @param [out] workerAddr - The UCP worker address
+// */
+//void initWorker(ucp_context_h ucpContext,
+//           ucp_worker_h *ucpWorker,
+//           ucxWorkerAddr *workerAddr);
 /**
  * Create a UCP worker on the given UCP context.
  * @param [in] ucpContext - The context to be passed to init the worker
  * @param [out] ucpWorker - The UCP worker
  */
-ucxWorker* initWorker(ucp_context_h ucpContext,
-                       ucp_worker_h *ucpWorker);
+ucxWorkerAddr* initWorker(ucp_context_h ucpContext,
+                      ucp_worker_h *ucpWorker);
 
 /**
  * Initialize a default UCP context.

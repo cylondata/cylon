@@ -64,8 +64,8 @@ struct PendingSend {
   // TODO Sandeepa Check
   // The problem comes if you move pending data here?
 
-  // UCX address and endpoint to send to
-  ucx::ucxWorker* wa;
+//  // UCX address and endpoint to send to
+//  ucx::ucxWorker* wa;
   // UCX context - For tracking the progress of the message
   ucx::ucxContext *context;
 };
@@ -156,11 +156,11 @@ class UCXChannel : public Channel {
 
   // # UCX specific attributes
   // The worker for receiving
-  ucp_worker_h  ucpRecvWorker;
-  // The address for the worker for receiving
-  ucx::ucxWorker* ucpRecvWorkerAddr;
+  ucp_worker_h*  ucpRecvWorker;
   // The worker for sending
-  ucp_worker_h  ucpSendWorker;
+  ucp_worker_h*  ucpSendWorker;
+  // Endpoint Map
+  std::unordered_map<int, ucp_ep_h> endPointMap;
   // Tag mask used to match UCX send / receives
   ucp_tag_t tagMask = UINT64_MAX;
   // UCX Cylon Communicator

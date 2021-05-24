@@ -105,7 +105,7 @@ ucx::ucxContext *UCXChannel::UCX_Irecv(void *buffer,
 
   // UCP non-blocking tag receive
   // Inp - UCP worker, buffer, length, datatype, tag, tag mask, receive handler
-  request = (ucx::ucxContext *) ucp_tag_recv_nb(ucpRecvWorker,
+  request = (ucx::ucxContext *) ucp_tag_recv_nb(*ucpRecvWorker,
                                             buffer,
                                             count,
                                             ucp_dt_make_contig(1),
@@ -134,10 +134,10 @@ ucx::ucxContext *UCXChannel::UCX_Irecv(void *buffer,
  * @param [out] ctx - Used for tracking the progress of the request
  */
 void UCXChannel::UCX_Isend(const void *buffer,
-                                       size_t count,
-                                       ucp_ep_h ep,
-                                       int target,
-                                       ucx::ucxContext* ctx) const {
+                           size_t count,
+                           ucp_ep_h ep,
+                           int target,
+                           ucx::ucxContext* ctx) const {
   // To hold the status of operations
   ucs_status_ptr_t status;
 
@@ -175,110 +175,121 @@ void UCXChannel::UCX_Isend(const void *buffer,
  * @param [in] sendIds - MPI IDs of the nodes to send to
  * @return
  */
-void UCXChannel::MPIInit(const std::vector<int> &receives,
-                            const std::vector<int> &sendIds) {
-  // Hold return value of functions
-  int ret;
-  // Get the rank for checking send to self, and initializations
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &worldSize);
-
-  // UCP Context - Holds a UCP communication instance's global information.
-  ucp_context_h ucpContext;
-  // TODO Sandeepa have a common distributed context?
-  // Init context
-  ret = cylon::ucx::initContext(&ucpContext, nullptr);
-  if (ret != 0) {
-    LOG(FATAL) << "Error occurred when creating UCX context";
-  }
-
-  // UCP Worker - The worker represents an instance of a local communication resource
-  // and the progress engine associated with it.
-  // Init recv worker
-  ucpRecvWorkerAddr = cylon::ucx::initWorker(ucpContext,
-                                             &ucpRecvWorker);
-  // Init send worker
-  cylon::ucx::initWorker(ucpContext,
-                         &ucpSendWorker);
-
-  // Get the number of receives and sends to be used in iterations
-  int numReci = (int) receives.size();
-  int numSends = (int) sendIds.size();
-  // Int variable used when iterating
-  int sIndx;
-
-  auto allAddresses = (ucp_address_t *)malloc(ucpRecvWorkerAddr->addrSize*worldSize);
-  MPI_Allgather(ucpRecvWorkerAddr->addr,
-                (int)ucpRecvWorkerAddr->addrSize,
-                MPI_BYTE,
-                allAddresses,
-                (int)ucpRecvWorkerAddr->addrSize,
-                MPI_BYTE,
-                MPI_COMM_WORLD);
-
-  // Iterate and set the receives
-  for (sIndx = 0; sIndx < numReci; sIndx++) {
-    // Rank of the node receiving from
-    int recvRank = receives.at(sIndx);
-    // Init a new pending receive for the request
-    auto *buf = new PendingReceive();
-    // TODO Sandeepa remove ipInt allocation since it's not used anywhere
-    buf->receiveId = recvRank;
-    // Add to pendingReceive object to pendingReceives map
-    pendingReceives.insert(std::pair<int, PendingReceive *>(recvRank, buf));
-    // Receive for the initial header buffer
-    buf->context = UCX_Irecv(buf->headerBuf,
-                             CYLON_CHANNEL_HEADER_SIZE * sizeof(int),
-                             recvRank);
-    // Init status of the receive
-    buf->status = RECEIVE_LENGTH_POSTED;
-  }
-
-
-  // Iterate and set the sends
-  for (sIndx = 0; sIndx < numSends; sIndx++) {
-    // Rank of the node sending to
-    int sendRank = sendIds.at(sIndx);
-
-    // Init a new pending send for the request
-    sends[sendRank] = new PendingSend();
-    // Init worker details object to store details on the node to send
-    sends[sendRank]->wa = new ucx::ucxWorker();
-    ucs_status_t ucxStatus;
-    ucp_ep_params_t epParams;
-
-    // If not self, then check if the worker address has been received.
-    //  If self,then assign local worker
-    if (sendRank != rank) {
-      char *p = (char*)allAddresses;
-      p+=sendRank*ucpRecvWorkerAddr->addrSize;
-      sends[sendRank]->wa->addr = (ucp_address_t*)p;
-    } else {
-      sends[sendRank]->wa->addr = ucpRecvWorkerAddr->addr;
-    }
-    sends[sendRank]->wa->addrSize = ucpRecvWorkerAddr->addrSize;
-
-    // Set params for the endpoint
-    epParams.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS |
-                          UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
-    epParams.address = sends[sendRank]->wa->addr;
-    epParams.err_mode = UCP_ERR_HANDLING_MODE_NONE;
-
-    // Create an endpoint
-    ucxStatus = ucp_ep_create(ucpSendWorker,
-                              &epParams,
-                              &sends[sendRank]->wa->ep);
-
-    // Check if the endpoint was created properly
-    if (ucxStatus != UCS_OK) {
-      LOG(FATAL)
-          << "Error when creating the endpoint.";
-    }
-  }
-}
+//void UCXChannel::MPIInit(const std::vector<int> &receives,
+//                            const std::vector<int> &sendIds) {
+//  // Hold return value of functions
+//  int ret;
+//  // Get the rank for checking send to self, and initializations
+//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//  MPI_Comm_size(MPI_COMM_WORLD, &worldSize);
+//
+//  // UCP Context - Holds a UCP communication instance's global information.
+//  ucp_context_h ucpContext;
+//  // TODO Sandeepa have a common distributed context?
+//  // Init context
+//  ret = cylon::ucx::initContext(&ucpContext, nullptr);
+//  if (ret != 0) {
+//    LOG(FATAL) << "Error occurred when creating UCX context";
+//  }
+//
+//  // UCP Worker - The worker represents an instance of a local communication resource
+//  // and the progress engine associated with it.
+//  // Init recv worker
+//  ucpRecvWorkerAddr = cylon::ucx::initWorker(ucpContext,
+//                                             &ucpRecvWorker);
+//  // Init send worker
+//  // TODO Sandeepa an object is created
+//  cylon::ucx::initWorker(ucpContext,
+//                         &ucpSendWorker);
+//
+//  // Get the number of receives and sends to be used in iterations
+//  int numReci = (int) receives.size();
+//  int numSends = (int) sendIds.size();
+//  // Int variable used when iterating
+//  int sIndx;
+//
+//  auto allAddresses = (ucp_address_t *)malloc(ucpRecvWorkerAddr->addrSize*worldSize);
+//  MPI_Allgather(ucpRecvWorkerAddr->addr,
+//                (int)ucpRecvWorkerAddr->addrSize,
+//                MPI_BYTE,
+//                allAddresses,
+//                (int)ucpRecvWorkerAddr->addrSize,
+//                MPI_BYTE,
+//                MPI_COMM_WORLD);
+//
+//  // Iterate and set the receives
+//  for (sIndx = 0; sIndx < numReci; sIndx++) {
+//    // Rank of the node receiving from
+//    int recvRank = receives.at(sIndx);
+//    // Init a new pending receive for the request
+//    auto *buf = new PendingReceive();
+//    // TODO Sandeepa remove ipInt allocation since it's not used anywhere
+//    buf->receiveId = recvRank;
+//    // Add to pendingReceive object to pendingReceives map
+//    pendingReceives.insert(std::pair<int, PendingReceive *>(recvRank, buf));
+//    // Receive for the initial header buffer
+//    buf->context = UCX_Irecv(buf->headerBuf,
+//                             CYLON_CHANNEL_HEADER_SIZE * sizeof(int),
+//                             recvRank);
+//    // Init status of the receive
+//    buf->status = RECEIVE_LENGTH_POSTED;
+//  }
+//
+//
+//  // Iterate and set the sends
+//  for (sIndx = 0; sIndx < numSends; sIndx++) {
+//    // Rank of the node sending to
+//    int sendRank = sendIds.at(sIndx);
+//
+//    // Init a new pending send for the request
+//    sends[sendRank] = new PendingSend();
+//    // Init worker details object to store details on the node to send
+//    sends[sendRank]->wa = new ucx::ucxWorker();
+//    ucs_status_t ucxStatus;
+//    ucp_ep_params_t epParams;
+//
+//    // If not self, then check if the worker address has been received.
+//    //  If self,then assign local worker
+//    if (sendRank != rank) {
+//      char *p = (char*)allAddresses;
+//      p+=sendRank*ucpRecvWorkerAddr->addrSize;
+//      sends[sendRank]->wa->addr = (ucp_address_t*)p;
+//    } else {
+//      sends[sendRank]->wa->addr = ucpRecvWorkerAddr->addr;
+//    }
+//    sends[sendRank]->wa->addrSize = ucpRecvWorkerAddr->addrSize;
+//
+//    // Set params for the endpoint
+//    epParams.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS |
+//                          UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
+//    epParams.address = sends[sendRank]->wa->addr;
+//    epParams.err_mode = UCP_ERR_HANDLING_MODE_NONE;
+//
+//    // Create an endpoint
+//    ucxStatus = ucp_ep_create(ucpSendWorker,
+//                              &epParams,
+//                              &sends[sendRank]->wa->ep);
+//
+//    // Check if the endpoint was created properly
+//    if (ucxStatus != UCS_OK) {
+//      LOG(FATAL)
+//          << "Error when creating the endpoint.";
+//    }
+//  }
+//}
 
 void UCXChannel::linkCommunicator(net::UCXCommunicator *com) {
   this->ucxCom = com;
+
+  this->worldSize = com->GetWorldSize();
+  this->rank = com->GetRank();
+  this->ucpRecvWorker = &(com->ucpRecvWorker);
+  this->ucpSendWorker = &(com->ucpSendWorker);
+
+  for (auto x : com->endPointMap) {
+    ucp_ep_h ep = x.second;
+    this->endPointMap[x.first] = ep;
+  }
 }
 
 // *********************** Implementations of UCX Channel ***********************
@@ -305,7 +316,40 @@ void UCXChannel::init(int ed,
 
   // TODO Sandeepa code for sending the worker address via sockets moved to extra_code.txt
   // socketInit(receives, sendIds);
-  MPIInit(receives, sendIds);
+  // MPIInit(receives, sendIds);
+
+  // Get the number of receives and sends to be used in iterations
+  int numReci = (int) receives.size();
+  int numSends = (int) sendIds.size();
+  // Int variable used when iterating
+  int sIndx;
+
+  // Iterate and set the receives
+  for (sIndx = 0; sIndx < numReci; sIndx++) {
+    // Rank of the node receiving from
+    int recvRank = receives.at(sIndx);
+    // Init a new pending receive for the request
+    auto *buf = new PendingReceive();
+    // TODO Sandeepa remove ipInt allocation since it's not used anywhere
+    buf->receiveId = recvRank;
+    // Add to pendingReceive object to pendingReceives map
+    pendingReceives.insert(std::pair<int, PendingReceive *>(recvRank, buf));
+    // Receive for the initial header buffer
+    buf->context = UCX_Irecv(buf->headerBuf,
+                             CYLON_CHANNEL_HEADER_SIZE * sizeof(int),
+                             recvRank);
+    // Init status of the receive
+    buf->status = RECEIVE_LENGTH_POSTED;
+  }
+
+
+  // Iterate and set the sends
+  for (sIndx = 0; sIndx < numSends; sIndx++) {
+    // Rank of the node sending to
+    int sendRank = sendIds.at(sIndx);
+    // Init a new pending send for the request
+    sends[sendRank] = new PendingSend();
+  }
 }
 
 /**
@@ -343,7 +387,7 @@ int UCXChannel::sendFin(std::shared_ptr<TxRequest> request) {
 
 void UCXChannel::progressReceives() {
   // Progress the ucp receive worker
-  ucp_worker_progress(ucpRecvWorker);
+  ucp_worker_progress(*ucpRecvWorker);
 
   // Iterate through the pending receives
   for (auto x : pendingReceives) {
@@ -426,7 +470,7 @@ void UCXChannel::progressReceives() {
 
 void UCXChannel::progressSends() {
   // Progress the ucp send worker
-  ucp_worker_progress(ucpSendWorker);
+  ucp_worker_progress(*ucpSendWorker);
 
   // Iterate through the sends
   for (auto x : sends) {
@@ -444,7 +488,7 @@ void UCXChannel::progressSends() {
         x.second->context =  new ucx::ucxContext();
         UCX_Isend(r->buffer,
                   r->length,
-                  x.second->wa->ep,
+                  endPointMap[x.first],
                   x.first,
                   x.second->context);
 
@@ -527,7 +571,7 @@ void UCXChannel::sendHeader(const std::pair<const int, PendingSend *> &x) const 
   x.second->context =  new ucx::ucxContext();
   UCX_Isend(x.second->headerBuf,
             (2 + r->headerLength) * sizeof(int),
-            x.second->wa->ep,
+            endPointMap.at(x.first),
             x.first,
             x.second->context);
   // Update status
@@ -547,7 +591,7 @@ void UCXChannel::sendFinishHeader(const std::pair<const int, PendingSend *> &x) 
   x.second->context =  new ucx::ucxContext();
   UCX_Isend(x.second->headerBuf,
             8 * sizeof(int),
-            x.second->wa->ep,
+            endPointMap.at(x.first),
             x.first,
             x.second->context);
   x.second->status = SEND_FINISH;

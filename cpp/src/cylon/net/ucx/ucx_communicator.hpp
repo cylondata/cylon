@@ -17,6 +17,9 @@
 
 #include "../comm_config.hpp"
 #include "../communicator.hpp"
+#include "ucx_operations.hpp"
+
+#include <ucp/api/ucp.h>
 
 namespace cylon {
 namespace net {
@@ -42,6 +45,14 @@ class UCXCommunicator : public Communicator {
   void Finalize() override;
   void Barrier() override;
   CommType GetCommType() override;
+
+  // # UCX specific attributes - These need to be passed to the channels created from the communicator
+  // The worker for receiving
+  ucp_worker_h  ucpRecvWorker;
+  // The worker for sending
+  ucp_worker_h  ucpSendWorker;
+  // Endpoint Map
+  std::unordered_map<int, ucp_ep_h> endPointMap;
 };
 }
 }

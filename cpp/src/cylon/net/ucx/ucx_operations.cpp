@@ -17,7 +17,6 @@
 #include <cstring>
 #include <glog/logging.h>
 
-#include <ucp/api/ucp.h>
 #include "ucx_operations.hpp"
 
 /**
@@ -25,8 +24,58 @@
  * @param [in] ucpContext - The context to be passed to init the worker
  * @param [out] ucpWorker - The UCP worker
  */
-cylon::ucx::ucxWorker* cylon::ucx::initWorker(ucp_context_h ucpContext,
-                       ucp_worker_h *ucpWorker)
+//void cylon::ucx::initWorker(ucp_context_h ucpContext,
+//                       ucp_worker_h *ucpWorker,
+//                       cylon::ucx::ucxWorkerAddr *workerAddr)
+//{
+//  // UCP objects
+//  // Worker params - Tuning parameters for the UCP worker.
+//  // Has threading and CPU count etc
+//  ucp_worker_params_t workerParams;
+//  // Variable to check status
+//  ucs_status_t status;
+//
+//  // Init values to worker params
+//  memset(&workerParams, 0, sizeof(workerParams));
+//
+//  // Thread mode params
+//  // TODO Sandeepa change the thread modes?
+//  //  current thread mode is single
+//  workerParams.field_mask  = UCP_WORKER_PARAM_FIELD_THREAD_MODE;
+//  workerParams.thread_mode = UCS_THREAD_MODE_SINGLE;
+//
+//  // Create UCP worker - 1:many -> context:worker
+//  // In - Context, worker params
+//  // Out - UCP worker
+//  status = ucp_worker_create(ucpContext, &workerParams, ucpWorker);
+//
+//  // Check status of worker
+//  if (status != UCS_OK) {
+//    LOG(FATAL) << "Failed to create a UCP worker for the given UCP context: " << ucs_status_string(status);
+//    goto err_cleanup;
+//  }
+//
+//  status = ucp_worker_get_address(*ucpWorker,
+//                                  &(workerAddr->addr),
+//                                  &(workerAddr->addrSize));
+//  // Check status of worker
+//  if (status != UCS_OK) {
+//    LOG(FATAL) << "Failed to get the address of the given UCP worker: " << ucs_status_string(status);
+//    goto err_worker;
+//  }
+//err_cleanup:
+//  ucp_cleanup(ucpContext);
+//err_worker:
+//  ucp_worker_destroy(*ucpWorker);
+//}
+
+/**
+ * Create a UCP worker on the given UCP context.
+ * @param [in] ucpContext - The context to be passed to init the worker
+ * @param [out] ucpWorker - The UCP worker
+ */
+cylon::ucx::ucxWorkerAddr* cylon::ucx::initWorker(ucp_context_h ucpContext,
+                                              ucp_worker_h *ucpWorker)
 {
   // UCP objects
   // Worker params - Tuning parameters for the UCP worker.
@@ -36,7 +85,7 @@ cylon::ucx::ucxWorker* cylon::ucx::initWorker(ucp_context_h ucpContext,
   ucs_status_t status;
 
   // New worker
-  auto worker = new ucxWorker();
+  auto worker = new ucxWorkerAddr();
 
   // Init values to worker params
   memset(&workerParams, 0, sizeof(workerParams));
@@ -69,15 +118,16 @@ cylon::ucx::ucxWorker* cylon::ucx::initWorker(ucp_context_h ucpContext,
 
   return worker;
 
-err_cleanup:
+  err_cleanup:
   ucp_cleanup(ucpContext);
   goto final;
-err_worker:
+  err_worker:
   ucp_worker_destroy(*ucpWorker);
   goto final;
-final:
+  final:
   return nullptr;
 }
+
 
 
 /**
