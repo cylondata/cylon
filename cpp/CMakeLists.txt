@@ -146,6 +146,8 @@ endif (CYLON_PARQUET)
 # ucx
 option(CYLON_UCX "Build Cylon with UCX" OFF)
 if (CYLON_UCX)
+    # TODO Sandeepa do something?
+    message("Linking UCX for Cylon")
     add_definitions(-DBUILD_CYLON_UCX)
 
 #    # Code for UCX code setup from github
@@ -159,8 +161,15 @@ if (CYLON_UCX)
 #    set(UCX_INCLUDE_DIR "$ENV{UCX_ROOT}/install/include")
 #    include_directories(${UCX_INCLUDE_DIR})
 
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(UCX REQUIRED ucx)
+#    find_package(PkgConfig REQUIRED)
+#    pkg_check_modules(UCX REQUIRED ucx)
+    if (NOT UCX_INCLUDEDIR)
+        message(FATAL_ERROR "CYLON_UCX is set, UCX_INCLUDEDIR should also be set")
+    endif ()
+
+    if (NOT UCX_LIBDIR)
+        message(FATAL_ERROR "CYLON_UCX is set, UCX_LIBDIR should also be set")
+    endif ()
     include_directories(${UCX_INCLUDEDIR})
     # Set UCX found as true
     set(UCX_FOUND TRUE)

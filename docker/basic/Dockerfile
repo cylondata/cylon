@@ -13,12 +13,16 @@ ENV CYLON_ENV=$CYLON_HOME/ENV
 
 WORKDIR $CYLON_HOME
 
+# TODO Sandeepa Change this back
 RUN git clone https://github.com/cylondata/cylon.git $CYLON_HOME
-RUN cd $CYLON_HOME && python3 -m venv --system-site-packages $CYLON_ENV
+# RUN cd $CYLON_HOME && python3 -m venv --system-site-packages $CYLON_ENV
 
-RUN echo 'alias build_cylon="cd $CYLON_HOME && ./build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --python --release"' >> $HOME/.bashrc
-RUN echo 'alias build_cylon_test="cd $CYLON_HOME && ./build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --test --python --pytest --release"' >> $HOME/.bashrc
+# RUN echo 'alias build_cylon="cd $CYLON_HOME && ./build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --python --release"' >> $HOME/.bashrc
+# RUN echo 'alias build_cylon_test="cd $CYLON_HOME && ./build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --test --python --pytest --release"' >> $HOME/.bashrc
 
-RUN cd $CYLON_HOME && /bin/bash build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --python --release
+RUN echo 'alias build_cylon="cd $CYLON_HOME && ./build.sh -bpath $CYLON_BUILD --cpp --release"' >> $HOME/.bashrc
+RUN echo 'alias build_cylon_test="cd $CYLON_HOME && ./build.sh -bpath $CYLON_BUILD --cpp --test --release"' >> $HOME/.bashrc
+
+RUN cd $CYLON_HOME && /bin/bash build.sh -bpath $CYLON_BUILD --cpp --release
 
 ENTRYPOINT ["/bin/bash"]
