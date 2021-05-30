@@ -84,15 +84,6 @@ void UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     LOG(FATAL) << "Error occurred when creating UCX context";
   }
 
-//  // Init recv worker and get address
-//  cylon::ucx::initWorker(ucpContext,
-//                         &ucpRecvWorker,
-//                         ucpRecvWorkerAddr);
-//  // Init send worker
-//  cylon::ucx::initWorker(ucpContext,
-//                         &ucpSendWorker,
-//                         ucpSendWorkerAddr);
-
   // Init recv worker and get address
   ucpRecvWorkerAddr = cylon::ucx::initWorker(ucpContext,
                          &ucpRecvWorker);
@@ -143,8 +134,6 @@ void UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     }
   }
 
-  // TODO Add all for cleaning
-  //  Need to add *?
   // Cleanup
   delete(ucpRecvWorkerAddr);
   delete(ucpSendWorkerAddr);
