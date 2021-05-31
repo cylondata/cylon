@@ -21,4 +21,13 @@ RUN echo 'alias build_cylon_test="cd $CYLON_HOME && ./build.sh -pyenv $CYLON_ENV
 
 RUN cd $CYLON_HOME && /bin/bash build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --python --release  --cmake-flags -DCYLON_PARQUET=ON
 
+# Activating PyCylon Env
+ENV LD_LIBRARY_PATH=$CYLON_BUILD/lib/:$CYLON_BUILD/arrow/install/lib/
+ENV PATH="$CYLON_ENV/bin:$PATH"
+
+# Adding Cylon User
+RUN useradd -ms /bin/bash cylon
+USER cylon
+WORKDIR /home/cylon
+
 ENTRYPOINT ["/bin/bash"]
