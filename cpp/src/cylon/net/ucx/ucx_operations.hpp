@@ -19,9 +19,6 @@
 #include <ucp/api/ucp.h>
 #include <net/comm_operations.hpp>
 
-// TODO Sandeepa may need to move these to a separate file?
-//  keep this file for operations like all-reduce?
-
 namespace cylon {
 namespace ucx {
 /**
@@ -40,18 +37,8 @@ struct ucxContext {
 struct ucxWorkerAddr {
   ucp_address_t *addr;
   size_t addrSize;
-//  ucp_ep_h ep;
 };
 
-///**
-// * Create a UCP worker on the given UCP context.
-// * @param [in] ucpContext - The context to be passed to init the worker
-// * @param [out] ucpWorker - The UCP worker
-// * @param [out] workerAddr - The UCP worker address
-// */
-//void initWorker(ucp_context_h ucpContext,
-//           ucp_worker_h *ucpWorker,
-//           ucxWorkerAddr *workerAddr);
 /**
  * Create a UCP worker on the given UCP context.
  * @param [in] ucpContext - The context to be passed to init the worker

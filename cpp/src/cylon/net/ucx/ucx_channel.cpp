@@ -14,12 +14,7 @@
 
 #include "ucx_channel.hpp"
 
-// TODO Sandeepa Remove the unnecessary
-#include <glog/logging.h>
-#include <vector>
 #include <iostream>
-#include <cstring>
-#include <memory>
 #include <utility>
 #include <status.hpp>
 #include <cassert>
@@ -27,10 +22,6 @@
 #include <algorithm>
 
 #include "ucx_operations.hpp"
-
-// TODO Sandeepa remove - was put to test if connections happen
-#include <fstream>
-#include <string>
 
 namespace cylon {
 
@@ -40,14 +31,16 @@ namespace cylon {
  * @param [in,out] request - Request pinter
  * @param [in] status - Status of the request
  * @param [in] info - Info of the request. (length and the sender tag)
+ * @param [in,out] ctx - Context (user data) of the request
  * @return
  */
 static void recvHandler(void *request,
-                         ucs_status_t status,
-                         ucp_tag_recv_info_t *info) {
-  auto *context = (ucx::ucxContext *) request;
+                        ucs_status_t status,
+                        const ucp_tag_recv_info_t *info,
+                        void *ctx) {
+  auto *context = (ucx::ucxContext *) ctx;
   context->completed = 1;
-  // TODO Sandeepa message to handle recv completion
+//  DLOG(INFO) << "Receive handle called. (Message receive completed)";
 }
 
 /**
@@ -63,34 +56,21 @@ static void sendHandler(void *request,
                          void *ctx) {
   auto *context = (ucx::ucxContext *) ctx;
   context->completed = 1;
-  // TODO Sandeepa message to handle send completion
+//  DLOG(INFO) << "Send handle called. (Message send completed)";
 }
 
 /**
  * Generate the tag used in messaging
- * Used to identify the sending and receiving pairs, not just the edge
- * Each of the 3 bytes used to represent an int is used to represent the stakeholders and sequence
- * Most significant byte represents the edge, the second most significant byte represents the receiver
- *  and the least significant byte represents the sender
+ * Used to identify the sender, not just the edge
+ * Both the edge and sender, which are ints, are combined to make the ucp_tag, which expects a 64 bit object
+ * Most significant 4 bytes represents the edge, and the least significant 4 bytes represents the sender
  * @param [in] edge - Edge / Sequence
- * @param [in] recver - Receiver of the message
  * @param [in] sender - Sender of the message
- * @return int the compound tag
+ * @return unsigned long int -  the compound tag
  */
-static int getTag(int edge,
-                   int recver,
-                   int sender) {
-  return (int)(edge * std::pow(2, 8 * 2) + recver * std::pow(2, 8 * 1) + sender);
-}
-
-/**
- * Check if all of the array is true. Used for checking if all sends / receives are completed when exchanging
- *  UCX worker addresses
- * @param [in] arr - Array containing the bool values
- * @return bool - if all elements in the array are true or not
- */
-bool checkArr(std::vector<bool> &arr){
-  return std::all_of(arr.begin(), arr.end(), [](bool elem){ return elem; });
+static unsigned long int getTag(int edge,
+                  int sender) {
+  return (((unsigned long int)edge)<<32) + sender;
 }
 
 /**
@@ -99,32 +79,36 @@ bool checkArr(std::vector<bool> &arr){
  * @param [out] buffer - Pointer to the output buffer
  * @param [in] count - Size of the receiving data
  * @param [in] sender - MPI id of the sender
- * @return ucx::ucxContext - Used for tracking the progress of the request
+ * @param [out] ctx - ucx::ucxContext object, used for tracking the progress of the request
  */
-ucx::ucxContext *UCXChannel::UCX_Irecv(void *buffer,
-                                       size_t count,
-                                       int sender) {
-  // UCX context / request
-  ucx::ucxContext *request;
+void UCXChannel::UCX_Irecv(void *buffer,
+                            size_t count,
+                            int sender,
+                            ucx::ucxContext* ctx) {
+  // To hold the status of operations
+  ucs_status_ptr_t status;
+
+  ucp_request_param_t recvParam;
+  recvParam.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
+      UCP_OP_ATTR_FIELD_USER_DATA |
+      UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
+  recvParam.cb.recv = recvHandler;
+  recvParam.user_data = ctx;
+
+  // Init completed
+  ctx->completed = 0;
 
   // UCP non-blocking tag receive
   // Inp - UCP worker, buffer, length, datatype, tag, tag mask, receive handler
-  request = (ucx::ucxContext *) ucp_tag_recv_nb(*ucpRecvWorker,
-                                            buffer,
-                                            count,
-                                            ucp_dt_make_contig(1),
-                                            getTag(edge, rank, sender),
-                                            tagMask,
-                                            recvHandler);
+  status = ucp_tag_recv_nbx(*ucpRecvWorker,
+                           buffer,
+                           count,
+                           getTag(edge, sender),
+                           tagMask,
+                           &recvParam);
 
-  // Check if there is an error in the request
-  if (UCS_PTR_IS_ERR(request)) {
-    LOG(FATAL) << "Unable to receive UCX message " <<
-               ucs_status_string(UCS_PTR_STATUS(request));
-    return nullptr;
-  } else {
-    assert(UCS_PTR_IS_PTR(request));
-    return request;
+  if (UCS_PTR_IS_ERR(status)) {
+    LOG(FATAL) << "Error in sending message via UCX";
   }
 }
 
@@ -134,13 +118,11 @@ ucx::ucxContext *UCXChannel::UCX_Irecv(void *buffer,
  * @param [out] buffer - Pointer to the buffer to send
  * @param [in] count - Size of the receiving data
  * @param [in] ep - Endpoint to send the data to
- * @param [in] target - MPI id of the receiver / target
  * @param [out] ctx - Used for tracking the progress of the request
  */
 void UCXChannel::UCX_Isend(const void *buffer,
                            size_t count,
                            ucp_ep_h ep,
-                           int target,
                            ucx::ucxContext* ctx) const {
   // To hold the status of operations
   ucs_status_ptr_t status;
@@ -160,7 +142,7 @@ void UCXChannel::UCX_Isend(const void *buffer,
   status = ucp_tag_send_nbx(ep,
                             buffer,
                             count,
-                            getTag(edge, target, rank),
+                            getTag(edge, rank),
                             &sendParam);
   // Check if there is an error in the request
   if (UCS_PTR_IS_ERR(status)) {
@@ -168,25 +150,28 @@ void UCXChannel::UCX_Isend(const void *buffer,
   }
   // Handle the situation where the ucp_tag_send_nbx function returns immediately
   // without calling the send handler
-  if (!UCS_PTR_IS_PTR(status) && status == nullptr) {
-    ctx->completed = 1;
-  }
+//  if (!UCS_PTR_IS_PTR(status) && status == nullptr) {
+//    ctx->completed = 1;
+//  }
 }
 
+
 /**
- * Initialize the UCX network by sending / receiving the UCX worker addresses via MPI
- * @param [in] receives - MPI IDs of the nodes to receive from
- * @param [in] sendIds - MPI IDs of the nodes to send to
+ * Link the necessary parameters associated with the communicator to the channel
+ * @param [in] com - The UCX communicator that created the channel
  * @return
  */
 void UCXChannel::linkCommunicator(net::UCXCommunicator *com) {
-  this->ucxCom = com;
+  // Link the communicator if by chance is later needed
+  //  this->ucxCom = com;
 
+  // Set world size, rank, and workers
   this->worldSize = com->GetWorldSize();
   this->rank = com->GetRank();
   this->ucpRecvWorker = &(com->ucpRecvWorker);
   this->ucpSendWorker = &(com->ucpSendWorker);
 
+  // Set the endpoints
   for (auto x : com->endPointMap) {
     ucp_ep_h ep = x.second;
     this->endPointMap[x.first] = ep;
@@ -215,10 +200,6 @@ void UCXChannel::init(int ed,
   send_comp_fn = send_fn;
   allocator = alloc;
 
-  // TODO Sandeepa code for sending the worker address via sockets moved to extra_code.txt
-  // socketInit(receives, sendIds);
-  // MPIInit(receives, sendIds);
-
   // Get the number of receives and sends to be used in iterations
   int numReci = (int) receives.size();
   int numSends = (int) sendIds.size();
@@ -231,14 +212,18 @@ void UCXChannel::init(int ed,
     int recvRank = receives.at(sIndx);
     // Init a new pending receive for the request
     auto *buf = new PendingReceive();
-    // TODO Sandeepa remove ipInt allocation since it's not used anywhere
     buf->receiveId = recvRank;
     // Add to pendingReceive object to pendingReceives map
     pendingReceives.insert(std::pair<int, PendingReceive *>(recvRank, buf));
     // Receive for the initial header buffer
-    buf->context = UCX_Irecv(buf->headerBuf,
-                             CYLON_CHANNEL_HEADER_SIZE * sizeof(int),
-                             recvRank);
+    // Init context
+    buf->context = new ucx::ucxContext();
+    buf->context->completed = 0;
+    // UCX receive
+    UCX_Irecv(buf->headerBuf,
+              CYLON_CHANNEL_HEADER_SIZE * sizeof(int),
+              recvRank,
+              buf->context);
     // Init status of the receive
     buf->status = RECEIVE_LENGTH_POSTED;
   }
@@ -251,12 +236,6 @@ void UCXChannel::init(int ed,
     // Init a new pending send for the request
     sends[sendRank] = new PendingSend();
   }
-
-  // TODO Sandeepa remove
-  const char *path="file.txt";
-  std::ofstream file(path); //open in constructor
-  std::string data("data to write to file");
-  file << data;
 }
 
 /**
@@ -302,16 +281,6 @@ void UCXChannel::progressReceives() {
     if (x.second->status == RECEIVE_LENGTH_POSTED) {
       // If completed request is completed
       if (x.second->context->completed == 1) {
-        // Release the existing context
-//        if (x.second->context != nullptr){
-//          ucp_request_release(x.second->context);
-//        }
-
-        // TODO Sandeepa is the count check necessary
-        //  Can be done by ucp_tag_probe_nb?
-        // The number of received elements
-//        int count = 8;
-
         // Get data from the header
         // read the length from the header
         int length = x.second->headerBuf[0];
@@ -329,8 +298,14 @@ void UCXChannel::progressReceives() {
 
           // Set the length
           x.second->length = length;
+
+          // Reset context
+          delete x.second->context;
+          x.second->context = new ucx::ucxContext();
+          x.second->context->completed = 0;
+
           // UCX receive
-          x.second->context = UCX_Irecv(x.second->data->GetByteBuffer(), length, x.first);
+          UCX_Irecv(x.second->data->GetByteBuffer(), length, x.first, x.second->context);
           // Set the flag to true so we can identify later which buffers are posted
           x.second->status = RECEIVE_POSTED;
 
@@ -351,24 +326,24 @@ void UCXChannel::progressReceives() {
     } else if (x.second->status == RECEIVE_POSTED) {
       // if request completed
       if (x.second->context->completed == 1) {
-        // Release the existing context
-//        if (x.second->context != nullptr){
-//          ucp_request_release(x.second->context);
-//        }
-
         // Fill header buffer
         std::fill_n(x.second->headerBuf, CYLON_CHANNEL_HEADER_SIZE, 0);
 
+        // Reset the context
+        delete x.second->context;
+        x.second->context = new ucx::ucxContext();
+        x.second->context->completed = 0;
+
         // UCX receive
-        x.second->context = UCX_Irecv(x.second->headerBuf,
-                                      CYLON_CHANNEL_HEADER_SIZE * sizeof(int),
-                                      x.first);
+        UCX_Irecv(x.second->headerBuf,
+                  CYLON_CHANNEL_HEADER_SIZE * sizeof(int),
+                  x.first,
+                  x.second->context);
         // Set state
         x.second->status = RECEIVE_LENGTH_POSTED;
         // Call the back end
         rcv_fn->receivedData(x.first, x.second->data, x.second->length);
       }
-      // TODO Sandeepa would a early return have any advantages? (There would be a string of jumps or a single jump?)
     } else if (x.second->status != RECEIVED_FIN) {
       LOG(FATAL) << "At an un-expected state " << x.second->status;
     }
@@ -393,10 +368,10 @@ void UCXChannel::progressSends() {
         std::shared_ptr<TxRequest> r = x.second->pendingData.front();
         // Send the message
         x.second->context =  new ucx::ucxContext();
+        x.second->context->completed = 0;
         UCX_Isend(r->buffer,
                   r->length,
                   endPointMap[x.first],
-                  x.first,
                   x.second->context);
 
         // Update status
@@ -463,7 +438,6 @@ void UCXChannel::sendHeader(const std::pair<const int, PendingSend *> &x) const 
   // Get the request
   std::shared_ptr<TxRequest> r = x.second->pendingData.front();
   // Put the length to the buffer
-  // TODO Sandeepa Is it possible to reduce the headers?
   x.second->headerBuf[0] = r->length;
   x.second->headerBuf[1] = 0;
 
@@ -476,10 +450,10 @@ void UCXChannel::sendHeader(const std::pair<const int, PendingSend *> &x) const 
   delete x.second->context;
   // UCX send of the header
   x.second->context =  new ucx::ucxContext();
+  x.second->context->completed = 0;
   UCX_Isend(x.second->headerBuf,
             (2 + r->headerLength) * sizeof(int),
             endPointMap.at(x.first),
-            x.first,
             x.second->context);
   // Update status
   x.second->status = SEND_LENGTH_POSTED;
@@ -493,13 +467,12 @@ void UCXChannel::sendFinishHeader(const std::pair<const int, PendingSend *> &x) 
   // for the last header we always send only the first 2 integers
   x.second->headerBuf[0] = 0;
   x.second->headerBuf[1] = CYLON_MSG_FIN;
-  // TODO Sandeepa count was 2, changed to 8 since 8 is hardcoded atm
   delete x.second->context;
   x.second->context =  new ucx::ucxContext();
+  x.second->context->completed = 0;
   UCX_Isend(x.second->headerBuf,
             8 * sizeof(int),
             endPointMap.at(x.first),
-            x.first,
             x.second->context);
   x.second->status = SEND_FINISH;
 }
@@ -508,17 +481,20 @@ void UCXChannel::sendFinishHeader(const std::pair<const int, PendingSend *> &x) 
  * Close the channel and clear any allocated memory by the channel
  */
 void UCXChannel::close() {
-  // TODO Sandeepa add all cleanups
   // Clear pending receives
   for (auto &pendingReceive : pendingReceives) {
+    delete (pendingReceive.second->context);
     delete (pendingReceive.second);
   }
   pendingReceives.clear();
 
   // Clear the sends
   for (auto &s : sends) {
+    delete (s.second->context);
     delete (s.second);
   }
   sends.clear();
+
+  endPointMap.clear();
 }
 }  // namespace cylon

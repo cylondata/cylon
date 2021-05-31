@@ -40,10 +40,6 @@ int join_perf(int argc, char **argv);
 int union_perf(int argc, char **argv);
 
 int main(int argc, char *argv[]) {
-    // TODO Sandeepa remove
-//  int i = 0;
-//  while (i==0){}
-
   join_perf(argc, argv);
 //  union_example(argc, argv);
   return 0;

@@ -5,7 +5,7 @@ RUN DEBIAN_FRONTEND=noninteractive TZ=America/New_York apt-get update -y  && apt
    && apt-get install -y apt-utils tzdata
 RUN dpkg-reconfigure tzdata
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-dev python3-venv python3-pip git build-essential libopenmpi-dev vim cmake
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-dev python3-venv python3-pip git build-essential libopenmpi-dev vim cmake libbrotli-dev
 
 ENV CYLON_HOME=/cylon
 ENV CYLON_BUILD=$CYLON_HOME/build
@@ -13,16 +13,12 @@ ENV CYLON_ENV=$CYLON_HOME/ENV
 
 WORKDIR $CYLON_HOME
 
-# TODO Sandeepa Change this back
 RUN git clone https://github.com/cylondata/cylon.git $CYLON_HOME
-# RUN cd $CYLON_HOME && python3 -m venv --system-site-packages $CYLON_ENV
+RUN cd $CYLON_HOME && python3 -m venv --system-site-packages $CYLON_ENV
 
-# RUN echo 'alias build_cylon="cd $CYLON_HOME && ./build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --python --release"' >> $HOME/.bashrc
-# RUN echo 'alias build_cylon_test="cd $CYLON_HOME && ./build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --test --python --pytest --release"' >> $HOME/.bashrc
+RUN echo 'alias build_cylon="cd $CYLON_HOME && ./build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --python --release --cmake-flags -DCYLON_PARQUET=ON"' >> $HOME/.bashrc
+RUN echo 'alias build_cylon_test="cd $CYLON_HOME && ./build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --test --python --pytest --release --cmake-flags -DCYLON_PARQUET=ON"' >> $HOME/.bashrc
 
-RUN echo 'alias build_cylon="cd $CYLON_HOME && ./build.sh -bpath $CYLON_BUILD --cpp --release"' >> $HOME/.bashrc
-RUN echo 'alias build_cylon_test="cd $CYLON_HOME && ./build.sh -bpath $CYLON_BUILD --cpp --test --release"' >> $HOME/.bashrc
-
-RUN cd $CYLON_HOME && /bin/bash build.sh -bpath $CYLON_BUILD --cpp --release
+RUN cd $CYLON_HOME && /bin/bash build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --python --release  --cmake-flags -DCYLON_PARQUET=ON
 
 ENTRYPOINT ["/bin/bash"]

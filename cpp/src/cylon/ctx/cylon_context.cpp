@@ -19,7 +19,10 @@
 #include "cylon_context.hpp"
 #include "arrow/memory_pool.h"
 #include "../net/mpi/mpi_communicator.hpp"
+
+#ifdef BUILD_CYLON_UCX
 #include "../net/ucx/ucx_communicator.hpp"
+#endif
 
 namespace cylon {
 
@@ -37,13 +40,17 @@ std::shared_ptr<CylonContext> CylonContext::InitDistributed(const std::shared_pt
     ctx->communicator->Init(config);
     ctx->is_distributed = true;
     return ctx;
-  } else if (config->Type() == net::CommType::UCX) {
+  }
+  #ifdef BUILD_CYLON_UCX
+  else if (config->Type() == net::CommType::UCX) {
     auto ctx = std::make_shared<CylonContext>(true);
     ctx->communicator = std::make_shared<net::UCXCommunicator>();
     ctx->communicator->Init(config);
     ctx->is_distributed = true;
     return ctx;
-  } else {
+  }
+  #endif
+  else {
     throw "Unsupported communication type";
   }
   return nullptr;

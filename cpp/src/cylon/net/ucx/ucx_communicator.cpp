@@ -20,7 +20,6 @@
 
 namespace cylon {
 namespace net {
-// TODO Sandeepa put config and context init here?
 void UCXConfig::DummyConfig(int dummy) {
   this->AddConfig("Dummy", &dummy);
 }
@@ -31,7 +30,7 @@ int UCXConfig::GetDummyConfig() {
 CommType UCXConfig::Type() {
   return CommType::UCX;
 }
-// TODO Sandeepa add the config to the list?
+
 std::shared_ptr<UCXConfig> UCXConfig::Make() {
   return std::make_shared<UCXConfig>();
 }
@@ -53,11 +52,8 @@ void UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   int initialized;
   // Int variable used when iterating
   int sIndx;
-  // UCP Context - Holds a UCP communication instance's global information.
-  ucp_context_h ucpContext;
   // Address of the UCP Worker for receiving
   cylon::ucx::ucxWorkerAddr *ucpRecvWorkerAddr;
-  // TODO Sandeepa check to see if you could pass nullptr
   // Address of the UCP Worker for sending
   cylon::ucx::ucxWorkerAddr *ucpSendWorkerAddr;
   // All addresses buffer for allGather
@@ -75,7 +71,6 @@ void UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
 
   // Get the rank for checking send to self, and initializations
   MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
-  // TODO Sandeepa can you go with the assumption that ranks don't change?
   MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
 
   // Init context
@@ -91,6 +86,7 @@ void UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   ucpSendWorkerAddr = cylon::ucx::initWorker(ucpContext,
                          &ucpSendWorker);
 
+  //  Gather all worker addresses
   allAddresses = (ucp_address_t *)malloc(ucpRecvWorkerAddr->addrSize*world_size);
   MPI_Allgather(ucpRecvWorkerAddr->addr,
                 (int)ucpRecvWorkerAddr->addrSize,
@@ -139,9 +135,7 @@ void UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   delete(ucpSendWorkerAddr);
 }
 void UCXCommunicator::Finalize() {
-  // TODO Sandeepa get UCP context somewhere
-//  ucp_context_h dummy_context;
-//  ucp_cleanup(dummy_context);
+  ucp_cleanup(ucpContext);
   MPI_Finalize();
 }
 void UCXCommunicator::Barrier() {

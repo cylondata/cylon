@@ -31,8 +31,7 @@
 #define CYLON_MSG_FIN 1
 
 namespace cylon {
-// TODO Sandeepa get these stated from a common file?
-enum SendStatus {
+enum UCXSendStatus {
   SEND_INIT = 0,
   SEND_LENGTH_POSTED = 1,
   SEND_POSTED = 2,
@@ -40,7 +39,7 @@ enum SendStatus {
   SEND_DONE = 4
 };
 
-enum ReceiveStatus {
+enum UCXReceiveStatus {
   RECEIVE_INIT = 0,
   RECEIVE_LENGTH_POSTED = 1,
   RECEIVE_POSTED = 2,
@@ -50,22 +49,16 @@ enum ReceiveStatus {
 /**
  * Keep track about the length buffer to receive the length first
  */
- // TODO Sandeepa are sends not considered as important
 struct PendingSend {
   //  we allow upto 8 ints for the header
   int headerBuf[CYLON_CHANNEL_HEADER_SIZE]{};
   // segments of data to be sent
-  std::queue<std::shared_ptr<TxRequest>> pendingData;
-  SendStatus status = SEND_INIT;
+  std::queue<std::shared_ptr<TxRequest>> pendingData{};
+  UCXSendStatus status = SEND_INIT;
   MPI_Request request{};
   // the current send, if it is a actual send
   std::shared_ptr<TxRequest> currentSend{};
 
-  // TODO Sandeepa Check
-  // The problem comes if you move pending data here?
-
-//  // UCX address and endpoint to send to
-//  ucx::ucxWorker* wa;
   // UCX context - For tracking the progress of the message
   ucx::ucxContext *context;
 };
@@ -73,13 +66,12 @@ struct PendingSend {
 struct PendingReceive {
   // we allow upto 8 integer header
   int headerBuf[CYLON_CHANNEL_HEADER_SIZE]{};
-  // TODO Sandeepa removing receiveID causes the same issue as moving request
   int receiveId{};
   // Buffers are untyped: they simply denote a physical memory
   // area regardless of its intended meaning or interpretation.
   std::shared_ptr<Buffer> data{};
   int length{};
-  ReceiveStatus status = RECEIVE_INIT;
+  UCXReceiveStatus status = RECEIVE_INIT;
   MPI_Request request{};
   // UCX context - For tracking the progress of the message
   ucx::ucxContext *context;
@@ -90,7 +82,6 @@ struct PendingReceive {
  * this channel sends a small message with the size of the next message.
  * This allows the other side to post the network buffer to receive the message.
  */
- // TODO Sandeepa get prepare? the buffer in the other end
 class UCXChannel : public Channel {
  public:
   /**
@@ -133,6 +124,11 @@ class UCXChannel : public Channel {
 
   void close() override;
 
+  /**
+   * Link the necessary parameters associated with the communicator to the channel
+   * @param [in] com - The UCX communicator that created the channel
+   * @return
+   */
   void linkCommunicator(net::UCXCommunicator* com);
 
  private:
@@ -163,8 +159,9 @@ class UCXChannel : public Channel {
   std::unordered_map<int, ucp_ep_h> endPointMap;
   // Tag mask used to match UCX send / receives
   ucp_tag_t tagMask = UINT64_MAX;
-  // UCX Cylon Communicator
-  net::UCXCommunicator* ucxCom;
+  // Commented - Use if info in necessary from the context
+//  // UCX Cylon Communicator
+//  net::UCXCommunicator* ucxCom;
 
   /**
    * UCX Receive
@@ -172,15 +169,12 @@ class UCXChannel : public Channel {
    * @param [out] buffer - Pointer to the output buffer
    * @param [in] count - Size of the receiving data
    * @param [in] sender - MPI id of the sender
-   * @return ucx::ucxContext - Used for tracking the progress of the request
+   * @param [out] ctx - ucx::ucxContext object, used for tracking the progress of the request
    */
-  ucx::ucxContext* UCX_Irecv(void *buffer,
-                             size_t count,
-                             int source);
-//   void UCX_Irecv(void *buffer,
-//                  size_t count,
-//                  int source,
-//                  ucx::ucxContext* request);
+  void UCX_Irecv(void *buffer,
+                 size_t count,
+                 int source,
+                 ucx::ucxContext* ctx);
 
   /**
    * UCX Send
@@ -188,26 +182,13 @@ class UCXChannel : public Channel {
    * @param [out] buffer - Pointer to the buffer to send
    * @param [in] count - Size of the receiving data
    * @param [in] ep - Endpoint to send the data to
-   * @param [in] target - MPI id of the receiver / target
-   * @return ucx::ucxContext - Used for tracking the progress of the request
+   * @param [out] request - UCX Context object
+   *                        Used for tracking the progress of the request
    */
-//  ucx::ucxContext* UCX_Isend(const void *buffer,
-//                             size_t  count,
-//                             ucp_ep_h ep,
-//                             int target) const;
   void UCX_Isend(const void *buffer,
                  size_t  count,
                  ucp_ep_h ep,
-                 int target,
                  ucx::ucxContext* request) const;
-  /**
-   * Initialize the UCX network by sending / receiving the UCX worker addresses via MPI
-   * @param [in] receives - MPI IDs of the nodes to receive from
-   * @param [in] sendIds - MPI IDs of the nodes to send to
-   * @return
-   */
-  void MPIInit(const std::vector<int> &receives,
-               const std::vector<int> &sendIds);
 
   /**
    * Send finish request

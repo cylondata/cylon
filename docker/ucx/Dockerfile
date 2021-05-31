@@ -23,7 +23,9 @@ RUN cd $UCX_HOME && tar xzf ucx-1.10.1.tar.gz
 RUN cd $UCX_HOME && ls
 RUN cd $UCX_SOURCE && ./contrib/configure-release --prefix=$PWD/install
 RUN cd $UCX_SOURCE && make -j8 install
-RUN git clone -b ucx-integration https://github.com/Sandeepa1995/cylon.git $CYLON_HOME
+# TOOD Sandeepa What to do here? Put the main branch git or put mine?
+RUN git clone https://github.com/cylondata/cylon.git $CYLON_HOME
+#RUN git clone -b ucx-integration https://github.com/Sandeepa1995/cylon.git $CYLON_HOME
 
 RUN cd $CYLON_HOME && /bin/bash build.sh -bpath $CYLON_BUILD --cpp --release --cmake-flags "-DCYLON_UCX=ON -DUCX_LIBDIR=$UCX_LIB -DUCX_INCLUDEDIR=$UCX_INCLUDE"
 

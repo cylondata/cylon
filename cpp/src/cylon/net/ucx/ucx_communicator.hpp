@@ -25,7 +25,6 @@ namespace cylon {
 namespace net {
 
 class UCXConfig : public CommConfig {
-  // TODO Sandeepa UCX has a context? Init as config? Later, just get he base running
   void DummyConfig(int dummy);
 
   int GetDummyConfig();
@@ -53,6 +52,8 @@ class UCXCommunicator : public Communicator {
   ucp_worker_h  ucpSendWorker;
   // Endpoint Map
   std::unordered_map<int, ucp_ep_h> endPointMap;
+  // UCP Context - Holds a UCP communication instance's global information.
+  ucp_context_h ucpContext;
 };
 }
 }
