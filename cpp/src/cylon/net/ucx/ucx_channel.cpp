@@ -17,7 +17,6 @@
 #include <iostream>
 #include <utility>
 #include <status.hpp>
-#include <cassert>
 #include <cmath>
 #include <algorithm>
 
@@ -162,8 +161,9 @@ void UCXChannel::UCX_Isend(const void *buffer,
  * @return
  */
 void UCXChannel::linkCommunicator(net::UCXCommunicator *com) {
-  // Link the communicator if by chance is later needed
-  //  this->ucxCom = com;
+  // Commented - Uncomment the variable in header and use if communicator is needed for later use
+//  // Link the communicator if by chance is later needed
+//  this->ucxCom = com;
 
   // Set world size, rank, and workers
   this->worldSize = com->GetWorldSize();
