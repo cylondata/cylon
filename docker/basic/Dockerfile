@@ -27,6 +27,10 @@ ENV PATH="$CYLON_ENV/bin:$PATH"
 
 # Adding Cylon User
 RUN useradd -ms /bin/bash cylon
+
+# Creating folder for the applications
+RUN mkdir /code && chown cylon /code
+
 USER cylon
 WORKDIR /home/cylon
 
