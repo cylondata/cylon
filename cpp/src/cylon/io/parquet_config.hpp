@@ -34,10 +34,10 @@ class ParquetOptions {
   ParquetOptions();
 
   ParquetOptions ConcurrentFileReads(bool file_reads);
-  bool IsConcurrentFileReads();
+  bool IsConcurrentFileReads() const;
 
   ParquetOptions ChunkSize(int64_t chunk_size_);
-  int64_t GetChunkSize();
+  int64_t GetChunkSize() const;
 
   ParquetOptions WriterProperties(std::shared_ptr<parquet::WriterProperties> &writer_properties_);
   std::shared_ptr<parquet::WriterProperties> GetWriterProperties();

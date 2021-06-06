@@ -26,13 +26,13 @@ import argparse
 """
 Run benchmark:
 
->>> python python/examples/op_benchmark/filter_benchmark.py --start_size 1_000_000 \
-                                        --step_size 1_000_000 \
-                                        --end_size 10_000_000 \
+>>> python python/examples/op_benchmark/filter_benchmark.py --start_size 10_000_000 \
+                                        --step_size 10_000_000 \
+                                        --end_size 30_000_000 \
                                         --num_cols 2 \
-                                        --stats_file /tmp/filter_bench.csv \
-                                        --repetitions 1 \
-                                        --duplication_factor 0.9
+                                        --stats_file /tmp/filter_table_bench.csv \
+                                        --repetitions 2 \
+                                        --unique_factor 0.1
 """
 
 
@@ -97,10 +97,10 @@ def fixed_filter_bench():
     print(f"PyArrow Table Creation : {t_ar_e_2 - t_ar_e}")
 
 
-def filter_op(num_rows: int, num_cols: int, duplication_factor: float):
+def filter_op(num_rows: int, num_cols: int, unique_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     ctx.add_config("compute_engine", "numpy")
-    pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
+    pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, unique_factor=unique_factor)
     filter_column  = pdf.columns[0]
     filter_column_data = pdf[pdf.columns[0]]
     random_index = np.random.randint(low=0, high=pdf.shape[0])
@@ -127,7 +127,7 @@ def filter_op(num_rows: int, num_cols: int, duplication_factor: float):
 
 
 def bench_filter_op(start: int, end: int, step: int, num_cols: int, repetitions: int, stats_file: str,
-                    duplication_factor: float):
+                    unique_factor: float):
     all_data = []
     schema = ["num_records", "num_cols", "pandas_filter_cr", "cylon_filter_cr", "pandas_filter",
               "cylon_filter", "speed up filter cr", "speed up filter"]
@@ -140,7 +140,7 @@ def bench_filter_op(start: int, end: int, step: int, num_cols: int, repetitions:
         for idx in range(repetitions):
             pandas_filter_cr_time, pandas_filter_time, cylon_filter_cr_time, cylon_filter_time = filter_op(
                 num_rows=records, num_cols=num_cols,
-                duplication_factor=duplication_factor)
+                unique_factor=unique_factor)
             times.append([pandas_filter_cr_time, pandas_filter_time, cylon_filter_cr_time, cylon_filter_time])
         times = np.array(times).sum(axis=0) / repetitions
         print(f"Filter Op : Records={records}, Columns={num_cols}"
@@ -161,8 +161,8 @@ if __name__ == '__main__':
     parser.add_argument("-e", "--end_size",
                         help="end data size",
                         type=int)
-    parser.add_argument("-d", "--duplication_factor",
-                        help="random data duplication factor",
+    parser.add_argument("-d", "--unique_factor",
+                        help="random data unique factor",
                         type=float)
     parser.add_argument("-s", "--step_size",
                         help="Step size",
@@ -184,7 +184,7 @@ if __name__ == '__main__':
     print(f"Start Data Size : {args.start_size}")
     print(f"End Data Size : {args.end_size}")
     print(f"Step Data Size : {args.step_size}")
-    print(f"Data Duplication Factor : {args.duplication_factor}")
+    print(f"Data Unique Factor : {args.unique_factor}")
     print(f"Number of Columns : {args.num_cols}")
     print(f"Number of Repetitions : {args.repetitions}")
     print(f"Stats File : {args.stats_file}")
@@ -194,4 +194,4 @@ if __name__ == '__main__':
                     num_cols=args.num_cols,
                     repetitions=args.repetitions,
                     stats_file=args.stats_file,
-                    duplication_factor=args.duplication_factor)
+                    unique_factor=args.unique_factor)

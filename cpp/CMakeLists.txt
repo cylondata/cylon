@@ -35,7 +35,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 # cmake modules directories
-set(CYLON_ARROW_VERSION 2.0.0)
+set(CYLON_ARROW_VERSION 4.0.0)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
@@ -55,6 +55,8 @@ if (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "DEBUG")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer ")
+#    # TODO SANDEEPA REVERT!
+#    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer ")
 elseif (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "RELEASE")
     message("Running on Release mode...")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
@@ -140,6 +142,35 @@ option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
 if (CYLON_PARQUET)
     add_definitions(-DBUILD_CYLON_PARQUET)
 endif (CYLON_PARQUET)
+
+# ucx
+option(CYLON_UCX "Build Cylon with UCX" OFF)
+if (CYLON_UCX)
+    # Check if UCX include and lib paths are given
+    if (NOT UCX_INCLUDEDIR)
+        message(FATAL_ERROR "CYLON_UCX is set, UCX_INCLUDEDIR should also be set")
+    endif ()
+    if (NOT UCX_LIBDIR)
+        message(FATAL_ERROR "CYLON_UCX is set, UCX_LIBDIR should also be set")
+    endif ()
+
+    # Definition used for checking
+    add_definitions(-DBUILD_CYLON_UCX)
+
+    # Set UCX found as true
+    set(UCX_FOUND TRUE)
+
+    # Include UCX
+    include_directories(${UCX_INCLUDEDIR})
+    # Set library directory for later use
+    set(UCX_LIBRARIES
+            ${UCX_LIBDIR}/ucx/libuct_cma.so
+            ${UCX_LIBDIR}/ucx/libuct_ib.so
+            ${UCX_LIBDIR}/libuct.so
+            ${UCX_LIBDIR}/libucs.so
+            ${UCX_LIBDIR}/libucm.so
+            ${UCX_LIBDIR}/libucp.so)
+endif (CYLON_UCX)
 
 include(Build)
 

@@ -498,10 +498,9 @@ cdef _is_in_array_like(table: Table, cmp_val, skip_null):
 
     '''
     ar_tb = table.to_arrow().combine_chunks()
-    lookup_opts = a_compute.SetLookupOptions(value_set=cmp_val, skip_null=skip_null)
     is_in_res = []
     for chunk_ar in ar_tb.itercolumns():
-        is_in_res.append(a_compute.is_in(chunk_ar, options=lookup_opts))
+        is_in_res.append(a_compute.is_in(chunk_ar, value_set=cmp_val, skip_nulls=skip_null))
     tb_new = Table.from_arrow(table.context, pa.Table.from_arrays(is_in_res, ar_tb.column_names))
     tb_new.set_index(table.index)
     return tb_new
@@ -517,8 +516,7 @@ def compare_array_like_values(l_org_ar, l_cmp_ar, skip_null=True):
     Returns: PyArrow array
 
     '''
-    s = a_compute.SetLookupOptions(value_set=l_cmp_ar, skip_null=skip_null)
-    return a_compute.is_in(l_org_ar, options=s)
+    return a_compute.is_in(l_org_ar, value_set=l_cmp_ar, skip_nulls=skip_null)
 
 cdef _broadcast(ar, broadcast_coefficient=1):
     # TODO: this method must be efficiently written using Cython
@@ -637,9 +635,10 @@ cdef _tb_compare_dict_values(tb, tb_cmp, skip_null=True):
         if col_validity.as_py():
             chunk_ar_org = tb_ar.column(col_name)
             chunk_ar_cmp = tb_cmp_ar.column(col_name)
-            s = a_compute.SetLookupOptions(value_set=chunk_ar_cmp, skip_null=skip_null)
             col_data_map[col_name] = _compare_two_arrays(a_compute.is_in(chunk_ar_org,
-                                                                         options=s), row_col_validity)
+                                                                         value_set=chunk_ar_cmp,
+                                                                         skip_nulls=skip_null),
+                                                         row_col_validity)
         else:
             col_data_map[col_name] = row_col_validity
     tb_new = Table.from_pydict(tb.context, col_data_map)
@@ -678,9 +677,10 @@ cdef _tb_compare_values(tb, tb_cmp, skip_null=True, index_check=True):
         row_col_validity = a_compute.cast(a_compute.multiply(row, col), pa.bool_())
         chunk_ar_org = tb_ar.column(col_name)
         chunk_ar_cmp = tb_cmp_ar.column(col_name)
-        s = a_compute.SetLookupOptions(value_set=chunk_ar_cmp, skip_null=skip_null)
         col_data_map[col_name] = _compare_two_arrays(a_compute.is_in(chunk_ar_org,
-                                                                     options=s), row_col_validity)
+                                                                     value_set=chunk_ar_cmp,
+                                                                     skip_nulls=skip_null),
+                                                     row_col_validity)
     tb_new = Table.from_pydict(tb.context, col_data_map)
     tb_new.set_index(tb.index)
     return tb_new
@@ -732,7 +732,7 @@ cpdef drop_na(table:Table, how:str, axis=0):
         column_names = ar_tb.column_names
         drop_columns = []
         for col_id, chunk_ar in enumerate(ar_tb.itercolumns()):
-            res = a_compute.cast(a_compute.is_null(chunk_ar), pa.int32())
+            res = a_compute.is_null(chunk_ar)
             sum_val = a_compute.sum(res).as_py()
             if sum_val > 0 and how == FilterType.ANY.value:
                 drop_columns.append(column_names[col_id])
@@ -772,7 +772,6 @@ cpdef drop_na(table:Table, how:str, axis=0):
 
         for i in range(1, column_count):
             sum_res = a_compute.add(sum_res, a_compute.cast(is_null_responses[i], pa.int32()))
-
         filtered_indices = []
 
         for index, value in enumerate(sum_res):

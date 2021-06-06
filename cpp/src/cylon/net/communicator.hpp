@@ -22,7 +22,6 @@ namespace cylon {
 namespace net {
 
 class Communicator {
-
  protected:
   int rank = -1;
   int world_size = -1;
@@ -34,6 +33,8 @@ class Communicator {
   virtual void Finalize() = 0;
   virtual void Barrier() = 0;
   virtual CommType GetCommType() = 0;
+
+  virtual ~Communicator() = default;
 };
 }
 }

@@ -19,3 +19,4 @@ cylon_install_all_headers("cylon/net")
 
 add_subdirectory(ops)
 add_subdirectory(mpi)
+add_subdirectory(ucx)

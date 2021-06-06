@@ -23,7 +23,7 @@ ParquetOptions ParquetOptions::ConcurrentFileReads(bool file_reads) {
   this->concurrent_file_reads = file_reads;
   return *this;
 }
-bool ParquetOptions::IsConcurrentFileReads() {
+bool ParquetOptions::IsConcurrentFileReads() const {
   return this->concurrent_file_reads;
 }
 
@@ -31,7 +31,7 @@ ParquetOptions ParquetOptions::ChunkSize(int64_t chunk_size_) {
   this->chunk_size = chunk_size_;
   return *this;
 }
-int64_t ParquetOptions::GetChunkSize() {
+int64_t ParquetOptions::GetChunkSize() const {
   return this->chunk_size;
 }
 
@@ -52,8 +52,7 @@ std::shared_ptr<parquet::ArrowWriterProperties> ParquetOptions::GetArrowWriterPr
   return this->arrow_writer_properties;
 }
 
-ParquetOptions::ParquetOptions() {
-}
+ParquetOptions::ParquetOptions() = default;
 }  // namespace config
 }  // namespace io
 }  // namespace cylon

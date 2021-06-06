@@ -50,4 +50,41 @@ TEST_CASE("Multi Index Join testing", "[multi_join]") {
          join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, cylon::join::config::JoinAlgorithm::HASH, "l_", "r_");
      REQUIRE(test::TestJoinOperation(jc, ctx, path1, path2, out_path) == 0);
    }
-}
+ }
+
+ TEST_CASE("Join testing chunks", "[join]") {
+   std::shared_ptr<Table> _t1, _t2, t1, t2, out;
+   std::shared_ptr<arrow::Table> at1, at2;
+
+   REQUIRE(test::CreateTable(ctx, 4, _t1).is_ok()); // create dummy table
+   REQUIRE(_t1->ToArrowTable(at1).is_ok()); // convert to arrow
+   auto res1 = arrow::ConcatenateTables({at1, at1}); // concat same table
+   REQUIRE(res1.ok());
+   REQUIRE(Table::FromArrowTable(ctx, res1.ValueOrDie(), t1).is_ok()); // use concat table
+
+   REQUIRE(test::CreateTable(ctx, 2, _t2).is_ok()); // create dummy table
+   REQUIRE(_t2->ToArrowTable(at2).is_ok()); // convert to arrow
+   auto res2 = arrow::ConcatenateTables({at2, at2}); // concat same table
+   REQUIRE(res2.ok());
+   REQUIRE(Table::FromArrowTable(ctx, res2.ValueOrDie(), t2).is_ok()); // use concat table
+
+   SECTION("testing inner joins - sort") {
+     const auto &jc = join::config::JoinConfig::InnerJoin(0, 0, join::config::JoinAlgorithm::SORT);
+     REQUIRE(DistributedJoin(t1, t2, jc, out).is_ok()); // just check if runs without a problem
+   }
+
+   SECTION("testing inner joins - hash") {
+     const auto &jc = join::config::JoinConfig::InnerJoin(0, 0, join::config::JoinAlgorithm::HASH);
+     REQUIRE(DistributedJoin(t1, t2, jc, out).is_ok()); // just check if runs without a problem
+   }
+
+   SECTION("testing inner joins - sort") {
+     const auto &jc = join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, join::config::JoinAlgorithm::SORT);
+     REQUIRE(DistributedJoin(t1, t2, jc, out).is_ok()); // just check if runs without a problem
+   }
+
+   SECTION("testing inner joins - hash") {
+     const auto &jc = join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, join::config::JoinAlgorithm::HASH);
+     REQUIRE(DistributedJoin(t1, t2, jc, out).is_ok()); // just check if runs without a problem
+   }
+ }

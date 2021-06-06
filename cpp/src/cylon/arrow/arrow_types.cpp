@@ -19,10 +19,7 @@
 namespace cylon {
 namespace tarrow {
 
-std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataType> &tType,
-                                                    int32_t width,
-                                                    int32_t precision,
-                                                    int32_t scale) {
+std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataType> &tType, int32_t width) {
   switch (tType->getType()) {
     case Type::BOOL:return std::make_shared<arrow::BooleanType>();
     case Type::UINT8:return std::make_shared<arrow::UInt8Type>();
@@ -47,11 +44,8 @@ std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataTy
     case Type::TIMESTAMP:return std::make_shared<arrow::TimestampType>();
     case Type::TIME32:return std::make_shared<arrow::Time32Type>();
     case Type::TIME64:return std::make_shared<arrow::Time64Type>();
-    case Type::DECIMAL: {
-      if (width < 0 || precision < 0 || scale < 0) break;
-      return std::make_shared<arrow::DecimalType>(width, precision, scale);
-    }
     case Type::DURATION:return std::make_shared<arrow::DurationType>();
+    case Type::DECIMAL: break;
     case Type::INTERVAL:break;
     case Type::LIST:break;
     case Type::FIXED_SIZE_LIST:break;
@@ -118,6 +112,7 @@ bool validateArrowTableTypes(const std::shared_ptr <arrow::Table> &table) {
       case arrow::Type::SPARSE_UNION:return false;
       case arrow::Type::DENSE_UNION:return false;
       case arrow::Type::MAX_ID:return false; // types above are NOT allowed. return false
+      case arrow::Type::DECIMAL256:break;
     }
   }
   return true;
@@ -162,6 +157,7 @@ std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &ar
     case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
     case arrow::Type::MAX_ID:break;
+    case arrow::Type::DECIMAL256:break;
   }
   return nullptr;
 }

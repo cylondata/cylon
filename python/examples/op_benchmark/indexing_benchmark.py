@@ -4,7 +4,7 @@ import numpy as np
 import pycylon as cn
 from pycylon import Table
 from pycylon.io import CSVWriteOptions
-from pycylon.indexing.index import IndexingSchema
+from pycylon.indexing.index import IndexingType
 import argparse
 from bench_util import get_dataframe
 
@@ -13,42 +13,46 @@ Run benchmark:
 
 >>> python python/examples/op_benchmark/indexing_benchmark.py --start_size 1_000_000 \
                                         --step_size 1_000_000 \
-                                        --end_size 20_000_000 \
+                                        --end_size 10_000_000 \
                                         --num_cols 2 \
                                         --stats_file /tmp/indexing_bench.csv \
-                                        --duplication_factor 0.9 \
+                                        --unique_factor 0.1 \
                                         --repetitions 1
 """
 
 
-def indexing_op(num_rows: int, num_cols: int, duplication_factor: float):
+def indexing_op(num_rows: int, num_cols: int, unique_factor: float):
+    from pycylon.indexing.index import IndexingType
     ctx: cn.CylonContext = cn.CylonContext(config=None, distributed=False)
-    pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
+    pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, unique_factor=unique_factor)
     filter_column = pdf.columns[0]
     filter_column_data = pdf[pdf.columns[0]]
     random_index = np.random.randint(low=0, high=pdf.shape[0])
     filter_value = filter_column_data.values[random_index]
+    filter_values = filter_column_data.values.tolist()[0:pdf.shape[0] // 2]
     tb = Table.from_pandas(ctx, pdf)
     cylon_indexing_time = time.time()
-    tb.set_index(filter_column, drop=True)
+    tb.set_index(filter_column, indexing_type=IndexingType.LINEAR, drop=True)
     cylon_indexing_time = time.time() - cylon_indexing_time
     pdf_indexing_time = time.time()
     pdf.set_index(filter_column, drop=True, inplace=True)
     pdf_indexing_time = time.time() - pdf_indexing_time
 
     cylon_filter_time = time.time()
-    tb_filter = tb.loc[filter_value]
+    tb_filter = tb.loc[filter_values]
     cylon_filter_time = time.time() - cylon_filter_time
 
     pandas_filter_time = time.time()
-    pdf_filtered = pdf.loc[filter_value]
+    pdf_filtered = pdf.loc[filter_values]
     pandas_filter_time = time.time() - pandas_filter_time
+
+    print(tb_filter.shape, pdf_filtered.shape)
 
     return pandas_filter_time, cylon_filter_time, pdf_indexing_time, cylon_indexing_time
 
 
 def bench_indexing_op(start: int, end: int, step: int, num_cols: int, repetitions: int, stats_file: str,
-                      duplication_factor: float):
+                      unique_factor: float):
     all_data = []
     schema = ["num_records", "num_cols", "pandas_loc", "cylon_loc", "speed up loc", "pandas_indexing", "cylon_indexing",
               "speed up indexing"]
@@ -61,7 +65,7 @@ def bench_indexing_op(start: int, end: int, step: int, num_cols: int, repetition
         for idx in range(repetitions):
             pandas_filter_time, cylon_filter_time, pdf_indexing_time, cylon_indexing_time = indexing_op(
                 num_rows=records, num_cols=num_cols,
-                duplication_factor=duplication_factor)
+                unique_factor=unique_factor)
             times.append([pandas_filter_time, cylon_filter_time, pdf_indexing_time, cylon_indexing_time])
         times = np.array(times).sum(axis=0) / repetitions
         print(
@@ -83,8 +87,8 @@ if __name__ == '__main__':
     parser.add_argument("-e", "--end_size",
                         help="end data size",
                         type=int)
-    parser.add_argument("-d", "--duplication_factor",
-                        help="random data duplication factor",
+    parser.add_argument("-d", "--unique_factor",
+                        help="random data unique factor",
                         type=float)
     parser.add_argument("-s", "--step_size",
                         help="Step size",
@@ -106,7 +110,7 @@ if __name__ == '__main__':
     print(f"Start Data Size : {args.start_size}")
     print(f"End Data Size : {args.end_size}")
     print(f"Step Data Size : {args.step_size}")
-    print(f"Data Duplication Factor : {args.duplication_factor}")
+    print(f"Data Unique Factor : {args.unique_factor}")
     print(f"Number of Columns : {args.num_cols}")
     print(f"Number of Repetitions : {args.repetitions}")
     print(f"Stats File : {args.stats_file}")
@@ -116,4 +120,4 @@ if __name__ == '__main__':
                       num_cols=args.num_cols,
                       repetitions=args.repetitions,
                       stats_file=args.stats_file,
-                      duplication_factor=args.duplication_factor)
+                      unique_factor=args.unique_factor)

@@ -255,26 +255,24 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
                    const std::vector<int32_t> &idx_cols,
                    const std::vector<std::pair<int32_t, std::shared_ptr<compute::AggregationOp>>> &aggregations,
                    std::shared_ptr<Table> &output) {
+#ifdef CYLON_DEBUG
   auto t1 = std::chrono::steady_clock::now();
-
-  auto ctx = table->GetContext();
+#endif
+  const auto& ctx = table->GetContext();
   arrow::MemoryPool *pool = ToArrowPool(ctx);
 
   std::shared_ptr<arrow::Table> atable = table->get_table();
-  if (atable->column(0)->num_chunks() > 1) { // todo: make this work with chunked arrays
-    const auto &res = atable->CombineChunks(pool);
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-    atable = res.ValueOrDie();
-  }
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(atable, pool); // todo: make this work with chunked arrays
+#ifdef CYLON_DEBUG
   auto t2 = std::chrono::steady_clock::now();
-
+#endif
   std::vector<int64_t> group_ids;
   int64_t unique_groups = 0;
   std::shared_ptr<arrow::Array> group_filter;
   RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, group_filter, &unique_groups));
-
+#ifdef CYLON_DEBUG
   auto t3 = std::chrono::steady_clock::now();
-
+#endif
   std::vector<std::shared_ptr<arrow::ChunkedArray>> new_arrays;
   std::vector<std::shared_ptr<arrow::Field>> new_fields;
   int new_cols = (int) (idx_cols.size() + aggregations.size());
@@ -312,14 +310,14 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   const auto &schema = std::make_shared<arrow::Schema>(new_fields);
   std::shared_ptr<arrow::Table> agg_table = arrow::Table::Make(schema, new_arrays);
 
-  output = std::make_shared<Table>(agg_table, ctx);
+  output = std::make_shared<Table>(ctx, agg_table);
+#ifdef CYLON_DEBUG
   auto t4 = std::chrono::steady_clock::now();
-
   LOG(INFO) << "hash groupby setup:" << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
             << " make_groups:" << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
             << " aggregate:" << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count()
             << " total:" << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t1).count();
-
+#endif
   return Status::OK();
 }
 

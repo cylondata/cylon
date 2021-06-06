@@ -39,8 +39,8 @@ pycylon_wrap_table,
 pycylon_unwrap_csv_read_options,
 pycylon_unwrap_csv_write_options,
 pycylon_unwrap_sort_options,
-pycylon_wrap_base_index,
-pycylon_unwrap_base_index,
+pycylon_wrap_base_arrow_index,
+pycylon_unwrap_base_arrow_index,
 pycylon_unwrap_join_config)
 
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
@@ -52,9 +52,9 @@ from pycylon.data import compute
 from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
 from pycylon.indexing.index_utils import IndexUtil
 
-from pycylon.indexing.index cimport CBaseIndex
-from pycylon.indexing.index import BaseIndex
-from pycylon.indexing.index import IndexingSchema
+from pycylon.indexing.index cimport CBaseArrowIndex
+from pycylon.indexing.index import BaseArrowIndex
+from pycylon.indexing.index import IndexingType
 from pycylon.indexing.index import PyLocIndexer
 
 from pycylon.util.type_utils import get_arrow_type
@@ -63,10 +63,9 @@ import math
 import pyarrow as pa
 import numpy as np
 import pandas as pd
-from typing import List, Any
+from typing import List
 import warnings
 import operator
-import copy
 
 '''
 Cylon Table definition mapping 
@@ -76,7 +75,7 @@ cdef class Table:
     def __init__(self, pyarrow_table=None, context=None):
         self.initialize(pyarrow_table, context)
         self._index = None
-        self._indexing_schema = IndexingSchema.RANGE
+        self._indexing_type = IndexingType.RANGE
 
     def __cinit__(self, pyarrow_table=None, context=None, columns=None):
         """
@@ -87,14 +86,14 @@ cdef class Table:
         """
         self.initialize(pyarrow_table, context)
         self._index = None
-        self._indexing_schema = IndexingSchema.RANGE
+        self._indexing_type = IndexingType.RANGE
 
     def initialize(self, pyarrow_table=None, context=None):
         cdef shared_ptr[CArrowTable] c_arrow_tb_shd_ptr
         if self._is_pycylon_context(context) and self._is_pyarrow_table(pyarrow_table):
             c_arrow_tb_shd_ptr = pyarrow_unwrap_table(pyarrow_table)
             self.sp_context = pycylon_unwrap_context(context)
-            self.table_shd_ptr = make_shared[CTable](c_arrow_tb_shd_ptr, self.sp_context)
+            self.table_shd_ptr = make_shared[CTable](self.sp_context, c_arrow_tb_shd_ptr)
 
     cdef void init(self, const shared_ptr[CTable]& table):
         self.table_shd_ptr = table
@@ -342,7 +341,7 @@ cdef class Table:
         """
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
-        cdef CJoinConfig*jcptr
+        cdef CJoinConfig *jcptr
 
         left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
         left_prefix = kwargs.get('left_prefix') if 'left_prefix' in kwargs else ""
@@ -368,7 +367,7 @@ cdef class Table:
         """
         cdef shared_ptr[CTable] output
         cdef shared_ptr[CTable] right = pycylon_unwrap_table(table)
-        cdef CJoinConfig*jcptr
+        cdef CJoinConfig *jcptr
 
         left_cols, right_cols = self._get_join_column_indices(table=table, **kwargs)
         left_prefix = kwargs.get('left_prefix') if 'left_prefix' in kwargs else ""
@@ -1169,7 +1168,7 @@ cdef class Table:
         Sets values for a existing table by means of a column
         Args:
             key: (str) column-name
-            value: (Table) data as a single column table
+            value: (Table) data as a single column table or a scalar
 
         Returns: PyCylon Table
 
@@ -2054,7 +2053,7 @@ cdef class Table:
         '''
         return self.get_index()
 
-    def set_index(self, key, indexing_schema: IndexingSchema = IndexingSchema.LINEAR,
+    def set_index(self, key, indexing_type: IndexingType = IndexingType.LINEAR,
                   drop: bool = False):
         '''
         Set Index
@@ -2098,17 +2097,48 @@ cdef class Table:
         # TODO: Multi-Indexing support: https://github.com/cylondata/cylon/issues/233
         # TODO: Enhancing: https://github.com/cylondata/cylon/issues/235
         cdef shared_ptr[CTable] indexed_cylon_table
-        cdef shared_ptr[CBaseIndex] c_base_index
+        cdef shared_ptr[CBaseArrowIndex] c_base_arrow_index
 
-        if isinstance(key, BaseIndex):
-            c_base_index = pycylon_unwrap_base_index(key)
-            self.table_shd_ptr.get().Set_Index(c_base_index, False)
+        if isinstance(key, BaseArrowIndex):
+            c_base_arrow_index = pycylon_unwrap_base_arrow_index(key)
+            self.table_shd_ptr.get().SetArrowIndex(c_base_arrow_index, False)
         else:
             indexed_table = process_index_by_value(key=key, table=self,
-                                                   index_schema=indexing_schema,
+                                                   indexing_type=indexing_type,
                                                    drop_index=drop)
             indexed_cylon_table = pycylon_unwrap_table(indexed_table)
             self.init(indexed_cylon_table)
+
+    # def _reset_index(self, drop_index: bool = False) -> Table:
+    #     """
+    #     reset_index
+    #     Here the existing index can be removed and set back to table.
+    #     This operation takes place in place.
+    #     Args:
+    #         drop_index: bool, if True the column is dropped otherwise added to the table with the
+    #         column name "index"
+    #
+    #     Returns: None
+    #
+    #     Examples
+    #     --------
+    #
+    #     >>> tb
+    #             col-2  col-3
+    #         1      5      9
+    #         2      6     10
+    #         3      7     11
+    #         4      8     12
+    #
+    #     >>> tb.reset_index()
+    #             col-1  col-2  col-3
+    #         0      1      5      9
+    #         1      2      6     10
+    #         2      3      7     11
+    #         3      4      8     12
+    #     """
+    #     cdef bool c_drop_index = drop_index
+    #     self.table_shd_ptr.get().ResetIndex(c_drop_index)
 
     def reset_index(self, drop_index: bool = False) -> Table:
         """
@@ -2139,7 +2169,7 @@ cdef class Table:
             3      4      8     12
         """
         cdef bool c_drop_index = drop_index
-        self.table_shd_ptr.get().ResetIndex(c_drop_index)
+        self.table_shd_ptr.get().ResetArrowIndex(c_drop_index)
 
     def dropna(self, axis=0, how='any', inplace=False):
         '''
@@ -2253,17 +2283,21 @@ cdef class Table:
         return Table.from_arrow(self.context,
                                 pa.Table.from_arrays(new_chunks, self.column_names))
 
-    def get_index(self) -> BaseIndex:
-        cdef shared_ptr[CBaseIndex] c_index = self.table_shd_ptr.get().GetIndex()
-        return pycylon_wrap_base_index(c_index)
+    # def _get_index(self) -> BaseIndex:
+    #     cdef shared_ptr[CBaseIndex] c_index = self.table_shd_ptr.get().GetIndex()
+    #     return pycylon_wrap_base_index(c_index)
+
+    def get_index(self) -> BaseArrowIndex:
+        cdef shared_ptr[CBaseArrowIndex] c_index = self.table_shd_ptr.get().GetArrowIndex()
+        return pycylon_wrap_base_arrow_index(c_index)
 
     @property
-    def indexing_schema(self):
-        return self._indexing_schema
+    def indexing_type(self):
+        return self._indexing_type
 
-    @indexing_schema.setter
-    def indexing_schema(self, schema):
-        self._indexing_schema = schema
+    @indexing_type.setter
+    def indexing_type(self, type):
+        self._indexing_type = type
 
     @property
     def loc(self) -> PyLocIndexer:
@@ -2331,8 +2365,10 @@ cdef class Table:
         return PyLocIndexer(self, "iloc")
 
     @staticmethod
-    def concat(tables: List[Table], axis: int = 0, join: str = 'inner', algorithm: str = 'sort', distributed=False):
+    def concat(tables: List[Table], axis: int = 0, join: str = 'inner', algorithm: str = 'sort'):
         """
+        Concatenate tables. axis=0 (row-wise) concat is independent from local/ distributed execution.
+
         Algorithm
         =========
         axis=1 (regular join op considering a column)
@@ -2356,46 +2392,45 @@ cdef class Table:
         Returns: PyCylon Table
 
         """
-        if axis == 0:
-            res_table = tables[0]
-            if not isinstance(res_table, Table):
-                raise ValueError(f"Invalid object {res_table}, expected Table")
-            formatted_tables = []
-            new_column_names = res_table.column_names
-            for tb_idx in range(len(tables)):
-                tb1 = tables[tb_idx]
-                tb1.reset_index()
-            res_table = Table.merge(tables)
-            res_table.set_index(res_table.column_names[0], drop=True)
-            for tb_idx in range(len(tables)):
-                tb1 = tables[tb_idx]
-                tb1.set_index(tb1.column_names[0], drop=True)
-            return res_table
-        elif axis == 1:
-            if not isinstance(tables[0], Table):
-                raise ValueError(f"Invalid object {tables[0]}, Table expected")
-            ctx = tables[0].context
-            res_table = tables[0]
-            for i in range(1, len(tables)):
-                tb1 = tables[i]
-                if not isinstance(tb1, Table):
-                    raise ValueError(f"Invalid object {tb1}, expected Table")
-                tb1.reset_index()
-                res_table.reset_index()
-                if ctx.get_world_size() > 1 and distributed:
-                    res_table = res_table.distributed_join(table=tb1, join_type=join,
-                                                           algorithm=algorithm,
-                                                           left_on=[res_table.column_names[0]],
-                                                           right_on=[tb1.column_names[0]])
-                else:
-                    res_table = res_table.join(table=tb1, join_type=join, algorithm=algorithm,
-                                               left_on=[res_table.column_names[0]],
-                                               right_on=[tb1.column_names[0]])
-                res_table.set_index(res_table.column_names[0], drop=True)
-                res_table.drop([tb1.column_names[0]], inplace=True)
-                tb1.set_index(tb1.column_names[0], drop=True)
-            tables[0].set_index(tables[0].column_names[0], drop=True)
-            return res_table
+        return _concat_impl(tables=tables, axis=axis, join=join, algorithm=algorithm)
+
+    @staticmethod
+    def distributed_concat(tables: List[Table], axis: int = 0, join: str = 'inner', algorithm: str = 'sort'):
+        """
+        Concatenate tables. axis=0 (row-wise) concat is independent from local/ distributed execution.
+
+        Algorithm
+        =========
+        axis=1 (regular join op considering a column)
+        ----------------------------------------------
+
+        1. If indexed or not, do a reset_index op (which will add the new column as 'index' in both
+        tables)
+        2. Do the regular join by considering the 'index' column
+        3. Set the index by 'index' in the resultant table
+
+        axis=0 (stacking tables or similar to merge function)
+        -----------------------------------------------------
+        assert: column count must match
+        the two tables are stacked upon each other in order
+        The index is created by concatenating two indices
+        Args:
+            tables: List of PyCylon Tables
+            axis: 0:row-wise 1:column-wise
+            join: 'inner' and 'outer'
+            algorithm: 'sort' or 'hash'
+        Returns: PyCylon Table
+
+        """
+        if not isinstance(tables[0], Table):
+            raise ValueError(f"Invalid object {tables[0]}, Table expected")
+        ctx = tables[0].context
+
+        if axis == 0 or (axis == 1 and ctx.get_world_size() == 1):
+            return _concat_impl(tables=tables, axis=axis, join=join, algorithm=algorithm)
+        elif axis == 1 and ctx.get_world_size() > 1:
+            return _concat_impl(tables=tables, axis=axis, join=join, algorithm=algorithm,
+                                axis1_join_func='distributed_join')
         else:
             raise ValueError(f"Invalid axis {axis}, must 0 or 1")
 
@@ -2489,6 +2524,51 @@ cdef class Table:
             return new_cn_table
         else:
             raise ValueError("Unsupported data type representation")
+
+    def __len__(self) -> int:
+        return self.row_count
+
+def _concat_impl(tables: List[Table], axis: int = 0, join: str = 'inner', algorithm: str = 'sort',
+                 axis1_join_func: str = 'join'):
+    # row-wise concat -> locally stacking up tables
+    if axis == 0:
+        res_table = tables[0]
+        if not isinstance(res_table, Table):
+            raise ValueError(f"Invalid object {res_table}, expected Table")
+        formatted_tables = []
+        new_column_names = res_table.column_names
+        for tb_idx in range(len(tables)):
+            tb1 = tables[tb_idx]
+            tb1.reset_index()
+        res_table = Table.merge(tables)
+        res_table.set_index(res_table.column_names[0], drop=True)
+        for tb_idx in range(len(tables)):
+            tb1 = tables[tb_idx]
+            tb1.set_index(tb1.column_names[0], drop=True)
+        return res_table
+    elif axis == 1:
+        if not isinstance(tables[0], Table):
+            raise ValueError(f"Invalid object {tables[0]}, Table expected")
+        ctx = tables[0].context
+        res_table = tables[0]
+        for i in range(1, len(tables)):
+            tb1 = tables[i]
+            if not isinstance(tb1, Table):
+                raise ValueError(f"Invalid object {tb1}, expected Table")
+            tb1.reset_index()
+            res_table.reset_index()
+            # call method name by string
+            res_table = getattr(res_table, axis1_join_func)(table=tb1, join_type=join,
+                                                            algorithm=algorithm,
+                                                            left_on=[res_table.column_names[0]],
+                                                            right_on=[tb1.column_names[0]])
+            res_table.set_index(res_table.column_names[0], drop=True)
+            res_table.drop([tb1.column_names[0]], inplace=True)
+            tb1.set_index(tb1.column_names[0], drop=True)
+        tables[0].set_index(tables[0].column_names[0], drop=True)
+        return res_table
+    else:
+        raise ValueError(f"Invalid axis {axis}, must 0 or 1")
 
 
 class EmptyTable(Table):

@@ -337,7 +337,7 @@ class RangePartitionKernel : public PartitionKernel {
   using ARROW_C_T = typename arrow::TypeTraits<ARROW_T>::CType;
 
  public:
-  RangePartitionKernel(std::shared_ptr<CylonContext> &ctx,
+  RangePartitionKernel(const std::shared_ptr<CylonContext> &ctx,
                        bool ascending,
                        uint64_t num_samples,
                        uint32_t num_bins) : PartitionKernel(),
@@ -449,13 +449,13 @@ class RangePartitionKernel : public PartitionKernel {
   const bool ascending;
   const uint32_t num_bins;
   const uint64_t num_samples;
-  std::shared_ptr<CylonContext> ctx; // todo dont need a copy here
+  const std::shared_ptr<CylonContext> &ctx;
   std::vector<uint32_t> bin_to_partition;
   ARROW_C_T min, max, range;
 };
 
 std::unique_ptr<PartitionKernel> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
-                                                            std::shared_ptr<CylonContext> &ctx,
+                                                            const std::shared_ptr<CylonContext> &ctx,
                                                             bool ascending,
                                                             uint64_t num_samples,
                                                             uint32_t num_bins) {

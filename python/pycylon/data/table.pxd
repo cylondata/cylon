@@ -28,16 +28,16 @@ from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
-from pycylon.indexing.index cimport CBaseIndex
-from pycylon.indexing.index import BaseIndex
+from pycylon.indexing.index cimport CBaseArrowIndex
+from pycylon.indexing.index import BaseArrowIndex
 
 
 cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CTable "cylon::Table":
-        CTable(shared_ptr[CArrowTable] & tab, shared_ptr[CCylonContext] & ctx)
+        CTable(const shared_ptr[CCylonContext] & ctx, shared_ptr[CArrowTable] tab)
 
         @ staticmethod
-        CStatus FromArrowTable(shared_ptr[CCylonContext] & ctx, shared_ptr[CArrowTable] & table,
+        CStatus FromArrowTable(const shared_ptr[CCylonContext] & ctx, const shared_ptr[CArrowTable] & table,
                                shared_ptr[CTable] & tableOut)
 
         CStatus ToArrowTable(shared_ptr[CArrowTable] & output)
@@ -52,7 +52,7 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         void Clear()
 
-        shared_ptr[CCylonContext] GetContext()
+        const shared_ptr[CCylonContext] & GetContext()
 
         vector[string] ColumnNames()
 
@@ -60,11 +60,11 @@ cdef extern from "../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         bool IsRetain() const
 
-        CStatus Set_Index(shared_ptr[CBaseIndex] & index, bool drop)
+        CStatus SetArrowIndex(shared_ptr[CBaseArrowIndex] & index, bool drop)
 
-        shared_ptr[CBaseIndex] GetIndex()
+        shared_ptr[CBaseArrowIndex] GetArrowIndex()
 
-        CStatus ResetIndex(bool drop)
+        CStatus ResetArrowIndex(bool drop)
 
         CStatus AddColumn(long position, string column_name, shared_ptr[CArrowArray] & input_column)
 

@@ -14,21 +14,70 @@
 
 
 from __future__ import annotations
-from typing import Hashable, List, Dict, Optional, Sequence, Union, Final
-from copy import copy
+
 from collections.abc import Iterable
-import pycylon as cn
+from copy import copy
+from typing import Hashable, List, Dict, Optional, Sequence, Union
+
 import numpy as np
+import pandas
 import pandas as pd
 import pyarrow as pa
-from pycylon import Series
-from pycylon.index import RangeIndex, CategoricalIndex
-from pycylon.io import CSVWriteOptions
-from pycylon.io import CSVReadOptions
 
+import pycylon as cn
+import pycylon.data as pcd
 from pycylon import CylonContext
+from pycylon import Series
+from pycylon.data.table import SortOptions
+from pycylon.index import RangeIndex, CategoricalIndex
+from pycylon.io import CSVReadOptions
+from pycylon.io import CSVWriteOptions
 
-DEVICE_CPU: Final = "cpu"
+DEVICE_CPU = "cpu"
+
+
+# Data loading Functions
+def read_csv(filepath: str, use_threads=True, names=None, sep=",", block_size: int = 1 << 20,
+             skiprows=0,
+             ignore_emptylines=True, na_values=None):
+    """
+    Read a comma-separated values (csv) file into DataFrame.
+
+    Parameters
+    ----------
+    filepath : A valid str path to the file
+    sep : str, default ,
+        Delimiter to use. 
+    names : array-like, optional
+        List of column names to use. If the file contains a header row,
+        then you should explicitly pass ``header=0`` to override the column names.
+        Duplicates in this list are not allowed.
+    block_size : int, default 1MB
+        Arrow block size to be used when chunking the final Cylon table
+    skiprows : int, optional, default 0
+        Line numbers to skip (0-indexed) or number of lines to skip (int)
+        at the start of the file.
+    ignore_emptylines: bool, default True
+        Whether to keep or ignore empty lines in the csv file
+    na_values : list-like, optional
+        Additional strings to recognize as NA/NaN.
+    """
+    read_config = CSVReadOptions().use_threads(
+        use_threads).block_size(block_size).with_delimiter(sep).skip_rows(skiprows)
+
+    if ignore_emptylines:
+        read_config.ignore_emptylines()
+
+    if na_values is not None:
+        read_config.na_values(na_values)
+
+    if names is not None:
+        read_config.use_cols(names)
+
+    table = pcd.csv.read_csv(CylonContext(
+        config=None, distributed=False), filepath, read_config)
+
+    return DataFrame(table)
 
 
 class CylonEnv(object):
@@ -62,16 +111,87 @@ class CylonEnv(object):
     def barrier(self):
         self._context.barrier()
 
-    def __del__(self):
+
+class GroupByDataFrame(object):
+    def __init__(self, df: DataFrame, by=None) -> None:
+        super().__init__()
+        self.df = df
+        self.by = by
+        self.by_diff = set(df.columns) - set(by)
+
+    def __do_groupby(self, op_dict) -> DataFrame:
+        return DataFrame(self.df.to_table().groupby(self.by, op_dict))
+
+    def __apply_on_remaining_columns(self, op: str) -> DataFrame:
+        op_dict = {}
+        for c in self.by_diff:
+            op_dict[c] = op
+        return self.__do_groupby(op_dict)
+
+    def min(self) -> DataFrame:
         """
-        On destruction of the application, the environment will be automatically finalized
+        Apply min operator on each remaining column  which has not been used for grouping
         """
-        self.finalize()
+        return self.__apply_on_remaining_columns("min")
+
+    def max(self) -> DataFrame:
+        """
+        Apply max operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("max")
+
+    def sum(self) -> DataFrame:
+        """
+        Apply sum operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("sum")
+
+    def count(self) -> DataFrame:
+        """
+        Apply count operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("count")
+
+    def mean(self) -> DataFrame:
+        """
+        Apply mean operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("mean")
+
+    def std(self) -> DataFrame:
+        """
+        Apply standard deviation operator on each remaining column  which has not been used for grouping
+        """
+        return self.__apply_on_remaining_columns("std")
+
+    def agg(self, dic: dict) -> DataFrame:
+        """
+        Apply different aggregation operations on each remainign column
+        which has not been used for grouping
+
+        Args:
+            dic : A dictionary specifying aggregation operation for each column
+        """
+        return self.__do_groupby(dic)
 
 
 class DataFrame(object):
 
     def __init__(self, data=None, index=None, columns=None, copy=False):
+        """
+        Construct a Cylon DataFrame
+
+        Parameters
+        ----------
+        data : Python list, ndarray, Pandas Dataframe, Arrow Table or a Cylon Table
+        columns : Optional set of column names
+        copy : By default, Cylon will try not to copy data when constructing a datframe from ndarray, 
+            Pandas Dataframe, Arrow Table or a Cylon Table. This behavior can be forcefully overridden by setting this flag.
+
+        Returns
+        -------
+        DataFrame
+        """
         self._index = None
         self._columns = []
 
@@ -101,16 +221,18 @@ class DataFrame(object):
     def is_device(self, device):
         return self._device == device
 
-    def _change_context(self, env: CylonEnv):
+    def _change_context(self, env: CylonEnv) -> DataFrame:
         """
         This is a temporary function to make the DataFrame backed by a Cylon Table with a different context.
         This should be removed once C++ support Tables which are independent from Contexts
         """
         self._table = self._initialize_dataframe(
-            data=self._table.to_arrow(), index=self._index, columns=self._columns, copy=False, context=env.context)
+            data=self._table.to_arrow(), index=self._index, columns=self._columns, copy=False,
+            context=env.context)
         return self
 
-    def _initialize_dataframe(self, data=None, index=None, columns=None, copy=False, context=CylonContext(config=None, distributed=False)):
+    def _initialize_dataframe(self, data=None, index=None, columns=None, copy=False,
+                              context=CylonContext(config=None, distributed=False)):
         rows = 0
         cols = 0
         self._table = None
@@ -298,7 +420,7 @@ class DataFrame(object):
             Sets values for a existing dataframe by means of a column
             Args:
                 key: (str) column-name
-                value: (DataFrame) data as a single column table
+                value: (DataFrame) data as a single column table or a scalar
 
             Returns: PyCylon DataFrame
 
@@ -327,8 +449,11 @@ class DataFrame(object):
                 3      4      8    120   1120
         '''
 
-        if isinstance(key, str) and isinstance(value, DataFrame):
-            self._table.__setitem__(key, value.to_table())
+        if isinstance(key, str):
+            if isinstance(value, DataFrame):
+                self._table.__setitem__(key, value.to_table())
+            elif np.isscalar(value):
+                self._table.__setitem__(key, value)
         else:
             raise ValueError(f"Not Implemented __setitem__ option for key Type {type(key)} and "
                              f"value type {type(value)}")
@@ -336,39 +461,43 @@ class DataFrame(object):
     def __repr__(self):
         return self._table.__repr__()
 
+    def __len__(self) -> int:
+        return self._table.row_count
+
     def __eq__(self, other) -> DataFrame:
         '''
-                Equal operator for DataFrame
-                Args:
-                    other: can be a numeric scalar or a DataFrame
+        Equal operator for DataFrame
+        Args:
+            other: can be a numeric scalar or a DataFrame
 
-                Returns: PyCylon DataFrame
+        Returns: PyCylon DataFrame
 
-                Examples
-                --------
+        Examples
+        --------
 
-                >>> df
-                       col-1  col-2  col-3
-                    0      1      5      9
-                    1      2      6     10
-                    2      3      7     11
-                    3      4      8     12
+        >>> df
+               col-1  col-2  col-3
+            0      1      5      9
+            1      2      6     10
+            2      3      7     11
+            3      4      8     12
 
-                >>> df['col-1'] == 2
-                       col-1
-                    0  False
-                    1   True
-                    2  False
-                    3  False
+        >>> df['col-1'] == 2
+               col-1
+            0  False
+            1   True
+            2  False
+            3  False
 
-                >>> df == 2
-                       col-1  col-2  col-3
-                    0  False  False  False
-                    1   True  False  False
-                    2  False  False  False
-                    3  False  False  False
+        >>> df == 2
+               col-1  col-2  col-3
+            0  False  False  False
+            1   True  False  False
+            2  False  False  False
+            3  False  False  False
 
-                '''
+        '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__eq__(other))
 
     def __ne__(self, other) -> DataFrame:
@@ -402,7 +531,7 @@ class DataFrame(object):
             2   True   True   True
             3   True   True   True
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__ne__(other))
 
     def __lt__(self, other) -> DataFrame:
@@ -436,7 +565,7 @@ class DataFrame(object):
             2  False  False  False
             3  False  False  False
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__lt__(other))
 
     def __gt__(self, other) -> DataFrame:
@@ -470,7 +599,7 @@ class DataFrame(object):
             2   True   True   True
             3   True   True   True
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__gt__(other))
 
     def __le__(self, other) -> DataFrame:
@@ -504,6 +633,7 @@ class DataFrame(object):
             2  False  False  False
             3  False  False  False
         '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__le__(other))
 
     def __ge__(self, other) -> DataFrame:
@@ -538,7 +668,7 @@ class DataFrame(object):
             2   True   True   True
             3   True   True   True
         '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__ge__(other))
 
     def __or__(self, other) -> DataFrame:
@@ -572,8 +702,8 @@ class DataFrame(object):
             2  False  False
             3   True   True
         '''
-
-        return DataFrame(self._table.__or__(other.to_table()))
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
+        return DataFrame(self._table.__or__(other))
 
     def __and__(self, other) -> DataFrame:
         '''
@@ -606,8 +736,8 @@ class DataFrame(object):
             2  False  False
             3  False  False
         '''
-
-        return DataFrame(self._table.__and__(other.to_table()))
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
+        return DataFrame(self._table.__and__(other))
 
     def __invert__(self) -> DataFrame:
         '''
@@ -683,6 +813,7 @@ class DataFrame(object):
             2      5      9     13
             3      6     10     14
          '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__add__(other))
 
     def __sub__(self, other) -> DataFrame:
@@ -709,6 +840,7 @@ class DataFrame(object):
             2      1      5      9
             3      2      6     10
          '''
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__sub__(other))
 
     def __mul__(self, other) -> DataFrame:
@@ -735,7 +867,7 @@ class DataFrame(object):
             2      6     14     22
             3      8     16     24
          '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__mul__(other))
 
     def __truediv__(self, other) -> DataFrame:
@@ -762,7 +894,7 @@ class DataFrame(object):
             2    1.5    3.5    5.5
             3    2.0    4.0    6.0
          '''
-
+        other = other.to_table() if (isinstance(other, DataFrame)) else other
         return DataFrame(self._table.__truediv__(other))
 
     def drop(self, column_names: List[str]) -> DataFrame:
@@ -1018,8 +1150,8 @@ class DataFrame(object):
     # Indexing
 
     def set_index(
-        self, keys, drop=True, append=False, inplace=False, verify_integrity=False
-    ):
+            self, keys, drop=True, append=False, inplace=False, verify_integrity=False
+    ) -> DataFrame:
         """
         Set the DataFrame index using existing columns.
         Set the DataFrame index (row labels) using one or more existing
@@ -1116,12 +1248,12 @@ class DataFrame(object):
             return new_df
 
     def reset_index(  # type: ignore[misc]
-        self,
-        level: Optional[Union[Hashable, Sequence[Hashable]]] = ...,
-        drop: bool = ...,
-        inplace: False = ...,
-        col_level: Hashable = ...,
-        col_fill=...,
+            self,
+            level: Optional[Union[Hashable, Sequence[Hashable]]] = ...,
+            drop: bool = ...,
+            inplace: False = ...,
+            col_level: Hashable = ...,
+            col_fill=...,
     ) -> DataFrame:
         # todo this is not a final implementation
         self._index_columns = []
@@ -1129,6 +1261,121 @@ class DataFrame(object):
         return self
 
     # Combining / joining / merging
+
+    def sort_values(
+            self,
+            by,
+            axis=0,
+            ascending=True,
+            inplace=False,
+            kind="quicksort",
+            na_position="last",
+            ignore_index=False,
+            key=None,
+            num_samples: int = 0,
+            num_bins: int = 0,
+            env: CylonEnv = None
+    ) -> DataFrame:
+        """
+        Sort by the values along either axis.
+        Parameters
+        ----------
+
+        axis : %(axes_single_arg)s, default 0
+             Axis to be sorted.
+        ascending : bool or list of bool, default True
+             Sort ascending vs. descending. Specify list for multiple sort
+             orders.  If this is a list of bools, must match the length of
+             the by.
+        inplace(Unsupported) : bool, default False
+             If True, perform operation in-place.
+        kind(Unsupported) : {'quicksort', 'mergesort', 'heapsort', 'stable'}, default 'quicksort'
+             Choice of sorting algorithm. See also :func:`numpy.sort` for more
+             information. `mergesort` and `stable` are the only stable algorithms. For
+             DataFrames, this option is only applied when sorting on a single
+             column or label.
+        na_position(Unsupported) : {'first', 'last'}, default 'last'
+             Puts NaNs at the beginning if `first`; `last` puts NaNs at the
+             end.
+        ignore_index(Unsupported) : bool, default False
+             If True, the resulting axis will be labeled 0, 1, …, n - 1.
+             .. versionadded:: 1.0.0
+        key(Unsupported) : callable, optional
+            Apply the key function to the values
+            before sorting. This is similar to the `key` argument in the
+            builtin :meth:`sorted` function, with the notable difference that
+            this `key` function should be *vectorized*. It should expect a
+            ``Series`` and return a Series with the same shape as the input.
+            It will be applied to each column in `by` independently.
+            .. versionadded:: 1.1.0
+        num_samples: int, default 0
+            Number of samples to determine key distribution. Only used in a distributed env. Need to pass a
+            deterministic value common to every process. If num_samples == 0, the value would be handled internally.
+        num_bins: int, default 0
+            Number of bins in the histogram of the key distribution. Only used in a distributed env. Need to pass a
+            deterministic value common to every process. If num_bins == 0, the value would be handled internally.
+        env: CylonEnv, default (None)
+            Execution environment used to distinguish between distributed and local operations. default None (local env)
+
+        Returns
+        -------
+        DataFrame or None
+            DataFrame with sorted values or None if ``inplace=True``.
+        See Also
+        --------
+        DataFrame.sort_index : Sort a DataFrame by the index.
+        Series.sort_values : Similar method for a Series.
+        Examples
+        --------
+        >>> df = DataFrame({
+        ...     'col1': ['A', 'A', 'B', np.nan, 'D', 'C'],
+        ...     'col2': [2, 1, 9, 8, 7, 4],
+        ...     'col3': [0, 1, 9, 4, 2, 3],
+        ...     'col4': ['a', 'B', 'c', 'D', 'e', 'F']
+        ... })
+        >>> df
+          col1  col2  col3 col4
+        0    A     2     0    a
+        1    A     1     1    B
+        2    B     9     9    c
+        3  NaN     8     4    D
+        4    D     7     2    e
+        5    C     4     3    F
+        Sort by col1
+        >>> df.sort_values(by=['col1'])
+          col1  col2  col3 col4
+        0    A     2     0    a
+        1    A     1     1    B
+        2    B     9     9    c
+        5    C     4     3    F
+        4    D     7     2    e
+        3  NaN     8     4    D
+        Sort by multiple columns
+        >>> df.sort_values(by=['col1', 'col2'])
+          col1  col2  col3 col4
+        1    A     1     1    B
+        0    A     2     0    a
+        2    B     9     9    c
+        5    C     4     3    F
+        4    D     7     2    e
+        3  NaN     8     4    D
+        Sort Descending
+        >>> df.sort_values(by='col1', ascending=False)
+          col1  col2  col3 col4
+        4    D     7     2    e
+        5    C     4     3    F
+        2    B     9     9    c
+        0    A     2     0    a
+        1    A     1     1    B
+        3  NaN     8     4    D
+        """
+        if env is None:
+            return DataFrame(self._table.sort(order_by=by, ascending=ascending))
+        else:
+            sort_opts = SortOptions(num_bins=num_bins, num_samples=num_samples)
+            return DataFrame(
+                self._change_context(env)._table.distributed_sort(order_by=by, ascending=ascending,
+                                                                  sort_options=sort_opts))
 
     def join(self, other: DataFrame, on=None, how='left', lsuffix='l', rsuffix='r',
              sort=False, algorithm="sort", env: CylonEnv = None) -> DataFrame:
@@ -1466,8 +1713,9 @@ class DataFrame(object):
             right_on = right._index_columns
 
         if left_on is None or right_on is None:
-            raise ValueError("Columns to merge is not specified. Expected on or left_index/right_index."
-                             "Make sure dataframes has specified index columns if using left_index/right_index")
+            raise ValueError(
+                "Columns to merge is not specified. Expected on or left_index/right_index."
+                "Make sure dataframes has specified index columns if using left_index/right_index")
 
         if env is None:
             joined_table = self._table.join(table=right._table, join_type=how,
@@ -1481,184 +1729,14 @@ class DataFrame(object):
             joined_table = self._table.distributed_join(table=right._table, join_type=how,
                                                         algorithm=algorithm,
                                                         left_on=left_on, right_on=right_on,
-                                                        left_prefix=suffixes[0], right_prefix=suffixes[1])
+                                                        left_prefix=suffixes[0],
+                                                        right_prefix=suffixes[1])
             return DataFrame(joined_table)
 
-    @staticmethod
-    def concat(
-        objs: Union[Iterable["DataFrame"]],
-        axis=0,
-        join="outer",
-        ignore_index: bool = False,
-        keys=None,
-        levels=None,
-        names=None,
-        verify_integrity: bool = False,
-        sort: bool = False,
-        copy: bool = True,
-        env: CylonEnv = None
-    ) -> DataFrame:
-        """
-        Concatenate DataFrames along a particular axis with optional set logic
-        along the other axes.
-        Can also add a layer of hierarchical indexing on the concatenation axis,
-        which may be useful if the labels are the same (or overlapping) on
-        the passed axis number.
-
-        Cylon currently support concat along axis=0, for DataFrames having the same schema(Union). 
-
-        Parameters
-        ----------
-        objs : a sequence or mapping of Series or DataFrame objects
-            If a mapping is passed, the sorted keys will be used as the `keys`
-            argument, unless it is passed, in which case the values will be
-            selected (see below). Any None objects will be dropped silently unless
-            they are all None in which case a ValueError will be raised.
-        axis : {0/'index', 1/'columns' (Unsupported)}, default 0
-            The axis to concatenate along.
-        join(Unsupported) : {'inner', 'outer'}, default 'outer'
-            How to handle indexes on other axis (or axes).
-        ignore_index(Unsupported) : bool, default False
-            If True, do not use the index values along the concatenation axis. The
-            resulting axis will be labeled 0, ..., n - 1. This is useful if you are
-            concatenating objects where the concatenation axis does not have
-            meaningful indexing information. Note the index values on the other
-            axes are still respected in the join.
-        keys(Unsupported) : sequence, default None
-            If multiple levels passed, should contain tuples. Construct
-            hierarchical index using the passed keys as the outermost level.
-        levels(Unsupported) : list of sequences, default None
-            Specific levels (unique values) to use for constructing a
-            MultiIndex. Otherwise they will be inferred from the keys.
-        names(Unsupported) : list, default None
-            Names for the levels in the resulting hierarchical index.
-        verify_integrity(Unsupported) : bool, default False
-            Check whether the new concatenated axis contains duplicates. This can
-            be very expensive relative to the actual data concatenation.
-        sort(Unsupported) : bool, default False
-            Sort non-concatenation axis if it is not already aligned when `join`
-            is 'outer'.
-            This has no effect when ``join='inner'``, which already preserves
-            the order of the non-concatenation axis.
-            .. versionchanged:: 1.0.0
-            Changed to not sort by default.
-        copy(Unsupported) : bool, default True
-            If False, do not copy data unnecessarily.
-        Returns
-        -------
-        object, type of objs
-            When concatenating along
-            the columns (axis=1) or rows (axis=0), a ``DataFrame`` is returned.
-
-        Examples
-        --------
-
-        Combine two ``DataFrame`` objects with identical columns.
-
-        >>> df1 = DataFrame([['a', 1], ['b', 2]],
-        ...                    columns=['letter', 'number'])
-        >>> df1
-        letter  number
-        0      a       1
-        1      b       2
-        >>> df2 = DataFrame([['c', 3], ['d', 4]],
-        ...                    columns=['letter', 'number'])
-        >>> df2
-        letter  number
-        0      c       3
-        1      d       4
-        >>> DataFrame.concat([df1, df2])
-        letter  number
-        0      a       1
-        1      b       2
-        0      c       3
-        1      d       4
-
-        (Unsupported) Combine ``DataFrame`` objects with overlapping columns
-        and return everything. Columns outside the intersection will
-        be filled with ``NaN`` values.
-
-        >>> df3 = DataFrame([['c', 3, 'cat'], ['d', 4, 'dog']],
-        ...                    columns=['letter', 'number', 'animal'])
-        >>> df3
-        letter  number animal
-        0      c       3    cat
-        1      d       4    dog
-        >>> DataFrame.concat([df1, df3], sort=False)
-        letter  number animal
-        0      a       1    NaN
-        1      b       2    NaN
-        0      c       3    cat
-        1      d       4    dog
-
-        (Unsupported) Combine ``DataFrame`` objects with overlapping columns
-        and return only those that are shared by passing ``inner`` to
-        the ``join`` keyword argument.
-
-        >>> DataFrame.concat([df1, df3], join="inner")
-        letter  number
-        0      a       1
-        1      b       2
-        0      c       3
-        1      d       4
-
-        (Unsupported) Combine ``DataFrame`` objects horizontally along the x axis by
-        passing in ``axis=1``.
-
-        >>> df4 = DataFrame([['bird', 'polly'], ['monkey', 'george']],
-        ...                    columns=['animal', 'name'])
-        >>> DataFrame.concat([df1, df4], axis=1)
-
-        letter  number  animal    name
-        0      a       1    bird   polly
-        1      b       2  monkey  george
-
-        (Unsupported) Prevent the result from including duplicate index values with the
-        ``verify_integrity`` option.
-
-        >>> df5 = DataFrame([1], index=['a'])
-        >>> df5
-        0
-        a  1
-        >>> df6 = DataFrame([2], index=['a'])
-        >>> df6
-        0
-        a  2
-        >>> DataFrame.concat([df5, df6], verify_integrity=True)
-        Traceback (most recent call last):
-            ...
-        ValueError: Indexes have overlapping values: ['a']
-        """
-
-        if len(objs) == 0:
-            raise "objs can't be empty"
-
-        if axis == 0:
-            if env is None:
-                current_table = objs[0]._table
-                for i in range(1, len(objs)):
-                    current_table = current_table.union(objs[i]._table)
-
-                return DataFrame(current_table)
-            else:
-                # todo not optimum for distributed
-                current_table = objs[0]._change_context(env)._table
-                for i in range(1, len(objs)):
-                    current_table = current_table.union(
-                        objs[i]._change_context(env)._table)
-
-                return DataFrame(current_table)
-        else:
-            raise "Unsupported operation"
-
-    def drop_duplicates(
-        self,
-        subset: Optional[Union[Hashable, Sequence[Hashable]]] = None,
-        keep: Union[str, bool] = "first",
-        inplace: bool = False,
-        ignore_index: bool = False,
-        env: CylonEnv = None
-    ) -> DataFrame:
+    def drop_duplicates(self, subset: Optional[Union[Hashable, Sequence[Hashable]]] = None,
+                        keep: Union[str, bool] = "first", inplace: bool = False,
+                        ignore_index: bool = False,
+                        env: CylonEnv = None) -> DataFrame:
         """
         Return DataFrame with duplicate rows removed.
         Considering certain columns is optional. Indexes, including time indexes
@@ -1677,7 +1755,7 @@ class DataFrame(object):
             Whether to drop duplicates in place or to return a copy.
         ignore_index (Unsupported) : bool, default False
             If True, the resulting axis will be labeled 0, 1, …, n - 1.
-            .. versionadded:: 1.0.0
+        env: Execution environment used to distinguish between distributed and local operations. default None (local env)
         Returns
         -------
         DataFrame or None
@@ -1722,105 +1800,275 @@ class DataFrame(object):
         if env is None:
             return DataFrame(self._table.unique(columns=subset, keep=keep, inplace=inplace))
         else:
-            return DataFrame(self._change_context(env)._table.distributed_unique(columns=subset, inplace=inplace))
+            return DataFrame(self._change_context(env)._table.distributed_unique(columns=subset,
+                                                                                 inplace=inplace))
 
-    def sort_values(
-        self,
-        by,
-        axis=0,
-        ascending=True,
-        inplace=False,
-        kind="quicksort",
-        na_position="last",
-        ignore_index=False,
-        key=None,
-        env: CylonEnv = None
-    ) -> DataFrame:
+    def groupby(self, by: Union[int, str, List], env: CylonEnv = None) -> GroupByDataFrame:
         """
-        Sort by the values along either axis.
+        A groupby operation involves some combination of splitting the object, applying a function, and combining the results. 
+        This can be used to group large amounts of data and compute operations on these groups.
+
         Parameters
         ----------
 
-        axis : %(axes_single_arg)s, default 0
-             Axis to be sorted.
-        ascending : bool or list of bool, default True
-             Sort ascending vs. descending. Specify list for multiple sort
-             orders.  If this is a list of bools, must match the length of
-             the by.
-        inplace(Unsupported) : bool, default False
-             If True, perform operation in-place.
-        kind(Unsupported) : {'quicksort', 'mergesort', 'heapsort', 'stable'}, default 'quicksort'
-             Choice of sorting algorithm. See also :func:`numpy.sort` for more
-             information. `mergesort` and `stable` are the only stable algorithms. For
-             DataFrames, this option is only applied when sorting on a single
-             column or label.
-        na_position(Unsupported) : {'first', 'last'}, default 'last'
-             Puts NaNs at the beginning if `first`; `last` puts NaNs at the
-             end.
-        ignore_index(Unsupported) : bool, default False
-             If True, the resulting axis will be labeled 0, 1, …, n - 1.
-             .. versionadded:: 1.0.0
-        key(Unsupported) : callable, optional
-            Apply the key function to the values
-            before sorting. This is similar to the `key` argument in the
-            builtin :meth:`sorted` function, with the notable difference that
-            this `key` function should be *vectorized*. It should expect a
-            ``Series`` and return a Series with the same shape as the input.
-            It will be applied to each column in `by` independently.
-            .. versionadded:: 1.1.0
+        by : str, int or a list of str, int.  
+            List of column(s) used for grouping.
+        
         Returns
         -------
-        DataFrame or None
-            DataFrame with sorted values or None if ``inplace=True``.
+        GroupByDataFrame
+
+        Examples
+        -------
+
+        >>> df1 = DataFrame([[0, 0, 1, 1], [1, 10, 1, 5], [10, 20, 30, 40]])
+
+
+        >>> df3 = df1.groupby(by=0).agg({"1": "sum", "2": "min"})
+        >>> df3
+        0  sum_1  min_2
+        0  0     11     10
+        1  1      6     30
+
+        >>> df4 = df1.groupby(by=0).min()
+        >>> df4
+        0  min_2  min_1
+        0  0     10      1
+        1  1     30      1
+
+        >>> df5 = df1.groupby(by=[0, 1]).max()
+        >>> df5
+        0   1  max_2
+        0  0   1     10
+        1  0  10     20
+        2  1   1     30
+        3  1   5     40
+        """
+        by_list = []
+        if isinstance(by, int):
+            by_list.append(self.columns[by])
+        elif isinstance(by, str):
+            if by not in self.columns:
+                raise ValueError(
+                    str + " is not a column of this table. Expected one of " + str(by))
+            by_list.append(by)
+        elif isinstance(by, list):
+            if len(by) == 0:
+                raise ValueError("Group by columns should be specified.")
+
+            for b in by:
+                if isinstance(b, str):
+                    by_list.append(b)
+                elif isinstance(b, int):
+                    by_list.append(self.columns[b])
+                else:
+                    raise ValueError(
+                        "Unsupported column specification. Expected column index or name")
+        else:
+            raise ValueError("Unknown value for by")
+        if env is None:
+            return GroupByDataFrame(self, by_list)
+        else:
+            return GroupByDataFrame(self._change_context(env), by_list)
+
+    def isin(self, values: Union[List, Dict, cn.Table], skip_null: bool = True) -> DataFrame:
+        """
+        Whether each element in the DataFrame is contained in values
+
+        Parameters
+        ----------
+        values: list, dict or cylon
+        skip_null:
+
+        Returns
+        ----------
+        DataFrame
+
+        """
+        if isinstance(values, (List, Dict)):
+            return DataFrame(self._table.isin(values, skip_null=skip_null))
+        elif isinstance(values, DataFrame):
+            return DataFrame(self._table.isin(values._table, skip_null=skip_null))
+        else:
+            raise ValueError("Unsupported type for values" + type(values))
+
+    def applymap(self, func, na_action=None) -> DataFrame:
+        """
+        Apply a function to a Dataframe elementwise.
+        This method applies a function that accepts and returns a scalar
+        to every element of a DataFrame.
+        Parameters
+        ----------
+        func : callable
+            Python function, returns a single value from a single value.
+        na_action :  (Unsupported) {None, 'ignore'}, default None
+            If ‘ignore’, propagate NaN values, without passing them to func.
+
+        Returns
+        -------
+        DataFrame
+            Transformed DataFrame.
         See Also
         --------
-        DataFrame.sort_index : Sort a DataFrame by the index.
-        Series.sort_values : Similar method for a Series.
+        DataFrame.apply : Apply a function along input axis of DataFrame.
         Examples
         --------
-        >>> df = DataFrame({
-        ...     'col1': ['A', 'A', 'B', np.nan, 'D', 'C'],
-        ...     'col2': [2, 1, 9, 8, 7, 4],
-        ...     'col3': [0, 1, 9, 4, 2, 3],
-        ...     'col4': ['a', 'B', 'c', 'D', 'e', 'F']
-        ... })
+        >>> df = pd.DataFrame([[1, 2.12], [3.356, 4.567]])
         >>> df
-          col1  col2  col3 col4
-        0    A     2     0    a
-        1    A     1     1    B
-        2    B     9     9    c
-        3  NaN     8     4    D
-        4    D     7     2    e
-        5    C     4     3    F
-        Sort by col1
-        >>> df.sort_values(by=['col1'])
-          col1  col2  col3 col4
-        0    A     2     0    a
-        1    A     1     1    B
-        2    B     9     9    c
-        5    C     4     3    F
-        4    D     7     2    e
-        3  NaN     8     4    D
-        Sort by multiple columns
-        >>> df.sort_values(by=['col1', 'col2'])
-          col1  col2  col3 col4
-        1    A     1     1    B
-        0    A     2     0    a
-        2    B     9     9    c
-        5    C     4     3    F
-        4    D     7     2    e
-        3  NaN     8     4    D
-        Sort Descending
-        >>> df.sort_values(by='col1', ascending=False)
-          col1  col2  col3 col4
-        4    D     7     2    e
-        5    C     4     3    F
-        2    B     9     9    c
-        0    A     2     0    a
-        1    A     1     1    B
-        3  NaN     8     4    D
+               0      1
+        0  1.000  2.120
+        1  3.356  4.567
+        >>> df.applymap(lambda x: len(str(x)))
+           0  1
+        0  3  4
+        1  5  5
+        (Unsupported) Like Series.map, NA values can be ignored:
+        >>> df_copy = df.copy()
+        >>> df_copy.iloc[0, 0] = pd.NA
+        >>> df_copy.applymap(lambda x: len(str(x)), na_action='ignore')
+              0  1
+        0  <NA>  4
+        1     5  5
+        Note that a vectorized version of `func` often exists, which will
+        be much faster. You could square each number elementwise.
+        >>> df.applymap(lambda x: x**2)
+                   0          1
+        0   1.000000   4.494400
+        1  11.262736  20.857489
+        (Unsupported) But it's better to avoid applymap in that case.
+        >>> df ** 2
+                   0          1
+        0   1.000000   4.494400
+        1  11.262736  20.857489
         """
-        if env is None:
-            return DataFrame(self._table.sort(order_by=by, ascending=ascending))
-        else:
-            return DataFrame(self._change_context(env)._table.distributed_sort(order_by=by, ascending=ascending))
+        return DataFrame(self._table.applymap(func))
+
+
+# -------------------- staticmethods ---------------------------
+
+def concat(objs: Union[Iterable["DataFrame"]], axis=0, join="outer",
+           env: CylonEnv = None) -> DataFrame:
+    """
+    Concatenate DataFrames along a particular axis with optional set logic
+    along the other axes.
+    Can also add a layer of hierarchical indexing on the concatenation axis,
+    which may be useful if the labels are the same (or overlapping) on
+    the passed axis number.
+
+    Cylon currently support concat along axis=0, for DataFrames having the same schema(Union).
+
+    Parameters
+    ----------
+    objs : a sequence or mapping of Series or DataFrame objects
+        If a mapping is passed, the sorted keys will be used as the `keys`
+        argument, unless it is passed, in which case the values will be
+        selected (see below). Any None objects will be dropped silently unless
+        they are all None in which case a ValueError will be raised.
+    axis : {0/'index', 1/'columns' (Unsupported)}, default 0
+        The axis to concatenate along.
+    join : {'inner', 'outer'}, default 'outer'
+        How to handle indexes on other axis (or axes).
+    env: Execution environment used to distinguish between distributed and local operations. default None (local env)
+    Returns
+    -------
+    object, type of objs
+        When concatenating along
+        the columns (axis=1) or rows (axis=0), a ``DataFrame`` is returned.
+
+    Examples
+    --------
+
+    Combine two ``DataFrame`` objects with identical columns.
+
+    >>> df1 = DataFrame([['a', 1], ['b', 2]],
+    ...                    columns=['letter', 'number'])
+    >>> df1
+    letter  number
+    0      a       1
+    1      b       2
+    >>> df2 = DataFrame([['c', 3], ['d', 4]],
+    ...                    columns=['letter', 'number'])
+    >>> df2
+    letter  number
+    0      c       3
+    1      d       4
+    >>> DataFrame.concat([df1, df2])
+    letter  number
+    0      a       1
+    1      b       2
+    0      c       3
+    1      d       4
+
+    (Unsupported) Combine ``DataFrame`` objects with overlapping columns
+    and return everything. Columns outside the intersection will
+    be filled with ``NaN`` values.
+
+    >>> df3 = DataFrame([['c', 3, 'cat'], ['d', 4, 'dog']],
+    ...                    columns=['letter', 'number', 'animal'])
+    >>> df3
+    letter  number animal
+    0      c       3    cat
+    1      d       4    dog
+    >>> DataFrame.concat([df1, df3])
+    letter  number animal
+    0      a       1    NaN
+    1      b       2    NaN
+    0      c       3    cat
+    1      d       4    dog
+
+    (Unsupported) Combine ``DataFrame`` objects with overlapping columns
+    and return only those that are shared by passing ``inner`` to
+    the ``join`` keyword argument.
+
+    >>> DataFrame.concat([df1, df3],join="inner")
+    letter  number
+    0      a       1
+    1      b       2
+    0      c       3
+    1      d       4
+
+    (Unsupported) Combine ``DataFrame`` objects horizontally along the x axis by
+    passing in ``axis=1``.
+
+    >>> df4 = DataFrame([['bird', 'polly'], ['monkey', 'george']],
+    ...                    columns=['animal', 'name'])
+    >>> DataFrame.concat([df1, df4],axis=1)
+
+    letter  number  animal    name
+    0      a       1    bird   polly
+    1      b       2  monkey  george
+
+    (Unsupported) Prevent the result from including duplicate index values with the
+    ``verify_integrity`` option.
+
+    >>> df5 = DataFrame([1], index=['a'])
+    >>> df5
+    0
+    a  1
+    >>> df6 = DataFrame([2], index=['a'])
+    >>> df6
+    0
+    a  2
+    >>> DataFrame.concat([df5, df6])
+    Traceback (most recent call last):
+        ...
+    ValueError: Indexes have overlapping values: ['a']
+    """
+    # ignore_index: bool = False,
+    # keys=None,
+    # levels=None,
+    # names=None,
+    # verify_integrity: bool = False,
+    # sort: bool = False,
+    # copy: bool = True,
+
+    if len(objs) == 0:
+        raise ValueError("objs can't be empty")
+
+    if env is None:
+        res_table = cn.Table.concat(tables=[df.to_table() for df in objs], axis=axis, join=join)
+    else:
+        res_table = cn.Table.distributed_concat(
+            tables=[df._change_context(env).to_table() for df in objs],
+            axis=axis, join=join)
+    return DataFrame(res_table)

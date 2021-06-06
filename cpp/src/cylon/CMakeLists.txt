@@ -27,6 +27,19 @@ else (CYLON_PARQUET)
     set(PARQUET_CYLON_FILES)
 endif (CYLON_PARQUET)
 
+if (CYLON_UCX)
+    set(UCX_CYLON_FILES
+            net/ucx/ucx_channel.hpp
+            net/ucx/ucx_channel.cpp
+            net/ucx/ucx_communicator.hpp
+            net/ucx/ucx_communicator.cpp
+            net/ucx/ucx_operations.hpp
+            net/ucx/ucx_operations.cpp
+            )
+else (CYLON_UCX)
+    set(UCX_CYLON_FILES)
+endif (CYLON_UCX)
+
 add_library(cylon SHARED
         net/ops/all_to_all.cpp
         net/ops/all_to_all.hpp
@@ -35,6 +48,7 @@ add_library(cylon SHARED
         net/mpi/mpi_channel.cpp
         net/mpi/mpi_communicator.hpp
         net/mpi/mpi_communicator.cpp
+        ${UCX_CYLON_FILES}
         arrow/arrow_all_to_all.cpp
         arrow/arrow_all_to_all.hpp
         join/join.hpp
@@ -167,6 +181,10 @@ target_compile_options(cylon PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter
 
 if (CYLON_PARQUET)
     target_link_libraries(cylon ${PARQUET_LIB})
+endif ()
+
+if (CYLON_UCX)
+    target_link_libraries(cylon ${UCX_LIBRARIES})
 endif ()
 
 cylon_install_all_headers("cylon")

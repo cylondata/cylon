@@ -25,21 +25,21 @@ import argparse
 """
 Run benchmark:
 
->>> python python/examples/op_benchmark/compute_benchmark.py --start_size 1_000_000_000 \
+>>> python python/examples/op_benchmark/compute_benchmark.py --start_size 10_000_000 \
                                         --step_size 10_000_000 \
                                         --end_size 30_000_000 \
                                         --num_cols 2 \
                                         --filter_size 1_000_000 \
                                         --stats_file /tmp/isin_bench_v1.csv \
                                         --repetitions 1 \
-                                        --duplication_factor 0.9
+                                        --unique_factor 0.1
 """
 
 
-def isin_op(num_rows: int, num_cols: int, filter_size: int, duplication_factor: float):
+def isin_op(num_rows: int, num_cols: int, filter_size: int, unique_factor: float):
     ctx: CylonContext = CylonContext(config=None, distributed=False)
     ctx.add_config("compute_engine", "arrow")
-    df = get_dataframe(num_rows=num_rows, num_cols=num_cols, duplication_factor=duplication_factor)
+    df = get_dataframe(num_rows=num_rows, num_cols=num_cols, unique_factor=unique_factor)
 
     ct = Table.from_pandas(ctx, df)
 
@@ -63,7 +63,7 @@ def isin_op(num_rows: int, num_cols: int, filter_size: int, duplication_factor: 
 
 
 def bench_isin(start: int, end: int, step: int, num_cols: int, filter_size: int, repetitions: int, stats_file: str,
-               duplication_factor: float):
+               unique_factor: float):
     all_data = []
     schema = ["num_records", "num_cols", "filter_size", "pandas", "cylon", "pandas_eval", "speed up", "speed up [eval]"]
     assert repetitions >= 1
@@ -77,7 +77,7 @@ def bench_isin(start: int, end: int, step: int, num_cols: int, filter_size: int,
         for idx in range(repetitions):
             pandas_time, cylon_time, pandas_eval_time = isin_op(num_rows=records, num_cols=num_cols,
                                                                 filter_size=filter_size,
-                                                                duplication_factor=duplication_factor)
+                                                                unique_factor=unique_factor)
             times.append([pandas_time, cylon_time, pandas_eval_time])
         times = np.array(times).sum(axis=0) / repetitions
         print(f"Isin Op : Records={records}, Columns={num_cols}, Filter Size={filter_size}, "
@@ -97,8 +97,8 @@ if __name__ == '__main__':
     parser.add_argument("-e", "--end_size",
                         help="end data size",
                         type=int)
-    parser.add_argument("-d", "--duplication_factor",
-                        help="random data duplication factor",
+    parser.add_argument("-d", "--unique_factor",
+                        help="random data unique factor",
                         type=float)
     parser.add_argument("-s", "--step_size",
                         help="Step size",
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     print(f"Start Data Size : {args.start_size}")
     print(f"End Data Size : {args.end_size}")
     print(f"Step Data Size : {args.step_size}")
-    print(f"Data Duplication Factor : {args.duplication_factor}")
+    print(f"Data Unique Factor : {args.unique_factor}")
     print(f"Number of Columns : {args.num_cols}")
     print(f"Number of Repetitions : {args.repetitions}")
     print(f"Stats File : {args.stats_file}")
@@ -131,5 +131,5 @@ if __name__ == '__main__':
                filter_size=args.filter_size,
                repetitions=args.repetitions,
                stats_file=args.stats_file,
-               duplication_factor=args.duplication_factor)
+               unique_factor=args.unique_factor)
 
