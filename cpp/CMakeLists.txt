@@ -55,8 +55,6 @@ if (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "DEBUG")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer ")
-#    # TODO SANDEEPA REVERT!
-#    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer ")
 elseif (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "RELEASE")
     message("Running on Release mode...")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
