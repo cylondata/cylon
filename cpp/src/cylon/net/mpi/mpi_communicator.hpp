@@ -35,7 +35,7 @@ class MPIConfig : public CommConfig {
 
 class MPICommunicator : public Communicator {
  public:
-  void Init(const std::shared_ptr<CommConfig> &config) override;
+  Status Init(const std::shared_ptr<CommConfig> &config) override;
   Channel *CreateChannel() override;
   int GetRank() override;
   int GetWorldSize() override;

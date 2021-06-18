@@ -26,6 +26,8 @@
 #include "ucx_communicator.hpp"
 
 #include "../buffer.hpp"
+#include "../../status.hpp"
+
 
 #define CYLON_CHANNEL_HEADER_SIZE 8
 #define CYLON_MSG_FIN 1
@@ -159,9 +161,6 @@ class UCXChannel : public Channel {
   std::unordered_map<int, ucp_ep_h> endPointMap;
   // Tag mask used to match UCX send / receives
   ucp_tag_t tagMask = UINT64_MAX;
-  // Commented - Use if info in necessary from the context
-//  // UCX Cylon Communicator
-//  net::UCXCommunicator* ucxCom;
 
   /**
    * UCX Receive
@@ -170,8 +169,9 @@ class UCXChannel : public Channel {
    * @param [in] count - Size of the receiving data
    * @param [in] sender - MPI id of the sender
    * @param [out] ctx - ucx::ucxContext object, used for tracking the progress of the request
+   * @return Cylon Status
    */
-  void UCX_Irecv(void *buffer,
+  Status UCX_Irecv(void *buffer,
                  size_t count,
                  int source,
                  ucx::ucxContext* ctx);
@@ -184,8 +184,9 @@ class UCXChannel : public Channel {
    * @param [in] ep - Endpoint to send the data to
    * @param [out] request - UCX Context object
    *                        Used for tracking the progress of the request
+   * @return Cylon Status
    */
-  void UCX_Isend(const void *buffer,
+  Status UCX_Isend(const void *buffer,
                  size_t  count,
                  ucp_ep_h ep,
                  ucx::ucxContext* request) const;

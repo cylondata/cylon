@@ -79,8 +79,9 @@ static unsigned long int getTag(int edge,
  * @param [in] count - Size of the receiving data
  * @param [in] sender - MPI id of the sender
  * @param [out] ctx - ucx::ucxContext object, used for tracking the progress of the request
+ * @return Cylon Status
  */
-void UCXChannel::UCX_Irecv(void *buffer,
+Status UCXChannel::UCX_Irecv(void *buffer,
                             size_t count,
                             int sender,
                             ucx::ucxContext* ctx) {
@@ -107,8 +108,11 @@ void UCXChannel::UCX_Irecv(void *buffer,
                            &recvParam);
 
   if (UCS_PTR_IS_ERR(status)) {
-    LOG(FATAL) << "Error in sending message via UCX";
+    LOG(FATAL) << "Error in receiving message via UCX";
+    return Status(UCS_PTR_STATUS(status), "This is an error from UCX");
   }
+
+  return Status::OK();
 }
 
 /**
@@ -118,8 +122,9 @@ void UCXChannel::UCX_Irecv(void *buffer,
  * @param [in] count - Size of the receiving data
  * @param [in] ep - Endpoint to send the data to
  * @param [out] ctx - Used for tracking the progress of the request
+ * @return Cylon Status
  */
-void UCXChannel::UCX_Isend(const void *buffer,
+Status UCXChannel::UCX_Isend(const void *buffer,
                            size_t count,
                            ucp_ep_h ep,
                            ucx::ucxContext* ctx) const {
@@ -146,12 +151,10 @@ void UCXChannel::UCX_Isend(const void *buffer,
   // Check if there is an error in the request
   if (UCS_PTR_IS_ERR(status)) {
     LOG(FATAL) << "Error in sending message via UCX";
+    return Status(UCS_PTR_STATUS(status), "This is an error from UCX");
   }
-  // Handle the situation where the ucp_tag_send_nbx function returns immediately
-  // without calling the send handler
-//  if (!UCS_PTR_IS_PTR(status) && status == nullptr) {
-//    ctx->completed = 1;
-//  }
+
+  return Status::OK();
 }
 
 
@@ -161,9 +164,6 @@ void UCXChannel::UCX_Isend(const void *buffer,
  * @return
  */
 void UCXChannel::linkCommunicator(net::UCXCommunicator *com) {
-  // Commented - Uncomment the variable in header and use if communicator is needed for later use
-//  // Link the communicator if by chance is later needed
-//  this->ucxCom = com;
 
   // Set world size, rank, and workers
   this->worldSize = com->GetWorldSize();
@@ -246,7 +246,7 @@ void UCXChannel::init(int ed,
 int UCXChannel::send(std::shared_ptr<TxRequest> request) {
   // Loads the pending send from sends
   PendingSend *ps = sends[request->target];
-  if (ps->pendingData.size() > 1000) {
+  if (ps->pendingData.size() > MAX_PENDING) {
     return -1;
   }
   // pendingData is a queue that has TXRequests

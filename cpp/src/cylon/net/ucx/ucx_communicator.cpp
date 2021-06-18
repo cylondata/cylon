@@ -47,7 +47,7 @@ int UCXCommunicator::GetRank() {
 int UCXCommunicator::GetWorldSize() {
   return this->world_size;
 }
-void UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
+Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   // Check init functions
   int initialized;
   // Int variable used when iterating
@@ -125,14 +125,17 @@ void UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     endPointMap[sIndx] = ep;
     // Check if the endpoint was created properly
     if (ucxStatus != UCS_OK) {
-      LOG(FATAL)
-          << "Error when creating the endpoint.";
+      LOG(FATAL) << "Error when creating the endpoint.";
+      return Status(ucxStatus,
+                    "This is an error from UCX");
     }
   }
 
   // Cleanup
   delete(ucpRecvWorkerAddr);
   delete(ucpSendWorkerAddr);
+
+  return Status::OK();
 }
 void UCXCommunicator::Finalize() {
   ucp_cleanup(ucpContext);
