@@ -50,6 +50,9 @@ class ChannelReceiveCallback {
  */
 class Channel {
  public:
+  // Maximum size of a pending data request
+  static const unsigned long MAX_PENDING = 1000;
+
   /**
    * Initialize the channel with the worker ids from which we are going to receive
    *

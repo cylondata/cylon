@@ -54,7 +54,7 @@ void MPIChannel::init(int ed, const std::vector<int> &receives, const std::vecto
 
 int MPIChannel::send(std::shared_ptr<TxRequest> request) {
   PendingSend *ps = sends[request->target];
-  if (ps->pendingData.size() > 1000) {
+  if (ps->pendingData.size() > MAX_PENDING) {
     return -1;
   }
   ps->pendingData.push(request);

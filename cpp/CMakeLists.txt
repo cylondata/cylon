@@ -141,6 +141,35 @@ if (CYLON_PARQUET)
     add_definitions(-DBUILD_CYLON_PARQUET)
 endif (CYLON_PARQUET)
 
+# ucx
+option(CYLON_UCX "Build Cylon with UCX" OFF)
+if (CYLON_UCX)
+    # Check if UCX include and lib paths are given
+    if (NOT UCX_INCLUDEDIR)
+        message(FATAL_ERROR "CYLON_UCX is set, UCX_INCLUDEDIR should also be set")
+    endif ()
+    if (NOT UCX_LIBDIR)
+        message(FATAL_ERROR "CYLON_UCX is set, UCX_LIBDIR should also be set")
+    endif ()
+
+    # Definition used for checking
+    add_definitions(-DBUILD_CYLON_UCX)
+
+    # Set UCX found as true
+    set(UCX_FOUND TRUE)
+
+    # Include UCX
+    include_directories(${UCX_INCLUDEDIR})
+    # Set library directory for later use
+    set(UCX_LIBRARIES
+            ${UCX_LIBDIR}/ucx/libuct_cma.so
+            ${UCX_LIBDIR}/ucx/libuct_ib.so
+            ${UCX_LIBDIR}/libuct.so
+            ${UCX_LIBDIR}/libucs.so
+            ${UCX_LIBDIR}/libucm.so
+            ${UCX_LIBDIR}/libucp.so)
+endif (CYLON_UCX)
+
 include(Build)
 
 if (NOT ARROW_BUILD_TYPE)
