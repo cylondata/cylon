@@ -15,8 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-cylon_install_all_headers("cylon/net")
-
-add_subdirectory(ops)
-add_subdirectory(mpi)
-add_subdirectory(ucx)
+cylon_install_all_headers("cylon/net/ucx")

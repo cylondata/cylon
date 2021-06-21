@@ -48,7 +48,7 @@ int MPICommunicator::GetRank() {
 int MPICommunicator::GetWorldSize() {
   return this->world_size;
 }
-void MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
+Status MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   int initialized;
   MPI_Initialized(&initialized);
   if (!initialized) {
@@ -57,6 +57,8 @@ void MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
 
   MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
   MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
+
+  return Status::OK();
 }
 void MPICommunicator::Finalize() {
   int finalized;
