@@ -25,3 +25,17 @@ cd $CYLON_HOME && ./build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --pytho
 ```bash
 cd $CYLON_HOME && ./build.sh -pyenv $CYLON_ENV -bpath $CYLON_BUILD --cpp --test --python --pytest --release 
 ```
+
+## Running Cylon Examples
+
+Start a container.
+
+```bash
+docker run -it cylondata/cylon
+```
+
+Execute a python example locally
+
+```bash
+python3 /cylon/python/examples/dataframe/data_loading.py /cylon/data/input/csv1_0.csv
+```
