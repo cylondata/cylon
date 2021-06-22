@@ -222,6 +222,11 @@ def test_pd_read_csv():
     responses.append(os.system("pytest -q python/test/test_pd_read_csv.py"))
     assert responses[-1] == 0
 
+def test_data_split():
+    print("30. Data Split")
+    responses.append(os.system("mpirun -np 4 pytest -q python/test/test_data_split.py"))
+    assert responses[-1] == 0
+
 
 def test_all():
     ar = np.array(responses)
