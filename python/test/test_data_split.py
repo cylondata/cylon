@@ -20,6 +20,7 @@ Run test:
 from pycylon import CylonEnv, read_csv
 from pycylon.net import MPIConfig
 import numpy
+import os
 
 
 def test_data_split():
@@ -45,6 +46,9 @@ def test_data_split():
 
     for i in range(0, seg_size):
         assert numpy.array_equal(np_data[i], np_data_full[(seg_size*env.rank)+i])
+
+    if env.rank==0:
+        os.remove("/tmp/test_split.csv")
 
     env.finalize()
 
