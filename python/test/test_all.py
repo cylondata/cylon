@@ -224,7 +224,7 @@ def test_pd_read_csv():
 
 def test_data_split():
     print("30. Data Split")
-    responses.append(os.system("mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest -q python/test/test_data_split.py"))
+    responses.append(os.system("mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest --with-mpi -q python/test/test_data_split.py"))
     assert responses[-1] == 0
 
 
