@@ -184,7 +184,7 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
                std::shared_ptr<Table> &tableOut, const cylon::io::config::CSVReadOptions &options) {
   arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::read_csv(ctx, path, options);
   if (result.ok()) {
-    const std::shared_ptr<arrow::Table> &table = result.ValueOrDie();
+    std::shared_ptr<arrow::Table> &table = result.ValueOrDie();
     LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
     if (table->column(0)->chunks().size() > 1) {
       const auto &combine_res = table->CombineChunks(ToArrowPool(ctx));
@@ -192,10 +192,31 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
         return Status(static_cast<int>(combine_res.status().code()),
                       combine_res.status().message());
       }
-      tableOut = std::make_shared<Table>(ctx, combine_res.ValueOrDie());
-    } else {
-      tableOut = std::make_shared<Table>(ctx, table);
+      table = combine_res.ValueOrDie();
     }
+    // slice the table if required
+    if (options.IsSlice() && ctx->GetWorldSize() > 1) {
+      int32_t rows_per_worker = table->num_rows() / ctx->GetWorldSize();
+      int32_t remainder = table->num_rows() % ctx->GetWorldSize();
+
+      // first few workers will balance out the remainder
+      int32_t balancer = 0;
+      if (remainder != 0 && ctx->GetRank() < remainder) {
+        balancer = 1;
+      }
+
+      // start index should offset the balanced out rows by previous workers
+      int32_t offset = ctx->GetRank();
+      if (ctx->GetRank() >= remainder) {
+        offset = remainder;
+      }
+
+      int32_t starting_index = (ctx->GetRank() * rows_per_worker) + offset;
+      // LOG(INFO) << ctx->GetRank() << " will start from " << starting_index << " and read "
+      //           << (rows_per_worker + balancer) << " offset : " << offset;
+      table = table->Slice(starting_index, rows_per_worker + balancer);
+    }
+    tableOut = std::make_shared<Table>(ctx, table);
     return Status::OK();
   }
   return Status(Code::IOError, result.status().message());

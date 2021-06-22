@@ -12,11 +12,12 @@
  * limitations under the License.
  */
 
+#include "csv_read_config.hpp"
+
 #include <utility>
 
-#include "csv_read_config.hpp"
-#include "csv_read_config_holder.hpp"
 #include "../arrow//arrow_types.hpp"
+#include "csv_read_config_holder.hpp"
 
 namespace cylon {
 namespace io {
@@ -55,9 +56,7 @@ CSVReadOptions::CSVReadOptions() {
   CSVReadOptions::holder = std::shared_ptr<void>(new CSVConfigHolder());
 }
 
-std::shared_ptr<void> CSVReadOptions::GetHolder() const {
-  return CSVReadOptions::holder;
-}
+std::shared_ptr<void> CSVReadOptions::GetHolder() const { return CSVReadOptions::holder; }
 CSVReadOptions CSVReadOptions::UseQuoting() {
   CSVConfigHolder::GetCastedHolder(*this)->quoting = true;
   return *this;
@@ -82,15 +81,13 @@ CSVReadOptions CSVReadOptions::HasNewLinesInValues() {
   CSVConfigHolder::GetCastedHolder(*this)->newlines_in_values = true;
   return *this;
 }
-CSVReadOptions CSVReadOptions::WithColumnTypes(const std::unordered_map<std::string,
-                                               std::shared_ptr<DataType>> &column_types) {
-  std::unordered_map<std::string,
-                     std::shared_ptr<arrow::DataType>> arrow_types{};
+CSVReadOptions CSVReadOptions::WithColumnTypes(
+    const std::unordered_map<std::string, std::shared_ptr<DataType>> &column_types) {
+  std::unordered_map<std::string, std::shared_ptr<arrow::DataType>> arrow_types{};
 
   for (const auto &column_type : column_types) {
-    auto pr = std::pair<std::string, std::shared_ptr<arrow::DataType>>(column_type.first,
-                                                                       cylon::tarrow::convertToArrowType(column_type
-                                                                                                             .second));
+    auto pr = std::pair<std::string, std::shared_ptr<arrow::DataType>>(
+        column_type.first, cylon::tarrow::convertToArrowType(column_type.second));
     arrow_types.insert(pr);
   }
   CSVConfigHolder::GetCastedHolder(*this)->column_types = arrow_types;
@@ -124,9 +121,14 @@ CSVReadOptions CSVReadOptions::ConcurrentFileReads(bool file_reads) {
   this->concurrent_file_reads = file_reads;
   return *this;
 }
-bool CSVReadOptions::IsConcurrentFileReads() const {
-  return this->concurrent_file_reads;
+bool CSVReadOptions::IsConcurrentFileReads() const { return this->concurrent_file_reads; }
+
+CSVReadOptions CSVReadOptions::Slice(bool slice) {
+  this->slice = slice;
+  return *this;
 }
+
+bool CSVReadOptions::IsSlice() const { return this->slice; }
 }  // namespace config
 }  // namespace io
 }  // namespace cylon

@@ -15,29 +15,35 @@
 #ifndef CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HPP_
 #define CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HPP_
 
-#include "../data_types.hpp"
-#include <vector>
+#include <memory>
 #include <string>
 #include <unordered_map>
-#include <memory>
+#include <vector>
+
+#include "../data_types.hpp"
 
 namespace cylon {
 namespace io {
 namespace config {
 class CSVReadOptions {
-
  private:
   std::shared_ptr<void> holder;
   bool concurrent_file_reads = true;
+  bool slice = false;
 
  public:
-
   CSVReadOptions();
 
   /*cylon specific options*/
 
   CSVReadOptions ConcurrentFileReads(bool concurrent_file_reads);
   bool IsConcurrentFileReads() const;
+
+  /**
+   * If true, the table will be sliced based on the worker index.
+   */
+  CSVReadOptions Slice(bool slice);
+  bool IsSlice() const;
 
   /*End of cylon specific options*/
 
@@ -104,8 +110,8 @@ class CSVReadOptions {
    */
   CSVReadOptions SkipRows(int32_t skip_rows);
 
-  CSVReadOptions WithColumnTypes(const std::unordered_map<std::string,
-                                                          std::shared_ptr<DataType>> &column_types);
+  CSVReadOptions WithColumnTypes(
+      const std::unordered_map<std::string, std::shared_ptr<DataType>> &column_types);
 
   /**
    * Recognized spellings for null values
@@ -149,4 +155,4 @@ class CSVReadOptions {
 }  // namespace config
 }  // namespace io
 }  // namespace cylon
-#endif //CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HPP_
+#endif  // CYLON_SRC_CYLON_IO_CSV_READ_CONFIG_HPP_
