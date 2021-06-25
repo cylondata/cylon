@@ -11,6 +11,9 @@ docker build -t cylon .
 ```bash
 docker run -it cylon
 ```
+## Re-building Cylon
+
+This docker conatiner comes with pre-built cylon binaries. Below steps should be followed if you want to change the core code and re-build Cylon core.
 
 Cylon will be installed in `/cylon/` directory. A container would have the following environment 
 variables and commands. 
