@@ -42,11 +42,26 @@ Do not use a prior installed pyarrow in your python environment.
 Uninstall it before running the setup.
 ```
 
-## OpenMPI
+## Installing MPI
 
-### From source
+Cylon uses MPI for distributed execution. So we need an MPI version installed in the system. There are many implementations
+of MPI standard such as MPICH and OpenMPI. We have tested Cylon with OpenMPI and you should be able to use any other MPI implementation like
+MPICH as well. 
 
-* We recommend using `OpenMPI 4.0.1`
+In this document we will explain how to install OpenMPI.
+
+### Installing OpenMPI with Ubuntu package manager
+
+```bash
+sudo apt install libopenmpi-dev
+```
+
+### Building OpenMPI From source (Not needed if installed from apt)
+
+In this section we will explain how to build and install OpenMPI 4.0.1 from source. The instructions can be used to build a higher 
+version of OpenMPI as well.
+
+* We recommend using `OpenMPI 4.0.1` or higher.
 * Download OpenMPI 4.0.1 from [https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.1.tar.gz](https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.1.tar.gz)
 * Extract the archive to a folder named `openmpi-4.0.1`
 * Also create a directory named `build` in some location. We will use this to install OpenMPI
@@ -68,11 +83,6 @@ Uninstall it before running the setup.
   ./configure --prefix=$BUILD --enable-mpi-java
   make -j 8;make install
   ```
-### Installing with package manager
-
-```bash
-sudo apt install libopenmpi-dev
-```
 
 ## Building Cylon From Source
 

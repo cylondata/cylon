@@ -2,7 +2,7 @@ module.exports = {
   someSidebar: {
     "Setting Up": ['compile', "conda"],
     "Architecture": ['arch'],
-    "Develop": ['cpp', 'python', "java"],
+    "Develop Cylon Programs": ['cpp', 'python', "java"],
     "Running Examples": ['mpi'],
     "Publications": ['pub'],
     "API": [{ "type": "link", "label": "Python API docs", "href": "https://cylondata.org/pydocs/frame.html" }, { "type": "link", "label": "Javadocs", "href": "https://cylondata.org/javadocs/index.html" }],
