@@ -288,6 +288,7 @@ arrow::Status ArrayIndexHashJoin(const std::shared_ptr<arrow::Array> &left_idx_c
   // probe
   probe_func_ptr(hash_map, (*arrays[build_idx])->length(), (*arrays[!build_idx])->length(),
                  *row_indices[build_idx], *row_indices[!build_idx]);
+  hashes[1].clear();
   return arrow::Status::OK();
 }
 
