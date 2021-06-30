@@ -104,12 +104,9 @@ public:
     for (const auto &arr: idx_col->chunks()) {
       const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
       const std::shared_ptr<arrow::ArrayData> &data = arr->data();
-      const T *left_data = data->template GetValues<T>(1);
-      if (left_data == NULLPTR) {
-        LOG(INFO) << "KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK";
-      }
+      const T *value_buffer = data->template GetValues<T>(1);
       for (int64_t i = 0; i < carr->length(); i++, offset++) {
-        partial_hashes[offset] = 31 * partial_hashes[offset] + static_cast<uint32_t>(left_data[i]);
+        partial_hashes[offset] = 31 * partial_hashes[offset] + static_cast<uint32_t>(value_buffer[i]);
       }
     }
 

@@ -86,7 +86,6 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
 class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
  public:
   using ARROW_ARRAY_T = arrow::FixedSizeBinaryArray;
-  using ARROW_BUILDER_T = arrow::FixedSizeBinaryBuilder;
 
   explicit FixedBinaryArraySplitKernel(arrow::MemoryPool *pool) : ArrowArraySplitKernel(pool) {}
 
@@ -96,27 +95,50 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
     if ((size_t)values->length() != target_partitions.size()) {
       return Status(Code::ExecutionError, "values rows != target_partitions length");
     }
+    
+    // if chunks 0 we can return immediately
+    if (values->chunks().size() == 0) {
+      return Status::OK();
+    }
 
-    std::vector<std::unique_ptr<ARROW_BUILDER_T>> builders;
-    builders.reserve(num_partitions);
+    std::shared_ptr<ARROW_ARRAY_T> first_array = std::static_pointer_cast<ARROW_ARRAY_T>(values->chunk(0));
+    int32_t width = first_array->byte_width();
+
+    std::vector<std::shared_ptr<arrow::Buffer>> build_buffers;
+    std::vector<uint8_t *> data_buffers;
+    std::vector<int> buffer_indexes;
     for (uint32_t i = 0; i < num_partitions; i++) {
-      builders.push_back(std::make_unique<ARROW_BUILDER_T>(values->type(), pool_));
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders.back()->Reserve(counts[i]));
+      int64_t buf_size = counts[i] * width;
+      arrow::Result<std::unique_ptr<arrow::Buffer>> result = arrow::AllocateBuffer(buf_size, pool_);
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+      std::shared_ptr<arrow::Buffer> indices_buf(std::move(result.ValueOrDie()));
+      build_buffers.push_back(indices_buf);
+      auto *indices_begin = reinterpret_cast<uint8_t *>(build_buffers.back()->mutable_data());
+      data_buffers.push_back(indices_begin);
+      buffer_indexes.push_back(0);
     }
 
     size_t offset = 0;
     for (const auto &array : values->chunks()) {
-      std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
+      const std::shared_ptr<arrow::ArrayData> &data = array->data();
+      const uint8_t *value_buffer = data->template GetValues<uint8_t>(1);
       const int64_t arr_len = array->length();
       for (int64_t i = 0; i < arr_len; i++, offset++) {
-        RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[target_partitions[offset]]->Append(casted_array->Value(i)));
+        unsigned int target_buffer = target_partitions[offset];
+        int idx = buffer_indexes[target_buffer];
+        memcpy(static_cast<void *>(data_buffers[target_buffer] + idx * width),
+               static_cast<const void *>(value_buffer + i * width), width);
+        buffer_indexes[target_buffer] = idx + 1;
       }
     }
 
     output.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
-      std::shared_ptr<arrow::Array> array;
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders[i]->Finish(&array));
+      std::vector<std::shared_ptr<arrow::Buffer>> buffs;
+      buffs.push_back(nullptr);
+      buffs.push_back(build_buffers[i]);
+      const std::shared_ptr<arrow::ArrayData> &data = arrow::ArrayData::Make(values->type(), counts[i], buffs, 0, 0);
+      std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
       output.push_back(array);
     }
 
