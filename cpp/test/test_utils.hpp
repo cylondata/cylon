@@ -145,7 +145,7 @@ int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
   LOG(INFO) << "Read tables in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start)
                 .count()
-            << "[ms]";
+            << "[ms]" << path1 << " " << path2 << " " << out_path;
 
   status = cylon::DistributedJoin(table1, table2, join_config, joined);
   LOG_AND_RETURN_INT_IF_FAILED(status)

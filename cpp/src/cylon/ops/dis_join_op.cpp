@@ -43,7 +43,7 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
   partition_op->AddChild(shuffle_op);
   execution->AddP(shuffle_op);
 
-  split_op = new SplitOp(ctx, schema, LEFT_RELATION, callback, {100, {config.join_config.GetLeftColumnIdx()}});
+  split_op = new SplitOp(ctx, schema, LEFT_RELATION, callback, {4000, {config.join_config.GetLeftColumnIdx()}});
   shuffle_op->AddChild(split_op);
   execution->AddP(split_op);
 
@@ -63,7 +63,7 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
   partition_op->AddChild(shuffle_op);
   execution->AddS(shuffle_op);
 
-  split_op = new SplitOp(ctx, schema, RIGHT_RELATION, callback, {100, {config.join_config.GetRightColumnIdx()}});
+  split_op = new SplitOp(ctx, schema, RIGHT_RELATION, callback, {4000, {config.join_config.GetRightColumnIdx()}});
   shuffle_op->AddChild(split_op);
   execution->AddS(split_op);
 
