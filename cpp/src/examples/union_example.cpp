@@ -24,8 +24,11 @@
  * This example reads two csv files and does a union on them.
  */
 int main(int argc, char *argv[]) {
-  if (argc < 3) {
-    LOG(ERROR) << "There should be two arguments with paths to csv files";
+  if (argc < 5) {
+    LOG(ERROR) << "./union_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
+               << "./union_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
+               << "./union_example f [n | o] csv_file1 csv_file2" << std::endl
+               << "./union_example f [n | o] csv_file1 csv_file2" << std::endl;
     return 1;
   }
 
@@ -52,9 +55,16 @@ int main(int argc, char *argv[]) {
       read_end_time - start_time).count() << "[ms]";
 
   auto union_start_time = std::chrono::steady_clock::now();
+  cylon::Status status;
   // apply union operation
-//  auto status = cylon::CCDistributedUnion(ctx, first_table, second_table, unioned_table);
-  auto status = cylon::DistributedUnion(first_table, second_table, unioned_table);
+  if (ops_param == "o") {
+    status = cylon::CCDistributedUnion(ctx, first_table, second_table, unioned_table);
+  } else if (ops_param == "n") {
+    status = cylon::DistributedUnion(first_table, second_table, unioned_table);
+  } else {
+    LOG(INFO) << "Incorrect arguments";
+    return 1;
+  }
   if (!status.is_ok()) {
     LOG(INFO) << "Union failed " << status.get_msg();
     ctx->Finalize();

@@ -21,8 +21,11 @@
 #include "example_utils.hpp"
 
 int main(int argc, char *argv[]) {
-  if (argc < 4) {
-    LOG(ERROR) << "There should be two arguments with paths to csv files";
+  if (argc < 6) {
+    LOG(ERROR) << "./join_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
+               << "./join_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
+               << "./join_example f [n | o] csv_file1 csv_file2" << std::endl
+               << "./join_example f [n | o] csv_file1 csv_file2" << std::endl;
     return 1;
   }
 
