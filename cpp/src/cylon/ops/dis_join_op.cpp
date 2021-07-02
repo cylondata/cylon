@@ -13,9 +13,7 @@
  */
 #include "dis_join_op.hpp"
 
-#include <utility>
 #include "all_to_all_op.hpp"
-#include "merge_op.hpp"
 #include "split_op.hpp"
 
 cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
@@ -43,7 +41,7 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
   partition_op->AddChild(shuffle_op);
   execution->AddP(shuffle_op);
 
-  split_op = new SplitOp(ctx, schema, LEFT_RELATION, callback, {6000, {config.join_config.GetLeftColumnIdx()}});
+  split_op = new SplitOp(ctx, schema, LEFT_RELATION, callback, {8000, {config.join_config.GetLeftColumnIdx()}});
   shuffle_op->AddChild(split_op);
   execution->AddP(split_op);
 
@@ -63,7 +61,7 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
   partition_op->AddChild(shuffle_op);
   execution->AddS(shuffle_op);
 
-  split_op = new SplitOp(ctx, schema, RIGHT_RELATION, callback, {6000, {config.join_config.GetRightColumnIdx()}});
+  split_op = new SplitOp(ctx, schema, RIGHT_RELATION, callback, {8000, {config.join_config.GetRightColumnIdx()}});
   shuffle_op->AddChild(split_op);
   execution->AddS(split_op);
 
@@ -78,4 +76,6 @@ bool cylon::DisJoinOP::Execute(int tag, std::shared_ptr<Table> &table) {
   this->InsertToChild(tag, tag, table);
   return true;
 }
+
+
 

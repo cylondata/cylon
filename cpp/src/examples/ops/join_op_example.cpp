@@ -20,19 +20,14 @@
 #include <table.hpp>
 #include <ops/dis_join_op.hpp>
 #include <string>
-
-void create_int64_table(char *const *argv,
-                        std::shared_ptr<cylon::CylonContext> &ctx,
-                        arrow::MemoryPool *pool,
-                        std::shared_ptr<arrow::Table> &left_table,
-                        std::shared_ptr<arrow::Table> &right_table);
+#include "../example_utils.hpp"
 
 int main(int argc, char *argv[]) {
-  if (argc < 3) {
-    LOG(ERROR) << "./join_op_example num_tuples_per_worker 0.0-1.0" << std::endl
-               << "./join_op_example num_tuples_per_worker 0.0-1.0  [hash | sort]" << std::endl
-               << "./join_op_example num_tuples_per_worker 0.0-1.0  csv_file1 csv_file2" << std::endl
-               << "./join_op_example num_tuples_per_worker 0.0-1.0  [hash | sort] csv_file1 csv_file2" << std::endl;
+  if (argc < 4) {
+    LOG(ERROR) << "./join_op_example m num_tuples_per_worker 0.0-1.0" << std::endl
+               << "./join_op_example m num_tuples_per_worker 0.0-1.0  [hash | sort]" << std::endl
+               << "./join_op_example f csv_file1 csv_file2" << std::endl
+               << "./join_op_example f csv_file1 csv_file2 [hash | sort] " << std::endl;
     return 1;
   }
 
@@ -40,46 +35,37 @@ int main(int argc, char *argv[]) {
   auto mpi_config = cylon::net::MPIConfig::Make();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  arrow::MemoryPool *pool = arrow::default_memory_pool();
   std::shared_ptr<cylon::Table> first_table, second_table, joined;
   cylon::join::config::JoinAlgorithm algorithm = cylon::join::config::JoinAlgorithm::SORT;
-  if (argc >= 3 && argc <= 4) {
-    if (argc == 4) {
-      if (!strcmp(argv[3], "hash")) {
+  std::string mem = std::string(argv[1]);
+  if (mem == "m") {
+    if (argc == 5) {
+      if (!strcmp(argv[4], "hash")) {
+        LOG(INFO) << "Hash join algorithm";
         algorithm = cylon::join::config::JoinAlgorithm::HASH;
+      } else {
+        LOG(INFO) << "Sort join algorithm";
       }
+    } else {
+      LOG(INFO) << "Sort join algorithm";
     }
-
-    std::shared_ptr<arrow::Table> left_table, right_table;
-    create_int64_table(argv, ctx, pool, left_table, right_table);
-    ctx->Barrier();
-
-    auto status = cylon::Table::FromArrowTable(ctx, left_table, first_table);
-    if (!status.is_ok()) {
-      LOG(INFO) << "Table reading failed " << argv[1];
-      ctx->Finalize();
-      return 1;
-    }
-
-    status = cylon::Table::FromArrowTable(ctx, right_table, second_table);
-    if (!status.is_ok()) {
-      LOG(INFO) << "Table reading failed " << argv[2];
-      ctx->Finalize();
-      return 1;
-    }
-  } else if (argc >= 5 && argc <= 6) {
-    if (argc == 6) {
-      if (!strcmp(argv[3], "hash")) {
+    uint64_t count = std::stoull(argv[2]);
+    double dup = std::stod(argv[3]);
+    cylon::examples::create_two_in_memory_tables(count, dup,ctx,first_table,second_table);
+  } else if (mem == "f") {
+    cylon::FromCSV(ctx, std::string(argv[2]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
+    cylon::FromCSV(ctx, std::string(argv[3]) + std::to_string(ctx->GetRank()) + ".csv", second_table);
+    if (argc == 5) {
+      if (!strcmp(argv[4], "hash")) {
+        LOG(INFO) << "Hash join algorithm";
         algorithm = cylon::join::config::JoinAlgorithm::HASH;
+      } else {
+        LOG(INFO) << "Sort join algorithm";
       }
-      cylon::FromCSV(ctx, std::string(argv[4]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
-      cylon::FromCSV(ctx, std::string(argv[5]) + std::to_string(ctx->GetRank()) + ".csv", second_table);
-    } else if (argc == 5) {
-      cylon::FromCSV(ctx, std::string(argv[4]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
-      cylon::FromCSV(ctx, std::string(argv[5]) + std::to_string(ctx->GetRank()) + ".csv", second_table);
     }
   }
 
+  ctx->Barrier();
   auto read_end_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Read tables in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -114,45 +100,5 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void create_int64_table(char *const *argv,
-                        std::shared_ptr<cylon::CylonContext> &ctx,
-                        arrow::MemoryPool *pool,
-                        std::shared_ptr<arrow::Table> &left_table,
-                        std::shared_ptr<arrow::Table> &right_table) {
-  arrow::Int64Builder left_id_builder(pool), right_id_builder(pool);
-  arrow::DoubleBuilder cost_builder(pool);
-  uint64_t count = std::stoull(argv[1]);
-  double dup = std::stod(argv[2]);
-  std::random_device rd;
-  std::mt19937_64 gen(0);
-  std::uniform_int_distribution<int64_t> distrib(0, (int64_t) (count * dup * ctx->GetWorldSize()));
 
-  std::mt19937_64 gen1(rd());
-  std::uniform_real_distribution<double> val_distrib;
-
-  arrow::Status st = left_id_builder.Reserve(count);
-  st = right_id_builder.Reserve(count);
-  st = cost_builder.Reserve(count);
-  for (uint64_t i = 0; i < count; i++) {
-    int64_t l = distrib(gen);
-    int64_t r = distrib(gen);
-    double v = val_distrib(gen1);
-    left_id_builder.UnsafeAppend(l);
-    right_id_builder.UnsafeAppend(r);
-    cost_builder.UnsafeAppend(v);
-  }
-
-  std::shared_ptr<arrow::Array> left, right, vals;
-  st = left_id_builder.Finish(&left);
-  st = right_id_builder.Finish(&right);
-  st = cost_builder.Finish(&vals);
-  std::vector<std::shared_ptr<arrow::Field>> left_schema_vector = {arrow::field("first", left->type()),
-                                                              arrow::field("second", vals->type())};
-  auto left_schema = std::make_shared<arrow::Schema>(left_schema_vector);
-  left_table = arrow::Table::Make(left_schema, {std::move(left), vals});
-  std::vector<std::shared_ptr<arrow::Field>> right_schema_vector = {arrow::field("first", right->type()),
-                                                               arrow::field("second", vals->type())};
-  auto right_schema = std::make_shared<arrow::Schema>(right_schema_vector);
-  right_table = arrow::Table::Make(right_schema, {std::move(right), std::move(vals)});
-}
 

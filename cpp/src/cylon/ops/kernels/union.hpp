@@ -19,14 +19,16 @@
 #include <table.hpp>
 #include <ops/kernels/row_comparator.hpp>
 #include <unordered_set>
+#include <queue>
 
 namespace cylon {
 namespace kernel {
 class Union {
  private:
-  std::shared_ptr<std::vector<std::shared_ptr<arrow::Table>>> tables;
   std::shared_ptr<arrow::Schema> schema;
   std::shared_ptr<CylonContext> ctx;
+  std::queue<std::shared_ptr<cylon::Table>> left_tables{};
+  std::queue<std::shared_ptr<cylon::Table>> right_tables{};
 
   std::shared_ptr<std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>> rows_set;
 
@@ -34,7 +36,7 @@ class Union {
   Union(const std::shared_ptr<CylonContext> &ctx,
         const std::shared_ptr<arrow::Schema> &schema,
         int64_t expected_rows);
-  void InsertTable(const std::shared_ptr<cylon::Table> &table);
+  void InsertTable(int tag, const std::shared_ptr<cylon::Table> &table);
   cylon::Status Finalize(std::shared_ptr<cylon::Table> &result);
 };
 }

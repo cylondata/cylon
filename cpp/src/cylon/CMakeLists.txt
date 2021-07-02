@@ -128,8 +128,8 @@ add_library(cylon SHARED
         ops/all_to_all_op.cpp
         ops/dis_union_op.hpp
         ops/dis_union_op.cpp
-        ops/dis_join_op.cpp
         ops/dis_join_op.hpp
+        ops/dis_join_op.cpp
         ops/execution/execution.hpp
         ops/execution/execution.cpp
         ops/kernels/join_kernel.hpp

@@ -1,5 +1,16 @@
 add_definitions(-DEXAMPLE_CMAKE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
 
+add_library(cylon_example_utils SHARED
+        example_utils.cpp
+        example_utils.hpp)
+
+include_directories(${MPI_INCLUDE_PATH})
+target_link_libraries(cylon_example_utils ${MPI_LIBRARIES})
+target_link_libraries(cylon_example_utils ${GLOG_LIBRARIES})
+target_link_libraries(cylon_example_utils ${ARROW_LIB})
+target_compile_options(cylon_example_utils PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
+install(TARGETS cylon_example_utils RUNTIME DESTINATION examples)
+
 #build a binary
 macro(cylon_add_exe EXENAME)
     add_executable(${EXENAME} ${EXENAME}.cpp)
@@ -7,6 +18,7 @@ macro(cylon_add_exe EXENAME)
     target_link_libraries(${EXENAME} cylon)
     target_link_libraries(${EXENAME} ${ARROW_LIB})
     target_link_libraries(${EXENAME} ${GLOG_LIBRARIES})
+    target_link_libraries(${EXENAME} cylon_example_utils)
     install(TARGETS ${EXENAME} RUNTIME DESTINATION examples)
 endmacro(cylon_add_exe)
 
@@ -51,6 +63,7 @@ macro(cylon_add_exe2 DIR EXENAME)
     target_link_libraries(${EXENAME} cylon)
     target_link_libraries(${EXENAME} ${ARROW_LIB})
     target_link_libraries(${EXENAME} ${GLOG_LIBRARIES})
+    target_link_libraries(${EXENAME} cylon_example_utils)
     install(TARGETS ${EXENAME} RUNTIME DESTINATION examples)
 endmacro(cylon_add_exe2)
 

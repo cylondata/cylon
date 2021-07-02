@@ -29,11 +29,16 @@ class DisUnionOp : public RootOp {
   DisUnionOpConfig config;
 
  public:
+  const static int32_t LEFT_RELATION = 100;
+  const static int32_t RIGHT_RELATION = 200;
+
   DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
              const std::shared_ptr<arrow::Schema> &schema,
              int id,
              const ResultsCallback &callback,
              const DisUnionOpConfig &config);
+
+  bool Execute(int tag, std::shared_ptr<Table> &table) override;
 };
 }
 #endif //CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_
