@@ -40,7 +40,7 @@ cylon::DisUnionOp::DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
 
   // build left sub tree
   partition_op = new PartitionOp(ctx, schema, LEFT_RELATION, callback,
-                                 {ctx->GetWorldSize(), std::move(part_cols)});
+                                 {ctx->GetWorldSize(), part_cols});
   this->AddChild(partition_op);
   execution->AddP(partition_op);
 
@@ -56,11 +56,11 @@ cylon::DisUnionOp::DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
   UnionOpConfig union_config;
   union_op = new UnionOp(ctx, schema, UNION_OP_ID, callback, union_config);
   split_op->AddChild(union_op);
-  execution->AddP(union_op);
+  execution->AddJoin(union_op);
 
   // build right sub tree
   partition_op = new PartitionOp(ctx, schema, RIGHT_RELATION, callback,
-                                 {ctx->GetWorldSize(), std::move(part_cols)});
+                                 {ctx->GetWorldSize(), part_cols});
   this->AddChild(partition_op);
   execution->AddS(partition_op);
 
