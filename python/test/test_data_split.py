@@ -29,15 +29,23 @@ def test_data_split():
 
     rows = 100
 
+    data_file = "/tmp/test_split.csv"
+
     if env.rank == 0:
+        # remove if the file already exists
+        try:
+            os.remove(data_file)
+        except OSError:
+            pass
         data = numpy.random.randint(100, size=(rows+1, 4))
-        numpy.savetxt("/tmp/test_split.csv", data, delimiter=",", fmt='%1f')
+
+        with open(data_file, 'w') as f:
+            numpy.savetxt(f, data, delimiter=",", fmt='%1f')
 
     env.barrier()
 
-    data_full = read_csv("/tmp/test_split.csv", slice=False, env=env)
-    data = read_csv("/tmp/test_split.csv", slice=True, env=env)
-
+    data_full = read_csv(data_file, slice=False, env=env)
+    data = read_csv(data_file, slice=True, env=env)
 
     np_data = data.to_numpy()
     np_data_full = data_full.to_numpy()
@@ -45,10 +53,10 @@ def test_data_split():
     seg_size = int(rows/env.world_size)
 
     for i in range(0, seg_size):
-        assert numpy.array_equal(np_data[i], np_data_full[(seg_size*env.rank)+i])
+        assert numpy.array_equal(
+            np_data[i], np_data_full[(seg_size*env.rank)+i])
 
-    if env.rank==0:
-        os.remove("/tmp/test_split.csv")
+    if env.rank == 0:
+        os.remove(data_file)
 
     env.finalize()
-
