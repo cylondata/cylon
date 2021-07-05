@@ -67,7 +67,5 @@ macro(cylon_add_exe2 DIR EXENAME)
     install(TARGETS ${EXENAME} RUNTIME DESTINATION examples)
 endmacro(cylon_add_exe2)
 
-cylon_add_exe2(ops com_comm_test)
-cylon_add_exe2(ops join_op_example)
 
 

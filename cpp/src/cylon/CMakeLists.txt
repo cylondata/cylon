@@ -116,10 +116,10 @@ add_library(cylon SHARED
         ops/partition_op.cpp
         ops/kernels/partition.hpp
         ops/kernels/partition.cpp
-        ops/union_op.hpp
-        ops/union_op.cpp
-        ops/kernels/union.cpp
-        ops/kernels/union.hpp
+        ops/set_op.hpp
+        ops/set_op.cpp
+        ops/kernels/set_kernel.cpp
+        ops/kernels/set_kernel.hpp
         ops/kernels/row_comparator.cpp
         ops/kernels/row_comparator.hpp
         ops/kernels/prepare_array.hpp

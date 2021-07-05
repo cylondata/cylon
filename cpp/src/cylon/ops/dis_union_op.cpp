@@ -15,14 +15,15 @@
 #include "dis_union_op.hpp"
 #include "partition_op.hpp"
 #include "all_to_all_op.hpp"
-#include "union_op.hpp"
+#include "set_op.hpp"
 #include "split_op.hpp"
 
 cylon::DisUnionOp::DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
                               const std::shared_ptr<arrow::Schema> &schema,
                               int id,
                               const ResultsCallback &callback,
-                              const DisUnionOpConfig &config)
+                              const DisUnionOpConfig &config,
+                              cylon::kernel::SetOpType op_type)
     : RootOp(ctx, schema, id, callback) {
   auto execution = new JoinExecution();
   execution->AddP(this);
@@ -53,8 +54,16 @@ cylon::DisUnionOp::DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
   execution->AddP(split_op);
 
   // add join op
-  UnionOpConfig union_config;
-  union_op = new UnionOp(ctx, schema, UNION_OP_ID, callback, union_config);
+  SetOpConfig union_config;
+  if (op_type == cylon::kernel::UNION) {
+    union_op = new UnionOp(ctx, schema, UNION_OP_ID, callback, union_config, cylon::kernel::SetOpType::UNION);
+  } else if (op_type == cylon::kernel::SUBTRACT) {
+    union_op = new UnionOp(ctx, schema, UNION_OP_ID, callback, union_config, cylon::kernel::SetOpType::SUBTRACT);
+  } else if (op_type == cylon::kernel::INTERSECT) {
+    union_op = new UnionOp(ctx, schema, UNION_OP_ID, callback, union_config, cylon::kernel::SetOpType::INTERSECT);
+  } else {
+    LOG(FATAL) << "Unsupported optype " << op_type;
+  }
   split_op->AddChild(union_op);
   execution->AddJoin(union_op);
 

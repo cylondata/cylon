@@ -16,12 +16,13 @@
 #define CYLON_SRC_CYLON_OPS_UNION_OP_HPP_
 
 #include "ops/api/parallel_op.hpp"
-#include <ops/kernels/union.hpp>
+#include <ops/kernels/set_kernel.hpp>
 
 namespace cylon {
-class UnionOpConfig {
+
+class SetOpConfig {
  public:
-  explicit UnionOpConfig(int64_t expected_rows = 100000) : expected_rows(expected_rows) {}
+  explicit SetOpConfig(int64_t expected_rows = 100000) : expected_rows(expected_rows) {}
 
   int64_t expected_rows;
 };
@@ -32,7 +33,8 @@ class UnionOp : public Op {
           const std::shared_ptr<arrow::Schema> &schema,
           int id,
           const ResultsCallback &callback,
-          const UnionOpConfig &config);
+          const SetOpConfig &config,
+          cylon::kernel::SetOpType type);
 
   ~UnionOp() override;
 
@@ -42,7 +44,7 @@ class UnionOp : public Op {
   bool Finalize() override;
 
  private:
-  cylon::kernel::Union *union_kernel;
+  std::unique_ptr<cylon::kernel::SetOp> union_kernel;
 };
 
 }

@@ -23,22 +23,26 @@
 
 namespace cylon {
 namespace kernel {
-class Union {
- private:
-  std::shared_ptr<arrow::Schema> schema;
-  std::shared_ptr<CylonContext> ctx;
-  std::queue<std::shared_ptr<cylon::Table>> left_tables{};
-  std::queue<std::shared_ptr<cylon::Table>> right_tables{};
 
-  std::shared_ptr<std::unordered_set<std::pair<int8_t, int64_t>, RowComparator, RowComparator>> rows_set;
-
- public:
-  Union(const std::shared_ptr<CylonContext> &ctx,
-        const std::shared_ptr<arrow::Schema> &schema,
-        int64_t expected_rows);
-  void InsertTable(int tag, const std::shared_ptr<cylon::Table> &table);
-  cylon::Status Finalize(std::shared_ptr<cylon::Table> &result);
+enum SetOpType {
+  UNION,
+  INTERSECT,
+  SUBTRACT,
 };
+
+class SetOp {
+ private:
+ public:
+  SetOp() {};
+  virtual void InsertTable(int tag, const std::shared_ptr<cylon::Table> &table) = 0;
+  virtual cylon::Status Finalize(std::shared_ptr<cylon::Table> &result) = 0;
+};
+
+std::unique_ptr<SetOp> CreateSetOp(const std::shared_ptr<CylonContext> &ctx,
+                                      const std::shared_ptr<arrow::Schema> &schema,
+                                      int64_t expected_rows,
+                                      SetOpType op_type);
+
 }
 }
 #endif //CYLON_SRC_CYLON_OPS_KERNELS_UNION_HPP_

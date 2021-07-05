@@ -436,6 +436,17 @@ Status CCDistributedUnion(const std::shared_ptr<cylon::CylonContext> &ctx,
                           std::shared_ptr<cylon::Table> &left,
                           std::shared_ptr<cylon::Table> &right,
                           std::shared_ptr<cylon::Table> &out);
+
+Status CCDistributedSubtract(const std::shared_ptr<cylon::CylonContext> &ctx,
+                             std::shared_ptr<cylon::Table> &left,
+                             std::shared_ptr<cylon::Table> &right,
+                             std::shared_ptr<cylon::Table> &out);
+
+Status CCDistributedIntersect(const std::shared_ptr<cylon::CylonContext> &ctx,
+                              std::shared_ptr<cylon::Table> &left,
+                              std::shared_ptr<cylon::Table> &right,
+                              std::shared_ptr<cylon::Table> &out);
+
 #ifdef BUILD_CYLON_PARQUET
 /**
  * Create a table by reading a parquet file

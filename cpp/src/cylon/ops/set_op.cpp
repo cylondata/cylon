@@ -12,7 +12,8 @@
  * limitations under the License.
  */
 
-#include "union_op.hpp"
+#include "set_op.hpp"
+#include "kernels/set_kernel.hpp"
 
 namespace cylon {
 
@@ -20,9 +21,11 @@ UnionOp::UnionOp(const std::shared_ptr<CylonContext> &ctx,
                  const std::shared_ptr<arrow::Schema> &schema,
                  int id,
                  const ResultsCallback &callback,
-                 const UnionOpConfig &config)
-    : Op(ctx, schema, id, callback),
-      union_kernel(new cylon::kernel::Union(ctx, schema, config.expected_rows)) {}
+                 const SetOpConfig &config,
+                 cylon::kernel::SetOpType type)
+    : Op(ctx, schema, id, callback) {
+  union_kernel = cylon::kernel::CreateSetOp(ctx, schema, 0, type);
+}
 
 bool UnionOp::Execute(int tag, std::shared_ptr<Table> &table) {
   union_kernel->InsertTable(tag, table);
@@ -42,6 +45,5 @@ void UnionOp::OnParentsFinalized() {
 }
 
 UnionOp::~UnionOp() {
-  delete union_kernel;
 }
 }

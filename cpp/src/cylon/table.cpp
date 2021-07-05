@@ -1117,7 +1117,39 @@ Status CCDistributedUnion(const std::shared_ptr<cylon::CylonContext> &ctx,
     out = table;
   };
   cylon::DisUnionOpConfig unionOpConfig;
-  auto op = cylon::DisUnionOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig);
+  auto op = cylon::DisUnionOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::UNION);
+  op.InsertTable(100, left);
+  op.InsertTable(200, right);
+  auto execution = op.GetExecution();
+  execution->WaitForCompletion();
+  return cylon::Status::OK();
+}
+
+Status CCDistributedSubtract(const std::shared_ptr<cylon::CylonContext> &ctx,
+                          std::shared_ptr<cylon::Table> &left,
+                          std::shared_ptr<cylon::Table> &right,
+                          std::shared_ptr<cylon::Table> &out) {
+  const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr<cylon::Table> &table) {
+    out = table;
+  };
+  cylon::DisUnionOpConfig unionOpConfig;
+  auto op = cylon::DisUnionOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::SUBTRACT);
+  op.InsertTable(100, left);
+  op.InsertTable(200, right);
+  auto execution = op.GetExecution();
+  execution->WaitForCompletion();
+  return cylon::Status::OK();
+}
+
+Status CCDistributedIntersect(const std::shared_ptr<cylon::CylonContext> &ctx,
+                             std::shared_ptr<cylon::Table> &left,
+                             std::shared_ptr<cylon::Table> &right,
+                             std::shared_ptr<cylon::Table> &out) {
+  const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr<cylon::Table> &table) {
+    out = table;
+  };
+  cylon::DisUnionOpConfig unionOpConfig;
+  auto op = cylon::DisUnionOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::INTERSECT);
   op.InsertTable(100, left);
   op.InsertTable(200, right);
   auto execution = op.GetExecution();

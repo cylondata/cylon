@@ -16,6 +16,7 @@
 #define CYLON_SRC_CYLON_OPS_DIS_UNION_OP_HPP_
 
 #include "ops/api/parallel_op.hpp"
+#include "ops/kernels/set_kernel.hpp"
 
 namespace cylon {
 
@@ -36,7 +37,8 @@ class DisUnionOp : public RootOp {
              const std::shared_ptr<arrow::Schema> &schema,
              int id,
              const ResultsCallback &callback,
-             const DisUnionOpConfig &config);
+             const DisUnionOpConfig &config,
+             cylon::kernel::SetOpType op_type);
 
   bool Execute(int tag, std::shared_ptr<Table> &table) override;
 };
