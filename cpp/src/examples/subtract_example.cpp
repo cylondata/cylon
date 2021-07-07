@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   auto read_end_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Read all in " << std::chrono::duration_cast<std::chrono::milliseconds>(
       read_end_time - start_time).count() << "[ms]";
-
+  ctx->Barrier();
   auto union_start_time = std::chrono::steady_clock::now();
   cylon::Status status;
   // apply union operation

@@ -73,12 +73,11 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-
+  ctx->Barrier();
   auto read_end_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Read tables in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
-
   auto join_config = cylon::join::config::JoinConfig(cylon::join::config::JoinType::INNER,
                                                      {0},
                                                      {0},

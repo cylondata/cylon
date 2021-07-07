@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     cylon::FromCSV(ctx, std::string(argv[3]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
     cylon::FromCSV(ctx, std::string(argv[4]) + std::to_string(ctx->GetRank()) + ".csv", second_table);
   }
-
+  ctx->Barrier();
   auto read_end_time = std::chrono::steady_clock::now();
   LOG(INFO) << "Read all in " << std::chrono::duration_cast<std::chrono::milliseconds>(
       read_end_time - start_time).count() << "[ms]";
