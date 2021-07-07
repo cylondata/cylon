@@ -93,5 +93,8 @@ module.exports = {
     ],
     customFields: {
         twitterImage: "img/wheel.png",
-    }
+    },
+    scripts:[
+        'https://static.medium.com/embed.js'
+    ]
 };

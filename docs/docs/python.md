@@ -57,7 +57,7 @@ numpy_arr = cylon_tb.to_numpy()
 
 Local Operations
 
-Local operations of PyCylon are backed by a high performance C++ core and 
+Local operations of PyCylon are backed by a high performance C++ core and
 can be simply executed as follows.
 
 ```python
@@ -74,7 +74,7 @@ print(df3)
 
 Distributed Operations
 
-Same operations can be executed ina distributed environment 
+Same operations can be executed ina distributed environment
 by simply passing the CylonEnv to the same function.
 
 ```python
@@ -97,11 +97,36 @@ print(df3)
 ## PyCylon Examples
 
 1. [Data Loading](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/data_loading.py)
+
+This example shows how data can be loaded into Cylon using it's built in APIs and also using other frameworks like Pandas.
+When loading from Pandas, Numpy or Apache Arrow to Cylon, there is no additional data copying overhead. When running on
+a distributed environment, data can be either pre-partitioned and load based on the worker ID, or Cylon provide additional flags
+to partition data if all the workers are configured to read from the same source.
+
 2. [Concat](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/concat.py)
+
+The Concat operation is analogous to the Union operation in databases when applied across axis 0. 
+If applied across axis 1, it will be similar to doing a Join.
+
 3. [Join](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/join.py)
+
+Join operation can be used to merge two DataFrames across the index columns. Cylon currently support two join algorithms(Sort Join and Hash Join)
+and four join types(Left, Right, Inner, Full Outer).
+
+
 4. [Merge](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/merge.py)
+
+Unlike the Join, Merge can be applied on non index columns. Similar to Join, Merge can be performed using two join algorithms(Sort Join and Hash Join)
+and four join types(Left, Right, Inner, Full Outer).
+
 5. [Sort](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/sort.py)
-5. [Group By](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/groupby.py)
+
+Sort operation can be used to re-arrange the rows of a DataFrame based on one or more columns. If two(or more) columns are specified,
+sort will be first done on the first column and then rows having similar values in the first column will be sorted based on the second column.
+
+6. [Group By](https://github.com/cylondata/cylon/blob/master/python/examples/dataframe/groupby.py)
+
+Group BY works similar to GROUP BY operator in databases. This should be coupled with an aggregate operation such as min, max, std, etc.
 
 ## Logging
 

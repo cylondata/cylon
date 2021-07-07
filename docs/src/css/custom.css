@@ -7,7 +7,7 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #042A51;
+  --ifm-color-primary: #042a51;
   --ifm-color-primary-dark: rgb(172, 175, 75);
   --ifm-color-primary-darker: rgb(222, 203, 23);
   --ifm-color-primary-darkest: rgb(26, 136, 112);
@@ -22,4 +22,11 @@
   display: block;
   margin: 0 calc(-1 * var(--ifm-pre-padding));
   padding: 0 var(--ifm-pre-padding);
+}
+
+.blogs-grid {
+  display: grid;
+  grid-auto-columns: auto;
+  grid-template-columns: 1fr 1fr;
+  grid-row-gap: 20px;
 }
