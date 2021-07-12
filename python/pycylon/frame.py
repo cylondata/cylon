@@ -297,6 +297,8 @@ class DataFrame(object):
                 columns = rename_with_new_column_names(data, columns)
                 data = data.rename(columns=columns)
             return data
+        elif not data:
+
         else:
             raise ValueError(f"Invalid data structure, {type(data)}")
 

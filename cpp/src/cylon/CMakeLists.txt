@@ -167,6 +167,8 @@ add_library(cylon SHARED
         indexing/indexer.cpp
         util/logging.hpp
         util/logging.cpp
+        ops.cpp
+        ops.hpp
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")

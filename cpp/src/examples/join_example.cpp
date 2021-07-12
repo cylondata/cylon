@@ -19,6 +19,7 @@
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
 #include "example_utils.hpp"
+#include <ops.hpp>
 
 int main(int argc, char *argv[]) {
   if (argc < 6) {
@@ -84,8 +85,12 @@ int main(int argc, char *argv[]) {
                                                      algorithm,
                                                      "l_",
                                                      "r_");
-  join_config.set_use_ops(ops);
-  auto status = cylon::DistributedJoin(first_table, second_table, join_config, joined);
+  cylon::Status status;
+  if (ops) {
+    status = cylon::JoinOperation(ctx, first_table, second_table, join_config, joined);
+  } else {
+    status = cylon::DistributedJoin(first_table, second_table, join_config, joined);
+  }
   if (!status.is_ok()) {
     LOG(INFO) << "Table join failed ";
     ctx->Finalize();

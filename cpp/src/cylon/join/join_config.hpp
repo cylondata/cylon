@@ -184,16 +184,8 @@ class JoinConfig {
     return left_column_idx.size() > 1 || right_column_idx.size() > 1;
   }
 
-  bool is_use_ops() const {
-    return use_ops;
-  }
-
   int32_t get_num_splits() const {
     return num_splits;
-  }
-
-  void set_use_ops(bool ops) {
-    use_ops = ops;
   }
 
   void set_num_splits(int32_t splits) {
@@ -206,7 +198,6 @@ private:
   const std::vector<int> left_column_idx, right_column_idx;
   const std::string left_table_suffix;
   const std::string right_table_suffix;
-  bool use_ops = false;
   int32_t num_splits = 10;
 };
 }  // namespace util

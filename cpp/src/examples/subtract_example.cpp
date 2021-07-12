@@ -18,6 +18,7 @@
 #include <table.hpp>
 #include <net/mpi/mpi_communicator.hpp>
 #include "example_utils.hpp"
+#include <ops.hpp>
 
 int main(int argc, char *argv[]) {
   if (argc < 5) {
@@ -54,7 +55,7 @@ int main(int argc, char *argv[]) {
   cylon::Status status;
   // apply union operation
   if (ops_param == "o") {
-    status = cylon::CCDistributedSubtract(ctx, first_table, second_table, unioned_table);
+    status = cylon::SubtractOperation(ctx, first_table, second_table, unioned_table);
   } else if (ops_param == "n") {
     status = cylon::DistributedSubtract(first_table, second_table, unioned_table);
   } else {

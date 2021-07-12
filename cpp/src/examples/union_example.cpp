@@ -18,6 +18,7 @@
 #include <net/mpi/mpi_communicator.hpp>
 #include <ctx/cylon_context.hpp>
 #include <table.hpp>
+#include <ops.hpp>
 #include "example_utils.hpp"
 
 /**
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]) {
   cylon::Status status;
   // apply union operation
   if (ops_param == "o") {
-    status = cylon::CCDistributedUnion(ctx, first_table, second_table, unioned_table);
+    status = cylon::UnionOperation(ctx, first_table, second_table, unioned_table);
   } else if (ops_param == "n") {
     status = cylon::DistributedUnion(first_table, second_table, unioned_table);
   } else {

@@ -478,25 +478,22 @@ Status Table::ToArrowTable(std::shared_ptr<arrow::Table> &out) {
 Status DistributedJoin(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &right,
 					   const join::config::JoinConfig &join_config,
 					   std::shared_ptr<cylon::Table> &out) {
-  if (!join_config.is_use_ops()) {
-    // check whether the world size is 1
-    const auto &ctx = left->GetContext();
-    if (ctx->GetWorldSize() == 1) {
-      return Join(left, right, join_config, out);
-    }
-
-    std::shared_ptr<arrow::Table> left_final_table, right_final_table;
-    RETURN_CYLON_STATUS_IF_FAILED(shuffle_two_tables_by_hashing(ctx, left, join_config.GetLeftColumnIdx(),
-                                                                right, join_config.GetRightColumnIdx(),
-                                                                left_final_table, right_final_table));
-
-    std::shared_ptr<arrow::Table> table;
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::JoinTables(left_final_table, right_final_table, join_config, &table,
-                                                         cylon::ToArrowPool(ctx)));
-    out = std::make_shared<cylon::Table>(ctx, table);
-  } else {
-    cylon::CCDistributedJoin(left->GetContext(), left, right, join_config, out);
+  // check whether the world size is 1
+  const auto &ctx = left->GetContext();
+  if (ctx->GetWorldSize() == 1) {
+    return Join(left, right, join_config, out);
   }
+
+  std::shared_ptr<arrow::Table> left_final_table, right_final_table;
+  RETURN_CYLON_STATUS_IF_FAILED(shuffle_two_tables_by_hashing(ctx, left, join_config.GetLeftColumnIdx(),
+                                                              right, join_config.GetRightColumnIdx(),
+                                                              left_final_table, right_final_table));
+
+  std::shared_ptr<arrow::Table> table;
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::JoinTables(left_final_table, right_final_table, join_config, &table,
+                                                       cylon::ToArrowPool(ctx)));
+    out = std::make_shared<cylon::Table>(ctx, table);
+
   return Status::OK();
 }
 
@@ -1091,71 +1088,7 @@ Table::Table(const std::shared_ptr<cylon::CylonContext> &ctx, std::vector<std::s
   }
 }
 
-Status CCDistributedJoin(const std::shared_ptr<cylon::CylonContext> &ctx,
-                                std::shared_ptr<cylon::Table> &left,
-                                std::shared_ptr<cylon::Table> &right,
-                                const cylon::join::config::JoinConfig &join_config,
-                                std::shared_ptr<cylon::Table> &out) {
-  const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr<cylon::Table> &table) {
-    out = table;
-  };
-  const auto &part_config = cylon::PartitionOpConfig(ctx->GetWorldSize(), {0});
-  const auto &dist_join_config = cylon::DisJoinOpConfig(part_config, join_config);
-  auto op = cylon::DisJoinOP(ctx, left->get_table()->schema(), 0, callback, dist_join_config);
-  op.InsertTable(100, left);
-  op.InsertTable(200, right);
-  auto execution = op.GetExecution();
-  execution->WaitForCompletion();
-  return cylon::Status::OK();
-}
 
-Status CCDistributedUnion(const std::shared_ptr<cylon::CylonContext> &ctx,
-                         std::shared_ptr<cylon::Table> &left,
-                         std::shared_ptr<cylon::Table> &right,
-                         std::shared_ptr<cylon::Table> &out) {
-  const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr<cylon::Table> &table) {
-    out = table;
-  };
-  cylon::DisUnionOpConfig unionOpConfig;
-  auto op = cylon::DisUnionOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::UNION);
-  op.InsertTable(100, left);
-  op.InsertTable(200, right);
-  auto execution = op.GetExecution();
-  execution->WaitForCompletion();
-  return cylon::Status::OK();
-}
-
-Status CCDistributedSubtract(const std::shared_ptr<cylon::CylonContext> &ctx,
-                          std::shared_ptr<cylon::Table> &left,
-                          std::shared_ptr<cylon::Table> &right,
-                          std::shared_ptr<cylon::Table> &out) {
-  const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr<cylon::Table> &table) {
-    out = table;
-  };
-  cylon::DisUnionOpConfig unionOpConfig;
-  auto op = cylon::DisUnionOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::SUBTRACT);
-  op.InsertTable(100, left);
-  op.InsertTable(200, right);
-  auto execution = op.GetExecution();
-  execution->WaitForCompletion();
-  return cylon::Status::OK();
-}
-
-Status CCDistributedIntersect(const std::shared_ptr<cylon::CylonContext> &ctx,
-                             std::shared_ptr<cylon::Table> &left,
-                             std::shared_ptr<cylon::Table> &right,
-                             std::shared_ptr<cylon::Table> &out) {
-  const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr<cylon::Table> &table) {
-    out = table;
-  };
-  cylon::DisUnionOpConfig unionOpConfig;
-  auto op = cylon::DisUnionOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::INTERSECT);
-  op.InsertTable(100, left);
-  op.InsertTable(200, right);
-  auto execution = op.GetExecution();
-  execution->WaitForCompletion();
-  return cylon::Status::OK();
-}
 
 #ifdef BUILD_CYLON_PARQUET
 Status FromParquet(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
