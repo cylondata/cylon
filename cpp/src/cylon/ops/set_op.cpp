@@ -33,7 +33,6 @@ bool UnionOp::Execute(int tag, std::shared_ptr<Table> &table) {
 }
 
 bool UnionOp::Finalize() {
-  LOG(INFO) << "Finalize Union op";
   std::shared_ptr<cylon::Table> final_result;
   union_kernel->Finalize(final_result);
   InsertToAllChildren(0, final_result);

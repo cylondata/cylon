@@ -24,7 +24,7 @@ class DisUnionOpConfig {
 
 };
 
-class DisUnionOp : public RootOp {
+class DisSetOp : public RootOp {
 
  private:
   DisUnionOpConfig config;
@@ -33,12 +33,12 @@ class DisUnionOp : public RootOp {
   const static int32_t LEFT_RELATION = 100;
   const static int32_t RIGHT_RELATION = 200;
 
-  DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
-             const std::shared_ptr<arrow::Schema> &schema,
-             int id,
-             const ResultsCallback &callback,
-             const DisUnionOpConfig &config,
-             cylon::kernel::SetOpType op_type);
+  DisSetOp(const std::shared_ptr<CylonContext> &ctx,
+           const std::shared_ptr<arrow::Schema> &schema,
+           int id,
+           const ResultsCallback &callback,
+           const DisUnionOpConfig &config,
+           cylon::kernel::SetOpType op_type);
 
   bool Execute(int tag, std::shared_ptr<Table> &table) override;
 };

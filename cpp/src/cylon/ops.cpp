@@ -43,7 +43,7 @@ Status UnionOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
     out = table;
   };
   cylon::DisUnionOpConfig unionOpConfig;
-  auto op = cylon::DisUnionOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::UNION);
+  auto op = cylon::DisSetOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::UNION);
   op.InsertTable(100, left);
   op.InsertTable(200, right);
   auto execution = op.GetExecution();
@@ -59,7 +59,7 @@ Status SubtractOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
     out = table;
   };
   cylon::DisUnionOpConfig unionOpConfig;
-  auto op = cylon::DisUnionOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::SUBTRACT);
+  auto op = cylon::DisSetOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::SUBTRACT);
   op.InsertTable(100, left);
   op.InsertTable(200, right);
   auto execution = op.GetExecution();
@@ -75,7 +75,7 @@ Status IntersectOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
     out = table;
   };
   cylon::DisUnionOpConfig unionOpConfig;
-  auto op = cylon::DisUnionOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::INTERSECT);
+  auto op = cylon::DisSetOp(ctx, left->get_table()->schema(), 0, callback, unionOpConfig, cylon::kernel::INTERSECT);
   op.InsertTable(100, left);
   op.InsertTable(200, right);
   auto execution = op.GetExecution();

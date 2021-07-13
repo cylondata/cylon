@@ -12,21 +12,21 @@
  * limitations under the License.
  */
 
-#include "dis_union_op.hpp"
+#include "dis_set_op.hpp"
 #include "partition_op.hpp"
 #include "all_to_all_op.hpp"
 #include "set_op.hpp"
 #include "split_op.hpp"
 
-cylon::DisUnionOp::DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
-                              const std::shared_ptr<arrow::Schema> &schema,
-                              int id,
-                              const ResultsCallback &callback,
-                              const DisUnionOpConfig &config,
-                              cylon::kernel::SetOpType op_type)
+cylon::DisSetOp::DisSetOp(const std::shared_ptr<CylonContext> &ctx,
+                          const std::shared_ptr<arrow::Schema> &schema,
+                          int id,
+                          const ResultsCallback &callback,
+                          const DisUnionOpConfig &config,
+                          cylon::kernel::SetOpType op_type)
     : RootOp(ctx, schema, id, callback) {
-  auto execution = new JoinExecution();
-  execution->AddP(this);
+  auto execution = new ForkJoinExecution();
+  execution->AddLeft(this);
   this->SetExecution(execution);
 
   const int32_t UNION_OP_ID = 4;
@@ -43,15 +43,15 @@ cylon::DisUnionOp::DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
   partition_op = new PartitionOp(ctx, schema, LEFT_RELATION, callback,
                                  {ctx->GetWorldSize(), part_cols});
   this->AddChild(partition_op);
-  execution->AddP(partition_op);
+  execution->AddLeft(partition_op);
 
   shuffle_op = new AllToAllOp(ctx, schema, LEFT_RELATION, callback, {});
   partition_op->AddChild(shuffle_op);
-  execution->AddP(shuffle_op);
+  execution->AddLeft(shuffle_op);
 
   split_op = new SplitOp(ctx, schema, LEFT_RELATION, callback, {8000, {0}});
   shuffle_op->AddChild(split_op);
-  execution->AddP(split_op);
+  execution->AddLeft(split_op);
 
   // add join op
   SetOpConfig union_config;
@@ -65,26 +65,26 @@ cylon::DisUnionOp::DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
     LOG(FATAL) << "Unsupported optype " << op_type;
   }
   split_op->AddChild(union_op);
-  execution->AddJoin(union_op);
+  execution->AddFinal(union_op);
 
   // build right sub tree
   partition_op = new PartitionOp(ctx, schema, RIGHT_RELATION, callback,
                                  {ctx->GetWorldSize(), part_cols});
   this->AddChild(partition_op);
-  execution->AddS(partition_op);
+  execution->AddRight(partition_op);
 
   shuffle_op = new AllToAllOp(ctx, schema, RIGHT_RELATION, callback, {});
   partition_op->AddChild(shuffle_op);
-  execution->AddS(shuffle_op);
+  execution->AddRight(shuffle_op);
 
   split_op = new SplitOp(ctx, schema, RIGHT_RELATION, callback, {8000, {0}});
   shuffle_op->AddChild(split_op);
-  execution->AddS(split_op);
+  execution->AddRight(split_op);
 
   split_op->AddChild(union_op); // join_op is already initialized
 }
 
-bool cylon::DisUnionOp::Execute(int tag, std::shared_ptr<Table> &table) {
+bool cylon::DisSetOp::Execute(int tag, std::shared_ptr<Table> &table) {
   if (tag != LEFT_RELATION && tag != RIGHT_RELATION) {
     LOG(INFO) << "Unknown tag";
     return false;

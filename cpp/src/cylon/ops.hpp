@@ -16,7 +16,7 @@
 #define CYLON_API_H
 
 #include "ops/dis_join_op.hpp"
-#include "ops/dis_union_op.hpp"
+#include "ops/dis_set_op.hpp"
 
 namespace cylon {
 

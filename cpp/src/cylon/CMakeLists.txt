@@ -126,8 +126,8 @@ add_library(cylon SHARED
         ops/kernels/prepare_array.cpp
         ops/all_to_all_op.hpp
         ops/all_to_all_op.cpp
-        ops/dis_union_op.hpp
-        ops/dis_union_op.cpp
+        ops/dis_set_op.hpp
+        ops/dis_set_op.cpp
         ops/dis_join_op.hpp
         ops/dis_join_op.cpp
         ops/execution/execution.hpp
