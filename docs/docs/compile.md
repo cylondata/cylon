@@ -6,23 +6,24 @@ sidebar_label: Compiling
 
 Cylon has C++ core, Java and Python bindings. You can compile these in three steps.
 
+Cylon can be build along with Arrow (Cylon will build Apache Arrow) or it can be build by pointing to an existing
+Arrow installation. 
+
 ## Prerequisites
 
 Here are the prerequisites for compiling Cylon.
 
 1. CMake 3.16.5
-2. OpenMPI 4.0.1 or higher
+2. OpenMPI 4.0.1 or higher (You can use any other MPI version as well, we tested with OpenMPI)
 3. Python 3.7 or higher
 4. C++ 14 or higher
 
-## Python Environment
+### Python Environment
 
-Because Cylon build Apache Arrow with it, we need to specify a Python environment to the build.
+We need to specify a Python environment to the build script. If you're using a virtual environment, 
+make sure to set the virtual environment path. Or you can specify /usr as the path if you're installing in the system path.
 
-If you're using a virtual environment, make sure to set the virtual environment path. Or you can specify /usr as
-the path if you're installing in the system path.
-
-### Create a virtual environment
+#### Create a virtual environment
 
 ```
 cd  $HOME/cylon
@@ -42,23 +43,116 @@ Do not use a prior installed pyarrow in your python environment.
 Uninstall it before running the setup.
 ```
 
-## Installing MPI
+### Installing MPI
 
 Cylon uses MPI for distributed execution. So we need an MPI version installed in the system. There are many implementations
 of MPI standard such as MPICH and OpenMPI. We have tested Cylon with OpenMPI and you should be able to use any other MPI implementation like
 MPICH as well. 
 
-In this document we will explain how to install OpenMPI.
-
-### Installing OpenMPI with Ubuntu package manager
+In this document we will explain how to install OpenMPI. You can use the following command to install OpenMPI on 
+an Ubuntu system. If you would like to build OpenMPI with custom options, please refer to their [documentation](https://www.open-mpi.org/faq/?category=building) or you can
+follow the quick tutorial at the end of the document to do so. 
 
 ```bash
 sudo apt install libopenmpi-dev
 ```
 
-### Building OpenMPI From source (Not needed if installed from apt)
+## Build Cylon & PyCylon
 
-In this section we will explain how to build and install OpenMPI 4.0.1 from source. The instructions can be used to build a higher 
+Here we will walk you through building Cylon along with Apache Arrow.
+
+We have provided a build script to make the build process easier. It is found in Cylon source root directory.
+Please note that Cylon will build Apache Arrow (both `libarrow` and `pyarrow`) alongside Cylon.  
+
+### Build C++ APIs
+
+```bash
+./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --cpp [--release | --debug]
+```
+
+Example:
+
+```bash
+./build.sh -pyenv $HOME/cylon/ENV -bpath $HOME/cylon/build --cpp --release
+```
+
+```txt
+Note: The default build mode is release 
+```
+
+Now lets try to run an C++ example and see whether our compilation is successful.
+
+
+
+### Build Python APIs
+
+Cylon provides Python APIs with Cython. You can use the following command to build the Python library.
+
+```bash
+./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --python
+```
+
+Here is an example command.
+
+```bash
+./build.sh -pyenv $HOME/cylon/ENV -bpath $HOME/cylon/build --python
+```
+
+This command will install the PyCylon and PyArrow into the virtual environment we specified. 
+
+### Updating `LD_LIBRARY_PATH`
+
+Before running the code in the base path of the cloned repo
+run the following command. Or add this to your `bashrc`.
+
+```bash
+export LD_LIBRARY_PATH=<path to cmake build dir>/arrow/install/lib:<path to cmake build dir>/lib:$LD_LIBRARY_PATH
+```
+
+### Running Tests 
+
+You can run Cylon tests as follows. 
+
+For C++ tests 
+```bash
+./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --cpp --test
+```
+
+Here is an example command.
+
+```bash
+./build.sh -pyenv $HOME/cylon/ENV -bpath $HOME/cylon/build --cpp --test
+```
+
+For Python tests
+
+```bash
+./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --python --pytest
+```
+
+Here is an example command
+
+```bash
+./build.sh -pyenv $HOME/cylon/ENV -bpath $HOME/cylon/build --python --test
+```
+
+## Building Cylon With An Existing Arrow Installation
+
+Instead of building Cylon and Apache Arrow together, you can use [`pyarrow` distribution from`pip`](https://pypi.org/project/pyarrow/) as follows.
+This will build Cylon C++ and Python APIs.
+
+```bash
+python3 -m venv <path to your env>
+source <path to your env>/bin/activate 
+pip install pyarrow==2.0.0
+
+cd <cylon source dir>
+./build.sh -pyenv <path to your env> -bpath <path to cmake build dir> --python_with_pyarrow  [--test | --pytest]
+```
+
+## Building OpenMPI From Source 
+
+In this section we will explain how to build and install OpenMPI 4.0.1 from source. The instructions can be used to build a higher
 version of OpenMPI as well.
 
 * We recommend using `OpenMPI 4.0.1` or higher.
@@ -83,77 +177,3 @@ version of OpenMPI as well.
   ./configure --prefix=$BUILD --enable-mpi-java
   make -j 8;make install
   ```
-
-## Building Cylon From Source
-
-We have provided a build script to make the build process easier. It is found in Cylon source root directory.
-Please note that Cylon will build Apache Arrow (both `libarrow` and `pyarrow`) alongside Cylon.  
-
-### Build C++ APIs
-
-```bash
-./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --cpp [--release | --debug]
-```
-
-Example:
-
-```bash
-./build.sh -pyenv $HOME/cylon/ENV -bpath $HOME/cylon/build --cpp --release
-```
-
-```txt
-Note: The default build mode is release 
-```
-
-### Build Python APIs
-
-Cylon provides Python APIs with Cython.
-
-If you're building for the first time, you can use `--all` option in build.
-If you'have already built cpp and want to compile the your changes to the API,
-do the following,
-
-```bash
-./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --python
-```
-
-Note: You only need to do `--python` just once after the initial C++ build. If you develop the
-Cython or Python APIs, use `--cython` flag instead.
-
-### Updating `LD_LIBRARY_PATH`
-
-Before running the code in the base path of the cloned repo
-run the following command. Or add this to your `bashrc`.
-
-```bash
-export LD_LIBRARY_PATH=<path to cmake build dir>/arrow/install/lib:<path to cmake build dir>/lib:$LD_LIBRARY_PATH
-```
-
-### Running Tests 
-
-You can run Cylon tests as follows. 
-
-For C++ tests 
-```bash
-./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --cpp --test
-```
-
-For Python tests 
-```bash
-./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --python --pytest
-```
-
-## Building Cylon using PyArrow from Python-pip
-
-Instead of building Cylon and Apache Arrow together, you can use [`pyarrow` distribution from`pip`](https://pypi.org/project/pyarrow/) as follows.
-This will build Cylon C++ and Python APIs.
-
-```bash
-python3 -m venv <path to your env>
-source <path to your env>/bin/activate 
-pip install pyarrow==2.0.0
-
-cd <cylon source dir>
-./build.sh -pyenv <path to your env> -bpath <path to cmake build dir> --python_with_pyarrow  [--test | --pytest]
-```
-
