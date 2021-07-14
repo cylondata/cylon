@@ -1,6 +1,6 @@
 ---
 id: compile
-title: Compiling
+title: Compiling Cylon
 sidebar_label: Compiling
 ---
 
@@ -67,13 +67,15 @@ Please note that Cylon will build Apache Arrow (both `libarrow` and `pyarrow`) a
 ### Build C++ APIs
 
 ```bash
-./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --cpp [--release | --debug]
+./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> -ipath <path to binary install directory> --cpp [--release | --debug]
 ```
 
 Example:
 
 ```bash
-./build.sh -pyenv $HOME/cylon/ENV -bpath $HOME/cylon/build --cpp --release
+# make the cylon cpp library install directory
+mkdir $HOME/cylon_install
+./build.sh -pyenv $HOME/cylon/ENV -bpath $HOME/cylon/build -ipath $HOME/cylon_install --cpp --release
 ```
 
 ```txt
@@ -82,11 +84,38 @@ Note: The default build mode is release
 
 Now lets try to run an C++ example and see whether our compilation is successful.
 
+```bash
+# export the lib path
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/cylon_install/lib
+cd $HOME/cylon_install
+# this will run the join example with randomly generated data
+./examples/join_example m o 40000 1 sort
+```
 
+It will generate an output like following. 
+
+```bash
+I0714 01:49:30.757613 867371 join_example.cpp:57] Sort join algorithm
+I0714 01:49:30.763633 867371 join_example.cpp:79] Read tables in 363[ms]
+I0714 01:49:30.840909 867371 partition_op.cpp:80] 0 Partition start: Wed Jul 14 01:49:30 2021 time: 0
+I0714 01:49:30.843380 867371 all_to_all_op.cpp:72] Shuffle time: 2
+I0714 01:49:30.851606 867371 split_op.cpp:152] Split time: 10 Fin time: 8 Split time: 2 Call count: 1
+I0714 01:49:30.852095 867371 partition_op.cpp:80] 0 Partition start: Wed Jul 14 01:49:30 2021 time: 0
+I0714 01:49:30.854277 867371 all_to_all_op.cpp:72] Shuffle time: 2
+I0714 01:49:30.862313 867371 split_op.cpp:152] Split time: 10 Fin time: 8 Split time: 2 Call count: 1
+I0714 01:49:30.953450 867371 join_kernel.cpp:57] Done concatenating tables, rows :  39712
+I0714 01:49:30.976418 867371 join_op.cpp:46] Join time : 110
+I0714 01:49:31.037182 867371 join_example.cpp:100] First table had : 40000 and Second table had : 40000, Joined has : 39712
+I0714 01:49:31.038038 867371 join_example.cpp:102] Join done in 272[ms]
+```
 
 ### Build Python APIs
 
-Cylon provides Python APIs with Cython. You can use the following command to build the Python library.
+Cylon provides Python APIs with Cython. Cylon will build, Cylon CPP, Cylon Python, Arrow CPP and Arrow Python here. In this mode
+it will install the Cylon and PyCylon libraries to the Python environment using pip. We only support pip through source builds.
+If you want to use an existing Cylon binary you would need to use Conda packages. 
+
+You can use the following command to build the Python library.
 
 ```bash
 ./build.sh -pyenv <path to your environment> -bpath <path to cmake build directory> --python
@@ -144,11 +173,15 @@ This will build Cylon C++ and Python APIs.
 ```bash
 python3 -m venv <path to your env>
 source <path to your env>/bin/activate 
-pip install pyarrow==2.0.0
+pip install pyarrow==4.0.0
 
 cd <cylon source dir>
 ./build.sh -pyenv <path to your env> -bpath <path to cmake build dir> --python_with_pyarrow  [--test | --pytest]
 ```
+
+Here is an example command
+
+
 
 ## Building OpenMPI From Source 
 
