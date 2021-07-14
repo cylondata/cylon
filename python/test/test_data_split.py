@@ -21,8 +21,9 @@ from pycylon import CylonEnv, read_csv
 from pycylon.net import MPIConfig
 import numpy
 import os
+import pytest
 
-
+@pytest.mark.mpi
 def test_data_split():
     mpi_config = MPIConfig()
     env: CylonEnv = CylonEnv(config=mpi_config, distributed=True)
@@ -58,5 +59,3 @@ def test_data_split():
 
     if env.rank == 0:
         os.remove(data_file)
-
-    env.finalize()
