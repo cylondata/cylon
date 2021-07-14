@@ -20,12 +20,12 @@ build:
 requirements:
   build:
     - cmake >=3.14.0
-    - arrow-cpp 4.0.0
+    - arrow-cpp 4.0.1
     - glog 0.4.0
     - openmpi
   run:
     - cmake >=3.14.0
-    - arrow-cpp 4.0.0
+    - arrow-cpp 4.0.1
     - glog 0.4.0
     - openmpi
 
