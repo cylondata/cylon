@@ -210,7 +210,7 @@ elseif (${ARROW_BUILD_TYPE} STREQUAL "CUSTOM")
 
     include_directories(SYSTEM ${ARROW_INCLUDE_DIR})
 else ()
-    message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM or SOURCE")
+    message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM, SOURCE or CUSTOM")
 endif()
 
 

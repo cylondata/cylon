@@ -148,7 +148,7 @@ Here is an example command.
 
 This command will install the PyCylon and PyArrow into the virtual environment we specified. 
 
-### Updating `LD_LIBRARY_PATH`
+#### Updating `LD_LIBRARY_PATH`
 
 Before running the code in the base path of the cloned repo
 run the following command. Or add this to your `bashrc`.
@@ -156,6 +156,29 @@ run the following command. Or add this to your `bashrc`.
 ```bash
 export LD_LIBRARY_PATH=<path to cmake build dir>/arrow/install/lib:<path to cmake build dir>/lib:$LD_LIBRARY_PATH
 ```
+
+Here is an example command.
+```bash
+export LD_LIBRARY_PATH=$HOME/cylon/build/arrow/install/lib:$HOME/cylon/build/lib:$LD_LIBRARY_PATH
+```
+
+After this you can verify the build.
+
+```bash
+source ENV/bin/activate
+```
+Here is an example PyCylon programs to check whether installation is working.
+
+```python
+from pycylon import DataFrame, CylonEnv
+from pycylon.net import MPIConfig
+
+df1 = DataFrame([[1, 2, 3], [2, 3, 4]])
+df2 = DataFrame([[1, 1, 1], [2, 3, 4]])
+df3 = df1.merge(right=df2, on=[0, 1])
+print(df3)
+```
+Congratulations you now have successfully installed PyCylon and Cylon.
 
 ### Running Tests 
 
@@ -186,21 +209,35 @@ Here is an example command
 
 ## Building Cylon With An Existing Arrow Installation
 
-Instead of building Cylon and Apache Arrow together, you can use [`pyarrow` distribution from`pip`](https://pypi.org/project/pyarrow/) as follows.
-This will build Cylon C++ and Python APIs.
+If you already have an arrow installation and wants to use that for the build, you can do so by pointing the build to that.
+
+### Building PyCylon
+
+Instead of building PyCylon and Apache Arrow together, you can use [`pyarrow` distribution from`pip`](https://pypi.org/project/pyarrow/) as follows.
+This will build only the Cylon C++ and Python APIs. Here we will use the arrow libraries from the PyArrow installation.
+
+First lets create a Python environment and install PyArrow in it. 
 
 ```bash
-python3 -m venv <path to your env>
-source <path to your env>/bin/activate 
+python3 -m venv ENV
+source ENV/bin/activate 
 pip install pyarrow==4.0.0
+```
 
-cd <cylon source dir>
+Then we can build Cylon pointing to this pyarrow with the following command.
+
+```bash
 ./build.sh -pyenv <path to your env> -bpath <path to cmake build dir> --python_with_pyarrow  [--test | --pytest]
 ```
 
-Here is an example command
+Here is an example command.
 
+```bash
+cd $HOME/cylon
+./build.sh -pyenv $HOME/cylon/ENV -bpath $HOME/cylon/build --python_with_pyarrow
+```
 
+After this you can run the above PyCylon examples to make sure it is working.
 
 ## Building OpenMPI From Source 
 
