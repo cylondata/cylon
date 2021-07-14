@@ -60,9 +60,9 @@ sudo apt install libopenmpi-dev
 Here are some of the other dependencies required. 
 
 ```bash
-apt install software-properties-common
-add-apt-repository ppa:deadsnakes/ppa
-apt-get update && apt-get install -y --no-install-recommends --no-install-suggests libssl-dev curl wget vim git build-essential python3.7-dev python3.7 maven libnuma-dev libc-dev python3-venv openmpi-bin libopenmpi-dev python3-pip python3-dev
+sudo apt install software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update && apt-get install -y --no-install-recommends --no-install-suggests libssl-dev curl wget vim git build-essential python3.7-dev python3.7 maven libnuma-dev libc-dev python3-venv openmpi-bin libopenmpi-dev python3-pip python3-dev
 ```
 
 We need a later version of CMake. We can build cmake from source if the version in our system is less than 3.16.5.
@@ -73,7 +73,7 @@ tar -xvf cmake-3.20.1.tar.gz
 cd cmake-3.20.1
 ./bootstrap
 make
-make install
+sudo make install
 ```
 
 ## Build Cylon & PyCylon
