@@ -59,4 +59,3 @@ def test_data_split():
 
     if env.rank == 0:
         os.remove(data_file)
-
