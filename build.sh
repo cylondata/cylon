@@ -150,6 +150,7 @@ check_python_pre_requisites(){
   echo "${response}"
 }
 
+INSTALL_PATH=${INSTALL_PATH:=${PREFIX:=${CONDA_PREFIX}}}
 INSTALL_CMD=
 if [ -z "$INSTALL_PATH" ]
 then
@@ -305,7 +306,7 @@ build_python_conda() {
 
   pushd python || exit 1
   make clean
-  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX}/lib python3 setup.py install || exit 1
+  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}}/lib python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
