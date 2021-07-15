@@ -20,14 +20,23 @@
 
 namespace cylon {
 
-class DisUnionOpConfig {
+class DisSetOpConfig {
+public:
+  DisSetOpConfig(int leftSplits, int rightSplits) : left_splits(leftSplits), right_splits(rightSplits) {}
 
+  int GetLeftSplits() const {
+    return left_splits;
+  }
+
+  int GetRightSplits() const {
+    return right_splits;
+  }
+private:
+  int left_splits;
+  int right_splits;
 };
 
 class DisSetOp : public RootOp {
-
- private:
-  DisUnionOpConfig config;
 
  public:
   const static int32_t LEFT_RELATION = 100;
@@ -37,7 +46,7 @@ class DisSetOp : public RootOp {
            const std::shared_ptr<arrow::Schema> &schema,
            int id,
            const ResultsCallback &callback,
-           const DisUnionOpConfig &config,
+           const DisSetOpConfig &config,
            cylon::kernel::SetOpType op_type);
 
   bool Execute(int tag, std::shared_ptr<Table> &table) override;

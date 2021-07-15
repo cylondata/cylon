@@ -22,11 +22,22 @@ namespace cylon {
 
 class DisJoinOpConfig {
  public:
-  DisJoinOpConfig(PartitionOpConfig partition_config, join::config::JoinConfig join_config)
-      : partition_config(std::move(partition_config)), join_config(join_config) {}
+  DisJoinOpConfig(PartitionOpConfig partition_config, join::config::JoinConfig join_config, int left_splits, int right_splits)
+      : partition_config(std::move(partition_config)), join_config(join_config),
+      left_splits(left_splits), right_splits(right_splits) {}
 
+  int GetLeftSplits() const {
+    return left_splits;
+  }
+
+  int GetRightSplits() const {
+    return right_splits;
+  }
   PartitionOpConfig partition_config;
   join::config::JoinConfig join_config;
+private:
+  int left_splits;
+  int right_splits;
 };
 
 class DisJoinOP : public RootOp {

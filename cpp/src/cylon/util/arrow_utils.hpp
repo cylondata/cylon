@@ -129,6 +129,21 @@ inline bool IsMutable(const std::shared_ptr<arrow::Array> &array) {
   return true;
 }
 
+/**
+ * Return the number of splits according to cache size
+ * @param values
+ * @return
+ */
+uint64_t GetNumberSplitsToFitInCache(int64_t total_bytes, int total_elements, int parallel);
+
+/**
+ * Return the number of bytes and elements in this table in the given columns
+ * @param table
+ * @param columns
+ * @return
+ */
+std::vector<int64_t> GetBytesAndElements(std::shared_ptr<arrow::Table> table, const std::vector<int> &columns);
+
 }  // namespace util
 }  // namespace cylon
 #endif  // CYLON_SRC_UTIL_ARROW_UTILS_HPP_

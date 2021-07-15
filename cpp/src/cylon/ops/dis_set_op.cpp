@@ -22,7 +22,7 @@ cylon::DisSetOp::DisSetOp(const std::shared_ptr<CylonContext> &ctx,
                           const std::shared_ptr<arrow::Schema> &schema,
                           int id,
                           const ResultsCallback &callback,
-                          const DisUnionOpConfig &config,
+                          const DisSetOpConfig &config,
                           cylon::kernel::SetOpType op_type)
     : RootOp(ctx, schema, id, callback) {
   auto execution = new ForkJoinExecution();
@@ -49,7 +49,7 @@ cylon::DisSetOp::DisSetOp(const std::shared_ptr<CylonContext> &ctx,
   partition_op->AddChild(shuffle_op);
   execution->AddLeft(shuffle_op);
 
-  split_op = new SplitOp(ctx, schema, LEFT_RELATION, callback, {8000, {0}});
+  split_op = new SplitOp(ctx, schema, LEFT_RELATION, callback, {config.GetLeftSplits(), {0}});
   shuffle_op->AddChild(split_op);
   execution->AddLeft(split_op);
 
@@ -77,7 +77,7 @@ cylon::DisSetOp::DisSetOp(const std::shared_ptr<CylonContext> &ctx,
   partition_op->AddChild(shuffle_op);
   execution->AddRight(shuffle_op);
 
-  split_op = new SplitOp(ctx, schema, RIGHT_RELATION, callback, {8000, {0}});
+  split_op = new SplitOp(ctx, schema, RIGHT_RELATION, callback, {config.GetRightSplits(), {0}});
   shuffle_op->AddChild(split_op);
   execution->AddRight(split_op);
 
@@ -92,4 +92,5 @@ bool cylon::DisSetOp::Execute(int tag, std::shared_ptr<Table> &table) {
   this->InsertToChild(tag, tag, table);
   return true;
 }
+
 

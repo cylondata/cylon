@@ -21,6 +21,7 @@
 #include <memory>
 #include <random>
 #include <vector>
+#include <arrow/util/cpu_info.h>
 
 #include "macros.hpp"
 
@@ -318,5 +319,31 @@ std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::
 
   return res.ok() ? out : nullptr;
 }
+
+uint64_t GetNumberSplitsToFitInCache(int64_t total_bytes, int total_elements, int parallel) {
+  if (total_elements == 0 || total_bytes == 0) {
+    return 1;
+  }
+
+  int64_t cache_size = arrow::internal::CpuInfo::GetInstance()->CacheSize(arrow::internal::CpuInfo::L1_CACHE);
+  cache_size += arrow::internal::CpuInfo::GetInstance()->CacheSize(arrow::internal::CpuInfo::L2_CACHE);
+  int64_t average_element_size = total_bytes / total_elements;
+  int64_t elements_in_cache = cache_size / average_element_size;
+  return (total_elements / parallel) / elements_in_cache;
+}
+
+std::vector<int64_t> GetBytesAndElements(std::shared_ptr<arrow::Table> table, const std::vector<int> &columns) {
+  int64_t num_elements = 0;
+  int64_t num_bytes = 0;
+  for (int64_t t : columns) {
+    const std::shared_ptr<arrow::ChunkedArray> &ptr = table->column(t);
+    for (std::shared_ptr<arrow::Array> arr : ptr->chunks()) {
+      num_elements += arr->length();
+      num_bytes += arr->data()->buffers[1]->size();
+    }
+  }
+  return {num_elements, num_bytes};
+}
+
 }  // namespace util
 }  // namespace cylon
