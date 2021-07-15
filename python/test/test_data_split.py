@@ -57,5 +57,7 @@ def test_data_split():
         assert numpy.array_equal(
             np_data[i], np_data_full[(seg_size*env.rank)+i])
 
+    env.barrier()
+    
     if env.rank == 0:
         os.remove(data_file)
