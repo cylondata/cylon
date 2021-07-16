@@ -3,6 +3,7 @@
 SOURCE_DIR=$(pwd)/cpp
 CPP_BUILD="OFF"
 PYTHON_BUILD="OFF"
+GCYLON_BUILD="OFF"
 PYTHON_WITH_PYARROW_BUILD="OFF"
 CONDA_CPP_BUILD="OFF"
 CONDA_PYTHON_BUILD="OFF"
@@ -48,6 +49,11 @@ case $key in
     --python)
     CPP_BUILD="ON"
     PYTHON_BUILD="ON"
+    shift # past argument
+    ;;
+    --gcylon)
+    GCYLON_BUILD="ON"
+#    CONDA_CPP_BUILD="ON"
     shift # past argument
     ;;
     --conda_cpp)
@@ -261,6 +267,47 @@ build_cpp_conda(){
   print_line
 }
 
+build_gcylon_conda(){
+  print_line
+  echo "Building Conda Gcylon CPP in ${BUILD_MODE} mode"
+  print_line
+  INSTALL_PATH=${INSTALL_PATH:=${PREFIX:=${CONDA_PREFIX}}}
+
+  ARROW_LIB=${CONDA_PREFIX}/lib
+  ARROW_INC=${CONDA_PREFIX}/include
+  echo "ARROW_LIB: $ARROW_LIB"
+  echo "ARROW_INC: $ARROW_INC"
+
+  # sometimes pip pyarrow installation does not contain a libarrow.so file, but only libarrow.so.xxx.
+  # then, create a symlink libarrow.so -->  libarrow.so.xxx
+  for SO_FILE in "${ARROW_LIB}/libarrow.so" "${ARROW_LIB}/libarrow_python.so"; do
+  if [ ! -f "$SO_FILE" ]; then
+    echo "$SO_FILE does not exist! Trying to create a symlink"
+    ln -sf "$(ls "$SO_FILE".*)" "$SO_FILE" || exit 1
+  fi
+  done
+
+  SOURCE_DIR=$(pwd)/cpp/src/gcylon
+  echo "SOURCE_DIR: ${SOURCE_DIR}"
+  BUILD_PATH=$(pwd)/build/gcylon
+  mkdir -p ${BUILD_PATH}
+  pushd ${BUILD_PATH} || exit 1
+  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
+      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
+      -DARROW_BUILD_TYPE="SYSTEM" -DARROW_LIB_DIR=${ARROW_LIB} -DARROW_INCLUDE_DIR=${ARROW_INC} \
+      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCYLON_PARQUET=ON \
+      ${CMAKE_FLAGS} \
+      ${SOURCE_DIR} \
+      || exit 1
+
+  make -j 4 || exit 1
+  printf "GCylon CPP Built Successfully!"
+  make install || exit 1
+  printf "GCylon Installed Successfully!"
+  popd || exit 1
+  print_line
+}
+
 build_pyarrow(){
   print_line
   echo "Building PyArrow"
@@ -399,6 +446,10 @@ fi
 
 if [ "${CPP_BUILD}" = "ON" ]; then
    	build_cpp
+fi
+
+if [ "${GCYLON_BUILD}" = "ON" ]; then
+   	build_gcylon_conda
 fi
 
 if [ "${PYTHON_BUILD}" = "ON" ]; then
