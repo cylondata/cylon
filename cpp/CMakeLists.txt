@@ -212,7 +212,7 @@ elseif (${ARROW_BUILD_TYPE} STREQUAL "CUSTOM")
 
     include_directories(SYSTEM ${ARROW_INCLUDE_DIR})
 else ()
-    message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM or SOURCE")
+    message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM, SOURCE or CUSTOM")
 endif()
 
 
@@ -231,6 +231,8 @@ add_subdirectory(src/tutorial)
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
     install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION include)
     install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so DESTINATION lib)
+    install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400 DESTINATION lib)
+    install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400.0.0 DESTINATION lib)
     install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
 endif ()
 

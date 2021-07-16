@@ -159,6 +159,15 @@ else
   echo "Install location set to: ${INSTALL_PATH}"
 fi
 
+install_libs() {
+  if [ -z "$INSTALL_PATH" ]
+  then
+    echo "\-ipath|--install_path is NOT set. we are not trying to install"
+  else
+    make install
+  fi
+}
+
 build_cpp(){
   print_line
   echo "Building CPP in ${BUILD_MODE} mode"
@@ -180,6 +189,7 @@ build_cpp(){
       ${CMAKE_FLAGS} \
       ${SOURCE_DIR} || exit 1
   make -j 4 || exit 1
+  install_libs
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
   printf "Cylon CPP Built Successfully!"
   popd || exit 1
@@ -220,6 +230,7 @@ build_cpp_with_custom_arrow(){
       ${SOURCE_DIR} \
       || exit 1
   make -j 4 || exit 1
+  install_libs
   printf "Cylon CPP Built Successfully!"
   popd || exit 1
   print_line
