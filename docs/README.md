@@ -2,10 +2,14 @@
 
 This website is built using [Docusaurus 2](https://v2.docusaurus.io/), a modern static website generator.
 
+### Prerequisites
+
+You need to install nodejs and yarn to build and deploy the website.
+
 ### Installation
 
 ```
-$ yarn
+$ yarn install 
 ```
 
 ### Local Development
