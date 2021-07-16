@@ -150,7 +150,6 @@ check_python_pre_requisites(){
   echo "${response}"
 }
 
-INSTALL_PATH=${INSTALL_PATH:=${PREFIX:=${CONDA_PREFIX}}}
 INSTALL_CMD=
 if [ -z "$INSTALL_PATH" ]
 then
@@ -241,6 +240,10 @@ build_cpp_conda(){
   print_line
   echo "Building Conda CPP in ${BUILD_MODE} mode"
   print_line
+
+  # set install path to conda directory if not already set
+  INSTALL_PATH=${INSTALL_PATH:=${PREFIX:=${CONDA_PREFIX}}}
+
   ARROW_LIB=${CONDA_PREFIX}/lib
   ARROW_INC=${CONDA_PREFIX}/include
   echo "ARROW_LIB: $ARROW_LIB"
@@ -260,15 +263,16 @@ build_cpp_conda(){
   mkdir -p ${BUILD_PATH}
   pushd ${BUILD_PATH} || exit 1
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
-      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $INSTALL_CMD \
+      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
       -DARROW_BUILD_TYPE="SYSTEM" -DARROW_LIB_DIR=${ARROW_LIB} -DARROW_INCLUDE_DIR=${ARROW_INC} \
       -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCYLON_PARQUET=ON \
       ${CMAKE_FLAGS} \
       ${SOURCE_DIR} \
       || exit 1
   make -j 4 || exit 1
-  make install || exit 1
   printf "Cylon CPP Built Successfully!"
+  make install || exit 1
+  printf "Cylon CPP Installed Successfully!"
   popd || exit 1
   print_line
 }
