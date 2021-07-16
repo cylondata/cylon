@@ -19,7 +19,7 @@ macro(cylon_add_exe EXENAME)
     target_link_libraries(${EXENAME} ${ARROW_LIB})
     target_link_libraries(${EXENAME} ${GLOG_LIBRARIES})
     target_link_libraries(${EXENAME} cylon_example_utils)
-    install(TARGETS ${EXENAME} RUNTIME DESTINATION examples)
+    install(TARGETS ${EXENAME} RUNTIME DESTINATION cylon/examples)
 endmacro(cylon_add_exe)
 
 include_directories(../cylon)
@@ -62,7 +62,7 @@ macro(cylon_add_exe2 DIR EXENAME)
     target_link_libraries(${EXENAME} ${ARROW_LIB})
     target_link_libraries(${EXENAME} ${GLOG_LIBRARIES})
     target_link_libraries(${EXENAME} cylon_example_utils)
-    install(TARGETS ${EXENAME} RUNTIME DESTINATION examples)
+    install(TARGETS ${EXENAME} RUNTIME DESTINATION cylon/examples)
 endmacro(cylon_add_exe2)
 
 
