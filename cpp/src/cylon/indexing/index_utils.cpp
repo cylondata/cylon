@@ -1,5 +1,6 @@
-#include "index_utils.hpp"
-#include "../util/arrow_utils.hpp"
+
+#include <cylon/indexing/index_utils.hpp>
+#include <cylon/util/arrow_utils.hpp>
 
 cylon::Status cylon::IndexUtil::BuildArrowHashIndex(const std::shared_ptr<Table> &input,
 													const int index_column,

@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "arrow_memory_pool_utils.hpp"
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
 
 arrow::MemoryPool *cylon::ToArrowPool(const std::shared_ptr<cylon::CylonContext> &ctx) {
   if (ctx->GetMemoryPool() == nullptr) {

@@ -18,8 +18,8 @@
 #include <vector>
 #include <memory>
 #include <cstring>
-#include "TxRequest.hpp"
-#include "net/buffer.hpp"
+#include <cylon/net/TxRequest.hpp>
+#include <cylon/net/buffer.hpp>
 
 namespace cylon {
 

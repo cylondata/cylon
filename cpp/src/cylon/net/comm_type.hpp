@@ -15,6 +15,7 @@
 
 #ifndef CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_
 #define CYLON_SRC_CYLON_NET_COMM_TYPE_HPP_
+
 namespace cylon {
 namespace net {
 enum CommType {

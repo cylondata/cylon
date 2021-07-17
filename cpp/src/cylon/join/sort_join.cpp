@@ -1,8 +1,8 @@
-#include "sort_join.hpp"
+#include <cylon/join/sort_join.hpp>
+#include <cylon/arrow/arrow_comparator.hpp>
+#include <cylon/arrow/arrow_kernels.hpp>
 
-#include "../arrow/arrow_comparator.hpp"
-#include "../arrow/arrow_kernels.hpp"
-#include "arrow/api.h"
+#include <arrow/api.h>
 
 namespace cylon {
 namespace join {

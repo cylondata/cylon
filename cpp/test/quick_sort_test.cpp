@@ -14,7 +14,7 @@
 
 #include "test_header.hpp"
 #include "test_utils.hpp"
-#include <util/sort.hpp>
+#include <cylon/util/sort.hpp>
 #include <random>
 
 TEST_CASE("Testing introsort", "[util]") {

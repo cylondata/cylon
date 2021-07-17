@@ -12,19 +12,17 @@
  * limitations under the License.
  */
 
-#include <arrow/arrow_comparator.hpp>
-#include <thridparty/flat_hash_map/bytell_hash_map.hpp>
-
+#include <cylon/arrow/arrow_comparator.hpp>
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
 #include <chrono>
 
-#include "../table.hpp"
-#include "../ctx/arrow_memory_pool_utils.hpp"
-#include "../util/arrow_utils.hpp"
-#include "../util/macros.hpp"
-
-#include "hash_groupby.hpp"
+#include <cylon/table.hpp>
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/util/macros.hpp>
+#include <cylon/groupby/hash_groupby.hpp>
+#include <cylon/thridparty/flat_hash_map/bytell_hash_map.hpp>
 
 namespace cylon {
 

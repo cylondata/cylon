@@ -14,13 +14,13 @@
 
 #include <glog/logging.h>
 
-#include "../util/murmur3.hpp"
-#include "../util/macros.hpp"
-#include "../util/arrow_utils.hpp"
-#include "../compute/aggregates.hpp"
-#include "../net/mpi/mpi_operations.hpp"
-#include "arrow_partition_kernels.hpp"
-#include "arrow_types.hpp"
+#include <cylon/util/murmur3.hpp>
+#include <cylon/util/macros.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/compute/aggregates.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
+#include <cylon/arrow/arrow_partition_kernels.hpp>
+#include <cylon/arrow/arrow_types.hpp>
 
 namespace cylon {
 

@@ -1,6 +1,6 @@
 
-#include "indexer.hpp"
-#include "index_utils.hpp"
+#include <cylon/indexing/indexer.hpp>
+#include <cylon/indexing/index_utils.hpp>
 
 cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingType indexing_type,
 											   std::shared_ptr<arrow::Array> &sub_index_arr,

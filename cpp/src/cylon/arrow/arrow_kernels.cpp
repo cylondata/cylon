@@ -12,16 +12,14 @@
  * limitations under the License.
  */
 
-#include "arrow_kernels.hpp"
-
 #include <glog/logging.h>
-
 #include <type_traits>
 
-#include "../util/macros.hpp"
-#include "../util/sort.hpp"
-#include "../util/arrow_utils.hpp"
-#include "arrow_comparator.hpp"
+#include <cylon/arrow/arrow_kernels.hpp>
+#include <cylon/util/macros.hpp>
+#include <cylon/util/sort.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/arrow/arrow_comparator.hpp>
 
 namespace cylon {
 

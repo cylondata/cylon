@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#include "set_op.hpp"
-#include "kernels/set_kernel.hpp"
+#include <cylon/ops/set_op.hpp>
+#include <cylon/ops/kernels/set_kernel.hpp>
 
 namespace cylon {
 

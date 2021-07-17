@@ -15,11 +15,13 @@
 
 #ifndef CYLON_SRC_CYLON_OPS_KERNELS_UNION_HPP_
 #define CYLON_SRC_CYLON_OPS_KERNELS_UNION_HPP_
+
 #include <vector>
-#include <table.hpp>
-#include <ops/kernels/row_comparator.hpp>
 #include <unordered_set>
 #include <queue>
+
+#include <cylon/table.hpp>
+#include <cylon/ops/kernels/row_comparator.hpp>
 
 namespace cylon {
 namespace kernel {

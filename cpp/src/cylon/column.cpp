@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "column.hpp"
+#include <cylon/column.hpp>
 
 namespace cylon {
 

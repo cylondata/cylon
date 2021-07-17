@@ -14,12 +14,12 @@
 
 #ifndef CYLON_SRC_CYLON_OPS_PARTITION_OP_HPP_
 #define CYLON_SRC_CYLON_OPS_PARTITION_OP_HPP_
+
 #include <chrono>
 
-#include <arrow/arrow_partition_kernels.hpp>
-
-#include "kernels/partition.hpp"
-#include "ops/api/parallel_op.hpp"
+#include <cylon/arrow/arrow_partition_kernels.hpp>
+#include <cylon/ops/kernels/partition.hpp>
+#include <cylon/ops/api/parallel_op.hpp>
 
 namespace cylon {
 

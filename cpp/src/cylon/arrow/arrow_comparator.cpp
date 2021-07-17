@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#include "arrow_comparator.hpp"
-#include "util/arrow_utils.hpp"
+#include <cylon/arrow/arrow_comparator.hpp>
+#include <cylon/util/arrow_utils.hpp>
 
 #include <glog/logging.h>
 

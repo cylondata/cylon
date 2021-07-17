@@ -15,10 +15,11 @@
 #include <glog/logging.h>
 #include <chrono>
 
-#include <table.hpp>
-#include <net/mpi/mpi_communicator.hpp>
+#include <cylon/ops.hpp>
+#include <cylon/table.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+
 #include "example_utils.hpp"
-#include <ops.hpp>
 
 int main(int argc, char *argv[]) {
   if (argc < 5) {

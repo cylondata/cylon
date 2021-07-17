@@ -15,9 +15,9 @@
 #include <glog/logging.h>
 #include <chrono>
 
-#include <net/ucx/ucx_communicator.hpp>
-#include <ctx/cylon_context.hpp>
-#include <table.hpp>
+#include <cylon/net/ucx/ucx_communicator.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/table.hpp>
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {

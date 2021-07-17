@@ -12,10 +12,11 @@
  * limitations under the License.
  */
 
-#include "prepare_array.hpp"
 #include <glog/logging.h>
-#include <util/arrow_utils.hpp>
-#include <ctx/arrow_memory_pool_utils.hpp>
+
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/ops/kernels/prepare_array.hpp>
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
 
 namespace cylon {
 namespace kernel {

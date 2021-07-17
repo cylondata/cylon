@@ -22,21 +22,21 @@
 #include <utility>
 #include <vector>
 
-#include "indexing/index.hpp"
-#include "io/csv_read_config.hpp"
+#include <cylon/indexing/index.hpp>
+#include <cylon/io/csv_read_config.hpp>
 
 #ifdef BUILD_CYLON_PARQUET
-#include "io/parquet_config.hpp"
+#include <cylon/io/parquet_config.hpp>
 #endif
 
-#include "column.hpp"
-#include "ctx/cylon_context.hpp"
-#include "io/csv_write_config.hpp"
-#include "join/join.hpp"
-#include "join/join_config.hpp"
-#include "row.hpp"
-#include "status.hpp"
-#include "util/uuid.hpp"
+#include <cylon/column.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/io/csv_write_config.hpp>
+#include <cylon/join/join.hpp>
+#include <cylon/join/join_config.hpp>
+#include <cylon/row.hpp>
+#include <cylon/status.hpp>
+#include <cylon/util/uuid.hpp>
 
 namespace cylon {
 

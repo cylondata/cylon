@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "join_op.hpp"
+#include <cylon/ops/join_op.hpp>
 
 #include <chrono>
 

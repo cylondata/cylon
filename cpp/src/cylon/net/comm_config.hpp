@@ -16,7 +16,8 @@
 #define CYLON_SRC_CYLON_COMM_COMM_CONFIG_H_
 #include <string>
 #include <unordered_map>
-#include "comm_type.hpp"
+#include <cylon/net/comm_type.hpp>
+
 namespace cylon {
 namespace net {
 class CommConfig {

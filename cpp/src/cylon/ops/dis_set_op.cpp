@@ -12,11 +12,11 @@
  * limitations under the License.
  */
 
-#include "dis_set_op.hpp"
-#include "partition_op.hpp"
-#include "all_to_all_op.hpp"
-#include "set_op.hpp"
-#include "split_op.hpp"
+#include <cylon/ops/dis_set_op.hpp>
+#include <cylon/ops/partition_op.hpp>
+#include <cylon/ops/all_to_all_op.hpp>
+#include <cylon/ops/set_op.hpp>
+#include <cylon/ops/split_op.hpp>
 
 cylon::DisSetOp::DisSetOp(const std::shared_ptr<CylonContext> &ctx,
                           const std::shared_ptr<arrow::Schema> &schema,

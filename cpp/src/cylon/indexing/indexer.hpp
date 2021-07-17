@@ -2,8 +2,8 @@
 #ifndef CYLON_SRC_CYLON_INDEXING_INDEXER_H_
 #define CYLON_SRC_CYLON_INDEXING_INDEXER_H_
 
-#include "index.hpp"
-#include "table.hpp"
+#include <cylon/indexing/index.hpp>
+#include <cylon/table.hpp>
 
 namespace cylon {
 

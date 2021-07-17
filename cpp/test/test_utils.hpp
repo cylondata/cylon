@@ -16,10 +16,11 @@
 #define CYLON_CPP_SRC_EXAMPLES_TEST_UTILS_HPP_
 
 #include <glog/logging.h>
-#include <net/mpi/mpi_communicator.hpp>
-#include <ctx/cylon_context.hpp>
-#include <table.hpp>
 #include <chrono>
+
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/table.hpp>
 
 #define LOG_AND_RETURN_INT_IF_FAILED(status) \
   if (!status.is_ok()) { \
