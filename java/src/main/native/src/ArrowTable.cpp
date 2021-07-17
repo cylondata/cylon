@@ -15,7 +15,7 @@
 #include <org_cylondata_cylon_arrow_ArrowTable.h>
 #include <cstdint>
 #include <iostream>
-#include "arrow/arrow_builder.hpp"
+#include <cylon/arrow/arrow_builder.hpp>
 #include "Utils.hpp"
 
 enum JavaType {

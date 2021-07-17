@@ -15,7 +15,7 @@
 #include <iostream>
 #include <vector>
 #include "org_cylondata_cylon_Table.h"
-#include "table_api.hpp"
+#include <cylon/table_api.hpp>
 #include "ConversionUtils.h"
 #include "Utils.hpp"
 
