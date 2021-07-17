@@ -12,9 +12,9 @@
  * limitations under the License.
  */
 
-#include "partition/partition.hpp"
+#include <cylon/partition/partition.hpp>
+#include <cylon/ops/partition_op.hpp>
 
-#include "partition_op.hpp"
 #include <iomanip>
 
 template<typename Clock, typename Duration>

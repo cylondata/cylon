@@ -15,8 +15,8 @@
 #ifndef CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
 #define CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
 
-#include "comm_config.hpp"
-#include "channel.hpp"
+#include <cylon/net/comm_config.hpp>
+#include <cylon/net/channel.hpp>
 
 namespace cylon {
 namespace net {

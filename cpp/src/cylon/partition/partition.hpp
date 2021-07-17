@@ -15,8 +15,8 @@
 #ifndef CYLON_CPP_SRC_CYLON_PARTITION_PARTITION_HPP_
 #define CYLON_CPP_SRC_CYLON_PARTITION_PARTITION_HPP_
 
-#include <ctx/cylon_context.hpp>
-#include <table.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/table.hpp>
 
 namespace cylon {
 

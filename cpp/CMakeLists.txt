@@ -111,7 +111,8 @@ SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 SET(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
 
 # root include directory
-include_directories(src/cylon)
+#include_directories(src/cylon)
+include_directories(src/)
 if(CONDA_INCLUDE_DIRS)
     include_directories("${CONDA_INCLUDE_DIRS}")
 endif(CONDA_INCLUDE_DIRS)

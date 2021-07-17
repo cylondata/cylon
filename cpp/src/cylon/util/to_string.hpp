@@ -17,6 +17,7 @@
 
 #include <string>
 #include <arrow/array.h>
+
 namespace cylon {
 namespace util {
 

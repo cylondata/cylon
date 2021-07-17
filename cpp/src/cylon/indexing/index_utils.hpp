@@ -1,11 +1,10 @@
 
-
 #ifndef CYLON_SRC_CYLON_INDEXING_BUILDER_H_
 #define CYLON_SRC_CYLON_INDEXING_BUILDER_H_
 
-#include "index.hpp"
-#include "status.hpp"
-#include "table.hpp"
+#include <cylon/indexing/index.hpp>
+#include <cylon/status.hpp>
+#include <cylon/table.hpp>
 
 namespace cylon {
 

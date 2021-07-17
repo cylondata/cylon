@@ -13,8 +13,8 @@
  */
 
 #include "org_cylondata_cylon_CylonContext.h"
-#include "ctx/cylon_context.hpp"
-#include "net/mpi/mpi_communicator.hpp"
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
 #include "ConversionUtils.h"
 
 JNIEXPORT void JNICALL Java_org_cylondata_cylon_CylonContext_nativeInit

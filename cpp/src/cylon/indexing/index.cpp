@@ -1,5 +1,5 @@
-#include "index.hpp"
-#include "table.hpp"
+#include <cylon/indexing/index.hpp>
+#include <cylon/table.hpp>
 
 namespace cylon {
 

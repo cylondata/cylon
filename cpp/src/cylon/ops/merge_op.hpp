@@ -17,8 +17,8 @@
 
 #include <map>
 
-#include "ops/api/parallel_op.hpp"
-#include "partition_op.hpp"
+#include <cylon/ops/api/parallel_op.hpp>
+#include <cylon/ops/partition_op.hpp>
 
 namespace cylon {
 class MergeOp : public Op {

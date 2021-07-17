@@ -15,9 +15,9 @@
 #ifndef CYLON_SRC_CYLON_COMM_UCXCOMMUNICATOR_H_
 #define CYLON_SRC_CYLON_COMM_UCXCOMMUNICATOR_H_
 
-#include "../comm_config.hpp"
-#include "../communicator.hpp"
-#include "ucx_operations.hpp"
+#include <cylon/net/comm_config.hpp>
+#include <cylon/net/communicator.hpp>
+#include <cylon/ctx/ucx/ucx_operations.hpp>
 
 #include <ucp/api/ucp.h>
 

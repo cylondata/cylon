@@ -13,13 +13,12 @@
  */
 
 #include <mpi.h>
-
 #include <memory>
 
-#include "net/communicator.hpp"
-#include "mpi_communicator.hpp"
-#include "mpi_channel.hpp"
-#include "mpi_operations.hpp"
+#include <cylon/net/communicator.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/net/mpi/mpi_channel.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 
 namespace cylon {
 namespace net {

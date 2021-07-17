@@ -15,15 +15,14 @@
 #ifndef CYLON_MPI_CHANNEL_H
 #define CYLON_MPI_CHANNEL_H
 
-#include "../channel.hpp"
-
 #include <vector>
 #include <unordered_map>
 #include <queue>
 #include <mpi.h>
 #include <glog/logging.h>
 
-#include "../buffer.hpp"
+#include <cylon/net/channel.hpp>
+#include <cylon/net/buffer.hpp>
 
 #define CYLON_CHANNEL_HEADER_SIZE 8
 #define CYLON_MSG_FIN 1

@@ -1,4 +1,4 @@
-#include <row.hpp>
+#include <cylon/row.hpp>
 #include <iostream>
 #include "org_cylondata_cylon_Row.h"
 

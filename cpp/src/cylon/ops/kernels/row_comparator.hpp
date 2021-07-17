@@ -16,9 +16,9 @@
 #define CYLON_SRC_CYLON_OPS_KERNELS_UTILS_ROWCOMPARATOR_HPP_
 
 #include <arrow/api.h>
-#include <arrow/arrow_comparator.hpp>
-#include <arrow/arrow_partition_kernels.hpp>
-#include <ctx/cylon_context.hpp>
+#include <cylon/arrow/arrow_comparator.hpp>
+#include <cylon/arrow/arrow_partition_kernels.hpp>
+#include <cylon/ctx/cylon_context.hpp>
 
 namespace cylon {
 namespace kernel {

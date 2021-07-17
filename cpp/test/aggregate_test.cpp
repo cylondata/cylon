@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include <compute/aggregates.hpp>
+#include <cylon/compute/aggregates.hpp>
 #include "test_header.hpp"
 #include "test_utils.hpp"
 

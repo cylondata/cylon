@@ -15,8 +15,8 @@
 #include <glog/logging.h>
 #include <chrono>
 
-#include <table.hpp>
-#include <net/mpi/mpi_communicator.hpp>
+#include <cylon/table.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {

@@ -20,10 +20,10 @@
 #include <mpi.h>
 #include <iostream>
 #include <glog/logging.h>
-#include <ctx/cylon_context.hpp>
-#include <table.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/table.hpp>
 #include <chrono>
-#include <net/mpi/mpi_communicator.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
 
 std::shared_ptr<cylon::CylonContext> ctx = nullptr;
 int RANK = 0;

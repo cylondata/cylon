@@ -17,7 +17,7 @@
 
 #include <arrow/api.h>
 
-#include "../status.hpp"
+#include <cylon/status.hpp>
 
 namespace cylon {
 

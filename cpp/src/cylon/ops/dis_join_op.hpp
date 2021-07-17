@@ -14,9 +14,10 @@
 
 #ifndef CYLON_SRC_CYLON_OPS_DIS_JOIN_OP_HPP_
 #define CYLON_SRC_CYLON_OPS_DIS_JOIN_OP_HPP_
-#include "ops/api/parallel_op.hpp"
-#include "partition_op.hpp"
-#include "join_op.hpp"
+
+#include <cylon/ops/api/parallel_op.hpp>
+#include <cylon/ops/partition_op.hpp>
+#include <cylon/ops/join_op.hpp>
 
 namespace cylon {
 

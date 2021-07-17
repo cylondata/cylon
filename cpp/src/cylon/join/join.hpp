@@ -18,7 +18,7 @@
 #include <arrow/api.h>
 #include <memory>
 
-#include "join_config.hpp"
+#include <cylon/join/join_config.hpp>
 
 namespace cylon {
 namespace join {

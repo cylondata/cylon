@@ -18,8 +18,8 @@
 #include <string>
 #include <utility>
 #include <memory>
-#include "data_types.hpp"
-#include "arrow/arrow_types.hpp"
+#include <cylon/data_types.hpp>
+#include <cylon/arrow/arrow_types.hpp>
 
 #include <arrow/api.h>
 #include <arrow/table.h>

@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-#include "arrow_builder.hpp"
 #include <glog/logging.h>
 #include <arrow/ipc/reader.h>
 #include <iostream>
@@ -20,7 +19,8 @@
 #include <unordered_map>
 #include <memory>
 
-#include "../table_api_extended.hpp"
+#include <cylon/arrow/arrow_builder.hpp>
+#include <cylon/table_api_extended.hpp>
 
 std::unordered_map<std::string,
 std::shared_ptr<std::vector < std::shared_ptr < arrow::Array>>>>

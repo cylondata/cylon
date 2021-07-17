@@ -14,9 +14,9 @@
 
 #include <memory>
 
-#include "net/communicator.hpp"
-#include "ucx_communicator.hpp"
-#include "ucx_channel.hpp"
+#include <cylon/net/communicator.hpp>
+#include <cylon/ctx/ucx/ucx_communicator.hpp>
+#include <cylon/ctx/ucx/ucx_channel.hpp>
 
 namespace cylon {
 namespace net {
