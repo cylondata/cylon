@@ -17,7 +17,8 @@
 
 #include <string>
 #include <vector>
-#include "../status.hpp"
+#include <cylon/status.hpp>
+
 namespace cylon {
 namespace cyarrow {
 cylon::Status BeginTable(const std::string &table_id);

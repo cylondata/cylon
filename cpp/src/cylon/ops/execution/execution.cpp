@@ -1,5 +1,5 @@
-#include "execution.hpp"
-#include "ops/api/parallel_op.hpp"
+#include <cylon/ops/execution/execution.hpp>
+#include <cylon/ops/api/parallel_op.hpp>
 
 namespace cylon {
 

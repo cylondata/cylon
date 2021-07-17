@@ -20,7 +20,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../data_types.hpp"
+#include <cylon/data_types.hpp>
 
 namespace cylon {
 namespace io {

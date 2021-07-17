@@ -16,8 +16,8 @@
 #define CYLON_SRC_CYLON_OPS_KERNELS_UTILS_PREPAREARRAY_HPP_
 
 #include <arrow/api.h>
-#include <status.hpp>
-#include <ctx/cylon_context.hpp>
+#include <cylon/status.hpp>
+#include <cylon/ctx/cylon_context.hpp>
 
 namespace cylon {
 namespace kernel {

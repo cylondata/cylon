@@ -12,8 +12,6 @@
  * limitations under the License.
  */
 
-#include "arrow_io.hpp"
-
 #include <arrow/io/api.h>
 #include <arrow/csv/api.h>
 #include <memory>
@@ -23,7 +21,8 @@
 #include <parquet/arrow/writer.h>
 #endif
 
-#include "csv_read_config_holder.hpp"
+#include <cylon/io/arrow_io.hpp>
+#include <cylon/io/csv_read_config_holder.hpp>
 
 namespace cylon {
 namespace io {

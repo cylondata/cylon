@@ -15,8 +15,8 @@
 #include <arrow/compute/api.h>
 #include <arrow/api.h>
 #include <glog/logging.h>
-#include "arrow_utils.hpp"
-#include "../status.hpp"
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/status.hpp>
 
 namespace cylon {
 namespace util {

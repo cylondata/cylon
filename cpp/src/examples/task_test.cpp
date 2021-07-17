@@ -13,10 +13,11 @@
  */
 
 #include <glog/logging.h>
-#include <arrow/arrow_task_all_to_all.h>
-#include <net/mpi/mpi_communicator.hpp>
 #include <thread>
-#include <table.hpp>
+
+#include <cylon/arrow/arrow_task_all_to_all.h>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/table.hpp>
 
 int main(int argc, char *argv[]) {
 

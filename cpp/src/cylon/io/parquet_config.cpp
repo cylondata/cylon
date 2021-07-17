@@ -14,7 +14,7 @@
 
 #include <cstdint>
 
-#include "parquet_config.hpp"
+#include <cylon/io/parquet_config.hpp>
 
 namespace cylon {
 namespace io {

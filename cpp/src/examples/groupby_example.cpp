@@ -15,11 +15,11 @@
 #include <glog/logging.h>
 #include <chrono>
 
-#include <net/mpi/mpi_communicator.hpp>
-#include <ctx/cylon_context.hpp>
-#include <table.hpp>
-#include <groupby/groupby.hpp>
-#include <groupby/hash_groupby.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/table.hpp>
+#include <cylon/groupby/groupby.hpp>
+#include <cylon/groupby/hash_groupby.hpp>
 
 #define CHECK_STATUS_AND_PRINT(first_table, status, output) \
   if (!status.is_ok()) { \

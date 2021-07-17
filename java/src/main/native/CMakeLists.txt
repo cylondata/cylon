@@ -26,7 +26,7 @@ SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
 
 message("${PROJECT_SOURCE_DIR}/../../../../cpp/src")
-set(CYLON_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src/cylon")
+set(CYLON_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src/")
 find_library(CYLON_LIBRARY "cylon" "${CYLON_CORE_LIBS}")
 find_library(ARROW_LIBRARY "arrow" "${CYLON_ARROW_DIR}/build/release")
 message(STATUS "CYLON_LIBRARY set to ${CYLON_LIBRARY}")

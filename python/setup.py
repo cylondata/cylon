@@ -76,7 +76,6 @@ extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
 
 glob_library_directory = os.path.join(CYLON_PREFIX, "glog", "install", "lib")
 
-
 glog_lib_include_dir = os.path.join(CYLON_PREFIX, "glog", "install", "include")
 cylon_library_directory = os.path.join(CYLON_PREFIX, "lib")
 
@@ -87,15 +86,9 @@ library_directories = [cylon_library_directory,
                        os.path.join(os.sys.prefix, "lib")]
 
 libraries = ["arrow", "cylon", "glog"]
+cylon_include_dir = "../cpp/src/"
 
-_include_dirs = ["../cpp/src/cylon/python",
-                 "../cpp/src/cylon/lib",
-                 "../cpp/src/cylon/",
-                 "../cpp/src/cylon/net",
-                 "../cpp/src/cylon/data",
-                 "../cpp/src/cylon/io",
-                 "../cpp/src/cylon/join",
-                 "../cpp/src/cylon/util",
+_include_dirs = [cylon_include_dir,
                  arrow_lib_include_dir,
                  glog_lib_include_dir,
                  pyarrow_include_dir,

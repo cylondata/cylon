@@ -14,8 +14,9 @@
 
 #ifndef CYLON_CPP_SRC_CYLON_NET_COMM_OPERATIONS_HPP_
 #define CYLON_CPP_SRC_CYLON_NET_COMM_OPERATIONS_HPP_
+
 #include <mpi.h>
-#include <data_types.hpp>
+#include <cylon/data_types.hpp>
 
 namespace cylon {
 namespace net {

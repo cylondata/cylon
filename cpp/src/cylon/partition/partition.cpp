@@ -15,12 +15,11 @@
 #include <glog/logging.h>
 #include <chrono>
 
-#include "../arrow/arrow_kernels.hpp"
-#include "../ctx/arrow_memory_pool_utils.hpp"
-#include "../util/macros.hpp"
-#include "../arrow/arrow_partition_kernels.hpp"
-
-#include "partition.hpp"
+#include <cylon/arrow/arrow_kernels.hpp>
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
+#include <cylon/util/macros.hpp>
+#include <cylon/arrow/arrow_partition_kernels.hpp>
+#include <cylon/ops/kernels/partition.hpp>
 
 namespace cylon {
 

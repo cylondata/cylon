@@ -12,15 +12,14 @@
  * limitations under the License.
  */
 
-#include "ucx_channel.hpp"
-
 #include <iostream>
 #include <utility>
-#include <status.hpp>
+#include <cylon/status.hpp>
 #include <cmath>
 #include <algorithm>
 
-#include "ucx_operations.hpp"
+#include <cylon/net/ucx/ucx_channel.hpp>
+#include <cylon/net/ucx/ucx_operations.hpp>
 
 namespace cylon {
 

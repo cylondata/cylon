@@ -11,17 +11,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "join.hpp"
 
 #include <glog/logging.h>
 #include <chrono>
 #include <string>
 
-#include "join_utils.hpp"
-#include "hash_join.hpp"
-#include "sort_join.hpp"
-#include "../arrow/arrow_kernels.hpp"
-#include "../arrow/arrow_comparator.hpp"
+#include <cylon/join/join.hpp>
+#include <cylon/join/join_utils.hpp>
+#include <cylon/join/hash_join.hpp>
+#include <cylon/join/sort_join.hpp>
+#include <cylon/arrow/arrow_kernels.hpp>
+#include <cylon/arrow/arrow_comparator.hpp>
 
 namespace cylon {
 namespace join {

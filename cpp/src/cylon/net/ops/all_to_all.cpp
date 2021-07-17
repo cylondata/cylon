@@ -17,9 +17,9 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <net/buffer.hpp>
 
-#include "all_to_all.hpp"
+#include <cylon/net/buffer.hpp>
+#include <cylon/net/ops/all_to_all.hpp>
 
 namespace cylon {
 

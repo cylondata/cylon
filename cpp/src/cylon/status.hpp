@@ -15,7 +15,7 @@
 #ifndef CYLON_STATUS_H
 #define CYLON_STATUS_H
 #include "string"
-#include "code.hpp"
+#include <cylon/code.hpp>
 
 namespace cylon {
 class Status {

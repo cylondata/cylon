@@ -1,20 +1,20 @@
 #ifndef CYLON_SRC_CYLON_INDEXING_INDEX_H_
 #define CYLON_SRC_CYLON_INDEXING_INDEX_H_
 
-#include "index.hpp"
+#include <cylon/indexing/index.hpp>
+#include <cylon/status.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
+#include <cylon/util/macros.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/thridparty/flat_hash_map/unordered_map.hpp>
 
-#include "status.hpp"
-#include "ctx/cylon_context.hpp"
-#include "ctx/arrow_memory_pool_utils.hpp"
-#include "util/macros.hpp"
-#include "util/arrow_utils.hpp"
 #include <glog/logging.h>
 #include <arrow/table.h>
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
 #include <arrow/compute/kernel.h>
-#include <arrow/arrow_comparator.hpp>
-#include "thridparty/flat_hash_map/unordered_map.hpp"
+#include <cylon/arrow/arrow_comparator.hpp>
 #include <chrono>
 
 namespace cylon {

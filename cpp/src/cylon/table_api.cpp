@@ -12,22 +12,20 @@
  * limitations under the License.
  */
 
-#include "table_api.hpp"
 
 #include <glog/logging.h>
-
 #include <chrono>
 #include <memory>
 #include <map>
 #include <future>
 #include <unordered_map>
 #include <utility>
+#include <iostream>
 
-#include "iostream"
-#include "util/arrow_utils.hpp"
-#include "util/uuid.hpp"
-
-#include "table.hpp"
+#include <cylon/table_api.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/util/uuid.hpp>
+#include <cylon/table.hpp>
 
 namespace cylon {
 // todo make this un ordered

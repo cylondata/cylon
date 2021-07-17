@@ -18,12 +18,12 @@
 #include <arrow/api.h>
 #include <string>
 
-#include "csv_read_config.hpp"
-#include "../table.hpp"
-#include "../ctx/cylon_context.hpp"
+#include <cylon/io/csv_read_config.hpp>
+#include <cylon/table.hpp>
+#include <cylon/ctx/cylon_context.hpp>
 
 #ifdef BUILD_CYLON_PARQUET
-#include "parquet_config.hpp"
+#include <cylon/io/parquet_config.hpp>
 #endif
 
 namespace cylon {

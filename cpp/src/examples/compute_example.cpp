@@ -15,10 +15,10 @@
 #include <glog/logging.h>
 #include <chrono>
 
-#include <net/mpi/mpi_communicator.hpp>
-#include <ctx/cylon_context.hpp>
-#include <table.hpp>
-#include <compute/aggregates.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/table.hpp>
+#include <cylon/compute/aggregates.hpp>
 
 cylon::Status CreateTable(std::shared_ptr<cylon::CylonContext> &ctx, int rows,
                           std::shared_ptr<cylon::Table> &output) {

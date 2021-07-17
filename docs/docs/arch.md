@@ -101,7 +101,7 @@ tensor = torch.from_numpy(npy)
 ```cpp
 #include <net/mpi/mpi_communicator.h>
 #include <ctx/cylon_context.h>
-#include <table.hpp>
+#include <cylon/table.hpp>
 
 using namespace cylon;
 //...

@@ -19,10 +19,10 @@
 #include <arrow/api.h>
 #include <chrono>
 
-#include "join_config.hpp"
-#include "join_utils.hpp"
-#include "util/arrow_utils.hpp"
-#include "util/macros.hpp"
+#include <cylon/join/join_config.hpp>
+#include <cylon/join/join_utils.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/util/macros.hpp>
 
 namespace cylon {
 namespace join {
