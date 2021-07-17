@@ -101,7 +101,6 @@ elseif(DEFINED ENV{CONDA_PREFIX})
     set(CONDA_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/include")
     set(CONDA_LINK_DIRS "$ENV{CONDA_PREFIX}/lib")
     set(ARROW_BUILD_TYPE "SYSTEM")
-    set(CMAKE_INSTALL_INCLUDEDIR "$ENV{BUILD_PREFIX}/include")
     message(STATUS "Conda environment detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
 endif("$ENV{CONDA_BUILD}" STREQUAL "1")
 
@@ -210,7 +209,7 @@ elseif (${ARROW_BUILD_TYPE} STREQUAL "CUSTOM")
 
     include_directories(SYSTEM ${ARROW_INCLUDE_DIR})
 else ()
-    message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM or SOURCE")
+    message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM, SOURCE or CUSTOM")
 endif()
 
 
@@ -229,6 +228,8 @@ add_subdirectory(src/tutorial)
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
     install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION include)
     install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so DESTINATION lib)
+    install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400 DESTINATION lib)
+    install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400.0.0 DESTINATION lib)
     install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
 endif ()
 

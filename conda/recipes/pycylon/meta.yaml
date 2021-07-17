@@ -22,7 +22,7 @@ requirements:
     - glog 0.4.0
     - cython >=0.29,<0.30
     - setuptools
-    - pyarrow 2.0.0
+    - pyarrow 4.0.1
     - openmpi
     - cylon {{ version }}
     - mpi4py
@@ -33,7 +33,7 @@ requirements:
     - pandas >=1.0,<1.2.0dev0
     - numpy
     - openmpi
-    - pyarrow 2.0.0
+    - pyarrow 4.0.1
     - mpi4py
     - pytest
     - {{ pin_compatible('pyarrow', max_pin='x.x.x') }}
