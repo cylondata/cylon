@@ -22,8 +22,8 @@
 #include <glog/logging.h>
 
 #include <cylon/net/channel.hpp>
-#include <cylon/ctx/ucx/ucx_operations.hpp>
-#include <cylon/ctx/ucx/ucx_communicator.hpp>
+#include <cylon/net/ucx/ucx_operations.hpp>
+#include <cylon/net/ucx/ucx_communicator.hpp>
 #include <cylon/net/buffer.hpp>
 #include <cylon/status.hpp>
 

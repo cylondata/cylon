@@ -18,8 +18,8 @@
 #include <cmath>
 #include <algorithm>
 
-#include <cylon/ctx/ucx/ucx_channel.hpp>
-#include <cylon/ctx/ucx/ucx_operations.hpp>
+#include <cylon/net/ucx/ucx_channel.hpp>
+#include <cylon/net/ucx/ucx_operations.hpp>
 
 namespace cylon {
 

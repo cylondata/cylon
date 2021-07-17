@@ -17,7 +17,7 @@
 
 #include <cylon/net/comm_config.hpp>
 #include <cylon/net/communicator.hpp>
-#include <cylon/ctx/ucx/ucx_operations.hpp>
+#include <cylon/net/ucx/ucx_operations.hpp>
 
 #include <ucp/api/ucp.h>
 
