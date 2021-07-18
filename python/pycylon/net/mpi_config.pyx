@@ -12,7 +12,6 @@
  # limitations under the License.
  ##
 
-
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from libcpp.string cimport string
