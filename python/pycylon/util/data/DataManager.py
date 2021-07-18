@@ -29,7 +29,6 @@ References: https://github.com/pytorch/pytorch
 '''
 
 
-
 class Partition(object):
 
     def __init__(self, data, index):
