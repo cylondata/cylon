@@ -12,7 +12,6 @@
  # limitations under the License.
  ##
 
-
 from pycylon.net.communicator cimport CMPICommunicator
 
 
