@@ -330,7 +330,7 @@ cylon::IndexingType cylon::ArrowLocIndexer::GetIndexingType() {
 }
 
 cylon::ArrowILocIndexer::ArrowILocIndexer(cylon::IndexingType indexing_type)
-	: ArrowLocIndexer(indexing_type), indexing_type_(indexing_type) {}
+	: ArrowLocIndexer(indexing_type) {}
 cylon::Status cylon::ArrowILocIndexer::loc(const std::shared_ptr<arrow::Scalar> &start_index,
 										   const std::shared_ptr<arrow::Scalar> &end_index,
 										   const int column_index,

@@ -321,7 +321,7 @@ class ArrowBinaryHashIndex : public BaseArrowIndex {
 	  vec[x.second] = x.first;
 	}
 
-	builder.AppendValues(vec);
+	auto ret = builder.AppendValues(vec);
 	arrow_status = builder.Finish(&index_arr_);
 
 	if (!arrow_status.ok()) {
@@ -461,6 +461,8 @@ class ArrowIndexKernel {
   virtual cylon::Status BuildIndex(arrow::MemoryPool *pool,
 								   std::shared_ptr<arrow::Table> &input_table,
 								   const int index_column, std::shared_ptr<BaseArrowIndex> &base_arrow_index) = 0;
+
+  virtual ~ArrowIndexKernel() = default;
 
 };
 
