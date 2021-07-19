@@ -16,8 +16,7 @@
 #define CYLON_SRC_CYLON_JOIN_JOIN_CONFIG_HPP_
 
 #include <utility>
-
-#include "string"
+#include <string>
 
 namespace cylon {
 namespace join {

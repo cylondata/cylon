@@ -18,15 +18,15 @@
 #include <string>
 #include <vector>
 #include <functional>
-#include "status.hpp"
-#include "join/join_config.hpp"
-#include "io/csv_read_config.hpp"
-#include "io/csv_write_config.hpp"
-#include "ctx/cylon_context.hpp"
-#include "row.hpp"
+#include <cylon/status.hpp>
+#include <cylon/join/join_config.hpp>
+#include <cylon/io/csv_read_config.hpp>
+#include <cylon/io/csv_write_config.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/row.hpp>
 
 #ifdef BUILD_CYLON_PARQUET
-#include "io/parquet_config.hpp"
+#include <cylon/io/parquet_config.hpp>
 #endif
 
 /**

@@ -14,9 +14,9 @@
 
 #include <memory>
 
-#include "row.hpp"
-#include "table_api_extended.hpp"
-#include "util/arrow_utils.hpp"
+#include <cylon/row.hpp>
+#include <cylon/table_api_extended.hpp>
+#include <cylon/util/arrow_utils.hpp>
 
 namespace cylon {
 

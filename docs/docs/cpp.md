@@ -461,9 +461,9 @@ Following is a simple C++ API example.
 ```cpp
 #include <glog/logging.h>
 
-#include <net/mpi/mpi_communicator.hpp>
-#include <ctx/cylon_context.hpp>
-#include <table.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/table.hpp>
 
 #define CHECK_STATUS(status, msg) \
   if (!status.is_ok()) {          \

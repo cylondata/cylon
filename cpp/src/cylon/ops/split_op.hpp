@@ -17,10 +17,9 @@
 
 #include <vector>
 
-#include "../arrow/arrow_kernels.hpp"
-
-#include "ops/api/parallel_op.hpp"
-#include "partition_op.hpp"
+#include <cylon/arrow/arrow_kernels.hpp>
+#include <cylon/ops/api/parallel_op.hpp>
+#include <cylon/ops/partition_op.hpp>
 
 namespace cylon {
 

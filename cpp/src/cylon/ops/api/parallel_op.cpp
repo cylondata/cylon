@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "parallel_op.hpp"
+#include <cylon/ops/api/parallel_op.hpp>
 
 #include <utility>
 

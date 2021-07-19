@@ -16,7 +16,8 @@
 #define CYLON_SRC_CYLON_CTX_MEMORY_POOL_HPP_
 
 #include <memory>
-#include "../status.hpp"
+#include <cylon/status.hpp>
+
 namespace cylon {
 
 /**

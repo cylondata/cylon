@@ -17,9 +17,10 @@
 
 #include <string>
 #include "unordered_map"
-#include "../net/comm_config.hpp"
-#include "../net/communicator.hpp"
-#include "memory_pool.hpp"
+
+#include <cylon/net/comm_config.hpp>
+#include <cylon/net/communicator.hpp>
+#include <cylon/ctx/memory_pool.hpp>
 
 namespace cylon {
 

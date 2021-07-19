@@ -12,7 +12,8 @@
 #include <iterator>
 #include <utility>
 #include <type_traits>
-#include "flat_hash_map.hpp"
+
+#include <cylon/thridparty/flat_hash_map/flat_hash_map.hpp>
 
 namespace ska
 {

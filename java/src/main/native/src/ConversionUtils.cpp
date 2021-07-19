@@ -13,8 +13,8 @@
  */
 
 #include <cstdint>
-#include <ctx/cylon_context.hpp>
-#include <join/join_config.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/join/join_config.hpp>
 
 std::unordered_map<int32_t, std::shared_ptr<cylon::CylonContext>> contexts{};
 

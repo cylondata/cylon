@@ -15,8 +15,8 @@
 #ifndef CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_HPP_
 #define CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_HPP_
 
-#include "arrow//memory_pool.h"
-#include "cylon_context.hpp"
+#include <arrow/memory_pool.h>
+#include <cylon/ctx/cylon_context.hpp>
 
 namespace cylon {
 

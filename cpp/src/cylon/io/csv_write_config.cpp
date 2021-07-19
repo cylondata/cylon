@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "csv_write_config.hpp"
+#include <cylon/io/csv_write_config.hpp>
 
 namespace cylon {
 namespace io {

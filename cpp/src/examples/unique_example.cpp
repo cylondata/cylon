@@ -15,10 +15,10 @@
 #include <glog/logging.h>
 #include <chrono>
 
-#include <net/mpi/mpi_communicator.hpp>
-#include <ctx/cylon_context.hpp>
-#include <table.hpp>
-#include <ctx/arrow_memory_pool_utils.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/table.hpp>
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
 
 int sequential(std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::Table> &out, const std::vector<int> &cols);
 int distributed(std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::Table> &out, const std::vector<int> &cols);

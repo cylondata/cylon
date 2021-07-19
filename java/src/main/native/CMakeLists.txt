@@ -1,3 +1,17 @@
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(CYLON_JNI)
 set(CYLON_VERSION 0.0)
@@ -26,7 +40,7 @@ SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
 
 message("${PROJECT_SOURCE_DIR}/../../../../cpp/src")
-set(CYLON_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src/cylon")
+set(CYLON_INCLUDE "${PROJECT_SOURCE_DIR}/../../../../cpp/src/")
 find_library(CYLON_LIBRARY "cylon" "${CYLON_CORE_LIBS}")
 find_library(ARROW_LIBRARY "arrow" "${CYLON_ARROW_DIR}/build/release")
 message(STATUS "CYLON_LIBRARY set to ${CYLON_LIBRARY}")

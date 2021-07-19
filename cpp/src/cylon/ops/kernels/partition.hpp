@@ -15,9 +15,9 @@
 #ifndef CYLON_SRC_CYLON_OPS_KERNELS_PARTITION_HPP_
 #define CYLON_SRC_CYLON_OPS_KERNELS_PARTITION_HPP_
 
-#include <arrow/arrow_partition_kernels.hpp>
-#include <arrow/arrow_kernels.hpp>
-#include <table.hpp>
+#include <cylon/arrow/arrow_partition_kernels.hpp>
+#include <cylon/arrow/arrow_kernels.hpp>
+#include <cylon/table.hpp>
 
 namespace cylon {
 namespace kernel {

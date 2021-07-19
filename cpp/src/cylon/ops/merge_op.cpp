@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#include <ctx/arrow_memory_pool_utils.hpp>
-#include "merge_op.hpp"
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
+#include <cylon/ops/merge_op.hpp>
 
 cylon::MergeOp::MergeOp(const std::shared_ptr<CylonContext> &ctx,
                         const std::shared_ptr<arrow::Schema> &schema,

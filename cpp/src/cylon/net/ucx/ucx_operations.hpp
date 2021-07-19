@@ -17,7 +17,7 @@
 
 #include <mpi.h>
 #include <ucp/api/ucp.h>
-#include <net/comm_operations.hpp>
+#include <cylon/net/comm_operations.hpp>
 
 namespace cylon {
 namespace ucx {

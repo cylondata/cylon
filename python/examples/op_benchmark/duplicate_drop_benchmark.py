@@ -12,7 +12,6 @@
 # limitations under the License.
 ##
 
-
 import time
 import pandas as pd
 import pycylon as cn

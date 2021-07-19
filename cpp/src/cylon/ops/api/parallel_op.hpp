@@ -16,8 +16,8 @@
 #define CYLON_SRC_CYLON_OPS_PARALLEL_OP_HPP_
 
 #include <memory>
-#include <table.hpp>
-#include "ops/execution/execution.hpp"
+#include <cylon/table.hpp>
+#include <cylon/ops/execution/execution.hpp>
 
 /**
  * Assumptions

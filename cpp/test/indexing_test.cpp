@@ -12,9 +12,8 @@
  * limitations under the License.
  */
 
+#include <cylon/indexing/index.hpp>
 #include "test_header.hpp"
-
-#include "indexing/index.hpp"
 #include "test_index_utils.hpp"
 
 using namespace cylon;

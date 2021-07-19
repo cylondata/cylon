@@ -16,7 +16,7 @@
 #define CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
 
 #include <mpi.h>
-#include <net/comm_operations.hpp>
+#include <cylon/net/comm_operations.hpp>
 
 namespace cylon {
 namespace mpi {

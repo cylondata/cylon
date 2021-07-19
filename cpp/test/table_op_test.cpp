@@ -15,7 +15,7 @@
 #include "test_header.hpp"
 #include "test_utils.hpp"
 
-#include <compute/aggregates.hpp>
+#include <cylon/compute/aggregates.hpp>
 
 using namespace cylon;
 

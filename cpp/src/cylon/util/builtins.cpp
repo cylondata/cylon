@@ -12,9 +12,10 @@
  * limitations under the License.
  */
 
-#include "builtins.hpp"
 #include <string>
 #include <iostream>
+
+#include <cylon/util/builtins.hpp>
 
 void cylon::util::printArray(const void *buf, int size, std::string dataType, int depth) {
   if (dataType == "int") {

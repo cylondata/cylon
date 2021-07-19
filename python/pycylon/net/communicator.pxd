@@ -12,7 +12,6 @@
  # limitations under the License.
  ##
 
-
 from libcpp.memory cimport shared_ptr
 from pycylon.net.comm_config cimport CCommConfig
 from pycylon.net.comm_type cimport CCommType

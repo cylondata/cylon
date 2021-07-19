@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-#include "mpi_channel.hpp"
 #include <glog/logging.h>
 #include <mpi.h>
 #include <vector>
@@ -20,9 +19,10 @@
 #include <cstring>
 #include <memory>
 #include <utility>
-#include <status.hpp>
 
-#include "../TxRequest.hpp"
+#include <cylon/status.hpp>
+#include <cylon/net/mpi/mpi_channel.hpp>
+#include <cylon/net/TxRequest.hpp>
 
 
 namespace cylon {

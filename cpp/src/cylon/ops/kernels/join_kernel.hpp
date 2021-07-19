@@ -18,7 +18,7 @@
 #include <arrow/api.h>
 #include <queue>
 
-#include "ctx/cylon_context.hpp"
+#include <cylon/ctx/cylon_context.hpp>
 
 namespace cylon {
 namespace kernel {

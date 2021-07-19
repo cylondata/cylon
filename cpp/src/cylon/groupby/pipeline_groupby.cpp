@@ -18,11 +18,11 @@
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
 
-#include "../util/macros.hpp"
-#include "../util/arrow_utils.hpp"
-#include "../ctx/arrow_memory_pool_utils.hpp"
+#include <cylon/util/macros.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
 
-#include "pipeline_groupby.hpp"
+#include <cylon/groupby/pipeline_groupby.hpp>
 
 namespace cylon {
 
