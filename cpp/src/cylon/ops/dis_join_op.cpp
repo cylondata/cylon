@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <utility>
 #include <cylon/ops/dis_join_op.hpp>
 #include <cylon/ops/all_to_all_op.hpp>
