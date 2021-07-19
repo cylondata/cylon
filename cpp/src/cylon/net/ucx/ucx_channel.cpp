@@ -17,6 +17,7 @@
 #include <cylon/status.hpp>
 #include <cmath>
 #include <algorithm>
+#include <glog/logging.h>
 
 #include <cylon/net/ucx/ucx_channel.hpp>
 #include <cylon/net/ucx/ucx_operations.hpp>
