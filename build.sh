@@ -396,7 +396,8 @@ export_info(){
 }
 
 check_pyarrow_installation(){
-  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  export_library_path ${LD_LIBRARY_PATH}
   response=$(python3 -c \
     "import pyarrow; print('PyArrow Installation');\
     print('Version {}'.format(pyarrow.__version__));\
