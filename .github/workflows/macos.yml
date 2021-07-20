@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
-        run: brew install open-mpi
+        run: brew install open-mpi re2
       - name: build cpp and test
         run: ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp --release --test --cmake-flags "-DCYLON_PARQUET=ON"
       - name: build python and test
