@@ -358,7 +358,11 @@ class DataFrame(object):
 
     def to_csv(self, path, csv_write_options: CSVWriteOptions):
         self._table.to_csv(path=path, csv_write_options=csv_write_options)
-
+        
+    @property
+    def iloc(self) -> PyLocIndexer:
+        return self._table.iloc
+    
     def __getitem__(self, item) -> DataFrame:
         """
             This method allows to retrieve a subset of a DataFrane by means of a key
