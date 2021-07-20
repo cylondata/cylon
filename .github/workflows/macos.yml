@@ -14,7 +14,5 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install dependencies
         run: brew install open-mpi re2
-      - name: build cpp and test
-        run: ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cpp --release --test --cmake-flags "-DCYLON_PARQUET=ON"
       - name: build python and test
         run: python3 -m venv ENV && ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --python --pytest --cmake-flags "-DCYLON_PARQUET=ON"
