@@ -15,7 +15,6 @@
 #ifndef CYLON_CPP_SRC_CYLON_JOIN_HASH_JOIN_HPP_
 #define CYLON_CPP_SRC_CYLON_JOIN_HASH_JOIN_HPP_
 
-#include <glog/logging.h>
 #include <arrow/api.h>
 #include <chrono>
 

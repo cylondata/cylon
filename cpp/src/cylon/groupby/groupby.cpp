@@ -14,7 +14,7 @@
 
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/util/macros.hpp>
-
+#include <glog/logging.h>
 #include <cylon/groupby/hash_groupby.hpp>
 #include <cylon/groupby/pipeline_groupby.hpp>
 #include <cylon/groupby/groupby.hpp>

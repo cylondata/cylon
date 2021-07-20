@@ -11,6 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include <glog/logging.h>
 #include <vector>
 #include <cylon/util/macros.hpp>
 #include <cylon/util/arrow_utils.hpp>

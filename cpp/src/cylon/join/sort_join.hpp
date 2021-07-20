@@ -15,7 +15,6 @@
 #ifndef DF78D761_8618_4A9B_AA2C_57ACC7F4E58E
 #define DF78D761_8618_4A9B_AA2C_57ACC7F4E58E
 
-#include <glog/logging.h>
 #include <arrow/api.h>
 #include <chrono>
 
