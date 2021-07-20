@@ -317,7 +317,7 @@ build_python_pyarrow() {
   echo "Building Python"
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
-  pip install pyarrow==2.0.0 || exit 1
+  pip install pyarrow==4.0.1 || exit 1
 
   ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
   LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
