@@ -165,8 +165,10 @@ check_python_pre_requisites(){
 export_library_path() {
   if [ "$(uname)" == "Darwin" ]; then
     export DYLD_LIBRARY_PATH=${1} || exit 1
+    echo "DYLD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
   elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     export LD_LIBRARY_PATH=${1} || exit 1
+    echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
   fi
 }
 
@@ -322,7 +324,6 @@ build_python_pyarrow() {
   ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
   LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
   export_library_path ${LD_LIBRARY_PATH}
-  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 
   check_python_pre_requisites
   pushd python || exit 1
@@ -339,7 +340,6 @@ build_python_conda() {
   ARROW_LIB=${CONDA_PREFIX}/lib
   LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
   export_library_path ${LD_LIBRARY_PATH}
-  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 
   pushd python || exit 1
   make clean
@@ -353,7 +353,6 @@ build_python() {
   echo "Building Python"
   LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH || exit 1
   export_library_path ${LD_LIBRARY_PATH}
-  echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
   # shellcheck disable=SC1090
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
@@ -372,7 +371,6 @@ release_python() {
   echo "Building Python"
   LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
   export_library_path ${LD_LIBRARY_PATH}
-  echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
   source "${PYTHON_ENV_PATH}"/bin/activate
   read_python_requirements
   check_python_pre_requisites
@@ -413,9 +411,8 @@ check_pycylon_installation(){
 
 python_test(){
   ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
-  LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
+  LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib" || exit 1
   export_library_path ${LD_LIBRARY_PATH}
-  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 
   python3 -m pytest python/test/test_all.py || exit 1
 }
