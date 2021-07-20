@@ -181,12 +181,10 @@ public:
     }
     arrow_status = builder.AppendValues(vec);
     if (!arrow_status.ok()) {
-//	  LOG(ERROR) << "Error occurred in appending values to array builder";
       return nullptr;
     }
     arrow_status = builder.Finish(&index_arr_);
     if (!arrow_status.ok()) {
-//	  LOG(ERROR) << "Error occurred in array builder finish";
       return nullptr;
     }
     return index_arr_;
@@ -322,11 +320,13 @@ public:
       vec[x.second] = x.first;
     }
 
-    builder.AppendValues(vec);
-    arrow_status = builder.Finish(&index_arr_);
-
+    arrow_status = builder.AppendValues(vec);
     if (!arrow_status.ok()) {
-//      LOG(ERROR) << "Error occurred in retrieving index";
+      return nullptr;
+    }
+
+    arrow_status = builder.Finish(&index_arr_);
+    if (!arrow_status.ok()) {
       return nullptr;
     }
 
@@ -371,15 +371,10 @@ private:
     index_arr_ = index_column;
     map_ = std::make_shared<MMAP_TYPE>(index_column->length());
     auto reader0 = std::static_pointer_cast<ARROW_ARRAY_TYPE>(index_column);
-//    auto start_start = std::chrono::steady_clock::now();
     for (int64_t i = reader0->length() - 1; i >= 0; --i) {
       auto val = reader0->GetString(i);
       map_->emplace(val, i);
     }
-//	auto end_time = std::chrono::steady_clock::now();
-//	LOG(INFO) << "Pure Indexing creation in "
-//			  << std::chrono::duration_cast<std::chrono::milliseconds>(
-//				  end_time - start_start).count() << "[ms]";
     return cylon::Status::OK();
   }
 };
