@@ -361,6 +361,36 @@ class DataFrame(object):
         
     @property
     def iloc(self) -> PyLocIndexer:
+        """
+        This operator finds value by integer-location based indexing.
+        Allowed inputs are:
+
+        - An integer, e.g. ``5``.
+        - A list or array of integers, e.g. ``[2, 3, 0]``.
+        - A slice object with ints, e.g. ``0:2``.
+
+        Examples
+        --------
+        >>> df1
+               col-0  col-1
+            0      1      4
+            1      2      5
+            2      3      6
+
+        >>> df1.iloc[1]
+               col-0  col-1
+            0      2      5
+
+        >>> df1.iloc[[1,2]]
+               col-0  col-1
+            0      2      5
+            1      3      6
+
+        >>> df1.iloc[1:3]
+               col-0  col-1
+            0      2      5
+            1      3      6
+        """
         return self._table.iloc
     
     def __getitem__(self, item) -> DataFrame:
