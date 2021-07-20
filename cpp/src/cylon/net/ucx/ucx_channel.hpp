@@ -19,7 +19,6 @@
 #include <unordered_map>
 #include <queue>
 #include <ucp/api/ucp.h>
-#include <glog/logging.h>
 
 #include <cylon/net/channel.hpp>
 #include <cylon/net/ucx/ucx_operations.hpp>

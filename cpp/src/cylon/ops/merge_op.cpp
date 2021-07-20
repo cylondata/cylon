@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <cylon/ctx/arrow_memory_pool_utils.hpp>
 #include <cylon/ops/merge_op.hpp>
 

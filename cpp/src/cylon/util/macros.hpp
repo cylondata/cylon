@@ -15,8 +15,6 @@
 #ifndef CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_
 #define CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_
 
-#include <glog/logging.h>
-
 #define LOG_AND_RETURN_ERROR(code, msg) \
   LOG(ERROR) << msg ; \
   return cylon::Status(code, msg)
@@ -25,7 +23,6 @@
   do{                               \
     const auto& _st = (expr);       \
     if (!_st.is_ok()) {             \
-      LOG(ERROR) << _st.get_msg() ; \
       return _st;                   \
     };                              \
   } while (0)
@@ -34,7 +31,6 @@
   do{                               \
     const auto& _st = (expr);       \
     if (!_st.ok()) {                \
-      LOG(ERROR) << _st.ToString(); \
       return cylon::Status(static_cast<int>(_st.code()), _st.message()); \
     };                              \
   } while (0)
@@ -43,7 +39,6 @@
   do{                               \
     const auto& _st = (expr);       \
     if (!_st.ok()) {                \
-      LOG(ERROR) << _st.ToString(); \
       return _st;                   \
     };                              \
   } while (0)
@@ -62,7 +57,6 @@
     if ((arrow_table)->column(0)->num_chunks() > 1){          \
       const auto &res = (arrow_table)->CombineChunks((pool)); \
       if (!res.ok()) {                                        \
-        LOG(ERROR) << res.status().ToString();                         \
         return res.status();                                  \
       }                                                       \
       (arrow_table) = res.ValueOrDie();                       \

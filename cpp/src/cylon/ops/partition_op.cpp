@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <cylon/partition/partition.hpp>
 #include <cylon/ops/partition_op.hpp>
 

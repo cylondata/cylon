@@ -15,7 +15,6 @@
 #ifndef CYLON_SRC_IO_TABLE_H_
 #define CYLON_SRC_IO_TABLE_H_
 
-#include <glog/logging.h>
 
 #include <memory>
 #include <string>

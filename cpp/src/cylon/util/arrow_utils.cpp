@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
 #include <memory>
