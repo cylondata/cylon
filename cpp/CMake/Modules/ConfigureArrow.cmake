@@ -71,7 +71,7 @@ if ($ENV{PARALLEL_LEVEL})
 endif ($ENV{PARALLEL_LEVEL})
 
 execute_process(
-        COMMAND ${CMAKE_COMMAND} --build .. -- -j 2
+        COMMAND ${CMAKE_COMMAND} --build ..
         RESULT_VARIABLE ARROW_BUILD
         WORKING_DIRECTORY ${ARROW_ROOT}/build)
 
