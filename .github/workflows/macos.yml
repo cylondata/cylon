@@ -8,11 +8,11 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-10.15
 
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
-        run: brew install open-mpi re2
+        run: brew install open-mpi re2 && brew update --preinstall && brew install automake boost brotli c-ares ccache cmake flatbuffers glog grpc llvm llvm@8 lz4 minio ninja numpy openssl@1.1 protobuf python rapidjson snappy thrift wget zstd
       - name: build python and test
         run: python3 -m venv ENV && ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --python --cmake-flags "-DCYLON_PARQUET=ON"
