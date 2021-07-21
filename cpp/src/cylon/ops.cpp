@@ -21,7 +21,10 @@
 namespace cylon {
 
 /**
- * A utility function for finding splits
+ * A utility function for finding splits. Since we are calculating the splits based on the input
+ * we are using the input data sizes and the cache sizes to calculate the splits. We need to improve the op framework
+ * to calculate the splits at the targets. But this will be a good approximation assuming we are doing a
+ * good partitioning.
  * @param ctx
  * @param left left table
  * @param right right table
@@ -42,9 +45,7 @@ Status Get_Splits(const std::shared_ptr <cylon::CylonContext> &ctx,
   std::array<int64_t, 4> all = {left_sizes[0], left_sizes[1], right_sizes[0], right_sizes[1]};
   std::array<int64_t, 4> totals;
   cylon::Status status = cylon::mpi::AllReduce(all.data(), totals.data(), 4, cylon::Int64(), cylon::net::SUM);
-  if (!status.is_ok()) {
-    return status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(status);
   *left_splits = cylon::util::GetNumberSplitsToFitInCache(totals[1], totals[0], ctx->GetWorldSize());
   *right_splits = cylon::util::GetNumberSplitsToFitInCache(totals[3], totals[2], ctx->GetWorldSize());
   return Status::OK();
