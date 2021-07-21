@@ -37,11 +37,11 @@ Status Get_Splits(const std::shared_ptr <cylon::CylonContext> &ctx,
                  const std::vector<int> &right_column_indexes,
                  int *left_splits,
                  int *right_splits) {
-  std::vector<int64_t> left_sizes = cylon::util::GetBytesAndElements(left->get_table(), left_column_indexes);
-  std::vector<int64_t> right_sizes = cylon::util::GetBytesAndElements(right->get_table(), right_column_indexes);
-  left_sizes.insert(left_sizes.end(), right_sizes.begin(), right_sizes.end());
-  std::vector<int64_t> totals(4);
-  cylon::Status status = cylon::mpi::AllReduce(left_sizes.data(), totals.data(), 4, cylon::Int64(), cylon::net::SUM);
+  std::array<int64_t, 2> left_sizes = cylon::util::GetBytesAndElements(left->get_table(), left_column_indexes);
+  std::array<int64_t, 2> right_sizes = cylon::util::GetBytesAndElements(right->get_table(), right_column_indexes);
+  std::array<int64_t, 4> all = {left_sizes[0], left_sizes[1], right_sizes[0], right_sizes[1]};
+  std::array<int64_t, 4> totals;
+  cylon::Status status = cylon::mpi::AllReduce(all.data(), totals.data(), 4, cylon::Int64(), cylon::net::SUM);
   if (!status.is_ok()) {
     return status;
   }
@@ -62,10 +62,7 @@ Status JoinOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
   int left_splits = 1;
   int right_splits = 1;
   auto status = Get_Splits(ctx, left, right, join_config.GetLeftColumnIdx(), join_config.GetRightColumnIdx(), &left_splits, &right_splits);
-  if (!status.is_ok()) {
-    LOG(INFO) << "Couldn't find the splits";
-    return status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(status);
   LOG(INFO) << "Left splits - " << left_splits << " Right splits - " << right_splits;
   const auto &part_config = cylon::PartitionOpConfig(ctx->GetWorldSize(), {0});
   const auto &dist_join_config = cylon::DisJoinOpConfig(part_config, join_config, left_splits, right_splits);

@@ -142,7 +142,7 @@ uint64_t GetNumberSplitsToFitInCache(int64_t total_bytes, int total_elements, in
  * @param columns
  * @return
  */
-std::vector<int64_t> GetBytesAndElements(std::shared_ptr<arrow::Table> table, const std::vector<int> &columns);
+std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table, const std::vector<int> &columns);
 
 }  // namespace util
 }  // namespace cylon

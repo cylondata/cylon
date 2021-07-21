@@ -331,7 +331,7 @@ uint64_t GetNumberSplitsToFitInCache(int64_t total_bytes, int total_elements, in
   return (total_elements / parallel) / elements_in_cache;
 }
 
-std::vector<int64_t> GetBytesAndElements(std::shared_ptr<arrow::Table> table, const std::vector<int> &columns) {
+std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table, const std::vector<int> &columns) {
   int64_t num_elements = 0;
   int64_t num_bytes = 0;
   for (int64_t t : columns) {
