@@ -33,12 +33,12 @@ namespace cylon {
 Status Get_Splits(const std::shared_ptr <cylon::CylonContext> &ctx,
                 std::shared_ptr <cylon::Table> &left,
                  std::shared_ptr <cylon::Table> &right,
-                 std::vector<int> left_column_indexes,
-                 std::vector<int> right_column_indexes,
+                 const std::vector<int> &left_column_indexes,
+                 const std::vector<int> &right_column_indexes,
                  int *left_splits,
                  int *right_splits) {
   std::vector<int64_t> left_sizes = cylon::util::GetBytesAndElements(left->get_table(), left_column_indexes);
-  std::vector<int64_t> right_sizes = cylon::util::GetBytesAndElements(left->get_table(), right_column_indexes);
+  std::vector<int64_t> right_sizes = cylon::util::GetBytesAndElements(right->get_table(), right_column_indexes);
   left_sizes.insert(left_sizes.end(), right_sizes.begin(), right_sizes.end());
   std::vector<int64_t> totals(4);
   cylon::Status status = cylon::mpi::AllReduce(left_sizes.data(), totals.data(), 4, cylon::Int64(), cylon::net::SUM);

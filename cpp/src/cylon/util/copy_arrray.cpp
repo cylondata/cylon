@@ -34,7 +34,6 @@ arrow::Status do_copy_numeric_array(const std::vector<int64_t> &indices,
   }
 
   using T = typename TYPE::c_type;
-  auto casted_array = std::static_pointer_cast<arrow::NumericArray<TYPE>>(data_array);
   const std::shared_ptr<arrow::ArrayData> &data = data_array->data();
   const T *value_buffer = data->template GetValues<T>(1);
   for (auto &index : indices) {
@@ -44,8 +43,8 @@ arrow::Status do_copy_numeric_array(const std::vector<int64_t> &indices,
       continue;
     }
 
-    if (casted_array->length() <= index) {
-      LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
+    if (data_array->length() <= index) {
+      LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << data_array->length();
     }
     array_builder.UnsafeAppend(value_buffer[index]);
   }
