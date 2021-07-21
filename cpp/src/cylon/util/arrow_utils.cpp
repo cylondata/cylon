@@ -338,7 +338,11 @@ std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table, 
     const std::shared_ptr<arrow::ChunkedArray> &ptr = table->column(t);
     for (std::shared_ptr<arrow::Array> arr : ptr->chunks()) {
       num_elements += arr->length();
-      num_bytes += arr->data()->buffers[1]->size();
+      for (auto &b : arr->data()->buffers) {
+        if (b != nullptr) {
+          num_bytes += b->size();
+        }
+      }
     }
   }
   return {num_elements, num_bytes};
