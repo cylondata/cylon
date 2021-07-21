@@ -11,30 +11,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "table.hpp"
 
+#include <glog/logging.h>
 #include <arrow/compute/api.h>
 #include <arrow/table.h>
 
 #include <fstream>
 #include <future>
-#include <join/join_utils.hpp>
 #include <memory>
 #include <unordered_map>
+#include <iostream>
 
-#include "arrow/arrow_all_to_all.hpp"
-#include "arrow/arrow_comparator.hpp"
-#include "arrow/arrow_types.hpp"
-#include "ctx/arrow_memory_pool_utils.hpp"
-#include "io/arrow_io.hpp"
-#include "iostream"
-#include "join/join.hpp"
-#include "partition/partition.hpp"
-#include "table_api_extended.hpp"
-#include "thridparty/flat_hash_map/bytell_hash_map.hpp"
-#include "util/arrow_utils.hpp"
-#include "util/macros.hpp"
-#include "util/to_string.hpp"
+#include <cylon/table.hpp>
+#include <cylon/join/join_utils.hpp>
+#include <cylon/arrow/arrow_all_to_all.hpp>
+#include <cylon/arrow/arrow_comparator.hpp>
+#include <cylon/arrow/arrow_types.hpp>
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
+#include <cylon/io/arrow_io.hpp>
+#include <cylon/join/join.hpp>
+#include <cylon/partition/partition.hpp>
+#include <cylon/table_api_extended.hpp>
+#include <cylon/thridparty/flat_hash_map/bytell_hash_map.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/util/macros.hpp>
+#include <cylon/util/to_string.hpp>
 
 namespace cylon {
 

@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#include <status.hpp>
-#include "mpi_operations.hpp"
+#include <cylon/status.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 
 MPI_Op cylon::mpi::GetMPIOp(cylon::net::ReduceOp reduce_op) {
   switch (reduce_op) {

@@ -12,10 +12,11 @@
  * limitations under the License.
  */
 
-#include <ctx/cylon_context.hpp>
-#include <net/mpi/mpi_communicator.hpp>
-#include <table.hpp>
-#include <ops/dis_union_op.hpp>
+#include <glog/logging.h>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/table.hpp>
+#include <cylon/ops/dis_union_op.hpp>
 
 int main(int argc, char *argv[]) {
 

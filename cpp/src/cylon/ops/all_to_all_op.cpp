@@ -13,9 +13,9 @@
  */
 
 #include <chrono>
-
-#include "all_to_all_op.hpp"
-#include "table.hpp"
+#include <glog/logging.h>
+#include <cylon/ops/all_to_all_op.hpp>
+#include <cylon/table.hpp>
 
 cylon::AllToAllOp::AllToAllOp(const std::shared_ptr<CylonContext> &ctx,
                               const std::shared_ptr<arrow::Schema> &schema,

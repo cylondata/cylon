@@ -12,7 +12,8 @@
  * limitations under the License.
  */
 
-#include "join_op.hpp"
+#include <glog/logging.h>
+#include <cylon/ops/join_op.hpp>
 
 #include <chrono>
 

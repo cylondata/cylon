@@ -17,7 +17,7 @@
 
 #include <arrow/api.h>
 
-#include "../ctx/cylon_context.hpp"
+#include <cylon/ctx/cylon_context.hpp>
 
 namespace cylon {
 

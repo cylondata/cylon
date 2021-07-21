@@ -15,14 +15,13 @@
 #ifndef CYLON_CPP_SRC_CYLON_JOIN_HASH_JOIN_HPP_
 #define CYLON_CPP_SRC_CYLON_JOIN_HASH_JOIN_HPP_
 
-#include <glog/logging.h>
 #include <arrow/api.h>
 #include <chrono>
 
-#include "join_config.hpp"
-#include "join_utils.hpp"
-#include "util/arrow_utils.hpp"
-#include "util/macros.hpp"
+#include <cylon/join/join_config.hpp>
+#include <cylon/join/join_utils.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/util/macros.hpp>
 
 namespace cylon {
 namespace join {

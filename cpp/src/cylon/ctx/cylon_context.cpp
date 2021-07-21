@@ -15,13 +15,13 @@
 #include <glog/logging.h>
 #include <utility>
 #include <vector>
+#include <arrow/memory_pool.h>
 
-#include "cylon_context.hpp"
-#include "arrow/memory_pool.h"
-#include "../net/mpi/mpi_communicator.hpp"
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
 
 #ifdef BUILD_CYLON_UCX
-#include "../net/ucx/ucx_communicator.hpp"
+#include <cylon/net/ucx/ucx_communicator.hpp>
 #endif
 
 namespace cylon {

@@ -12,9 +12,10 @@
  * limitations under the License.
  */
 
-#include "arrow_types.hpp"
-#include "../data_types.hpp"
-#include "glog/logging.h"
+#include <cylon/arrow/arrow_types.hpp>
+#include <cylon/data_types.hpp>
+
+#include <glog/logging.h>
 
 namespace cylon {
 namespace tarrow {

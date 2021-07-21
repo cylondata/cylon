@@ -12,8 +12,9 @@
  * limitations under the License.
  */
 
-#include "hash_join.hpp"
-#include "arrow/arrow_comparator.hpp"
+#include <glog/logging.h>
+#include <cylon/join/hash_join.hpp>
+#include <cylon/arrow/arrow_comparator.hpp>
 
 namespace cylon {
 namespace join {

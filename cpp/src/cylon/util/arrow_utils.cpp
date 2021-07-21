@@ -12,17 +12,16 @@
  * limitations under the License.
  */
 
-#include "arrow_utils.hpp"
-
+#include <glog/logging.h>
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
-
-#include <arrow/arrow_kernels.hpp>
 #include <memory>
 #include <random>
 #include <vector>
 
-#include "macros.hpp"
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/arrow/arrow_kernels.hpp>
+#include <cylon/util/macros.hpp>
 
 namespace cylon {
 namespace util {

@@ -15,9 +15,9 @@
 #include "test_header.hpp"
 #include "test_utils.hpp"
 
-#include <partition/partition.hpp>
-#include <util/murmur3.hpp>
-#include <compute/aggregates.hpp>
+#include <cylon/partition/partition.hpp>
+#include <cylon/util/murmur3.hpp>
+#include <cylon/compute/aggregates.hpp>
 
 using namespace cylon;
 

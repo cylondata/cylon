@@ -13,15 +13,16 @@
  */
 
 #include <glog/logging.h>
-#include <net/ucx/ucx_communicator.hpp>
-#include <ctx/cylon_context.hpp>
-#include <util/builtins.hpp>
-#include <table.hpp>
 #include <chrono>
 #include <arrow/api.h>
 #include <arrow/array.h>
 #include <random>
 #include <mpi.h>
+
+#include <cylon/net/ucx/ucx_communicator.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/util/builtins.hpp>
+#include <cylon/table.hpp>
 
 void create_binary_table(char *const *argv,
                          std::shared_ptr<cylon::CylonContext> &ctx,

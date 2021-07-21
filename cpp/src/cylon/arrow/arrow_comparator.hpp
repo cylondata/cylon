@@ -17,8 +17,8 @@
 
 #include <arrow/api.h>
 
-#include "../ctx/cylon_context.hpp"
-#include "arrow_partition_kernels.hpp"
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/arrow/arrow_partition_kernels.hpp>
 
 namespace cylon {
 

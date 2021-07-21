@@ -19,9 +19,9 @@
 #include<unordered_map>
 #include<queue>
 #include<unordered_set>
-#include "../../ctx/cylon_context.hpp"
 
-#include "../channel.hpp"
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/net/channel.hpp>
 
 namespace cylon {
 class ReceiveCallback {

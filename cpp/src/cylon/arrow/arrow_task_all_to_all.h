@@ -16,8 +16,9 @@
 #define CYLON_SRC_CYLON_ARROW_ARROW_TASK_ALL_TO_ALL_H_
 
 #include <mutex>
-#include "arrow_all_to_all.hpp"
+#include <cylon/arrow/arrow_all_to_all.hpp>
 #include <glog/logging.h>
+
 namespace cylon {
 
 class LogicalTaskPlan {

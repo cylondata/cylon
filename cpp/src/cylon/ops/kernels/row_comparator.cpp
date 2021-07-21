@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "row_comparator.hpp"
+#include <cylon/ops/kernels/row_comparator.hpp>
 
 bool cylon::kernel::RowComparator::operator()(const std::pair<int32_t, int64_t> &record1,
                                               const std::pair<int32_t, int64_t> &record2) const {

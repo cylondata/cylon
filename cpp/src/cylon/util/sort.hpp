@@ -16,7 +16,6 @@
 
 #include <cmath>
 #include <arrow/api.h>
-#include <glog/logging.h>
 
 namespace cylon {
 namespace util {

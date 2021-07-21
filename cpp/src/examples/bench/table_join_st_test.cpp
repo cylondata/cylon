@@ -12,11 +12,12 @@
  * limitations under the License.
  */
 
-#include <table.hpp>
-#include <status.hpp>
 #include <iostream>
-#include <io/csv_read_config.hpp>
 #include <chrono>
+
+#include <cylon/table.hpp>
+#include <cylon/status.hpp>
+#include <cylon/io/csv_read_config.hpp>
 
 using namespace cylon;
 using namespace cylon::join::config;

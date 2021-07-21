@@ -12,10 +12,10 @@
  * limitations under the License.
  */
 
-#include <ops/kernels/prepare_array.hpp>
-#include <ctx/arrow_memory_pool_utils.hpp>
-#include "union.hpp"
-#include "row_comparator.hpp"
+#include <cylon/ops/kernels/prepare_array.hpp>
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
+#include <cylon/ops/kernels/union.hpp>
+#include <cylon/ops/kernels/row_comparator.hpp>
 
 void cylon::kernel::Union::InsertTable(const std::shared_ptr<cylon::Table> &table) {
   std::shared_ptr<arrow::Table> arrow_table;

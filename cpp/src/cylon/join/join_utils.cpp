@@ -18,8 +18,8 @@
 #include <vector>
 #include <memory>
 
-#include "join_utils.hpp"
-#include "../util/arrow_utils.hpp"
+#include <cylon/join/join_utils.hpp>
+#include <cylon/util/arrow_utils.hpp>
 
 namespace cylon {
 namespace join {

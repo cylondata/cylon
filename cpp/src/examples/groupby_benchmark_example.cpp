@@ -13,22 +13,21 @@
  */
 
 #include <glog/logging.h>
-#include <net/mpi/mpi_communicator.hpp>
-#include <ctx/cylon_context.hpp>
-#include <util/builtins.hpp>
-#include <table.hpp>
 #include <chrono>
 #include <arrow/api.h>
 #include <arrow/array.h>
 #include <random>
 #include <mpi.h>
-
 #include <arrow/compute/api.h>
-#include <ctx/arrow_memory_pool_utils.hpp>
 
-#include <util/arrow_utils.hpp>
-#include <groupby/groupby.hpp>
-#include <groupby/groupby.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/util/builtins.hpp>
+#include <cylon/table.hpp>
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/groupby/groupby.hpp>
+#include <cylon/groupby/groupby.hpp>
 
 
 void create_table(char *const *argv,

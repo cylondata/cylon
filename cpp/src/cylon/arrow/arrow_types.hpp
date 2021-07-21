@@ -18,7 +18,7 @@
 #include <memory>
 #include <arrow/api.h>
 
-#include "../data_types.hpp"
+#include <cylon/data_types.hpp>
 
 namespace cylon {
 namespace tarrow {

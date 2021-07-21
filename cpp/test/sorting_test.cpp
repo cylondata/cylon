@@ -13,16 +13,16 @@
  */
 
 #include <glog/logging.h>
-#include <net/mpi/mpi_communicator.hpp>
-#include <ctx/cylon_context.hpp>
-#include <util/builtins.hpp>
-#include <table.hpp>
 #include <chrono>
 #include <random>
 
-#include <util/arrow_utils.hpp>
-#include <groupby/groupby.hpp>
-#include <compute/aggregates.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/util/builtins.hpp>
+#include <cylon/table.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/groupby/groupby.hpp>
+#include <cylon/compute/aggregates.hpp>
 
 #include "test_header.hpp"
 

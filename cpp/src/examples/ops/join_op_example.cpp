@@ -14,12 +14,12 @@
 
 #include <glog/logging.h>
 #include <chrono>
-
-#include <net/mpi/mpi_communicator.hpp>
-#include <ctx/cylon_context.hpp>
-#include <table.hpp>
-#include <ops/dis_join_op.hpp>
 #include <mpi.h>
+
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/table.hpp>
+#include <cylon/ops/dis_join_op.hpp>
 
 void create_binary_table(char *const *argv,
                          cylon::CylonContext *ctx,

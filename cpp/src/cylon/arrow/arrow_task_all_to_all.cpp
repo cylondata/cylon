@@ -14,7 +14,7 @@
 
 #include <utility>
 
-#include "./arrow_task_all_to_all.h"
+#include <cylon/arrow/arrow_task_all_to_all.h>
 
 cylon::LogicalTaskPlan::LogicalTaskPlan(std::shared_ptr<std::vector<int>> task_source,
                                         std::shared_ptr<std::vector<int>> task_targets,

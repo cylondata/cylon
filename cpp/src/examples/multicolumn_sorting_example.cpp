@@ -13,11 +13,11 @@
  */
 
 #include <glog/logging.h>
-
 #include <chrono>
-#include <ctx/cylon_context.hpp>
-#include <net/mpi/mpi_communicator.hpp>
-#include <table.hpp>
+
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/table.hpp>
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {

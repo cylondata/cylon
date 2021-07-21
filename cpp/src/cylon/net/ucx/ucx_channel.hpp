@@ -15,18 +15,16 @@
 #ifndef CYLON_UCX_CHANNEL_H
 #define CYLON_UCX_CHANNEL_H
 
-#include "../channel.hpp"
-
 #include <vector>
 #include <unordered_map>
 #include <queue>
 #include <ucp/api/ucp.h>
-#include <glog/logging.h>
-#include "ucx_operations.hpp"
-#include "ucx_communicator.hpp"
 
-#include "../buffer.hpp"
-#include "../../status.hpp"
+#include <cylon/net/channel.hpp>
+#include <cylon/net/ucx/ucx_operations.hpp>
+#include <cylon/net/ucx/ucx_communicator.hpp>
+#include <cylon/net/buffer.hpp>
+#include <cylon/status.hpp>
 
 
 #define CYLON_CHANNEL_HEADER_SIZE 8

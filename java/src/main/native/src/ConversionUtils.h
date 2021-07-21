@@ -15,9 +15,9 @@
 #ifndef CYLON_JNI_SRC_CONVERSIONUTILS_H_
 #define CYLON_JNI_SRC_CONVERSIONUTILS_H_
 
-#include "unordered_map"
-#include "ctx/cylon_context.hpp"
-#include "join/join_config.hpp"
+#include <unordered_map>
+#include <cylon/ctx/cylon_context.hpp>
+#include <cylon/join/join_config.hpp>
 
 extern std::unordered_map<int32_t, std::shared_ptr<cylon::CylonContext>> contexts;
 

@@ -18,8 +18,8 @@
 #include <arrow/api.h>
 #include <arrow/table.h>
 
-#include "../net/buffer.hpp"
-#include "../net/ops/all_to_all.hpp"
+#include <cylon/net/buffer.hpp>
+#include <cylon/net/ops/all_to_all.hpp>
 
 namespace cylon {
 // lets define some integers to indicate the state of the data transfer using headers

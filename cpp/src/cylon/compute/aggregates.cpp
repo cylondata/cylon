@@ -14,11 +14,11 @@
 
 #include <glog/logging.h>
 
-#include "../net/comm_operations.hpp"
-#include "../util/macros.hpp"
+#include <cylon/net/comm_operations.hpp>
+#include <cylon/util/macros.hpp>
 
-#include "aggregates.hpp"
-#include "aggregate_utils.hpp"
+#include <cylon/compute/aggregates.hpp>
+#include <cylon/compute/aggregate_utils.hpp>
 
 namespace cylon {
 namespace compute {

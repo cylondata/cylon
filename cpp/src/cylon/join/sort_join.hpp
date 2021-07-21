@@ -15,14 +15,13 @@
 #ifndef DF78D761_8618_4A9B_AA2C_57ACC7F4E58E
 #define DF78D761_8618_4A9B_AA2C_57ACC7F4E58E
 
-#include <glog/logging.h>
 #include <arrow/api.h>
 #include <chrono>
 
-#include "join_config.hpp"
-#include "join_utils.hpp"
-#include "util/arrow_utils.hpp"
-#include "util/macros.hpp"
+#include <cylon/join/join_config.hpp>
+#include <cylon/join/join_utils.hpp>
+#include <cylon/util/arrow_utils.hpp>
+#include <cylon/util/macros.hpp>
 
 namespace cylon {
 namespace join {

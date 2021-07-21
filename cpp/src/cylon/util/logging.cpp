@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#include "logging.hpp"
-#include "glog/logging.h"
+#include <cylon/util/logging.hpp>
+#include <glog/logging.h>
 
 namespace cylon {
 void SetLogLevel(int level) {

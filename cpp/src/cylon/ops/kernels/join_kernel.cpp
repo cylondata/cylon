@@ -14,9 +14,9 @@
 
 #include <glog/logging.h>
 
-#include "table.hpp"
-#include "ctx/arrow_memory_pool_utils.hpp"
-#include "ops/kernels/join_kernel.hpp"
+#include <cylon/table.hpp>
+#include <cylon/ctx/arrow_memory_pool_utils.hpp>
+#include <cylon/ops/kernels/join_kernel.hpp>
 
 namespace cylon {
 namespace kernel {

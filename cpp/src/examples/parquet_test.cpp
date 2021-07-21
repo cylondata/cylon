@@ -11,8 +11,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <net/mpi/mpi_communicator.hpp>
-#include <table.hpp>
+
+#include <glog/logging.h>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/table.hpp>
 
 int main(int argc, char *argv[]) {
   auto start_start = std::chrono::steady_clock::now();
