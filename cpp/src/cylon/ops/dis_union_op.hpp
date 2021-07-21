@@ -26,8 +26,6 @@ class DisUnionOpConfig {
 class DisUnionOp : public RootOp {
 
  private:
-  DisUnionOpConfig config;
-
  public:
   DisUnionOp(const std::shared_ptr<CylonContext> &ctx,
              const std::shared_ptr<arrow::Schema> &schema,

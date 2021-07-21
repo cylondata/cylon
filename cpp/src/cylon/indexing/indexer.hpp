@@ -156,7 +156,7 @@ class ArrowILocIndexer : public ArrowLocIndexer {
   IndexingType GetIndexingType() override;
 
  private:
-  IndexingType indexing_type_;
+//  IndexingType indexing_type_;
 };
 
 }

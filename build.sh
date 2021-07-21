@@ -162,6 +162,16 @@ check_python_pre_requisites(){
   echo "${response}"
 }
 
+export_library_path() {
+  if [ "$(uname)" == "Darwin" ]; then
+    export DYLD_LIBRARY_PATH=${1} || exit 1
+    echo "DYLD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+  elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+    export LD_LIBRARY_PATH=${1} || exit 1
+    echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+  fi
+}
+
 INSTALL_CMD=
 if [ -z "$INSTALL_PATH" ]
 then
@@ -309,11 +319,11 @@ build_python_pyarrow() {
   echo "Building Python"
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
-  pip install pyarrow==2.0.0 || exit 1
+  pip install pyarrow==4.0.1 || exit 1
 
   ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
-  export LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
-  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+  LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
+  export_library_path ${LD_LIBRARY_PATH}
 
   check_python_pre_requisites
   pushd python || exit 1
@@ -328,8 +338,8 @@ build_python_conda() {
   print_line
   echo "Building Python"
   ARROW_LIB=${CONDA_PREFIX}/lib
-  export LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
-  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+  LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
+  export_library_path ${LD_LIBRARY_PATH}
 
   pushd python || exit 1
   make clean
@@ -341,8 +351,8 @@ build_python_conda() {
 build_python() {
   print_line
   echo "Building Python"
-  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH || exit 1
-  echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
+  LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH || exit 1
+  export_library_path ${LD_LIBRARY_PATH}
   # shellcheck disable=SC1090
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
@@ -359,8 +369,8 @@ build_python() {
 release_python() {
   print_line
   echo "Building Python"
-  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
-  echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
+  LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  export_library_path ${LD_LIBRARY_PATH}
   source "${PYTHON_ENV_PATH}"/bin/activate
   read_python_requirements
   check_python_pre_requisites
@@ -386,7 +396,8 @@ export_info(){
 }
 
 check_pyarrow_installation(){
-  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  export_library_path ${LD_LIBRARY_PATH}
   response=$(python3 -c \
     "import pyarrow; print('PyArrow Installation');\
     print('Version {}'.format(pyarrow.__version__));\
@@ -401,8 +412,8 @@ check_pycylon_installation(){
 
 python_test(){
   ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
-  export LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
-  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+  LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${BUILD_PATH}/arrow/install/lib" || exit 1
+  export_library_path ${LD_LIBRARY_PATH}
 
   python3 -m pytest python/test/test_all.py || exit 1
 }
