@@ -334,7 +334,7 @@ struct TypedAggregationKernel : public AggregationKernel {
   };
 
   inline void Finalize(const void *state, void *result) override {
-    return static_cast<DERIVED &>(*this).Finalize(static_cast<const State *>(state), static_cast<ResultT *>(result));
+    //return static_cast<DERIVED &>(*this).Finalize(static_cast<const State *>(state), static_cast<ResultT *>(result));
   }
 };
 

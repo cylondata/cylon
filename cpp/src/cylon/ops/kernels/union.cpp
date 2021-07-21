@@ -30,7 +30,7 @@ void cylon::kernel::Union::InsertTable(const std::shared_ptr<cylon::Table> &tabl
 }
 
 cylon::Status cylon::kernel::Union::Finalize(std::shared_ptr<cylon::Table> &result) {
-  std::vector<int64_t> indices_from_tabs[this->tables->size()];
+  std::vector<std::vector<int64_t>> indices_from_tabs(this->tables->size());
 
   for (auto const &pr : *this->rows_set) {
     indices_from_tabs[pr.first].push_back(pr.second);
