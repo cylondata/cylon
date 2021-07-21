@@ -38,6 +38,9 @@ class SetOp {
   SetOp() {};
   virtual void InsertTable(int tag, const std::shared_ptr<cylon::Table> &table) = 0;
   virtual cylon::Status Finalize(std::shared_ptr<cylon::Table> &result) = 0;
+
+  virtual ~SetOp() = default;
+
 };
 
 std::unique_ptr<SetOp> CreateSetOp(const std::shared_ptr<CylonContext> &ctx,

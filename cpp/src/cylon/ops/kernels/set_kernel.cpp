@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <cylon/ops/kernels/prepare_array.hpp>
 #include <cylon/ctx/arrow_memory_pool_utils.hpp>
 #include <cylon/ops/kernels/set_kernel.hpp>

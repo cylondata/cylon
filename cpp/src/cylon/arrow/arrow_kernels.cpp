@@ -42,13 +42,14 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
 
     std::vector<std::shared_ptr<arrow::Buffer>> build_buffers;
     std::vector<T *> data_buffers;
+    data_buffers.reserve(num_partitions);
     std::vector<int> buffer_indexes;
+    buffer_indexes.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
       int64_t buf_size = counts[i] * sizeof(T);
       arrow::Result<std::unique_ptr<arrow::Buffer>> result = arrow::AllocateBuffer(buf_size, pool_);
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-      std::shared_ptr<arrow::Buffer> indices_buf(std::move(result.ValueOrDie()));
-      build_buffers.push_back(indices_buf);
+      build_buffers.push_back(std::move(result.ValueOrDie()));
       auto *indices_begin = reinterpret_cast<T *>(build_buffers.back()->mutable_data());
       data_buffers.push_back(indices_begin);
       buffer_indexes.push_back(0);
@@ -70,10 +71,8 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
 
     output.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
-      std::vector<std::shared_ptr<arrow::Buffer>> buffs;
-      buffs.push_back(nullptr);
-      buffs.push_back(build_buffers[i]);
-      const std::shared_ptr<arrow::ArrayData> &data = arrow::ArrayData::Make(values->type(), counts[i], buffs, 0, 0);
+      const std::shared_ptr<arrow::ArrayData> &data = arrow::ArrayData::Make(
+          values->type(), counts[i], {nullptr, build_buffers[i]}, 0, 0);
       std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
       output.push_back(array);
     }
@@ -109,9 +108,8 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
       int64_t buf_size = counts[i] * width;
       arrow::Result<std::unique_ptr<arrow::Buffer>> result = arrow::AllocateBuffer(buf_size, pool_);
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-      std::shared_ptr<arrow::Buffer> indices_buf(std::move(result.ValueOrDie()));
-      build_buffers.push_back(indices_buf);
-      auto *indices_begin = reinterpret_cast<uint8_t *>(build_buffers.back()->mutable_data());
+      build_buffers.push_back(std::move(result.ValueOrDie()));
+      uint8_t *indices_begin = build_buffers.back()->mutable_data();
       data_buffers.push_back(indices_begin);
       buffer_indexes.push_back(0);
     }
@@ -124,18 +122,15 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
       for (int64_t i = 0; i < arr_len; i++, offset++) {
         unsigned int target_buffer = target_partitions[offset];
         int idx = buffer_indexes[target_buffer];
-        memcpy(static_cast<void *>(data_buffers[target_buffer] + idx * width),
-               static_cast<const void *>(value_buffer + i * width), width);
+        memcpy(data_buffers[target_buffer] + idx * width,value_buffer + i * width, width);
         buffer_indexes[target_buffer] = idx + 1;
       }
     }
 
     output.reserve(num_partitions);
     for (uint32_t i = 0; i < num_partitions; i++) {
-      std::vector<std::shared_ptr<arrow::Buffer>> buffs;
-      buffs.push_back(nullptr);
-      buffs.push_back(build_buffers[i]);
-      const std::shared_ptr<arrow::ArrayData> &data = arrow::ArrayData::Make(values->type(), counts[i], buffs, 0, 0);
+      const std::shared_ptr<arrow::ArrayData> &data = arrow::ArrayData::Make(
+          values->type(), counts[i], {nullptr, build_buffers[i]}, 0, 0);
       std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
       output.push_back(array);
     }
@@ -506,11 +501,13 @@ class NumericStreamingSplitKernel : public StreamingSplitKernel {
 public:
   NumericStreamingSplitKernel(int32_t num_targets, arrow::MemoryPool *pool)
       : StreamingSplitKernel(), num_partitions(num_targets), pool_(pool) {
+    build_buffers.reserve(num_targets);
+    counts.reserve(num_targets);
+    buffer_indexes.reserve(num_targets);
     for (int i = 0; i < num_targets; i++) {
       int64_t buf_size = 1024 * 1024 * sizeof(T);
       arrow::Result<std::unique_ptr<arrow::ResizableBuffer>> result = arrow::AllocateResizableBuffer(buf_size, pool_);
-      std::shared_ptr<arrow::ResizableBuffer> indices_buf(std::move(result.ValueOrDie()));
-      build_buffers.push_back(indices_buf);
+      build_buffers.push_back(std::move(result.ValueOrDie()));
 
       counts.push_back(0);
       buffer_indexes.push_back(0);
@@ -519,7 +516,6 @@ public:
 
   Status Split(const std::shared_ptr<arrow::Array> &values, const std::vector<uint32_t> &partitions,
                const std::vector<uint32_t> &cnts) override {
-    const auto &cast_array = std::static_pointer_cast<ARRAY_T>(values);
     type = values->type();
     // reserve additional space in the builders
     data_buffers.clear();
@@ -546,10 +542,7 @@ public:
   Status Finish(std::vector<std::shared_ptr<arrow::Array>> &out) override {
     out.reserve(num_partitions);
     for (int i = 0; i < num_partitions; i++) {
-      std::vector<std::shared_ptr<arrow::Buffer>> buffs;
-      buffs.push_back(nullptr);
-      buffs.push_back(build_buffers[i]);
-      const std::shared_ptr<arrow::ArrayData> &data = arrow::ArrayData::Make(type, counts[i], buffs);
+      const std::shared_ptr<arrow::ArrayData> &data = arrow::ArrayData::Make(type, counts[i], {nullptr, build_buffers[i]});
       std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
       out.push_back(array);
     }

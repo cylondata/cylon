@@ -12,9 +12,11 @@
  * limitations under the License.
  */
 
-#include "table.hpp"
-#include "ops.hpp"
-#include "net/mpi/mpi_operations.hpp"
+#include <glog/logging.h>
+
+#include <cylon/table.hpp>
+#include <cylon/ops.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 
 namespace cylon {
 
@@ -33,8 +35,8 @@ Status Get_Splits(const std::shared_ptr <cylon::CylonContext> &ctx,
                  std::shared_ptr <cylon::Table> &right,
                  std::vector<int> left_column_indexes,
                  std::vector<int> right_column_indexes,
-                 int &left_splits,
-                 int &right_splits) {
+                 int *left_splits,
+                 int *right_splits) {
   std::vector<int64_t> left_sizes = cylon::util::GetBytesAndElements(left->get_table(), left_column_indexes);
   std::vector<int64_t> right_sizes = cylon::util::GetBytesAndElements(left->get_table(), right_column_indexes);
   left_sizes.insert(left_sizes.end(), right_sizes.begin(), right_sizes.end());
@@ -43,8 +45,8 @@ Status Get_Splits(const std::shared_ptr <cylon::CylonContext> &ctx,
   if (!status.is_ok()) {
     return status;
   }
-  left_splits = cylon::util::GetNumberSplitsToFitInCache(totals[1], totals[0], ctx->GetWorldSize());
-  right_splits = cylon::util::GetNumberSplitsToFitInCache(totals[3], totals[2], ctx->GetWorldSize());
+  *left_splits = cylon::util::GetNumberSplitsToFitInCache(totals[1], totals[0], ctx->GetWorldSize());
+  *right_splits = cylon::util::GetNumberSplitsToFitInCache(totals[3], totals[2], ctx->GetWorldSize());
   return Status::OK();
 }
 
@@ -59,7 +61,7 @@ Status JoinOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
 
   int left_splits = 1;
   int right_splits = 1;
-  auto status = Get_Splits(ctx, left, right, join_config.GetLeftColumnIdx(), join_config.GetRightColumnIdx(), left_splits, right_splits);
+  auto status = Get_Splits(ctx, left, right, join_config.GetLeftColumnIdx(), join_config.GetRightColumnIdx(), &left_splits, &right_splits);
   if (!status.is_ok()) {
     LOG(INFO) << "Couldn't find the splits";
     return status;
@@ -89,7 +91,7 @@ Status UnionOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
   std::iota (std::begin(right_column_indexes), std::end(right_column_indexes), 0);
   int left_splits = 1;
   int right_splits = 1;
-  auto status = Get_Splits(ctx, left, right, left_column_indexes, right_column_indexes, left_splits, right_splits);
+  auto status = Get_Splits(ctx, left, right, left_column_indexes, right_column_indexes, &left_splits, &right_splits);
   if (!status.is_ok()) {
     LOG(INFO) << "Couldn't find the splits";
     return status;
@@ -118,7 +120,7 @@ Status SubtractOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
   std::iota (std::begin(right_column_indexes), std::end(right_column_indexes), 0);
   int left_splits = 1;
   int right_splits = 1;
-  auto status = Get_Splits(ctx, left, right, left_column_indexes, right_column_indexes, left_splits, right_splits);
+  auto status = Get_Splits(ctx, left, right, left_column_indexes, right_column_indexes, &left_splits, &right_splits);
   if (!status.is_ok()) {
     LOG(INFO) << "Couldn't find the splits";
     return status;
@@ -147,7 +149,7 @@ Status IntersectOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
   std::iota (std::begin(right_column_indexes), std::end(right_column_indexes), 0);
   int left_splits = 1;
   int right_splits = 1;
-  auto status = Get_Splits(ctx, left, right, left_column_indexes, right_column_indexes, left_splits, right_splits);
+  auto status = Get_Splits(ctx, left, right, left_column_indexes, right_column_indexes, &left_splits, &right_splits);
   if (!status.is_ok()) {
     LOG(INFO) << "Couldn't find the splits";
     return status;

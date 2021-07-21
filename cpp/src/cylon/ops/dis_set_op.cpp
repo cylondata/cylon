@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include <glog/logging.h>
 #include <cylon/ops/dis_set_op.hpp>
 #include <cylon/ops/partition_op.hpp>
 #include <cylon/ops/all_to_all_op.hpp>

@@ -83,8 +83,8 @@ public:
       const std::shared_ptr<arrow::ArrayData> &data = arr->data();
       T *value_buffer = data->template GetMutableValues<T>(1);
 
-      const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
-      for (int64_t i = 0; i < carr->length(); i++, offset++) {
+      int64_t length = arr->length();
+      for (int64_t i = 0; i < length; i++, offset++) {
         uint32_t pseudo_hash = 31 * target_partitions[offset] + static_cast<uint32_t>(value_buffer[i]);
         uint32_t p = pseudo_hash % num_partitions;
         target_partitions[offset] = p;
@@ -102,10 +102,10 @@ public:
 
     uint64_t offset = 0;
     for (const auto &arr: idx_col->chunks()) {
-      const std::shared_ptr<ARROW_ARRAY_T> &carr = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
       const std::shared_ptr<arrow::ArrayData> &data = arr->data();
       const T *value_buffer = data->template GetValues<T>(1);
-      for (int64_t i = 0; i < carr->length(); i++, offset++) {
+      int64_t length = arr->length();
+      for (int64_t i = 0; i < length; i++, offset++) {
         partial_hashes[offset] = 31 * partial_hashes[offset] + static_cast<uint32_t>(value_buffer[i]);
       }
     }

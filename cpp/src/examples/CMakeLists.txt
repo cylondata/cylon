@@ -22,6 +22,7 @@ include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(cylon_example_utils ${MPI_LIBRARIES})
 target_link_libraries(cylon_example_utils ${GLOG_LIBRARIES})
 target_link_libraries(cylon_example_utils ${ARROW_LIB})
+target_link_libraries(cylon_example_utils cylon)
 target_compile_options(cylon_example_utils PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
 install(TARGETS cylon_example_utils RUNTIME DESTINATION cylon/examples)
 
