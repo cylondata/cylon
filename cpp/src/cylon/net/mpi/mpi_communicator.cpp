@@ -37,6 +37,8 @@ std::shared_ptr<MPIConfig> MPIConfig::Make() {
   return std::make_shared<MPIConfig>();
 }
 
+MPIConfig::~MPIConfig() {}
+
 Channel *MPICommunicator::CreateChannel() {
   return new MPIChannel();
 }

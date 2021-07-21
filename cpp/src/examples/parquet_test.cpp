@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <cylon/net/mpi/mpi_communicator.hpp>
 #include <cylon/table.hpp>
 

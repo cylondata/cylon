@@ -12,8 +12,4 @@
 # limitations under the License.
 ##
 
-cylon_install_all_headers("cylon/ops")
-
-add_subdirectory(kernels)
-add_subdirectory(execution)
-add_subdirectory(api)
+cylon_install_all_headers("cylon/ops/execution")

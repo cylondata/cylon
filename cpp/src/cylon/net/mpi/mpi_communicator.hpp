@@ -22,14 +22,13 @@ namespace cylon {
 namespace net {
 
 class MPIConfig : public CommConfig {
+ private:
   // no configs for MPI. This is an example
   void DummyConfig(int dummy);
-
   int GetDummyConfig();
-
+public:
   CommType Type() override;
-
- public:
+  virtual ~MPIConfig();
   static std::shared_ptr<MPIConfig> Make();
 };
 

@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <cylon/join/sort_join.hpp>
 #include <cylon/arrow/arrow_comparator.hpp>
 #include <cylon/arrow/arrow_kernels.hpp>

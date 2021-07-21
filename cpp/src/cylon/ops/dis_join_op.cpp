@@ -11,10 +11,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "dis_join_op.hpp"
 
-#include "all_to_all_op.hpp"
-#include "split_op.hpp"
+#include <glog/logging.h>
+#include <utility>
+#include <cylon/ops/dis_join_op.hpp>
+#include <cylon/ops/all_to_all_op.hpp>
+#include <cylon/ops/merge_op.hpp>
+#include <cylon/ops/split_op.hpp>
 
 cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
                             const std::shared_ptr<arrow::Schema> &schema,

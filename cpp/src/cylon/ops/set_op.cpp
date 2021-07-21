@@ -14,6 +14,7 @@
 
 #include <cylon/ops/set_op.hpp>
 #include <cylon/ops/kernels/set_kernel.hpp>
+#include <glog/logging.h>
 
 namespace cylon {
 
