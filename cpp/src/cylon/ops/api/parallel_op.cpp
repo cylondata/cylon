@@ -34,7 +34,7 @@ cylon::Op::Op(const std::shared_ptr<cylon::CylonContext> &ctx,
     : callback(std::move(callback)), all_parents_finalized(root_op), id(id), ctx_(ctx), schema(schema) {
 }
 
-void cylon::Op::InsertTable(int tag, std::shared_ptr<Table> &table) {
+void cylon::Op::InsertTable(int tag, const std::shared_ptr<Table> &table) {
   auto q_iter = queues.find(tag);
   if (q_iter == queues.end()) { // if tag not found -> create queue for tag
     q_iter = queues.emplace(tag, new std::queue<std::shared_ptr<cylon::Table>>()).first;

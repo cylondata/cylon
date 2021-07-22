@@ -30,8 +30,8 @@ namespace cylon {
  * @return the Cylon Status the status of the join operation
  */
 Status JoinOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
-                         std::shared_ptr <cylon::Table> &first,
-                         std::shared_ptr <cylon::Table> &second,
+                     const std::shared_ptr <cylon::Table> &first,
+                     const std::shared_ptr <cylon::Table> &second,
                          const cylon::join::config::JoinConfig &join_config,
                          std::shared_ptr <cylon::Table> &out);
 
@@ -45,8 +45,8 @@ Status JoinOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
  * @return the Cylon Status the status of the join operation
  */
 Status UnionOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
-                          std::shared_ptr <cylon::Table> &first,
-                          std::shared_ptr <cylon::Table> &second,
+                      const std::shared_ptr <cylon::Table> &first,
+                      const std::shared_ptr <cylon::Table> &second,
                           std::shared_ptr <cylon::Table> &out);
 
 /**
@@ -58,8 +58,8 @@ Status UnionOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
  * @return the Cylon Status the status of the join operation
  */
 Status SubtractOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
-                             std::shared_ptr <cylon::Table> &first,
-                             std::shared_ptr <cylon::Table> &second,
+                         const std::shared_ptr <cylon::Table> &first,
+                         const std::shared_ptr <cylon::Table> &second,
                              std::shared_ptr <cylon::Table> &out);
 
 /**
@@ -71,8 +71,8 @@ Status SubtractOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
  * @return the Cylon Status the status of the join operation
  */
 Status IntersectOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
-                              std::shared_ptr <cylon::Table> &first,
-                              std::shared_ptr <cylon::Table> &second,
+                          const std::shared_ptr <cylon::Table> &first,
+                          const std::shared_ptr <cylon::Table> &second,
                               std::shared_ptr <cylon::Table> &out);
 }
 

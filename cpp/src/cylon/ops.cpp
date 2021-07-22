@@ -34,8 +34,8 @@ namespace cylon {
  * @param right_splits return right splits
  */
 Status Get_Splits(const std::shared_ptr <cylon::CylonContext> &ctx,
-                std::shared_ptr <cylon::Table> &left,
-                 std::shared_ptr <cylon::Table> &right,
+                  const std::shared_ptr <cylon::Table> &left,
+                  const std::shared_ptr <cylon::Table> &right,
                  const std::vector<int> &left_column_indexes,
                  const std::vector<int> &right_column_indexes,
                  int *left_splits,
@@ -52,8 +52,8 @@ Status Get_Splits(const std::shared_ptr <cylon::CylonContext> &ctx,
 }
 
 Status JoinOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
-                         std::shared_ptr <cylon::Table> &left,
-                         std::shared_ptr <cylon::Table> &right,
+                     const std::shared_ptr <cylon::Table> &left,
+                     const std::shared_ptr <cylon::Table> &right,
                          const cylon::join::config::JoinConfig &join_config,
                          std::shared_ptr <cylon::Table> &out) {
   const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr <cylon::Table> &table) {
@@ -76,8 +76,8 @@ Status JoinOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
 }
 
 Status UnionOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
-                          std::shared_ptr <cylon::Table> &left,
-                          std::shared_ptr <cylon::Table> &right,
+                      const std::shared_ptr <cylon::Table> &left,
+                      const std::shared_ptr <cylon::Table> &right,
                           std::shared_ptr <cylon::Table> &out) {
   const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr <cylon::Table> &table) {
     out = table;
@@ -105,8 +105,8 @@ Status UnionOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
 }
 
 Status SubtractOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
-                             std::shared_ptr <cylon::Table> &left,
-                             std::shared_ptr <cylon::Table> &right,
+                         const std::shared_ptr <cylon::Table> &left,
+                         const std::shared_ptr <cylon::Table> &right,
                              std::shared_ptr <cylon::Table> &out) {
   const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr <cylon::Table> &table) {
     out = table;
@@ -134,8 +134,8 @@ Status SubtractOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
 }
 
 Status IntersectOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
-                              std::shared_ptr <cylon::Table> &left,
-                              std::shared_ptr <cylon::Table> &right,
+                          const std::shared_ptr <cylon::Table> &left,
+                          const std::shared_ptr <cylon::Table> &right,
                               std::shared_ptr <cylon::Table> &out) {
   const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr <cylon::Table> &table) {
     out = table;
