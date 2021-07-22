@@ -90,7 +90,7 @@ brew install open-mpi
 
 Once those are installed you are ready to compile Cylon on macos.
 
-## Build Cylon & PyCylon on Linux and Mac OS
+## Build Cylon & PyCylon on Linux or Mac OS
 
 Here we will walk you through building Cylon along with Apache Arrow.
 
