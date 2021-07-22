@@ -11,7 +11,7 @@ Arrow installation.
 
 This document shows how to build Cylon on Linux and Mac OS. The first section of the document shows how to install
 the required dependencies on Linux (Ubuntu) and Mac OS. After required dependencies are installed, 
-the compiling is similar in both Linux and Mac OS.
+the compiling is similar in Linux and Mac OS.
 
 ## Prerequisites
 
