@@ -1,6 +1,6 @@
 module.exports = {
   someSidebar: {
-    "Setting Up": ['compile', "conda"],
+    "Installing": ['docker', "conda", "source"],
     "Architecture": ['arch'],
     "Develop": ['quick_start','cpp', 'python', "java"],
     "Running Examples": ['mpi'],

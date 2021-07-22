@@ -1,6 +1,6 @@
 ---
 id: conda
-title: Cylon Conda 
+title: Cylon Conda Binaries
 sidebar_label: Conda
 ---
 

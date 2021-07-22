@@ -1,13 +1,17 @@
 ---
-id: compile
-title: Compiling Cylon
-sidebar_label: Compiling
+id: source
+title: Source Compilation
+sidebar_label: Source
 ---
 
 Cylon has C++ core, Java and Python bindings. You can compile these in three steps.
 
 Cylon can be build along with Arrow (Cylon will build Apache Arrow) or it can be build by pointing to an existing
-Arrow installation. 
+Arrow installation.
+
+This document shows how to build Cylon on Linux and Mac OS. The first section of the document shows how to install
+the required dependencies on Linux (Ubuntu) and Mac OS. After required dependencies are installed, 
+the compiling is similar in both Linux and Mac OS.
 
 ## Prerequisites
 
@@ -43,7 +47,7 @@ Do not use a prior installed pyarrow in your python environment.
 Uninstall it before running the setup.
 ```
 
-### Installing Required Libraries
+### Installing Dependencies Ubuntu
 
 Cylon uses MPI for distributed execution. So we need an MPI version installed in the system. There are many implementations
 of MPI standard such as MPICH and OpenMPI. We have tested Cylon with OpenMPI and you should be able to use any other MPI implementation like
@@ -76,7 +80,17 @@ make
 sudo make install
 ```
 
-## Build Cylon & PyCylon
+### Installing Dependencies MacOS
+
+You would need to install XCode and install an MPI version such as OpenMPI.
+
+```bash
+brew install open-mpi
+```
+
+Once those are installed you are ready to compile Cylon on macos.
+
+## Build Cylon & PyCylon on Linux and Mac OS
 
 Here we will walk you through building Cylon along with Apache Arrow.
 
