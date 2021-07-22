@@ -162,10 +162,12 @@ Here is an example command.
 
 This command will install the PyCylon and PyArrow into the virtual environment we specified. 
 
-#### Updating `LD_LIBRARY_PATH`
+#### Updating library path
 
-Before running the code in the base path of the cloned repo
-run the following command. Or add this to your `bashrc`.
+Before running the code in the base path of the cloned repo you need to update the runtime library path. Linux and Mac OS uses different environment variable names.
+Following are two commands to update the path on these operating systems. 
+
+#### Linux
 
 ```bash
 export LD_LIBRARY_PATH=<path to cmake build dir>/arrow/install/lib:<path to cmake build dir>/lib:$LD_LIBRARY_PATH
@@ -174,6 +176,17 @@ export LD_LIBRARY_PATH=<path to cmake build dir>/arrow/install/lib:<path to cmak
 Here is an example command.
 ```bash
 export LD_LIBRARY_PATH=$HOME/cylon/build/arrow/install/lib:$HOME/cylon/build/lib:$LD_LIBRARY_PATH
+```
+
+#### Mac OS
+
+```bash
+export DYLD_LIBRARY_PATH=<path to cmake build dir>/arrow/install/lib:<path to cmake build dir>/lib:$DYLD_LIBRARY_PATH
+```
+
+Here is an example command.
+```bash
+export DYLD_LIBRARY_PATH=$HOME/cylon/build/arrow/install/lib:$HOME/cylon/build/lib:$DYLD_LIBRARY_PATH
 ```
 
 After this you can verify the build.
