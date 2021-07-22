@@ -27,16 +27,16 @@ class SetOpConfig {
   int64_t expected_rows;
 };
 
-class UnionOp : public Op {
+class SetOp : public Op {
  public:
-  UnionOp(const std::shared_ptr<CylonContext> &ctx,
+  SetOp(const std::shared_ptr<CylonContext> &ctx,
           const std::shared_ptr<arrow::Schema> &schema,
           int id,
           const ResultsCallback &callback,
           const SetOpConfig &config,
           cylon::kernel::SetOpType type);
 
-  ~UnionOp() override;
+  ~SetOp() override;
 
   bool Execute(int tag, std::shared_ptr<Table> &table) override;
 
@@ -44,7 +44,7 @@ class UnionOp : public Op {
   bool Finalize() override;
 
  private:
-  std::unique_ptr<cylon::kernel::SetOp> union_kernel;
+  std::unique_ptr<cylon::kernel::SetOp> set_kernel;
 };
 
 }

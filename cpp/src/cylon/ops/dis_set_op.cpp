@@ -37,7 +37,7 @@ cylon::DisSetOp::DisSetOp(const std::shared_ptr<CylonContext> &ctx,
 
   const std::vector<int32_t> PARTITION_IDS = {LEFT_RELATION, RIGHT_RELATION};
   // create graph
-  Op *partition_op, *shuffle_op, *split_op, *union_op;
+  Op *partition_op, *shuffle_op, *split_op, *set_op;
 
   // build left sub tree
   partition_op = new PartitionOp(ctx, schema, LEFT_RELATION, callback,
@@ -54,18 +54,18 @@ cylon::DisSetOp::DisSetOp(const std::shared_ptr<CylonContext> &ctx,
   execution->AddLeft(split_op);
 
   // add join op
-  SetOpConfig union_config;
+  SetOpConfig set_config;
   if (op_type == cylon::kernel::UNION) {
-    union_op = new UnionOp(ctx, schema, UNION_OP_ID, callback, union_config, cylon::kernel::SetOpType::UNION);
+    set_op = new SetOp(ctx, schema, UNION_OP_ID, callback, set_config, cylon::kernel::SetOpType::UNION);
   } else if (op_type == cylon::kernel::SUBTRACT) {
-    union_op = new UnionOp(ctx, schema, UNION_OP_ID, callback, union_config, cylon::kernel::SetOpType::SUBTRACT);
+    set_op = new SetOp(ctx, schema, UNION_OP_ID, callback, set_config, cylon::kernel::SetOpType::SUBTRACT);
   } else if (op_type == cylon::kernel::INTERSECT) {
-    union_op = new UnionOp(ctx, schema, UNION_OP_ID, callback, union_config, cylon::kernel::SetOpType::INTERSECT);
+    set_op = new SetOp(ctx, schema, UNION_OP_ID, callback, set_config, cylon::kernel::SetOpType::INTERSECT);
   } else {
     LOG(FATAL) << "Unsupported optype " << op_type;
   }
-  split_op->AddChild(union_op);
-  execution->AddFinal(union_op);
+  split_op->AddChild(set_op);
+  execution->AddFinal(set_op);
 
   // build right sub tree
   partition_op = new PartitionOp(ctx, schema, RIGHT_RELATION, callback,
@@ -81,7 +81,7 @@ cylon::DisSetOp::DisSetOp(const std::shared_ptr<CylonContext> &ctx,
   shuffle_op->AddChild(split_op);
   execution->AddRight(split_op);
 
-  split_op->AddChild(union_op); // join_op is already initialized
+  split_op->AddChild(set_op); // join_op is already initialized
 }
 
 bool cylon::DisSetOp::Execute(int tag, std::shared_ptr<Table> &table) {

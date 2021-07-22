@@ -42,6 +42,7 @@ public:
       std::shared_ptr<cylon::Table> right_tab = right_tables.front();
       std::shared_ptr<cylon::Table> out;
       Status st = op(left_tab, right_tab, out);
+      RETURN_CYLON_STATUS_IF_FAILED(st);
       left_tables.pop();
       right_tables.pop();
       unioned_tables.push_back(out->get_table());

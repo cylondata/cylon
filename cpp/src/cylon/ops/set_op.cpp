@@ -18,32 +18,32 @@
 
 namespace cylon {
 
-UnionOp::UnionOp(const std::shared_ptr<CylonContext> &ctx,
+SetOp::SetOp(const std::shared_ptr<CylonContext> &ctx,
                  const std::shared_ptr<arrow::Schema> &schema,
                  int id,
                  const ResultsCallback &callback,
                  const SetOpConfig &config,
                  cylon::kernel::SetOpType type)
     : Op(ctx, schema, id, callback) {
-  union_kernel = cylon::kernel::CreateSetOp(ctx, schema, 0, type);
+  set_kernel = cylon::kernel::CreateSetOp(ctx, schema, 0, type);
 }
 
-bool UnionOp::Execute(int tag, std::shared_ptr<Table> &table) {
-  union_kernel->InsertTable(tag, table);
+bool SetOp::Execute(int tag, std::shared_ptr<Table> &table) {
+  set_kernel->InsertTable(tag, table);
   return true;
 }
 
-bool UnionOp::Finalize() {
+bool SetOp::Finalize() {
   std::shared_ptr<cylon::Table> final_result;
-  union_kernel->Finalize(final_result);
+  set_kernel->Finalize(final_result);
   InsertToAllChildren(0, final_result);
   return true;
 }
 
-void UnionOp::OnParentsFinalized() {
+void SetOp::OnParentsFinalized() {
   // do nothing
 }
 
-UnionOp::~UnionOp() {
+SetOp::~SetOp() {
 }
 }
