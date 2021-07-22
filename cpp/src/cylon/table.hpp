@@ -425,6 +425,8 @@ Status Unique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
 Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
 						 std::shared_ptr<cylon::Table> &out);
 
+
+
 #ifdef BUILD_CYLON_PARQUET
 /**
  * Create a table by reading a parquet file

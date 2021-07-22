@@ -51,7 +51,7 @@ class RoundRobinExecution : public Execution {
   bool IsComplete() override;
 };
 
-class JoinExecution : public Execution {
+class ForkJoinExecution : public Execution {
 private:
   std::vector<Op *> p_ops;
   std::vector<Op *> s_ops;
@@ -61,17 +61,17 @@ private:
   std::size_t current_index{};
   int state = 0;
 public:
-  ~JoinExecution() override;
+  ~ForkJoinExecution() override;
 
-  void AddP(Op *op) {
+  void AddLeft(Op *op) {
     p_ops.push_back(op);
     p_indices.push_back(p_ops.size() - 1);
   }
-  void AddS(Op *op) {
+  void AddRight(Op *op) {
     s_ops.push_back(op);
     s_indices.push_back(s_ops.size() - 1);
   }
-  void AddJoin(Op *op) {
+  void AddFinal(Op *op) {
     join = op;
   }
   bool IsComplete() override;

@@ -38,7 +38,9 @@ list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 
-set("CYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
+if (NOT DEFINED CYLON_SIMD_LEVEL)
+    set("CYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
+endif ()
 
 # Add common flags
 include(SetupCxxFlags)

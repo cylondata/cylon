@@ -106,14 +106,14 @@ int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1, int
 
 template<typename TYPE, bool ASC>
 class NumericRowIndexComparator : public ArrayIndexComparator {
-  using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
+  using T = typename TYPE::c_type;
 
  public:
   explicit NumericRowIndexComparator(const std::shared_ptr<arrow::Array> &array)
-      : casted_arr(std::static_pointer_cast<ARROW_ARRAY_T>(array)) {}
+      : value_buffer(array->data()->template GetValues<T>(1)) {}
 
   int compare(int64_t index1, int64_t index2) const override {
-    auto diff = (casted_arr->Value(index1) - casted_arr->Value(index2));
+    auto diff = (value_buffer[index1] - value_buffer[index2]);
     if (ASC) {
       return (diff > 0) - (diff < 0);
     } else {
@@ -122,11 +122,11 @@ class NumericRowIndexComparator : public ArrayIndexComparator {
   }
 
   bool equal_to(const int64_t index1, const int64_t index2) const override {
-    return casted_arr->Value(index1) == casted_arr->Value(index2);
+    return value_buffer[index1] == value_buffer[index2];
   }
 
  private:
-  std::shared_ptr<ARROW_ARRAY_T> casted_arr;
+  const T *value_buffer;
 };
 
 template<typename TYPE, bool ASC>
@@ -212,15 +212,15 @@ std::shared_ptr<ArrayIndexComparator> CreateArrayIndexComparatorUtil(const std::
 
 template<typename TYPE, bool ASC = true>
 class TwoNumericRowIndexComparator : public TwoArrayIndexComparator {
-  using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
+  using T = typename TYPE::c_type;
 
  public:
   TwoNumericRowIndexComparator(const std::shared_ptr<arrow::Array> &a1, const std::shared_ptr<arrow::Array> &a2)
-      : arrays({std::static_pointer_cast<ARROW_ARRAY_T>(a1), std::static_pointer_cast<ARROW_ARRAY_T>(a2)}) {}
+      : arrays({a1->data()->template GetValues<T>(1), a2->data()->template GetValues<T>(1)}) {}
 
   int compare(int64_t index1, int64_t index2) const override {
-    auto diff = arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
-        - arrays.at(util::CheckBit(index2))->Value(util::ClearBit(index2));
+    auto diff = arrays.at(util::CheckBit(index1))[util::ClearBit(index1)]
+        - arrays.at(util::CheckBit(index2))[util::ClearBit(index2)];
     if (ASC) {
       return (diff > 0) - (diff < 0);
     } else {
@@ -229,7 +229,7 @@ class TwoNumericRowIndexComparator : public TwoArrayIndexComparator {
   }
 
   int compare(int32_t array_index1, int64_t row_index1, int32_t array_index2, int64_t row_index2) const override {
-    auto diff = arrays.at(array_index1)->Value(row_index1) - arrays.at(array_index2)->Value(row_index2);
+    auto diff = arrays.at(array_index1)[row_index1] - arrays.at(array_index2)[row_index2];
     if (ASC) {
       return (diff > 0) - (diff < 0);
     } else {
@@ -238,12 +238,12 @@ class TwoNumericRowIndexComparator : public TwoArrayIndexComparator {
   }
 
   bool equal_to(const int64_t index1, const int64_t index2) const override {
-    return arrays.at(util::CheckBit(index1))->Value(util::ClearBit(index1))
-        == arrays.at(util::CheckBit(index2))->Value(util::ClearBit(index2));
+    return arrays.at(util::CheckBit(index1))[util::ClearBit(index1)]
+        == arrays.at(util::CheckBit(index2))[util::ClearBit(index2)];
   }
 
  private:
-  std::array<std::shared_ptr<ARROW_ARRAY_T>, 2> arrays;
+  std::array<const T *, 2> arrays;
 };
 
 template<typename TYPE, bool ASC>

@@ -183,7 +183,7 @@ class JoinConfig {
     return left_column_idx.size() > 1 || right_column_idx.size() > 1;
   }
 
- private:
+private:
   JoinType type;
   JoinAlgorithm algorithm;
   const std::vector<int> left_column_idx, right_column_idx;

@@ -116,7 +116,7 @@ class Op {
    * @param tag
    * @param table
    */
-  void InsertTable(int tag, std::shared_ptr<Table> &table);
+  void InsertTable(int tag, const std::shared_ptr<Table> &table);
 
   /**
    * This function defines the execution logic of this op. It can be either a computation or a communication
