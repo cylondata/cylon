@@ -1,6 +1,6 @@
 ---
 id: python
-title: PyCylon
+title: Python 
 ---
 
 PyCylon is the Python binding for LibCylon (C++ Cylon). The uniqueness of PyCylon

@@ -1,5 +1,5 @@
 ---
-id: source
+id: compile
 title: Source Compilation
 sidebar_label: Source
 ---

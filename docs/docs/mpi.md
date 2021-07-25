@@ -1,6 +1,6 @@
 ---
 id: mpi
-title: Run with MPI
+title: MPI
 ---
 
 Cylon executables can be run with MPI distributions as follows. 
