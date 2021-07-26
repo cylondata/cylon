@@ -21,7 +21,7 @@
 #   make test                                                            #
 # For more information about CMake, see http://www.cmake.org             #
 ##########################################################################
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 project(CYLON VERSION 0.4.0)
 
 set(CYLON_VERSION 0.4.0)
@@ -221,6 +221,10 @@ option(CYLON_BUILD_TESTS "Build tests." ON)
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
 add_subdirectory(src/tutorial)
+if (GCYLON_BUILD)
+    add_subdirectory(src/gcylon)
+    add_subdirectory(src/examples/gcylon)
+endif ()
 
 ## installing arrow files
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")

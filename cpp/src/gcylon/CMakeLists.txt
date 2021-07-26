@@ -12,16 +12,12 @@
 # limitations under the License.
 ##
 
-cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
-
 # help cmake find cuda
 # CUDACXX must be set as an environment variable pointing to nvcc
 # such as: /usr/local/cuda/bin/nvcc
 set(CMAKE_CUDA_COMPILER $ENV{CUDACXX})
 
-project(GCYLON LANGUAGES CXX CUDA)
-
-set(GCYLON_VERSION 0.4.0)
+enable_language(CUDA)
 
 message("CONDA_PREFIX: " $ENV{CONDA_PREFIX})
 if ((NOT DEFINED ENV{CONDA_PREFIX}) AND (NOT DEFINED ENV{CONDA_BUILD}) )
@@ -49,35 +45,15 @@ endif ()
 
 # if conda build is used
 if("$ENV{CONDA_BUILD}" STREQUAL "1")
-    set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{BUILD_PREFIX};$ENV{PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
-    set(CONDA_INCLUDE_DIRS "$ENV{BUILD_PREFIX}/include" "$ENV{PREFIX}/include")
-    set(CMAKE_INSTALL_INCLUDEDIR "$ENV{BUILD_PREFIX}/include")
     set(CUDF_CUDA_INCLUDE_DIR "$ENV{BUILD_PREFIX}/include/libcudf/libcudacxx/" "$ENV{PREFIX}/include/libcudf/libcudacxx/")
-    link_directories($ENV{BUILD_PREFIX}/lib/)
-    link_directories($ENV{BUILD_PREFIX}/lib64/)
-    message(STATUS "Conda build detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
-
-    # if build.sh is used without conda build
 elseif(DEFINED ENV{CONDA_PREFIX})
-    set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{CONDA_PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
-    set(CONDA_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/include")
     set(CUDF_CUDA_INCLUDE_DIR "$ENV{CONDA_PREFIX}/include/libcudf/libcudacxx/")
-    link_directories($ENV{CONDA_PREFIX}/lib/)
-    link_directories($ENV{CONDA_PREFIX}/lib64/)
-    message(STATUS "Conda environment detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
 endif("$ENV{CONDA_BUILD}" STREQUAL "1")
 
 # Put the libaries and binaries that get built into directories at the top of the build.
 SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 SET(TEST_DATA_DIR ${GCYLON_SOURCE_DIR}/data)
-
-# glog
-find_package (gflags REQUIRED)
-find_package (glog REQUIRED)
-option(WITH_GFLAGS "Use gflags" ON)
-SET(WITH_GFLAGS OFF)
-set(GLOG_LIBRARIES glog)
 
 # find CUDA
 find_package(CUDAToolkit REQUIRED)
@@ -106,7 +82,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
 
 set_target_properties(gcylon PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 set_property(TARGET gcylon PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-set_target_properties(gcylon PROPERTIES VERSION ${GCYLON_VERSION})
+set_target_properties(gcylon PROPERTIES VERSION ${CYLON_VERSION})
 
 target_link_libraries(gcylon
         ${GLOG_LIBRARIES}
@@ -115,8 +91,7 @@ target_link_libraries(gcylon
         CUDA::cudart
 )
 
-# todo: header file installations need to be fixed for gcylon
-#gcylon_install_all_headers("gcylon")
+cylon_install_all_headers("gcylon")
 
 add_subdirectory(all2all)
 

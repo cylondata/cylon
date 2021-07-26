@@ -12,4 +12,4 @@
 # limitations under the License.
 ##
 
-
+cylon_install_all_headers("gcylon/all2all")
