@@ -56,9 +56,15 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         )
 
 if (PYCYLON_BUILD)
-    list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
-            " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/bin/python3"
-            )
+    if(WIN32)
+        list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
+                " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/Scripts/python.exe"
+                )
+    else()
+        list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
+        " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/bin/python3"
+        )
+    endif()
 endif (PYCYLON_BUILD)
 
 message("CMake Source Dir :")

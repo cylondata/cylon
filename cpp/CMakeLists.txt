@@ -138,6 +138,11 @@ else()
     include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
 endif(CONDA_INCLUDE_DIRS)
 
+# this is required on windows to prevent clashes between ERROR abbreviation in logging.h and windows.h
+if(WIN32)
+    add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
+endif()
+
 # parquet
 option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
 if (CYLON_PARQUET)
