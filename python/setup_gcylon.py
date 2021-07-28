@@ -20,6 +20,8 @@ https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
 
 import os
 import sys
+import re
+import shutil
 import numpy as np
 from os.path import join as pjoin
 
@@ -34,9 +36,10 @@ version = versioneer.get_version(),
 cmdclass = versioneer.get_cmdclass(),
 
 # make sure conda is activated or, conda-build is used
-if ("CONDA_PREFIX" not in os.environ and "CONDA_BUILD" not in os.environ):
+if "CONDA_PREFIX" not in os.environ and "CONDA_BUILD" not in os.environ:
     print("Neither CONDA_PREFIX nor CONDA_BUILD is set. Activate conda environment or use conda-build")
     sys.exit()
+
 
 def find_in_path(name, path):
     """Find a file in a search path"""
@@ -48,45 +51,58 @@ def find_in_path(name, path):
             return os.path.abspath(binpath)
     return None
 
-def locate_cuda():
-    """Locate the CUDA environment on the system
-    Returns a dict with keys 'home', 'nvcc', 'include', and 'lib64'
-    and values giving the absolute path to each directory.
-    Starts by looking for the CUDAHOME env variable. If not found,
-    everything is based on finding 'nvcc' in the PATH.
-    from: https://github.com/rmcgibbo/npcuda-example/blob/master/cython/setup.py
-    """
 
-    # First check if the CUDAHOME env variable is in use
-    if 'CUDAHOME' in os.environ:
-        home = os.environ['CUDAHOME']
-        nvcc = pjoin(home, 'bin', 'nvcc')
-    else:
-        # Otherwise, search the PATH for NVCC
-        nvcc = find_in_path('nvcc', os.environ['PATH'])
-        if nvcc is None:
-            raise EnvironmentError('The nvcc binary could not be '
-                                   'located in your $PATH. Either add it to your path, '
-                                   'or set $CUDAHOME')
-        home = os.path.dirname(os.path.dirname(nvcc))
+# locating cuda code is from cudf setup.py file
+# https://github.com/rapidsai/cudf/blob/branch-21.10/python/cudf/setup.py
+def get_cuda_version_from_header(cuda_include_dir, delimeter=""):
 
-    cudaconfig = {'home': home, 'nvcc': nvcc,
-                  'include': pjoin(home, 'include'),
-                  'lib64': pjoin(home, 'lib64')}
-    for k, v in iter(cudaconfig.items()):
-        if not os.path.exists(v):
-            raise EnvironmentError('The CUDA %s path could not be '
-                                   'located in %s' % (k, v))
+    cuda_version = None
 
-    return cudaconfig
+    with open(
+        os.path.join(cuda_include_dir, "cuda.h"), "r", encoding="utf-8"
+    ) as f:
+        for line in f.readlines():
+            if re.search(r"#define CUDA_VERSION ", line) is not None:
+                cuda_version = line
+                break
+
+    if cuda_version is None:
+        raise TypeError("CUDA_VERSION not found in cuda.h")
+    cuda_version = int(cuda_version.split()[2])
+    return "%d%s%d" % (
+        cuda_version // 1000,
+        delimeter,
+        (cuda_version % 1000) // 10,
+    )
+
+
+CUDA_HOME = os.environ.get("CUDA_HOME", False)
+if not CUDA_HOME:
+    path_to_cuda_gdb = shutil.which("cuda-gdb")
+    if path_to_cuda_gdb is None:
+        raise OSError(
+            "Could not locate CUDA. "
+            "Please set the environment variable "
+            "CUDA_HOME to the path to the CUDA installation "
+            "and try again."
+        )
+    CUDA_HOME = os.path.dirname(os.path.dirname(path_to_cuda_gdb))
+
+if not os.path.isdir(CUDA_HOME):
+    raise OSError(f"Invalid CUDA_HOME: directory does not exist: {CUDA_HOME}")
+
+cuda_include_dir = os.path.join(CUDA_HOME, "include")
+cuda_lib_dir = os.path.join(CUDA_HOME, "lib64")
 
 # os.environ["CXX"] = "mpic++"
+
 
 class BuildExt(build_ext):
     def build_extensions(self):
         if '-Wstrict-prototypes' in self.compiler.compiler_so:
             self.compiler.compiler_so.remove('-Wstrict-prototypes')
         super().build_extensions()
+
 
 try:
     nthreads = int(os.environ.get("PARALLEL_LEVEL", "0") or "0")
@@ -111,14 +127,12 @@ elif "CONDA_PREFIX" in os.environ:
     conda_lib_dir = os.path.join(os.environ.get('CONDA_PREFIX'), "lib")
     conda_include_dir = os.path.join(os.environ.get('CONDA_PREFIX'), "include")
 
-CUDA = locate_cuda()
-
 print("conda_library_directory: ", conda_lib_dir)
-print("cuda_library_directory: ", CUDA['lib64'])
+print("cuda_library_directory: ", cuda_lib_dir)
 
 library_directories = [
     conda_lib_dir,
-    CUDA['lib64'],
+    cuda_lib_dir,
     get_python_lib(),
     os.path.join(os.sys.prefix, "lib")]
 
@@ -127,7 +141,7 @@ libraries = ["gcylon", "cylon", "cudf", "cudart", "glog"]
 _include_dirs = ["../cpp/src",
                  conda_include_dir,
                  os.path.join(conda_include_dir, "libcudf/libcudacxx"),
-                 CUDA['include'],
+                 cuda_include_dir,
                  np.get_include()]
 
 cython_files = ["pygcylon/**/*.pyx"]
