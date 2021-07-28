@@ -36,7 +36,8 @@ set(CYLON_ARROW_VERSION 4.0.0)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-error=redundant-move")
+# set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 
 set("CYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
 
