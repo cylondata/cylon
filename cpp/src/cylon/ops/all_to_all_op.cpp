@@ -13,7 +13,7 @@
  */
 
 #include <chrono>
-
+#include <glog/logging.h>
 #include <cylon/ops/all_to_all_op.hpp>
 #include <cylon/table.hpp>
 

@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <arrow/compute/api.h>
 #include <arrow/table.h>
 
@@ -489,8 +490,8 @@ Status DistributedJoin(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylo
 
   std::shared_ptr<arrow::Table> table;
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::JoinTables(left_final_table, right_final_table, join_config, &table,
-													   cylon::ToArrowPool(ctx)));
-  out = std::make_shared<cylon::Table>(ctx, table);
+                                                       cylon::ToArrowPool(ctx)));
+    out = std::make_shared<cylon::Table>(ctx, table);
 
   return Status::OK();
 }
@@ -1085,6 +1086,8 @@ Table::Table(const std::shared_ptr<cylon::CylonContext> &ctx, std::vector<std::s
     throw "cylon table created with invalid types";
   }
 }
+
+
 
 #ifdef BUILD_CYLON_PARQUET
 Status FromParquet(const std::shared_ptr<CylonContext> &ctx, const std::string &path,

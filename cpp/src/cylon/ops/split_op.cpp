@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <memory>
 
+#include <glog/logging.h>
 #include <cylon/ops/split_op.hpp>
 #include <cylon/ctx/arrow_memory_pool_utils.hpp>
 #include <cylon/arrow/arrow_partition_kernels.hpp>

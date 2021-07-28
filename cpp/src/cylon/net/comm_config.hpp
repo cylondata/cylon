@@ -34,6 +34,7 @@ class CommConfig {
   }
  public:
   virtual CommType Type() = 0;
+  virtual ~CommConfig() = default;
 };
 }  // namespace net
 }  // namespace cylon

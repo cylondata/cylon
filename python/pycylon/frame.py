@@ -358,7 +358,41 @@ class DataFrame(object):
 
     def to_csv(self, path, csv_write_options: CSVWriteOptions):
         self._table.to_csv(path=path, csv_write_options=csv_write_options)
+        
+    @property
+    def iloc(self) -> PyLocIndexer:
+        """
+        This operator finds value by integer-location based indexing.
+        Allowed inputs are:
 
+        - An integer, e.g. ``5``.
+        - A list or array of integers, e.g. ``[2, 3, 0]``.
+        - A slice object with ints, e.g. ``0:2``.
+
+        Examples
+        --------
+        >>> df1
+               col-0  col-1
+            0      1      4
+            1      2      5
+            2      3      6
+
+        >>> df1.iloc[1]
+               col-0  col-1
+            0      2      5
+
+        >>> df1.iloc[[1,2]]
+               col-0  col-1
+            0      2      5
+            1      3      6
+
+        >>> df1.iloc[1:3]
+               col-0  col-1
+            0      2      5
+            1      3      6
+        """
+        return self._table.iloc
+    
     def __getitem__(self, item) -> DataFrame:
         """
             This method allows to retrieve a subset of a DataFrane by means of a key

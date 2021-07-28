@@ -113,20 +113,20 @@ add_library(cylon SHARED
         ops/partition_op.cpp
         ops/kernels/partition.hpp
         ops/kernels/partition.cpp
-        ops/union_op.hpp
-        ops/union_op.cpp
-        ops/kernels/union.cpp
-        ops/kernels/union.hpp
+        ops/set_op.hpp
+        ops/set_op.cpp
+        ops/kernels/set_kernel.cpp
+        ops/kernels/set_kernel.hpp
         ops/kernels/row_comparator.cpp
         ops/kernels/row_comparator.hpp
         ops/kernels/prepare_array.hpp
         ops/kernels/prepare_array.cpp
         ops/all_to_all_op.hpp
         ops/all_to_all_op.cpp
-        ops/dis_union_op.hpp
-        ops/dis_union_op.cpp
-        ops/dis_join_op.cpp
+        ops/dis_set_op.hpp
+        ops/dis_set_op.cpp
         ops/dis_join_op.hpp
+        ops/dis_join_op.cpp
         ops/execution/execution.hpp
         ops/execution/execution.cpp
         ops/kernels/join_kernel.hpp
@@ -164,9 +164,16 @@ add_library(cylon SHARED
         indexing/indexer.cpp
         util/logging.hpp
         util/logging.cpp
+        ops.cpp
+        ops.hpp
         )
 
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
+if(APPLE)
+    set(CMAKE_SHARED_LINKER_FLAGS "-Wl")
+else()
+    set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
+endif()
+
 
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(cylon ${MPI_LIBRARIES})
@@ -192,6 +199,8 @@ add_subdirectory(join)
 add_subdirectory(io)
 add_subdirectory(ctx)
 add_subdirectory(arrow)
+add_subdirectory(indexing)
+add_subdirectory(thridparty/flat_hash_map)
 
 set_target_properties(cylon PROPERTIES VERSION ${CYLON_VERSION})
 install(TARGETS cylon DESTINATION lib)

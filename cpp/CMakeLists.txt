@@ -32,14 +32,16 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 # cmake modules directories
-set(CYLON_ARROW_VERSION 4.0.0)
+set(CYLON_ARROW_VERSION 4.0.1)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-error=redundant-move")
 # set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 
-set("CYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
+if (NOT DEFINED CYLON_SIMD_LEVEL)
+    set("CYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
+endif ()
 
 # Add common flags
 include(SetupCxxFlags)
@@ -230,10 +232,17 @@ endif ()
 ## installing arrow files
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
     install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION include)
-    install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so DESTINATION lib)
-    install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400 DESTINATION lib)
-    install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400.0.0 DESTINATION lib)
-    install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
+    if(APPLE)
+        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.dylib DESTINATION lib)
+        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.400.dylib DESTINATION lib)
+        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.400.0.0.dylib DESTINATION lib)
+        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
+    else()
+        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so DESTINATION lib)
+        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400 DESTINATION lib)
+        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400.0.0 DESTINATION lib)
+        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
+    endif()
 endif ()
 
 if (CYLON_WITH_TEST)

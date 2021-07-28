@@ -12,36 +12,38 @@
  * limitations under the License.
  */
 
-#include <cylon/ops/union_op.hpp>
+#include <cylon/ops/set_op.hpp>
+#include <cylon/ops/kernels/set_kernel.hpp>
+#include <glog/logging.h>
 
 namespace cylon {
 
-UnionOp::UnionOp(const std::shared_ptr<CylonContext> &ctx,
+SetOp::SetOp(const std::shared_ptr<CylonContext> &ctx,
                  const std::shared_ptr<arrow::Schema> &schema,
                  int id,
                  const ResultsCallback &callback,
-                 const UnionOpConfig &config)
-    : Op(ctx, schema, id, callback),
-      union_kernel(new cylon::kernel::Union(ctx, schema, config.expected_rows)) {}
+                 const SetOpConfig &config,
+                 cylon::kernel::SetOpType type)
+    : Op(ctx, schema, id, callback) {
+  set_kernel = cylon::kernel::CreateSetOp(ctx, schema, 0, type);
+}
 
-bool UnionOp::Execute(int tag, std::shared_ptr<Table> &table) {
-  LOG(INFO) << "Executing local union";
-  union_kernel->InsertTable(table);
+bool SetOp::Execute(int tag, std::shared_ptr<Table> &table) {
+  set_kernel->InsertTable(tag, table);
   return true;
 }
 
-bool UnionOp::Finalize() {
+bool SetOp::Finalize() {
   std::shared_ptr<cylon::Table> final_result;
-  union_kernel->Finalize(final_result);
+  set_kernel->Finalize(final_result);
   InsertToAllChildren(0, final_result);
   return true;
 }
 
-void UnionOp::OnParentsFinalized() {
+void SetOp::OnParentsFinalized() {
   // do nothing
 }
 
-UnionOp::~UnionOp() {
-  delete union_kernel;
+SetOp::~SetOp() {
 }
 }

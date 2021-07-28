@@ -13,7 +13,7 @@
  */
 
 #include <memory>
-
+#include <glog/logging.h>
 #include <cylon/net/communicator.hpp>
 #include <cylon/net/ucx/ucx_communicator.hpp>
 #include <cylon/net/ucx/ucx_channel.hpp>

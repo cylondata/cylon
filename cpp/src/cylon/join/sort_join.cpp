@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <cylon/join/sort_join.hpp>
 #include <cylon/arrow/arrow_comparator.hpp>
 #include <cylon/arrow/arrow_kernels.hpp>
@@ -58,17 +59,9 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
                                            std::shared_ptr<arrow::Table> *joined_table,
                                            arrow::MemoryPool *memory_pool) {
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
-
   std::shared_ptr<arrow::Table> left_tab_comb(left_tab), right_tab_comb(right_tab);
-
-  // combine chunks if multiple chunks are available
-  auto t11 = std::chrono::high_resolution_clock::now();
   COMBINE_CHUNKS_RETURN_ARROW_STATUS(left_tab_comb, memory_pool);
   COMBINE_CHUNKS_RETURN_ARROW_STATUS(right_tab_comb, memory_pool);
-  auto t22 = std::chrono::high_resolution_clock::now();
-
-  LOG(INFO) << "Combine chunks time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
 
   // sort columns
   auto left_join_column =
@@ -76,26 +69,16 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   auto right_join_column =
       cylon::util::GetChunkOrEmptyArray(right_tab_comb->column(right_join_column_idx), 0);
 
-  auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
   RETURN_ARROW_STATUS_IF_FAILED(SortIndices(memory_pool, left_join_column, left_index_sorted_column));
-  auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Left sorting time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
-  t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> right_index_sorted_column;
   RETURN_ARROW_STATUS_IF_FAILED(SortIndices(memory_pool, right_join_column, right_index_sorted_column));
-  t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "right sorting time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   CPP_KEY_TYPE left_key, right_key;
   std::vector<int64_t> left_subset, right_subset;
   int64_t left_current_index = 0;
   int64_t right_current_index = 0;
-
-  t1 = std::chrono::high_resolution_clock::now();
 
   std::vector<int64_t> left_indices, right_indices;
   int64_t init_vec_size = std::min(left_join_column->length(), right_join_column->length());
@@ -172,20 +155,10 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   // clear the sort columns
   left_index_sorted_column.reset();
   right_index_sorted_column.reset();
-  t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Index join time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Building final table with number of tuples - " << left_indices.size();
-
-  t1 = std::chrono::high_resolution_clock::now();
   // build final table
   RETURN_ARROW_STATUS_IF_FAILED(util::build_final_table(left_indices, right_indices, left_tab_comb,
                                                         right_tab_comb, left_table_prefix,
                                                         right_table_prefix, joined_table, memory_pool));
-  t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Built final table in : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Done and produced : " << left_indices.size();
   return arrow::Status::OK();
 }
 
@@ -223,15 +196,8 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   std::shared_ptr<arrow::Table> left_tab_comb(left_tab), right_tab_comb(right_tab);
 
-  // combine chunks if multiple chunks are available
-  auto t11 = std::chrono::high_resolution_clock::now();
-
   COMBINE_CHUNKS_RETURN_ARROW_STATUS(left_tab_comb, memory_pool);
   COMBINE_CHUNKS_RETURN_ARROW_STATUS(right_tab_comb, memory_pool);
-
-  auto t22 = std::chrono::high_resolution_clock::now();
-
-  LOG(INFO) << "Combine chunks time : " << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
 
   // sort columns
   auto left_join_column =
@@ -239,26 +205,16 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
   auto right_join_column =
       cylon::util::GetChunkOrEmptyArray(right_tab_comb->column(right_join_column_idx), 0);
 
-  auto t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
   RETURN_ARROW_STATUS_IF_FAILED(SortIndicesInPlace(memory_pool, left_join_column, left_index_sorted_column));
-  auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Left sorting time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
-  t1 = std::chrono::high_resolution_clock::now();
   std::shared_ptr<arrow::UInt64Array> right_index_sorted_column;
   RETURN_ARROW_STATUS_IF_FAILED(SortIndicesInPlace(memory_pool, right_join_column, right_index_sorted_column));
-  t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "right sorting time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   CPP_KEY_TYPE left_key, right_key;
   std::vector<int64_t> left_subset, right_subset;
   int64_t left_current_index = 0;
   int64_t right_current_index = 0;
-
-  t1 = std::chrono::high_resolution_clock::now();
 
   std::vector<int64_t> left_indices, right_indices;
   int64_t init_vec_size = std::min(left_join_column->length(), right_join_column->length());
@@ -335,12 +291,6 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
     }
   }
 
-  t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Index join time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Building final table with number of tuples - " << left_indices.size();
-
-  t1 = std::chrono::high_resolution_clock::now();
   // build final table
   RETURN_ARROW_STATUS_IF_FAILED(join::util::build_final_table_inplace_index(left_join_column_idx,
                                                                             right_join_column_idx,
@@ -354,11 +304,6 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
                                                                             right_table_prefix,
                                                                             joined_table,
                                                                             memory_pool));
-  t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Built final table in : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-  LOG(INFO) << "Done and produced : " << left_indices.size();
-
   return arrow::Status::OK();
 }
 

@@ -16,7 +16,7 @@
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
 #include <chrono>
-
+#include <glog/logging.h>
 #include <cylon/table.hpp>
 #include <cylon/ctx/arrow_memory_pool_utils.hpp>
 #include <cylon/util/arrow_utils.hpp>

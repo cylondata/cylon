@@ -12,27 +12,11 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <cylon/partition/partition.hpp>
 #include <cylon/ops/partition_op.hpp>
 
 #include <iomanip>
-
-template<typename Clock, typename Duration>
-std::ostream &operator<<(std::ostream &stream,
-                         const std::chrono::time_point<Clock, Duration> &time_point) {
-  const time_t time = Clock::to_time_t(time_point);
-#if __GNUC__ > 4 || \
-    ((__GNUC__ == 4) && __GNUC_MINOR__ > 8 && __GNUC_REVISION__ > 1)
-  struct tm tm;
-  localtime_r(&time, &tm);
-  return stream << std::put_time(&tm, "%c"); // Print standard date&time
-#else
-  char buffer[26];
-  ctime_r(&time, buffer);
-  buffer[24] = '\0';  // Removes the newline that is added
-  return stream << buffer;
-#endif
-}
 
 cylon::PartitionOp::PartitionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
                                 const std::shared_ptr<arrow::Schema> &schema,
@@ -46,7 +30,6 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> &table) {
     start = std::chrono::high_resolution_clock::now();
     started_time = true;
   }
-//  auto t1 = std::chrono::high_resolution_clock::now();
   std::vector<std::shared_ptr<cylon::Table>> out;
   const auto &status = PartitionByHashing(table, config.hash_columns, config.num_partitions, out);
   if (!status.is_ok()) {
@@ -69,15 +52,13 @@ bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> &table) {
   if (!table->IsRetain()) {
     table.reset();
   }
-//  auto t2 = std::chrono::high_resolution_clock::now();
-//  exec_time += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   return true;
 }
 
 bool cylon::PartitionOp::Finalize() {
   auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << ctx_->GetRank() << " Partition start: " << start << " time: "
+  LOG(INFO) << ctx_->GetRank() << " Partition time: "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - start).count();
   return true;
 }

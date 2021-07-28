@@ -15,7 +15,6 @@
 #ifndef CYLON_SRC_IO_TABLE_H_
 #define CYLON_SRC_IO_TABLE_H_
 
-#include <glog/logging.h>
 
 #include <memory>
 #include <string>
@@ -425,6 +424,8 @@ Status Unique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
 
 Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
 						 std::shared_ptr<cylon::Table> &out);
+
+
 
 #ifdef BUILD_CYLON_PARQUET
 /**
