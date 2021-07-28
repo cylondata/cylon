@@ -12,12 +12,18 @@
 # limitations under the License.
 ##
 
-# help cmake find cuda
-# CUDACXX must be set as an environment variable pointing to nvcc
-# such as: /usr/local/cuda/bin/nvcc
-set(CMAKE_CUDA_COMPILER $ENV{CUDACXX})
+# Find the CUDAToolkit
+find_package(CUDAToolkit REQUIRED)
 
+# we enable all archs
+# can be limited
+set(CMAKE_CUDA_ARCHITECTURES 60 61 75)
+
+# this must come after find_package and setting CMAKE_CUDA_ARCHITECTURES
+# according to cudf build files
+# https://github.com/rapidsai/cudf/blob/branch-21.10/cpp/cmake/Modules/ConfigureCUDA.cmake
 enable_language(CUDA)
+message("CUDAToolkit_INCLUDE_DIRS: " ${CUDAToolkit_INCLUDE_DIRS})
 
 message("CONDA_PREFIX: " $ENV{CONDA_PREFIX})
 if ((NOT DEFINED ENV{CONDA_PREFIX}) AND (NOT DEFINED ENV{CONDA_BUILD}) )
@@ -30,7 +36,6 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 set("GCYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
-set(CMAKE_CUDA_ARCHITECTURES 60 61 75)
 
 # C++ standard
 # with cudf v21.08, at least c++ 17 required
@@ -54,10 +59,6 @@ endif("$ENV{CONDA_BUILD}" STREQUAL "1")
 SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 SET(TEST_DATA_DIR ${GCYLON_SOURCE_DIR}/data)
-
-# find CUDA
-find_package(CUDAToolkit REQUIRED)
-message("CUDAToolkit_INCLUDE_DIRS: " ${CUDAToolkit_INCLUDE_DIRS})
 
 set(CYLON_INCLUDE_DIR "../")
 
