@@ -344,7 +344,14 @@ build_python_conda() {
 
   pushd python || exit 1
   make clean
-  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}}/lib python3 setup.py install || exit 1
+#  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}} python3 setup.py install || exit 1
+
+  if [ "${GCYLON_BUILD}" = "ON" ]; then
+    echo "Building pygcylon ........................"
+    CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}}/lib python3 setup_gcylon.py install || exit 1
+    echo "Built and installed pygcylon ........................"
+  fi
+
   popd || exit 1
   print_line
 }

@@ -27,6 +27,7 @@ from pycylon.frame import DataFrame
 from pycylon.frame import CylonEnv
 from pycylon.frame import read_csv
 from pycylon.frame import concat
+from pycylon.net import MPIConfig
 from pycylon.util.logging import log_level, disable_logging
 
 import os
