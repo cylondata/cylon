@@ -1,0 +1,17 @@
+name: gcylon_dev
+channels:
+  - rapidsai
+  - nvidia
+  - rapidsai-nightly
+  - conda-forge
+  - defaults
+dependencies:
+  - cmake>=3.17
+  - cython>=0.29,<0.30
+  - cudf=21.08
+  - cudatoolkit=11.2
+  - pyarrow=4.0.1
+  - arrow-cpp=4.0.1
+  - gflags
+  - glog
+  - setuptools
