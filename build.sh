@@ -116,8 +116,14 @@ case $key in
     shift # past argument
     shift # past value
     ;;
-    --with-gcylon)
+    --gcylon)
     GCYLON_BUILD="ON"
+    CONDA_CPP_BUILD="ON"
+    shift # past argument
+    ;;
+    --pygcylon)
+    GCYLON_BUILD="ON"
+    CONDA_PYTHON_BUILD="ON"
     shift # past argument
     ;;
     *)    # unknown option
