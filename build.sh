@@ -31,6 +31,7 @@ INSTALL_PATH=
 BUILD_PATH=$(pwd)/build
 CMAKE_FLAGS=""
 GCYLON_BUILD="OFF"
+PYGCYLON_BUILD="OFF"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -118,12 +119,10 @@ case $key in
     ;;
     --gcylon)
     GCYLON_BUILD="ON"
-    CONDA_CPP_BUILD="ON"
     shift # past argument
     ;;
     --pygcylon)
-    GCYLON_BUILD="ON"
-    CONDA_PYTHON_BUILD="ON"
+    PYGCYLON_BUILD="ON"
     shift # past argument
     ;;
     *)    # unknown option
@@ -361,15 +360,18 @@ build_python_conda() {
   pushd python/pycylon || exit 1
   make clean
   CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}} python3 setup.py install || exit 1
+  popd || exit 1
+  print_line
+}
 
-  if [ "${GCYLON_BUILD}" = "ON" ]; then
-    popd
-    pushd python/pygcylon
-    echo "Building pygcylon ........................"
-    CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}}/lib python3 setup.py install || exit 1
-    echo "Built and installed pygcylon ........................"
-  fi
+build_pygcylon() {
+  print_line
+  echo "Building PyGcylon ............. "
 
+  pushd python/pygcylon || exit 1
+  make clean
+  python3 setup.py install || exit 1
+  echo "Built and installed pygcylon ........................"
   popd || exit 1
   print_line
 }
@@ -526,6 +528,16 @@ fi
 if [ "${CONDA_PYTHON_BUILD}" = "ON" ]; then
 	echo "Running conda build"
 	build_python_conda
+fi
+
+if [ "${GCYLON_BUILD}" = "ON" ]; then
+	echo "Running conda build"
+	build_cpp_conda
+fi
+
+if [ "${PYGCYLON_BUILD}" = "ON" ]; then
+	echo "Running pygcylon conda build"
+	build_pygcylon
 fi
 
 
