@@ -12,6 +12,5 @@ dependencies:
   - cudatoolkit=11.2
   - pyarrow=4.0.1
   - arrow-cpp=4.0.1
-  - gflags
-  - glog
-  - setuptools
+  - glog>=0.4.0
+  - setuptools>=49.6.0
