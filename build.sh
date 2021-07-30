@@ -315,6 +315,29 @@ build_cpp_conda(){
   print_line
 }
 
+build_gcylon(){
+  print_line
+  echo "Building GCylon in ${BUILD_MODE} mode"
+  print_line
+
+  # set install path to conda directory if not already set
+  INSTALL_PATH=${INSTALL_PATH:=${PREFIX:=${CONDA_PREFIX}}}
+
+  echo "SOURCE_DIR: ${SOURCE_DIR}"
+  BUILD_PATH=$(pwd)/build
+  mkdir -p ${BUILD_PATH}
+  pushd ${BUILD_PATH} || exit 1
+  cmake -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
+      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DGCYLON_BUILD=${GCYLON_BUILD} ${CMAKE_FLAGS} ${SOURCE_DIR} \
+      || exit 1
+  make -j 4 || exit 1
+  printf "GCylon CPP Built Successfully!"
+  make install || exit 1
+  printf "GCylon CPP Installed Successfully!"
+  popd || exit 1
+  print_line
+}
+
 build_pyarrow(){
   print_line
   echo "Building PyArrow"
@@ -532,7 +555,7 @@ fi
 
 if [ "${GCYLON_BUILD}" = "ON" ]; then
 	echo "Running conda build"
-	build_cpp_conda
+	build_gcylon
 fi
 
 if [ "${PYGCYLON_BUILD}" = "ON" ]; then

@@ -135,6 +135,15 @@ else()
     include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
 endif(CONDA_INCLUDE_DIRS)
 
+include(Build)
+
+# if building gcylon, no need to build cylon
+if (GCYLON_BUILD)
+    add_subdirectory(src/gcylon)
+    add_subdirectory(src/examples/gcylon)
+    return()
+endif ()
+
 # parquet
 option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
 if (CYLON_PARQUET)
@@ -169,8 +178,6 @@ if (CYLON_UCX)
             ${UCX_LIBDIR}/libucm.so
             ${UCX_LIBDIR}/libucp.so)
 endif (CYLON_UCX)
-
-include(Build)
 
 if (NOT ARROW_BUILD_TYPE)
     set(ARROW_BUILD_TYPE "SOURCE")
@@ -224,10 +231,6 @@ option(CYLON_BUILD_TESTS "Build tests." ON)
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
 add_subdirectory(src/tutorial)
-if (GCYLON_BUILD)
-    add_subdirectory(src/gcylon)
-    add_subdirectory(src/examples/gcylon)
-endif ()
 
 ## installing arrow files
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
