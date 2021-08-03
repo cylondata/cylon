@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-#include <examples/gcylon/print.hpp>
 #include "common/test_header.hpp"
 #include <gcylon/utils/util.hpp>
 #include <gcylon/utils/construct.hpp>

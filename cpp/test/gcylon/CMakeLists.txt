@@ -80,6 +80,8 @@ endfunction(cylon_run_test)
 # param 1 -- name of the test, param 2 -- number of processes
 
 # create table test
-cylon_add_test(create_table_test)
-cylon_run_test(create_table_test 1)
+cylon_add_test(create_cudf_table_test)
+cylon_run_test(create_cudf_table_test 1)
+cylon_run_test(create_cudf_table_test 2)
+cylon_run_test(create_cudf_table_test 4)
 

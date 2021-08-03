@@ -15,6 +15,10 @@
 #ifndef GCYLON_ALL2ALL_UTIL_H
 #define GCYLON_ALL2ALL_UTIL_H
 
+#include <cuda.h>
+#include <cudf/column/column.hpp>
+#include <cudf/table/table.hpp>
+
 /**
  * get one scalar value from device to host
  * @param buff
