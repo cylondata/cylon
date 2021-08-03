@@ -24,22 +24,9 @@
 #include <cudf/io/types.hpp>
 #include <cuda.h>
 
+#include <gcylon/utils/util.hpp>
+
 using namespace std;
-
-int64_t * getColumnPart(const cudf::column_view &cv, int64_t start, int64_t end) {
-    int64_t size = end - start;
-    uint8_t * hostArray = new uint8_t[size * 8];
-    cudaMemcpy(hostArray, cv.data<uint8_t>() + start * 8, size * 8, cudaMemcpyDeviceToHost);
-    return (int64_t *) hostArray;
-}
-
-int64_t * getColumnTop(const cudf::column_view &cv, int64_t topN = 5) {
-    return getColumnPart(cv, 0, topN);
-}
-
-int64_t * getColumnTail(const cudf::column_view &cv, int64_t tailN = 5) {
-    return getColumnPart(cv, cv.size() - tailN, cv.size());
-}
 
 void printLongColumn(const cudf::column_view &cv, int64_t topN = 5, int64_t tailN = 5) {
     if(cv.size() < (topN + tailN)) {
@@ -47,13 +34,13 @@ void printLongColumn(const cudf::column_view &cv, int64_t topN = 5, int64_t tail
         return;
     }
 
-    int64_t * hdata = getColumnTop(cv, topN);
+    int64_t * hdata = getColumnTop<int64_t>(cv, topN);
     cout << "Top: " << topN << " elements of the column: " << endl;
     for (int i = 0; i < topN; ++i) {
         cout << i << ": " << hdata[i] << endl;
     }
 
-    hdata = getColumnTail(cv, tailN);
+    hdata = getColumnTail<int64_t>(cv, tailN);
     cout << "Tail: " << tailN << " elements of the column: " << endl;
     int64_t ci = cv.size() - tailN;
     for (int i = 0; i < tailN; ++i) {
@@ -65,7 +52,7 @@ void printWholeTable(cudf::table_view &tableView) {
     // get column tops
     std::vector<int64_t *> columnTops{};
     for (int i = 0; i < tableView.num_columns(); ++i) {
-        columnTops.push_back(getColumnTop(tableView.column(i), tableView.num_rows()));
+        columnTops.push_back(getColumnTop<int64_t>(tableView.column(i), tableView.num_rows()));
     }
 
     cout << "..................................................................................." << endl;
@@ -89,7 +76,7 @@ void printLongTable(cudf::table_view &tableView, int64_t topN = 5, int64_t tailN
     // get column tops
     std::vector<int64_t *> columnTops{};
     for (int i = 0; i < tableView.num_columns(); ++i) {
-        columnTops.push_back(getColumnTop(tableView.column(i), topN));
+        columnTops.push_back(getColumnTop<int64_t>(tableView.column(i), topN));
     }
 
     cout << "..................................................................................." << endl;
@@ -111,7 +98,7 @@ void printLongTable(cudf::table_view &tableView, int64_t topN = 5, int64_t tailN
     cout << "......................................" << endl;
     std::vector<int64_t *> columnTails{};
     for (int i = 0; i < tableView.num_columns(); ++i) {
-        columnTails.push_back(getColumnTail(tableView.column(i), tailN));
+        columnTails.push_back(getColumnTail<int64_t>(tableView.column(i), tailN));
     }
 
     int64_t ci = tableView.num_rows() - tailN;

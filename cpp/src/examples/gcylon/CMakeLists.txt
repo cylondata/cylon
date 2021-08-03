@@ -47,7 +47,7 @@ include_directories(../../
 
 #build a binary with cuda
 macro(cylon_add_exe EXENAME)
-    add_executable(${EXENAME} ${EXENAME}.cpp construct.hpp print.hpp)
+    add_executable(${EXENAME} ${EXENAME}.cpp ../../gcylon/utils/construct.hpp print.hpp)
     target_link_libraries(${EXENAME} gcylon)
     install(TARGETS ${EXENAME} RUNTIME DESTINATION gcylon/examples)
 endmacro(cylon_add_exe)

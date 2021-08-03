@@ -29,7 +29,7 @@
 #include <cuda.h>
 
 #include <gcylon/gtable.hpp>
-#include <examples/gcylon/construct.hpp>
+#include <gcylon/utils/construct.hpp>
 #include <examples/gcylon/print.hpp>
 #include <cylon/net/mpi/mpi_communicator.hpp>
 

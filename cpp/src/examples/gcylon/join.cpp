@@ -15,11 +15,10 @@
 #include <cudf/table/table.hpp>
 #include <cudf/table/table_view.hpp>
 
-#include <examples/gcylon/construct.hpp>
-#include <examples/gcylon/print.hpp>
-
+#include <gcylon/utils/construct.hpp>
 #include <gcylon/gtable.hpp>
 #include <cylon/net/mpi/mpi_communicator.hpp>
+#include <examples/gcylon/print.hpp>
 
 using std::cout;
 using std::endl;

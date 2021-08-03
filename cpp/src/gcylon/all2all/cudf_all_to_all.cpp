@@ -21,7 +21,7 @@
 
 #include <gcylon/all2all/cudf_all_to_all.hpp>
 #include <gcylon/gtable.hpp>
-#include <gcylon/all2all/util.hpp>
+#include <gcylon/utils/util.hpp>
 #include <gcylon/all2all/cudf_all_to_all.cuh>
 #include <cylon/net/mpi/mpi_communicator.hpp>
 

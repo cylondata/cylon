@@ -533,11 +533,6 @@ if [ "${PYTHON_RELEASE}" = "ON" ]; then
 	release_python
 fi
 
-if [ "${RUN_CPP_TESTS}" = "ON" ]; then
-	echo "Running CPP tests"
-	CTEST_OUTPUT_ON_FAILURE=1 make -C "$BUILD_PATH" test || exit 1
-fi
-
 if [ "${RUN_PYTHON_TESTS}" = "ON" ]; then
 	echo "Running Python tests"
 	python_test
@@ -561,6 +556,11 @@ fi
 if [ "${PYGCYLON_BUILD}" = "ON" ]; then
 	echo "Running pygcylon conda build"
 	build_pygcylon
+fi
+
+if [ "${RUN_CPP_TESTS}" = "ON" ]; then
+	echo "Running CPP tests"
+	CTEST_OUTPUT_ON_FAILURE=1 make -C "$BUILD_PATH" test || exit 1
 fi
 
 

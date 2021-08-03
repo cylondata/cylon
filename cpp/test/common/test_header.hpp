@@ -16,7 +16,7 @@
 #define __CYLON_TEST_HEADER_
 
 #define CATCH_CONFIG_RUNNER
-#include <catch.hpp>
+#include <common/catch.hpp>
 #include <mpi.h>
 #include <iostream>
 #include <glog/logging.h>
