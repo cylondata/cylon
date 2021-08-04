@@ -17,6 +17,7 @@
 #include <gcylon/utils/construct.hpp>
 
 using namespace cylon;
+using namespace gcylon;
 
 TEST_CASE("create cudf table testing", "[gcreate]") {
   cylon::Status status;

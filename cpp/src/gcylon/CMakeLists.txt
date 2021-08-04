@@ -75,6 +75,7 @@ add_library(gcylon SHARED
         all2all/cudf_all_to_all.hpp
         all2all/cudf_all_to_all.cpp
         utils/util.hpp
+        utils/util.cpp
         gtable.hpp
         gtable.cpp
         )

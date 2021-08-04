@@ -41,6 +41,7 @@ elseif(DEFINED ENV{CONDA_PREFIX})
 endif("$ENV{CONDA_BUILD}" STREQUAL "1")
 
 SET(MPI_RUN_CMD mpirun)
+file(COPY ${CYLON_SOURCE_DIR}/../data DESTINATION ${CMAKE_BINARY_DIR})
 
 include_directories(
         ${CYLON_SOURCE_DIR}/src
@@ -60,7 +61,7 @@ endmacro(tx_add_exe)
 # macro to add a test
 function(cylon_add_test TESTNAME)
   set(exec_name "${TESTNAME}")
-  add_executable(${exec_name} ${TESTNAME}.cpp)
+  add_executable(${exec_name} ${TESTNAME}.cpp test_gutils.hpp)
   target_link_libraries(${exec_name} ${MPI_LIBRARIES} )
   target_link_libraries(${exec_name} cylon)
   target_link_libraries(${exec_name} gcylon)
@@ -72,7 +73,7 @@ endfunction(cylon_add_test)
 # macro to run executable
 function(cylon_run_test TESTNAME no_mpi_proc)
   set(exec_name "${TESTNAME}_${no_mpi_proc}")
-  set(test_params --allow-run-as-root --oversubscribe -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}")
+  set(test_params --allow-run-as-root --oversubscribe --mca pml ucx --mca btl_openib_allow_ib true -np ${no_mpi_proc} ${CMAKE_BINARY_DIR}/bin/${TESTNAME})
   add_test(NAME ${exec_name} COMMAND ${MPI_RUN_CMD} ${test_params})
 endfunction(cylon_run_test)
 
@@ -81,7 +82,9 @@ endfunction(cylon_run_test)
 
 # create table test
 cylon_add_test(create_cudf_table_test)
-cylon_run_test(create_cudf_table_test 1)
-cylon_run_test(create_cudf_table_test 2)
 cylon_run_test(create_cudf_table_test 4)
+
+# create table test
+cylon_add_test(shuffle_gcylon_table_test)
+cylon_run_test(shuffle_gcylon_table_test 4)
 

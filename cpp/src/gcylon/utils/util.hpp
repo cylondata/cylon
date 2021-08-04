@@ -15,9 +15,12 @@
 #ifndef GCYLON_ALL2ALL_UTIL_H
 #define GCYLON_ALL2ALL_UTIL_H
 
+#include <glog/logging.h>
 #include <cuda.h>
 #include <cudf/column/column.hpp>
 #include <cudf/table/table.hpp>
+
+namespace gcylon {
 
 /**
  * get one scalar value from device to host
@@ -72,6 +75,16 @@ T * getColumnTop(const cudf::column_view &cv, int64_t topN = 5) {
 template <typename T>
 T * getColumnTail(const cudf::column_view &cv, int64_t tailN = 5) {
     return getColumnPart<T>(cv, cv.size() - tailN, cv.size());
+}
+
+/**
+ * whether two cudf tables are equal with all elements in them
+ * @param tv1
+ * @param tv2
+ * @return
+ */
+bool equal(cudf::table_view & tv1, cudf::table_view & tv2);
+
 }
 
 #endif //GCYLON_ALL2ALL_UTIL_H

@@ -27,6 +27,7 @@
 #include <gcylon/utils/util.hpp>
 
 using namespace std;
+using namespace gcylon;
 
 void printLongColumn(const cudf::column_view &cv, int64_t topN = 5, int64_t tailN = 5) {
     if(cv.size() < (topN + tailN)) {
