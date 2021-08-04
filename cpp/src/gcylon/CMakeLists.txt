@@ -96,5 +96,6 @@ target_link_libraries(gcylon
 cylon_install_all_headers("gcylon")
 
 add_subdirectory(all2all)
+add_subdirectory(utils)
 
 install(TARGETS gcylon DESTINATION lib)
