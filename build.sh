@@ -371,7 +371,7 @@ build_python_pyarrow() {
   export_library_path ${LD_LIBRARY_PATH}
 
   check_python_pre_requisites
-  pushd python || exit 1
+  pushd python/pycylon || exit 1
   pip3 uninstall -y pycylon
   make clean
   CYLON_PREFIX=${BUILD_PATH}  python3 setup.py install || exit 1
@@ -414,7 +414,7 @@ build_python() {
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
   check_python_pre_requisites
-  pushd python || exit 1
+  pushd python/pycylon || exit 1
   pip3 uninstall -y pycylon
   make clean
   CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PATH}/arrow/install python3 setup.py install || exit 1
@@ -431,7 +431,7 @@ release_python() {
   source "${PYTHON_ENV_PATH}"/bin/activate
   read_python_requirements
   check_python_pre_requisites
-  pushd python || exit 1
+  pushd python/pycylon || exit 1
   pip3 uninstall -y pycylon
   make clean
   # https://www.scivision.dev/easy-upload-to-pypi/ [solution to linux wheel issue]
