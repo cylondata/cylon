@@ -73,8 +73,8 @@ endfunction(cylon_add_test)
 # macro to run executable
 function(cylon_run_test TESTNAME no_mpi_proc)
   set(exec_name "${TESTNAME}_${no_mpi_proc}")
-  set(test_params --allow-run-as-root --oversubscribe --mca pml ucx --mca btl_openib_allow_ib true -np ${no_mpi_proc} ${CMAKE_BINARY_DIR}/bin/${TESTNAME})
-  add_test(NAME ${exec_name} COMMAND ${MPI_RUN_CMD} ${test_params})
+  set(mpi_params --allow-run-as-root --oversubscribe --mca opal_cuda_support 1 --mca pml ucx --mca btl_openib_allow_ib true)
+  add_test(NAME ${exec_name} COMMAND ${MPI_RUN_CMD} ${mpi_params} -np ${no_mpi_proc} ${CMAKE_BINARY_DIR}/bin/${TESTNAME})
 endfunction(cylon_run_test)
 
 #Add tests as follows ...
