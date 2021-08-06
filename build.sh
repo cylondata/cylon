@@ -26,6 +26,7 @@ BUILD_MODE_RELEASE="OFF"
 PYTHON_RELEASE="OFF"
 RUN_CPP_TESTS="OFF"
 RUN_PYTHON_TESTS="OFF"
+RUN_PYGCYLON_TESTS="OFF"
 STYLE_CHECK="OFF"
 INSTALL_PATH=
 BUILD_PATH=$(pwd)/build
@@ -103,6 +104,10 @@ case $key in
     RUN_PYTHON_TESTS="ON"
     shift # past argument
     ;;
+    --pygtest)
+    RUN_PYGCYLON_TESTS="ON"
+    shift # past argument
+    ;;
     --style-check)
     STYLE_CHECK="ON"
     shift # past argument
@@ -141,6 +146,7 @@ echo "FLAG BUILD DEBUG      = ${BUILD_MODE_DEBUG}"
 echo "FLAG BUILD RELEASE    = ${BUILD_MODE_RELEASE}"
 echo "FLAG RUN CPP TEST     = ${RUN_CPP_TESTS}"
 echo "FLAG RUN PYTHON TEST  = ${RUN_PYTHON_TESTS}"
+echo "RUN PYGCYLON TESTS    = ${RUN_PYGCYLON_TESTS}"
 echo "FLAG STYLE CHECK      = ${STYLE_CHECK}"
 echo "ADDITIONAL CMAKE FLAGS= ${CMAKE_FLAGS}"
 
@@ -457,7 +463,7 @@ check_pyarrow_installation(){
 }
 
 check_pycylon_installation(){
-  response=$(python3 python/test/test_pycylon.py)
+  response=$(python3 python/pycylon/test/test_pycylon.py)
   echo "${response}"
 }
 
@@ -466,7 +472,11 @@ python_test(){
   LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${BUILD_PATH}/arrow/install/lib" || exit 1
   export_library_path ${LD_LIBRARY_PATH}
 
-  python3 -m pytest python/test/test_all.py || exit 1
+  python3 -m pytest python/pycylon/test/test_all.py || exit 1
+}
+
+pygcylon_test(){
+  python3 -m pytest python/pygcylon/test/test_all.py || exit 1
 }
 
 build_java(){
@@ -561,6 +571,11 @@ fi
 if [ "${RUN_CPP_TESTS}" = "ON" ]; then
 	echo "Running CPP tests"
 	CTEST_OUTPUT_ON_FAILURE=1 make -C "$BUILD_PATH" test || exit 1
+fi
+
+if [ "${RUN_PYGCYLON_TESTS}" = "ON" ]; then
+	echo "Running PyGcylon tests"
+	pygcylon_test
 fi
 
 
