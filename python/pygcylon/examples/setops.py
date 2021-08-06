@@ -211,6 +211,29 @@ def dist_concat():
     env.finalize()
 
 
+def dist_drop_duplicates():
+    env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
+    print("CylonEnv Initialized: My rank: ", env.rank)
+
+    inputFile1 = "data/input/cities_" + str(env.rank) + ".csv"
+    inputFile2 = "data/input/cities_setops_" + str(env.rank) + ".csv"
+    unionFile = "data/output/union_cities_" + str(env.rank) + ".csv"
+
+    df1 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile1))
+    df2 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile2))
+
+    print("df1: \n", df1)
+    print("df2: \n", df2)
+    concatedDf = gcy.concat([df1, df2], env=env)
+    duplicates_dropped = concatedDf.drop_duplicates(ignore_index=True, env=env)
+    d_dropped_sorted = duplicates_dropped.to_cudf().sort_values(by=["city", "state_id"], ignore_index=True)
+
+    saved_union = cudf.read_csv(unionFile).sort_values(by=["city", "state_id"], ignore_index=True)
+    print(env.rank, " equal") if d_dropped_sorted.equals(saved_union) else print(env.rank, " not equal")
+
+    env.finalize()
+
+
 #####################################################
 
 # gen_dist_diff_files()
@@ -223,4 +246,6 @@ def dist_concat():
 # dist_intersect()
 
 # gen_dist_concat_files()
-dist_concat()
+# dist_concat()
+
+dist_drop_duplicates()

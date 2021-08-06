@@ -14,6 +14,13 @@
 
 '''
 running test case
+we test following operations:
+    set_difference
+    set_union
+    set_intersection
+    concat
+    drop_duplicates
+
 >>  mpirun --mca opal_cuda_support 1 -n 4 -quiet python -m pytest --with-mpi -q python/pygcylon/test/test_setops.py
 '''
 
@@ -111,5 +118,33 @@ def test_dist_concat():
     saved_concated = cudf.read_csv(concatFile).sort_values(by=["city", "state_id"], ignore_index=True)
 
     assert concated_sorted.equals(saved_concated), "Concatanated DataFrame and the DataFrame from file are not equal"
+#    env.finalize()
+
+
+@pytest.mark.mpi
+def test_dist_drop_duplicates():
+    """
+    We first perform concatenation of two dataframes,
+    then drop duplicates.
+    Resulting dataframe must be equal to the union of the two original dataframe
+    """
+
+    env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
+    print("CylonEnv Initialized: My rank: ", env.rank)
+
+    inputFile1 = "data/input/cities_" + str(env.rank) + ".csv"
+    inputFile2 = "data/input/cities_setops_" + str(env.rank) + ".csv"
+    unionFile = "data/output/union_cities_" + str(env.rank) + ".csv"
+
+    df1 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile1))
+    df2 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile2))
+
+    concatedDf = gcy.concat([df1, df2], env=env)
+    duplicates_dropped = concatedDf.drop_duplicates(ignore_index=True, env=env)
+    d_dropped_sorted = duplicates_dropped.to_cudf().sort_values(by=["city", "state_id"], ignore_index=True)
+
+    saved_union = cudf.read_csv(unionFile).sort_values(by=["city", "state_id"], ignore_index=True)
+
+    assert d_dropped_sorted.equals(saved_union), "Duplicates dropped DataFrame and the DataFrame from file are not equal"
 #    env.finalize()
 
