@@ -47,6 +47,15 @@ def test_shuffle():
     assert responses[-1] == 0
 
 
+def test_setops():
+    print("4. PyGcylon Set Operations Test")
+    responses.append(
+        os.system(
+            "mpirun --mca opal_cuda_support 1 -n 4 -quiet python -m pytest --with-mpi "
+            "-q python/pygcylon/test/test_setops.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)
