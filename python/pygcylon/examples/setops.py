@@ -168,6 +168,49 @@ def dist_intersect():
     env.finalize()
 
 
+def gen_dist_concat_files():
+    env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
+    print("CylonEnv Initialized: My rank: ", env.rank)
+
+    inputFile1 = "data/input/cities_" + str(env.rank) + ".csv"
+    inputFile2 = "data/input/cities_setops_" + str(env.rank) + ".csv"
+    concatFile = "data/output/concat_cities_" + str(env.rank) + ".csv"
+
+    df1 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile1))
+    df2 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile2))
+
+    print("df1: \n", df1)
+    print("df2: \n", df2)
+    concatedDf = gcy.concat([df1, df2], env=env)
+
+    concatedDf.to_cudf().to_csv(concatFile, index=False)
+    print(env.rank, " written concatFile to the file: ", concatFile)
+
+    env.finalize()
+
+
+def dist_concat():
+    env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
+    print("CylonEnv Initialized: My rank: ", env.rank)
+
+    inputFile1 = "data/input/cities_" + str(env.rank) + ".csv"
+    inputFile2 = "data/input/cities_setops_" + str(env.rank) + ".csv"
+    concatFile = "data/output/concat_cities_" + str(env.rank) + ".csv"
+
+    df1 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile1))
+    df2 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile2))
+
+    concatedDf = gcy.concat([df1, df2], env=env)
+
+    #  sort dataframe
+    concated_sorted = concatedDf.to_cudf().sort_values(by=["city", "state_id"], ignore_index=True)
+
+    saved_concated = cudf.read_csv(concatFile).sort_values(by=["city", "state_id"], ignore_index=True)
+
+    print(env.rank, " equal") if concated_sorted.equals(saved_concated) else print(env.rank, " not equal")
+    env.finalize()
+
+
 #####################################################
 
 # gen_dist_diff_files()
@@ -178,3 +221,6 @@ def dist_intersect():
 
 # gen_dist_intersect_files()
 # dist_intersect()
+
+# gen_dist_concat_files()
+dist_concat()

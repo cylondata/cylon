@@ -92,3 +92,24 @@ def test_dist_intersect():
     assert intersect_sorted.equals(saved_intersect), "Intersect DataFrame and the DataFrame from file are not equal"
 #    env.finalize()
 
+
+@pytest.mark.mpi
+def test_dist_concat():
+    env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
+    print("CylonEnv Initialized: My rank: ", env.rank)
+
+    inputFile1 = "data/input/cities_" + str(env.rank) + ".csv"
+    inputFile2 = "data/input/cities_setops_" + str(env.rank) + ".csv"
+    concatFile = "data/output/concat_cities_" + str(env.rank) + ".csv"
+
+    df1 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile1))
+    df2 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile2))
+
+    concatedDf = gcy.concat([df1, df2], env=env)
+    concated_sorted = concatedDf.to_cudf().sort_values(by=["city", "state_id"], ignore_index=True)
+
+    saved_concated = cudf.read_csv(concatFile).sort_values(by=["city", "state_id"], ignore_index=True)
+
+    assert concated_sorted.equals(saved_concated), "Concatanated DataFrame and the DataFrame from file are not equal"
+#    env.finalize()
+
