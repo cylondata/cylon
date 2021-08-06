@@ -14,7 +14,7 @@
 
 '''
 Run test:
->> pytest -q python/test/test_join_config.py
+>> pytest -q python/pycylon/test/test_join_config.py
 '''
 
 from pycylon.commons import JoinAlgorithm

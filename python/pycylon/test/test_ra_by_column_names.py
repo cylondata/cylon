@@ -14,7 +14,7 @@
 
 '''
 Run test
->> pytest -q python/test/test_ra_by_column_names.py
+>> pytest -q python/pycylon/test/test_ra_by_column_names.py
 '''
 
 import os

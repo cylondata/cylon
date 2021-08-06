@@ -14,7 +14,7 @@
 
 '''
 Run test:
->> pytest -q python/test/test_data_types.py
+>> pytest -q python/pycylon/test/test_data_types.py
 '''
 
 from pycylon.data.data_type import Type

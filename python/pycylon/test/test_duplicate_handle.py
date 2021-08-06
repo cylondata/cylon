@@ -21,7 +21,7 @@ from pycylon.io import read_csv
 
 '''
 Run test:
->> mpirun -n 2 python -m pytest --with-mpi -q python/test/test_duplicate_handle.py
+>> mpirun -n 2 python -m pytest --with-mpi -q python/pycylon/test/test_duplicate_handle.py
 '''
 
 @pytest.mark.mpi

@@ -14,7 +14,7 @@
 
 '''
 Run test
->> pytest -q python/test/test_status.py
+>> pytest -q python/pycylon/test/test_status.py
 '''
 
 from pycylon.commons import Code

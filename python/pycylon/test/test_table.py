@@ -16,7 +16,7 @@
 """
 Run test:
 
->>> pytest -q python/test/test_table.py
+>>> pytest -q python/pycylon/test/test_table.py
 """
 
 from pyarrow.csv import read_csv as pyarrow_read_csv

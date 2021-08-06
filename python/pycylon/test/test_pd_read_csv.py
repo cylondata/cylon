@@ -14,7 +14,7 @@
 
 '''
 Run test:
->> pytest -q python/test/test_pd_read_csv.py
+>> pytest -q python/pycylon/test/test_pd_read_csv.py
 '''
 
 import pandas as pd

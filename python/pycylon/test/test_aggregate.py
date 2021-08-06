@@ -14,7 +14,7 @@
 
 '''
 Run test:
->> pytest -q python/test/test_aggregate.py
+>> pytest -q python/pycylon/test/test_aggregate.py
 '''
 
 import numpy as np

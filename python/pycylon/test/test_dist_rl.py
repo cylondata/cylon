@@ -14,7 +14,7 @@
 
 '''
 Run test:
->> mpirun -n 4 python -m pytest --with-mpi -q python/test/test_dist_rl.py
+>> mpirun -n 4 python -m pytest --with-mpi -q python/pycylon/test/test_dist_rl.py
 '''
 
 import os

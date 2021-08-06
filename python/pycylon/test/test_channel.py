@@ -14,7 +14,7 @@
 
 '''
 Run test:
->> pytest -q python/test/test_channel.py
+>> pytest -q python/pycylon/test/test_channel.py
 '''
 
 def test_channel_imports():

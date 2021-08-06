@@ -23,7 +23,7 @@ from pycylon.io import read_csv
 
 '''
 running test case 
->>  pytest -q python/test/test_pyarrow.py 
+>>  pytest -q python/pycylon/test/test_pyarrow.py 
 '''
 
 def test_arrow_cylon():

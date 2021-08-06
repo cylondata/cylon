@@ -14,7 +14,7 @@
 
 """
 Run test:
->> pytest -q python/test/test_table_properties.py
+>> pytest -q python/pycylon/test/test_table_properties.py
 """
 
 import operator
@@ -32,7 +32,7 @@ import pandas as pd
 
 '''
 Run test:
->> pytest -q python/test/test_table_properties.py
+>> pytest -q python/pycylon/test/test_table_properties.py
 '''
 
 '''

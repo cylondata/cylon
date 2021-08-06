@@ -14,7 +14,7 @@
 
 """
 Run test:
->> mpirun -n 4 python -m pytest -q python/test/test_df_dist_sorting.py
+>> mpirun -n 4 python -m pytest -q python/pycylon/test/test_df_dist_sorting.py
 """
 import pytest
 from pycylon import DataFrame, CylonEnv

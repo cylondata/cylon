@@ -25,20 +25,20 @@ responses = []
 
 def test_pycylon_installation_test():
     print("1. PyCylon Installation Test")
-    responses.append(os.system("pytest -q python/test/test_pycylon.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_pycylon.py"))
     assert responses[-1] == 0
 
 
 def test_pyarrow_installation_test():
     print("2. PyArrow Installation Test")
-    responses.append(os.system("pytest -q python/test/test_build_arrow.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_build_arrow.py"))
     assert responses[-1] == 0
 
 
 # def test_fake():
 #     # NOTE: To Test the Test Framework
 #     print("Fake Test")
-#     responses.append(os.system("pytest -q python/test/test_fake.py"))
+#     responses.append(os.system("pytest -q python/pycylon/test/test_fake.py"))
 #     assert responses[-1] == 0
 
 def test_cylon_context():
@@ -46,55 +46,55 @@ def test_cylon_context():
     responses.append(
         os.system(
             "mpirun --oversubscribe --allow-run-as-root -n 2 python -m pytest --with-mpi "
-            "-q python/test/test_cylon_context.py"))
+            "-q python/pycylon/test/test_cylon_context.py"))
     assert responses[-1] == 0
 
 
 def test_channel():
     print("4. Channel Test")
-    responses.append(os.system("pytest -q python/test/test_channel.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_channel.py"))
     assert responses[-1] == 0
 
 
 def test_commtype():
     print("5. CommType Test")
-    responses.append(os.system("pytest -q python/test/test_comm_type.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_comm_type.py"))
     assert responses[-1] == 0
 
 
 def test_csv_read_options():
     print("6. CSV Read Options Test")
-    responses.append(os.system("pytest -q python/test/test_csv_read_options.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_csv_read_options.py"))
     assert responses[-1] == 0
 
 
 def test_datatype():
     print("7. Data Types Test")
-    responses.append(os.system("pytest -q python/test/test_data_types.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_data_types.py"))
     assert responses[-1] == 0
 
 
 def test_data_utils():
     print("8. Data Utils Test")
-    responses.append(os.system("pytest -q python/test/test_data_utils.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_data_utils.py"))
     assert responses[-1] == 0
 
 
 def test_status():
     print("9. Cylon Status Test")
-    responses.append(os.system("pytest -q python/test/test_status.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_status.py"))
     assert responses[-1] == 0
 
 
 def test_request():
     print("10. Request Test")
-    responses.append(os.system("pytest -q python/test/test_txrequest.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_txrequest.py"))
     assert responses[-1] == 0
 
 
 def test_pycylon_pyarrow():
     print("11. PyArrow/PyCylon Test")
-    responses.append(os.system("pytest -q python/test/test_pyarrow.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_pyarrow.py"))
     assert responses[-1] == 0
 
 
@@ -102,31 +102,31 @@ def test_table_conversion():
     print("12. Table Conversion Test")
     responses.append(os.system(
         "mpirun --oversubscribe --allow-run-as-root -n 2 python -m pytest --with-mpi "
-        "-q python/test/test_cylon_table_conversion.py"))
+        "-q python/pycylon/test/test_cylon_table_conversion.py"))
     assert responses[-1] == 0
 
 
 def test_table_operation():
     print("13. Table Operation Test")
-    responses.append(os.system("pytest -q python/test/test_table.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_table.py"))
     assert responses[-1] == 0
 
 
 def test_table_properties():
     print("14. Table Properties Test")
-    responses.append(os.system("pytest -q python/test/test_table_properties.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_table_properties.py"))
     assert responses[-1] == 0
 
 
 def test_aggregate():
     print("15. Aggregate Test")
-    responses.append(os.system("pytest -q python/test/test_aggregate.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_aggregate.py"))
     assert responses[-1] == 0
 
 
 def test_join_config():
     print("16. Join Config Test")
-    responses.append(os.system("pytest -q python/test/test_join_config.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_join_config.py"))
     assert responses[-1] == 0
 
 
@@ -134,7 +134,7 @@ def test_simple_table_join():
     print("17. Simple Table Join Test")
     responses.append(os.system(
         "mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest --with-mpi "
-        "-q python/test/test_cylon_simple_table_join.py"))
+        "-q python/pycylon/test/test_cylon_simple_table_join.py"))
     assert responses[-1] == 0
 
 
@@ -143,19 +143,19 @@ def test_dist_rl():
     responses.append(
         os.system(
             "mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest --with-mpi "
-            "-q python/test/test_dist_rl.py"))
+            "-q python/pycylon/test/test_dist_rl.py"))
     assert responses[-1] == 0
 
 
 def test_rl():
     print("19. Sequential Relational Algebra Operator Test")
-    responses.append(os.system("pytest -q python/test/test_rl.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_rl.py"))
     assert responses[-1] == 0
 
 
 def test_rl_col():
     print("20. Sequential Relational Algebra with Column Names Test")
-    responses.append(os.system("pytest -q python/test/test_ra_by_column_names.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_ra_by_column_names.py"))
     assert responses[-1] == 0
 
 
@@ -163,35 +163,35 @@ def test_dist_rl_col():
     print("21. Distributed Relational Algebra with Column Names Test")
     responses.append(
         os.system("mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest --with-mpi -q "
-                  "python/test/test_dist_ra_by_column_names.py"))
+                  "python/pycylon/test/test_dist_ra_by_column_names.py"))
     assert responses[-1] == 0
 
 
 def test_index():
     print("22. Index Test")
     responses.append(
-        os.system("pytest -q python/test/test_index.py"))
+        os.system("pytest -q python/pycylon/test/test_index.py"))
     assert responses[-1] == 0
 
 
 def test_compute():
     print("23. Compute Test")
     responses.append(
-        os.system("pytest -q python/test/test_compute.py"))
+        os.system("pytest -q python/pycylon/test/test_compute.py"))
     assert responses[-1] == 0
 
 
 def test_series():
     print("24. Series Test")
     responses.append(
-        os.system("pytest -q python/test/test_series.py"))
+        os.system("pytest -q python/pycylon/test/test_series.py"))
     assert responses[-1] == 0
 
 
 def test_frame():
     print("25. DataFrame Test")
     responses.append(
-        os.system("pytest -q python/test/test_frame.py"))
+        os.system("pytest -q python/pycylon/test/test_frame.py"))
     assert responses[-1] == 0
 
 
@@ -200,31 +200,31 @@ def test_duplicate():
     responses.append(
         os.system(
             "mpirun --oversubscribe --allow-run-as-root -n 2 python -m pytest --with-mpi "
-            "-q python/test/test_duplicate_handle.py"))
+            "-q python/pycylon/test/test_duplicate_handle.py"))
     assert responses[-1] == 0
 
 
 def test_sorting():
     print("27. Sorting")
-    responses.append(os.system("pytest -q python/test/test_sorting.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_sorting.py"))
     assert responses[-1] == 0
 
 
 def test_df_dist_sorting():
     print("28. Sorting")
     responses.append(os.system("mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest "
-                               "-q python/test/test_df_dist_sorting.py"))
+                               "-q python/pycylon/test/test_df_dist_sorting.py"))
     assert responses[-1] == 0
 
     
 def test_pd_read_csv():
     print("29. pandas read_csv")
-    responses.append(os.system("pytest -q python/test/test_pd_read_csv.py"))
+    responses.append(os.system("pytest -q python/pycylon/test/test_pd_read_csv.py"))
     assert responses[-1] == 0
 
 def test_data_split():
     print("30. Data Split")
-    responses.append(os.system("mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest --with-mpi python/test/test_data_split.py"))
+    responses.append(os.system("mpirun --oversubscribe --allow-run-as-root -n 4 python -m pytest --with-mpi python/pycylon/test/test_data_split.py"))
     assert responses[-1] == 0
 
 

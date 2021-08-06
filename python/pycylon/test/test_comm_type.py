@@ -14,7 +14,7 @@
 
 '''
 Run test:
->> pytest -q python/test/test_comm_type.py
+>> pytest -q python/pycylon/test/test_comm_type.py
 '''
 
 from pycylon.net.comm_type import CommType

@@ -14,7 +14,7 @@
 
 '''
 running test case
->>  pytest -q python/test/test_pycylon.py
+>>  pytest -q python/pycylon/test/test_pycylon.py
 '''
 
 def test_cylon_install():

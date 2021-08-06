@@ -14,7 +14,7 @@
 
 '''
 Run test:
->> pytest -q python/test/test_build_arrow.py
+>> pytest -q python/pycylon/test/test_build_arrow.py
 '''
 
 import os

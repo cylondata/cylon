@@ -14,7 +14,7 @@
 
 """
 Run test:
->> mpirun -n 2 python -m pytest --with-mpi -q python/test/test_cylon_table_conversion.py
+>> mpirun -n 2 python -m pytest --with-mpi -q python/pycylon/test/test_cylon_table_conversion.py
 """
 
 import os

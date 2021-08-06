@@ -14,7 +14,7 @@
 
 """
 Run test:
->> pytest -q python/test/test_sorting.py
+>> pytest -q python/pycylon/test/test_sorting.py
 """
 
 from utils import create_df,assert_eq

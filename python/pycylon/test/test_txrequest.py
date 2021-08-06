@@ -15,7 +15,7 @@
 """
 Run test:
 
->>> pytest -q python/test/test_txrequest.py
+>>> pytest -q python/pycylon/test/test_txrequest.py
 """
 
 from pycylon.net.txrequest import TxRequest

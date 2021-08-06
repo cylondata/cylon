@@ -14,7 +14,7 @@
 
 '''
 Run this file:
->> pytest -q python/test/test_rl.py
+>> pytest -q python/pycylon/test/test_rl.py
 '''
 
 import os

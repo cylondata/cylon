@@ -14,7 +14,7 @@
 
 '''
 Run test:
->> pytest -q python/test/test_data_utils.py
+>> pytest -q python/pycylon/test/test_data_utils.py
 '''
 
 import os

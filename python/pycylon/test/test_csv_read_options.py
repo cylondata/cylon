@@ -14,7 +14,7 @@
 
 '''
 Run test:
->> pytest -q python/test/test_csv_read_options.py
+>> pytest -q python/pycylon/test/test_csv_read_options.py
 '''
 
 from pandas import DataFrame
