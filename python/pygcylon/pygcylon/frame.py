@@ -1002,6 +1002,58 @@ class DataFrame(object):
         shuffled_df = _shuffle(self._cdf, hash_columns=shuffle_column_indices, env=env, ignore_index=ignore_index)
         return DataFrame.from_cudf(shuffled_df)
 
+    def equals(self, other, **kwargs):
+        """
+        Test whether two objects contain the same elements.
+        This function allows two Series or DataFrames to be compared against
+        each other to see if they have the same shape and elements. NaNs in
+        the same location are considered equal. The column headers do not
+        need to have the same type.
+
+        This method performs local equality only.
+        Todo: We need to add distributed equality comparison.
+
+        Parameters
+        ----------
+        other : Series or DataFrame
+            The other Series or DataFrame to be compared with the first.
+
+        Returns
+        -------
+        bool
+            True if all elements are the same in both objects, False
+            otherwise.
+
+        Examples
+        --------
+        >>> import pygcylon as gcy
+
+        Comparing DataFrames with `equals`:
+
+        >>> df = gcy.DataFrame({1: [10], 2: [20]})
+        >>> df
+            1   2
+        0  10  20
+        >>> exactly_equal = gcy.DataFrame({1: [10], 2: [20]})
+        >>> exactly_equal
+            1   2
+        0  10  20
+        >>> df.equals(exactly_equal)
+        True
+
+        For two DataFrames to compare equal, the types of column
+        values must be equal, but the types of column labels
+        need not:
+
+        >>> different_column_type = gcy.DataFrame({1.0: [10], 2.0: [20]})
+        >>> different_column_type
+           1.0  2.0
+        0   10   20
+        >>> df.equals(different_column_type)
+        True
+        """
+        return self._cdf.equals(other=other.to_cudf(), **kwargs)
+
     def groupby(
         self,
         by=None,
