@@ -31,12 +31,12 @@ import pygcylon as gcy
 
 
 @pytest.mark.mpi
-def test_dist_diff():
+def test_diff():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
     print("CylonEnv Initialized: My rank: ", env.rank)
 
-    inputFile1 = "data/input/cities_" + str(env.rank) + ".csv"
-    inputFile2 = "data/input/cities_setops_" + str(env.rank) + ".csv"
+    inputFile1 = "data/input/cities_a_" + str(env.rank) + ".csv"
+    inputFile2 = "data/input/cities_b_" + str(env.rank) + ".csv"
     diffFile1 = "data/output/diff_df1-df2_" + str(env.rank) + ".csv"
     diffFile2 = "data/output/diff_df2-df1_" + str(env.rank) + ".csv"
 
@@ -53,18 +53,20 @@ def test_dist_diff():
     saved_diff1 = cudf.read_csv(diffFile1).sort_values(by=["city", "state_id"], ignore_index=True)
     saved_diff2 = cudf.read_csv(diffFile2).sort_values(by=["city", "state_id"], ignore_index=True)
 
-    assert diff1_sorted.equals(saved_diff1), "First Difference DataFrame and the DataFrame from file are not equal"
-    assert diff2_sorted.equals(saved_diff2), "Second Difference DataFrame and the DataFrame from file are not equal"
+    assert diff1_sorted.equals(saved_diff1), \
+        "First Difference DataFrame and the DataFrame from file are not equal"
+    assert diff2_sorted.equals(saved_diff2), \
+        "Second Difference DataFrame and the DataFrame from file are not equal"
 #    env.finalize()
 
 
 @pytest.mark.mpi
-def test_dist_union():
+def test_union():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
     print("CylonEnv Initialized: My rank: ", env.rank)
 
-    inputFile1 = "data/input/cities_" + str(env.rank) + ".csv"
-    inputFile2 = "data/input/cities_setops_" + str(env.rank) + ".csv"
+    inputFile1 = "data/input/cities_a_" + str(env.rank) + ".csv"
+    inputFile2 = "data/input/cities_b_" + str(env.rank) + ".csv"
     unionFile = "data/output/union_cities_" + str(env.rank) + ".csv"
 
     df1 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile1))
@@ -75,17 +77,18 @@ def test_dist_union():
 
     saved_union = cudf.read_csv(unionFile).sort_values(by=["city", "state_id"], ignore_index=True)
 
-    assert union_sorted.equals(saved_union), "Union DataFrame and the DataFrame from file are not equal"
+    assert union_sorted.equals(saved_union), \
+        "Union DataFrame and the DataFrame from file are not equal"
 #    env.finalize()
 
 
 @pytest.mark.mpi
-def test_dist_intersect():
+def test_intersect():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
     print("CylonEnv Initialized: My rank: ", env.rank)
 
-    inputFile1 = "data/input/cities_" + str(env.rank) + ".csv"
-    inputFile2 = "data/input/cities_setops_" + str(env.rank) + ".csv"
+    inputFile1 = "data/input/cities_a_" + str(env.rank) + ".csv"
+    inputFile2 = "data/input/cities_b_" + str(env.rank) + ".csv"
     intersectFile = "data/output/intersect_cities_" + str(env.rank) + ".csv"
 
     df1 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile1))
@@ -96,17 +99,18 @@ def test_dist_intersect():
 
     saved_intersect = cudf.read_csv(intersectFile).sort_values(by=["city", "state_id"], ignore_index=True)
 
-    assert intersect_sorted.equals(saved_intersect), "Intersect DataFrame and the DataFrame from file are not equal"
+    assert intersect_sorted.equals(saved_intersect), \
+        "Intersect DataFrame and the DataFrame from file are not equal"
 #    env.finalize()
 
 
 @pytest.mark.mpi
-def test_dist_concat():
+def test_concat():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
     print("CylonEnv Initialized: My rank: ", env.rank)
 
-    inputFile1 = "data/input/cities_" + str(env.rank) + ".csv"
-    inputFile2 = "data/input/cities_setops_" + str(env.rank) + ".csv"
+    inputFile1 = "data/input/cities_a_" + str(env.rank) + ".csv"
+    inputFile2 = "data/input/cities_b_" + str(env.rank) + ".csv"
     concatFile = "data/output/concat_cities_" + str(env.rank) + ".csv"
 
     df1 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile1))
@@ -117,12 +121,13 @@ def test_dist_concat():
 
     saved_concated = cudf.read_csv(concatFile).sort_values(by=["city", "state_id"], ignore_index=True)
 
-    assert concated_sorted.equals(saved_concated), "Concatanated DataFrame and the DataFrame from file are not equal"
+    assert concated_sorted.equals(saved_concated), \
+        "Concatanated DataFrame and the DataFrame from file are not equal"
 #    env.finalize()
 
 
 @pytest.mark.mpi
-def test_dist_drop_duplicates():
+def test_drop_duplicates():
     """
     We first perform concatenation of two dataframes,
     then drop duplicates.
@@ -132,8 +137,8 @@ def test_dist_drop_duplicates():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
     print("CylonEnv Initialized: My rank: ", env.rank)
 
-    inputFile1 = "data/input/cities_" + str(env.rank) + ".csv"
-    inputFile2 = "data/input/cities_setops_" + str(env.rank) + ".csv"
+    inputFile1 = "data/input/cities_a_" + str(env.rank) + ".csv"
+    inputFile2 = "data/input/cities_b_" + str(env.rank) + ".csv"
     unionFile = "data/output/union_cities_" + str(env.rank) + ".csv"
 
     df1 = gcy.DataFrame.from_cudf(cudf.read_csv(inputFile1))
@@ -145,6 +150,7 @@ def test_dist_drop_duplicates():
 
     saved_union = cudf.read_csv(unionFile).sort_values(by=["city", "state_id"], ignore_index=True)
 
-    assert d_dropped_sorted.equals(saved_union), "Duplicates dropped DataFrame and the DataFrame from file are not equal"
+    assert d_dropped_sorted.equals(saved_union), \
+        "Duplicates dropped DataFrame and the DataFrame from file are not equal"
 #    env.finalize()
 

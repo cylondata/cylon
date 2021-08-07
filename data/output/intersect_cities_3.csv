@@ -1,11 +1,9 @@
-city,state_id
-Adairsville,GA
-Adairville,KY
-Adams,MN
-Adams,OR
-Adamsburg,PA
-Adamsville,TN
-Addington,OK
-Addison,IL
-Adel,IA
-Adelphi,OH
+city,state_id,population
+Adel,IA,5455
+Adel,GA,6989
+Adelanto,CA,34049
+Adams Center,NY,1385
+Adamstown,PA,1880
+Adams,NE,617
+Addison,AL,718
+Adair,OK,811

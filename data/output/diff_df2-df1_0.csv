@@ -1,15 +1,18 @@
-city,state_id
-Airport Drive,MO
-Airport Road Addition,TX
-Akron,PA
-Akron,CO
-Akron,NY
-Akron,IA
-Akutan,AK
-Agency,MO
-Aguanga,CA
-Ahmeek,MI
-Adrian,MO
-Advance,IN
-Advance,MO
-Afton,WY
+city,state_id,population
+Ahmeek,MI,144
+Adrian,TX,170
+Adrian,OR,173
+Agency Village,SD,242
+Airport Road Addition,TX,279
+Agua Dulce,CA,3742
+Akron,PA,4015
+Adjuntas,PR,4258
+Ahoskie,NC,4763
+Aguadilla,PR,10739
+Agawam,MA,28613
+Adrian,MN,1218
+Aetna Estates,CO,1398
+Airport,CA,1479
+Ajo,AZ,2841
+Ainaloa,HI,3279
+Akiachak,AK,573

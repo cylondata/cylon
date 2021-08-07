@@ -1,16 +1,11 @@
-city,state_id
-Ackerly,TX
-Abrams,WI
-Abie,NE
-Abiquiu,NM
-Achille,OK
-Abbottstown,PA
-Abbeville,AL
-Acampo,CA
-Acalanes Ridge,CA
-Acres Green,CO
-Abbeville,GA
-Ackworth,IA
-Abbeville,MS
-Ackerman,MS
-Aberdeen,MS
+city,state_id,population
+Aberdeen,MD,16019
+Abilene,TX,123420
+Absarokee,MT,1061
+Acalanes Ridge,CA,1134
+Abita Springs,LA,2614
+Abbyville,KS,85
+Acme,WA,108
+Abeytas,NM,293
+Abrams,WI,461
+Accoville,WV,980

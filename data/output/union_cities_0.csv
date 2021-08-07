@@ -1,43 +1,43 @@
-city,state_id
-Aaronsburg,PA
-Abanda,AL
-Abbeville,LA
-Abbotsford,WI
-Abbott,TX
-Aberdeen,ID
-Aberdeen,IN
-Aberdeen,OH
-Abernathy,TX
-Abilene,TX
-Abingdon,VA
-Absarokee,MT
-Accomac,VA
-Accord,NY
-Ackley,IA
-Ada,MN
-Ada,OK
-Adak,AK
-Adams,TN
-Adams,WI
-Adams Center,NY
-Adamstown,MD
-Adamsville,AL
-Addieville,IL
-Addison,WV
-Addyston,OH
-Adelino,NM
-Adell,WI
-Adrian,MO
-Advance,IN
-Advance,MO
-Afton,WY
-Agency,MO
-Aguanga,CA
-Ahmeek,MI
-Airport Drive,MO
-Airport Road Addition,TX
-Akron,CO
-Akron,IA
-Akron,NY
-Akron,PA
-Akutan,AK
+city,state_id,population
+Abanda,AL,176
+Abbeville,LA,19470
+Abbottstown,PA,1026
+Aberdeen,IN,1591
+Aberdeen,WA,29609
+Aberdeen Proving Ground,MD,2872
+Abingdon,IL,3115
+Abingdon,VA,7867
+Accokeek,MD,11647
+Aceitunas,PR,1890
+Acequia,ID,133
+Achille,OK,540
+Ackerly,TX,232
+Acres Green,CO,3100
+Ada,MN,1563
+Adair Village,OR,874
+Adak,AK,326
+Adams,MN,790
+Adamsburg,PA,162
+Adamstown,MD,2512
+Adamsville,PA,57
+Addieville,IL,238
+Addison,TX,16263
+Addyston,OH,936
+Adelphi,OH,375
+Adjuntas,PR,4258
+Adrian,MN,1218
+Adrian,OR,173
+Adrian,TX,170
+Aetna Estates,CO,1398
+Agawam,MA,28613
+Agency Village,SD,242
+Agua Dulce,CA,3742
+Aguadilla,PR,10739
+Ahmeek,MI,144
+Ahoskie,NC,4763
+Ainaloa,HI,3279
+Airport,CA,1479
+Airport Road Addition,TX,279
+Ajo,AZ,2841
+Akiachak,AK,573
+Akron,PA,4015
