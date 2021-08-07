@@ -51,12 +51,12 @@ void writeCSV(cudf::table_view & tv, std::string filename, int rank, cudf::io::t
     cudf::io::write_csv(writerOptions);
 }
 
-bool PerformShuffleTest(string & inputFileName, string & outputFileName, int rank) {
+bool PerformShuffleTest(string & inputFileName, string & outputFileName, int shuffleIndex, int rank) {
     cudf::io::table_with_metadata inputTable = readCSV(inputFileName, rank);
     auto inputTv = inputTable.tbl->view();
 
     // shuffle the table
-    std::vector<cudf::size_type> columns_to_hash = {0};
+    std::vector<cudf::size_type> columns_to_hash = {shuffleIndex};
     std::unique_ptr<cudf::table> shuffledTable;
     Shuffle(inputTv, columns_to_hash, ctx, shuffledTable);
     auto shuffledtv = shuffledTable->view();

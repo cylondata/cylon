@@ -14,19 +14,17 @@
 
 '''
 running test case
->>  mpirun --mca opal_cuda_support 1 -n 4 -quiet python -m pytest --with-mpi -q python/pygcylon/test/test_shuffle.py
+>>  mpirun --mca opal_cuda_support 1 -n 4 python python/pygcylon/test/gen_shuffle_test_data.py
 '''
 
-import pytest
 import cudf
 import pycylon as cy
 import pygcylon as gcy
 
 
-@pytest.mark.mpi
-def test_shuffle():
+def gen_shuffle_test_data():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
-    print("CylonContext Initialized: My rank: ", env.rank)
+    print("CylonEnv Initialized: My rank: ", env.rank)
 
     input_file = "data/input/cities_a_" + str(env.rank) + ".csv"
     str_shuffle_file = "data/output/shuffle_str_cities_a_" + str(env.rank) + ".csv"
@@ -35,21 +33,15 @@ def test_shuffle():
     df1 = gcy.DataFrame.from_cudf(cudf.read_csv(input_file))
 
     str_shuffled = df1.shuffle(on="state_id", ignore_index=True, env=env)
-    str_shuffled_sorted = str_shuffled.to_cudf()\
-        .sort_values(by=["state_id", "city", "population"], ignore_index=True)
+    str_shuffled.to_cudf().to_csv(str_shuffle_file, index=False)
 
     int_shuffled = df1.shuffle(on="population", ignore_index=True, env=env)
-    int_shuffled_sorted = int_shuffled.to_cudf()\
-        .sort_values(by=["state_id", "city", "population"], ignore_index=True)
+    int_shuffled.to_cudf().to_csv(int_shuffle_file, index=False)
 
-    str_shuffled_saved = cudf.read_csv(str_shuffle_file)\
-        .sort_values(by=["state_id", "city", "population"], ignore_index=True)
-    int_shuffled_saved = cudf.read_csv(int_shuffle_file)\
-        .sort_values(by=["state_id", "city", "population"], ignore_index=True)
+    print(env.rank, " written gbyFile1 to the file: ", str_shuffle_file)
+    print(env.rank, " written gbyFile2 to the file: ", int_shuffle_file)
+    env.finalize()
 
-    assert str_shuffled_sorted.equals(str_shuffled_saved), \
-        "String based Shuffled DataFrame and DataFrame from file are not equal"
-    assert int_shuffled_sorted.equals(int_shuffled_saved), \
-        "Integer based Shuffled DataFrame and DataFrame from file are not equal"
 
-#    env.finalize()
+#####################################################
+gen_shuffle_test_data()
