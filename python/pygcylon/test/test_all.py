@@ -65,6 +65,15 @@ def test_groupby():
     assert responses[-1] == 0
 
 
+def test_groupby():
+    print("5. PyGcylon Join Test")
+    responses.append(
+        os.system(
+            "mpirun --mca opal_cuda_support 1 -n 4 -quiet python -m pytest --with-mpi "
+            "-q python/pygcylon/test/test_join.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)

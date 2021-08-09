@@ -1,0 +1,119 @@
+state_id,cityl,populationl,cityr,populationr
+SC,Abbeville,5019,Aiken,30869
+MN,Ada,1563,Akeley,443
+CO,Acres Green,3100,Aguilar,480
+IA,Ackworth,105,Ainsworth,579
+OK,Addington,107,Akins,586
+IA,Ackworth,105,Agency,643
+WV,Addison,663,Addison,663
+IA,Ackworth,105,Adair,713
+MN,Ada,1563,Adams,790
+OK,Addington,107,Adair,811
+IA,Ackworth,105,Afton,815
+OR,Adams,357,Adair Village,874
+MN,Adams,790,Akeley,443
+IA,Ackley,1498,Ainsworth,579
+OK,Ada,17840,Akins,586
+IA,Ackley,1498,Agency,643
+IA,Ackley,1498,Adair,713
+MN,Adams,790,Adams,790
+OK,Ada,17840,Adair,811
+IA,Ackley,1498,Afton,815
+OR,Adair Village,874,Adair Village,874
+IA,Adel,5455,Ainsworth,579
+OK,Achille,540,Akins,586
+IA,Adel,5455,Agency,643
+WV,Accoville,980,Addison,663
+IA,Adel,5455,Adair,713
+OK,Achille,540,Adair,811
+IA,Adel,5455,Afton,815
+IA,Adair,713,Ainsworth,579
+OK,Adair,811,Akins,586
+IA,Adair,713,Agency,643
+IA,Adair,713,Adair,713
+OK,Adair,811,Adair,811
+IA,Adair,713,Afton,815
+PA,Adamsville,57,Adamsville,57
+OK,Addington,107,Addington,107
+WA,Acme,108,Addy,130
+PA,Adamsville,57,Adamsburg,162
+OR,Adams,357,Adrian,173
+OK,Addington,107,Agra,344
+OR,Adams,357,Adams,357
+OK,Addington,107,Afton,1020
+NC,Aberdeen,7988,Advance,1158
+MN,Ada,1563,Adrian,1218
+NY,Adams Center,1385,Adams Center,1385
+CO,Acres Green,3100,Aetna Estates,1398
+IA,Ackworth,105,Akron,1463
+CO,Acres Green,3100,Akron,1723
+PA,Adamsville,57,Adamstown,1880
+MN,Ada,1563,Aitkin,1985
+PR,Aceitunas,1890,Aguas Claras,2266
+PR,Aceitunas,1890,Aguada,2812
+NY,Adams Center,1385,Akron,2969
+MN,Ada,1563,Afton,3028
+WA,Acme,108,Ahtanum,3356
+PR,Aceitunas,1890,Aguas Buenas,3446
+PA,Adamsville,57,Akron,4015
+PR,Aceitunas,1890,Aguilita,4069
+PR,Aceitunas,1890,Adjuntas,4258
+NC,Aberdeen,7988,Ahoskie,4763
+IA,Ackworth,105,Adel,5455
+CO,Acres Green,3100,Air Force Academy,6512
+PR,Aceitunas,1890,Aibonito,7820
+NY,Adams Center,1385,Airmont,8786
+WA,Acme,108,Airway Heights,9485
+PR,Aceitunas,1890,Aguadilla,10739
+OK,Ada,17840,Addington,107
+WA,Addy,130,Addy,130
+OR,Adair Village,874,Adrian,173
+OK,Ada,17840,Agra,344
+OR,Adair Village,874,Adams,357
+OK,Ada,17840,Afton,1020
+MN,Adams,790,Adrian,1218
+NY,Accord,560,Adams Center,1385
+IA,Ackley,1498,Akron,1463
+MN,Adams,790,Aitkin,1985
+NY,Accord,560,Akron,2969
+MN,Adams,790,Afton,3028
+WA,Addy,130,Ahtanum,3356
+IA,Ackley,1498,Adel,5455
+NY,Accord,560,Airmont,8786
+WA,Addy,130,Airway Heights,9485
+OK,Achille,540,Addington,107
+OK,Achille,540,Agra,344
+OK,Achille,540,Afton,1020
+IA,Adel,5455,Akron,1463
+IA,Adel,5455,Adel,5455
+PA,Adamsburg,162,Adamsville,57
+OK,Adair,811,Addington,107
+WA,Aberdeen Gardens,337,Addy,130
+PA,Adamsburg,162,Adamsburg,162
+OK,Adair,811,Agra,344
+OK,Adair,811,Afton,1020
+IA,Adair,713,Akron,1463
+PA,Adamsburg,162,Adamstown,1880
+WA,Aberdeen Gardens,337,Ahtanum,3356
+PA,Adamsburg,162,Akron,4015
+IA,Adair,713,Adel,5455
+WA,Aberdeen Gardens,337,Airway Heights,9485
+PA,Abbottstown,1026,Adamsville,57
+PA,Abbottstown,1026,Adamsburg,162
+PA,Abbottstown,1026,Adamstown,1880
+PA,Abbottstown,1026,Akron,4015
+PA,Adamstown,1880,Adamsville,57
+WA,Aberdeen,29609,Addy,130
+PA,Adamstown,1880,Adamsburg,162
+PA,Adamstown,1880,Adamstown,1880
+WA,Aberdeen,29609,Ahtanum,3356
+PA,Adamstown,1880,Akron,4015
+WA,Aberdeen,29609,Airway Heights,9485
+PA,Aaronsburg,487,Adamsville,57
+PA,Aaronsburg,487,Adamsburg,162
+PA,Aaronsburg,487,Adamstown,1880
+PA,Aaronsburg,487,Akron,4015
+PA,Ackermanville,632,Adamsville,57
+PA,Ackermanville,632,Adamsburg,162
+PA,Ackermanville,632,Adamstown,1880
+PA,Ackermanville,632,Akron,4015
