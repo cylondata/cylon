@@ -27,8 +27,8 @@ int ceil(const int& numerator, const int& denominator) {
    return (numerator + denominator - 1) / denominator;
 }
 
-//todo: need to take care of the case when the size is more than
-//      max_thread_count_per_block * max_number_of_blocks
+//todo: may be optimized better.
+//      each thread can rebase a set of offsets instead of one
 void callRebaseOffsets(int32_t * arr, int size, int32_t base){
     int threads_per_block = 256;
     int number_of_blocks = ceil(size, threads_per_block);
