@@ -130,7 +130,8 @@ include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
 
 # glog, if conda build, we will get glog from conda instead of building ourselves
 if(CONDA_INCLUDE_DIRS)
-    set(GLOG_LIBRARIES glog)
+    find_package (glog 0.5.0 REQUIRED)
+    set(GLOG_LIBRARIES glog::glog)
 else()
     option(WITH_GFLAGS "Use gflags" ON)
     SET(WITH_GFLAGS OFF)
