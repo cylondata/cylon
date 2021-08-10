@@ -125,6 +125,19 @@ def check_status(status, task):
         print(f'{task} completed successfully')
 
 
+def python_command():
+    res = subprocess.call("python3 --version")
+    if res == 0:
+        return "python3"
+
+    res = subprocess.call("python --version")
+    if res == 0:
+        return "python"
+
+    print("Python not found.")
+    quit()
+
+
 def build_cpp():
     if not BUILD_CPP:
         return
@@ -159,7 +172,7 @@ def build_docker():
 
 def python_test():
     test_command = env_activate_command(
-    ) + ' && python -m pytest python/test/test_all.py || exit 1'
+    ) + f' && {python_command()} -m pytest python/test/test_all.py || exit 1'
     # ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
     # export LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
     # echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
@@ -178,7 +191,7 @@ def build_python():
     print("Building Python")
 
     python_build_command = env_activate_command(
-    ) + f' && pip3 uninstall -y pycylon && python python/setup.py install || exit 1'
+    ) + f' && pip3 uninstall -y pycylon && ${python_command()} python/setup.py install || exit 1'
 
     print(python_build_command)
     env = os.environ
@@ -193,5 +206,6 @@ def build_python():
 
 # build_cpp()
 # build_docker()
-build_python()
+# build_python()
 # python_test()
+print(python_command())
