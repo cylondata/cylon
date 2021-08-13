@@ -1,13 +1,17 @@
 ---
 id: compile
-title: Compiling Cylon
-sidebar_label: Compiling
+title: Source Compilation
+sidebar_label: Source
 ---
 
 Cylon has C++ core, Java and Python bindings. You can compile these in three steps.
 
 Cylon can be build along with Arrow (Cylon will build Apache Arrow) or it can be build by pointing to an existing
-Arrow installation. 
+Arrow installation.
+
+This document shows how to build Cylon on Linux and Mac OS. The first section of the document shows how to install
+the required dependencies on Linux (Ubuntu) and Mac OS. After required dependencies are installed, 
+the compiling is similar in Linux and Mac OS.
 
 ## Prerequisites
 
@@ -43,7 +47,7 @@ Do not use a prior installed pyarrow in your python environment.
 Uninstall it before running the setup.
 ```
 
-### Installing Required Libraries
+### Installing Dependencies Ubuntu
 
 Cylon uses MPI for distributed execution. So we need an MPI version installed in the system. There are many implementations
 of MPI standard such as MPICH and OpenMPI. We have tested Cylon with OpenMPI and you should be able to use any other MPI implementation like
@@ -62,7 +66,7 @@ Here are some of the other dependencies required.
 ```bash
 sudo apt install software-properties-common
 sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt-get update && apt-get install -y --no-install-recommends --no-install-suggests libssl-dev curl wget vim git build-essential python3.7-dev python3.7 maven libnuma-dev libc-dev python3-venv openmpi-bin libopenmpi-dev python3-pip python3-dev
+sudo apt-get update && apt-get install -y --no-install-recommends --no-install-suggests libssl-dev curl wget vim git build-essential python3.7-dev python3.7 maven libnuma-dev libc-dev python3-venv openmpi-bin libopenmpi-dev python3-pip python3-dev libutf8proc-dev libre2-dev
 ```
 
 We need a later version of CMake. We can build cmake from source if the version in our system is less than 3.16.5.
@@ -76,7 +80,17 @@ make
 sudo make install
 ```
 
-## Build Cylon & PyCylon
+### Installing Dependencies MacOS
+
+You would need to install XCode and install an MPI version such as OpenMPI.
+
+```bash
+brew install open-mpi
+```
+
+Once those are installed you are ready to compile Cylon on macos.
+
+## Build Cylon & PyCylon on Linux or Mac OS
 
 Here we will walk you through building Cylon along with Apache Arrow.
 
@@ -148,10 +162,12 @@ Here is an example command.
 
 This command will install the PyCylon and PyArrow into the virtual environment we specified. 
 
-#### Updating `LD_LIBRARY_PATH`
+#### Updating library path
 
-Before running the code in the base path of the cloned repo
-run the following command. Or add this to your `bashrc`.
+Before running the code in the base path of the cloned repo you need to update the runtime library path. Linux and Mac OS uses different environment variable names.
+Following are two commands to update the path on these operating systems. 
+
+#### Linux
 
 ```bash
 export LD_LIBRARY_PATH=<path to cmake build dir>/arrow/install/lib:<path to cmake build dir>/lib:$LD_LIBRARY_PATH
@@ -160,6 +176,17 @@ export LD_LIBRARY_PATH=<path to cmake build dir>/arrow/install/lib:<path to cmak
 Here is an example command.
 ```bash
 export LD_LIBRARY_PATH=$HOME/cylon/build/arrow/install/lib:$HOME/cylon/build/lib:$LD_LIBRARY_PATH
+```
+
+#### Mac OS
+
+```bash
+export DYLD_LIBRARY_PATH=<path to cmake build dir>/arrow/install/lib:<path to cmake build dir>/lib:$DYLD_LIBRARY_PATH
+```
+
+Here is an example command.
+```bash
+export DYLD_LIBRARY_PATH=$HOME/cylon/build/arrow/install/lib:$HOME/cylon/build/lib:$DYLD_LIBRARY_PATH
 ```
 
 After this you can verify the build.
