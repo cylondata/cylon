@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     cylon::FromCSV(ctx, std::string(argv[2]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
   }
 
-  auto status = cylon::Sort(first_table, 0, output);
+  auto status = cylon::DistributedSort(first_table, 0, output);
   if (status.is_ok() && output->Rows() <= 1000) {
     output->Print();
   }
