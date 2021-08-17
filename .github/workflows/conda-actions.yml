@@ -19,7 +19,7 @@ jobs:
     - name: Installing Conda Packages
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
-        $CONDA/bin/conda env update --file conda/environments/gcylon.yml --name base
+        $CONDA/bin/conda env update --file conda/environments/gcylon.yml --name base && $CONDA/bin/conda activate base
     - name: build cpp and test
       run: ./build.sh --conda_cpp --release --test
     - name: build pycylon and test
