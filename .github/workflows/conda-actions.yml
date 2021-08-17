@@ -1,0 +1,33 @@
+name: Compile and Test on Conda
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y --no-install-recommends --no-install-suggests g++ python3-dev python3-pip
+    - name: Installing Conda Packages
+      run: |
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        $CONDA/bin/conda env update --file conda/environments/gcylon.yml --name base
+    - name: build cpp and test
+      run: ./build.sh --conda_cpp --release --test
+    - name: build pycylon and test
+      run: ./build.sh --conda_python --release --pytest
+    - name: build gcylon cpp, no testing at github for gpu
+      run: ./build.sh --gcylon --release
+    - name: build pygcylon, no testing at github for gpu
+      run: ./build.sh --pygcylon --release
+
