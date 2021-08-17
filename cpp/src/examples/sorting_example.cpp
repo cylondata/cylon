@@ -19,9 +19,12 @@
 #include <cylon/ctx/cylon_context.hpp>
 #include <cylon/table.hpp>
 
+#include "example_utils.hpp"
+
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    LOG(ERROR) << "There should be two arguments with paths to csv files";
+  if (argc < 3) {
+    LOG(ERROR) << "./sorting_example m num_tuples_per_worker 0.0-1.0" << std::endl
+               << "./sorting_example f csv_file1" << std::endl;
     return 1;
   }
 
@@ -31,28 +34,20 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<cylon::Table> first_table, output;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-  auto status = cylon::FromCSV(ctx, argv[1], first_table, read_options);
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table reading failed " << argv[1];
-    ctx->Finalize();
-    return 1;
+
+  std::string mem = std::string(argv[1]);
+  if (mem == "m") {
+    uint64_t count = std::stoull(argv[2]);
+    double dup = std::stod(argv[3]);
+    cylon::examples::create_in_memory_tables(count, dup, ctx, first_table);
+  } else if (mem == "f") {
+    cylon::FromCSV(ctx, std::string(argv[2]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
   }
 
-  auto read_end_time = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start).count() << "[ms]";
-
-  LOG(INFO) << "Table Data";
-  first_table->Print();
-  std::cout << "-----------------------" << std::endl;
-
-  status = cylon::Sort(first_table, 0, output);
-
-  if (status.is_ok()) {
+  auto status = cylon::Sort(first_table, 0, output);
+  if (status.is_ok() && output->Rows() <= 1000) {
     output->Print();
   }
-
   ctx->Finalize();
   return 0;
 }
