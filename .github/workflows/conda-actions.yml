@@ -1,4 +1,4 @@
-name: Compile and Test on Conda
+name: Compile and Test using Conda
 
 on:
   push:
@@ -8,19 +8,58 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+      # explicit include-based build matrix, of known valid options
+      matrix:
+        include:
+          # 20.04 supports CUDA 11.0+
+          - os: ubuntu-20.04
+            cuda: "11.2"
+            gcc: 9
+          # - os: ubuntu-20.04
+          #   cuda: "11.2"
+          #   gcc: 10
+          # 18.04 supports CUDA 10.1+ (gxx <= 8)
+          # - os: ubuntu-18.04
+          #   cuda: "11.0"
+          #   gcc: 8
+          # - os: ubuntu-18.04
+          #   cuda: "10.2"
+          #   gcc: 8
+          # - os: ubuntu-18.04
+          #   cuda: "10.1"
+          #   gcc: 8
+
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - uses: s-weigand/setup-conda@v1
-    - name: Installing Conda Packages
+    - name: Install CUDA
+      env:
+        cuda: ${{ matrix.cuda }}
+      run: ./.github/scripts/install_cuda_ubuntu.sh
+      shell: bash
+
+    # Specify the correct host compilers
+    - name: Install/Select gcc and g++
       run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        $CONDA/bin/conda env update --file conda/environments/gcylon.yml --name base
+        sudo apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }}
+        echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
+        echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
+        echo "CUDAHOSTCXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
+
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: gcylon_dev
+        environment-file: conda/environments/gcylon.yml
+
+    - name: activate conda
+      run: conda activate gcylon_dev
+
     - name: build cpp and test
       run: ./build.sh --conda_cpp --release --test
     - name: build pycylon and test

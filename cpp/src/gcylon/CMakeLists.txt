@@ -25,6 +25,12 @@ set(CMAKE_CUDA_ARCHITECTURES 60 61 75)
 enable_language(CUDA)
 message("CUDAToolkit_INCLUDE_DIRS: " ${CUDAToolkit_INCLUDE_DIRS})
 
+# If executed on github actions, set below flag to avoid linker error for cuda
+# ref: https://github.com/NVIDIA/nvidia-docker/issues/775
+if(DEFINED ENV{GITHUB_ACTIONS})
+    set(CMAKE_CXX_FLAGS "-Wl,--allow-shlib-undefined")
+endif()
+
 message("CONDA_PREFIX: " $ENV{CONDA_PREFIX})
 if ((NOT DEFINED ENV{CONDA_PREFIX}) AND (NOT DEFINED ENV{CONDA_BUILD}) )
     message(SEND_ERROR "Neither CONDA_PREFIX nor CONDA_BUILD is set. Activate conda environment or use conda-build")

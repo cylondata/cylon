@@ -32,6 +32,12 @@ SET(CMAKE_REQUIRED_FLAGS "-std=c++17")
 # find CUDA
 find_package(CUDAToolkit REQUIRED)
 
+# If executed on github actions, set below flag to avoid linker error for cuda
+# ref: https://github.com/NVIDIA/nvidia-docker/issues/775
+if(DEFINED ENV{GITHUB_ACTIONS})
+    set(CMAKE_CXX_FLAGS "-Wl,--allow-shlib-undefined")
+endif()
+
 # if conda build is used
 if("$ENV{CONDA_BUILD}" STREQUAL "1")
     set(CUDF_CUDA_INCLUDE_DIR "$ENV{BUILD_PREFIX}/include/libcudf/libcudacxx/" "$ENV{PREFIX}/include/libcudf/libcudacxx/")
