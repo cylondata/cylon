@@ -16,11 +16,10 @@
 #define GCYLON_GTABLE_H
 
 #include <cudf/table/table.hpp>
-#include <cudf/table/table_view.hpp>
 #include <cudf/io/types.hpp>
 
-#include <gcylon/all2all/cudf_all_to_all.hpp>
-#include <cylon/join/join_config.hpp>
+#include <cylon/status.hpp>
+#include <cylon/ctx/cylon_context.hpp>
 
 namespace gcylon {
 

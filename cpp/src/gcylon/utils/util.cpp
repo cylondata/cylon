@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-#include <glog/logging.h>
 #include <gcylon/utils/util.hpp>
 
 #include <cudf/sorting.hpp>
@@ -31,16 +30,13 @@ bool equal(cudf::table_view & tv1, cudf::table_view & tv2) {
     auto sortedTv2 = sortedTable2->view();
 
     if (sortedTv1.num_columns() != sortedTv2.num_columns()){
-        LOG(INFO) << "number of columns do not match: " << sortedTv1.num_columns() << " != " << sortedTv2.num_columns();
         return false;
     } else if (sortedTv1.num_rows() != sortedTv2.num_rows()) {
-        LOG(INFO) << "number of columns do not match: " << sortedTv1.num_rows() << " != " << sortedTv2.num_rows();
         return false;
     }
 
     // whether the table columns have the same data type
     if (!cudf::have_same_types(tv1, tv2)) {
-        LOG(INFO) << "table column types do not match: ";
         return false;
     }
 

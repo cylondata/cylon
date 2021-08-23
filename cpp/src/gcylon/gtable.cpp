@@ -12,15 +12,6 @@
  * limitations under the License.
  */
 
-#include <glog/logging.h>
-#include <chrono>
-#include <thread>
-
-#include <cudf/partitioning.hpp>
-#include <cudf/concatenate.hpp>
-#include <cudf/join.hpp>
-#include <cudf/io/csv.hpp>
-
 #include <gcylon/gtable.hpp>
 #include <cylon/util/macros.hpp>
 
@@ -48,10 +39,10 @@ cudf::io::table_metadata & GTable::GetCudfMetadata() {
     return this->metadata_;
 }
 
-    /**
-     * sets cudf table metadata
-     * @return
-     */
+/**
+ * sets cudf table metadata
+ * @return
+ */
 void GTable::SetCudfMetadata(cudf::io::table_metadata & metadata) {
     metadata_ = metadata;
 }
@@ -60,7 +51,6 @@ cylon::Status GTable::FromCudfTable(std::shared_ptr<cylon::CylonContext> &ctx,
                                     std::unique_ptr<cudf::table> &table,
                                     std::shared_ptr<GTable> &tableOut) {
     if (false) { // todo: need to check column types
-        LOG(FATAL) << "Types not supported";
         return cylon::Status(cylon::Invalid, "This type not supported");
     }
     tableOut = std::make_shared<GTable>(ctx, table);
@@ -71,7 +61,6 @@ cylon::Status GTable::FromCudfTable(std::shared_ptr<cylon::CylonContext> &ctx,
                                     cudf::io::table_with_metadata &table,
                                     std::shared_ptr<GTable> &tableOut) {
     if (false) { // todo: need to check column types
-        LOG(FATAL) << "Types not supported";
         return cylon::Status(cylon::Invalid, "This type not supported");
     }
 

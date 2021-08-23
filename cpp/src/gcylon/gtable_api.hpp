@@ -20,7 +20,6 @@
 #include <cudf/io/types.hpp>
 
 #include <gcylon/gtable.hpp>
-#include <gcylon/all2all/cudf_all_to_all.hpp>
 #include <cylon/join/join_config.hpp>
 
 namespace gcylon {

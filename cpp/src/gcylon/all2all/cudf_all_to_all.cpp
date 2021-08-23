@@ -493,7 +493,6 @@ void CudfAllToAll::makeColumnBuffers(const cudf::column_view &cw,
     } else {
         dataBuffer = cw.data<uint8_t>();
         bufferSize = dataLength(cw);
-//    LOG(INFO) << myrank << "******* inserting column buffer with length: " << dataLen;
     }
     // insert the data buffer
     if(bufferSize < 0) {
@@ -615,7 +614,7 @@ std::shared_ptr<cudf::table> CudfAllToAll::constructTable(std::shared_ptr<Pendin
  * This function is called when a data is received
  */
 bool CudfAllToAll::onReceive(int source, std::shared_ptr<cylon::Buffer> buffer, int length) {
-//  LOG(INFO) << myrank << ",,,,, buffer received from the source: " << source << ", with length: " << length;
+
   if (length == 0) {
       return true;
   }
@@ -682,12 +681,6 @@ bool CudfAllToAll::onReceiveHeader(int source, int finished, int *buffer, int le
           pr->hasNullBuffer = buffer[3];
           pr->hasOffsetBuffer = buffer[4];
           pr->dataSize = buffer[5];
-//          LOG(INFO) << myrank << "----received a column header from the source: " << source
-//                  << ", columnIndex: " << pr->columnIndex << std::endl
-//                  << ", columnDataType: " << pr->columnDataType << std::endl
-//                  << ", hasNullBuffer: " << pr->hasNullBuffer << std::endl
-//                  << ", hasOffsetBuffer: " << pr->hasOffsetBuffer << std::endl
-//                  << ", dataSize: " << pr->dataSize << std::endl;
       }
   }
   return true;
@@ -698,7 +691,6 @@ bool CudfAllToAll::onReceiveHeader(int source, int finished, int *buffer, int le
  * @return
  */
 bool CudfAllToAll::onSendComplete(int target, const void *buffer, int length) {
-//  LOG(INFO) << myrank << ", SendComplete with length: " << length << " for the target: " << target;
   return true;
 }
 
