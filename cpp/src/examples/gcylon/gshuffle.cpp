@@ -60,6 +60,7 @@ int main(int argc, char *argv[]) {
 
     const int COLS = 4;
     std::string dataSize = argv[1];
+    const bool RESULT_TO_FILE = false;
 
     auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
     auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
@@ -103,13 +104,12 @@ int main(int argc, char *argv[]) {
     }
     cout << "myRank: "  << myRank << ", rows in shuffled df: "<< shuffledtv.num_rows() << endl;
 
-    std::ofstream srf;
-    srf.open("single_run_"s + to_string(myRank) + ".csv");
-    srf << myRank << "," << delay << endl;
-    srf.close();
-
-    //cout << "sleeping 50 seconds ...." << endl;
-    //std::this_thread::sleep_until(system_clock::now() + seconds(50));
+    if (RESULT_TO_FILE) {
+        std::ofstream srf;
+        srf.open("single_run_"s + to_string(myRank) + ".csv");
+        srf << myRank << "," << delay << endl;
+        srf.close();
+    }
 
     ctx->Finalize();
     return 0;
