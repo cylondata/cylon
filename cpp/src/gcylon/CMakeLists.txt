@@ -41,7 +41,9 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif ()
 
-set("GCYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
+if (NOT DEFINED GCYLON_SIMD_LEVEL)
+    set("GCYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
+endif ()
 
 # C++ standard
 # with cudf v21.08, at least c++ 17 required
