@@ -26,7 +26,7 @@ from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.cpp.table.table cimport table
 
 #
-cdef extern from "gcylon/gtable.hpp" namespace "gcylon":
+cdef extern from "gcylon/gtable_api.hpp" namespace "gcylon":
 
     CStatus Shuffle(const table_view & inputTview,
                     const vector[int] & columns_to_hash,
