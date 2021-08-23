@@ -16,7 +16,7 @@
 #include <cudf/table/table_view.hpp>
 
 #include <gcylon/utils/construct.hpp>
-#include <gcylon/gtable.hpp>
+#include <gcylon/gtable_api.hpp>
 #include <cylon/net/mpi/mpi_communicator.hpp>
 #include <examples/gcylon/print.hpp>
 

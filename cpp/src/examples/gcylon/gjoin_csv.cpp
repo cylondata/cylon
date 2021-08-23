@@ -17,6 +17,7 @@
 #include <cudf/io/csv.hpp>
 
 #include <gcylon/gtable.hpp>
+#include <gcylon/gtable_api.hpp>
 #include <cylon/net/mpi/mpi_communicator.hpp>
 
 using std::cout;

@@ -28,7 +28,7 @@
 #include <cudf/io/types.hpp>
 #include <cuda.h>
 
-#include <gcylon/gtable.hpp>
+#include <gcylon/gtable_api.hpp>
 #include <gcylon/utils/construct.hpp>
 #include <examples/gcylon/print.hpp>
 #include <cylon/net/mpi/mpi_communicator.hpp>

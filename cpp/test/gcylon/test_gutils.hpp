@@ -21,7 +21,7 @@
 #include <cudf/io/csv.hpp>
 #include <cudf/io/types.hpp>
 
-#include <gcylon/gtable.hpp>
+#include <gcylon/gtable_api.hpp>
 #include <gcylon/utils/util.hpp>
 
 // this is a toggle to generate test files. Set execute to 0 then, it will generate the expected
