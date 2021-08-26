@@ -46,6 +46,10 @@ namespace examples {
                                    std::shared_ptr<cylon::CylonContext> &ctx,
                                    std::shared_ptr<cylon::Table> &first_table,
                                    std::shared_ptr<cylon::Table> &second_table);
+
+  int create_in_memory_tables(uint64_t count, double dup,
+                              std::shared_ptr<cylon::CylonContext> &ctx,
+                              std::shared_ptr<cylon::Table> &first_table);
 }
 }
 #endif //CYLON_EXAMPLE_UTILS_HPP
