@@ -51,7 +51,7 @@ void writeCSV(cudf::table_view & tv, std::string filename, int rank, cudf::io::t
     cudf::io::write_csv(writerOptions);
 }
 
-bool PerformShuffleTest(string & inputFileName, string & outputFileName, int shuffleIndex, int rank) {
+bool PerformShuffleTest(std::string & inputFileName, std::string & outputFileName, int shuffleIndex, int rank) {
     cudf::io::table_with_metadata inputTable = readCSV(inputFileName, rank);
     auto inputTv = inputTable.tbl->view();
 
