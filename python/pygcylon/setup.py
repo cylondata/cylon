@@ -110,13 +110,7 @@ except Exception:
     nthreads = 0
 
 std_version = '-std=c++17'
-additional_compile_args = [std_version]
-
-extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
-extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
-extra_compile_args = extra_compile_args + extra_link_args + additional_compile_args
-#  extra_compile_args = additional_compile_args
-# extra_link_args.append("-Wl,-rpath")
+extra_compile_args = [std_version]
 
 if "CONDA_BUILD" in os.environ:
     conda_lib_dir = os.path.join(os.environ.get('BUILD_PREFIX'), "lib") + " "
@@ -156,7 +150,6 @@ extensions = [
         include_dirs=_include_dirs,
         language='c++',
         extra_compile_args=extra_compile_args,
-        extra_link_args=extra_link_args,
         libraries=libraries,
         library_dirs=library_directories,
     )
