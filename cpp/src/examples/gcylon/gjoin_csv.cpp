@@ -20,15 +20,13 @@
 #include <gcylon/gtable_api.hpp>
 #include <cylon/net/mpi/mpi_communicator.hpp>
 
-using std::cout;
-using std::endl;
 using std::string;
 using namespace gcylon;
 
 int main(int argc, char *argv[]) {
 
     if (argc != 3) {
-        std::cout << "You must specify two CSV input files.\n";
+        LOG(ERROR) << "You must specify two CSV input files.";
         return 1;
     }
 
@@ -101,7 +99,7 @@ int main(int argc, char *argv[]) {
         cudf::io::sink_info sinkInfo(outFile);
         cudf::io::csv_writer_options writerOptions = cudf::io::csv_writer_options::builder(sinkInfo, tv);
         cudf::io::write_csv(writerOptions);
-        cout << myRank << ", written joined table to the file: " << outFile << endl;
+        LOG(INFO) << myRank << ", written joined table to the file: " << outFile;
     }
 
     ctx->Finalize();

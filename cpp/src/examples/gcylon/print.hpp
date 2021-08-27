@@ -16,7 +16,6 @@
 #define GCYLON_EX_PRINT_H
 
 #include <iostream>
-#include <string>
 
 #include <cudf/column/column.hpp>
 #include <cudf/table/table.hpp>
@@ -26,26 +25,25 @@
 
 #include <gcylon/utils/util.hpp>
 
-using namespace std;
 using namespace gcylon;
 
 void printLongColumn(const cudf::column_view &cv, int64_t topN = 5, int64_t tailN = 5) {
     if(cv.size() < (topN + tailN)) {
-        cout << "!!!!!!!!!!!!!!!! number of elements in the column is less than (topN + tailN)";
+        std::cout << "!!!!!!!!!!!!!!!! number of elements in the column is less than (topN + tailN)";
         return;
     }
 
     int64_t * hdata = getColumnTop<int64_t>(cv, topN);
-    cout << "Top: " << topN << " elements of the column: " << endl;
+    std::cout << "Top: " << topN << " elements of the column: " << std::endl;
     for (int i = 0; i < topN; ++i) {
-        cout << i << ": " << hdata[i] << endl;
+        std::cout << i << ": " << hdata[i] << std::endl;
     }
 
     hdata = getColumnTail<int64_t>(cv, tailN);
-    cout << "Tail: " << tailN << " elements of the column: " << endl;
+    std::cout << "Tail: " << tailN << " elements of the column: " << std::endl;
     int64_t ci = cv.size() - tailN;
     for (int i = 0; i < tailN; ++i) {
-        cout << ci++ << ": " << hdata[i] << endl;
+        std::cout << ci++ << ": " << hdata[i] << std::endl;
     }
 }
 
@@ -56,21 +54,21 @@ void printWholeTable(cudf::table_view &tableView) {
         columnTops.push_back(getColumnTop<int64_t>(tableView.column(i), tableView.num_rows()));
     }
 
-    cout << "..................................................................................." << endl;
+    std::cout << "..................................................................................." << std::endl;
     // print header
     for (int i = 0; i < tableView.num_columns(); ++i) {
-        cout << "\t\t" << i;
+        std::cout << "\t\t" << i;
     }
-    cout << endl;
+    std::cout << std::endl;
 
     for (int i=0; i<tableView.num_rows(); i++) {
-        cout << i;
+        std::cout << i;
         for (auto columnTop: columnTops) {
-            cout << "\t\t" << columnTop[i];
+            std::cout << "\t\t" << columnTop[i];
         }
-        cout << endl;
+        std::cout << std::endl;
     }
-    cout << "..................................................................................." << endl;
+    std::cout << "..................................................................................." << std::endl;
 }
 
 void printLongTable(cudf::table_view &tableView, int64_t topN = 5, int64_t tailN = 5) {
@@ -80,23 +78,23 @@ void printLongTable(cudf::table_view &tableView, int64_t topN = 5, int64_t tailN
         columnTops.push_back(getColumnTop<int64_t>(tableView.column(i), topN));
     }
 
-    cout << "..................................................................................." << endl;
+    std::cout << "..................................................................................." << std::endl;
     // print table top
     // print header
     for (int i = 0; i < tableView.num_columns(); ++i) {
-        cout << "\t\t" << i;
+        std::cout << "\t\t" << i;
     }
-    cout << endl;
+    std::cout << std::endl;
 
     for (int i=0; i<topN; i++) {
-        cout << i;
+        std::cout << i;
         for (auto columnTop: columnTops) {
-            cout << "\t\t" << columnTop[i];
+            std::cout << "\t\t" << columnTop[i];
         }
-        cout << endl;
+        std::cout << std::endl;
     }
     // print table tail
-    cout << "......................................" << endl;
+    std::cout << "......................................" << std::endl;
     std::vector<int64_t *> columnTails{};
     for (int i = 0; i < tableView.num_columns(); ++i) {
         columnTails.push_back(getColumnTail<int64_t>(tableView.column(i), tailN));
@@ -104,12 +102,12 @@ void printLongTable(cudf::table_view &tableView, int64_t topN = 5, int64_t tailN
 
     int64_t ci = tableView.num_rows() - tailN;
     for (int i=0; i<tailN; i++) {
-        cout << ci++;
+        std::cout << ci++;
         for (auto columnTail: columnTails) {
-            cout << "\t\t" << columnTail[i];
+            std::cout << "\t\t" << columnTail[i];
         }
-        cout << endl;
+        std::cout << std::endl;
     }
-    cout << "..................................................................................." << endl;
+    std::cout << "..................................................................................." << std::endl;
 }
 #endif //GCYLON_EX_PRINT_H

@@ -33,7 +33,6 @@
 #include <examples/gcylon/print.hpp>
 #include <cylon/net/mpi/mpi_communicator.hpp>
 
-using namespace std;
 using namespace gcylon;
 using namespace std::chrono;
 
@@ -41,12 +40,13 @@ int64_t calculateRows(std::string dataSize, const int& cols, int workers) {
     char lastChar = dataSize[dataSize.size() - 1];
     char prevChar = dataSize[dataSize.size() - 2];
     int64_t sizeNum = stoi(dataSize.substr(0, dataSize.size() - 2));
-    if (prevChar == 'M' && lastChar == 'B')
+    if (prevChar == 'M' && lastChar == 'B') {
         sizeNum *= 1000000;
-    else if (prevChar == 'G' && lastChar == 'B')
+    } else if (prevChar == 'G' && lastChar == 'B') {
         sizeNum *= 1000000000;
-    else
+    } else {
         throw "data size has to end with either MB or GB!";
+    }
 
     return sizeNum / (cols * workers * 8);
 }
@@ -54,7 +54,7 @@ int64_t calculateRows(std::string dataSize, const int& cols, int workers) {
 int main(int argc, char *argv[]) {
 
     if (argc != 2) {
-        std::cout << "You must specify the total data size in MB or GB: 100MB, 2GB, etc.\n";
+        LOG(ERROR) << "You must specify the total data size in MB or GB: 100MB, 2GB, etc.";
         return 1;
     }
 
@@ -73,16 +73,16 @@ int main(int argc, char *argv[]) {
     cudaSetDevice(myRank % numberOfGPUs);
     int deviceInUse = -1;
     cudaGetDevice(&deviceInUse);
-    cout << "myRank: "  << myRank << ", device in use: "<< deviceInUse << ", number of GPUs: " << numberOfGPUs << endl;
+    LOG(INFO) << "myRank: "  << myRank << ", device in use: "<< deviceInUse << ", number of GPUs: " << numberOfGPUs;
 
     // calculate the number of rows
     int64_t rows = calculateRows(dataSize, COLS, ctx->GetWorldSize());
-    cout << "myRank: "  << myRank << ", initial dataframe. cols: "<< COLS << ", rows: " << rows << endl;
+    LOG(INFO) << "myRank: "  << myRank << ", initial dataframe. cols: "<< COLS << ", rows: " << rows;
 
     std::shared_ptr<cudf::table> tbl = constructTable(COLS, rows);
     auto tv = tbl->view();
     if (myRank == 0) {
-        cout << "myRank: "  << myRank << ", initial dataframe................................. " << endl;
+        LOG(INFO) << "myRank: "  << myRank << ", initial dataframe................................. ";
         printLongTable(tv);
     }
 
@@ -96,13 +96,13 @@ int main(int argc, char *argv[]) {
     duration<double, std::milli> diff = t2 - t1;
     long int delay = diff.count();
 
-    cout << "myRank: "  << myRank << ", duration: "<<  delay << endl;
+    LOG(INFO) << "myRank: "  << myRank << ", duration: "<<  delay;
     auto shuffledtv = shuffledTable->view();
     if (myRank == 0) {
-        cout << "myRank: "  << myRank << ", shuffled dataframe................................. " << endl;
+        LOG(INFO) << "myRank: "  << myRank << ", shuffled dataframe................................. ";
         printLongTable(shuffledtv);
     }
-    cout << "myRank: "  << myRank << ", rows in shuffled df: "<< shuffledtv.num_rows() << endl;
+    LOG(INFO) << "myRank: "  << myRank << ", rows in shuffled df: "<< shuffledtv.num_rows();
 
     if (RESULT_TO_FILE) {
         std::ofstream srf;
