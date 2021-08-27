@@ -81,5 +81,10 @@ java/src/main/native/include
 env/
 
 # Pycylon
-python/pycylon/**/*.cpp
-python/pycylon/**/*.h
+python/pycylon/pycylon/**/*.cpp
+python/pycylon/pycylon/**/*.h
+
+#pygcylon
+python/pygcylon/pygcylon/**/*.cpp
+python/pygcylon/pygcylon/**/*.h
+
