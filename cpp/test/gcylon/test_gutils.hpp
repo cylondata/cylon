@@ -64,7 +64,7 @@ bool PerformShuffleTest(std::string &input_filename, std::string &output_filenam
 #if EXECUTE
     cudf::io::table_with_metadata saved_shuffled_table = readCSV(output_filename, rank);
     auto saved_tv = saved_shuffled_table.tbl->view();
-    return equal(shuffled_tv, saved_tv);
+    return table_equal(shuffled_tv, saved_tv);
 #else
     writeCSV(shuffled_tv, output_filename, rank, input_table.metadata);
     return true;

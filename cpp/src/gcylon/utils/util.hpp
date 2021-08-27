@@ -83,7 +83,7 @@ T * getColumnTail(const cudf::column_view &cv, int64_t tailN = 5) {
  * @param tv2
  * @return
  */
-bool equal(cudf::table_view & tv1, cudf::table_view & tv2);
+bool table_equal(cudf::table_view & tv1, cudf::table_view & tv2);
 
 }
 

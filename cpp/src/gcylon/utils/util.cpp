@@ -22,7 +22,7 @@
 
 namespace gcylon {
 
-bool equal(cudf::table_view & tv1, cudf::table_view & tv2) {
+bool table_equal(cudf::table_view & tv1, cudf::table_view & tv2) {
     std::unique_ptr<cudf::table> sorted_table1 = cudf::sort(tv1);
     auto sorted_tv1 = sorted_table1->view();
 
