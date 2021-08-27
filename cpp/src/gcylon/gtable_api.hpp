@@ -27,27 +27,28 @@ namespace gcylon {
 /**
  * Shuffles a cudf::table with table_view
  * this is to be called from cython code and the other Shuffle with GTable
- * @param inputTable
+ * @param input_table
  * @param columns_to_hash
  * @param ctx
  * @param table_out
  * @return
  */
-cylon::Status Shuffle(const cudf::table_view & inputTable,
+cylon::Status Shuffle(const cudf::table_view &input_table,
                       const std::vector<int> &columns_to_hash,
                       std::shared_ptr<cylon::CylonContext> ctx,
                       std::unique_ptr<cudf::table> &table_out);
 
 /**
  * Similar to local join, but performs the join in a distributed fashion
- * @param left
- * @param right
+ * @param left_table
+ * @param right_table
  * @param join_config
- * @param output
+ * @param ctx
+ * @param table_out
  * @return <cylon::Status>
  */
-cylon::Status DistributedJoin(const cudf::table_view & leftTable,
-                              const cudf::table_view & rightTable,
+cylon::Status DistributedJoin(const cudf::table_view & left_table,
+                              const cudf::table_view & right_table,
                               const cylon::join::config::JoinConfig &join_config,
                               std::shared_ptr<cylon::CylonContext> ctx,
                               std::unique_ptr<cudf::table> &table_out);
@@ -60,7 +61,7 @@ cylon::Status DistributedJoin(const cudf::table_view & leftTable,
 * @param output
 * @return
 */
-cylon::Status Shuffle(std::shared_ptr<GTable> &inputTable,
+cylon::Status Shuffle(std::shared_ptr<GTable> &input_table,
                       const std::vector<int> &columns_to_hash,
                       std::shared_ptr<GTable> &outputTable);
 
@@ -80,10 +81,10 @@ cylon::Status DistributedJoin(std::shared_ptr<GTable> &left,
 /**
  * write the csv table to a file
  * @param table
- * @param outputFile
+ * @param output_file
  * @return
  */
-cylon::Status WriteToCsv(std::shared_ptr<GTable> &table, std::string outputFile);
+cylon::Status WriteToCsv(std::shared_ptr<GTable> &table, std::string output_file);
 
 }// end of namespace gcylon
 

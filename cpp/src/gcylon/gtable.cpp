@@ -43,28 +43,28 @@ cudf::io::table_metadata & GTable::GetCudfMetadata() {
  * sets cudf table metadata
  * @return
  */
-void GTable::SetCudfMetadata(cudf::io::table_metadata & metadata) {
+void GTable::SetCudfMetadata(cudf::io::table_metadata &metadata) {
     metadata_ = metadata;
 }
 
 cylon::Status GTable::FromCudfTable(std::shared_ptr<cylon::CylonContext> &ctx,
                                     std::unique_ptr<cudf::table> &table,
-                                    std::shared_ptr<GTable> &tableOut) {
+                                    std::shared_ptr<GTable> &table_out) {
     if (false) { // todo: need to check column types
         return cylon::Status(cylon::Invalid, "This type not supported");
     }
-    tableOut = std::make_shared<GTable>(ctx, table);
+    table_out = std::make_shared<GTable>(ctx, table);
     return cylon::Status(cylon::OK, "Loaded Successfully");
 }
 
 cylon::Status GTable::FromCudfTable(std::shared_ptr<cylon::CylonContext> &ctx,
                                     cudf::io::table_with_metadata &table,
-                                    std::shared_ptr<GTable> &tableOut) {
+                                    std::shared_ptr<GTable> &table_out) {
     if (false) { // todo: need to check column types
         return cylon::Status(cylon::Invalid, "This type not supported");
     }
 
-    tableOut = std::make_shared<GTable>(ctx, table.tbl, table.metadata);
+    table_out = std::make_shared<GTable>(ctx, table.tbl, table.metadata);
     return cylon::Status(cylon::OK, "Loaded Successfully");
 }
 

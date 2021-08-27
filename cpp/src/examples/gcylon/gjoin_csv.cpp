@@ -35,26 +35,26 @@ int main(int argc, char *argv[]) {
 
     auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
     auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
-    int myRank = ctx->GetRank();
+    int my_rank = ctx->GetRank();
 
-    LOG(INFO) << "myRank: "  << myRank << ", world size: " << ctx->GetWorldSize();
+    LOG(INFO) << "my_rank: "  << my_rank << ", world size: " << ctx->GetWorldSize();
 
-    int numberOfGPUs;
-    cudaGetDeviceCount(&numberOfGPUs);
-    LOG(INFO) << "myRank: "  << myRank << ", number of GPUs: " << numberOfGPUs;
+    int number_of_GPUs;
+    cudaGetDeviceCount(&number_of_GPUs);
+    LOG(INFO) << "my_rank: "  << my_rank << ", number of GPUs: " << number_of_GPUs;
 
     // set the gpu
-    cudaSetDevice(myRank % numberOfGPUs);
+    cudaSetDevice(my_rank % number_of_GPUs);
 
     // construct table1
     cudf::io::source_info si1(input_csv_file1);
     cudf::io::csv_reader_options options1 = cudf::io::csv_reader_options::builder(si1);
     cudf::io::table_with_metadata ctable1 = cudf::io::read_csv(options1);
-    LOG(INFO) << myRank << ", " << input_csv_file1 << ", number of columns: "
+    LOG(INFO) << my_rank << ", " << input_csv_file1 << ", number of columns: "
               << ctable1.tbl->num_columns() << ", number of rows: " << ctable1.tbl->num_rows();
 
-    std::shared_ptr<GTable> sourceGTable1;
-    cylon::Status status = GTable::FromCudfTable(ctx, ctable1.tbl, sourceGTable1);
+    std::shared_ptr<GTable> source_table1;
+    cylon::Status status = GTable::FromCudfTable(ctx, ctable1.tbl, source_table1);
     if (!status.is_ok()) {
         LOG(ERROR) << "GTable is not constructed successfully.";
         ctx->Finalize();
@@ -65,11 +65,11 @@ int main(int argc, char *argv[]) {
     cudf::io::source_info si2(input_csv_file2);
     cudf::io::csv_reader_options options2 = cudf::io::csv_reader_options::builder(si2);
     cudf::io::table_with_metadata ctable2 = cudf::io::read_csv(options2);
-    LOG(INFO) << myRank << ", " << input_csv_file2 << ", number of columns: "
+    LOG(INFO) << my_rank << ", " << input_csv_file2 << ", number of columns: "
               << ctable2.tbl->num_columns() << ", number of rows: " << ctable2.tbl->num_rows();
 
-    std::shared_ptr<GTable> sourceGTable2;
-    status = GTable::FromCudfTable(ctx, ctable2.tbl, sourceGTable2);
+    std::shared_ptr<GTable> source_table2;
+    status = GTable::FromCudfTable(ctx, ctable2.tbl, source_table2);
     if (!status.is_ok()) {
         LOG(ERROR) << "GTable is not constructed successfully.";
         ctx->Finalize();
@@ -77,29 +77,29 @@ int main(int argc, char *argv[]) {
     }
 
     // join the tables on the first columns
-    std::shared_ptr<GTable> joinedGTable;
+    std::shared_ptr<GTable> joined_table;
     auto join_config = cylon::join::config::JoinConfig(cylon::join::config::JoinType::FULL_OUTER,
                                                        0,
                                                        0,
                                                        cylon::join::config::JoinAlgorithm::HASH);
-    status = DistributedJoin(sourceGTable1, sourceGTable2, join_config, joinedGTable);
+    status = DistributedJoin(source_table1, source_table2, join_config, joined_table);
     if (!status.is_ok()) {
         LOG(ERROR) << "GTable is not joined successfully.";
         ctx->Finalize();
         return 1;
     }
-    cudf::table_view tv = joinedGTable->GetCudfTable()->view();
+    cudf::table_view tv = joined_table->GetCudfTable()->view();
 
     // write the results to a file
     if (tv.num_rows() == 0) {
-        LOG(INFO) << myRank << ": joined table is empty";
+        LOG(INFO) << my_rank << ": joined table is empty";
     } else {
-        LOG(INFO) << myRank << ", Joined table: number of columns: " << tv.num_columns() << ", number of rows: " << tv.num_rows();
-        string outFile = string("joined") + std::to_string(myRank) + ".csv";
+        LOG(INFO) << my_rank << ", Joined table: number of columns: " << tv.num_columns() << ", number of rows: " << tv.num_rows();
+        string outFile = string("joined") + std::to_string(my_rank) + ".csv";
         cudf::io::sink_info sinkInfo(outFile);
         cudf::io::csv_writer_options writerOptions = cudf::io::csv_writer_options::builder(sinkInfo, tv);
         cudf::io::write_csv(writerOptions);
-        LOG(INFO) << myRank << ", written joined table to the file: " << outFile;
+        LOG(INFO) << my_rank << ", written joined table to the file: " << outFile;
     }
 
     ctx->Finalize();

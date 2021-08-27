@@ -29,9 +29,9 @@ namespace gcylon {
  */
 template <typename T>
 inline T getScalar(const uint8_t * buff) {
-    uint8_t *hostArray= new uint8_t[sizeof(T)];
-    cudaMemcpy(hostArray, buff, sizeof(T), cudaMemcpyDeviceToHost);
-    T * hdata = (T *) hostArray;
+    uint8_t *host_array= new uint8_t[sizeof(T)];
+    cudaMemcpy(host_array, buff, sizeof(T), cudaMemcpyDeviceToHost);
+    T * hdata = (T *) host_array;
     return hdata[0];
 }
 
@@ -48,9 +48,9 @@ T * getColumnPart(const cudf::column_view &cv, int64_t start, int64_t end) {
     int64_t size = end - start;
     // data type size
     int dts = sizeof(T);
-    uint8_t * hostArray = new uint8_t[size * dts];
-    cudaMemcpy(hostArray, cv.data<uint8_t>() + start * dts, size * dts, cudaMemcpyDeviceToHost);
-    return (T *) hostArray;
+    uint8_t * host_array = new uint8_t[size * dts];
+    cudaMemcpy(host_array, cv.data<uint8_t>() + start * dts, size * dts, cudaMemcpyDeviceToHost);
+    return (T *) host_array;
 }
 
 /**

@@ -33,7 +33,7 @@ using namespace gcylon;
 namespace gcylon {
 namespace test {
 
-cudf::io::table_with_metadata readCSV(std::string & filename, int rank) {
+cudf::io::table_with_metadata readCSV(std::string &filename, int rank) {
     cudf::io::source_info si(filename);
     cudf::io::csv_reader_options options = cudf::io::csv_reader_options::builder(si);
     cudf::io::table_with_metadata ctable = cudf::io::read_csv(options);
@@ -42,31 +42,31 @@ cudf::io::table_with_metadata readCSV(std::string & filename, int rank) {
     return ctable;
 }
 
-void writeCSV(cudf::table_view & tv, std::string filename, int rank, cudf::io::table_metadata &tableMetadata) {
+void writeCSV(cudf::table_view &tv, std::string filename, int rank, cudf::io::table_metadata &table_metadata) {
     cudf::io::sink_info sinkInfo(filename);
-    cudf::io::csv_writer_options writerOptions =
-            cudf::io::csv_writer_options::builder(sinkInfo, tv).metadata(&tableMetadata);
+    cudf::io::csv_writer_options writer_options =
+            cudf::io::csv_writer_options::builder(sinkInfo, tv).metadata(&table_metadata);
     LOG(INFO) << "myRank: "  << rank << ", output file: " << filename
         << ", cols: "<< tv.num_columns() << ", rows: " << tv.num_rows();
-    cudf::io::write_csv(writerOptions);
+    cudf::io::write_csv(writer_options);
 }
 
-bool PerformShuffleTest(std::string & inputFileName, std::string & outputFileName, int shuffleIndex, int rank) {
-    cudf::io::table_with_metadata inputTable = readCSV(inputFileName, rank);
-    auto inputTv = inputTable.tbl->view();
+bool PerformShuffleTest(std::string &input_filename, std::string &output_filename, int shuffle_index, int rank) {
+    cudf::io::table_with_metadata input_table = readCSV(input_filename, rank);
+    auto input_tv = input_table.tbl->view();
 
     // shuffle the table
-    std::vector<cudf::size_type> columns_to_hash = {shuffleIndex};
-    std::unique_ptr<cudf::table> shuffledTable;
-    Shuffle(inputTv, columns_to_hash, ctx, shuffledTable);
-    auto shuffledtv = shuffledTable->view();
+    std::vector<cudf::size_type> columns_to_hash = {shuffle_index};
+    std::unique_ptr<cudf::table> shuffled_table;
+    Shuffle(input_tv, columns_to_hash, ctx, shuffled_table);
+    auto shuffled_tv = shuffled_table->view();
 
 #if EXECUTE
-    cudf::io::table_with_metadata savedShuffledTable = readCSV(outputFileName, rank);
-    auto savedTv = savedShuffledTable.tbl->view();
-    return equal(shuffledtv, savedTv);
+    cudf::io::table_with_metadata saved_shuffled_table = readCSV(output_filename, rank);
+    auto saved_tv = saved_shuffled_table.tbl->view();
+    return equal(shuffled_tv, saved_tv);
 #else
-    writeCSV(shuffledtv, outputFileName, rank, inputTable.metadata);
+    writeCSV(shuffled_tv, output_filename, rank, input_table.metadata);
     return true;
 #endif
 }

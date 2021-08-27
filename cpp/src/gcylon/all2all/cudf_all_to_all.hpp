@@ -31,12 +31,12 @@ cudf::size_type dataLength(cudf::column_view const& cw);
 
 class CudfBuffer : public cylon::Buffer {
 public:
-    CudfBuffer(std::shared_ptr<rmm::device_buffer> rmmBuf);
+    CudfBuffer(std::shared_ptr<rmm::device_buffer> rmm_buf);
     int64_t GetLength() override;
     uint8_t * GetByteBuffer() override;
     std::shared_ptr<rmm::device_buffer> getBuf() const;
 private:
-    std::shared_ptr<rmm::device_buffer> rmmBuf;
+    std::shared_ptr<rmm::device_buffer> rmm_buf;
 };
 
 class CudfAllocator : public cylon::Allocator {
@@ -48,23 +48,23 @@ public:
 class PendingBuffer {
 public:
     PendingBuffer(const uint8_t *buffer,
-                  int bufferSize,
+                  int buffer_size,
                   int target,
                   std::unique_ptr<int []> headers = nullptr,
-                  int headersLength = -1);
+                  int headers_length = -1);
 
     PendingBuffer(int target,
                   std::unique_ptr<int []> headers,
-                  int headersLength);
+                  int headers_length);
 
     bool sendBuffer(std::shared_ptr<cylon::AllToAll> all);
 
 private:
     const uint8_t *buffer;
-    int bufferSize;
+    int buffer_size;
     int target;
     std::unique_ptr<int []> headers;
-    int headersLength;
+    int headers_length;
 };
 
 /**
@@ -72,19 +72,19 @@ private:
  */
 class PartColumnView {
 public:
-    PartColumnView(const cudf::column_view &cv, const std::vector<cudf::size_type> &partIndexes);
+    PartColumnView(const cudf::column_view &cv, const std::vector<cudf::size_type> &part_indexes);
 
-    const uint8_t * getDataBuffer(int partIndex);
-    int getDataBufferSize(int partIndex);
+    const uint8_t * getDataBuffer(int part_index);
+    int getDataBufferSize(int part_index);
 
-    const uint8_t * getOffsetBuffer(int partIndex);
-    int getOffsetBufferSize(int partIndex);
+    const uint8_t * getOffsetBuffer(int part_index);
+    int getOffsetBufferSize(int part_index);
 
-    const uint8_t * getMaskBuffer(int partIndex);
-    int getMaskBufferSize(int partIndex);
+    const uint8_t * getMaskBuffer(int part_index);
+    int getMaskBufferSize(int part_index);
 
-    inline int numberOfElements(int partIndex) {
-        return partIndexes[partIndex + 1] - partIndexes[partIndex];
+    inline int numberOfElements(int part_index) {
+        return part_indexes[part_index + 1] - part_indexes[part_index];
     }
 
     inline int getColumnTypeId() {
@@ -100,15 +100,15 @@ private:
     const cudf::column_view &cv;
     std::unique_ptr<cudf::strings_column_view> scv;
     // partition indices, last one shows the limit of the previous one
-    // there are partIndexes.size()-1 partitions
-    const std::vector<cudf::size_type> & partIndexes;
+    // there are part_indexes.size()-1 partitions
+    const std::vector<cudf::size_type> & part_indexes;
 
     // partition char offsets on a single char array for the column
     // last index shows the end of the last string
-    std::vector<cudf::size_type> partCharOffsets;
+    std::vector<cudf::size_type> part_char_offsets;
 
     // this is to prevent std::shared_ptr<rmm::device_buffer> to be deleted before they are sent out
-    std::unordered_map<long unsigned int, rmm::device_buffer> maskBuffers{};
+    std::unordered_map<long unsigned int, rmm::device_buffer> mask_buffers{};
 };
 
 /**
@@ -117,20 +117,20 @@ private:
  */
 class PartTableView {
 public:
-    PartTableView(cudf::table_view &tv, std::vector<cudf::size_type> &partIndexes);
+    PartTableView(cudf::table_view &tv, std::vector<cudf::size_type> &part_indexes);
 
-    std::shared_ptr<PartColumnView> column(int columnIndex);
+    std::shared_ptr<PartColumnView> column(int column_index);
 
     inline int numberOfColumns() {
         return tv.num_columns();
     }
 
-    inline int numberOfRows(int partIndex) {
-        return partIndexes[partIndex + 1] - partIndexes[partIndex];
+    inline int numberOfRows(int part_index) {
+        return part_indexes[part_index + 1] - part_indexes[part_index];
     }
 
     inline int numberOfParts() {
-        return partIndexes.size() - 1;
+        return part_indexes.size() - 1;
     }
 
 private:
@@ -141,8 +141,8 @@ private:
     std::unordered_map<int, std::shared_ptr<PartColumnView>> columns{};
 
     // partition indices, last one shows the limit of the previous one
-    // there are partIndexes.size()-1 partitions
-    std::vector<cudf::size_type> & partIndexes;
+    // there are part_indexes.size()-1 partitions
+    std::vector<cudf::size_type> & part_indexes;
 };
 
 struct PendingReceives {
@@ -150,31 +150,31 @@ struct PendingReceives {
     // currently received columns
     std::unordered_map<int, std::unique_ptr<cudf::column>> columns;
     // number of columns in the table
-    int numberOfColumns{-1};
+    int number_of_columns{-1};
     // the reference
     int reference{-1};
 
     // column variables
     // data type of the column
-    int columnDataType{-1};
+    int column_data_type{-1};
     // the current data column index
-    int columnIndex{-1};
+    int column_index{-1};
     // whether the current column has the null buffer
-    bool hasNullBuffer{false};
+    bool has_null_buffer{false};
     // whether the current column has the offset buffer
-    bool hasOffsetBuffer{false};
+    bool has_offset_buffer{false};
     // number of data elements
-    int dataSize{0};
+    int data_size{0};
     // length of the data buffer
-    int dataBufferLen{0};
+    int data_buffer_len{0};
 
 
     // data buffer for the current column
-    std::shared_ptr<rmm::device_buffer> dataBuffer;
+    std::shared_ptr<rmm::device_buffer> data_buffer;
     // null buffer for the current column
-    std::shared_ptr<rmm::device_buffer> nullBuffer;
+    std::shared_ptr<rmm::device_buffer> null_buffer;
     // offsets buffer for the current column
-    std::shared_ptr<rmm::device_buffer> offsetsBuffer;
+    std::shared_ptr<rmm::device_buffer> offsets_buffer;
 };
 
 /**
@@ -192,7 +192,7 @@ public:
   CudfAllToAll(std::shared_ptr<cylon::CylonContext> ctx,
                const std::vector<int> &sources,
                const std::vector<int> &targets,
-               int edgeId,
+               int edge_id,
                CudfCallback callback);
 
   /**
@@ -260,34 +260,34 @@ public:
   bool onSendComplete(int target, const void *buffer, int length) override;
 
 private:
-    std::unique_ptr<int []> makeTableHeader(int headersLength, int ref, int numberOfColumns, int numberOfRows);
+    std::unique_ptr<int []> makeTableHeader(int headers_length, int ref, int number_of_columns, int number_of_rows);
 
     void makePartTableBuffers(int target,
                               int ref,
-                              std::queue<std::shared_ptr<PendingBuffer>> &bufferQueue);
+                              std::queue<std::shared_ptr<PendingBuffer>> &buffer_queue);
 
     void makeTableBuffers(std::shared_ptr<cudf::table_view> tview,
                           int target,
                           int ref,
-                          std::queue<std::shared_ptr<PendingBuffer>> &bufferQueue);
+                          std::queue<std::shared_ptr<PendingBuffer>> &buffer_queue);
 
-    std::unique_ptr<int []> makeColumnHeader(int headersLength,
-                                             int columnIndex,
+    std::unique_ptr<int []> makeColumnHeader(int headers_length,
+                                             int column_index,
                                              int typeId,
-                                             bool hasMask,
-                                             bool hasOffset,
-                                             int numberOfElements);
+                                             bool has_mask,
+                                             bool has_offset,
+                                             int number_of_elements);
 
     void makePartColumnBuffers(std::shared_ptr<PartColumnView> pcv,
-                           int partIndex,
-                           int columnIndex,
+                           int part_index,
+                           int column_index,
                            int target,
-                           std::queue<std::shared_ptr<PendingBuffer>> &bufferQueue);
+                           std::queue<std::shared_ptr<PendingBuffer>> &buffer_queue);
 
     void makeColumnBuffers(const cudf::column_view &cw,
-                           int columnIndex,
+                           int column_index,
                            int target,
-                           std::queue<std::shared_ptr<PendingBuffer>> &bufferQueue);
+                           std::queue<std::shared_ptr<PendingBuffer>> &buffer_queue);
 
     void constructColumn(std::shared_ptr<PendingReceives> pr);
 
@@ -296,7 +296,7 @@ private:
     /**
      * worker rank
      */
-    int myrank;
+    int rank_;
 
     /**
      * The sources
@@ -316,7 +316,7 @@ private:
     /**
      * we keep a queue for each target
      */
-    std::unordered_map<int, std::queue<std::shared_ptr<PendingBuffer>>> sendQueues{};
+    std::unordered_map<int, std::queue<std::shared_ptr<PendingBuffer>>> send_queues_{};
 
     /**
      * Keep track of the receives
@@ -336,12 +336,12 @@ private:
     /**
      * We have received the finish
      */
-    bool finished = false;
+    bool finished_ = false;
 
     bool completed_ = false;
-    bool finishCalled_ = false;
+    bool finish_called_ = false;
 
-    std::unique_ptr<PartTableView> ptview;
+    std::unique_ptr<PartTableView> ptview_;
 };
 
 }// end of namespace gcylon

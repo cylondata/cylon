@@ -23,15 +23,15 @@
 namespace gcylon {
 
 bool equal(cudf::table_view & tv1, cudf::table_view & tv2) {
-    std::unique_ptr<cudf::table> sortedTable1 = cudf::sort(tv1);
-    auto sortedTv1 = sortedTable1->view();
+    std::unique_ptr<cudf::table> sorted_table1 = cudf::sort(tv1);
+    auto sorted_tv1 = sorted_table1->view();
 
-    std::unique_ptr<cudf::table> sortedTable2 = cudf::sort(tv2);
-    auto sortedTv2 = sortedTable2->view();
+    std::unique_ptr<cudf::table> sorted_table2 = cudf::sort(tv2);
+    auto sorted_tv2 = sorted_table2->view();
 
-    if (sortedTv1.num_columns() != sortedTv2.num_columns()){
+    if (sorted_tv1.num_columns() != sorted_tv2.num_columns()){
         return false;
-    } else if (sortedTv1.num_rows() != sortedTv2.num_rows()) {
+    } else if (sorted_tv1.num_rows() != sorted_tv2.num_rows()) {
         return false;
     }
 
@@ -41,17 +41,17 @@ bool equal(cudf::table_view & tv1, cudf::table_view & tv2) {
     }
 
     std::unique_ptr<cudf::aggregation> agg = cudf::make_all_aggregation();
-    cudf::data_type boolType = cudf::data_type(cudf::type_id::BOOL8);
+    cudf::data_type bool_type = cudf::data_type(cudf::type_id::BOOL8);
 
     // compare all elements in the table
-    for (int i = 0; i < sortedTv1.num_columns(); ++i) {
-        std::unique_ptr<cudf::column> resultColumn = cudf::binary_operation(sortedTv1.column(i),
-                                                                            sortedTv2.column(i),
+    for (int i = 0; i < sorted_tv1.num_columns(); ++i) {
+        std::unique_ptr<cudf::column> result_column = cudf::binary_operation(sorted_tv1.column(i),
+                                                                            sorted_tv2.column(i),
                                                                             cudf::binary_operator::EQUAL,
-                                                                            boolType);
-        std::unique_ptr<cudf::scalar> all = cudf::reduce(resultColumn->view(), agg, boolType);
-        std::unique_ptr<cudf::numeric_scalar<bool>> allNumeric(static_cast<cudf::numeric_scalar<bool> *>(all.release()));
-        if (!allNumeric->value())
+                                                                            bool_type);
+        std::unique_ptr<cudf::scalar> all = cudf::reduce(result_column->view(), agg, bool_type);
+        std::unique_ptr<cudf::numeric_scalar<bool>> all_numeric(static_cast<cudf::numeric_scalar<bool> *>(all.release()));
+        if (!all_numeric->value())
             return false;
     }
 

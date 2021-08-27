@@ -44,7 +44,7 @@ public:
      */
     static cylon::Status FromCudfTable(std::shared_ptr <cylon::CylonContext> &ctx,
                                        std::unique_ptr <cudf::table> &table,
-                                       std::shared_ptr <GTable> &tableOut);
+                                       std::shared_ptr <GTable> &table_out);
 
     /**
      * Create a table from a cudf table_with_metadata,
@@ -53,7 +53,7 @@ public:
      */
     static cylon::Status FromCudfTable(std::shared_ptr<cylon::CylonContext> &ctx,
                                         cudf::io::table_with_metadata &table,
-                                        std::shared_ptr<GTable> &tableOut);
+                                        std::shared_ptr<GTable> &table_out);
     /**
      * destructor
      */
@@ -81,7 +81,7 @@ public:
      * sets cudf table metadata
      * @return
      */
-    void SetCudfMetadata(cudf::io::table_metadata & metadata);
+    void SetCudfMetadata(cudf::io::table_metadata &metadata);
 
     //todo: need to add GetTableWithMetadata
 

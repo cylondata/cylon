@@ -25,26 +25,26 @@ using namespace std;
 /**
  * construct a long columns with sequentailly increasing values
  * @param size
- * @param valueStart
+ * @param value_start
  * @return
  */
-std::unique_ptr<cudf::column> constructLongColumn(int64_t size, int64_t valueStart = 0) {
-    int64_t * cpuBuf = new int64_t[size];
+std::unique_ptr<cudf::column> constructLongColumn(int64_t size, int64_t value_start = 0) {
+    int64_t * cpu_buf = new int64_t[size];
     for(int64_t i=0; i < size; i++)
-        cpuBuf[i] = valueStart++;
+        cpu_buf[i] = value_start++;
 
     // allocate byte buffer on gpu
-    rmm::device_buffer rmmBuf(size * 8, rmm::cuda_stream_default);
+    rmm::device_buffer rmm_buf(size * 8, rmm::cuda_stream_default);
     // copy array to gpu
-    auto result = cudaMemcpy(rmmBuf.data(), cpuBuf, size * 8, cudaMemcpyHostToDevice);
+    auto result = cudaMemcpy(rmm_buf.data(), cpu_buf, size * 8, cudaMemcpyHostToDevice);
     if (result != cudaSuccess) {
         cout << cudaGetErrorString(result) << endl;
         return nullptr;
     }
 
-    delete [] cpuBuf;
+    delete [] cpu_buf;
     cudf::data_type dt(cudf::type_id::INT64);
-    auto col = std::make_unique<cudf::column>(dt, size, std::move(rmmBuf));
+    auto col = std::make_unique<cudf::column>(dt, size, std::move(rmm_buf));
     return col;
 }
 
@@ -52,20 +52,20 @@ std::unique_ptr<cudf::column> constructLongColumn(int64_t size, int64_t valueSta
  * construct a cudf Table with int64_t data
  * @param columns number of columns in the table
  * @param rows number of rows in the table
- * @param valueStart start value of the first columns
+ * @param value_start start value of the first columns
  * @param cont continue to increase values sequentially when moving from one column to another
  * @return
  */
-std::shared_ptr<cudf::table> constructTable(int columns, int64_t rows, int64_t valueStart = 0, bool cont=false) {
+std::shared_ptr<cudf::table> constructTable(int columns, int64_t rows, int64_t value_start = 0, bool cont=false) {
 
-    std::vector<std::unique_ptr<cudf::column>> columnVector{};
+    std::vector<std::unique_ptr<cudf::column>> column_vector{};
     for (int i=0; i < columns; i++) {
-        std::unique_ptr<cudf::column> col = constructLongColumn(rows, valueStart);
-        columnVector.push_back(std::move(col));
+        std::unique_ptr<cudf::column> col = constructLongColumn(rows, value_start);
+        column_vector.push_back(std::move(col));
         if(cont)
-            valueStart += rows;
+            value_start += rows;
     }
 
-    return std::make_shared<cudf::table>(std::move(columnVector));
+    return std::make_shared<cudf::table>(std::move(column_vector));
 }
 #endif //GCYLON_EX_CONSTRUCT_H

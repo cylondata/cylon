@@ -47,23 +47,23 @@ void printLongColumn(const cudf::column_view &cv, int64_t topN = 5, int64_t tail
     }
 }
 
-void printWholeTable(cudf::table_view &tableView) {
+void printWholeTable(cudf::table_view &tv) {
     // get column tops
-    std::vector<int64_t *> columnTops{};
-    for (int i = 0; i < tableView.num_columns(); ++i) {
-        columnTops.push_back(getColumnTop<int64_t>(tableView.column(i), tableView.num_rows()));
+    std::vector<int64_t *> column_tops{};
+    for (int i = 0; i < tv.num_columns(); ++i) {
+        column_tops.push_back(getColumnTop<int64_t>(tv.column(i), tv.num_rows()));
     }
 
     std::cout << "..................................................................................." << std::endl;
     // print header
-    for (int i = 0; i < tableView.num_columns(); ++i) {
+    for (int i = 0; i < tv.num_columns(); ++i) {
         std::cout << "\t\t" << i;
     }
     std::cout << std::endl;
 
-    for (int i=0; i<tableView.num_rows(); i++) {
+    for (int i=0; i<tv.num_rows(); i++) {
         std::cout << i;
-        for (auto columnTop: columnTops) {
+        for (auto columnTop: column_tops) {
             std::cout << "\t\t" << columnTop[i];
         }
         std::cout << std::endl;
@@ -71,39 +71,39 @@ void printWholeTable(cudf::table_view &tableView) {
     std::cout << "..................................................................................." << std::endl;
 }
 
-void printLongTable(cudf::table_view &tableView, int64_t topN = 5, int64_t tailN = 5) {
+void printLongTable(cudf::table_view &tv, int64_t topN = 5, int64_t tailN = 5) {
     // get column tops
-    std::vector<int64_t *> columnTops{};
-    for (int i = 0; i < tableView.num_columns(); ++i) {
-        columnTops.push_back(getColumnTop<int64_t>(tableView.column(i), topN));
+    std::vector<int64_t *> column_tops{};
+    for (int i = 0; i < tv.num_columns(); ++i) {
+        column_tops.push_back(getColumnTop<int64_t>(tv.column(i), topN));
     }
 
     std::cout << "..................................................................................." << std::endl;
     // print table top
     // print header
-    for (int i = 0; i < tableView.num_columns(); ++i) {
+    for (int i = 0; i < tv.num_columns(); ++i) {
         std::cout << "\t\t" << i;
     }
     std::cout << std::endl;
 
     for (int i=0; i<topN; i++) {
         std::cout << i;
-        for (auto columnTop: columnTops) {
+        for (auto columnTop: column_tops) {
             std::cout << "\t\t" << columnTop[i];
         }
         std::cout << std::endl;
     }
     // print table tail
     std::cout << "......................................" << std::endl;
-    std::vector<int64_t *> columnTails{};
-    for (int i = 0; i < tableView.num_columns(); ++i) {
-        columnTails.push_back(getColumnTail<int64_t>(tableView.column(i), tailN));
+    std::vector<int64_t *> column_tails{};
+    for (int i = 0; i < tv.num_columns(); ++i) {
+        column_tails.push_back(getColumnTail<int64_t>(tv.column(i), tailN));
     }
 
-    int64_t ci = tableView.num_rows() - tailN;
+    int64_t ci = tv.num_rows() - tailN;
     for (int i=0; i<tailN; i++) {
         std::cout << ci++;
-        for (auto columnTail: columnTails) {
+        for (auto columnTail: column_tails) {
             std::cout << "\t\t" << columnTail[i];
         }
         std::cout << std::endl;

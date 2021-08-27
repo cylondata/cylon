@@ -37,18 +37,18 @@ using namespace gcylon;
 using namespace std::chrono;
 
 int64_t calculateRows(std::string dataSize, const int& cols, int workers) {
-    char lastChar = dataSize[dataSize.size() - 1];
-    char prevChar = dataSize[dataSize.size() - 2];
-    int64_t sizeNum = stoi(dataSize.substr(0, dataSize.size() - 2));
-    if (prevChar == 'M' && lastChar == 'B') {
-        sizeNum *= 1000000;
-    } else if (prevChar == 'G' && lastChar == 'B') {
-        sizeNum *= 1000000000;
+    char last_char = dataSize[dataSize.size() - 1];
+    char prev_char = dataSize[dataSize.size() - 2];
+    int64_t size_num = stoi(dataSize.substr(0, dataSize.size() - 2));
+    if (prev_char == 'M' && last_char == 'B') {
+        size_num *= 1000000;
+    } else if (prev_char == 'G' && last_char == 'B') {
+        size_num *= 1000000000;
     } else {
         throw "data size has to end with either MB or GB!";
     }
 
-    return sizeNum / (cols * workers * 8);
+    return size_num / (cols * workers * 8);
 }
 
 int main(int argc, char *argv[]) {
@@ -64,50 +64,50 @@ int main(int argc, char *argv[]) {
 
     auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
     auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
-    int myRank = ctx->GetRank();
+    int my_rank = ctx->GetRank();
 
-    int numberOfGPUs;
-    cudaGetDeviceCount(&numberOfGPUs);
+    int number_of_GPUs;
+    cudaGetDeviceCount(&number_of_GPUs);
 
     // set the gpu
-    cudaSetDevice(myRank % numberOfGPUs);
+    cudaSetDevice(my_rank % number_of_GPUs);
     int deviceInUse = -1;
     cudaGetDevice(&deviceInUse);
-    LOG(INFO) << "myRank: "  << myRank << ", device in use: "<< deviceInUse << ", number of GPUs: " << numberOfGPUs;
+    LOG(INFO) << "my_rank: "  << my_rank << ", device in use: "<< deviceInUse << ", number of GPUs: " << number_of_GPUs;
 
     // calculate the number of rows
     int64_t rows = calculateRows(dataSize, COLS, ctx->GetWorldSize());
-    LOG(INFO) << "myRank: "  << myRank << ", initial dataframe. cols: "<< COLS << ", rows: " << rows;
+    LOG(INFO) << "my_rank: "  << my_rank << ", initial dataframe. cols: "<< COLS << ", rows: " << rows;
 
     std::shared_ptr<cudf::table> tbl = constructTable(COLS, rows);
     auto tv = tbl->view();
-    if (myRank == 0) {
-        LOG(INFO) << "myRank: "  << myRank << ", initial dataframe................................. ";
+    if (my_rank == 0) {
+        LOG(INFO) << "my_rank: "  << my_rank << ", initial dataframe................................. ";
         printLongTable(tv);
     }
 
     // shuffle the table
     std::vector<cudf::size_type> columns_to_hash = {0};
-    std::unique_ptr<cudf::table> shuffledTable;
+    std::unique_ptr<cudf::table> shuffled_table;
 
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    Shuffle(tv, columns_to_hash, ctx, shuffledTable);
+    Shuffle(tv, columns_to_hash, ctx, shuffled_table);
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     duration<double, std::milli> diff = t2 - t1;
     long int delay = diff.count();
 
-    LOG(INFO) << "myRank: "  << myRank << ", duration: "<<  delay;
-    auto shuffledtv = shuffledTable->view();
-    if (myRank == 0) {
-        LOG(INFO) << "myRank: "  << myRank << ", shuffled dataframe................................. ";
-        printLongTable(shuffledtv);
+    LOG(INFO) << "my_rank: "  << my_rank << ", duration: "<<  delay;
+    auto shuffled_tv = shuffled_table->view();
+    if (my_rank == 0) {
+        LOG(INFO) << "my_rank: "  << my_rank << ", shuffled dataframe................................. ";
+        printLongTable(shuffled_tv);
     }
-    LOG(INFO) << "myRank: "  << myRank << ", rows in shuffled df: "<< shuffledtv.num_rows();
+    LOG(INFO) << "my_rank: "  << my_rank << ", rows in shuffled df: "<< shuffled_tv.num_rows();
 
     if (RESULT_TO_FILE) {
         std::ofstream srf;
-        srf.open("single_run_"s + to_string(myRank) + ".csv");
-        srf << myRank << "," << delay << endl;
+        srf.open("single_run_"s + to_string(my_rank) + ".csv");
+        srf << my_rank << "," << delay << endl;
         srf.close();
     }
 

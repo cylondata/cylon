@@ -31,21 +31,21 @@ namespace gcylon {
  * @param tv
  * @return
  */
-std::unique_ptr<cudf::table> createEmptyTable(const cudf::table_view & tv) {
+std::unique_ptr<cudf::table> createEmptyTable(const cudf::table_view &tv) {
 
-    std::vector<std::unique_ptr<cudf::column>> columnVector{};
+    std::vector<std::unique_ptr<cudf::column>> column_vector{};
     for (int i=0; i < tv.num_columns(); i++) {
         auto column = std::make_unique<cudf::column>(tv.column(i).type(),
                                                      0,
                                                      rmm::device_buffer{0, rmm::cuda_stream_default});
-        columnVector.push_back(std::move(column));
+        column_vector.push_back(std::move(column));
     }
 
-    return std::make_unique<cudf::table>(std::move(columnVector));
+    return std::make_unique<cudf::table>(std::move(column_vector));
 }
 
 cylon::Status all_to_all_cudf_table(std::shared_ptr<cylon::CylonContext> ctx,
-                                    std::unique_ptr<cudf::table> & ptable,
+                                    std::unique_ptr<cudf::table> &ptable,
                                     std::vector<cudf::size_type> &offsets,
                                     std::unique_ptr<cudf::table> &table_out) {
 
@@ -91,13 +91,13 @@ cylon::Status all_to_all_cudf_table(std::shared_ptr<cylon::CylonContext> ctx,
     return cylon::Status::OK();
 }
 
-cylon::Status Shuffle(const cudf::table_view & inputTable,
+cylon::Status Shuffle(const cudf::table_view &input_table,
                       const std::vector<int> &columns_to_hash,
                       std::shared_ptr<cylon::CylonContext> ctx,
                       std::unique_ptr<cudf::table> &table_out) {
 
     std::pair<std::unique_ptr<cudf::table>, std::vector<cudf::size_type>> partitioned
-            = cudf::hash_partition(inputTable, columns_to_hash, ctx->GetWorldSize());
+            = cudf::hash_partition(input_table, columns_to_hash, ctx->GetWorldSize());
 
     RETURN_CYLON_STATUS_IF_FAILED(
             all_to_all_cudf_table(ctx, partitioned.first, partitioned.second, table_out));
@@ -105,21 +105,21 @@ cylon::Status Shuffle(const cudf::table_view & inputTable,
     return cylon::Status::OK();
 }
 
-cylon::Status Shuffle(std::shared_ptr<GTable> &inputTable,
+cylon::Status Shuffle(std::shared_ptr<GTable> &input_table,
                       const std::vector<int> &columns_to_hash,
-                      std::shared_ptr<GTable> &outputTable) {
+                      std::shared_ptr<GTable> &output_table) {
 
     std::unique_ptr<cudf::table> table_out;
-    auto ctx = inputTable->GetContext();
+    auto ctx = input_table->GetContext();
 
     RETURN_CYLON_STATUS_IF_FAILED(
-            Shuffle(inputTable->GetCudfTable()->view(), columns_to_hash, ctx, table_out));
+            Shuffle(input_table->GetCudfTable()->view(), columns_to_hash, ctx, table_out));
 
     RETURN_CYLON_STATUS_IF_FAILED(
-            GTable::FromCudfTable(ctx, table_out, outputTable));
+            GTable::FromCudfTable(ctx, table_out, output_table));
 
     // set metadata for the shuffled table
-    outputTable->SetCudfMetadata(inputTable->GetCudfMetadata());
+    output_table->SetCudfMetadata(input_table->GetCudfMetadata());
 
     return cylon::Status::OK();
 }
@@ -163,7 +163,7 @@ cylon::Status joinTables(const cudf::table_view & left,
 cylon::Status joinTables(std::shared_ptr<GTable> &left,
                          std::shared_ptr<GTable> &right,
                          const cylon::join::config::JoinConfig &join_config,
-                         std::shared_ptr<GTable> &joinedTable) {
+                         std::shared_ptr<GTable> &joined_table) {
 
     if (left == nullptr) {
         return cylon::Status(cylon::Code::KeyError, "Couldn't find the left table");
@@ -184,41 +184,41 @@ cylon::Status joinTables(std::shared_ptr<GTable> &left,
                                              joined));
 
     RETURN_CYLON_STATUS_IF_FAILED(
-            GTable::FromCudfTable(ctx, joined, joinedTable));
+            GTable::FromCudfTable(ctx, joined, joined_table));
 
     // set metadata for the joined table
-    joinedTable->SetCudfMetadata(left->GetCudfMetadata());
+    joined_table->SetCudfMetadata(left->GetCudfMetadata());
     return cylon::Status::OK();
 }
 
  /**
  * Similar to local join, but performs the join in a distributed fashion
   * works on tale_view objects
- * @param leftTable
- * @param rightTable
+ * @param left_table
+ * @param right_table
  * @param join_config
  * @param ctx
  * @param table_out
  * @return
  */
-cylon::Status DistributedJoin(const cudf::table_view & leftTable,
-                              const cudf::table_view & rightTable,
+cylon::Status DistributedJoin(const cudf::table_view &left_table,
+                              const cudf::table_view &right_table,
                               const cylon::join::config::JoinConfig &join_config,
                               std::shared_ptr<cylon::CylonContext> ctx,
                               std::unique_ptr<cudf::table> &table_out) {
 
     if (ctx->GetWorldSize() == 1) {
         // perform single join
-        return joinTables(leftTable, rightTable, join_config, ctx, table_out);
+        return joinTables(left_table, right_table, join_config, ctx, table_out);
     }
 
     std::unique_ptr<cudf::table> left_shuffled_table, right_shuffled_table;
 
     RETURN_CYLON_STATUS_IF_FAILED(
-            Shuffle(leftTable, join_config.GetLeftColumnIdx(), ctx, left_shuffled_table));
+            Shuffle(left_table, join_config.GetLeftColumnIdx(), ctx, left_shuffled_table));
 
     RETURN_CYLON_STATUS_IF_FAILED(
-            Shuffle(rightTable, join_config.GetRightColumnIdx(), ctx, right_shuffled_table));
+            Shuffle(right_table, join_config.GetRightColumnIdx(), ctx, right_shuffled_table));
 
     RETURN_CYLON_STATUS_IF_FAILED(
             joinTables(left_shuffled_table->view(), right_shuffled_table->view(), join_config, ctx, table_out));
@@ -263,11 +263,11 @@ cylon::Status DistributedJoin(std::shared_ptr<GTable> &left,
 /**
  * write GTable to file
  * @param table
- * @param outputFile
+ * @param output_file
  * @return
  */
-cylon::Status WriteToCsv(std::shared_ptr<GTable> &table, std::string outputFile) {
-    cudf::io::sink_info sink_info(outputFile);
+cylon::Status WriteToCsv(std::shared_ptr<GTable> &table, std::string output_file) {
+    cudf::io::sink_info sink_info(output_file);
     cudf::io::csv_writer_options options =
             cudf::io::csv_writer_options::builder(sink_info, table->GetCudfTable()->view())
             .metadata(&(table->GetCudfMetadata()))
