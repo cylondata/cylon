@@ -71,8 +71,6 @@ bool PerformShuffleTest(std::string &input_filename, std::string &output_filenam
 #endif
 }
 
-
-
 }
 }
 #endif //CYLON_CPP_SRC_EXAMPLES_TEST_UTILS_HPP_
