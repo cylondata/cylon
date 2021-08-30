@@ -13,7 +13,7 @@
  */
 
 #include <cylon/compute/aggregates.hpp>
-#include "test_header.hpp"
+#include "common/test_header.hpp"
 #include "test_utils.hpp"
 
 using namespace cylon;

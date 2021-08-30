@@ -1,0 +1,60 @@
+name: Compile and Test using Conda
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+      # explicit include-based build matrix, of known valid options
+      matrix:
+        include:
+          # 20.04 supports CUDA 11.0+
+          - os: ubuntu-20.04
+            cuda: "11.2.2"
+            gcc: 9
+          # - os: ubuntu-20.04
+          #   cuda: "11.2"
+          #   gcc: 10
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # Specify the correct host compilers
+    - name: Install/Select gcc and g++
+      run: |
+        sudo apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }}
+        echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
+        echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
+        echo "CUDAHOSTCXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
+
+    - uses: Jimver/cuda-toolkit@v0.2.4
+      id: cuda-toolkit
+      with:
+        cuda: ${{ matrix.cuda }}
+
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: gcylon_dev
+        environment-file: conda/environments/gcylon.yml
+
+    - name: activate conda
+      run: conda activate gcylon_dev
+
+    - name: build cpp and test
+      run: ./build.sh --conda_cpp --release --test
+    - name: build pycylon and test
+      run: ./build.sh --conda_python --release --pytest
+    - name: build gcylon cpp, no testing at github for gpu
+      run: ./build.sh --gcylon --release
+    - name: build pygcylon, no testing at github for gpu
+      run: ./build.sh --pygcylon --release
+

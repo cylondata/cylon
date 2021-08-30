@@ -13,7 +13,7 @@
  */
 
 #include <cylon/indexing/index.hpp>
-#include "test_header.hpp"
+#include "common/test_header.hpp"
 #include "test_index_utils.hpp"
 
 using namespace cylon;

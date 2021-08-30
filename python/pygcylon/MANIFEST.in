@@ -1,0 +1,2 @@
+include versioneer.py
+include pygcylon/_version.py

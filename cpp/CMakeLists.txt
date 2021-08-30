@@ -21,7 +21,7 @@
 #   make test                                                            #
 # For more information about CMake, see http://www.cmake.org             #
 ##########################################################################
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 project(CYLON VERSION 0.4.0)
 
 set(CYLON_VERSION 0.4.0)
@@ -36,7 +36,8 @@ set(CYLON_ARROW_VERSION 4.0.1)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-error=redundant-move")
+# set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 
 if (NOT DEFINED CYLON_SIMD_LEVEL)
     set("CYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
@@ -134,6 +135,20 @@ else()
     include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
 endif(CONDA_INCLUDE_DIRS)
 
+include(Build)
+
+# if building gcylon, no need to build cylon
+if (GCYLON_BUILD)
+    add_subdirectory(src/gcylon)
+    add_subdirectory(src/examples/gcylon)
+    if (CYLON_WITH_TEST)
+        message("Tests enabled!")
+        enable_testing()
+        add_subdirectory(test/gcylon)
+    endif ()
+    return()
+endif ()
+
 # parquet
 option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
 if (CYLON_PARQUET)
@@ -168,8 +183,6 @@ if (CYLON_UCX)
             ${UCX_LIBDIR}/libucm.so
             ${UCX_LIBDIR}/libucp.so)
 endif (CYLON_UCX)
-
-include(Build)
 
 if (NOT ARROW_BUILD_TYPE)
     set(ARROW_BUILD_TYPE "SOURCE")

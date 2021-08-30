@@ -1,0 +1,23 @@
+name: gcylon_dev
+channels:
+  - rapidsai
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - cmake>=3.17
+  - cython>=0.29,<0.30
+  - cudf=21.08
+  - cudatoolkit=11.2
+#  - pyarrow=4.0.1
+#  - arrow-cpp=4.0.1
+  - glog>=0.4.0
+  - setuptools>=49.6.0
+  - openmpi>=4.1.1
+  - ucx>=1.9.0
+# these are for running tests only,
+# they are not needed for using pygcylon or compiling it
+  - pytest
+  - pytest-mpi
+  - mpi4py

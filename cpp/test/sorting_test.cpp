@@ -24,7 +24,7 @@
 #include <cylon/groupby/groupby.hpp>
 #include <cylon/compute/aggregates.hpp>
 
-#include "test_header.hpp"
+#include "common/test_header.hpp"
 
 Status create_table(std::shared_ptr<cylon::Table> &table) {
   arrow::Int64Builder b0;
