@@ -16,7 +16,7 @@
 
 namespace gcylon {
 
-    __global__ void rebaseOffsets(int32_t * arr, int size, int32_t base) {
+__global__ void rebaseOffsets(int32_t * arr, int size, int32_t base) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < size) {
         arr[i] -= base;
