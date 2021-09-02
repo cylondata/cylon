@@ -59,7 +59,7 @@ if (PYCYLON_BUILD)
     if(WIN32)
         list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
                 " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/Scripts/python.exe"
-                )
+                " -DBOOST_ROOT=C:/local/boost_1_77_0_b1_rc1")
     else()
         list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
         " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/bin/python3"
@@ -123,6 +123,7 @@ set(FLATBUFFERS_INCLUDE_DIR "${FLATBUFFERS_ROOT}/include")
 set(FLATBUFFERS_LIBRARY_DIR "${FLATBUFFERS_ROOT}/lib")
 
 if (CYLON_PARQUET)
+    # todo handle windows
     set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.so)
 endif (CYLON_PARQUET)
 

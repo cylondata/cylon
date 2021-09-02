@@ -191,9 +191,27 @@ def build_python():
     print("Building Python")
 
     python_build_command = env_activate_command(
-    ) + f' && pip3 uninstall -y pycylon && ${python_command()} python/setup.py install || exit 1'
+    ) + f' && pip3 uninstall -y pycylon && cd python && {python_command()} setup.py install || exit 1'
 
-    print(python_build_command)
+    env = os.environ
+    env["LD_LIBRARY_PATH"] = f'{os.path.join(BUILD_DIR, "arrow", "install","lib")}:{os.path.join(BUILD_DIR, "lib")}:{os.environ.get("LD_LIBRARY_PATH","")}'
+    env["CYLON_PREFIX"] = BUILD_DIR
+    env["ARROW_PREFIX"] = os.path.join(os.environ["CONDA_PREFIX"],"Library")#os.path.join(BUILD_DIR, "arrow", "install")
+
+    res = subprocess.run(python_build_command, shell=True, env=env)
+
+    check_status(res.returncode, "PyCylon build")
+
+def release_python():
+    if not BUILD_PYTHON:
+        return
+
+    print_line()
+    print("Building Python")
+
+    python_build_command = env_activate_command(
+    ) + f' && pip3 uninstall -y pycylon && cd python && {python_command()} setup.py build_ext --inplace --library-dir={BUILD_DIR} || exit 1'
+
     env = os.environ
     env["LD_LIBRARY_PATH"] = f'{os.path.join(BUILD_DIR, "arrow", "install","lib")}:{os.path.join(BUILD_DIR, "lib")}:{os.environ.get("LD_LIBRARY_PATH","")}'
     env["CYLON_PREFIX"] = BUILD_DIR
@@ -203,9 +221,8 @@ def build_python():
 
     check_status(res.returncode, "PyCylon build")
 
-
-# build_cpp()
+build_cpp()
 # build_docker()
-# build_python()
+build_python()
+# release_python()
 # python_test()
-print(python_command())
