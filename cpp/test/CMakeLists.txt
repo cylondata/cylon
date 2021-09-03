@@ -20,10 +20,9 @@ SET(MPI_RUN_CMD mpirun)
 file(COPY ${CYLON_SOURCE_DIR}/../data DESTINATION ${CMAKE_BINARY_DIR})
 
 include_directories (${CYLON_SOURCE_DIR}/src)
-include_directories (${CMAKE_CURRENT_SOURCE_DIR}/common)
+include_directories (${CYLON_SOURCE_DIR}/test)
 include_directories (${CMAKE_BINARY_DIR}/thirdparty/glog)
 include_directories (${CYLON_SOURCE_DIR}/thirdparty/glog/src)
-include_directories (${CYLON_SOURCE_DIR}/src/cylon)
 
 include(CTest)
 

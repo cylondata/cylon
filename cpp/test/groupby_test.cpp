@@ -24,7 +24,7 @@
 #include <cylon/groupby/groupby.hpp>
 #include <cylon/compute/aggregates.hpp>
 
-#include "test_header.hpp"
+#include "common/test_header.hpp"
 
 Status create_table(std::shared_ptr<cylon::Table> &table) {
   std::vector<int64_t> col0{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};

@@ -66,8 +66,8 @@ template<typename ARROW_T, typename = typename std::enable_if<
         | arrow::is_temporal_type<ARROW_T>::value>::type>
 class ModuloPartitionKernel : public HashPartitionKernel {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
-
- public:
+  using T = typename ARROW_T::c_type;
+public:
   Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                    uint32_t num_partitions,
                    std::vector<uint32_t> &target_partitions,
@@ -78,17 +78,19 @@ class ModuloPartitionKernel : public HashPartitionKernel {
     }
 
     Partitioner partitioner = get_partitioner(num_partitions);
-    LoopRunner<ARROW_ARRAY_T> loop_runner = [&](const std::shared_ptr<ARROW_ARRAY_T> &casted_arr,
-                                                uint64_t chunk_offset,
-                                                uint64_t idx) {
-      uint32_t pseudo_hash = 31 * target_partitions[chunk_offset] + static_cast<uint32_t>(casted_arr->Value(idx));
-      uint32_t p = partitioner(pseudo_hash);
-      target_partitions[chunk_offset] = p;
-      partition_histogram[p]++;
-    };
+    uint64_t offset = 0;
+    for (const auto &arr: idx_col->chunks()) {
+      const std::shared_ptr<arrow::ArrayData> &data = arr->data();
+      T *value_buffer = data->template GetMutableValues<T>(1);
 
-    run_loop(idx_col, loop_runner);
-
+      int64_t length = arr->length();
+      for (int64_t i = 0; i < length; i++, offset++) {
+        uint32_t pseudo_hash = 31 * target_partitions[offset] + static_cast<uint32_t>(value_buffer[i]);
+        uint32_t p = pseudo_hash % num_partitions;
+        target_partitions[offset] = p;
+        partition_histogram[p]++;
+      }
+    }
     return Status::OK();
   }
 
@@ -98,12 +100,15 @@ class ModuloPartitionKernel : public HashPartitionKernel {
       return Status(Code::Invalid, "partial hashes size != idx col length!");
     }
 
-    LoopRunner<ARROW_ARRAY_T> loop_runner = [&](const std::shared_ptr<ARROW_ARRAY_T> &carr,
-                                                uint64_t offset,
-                                                uint64_t i) {
-      partial_hashes[offset] = 31 * partial_hashes[offset] + static_cast<uint32_t>(carr->Value(i));
-    };
-    run_loop(idx_col, loop_runner);
+    uint64_t offset = 0;
+    for (const auto &arr: idx_col->chunks()) {
+      const std::shared_ptr<arrow::ArrayData> &data = arr->data();
+      const T *value_buffer = data->template GetValues<T>(1);
+      int64_t length = arr->length();
+      for (int64_t i = 0; i < length; i++, offset++) {
+        partial_hashes[offset] = 31 * partial_hashes[offset] + static_cast<uint32_t>(value_buffer[i]);
+      }
+    }
 
     return Status::OK();
   }

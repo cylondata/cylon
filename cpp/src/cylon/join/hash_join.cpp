@@ -191,8 +191,6 @@ arrow::Status ArrayIndexHashJoin(const std::shared_ptr<arrow::Array> &left_idx_c
                                  config::JoinType join_type,
                                  std::vector<int64_t> &left_table_indices,
                                  std::vector<int64_t> &right_table_indices) {
-  auto t1 = std::chrono::high_resolution_clock::now();
-
   if (left_idx_col->type_id() != right_idx_col->type_id()) {
     return arrow::Status::Invalid("left and right index array types are not equal");
   }
@@ -283,27 +281,15 @@ arrow::Status ArrayIndexHashJoin(const std::shared_ptr<arrow::Array> &left_idx_c
 
   // populate left hash table. use build array length number of buckets in the hashmap
   TwoArrayIndexHashMMap hash_map((*arrays[build_idx])->length(), hash, equal_to);
-
-  auto t2 = std::chrono::high_resolution_clock::now();
-
   // build hashmap from corresponding table
   for (int64_t i = 0; i < (*arrays[build_idx])->length(); i++) {
     hash_map.emplace(i, i);
   }
   hashes[0].clear(); // hashes of the building array are no longer needed
-  auto t3 = std::chrono::high_resolution_clock::now();
-
   // probe
   probe_func_ptr(hash_map, (*arrays[build_idx])->length(), (*arrays[!build_idx])->length(),
                  *row_indices[build_idx], *row_indices[!build_idx]);
-
-  auto t4 = std::chrono::high_resolution_clock::now();
-
-  LOG(INFO) << "idx hash join: setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-            << " build: " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count()
-            << " probe: " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count()
-            << " total: " << std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t1).count();
-
+  hashes[1].clear();
   return arrow::Status::OK();
 }
 

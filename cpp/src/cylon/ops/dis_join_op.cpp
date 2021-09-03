@@ -24,8 +24,8 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
                             int id,
                             const ResultsCallback &callback,
                             const DisJoinOpConfig &config) : RootOp(ctx, schema, id, callback) {
-  auto execution = new JoinExecution();
-  execution->AddP(this);
+  auto execution = new ForkJoinExecution();
+  execution->AddLeft(this);
   this->SetExecution(execution);
 
   const std::vector<int32_t> PARTITION_IDS = {LEFT_RELATION, RIGHT_RELATION};
@@ -38,35 +38,35 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
   partition_op = new PartitionOp(ctx, schema, LEFT_RELATION, callback,
                                  {ctx->GetWorldSize(), {config.join_config.GetLeftColumnIdx()}});
   this->AddChild(partition_op);
-  execution->AddP(partition_op);
+  execution->AddLeft(partition_op);
 
   shuffle_op = new AllToAllOp(ctx, schema, LEFT_RELATION, callback, {});
   partition_op->AddChild(shuffle_op);
-  execution->AddP(shuffle_op);
+  execution->AddLeft(shuffle_op);
 
-  split_op = new SplitOp(ctx, schema, LEFT_RELATION, callback, {100, {config.join_config.GetLeftColumnIdx()}});
+  split_op = new SplitOp(ctx, schema, LEFT_RELATION, callback, {8000, {config.join_config.GetLeftColumnIdx()}});
   shuffle_op->AddChild(split_op);
-  execution->AddP(split_op);
+  execution->AddLeft(split_op);
 
   // add join op
   join_op = new JoinOp(ctx, schema, JOIN_OP_ID, callback, config.join_config);
   split_op->AddChild(join_op);
-  execution->AddJoin(join_op);
+  execution->AddFinal(join_op);
 
 
   // build right sub tree
   partition_op = new PartitionOp(ctx, schema, RIGHT_RELATION, callback,
                                  {ctx->GetWorldSize(), {config.join_config.GetLeftColumnIdx()}});
   this->AddChild(partition_op);
-  execution->AddS(partition_op);
+  execution->AddRight(partition_op);
 
   shuffle_op = new AllToAllOp(ctx, schema, RIGHT_RELATION, callback, {});
   partition_op->AddChild(shuffle_op);
-  execution->AddS(shuffle_op);
+  execution->AddRight(shuffle_op);
 
-  split_op = new SplitOp(ctx, schema, RIGHT_RELATION, callback, {100, {config.join_config.GetRightColumnIdx()}});
+  split_op = new SplitOp(ctx, schema, RIGHT_RELATION, callback, {8000, {config.join_config.GetRightColumnIdx()}});
   shuffle_op->AddChild(split_op);
-  execution->AddS(split_op);
+  execution->AddRight(split_op);
 
   split_op->AddChild(join_op); // join_op is already initialized
 }
@@ -79,4 +79,6 @@ bool cylon::DisJoinOP::Execute(int tag, std::shared_ptr<Table> &table) {
   this->InsertToChild(tag, tag, table);
   return true;
 }
+
+
 

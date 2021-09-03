@@ -124,7 +124,11 @@ set(FLATBUFFERS_LIBRARY_DIR "${FLATBUFFERS_ROOT}/lib")
 
 if (CYLON_PARQUET)
     # todo handle windows
-    set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.so)
+    if(APPLE)
+      set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.dylib)
+    else()
+      set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.so)
+    endif()
 endif (CYLON_PARQUET)
 
 add_definitions(-DARROW_METADATA_V4)

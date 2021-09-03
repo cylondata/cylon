@@ -26,10 +26,13 @@ BUILD_MODE_RELEASE="OFF"
 PYTHON_RELEASE="OFF"
 RUN_CPP_TESTS="OFF"
 RUN_PYTHON_TESTS="OFF"
+RUN_PYGCYLON_TESTS="OFF"
 STYLE_CHECK="OFF"
 INSTALL_PATH=
 BUILD_PATH=$(pwd)/build
 CMAKE_FLAGS=""
+GCYLON_BUILD="OFF"
+PYGCYLON_BUILD="OFF"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -101,6 +104,10 @@ case $key in
     RUN_PYTHON_TESTS="ON"
     shift # past argument
     ;;
+    --pygtest)
+    RUN_PYGCYLON_TESTS="ON"
+    shift # past argument
+    ;;
     --style-check)
     STYLE_CHECK="ON"
     shift # past argument
@@ -114,6 +121,14 @@ case $key in
     CMAKE_FLAGS="$2"
     shift # past argument
     shift # past value
+    ;;
+    --gcylon)
+    GCYLON_BUILD="ON"
+    shift # past argument
+    ;;
+    --pygcylon)
+    PYGCYLON_BUILD="ON"
+    shift # past argument
     ;;
     *)    # unknown option
     POSITIONAL+=("$1") # save it in an array for later
@@ -131,6 +146,7 @@ echo "FLAG BUILD DEBUG      = ${BUILD_MODE_DEBUG}"
 echo "FLAG BUILD RELEASE    = ${BUILD_MODE_RELEASE}"
 echo "FLAG RUN CPP TEST     = ${RUN_CPP_TESTS}"
 echo "FLAG RUN PYTHON TEST  = ${RUN_PYTHON_TESTS}"
+echo "RUN PYGCYLON TESTS    = ${RUN_PYGCYLON_TESTS}"
 echo "FLAG STYLE CHECK      = ${STYLE_CHECK}"
 echo "ADDITIONAL CMAKE FLAGS= ${CMAKE_FLAGS}"
 
@@ -162,6 +178,16 @@ check_python_pre_requisites(){
   echo "${response}"
 }
 
+export_library_path() {
+  if [ "$(uname)" == "Darwin" ]; then
+    export DYLD_LIBRARY_PATH=${1} || exit 1
+    echo "DYLD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+  elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+    export LD_LIBRARY_PATH=${1} || exit 1
+    echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+  fi
+}
+
 INSTALL_CMD=
 if [ -z "$INSTALL_PATH" ]
 then
@@ -184,6 +210,12 @@ build_cpp(){
   print_line
   echo "Building CPP in ${BUILD_MODE} mode"
   print_line
+
+  if [ "${GCYLON_BUILD}" = "ON" ]; then
+    echo "gcylon build is supported only with conda environment: --conda_cpp --with-gcylon"
+    exit 1
+  fi
+
   if [ "${PYTHON_BUILD}" = "ON" ]; then
     echo "Using Python environment at [${PYTHON_ENV_PATH}]"
     source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
@@ -277,7 +309,7 @@ build_cpp_conda(){
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
       -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
       -DARROW_BUILD_TYPE="SYSTEM" -DARROW_LIB_DIR=${ARROW_LIB} -DARROW_INCLUDE_DIR=${ARROW_INC} \
-      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCYLON_PARQUET=ON \
+      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCYLON_PARQUET=ON -DGCYLON_BUILD=${GCYLON_BUILD}\
       ${CMAKE_FLAGS} \
       ${SOURCE_DIR} \
       || exit 1
@@ -285,6 +317,29 @@ build_cpp_conda(){
   printf "Cylon CPP Built Successfully!"
   make install || exit 1
   printf "Cylon CPP Installed Successfully!"
+  popd || exit 1
+  print_line
+}
+
+build_gcylon(){
+  print_line
+  echo "Building GCylon in ${BUILD_MODE} mode"
+  print_line
+
+  # set install path to conda directory if not already set
+  INSTALL_PATH=${INSTALL_PATH:=${PREFIX:=${CONDA_PREFIX}}}
+
+  echo "SOURCE_DIR: ${SOURCE_DIR}"
+  BUILD_PATH=$(pwd)/build
+  mkdir -p ${BUILD_PATH}
+  pushd ${BUILD_PATH} || exit 1
+  cmake -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
+      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DGCYLON_BUILD=${GCYLON_BUILD} ${CMAKE_FLAGS} ${SOURCE_DIR} \
+      || exit 1
+  make -j 4 || exit 1
+  printf "GCylon CPP Built Successfully!"
+  make install || exit 1
+  printf "GCylon CPP Installed Successfully!"
   popd || exit 1
   print_line
 }
@@ -309,14 +364,14 @@ build_python_pyarrow() {
   echo "Building Python"
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
-  pip install pyarrow==2.0.0 || exit 1
+  pip install pyarrow==4.0.1 || exit 1
 
   ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
-  export LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
-  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+  LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
+  export_library_path ${LD_LIBRARY_PATH}
 
   check_python_pre_requisites
-  pushd python || exit 1
+  pushd python/pycylon || exit 1
   pip3 uninstall -y pycylon
   make clean
   CYLON_PREFIX=${BUILD_PATH}  python3 setup.py install || exit 1
@@ -328,12 +383,24 @@ build_python_conda() {
   print_line
   echo "Building Python"
   ARROW_LIB=${CONDA_PREFIX}/lib
-  export LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
-  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+  LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
+  export_library_path ${LD_LIBRARY_PATH}
 
-  pushd python || exit 1
+  pushd python/pycylon || exit 1
   make clean
-  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}}/lib python3 setup.py install || exit 1
+  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}} python3 setup.py install || exit 1
+  popd || exit 1
+  print_line
+}
+
+build_pygcylon() {
+  print_line
+  echo "Building PyGcylon ............. "
+
+  pushd python/pygcylon || exit 1
+  make clean
+  python3 setup.py install || exit 1
+  echo "Built and installed pygcylon ........................"
   popd || exit 1
   print_line
 }
@@ -341,13 +408,13 @@ build_python_conda() {
 build_python() {
   print_line
   echo "Building Python"
-  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH || exit 1
-  echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
+  LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH || exit 1
+  export_library_path ${LD_LIBRARY_PATH}
   # shellcheck disable=SC1090
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
   check_python_pre_requisites
-  pushd python || exit 1
+  pushd python/pycylon || exit 1
   pip3 uninstall -y pycylon
   make clean
   CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PATH}/arrow/install python3 setup.py install || exit 1
@@ -359,12 +426,12 @@ build_python() {
 release_python() {
   print_line
   echo "Building Python"
-  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
-  echo "LD_LIBRARY_PATH="$LD_LIBRARY_PATH
+  LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  export_library_path ${LD_LIBRARY_PATH}
   source "${PYTHON_ENV_PATH}"/bin/activate
   read_python_requirements
   check_python_pre_requisites
-  pushd python || exit 1
+  pushd python/pycylon || exit 1
   pip3 uninstall -y pycylon
   make clean
   # https://www.scivision.dev/easy-upload-to-pypi/ [solution to linux wheel issue]
@@ -386,7 +453,8 @@ export_info(){
 }
 
 check_pyarrow_installation(){
-  export LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  LD_LIBRARY_PATH=${BUILD_PATH}/arrow/install/lib:${BUILD_PATH}/lib:$LD_LIBRARY_PATH
+  export_library_path ${LD_LIBRARY_PATH}
   response=$(python3 -c \
     "import pyarrow; print('PyArrow Installation');\
     print('Version {}'.format(pyarrow.__version__));\
@@ -395,16 +463,20 @@ check_pyarrow_installation(){
 }
 
 check_pycylon_installation(){
-  response=$(python3 python/test/test_pycylon.py)
+  response=$(python3 python/pycylon/test/test_pycylon.py)
   echo "${response}"
 }
 
 python_test(){
   ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
-  export LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
-  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+  LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${BUILD_PATH}/arrow/install/lib" || exit 1
+  export_library_path ${LD_LIBRARY_PATH}
 
-  python3 -m pytest python/test/test_all.py || exit 1
+  python3 -m pytest python/pycylon/test/test_all.py || exit 1
+}
+
+pygcylon_test(){
+  python3 -m pytest python/pygcylon/test/test_all.py || exit 1
 }
 
 build_java(){
@@ -471,6 +543,26 @@ if [ "${PYTHON_RELEASE}" = "ON" ]; then
 	release_python
 fi
 
+if [ "${CONDA_CPP_BUILD}" = "ON" ]; then
+	echo "Running conda build"
+	build_cpp_conda
+fi
+
+if [ "${CONDA_PYTHON_BUILD}" = "ON" ]; then
+	echo "Running conda build"
+	build_python_conda
+fi
+
+if [ "${GCYLON_BUILD}" = "ON" ]; then
+	echo "Running conda build"
+	build_gcylon
+fi
+
+if [ "${PYGCYLON_BUILD}" = "ON" ]; then
+	echo "Running pygcylon conda build"
+	build_pygcylon
+fi
+
 if [ "${RUN_CPP_TESTS}" = "ON" ]; then
 	echo "Running CPP tests"
 	CTEST_OUTPUT_ON_FAILURE=1 make -C "$BUILD_PATH" test || exit 1
@@ -481,14 +573,9 @@ if [ "${RUN_PYTHON_TESTS}" = "ON" ]; then
 	python_test
 fi
 
-if [ "${CONDA_CPP_BUILD}" = "ON" ]; then
-	echo "Running conda build"
-	build_cpp_conda
-fi
-
-if [ "${CONDA_PYTHON_BUILD}" = "ON" ]; then
-	echo "Running conda build"
-	build_python_conda
+if [ "${RUN_PYGCYLON_TESTS}" = "ON" ]; then
+	echo "Running PyGcylon tests"
+	pygcylon_test
 fi
 
 

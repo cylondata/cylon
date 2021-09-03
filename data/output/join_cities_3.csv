@@ -1,0 +1,91 @@
+state_id,cityl,populationl,cityr,populationr
+LA,Addis,6221,Addis,6221
+CA,Acton,7232,Agua Dulce,3742
+VA,Abingdon,7867,Adwolf,1573
+MD,Accokeek,11647,Adelphi,16377
+MD,Aberdeen,16019,Adelphi,16377
+TX,Addison,16263,Addison,16263
+MD,Adelphi,16377,Adelphi,16377
+LA,Abbeville,19470,Addis,6221
+SD,Aberdeen,28257,Akaska,47
+CA,Adelanto,34049,Agua Dulce,3742
+TX,Abilene,123420,Addison,16263
+CA,Acalanes Ridge,1134,Agua Dulce,3742
+WI,Adams,1893,Adams,1893
+TN,Adamsville,2164,Adamsville,2164
+TX,Abram,2328,Addison,16263
+MD,Adamstown,2512,Adelphi,16377
+LA,Abita Springs,2614,Addis,6221
+TX,Abernathy,2706,Addison,16263
+MD,Aberdeen Proving Ground,2872,Adelphi,16377
+WI,Abbotsford,3833,Adams,1893
+CA,Acampo,204,Agua Dulce,3742
+TX,Ackerly,232,Addison,16263
+MD,Accident,312,Adelphi,16377
+TX,Abbott,369,Addison,16263
+WI,Abrams,461,Adams,1893
+VA,Accomac,485,Adwolf,1573
+WI,Adell,512,Adams,1893
+TN,Adams,671,Adamsville,2164
+CA,Acton,7232,Agoura Hills,20222
+TX,Addison,16263,Agua Dulce,3268
+SD,Aberdeen,28257,Agar,80
+CA,Adelanto,34049,Agoura Hills,20222
+TX,Abilene,123420,Agua Dulce,3268
+CA,Acalanes Ridge,1134,Agoura Hills,20222
+WI,Adams,1893,Adell,512
+TX,Abram,2328,Agua Dulce,3268
+TX,Abernathy,2706,Agua Dulce,3268
+WI,Abbotsford,3833,Adell,512
+CA,Acampo,204,Agoura Hills,20222
+TX,Ackerly,232,Agua Dulce,3268
+TX,Abbott,369,Agua Dulce,3268
+WI,Abrams,461,Adell,512
+WI,Adell,512,Adell,512
+CA,Acton,7232,Adelanto,34049
+MD,Accokeek,11647,Adamstown,2512
+MD,Aberdeen,16019,Adamstown,2512
+TX,Addison,16263,Airport Heights,22
+MD,Adelphi,16377,Adamstown,2512
+SD,Aberdeen,28257,Agency Village,242
+CA,Adelanto,34049,Adelanto,34049
+TX,Abilene,123420,Airport Heights,22
+CA,Acalanes Ridge,1134,Adelanto,34049
+TN,Adamsville,2164,Adams,671
+TX,Abram,2328,Airport Heights,22
+MD,Adamstown,2512,Adamstown,2512
+TX,Abernathy,2706,Airport Heights,22
+MD,Aberdeen Proving Ground,2872,Adamstown,2512
+CA,Acampo,204,Adelanto,34049
+TX,Ackerly,232,Airport Heights,22
+MD,Accident,312,Adamstown,2512
+TX,Abbott,369,Airport Heights,22
+TN,Adams,671,Adams,671
+CA,Acton,7232,Airport,1479
+TX,Addison,16263,Adrian,170
+CA,Adelanto,34049,Airport,1479
+TX,Abilene,123420,Adrian,170
+CA,Acalanes Ridge,1134,Airport,1479
+TX,Abram,2328,Adrian,170
+TX,Abernathy,2706,Adrian,170
+CA,Acampo,204,Airport,1479
+TX,Ackerly,232,Adrian,170
+TX,Abbott,369,Adrian,170
+CA,Acton,7232,Ahwahnee,2513
+CA,Adelanto,34049,Ahwahnee,2513
+CA,Acalanes Ridge,1134,Ahwahnee,2513
+CA,Acampo,204,Ahwahnee,2513
+CA,Acton,7232,Adin,171
+CA,Adelanto,34049,Adin,171
+CA,Acalanes Ridge,1134,Adin,171
+CA,Acampo,204,Adin,171
+CA,Acton,7232,Aguanga,805
+TX,Addison,16263,Airport Road Addition,279
+CA,Adelanto,34049,Aguanga,805
+TX,Abilene,123420,Airport Road Addition,279
+CA,Acalanes Ridge,1134,Aguanga,805
+TX,Abram,2328,Airport Road Addition,279
+TX,Abernathy,2706,Airport Road Addition,279
+CA,Acampo,204,Aguanga,805
+TX,Ackerly,232,Airport Road Addition,279
+TX,Abbott,369,Airport Road Addition,279

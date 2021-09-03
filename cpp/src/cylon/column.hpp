@@ -85,10 +85,10 @@ class VectorColumn : public Column {
                const std::shared_ptr<std::vector<T>> &data_vector) :
       Column(id, type),
       data(data_vector) {
-    const std::shared_ptr<arrow::Buffer> &data_buff = arrow::Buffer::Wrap(*data);
+    const std::shared_ptr<arrow::Buffer> &data_buff = arrow::MutableBuffer::Wrap(data->data(), (int64_t)data->size());
     const std::shared_ptr<arrow::ArrayData> &arr_data =
         arrow::ArrayData::Make(cylon::tarrow::convertToArrowType(type), data->size(),
-                               {nullptr, data_buff});
+                               {nullptr, data_buff}, 0, 0);
 
     Column::data_array = std::make_shared<arrow::ChunkedArray>(arrow::MakeArray(arr_data));
   }

@@ -31,7 +31,7 @@ bool RoundRobinExecution::IsComplete() {
   return indices.empty();
 }
 
-bool JoinExecution::IsComplete() {
+bool ForkJoinExecution::IsComplete() {
   bool completed;
   switch (state) {
     case 0:completed = p_ops[p_indices[current_index]]->IsComplete();
@@ -69,7 +69,7 @@ bool JoinExecution::IsComplete() {
   return false;
 }
 
-JoinExecution::~JoinExecution() {
+ForkJoinExecution::~ForkJoinExecution() {
   // NOTE: p_ops[0] is the head op which holds this execution object.
   // So, don't delete that!
   for (size_t i = 1; i < p_ops.size(); i++) {

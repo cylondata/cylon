@@ -19,6 +19,8 @@
 #include <cylon/ctx/cylon_context.hpp>
 #include <cylon/table.hpp>
 
+#include "example_utils.hpp"
+
 #define EXIT_IF_FAILED(expr)    \
   do{                           \
     const auto& _st = (expr);   \
@@ -30,8 +32,11 @@
   } while (0)
 
 int main(int argc, char *argv[]) {
-  if (argc < 3) {
-    LOG(ERROR) << "There should be two arguments with paths to csv files";
+  if (argc < 6) {
+    LOG(ERROR) << "./multi_idx_join_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
+               << "./multi_idx_join_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
+               << "./multi_idx_join_example f [n | o] csv_file1 csv_file2" << std::endl
+               << "./multi_idx_join_example f [n | o] csv_file1 csv_file2" << std::endl;
     return 1;
   }
 
@@ -41,8 +46,44 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<cylon::Table> first_table, second_table, joined;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-  EXIT_IF_FAILED(cylon::FromCSV(ctx, argv[1], first_table, read_options));
-  EXIT_IF_FAILED(cylon::FromCSV(ctx, argv[2], second_table, read_options));
+  cylon::join::config::JoinAlgorithm algorithm = cylon::join::config::JoinAlgorithm::SORT;
+  std::string mem = std::string(argv[1]);
+  std::string ops_param = std::string(argv[2]);
+
+  bool ops = true;
+  if (ops_param == "o") {
+    ops = true;
+  } else if (ops_param == "n") {
+    ops = false;
+  }
+
+  if (mem == "m") {
+    if (argc == 6) {
+      if (!strcmp(argv[5], "hash")) {
+        LOG(INFO) << "Hash join algorithm";
+        algorithm = cylon::join::config::JoinAlgorithm::HASH;
+      } else {
+        LOG(INFO) << "Sort join algorithm";
+      }
+    } else {
+      LOG(INFO) << "Sort join algorithm";
+    }
+    uint64_t count = std::stoull(argv[3]);
+    double dup = std::stod(argv[4]);
+    cylon::examples::create_two_in_memory_tables(count, dup,ctx,first_table,second_table);
+  } else if (mem == "f") {
+    cylon::FromCSV(ctx, std::string(argv[3]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
+    cylon::FromCSV(ctx, std::string(argv[4]) + std::to_string(ctx->GetRank()) + ".csv", second_table);
+    if (argc == 6) {
+      if (!strcmp(argv[5], "hash")) {
+        LOG(INFO) << "Hash join algorithm";
+        algorithm = cylon::join::config::JoinAlgorithm::HASH;
+      } else {
+        LOG(INFO) << "Sort join algorithm";
+      }
+    }
+  }
+  ctx->Barrier();
 
   auto read_end_time = std::chrono::steady_clock::now();
 
@@ -52,7 +93,7 @@ int main(int argc, char *argv[]) {
   auto join_config = cylon::join::config::JoinConfig(cylon::join::config::JoinType::INNER,
                                                      {0, 1},
                                                      {0, 1},
-                                                     cylon::join::config::JoinAlgorithm::HASH,
+                                                     algorithm,
                                                      "l_",
                                                      "r_");
 
