@@ -88,3 +88,72 @@ After that you can use the package.
 conda create -n cylon-0.4.0 -c cylondata pycylon python=3.7
 conda activate cylon-0.4.0
 ```
+
+## Installing and Using GCylon
+
+GPU Cylon (gcylon) provides distributed dataframe processing on NVIDIA GPUs. 
+There are two libraries for gcylon: 
+* a cpp library (libgcylon) 
+* a python library (pygcylon)
+
+GCylon libraries depend on cylon libraries and also NVIDIA libraries: cudatoolkit and cudf
+
+Since cudatoolkit and cudf libraries are rather large, we provide an extra conda environment for installing and compiling gcylon.
+
+The easiest way to compile and run gcylon is through a conda environment. We provide a conda environment yml file to download and setup all dependencies.
+
+### Prerequisites 
+* Clone the cylon project to your machine from github if not already done.
+* Make sure you have anaconda or miniconda installed. If not, please install anaconda or miniconda first. 
+* Install cudatoolkit 11.0 or higher. 
+* Make sure your machine has:
+  - NVIDIA driver 450.80.02+
+  - Pascal architecture or better (Compute Capability >=6.0)
+
+### Installing Conda Packages
+Check your cudatoolkit installation version. You can check it with:
+```
+nvcc --version
+```
+
+If your cudatoolkit version is not 11.2, update the cudatoolkit version at the file:
+conda/environments/gcylon.yml
+
+Create the conda environment and install the dependencies. 
+Activate the conda environment:
+```
+conda env create -f conda/environments/gcylon.yml
+conda activate gcylon_dev
+```
+
+Compile and Install Cylon cpp and python packages:
+```
+./build.sh --conda_cpp --conda_python
+```
+
+Compile and Install GCylon cpp and python packages:
+```
+./build.sh --gcylon --pygcylon
+```
+
+Checking whether pycylon and pygcylon packages are installed after the compilation:
+```
+conda list | grep cylon
+pycylon                 "version number"
+pygcylon                "version number"
+```
+
+Running the join example from gcylon examples directory:
+Running with 2 mpi workers (-n 2) on the local machine:
+```
+mpirun -n 2 --mca opal_cuda_support 1 python python/pygcylon/examples/join.py
+```
+
+To enable ucx, add the flags "--mca pml ucx --mca osc ucx" to the mpirun command.
+To enable infiniband, add the flag "--mca btl_openib_allow_ib true" to the mpirun command.
+To run the join example with both ucx and infiniband enabled on the local machine with two mpi workers:
+```
+mpirun -n 2 --mca opal_cuda_support 1 --mca pml ucx --mca osc ucx --mca btl_openib_allow_ib true python python/pygcylon/examples/join.py
+```
+
+Other examples in the python/pygcylon/examples/ directory can be run similarly.
