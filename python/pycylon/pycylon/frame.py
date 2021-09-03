@@ -393,6 +393,271 @@ class DataFrame(object):
         """
         return self._table.iloc
     
+    def __len__(self):
+        """
+        This operator returns number of rows in the df.
+
+        Example
+        --------
+        >>> df1
+               col-0  col-1
+            0      1      4
+            1      2      5
+            2      3      6
+
+        >>> len(df1)
+            3
+
+        """
+        return self._table.row_count
+    
+    def set_index(self, key, indexing_type: IndexingType = IndexingType.LINEAR, drop: bool = False):
+        """
+        Set index of the pycylon DataFrame
+        Allowed inputs are:
+
+        - A list e.g. ``[i for i in range(len(df))]``
+        - A list e.g. ``[0,1,len(df)-1]``
+
+        Examples
+        --------
+
+        >>> df1
+               col-0  col-1
+            0      1      4
+            1      2      5
+            2      3      6
+        >>> df1.set_index([i for i in range(len(df1))])
+
+        or
+
+        >>> df1.set_index([0,1,len(df1)-1])
+
+        """
+        return self._table.set_index(key, indexing_type, drop)
+    
+    @property 
+    def index(self):
+        """
+        Returns the index of the df.
+
+        Example
+        --------
+        >>> df1
+               col-0  col-1
+            0      1      4
+            1      2      5
+            2      3      6
+
+        >>> df1.index
+            <pycylon.indexing.index.BaseArrowIndex object at 0x7f6cf948ca00>
+
+        """
+        return self._table.get_index()
+      
+    def get_hash_object(self, index=True, encoding="utf8", hash_key=None, categorize=True):
+        """
+        Returns a data hash of the df.
+
+        Example
+        --------
+        >>> df1
+               col-0  col-1
+            0      1      4
+            1      2      5
+            2      3      6
+
+        >>> df1.get_hash_object()
+                                 0
+            0   580038878669277522
+            1  2529894495349307502
+            2  4389717532997776129
+
+        """
+
+        pdf = self.to_pandas()
+        hashed_series = pd.util.hash_pandas_object(pdf, index=index, encoding=encoding, hash_key=hash_key, categorize=categorize)
+        hashed_pdf = hashed_series.to_frame() 
+        context = CylonContext(config=None, distributed=False) 
+        return DataFrame(cn.Table.from_pandas(context, hashed_pdf))
+      
+    @property
+    def values(self) -> np.ndarray: 
+        """
+        Returns Numpy ndarray object representation of the df.
+
+        Example
+        -------
+        >>> df1
+               col-0  col-1
+            0      1      4
+            1      2      5
+            2      3      6
+
+        >>> df1.values
+            array([[1, 4],
+                   [2, 5],
+                   [3, 6]])
+
+        """
+
+        if len(self.columns) >= 2:
+            return self.to_numpy()
+        else:
+            dict = self.to_dict()
+            col = self.columns[0]
+            return np.array(list(dict[col]))
+          
+    def dtypes(self):
+        """
+        Return the dtypes in the df as a Dictionary object.
+
+        Example
+        -------
+        >>> df1
+               col-0  col-1
+            0      1      4
+            1      2      5
+            2      3      6
+
+        >>> df1.dtypes
+            {'col-0': <class 'numpy.int64'>, 'col-1': <class 'numpy.int64'>}
+        """
+
+        schema = self._table.to_arrow().schema
+        dict = {}
+        types = schema.types
+        i = 0
+        for value in schema.names:
+            dict[value] = pa.DataType.to_pandas_dtype(types[i]) 
+            i += 1
+
+        return dict
+      
+    def select_dtypes(self, include=None, exclude=None) -> DataFrame:
+        """
+        Return a subset of the df's columns based on the column dtypes.
+
+        Parameters
+        ----------
+        include, exclude : scalar or list-like
+            A selection of dtypes or strings to be included/excluded.
+            At least one of these parameters must be supplied.
+
+        Returns
+        -------
+        DataFrame: subset of the frame including the dtypes in ``include`` and
+            excluding the dtypes in ``exclude``.
+
+        Raises
+        ------
+        ValueError
+            * If both of ``include`` and ``exclude`` are null
+            * If ``include`` and ``exclude`` have overlapping elements
+            * If any kind of string dtype is passed in.
+
+        Examples
+        --------
+        >>> df1
+               col-1 col-2
+            0   True     b
+            1  False     a
+            2  False     c
+
+        >>> df1.select_dtypes(include=['int64', 'object'], exclude=['bool'])
+                col-2
+            0     b
+            1     a
+            2     c
+        >>> df1.select_dtypes(include=['object'])
+                col-2
+            0     b
+            1     a
+            2     c
+        >>> df1.select_dtypes(exclude=['bool'])
+                col-2
+            0     b
+            1     a
+            2     c
+        >>> df1.select_dtypes(exclude=['int64'])
+                col-1 col-2
+            0   True     b
+            1  False     a
+            2  False     c
+        >>> df1.select_dtypes(include=['int64'])
+            Empty DataFrame
+            Columns: []
+            Index: []
+
+        """
+
+        if not isinstance(include, (list, tuple)):
+            include = (include,) if include is not None else ()
+        if not isinstance(exclude, (list, tuple)):
+            exclude = (exclude,) if exclude is not None else ()
+            
+        selection = (frozenset(include), frozenset(exclude))
+        
+
+        if not any(selection):
+            raise ValueError("at least one of include or exclude must be nonempty")
+
+        include = frozenset(infer_dtype_from_object(x) for x in include)
+        exclude = frozenset(infer_dtype_from_object(x) for x in exclude)
+
+        if not include.isdisjoint(exclude):
+            raise ValueError(
+                f"include and exclude overlap on {(include & exclude)}"
+            )
+
+        def extract_unique_dtypes_from_dtypes_set(dtypes_set: FrozenSet[np.generic], unique_dtypes: np.ndarray) -> List[
+            np.generic]:
+            extracted_dtypes = [
+                unique_dtype
+                for unique_dtype in unique_dtypes
+                # error: Argument 1 to "tuple" has incompatible type
+                # "FrozenSet[Union[ExtensionDtype, str, Any, Type[str],
+                # Type[float], Type[int], Type[complex], Type[bool]]]";
+                # expected "Iterable[Union[type, Tuple[Any, ...]]]"
+                if issubclass(
+                    # here no need to put unique_dtypes.type -> already gets type
+                    unique_dtype, tuple(dtypes_set)  # type: ignore[arg-type]
+                )
+            ]
+            return extracted_dtypes
+
+        #get unique dtypes from cylon df - set operation
+        unique_set = set(self.dtypes.values())
+        unique_dtypes = np.array(list(unique_set), dtype=object)
+
+
+        if include:
+            included_dtypes = extract_unique_dtypes_from_dtypes_set(include, unique_dtypes)
+            
+            extracted_columns=[
+                column
+                for column, dtype in self.dtypes.items()
+                if dtype in included_dtypes
+            ]
+
+        if exclude:
+            if include:
+                # include given priority always, so need to execute exclude
+                pass
+            else:
+                excluded_dtypes = extract_unique_dtypes_from_dtypes_set(exclude, unique_dtypes)
+                
+                extracted_columns = [
+                    column
+                    for column, dtype in self.dtypes.items()
+                    if dtype not in excluded_dtypes
+                ]
+
+        if extracted_columns:
+            return DataFrame(self.iloc[:, extracted_columns].to_arrow())
+        else:
+            return DataFrame()
+
     def __getitem__(self, item) -> DataFrame:
         """
             This method allows to retrieve a subset of a DataFrane by means of a key
