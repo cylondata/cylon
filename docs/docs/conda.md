@@ -111,6 +111,8 @@ The easiest way to compile and run gcylon is through a conda environment. We pro
   - Pascal architecture or better (Compute Capability >=6.0)
 
 ### Installing Conda Packages
+Go to cylon project directory on the command line.
+
 Check your cudatoolkit installation version. You can check it with:
 ```
 nvcc --version
@@ -149,8 +151,8 @@ Running with 2 mpi workers (-n 2) on the local machine:
 mpirun -n 2 --mca opal_cuda_support 1 python python/pygcylon/examples/join.py
 ```
 
-To enable ucx, add the flags "--mca pml ucx --mca osc ucx" to the mpirun command.
-To enable infiniband, add the flag "--mca btl_openib_allow_ib true" to the mpirun command.
+To enable ucx, add the flags "--mca pml ucx --mca osc ucx" to the mpirun command.  
+To enable infiniband, add the flag "--mca btl_openib_allow_ib true" to the mpirun command.  
 To run the join example with both ucx and infiniband enabled on the local machine with two mpi workers:
 ```
 mpirun -n 2 --mca opal_cuda_support 1 --mca pml ucx --mca osc ucx --mca btl_openib_allow_ib true python python/pygcylon/examples/join.py
