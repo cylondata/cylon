@@ -36,8 +36,13 @@ set(CYLON_ARROW_VERSION 4.0.1)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-error=redundant-move")
-# set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+# Compiler specific flags
+IF(MSVC)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+    set(BUILD_SHARED_LIBS TRUE)
+ELSE()
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+ENDIF()
 
 if (NOT DEFINED CYLON_SIMD_LEVEL)
     set("CYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
@@ -83,7 +88,7 @@ SET(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
 SET(GCC_ABI_COMPILE_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0")
-add_compile_options(-Wall -Wextra -W)
+# add_compile_options(-Wall -Wextra -W) # -Wextra
 if (NOT HAVE_EXCLUSIVE_SCAN)
     add_definitions(-DNEED_EXCLUSIVE_SCAN)
 endif ()
@@ -127,7 +132,8 @@ include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
 
 # glog, if conda build, we will get glog from conda instead of building ourselves
 if(CONDA_INCLUDE_DIRS)
-    set(GLOG_LIBRARIES glog)
+    find_package (glog 0.5.0 REQUIRED)
+    set(GLOG_LIBRARIES glog::glog)
 else()
     option(WITH_GFLAGS "Use gflags" ON)
     SET(WITH_GFLAGS OFF)
@@ -135,6 +141,12 @@ else()
     include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
 endif(CONDA_INCLUDE_DIRS)
 
+<<<<<<< HEAD
+# this is required on windows to prevent clashes between ERROR abbreviation in logging.h and windows.h
+if(WIN32)
+    add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
+endif()
+=======
 include(Build)
 
 # if building gcylon, no need to build cylon
@@ -148,6 +160,7 @@ if (GCYLON_BUILD)
     endif ()
     return()
 endif ()
+>>>>>>> 1f1ddd9c5a76557c3a6bce4178fb050fb70154fe
 
 # parquet
 option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
@@ -240,17 +253,29 @@ add_subdirectory(src/tutorial)
 ## installing arrow files
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
     install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION include)
+<<<<<<< HEAD
+    IF(WIN32)
+        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/arrow.lib DESTINATION lib)
+        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/arrow_bundled_dependencies.lib DESTINATION lib)
+        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/arrow_static.lib DESTINATION lib)
+    ELSE()
+=======
     if(APPLE)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.dylib DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.400.dylib DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.400.0.0.dylib DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
     else()
+>>>>>>> 1f1ddd9c5a76557c3a6bce4178fb050fb70154fe
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400 DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400.0.0 DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
+<<<<<<< HEAD
+    ENDIF()
+=======
     endif()
+>>>>>>> 1f1ddd9c5a76557c3a6bce4178fb050fb70154fe
 endif ()
 
 if (CYLON_WITH_TEST)

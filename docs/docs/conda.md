@@ -82,6 +82,17 @@ conda install --use-local cylon
 conda install --use-local pycylon
 ```
 
+If the above doesn't work use the following command to install in local environment.
+```bash
+conda install -c <pathto cylon conda artifcat> cylon
+conda install -c <pathto pycylon conda artifcat> pycylon
+```
+
+Here is an example command in a local machine
+```bash
+conda install -c ~/anaconda3/envs/build_env/conda-bld/linux-64/pycylon-0.4.0-cylon_0.4_py37_gfa14527_455.tar.bz2 pycylon
+```
+
 After that you can use the package.
 
 ```bash

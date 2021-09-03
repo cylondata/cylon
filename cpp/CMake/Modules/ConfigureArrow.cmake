@@ -56,9 +56,15 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         )
 
 if (PYCYLON_BUILD)
-    list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
-            " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/bin/python3"
-            )
+    if(WIN32)
+        list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
+                " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/Scripts/python.exe"
+                " -DBOOST_ROOT=C:/local/boost_1_77_0_b1_rc1")
+    else()
+        list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
+        " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/bin/python3"
+        )
+    endif()
 endif (PYCYLON_BUILD)
 
 message("CMake Source Dir :")
@@ -85,7 +91,7 @@ if ($ENV{PARALLEL_LEVEL})
 endif ($ENV{PARALLEL_LEVEL})
 
 execute_process(
-        COMMAND ${CMAKE_COMMAND} --build .. -- -j 2
+        COMMAND ${CMAKE_COMMAND} --build ..
         RESULT_VARIABLE ARROW_BUILD
         WORKING_DIRECTORY ${ARROW_ROOT}/build)
 
@@ -117,6 +123,7 @@ set(FLATBUFFERS_INCLUDE_DIR "${FLATBUFFERS_ROOT}/include")
 set(FLATBUFFERS_LIBRARY_DIR "${FLATBUFFERS_ROOT}/lib")
 
 if (CYLON_PARQUET)
+    # todo handle windows
     if(APPLE)
       set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.dylib)
     else()
