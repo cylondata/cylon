@@ -424,8 +424,9 @@ def test_select_dtypes():
     df = {'a': [1, 2] * 3, 'b': ['a', 'b'] * 3, 'c': [1.0, 2.0] * 3}
     cdf = DataFrame(df)
     pdf = DataFrame(df)
-
+    
     assert cdf.select_dtypes(include='object').values.tolist() == [i for j in pdf.select_dtypes(include='object').values.tolist() for i in j]
-    assert cdf.select_dtypes(include=['float64']).values.tolist() == [i for j in pdf.select_dtypes(include=['float64']).values.tolist() for i in j]
-    assert cdf.select_dtypes(exclude='object').values.tolist() == pdf.select_dtypes(exclude='object').values.tolist()
+    assert cdf.select_dtypes(exclude=['int64', 'object']).values.tolist() == pdf.select_dtypes(exclude=['int64', 'object']).values.tolist()
     assert len(cdf.select_dtypes(include='bool').values.tolist()) == 0
+
+    
