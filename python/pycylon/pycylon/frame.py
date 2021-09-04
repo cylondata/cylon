@@ -482,7 +482,7 @@ class DataFrame(object):
         return DataFrame(cn.Table.from_pandas(context, hashed_pdf))
       
     @property
-    def values(self) -> np.ndarray: 
+    def values(self) -> np.ndarray: #pandas series.values and here should be same
         """
         Returns Numpy ndarray object representation of the df.
 
@@ -504,6 +504,9 @@ class DataFrame(object):
         if len(self.columns) >= 2:
             return self.to_numpy()
         else:
+            if len(self.columns)==0:
+                return np.empty(self.shape, dtype=float) 
+
             dict = self.to_dict()
             col = self.columns[0]
             return np.array(list(dict[col]))
