@@ -24,6 +24,7 @@ from pycylon import Table
 from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
 from pycylon import CylonContext
+from pycylon.indexing.index import BaseArrowIndex
 import operator
 
 
@@ -371,3 +372,62 @@ def test_applymap():
 
     assert (pdf.applymap(lambda x: len(str(x))).values.tolist() == cdf.applymap(
         lambda x: len(str(x))).to_pandas().values.tolist())
+
+def test_data_frame():
+    df = {'col-0': [1, 2, 3], 'col-1': [4, 5, 6]}
+    cdf = DataFrame(df)
+    pdf = pd.DataFrame(df)
+
+    assert len(cdf) == len(pdf)
+
+
+def test_iloc():
+    df = {'col-0': [1, 2, 3], 'col-1': [4, 5, 6]}
+    cdf = DataFrame(df)
+    pdf = pd.DataFrame(df)
+
+    assert DataFrame(cdf.iloc[0:2]).values.tolist() == pdf.iloc[0:2].values.tolist()
+
+
+def test_index():
+    df = {'col-0': [1, 2, 3], 'col-1': [4, 5, 6]}
+    cdf = DataFrame(df)
+
+    assert isinstance(cdf.index, BaseArrowIndex)
+
+
+def test_get_hash_object():
+    df = {'col-0': [1, 2, 3], 'col-1': [4, 5, 6]}
+    cdf = DataFrame(df)
+    pdf = pd.DataFrame(df)
+
+    assert cdf.get_hash_object().values.tolist() == pd.util.hash_pandas_object(pdf).values.tolist()
+
+
+def test_values():
+    df = {'col-0': [1, 2, 3], 'col-1': [4, 5, 6]}
+    cdf = DataFrame(df)
+    pdf = pd.DataFrame(df)
+
+    assert cdf.values.tolist() == pdf.values.tolist()
+
+
+def test_dtypes():
+    df = {'col-0': [1, 2, 3], 'col-1': [4, 5, 6]}
+    cdf = DataFrame(df)
+    pdf = pd.DataFrame(df)
+
+    print(cdf.dtypes)
+    print(pdf.dtypes.to_dict())
+
+
+def test_select_dtypes():
+    df = {'a': [1, 2] * 3, 'b': ['a', 'b'] * 3, 'c': [1.0, 2.0] * 3}
+    cdf = DataFrame(df)
+    pdf = DataFrame(df)
+    
+    assert cdf.select_dtypes(include='object').values.tolist() == [i for j in pdf.select_dtypes(include='object').values.tolist() for i in j]
+    assert cdf.select_dtypes(exclude=['int64', 'object']).values.tolist() == pdf.select_dtypes(exclude=['int64', 'object']).values.tolist()
+    assert len(cdf.select_dtypes(include='bool').values.tolist()) == 0
+
+    
