@@ -516,6 +516,7 @@ class DataFrame(object):
             col = self.columns[0]
             return np.array(list(dict[col]))
           
+    @property
     def dtypes(self):
         """
         Return the dtypes in the df as a Dictionary object.
