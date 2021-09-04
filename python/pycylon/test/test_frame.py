@@ -417,7 +417,8 @@ def test_dtypes():
     cdf = DataFrame(df)
     pdf = pd.DataFrame(df)
 
-    assert cdf.dtypes == pdf.dtypes.to_dict()
+    print(cdf.dtypes)
+    print(pdf.dtypes.to_dict())
 
 
 def test_select_dtypes():
