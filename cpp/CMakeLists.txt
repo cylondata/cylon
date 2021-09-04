@@ -141,12 +141,12 @@ else()
     include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
 endif(CONDA_INCLUDE_DIRS)
 
-<<<<<<< HEAD
+
 # this is required on windows to prevent clashes between ERROR abbreviation in logging.h and windows.h
 if(WIN32)
     add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
 endif()
-=======
+
 include(Build)
 
 # if building gcylon, no need to build cylon
@@ -160,7 +160,7 @@ if (GCYLON_BUILD)
     endif ()
     return()
 endif ()
->>>>>>> 1f1ddd9c5a76557c3a6bce4178fb050fb70154fe
+
 
 # parquet
 option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
@@ -253,29 +253,21 @@ add_subdirectory(src/tutorial)
 ## installing arrow files
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
     install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION include)
-<<<<<<< HEAD
     IF(WIN32)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/arrow.lib DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/arrow_bundled_dependencies.lib DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/arrow_static.lib DESTINATION lib)
-    ELSE()
-=======
-    if(APPLE)
+    ELIF(APPLE)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.dylib DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.400.dylib DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.400.0.0.dylib DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
-    else()
->>>>>>> 1f1ddd9c5a76557c3a6bce4178fb050fb70154fe
+    ELSE()
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400 DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400.0.0 DESTINATION lib)
         install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
-<<<<<<< HEAD
     ENDIF()
-=======
-    endif()
->>>>>>> 1f1ddd9c5a76557c3a6bce4178fb050fb70154fe
 endif ()
 
 if (CYLON_WITH_TEST)
