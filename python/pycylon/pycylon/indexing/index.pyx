@@ -223,7 +223,7 @@ cdef class ArrowILocIndexer:
         self.indexer_shd_ptr = make_shared[CArrowILocIndexer](indexing_type)
 
     def _fix_partial_slice_inidices(self, start_index, end_index, index):
-        if start_index and end_index:
+        if start_index is not None and end_index is not None:
             # (excluding the boundary value)
             return start_index, end_index - 1
         elif start_index is None and end_index is None:
