@@ -24,6 +24,7 @@ from pycylon import Table
 from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
 from pycylon import CylonContext
+from pycylon.indexing.index import BaseArrowIndex
 import operator
 
 
