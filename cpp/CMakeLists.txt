@@ -283,36 +283,12 @@ if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
 
     # install locally built arrow files
     install(DIRECTORY ${ARROW_INCLUDE_DIR}/arrow DESTINATION include)
-    # install libarrow.so, libarrow.so.xxx, libarrow.so.xxx.x.x, and libarrow.a
-    install(FILES ${ARROW_SHARED_LIB} ${ARROW_SHARED_LIB}.${ARROW_SO_VERSION}
-            ${ARROW_SHARED_LIB}.${ARROW_FULL_SO_VERSION} ${ARROW_STATIC_LIB}
-            DESTINATION lib)
-
+    install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/lib/ DESTINATION lib
+            PATTERN ${ARROW_INCLUDE_DIR}/cmake EXCLUDE
+            PATTERN ${ARROW_INCLUDE_DIR}/pkgconfig EXCLUDE
+            )
     # glog.a file
     install(FILES ${GLOG_LIBRARIES} DESTINATION lib)
-
-    # install parquet from arrow files
-    if (CYLON_PARQUET)
-        message(STATUS "parquet include dir: ${PARQUET_INCLUDE_DIR}")
-        message(STATUS "parquet libs: ${PARQUET_SHARED_LIB} ${PARQUET_STATIC_LIB}")
-
-        install(DIRECTORY ${PARQUET_INCLUDE_DIR}/parquet DESTINATION include)
-        install(FILES ${PARQUET_SHARED_LIB} ${PARQUET_SHARED_LIB}.${ARROW_SO_VERSION}
-                ${PARQUET_SHARED_LIB}.${ARROW_FULL_SO_VERSION} ${PARQUET_STATIC_LIB}
-                DESTINATION lib)
-    endif ()
-
-    if (PYCYLON_BUILD)
-        message(STATUS "arrow_python include dir: ${ARROW_PYTHON_INCLUDE_DIR}")
-        message(STATUS "arrow_python libs: ${ARROW_PYTHON_SHARED_LIB} ${ARROW_PYTHON_STATIC_LIB}")
-
-        # install locally built arrow_python files
-        install(DIRECTORY ${ARROW_PYTHON_INCLUDE_DIR}/arrow DESTINATION include)
-        install(FILES ${ARROW_PYTHON_SHARED_LIB} ${ARROW_PYTHON_SHARED_LIB}.${ARROW_SO_VERSION}
-                ${ARROW_PYTHON_SHARED_LIB}.${ARROW_FULL_SO_VERSION} ${ARROW_PYTHON_STATIC_LIB}
-                DESTINATION lib)
-    endif ()
-
 endif ()
 
 if (CYLON_WITH_TEST)
