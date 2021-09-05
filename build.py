@@ -66,7 +66,7 @@ def on_off(arg):
 BUILD_CPP = args.cpp
 CPP_BUILD_MODE = "Release" if (args.release or (
     not args.release and not args.debug)) else "Debug"
-CPP_SOURCE_DIR = Path(args.root, 'cpp')
+CPP_SOURCE_DIR = str(Path(args.root, 'cpp'))
 PYTHON_SOURCE_DIR = Path(args.root, 'python', 'pycylon')
 RUN_CPP_TESTS = args.test
 CMAKE_FLAGS = args.cmake_flags
@@ -78,7 +78,7 @@ BUILD_PYTHON = args.python
 # docker
 BUILD_DOCKER = args.docker
 
-BUILD_DIR = Path(args.bpath)
+BUILD_DIR = str(Path(args.bpath))
 INSTALL_COMMAND = f"-DCMAKE_INSTALL_PREFIX={args.ipath}" if args.ipath else ""
 
 def print_line():
@@ -86,6 +86,7 @@ def print_line():
 
 print_line()
 print("Build mode: " + CPP_BUILD_MODE)
+print("Build path: " + BUILD_DIR)
 print_line()
 
 # create build directory
@@ -130,16 +131,16 @@ def build_cpp():
       -DCMAKE_BUILD_TYPE={CPP_BUILD_MODE} -DCYLON_WITH_TEST={on_off(RUN_CPP_TESTS)} -DARROW_BUILD_TYPE=SYSTEM {CPPLINT_COMMAND} {INSTALL_COMMAND} \
       {CMAKE_FLAGS} {CPP_SOURCE_DIR}'
 
-    print(cmake_command)
-    res = subprocess.call(cmake_command, cwd=BUILD_DIR)
+    print(cmake_command, BUILD_DIR)
+    res = subprocess.call(cmake_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake generate")
 
     cmake_build_command = f'cmake --build . --parallel {os.cpu_count()} --config {CPP_BUILD_MODE}'
-    res = subprocess.call(cmake_build_command, cwd=BUILD_DIR)
+    res = subprocess.call(cmake_build_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake build")
 
     cmake_install_command = f'cmake --install . --prefix {CONDA_PREFIX}'
-    res = subprocess.call(cmake_install_command, cwd=BUILD_DIR)
+    res = subprocess.call(cmake_install_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake build")
 
 def build_docker():
@@ -174,7 +175,7 @@ def build_python():
     python_build_command = 'python setup.py install'
     env = os.environ
     env["CYLON_PREFIX"] = str(BUILD_DIR)
-    if os.name == 'posix'
+    if os.name == 'posix':
         env["ARROW_PREFIX"] = str(Path(CONDA_PREFIX))
     elif os.name == 'nt':
         env["ARROW_PREFIX"] = str(Path(os.environ["CONDA_PREFIX"], "Library"))
