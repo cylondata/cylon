@@ -44,9 +44,9 @@ from pycylon.data.table cimport SortOptions
 from pycylon.common.join_config cimport CJoinConfig
 from pycylon.common.join_config import JoinConfig
 from pycylon.common.join_config cimport JoinConfig
-from pycylon.indexing.index import BaseArrowIndex
-from pycylon.indexing.index cimport CBaseArrowIndex
-from pycylon.indexing.index cimport BaseArrowIndex
+from pycylon.indexing.cyindex import BaseArrowIndex
+from pycylon.indexing.cyindex cimport CBaseArrowIndex
+from pycylon.indexing.cyindex cimport BaseArrowIndex
 
 
 cdef api bint pyclon_is_context(object context):

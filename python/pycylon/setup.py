@@ -48,11 +48,8 @@ except Exception:
 compiler_directives = {"language_level": 3, "embedsignature": True}
 
 
-cython_files = []
-for root, dirs, files in os.walk(os.path.dirname(os.path.abspath(__file__))):
-	for file in files:
-		if(file.endswith(".pyx")):
-			cython_files.append(os.path.join(root,file))
+cython_files = ["pycylon/*/*.pyx"]
+print("CYTHON: " + str(cython_files))
 
 if not CYLON_PREFIX:
     raise ValueError("CYLON_PREFIX not set")
@@ -99,7 +96,9 @@ library_directories = [cylon_library_directory,
                        get_python_lib(),
                        os.path.join(os.sys.prefix, "lib")]
 
-libraries = ["arrow", "cylon", "glogd"] # todo glogd was added temporarily
+print("Libraries: " + str(library_directories))
+
+libraries = ["arrow", "cylon", "glog"] # todo glogd was added temporarily
 cylon_include_dir = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "..", "cpp", "src")
 
@@ -129,6 +128,8 @@ extensions = [
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
 packages = find_packages(include=["pycylon", "pycylon.*"])
+
+print("PACKAGES: " + str(packages))
 
 ret = setup(
     name="pycylon",

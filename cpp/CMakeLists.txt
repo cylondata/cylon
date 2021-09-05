@@ -75,14 +75,6 @@ else ()
     set(PYCYLON_BUILD OFF)
 endif ()
 
-## Python Executable Path
-if (PYTHON_EXEC_PATH)
-    message("Python Executable Path ${PYTHON_EXEC_PATH}")
-else ()
-    set(PYTHON_EXEC_PATH /usr)
-    message("Python Executable Path ${PYTHON_EXEC_PATH}")
-endif ()
-
 # C++ standard
 SET(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -104,7 +96,7 @@ if("$ENV{CONDA_BUILD}" STREQUAL "1")
 elseif(DEFINED ENV{CONDA_PREFIX})
     set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{CONDA_PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
     set(CONDA_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/include")
-    set(CONDA_LINK_DIRS "$ENV{CONDA_PREFIX}/lib")
+    set(CONDA_LINK_DIRS "$ENV{CONDA_PREFIX}/lib $ENV{CONDA_PREFIX}/Library/lib")
     set(ARROW_BUILD_TYPE "SYSTEM")
     message(STATUS "Conda environment detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
 endif("$ENV{CONDA_BUILD}" STREQUAL "1")

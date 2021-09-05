@@ -208,6 +208,7 @@ add_subdirectory(ctx)
 add_subdirectory(arrow)
 add_subdirectory(indexing)
 add_subdirectory(thridparty/flat_hash_map)
+add_subdirectory(compute)
 
 set_target_properties(cylon PROPERTIES VERSION ${CYLON_VERSION})
 install(TARGETS cylon DESTINATION lib)

@@ -34,8 +34,8 @@ from pycylon.index import RangeIndex, CategoricalIndex
 from pycylon.io import CSVReadOptions
 from pycylon.io import CSVWriteOptions
 
-from pycylon.indexing.index import IndexingType
-from pycylon.indexing.index import PyLocIndexer
+from pycylon.indexing.cyindex import IndexingType
+from pycylon.indexing.cyindex import PyLocIndexer
 
 
 DEVICE_CPU = "cpu"
@@ -455,7 +455,7 @@ class DataFrame(object):
             2      3      6
 
         >>> df1.index
-            <pycylon.indexing.index.BaseArrowIndex object at 0x7f6cf948ca00>
+            <pycylon.indexing.cyindex.BaseArrowIndex object at 0x7f6cf948ca00>
 
         """
         return self._table.get_index()

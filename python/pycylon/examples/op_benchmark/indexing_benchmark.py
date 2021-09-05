@@ -18,7 +18,7 @@ import numpy as np
 import pycylon as cn
 from pycylon import Table
 from pycylon.io import CSVWriteOptions
-from pycylon.indexing.index import IndexingType
+from pycylon.indexing.cyindex import IndexingType
 import argparse
 from bench_util import get_dataframe
 
@@ -36,7 +36,7 @@ Run benchmark:
 
 
 def indexing_op(num_rows: int, num_cols: int, unique_factor: float):
-    from pycylon.indexing.index import IndexingType
+    from pycylon.indexing.cyindex import IndexingType
     ctx: cn.CylonContext = cn.CylonContext(config=None, distributed=False)
     pdf = get_dataframe(num_rows=num_rows, num_cols=num_cols, unique_factor=unique_factor)
     filter_column = pdf.columns[0]

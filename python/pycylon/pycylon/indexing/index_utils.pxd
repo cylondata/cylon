@@ -24,7 +24,7 @@ from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 from pycylon.data.table cimport CTable
 from pycylon.data.table import Table
-from pycylon.indexing.index cimport CIndexingType
+from pycylon.indexing.cyindex cimport CIndexingType
 
 
 cdef extern from "../../../../cpp/src/cylon/indexing/index_utils.hpp" namespace "cylon":
