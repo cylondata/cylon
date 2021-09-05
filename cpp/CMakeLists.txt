@@ -41,7 +41,7 @@ IF(MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
     set(BUILD_SHARED_LIBS TRUE)
 ELSE()
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+    set(CMAKE_CXX_FLAGS  "-Wall -Wextra -Wno-error=redundant-move")
 ENDIF()
 
 if (NOT DEFINED CYLON_SIMD_LEVEL)
