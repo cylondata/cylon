@@ -5,4 +5,3 @@ pandas
 pytest
 pytest-mpi
 mpi4py
-pyarrow==4.0.1
