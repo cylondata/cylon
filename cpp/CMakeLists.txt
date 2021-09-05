@@ -80,26 +80,58 @@ SET(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
 SET(GCC_ABI_COMPILE_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0")
-# add_compile_options(-Wall -Wextra -W) # -Wextra
 if (NOT HAVE_EXCLUSIVE_SCAN)
     add_definitions(-DNEED_EXCLUSIVE_SCAN)
 endif ()
 
 # conda environment
-if("$ENV{CONDA_BUILD}" STREQUAL "1")
+if ("$ENV{CONDA_BUILD}" STREQUAL "1")
+    message("CONDA_BUILD detected. BUILD_PREFIX: $ENV{BUILD_PREFIX} PREFIX: $ENV{PREFIX}")
+
     set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{BUILD_PREFIX};$ENV{PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
     set(CONDA_INCLUDE_DIRS "$ENV{BUILD_PREFIX}/include" "$ENV{PREFIX}/include")
     set(CONDA_LINK_DIRS "$ENV{BUILD_PREFIX}/lib" "$ENV{PREFIX}/lib")
     set(ARROW_BUILD_TYPE "SYSTEM")
     set(CMAKE_INSTALL_INCLUDEDIR "$ENV{BUILD_PREFIX}/include")
+
     message(STATUS "Conda build detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
-elseif(DEFINED ENV{CONDA_PREFIX})
+    message(STATUS "CONDA_INCLUDE_DIRS set to: ${CONDA_INCLUDE_DIRS}")
+    message(STATUS "CONDA_LINK_DIRS set to: ${CONDA_LINK_DIRS}")
+
+
+    #    if conda build is on, set Python Root DIR to conda
+    set(Python3_ROOT_DIR "$ENV{BUILD_PREFIX}")
+elseif (DEFINED ENV{CONDA_PREFIX})
+    message("CONDA_PREFIX detected: $ENV{CONDA_PREFIX}")
+
     set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{CONDA_PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
     set(CONDA_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/include")
     set(CONDA_LINK_DIRS "$ENV{CONDA_PREFIX}/lib $ENV{CONDA_PREFIX}/Library/lib")
     set(ARROW_BUILD_TYPE "SYSTEM")
+
     message(STATUS "Conda environment detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
-endif("$ENV{CONDA_BUILD}" STREQUAL "1")
+    message(STATUS "CONDA_INCLUDE_DIRS set to: ${CONDA_INCLUDE_DIRS}")
+    message(STATUS "CONDA_LINK_DIRS set to: ${CONDA_LINK_DIRS}")
+
+    #    if conda prefix is on, set Python Root DIR to conda
+    set(Python3_ROOT_DIR "$ENV{CONDA_PREFIX}")
+endif ("$ENV{CONDA_BUILD}" STREQUAL "1")
+
+## PyCylon build
+if (PYCYLON_BUILD)
+    message("Cylon Python Build [READ] ${PYCYLON_BUILD}")
+
+    # LocationByValue Python
+    find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
+    message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
+    message(STATUS "Python3 include dir: ${Python3_INCLUDE_DIRS}")
+    message(STATUS "Python3 NumPy include dir: ${Python3_NumPy_INCLUDE_DIRS}")
+
+    include_directories(${Python3_INCLUDE_DIRS})
+else ()
+    message("Cylon Python Build [UNREAD] ${PYTCYLON_BUILD}")
+    set(PYCYLON_BUILD OFF)
+endif (PYCYLON_BUILD)
 
 # Put the libaries and binaries that get built into directories at the
 # top of the build.
@@ -123,7 +155,7 @@ find_package(MPI REQUIRED)
 include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
 
 # glog, if conda build, we will get glog from conda instead of building ourselves
-if(CONDA_INCLUDE_DIRS)
+if (CONDA_INCLUDE_DIRS)
     find_package (glog 0.5.0 REQUIRED)
     set(GLOG_LIBRARIES glog::glog)
 else()
@@ -131,7 +163,7 @@ else()
     SET(WITH_GFLAGS OFF)
     include(ConfigureGlog)
     include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
-endif(CONDA_INCLUDE_DIRS)
+endif (CONDA_INCLUDE_DIRS)
 
 
 # this is required on windows to prevent clashes between ERROR abbreviation in logging.h and windows.h
@@ -152,7 +184,6 @@ if (GCYLON_BUILD)
     endif ()
     return()
 endif ()
-
 
 # parquet
 option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
@@ -194,17 +225,24 @@ if (NOT ARROW_BUILD_TYPE)
 endif()
 
 if (${ARROW_BUILD_TYPE} STREQUAL "SYSTEM")
+    message("Finding Arrow from SYSTEM")
     find_package(Arrow REQUIRED)
+    message(STATUS "Arrow ver: ${ARROW_FULL_SO_VERSION}")
+    message(STATUS "Arrow include dir: ${ARROW_INCLUDE_DIR}")
+    message(STATUS "Arrow lib dir: ${ARROW_LIB_DIR}")
     set(ARROW_LIB arrow_shared)
 
     if (CYLON_PARQUET)
         find_library(PARQUET_LIB parquet REQUIRED)
-        message("PARQUET_LIB: ${PARQUET_LIB}")
+        message(STATUS "Parquet lib: ${PARQUET_LIB}")
     endif ()
 elseif (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
+    message("Building Arrow from SOURCE")
     include(ConfigureArrow)
     include_directories(SYSTEM "${ARROW_INCLUDE_DIR}")
 elseif (${ARROW_BUILD_TYPE} STREQUAL "CUSTOM")
+    message("Using CUSTOM Arrow installation")
+
     if (NOT ARROW_LIB_DIR)
         message(FATAL_ERROR "ARROW_BUILD_TYPE is set to CUSTOM, ARROW_LIB_DIR should be set")
     endif ()
@@ -222,18 +260,13 @@ elseif (${ARROW_BUILD_TYPE} STREQUAL "CUSTOM")
 
     if (CYLON_PARQUET)
         find_library(PARQUET_LIB parquet REQUIRED HINTS "${ARROW_LIB_DIR}")
-        message("PARQUET_LIB: ${PARQUET_LIB}")
+        message(STATUS "Parquet lib: ${PARQUET_LIB}")
     endif ()
 
     include_directories(SYSTEM ${ARROW_INCLUDE_DIR})
 else ()
     message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM, SOURCE or CUSTOM")
 endif()
-
-
-## LocationByValue Python
-find_package(PythonLibs REQUIRED)
-include_directories(${PYTHON_INCLUDE_DIRS})
 
 # Off if you dont want to build tests -- ON default
 option(CYLON_BUILD_TESTS "Build tests." ON)
@@ -242,24 +275,44 @@ add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
 add_subdirectory(src/tutorial)
 
-## installing arrow files
+# installing arrow files
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
-    install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/include/arrow DESTINATION include)
-    IF(WIN32)
-        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/arrow.lib DESTINATION lib)
-        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/arrow_bundled_dependencies.lib DESTINATION lib)
-        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/arrow_static.lib DESTINATION lib)
-    ELIF(APPLE)
-        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.dylib DESTINATION lib)
-        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.400.dylib DESTINATION lib)
-        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.400.0.0.dylib DESTINATION lib)
-        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
-    ELSE()
-        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so DESTINATION lib)
-        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400 DESTINATION lib)
-        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.so.400.0.0 DESTINATION lib)
-        install(FILES ${CMAKE_BINARY_DIR}/arrow/install/lib/libarrow.a DESTINATION lib)
-    ENDIF()
+    #    Following variables will be populated by FindPackage(Arrow...) in ConfigureArrow.cmake
+    message(STATUS "Arrow include dir: ${ARROW_INCLUDE_DIR}")
+    message(STATUS "Arrow libs: ${ARROW_SHARED_LIB} ${ARROW_STATIC_LIB}")
+
+    # install locally built arrow files
+    install(DIRECTORY ${ARROW_INCLUDE_DIR}/arrow DESTINATION include)
+    # install libarrow.so, libarrow.so.xxx, libarrow.so.xxx.x.x, and libarrow.a
+    install(FILES ${ARROW_SHARED_LIB} ${ARROW_SHARED_LIB}.${ARROW_SO_VERSION}
+            ${ARROW_SHARED_LIB}.${ARROW_FULL_SO_VERSION} ${ARROW_STATIC_LIB}
+            DESTINATION lib)
+
+    # glog.a file
+    install(FILES ${GLOG_LIBRARIES} DESTINATION lib)
+
+    # install parquet from arrow files
+    if (CYLON_PARQUET)
+        message(STATUS "parquet include dir: ${PARQUET_INCLUDE_DIR}")
+        message(STATUS "parquet libs: ${PARQUET_SHARED_LIB} ${PARQUET_STATIC_LIB}")
+
+        install(DIRECTORY ${PARQUET_INCLUDE_DIR}/parquet DESTINATION include)
+        install(FILES ${PARQUET_SHARED_LIB} ${PARQUET_SHARED_LIB}.${ARROW_SO_VERSION}
+                ${PARQUET_SHARED_LIB}.${ARROW_FULL_SO_VERSION} ${PARQUET_STATIC_LIB}
+                DESTINATION lib)
+    endif ()
+
+    if (PYCYLON_BUILD)
+        message(STATUS "arrow_python include dir: ${ARROW_PYTHON_INCLUDE_DIR}")
+        message(STATUS "arrow_python libs: ${ARROW_PYTHON_SHARED_LIB} ${ARROW_PYTHON_STATIC_LIB}")
+
+        # install locally built arrow_python files
+        install(DIRECTORY ${ARROW_PYTHON_INCLUDE_DIR}/arrow DESTINATION include)
+        install(FILES ${ARROW_PYTHON_SHARED_LIB} ${ARROW_PYTHON_SHARED_LIB}.${ARROW_SO_VERSION}
+                ${ARROW_PYTHON_SHARED_LIB}.${ARROW_FULL_SO_VERSION} ${ARROW_PYTHON_STATIC_LIB}
+                DESTINATION lib)
+    endif ()
+
 endif ()
 
 if (CYLON_WITH_TEST)

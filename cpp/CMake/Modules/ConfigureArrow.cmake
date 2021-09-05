@@ -15,8 +15,6 @@
 set(ARROW_HOME ${CMAKE_BINARY_DIR}/arrow/install)
 set(ARROW_ROOT ${CMAKE_BINARY_DIR}/arrow)
 
-message("Python Executable Path ${PYTHON_EXEC_PATH}")
-
 if (CYLON_PARQUET)
     set(PARQUET_ARGS " -DARROW_WITH_BROTLI=ON"
             " -DARROW_WITH_SNAPPY=ON"
@@ -56,14 +54,16 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         )
 
 if (PYCYLON_BUILD)
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    message("Python Executable Path ${Python3_EXECUTABLE}")
     if(WIN32)
         list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
-                " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/Scripts/python.exe"
+                " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}"
                 " -DBOOST_ROOT=C:/local/boost_1_77_0_b1_rc1")
     else()
         list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
-        " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/bin/python3"
-        )
+                " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}"
+                )
     endif()
 endif (PYCYLON_BUILD)
 
@@ -103,13 +103,24 @@ message(STATUS "Arrow installed here: " ${ARROW_ROOT}/install)
 set(ARROW_LIBRARY_DIR "${ARROW_ROOT}/install/lib")
 set(ARROW_INCLUDE_DIR "${ARROW_ROOT}/install/include")
 
+# todo we may be able to remove these!
 find_library(ARROW_LIB arrow
         NO_DEFAULT_PATH
         HINTS "${ARROW_LIBRARY_DIR}")
-
 find_library(ARROW_PYTHON arrow_python
         NO_DEFAULT_PATH
         HINTS "${ARROW_LIBRARY_DIR}")
+
+# find packages with the help of arrow Find*.cmake files
+find_package(Arrow REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindArrow.cmake)
+
+if (CYLON_PARQUET)
+find_package(Parquet REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindParquet.cmake)
+endif (CYLON_PARQUET)
+
+if (PYCYLON_BUILD)
+    find_package(arrow_python REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindArrowPython.cmake)
+endif (PYCYLON_BUILD)
 
 if (ARROW_LIB)
     message(STATUS "Arrow library: " ${ARROW_LIB})
@@ -122,6 +133,7 @@ message(STATUS "FlatBuffers installed here: " ${FLATBUFFERS_ROOT})
 set(FLATBUFFERS_INCLUDE_DIR "${FLATBUFFERS_ROOT}/include")
 set(FLATBUFFERS_LIBRARY_DIR "${FLATBUFFERS_ROOT}/lib")
 
+# todo we may be able to remove these!
 if (CYLON_PARQUET)
     # todo handle windows
     if(APPLE)
