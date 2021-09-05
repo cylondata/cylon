@@ -475,10 +475,11 @@ check_pycylon_installation(){
 }
 
 python_test(){
-  ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
-  LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${BUILD_PATH}/arrow/install/lib" || exit 1
+  LD_LIBRARY_PATH="${BUILD_PATH}/lib:${BUILD_PATH}/arrow/install/lib" || exit 1
   export_library_path ${LD_LIBRARY_PATH}
-
+  ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
+  LD_LIBRARY_PATH="${ARROW_LIB}:${LD_LIBRARY_PATH}" || exit 1
+  export_library_path ${LD_LIBRARY_PATH}
   python3 -m pytest python/pycylon/test/test_all.py || exit 1
 }
 
