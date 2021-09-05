@@ -74,12 +74,15 @@ else:
 
 pyarrow_include_dir = os.path.join(pyarrow_location, 'include')
 
-# extra_compile_args = os.popen(
-#     "mpic++ --showme:compile").read().strip().split(' ')
-# extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
-# extra_compile_args = extra_compile_args + \
-#     extra_link_args + additional_compile_args
-# extra_link_args = ["-Wl","-rpath","$ORIGIN/pyarrow"]
+extra_compile_args = []
+extra_link_args = []
+if os.name == 'posix':
+    extra_compile_args = os.popen(
+        "mpic++ --showme:compile").read().strip().split(' ')
+    extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
+    extra_compile_args = extra_compile_args + \
+        extra_link_args + additional_compile_args
+    extra_link_args = ["-Wl","-rpath","$ORIGIN/pyarrow"]
 
 glob_library_directory = os.path.join(CYLON_PREFIX, "glog", "install", "lib")
 
@@ -118,8 +121,8 @@ extensions = [
         sources=cython_files,
         include_dirs=_include_dirs,
         language='c++',
-        # extra_compile_args=extra_compile_args,
-        # extra_link_args=extra_link_args,
+        extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
         libraries=libraries,
         library_dirs=library_directories,
     )
