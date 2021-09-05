@@ -80,9 +80,8 @@ if os.name == 'posix':
     extra_compile_args = os.popen(
         "mpic++ --showme:compile").read().strip().split(' ')
     extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
-    extra_compile_args = extra_compile_args + \
-        extra_link_args + additional_compile_args
-    extra_link_args = ["-Wl","-rpath","$ORIGIN/pyarrow"]
+    extra_compile_args = extra_compile_args + additional_compile_args
+    extra_link_args = ["-W"]
 
 glob_library_directory = os.path.join(CYLON_PREFIX, "glog", "install", "lib")
 

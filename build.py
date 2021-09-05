@@ -149,10 +149,7 @@ def build_docker():
 
 
 def python_test():
-    test_command = '{python_command()} -m pytest python/test/test_all.py || exit 1'
-    # ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
-    # export LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
-    # echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+    test_command = f'{python_command()} -m pytest python/test/test_all.py || exit 1'
     env = os.environ
     env["LD_LIBRARY_PATH"] = f'{os.path.join(BUILD_DIR, "arrow", "install","lib")}:{os.path.join(BUILD_DIR, "lib")}:{os.environ.get("LD_LIBRARY_PATH","")}'
     env["PATH"] = f'{os.path.join(BUILD_DIR, "arrow", "install","lib")}:{os.path.join(BUILD_DIR, "lib")}:{os.environ.get("PATH","")}'
