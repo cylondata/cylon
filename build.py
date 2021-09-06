@@ -69,6 +69,7 @@ CPP_BUILD_MODE = "Release" if (args.release or (
 CPP_SOURCE_DIR = str(Path(args.root, 'cpp'))
 PYTHON_SOURCE_DIR = Path(args.root, 'python', 'pycylon')
 RUN_CPP_TESTS = args.test
+RUN_PYTHON_TESTS = args.pytest
 CMAKE_FLAGS = args.cmake_flags
 CPPLINT_COMMAND = " \"-DCMAKE_CXX_CPPLINT=cpplint;--linelength=100;--headers=h,hpp;--filter=-legal/copyright,-build/c++11,-runtime/references\" " if args.style_check else ""
 
@@ -141,21 +142,23 @@ def build_cpp():
 
     cmake_install_command = f'cmake --install . --prefix {CONDA_PREFIX}'
     res = subprocess.call(cmake_install_command, cwd=BUILD_DIR, shell=True)
-    check_status(res, "C++ cmake build")
+    check_status(res, "C++ cmake install")
+
+    if RUN_CPP_TESTS:
+        cmake_test_command = f'cmake --build . --target test --config {CPP_BUILD_MODE}'
+        res = subprocess.call(cmake_test_command, cwd=BUILD_DIR, shell=True)
+        check_status(res, "C++ cmake test")
 
 def build_docker():
     if not BUILD_DOCKER:
         return
 
-
 def python_test():
-    test_command = f'{python_command()} -m pytest python/test/test_all.py || exit 1'
-    env = os.environ
-    env["LD_LIBRARY_PATH"] = f'{os.path.join(BUILD_DIR, "arrow", "install","lib")}:{os.path.join(BUILD_DIR, "lib")}:{os.environ.get("LD_LIBRARY_PATH","")}'
-    env["PATH"] = f'{os.path.join(BUILD_DIR, "arrow", "install","lib")}:{os.path.join(BUILD_DIR, "lib")}:{os.environ.get("PATH","")}'
-    res = subprocess.run(test_command, shell=True, env=env)
+    if not RUN_PYTHON_TESTS:
+        return
+    test_command = 'python -m pytest python/pycylon/test/test_all.py'
+    res = subprocess.run(test_command, shell=True)
     check_status(res, "Python test suite")
-
 
 def build_python():
     if not BUILD_PYTHON:
@@ -183,3 +186,4 @@ def build_python():
 
 build_cpp()
 build_python()
+python_test()
