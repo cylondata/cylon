@@ -1,0 +1,16 @@
+name: cylon_dev
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - cmake>=3.17
+  - pyarrow=4.0.1
+  - glog
+  - msmpi
+  - cython>=0.29,<0.30
+  - numpy
+  - pandas
+  - setuptools
+  # they are not needed for using pygcylon or compiling it
+  - pytest
