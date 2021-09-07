@@ -128,7 +128,7 @@ def build_cpp():
             print("The build should be in a conda environment")
             return
 
-    cmake_command = f'cmake -DPYCYLON_BUILD={on_off(BUILD_PYTHON)}  \
+    cmake_command = f'cmake -DPYCYLON_BUILD={on_off(BUILD_PYTHON)} -A x64 \
       -DCMAKE_BUILD_TYPE={CPP_BUILD_MODE} -DCYLON_WITH_TEST={on_off(RUN_CPP_TESTS)} -DARROW_BUILD_TYPE=SYSTEM {CPPLINT_COMMAND} {INSTALL_COMMAND} \
       {CMAKE_FLAGS} {CPP_SOURCE_DIR}'
 
