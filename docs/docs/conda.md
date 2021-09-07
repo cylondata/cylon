@@ -130,11 +130,12 @@ Additionally, Cylon libraries would also be copied to `$CONDA_PREFIX/lib` and
 
 In addition to use terminal, you can also use the Conda environment in your preferred IDE's. 
 
-1. Open Cylon as a C++ project, and assign `cylon/cpp/CmakeLists.txt` as main CMake file.  
+1. Open Cylon as a C++ project, and assign `cylon/cpp/CmakeLists.txt` as main CMake file.
 
-2. Export `CONDA_PREFIX=<path to env>` environment variable for the IDE, and point to a build 
-   directory (ex: `$CYLON_HOME/build`) 
- 
+2. Export `CONDA_PREFIX=<path to env>` environment variable for the IDE
+
+3. Add a CMake build directory (ex: `$CYLON_HOME/build`)
+
 3. Use the following CMake options
 ```bash
 -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX"

@@ -41,10 +41,10 @@ Channel *UCXCommunicator::CreateChannel() {
   return newChannel;
 }
 
-int UCXCommunicator::GetRank() {
+int UCXCommunicator::GetRank() const {
   return this->rank;
 }
-int UCXCommunicator::GetWorldSize() {
+int UCXCommunicator::GetWorldSize() const {
   return this->world_size;
 }
 Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
@@ -56,12 +56,11 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   cylon::ucx::ucxWorkerAddr *ucpRecvWorkerAddr;
   // Address of the UCP Worker for sending
   cylon::ucx::ucxWorkerAddr *ucpSendWorkerAddr;
-  // All addresses buffer for allGather
-  ucp_address_t * allAddresses;
+
   // Status check when creating end-points
   ucs_status_t ucxStatus;
   // Variable to hold the current ucp address
-  ucp_address_t * address;
+  ucp_address_t *address;
 
   // MPI init
   MPI_Initialized(&initialized);
@@ -80,19 +79,18 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   }
 
   // Init recv worker and get address
-  ucpRecvWorkerAddr = cylon::ucx::initWorker(ucpContext,
-                         &ucpRecvWorker);
+  ucpRecvWorkerAddr = cylon::ucx::initWorker(ucpContext, &ucpRecvWorker);
   // Init send worker
-  ucpSendWorkerAddr = cylon::ucx::initWorker(ucpContext,
-                         &ucpSendWorker);
+  ucpSendWorkerAddr = cylon::ucx::initWorker(ucpContext, &ucpSendWorker);
 
   //  Gather all worker addresses
-  allAddresses = (ucp_address_t *)malloc(ucpRecvWorkerAddr->addrSize*world_size);
+  // All addresses buffer for allGather
+  auto allAddresses = std::make_unique<uint8_t[]>(ucpRecvWorkerAddr->addrSize * world_size);
   MPI_Allgather(ucpRecvWorkerAddr->addr,
-                (int)ucpRecvWorkerAddr->addrSize,
+                (int) ucpRecvWorkerAddr->addrSize,
                 MPI_BYTE,
-                allAddresses,
-                (int)ucpRecvWorkerAddr->addrSize,
+                allAddresses.get(),
+                (int) ucpRecvWorkerAddr->addrSize,
                 MPI_BYTE,
                 MPI_COMM_WORLD);
 
@@ -104,9 +102,7 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     // If not self, then check if the worker address has been received.
     //  If self,then assign local worker
     if (this->rank != sIndx) {
-      char *p = (char*)allAddresses;
-      p += sIndx*ucpRecvWorkerAddr->addrSize;
-      address = (ucp_address_t*)p;
+      address = reinterpret_cast<ucp_address_t *>(allAddresses.get() + sIndx * ucpRecvWorkerAddr->addrSize);
     } else {
       address = ucpRecvWorkerAddr->addr;
     }
@@ -118,22 +114,19 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     epParams.err_mode = UCP_ERR_HANDLING_MODE_NONE;
 
     // Create an endpoint
-    ucxStatus = ucp_ep_create(ucpSendWorker,
-                              &epParams,
-                              &ep);
+    ucxStatus = ucp_ep_create(ucpSendWorker, &epParams, &ep);
 
     endPointMap[sIndx] = ep;
     // Check if the endpoint was created properly
     if (ucxStatus != UCS_OK) {
       LOG(FATAL) << "Error when creating the endpoint.";
-      return Status(ucxStatus,
-                    "This is an error from UCX");
+      return Status(ucxStatus, "This is an error from UCX");
     }
   }
 
   // Cleanup
-  delete(ucpRecvWorkerAddr);
-  delete(ucpSendWorkerAddr);
+  delete (ucpRecvWorkerAddr);
+  delete (ucpSendWorkerAddr);
 
   return Status::OK();
 }
@@ -141,11 +134,12 @@ void UCXCommunicator::Finalize() {
   ucp_cleanup(ucpContext);
   MPI_Finalize();
 }
+
 void UCXCommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
-CommType UCXCommunicator::GetCommType() {
+CommType UCXCommunicator::GetCommType() const {
   return UCX;
 }
 }  // namespace net
