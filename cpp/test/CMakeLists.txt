@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-SET(MPI_RUN_CMD mpirun)
+SET(MPI_RUN_CMD mpiexec)
 
 file(COPY ${CYLON_SOURCE_DIR}/../data DESTINATION ${CMAKE_BINARY_DIR})
 
@@ -43,7 +43,11 @@ endfunction(cylon_add_test)
 # macro to run executable
 function(cylon_run_test TESTNAME no_mpi_proc)
   set(exec_name "${TESTNAME}_${no_mpi_proc}")
-  set(test_params --allow-run-as-root --oversubscribe -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}")
+  if (WIN32)
+    set(test_params -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/${TESTNAME}")
+  else()
+    set(test_params --allow-run-as-root --oversubscribe -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}")
+  endif()
   add_test(NAME ${exec_name} COMMAND ${MPI_RUN_CMD} ${test_params})
 endfunction(cylon_run_test)
 

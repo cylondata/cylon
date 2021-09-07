@@ -148,6 +148,7 @@ def build_cpp():
         cmake_test_command = f'cmake --build . --target test --config {CPP_BUILD_MODE}'
         if os.name == 'nt':
             cmake_test_command = f'cmake --build . --target RUN_TESTS --config {CPP_BUILD_MODE}'
+        print("CPP Test command: " + cmake_test_command)
         res = subprocess.call(cmake_test_command, cwd=BUILD_DIR, shell=True)
         check_status(res, "C++ cmake test")
 
