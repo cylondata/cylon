@@ -145,7 +145,10 @@ def build_cpp():
     check_status(res, "C++ cmake install")
 
     if RUN_CPP_TESTS:
-        cmake_test_command = f'cmake --build . --target test --config {CPP_BUILD_MODE}'
+        if os.name == 'posix':
+            cmake_test_command = f'cmake --build . --target test --config {CPP_BUILD_MODE}'
+        elif os.name == 'nt':
+            cmake_test_command = f'cmake --build . --target RUN_TESTS --config {CPP_BUILD_MODE}'
         res = subprocess.call(cmake_test_command, cwd=BUILD_DIR, shell=True)
         check_status(res, "C++ cmake test")
 
