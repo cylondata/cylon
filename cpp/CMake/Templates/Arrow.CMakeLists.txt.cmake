@@ -16,8 +16,6 @@ cmake_minimum_required(VERSION 3.10)
 project(ArrowModule)
 include(ExternalProject)
 
-
-message("############# ${CYLON_ARROW_VERSION}")
 ExternalProject_Add(Arrow
         GIT_REPOSITORY    https://github.com/apache/arrow.git
         GIT_TAG           "apache-arrow-${CYLON_ARROW_VERSION}"

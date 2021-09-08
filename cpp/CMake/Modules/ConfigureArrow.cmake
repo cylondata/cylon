@@ -58,8 +58,7 @@ if (PYCYLON_BUILD)
     message("Python Executable Path ${Python3_EXECUTABLE}")
     if(WIN32)
         list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
-                " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}"
-                " -DBOOST_ROOT=C:/local/boost_1_77_0_b1_rc1")
+                " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}")
     else()
         list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
                 " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}"

@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-SET(MPI_RUN_CMD mpiexec)
+find_package(MPI REQUIRED)
 
 file(COPY ${CYLON_SOURCE_DIR}/../data DESTINATION ${CMAKE_BINARY_DIR})
 
@@ -48,7 +48,7 @@ function(cylon_run_test TESTNAME no_mpi_proc)
   else()
     set(test_params --allow-run-as-root --oversubscribe -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}")
   endif()
-  add_test(NAME ${exec_name} COMMAND ${MPI_RUN_CMD} ${test_params})
+  add_test(NAME ${exec_name} COMMAND ${MPIEXEC_EXECUTABLE} ${test_params})
 endfunction(cylon_run_test)
 
 #Add tests as follows ...
