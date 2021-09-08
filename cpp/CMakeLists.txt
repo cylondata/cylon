@@ -54,6 +54,7 @@ message("CXX_COMMON_FLAGS: ${CXX_COMMON_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMMON_FLAGS}")
 set(CMAKE_INSTALL_INCLUDEDIR "include")
 
+# Check build type (debug/ release) and set flags
 string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPERCASE_CMAKE_BUILD_TYPE)
 if (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "DEBUG")
     message("Running on debug mode...")
@@ -76,15 +77,15 @@ else ()
 endif ()
 
 # C++ standard
-SET(CMAKE_CXX_STANDARD 14)
-SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_CXX_EXTENSIONS OFF)
-SET(GCC_ABI_COMPILE_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0")
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(GCC_ABI_COMPILE_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0")
 if (NOT HAVE_EXCLUSIVE_SCAN)
     add_definitions(-DNEED_EXCLUSIVE_SCAN)
 endif ()
 
-# conda environment
+# check for conda environment
 if ("$ENV{CONDA_BUILD}" STREQUAL "1")
     message("CONDA_BUILD detected. BUILD_PREFIX: $ENV{BUILD_PREFIX} PREFIX: $ENV{PREFIX}")
 
@@ -97,7 +98,6 @@ if ("$ENV{CONDA_BUILD}" STREQUAL "1")
     message(STATUS "Conda build detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
     message(STATUS "CONDA_INCLUDE_DIRS set to: ${CONDA_INCLUDE_DIRS}")
     message(STATUS "CONDA_LINK_DIRS set to: ${CONDA_LINK_DIRS}")
-
 
     #    if conda build is on, set Python Root DIR to conda
     set(Python3_ROOT_DIR "$ENV{BUILD_PREFIX}")
@@ -135,24 +135,27 @@ endif (PYCYLON_BUILD)
 
 # Put the libaries and binaries that get built into directories at the
 # top of the build.
-SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
-SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-SET(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
+set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+set(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
 
-# root include directory
-#include_directories(src/cylon)
-include_directories(src/)
+# set cmake include directory
 if(CONDA_INCLUDE_DIRS)
     include_directories("${CONDA_INCLUDE_DIRS}")
 endif(CONDA_INCLUDE_DIRS)
+include_directories(src/)
 
+# set cmake link dirs
 if(CONDA_LINK_DIRS)
     link_directories("${CONDA_LINK_DIRS}")
 endif(CONDA_LINK_DIRS)
 
 # LocationByValue MPI
-find_package(MPI REQUIRED)
-include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
+message("Finding MPI")
+find_package(MPI REQUIRED COMPONENTS CXX)
+message(STATUS "MPI include dir: ${MPI_CXX_INCLUDE_PATH}")
+message(STATUS "MPI libs: ${MPI_CXX_LIBRARIES}")
+include_directories(${MPI_CXX_INCLUDE_PATH})
 
 # glog, if conda build, we will get glog from conda instead of building ourselves
 if (CONDA_INCLUDE_DIRS)
@@ -160,7 +163,7 @@ if (CONDA_INCLUDE_DIRS)
     set(GLOG_LIBRARIES glog::glog)
 else()
     option(WITH_GFLAGS "Use gflags" ON)
-    SET(WITH_GFLAGS OFF)
+    set(WITH_GFLAGS OFF)
     include(ConfigureGlog)
     include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
 endif (CONDA_INCLUDE_DIRS)

@@ -182,9 +182,9 @@ IF(NOT MSVC)
     endif()
 ENDIF()
 
+# link MPI
+target_link_libraries(cylon ${MPI_CXX_LIBRARIES})
 
-include_directories(${MPI_INCLUDE_PATH})
-target_link_libraries(cylon ${MPI_LIBRARIES})
 target_link_libraries(cylon ${GLOG_LIBRARIES})
 target_link_libraries(cylon ${ARROW_LIB})
 target_link_libraries(cylon ${PYTHON_LIBRARIES})
