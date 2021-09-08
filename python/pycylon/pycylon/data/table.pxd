@@ -28,8 +28,8 @@ from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
-from pycylon.indexing.index cimport CBaseArrowIndex
-from pycylon.indexing.index import BaseArrowIndex
+from pycylon.indexing.cyindex cimport CBaseArrowIndex
+from pycylon.indexing.cyindex import BaseArrowIndex
 
 
 cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":

@@ -18,9 +18,13 @@
  */
 #include <iostream>
 #include "murmur3.hpp"
+#include "compiler.h"
 
+#if defined(CYLON_COMP_GCC)
 #define FORCE_INLINE inline __attribute__((always_inline))
-
+#else
+#define FORCE_INLINE __forceinline
+#endif
 namespace cylon {
 namespace util {
 

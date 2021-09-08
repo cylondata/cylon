@@ -17,9 +17,9 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string
 from pyarrow.lib cimport CArray as CArrowArray
 from pyarrow.lib cimport CScalar as CArrowScalar
-from pycylon.indexing.index cimport CIndexingType
-from pycylon.indexing.index cimport CArrowLocIndexer
-from pycylon.indexing.index cimport CBaseArrowIndex
+from pycylon.indexing.cyindex cimport CIndexingType
+from pycylon.indexing.cyindex cimport CArrowLocIndexer
+from pycylon.indexing.cyindex cimport CBaseArrowIndex
 from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table, pyarrow_wrap_array,
 pyarrow_unwrap_array, pyarrow_wrap_scalar, pyarrow_unwrap_scalar)
 

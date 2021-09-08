@@ -12,6 +12,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Remove link for preventing an error
+        run: rm /usr/local/bin/2to3
       - name: Install dependencies
         run: brew install open-mpi re2 && brew update --preinstall && brew install automake boost brotli c-ares ccache cmake flatbuffers glog grpc llvm llvm@8 lz4 minio ninja numpy openssl@1.1 protobuf python rapidjson snappy thrift wget zstd
       - name: build python and test

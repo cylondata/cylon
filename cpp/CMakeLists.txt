@@ -36,8 +36,13 @@ set(CYLON_ARROW_VERSION 4.0.1)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-error=redundant-move")
-# set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+# Compiler specific flags
+IF(MSVC)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+    set(BUILD_SHARED_LIBS TRUE)
+ELSE()
+    set(CMAKE_CXX_FLAGS  "-Wall -Wextra -Wno-error=redundant-move")
+ENDIF()
 
 if (NOT DEFINED CYLON_SIMD_LEVEL)
     set("CYLON_SIMD_LEVEL" "SSE4_2") # options: SSE4_2| AVX512 | AVX2
@@ -62,12 +67,19 @@ else ()
     message(FATAL_ERROR "Unknown CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE}! Exiting...")
 endif ()
 
+## PyCylon build
+if (PYCYLON_BUILD)
+    message("Cylon Python Build [READ] ${PYCYLON_BUILD}")
+else ()
+    message("Cylon Python Build [UNREAD] ${PYTCYLON_BUILD}")
+    set(PYCYLON_BUILD OFF)
+endif ()
+
 # C++ standard
 SET(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
 SET(GCC_ABI_COMPILE_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0")
-add_compile_options(-Wall -Wextra -W)
 if (NOT HAVE_EXCLUSIVE_SCAN)
     add_definitions(-DNEED_EXCLUSIVE_SCAN)
 endif ()
@@ -94,7 +106,7 @@ elseif (DEFINED ENV{CONDA_PREFIX})
 
     set(CMAKE_SYSTEM_PREFIX_PATH "$ENV{CONDA_PREFIX};${CMAKE_SYSTEM_PREFIX_PATH}")
     set(CONDA_INCLUDE_DIRS "$ENV{CONDA_PREFIX}/include")
-    set(CONDA_LINK_DIRS "$ENV{CONDA_PREFIX}/lib")
+    set(CONDA_LINK_DIRS "$ENV{CONDA_PREFIX}/lib" "$ENV{CONDA_PREFIX}/Library/lib")
     set(ARROW_BUILD_TYPE "SYSTEM")
 
     message(STATUS "Conda environment detected, CMAKE_SYSTEM_PREFIX_PATH set to: ${CMAKE_SYSTEM_PREFIX_PATH}")
@@ -144,13 +156,20 @@ include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
 
 # glog, if conda build, we will get glog from conda instead of building ourselves
 if (CONDA_INCLUDE_DIRS)
-    set(GLOG_LIBRARIES glog)
-else ()
+    find_package (glog 0.5.0 REQUIRED)
+    set(GLOG_LIBRARIES glog::glog)
+else()
     option(WITH_GFLAGS "Use gflags" ON)
     SET(WITH_GFLAGS OFF)
     include(ConfigureGlog)
     include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
 endif (CONDA_INCLUDE_DIRS)
+
+
+# this is required on windows to prevent clashes between ERROR abbreviation in logging.h and windows.h
+if(WIN32)
+    add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
+endif()
 
 include(Build)
 
@@ -264,36 +283,12 @@ if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
 
     # install locally built arrow files
     install(DIRECTORY ${ARROW_INCLUDE_DIR}/arrow DESTINATION include)
-    # install libarrow.so, libarrow.so.xxx, libarrow.so.xxx.x.x, and libarrow.a
-    install(FILES ${ARROW_SHARED_LIB} ${ARROW_SHARED_LIB}.${ARROW_SO_VERSION}
-            ${ARROW_SHARED_LIB}.${ARROW_FULL_SO_VERSION} ${ARROW_STATIC_LIB}
-            DESTINATION lib)
-
+    install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/lib/ DESTINATION lib
+            PATTERN ${ARROW_INCLUDE_DIR}/cmake EXCLUDE
+            PATTERN ${ARROW_INCLUDE_DIR}/pkgconfig EXCLUDE
+            )
     # glog.a file
     install(FILES ${GLOG_LIBRARIES} DESTINATION lib)
-
-    # install parquet from arrow files
-    if (CYLON_PARQUET)
-        message(STATUS "parquet include dir: ${PARQUET_INCLUDE_DIR}")
-        message(STATUS "parquet libs: ${PARQUET_SHARED_LIB} ${PARQUET_STATIC_LIB}")
-
-        install(DIRECTORY ${PARQUET_INCLUDE_DIR}/parquet DESTINATION include)
-        install(FILES ${PARQUET_SHARED_LIB} ${PARQUET_SHARED_LIB}.${ARROW_SO_VERSION}
-                ${PARQUET_SHARED_LIB}.${ARROW_FULL_SO_VERSION} ${PARQUET_STATIC_LIB}
-                DESTINATION lib)
-    endif ()
-
-    if (PYCYLON_BUILD)
-        message(STATUS "arrow_python include dir: ${ARROW_PYTHON_INCLUDE_DIR}")
-        message(STATUS "arrow_python libs: ${ARROW_PYTHON_SHARED_LIB} ${ARROW_PYTHON_STATIC_LIB}")
-
-        # install locally built arrow_python files
-        install(DIRECTORY ${ARROW_PYTHON_INCLUDE_DIR}/arrow DESTINATION include)
-        install(FILES ${ARROW_PYTHON_SHARED_LIB} ${ARROW_PYTHON_SHARED_LIB}.${ARROW_SO_VERSION}
-                ${ARROW_PYTHON_SHARED_LIB}.${ARROW_FULL_SO_VERSION} ${ARROW_PYTHON_STATIC_LIB}
-                DESTINATION lib)
-    endif ()
-
 endif ()
 
 if (CYLON_WITH_TEST)

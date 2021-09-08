@@ -56,9 +56,14 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
 if (PYCYLON_BUILD)
     find_package(Python3 COMPONENTS Interpreter REQUIRED)
     message("Python Executable Path ${Python3_EXECUTABLE}")
-
-    list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
-            " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}")
+    if(WIN32)
+        list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
+                " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}")
+    else()
+        list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
+                " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}"
+                )
+    endif()
 endif (PYCYLON_BUILD)
 
 message("CMake Source Dir :")
@@ -85,7 +90,7 @@ if ($ENV{PARALLEL_LEVEL})
 endif ($ENV{PARALLEL_LEVEL})
 
 execute_process(
-        COMMAND ${CMAKE_COMMAND} --build .. -- -j 2
+        COMMAND ${CMAKE_COMMAND} --build ..
         RESULT_VARIABLE ARROW_BUILD
         WORKING_DIRECTORY ${ARROW_ROOT}/build)
 
@@ -129,6 +134,7 @@ set(FLATBUFFERS_LIBRARY_DIR "${FLATBUFFERS_ROOT}/lib")
 
 # todo we may be able to remove these!
 if (CYLON_PARQUET)
+    # todo handle windows
     if(APPLE)
       set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.dylib)
     else()

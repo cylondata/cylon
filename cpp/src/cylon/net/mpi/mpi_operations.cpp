@@ -21,13 +21,13 @@ MPI_Op cylon::mpi::GetMPIOp(cylon::net::ReduceOp reduce_op) {
     case cylon::net::MIN: return MPI_MIN;
     case cylon::net::MAX: return MPI_MAX;
 //    case cylon::PROD: return MPI_PROD;
-    default: return nullptr;
+    default: return MPI_OP_NULL;
   }
 }
 
 MPI_Datatype cylon::mpi::GetMPIDataType(const std::shared_ptr<DataType> &data_type) {
   switch (data_type->getType()) {
-    case Type::BOOL:return MPI_CXX_BOOL;
+    case Type::BOOL:return MPI_C_BOOL;
     case Type::UINT8:return MPI_UINT8_T;
     case Type::INT8:return MPI_INT8_T;
     case Type::UINT16:return MPI_UINT16_T;
@@ -55,7 +55,7 @@ MPI_Datatype cylon::mpi::GetMPIDataType(const std::shared_ptr<DataType> &data_ty
     case Type::FIXED_SIZE_LIST:
     case Type::EXTENSION:break;
   }
-  return nullptr;
+  return MPI_DATATYPE_NULL;
 }
 
 cylon::Status cylon::mpi::AllReduce(const void *send_buf,
@@ -66,7 +66,7 @@ cylon::Status cylon::mpi::AllReduce(const void *send_buf,
   MPI_Datatype mpi_data_type = cylon::mpi::GetMPIDataType(data_type);
   MPI_Op mpi_op = cylon::mpi::GetMPIOp(reduce_op);
 
-  if (mpi_data_type == nullptr || mpi_op == nullptr) {
+  if (mpi_data_type == MPI_DATATYPE_NULL || mpi_op == MPI_OP_NULL) {
     return cylon::Status(cylon::Code::NotImplemented, "Unknown data type or operation for MPI");
   }
 
