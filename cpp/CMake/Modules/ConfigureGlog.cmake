@@ -59,8 +59,12 @@ set(GLOG_INCLUDE_DIR "${GLOG_ROOT}/install/include")
 
 set(GLOG_FOUND TRUE)
 
+# glog depends on libunwind
+find_package(unwind REQUIRED HINTS ${GLOG_ROOT}/glog/cmake CONFIGS FindUnwind.cmake)
+message("Unwind found: ${Unwind_FOUND}")
+
 IF(WIN32)
-        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/glogd.lib)       
+        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/glogd.lib unwind::unwind)
 ELSE()
-        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/libglog.a)
+        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/libglog.a unwind::unwind)
 ENDIF()

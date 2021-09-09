@@ -157,8 +157,8 @@ include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
 # if conda build, we will get glog from conda instead of building ourselves
 if (CYLON_CONDA_BUILD)
     message("Using Conda Glog")
-    find_library(GLOG_LIBRARIES glog 0.5.0 REQUIRED HINTS ${CONDA_LINK_DIRS})
-    #    set(GLOG_LIBRARIES glog::glog)
+    find_package(glog 0.5.0 REQUIRED)
+    set(GLOG_LIBRARIES glog::glog)
 else ()
     message("Building Glog locally")
     option(WITH_GFLAGS "Use gflags" ON)
@@ -173,6 +173,9 @@ message(STATUS "Glog libs: ${GLOG_LIBRARIES}")
 if (WIN32)
     add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
 endif ()
+
+# include Modules/Build.cmake
+include(Modules/Build)
 
 # if building gcylon, no need to build cylon
 option(GCYLON_BUILD "Build GCylon" OFF)
@@ -291,10 +294,6 @@ if (CYLON_PARQUET)
     message(STATUS "Parquet lib: ${PARQUET_LIB}")
 endif (CYLON_PARQUET)
 
-
-# include Modules/Build.cmake
-include(Modules/Build)
-
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
 add_subdirectory(src/tutorial)
@@ -311,6 +310,7 @@ if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
             PATTERN ${ARROW_INCLUDE_DIR}/cmake EXCLUDE
             PATTERN ${ARROW_INCLUDE_DIR}/pkgconfig EXCLUDE
             )
+
     # glog.a file
     install(FILES ${GLOG_LIBRARIES} DESTINATION lib)
 endif ()
