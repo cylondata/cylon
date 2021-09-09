@@ -161,8 +161,6 @@ if (CYLON_CONDA_BUILD)
     set(GLOG_LIBRARIES glog::glog)
 else ()
     message("Building Glog locally")
-    option(WITH_GFLAGS "Use gflags" ON)
-    set(WITH_GFLAGS OFF)
     include(ConfigureGlog)
     include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
     message(STATUS "Glog include dir: ${GLOG_INCLUDE_DIR}")
@@ -175,7 +173,7 @@ if (WIN32)
 endif ()
 
 # include Modules/Build.cmake
-include(Modules/Build)
+include(Build)
 
 # if building gcylon, no need to build cylon
 option(GCYLON_BUILD "Build GCylon" OFF)

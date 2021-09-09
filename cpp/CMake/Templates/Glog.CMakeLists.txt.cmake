@@ -22,4 +22,4 @@ ExternalProject_Add(glog
         SOURCE_DIR        "${GLOG_ROOT}/glog"
         BINARY_DIR        "${GLOG_ROOT}/build"
         INSTALL_DIR       "${GLOG_ROOT}/install"
-        CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX=${GLOG_ROOT}/install -DWITH_GFLAGS=OFF -DBUILD_SHARED_LIBS=OFF)
+        CMAKE_ARGS        -DCMAKE_INSTALL_PREFIX=${GLOG_ROOT}/install -DWITH_GFLAGS=OFF -DWITH_UNWIND=OFF -DBUILD_SHARED_LIBS=OFF)

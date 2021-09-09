@@ -27,8 +27,6 @@ ENDIF()
 set(GLOG_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${GLOG_EXTRA_COMPILER_FLAGS})
 set(GLOG_C_FLAGS ${CMAKE_C_FLAGS} ${GLOG_EXTRA_COMPILER_FLAGS})
 
-SET(WITH_GFLAGS OFF)
-
 configure_file("${CMAKE_SOURCE_DIR}/CMake/Templates/Glog.CMakeLists.txt.cmake"
         "${GLOG_ROOT}/CMakeLists.txt")
 
@@ -59,12 +57,8 @@ set(GLOG_INCLUDE_DIR "${GLOG_ROOT}/install/include")
 
 set(GLOG_FOUND TRUE)
 
-# glog depends on libunwind
-find_package(unwind REQUIRED HINTS ${GLOG_ROOT}/glog/cmake CONFIGS FindUnwind.cmake)
-message("Unwind found: ${Unwind_FOUND}")
-
 IF(WIN32)
-        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/glogd.lib unwind::unwind)
+        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/glogd.lib)
 ELSE()
-        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/libglog.a unwind::unwind)
+        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/libglog.a)
 ENDIF()
