@@ -182,15 +182,11 @@ IF(NOT MSVC)
     endif()
 ENDIF()
 
-# link MPI
+# link external libraries
 target_link_libraries(cylon ${MPI_CXX_LIBRARIES})
-
 target_link_libraries(cylon ${GLOG_LIBRARIES})
 target_link_libraries(cylon ${ARROW_LIB})
-target_link_libraries(cylon ${PYTHON_LIBRARIES})
 target_link_libraries(cylon Threads::Threads)
-# target_compile_options(cylon PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
-target_compile_options(cylon PRIVATE)
 
 if (CYLON_PARQUET)
     target_link_libraries(cylon ${PARQUET_LIB})
@@ -199,6 +195,14 @@ endif ()
 if (CYLON_UCX)
     target_link_libraries(cylon ${UCX_LIBRARIES})
 endif ()
+
+if (PYCYLON_BUILD)
+    target_link_libraries(cylon ${PYTHON_LIBRARIES})
+    target_link_libraries(cylon ${ARROW_PY_LIB})
+endif (PYCYLON_BUILD)
+
+target_compile_options(cylon PRIVATE)
+# target_compile_options(cylon PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
 
 cylon_install_all_headers("cylon")
 
@@ -213,4 +217,5 @@ add_subdirectory(thridparty/flat_hash_map)
 add_subdirectory(compute)
 
 set_target_properties(cylon PROPERTIES VERSION ${CYLON_VERSION})
+
 install(TARGETS cylon DESTINATION lib)

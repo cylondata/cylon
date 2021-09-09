@@ -55,14 +55,13 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
 
 if (PYCYLON_BUILD)
     find_package(Python3 COMPONENTS Interpreter REQUIRED)
-    message("Python Executable Path ${Python3_EXECUTABLE}")
+    message(STATUS "Python Executable Path ${Python3_EXECUTABLE}")
     if(WIN32)
         list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
                 " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}")
     else()
         list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
-                " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}"
-                )
+                " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}")
     endif()
 endif (PYCYLON_BUILD)
 
@@ -102,44 +101,27 @@ message(STATUS "Arrow installed here: " ${ARROW_ROOT}/install)
 set(ARROW_LIBRARY_DIR "${ARROW_ROOT}/install/lib")
 set(ARROW_INCLUDE_DIR "${ARROW_ROOT}/install/include")
 
-# todo we may be able to remove these!
-find_library(ARROW_LIB arrow
-        NO_DEFAULT_PATH
-        HINTS "${ARROW_LIBRARY_DIR}")
-find_library(ARROW_PYTHON arrow_python
-        NO_DEFAULT_PATH
-        HINTS "${ARROW_LIBRARY_DIR}")
-
 # find packages with the help of arrow Find*.cmake files
 find_package(Arrow REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindArrow.cmake)
+message(STATUS "Arrow lib: ${ARROW_SHARED_LIB}")
+set(ARROW_LIB ${ARROW_SHARED_LIB})
 
 if (CYLON_PARQUET)
-find_package(Parquet REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindParquet.cmake)
+    find_package(Parquet REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindParquet.cmake)
+    message(STATUS "Parquet lib: ${PARQUET_SHARED_LIB}")
+    set(PARQUET_LIB ${PARQUET_SHARED_LIB})
 endif (CYLON_PARQUET)
 
 if (PYCYLON_BUILD)
     find_package(arrow_python REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindArrowPython.cmake)
+    message(STATUS "Arrow py lib: ${ARROW_PYTHON_SHARED_LIB}")
+    set(ARROW_PY_LIB ${ARROW_PYTHON_SHARED_LIB})
 endif (PYCYLON_BUILD)
-
-if (ARROW_LIB)
-    message(STATUS "Arrow library: " ${ARROW_LIB})
-    set(ARROW_FOUND TRUE)
-endif (ARROW_LIB)
 
 set(FLATBUFFERS_ROOT "${ARROW_ROOT}/build/flatbuffers_ep-prefix/src/flatbuffers_ep-install")
 
 message(STATUS "FlatBuffers installed here: " ${FLATBUFFERS_ROOT})
 set(FLATBUFFERS_INCLUDE_DIR "${FLATBUFFERS_ROOT}/include")
 set(FLATBUFFERS_LIBRARY_DIR "${FLATBUFFERS_ROOT}/lib")
-
-# todo we may be able to remove these!
-if (CYLON_PARQUET)
-    # todo handle windows
-    if(APPLE)
-      set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.dylib)
-    else()
-      set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.so)
-    endif()
-endif (CYLON_PARQUET)
 
 add_definitions(-DARROW_METADATA_V4)

@@ -68,14 +68,6 @@ else ()
     message(FATAL_ERROR "Unknown CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE}! Exiting...")
 endif ()
 
-## PyCylon build
-if (PYCYLON_BUILD)
-    message("Cylon Python Build [READ] ${PYCYLON_BUILD}")
-else ()
-    message("Cylon Python Build [UNREAD] ${PYTCYLON_BUILD}")
-    set(PYCYLON_BUILD OFF)
-endif ()
-
 # C++ standard
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -101,6 +93,8 @@ if ("$ENV{CONDA_BUILD}" STREQUAL "1")
 
     #    if conda build is on, set Python Root DIR to conda
     set(Python3_ROOT_DIR "$ENV{BUILD_PREFIX}")
+
+    set(CYLON_CONDA_BUILD ON)
 elseif (DEFINED ENV{CONDA_PREFIX})
     message("CONDA_PREFIX detected: $ENV{CONDA_PREFIX}")
 
@@ -115,11 +109,14 @@ elseif (DEFINED ENV{CONDA_PREFIX})
 
     #    if conda prefix is on, set Python Root DIR to conda
     set(Python3_ROOT_DIR "$ENV{CONDA_PREFIX}")
+
+    set(CYLON_CONDA_BUILD ON)
 endif ("$ENV{CONDA_BUILD}" STREQUAL "1")
 
 ## PyCylon build
+option(PYCYLON_BUILD "Enable PyCylon build" OFF)
 if (PYCYLON_BUILD)
-    message("Cylon Python Build [READ] ${PYCYLON_BUILD}")
+    message("Cylon Python Build enabled")
 
     # LocationByValue Python
     find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
@@ -127,10 +124,7 @@ if (PYCYLON_BUILD)
     message(STATUS "Python3 include dir: ${Python3_INCLUDE_DIRS}")
     message(STATUS "Python3 NumPy include dir: ${Python3_NumPy_INCLUDE_DIRS}")
 
-    include_directories(${Python3_INCLUDE_DIRS})
-else ()
-    message("Cylon Python Build [UNREAD] ${PYTCYLON_BUILD}")
-    set(PYCYLON_BUILD OFF)
+    include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
 endif (PYCYLON_BUILD)
 
 # Put the libaries and binaries that get built into directories at the
@@ -140,43 +134,48 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(TEST_DATA_DIR ${CYLON_SOURCE_DIR}/data)
 
 # set cmake include directory
-if(CONDA_INCLUDE_DIRS)
-    include_directories("${CONDA_INCLUDE_DIRS}")
-endif(CONDA_INCLUDE_DIRS)
+if (CYLON_CONDA_BUILD)
+    include_directories(SYSTEM "${CONDA_INCLUDE_DIRS}")
+endif (CYLON_CONDA_BUILD)
 include_directories(src/)
 
 # set cmake link dirs
-if(CONDA_LINK_DIRS)
+if (CYLON_CONDA_BUILD)
     link_directories("${CONDA_LINK_DIRS}")
-endif(CONDA_LINK_DIRS)
+endif (CYLON_CONDA_BUILD)
 
 # LocationByValue MPI
 message("Finding MPI")
 find_package(MPI REQUIRED COMPONENTS CXX)
 message(STATUS "MPI include dir: ${MPI_CXX_INCLUDE_PATH}")
 message(STATUS "MPI libs: ${MPI_CXX_LIBRARIES}")
-include_directories(${MPI_CXX_INCLUDE_PATH})
+message(STATUS "MPI executable: ${MPIEXEC_EXECUTABLE}")
 
-# glog, if conda build, we will get glog from conda instead of building ourselves
-if (CONDA_INCLUDE_DIRS)
-    find_package (glog 0.5.0 REQUIRED)
-    set(GLOG_LIBRARIES glog::glog)
-else()
+include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
+
+# Glog
+# if conda build, we will get glog from conda instead of building ourselves
+if (CYLON_CONDA_BUILD)
+    message("Using Conda Glog")
+    find_library(GLOG_LIBRARIES glog 0.5.0 REQUIRED HINTS ${CONDA_LINK_DIRS})
+    #    set(GLOG_LIBRARIES glog::glog)
+else ()
+    message("Building Glog locally")
     option(WITH_GFLAGS "Use gflags" ON)
     set(WITH_GFLAGS OFF)
     include(ConfigureGlog)
     include_directories(SYSTEM "${GLOG_INCLUDE_DIR}")
-endif (CONDA_INCLUDE_DIRS)
-
+    message(STATUS "Glog include dir: ${GLOG_INCLUDE_DIR}")
+endif (CYLON_CONDA_BUILD)
+message(STATUS "Glog libs: ${GLOG_LIBRARIES}")
 
 # this is required on windows to prevent clashes between ERROR abbreviation in logging.h and windows.h
-if(WIN32)
+if (WIN32)
     add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
-endif()
-
-include(Build)
+endif ()
 
 # if building gcylon, no need to build cylon
+option(GCYLON_BUILD "Build GCylon" OFF)
 if (GCYLON_BUILD)
     add_subdirectory(src/gcylon)
     add_subdirectory(src/examples/gcylon)
@@ -187,12 +186,6 @@ if (GCYLON_BUILD)
     endif ()
     return()
 endif ()
-
-# parquet
-option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
-if (CYLON_PARQUET)
-    add_definitions(-DBUILD_CYLON_PARQUET)
-endif (CYLON_PARQUET)
 
 # ucx
 option(CYLON_UCX "Build Cylon with UCX" OFF)
@@ -222,7 +215,7 @@ if (CYLON_UCX)
         set(UCX_FOUND TRUE)
 
         # Include UCX
-        include_directories(${UCX_INCLUDEDIR})
+        include_directories(SYSTEM ${UCX_INCLUDEDIR})
         # Set library directory for later use
         set(UCX_LIBRARIES
                 ${UCX_LIBDIR}/ucx/libuct_cma.so
@@ -235,6 +228,7 @@ if (CYLON_UCX)
     message(STATUS "UCX libs: ${UCX_LIBRARIES}")
 endif (CYLON_UCX)
 
+# Arrow
 if (NOT ARROW_BUILD_TYPE)
     set(ARROW_BUILD_TYPE "SOURCE")
 endif()
@@ -245,12 +239,15 @@ if (${ARROW_BUILD_TYPE} STREQUAL "SYSTEM")
     message(STATUS "Arrow ver: ${ARROW_FULL_SO_VERSION}")
     message(STATUS "Arrow include dir: ${ARROW_INCLUDE_DIR}")
     message(STATUS "Arrow lib dir: ${ARROW_LIB_DIR}")
-    set(ARROW_LIB arrow_shared)
 
-    if (CYLON_PARQUET)
-        find_library(PARQUET_LIB parquet REQUIRED)
-        message(STATUS "Parquet lib: ${PARQUET_LIB}")
-    endif ()
+    find_library(ARROW_LIB arrow ${CYLON_ARROW_VERSION} REQUIRED)
+    message(STATUS "Arrow lib: ${ARROW_LIB}")
+
+    if (PYCYLON_BUILD)
+        find_library(ARROW_PY_LIB arrow_python ${CYLON_ARROW_VERSION} REQUIRED)
+        message(STATUS "Arrow py lib: ${ARROW_PY_LIB}")
+    endif (PYCYLON_BUILD)
+
 elseif (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
     message("Building Arrow from SOURCE")
     include(ConfigureArrow)
@@ -265,32 +262,44 @@ elseif (${ARROW_BUILD_TYPE} STREQUAL "CUSTOM")
     if (NOT ARROW_INCLUDE_DIR)
         message(FATAL_ERROR "ARROW_BUILD_TYPE is set to CUSTOM, ARROW_INCLUDE_DIR should be set")
     endif ()
+
     add_definitions(${GCC_ABI_COMPILE_FLAGS})
-    LINK_DIRECTORIES(${ARROW_LIB_DIR})
 
     string(REPLACE "." "" ARROW_SO_VERSION ${CYLON_ARROW_VERSION})
     list(APPEND CMAKE_FIND_LIBRARY_SUFFIXES ".so.${ARROW_SO_VERSION}")
-    find_library(ARROW_LIB arrow REQUIRED HINTS "${ARROW_LIB_DIR}")
-    message("ARROW_LIB: ${ARROW_LIB}")
-
-    if (CYLON_PARQUET)
-        find_library(PARQUET_LIB parquet REQUIRED HINTS "${ARROW_LIB_DIR}")
-        message(STATUS "Parquet lib: ${PARQUET_LIB}")
-    endif ()
 
     include_directories(SYSTEM ${ARROW_INCLUDE_DIR})
-else ()
-    message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM, SOURCE or CUSTOM")
-endif()
+    link_directories(${ARROW_LIB_DIR})
 
-# Off if you dont want to build tests -- ON default
-option(CYLON_BUILD_TESTS "Build tests." ON)
+    find_library(ARROW_LIB arrow ${CYLON_ARROW_VERSION} REQUIRED HINTS "${ARROW_LIB_DIR}")
+    message(STATUS "Arrow lib: ${ARROW_LIB}")
+
+    if (PYCYLON_BUILD)
+        find_library(ARROW_PY_LIB arrow_python ${CYLON_ARROW_VERSION} REQUIRED HINTS "${ARROW_LIB_DIR}")
+        message(STATUS "Arrow py lib: ${ARROW_PY_LIB}")
+    endif (PYCYLON_BUILD)
+else ()
+    message(FATAL_ERROR "ARROW_BUILD_TYPE should be SYSTEM, SOURCE or CUSTOM. Given ${ARROW_BUILD_TYPE}")
+endif ()
+
+# parquet
+option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
+if (CYLON_PARQUET)
+    message("Cylon Parquet enabled")
+    add_definitions(-DBUILD_CYLON_PARQUET)
+    find_library(PARQUET_LIB parquet REQUIRED HINTS "${ARROW_LIB_DIR}")
+    message(STATUS "Parquet lib: ${PARQUET_LIB}")
+endif (CYLON_PARQUET)
+
+
+# include Modules/Build.cmake
+include(Modules/Build)
 
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
 add_subdirectory(src/tutorial)
 
-# installing arrow files
+# installing lib files if built locally
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
     #    Following variables will be populated by FindPackage(Arrow...) in ConfigureArrow.cmake
     message(STATUS "Arrow include dir: ${ARROW_INCLUDE_DIR}")
@@ -306,8 +315,10 @@ if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
     install(FILES ${GLOG_LIBRARIES} DESTINATION lib)
 endif ()
 
+# Off if you dont want to build tests -- ON default
+option(CYLON_WITH_TEST "Build Cylon C++ tests." OFF)
 if (CYLON_WITH_TEST)
-    message("Tests enabled!")
+    message("C++ tests enabled")
     enable_testing()
     add_subdirectory(test)
 endif ()
