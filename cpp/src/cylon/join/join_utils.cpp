@@ -32,7 +32,7 @@ std::shared_ptr<arrow::Schema> build_final_table_schema(const std::shared_ptr<ar
                                                         const std::string &right_table_prefix) {
   // creating joined schema
   std::vector<std::shared_ptr<arrow::Field>> fields;
-  // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
+
   std::unordered_map<std::string, int32_t> column_name_index;
 
   // adding left table
