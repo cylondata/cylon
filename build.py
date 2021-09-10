@@ -95,7 +95,7 @@ def print_line():
 print_line()
 logger.info(f"Build mode     : {CPP_BUILD_MODE}")
 logger.info(f"Build path     : {BUILD_DIR}")
-logger.info(f"Install path   : {Path(args.ipath)}")
+logger.info(f"Install path   : {str(Path(args.ipath))}")
 logger.info(f"CMake flags    : {CMAKE_FLAGS}")
 logger.info(f"Run C++ tests  : {RUN_CPP_TESTS}")
 logger.info(f"Build PyCylon  : {BUILD_PYTHON}")
