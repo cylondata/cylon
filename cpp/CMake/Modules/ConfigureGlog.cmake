@@ -58,7 +58,7 @@ set(GLOG_INCLUDE_DIR "${GLOG_ROOT}/install/include")
 set(GLOG_FOUND TRUE)
 
 IF(WIN32)
-        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/glogd.lib)
+        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/glog.lib)
 ELSE()
         set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/libglog.a)
 ENDIF()

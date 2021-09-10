@@ -56,13 +56,8 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
 if (PYCYLON_BUILD)
     find_package(Python3 COMPONENTS Interpreter REQUIRED)
     message(STATUS "Python Executable Path ${Python3_EXECUTABLE}")
-    if(WIN32)
-        list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
-                " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}")
-    else()
-        list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
-                " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}")
-    endif()
+    list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
+            " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}")
 endif (PYCYLON_BUILD)
 
 message("CMake Source Dir :")

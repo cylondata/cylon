@@ -13,7 +13,12 @@
 import argparse
 import os
 import subprocess
+import logging
 from pathlib import Path
+
+logging.basicConfig(format='[%(levelname)s] %(message)s')
+logger = logging.getLogger("cylon_build")
+logger.setLevel(logging.INFO)
 
 parser = argparse.ArgumentParser()
 
@@ -56,22 +61,23 @@ parser.add_argument("-ipath", help='Install directory')
 
 args = parser.parse_args()
 
+
 # Variables
-
-
 def on_off(arg):
     return "ON" if arg else "OFF"
 
 
 BUILD_CPP = args.cpp
 CPP_BUILD_MODE = "Release" if (args.release or (
-    not args.release and not args.debug)) else "Debug"
+        not args.release and not args.debug)) else "Debug"
 CPP_SOURCE_DIR = str(Path(args.root, 'cpp'))
 PYTHON_SOURCE_DIR = Path(args.root, 'python', 'pycylon')
 RUN_CPP_TESTS = args.test
 RUN_PYTHON_TESTS = args.pytest
 CMAKE_FLAGS = args.cmake_flags
-CPPLINT_COMMAND = " \"-DCMAKE_CXX_CPPLINT=cpplint;--linelength=100;--headers=h,hpp;--filter=-legal/copyright,-build/c++11,-runtime/references\" " if args.style_check else ""
+CPPLINT_COMMAND = "\"-DCMAKE_CXX_CPPLINT=cpplint;--linelength=100;--headers=h," \
+                  "hpp;--filter=-legal/copyright,-build/c++11,-runtime/references\" " if \
+    args.style_check else " "
 
 # arrow build expects /s even on windows
 BUILD_PYTHON = args.python
@@ -80,27 +86,35 @@ BUILD_PYTHON = args.python
 BUILD_DOCKER = args.docker
 
 BUILD_DIR = str(Path(args.bpath))
-INSTALL_COMMAND = f"-DCMAKE_INSTALL_PREFIX={args.ipath}" if args.ipath else ""
+
 
 def print_line():
-    print("=================================================================")
+    logger.info("=================================================================")
+
 
 print_line()
-print("Build mode: " + CPP_BUILD_MODE)
-print("Build path: " + BUILD_DIR)
+logger.info(f"Build mode     : {CPP_BUILD_MODE}")
+logger.info(f"Build path     : {BUILD_DIR}")
+logger.info(f"Install path   : {Path(args.ipath)}")
+logger.info(f"CMake flags    : {CMAKE_FLAGS}")
+logger.info(f"Run C++ tests  : {RUN_CPP_TESTS}")
+logger.info(f"Build PyCylon  : {BUILD_PYTHON}")
+logger.info(f"Run Py tests   : {RUN_PYTHON_TESTS}")
 print_line()
 
 # create build directory
 if not os.path.exists(BUILD_DIR):
-    print("Creating build directory...")
+    logger.info("Creating build directory...")
     os.makedirs(BUILD_DIR)
+
 
 def check_status(status, task):
     if status != 0:
-        print(f'{task} failed with a non zero exit code. Cylon build is terminating.')
+        logger.error(f'{task} failed with a non zero exit code. Cylon build is terminating.')
         quit()
     else:
-        print(f'{task} completed successfully')
+        logger.info(f'{task} completed successfully')
+
 
 def python_command():
     res = subprocess.call("python3 --version")
@@ -111,7 +125,7 @@ def python_command():
     if res == 0:
         return "python"
 
-    print("Python not found.")
+    logger.error("Python not found.")
     quit()
 
 
@@ -120,27 +134,36 @@ def build_cpp():
         return
 
     CONDA_PREFIX = os.getenv('CONDA_PREFIX')
-    INSTALL_COMMAND = f"-DCMAKE_INSTALL_PREFIX={args.ipath}" if args.ipath else ""
-    if not args.ipath:
+    if args.ipath:
+        install_prefix = args.ipath
+    else:
         if CONDA_PREFIX:
-            INSTALL_COMMAND = f"-DCMAKE_INSTALL_PREFIX={CONDA_PREFIX}"
+            install_prefix = CONDA_PREFIX
         else:
-            print("The build should be in a conda environment")
+            logger.error("install prefix can not be inferred. ")
             return
 
-    cmake_command = f'cmake -DPYCYLON_BUILD={on_off(BUILD_PYTHON)} -A x64 \
-      -DCMAKE_BUILD_TYPE={CPP_BUILD_MODE} -DCYLON_WITH_TEST={on_off(RUN_CPP_TESTS)} -DARROW_BUILD_TYPE=SYSTEM {CPPLINT_COMMAND} {INSTALL_COMMAND} \
-      {CMAKE_FLAGS} {CPP_SOURCE_DIR}'
+    win_cmake_args = "-A x64" if os.name == 'nt' else ""
 
-    print(cmake_command, BUILD_DIR)
+    cmake_command = f"cmake -DPYCYLON_BUILD={on_off(BUILD_PYTHON)} {win_cmake_args} " \
+                    f"-DCMAKE_BUILD_TYPE={CPP_BUILD_MODE} " \
+                    f"-DCYLON_WITH_TEST={on_off(RUN_CPP_TESTS)} " \
+                    f"-DARROW_BUILD_TYPE=SYSTEM " \
+                    f"{CPPLINT_COMMAND} " \
+                    f"-DCMAKE_INSTALL_PREFIX={install_prefix} " \
+                    f"{CMAKE_FLAGS} {CPP_SOURCE_DIR}"
+
+    logger.info(f"Generate command: {cmake_command}")
     res = subprocess.call(cmake_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake generate")
 
     cmake_build_command = f'cmake --build . --parallel {os.cpu_count()} --config {CPP_BUILD_MODE}'
+    logger.info(f"Build command: {cmake_build_command}")
     res = subprocess.call(cmake_build_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake build")
 
-    cmake_install_command = f'cmake --install . --prefix {CONDA_PREFIX}'
+    cmake_install_command = f'cmake --install . --prefix {install_prefix}'
+    logger.info(f"Install command: {cmake_install_command}")
     res = subprocess.call(cmake_install_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake install")
 
@@ -148,13 +171,15 @@ def build_cpp():
         cmake_test_command = f'cmake --build . --target test --config {CPP_BUILD_MODE}'
         if os.name == 'nt':
             cmake_test_command = f'cmake --build . --target RUN_TESTS --config {CPP_BUILD_MODE}'
-        print("CPP Test command: " + cmake_test_command)
+        logger.info("CPP Test command: " + cmake_test_command)
         res = subprocess.call(cmake_test_command, cwd=BUILD_DIR, shell=True)
         check_status(res, "C++ cmake test")
+
 
 def build_docker():
     if not BUILD_DOCKER:
         return
+
 
 def python_test():
     if not RUN_PYTHON_TESTS:
@@ -163,16 +188,17 @@ def python_test():
     res = subprocess.run(test_command, shell=True)
     check_status(res, "Python test suite")
 
+
 def build_python():
     if not BUILD_PYTHON:
         return
 
     print_line()
-    print("Building Python")
+    logger.info("Building Python")
 
     CONDA_PREFIX = os.getenv('CONDA_PREFIX')
     if not CONDA_PREFIX:
-        print("The build should be in a conda environment")
+        logger.error("The build should be in a conda environment")
         return
 
     python_build_command = 'python setup.py install'
@@ -183,9 +209,10 @@ def build_python():
     elif os.name == 'nt':
         env["ARROW_PREFIX"] = str(Path(os.environ["CONDA_PREFIX"], "Library"))
 
-    print("Arrow prefix: " + str(Path(os.environ["CONDA_PREFIX"])))
+    logger.info("Arrow prefix: " + str(Path(os.environ["CONDA_PREFIX"])))
     res = subprocess.run(python_build_command, shell=True, env=env, cwd=PYTHON_SOURCE_DIR)
     check_status(res.returncode, "PyCylon build")
+
 
 build_cpp()
 build_python()
