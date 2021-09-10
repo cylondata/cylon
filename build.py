@@ -14,7 +14,10 @@ import argparse
 import os
 import subprocess
 import logging
+import platform
 from pathlib import Path
+
+import sys
 
 logging.basicConfig(format='[%(levelname)s] %(message)s')
 logger = logging.getLogger("cylon_build")
@@ -86,6 +89,11 @@ BUILD_PYTHON = args.python
 BUILD_DOCKER = args.docker
 
 BUILD_DIR = str(Path(args.bpath))
+INSTALL_DIR = str(Path(args.ipath))
+
+OS_NAME = platform.system()  # Linux, Darwin or Windows
+
+PYTHON_EXEC = sys.executable
 
 
 def print_line():
@@ -93,9 +101,11 @@ def print_line():
 
 
 print_line()
+logger.info(f"OS             : {OS_NAME}")
+logger.info(f"Python exec    : {PYTHON_EXEC}")
 logger.info(f"Build mode     : {CPP_BUILD_MODE}")
 logger.info(f"Build path     : {BUILD_DIR}")
-logger.info(f"Install path   : {str(Path(args.ipath))}")
+logger.info(f"Install path   : {INSTALL_DIR}")
 logger.info(f"CMake flags    : {CMAKE_FLAGS}")
 logger.info(f"Run C++ tests  : {RUN_CPP_TESTS}")
 logger.info(f"Build PyCylon  : {BUILD_PYTHON}")
@@ -110,23 +120,11 @@ if not os.path.exists(BUILD_DIR):
 
 def check_status(status, task):
     if status != 0:
-        logger.error(f'{task} failed with a non zero exit code. Cylon build is terminating.')
+        logger.error(f'{task} failed with a non zero exit code ({status}). '
+                     f'Cylon build is terminating.')
         quit()
     else:
         logger.info(f'{task} completed successfully')
-
-
-def python_command():
-    res = subprocess.call("python3 --version")
-    if res == 0:
-        return "python3"
-
-    res = subprocess.call("python --version")
-    if res == 0:
-        return "python"
-
-    logger.error("Python not found.")
-    quit()
 
 
 def build_cpp():
@@ -135,7 +133,7 @@ def build_cpp():
 
     CONDA_PREFIX = os.getenv('CONDA_PREFIX')
     if args.ipath:
-        install_prefix = args.ipath
+        install_prefix = INSTALL_DIR
     else:
         if CONDA_PREFIX:
             install_prefix = CONDA_PREFIX
@@ -184,9 +182,20 @@ def build_docker():
 def python_test():
     if not RUN_PYTHON_TESTS:
         return
-    test_command = 'python -m pytest python/pycylon/test/test_all.py'
-    res = subprocess.run(test_command, shell=True)
-    check_status(res, "Python test suite")
+    env = os.environ
+    if args.ipath:
+        if OS_NAME == 'Linux':
+            env['LD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \
+                                     + env['LD_LIBRARY_PATH']
+        elif OS_NAME == 'Darwin':
+            env['DYLD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \
+                                       + env['DYLD_LIBRARY_PATH']
+        else:  # Windows
+            env['PATH'] = str(Path(INSTALL_DIR, "Library")) + os.pathsep + env['PATH']
+
+    test_command = f"{PYTHON_EXEC} -m pytest python/pycylon/test/test_all.py"
+    res = subprocess.run(test_command, env=env, shell=True)
+    check_status(res.returncode, "Python test suite")
 
 
 def build_python():
@@ -201,7 +210,7 @@ def build_python():
         logger.error("The build should be in a conda environment")
         return
 
-    python_build_command = 'python setup.py install'
+    python_build_command = f'{PYTHON_EXEC} setup.py install'
     env = os.environ
     env["CYLON_PREFIX"] = str(BUILD_DIR)
     if os.name == 'posix':
