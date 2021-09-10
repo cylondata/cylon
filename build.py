@@ -89,7 +89,7 @@ BUILD_PYTHON = args.python
 BUILD_DOCKER = args.docker
 
 BUILD_DIR = str(Path(args.bpath))
-INSTALL_DIR = str(Path(args.ipath))
+INSTALL_DIR = str(Path(args.ipath)) if args.ipath else ""
 
 OS_NAME = platform.system()  # Linux, Darwin or Windows
 
