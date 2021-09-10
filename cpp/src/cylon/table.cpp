@@ -988,6 +988,35 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<in
   return Unique(shuffle_out, cols, out);
 }
 
+bool Equal(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylon::Table>& b) {
+  return a->get_table()->Equals(*b->get_table().get());
+}
+
+bool UnorderedEqual(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylon::Table>& b) {
+  if(a->Columns() != b->Columns()) return false;
+  int col = a->Columns();
+
+  // question: column order matter??
+
+  std::vector<int32_t> indices_a(col), indices_b(col);
+  for(int i = 0; i < col; i++) {
+    indices_a[i] = indices_b[i] = i;
+  }
+
+  std::shared_ptr<cylon::Table> out_a, out_b;
+  auto status = Sort(const_cast<std::shared_ptr<cylon::Table>&>(a), indices_a, out_a, true);
+  if (!status.is_ok()) {
+      throw "unable to sort table in unordered equal: " + status.get_msg();
+  }
+
+  status = Sort(const_cast<std::shared_ptr<cylon::Table>&>(b), indices_b, out_b, true);
+  if (!status.is_ok()) {
+      throw "unable to sort table in unordered equal: " + status.get_msg();
+  }
+
+  return out_a->get_table()->Equals(*out_b->get_table().get());
+}
+
 std::shared_ptr<BaseArrowIndex> Table::GetArrowIndex() { return base_arrow_index_; }
 
 Status Table::SetArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool drop_index) {
