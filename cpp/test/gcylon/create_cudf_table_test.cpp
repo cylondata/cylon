@@ -21,22 +21,30 @@ using namespace gcylon;
 
 TEST_CASE("create cudf table testing", "[gcreate]") {
   cylon::Status status;
-  const int COLS = 2;
+  const int COLS = 4;
   const int ROWS = 10;
-  const int START = 0;
-  const bool CONT = false;
+  const int64_t START = 100;
+  const int STEP = 5;
+  const bool CONT = true;
 
   SECTION("testing create table") {
 
-    std::shared_ptr<cudf::table> tbl = constructTable(COLS, ROWS, START, CONT);
+    std::unique_ptr<cudf::table> tbl = constructTable(COLS, ROWS, START, STEP, CONT);
     auto tv = tbl->view();
 
     REQUIRE((tv.num_columns() == COLS && tv.num_rows() == ROWS));
 
-    int64_t * col0 = getColumnPart<int64_t>(tv.column(0), START, ROWS);
+    int64_t value = START;
+    for(int j = 0; j < COLS; j++) {
 
-    for (int i = 0; i < ROWS; i++) {
-      REQUIRE((col0[i] == START + i));
+        int64_t * col = getColumnPart<int64_t>(tv.column(j), 0, ROWS);
+        if (!CONT)
+            value = START;
+
+        for (int i = 0; i < ROWS; i++) {
+          REQUIRE((col[i] == value));
+          value += STEP;
+        }
     }
   }
 }
