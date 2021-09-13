@@ -51,13 +51,13 @@ static inline constexpr T GetAbs(const T v) {
  * @return
  */
 static inline constexpr int64_t SetBit(const int64_t v) {
-  return v | 1UL << (sizeof(int64_t) * CHAR_BIT - 1);
+  return v | int64_t(1) << (sizeof(int64_t) * CHAR_BIT - 1);
 }
 static inline constexpr int64_t ClearBit(const int64_t v) {
-  return v & ~(1UL << (sizeof(int64_t) * CHAR_BIT - 1));
+  return v & ~(int64_t(1) << (sizeof(int64_t) * CHAR_BIT - 1));
 }
-static inline constexpr size_t CheckBit(const int64_t v) {
-  return (v >> (sizeof(int64_t) * CHAR_BIT - 1)) & 1U;
+static inline constexpr int64_t CheckBit(const int64_t v) {
+  return (v >> (sizeof(int64_t) * CHAR_BIT - 1)) & int64_t(1);
 }
 
 arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort_column_index,

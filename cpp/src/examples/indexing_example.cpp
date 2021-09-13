@@ -273,8 +273,8 @@ int test_scalar_casting() {
   int64_t find_val = casted_a_1->value;
 
   std::cout << "Search Value in C : " << casted_a->value << ", " << find_val << ", "
-            << casted_a_s->value->ToString() << std::endl;
-
+			<< casted_a_s->value->ToString() << std::endl;
+  return 0;
 }
 
 /*

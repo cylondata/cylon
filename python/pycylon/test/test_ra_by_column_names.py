@@ -114,19 +114,19 @@ def test_prefix_process():
 
     assert tb3.row_count == tb4.row_count == tb5.row_count and tb3.column_count == \
            tb4.column_count == tb5.column_count
-    expected_column_names_1 = ['l_use_id', 'l_user_id', 'l_platform_version', 'l_use_type_id',
-                               'r_outgoing_mins_per_month', 'r_outgoing_sms_per_month',
-                               'r_monthly_mb', 'r_use_id']
+    expected_column_names_1 = ['l_use_id', 'user_id', 'platform_version', 'use_type_id',
+                               'outgoing_mins_per_month', 'outgoing_sms_per_month',
+                               'monthly_mb', 'r_use_id']
 
-    expected_column_names_2 = ['l_1_use_id', 'l_1_user_id', 'l_1_platform_version',
-                               'l_1_use_type_id', 'r_1_outgoing_mins_per_month',
-                               'r_1_outgoing_sms_per_month',
-                               'r_1_monthly_mb', 'r_1_use_id']
+    expected_column_names_2 = ['l_1_use_id', 'user_id', 'platform_version',
+                               'use_type_id', 'outgoing_mins_per_month',
+                               'outgoing_sms_per_month',
+                               'monthly_mb', 'r_1_use_id']
 
-    expected_column_names_3 = ['l_2_use_id', 'l_2_user_id', 'l_2_platform_version',
-                               'l_2_use_type_id', 'r_2_outgoing_mins_per_month',
-                               'r_2_outgoing_sms_per_month',
-                               'r_2_monthly_mb', 'r_2_use_id']
+    expected_column_names_3 = ['l_2_use_id', 'user_id', 'platform_version',
+                               'use_type_id', 'outgoing_mins_per_month',
+                               'outgoing_sms_per_month',
+                               'monthly_mb', 'r_2_use_id']
 
     assert expected_column_names_1 == tb3.column_names
     assert expected_column_names_2 == tb4.column_names

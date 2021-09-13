@@ -18,18 +18,23 @@ add_library(cylon_example_utils SHARED
         example_utils.cpp
         example_utils.hpp)
 
-include_directories(${MPI_INCLUDE_PATH})
-target_link_libraries(cylon_example_utils ${MPI_LIBRARIES})
+target_link_libraries(cylon_example_utils ${MPI_CXX_LIBRARIES})
 target_link_libraries(cylon_example_utils ${GLOG_LIBRARIES})
 target_link_libraries(cylon_example_utils ${ARROW_LIB})
 target_link_libraries(cylon_example_utils cylon)
-target_compile_options(cylon_example_utils PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
+
+IF(WIN32)
+    target_compile_options(cylon_example_utils PRIVATE -Wall)
+ELSE()
+    target_compile_options(cylon_example_utils PRIVATE -Werror -Wall -Wextra -Wno-unused-parameter)
+ENDIF()
+
 install(TARGETS cylon_example_utils RUNTIME DESTINATION cylon/examples)
 
 #build a binary
 macro(cylon_add_exe EXENAME)
     add_executable(${EXENAME} ${EXENAME}.cpp)
-    target_link_libraries(${EXENAME} ${MPI_LIBRARIES})
+    target_link_libraries(${EXENAME} ${MPI_CXX_LIBRARIES})
     target_link_libraries(${EXENAME} cylon)
     target_link_libraries(${EXENAME} ${ARROW_LIB})
     target_link_libraries(${EXENAME} ${GLOG_LIBRARIES})

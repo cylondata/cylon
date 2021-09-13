@@ -33,6 +33,7 @@ BUILD_PATH=$(pwd)/build
 CMAKE_FLAGS=""
 GCYLON_BUILD="OFF"
 PYGCYLON_BUILD="OFF"
+MAKE_JOBS=4
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -130,6 +131,10 @@ case $key in
     PYGCYLON_BUILD="ON"
     shift # past argument
     ;;
+    -j|--jobs)
+    MAKE_JOBS="$2"
+    shift # past argument
+    ;;
     *)    # unknown option
     POSITIONAL+=("$1") # save it in an array for later
     shift # past argument
@@ -149,6 +154,7 @@ echo "FLAG RUN PYTHON TEST  = ${RUN_PYTHON_TESTS}"
 echo "RUN PYGCYLON TESTS    = ${RUN_PYGCYLON_TESTS}"
 echo "FLAG STYLE CHECK      = ${STYLE_CHECK}"
 echo "ADDITIONAL CMAKE FLAGS= ${CMAKE_FLAGS}"
+echo "MAKE MAKE_JOBS        = ${MAKE_JOBS}"
 
 if [[ -n $1 ]]; then
     echo "Last line of file specified as non-opt/last argument:"
@@ -225,14 +231,14 @@ build_cpp(){
   if [ "${STYLE_CHECK}" = "ON" ]; then
     CPPLINT_CMD=${CPPLINT_COMMAND}
   fi
-  mkdir ${BUILD_PATH}
+  mkdir -p ${BUILD_PATH}
   pushd ${BUILD_PATH} || exit 1
   export ARROW_HOME=${BUILD_PATH}/arrow/install
-  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
-      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $CPPLINT_CMD $INSTALL_CMD \
+  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DCMAKE_BUILD_TYPE=${BUILD_MODE} \
+        -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $CPPLINT_CMD $INSTALL_CMD \
       ${CMAKE_FLAGS} \
       ${SOURCE_DIR} || exit 1
-  make -j 4 || exit 1
+  make -j ${MAKE_JOBS} || exit 1
   install_libs
   printf "ARROW HOME SET :%s \n" "${ARROW_HOME}"
   printf "Cylon CPP Built Successfully!"
@@ -265,15 +271,16 @@ build_cpp_with_custom_arrow(){
     CPPLINT_CMD=${CPPLINT_COMMAND}
   fi
   echo "SOURCE_DIR: ${SOURCE_DIR}"
-  mkdir ${BUILD_PATH}
+  mkdir -p ${BUILD_PATH}
   pushd ${BUILD_PATH} || exit 1
-  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
-      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $CPPLINT_CMD $INSTALL_CMD \
-      -DARROW_BUILD_TYPE="CUSTOM" -DARROW_LIB_DIR=${ARROW_LIB} -DARROW_INCLUDE_DIR=${ARROW_INC} -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DCMAKE_BUILD_TYPE=${BUILD_MODE} \
+      -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $CPPLINT_CMD $INSTALL_CMD \
+      -DARROW_BUILD_TYPE="CUSTOM" -DARROW_LIB_DIR=${ARROW_LIB} -DARROW_INCLUDE_DIR=${ARROW_INC} \
+      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
       ${CMAKE_FLAGS} \
       ${SOURCE_DIR} \
       || exit 1
-  make -j 4 || exit 1
+  make -j ${MAKE_JOBS} || exit 1
   install_libs
   printf "Cylon CPP Built Successfully!"
   popd || exit 1
@@ -306,14 +313,14 @@ build_cpp_conda(){
   BUILD_PATH=$(pwd)/build
   mkdir -p ${BUILD_PATH}
   pushd ${BUILD_PATH} || exit 1
-  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DPYTHON_EXEC_PATH=${PYTHON_ENV_PATH} \
-      -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
+  cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DCMAKE_BUILD_TYPE=${BUILD_MODE} \
+      -DCYLON_WITH_TEST=${RUN_CPP_TESTS} -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
       -DARROW_BUILD_TYPE="SYSTEM" -DARROW_LIB_DIR=${ARROW_LIB} -DARROW_INCLUDE_DIR=${ARROW_INC} \
-      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCYLON_PARQUET=ON -DGCYLON_BUILD=${GCYLON_BUILD}\
+      -DCYLON_PARQUET=ON -DGCYLON_BUILD=${GCYLON_BUILD}\
       ${CMAKE_FLAGS} \
       ${SOURCE_DIR} \
       || exit 1
-  make -j 4 || exit 1
+  make -j ${MAKE_JOBS} || exit 1
   printf "Cylon CPP Built Successfully!"
   make install || exit 1
   printf "Cylon CPP Installed Successfully!"
@@ -336,7 +343,7 @@ build_gcylon(){
   cmake -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
       -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DGCYLON_BUILD=${GCYLON_BUILD} ${CMAKE_FLAGS} ${SOURCE_DIR} \
       || exit 1
-  make -j 4 || exit 1
+  make -j ${MAKE_JOBS} || exit 1
   printf "GCylon CPP Built Successfully!"
   make install || exit 1
   printf "GCylon CPP Installed Successfully!"
@@ -468,10 +475,11 @@ check_pycylon_installation(){
 }
 
 python_test(){
-  ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
-  LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${BUILD_PATH}/arrow/install/lib" || exit 1
+  LD_LIBRARY_PATH="${BUILD_PATH}/lib:${BUILD_PATH}/arrow/install/lib" || exit 1
   export_library_path ${LD_LIBRARY_PATH}
-
+  ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
+  LD_LIBRARY_PATH="${ARROW_LIB}:${LD_LIBRARY_PATH}" || exit 1
+  export_library_path ${LD_LIBRARY_PATH}
   python3 -m pytest python/pycylon/test/test_all.py || exit 1
 }
 
