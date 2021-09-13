@@ -363,7 +363,13 @@ class DataFrame(object):
 
     def to_csv(self, path, csv_write_options: CSVWriteOptions):
         self._table.to_csv(path=path, csv_write_options=csv_write_options)
-        
+
+    def equal(self, df: DataFrame):
+        return self._table.equal(df._table)
+
+    def unordered_equal(self, df: DataFrame):
+        return self._table.unordered_equal(df._table)
+
     @property
     def iloc(self) -> PyLocIndexer:
         """

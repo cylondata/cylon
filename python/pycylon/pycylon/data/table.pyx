@@ -763,6 +763,12 @@ cdef class Table:
         else:
             raise Exception(f"Unique operation failed {status.get_msg().decode()}")
 
+    def equal(self, table: Table):
+        return Equal(self.table_shd_ptr, table.table_shd_ptr)
+
+    def unordered_equal(self, table: Table):
+        return UnorderedEqual(self.table_shd_ptr, table.table_shd_ptr)
+
     @staticmethod
     def from_arrow(context, pyarrow_table) -> Table:
         '''

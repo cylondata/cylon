@@ -119,6 +119,10 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
     CStatus DistributedUnique(shared_ptr[CTable] & input_table, const vector[int] & columns,
                               shared_ptr[CTable]& output)
 
+    bool Equal(shared_ptr[CTable] & a, shared_ptr[CTable] & b)
+
+    bool UnorderedEqual(shared_ptr[CTable] & a, shared_ptr[CTable] & )
+
 cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CSortOptions "cylon::SortOptions":
         int num_bins
