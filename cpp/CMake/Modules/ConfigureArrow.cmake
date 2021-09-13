@@ -15,8 +15,6 @@
 set(ARROW_HOME ${CMAKE_BINARY_DIR}/arrow/install)
 set(ARROW_ROOT ${CMAKE_BINARY_DIR}/arrow)
 
-message("Python Executable Path ${PYTHON_EXEC_PATH}")
-
 if (CYLON_PARQUET)
     set(PARQUET_ARGS " -DARROW_WITH_BROTLI=ON"
             " -DARROW_WITH_SNAPPY=ON"
@@ -56,9 +54,10 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         )
 
 if (PYCYLON_BUILD)
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    message(STATUS "Python Executable Path ${Python3_EXECUTABLE}")
     list(APPEND ARROW_CMAKE_ARGS " -DARROW_PYTHON=${PYCYLON_BUILD}"
-            " -DPYTHON_EXECUTABLE=${PYTHON_EXEC_PATH}/bin/python3"
-            )
+            " -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}")
 endif (PYCYLON_BUILD)
 
 message("CMake Source Dir :")
@@ -85,7 +84,7 @@ if ($ENV{PARALLEL_LEVEL})
 endif ($ENV{PARALLEL_LEVEL})
 
 execute_process(
-        COMMAND ${CMAKE_COMMAND} --build .. -- -j 2
+        COMMAND ${CMAKE_COMMAND} --build ..
         RESULT_VARIABLE ARROW_BUILD
         WORKING_DIRECTORY ${ARROW_ROOT}/build)
 
@@ -97,31 +96,27 @@ message(STATUS "Arrow installed here: " ${ARROW_ROOT}/install)
 set(ARROW_LIBRARY_DIR "${ARROW_ROOT}/install/lib")
 set(ARROW_INCLUDE_DIR "${ARROW_ROOT}/install/include")
 
-find_library(ARROW_LIB arrow
-        NO_DEFAULT_PATH
-        HINTS "${ARROW_LIBRARY_DIR}")
+# find packages with the help of arrow Find*.cmake files
+find_package(Arrow REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindArrow.cmake)
+message(STATUS "Arrow lib: ${ARROW_SHARED_LIB}")
+set(ARROW_LIB ${ARROW_SHARED_LIB})
 
-find_library(ARROW_PYTHON arrow_python
-        NO_DEFAULT_PATH
-        HINTS "${ARROW_LIBRARY_DIR}")
+if (CYLON_PARQUET)
+    find_package(Parquet REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindParquet.cmake)
+    message(STATUS "Parquet lib: ${PARQUET_SHARED_LIB}")
+    set(PARQUET_LIB ${PARQUET_SHARED_LIB})
+endif (CYLON_PARQUET)
 
-if (ARROW_LIB)
-    message(STATUS "Arrow library: " ${ARROW_LIB})
-    set(ARROW_FOUND TRUE)
-endif (ARROW_LIB)
+if (PYCYLON_BUILD)
+    find_package(arrow_python REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindArrowPython.cmake)
+    message(STATUS "Arrow py lib: ${ARROW_PYTHON_SHARED_LIB}")
+    set(ARROW_PY_LIB ${ARROW_PYTHON_SHARED_LIB})
+endif (PYCYLON_BUILD)
 
 set(FLATBUFFERS_ROOT "${ARROW_ROOT}/build/flatbuffers_ep-prefix/src/flatbuffers_ep-install")
 
 message(STATUS "FlatBuffers installed here: " ${FLATBUFFERS_ROOT})
 set(FLATBUFFERS_INCLUDE_DIR "${FLATBUFFERS_ROOT}/include")
 set(FLATBUFFERS_LIBRARY_DIR "${FLATBUFFERS_ROOT}/lib")
-
-if (CYLON_PARQUET)
-    if(APPLE)
-      set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.dylib)
-    else()
-      set(PARQUET_LIB ${ARROW_HOME}/lib/libparquet.so)
-    endif()
-endif (CYLON_PARQUET)
 
 add_definitions(-DARROW_METADATA_V4)

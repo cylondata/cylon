@@ -1,0 +1,34 @@
+name: Compile on Windows
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+      # explicit include-based build matrix, of known valid options
+      matrix:
+        include:
+          - os: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: cylon_dev
+          environment-file: conda/environments/windows.yml
+
+      - name: activate conda
+        run: conda activate cylon_dev
+      - name: build cpp and test
+        run: python build.py --cpp --test
+      - name: build pycylon and test
+        run: python build.py --python

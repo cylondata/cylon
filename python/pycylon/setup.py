@@ -28,6 +28,7 @@ import versioneer
 from Cython.Build import cythonize
 from setuptools import find_packages, setup
 from setuptools.extension import Extension
+import glob
 
 version = versioneer.get_version(),
 cmdclass = versioneer.get_cmdclass(),
@@ -45,7 +46,10 @@ except Exception:
     nthreads = 0
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
+
+
 cython_files = ["pycylon/*/*.pyx"]
+print("CYTHON: " + str(cython_files))
 
 if not CYLON_PREFIX:
     raise ValueError("CYLON_PREFIX not set")
@@ -58,35 +62,46 @@ arrow_library_directory = None
 if not ARROW_PREFIX:
     arrow_lib_include_dir = os.path.join(pyarrow_location, "include")
     arrow_library_directory = pyarrow_location
-    additional_compile_args = additional_compile_args + ['-D_GLIBCXX_USE_CXX11_ABI=0']
+    additional_compile_args = additional_compile_args + \
+        ['-D_GLIBCXX_USE_CXX11_ABI=0']
     if not os.path.exists(arrow_library_directory):
         arrow_library_directory = os.path.join(pyarrow_location, "lib64")
 else:
     arrow_lib_include_dir = os.path.join(ARROW_PREFIX, "include")
     arrow_library_directory = os.path.join(ARROW_PREFIX, "lib")
-
     if not os.path.exists(arrow_library_directory):
         arrow_library_directory = os.path.join(ARROW_PREFIX, "lib64")
 
 pyarrow_include_dir = os.path.join(pyarrow_location, 'include')
-extra_compile_args = os.popen("mpic++ --showme:compile").read().strip().split(' ')
-extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
-extra_compile_args = extra_compile_args + extra_link_args + additional_compile_args
-extra_link_args.append("-Wl,-rpath,$ORIGIN/pyarrow")
+
+extra_compile_args = []
+extra_link_args = []
+if os.name == 'posix':
+    extra_compile_args = os.popen(
+        "mpic++ --showme:compile").read().strip().split(' ')
+    extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
+    extra_compile_args = extra_compile_args + additional_compile_args
+    extra_link_args = ["-W"]
 
 glob_library_directory = os.path.join(CYLON_PREFIX, "glog", "install", "lib")
 
 glog_lib_include_dir = os.path.join(CYLON_PREFIX, "glog", "install", "include")
 cylon_library_directory = os.path.join(CYLON_PREFIX, "lib")
+cylon_library_directory_debug = os.path.join(CYLON_PREFIX, "lib", "Debug")
+cylon_library_directory_release = os.path.join(CYLON_PREFIX, "lib", "Release")
 
 library_directories = [cylon_library_directory,
+                       cylon_library_directory_debug,
+                       cylon_library_directory_release,
                        arrow_library_directory,
                        glob_library_directory,
                        get_python_lib(),
                        os.path.join(os.sys.prefix, "lib")]
 
-libraries = ["arrow", "cylon", "glog"]
-cylon_include_dir = "../../cpp/src/"
+print("Libraries: " + str(library_directories))
+
+libraries = ["arrow", "cylon", "glog"] # todo glogd was added temporarily
+cylon_include_dir = os.path.abspath(os.path.join(__file__, "../../..", "cpp", "src"))
 
 _include_dirs = [cylon_include_dir,
                  arrow_lib_include_dir,
@@ -115,7 +130,9 @@ extensions = [
 compiler_directives = {"language_level": 3, "embedsignature": True}
 packages = find_packages(include=["pycylon", "pycylon.*"])
 
-setup(
+print("PACKAGES: " + str(packages))
+
+ret = setup(
     name="pycylon",
     packages=packages,
     version=versioneer.get_version(),
@@ -139,5 +156,6 @@ setup(
         f'pyarrow=={pyarrow_version}',
         'cython',
     ],
-    zip_safe=False,
+    zip_safe=False
 )
+print("Done setup ####################################")

@@ -19,7 +19,7 @@ from numbers import Number
 import warnings
 import numpy as np
 from pycylon.util.TableUtils import resolve_column_index_from_column_name
-from pycylon.indexing.index import IndexingType
+from pycylon.indexing.cyindex import IndexingType
 from pycylon.indexing.index_utils import IndexUtil
 
 

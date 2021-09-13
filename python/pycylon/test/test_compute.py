@@ -16,7 +16,7 @@ import pyarrow as pa
 import pandas as pd
 import pycylon as cn
 from pycylon import CylonContext
-from pycylon.indexing.index import IndexingType
+from pycylon.indexing.cyindex import IndexingType
 
 
 def test_isin():

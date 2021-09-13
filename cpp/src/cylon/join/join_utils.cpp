@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <set>
 
 #include <cylon/join/join_utils.hpp>
 #include <cylon/util/arrow_utils.hpp>
@@ -24,6 +25,40 @@
 namespace cylon {
 namespace join {
 namespace util {
+
+std::shared_ptr<arrow::Schema> build_final_table_schema(const std::shared_ptr<arrow::Table> &left_tab,
+                                                        const std::shared_ptr<arrow::Table> &right_tab,
+                                                        const std::string &left_table_prefix,
+                                                        const std::string &right_table_prefix) {
+  // creating joined schema
+  std::vector<std::shared_ptr<arrow::Field>> fields;
+
+  std::unordered_map<std::string, int32_t> column_name_index;
+
+  // adding left table
+  for (const auto &field: left_tab->schema()->fields()) {
+    column_name_index.insert(std::make_pair<>(field->name(), fields.size()));
+    fields.emplace_back(field);
+  }
+
+  // adding right table
+  for (const auto &field: right_tab->schema()->fields()) {
+    auto new_field = field;
+    if (column_name_index.find(field->name()) != column_name_index.end()) {
+      // same column name exists in the left table
+      // make the existing column name prefixed with left column prefix
+      fields[column_name_index.find(field->name())->second] = field->WithName(left_table_prefix + field->name());
+
+      // new field will be prefixed with the right table
+      new_field = field->WithName(right_table_prefix + field->name());
+    }
+    // this is a unique column name
+    column_name_index.insert(std::make_pair<>(new_field->name(), fields.size()));
+    fields.emplace_back(new_field);
+  }
+
+  return arrow::schema(fields);
+}
 
 arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t right_inplace_column,
                                               const std::vector<int64_t> &left_indices,
@@ -36,23 +71,13 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
                                               const std::string &right_table_prefix,
                                               std::shared_ptr<arrow::Table> *final_table,
                                               arrow::MemoryPool *memory_pool) {
-  // creating joined schema
-  std::vector<std::shared_ptr<arrow::Field>> fields;
-  // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
-  std::string  prefix = left_table_prefix;
-  for(const auto &t: {left_tab, right_tab}){
-    for (const auto &field: t->schema()->fields()){
-      fields.emplace_back(field->WithName(prefix + field->name()));
-    }
-    prefix = right_table_prefix;
-  }
-  const auto &schema = arrow::schema(fields);
+  const auto &schema = build_final_table_schema(left_tab, right_tab, left_table_prefix, right_table_prefix);
 
   std::vector<int64_t> indices_indexed;
   indices_indexed.reserve(left_indices.size());
 
-  for (long v : left_indices) {
-    if (v < 0){
+  for (long v: left_indices) {
+    if (v < 0) {
       indices_indexed.push_back(v);
     } else {
       indices_indexed.push_back(left_index_sorted_column->Value(v));
@@ -87,8 +112,8 @@ arrow::Status build_final_table_inplace_index(size_t left_inplace_column, size_t
 
   indices_indexed.clear();
   indices_indexed.reserve(right_indices.size());
-  for (long v : right_indices) {
-    if (v < 0){
+  for (long v: right_indices) {
+    if (v < 0) {
       indices_indexed.push_back(v);
     } else {
       indices_indexed.push_back(right_index_sorted_column->Value(v));
@@ -131,22 +156,12 @@ arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
                                 const std::string &right_table_prefix,
                                 std::shared_ptr<arrow::Table> *final_table,
                                 arrow::MemoryPool *memory_pool) {
-  // creating joined schema
-  std::vector<std::shared_ptr<arrow::Field>> fields;
-  // TODO: get left and right suffixes from user if needed and update it here and replace in the schema with newfileds
-  std::string  prefix = left_table_prefix;
-  for(const auto &t: {left_tab, right_tab}){
-    for (const auto &field: t->schema()->fields()){
-      fields.emplace_back(field->WithName(prefix + field->name()));
-    }
-    prefix = right_table_prefix;
-  }
-  const auto &schema = arrow::schema(fields);
+  const auto &schema = build_final_table_schema(left_tab, right_tab, left_table_prefix, right_table_prefix);
 
   std::vector<std::shared_ptr<arrow::Array>> data_arrays;
 
   // build arrays for left tab
-  for (auto &column : left_tab->columns()) {
+  for (auto &column: left_tab->columns()) {
     std::shared_ptr<arrow::Array> destination_col_array;
     arrow::Status
         status = cylon::util::copy_array_by_indices(left_indices,
@@ -162,7 +177,7 @@ arrow::Status build_final_table(const std::vector<int64_t> &left_indices,
   }
 
   // build arrays for right tab
-  for (auto &column : right_tab->columns()) {
+  for (auto &column: right_tab->columns()) {
     std::shared_ptr<arrow::Array> destination_col_array;
     arrow::Status
         status = cylon::util::copy_array_by_indices(right_indices,

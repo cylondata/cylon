@@ -67,8 +67,8 @@ We need conda-build package to build Cylon.
 git clone https://github.com/cylondata/cylon.git
 cd cylon
 
-conda create --name build_env python=3.7
-conda activate build_env
+conda env create -f conda/environments/cylon.yml
+conda activate cylon_dev
 conda install conda-build
 
 conda-build conda/recipes/cylon/
@@ -98,4 +98,51 @@ After that you can use the package.
 ```bash
 conda create -n cylon-0.4.0 -c cylondata pycylon python=3.7
 conda activate cylon-0.4.0
+```
+
+## Developing in a Conda environment
+
+We can also use Conda environment for Cylon C++ and Python development. This is a very convenient 
+way to get started with Cylon development and testing. 
+
+1. Create a Conda environment with the dependencies, and activate the environment. Here we are using 
+the `conda/environments/cylon.yml` env file which creates `cylon_dev` environment.  
+
+```bash
+git clone https://github.com/cylondata/cylon.git
+cd cylon
+
+conda env create -f conda/environments/cylon.yml
+conda activate cylon_dev
+```
+
+2. Build Cylon against `cylon_dev` env. Here we are using the `build.sh` convenience script.  
+```bash
+./build.sh [-bpath <build dir>] [-j <num jobs>] --conda_cpp --conda_python [--test] [--pytest]
+```
+Here, Conda would build Cylon. Built files can be found in the `-bpath` directory (default: 
+`$CYLON_HOME/build`). 
+
+Additionally, Cylon libraries would also be copied to `$CONDA_PREFIX/lib` and 
+`$CONDA_PREFIX/include` directories. 
+
+### Setting up IDEs 
+
+In addition to use terminal, you can also use the Conda environment in your preferred IDE's. 
+
+1. Open Cylon as a C++ project, and assign `cylon/cpp/CmakeLists.txt` as main CMake file.
+
+2. Export `CONDA_PREFIX=<path to env>` environment variable for the IDE
+
+3. Add a CMake build directory (ex: `$CYLON_HOME/build`)
+
+3. Use the following CMake options
+```bash
+-DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX"
+-DARROW_BUILD_TYPE="SYSTEM"
+-DARROW_LIB_DIR="$CONDA_PREFIX/lib"
+-DARROW_INCLUDE_DIR="$CONDA_PREFIX/include"
+-DCYLON_PARQUET=ON # enable Cylon parquet 
+-DPYCYLON_BUILD=ON # enable PyCylon 
+-DCYLON_WITH_TEST=ON # run C++ tests 
 ```

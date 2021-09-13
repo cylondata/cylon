@@ -40,9 +40,9 @@ from pycylon.data.table cimport CSortOptions
 from pycylon.data.table import SortOptions
 from pycylon.data.table cimport SortOptions
 from pycylon.common.join_config cimport CJoinConfig
-from pycylon.indexing.index import BaseArrowIndex
-from pycylon.indexing.index cimport CBaseArrowIndex
-from pycylon.indexing.index cimport BaseArrowIndex
+from pycylon.indexing.cyindex import BaseArrowIndex
+from pycylon.indexing.cyindex cimport CBaseArrowIndex
+from pycylon.indexing.cyindex cimport BaseArrowIndex
 
 
 

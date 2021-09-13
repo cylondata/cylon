@@ -52,10 +52,10 @@ from pycylon.data import compute
 from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
 from pycylon.indexing.index_utils import IndexUtil
 
-from pycylon.indexing.index cimport CBaseArrowIndex
-from pycylon.indexing.index import BaseArrowIndex
-from pycylon.indexing.index import IndexingType
-from pycylon.indexing.index import PyLocIndexer
+from pycylon.indexing.cyindex cimport CBaseArrowIndex
+from pycylon.indexing.cyindex import BaseArrowIndex
+from pycylon.indexing.cyindex import IndexingType
+from pycylon.indexing.cyindex import PyLocIndexer
 
 from pycylon.util.type_utils import get_arrow_type
 
@@ -2059,7 +2059,7 @@ cdef class Table:
         Set Index
         Operation takes place inplace.
         Args:
-            key: pycylon.indexing.index.BaseIndex
+            key: pycylon.indexing.cyindex.BaseIndex
 
         Returns: None
 
@@ -2077,7 +2077,7 @@ cdef class Table:
         >>> tb.set_index(['a', 'b', 'c', 'd'])
 
         >>> tb.index
-            <pycylon.indexing.index.BaseIndex object at 0x7fa72c2b6ca0>
+            <pycylon.indexing.cyindex.BaseIndex object at 0x7fa72c2b6ca0>
 
         >>> tb.index.index_values
             ['a', 'b', 'c', 'd']
