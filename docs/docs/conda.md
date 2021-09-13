@@ -4,7 +4,8 @@ title: Cylon Conda Binaries
 sidebar_label: Conda
 ---
 
-PyCylon can be built using Conda. There are Conda packages for libcylon and pycylon.
+Cylon can be built and used through a Conda environment. 
+There are Conda packages for Cylon C++ and Python libraries (libcylon and pycylon).
 
 ## Installing from Conda
 
@@ -67,27 +68,19 @@ We need conda-build package to build Cylon.
 git clone https://github.com/cylondata/cylon.git
 cd cylon
 
-conda create --name build_env python=3.7
-conda activate build_env
-conda install conda-build
-
-conda-build conda/recipes/cylon/
-conda-build conda/recipes/pycylon/
+conda env create -f conda/environments/cylon.yml
+conda activate cylon_dev
+./build.sh --conda_cpp --conda_python
 ```
 
-Now you can install these packages into your conda environment. 
+After that you can use PyCylon or libcylon as explained above.
 
-```bash
-conda install --use-local cylon
-conda install --use-local pycylon
-```
+Here, Built files can be found in the `$CYLON_HOME/build` 
+(build directory can be specified from the command line with 
+`-bpath` flag as: ./build.sh [-bpath \<build dir>] ... )
 
-After that you can use the package.
-
-```bash
-conda create -n cylon-0.4.0 -c cylondata pycylon python=3.7
-conda activate cylon-0.4.0
-```
+Additionally, Cylon libraries would also be installed to `$CONDA_PREFIX/lib` and
+`$CONDA_PREFIX/include` directories.
 
 ## Installing and Using GCylon
 
@@ -96,19 +89,19 @@ There are two libraries for gcylon:
 * a cpp library (libgcylon) 
 * a python library (pygcylon)
 
-GCylon libraries depend on cylon libraries and also NVIDIA libraries: cudatoolkit and cudf
+GCylon libraries depend on Cylon libraries and NVIDIA libraries: cudatoolkit and cudf
 
-Since cudatoolkit and cudf libraries are rather large, we provide an extra conda environment for installing and compiling gcylon.
+Since cudatoolkit and cudf libraries are rather large, we provide a separate conda environment for installing and compiling gcylon.
 
-The easiest way to compile and run gcylon is through a conda environment. We provide a conda environment yml file to download and setup all dependencies.
+The easiest way to compile and run gcylon is through a conda environment. We provide a conda environment yml file. It has all dependencies listed.
 
 ### Prerequisites 
 * Clone the cylon project to your machine from github if not already done.
 * Make sure you have anaconda or miniconda installed. If not, please install anaconda or miniconda first. 
 * Install cudatoolkit 11.0 or higher. 
-* Make sure your machine has:
+* Make sure your machine is Linux and has:
   - NVIDIA driver 450.80.02+
-  - Pascal architecture or better (Compute Capability >=6.0)
+  - A GPU with Pascal architecture or better (Compute Capability >=6.0)
 
 ### Installing Conda Packages
 Go to cylon project directory on the command line.
@@ -121,8 +114,8 @@ nvcc --version
 If your cudatoolkit version is not 11.2, update the cudatoolkit version at the file:
 conda/environments/gcylon.yml
 
-Create the conda environment and install the dependencies. 
-Activate the conda environment:
+Create the conda environment and install the dependencies, 
+activate the conda environment:
 ```
 conda env create -f conda/environments/gcylon.yml
 conda activate gcylon_dev
@@ -159,3 +152,25 @@ mpirun -n 2 --mca opal_cuda_support 1 --mca pml ucx --mca osc ucx --mca btl_open
 ```
 
 Other examples in the python/pygcylon/examples/ directory can be run similarly.
+
+
+## Setting up IDEs 
+
+In addition to use terminal, you can also use the Conda environment in your preferred IDE's. 
+
+1. Open Cylon as a C++ project, and assign `cylon/cpp/CmakeLists.txt` as main CMake file.
+
+2. Export `CONDA_PREFIX=<path to env>` environment variable for the IDE
+
+3. Add a CMake build directory (ex: `$CYLON_HOME/build`)
+
+4. Use the following CMake options
+```bash
+-DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX"
+-DARROW_BUILD_TYPE="SYSTEM"
+-DARROW_LIB_DIR="$CONDA_PREFIX/lib"
+-DARROW_INCLUDE_DIR="$CONDA_PREFIX/include"
+-DCYLON_PARQUET=ON # enable Cylon parquet 
+-DPYCYLON_BUILD=ON # enable PyCylon 
+-DCYLON_WITH_TEST=ON # run C++ tests 
+```

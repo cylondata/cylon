@@ -18,7 +18,7 @@ import pandas as pd
 import pycylon as cn
 from pycylon import CylonContext
 from pycylon import Table
-from pycylon.indexing.index import IndexingType
+from pycylon.indexing.cyindex import IndexingType
 from bench_util import get_dataframe
 import time
 import argparse

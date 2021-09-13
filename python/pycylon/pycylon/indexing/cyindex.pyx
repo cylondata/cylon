@@ -17,9 +17,9 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string
 from pyarrow.lib cimport CArray as CArrowArray
 from pyarrow.lib cimport CScalar as CArrowScalar
-from pycylon.indexing.index cimport CIndexingType
-from pycylon.indexing.index cimport CArrowLocIndexer
-from pycylon.indexing.index cimport CBaseArrowIndex
+from pycylon.indexing.cyindex cimport CIndexingType
+from pycylon.indexing.cyindex cimport CArrowLocIndexer
+from pycylon.indexing.cyindex cimport CBaseArrowIndex
 from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table, pyarrow_wrap_array,
 pyarrow_unwrap_array, pyarrow_wrap_scalar, pyarrow_unwrap_scalar)
 
@@ -223,7 +223,7 @@ cdef class ArrowILocIndexer:
         self.indexer_shd_ptr = make_shared[CArrowILocIndexer](indexing_type)
 
     def _fix_partial_slice_inidices(self, start_index, end_index, index):
-        if start_index and end_index:
+        if start_index is not None and end_index is not None:
             # (excluding the boundary value)
             return start_index, end_index - 1
         elif start_index is None and end_index is None:

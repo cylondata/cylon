@@ -43,10 +43,10 @@ Channel *MPICommunicator::CreateChannel() {
   return new MPIChannel();
 }
 
-int MPICommunicator::GetRank() {
+int MPICommunicator::GetRank() const {
   return this->rank;
 }
-int MPICommunicator::GetWorldSize() {
+int MPICommunicator::GetWorldSize() const {
   return this->world_size;
 }
 Status MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
@@ -72,7 +72,7 @@ void MPICommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
-CommType MPICommunicator::GetCommType() {
+CommType MPICommunicator::GetCommType() const {
   return MPI;
 }
 }  // namespace net

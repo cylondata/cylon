@@ -24,8 +24,8 @@ from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 from pycylon.data.table cimport CTable
 from pycylon.data.table import Table
-from pycylon.indexing.index cimport CIndexingType
-from pycylon.indexing.index import IndexingType
+from pycylon.indexing.cyindex cimport CIndexingType
+from pycylon.indexing.cyindex import IndexingType
 from pycylon.indexing.index_utils cimport CIndexUtil
 
 from pycylon.api.lib cimport (pycylon_wrap_context, pycylon_unwrap_context, pycylon_unwrap_table,
