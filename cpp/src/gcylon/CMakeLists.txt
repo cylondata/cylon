@@ -78,6 +78,8 @@ include_directories(
 )
 
 add_library(gcylon SHARED
+        cudf_buffer.hpp
+        cudf_buffer.cpp
         all2all/cudf_all_to_all.cuh
         all2all/cudf_all_to_all.cu
         all2all/cudf_all_to_all.hpp

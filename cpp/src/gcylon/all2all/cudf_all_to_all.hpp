@@ -21,6 +21,7 @@
 #include <cylon/status.hpp>
 #include <cylon/net/buffer.hpp>
 
+#include <gcylon/cudf_buffer.hpp>
 #include <cudf/types.hpp>
 #include <cudf/table/table_view.hpp>
 #include <cudf/strings/strings_column_view.hpp>
@@ -28,22 +29,6 @@
 namespace gcylon {
 
 cudf::size_type dataLength(cudf::column_view const& cw);
-
-class CudfBuffer : public cylon::Buffer {
-public:
-    CudfBuffer(std::shared_ptr<rmm::device_buffer> rmm_buf);
-    int64_t GetLength() override;
-    uint8_t * GetByteBuffer() override;
-    std::shared_ptr<rmm::device_buffer> getBuf() const;
-private:
-    std::shared_ptr<rmm::device_buffer> rmm_buf;
-};
-
-class CudfAllocator : public cylon::Allocator {
-public:
-    cylon::Status Allocate(int64_t length, std::shared_ptr<cylon::Buffer> *buffer) override;
-    virtual ~CudfAllocator();
-};
 
 class PendingBuffer {
 public:
