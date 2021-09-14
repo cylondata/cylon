@@ -28,11 +28,11 @@ class Communicator {
  public:
   virtual Status Init(const std::shared_ptr<CommConfig> &config) = 0;
   virtual Channel *CreateChannel() = 0;
-  virtual int GetRank() = 0;
-  virtual int GetWorldSize() = 0;
+  virtual int GetRank() const = 0;
+  virtual int GetWorldSize() const = 0;
   virtual void Finalize() = 0;
   virtual void Barrier() = 0;
-  virtual CommType GetCommType() = 0;
+  virtual CommType GetCommType() const = 0;
 
   virtual ~Communicator() = default;
 };

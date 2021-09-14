@@ -36,11 +36,11 @@ class MPICommunicator : public Communicator {
  public:
   Status Init(const std::shared_ptr<CommConfig> &config) override;
   Channel *CreateChannel() override;
-  int GetRank() override;
-  int GetWorldSize() override;
+  int GetRank() const override;
+  int GetWorldSize() const override;
   void Finalize() override;
   void Barrier() override;
-  CommType GetCommType() override;
+  CommType GetCommType() const override;
 };
 }
 }
