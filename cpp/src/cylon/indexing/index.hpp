@@ -21,17 +21,12 @@
 #include <arrow/table.h>
 #include <arrow/visitor_inline.h>
 
-#include <chrono>
-#include <cylon/arrow/arrow_comparator.hpp>
-#include <cylon/ctx/arrow_memory_pool_utils.hpp>
-#include <cylon/ctx/cylon_context.hpp>
-#include <cylon/indexing/index.hpp>
-#include <cylon/status.hpp>
-#include <cylon/thridparty/flat_hash_map/unordered_map.hpp>
-#include <cylon/util/arrow_utils.hpp>
-#include <cylon/util/macros.hpp>
+#include "cylon/table.hpp"
+#include "cylon/status.hpp"
 
 namespace cylon {
+
+class Table;
 
 enum IndexingType {
   Range = 0,

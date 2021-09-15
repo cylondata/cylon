@@ -19,8 +19,8 @@
 #include <arrow/table.h>
 #include <arrow/visitor_inline.h>
 
-#include <cylon/status.hpp>
-#include "macros.hpp"
+#include "cylon/status.hpp"
+#include "cylon/util/macros.hpp"
 
 namespace cylon {
 namespace util {
@@ -281,7 +281,6 @@ arrow::Status FindIndices(const std::shared_ptr<arrow::Array> &array,
 template<typename ArrowT>
 arrow::Status FindIndex(const std::shared_ptr<arrow::Array> &index_array_,
                         const std::shared_ptr<arrow::Scalar> &search_param, int64_t *index) {
-  using ScalarT = typename ArrowScalarValue<ArrowT>::ScalarT;
   using ValueT = typename ArrowScalarValue<ArrowT>::ValueT;
 
   if (!search_param->is_valid && index_array_->null_count() == 0) {

@@ -12,7 +12,11 @@
  * limitations under the License.
  */
 #include <glog/logging.h>
-#include <cylon/indexing/indexer.hpp>
+
+#include "cylon/indexing/indexer.hpp"
+#include "cylon/util/macros.hpp"
+#include "cylon/ctx/arrow_memory_pool_utils.hpp"
+#include "cylon/util/arrow_utils.hpp"
 
 namespace cylon {
 namespace indexing {

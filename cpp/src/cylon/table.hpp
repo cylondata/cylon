@@ -38,6 +38,8 @@
 
 namespace cylon {
 
+class BaseArrowIndex;
+
 /**
  * Table provides the main API for using cylon for data processing.
  */

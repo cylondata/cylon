@@ -12,8 +12,11 @@
  * limitations under the License.
  */
 #include <glog/logging.h>
-#include <cylon/indexing/index.hpp>
-#include <cylon/table.hpp>
+
+#include "cylon/ctx/arrow_memory_pool_utils.hpp"
+#include "cylon/indexing/index.hpp"
+#include "cylon/util/macros.hpp"
+#include "cylon/util/arrow_utils.hpp"
 
 namespace cylon {
 
@@ -100,7 +103,11 @@ class ArrowHashIndex : public BaseArrowIndex {
     }
 
     // reserve additional space to the builder, and append values
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.template AppendValues(ret.first, ret.second));
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(std::distance(ret.first, ret.second)));
+    for (auto it = ret.first; it != ret.second; it++) {
+      builder.UnsafeAppend(it->second);
+    }
+
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(locations));
     return Status::OK();
   }
@@ -148,7 +155,11 @@ class ArrowHashIndex : public BaseArrowIndex {
                 return arrow::Status::Cancelled("key not found"); // this will break the visit loop
               }
               // reserve additional space to the builder, and append values
-              return builder.template AppendValues(ret.first, ret.second);
+              RETURN_ARROW_STATUS_IF_FAILED(builder.Reserve(std::distance(ret.first, ret.second)));
+              for (auto it = ret.first; it != ret.second; it++) {
+                builder.UnsafeAppend(it->second);
+              }
+              return arrow::Status::OK();
             },
             [&]() {  // nothing to do for nulls
               return builder.AppendValues(*null_indices);
