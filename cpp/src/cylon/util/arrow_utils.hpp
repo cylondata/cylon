@@ -17,6 +17,10 @@
 
 #include <arrow/api.h>
 #include <arrow/table.h>
+#include <arrow/visitor_inline.h>
+
+#include <cylon/status.hpp>
+#include "macros.hpp"
 
 namespace cylon {
 namespace util {
@@ -104,23 +108,24 @@ arrow::Status Duplicate(const std::shared_ptr<arrow::Table> &table, arrow::Memor
  * @param pool
  * @return
  */
-arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &array,
-                          uint64_t num_samples,
+arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &array, uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out,
                           arrow::MemoryPool *pool = arrow::default_memory_pool());
 
-arrow::Status SampleArray(std::shared_ptr<arrow::Table> &table,
-                          int32_t idx,
-                          uint64_t num_samples,
+arrow::Status SampleArray(std::shared_ptr<arrow::Table> &table, int32_t idx, uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out,
                           arrow::MemoryPool *pool = arrow::default_memory_pool());
 
-arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array,
-                          uint64_t num_samples,
+arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array, uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out,
                           arrow::MemoryPool *pool = arrow::default_memory_pool());
 
-std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk);
+std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk,
+                                                   arrow::MemoryPool *pool = arrow::default_memory_pool());
+
+arrow::Status GetConcatenatedColumn(const std::shared_ptr<arrow::Table> &table, int col_id,
+                                    std::shared_ptr<arrow::Array> *output,
+                                    arrow::MemoryPool *pool = arrow::default_memory_pool());
 
 inline bool IsMutable(const std::shared_ptr<arrow::Array> &array) {
   for (auto &&buff: array->data()->buffers) {
@@ -142,7 +147,191 @@ uint64_t GetNumberSplitsToFitInCache(int64_t total_bytes, int total_elements, in
  * @param columns
  * @return
  */
-std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table, const std::vector<int> &columns);
+std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table,
+                                           const std::vector<int> &columns);
+
+/**
+ * Creates an empty array of type `data_type`
+ * @param data_type
+ * @param output
+ * @param pool
+ * @return
+ */
+arrow::Status CreateEmptyArray(const std::shared_ptr<arrow::DataType> &data_type,
+                               std::shared_ptr<arrow::Array> *output,
+                               arrow::MemoryPool *pool = arrow::default_memory_pool());
+
+/**
+ * Check an array for uniqueness
+ * @param array
+ * @param pool
+ * @return
+ */
+arrow::Status IsUnique(const std::shared_ptr<arrow::Array> &array, bool *output,
+                       arrow::MemoryPool *pool = arrow::default_memory_pool());
+
+template<typename ArrowT, typename Enable = void>
+struct ArrowScalarValue {};
+
+template<typename ArrowT>
+struct ArrowScalarValue<ArrowT, arrow::enable_if_has_c_type<ArrowT>> {
+  using ScalarT = typename arrow::TypeTraits<ArrowT>::ScalarType;
+  using ValueT = typename ArrowT::c_type;
+
+  static ValueT Extract(const std::shared_ptr<arrow::Scalar> &scalar) {
+    return std::static_pointer_cast<ScalarT>(scalar)->value;
+  }
+};
+
+template<typename ArrowT>
+struct ArrowScalarValue<ArrowT, arrow::enable_if_has_string_view<ArrowT>> {
+  using ScalarT = typename arrow::TypeTraits<ArrowT>::ScalarType;
+  using ValueT = arrow::util::string_view;
+
+  static ValueT Extract(const std::shared_ptr<arrow::Scalar> &scalar) {
+    return ValueT(*(std::static_pointer_cast<ScalarT>(scalar))->value);
+  }
+};
+
+/**
+ * Find indices of `search_param` value. If not found, IndexError Status will be returned.
+ *
+ * @param array
+ * @param search_param
+ * @param locations
+ * @return arrow::Status
+ */
+template<typename ArrowT>
+arrow::Status FindIndices(const std::shared_ptr<arrow::Array> &index_array_,
+                          const std::shared_ptr<arrow::Scalar> &search_param,
+                          std::shared_ptr<arrow::Int64Array> *locations,
+                          arrow::MemoryPool *pool) {
+  using ValueT = typename ArrowScalarValue<ArrowT>::ValueT;
+
+  // if search param is null and index_array doesn't have any nulls, return empty array
+  if (!search_param->is_valid && index_array_->null_count() == 0) {
+    return arrow::Status::KeyError("Key not found");
+  }
+
+  // search param needs to be casted here to support castable params from python
+  auto res = search_param->CastTo(index_array_->type());
+  RETURN_ARROW_STATUS_IF_FAILED(res.status());
+  const ValueT &cast_val = ArrowScalarValue<ArrowT>::Extract(res.ValueOrDie());
+
+  // reserve conservatively
+  arrow::Int64Builder builder(pool);
+  RETURN_ARROW_STATUS_IF_FAILED(builder.Reserve(index_array_->length()));
+
+  int64_t idx = 0;
+  const auto &arr_data = *index_array_->data();
+  if (search_param->is_valid) {  // param is valid, so search only on the valid elements
+    arrow::VisitArrayDataInline<ArrowT>(
+        arr_data,
+        [&](ValueT val) {
+          if (cast_val == val) {
+            builder.UnsafeAppend(idx);
+          }
+          idx++;
+        },
+        [&]() {  // nothing to do for nulls
+          idx++;
+        });
+  } else {
+    // param is null. search only on the null elements. So, search in the validity bitmap of array
+    const auto &val_buff = arr_data.buffers[0];
+    arrow::VisitNullBitmapInline(
+        val_buff->data(), arr_data.offset, arr_data.length, 0,
+        [&]() {  // nothing to do for valid-values
+          idx++;
+        },
+        [&]() {
+          builder.UnsafeAppend(idx);
+          idx++;
+        });
+  }
+
+  if (builder.length() == 0) {
+    return arrow::Status::KeyError("Key not found");
+  }
+
+  return builder.Finish(locations);
+}
+
+/**
+ * @brief Find indices of the values in `search_param` array. If not found, IndexError Status will be returned.
+ *
+ * @param array
+ * @param search_param
+ * @param locations
+ * @return arrow::Status
+ */
+arrow::Status FindIndices(const std::shared_ptr<arrow::Array> &array,
+                          const std::shared_ptr<arrow::Array> &search_param,
+                          std::shared_ptr<arrow::Int64Array> *locations,
+                          arrow::MemoryPool *pool = arrow::default_memory_pool());
+
+/**
+ * Find index of `search_param` value. If not found, IndexError Status will be returned.
+ *
+ * @param array
+ * @param search_param
+ * @param locations
+ * @return arrow::Status
+ */
+template<typename ArrowT>
+arrow::Status FindIndex(const std::shared_ptr<arrow::Array> &index_array_,
+                        const std::shared_ptr<arrow::Scalar> &search_param, int64_t *index) {
+  using ScalarT = typename ArrowScalarValue<ArrowT>::ScalarT;
+  using ValueT = typename ArrowScalarValue<ArrowT>::ValueT;
+
+  if (!search_param->is_valid && index_array_->null_count() == 0) {
+    *index = -1;
+    return arrow::Status::OK();
+  }
+
+  // search param needs to be casted here to support castable params from python
+  const auto &res = search_param->CastTo(index_array_->type());
+  RETURN_ARROW_STATUS_IF_FAILED(res.status());
+  const ValueT &cast_val = ArrowScalarValue<ArrowT>::Extract(res.ValueOrDie());
+
+  int64_t idx = 0;
+  const auto &arr_data = *index_array_->data();
+  if (search_param->is_valid) {  // param is valid, so search only on the valid elements
+    arrow::VisitArrayDataInline<ArrowT>(
+        arr_data,
+        [&](ValueT val) {
+          if (cast_val == val) {
+            *index = idx;
+            return arrow::Status::Cancelled("");  // this will break the visit loop
+          }
+          idx++;
+          return arrow::Status::OK();
+        },
+        [&]() {  // nothing to do for nulls
+          idx++;
+          return arrow::Status::OK();
+        });
+  } else {
+    // param is null. search only on the null elements. So, search in the validity bitmap of array
+    const auto &val_buff = arr_data.buffers[0];
+    arrow::VisitNullBitmapInline(
+        val_buff->data(), arr_data.offset, arr_data.length, 0,
+        [&]() {  // nothing to do for valid-values
+          idx++;
+          return arrow::Status::OK();
+        },
+        [&]() {
+          *index = idx;
+          return arrow::Status::Cancelled("");  // this will break the visit loop
+        });
+  }
+
+  if (idx == index_array_->length()) { // param is not found
+    return arrow::Status::KeyError("Key not found");
+  }
+
+  return arrow::Status::OK();
+}
 
 }  // namespace util
 }  // namespace cylon

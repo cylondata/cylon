@@ -19,146 +19,87 @@
 #include <cylon/table.hpp>
 
 namespace cylon {
+namespace indexing {
 
 bool CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar> &index_value,
-							 const std::shared_ptr<BaseArrowIndex> &index);
+                             const std::shared_ptr<BaseArrowIndex> &index);
 
 /**
- * Loc operations
- * */
+* locate values in [start_index:end_index] and take only the given columns.
+* @param input_table
+* @param start_value
+* @param end_value
+* @param columns
+* @param output
+* @return
+*/
+Status Loc(const std::shared_ptr<Table> &input_table,
+           const std::shared_ptr<arrow::Scalar> &start_value,
+           const std::shared_ptr<arrow::Scalar> &end_value,
+           const std::vector<int> &columns,
+           std::shared_ptr<cylon::Table> *output);
 
-class ArrowBaseIndexer {
+Status Loc(const std::shared_ptr<Table> &input_table,
+           const std::shared_ptr<arrow::Scalar> &start_index,
+           const std::shared_ptr<arrow::Scalar> &end_index,
+           int start_column,
+           int end_column,
+           std::shared_ptr<Table> *output);
 
- public:
-  explicit ArrowBaseIndexer() {
+Status Loc(const std::shared_ptr<Table> &input_table,
+           const std::shared_ptr<arrow::Scalar> &start_index,
+           const std::shared_ptr<arrow::Scalar> &end_index,
+           int column_index,
+           std::shared_ptr<Table> *output);
 
-  }
+Status Loc(const std::shared_ptr<Table> &input_table,
+           const std::shared_ptr<arrow::Array> &values,
+           const std::vector<int> &columns,
+           std::shared_ptr<cylon::Table> *output);
 
-  virtual Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
-					 const std::shared_ptr<arrow::Scalar> &end_index,
-					 const int column_index,
-					 const std::shared_ptr<Table> &input_table,
-					 std::shared_ptr<cylon::Table> &output) = 0;
+Status Loc(const std::shared_ptr<Table> &input_table,
+           const std::shared_ptr<arrow::Array> &indices,
+           int column_index,
+           std::shared_ptr<cylon::Table> *output);
 
-  virtual Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
-					 const std::shared_ptr<arrow::Scalar> &end_index,
-					 const int start_column_index,
-					 const int end_column_index,
-					 const std::shared_ptr<Table> &input_table,
-					 std::shared_ptr<cylon::Table> &output) = 0;
+Status Loc(const std::shared_ptr<Table> &input_table, const std::shared_ptr<arrow::Array> &indices,
+           int start_column, int end_column, std::shared_ptr<cylon::Table> *output);
 
-  virtual Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
-					 const std::shared_ptr<arrow::Scalar> &end_index,
-					 const std::vector<int> &columns,
-					 const std::shared_ptr<Table> &input_table,
-					 std::shared_ptr<cylon::Table> &output) = 0;
+Status iLoc(const std::shared_ptr<Table> &input_table,
+            const std::shared_ptr<arrow::Scalar> &start_index,
+            const std::shared_ptr<arrow::Scalar> &end_index,
+            const std::vector<int> &columns,
+            std::shared_ptr<Table> *output);
 
-  virtual Status loc(const std::shared_ptr<arrow::Array> &indices,
-					 const int column_index,
-					 const std::shared_ptr<Table> &input_table,
-					 std::shared_ptr<cylon::Table> &output) = 0;
+Status iLoc(const std::shared_ptr<Table> &input_table,
+            const std::shared_ptr<arrow::Scalar> &start_index,
+            const std::shared_ptr<arrow::Scalar> &end_index,
+            int column_index,
+            std::shared_ptr<Table> *output);
 
-  virtual Status loc(const std::shared_ptr<arrow::Array> &indices,
-					 const int start_column,
-					 const int end_column,
-					 const std::shared_ptr<Table> &input_table,
-					 std::shared_ptr<cylon::Table> &output) = 0;
+Status iLoc(const std::shared_ptr<Table> &input_table,
+            const std::shared_ptr<arrow::Scalar> &start_index,
+            const std::shared_ptr<arrow::Scalar> &end_index,
+            int start_column,
+            int end_column,
+            std::shared_ptr<cylon::Table> *output);
 
-  virtual Status loc(const std::shared_ptr<arrow::Array> &indices,
-					 const std::vector<int> &columns,
-					 const std::shared_ptr<Table> &input_table,
-					 std::shared_ptr<cylon::Table> &output) = 0;
+Status iLoc(const std::shared_ptr<Table> &input_table,
+            const std::shared_ptr<arrow::Array> &indices,
+            const std::vector<int> &columns,
+            std::shared_ptr<cylon::Table> *output);
 
-  virtual IndexingType GetIndexingType() = 0;
+Status iLoc(const std::shared_ptr<Table> &input_table,
+            const std::shared_ptr<arrow::Array> &indices,
+            int column_index,
+            std::shared_ptr<cylon::Table> *output);
 
-};
+Status iLoc(const std::shared_ptr<Table> &input_table,
+            const std::shared_ptr<arrow::Array> &indices,
+            int start_column, int end_column,
+            std::shared_ptr<cylon::Table> *output);
 
-class ArrowLocIndexer : public ArrowBaseIndexer {
-
- public:
-  explicit ArrowLocIndexer(IndexingType indexing_type) : ArrowBaseIndexer(), indexing_type_(indexing_type) {
-
-  };
-
-  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
-			 const std::shared_ptr<arrow::Scalar> &end_index,
-			 const int column_index,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
-			 const std::shared_ptr<arrow::Scalar> &end_index,
-			 const int start_column_index,
-			 const int end_column_index,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
-			 const std::shared_ptr<arrow::Scalar> &end_index,
-			 const std::vector<int> &columns,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Array> &indices,
-			 const int column_index,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Array> &indices,
-			 const int start_column,
-			 const int end_column,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Array> &indices,
-			 const std::vector<int> &columns,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  IndexingType GetIndexingType() override;
-
- private:
-  IndexingType indexing_type_;
-
-};
-
-/**
- * iLoc operations
- * */
-
-class ArrowILocIndexer : public ArrowLocIndexer {
- public:
-  ArrowILocIndexer(IndexingType indexing_type);
-
-  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
-			 const std::shared_ptr<arrow::Scalar> &end_index,
-			 const int column_index,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
-			 const std::shared_ptr<arrow::Scalar> &end_index,
-			 const int start_column_index,
-			 const int end_column_index,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Scalar> &start_index,
-			 const std::shared_ptr<arrow::Scalar> &end_index,
-			 const std::vector<int> &columns,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Array> &indices,
-			 const int column_index,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Array> &indices,
-			 const int start_column,
-			 const int end_column,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  Status loc(const std::shared_ptr<arrow::Array> &indices,
-			 const std::vector<int> &columns,
-			 const std::shared_ptr<Table> &input_table,
-			 std::shared_ptr<cylon::Table> &output) override;
-  IndexingType GetIndexingType() override;
-
- private:
-//  IndexingType indexing_type_;
-};
-
-}
+} // namespace indexing
+} // namespace cylon
 
 #endif //CYLON_SRC_CYLON_INDEXING_INDEXER_H_

@@ -79,8 +79,6 @@ add_library(cylon SHARED
         groupby/pipeline_groupby.hpp
         indexing/index.cpp
         indexing/index.hpp
-        indexing/index_utils.cpp
-        indexing/index_utils.hpp
         indexing/indexer.cpp
         indexing/indexer.hpp
         io/arrow_io.cpp
