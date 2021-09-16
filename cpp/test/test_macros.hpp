@@ -19,15 +19,24 @@
   do {                                                                         \
     const auto& exp = (expected);                                              \
     const auto& rec = (received);                                              \
-    INFO("Expected: " << exp->ToString() << "\nReceived: " << rec->ToString()) \
+    INFO("Expected: " << exp->ToString() << "\nReceived: " << rec->ToString()); \
     REQUIRE(exp->Equals(*rec));                                                \
   } while(0)
 
 #define CHECK_CYLON_STATUS(expr)  \
   do{                             \
       const auto& st = (expr);    \
-      INFO("code: " << st.get_code() << " msg: " << st.get_msg()) \
+      INFO("code: " << st.get_code() << " msg: " << st.get_msg()); \
       REQUIRE(st.is_ok());        \
+  } while(0)
+
+#define EXPECT_FAIL_WITH_MSG(code, msg_sub_str, expr)  \
+  do{                             \
+      const auto& st = (expr);                         \
+      const auto& matcher = (msg_sub_str);             \
+      INFO("Expected: [" << code << "-*" << matcher<< "*] \nReceived: [" \
+            << st.get_code() << "-" << st.get_msg() <<"]"); \
+      REQUIRE( (!st.is_ok() && st.get_msg().find(matcher) != std::string::npos));        \
   } while(0)
 
 #endif //CYLON_CPP_TEST_TEST_MACROS_HPP_

@@ -213,18 +213,19 @@ arrow::Status FindIndices(const std::shared_ptr<arrow::Array> &index_array_,
     return arrow::Status::KeyError("Key not found");
   }
 
-  // search param needs to be casted here to support castable params from python
-  auto res = search_param->CastTo(index_array_->type());
-  RETURN_ARROW_STATUS_IF_FAILED(res.status());
-  const ValueT &cast_val = ArrowScalarValue<ArrowT>::Extract(res.ValueOrDie());
-
   // reserve conservatively
   arrow::Int64Builder builder(pool);
   RETURN_ARROW_STATUS_IF_FAILED(builder.Reserve(index_array_->length()));
 
   int64_t idx = 0;
   const auto &arr_data = *index_array_->data();
-  if (search_param->is_valid) {  // param is valid, so search only on the valid elements
+  if (search_param->is_valid) {
+    // param is valid, so search only on the valid elements
+    // search param needs to be casted here to support castable params from python
+    auto res = search_param->CastTo(index_array_->type());
+    RETURN_ARROW_STATUS_IF_FAILED(res.status());
+    const ValueT &cast_val = ArrowScalarValue<ArrowT>::Extract(res.ValueOrDie());
+
     arrow::VisitArrayDataInline<ArrowT>(
         arr_data,
         [&](ValueT val) {
@@ -284,18 +285,19 @@ arrow::Status FindIndex(const std::shared_ptr<arrow::Array> &index_array_,
   using ValueT = typename ArrowScalarValue<ArrowT>::ValueT;
 
   if (!search_param->is_valid && index_array_->null_count() == 0) {
-    *index = -1;
-    return arrow::Status::OK();
+    return arrow::Status::KeyError("Key not found");
   }
-
-  // search param needs to be casted here to support castable params from python
-  const auto &res = search_param->CastTo(index_array_->type());
-  RETURN_ARROW_STATUS_IF_FAILED(res.status());
-  const ValueT &cast_val = ArrowScalarValue<ArrowT>::Extract(res.ValueOrDie());
 
   int64_t idx = 0;
   const auto &arr_data = *index_array_->data();
-  if (search_param->is_valid) {  // param is valid, so search only on the valid elements
+  if (search_param->is_valid) {
+    // param is valid, so search only on the valid elements
+
+    // search param needs to be casted here to support castable params from python
+    const auto &res = search_param->CastTo(index_array_->type());
+    RETURN_ARROW_STATUS_IF_FAILED(res.status());
+    const ValueT &cast_val = ArrowScalarValue<ArrowT>::Extract(res.ValueOrDie());
+
     arrow::VisitArrayDataInline<ArrowT>(
         arr_data,
         [&](ValueT val) {
@@ -325,7 +327,8 @@ arrow::Status FindIndex(const std::shared_ptr<arrow::Array> &index_array_,
         });
   }
 
-  if (idx == index_array_->length()) { // param is not found
+  // if the index has reached the end, that means the param is not found
+  if (idx == index_array_->length()) {
     return arrow::Status::KeyError("Key not found");
   }
 

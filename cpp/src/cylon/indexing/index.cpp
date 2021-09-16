@@ -152,7 +152,7 @@ class ArrowHashIndex : public BaseArrowIndex {
             [&](ValueT val) {
               const auto &ret = map_->find(val);
               if (ret == map_->end()) { // not found
-                return arrow::Status::Cancelled("key not found"); // this will break the visit loop
+                return arrow::Status::KeyError("key not found"); // this will break the visit loop
               }
               const std::vector<int64_t> &indices = ret->second;
               return builder.AppendValues(indices);
@@ -277,6 +277,12 @@ Status BuildHashIndex(std::shared_ptr<arrow::Array> idx_arr, std::shared_ptr<Bas
       break;
     case arrow::Type::BINARY:
       *output = std::make_shared<ArrowHashIndex<arrow::BinaryType>>(std::move(idx_arr), col_id, pool);
+      break;
+    case arrow::Type::LARGE_STRING:
+      *output = std::make_shared<ArrowHashIndex<arrow::LargeStringType>>(std::move(idx_arr), col_id, pool);
+      break;
+    case arrow::Type::LARGE_BINARY:
+      *output = std::make_shared<ArrowHashIndex<arrow::LargeBinaryType>>(std::move(idx_arr), col_id, pool);
       break;
     case arrow::Type::DATE32:
       *output = std::make_shared<ArrowHashIndex<arrow::Date32Type>>(std::move(idx_arr), col_id, pool);

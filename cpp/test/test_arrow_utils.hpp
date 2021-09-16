@@ -72,6 +72,59 @@ std::shared_ptr<arrow::Table> TableFromJSON(const std::shared_ptr<arrow::Schema>
   return *arrow::Table::FromRecordBatches(schema, batches);
 }
 
+using ArrowNumericTypes = std::tuple<arrow::Int8Type, arrow::Int16Type, arrow::Int32Type, arrow::Int64Type,
+                                     arrow::UInt8Type, arrow::UInt16Type, arrow::UInt32Type, arrow::UInt64Type,
+                                     arrow::FloatType, arrow::DoubleType>;
+
+using ArrowTemporalTypes = std::tuple<arrow::Date32Type,
+                                      arrow::Date64Type,
+                                      arrow::TimestampType,
+                                      arrow::Time32Type,
+                                      arrow::Time64Type>;
+
+using ArrowBinaryTypes = std::tuple<arrow::StringType, arrow::LargeStringType,
+                                    arrow::BinaryType, arrow::LargeBinaryType>;
+
+/**
+ * from:
+ * https://github.com/apache/arrow/blob/master/cpp/src/arrow/compute/kernels/test_util.h#L123-L143
+ * Helper to get a default instance of a type, including parameterized types
+ */
+template<typename T>
+arrow::enable_if_parameter_free<T, std::shared_ptr<arrow::DataType>> default_type_instance() {
+  return arrow::TypeTraits<T>::type_singleton();
+}
+template<typename T>
+arrow::enable_if_time<T, std::shared_ptr<arrow::DataType>> default_type_instance() {
+  // Time32 requires second/milli, Time64 requires nano/micro
+  if (bit_width(T::type_id) == 32) {
+    return std::make_shared<T>(arrow::TimeUnit::type::SECOND);
+  }
+  return std::make_shared<T>(arrow::TimeUnit::type::NANO);
+}
+
+template<typename T>
+arrow::enable_if_timestamp<T, std::shared_ptr<arrow::DataType>> default_type_instance() {
+  return std::make_shared<T>(arrow::TimeUnit::type::SECOND);
+}
+
+template<typename T>
+arrow::enable_if_decimal<T, std::shared_ptr<arrow::DataType>> default_type_instance() {
+  return std::make_shared<T>(5, 2);
+}
+
+/**
+ *
+ * @tparam T
+ * @param val
+ * @return
+ */
+template<typename T>
+arrow::enable_if_base_binary<T, std::shared_ptr<arrow::Scalar>> MakeBinaryScalar(std::string val) {
+  using ScalarT = typename arrow::TypeTraits<T>::ScalarType;
+  return std::make_shared<ScalarT>(arrow::Buffer::FromString(std::move(val)));
+}
+
 } // namespace test
 } // namespace cylon
 
