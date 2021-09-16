@@ -16,7 +16,6 @@
 #include "common/test_header.hpp"
 #include "test_index_utils.hpp"
 #include "test_arrow_utils.hpp"
-#include "test_utils.hpp"
 #include "test_macros.hpp"
 
 #include <arrow/ipc/api.h>
@@ -94,6 +93,10 @@
 namespace cylon {
 namespace test {
 
+TEST_CASE("Test range index", "[indexing]") {
+
+}
+
 void TestIndex(IndexingType index_type, const std::shared_ptr<arrow::DataType> &data_type) {
   const auto &idx_arr = ArrayFromJSON(data_type, "[1, 2, 2, null, 5, 5, null, 8]");
 
@@ -104,13 +107,13 @@ void TestIndex(IndexingType index_type, const std::shared_ptr<arrow::DataType> &
     std::shared_ptr<arrow::Int64Array> locs;
 
     SECTION("check non-null value") {
-      auto val = idx_arr->GetScalar(1).ValueOrDie(); // get idx_arr[1] (= 2)
+      auto val = arrow::MakeScalar(data_type, 2).ValueOrDie();
       CHECK_CYLON_STATUS(index->LocationByValue(val, &locs));
       CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2]"), locs);
     }
 
     SECTION("check null value") {
-      auto val = idx_arr->GetScalar(3).ValueOrDie(); // get idx_arr[3] (= null)
+      auto val = arrow::MakeNullScalar(data_type);
       CHECK_CYLON_STATUS(index->LocationByValue(val, &locs));
       CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[3, 6]"), locs);
     }
@@ -125,13 +128,13 @@ void TestIndex(IndexingType index_type, const std::shared_ptr<arrow::DataType> &
     int64_t loc = -1;
 
     SECTION("check non-null value") {
-      auto val = idx_arr->GetScalar(1).ValueOrDie(); // get idx_arr[1] (= 2)
+      auto val = arrow::MakeScalar(data_type, 2).ValueOrDie();
       CHECK_CYLON_STATUS(index->LocationByValue(val, &loc));
       REQUIRE(loc == 1);
     }
 
     SECTION("check null value") {
-      auto val = idx_arr->GetScalar(3).ValueOrDie(); // get idx_arr[3] (= null)
+      auto val = arrow::MakeNullScalar(data_type);
       CHECK_CYLON_STATUS(index->LocationByValue(val, &loc));
       REQUIRE(loc == 3);
     }

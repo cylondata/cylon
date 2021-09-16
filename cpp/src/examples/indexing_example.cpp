@@ -100,7 +100,7 @@
 // */
 //
 //
-//int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 //
 //  arrow_indexer_test_1();
 //  arrow_indexer_test_2();
@@ -1597,4 +1597,4 @@
 //  print_arrow_array(index_arr);
 //
 //  return 0;
-//}
+}
