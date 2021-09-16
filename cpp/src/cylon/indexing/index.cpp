@@ -17,6 +17,8 @@
 #include "cylon/indexing/index.hpp"
 #include "cylon/util/macros.hpp"
 #include "cylon/util/arrow_utils.hpp"
+#include "cylon/table.hpp"
+#include "cylon/thridparty/flat_hash_map/bytell_hash_map.hpp"
 
 namespace cylon {
 
@@ -68,7 +70,7 @@ Status BaseArrowIndex::LocationRangeByValue(const std::shared_ptr<arrow::Scalar>
 template<typename ArrowT>
 class ArrowHashIndex : public BaseArrowIndex {
   using ValueT = typename util::ArrowScalarValue<ArrowT>::ValueT;
-  using MapT = typename std::unordered_multimap<ValueT, int64_t>;
+  using MapT = typename ska::bytell_hash_map<ValueT, std::vector<int64_t>>;
 
  public:
   ArrowHashIndex(std::shared_ptr<arrow::Array> index_arr, int col_id, arrow::MemoryPool *pool)
@@ -97,16 +99,14 @@ class ArrowHashIndex : public BaseArrowIndex {
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
     const ValueT &cast_val = util::ArrowScalarValue<ArrowT>::Extract(res.ValueOrDie());
 
-    const auto &ret = map_->equal_range(cast_val);
-    if (ret.first == ret.second) { // not found
-      return {Code::KeyError, "Key not found"};
+    const auto &ret = map_->find(cast_val);
+    if (ret == map_->end()) { // not found
+      return {Code::KeyError, "Key not found " + search_param->ToString()};
     }
 
     // reserve additional space to the builder, and append values
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(std::distance(ret.first, ret.second)));
-    for (auto it = ret.first; it != ret.second; it++) {
-      builder.UnsafeAppend(it->second);
-    }
+    const std::vector<int64_t> &indices = ret->second;
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.AppendValues(indices));
 
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(locations));
     return Status::OK();
@@ -131,7 +131,7 @@ class ArrowHashIndex : public BaseArrowIndex {
 
     const auto &ret = map_->find(cast_val);
     if (ret != map_->end()) {
-      *find_index = ret->second;
+      *find_index = (ret->second)[0];
       return Status::OK();
     }
     return {Code::KeyError, "Key not found"};
@@ -150,16 +150,12 @@ class ArrowHashIndex : public BaseArrowIndex {
         arrow::VisitArrayDataInline<ArrowT>(
             arr_data,
             [&](ValueT val) {
-              const auto &ret = map_->equal_range(val);
-              if (ret.first == ret.second) { // not found
+              const auto &ret = map_->find(val);
+              if (ret == map_->end()) { // not found
                 return arrow::Status::Cancelled("key not found"); // this will break the visit loop
               }
-              // reserve additional space to the builder, and append values
-              RETURN_ARROW_STATUS_IF_FAILED(builder.Reserve(std::distance(ret.first, ret.second)));
-              for (auto it = ret.first; it != ret.second; it++) {
-                builder.UnsafeAppend(it->second);
-              }
-              return arrow::Status::OK();
+              const std::vector<int64_t> &indices = ret->second;
+              return builder.AppendValues(indices);
             },
             [&]() {  // nothing to do for nulls
               return builder.AppendValues(*null_indices);
@@ -184,15 +180,7 @@ class ArrowHashIndex : public BaseArrowIndex {
   }
 
   bool IsUnique() override {
-    if (unique_flag < 0) { // not calculated
-      const auto &status = util::IsUnique(index_arr_, reinterpret_cast<bool *>(&unique_flag), GetPool());
-
-      if (!status.ok()) {
-        unique_flag = -1; // uniqueness check failed
-      }
-    }
-
-    return unique_flag == 1;
+    return unique_flag;
   }
 
   IndexingType GetIndexingType() override { return IndexingType::Hash; }
@@ -220,11 +208,14 @@ class ArrowHashIndex : public BaseArrowIndex {
     arrow::VisitArrayDataInline<ArrowT>(
         arr_data,
         [&](ValueT val) {
-          map_->template emplace(val, idx);
+          auto &indices = (*map_)[val];
+          indices.push_back(idx);
+          unique_flag |= (indices.size() > 1);
           idx++;
         },
         [&]() {  // nothing to do for nulls
           null_indices->push_back(idx);
+          unique_flag |= (null_indices->size() > 1);
           idx++;
         });
 
@@ -234,7 +225,7 @@ class ArrowHashIndex : public BaseArrowIndex {
   std::shared_ptr<arrow::Array> index_arr_;
   std::shared_ptr<MapT> map_ = nullptr;
   std::shared_ptr<std::vector<int64_t>> null_indices = nullptr;
-  int8_t unique_flag = -1;
+  bool unique_flag = false;
 };
 
 Status BuildHashIndex(const std::shared_ptr<arrow::Table> &table, int col_id,
@@ -242,7 +233,12 @@ Status BuildHashIndex(const std::shared_ptr<arrow::Table> &table, int col_id,
   std::shared_ptr<arrow::Array> idx_arr;
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::GetConcatenatedColumn(table, col_id, &idx_arr, pool));
 
-  switch (table->column(col_id)->type()->id()) {
+  return BuildHashIndex(std::move(idx_arr), output, col_id, pool);
+}
+
+Status BuildHashIndex(std::shared_ptr<arrow::Array> idx_arr, std::shared_ptr<BaseArrowIndex> *output,
+                      int col_id, arrow::MemoryPool *pool) {
+  switch (idx_arr->type()->id()) {
     case arrow::Type::BOOL:
       *output = std::make_shared<ArrowHashIndex<arrow::BooleanType>>(std::move(idx_arr), col_id, pool);
       break;
@@ -259,13 +255,13 @@ Status BuildHashIndex(const std::shared_ptr<arrow::Table> &table, int col_id,
       *output = std::make_shared<ArrowHashIndex<arrow::Int16Type>>(std::move(idx_arr), col_id, pool);
       break;
     case arrow::Type::UINT32:
-      *output = std::make_shared<ArrowHashIndex<arrow::UInt16Type>>(std::move(idx_arr), col_id, pool);
+      *output = std::make_shared<ArrowHashIndex<arrow::UInt32Type>>(std::move(idx_arr), col_id, pool);
       break;
     case arrow::Type::INT32:
       *output = std::make_shared<ArrowHashIndex<arrow::Int32Type>>(std::move(idx_arr), col_id, pool);
       break;
     case arrow::Type::UINT64:
-      *output = std::make_shared<ArrowHashIndex<arrow::UInt16Type>>(std::move(idx_arr), col_id, pool);
+      *output = std::make_shared<ArrowHashIndex<arrow::UInt64Type>>(std::move(idx_arr), col_id, pool);
       break;
     case arrow::Type::INT64:
       *output = std::make_shared<ArrowHashIndex<arrow::Int64Type>>(std::move(idx_arr), col_id, pool);
@@ -643,8 +639,24 @@ Status BuildIndex(const std::shared_ptr<arrow::Table> &table,
   switch (indexing_type) {
     case Range:*index = BuildRangeIndex(table, 0, -1, 1, pool);
       return Status::OK();
-    case Linear: return BuildLinearIndex(table, col_id, index);
-    case Hash: return BuildHashIndex(table, col_id, index);
+    case Linear: return BuildLinearIndex(table, col_id, index, pool);
+    case Hash: return BuildHashIndex(table, col_id, index, pool);
+    case BinaryTree:
+    case BTree:
+    default:return {Code::NotImplemented, "Unsupported index type"};
+  }
+}
+
+Status BuildIndex(std::shared_ptr<arrow::Array> index_array,
+                  IndexingType indexing_type,
+                  std::shared_ptr<BaseArrowIndex> *output,
+                  int col_id,
+                  arrow::MemoryPool *pool) {
+  switch (indexing_type) {
+    case Range:*output = std::make_shared<ArrowRangeIndex>(0, index_array->length(), 1, pool);
+      return Status::OK();
+    case Linear: return BuildLinearIndex(std::move(index_array), output, col_id, pool);
+    case Hash: return BuildHashIndex(std::move(index_array), output, col_id, pool);
     case BinaryTree:
     case BTree:
     default:return {Code::NotImplemented, "Unsupported index type"};

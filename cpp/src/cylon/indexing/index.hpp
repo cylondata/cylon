@@ -21,7 +21,6 @@
 #include <arrow/table.h>
 #include <arrow/visitor_inline.h>
 
-#include "cylon/table.hpp"
 #include "cylon/status.hpp"
 
 namespace cylon {
@@ -181,6 +180,10 @@ Status BuildHashIndex(const std::shared_ptr<arrow::Table> &table,
                       int col_id,
                       std::shared_ptr<BaseArrowIndex> *output,
                       arrow::MemoryPool *pool = arrow::default_memory_pool());
+Status BuildHashIndex(std::shared_ptr<arrow::Array> index_array,
+                      std::shared_ptr<BaseArrowIndex> *output,
+                      int col_id = BaseArrowIndex::kNoColumnId,
+                      arrow::MemoryPool *pool = arrow::default_memory_pool());
 
 /**
  * Builds index for an arrow table
@@ -196,7 +199,11 @@ Status BuildIndex(const std::shared_ptr<arrow::Table> &table,
                   IndexingType indexing_type,
                   std::shared_ptr<BaseArrowIndex> *output,
                   arrow::MemoryPool *pool = arrow::default_memory_pool());
-
+Status BuildIndex(std::shared_ptr<arrow::Array> index_array,
+                  IndexingType indexing_type,
+                  std::shared_ptr<BaseArrowIndex> *output,
+                  int col_id = BaseArrowIndex::kNoColumnId,
+                  arrow::MemoryPool *pool = arrow::default_memory_pool());
 /**
  * Sets index for a cylon table, and creates a new table
  * @param indexing_type
