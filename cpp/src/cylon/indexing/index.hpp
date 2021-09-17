@@ -17,8 +17,6 @@
 
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
-#include <arrow/compute/kernel.h>
-#include <arrow/table.h>
 #include <arrow/visitor_inline.h>
 
 #include "cylon/status.hpp"
