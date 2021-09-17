@@ -35,17 +35,17 @@ public:
                                                   int32_t offsets_size,
                                                   cudf::data_type dt);
 
-    std::unique_ptr<cudf::table>  deserializeTable(std::vector<std::shared_ptr<cylon::Buffer>> &receivedBuffers,
+    std::unique_ptr<cudf::table>  deserializeTable(std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
                                    std::vector<int32_t> &disp_per_buffer,
                                    std::vector<int32_t> &buffer_sizes);
 
     /**
      * deserialize all tables received by gather operation
      */
-    cylon::Status deserialize(std::vector<std::shared_ptr<cylon::Buffer>> &receivedBuffers,
+    cylon::Status deserialize(std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
                               std::vector<std::vector<int32_t>> &displacements_per_buffer,
                               std::vector<std::vector<int32_t>> &buffer_sizes_per_table,
-                              std::vector<std::unique_ptr<cudf::table>> &receivedTables);
+                              std::vector<std::unique_ptr<cudf::table>> &received_tables);
 
 private:
     cudf::table_view tv_;

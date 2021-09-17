@@ -48,9 +48,9 @@ public:
     std::vector<int32_t> getEmptyTableBufferSizes();
     std::vector<uint8_t *> & getDataBuffers();
 
-    std::pair<int32_t, uint8_t *> getColumnData(int columnIndex);
-    std::pair<int32_t, uint8_t *> getColumnMask(int columnIndex);
-    std::pair<int32_t, uint8_t *> getColumnOffsets(int columnIndex);
+    std::pair<int32_t, uint8_t *> getColumnData(int column_index);
+    std::pair<int32_t, uint8_t *> getColumnMask(int column_index);
+    std::pair<int32_t, uint8_t *> getColumnOffsets(int column_index);
 
 private:
     cudf::table_view tv_;

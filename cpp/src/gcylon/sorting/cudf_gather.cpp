@@ -148,8 +148,8 @@ cylon::Status TableGatherer::Gather(cudf::table_view &tv,
         printBuffer(total_buffer_sizes);
     }
 
-    std::vector<uint8_t *> sendBuffers = serializer.getDataBuffers();
-    std::vector<std::shared_ptr<cylon::Buffer>> receiveBuffers;
+    std::vector<uint8_t *> send_buffers = serializer.getDataBuffers();
+    std::vector<std::shared_ptr<cylon::Buffer>> receive_buffers;
     std::vector<std::vector<int32_t>> all_disps;
     for (long unsigned int i = 0; i < local_buffer_sizes.size(); ++i) {
         if(AmIRoot()) {
@@ -159,7 +159,7 @@ cylon::Status TableGatherer::Gather(cudf::table_view &tv,
             std::vector<int32_t> disp_per_buffer = displacementsPerBuffer(all_buffer_sizes.get(), i, local_buffer_sizes.size());
             all_disps.push_back(disp_per_buffer);
 
-            int status = MPI_Gatherv(sendBuffers.at(i),
+            int status = MPI_Gatherv(send_buffers.at(i),
                                      local_buffer_sizes[i],
                                      MPI_UINT8_T,
                                      receiveBuf->GetByteBuffer(),
@@ -171,10 +171,10 @@ cylon::Status TableGatherer::Gather(cudf::table_view &tv,
             if (status != MPI_SUCCESS) {
                 return cylon::Status(cylon::Code::ExecutionError, "MPI_Gatherv failed!");
             }
-            receiveBuffers.push_back(receiveBuf);
+            receive_buffers.push_back(receiveBuf);
 
         } else {
-            int status = MPI_Gatherv(sendBuffers.at(i),
+            int status = MPI_Gatherv(send_buffers.at(i),
                                      local_buffer_sizes[i],
                                      MPI_UINT8_T,
                                      nullptr,
@@ -200,13 +200,13 @@ cylon::Status TableGatherer::Gather(cudf::table_view &tv,
         printTensor(all_disps);
 
         std::cout << "received buffer sizes: " << std::endl;
-        for (long unsigned int i = 0; i < receiveBuffers.size(); ++i) {
-            std::cout << receiveBuffers[i]->GetLength() << ", ";
+        for (long unsigned int i = 0; i < receive_buffers.size(); ++i) {
+            std::cout << receive_buffers[i]->GetLength() << ", ";
         }
         std::cout << std::endl;
 
         TableDeserializer deserializer(tv);
-        deserializer.deserialize(receiveBuffers, all_disps, buffer_sizes_per_table, gathered_tables);
+        deserializer.deserialize(receive_buffers, all_disps, buffer_sizes_per_table, gathered_tables);
     }
 
     return cylon::Status::OK();

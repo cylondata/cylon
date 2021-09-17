@@ -91,7 +91,7 @@ std::unique_ptr<cudf::column> TableDeserializer::constructColumn(uint8_t * data_
 }
 
 std::unique_ptr<cudf::table>
-TableDeserializer::deserializeTable(std::vector<std::shared_ptr<cylon::Buffer>> &receivedBuffers,
+TableDeserializer::deserializeTable(std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
                                     std::vector<int32_t> &disp_per_buffer,
                                     std::vector<int32_t> &buffer_sizes) {
 
@@ -99,11 +99,11 @@ TableDeserializer::deserializeTable(std::vector<std::shared_ptr<cylon::Buffer>> 
     int bc = 0;
     for (int i = 0; i < tv_.num_columns(); ++i) {
         std::unique_ptr<cudf::column> clmn =
-                constructColumn(receivedBuffers[bc]->GetByteBuffer() + disp_per_buffer[bc],
+                constructColumn(received_buffers[bc]->GetByteBuffer() + disp_per_buffer[bc],
                                 buffer_sizes[bc],
-                                receivedBuffers[bc + 1]->GetByteBuffer() + disp_per_buffer[bc + 1],
+                                received_buffers[bc + 1]->GetByteBuffer() + disp_per_buffer[bc + 1],
                                 buffer_sizes[bc + 1],
-                                receivedBuffers[bc + 2]->GetByteBuffer() + disp_per_buffer[bc + 2],
+                                received_buffers[bc + 2]->GetByteBuffer() + disp_per_buffer[bc + 2],
                                 buffer_sizes[bc + 2],
                                 tv_.column(i).type());
         bc += 3;
@@ -135,10 +135,10 @@ bool allZero(std::vector<int32_t> &buffer_sizes) {
     return true;
 }
 
-cylon::Status TableDeserializer::deserialize(std::vector<std::shared_ptr<cylon::Buffer>> &receivedBuffers,
+cylon::Status TableDeserializer::deserialize(std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
                                                  std::vector<std::vector<int32_t>> &displacements_per_buffer,
                                                  std::vector<std::vector<int32_t>> &buffer_sizes_per_table,
-                                                 std::vector<std::unique_ptr<cudf::table>> &receivedTables) {
+                                                 std::vector<std::unique_ptr<cudf::table>> &received_tables) {
 
     int number_of_tables = buffer_sizes_per_table.size();
 
@@ -148,10 +148,10 @@ cylon::Status TableDeserializer::deserialize(std::vector<std::shared_ptr<cylon::
             continue;
         }
         std::vector<int32_t> disp = displacementsPerTable(displacements_per_buffer, i);
-        std::unique_ptr<cudf::table> outTable = deserializeTable(receivedBuffers,
+        std::unique_ptr<cudf::table> outTable = deserializeTable(received_buffers,
                                                                  disp,
                                                                  buffer_sizes_per_table.at(i));
-        receivedTables.push_back(std::move(outTable));
+        received_tables.push_back(std::move(outTable));
     }
 
     return cylon::Status::OK();
