@@ -27,17 +27,16 @@ from pycylon.data.table import Table
 from pycylon.indexing.cyindex cimport CIndexingType
 
 
-cdef extern from "../../../../cpp/src/cylon/indexing/index_utils.hpp" namespace "cylon":
+cdef extern from "../../../../cpp/src/cylon/indexing/index.hpp" namespace "cylon":
+    CStatus BuildIndexFromTable(const shared_ptr[CTable] & input,
+                                int index_column,
+                                CIndexingType schema,
+                                shared_ptr[CTable] *output,
+                                bool drop)
 
-    cdef cppclass CIndexUtil 'cylon::IndexUtil':
-
-        @staticmethod
-        CStatus BuildArrowIndex(const CIndexingType schema, const shared_ptr[CTable] & input,
-                           const int index_column, const bool drop, shared_ptr[CTable] & output)
-
-        @ staticmethod
-        CStatus BuildArrowIndexFromArray(const CIndexingType schema, const shared_ptr[CTable] & input,
-                                         const shared_ptr[CArrowArray] & index_array)
+    CStatus SetIndexForTable(shared_ptr[CTable] & input,
+                             shared_ptr[CArrowArray] index_array,
+                             const CIndexingType schema)
 
 
 cdef class IndexUtil:

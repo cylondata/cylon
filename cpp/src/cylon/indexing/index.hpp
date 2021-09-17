@@ -210,11 +210,16 @@ Status BuildIndex(std::shared_ptr<arrow::Array> index_array,
  * @param output
  * @return
  */
-Status SetIndexForTable(IndexingType indexing_type,
-                        const std::shared_ptr<Table> &table,
-                        int col_id,
-                        std::shared_ptr<Table> *out_table,
-                        bool drop = false);
+Status BuildIndexFromTable(const std::shared_ptr<Table> &table,
+                           int col_id,
+                           IndexingType indexing_type,
+                           std::shared_ptr<Table> *out_table,
+                           bool drop = false);
+
+Status SetIndexForTable(std::shared_ptr<Table> &table,
+                        std::shared_ptr<arrow::Array> array,
+                        IndexingType indexing_type,
+                        int col_id = BaseArrowIndex::kNoColumnId);
 
 }  // namespace cylon
 

@@ -50,7 +50,7 @@ from pycylon.data.groupby cimport (DistributedHashGroupBy, DistributedPipelineGr
 from pycylon.data import compute
 
 from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
-from pycylon.indexing.index_utils import IndexUtil
+# from pycylon.indexing.index_utils import IndexUtil
 
 from pycylon.indexing.cyindex cimport CBaseArrowIndex
 from pycylon.indexing.cyindex import BaseArrowIndex

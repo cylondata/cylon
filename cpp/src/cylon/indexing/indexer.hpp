@@ -37,7 +37,7 @@ Status Loc(const std::shared_ptr<Table> &input_table,
            const std::shared_ptr<arrow::Scalar> &start_value,
            const std::shared_ptr<arrow::Scalar> &end_value,
            const std::vector<int> &columns,
-           std::shared_ptr<cylon::Table> *output);
+           std::shared_ptr<Table> *output);
 
 Status Loc(const std::shared_ptr<Table> &input_table,
            const std::shared_ptr<arrow::Scalar> &start_index,
@@ -55,15 +55,16 @@ Status Loc(const std::shared_ptr<Table> &input_table,
 Status Loc(const std::shared_ptr<Table> &input_table,
            const std::shared_ptr<arrow::Array> &values,
            const std::vector<int> &columns,
-           std::shared_ptr<cylon::Table> *output);
+           std::shared_ptr<Table> *output);
 
 Status Loc(const std::shared_ptr<Table> &input_table,
            const std::shared_ptr<arrow::Array> &indices,
            int column_index,
-           std::shared_ptr<cylon::Table> *output);
+           std::shared_ptr<Table> *output);
 
-Status Loc(const std::shared_ptr<Table> &input_table, const std::shared_ptr<arrow::Array> &indices,
-           int start_column, int end_column, std::shared_ptr<cylon::Table> *output);
+Status Loc(const std::shared_ptr<Table> &input_table,
+           const std::shared_ptr<arrow::Array> &indices,
+           int start_column, int end_column, std::shared_ptr<Table> *output);
 
 Status iLoc(const std::shared_ptr<Table> &input_table,
             const std::shared_ptr<arrow::Scalar> &start_index,
@@ -82,22 +83,22 @@ Status iLoc(const std::shared_ptr<Table> &input_table,
             const std::shared_ptr<arrow::Scalar> &end_index,
             int start_column,
             int end_column,
-            std::shared_ptr<cylon::Table> *output);
+            std::shared_ptr<Table> *output);
 
 Status iLoc(const std::shared_ptr<Table> &input_table,
             const std::shared_ptr<arrow::Array> &indices,
             const std::vector<int> &columns,
-            std::shared_ptr<cylon::Table> *output);
+            std::shared_ptr<Table> *output);
 
 Status iLoc(const std::shared_ptr<Table> &input_table,
             const std::shared_ptr<arrow::Array> &indices,
             int column_index,
-            std::shared_ptr<cylon::Table> *output);
+            std::shared_ptr<Table> *output);
 
 Status iLoc(const std::shared_ptr<Table> &input_table,
             const std::shared_ptr<arrow::Array> &indices,
             int start_column, int end_column,
-            std::shared_ptr<cylon::Table> *output);
+            std::shared_ptr<Table> *output);
 
 } // namespace indexing
 } // namespace cylon

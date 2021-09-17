@@ -37,7 +37,7 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
         CTable(const shared_ptr[CCylonContext] & ctx, shared_ptr[CArrowTable] tab)
 
         @ staticmethod
-        CStatus FromArrowTable(const shared_ptr[CCylonContext] & ctx, const shared_ptr[CArrowTable] & table,
+        CStatus FromArrowTable(const shared_ptr[CCylonContext] & ctx, shared_ptr[CArrowTable] table,
                                shared_ptr[CTable] & tableOut)
 
         CStatus ToArrowTable(shared_ptr[CArrowTable] & output)
@@ -60,7 +60,7 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         bool IsRetain() const
 
-        CStatus SetArrowIndex(shared_ptr[CBaseArrowIndex] & index, bool drop)
+        CStatus SetArrowIndex(shared_ptr[CBaseArrowIndex] index, bool drop)
 
         shared_ptr[CBaseArrowIndex] GetArrowIndex()
 

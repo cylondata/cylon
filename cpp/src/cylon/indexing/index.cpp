@@ -671,8 +671,11 @@ Status BuildIndex(std::shared_ptr<arrow::Array> index_array,
   }
 }
 
-Status SetIndexForTable(IndexingType indexing_type, const std::shared_ptr<Table> &table,
-                        int col_id, std::shared_ptr<Table> *out_table, bool drop) {
+Status BuildIndexFromTable(const std::shared_ptr<Table> &table,
+                           int col_id,
+                           IndexingType indexing_type,
+                           std::shared_ptr<Table> *out_table,
+                           bool drop) {
   arrow::MemoryPool *pool = ToArrowPool(table->GetContext());
 
   // take a copy of the arrow table
@@ -682,8 +685,24 @@ Status SetIndexForTable(IndexingType indexing_type, const std::shared_ptr<Table>
   RETURN_CYLON_STATUS_IF_FAILED(BuildIndex(a_table, col_id, indexing_type, &index, pool));
 
   // create cylon table
-  *out_table = std::make_shared<Table>(table->GetContext(), std::move(a_table));
+  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(table->GetContext(), std::move(a_table), *out_table));
   RETURN_CYLON_STATUS_IF_FAILED((*out_table)->SetArrowIndex(std::move(index), drop));
+  return Status::OK();
+}
+
+Status SetIndexForTable(std::shared_ptr<Table> &table,
+                        std::shared_ptr<arrow::Array> array,
+                        IndexingType indexing_type,
+                        int col_id) {
+  if (array->length() != table->Rows()) {
+    return {Code::Invalid, "array length != table length"};
+  }
+
+  arrow::MemoryPool *pool = ToArrowPool(table->GetContext());
+  std::shared_ptr<BaseArrowIndex> index;
+  RETURN_CYLON_STATUS_IF_FAILED(BuildIndex(std::move(array), indexing_type, &index, col_id, pool));
+
+  RETURN_CYLON_STATUS_IF_FAILED(table->SetArrowIndex(std::move(index), /*drop_index*/false));
   return Status::OK();
 }
 

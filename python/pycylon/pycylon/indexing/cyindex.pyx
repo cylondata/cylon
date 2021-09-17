@@ -18,7 +18,7 @@ from libcpp.string cimport string
 from pyarrow.lib cimport CArray as CArrowArray
 from pyarrow.lib cimport CScalar as CArrowScalar
 from pycylon.indexing.cyindex cimport CIndexingType
-from pycylon.indexing.cyindex cimport CArrowLocIndexer
+# from pycylon.indexing.cyindex cimport CArrowLocIndexer
 from pycylon.indexing.cyindex cimport CBaseArrowIndex
 from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table, pyarrow_wrap_array,
 pyarrow_unwrap_array, pyarrow_wrap_scalar, pyarrow_unwrap_scalar)
@@ -105,7 +105,8 @@ cdef class BaseArrowIndex:
 
 cdef class ArrowLocIndexer:
     def __cinit__(self, CIndexingType indexing_type):
-        self.indexer_shd_ptr = make_shared[CArrowLocIndexer](indexing_type)
+        # self.indexer_shd_ptr = make_shared[CArrowLocIndexer](indexing_type)
+        pass
 
     def _fix_partial_slice_inidices(self, start_index, end_index, index):
         if start_index and end_index:
@@ -166,21 +167,24 @@ cdef class ArrowLocIndexer:
         if np.isscalar(column):
             # single column
             c_column_index = self._resolve_column_indices_vector([column], table)[0]
-            self.indexer_shd_ptr.get().loc(start, end, c_column_index, input, output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_column_index, input, output)
+            Loc(input, start, end, c_column_index, &output)
             return pycylon_wrap_table(output)
         elif isinstance(column, slice):
             # range of columns
             start_index, end_index = self._resolve_column_index_slice(column, table)
             c_start_column_index = start_index
             c_end_column_index = end_index
-            self.indexer_shd_ptr.get().loc(start, end, c_start_column_index, c_end_column_index, input, output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_start_column_index, c_end_column_index, input, output)
+            Loc(input, start, end, c_start_column_index, c_end_column_index, & output)
             return pycylon_wrap_table(output)
         elif isinstance(column, List):
             # list of columns
             column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
-            self.indexer_shd_ptr.get().loc(start, end, c_column_vector, input, output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_column_vector, input, output)
+            Loc(input, start, end, c_column_vector, &output)
             return pycylon_wrap_table(output)
 
     def loc_with_indices(self, indices, column, table):
@@ -200,27 +204,31 @@ cdef class ArrowLocIndexer:
         if np.isscalar(column):
             # single column
             c_column_index = self._resolve_column_indices_vector([column], table)[0]
-            self.indexer_shd_ptr.get().loc(c_indices, c_column_index, input, output)
+            # self.indexer_shd_ptr.get().loc(c_indices, c_column_index, input, output)
+            Loc(input, c_indices, c_column_index, &output)
             return pycylon_wrap_table(output)
         elif isinstance(column, slice):
             # range of columns
             start_index, end_index = self._resolve_column_index_slice(column, table)
             c_start_column_index = start_index
             c_end_column_index = end_index
-            self.indexer_shd_ptr.get().loc(c_indices, c_start_column_index, c_end_column_index, input, output)
+            # self.indexer_shd_ptr.get().loc(c_indices, c_start_column_index, c_end_column_index, input, output)
+            Loc(input, c_indices, c_start_column_index, c_end_column_index, &output)
             return pycylon_wrap_table(output)
         elif isinstance(column, List):
             # list of columns
             column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
-            self.indexer_shd_ptr.get().loc(c_indices, c_column_vector, input, output)
+            # self.indexer_shd_ptr.get().loc(c_indices, c_column_vector, input, output)
+            Loc(input, c_indices, c_column_vector, &output)
             return pycylon_wrap_table(output)
 
 
 cdef class ArrowILocIndexer:
     def __cinit__(self, CIndexingType indexing_type):
-        self.indexer_shd_ptr = make_shared[CArrowILocIndexer](indexing_type)
+        # self.indexer_shd_ptr = make_shared[CArrowILocIndexer](indexing_type)
+        pass
 
     def _fix_partial_slice_inidices(self, start_index, end_index, index):
         if start_index is not None and end_index is not None:
@@ -299,21 +307,24 @@ cdef class ArrowILocIndexer:
         if np.isscalar(column):
             # single column
             c_column_index = self._resolve_column_indices_vector([column], table)[0]
-            self.indexer_shd_ptr.get().loc(start, end, c_column_index, input, output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_column_index, input, output)
+            iLoc(input, start, end, c_column_index, &output)
             return pycylon_wrap_table(output)
         elif isinstance(column, slice):
             # range of columns
             start_index, end_index = self._resolve_column_index_slice(column, table)
             c_start_column_index = start_index
             c_end_column_index = end_index
-            self.indexer_shd_ptr.get().loc(start, end, c_start_column_index, c_end_column_index, input, output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_start_column_index, c_end_column_index, input, output)
+            iLoc(input, start, end, c_start_column_index, c_end_column_index, &output)
             return pycylon_wrap_table(output)
         elif isinstance(column, List):
             # list of columns
             column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
-            self.indexer_shd_ptr.get().loc(start, end, c_column_vector, input, output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_column_vector, input, output)
+            iLoc(input, start, end, c_column_vector, & output)
             return pycylon_wrap_table(output)
 
     def loc_with_indices(self, indices, column, table):
@@ -333,21 +344,24 @@ cdef class ArrowILocIndexer:
         if np.isscalar(column):
             # single column
             c_column_index = self._resolve_column_indices_vector([column], table)[0]
-            self.indexer_shd_ptr.get().loc(c_indices, c_column_index, input, output)
+            # self.indexer_shd_ptr.get().loc(c_indices, c_column_index, input, output)
+            iLoc(input, c_indices, c_column_index, &output)
             return pycylon_wrap_table(output)
         elif isinstance(column, slice):
             # range of columns
             start_index, end_index = self._resolve_column_index_slice(column, table)
             c_start_column_index = start_index
             c_end_column_index = end_index
-            self.indexer_shd_ptr.get().loc(c_indices, c_start_column_index, c_end_column_index, input, output)
+            # self.indexer_shd_ptr.get().loc(c_indices, c_start_column_index, c_end_column_index, input, output)
+            iLoc(input, c_indices, c_start_column_index, c_end_column_index, &output)
             return pycylon_wrap_table(output)
         elif isinstance(column, List):
             # list of columns
             column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
-            self.indexer_shd_ptr.get().loc(c_indices, c_column_vector, input, output)
+            # self.indexer_shd_ptr.get().loc(c_indices, c_column_vector, input, output)
+            iLoc(input, c_indices, c_column_vector, & output)
             return pycylon_wrap_table(output)
 
 
