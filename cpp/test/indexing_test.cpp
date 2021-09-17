@@ -24,7 +24,88 @@ namespace cylon {
 namespace test {
 
 TEST_CASE("Test range index", "[indexing]") {
-  // todo add this!
+  const auto &index = BuildRangeIndex(nullptr, 0, 10, 1);
+
+  auto data_type = arrow::int64();
+
+  SECTION("check LocationByValue - all locations") {
+    std::shared_ptr<arrow::Int64Array> locs;
+
+    SECTION("check non-null value") {
+      auto val = arrow::MakeScalar(data_type, 2).ValueOrDie();
+      CHECK_CYLON_STATUS(index->LocationByValue(val, &locs));
+      CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[2]"), locs);
+    }
+
+    SECTION("check null value") {
+      auto val = arrow::MakeNullScalar(data_type);
+      EXPECT_FAIL_WITH_MSG(Code::KeyError, "null", index->LocationByValue(val, &locs));
+    }
+
+    SECTION("check non-existent value") {
+      auto val = arrow::MakeScalar(data_type, 10).ValueOrDie();
+      EXPECT_FAIL_WITH_MSG(Code::KeyError, "not found", index->LocationByValue(val, &locs));
+    }
+  }
+
+  SECTION("check LocationByValue - first location") {
+    int64_t loc = -1;
+
+    SECTION("check non-null value") {
+      auto val = arrow::MakeScalar(data_type, 2).ValueOrDie();
+      CHECK_CYLON_STATUS(index->LocationByValue(val, &loc));
+      REQUIRE(loc == 2);
+    }
+
+    SECTION("check null value") {
+      auto val = arrow::MakeNullScalar(data_type);
+      EXPECT_FAIL_WITH_MSG(Code::KeyError, "null", index->LocationByValue(val, &loc));
+    }
+
+    SECTION("check non-existent value") {
+      auto val = arrow::MakeScalar(data_type, 10).ValueOrDie();
+      EXPECT_FAIL_WITH_MSG(Code::KeyError, "not found", index->LocationByValue(val, &loc));
+    }
+  }
+
+  SECTION("check LocationByVector") {
+    std::shared_ptr<arrow::Int64Array> locs;
+
+    SECTION("check all non-null values") {
+      auto val = ArrayFromJSON(data_type, "[1, 2]");
+      CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
+      CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2]"), locs);
+    }
+
+    SECTION("check with a null value") {
+      auto val = ArrayFromJSON(data_type, "[2, null, 5]");
+      EXPECT_FAIL_WITH_MSG(Code::KeyError, "null", index->LocationByVector(val, &locs));
+    }
+
+    SECTION("Linear index fails with duplicate search values") {
+      auto val = ArrayFromJSON(data_type, "[1, 2, 1]");
+      CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
+      CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2, 1]"), locs);
+    }
+  }
+
+  SECTION("check LocationRangeByValue") {
+    int64_t start = -1, end = -1;
+
+    SECTION("check non-null value") {
+      auto startv = arrow::MakeScalar(data_type, 1).ValueOrDie();
+      auto endv = arrow::MakeScalar(data_type, 2).ValueOrDie();
+      CHECK_CYLON_STATUS(index->LocationRangeByValue(startv, endv, &start, &end));
+      REQUIRE((start == 1 && end == 2));
+    }
+
+    SECTION("check with null value") {
+      auto startv = arrow::MakeScalar(data_type, 2).ValueOrDie();
+      auto endv = arrow::MakeScalar(data_type, 5).ValueOrDie();
+      CHECK_CYLON_STATUS(index->LocationRangeByValue(startv, endv, &start, &end));
+      REQUIRE((start == 2 && end == 5));
+    }
+  }
 }
 
 template<typename ArrowT>

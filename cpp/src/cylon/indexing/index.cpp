@@ -326,40 +326,40 @@ class ArrowRangeIndex : public BaseArrowIndex {
 
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
                          std::shared_ptr<arrow::Int64Array> *find_index) override {
-    if (search_param->type->id() != arrow::Type::INT64) {
-      return {Code::Invalid, "RangeIndex values should be Int64 type, given " + search_param->type->ToString()};
-    }
+    int64_t val = 0;
+    RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(search_param, &val));
 
-    auto casted_search_param = std::static_pointer_cast<arrow::Int64Scalar>(search_param);
-    int64_t val = casted_search_param->value;
-
-    if (val < start_ || val >= end_) {
-      return {Code::KeyError, "Invalid Key, it must be in the range [start, end)"};
-    }
-
-    const auto &res = arrow::MakeArrayFromScalar(*search_param, 1, GetPool());
+    const auto &res = arrow::MakeArrayFromScalar(arrow::Int64Scalar(val), 1, GetPool());
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-    *find_index = std::static_pointer_cast<arrow::Int64Array>(res.ValueOrDie());
 
+    *find_index = std::static_pointer_cast<arrow::Int64Array>(res.ValueOrDie());
     return Status::OK();
   }
 
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
                          int64_t *find_index) override {
-    if (search_param->type->id() != arrow::Type::INT64) {
-      return {Code::Invalid, "RangeIndex values should be Int64 type, given " + search_param->type->ToString()};
+    if (!search_param->is_valid) {
+      return {Code::KeyError, "invalid search param: null"};
     }
-    auto casted_search_param = std::static_pointer_cast<arrow::Int64Scalar>(search_param);
+
+    if (search_param->type->id() != arrow::Type::INT64) {
+      return {Code::KeyError, "RangeIndex values should be Int64 type, given " + search_param->type->ToString()};
+    }
+    const auto &casted_search_param = std::static_pointer_cast<arrow::Int64Scalar>(search_param);
     int64_t val = casted_search_param->value;
     if (val < start_ || val >= end_) {
-      return {Code::KeyError, "Invalid Key, it must be in the range of 0, num of records"};
+      return {Code::KeyError, "key not found. must be in the range [start, end)"};
     }
-    *find_index = val;
+    *find_index = val - start_;
     return Status::OK();
   }
 
   Status LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
                           std::shared_ptr<arrow::Int64Array> *filter_location) override {
+    if (search_param->null_count() > 0) {
+      return {Code::KeyError, "invalid search param: null"};
+    }
+
     if (search_param->type()->id() != arrow::Type::INT64) {
       return {Code::Invalid, "RangeIndex values should be Int64 type, given " + search_param->type()->ToString()};
     }
@@ -373,9 +373,11 @@ class ArrowRangeIndex : public BaseArrowIndex {
     int64_t max = std::static_pointer_cast<arrow::Int64Scalar>(min_max[1])->value;
 
     if (min < start_ || max >= end_) {
-      return {Code::Invalid, "search params are out of bounds"};
+      return {Code::KeyError, "search params are out of bounds"};
     } else {
-      *filter_location = std::static_pointer_cast<arrow::Int64Array>(search_param);
+      const auto& sub_res = arrow::compute::Subtract(search_param, arrow::Datum(start_));
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(sub_res.status());
+      *filter_location = std::make_shared<arrow::Int64Array>(sub_res.ValueOrDie().array());
       return Status::OK();
     }
   }
