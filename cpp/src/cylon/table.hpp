@@ -123,6 +123,7 @@ class Table {
   Status PrintToOStream(int col1, int col2, int row1, int row2, std::ostream &out,
                         char delimiter = ',', bool use_custom_header = false,
                         const std::vector<std::string> &headers = {});
+  Status PrintToOStream(std::ostream &out);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
 

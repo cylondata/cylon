@@ -21,6 +21,7 @@
 
 #include <cylon/arrow/arrow_builder.hpp>
 #include <cylon/table_api_extended.hpp>
+#include <cylon/table.hpp>
 
 std::unordered_map<std::string,
 std::shared_ptr<std::vector < std::shared_ptr < arrow::Array>>>>

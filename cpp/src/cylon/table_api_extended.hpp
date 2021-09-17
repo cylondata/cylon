@@ -18,9 +18,11 @@
 #include <arrow/api.h>
 
 #include <cylon/status.hpp>
-#include <cylon/table.hpp>
+//#include <cylon/table.hpp>
 
 namespace cylon {
+
+class Table;
 
 std::shared_ptr<cylon::Table> GetTable(const std::string &id);
 

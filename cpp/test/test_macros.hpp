@@ -15,6 +15,9 @@
 #ifndef CYLON_CPP_TEST_TEST_MACROS_HPP_
 #define CYLON_CPP_TEST_TEST_MACROS_HPP_
 
+#include <cylon/table.hpp>
+#include <cylon/table_api_extended.hpp>
+
 #define CHECK_ARRAYS_EQUAL(expected, received)                                 \
   do {                                                                         \
     const auto& exp = (expected);                                              \
@@ -38,5 +41,33 @@
             << st.get_code() << "-" << st.get_msg() <<"]"); \
       REQUIRE( (!st.is_ok() && st.get_msg().find(matcher) != std::string::npos));        \
   } while(0)
+
+#define VERIFY_TABLES_EQUAL_UNORDERED(exp_expr, rec_expr)           \
+  do {                                                              \
+  std::shared_ptr<Table> temp;                                      \
+  const auto& _expected = (exp_expr);                               \
+  const auto& _result = (rec_expr);                                 \
+  std::stringstream ss;                                             \
+  ss << "expected:\n";                                              \
+  _expected->PrintToOStream(ss);                                    \
+  ss << "received:\n";                                              \
+  _result->PrintToOStream(ss);                                      \
+  INFO(ss.str());                                                   \
+  INFO("row count: " << _expected->Rows() << " vs " << _result->Rows()); \
+  REQUIRE(_expected->Rows() == _result->Rows());                    \
+                                                                    \
+  const auto& exp_schema = _expected->get_table()->schema();        \
+  const auto& res_schema = _result->get_table()->schema();          \
+  INFO("Schema: " << exp_schema->ToString() << "\nvs " << res_schema->ToString());    \
+  CHECK_CYLON_STATUS(cylon::VerifyTableSchema(_expected->get_table(), _result->get_table()));\
+                                                                    \
+  CHECK_CYLON_STATUS(cylon::Subtract(_expected, _result, temp));    \
+  INFO("subtract(expected, result) row count: " << temp->Rows());   \
+  REQUIRE(temp->Rows() == 0);                                       \
+                                                                    \
+  CHECK_CYLON_STATUS(cylon::Subtract(_result, _expected, temp));    \
+  INFO("subtract(result, expected) row count: " << temp->Rows());   \
+  REQUIRE(temp->Rows() == 0);                                       \
+} while (0)
 
 #endif //CYLON_CPP_TEST_TEST_MACROS_HPP_

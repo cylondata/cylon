@@ -23,6 +23,57 @@
 namespace cylon {
 namespace test {
 
+TEST_CASE("Index testing", "[indexing]") {
+  std::string path1 = "../data/input/indexing_data.csv";
+  std::unordered_map<IndexingType, std::string> out_files{
+      {IndexingType::Hash, "../data/output/indexing_loc_hl_"},
+      {IndexingType::Linear, "../data/output/indexing_loc_hl_"},
+      {IndexingType::Range, "../data/output/indexing_loc_r_"}
+  };
+
+  SECTION("testing build index") {
+    for (auto & item : out_files) {
+      TestIndexBuildOperation(ctx, path1, item.first);
+    }
+  }
+
+  SECTION("testing loc index 1") {
+    for (auto & item : out_files) {
+      TestIndexLocOperation1(ctx, path1, item.first, item.second);
+    }
+  }
+
+  SECTION("testing loc index 2") {
+    for (auto & item : out_files) {
+      TestIndexLocOperation2(ctx, path1, item.first, item.second);
+    }
+  }
+
+  SECTION("testing loc index 3") {
+    for (auto & item : out_files) {
+      TestIndexLocOperation3(ctx, path1, item.first, item.second);
+    }
+  }
+
+  SECTION("testing loc index 4") {
+    for (auto & item : out_files) {
+      TestIndexLocOperation4(ctx, path1, item.first, item.second);
+    }
+  }
+
+  SECTION("testing loc index 5") {
+    for (auto & item : out_files) {
+      TestIndexLocOperation5(ctx, path1, item.first, item.second);
+    }
+  }
+
+  SECTION("testing loc index 6") {
+    for (auto & item : out_files) {
+      TestIndexLocOperation6(ctx, path1, item.first, item.second);
+    }
+  }
+}
+
 TEST_CASE("Test range index", "[indexing]") {
   const auto &index = BuildRangeIndex(nullptr, 0, 10, 1);
 

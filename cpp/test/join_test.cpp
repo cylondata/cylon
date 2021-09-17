@@ -15,9 +15,12 @@
 #include "common/test_header.hpp"
 #include "test_utils.hpp"
 
-using namespace cylon;
+ using namespace cylon;
 
-TEST_CASE("Join testing", "[join]") {
+ namespace cylon {
+ namespace test {
+
+ TEST_CASE("Join testing", "[join]") {
    std::string path1 = "../data/input/csv1_" + std::to_string(RANK) + ".csv";
    std::string path2 = "../data/input/csv2_" + std::to_string(RANK) + ".csv";
    std::string out_path =
@@ -25,16 +28,16 @@ TEST_CASE("Join testing", "[join]") {
 
    SECTION("testing inner joins - sort") {
      const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::SORT);
-     REQUIRE(test::TestJoinOperation(join_config, ctx, path1, path2, out_path) == 0);
+     test::TestJoinOperation(join_config, ctx, path1, path2, out_path);
    }
 
    SECTION("testing inner joins - hash") {
      const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::HASH);
-     REQUIRE(test::TestJoinOperation(join_config, ctx, path1, path2, out_path) == 0);
+     test::TestJoinOperation(join_config, ctx, path1, path2, out_path);
    }
 }
 
-TEST_CASE("Multi Index Join testing", "[multi_join]") {
+ TEST_CASE("Multi Index Join testing", "[multi_join]") {
    std::string path1 = "../data/input/multi_join1.csv";
    std::string path2 = "../data/input/multi_join2.csv";
    std::string out_path = "../data/output/multi_join_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
@@ -42,13 +45,13 @@ TEST_CASE("Multi Index Join testing", "[multi_join]") {
    SECTION("testing inner joins - sort") {
      const auto &jc =
          join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, cylon::join::config::JoinAlgorithm::SORT, "l_", "r_");
-     REQUIRE(test::TestJoinOperation(jc, ctx, path1, path2, out_path) == 0);
+     test::TestJoinOperation(jc, ctx, path1, path2, out_path);
    }
 
    SECTION("testing inner joins - hash") {
      const auto &jc =
          join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, cylon::join::config::JoinAlgorithm::HASH, "l_", "r_");
-     REQUIRE(test::TestJoinOperation(jc, ctx, path1, path2, out_path) == 0);
+     test::TestJoinOperation(jc, ctx, path1, path2, out_path);
    }
  }
 
@@ -56,35 +59,38 @@ TEST_CASE("Multi Index Join testing", "[multi_join]") {
    std::shared_ptr<Table> _t1, _t2, t1, t2, out;
    std::shared_ptr<arrow::Table> at1, at2;
 
-   REQUIRE(test::CreateTable(ctx, 4, _t1).is_ok()); // create dummy table
-   REQUIRE(_t1->ToArrowTable(at1).is_ok()); // convert to arrow
+   CHECK_CYLON_STATUS(test::CreateTable(ctx, 4, _t1)); // create dummy table
+   CHECK_CYLON_STATUS(_t1->ToArrowTable(at1)); // convert to arrow
    auto res1 = arrow::ConcatenateTables({at1, at1}); // concat same table
    REQUIRE(res1.ok());
-   REQUIRE(Table::FromArrowTable(ctx, res1.ValueOrDie(), t1).is_ok()); // use concat table
+   CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, res1.ValueOrDie(), t1)); // use concat table
 
-   REQUIRE(test::CreateTable(ctx, 2, _t2).is_ok()); // create dummy table
-   REQUIRE(_t2->ToArrowTable(at2).is_ok()); // convert to arrow
+   CHECK_CYLON_STATUS(test::CreateTable(ctx, 2, _t2)); // create dummy table
+   CHECK_CYLON_STATUS(_t2->ToArrowTable(at2)); // convert to arrow
    auto res2 = arrow::ConcatenateTables({at2, at2}); // concat same table
    REQUIRE(res2.ok());
-   REQUIRE(Table::FromArrowTable(ctx, res2.ValueOrDie(), t2).is_ok()); // use concat table
+   CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, res2.ValueOrDie(), t2)); // use concat table
 
    SECTION("testing inner joins - sort") {
      const auto &jc = join::config::JoinConfig::InnerJoin(0, 0, join::config::JoinAlgorithm::SORT);
-     REQUIRE(DistributedJoin(t1, t2, jc, out).is_ok()); // just check if runs without a problem
+     CHECK_CYLON_STATUS(DistributedJoin(t1, t2, jc, out)); // just check if runs without a problem
    }
 
    SECTION("testing inner joins - hash") {
      const auto &jc = join::config::JoinConfig::InnerJoin(0, 0, join::config::JoinAlgorithm::HASH);
-     REQUIRE(DistributedJoin(t1, t2, jc, out).is_ok()); // just check if runs without a problem
+     CHECK_CYLON_STATUS(DistributedJoin(t1, t2, jc, out)); // just check if runs without a problem
    }
 
    SECTION("testing inner joins - sort") {
      const auto &jc = join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, join::config::JoinAlgorithm::SORT);
-     REQUIRE(DistributedJoin(t1, t2, jc, out).is_ok()); // just check if runs without a problem
+     CHECK_CYLON_STATUS(DistributedJoin(t1, t2, jc, out)); // just check if runs without a problem
    }
 
    SECTION("testing inner joins - hash") {
      const auto &jc = join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, join::config::JoinAlgorithm::HASH);
-     REQUIRE(DistributedJoin(t1, t2, jc, out).is_ok()); // just check if runs without a problem
+     CHECK_CYLON_STATUS(DistributedJoin(t1, t2, jc, out)); // just check if runs without a problem
    }
+ }
+
+ }
  }

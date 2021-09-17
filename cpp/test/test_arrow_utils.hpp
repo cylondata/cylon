@@ -29,6 +29,33 @@
 namespace cylon {
 namespace test {
 
+/**
+ * Testing type tuples for templated tests
+ */
+using ArrowNumericTypes = std::tuple<arrow::Int8Type, arrow::Int16Type, arrow::Int32Type, arrow::Int64Type,
+                                     arrow::UInt8Type, arrow::UInt16Type, arrow::UInt32Type, arrow::UInt64Type,
+                                     arrow::FloatType, arrow::DoubleType>;
+
+using ArrowTemporalTypes = std::tuple<arrow::Date32Type,
+                                      arrow::Date64Type,
+                                      arrow::TimestampType,
+                                      arrow::Time32Type,
+                                      arrow::Time64Type>;
+
+using ArrowBinaryTypes = std::tuple<arrow::StringType, arrow::LargeStringType,
+                                    arrow::BinaryType, arrow::LargeBinaryType>;
+
+
+/**
+ * Arrow data structures from strings
+ * from: https://github.com/apache/arrow/blob/master/cpp/src/arrow/testing/gtest_util.cc#L406-L456
+*/
+
+/*
+ Create array
+ auto type = ...;
+ auto array = ArrayFromJSON(type, R"(["a", "b", "c"])");
+ */
 std::shared_ptr<arrow::Array> ArrayFromJSON(const std::shared_ptr<arrow::DataType> &type,
                                             arrow::util::string_view json) {
   std::shared_ptr<arrow::Array> out;
@@ -44,6 +71,15 @@ std::shared_ptr<arrow::Array> DictArrayFromJSON(const std::shared_ptr<arrow::Dat
   return out;
 }
 
+/*
+ Create chunked array
+  auto type = ...;
+  auto chunked_array = ChunkedArrayFromJSON(type, {
+                                                      "[0, 1]",
+                                                      "[3, 2, 1]",
+                                                      "[5, 0]",
+                                                  });
+ */
 std::shared_ptr<arrow::ChunkedArray> ChunkedArrayFromJSON(const std::shared_ptr<arrow::DataType> &type,
                                                           const std::vector<std::string> &json) {
   arrow::ArrayVector out_chunks;
@@ -53,6 +89,20 @@ std::shared_ptr<arrow::ChunkedArray> ChunkedArrayFromJSON(const std::shared_ptr<
   return std::make_shared<arrow::ChunkedArray>(std::move(out_chunks), type);
 }
 
+/*
+  Create record batch
+  auto schema = ::arrow::schema({
+      {field("a", decimal128(3, 1))},
+      {field("b", decimal256(4, 2))},
+  });
+  auto batch = RecordBatchFromJSON(schema,
+                                 R"([{"a": "12.3", "b": "12.34"},
+                                     {"a": "45.6", "b": "12.34"},
+                                     {"a": "12.3", "b": "-12.34"},
+                                     {"a": "-12.3", "b": null},
+                                     {"a": "-12.3", "b": "-45.67"}
+                                     ])");
+*/
 std::shared_ptr<arrow::RecordBatch> RecordBatchFromJSON(const std::shared_ptr<arrow::Schema> &schema,
                                                         arrow::util::string_view json) {
   // Parse as a StructArray
@@ -63,6 +113,21 @@ std::shared_ptr<arrow::RecordBatch> RecordBatchFromJSON(const std::shared_ptr<ar
   return *arrow::RecordBatch::FromStructArray(struct_array);
 }
 
+/*
+ Create table
+  auto schema = ::arrow::schema({
+      {field("a", uint8())},
+      {field("b", uint32())},
+  });
+  table = TableFromJSON(schema, {R"([{"a": null, "b": 5},
+                                     {"a": 1,    "b": 3},
+                                     {"a": 3,    "b": null}
+                                    ])",
+                                 R"([{"a": null, "b": null},
+                                     {"a": 2,    "b": 5},
+                                     {"a": 1,    "b": 5}
+                                    ])"});
+ */
 std::shared_ptr<arrow::Table> TableFromJSON(const std::shared_ptr<arrow::Schema> &schema,
                                             const std::vector<std::string> &json) {
   std::vector<std::shared_ptr<arrow::RecordBatch>> batches;
@@ -72,18 +137,6 @@ std::shared_ptr<arrow::Table> TableFromJSON(const std::shared_ptr<arrow::Schema>
   return *arrow::Table::FromRecordBatches(schema, batches);
 }
 
-using ArrowNumericTypes = std::tuple<arrow::Int8Type, arrow::Int16Type, arrow::Int32Type, arrow::Int64Type,
-                                     arrow::UInt8Type, arrow::UInt16Type, arrow::UInt32Type, arrow::UInt64Type,
-                                     arrow::FloatType, arrow::DoubleType>;
-
-using ArrowTemporalTypes = std::tuple<arrow::Date32Type,
-                                      arrow::Date64Type,
-                                      arrow::TimestampType,
-                                      arrow::Time32Type,
-                                      arrow::Time64Type>;
-
-using ArrowBinaryTypes = std::tuple<arrow::StringType, arrow::LargeStringType,
-                                    arrow::BinaryType, arrow::LargeBinaryType>;
 
 /**
  * from:
@@ -114,7 +167,7 @@ arrow::enable_if_decimal<T, std::shared_ptr<arrow::DataType>> default_type_insta
 }
 
 /**
- *
+ * Make binary scalar
  * @tparam T
  * @param val
  * @return

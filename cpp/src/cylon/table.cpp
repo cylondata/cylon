@@ -186,7 +186,7 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
   arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::read_csv(ctx, path, options);
   if (result.ok()) {
     std::shared_ptr<arrow::Table> &table = result.ValueOrDie();
-    LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
+//    LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
     if (table->column(0)->chunks().size() > 1) {
       const auto &combine_res = table->CombineChunks(ToArrowPool(ctx));
       if (!combine_res.ok()) {
@@ -846,20 +846,23 @@ Status Project(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> 
   return Status::OK();
 }
 
+Status Table::PrintToOStream(std::ostream &out) {
+  return PrintToOStream(0, Columns(), 0, Rows(), out);
+}
+
 Status Table::PrintToOStream(int col1, int col2, int row1, int row2, std::ostream &out,
                              char delimiter, bool use_custom_header,
                              const std::vector<std::string> &headers) {
-  auto table = table_;
-  if (table != NULLPTR) {
+  if (table_ != NULLPTR) {
     // print the headers
     if (use_custom_header) {
       // check if the headers are valid
-      if (headers.size() != (uint64_t) table->num_columns()) {
+      if (headers.size() != (size_t) table_->num_columns()) {
         return Status(
             cylon::Code::IndexError,
             "Provided headers doesn't match with the number of columns of the table. Given " +
                 std::to_string(headers.size()) + ", Expected " +
-                std::to_string(table->num_columns()));
+                std::to_string(table_->num_columns()));
       }
 
       for (int col = col1; col < col2; col++) {
@@ -870,10 +873,20 @@ Status Table::PrintToOStream(int col1, int col2, int row1, int row2, std::ostrea
           out << std::endl;
         }
       }
+    } else {
+      const auto &field_names = table_->schema()->field_names();
+      for (int col = col1; col < col2; col++) {
+        out << field_names[col];
+        if (col != col2 - 1) {
+          out << delimiter;
+        } else {
+          out << std::endl;
+        }
+      }
     }
     for (int row = row1; row < row2; row++) {
       for (int col = col1; col < col2; col++) {
-        auto column = table->column(col);
+        auto column = table_->column(col);
         int rowCount = 0;
         for (int chunk = 0; chunk < column->num_chunks(); chunk++) {
           auto array = column->chunk(chunk);
@@ -1001,7 +1014,8 @@ Status Table::SetArrowIndex(std::shared_ptr<BaseArrowIndex> index, bool drop_ind
   base_arrow_index_ = std::move(index);
 
   // if the index has a valid column id, drop it
-  if (drop_index && base_arrow_index_->GetColId() >= 0) {
+  if (drop_index && base_arrow_index_->GetIndexingType() != Range &&
+      base_arrow_index_->GetColId() >= 0) {
     const auto &res = table_->RemoveColumn(base_arrow_index_->GetColId());
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
     table_ = res.ValueOrDie();
