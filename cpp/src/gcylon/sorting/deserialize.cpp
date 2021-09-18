@@ -17,6 +17,7 @@
 #include <cudf/types.hpp>
 #include <cudf/table/table.hpp>
 #include <cudf/strings/strings_column_view.hpp>
+#include <rmm/device_buffer.hpp>
 
 namespace gcylon {
 
@@ -144,7 +145,6 @@ cylon::Status TableDeserializer::deserialize(std::vector<std::shared_ptr<cylon::
 
     for (int i = 0; i < number_of_tables; ++i) {
         if (allZero(buffer_sizes_per_table.at(i))) {
-            LOG(WARNING) << "All buffer sizes is zero for the table: " << i;
             continue;
         }
         std::vector<int32_t> disp = displacementsPerTable(displacements_per_buffer, i);

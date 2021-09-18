@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef GCYLON_SERIALIZE_HPP
-#define GCYLON_SERIALIZE_HPP
+#ifndef GCYLON_CUDF_TABLE_SERIALIZE_HPP
+#define GCYLON_CUDF_TABLE_SERIALIZE_HPP
 
 #include <memory>
 #include <type_traits>
@@ -21,35 +21,91 @@
 
 namespace gcylon {
 
-
-template <typename E>
-constexpr auto to_underlying(E e) noexcept
-{
-    return static_cast<std::underlying_type_t<E>>(e);
-}
-
 /**
- * enums to encode the column data.
- * enum values indicate indices in the encoded array after the starting point
+ * Serialize a CuDF table to send over the wire
  */
-enum class ColumnHeaderEncoding : int32_t {
-    DATA_SIZE,  /// in the number of bytes
-    MASK_SIZE, /// in the number of bytes
-    OFFSETS_SIZE, /// in the number of bytes
-    COUNT, /// this is to show the number of enums, it has to the last in the list
-};
-
-
 class TableSerializer {
 public:
+    /**
+     * @param tv table_view to serialize
+     */
     TableSerializer(cudf::table_view &tv);
+
+    /**
+     * get the buffer sizes for this table in bytes
+     * starting from column 0 to the last column
+     * For each column, three buffer sizes are returned in this order:
+     *      size of the column data buffer in bytes
+     *      size of the column null mask buffer in bytes
+     *      size of the column offsets buffer in bytes
+     * If there are two columns in a table, 6 data buffers sizes are returned
+     *      buffer[0] = size of the data buffer of the first column
+     *      buffer[1] = size of the null mask buffer of the first column
+     *      buffer[2] = size of the offsets buffer of the first column
+     *      buffer[3] = size of the data buffer of the second column
+     *      buffer[4] = size of the null mask buffer of the second column
+     *      buffer[5] = size of the offsets buffer of the second column
+     *
+     * If there are n columns, 3 * n buffer sizes are returned
+     *
+     * This method is symmetrical to getDataBuffers()
+     * @return
+     */
     std::vector<int32_t> & getBufferSizes();
+
+    /**
+     * length of the buffer sizes
+     * @return
+     */
     int getBufferSizesLength();
+
+    /**
+     * zeros for all column data as if the table is empty
+     * This is used by the MPI gather root
+     * @return
+     */
     std::vector<int32_t> getEmptyTableBufferSizes();
+
+    /**
+     * Get data buffers starting from column 0 to the last column
+     * For each column, three buffers are returned in this order:
+     *      column data buffer
+     *      column null mask buffer
+     *      column offsets buffer
+     * If there are two columns in a table, 6 data buffers are returned
+     *      buffer[0] = data buffer of the first column
+     *      buffer[1] = null mask buffer of the first column
+     *      buffer[2] = offsets buffer of the first column
+     *      buffer[3] = data buffer of the second column
+     *      buffer[4] = null mask buffer of the second column
+     *      buffer[5] = offsets buffer of the second column
+     *
+     * If there are n columns, 3 * n buffers are returned
+     *
+     * This method is symmetrical to getBufferSizes()
+     * @return
+     */
     std::vector<uint8_t *> & getDataBuffers();
 
+    /**
+     * Get the column data size in bytes and its data buffer
+     * @param column_index
+     * @return
+     */
     std::pair<int32_t, uint8_t *> getColumnData(int column_index);
+
+    /**
+     * Get the column null mask size in bytes and its null mask buffer
+     * @param column_index
+     * @return
+     */
     std::pair<int32_t, uint8_t *> getColumnMask(int column_index);
+
+    /**
+     * Get the column offsets size in bytes and its offsets buffer
+     * @param column_index
+     * @return
+     */
     std::pair<int32_t, uint8_t *> getColumnOffsets(int column_index);
 
 private:
@@ -64,4 +120,4 @@ private:
 
 } // end of namespace gcylon
 
-#endif //GCYLON_SERIALIZE_HPP
+#endif //GCYLON_CUDF_TABLE_SERIALIZE_HPP
