@@ -77,7 +77,9 @@ After that you can use PyCylon or libcylon as explained above.
 
 Here, Built files can be found in the `$CYLON_HOME/build` 
 (build directory can be specified from the command line with 
-`-bpath` flag as: ./build.sh [-bpath \<build dir>] ... )
+```bash
+`-bpath` flag as: ./build.sh [-bpath <build dir>] ... )
+```
 
 Additionally, Cylon libraries would also be installed to `$CONDA_PREFIX/lib` and
 `$CONDA_PREFIX/include` directories.
