@@ -37,12 +37,12 @@ std::unique_ptr<cudf::column> TableDeserializer::constructColumn(uint8_t * data_
     // unfortunately this device_buffer performs data copying according to their docs
     // however, there is no other constructor to create a device_buffer using already existing memory on the gpu
     rmm::device_buffer db(data_buffer, data_size, rmm::cuda_stream_default);
-    rmm::cuda_stream_default.synchronize();
 
     // if it is non-string column
     if (dt.id() != cudf::type_id::STRING) {
         int32_t data_count = data_size / cudf::size_of(dt);
         if (mask_size == 0) {
+            rmm::cuda_stream_default.synchronize();
             clmn = std::make_unique<cudf::column>(dt, data_count, std::move(db));
         } else {
             rmm::device_buffer mb(mask_buffer, mask_size, rmm::cuda_stream_default);
@@ -55,7 +55,6 @@ std::unique_ptr<cudf::column> TableDeserializer::constructColumn(uint8_t * data_
     // if it is a string column
     } else {
         rmm::device_buffer ob(offsets_buffer, offsets_size, rmm::cuda_stream_default);
-        rmm::cuda_stream_default.synchronize();
 
         // construct chars child column
         auto cdt = cudf::data_type{cudf::type_id::INT8};
@@ -80,6 +79,7 @@ std::unique_ptr<cudf::column> TableDeserializer::constructColumn(uint8_t * data_
                                                     cudf::UNKNOWN_NULL_COUNT,
                                                     std::move(children));
         } else{
+            rmm::cuda_stream_default.synchronize();
             clmn = std::make_unique<cudf::column>(cudf::data_type{cudf::type_id::STRING},
                                                     offsets_count -1,
                                                     std::move(rmm::device_buffer{0, rmm::cuda_stream_default}),
