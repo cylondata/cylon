@@ -107,13 +107,14 @@ std::vector<std::vector<int32_t>> TableGatherer::bufferSizesPerTable(int32_t *al
 
 
 cylon::Status TableGatherer::Gather(cudf::table_view &tv,
+                                    bool gather_from_root,
                                     std::vector<std::unique_ptr<cudf::table>> &gathered_tables) {
 
     TableSerializer serializer(tv);
 
     // first gather table buffer sizes
     std::vector<int32_t> local_buffer_sizes;
-    if(AmIRoot()) {
+    if(AmIRoot() && !gather_from_root) {
         local_buffer_sizes = serializer.getEmptyTableBufferSizes();
     } else {
         local_buffer_sizes = serializer.getBufferSizes();

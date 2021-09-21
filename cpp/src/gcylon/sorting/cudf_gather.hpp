@@ -29,6 +29,7 @@ public:
                   std::shared_ptr<cylon::Allocator> allocator);
 
     cylon::Status Gather(cudf::table_view &tv,
+                         bool gather_from_root,
                          std::vector<std::unique_ptr<cudf::table>> &gathered_tables);
 
     bool AmIRoot();

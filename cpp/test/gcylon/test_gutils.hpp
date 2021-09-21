@@ -95,6 +95,7 @@ bool PerformGatherTest(const std::string &input_filename,
                        const std::vector<std::string> &column_names,
                        const std::vector<std::string> &date_columns,
                        int gather_root,
+                       bool gather_from_root,
                        std::shared_ptr<cylon::CylonContext> ctx) {
 
     cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names, date_columns);
@@ -105,7 +106,7 @@ bool PerformGatherTest(const std::string &input_filename,
     TableGatherer gatherer(ctx, gather_root, allocator);
 
     std::vector<std::unique_ptr<cudf::table>> gathered_tables;
-    gatherer.Gather(input_tv, gathered_tables);
+    gatherer.Gather(input_tv, gather_from_root, gathered_tables);
 
     // read all tables if this is gather_root and compare to the gathered one
     std::vector<cudf::table_view> all_tables;
