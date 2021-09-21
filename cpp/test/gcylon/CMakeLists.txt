@@ -90,7 +90,11 @@ endfunction(cylon_run_test)
 cylon_add_test(create_cudf_table_test)
 cylon_run_test(create_cudf_table_test 4)
 
-# create table test
+# shuffle table test
 cylon_add_test(shuffle_gcylon_table_test)
 cylon_run_test(shuffle_gcylon_table_test 4)
+
+# gather table test
+cylon_add_test(gather_gcylon_table_test)
+cylon_run_test(gather_gcylon_table_test 4)
 

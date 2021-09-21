@@ -79,6 +79,15 @@ T * getColumnTail(const cudf::column_view &cv, int64_t tailN = 5) {
 
 /**
  * whether two cudf tables are equal with all elements in them
+ * first sort both tables and compare then afterward
+ * @param tv1
+ * @param tv2
+ * @return
+ */
+bool table_equal_with_sorting(cudf::table_view & tv1, cudf::table_view & tv2);
+
+/**
+ * whether two cudf tables are equal with all elements in them
  * @param tv1
  * @param tv2
  * @return

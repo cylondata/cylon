@@ -22,16 +22,19 @@
 
 namespace gcylon {
 
-bool table_equal(cudf::table_view & tv1, cudf::table_view & tv2) {
+bool table_equal_with_sorting(cudf::table_view & tv1, cudf::table_view & tv2) {
     std::unique_ptr<cudf::table> sorted_table1 = cudf::sort(tv1);
     auto sorted_tv1 = sorted_table1->view();
 
     std::unique_ptr<cudf::table> sorted_table2 = cudf::sort(tv2);
     auto sorted_tv2 = sorted_table2->view();
+    return table_equal(sorted_tv1, sorted_tv2);
+}
 
-    if (sorted_tv1.num_columns() != sorted_tv2.num_columns()){
+bool table_equal(cudf::table_view & tv1, cudf::table_view & tv2) {
+    if (tv1.num_columns() != tv2.num_columns()){
         return false;
-    } else if (sorted_tv1.num_rows() != sorted_tv2.num_rows()) {
+    } else if (tv1.num_rows() != tv2.num_rows()) {
         return false;
     }
 
@@ -44,11 +47,11 @@ bool table_equal(cudf::table_view & tv1, cudf::table_view & tv2) {
     cudf::data_type bool_type = cudf::data_type(cudf::type_id::BOOL8);
 
     // compare all elements in the table
-    for (int i = 0; i < sorted_tv1.num_columns(); ++i) {
-        std::unique_ptr<cudf::column> result_column = cudf::binary_operation(sorted_tv1.column(i),
-                                                                            sorted_tv2.column(i),
-                                                                            cudf::binary_operator::EQUAL,
-                                                                            bool_type);
+    for (int i = 0; i < tv1.num_columns(); ++i) {
+        std::unique_ptr<cudf::column> result_column = cudf::binary_operation(tv1.column(i),
+                                                                             tv2.column(i),
+                                                                             cudf::binary_operator::EQUAL,
+                                                                             bool_type);
         std::unique_ptr<cudf::scalar> all = cudf::reduce(result_column->view(), agg, bool_type);
         std::unique_ptr<cudf::numeric_scalar<bool>> all_numeric(static_cast<cudf::numeric_scalar<bool> *>(all.release()));
         if (!all_numeric->value())
@@ -57,5 +60,6 @@ bool table_equal(cudf::table_view & tv1, cudf::table_view & tv2) {
 
     return true;
 }
+
 
 }// end of namespace gcylon
