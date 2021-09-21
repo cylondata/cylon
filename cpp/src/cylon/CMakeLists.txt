@@ -111,6 +111,8 @@ add_library(cylon SHARED
         net/mpi/mpi_operations.hpp
         net/ops/all_to_all.cpp
         net/ops/all_to_all.hpp
+        net/ops/gather.hpp
+        net/ops/gather.cpp
         net/TxRequest.cpp
         net/TxRequest.hpp
         ops.cpp

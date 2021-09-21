@@ -25,7 +25,7 @@ namespace gcylon {
 /**
  * Serialize a CuDF table to send over the wire
  */
-class CudfTableSerializer {
+class CudfTableSerializer : public cylon::TableSerializer {
 public:
     /**
      * @param tv table_view to serialize

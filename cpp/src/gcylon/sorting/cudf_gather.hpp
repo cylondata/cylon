@@ -18,15 +18,14 @@
 #include <cylon/ctx/cylon_context.hpp>
 #include <cylon/status.hpp>
 #include <cylon/net/buffer.hpp>
-#include <gcylon/net/serialize.hpp>
+#include <gcylon/net/cudf_serialize.hpp>
 
 namespace gcylon {
 
-class TableGatherer {
+class CudfTableGatherer {
 public:
-    TableGatherer(std::shared_ptr<cylon::CylonContext> ctx,
-                  const int gather_root,
-                  std::shared_ptr<cylon::Allocator> allocator);
+    CudfTableGatherer(std::shared_ptr<cylon::CylonContext> ctx,
+                  const int gather_root);
 
     cylon::Status Gather(cudf::table_view &tv,
                          bool gather_from_root,
@@ -34,15 +33,12 @@ public:
 
     bool AmIRoot();
 
-    std::vector<int32_t> totalBufferSizes(int32_t * all_buffer_sizes, int buffer_size_pw);
-    std::vector<int32_t> receiveCounts(int32_t *all_buffer_sizes, int receiveNo, int buffer_size_pw);
-    std::vector<int32_t> displacementsPerBuffer(int32_t *all_buffer_sizes, int receiveNo, int buffer_size_pw);
-    std::vector<std::vector<int32_t>> bufferSizesPerTable(int32_t *all_buffer_sizes, int buffer_size_pw);
 
 private:
     std::shared_ptr<cylon::CylonContext> ctx_;
     const int root_;
-    std::shared_ptr<cylon::Allocator> allocator_;
+
+    std::vector<std::vector<int32_t>> bufferSizesPerTable(int32_t *all_buffer_sizes, int number_of_buffers);
 };
 
 

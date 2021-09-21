@@ -15,8 +15,7 @@
 #ifndef CYLON_NET_TABLE_SERIALIZE_HPP
 #define CYLON_NET_TABLE_SERIALIZE_HPP
 
-#include <memory>
-#include <type_traits>
+#include <vector>
 
 namespace cylon {
 
@@ -25,6 +24,9 @@ namespace cylon {
  */
 class TableSerializer {
 public:
+
+    virtual ~TableSerializer() = default;
+
     /**
      * get the buffer sizes for this table in bytes
      * starting from column 0 to the last column
@@ -45,20 +47,20 @@ public:
      * This method is symmetrical to getDataBuffers()
      * @return
      */
-    virtual std::vector<int32_t> & getBufferSizes();
+    virtual std::vector<int32_t> & getBufferSizes() = 0;
 
     /**
      * length of the buffer sizes
      * @return
      */
-    virtual int getBufferSizesLength();
+    virtual int getBufferSizesLength() = 0;
 
     /**
      * zeros for all column data as if the table is empty
      * This is used by the MPI gather root
      * @return
      */
-    virtual std::vector<int32_t> getEmptyTableBufferSizes();
+    virtual std::vector<int32_t> getEmptyTableBufferSizes() = 0;
 
     /**
      * Get data buffers starting from column 0 to the last column
@@ -79,28 +81,7 @@ public:
      * This method is symmetrical to getBufferSizes()
      * @return
      */
-    virtual std::vector<uint8_t *> & getDataBuffers();
-
-    /**
-     * Get the column data size in bytes and its data buffer
-     * @param column_index
-     * @return
-     */
-    virtual std::pair<int32_t, uint8_t *> getColumnData(int column_index);
-
-    /**
-     * Get the column null mask size in bytes and its null mask buffer
-     * @param column_index
-     * @return
-     */
-    virtual std::pair<int32_t, uint8_t *> getColumnMask(int column_index);
-
-    /**
-     * Get the column offsets size in bytes and its offsets buffer
-     * @param column_index
-     * @return
-     */
-    virtual std::pair<int32_t, uint8_t *> getColumnOffsets(int column_index);
+    virtual std::vector<uint8_t *> & getDataBuffers() = 0;
 
 };
 

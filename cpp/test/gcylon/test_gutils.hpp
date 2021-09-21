@@ -21,7 +21,6 @@
 #include <cudf/io/csv.hpp>
 #include <cudf/io/types.hpp>
 
-#include <gcylon/cudf_buffer.hpp>
 #include <gcylon/gtable_api.hpp>
 #include <gcylon/utils/util.hpp>
 #include <gcylon/sorting/cudf_gather.hpp>
@@ -102,8 +101,7 @@ bool PerformGatherTest(const std::string &input_filename,
     auto input_tv = input_table.tbl->view();
 
     // gather the tables
-    std::shared_ptr<cylon::Allocator> allocator = std::make_shared<CudfAllocator>();
-    TableGatherer gatherer(ctx, gather_root, allocator);
+    CudfTableGatherer gatherer(ctx, gather_root);
 
     std::vector<std::unique_ptr<cudf::table>> gathered_tables;
     gatherer.Gather(input_tv, gather_from_root, gathered_tables);

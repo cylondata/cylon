@@ -13,7 +13,7 @@
  */
 
 #include <glog/logging.h>
-#include <gcylon/net/serialize.hpp>
+#include <gcylon/net/cudf_serialize.hpp>
 #include <cudf/strings/strings_column_view.hpp>
 #include <cudf/null_mask.hpp>
 
