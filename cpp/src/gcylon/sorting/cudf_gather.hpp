@@ -18,7 +18,7 @@
 #include <cylon/ctx/cylon_context.hpp>
 #include <cylon/status.hpp>
 #include <cylon/net/buffer.hpp>
-#include <gcylon/sorting/serialize.hpp>
+#include <gcylon/net/serialize.hpp>
 
 namespace gcylon {
 

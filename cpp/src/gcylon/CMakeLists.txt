@@ -84,8 +84,8 @@ add_library(gcylon SHARED
         all2all/cudf_all_to_all.cu
         all2all/cudf_all_to_all.hpp
         all2all/cudf_all_to_all.cpp
-        sorting/serialize.hpp
-        sorting/serialize.cpp
+        net/serialize.hpp
+        net/serialize.cpp
         sorting/deserialize.hpp
         sorting/deserialize.cpp
         sorting/cudf_gather.hpp

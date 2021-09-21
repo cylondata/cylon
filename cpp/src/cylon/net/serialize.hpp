@@ -12,25 +12,19 @@
  * limitations under the License.
  */
 
-#ifndef GCYLON_CUDF_TABLE_SERIALIZE_HPP
-#define GCYLON_CUDF_TABLE_SERIALIZE_HPP
+#ifndef CYLON_NET_TABLE_SERIALIZE_HPP
+#define CYLON_NET_TABLE_SERIALIZE_HPP
 
 #include <memory>
 #include <type_traits>
-#include <cudf/table/table_view.hpp>
 
-namespace gcylon {
+namespace cylon {
 
 /**
- * Serialize a CuDF table to send over the wire
+ * Serialize a table to send over the wire
  */
 class TableSerializer {
 public:
-    /**
-     * @param tv table_view to serialize
-     */
-    TableSerializer(cudf::table_view &tv);
-
     /**
      * get the buffer sizes for this table in bytes
      * starting from column 0 to the last column
@@ -51,20 +45,20 @@ public:
      * This method is symmetrical to getDataBuffers()
      * @return
      */
-    std::vector<int32_t> & getBufferSizes();
+    virtual std::vector<int32_t> & getBufferSizes();
 
     /**
      * length of the buffer sizes
      * @return
      */
-    int getBufferSizesLength();
+    virtual int getBufferSizesLength();
 
     /**
      * zeros for all column data as if the table is empty
      * This is used by the MPI gather root
      * @return
      */
-    std::vector<int32_t> getEmptyTableBufferSizes();
+    virtual std::vector<int32_t> getEmptyTableBufferSizes();
 
     /**
      * Get data buffers starting from column 0 to the last column
@@ -85,39 +79,31 @@ public:
      * This method is symmetrical to getBufferSizes()
      * @return
      */
-    std::vector<uint8_t *> & getDataBuffers();
+    virtual std::vector<uint8_t *> & getDataBuffers();
 
     /**
      * Get the column data size in bytes and its data buffer
      * @param column_index
      * @return
      */
-    std::pair<int32_t, uint8_t *> getColumnData(int column_index);
+    virtual std::pair<int32_t, uint8_t *> getColumnData(int column_index);
 
     /**
      * Get the column null mask size in bytes and its null mask buffer
      * @param column_index
      * @return
      */
-    std::pair<int32_t, uint8_t *> getColumnMask(int column_index);
+    virtual std::pair<int32_t, uint8_t *> getColumnMask(int column_index);
 
     /**
      * Get the column offsets size in bytes and its offsets buffer
      * @param column_index
      * @return
      */
-    std::pair<int32_t, uint8_t *> getColumnOffsets(int column_index);
+    virtual std::pair<int32_t, uint8_t *> getColumnOffsets(int column_index);
 
-private:
-    cudf::table_view tv_;
-    std::vector<int32_t> buffer_sizes_ = std::vector<int32_t>();
-    std::vector<uint8_t *> table_buffers_ = std::vector<uint8_t *>();
-    bool table_buffers_initialized = false;
-
-    void initTableBuffers();
 };
 
+} // end of namespace cylon
 
-} // end of namespace gcylon
-
-#endif //GCYLON_CUDF_TABLE_SERIALIZE_HPP
+#endif //CYLON_NET_TABLE_SERIALIZE_HPP
