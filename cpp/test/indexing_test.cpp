@@ -75,7 +75,7 @@ TEST_CASE("Index testing", "[indexing]") {
 }
 
 TEST_CASE("Test range index", "[indexing]") {
-  const auto &index = BuildRangeIndex(nullptr, 0, 10, 1);
+  const auto &index = BuildRangeIndex(0, 10, 1);
 
   auto data_type = arrow::int64();
 
@@ -85,7 +85,7 @@ TEST_CASE("Test range index", "[indexing]") {
     SECTION("check non-null value") {
       auto val = arrow::MakeScalar(data_type, 2).ValueOrDie();
       CHECK_CYLON_STATUS(index->LocationByValue(val, &locs));
-      CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[2]"), locs);
+      CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[2]"), locs);
     }
 
     SECTION("check null value") {
@@ -125,7 +125,7 @@ TEST_CASE("Test range index", "[indexing]") {
     SECTION("check all non-null values") {
       auto val = ArrayFromJSON(data_type, "[1, 2]");
       CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
-      CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2]"), locs);
+      CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2]"), locs);
     }
 
     SECTION("check with a null value") {
@@ -136,7 +136,7 @@ TEST_CASE("Test range index", "[indexing]") {
     SECTION("Linear index fails with duplicate search values") {
       auto val = ArrayFromJSON(data_type, "[1, 2, 1]");
       CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
-      CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2, 1]"), locs);
+      CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2, 1]"), locs);
     }
   }
 
@@ -163,9 +163,12 @@ template<typename ArrowT>
 arrow::enable_if_has_c_type<ArrowT, void> TestIndexNumeric(IndexingType index_type) {
   auto data_type = default_type_instance<ArrowT>();
   const auto &idx_arr = ArrayFromJSON(data_type, "[1, 2, 2, null, 5, 5, null, 8]");
+  auto a_table = arrow::Table::Make(arrow::schema({field("a", data_type)}),
+                                    {idx_arr});
 
-  std::shared_ptr<BaseArrowIndex> index;
-  CHECK_CYLON_STATUS(BuildIndex(idx_arr, index_type, &index));
+  auto table = std::make_shared<Table>(ctx, std::move(a_table));
+  CHECK_CYLON_STATUS(table->SetArrowIndex(0, index_type));
+  const auto &index = table->GetArrowIndex();
 
   SECTION("check LocationByValue - all locations") {
     std::shared_ptr<arrow::Int64Array> locs;
@@ -173,13 +176,13 @@ arrow::enable_if_has_c_type<ArrowT, void> TestIndexNumeric(IndexingType index_ty
     SECTION("check non-null value") {
       auto val = arrow::MakeScalar(data_type, 2).ValueOrDie();
       CHECK_CYLON_STATUS(index->LocationByValue(val, &locs));
-      CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2]"), locs);
+      CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2]"), locs);
     }
 
     SECTION("check null value") {
       auto val = arrow::MakeNullScalar(data_type);
       CHECK_CYLON_STATUS(index->LocationByValue(val, &locs));
-      CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[3, 6]"), locs);
+      CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[3, 6]"), locs);
     }
 
     SECTION("check non-existent value") {
@@ -217,13 +220,13 @@ arrow::enable_if_has_c_type<ArrowT, void> TestIndexNumeric(IndexingType index_ty
       SECTION("check all non-null values") {
         auto val = ArrayFromJSON(data_type, "[1, 2]");
         CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
-        CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[0, 1, 2]"), locs);
+        CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[0, 1, 2]"), locs);
       }
 
       SECTION("check with a null value") {
         auto val = ArrayFromJSON(data_type, "[2, null, 5]");
         CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
-        CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2, 3, 4, 5, 6]"), locs);
+        CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2, 3, 4, 5, 6]"), locs);
       }
 
       SECTION("Linear index fails with duplicate search values") {
@@ -234,13 +237,13 @@ arrow::enable_if_has_c_type<ArrowT, void> TestIndexNumeric(IndexingType index_ty
       SECTION("check all non-null values") {
         auto val = ArrayFromJSON(data_type, "[1, 2, 1]");
         CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
-        CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[0, 1, 2, 0]"), locs);
+        CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[0, 1, 2, 0]"), locs);
       }
 
       SECTION("check with a null value") {
         auto val = ArrayFromJSON(data_type, "[2, null, 5]");
         CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
-        CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2, 3, 6, 4, 5]"), locs);
+        CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2, 3, 6, 4, 5]"), locs);
       }
     }
 
@@ -281,8 +284,11 @@ arrow::enable_if_base_binary<ArrowT, void> TestIndexBinary(IndexingType index_ty
   auto data_type = default_type_instance<ArrowT>();
   const auto &idx_arr = ArrayFromJSON(data_type, R"(["a", "b", "b", null, "c", "c", null, "d"])");
 
-  std::shared_ptr<BaseArrowIndex> index;
-  CHECK_CYLON_STATUS(BuildIndex(idx_arr, index_type, &index));
+  auto a_table = arrow::Table::Make(arrow::schema({field("a", data_type)}), {idx_arr});
+
+  auto table = std::make_shared<Table>(ctx, std::move(a_table));
+  CHECK_CYLON_STATUS(table->SetArrowIndex(0, index_type));
+  const auto &index = table->GetArrowIndex();
 
   SECTION("check LocationByValue - all locations") {
     std::shared_ptr<arrow::Int64Array> locs;
@@ -290,13 +296,13 @@ arrow::enable_if_base_binary<ArrowT, void> TestIndexBinary(IndexingType index_ty
     SECTION("check non-null value") {
       auto val = MakeBinaryScalar<ArrowT>("b");
       CHECK_CYLON_STATUS(index->LocationByValue(val, &locs));
-      CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2]"), locs);
+      CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2]"), locs);
     }
 
     SECTION("check null value") {
       auto val = arrow::MakeNullScalar(data_type);
       CHECK_CYLON_STATUS(index->LocationByValue(val, &locs));
-      CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[3, 6]"), locs);
+      CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[3, 6]"), locs);
     }
 
     SECTION("check non-existent value") {
@@ -334,13 +340,13 @@ arrow::enable_if_base_binary<ArrowT, void> TestIndexBinary(IndexingType index_ty
       SECTION("check all non-null values") {
         auto val = ArrayFromJSON(data_type, R"(["a", "b"])");
         CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
-        CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[0, 1, 2]"), locs);
+        CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[0, 1, 2]"), locs);
       }
 
       SECTION("check with a null value") {
         auto val = ArrayFromJSON(data_type, R"(["b", null, "c"])");
         CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
-        CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2, 3, 4, 5, 6]"), locs);
+        CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2, 3, 4, 5, 6]"), locs);
       }
 
       SECTION("Linear index fails with duplicate search values") {
@@ -351,13 +357,13 @@ arrow::enable_if_base_binary<ArrowT, void> TestIndexBinary(IndexingType index_ty
       SECTION("check all non-null values") {
         auto val = ArrayFromJSON(data_type, R"(["a", "b", "a"])");
         CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
-        CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[0, 1, 2, 0]"), locs);
+        CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[0, 1, 2, 0]"), locs);
       }
 
       SECTION("check with a null value") {
         auto val = ArrayFromJSON(data_type, R"(["b", null, "c"])");
         CHECK_CYLON_STATUS(index->LocationByVector(val, &locs));
-        CHECK_ARRAYS_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2, 3, 6, 4, 5]"), locs);
+        CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 2, 3, 6, 4, 5]"), locs);
       }
     }
 
@@ -415,6 +421,228 @@ TEMPLATE_LIST_TEST_CASE("Test linear index - temporal types", "[indexing]", Arro
 
 TEMPLATE_LIST_TEST_CASE("Test hash index - temporal types", "[indexing]", ArrowTemporalTypes) {
   TestIndexNumeric<TestType>(IndexingType::Hash);
+}
+
+TEMPLATE_LIST_TEST_CASE("Test SetIndex ResetIndex", "[indexing]", ArrowNumericTypes) {
+  auto type = default_type_instance<TestType>();
+  auto ab = TableFromJSON(arrow::schema({
+                                            {field("a", type)},
+                                            {field("b", arrow::uint32())},
+                                        }),
+                          {R"([
+                                      {"a": null, "b": 5},
+                                      {"a": 1,    "b": 3},
+                                      {"a": 3,    "b": null},
+                                      {"a": 2,    "b": 5},
+                                      {"a": 2,    "b": 6},
+                                      {"a": 1,    "b": 5}
+                                    ])"});
+  auto just_a = ab->SelectColumns({0}).ValueOrDie();
+
+  auto col_a = ab->column(0)->chunk(0);
+  auto col_b = ab->column(1)->chunk(0);
+
+  SECTION("check default range index") {
+    std::shared_ptr<Table> table;
+    CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, ab, table));
+
+    const auto &index = table->GetArrowIndex();
+    REQUIRE(index->GetIndexingType() == IndexingType::Range);
+    REQUIRE(index->size() == table->Rows());
+  }
+
+  SECTION("SetIndex + ResetIndex") {
+    for (auto index_type: {IndexingType::Linear, IndexingType::Hash}) {
+      SECTION("Indexing type " + std::to_string(index_type)) {
+        std::shared_ptr<Table> table;
+        CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, ab, table));
+
+//        std::shared_ptr<BaseArrowIndex> new_index;
+//        CHECK_CYLON_STATUS(BuildIndex(table->get_table(), 0, index_type, &new_index));
+
+        // set index
+        CHECK_CYLON_STATUS(table->SetArrowIndex(0, index_type));
+        REQUIRE(table->GetArrowIndex()->GetIndexingType() == index_type);
+        CHECK_ARROW_EQUAL(ab, table->get_table());
+
+//        // set index with dropping
+//        CHECK_CYLON_STATUS(table->SetArrowIndex(new_index, /*drop_index=*/true));
+//        REQUIRE(table->GetArrowIndex()->GetIndexingType() == index_type);
+//        CHECK_ARROW_EQUAL(just_b, table->get_table());
+
+        // now reset the index
+        CHECK_CYLON_STATUS(table->ResetArrowIndex(/*drop=*/false));
+        REQUIRE(table->GetArrowIndex()->GetIndexingType() == IndexingType::Range);
+        CHECK_ARROW_EQUAL(ab, table->get_table());
+
+        // set index to column b
+        CHECK_CYLON_STATUS(table->SetArrowIndex(1, index_type));
+        CHECK_ARROW_EQUAL(ab, table->get_table());
+
+        // now reset index with drop. this would not add the column back to the table.
+        CHECK_CYLON_STATUS(table->ResetArrowIndex(/*drop=*/true));
+        REQUIRE(table->GetArrowIndex()->GetIndexingType() == IndexingType::Range);
+        CHECK_ARROW_EQUAL(just_a, table->get_table());
+      }
+    }
+  }
+}
+
+TEST_CASE("Test SliceTableByRange", "[indexing]") {
+  auto ab = TableFromJSON(arrow::schema({
+                                            {field("a", arrow::uint32())},
+                                            {field("b", arrow::uint32())},
+                                        }),
+                          {R"([
+                                      {"a": null, "b": 5},
+                                      {"a": 1,    "b": 3},
+                                      {"a": 3,    "b": null},
+                                      {"a": 2,    "b": 5},
+                                      {"a": 2,    "b": 6},
+                                      {"a": 1,    "b": 5}
+                                    ])"});
+  std::shared_ptr<Table> table, out;
+  CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, ab, table));
+
+  SECTION("Slice - range index") {
+    // out has range index by default
+    CHECK_CYLON_STATUS(indexing::SliceTableByRange(table, 1, 3, {1}, &out, false));
+    auto expected = TableFromJSON(arrow::schema({
+                                                    {field("b", arrow::uint32())},
+                                                }),
+                                  {R"([
+                                      {"b": 3},
+                                      {"b": null},
+                                      {"b": 5}
+                                     ])"});
+    CHECK_ARROW_EQUAL(expected, out->get_table());
+
+    auto index = std::static_pointer_cast<ArrowRangeIndex>(out->GetArrowIndex());
+    REQUIRE(index->start_ == 1);
+    REQUIRE(index->end_ == 4);
+    REQUIRE(index->step_ == 1);
+
+    int64_t test_loc = -1;
+    CHECK_CYLON_STATUS(index->LocationByValue(arrow::MakeScalar<int64_t>(2), &test_loc));
+    REQUIRE(test_loc == 1);
+  }
+
+  for (auto index_type: {IndexingType::Linear, IndexingType::Hash}) {
+    SECTION("Slice - " + std::to_string(index_type)) {
+      // set index by column b
+      CHECK_CYLON_STATUS(table->SetArrowIndex(1, index_type));
+
+      // select column a --> this would add col b back into the table at the end
+      CHECK_CYLON_STATUS(indexing::SliceTableByRange(table, 1, 3, {0}, &out, false));
+      auto expected = TableFromJSON(arrow::schema({
+                                                      {field("a", arrow::uint32())},
+                                                      {field("b", arrow::uint32())},
+                                                  }),
+                                    {R"([
+                                      {"a": 1,    "b": 3},
+                                      {"a": 3,    "b": null},
+                                      {"a": 2,    "b": 5}
+                                     ])"});
+      CHECK_ARROW_EQUAL(expected, out->get_table());
+
+      int64_t test_loc = -1;
+      CHECK_CYLON_STATUS(out->GetArrowIndex()->LocationByValue(arrow::MakeScalar<uint32_t>(5), &test_loc));
+      REQUIRE(test_loc == 2);
+      CHECK_CYLON_STATUS(out->GetArrowIndex()->LocationByValue(arrow::MakeNullScalar(arrow::uint32()), &test_loc));
+      REQUIRE(test_loc == 1);
+
+      CHECK_CYLON_STATUS(table->ResetArrowIndex()); // put the index array back into the table
+    }
+  }
+}
+
+TEST_CASE("Test FilterTable", "[indexing]") {
+  auto ab = TableFromJSON(arrow::schema({
+                                            {field("a", arrow::uint32())},
+                                            {field("b", arrow::uint32())},
+                                        }),
+                          {R"([
+                                      {"a": null, "b": 5},
+                                      {"a": 1,    "b": 3},
+                                      {"a": 3,    "b": null},
+                                      {"a": 2,    "b": 5},
+                                      {"a": 2,    "b": 6},
+                                      {"a": 1,    "b": 5}
+                                    ])"});
+  std::shared_ptr<Table> table, out;
+  CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, ab, table));
+
+  SECTION("filter table - range index") {
+    auto expected = TableFromJSON(arrow::schema({
+                                                    {field("b", arrow::uint32())},
+                                                    {field("index", arrow::int64())}
+                                                }),
+                                  {R"([
+                                      {"b": 5,    "index": 0},
+                                      {"b": null, "index": 2},
+                                      {"b": 6,    "index": 4}
+                                     ])"});
+    SECTION("reset index = false") {
+      CHECK_CYLON_STATUS(indexing::FilterTable(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
+                                               {1}, &out, /*bounds_check=*/false, /*reset_index=*/false));
+      CHECK_ARROW_EQUAL(expected, out->get_table());
+
+      int64_t test_loc = -1;
+      CHECK_CYLON_STATUS(out->GetArrowIndex()->LocationByValue(arrow::MakeScalar<int64_t>(2), &test_loc));
+      REQUIRE(test_loc == 1);
+    }
+
+    SECTION("reset index = true") {
+      CHECK_CYLON_STATUS(indexing::FilterTable(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
+                                               {1}, &out, /*bounds_check=*/false, /*reset_index=*/true));
+      CHECK_ARROW_EQUAL(expected->SelectColumns({0}).ValueOrDie(), out->get_table());
+
+      int64_t test_loc = -1;
+      CHECK_CYLON_STATUS(out->GetArrowIndex()->LocationByValue(arrow::MakeScalar<int64_t>(2), &test_loc));
+      REQUIRE(test_loc == 2);
+    }
+  }
+
+  for (auto index_type: {IndexingType::Linear, IndexingType::Hash}) {
+    SECTION("filter table - " + std::to_string(index_type)) {
+      auto expected = TableFromJSON(arrow::schema({
+                                                      {field("a", arrow::uint32())},
+                                                      {field("b", arrow::uint32())},
+                                                  }),
+                                    {R"([
+                                      {"a": null, "b": 5},
+                                      {"a": 3,    "b": null},
+                                      {"a": 2,    "b": 6}
+                                     ])"});
+      // set index by column b
+      CHECK_CYLON_STATUS(table->SetArrowIndex(1, index_type));
+
+      SECTION("reset index = false") {
+        // filter column a. this will add col b to the table as it is the index
+        CHECK_CYLON_STATUS(indexing::FilterTable(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
+                                                 {0}, &out, /*bounds_check=*/false, /*reset_index=*/false));
+        CHECK_ARROW_EQUAL(expected, out->get_table());
+
+        REQUIRE(out->GetArrowIndex()->GetIndexingType() == index_type);
+        int64_t test_loc = -1;
+        CHECK_CYLON_STATUS(out->GetArrowIndex()->LocationByValue(arrow::MakeScalar<uint32_t>(5), &test_loc));
+        REQUIRE(test_loc == 0);
+        CHECK_CYLON_STATUS(out->GetArrowIndex()->LocationByValue(arrow::MakeNullScalar(arrow::uint32()), &test_loc));
+        REQUIRE(test_loc == 1);
+      }
+
+      SECTION("reset index = true") {
+        CHECK_CYLON_STATUS(indexing::FilterTable(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
+                                                 {0}, &out, /*bounds_check=*/false, /*reset_index=*/true));
+        CHECK_ARROW_EQUAL(expected->SelectColumns({0}).ValueOrDie(), out->get_table());
+
+        REQUIRE(out->GetArrowIndex()->GetIndexingType() == Range);
+        int64_t test_loc = -1;
+        CHECK_CYLON_STATUS(out->GetArrowIndex()->LocationByValue(arrow::MakeScalar<uint32_t>(2), &test_loc));
+        REQUIRE(test_loc == 2);
+      }
+    }
+  }
 }
 
 } // namespace test

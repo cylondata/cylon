@@ -43,19 +43,16 @@ void TestIndexBuildOperation(const std::shared_ptr<CylonContext> &ctx,
 
   int index_column = 0;
 
-  CHECK_CYLON_STATUS(BuildIndex(input1->get_table(), index_column, indexing_type, &index));
-
-  REQUIRE(input1->Rows() == index->GetIndexArray()->length());
+  CHECK_CYLON_STATUS(BuildIndex(input1.get(), index_column, indexing_type, &index));
+  REQUIRE(input1->Rows() == index->size());
 }
 
-void set_data_for_arrow_indexing_test(const std::shared_ptr<CylonContext> &ctx,
-                                      std::string &input_file_path,
-                                      IndexingType indexing_type,
-                                      std::string &output_file_path,
-                                      std::shared_ptr<Table> &input,
-                                      std::shared_ptr<Table> &expected_output,
-                                      std::shared_ptr<BaseArrowIndex> &index,
-                                      int id) {
+void read_data_files(const std::shared_ptr<CylonContext> &ctx,
+                     std::string &input_file_path,
+                     std::string &output_file_path,
+                     std::shared_ptr<Table> &input,
+                     std::shared_ptr<Table> &expected_output,
+                     int id) {
   Status status;
   output_file_path = output_file_path + std::to_string(id) + ".csv";
   auto read_options = io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
@@ -66,14 +63,13 @@ void set_data_for_arrow_indexing_test(const std::shared_ptr<CylonContext> &ctx,
   CHECK_CYLON_STATUS(FromCSV(ctx, input_file_path, input, read_options));
   CHECK_CYLON_STATUS(FromCSV(ctx, output_file_path, expected_output, read_options));
 
-  const int index_column = 0;
-  bool drop_index = true;
-
-  CHECK_CYLON_STATUS(BuildIndex(input->get_table(), index_column, indexing_type, &index));
-
-  REQUIRE(input->Rows() == index->GetSize());
-
-  CHECK_CYLON_STATUS(input->SetArrowIndex(index, drop_index));
+//  const int index_column = 0;
+////  bool drop_index = true;
+//
+//  CHECK_CYLON_STATUS(BuildIndex(input.get(), index_column, indexing_type, &index));
+//  REQUIRE(input->Rows() == index->size());
+//
+//  CHECK_CYLON_STATUS(input->SetArrowIndex(index));
 }
 
 void TestIndexLocOperation1(const std::shared_ptr<CylonContext> &ctx,
@@ -83,9 +79,10 @@ void TestIndexLocOperation1(const std::shared_ptr<CylonContext> &ctx,
   INFO("index type: " << std::to_string(indexing_type) << " input: " << input_file_path << " expected: "
                       << output_file_path);
   std::shared_ptr<Table> input, expected_output, result;
-  std::shared_ptr<BaseArrowIndex> index;
-  set_data_for_arrow_indexing_test(ctx, input_file_path, indexing_type, output_file_path, input,
-                                   expected_output, index, 1);
+  read_data_files(ctx, input_file_path, output_file_path, input, expected_output, 1);
+  if (indexing_type != Range) {
+    CHECK_CYLON_STATUS(input->SetArrowIndex(0, indexing_type));
+  }
 
   auto start_index = arrow::MakeScalar<int64_t>(0);
   auto end_index = arrow::MakeScalar<int64_t>(5);
@@ -103,9 +100,10 @@ void TestIndexLocOperation2(const std::shared_ptr<CylonContext> &ctx,
                       << output_file_path);
 
   std::shared_ptr<Table> input, expected_output, result;
-  std::shared_ptr<BaseArrowIndex> index;
-  set_data_for_arrow_indexing_test(ctx, input_file_path, indexing_type, output_file_path,
-                                   input, expected_output, index, 2);
+  read_data_files(ctx, input_file_path, output_file_path, input, expected_output, 2);
+  if (indexing_type != Range) {
+    CHECK_CYLON_STATUS(input->SetArrowIndex(0, indexing_type));
+  }
 
   auto start_index = arrow::MakeScalar<int64_t>(0);
   auto end_index = arrow::MakeScalar<int64_t>(5);
@@ -122,9 +120,10 @@ void TestIndexLocOperation3(const std::shared_ptr<CylonContext> &ctx, std::strin
   INFO("index type: " << std::to_string(indexing_type) << " input: " << input_file_path << " expected: "
                       << output_file_path);
   std::shared_ptr<Table> input, expected_output, result;
-  std::shared_ptr<BaseArrowIndex> index;
-  set_data_for_arrow_indexing_test(ctx, input_file_path, indexing_type, output_file_path,
-                                   input, expected_output, index, 3);
+  read_data_files(ctx, input_file_path, output_file_path, input, expected_output, 3);
+  if (indexing_type != Range) {
+    CHECK_CYLON_STATUS(input->SetArrowIndex(0, indexing_type));
+  }
 
   auto start_index = arrow::MakeScalar<int64_t>(0);
   auto end_index = arrow::MakeScalar<int64_t>(5);
@@ -141,9 +140,10 @@ void TestIndexLocOperation4(const std::shared_ptr<CylonContext> &ctx, std::strin
                       << output_file_path);
 
   std::shared_ptr<Table> input, expected_output, result;
-  std::shared_ptr<BaseArrowIndex> index;
-  set_data_for_arrow_indexing_test(ctx, input_file_path, indexing_type, output_file_path,
-                                   input, expected_output, index, 4);
+  read_data_files(ctx, input_file_path, output_file_path, input, expected_output, 4);
+  if (indexing_type != Range) {
+    CHECK_CYLON_STATUS(input->SetArrowIndex(0, indexing_type));
+  }
 
   auto start_index = ArrayFromJSON(arrow::int64(), "[10]");
   int column = 1;
@@ -158,9 +158,10 @@ void TestIndexLocOperation5(const std::shared_ptr<CylonContext> &ctx, std::strin
                       << output_file_path);
 
   std::shared_ptr<Table> input, expected_output, result;
-  std::shared_ptr<BaseArrowIndex> index;
-  set_data_for_arrow_indexing_test(ctx, input_file_path, indexing_type, output_file_path,
-                                   input, expected_output, index, 5);
+  read_data_files(ctx, input_file_path, output_file_path, input, expected_output, 5);
+  if (indexing_type != Range) {
+    CHECK_CYLON_STATUS(input->SetArrowIndex(0, indexing_type));
+  }
 
   const auto &start_index = ArrayFromJSON(arrow::int64(), "[4, 10]");
   int start_column = 1;
@@ -177,9 +178,10 @@ void TestIndexLocOperation6(const std::shared_ptr<CylonContext> &ctx, std::strin
                       << output_file_path);
 
   std::shared_ptr<Table> input, expected_output, result;
-  std::shared_ptr<BaseArrowIndex> index;
-  set_data_for_arrow_indexing_test(ctx, input_file_path, indexing_type, output_file_path,
-                                   input, expected_output, index, 6);
+  read_data_files(ctx, input_file_path, output_file_path, input, expected_output, 6);
+  if (indexing_type != Range) {
+    CHECK_CYLON_STATUS(input->SetArrowIndex(0, indexing_type));
+  }
 
   std::vector<int> columns = {0, 2};
   auto start_index = ArrayFromJSON(arrow::int64(), "[4, 10]");

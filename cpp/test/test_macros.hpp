@@ -18,11 +18,11 @@
 #include <cylon/table.hpp>
 #include <cylon/table_api_extended.hpp>
 
-#define CHECK_ARRAYS_EQUAL(expected, received)                                 \
+#define CHECK_ARROW_EQUAL(expected, received)                                 \
   do {                                                                         \
     const auto& exp = (expected);                                              \
     const auto& rec = (received);                                              \
-    INFO("Expected: " << exp->ToString() << "\nReceived: " << rec->ToString()); \
+    INFO("Expected: " << exp->ToString() << "\nReceived: " << rec->ToString());\
     REQUIRE(exp->Equals(*rec));                                                \
   } while(0)
 

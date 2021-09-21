@@ -37,8 +37,11 @@ class BaseArrowIndex {
  public:
   static constexpr int kNoColumnId = -1;
 
-  BaseArrowIndex(int col_id, int64_t size, arrow::MemoryPool *pool)
-      : size_(size), col_id_(col_id), pool_(pool) {};
+//  BaseArrowIndex(int col_id, int64_t size, arrow::MemoryPool *pool)
+//      : size_(size), col_id_(col_id), pool_(pool) {};
+
+  BaseArrowIndex(Table *table, int col_id, int64_t size);
+  BaseArrowIndex(int64_t size, arrow::MemoryPool *pool);
 
   virtual ~BaseArrowIndex() = default;
 
@@ -87,17 +90,17 @@ class BaseArrowIndex {
                               int64_t *start_index,
                               int64_t *end_index);
 
-  /**
-   * Recalculate index with a new array
-   * @param index_arr
-   */
-  virtual Status SetIndexArray(std::shared_ptr<arrow::Array> index_arr, int col_id = -1) = 0;
+//  /**
+//   * Recalculate index with a new array
+//   * @param index_arr
+//   */
+//  virtual Status SetIndexArray(std::shared_ptr<arrow::Array> index_arr, int col_id = -1) = 0;
 
-  /**
-   * Get index values as an array
-   * @return
-   */
-  virtual const std::shared_ptr<arrow::Array> &GetIndexArray() = 0;
+/**
+ * Get index values as an array
+ * @return
+ */
+  virtual Status GetIndexAsArray(std::shared_ptr<arrow::Array> *out) = 0;
 
   virtual IndexingType GetIndexingType() = 0;
 
@@ -107,30 +110,76 @@ class BaseArrowIndex {
    */
   virtual bool IsUnique() = 0;
 
-  int GetColId() const { return col_id_; }
+  int col_id() const {
+    return col_id_;
+  }
 
-  int64_t GetSize() const { return size_; }
+  int64_t size() const {
+    return size_;
+  }
 
-  arrow::MemoryPool *GetPool() const { return pool_; }
+  Table* table() const {
+    return table_;
+  }
 
-  void SetColId(int col_id) { col_id_ = col_id; }
+//  arrow::MemoryPool *GetPool() const { return pool_; }
+//
+//  void SetColId(int col_id) { col_id_ = col_id; }
 
-  /**
-   * Slice the current index in the range [start, end), and return a new index
-   * @param start
-   * @param end
-   * @return
-   */
-  virtual Status Slice(int64_t start, int64_t end, std::shared_ptr<BaseArrowIndex> *out_index) const = 0;
+//  /**
+//   * Slice the current index in the range [start, end), and return a new index
+//   * @param start
+//   * @param end
+//   * @return
+//   */
+//  virtual Status Slice(int64_t start, int64_t end, std::shared_ptr<BaseArrowIndex> *out_index) const = 0;
 
- private:
-  int64_t size_;
-  // col_id would be <0 if the index is set with an array other than a column (ex: range index)
+ protected:
+  Table *table_;
   int col_id_;
+  int64_t size_;
   arrow::MemoryPool *pool_;
 };
 
 // ------------------ Range Index ------------------
+class ArrowRangeIndex : public BaseArrowIndex {
+ public:
+  ArrowRangeIndex(int64_t start, int64_t end, int64_t step, arrow::MemoryPool *pool)
+      : BaseArrowIndex((end - start) / step, pool), start_(start), end_(end), step_(step) {}
+
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+                         std::shared_ptr<arrow::Int64Array> *find_index) override;
+
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+                         int64_t *find_index) override;
+
+  Status LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
+                          std::shared_ptr<arrow::Int64Array> *filter_location) override;
+
+//  Status SetIndexArray(std::shared_ptr<arrow::Array> index_arr, int col_id) override;
+
+//  const std::shared_ptr<arrow::Array> &GetIndexArray() override;
+
+  Status GetIndexAsArray(std::shared_ptr<arrow::Array> *out) override;
+
+  IndexingType GetIndexingType() override {
+    return Range;
+  }
+
+  bool IsUnique() override {
+    return true;
+  }
+
+  /*
+   * Slice in the range [start, end]
+   */
+  Status Slice(int64_t start, int64_t end_inclusive, std::shared_ptr<BaseArrowIndex> *out_index) const;
+
+  int64_t start_ = 0;
+  int64_t end_ = 0;
+  int64_t step_ = 1;
+};
+
 /**
  * Builds range index from a column in the range [start, end)
  * @param input_table
@@ -140,40 +189,35 @@ class BaseArrowIndex {
  * @param pool
  * @return
  */
-std::shared_ptr<BaseArrowIndex> BuildRangeIndex(const std::shared_ptr<arrow::Table> &input_table,
-                                                int64_t start = 0,
-                                                int64_t end = -1,
+std::shared_ptr<BaseArrowIndex> BuildRangeIndex(int64_t start,
+                                                int64_t end,
                                                 int64_t step = 1,
                                                 arrow::MemoryPool *pool = arrow::default_memory_pool());
 
-
+/*
 // ------------------ Linear Index ------------------
-/**
+*//**
  * Builds linear index from a column
  * @param table
  * @param col_id
  * @param out_index
  * @param pool
  * @return
- */
-Status BuildLinearIndex(const std::shared_ptr<arrow::Table> &table, int col_id,
-                        std::shared_ptr<BaseArrowIndex> *out_index,
-                        arrow::MemoryPool *pool = arrow::default_memory_pool());
-Status BuildLinearIndex(std::shared_ptr<arrow::Array> index_array,
-                        std::shared_ptr<BaseArrowIndex> *out_index,
-                        int col_id = BaseArrowIndex::kNoColumnId,
-                        arrow::MemoryPool *pool = arrow::default_memory_pool());
+ *//*
+Status BuildLinearIndex(const std::shared_ptr<Table> &table, int col_id, std::shared_ptr<BaseArrowIndex> *out_index);
+// insert a new array into the table and create an index with it.
+Status BuildLinearIndex(std::shared_ptr<arrow::Array> index_array, std::shared_ptr<BaseArrowIndex> *out_index);
 
 
 // ------------------ Hash Index ------------------
-/**
+*//**
  * Builds hash index from a column
  * @param table
  * @param col_id
  * @param output
  * @param pool
  * @return
- */
+ *//*
 Status BuildHashIndex(const std::shared_ptr<arrow::Table> &table,
                       int col_id,
                       std::shared_ptr<BaseArrowIndex> *output,
@@ -181,7 +225,7 @@ Status BuildHashIndex(const std::shared_ptr<arrow::Table> &table,
 Status BuildHashIndex(std::shared_ptr<arrow::Array> index_array,
                       std::shared_ptr<BaseArrowIndex> *output,
                       int col_id = BaseArrowIndex::kNoColumnId,
-                      arrow::MemoryPool *pool = arrow::default_memory_pool());
+                      arrow::MemoryPool *pool = arrow::default_memory_pool());*/
 
 /**
  * Builds index for an arrow table
@@ -192,34 +236,28 @@ Status BuildHashIndex(std::shared_ptr<arrow::Array> index_array,
  * @param pool
  * @return
  */
-Status BuildIndex(const std::shared_ptr<arrow::Table> &table,
+Status BuildIndex(Table *table,
                   int col_id,
                   IndexingType indexing_type,
-                  std::shared_ptr<BaseArrowIndex> *output,
-                  arrow::MemoryPool *pool = arrow::default_memory_pool());
-Status BuildIndex(std::shared_ptr<arrow::Array> index_array,
-                  IndexingType indexing_type,
-                  std::shared_ptr<BaseArrowIndex> *output,
-                  int col_id = BaseArrowIndex::kNoColumnId,
-                  arrow::MemoryPool *pool = arrow::default_memory_pool());
-/**
- * Sets index for a cylon table, and creates a new table
- * @param indexing_type
- * @param table
- * @param col_id
- * @param output
- * @return
- */
-Status BuildIndexFromTable(const std::shared_ptr<Table> &table,
-                           int col_id,
-                           IndexingType indexing_type,
-                           std::shared_ptr<Table> *out_table,
-                           bool drop = false);
-
-Status SetIndexForTable(std::shared_ptr<Table> &table,
-                        std::shared_ptr<arrow::Array> array,
-                        IndexingType indexing_type,
-                        int col_id = BaseArrowIndex::kNoColumnId);
+                  std::shared_ptr<BaseArrowIndex> *output);
+//Status BuildIndex(std::shared_ptr<arrow::Array> index_array,
+//                  IndexingType indexing_type,
+//                  std::shared_ptr<BaseArrowIndex> *output,
+//                  int col_id = BaseArrowIndex::kNoColumnId,
+//                  arrow::MemoryPool *pool = arrow::default_memory_pool());
+///**
+// * Sets index for a cylon table, and creates a new table
+// * @param indexing_type
+// * @param table
+// * @param col_id
+// * @param output
+// * @return
+// */
+//Status SetIndexForTable(std::shared_ptr<Table> &table, int col_id, IndexingType indexing_type, bool drop = false);
+//Status SetIndexForTable(std::shared_ptr<Table> &table,
+//                        std::shared_ptr<arrow::Array> array,
+//                        IndexingType indexing_type,
+//                        int col_id = BaseArrowIndex::kNoColumnId);
 
 }  // namespace cylon
 

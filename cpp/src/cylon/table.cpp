@@ -39,6 +39,8 @@
 
 namespace cylon {
 
+static constexpr const char *kDefaultIndexName = "index";
+
 /**
  * creates an Arrow array based on col_idx, filtered by row_indices
  * @param ctx
@@ -231,14 +233,14 @@ Status Table::FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
   return Status::OK();
 }
 
-Status Table::FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
-                             std::shared_ptr<arrow::Table> table,
-                             std::shared_ptr<BaseArrowIndex> index,
-                             std::shared_ptr<Table> *output) {
-  RETURN_CYLON_STATUS_IF_FAILED(tarrow::CheckSupportedTypes(table));
-  *output = std::make_shared<Table>(ctx, std::move(table), std::move(index));
-  return Status::OK();
-}
+//Status Table::FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
+//                             std::shared_ptr<arrow::Table> table,
+//                             std::shared_ptr<BaseArrowIndex> index,
+//                             std::shared_ptr<Table> *output) {
+//  RETURN_CYLON_STATUS_IF_FAILED(tarrow::CheckSupportedTypes(table));
+//  *output = std::make_shared<Table>(ctx, std::move(table), std::move(index));
+//  return Status::OK();
+//}
 
 Status Table::FromColumns(const std::shared_ptr<CylonContext> &ctx,
                           const std::vector<std::shared_ptr<Column>> &columns,
@@ -258,11 +260,13 @@ Status WriteCSV(const std::shared_ptr<Table> &table, const std::string &path,
   return status;
 }
 
-int Table::Columns() { return table_->num_columns(); }
+int Table::Columns() const { return table_->num_columns(); }
 
 std::vector<std::string> Table::ColumnNames() { return table_->ColumnNames(); }
 
-int64_t Table::Rows() { return table_->num_rows(); }
+int64_t Table::Rows() const { return table_->num_rows(); }
+
+bool Table::Empty() const { return table_->num_rows() == 0; }
 
 void Table::Print() { Print(0, this->Rows(), 0, this->Columns()); }
 
@@ -1009,32 +1013,65 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<in
 
 const std::shared_ptr<BaseArrowIndex> &Table::GetArrowIndex() { return base_arrow_index_; }
 
-Status Table::SetArrowIndex(std::shared_ptr<BaseArrowIndex> index, bool drop_index) {
-  // move the copy to local index
-  base_arrow_index_ = std::move(index);
-
-  // if the index has a valid column id, drop it
-  if (drop_index && base_arrow_index_->GetIndexingType() != Range &&
-      base_arrow_index_->GetColId() >= 0) {
-    const auto &res = table_->RemoveColumn(base_arrow_index_->GetColId());
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-    table_ = res.ValueOrDie();
+Status Table::SetArrowIndex(std::shared_ptr<arrow::Array> index, IndexingType indexing_type) {
+  // if a column named `index` is available, throw an error
+  if (table_->schema()->GetFieldIndex(kDefaultIndexName) != -1) {
+    return {Code::Invalid, "column `index` is already available"};
   }
 
+  // adding the column into the table as `index` at the end
+  int index_col_id = table_->num_columns();
+  auto data_type = std::make_shared<arrow::Field>(kDefaultIndexName, index->type());
+  const auto &add_col_res = table_->AddColumn(index_col_id, std::move(data_type),
+                                              std::make_shared<arrow::ChunkedArray>(std::move(index)));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(add_col_res.status());
+  table_ = add_col_res.ValueOrDie();
+
+  // update the base arrow index
+  return BuildIndex(this, index_col_id, indexing_type, &base_arrow_index_);
+//
+//  // if the index has a valid column id, drop it
+//  if (drop_index && base_arrow_index_->GetIndexingType() != Range &&
+//      base_arrow_index_->GetColId() >= 0) {
+//    const auto &res = table_->RemoveColumn(base_arrow_index_->GetColId());
+//    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
+//    table_ = res.ValueOrDie();
+//  }
+//
+//  return Status::OK();
+}
+
+Status Table::SetArrowIndex(int col_id, IndexingType indexing_type) {
+  return BuildIndex(this, col_id, indexing_type, &base_arrow_index_);
+}
+
+Status Table::SetArrowIndex(std::shared_ptr<BaseArrowIndex> index) {
+  if (index->size() != table_->num_rows()) {
+    return {Code::Invalid,
+            "length mismatch: " + std::to_string(index->size()) + " vs " + std::to_string(table_->num_rows())};
+  }
+
+  // following checks are for Linear and Hash indices
+  if (index->table() && index->table() != this) {
+    return {Code::Invalid, "index is not built for this table"};
+  }
+
+  if (index->col_id() != BaseArrowIndex::kNoColumnId && index->col_id() >= table_->num_columns()) {
+    return {Code::Invalid, "index column id not found in table"};
+  }
+
+  base_arrow_index_ = std::move(index);
   return Status::OK();
 }
 
 Status Table::ResetArrowIndex(bool drop) {
   // if the current index is a range index, nothing to do!
-  if (base_arrow_index_->GetIndexingType() != Range) {
-    // if not drop (i.e. preserve) index, add it as the 0'th column
-    if (!drop) {
-      // take a copy of the array in the index and set add it as the 0th column
-      auto index_arr = base_arrow_index_->GetIndexArray();
-      RETURN_CYLON_STATUS_IF_FAILED(AddColumn(0, "index", std::move(index_arr)));
-    }
+  if (drop && base_arrow_index_->GetIndexingType() != Range) {
+    const auto &res = table_->RemoveColumn(base_arrow_index_->col_id());
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
+    table_ = res.ValueOrDie();
   }
-  base_arrow_index_ = BuildRangeIndex(table_, 0, -1, 1, cylon::ToArrowPool(ctx));
+  base_arrow_index_ = BuildRangeIndex(0, table_->num_rows(), 1, ToArrowPool(ctx_));
   return Status::OK();
 }
 
@@ -1053,11 +1090,12 @@ Status Table::AddColumn(int position, std::string column_name, std::shared_ptr<a
 }
 
 const std::shared_ptr<cylon::CylonContext> &Table::GetContext() const {
-  return ctx;
+  return ctx_;
 }
 
 Table::Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Table> tab)
-    : ctx(ctx), table_(std::move(tab)), columns_({}), base_arrow_index_(BuildRangeIndex(table_)) {
+    : ctx_(ctx), table_(std::move(tab)), columns_({}),
+      base_arrow_index_(BuildRangeIndex(0, table_->num_rows(), 1, ToArrowPool(ctx_))) {
   columns_.reserve(table_->num_columns());
   for (int i = 0; i < table_->num_columns(); i++) {
     const std::shared_ptr<arrow::Field> &field = table_->field(i);
@@ -1065,19 +1103,19 @@ Table::Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Ta
   }
 }
 
-Table::Table(const std::shared_ptr<CylonContext> &ctx,
-             std::shared_ptr<arrow::Table> tab,
-             std::shared_ptr<BaseArrowIndex> index)
-    : ctx(ctx), table_(std::move(tab)), base_arrow_index_(std::move(index)) {
-  columns_.reserve(table_->num_columns());
-  for (int i = 0; i < table_->num_columns(); i++) {
-    const std::shared_ptr<arrow::Field> &field = table_->field(i);
-    columns_.emplace_back(Column::Make(field->name(), tarrow::ToCylonType(field->type()), table_->column(i)));
-  }
-}
+//Table::Table(const std::shared_ptr<CylonContext> &ctx,
+//             std::shared_ptr<arrow::Table> tab,
+//             std::shared_ptr<BaseArrowIndex> index)
+//    : ctx(ctx), table_(std::move(tab)), base_arrow_index_(std::move(index)) {
+//  columns_.reserve(table_->num_columns());
+//  for (int i = 0; i < table_->num_columns(); i++) {
+//    const std::shared_ptr<arrow::Field> &field = table_->field(i);
+//    columns_.emplace_back(Column::Make(field->name(), tarrow::ToCylonType(field->type()), table_->column(i)));
+//  }
+//}
 
 Table::Table(const std::shared_ptr<cylon::CylonContext> &ctx, std::vector<std::shared_ptr<Column>> cols)
-    : ctx(ctx), columns_(std::move(cols)) {
+    : ctx_(ctx), columns_(std::move(cols)) {
   arrow::SchemaBuilder schema_builder;
   std::vector<std::shared_ptr<arrow::ChunkedArray>> col_arrays;
   col_arrays.reserve(cols.size());
@@ -1101,12 +1139,12 @@ Table::Table(const std::shared_ptr<cylon::CylonContext> &ctx, std::vector<std::s
     throw "cylon table created with invalid types";
   }
 
-  base_arrow_index_ = BuildRangeIndex(table_);
+  base_arrow_index_ = BuildRangeIndex(0, table_->num_rows(), 1, ToArrowPool(ctx_));
 }
 
 Status Table::CombineChunks() {
   if (table_->column(0)->num_chunks() > 1) {
-    const auto &res = table_->CombineChunks(cylon::ToArrowPool(ctx));
+    const auto &res = table_->CombineChunks(cylon::ToArrowPool(ctx_));
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
     table_ = res.ValueOrDie();
   }

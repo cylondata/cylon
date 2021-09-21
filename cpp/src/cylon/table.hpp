@@ -53,14 +53,14 @@ class Table {
    */
   Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Table> tab);
 
-  /**
- * Table created from an arrow::Table with an index
- * @param ctx
- * @param tab (shared_ptr is passed by value and the copy is moved as a class member)
- */
-  Table(const std::shared_ptr<CylonContext> &ctx,
-        std::shared_ptr<arrow::Table> tab,
-        std::shared_ptr<BaseArrowIndex> index);
+//  /**
+// * Table created from an arrow::Table with an index
+// * @param ctx
+// * @param tab (shared_ptr is passed by value and the copy is moved as a class member)
+// */
+//  Table(const std::shared_ptr<CylonContext> &ctx,
+//        std::shared_ptr<arrow::Table> tab,
+//        std::shared_ptr<BaseArrowIndex> index);
 
   /**
    * Table created from cylon::Column
@@ -80,15 +80,15 @@ class Table {
                                std::shared_ptr<arrow::Table> table,
                                std::shared_ptr<Table> &tableOut);
 
-  /**
- * Create a table from an arrow table, with an index
- * @param table arrow::Table
- * @return
- */
-  static Status FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
-                               std::shared_ptr<arrow::Table> table,
-                               std::shared_ptr<BaseArrowIndex> index,
-                               std::shared_ptr<Table> *output);
+//  /**
+// * Create a table from an arrow table, with an index
+// * @param table arrow::Table
+// * @return
+// */
+//  static Status FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
+//                               std::shared_ptr<arrow::Table> table,
+//                               std::shared_ptr<BaseArrowIndex> index,
+//                               std::shared_ptr<Table> *output);
 
   /**
    * Create a table from cylon columns
@@ -131,13 +131,19 @@ class Table {
    * Get the number of columns in the table
    * @return number of columns
    */
-  int32_t Columns();
+  int32_t Columns() const;
 
   /**
    * Get the number of rows in this table
    * @return number of rows in the table
    */
-  int64_t Rows();
+  int64_t Rows() const;
+
+  /**
+   * Returns if the table is empty or not
+   * @return
+   */
+  bool Empty() const;
 
   /**
    * Print the complete table
@@ -201,12 +207,14 @@ class Table {
   const std::vector<std::shared_ptr<cylon::Column>> &GetColumns() const;
 
   /**
-   * Set an index from outside
+   * Set an index for a table. if an arrow::Array is provided, it will be added into the table as a column.
+   * Index will always be managed within a table as a column.
    * @param index
-   * @param drop_index if true, BaseArrowIndex.GetColId() column will be dropped from the table
    * @return
    */
-  Status SetArrowIndex(std::shared_ptr<BaseArrowIndex> index, bool drop_index);
+  Status SetArrowIndex(std::shared_ptr<arrow::Array> index, IndexingType indexing_type = Linear);
+  Status SetArrowIndex(int col_id, IndexingType indexing_type = Linear);
+  Status SetArrowIndex(std::shared_ptr<BaseArrowIndex> index);
 
   /**
    * Get the current index of the table
@@ -233,7 +241,7 @@ class Table {
   Status CombineChunks();
 
  private:
-  const std::shared_ptr<CylonContext> ctx;
+  const std::shared_ptr<CylonContext> ctx_;
   std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
   std::vector<std::shared_ptr<Column>> columns_;
