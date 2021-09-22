@@ -13,7 +13,6 @@
  */
 
 #include <mpi.h>
-#include <memory>
 #include <cylon/net/ops/gather.hpp>
 
 
@@ -53,8 +52,8 @@ std::vector<int32_t> displacementsPerBuffer(int32_t *all_buffer_sizes, int recei
 
 
 cylon::Status cylon::mpi::Gather(std::shared_ptr<cylon::TableSerializer> serializer,
-                     int gather_root,
-                     bool gather_from_root,
+                     const int gather_root,
+                     const bool gather_from_root,
                      std::shared_ptr<cylon::Allocator> allocator,
                      std::unique_ptr<int32_t []> & all_buffer_sizes,
                      std::vector<std::shared_ptr<cylon::Buffer>> & receive_buffers,
@@ -70,7 +69,7 @@ cylon::Status cylon::mpi::Gather(std::shared_ptr<cylon::TableSerializer> seriali
         local_buffer_sizes = serializer->getBufferSizes();
     }
 
-    int num_buffers = local_buffer_sizes.size();
+    int32_t num_buffers = local_buffer_sizes.size();
 
     // gather size buffers
     if (AmIRoot(gather_root, ctx)) {
@@ -98,7 +97,7 @@ cylon::Status cylon::mpi::Gather(std::shared_ptr<cylon::TableSerializer> seriali
     auto statuses = std::make_unique<MPI_Status []>(num_buffers);
     std::vector<uint8_t *> send_buffers = serializer->getDataBuffers();
 
-    for (long unsigned int i = 0; i < num_buffers; ++i) {
+    for (int32_t i = 0; i < num_buffers; ++i) {
         if(AmIRoot(gather_root, ctx)) {
             std::shared_ptr<cylon::Buffer> receive_buf;
             allocator->Allocate(total_buffer_sizes[i], &receive_buf);

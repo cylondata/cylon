@@ -52,13 +52,13 @@ public:
      * This method is symmetrical to getDataBuffers()
      * @return
      */
-    std::vector<int32_t> & getBufferSizes();
+    std::vector<int32_t> getBufferSizes();
 
     /**
-     * length of the buffer sizes
+     * number of buffers
      * @return
      */
-    int getBufferSizesLength();
+    int getNumberOfBuffers();
 
     /**
      * zeros for all column data as if the table is empty
@@ -86,7 +86,7 @@ public:
      * This method is symmetrical to getBufferSizes()
      * @return
      */
-    std::vector<uint8_t *> & getDataBuffers();
+    std::vector<uint8_t *> getDataBuffers();
 
     /**
      * Get the column data size in bytes and its data buffer

@@ -47,13 +47,13 @@ public:
      * This method is symmetrical to getDataBuffers()
      * @return
      */
-    virtual std::vector<int32_t> & getBufferSizes() = 0;
+    virtual std::vector<int32_t> getBufferSizes() = 0;
 
     /**
      * length of the buffer sizes
      * @return
      */
-    virtual int getBufferSizesLength() = 0;
+    virtual int getNumberOfBuffers() = 0;
 
     /**
      * zeros for all column data as if the table is empty
@@ -81,7 +81,7 @@ public:
      * This method is symmetrical to getBufferSizes()
      * @return
      */
-    virtual std::vector<uint8_t *> & getDataBuffers() = 0;
+    virtual std::vector<uint8_t *> getDataBuffers() = 0;
 
 };
 

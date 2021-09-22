@@ -36,8 +36,8 @@ namespace mpi {
  * @return
  */
 cylon::Status Gather(std::shared_ptr<cylon::TableSerializer> serializer,
-                     int gather_root,
-                     bool gather_from_root,
+                     const int gather_root,
+                     const bool gather_from_root,
                      std::shared_ptr<cylon::Allocator> allocator,
                      std::unique_ptr<int32_t []> & all_buffer_sizes,
                      std::vector<std::shared_ptr<cylon::Buffer>> & received_buffers,

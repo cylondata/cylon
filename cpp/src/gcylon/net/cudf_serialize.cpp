@@ -41,7 +41,7 @@ void CudfTableSerializer::initTableBuffers() {
     table_buffers_initialized = true;
 }
 
-std::vector<int32_t> & CudfTableSerializer::getBufferSizes() {
+std::vector<int32_t> CudfTableSerializer::getBufferSizes() {
     if(!table_buffers_initialized) {
         initTableBuffers();
     }
@@ -49,19 +49,19 @@ std::vector<int32_t> & CudfTableSerializer::getBufferSizes() {
     return buffer_sizes_;
 }
 
-std::vector<uint8_t *> &CudfTableSerializer::getDataBuffers() {
+std::vector<uint8_t *> CudfTableSerializer::getDataBuffers() {
     if(!table_buffers_initialized) {
         initTableBuffers();
     }
     return table_buffers_;
 }
 
-int CudfTableSerializer::getBufferSizesLength() {
+int CudfTableSerializer::getNumberOfBuffers() {
     return tv_.num_columns() * 3;
 }
 
 std::vector<int32_t> CudfTableSerializer::getEmptyTableBufferSizes() {
-    return std::vector<int32_t>(getBufferSizesLength(), 0);
+    return std::vector<int32_t>(getNumberOfBuffers(), 0);
 }
 
 std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnData(int column_index) {
