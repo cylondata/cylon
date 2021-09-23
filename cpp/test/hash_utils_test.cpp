@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 
+#include "cylon/arrow/arrow_comparator.hpp"
+#include "cylon/util/arrow_utils.hpp"
 #include "common/test_header.hpp"
 #include "test_utils.hpp"
 
