@@ -25,8 +25,8 @@ TEST_CASE("MPI Gather CuDF tables", "[ggather]") {
 
         std::vector<int> gather_roots{0, 1};
         std::vector<bool> gather_from_root{false, true};
-        std::vector<std::string> input_file_bases {"../../data/input/gather/numeric_",
-                                                   "../../data/input/gather/sales_records_nulls_nunascii_"};
+        std::vector<std::string> input_file_bases {"../../data/gather/numeric_",
+                                                   "../../data/gather/sales_records_nulls_nunascii_"};
         std::vector<std::vector<std::string>> column_name_vectors{{"0", "1"},
                                                                  {"Country", "Item Type", "Order Date", "Order ID", "Units Sold", "Unit Price"}};
         std::vector<std::vector<std::string>> date_column_vectors{{},

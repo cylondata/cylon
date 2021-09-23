@@ -98,3 +98,7 @@ cylon_run_test(shuffle_gcylon_table_test 4)
 cylon_add_test(gather_gcylon_table_test)
 cylon_run_test(gather_gcylon_table_test 4)
 
+# broadcast table test
+cylon_add_test(bcast_gcylon_table_test)
+cylon_run_test(bcast_gcylon_table_test 4)
+

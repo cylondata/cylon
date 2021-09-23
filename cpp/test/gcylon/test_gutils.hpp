@@ -24,6 +24,7 @@
 #include <gcylon/gtable_api.hpp>
 #include <gcylon/utils/util.hpp>
 #include <gcylon/sorting/cudf_gather.hpp>
+#include <gcylon/net/cudf_net_ops.hpp>
 
 // this is a toggle to generate test files. Set execute to 0 then, it will generate the expected
 // output files
@@ -122,6 +123,40 @@ bool PerformGatherTest(const std::string &input_filename,
     return true;
 }
 
+bool PerformBcastTest(const std::string &input_filename,
+                       const std::vector<std::string> &column_names,
+                       const std::vector<std::string> &date_columns,
+                       int bcast_root,
+                       std::shared_ptr<cylon::CylonContext> ctx) {
+
+    cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names, date_columns);
+    auto input_tv = input_table.tbl->view();
+
+    // broadcast the table from broadcast root
+    cudf::table_view send_tv;
+    if (bcast_root == ctx->GetRank()) {
+        send_tv = input_tv;
+    }
+    std::unique_ptr<cudf::table> received_table;
+    cylon::Status status = gcylon::net::Bcast(send_tv, bcast_root, ctx, received_table);
+    if (!status.is_ok()) {
+        return false;
+    }
+
+    // compare received table to read table for all receiving workers
+    if (bcast_root != ctx->GetRank()) {
+        if (received_table == nullptr) {
+            return false;
+        }
+
+        auto received_tv = received_table->view();
+        if (!table_equal(input_tv, received_tv)){
+            return false;
+        }
+    }
+
+    return true;
+}
 
 }
 }
