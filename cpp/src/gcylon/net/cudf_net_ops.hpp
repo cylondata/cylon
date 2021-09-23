@@ -63,6 +63,22 @@ cylon::Status Bcast(cudf::table_view &tv,
                     const std::shared_ptr<cylon::CylonContext> ctx,
                     std::unique_ptr<cudf::table> &received_table);
 
+/**
+ * Gather CuDF tables
+ * @param tv the table to gather
+ * @param gather_root MPI rank of the worker that gathers tables
+ * @param gather_from_root Whether the table from the root will be gathered
+ * @param ctx Cylon context
+ * @param gathered_tables gathered tables at the gather root
+ * @return
+ */
+cylon::Status Gather(cudf::table_view &tv,
+                     const int gather_root,
+                     bool gather_from_root,
+                     std::shared_ptr<cylon::CylonContext> ctx,
+                     std::vector<std::unique_ptr<cudf::table>> &gathered_tables);
+
+
 } // end of namespace net
 } // end of namespace gcylon
 

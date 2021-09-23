@@ -88,10 +88,9 @@ add_library(gcylon SHARED
         net/cudf_bcast.cpp
         net/cudf_serialize.hpp
         net/cudf_serialize.cpp
+        net/cudf_gather.cpp
         sorting/deserialize.hpp
         sorting/deserialize.cpp
-        sorting/cudf_gather.hpp
-        sorting/cudf_gather.cpp
         utils/util.hpp
         utils/util.cpp
         gtable.hpp

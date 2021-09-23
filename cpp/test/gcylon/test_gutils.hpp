@@ -23,7 +23,6 @@
 
 #include <gcylon/gtable_api.hpp>
 #include <gcylon/utils/util.hpp>
-#include <gcylon/sorting/cudf_gather.hpp>
 #include <gcylon/net/cudf_net_ops.hpp>
 
 // this is a toggle to generate test files. Set execute to 0 then, it will generate the expected
@@ -102,10 +101,15 @@ bool PerformGatherTest(const std::string &input_filename,
     auto input_tv = input_table.tbl->view();
 
     // gather the tables
-    CudfTableGatherer gatherer(ctx, gather_root);
-
     std::vector<std::unique_ptr<cudf::table>> gathered_tables;
-    gatherer.Gather(input_tv, gather_from_root, gathered_tables);
+    cylon::Status status = gcylon::net::Gather(input_tv,
+                                               gather_root,
+                                               gather_from_root,
+                                               ctx,
+                                               gathered_tables);
+    if (!status.is_ok()) {
+        return false;
+    }
 
     // read all tables if this is gather_root and compare to the gathered one
     std::vector<cudf::table_view> all_tables;
