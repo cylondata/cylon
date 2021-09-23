@@ -13,11 +13,11 @@
  */
 
 #include <mpi.h>
-#include <cylon/net/ops/gather.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 
 
-bool AmIRoot(int gather_root, std::shared_ptr<cylon::CylonContext> ctx) {
-    return gather_root == ctx->GetRank();
+bool cylon::mpi::AmIRoot(int root, std::shared_ptr<cylon::CylonContext> ctx) {
+    return root == ctx->GetRank();
 }
 
 std::vector<int32_t> totalBufferSizes(int32_t *all_buffer_sizes, int num_buffers, int world_size) {

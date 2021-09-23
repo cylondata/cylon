@@ -23,14 +23,6 @@ namespace gcylon {
 namespace net {
 
 /**
- * whether this worker is the root
- * @param ctx
- * @param root
- * @return
- */
-bool Am_I_Root(std::shared_ptr<cylon::CylonContext> ctx, const int root);
-
-/**
  * calculate number of rows in received buffers
  * @param received_buffers received buffers over the wire, encoded with cylon::TableSerializer::getDataBuffers()
  * @param data_types data type of the first column in the table, encoded with cylon::TableSerializer::getDataTypes()

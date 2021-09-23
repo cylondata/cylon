@@ -14,7 +14,7 @@
 
 #include <cylon/util/macros.hpp>
 #include <glog/logging.h>
-#include <cylon/net/ops/gather.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 #include <gcylon/cudf_buffer.hpp>
 #include <gcylon/net/cudf_net_ops.hpp>
 #include <gcylon/sorting/deserialize.hpp>
@@ -59,7 +59,7 @@ cylon::Status gcylon::net::Gather(cudf::table_view &tv,
                                               all_disps,
                                               ctx));
 
-    if (Am_I_Root(ctx, gather_root)) {
+    if (cylon::mpi::AmIRoot(gather_root, ctx)) {
         std::vector<std::vector<int32_t>> buffer_sizes_per_table =
                 bufferSizesPerTable(all_buffer_sizes.get(), receive_buffers.size(), ctx->GetWorldSize());
 

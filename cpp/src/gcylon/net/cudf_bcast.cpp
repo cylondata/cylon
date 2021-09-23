@@ -13,15 +13,11 @@
  */
 
 #include <cylon/util/macros.hpp>
-#include <cylon/net/ops/bcast.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 #include <gcylon/net/cudf_net_ops.hpp>
 #include <gcylon/cudf_buffer.hpp>
 #include <gcylon/sorting/deserialize.hpp>
 #include <gcylon/net/cudf_serialize.hpp>
-
-bool gcylon::net::Am_I_Root(std::shared_ptr<cylon::CylonContext> ctx, const int root) {
-    return ctx->GetRank() == root;
-}
 
 cylon::Status gcylon::net::Bcast(cudf::table_view &tv,
                    const int bcast_root,
@@ -29,7 +25,7 @@ cylon::Status gcylon::net::Bcast(cudf::table_view &tv,
                    std::unique_ptr<cudf::table> &received_table) {
 
     std::shared_ptr<CudfTableSerializer> serializer;
-    if (Am_I_Root(ctx, bcast_root)) {
+    if (cylon::mpi::AmIRoot(bcast_root, ctx)) {
         serializer = std::make_shared<CudfTableSerializer>(tv);
     }
     auto allocator = std::make_shared<CudfAllocator>();
@@ -39,7 +35,7 @@ cylon::Status gcylon::net::Bcast(cudf::table_view &tv,
     RETURN_CYLON_STATUS_IF_FAILED(
             cylon::mpi::Bcast(serializer, bcast_root, allocator, received_buffers, data_types, ctx));
 
-    if (!Am_I_Root(ctx, bcast_root)){
+    if (!cylon::mpi::AmIRoot(bcast_root, ctx)){
         RETURN_CYLON_STATUS_IF_FAILED(
                 gcylon::deserializeSingleTable(received_buffers, data_types, received_table));
     }
