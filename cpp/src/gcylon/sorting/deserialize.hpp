@@ -80,6 +80,16 @@ private:
     cudf::table_view tv_;
 };
 
+/**
+ * deserialize a single table received over the wire
+ * @param received_buffers
+ * @param data_types
+ * @return
+ */
+cylon::Status deserializeSingleTable(std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
+                                     std::vector<int32_t> &data_types,
+                                     std::unique_ptr<cudf::table> &out_table);
+
 
 } // end of namespace gcylon
 

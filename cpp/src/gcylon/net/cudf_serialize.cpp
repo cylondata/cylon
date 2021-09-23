@@ -96,4 +96,12 @@ std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnOffsets(int column_i
     return std::make_pair(0, nullptr);
 }
 
+std::vector<int32_t> CudfTableSerializer::getDataTypes() {
+    std::vector<int32_t> data_types;
+    for (int i = 0; i < tv_.num_columns(); ++i) {
+        data_types.push_back((int32_t)tv_.column(i).type().id());
+    }
+    return data_types;
+}
+
 } // end of namespace gcylon

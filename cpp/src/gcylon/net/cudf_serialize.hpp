@@ -109,6 +109,13 @@ public:
      */
     std::pair<int32_t, uint8_t *> getColumnOffsets(int column_index);
 
+    /**
+     * get the data types of the columns as an int vector
+     * @return
+     */
+    std::vector<int32_t> getDataTypes();
+
+
 private:
     cudf::table_view tv_;
     std::vector<int32_t> buffer_sizes_ = std::vector<int32_t>();

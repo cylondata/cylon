@@ -83,6 +83,16 @@ public:
      */
     virtual std::vector<uint8_t *> getDataBuffers() = 0;
 
+    /**
+     * Return data types of the columns in an int vector
+     * This vector will be sent over the over
+     * Data type of the first column will be at the first position of the vector,
+     * Data type of the second column will be at the second position of the vector,
+     * so on,
+     * @return
+     */
+    virtual std::vector<int32_t> getDataTypes() = 0;
+
 };
 
 } // end of namespace cylon

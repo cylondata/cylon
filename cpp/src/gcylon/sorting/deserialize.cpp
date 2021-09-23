@@ -18,6 +18,8 @@
 #include <cudf/table/table.hpp>
 #include <cudf/strings/strings_column_view.hpp>
 #include <rmm/device_buffer.hpp>
+#include <gcylon/cudf_buffer.hpp>
+#include <gcylon/net/cudf_net_ops.hpp>
 
 namespace gcylon {
 
@@ -156,5 +158,111 @@ cylon::Status TableDeserializer::deserialize(std::vector<std::shared_ptr<cylon::
 
     return cylon::Status::OK();
 }
+
+std::unique_ptr<cudf::column> constructColumn(std::shared_ptr<cylon::Buffer> data_buffer,
+                                              std::shared_ptr<cylon::Buffer> mask_buffer,
+                                              std::shared_ptr<cylon::Buffer> offsets_buffer,
+                                              cudf::data_type dt,
+                                              int32_t num_rows) {
+
+    std::unique_ptr<cudf::column> clmn = nullptr;
+
+    std::shared_ptr<CudfBuffer> db = std::dynamic_pointer_cast<CudfBuffer>(data_buffer);
+    std::shared_ptr<CudfBuffer> mb = std::dynamic_pointer_cast<CudfBuffer>(mask_buffer);
+
+    // if it is non-string column
+    if (dt.id() != cudf::type_id::STRING) {
+        if (mask_buffer->GetLength() == 0) {
+            rmm::cuda_stream_default.synchronize();
+            clmn = std::make_unique<cudf::column>(dt, num_rows, std::move(*db->getBuf()));
+        } else {
+            clmn = std::make_unique<cudf::column>(dt,
+                                                  num_rows,
+                                                  std::move(*db->getBuf()),
+                                                  std::move(*mb->getBuf()));
+        }
+        // if it is a string column
+    } else {
+        std::shared_ptr<CudfBuffer> ob = std::dynamic_pointer_cast<CudfBuffer>(offsets_buffer);
+
+        // construct chars child column
+        auto cdt = cudf::data_type{cudf::type_id::INT8};
+        auto chars_column = std::make_unique<cudf::column>(cdt, data_buffer->GetLength(), std::move(*db->getBuf()));
+
+        auto odt = cudf::data_type{cudf::type_id::INT32};
+        auto offsets_column = std::make_unique<cudf::column>(odt, num_rows + 1, std::move(*ob->getBuf()));
+
+        std::vector<std::unique_ptr<cudf::column>> children;
+        children.emplace_back(std::move(offsets_column));
+        children.emplace_back(std::move(chars_column));
+
+        if (mask_buffer->GetLength() > 0) {
+            clmn = std::make_unique<cudf::column>(cudf::data_type{cudf::type_id::STRING},
+                                                  num_rows,
+                                                  std::move(rmm::device_buffer{0, rmm::cuda_stream_default}),
+                                                  std::move(*mb->getBuf()),
+                                                  cudf::UNKNOWN_NULL_COUNT,
+                                                  std::move(children));
+        } else{
+            rmm::cuda_stream_default.synchronize();
+            clmn = std::make_unique<cudf::column>(cudf::data_type{cudf::type_id::STRING},
+                                                  num_rows,
+                                                  std::move(rmm::device_buffer{0, rmm::cuda_stream_default}),
+                                                  std::move(rmm::device_buffer{0, rmm::cuda_stream_default}),
+                                                  0,
+                                                  std::move(children));
+        }
+    }
+    return clmn;
+}
+
+int32_t gcylon::net::numOfRows(const std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
+                               const std::vector<int32_t> &data_types) {
+
+    if (received_buffers.empty() || received_buffers[0]->GetLength() == 0) {
+        return 0;
+    }
+
+    cudf::data_type dt(static_cast<cudf::type_id>(data_types[0]));
+    if (cudf::is_fixed_width(dt)) {
+        return received_buffers[0]->GetLength() / cudf::size_of(dt);
+    } else if (dt.id() == cudf::type_id::STRING) {
+        // there are num_rows + 1 offsets value
+        // each offset value is 4 bytes
+        return (received_buffers[2]->GetLength() - 4) / 4;
+    } else {
+        throw "Can not determine number_of_rows on the received table";
+    }
+}
+
+
+cylon::Status deserializeSingleTable(std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
+                                     std::vector<int32_t> &data_types,
+                                     std::unique_ptr<cudf::table> &out_table) {
+
+    int32_t num_rows = gcylon::net::numOfRows(received_buffers, data_types);
+    int32_t num_cols = data_types.size();
+    std::cout << "number of rows: " << num_rows << "number of cols: " << num_cols << std::endl;
+    std::vector<std::unique_ptr<cudf::column>> columns{};
+    for (int i = 0, bc = 0; i < num_cols; ++i) {
+        cudf::data_type dt(static_cast<cudf::type_id>(data_types[i]));
+        std::unique_ptr<cudf::column> clmn = constructColumn(received_buffers[bc],
+                                                             received_buffers[bc + 1],
+                                                             received_buffers[bc + 2],
+                                                             dt,
+                                                             num_rows);
+        bc += 3;
+        if (clmn == nullptr) {
+            std::string msg = "Following column is not constructed successfully: ";
+            throw msg + std::to_string(i);
+        }
+        columns.push_back(std::move(clmn));
+    }
+
+    out_table = std::make_unique<cudf::table>(std::move(columns));
+
+    return cylon::Status::OK();
+}
+
 
 } // end of namespace gcylon
