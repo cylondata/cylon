@@ -33,25 +33,6 @@ public:
     TableDeserializer(cudf::table_view &tv);
 
     /**
-     * deserialize a single column
-     * @param data_buffer data buffer
-     * @param data_size data size in bytes
-     * @param mask_buffer mask buffer
-     * @param mask_size mask buffer size in bytes
-     * @param offsets_buffer offsets buffer
-     * @param offsets_size offsets buffer size in bytes
-     * @param dt data type of the column
-     * @return
-     */
-    std::unique_ptr<cudf::column> constructColumn(uint8_t *data_buffer,
-                                                  int32_t data_size,
-                                                  uint8_t *mask_buffer,
-                                                  int32_t mask_size,
-                                                  uint8_t *offsets_buffer,
-                                                  int32_t offsets_size,
-                                                  cudf::data_type dt);
-
-    /**
      * deserialize a single table
      * @param received_buffers received buffers by gather operation
      * @param disp_per_buffer displacements in buffers for this table
@@ -79,6 +60,21 @@ public:
 private:
     cudf::table_view tv_;
 };
+
+/**
+ * Deserialize a column received over the wire
+ * @param data_buffer
+ * @param mask_buffer
+ * @param offsets_buffer
+ * @param dt
+ * @param num_rows
+ * @return
+ */
+std::unique_ptr<cudf::column> constructColumn(std::shared_ptr<rmm::device_buffer> data_buffer,
+                                              std::shared_ptr<rmm::device_buffer> mask_buffer,
+                                              std::shared_ptr<rmm::device_buffer> offsets_buffer,
+                                              cudf::data_type dt,
+                                              int32_t num_rows);
 
 /**
  * deserialize a single table received over the wire

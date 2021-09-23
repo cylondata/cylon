@@ -33,11 +33,22 @@ bool Am_I_Root(std::shared_ptr<cylon::CylonContext> ctx, const int root);
 /**
  * calculate number of rows in received buffers
  * @param received_buffers received buffers over the wire, encoded with cylon::TableSerializer::getDataBuffers()
- * @param data_types received data types of a table, encoded with cylon::TableSerializer::getDataTypes()
+ * @param data_types data type of the first column in the table, encoded with cylon::TableSerializer::getDataTypes()
  * @return
  */
 int32_t numOfRows(const std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
-                  const std::vector<int32_t> &data_types);
+                  const int32_t data_type);
+
+/**
+ * calculate the number of rows in a column
+ * @param data_types data type of the column in the table
+ * @param data_size size of the data in the column in bytes
+ * @param offsets_size size of the offsets buffer int the column in bytes
+ * @return
+ */
+int32_t numOfRows(const cudf::data_type dt,
+                  const int32_t data_size,
+                  const int32_t offsets_size);
 
 /**
  * Broadcast a table to all workers except the broadcast root

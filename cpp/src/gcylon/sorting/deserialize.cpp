@@ -26,89 +26,34 @@ namespace gcylon {
 TableDeserializer::TableDeserializer(cudf::table_view &tv) : tv_(tv) {
 }
 
-std::unique_ptr<cudf::column> TableDeserializer::constructColumn(uint8_t * data_buffer,
-                                                                 int32_t data_size,
-                                                                 uint8_t * mask_buffer,
-                                                                 int32_t mask_size,
-                                                                 uint8_t * offsets_buffer,
-                                                                 int32_t offsets_size,
-                                                                 cudf::data_type dt) {
-
-    std::unique_ptr<cudf::column> clmn = nullptr;
-
-    // unfortunately this device_buffer performs data copying according to their docs
-    // however, there is no other constructor to create a device_buffer using already existing memory on the gpu
-    rmm::device_buffer db(data_buffer, data_size, rmm::cuda_stream_default);
-
-    // if it is non-string column
-    if (dt.id() != cudf::type_id::STRING) {
-        int32_t data_count = data_size / cudf::size_of(dt);
-        if (mask_size == 0) {
-            rmm::cuda_stream_default.synchronize();
-            clmn = std::make_unique<cudf::column>(dt, data_count, std::move(db));
-        } else {
-            rmm::device_buffer mb(mask_buffer, mask_size, rmm::cuda_stream_default);
-            rmm::cuda_stream_default.synchronize();
-            clmn = std::make_unique<cudf::column>(dt,
-                                                  data_count,
-                                                  std::move(db),
-                                                  std::move(mb));
-        }
-    // if it is a string column
-    } else {
-        rmm::device_buffer ob(offsets_buffer, offsets_size, rmm::cuda_stream_default);
-
-        // construct chars child column
-        auto cdt = cudf::data_type{cudf::type_id::INT8};
-        auto chars_column = std::make_unique<cudf::column>(cdt, data_size, std::move(db));
-
-        auto odt = cudf::data_type{cudf::type_id::INT32};
-        int offsets_count = offsets_size / 4;
-        auto offsets_column = std::make_unique<cudf::column>(odt, offsets_count, std::move(ob));
-
-        std::vector<std::unique_ptr<cudf::column>> children;
-        children.emplace_back(std::move(offsets_column));
-        children.emplace_back(std::move(chars_column));
-
-        if (mask_size > 0) {
-            rmm::device_buffer rmm_buf{0, rmm::cuda_stream_default, rmm::mr::get_current_device_resource()};
-            rmm::device_buffer mb(mask_buffer, mask_size, rmm::cuda_stream_default);
-            rmm::cuda_stream_default.synchronize();
-            clmn = std::make_unique<cudf::column>(cudf::data_type{cudf::type_id::STRING},
-                                                    offsets_count - 1,
-                                                    std::move(rmm_buf),
-                                                    std::move(mb),
-                                                    cudf::UNKNOWN_NULL_COUNT,
-                                                    std::move(children));
-        } else{
-            rmm::cuda_stream_default.synchronize();
-            clmn = std::make_unique<cudf::column>(cudf::data_type{cudf::type_id::STRING},
-                                                    offsets_count -1,
-                                                    std::move(rmm::device_buffer{0, rmm::cuda_stream_default}),
-                                                    std::move(rmm::device_buffer{0, rmm::cuda_stream_default}),
-                                                    0,
-                                                    std::move(children));
-        }
-    }
-    return clmn;
-}
-
 std::unique_ptr<cudf::table>
 TableDeserializer::deserializeTable(std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
                                     std::vector<int32_t> &disp_per_buffer,
                                     std::vector<int32_t> &buffer_sizes) {
 
     std::vector<std::unique_ptr<cudf::column>> columns{};
+    int32_t num_rows = gcylon::net::numOfRows(tv_.column(0).type(),
+                                              buffer_sizes[0],
+                                              buffer_sizes[2]);
+
     int bc = 0;
     for (int i = 0; i < tv_.num_columns(); ++i) {
-        std::unique_ptr<cudf::column> clmn =
-                constructColumn(received_buffers[bc]->GetByteBuffer() + disp_per_buffer[bc],
-                                buffer_sizes[bc],
-                                received_buffers[bc + 1]->GetByteBuffer() + disp_per_buffer[bc + 1],
-                                buffer_sizes[bc + 1],
-                                received_buffers[bc + 2]->GetByteBuffer() + disp_per_buffer[bc + 2],
-                                buffer_sizes[bc + 2],
-                                tv_.column(i).type());
+        // unfortunately this device_buffer performs data copying according to their docs
+        // however, there is no other constructor to create a device_buffer using already existing memory on the gpu
+        uint8_t * data_buffer = received_buffers[bc]->GetByteBuffer() + disp_per_buffer[bc];
+        uint8_t * mask_buffer = received_buffers[bc + 1]->GetByteBuffer() + disp_per_buffer[bc + 1];
+        uint8_t * offsets_buffer = received_buffers[bc + 2]->GetByteBuffer() + disp_per_buffer[bc + 2];
+
+        auto db = std::make_shared<rmm::device_buffer>(data_buffer, buffer_sizes[bc], rmm::cuda_stream_default);
+        auto mb = std::make_shared<rmm::device_buffer>(mask_buffer, buffer_sizes[bc + 1], rmm::cuda_stream_default);
+        auto ob = std::make_shared<rmm::device_buffer>(offsets_buffer, buffer_sizes[bc + 2], rmm::cuda_stream_default);
+        rmm::cuda_stream_default.synchronize();
+
+        std::unique_ptr<cudf::column> clmn = gcylon::constructColumn(db,
+                                                                     mb,
+                                                                     ob,
+                                                                     tv_.column(i).type(),
+                                                                     num_rows);
         bc += 3;
         if (clmn == nullptr) {
             std::string msg = "Following column is not constructed successfully: ";
@@ -159,52 +104,45 @@ cylon::Status TableDeserializer::deserialize(std::vector<std::shared_ptr<cylon::
     return cylon::Status::OK();
 }
 
-std::unique_ptr<cudf::column> constructColumn(std::shared_ptr<cylon::Buffer> data_buffer,
-                                              std::shared_ptr<cylon::Buffer> mask_buffer,
-                                              std::shared_ptr<cylon::Buffer> offsets_buffer,
+std::unique_ptr<cudf::column> constructColumn(std::shared_ptr<rmm::device_buffer> data_buffer,
+                                              std::shared_ptr<rmm::device_buffer> mask_buffer,
+                                              std::shared_ptr<rmm::device_buffer> offsets_buffer,
                                               cudf::data_type dt,
                                               int32_t num_rows) {
 
     std::unique_ptr<cudf::column> clmn = nullptr;
 
-    std::shared_ptr<CudfBuffer> db = std::dynamic_pointer_cast<CudfBuffer>(data_buffer);
-    std::shared_ptr<CudfBuffer> mb = std::dynamic_pointer_cast<CudfBuffer>(mask_buffer);
-
     // if it is non-string column
     if (dt.id() != cudf::type_id::STRING) {
-        if (mask_buffer->GetLength() == 0) {
-            rmm::cuda_stream_default.synchronize();
-            clmn = std::make_unique<cudf::column>(dt, num_rows, std::move(*db->getBuf()));
+        if (mask_buffer->size() == 0) {
+            clmn = std::make_unique<cudf::column>(dt, num_rows, std::move(*data_buffer));
         } else {
             clmn = std::make_unique<cudf::column>(dt,
                                                   num_rows,
-                                                  std::move(*db->getBuf()),
-                                                  std::move(*mb->getBuf()));
+                                                  std::move(*data_buffer),
+                                                  std::move(*mask_buffer));
         }
         // if it is a string column
     } else {
-        std::shared_ptr<CudfBuffer> ob = std::dynamic_pointer_cast<CudfBuffer>(offsets_buffer);
-
         // construct chars child column
         auto cdt = cudf::data_type{cudf::type_id::INT8};
-        auto chars_column = std::make_unique<cudf::column>(cdt, data_buffer->GetLength(), std::move(*db->getBuf()));
+        auto chars_column = std::make_unique<cudf::column>(cdt, data_buffer->size(), std::move(*data_buffer));
 
         auto odt = cudf::data_type{cudf::type_id::INT32};
-        auto offsets_column = std::make_unique<cudf::column>(odt, num_rows + 1, std::move(*ob->getBuf()));
+        auto offsets_column = std::make_unique<cudf::column>(odt, num_rows + 1, std::move(*offsets_buffer));
 
         std::vector<std::unique_ptr<cudf::column>> children;
         children.emplace_back(std::move(offsets_column));
         children.emplace_back(std::move(chars_column));
 
-        if (mask_buffer->GetLength() > 0) {
+        if (mask_buffer->size() > 0) {
             clmn = std::make_unique<cudf::column>(cudf::data_type{cudf::type_id::STRING},
                                                   num_rows,
                                                   std::move(rmm::device_buffer{0, rmm::cuda_stream_default}),
-                                                  std::move(*mb->getBuf()),
+                                                  std::move(*mask_buffer),
                                                   cudf::UNKNOWN_NULL_COUNT,
                                                   std::move(children));
         } else{
-            rmm::cuda_stream_default.synchronize();
             clmn = std::make_unique<cudf::column>(cudf::data_type{cudf::type_id::STRING},
                                                   num_rows,
                                                   std::move(rmm::device_buffer{0, rmm::cuda_stream_default}),
@@ -216,39 +154,54 @@ std::unique_ptr<cudf::column> constructColumn(std::shared_ptr<cylon::Buffer> dat
     return clmn;
 }
 
-int32_t gcylon::net::numOfRows(const std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
-                               const std::vector<int32_t> &data_types) {
+int32_t gcylon::net::numOfRows(const cudf::data_type dt,
+                               const int32_t data_size,
+                               const int32_t offsets_size) {
 
-    if (received_buffers.empty() || received_buffers[0]->GetLength() == 0) {
-        return 0;
-    }
-
-    cudf::data_type dt(static_cast<cudf::type_id>(data_types[0]));
     if (cudf::is_fixed_width(dt)) {
-        return received_buffers[0]->GetLength() / cudf::size_of(dt);
+        return data_size / cudf::size_of(dt);
     } else if (dt.id() == cudf::type_id::STRING) {
         // there are num_rows + 1 offsets value
         // each offset value is 4 bytes
-        return (received_buffers[2]->GetLength() - 4) / 4;
+        return (offsets_size - 4) / 4;
     } else {
         throw "Can not determine number_of_rows on the received table";
     }
+
+}
+
+int32_t gcylon::net::numOfRows(const std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
+                               const int32_t data_type) {
+    if (received_buffers.size() < 3 || received_buffers[0]->GetLength() == 0) {
+        return 0;
+    }
+
+    cudf::data_type dt(static_cast<cudf::type_id>(data_type));
+    int32_t data_size = received_buffers[0]->GetLength();
+    int32_t offsets_size = received_buffers[2]->GetLength();
+    return numOfRows(dt, data_size, offsets_size);
 }
 
 
 cylon::Status deserializeSingleTable(std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
                                      std::vector<int32_t> &data_types,
                                      std::unique_ptr<cudf::table> &out_table) {
+    if(data_types.empty()) {
+        return cylon::Status(cylon::Code::ExecutionError, "data_types empty.");
+    }
 
-    int32_t num_rows = gcylon::net::numOfRows(received_buffers, data_types);
+    int32_t num_rows = gcylon::net::numOfRows(received_buffers, data_types[0]);
     int32_t num_cols = data_types.size();
-    std::cout << "number of rows: " << num_rows << "number of cols: " << num_cols << std::endl;
     std::vector<std::unique_ptr<cudf::column>> columns{};
     for (int i = 0, bc = 0; i < num_cols; ++i) {
         cudf::data_type dt(static_cast<cudf::type_id>(data_types[i]));
-        std::unique_ptr<cudf::column> clmn = constructColumn(received_buffers[bc],
-                                                             received_buffers[bc + 1],
-                                                             received_buffers[bc + 2],
+        std::shared_ptr<CudfBuffer> db = std::dynamic_pointer_cast<CudfBuffer>(received_buffers[bc]);
+        std::shared_ptr<CudfBuffer> mb = std::dynamic_pointer_cast<CudfBuffer>(received_buffers[bc + 1]);
+        std::shared_ptr<CudfBuffer> ob = std::dynamic_pointer_cast<CudfBuffer>(received_buffers[bc + 2]);
+
+        std::unique_ptr<cudf::column> clmn = constructColumn(db->getBuf(),
+                                                             mb->getBuf(),
+                                                             ob->getBuf(),
                                                              dt,
                                                              num_rows);
         bc += 3;
