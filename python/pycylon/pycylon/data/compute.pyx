@@ -495,7 +495,7 @@ cdef _is_in_array_like_np(table: Table, cmp_val):
         chunk_ar_np = chunk_ar.to_numpy()
         is_in_res.append(np.isin(chunk_ar, np.array(cmp_val)))
     tb_new = Table.from_numpy(table.context, table.column_names, is_in_res)
-    tb_new.set_index(table.index)
+    tb_new.set_index(table.index.column_id, table.index.get_type())
     return tb_new
 
 
@@ -516,7 +516,7 @@ cdef _is_in_array_like(table: Table, cmp_val, skip_null):
     for chunk_ar in ar_tb.itercolumns():
         is_in_res.append(a_compute.is_in(chunk_ar, value_set=cmp_val, skip_nulls=skip_null))
     tb_new = Table.from_arrow(table.context, pa.Table.from_arrays(is_in_res, ar_tb.column_names))
-    tb_new.set_index(table.index)
+    tb_new.set_index(table.index.column_id, table.index.get_type())
     return tb_new
 
 def compare_array_like_values(l_org_ar, l_cmp_ar, skip_null=True):
@@ -656,7 +656,7 @@ cdef _tb_compare_dict_values(tb, tb_cmp, skip_null=True):
         else:
             col_data_map[col_name] = row_col_validity
     tb_new = Table.from_pydict(tb.context, col_data_map)
-    tb_new.set_index(tb.index)
+    tb_new.set_index(tb.index.column_id, tb.index.get_type())
     return tb_new
 
 cdef _tb_compare_values(tb, tb_cmp, skip_null=True, index_check=True):
@@ -696,7 +696,7 @@ cdef _tb_compare_values(tb, tb_cmp, skip_null=True, index_check=True):
                                                                      skip_nulls=skip_null),
                                                      row_col_validity)
     tb_new = Table.from_pydict(tb.context, col_data_map)
-    tb_new.set_index(tb.index)
+    tb_new.set_index(tb.index.column_id, tb.index.get_type())
     return tb_new
 
 cpdef is_in(table:Table, comparison_values, skip_null, engine):
@@ -808,7 +808,7 @@ cpdef infer_map(table, func):
         ndarray[object] result
         object val
     n = table.column_count
-    print("N : ", n, i)
+    # print("N : ", n, i)
     ar_list = []
     i = 0
     result = np.empty(n, dtype=object)

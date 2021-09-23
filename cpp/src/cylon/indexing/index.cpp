@@ -571,6 +571,26 @@ Status BuildIndex(Table *table, int col_id, IndexingType indexing_type,
   }
 }
 
+Status BuildTableWithIndex(const std::shared_ptr<Table> &table,
+                           int col_id,
+                           IndexingType indexing_type,
+                           std::shared_ptr<Table> *output) {
+  auto arrow_table = table->get_table();
+  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(table->GetContext(), std::move(arrow_table), *output));
+
+  return (*output)->SetArrowIndex(col_id, indexing_type);
+}
+
+Status BuildTableWithIndexArray(const std::shared_ptr<Table> &table,
+                                std::shared_ptr<arrow::Array> index_array,
+                                IndexingType indexing_type,
+                                std::shared_ptr<Table> *output) {
+  auto arrow_table = table->get_table();
+  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(table->GetContext(), std::move(arrow_table), *output));
+
+  return (*output)->SetArrowIndex(std::move(index_array), indexing_type);
+}
+
 //Status BuildIndex(std::shared_ptr<arrow::Array> index_array,
 //                  IndexingType indexing_type,
 //                  std::shared_ptr<BaseArrowIndex> *output,

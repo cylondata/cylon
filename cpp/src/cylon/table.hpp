@@ -40,8 +40,22 @@ namespace cylon {
 
 class BaseArrowIndex;
 
+
+class TableHook{
+  virtual Status Validate(Table* table) = 0;
+};
+
+//
+
 /**
  * Table provides the main API for using cylon for data processing.
+ */
+
+
+/**
+ * Rules:
+ * mutability - immutable
+ *
  */
 class Table {
  public:
@@ -69,7 +83,7 @@ class Table {
    */
   Table(const std::shared_ptr<CylonContext> &ctx, std::vector<std::shared_ptr<Column>> cols);
 
-  virtual ~Table();
+  virtual ~Table() = 0;
 
   /**
    * Create a table from an arrow table,
@@ -165,10 +179,10 @@ class Table {
    */
   const std::shared_ptr<arrow::Table> &get_table() const;
 
-  /**
-   * Clears the table
-   */
-  void Clear();
+//  /**
+//   * Clears the table
+//   */
+//  void Clear();
 
   /**
    * Returns the cylon Context
@@ -230,6 +244,7 @@ class Table {
   Status ResetArrowIndex(bool drop = false);
 
   /**
+   * todo: MUTABLE REMOVE!
    * Adds an arrow::Array as a column at a given position
    * @param position
    * @param column_name
@@ -238,11 +253,17 @@ class Table {
    */
   Status AddColumn(int position, std::string column_name, std::shared_ptr<arrow::Array> input_column);
 
+  /**
+   * todo: MUTABLE REMOVE!
+   * Combines chunks of the arrow table and update.
+   * @return
+   * todo: may be remove this
+   */
   Status CombineChunks();
 
  private:
   const std::shared_ptr<CylonContext> ctx_;
-  std::shared_ptr<arrow::Table> table_;
+  const std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
   std::vector<std::shared_ptr<Column>> columns_;
   std::shared_ptr<BaseArrowIndex> base_arrow_index_;

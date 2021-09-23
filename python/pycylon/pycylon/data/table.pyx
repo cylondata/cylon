@@ -53,9 +53,8 @@ from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_in
 # from pycylon.indexing.index_utils import IndexUtil
 
 from pycylon.indexing.cyindex cimport CBaseArrowIndex
-from pycylon.indexing.cyindex import BaseArrowIndex
-from pycylon.indexing.cyindex import IndexingType
-from pycylon.indexing.cyindex import PyLocIndexer
+from pycylon.indexing.cyindex import BaseArrowIndex, IndexingType, PyLocIndexer, \
+    to_pandas_range_index, slice_table_by_range, filter_table_by_mask, mask_table
 
 from pycylon.util.type_utils import get_arrow_type
 
@@ -110,6 +109,11 @@ cdef class Table:
     @staticmethod
     def _is_pycylon_context(context):
         return isinstance(context, CylonContext)
+
+    def combine_chunks(self):
+        cdef CStatus status = self.table_shd_ptr.get().CombineChunks()
+        if not status.is_ok():
+            raise Exception(f"Combine chunks error: {status.get_msg().decode()}")
 
     def show(self, row1=-1, row2=-1, col1=-1, col2=-1):
         '''
@@ -209,12 +213,11 @@ cdef class Table:
             raise ValueError("Tables are not parsed for merge")
 
     def _resolve_column_index_from_column_name(self, column_name) -> int:
-        index = None
         for idx, col_name in enumerate(self.column_names):
             if column_name == col_name:
                 return idx
-        if index is None:
-            raise ValueError(f"Column {column_name} does not exist in the table")
+
+        raise ValueError(f"Column {column_name} does not exist in the table")
 
     @property
     def column_count(self) -> int:
@@ -1035,32 +1038,45 @@ cdef class Table:
 
         '''
 
-        mask_batches = mask.to_arrow().combine_chunks().to_batches()
+        # mask_batches = mask.to_arrow().combine_chunks().to_batches()
 
         if mask.column_count == 1:
             # Handle when masking is done based on a single column data
-            self.reset_index()
-            masked_table = self.from_arrow(self.context, self.to_arrow().filter(mask_batches[0][0]))
-            masked_table.set_index(masked_table.column_names[0], drop=True)
-            self.set_index(self.column_names[0], drop=True)
-            return masked_table
+            # self.reset_index()
+            # masked_table = self.from_arrow(self.context, self.to_arrow().filter(mask_batches[0][0]))
+            # masked_table.set_index(masked_table.column_names[0], drop=True)
+            # self.set_index(self.column_names[0], drop=True)
+            # return masked_table
+            mask.combine_chunks()
+            mask_arr = mask.to_arrow().column(0).chunk(0)
+            return filter_table_by_mask(self, mask_arr, list(range(self.column_count)))
         else:
-            # Handle when masking is done on whole table
-            filtered_all_data = []
-            table_record_batches = self.to_arrow().combine_chunks().to_batches()
-            for mask_batch, table_batch in zip(mask_batches[0], table_record_batches[0]):
-                filtered_data = []
-                for mask_value, table_value in zip(mask_batch, table_batch):
-                    if mask_value.as_py():
-                        filtered_data.append(table_value.as_py())
-                    else:
-                        filtered_data.append(math.nan)
-                filtered_all_data.append(filtered_data)
+            pass
+            # if mask.column_count != self.column_count:
+            #     raise ValueError("mask column count should match the table column count")
+            #
+            # output_arrays = []
+            # arrow_table = self.to_arrow()
+            # for i in range(arrow_table.num_columns):
+            #     arrow_table.column(i).
 
-            col_names = self.column_names
-            print(len(col_names), len(filtered_all_data))
-            final_table = Table.from_list(self.context, col_names, filtered_all_data)
-            return final_table
+            # Handle when masking is done on whole table
+            # filtered_all_data = []
+            # table_record_batches = self.to_arrow().combine_chunks().to_batches()
+            # for mask_batch, table_batch in zip(mask_batches[0], table_record_batches[0]):
+            #     filtered_data = []
+            #     for mask_value, table_value in zip(mask_batch, table_batch):
+            #         if mask_value.as_py():
+            #             filtered_data.append(table_value.as_py())
+            #         else:
+            #             filtered_data.append(math.nan)
+            #     filtered_all_data.append(filtered_data)
+            #
+            # col_names = self.column_names
+            # print(len(col_names), len(filtered_all_data))
+            # final_table = Table.from_list(self.context, col_names, filtered_all_data)
+            # return final_table
+            return mask_table(self, mask)
 
     def __getitem__(self, key) -> Table:
         """
@@ -1125,39 +1141,16 @@ cdef class Table:
         tb_index = self.index
         py_arrow_table = self.to_arrow().combine_chunks()
         if isinstance(key, slice):
-            new_tb = self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
-            new_index = tb_index.values[key.start: key.stop].tolist()
-            new_tb.set_index(new_index)
-            return new_tb
+            return slice_table_by_range(self, key.start, key.stop - 1,
+                                        list(range(self.column_count)))
         elif isinstance(key, int):
-            new_tb = self.from_arrow(self.context, py_arrow_table.slice(key, 1))
-            new_index = tb_index.values[key].tolist()
-            new_tb.set_index(new_index)
-            return new_tb
+            return slice_table_by_range(self, key, key, list(range(self.column_count)))
         elif isinstance(key, str):
             index = self._resolve_column_index_from_column_name(key)
-            chunked_arr = py_arrow_table.column(index)
-            tb_filtered = self.from_arrow(self.context, pa.Table.from_arrays([chunked_arr.chunk(0)],
-                                                                             [key]))
-            tb_filtered.set_index(tb_index)
-            return tb_filtered
+            return slice_table_by_range(self, 0, self.row_count - 1, [index])
         elif isinstance(key, List):
-            chunked_arrays = []
-            selected_columns = []
-            column_headers = self.column_names
-            index_values = self.index
-            for column_name in key:
-                index = -1
-                if isinstance(column_name, str):
-                    index = self._resolve_column_index_from_column_name(column_name)
-                elif isinstance(column_name, int):
-                    index = key
-                chunked_arrays.append(py_arrow_table.column(index).chunk(0))
-                selected_columns.append(column_headers[index])
-            new_table = self.from_arrow(self.context, pa.Table.from_arrays(chunked_arrays,
-                                                                           selected_columns))
-            new_table.set_index(index_values)
-            return new_table
+            columns = [self._resolve_column_index_from_column_name(n) for n in key]
+            return slice_table_by_range(self, 0, self.row_count - 1, columns)
         elif self._is_pycylon_table(key):
             return self._table_from_mask(key)
         else:
@@ -1196,7 +1189,6 @@ cdef class Table:
             2      3      7    110   1110
             3      4      8    120   1120
         '''
-        tb_index = self.index
         if isinstance(key, str) and isinstance(value, Table):
             if value.column_count == 1:
                 value_arrow_table = value.to_arrow().combine_chunks()
@@ -1210,15 +1202,16 @@ cdef class Table:
                              f"value type {type(value)}")
 
         current_ar_table = self.to_arrow()
-        if key in self.column_names:
+        if key in self.column_names:  # already existing column
             index = self._resolve_column_index_from_column_name(key)
             # A new Column is replacing an existing column
             self.initialize(current_ar_table.set_column(index, key, chunk_arr),
                             self.context)
-            self.set_index(tb_index)
-        else:
+            # if the new column overrides the current index column_id, reset it
+            if index == self.index.column_id:
+                self.set_index(index, self.index.get_type())
+        else:  # new column
             self.initialize(current_ar_table.append_column(key, chunk_arr), self.context)
-            self.set_index(tb_index)
 
     def __eq__(self, other) -> Table:
         '''
@@ -1660,24 +1653,14 @@ cdef class Table:
         # TODO: Need to improve this method with more features:
         #  https://github.com/cylondata/cylon/issues/219
 
-        row_limit = row_limit if row_limit % 2 == 0 else row_limit + 1
-        str1 = self.to_pandas().to_string()
-        if self.row_count > row_limit:
-            printable_rows = []
-            rows = str1.split("\n")
-            len_mid_line = len(rows[self.row_count])
-            dot_line = ""
-            for i in range(len_mid_line):
-                dot_line += "."
-            dot_line += "\n"
-            printable_rows = rows[:row_limit // 2] + [dot_line] + rows[-row_limit // 2:]
-            row_strs = ""
-            len_row = 0
-            for row_id, row_str in enumerate(printable_rows):
-                row_strs += row_str + "\n"
-            return row_strs
+        df = self.to_pandas()
+        self_index = self.get_index()
+        if self_index.get_type() == IndexingType.RANGE:
+            df_index = to_pandas_range_index(self_index)
         else:
-            return str1
+            df_index = self.column_names[self_index.column_id]
+
+        return df.set_index(df_index).to_string(max_rows=row_limit)
 
     def drop(self, column_names: List[str], inplace=False):
         '''
@@ -1704,15 +1687,39 @@ cdef class Table:
             2      7     11
             3      8     12
         '''
-        index = self.index
-        if inplace:
 
+        index_col_id = self.index.column_id
+        if inplace:
             artb = self.to_arrow().drop(column_names)
             self.initialize(artb, self.context)
-            self.set_index(index)
+
+            # if index is range, return
+            if self.index.get_type() == IndexingType.RANGE:
+                return
+
+            # if index column is also included in the drop, just return
+            index_column_name = self.column_names[self.index.column_id]
+            if index_column_name in column_names:
+                return
+
+            # if the column deletion has changed the index col id, reset index 
+            new_index_col_id = self._resolve_column_index_from_column_name(index_column_name)
+            if new_index_col_id != index_col_id:
+                self.set_index(new_index_col_id, self.index.get_type())
         else:
             drop_tb = self.from_arrow(self.context, self.to_arrow().drop(column_names))
-            drop_tb.set_index(index)
+            # if index is range, return
+            if self.index.get_type() == IndexingType.RANGE:
+                return drop_tb
+
+            # if index column is also included in the drop, reset the index to range
+            index_column_name = self.column_names[self.index.column_id]
+            if index_column_name in column_names:
+                return drop_tb
+
+            # if the column deletion has changed the index col id, reset index
+            new_index_col_id = drop_tb._resolve_column_index_from_column_name(index_column_name)
+            drop_tb.set_index(new_index_col_id, self.index.get_type())
             return drop_tb
 
     def fillna(self, fill_value):
@@ -1923,7 +1930,7 @@ cdef class Table:
             2   3   7  11
             3   4   8  12
         '''
-        index_values = self.index
+        # index_values = self.index
         if isinstance(column_names, dict):
             table_col_names = self.column_names
             for key in column_names.keys():
@@ -1932,12 +1939,8 @@ cdef class Table:
                 else:
                     table_col_names[table_col_names.index(key)] = column_names[key]
             self.initialize(self.to_arrow().rename_columns(table_col_names), self.context)
-        elif isinstance(column_names, list):
-            if len(column_names) == self.column_count:
-                self.initialize(self.to_arrow().rename_columns(column_names), self.context)
         else:
-            raise ValueError("Input Column names must be a dictionary or list")
-        self.set_index(index_values)
+            raise ValueError("Input Column names must be a dictionary")
 
     def add_prefix(self, prefix: str) -> Table:
         '''
@@ -2053,8 +2056,7 @@ cdef class Table:
         '''
         return self.get_index()
 
-    def set_index(self, key, indexing_type: IndexingType = IndexingType.LINEAR,
-                  drop: bool = False):
+    def set_index(self, key, indexing_type: IndexingType = IndexingType.LINEAR):
         '''
         Set Index
         Operation takes place inplace.
@@ -2082,14 +2084,14 @@ cdef class Table:
         >>> tb.index.index_values
             ['a', 'b', 'c', 'd']
 
-        >>> tb.set_index('col-1', IndexingSchema.LINEAR, True)
+        >>> tb.set_index('col-1', IndexingSchema.LINEAR)
 
                col-2  col-3
+        col-1
             1      5      9
             2      6     10
             3      7     11
             4      8     12
-        NOTE: indexing value is not exposed to print functions
         >>> tb.index.index_values
             [ 1, 2, 3, 4]
         '''
@@ -2101,11 +2103,11 @@ cdef class Table:
 
         if isinstance(key, BaseArrowIndex):
             c_base_arrow_index = pycylon_unwrap_base_arrow_index(key)
-            self.table_shd_ptr.get().SetArrowIndex(c_base_arrow_index, False)
+            # self.table_shd_ptr.get().SetArrowIndex(c_base_arrow_index, False)
+            self.table_shd_ptr.get().SetArrowIndex(c_base_arrow_index)
         else:
             indexed_table = process_index_by_value(key=key, table=self,
-                                                   indexing_type=indexing_type,
-                                                   drop_index=drop)
+                                                   indexing_type=indexing_type)
             indexed_cylon_table = pycylon_unwrap_table(indexed_table)
             self.init(indexed_cylon_table)
 
@@ -2236,13 +2238,13 @@ cdef class Table:
             0      1      5      9
             1      3      7     11
         '''
-        self.reset_index()
         new_tb = compute.drop_na(self, how, axis)
         if inplace:
             self.initialize(new_tb.to_arrow(), self.context)
-            self.set_index(self.column_names[0], drop=True)
+            self.set_index(self.index.column_id, self.index.get_type())
         else:
-            new_tb.set_index(new_tb.column_names[0], drop=True)
+            # set the same col id and index type
+            new_tb.set_index(self.index.column_id, self.index.get_type())
             return new_tb
 
     def isin(self, value, skip_null=True) -> Table:
@@ -2395,7 +2397,8 @@ cdef class Table:
         return _concat_impl(tables=tables, axis=axis, join=join, algorithm=algorithm)
 
     @staticmethod
-    def distributed_concat(tables: List[Table], axis: int = 0, join: str = 'inner', algorithm: str = 'sort'):
+    def distributed_concat(tables: List[Table], axis: int = 0, join: str = 'inner',
+                           algorithm: str = 'sort'):
         """
         Concatenate tables. axis=0 (row-wise) concat is independent from local/ distributed execution.
 
@@ -2484,7 +2487,6 @@ cdef class Table:
 
 
         """
-        self.reset_index()
         column_names = self.column_names
         artb = self.to_arrow()
         schema = artb.schema
@@ -2504,8 +2506,7 @@ cdef class Table:
                 schema = schema.set(field_id, new_field)
             casted_artb = artb.cast(schema, safe)
             new_cn_table = Table.from_arrow(self.context, casted_artb)
-            new_cn_table.set_index(new_cn_table.column_names[0], drop=True)
-            self.set_index(self.column_names[0], drop=True)
+            new_cn_table.set_index(self.index.column_id, self.index.get_type())
             return new_cn_table
         elif np.isscalar(dtype) or isinstance(dtype, type):
             arrow_type = get_arrow_type(dtype)
@@ -2519,8 +2520,7 @@ cdef class Table:
                 schema = schema.set(field_id, new_field)
             casted_artb = artb.cast(schema, safe)
             new_cn_table = Table.from_arrow(self.context, casted_artb)
-            new_cn_table.set_index(new_cn_table.column_names[0], drop=True)
-            self.set_index(self.column_names[0], drop=True)
+            new_cn_table.set_index(self.index.column_id, self.index.get_type())
             return new_cn_table
         else:
             raise ValueError("Unsupported data type representation")
@@ -2537,20 +2537,19 @@ def _concat_impl(tables: List[Table], axis: int = 0, join: str = 'inner', algori
             raise ValueError(f"Invalid object {res_table}, expected Table")
         formatted_tables = []
         new_column_names = res_table.column_names
-        for tb_idx in range(len(tables)):
-            tb1 = tables[tb_idx]
-            tb1.reset_index()
+
         res_table = Table.merge(tables)
-        res_table.set_index(res_table.column_names[0], drop=True)
-        for tb_idx in range(len(tables)):
-            tb1 = tables[tb_idx]
-            tb1.set_index(tb1.column_names[0], drop=True)
+
+        if tables[0].index.get_type() != IndexingType.RANGE:
+            res_table.set_index(tables[0].index.column_id, tables[0].index.get_type())
+
         return res_table
     elif axis == 1:
         if not isinstance(tables[0], Table):
             raise ValueError(f"Invalid object {tables[0]}, Table expected")
         ctx = tables[0].context
         res_table = tables[0]
+        # TODO! HOW TO HANDLE INDICES
         for i in range(1, len(tables)):
             tb1 = tables[i]
             if not isinstance(tb1, Table):

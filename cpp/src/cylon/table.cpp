@@ -780,9 +780,9 @@ Status DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table>
   return do_dist_set_op(&Intersect, left, right, out);
 }
 
-void Table::Clear() {}
-
-Table::~Table() { this->Clear(); }
+//void Table::Clear() {}
+//
+//Table::~Table() { this->Clear(); }
 
 void ReadCSVThread(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
                    std::shared_ptr<cylon::Table> *table,
@@ -1065,6 +1065,16 @@ Status Table::SetArrowIndex(std::shared_ptr<BaseArrowIndex> index) {
 }
 
 Status Table::ResetArrowIndex(bool drop) {
+  if (base_arrow_index_->GetIndexingType() == Range) {
+    if (!drop) { // if not drop, create an index array and add it to the table
+      std::shared_ptr<arrow::Array> index_arr;
+      RETURN_CYLON_STATUS_IF_FAILED(base_arrow_index_->GetIndexAsArray(&index_arr));
+      AddColumn()
+    }
+  }
+
+
+
   // if the current index is a range index, nothing to do!
   if (drop && base_arrow_index_->GetIndexingType() != Range) {
     const auto &res = table_->RemoveColumn(base_arrow_index_->col_id());
@@ -1077,15 +1087,16 @@ Status Table::ResetArrowIndex(bool drop) {
 
 Status Table::AddColumn(int position, std::string column_name, std::shared_ptr<arrow::Array> input_column) {
   if (input_column->length() != table_->num_rows()) {
-    LOG(ERROR) << "New column length must match the number of rows in the table";
-    return Status(cylon::Code::CapacityError);
+    return {Code::Invalid, "New column length must match the number of rows in the table"};
   }
   auto field = std::make_shared<arrow::Field>(std::move(column_name), input_column->type());
   auto chunked_array = std::make_shared<arrow::ChunkedArray>(std::move(input_column));
-  const auto &result = table_->AddColumn(position, std::move(field), std::move(chunked_array));
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
 
-  table_ = result.ValueOrDie();
+  CYLON_ASSIGN_OR_RAISE(table_, table_->AddColumn(position, std::move(field), std::move(chunked_array)));
+
+  if (position <= base_arrow_index_->col_id()) {
+    base_arrow_index_->col_id_++;
+  }
   return Status::OK();
 }
 
@@ -1143,7 +1154,7 @@ Table::Table(const std::shared_ptr<cylon::CylonContext> &ctx, std::vector<std::s
 }
 
 Status Table::CombineChunks() {
-  if (table_->column(0)->num_chunks() > 1) {
+  if (!this->Empty() && table_->column(0)->num_chunks() > 1) {
     const auto &res = table_->CombineChunks(cylon::ToArrowPool(ctx_));
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
     table_ = res.ValueOrDie();

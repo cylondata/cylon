@@ -21,41 +21,6 @@
 namespace cylon {
 namespace indexing {
 
-//bool CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar> &index_value,
-//                             const std::shared_ptr<BaseArrowIndex> &index);
-
-/**
- * Slice a table row range [start_index, end_index] and returns a new table with a sliced index
- * @param input_table
- * @param start
- * @param end_inclusive
- * @param columns
- * @param output
- * @return
- */
-Status SliceTableByRange(const std::shared_ptr<Table> &input_table,
-                         int64_t start,
-                         int64_t end_inclusive,
-                         std::vector<int> columns,
-                         std::shared_ptr<Table> *output,
-                         bool reset_index = false);
-
-/**
- * Filter table based on indices. The new table will inherit the indices array as it's index (LinearIndex)
- * @param input_table
- * @param indices
- * @param columns
- * @param output
- * @param bounds_check
- * @return
- */
-Status FilterTable(const std::shared_ptr<Table> &input_table,
-                   const std::shared_ptr<arrow::Array> &indices,
-                   std::vector<int> columns,
-                   std::shared_ptr<Table> *output,
-                   bool bounds_check = false,
-                   bool reset_index = false);
-
 /**
 * locate values in [start_index:end_index] and take only the given columns.
 * @param input_table

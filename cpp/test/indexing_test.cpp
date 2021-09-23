@@ -13,6 +13,7 @@
  */
 
 #include "cylon/indexing/index.hpp"
+#include "cylon/indexing/index_utils.hpp"
 #include "common/test_header.hpp"
 #include "test_index_utils.hpp"
 #include "test_arrow_utils.hpp"
@@ -583,8 +584,8 @@ TEST_CASE("Test FilterTable", "[indexing]") {
                                       {"b": 6,    "index": 4}
                                      ])"});
     SECTION("reset index = false") {
-      CHECK_CYLON_STATUS(indexing::FilterTable(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
-                                               {1}, &out, /*bounds_check=*/false, /*reset_index=*/false));
+      CHECK_CYLON_STATUS(indexing::SelectTableByRows(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
+                                                     {1}, &out, /*bounds_check=*/false, /*reset_index=*/false));
       CHECK_ARROW_EQUAL(expected, out->get_table());
 
       int64_t test_loc = -1;
@@ -593,8 +594,8 @@ TEST_CASE("Test FilterTable", "[indexing]") {
     }
 
     SECTION("reset index = true") {
-      CHECK_CYLON_STATUS(indexing::FilterTable(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
-                                               {1}, &out, /*bounds_check=*/false, /*reset_index=*/true));
+      CHECK_CYLON_STATUS(indexing::SelectTableByRows(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
+                                                     {1}, &out, /*bounds_check=*/false, /*reset_index=*/true));
       CHECK_ARROW_EQUAL(expected->SelectColumns({0}).ValueOrDie(), out->get_table());
 
       int64_t test_loc = -1;
@@ -619,8 +620,8 @@ TEST_CASE("Test FilterTable", "[indexing]") {
 
       SECTION("reset index = false") {
         // filter column a. this will add col b to the table as it is the index
-        CHECK_CYLON_STATUS(indexing::FilterTable(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
-                                                 {0}, &out, /*bounds_check=*/false, /*reset_index=*/false));
+        CHECK_CYLON_STATUS(indexing::SelectTableByRows(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
+                                                       {0}, &out, /*bounds_check=*/false, /*reset_index=*/false));
         CHECK_ARROW_EQUAL(expected, out->get_table());
 
         REQUIRE(out->GetArrowIndex()->GetIndexingType() == index_type);
@@ -632,8 +633,8 @@ TEST_CASE("Test FilterTable", "[indexing]") {
       }
 
       SECTION("reset index = true") {
-        CHECK_CYLON_STATUS(indexing::FilterTable(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
-                                                 {0}, &out, /*bounds_check=*/false, /*reset_index=*/true));
+        CHECK_CYLON_STATUS(indexing::SelectTableByRows(table, ArrayFromJSON(arrow::int64(), "[0, 2, 4]"),
+                                                       {0}, &out, /*bounds_check=*/false, /*reset_index=*/true));
         CHECK_ARROW_EQUAL(expected->SelectColumns({0}).ValueOrDie(), out->get_table());
 
         REQUIRE(out->GetArrowIndex()->GetIndexingType() == Range);
@@ -642,6 +643,56 @@ TEST_CASE("Test FilterTable", "[indexing]") {
         REQUIRE(test_loc == 2);
       }
     }
+  }
+}
+
+TEST_CASE("Test MaskTable", "[indexing]") {
+  auto ab = TableFromJSON(arrow::schema({
+                                            {field("a", arrow::uint32())},
+                                            {field("b", arrow::uint32())},
+                                        }),
+                          {R"([
+                                      {"a": null, "b": 5},
+                                      {"a": 1,    "b": 3},
+                                      {"a": 3,    "b": 4}
+                                    ])"});
+
+  auto mask = TableFromJSON(arrow::schema({
+                                              {field("a", arrow::boolean())},
+                                              {field("b", arrow::boolean())},
+                                          }),
+                            {R"([
+                                      {"a": true,   "b": false},
+                                      {"a": true,   "b": true},
+                                      {"a": false,  "b": false}
+                                    ])"});
+
+  auto expected = TableFromJSON(arrow::schema({
+                                                  {field("a", arrow::uint32())},
+                                                  {field("b", arrow::uint32())},
+                                              }),
+                                {R"([
+                                      {"a": null,   "b": null},
+                                      {"a": 1,      "b": 3},
+                                      {"a": null,   "b": null}
+                                    ])"});
+
+  std::shared_ptr<Table> table, cmask, out;
+
+  SECTION("no offset") {
+    CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, ab, table));
+    CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, mask, cmask));
+
+    CHECK_CYLON_STATUS(indexing::MaskTable(table, cmask, &out));
+    CHECK_ARROW_EQUAL(expected, out->get_table());
+  }
+
+  SECTION("with offset"){
+    CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, ab->Slice(1, 2), table));
+    CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, mask->Slice(1, 2), cmask));
+
+    CHECK_CYLON_STATUS(indexing::MaskTable(table, cmask, &out));
+    CHECK_ARROW_EQUAL(expected->Slice(1, 2), out->get_table());
   }
 }
 

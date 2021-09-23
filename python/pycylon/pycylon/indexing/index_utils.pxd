@@ -28,15 +28,19 @@ from pycylon.indexing.cyindex cimport CIndexingType
 
 
 cdef extern from "../../../../cpp/src/cylon/indexing/index.hpp" namespace "cylon":
-    CStatus BuildIndexFromTable(const shared_ptr[CTable] & input,
+    CStatus BuildTableWithIndex(const shared_ptr[CTable] & input,
                                 int index_column,
                                 CIndexingType schema,
-                                shared_ptr[CTable] *output,
-                                bool drop)
+                                shared_ptr[CTable] *output)
 
-    CStatus SetIndexForTable(shared_ptr[CTable] & input,
-                             shared_ptr[CArrowArray] index_array,
-                             const CIndexingType schema)
+    CStatus BuildTableWithIndexArray(const shared_ptr[CTable] & input,
+                                     shared_ptr[CArrowArray] index_array,
+                                     CIndexingType schema,
+                                     shared_ptr[CTable] *output)
+    #
+    # CStatus SetIndexForTable(shared_ptr[CTable] & input,
+    #                          shared_ptr[CArrowArray] index_array,
+    #                          const CIndexingType schema)
 
 
 cdef class IndexUtil:

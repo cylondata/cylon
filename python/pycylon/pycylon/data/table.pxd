@@ -30,6 +30,7 @@ from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 from pycylon.indexing.cyindex cimport CBaseArrowIndex
 from pycylon.indexing.cyindex import BaseArrowIndex
+from pycylon.indexing.cyindex cimport CIndexingType
 
 
 cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
@@ -60,13 +61,15 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         bool IsRetain() const
 
-        CStatus SetArrowIndex(shared_ptr[CBaseArrowIndex] index, bool drop)
+        CStatus SetArrowIndex(shared_ptr[CBaseArrowIndex] index)
 
         shared_ptr[CBaseArrowIndex] GetArrowIndex()
 
         CStatus ResetArrowIndex(bool drop)
 
         CStatus AddColumn(long position, string column_name, shared_ptr[CArrowArray] & input_column)
+
+        CStatus CombineChunks()
 
 
 cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":

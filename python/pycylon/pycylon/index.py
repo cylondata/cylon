@@ -196,14 +196,15 @@ def _get_column_by_name(table, column_name):
     return artb.column(column_name)
 
 
-def process_index_by_value(key, table, indexing_type, drop_index):
+def process_index_by_value(key, table, indexing_type):
     if np.isscalar(key):
         column_index = None
         if isinstance(key, str):
             column_index = resolve_column_index_from_column_name(key, table)
         elif isinstance(key, int):
             column_index = key
-        return IndexUtil.build_arrow_index(indexing_type, table, column_index, drop_index)
+        # return IndexUtil.build_arrow_index(indexing_type, table, column_index, drop_index)
+        return IndexUtil.build_arrow_index(indexing_type, table, column_index)
     elif isinstance(key, List):
         return IndexUtil.build_arrow_index_from_list(indexing_type, table, key)
     else:

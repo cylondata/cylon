@@ -34,6 +34,8 @@ enum IndexingType {
 };
 
 class BaseArrowIndex {
+  friend Table;
+
  public:
   static constexpr int kNoColumnId = -1;
 
@@ -99,6 +101,7 @@ class BaseArrowIndex {
 /**
  * Get index values as an array
  * @return
+ * todo: rename to GetIndexColumn(AsArray)
  */
   virtual Status GetIndexAsArray(std::shared_ptr<arrow::Array> *out) = 0;
 
@@ -240,6 +243,16 @@ Status BuildIndex(Table *table,
                   int col_id,
                   IndexingType indexing_type,
                   std::shared_ptr<BaseArrowIndex> *output);
+
+Status BuildTableWithIndex(const std::shared_ptr<Table> &table,
+                           int col_id,
+                           IndexingType indexing_type,
+                           std::shared_ptr<Table> *output);
+Status BuildTableWithIndexArray(const std::shared_ptr<Table> &table,
+                                std::shared_ptr<arrow::Array> index_array,
+                                IndexingType indexing_type,
+                                std::shared_ptr<Table> *output);
+
 //Status BuildIndex(std::shared_ptr<arrow::Array> index_array,
 //                  IndexingType indexing_type,
 //                  std::shared_ptr<BaseArrowIndex> *output,
