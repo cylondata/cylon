@@ -14,10 +14,12 @@
 
 #include "common/test_header.hpp"
 #include "test_utils.hpp"
+#include "test_macros.hpp"
 
 #include <cylon/compute/aggregates.hpp>
 
-using namespace cylon;
+namespace cylon {
+namespace test {
 
 TEST_CASE("Set operation testing", "[set_op]") {
   std::string path1 = "../data/input/csv1_" + std::to_string(RANK) + ".csv";
@@ -25,55 +27,46 @@ TEST_CASE("Set operation testing", "[set_op]") {
   std::string out_path;
 
   SECTION("testing union") {
-    out_path =
-        "../data/output/union_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
-    REQUIRE(test::TestSetOperation(&DistributedUnion, ctx, path1, path2, out_path) == 0);
+    out_path = "../data/output/union_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
+    test::TestSetOperation(&DistributedUnion, ctx, path1, path2, out_path);
   }
 
   SECTION("testing union itself") {
     std::shared_ptr<Table> t, local, dist;
-    auto s = FromCSV(ctx, "../data/input/csv1_0.csv", t);
-    REQUIRE(s.is_ok());
+    CHECK_CYLON_STATUS(FromCSV(ctx, "../data/input/csv1_0.csv", t));
 
-    s = Union(t, t, local);
-    REQUIRE(s.is_ok());
+    CHECK_CYLON_STATUS(Union(t, t, local));
 
-    s = DistributedUnion(t, t, dist);
-    REQUIRE(s.is_ok());
+    CHECK_CYLON_STATUS(DistributedUnion(t, t, dist));
 
     std::shared_ptr<compute::Result> res;
-    s = compute::Count(dist, 0, res);
-    REQUIRE((s.is_ok()
-        && std::static_pointer_cast<arrow::Int64Scalar>(res->GetResult().scalar())->value == local->Rows()));
+    CHECK_CYLON_STATUS(compute::Count(dist, 0, res));
+    REQUIRE(std::static_pointer_cast<arrow::Int64Scalar>(res->GetResult().scalar())->value == local->Rows());
   }
 
   SECTION("testing intersection itself") {
     std::shared_ptr<Table> t, local, dist;
-    auto s = FromCSV(ctx, "../data/input/csv1_0.csv", t);
-    REQUIRE(s.is_ok());
+    CHECK_CYLON_STATUS(FromCSV(ctx, "../data/input/csv1_0.csv", t));
 
-    s = Intersect(t, t, local);
-    REQUIRE(s.is_ok());
+    CHECK_CYLON_STATUS(Intersect(t, t, local));
 
-    s = DistributedIntersect(t, t, dist);
-    REQUIRE(s.is_ok());
+    CHECK_CYLON_STATUS(DistributedIntersect(t, t, dist));
 
     std::shared_ptr<compute::Result> res;
-    s = compute::Count(dist, 0, res);
-    REQUIRE((s.is_ok()
-        && std::static_pointer_cast<arrow::Int64Scalar>(res->GetResult().scalar())->value == local->Rows()));
+    CHECK_CYLON_STATUS(compute::Count(dist, 0, res));
+    REQUIRE(std::static_pointer_cast<arrow::Int64Scalar>(res->GetResult().scalar())->value == local->Rows());
   }
 
   SECTION("testing subtract") {
-    out_path =
-        "../data/output/subtract_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
-    REQUIRE(test::TestSetOperation(&DistributedSubtract, ctx, path1, path2, out_path) == 0);
+    out_path = "../data/output/subtract_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
+    TestSetOperation(&DistributedSubtract, ctx, path1, path2, out_path);
   }
 
-  SECTION("testing subtract") {
-    out_path =
-        "../data/output/intersect_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK)
-            + ".csv";
-    REQUIRE(test::TestSetOperation(&DistributedIntersect, ctx, path1, path2, out_path) == 0);
+  SECTION("testing intersect") {
+    out_path = "../data/output/intersect_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
+    TestSetOperation(&DistributedIntersect, ctx, path1, path2, out_path);
   }
+}
+
+}
 }
