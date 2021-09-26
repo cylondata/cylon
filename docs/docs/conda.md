@@ -4,7 +4,8 @@ title: Cylon Conda Binaries
 sidebar_label: Conda
 ---
 
-PyCylon can be built using Conda. There are Conda packages for libcylon and pycylon.
+Cylon can be built and used through a Conda environment. 
+There are Conda packages for Cylon C++ and Python libraries (libcylon and pycylon).
 
 ## Installing from Conda
 
@@ -69,64 +70,93 @@ cd cylon
 
 conda env create -f conda/environments/cylon.yml
 conda activate cylon_dev
-conda install conda-build
-
-conda-build conda/recipes/cylon/
-conda-build conda/recipes/pycylon/
+./build.sh --conda_cpp --conda_python
 ```
 
-Now you can install these packages into your conda environment. 
+After that you can use PyCylon or libcylon as explained above.
 
+Here, Built files can be found in the `$CYLON_HOME/build` 
+(build directory can be specified from the command line with 
 ```bash
-conda install --use-local cylon
-conda install --use-local pycylon
+`-bpath` flag as: ./build.sh [-bpath <build dir>] ... )
 ```
 
-If the above doesn't work use the following command to install in local environment.
-```bash
-conda install -c <pathto cylon conda artifcat> cylon
-conda install -c <pathto pycylon conda artifcat> pycylon
+Additionally, Cylon libraries would also be installed to `$CONDA_PREFIX/lib` and
+`$CONDA_PREFIX/include` directories.
+
+## Installing and Using GCylon
+
+GPU Cylon (gcylon) provides distributed dataframe processing on NVIDIA GPUs. 
+There are two libraries for gcylon: 
+* a cpp library (libgcylon) 
+* a python library (pygcylon)
+
+GCylon libraries depend on Cylon libraries and NVIDIA libraries: cudatoolkit and cudf
+
+Since cudatoolkit and cudf libraries are rather large, we provide a separate conda environment for installing and compiling gcylon.
+
+The easiest way to compile and run gcylon is through a conda environment. We provide a conda environment yml file. It has all dependencies listed.
+
+### Prerequisites 
+* Clone the cylon project to your machine from github if not already done.
+* Make sure you have anaconda or miniconda installed. If not, please install anaconda or miniconda first. 
+* Install cudatoolkit 11.0 or higher. 
+* Make sure your machine is Linux and has:
+  - NVIDIA driver 450.80.02+
+  - A GPU with Pascal architecture or better (Compute Capability >=6.0)
+
+### Installing Conda Packages
+Go to cylon project directory on the command line.
+
+Check your cudatoolkit installation version. You can check it with:
+```
+nvcc --version
 ```
 
-Here is an example command in a local machine
-```bash
-conda install -c ~/anaconda3/envs/build_env/conda-bld/linux-64/pycylon-0.4.0-cylon_0.4_py37_gfa14527_455.tar.bz2 pycylon
+If your cudatoolkit version is not 11.2, update the cudatoolkit version at the file:
+conda/environments/gcylon.yml
+
+Create the conda environment and install the dependencies, 
+activate the conda environment:
+```
+conda env create -f conda/environments/gcylon.yml
+conda activate gcylon_dev
 ```
 
-After that you can use the package.
-
-```bash
-conda create -n cylon-0.4.0 -c cylondata pycylon python=3.7
-conda activate cylon-0.4.0
+Compile and Install Cylon cpp and python packages:
+```
+./build.sh --conda_cpp --conda_python
 ```
 
-## Developing in a Conda environment
-
-We can also use Conda environment for Cylon C++ and Python development. This is a very convenient 
-way to get started with Cylon development and testing. 
-
-1. Create a Conda environment with the dependencies, and activate the environment. Here we are using 
-the `conda/environments/cylon.yml` env file which creates `cylon_dev` environment.  
-
-```bash
-git clone https://github.com/cylondata/cylon.git
-cd cylon
-
-conda env create -f conda/environments/cylon.yml
-conda activate cylon_dev
+Compile and Install GCylon cpp and python packages:
+```
+./build.sh --gcylon --pygcylon
 ```
 
-2. Build Cylon against `cylon_dev` env. Here we are using the `build.sh` convenience script.  
-```bash
-./build.sh [-bpath <build dir>] [-j <num jobs>] --conda_cpp --conda_python [--test] [--pytest]
+Checking whether pycylon and pygcylon packages are installed after the compilation:
 ```
-Here, Conda would build Cylon. Built files can be found in the `-bpath` directory (default: 
-`$CYLON_HOME/build`). 
+conda list | grep cylon
+pycylon                 "version number"
+pygcylon                "version number"
+```
 
-Additionally, Cylon libraries would also be copied to `$CONDA_PREFIX/lib` and 
-`$CONDA_PREFIX/include` directories. 
+Running the join example from gcylon examples directory:
+Running with 2 mpi workers (-n 2) on the local machine:
+```
+mpirun -n 2 --mca opal_cuda_support 1 python python/pygcylon/examples/join.py
+```
 
-### Setting up IDEs 
+To enable ucx, add the flags "--mca pml ucx --mca osc ucx" to the mpirun command.  
+To enable infiniband, add the flag "--mca btl_openib_allow_ib true" to the mpirun command.  
+To run the join example with both ucx and infiniband enabled on the local machine with two mpi workers:
+```
+mpirun -n 2 --mca opal_cuda_support 1 --mca pml ucx --mca osc ucx --mca btl_openib_allow_ib true python python/pygcylon/examples/join.py
+```
+
+Other examples in the python/pygcylon/examples/ directory can be run similarly.
+
+
+## Setting up IDEs 
 
 In addition to use terminal, you can also use the Conda environment in your preferred IDE's. 
 
@@ -136,7 +166,7 @@ In addition to use terminal, you can also use the Conda environment in your pref
 
 3. Add a CMake build directory (ex: `$CYLON_HOME/build`)
 
-3. Use the following CMake options
+4. Use the following CMake options
 ```bash
 -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX"
 -DARROW_BUILD_TYPE="SYSTEM"

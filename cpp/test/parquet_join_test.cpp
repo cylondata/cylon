@@ -15,7 +15,8 @@
 #include "common/test_header.hpp"
 #include "test_utils.hpp"
 
-using namespace cylon;
+namespace cylon {
+namespace test {
 
 TEST_CASE("Parquet join testing", "[join]") {
   std::string path1 = "../data/input/parquet1_" + std::to_string(RANK) + ".parquet";
@@ -25,11 +26,14 @@ TEST_CASE("Parquet join testing", "[join]") {
 
   SECTION("testing inner joins") {
     auto join_config = cylon::join::config::JoinConfig(cylon::join::config::JoinType::INNER,
-                                                   0,
-                                                   0,
-                                                   cylon::join::config::JoinAlgorithm::SORT,
-                                                   "l_",
-                                                   "r_");
-    REQUIRE(test::TestParquetJoinOperation(join_config, ctx, path1, path2, out_path) == 0);
+                                                       0,
+                                                       0,
+                                                       cylon::join::config::JoinAlgorithm::SORT,
+                                                       "l_",
+                                                       "r_");
+    TestParquetJoinOperation(join_config, ctx, path1, path2, out_path);
   }
+}
+
+}
 }

@@ -186,7 +186,7 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
   arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::read_csv(ctx, path, options);
   if (result.ok()) {
     std::shared_ptr<arrow::Table> &table = result.ValueOrDie();
-    LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
+//    LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
     if (table->column(0)->chunks().size() > 1) {
       const auto &combine_res = table->CombineChunks(ToArrowPool(ctx));
       if (!combine_res.ok()) {
@@ -224,13 +224,10 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
 }
 
 Status Table::FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
-                             const std::shared_ptr<arrow::Table> &table,
+                             std::shared_ptr<arrow::Table> table,
                              std::shared_ptr<Table> &tableOut) {
-  if (!cylon::tarrow::validateArrowTableTypes(table)) {
-    LOG(FATAL) << "Types not supported";
-    return Status(cylon::Invalid, "This type not supported");
-  }
-  tableOut = std::make_shared<Table>(ctx, table);
+  RETURN_CYLON_STATUS_IF_FAILED(tarrow::CheckSupportedTypes(table));
+  tableOut = std::make_shared<Table>(ctx, std::move(table));
   return Status::OK();
 }
 
@@ -252,11 +249,13 @@ Status WriteCSV(const std::shared_ptr<Table> &table, const std::string &path,
   return status;
 }
 
-int Table::Columns() { return table_->num_columns(); }
+int Table::Columns() const { return table_->num_columns(); }
 
 std::vector<std::string> Table::ColumnNames() { return table_->ColumnNames(); }
 
-int64_t Table::Rows() { return table_->num_rows(); }
+int64_t Table::Rows() const { return table_->num_rows(); }
+
+bool Table::Empty() const { return table_->num_rows() == 0; }
 
 void Table::Print() { Print(0, this->Rows(), 0, this->Columns()); }
 
@@ -770,10 +769,6 @@ Status DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table>
   return do_dist_set_op(&Intersect, left, right, out);
 }
 
-void Table::Clear() {}
-
-Table::~Table() { this->Clear(); }
-
 void ReadCSVThread(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
 				   std::shared_ptr<cylon::Table> *table,
 				   const cylon::io::config::CSVReadOptions &options,
@@ -840,55 +835,68 @@ Status Project(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> 
   return Status::OK();
 }
 
-Status Table::PrintToOStream(int col1, int col2, int row1, int row2, std::ostream &out,
-							 char delimiter, bool use_custom_header,
-							 const std::vector<std::string> &headers) {
-  auto table = table_;
-  if (table != NULLPTR) {
-	// print the headers
-	if (use_custom_header) {
-	  // check if the headers are valid
-	  if (headers.size() != (uint64_t)table->num_columns()) {
-		return Status(
-			cylon::Code::IndexError,
-			"Provided headers doesn't match with the number of columns of the table. Given " +
-				std::to_string(headers.size()) + ", Expected " +
-				std::to_string(table->num_columns()));
-	  }
+Status Table::PrintToOStream(std::ostream &out) {
+  return PrintToOStream(0, Columns(), 0, Rows(), out);
+}
 
-	  for (int col = col1; col < col2; col++) {
-		out << headers[col];
-		if (col != col2 - 1) {
-		  out << delimiter;
-		} else {
-		  out << std::endl;
-		}
-	  }
-	}
-	for (int row = row1; row < row2; row++) {
-	  for (int col = col1; col < col2; col++) {
-		auto column = table->column(col);
-		int rowCount = 0;
-		for (int chunk = 0; chunk < column->num_chunks(); chunk++) {
-		  auto array = column->chunk(chunk);
-		  if (rowCount <= row && rowCount + array->length() > row) {
-			// print this array
-			out << cylon::util::array_to_string(array, row - rowCount);
-			if (col != col2 - 1) {
-			  out << delimiter;
-			}
-			break;
-		  }
-		  rowCount += array->length();
-		}
-	  }
-	  out << std::endl;
-	}
+Status Table::PrintToOStream(int col1, int col2, int row1, int row2, std::ostream &out,
+                             char delimiter, bool use_custom_header,
+                             const std::vector<std::string> &headers) {
+  if (table_ != NULLPTR) {
+    // print the headers
+    if (use_custom_header) {
+      // check if the headers are valid
+      if (headers.size() != (size_t) table_->num_columns()) {
+        return Status(
+            cylon::Code::IndexError,
+            "Provided headers doesn't match with the number of columns of the table. Given " +
+                std::to_string(headers.size()) + ", Expected " +
+                std::to_string(table_->num_columns()));
+      }
+
+      for (int col = col1; col < col2; col++) {
+        out << headers[col];
+        if (col != col2 - 1) {
+          out << delimiter;
+        } else {
+          out << std::endl;
+        }
+      }
+    } else {
+      const auto &field_names = table_->schema()->field_names();
+      for (int col = col1; col < col2; col++) {
+        out << field_names[col];
+        if (col != col2 - 1) {
+          out << delimiter;
+        } else {
+          out << std::endl;
+        }
+      }
+    }
+    for (int row = row1; row < row2; row++) {
+      for (int col = col1; col < col2; col++) {
+        auto column = table_->column(col);
+        int rowCount = 0;
+        for (int chunk = 0; chunk < column->num_chunks(); chunk++) {
+          auto array = column->chunk(chunk);
+          if (rowCount <= row && rowCount + array->length() > row) {
+            // print this array
+            out << cylon::util::array_to_string(array, row - rowCount);
+            if (col != col2 - 1) {
+              out << delimiter;
+            }
+            break;
+          }
+          rowCount += array->length();
+        }
+      }
+      out << std::endl;
+    }
   }
   return Status(Code::OK);
 }
 
-std::shared_ptr<arrow::Table> Table::get_table() { return table_; }
+const std::shared_ptr<arrow::Table> &Table::get_table() const { return table_; }
 
 bool Table::IsRetain() const { return retain_; }
 

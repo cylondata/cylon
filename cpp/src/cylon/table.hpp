@@ -15,7 +15,6 @@
 #ifndef CYLON_SRC_IO_TABLE_H_
 #define CYLON_SRC_IO_TABLE_H_
 
-
 #include <memory>
 #include <string>
 #include <utility>
@@ -59,15 +58,13 @@ class Table {
    */
   Table(const std::shared_ptr<CylonContext> &ctx, std::vector<std::shared_ptr<Column>> cols);
 
-  virtual ~Table();
-
   /**
    * Create a table from an arrow table,
    * @param table arrow::Table
    * @return
    */
   static Status FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
-                               const std::shared_ptr<arrow::Table> &table,
+                               std::shared_ptr<arrow::Table> table,
                                std::shared_ptr<Table> &tableOut);
 
   /**
@@ -101,8 +98,9 @@ class Table {
    * @return true if print is successful
    */
   Status PrintToOStream(int col1, int col2, int row1, int row2, std::ostream &out,
-						char delimiter = ',', bool use_custom_header = false,
-						const std::vector<std::string> &headers = {});
+                        char delimiter = ',', bool use_custom_header = false,
+                        const std::vector<std::string> &headers = {});
+  Status PrintToOStream(std::ostream &out);
 
   /*END OF TRANSFORMATION FUNCTIONS*/
 
@@ -110,13 +108,19 @@ class Table {
    * Get the number of columns in the table
    * @return number of columns
    */
-  int32_t Columns();
+  int32_t Columns() const;
 
   /**
    * Get the number of rows in this table
    * @return number of rows in the table
    */
-  int64_t Rows();
+  int64_t Rows() const;
+
+  /**
+   * Returns if the table is empty or not
+   * @return
+   */
+  bool Empty() const;
 
   /**
    * Print the complete table
@@ -136,12 +140,7 @@ class Table {
    * Get the underlying arrow table
    * @return the arrow table
    */
-  std::shared_ptr<arrow::Table> get_table();
-
-  /**
-   * Clears the table
-   */
-  void Clear();
+  const std::shared_ptr<arrow::Table> &get_table() const;
 
   /**
    * Returns the cylon Context

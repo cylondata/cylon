@@ -35,6 +35,11 @@
     };                              \
   } while (0)
 
+#define CYLON_ASSIGN_OR_RAISE(lhs, rexpr) \
+  auto&& result_name = (rexpr);           \
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED((result_name).status()); \
+  lhs = std::move(result_name).ValueUnsafe();
+
 #define RETURN_ARROW_STATUS_IF_FAILED(expr) \
   do{                               \
     const auto& _st = (expr);       \

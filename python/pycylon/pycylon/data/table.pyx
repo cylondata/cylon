@@ -165,12 +165,6 @@ cdef class Table:
         else:
             raise Exception(f"Table couldn't be sorted: {status.get_msg().decode()}")
 
-    def clear(self):
-        """
-        Clear PyCylon table
-        """
-        self.table_shd_ptr.get().Clear()
-
     def retain_memory(self, retain):
         """
         Retain  memory for PyCylon table
