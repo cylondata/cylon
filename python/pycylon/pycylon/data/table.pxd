@@ -42,15 +42,13 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         CStatus ToArrowTable(shared_ptr[CArrowTable] & output)
 
-        int Columns()
+        int Columns() const
 
-        int Rows()
+        int Rows() const
 
         void Print()
 
         void Print(int row1, int row2, int col1, int col2)
-
-        void Clear()
 
         const shared_ptr[CCylonContext] & GetContext()
 

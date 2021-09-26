@@ -19,6 +19,7 @@
 #include <arrow/api.h>
 
 #include <cylon/data_types.hpp>
+#include <cylon/status.hpp>
 
 namespace cylon {
 namespace tarrow {
@@ -44,6 +45,8 @@ std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &ar
  * @return false if we don't support the types
  */
 bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table);
+
+cylon::Status CheckSupportedTypes(const std::shared_ptr<arrow::Table> &table);
 
 }  // namespace tarrow
 }  // namespace cylon
