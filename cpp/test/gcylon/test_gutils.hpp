@@ -162,6 +162,32 @@ bool PerformBcastTest(const std::string &input_filename,
     return true;
 }
 
+bool PerformSortTest(const std::string &input_filename,
+                      const std::string &sorted_filename,
+                      const std::vector<std::string> &column_names,
+                      const std::vector<std::string> &date_columns,
+                      int sort_root,
+                      const std::vector<int32_t> sort_columns,
+                      std::shared_ptr<cylon::CylonContext> ctx) {
+
+    cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names, date_columns);
+    auto input_tv = input_table.tbl->view();
+    cudf::io::table_with_metadata sorted_saved_table = readCSV(sorted_filename, column_names, date_columns);
+
+    // perform distributed sort
+    std::unique_ptr<cudf::table> sorted_table;
+    cylon::Status status = DistributedSort(input_tv, sort_columns, ctx, sorted_table, sort_root, true, true);
+    if (!status.is_ok()) {
+        return false;
+    }
+
+    auto sorted_columns_tv = sorted_table->select(sort_columns);
+    auto sorted_saved_columns_tv = sorted_saved_table.tbl->select(sort_columns);
+
+    // compare resulting sorted table with the sorted table from the file
+    return table_equal(sorted_columns_tv, sorted_saved_columns_tv);
+}
+
 }
 }
 #endif //CYLON_CPP_SRC_EXAMPLES_TEST_UTILS_HPP_
