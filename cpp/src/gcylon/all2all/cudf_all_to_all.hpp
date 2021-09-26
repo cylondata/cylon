@@ -102,7 +102,7 @@ private:
  */
 class PartTableView {
 public:
-    PartTableView(cudf::table_view &tv, std::vector<cudf::size_type> &part_indexes);
+    PartTableView(const cudf::table_view &tv, const std::vector<cudf::size_type> &part_indexes);
 
     std::shared_ptr<PartColumnView> column(int column_index);
 
@@ -126,8 +126,7 @@ private:
     std::unordered_map<int, std::shared_ptr<PartColumnView>> columns{};
 
     // partition indices, last one shows the limit of the previous one
-    // there are part_indexes.size()-1 partitions
-    std::vector<cudf::size_type> & part_indexes;
+    const std::vector<cudf::size_type> part_indexes;
 };
 
 struct PendingReceives {
@@ -169,7 +168,7 @@ struct PendingReceives {
  * @param reference the reference number sent by the sender
  * @return true if we accept this buffer
  */
-using CudfCallback = std::function<bool(int source, const std::shared_ptr<cudf::table> &table, int reference)>;
+using CudfCallback = std::function<bool(int source, std::unique_ptr<cudf::table> table, int reference)>;
 
 class CudfAllToAll : public cylon::ReceiveCallback {
 
@@ -209,7 +208,7 @@ public:
      * @param offsets partitioning offsets in the table
      * @return true if the buffer is accepted
      */
-  int insert(cudf::table_view &tview, std::vector<cudf::size_type> &offsets, int ref);
+  int insert(const cudf::table_view &tview, const std::vector<cudf::size_type> &offsets, int ref);
 
   /**
    * Check weather the operation is complete, this method needs to be called until the operation is complete
@@ -276,7 +275,7 @@ private:
 
     void constructColumn(std::shared_ptr<PendingReceives> pr);
 
-    std::shared_ptr<cudf::table> constructTable(std::shared_ptr<PendingReceives> pr);
+    std::unique_ptr<cudf::table> constructTable(std::shared_ptr<PendingReceives> pr);
 
     /**
      * worker rank

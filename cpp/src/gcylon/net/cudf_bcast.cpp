@@ -19,7 +19,7 @@
 #include <gcylon/sorting/deserialize.hpp>
 #include <gcylon/net/cudf_serialize.hpp>
 
-cylon::Status gcylon::net::Bcast(cudf::table_view &tv,
+cylon::Status gcylon::net::Bcast(const cudf::table_view &tv,
                    const int bcast_root,
                    const std::shared_ptr<cylon::CylonContext> ctx,
                    std::unique_ptr<cudf::table> &received_table) {

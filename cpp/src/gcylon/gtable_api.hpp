@@ -86,6 +86,27 @@ cylon::Status DistributedJoin(std::shared_ptr<GTable> &left,
  */
 cylon::Status WriteToCsv(std::shared_ptr<GTable> &table, std::string output_file);
 
+/**
+ * perform distributed sort on provided table
+ * @param tv
+ * @param sort_column_indices sort based on these columns
+ * @param ctx
+ * @param sorted_table resulting table
+ * @param sort_root the worker that will determine the global split points
+ * @param sort_ascending
+ * @param nulls_after
+ * @return
+ */
+cylon::Status DistributedSort(const cudf::table_view &tv,
+                              const std::vector<int32_t> &sort_column_indices,
+                              std::shared_ptr<cylon::CylonContext> ctx,
+                              std::unique_ptr<cudf::table> &sorted_table,
+                              const int sort_root = 0,
+                              bool sort_ascending = true,
+                              bool nulls_after = true);
+
+
+
 }// end of namespace gcylon
 
 #endif //GCYLON_GTABLE_API_H

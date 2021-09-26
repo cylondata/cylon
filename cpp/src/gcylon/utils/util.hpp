@@ -94,6 +94,39 @@ bool table_equal_with_sorting(cudf::table_view & tv1, cudf::table_view & tv2);
  */
 bool table_equal(cudf::table_view & tv1, cudf::table_view & tv2);
 
+/**
+ * create a table with empty columns
+ * each column has the same datatype with the given table columns
+ * @param tv
+ * @return
+ */
+std::unique_ptr<cudf::table> createEmptyTable(const cudf::table_view &tv);
+
+
+/**
+ * convert a vector of elements to a string with comma + space in between
+ * @tparam T
+ * @param vec
+ * @return
+ */
+template<typename T>
+std::string vectorToString(std::vector<T> vec) {
+    if (vec.empty()) {
+        return std::string();
+    }
+
+    std::ostringstream oss;
+    // Convert all but the last element to avoid a trailing ","
+    std::copy(vec.begin(), vec.end()-1,
+              std::ostream_iterator<T>(oss, ", "));
+
+    // Now add the last element with no delimiter
+    oss << vec.back();
+    return oss.str();
 }
+
+
+
+} // end of namespace gcylon
 
 #endif //GCYLON_ALL2ALL_UTIL_H

@@ -91,6 +91,8 @@ add_library(gcylon SHARED
         net/cudf_gather.cpp
         sorting/deserialize.hpp
         sorting/deserialize.cpp
+        sorting/sorting.hpp
+        sorting/sorting.cpp
         utils/util.hpp
         utils/util.cpp
         gtable.hpp

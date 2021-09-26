@@ -38,7 +38,7 @@ std::vector<std::vector<int32_t>> bufferSizesPerTable(int32_t *all_buffer_sizes,
 }
 
 
-cylon::Status gcylon::net::Gather(cudf::table_view &tv,
+cylon::Status gcylon::net::Gather(const cudf::table_view &tv,
                                   const int gather_root,
                                   bool gather_from_root,
                                   std::shared_ptr<cylon::CylonContext> ctx,

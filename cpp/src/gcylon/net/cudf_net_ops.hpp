@@ -50,7 +50,7 @@ int32_t numOfRows(const cudf::data_type dt,
  * @param received_table all workers except the broadcast root get a table (significant at all receiver workers)
  * @return
  */
-cylon::Status Bcast(cudf::table_view &tv,
+cylon::Status Bcast(const cudf::table_view &tv,
                     const int bcast_root,
                     const std::shared_ptr<cylon::CylonContext> ctx,
                     std::unique_ptr<cudf::table> &received_table);
@@ -64,12 +64,28 @@ cylon::Status Bcast(cudf::table_view &tv,
  * @param gathered_tables gathered tables at the gather root
  * @return
  */
-cylon::Status Gather(cudf::table_view &tv,
+cylon::Status Gather(const cudf::table_view &tv,
                      const int gather_root,
                      bool gather_from_root,
                      std::shared_ptr<cylon::CylonContext> ctx,
                      std::vector<std::unique_ptr<cudf::table>> &gathered_tables);
 
+
+/**
+ * MPI All to all for a CuDF Table on each worker
+ * Each table has n partitions for n workers
+ * part_indices has (n+1) partition indices each range for a worker
+ *   range(i, i+1) goes to the worker[i]
+ * @param tv_with_parts table_view with partitions
+ * @param part_indices (n-1) partition indices
+ * @param ctx
+ * @param received_tables
+ * @return
+ */
+cylon::Status AllToAll(const cudf::table_view & tv_with_parts,
+                       const std::vector<cudf::size_type> &part_indices,
+                       std::shared_ptr<cylon::CylonContext> ctx,
+                       std::vector<std::unique_ptr<cudf::table>> &received_tables);
 
 } // end of namespace net
 } // end of namespace gcylon

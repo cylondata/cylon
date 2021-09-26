@@ -30,7 +30,7 @@ public:
      * Provide the local table_view to deconstruct the received tables as a template
      * @param tv
      */
-    TableDeserializer(cudf::table_view &tv);
+    TableDeserializer(const cudf::table_view &tv);
 
     /**
      * deserialize a single table

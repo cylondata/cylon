@@ -19,7 +19,7 @@
 
 namespace gcylon {
 
-CudfTableSerializer::CudfTableSerializer(cudf::table_view &tv) : tv_(tv) {
+CudfTableSerializer::CudfTableSerializer(const cudf::table_view &tv) : tv_(tv) {
 }
 
 void CudfTableSerializer::initTableBuffers() {

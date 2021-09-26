@@ -23,7 +23,45 @@
 #include <gcylon/gtable.hpp>
 #include <gcylon/utils/util.hpp>
 #include <gcylon/all2all/cudf_all_to_all.cuh>
+#include <gcylon/net/cudf_net_ops.hpp>
 #include <cylon/net/mpi/mpi_communicator.hpp>
+
+cylon::Status gcylon::net::AllToAll(const cudf::table_view & tv_with_parts,
+                                    const std::vector<cudf::size_type> &part_indices,
+                                    std::shared_ptr<cylon::CylonContext> ctx,
+                                    std::vector<std::unique_ptr<cudf::table>> &received_tables) {
+
+    if (part_indices.size() != ctx->GetWorldSize() + 1) {
+        return cylon::Status(cylon::Code::ValueError,
+                      "there must be number of workers + 1 values in part_indices");
+    }
+
+    const auto &neighbours = ctx->GetNeighbours(true);
+    received_tables.reserve(neighbours.size());
+
+    // define call back to catch the receiving tables
+    CudfCallback cudf_callback =
+            [&received_tables](int source, std::unique_ptr<cudf::table> received_table, int reference) {
+                received_tables.push_back(std::move(received_table));
+                return true;
+            };
+
+    // doing all to all communication to exchange tables
+    CudfAllToAll all_to_all(ctx, neighbours, neighbours, ctx->GetNextSequence(), cudf_callback);
+
+    // insert partitioned table for all-to-all
+    int accepted = all_to_all.insert(tv_with_parts, part_indices, ctx->GetNextSequence());
+    if (!accepted)
+        return cylon::Status(accepted);
+
+    // wait for the partitioned tables to arrive
+    // now complete the communication
+    all_to_all.finish();
+    while (!all_to_all.isComplete()) {}
+    all_to_all.close();
+
+    return cylon::Status::OK();
+}
 
 namespace gcylon {
 
@@ -203,11 +241,8 @@ int PartColumnView::getMaskBufferSize(int part_index) {
 //////////////////////////////////////////////////////////////////////
 // PartTableView implementations
 //////////////////////////////////////////////////////////////////////
-PartTableView::PartTableView(cudf::table_view &tv, std::vector<cudf::size_type> &part_indexes)
+PartTableView::PartTableView(const cudf::table_view &tv, const std::vector<cudf::size_type> &part_indexes)
         : tv(tv), part_indexes(part_indexes) {
-
-    // add the limit of the last partition
-    part_indexes.push_back(tv.num_rows());
 
     for (int i = 0; i < this->tv.num_columns(); ++i) {
         auto pcv = std::make_shared<PartColumnView>(this->tv.column(i), this->part_indexes);
@@ -260,7 +295,7 @@ int CudfAllToAll::insert(const std::shared_ptr<cudf::table_view> &tview,
     return 1;
 }
 
-int CudfAllToAll::insert(cudf::table_view &tview, std::vector<cudf::size_type> &offsets, int ref) {
+int CudfAllToAll::insert(const cudf::table_view &tview, const std::vector<cudf::size_type> &offsets, int ref) {
 
     // if there is already a partitioned table being sent, return false
     if (ptview_)
@@ -558,14 +593,14 @@ void CudfAllToAll::constructColumn(std::shared_ptr<PendingReceives> pr) {
     }
 }
 
-std::shared_ptr<cudf::table> CudfAllToAll::constructTable(std::shared_ptr<PendingReceives> pr) {
+std::unique_ptr<cudf::table> CudfAllToAll::constructTable(std::shared_ptr<PendingReceives> pr) {
 
     std::vector<std::unique_ptr<cudf::column>> column_vector{};
     for (long unsigned int i=0; i < pr->columns.size(); i++) {
         column_vector.push_back(std::move(pr->columns.at(i)));
     }
 
-    return std::make_shared<cudf::table>(std::move(column_vector));
+    return std::make_unique<cudf::table>(std::move(column_vector));
 }
 
 /**
@@ -605,8 +640,8 @@ bool CudfAllToAll::onReceive(int source, std::shared_ptr<cylon::Buffer> buffer, 
 
   // if all columns are created, create the table
   if ((int32_t)pr->columns.size() == pr->number_of_columns) {
-      std::shared_ptr<cudf::table> tbl = constructTable(pr);
-      recv_callback_(source, tbl, pr->reference);
+      std::unique_ptr<cudf::table> tbl = constructTable(pr);
+      recv_callback_(source, std::move(tbl), pr->reference);
 
       // clear table data from pr
       pr->columns.clear();

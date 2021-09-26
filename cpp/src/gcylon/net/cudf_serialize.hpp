@@ -30,7 +30,7 @@ public:
     /**
      * @param tv table_view to serialize
      */
-    CudfTableSerializer(cudf::table_view &tv);
+    CudfTableSerializer(const cudf::table_view &tv);
 
     /**
      * get the buffer sizes for this table in bytes
@@ -117,7 +117,7 @@ public:
 
 
 private:
-    cudf::table_view tv_;
+    const cudf::table_view tv_;
     std::vector<int32_t> buffer_sizes_ = std::vector<int32_t>();
     std::vector<uint8_t *> table_buffers_ = std::vector<uint8_t *>();
     bool table_buffers_initialized = false;

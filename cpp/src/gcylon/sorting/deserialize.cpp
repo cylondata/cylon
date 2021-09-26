@@ -23,7 +23,7 @@
 
 namespace gcylon {
 
-TableDeserializer::TableDeserializer(cudf::table_view &tv) : tv_(tv) {
+TableDeserializer::TableDeserializer(const cudf::table_view &tv) : tv_(tv) {
 }
 
 std::unique_ptr<cudf::table>
