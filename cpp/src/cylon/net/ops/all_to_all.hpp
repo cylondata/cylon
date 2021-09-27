@@ -90,7 +90,7 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
            ReceiveCallback *callback,
            Allocator *alloc);
 
-  virtual ~AllToAll() = default;
+  ~AllToAll() override = default;
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true
