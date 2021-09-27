@@ -174,13 +174,15 @@ bool PerformSortTest(const std::string &input_filename,
     auto input_tv = input_table.tbl->view();
     cudf::io::table_with_metadata sorted_saved_table = readCSV(sorted_filename, column_names, date_columns);
 
+    std::vector<cudf::order> column_orders(sort_columns.size(), cudf::order::ASCENDING);
+
     // perform distributed sort
     std::unique_ptr<cudf::table> sorted_table;
     cylon::Status status = DistributedSort(input_tv,
                                            sort_columns,
+                                           column_orders,
                                            ctx,
                                            sorted_table,
-                                           true,
                                            true,
                                            sort_root);
     if (!status.is_ok()) {

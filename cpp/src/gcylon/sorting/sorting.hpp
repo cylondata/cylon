@@ -48,8 +48,8 @@ cylon::Status SampleTableUniform(const cudf::table_view &tv,
  */
 cylon::Status GetSplitPoints(const cudf::table_view & sample_tv,
                              const int splitter,
+                             const std::vector<cudf::order> &column_orders,
                              std::shared_ptr<cylon::CylonContext> ctx,
-                             const cudf::order sort_order,
                              std::unique_ptr<cudf::table> &split_table);
 
 } // end of namespace gcylon
