@@ -159,9 +159,9 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
                                       const std::vector<int32_t> & sort_column_indices,
                                       std::shared_ptr<cylon::CylonContext> ctx,
                                       std::unique_ptr<cudf::table> &sorted_table,
-                                      const int sort_root,
                                       bool sort_ascending,
-                                      bool nulls_after) {
+                                      bool nulls_after,
+                                      const int sort_root) {
 
     if (sort_column_indices.size() > tv.num_columns()) {
         return cylon::Status(cylon::Code::ValueError,

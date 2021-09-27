@@ -176,7 +176,13 @@ bool PerformSortTest(const std::string &input_filename,
 
     // perform distributed sort
     std::unique_ptr<cudf::table> sorted_table;
-    cylon::Status status = DistributedSort(input_tv, sort_columns, ctx, sorted_table, sort_root, true, true);
+    cylon::Status status = DistributedSort(input_tv,
+                                           sort_columns,
+                                           ctx,
+                                           sorted_table,
+                                           true,
+                                           true,
+                                           sort_root);
     if (!status.is_ok()) {
         return false;
     }

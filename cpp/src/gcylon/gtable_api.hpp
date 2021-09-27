@@ -101,9 +101,9 @@ cylon::Status DistributedSort(const cudf::table_view &tv,
                               const std::vector<int32_t> &sort_column_indices,
                               std::shared_ptr<cylon::CylonContext> ctx,
                               std::unique_ptr<cudf::table> &sorted_table,
-                              const int sort_root = 0,
                               bool sort_ascending = true,
-                              bool nulls_after = true);
+                              bool nulls_after = true,
+                              const int sort_root = 0);
 
 
 
