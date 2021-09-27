@@ -31,31 +31,6 @@ from pyarrow.lib cimport pyarrow_unwrap_array
 
 
 cdef extern from "../../../../cpp/src/cylon/column.hpp" namespace "cylon":
-    cdef cppclass CColumn "cylon::Column":
-        CColumn(const string &id, const shared_ptr[CDataType] &type, const shared_ptr[
-                ArrowCChunkedAarray] &data_)
-
-        CColumn(const string &id, const shared_ptr[CDataType] &type, const shared_ptr[
-                ArrowCAarray] &data_)
-
-        shared_ptr[ArrowCChunkedAarray] GetColumnData() const
-
-        string GetID() const
-
-        shared_ptr[CDataType] GetDataType() const
-
-        @staticmethod
-        shared_ptr[CColumn] Make(const string &id, const shared_ptr[CDataType] &type,
-                                const shared_ptr[ArrowCChunkedAarray] &data_)
-
-        @staticmethod
-        shared_ptr[CColumn] Make(const string &id, const shared_ptr[CDataType] &type,
-                                const shared_ptr[ArrowCAarray] &data_)
-
-
-
-cdef extern from "../../../../cpp/src/cylon/column.hpp" namespace "cylon":
-
     ctypedef fused T:
         signed char
         signed short
@@ -73,17 +48,36 @@ cdef extern from "../../../../cpp/src/cylon/column.hpp" namespace "cylon":
         double
         long double
 
-    cdef cppclass CVectorColumn "cylon::VectorColumn"[T]:
-        CVectorColumn(const string &id, const shared_ptr[CDataType] &type, const shared_ptr[
-                vector[T]] &data_vector)
+    cdef cppclass CColumn "cylon::Column":
+        CColumn(const string & id, const shared_ptr[CDataType] & type, const shared_ptr[
+                ArrowCChunkedAarray] & data_)
 
-        @staticmethod
-        shared_ptr[CVectorColumn[T]] Make(const string &id, const shared_ptr[CDataType] &type,
-                                          const shared_ptr[vector[T]] &data_vector)
+        CColumn(const string & id, const shared_ptr[CDataType] & type, const shared_ptr[
+                ArrowCAarray] & data_)
+
+        shared_ptr[ArrowCChunkedAarray] GetColumnData() const
+
+        string GetID() const
+
+        shared_ptr[CDataType] GetDataType() const
+
+        @ staticmethod
+        shared_ptr[CColumn] Make(const string & id, const shared_ptr[CDataType] & type,
+                                 const shared_ptr[ArrowCChunkedAarray] & data_)
+
+        @ staticmethod
+        shared_ptr[CColumn] Make(const string & id, const shared_ptr[CDataType] & type,
+                                 const shared_ptr[ArrowCAarray] & data_)
+
+        @ staticmethod
+        CStatus FromVector[T](const shared_ptr[CCylonContext] & ctx,
+                              const string & id,
+                              const shared_ptr[CDataType] & type,
+                              const vector[T] & data_vector,
+                              shared_ptr[CColumn] & output)
 
 
 cdef class Column:
     cdef:
         CColumn *thisPtr
         shared_ptr[CColumn] sp_column
-

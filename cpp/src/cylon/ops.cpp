@@ -83,8 +83,8 @@ Status UnionOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
     out = table;
   };
 
-  std::vector<int> left_column_indexes(left->GetColumns().size());
-  std::vector<int> right_column_indexes(right->GetColumns().size());
+  std::vector<int> left_column_indexes(left->Columns());
+  std::vector<int> right_column_indexes(right->Columns());
   std::iota (std::begin(left_column_indexes), std::end(left_column_indexes), 0);
   std::iota (std::begin(right_column_indexes), std::end(right_column_indexes), 0);
   int left_splits = 1;
@@ -112,8 +112,8 @@ Status SubtractOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
     out = table;
   };
 
-  std::vector<int> left_column_indexes(left->GetColumns().size());
-  std::vector<int> right_column_indexes(right->GetColumns().size());
+  std::vector<int> left_column_indexes(left->Columns());
+  std::vector<int> right_column_indexes(right->Columns());
   std::iota (std::begin(left_column_indexes), std::end(left_column_indexes), 0);
   std::iota (std::begin(right_column_indexes), std::end(right_column_indexes), 0);
   int left_splits = 1;
@@ -141,8 +141,8 @@ Status IntersectOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
     out = table;
   };
 
-  std::vector<int> left_column_indexes(left->GetColumns().size());
-  std::vector<int> right_column_indexes(right->GetColumns().size());
+  std::vector<int> left_column_indexes(left->Columns());
+  std::vector<int> right_column_indexes(right->Columns());
   std::iota (std::begin(left_column_indexes), std::end(left_column_indexes), 0);
   std::iota (std::begin(right_column_indexes), std::end(right_column_indexes), 0);
   int left_splits = 1;

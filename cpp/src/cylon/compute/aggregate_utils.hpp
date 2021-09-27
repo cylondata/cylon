@@ -117,7 +117,7 @@ cylon::Status AllReduce(cylon::net::CommType comm_type,
   }
 }
 
-template<typename RED_OPS=cylon::net::ReduceOp>
+template<typename RED_OPS>
 cylon::Status DoAllReduce(const std::shared_ptr<CylonContext> &ctx,
                           const arrow::Datum &snd,
                           std::shared_ptr<Result> &rcv,
