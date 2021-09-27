@@ -1067,42 +1067,7 @@ const std::shared_ptr<cylon::CylonContext> &Table::GetContext() const {
 Table::Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Table> tab)
     : ctx(ctx),
       table_(std::move(tab)),
-      base_arrow_index_(std::make_shared<cylon::ArrowRangeIndex>(0, table_->num_rows(), 1, cylon::ToArrowPool(ctx))) {
-//  columns_.reserve(table_->num_columns());
-//  for (int i = 0; i < table_->num_columns(); i++) {
-//    const std::shared_ptr<arrow::Field> &field = table_->field(i);
-//    columns_.emplace_back(Column::Make(field->name(), cylon::tarrow::ToCylonType(field->type()), table_->column(i)));
-//  }
-//  base_arrow_index_ = std::make_shared<cylon::ArrowRangeIndex>(0, table_->num_rows(), 1, cylon::ToArrowPool(ctx));
-}
-
-//Table::Table(const std::shared_ptr<cylon::CylonContext> &ctx, std::vector<std::shared_ptr<Column>> cols)
-//    : ctx(ctx), columns_(std::move(cols)) {
-//  arrow::SchemaBuilder schema_builder;
-//  std::vector<std::shared_ptr<arrow::ChunkedArray>> col_arrays;
-//  col_arrays.reserve(cols.size());
-//
-//  for (const std::shared_ptr<Column> &col : columns_) {
-//    const std::shared_ptr<DataType> &data_type = col->GetDataType();
-//    const std::shared_ptr<arrow::Field>
-//        &field = arrow::field(col->GetID(), cylon::tarrow::convertToArrowType(data_type));
-//    const auto &status = schema_builder.AddField(field);
-//    if (!status.ok()) {
-//      throw "unable to add field to arrow schema: " + status.message();
-//    }
-//
-//    col_arrays.push_back(col->GetColumnData());
-//  }
-//
-//  const auto &schema_result = schema_builder.Finish();
-//  table_ = arrow::Table::Make(schema_result.ValueOrDie(), std::move(col_arrays));
-//
-//  if (!cylon::tarrow::validateArrowTableTypes(table_)) {
-//    throw "cylon table created with invalid types";
-//  }
-//}
-
-
+      base_arrow_index_(std::make_shared<cylon::ArrowRangeIndex>(0, table_->num_rows(), 1, cylon::ToArrowPool(ctx))) {}
 
 #ifdef BUILD_CYLON_PARQUET
 Status FromParquet(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
