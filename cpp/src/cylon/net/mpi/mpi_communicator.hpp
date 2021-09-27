@@ -28,12 +28,13 @@ class MPIConfig : public CommConfig {
   int GetDummyConfig();
 public:
   CommType Type() override;
-  virtual ~MPIConfig();
+  ~MPIConfig() override;
   static std::shared_ptr<MPIConfig> Make();
 };
 
 class MPICommunicator : public Communicator {
  public:
+  virtual ~MPICommunicator();
   Status Init(const std::shared_ptr<CommConfig> &config) override;
   Channel *CreateChannel() override;
   int GetRank() const override;
@@ -41,6 +42,9 @@ class MPICommunicator : public Communicator {
   void Finalize() override;
   void Barrier() override;
   CommType GetCommType() const override;
+
+ private:
+  std::vector<Channel*> channels_{};
 };
 }
 }

@@ -37,10 +37,12 @@ std::shared_ptr<MPIConfig> MPIConfig::Make() {
   return std::make_shared<MPIConfig>();
 }
 
-MPIConfig::~MPIConfig() {}
+MPIConfig::~MPIConfig() = default;
 
 Channel *MPICommunicator::CreateChannel() {
-  return new MPIChannel();
+  Channel *channel = new MPIChannel();
+  channels_.push_back(channel);
+  return channel;
 }
 
 int MPICommunicator::GetRank() const {
@@ -65,8 +67,8 @@ void MPICommunicator::Finalize() {
   int finalized;
   MPI_Finalized(&finalized);
   if (!finalized) {
-	MPI_Finalize();
-  } 
+    MPI_Finalize();
+  }
 }
 void MPICommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);
@@ -74,6 +76,13 @@ void MPICommunicator::Barrier() {
 
 CommType MPICommunicator::GetCommType() const {
   return MPI;
+}
+
+MPICommunicator::~MPICommunicator() {
+  for (auto &&c: channels_) {
+    delete c;
+  }
+  channels_.clear();
 }
 }  // namespace net
 }  // namespace cylon

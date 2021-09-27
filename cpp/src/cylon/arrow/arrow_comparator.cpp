@@ -251,7 +251,7 @@ class TwoBinaryRowIndexComparator : public TwoArrayIndexComparator {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
  public:
   explicit TwoBinaryRowIndexComparator(const std::shared_ptr<arrow::Array> &a1, const std::shared_ptr<arrow::Array> &a2)
-      : arrays({std::static_pointer_cast<ARROW_ARRAY_T>(a1), std::static_pointer_cast<ARROW_ARRAY_T>(a1)}) {}
+      : arrays({std::static_pointer_cast<ARROW_ARRAY_T>(a1), std::static_pointer_cast<ARROW_ARRAY_T>(a2)}) {}
 
   int compare(int64_t index1, int64_t index2) const override {
     if (ASC) {

@@ -34,6 +34,7 @@ namespace cylon {
    */
   class Allocator {
   public:
+    virtual ~Allocator() = default;
     virtual Status Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) = 0;
   };
 
@@ -53,8 +54,7 @@ namespace cylon {
 
   class DefaultAllocator : public Allocator {
    public:
-    cylon::Status Allocate(int64_t length,
-        std::shared_ptr<Buffer> *buffer) override {
+    cylon::Status Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) override {
       auto *b = new uint8_t[length];
       *buffer = std::make_shared<DefaultBuffer>(b, length);
       return Status::OK();
