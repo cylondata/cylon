@@ -44,6 +44,20 @@ bool is_nulls_present(const std::shared_ptr<arrow::ChunkedArray> &values) {
   return false;
 }
 
+Status build_null_buffers_from_array(const std::shared_ptr<arrow::Array> &array,
+                          const std::vector<std::shared_ptr<arrow::TypedBufferBuilder<bool>>> &null_bitmap_builders,
+                          const std::vector<uint32_t> &target_partitions) {
+  const std::shared_ptr<arrow::ArrayData> &data = array->data();
+  const int64_t arr_len = array->length();
+  for (int64_t i = 0; i < arr_len; i++) {
+    unsigned int target_buffer = target_partitions[i];
+    if (array->IsNull(i)) {
+      null_bitmap_builders[target_buffer]->Append(array->IsNull(i));
+    }
+  }
+  return Status::OK();
+}
+
 Status build_null_buffers(const std::shared_ptr<arrow::ChunkedArray> &values,
                           const std::vector<std::shared_ptr<arrow::TypedBufferBuilder<bool>>> &null_bitmap_builders,
                           const std::vector<uint32_t> &target_partitions) {
@@ -582,7 +596,7 @@ public:
       int64_t buf_size = 1024 * 1024 * sizeof(T);
       arrow::Result<std::unique_ptr<arrow::ResizableBuffer>> result = arrow::AllocateResizableBuffer(buf_size, pool_);
       build_buffers.push_back(std::move(result.ValueOrDie()));
-
+      null_bitmap_builders.push_back(std::make_shared<arrow::TypedBufferBuilder<bool>>(pool_));
       counts.push_back(0);
       buffer_indexes.push_back(0);
     }
@@ -610,27 +624,41 @@ public:
       indices_begin[idx] = value_buffer[i];
       buffer_indexes[i1] = buffer_indexes[i1] + 1;
     }
+
+    if (values->null_count() > 0) {
+      build_null_buffers_from_array(values, null_bitmap_builders, partitions);
+      nulls_present = true;
+    }
     return Status::OK();
   }
 
-  Status Finish(std::vector<std::shared_ptr<arrow::Array>> &out) override {
-    out.reserve(num_partitions);
-    for (int i = 0; i < num_partitions; i++) {
-      const std::shared_ptr<arrow::ArrayData> &data = arrow::ArrayData::Make(type, counts[i], {nullptr, build_buffers[i]});
-      std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
-      out.push_back(array);
+  Status Finish(std::vector<std::shared_ptr<arrow::Array>> &output) override {
+    output.reserve(num_partitions);
+    if (nulls_present) {
+      for (int32_t i = 0; i < num_partitions; i++) {
+        create_output_arrays(counts[i], type, {nullptr, build_buffers[i]}, 0, 0, output);
+      }
+    } else {
+      for (int32_t i = 0; i < num_partitions; i++) {
+        std::shared_ptr<arrow::Buffer> null_buffer;
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders[i]->Finish(&null_buffer));
+        create_output_arrays(counts[i], type, {null_buffer, build_buffers[i]}, null_bitmap_builders[i]->false_count(),
+                             0, output);
+      }
     }
     return Status::OK();
   }
 
 private:
-  int32_t num_partitions;
+  uint32_t num_partitions;
   std::shared_ptr<arrow::DataType> type;
   std::vector<int> counts;
   std::vector<std::shared_ptr<arrow::ResizableBuffer>> build_buffers;
   std::vector<T *> data_buffers;
   std::vector<int> buffer_indexes;
   arrow::MemoryPool *pool_;
+  std::vector<std::shared_ptr<arrow::TypedBufferBuilder<bool>>> null_bitmap_builders;
+  bool nulls_present;
 };
 
 class FixedBinaryStreamingSplitKernel : public StreamingSplitKernel {
@@ -653,8 +681,12 @@ class FixedBinaryStreamingSplitKernel : public StreamingSplitKernel {
     }
 
     for (size_t i = 0; i < partitions.size(); i++) {
-      const uint8_t *value = reader->Value(i);
-      builders_[partitions[i]]->UnsafeAppend(value);
+      if (!reader->IsNull(i)) {
+        const uint8_t *value = reader->Value(i);
+        builders_[partitions[i]]->UnsafeAppend(value);
+      } else {
+        builders_[partitions[i]]->UnsafeAppendNull();
+      }
     }
     return Status::OK();
   }
@@ -691,9 +723,13 @@ class BinaryStreamingSplitKernel : public StreamingSplitKernel {
     auto reader = std::static_pointer_cast<arrow::BinaryArray>(values);
 
     for (size_t i = 0; i < partitions.size(); i++) {
-      int length = 0;
-      const uint8_t *value = reader->GetValue(i, &length);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[partitions[i]]->Append(value, length));
+      if (!reader->IsNull(i)) {
+        int length = 0;
+        const uint8_t *value = reader->GetValue(i, &length);
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[partitions[i]]->Append(value, length));
+      } else {
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[partitions[i]]->AppendNull());
+      }
     }
     return Status::OK();
   }
