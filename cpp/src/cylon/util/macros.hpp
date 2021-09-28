@@ -72,4 +72,6 @@
     }                                                         \
   } while (0)
 
+#define CYLON_UNUSED(expr) do { (void)(expr); } while (0)
+
 #endif //CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_

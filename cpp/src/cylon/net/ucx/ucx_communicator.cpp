@@ -17,6 +17,7 @@
 #include <cylon/net/communicator.hpp>
 #include <cylon/net/ucx/ucx_communicator.hpp>
 #include <cylon/net/ucx/ucx_channel.hpp>
+#include <cylon/util/macros.hpp>
 
 namespace cylon {
 namespace net {
@@ -35,10 +36,8 @@ std::shared_ptr<UCXConfig> UCXConfig::Make() {
   return std::make_shared<UCXConfig>();
 }
 
-Channel *UCXCommunicator::CreateChannel() {
-  auto newChannel = new UCXChannel();
-  newChannel->linkCommunicator(this);
-  return newChannel;
+std::unique_ptr<Channel> UCXCommunicator::CreateChannel() const {
+  return std::make_unique<UCXChannel>(this);
 }
 
 int UCXCommunicator::GetRank() const {
@@ -48,6 +47,7 @@ int UCXCommunicator::GetWorldSize() const {
   return this->world_size;
 }
 Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
+  CYLON_UNUSED(config);
   // Check init functions
   int initialized;
   // Int variable used when iterating

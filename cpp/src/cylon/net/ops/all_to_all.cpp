@@ -58,7 +58,6 @@ void AllToAll::close() {
   sends.clear();
   // free the channel
   channel->close();
-  delete channel;
 }
 
 int AllToAll::insert(const void *buffer, int length, int target) {

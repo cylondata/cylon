@@ -34,17 +34,14 @@ public:
 
 class MPICommunicator : public Communicator {
  public:
-  virtual ~MPICommunicator();
+  ~MPICommunicator() override = default;
   Status Init(const std::shared_ptr<CommConfig> &config) override;
-  Channel *CreateChannel() override;
+  std::unique_ptr<Channel> CreateChannel() const override;
   int GetRank() const override;
   int GetWorldSize() const override;
   void Finalize() override;
   void Barrier() override;
   CommType GetCommType() const override;
-
- private:
-  std::vector<Channel*> channels_{};
 };
 }
 }

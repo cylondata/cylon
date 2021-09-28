@@ -60,7 +60,7 @@ class ArrowTaskAllToAll : public ArrowAllToAll {
   const LogicalTaskPlan &plan;
 
  public:
-  ArrowTaskAllToAll(std::shared_ptr<cylon::CylonContext> ctx,
+  ArrowTaskAllToAll(const std::shared_ptr<CylonContext> &ctx,
                     const LogicalTaskPlan &plan,
                     int edgeId,
                     ArrowTaskCallBack callback,
