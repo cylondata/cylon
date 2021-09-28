@@ -27,6 +27,7 @@
 #include <cudf/search.hpp>
 #include <rmm/device_buffer.hpp>
 #include <cuda.h>
+#include <algorithm>
 
 
 cylon::Status MergeTables(const cudf::table_view &splitter_tv,
@@ -172,21 +173,37 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
     // sample_count = number_of_workers * SAMPLING_RATIO
     const int SAMPLING_RATIO = 2;
 
+    // get a table_view with sort_columns in the first k positions
+    // since cudf::sort method expects all columns listed as sort keys
+    // we perform sorting on this table, and revert back to the original at the end
+    std::vector<int32_t> column_indices_4s;
+    for (int i = 0; i < tv.num_columns(); ++i) {
+        if (std::find(sort_column_indices.begin(), sort_column_indices.end(), i) == sort_column_indices.end()) {
+            column_indices_4s.push_back(i);
+        }
+    }
+    column_indices_4s.insert(column_indices_4s.begin(), sort_column_indices.begin(), sort_column_indices.end());
+    auto tv_for_sorting = tv.select(column_indices_4s);
+
     // sort unspecified columns in ASCENDING order
     std::vector<cudf::order> column_orders_all(tv.num_columns(), cudf::order::ASCENDING);
     for (int i = 0; i < sort_column_indices.size(); ++i) {
-        column_orders_all[sort_column_indices[i]] = column_orders[i];
+        column_orders_all[i] = column_orders[i];
     }
 
     cudf::null_order null_ordering = nulls_after ? cudf::null_order::AFTER : cudf::null_order::BEFORE;
     std::vector<cudf::null_order> column_null_orders(tv.num_columns(), null_ordering);
 
     // first perform local sort
-    auto initial_sorted_tbl = cudf::sort(tv, column_orders_all, column_null_orders);
+    auto initial_sorted_tbl = cudf::sort(tv_for_sorting, column_orders_all, column_null_orders);
     auto initial_sorted_tv = initial_sorted_tbl->view();
 
     // get sort columns as a separate table_view
-    auto sort_columns_tv = initial_sorted_tbl->select(sort_column_indices);
+    std::vector<int32_t> key_column_indices;
+    for (int i = 0; i < sort_column_indices.size(); ++i) {
+        key_column_indices.push_back(i);
+    }
+    auto sort_columns_tv = initial_sorted_tbl->select(key_column_indices);
 
     // sample the sorted table with sort columns and create a table
     int sample_count = ctx->GetWorldSize() * SAMPLING_RATIO;
@@ -231,8 +248,16 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
         tv_to_merge.push_back(received_tables[i]->view());
     }
 
-    column_null_orders.resize(sort_column_indices.size());
-    sorted_table = cudf::merge(tv_to_merge, sort_column_indices, column_orders, column_null_orders);
+    column_null_orders.resize(key_column_indices.size());
+    auto sorted_tbl = cudf::merge(tv_to_merge, key_column_indices, column_orders, column_null_orders);
 
+    // change order of columns to the original
+    std::vector<std::unique_ptr<cudf::column>> columns = sorted_tbl->release();
+    std::vector<std::unique_ptr<cudf::column>> columns2(columns.size());
+    for (int i = columns.size() - 1; i >= 0 ; --i) {
+        columns2[column_indices_4s[i]] = std::move(columns[i]);
+    }
+
+    sorted_table = std::make_unique<cudf::table>(std::move(columns2));
     return cylon::Status::OK();
 }
