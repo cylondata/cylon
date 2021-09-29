@@ -26,8 +26,8 @@ def gen_index_sorted_test_data():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
     print("CylonEnv Initialized: My rank: ", env.rank)
 
-    input_file = "data/gather/sales_records_nulls_nunascii_" + str(env.rank) + ".csv"
-    out_file = "data/gather/sales_index_sorted_" + str(env.rank) + ".csv"
+    input_file = "data/mpiops/sales_nulls_nunascii_" + str(env.rank) + ".csv"
+    out_file = "data/sorting/sales_index_sorted_" + str(env.rank) + ".csv"
 
     df = gcy.DataFrame.from_cudf(cudf.read_csv(input_file,
                                                parse_dates=["Order Date"],

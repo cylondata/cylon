@@ -28,8 +28,8 @@ def test_sort_by_index():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
     print("CylonContext Initialized: My rank: ", env.rank)
 
-    input_file = "data/gather/sales_records_nulls_nunascii_" + str(env.rank) + ".csv"
-    sorted_file = "data/gather/sales_index_sorted_" + str(env.rank) + ".csv"
+    input_file = "data/mpiops/sales_nulls_nunascii_" + str(env.rank) + ".csv"
+    sorted_file = "data/sorting/sales_index_sorted_" + str(env.rank) + ".csv"
 
     df = gcy.DataFrame.from_cudf(cudf.read_csv(input_file,
                                                parse_dates=["Order Date"],
@@ -52,8 +52,8 @@ def test_sort_by_value_numeric():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
     print("CylonContext Initialized: My rank: ", env.rank)
 
-    input_file = "data/gather/numeric_" + str(env.rank) + ".csv"
-    sorted_file = "data/gather/numeric_sorted_" + str(env.rank) + ".csv"
+    input_file = "data/mpiops/numeric_" + str(env.rank) + ".csv"
+    sorted_file = "data/sorting/numeric_sorted_" + str(env.rank) + ".csv"
 
     df = gcy.DataFrame.from_cudf(cudf.read_csv(input_file))
     sorted_df = df.sort_values(by=["0", "1"], ignore_index=True, env=env)
@@ -69,8 +69,8 @@ def test_sort_by_value_all():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
     print("CylonContext Initialized: My rank: ", env.rank)
 
-    input_file = "data/gather/sales_records_nulls_nunascii_" + str(env.rank) + ".csv"
-    sorted_file = "data/gather/sales_sorted_" + str(env.rank) + ".csv"
+    input_file = "data/mpiops/sales_nulls_nunascii_" + str(env.rank) + ".csv"
+    sorted_file = "data/sorting/sales_sorted_" + str(env.rank) + ".csv"
 
     df = gcy.DataFrame.from_cudf(cudf.read_csv(input_file,
                                                parse_dates=["Order Date"],

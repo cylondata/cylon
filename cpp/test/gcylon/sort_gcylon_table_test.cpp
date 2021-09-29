@@ -24,10 +24,10 @@ TEST_CASE("Distributed Sorting CuDF tables", "[gsort]") {
     SECTION("testing Distributed Sort of CuDF tables") {
 
         std::vector<int> sort_roots{0, 1};
-        std::vector<std::string> input_file_bases {"../../data/gather/numeric_",
-                                           "../../data/gather/sales_records_nulls_nunascii_"};
-        std::vector<std::string> sorted_file_bases {"../../data/gather/numeric_sorted_",
-                                                    "../../data/gather/sales_sorted_"};
+        std::vector<std::string> input_file_bases {"../../data/mpiops/numeric_",
+                                           "../../data/mpiops/sales_nulls_nunascii_"};
+        std::vector<std::string> sorted_file_bases {"../../data/sorting/numeric_sorted_",
+                                                    "../../data/sorting/sales_sorted_"};
         std::vector<std::vector<std::string>> column_name_vectors{{"0", "1"},
                                                                  {"Country", "Item Type", "Order Date", "Order ID", "Units Sold", "Unit Price"}};
         std::vector<std::vector<std::string>> date_column_vectors{{},

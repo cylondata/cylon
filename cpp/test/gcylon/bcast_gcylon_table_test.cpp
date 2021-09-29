@@ -24,8 +24,8 @@ TEST_CASE("MPI Broadcast a CuDF table", "[gbcast]") {
     SECTION("testing MPI broadcast of a CuDF table") {
 
         std::vector<int> bcast_roots{0, 1};
-        std::vector<std::string> input_files {"../../data/gather/numeric_0.csv",
-                                              "../../data/gather/sales_records_nulls_nunascii_0.csv"};
+        std::vector<std::string> input_files {"../../data/mpiops/numeric_0.csv",
+                                              "../../data/mpiops/sales_nulls_nunascii_0.csv"};
         std::vector<std::vector<std::string>> column_name_vectors{{"0", "1"},
                                                                  {"Country", "Item Type", "Order Date", "Order ID", "Units Sold", "Unit Price"}};
         std::vector<std::vector<std::string>> date_column_vectors{{},
