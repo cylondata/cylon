@@ -1237,6 +1237,85 @@ class DataFrame(object):
         number_of_index_columns = 0 if ignore_index else df._num_indices
         return [number_of_index_columns + df.columns.to_list().index(cname) for cname in column_names]
 
+    def sort_index(
+            self,
+            axis=0,
+            level=None,
+            ascending=True,
+            inplace=False,
+            kind=None,
+            na_position="last",
+            sort_remaining=True,
+            ignore_index=False,
+            env: CylonEnv = None,
+    ):
+        """Sort distributed DataFrame by labels (along an axis).
+
+        Parameters
+        ----------
+        axis : {0 or ‘index’, 1 or ‘columns’}, default 0
+            The axis along which to sort. The value 0 identifies the rows,
+            and 1 identifies the columns.
+            only 0 is supported.
+        level : int or level name or list of ints or list of level names
+            If not None, sort on values in specified index level(s).
+            This is only useful in the case of MultiIndex.
+        ascending : bool, default True
+            Sort ascending vs. descending.
+        inplace : bool, default False
+            If True, perform operation in-place.
+        kind : sorting method such as `quick sort` and others.
+            Not yet supported.
+        na_position : {‘first’, ‘last’}, default ‘last’
+            Puts NaNs at the beginning if first; last puts NaNs at the end.
+        sort_remaining : bool, default True
+            Not yet supported
+        ignore_index : bool, default False
+            if True, index will be replaced with RangeIndex.
+
+        Returns
+        -------
+        DataFrame or None
+
+        """
+        if env is None or env.world_size == 1:
+            sorted_cdf = self._cdf.sort_index(axis=axis,
+                                              level=level,
+                                              ascending=ascending,
+                                              inplace=inplace,
+                                              kind=kind,
+                                              na_position=na_position,
+                                              sort_remaining=sort_remaining,
+                                              ignore_index=ignore_index)
+            return DataFrame.from_cudf(sorted_cdf)
+
+        if kind is not None:
+            raise NotImplementedError("kind is not yet supported")
+
+        if level is not None:
+            raise NotImplementedError("level is not yet supported")
+
+        if not sort_remaining:
+            raise NotImplementedError(
+                "sort_remaining == False is not yet supported"
+            )
+        if axis not in (0, "index"):
+            raise NotImplementedError("can sort only row wise")
+
+        nulls_after = True if na_position == "last" else False
+        sorted_tbl = distributed_sort(self._cdf,
+                                      context=env.context,
+                                      ascending=ascending,
+                                      nulls_after=nulls_after,
+                                      ignore_index=False,
+                                      by_index=True)
+        sorted_cdf = cudf.DataFrame._from_table(sorted_tbl)
+
+        if ignore_index is True:
+            sorted_cdf = sorted_cdf.reset_index(drop=True)
+
+        return DataFrame.from_cudf(sorted_cdf)
+
     def sort_values(
             self,
             by,
@@ -1312,8 +1391,8 @@ class DataFrame(object):
 
         nulls_after = True if na_position == "last" else False
         sorted_tbl = distributed_sort(self._cdf,
-                                      sort_columns=by,
                                       context=env.context,
+                                      sort_columns=by,
                                       ascending=ascending,
                                       nulls_after=nulls_after,
                                       ignore_index=ignore_index,

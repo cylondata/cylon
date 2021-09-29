@@ -20,7 +20,7 @@ from libcpp cimport bool as cppbool
 
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.api.lib cimport pycylon_unwrap_context
-from pygcylon.data.sorting cimport DistributedSort
+from pygcylon.net.sorting cimport DistributedSort
 
 from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.cpp.table.table cimport table
@@ -30,8 +30,8 @@ cimport cudf._lib.cpp.types as libcudf_types
 
 def distributed_sort(
         object tbl,
-        object sort_columns,
         context,
+        object sort_columns=None,
         ascending=True,
         nulls_after=True,
         ignore_index=False,
@@ -45,9 +45,6 @@ def distributed_sort(
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
     cdef cppbool c_ascending = ascending
     cdef cppbool c_nulls_after = nulls_after
-
-    if not sort_columns:
-        raise ValueError("sort_columns can not be empty")
 
     # Determine sort_column indices from index names
     # ref: cudf/python/cudf/merge.pyx
@@ -70,15 +67,8 @@ def distributed_sort(
                 num_index_columns + tbl._column_names.index(cname)
             )
     else:
-        if by_index:
-            start = 0
-            stop = num_index_columns
-        else:
-            start = num_index_columns
-            stop = num_index_columns + tbl._num_columns
-        num_keys = stop - start
-        c_sort_column_indices.reserve(num_keys)
-        for key in range(start, stop):
+        c_sort_column_indices.reserve(num_index_columns)
+        for key in range(0, num_index_columns):
             c_sort_column_indices.push_back(key)
 
     # construct c_column_orders

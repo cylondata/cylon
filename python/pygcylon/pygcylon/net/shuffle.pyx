@@ -19,7 +19,7 @@ from libcpp.vector cimport vector
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.api.lib cimport pycylon_unwrap_context
 
-from pygcylon.data.shuffle cimport Shuffle
+from pygcylon.net.shuffle cimport Shuffle
 
 from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.cpp.table.table cimport table
