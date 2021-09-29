@@ -52,13 +52,6 @@ class Table {
   Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Table> tab);
 
   /**
-   * Table created from cylon::Column
-   * @param ctx
-   * @param cols (vector is passed by value and the copy is moved as a class member)
-   */
-  Table(const std::shared_ptr<CylonContext> &ctx, std::vector<std::shared_ptr<Column>> cols);
-
-  /**
    * Create a table from an arrow table,
    * @param table arrow::Table
    * @return
@@ -97,10 +90,10 @@ class Table {
    * @param headers the names of custom header
    * @return true if print is successful
    */
-  Status PrintToOStream(int col1, int col2, int row1, int row2, std::ostream &out,
+  Status PrintToOStream(int col1, int col2, int64_t row1, int64_t row2, std::ostream &out,
                         char delimiter = ',', bool use_custom_header = false,
-                        const std::vector<std::string> &headers = {});
-  Status PrintToOStream(std::ostream &out);
+                        const std::vector<std::string> &headers = {}) const;
+  Status PrintToOStream(std::ostream &out) const;
 
   /*END OF TRANSFORMATION FUNCTIONS*/
 
@@ -125,7 +118,7 @@ class Table {
   /**
    * Print the complete table
    */
-  void Print();
+  void Print() const;
 
   /**
    * Print the table from row1 to row2 and col1 to col2
@@ -134,7 +127,7 @@ class Table {
    * @param col1 first column to start printing (including)
    * @param col2 end column to stop printing (including)
    */
-  void Print(int row1, int row2, int col1, int col2);
+  void Print(int row1, int row2, int col1, int col2) const;
 
   /**
    * Get the underlying arrow table
@@ -165,19 +158,6 @@ class Table {
    */
   bool IsRetain() const;
 
-  /**
-   * Get a cylon::Column from the table
-   * @param index
-   * @return
-   */
-  std::shared_ptr<Column> GetColumn(int32_t index) const;
-
-  /**
-   * Get the column vector of the table
-   * @return
-   */
-  const std::vector<std::shared_ptr<cylon::Column>> &GetColumns() const;
-
   Status SetArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool drop_index);
 
   std::shared_ptr<BaseArrowIndex> GetArrowIndex();
@@ -193,7 +173,6 @@ class Table {
   const std::shared_ptr<cylon::CylonContext> ctx;
   std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
-  std::vector<std::shared_ptr<cylon::Column>> columns_;
   std::shared_ptr<cylon::BaseArrowIndex> base_arrow_index_ = nullptr;
 };
 

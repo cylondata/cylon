@@ -106,7 +106,7 @@ using ArrowCallback = std::function<bool(int source, const std::shared_ptr<arrow
 class ArrowAllocator : public Allocator {
  public:
   explicit ArrowAllocator(arrow::MemoryPool *pool);
-  virtual ~ArrowAllocator();
+  ~ArrowAllocator() override;
 
   Status Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) override;
  private:

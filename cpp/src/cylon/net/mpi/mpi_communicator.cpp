@@ -37,10 +37,10 @@ std::shared_ptr<MPIConfig> MPIConfig::Make() {
   return std::make_shared<MPIConfig>();
 }
 
-MPIConfig::~MPIConfig() {}
+MPIConfig::~MPIConfig() = default;
 
-Channel *MPICommunicator::CreateChannel() {
-  return new MPIChannel();
+std::unique_ptr<Channel> MPICommunicator::CreateChannel() const {
+  return std::make_unique<MPIChannel>();
 }
 
 int MPICommunicator::GetRank() const {
@@ -65,8 +65,8 @@ void MPICommunicator::Finalize() {
   int finalized;
   MPI_Finalized(&finalized);
   if (!finalized) {
-	MPI_Finalize();
-  } 
+    MPI_Finalize();
+  }
 }
 void MPICommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);

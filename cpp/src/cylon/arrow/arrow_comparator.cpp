@@ -16,6 +16,7 @@
 #include <cylon/util/arrow_utils.hpp>
 
 #include <glog/logging.h>
+#include <cylon/util/macros.hpp>
 
 namespace cylon {
 
@@ -157,9 +158,17 @@ class EmptyIndexComparator : public ArrayIndexComparator {
  public:
   explicit EmptyIndexComparator() = default;
 
-  int compare(int64_t index1, int64_t index2) const override { return 0; }
+  int compare(int64_t index1, int64_t index2) const override {
+    CYLON_UNUSED(index1);
+    CYLON_UNUSED(index2);
+    return 0;
+  }
 
-  bool equal_to(const int64_t index1, const int64_t index2) const override { return true; }
+  bool equal_to(const int64_t index1, const int64_t index2) const override {
+    CYLON_UNUSED(index1);
+    CYLON_UNUSED(index2);
+    return true;
+  }
 };
 
 template<bool ASC>
@@ -251,7 +260,7 @@ class TwoBinaryRowIndexComparator : public TwoArrayIndexComparator {
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
  public:
   explicit TwoBinaryRowIndexComparator(const std::shared_ptr<arrow::Array> &a1, const std::shared_ptr<arrow::Array> &a2)
-      : arrays({std::static_pointer_cast<ARROW_ARRAY_T>(a1), std::static_pointer_cast<ARROW_ARRAY_T>(a1)}) {}
+      : arrays({std::static_pointer_cast<ARROW_ARRAY_T>(a1), std::static_pointer_cast<ARROW_ARRAY_T>(a2)}) {}
 
   int compare(int64_t index1, int64_t index2) const override {
     if (ASC) {
@@ -334,9 +343,7 @@ std::shared_ptr<TwoArrayIndexComparator> CreateTwoArrayIndexComparator(const std
   }
 }
 
-RowEqualTo::RowEqualTo(std::shared_ptr<cylon::CylonContext> &ctx,
-                       const std::shared_ptr<arrow::Table> *tables, int64_t *eq,
-                       int64_t *hs) {
+RowEqualTo::RowEqualTo(const std::shared_ptr<arrow::Table> *tables, int64_t *eq, int64_t *hs) {
   this->tables = tables;
   this->comparator = std::make_shared<cylon::TableRowComparator>(tables[0]->fields());
   this->row_hashing_kernel = std::make_shared<cylon::RowHashingKernel>(tables[0]->fields());

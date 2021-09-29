@@ -70,7 +70,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
     status = cylon::compute::Sum(table, 1, output);
     REQUIRE(status.is_ok());
 
-    auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
+    auto array = output->get_table()->column(0)->chunk(0);
     auto val = std::static_pointer_cast<arrow::NumericArray<arrow::DoubleType>>(array)->Value(0);
 
     REQUIRE(val == ((double) (rows * (rows - 1) / 2.0) + 10.0 * rows) * ctx->GetWorldSize());
@@ -80,7 +80,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
     status = cylon::compute::Count(table, 1, output);
     REQUIRE(status.is_ok());
 
-    auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
+    auto array = output->get_table()->column(0)->chunk(0);
     auto val = std::static_pointer_cast<arrow::NumericArray<arrow::Int64Type>>(array)->Value(0);
 
     REQUIRE(val == rows * ctx->GetWorldSize());
@@ -90,7 +90,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
     status = cylon::compute::Min(table, 1, output);
     REQUIRE(status.is_ok());
 
-    auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
+    auto array = output->get_table()->column(0)->chunk(0);
     auto val = std::static_pointer_cast<arrow::NumericArray<arrow::DoubleType>>(array)->Value(0);
 
     REQUIRE(val == 10.0);
@@ -100,7 +100,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
     status = cylon::compute::Max(table, 1, output);
     REQUIRE(status.is_ok());
 
-    auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
+    auto array = output->get_table()->column(0)->chunk(0);
     auto val = std::static_pointer_cast<arrow::NumericArray<arrow::DoubleType>>(array)->Value(0);
 
     REQUIRE(val == 10.0 + (double) (rows - 1));
