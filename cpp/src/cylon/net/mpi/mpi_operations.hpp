@@ -85,6 +85,19 @@ cylon::Status Bcast(const std::shared_ptr<cylon::TableSerializer>& serializer,
                     const std::shared_ptr<cylon::CylonContext>& ctx
 );
 
+/**
+ * All gather an int vector from each worker
+ * Each vector has to be the same size
+ * @param send_data
+ * @param number_of_workers
+ * @param received_data
+ * @return
+ */
+cylon::Status AllGather(const std::vector<int32_t> &send_data,
+                        int number_of_workers,
+                        std::vector<int32_t> &received_data);
+
+
 }
 }
 #endif //CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_

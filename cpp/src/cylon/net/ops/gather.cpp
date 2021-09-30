@@ -153,4 +153,24 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
     return cylon::Status::OK();
 }
 
+cylon::Status cylon::mpi::AllGather(const std::vector<int32_t> &send_data,
+                                    int number_of_workers,
+                                    std::vector<int32_t> &received_data) {
+
+    received_data.resize(number_of_workers * send_data.size());
+
+    auto status = MPI_Allgather(send_data.data(),
+                                send_data.size(),
+                                MPI_INT32_T,
+                                received_data.data(),
+                                send_data.size(),
+                                MPI_INT32_T,
+                                MPI_COMM_WORLD);
+    if (status != MPI_SUCCESS) {
+        return cylon::Status(cylon::Code::ExecutionError, "MPI_Allgather failed!");
+    }
+
+    return cylon::Status::OK();
+}
+
 

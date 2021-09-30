@@ -17,6 +17,7 @@ from typing import Hashable, List, Tuple, Dict, Optional, Sequence, Union, Itera
 import cudf
 import numpy as np
 from pygcylon.net.shuffle import shuffle as cshuffle
+from pygcylon.net.row_counts import row_counts_all_tables
 from pygcylon.net.sorting import distributed_sort
 from pycylon.frame import CylonEnv
 from pygcylon.groupby import GroupByDataFrame
@@ -1400,6 +1401,22 @@ class DataFrame(object):
         sorted_cdf = cudf.DataFrame._from_table(sorted_tbl)
         return DataFrame.from_cudf(sorted_cdf)
 
+    def row_counts_for_all(self, env: CylonEnv = None) -> List[int]:
+        '''
+        Get the number of rows in all DataFrame partitions
+        In the returned list,
+            first element shows the number_of_rows in the first worker partition
+            second element shows the number_of_rows in the second worker partition
+            third element shows the number_of_rows in the third worker partition
+            ....
+            last element shows the number_of_rows in the last worker partition
+        '''
+
+        if env is None or env.world_size == 1:
+            return [len(self._cdf._index)]
+
+        num_rows = len(self._cdf)
+        return row_counts_all_tables(num_rows=num_rows, context=env.context)
 
 def concat(
         dfs,

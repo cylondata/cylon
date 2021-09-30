@@ -105,6 +105,17 @@ cylon::Status DistributedSort(const cudf::table_view &tv,
                               bool nulls_after = true,
                               const int sort_root = 0);
 
+/**
+ * get table sizes from all workers
+ * each worker size in the table_sizes[rank]
+ * @param num_rows size of the table at the current worker
+ * @param ctx
+ * @param all_num_rows all tables sizes from all workers
+ * @return
+ */
+cylon::Status RowCountsAllTables(int32_t num_rows,
+                                 const std::shared_ptr<cylon::CylonContext> &ctx,
+                                 std::vector<int32_t> &all_num_rows);
 
 
 }// end of namespace gcylon
