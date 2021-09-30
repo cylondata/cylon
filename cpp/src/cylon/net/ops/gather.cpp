@@ -113,7 +113,7 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
                                                                           ctx->GetWorldSize());
             displacements.push_back(disp_per_buffer);
 
-            status = MPI_Igatherv(send_buffers.at(i),
+            status = MPI_Igatherv(send_buffers[i],
                                   local_buffer_sizes[i],
                                   MPI_UINT8_T,
                                   receive_buf->GetByteBuffer(),
@@ -129,7 +129,7 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
             receive_buffers.push_back(receive_buf);
 
         } else {
-            status = MPI_Igatherv(send_buffers.at(i),
+            status = MPI_Igatherv(send_buffers[i],
                                   local_buffer_sizes[i],
                                   MPI_UINT8_T,
                                   nullptr,
