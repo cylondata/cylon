@@ -1,4 +1,4 @@
-name: cylon_dev2
+name: cylon_dev
 channels:
   - conda-forge
   - defaults
