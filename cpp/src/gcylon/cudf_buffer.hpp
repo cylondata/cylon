@@ -25,7 +25,7 @@ public:
     CudfBuffer(std::shared_ptr<rmm::device_buffer> rmm_buf);
     int64_t GetLength() override;
     uint8_t * GetByteBuffer() override;
-    std::shared_ptr<rmm::device_buffer> getBuf() const;
+    const std::shared_ptr<rmm::device_buffer>& getBuf() const;
 private:
     std::shared_ptr<rmm::device_buffer> rmm_buf;
 };

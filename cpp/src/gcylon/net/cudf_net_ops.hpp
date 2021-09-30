@@ -84,7 +84,7 @@ cylon::Status Gather(const cudf::table_view &tv,
  */
 cylon::Status AllToAll(const cudf::table_view & tv_with_parts,
                        const std::vector<cudf::size_type> &part_indices,
-                       std::shared_ptr<cylon::CylonContext> ctx,
+                       const std::shared_ptr<cylon::CylonContext> &ctx,
                        std::vector<std::unique_ptr<cudf::table>> &received_tables);
 
 } // end of namespace net

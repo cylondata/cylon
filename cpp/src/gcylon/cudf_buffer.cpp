@@ -30,7 +30,7 @@ namespace gcylon {
         return (uint8_t *)rmm_buf->data();
     }
 
-    std::shared_ptr<rmm::device_buffer> CudfBuffer::getBuf() const {
+    const std::shared_ptr<rmm::device_buffer>& CudfBuffer::getBuf() const {
         return rmm_buf;
     }
 
@@ -40,7 +40,7 @@ namespace gcylon {
     cylon::Status CudfAllocator::Allocate(int64_t length, std::shared_ptr<cylon::Buffer> *buffer) {
         try {
             auto rmm_buf = std::make_shared<rmm::device_buffer>(length, rmm::cuda_stream_default);
-            *buffer = std::make_shared<CudfBuffer>(rmm_buf);
+            *buffer = std::make_shared<CudfBuffer>(std::move(rmm_buf));
             return cylon::Status::OK();
         } catch (rmm::bad_alloc * badAlloc) {
             LOG(ERROR) << "failed to allocate gpu memory with rmm: " << badAlloc->what();

@@ -28,7 +28,7 @@
 
 cylon::Status gcylon::net::AllToAll(const cudf::table_view & tv_with_parts,
                                     const std::vector<cudf::size_type> &part_indices,
-                                    std::shared_ptr<cylon::CylonContext> ctx,
+                                    const std::shared_ptr<cylon::CylonContext> &ctx,
                                     std::vector<std::unique_ptr<cudf::table>> &received_tables) {
 
     if (part_indices.size() != ctx->GetWorldSize() + 1) {
@@ -47,7 +47,7 @@ cylon::Status gcylon::net::AllToAll(const cudf::table_view & tv_with_parts,
             };
 
     // doing all to all communication to exchange tables
-    CudfAllToAll all_to_all(ctx, neighbours, neighbours, ctx->GetNextSequence(), cudf_callback);
+    CudfAllToAll all_to_all(ctx, neighbours, neighbours, ctx->GetNextSequence(), std::move(cudf_callback));
 
     // insert partitioned table for all-to-all
     int accepted = all_to_all.insert(tv_with_parts, part_indices, ctx->GetNextSequence());
