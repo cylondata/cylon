@@ -14,14 +14,14 @@
 
 #include <mpi.h>
 #include <cylon/net/mpi/mpi_operations.hpp>
+#include <cylon/util/macros.hpp>
 
 
 std::vector<int32_t> totalBufferSizes(const std::vector<int32_t> &all_buffer_sizes, int num_buffers, int world_size) {
     std::vector<int32_t> total_buffer_sizes(num_buffers, 0);
-    for (int i = 0; i < num_buffers; ++i) {
-        for (int j = 0, k = i; j < world_size; ++j) {
-            total_buffer_sizes[i] += all_buffer_sizes[k];
-            k += num_buffers;
+    for (int w = 0; w < world_size; w++){
+        for (int i = 0; i < num_buffers; i++){
+            total_buffer_sizes[i] += all_buffer_sizes[w*num_buffers + i];
         }
     }
     return total_buffer_sizes;
@@ -96,7 +96,7 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
     for (int32_t i = 0; i < num_buffers; ++i) {
         if(AmIRoot(gather_root, ctx)) {
             std::shared_ptr<cylon::Buffer> receive_buf;
-            allocator->Allocate(total_buffer_sizes[i], &receive_buf);
+            RETURN_CYLON_STATUS_IF_FAILED(allocator->Allocate(total_buffer_sizes[i], &receive_buf));
             std::vector<int32_t> receive_counts = receiveCounts(all_buffer_sizes,
                                                                 i,
                                                                 num_buffers,
