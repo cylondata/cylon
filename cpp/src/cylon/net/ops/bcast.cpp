@@ -13,6 +13,7 @@
  */
 
 #include <cylon/net/mpi/mpi_operations.hpp>
+#include <cylon/util/macros.hpp>
 
 cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &serializer,
                                 int bcast_root,
@@ -61,6 +62,8 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
     std::vector<uint8_t *> send_buffers{};
     if (AmIRoot(bcast_root, ctx)) {
         send_buffers = serializer->getDataBuffers();
+    } else {
+        received_buffers.reserve(num_buffers);
     }
 
     for (int32_t i = 0; i < num_buffers; ++i) {
@@ -76,7 +79,7 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
             }
         } else {
             std::shared_ptr<cylon::Buffer> receive_buf;
-            allocator->Allocate(buffer_sizes[i], &receive_buf);
+            RETURN_CYLON_STATUS_IF_FAILED(allocator->Allocate(buffer_sizes[i], &receive_buf));
 
             status = MPI_Ibcast(receive_buf->GetByteBuffer(),
                                 buffer_sizes[i],
