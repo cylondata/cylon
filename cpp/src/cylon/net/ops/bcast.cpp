@@ -56,8 +56,8 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
         return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for data type array broadcast!");
     }
 
-    auto requests = std::make_unique<MPI_Request []>(num_buffers);
-    auto statuses = std::make_unique<MPI_Status []>(num_buffers);
+    std::vector<MPI_Request> requests(num_buffers);
+    std::vector<MPI_Status> statuses(num_buffers);
     std::vector<uint8_t *> send_buffers{};
     if (AmIRoot(bcast_root, ctx)) {
         send_buffers = serializer->getDataBuffers();
@@ -65,30 +65,25 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
 
     for (int32_t i = 0; i < num_buffers; ++i) {
         if(AmIRoot(bcast_root, ctx)) {
-            if (buffer_sizes[i] == 0) {
-                continue;
-            }
-            status = MPI_Bcast(send_buffers.at(i),
+            status = MPI_Ibcast(send_buffers[i],
                                 buffer_sizes[i],
                                 MPI_UINT8_T,
                                 bcast_root,
-                                MPI_COMM_WORLD);
+                                MPI_COMM_WORLD,
+                                &requests[i]);
             if (status != MPI_SUCCESS) {
                 return cylon::Status(cylon::Code::ExecutionError, "MPI_Ibast failed!");
             }
         } else {
             std::shared_ptr<cylon::Buffer> receive_buf;
             allocator->Allocate(buffer_sizes[i], &receive_buf);
-            if (buffer_sizes[i] == 0) {
-                received_buffers.push_back(receive_buf);
-                continue;
-            }
 
-            status = MPI_Bcast(receive_buf->GetByteBuffer(),
+            status = MPI_Ibcast(receive_buf->GetByteBuffer(),
                                 buffer_sizes[i],
                                 MPI_UINT8_T,
                                 bcast_root,
-                                MPI_COMM_WORLD);
+                                MPI_COMM_WORLD,
+                                &requests[i]);
             if (status != MPI_SUCCESS) {
                 return cylon::Status(cylon::Code::ExecutionError, "MPI_Ibast failed!");
             }
@@ -96,10 +91,10 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
         }
     }
 
-//    status = MPI_Waitall(num_buffers, requests.get(), statuses.get());
-//    if (status != MPI_SUCCESS) {
-//        return cylon::Status(cylon::Code::ExecutionError, "MPI_Ibast failed when waiting!");
-//    }
+    status = MPI_Waitall(num_buffers, requests.data(), statuses.data());
+    if (status != MPI_SUCCESS) {
+        return cylon::Status(cylon::Code::ExecutionError, "MPI_Ibast failed when waiting!");
+    }
 
     return cylon::Status::OK();
 }
