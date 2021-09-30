@@ -51,14 +51,14 @@ std::vector<int32_t> displacementsPerBuffer(int32_t *all_buffer_sizes, int recei
 }
 
 
-cylon::Status cylon::mpi::Gather(std::shared_ptr<cylon::TableSerializer> serializer,
-                     const int gather_root,
-                     const bool gather_from_root,
-                     std::shared_ptr<cylon::Allocator> allocator,
-                     std::unique_ptr<int32_t []> & all_buffer_sizes,
+cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &serializer,
+                     int gather_root,
+                     bool gather_from_root,
+                     const std::shared_ptr<cylon::Allocator>& allocator,
+                     const std::unique_ptr<int32_t []> & all_buffer_sizes,
                      std::vector<std::shared_ptr<cylon::Buffer>> & receive_buffers,
                      std::vector<std::vector<int32_t>> & displacements,
-                     std::shared_ptr<cylon::CylonContext> ctx
+                     const std::shared_ptr<cylon::CylonContext> &ctx
                      ){
 
     // first gather table buffer sizes
