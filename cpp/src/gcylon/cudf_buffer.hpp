@@ -23,7 +23,7 @@ namespace gcylon {
 class CudfBuffer : public cylon::Buffer {
 public:
     CudfBuffer(std::shared_ptr<rmm::device_buffer> rmm_buf);
-    int64_t GetLength() override;
+    int64_t GetLength() const override;
     uint8_t * GetByteBuffer() override;
     const std::shared_ptr<rmm::device_buffer>& getBuf() const;
 private:

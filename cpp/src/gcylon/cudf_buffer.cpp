@@ -22,7 +22,7 @@ namespace gcylon {
 //////////////////////////////////////////////////////////////////////
     CudfBuffer::CudfBuffer(std::shared_ptr<rmm::device_buffer> rmm_buf) : rmm_buf(std::move(rmm_buf)) {}
 
-    int64_t CudfBuffer::GetLength() {
+    int64_t CudfBuffer::GetLength() const {
         return rmm_buf->size();
     }
 
