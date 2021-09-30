@@ -16,10 +16,6 @@
 #include <cylon/net/mpi/mpi_operations.hpp>
 
 
-bool cylon::mpi::AmIRoot(int root, const std::shared_ptr<cylon::CylonContext> &ctx) {
-    return root == ctx->GetRank();
-}
-
 std::vector<int32_t> totalBufferSizes(int32_t *all_buffer_sizes, int num_buffers, int world_size) {
     std::vector<int32_t> total_buffer_sizes(num_buffers, 0);
     for (int i = 0; i < num_buffers; ++i) {

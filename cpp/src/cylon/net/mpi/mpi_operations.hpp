@@ -41,7 +41,9 @@ cylon::Status AllReduce(const void *send_buf,
  * @param ctx
  * @return
  */
-bool AmIRoot(int root, const std::shared_ptr<cylon::CylonContext>& ctx);
+inline bool AmIRoot(int root, const std::shared_ptr<cylon::CylonContext>& ctx){
+        return root == ctx->GetRank();
+}
 
 /**
  * Perform MPI Gather on a table
