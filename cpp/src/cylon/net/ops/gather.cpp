@@ -95,7 +95,7 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
 
     auto requests = std::make_unique<MPI_Request []>(num_buffers);
     auto statuses = std::make_unique<MPI_Status []>(num_buffers);
-    std::vector<uint8_t *> send_buffers = serializer->getDataBuffers();
+    const std::vector<uint8_t *>& send_buffers = serializer->getDataBuffers();
 
     for (int32_t i = 0; i < num_buffers; ++i) {
         if(AmIRoot(gather_root, ctx)) {
