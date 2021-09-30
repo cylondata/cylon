@@ -118,8 +118,8 @@ public:
 
 private:
     const cudf::table_view tv_;
-    std::vector<int32_t> buffer_sizes_ = std::vector<int32_t>();
-    std::vector<uint8_t *> table_buffers_ = std::vector<uint8_t *>();
+    std::vector<int32_t> buffer_sizes_{};
+    std::vector<uint8_t *> table_buffers_{};
     bool table_buffers_initialized = false;
 
     void initTableBuffers();
