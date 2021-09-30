@@ -36,7 +36,7 @@
 using namespace gcylon;
 using namespace std::chrono;
 
-int64_t calculateRows(std::string dataSize, const int& cols) {
+int64_t calculateRows(const std::string& dataSize, int cols) {
     char last_char = dataSize[dataSize.size() - 1];
     char prev_char = dataSize[dataSize.size() - 2];
     int64_t size_num = stoi(dataSize.substr(0, dataSize.size() - 2));
