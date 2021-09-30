@@ -23,7 +23,7 @@
 #include <cudf/table/table.hpp>
 
 
-std::vector<std::vector<int32_t>> bufferSizesPerTable(int32_t *all_buffer_sizes,
+std::vector<std::vector<int32_t>> bufferSizesPerTable(const std::vector<int32_t> &all_buffer_sizes,
                                                       int number_of_buffers,
                                                       int numb_workers) {
     std::vector<std::vector<int32_t>> buffer_sizes_all_tables;
@@ -46,7 +46,7 @@ cylon::Status gcylon::net::Gather(const cudf::table_view &tv,
 
     auto serializer = std::make_shared<CudfTableSerializer>(tv);
     auto allocator = std::make_shared<CudfAllocator>();
-    std::unique_ptr<int32_t []> all_buffer_sizes;
+    std::vector<int32_t> all_buffer_sizes;
     std::vector<std::shared_ptr<cylon::Buffer>> receive_buffers;
     std::vector<std::vector<int32_t>> all_disps;
 
@@ -61,7 +61,7 @@ cylon::Status gcylon::net::Gather(const cudf::table_view &tv,
 
     if (cylon::mpi::AmIRoot(gather_root, ctx)) {
         std::vector<std::vector<int32_t>> buffer_sizes_per_table =
-                bufferSizesPerTable(all_buffer_sizes.get(), receive_buffers.size(), ctx->GetWorldSize());
+                bufferSizesPerTable(all_buffer_sizes, receive_buffers.size(), ctx->GetWorldSize());
 
         TableDeserializer deserializer(tv);
         deserializer.deserialize(receive_buffers, all_disps, buffer_sizes_per_table, gathered_tables);

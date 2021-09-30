@@ -16,7 +16,7 @@
 #include <cylon/net/mpi/mpi_operations.hpp>
 
 
-std::vector<int32_t> totalBufferSizes(int32_t *all_buffer_sizes, int num_buffers, int world_size) {
+std::vector<int32_t> totalBufferSizes(const std::vector<int32_t> &all_buffer_sizes, int num_buffers, int world_size) {
     std::vector<int32_t> total_buffer_sizes(num_buffers, 0);
     for (int i = 0; i < num_buffers; ++i) {
         for (int j = 0, k = i; j < world_size; ++j) {
@@ -27,7 +27,7 @@ std::vector<int32_t> totalBufferSizes(int32_t *all_buffer_sizes, int num_buffers
     return total_buffer_sizes;
 }
 
-std::vector<int32_t> receiveCounts(int32_t *all_buffer_sizes, int receiveNo, int num_buffers, int world_size) {
+std::vector<int32_t> receiveCounts(const std::vector<int32_t> &all_buffer_sizes, int receiveNo, int num_buffers, int world_size) {
     std::vector<int32_t> receive_counts(world_size, 0);
     for (int i = 0, k = receiveNo; i < world_size; ++i) {
         receive_counts[i] = all_buffer_sizes[k];
@@ -36,7 +36,7 @@ std::vector<int32_t> receiveCounts(int32_t *all_buffer_sizes, int receiveNo, int
     return receive_counts;
 }
 
-std::vector<int32_t> displacementsPerBuffer(int32_t *all_buffer_sizes, int receiveNo, int num_buffers, int world_size) {
+std::vector<int32_t> displacementsPerBuffer(const std::vector<int32_t> & all_buffer_sizes, int receiveNo, int num_buffers, int world_size) {
     std::vector<int32_t> disp_array(world_size, 0);
     disp_array[0] = 0;
     for (int i = 1, k = receiveNo; i < world_size; ++i) {
@@ -51,7 +51,7 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
                      int gather_root,
                      bool gather_from_root,
                      const std::shared_ptr<cylon::Allocator>& allocator,
-                     std::unique_ptr<int32_t []> & all_buffer_sizes,
+                     std::vector<int32_t> & all_buffer_sizes,
                      std::vector<std::shared_ptr<cylon::Buffer>> & receive_buffers,
                      std::vector<std::vector<int32_t>> & displacements,
                      const std::shared_ptr<cylon::CylonContext> &ctx
@@ -69,13 +69,13 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
 
     // gather size buffers
     if (AmIRoot(gather_root, ctx)) {
-        all_buffer_sizes = std::make_unique<int32_t []>(ctx->GetWorldSize() * num_buffers);
+        all_buffer_sizes.resize(ctx->GetWorldSize() * num_buffers);
     }
 
     int status = MPI_Gather(local_buffer_sizes.data(),
                             num_buffers,
                             MPI_INT32_T,
-                            all_buffer_sizes.get(),
+                            all_buffer_sizes.data(),
                             num_buffers,
                             MPI_INT32_T,
                             gather_root,
@@ -86,7 +86,7 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
 
     std::vector<int32_t> total_buffer_sizes;
     if (AmIRoot(gather_root, ctx)) {
-        totalBufferSizes(all_buffer_sizes.get(), num_buffers, ctx->GetWorldSize()).swap(total_buffer_sizes);
+        totalBufferSizes(all_buffer_sizes, num_buffers, ctx->GetWorldSize()).swap(total_buffer_sizes);
     }
 
     auto requests = std::make_unique<MPI_Request []>(num_buffers);
@@ -97,11 +97,11 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
         if(AmIRoot(gather_root, ctx)) {
             std::shared_ptr<cylon::Buffer> receive_buf;
             allocator->Allocate(total_buffer_sizes[i], &receive_buf);
-            std::vector<int32_t> receive_counts = receiveCounts(all_buffer_sizes.get(),
+            std::vector<int32_t> receive_counts = receiveCounts(all_buffer_sizes,
                                                                 i,
                                                                 num_buffers,
                                                                 ctx->GetWorldSize());
-            std::vector<int32_t> disp_per_buffer = displacementsPerBuffer(all_buffer_sizes.get(),
+            std::vector<int32_t> disp_per_buffer = displacementsPerBuffer(all_buffer_sizes,
                                                                           i,
                                                                           num_buffers,
                                                                           ctx->GetWorldSize());

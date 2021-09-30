@@ -61,7 +61,7 @@ cylon::Status Gather(const std::shared_ptr<cylon::TableSerializer>& serializer,
                      int gather_root,
                      bool gather_from_root,
                      const std::shared_ptr<cylon::Allocator>& allocator,
-                     std::unique_ptr<int32_t []> & all_buffer_sizes,
+                     std::vector<int32_t> & all_buffer_sizes,
                      std::vector<std::shared_ptr<cylon::Buffer>> & received_buffers,
                      std::vector<std::vector<int32_t>> & displacements,
                     const std::shared_ptr<cylon::CylonContext> &ctx
