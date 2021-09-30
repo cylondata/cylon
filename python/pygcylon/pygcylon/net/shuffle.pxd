@@ -30,6 +30,6 @@ cdef extern from "gcylon/gtable_api.hpp" namespace "gcylon":
 
     CStatus Shuffle(const table_view &input_tv,
                     const vector[int] &columns_to_hash,
-                    shared_ptr[CCylonContext] ctx_srd_ptr,
+                    const shared_ptr[CCylonContext] &ctx_srd_ptr,
                     unique_ptr[table] &output_table);
 

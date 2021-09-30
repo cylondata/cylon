@@ -24,6 +24,7 @@
 #include <gcylon/net/cudf_net_ops.hpp>
 
 #include <cylon/util/macros.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 
 namespace gcylon {
 
@@ -33,9 +34,12 @@ cylon::Status all_to_all_cudf_table(std::shared_ptr<cylon::CylonContext> ctx,
                                     std::unique_ptr<cudf::table> &table_out) {
 
     std::vector<std::unique_ptr<cudf::table>> received_tables;
+    received_tables.reserve(ctx->GetWorldSize());
+
     auto tv = ptable->view();
     offsets.push_back(tv.num_rows());
-    gcylon::net::AllToAll(tv, offsets, ctx, received_tables);
+    RETURN_CYLON_STATUS_IF_FAILED(
+            gcylon::net::AllToAll(tv, offsets, ctx, received_tables));
 
     if (received_tables.size() == 0) {
         table_out = std::move(createEmptyTable(ptable->view()));
@@ -53,7 +57,7 @@ cylon::Status all_to_all_cudf_table(std::shared_ptr<cylon::CylonContext> ctx,
 
 cylon::Status Shuffle(const cudf::table_view &input_table,
                       const std::vector<int> &columns_to_hash,
-                      std::shared_ptr<cylon::CylonContext> ctx,
+                      const std::shared_ptr<cylon::CylonContext> &ctx,
                       std::unique_ptr<cudf::table> &table_out) {
 
     std::pair<std::unique_ptr<cudf::table>, std::vector<cudf::size_type>> partitioned
@@ -164,7 +168,7 @@ cylon::Status joinTables(std::shared_ptr<GTable> &left,
 cylon::Status DistributedJoin(const cudf::table_view &left_table,
                               const cudf::table_view &right_table,
                               const cylon::join::config::JoinConfig &join_config,
-                              std::shared_ptr<cylon::CylonContext> ctx,
+                              const std::shared_ptr<cylon::CylonContext> &ctx,
                               std::unique_ptr<cudf::table> &table_out) {
 
     if (ctx->GetWorldSize() == 1) {

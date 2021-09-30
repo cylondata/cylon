@@ -82,8 +82,8 @@ std::unique_ptr<cudf::column> constructColumn(std::shared_ptr<rmm::device_buffer
  * @param data_types
  * @return
  */
-cylon::Status deserializeSingleTable(std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
-                                     std::vector<int32_t> &data_types,
+cylon::Status deserializeSingleTable(const std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
+                                     const std::vector<int32_t> &data_types,
                                      std::unique_ptr<cudf::table> &out_table);
 
 

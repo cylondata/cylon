@@ -34,7 +34,7 @@ cdef extern from "gcylon/gtable_api.hpp" namespace "gcylon":
     CStatus DistributedSort(const table_view &input_tv,
                             const vector[int] &sort_columns,
                             const vector[libcudf_types.order] c_column_orders,
-                            shared_ptr[CCylonContext] ctx_srd_ptr,
+                            const shared_ptr[CCylonContext] &ctx_srd_ptr,
                             unique_ptr[table] & sorted_table,
                             cppbool nulls_after
                             );

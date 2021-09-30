@@ -51,8 +51,9 @@ cylon::Status gcylon::net::AllToAll(const cudf::table_view & tv_with_parts,
 
     // insert partitioned table for all-to-all
     int accepted = all_to_all.insert(tv_with_parts, part_indices, ctx->GetNextSequence());
-    if (!accepted)
+    if (!accepted) {
         return cylon::Status(accepted);
+    }
 
     // wait for the partitioned tables to arrive
     // now complete the communication

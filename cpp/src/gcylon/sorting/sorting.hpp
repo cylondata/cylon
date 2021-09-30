@@ -30,7 +30,7 @@ namespace gcylon {
  * @return
  */
 cylon::Status SampleTableUniform(const cudf::table_view &tv,
-                                 const int sample_count,
+                                 int sample_count,
                                  std::unique_ptr<cudf::table> &sampled_table);
 
 /**
@@ -47,9 +47,9 @@ cylon::Status SampleTableUniform(const cudf::table_view &tv,
  * @return
  */
 cylon::Status GetSplitPoints(const cudf::table_view & sample_tv,
-                             const int splitter,
+                             int splitter,
                              const std::vector<cudf::order> &column_orders,
-                             std::shared_ptr<cylon::CylonContext> ctx,
+                             const std::shared_ptr<cylon::CylonContext> &ctx,
                              std::unique_ptr<cudf::table> &split_table);
 
 } // end of namespace gcylon

@@ -36,8 +36,7 @@ TableDeserializer::deserializeTable(std::vector<std::shared_ptr<cylon::Buffer>> 
                                               buffer_sizes[0],
                                               buffer_sizes[2]);
 
-    int bc = 0;
-    for (int i = 0; i < tv_.num_columns(); ++i) {
+    for (int i = 0, bc = 0; i < tv_.num_columns(); ++i, bc += 3) {
         // unfortunately this device_buffer performs data copying according to their docs
         // however, there is no other constructor to create a device_buffer using already existing memory on the gpu
         uint8_t * data_buffer = received_buffers[bc]->GetByteBuffer() + disp_per_buffer[bc];
@@ -54,7 +53,6 @@ TableDeserializer::deserializeTable(std::vector<std::shared_ptr<cylon::Buffer>> 
                                                                      ob,
                                                                      tv_.column(i).type(),
                                                                      num_rows);
-        bc += 3;
         if (clmn == nullptr) {
             std::string msg = "Following column is not constructed successfully: ";
             throw msg + std::to_string(i);
@@ -75,12 +73,7 @@ std::vector<int32_t> displacementsPerTable(std::vector<std::vector<int32_t>> &di
 }
 
 bool allZero(std::vector<int32_t> &buffer_sizes) {
-    for (int i: buffer_sizes) {
-        if (i != 0) {
-            return false;
-        }
-    }
-    return true;
+    return std::all_of(buffer_sizes.begin(), buffer_sizes.end(), [](int32_t i){return i == 0;});
 }
 
 cylon::Status TableDeserializer::deserialize(std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
@@ -183,8 +176,8 @@ int32_t gcylon::net::numOfRows(const std::vector<std::shared_ptr<cylon::Buffer>>
 }
 
 
-cylon::Status deserializeSingleTable(std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
-                                     std::vector<int32_t> &data_types,
+cylon::Status deserializeSingleTable(const std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
+                                     const std::vector<int32_t> &data_types,
                                      std::unique_ptr<cudf::table> &out_table) {
     if(data_types.empty()) {
         return cylon::Status(cylon::Code::ExecutionError, "data_types empty.");
@@ -193,7 +186,7 @@ cylon::Status deserializeSingleTable(std::vector<std::shared_ptr<cylon::Buffer>>
     int32_t num_rows = gcylon::net::numOfRows(received_buffers, data_types[0]);
     int32_t num_cols = data_types.size();
     std::vector<std::unique_ptr<cudf::column>> columns{};
-    for (int i = 0, bc = 0; i < num_cols; ++i) {
+    for (int i = 0, bc = 0; i < num_cols; ++i, bc += 3) {
         cudf::data_type dt(static_cast<cudf::type_id>(data_types[i]));
         std::shared_ptr<CudfBuffer> db = std::dynamic_pointer_cast<CudfBuffer>(received_buffers[bc]);
         std::shared_ptr<CudfBuffer> mb = std::dynamic_pointer_cast<CudfBuffer>(received_buffers[bc + 1]);
@@ -204,7 +197,6 @@ cylon::Status deserializeSingleTable(std::vector<std::shared_ptr<cylon::Buffer>>
                                                              ob->getBuf(),
                                                              dt,
                                                              num_rows);
-        bc += 3;
         if (clmn == nullptr) {
             std::string msg = "Following column is not constructed successfully: ";
             throw msg + std::to_string(i);

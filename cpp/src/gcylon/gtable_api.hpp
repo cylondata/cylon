@@ -35,7 +35,7 @@ namespace gcylon {
  */
 cylon::Status Shuffle(const cudf::table_view &input_table,
                       const std::vector<int> &columns_to_hash,
-                      std::shared_ptr<cylon::CylonContext> ctx,
+                      const std::shared_ptr<cylon::CylonContext> &ctx,
                       std::unique_ptr<cudf::table> &table_out);
 
 /**
@@ -50,7 +50,7 @@ cylon::Status Shuffle(const cudf::table_view &input_table,
 cylon::Status DistributedJoin(const cudf::table_view & left_table,
                               const cudf::table_view & right_table,
                               const cylon::join::config::JoinConfig &join_config,
-                              std::shared_ptr<cylon::CylonContext> ctx,
+                              const std::shared_ptr<cylon::CylonContext> &ctx,
                               std::unique_ptr<cudf::table> &table_out);
 
 
@@ -100,7 +100,7 @@ cylon::Status WriteToCsv(std::shared_ptr<GTable> &table, std::string output_file
 cylon::Status DistributedSort(const cudf::table_view &tv,
                               const std::vector<int32_t> &sort_column_indices,
                               const std::vector<cudf::order> &column_orders,
-                              std::shared_ptr<cylon::CylonContext> ctx,
+                              const std::shared_ptr<cylon::CylonContext> &ctx,
                               std::unique_ptr<cudf::table> &sorted_table,
                               bool nulls_after = true,
                               const int sort_root = 0);
