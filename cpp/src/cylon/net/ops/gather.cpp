@@ -89,8 +89,8 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
         totalBufferSizes(all_buffer_sizes, num_buffers, ctx->GetWorldSize()).swap(total_buffer_sizes);
     }
 
-    auto requests = std::make_unique<MPI_Request []>(num_buffers);
-    auto statuses = std::make_unique<MPI_Status []>(num_buffers);
+    std::vector<MPI_Request> requests(num_buffers);
+    std::vector<MPI_Status> statuses(num_buffers);
     const std::vector<uint8_t *>& send_buffers = serializer->getDataBuffers();
 
     for (int32_t i = 0; i < num_buffers; ++i) {
@@ -139,7 +139,7 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
         }
     }
 
-    status = MPI_Waitall(num_buffers, requests.get(), statuses.get());
+    status = MPI_Waitall(num_buffers, requests.data(), statuses.data());
     if (status != MPI_SUCCESS) {
         return cylon::Status(cylon::Code::ExecutionError, "MPI_Igatherv failed!");
     }
