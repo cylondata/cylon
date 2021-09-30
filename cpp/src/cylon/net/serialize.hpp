@@ -47,7 +47,7 @@ public:
      * This method is symmetrical to getDataBuffers()
      * @return
      */
-    virtual std::vector<int32_t> getBufferSizes() = 0;
+    virtual const std::vector<int32_t>& getBufferSizes() = 0;
 
     /**
      * length of the buffer sizes
