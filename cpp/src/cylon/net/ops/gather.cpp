@@ -17,7 +17,9 @@
 #include <cylon/util/macros.hpp>
 
 
-std::vector<int32_t> totalBufferSizes(const std::vector<int32_t> &all_buffer_sizes, int num_buffers, int world_size) {
+std::vector<int32_t> totalBufferSizes(const std::vector<int32_t> &all_buffer_sizes,
+                                      int num_buffers,
+                                      int world_size) {
     std::vector<int32_t> total_buffer_sizes(num_buffers, 0);
     for (int w = 0; w < world_size; w++){
         for (int i = 0; i < num_buffers; i++){
@@ -27,7 +29,10 @@ std::vector<int32_t> totalBufferSizes(const std::vector<int32_t> &all_buffer_siz
     return total_buffer_sizes;
 }
 
-std::vector<int32_t> receiveCounts(const std::vector<int32_t> &all_buffer_sizes, int receiveNo, int num_buffers, int world_size) {
+std::vector<int32_t> receiveCounts(const std::vector<int32_t> &all_buffer_sizes,
+                                   int receiveNo,
+                                   int num_buffers,
+                                   int world_size) {
     std::vector<int32_t> receive_counts(world_size, 0);
     for (int i = 0, k = receiveNo; i < world_size; ++i) {
         receive_counts[i] = all_buffer_sizes[k];
@@ -36,12 +41,14 @@ std::vector<int32_t> receiveCounts(const std::vector<int32_t> &all_buffer_sizes,
     return receive_counts;
 }
 
-std::vector<int32_t> displacementsPerBuffer(const std::vector<int32_t> & all_buffer_sizes, int receiveNo, int num_buffers, int world_size) {
+std::vector<int32_t> displacementsPerBuffer(const std::vector<int32_t> & all_buffer_sizes,
+                                            int receiveNo,
+                                            int num_buffers,
+                                            int world_size) {
     std::vector<int32_t> disp_array(world_size, 0);
     disp_array[0] = 0;
-    for (int i = 1, k = receiveNo; i < world_size; ++i) {
-        disp_array[i] = disp_array[i-1] + all_buffer_sizes[k];
-        k += num_buffers;
+    for (int i = 0; i < world_size - 1; ++i) {
+        disp_array[i + 1] = disp_array[i] + all_buffer_sizes[i*num_buffers + receiveNo];
     }
     return disp_array;
 }
