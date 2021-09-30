@@ -67,7 +67,7 @@ Status JoinOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
   LOG(INFO) << "Left splits - " << left_splits << " Right splits - " << right_splits;
   const auto &part_config = cylon::PartitionOpConfig(ctx->GetWorldSize(), {0});
   const auto &dist_join_config = cylon::DisJoinOpConfig(part_config, join_config, left_splits, right_splits);
-  auto op = cylon::DisJoinOP(ctx, left->get_table()->schema(), 0, callback, dist_join_config);
+  auto op = cylon::DisJoinOP(ctx, left->get_table()->schema(), right->get_table()->schema(), 0, callback, dist_join_config);
   op.InsertTable(100, left);
   op.InsertTable(200, right);
   auto execution = op.GetExecution();
