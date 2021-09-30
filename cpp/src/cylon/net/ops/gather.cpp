@@ -34,9 +34,8 @@ std::vector<int32_t> receiveCounts(const std::vector<int32_t> &all_buffer_sizes,
                                    int num_buffers,
                                    int world_size) {
     std::vector<int32_t> receive_counts(world_size, 0);
-    for (int i = 0, k = receiveNo; i < world_size; ++i) {
-        receive_counts[i] = all_buffer_sizes[k];
-        k += num_buffers;
+    for (int i = 0; i < world_size; ++i) {
+        receive_counts[i] = all_buffer_sizes[i * num_buffers + receiveNo];
     }
     return receive_counts;
 }
