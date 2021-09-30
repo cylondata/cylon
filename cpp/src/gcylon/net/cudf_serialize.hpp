@@ -52,7 +52,7 @@ public:
      * This method is symmetrical to getDataBuffers()
      * @return
      */
-    std::vector<int32_t> getBufferSizes();
+    const std::vector<int32_t>& getBufferSizes();
 
     /**
      * number of buffers
@@ -86,28 +86,28 @@ public:
      * This method is symmetrical to getBufferSizes()
      * @return
      */
-    std::vector<uint8_t *> getDataBuffers();
+    const std::vector<uint8_t *>& getDataBuffers();
 
     /**
      * Get the column data size in bytes and its data buffer
-     * @param column_index
+     * @param cv
      * @return
      */
-    std::pair<int32_t, uint8_t *> getColumnData(int column_index);
+    std::pair<int32_t, uint8_t *> getColumnData(const cudf::column_view& cv);
 
     /**
      * Get the column null mask size in bytes and its null mask buffer
-     * @param column_index
+     * @param cv
      * @return
      */
-    std::pair<int32_t, uint8_t *> getColumnMask(int column_index);
+    std::pair<int32_t, uint8_t *> getColumnMask(const cudf::column_view& cv);
 
     /**
      * Get the column offsets size in bytes and its offsets buffer
-     * @param column_index
+     * @param cv
      * @return
      */
-    std::pair<int32_t, uint8_t *> getColumnOffsets(int column_index);
+    std::pair<int32_t, uint8_t *> getColumnOffsets(const cudf::column_view& cv);
 
     /**
      * get the data types of the columns as an int vector

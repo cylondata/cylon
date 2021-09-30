@@ -110,7 +110,7 @@ std::unique_ptr<cudf::table> createEmptyTable(const cudf::table_view &tv);
  * @return
  */
 template<typename T>
-std::string vectorToString(std::vector<T> vec) {
+std::string vectorToString(const std::vector<T> &vec) {
     if (vec.empty()) {
         return std::string();
     }

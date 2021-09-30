@@ -81,7 +81,7 @@ public:
      * This method is symmetrical to getBufferSizes()
      * @return
      */
-    virtual std::vector<uint8_t *> getDataBuffers() = 0;
+    virtual const std::vector<uint8_t *>& getDataBuffers() = 0;
 
     /**
      * Return data types of the columns in an int vector

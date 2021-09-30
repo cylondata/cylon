@@ -16,7 +16,7 @@
 #include <cylon/net/mpi/mpi_operations.hpp>
 
 
-bool cylon::mpi::AmIRoot(int root, std::shared_ptr<cylon::CylonContext> ctx) {
+bool cylon::mpi::AmIRoot(int root, const std::shared_ptr<cylon::CylonContext> &ctx) {
     return root == ctx->GetRank();
 }
 
@@ -55,7 +55,7 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
                      int gather_root,
                      bool gather_from_root,
                      const std::shared_ptr<cylon::Allocator>& allocator,
-                     const std::unique_ptr<int32_t []> & all_buffer_sizes,
+                     std::unique_ptr<int32_t []> & all_buffer_sizes,
                      std::vector<std::shared_ptr<cylon::Buffer>> & receive_buffers,
                      std::vector<std::vector<int32_t>> & displacements,
                      const std::shared_ptr<cylon::CylonContext> &ctx

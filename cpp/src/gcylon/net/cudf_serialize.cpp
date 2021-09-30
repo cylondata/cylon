@@ -26,22 +26,23 @@ void CudfTableSerializer::initTableBuffers() {
     // for each column, we keep 3 data objects: data, mask, offsets
     std::pair<int32_t, uint8_t *> p;
     for (int i = 0; i < tv_.num_columns(); ++i) {
-        p = getColumnData(i);
+        auto cv = tv_.column(i);
+        p = getColumnData(cv);
         buffer_sizes_.push_back(p.first);
         table_buffers_.push_back(p.second);
 
-        p = getColumnMask(i);
+        p = getColumnMask(cv);
         buffer_sizes_.push_back(p.first);
         table_buffers_.push_back(p.second);
 
-        p = getColumnOffsets(i);
+        p = getColumnOffsets(cv);
         buffer_sizes_.push_back(p.first);
         table_buffers_.push_back(p.second);
     }
     table_buffers_initialized = true;
 }
 
-std::vector<int32_t> CudfTableSerializer::getBufferSizes() {
+const std::vector<int32_t>& CudfTableSerializer::getBufferSizes() {
     if(!table_buffers_initialized) {
         initTableBuffers();
     }
@@ -49,7 +50,7 @@ std::vector<int32_t> CudfTableSerializer::getBufferSizes() {
     return buffer_sizes_;
 }
 
-std::vector<uint8_t *> CudfTableSerializer::getDataBuffers() {
+const std::vector<uint8_t *>& CudfTableSerializer::getDataBuffers() {
     if(!table_buffers_initialized) {
         initTableBuffers();
     }
@@ -64,8 +65,7 @@ std::vector<int32_t> CudfTableSerializer::getEmptyTableBufferSizes() {
     return std::vector<int32_t>(getNumberOfBuffers(), 0);
 }
 
-std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnData(int column_index) {
-    auto cv = tv_.column(column_index);
+std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnData(const cudf::column_view& cv) {
     if (cv.type().id() == cudf::type_id::STRING) {
         cudf::strings_column_view scv(cv);
         return std::make_pair(scv.chars_size(), (uint8_t *)scv.chars().data<uint8_t>());
@@ -75,8 +75,7 @@ std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnData(int column_inde
     return std::make_pair(size, (uint8_t *)cv.data<uint8_t>());
 }
 
-std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnMask(int column_index) {
-    auto cv = tv_.column(column_index);
+std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnMask(const cudf::column_view& cv) {
     if (cv.has_nulls()) {
         int size = cudf::bitmask_allocation_size_bytes(cv.size());
         return std::make_pair(size, (uint8_t *)cv.null_mask());
@@ -85,8 +84,7 @@ std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnMask(int column_inde
     }
 }
 
-std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnOffsets(int column_index) {
-    auto cv = tv_.column(column_index);
+std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnOffsets(const cudf::column_view& cv) {
     if (cv.type().id() == cudf::type_id::STRING) {
         cudf::strings_column_view scv(cv);
         int size = cudf::size_of(scv.offsets().type()) * scv.offsets().size();

@@ -14,12 +14,12 @@
 
 #include <cylon/net/mpi/mpi_operations.hpp>
 
-cylon::Status cylon::mpi::Bcast(std::shared_ptr<cylon::TableSerializer> serializer,
-                                const int bcast_root,
-                                std::shared_ptr<cylon::Allocator> allocator,
+cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &serializer,
+                                int bcast_root,
+                                const std::shared_ptr<cylon::Allocator> &allocator,
                                 std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
                                 std::vector<int32_t> &data_types,
-                                std::shared_ptr<cylon::CylonContext> ctx) {
+                                const std::shared_ptr<cylon::CylonContext> &ctx) {
 
 
     // first broadcast the number of buffers
