@@ -41,7 +41,7 @@ cylon::Status AllReduce(const void *send_buf,
  * @param ctx
  * @return
  */
-bool AmIRoot(int root, std::shared_ptr<cylon::CylonContext> ctx);
+bool AmIRoot(int root, const std::shared_ptr<cylon::CylonContext>& ctx);
 
 /**
  * Perform MPI Gather on a table
