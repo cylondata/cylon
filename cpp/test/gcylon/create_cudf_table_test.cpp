@@ -27,7 +27,7 @@ TEST_CASE("create cudf table testing", "[gcreate]") {
   const int STEP = 5;
   const bool CONT = true;
 
-  SECTION("testing create table") {
+  SECTION("testing create increasing table") {
 
     std::unique_ptr<cudf::table> tbl = constructTable(COLS, ROWS, START, STEP, CONT);
     auto tv = tbl->view();
@@ -47,4 +47,13 @@ TEST_CASE("create cudf table testing", "[gcreate]") {
         }
     }
   }
+
+SECTION("testing create random table") {
+
+    std::unique_ptr<cudf::table> tbl = constructRandomDataTable(COLS, ROWS);
+    auto tv = tbl->view();
+
+    REQUIRE((tv.num_columns() == COLS && tv.num_rows() == ROWS));
+  }
+
 }
