@@ -84,6 +84,9 @@ class DataFrame(object):
     def __sizeof__(self):
         return self._cdf.__sizeof__()
 
+    def __len__(self):
+        return self._cdf.__len__()
+
     def __del__(self):
         del self._cdf
 
@@ -1402,7 +1405,7 @@ class DataFrame(object):
         return DataFrame.from_cudf(sorted_cdf)
 
     def row_counts_for_all(self, env: CylonEnv = None) -> List[int]:
-        '''
+        """
         Get the number of rows in all DataFrame partitions
         In the returned list,
             first element shows the number_of_rows in the first worker partition
@@ -1410,13 +1413,126 @@ class DataFrame(object):
             third element shows the number_of_rows in the third worker partition
             ....
             last element shows the number_of_rows in the last worker partition
-        '''
+        """
 
         if env is None or env.world_size == 1:
             return [len(self._cdf._index)]
 
         num_rows = len(self._cdf)
         return row_counts_all_tables(num_rows=num_rows, context=env.context)
+
+    @staticmethod
+    def _calculate_row_counts_head_tail(n: int, head: bool, all_row_counts: List[int]) -> List[int]:
+        """
+        calculate the distribution of rows to workers in head/tail DataFrame
+        """
+
+        nworkers = len(all_row_counts)
+        indices = [i for i in range(nworkers)] if head else [i for i in reversed(range(nworkers))]
+
+        row_counts = [0] * nworkers
+        total = 0
+        for i in indices:
+            if total + all_row_counts[i] < n:
+                row_counts[i] = all_row_counts[i]
+                total += all_row_counts[i]
+            elif total + all_row_counts[i] >= n:
+                row_counts[i] = n - total
+                break
+
+        return row_counts
+
+    def head(self, n, env: CylonEnv = None) -> DataFrame:
+        """
+        Return a new DataFrame with top n rows in it.
+        If the first worker has more than n rows,
+            all rows will be returned from the first worker.
+            Top n rows of the first worker will be returned.
+        If the first worker has less than n rows, then:
+            rows from the second worker will be returned.
+        If the second worker also does not have enough rows,
+            rows from the third worker will be returned.
+        etc.
+
+        The resulting DataFrame object may have rows in the first worker only,
+        or it may have rows in other workers as well.
+        This function does not bring all rows back to the first worker.
+        Rows will be residing in the worker where they are copied from.
+        For example:
+            If a DataFrame has 4 partitions with following row counts: [50, 60, 20, 30]
+            DataFrame returned by head(20) will have rows: [20, 0, 0, 00]
+            DataFrame returned by head(60) will have rows: [50, 10, 0, 0]
+            DataFrame returned by head(120) will have rows: [50, 60, 10, 0]
+            DataFrame returned by head(1000) will have rows: [50, 60, 20, 30]
+
+        If the user wants to collect all rows to a worker,
+        a separate function should be executed.
+
+        Parameters
+        ----------
+        n: the number of rows to return
+        env: Cylon environment object. Required for distributed head operation.
+
+        Returns
+        -------
+        A new DataFrame object constructed by head N rows.
+        """
+
+        if env is None or env.world_size == 1:
+            head_n_cdf = self._cdf.head(n)
+            return DataFrame.from_cudf(head_n_cdf)
+
+        row_counts = self.row_counts_for_all(env=env)
+        head_row_counts = DataFrame._calculate_row_counts_head_tail(n=n, head=True, all_row_counts=row_counts)
+
+        head_n_cdf = self._cdf.head(head_row_counts[env.rank])
+        return DataFrame.from_cudf(head_n_cdf)
+
+    def tail(self, n, env: CylonEnv = None) -> DataFrame:
+        """
+        Return a new DataFrame with tail n rows in it.
+        If the last worker has more than n rows,
+            all rows will be returned from the last worker.
+            Tail n rows of the last worker will be returned.
+        If the last worker has less than n rows, then:
+            rows from the (last-1) worker will be returned.
+        If the (last-1) worker also does not have enough rows,
+            rows from the (last-2) worker will be returned.
+        etc.
+
+        The resulting DataFrame object may have rows in the last worker only,
+        or it may have rows in other workers as well.
+        This function leaves the rows where they have been residing.
+        For example:
+            If a DataFrame has 4 partitions with following row counts: [50, 60, 20, 30]
+            DataFrame returned by tail(20) will have rows: [0, 0, 0, 20]
+            DataFrame returned by tail(40) will have rows: [0, 0, 10, 30]
+            DataFrame returned by tail(100) will have rows: [0, 50, 20, 30]
+            DataFrame returned by tail(1000) will have rows: [50, 60, 20, 30]
+
+        If the user wants to collect all rows to a worker,
+        a separate function should be executed.
+
+        Parameters
+        ----------
+        n: the number of rows to return
+        env: Cylon environment object. Required for distributed head operation.
+
+        Returns
+        -------
+        A new DataFrame object constructed by head N rows.
+        """
+
+        if env is None or env.world_size == 1:
+            tail_n_cdf = self._cdf.tail(n)
+            return DataFrame.from_cudf(tail_n_cdf)
+
+        row_counts = self.row_counts_for_all(env=env)
+        tail_row_counts = DataFrame._calculate_row_counts_head_tail(n=n, head=False, all_row_counts=row_counts)
+
+        tail_n_cdf = self._cdf.head(tail_row_counts[env.rank])
+        return DataFrame.from_cudf(tail_n_cdf)
+
 
 def concat(
         dfs,
