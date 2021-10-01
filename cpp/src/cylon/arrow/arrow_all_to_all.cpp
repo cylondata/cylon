@@ -258,7 +258,7 @@ ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
 
 ArrowAllocator::~ArrowAllocator() = default;
 
-int64_t ArrowBuffer::GetLength() {
+int64_t ArrowBuffer::GetLength() const {
   return 0;
 }
 

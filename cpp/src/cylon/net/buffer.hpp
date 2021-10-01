@@ -25,7 +25,7 @@ namespace cylon {
   class Buffer {
   public:
     virtual ~Buffer() = default;
-    virtual int64_t GetLength() = 0;
+    virtual int64_t GetLength() const = 0;
     virtual uint8_t * GetByteBuffer() = 0;
   };
 
@@ -40,7 +40,7 @@ namespace cylon {
 
   class DefaultBuffer : public Buffer {
    public:
-    int64_t GetLength() override {
+    int64_t GetLength() const override {
       return length;
     }
     uint8_t * GetByteBuffer() override {

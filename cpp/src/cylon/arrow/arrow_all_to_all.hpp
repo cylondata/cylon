@@ -82,7 +82,7 @@ struct PendingReceiveTable {
 class ArrowBuffer : public Buffer {
  public:
   explicit ArrowBuffer(std::shared_ptr<arrow::Buffer> buf);
-  int64_t GetLength() override;
+  int64_t GetLength() const override;
   uint8_t *GetByteBuffer() override;
 
   std::shared_ptr<arrow::Buffer> getBuf() const;
