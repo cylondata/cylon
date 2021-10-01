@@ -119,11 +119,11 @@ std::unique_ptr<cudf::table> constructTable(int columns,
  * @param cont continue to increase values sequentially when moving from one column to another
  * @return
  */
-std::unique_ptr<cudf::table> constructRandomDataTable(int columns, int64_t rows) {
+std::unique_ptr<cudf::table> constructRandomDataTable(int columns, int64_t rows, int seed = 10) {
 
     std::vector<std::unique_ptr<cudf::column>> column_vector{};
     for (int i=0; i < columns; i++) {
-        std::unique_ptr<cudf::column> col = constructRandomLongColumn(rows, i*10);
+        std::unique_ptr<cudf::column> col = constructRandomLongColumn(rows, i * seed);
         column_vector.push_back(std::move(col));
     }
 
