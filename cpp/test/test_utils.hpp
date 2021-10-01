@@ -18,16 +18,8 @@
 #include <glog/logging.h>
 #include <chrono>
 
-#include <cylon/net/mpi/mpi_communicator.hpp>
-#include <cylon/ctx/cylon_context.hpp>
 #include <cylon/table.hpp>
-
-#define LOG_AND_RETURN_INT_IF_FAILED(status) \
-  if (!status.is_ok()) { \
-    LOG(ERROR) << status.get_msg() ; \
-    return status.get_code(); \
-  };
-
+#include "test_macros.hpp"
 
 // this is a toggle to generate test files. Set execute to 0 then, it will generate the expected
 // output files
@@ -35,204 +27,115 @@
 
 namespace cylon {
 namespace test {
-static int Verify(const std::shared_ptr<cylon::CylonContext> &ctx, std::shared_ptr<Table> &result,
-                  std::shared_ptr<Table> &expected_result) {
-  Status status;
-  std::shared_ptr<Table> verification;
-
-  LOG(INFO) << "starting verification...";
-
-  if (expected_result->Rows() != result->Rows()) {
-    LOG(ERROR) << "expected:" << expected_result->Rows() << " found:" << result->Rows();
-    return 1;
-  } else if (!(status = cylon::Subtract(result, expected_result, verification)).is_ok()) {
-    LOG(ERROR) << "subtract FAIL! " << status.get_msg();
-    return 1;
-  } else if (verification->Rows()) {
-    LOG(ERROR) << "verification FAIL! Rank:" << ctx->GetRank() << " status:" << status.get_msg()
-               << " expected:" << expected_result->Rows() << " found:" << result->Rows() << " "
-               << verification->Rows();
-    return 1;
-  } else {
-    LOG(INFO) << "verification SUCCESS!";
-    return 0;
-  }
-}
 
 typedef Status(*fun_ptr)(std::shared_ptr<Table> &,
                          std::shared_ptr<Table> &,
                          std::shared_ptr<Table> &);
 
-int TestSetOperation(fun_ptr fn,
-                     std::shared_ptr<cylon::CylonContext> &ctx,
-                     const std::string &path1,
-                     const std::string &path2,
-                     const std::string &out_path) {
-  std::shared_ptr<cylon::Table> table1, table2, result_expected, result;
+void TestSetOperation(fun_ptr fn,
+                      std::shared_ptr<CylonContext> &ctx,
+                      const std::string &path1,
+                      const std::string &path2,
+                      const std::string &out_path) {
+  std::shared_ptr<Table> table1, table2, result_expected, result;
 
-  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false)
+  auto read_options = io::config::CSVReadOptions().UseThreads(false)
       .WithColumnTypes({
                            {"0", std::make_shared<DataType>(Type::INT64)},
                            {"1", std::make_shared<DataType>(Type::DOUBLE)},
                        });
 
-  Status status;
-  auto start_start = std::chrono::steady_clock::now();
-
-  status = cylon::FromCSV(ctx,
 #if EXECUTE
-                          std::vector<std::string>{path1, path2, out_path},
-                          std::vector<std::shared_ptr<Table> *>{&table1, &table2,
-                                                                &result_expected},
+  CHECK_CYLON_STATUS(FromCSV(ctx, std::vector<std::string>{path1, path2, out_path},
+                             std::vector<std::shared_ptr<Table> *>{&table1, &table2, &result_expected},
+                             read_options));
 #else
-      std::vector<std::string>{path1, path2},
-      std::vector<std::shared_ptr<Table> *>{&table1, &table2},
+  CHECK_CYLON_STATUS(FromCSV(ctx, std::vector<std::string>{path1, path2},
+                             std::vector<std::shared_ptr<Table> *>{&table1, &table2},
+                             read_options));
 #endif
-                          read_options);
-  LOG_AND_RETURN_INT_IF_FAILED(status)
 
-  auto read_end_time = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start)
-                .count()
-            << "[ms]";
-  status = fn(table1, table2, result);
-  LOG_AND_RETURN_INT_IF_FAILED(status)
-
-  auto op_end_time = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "First table had : " << table1->Rows() << " and Second table had : "
-            << table2->Rows() << ", result has : " << result->Rows();
-  LOG(INFO) << "operation done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(op_end_time - read_end_time)
-                .count()
-            << "[ms]";
+  CHECK_CYLON_STATUS(fn(table1, table2, result));
 
 #if EXECUTE
-  return test::Verify(ctx, result, result_expected);
+  VERIFY_TABLES_EQUAL_UNORDERED(result_expected, result);
 #else
   auto write_options = io::config::CSVWriteOptions().ColumnNames(result->ColumnNames());
-  LOG_AND_RETURN_INT_IF_FAILED(WriteCSV(result, out_path, write_options))
-  return 0;
+  CHECK_CYLON_STATUS(WriteCSV(result, out_path, write_options));
 #endif
 }
 
-int TestJoinOperation(const cylon::join::config::JoinConfig &join_config,
-                      const std::shared_ptr<cylon::CylonContext> &ctx,
-                      const std::string &path1,
-                      const std::string &path2,
-                      const std::string &out_path) {
-  Status status;
-  std::shared_ptr<cylon::Table> table1, table2, joined_expected, joined, verification;
+void TestJoinOperation(const join::config::JoinConfig &join_config,
+                       const std::shared_ptr<CylonContext> &ctx,
+                       const std::string &path1,
+                       const std::string &path2,
+                       const std::string &out_path) {
+  std::shared_ptr<Table> table1, table2, expected, joined, verification;
 
-  auto start_start = std::chrono::steady_clock::now();
+  auto read_options = io::config::CSVReadOptions().UseThreads(false);
 
-  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false);
-  status = cylon::FromCSV(ctx,
 #if EXECUTE
-                          std::vector<std::string>{path1, path2, out_path},
-                          std::vector<std::shared_ptr<Table> *>{&table1, &table2,
-                                                                &joined_expected},
+  CHECK_CYLON_STATUS(FromCSV(ctx, std::vector<std::string>{path1, path2, out_path},
+                             std::vector<std::shared_ptr<Table> *>{&table1, &table2, &expected},
+                             read_options));
 #else
-      std::vector<std::string>{path1, path2},
-      std::vector<std::shared_ptr<Table> *>{&table1, &table2},
+  CHECK_CYLON_STATUS(FromCSV(ctx, std::vector<std::string>{path1, path2},
+                             std::vector<std::shared_ptr<Table> *>{&table1, &table2},
+                             read_options));
 #endif
-                          read_options);
-  LOG_AND_RETURN_INT_IF_FAILED(status)
 
-  auto read_end_time = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start)
-                .count()
-            << "[ms]" << path1 << " " << path2 << " " << out_path;
-
-  status = cylon::DistributedJoin(table1, table2, join_config, joined);
-  LOG_AND_RETURN_INT_IF_FAILED(status)
-
-  auto join_end_time = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "First table had : " << table1->Rows() << " and Second table had : "
-            << table2->Rows() << ", Joined has : " << joined->Rows();
-  LOG(INFO) << "Join done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time)
-                .count()
-            << "[ms]";
+  CHECK_CYLON_STATUS(DistributedJoin(table1, table2, join_config, joined));
 
 #if EXECUTE
-  return test::Verify(ctx, joined, joined_expected);
+  VERIFY_TABLES_EQUAL_UNORDERED(expected, joined);
 #else
   auto write_options = io::config::CSVWriteOptions().ColumnNames(joined->ColumnNames());
-  LOG_AND_RETURN_INT_IF_FAILED(cylon::WriteCSV(joined, out_path, write_options));
-  return 0;
+  LOG_AND_RETURN_INT_IF_FAILED(WriteCSV(joined, out_path, write_options));
 #endif
 }
 
-cylon::Status CreateTable(const std::shared_ptr<cylon::CylonContext> &ctx, int rows, std::shared_ptr<cylon::Table> &output) {
-  std::shared_ptr<std::vector<int32_t>> col0 = std::make_shared<std::vector<int32_t >>();
-  std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t >>();
+Status CreateTable(const std::shared_ptr<CylonContext> &ctx, int rows, std::shared_ptr<Table> &output) {
+  std::vector<int32_t> col0;
+  std::vector<double_t> col1;
 
   for (int i = 0; i < rows; i++) {
-    col0->push_back(i);
-    col1->push_back((double_t) i + 10.0);
+    col0.push_back(i);
+    col1.push_back((double_t) i + 10.0);
   }
 
-  auto c0 = cylon::VectorColumn<int32_t>::Make("col0", cylon::Int32(), col0);
-  auto c1 = cylon::VectorColumn<double>::Make("col1", cylon::Double(), col1);
+  std::shared_ptr<Column> c0, c1;
+  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(ctx, "col0", Int32(), col0, c0));
+  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(ctx, "col1", Double(), col1, c1));
 
-  return cylon::Table::FromColumns(ctx, {c0, c1}, output);
+  return Table::FromColumns(ctx, {std::move(c0), std::move(c1)}, output);
 }
 
 #ifdef BUILD_CYLON_PARQUET
-int TestParquetJoinOperation(const cylon::join::config::JoinConfig &join_config,
-                      std::shared_ptr<cylon::CylonContext> &ctx,
-                      const std::string &path1,
-                      const std::string &path2,
-                      const std::string &out_path) {
-  Status status;
-  std::shared_ptr<cylon::Table> table1, table2, joined_expected, joined, verification;
+void TestParquetJoinOperation(const join::config::JoinConfig &join_config,
+                              std::shared_ptr<CylonContext> &ctx,
+                              const std::string &path1,
+                              const std::string &path2,
+                              const std::string &out_path) {
+  std::shared_ptr<Table> table1, table2, expected, joined, verification;
 
-  auto start_start = std::chrono::steady_clock::now();
-
-  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false);
-  status = cylon::FromParquet(ctx,
+  auto read_options = io::config::ParquetOptions().ConcurrentFileReads(false);
 #if EXECUTE
-                          std::vector<std::string>{path1, path2, out_path},
-                          std::vector<std::shared_ptr<Table> *>{&table1, &table2,
-                                                                &joined_expected}
+  CHECK_CYLON_STATUS(FromParquet(ctx, std::vector<std::string>{path1, path2, out_path},
+                                 std::vector<std::shared_ptr<Table> *>{&table1, &table2, &expected},
+                                 read_options));
 #else
-      std::vector<std::string>{path1, path2},
-      std::vector<std::shared_ptr<Table> *>{&table1, &table2}
+  CHECK_CYLON_STATUS(FromParquet(ctx, std::vector<std::string>{path1, path2},
+                             std::vector<std::shared_ptr<Table> *>{&table1, &table2},
+                             read_options));
 #endif
-                          );
-  LOG_AND_RETURN_INT_IF_FAILED(status)
 
-  auto read_end_time = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "Read tables in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(read_end_time - start_start)
-                .count()
-            << "[ms]";
-
-  status = cylon::DistributedJoin(table1, table2, join_config, joined);
-  LOG_AND_RETURN_INT_IF_FAILED(status)
-
-  auto join_end_time = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "First table had : " << table1->Rows() << " and Second table had : "
-            << table2->Rows() << ", Joined has : " << joined->Rows();
-  LOG(INFO) << "Join done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(join_end_time - read_end_time)
-                .count()
-            << "[ms]";
+  CHECK_CYLON_STATUS(DistributedJoin(table1, table2, join_config, joined));
 
 #if EXECUTE
-  return test::Verify(ctx, joined, joined_expected);
+  VERIFY_TABLES_EQUAL_UNORDERED(expected, joined);
 #else
-  auto parquetOptions = cylon::io::config::ParquetOptions();
-  LOG_AND_RETURN_INT_IF_FAILED(cylon::WriteParquet(joined, ctx, out_path, parquetOptions))
-  return 0;
+  auto parquetOptions = io::config::ParquetOptions();
+  LOG_AND_RETURN_INT_IF_FAILED(WriteParquet(joined, ctx, out_path, parquetOptions))
 #endif
 }
 #endif
@@ -240,11 +143,8 @@ int TestParquetJoinOperation(const cylon::join::config::JoinConfig &join_config,
 template<typename T>
 std::shared_ptr<arrow::Array> VectorToArrowArray(const std::vector<T> &v) {
   const auto &buf = arrow::Buffer::Wrap(v);
-  const auto
-      &data = arrow::ArrayData::Make(arrow::TypeTraits<typename arrow::CTypeTraits<T>::ArrowType>::type_singleton(),
-                                     v.size(),
-                                     {nullptr, buf});
-
+  const auto &type = arrow::TypeTraits<typename arrow::CTypeTraits<T>::ArrowType>::type_singleton();
+  const auto &data = arrow::ArrayData::Make(type, v.size(), {nullptr, buf});
   return arrow::MakeArray(data);
 }
 

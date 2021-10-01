@@ -16,72 +16,59 @@
 #include "common/test_header.hpp"
 #include "test_index_utils.hpp"
 
-using namespace cylon;
+namespace cylon {
+namespace test {
 
 TEST_CASE("Index testing", "[indexing]") {
-std::string path1 = "../data/input/indexing_data.csv";
+  std::string path1 = "../data/input/indexing_data.csv";
+  std::unordered_map<IndexingType, std::string> out_files{
+      {IndexingType::Hash, "../data/output/indexing_loc_hl_"},
+      {IndexingType::Linear, "../data/output/indexing_loc_hl_"},
+      {IndexingType::Range, "../data/output/indexing_loc_r_"}
+  };
 
-std::vector<std::string> output_files {"../data/output/indexing_loc_hl_",
-                                       "../data/output/indexing_loc_hl_",
-                                       "../data/output/indexing_loc_r_"};
-
-
-std::vector<cylon::IndexingType> indexing_types = {cylon::IndexingType::Hash,
-                                                       cylon::IndexingType::Linear,
-                                                       cylon::IndexingType::Range};
-
-SECTION("testing build index") {
-  for(auto type : indexing_types) {
-    REQUIRE(test::TestIndexBuildOperation(path1, type) == 0);
+  SECTION("testing build index") {
+    for (auto &item: out_files) {
+      TestIndexBuildOperation(ctx, path1, item.first);
+    }
   }
-}
-SECTION("testing loc index 1") {
-for(size_t i=0; i < output_files.size(); i++) {
-  auto type = indexing_types.at(i);
-  auto output_file = output_files.at(i);
-  REQUIRE(test::TestIndexLocOperation1(path1, type, output_file) == 0);
-}
 
-SECTION("testing loc index 2") {
-for(size_t i = 0; i<output_files.size(); i++) {
-  auto type = indexing_types.at(i);
-  auto output_file = output_files.at(i);
-  REQUIRE(test::TestIndexLocOperation2(path1, type, output_file) == 0);
-}
-}
-
-SECTION("testing loc index 3") {
-  for(size_t i = 0; i<output_files.size(); i++) {
-    auto type = indexing_types.at(i);
-    auto output_file = output_files.at(i);
-    REQUIRE(test::TestIndexLocOperation3(path1, type, output_file) == 0);
+  SECTION("testing loc index 1") {
+    for (auto &item: out_files) {
+      TestIndexLocOperation1(ctx, path1, item.first, item.second);
+    }
   }
-}
 
-SECTION("testing loc index 4") {
-  for(size_t i = 0; i<output_files.size(); i++) {
-    auto type = indexing_types.at(i);
-    auto output_file = output_files.at(i);
-    REQUIRE(test::TestIndexLocOperation4(path1, type, output_file) == 0);
+  SECTION("testing loc index 2") {
+    for (auto &item: out_files) {
+      TestIndexLocOperation2(ctx, path1, item.first, item.second);
+    }
   }
-}
 
-SECTION("testing loc index 5") {
-  for(size_t i = 0; i<output_files.size(); i++) {
-    auto type = indexing_types.at(i);
-    auto output_file = output_files.at(i);
-    REQUIRE(test::TestIndexLocOperation5(path1, type, output_file) == 0);
+  SECTION("testing loc index 3") {
+    for (auto &item: out_files) {
+      TestIndexLocOperation3(ctx, path1, item.first, item.second);
+    }
+  }
+
+  SECTION("testing loc index 4") {
+    for (auto &item: out_files) {
+      TestIndexLocOperation4(ctx, path1, item.first, item.second);
+    }
+  }
+
+  SECTION("testing loc index 5") {
+    for (auto &item: out_files) {
+      TestIndexLocOperation5(ctx, path1, item.first, item.second);
+    }
+  }
+
+  SECTION("testing loc index 6") {
+    for (auto &item: out_files) {
+      TestIndexLocOperation6(ctx, path1, item.first, item.second);
+    }
   }
 }
 
-SECTION("testing loc index 6") {
-  for(size_t i = 0; i<output_files.size(); i++) {
-    auto type = indexing_types.at(i);
-    auto output_file = output_files.at(i);
-    REQUIRE(test::TestIndexLocOperation6(path1, type, output_file) == 0);
-  }
-}
-
-}
-
-}
+} // namespace test
+} // namespace cylon

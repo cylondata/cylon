@@ -57,6 +57,7 @@ add_library(cylon SHARED
         arrow/arrow_partition_kernels.hpp
         arrow/arrow_task_all_to_all.cpp
         arrow/arrow_task_all_to_all.h
+        arrow/arrow_type_traits.hpp
         arrow/arrow_types.cpp
         arrow/arrow_types.hpp
         column.cpp

@@ -55,68 +55,58 @@ std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataTy
   return nullptr;
 }
 
-bool validateArrowTableTypes(const std::shared_ptr <arrow::Table> &table) {
-  std::shared_ptr <arrow::Schema> schema = table->schema();
-  
-  for (const auto &t : schema->fields()) {
+bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table) {
+  return CheckSupportedTypes(table).is_ok();
+}
+
+Status CheckSupportedTypes(const std::shared_ptr<arrow::Table> &table) {
+  const auto &schema = table->schema();
+  for (const auto &t: schema->fields()) {
     switch (t->type()->id()) {
-      case arrow::Type::BOOL:continue;
-      case arrow::Type::UINT8:continue;
-      case arrow::Type::INT8:continue;
-      case arrow::Type::UINT16:continue;
-      case arrow::Type::INT16:continue;
-      case arrow::Type::UINT32:continue;
-      case arrow::Type::INT32:continue;
-      case arrow::Type::UINT64:continue;
-      case arrow::Type::INT64:continue;
-      case arrow::Type::HALF_FLOAT:continue;
-      case arrow::Type::FLOAT:continue;
-      case arrow::Type::DOUBLE:continue;
-      case arrow::Type::BINARY:continue;
-      case arrow::Type::FIXED_SIZE_BINARY:continue;
-      case arrow::Type::STRING: continue; // types above are allowed. go to next column type
+      /* following types are supported. go to next column type */
+      case arrow::Type::BOOL:
+      case arrow::Type::UINT8:
+      case arrow::Type::INT8:
+      case arrow::Type::UINT16:
+      case arrow::Type::INT16:
+      case arrow::Type::UINT32:
+      case arrow::Type::INT32:
+      case arrow::Type::UINT64:
+      case arrow::Type::INT64:
+      case arrow::Type::HALF_FLOAT:
+      case arrow::Type::FLOAT:
+      case arrow::Type::DOUBLE:
+      case arrow::Type::BINARY:
+      case arrow::Type::FIXED_SIZE_BINARY:
+      case arrow::Type::STRING:
+      case arrow::Type::DATE32:
+      case arrow::Type::DATE64:
+      case arrow::Type::TIMESTAMP:
+      case arrow::Type::TIME32:
+      case arrow::Type::TIME64: continue;
       case arrow::Type::LIST: {
-        auto t_value = std::static_pointer_cast<arrow::ListType>(t->type());
+        const auto &t_value = std::static_pointer_cast<arrow::ListType>(t->type());
         switch (t_value->value_type()->id()) {
-          case arrow::Type::UINT8:continue;
-          case arrow::Type::INT8:continue;
-          case arrow::Type::UINT16:continue;
-          case arrow::Type::INT16:continue;
-          case arrow::Type::UINT32:continue;
-          case arrow::Type::INT32:continue;
-          case arrow::Type::UINT64:continue;
-          case arrow::Type::INT64:continue;
-          case arrow::Type::HALF_FLOAT:continue;
-          case arrow::Type::FLOAT:continue;
-          case arrow::Type::DOUBLE:continue; // types above are allowed. go to next column type
-          default:return false;
+          /* following types are supported. go to next column type */
+          case arrow::Type::UINT8:
+          case arrow::Type::INT8:
+          case arrow::Type::UINT16:
+          case arrow::Type::INT16:
+          case arrow::Type::UINT32:
+          case arrow::Type::INT32:
+          case arrow::Type::UINT64:
+          case arrow::Type::INT64:
+          case arrow::Type::HALF_FLOAT:
+          case arrow::Type::FLOAT:
+          case arrow::Type::DOUBLE:continue;
+          default:
+            return {Code::NotImplemented, "unsupported value type for lists " + t_value->value_type()->ToString()};;
         }
       }
-      case arrow::Type::NA:return false;
-      case arrow::Type::DATE32:return true;
-      case arrow::Type::DATE64:return true;
-      case arrow::Type::TIMESTAMP:return true;
-      case arrow::Type::TIME32:return true;
-      case arrow::Type::TIME64:return true;
-      case arrow::Type::DECIMAL:return false;
-      case arrow::Type::STRUCT:return false;
-      case arrow::Type::DICTIONARY:return false;
-      case arrow::Type::MAP:return false;
-      case arrow::Type::EXTENSION:return false;
-      case arrow::Type::FIXED_SIZE_LIST:return false;
-      case arrow::Type::DURATION:return false;
-      case arrow::Type::LARGE_STRING:return false;
-      case arrow::Type::LARGE_BINARY:return false;
-      case arrow::Type::LARGE_LIST:return false;
-      case arrow::Type::INTERVAL_MONTHS:return false;
-      case arrow::Type::INTERVAL_DAY_TIME:return false;
-      case arrow::Type::SPARSE_UNION:return false;
-      case arrow::Type::DENSE_UNION:return false;
-      case arrow::Type::MAX_ID:return false; // types above are NOT allowed. return false
-      case arrow::Type::DECIMAL256:break;
+      default: return {Code::NotImplemented, "unsupported type " + t->type()->ToString()};
     }
   }
-  return true;
+  return Status::OK();
 }
 
 std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &arr_type) {

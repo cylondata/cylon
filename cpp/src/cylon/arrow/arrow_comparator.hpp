@@ -132,8 +132,7 @@ std::shared_ptr<TwoArrayIndexComparator> CreateTwoArrayIndexComparator(const std
  */
 class RowEqualTo {
  public:
-  RowEqualTo(std::shared_ptr<cylon::CylonContext> &ctx, const std::shared_ptr<arrow::Table> *tables,
-             int64_t *eq, int64_t *hs);
+  RowEqualTo(const std::shared_ptr<arrow::Table> *tables, int64_t *eq, int64_t *hs);
 
   // equality
   bool operator()(const std::pair<int8_t, int64_t> &record1, const std::pair<int8_t, int64_t> &record2) const;

@@ -12,6 +12,23 @@
 # limitations under the License.
 ##
 
+'''
+# running this example with 2 mpi workers (-n 2) on the local machine:
+mpirun -n 2 --mca opal_cuda_support 1 \
+    python python/pygcylon/examples/merge.py
+
+# running this example with ucx enabled:
+mpirun -n 2 --mca opal_cuda_support 1 \
+    --mca pml ucx --mca osc ucx \
+    python python/pygcylon/examples/merge.py
+
+# running this example with ucx and infiniband enabled:
+mpirun -n 2 --mca opal_cuda_support 1 \
+    --mca pml ucx --mca osc ucx \
+    --mca btl_openib_allow_ib true \
+    python python/pygcylon/examples/merge.py
+'''
+
 import cupy as cp
 import pycylon as cy
 import pygcylon as gcy

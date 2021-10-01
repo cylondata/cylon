@@ -186,7 +186,7 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
   arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::read_csv(ctx, path, options);
   if (result.ok()) {
     std::shared_ptr<arrow::Table> &table = result.ValueOrDie();
-    LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
+//    LOG(INFO) << "Chunks " << table->column(0)->chunks().size();
     if (table->column(0)->chunks().size() > 1) {
       const auto &combine_res = table->CombineChunks(ToArrowPool(ctx));
       if (!combine_res.ok()) {
@@ -224,21 +224,35 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
 }
 
 Status Table::FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
-                             const std::shared_ptr<arrow::Table> &table,
+                             std::shared_ptr<arrow::Table> table,
                              std::shared_ptr<Table> &tableOut) {
-  if (!cylon::tarrow::validateArrowTableTypes(table)) {
-    LOG(FATAL) << "Types not supported";
-    return Status(cylon::Invalid, "This type not supported");
-  }
-  tableOut = std::make_shared<Table>(ctx, table);
+  RETURN_CYLON_STATUS_IF_FAILED(tarrow::CheckSupportedTypes(table));
+  tableOut = std::make_shared<Table>(ctx, std::move(table));
   return Status::OK();
 }
 
 Status Table::FromColumns(const std::shared_ptr<CylonContext> &ctx,
                           const std::vector<std::shared_ptr<Column>> &columns,
                           std::shared_ptr<Table> &tableOut) {
-  tableOut = std::make_shared<Table>(ctx, columns);
-  return Status::OK();
+  arrow::SchemaBuilder schema_builder;
+  arrow::ChunkedArrayVector arrays;
+
+  for (const auto &col: columns) {
+    const auto &data_type = col->GetDataType();
+    const auto &field = arrow::field(col->GetID(), cylon::tarrow::convertToArrowType(data_type));
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(schema_builder.AddField(field));
+    arrays.push_back(col->GetColumnData());
+  }
+
+  CYLON_ASSIGN_OR_RAISE(auto schema, schema_builder.Finish());
+
+  auto table = arrow::Table::Make(std::move(schema), std::move(arrays));
+
+  if (!cylon::tarrow::validateArrowTableTypes(table)) {
+    return {Code::Invalid, "cylon table created with invalid types"};
+  }
+
+  return Table::FromArrowTable(ctx, std::move(table), tableOut);
 }
 
 Status WriteCSV(const std::shared_ptr<Table> &table, const std::string &path,
@@ -252,15 +266,17 @@ Status WriteCSV(const std::shared_ptr<Table> &table, const std::string &path,
   return status;
 }
 
-int Table::Columns() { return table_->num_columns(); }
+int Table::Columns() const { return table_->num_columns(); }
 
 std::vector<std::string> Table::ColumnNames() { return table_->ColumnNames(); }
 
-int64_t Table::Rows() { return table_->num_rows(); }
+int64_t Table::Rows() const { return table_->num_rows(); }
 
-void Table::Print() { Print(0, this->Rows(), 0, this->Columns()); }
+bool Table::Empty() const { return table_->num_rows() == 0; }
 
-void Table::Print(int row1, int row2, int col1, int col2) {
+void Table::Print() const { Print(0, this->Rows(), 0, this->Columns()); }
+
+void Table::Print(int row1, int row2, int col1, int col2) const {
   PrintToOStream(col1, col2, row1, row2, std::cout);
 }
 
@@ -770,10 +786,6 @@ Status DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table>
   return do_dist_set_op(&Intersect, left, right, out);
 }
 
-void Table::Clear() {}
-
-Table::~Table() { this->Clear(); }
-
 void ReadCSVThread(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
 				   std::shared_ptr<cylon::Table> *table,
 				   const cylon::io::config::CSVReadOptions &options,
@@ -840,74 +852,76 @@ Status Project(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> 
   return Status::OK();
 }
 
-Status Table::PrintToOStream(int col1, int col2, int row1, int row2, std::ostream &out,
-							 char delimiter, bool use_custom_header,
-							 const std::vector<std::string> &headers) {
-  auto table = table_;
-  if (table != NULLPTR) {
-	// print the headers
-	if (use_custom_header) {
-	  // check if the headers are valid
-	  if (headers.size() != (uint64_t)table->num_columns()) {
-		return Status(
-			cylon::Code::IndexError,
-			"Provided headers doesn't match with the number of columns of the table. Given " +
-				std::to_string(headers.size()) + ", Expected " +
-				std::to_string(table->num_columns()));
-	  }
+Status Table::PrintToOStream(std::ostream &out) const {
+  return PrintToOStream(0, Columns(), 0, Rows(), out);
+}
 
-	  for (int col = col1; col < col2; col++) {
-		out << headers[col];
-		if (col != col2 - 1) {
-		  out << delimiter;
-		} else {
-		  out << std::endl;
-		}
-	  }
-	}
-	for (int row = row1; row < row2; row++) {
-	  for (int col = col1; col < col2; col++) {
-		auto column = table->column(col);
-		int rowCount = 0;
-		for (int chunk = 0; chunk < column->num_chunks(); chunk++) {
-		  auto array = column->chunk(chunk);
-		  if (rowCount <= row && rowCount + array->length() > row) {
-			// print this array
-			out << cylon::util::array_to_string(array, row - rowCount);
-			if (col != col2 - 1) {
-			  out << delimiter;
-			}
-			break;
-		  }
-		  rowCount += array->length();
-		}
-	  }
-	  out << std::endl;
-	}
+Status Table::PrintToOStream(int col1, int col2, int64_t row1, int64_t row2, std::ostream &out,
+                             char delimiter, bool use_custom_header,
+                             const std::vector<std::string> &headers) const {
+  if (table_ != NULLPTR) {
+    // print the headers
+    if (use_custom_header) {
+      // check if the headers are valid
+      if (headers.size() != (size_t) table_->num_columns()) {
+        return Status(
+            cylon::Code::IndexError,
+            "Provided headers doesn't match with the number of columns of the table. Given " +
+                std::to_string(headers.size()) + ", Expected " +
+                std::to_string(table_->num_columns()));
+      }
+
+      for (int col = col1; col < col2; col++) {
+        out << headers[col];
+        if (col != col2 - 1) {
+          out << delimiter;
+        } else {
+          out << std::endl;
+        }
+      }
+    } else {
+      const auto &field_names = table_->schema()->field_names();
+      for (int col = col1; col < col2; col++) {
+        out << field_names[col];
+        if (col != col2 - 1) {
+          out << delimiter;
+        } else {
+          out << std::endl;
+        }
+      }
+    }
+    for (int row = row1; row < row2; row++) {
+      for (int col = col1; col < col2; col++) {
+        auto column = table_->column(col);
+        int rowCount = 0;
+        for (int chunk = 0; chunk < column->num_chunks(); chunk++) {
+          auto array = column->chunk(chunk);
+          if (rowCount <= row && rowCount + array->length() > row) {
+            // print this array
+            out << cylon::util::array_to_string(array, row - rowCount);
+            if (col != col2 - 1) {
+              out << delimiter;
+            }
+            break;
+          }
+          rowCount += array->length();
+        }
+      }
+      out << std::endl;
+    }
   }
   return Status(Code::OK);
 }
 
-std::shared_ptr<arrow::Table> Table::get_table() { return table_; }
+const std::shared_ptr<arrow::Table> &Table::get_table() const { return table_; }
 
 bool Table::IsRetain() const { return retain_; }
 
-std::shared_ptr<Column> Table::GetColumn(int32_t index) const { return this->columns_.at(index); }
-
-const std::vector<std::shared_ptr<cylon::Column>> &Table::GetColumns() const {
-  return columns_;
-}
-
 Status Shuffle(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_columns,
-			   std::shared_ptr<cylon::Table> &output) {
+               std::shared_ptr<cylon::Table> &output) {
   const auto &ctx_ = table->GetContext();
   std::shared_ptr<arrow::Table> table_out;
-  cylon::Status status = shuffle_table_by_hashing(ctx_, table, hash_columns, table_out);
-
-  if (!status.is_ok()) {
-	LOG(FATAL) << "table shuffle failed!";
-	return status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(shuffle_table_by_hashing(ctx_, table, hash_columns, table_out));
   return cylon::Table::FromArrowTable(ctx_, table_out, output);
 }
 
@@ -1051,43 +1065,9 @@ const std::shared_ptr<cylon::CylonContext> &Table::GetContext() const {
 }
 
 Table::Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Table> tab)
-    : ctx(ctx), table_(std::move(tab)), columns_({}) {
-  columns_.reserve(table_->num_columns());
-  for (int i = 0; i < table_->num_columns(); i++) {
-    const std::shared_ptr<arrow::Field> &field = table_->field(i);
-    columns_.emplace_back(Column::Make(field->name(), cylon::tarrow::ToCylonType(field->type()), table_->column(i)));
-  }
-
-  base_arrow_index_ = std::make_shared<cylon::ArrowRangeIndex>(0, table_->num_rows(), 1, cylon::ToArrowPool(ctx));
-}
-
-Table::Table(const std::shared_ptr<cylon::CylonContext> &ctx, std::vector<std::shared_ptr<Column>> cols)
-    : ctx(ctx), columns_(std::move(cols)) {
-  arrow::SchemaBuilder schema_builder;
-  std::vector<std::shared_ptr<arrow::ChunkedArray>> col_arrays;
-  col_arrays.reserve(cols.size());
-
-  for (const std::shared_ptr<Column> &col : columns_) {
-    const std::shared_ptr<DataType> &data_type = col->GetDataType();
-    const std::shared_ptr<arrow::Field>
-        &field = arrow::field(col->GetID(), cylon::tarrow::convertToArrowType(data_type));
-    const auto &status = schema_builder.AddField(field);
-    if (!status.ok()) {
-      throw "unable to add field to arrow schema: " + status.message();
-    }
-
-    col_arrays.push_back(col->GetColumnData());
-  }
-
-  const auto &schema_result = schema_builder.Finish();
-  table_ = arrow::Table::Make(schema_result.ValueOrDie(), std::move(col_arrays));
-
-  if (!cylon::tarrow::validateArrowTableTypes(table_)) {
-    throw "cylon table created with invalid types";
-  }
-}
-
-
+    : ctx(ctx),
+      table_(std::move(tab)),
+      base_arrow_index_(std::make_shared<cylon::ArrowRangeIndex>(0, table_->num_rows(), 1, cylon::ToArrowPool(ctx))) {}
 
 #ifdef BUILD_CYLON_PARQUET
 Status FromParquet(const std::shared_ptr<CylonContext> &ctx, const std::string &path,

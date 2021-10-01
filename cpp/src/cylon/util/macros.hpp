@@ -35,6 +35,15 @@
     };                              \
   } while (0)
 
+#define CYLON_ASSIGN_OR_RAISE_IMPL(result_name, lhs, rexpr)     \
+  auto&& result_name = (rexpr);                                 \
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED((result_name).status()) ; \
+  lhs = std::move(result_name).ValueUnsafe();
+
+#define CYLON_ASSIGN_OR_RAISE(lhs, rexpr)                                              \
+  CYLON_ASSIGN_OR_RAISE_IMPL(ARROW_ASSIGN_OR_RAISE_NAME(_error_or_value, __COUNTER__), \
+                                  lhs, rexpr);
+
 #define RETURN_ARROW_STATUS_IF_FAILED(expr) \
   do{                               \
     const auto& _st = (expr);       \
@@ -62,5 +71,7 @@
       (arrow_table) = res.ValueOrDie();                       \
     }                                                         \
   } while (0)
+
+#define CYLON_UNUSED(expr) do { (void)(expr); } while (0)
 
 #endif //CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_

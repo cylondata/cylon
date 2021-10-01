@@ -17,10 +17,10 @@
 
 file(COPY ${CYLON_SOURCE_DIR}/../data DESTINATION ${CMAKE_BINARY_DIR})
 
-include_directories (${CYLON_SOURCE_DIR}/src)
-include_directories (${CYLON_SOURCE_DIR}/test)
-include_directories (${CMAKE_BINARY_DIR}/thirdparty/glog)
-include_directories (${CYLON_SOURCE_DIR}/thirdparty/glog/src)
+include_directories(${CYLON_SOURCE_DIR}/src)
+include_directories(${CYLON_SOURCE_DIR}/test)
+include_directories(${CMAKE_BINARY_DIR}/thirdparty/glog)
+include_directories(${CYLON_SOURCE_DIR}/thirdparty/glog/src)
 
 include(CTest)
 
@@ -32,7 +32,14 @@ endmacro(tx_add_exe)
 # macro to add a test
 function(cylon_add_test TESTNAME)
   set(exec_name "${TESTNAME}")
-  add_executable(${exec_name} ${TESTNAME}.cpp test_utils.hpp test_index_utils.hpp)
+  add_executable(${exec_name} ${TESTNAME}.cpp)
+
+  target_sources(${exec_name} PRIVATE
+          test_macros.hpp
+          test_utils.hpp
+          test_index_utils.hpp
+          test_arrow_utils.hpp)
+
   target_link_libraries(${exec_name} ${MPI_CXX_LIBRARIES})
   target_link_libraries(${exec_name} ${ARROW_LIB})
   target_link_libraries(${exec_name} cylon)
@@ -115,3 +122,7 @@ cylon_run_test(sorting_test 1)
 # hash utils test
 cylon_add_test(hash_utils_test)
 cylon_run_test(hash_utils_test 1)
+
+# utils test
+cylon_add_test(utils_test)
+cylon_run_test(utils_test 1)

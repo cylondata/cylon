@@ -21,6 +21,7 @@
 
 #include <cylon/net/ucx/ucx_channel.hpp>
 #include <cylon/net/ucx/ucx_operations.hpp>
+#include <cylon/util/macros.hpp>
 
 namespace cylon {
 
@@ -37,6 +38,9 @@ static void recvHandler(void *request,
                         ucs_status_t status,
                         const ucp_tag_recv_info_t *info,
                         void *ctx) {
+  CYLON_UNUSED(request);
+  CYLON_UNUSED(status);
+  CYLON_UNUSED(info);
   auto *context = (ucx::ucxContext *) ctx;
   context->completed = 1;
 //  DLOG(INFO) << "Receive handle called. (Message receive completed)";
@@ -53,6 +57,8 @@ static void recvHandler(void *request,
 static void sendHandler(void *request,
                          ucs_status_t status,
                          void *ctx) {
+  CYLON_UNUSED(request);
+  CYLON_UNUSED(status);
   auto *context = (ucx::ucxContext *) ctx;
   context->completed = 1;
 //  DLOG(INFO) << "Send handle called. (Message send completed)";
@@ -67,9 +73,16 @@ static void sendHandler(void *request,
  * @param [in] sender - Sender of the message
  * @return unsigned long int -  the compound tag
  */
-static unsigned long int getTag(int edge,
-                  int sender) {
-  return (((unsigned long int)edge)<<32) + sender;
+static unsigned long int getTag(int edge, int sender) {
+  return (((unsigned long int) edge) << 32) + sender;
+}
+
+UCXChannel::UCXChannel(const net::UCXCommunicator *com) :
+    rank(com->GetRank()),
+    worldSize(com->GetWorldSize()),
+    ucpRecvWorker(&(com->ucpRecvWorker)),
+    ucpSendWorker(&(com->ucpSendWorker)),
+    endPointMap(com->endPointMap) {
 }
 
 /**
@@ -155,27 +168,6 @@ Status UCXChannel::UCX_Isend(const void *buffer,
   }
 
   return Status::OK();
-}
-
-
-/**
- * Link the necessary parameters associated with the communicator to the channel
- * @param [in] com - The UCX communicator that created the channel
- * @return
- */
-void UCXChannel::linkCommunicator(net::UCXCommunicator *com) {
-
-  // Set world size, rank, and workers
-  this->worldSize = com->GetWorldSize();
-  this->rank = com->GetRank();
-  this->ucpRecvWorker = &(com->ucpRecvWorker);
-  this->ucpSendWorker = &(com->ucpSendWorker);
-
-  // Set the endpoints
-  for (auto x : com->endPointMap) {
-    ucp_ep_h ep = x.second;
-    this->endPointMap[x.first] = ep;
-  }
 }
 
 // *********************** Implementations of UCX Channel ***********************
@@ -489,7 +481,7 @@ void UCXChannel::close() {
   pendingReceives.clear();
 
   // Clear the sends
-  for (auto &s : sends) {
+  for (auto &s: sends) {
     delete (s.second->context);
     delete (s.second);
   }

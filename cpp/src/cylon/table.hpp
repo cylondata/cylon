@@ -15,7 +15,6 @@
 #ifndef CYLON_SRC_IO_TABLE_H_
 #define CYLON_SRC_IO_TABLE_H_
 
-
 #include <memory>
 #include <string>
 #include <utility>
@@ -53,21 +52,12 @@ class Table {
   Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Table> tab);
 
   /**
-   * Table created from cylon::Column
-   * @param ctx
-   * @param cols (vector is passed by value and the copy is moved as a class member)
-   */
-  Table(const std::shared_ptr<CylonContext> &ctx, std::vector<std::shared_ptr<Column>> cols);
-
-  virtual ~Table();
-
-  /**
    * Create a table from an arrow table,
    * @param table arrow::Table
    * @return
    */
   static Status FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
-                               const std::shared_ptr<arrow::Table> &table,
+                               std::shared_ptr<arrow::Table> table,
                                std::shared_ptr<Table> &tableOut);
 
   /**
@@ -100,9 +90,10 @@ class Table {
    * @param headers the names of custom header
    * @return true if print is successful
    */
-  Status PrintToOStream(int col1, int col2, int row1, int row2, std::ostream &out,
-						char delimiter = ',', bool use_custom_header = false,
-						const std::vector<std::string> &headers = {});
+  Status PrintToOStream(int col1, int col2, int64_t row1, int64_t row2, std::ostream &out,
+                        char delimiter = ',', bool use_custom_header = false,
+                        const std::vector<std::string> &headers = {}) const;
+  Status PrintToOStream(std::ostream &out) const;
 
   /*END OF TRANSFORMATION FUNCTIONS*/
 
@@ -110,18 +101,24 @@ class Table {
    * Get the number of columns in the table
    * @return number of columns
    */
-  int32_t Columns();
+  int32_t Columns() const;
 
   /**
    * Get the number of rows in this table
    * @return number of rows in the table
    */
-  int64_t Rows();
+  int64_t Rows() const;
+
+  /**
+   * Returns if the table is empty or not
+   * @return
+   */
+  bool Empty() const;
 
   /**
    * Print the complete table
    */
-  void Print();
+  void Print() const;
 
   /**
    * Print the table from row1 to row2 and col1 to col2
@@ -130,18 +127,13 @@ class Table {
    * @param col1 first column to start printing (including)
    * @param col2 end column to stop printing (including)
    */
-  void Print(int row1, int row2, int col1, int col2);
+  void Print(int row1, int row2, int col1, int col2) const;
 
   /**
    * Get the underlying arrow table
    * @return the arrow table
    */
-  std::shared_ptr<arrow::Table> get_table();
-
-  /**
-   * Clears the table
-   */
-  void Clear();
+  const std::shared_ptr<arrow::Table> &get_table() const;
 
   /**
    * Returns the cylon Context
@@ -166,19 +158,6 @@ class Table {
    */
   bool IsRetain() const;
 
-  /**
-   * Get a cylon::Column from the table
-   * @param index
-   * @return
-   */
-  std::shared_ptr<Column> GetColumn(int32_t index) const;
-
-  /**
-   * Get the column vector of the table
-   * @return
-   */
-  const std::vector<std::shared_ptr<cylon::Column>> &GetColumns() const;
-
   Status SetArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool drop_index);
 
   std::shared_ptr<BaseArrowIndex> GetArrowIndex();
@@ -194,7 +173,6 @@ class Table {
   const std::shared_ptr<cylon::CylonContext> ctx;
   std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
-  std::vector<std::shared_ptr<cylon::Column>> columns_;
   std::shared_ptr<cylon::BaseArrowIndex> base_arrow_index_ = nullptr;
 };
 
