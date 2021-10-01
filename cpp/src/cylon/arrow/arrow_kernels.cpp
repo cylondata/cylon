@@ -330,13 +330,13 @@ class ArrowBinarySortKernel : public IndexSortKernel {
     auto array = std::static_pointer_cast<ARRAY_T>(values);
 
     if (ascending) {
-      return DoSort(
+      return do_sort(
           [&array](uint64_t left, uint64_t right) {
             return array->GetView(left).compare(array->GetView(right)) < 0;
           },
           values->length(), pool_, offsets);
     } else {
-      return DoSort(
+      return do_sort(
           [&array](uint64_t left, uint64_t right) {
             return array->GetView(left).compare(array->GetView(right)) > 0;
           },
@@ -362,13 +362,13 @@ class NumericIndexSortKernel : public IndexSortKernel {
     const T *left_data = array->raw_values();
 
     if (ascending) {
-      return DoSort([&left_data](uint64_t left,
-                                 uint64_t right) { return left_data[left] < left_data[right]; },
-                    values->length(), pool_, offsets);
+      return do_sort([&left_data](uint64_t left,
+                                  uint64_t right) { return left_data[left] < left_data[right]; },
+                     values->length(), pool_, offsets);
     } else {
-      return DoSort([&left_data](uint64_t left,
-                                 uint64_t right) { return left_data[left] > left_data[right]; },
-                    values->length(), pool_, offsets);
+      return do_sort([&left_data](uint64_t left,
+                                  uint64_t right) { return left_data[left] > left_data[right]; },
+                     values->length(), pool_, offsets);
     }
   }
 };
@@ -504,18 +504,14 @@ arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
   return out->Sort(values, offsets);
 }
 
-arrow::Status IndexSortKernel::DoSort(const std::function<bool(int64_t, int64_t)> &comp,
-                                      int64_t len, arrow::MemoryPool *pool,
-                                      std::shared_ptr<arrow::UInt64Array> &offsets) {
-  int64_t buf_size = len * sizeof(int64_t);
+template<typename Comparator>
+arrow::Status do_sort(Comparator &&comp, int64_t len, arrow::MemoryPool *pool,
+                      std::shared_ptr<arrow::UInt64Array> &offsets) {
+  auto buf_size = static_cast<int64_t>(len * sizeof(int64_t));
 
-  arrow::Result<std::unique_ptr<arrow::Buffer>> result = arrow::AllocateBuffer(buf_size + 1, pool);
-  const arrow::Status &status = result.status();
-  if (!status.ok()) {
-    LOG(FATAL) << "Failed to allocate sort indices - " << status.message();
-    return status;
-  }
-  std::shared_ptr<arrow::Buffer> indices_buf(std::move(result.ValueOrDie()));
+  arrow::Result<std::unique_ptr<arrow::Buffer>> result = arrow::AllocateBuffer(buf_size, pool);
+  RETURN_ARROW_STATUS_IF_FAILED(result.status());
+  std::shared_ptr<arrow::Buffer> indices_buf(std::move(result).ValueOrDie());
 
   auto *indices_begin = reinterpret_cast<int64_t *>(indices_buf->mutable_data());
   for (int64_t i = 0; i < len; i++) {

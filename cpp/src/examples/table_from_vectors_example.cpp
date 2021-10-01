@@ -13,7 +13,6 @@
  */
 
 #include <glog/logging.h>
-#include <chrono>
 
 #include <cylon/net/mpi/mpi_communicator.hpp>
 #include <cylon/ctx/cylon_context.hpp>
@@ -29,34 +28,32 @@ int main() {
 
   auto ctx = cylon::CylonContext::Init();
 
-  std::shared_ptr<std::vector<int32_t>> col0 = std::make_shared<std::vector<int32_t>>();
-  std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t>>();
+  std::vector<int32_t> col0;
+  std::vector<double_t> col1;
 
   for (int i = 0; i < size; i++) {
-    col0->push_back(i);
-    col1->push_back((double_t) i + 10.0);
+    col0.push_back(i);
+    col1.push_back((double_t) i + 10.0);
   }
 
-  auto cy_col0 = cylon::VectorColumn<int32_t>::Make("col0", cylon::Int32(), col0);
-  auto cy_col1 = cylon::VectorColumn<double>::Make("col1", cylon::Double(), col1);
+  std::shared_ptr<cylon::Column> c0, c1;
+  status = cylon::Column::FromVector(ctx, "col0", cylon::Int32(), col0, c0);
+  if (!status.is_ok()) return 1;
+  status = cylon::Column::FromVector(ctx, "col1", cylon::Double(), col1, c1);
+  if (!status.is_ok()) return 1;
 
   std::shared_ptr<cylon::Table> output;
-  auto start = std::chrono::steady_clock::now();
-  status = cylon::Table::FromColumns(ctx, {cy_col0, cy_col1}, output);
-  auto end = std::chrono::steady_clock::now();
+  status = cylon::Table::FromColumns(ctx, {std::move(c0), std::move(c1)}, output);
 
-  LOG(INFO) << "Read tables in "
-			<< std::chrono::duration_cast<std::chrono::milliseconds>(
-				end - start).count() << "[ms], Row Count: " << output->Rows();
+  LOG(INFO) << "Read tables. Row Count: " << output->Rows();
 
   if ((status.is_ok() && output->Columns() == 2 && output->Rows() == size)) {
     output->Print();
   }
 
-  std::shared_ptr<arrow::DoubleArray>
-      c = std::static_pointer_cast<arrow::DoubleArray>(output->GetColumn(1)->GetColumnData()->chunk(0));
+  auto c = std::static_pointer_cast<arrow::DoubleArray>(output->get_table()->column(1)->chunk(0));
 
-  for (int i = 0; i < c->length() ; i++) {
+  for (int i = 0; i < c->length(); i++) {
     std::cout << c->Value(i) << " ";
   }
   std::cout << std::endl;

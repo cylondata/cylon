@@ -20,6 +20,7 @@
 
 #include <cylon/arrow/arrow_all_to_all.hpp>
 #include <cylon/ctx/arrow_memory_pool_utils.hpp>
+#include <cylon/util/macros.hpp>
 
 namespace cylon {
 ArrowAllToAll::ArrowAllToAll(const std::shared_ptr<cylon::CylonContext> &ctx,
@@ -171,6 +172,7 @@ void ArrowAllToAll::close() {
 }*/
 
 bool ArrowAllToAll::onReceive(int source, std::shared_ptr<Buffer> buffer, int length) {
+  CYLON_UNUSED(length);
   std::shared_ptr<PendingReceiveTable> table = receives_[source];
   receivedBuffers_++;
   // create the buffer hosting the value
@@ -233,6 +235,9 @@ bool ArrowAllToAll::onReceiveHeader(int source, int fin, int *buffer, int length
 
 bool ArrowAllToAll::onSendComplete(int target, const void *buffer, int length) {
 //    pool_->Free((uint8_t *)buffer, length);
+  CYLON_UNUSED(target);
+  CYLON_UNUSED(buffer);
+  CYLON_UNUSED(length);
   return false;
 }
 
@@ -253,7 +258,7 @@ ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
 
 ArrowAllocator::~ArrowAllocator() = default;
 
-int64_t ArrowBuffer::GetLength() {
+int64_t ArrowBuffer::GetLength() const {
   return 0;
 }
 

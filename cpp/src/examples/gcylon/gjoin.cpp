@@ -43,13 +43,13 @@ int main(int argc, char *argv[]) {
 
     // construct table1
     int64_t start = my_rank * 100;
-    std::shared_ptr<cudf::table> tbl1 = constructTable(COLS, ROWS, start, true);
+    std::unique_ptr<cudf::table> tbl1 = constructTable(COLS, ROWS, start, 1, true);
     auto tv1 = tbl1->view();
     LOG(INFO) << "my_rank: "  << my_rank << ", initial dataframe. cols: "<< tv1.num_columns() << ", rows: " << tv1.num_rows();
     printWholeTable(tv1);
 
     // construct table1
-    std::shared_ptr<cudf::table> tbl2 = constructTable(COLS, ROWS, start + 5, true);
+    std::unique_ptr<cudf::table> tbl2 = constructTable(COLS, ROWS, start + 5, 1, true);
     auto tv2 = tbl2->view();
     LOG(INFO) << "my_rank: "  << my_rank << ", initial dataframe. cols: "<< tv2.num_columns() << ", rows: " << tv2.num_rows();
     printWholeTable(tv2);

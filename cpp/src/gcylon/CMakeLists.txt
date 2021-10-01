@@ -78,10 +78,21 @@ include_directories(
 )
 
 add_library(gcylon SHARED
+        cudf_buffer.hpp
+        cudf_buffer.cpp
         all2all/cudf_all_to_all.cuh
         all2all/cudf_all_to_all.cu
         all2all/cudf_all_to_all.hpp
         all2all/cudf_all_to_all.cpp
+        net/cudf_net_ops.hpp
+        net/cudf_bcast.cpp
+        net/cudf_serialize.hpp
+        net/cudf_serialize.cpp
+        net/cudf_gather.cpp
+        sorting/deserialize.hpp
+        sorting/deserialize.cpp
+        sorting/sorting.hpp
+        sorting/sorting.cpp
         utils/util.hpp
         utils/util.cpp
         gtable.hpp
@@ -101,6 +112,7 @@ target_link_libraries(gcylon
         cylon
         cudf
         CUDA::cudart
+        ${MPI_CXX_LIBRARIES}
 )
 
 cylon_install_all_headers("gcylon")
