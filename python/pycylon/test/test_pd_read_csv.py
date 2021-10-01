@@ -26,8 +26,8 @@ from pycylon.net import MPIConfig
 def test_pd_read_csv():
     env = CylonEnv(config=MPIConfig())
 
-    df1 = DataFrame(pd.read_csv('/tmp/user_usage_tm_1.csv'))
-    df2 = DataFrame(pd.read_csv('/tmp/user_device_tm_1.csv'))
+    df1 = DataFrame(pd.read_csv('data/input/user_usage_tm_1.csv'))
+    df2 = DataFrame(pd.read_csv('data/input/user_device_tm_1.csv'))
 
     df1 = df1.set_index([3], drop=True)
     df2 = df2.set_index([0], drop=True)

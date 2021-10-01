@@ -8,9 +8,9 @@
  # Unless required by applicable law or agreed to in writing, software
  # distributed under the License is distributed on an "AS IS" BASIS,
  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- # See the License for the specific language governing permissions and
- # limitations under the License.
- ##
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##
 
 from pycylon import Table
 from pycylon import CylonContext
@@ -18,8 +18,8 @@ from pycylon.io import CSVReadOptions
 from pycylon.io import read_csv
 from pycylon.net import MPIConfig
 
-table1_path = '/tmp/user_device_tm_1.csv'
-table2_path = '/tmp/user_usage_tm_1.csv'
+table1_path = 'data/input/user_device_tm_1.csv'
+table2_path = 'data/input/user_usage_tm_1.csv'
 
 
 def single_process():

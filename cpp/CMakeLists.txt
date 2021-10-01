@@ -294,7 +294,6 @@ endif (CYLON_PARQUET)
 
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
-add_subdirectory(src/tutorial)
 
 # installing lib files if built locally
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
