@@ -14,73 +14,63 @@
 
 #include <glog/logging.h>
 #include <type_traits>
+#include <arrow/visitor_inline.h>
 
 #include <cylon/arrow/arrow_kernels.hpp>
 #include <cylon/util/macros.hpp>
 #include <cylon/util/sort.hpp>
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/arrow/arrow_comparator.hpp>
+#include <utility>
 
 namespace cylon {
 
-inline Status create_output_arrays(uint32_t count, std::shared_ptr<arrow::DataType> type,
-                             std::vector<std::shared_ptr<arrow::Buffer>> buffers,
-                             int64_t null_count, int64_t offset,
-                             std::vector<std::shared_ptr<arrow::Array>> &output) {
-  const std::shared_ptr<arrow::ArrayData> &data = arrow::ArrayData::Make(
-      type, count, buffers, null_count, offset);
-  std::shared_ptr<arrow::Array> array = arrow::MakeArray(data);
-  output.push_back(array);
+inline Status create_output_arrays(uint32_t count, const std::shared_ptr<arrow::DataType> &type,
+                                   std::vector<std::shared_ptr<arrow::Buffer>> buffers,
+                                   int64_t null_count, int64_t offset,
+                                   std::vector<std::shared_ptr<arrow::Array>> &output) {
+  const auto &data = arrow::ArrayData::Make(type, count, std::move(buffers), null_count, offset);
+  output.push_back(arrow::MakeArray(data));
   return Status::OK();
 }
 
-bool is_nulls_present(const std::shared_ptr<arrow::ChunkedArray> &values) {
-  for (const auto &array : values->chunks()) {
-    const std::shared_ptr<arrow::ArrayData> &data = array->data();
-    if (data->GetNullCount() > 0) {
-      return true;
-    }
-  }
-  return false;
+inline bool is_nulls_present(const std::shared_ptr<arrow::ChunkedArray> &values) {
+  return values->null_count() > 0;
 }
 
 Status build_null_buffers_from_array(const std::shared_ptr<arrow::Array> &array,
-                          const std::vector<std::shared_ptr<arrow::TypedBufferBuilder<bool>>> &null_bitmap_builders,
-                          const std::vector<uint32_t> &target_partitions) {
-  const std::shared_ptr<arrow::ArrayData> &data = array->data();
-  const int64_t arr_len = array->length();
-  for (int64_t i = 0; i < arr_len; i++) {
-    unsigned int target_buffer = target_partitions[i];
-    if (array->IsNull(i)) {
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders[target_buffer]->Append(false));
-    } else {
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders[target_buffer]->Append(true));
-    }
+                                     const std::vector<uint32_t> &target_partitions,
+                                     const std::vector<uint32_t> &additional_counts,
+                                     std::vector<arrow::TypedBufferBuilder<bool>> &null_bitmap_builders) {
+  for (size_t i = 0; i < additional_counts.size(); i++) {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders[i].Reserve(additional_counts[i]));
+  }
+
+  for (int64_t i = 0; i < array->length(); i++) {
+    const auto &target_buffer = target_partitions[i];
+    null_bitmap_builders[target_buffer].UnsafeAppend(!array->IsNull(i));
   }
   return Status::OK();
 }
 
 Status build_null_buffers(const std::shared_ptr<arrow::ChunkedArray> &values,
-                          const std::vector<std::shared_ptr<arrow::TypedBufferBuilder<bool>>> &null_bitmap_builders,
+                          std::vector<arrow::TypedBufferBuilder<bool>> &null_bitmap_builders,
                           const std::vector<uint32_t> &target_partitions) {
-  size_t offset = 0;
-  for (const auto &array : values->chunks()) {
-    const std::shared_ptr<arrow::ArrayData> &data = array->data();
+  int64_t offset = 0;
+  for (const auto &array: values->chunks()) {
     const int64_t arr_len = array->length();
-    for (int64_t i = 0; i < arr_len; i++, offset++) {
-      unsigned int target_buffer = target_partitions[offset];
-      if (array->IsNull(i)) {
-        null_bitmap_builders[target_buffer]->UnsafeAppend(false);
-      } else {
-        null_bitmap_builders[target_buffer]->UnsafeAppend(true);
-      }
+    for (int64_t i = 0; i < arr_len; i++) {
+      const auto &target_buffer = target_partitions[offset + i];
+      null_bitmap_builders[target_buffer].UnsafeAppend(!array->IsNull(i));
     }
+    offset += arr_len;
   }
+  assert(offset == values->length());
   return Status::OK();
 }
 // SPLITTING -----------------------------------------------------------------------------
 
-template <typename TYPE,
+template<typename TYPE,
     typename = typename std::enable_if<arrow::is_number_type<TYPE>::value | arrow::is_boolean_type<TYPE>::value
                                            | arrow::is_temporal_type<TYPE>::value>::type>
 class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
@@ -91,12 +81,12 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values, uint32_t num_partitions,
                const std::vector<uint32_t> &target_partitions, const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override {
-    if ((size_t)values->length() != target_partitions.size()) {
+    if ((size_t) values->length() != target_partitions.size()) {
       return Status(Code::ExecutionError, "values rows != target_partitions length");
     }
 
     std::vector<std::shared_ptr<arrow::Buffer>> build_buffers;
-    std::vector<std::shared_ptr<arrow::TypedBufferBuilder<bool>>> null_bitmap_builders;
+    std::vector<arrow::TypedBufferBuilder<bool>> null_bitmap_builders;
 
     std::vector<T *> data_buffers;
     data_buffers.reserve(num_partitions);
@@ -113,19 +103,19 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
       data_buffers.push_back(indices_begin);
       buffer_indexes.push_back(0);
       if (nulls_present) {
-        null_bitmap_builders.push_back(std::make_shared<arrow::TypedBufferBuilder<bool>>(pool_));
-        RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders.back()->Reserve(counts[i]));
+        null_bitmap_builders.emplace_back(pool_);
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders.back().Reserve(counts[i]));
       }
     }
 
     size_t offset = 0;
-    for (const auto &array : values->chunks()) {
+    for (const auto &array: values->chunks()) {
       const std::shared_ptr<arrow::ArrayData> &data = array->data();
       const T *value_buffer = data->template GetValues<T>(1);
 
       const int64_t arr_len = array->length();
       for (int64_t i = 0; i < arr_len; i++, offset++) {
-        unsigned int target_buffer = target_partitions[offset];
+        uint32_t target_buffer = target_partitions[offset];
         int idx = buffer_indexes[target_buffer];
         data_buffers[target_buffer][idx] = value_buffer[i];
         buffer_indexes[target_buffer] = idx + 1;
@@ -133,20 +123,30 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
     }
 
     if (nulls_present) {
-      build_null_buffers(values, null_bitmap_builders, target_partitions);
+      RETURN_CYLON_STATUS_IF_FAILED(build_null_buffers(values, null_bitmap_builders, target_partitions));
     }
 
     output.reserve(num_partitions);
     if (!nulls_present) {
       for (uint32_t i = 0; i < num_partitions; i++) {
-        create_output_arrays(counts[i], values->type(), {nullptr, build_buffers[i]}, 0, 0, output);
+        RETURN_CYLON_STATUS_IF_FAILED(create_output_arrays(counts[i],
+                                                           values->type(),
+                                                           {nullptr, build_buffers[i]},
+                                                           0,
+                                                           0,
+                                                           output));
       }
     } else {
       for (uint32_t i = 0; i < num_partitions; i++) {
         std::shared_ptr<arrow::Buffer> null_buffer;
-        int64_t null_count = null_bitmap_builders[i]->false_count();
-        RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders[i]->Finish(&null_buffer));
-        create_output_arrays(counts[i], values->type(), {null_buffer, build_buffers[i]}, null_count, 0, output);
+        int64_t null_count = null_bitmap_builders[i].false_count();
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders[i].Finish(&null_buffer));
+        RETURN_CYLON_STATUS_IF_FAILED(create_output_arrays(counts[i],
+                                                           values->type(),
+                                                           {std::move(null_buffer), build_buffers[i]},
+                                                           null_count,
+                                                           0,
+                                                           output));
       }
     }
     return Status::OK();
@@ -162,10 +162,10 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values, uint32_t num_partitions,
                const std::vector<uint32_t> &target_partitions, const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override {
-    if ((size_t)values->length() != target_partitions.size()) {
+    if ((size_t) values->length() != target_partitions.size()) {
       return Status(Code::ExecutionError, "values rows != target_partitions length");
     }
-    
+
     // if chunks 0 we can return immediately
     if (values->chunks().size() == 0) {
       return Status::OK();
@@ -173,7 +173,7 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
 
     std::shared_ptr<ARROW_ARRAY_T> first_array = std::static_pointer_cast<ARROW_ARRAY_T>(values->chunk(0));
     int32_t width = first_array->byte_width();
-    std::vector<std::shared_ptr<arrow::TypedBufferBuilder<bool>>> null_bitmap_builders;
+    std::vector<arrow::TypedBufferBuilder<bool>> null_bitmap_builders;
     std::vector<std::shared_ptr<arrow::Buffer>> build_buffers;
     std::vector<uint8_t *> data_buffers;
     std::vector<int> buffer_indexes;
@@ -188,26 +188,26 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
       data_buffers.push_back(indices_begin);
       buffer_indexes.push_back(0);
       if (nulls_present) {
-        null_bitmap_builders.push_back(std::make_shared<arrow::TypedBufferBuilder<bool>>(pool_));
-        RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders.back()->Reserve(counts[i]));
+        null_bitmap_builders.emplace_back(pool_);
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders.back().Reserve(counts[i]));
       }
     }
 
     size_t offset = 0;
-    for (const auto &array : values->chunks()) {
+    for (const auto &array: values->chunks()) {
       const std::shared_ptr<arrow::ArrayData> &data = array->data();
-      const uint8_t *value_buffer = data->template GetValues<uint8_t>(1);
+      const auto *value_buffer = data->template GetValues<uint8_t>(1);
       const int64_t arr_len = array->length();
       for (int64_t i = 0; i < arr_len; i++, offset++) {
         unsigned int target_buffer = target_partitions[offset];
         int idx = buffer_indexes[target_buffer];
-        memcpy(data_buffers[target_buffer] + idx * width,value_buffer + i * width, width);
+        memcpy(data_buffers[target_buffer] + idx * width, value_buffer + i * width, width);
         buffer_indexes[target_buffer] = idx + 1;
       }
     }
 
     if (nulls_present) {
-      build_null_buffers(values, null_bitmap_builders, target_partitions);
+      RETURN_CYLON_STATUS_IF_FAILED(build_null_buffers(values, null_bitmap_builders, target_partitions));
     }
 
     output.reserve(num_partitions);
@@ -218,8 +218,8 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
     } else {
       for (uint32_t i = 0; i < num_partitions; i++) {
         std::shared_ptr<arrow::Buffer> null_buffer;
-        int64_t null_count = null_bitmap_builders[i]->false_count();
-        RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders[i]->Finish(&null_buffer));
+        int64_t null_count = null_bitmap_builders[i].false_count();
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders[i].Finish(&null_buffer));
         create_output_arrays(counts[i], values->type(), {null_buffer, build_buffers[i]}, null_count, 0, output);
       }
     }
@@ -227,7 +227,7 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
   }
 };
 
-template <typename TYPE>
+template<typename TYPE>
 class BinaryArraySplitKernel : public ArrowArraySplitKernel {
  public:
   using ARROW_ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
@@ -239,7 +239,7 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values, uint32_t num_partitions,
                const std::vector<uint32_t> &target_partitions, const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override {
-    if ((size_t)values->length() != target_partitions.size()) {
+    if ((size_t) values->length() != target_partitions.size()) {
       return Status(Code::ExecutionError, "values rows != target_partitions length");
     }
     std::vector<std::shared_ptr<arrow::TypedBufferBuilder<bool>>> null_bitmap_builders;
@@ -252,7 +252,7 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
     }
 
     size_t offset = 0;
-    for (const auto &array : values->chunks()) {
+    for (const auto &array: values->chunks()) {
       std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(array);
       const int64_t arr_len = array->length();
       for (int64_t i = 0; i < arr_len; i++, offset++) {
@@ -317,7 +317,7 @@ std::unique_ptr<ArrowArraySplitKernel> CreateSplitter(const std::shared_ptr<arro
 
 // SORTING -----------------------------------------------------------------------------
 
-template <typename ARROW_T>
+template<typename ARROW_T>
 class ArrowBinarySortKernel : public IndexSortKernel {
   using ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
 
@@ -538,10 +538,10 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
 
   std::vector<std::shared_ptr<ArrayIndexComparator>> comparators;
   comparators.reserve(columns.size());
-    for (size_t i = 0; i < columns.size(); i++) {
-      comparators.push_back(
-          CreateArrayIndexComparator(cylon::util::GetChunkOrEmptyArray(table->column(columns[i]), 0), ascending[i]));
-    }
+  for (size_t i = 0; i < columns.size(); i++) {
+    comparators.push_back(
+        CreateArrayIndexComparator(cylon::util::GetChunkOrEmptyArray(table->column(columns[i]), 0), ascending[i]));
+  }
 
   int64_t buf_size = table->num_rows() * sizeof(int64_t);
 
@@ -560,7 +560,7 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
 
   int64_t *indices_end = indices_begin + table->num_rows();
   std::sort(indices_begin, indices_end, [&comparators](int64_t idx1, int64_t idx2) {
-    for (auto const &comp : comparators) {
+    for (auto const &comp: comparators) {
       auto res = comp->compare(idx1, idx2);
       if (res != 0) {
         return res < 0;
@@ -578,17 +578,17 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
                                       const std::vector<int32_t> &columns,
                                       std::shared_ptr<arrow::UInt64Array> &offsets) {
   return SortIndicesMultiColumns(memory_pool, table, columns, offsets,
-                          std::vector<bool>(columns.size(), true));
+                                 std::vector<bool>(columns.size(), true));
 }
 
 // STREAMING SPLIT-----------------------------------------------------------------------------
 
-template <typename TYPE>
+template<typename TYPE>
 class NumericStreamingSplitKernel : public StreamingSplitKernel {
   using ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
   using T = typename TYPE::c_type;
 
-public:
+ public:
   NumericStreamingSplitKernel(int32_t num_targets, arrow::MemoryPool *pool)
       : StreamingSplitKernel(), num_partitions(num_targets), pool_(pool) {
     build_buffers.reserve(num_targets);
@@ -598,7 +598,7 @@ public:
       int64_t buf_size = 1024 * 1024 * sizeof(T);
       arrow::Result<std::unique_ptr<arrow::ResizableBuffer>> result = arrow::AllocateResizableBuffer(buf_size, pool_);
       build_buffers.push_back(std::move(result.ValueOrDie()));
-      null_bitmap_builders.push_back(std::make_shared<arrow::TypedBufferBuilder<bool>>(pool_));
+      null_bitmap_builders.push_back(arrow::TypedBufferBuilder<bool>(pool_));
       counts.push_back(0);
       buffer_indexes.push_back(0);
     }
@@ -609,7 +609,7 @@ public:
     type = values->type();
     // reserve additional space in the builders
     data_buffers.clear();
-    for (int i = 0; i < num_partitions; i++) {
+    for (uint32_t i = 0; i < num_partitions; i++) {
       counts[i] += cnts[i];
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(build_buffers[i]->template TypedResize<T>(counts[i], false));
       auto *indices_begin = reinterpret_cast<T *>(build_buffers[i]->mutable_data());
@@ -628,7 +628,7 @@ public:
     }
 
     if (values->null_count() > 0) {
-      build_null_buffers_from_array(values, null_bitmap_builders, partitions);
+      RETURN_CYLON_STATUS_IF_FAILED(build_null_buffers_from_array(values, partitions, cnts, null_bitmap_builders));
       nulls_present = true;
     }
     return Status::OK();
@@ -637,22 +637,25 @@ public:
   Status Finish(std::vector<std::shared_ptr<arrow::Array>> &output) override {
     output.reserve(num_partitions);
     if (!nulls_present) {
-      for (int32_t i = 0; i < num_partitions; i++) {
-        create_output_arrays(counts[i], type, {nullptr, build_buffers[i]}, 0, 0, output);
+      for (uint32_t i = 0; i < num_partitions; i++) {
+        RETURN_CYLON_STATUS_IF_FAILED(create_output_arrays(counts[i], type,
+                                                           {nullptr, build_buffers[i]},
+                                                           0, 0, output));
       }
     } else {
-      for (int32_t i = 0; i < num_partitions; i++) {
+      for (uint32_t i = 0; i < num_partitions; i++) {
         std::shared_ptr<arrow::Buffer> null_buffer;
-        int64_t null_count = null_bitmap_builders[i]->false_count();
-        RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders[i]->Finish(&null_buffer));
-        create_output_arrays(counts[i], type, {null_buffer, build_buffers[i]}, null_count,
-                             0, output);
+        int64_t null_count = null_bitmap_builders[i].false_count();
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(null_bitmap_builders[i].Finish(&null_buffer));
+        RETURN_CYLON_STATUS_IF_FAILED(create_output_arrays(counts[i], type,
+                                                           {std::move(null_buffer), build_buffers[i]},
+                                                           null_count, 0, output));
       }
     }
     return Status::OK();
   }
 
-private:
+ private:
   uint32_t num_partitions;
   std::shared_ptr<arrow::DataType> type;
   std::vector<int> counts;
@@ -660,7 +663,7 @@ private:
   std::vector<T *> data_buffers;
   std::vector<int> buffer_indexes;
   arrow::MemoryPool *pool_;
-  std::vector<std::shared_ptr<arrow::TypedBufferBuilder<bool>>> null_bitmap_builders;
+  std::vector<arrow::TypedBufferBuilder<bool>> null_bitmap_builders;
   bool nulls_present = false;
 };
 
@@ -682,8 +685,7 @@ class FixedBinaryStreamingSplitKernel : public StreamingSplitKernel {
     for (size_t i = 0; i < builders_.size(); i++) {
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(builders_[i]->Reserve(cnts[i]));
     }
-    int64_t length = values->length();
-    for (size_t i = 0; i < length; i++) {
+    for (int64_t i = 0; i < values->length(); i++) {
       if (!reader->IsNull(i)) {
         const uint8_t *value = reader->Value(i);
         builders_[partitions[i]]->UnsafeAppend(value);
@@ -696,7 +698,7 @@ class FixedBinaryStreamingSplitKernel : public StreamingSplitKernel {
 
   Status Finish(std::vector<std::shared_ptr<arrow::Array>> &out) override {
     out.reserve(builders_.size());
-    for (auto &builder : builders_) {
+    for (auto &&builder: builders_) {
       std::shared_ptr<arrow::Array> array;
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder->Finish(&array));
       out.emplace_back(std::move(array));
@@ -708,7 +710,7 @@ class FixedBinaryStreamingSplitKernel : public StreamingSplitKernel {
   std::vector<std::shared_ptr<arrow::FixedSizeBinaryBuilder>> builders_;
 };
 
-template <typename TYPE>
+template<typename TYPE>
 class BinaryStreamingSplitKernel : public StreamingSplitKernel {
   using BUILDER_T = typename arrow::TypeTraits<TYPE>::BuilderType;
   using ARROW_OFFSET_T = typename TYPE::offset_type;
@@ -769,34 +771,20 @@ using DoubleArrayStreamingSplitter = NumericStreamingSplitKernel<arrow::DoubleTy
 std::unique_ptr<StreamingSplitKernel> CreateStreamingSplitter(
     const std::shared_ptr<arrow::DataType> &type, int32_t targets, arrow::MemoryPool *pool) {
   switch (type->id()) {
-    case arrow::Type::UINT8:
-      return std::make_unique<UInt8ArrayStreamingSplitter>(targets, pool);
-    case arrow::Type::INT8:
-      return std::make_unique<Int8ArrayStreamingSplitter>(targets, pool);
-    case arrow::Type::UINT16:
-      return std::make_unique<UInt16ArrayStreamingSplitter>(targets, pool);
-    case arrow::Type::INT16:
-      return std::make_unique<Int16ArrayStreamingSplitter>(targets, pool);
-    case arrow::Type::UINT32:
-      return std::make_unique<UInt32ArrayStreamingSplitter>(targets, pool);
-    case arrow::Type::INT32:
-      return std::make_unique<Int32ArrayStreamingSplitter>(targets, pool);
-    case arrow::Type::UINT64:
-      return std::make_unique<UInt64ArrayStreamingSplitter>(targets, pool);
-    case arrow::Type::INT64:
-      return std::make_unique<Int64ArrayStreamingSplitter>(targets, pool);
-    case arrow::Type::FLOAT:
-      return std::make_unique<FloatArrayStreamingSplitter>(targets, pool);
-    case arrow::Type::DOUBLE:
-      return std::make_unique<DoubleArrayStreamingSplitter>(targets, pool);
-    case arrow::Type::FIXED_SIZE_BINARY:
-      return std::make_unique<FixedBinaryStreamingSplitKernel>(type, targets, pool);
-    case arrow::Type::STRING:
-      return std::make_unique<BinaryStreamingSplitKernel<arrow::StringType>>(targets, pool);
-    case arrow::Type::BINARY:
-      return std::make_unique<BinaryStreamingSplitKernel<arrow::BinaryType>>(targets, pool);
-    default:
-      LOG(FATAL) << "Un-known type " << type->name();
+    case arrow::Type::UINT8:return std::make_unique<UInt8ArrayStreamingSplitter>(targets, pool);
+    case arrow::Type::INT8:return std::make_unique<Int8ArrayStreamingSplitter>(targets, pool);
+    case arrow::Type::UINT16:return std::make_unique<UInt16ArrayStreamingSplitter>(targets, pool);
+    case arrow::Type::INT16:return std::make_unique<Int16ArrayStreamingSplitter>(targets, pool);
+    case arrow::Type::UINT32:return std::make_unique<UInt32ArrayStreamingSplitter>(targets, pool);
+    case arrow::Type::INT32:return std::make_unique<Int32ArrayStreamingSplitter>(targets, pool);
+    case arrow::Type::UINT64:return std::make_unique<UInt64ArrayStreamingSplitter>(targets, pool);
+    case arrow::Type::INT64:return std::make_unique<Int64ArrayStreamingSplitter>(targets, pool);
+    case arrow::Type::FLOAT:return std::make_unique<FloatArrayStreamingSplitter>(targets, pool);
+    case arrow::Type::DOUBLE:return std::make_unique<DoubleArrayStreamingSplitter>(targets, pool);
+    case arrow::Type::FIXED_SIZE_BINARY:return std::make_unique<FixedBinaryStreamingSplitKernel>(type, targets, pool);
+    case arrow::Type::STRING:return std::make_unique<BinaryStreamingSplitKernel<arrow::StringType>>(targets, pool);
+    case arrow::Type::BINARY:return std::make_unique<BinaryStreamingSplitKernel<arrow::BinaryType>>(targets, pool);
+    default:LOG(FATAL) << "Un-known type " << type->name();
       return nullptr;
   }
 }
