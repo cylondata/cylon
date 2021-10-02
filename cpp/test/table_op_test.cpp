@@ -51,7 +51,7 @@ SECTION("testing unique") {
   std::shared_ptr<cylon::Table> input1, output, sort_table;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
-  std::string test_file = "/tmp/duplicate_data_0.csv";
+  std::string test_file = "../data/input/duplicate_data_0.csv";
   std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
   status = cylon::FromCSV(ctx, test_file, input1, read_options);
 
