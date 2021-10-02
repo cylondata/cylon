@@ -36,24 +36,24 @@ AllToAll::AllToAll(const std::shared_ptr<cylon::CylonContext> &ctx, const std::v
 
   // initialize the sends
   for (int t : tgts) {
-	int tAdjusted = (t + ctx->GetRank()) % targets.size();
-	sends.push_back(new AllToAllSends(tAdjusted));
+    int tAdjusted = (t + ctx->GetRank()) % targets.size();
+    sends.push_back(new AllToAllSends(tAdjusted));
   }
 
   thisNumTargets = 0;
   thisNumSources = 0;
   if (std::find(targets.begin(), targets.end(), ctx->GetRank()) != targets.end()) {
-	thisNumTargets = 1;
+    thisNumTargets = 1;
   }
 
   if (std::find(sources.begin(), sources.end(), ctx->GetRank()) != sources.end()) {
-	thisNumSources = 1;
+    thisNumSources = 1;
   }
 }
 
 void AllToAll::close() {
   for (int t : targets) {
-	delete sends[t];
+    delete sends[t];
   }
   sends.clear();
   // free the channel
@@ -62,8 +62,8 @@ void AllToAll::close() {
 
 int AllToAll::insert(const void *buffer, int length, int target) {
   if (finishFlag) {
-	// we cannot accept further
-	return -1;
+    // we cannot accept further
+    return -1;
   }
 
   AllToAllSends *s = sends[target];
@@ -76,19 +76,19 @@ int AllToAll::insert(const void *buffer, int length, int target) {
 
 int AllToAll::insert(const void *buffer, int length, int target, int *header, int headerLength) {
   if (finishFlag) {
-	// we cannot accept further
-	return -1;
+    // we cannot accept further
+    return -1;
   }
 
   // we cannot accept headers greater than 6
   if (headerLength > 6) {
-	return -1;
+    return -1;
   }
 
   AllToAllSends *s = sends[target];
   // LOG(INFO) << "Allocating buffer " << length;
   std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(target, buffer, length, header,
-																   headerLength);
+                                                                   headerLength);
   s->requestQueue.push(request);
   s->messageSizes += length;
   return 1;
@@ -98,33 +98,33 @@ bool AllToAll::isComplete() {
   bool allQueuesEmpty = true;
   // if this is a source, send until the operation is finished
   for (auto w : sends) {
-	while (!w->requestQueue.empty()) {
-	  if (w->sendStatus == ALL_TO_ALL_FINISH_SENT || w->sendStatus == ALL_TO_ALL_FINISHED) {
-		LOG(FATAL) << "We cannot have items to send after finish sent";
-	  }
+    while (!w->requestQueue.empty()) {
+      if (w->sendStatus == ALL_TO_ALL_FINISH_SENT || w->sendStatus == ALL_TO_ALL_FINISHED) {
+        LOG(FATAL) << "We cannot have items to send after finish sent";
+      }
 
-	  std::shared_ptr<TxRequest> request = w->requestQueue.front();
-	  // if the request is accepted to be set, pop
-	  if (channel->send(request)) {
-		w->requestQueue.pop();
-		// we add to the pending queue
-		w->pendingQueue.push(request);
-	  }
-	}
+      std::shared_ptr<TxRequest> request = w->requestQueue.front();
+      // if the request is accepted to be set, pop
+      if (channel->send(request)) {
+        w->requestQueue.pop();
+        // we add to the pending queue
+        w->pendingQueue.push(request);
+      }
+    }
 
-	if (w->requestQueue.empty() && w->pendingQueue.empty()) {
-	  if (finishFlag) {
-		if (w->sendStatus == ALL_TO_ALL_SENDING) {
-		  std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(w->target);
-		  if (channel->sendFin(request)) {
-			// LOG(INFO) << worker_id << " Sent FIN *** " << w.first;
-			w->sendStatus = ALL_TO_ALL_FINISH_SENT;
-		  }
-		}
-	  }
-	} else {
-	  allQueuesEmpty = false;
-	}
+    if (w->requestQueue.empty() && w->pendingQueue.empty()) {
+      if (finishFlag) {
+        if (w->sendStatus == ALL_TO_ALL_SENDING) {
+          std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(w->target);
+          if (channel->sendFin(request)) {
+            // LOG(INFO) << worker_id << " Sent FIN *** " << w.first;
+            w->sendStatus = ALL_TO_ALL_FINISH_SENT;
+          }
+        }
+      }
+    } else {
+      allQueuesEmpty = false;
+    }
   }
   // progress the sends
   channel->progressSends();
@@ -132,7 +132,7 @@ bool AllToAll::isComplete() {
   channel->progressReceives();
 
   return allQueuesEmpty && finishedTargets.size() == targets.size() &&
-	  finishedSources.size() == sources.size();
+         finishedSources.size() == sources.size();
 }
 
 void AllToAll::finish() {
@@ -156,15 +156,15 @@ void AllToAll::sendComplete(std::shared_ptr<TxRequest> request) {
 void AllToAll::receivedHeader(int receiveId, int finished,
 							  int *header, int headerLength) {
   if (finished) {
-	finishedSources.insert(receiveId);
-	callback->onReceiveHeader(receiveId, finished, header, headerLength);
+    finishedSources.insert(receiveId);
+    callback->onReceiveHeader(receiveId, finished, header, headerLength);
   } else {
-	if (headerLength > 0) {
-	  callback->onReceiveHeader(receiveId, finished, header, headerLength);
-	  delete[] header;
-	} else {
-	  callback->onReceiveHeader(receiveId, finished, nullptr, 0);
-	}
+    if (headerLength > 0) {
+      callback->onReceiveHeader(receiveId, finished, header, headerLength);
+      delete[] header;
+    } else {
+      callback->onReceiveHeader(receiveId, finished, nullptr, 0);
+    }
   }
 }
 
@@ -172,6 +172,5 @@ void AllToAll::sendFinishComplete(std::shared_ptr<TxRequest> request) {
   finishedTargets.insert(request->target);
   AllToAllSends *s = sends[request->target];
   s->sendStatus = ALL_TO_ALL_FINISHED;
-  // LOG(INFO) << worker_id << " Free fin buffer " << request->length;
 }
 }  // namespace cylon
