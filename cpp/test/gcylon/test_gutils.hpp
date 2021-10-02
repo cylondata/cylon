@@ -23,6 +23,7 @@
 
 #include <gcylon/gtable_api.hpp>
 #include <gcylon/utils/util.hpp>
+#include <gcylon/net/cudf_net_ops.hpp>
 
 // this is a toggle to generate test files. Set execute to 0 then, it will generate the expected
 // output files
@@ -33,12 +34,18 @@ using namespace gcylon;
 namespace gcylon {
 namespace test {
 
-cudf::io::table_with_metadata readCSV(std::string &filename, int rank) {
+cudf::io::table_with_metadata readCSV(const std::string &filename,
+                                      const std::vector<std::string> & column_names = std::vector<std::string>{},
+                                      const std::vector<std::string> & date_columns = std::vector<std::string>{}) {
     cudf::io::source_info si(filename);
     cudf::io::csv_reader_options options = cudf::io::csv_reader_options::builder(si);
+    if (column_names.size() > 0){
+        options.set_use_cols_names(column_names);
+    }
+    if (date_columns.size() > 0){
+        options.set_infer_date_names(date_columns);
+    }
     cudf::io::table_with_metadata ctable = cudf::io::read_csv(options);
-    LOG(INFO) << "myRank: "  << rank << ", input file: " << filename
-        << ", cols: "<< ctable.tbl->view().num_columns() << ", rows: " << ctable.tbl->view().num_rows();
     return ctable;
 }
 
@@ -51,8 +58,9 @@ void writeCSV(cudf::table_view &tv, std::string filename, int rank, cudf::io::ta
     cudf::io::write_csv(writer_options);
 }
 
-bool PerformShuffleTest(std::string &input_filename, std::string &output_filename, int shuffle_index, int rank) {
-    cudf::io::table_with_metadata input_table = readCSV(input_filename, rank);
+bool PerformShuffleTest(std::string &input_filename, std::string &output_filename, int shuffle_index) {
+    std::vector<std::string> column_names{"city", "state_id" , "population"};
+    cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names);
     auto input_tv = input_table.tbl->view();
 
     // shuffle the table
@@ -62,13 +70,130 @@ bool PerformShuffleTest(std::string &input_filename, std::string &output_filenam
     auto shuffled_tv = shuffled_table->view();
 
 #if EXECUTE
-    cudf::io::table_with_metadata saved_shuffled_table = readCSV(output_filename, rank);
+    cudf::io::table_with_metadata saved_shuffled_table = readCSV(output_filename, column_names);
     auto saved_tv = saved_shuffled_table.tbl->view();
-    return table_equal(shuffled_tv, saved_tv);
+    return table_equal_with_sorting(shuffled_tv, saved_tv);
 #else
     writeCSV(shuffled_tv, output_filename, rank, input_table.metadata);
     return true;
 #endif
+}
+
+std::vector<std::string> constructInputFiles(std::string base, int world_size) {
+    std::vector<std::string> all_input_files;
+
+    for(int i=0; i <world_size; i++) {
+        std::string filename = base + std::to_string(i) + ".csv";
+        all_input_files.push_back(filename);
+    }
+    return all_input_files;
+}
+
+bool PerformGatherTest(const std::string &input_filename,
+                       std::vector<std::string> &all_input_files,
+                       const std::vector<std::string> &column_names,
+                       const std::vector<std::string> &date_columns,
+                       int gather_root,
+                       bool gather_from_root,
+                       std::shared_ptr<cylon::CylonContext> ctx) {
+
+    cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names, date_columns);
+    auto input_tv = input_table.tbl->view();
+
+    // gather the tables
+    std::vector<std::unique_ptr<cudf::table>> gathered_tables;
+    cylon::Status status = gcylon::net::Gather(input_tv,
+                                               gather_root,
+                                               gather_from_root,
+                                               ctx,
+                                               gathered_tables);
+    if (!status.is_ok()) {
+        return false;
+    }
+
+    // read all tables if this is gather_root and compare to the gathered one
+    std::vector<cudf::table_view> all_tables;
+    if (gather_root == ctx->GetRank()) {
+        for(long unsigned int i=0; i < all_input_files.size(); i++) {
+            cudf::io::table_with_metadata read_table = readCSV(all_input_files[i], column_names, date_columns);
+            auto read_tv = read_table.tbl->view();
+            auto gathered_tv = gathered_tables[i]->view();
+            if (!table_equal(read_tv, gathered_tv)){
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool PerformBcastTest(const std::string &input_filename,
+                       const std::vector<std::string> &column_names,
+                       const std::vector<std::string> &date_columns,
+                       int bcast_root,
+                       std::shared_ptr<cylon::CylonContext> ctx) {
+
+    cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names, date_columns);
+    auto input_tv = input_table.tbl->view();
+
+    // broadcast the table from broadcast root
+    cudf::table_view send_tv;
+    if (bcast_root == ctx->GetRank()) {
+        send_tv = input_tv;
+    }
+    std::unique_ptr<cudf::table> received_table;
+    cylon::Status status = gcylon::net::Bcast(send_tv, bcast_root, ctx, received_table);
+    if (!status.is_ok()) {
+        return false;
+    }
+
+    // compare received table to read table for all receiving workers
+    if (bcast_root != ctx->GetRank()) {
+        if (received_table == nullptr) {
+            return false;
+        }
+
+        auto received_tv = received_table->view();
+        if (!table_equal(input_tv, received_tv)){
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool PerformSortTest(const std::string &input_filename,
+                      const std::string &sorted_filename,
+                      const std::vector<std::string> &column_names,
+                      const std::vector<std::string> &date_columns,
+                      int sort_root,
+                      const std::vector<int32_t> sort_columns,
+                      std::shared_ptr<cylon::CylonContext> ctx) {
+
+    cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names, date_columns);
+    auto input_tv = input_table.tbl->view();
+    cudf::io::table_with_metadata sorted_saved_table = readCSV(sorted_filename, column_names, date_columns);
+
+    std::vector<cudf::order> column_orders(sort_columns.size(), cudf::order::ASCENDING);
+
+    // perform distributed sort
+    std::unique_ptr<cudf::table> sorted_table;
+    cylon::Status status = DistributedSort(input_tv,
+                                           sort_columns,
+                                           column_orders,
+                                           ctx,
+                                           sorted_table,
+                                           true,
+                                           sort_root);
+    if (!status.is_ok()) {
+        return false;
+    }
+
+    auto sorted_columns_tv = sorted_table->select(sort_columns);
+    auto sorted_saved_columns_tv = sorted_saved_table.tbl->select(sort_columns);
+
+    // compare resulting sorted table with the sorted table from the file
+    return table_equal(sorted_columns_tv, sorted_saved_columns_tv);
 }
 
 }

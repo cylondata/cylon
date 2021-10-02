@@ -12,11 +12,9 @@
  * limitations under the License.
  */
 
-#include <examples/gcylon/print.hpp>
 #include "common/test_header.hpp"
 #include "gcylon/test_gutils.hpp"
 #include <gcylon/utils/util.hpp>
-#include <gcylon/utils/construct.hpp>
 
 using namespace cylon;
 using namespace gcylon;
@@ -34,12 +32,12 @@ TEST_CASE("shuffling cudf tables", "[gshuffle]") {
       // population is at index 2 on the dataframe
       // perform int based shuffle
       int shuffle_index = 2;
-      REQUIRE((gcylon::test::PerformShuffleTest(input_filename, int_shuffle_filename, shuffle_index, RANK)));
+      REQUIRE((gcylon::test::PerformShuffleTest(input_filename, int_shuffle_filename, shuffle_index)));
 
       // state_id is at index 1 on the dataframe
       // perform string based shuffle
       shuffle_index = 1;
-      REQUIRE((gcylon::test::PerformShuffleTest(input_filename, str_shuffle_filename, shuffle_index, RANK)));
+      REQUIRE((gcylon::test::PerformShuffleTest(input_filename, str_shuffle_filename, shuffle_index)));
   }
 
 }

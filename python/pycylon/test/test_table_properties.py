@@ -63,8 +63,8 @@ Comparison Operators
 def test_properties():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-    table1_path = '/tmp/user_usage_tm_1.csv'
-    table2_path = '/tmp/user_usage_tm_2.csv'
+    table1_path = 'data/input/user_usage_tm_1.csv'
+    table2_path = 'data/input/user_usage_tm_2.csv'
 
     assert os.path.exists(table1_path) and os.path.exists(table2_path)
 
@@ -158,8 +158,8 @@ def test_string_type_filters():
 def test_filter():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-    table1_path = '/tmp/user_usage_tm_1.csv'
-    table2_path = '/tmp/user_usage_tm_2.csv'
+    table1_path = 'data/input/user_usage_tm_1.csv'
+    table2_path = 'data/input/user_usage_tm_2.csv'
 
     assert os.path.exists(table1_path) and os.path.exists(table2_path)
 
@@ -205,7 +205,7 @@ def test_filter():
 def test_drop():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-    table1_path = '/tmp/user_usage_tm_1.csv'
+    table1_path = 'data/input/user_usage_tm_1.csv'
 
     assert os.path.exists(table1_path)
 
@@ -516,7 +516,7 @@ def test_empty_table():
 def test_iterrows():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb1.to_pandas()
 
@@ -801,7 +801,7 @@ def test_str_astype():
 def test_table_initialization_with_index():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb: Table = read_csv(ctx, table_path, csv_read_options)
     expected_index = [i for i in range(tb.row_count)]
     expected_index_1 = [0, 1, 2]
@@ -839,7 +839,7 @@ def test_table_initialization_with_index():
 def test_getitem_with_index():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb.to_pandas()
 
@@ -880,7 +880,7 @@ def test_getitem_with_index():
 def test_setitem_with_index():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb.to_pandas()
 
@@ -905,7 +905,7 @@ def test_setitem_with_index():
 def test_isin_with_index():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb1.to_pandas()
     filter_isin = [20, 11, 23]

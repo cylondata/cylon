@@ -15,6 +15,7 @@
 #include <utility>
 
 #include <cylon/arrow/arrow_task_all_to_all.h>
+#include <cylon/util/macros.hpp>
 
 cylon::LogicalTaskPlan::LogicalTaskPlan(std::shared_ptr<std::vector<int>> task_source,
                                         std::shared_ptr<std::vector<int>> task_targets,
@@ -42,7 +43,7 @@ const std::shared_ptr<std::unordered_map<int, int>> &cylon::LogicalTaskPlan::Get
   return task_to_worker;
 }
 
-cylon::ArrowTaskAllToAll::ArrowTaskAllToAll(std::shared_ptr<cylon::CylonContext> ctx,
+cylon::ArrowTaskAllToAll::ArrowTaskAllToAll(const std::shared_ptr<CylonContext> &ctx,
                                             const cylon::LogicalTaskPlan &plan,
                                             int edgeId,
                                             ArrowTaskCallBack callback,
@@ -52,6 +53,7 @@ cylon::ArrowTaskAllToAll::ArrowTaskAllToAll(std::shared_ptr<cylon::CylonContext>
                     *plan.GetWorkerTargets(),
                     edgeId,
                     [&callback](int worker_source, const std::shared_ptr<arrow::Table> &table, int target_task) {
+                      CYLON_UNUSED(worker_source);
                       return callback(table, target_task);
                     },
                     schema),

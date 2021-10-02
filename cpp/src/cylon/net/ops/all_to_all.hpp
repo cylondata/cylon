@@ -90,7 +90,7 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
            ReceiveCallback *callback,
            Allocator *alloc);
 
-  virtual ~AllToAll() = default;
+  ~AllToAll() override = default;
 
   /**
    * Insert a buffer to be sent, if the buffer is accepted return true
@@ -163,7 +163,7 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
   std::unordered_set<int> finishedSources;  // keep track of  the finished sources
   std::unordered_set<int> finishedTargets;  // keep track of  the finished targets
   bool finishFlag = false;
-  Channel *channel;             // the underlying channel
+  std::unique_ptr<Channel> channel;             // the underlying channel
   ReceiveCallback *callback;    // after we receive a buffer we will call this function
   unsigned long thisNumTargets;            // number of targets in this process, 1 or 0
   int thisNumSources;            // number of sources in this process, 1 or 0

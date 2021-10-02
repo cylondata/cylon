@@ -28,8 +28,8 @@ from pycylon.io import read_csv
 def test_rl():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-    table1_path = '/tmp/user_usage_tm_1.csv'
-    table2_path = '/tmp/user_usage_tm_2.csv'
+    table1_path = 'data/input/user_usage_tm_1.csv'
+    table2_path = 'data/input/user_usage_tm_2.csv'
 
     assert os.path.exists(table1_path) and os.path.exists(table2_path)
 

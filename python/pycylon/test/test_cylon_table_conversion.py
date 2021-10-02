@@ -37,8 +37,8 @@ def test_conversion_check():
 
     assert size == 2
 
-    table1_path = f'/tmp/user_usage_tm_{rank + 1}.csv'
-    table2_path = f'/tmp/user_device_tm_{rank + 1}.csv'
+    table1_path = f'data/input/user_usage_tm_{rank + 1}.csv'
+    table2_path = f'data/input/user_device_tm_{rank + 1}.csv'
 
     assert os.path.exists(table1_path)
     assert os.path.exists(table2_path)

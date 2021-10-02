@@ -38,7 +38,7 @@ def test_read_csv_with_use_cols():
         .use_threads(True) \
         .block_size(1 << 30) \
         .use_cols(use_cols)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf = pd.read_csv(table_path, usecols=use_cols)
     assert tb1.column_names == use_cols == pdf.columns.tolist()
@@ -50,7 +50,7 @@ def test_read_csv_with_skiprows():
         .use_threads(True) \
         .block_size(1 << 30) \
         .skip_rows(1)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf = pd.read_csv(table_path, skiprows=1)
     print(tb1)

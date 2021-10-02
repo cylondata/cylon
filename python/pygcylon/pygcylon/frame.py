@@ -16,7 +16,8 @@ from __future__ import annotations
 from typing import Hashable, List, Tuple, Dict, Optional, Sequence, Union, Iterable
 import cudf
 import numpy as np
-from pygcylon.data.shuffle import shuffle as cshuffle
+from pygcylon.net.shuffle import shuffle as cshuffle
+from pygcylon.net.sorting import distributed_sort
 from pycylon.frame import CylonEnv
 from pygcylon.groupby import GroupByDataFrame
 
@@ -1224,6 +1225,180 @@ class DataFrame(object):
             sort=sort,
             env=env,
         )
+
+    @staticmethod
+    def _get_column_indices(df: cudf.DataFrame, column_names: List[str], ignore_index=True) -> List[int]:
+        """
+        get column indices from column names
+        """
+        if not isinstance(column_names, list) and not isinstance(column_names[0], str):
+            raise ValueError
+
+        number_of_index_columns = 0 if ignore_index else df._num_indices
+        return [number_of_index_columns + df.columns.to_list().index(cname) for cname in column_names]
+
+    def sort_index(
+            self,
+            axis=0,
+            level=None,
+            ascending=True,
+            inplace=False,
+            kind=None,
+            na_position="last",
+            sort_remaining=True,
+            ignore_index=False,
+            env: CylonEnv = None,
+    ):
+        """Sort distributed DataFrame by labels (along an axis).
+
+        Parameters
+        ----------
+        axis : {0 or ‘index’, 1 or ‘columns’}, default 0
+            The axis along which to sort. The value 0 identifies the rows,
+            and 1 identifies the columns.
+            only 0 is supported.
+        level : int or level name or list of ints or list of level names
+            If not None, sort on values in specified index level(s).
+            This is only useful in the case of MultiIndex.
+        ascending : bool, default True
+            Sort ascending vs. descending.
+        inplace : bool, default False
+            If True, perform operation in-place.
+        kind : sorting method such as `quick sort` and others.
+            Not yet supported.
+        na_position : {‘first’, ‘last’}, default ‘last’
+            Puts NaNs at the beginning if first; last puts NaNs at the end.
+        sort_remaining : bool, default True
+            Not yet supported
+        ignore_index : bool, default False
+            if True, index will be replaced with RangeIndex.
+
+        Returns
+        -------
+        DataFrame or None
+
+        """
+        if env is None or env.world_size == 1:
+            sorted_cdf = self._cdf.sort_index(axis=axis,
+                                              level=level,
+                                              ascending=ascending,
+                                              inplace=inplace,
+                                              kind=kind,
+                                              na_position=na_position,
+                                              sort_remaining=sort_remaining,
+                                              ignore_index=ignore_index)
+            return DataFrame.from_cudf(sorted_cdf)
+
+        if kind is not None:
+            raise NotImplementedError("kind is not yet supported")
+
+        if level is not None:
+            raise NotImplementedError("level is not yet supported")
+
+        if not sort_remaining:
+            raise NotImplementedError(
+                "sort_remaining == False is not yet supported"
+            )
+        if axis not in (0, "index"):
+            raise NotImplementedError("can sort only row wise")
+
+        nulls_after = True if na_position == "last" else False
+        sorted_tbl = distributed_sort(self._cdf,
+                                      context=env.context,
+                                      ascending=ascending,
+                                      nulls_after=nulls_after,
+                                      ignore_index=False,
+                                      by_index=True)
+        sorted_cdf = cudf.DataFrame._from_table(sorted_tbl)
+
+        if ignore_index is True:
+            sorted_cdf = sorted_cdf.reset_index(drop=True)
+
+        return DataFrame.from_cudf(sorted_cdf)
+
+    def sort_values(
+            self,
+            by,
+            axis=0,
+            ascending=True,
+            inplace=False,
+            na_position="last",
+            ignore_index=False,
+            env: CylonEnv = None
+    ) -> DataFrame:
+        """
+        sort dataframe based on given columns
+        Perform distributed sorting on the dataframe.
+        When DataFrame is sorted in ascending order, After the sorting:
+            First worker will have the values: [min to smallest(k)]
+            Second worker will have the values: [smallest(k+1) to smallest(l)]
+            Third worker will have the values: [smallest(l+1) to smallest(m)]
+            ....
+            Last worker will have the values: [largest(p) to largest(n)]
+        where 0 < k < l < m < p < n
+
+        When the DataFrame is sorted in descending order,
+        first worker will have the largest values and the last worker will have the smallest values
+
+        Distributed Sorting Algorithm:
+        1. Each worker sorts its local DataFrame
+        2. Each worker samples the sorted dataframe uniformly and sends the samples to the first worker
+        3. First workers receives all samples, merges sub sorted samples and gets all samples sorted
+        4. First worker determines global split points for the ultimate sorted array based on samples.
+        5. First worker broadcasts the split points to all workers
+        6. All workers sends the corresponding sorted sub arrays to other workers
+        7. Each worker merges sorted sub-ranges from all other workers
+
+        Parameters
+        ----------
+        by : str or list of str
+            Name or list of names to sort by.
+        axis : only column based sorting supported with axis=0
+        ascending : bool or list of bool, default True
+            Sort ascending vs. descending. Specify list for multiple sort
+            orders. If this is a list of bools, must match the length of the
+            by.
+        inplace: no inplace sorting
+        na_position : {‘first’, ‘last’}, default ‘last’
+            'first' puts nulls at the beginning, 'last' puts nulls at the end
+        ignore_index : bool, default False
+            If True, index will not be sorted.
+        env : CylonEnv object for distributed sorting
+
+        """
+        if inplace:
+            raise NotImplementedError("`inplace` not currently implemented.")
+        if axis != 0:
+            raise NotImplementedError("`axis` not currently implemented.")
+        if isinstance(by, list) and isinstance(ascending, list) and len(by) != len(ascending):
+            raise ValueError("size of 'by' and 'ascending' lists must match.")
+        if not (isinstance(ascending, bool) or isinstance(ascending, list)):
+            raise ValueError("ascending must be either bool or list of bool.")
+
+        if env is None or env.world_size == 1:
+            sorted_cdf = self._cdf.sort_values(by=by,
+                                               ascending=ascending,
+                                               inplace=inplace,
+                                               na_position=na_position,
+                                               ignore_index=ignore_index)
+            return DataFrame.from_cudf(sorted_cdf)
+
+        # make sure by is a list of string
+        if isinstance(by, str):
+            by = [by]
+        if not isinstance(by, list):
+            raise ValueError("by has to be either str or list[str]")
+
+        nulls_after = True if na_position == "last" else False
+        sorted_tbl = distributed_sort(self._cdf,
+                                      context=env.context,
+                                      sort_columns=by,
+                                      ascending=ascending,
+                                      nulls_after=nulls_after,
+                                      ignore_index=ignore_index,
+                                      by_index=False)
+        sorted_cdf = cudf.DataFrame._from_table(sorted_tbl)
+        return DataFrame.from_cudf(sorted_cdf)
 
 
 def concat(

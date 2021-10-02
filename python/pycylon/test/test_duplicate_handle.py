@@ -62,7 +62,7 @@ def test_unique():
 
     ctx = cn.CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: cn.Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb1.to_pandas()
 

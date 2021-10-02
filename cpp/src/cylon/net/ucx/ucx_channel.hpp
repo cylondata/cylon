@@ -85,6 +85,13 @@ struct PendingReceive {
 class UCXChannel : public Channel {
  public:
   /**
+ * Link the necessary parameters associated with the communicator to the channel
+ * @param [in] com - The UCX communicator that created the channel
+ * @return
+ */
+  explicit UCXChannel(const net::UCXCommunicator *com);
+
+  /**
    * Initialize the channel
    *
    * @param receives receive from these ranks
@@ -92,9 +99,9 @@ class UCXChannel : public Channel {
   void init(int edge,
             const std::vector<int> &receives,
             const std::vector<int> &sendIds,
-			ChannelReceiveCallback *rcv,
-			ChannelSendCallback *send,
-			Allocator *alloc) override;
+            ChannelReceiveCallback *rcv,
+            ChannelSendCallback *send,
+            Allocator *alloc) override;
 
   /**
   * Send the message to the target.
@@ -124,13 +131,6 @@ class UCXChannel : public Channel {
 
   void close() override;
 
-  /**
-   * Link the necessary parameters associated with the communicator to the channel
-   * @param [in] com - The UCX communicator that created the channel
-   * @return
-   */
-  void linkCommunicator(net::UCXCommunicator* com);
-
  private:
   int edge;
   // keep track of the length buffers for each receiver
@@ -152,9 +152,9 @@ class UCXChannel : public Channel {
 
   // # UCX specific attributes
   // The worker for receiving
-  ucp_worker_h*  ucpRecvWorker;
+  const ucp_worker_h *ucpRecvWorker;
   // The worker for sending
-  ucp_worker_h*  ucpSendWorker;
+  const ucp_worker_h *ucpSendWorker;
   // Endpoint Map
   std::unordered_map<int, ucp_ep_h> endPointMap;
   // Tag mask used to match UCX send / receives
@@ -193,15 +193,13 @@ class UCXChannel : public Channel {
    * Send finish request
    * @param x the target, pendingSend pair
    */
-  void sendFinishHeader(const std::pair<const int,
-                        PendingSend *> &x) const;
+  void sendFinishHeader(const std::pair<const int, PendingSend *> &x) const;
 
   /**
    * Send the length
    * @param x the target, pendingSend pair
    */
-  void sendHeader(const std::pair<const int,
-                  PendingSend *> &x) const;
+  void sendHeader(const std::pair<const int, PendingSend *> &x) const;
 };
 }
 
