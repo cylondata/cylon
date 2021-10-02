@@ -14,6 +14,7 @@
 
 #include "common/test_header.hpp"
 #include "test_utils.hpp"
+#include "test_arrow_utils.hpp"
 
 namespace cylon {
 namespace test {
@@ -23,6 +24,23 @@ TEST_CASE("Join testing", "[join]") {
   std::string path2 = "../data/input/csv2_" + std::to_string(RANK) + ".csv";
   std::string out_path =
       "../data/output/join_inner_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
+
+  SECTION("testing inner joins - sort") {
+    const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::SORT);
+    test::TestJoinOperation(join_config, ctx, path1, path2, out_path);
+  }
+
+  SECTION("testing inner joins - hash") {
+    const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::HASH);
+    test::TestJoinOperation(join_config, ctx, path1, path2, out_path);
+  }
+}
+
+TEST_CASE("Join testing with null values in value columns", "[join]") {
+  std::string path1 = "../data/input/csv_with_null1_" + std::to_string(RANK) + ".csv";
+  std::string path2 = "../data/input/csv_with_null2_" + std::to_string(RANK) + ".csv";
+  std::string out_path =
+      "../data/output/join_inner_null_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
 
   SECTION("testing inner joins - sort") {
     const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::SORT);

@@ -138,7 +138,7 @@ def build_cpp():
         if CONDA_PREFIX:
             install_prefix = CONDA_PREFIX
         else:
-            logger.error("install prefix can not be inferred. ")
+            logger.error("install prefix can not be inferred. The build should be in a conda environment")
             return
 
     win_cmake_args = "-A x64" if os.name == 'nt' else ""
