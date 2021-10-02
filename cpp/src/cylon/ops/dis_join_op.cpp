@@ -20,10 +20,11 @@
 #include <cylon/ops/split_op.hpp>
 
 cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
-                            const std::shared_ptr<arrow::Schema> &schema,
+                            const std::shared_ptr<arrow::Schema> &left_schema,
+                            const std::shared_ptr<arrow::Schema> &right_schema,
                             int id,
                             const ResultsCallback &callback,
-                            const DisJoinOpConfig &config) : RootOp(ctx, schema, id, callback) {
+                            const DisJoinOpConfig &config) : RootOp(ctx, left_schema, id, callback) {
   auto execution = new ForkJoinExecution();
   execution->AddLeft(this);
   this->SetExecution(execution);
@@ -35,36 +36,36 @@ cylon::DisJoinOP::DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
   Op *partition_op, *shuffle_op, *split_op, *join_op;
 
   // build left sub tree
-  partition_op = new PartitionOp(ctx, schema, LEFT_RELATION, callback,
+  partition_op = new PartitionOp(ctx, left_schema, LEFT_RELATION, callback,
                                  {ctx->GetWorldSize(), {config.join_config.GetLeftColumnIdx()}});
   this->AddChild(partition_op);
   execution->AddLeft(partition_op);
 
-  shuffle_op = new AllToAllOp(ctx, schema, LEFT_RELATION, callback, {});
+  shuffle_op = new AllToAllOp(ctx, left_schema, LEFT_RELATION, callback, {});
   partition_op->AddChild(shuffle_op);
   execution->AddLeft(shuffle_op);
 
-  split_op = new SplitOp(ctx, schema, LEFT_RELATION, callback, {8000, {config.join_config.GetLeftColumnIdx()}});
+  split_op = new SplitOp(ctx, left_schema, LEFT_RELATION, callback, {config.GetLeftSplits(), {config.join_config.GetLeftColumnIdx()}});
   shuffle_op->AddChild(split_op);
   execution->AddLeft(split_op);
 
   // add join op
-  join_op = new JoinOp(ctx, schema, JOIN_OP_ID, callback, config.join_config);
+  join_op = new JoinOp(ctx, left_schema, JOIN_OP_ID, callback, config.join_config);
   split_op->AddChild(join_op);
   execution->AddFinal(join_op);
 
 
   // build right sub tree
-  partition_op = new PartitionOp(ctx, schema, RIGHT_RELATION, callback,
+  partition_op = new PartitionOp(ctx, right_schema, RIGHT_RELATION, callback,
                                  {ctx->GetWorldSize(), {config.join_config.GetLeftColumnIdx()}});
   this->AddChild(partition_op);
   execution->AddRight(partition_op);
 
-  shuffle_op = new AllToAllOp(ctx, schema, RIGHT_RELATION, callback, {});
+  shuffle_op = new AllToAllOp(ctx, right_schema, RIGHT_RELATION, callback, {});
   partition_op->AddChild(shuffle_op);
   execution->AddRight(shuffle_op);
 
-  split_op = new SplitOp(ctx, schema, RIGHT_RELATION, callback, {8000, {config.join_config.GetRightColumnIdx()}});
+  split_op = new SplitOp(ctx, right_schema, RIGHT_RELATION, callback, {config.GetRightSplits(), {config.join_config.GetRightColumnIdx()}});
   shuffle_op->AddChild(split_op);
   execution->AddRight(split_op);
 
