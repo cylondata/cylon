@@ -47,7 +47,8 @@ class DisJoinOP : public RootOp {
   const static int32_t RIGHT_RELATION = 200;
 
   DisJoinOP(const std::shared_ptr<CylonContext> &ctx,
-            const std::shared_ptr<arrow::Schema> &schema,
+            const std::shared_ptr<arrow::Schema> &left_schema,
+            const std::shared_ptr<arrow::Schema> &right_schema,
             int id,
             const ResultsCallback &callback,
             const DisJoinOpConfig &config);

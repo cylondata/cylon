@@ -42,24 +42,26 @@ static inline constexpr uint32_t mod(T val, uint32_t num_partitions) {
   return val % num_partitions;
 }
 
-template<typename ArrowT, typename Visitor>
+template<typename ArrowT, typename ValidFn, typename NullFn>
 inline Status visit_chunked_array(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
-                                  Visitor &&visitor) {
+                                  ValidFn &&valid_fn,
+                                  NullFn &&null_fn) {
   using ValueT = typename cylon::ArrowTypeTraits<ArrowT>::ValueT;
 
   uint64_t global_idx = 0;
   for (auto &&array: idx_col->chunks()) {
     const auto &arr_data = array->data();
-    if (array->null_count()) {
-      return {Code::NotImplemented, "nulls in index arrays are not supported!"};
-    }
+//    if (array->null_count()) {
+//      return {Code::NotImplemented, "nulls in index arrays are not supported!"};
+//    }
 
     arrow::VisitArrayDataInline<ArrowT>(*arr_data,
                                         [&](ValueT val) {
-                                          visitor(global_idx, val);
+                                          valid_fn(global_idx, val);
                                           global_idx++;
                                         },
                                         [&]() { // nothing to do for nulls
+                                          null_fn(global_idx);
                                           global_idx++;
                                         }
     );
@@ -95,6 +97,11 @@ class ModuloPartitionKernel : public HashPartitionKernel {
             uint32_t p = mod_power2(pseudo_hash, num_partitions);
             target_partitions[offset] = p;
             partition_histogram[p]++;
+          },
+          [&](uint64_t offset) {
+            uint32_t p = mod_power2(target_partitions[offset], num_partitions);
+            target_partitions[offset] = p;
+            partition_histogram[p]++;
           });
     } else {
       return visit_chunked_array<ARROW_T>(
@@ -102,6 +109,11 @@ class ModuloPartitionKernel : public HashPartitionKernel {
           [&](uint64_t offset, T val) {
             T pseudo_hash = 31 * target_partitions[offset] + val;
             uint32_t p = mod(pseudo_hash, num_partitions);
+            target_partitions[offset] = p;
+            partition_histogram[p]++;
+          },
+          [&](uint64_t offset) {
+            uint32_t p = mod(target_partitions[offset], num_partitions);
             target_partitions[offset] = p;
             partition_histogram[p]++;
           });
@@ -118,7 +130,10 @@ class ModuloPartitionKernel : public HashPartitionKernel {
         idx_col,
         [&](uint64_t offset, T val) {
           partial_hashes[offset] = 31 * partial_hashes[offset] + val;
-        });
+        },
+        [&](uint64_t offset) {
+          CYLON_UNUSED(offset);
+        }); // null values wouldn't change
   }
 
   inline uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index)
@@ -154,6 +169,11 @@ class NumericHashPartitionKernel : public HashPartitionKernel {
                                             uint32_t p = mod_power2(hash, num_partitions);
                                             target_partitions[global_idx] = p;
                                             partition_histogram[p]++;
+                                          },
+                                          [&](uint64_t global_idx) {
+                                            uint32_t p = mod_power2(target_partitions[global_idx], num_partitions);
+                                            target_partitions[global_idx] = p;
+                                            partition_histogram[p]++;
                                           });
     } else {
       return
@@ -163,6 +183,11 @@ class NumericHashPartitionKernel : public HashPartitionKernel {
                                          util::MurmurHash3_x86_32(&val, len, 0, &hash);
                                          hash += 31 * target_partitions[global_idx];
                                          uint32_t p = mod(hash, num_partitions);
+                                         target_partitions[global_idx] = p;
+                                         partition_histogram[p]++;
+                                       },
+                                       [&](uint64_t global_idx) {
+                                         uint32_t p = mod(target_partitions[global_idx], num_partitions);
                                          target_partitions[global_idx] = p;
                                          partition_histogram[p]++;
                                        });
@@ -182,6 +207,9 @@ class NumericHashPartitionKernel : public HashPartitionKernel {
                                           util::MurmurHash3_x86_32(&val, len, 0, &hash);
                                           hash += 31 * partial_hashes[global_idx];
                                           partial_hashes[global_idx] = hash;
+                                        },
+                                        [&](uint64_t global_idx) {
+                                          CYLON_UNUSED(global_idx);
                                         });
   }
 
@@ -233,6 +261,11 @@ class FixedSizeBinaryHashPartitionKernel : public HashPartitionKernel {
                 uint32_t p = mod_power2(hash, num_partitions);
                 target_partitions[global_idx] = p;
                 partition_histogram[p]++;
+              },
+              [&](uint64_t global_idx) {
+                uint32_t p = mod_power2(target_partitions[global_idx], num_partitions);
+                target_partitions[global_idx] = p;
+                partition_histogram[p]++;
               });
     } else {
       return visit_chunked_array<arrow::FixedSizeBinaryType>(
@@ -242,6 +275,11 @@ class FixedSizeBinaryHashPartitionKernel : public HashPartitionKernel {
             util::MurmurHash3_x86_32(&val, len, 0, &hash);
             hash += 31 * target_partitions[global_idx];
             uint32_t p = mod(hash, num_partitions);
+            target_partitions[global_idx] = p;
+            partition_histogram[p]++;
+          },
+          [&](uint64_t global_idx) {
+            uint32_t p = mod(target_partitions[global_idx], num_partitions);
             target_partitions[global_idx] = p;
             partition_histogram[p]++;
           });
@@ -263,6 +301,9 @@ class FixedSizeBinaryHashPartitionKernel : public HashPartitionKernel {
            util::MurmurHash3_x86_32(&val, byte_width, 0, &hash);
            hash += 31 * partial_hashes[global_idx];
            partial_hashes[global_idx] = hash;
+         },
+         [&](uint64_t global_idx) {
+           CYLON_UNUSED(global_idx);
          });
   }
 };
@@ -302,6 +343,11 @@ class BinaryHashPartitionKernel : public HashPartitionKernel {
                 uint32_t p = mod_power2(hash, num_partitions);
                 target_partitions[global_idx] = p;
                 partition_histogram[p]++;
+              },
+              [&](uint64_t global_idx) {
+                uint32_t p = mod_power2(target_partitions[global_idx], num_partitions);
+                target_partitions[global_idx] = p;
+                partition_histogram[p]++;
               });
     } else {
       return
@@ -312,6 +358,11 @@ class BinaryHashPartitionKernel : public HashPartitionKernel {
                 util::MurmurHash3_x86_32(&val, static_cast<int>(val.size()), 0, &hash);
                 hash += 31 * target_partitions[global_idx];
                 uint32_t p = mod(hash, num_partitions);
+                target_partitions[global_idx] = p;
+                partition_histogram[p]++;
+              },
+              [&](uint64_t global_idx) {
+                uint32_t p = mod(target_partitions[global_idx], num_partitions);
                 target_partitions[global_idx] = p;
                 partition_histogram[p]++;
               });
@@ -332,6 +383,9 @@ class BinaryHashPartitionKernel : public HashPartitionKernel {
               util::MurmurHash3_x86_32(&val, static_cast<int>(val.size()), 0, &hash);
               hash += 31 * partial_hashes[global_idx];
               partial_hashes[global_idx] = hash;
+            },
+            [&](uint64_t global_idx) {
+              CYLON_UNUSED(global_idx);
             });
   }
 };
@@ -383,6 +437,10 @@ class RangePartitionKernel : public PartitionKernel {
                    uint32_t num_partitions,
                    std::vector<uint32_t> &target_partitions,
                    std::vector<uint32_t> &partition_histogram) override {
+    if (idx_col->null_count() > 0) {
+      return {Code::Invalid, "Range partition kernel doesn't support null values"};
+    }
+
     RETURN_CYLON_STATUS_IF_FAILED(build_bin_to_partition(idx_col, num_partitions));
 
     // resize vectors
@@ -396,6 +454,9 @@ class RangePartitionKernel : public PartitionKernel {
                        bin_to_partition[get_bin_pos(val)] : num_partitions - 1 - bin_to_partition[get_bin_pos(val)];
           target_partitions[global_idx] = p;
           partition_histogram[p]++;
+        },
+        [&](uint64_t global_idx) {
+          CYLON_UNUSED(global_idx);
         });
   }
 

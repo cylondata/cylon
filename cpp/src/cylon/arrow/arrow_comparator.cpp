@@ -413,7 +413,7 @@ TableRowIndexHash::TableRowIndexHash(const std::shared_ptr<arrow::Table> &table,
       }
       const auto &s = hash_kernel->UpdateHash(table->column(c), *hashes_ptr);  // update the hashes
       if (!s.is_ok()) {
-        throw "hash update failed!";
+        throw "hash update failed! " + s.get_msg();
       }
     }
   } else { // if col_ids is empty, use all columns
@@ -424,7 +424,7 @@ TableRowIndexHash::TableRowIndexHash(const std::shared_ptr<arrow::Table> &table,
       }
       const auto &s = hash_kernel->UpdateHash(table->column(i), *hashes_ptr);  // update the hashes
       if (!s.is_ok()) {
-        throw "hash update failed!";
+        throw "hash update failed!" + s.get_msg();;
       }
     }
   }
@@ -439,7 +439,7 @@ TableRowIndexHash::TableRowIndexHash(const std::vector<std::shared_ptr<arrow::Ar
     }
     const auto &s = hash_kernel->UpdateHash(arr, *hashes_ptr);  // update the hashes
     if (!s.is_ok()) {
-      throw "hash update failed!";
+      throw "hash update failed!" + s.get_msg();;
     }
   }
 }
@@ -573,7 +573,7 @@ ArrayIndexHash::ArrayIndexHash(const std::shared_ptr<arrow::Array> &arr)
   }
   const auto &s = hash_kernel->UpdateHash(arr, *hashes_ptr);  // update the hashes
   if (!s.is_ok()) {
-    throw "hash update failed!";
+    throw "hash update failed!" + s.get_msg();;
   }
 }
 

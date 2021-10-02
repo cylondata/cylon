@@ -38,13 +38,9 @@ arrow::Status do_copy_numeric_array(const std::vector<int64_t> &indices,
   const T *value_buffer = data->template GetValues<T>(1);
   for (auto &index : indices) {
     // handle -1 index : comes in left, right joins
-    if (index == -1) {
+    if (index == -1 || data_array->IsNull(index)) {
       array_builder.UnsafeAppendNull();
       continue;
-    }
-
-    if (data_array->length() <= index) {
-      LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << data_array->length();
     }
     array_builder.UnsafeAppend(value_buffer[index]);
   }
@@ -62,11 +58,7 @@ arrow::Status do_copy_binary_array(const std::vector<int64_t> &indices,
   BUILDER_TYPE binary_builder(memory_pool);
   auto casted_array = std::static_pointer_cast<ARRAY_TYPE>(data_array);
   for (auto &index : indices) {
-    if (casted_array->length() <= index) {
-      LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
-    }
-
-    if (index == -1) {
+    if (index == -1 || casted_array->IsNull(index)) {
       const auto &status = binary_builder.AppendNull();
       if (!status.ok()) {
         return status;
@@ -98,10 +90,7 @@ arrow::Status do_copy_fixed_binary_array(const std::vector<int64_t> &indices,
   }
   auto casted_array = std::static_pointer_cast<arrow::FixedSizeBinaryArray>(data_array);
   for (auto &index : indices) {
-    if (casted_array->length() <= index) {
-      LOG(FATAL) << "INVALID INDEX " << index << " LENGTH " << casted_array->length();
-    }
-    if (index == -1) {
+    if (index == -1 || casted_array->IsNull(index)) {
       binary_builder.UnsafeAppendNull();
       continue;
     }
