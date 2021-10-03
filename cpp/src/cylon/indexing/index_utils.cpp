@@ -20,11 +20,11 @@ cylon::Status cylon::IndexUtil::BuildArrowHashIndex(const std::shared_ptr<Table>
 													std::shared_ptr<cylon::BaseArrowIndex> &index) {
 
   auto table_ = input->get_table();
-  const auto& ctx = input->GetContext();
+  const auto &ctx = input->GetContext();
   if (table_->column(0)->num_chunks() > 1) {
-	const arrow::Result<std::shared_ptr<arrow::Table>> &res = table_->CombineChunks(cylon::ToArrowPool(ctx));
-	RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-	table_ = res.ValueOrDie();
+    const arrow::Result<std::shared_ptr<arrow::Table>> &res = table_->CombineChunks(cylon::ToArrowPool(ctx));
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
+    table_ = res.ValueOrDie();
   }
   auto pool = cylon::ToArrowPool(ctx);
   std::shared_ptr<cylon::ArrowIndexKernel> kernel = CreateArrowIndexKernel(table_, index_column);
@@ -53,23 +53,26 @@ cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingTy
 														 const std::shared_ptr<arrow::Array> &index_array) {
   cylon::Status status;
   std::shared_ptr<cylon::BaseArrowIndex> index;
-  const auto& ctx = input->GetContext();
+  const auto &ctx = input->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
   switch (schema) {
-	case Range: status = BuildArrowRangeIndexFromArray(index_array->length(), pool, index);
-	  break;
-	case Linear:
-	  status = BuildArrowLinearIndexFromArrowArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array),
-												   pool,
-												   index);
-	  break;
-	case Hash:
-	  status = BuildArrowHashIndexFromArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array), pool, index);
-	  break;
-	case BinaryTree:status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
-	  break;
-	case BTree:status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
-	  break;
+    case Range:
+      status = BuildArrowRangeIndexFromArray(index_array->length(), pool, index);
+      break;
+    case Linear:
+      status = BuildArrowLinearIndexFromArrowArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array),
+                                                   pool,
+                                                   index);
+      break;
+    case Hash:
+      status = BuildArrowHashIndexFromArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array), pool, index);
+      break;
+    case BinaryTree:
+      status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
+      break;
+    case BTree:
+      status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
+      break;
   }
   RETURN_CYLON_STATUS_IF_FAILED(status);
   RETURN_CYLON_STATUS_IF_FAILED(input->SetArrowIndex(index, false));
@@ -101,7 +104,7 @@ cylon::Status cylon::IndexUtil::BuildArrowLinearIndex(const std::shared_ptr<Tabl
 cylon::Status cylon::IndexUtil::BuildArrowRangeIndex(const std::shared_ptr<Table> &input,
 													 std::shared_ptr<cylon::BaseArrowIndex> &index) {
 
-  const auto& ctx = input->GetContext();
+  const auto &ctx = input->GetContext();
   auto pool = cylon::ToArrowPool(ctx);
   auto table_ = input->get_table();
   std::shared_ptr<cylon::ArrowIndexKernel> kernel = std::make_unique<ArrowRangeIndexKernel>();
@@ -109,7 +112,7 @@ cylon::Status cylon::IndexUtil::BuildArrowRangeIndex(const std::shared_ptr<Table
   std::vector<int64_t> range_index_values(input->Rows());
   std::shared_ptr<arrow::Array> index_arr;
   for (int i = 0; i < input->Rows(); ++i) {
-	range_index_values.push_back(i);
+    range_index_values.push_back(i);
   }
   arrow::Int64Builder builder(pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(input->Rows()));
@@ -129,91 +132,93 @@ cylon::Status cylon::IndexUtil::BuildArrowHashIndexFromArray(const std::shared_p
 															 std::shared_ptr<cylon::BaseArrowIndex> &index) {
   switch (index_values->type()->id()) {
 
-	case arrow::Type::NA:break;
-	case arrow::Type::BOOL:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::BooleanType>(index_values,
-																							pool,
-																							index);
-	case arrow::Type::UINT8:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt8Type>(index_values,
-																						  pool,
-																						  index);
-	case arrow::Type::INT8:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int8Type>(index_values,
-																						 pool,
-																						 index);
-	case arrow::Type::UINT16:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt16Type>(index_values,
-																						   pool,
-																						   index);
-	case arrow::Type::INT16:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int16Type>(index_values,
-																						  pool,
-																						  index);
-	case arrow::Type::UINT32:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt32Type>(index_values,
-																						   pool,
-																						   index);
-	case arrow::Type::INT32:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int32Type>(index_values,
-																						  pool,
-																						  index);
-	case arrow::Type::UINT64:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt64Type>(index_values,
-																						   pool,
-																						   index);
-	case arrow::Type::INT64:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int64Type>(index_values,
-																						  pool,
-																						  index);
-	case arrow::Type::HALF_FLOAT:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::HalfFloatType>(index_values,
-																							  pool,
-																							  index);
-	case arrow::Type::FLOAT:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::FloatType>(index_values,
-																						  pool,
-																						  index);
-	case arrow::Type::DOUBLE:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::DoubleType>(index_values,
-																						   pool,
-																						   index);
-	case arrow::Type::STRING:
-	  return cylon::IndexUtil::BuildArrowBinaryHashIndexFromArrowArray<arrow::StringType>(
-		  index_values,
-		  pool,
-		  index);
-	case arrow::Type::BINARY:
-	  return cylon::IndexUtil::BuildArrowBinaryHashIndexFromArrowArray<arrow::BinaryType>(
-		  index_values,
-		  pool,
-		  index);
-	case arrow::Type::FIXED_SIZE_BINARY:
-	  return cylon::IndexUtil::BuildArrowBinaryHashIndexFromArrowArray<arrow::BinaryType>(
-		  index_values,
-		  pool,
-		  index);
-	case arrow::Type::DATE32:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Date32Type>(index_values,
-																						   pool,
-																						   index);
-	case arrow::Type::DATE64:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Date64Type>(index_values,
-																						   pool,
-																						   index);
-	case arrow::Type::TIMESTAMP:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::TimestampType>(index_values,
-																							  pool,
-																							  index);
-	case arrow::Type::TIME32:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Time32Type>(index_values,
-																						   pool,
-																						   index);
-	case arrow::Type::TIME64:
-	  return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Time64Type>(index_values,
-																						   pool,
-																						   index);
-	default: return cylon::Status(cylon::Code::Invalid, "Unsupported data type");
+    case arrow::Type::NA:
+      break;
+    case arrow::Type::BOOL:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::BooleanType>(index_values,
+                                                                                            pool,
+                                                                                            index);
+    case arrow::Type::UINT8:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt8Type>(index_values,
+                                                                                          pool,
+                                                                                          index);
+    case arrow::Type::INT8:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int8Type>(index_values,
+                                                                                         pool,
+                                                                                         index);
+    case arrow::Type::UINT16:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt16Type>(index_values,
+                                                                                           pool,
+                                                                                           index);
+    case arrow::Type::INT16:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int16Type>(index_values,
+                                                                                          pool,
+                                                                                          index);
+    case arrow::Type::UINT32:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt32Type>(index_values,
+                                                                                           pool,
+                                                                                           index);
+    case arrow::Type::INT32:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int32Type>(index_values,
+                                                                                          pool,
+                                                                                          index);
+    case arrow::Type::UINT64:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt64Type>(index_values,
+                                                                                           pool,
+                                                                                           index);
+    case arrow::Type::INT64:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int64Type>(index_values,
+                                                                                          pool,
+                                                                                          index);
+    case arrow::Type::HALF_FLOAT:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::HalfFloatType>(index_values,
+                                                                                              pool,
+                                                                                              index);
+    case arrow::Type::FLOAT:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::FloatType>(index_values,
+                                                                                          pool,
+                                                                                          index);
+    case arrow::Type::DOUBLE:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::DoubleType>(index_values,
+                                                                                           pool,
+                                                                                           index);
+    case arrow::Type::STRING:
+      return cylon::IndexUtil::BuildArrowBinaryHashIndexFromArrowArray<arrow::StringType>(
+          index_values,
+          pool,
+          index);
+    case arrow::Type::BINARY:
+      return cylon::IndexUtil::BuildArrowBinaryHashIndexFromArrowArray<arrow::BinaryType>(
+          index_values,
+          pool,
+          index);
+    case arrow::Type::FIXED_SIZE_BINARY:
+      return cylon::IndexUtil::BuildArrowBinaryHashIndexFromArrowArray<arrow::BinaryType>(
+          index_values,
+          pool,
+          index);
+    case arrow::Type::DATE32:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Date32Type>(index_values,
+                                                                                           pool,
+                                                                                           index);
+    case arrow::Type::DATE64:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Date64Type>(index_values,
+                                                                                           pool,
+                                                                                           index);
+    case arrow::Type::TIMESTAMP:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::TimestampType>(index_values,
+                                                                                              pool,
+                                                                                              index);
+    case arrow::Type::TIME32:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Time32Type>(index_values,
+                                                                                           pool,
+                                                                                           index);
+    case arrow::Type::TIME64:
+      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Time64Type>(index_values,
+                                                                                           pool,
+                                                                                           index);
+    default:
+      return cylon::Status(cylon::Code::Invalid, "Unsupported data type");
   }
   return cylon::Status(cylon::Code::Invalid, "Unsupported data type");
 }
