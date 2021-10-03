@@ -49,11 +49,25 @@ def tail_example():
     print(env.rank, ", created tail:", tail_n, ", number of rows in the tail_df: ", len(tail_df))
     env.finalize()
 
+
+def row_counts_all_example():
+    env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
+    print("CylonEnv Initialized: My rank: ", env.rank)
+
+    cdf = util.random_data_df(nrows=20 + env.rank, col_lows=[0, 100, 200, 300], col_highs=[50, 150, 250, 350])
+    print("\n\nnumber of rows: ", len(cdf))
+
+    gdf = gcy.DataFrame(cdf)
+    row_counts = gdf.row_counts_for_all(env=env)
+    print("\n\nnumber of rows in all dataframe partitions: ", row_counts)
+
+    env.finalize()
+
 ###########################################################################
 
 # cupy.cuda.Device(1).use()
 
 head_example()
-# print("-------------------------------------------------------------------------")
 # tail_example()
+# row_counts_all_example()
 
