@@ -83,6 +83,15 @@ def test_sort():
     assert responses[-1] == 0
 
 
+def test_head_tail():
+    print("8. PyGcylon head-tail Test")
+    responses.append(
+        os.system(
+            "mpirun --mca opal_cuda_support 1 -n 4 -quiet python -m pytest --with-mpi "
+            "-q python/pygcylon/test/test_head_tail.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)
