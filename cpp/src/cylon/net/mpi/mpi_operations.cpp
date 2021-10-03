@@ -20,6 +20,8 @@ MPI_Op cylon::mpi::GetMPIOp(cylon::net::ReduceOp reduce_op) {
     case cylon::net::SUM: return MPI_SUM;
     case cylon::net::MIN: return MPI_MIN;
     case cylon::net::MAX: return MPI_MAX;
+    case cylon::net::LAND: return MPI_LAND;
+    case cylon::net::LOR: return MPI_LOR;
 //    case cylon::PROD: return MPI_PROD;
     default: return MPI_OP_NULL;
   }

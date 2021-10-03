@@ -27,7 +27,9 @@ namespace net {
 enum ReduceOp {
   SUM,
   MIN,
-  MAX
+  MAX,
+  LAND,
+  LOR
 };
 
 }

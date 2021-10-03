@@ -758,7 +758,13 @@ cdef class Table:
             raise Exception(f"Unique operation failed {status.get_msg().decode()}")
 
     def equals(self, table: Table, ordered=True):
-        return Equals(self.table_shd_ptr, table.table_shd_ptr, ordered)
+        cdef CStatus status
+        cdef bool output
+        status = Equals(self.table_shd_ptr, table.table_shd_ptr, output, ordered)
+        if status.is_ok():
+            return output
+        else:
+            raise Exception(f"Equal operation failed {status.get_msg().decode()}")
 
     @staticmethod
     def from_arrow(context, pyarrow_table) -> Table:

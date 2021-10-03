@@ -36,6 +36,7 @@
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/util/macros.hpp>
 #include <cylon/util/to_string.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 
 namespace cylon {
 
@@ -996,26 +997,59 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<in
   return Unique(shuffle_out, cols, out);
 }
 
-bool Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylon::Table>& b, bool ordered) {
+Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylon::Table>& b, bool& result, bool ordered) {
   if(ordered) {
-    return a->get_table()->Equals(*b->get_table().get());
+    result = a->get_table()->Equals(*b->get_table().get());
   } else {
-    if(a->Columns() != b->Columns()) return false;
+    if(a->Columns() != b->Columns()) {
+      result = false;
+      goto end;
+    }
+    auto status = VerifyTableSchema(a->get_table(), b->get_table());
+    if(!status.is_ok()) {
+      result = false;
+      return status;
+    }
     int col = a->Columns();
 
-    std::vector<int32_t> indices_a(col), indices_b(col);
-    for(int i = 0; i < col; i++) {
-      indices_a[i] = indices_b[i] = i;
-    }
+    std::vector<int32_t> indices(col);
+    std::iota(indices.begin(), indices.end(), 0);
 
     std::shared_ptr<cylon::Table> out_a, out_b;
-    auto status = Sort(const_cast<std::shared_ptr<cylon::Table>&>(a), indices_a, out_a, true);
-    status = Sort(const_cast<std::shared_ptr<cylon::Table>&>(b), indices_b, out_b, true);
+    RETURN_CYLON_STATUS_IF_FAILED(Sort(const_cast<std::shared_ptr<cylon::Table>&>(a), indices, out_a, true));
+    RETURN_CYLON_STATUS_IF_FAILED(Sort(const_cast<std::shared_ptr<cylon::Table>&>(b), indices, out_b, true));
 
-    return out_a->get_table()->Equals(*out_b->get_table().get());
+    result = out_a->get_table()->Equals(*out_b->get_table().get());
   }
+  end:;
+  return Status::OK();
 }
 
+Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, bool& result, bool ordered) {
+  if(!ordered) {
+    std::shared_ptr<cylon::Table> out;
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSubtract(const_cast<std::shared_ptr<cylon::Table> &>(a), const_cast<std::shared_ptr<cylon::Table> &>(b), out));
+    if(out->Rows() != 0) {
+      result = false;
+      goto end;
+    }
+
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSubtract(const_cast<std::shared_ptr<cylon::Table> &>(b), const_cast<std::shared_ptr<cylon::Table> &>(a), out));
+    
+    if(out->Rows() != 0) {
+      result = false;
+    } else {
+      result = true;
+    }
+  } else {
+    bool subResult;
+    RETURN_CYLON_STATUS_IF_FAILED(Equals(a, b, subResult, true));
+    mpi::AllReduce(&subResult, &result, 1, Bool(), cylon::net::LAND);
+  }
+
+  end:;
+  return Status::OK();
+}
 
 std::shared_ptr<BaseArrowIndex> Table::GetArrowIndex() { return base_arrow_index_; }
 
