@@ -110,6 +110,7 @@ add_library(cylon SHARED
         net/mpi/mpi_communicator.hpp
         net/mpi/mpi_operations.cpp
         net/mpi/mpi_operations.hpp
+        net/mpi/mpi_type_traits.hpp
         net/ops/all_to_all.cpp
         net/ops/all_to_all.hpp
         net/ops/gather.cpp

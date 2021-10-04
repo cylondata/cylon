@@ -15,13 +15,11 @@
 #ifndef CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
 #define CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
 
-#include <type_traits>
-#include <mpi.h>
 #include <memory>
 #include <cylon/net/serialize.hpp>
-#include <cylon/net/buffer.hpp>
 #include <cylon/ctx/cylon_context.hpp>
 #include <cylon/net/comm_operations.hpp>
+#include <cylon/net/mpi/mpi_type_traits.hpp>
 
 namespace cylon {
 namespace mpi {
@@ -29,28 +27,6 @@ namespace mpi {
 MPI_Op GetMPIOp(cylon::net::ReduceOp reduce_op);
 
 MPI_Datatype GetMPIDataType(const std::shared_ptr<DataType> &data_type);
-
-/**
- * dispatch MPI_Datatype from primitive types using a template
- * @return
- */
-template<typename T>
-MPI_Datatype GetMPIType() {
-  if (std::is_same<T, int8_t>::value) return MPI_INT8_T;
-  if (std::is_same<T, uint8_t>::value) return MPI_UINT8_T;
-  if (std::is_same<T, int16_t>::value) return MPI_INT16_T;
-  if (std::is_same<T, uint16_t>::value) return MPI_UINT16_T;
-  if (std::is_same<T, int32_t>::value) return MPI_INT32_T;
-  if (std::is_same<T, uint32_t>::value) return MPI_UINT32_T;
-  if (std::is_same<T, int64_t>::value) return MPI_INT64_T;
-  if (std::is_same<T, uint64_t>::value) return MPI_UINT64_T;
-  if (std::is_same<T, float>::value) return MPI_FLOAT;
-  if (std::is_same<T, double>::value) return MPI_DOUBLE;
-
-  // if nothing matches
-  return MPI_DATATYPE_NULL;
-}
-
 
 cylon::Status AllReduce(const void *send_buf,
                         void *rcv_buf,
@@ -122,7 +98,7 @@ cylon::Status AllGather(const std::vector<T> &send_data,
                         std::vector<T> &received_data) {
 
   received_data.resize(number_of_workers * send_data.size());
-  MPI_Datatype dt = GetMPIType<T>();
+  auto dt = MPICTypeTraits<T>::MPIDataType();
 
   auto status = MPI_Allgather(send_data.data(),
                               send_data.size(),
@@ -132,7 +108,7 @@ cylon::Status AllGather(const std::vector<T> &send_data,
                               dt,
                               MPI_COMM_WORLD);
   if (status != MPI_SUCCESS) {
-    return cylon::Status(cylon::Code::ExecutionError, "MPI_Allgather failed!");
+    return {cylon::Code::ExecutionError, "MPI_Allgather failed!"};
   }
 
   return cylon::Status::OK();

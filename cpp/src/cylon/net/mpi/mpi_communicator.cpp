@@ -18,7 +18,7 @@
 #include <cylon/net/communicator.hpp>
 #include <cylon/net/mpi/mpi_communicator.hpp>
 #include <cylon/net/mpi/mpi_channel.hpp>
-#include <cylon/net/mpi/mpi_operations.hpp>
+#include <cylon/util/macros.hpp>
 
 namespace cylon {
 namespace net {
@@ -50,6 +50,7 @@ int MPICommunicator::GetWorldSize() const {
   return this->world_size;
 }
 Status MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
+  CYLON_UNUSED(config);
   int initialized;
   MPI_Initialized(&initialized);
   if (!initialized) {
