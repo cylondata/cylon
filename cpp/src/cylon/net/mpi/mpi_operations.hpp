@@ -15,12 +15,11 @@
 #ifndef CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
 #define CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
 
-#include <mpi.h>
 #include <memory>
 #include <cylon/net/serialize.hpp>
-#include <cylon/net/buffer.hpp>
 #include <cylon/ctx/cylon_context.hpp>
 #include <cylon/net/comm_operations.hpp>
+#include <cylon/net/mpi/mpi_type_traits.hpp>
 
 namespace cylon {
 namespace mpi {
@@ -86,17 +85,34 @@ cylon::Status Bcast(const std::shared_ptr<cylon::TableSerializer>& serializer,
 );
 
 /**
- * All gather an int vector from each worker
- * Each vector has to be the same size
+ * All gather a vector of primitives from each worker
+ * Each vector has to have the same number of elements
  * @param send_data
  * @param number_of_workers
  * @param received_data
  * @return
  */
-cylon::Status AllGather(const std::vector<int32_t> &send_data,
+template<typename T>
+cylon::Status AllGather(const std::vector<T> &send_data,
                         int number_of_workers,
-                        std::vector<int32_t> &received_data);
+                        std::vector<T> &received_data) {
 
+  received_data.resize(number_of_workers * send_data.size());
+  auto dt = MPICTypeTraits<T>::MPIDataType();
+
+  auto status = MPI_Allgather(send_data.data(),
+                              send_data.size(),
+                              dt,
+                              received_data.data(),
+                              send_data.size(),
+                              dt,
+                              MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return {cylon::Code::ExecutionError, "MPI_Allgather failed!"};
+  }
+
+  return cylon::Status::OK();
+}
 
 }
 }
