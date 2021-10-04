@@ -15,6 +15,7 @@
 #ifndef CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
 #define CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
 
+#include <type_traits>
 #include <mpi.h>
 #include <memory>
 #include <cylon/net/serialize.hpp>
@@ -28,6 +29,28 @@ namespace mpi {
 MPI_Op GetMPIOp(cylon::net::ReduceOp reduce_op);
 
 MPI_Datatype GetMPIDataType(const std::shared_ptr<DataType> &data_type);
+
+/**
+ * dispatch MPI_Datatype from primitive types using a template
+ * @return
+ */
+template<typename T>
+MPI_Datatype GetMPIType() {
+  if (std::is_same<T, int8_t>::value) return MPI_INT8_T;
+  if (std::is_same<T, uint8_t>::value) return MPI_UINT8_T;
+  if (std::is_same<T, int16_t>::value) return MPI_INT16_T;
+  if (std::is_same<T, uint16_t>::value) return MPI_UINT16_T;
+  if (std::is_same<T, int32_t>::value) return MPI_INT32_T;
+  if (std::is_same<T, uint32_t>::value) return MPI_UINT32_T;
+  if (std::is_same<T, int64_t>::value) return MPI_INT64_T;
+  if (std::is_same<T, uint64_t>::value) return MPI_UINT64_T;
+  if (std::is_same<T, float>::value) return MPI_FLOAT;
+  if (std::is_same<T, double>::value) return MPI_DOUBLE;
+
+  // if nothing matches
+  return MPI_DATATYPE_NULL;
+}
+
 
 cylon::Status AllReduce(const void *send_buf,
                         void *rcv_buf,
@@ -86,17 +109,34 @@ cylon::Status Bcast(const std::shared_ptr<cylon::TableSerializer>& serializer,
 );
 
 /**
- * All gather an int vector from each worker
- * Each vector has to be the same size
+ * All gather a vector of primitives from each worker
+ * Each vector has to have the same number of elements
  * @param send_data
  * @param number_of_workers
  * @param received_data
  * @return
  */
-cylon::Status AllGather(const std::vector<int32_t> &send_data,
+template<typename T>
+cylon::Status AllGather(const std::vector<T> &send_data,
                         int number_of_workers,
-                        std::vector<int32_t> &received_data);
+                        std::vector<T> &received_data) {
 
+  received_data.resize(number_of_workers * send_data.size());
+  MPI_Datatype dt = GetMPIType<T>();
+
+  auto status = MPI_Allgather(send_data.data(),
+                              send_data.size(),
+                              dt,
+                              received_data.data(),
+                              send_data.size(),
+                              dt,
+                              MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Allgather failed!");
+  }
+
+  return cylon::Status::OK();
+}
 
 }
 }
