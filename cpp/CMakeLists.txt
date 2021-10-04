@@ -22,9 +22,9 @@
 # For more information about CMake, see http://www.cmake.org             #
 ##########################################################################
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
-project(CYLON VERSION 0.4.0)
+project(CYLON VERSION 0.5.0)
 
-set(CYLON_VERSION 0.4.0)
+set(CYLON_VERSION 0.5.0)
 
 ## defaults to release build
 if (NOT CMAKE_BUILD_TYPE)
