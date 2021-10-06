@@ -167,6 +167,8 @@ add_library(cylon SHARED
         util/builtins.cpp
         util/builtins.hpp
         util/copy_arrray.cpp
+        util/flatten_array.cpp
+        util/flatten_array.hpp
         util/logging.cpp
         util/logging.hpp
         util/macros.hpp
