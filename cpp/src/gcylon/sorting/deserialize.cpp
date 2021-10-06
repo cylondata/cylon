@@ -19,7 +19,9 @@
 #include <cudf/strings/strings_column_view.hpp>
 #include <rmm/device_buffer.hpp>
 #include <gcylon/cudf_buffer.hpp>
+#include <gcylon/all2all/cudf_all_to_all.cuh>
 #include <gcylon/net/cudf_net_ops.hpp>
+#include <gcylon/utils/util.hpp>
 
 namespace gcylon {
 
@@ -120,6 +122,11 @@ std::unique_ptr<cudf::column> constructColumn(std::shared_ptr<rmm::device_buffer
         // construct chars child column
         auto cdt = cudf::data_type{cudf::type_id::INT8};
         auto chars_column = std::make_unique<cudf::column>(cdt, data_buffer->size(), std::move(*data_buffer));
+
+        int32_t off_base = getScalar((int32_t *)offsets_buffer->data());
+        if (off_base > 0) {
+          callRebaseOffsets((int32_t *)offsets_buffer->data(), num_rows + 1, off_base);
+        }
 
         auto odt = cudf::data_type{cudf::type_id::INT32};
         auto offsets_column = std::make_unique<cudf::column>(odt, num_rows + 1, std::move(*offsets_buffer));

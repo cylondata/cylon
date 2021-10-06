@@ -14,6 +14,7 @@
 
 #include <glog/logging.h>
 #include <gcylon/net/cudf_serialize.hpp>
+#include <gcylon/utils/util.hpp>
 #include <cudf/strings/strings_column_view.hpp>
 #include <cudf/null_mask.hpp>
 
@@ -66,32 +67,55 @@ std::vector<int32_t> CudfTableSerializer::getEmptyTableBufferSizes() {
 }
 
 std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnData(const cudf::column_view& cv) {
-    if (cv.type().id() == cudf::type_id::STRING) {
-        cudf::strings_column_view scv(cv);
-        return std::make_pair(scv.chars_size(), (uint8_t *)scv.chars().data<uint8_t>());
+  if (cv.type().id() == cudf::type_id::STRING) {
+    cudf::strings_column_view scv(cv);
+    int32_t offset_in_bytes = 0;
+    int32_t end_in_bytes = scv.chars_size();
+    if (scv.offset() > 0) {
+      // if the column view is a table slice that does not start from the first row
+      offset_in_bytes = getScalar<int32_t>(scv.offsets().data<int32_t>() + scv.offset());
     }
 
-    int size = cudf::size_of(cv.type()) * cv.size();
-    return std::make_pair(size, (uint8_t *)cv.data<uint8_t>());
+    if (scv.size() < scv.offsets().size() - 1) {
+      // if the column view is a table slice that does not end at the last row
+      end_in_bytes = getScalar<int32_t>(scv.offsets().data<int32_t>() + scv.offset() + scv.size());
+    }
+    int32_t size_in_bytes = end_in_bytes - offset_in_bytes;
+    return std::make_pair(size_in_bytes, (uint8_t *) scv.chars().data<uint8_t>() + offset_in_bytes);
+  }
+
+  int32_t size_in_bytes = cudf::size_of(cv.type()) * cv.size();
+  int32_t offset_in_bytes = cudf::size_of(cv.type()) * cv.offset();
+  return std::make_pair(size_in_bytes, (uint8_t *)cv.head<uint8_t>() + offset_in_bytes);
 }
 
 std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnMask(const cudf::column_view& cv) {
-    if (cv.has_nulls()) {
-        int size = cudf::bitmask_allocation_size_bytes(cv.size());
-        return std::make_pair(size, (uint8_t *)cv.null_mask());
+  if (cv.has_nulls()) {
+    if (cv.offset() == 0) {
+      int32_t size = cudf::bitmask_allocation_size_bytes(cv.size());
+      return std::make_pair(size, (uint8_t *)cv.null_mask());
     } else {
-        return std::make_pair(0, nullptr);
+      auto mask_buf = cudf::copy_bitmask(cv.null_mask(), cv.offset(), cv.offset() + cv.size());
+      rmm::cuda_stream_default.synchronize();
+      auto buff = (uint8_t *)mask_buf.data();
+      int32_t size = mask_buf.size();
+      mask_buffers.push_back(std::move(mask_buf));
+      return std::make_pair(size, buff);
     }
+  }
+
+  return std::make_pair(0, nullptr);
 }
 
 std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnOffsets(const cudf::column_view& cv) {
-    if (cv.type().id() == cudf::type_id::STRING) {
-        cudf::strings_column_view scv(cv);
-        int size = cudf::size_of(scv.offsets().type()) * scv.offsets().size();
-        return std::make_pair(size, (uint8_t *)scv.offsets().data<uint8_t>());
-    }
+  if (cv.type().id() == cudf::type_id::STRING) {
+    cudf::strings_column_view scv(cv);
+    int size_in_bytes = cudf::size_of(scv.offsets().type()) * (scv.size() + 1);
+    int offset_in_bytes = cudf::size_of(scv.offsets().type()) * scv.offset();
+    return std::make_pair(size_in_bytes, (uint8_t *)scv.offsets().head<uint8_t>() + offset_in_bytes);
+  }
 
-    return std::make_pair(0, nullptr);
+  return std::make_pair(0, nullptr);
 }
 
 std::vector<int32_t> CudfTableSerializer::getDataTypes() {

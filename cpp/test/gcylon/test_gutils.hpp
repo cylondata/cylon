@@ -20,6 +20,7 @@
 #include <cudf/table/table.hpp>
 #include <cudf/io/csv.hpp>
 #include <cudf/io/types.hpp>
+#include <cudf/copying.hpp>
 
 #include <gcylon/gtable_api.hpp>
 #include <gcylon/utils/util.hpp>
@@ -127,14 +128,50 @@ bool PerformGatherTest(const std::string &input_filename,
     return true;
 }
 
-bool PerformBcastTest(const std::string &input_filename,
-                       const std::vector<std::string> &column_names,
-                       const std::vector<std::string> &date_columns,
-                       int bcast_root,
-                       std::shared_ptr<cylon::CylonContext> ctx) {
+bool PerformGatherSlicedTest(const cudf::table_view & input_tv,
+                             const std::vector<std::string> &all_input_files,
+                             const std::vector<std::string> &column_names,
+                             const std::vector<std::string> &date_columns,
+                             const std::vector<int32_t> &row_range,
+                             std::shared_ptr<cylon::CylonContext> ctx) {
 
-    cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names, date_columns);
-    auto input_tv = input_table.tbl->view();
+  int GATHER_ROOT = 0;
+  bool GATHER_FROM_ROOT = true;
+
+  // gather the tables
+  std::vector<std::unique_ptr<cudf::table>> gathered_tables;
+  cylon::Status status = gcylon::net::Gather(input_tv,
+                                             GATHER_ROOT,
+                                             GATHER_FROM_ROOT,
+                                             ctx,
+                                             gathered_tables);
+  if (!status.is_ok()) {
+    return false;
+  }
+
+  // if not the root worker, nothing more to be done
+  if (GATHER_ROOT != ctx->GetRank()) {
+    return true;
+  }
+
+  // read all tables if this is gather_root and compare to the gathered one
+  for(long unsigned int i=0; i < all_input_files.size(); i++) {
+    cudf::io::table_with_metadata read_table = readCSV(all_input_files[i], column_names, date_columns);
+    auto read_tv = cudf::slice(read_table.tbl->view(), row_range)[0];
+    auto gathered_tv = gathered_tables[i]->view();
+
+    if (!table_equal(read_tv, gathered_tv)){
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+bool PerformBcastTest(const cudf::table_view &input_tv,
+                      int bcast_root,
+                      std::shared_ptr<cylon::CylonContext> ctx) {
 
     // broadcast the table from broadcast root
     cudf::table_view send_tv;
@@ -195,6 +232,41 @@ bool PerformSortTest(const std::string &input_filename,
     // compare resulting sorted table with the sorted table from the file
     return table_equal(sorted_columns_tv, sorted_saved_columns_tv);
 }
+
+bool PerformSlicedSortTest(const std::string &input_filename,
+                           const std::string &sorted_filename,
+                           const std::vector<std::string> &column_names,
+                           const std::vector<std::string> &date_columns,
+                           const std::vector<int32_t> sort_columns,
+                           const std::vector<int32_t> slice_range,
+                           std::shared_ptr<cylon::CylonContext> ctx) {
+
+  cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names, date_columns);
+  auto input_tv = cudf::slice(input_table.tbl->view(), slice_range)[0];
+
+  cudf::io::table_with_metadata sorted_saved_table = readCSV(sorted_filename, column_names, date_columns);
+
+  std::vector<cudf::order> column_orders(sort_columns.size(), cudf::order::ASCENDING);
+
+  // perform distributed sort
+  std::unique_ptr<cudf::table> sorted_table;
+  cylon::Status status = DistributedSort(input_tv,
+                                         sort_columns,
+                                         column_orders,
+                                         ctx,
+                                         sorted_table,
+                                         true);
+  if (!status.is_ok()) {
+    return false;
+  }
+
+  auto sorted_columns_tv = sorted_table->select(sort_columns);
+  auto sorted_saved_columns_tv = sorted_saved_table.tbl->select(sort_columns);
+
+  // compare resulting sorted table with the sorted table from the file
+  return table_equal(sorted_columns_tv, sorted_saved_columns_tv);
+}
+
 
 }
 }

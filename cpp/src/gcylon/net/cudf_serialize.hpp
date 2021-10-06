@@ -122,6 +122,8 @@ private:
     std::vector<uint8_t *> table_buffers_{};
     bool table_buffers_initialized = false;
 
+    std::vector<rmm::device_buffer> mask_buffers{};
+
     void initTableBuffers();
 };
 
