@@ -228,8 +228,8 @@ class TwoNumericRowIndexComparator : public TwoArrayIndexComparator {
       : arrays({a1->data()->template GetValues<T>(1), a2->data()->template GetValues<T>(1)}) {}
 
   int compare(int64_t index1, int64_t index2) const override {
-    auto diff = arrays.at(util::CheckBit(index1))[util::ClearBit(index1)]
-        - arrays.at(util::CheckBit(index2))[util::ClearBit(index2)];
+    auto diff = arrays[util::CheckBit(index1)][util::ClearBit(index1)] -
+        arrays[util::CheckBit(index2)][util::ClearBit(index2)];
     if (ASC) {
       return (diff > 0) - (diff < 0);
     } else {
@@ -238,7 +238,7 @@ class TwoNumericRowIndexComparator : public TwoArrayIndexComparator {
   }
 
   int compare(int32_t array_index1, int64_t row_index1, int32_t array_index2, int64_t row_index2) const override {
-    auto diff = arrays.at(array_index1)[row_index1] - arrays.at(array_index2)[row_index2];
+    auto diff = arrays[array_index1][row_index1] - arrays[array_index2][row_index2];
     if (ASC) {
       return (diff > 0) - (diff < 0);
     } else {
@@ -247,8 +247,8 @@ class TwoNumericRowIndexComparator : public TwoArrayIndexComparator {
   }
 
   bool equal_to(const int64_t index1, const int64_t index2) const override {
-    return arrays.at(util::CheckBit(index1))[util::ClearBit(index1)]
-        == arrays.at(util::CheckBit(index2))[util::ClearBit(index2)];
+    return arrays[util::CheckBit(index1)][util::ClearBit(index1)]
+        == arrays[util::CheckBit(index2)][util::ClearBit(index2)];
   }
 
  private:
@@ -273,15 +273,15 @@ class TwoBinaryRowIndexComparator : public TwoArrayIndexComparator {
   }
 
   bool equal_to(const int64_t index1, const int64_t index2) const override {
-    return arrays.at(util::CheckBit(index1))->GetView(util::ClearBit(index1))
-        .compare(arrays.at(util::CheckBit(index2))->GetView(util::ClearBit(index2)));
+    return arrays[util::CheckBit(index1)]->GetView(util::ClearBit(index1))
+        == arrays[util::CheckBit(index2)]->GetView(util::ClearBit(index2));
   }
 
   int compare(int32_t array_index1, int64_t row_index1, int32_t array_index2, int64_t row_index2) const override {
     if (ASC) {
-      return arrays.at(array_index1)->GetView(row_index1).compare(arrays.at(array_index2)->GetView(row_index2));
+      return arrays[array_index1]->GetView(row_index1).compare(arrays[array_index2]->GetView(row_index2));
     } else {
-      return arrays.at(array_index2)->GetView(row_index2).compare(arrays.at(array_index1)->GetView(row_index1));
+      return arrays[array_index2]->GetView(row_index2).compare(arrays[array_index1]->GetView(row_index1));
     }
   }
 
@@ -517,7 +517,7 @@ TwoTableRowIndexEqualTo::TwoTableRowIndexEqualTo(const std::shared_ptr<arrow::Ta
 
 bool TwoTableRowIndexEqualTo::operator()(const int64_t &record1, const int64_t &record2) const {
   for (const auto &comp:comparators) {
-    if (comp->compare(record1, record2)) return false;
+    if (comp->equal_to(record1, record2)) return false;
   }
   return true;
 }
