@@ -94,6 +94,12 @@ std::pair<int32_t, uint8_t *> CudfTableSerializer::getColumnMask(const cudf::col
     if (cv.offset() == 0) {
       int32_t size = cudf::bitmask_allocation_size_bytes(cv.size());
       return std::make_pair(size, (uint8_t *)cv.null_mask());
+    } else if (cv.offset() % 8 == 0) {
+      // if the offset is a multiple of 8, there is no need for copying the null mask
+      // we can ignore the first offset_size/8 bytes and send the remaining null mask buffer
+      int offset_start_in_bytes = cv.offset() / 8;
+      int32_t size = cudf::bitmask_allocation_size_bytes(cv.size()) - offset_start_in_bytes;
+      return std::make_pair(size, (uint8_t *)cv.null_mask() + offset_start_in_bytes);
     } else {
       auto mask_buf = cudf::copy_bitmask(cv.null_mask(), cv.offset(), cv.offset() + cv.size());
       rmm::cuda_stream_default.synchronize();
