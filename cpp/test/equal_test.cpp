@@ -18,8 +18,48 @@
 
 namespace cylon {
 namespace test {
-TEST_CASE("Ordered equal test", "[equal]") {
+TEST_CASE("Equal testing", "[equal]") {
+    std::string path1 = "../data/input/csv1_0.csv";
+    std::string path2 = "../data/input/csv1_1.csv";
+    std::string path3 = "../data/input/csv1_0_shuffled.csv";
+    std::string path4 = "../data/input/csv1_0_col_order_change.csv";
+    std::shared_ptr<Table> table1, table2, table3, table4;
 
+    auto read_options = io::config::CSVReadOptions().UseThreads(false);
+
+    CHECK_CYLON_STATUS(FromCSV(ctx, std::vector<std::string>{path1, path2, path3, path4},
+                            std::vector<std::shared_ptr<Table> *>{&table1, &table2, &table3, &table4},
+                            read_options));
+
+    SECTION("testing ordered equal") {
+        bool result;
+        CHECK_CYLON_STATUS(Equals(table1, table1, result));
+        assert(result == true);
+
+        CHECK_CYLON_STATUS(Equals(table1, table2, result));
+        assert(result == false);
+
+        CHECK_CYLON_STATUS(Equals(table1, table3, result));
+        assert(result == false);
+
+        CHECK_CYLON_STATUS(Equals(table1, table4, result));
+        assert(result == false);
+    }
+
+    SECTION("testing unordered equal") {
+        bool result;
+        CHECK_CYLON_STATUS(Equals(table1, table1, result));
+        assert(result == true);
+
+        CHECK_CYLON_STATUS(Equals(table1, table2, result));
+        assert(result == false);
+
+        CHECK_CYLON_STATUS(Equals(table1, table3, result));
+        assert(result == true);
+
+        CHECK_CYLON_STATUS(Equals(table1, table4, result));
+        assert(result == false);
+    }
 }
 
 }
