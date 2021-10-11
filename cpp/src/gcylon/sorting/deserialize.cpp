@@ -123,7 +123,7 @@ std::unique_ptr<cudf::column> constructColumn(std::shared_ptr<rmm::device_buffer
         auto cdt = cudf::data_type{cudf::type_id::INT8};
         auto chars_column = std::make_unique<cudf::column>(cdt, data_buffer->size(), std::move(*data_buffer));
 
-        int32_t off_base = getScalar((int32_t *)offsets_buffer->data());
+        int32_t off_base = getScalar(static_cast<int32_t *>(offsets_buffer->data()));
         if (off_base > 0) {
           callRebaseOffsets((int32_t *)offsets_buffer->data(), num_rows + 1, off_base);
         }

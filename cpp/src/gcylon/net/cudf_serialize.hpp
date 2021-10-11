@@ -86,28 +86,28 @@ public:
      * This method is symmetrical to getBufferSizes()
      * @return
      */
-    const std::vector<uint8_t *>& getDataBuffers();
+    const std::vector<const uint8_t *>& getDataBuffers();
 
     /**
      * Get the column data size in bytes and its data buffer
      * @param cv
      * @return
      */
-    std::pair<int32_t, uint8_t *> getColumnData(const cudf::column_view& cv);
+    std::pair<int32_t, const uint8_t *> getColumnData(const cudf::column_view& cv);
 
     /**
      * Get the column null mask size in bytes and its null mask buffer
      * @param cv
      * @return
      */
-    std::pair<int32_t, uint8_t *> getColumnMask(const cudf::column_view& cv);
+    std::pair<int32_t, const uint8_t *> getColumnMask(const cudf::column_view& cv);
 
     /**
      * Get the column offsets size in bytes and its offsets buffer
      * @param cv
      * @return
      */
-    std::pair<int32_t, uint8_t *> getColumnOffsets(const cudf::column_view& cv);
+    std::pair<int32_t, const uint8_t *> getColumnOffsets(const cudf::column_view& cv);
 
     /**
      * get the data types of the columns as an int vector
@@ -119,7 +119,7 @@ public:
 private:
     const cudf::table_view tv_;
     std::vector<int32_t> buffer_sizes_{};
-    std::vector<uint8_t *> table_buffers_{};
+    std::vector<const uint8_t *> table_buffers_{};
     bool table_buffers_initialized = false;
 
     std::vector<rmm::device_buffer> mask_buffers{};
