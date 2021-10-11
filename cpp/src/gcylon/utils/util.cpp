@@ -31,7 +31,7 @@ bool table_equal_with_sorting(cudf::table_view & tv1, cudf::table_view & tv2) {
     return table_equal(sorted_tv1, sorted_tv2);
 }
 
-bool table_equal(cudf::table_view & tv1, cudf::table_view & tv2) {
+bool table_equal(const cudf::table_view & tv1, const cudf::table_view & tv2) {
     if (tv1.num_columns() != tv2.num_columns()){
         return false;
     } else if (tv1.num_rows() != tv2.num_rows()) {
