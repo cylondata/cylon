@@ -544,7 +544,7 @@ void CudfAllToAll::constructColumn(std::shared_ptr<PendingReceives> pr) {
         auto cdt = cudf::data_type{cudf::type_id::INT8};
         auto chars_column = std::make_unique<cudf::column>(cdt, pr->data_buffer_len, std::move(*data_buffer));
 
-        int32_t off_base = getScalar<int32_t>((uint8_t *)offsets_buffer->data());
+        int32_t off_base = getScalar((int32_t *)offsets_buffer->data());
         // todo: can offsets start from non zero values in non-partitioned tables
         //       we need to make sure of this
         if (off_base > 0) {

@@ -57,7 +57,7 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
 
   std::vector<MPI_Request> requests(num_buffers);
   std::vector<MPI_Status> statuses(num_buffers);
-  std::vector<uint8_t *> send_buffers{};
+  std::vector<const uint8_t *> send_buffers{};
   if (AmIRoot(bcast_root, ctx)) {
     send_buffers = serializer->getDataBuffers();
   } else {
@@ -66,7 +66,7 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
 
   for (int32_t i = 0; i < num_buffers; ++i) {
     if (AmIRoot(bcast_root, ctx)) {
-      status = MPI_Ibcast(send_buffers[i],
+      status = MPI_Ibcast(const_cast<uint8_t *>(send_buffers[i]),
                           buffer_sizes[i],
                           MPI_UINT8_T,
                           bcast_root,

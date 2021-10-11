@@ -28,11 +28,10 @@ namespace gcylon {
  * @return
  */
 template <typename T>
-inline T getScalar(const uint8_t * buff) {
-    uint8_t *host_array= new uint8_t[sizeof(T)];
-    cudaMemcpy(host_array, buff, sizeof(T), cudaMemcpyDeviceToHost);
-    T * hdata = (T *) host_array;
-    return hdata[0];
+inline T getScalar(const T * buff) {
+  T value;
+  cudaMemcpy(&value, buff, sizeof(T), cudaMemcpyDeviceToHost);
+  return value;
 }
 
 /**
@@ -92,7 +91,7 @@ bool table_equal_with_sorting(cudf::table_view & tv1, cudf::table_view & tv2);
  * @param tv2
  * @return
  */
-bool table_equal(cudf::table_view & tv1, cudf::table_view & tv2);
+bool table_equal(const cudf::table_view & tv1, const cudf::table_view & tv2);
 
 /**
  * create a table with empty columns
