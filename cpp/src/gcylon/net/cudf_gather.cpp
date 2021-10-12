@@ -26,15 +26,15 @@
 std::vector<std::vector<int32_t>> bufferSizesPerTable(const std::vector<int32_t> &all_buffer_sizes,
                                                       int number_of_buffers,
                                                       int numb_workers) {
-    std::vector<std::vector<int32_t>> buffer_sizes_all_tables;
-    for (int i = 0, k = 0; i < numb_workers; ++i) {
-        std::vector<int32_t> single_table_buffer_sizes;
-        for (int j = 0; j < number_of_buffers; ++j) {
-            single_table_buffer_sizes.push_back(all_buffer_sizes[k++]);
-        }
-        buffer_sizes_all_tables.push_back(single_table_buffer_sizes);
+  std::vector<std::vector<int32_t>> buffer_sizes_all_tables;
+  for (int i = 0, k = 0; i < numb_workers; ++i) {
+    std::vector<int32_t> single_table_buffer_sizes;
+    for (int j = 0; j < number_of_buffers; ++j) {
+      single_table_buffer_sizes.push_back(all_buffer_sizes[k++]);
     }
-    return buffer_sizes_all_tables;
+    buffer_sizes_all_tables.push_back(single_table_buffer_sizes);
+  }
+  return buffer_sizes_all_tables;
 }
 
 
@@ -44,28 +44,28 @@ cylon::Status gcylon::net::Gather(const cudf::table_view &tv,
                                   std::shared_ptr<cylon::CylonContext> ctx,
                                   std::vector<std::unique_ptr<cudf::table>> &gathered_tables) {
 
-    auto serializer = std::make_shared<CudfTableSerializer>(tv);
-    auto allocator = std::make_shared<CudfAllocator>();
-    std::vector<int32_t> all_buffer_sizes;
-    std::vector<std::shared_ptr<cylon::Buffer>> receive_buffers;
-    std::vector<std::vector<int32_t>> all_disps;
+  auto serializer = std::make_shared<CudfTableSerializer>(tv);
+  auto allocator = std::make_shared<CudfAllocator>();
+  std::vector<int32_t> all_buffer_sizes;
+  std::vector<std::shared_ptr<cylon::Buffer>> receive_buffers;
+  std::vector<std::vector<int32_t>> all_disps;
 
-    RETURN_CYLON_STATUS_IF_FAILED(cylon::mpi::Gather(serializer,
-                                              gather_root,
-                                              gather_from_root,
-                                              allocator,
-                                              all_buffer_sizes,
-                                              receive_buffers,
-                                              all_disps,
-                                              ctx));
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::mpi::Gather(serializer,
+                                                   gather_root,
+                                                   gather_from_root,
+                                                   allocator,
+                                                   all_buffer_sizes,
+                                                   receive_buffers,
+                                                   all_disps,
+                                                   ctx));
 
-    if (cylon::mpi::AmIRoot(gather_root, ctx)) {
-        std::vector<std::vector<int32_t>> buffer_sizes_per_table =
-                bufferSizesPerTable(all_buffer_sizes, receive_buffers.size(), ctx->GetWorldSize());
+  if (cylon::mpi::AmIRoot(gather_root, ctx)) {
+    std::vector<std::vector<int32_t>> buffer_sizes_per_table =
+        bufferSizesPerTable(all_buffer_sizes, receive_buffers.size(), ctx->GetWorldSize());
 
-        TableDeserializer deserializer(tv);
-        deserializer.deserialize(receive_buffers, all_disps, buffer_sizes_per_table, gathered_tables);
-    }
+    TableDeserializer deserializer(tv);
+    deserializer.deserialize(receive_buffers, all_disps, buffer_sizes_per_table, gathered_tables);
+  }
 
-    return cylon::Status::OK();
+  return cylon::Status::OK();
 }

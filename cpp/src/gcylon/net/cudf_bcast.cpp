@@ -20,25 +20,25 @@
 #include <gcylon/net/cudf_serialize.hpp>
 
 cylon::Status gcylon::net::Bcast(const cudf::table_view &tv,
-                   const int bcast_root,
-                   const std::shared_ptr<cylon::CylonContext> ctx,
-                   std::unique_ptr<cudf::table> &received_table) {
+                                 const int bcast_root,
+                                 const std::shared_ptr<cylon::CylonContext> ctx,
+                                 std::unique_ptr<cudf::table> &received_table) {
 
-    std::shared_ptr<CudfTableSerializer> serializer;
-    if (cylon::mpi::AmIRoot(bcast_root, ctx)) {
-        serializer = std::make_shared<CudfTableSerializer>(tv);
-    }
-    auto allocator = std::make_shared<CudfAllocator>();
-    std::vector<std::shared_ptr<cylon::Buffer>> received_buffers;
-    std::vector<int32_t> data_types;
+  std::shared_ptr<CudfTableSerializer> serializer;
+  if (cylon::mpi::AmIRoot(bcast_root, ctx)) {
+    serializer = std::make_shared<CudfTableSerializer>(tv);
+  }
+  auto allocator = std::make_shared<CudfAllocator>();
+  std::vector<std::shared_ptr<cylon::Buffer>> received_buffers;
+  std::vector<int32_t> data_types;
 
+  RETURN_CYLON_STATUS_IF_FAILED(
+      cylon::mpi::Bcast(serializer, bcast_root, allocator, received_buffers, data_types, ctx));
+
+  if (!cylon::mpi::AmIRoot(bcast_root, ctx)) {
     RETURN_CYLON_STATUS_IF_FAILED(
-            cylon::mpi::Bcast(serializer, bcast_root, allocator, received_buffers, data_types, ctx));
+        gcylon::deserializeSingleTable(received_buffers, data_types, received_table));
+  }
 
-    if (!cylon::mpi::AmIRoot(bcast_root, ctx)){
-        RETURN_CYLON_STATUS_IF_FAILED(
-                gcylon::deserializeSingleTable(received_buffers, data_types, received_table));
-    }
-
-    return cylon::Status::OK();
+  return cylon::Status::OK();
 }

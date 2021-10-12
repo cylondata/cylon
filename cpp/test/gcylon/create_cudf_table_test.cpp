@@ -35,20 +35,20 @@ TEST_CASE("create cudf table testing", "[gcreate]") {
     REQUIRE((tv.num_columns() == COLS && tv.num_rows() == ROWS));
 
     int64_t value = START;
-    for(int j = 0; j < COLS; j++) {
+    for (int j = 0; j < COLS; j++) {
 
-        int64_t * col = getColumnPart<int64_t>(tv.column(j), 0, ROWS);
-        if (!CONT)
-            value = START;
+      int64_t *col = getColumnPart<int64_t>(tv.column(j), 0, ROWS);
+      if (!CONT)
+        value = START;
 
-        for (int i = 0; i < ROWS; i++) {
-          REQUIRE((col[i] == value));
-          value += STEP;
-        }
+      for (int i = 0; i < ROWS; i++) {
+        REQUIRE((col[i] == value));
+        value += STEP;
+      }
     }
   }
 
-SECTION("testing create random table") {
+  SECTION("testing create random table") {
 
     std::unique_ptr<cudf::table> tbl = constructRandomDataTable(COLS, ROWS);
     auto tv = tbl->view();
