@@ -24,17 +24,17 @@ TEST_CASE("Distributed Sorting CuDF tables", "[gsort]") {
   SECTION("testing Distributed Sort of CuDF tables") {
 
     std::vector<int> sort_roots{0, 1};
-    std::vector<std::string> input_file_bases {"../../data/mpiops/numeric_",
-                                       "../../data/mpiops/sales_nulls_nunascii_"};
-    std::vector<std::string> sorted_file_bases {"../../data/sorting/numeric_sorted_",
-                                                "../../data/sorting/sales_sorted_"};
-    std::vector<std::vector<std::string>> column_name_vectors{{"0", "1"},
-                                                             {"Country", "Item Type", "Order Date", "Order ID", "Units Sold", "Unit Price"}};
+    std::vector<std::string> input_file_bases{"../../data/mpiops/numeric_",
+                                              "../../data/mpiops/sales_nulls_nunascii_"};
+    std::vector<std::string> sorted_file_bases{"../../data/sorting/numeric_sorted_",
+                                               "../../data/sorting/sales_sorted_"};
+    std::vector<std::vector<std::string>> column_name_vectors{{"0",       "1"},
+                                                              {"Country", "Item Type", "Order Date", "Order ID", "Units Sold", "Unit Price"}};
     std::vector<std::vector<std::string>> date_column_vectors{{},
                                                               {"Order Date"}};
     std::vector<int32_t> sort_columns{0, 1};
 
-    for(long unsigned int i = 0; i < input_file_bases.size(); i++) {
+    for (long unsigned int i = 0; i < input_file_bases.size(); i++) {
       std::string input_file = input_file_bases[i] + std::to_string(RANK) + ".csv";
       std::string sorted_file = sorted_file_bases[i] + std::to_string(RANK) + ".csv";
       std::ifstream in_file1(input_file);
@@ -42,7 +42,7 @@ TEST_CASE("Distributed Sorting CuDF tables", "[gsort]") {
       std::ifstream in_file2(sorted_file);
       REQUIRE((in_file2.good()));
 
-      for(int sort_root: sort_roots) {
+      for (int sort_root: sort_roots) {
         REQUIRE((gcylon::test::PerformSortTest(input_file,
                                                sorted_file,
                                                column_name_vectors[i],
@@ -76,12 +76,12 @@ TEST_CASE("Distributed Sorting of sliced CuDF tables", "[gsort]") {
     in_file2.close();
 
     REQUIRE((gcylon::test::PerformSlicedSortTest(input_file,
-                                           sorted_file,
-                                           column_names,
-                                           date_columns,
-                                           sort_columns,
-                                           slice_range,
-                                           ctx)));
+                                                 sorted_file,
+                                                 column_names,
+                                                 date_columns,
+                                                 sort_columns,
+                                                 slice_range,
+                                                 ctx)));
   }
 
 }

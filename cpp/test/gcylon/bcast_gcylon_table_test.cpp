@@ -25,14 +25,14 @@ TEST_CASE("MPI Broadcast a CuDF table", "[gbcast]") {
   SECTION("testing MPI broadcast of a CuDF table") {
 
     std::vector<int> bcast_roots{0, 1};
-    std::vector<std::string> input_files {"../../data/mpiops/numeric_0.csv",
-                                          "../../data/mpiops/sales_nulls_nunascii_0.csv"};
-    std::vector<std::vector<std::string>> column_name_vectors{{"0", "1"},
-                                                             {"Country", "Item Type", "Order Date", "Order ID", "Units Sold", "Unit Price"}};
+    std::vector<std::string> input_files{"../../data/mpiops/numeric_0.csv",
+                                         "../../data/mpiops/sales_nulls_nunascii_0.csv"};
+    std::vector<std::vector<std::string>> column_name_vectors{{"0",       "1"},
+                                                              {"Country", "Item Type", "Order Date", "Order ID", "Units Sold", "Unit Price"}};
     std::vector<std::vector<std::string>> date_column_vectors{{},
                                                               {"Order Date"}};
 
-    for(long unsigned int i = 0; i < input_files.size(); i++) {
+    for (long unsigned int i = 0; i < input_files.size(); i++) {
       std::ifstream in_file(input_files[i]);
       REQUIRE((in_file.good()));
       in_file.close();
@@ -42,7 +42,7 @@ TEST_CASE("MPI Broadcast a CuDF table", "[gbcast]") {
                                                                         date_column_vectors[i]);
       auto input_tv = input_table.tbl->view();
 
-      for(int bcast_root: bcast_roots) {
+      for (int bcast_root: bcast_roots) {
         REQUIRE((gcylon::test::PerformBcastTest(input_tv, bcast_root, ctx)));
       }
     }

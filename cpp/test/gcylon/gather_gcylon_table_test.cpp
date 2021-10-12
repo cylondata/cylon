@@ -82,7 +82,7 @@ TEST_CASE("MPI Gather sliced CuDF tables", "[ggather]") {
     auto tv_vec = cudf::slice(input_tv, row_ranges);
 
     int index = 0;
-    for(auto tv : tv_vec) {
+    for (auto tv: tv_vec) {
       std::vector<cudf::size_type> row_range{row_ranges[index], row_ranges[index + 1]};
       index += 2;
       REQUIRE((gcylon::test::PerformGatherSlicedTest(tv,

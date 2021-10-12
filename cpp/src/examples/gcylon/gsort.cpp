@@ -33,63 +33,64 @@ using namespace gcylon;
 using namespace std::chrono;
 
 void writeToFile(cudf::table_view tv, std::string file_name, int my_rank) {
-    cudf::io::sink_info sinkInfo(file_name);
-    cudf::io::csv_writer_options writerOptions = cudf::io::csv_writer_options::builder(sinkInfo, tv);
-    cudf::io::write_csv(writerOptions);
-    LOG(INFO) << my_rank  << ", written the table to the file: " << file_name;
+  cudf::io::sink_info sinkInfo(file_name);
+  cudf::io::csv_writer_options writerOptions = cudf::io::csv_writer_options::builder(sinkInfo, tv);
+  cudf::io::write_csv(writerOptions);
+  LOG(INFO) << my_rank << ", written the table to the file: " << file_name;
 }
 
 int main(int argc, char *argv[]) {
 
-    const int COLS = 4;
-    const int ROWS = 20;
-    const bool RESULT_TO_FILE = true;
+  const int COLS = 4;
+  const int ROWS = 20;
+  const bool RESULT_TO_FILE = true;
 
-    auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-    auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
-    int my_rank = ctx->GetRank();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  int my_rank = ctx->GetRank();
 
-    int number_of_GPUs;
-    cudaGetDeviceCount(&number_of_GPUs);
+  int number_of_GPUs;
+  cudaGetDeviceCount(&number_of_GPUs);
 
-    // set the gpu
-    cudaSetDevice(my_rank % number_of_GPUs);
-    int deviceInUse = -1;
-    cudaGetDevice(&deviceInUse);
-    LOG(INFO) << "my_rank: "  << my_rank << ", device in use: "<< deviceInUse << ", number of GPUs: " << number_of_GPUs;
+  // set the gpu
+  cudaSetDevice(my_rank % number_of_GPUs);
+  int deviceInUse = -1;
+  cudaGetDevice(&deviceInUse);
+  LOG(INFO) << "my_rank: " << my_rank << ", device in use: " << deviceInUse << ", number of GPUs: " << number_of_GPUs;
 
-    std::shared_ptr<cudf::table> tbl = constructRandomDataTable(COLS, ROWS, ctx->GetRank() * 100);
-    auto tv = tbl->view();
-    LOG(INFO) << "my_rank: "  << my_rank << ", initial dataframe. cols: "<< tv.num_columns() << ", rows: " << tv.num_rows();
-    if (my_rank == 0) {
-        LOG(INFO) << "my_rank: "  << my_rank << ", initial dataframe................................. ";
-        printLongTable(tv);
-    }
+  std::shared_ptr<cudf::table> tbl = constructRandomDataTable(COLS, ROWS, ctx->GetRank() * 100);
+  auto tv = tbl->view();
+  LOG(INFO) << "my_rank: " << my_rank << ", initial dataframe. cols: " << tv.num_columns() << ", rows: "
+            << tv.num_rows();
+  if (my_rank == 0) {
+    LOG(INFO) << "my_rank: " << my_rank << ", initial dataframe................................. ";
+    printLongTable(tv);
+  }
 
-    // sort the table
-    std::vector<cudf::size_type> sort_columns = {0, 1};
-    std::vector<cudf::order> column_orders{sort_columns.size(), cudf::order::ASCENDING};
-    std::unique_ptr<cudf::table> sorted_table;
+  // sort the table
+  std::vector<cudf::size_type> sort_columns = {0, 1};
+  std::vector<cudf::order> column_orders{sort_columns.size(), cudf::order::ASCENDING};
+  std::unique_ptr<cudf::table> sorted_table;
 
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    DistributedSort(tv, sort_columns, column_orders, ctx, sorted_table);
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    duration<double, std::milli> diff = t2 - t1;
-    long int delay = diff.count();
+  high_resolution_clock::time_point t1 = high_resolution_clock::now();
+  DistributedSort(tv, sort_columns, column_orders, ctx, sorted_table);
+  high_resolution_clock::time_point t2 = high_resolution_clock::now();
+  duration<double, std::milli> diff = t2 - t1;
+  long int delay = diff.count();
 
-    LOG(INFO) << "my_rank: "  << my_rank << ", duration: "<<  delay;
-    auto sorted_tv = sorted_table->view();
-    if (my_rank == 0) {
-        LOG(INFO) << "my_rank: "  << my_rank << ", sorted dataframe................................. ";
-        printLongTable(sorted_tv);
-    }
-    LOG(INFO) << "my_rank: "  << my_rank << ", rows in sorted table: "<< sorted_tv.num_rows();
+  LOG(INFO) << "my_rank: " << my_rank << ", duration: " << delay;
+  auto sorted_tv = sorted_table->view();
+  if (my_rank == 0) {
+    LOG(INFO) << "my_rank: " << my_rank << ", sorted dataframe................................. ";
+    printLongTable(sorted_tv);
+  }
+  LOG(INFO) << "my_rank: " << my_rank << ", rows in sorted table: " << sorted_tv.num_rows();
 
-    if (RESULT_TO_FILE) {
-        std::string file_name = std::string("sorted_table_") + std::to_string(ctx->GetRank()) + ".csv";
-        writeToFile(sorted_tv, file_name, ctx->GetRank());
-    }
+  if (RESULT_TO_FILE) {
+    std::string file_name = std::string("sorted_table_") + std::to_string(ctx->GetRank()) + ".csv";
+    writeToFile(sorted_tv, file_name, ctx->GetRank());
+  }
 
-    ctx->Finalize();
-    return 0;
+  ctx->Finalize();
+  return 0;
 }
