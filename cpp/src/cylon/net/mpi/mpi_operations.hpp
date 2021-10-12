@@ -41,7 +41,7 @@ cylon::Status AllReduce(const void *send_buf,
  * @return
  */
 inline bool AmIRoot(int root, const std::shared_ptr<cylon::CylonContext>& ctx){
-        return root == ctx->GetRank();
+  return root == ctx->GetRank();
 }
 
 /**

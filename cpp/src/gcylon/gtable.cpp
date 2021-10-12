@@ -28,15 +28,15 @@ GTable::GTable(std::shared_ptr<cylon::CylonContext> &ctx,
 GTable::~GTable() {}
 
 std::shared_ptr<cylon::CylonContext> GTable::GetContext() {
-    return this->ctx_;
+  return this->ctx_;
 }
 
 std::unique_ptr<cudf::table> & GTable::GetCudfTable() {
-    return this->table_;
+  return this->table_;
 }
 
 cudf::io::table_metadata & GTable::GetCudfMetadata() {
-    return this->metadata_;
+  return this->metadata_;
 }
 
 /**
@@ -44,28 +44,28 @@ cudf::io::table_metadata & GTable::GetCudfMetadata() {
  * @return
  */
 void GTable::SetCudfMetadata(cudf::io::table_metadata &metadata) {
-    metadata_ = metadata;
+  metadata_ = metadata;
 }
 
 cylon::Status GTable::FromCudfTable(std::shared_ptr<cylon::CylonContext> &ctx,
                                     std::unique_ptr<cudf::table> &table,
                                     std::shared_ptr<GTable> &table_out) {
-    if (false) { // todo: need to check column types
-        return cylon::Status(cylon::Invalid, "This type not supported");
-    }
-    table_out = std::make_shared<GTable>(ctx, table);
-    return cylon::Status(cylon::OK, "Loaded Successfully");
+  if (false) { // todo: need to check column types
+    return cylon::Status(cylon::Invalid, "This type not supported");
+  }
+  table_out = std::make_shared<GTable>(ctx, table);
+  return cylon::Status(cylon::OK, "Loaded Successfully");
 }
 
 cylon::Status GTable::FromCudfTable(std::shared_ptr<cylon::CylonContext> &ctx,
                                     cudf::io::table_with_metadata &table,
                                     std::shared_ptr<GTable> &table_out) {
-    if (false) { // todo: need to check column types
-        return cylon::Status(cylon::Invalid, "This type not supported");
-    }
+  if (false) { // todo: need to check column types
+    return cylon::Status(cylon::Invalid, "This type not supported");
+  }
 
-    table_out = std::make_shared<GTable>(ctx, table.tbl, table.metadata);
-    return cylon::Status(cylon::OK, "Loaded Successfully");
+  table_out = std::make_shared<GTable>(ctx, table.tbl, table.metadata);
+  return cylon::Status(cylon::OK, "Loaded Successfully");
 }
 
 }// end of namespace gcylon
