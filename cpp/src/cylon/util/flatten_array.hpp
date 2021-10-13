@@ -18,28 +18,43 @@
 
 namespace cylon {
 
-struct ColumnFlattenKernel {
-  ColumnFlattenKernel() = default;
-  virtual ~ColumnFlattenKernel() = default;
-  virtual int32_t ByteWidth() const = 0;
+struct ArraysMetadata {
+  uint8_t arrays_with_nulls = 0;
+  int32_t fixed_size_bytes_per_row = 0;
+  std::vector<uint8_t> var_bin_array_indices{};
 
-  virtual Status CopyData(uint8_t col_idx,
-                          int32_t *row_offset,
-                          uint8_t *data_buf,
-                          const int32_t *offset_buff) const = 0;
-
-  virtual Status IncrementRowOffset(int32_t *offsets) const = 0;
+  inline bool ContainsNullArrays() const { return arrays_with_nulls > 0; };
+  inline bool ContainsOnlyNumeric() const { return var_bin_array_indices.empty(); }
 };
 
 struct FlattenedArray {
   FlattenedArray(std::shared_ptr<arrow::Array> flattened,
-                 std::vector<std::shared_ptr<arrow::Array>> parent_data)
-      : flattened(std::move(flattened)), parent_data(std::move(parent_data)) {};
+                 std::vector<std::shared_ptr<arrow::Array>> parent_data, ArraysMetadata metadata)
+      : data(std::move(flattened)),
+        parent_data(std::move(parent_data)), metadata(std::move(metadata)) {};
 
-  std::shared_ptr<arrow::Array> flattened;
-  std::vector<std::shared_ptr<arrow::Array>> parent_data;
+  const std::shared_ptr<arrow::Array> data;
+  const std::vector<std::shared_ptr<arrow::Array>> parent_data;
+  const ArraysMetadata metadata;
 };
 
+/**
+ * Row-wise flattens a set of arrays to a single Binary array.
+ * ex: a1 = [a, b, c, d], a2 = [e, f, g, h] --> [ae, bf, cg, dh]
+ *
+ * If there are nulls in either of arrays, each element of the output array would be arranged as
+ * follows.
+ * |  1byte  | each index 1 byte         |    row size in bytes^^   |
+ * |num_nulls|<...sparse null indices...>|<...flattened row data...>|
+ *
+ * ^^ While flattening null values, for fixed sized data (int, float, etc) an empty element (i.e. 0)
+ * will be appended. For variable sized data (str, binary), null values would have empty slots.
+ *
+ * @param ctx
+ * @param arrays
+ * @param output
+ * @return
+ */
 Status FlattenArrays(CylonContext *ctx,
                      const std::vector<std::shared_ptr<arrow::Array>> &arrays,
                      std::shared_ptr<FlattenedArray> *output);

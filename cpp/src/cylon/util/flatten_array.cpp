@@ -16,8 +16,6 @@
 #include <arrow/visitor_inline.h>
 #include <arrow/util/bitmap_visit.h>
 
-#include <utility>
-
 #include "cylon/arrow/arrow_type_traits.hpp"
 
 namespace cylon {
@@ -37,6 +35,19 @@ void IncrementRowNullCount(const arrow::ArrayData *arr_data, std::vector<int32_t
                                        bit_visitor);
   }
 }
+
+struct ColumnFlattenKernel {
+  ColumnFlattenKernel() = default;
+  virtual ~ColumnFlattenKernel() = default;
+  virtual int32_t ByteWidth() const = 0;
+
+  virtual Status CopyData(uint8_t col_idx,
+                          int32_t *row_offset,
+                          uint8_t *data_buf,
+                          const int32_t *offset_buff) const = 0;
+
+  virtual Status IncrementRowOffset(int32_t *offsets) const = 0;
+};
 
 // primitive types
 template<typename ArrowT, typename Enable = arrow::enable_if_primitive_ctype<ArrowT>>
@@ -119,7 +130,7 @@ struct BinaryColumnFlattenKernelImpl : public ColumnFlattenKernel {
       arrow::VisitArrayDataInline<ArrowT>(*array_data,
                                           [&](const ValueT &val) {
                                             std::memcpy(data_buf + offset_buff[i] + row_offset[i],
-                                                        &val, val.size());
+                                                        val.data(), val.size());
                                             row_offset[i] += val.size();
                                             assert(row_offset[i] <= offset_buff[i + 1]);
                                             i++;
@@ -168,45 +179,8 @@ struct BinaryColumnFlattenKernelImpl : public ColumnFlattenKernel {
   }
 };
 
-//// boolean type
-//template<typename ArrowT>
-//struct RowFlattenKernelImpl<ArrowT, arrow::enable_if_boolean<ArrowT>> : public RowFlattenKernel {
-//  Status CountNullsInRow(const std::shared_ptr<arrow::Array> &array, int32_t *row_nulls, int64_t offset) override {
-//    return Status::OK();
-//  }
-//
-//  Status CopyData(const std::shared_ptr<arrow::Array> &array, int32_t *row_nulls, int64_t offset) override {
-//    return Status::OK();
-//  }
-//};
-
-// null type
-template<typename ArrowT, typename Enable = arrow::enable_if_null<ArrowT>>
-struct NullColumnFlattenKernelImpl : public ColumnFlattenKernel {
-  const arrow::ArrayData *array_data;
-  explicit NullColumnFlattenKernelImpl(const arrow::ArrayData *array_data)
-      : array_data(array_data) {}
-
-  int32_t ByteWidth() const override {
-    return 0;
-  }
-
-  Status CopyData(uint8_t col_idx,
-                  int32_t *row_offset,
-                  uint8_t *data_buf,
-                  const int32_t *offset_buff) const override {
-    return Status::OK();
-  }
-
-  Status IncrementRowOffset(int32_t *offsets) const override {
-    return Status::OK();
-  }
-};
-
 std::unique_ptr<ColumnFlattenKernel> GetKernel(const std::shared_ptr<arrow::Array> &array) {
   switch (array->type_id()) {
-    case arrow::Type::NA:
-      return std::make_unique<NullColumnFlattenKernelImpl<arrow::NullType>>(array->data().get());
     case arrow::Type::BOOL:
       return std::make_unique<NumericFlattenKernelImpl<arrow::BooleanType>>(array->data().get());
     case arrow::Type::UINT8:
@@ -239,6 +213,7 @@ std::unique_ptr<ColumnFlattenKernel> GetKernel(const std::shared_ptr<arrow::Arra
     case arrow::Type::LARGE_BINARY:
       return std::make_unique<BinaryColumnFlattenKernelImpl<arrow::LargeStringType>>(array->data()
                                                                                          .get());
+    case arrow::Type::NA:
     case arrow::Type::HALF_FLOAT:
     case arrow::Type::FIXED_SIZE_BINARY:
     case arrow::Type::DECIMAL128:
@@ -253,22 +228,12 @@ std::unique_ptr<ColumnFlattenKernel> GetKernel(const std::shared_ptr<arrow::Arra
     case arrow::Type::FIXED_SIZE_LIST:
     case arrow::Type::LARGE_LIST:
     case arrow::Type::MAX_ID:
-    default:break;
+    default:return nullptr;
   }
-  return nullptr;
 }
 
-static constexpr int32_t
-    additional_data = sizeof(uint8_t); // 1 byte to hold how many number of nulls in a row
-
-struct ArraysMetadata {
-  uint8_t arrays_with_nulls = 0;
-  int32_t fixed_size_bytes_per_row = 0;
-  std::vector<uint8_t> var_bin_array_indices{};
-
-  inline bool ContainsNullArrays() const { return arrays_with_nulls > 0; };
-  inline bool ContainsOnlyNumeric() const { return var_bin_array_indices.empty(); }
-};
+// 1 byte to hold how many number of nulls in a row
+static constexpr int32_t additional_data = sizeof(uint8_t);
 
 /**
  * Calculates row offsets as follows.
@@ -383,7 +348,7 @@ Status FlattenArrays(CylonContext *ctx, const std::vector<std::shared_ptr<arrow:
   // at this point, row_offsets contains num nulls at each row
 
   // create the offset array
-  CYLON_ASSIGN_OR_RAISE(auto offset_buf, arrow::AllocateBuffer((len + 1) * sizeof(int32_t), pool));
+  CYLON_ASSIGN_OR_RAISE(auto offset_buf, arrow::AllocateBuffer((len + 1) * sizeof(int32_t), pool))
   auto *offsets = reinterpret_cast<int32_t *>(offset_buf->mutable_data());
   std::fill(offsets, offsets + len + 1, 0);
 
@@ -398,7 +363,7 @@ Status FlattenArrays(CylonContext *ctx, const std::vector<std::shared_ptr<arrow:
   int32_t total_size = offsets[len];
 
   // now allocate data array
-  CYLON_ASSIGN_OR_RAISE(auto data_buf, arrow::AllocateBuffer(total_size, pool));
+  CYLON_ASSIGN_OR_RAISE(auto data_buf, arrow::AllocateBuffer(total_size, pool))
   // initialize num nulls
   if (metadata.ContainsNullArrays()) {
     auto *data = data_buf->mutable_data();
@@ -420,7 +385,7 @@ Status FlattenArrays(CylonContext *ctx, const std::vector<std::shared_ptr<arrow:
                                                         nullptr,
                                                         0);
 
-  *output = std::make_shared<FlattenedArray>(std::move(flattened), arrays);
+  *output = std::make_shared<FlattenedArray>(std::move(flattened), arrays, std::move(metadata));
 
   return Status::OK();
 }
