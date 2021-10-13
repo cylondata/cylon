@@ -62,5 +62,26 @@ TEST_CASE("Equal testing", "[equal]") {
     }
 }
 
+TEST_CASE("Distributed equal testing", "[distributed equal]") {
+    std::string path1 = "../data/input/csv1_" + std::to_string(RANK) +".csv";
+    std::string path2 = "../data/input/csv2_" + std::to_string(RANK) +".csv";
+    std::shared_ptr<Table> table1, table2;
+
+    auto read_options = io::config::CSVReadOptions().UseThreads(false);
+
+    CHECK_CYLON_STATUS(FromCSV(ctx, std::vector<std::string>{path1, path2},
+                    std::vector<std::shared_ptr<Table> *>{&table1, &table2},
+                            read_options));
+
+    SECTION("testing ordered equal") {
+        bool result;
+        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
+        assert(result == true);
+
+        CHECK_CYLON_STATUS(DistributedEquals(table1, table2, result));
+        assert(result == false);
+    }
+}
+
 }
 }

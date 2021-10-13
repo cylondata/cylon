@@ -130,3 +130,4 @@ cylon_run_test(utils_test 1)
 # equal test
 cylon_add_test(equal_test)
 cylon_run_test(equal_test 1)
+cylon_run_test(equal_test 2)
