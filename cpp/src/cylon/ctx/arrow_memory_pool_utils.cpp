@@ -21,3 +21,11 @@ arrow::MemoryPool *cylon::ToArrowPool(const std::shared_ptr<cylon::CylonContext>
     return new ProxyMemoryPool(ctx->GetMemoryPool());
   }
 }
+
+arrow::MemoryPool *cylon::ToArrowPool(cylon::CylonContext* ctx) {
+  if (ctx->GetMemoryPool() == nullptr) {
+    return arrow::default_memory_pool();
+  } else {
+    return new ProxyMemoryPool(ctx->GetMemoryPool());
+  }
+}

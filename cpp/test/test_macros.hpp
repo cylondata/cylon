@@ -33,6 +33,13 @@
       REQUIRE(st.is_ok());        \
   } while(0)
 
+#define CHECK_ARROW_STATUS(expr)  \
+  do{                             \
+      const auto& st = (expr);    \
+      INFO("status: " << st.ToString()); \
+      REQUIRE(st.ok());        \
+  } while(0)
+
 #define EXPECT_FAIL_WITH_MSG(code, msg_sub_str, expr)  \
   do{                             \
       const auto& st = (expr);                         \
