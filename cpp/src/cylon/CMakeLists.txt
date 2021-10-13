@@ -57,6 +57,7 @@ add_library(cylon SHARED
         arrow/arrow_partition_kernels.hpp
         arrow/arrow_task_all_to_all.cpp
         arrow/arrow_task_all_to_all.h
+        arrow/arrow_type_traits.hpp
         arrow/arrow_types.cpp
         arrow/arrow_types.hpp
         column.cpp
@@ -109,8 +110,11 @@ add_library(cylon SHARED
         net/mpi/mpi_communicator.hpp
         net/mpi/mpi_operations.cpp
         net/mpi/mpi_operations.hpp
+        net/mpi/mpi_type_traits.hpp
         net/ops/all_to_all.cpp
         net/ops/all_to_all.hpp
+        net/ops/gather.cpp
+        net/ops/bcast.cpp
         net/TxRequest.cpp
         net/TxRequest.hpp
         ops.cpp

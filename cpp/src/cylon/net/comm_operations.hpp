@@ -28,8 +28,11 @@ enum ReduceOp {
   SUM,
   MIN,
   MAX,
+  PROD,
   LAND,
-  LOR
+  LOR,
+  BAND,
+  BOR,
 };
 
 }

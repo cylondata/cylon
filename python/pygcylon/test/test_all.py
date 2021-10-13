@@ -57,7 +57,7 @@ def test_setops():
 
 
 def test_groupby():
-    print("4. PyGcylon GroupBy Test")
+    print("5. PyGcylon GroupBy Test")
     responses.append(
         os.system(
             "mpirun --mca opal_cuda_support 1 -n 4 -quiet python -m pytest --with-mpi "
@@ -65,12 +65,30 @@ def test_groupby():
     assert responses[-1] == 0
 
 
-def test_groupby():
-    print("5. PyGcylon Join Test")
+def test_join():
+    print("6. PyGcylon Join Test")
     responses.append(
         os.system(
             "mpirun --mca opal_cuda_support 1 -n 4 -quiet python -m pytest --with-mpi "
             "-q python/pygcylon/test/test_join.py"))
+    assert responses[-1] == 0
+
+
+def test_sort():
+    print("7. PyGcylon sort Test")
+    responses.append(
+        os.system(
+            "mpirun --mca opal_cuda_support 1 -n 4 -quiet python -m pytest --with-mpi "
+            "-q python/pygcylon/test/test_sort.py"))
+    assert responses[-1] == 0
+
+
+def test_head_tail():
+    print("8. PyGcylon head-tail Test")
+    responses.append(
+        os.system(
+            "mpirun --mca opal_cuda_support 1 -n 4 -quiet python -m pytest --with-mpi "
+            "-q python/pygcylon/test/test_head_tail.py"))
     assert responses[-1] == 0
 
 

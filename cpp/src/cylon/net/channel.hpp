@@ -29,6 +29,8 @@ namespace cylon {
  */
 class ChannelSendCallback {
  public:
+  virtual ~ChannelSendCallback() = default;
+
   virtual void sendComplete(std::shared_ptr<TxRequest> request) = 0;
 
   virtual void sendFinishComplete(std::shared_ptr<TxRequest> request) = 0;
@@ -39,6 +41,8 @@ class ChannelSendCallback {
  */
 class ChannelReceiveCallback {
  public:
+  virtual ~ChannelReceiveCallback() = default;
+
   virtual void receivedData(int receiveId, std::shared_ptr<Buffer> buffer, int length) = 0;
 
   virtual void receivedHeader(int receiveId, int finished, int *header, int headerLength) = 0;

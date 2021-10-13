@@ -17,12 +17,14 @@
 
 MPI_Op cylon::mpi::GetMPIOp(cylon::net::ReduceOp reduce_op) {
   switch (reduce_op) {
-    case cylon::net::SUM: return MPI_SUM;
-    case cylon::net::MIN: return MPI_MIN;
-    case cylon::net::MAX: return MPI_MAX;
-    case cylon::net::LAND: return MPI_LAND;
-    case cylon::net::LOR: return MPI_LOR;
-//    case cylon::PROD: return MPI_PROD;
+    case net::SUM: return MPI_SUM;
+    case net::MIN: return MPI_MIN;
+    case net::MAX: return MPI_MAX;
+    case net::PROD: return MPI_PROD;
+    case net::LAND:return MPI_LAND;
+    case net::LOR:return MPI_LOR;
+    case net::BAND:return MPI_BAND;
+    case net::BOR:return MPI_BOR;
     default: return MPI_OP_NULL;
   }
 }

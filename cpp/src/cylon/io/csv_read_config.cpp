@@ -53,6 +53,11 @@ CSVReadOptions CSVReadOptions::SkipRows(int32_t skip_rows) {
 
 CSVReadOptions::CSVReadOptions() {
   CSVReadOptions::holder = std::shared_ptr<void>(new CSVConfigHolder());
+  // set the defaults
+  arrow::csv::ConvertOptions convertOptions = arrow::csv::ConvertOptions::Defaults();
+  CSVConfigHolder::GetCastedHolder(*this)->null_values = convertOptions.null_values;
+  CSVConfigHolder::GetCastedHolder(*this)->false_values = convertOptions.false_values;
+  CSVConfigHolder::GetCastedHolder(*this)->true_values = convertOptions.true_values;
 }
 
 std::shared_ptr<void> CSVReadOptions::GetHolder() const { return CSVReadOptions::holder; }

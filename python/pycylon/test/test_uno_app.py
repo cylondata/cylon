@@ -277,7 +277,7 @@ def test_filter():
 def test_unique():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb1.to_pandas()
 
@@ -313,7 +313,7 @@ def test_unique():
 def test_series_tolist():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb1.to_pandas()
 
@@ -344,7 +344,7 @@ def test_set_list_conv():
 def test_df_with_index():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb1.to_pandas()
 
@@ -369,7 +369,7 @@ def test_df_with_index():
 def test_df_iterrows():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb1.to_pandas()
 
@@ -463,7 +463,7 @@ def test_read_partition_from_csv():
 def test_isin_column():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb1.to_pandas()
 
@@ -544,7 +544,7 @@ def test_numpy_conversion():
 def test_col_access():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb1.to_pandas()
     print(tb1)
@@ -557,7 +557,7 @@ def test_col_access():
 def test_isin_with_index():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb1: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb1.to_pandas()
     filter_isin = [11, 20, 11, 23]

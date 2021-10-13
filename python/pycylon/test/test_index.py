@@ -735,7 +735,7 @@ def test_iloc_op_mode_1():
 def test_isin():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb.to_pandas()
 
@@ -755,7 +755,7 @@ def test_isin():
 def test_isin_with_getitem():
     ctx = CylonContext(config=None, distributed=False)
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
-    table_path = '/tmp/duplicate_data_0.csv'
+    table_path = 'data/input/duplicate_data_0.csv'
     tb: Table = read_csv(ctx, table_path, csv_read_options)
     pdf: pd.DataFrame = tb.to_pandas()
 

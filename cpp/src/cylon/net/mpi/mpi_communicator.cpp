@@ -18,7 +18,7 @@
 #include <cylon/net/communicator.hpp>
 #include <cylon/net/mpi/mpi_communicator.hpp>
 #include <cylon/net/mpi/mpi_channel.hpp>
-#include <cylon/net/mpi/mpi_operations.hpp>
+#include <cylon/util/macros.hpp>
 
 namespace cylon {
 namespace net {
@@ -37,10 +37,10 @@ std::shared_ptr<MPIConfig> MPIConfig::Make() {
   return std::make_shared<MPIConfig>();
 }
 
-MPIConfig::~MPIConfig() {}
+MPIConfig::~MPIConfig() = default;
 
-Channel *MPICommunicator::CreateChannel() {
-  return new MPIChannel();
+std::unique_ptr<Channel> MPICommunicator::CreateChannel() const {
+  return std::make_unique<MPIChannel>();
 }
 
 int MPICommunicator::GetRank() const {
@@ -50,6 +50,7 @@ int MPICommunicator::GetWorldSize() const {
   return this->world_size;
 }
 Status MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
+  CYLON_UNUSED(config);
   int initialized;
   MPI_Initialized(&initialized);
   if (!initialized) {
@@ -65,8 +66,8 @@ void MPICommunicator::Finalize() {
   int finalized;
   MPI_Finalized(&finalized);
   if (!finalized) {
-	MPI_Finalize();
-  } 
+    MPI_Finalize();
+  }
 }
 void MPICommunicator::Barrier() {
   MPI_Barrier(MPI_COMM_WORLD);

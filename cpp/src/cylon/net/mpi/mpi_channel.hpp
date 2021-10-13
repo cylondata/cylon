@@ -108,6 +108,8 @@ class MPIChannel : public Channel {
 
   void close() override;
 
+  ~MPIChannel() override = default;
+
  private:
   int edge;
   // keep track of the length buffers for each receiver

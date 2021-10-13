@@ -68,19 +68,6 @@ class IndexSortKernel {
 
   virtual ~IndexSortKernel() = default;
 
- protected:
-  /**
-   * Runs the sorting operation based on the comparator lambda
-   * @param comp
-   * @param len
-   * @param pool
-   * @param offsets
-   * @return
-   */
-  static arrow::Status DoSort(const std::function<bool(int64_t, int64_t)> &comp, int64_t len,
-                              arrow::MemoryPool *pool,
-                              std::shared_ptr<arrow::UInt64Array> &offsets);
-
   arrow::MemoryPool *pool_;
   bool ascending;
 };

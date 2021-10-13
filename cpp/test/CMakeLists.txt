@@ -123,5 +123,10 @@ cylon_run_test(sorting_test 1)
 cylon_add_test(hash_utils_test)
 cylon_run_test(hash_utils_test 1)
 
+# utils test
+cylon_add_test(utils_test)
+cylon_run_test(utils_test 1)
+
+# equal test
 cylon_add_test(equal_test)
 cylon_run_test(equal_test 1)

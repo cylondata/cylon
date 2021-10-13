@@ -64,8 +64,8 @@ def test_get_set_item():
 
 def test_filter():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
-    table1_path = '/tmp/user_usage_tm_1.csv'
-    table2_path = '/tmp/user_usage_tm_2.csv'
+    table1_path = 'data/input/user_usage_tm_1.csv'
+    table2_path = 'data/input/user_usage_tm_2.csv'
 
     assert os.path.exists(table1_path) and os.path.exists(table2_path)
 
@@ -263,7 +263,7 @@ def test_math_i_ops_for_scalar():
 def test_drop():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-    table1_path = '/tmp/user_usage_tm_1.csv'
+    table1_path = 'data/input/user_usage_tm_1.csv'
 
     assert os.path.exists(table1_path)
 

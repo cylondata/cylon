@@ -18,6 +18,7 @@
 #include <memory>
 #include <random>
 #include <vector>
+#include <math.h>
 #include <arrow/util/cpu_info.h>
 
 #include <cylon/util/arrow_utils.hpp>
@@ -328,7 +329,7 @@ uint64_t GetNumberSplitsToFitInCache(int64_t total_bytes, int total_elements, in
   cache_size += arrow::internal::CpuInfo::GetInstance()->CacheSize(arrow::internal::CpuInfo::L2_CACHE);
   int64_t average_element_size = total_bytes / total_elements;
   int64_t elements_in_cache = cache_size / average_element_size;
-  return (total_elements / parallel) / elements_in_cache;
+  return ceil((double)(total_elements / parallel) / elements_in_cache);
 }
 
 std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table, const std::vector<int> &columns) {

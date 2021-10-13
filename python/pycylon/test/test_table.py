@@ -31,7 +31,7 @@ import pyarrow as pa
 def test_table():
     ctx: CylonContext = CylonContext(config=None, distributed=False)
 
-    table_path = '/tmp/user_device_tm_1.csv'
+    table_path = 'data/input/user_device_tm_1.csv'
 
     pyarrow_table = pyarrow_read_csv(table_path)
 

@@ -21,11 +21,16 @@ cylon::Status BuildArrowIndexFromArrayByKernel(cylon::IndexingType indexing_type
 											   std::shared_ptr<cylon::BaseArrowIndex> &loc_index) {
 
   switch (indexing_type) {
-	case cylon::Range: return cylon::IndexUtil::BuildArrowRangeIndexFromArray(sub_index_arr->length(), pool, loc_index);
-	case cylon::Linear: return cylon::IndexUtil::BuildArrowLinearIndexFromArrowArray(sub_index_arr, pool, loc_index);
-	case cylon::Hash: return cylon::IndexUtil::BuildArrowHashIndexFromArray(sub_index_arr, pool, loc_index);
-	case cylon::BinaryTree: return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
-	case cylon::BTree: return cylon::Status(cylon::Code::NotImplemented, "B-Tree Indexing not implemented!");
+    case cylon::Range:
+      return cylon::IndexUtil::BuildArrowRangeIndexFromArray(sub_index_arr->length(), pool, loc_index);
+    case cylon::Linear:
+      return cylon::IndexUtil::BuildArrowLinearIndexFromArrowArray(sub_index_arr, pool, loc_index);
+    case cylon::Hash:
+      return cylon::IndexUtil::BuildArrowHashIndexFromArray(sub_index_arr, pool, loc_index);
+    case cylon::BinaryTree:
+      return cylon::Status(cylon::Code::NotImplemented, "Binary Tree Indexing not implemented!");
+    case cylon::BTree:
+      return cylon::Status(cylon::Code::NotImplemented, "B-Tree Indexing not implemented!");
   }
   return cylon::Status(cylon::Code::TypeError, "Unknown indexing type.");
 }
@@ -102,10 +107,10 @@ cylon::Status GetColumnIndicesFromLimits(const int &start_column,
 										 std::vector<int> &selected_columns) {
 
   if (start_column > end_column) {
-	return cylon::Status(cylon::Code::Invalid, "Invalid column boundaries");
+    return cylon::Status(cylon::Code::Invalid, "Invalid column boundaries");
   }
   for (int s = start_column; s <= end_column; s++) {
-	selected_columns.push_back(s);
+    selected_columns.push_back(s);
   }
   return cylon::Status::OK();
 }
@@ -124,8 +129,8 @@ static cylon::Status ResolveArrowILocIndices(const std::shared_ptr<arrow::Array>
 											 std::vector<int64_t> &output_indices) {
   std::shared_ptr<arrow::Int64Array> input_indices_ar = std::static_pointer_cast<arrow::Int64Array>(input_indices);
   for (int64_t ix = 0; ix < input_indices->length(); ix++) {
-	int64_t val = input_indices_ar->Value(ix);
-	output_indices[ix] = val;
+    int64_t val = input_indices_ar->Value(ix);
+    output_indices[ix] = val;
   }
   return cylon::Status::OK();
 }
@@ -208,21 +213,21 @@ bool cylon::CheckIsIndexValueUnique(const std::shared_ptr<arrow::Scalar> &index_
 									const std::shared_ptr<BaseArrowIndex> &index) {
 
   if (index->GetIndexingType() == cylon::IndexingType::Range) {
-	return true;
+    return true;
   } else {
-	auto index_arr = index->GetIndexArray();
-	int64_t find_cout = 0;
-	for (int64_t ix = 0; ix < index_arr->length(); ix++) {
-	  auto val = index_arr->GetScalar(ix).ValueOrDie();
-	  auto index_value_cast = index_value->CastTo(val->type).ValueOrDie();
-	  if (val == index_value_cast) {
-		find_cout++;
-	  }
-	  if (find_cout > 1) {
-		return false;
-	  }
-	}
-	return true;
+    auto index_arr = index->GetIndexArray();
+    int64_t find_cout = 0;
+    for (int64_t ix = 0; ix < index_arr->length(); ix++) {
+      auto val = index_arr->GetScalar(ix).ValueOrDie();
+      auto index_value_cast = index_value->CastTo(val->type).ValueOrDie();
+      if (val == index_value_cast) {
+        find_cout++;
+      }
+      if (find_cout > 1) {
+        return false;
+      }
+    }
+    return true;
   }
 
 }

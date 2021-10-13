@@ -30,8 +30,8 @@ def test_single_process():
 
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-    table1_path = '/tmp/user_device_tm_1.csv'
-    table2_path = '/tmp/user_usage_tm_1.csv'
+    table1_path = 'data/input/user_device_tm_1.csv'
+    table2_path = 'data/input/user_usage_tm_1.csv'
 
     assert os.path.exists(table1_path) and os.path.exists(table2_path)
 
@@ -73,8 +73,8 @@ def test_prefix_process():
 
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-    table1_path = '/tmp/user_device_tm_1.csv'
-    table2_path = '/tmp/user_usage_tm_1.csv'
+    table1_path = 'data/input/user_device_tm_1.csv'
+    table2_path = 'data/input/user_usage_tm_1.csv'
 
     assert os.path.exists(table1_path) and os.path.exists(table2_path)
 
