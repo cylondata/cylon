@@ -40,7 +40,8 @@ struct FlattenedArray {
 
 /**
  * Row-wise flattens a set of arrays to a single Binary array.
- * ex: a1 = [a, b, c, d], a2 = [e, f, g, h] --> [ae, bf, cg, dh]
+ * ex:
+ * a1 = [a, b, c, d], a2 = [e, f, g, h] --> [ae, bf, cg, dh]
  *
  * If there are nulls in either of arrays, each element of the output array would be arranged as
  * follows.
@@ -49,6 +50,20 @@ struct FlattenedArray {
  *
  * ^^ While flattening null values, for fixed sized data (int, float, etc) an empty element (i.e. 0)
  * will be appended. For variable sized data (str, binary), null values would have empty slots.
+ *
+ * ex:
+ * a1 = [200, null, 300, null], a2 = [eee, fff, null, null] -->
+ * [
+ * |#nulls  |idx    |flattened data|
+ * |    0   |       |200.eee|
+ * |    1   |0      |0.fff|
+ * |    1   |1      |300.|
+ * |    2   |0.1    |0.|
+ * ]
+ * NOTE: characters '|' and '.' are just for clarity.
+ *
+ *
+ * Flattening is only supported for a maximum of 255 arrays at a time.
  *
  * @param ctx
  * @param arrays
