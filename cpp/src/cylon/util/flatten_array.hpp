@@ -43,9 +43,6 @@ struct FlattenedArray {
 Status FlattenArrays(CylonContext *ctx,
                      const std::vector<std::shared_ptr<arrow::Array>> &arrays,
                      std::shared_ptr<FlattenedArray> *output);
-// count nulls
-// create offset array
-// copy data to the flattened array
 }
 
 #endif //CYLON_CPP_SRC_CYLON_UTIL_FLATTEN_ARRAY_HPP_

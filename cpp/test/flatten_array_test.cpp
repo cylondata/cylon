@@ -53,10 +53,79 @@ TEST_CASE("Test all numeric", "[flatten array]") {
                                 0x09, 0x00, 0x00, 0x00, 0x13, 0x6c, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                 0x0a, 0x00, 0x00, 0x00, 0x14, 0xd0, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-  arrow::Buffer expected_buf(expected.data(), static_cast<int64_t>(expected.size()));
-  INFO("expected: " << expected_buf.ToHexString() << " received: "
-                    << flattened->flattened->data()->buffers[2]->ToHexString());
-  REQUIRE(expected_buf.Equals(*flattened->flattened->data()->buffers[2]));
+  auto expected_buf = std::make_shared<arrow::Buffer>(expected.data(), static_cast<int64_t>(expected.size()));
+  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->flattened->data()->buffers[2]);
+}
+
+TEST_CASE("Test all string", "[flatten array]") {
+  auto a1 = ArrayFromJSON(arrow::utf8(),
+                          R"(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])");
+  auto a2 = ArrayFromJSON(arrow::utf8(),
+                          R"(["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"])");
+  auto a3 = ArrayFromJSON(arrow::utf8(),
+                          R"(["1000", "1100", "1200", "1300", "1400", "1500", "1600", "1700", "1800", "1900", "2000"])");
+
+  std::shared_ptr<FlattenedArray> flattened;
+  CHECK_CYLON_STATUS(FlattenArrays(ctx.get(), {a1, a2, a3}, &flattened));
+
+  /*
+    # byte string was generated from this python code
+    a1 = np.array(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])
+    a2 = np.array(["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"])
+    a3 = np.array(["1000", "1100", "1200", "1300", "1400", "1500", "1600", "1700", "1800", "1900", "2000"])
+    for x in zip(a1, a2, a3):
+      print("{},".format("".join(x)))
+  */
+
+  auto expected = ArrayFromJSON(arrow::binary(), R"(["0101000",
+                                                                "1111100",
+                                                                "2121200",
+                                                                "3131300",
+                                                                "4141400",
+                                                                "5151500",
+                                                                "6161600",
+                                                                "7171700",
+                                                                "8181800",
+                                                                "9191900",
+                                                                "10202000"])");
+  CHECK_ARROW_EQUAL(expected, flattened->flattened);
+}
+
+TEST_CASE("Test numeric & string", "[flatten array]") {
+  auto a1 = ArrayFromJSON(arrow::utf8(),
+                          R"(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])");
+  auto a2 = ArrayFromJSON(arrow::int32(), "[10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]");
+  auto a3 = ArrayFromJSON(arrow::utf8(),
+                          R"(["1000", "1100", "1200", "1300", "1400", "1500", "1600", "1700", "1800", "1900", "2000"])");
+
+  std::shared_ptr<FlattenedArray> flattened;
+  CHECK_CYLON_STATUS(FlattenArrays(ctx.get(), {a1, a2, a3}, &flattened));
+
+  /*
+    # byte string was generated from this python code
+    a1 = np.array(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])
+    a2 = np.array([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], dtype=np.int32)
+    a3 = np.array(["1000", "1100", "1200", "1300", "1400", "1500", "1600", "1700", "1800", "1900", "2000"])
+    for x in zip(a1, a2, a3):
+      print("{}, {}, {},".format(", ".join(['0x{:02x}'.format(ord(c)) for c in x[0]]),
+                                 ", ".join(['0x{:02x}'.format(c) for c in x[1].tobytes()]),
+                                 ", ".join(['0x{:02x}'.format(ord(c)) for c in x[2]])))
+   */
+
+  std::vector<uint8_t> expected{0x30, 0x0a, 0x00, 0x00, 0x00, 0x31, 0x30, 0x30, 0x30,
+                                0x31, 0x0b, 0x00, 0x00, 0x00, 0x31, 0x31, 0x30, 0x30,
+                                0x32, 0x0c, 0x00, 0x00, 0x00, 0x31, 0x32, 0x30, 0x30,
+                                0x33, 0x0d, 0x00, 0x00, 0x00, 0x31, 0x33, 0x30, 0x30,
+                                0x34, 0x0e, 0x00, 0x00, 0x00, 0x31, 0x34, 0x30, 0x30,
+                                0x35, 0x0f, 0x00, 0x00, 0x00, 0x31, 0x35, 0x30, 0x30,
+                                0x36, 0x10, 0x00, 0x00, 0x00, 0x31, 0x36, 0x30, 0x30,
+                                0x37, 0x11, 0x00, 0x00, 0x00, 0x31, 0x37, 0x30, 0x30,
+                                0x38, 0x12, 0x00, 0x00, 0x00, 0x31, 0x38, 0x30, 0x30,
+                                0x39, 0x13, 0x00, 0x00, 0x00, 0x31, 0x39, 0x30, 0x30,
+                                0x31, 0x30, 0x14, 0x00, 0x00, 0x00, 0x32, 0x30, 0x30, 0x30};
+
+  auto expected_buf = std::make_shared<arrow::Buffer>(expected.data(), static_cast<int64_t>(expected.size()));
+  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->flattened->data()->buffers[2]);
 }
 
 }
