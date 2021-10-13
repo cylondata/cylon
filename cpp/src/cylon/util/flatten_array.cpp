@@ -31,7 +31,10 @@ void IncrementRowNullCount(const arrow::ArrayData *arr_data, std::vector<int32_t
       (*row_null_count)[i] += !bit;
       i++;
     };
-    arrow::internal::VisitBitsUnrolled(arr_data->buffers[0]->data(), arr_data->offset, arr_data->length, bit_visitor);
+    arrow::internal::VisitBitsUnrolled(arr_data->buffers[0]->data(),
+                                       arr_data->offset,
+                                       arr_data->length,
+                                       bit_visitor);
   }
 }
 
@@ -47,7 +50,10 @@ struct NumericFlattenKernelImpl : public ColumnFlattenKernel {
     return sizeof(ValueT);
   }
 
-  Status CopyData(uint8_t col_idx, int32_t *row_offset, uint8_t *data_buf, const int32_t *offset_buff) const override {
+  Status CopyData(uint8_t col_idx,
+                  int32_t *row_offset,
+                  uint8_t *data_buf,
+                  const int32_t *offset_buff) const override {
     if (array_data->MayHaveNulls()) {
       int64_t i = 0;
       arrow::VisitArrayDataInline<ArrowT>(*array_data,
@@ -60,13 +66,16 @@ struct NumericFlattenKernelImpl : public ColumnFlattenKernel {
                                           },
                                           [&]() {
                                             // clear the slot
-                                            std::memset(data_buf + offset_buff[i] + row_offset[i], 0, sizeof(ValueT));
+                                            std::memset(data_buf + offset_buff[i] + row_offset[i],
+                                                        0,
+                                                        sizeof(ValueT));
                                             row_offset[i] += sizeof(ValueT);
                                             assert(row_offset[i] <= offset_buff[i + 1]);
 
                                             // now copy the col_idx to appropriate place
                                             uint8_t curr_row_null_count = data_buf[offset_buff[i]];
-                                            data_buf[offset_buff[i] + curr_row_null_count] = col_idx;
+                                            data_buf[offset_buff[i] + 1 + curr_row_null_count] =
+                                                col_idx;
                                             data_buf[offset_buff[i]]++; // increment curr_row_null_count
                                             i++;
                                           });
@@ -94,13 +103,17 @@ struct BinaryColumnFlattenKernelImpl : public ColumnFlattenKernel {
   using OffsetType = typename arrow::TypeTraits<ArrowT>::OffsetType::c_type;
 
   const arrow::ArrayData *array_data;
-  explicit BinaryColumnFlattenKernelImpl(const arrow::ArrayData *array_data) : array_data(array_data) {}
+  explicit BinaryColumnFlattenKernelImpl(const arrow::ArrayData *array_data)
+      : array_data(array_data) {}
 
   int32_t ByteWidth() const override {
     return -1;
   }
 
-  Status CopyData(uint8_t col_idx, int32_t *row_offset, uint8_t *data_buf, const int32_t *offset_buff) const override {
+  Status CopyData(uint8_t col_idx,
+                  int32_t *row_offset,
+                  uint8_t *data_buf,
+                  const int32_t *offset_buff) const override {
     if (array_data->MayHaveNulls()) {
       int64_t i = 0;
       arrow::VisitArrayDataInline<ArrowT>(*array_data,
@@ -116,7 +129,8 @@ struct BinaryColumnFlattenKernelImpl : public ColumnFlattenKernel {
 
                                             // now copy the col_idx to appropriate place
                                             uint8_t curr_row_null_count = data_buf[offset_buff[i]];
-                                            data_buf[offset_buff[i] + curr_row_null_count] = col_idx;
+                                            data_buf[offset_buff[i] + 1 + curr_row_null_count] =
+                                                col_idx;
                                             data_buf[offset_buff[i]]++; // increment curr_row_null_count
                                             i++;
                                           });
@@ -170,13 +184,17 @@ struct BinaryColumnFlattenKernelImpl : public ColumnFlattenKernel {
 template<typename ArrowT, typename Enable = arrow::enable_if_null<ArrowT>>
 struct NullColumnFlattenKernelImpl : public ColumnFlattenKernel {
   const arrow::ArrayData *array_data;
-  explicit NullColumnFlattenKernelImpl(const arrow::ArrayData *array_data) : array_data(array_data) {}
+  explicit NullColumnFlattenKernelImpl(const arrow::ArrayData *array_data)
+      : array_data(array_data) {}
 
   int32_t ByteWidth() const override {
     return 0;
   }
 
-  Status CopyData(uint8_t col_idx, int32_t *row_offset, uint8_t *data_buf, const int32_t *offset_buff) const override {
+  Status CopyData(uint8_t col_idx,
+                  int32_t *row_offset,
+                  uint8_t *data_buf,
+                  const int32_t *offset_buff) const override {
     return Status::OK();
   }
 
@@ -187,12 +205,16 @@ struct NullColumnFlattenKernelImpl : public ColumnFlattenKernel {
 
 std::unique_ptr<ColumnFlattenKernel> GetKernel(const std::shared_ptr<arrow::Array> &array) {
   switch (array->type_id()) {
-    case arrow::Type::NA:return std::make_unique<NullColumnFlattenKernelImpl<arrow::NullType>>(array->data().get());
-    case arrow::Type::BOOL:return std::make_unique<NumericFlattenKernelImpl<arrow::BooleanType>>(array->data().get());
+    case arrow::Type::NA:
+      return std::make_unique<NullColumnFlattenKernelImpl<arrow::NullType>>(array->data().get());
+    case arrow::Type::BOOL:
+      return std::make_unique<NumericFlattenKernelImpl<arrow::BooleanType>>(array->data().get());
     case arrow::Type::UINT8:
-    case arrow::Type::INT8:return std::make_unique<NumericFlattenKernelImpl<arrow::UInt8Type>>(array->data().get());
+    case arrow::Type::INT8:
+      return std::make_unique<NumericFlattenKernelImpl<arrow::UInt8Type>>(array->data().get());
     case arrow::Type::UINT16:
-    case arrow::Type::INT16:return std::make_unique<NumericFlattenKernelImpl<arrow::UInt16Type>>(array->data().get());
+    case arrow::Type::INT16:
+      return std::make_unique<NumericFlattenKernelImpl<arrow::UInt16Type>>(array->data().get());
     case arrow::Type::UINT32:
     case arrow::Type::INT32:
     case arrow::Type::FLOAT:
@@ -211,10 +233,12 @@ std::unique_ptr<ColumnFlattenKernel> GetKernel(const std::shared_ptr<arrow::Arra
       return std::make_unique<NumericFlattenKernelImpl<arrow::UInt64Type>>(array->data().get());
     case arrow::Type::STRING:
     case arrow::Type::BINARY:
-      return std::make_unique<BinaryColumnFlattenKernelImpl<arrow::StringType>>(array->data().get());
+      return std::make_unique<BinaryColumnFlattenKernelImpl<arrow::StringType>>(array->data()
+                                                                                    .get());
     case arrow::Type::LARGE_STRING:
     case arrow::Type::LARGE_BINARY:
-      return std::make_unique<BinaryColumnFlattenKernelImpl<arrow::LargeStringType>>(array->data().get());
+      return std::make_unique<BinaryColumnFlattenKernelImpl<arrow::LargeStringType>>(array->data()
+                                                                                         .get());
     case arrow::Type::HALF_FLOAT:
     case arrow::Type::FIXED_SIZE_BINARY:
     case arrow::Type::DECIMAL128:
@@ -234,7 +258,8 @@ std::unique_ptr<ColumnFlattenKernel> GetKernel(const std::shared_ptr<arrow::Arra
   return nullptr;
 }
 
-static constexpr int32_t additional_data = sizeof(uint8_t); // 1 byte to hold how many number of nulls in a row
+static constexpr int32_t
+    additional_data = sizeof(uint8_t); // 1 byte to hold how many number of nulls in a row
 
 struct ArraysMetadata {
   uint8_t arrays_with_nulls = 0;
@@ -276,14 +301,11 @@ Status CalculateRowOffsets(const std::vector<std::unique_ptr<ColumnFlattenKernel
                    row_offset.cend(),
                    offsets + 1,
                    [&](const int32_t row_nulls) {
-                     return additional_data + row_nulls + metadata.fixed_size_bytes_per_row;
+                     return row_nulls + metadata.fixed_size_bytes_per_row;
                    });
   } else { // all columns are valid. So no need to reserve additional byte
     // add metadata.fixed_size_bytes_per_row to each position of the offset
-    std::transform(offsets + 1,
-                   offsets + len + 1,
-                   offsets + 1,
-                   [&](int32_t i) { return i + metadata.fixed_size_bytes_per_row; });
+    std::fill(offsets + 1, offsets + len + 1, metadata.fixed_size_bytes_per_row);
   }
 
   // if there are no variable binary arrays, adjustment for fixed_size_bytes_per_row and metadata is already done!
@@ -325,7 +347,16 @@ Status FlattenArrays(CylonContext *ctx, const std::vector<std::shared_ptr<arrow:
   flatten_kernels.reserve(arrays.size());
 
   // row offsets (this vector serves 2 purposes. 1. count nulls per row, 2. carry row offsets)
-  std::vector<int32_t> row_offsets(len, 0);
+  // this vector will be lazily initialized
+  std::vector<int32_t> row_offsets;
+  // if at least one array has nulls, init to 1, else init to 0
+  if (std::any_of(arrays.begin(), arrays.end(), [&](const std::shared_ptr<arrow::Array> &arr) {
+    return arr->null_count() > 0;
+  })) {
+    row_offsets.resize(len, additional_data);
+  } else {
+    row_offsets.resize(len, 0);
+  }
 
   for (uint8_t i = 0; i < static_cast<uint8_t>(arrays.size()); i++) {
     const auto &arr = arrays[i];
@@ -354,6 +385,7 @@ Status FlattenArrays(CylonContext *ctx, const std::vector<std::shared_ptr<arrow:
   // create the offset array
   CYLON_ASSIGN_OR_RAISE(auto offset_buf, arrow::AllocateBuffer((len + 1) * sizeof(int32_t), pool));
   auto *offsets = reinterpret_cast<int32_t *>(offset_buf->mutable_data());
+  std::fill(offsets, offsets + len + 1, 0);
 
   // create offset sizes
   RETURN_CYLON_STATUS_IF_FAILED(CalculateRowOffsets(flatten_kernels,
@@ -367,14 +399,26 @@ Status FlattenArrays(CylonContext *ctx, const std::vector<std::shared_ptr<arrow:
 
   // now allocate data array
   CYLON_ASSIGN_OR_RAISE(auto data_buf, arrow::AllocateBuffer(total_size, pool));
+  // initialize num nulls
+  if (metadata.ContainsNullArrays()) {
+    auto *data = data_buf->mutable_data();
+    std::for_each(offsets, offsets + len, [&](int32_t offset) { data[offset] = 0; });
+  }
 
   // now copy the data
   for (uint8_t i = 0; i < static_cast<uint8_t>(flatten_kernels.size()); i++) {
     const ColumnFlattenKernel *kernel = flatten_kernels[i].get();
-    RETURN_CYLON_STATUS_IF_FAILED(kernel->CopyData(i, row_offsets.data(), data_buf->mutable_data(), offsets));
+    RETURN_CYLON_STATUS_IF_FAILED(kernel->CopyData(i,
+                                                   row_offsets.data(),
+                                                   data_buf->mutable_data(),
+                                                   offsets));
   }
 
-  auto flattened = std::make_shared<arrow::BinaryArray>(len, std::move(offset_buf), std::move(data_buf), nullptr, 0);
+  auto flattened = std::make_shared<arrow::BinaryArray>(len,
+                                                        std::move(offset_buf),
+                                                        std::move(data_buf),
+                                                        nullptr,
+                                                        0);
 
   *output = std::make_shared<FlattenedArray>(std::move(flattened), arrays);
 
