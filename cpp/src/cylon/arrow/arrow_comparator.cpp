@@ -516,10 +516,10 @@ TwoTableRowIndexEqualTo::TwoTableRowIndexEqualTo(const std::shared_ptr<arrow::Ta
 }
 
 bool TwoTableRowIndexEqualTo::operator()(const int64_t &record1, const int64_t &record2) const {
-  for (const auto &comp:comparators) {
-    if (comp->equal_to(record1, record2)) return false;
-  }
-  return true;
+  return std::all_of(comparators.begin(), comparators.end(),
+                     [&](const std::shared_ptr<TwoArrayIndexComparator> &comp) {
+                       return comp->equal_to(record1, record2);
+                     });
 }
 
 int TwoTableRowIndexEqualTo::compare(const int64_t &record1, const int64_t &record2) const {
