@@ -162,6 +162,7 @@ add_library(cylon SHARED
         thridparty/flat_hash_map/bytell_hash_map.hpp
         thridparty/flat_hash_map/flat_hash_map.hpp
         thridparty/flat_hash_map/unordered_map.hpp
+        util/arrow_rand.hpp
         util/arrow_utils.cpp
         util/arrow_utils.hpp
         util/builtins.cpp

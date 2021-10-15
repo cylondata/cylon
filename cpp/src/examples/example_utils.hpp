@@ -30,7 +30,7 @@
 namespace cylon {
 namespace examples {
 
-  void create_int64_table(uint64_t count, double dup,
+  void create_int64_table(int64_t count, double dup,
                           std::shared_ptr <cylon::CylonContext> &ctx,
                           arrow::MemoryPool *pool,
                           std::shared_ptr <arrow::Table> &left_table,
@@ -42,14 +42,16 @@ namespace examples {
                                                     std::shared_ptr<cylon::Table> &first_table,
                                                     std::shared_ptr<cylon::Table> &second_table);
 
-  int create_two_in_memory_tables(uint64_t count, double dup,
-                                   std::shared_ptr<cylon::CylonContext> &ctx,
-                                   std::shared_ptr<cylon::Table> &first_table,
-                                   std::shared_ptr<cylon::Table> &second_table);
+  int create_two_in_memory_tables(int64_t count, double dup,
+                                  std::shared_ptr<cylon::CylonContext> &ctx,
+                                  std::shared_ptr<cylon::Table> &first_table,
+                                  std::shared_ptr<cylon::Table> &second_table);
 
-  int create_in_memory_tables(uint64_t count, double dup,
+  int create_in_memory_tables(int64_t count,
+                              double dup,
                               std::shared_ptr<cylon::CylonContext> &ctx,
-                              std::shared_ptr<cylon::Table> &first_table);
+                              std::shared_ptr<cylon::Table> &first_table,
+                              double null_prob = 0.0);
 }
 }
 #endif //CYLON_EXAMPLE_UTILS_HPP
