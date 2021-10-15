@@ -69,28 +69,6 @@ namespace gcylon {
 //////////////////////////////////////////////////////////////////////
 // global types and fuctions
 //////////////////////////////////////////////////////////////////////
-// sizes of cudf data types
-// ref: type_id in cudf/types.hpp
-int type_bytes[] = {0, 1, 2, 4, 8, 1, 2, 4, 8, 4, 8, 1, 4, 8, 8, 8, 8, 4, 8, 8, 8, 8, -1, -1, -1, 4, 8, -1, -1};
-
-/**
-* whether the data type is uniform in size such as int (4 bytes) or string(variable length)
-* @param input
-* @return
-*/
-int dataTypeSize(cudf::column_view const &cw) {
-  return type_bytes[static_cast<int>(cw.type().id())];
-}
-
-/**
-* whether the data type is uniform in size such as int (4 bytes) or string(variable length)
-* @param input
-* @return
-*/
-bool uniform_size_data(cudf::column_view const &cw) {
-  int data_type_size = dataTypeSize(cw);
-  return data_type_size == -1 ? false : true;
-}
 
 /**
 * data buffer length of a column in bytes
@@ -98,14 +76,8 @@ bool uniform_size_data(cudf::column_view const &cw) {
 * @return
 */
 cudf::size_type dataLength(cudf::column_view const &cw) {
-  int element_size = type_bytes[static_cast<int>(cw.type().id())];
-  if (element_size == -1) {
-    std::cout << "ERRORRRRRR unsupported type id: " << static_cast<int>(cw.type().id()) << std::endl;
-    return -1;
-  }
-
   // even null values exist in the buffer with unspecified values
-  return element_size * cw.size();
+  return cudf::size_of(cw.type()) * cw.size();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -133,7 +105,7 @@ PendingBuffer::PendingBuffer(int target,
 
 bool PendingBuffer::sendBuffer(std::shared_ptr<cylon::AllToAll> all) {
   // if there is no data buffer, only header buffer
-  if (buffer_size < 0) {
+  if (buffer_size <= 0) {
     bool accepted = all->insert(nullptr, 0, target, headers.get(), headers_length);
     if (!accepted) {
       LOG(WARNING) << " header buffer not accepted to be sent";
@@ -373,7 +345,7 @@ std::unique_ptr<int[]> CudfAllToAll::makeTableHeader(int headers_length,
 
 std::unique_ptr<int[]> CudfAllToAll::makeColumnHeader(int headers_length,
                                                       int column_index,
-                                                      int typeId,
+                                                      bool has_data_buffer,
                                                       bool has_mask,
                                                       bool has_offset,
                                                       int number_of_elements) {
@@ -381,7 +353,7 @@ std::unique_ptr<int[]> CudfAllToAll::makeColumnHeader(int headers_length,
   auto headers = std::make_unique<int[]>(headers_length);
   headers[0] = 1; // shows it is a column header
   headers[1] = column_index;
-  headers[2] = typeId;
+  headers[2] = has_data_buffer;
   headers[3] = has_mask;
   headers[4] = has_offset;
   headers[5] = number_of_elements;
@@ -434,7 +406,7 @@ void CudfAllToAll::makePartColumnBuffers(std::shared_ptr<PartColumnView> pcv,
   int headers_length = 6;
   auto column_headers = makeColumnHeader(headers_length,
                                          column_index,
-                                         pcv->getColumnTypeId(),
+                                         pcv->getDataBufferSize(part_index),
                                          pcv->getColumnView().nullable(),
                                          pcv->getColumnView().num_children(),
                                          pcv->numberOfElements(part_index));
@@ -467,17 +439,9 @@ void CudfAllToAll::makeColumnBuffers(const cudf::column_view &cw,
                                      std::queue<std::shared_ptr<PendingBuffer>> &buffer_queue) {
 
   // we support uniform size data types and the string type
-  if (!uniform_size_data(cw) && cw.type().id() != cudf::type_id::STRING) {
-    throw "only uniform-size data-types and the string is supported.";
+  if (!cudf::is_fixed_width(cw.type()) && cw.type().id() != cudf::type_id::STRING) {
+    throw "only fixed-width data-types and the string are supported.";
   }
-
-  int headers_length = 6;
-  auto column_headers = makeColumnHeader(headers_length,
-                                         column_index,
-                                         (int) (cw.type().id()),
-                                         cw.nullable(),
-                                         cw.num_children(),
-                                         cw.size());
 
   // insert data buffer
   const uint8_t *data_buffer;
@@ -503,6 +467,14 @@ void CudfAllToAll::makeColumnBuffers(const cudf::column_view &cw,
     throw "buffer_size is negative: " + std::to_string(buffer_size);
   }
 
+  int headers_length = 6;
+  auto column_headers = makeColumnHeader(headers_length,
+                                         column_index,
+                                         buffer_size,
+                                         cw.nullable(),
+                                         cw.num_children(),
+                                         cw.size());
+
   auto pb = std::make_shared<PendingBuffer>(data_buffer, buffer_size, target, std::move(column_headers),
                                             headers_length);
   buffer_queue.emplace(pb);
@@ -525,7 +497,7 @@ void CudfAllToAll::constructColumn(std::shared_ptr<PendingReceives> pr) {
 
   std::unique_ptr<cudf::column> column;
 
-  cudf::data_type dt(static_cast<cudf::type_id>(pr->column_data_type));
+  cudf::data_type dt = ptview_->column(pr->column_index)->getColumnDataType();
   std::shared_ptr<rmm::device_buffer> data_buffer = pr->data_buffer;
   std::shared_ptr<rmm::device_buffer> null_buffer = pr->null_buffer;
   std::shared_ptr<rmm::device_buffer> offsets_buffer = pr->offsets_buffer;
@@ -547,8 +519,6 @@ void CudfAllToAll::constructColumn(std::shared_ptr<PendingReceives> pr) {
     auto chars_column = std::make_unique<cudf::column>(cdt, pr->data_buffer_len, std::move(*data_buffer));
 
     int32_t off_base = getScalar((int32_t *) offsets_buffer->data());
-    // todo: can offsets start from non zero values in non-partitioned tables
-    //       we need to make sure of this
     if (off_base > 0) {
       callRebaseOffsets((int32_t *) offsets_buffer->data(), pr->data_size + 1, off_base);
     }
@@ -581,11 +551,11 @@ void CudfAllToAll::constructColumn(std::shared_ptr<PendingReceives> pr) {
 
   // if the column is constructed, add it to the list
   if (column) {
-    pr->columns.insert({pr->column_index, std::move(column)});
+    pr->columns.push_back(std::move(column));
 
     // clear column related data from pr
     pr->column_index = -1;
-    pr->column_data_type = -1;
+    pr->has_data_buff = false;
     pr->data_size = 0;
     pr->data_buffer.reset();
     pr->null_buffer.reset();
@@ -597,13 +567,7 @@ void CudfAllToAll::constructColumn(std::shared_ptr<PendingReceives> pr) {
 }
 
 std::unique_ptr<cudf::table> CudfAllToAll::constructTable(std::shared_ptr<PendingReceives> pr) {
-
-  std::vector<std::unique_ptr<cudf::column>> column_vector{};
-  for (long unsigned int i = 0; i < pr->columns.size(); i++) {
-    column_vector.push_back(std::move(pr->columns.at(i)));
-  }
-
-  return std::make_unique<cudf::table>(std::move(column_vector));
+  return std::make_unique<cudf::table>(std::move(pr->columns));
 }
 
 /**
@@ -618,7 +582,7 @@ bool CudfAllToAll::onReceive(int source, std::shared_ptr<cylon::Buffer> buffer, 
 
   // if the data buffer is not received yet, get it
   std::shared_ptr<PendingReceives> pr = receives_.at(source);
-  if (!pr->data_buffer) {
+  if (pr->has_data_buff && !pr->data_buffer) {
     pr->data_buffer = cb->getBuf();
     pr->data_buffer_len = length;
 
@@ -637,8 +601,7 @@ bool CudfAllToAll::onReceive(int source, std::shared_ptr<cylon::Buffer> buffer, 
     constructColumn(pr);
   } else {
     LOG(WARNING) << rank_ << " column_index: " << pr->column_index << " an unexpected buffer received from: "
-                 << source
-                 << ", buffer length: " << length;
+                 << source << ", buffer length: " << length;
     return false;
   }
 
@@ -674,10 +637,14 @@ bool CudfAllToAll::onReceiveHeader(int source, int finished, int *buffer, int le
     } else if (buffer[0] == 1) { // column header
       std::shared_ptr<PendingReceives> pr = receives_.at(source);
       pr->column_index = buffer[1];
-      pr->column_data_type = buffer[2];
+      pr->has_data_buff = buffer[2];
       pr->has_null_buffer = buffer[3];
       pr->has_offset_buffer = buffer[4];
       pr->data_size = buffer[5];
+      if (!pr->has_data_buff) {
+        pr->data_buffer_len = 0;
+        pr->data_buffer = std::make_shared<rmm::device_buffer>(0, rmm::cuda_stream_default);
+      }
     }
   }
   return true;
