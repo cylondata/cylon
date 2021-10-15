@@ -25,32 +25,122 @@
 #include <cudf/merge.hpp>
 #include <cudf/copying.hpp>
 #include <cudf/search.hpp>
+#include <cudf/concatenate.hpp>
 #include <rmm/device_buffer.hpp>
 #include <cuda.h>
 #include <algorithm>
 
 
-cylon::Status MergeTables(const cudf::table_view &splitter_tv,
-                          const std::vector<std::unique_ptr<cudf::table>> &gathered_tables,
-                          const std::vector<cudf::order> &column_orders,
-                          std::unique_ptr<cudf::table> &merged_table) {
-
-  std::vector<cudf::table_view> tables_to_merge;
-  tables_to_merge.reserve(gathered_tables.size() + 1);
-  tables_to_merge.push_back(splitter_tv);
-  for (long unsigned int i = 0; i < gathered_tables.size(); ++i) {
-    tables_to_merge.push_back(gathered_tables[i]->view());
+bool gcylon::MergeOrSort(int num_columns, int num_tables) {
+  if (num_columns == 1) {
+    return num_tables <= 5;
   }
 
-  std::vector<cudf::size_type> key_cols;
-  key_cols.reserve(splitter_tv.num_columns());
-  for (int i = 0; i < splitter_tv.num_columns(); ++i) {
-    key_cols.push_back(i);
+  if (num_columns == 2) {
+    return num_tables <= 100;
   }
 
-  merged_table = cudf::merge(tables_to_merge, key_cols, column_orders);
-  if (merged_table == nullptr) {
-    return cylon::Status(cylon::Code::ExecutionError, "merge failed");
+  if (num_columns == 3) {
+    return num_tables <= 70;
+  }
+
+  if (num_columns == 4) {
+    return num_tables <= 40;
+  }
+
+  if (num_columns == 5) {
+    return num_tables <= 30;
+  }
+
+  if (num_columns == 6) {
+    return num_tables <= 20;
+  }
+
+  if (num_columns == 7) {
+    return num_tables <= 15;
+  }
+
+  if (num_columns == 8) {
+    return num_tables <= 12;
+  }
+
+  if (num_columns > 8) {
+    return num_tables <= 10;
+  }
+
+  return true;
+}
+
+/**
+ * create a vector with numbers from 0 to count
+ * @param count
+ * @return
+ */
+std::vector<cudf::size_type> monotonicVector(int count) {
+  std::vector<cudf::size_type> vec;
+  vec.reserve(count);
+  for (int i = 0; i < count; ++i) {
+    vec.push_back(i);
+  }
+  return vec;
+}
+
+void appendTableViews(const std::vector<std::unique_ptr<cudf::table>> &tables,
+                      std::vector<cudf::table_view> &tviews) {
+  for (long unsigned int i = 0; i < tables.size(); i++) {
+    tviews.push_back(tables[i]->view());
+  }
+}
+
+/**
+ * when sorting columns, we ned to specify orders for columns that are not sort columns
+ * if set the order as the majority order for those columns
+ * this should not be significant mostly, only in some very unlikely cases
+ * @param column_orders
+ * @return
+ */
+cudf::order SortOrder(const std::vector<cudf::order> &column_orders) {
+  int asc_count = std::count(column_orders.begin(), column_orders.end(), cudf::order::ASCENDING);
+  return asc_count >= column_orders.size() / 2.0 ? cudf::order::ASCENDING : cudf::order::DESCENDING;
+}
+
+/**
+ * merge or sort tables
+ * when merging first column_orders.size() columns are used
+ * when sorting all columns from 0 to num_columns are used
+ * @param tv_all
+ * @param column_orders
+ * @param null_ordering
+ * @param merged_table
+ * @return
+ */
+cylon::Status MergeOrSortTables(const std::vector<cudf::table_view> &tv_all,
+                                const std::vector<cudf::order> &column_orders,
+                                cudf::null_order null_ordering,
+                                std::unique_ptr<cudf::table> &merged_table) {
+
+  if (tv_all.size() == 0) {
+    return cylon::Status(cylon::Code::ExecutionError, "nothing to merge");
+  }
+
+  int32_t num_columns = tv_all[0].num_columns();
+
+  if (gcylon::MergeOrSort(num_columns, tv_all.size())) {
+    auto key_cols = monotonicVector(column_orders.size());
+    std::vector<cudf::null_order> column_null_orders(column_orders.size(), null_ordering);
+    merged_table = cudf::merge(tv_all, key_cols, column_orders, column_null_orders);
+    if (merged_table == nullptr) {
+      return cylon::Status(cylon::Code::ExecutionError, "merge failed");
+    }
+  } else {
+    auto single_tbl = cudf::concatenate(tv_all);
+    std::vector<cudf::order> column_orders2(column_orders);
+    column_orders2.insert(column_orders2.end(), num_columns - column_orders2.size(), SortOrder(column_orders));
+    std::vector<cudf::null_order> column_null_orders(num_columns, null_ordering);
+    merged_table = cudf::sort(single_tbl->view(), column_orders2, column_null_orders);
+    if (merged_table == nullptr) {
+      return cylon::Status(cylon::Code::ExecutionError, "merge failed");
+    }
   }
 
   return cylon::Status::OK();
@@ -59,22 +149,28 @@ cylon::Status MergeTables(const cudf::table_view &splitter_tv,
 cylon::Status DetermineSplitPoints(const cudf::table_view &splitter_tv,
                                    const std::vector<std::unique_ptr<cudf::table>> &gathered_tables,
                                    const std::vector<cudf::order> &column_orders,
+                                   cudf::null_order null_ordering,
                                    const std::shared_ptr<cylon::CylonContext> &ctx,
                                    std::unique_ptr<cudf::table> &split_points_table) {
 
-  //todo: when the number of workers is more than 10, we can sort instead of merging
-  std::unique_ptr<cudf::table> merged_table;
+  std::vector<cudf::table_view> tv_all;
+  tv_all.reserve(gathered_tables.size() + 1);
+  tv_all.push_back(splitter_tv);
+  appendTableViews(gathered_tables, tv_all);
+
+  std::unique_ptr<cudf::table> sorted_table;
   RETURN_CYLON_STATUS_IF_FAILED(
-      MergeTables(splitter_tv, gathered_tables, column_orders, merged_table));
+    MergeOrSortTables(tv_all, column_orders, null_ordering, sorted_table));
 
   int num_split_points = ctx->GetWorldSize() - 1;
-  auto merged_tv = merged_table->view();
-  return gcylon::SampleTableUniform(merged_tv, num_split_points, split_points_table);
+  auto sorted_tv = sorted_table->view();
+  return gcylon::SampleTableUniform(sorted_tv, num_split_points, split_points_table);
 }
 
 cylon::Status gcylon::GetSplitPoints(const cudf::table_view &sample_tv,
                                      int splitter,
                                      const std::vector<cudf::order> &column_orders,
+                                     cudf::null_order null_ordering,
                                      const std::shared_ptr<cylon::CylonContext> &ctx,
                                      std::unique_ptr<cudf::table> &split_points_table) {
 
@@ -85,7 +181,7 @@ cylon::Status gcylon::GetSplitPoints(const cudf::table_view &sample_tv,
 
   if (cylon::mpi::AmIRoot(splitter, ctx)) {
     RETURN_CYLON_STATUS_IF_FAILED(
-        DetermineSplitPoints(sample_tv, gathered_tables, column_orders, ctx, split_points_table));
+        DetermineSplitPoints(sample_tv, gathered_tables, column_orders, null_ordering, ctx, split_points_table));
   }
 
   cudf::table_view source_tv;
@@ -223,8 +319,7 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
   auto sort_tbl_clm_indices = SortTableColumnIndices(tv, sort_column_indices);
   auto tv_for_sorting = tv.select(sort_tbl_clm_indices);
 
-  // sort unspecified columns in ASCENDING order
-  std::vector<cudf::order> column_orders_all(tv.num_columns(), cudf::order::ASCENDING);
+  std::vector<cudf::order> column_orders_all(tv.num_columns(), SortOrder(column_orders));
   for (int i = 0; i < sort_column_indices.size(); ++i) {
     column_orders_all[i] = column_orders[i];
   }
@@ -237,10 +332,7 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
   auto initial_sorted_tv = initial_sorted_tbl->view();
 
   // get sort columns as a separate table_view
-  std::vector<int32_t> key_column_indices;
-  for (int i = 0; i < sort_column_indices.size(); ++i) {
-    key_column_indices.push_back(i);
-  }
+  auto key_column_indices = monotonicVector(sort_column_indices.size());
   auto sort_columns_tv = initial_sorted_tbl->select(key_column_indices);
 
   // sample the sorted table with sort columns and create a table
@@ -259,6 +351,7 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
       gcylon::GetSplitPoints(sample_tv,
                              sort_root,
                              column_orders,
+                             null_ordering,
                              ctx,
                              split_points_table));
   auto split_points_tv = split_points_table->view();
@@ -280,15 +373,15 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
   RETURN_CYLON_STATUS_IF_FAILED(
       gcylon::net::AllToAll(initial_sorted_tv, split_point_indices, ctx, received_tables));
 
-  // merge received tables
-  std::vector<cudf::table_view> tv_to_merge{};
-  tv_to_merge.reserve(received_tables.size());
-  for (long unsigned int i = 0; i < received_tables.size(); i++) {
-    tv_to_merge.push_back(received_tables[i]->view());
-  }
+  // merge or sort received tables
+  std::vector<cudf::table_view> tvs_to_merge{};
+  tvs_to_merge.reserve(received_tables.size());
+  appendTableViews(received_tables, tvs_to_merge);
 
   column_null_orders.resize(key_column_indices.size());
-  auto sorted_tbl = cudf::merge(tv_to_merge, key_column_indices, column_orders, column_null_orders);
+  std::unique_ptr<cudf::table> sorted_tbl;
+  RETURN_CYLON_STATUS_IF_FAILED(
+    MergeOrSortTables(tvs_to_merge, column_orders, null_ordering, sorted_tbl));
   sorted_table = RevertColumnOrder(std::move(sorted_tbl), sort_tbl_clm_indices);
   return cylon::Status::OK();
 }
