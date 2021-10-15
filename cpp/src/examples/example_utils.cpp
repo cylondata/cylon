@@ -39,13 +39,14 @@ void create_int64_table(int64_t count, double dup,
                         std::shared_ptr<cylon::CylonContext> &ctx,
                         arrow::MemoryPool *pool,
                         std::shared_ptr<arrow::Table> &left_table,
-                        std::shared_ptr<arrow::Table> &right_table) {
+                        std::shared_ptr<arrow::Table> &right_table,
+                        double null_prob) {
   RandomArrayGenerator gen(/*seed=*/0, pool);
 
   auto max = (int64_t) (count * dup * ctx->GetWorldSize());
-  auto left = gen.Numeric<arrow::Int64Type>(count, 0L, max);
-  auto right = gen.Numeric<arrow::Int64Type>(count, 0L, max);
-  auto vals = gen.Numeric<arrow::DoubleType>(count, 0.0, 1.0);
+  auto left = gen.Numeric<arrow::Int64Type>(count, 0L, max, null_prob);
+  auto right = gen.Numeric<arrow::Int64Type>(count, 0L, max, null_prob);
+  auto vals = gen.Numeric<arrow::DoubleType>(count, 0.0, 1.0, null_prob);
 
   auto left_schema = arrow::schema({arrow::field("first", left->type()),
                                     arrow::field("second", vals->type())});
@@ -73,13 +74,15 @@ int create_two_in_memory_tables_from_arrow_tables(std::shared_ptr<cylon::CylonCo
   return 0;
 }
 
-int create_two_in_memory_tables(int64_t count, double dup,
+int create_two_in_memory_tables(int64_t count,
+                                double dup,
                                 std::shared_ptr<cylon::CylonContext> &ctx,
                                 std::shared_ptr<cylon::Table> &first_table,
-                                std::shared_ptr<cylon::Table> &second_table) {
+                                std::shared_ptr<cylon::Table> &second_table,
+                                double null_prob) {
   arrow::MemoryPool *pool = arrow::default_memory_pool();
   std::shared_ptr<arrow::Table> left_table, right_table;
-  cylon::examples::create_int64_table(count, dup, ctx, pool, left_table, right_table);
+  create_int64_table(count, dup, ctx, pool, left_table, right_table, null_prob);
   create_two_in_memory_tables_from_arrow_tables(ctx,
                                                 left_table,
                                                 right_table,
@@ -95,7 +98,7 @@ int create_in_memory_tables(int64_t count,
                             double null_prob) {
   arrow::MemoryPool *pool = arrow::default_memory_pool();
   std::shared_ptr<arrow::Table> left_table, right_table;
-  cylon::examples::create_table(count, dup, ctx, pool, left_table, null_prob);
+  create_table(count, dup, ctx, pool, left_table, null_prob);
   auto status = cylon::Table::FromArrowTable(ctx, left_table, first_table);
   if (!status.is_ok()) {
     return 1;
