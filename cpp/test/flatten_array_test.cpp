@@ -29,7 +29,7 @@ TEST_CASE("Test single array non null", "[flatten array]") {
     auto a1 = ArrayFromJSON(arrow::int32(), "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
     std::shared_ptr<FlattenedArray> flattened;
     CHECK_CYLON_STATUS(FlattenArrays(ctx.get(), {a1}, &flattened));
-    CHECK_ARROW_BUFFER_EQUAL(a1->data()->buffers[1], flattened->data->data()->buffers[2]);
+    CHECK_ARROW_BUFFER_EQUAL(a1->data()->buffers[1], flattened->data_buffer());
   }
 
   SECTION("str") {
@@ -37,8 +37,8 @@ TEST_CASE("Test single array non null", "[flatten array]") {
                             R"(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])");
     std::shared_ptr<FlattenedArray> flattened;
     CHECK_CYLON_STATUS(FlattenArrays(ctx.get(), {a1}, &flattened));
-    CHECK_ARROW_BUFFER_EQUAL(a1->data()->buffers[1], flattened->data->data()->buffers[1]);
-    CHECK_ARROW_BUFFER_EQUAL(a1->data()->buffers[2], flattened->data->data()->buffers[2]);
+    CHECK_ARROW_BUFFER_EQUAL(a1->data()->buffers[1], flattened->offset_buffer());
+    CHECK_ARROW_BUFFER_EQUAL(a1->data()->buffers[2], flattened->data_buffer());
   }
 }
 
@@ -75,7 +75,7 @@ TEST_CASE("Test numeric", "[flatten array]") {
 
   auto expected_buf =
       std::make_shared<arrow::Buffer>(expected.data(), static_cast<int64_t>(expected.size()));
-  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->data->data()->buffers[2]);
+  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->data_buffer());
 }
 
 TEST_CASE("Test string", "[flatten array]") {
@@ -111,7 +111,7 @@ TEST_CASE("Test string", "[flatten array]") {
                                                                 "8181800",
                                                                 "9191900",
                                                                 "10202000"])");
-  CHECK_ARROW_EQUAL(expected, flattened->data);
+  CHECK_ARROW_EQUAL(expected, flattened->data_);
 }
 
 TEST_CASE("Test numeric & string", "[flatten array]") {
@@ -149,7 +149,7 @@ TEST_CASE("Test numeric & string", "[flatten array]") {
 
   auto expected_buf =
       std::make_shared<arrow::Buffer>(expected.data(), static_cast<int64_t>(expected.size()));
-  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->data->data()->buffers[2]);
+  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->data_buffer());
 }
 
 TEST_CASE("Test numeric w/ nulls", "[flatten array]") {
@@ -198,7 +198,7 @@ TEST_CASE("Test numeric w/ nulls", "[flatten array]") {
 
   auto expected_buf =
       std::make_shared<arrow::Buffer>(expected.data(), static_cast<int64_t>(expected.size()));
-  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->data->data()->buffers[2]);
+  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->data_buffer());
 }
 
 TEST_CASE("Test string w/ nulls", "[flatten array]") {
@@ -245,7 +245,7 @@ TEST_CASE("Test string w/ nulls", "[flatten array]") {
                                 0x00, 0x68, 0x61, 0x61, 0x6b, 0x6b, 0x6b};
   auto expected_buf =
       std::make_shared<arrow::Buffer>(expected.data(), static_cast<int64_t>(expected.size()));
-  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->data->data()->buffers[2]);
+  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->data_buffer());
 }
 
 TEST_CASE("Test numeric & string w/ nulls", "[flatten array]") {
@@ -313,7 +313,7 @@ TEST_CASE("Test numeric & string w/ nulls", "[flatten array]") {
 
   auto expected_buf =
       std::make_shared<arrow::Buffer>(expected.data(), static_cast<int64_t>(expected.size()));
-  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->data->data()->buffers[2]);
+  CHECK_ARROW_BUFFER_EQUAL(expected_buf, flattened->data_buffer());
 }
 
 }

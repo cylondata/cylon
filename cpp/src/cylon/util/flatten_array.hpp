@@ -30,12 +30,18 @@ struct ArraysMetadata {
 struct FlattenedArray {
   FlattenedArray(std::shared_ptr<arrow::Array> flattened,
                  std::vector<std::shared_ptr<arrow::Array>> parent_data, ArraysMetadata metadata)
-      : data(std::move(flattened)),
-        parent_data(std::move(parent_data)), metadata(std::move(metadata)) {};
+      : data_(std::move(flattened)),
+        parent_data_(std::move(parent_data)), metadata_(std::move(metadata)) {};
 
-  const std::shared_ptr<arrow::Array> data;
-  const std::vector<std::shared_ptr<arrow::Array>> parent_data;
-  const ArraysMetadata metadata;
+  const std::shared_ptr<arrow::Array> data_;
+  const std::vector<std::shared_ptr<arrow::Array>> parent_data_;
+  const ArraysMetadata metadata_;
+
+  const uint8_t *data() const { return data_->data()->buffers[2]->data(); }
+  const std::shared_ptr<arrow::Buffer> &data_buffer() const { return data_->data()->buffers[2]; }
+
+  const int32_t *offsets() const { return data_->data()->GetValues<int32_t>(1); }
+  const std::shared_ptr<arrow::Buffer> &offset_buffer() const { return data_->data()->buffers[1]; }
 };
 
 /**
