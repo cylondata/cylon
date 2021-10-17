@@ -34,31 +34,31 @@ TEST_CASE("Equal testing", "[equal]") {
     SECTION("testing ordered equal") {
         bool result;
         CHECK_CYLON_STATUS(Equals(table1, table1, result));
-        assert(result == true);
+        REQUIRE(result == true);
 
         CHECK_CYLON_STATUS(Equals(table1, table2, result));
-        assert(result == false);
+        REQUIRE(result == false);
 
         CHECK_CYLON_STATUS(Equals(table1, table3, result));
-        assert(result == false);
+        REQUIRE(result == false);
 
         CHECK_CYLON_STATUS(Equals(table1, table4, result));
-        assert(result == false);
+        REQUIRE(result == false);
     }
 
     SECTION("testing unordered equal") {
         bool result;
-        CHECK_CYLON_STATUS(Equals(table1, table1, result));
-        assert(result == true);
+        CHECK_CYLON_STATUS(Equals(table1, table1, result, false));
+        REQUIRE(result == true);
 
-        CHECK_CYLON_STATUS(Equals(table1, table2, result));
-        assert(result == false);
+        CHECK_CYLON_STATUS(Equals(table1, table2, result, false));
+        REQUIRE(result == false);
 
-        CHECK_CYLON_STATUS(Equals(table1, table3, result));
-        assert(result == true);
+        CHECK_CYLON_STATUS(Equals(table1, table3, result, false));
+        REQUIRE(result == true);
 
-        CHECK_CYLON_STATUS(Equals(table1, table4, result));
-        assert(result == false);
+        CHECK_CYLON_STATUS(Equals(table1, table4, result, false));
+        REQUIRE(result == false);
     }
 }
 
@@ -76,10 +76,19 @@ TEST_CASE("Distributed equal testing", "[distributed equal]") {
     SECTION("testing ordered equal") {
         bool result;
         CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
-        assert(result == true);
+        REQUIRE(result == true);
 
         CHECK_CYLON_STATUS(DistributedEquals(table1, table2, result));
-        assert(result == false);
+        REQUIRE(result == false);
+    }
+
+    SECTION("testing unordered equal") {
+        bool result;
+        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result, false));
+        REQUIRE(result == true);
+
+        CHECK_CYLON_STATUS(DistributedEquals(table1, table2, result, false));
+        REQUIRE(result == false);
     }
 }
 

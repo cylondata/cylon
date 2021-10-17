@@ -364,8 +364,40 @@ class DataFrame(object):
     def to_csv(self, path, csv_write_options: CSVWriteOptions):
         self._table.to_csv(path=path, csv_write_options=csv_write_options)
 
-    def equals(self, df: DataFrame, ordered=True):
-        return self._table.equals(df._table, ordered)
+    def equals(self, df: DataFrame, ordered=True, env: CylonEnv = None):
+        '''
+        Determine whether two tables are equal.
+        Args:
+            table: the other table
+            ordered: whether we have to maintain the original order when 
+            comparing two tables
+
+        Returns: boolean
+
+        Examples
+        ----------
+        >>> tb1
+            1,2
+            1,2
+            3,4
+            5,6
+
+        >>> tb2
+            1,2
+            1,2
+            5,6
+            3,4
+
+        >>> tb1.equals(tb2)
+            False
+        
+        >>> tb1.equals(tb2, false)
+            True
+        '''
+        if env is None:
+            return self._table.equals(df._table, ordered)
+        else:
+            return self._table.distributed_equals(df._table, ordered)
 
     @property
     def iloc(self) -> PyLocIndexer:
