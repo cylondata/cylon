@@ -17,7 +17,6 @@
 #include <gcylon/gtable_api.hpp>
 #include <gcylon/net/cudf_net_ops.hpp>
 #include <gcylon/sorting/sorting.hpp>
-#include <gcylon/utils/util.hpp>
 
 #include <cudf/types.hpp>
 #include <cudf/table/table.hpp>
@@ -72,24 +71,14 @@ bool gcylon::MergeOrSort(int num_columns, int num_tables) {
 }
 
 /**
- * create a vector with numbers from 0 to count
+ * create a vector with monotonically increasing numbers
  * @param count
  * @return
  */
-std::vector<cudf::size_type> monotonicVector(int count) {
-  std::vector<cudf::size_type> vec;
-  vec.reserve(count);
-  for (int i = 0; i < count; ++i) {
-    vec.push_back(i);
-  }
+std::vector<cudf::size_type> monotonicVector(int count, int start = 0, int step = 1) {
+  std::vector<cudf::size_type> vec(count);
+  std::generate(vec.begin(), vec.end(), [n = start - step, step]()mutable {return n += step;});
   return vec;
-}
-
-void appendTableViews(const std::vector<std::unique_ptr<cudf::table>> &tables,
-                      std::vector<cudf::table_view> &tviews) {
-  for (long unsigned int i = 0; i < tables.size(); i++) {
-    tviews.push_back(tables[i]->view());
-  }
 }
 
 /**
@@ -156,7 +145,8 @@ cylon::Status DetermineSplitPoints(const cudf::table_view &splitter_tv,
   std::vector<cudf::table_view> tv_all;
   tv_all.reserve(gathered_tables.size() + 1);
   tv_all.push_back(splitter_tv);
-  appendTableViews(gathered_tables, tv_all);
+  std::transform(gathered_tables.begin(), gathered_tables.end(), std::back_inserter(tv_all),
+                 [](const std::unique_ptr<cudf::table>& t){ return t->view();});
 
   std::unique_ptr<cudf::table> sorted_table;
   RETURN_CYLON_STATUS_IF_FAILED(
@@ -376,7 +366,8 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
   // merge or sort received tables
   std::vector<cudf::table_view> tvs_to_merge{};
   tvs_to_merge.reserve(received_tables.size());
-  appendTableViews(received_tables, tvs_to_merge);
+  std::transform(received_tables.begin(), received_tables.end(), std::back_inserter(tvs_to_merge),
+                 [](const std::unique_ptr<cudf::table>& t){ return t->view();});
 
   column_null_orders.resize(key_column_indices.size());
   std::unique_ptr<cudf::table> sorted_tbl;
