@@ -35,35 +35,15 @@ bool gcylon::MergeOrSort(int num_columns, int num_tables) {
     return num_tables <= 5;
   }
 
-  if (num_columns == 2) {
+  if (num_columns >= 2 && num_columns < 4) {
     return num_tables <= 100;
   }
 
-  if (num_columns == 3) {
-    return num_tables <= 70;
-  }
-
-  if (num_columns == 4) {
-    return num_tables <= 40;
-  }
-
-  if (num_columns == 5) {
-    return num_tables <= 30;
-  }
-
-  if (num_columns == 6) {
+  if (num_columns >= 4 && num_columns < 8) {
     return num_tables <= 20;
   }
 
-  if (num_columns == 7) {
-    return num_tables <= 15;
-  }
-
-  if (num_columns == 8) {
-    return num_tables <= 12;
-  }
-
-  if (num_columns > 8) {
+  if (num_columns >= 8) {
     return num_tables <= 10;
   }
 
