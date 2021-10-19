@@ -36,6 +36,7 @@
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/util/macros.hpp>
 #include <cylon/util/to_string.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 
 namespace cylon {
 
@@ -997,6 +998,54 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<in
   RETURN_CYLON_STATUS_IF_FAILED(cylon::Shuffle(in, cols, shuffle_out));
 
   return Unique(shuffle_out, cols, out);
+}
+
+Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylon::Table>& b, bool& result, bool ordered) {
+  if(ordered) {
+    result = a->get_table()->Equals(*b->get_table().get());
+  } else {
+    if(a->Columns() != b->Columns()) {
+      result = false;
+      return Status::OK();
+    }
+    auto status = VerifyTableSchema(a->get_table(), b->get_table());
+    if(!status.is_ok()) {
+      result = false;
+      return status;
+    }
+    int col = a->Columns();
+
+    std::vector<int32_t> indices(col);
+    std::iota(indices.begin(), indices.end(), 0);
+
+    std::shared_ptr<cylon::Table> out_a, out_b;
+    RETURN_CYLON_STATUS_IF_FAILED(Sort(const_cast<std::shared_ptr<cylon::Table>&>(a), indices, out_a, true));
+    RETURN_CYLON_STATUS_IF_FAILED(Sort(const_cast<std::shared_ptr<cylon::Table>&>(b), indices, out_b, true));
+
+    result = out_a->get_table()->Equals(*out_b->get_table().get());
+  }
+  return Status::OK();
+}
+
+Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, bool& result, bool ordered) {
+  bool subResult;
+  if(!ordered) {
+    int col = a->Columns();
+    std::vector<int32_t> indices(col);
+    std::vector<bool> column_orders(col, 0);
+    std::iota(indices.begin(), indices.end(), 0);
+    std::shared_ptr<cylon::Table> out_a, out_b;
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(const_cast<std::shared_ptr<cylon::Table> &>(a), indices, out_a, column_orders));
+
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(const_cast<std::shared_ptr<cylon::Table> &>(b), indices, out_b, column_orders));
+
+    subResult = out_a->get_table()->Equals(*out_b->get_table().get());
+  } else {
+    RETURN_CYLON_STATUS_IF_FAILED(Equals(a, b, subResult, true));
+  }
+
+  mpi::AllReduce(&subResult, &result, 1, Bool(), cylon::net::LAND);
+  return Status::OK();
 }
 
 std::shared_ptr<BaseArrowIndex> Table::GetArrowIndex() { return base_arrow_index_; }
