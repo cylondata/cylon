@@ -23,6 +23,18 @@
 namespace gcylon {
 
 /**
+ * get the sampling ratio for sorting
+ * when the number of workers is small, we sample more:
+ * because it does not have much performance penalty sampling more data when the number of workers is small
+ * and it gives better result with more balanced data distribution after sorting
+ * @param num_workers
+ * @return
+ */
+inline int GetSamplingRatio(int num_workers) {
+  return num_workers < 100 ? 2 : 1;
+}
+
+/**
  * sample a table uniformly
  * @param tv
  * @param sample_count number of rows to have in the resulting table
@@ -46,7 +58,7 @@ cylon::Status SampleTableUniform(const cudf::table_view &tv,
  * @param num_rows
  * @return
  */
-cylon::Status GetSplitPoints(const cudf::table_view & sample_tv,
+cylon::Status GetSplitPoints(std::unique_ptr<cudf::table> sample_tbl,
                              int splitter,
                              const std::vector<cudf::order> &column_orders,
                              cudf::null_order null_ordering,
