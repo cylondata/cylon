@@ -35,6 +35,14 @@ inline int GetSamplingRatio(int num_workers) {
 }
 
 /**
+ * calculate the number of samples to be used for sorting
+ * @param num_workers
+ * @param num_rows
+ * @return
+ */
+int32_t GetSampleCount(int num_workers, int num_rows);
+
+/**
  * sample a table uniformly
  * @param tv
  * @param sample_count number of rows to have in the resulting table

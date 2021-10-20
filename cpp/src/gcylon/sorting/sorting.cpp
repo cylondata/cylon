@@ -273,6 +273,11 @@ std::unique_ptr<cudf::table> RevertColumnOrder(std::unique_ptr<cudf::table> sort
   return std::make_unique<cudf::table>(std::move(columns2));
 }
 
+int32_t gcylon::GetSampleCount(int num_workers, int num_rows) {
+  int32_t sample_count = num_workers * GetSamplingRatio(num_workers);
+  return sample_count > num_rows ? num_rows : sample_count;
+}
+
 cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
                                       const std::vector<int32_t> &sort_column_indices,
                                       const std::vector<cudf::order> &column_orders,
@@ -288,9 +293,6 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
     return cylon::Status(cylon::Code::ValueError,
                          "sizes of sort_column_indices and column_orders must match");
   }
-
-  // sample_count = number_of_workers * sampling_ratio
-  int sampling_ratio = GetSamplingRatio(ctx->GetWorldSize());
 
   // get a table_view with sort_columns in the first k positions
   // since cudf::sort method expects all columns listed as sort keys
@@ -314,11 +316,8 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
   auto key_column_indices = monotonicVector(sort_column_indices.size());
   auto sort_columns_tv = initial_sorted_tbl->select(key_column_indices);
 
+  int sample_count = GetSampleCount(ctx->GetWorldSize(), sort_columns_tv.num_rows());
   // sample the sorted table with sort columns and create a table
-  int sample_count = ctx->GetWorldSize() * sampling_ratio;
-  if (sample_count > sort_columns_tv.num_rows()) {
-    sample_count = sort_columns_tv.num_rows();
-  }
   std::unique_ptr<cudf::table> sample_tbl;
   RETURN_CYLON_STATUS_IF_FAILED(
       gcylon::SampleTableUniform(sort_columns_tv, sample_count, sample_tbl));
