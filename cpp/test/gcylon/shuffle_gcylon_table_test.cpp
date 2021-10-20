@@ -22,22 +22,22 @@ using namespace gcylon;
 TEST_CASE("shuffling cudf tables", "[gshuffle]") {
 
   SECTION("testing int64 column based shuffling") {
-      std::string input_filename = "../../data/input/cities_a_" + std::to_string(RANK) + ".csv";
-      std::string int_shuffle_filename = "../../data/output/shuffle_int_cities_a_" + std::to_string(RANK) + ".csv";
-      std::string str_shuffle_filename = "../../data/output/shuffle_str_cities_a_" + std::to_string(RANK) + ".csv";
+    std::string input_filename = "../../data/input/cities_a_" + std::to_string(RANK) + ".csv";
+    std::string int_shuffle_filename = "../../data/output/shuffle_int_cities_a_" + std::to_string(RANK) + ".csv";
+    std::string str_shuffle_filename = "../../data/output/shuffle_str_cities_a_" + std::to_string(RANK) + ".csv";
 
-      std::ifstream infile(input_filename);
-      REQUIRE((infile.good()));
+    std::ifstream infile(input_filename);
+    REQUIRE((infile.good()));
 
-      // population is at index 2 on the dataframe
-      // perform int based shuffle
-      int shuffle_index = 2;
-      REQUIRE((gcylon::test::PerformShuffleTest(input_filename, int_shuffle_filename, shuffle_index)));
+    // population is at index 2 on the dataframe
+    // perform int based shuffle
+    int shuffle_index = 2;
+    REQUIRE((gcylon::test::PerformShuffleTest(input_filename, int_shuffle_filename, shuffle_index)));
 
-      // state_id is at index 1 on the dataframe
-      // perform string based shuffle
-      shuffle_index = 1;
-      REQUIRE((gcylon::test::PerformShuffleTest(input_filename, str_shuffle_filename, shuffle_index)));
+    // state_id is at index 1 on the dataframe
+    // perform string based shuffle
+    shuffle_index = 1;
+    REQUIRE((gcylon::test::PerformShuffleTest(input_filename, str_shuffle_filename, shuffle_index)));
   }
 
 }

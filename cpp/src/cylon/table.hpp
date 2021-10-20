@@ -403,7 +403,9 @@ Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols,
 Status DistributedUnique(const std::shared_ptr<Table> &in, const std::vector<int> &cols,
                          std::shared_ptr<cylon::Table> &out);
 
+Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylon::Table>& b, bool& result, bool ordered = true);
 
+Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, bool& result, bool ordered = true);
 
 #ifdef BUILD_CYLON_PARQUET
 /**

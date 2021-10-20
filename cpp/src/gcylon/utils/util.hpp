@@ -28,11 +28,10 @@ namespace gcylon {
  * @return
  */
 template <typename T>
-inline T getScalar(const uint8_t * buff) {
-    uint8_t *host_array= new uint8_t[sizeof(T)];
-    cudaMemcpy(host_array, buff, sizeof(T), cudaMemcpyDeviceToHost);
-    T * hdata = (T *) host_array;
-    return hdata[0];
+inline T getScalar(const T * buff) {
+  T value;
+  cudaMemcpy(&value, buff, sizeof(T), cudaMemcpyDeviceToHost);
+  return value;
 }
 
 /**
@@ -45,12 +44,12 @@ inline T getScalar(const uint8_t * buff) {
  */
 template <typename T>
 T * getColumnPart(const cudf::column_view &cv, int64_t start, int64_t end) {
-    int64_t size = end - start;
-    // data type size
-    int dts = sizeof(T);
-    uint8_t * host_array = new uint8_t[size * dts];
-    cudaMemcpy(host_array, cv.data<uint8_t>() + start * dts, size * dts, cudaMemcpyDeviceToHost);
-    return (T *) host_array;
+  int64_t size = end - start;
+  // data type size
+  int dts = sizeof(T);
+  uint8_t * host_array = new uint8_t[size * dts];
+  cudaMemcpy(host_array, cv.data<uint8_t>() + start * dts, size * dts, cudaMemcpyDeviceToHost);
+  return (T *) host_array;
 }
 
 /**
@@ -62,7 +61,7 @@ T * getColumnPart(const cudf::column_view &cv, int64_t start, int64_t end) {
  */
 template <typename T>
 T * getColumnTop(const cudf::column_view &cv, int64_t topN = 5) {
-    return getColumnPart<T>(cv, 0, topN);
+  return getColumnPart<T>(cv, 0, topN);
 }
 
 /**
@@ -74,7 +73,7 @@ T * getColumnTop(const cudf::column_view &cv, int64_t topN = 5) {
  */
 template <typename T>
 T * getColumnTail(const cudf::column_view &cv, int64_t tailN = 5) {
-    return getColumnPart<T>(cv, cv.size() - tailN, cv.size());
+  return getColumnPart<T>(cv, cv.size() - tailN, cv.size());
 }
 
 /**
@@ -92,7 +91,7 @@ bool table_equal_with_sorting(cudf::table_view & tv1, cudf::table_view & tv2);
  * @param tv2
  * @return
  */
-bool table_equal(cudf::table_view & tv1, cudf::table_view & tv2);
+bool table_equal(const cudf::table_view & tv1, const cudf::table_view & tv2);
 
 /**
  * create a table with empty columns
@@ -111,21 +110,19 @@ std::unique_ptr<cudf::table> createEmptyTable(const cudf::table_view &tv);
  */
 template<typename T>
 std::string vectorToString(const std::vector<T> &vec) {
-    if (vec.empty()) {
-        return std::string();
-    }
+  if (vec.empty()) {
+    return std::string();
+  }
 
-    std::ostringstream oss;
-    // Convert all but the last element to avoid a trailing ","
-    std::copy(vec.begin(), vec.end()-1,
-              std::ostream_iterator<T>(oss, ", "));
+  std::ostringstream oss;
+  // Convert all but the last element to avoid a trailing ","
+  std::copy(vec.begin(), vec.end()-1,
+            std::ostream_iterator<T>(oss, ", "));
 
-    // Now add the last element with no delimiter
-    oss << vec.back();
-    return oss.str();
+  // Now add the last element with no delimiter
+  oss << vec.back();
+  return oss.str();
 }
-
-
 
 } // end of namespace gcylon
 
