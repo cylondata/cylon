@@ -78,8 +78,7 @@ struct NumericFlattenKernelImpl : public ColumnFlattenKernel {
                                           [&]() {
                                             // clear the slot
                                             std::memset(data_buf + offset_buff[i] + row_offset[i],
-                                                        0,
-                                                        sizeof(ValueT));
+                                                        0, sizeof(ValueT));
                                             row_offset[i] += sizeof(ValueT);
                                             assert(row_offset[i] <= offset_buff[i + 1]);
 
@@ -207,11 +206,11 @@ std::unique_ptr<ColumnFlattenKernel> GetKernel(const std::shared_ptr<arrow::Arra
       return std::make_unique<NumericFlattenKernelImpl<arrow::UInt64Type>>(array->data().get());
     case arrow::Type::STRING:
     case arrow::Type::BINARY:
-      return std::make_unique<BinaryColumnFlattenKernelImpl<arrow::StringType>>(array->data()
+      return std::make_unique<BinaryColumnFlattenKernelImpl<arrow::BinaryType>>(array->data()
                                                                                     .get());
     case arrow::Type::LARGE_STRING:
     case arrow::Type::LARGE_BINARY:
-      return std::make_unique<BinaryColumnFlattenKernelImpl<arrow::LargeStringType>>(array->data()
+      return std::make_unique<BinaryColumnFlattenKernelImpl<arrow::LargeBinaryType>>(array->data()
                                                                                          .get());
     case arrow::Type::NA:
     case arrow::Type::HALF_FLOAT:

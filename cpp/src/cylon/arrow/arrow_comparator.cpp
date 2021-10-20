@@ -98,9 +98,11 @@ int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1, int
   // schema validation should be done to make sure
   // table1 and table2 has the same schema.
   for (int c = 0; c < table1->num_columns(); ++c) {
-    int comparision = this->comparators[c]->compare(cylon::util::GetChunkOrEmptyArray(table1->column(c), 0), index1,
-                                                    cylon::util::GetChunkOrEmptyArray(table2->column(c), 0), index2);
-    if (comparision) return comparision;
+    int comparision = comparators[c]->compare(table1->column(c)->chunk(0), index1,
+                                              table2->column(c)->chunk(0), index2);
+    if (comparision != 0) {
+      return comparision;
+    }
   }
   return 0;
 }
@@ -264,11 +266,11 @@ class TwoBinaryRowIndexComparator : public TwoArrayIndexComparator {
 
   int compare(int64_t index1, int64_t index2) const override {
     if (ASC) {
-      return arrays.at(util::CheckBit(index1))->GetView(util::ClearBit(index1))
-          .compare(arrays.at(util::CheckBit(index2))->GetView(util::ClearBit(index2)));
+      return arrays[util::CheckBit(index1)]->GetView(util::ClearBit(index1))
+          .compare(arrays[util::CheckBit(index2)]->GetView(util::ClearBit(index2)));
     } else {
-      return arrays.at(util::CheckBit(index2))->GetView(util::ClearBit(index2))
-          .compare(arrays.at(util::CheckBit(index1))->GetView(util::ClearBit(index1)));
+      return arrays[util::CheckBit(index2)]->GetView(util::ClearBit(index2))
+          .compare(arrays[util::CheckBit(index1)]->GetView(util::ClearBit(index1)));
     }
   }
 
@@ -370,30 +372,28 @@ TableRowIndexEqualTo::TableRowIndexEqualTo(const std::shared_ptr<arrow::Table> &
     : idx_comparators_ptr(
     std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>(col_ids.size())) {
   for (size_t c = 0; c < col_ids.size(); c++) {
-    if (table->column(col_ids.at(c))->num_chunks() == 0) {
-      this->idx_comparators_ptr->at(c) = std::make_shared<EmptyIndexComparator>();
+    if (table->num_rows() == 0) {
+      (*idx_comparators_ptr)[c] = std::make_shared<EmptyIndexComparator>();
     } else {
-      const std::shared_ptr<arrow::Array> &array = cylon::util::GetChunkOrEmptyArray(table->column(col_ids.at(c)), 0);
-      this->idx_comparators_ptr->at(c) = CreateArrayIndexComparator(array);
-      if (this->idx_comparators_ptr->at(c) == nullptr) {
+      const auto &array = table->column(col_ids[c])->chunk(0);
+      (*idx_comparators_ptr)[c] = CreateArrayIndexComparator(array);
+      if ((*idx_comparators_ptr)[c] == nullptr) {
         throw "Unable to find comparator for type " + array->type()->name();
       }
     }
   }
 }
 bool TableRowIndexEqualTo::operator()(const int64_t &record1, const int64_t &record2) const {
-  for (auto &&comp : *idx_comparators_ptr) {
-    if (comp->compare(record1, record2)) return false;
-  }
-  return true;
+  return std::all_of(idx_comparators_ptr->begin(), idx_comparators_ptr->end(),
+                     [&](const std::shared_ptr<ArrayIndexComparator> &comp) {
+                       return comp->equal_to(record1, record2);
+                     });
 }
 
 int TableRowIndexEqualTo::compare(const int64_t &record1, const int64_t &record2) const {
-  for (auto &&comp : *idx_comparators_ptr) {
-    auto res = comp->compare(record1, record2);
-    if (res == 0) {
-      continue;
-    } else {
+  for (const auto &comp: *idx_comparators_ptr) {
+    int res = comp->compare(record1, record2);
+    if (res != 0) {
       return res;
     }
   }
@@ -444,7 +444,7 @@ TableRowIndexHash::TableRowIndexHash(const std::vector<std::shared_ptr<arrow::Ar
   }
 }
 
-size_t TableRowIndexHash::operator()(const int64_t &record) const { return hashes_ptr->at(record); }
+size_t TableRowIndexHash::operator()(const int64_t &record) const { return (*hashes_ptr)[record]; }
 
 std::shared_ptr<arrow::UInt32Array> TableRowIndexHash::GetHashArray(const TableRowIndexHash &hasher) {
   const auto &buf = arrow::Buffer::Wrap(*hasher.hashes_ptr);
@@ -474,13 +474,13 @@ TwoTableRowIndexHash::TwoTableRowIndexHash(const std::shared_ptr<arrow::Table> &
 }
 
 size_t TwoTableRowIndexHash::operator()(int64_t idx) const {
-  return table_hashes.at(util::CheckBit(idx))->operator()(util::ClearBit(idx));
+  return table_hashes[util::CheckBit(idx)]->operator()(util::ClearBit(idx));
 }
 
 int MultiTableRowIndexEqualTo::compare(const std::pair<int8_t, int64_t> &record1,
                                        const std::pair<int8_t, int64_t> &record2) const {
-  return this->comparator->compare(this->tables[record1.first], record1.second,
-                                   this->tables[record2.first], record2.second);
+  return comparator->compare(tables[record1.first], record1.second,
+                             tables[record2.first], record2.second);
 }
 
 TwoTableRowIndexEqualTo::TwoTableRowIndexEqualTo(const std::shared_ptr<arrow::Table> &t1,
@@ -554,7 +554,7 @@ TwoArrayIndexHash::TwoArrayIndexHash(const std::shared_ptr<arrow::Array> &arr1,
     : array_hashes({std::make_shared<ArrayIndexHash>(arr1), std::make_shared<ArrayIndexHash>(arr2)}) {}
 
 size_t TwoArrayIndexHash::operator()(int64_t idx) const {
-  return array_hashes.at(util::CheckBit(idx))->operator()(util::ClearBit(idx));
+  return array_hashes[util::CheckBit(idx)]->operator()(util::ClearBit(idx));
 }
 
 TwoArrayIndexEqualTo::TwoArrayIndexEqualTo(const std::shared_ptr<arrow::Array> &arr1,
@@ -578,6 +578,6 @@ ArrayIndexHash::ArrayIndexHash(const std::shared_ptr<arrow::Array> &arr)
 }
 
 size_t ArrayIndexHash::operator()(const int64_t &record) const {
-  return hashes_ptr->at(record);
+  return (*hashes_ptr)[record];
 }
 }  // namespace cylon

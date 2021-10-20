@@ -959,19 +959,18 @@ Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols,
   auto pool = cylon::ToArrowPool(ctx);
   std::shared_ptr<arrow::Table> out_table, in_table = in->get_table();
 
-  if (in_table->num_rows() > 1) {
+  if (!in->Empty()) {
     if (in_table->column(0)->num_chunks() > 1) {
-      const arrow::Result<std::shared_ptr<arrow::Table>> &res = in_table->CombineChunks(pool);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-      in_table = res.ValueOrDie();
+      CYLON_ASSIGN_OR_RAISE(in_table, in_table->CombineChunks(pool))
     }
 
     TableRowIndexEqualTo row_comp(in_table, cols);
     TableRowIndexHash row_hash(in_table, cols);
     const int64_t num_rows = in_table->num_rows();
-    ska::bytell_hash_set<int64_t, TableRowIndexHash, TableRowIndexEqualTo> rows_set(num_rows, row_hash, row_comp);
+    ska::bytell_hash_set<int64_t, TableRowIndexHash, TableRowIndexEqualTo>
+        rows_set(num_rows, row_hash, row_comp);
 
-    arrow::BooleanBuilder filter(pool);
+    arrow::Int64Builder filter(pool);
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(num_rows));
 #ifdef CYLON_DEBUG
     auto p2 = std::chrono::high_resolution_clock::now();
@@ -979,39 +978,42 @@ Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols,
     if (first) {
       for (int64_t row = 0; row < num_rows; ++row) {
         const auto &res = rows_set.insert(row);
-        filter.UnsafeAppend(res.second);
+        if (res.second) {
+          filter.UnsafeAppend(row);
+        }
       }
     } else {
       for (int64_t row = num_rows - 1; row > 0; --row) {
         const auto &res = rows_set.insert(row);
-        filter.UnsafeAppend(res.second);
+        if (res.second) {
+          filter.UnsafeAppend(row);
+        }
       }
     }
 #ifdef CYLON_DEBUG
     auto p3 = std::chrono::high_resolution_clock::now();
-
-    //  rows_set.clear();
+#endif
+    rows_set.clear();
+#ifdef CYLON_DEBUG
     auto p4 = std::chrono::high_resolution_clock::now();
 #endif
-    std::shared_ptr<arrow::BooleanArray> filter_arr;
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Finish(&filter_arr));
+    CYLON_ASSIGN_OR_RAISE(auto take_arr, filter.Finish());
+    CYLON_ASSIGN_OR_RAISE(auto take_res, arrow::compute::Take(in_table, take_arr))
+    out_table = take_res.table();
 
-    const arrow::Result<arrow::Datum> &res = arrow::compute::Filter(in_table, filter_arr);
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-    out_table = res.ValueOrDie().table();
-  } else {
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::Duplicate(in_table, pool, out_table));
-  }
-  out = std::make_shared<Table>(ctx, out_table);
 #ifdef CYLON_DEBUG
-  auto p5 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(p2 - p1).count()
-      << " P2 " << std::chrono::duration_cast<std::chrono::milliseconds>(p3 - p2).count()
-      << " P3 " << std::chrono::duration_cast<std::chrono::milliseconds>(p4 - p3).count()
-      << " P4 " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p4).count()
-      << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p1).count();
+    auto p5 = std::chrono::high_resolution_clock::now();
+    LOG(INFO) << "P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(p2 - p1).count()
+              << " P2 " << std::chrono::duration_cast<std::chrono::milliseconds>(p3 - p2).count()
+              << " P3 " << std::chrono::duration_cast<std::chrono::milliseconds>(p4 - p3).count()
+              << " P4 " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p4).count()
+              << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p1).count()
+              << " tot " << rows_set.load_factor() << " " << rows_set.bucket_count();
 #endif
-  return Status::OK();
+  } else {
+    out_table = in_table;
+  }
+  return Table::FromArrowTable(ctx, std::move(out_table), out);
 }
 
 Status DistributedUnique(const std::shared_ptr<Table> &in, const std::vector<int> &cols,
