@@ -64,7 +64,7 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         CStatus ResetArrowIndex(bool drop)
 
-        CStatus AddColumn(long position, string column_name, shared_ptr[CArrowArray] & input_column)
+        CStatus AddColumn(int position, string column_name, shared_ptr[CArrowArray] input_column)
 
 
 cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":

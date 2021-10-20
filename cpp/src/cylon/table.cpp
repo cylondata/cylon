@@ -1032,27 +1032,24 @@ Status DistributedUnique(const std::shared_ptr<Table> &in, const std::vector<int
 
 Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylon::Table>& b, bool& result, bool ordered) {
   if(ordered) {
-    result = a->get_table()->Equals(*b->get_table().get());
+    result = a->get_table()->Equals(*b->get_table());
   } else {
-    if(a->Columns() != b->Columns()) {
-      result = false;
+    result = false;
+    if (a->Columns() != b->Columns()) {
       return Status::OK();
     }
-    auto status = VerifyTableSchema(a->get_table(), b->get_table());
-    if(!status.is_ok()) {
-      result = false;
-      return status;
-    }
+    RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(a->get_table(), b->get_table()));
+
     int col = a->Columns();
 
     std::vector<int32_t> indices(col);
     std::iota(indices.begin(), indices.end(), 0);
 
     std::shared_ptr<cylon::Table> out_a, out_b;
-    RETURN_CYLON_STATUS_IF_FAILED(Sort(const_cast<std::shared_ptr<cylon::Table>&>(a), indices, out_a, true));
-    RETURN_CYLON_STATUS_IF_FAILED(Sort(const_cast<std::shared_ptr<cylon::Table>&>(b), indices, out_b, true));
+    RETURN_CYLON_STATUS_IF_FAILED(Sort(a, indices, out_a, true));
+    RETURN_CYLON_STATUS_IF_FAILED(Sort(b, indices, out_b, true));
 
-    result = out_a->get_table()->Equals(*out_b->get_table().get());
+    result = out_a->get_table()->Equals(*out_b->get_table());
   }
   return Status::OK();
 }
@@ -1062,19 +1059,18 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shar
   if(!ordered) {
     int col = a->Columns();
     std::vector<int32_t> indices(col);
-    std::vector<bool> column_orders(col, 0);
+    std::vector<bool> column_orders(col, true);
     std::iota(indices.begin(), indices.end(), 0);
     std::shared_ptr<cylon::Table> out_a, out_b;
-    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(const_cast<std::shared_ptr<cylon::Table> &>(a), indices, out_a, column_orders));
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(a, indices, out_a, column_orders));
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(b, indices, out_b, column_orders));
 
-    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(const_cast<std::shared_ptr<cylon::Table> &>(b), indices, out_b, column_orders));
-
-    subResult = out_a->get_table()->Equals(*out_b->get_table().get());
+    subResult = out_a->get_table()->Equals(*out_b->get_table());
   } else {
     RETURN_CYLON_STATUS_IF_FAILED(Equals(a, b, subResult, true));
   }
 
-  mpi::AllReduce(&subResult, &result, 1, Bool(), cylon::net::LAND);
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllReduce(&subResult, &result, 1, Bool(), cylon::net::LAND));
   return Status::OK();
 }
 
@@ -1121,19 +1117,16 @@ Status Table::ResetArrowIndex(bool drop) {
   return Status::OK();
 }
 
-Status Table::AddColumn(int64_t position, const std::string &column_name,
-                        std::shared_ptr<arrow::Array> &input_column) {
+Status Table::AddColumn(int32_t position, const std::string &column_name,
+                        std::shared_ptr<arrow::Array> input_column) {
   if (input_column->length() != table_->num_rows()) {
-    LOG(ERROR) << "New column length must match the number of rows in the table";
-    return Status(cylon::Code::CapacityError);
+    return {cylon::Code::CapacityError,
+            "New column length must match the number of rows in the table"};
   }
-  std::shared_ptr<arrow::Field> field =
-      std::make_shared<arrow::Field>(column_name, input_column->type());
-  auto chunked_array = std::make_shared<arrow::ChunkedArray>(input_column);
-  auto result = table_->AddColumn(position, field, chunked_array);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-
-  table_ = result.ValueOrDie();
+  auto field = arrow::field(column_name, input_column->type());
+  auto chunked_array = std::make_shared<arrow::ChunkedArray>(std::move(input_column));
+  CYLON_ASSIGN_OR_RAISE(table_,
+                        table_->AddColumn(position, std::move(field), std::move(chunked_array)))
   return Status::OK();
 }
 
