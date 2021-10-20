@@ -239,12 +239,12 @@ cylon::Status GetSplitPointIndices(const cudf::table_view &sort_columns_tv,
  * @param sort_column_indices
  * @return
  */
-std::vector<int32_t> SortTableColumnIndices(const cudf::table_view &tv,
+std::vector<int32_t> SortTableColumnIndices(int32_t num_columns,
                                             const std::vector<int32_t> & sort_column_indices) {
   std::vector<int32_t> sort_table_column_indices;
-  sort_table_column_indices.reserve(tv.num_columns());
+  sort_table_column_indices.reserve(num_columns);
   sort_table_column_indices.insert(sort_table_column_indices.begin(), sort_column_indices.begin(), sort_column_indices.end());
-  for (int i = 0; i < tv.num_columns(); ++i) {
+  for (int i = 0; i < num_columns; ++i) {
     if (std::find(sort_column_indices.begin(), sort_column_indices.end(), i) == sort_column_indices.end()) {
       sort_table_column_indices.push_back(i);
     }
@@ -263,7 +263,8 @@ std::vector<int32_t> SortTableColumnIndices(const cudf::table_view &tv,
  * @return
  */
 std::unique_ptr<cudf::table> RevertColumnOrder(std::unique_ptr<cudf::table> sorted_table,
-                                               const std::vector<int32_t> &sort_tbl_clm_indices) {
+                                               const std::vector<int32_t> & sort_column_indices) {
+  auto sort_tbl_clm_indices = SortTableColumnIndices(sorted_table->num_columns(), sort_column_indices);
   std::vector<std::unique_ptr<cudf::column>> columns = sorted_table->release();
   std::vector<std::unique_ptr<cudf::column>> columns2(columns.size());
   for (int i = columns.size() - 1; i >= 0; --i) {
@@ -276,6 +277,26 @@ std::unique_ptr<cudf::table> RevertColumnOrder(std::unique_ptr<cudf::table> sort
 int32_t gcylon::GetSampleCount(int num_workers, int num_rows) {
   int32_t sample_count = num_workers * GetSamplingRatio(num_workers);
   return sample_count > num_rows ? num_rows : sample_count;
+}
+
+std::unique_ptr<cudf::table> SortInitialTv(const cudf::table_view &tv,
+                                           const std::vector<int32_t> &sort_column_indices,
+                                           const std::vector<cudf::order> &column_orders,
+                                           cudf::null_order null_ordering) {
+
+  // get a table_view with sort_columns in the first k positions
+  // since cudf::sort method expects all columns listed as sort keys
+  // we perform sorting on this table, and revert back to the original at the end
+  auto sort_tbl_clm_indices = SortTableColumnIndices(tv.num_columns(), sort_column_indices);
+  auto tv_for_sorting = tv.select(sort_tbl_clm_indices);
+
+  std::vector<cudf::order> column_orders_all(tv.num_columns(), SortOrder(column_orders));
+  for (int i = 0; i < sort_column_indices.size(); ++i) {
+    column_orders_all[i] = column_orders[i];
+  }
+  std::vector<cudf::null_order> column_null_orders(tv.num_columns(), null_ordering);
+
+  return cudf::sort(tv_for_sorting, column_orders_all, column_null_orders);
 }
 
 cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
@@ -294,22 +315,8 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
                          "sizes of sort_column_indices and column_orders must match");
   }
 
-  // get a table_view with sort_columns in the first k positions
-  // since cudf::sort method expects all columns listed as sort keys
-  // we perform sorting on this table, and revert back to the original at the end
-  auto sort_tbl_clm_indices = SortTableColumnIndices(tv, sort_column_indices);
-  auto tv_for_sorting = tv.select(sort_tbl_clm_indices);
-
-  std::vector<cudf::order> column_orders_all(tv.num_columns(), SortOrder(column_orders));
-  for (int i = 0; i < sort_column_indices.size(); ++i) {
-    column_orders_all[i] = column_orders[i];
-  }
-
   cudf::null_order null_ordering = nulls_after ? cudf::null_order::AFTER : cudf::null_order::BEFORE;
-  std::vector<cudf::null_order> column_null_orders(tv.num_columns(), null_ordering);
-
-  // first perform local sort
-  auto initial_sorted_tbl = cudf::sort(tv_for_sorting, column_orders_all, column_null_orders);
+  auto initial_sorted_tbl = SortInitialTv(tv, sort_column_indices, column_orders, null_ordering);
   auto initial_sorted_tv = initial_sorted_tbl->view();
 
   // get sort columns as a separate table_view
@@ -353,10 +360,9 @@ cylon::Status gcylon::DistributedSort(const cudf::table_view &tv,
   // delete initial_sorted_tbl to reclaim the memory
   initial_sorted_tbl.reset();
 
-  column_null_orders.resize(key_column_indices.size());
   std::unique_ptr<cudf::table> sorted_tbl;
   RETURN_CYLON_STATUS_IF_FAILED(
     MergeOrSortTables(received_tables, column_orders, null_ordering, sorted_tbl));
-  sorted_table = RevertColumnOrder(std::move(sorted_tbl), sort_tbl_clm_indices);
+  sorted_table = RevertColumnOrder(std::move(sorted_tbl), sort_column_indices);
   return cylon::Status::OK();
 }
