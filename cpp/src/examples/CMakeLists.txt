@@ -59,7 +59,6 @@ cylon_add_exe(indexing_example)
 cylon_add_exe(sorting_example)
 cylon_add_exe(multicolumn_sorting_example)
 cylon_add_exe(multi_idx_join_example)
-cylon_add_exe(unique_perf)
 
 if (CYLON_PARQUET)
     cylon_add_exe(parquet_union_example)
