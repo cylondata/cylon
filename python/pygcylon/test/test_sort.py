@@ -41,7 +41,8 @@ def test_sort_by_index():
                                                             index_col="Order Date",
                                                             parse_dates=["Order Date"],
                                                             infer_datetime_format=True))
-    assert index_sorted.equals(saved_sorted_df), \
+
+    assert index_sorted.to_cudf().index.equals(saved_sorted_df.to_cudf().index), \
         "Index sorted DataFrame and DataFrame from file are not equal"
 
 #    env.finalize()
