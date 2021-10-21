@@ -25,7 +25,7 @@ void create_table(int64_t count, double dup,
                   std::shared_ptr<arrow::Table> &left_table,
                   double null_prob) {
   RandomArrayGenerator gen(/*seed=*/0, pool);
-  auto left = gen.Numeric<arrow::Int64Type>(count, 0L,
+  auto left = gen.Numeric<arrow::Int64Type>(count, 0LL,
                                             (int64_t) (count * ctx->GetWorldSize() * dup),
                                             null_prob);
   auto vals = gen.Numeric<arrow::DoubleType>(count, 0.0, 1.0, null_prob);
@@ -44,8 +44,8 @@ void create_int64_table(int64_t count, double dup,
   RandomArrayGenerator gen(/*seed=*/0, pool);
 
   auto max = (int64_t) (count * dup * ctx->GetWorldSize());
-  auto left = gen.Numeric<arrow::Int64Type>(count, 0L, max, null_prob);
-  auto right = gen.Numeric<arrow::Int64Type>(count, 0L, max, null_prob);
+  auto left = gen.Numeric<arrow::Int64Type>(count, 0LL, max, null_prob);
+  auto right = gen.Numeric<arrow::Int64Type>(count, 0LL, max, null_prob);
   auto vals = gen.Numeric<arrow::DoubleType>(count, 0.0, 1.0, null_prob);
 
   auto left_schema = arrow::schema({arrow::field("first", left->type()),
