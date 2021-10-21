@@ -123,7 +123,7 @@ std::unique_ptr<cudf::table> constructRandomDataTable(int columns, int64_t rows,
 
   std::vector<std::unique_ptr<cudf::column>> column_vector{};
   for (int i = 0; i < columns; i++) {
-    std::unique_ptr<cudf::column> col = constructRandomLongColumn(rows, i * seed);
+    std::unique_ptr<cudf::column> col = constructRandomLongColumn(rows, seed + i * seed);
     column_vector.push_back(std::move(col));
   }
 

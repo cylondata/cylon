@@ -73,7 +73,11 @@ public:
   }
 
   inline int getColumnTypeId() {
-      return (int)cv.type().id();
+    return (int)cv.type().id();
+  }
+
+  inline cudf::data_type getColumnDataType() {
+    return cv.type();
   }
 
   inline const cudf::column_view & getColumnView() {
@@ -132,7 +136,7 @@ private:
 struct PendingReceives {
   // table variables
   // currently received columns
-  std::unordered_map<int, std::unique_ptr<cudf::column>> columns;
+  std::vector<std::unique_ptr<cudf::column>> columns;
   // number of columns in the table
   int number_of_columns{-1};
   // the reference
@@ -140,7 +144,7 @@ struct PendingReceives {
 
   // column variables
   // data type of the column
-  int column_data_type{-1};
+  int has_data_buff{false};
   // the current data column index
   int column_index{-1};
   // whether the current column has the null buffer
@@ -257,7 +261,7 @@ private:
 
   std::unique_ptr<int []> makeColumnHeader(int headers_length,
                                            int column_index,
-                                           int typeId,
+                                           bool has_data_buffer,
                                            bool has_mask,
                                            bool has_offset,
                                            int number_of_elements);
