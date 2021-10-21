@@ -164,7 +164,7 @@ class Table {
 
   Status ResetArrowIndex(bool drop = false);
 
-  Status AddColumn(int64_t position, const std::string& column_name, std::shared_ptr<arrow::Array> &input_column);
+  Status AddColumn(int32_t position, const std::string& column_name, std::shared_ptr<arrow::Array> input_column);
 
  private:
   /**
@@ -222,8 +222,8 @@ Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &tables, std::shar
  * @param output the final table
  * @return success
  */
-Status Join(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-			const join::config::JoinConfig &join_config, std::shared_ptr<Table> &output);
+Status Join(const std::shared_ptr<Table> &left, const std::shared_ptr<Table> &right,
+            const join::config::JoinConfig &join_config, std::shared_ptr<Table> &output);
 
 /**
  * Similar to local join, but performs the join in a distributed fashion
@@ -233,8 +233,8 @@ Status Join(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
  * @param output
  * @return <cylon::Status>
  */
-Status DistributedJoin(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-					   const join::config::JoinConfig &join_config, std::shared_ptr<Table> &output);
+Status DistributedJoin(const std::shared_ptr<Table> &left, const std::shared_ptr<Table> &right,
+                       const join::config::JoinConfig &join_config, std::shared_ptr<Table> &output);
 
 /**
  * Performs union with the passed table
@@ -253,8 +253,8 @@ Status Union(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &
  * @param output
  * @return <cylon::Status>
  */
-Status DistributedUnion(std::shared_ptr<Table> &first, std::shared_ptr<Table> &second,
-						std::shared_ptr<Table> &out);
+Status DistributedUnion(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &second,
+                        std::shared_ptr<Table> &out);
 
 /**
  * Performs subtract/difference with the passed table
@@ -273,8 +273,8 @@ Status Subtract(const std::shared_ptr<Table> &first, const std::shared_ptr<Table
  * @param output
  * @return <cylon::Status>
  */
-Status DistributedSubtract(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-						   std::shared_ptr<Table> &out);
+Status DistributedSubtract(const std::shared_ptr<Table> &left, const std::shared_ptr<Table> &right,
+                           std::shared_ptr<Table> &out);
 
 /**
  * Performs intersection with the passed table
@@ -293,8 +293,8 @@ Status Intersect(const std::shared_ptr<Table> &first, const std::shared_ptr<Tabl
  * @param output
  * @return <cylon::Status>
  */
-Status DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
-							std::shared_ptr<Table> &out);
+Status DistributedIntersect(const std::shared_ptr<Table> &left, const std::shared_ptr<Table> &right,
+                            std::shared_ptr<Table> &out);
 
 /**
  * Shuffles a table based on hashes
@@ -303,8 +303,8 @@ Status DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table>
  * @param output
  * @return
  */
-Status Shuffle(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_col_idx,
-			   std::shared_ptr<cylon::Table> &output);
+Status Shuffle(const std::shared_ptr<Table> &table, const std::vector<int> &hash_col_idx,
+               std::shared_ptr<cylon::Table> &output);
 
 /**
  * Partition the table based on the hash
@@ -312,9 +312,9 @@ Status Shuffle(std::shared_ptr<cylon::Table> &table, const std::vector<int> &has
  * @param no_of_partitions number partitions
  * @return new set of tables each with the new partition
  */
-Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_columns,
-					 int no_of_partitions,
-					 std::unordered_map<int, std::shared_ptr<cylon::Table>> *output);
+Status HashPartition(const std::shared_ptr<Table> &table, const std::vector<int> &hash_columns,
+                     int no_of_partitions,
+                     std::unordered_map<int, std::shared_ptr<cylon::Table>> *output);
 
 /**
  * Sort the table according to the given column, this is a local sort (if the table has chunked
@@ -322,8 +322,8 @@ Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int
  * @param sort_column
  * @return new table sorted according to the sort column
  */
-Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_ptr<Table> &output,
-			bool ascending = true);
+Status Sort(const std::shared_ptr<Table> &table, int sort_column, std::shared_ptr<Table> &output,
+            bool ascending = true);
 
 /**
  * Sort the table according to the given set of columns, this is a local sort (if the table has
@@ -331,8 +331,8 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column, std::shared_p
  * @param sort_column
  * @return new table sorted according to the sort columns
  */
-Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &sort_columns,
-			std::shared_ptr<cylon::Table> &out, bool ascending);
+Status Sort(const std::shared_ptr<Table> &table, const std::vector<int32_t> &sort_columns,
+            std::shared_ptr<cylon::Table> &out, bool ascending);
 
 /**
  * Sort the table according to the given set of columns and respective ordering direction, this is a
@@ -342,8 +342,8 @@ Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &so
  * @param sort_column
  * @return new table sorted according to the sort columns
  */
-Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &sort_columns,
-			std::shared_ptr<cylon::Table> &out, const std::vector<bool> &sort_direction);
+Status Sort(const std::shared_ptr<Table> &table, const std::vector<int32_t> &sort_columns,
+            std::shared_ptr<cylon::Table> &out, const std::vector<bool> &sort_direction);
 
 /**
  * Sort the table according to the given column, this is a local sort (if the table has chunked
@@ -358,17 +358,17 @@ struct SortOptions {
 
   static SortOptions Defaults() { return {0, 0}; }
 };
-Status DistributedSort(std::shared_ptr<cylon::Table> &table,
-					   int sort_column,
-					   std::shared_ptr<Table> &output,
-					   bool ascending = true,
-					   SortOptions sort_options = SortOptions::Defaults());
+Status DistributedSort(const std::shared_ptr<Table> &table,
+                       int sort_column,
+                       std::shared_ptr<Table> &output,
+                       bool ascending = true,
+                       SortOptions sort_options = SortOptions::Defaults());
 
-Status DistributedSort(std::shared_ptr<cylon::Table> &table,
-					   const std::vector<int> &sort_columns,
-					   std::shared_ptr<Table> &output,
-					   const std::vector<bool> &sort_direction,
-					   SortOptions sort_options = SortOptions::Defaults());
+Status DistributedSort(const std::shared_ptr<Table> &table,
+                       const std::vector<int> &sort_columns,
+                       std::shared_ptr<Table> &output,
+                       const std::vector<bool> &sort_direction,
+                       SortOptions sort_options = SortOptions::Defaults());
 
 /**
  * Filters out rows based on the selector function
@@ -377,8 +377,8 @@ Status DistributedSort(std::shared_ptr<cylon::Table> &table,
  * @param output
  * @return
  */
-Status Select(std::shared_ptr<cylon::Table> &table, const std::function<bool(cylon::Row)> &selector,
-			  std::shared_ptr<Table> &output);
+Status Select(const std::shared_ptr<Table> &table, const std::function<bool(cylon::Row)> &selector,
+              std::shared_ptr<Table> &output);
 
 /**
  * Creates a View of an existing table by dropping one or more columns
@@ -387,8 +387,8 @@ Status Select(std::shared_ptr<cylon::Table> &table, const std::function<bool(cyl
  * @param output
  * @return
  */
-Status Project(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &project_columns,
-			   std::shared_ptr<Table> &output);
+Status Project(const std::shared_ptr<Table> &table, const std::vector<int32_t> &project_columns,
+               std::shared_ptr<Table> &output);
 
 /**
  * Creates a new table by dropping the duplicated elements column-wise
@@ -397,11 +397,11 @@ Status Project(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> 
  * @param out
  * @return Status
  */
-Status Unique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
-			  std::shared_ptr<cylon::Table> &out, bool first = true);
+Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols,
+              std::shared_ptr<cylon::Table> &out, bool first = true);
 
-Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
-						 std::shared_ptr<cylon::Table> &out);
+Status DistributedUnique(const std::shared_ptr<Table> &in, const std::vector<int> &cols,
+                         std::shared_ptr<cylon::Table> &out);
 
 Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylon::Table>& b, bool& result, bool ordered = true);
 

@@ -27,9 +27,8 @@
  */
 int main(int argc, char *argv[]) {
   if (argc < 5) {
-    LOG(ERROR) << "./union_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
-               << "./union_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
-               << "./union_example f [n | o] csv_file1 csv_file2" << std::endl
+    LOG(ERROR) << "./union_example m [n | o] num_tuples_per_worker 0.0-1.0 null_probability"
+               << std::endl
                << "./union_example f [n | o] csv_file1 csv_file2" << std::endl;
     return 1;
   }
@@ -44,9 +43,11 @@ int main(int argc, char *argv[]) {
   std::string mem = std::string(argv[1]);
   std::string ops_param = std::string(argv[2]);
   if (mem == "m") {
-    uint64_t count = std::stoull(argv[3]);
+    int64_t count = std::stoll(argv[3]);
     double dup = std::stod(argv[4]);
-    cylon::examples::create_two_in_memory_tables(count, dup,ctx,first_table,second_table);
+    double null_prob = std::stod(argv[5]);
+    cylon::examples::create_two_in_memory_tables(count, dup, ctx, first_table, second_table,
+                                                 null_prob);
   } else if (mem == "f") {
     cylon::FromCSV(ctx, std::string(argv[3]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
     cylon::FromCSV(ctx, std::string(argv[4]) + std::to_string(ctx->GetRank()) + ".csv", second_table);
