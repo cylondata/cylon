@@ -131,3 +131,7 @@ cylon_run_test(utils_test 1)
 cylon_add_test(equal_test)
 cylon_run_test(equal_test 1)
 cylon_run_test(equal_test 2)
+
+# flatten array test
+cylon_add_test(flatten_array_test)
+cylon_run_test(flatten_array_test 1)

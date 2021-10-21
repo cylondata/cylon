@@ -28,12 +28,9 @@
 namespace cylon {
 namespace test {
 
-typedef Status(*fun_ptr)(std::shared_ptr<Table> &,
-                         std::shared_ptr<Table> &,
-                         std::shared_ptr<Table> &);
-
-void TestSetOperation(fun_ptr fn,
-                      std::shared_ptr<CylonContext> &ctx,
+template<typename Func>
+void TestSetOperation(Func fn,
+                      const std::shared_ptr<CylonContext> &ctx,
                       const std::string &path1,
                       const std::string &path2,
                       const std::string &out_path) {

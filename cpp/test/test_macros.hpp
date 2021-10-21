@@ -26,11 +26,26 @@
     REQUIRE(exp->Equals(*rec));                                                \
   } while(0)
 
+#define CHECK_ARROW_BUFFER_EQUAL(expected, received)                           \
+  do {                                                                         \
+    const auto& exp = (expected);                                              \
+    const auto& rec = (received);                                              \
+    INFO("Expected: " << exp->ToHexString() << "\nReceived: " << rec->ToHexString());\
+    REQUIRE(exp->Equals(*rec));                                                \
+  } while(0)
+
 #define CHECK_CYLON_STATUS(expr)  \
   do{                             \
       const auto& st = (expr);    \
       INFO("code: " << st.get_code() << " msg: " << st.get_msg()); \
       REQUIRE(st.is_ok());        \
+  } while(0)
+
+#define CHECK_ARROW_STATUS(expr)  \
+  do{                             \
+      const auto& st = (expr);    \
+      INFO("status: " << st.ToString()); \
+      REQUIRE(st.ok());        \
   } while(0)
 
 #define EXPECT_FAIL_WITH_MSG(code, msg_sub_str, expr)  \
