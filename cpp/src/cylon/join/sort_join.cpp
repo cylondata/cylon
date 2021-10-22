@@ -49,19 +49,19 @@ inline void advance(
 }
 
 template<typename ARROW_T, typename CPP_KEY_TYPE>
-static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
-                                           const std::shared_ptr<arrow::Table> &right_tab,
-                                           int left_join_column_idx,
-                                           int right_join_column_idx,
-                                           cylon::join::config::JoinType join_type,
-                                           const std::string &left_table_prefix,
-                                           const std::string &right_table_prefix,
-                                           std::shared_ptr<arrow::Table> *joined_table,
-                                           arrow::MemoryPool *memory_pool) {
+Status do_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
+                      const std::shared_ptr<arrow::Table> &right_tab,
+                      int left_join_column_idx,
+                      int right_join_column_idx,
+                      cylon::join::config::JoinType join_type,
+                      const std::string &left_table_prefix,
+                      const std::string &right_table_prefix,
+                      std::shared_ptr<arrow::Table> *joined_table,
+                      arrow::MemoryPool *memory_pool) {
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   std::shared_ptr<arrow::Table> left_tab_comb(left_tab), right_tab_comb(right_tab);
-  COMBINE_CHUNKS_RETURN_ARROW_STATUS(left_tab_comb, memory_pool);
-  COMBINE_CHUNKS_RETURN_ARROW_STATUS(right_tab_comb, memory_pool);
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(left_tab_comb, memory_pool);
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(right_tab_comb, memory_pool);
 
   // sort columns
   auto left_join_column =
@@ -70,10 +70,14 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
       cylon::util::GetChunkOrEmptyArray(right_tab_comb->column(right_join_column_idx), 0);
 
   std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
-  RETURN_ARROW_STATUS_IF_FAILED(SortIndices(memory_pool, left_join_column, left_index_sorted_column));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(SortIndices(memory_pool,
+                                                  left_join_column,
+                                                  left_index_sorted_column));
 
   std::shared_ptr<arrow::UInt64Array> right_index_sorted_column;
-  RETURN_ARROW_STATUS_IF_FAILED(SortIndices(memory_pool, right_join_column, right_index_sorted_column));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(SortIndices(memory_pool,
+                                                  right_join_column,
+                                                  right_index_sorted_column));
 
   CPP_KEY_TYPE left_key, right_key;
   std::vector<int64_t> left_subset, right_subset;
@@ -156,10 +160,15 @@ static inline arrow::Status do_sorted_join(const std::shared_ptr<arrow::Table> &
   left_index_sorted_column.reset();
   right_index_sorted_column.reset();
   // build final table
-  RETURN_ARROW_STATUS_IF_FAILED(util::build_final_table(left_indices, right_indices, left_tab_comb,
-                                                        right_tab_comb, left_table_prefix,
-                                                        right_table_prefix, joined_table, memory_pool));
-  return arrow::Status::OK();
+  RETURN_CYLON_STATUS_IF_FAILED(util::build_final_table(left_indices,
+                                                        right_indices,
+                                                        left_tab_comb,
+                                                        right_tab_comb,
+                                                        left_table_prefix,
+                                                        right_table_prefix,
+                                                        joined_table,
+                                                        memory_pool));
+  return Status::OK();
 }
 
 /*  SINGLE INDEX INPLACE */
@@ -185,19 +194,19 @@ inline void advance_inplace_array(std::vector<int64_t> *subset,
 }
 
 template<typename ARROW_T, typename CPP_KEY_TYPE>
-arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
-                                     const std::shared_ptr<arrow::Table> &right_tab,
-                                     int left_join_column_idx, int right_join_column_idx,
-                                     cylon::join::config::JoinType join_type,
-                                     const std::string &left_table_prefix,
-                                     const std::string &right_table_prefix,
-                                     std::shared_ptr<arrow::Table> *joined_table,
-                                     arrow::MemoryPool *memory_pool) {
+Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
+                              const std::shared_ptr<arrow::Table> &right_tab,
+                              int left_join_column_idx, int right_join_column_idx,
+                              cylon::join::config::JoinType join_type,
+                              const std::string &left_table_prefix,
+                              const std::string &right_table_prefix,
+                              std::shared_ptr<arrow::Table> *joined_table,
+                              arrow::MemoryPool *memory_pool) {
   using ARROW_ARRAY_TYPE = typename arrow::TypeTraits<ARROW_T>::ArrayType;
   std::shared_ptr<arrow::Table> left_tab_comb(left_tab), right_tab_comb(right_tab);
 
-  COMBINE_CHUNKS_RETURN_ARROW_STATUS(left_tab_comb, memory_pool);
-  COMBINE_CHUNKS_RETURN_ARROW_STATUS(right_tab_comb, memory_pool);
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(left_tab_comb, memory_pool);
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(right_tab_comb, memory_pool);
 
   // sort columns
   auto left_join_column =
@@ -206,10 +215,14 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
       cylon::util::GetChunkOrEmptyArray(right_tab_comb->column(right_join_column_idx), 0);
 
   std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
-  RETURN_ARROW_STATUS_IF_FAILED(SortIndicesInPlace(memory_pool, left_join_column, left_index_sorted_column));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(SortIndicesInPlace(memory_pool,
+                                                         left_join_column,
+                                                         left_index_sorted_column));
 
   std::shared_ptr<arrow::UInt64Array> right_index_sorted_column;
-  RETURN_ARROW_STATUS_IF_FAILED(SortIndicesInPlace(memory_pool, right_join_column, right_index_sorted_column));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(SortIndicesInPlace(memory_pool,
+                                                         right_join_column,
+                                                         right_index_sorted_column));
 
   CPP_KEY_TYPE left_key, right_key;
   std::vector<int64_t> left_subset, right_subset;
@@ -292,7 +305,7 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
   }
 
   // build final table
-  RETURN_ARROW_STATUS_IF_FAILED(join::util::build_final_table_inplace_index(left_join_column_idx,
+  RETURN_CYLON_STATUS_IF_FAILED(join::util::build_final_table_inplace_index(left_join_column_idx,
                                                                             right_join_column_idx,
                                                                             left_indices,
                                                                             right_indices,
@@ -304,7 +317,7 @@ arrow::Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_t
                                                                             right_table_prefix,
                                                                             joined_table,
                                                                             memory_pool));
-  return arrow::Status::OK();
+  return Status::OK();
 }
 
 /*  MULTI INDEX */
@@ -330,22 +343,22 @@ inline void advance_multi_index(std::vector<int64_t> *subset,
   }
 }
 
-static inline arrow::Status do_multi_index_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
-                                                       const std::shared_ptr<arrow::Table> &right_tab,
-                                                       const std::vector<int32_t> &left_join_column_indices,
-                                                       const std::vector<int32_t> &right_join_column_indices,
-                                                       cylon::join::config::JoinType join_type,
-                                                       const std::string &left_table_prefix,
-                                                       const std::string &right_table_prefix,
-                                                       std::shared_ptr<arrow::Table> *joined_table,
-                                                       arrow::MemoryPool *memory_pool) {
+Status do_multi_index_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
+                                  const std::shared_ptr<arrow::Table> &right_tab,
+                                  const std::vector<int32_t> &left_join_column_indices,
+                                  const std::vector<int32_t> &right_join_column_indices,
+                                  cylon::join::config::JoinType join_type,
+                                  const std::string &left_table_prefix,
+                                  const std::string &right_table_prefix,
+                                  std::shared_ptr<arrow::Table> *joined_table,
+                                  arrow::MemoryPool *memory_pool) {
   std::shared_ptr<arrow::Table> left_tab_comb(left_tab), right_tab_comb(right_tab);
 
   // combine chunks if multiple chunks are available
   auto t11 = std::chrono::high_resolution_clock::now();
 
-  COMBINE_CHUNKS_RETURN_ARROW_STATUS(left_tab_comb, memory_pool);
-  COMBINE_CHUNKS_RETURN_ARROW_STATUS(right_tab_comb, memory_pool);
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(left_tab_comb, memory_pool);
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(right_tab_comb, memory_pool);
 
   auto t22 = std::chrono::high_resolution_clock::now();
 
@@ -356,29 +369,37 @@ static inline arrow::Status do_multi_index_sorted_join(const std::shared_ptr<arr
   auto t1 = std::chrono::high_resolution_clock::now();
 
   std::shared_ptr<arrow::UInt64Array> left_index_sorted_column;
-  RETURN_ARROW_STATUS_IF_FAILED(cylon::SortIndicesMultiColumns(memory_pool, left_tab_comb, left_join_column_indices,
-                                                               left_index_sorted_column));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(SortIndicesMultiColumns(memory_pool,
+                                                              left_tab_comb,
+                                                              left_join_column_indices,
+                                                              left_index_sorted_column));
 
   auto t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Left sorting time : "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
   std::shared_ptr<arrow::UInt64Array> right_index_sorted_column;
-  RETURN_ARROW_STATUS_IF_FAILED(cylon::SortIndicesMultiColumns(memory_pool, right_tab_comb, right_join_column_indices,
-                                                               right_index_sorted_column));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(SortIndicesMultiColumns(memory_pool,
+                                                              right_tab_comb,
+                                                              right_join_column_indices,
+                                                              right_index_sorted_column));
 
   t1 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "right sorting time : "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t2).count();
 
   // create comparator
-  cylon::TableRowIndexEqualTo left_tab_index_comparator(left_tab_comb, left_join_column_indices);
-  cylon::TableRowIndexEqualTo right_tab_index_comparator(right_tab_comb, right_join_column_indices);
+  std::unique_ptr<TableRowIndexEqualTo> left_tab_index_comparator, right_tab_index_comparator;
+  RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexEqualTo::Make(left_tab_comb,
+                                                           left_join_column_indices,
+                                                           &left_tab_index_comparator));
+  RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexEqualTo::Make(right_tab_comb,
+                                                           right_join_column_indices,
+                                                           &right_tab_index_comparator));
 
-  auto mult_tab_comparator = cylon::TwoTableRowIndexEqualTo(left_tab_comb,
-                                                            right_tab_comb,
-                                                            left_join_column_indices,
-                                                            right_join_column_indices);
+  std::unique_ptr<DualTableRowIndexEqualTo> mult_tab_comparator;
+  DualTableRowIndexEqualTo::Make(left_tab_comb, right_tab_comb, left_join_column_indices,
+                                 right_join_column_indices, &mult_tab_comparator);
 
   int64_t left_key_index = 0, right_key_index = 0;  // reference indices
   std::vector<int64_t> left_subset, right_subset;
@@ -392,13 +413,13 @@ static inline arrow::Status do_multi_index_sorted_join(const std::shared_ptr<arr
   right_indices.reserve(init_vec_size);
 
   advance_multi_index(&left_subset, left_index_sorted_column, &left_current_index,
-                      &left_tab_index_comparator, &left_key_index);
+                      left_tab_index_comparator.get(), &left_key_index);
 
   advance_multi_index(&right_subset, right_index_sorted_column, &right_current_index,
-                      &right_tab_index_comparator, &right_key_index);
+                      right_tab_index_comparator.get(), &right_key_index);
 
   while (!left_subset.empty() && !right_subset.empty()) {
-    auto com = mult_tab_comparator.compare(0, left_key_index, 1, right_key_index);
+    auto com = mult_tab_comparator->compare(0, left_key_index, 1, right_key_index);
     if (com == 0) {  // use a key comparator
       for (int64_t left_idx : left_subset) {
         for (int64_t right_idx : right_subset) {
@@ -408,10 +429,10 @@ static inline arrow::Status do_multi_index_sorted_join(const std::shared_ptr<arr
       }
       // advance
       advance_multi_index(&left_subset, left_index_sorted_column, &left_current_index,
-                          &left_tab_index_comparator, &left_key_index);
+                          left_tab_index_comparator.get(), &left_key_index);
 
       advance_multi_index(&right_subset, right_index_sorted_column, &right_current_index,
-                          &right_tab_index_comparator, &right_key_index);
+                          right_tab_index_comparator.get(), &right_key_index);
     } else if (com < 0) {
       // if this is a left join, this is the time to include them all in the result set
       if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
@@ -422,7 +443,7 @@ static inline arrow::Status do_multi_index_sorted_join(const std::shared_ptr<arr
       }
 
       advance_multi_index(&left_subset, left_index_sorted_column, &left_current_index,
-                          &left_tab_index_comparator, &left_key_index);
+                          left_tab_index_comparator.get(), &left_key_index);
     } else {
       // if this is a right join, this is the time to include them all in the result set
       if (join_type == cylon::join::config::RIGHT || join_type == cylon::join::config::FULL_OUTER) {
@@ -433,7 +454,7 @@ static inline arrow::Status do_multi_index_sorted_join(const std::shared_ptr<arr
       }
 
       advance_multi_index(&right_subset, right_index_sorted_column, &right_current_index,
-                          &right_tab_index_comparator, &right_key_index);
+                          right_tab_index_comparator.get(), &right_key_index);
     }
   }
 
@@ -445,7 +466,7 @@ static inline arrow::Status do_multi_index_sorted_join(const std::shared_ptr<arr
         right_indices.push_back(-1);
       }
       advance_multi_index(&left_subset, left_index_sorted_column, &left_current_index,
-                          &left_tab_index_comparator, &left_key_index);
+                          left_tab_index_comparator.get(), &left_key_index);
     }
   }
 
@@ -456,7 +477,7 @@ static inline arrow::Status do_multi_index_sorted_join(const std::shared_ptr<arr
         right_indices.push_back(right_idx);
       }
       advance_multi_index(&right_subset, right_index_sorted_column, &right_current_index,
-                          &right_tab_index_comparator, &right_key_index);
+                          right_tab_index_comparator.get(), &right_key_index);
     }
   }
 
@@ -470,26 +491,31 @@ static inline arrow::Status do_multi_index_sorted_join(const std::shared_ptr<arr
 
   t1 = std::chrono::high_resolution_clock::now();
   // build final table
-  RETURN_ARROW_STATUS_IF_FAILED(util::build_final_table(left_indices, right_indices, left_tab_comb,
-                                                        right_tab_comb, left_table_prefix,
-                                                        right_table_prefix, joined_table, memory_pool));
+  RETURN_CYLON_STATUS_IF_FAILED(util::build_final_table(left_indices,
+                                                        right_indices,
+                                                        left_tab_comb,
+                                                        right_tab_comb,
+                                                        left_table_prefix,
+                                                        right_table_prefix,
+                                                        joined_table,
+                                                        memory_pool));
   t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Built final table in : "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
   LOG(INFO) << "Done and produced : " << left_indices.size();
-  return arrow::Status::OK();
+  return Status::OK();
 }
 
 template<typename ARROW_T, typename CPP_KEY_TYPE = typename ARROW_T::c_type>
-arrow::Status do_single_column_join(const std::shared_ptr<arrow::Table> &left_tab,
-                                    const std::shared_ptr<arrow::Table> &right_tab,
-                                    int64_t left_join_column_idx,
-                                    int64_t right_join_column_idx,
-                                    cylon::join::config::JoinType join_type,
-                                    const std::string &left_table_prefix,
-                                    const std::string &right_table_prefix,
-                                    std::shared_ptr<arrow::Table> *joined_table,
-                                    arrow::MemoryPool *memory_pool) {
+Status do_single_column_join(const std::shared_ptr<arrow::Table> &left_tab,
+                             const std::shared_ptr<arrow::Table> &right_tab,
+                             int64_t left_join_column_idx,
+                             int64_t right_join_column_idx,
+                             cylon::join::config::JoinType join_type,
+                             const std::string &left_table_prefix,
+                             const std::string &right_table_prefix,
+                             std::shared_ptr<arrow::Table> *joined_table,
+                             arrow::MemoryPool *memory_pool) {
   if (arrow::is_number_type<ARROW_T>::value) {
     return do_inplace_sorted_join<ARROW_T, CPP_KEY_TYPE>(left_tab,
                                                          right_tab,
@@ -507,22 +533,22 @@ arrow::Status do_single_column_join(const std::shared_ptr<arrow::Table> &left_ta
   }
 }
 
-arrow::Status SortJoin(const std::shared_ptr<arrow::Table> &left_tab,
-                       const std::shared_ptr<arrow::Table> &right_tab,
-                       const config::JoinConfig &join_config,
-                       std::shared_ptr<arrow::Table> *joined_table,
-                       arrow::MemoryPool *memory_pool) {
+Status SortJoin(const std::shared_ptr<arrow::Table> &left_tab,
+                const std::shared_ptr<arrow::Table> &right_tab,
+                const config::JoinConfig &join_config,
+                std::shared_ptr<arrow::Table> *joined_table,
+                arrow::MemoryPool *memory_pool) {
   auto left_indices = join_config.GetLeftColumnIdx();
   auto right_indices = join_config.GetRightColumnIdx();
 
   // sort joins
   if (left_indices.size() == 1 && right_indices.size() == 1) {
-    const auto &left_type = left_tab->column(left_indices[0])->type()->id();
-    const auto &right_type = right_tab->column(right_indices[0])->type()->id();
+    const auto &left_type = left_tab->field(left_indices[0])->type()->id();
+    const auto &right_type = right_tab->field(right_indices[0])->type()->id();
 
     if (left_type != right_type) {
       LOG(FATAL) << "The join column types of two tables mismatches.";
-      return arrow::Status::Invalid<std::string>("The join column types of two tables mismatches.");
+      return {Code::Invalid, "The join column types of two tables mismatches."};
     }
 
     switch (left_type) {
@@ -639,37 +665,30 @@ arrow::Status SortJoin(const std::shared_ptr<arrow::Table> &left_tab,
                                                         joined_table,
                                                         memory_pool);
       case arrow::Type::STRING:
-        return do_single_column_join<arrow::StringType, arrow::util::string_view>(left_tab,
-                                                                                  right_tab,
-                                                                                  left_indices[0],
-                                                                                  right_indices[0],
-                                                                                  join_config.GetType(),
-                                                                                  join_config.GetLeftTableSuffix(),
-                                                                                  join_config.GetRightTableSuffix(),
-                                                                                  joined_table,
-                                                                                  memory_pool);
+        return do_single_column_join<arrow::StringType, arrow::util::string_view>(
+            left_tab, right_tab, left_indices[0], right_indices[0],
+            join_config.GetType(), join_config.GetLeftTableSuffix(),
+            join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::BINARY:
-        return do_single_column_join<arrow::BinaryType, arrow::util::string_view>(left_tab,
-                                                                                  right_tab,
-                                                                                  left_indices[0],
-                                                                                  right_indices[0],
-                                                                                  join_config.GetType(),
-                                                                                  join_config.GetLeftTableSuffix(),
-                                                                                  join_config.GetRightTableSuffix(),
-                                                                                  joined_table,
-                                                                                  memory_pool);
+        return do_single_column_join<arrow::BinaryType, arrow::util::string_view>(
+            left_tab, right_tab, left_indices[0], right_indices[0],
+            join_config.GetType(), join_config.GetLeftTableSuffix(),
+            join_config.GetRightTableSuffix(), joined_table, memory_pool);
+      case arrow::Type::LARGE_STRING:
+        return do_single_column_join<arrow::LargeStringType, arrow::util::string_view>(
+            left_tab, right_tab, left_indices[0], right_indices[0],
+            join_config.GetType(), join_config.GetLeftTableSuffix(),
+            join_config.GetRightTableSuffix(), joined_table, memory_pool);
+      case arrow::Type::LARGE_BINARY:
+        return do_single_column_join<arrow::LargeBinaryType, arrow::util::string_view>(
+            left_tab, right_tab, left_indices[0], right_indices[0],
+            join_config.GetType(), join_config.GetLeftTableSuffix(),
+            join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::FIXED_SIZE_BINARY:
-        return do_single_column_join<arrow::FixedSizeBinaryType, arrow::util::string_view>(left_tab,
-                                                                                           right_tab,
-                                                                                           left_indices[0],
-                                                                                           right_indices[0],
-                                                                                           join_config.GetType(),
-                                                                                           join_config
-                                                                                               .GetLeftTableSuffix(),
-                                                                                           join_config
-                                                                                               .GetRightTableSuffix(),
-                                                                                           joined_table,
-                                                                                           memory_pool);
+        return do_single_column_join<arrow::FixedSizeBinaryType, arrow::util::string_view>(
+            left_tab, right_tab, left_indices[0], right_indices[0],
+            join_config.GetType(), join_config.GetLeftTableSuffix(),
+            join_config.GetRightTableSuffix(), joined_table, memory_pool);
       case arrow::Type::DATE32:
         return do_single_column_join<arrow::Date32Type>(left_tab,
                                                         right_tab,
@@ -720,25 +739,25 @@ arrow::Status SortJoin(const std::shared_ptr<arrow::Table> &left_tab,
                                                         join_config.GetRightTableSuffix(),
                                                         joined_table,
                                                         memory_pool);
-      case arrow::Type::DECIMAL:break;
-      case arrow::Type::LIST:break;
-      case arrow::Type::STRUCT:break;
-      case arrow::Type::DICTIONARY:break;
-      case arrow::Type::MAP:break;
-      case arrow::Type::EXTENSION:break;
-      case arrow::Type::FIXED_SIZE_LIST:break;
-      case arrow::Type::DURATION:break;
-      case arrow::Type::LARGE_STRING:break;
-      case arrow::Type::LARGE_BINARY:break;
-      case arrow::Type::LARGE_LIST:break;
-      case arrow::Type::INTERVAL_MONTHS:break;
-      case arrow::Type::INTERVAL_DAY_TIME:break;
-      case arrow::Type::SPARSE_UNION:break;
-      case arrow::Type::DENSE_UNION:break;
-      case arrow::Type::MAX_ID:break;
-      case arrow::Type::DECIMAL256:break;
+      case arrow::Type::DECIMAL:
+      case arrow::Type::LIST:
+      case arrow::Type::STRUCT:
+      case arrow::Type::DICTIONARY:
+      case arrow::Type::MAP:
+      case arrow::Type::EXTENSION:
+      case arrow::Type::FIXED_SIZE_LIST:
+      case arrow::Type::DURATION:
+      case arrow::Type::LARGE_LIST:
+      case arrow::Type::INTERVAL_MONTHS:
+      case arrow::Type::INTERVAL_DAY_TIME:
+      case arrow::Type::SPARSE_UNION:
+      case arrow::Type::DENSE_UNION:
+      case arrow::Type::MAX_ID:
+      case arrow::Type::DECIMAL256:
+      default:
+        return {Code::Invalid,
+                "Un-supported type " + left_tab->field(left_indices[0])->type()->ToString()};
     }
-    return arrow::Status::Invalid("Un-supported type");
   } else {
     return do_multi_index_sorted_join(left_tab,
                                       right_tab,
@@ -750,6 +769,8 @@ arrow::Status SortJoin(const std::shared_ptr<arrow::Table> &left_tab,
                                       joined_table,
                                       memory_pool);
   }
+
+  return Status::OK();
 }
 }  // namespace join
 }  // namespace cylon

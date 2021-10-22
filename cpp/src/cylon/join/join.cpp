@@ -26,67 +26,47 @@
 namespace cylon {
 namespace join {
 
-arrow::Status JoinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_tabs,
-                         const std::vector<std::shared_ptr<arrow::Table>> &right_tabs,
-                         const config::JoinConfig &join_config,
-                         std::shared_ptr<arrow::Table> *joined_table,
-                         arrow::MemoryPool *memory_pool) {
-  std::shared_ptr<arrow::Table> left_tab = arrow::ConcatenateTables(left_tabs,
-                                                                    arrow::ConcatenateTablesOptions::Defaults(),
-                                                                    memory_pool).ValueOrDie();
-  std::shared_ptr<arrow::Table> right_tab = arrow::ConcatenateTables(right_tabs,
-                                                                     arrow::ConcatenateTablesOptions::Defaults(),
-                                                                     memory_pool).ValueOrDie();
+Status JoinTables(const std::vector<std::shared_ptr<arrow::Table>> &left_tabs,
+                  const std::vector<std::shared_ptr<arrow::Table>> &right_tabs,
+                  const config::JoinConfig &join_config,
+                  std::shared_ptr<arrow::Table> *joined_table,
+                  arrow::MemoryPool *memory_pool) {
+  CYLON_ASSIGN_OR_RAISE(auto left_tab, arrow::ConcatenateTables(left_tabs,
+                                                                arrow::ConcatenateTablesOptions::Defaults(),
+                                                                memory_pool))
+  CYLON_ASSIGN_OR_RAISE(auto right_tab, arrow::ConcatenateTables(right_tabs,
+                                                                 arrow::ConcatenateTablesOptions::Defaults(),
+                                                                 memory_pool));
 
-  arrow::Result<std::shared_ptr<arrow::Table>> left_combine_res = left_tab->CombineChunks(memory_pool);
-  const arrow::Status &left_combine_stat = left_combine_res.status();
-  if (!left_combine_stat.ok()) {
-    LOG(FATAL) << "Error in combining table chunks of left table." << left_combine_stat.message();
-    return left_combine_stat;
-  }
-  const std::shared_ptr<arrow::Table> &left_tab_combined = left_combine_res.ValueOrDie();
+  CYLON_ASSIGN_OR_RAISE(auto left_tab_combined, left_tab->CombineChunks(memory_pool));
 
   if (left_tabs.size() > 1) {
-    for (const auto &t : left_tabs) {
-      arrow::Status status = cylon::util::free_table(t);
-      if (!status.ok()) {
-        LOG(FATAL) << "Failed to free table" << status.message();
-        return status;
-      }
+    for (const auto &t: left_tabs) {
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(cylon::util::free_table(t));
     }
   }
 
-  arrow::Result<std::shared_ptr<arrow::Table>> right_combine_res = right_tab->CombineChunks(memory_pool);
-  const arrow::Status &right_combine_stat = right_combine_res.status();
-  if (!right_combine_stat.ok()) {
-    LOG(FATAL) << "Error in combining table chunks of right table." << right_combine_stat.message();
-    return right_combine_stat;
-  }
-  const std::shared_ptr<arrow::Table> &right_tab_combined = right_combine_res.ValueOrDie();
+  CYLON_ASSIGN_OR_RAISE(auto right_tab_combined, right_tab->CombineChunks(memory_pool));
 
   if (right_tabs.size() > 1) {
-    for (const auto &t : right_tabs) {
-      arrow::Status status = cylon::util::free_table(t);
-      if (!status.ok()) {
-        LOG(FATAL) << "Failed to free table" << status.message();
-        return status;
-      }
+    for (const auto &t: right_tabs) {
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(cylon::util::free_table(t));
     }
   }
 
-  return cylon::join::JoinTables(left_tab_combined, right_tab_combined, join_config, joined_table, memory_pool);
+  return JoinTables(left_tab_combined, right_tab_combined, join_config, joined_table, memory_pool);
 }
 
-arrow::Status JoinTables(const std::shared_ptr<arrow::Table> &left_tab,
-                         const std::shared_ptr<arrow::Table> &right_tab,
-                         const config::JoinConfig &join_config,
-                         std::shared_ptr<arrow::Table> *joined_table,
-                         arrow::MemoryPool *memory_pool) {
+Status JoinTables(const std::shared_ptr<arrow::Table> &left_tab,
+                  const std::shared_ptr<arrow::Table> &right_tab,
+                  const config::JoinConfig &join_config,
+                  std::shared_ptr<arrow::Table> *joined_table,
+                  arrow::MemoryPool *memory_pool) {
   const std::vector<int> &left_indices = join_config.GetLeftColumnIdx();
   const std::vector<int> &right_indices = join_config.GetRightColumnIdx();
 
   if (left_indices.size() != right_indices.size()) {
-    return arrow::Status::Invalid("left and right index sizes are not equal");
+    return {Code::Invalid, "left and right index sizes are not equal"};
   }
 
   if (join_config.GetAlgorithm() == config::HASH) {
@@ -96,7 +76,7 @@ arrow::Status JoinTables(const std::shared_ptr<arrow::Table> &left_tab,
     // sort joins
     return SortJoin(left_tab, right_tab, join_config, joined_table, memory_pool);
   }
-  return arrow::Status::UnknownError("unknown error");
+  return {Code::UnknownError, "unknown error"};
 }
 }  // namespace join
 }  // namespace cylon

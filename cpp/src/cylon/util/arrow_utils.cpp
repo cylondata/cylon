@@ -310,14 +310,13 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &arr,
   return SampleArray(std::make_shared<arrow::ChunkedArray>(arr), num_samples, out, pool);
 }
 
-std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk) {
+std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk,
+                                                   arrow::MemoryPool *pool) {
   if (column->num_chunks() > 0) {
     return column->chunk(chunk);
   }
-  std::shared_ptr<arrow::Array> out;
-  const arrow::Status &res = SampleArray(column, 0, out);
-
-  return res.ok() ? out : nullptr;
+  auto res = arrow::MakeArrayOfNull(column->type(), 0, pool);
+  return res.ok() ? res.ValueOrDie() : nullptr;
 }
 
 uint64_t GetNumberSplitsToFitInCache(int64_t total_bytes, int total_elements, int parallel) {

@@ -81,13 +81,13 @@ std::string CylonContext::GetConfig(const std::string &key, const std::string &d
   }
   return find->second;
 }
-int CylonContext::GetRank() {
+int CylonContext::GetRank() const {
   if (this->is_distributed) {
     return this->communicator->GetRank();
   }
   return 0;
 }
-int CylonContext::GetWorldSize() {
+int CylonContext::GetWorldSize() const {
   if (this->is_distributed) {
     return this->communicator->GetWorldSize();
   }

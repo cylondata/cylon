@@ -44,24 +44,17 @@ cylon::Status JoinKernel::Finalize(std::shared_ptr<cylon::Table> &result) {
     std::shared_ptr<arrow::Table> left_tab = left_tables.front();
     std::shared_ptr<arrow::Table> right_tab = right_tables.front();
     std::shared_ptr<arrow::Table> out;
-    arrow::Status st = cylon::join::JoinTables(left_tab, right_tab, *join_config, &out, kPool);
+    RETURN_CYLON_STATUS_IF_FAILED(join::JoinTables(left_tab, right_tab, *join_config, &out, kPool));
     left_tables.pop();
     right_tables.pop();
     joined_tables.push_back(out);
   }
-  arrow::Result<std::shared_ptr<arrow::Table>> concat_tables =
-      arrow::ConcatenateTables(joined_tables, arrow::ConcatenateTablesOptions::Defaults(), kPool);
+  CYLON_ASSIGN_OR_RAISE(auto concat_tables,
+                        arrow::ConcatenateTables(joined_tables,
+                                                 arrow::ConcatenateTablesOptions::Defaults(),
+                                                 kPool));
 
-  if (concat_tables.ok()) {
-    auto final_table = concat_tables.ValueOrDie();
-    LOG(INFO) << "Done concatenating tables, rows :  " << final_table->num_rows();
-    cylon::Table::FromArrowTable(this->ctx, final_table, result);
-    return Status(static_cast<int>(concat_tables.status().code()),
-        concat_tables.status().message());
-  } else {
-    return Status(static_cast<int>(concat_tables.status().code()),
-                  concat_tables.status().message());
-  }
+  return Table::FromArrowTable(ctx, std::move(concat_tables), result);
 }
 
 }  // namespace kernel

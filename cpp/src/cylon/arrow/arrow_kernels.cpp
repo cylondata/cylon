@@ -82,7 +82,7 @@ class ArrowArrayNumericSplitKernel : public ArrowArraySplitKernel {
                const std::vector<uint32_t> &target_partitions, const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override {
     if ((size_t) values->length() != target_partitions.size()) {
-      return Status(Code::ExecutionError, "values rows != target_partitions length");
+      return {Code::ExecutionError, "values rows != target_partitions length"};
     }
 
     std::vector<std::shared_ptr<arrow::Buffer>> build_buffers;
@@ -163,11 +163,11 @@ class FixedBinaryArraySplitKernel : public ArrowArraySplitKernel {
                const std::vector<uint32_t> &target_partitions, const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override {
     if ((size_t) values->length() != target_partitions.size()) {
-      return Status(Code::ExecutionError, "values rows != target_partitions length");
+      return {Code::ExecutionError, "values rows != target_partitions length"};
     }
 
     // if chunks 0 we can return immediately
-    if (values->chunks().size() == 0) {
+    if (values->chunks().empty()) {
       return Status::OK();
     }
 
@@ -239,8 +239,9 @@ class BinaryArraySplitKernel : public ArrowArraySplitKernel {
   Status Split(const std::shared_ptr<arrow::ChunkedArray> &values, uint32_t num_partitions,
                const std::vector<uint32_t> &target_partitions, const std::vector<uint32_t> &counts,
                std::vector<std::shared_ptr<arrow::Array>> &output) override {
+    CYLON_UNUSED(counts);
     if ((size_t) values->length() != target_partitions.size()) {
-      return Status(Code::ExecutionError, "values rows != target_partitions length");
+      return {Code::ExecutionError, "values rows != target_partitions length"};
     }
     std::vector<std::shared_ptr<arrow::TypedBufferBuilder<bool>>> null_bitmap_builders;
     bool nulls_present = is_nulls_present(values);
@@ -417,8 +418,7 @@ arrow::Status SortIndices(arrow::MemoryPool *memory_pool,
                           std::shared_ptr<arrow::UInt64Array> &offsets, bool ascending) {
   std::unique_ptr<IndexSortKernel> out = CreateSorter(values->type(), memory_pool, ascending);
   if (out == nullptr) {
-    return arrow::Status(arrow::StatusCode::NotImplemented,
-                         "unknown type " + values->type()->ToString());
+    return arrow::Status::NotImplemented("unknown type " + values->type()->ToString());
   }
   return out->Sort(values, offsets);
 }
@@ -443,7 +443,7 @@ class NumericInplaceIndexSortKernel : public InplaceIndexSortKernel {
 
     T *left_data = data->template GetMutableValues<T>(1);
     int64_t length = values->length();
-    int64_t buf_size = length * sizeof(uint64_t);
+    int64_t buf_size = length * (int64_t) (sizeof(uint64_t));
 
     arrow::Result<std::unique_ptr<arrow::Buffer>> result = AllocateBuffer(buf_size, pool_);
     RETURN_ARROW_STATUS_IF_FAILED(result.status());
@@ -498,8 +498,7 @@ arrow::Status SortIndicesInPlace(arrow::MemoryPool *memory_pool,
                                  std::shared_ptr<arrow::UInt64Array> &offsets) {
   std::unique_ptr<InplaceIndexSortKernel> out = CreateInplaceSorter(values->type(), memory_pool);
   if (out == nullptr) {
-    return arrow::Status(arrow::StatusCode::NotImplemented,
-                         "unknown type " + values->type()->ToString());
+    return arrow::Status::NotImplemented("unknown type " + values->type()->ToString());
   }
   return out->Sort(values, offsets);
 }
@@ -532,18 +531,23 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
                                       std::shared_ptr<arrow::UInt64Array> &offsets,
                                       const std::vector<bool> &ascending) {
   if (columns.size() != ascending.size()) {
-    return arrow::Status(arrow::StatusCode::Invalid,
-                         "No of sort columns and no of sort direction indicators mismatch");
+    return arrow::Status::Invalid("No of sort columns and no of sort direction indicators mismatch");
   }
 
   std::vector<std::shared_ptr<ArrayIndexComparator>> comparators;
   comparators.reserve(columns.size());
   for (size_t i = 0; i < columns.size(); i++) {
-    comparators.push_back(
-        CreateArrayIndexComparator(cylon::util::GetChunkOrEmptyArray(table->column(columns[i]), 0), ascending[i]));
+    std::unique_ptr<ArrayIndexComparator> comp;
+    auto status =
+        CreateArrayIndexComparator(cylon::util::GetChunkOrEmptyArray(table->column(columns[i]), 0),
+                                   &comp, ascending[i]);
+    if (!status.is_ok()) {
+      return arrow::Status::Invalid(status.get_msg());
+    }
+    comparators.emplace_back(std::move(comp));
   }
 
-  int64_t buf_size = table->num_rows() * sizeof(int64_t);
+  auto buf_size = (int64_t) (table->num_rows() * sizeof(int64_t));
 
   arrow::Result<std::unique_ptr<arrow::Buffer>> result = arrow::AllocateBuffer(buf_size, memory_pool);
   const arrow::Status &status = result.status();
@@ -585,7 +589,6 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
 
 template<typename TYPE>
 class NumericStreamingSplitKernel : public StreamingSplitKernel {
-  using ARRAY_T = typename arrow::TypeTraits<TYPE>::ArrayType;
   using T = typename TYPE::c_type;
 
  public:
@@ -726,6 +729,7 @@ class BinaryStreamingSplitKernel : public StreamingSplitKernel {
 
   Status Split(const std::shared_ptr<arrow::Array> &array, const std::vector<uint32_t> &partitions,
                const std::vector<uint32_t> &cnts) override {
+    CYLON_UNUSED(cnts);
     auto reader = std::static_pointer_cast<arrow::BinaryArray>(array);
     const int64_t arr_len = array->length();
     for (int64_t i = 0; i < arr_len; i++) {

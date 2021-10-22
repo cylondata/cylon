@@ -120,7 +120,8 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array,
                           std::shared_ptr<arrow::Array> &out,
                           arrow::MemoryPool *pool = arrow::default_memory_pool());
 
-std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk);
+std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk,
+                                                   arrow::MemoryPool *pool = arrow::default_memory_pool());
 
 inline bool IsMutable(const std::shared_ptr<arrow::Array> &array) {
   for (auto &&buff: array->data()->buffers) {

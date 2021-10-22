@@ -25,7 +25,12 @@ cylon::kernel::StreamingHashPartitionKernel::StreamingHashPartitionKernel(const 
     : num_partitions(num_partitions), hash_columns(hash_columns), schema(schema), ctx(ctx) {
   partition_kernels.reserve(hash_columns.size());
   for (auto &&col:hash_columns) {
-    partition_kernels.emplace_back(CreateHashPartitionKernel(schema->field(col)->type()));
+    std::unique_ptr<HashPartitionKernel> kernel;
+    auto status = CreateHashPartitionKernel(schema->field(col)->type(), &kernel);
+    if (!status.is_ok()) {
+      throw std::runtime_error(status.get_msg());
+    }
+    partition_kernels.emplace_back(std::move(kernel));
   }
 
   split_kernels.reserve(schema->num_fields());

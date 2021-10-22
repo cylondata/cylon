@@ -35,7 +35,7 @@ namespace join {
  * @param memory_pool
  * @return
  */
-arrow::Status SortJoin(const std::shared_ptr<arrow::Table> &ltab,
+Status SortJoin(const std::shared_ptr<arrow::Table> &ltab,
                        const std::shared_ptr<arrow::Table> &rtab,
                        const config::JoinConfig &config,
                        std::shared_ptr<arrow::Table> *joined_table,
