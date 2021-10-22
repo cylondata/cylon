@@ -118,7 +118,7 @@ struct CompareFunc<ArrowT, Asc, arrow::enable_if_has_c_type<ArrowT>> {
   using T = typename ArrowTypeTraits<ArrowT>::ValueT;
 
   static int compare(const T &v1, const T &v2) {
-    auto diff = v1 - v2;
+    auto diff = static_cast<int>(v1 - v2);
     if (Asc) {
       return (diff > 0) - (diff < 0);
     } else {
@@ -129,9 +129,8 @@ struct CompareFunc<ArrowT, Asc, arrow::enable_if_has_c_type<ArrowT>> {
 
 template<typename ArrowT, bool Asc>
 struct CompareFunc<ArrowT, Asc, arrow::enable_if_has_string_view<ArrowT>> {
-  using T = typename arrow::util::string_view;
 
-  static int compare(const T &v1, const T &v2) {
+  static int compare(const arrow::util::string_view &v1, const arrow::util::string_view &v2) {
     if (Asc) {
       return v1.compare(v2);
     } else {
