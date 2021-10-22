@@ -59,19 +59,20 @@ class TableRowComparator {
 class ArrayIndexComparator {
  public:
   virtual  ~ArrayIndexComparator() = default;
-  virtual int compare(int64_t index1, int64_t index2) const = 0;
-  virtual bool equal_to(int64_t index1, int64_t index2) const = 0;
+  virtual int compare(const int64_t &index1, const int64_t &index2) const = 0;
+  virtual bool equal_to(const int64_t &index1, const int64_t &index2) const = 0;
 };
 
 /**
  * Creates a comparator for a single array
  * @param array
- * @param asc
+ * @param asc ? ascending: descending
+ * @param null_order ? null values considered as largest : null values considered as smallest
  * @return
  */
 Status CreateArrayIndexComparator(const std::shared_ptr<arrow::Array> &array,
                                   std::unique_ptr<ArrayIndexComparator> *out_comp,
-                                  bool asc = true);
+                                  bool asc = true, bool null_order = true);
 
 // -----------------------------------------------------------------------------
 
@@ -123,7 +124,7 @@ class DualArrayIndexComparator {
 Status CreateDualArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,
                                       const std::shared_ptr<arrow::Array> &a2,
                                       std::unique_ptr<DualArrayIndexComparator> *out_comp,
-                                      bool asc = true);
+                                      bool asc = true, bool null_order = true);
 
 // -----------------------------------------------------------------------------
 

@@ -540,7 +540,7 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
     std::unique_ptr<ArrayIndexComparator> comp;
     auto status =
         CreateArrayIndexComparator(cylon::util::GetChunkOrEmptyArray(table->column(columns[i]), 0),
-                                   &comp, ascending[i]);
+                                   &comp, ascending[i], /*null_order=*/true);
     if (!status.is_ok()) {
       return arrow::Status::Invalid(status.get_msg());
     }
