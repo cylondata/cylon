@@ -13,11 +13,12 @@
  */
 
 #include <glog/logging.h>
-#include <cylon/join/sort_join.hpp>
-#include <cylon/arrow/arrow_comparator.hpp>
-#include <cylon/arrow/arrow_kernels.hpp>
-
 #include <arrow/api.h>
+
+#include "cylon/join/sort_join.hpp"
+#include "cylon/arrow/arrow_comparator.hpp"
+#include "cylon/arrow/arrow_kernels.hpp"
+#include "cylon/util/arrow_utils.hpp"
 
 namespace cylon {
 namespace join {
@@ -321,25 +322,41 @@ Status do_inplace_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
 }
 
 /*  MULTI INDEX */
-
-inline void advance_multi_index(std::vector<int64_t> *subset,
-                                const std::shared_ptr<arrow::UInt64Array> &sorted_indices, // this is always UInt64Array
-                                int64_t *current_index,                                    // always int64_t
-                                cylon::TableRowIndexEqualTo *comp, int64_t *key_index) {
+enum AdvancingSide {
+  Left, Right
+};
+template<AdvancingSide side>
+inline void advance_multi_index(const DualTableRowIndexEqualTo &comp,
+                                const std::shared_ptr<arrow::UInt64Array> &sorted_indices,
+                                std::vector<int64_t> *subset,
+                                int64_t *current_index,
+                                int64_t *key_index) {
   subset->clear();
   if (*current_index == sorted_indices->length()) {
     return;
   }
 
-  int64_t data_index = sorted_indices->Value(*current_index);
+  auto data_index = (int64_t) sorted_indices->Value(*current_index);
   *key_index = data_index;
-  while (*current_index < sorted_indices->length() && comp->compare(data_index, *key_index) == 0) {
-    subset->push_back(data_index);
-    (*current_index)++;
-    if (*current_index == sorted_indices->length()) {
-      break;
+  if (side == Left) {
+    while (*current_index < sorted_indices->length() && comp(data_index, *key_index)) {
+      subset->push_back(data_index);
+      (*current_index)++;
+      if (*current_index == sorted_indices->length()) {
+        break;
+      }
+      data_index = (int64_t) sorted_indices->Value(*current_index);
     }
-    data_index = sorted_indices->Value(*current_index);
+  } else { // if right indices, set the leading bit
+    while (*current_index < sorted_indices->length()
+        && comp(cylon::util::SetBit(data_index), cylon::util::SetBit(*key_index))) {
+      subset->push_back(data_index);
+      (*current_index)++;
+      if (*current_index == sorted_indices->length()) {
+        break;
+      }
+      data_index = (int64_t) sorted_indices->Value(*current_index);
+    }
   }
 }
 
@@ -389,17 +406,10 @@ Status do_multi_index_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
             << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t2).count();
 
   // create comparator
-  std::unique_ptr<TableRowIndexEqualTo> left_tab_index_comparator, right_tab_index_comparator;
-  RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexEqualTo::Make(left_tab_comb,
-                                                           left_join_column_indices,
-                                                           &left_tab_index_comparator));
-  RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexEqualTo::Make(right_tab_comb,
-                                                           right_join_column_indices,
-                                                           &right_tab_index_comparator));
-
-  std::unique_ptr<DualTableRowIndexEqualTo> mult_tab_comparator;
-  DualTableRowIndexEqualTo::Make(left_tab_comb, right_tab_comb, left_join_column_indices,
-                                 right_join_column_indices, &mult_tab_comparator);
+  std::unique_ptr<DualTableRowIndexEqualTo> multi_tab_comp;
+  RETURN_CYLON_STATUS_IF_FAILED(
+      DualTableRowIndexEqualTo::Make(left_tab_comb, right_tab_comb, left_join_column_indices,
+                                     right_join_column_indices, &multi_tab_comp));
 
   int64_t left_key_index = 0, right_key_index = 0;  // reference indices
   std::vector<int64_t> left_subset, right_subset;
@@ -412,78 +422,62 @@ Status do_multi_index_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
   left_indices.reserve(init_vec_size);
   right_indices.reserve(init_vec_size);
 
-  advance_multi_index(&left_subset, left_index_sorted_column, &left_current_index,
-                      left_tab_index_comparator.get(), &left_key_index);
+  advance_multi_index<Left>(*multi_tab_comp, left_index_sorted_column, &left_subset,
+                            &left_current_index, &left_key_index);
 
-  advance_multi_index(&right_subset, right_index_sorted_column, &right_current_index,
-                      right_tab_index_comparator.get(), &right_key_index);
+  advance_multi_index<Right>(*multi_tab_comp, right_index_sorted_column, &right_subset,
+                             &right_current_index, &right_key_index);
 
   while (!left_subset.empty() && !right_subset.empty()) {
-    auto com = mult_tab_comparator->compare(0, left_key_index, 1, right_key_index);
+    int com = multi_tab_comp->compare(0, left_key_index, 1, right_key_index);
     if (com == 0) {  // use a key comparator
-      for (int64_t left_idx : left_subset) {
-        for (int64_t right_idx : right_subset) {
+      for (int64_t left_idx: left_subset) {
+        for (int64_t right_idx: right_subset) {
           left_indices.push_back(left_idx);
           right_indices.push_back(right_idx);
         }
       }
       // advance
-      advance_multi_index(&left_subset, left_index_sorted_column, &left_current_index,
-                          left_tab_index_comparator.get(), &left_key_index);
-
-      advance_multi_index(&right_subset, right_index_sorted_column, &right_current_index,
-                          right_tab_index_comparator.get(), &right_key_index);
+      advance_multi_index<Left>(*multi_tab_comp, left_index_sorted_column, &left_subset,
+                                &left_current_index, &left_key_index);
+      advance_multi_index<Right>(*multi_tab_comp, right_index_sorted_column, &right_subset,
+                                 &right_current_index, &right_key_index);
     } else if (com < 0) {
       // if this is a left join, this is the time to include them all in the result set
       if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
-        for (int64_t left_idx : left_subset) {
-          left_indices.push_back(left_idx);
-          right_indices.push_back(-1);
-        }
+        left_indices.insert(left_indices.end(), left_subset.begin(), left_subset.end());
+        right_indices.insert(right_indices.end(), left_subset.size(), -1);
       }
-
-      advance_multi_index(&left_subset, left_index_sorted_column, &left_current_index,
-                          left_tab_index_comparator.get(), &left_key_index);
+      advance_multi_index<Left>(*multi_tab_comp, left_index_sorted_column, &left_subset,
+                                &left_current_index, &left_key_index);
     } else {
       // if this is a right join, this is the time to include them all in the result set
       if (join_type == cylon::join::config::RIGHT || join_type == cylon::join::config::FULL_OUTER) {
-        for (int64_t right_idx : right_subset) {
-          left_indices.push_back(-1);
-          right_indices.push_back(right_idx);
-        }
+        left_indices.insert(left_indices.end(), right_subset.size(), -1);
+        right_indices.insert(right_indices.end(), right_subset.begin(), right_subset.end());
       }
-
-      advance_multi_index(&right_subset, right_index_sorted_column, &right_current_index,
-                          right_tab_index_comparator.get(), &right_key_index);
+      advance_multi_index<Right>(*multi_tab_comp, right_index_sorted_column, &right_subset,
+                                 &right_current_index, &right_key_index);
     }
   }
 
   // specially handling left and right join
   if (join_type == cylon::join::config::LEFT || join_type == cylon::join::config::FULL_OUTER) {
-    while (!left_subset.empty()) {
-      for (int64_t left_idx : left_subset) {
-        left_indices.push_back(left_idx);
-        right_indices.push_back(-1);
-      }
-      advance_multi_index(&left_subset, left_index_sorted_column, &left_current_index,
-                          left_tab_index_comparator.get(), &left_key_index);
-    }
+    left_indices.insert(left_indices.end(), left_subset.begin(), left_subset.end());
+    right_indices.insert(right_indices.end(), left_subset.size(), -1);
   }
 
   if (join_type == cylon::join::config::RIGHT || join_type == cylon::join::config::FULL_OUTER) {
-    while (!right_subset.empty()) {
-      for (int64_t right_idx : right_subset) {
-        left_indices.push_back(-1);
-        right_indices.push_back(right_idx);
-      }
-      advance_multi_index(&right_subset, right_index_sorted_column, &right_current_index,
-                          right_tab_index_comparator.get(), &right_key_index);
-    }
+    left_indices.insert(left_indices.end(), right_subset.size(), -1);
+    right_indices.insert(right_indices.end(), right_subset.begin(), right_subset.end());
   }
 
   // clear the sort columns
   left_index_sorted_column.reset();
   right_index_sorted_column.reset();
+  left_subset.clear();
+  right_subset.clear();
+
   t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Index join time : "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -491,14 +485,9 @@ Status do_multi_index_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
 
   t1 = std::chrono::high_resolution_clock::now();
   // build final table
-  RETURN_CYLON_STATUS_IF_FAILED(util::build_final_table(left_indices,
-                                                        right_indices,
-                                                        left_tab_comb,
-                                                        right_tab_comb,
-                                                        left_table_prefix,
-                                                        right_table_prefix,
-                                                        joined_table,
-                                                        memory_pool));
+  RETURN_CYLON_STATUS_IF_FAILED(
+      util::build_final_table(left_indices, right_indices, left_tab_comb, right_tab_comb,
+                              left_table_prefix, right_table_prefix, joined_table, memory_pool));
   t2 = std::chrono::high_resolution_clock::now();
   LOG(INFO) << "Built final table in : "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();

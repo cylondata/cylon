@@ -113,12 +113,32 @@ int TableRowComparator::compare(const std::shared_ptr<arrow::Table> &table1, int
 template<typename ArrowT, bool Asc, typename Enable = void>
 struct CompareFunc {};
 
+// compare function for integer-like values.
 template<typename ArrowT, bool Asc>
-struct CompareFunc<ArrowT, Asc, arrow::enable_if_has_c_type<ArrowT>> {
+struct CompareFunc<ArrowT, Asc,
+                   std::enable_if_t<arrow::is_integer_type<ArrowT>::value
+                                        || arrow::is_temporal_type<ArrowT>::value >> {
+  using T = typename ArrowTypeTraits<ArrowT>::ValueT;
+  using SignedT = typename std::make_signed<T>::type;
+
+  // Since there are unsigned types, we need to promote diff to its signed type
+  static int compare(const T &v1, const T &v2) {
+    auto diff = static_cast<SignedT>(v1 - v2);
+    if (Asc) {
+      return (diff > 0) - (diff < 0);
+    } else {
+      return (diff < 0) - (diff > 0);
+    }
+  }
+};
+
+// compare function for float-like values
+template<typename ArrowT, bool Asc>
+struct CompareFunc<ArrowT, Asc, arrow::enable_if_floating_point<ArrowT>> {
   using T = typename ArrowTypeTraits<ArrowT>::ValueT;
 
   static int compare(const T &v1, const T &v2) {
-    auto diff = static_cast<int>(v1 - v2);
+    T diff = v1 - v2;
     if (Asc) {
       return (diff > 0) - (diff < 0);
     } else {
@@ -419,25 +439,14 @@ class DualNumericRowIndexComparator : public DualArrayIndexComparator {
   }
 
   int compare(int64_t index1, int64_t index2) const override {
-    auto diff = arrays[util::CheckBit(index1)][util::ClearBit(index1)] -
-        arrays[util::CheckBit(index2)][util::ClearBit(index2)];
-    if (ASC) {
-      return (diff > 0) - (diff < 0);
-    } else {
-      return (diff < 0) - (diff > 0);
-    }
+    return CompareFunc<TYPE, ASC>::compare(arrays[util::CheckBit(index1)][util::ClearBit(index1)],
+                                           arrays[util::CheckBit(index2)][util::ClearBit(index2)]);
   }
 
-  int compare(int32_t array_index1,
-              int64_t row_index1,
-              int32_t array_index2,
-              int64_t row_index2) const override {
-    auto diff = arrays[array_index1][row_index1] - arrays[array_index2][row_index2];
-    if (ASC) {
-      return (diff > 0) - (diff < 0);
-    } else {
-      return (diff < 0) - (diff > 0);
-    }
+  int compare(int32_t array_index1, int64_t row_index1,
+              int32_t array_index2, int64_t row_index2) const override {
+    return CompareFunc<TYPE, ASC>::compare(arrays[array_index1][row_index1],
+                                           arrays[array_index2][row_index2]);
   }
 
   bool equal_to(int64_t index1, int64_t index2) const override {
@@ -466,13 +475,9 @@ class DualBinaryRowIndexComparator : public DualArrayIndexComparator {
   }
 
   int compare(int64_t index1, int64_t index2) const override {
-    if (ASC) {
-      return arrays[util::CheckBit(index1)]->GetView(util::ClearBit(index1))
-          .compare(arrays[util::CheckBit(index2)]->GetView(util::ClearBit(index2)));
-    } else {
-      return arrays[util::CheckBit(index2)]->GetView(util::ClearBit(index2))
-          .compare(arrays[util::CheckBit(index1)]->GetView(util::ClearBit(index1)));
-    }
+    return CompareFunc<TYPE, ASC>::compare(
+        arrays[util::CheckBit(index1)]->GetView(util::ClearBit(index1)),
+        arrays[util::CheckBit(index2)]->GetView(util::ClearBit(index2)));
   }
 
   bool equal_to(int64_t index1, int64_t index2) const override {
@@ -480,17 +485,10 @@ class DualBinaryRowIndexComparator : public DualArrayIndexComparator {
         == arrays[util::CheckBit(index2)]->GetView(util::ClearBit(index2));
   }
 
-  int compare(int32_t array_index1,
-              int64_t row_index1,
-              int32_t array_index2,
-              int64_t row_index2) const override {
-    if (ASC) {
-      return arrays[array_index1]->GetView(row_index1)
-          .compare(arrays[array_index2]->GetView(row_index2));
-    } else {
-      return arrays[array_index2]->GetView(row_index2)
-          .compare(arrays[array_index1]->GetView(row_index1));
-    }
+  int compare(int32_t array_index1, int64_t row_index1,
+              int32_t array_index2, int64_t row_index2) const override {
+    return CompareFunc<TYPE, ASC>::compare(arrays[array_index1]->GetView(row_index1),
+                                           arrays[array_index2]->GetView(row_index2));
   }
 
  private:
@@ -815,7 +813,7 @@ Status DualTableRowIndexEqualTo::Make(const std::shared_ptr<arrow::Table> &t1,
     const auto &a2 = util::GetChunkOrEmptyArray(t2->column(t2_indices[i]), 0);
 
     std::unique_ptr<DualArrayIndexComparator> comp;
-    RETURN_CYLON_STATUS_IF_FAILED(CreateDualArrayIndexComparator(a1, a2, &comp, false));
+    RETURN_CYLON_STATUS_IF_FAILED(CreateDualArrayIndexComparator(a1, a2, &comp));
     (*comps)[i] = std::move(comp);
   }
 
@@ -845,7 +843,7 @@ bool DualTableRowIndexEqualTo::operator()(const int64_t &record1, const int64_t 
 
 int DualTableRowIndexEqualTo::compare(const int64_t &record1, const int64_t &record2) const {
   for (const auto &comp: *comparators) {
-    auto com = comp->compare(record1, record2);
+    int com = comp->compare(record1, record2);
     if (com != 0) {
       return com;
     }
@@ -858,7 +856,7 @@ int DualTableRowIndexEqualTo::compare(const int32_t &table1,
                                       const int32_t &table2,
                                       const int64_t &record2) const {
   for (const auto &comp: *comparators) {
-    auto com = comp->compare(table1, record1, table2, record2);
+    int com = comp->compare(table1, record1, table2, record2);
     if (com != 0) {
       return com;
     }

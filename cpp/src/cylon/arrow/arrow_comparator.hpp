@@ -59,8 +59,34 @@ class TableRowComparator {
 class ArrayIndexComparator {
  public:
   virtual  ~ArrayIndexComparator() = default;
-  virtual int compare(const int64_t &index1, const int64_t &index2) const = 0;
-  virtual bool equal_to(const int64_t &index1, const int64_t &index2) const = 0;
+
+  /**
+   * compares indices i and j
+   * @param i
+   * @param j
+   * @return Output is semantically similar to the following lambda.
+
+   auto dummy_comp = [](bool null_order, bool asc, int64_t i, int64_t j) -> int {
+      T v1 = arr.IsNull(i) ? (null_order ? T_MAX_VALUE : T_MIN_VALUE) : arr[i];
+      T v2 = arr.IsNull(j) ? (null_order ? T_MAX_VALUE : T_MIN_VALUE) : arr[j];
+      return  asc? v1.compare(v2) : v2.compare(v1);
+    };
+   */
+  virtual int compare(const int64_t &i, const int64_t &j) const = 0;
+
+  /**
+   * checks if indices i and j are equal
+   * @param i
+   * @param j
+   * @return Output is semantically similar to the following lambda
+
+   auto dummy_equal = [](int64_t i, int64_t j) -> bool {
+      T v1 = arr.IsNull(i) ? T_MAX_VALUE : arr[i];
+      T v2 = arr.IsNull(j) ? T_MAX_VALUE : arr[j];
+      return v1 == v2;
+    };
+   */
+  virtual bool equal_to(const int64_t &i, const int64_t &j) const = 0;
 };
 
 /**
