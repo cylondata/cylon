@@ -19,79 +19,112 @@
 namespace cylon {
 namespace test {
 
-TEMPLATE_LIST_TEST_CASE("test comparator - numeric", "[comp]", ArrowNumericTypes) {
-  using T = typename ArrowTypeTraits<TestType>::ValueT;
+template<typename T, typename Enable = void>
+struct Helper {};
 
-  auto type = default_type_instance<TestType>();
-  INFO("testing " + type->ToString())
+template<typename T>
+struct Helper<T, std::enable_if_t<std::is_arithmetic<T>::value>> {
+  static T max() { return std::numeric_limits<T>::max(); }
+  static T min() { return std::numeric_limits<T>::min(); }
 
-  auto dummy_comp = [](bool asc, T v1, T v2) -> int {
+  static int compare(bool asc, const T &v1, const T &v2) {
     if (v1 == v2) return 0;
     else if (v1 < v2) return asc ? -1 : 1;
     else return asc ? 1 : -1;
+  }
+};
+
+template<>
+struct Helper<arrow::util::string_view> {
+  static arrow::util::string_view max() { return "ZZZZ"; }
+  static arrow::util::string_view min() { return ""; }
+
+  static int compare(bool asc,
+                     const arrow::util::string_view &v1,
+                     const arrow::util::string_view &v2) {
+    return asc ? v1.compare(v2) : v2.compare(v1);
+  }
+};
+
+template<typename ArrowT>
+void TestArrayIndexComparator(std::string arr_str) {
+  using T = typename ArrowTypeTraits<ArrowT>::ValueT;
+  using ArrayT = typename ArrowTypeTraits<ArrowT>::ArrayT;
+
+  auto type = default_type_instance<ArrowT>();
+  INFO("testing " + type->ToString())
+
+  auto arr = std::static_pointer_cast<ArrayT>(ArrayFromJSON(type, arr_str));
+
+  // dummy comparator to emulate the behavior
+  auto dummy_comp = [&](bool null_order, bool asc, int64_t i, int64_t j) -> int {
+    T v1 = arr->IsNull(i) ? (null_order ? Helper<T>::max() : Helper<T>::min())
+                          : arr->GetView(i);
+    T v2 = arr->IsNull(j) ? (null_order ? Helper<T>::max() : Helper<T>::min())
+                          : arr->GetView(j);
+    return  Helper<T>::compare(asc, v1, v2);
   };
 
-  auto arr = ArrayFromJSON(type, "[1, 2, 3, 4, 5, 6, 7, 1, 2, 3]");
-  const T *data = arr->data()->template GetValues<T>(1);
+  // dummy comparator and comp->compare might give different output ints. for those to be valid,
+  // they need to be equal or have the same sign.
+  auto check_comp_values= [](int a, int b){
+    if (a == b) return true;
+    return a*b > 0;
+  };
 
   std::unique_ptr<ArrayIndexComparator> comp;
-  for (bool asc: {true, false}) {
-    SECTION(asc ? "asc" : "desc") {
-      CHECK_CYLON_STATUS(CreateArrayIndexComparator(arr, &comp, asc));
-      for (int64_t i = 0; i < arr->length(); i++) {
-        for (int64_t j = 0; j < arr->length(); j++) {
-          REQUIRE((dummy_comp(asc, data[i], data[j]) == comp->compare(i, j)));
+  for (bool null_order: {true, false}) {
+    SECTION(null_order ? "null to max" : "null to min") {
+      for (bool asc: {true, false}) {
+        SECTION(asc ? "asc " : "desc ") {
+          CHECK_CYLON_STATUS(CreateArrayIndexComparator(arr, &comp, asc, null_order));
+          for (int64_t i = 0; i < arr->length(); i++) {
+            for (int64_t j = 0; j < arr->length(); j++) {
+              auto exp = dummy_comp(null_order, asc, i, j);
+              auto got = comp->compare(i, j);
+              INFO("" << i << " " << j << " " << exp << " " << got);
+              REQUIRE(check_comp_values(exp, got));
+            }
+          }
         }
       }
     }
   }
 
   SECTION("equal to") {
+    // dummy equal to operator to emulate the behavior
+    auto dummy_equal = [&](int64_t i, int64_t j) {
+      // if i'th value is null, replace with some known value
+      T v1 = arr->IsNull(i) ? Helper<T>::max() : arr->GetView(i);
+      T v2 = arr->IsNull(j) ? Helper<T>::max() : arr->GetView(j);
+      return v1 == v2;
+    };
+
     CHECK_CYLON_STATUS(CreateArrayIndexComparator(arr, &comp));
     for (int64_t i = 0; i < arr->length(); i++) {
       for (int64_t j = 0; j < arr->length(); j++) {
-        REQUIRE((data[i] == data[j]) == comp->equal_to(i, j));
+        REQUIRE((dummy_equal(i, j) == comp->equal_to(i, j)));
       }
     }
   }
 }
 
-//TEMPLATE_LIST_TEST_CASE("test comparator w/ null- numeric", "[comp]", ArrowNumericTypes) {
-//  using T = typename ArrowTypeTraits<TestType>::ValueT;
-//
-//  auto type = default_type_instance<TestType>();
-//  INFO("testing " + type->ToString())
-//
-//  auto arr = ArrayFromJSON(type, "[1, 2, 3, 4, null, 6, null, 1, 2, 3]");
-//  const T *data = arr->data()->template GetValues<T>(1);
-//
-//  auto dummy_comp = [](bool asc, int64_t v1, int64_t v2) -> int {
-//    if (v1 == v2) return 0;
-//    else if (v1 < v2) return asc ? -1 : 1;
-//    else return asc ? 1 : -1;
-//  };
-//
-//  std::unique_ptr<ArrayIndexComparator> comp;
-//  for (bool asc: {true, false}) {
-//    SECTION(asc ? "asc" : "desc") {
-//      CHECK_CYLON_STATUS(CreateArrayIndexComparator(arr, &comp, asc));
-//      for (int64_t i = 0; i < arr->length(); i++) {
-//        for (int64_t j = 0; j < arr->length(); j++) {
-//          REQUIRE((dummy_comp(asc, data[i], data[j]) == comp->compare(i, j)));
-//        }
-//      }
-//    }
-//  }
-//
-//  SECTION("equal to") {
-//    CHECK_CYLON_STATUS(CreateArrayIndexComparator(arr, &comp));
-//    for (int64_t i = 0; i < arr->length(); i++) {
-//      for (int64_t j = 0; j < arr->length(); j++) {
-//        REQUIRE((data[i] == data[j]) == comp->equal_to(i, j));
-//      }
-//    }
-//  }
-//}
+TEMPLATE_LIST_TEST_CASE("test comparator - numeric", "[comp]", ArrowNumericTypes) {
+  TestArrayIndexComparator<TestType>("[10, 2, 3, 4, 5, 6, 7, 10, 2, 3]");
+}
+
+TEMPLATE_LIST_TEST_CASE("test comparator w/ null- numeric", "[comp]", ArrowNumericTypes) {
+  TestArrayIndexComparator<TestType>("[10, 2, 3, 4, null, 6, null, 10, 2, 3]");
+}
+
+TEMPLATE_LIST_TEST_CASE("test comparator - binary", "[comp]", ArrowBinaryTypes) {
+  TestArrayIndexComparator<TestType>(
+      R"(["10", "2", "3", "4", "5", "6", "7", "10", "2", "3"])");
+}
+
+TEMPLATE_LIST_TEST_CASE("test comparator w/ nulls - binary", "[comp]", ArrowBinaryTypes) {
+  TestArrayIndexComparator<TestType>(R"(["10", "2", "3", "4", null, "6", null, "10", "2", "3"])");
+}
 
 }
 }

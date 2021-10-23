@@ -173,7 +173,7 @@ class BinaryRowIndexComparator : public ArrayIndexComparator {
   }
 
   bool equal_to(const int64_t &index1, const int64_t &index2) const override {
-    return casted_arr->GetView(index1).compare(casted_arr->GetView(index2));
+    return casted_arr->GetView(index1) == casted_arr->GetView(index2);
   }
 
  private:
@@ -229,7 +229,7 @@ class ArrayIndexComparatorWithNulls : public ArrayIndexComparator {
     bool is_null2 = array->IsNull(index2);
 
     return (is_null1 && is_null2) ||
-        (!is_null1 && !is_null2 && array->GetView(index1) == array->GetView(index2));
+        (!is_null1 && !is_null2 && (array->GetView(index1) == array->GetView(index2)));
   }
 
  private:
