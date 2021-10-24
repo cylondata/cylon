@@ -407,6 +407,10 @@ Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylo
 
 Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, bool& result, bool ordered = true);
 
+Status Repartition(const std::shared_ptr<cylon::Table>& table,
+                   const std::vector<int64_t>& rows_per_partition,
+                   std::shared_ptr<cylon::Table> *output);
+
 #ifdef BUILD_CYLON_PARQUET
 /**
  * Create a table by reading a parquet file
