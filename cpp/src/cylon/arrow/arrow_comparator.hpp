@@ -137,6 +137,7 @@ class DualArrayIndexComparator {
    */
   virtual int compare(int32_t array_index1, int64_t row_index1, int32_t array_index2, int64_t row_index2) const = 0;
 };
+
 /**
  * Creates a comparator for two arrays
  * IMPORTANT: to uniquely identify rows of arr1 and arr2, the most significant bit of index value is encoded as,
@@ -144,7 +145,8 @@ class DualArrayIndexComparator {
  *  1 --> arr2
  * @param a1
  * @param a2
- * @param asc
+ * @param asc ? ascending: descending
+ * @param null_order ? null values considered as largest : null values considered as smallest
  * @return
  */
 Status CreateDualArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,

@@ -431,13 +431,6 @@ class DualNumericRowIndexComparator : public DualArrayIndexComparator {
                                 const std::shared_ptr<arrow::Array> &a2)
       : arrays({a1->data()->template GetValues<T>(1), a2->data()->template GetValues<T>(1)}) {}
 
-  static Status Make(const std::shared_ptr<arrow::Array> &a1,
-                     const std::shared_ptr<arrow::Array> &a2,
-                     std::unique_ptr<DualArrayIndexComparator> *out_comp) {
-    *out_comp = std::make_unique<DualNumericRowIndexComparator<TYPE, ASC>>(a1, a2);
-    return Status::OK();
-  }
-
   int compare(int64_t index1, int64_t index2) const override {
     return CompareFunc<TYPE, ASC>::compare(arrays[util::CheckBit(index1)][util::ClearBit(index1)],
                                            arrays[util::CheckBit(index2)][util::ClearBit(index2)]);
@@ -466,13 +459,6 @@ class DualBinaryRowIndexComparator : public DualArrayIndexComparator {
                                         const std::shared_ptr<arrow::Array> &a2)
       : arrays({std::static_pointer_cast<ARROW_ARRAY_T>(a1),
                 std::static_pointer_cast<ARROW_ARRAY_T>(a2)}) {}
-
-  static Status Make(const std::shared_ptr<arrow::Array> &a1,
-                     const std::shared_ptr<arrow::Array> &a2,
-                     std::unique_ptr<DualArrayIndexComparator> *out_comp) {
-    *out_comp = std::make_unique<DualBinaryRowIndexComparator<TYPE, ASC>>(a1, a2);
-    return Status::OK();
-  }
 
   int compare(int64_t index1, int64_t index2) const override {
     return CompareFunc<TYPE, ASC>::compare(
@@ -556,94 +542,205 @@ class DualArrayIndexComparatorForSingleArray : public DualArrayIndexComparator {
   std::shared_ptr<ArrayIndexComparator> non_empty_comp;
 };
 
-template<bool ASC>
-Status CreateArrayIndexComparatorUtil(const std::shared_ptr<arrow::Array> &a1,
-                                      const std::shared_ptr<arrow::Array> &a2,
-                                      std::unique_ptr<DualArrayIndexComparator> *out_comp) {
-  if (!a1->type()->Equals(a2->type())) {
-    return {Code::Invalid, "array types are not equal " + a1->type()->ToString() + " vs "
-        + a2->type()->ToString()};
+template<typename ArrowT, bool Asc, bool NullOrder>
+class DualArrayIndexComparatorWithNulls : public DualArrayIndexComparator {
+  using T = typename ArrowTypeTraits<ArrowT>::ValueT;
+  using ArrayT = typename ArrowTypeTraits<ArrowT>::ArrayT;
+
+ public:
+  DualArrayIndexComparatorWithNulls(const std::shared_ptr<arrow::Array> &a1,
+                                    const std::shared_ptr<arrow::Array> &a2)
+      : arrays({std::static_pointer_cast<ArrayT>(a1), std::static_pointer_cast<ArrayT>(a2)}) {}
+
+  int compare(int64_t index1, int64_t index2) const override {
+    bool is_null1 = arrays[util::CheckBit(index1)]->IsNull(util::ClearBit(index1));
+    bool is_null2 = arrays[util::CheckBit(index2)]->IsNull(util::ClearBit(index2));
+
+    if (is_null1 || is_null2) { // if either one is null,
+      return (is_null1 && !is_null2) * ((Asc == NullOrder) - (Asc != NullOrder))
+          + (!is_null1 && is_null2) * ((Asc != NullOrder) - (Asc == NullOrder));
+    }
+
+    return CompareFunc<ArrowT, Asc>::compare(
+        arrays[util::CheckBit(index1)]->GetView(util::ClearBit(index1)),
+        arrays[util::CheckBit(index2)]->GetView(util::ClearBit(index2)));
   }
 
-  switch (a1->type_id()) {
-    case arrow::Type::UINT8:
-      return DualNumericRowIndexComparator<arrow::UInt8Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::INT8:
-      return DualNumericRowIndexComparator<arrow::Int8Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::UINT16:
-      return DualNumericRowIndexComparator<arrow::UInt16Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::INT16:
-      return DualNumericRowIndexComparator<arrow::Int16Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::UINT32:
-      return DualNumericRowIndexComparator<arrow::UInt32Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::INT32:
-      return DualNumericRowIndexComparator<arrow::Int32Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::UINT64:
-      return DualNumericRowIndexComparator<arrow::UInt64Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::INT64:
-      return DualNumericRowIndexComparator<arrow::Int64Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::HALF_FLOAT:
-      return DualNumericRowIndexComparator<arrow::HalfFloatType, ASC>::Make(a1,
-                                                                            a2, out_comp);
-    case arrow::Type::FLOAT:
-      return DualNumericRowIndexComparator<arrow::FloatType,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::DOUBLE:
-      return DualNumericRowIndexComparator<arrow::DoubleType,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::STRING:
-      return DualBinaryRowIndexComparator<arrow::StringType,
-                                          ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::BINARY:
-      return DualBinaryRowIndexComparator<arrow::BinaryType,
-                                          ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::LARGE_STRING:
-      return DualBinaryRowIndexComparator<arrow::LargeStringType,
-                                          ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::LARGE_BINARY:
-      return DualBinaryRowIndexComparator<arrow::LargeBinaryType,
-                                          ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::FIXED_SIZE_BINARY:
-      return DualBinaryRowIndexComparator<arrow::FixedSizeBinaryType,
-                                          ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::DATE32:
-      return DualNumericRowIndexComparator<arrow::Date32Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::DATE64:
-      return DualNumericRowIndexComparator<arrow::Date64Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::TIMESTAMP:
-      return DualNumericRowIndexComparator<arrow::TimestampType,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::TIME32:
-      return DualNumericRowIndexComparator<arrow::Time32Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    case arrow::Type::TIME64:
-      return DualNumericRowIndexComparator<arrow::Time64Type,
-                                           ASC>::Make(a1, a2, out_comp);
-    default:
-      return {Code::Invalid,
-              "Invalid data type for ArrayIndexComparator " + a1->type()->ToString()};
+  int compare(int32_t array_index1, int64_t row_index1,
+              int32_t array_index2, int64_t row_index2) const override {
+    bool is_null1 = arrays[array_index1]->IsNull(row_index1);
+    bool is_null2 = arrays[array_index2]->IsNull(row_index2);
+
+    if (is_null1 || is_null2) { // if either one is null,
+      return (is_null1 && !is_null2) * ((Asc == NullOrder) - (Asc != NullOrder))
+          + (!is_null1 && is_null2) * ((Asc != NullOrder) - (Asc == NullOrder));
+    }
+
+    return CompareFunc<ArrowT, Asc>::compare(arrays[array_index1]->GetView(row_index1),
+                                             arrays[array_index2]->GetView(row_index2));
   }
-}
+
+  bool equal_to(int64_t index1, int64_t index2) const override {
+    bool is_null1 = arrays[util::CheckBit(index1)]->IsNull(util::ClearBit(index1));
+    bool is_null2 = arrays[util::CheckBit(index2)]->IsNull(util::ClearBit(index2));
+
+    return (is_null1 && is_null2) ||
+        (!is_null1 && !is_null2 && (
+            arrays[util::CheckBit(index1)]->GetView(util::ClearBit(index1))
+                == arrays[util::CheckBit(index2)]->GetView(util::ClearBit(index2))));
+  }
+
+ private:
+  std::array<const std::shared_ptr<ArrayT>, 2> arrays;
+};
+
+template<typename ArrowT, typename Enable = void>
+struct MakeDualArrayIndexComparator {};
+
+template<typename ArrowT>
+struct MakeDualArrayIndexComparator<ArrowT, arrow::enable_if_has_c_type<ArrowT>> {
+  static Status Make(const std::shared_ptr<arrow::Array> &a1,
+                     const std::shared_ptr<arrow::Array> &a2,
+                     std::unique_ptr<DualArrayIndexComparator> *out_comp,
+                     bool asc, bool null_order) {
+    if (a1->null_count() || a2->null_count()) {
+      if (asc) {
+        if (null_order) {
+          *out_comp =
+              std::make_unique<DualArrayIndexComparatorWithNulls<ArrowT, true, true>>(a1, a2);
+        } else {
+          *out_comp =
+              std::make_unique<DualArrayIndexComparatorWithNulls<ArrowT, true, false>>(a1, a2);
+        }
+      } else {
+        if (null_order) {
+          *out_comp =
+              std::make_unique<DualArrayIndexComparatorWithNulls<ArrowT, false, true>>(a1, a2);
+        } else {
+          *out_comp =
+              std::make_unique<DualArrayIndexComparatorWithNulls<ArrowT, false, false>>(a1, a2);
+        }
+      }
+    } else {
+      if (asc) {
+        *out_comp = std::make_unique<DualNumericRowIndexComparator<ArrowT, true>>(a1, a2);
+      } else {
+        *out_comp = std::make_unique<DualNumericRowIndexComparator<ArrowT, false>>(a1, a2);
+      }
+    }
+    return Status::OK();
+  }
+};
+
+template<typename ArrowT>
+struct MakeDualArrayIndexComparator<ArrowT, arrow::enable_if_has_string_view<ArrowT>> {
+  static Status Make(const std::shared_ptr<arrow::Array> &a1,
+                     const std::shared_ptr<arrow::Array> &a2,
+                     std::unique_ptr<DualArrayIndexComparator> *out_comp,
+                     bool asc, bool null_order) {
+    if (a1->null_count() || a2->null_count()) {
+      if (asc) {
+        if (null_order) {
+          *out_comp =
+              std::make_unique<DualArrayIndexComparatorWithNulls<ArrowT, true, true>>(a1, a2);
+        } else {
+          *out_comp =
+              std::make_unique<DualArrayIndexComparatorWithNulls<ArrowT, true, false>>(a1, a2);
+        }
+      } else {
+        if (null_order) {
+          *out_comp =
+              std::make_unique<DualArrayIndexComparatorWithNulls<ArrowT, false, true>>(a1, a2);
+        } else {
+          *out_comp =
+              std::make_unique<DualArrayIndexComparatorWithNulls<ArrowT, false, false>>(a1, a2);
+        }
+      }
+    } else {
+      if (asc) {
+        *out_comp = std::make_unique<DualBinaryRowIndexComparator<ArrowT, true>>(a1, a2);
+      } else {
+        *out_comp = std::make_unique<DualBinaryRowIndexComparator<ArrowT, false>>(a1, a2);
+      }
+    }
+    return Status::OK();
+  }
+};
 
 Status CreateDualArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,
                                       const std::shared_ptr<arrow::Array> &a2,
                                       std::unique_ptr<DualArrayIndexComparator> *out_comp,
                                       bool asc, bool null_order) {
+  if (!a1->type()->Equals(a2->type())) {
+    return {Code::Invalid, "array types are not equal " + a1->type()->ToString() + " vs "
+        + a2->type()->ToString()};
+  }
+
   if (a1->length() && a2->length()) { // if both array have values
-    if (asc) {
-      return CreateArrayIndexComparatorUtil<true>(a1, a2, out_comp);
-    } else {
-      return CreateArrayIndexComparatorUtil<false>(a1, a2, out_comp);
+    switch (a1->type_id()) {
+      case arrow::Type::UINT8:
+        return MakeDualArrayIndexComparator<arrow::UInt8Type>::Make(a1, a2, out_comp, asc,
+                                                                    null_order);
+      case arrow::Type::INT8:
+        return MakeDualArrayIndexComparator<arrow::Int8Type>::Make(a1, a2, out_comp, asc,
+                                                                   null_order);
+      case arrow::Type::UINT16:
+        return MakeDualArrayIndexComparator<arrow::UInt16Type>::Make(a1, a2, out_comp, asc,
+                                                                     null_order);
+      case arrow::Type::INT16:
+        return MakeDualArrayIndexComparator<arrow::Int16Type>::Make(a1, a2, out_comp, asc,
+                                                                    null_order);
+      case arrow::Type::UINT32:
+        return MakeDualArrayIndexComparator<arrow::UInt32Type>::Make(a1, a2, out_comp, asc,
+                                                                     null_order);
+      case arrow::Type::INT32:
+        return MakeDualArrayIndexComparator<arrow::Int32Type>::Make(a1, a2, out_comp, asc,
+                                                                    null_order);
+      case arrow::Type::UINT64:
+        return MakeDualArrayIndexComparator<arrow::UInt64Type>::Make(a1, a2, out_comp, asc,
+                                                                     null_order);
+      case arrow::Type::INT64:
+        return MakeDualArrayIndexComparator<arrow::Int64Type>::Make(a1, a2, out_comp, asc,
+                                                                    null_order);
+      case arrow::Type::FLOAT:
+        return MakeDualArrayIndexComparator<arrow::FloatType>::Make(a1, a2, out_comp, asc,
+                                                                    null_order);
+      case arrow::Type::DOUBLE:
+        return MakeDualArrayIndexComparator<arrow::DoubleType>::Make(a1, a2, out_comp, asc,
+                                                                     null_order);
+      case arrow::Type::STRING:
+        return MakeDualArrayIndexComparator<arrow::StringType>::Make(a1, a2, out_comp, asc,
+                                                                     null_order);
+      case arrow::Type::BINARY:
+        return MakeDualArrayIndexComparator<arrow::BinaryType>::Make(a1, a2, out_comp, asc,
+                                                                     null_order);
+      case arrow::Type::LARGE_STRING:
+        return MakeDualArrayIndexComparator<arrow::LargeStringType>::Make(a1, a2, out_comp, asc,
+                                                                          null_order);
+      case arrow::Type::LARGE_BINARY:
+        return MakeDualArrayIndexComparator<arrow::LargeBinaryType>::Make(a1, a2, out_comp, asc,
+                                                                          null_order);
+      case arrow::Type::FIXED_SIZE_BINARY:
+        return MakeDualArrayIndexComparator<arrow::FixedSizeBinaryType>::Make(a1, a2, out_comp, asc,
+                                                                              null_order);
+      case arrow::Type::DATE32:
+        return MakeDualArrayIndexComparator<arrow::Date32Type>::Make(a1, a2, out_comp, asc,
+                                                                     null_order);
+      case arrow::Type::DATE64:
+        return MakeDualArrayIndexComparator<arrow::Date64Type>::Make(a1, a2, out_comp, asc,
+                                                                     null_order);
+      case arrow::Type::TIMESTAMP:
+        return MakeDualArrayIndexComparator<arrow::TimestampType>::Make(a1, a2, out_comp, asc,
+                                                                        null_order);
+      case arrow::Type::TIME32:
+        return MakeDualArrayIndexComparator<arrow::Time32Type>::Make(a1, a2, out_comp, asc,
+                                                                     null_order);
+      case arrow::Type::TIME64:
+        return MakeDualArrayIndexComparator<arrow::Time64Type>::Make(a1, a2, out_comp, asc,
+                                                                     null_order);
+      default:
+        return {Code::Invalid,
+                "Invalid data type for ArrayIndexComparator " + a1->type()->ToString()};
     }
   }
 
@@ -663,15 +760,16 @@ Status CreateDualArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,
 Status TableRowIndexEqualTo::Make(const std::shared_ptr<arrow::Table> &table,
                                   const std::vector<int> &col_ids,
                                   std::unique_ptr<TableRowIndexEqualTo> *out_equal_to) {
-  auto comps = std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>(col_ids.size());
-  for (size_t c = 0; c < col_ids.size(); c++) {
+  auto comps = std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>();
+  comps->reserve(col_ids.size());
+  for (int col_id: col_ids) {
     if (table->num_rows() == 0) {
-      (*comps)[c] = std::make_shared<EmptyIndexComparator>();
+      comps->emplace_back(std::make_shared<EmptyIndexComparator>());
     } else {
-      const auto &array = table->column(col_ids[c])->chunk(0);
+      const auto &array = table->column(col_id)->chunk(0);
       std::unique_ptr<ArrayIndexComparator> comp;
       RETURN_CYLON_STATUS_IF_FAILED(CreateArrayIndexComparator(array, &comp));
-      (*comps)[c] = std::move(comp);
+      comps->emplace_back(std::move(comp));
     }
   }
 

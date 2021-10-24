@@ -62,14 +62,14 @@ void TestArrayIndexComparator(std::string arr_str) {
                           : arr->GetView(i);
     T v2 = arr->IsNull(j) ? (null_order ? Helper<T>::max() : Helper<T>::min())
                           : arr->GetView(j);
-    return  Helper<T>::compare(asc, v1, v2);
+    return Helper<T>::compare(asc, v1, v2);
   };
 
   // dummy comparator and comp->compare might give different output ints. for those to be valid,
   // they need to be equal or have the same sign.
-  auto check_comp_values= [](int a, int b){
+  auto check_comp_values = [](int a, int b) {
     if (a == b) return true;
-    return a*b > 0;
+    return a * b > 0;
   };
 
   std::unique_ptr<ArrayIndexComparator> comp;
@@ -124,6 +124,81 @@ TEMPLATE_LIST_TEST_CASE("test comparator - binary", "[comp]", ArrowBinaryTypes) 
 
 TEMPLATE_LIST_TEST_CASE("test comparator w/ nulls - binary", "[comp]", ArrowBinaryTypes) {
   TestArrayIndexComparator<TestType>(R"(["10", "2", "3", "4", null, "6", null, "10", "2", "3"])");
+}
+
+/*
+ * Split an array into 2 and check against the results of ArrayIndexComparator
+ */
+template<typename ArrowT>
+void TestDualArrayIndexComparator(std::string arr_str) {
+  using ArrayT = typename ArrowTypeTraits<ArrowT>::ArrayT;
+
+  auto type = default_type_instance<ArrowT>();
+  INFO("testing " + type->ToString())
+
+  auto arr = std::static_pointer_cast<ArrayT>(ArrayFromJSON(type, arr_str));
+  auto arr1 = std::static_pointer_cast<ArrayT>(arr->Slice(0, arr->length() / 2));
+  auto arr2 = std::static_pointer_cast<ArrayT>(arr->Slice(arr->length() / 2, arr->length()));
+
+  // dummy comparator and comp->compare might give different output ints. for those to be valid,
+  // they need to be equal or have the same sign.
+  auto check_comp_values = [](int a, int b) {
+    if (a == b) return true;
+    return a * b > 0;
+  };
+
+  std::unique_ptr<ArrayIndexComparator> exp_comp;
+  std::unique_ptr<DualArrayIndexComparator> comp;
+  for (bool null_order: {true, false}) {
+    SECTION(null_order ? "null to max" : "null to min") {
+      for (bool asc: {true, false}) {
+        SECTION(asc ? "asc " : "desc ") {
+          CHECK_CYLON_STATUS(CreateArrayIndexComparator(arr, &exp_comp, asc, null_order));
+          CHECK_CYLON_STATUS(CreateDualArrayIndexComparator(arr1, arr2, &comp, asc, null_order));
+          for (int64_t i = 0; i < arr1->length(); i++) {
+            for (int64_t j = 0; j < arr2->length(); j++) {
+              auto exp = exp_comp->compare(i, arr1->length() + j);
+              auto got = comp->compare(i, util::SetBit(j));
+              INFO("" << i << " " << j << " " << exp << " " << got);
+              REQUIRE(check_comp_values(exp, got));
+            }
+          }
+        }
+      }
+    }
+  }
+
+  SECTION("equal to") {
+    CHECK_CYLON_STATUS(CreateArrayIndexComparator(arr, &exp_comp));
+    CHECK_CYLON_STATUS(CreateDualArrayIndexComparator(arr1, arr2, &comp));
+    for (int64_t i = 0; i < arr1->length(); i++) {
+      for (int64_t j = 0; j < arr2->length(); j++) {
+        auto exp = exp_comp->equal_to(i, arr1->length() + j);
+        auto got = comp->equal_to(i, util::SetBit(j));
+        REQUIRE(exp == got);
+      }
+    }
+  }
+}
+
+TEMPLATE_LIST_TEST_CASE("test dual comparator - numeric", "[comp]", ArrowNumericTypes) {
+  TestDualArrayIndexComparator<TestType>(
+      "[10, 2, 3, 4, 5, 6, 7, 10, 2, 3, 3, 4, 5, 6, 7, 10, 2, 3, 3]");
+}
+
+TEMPLATE_LIST_TEST_CASE("test dual comparator w/ null- numeric", "[comp]", ArrowNumericTypes) {
+  TestDualArrayIndexComparator<TestType>(
+      "[10, 2, 3, 4, null, 6, null, 10, 2, 3, 3, 4, null, 6, null, 10]");
+}
+
+TEMPLATE_LIST_TEST_CASE("test dual comparator - binary", "[comp]", ArrowBinaryTypes) {
+  TestDualArrayIndexComparator<TestType>(
+      R"(["10", "2", "3", "4", "5", "6", "7", "10", "2", "3", "4", "5", "6", "7", "10", "2", "3"])");
+}
+
+TEMPLATE_LIST_TEST_CASE("test dual comparator w/ nulls - binary", "[comp]", ArrowBinaryTypes) {
+  TestDualArrayIndexComparator<TestType>(
+      R"(["10", "2", "3", "4", null, "6", null, "10", "2", "3", "4", null, "6", null, "10", "2", "3"])");
 }
 
 }
