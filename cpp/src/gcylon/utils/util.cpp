@@ -62,23 +62,4 @@ bool table_equal(const cudf::table_view &tv1, const cudf::table_view &tv2) {
   return true;
 }
 
-/**
-* create a table with empty columns
-* each column has the same datatype with the given table column
-* @param tv
-* @return
-*/
-std::unique_ptr<cudf::table> createEmptyTable(const cudf::table_view &tv) {
-
-  std::vector<std::unique_ptr<cudf::column>> column_vector{};
-  for (int i = 0; i < tv.num_columns(); i++) {
-    auto column = std::make_unique<cudf::column>(tv.column(i).type(),
-                                                 0,
-                                                 rmm::device_buffer{0, rmm::cuda_stream_default});
-    column_vector.push_back(std::move(column));
-  }
-
-  return std::make_unique<cudf::table>(std::move(column_vector));
-}
-
 }// end of namespace gcylon

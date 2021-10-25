@@ -94,15 +94,6 @@ bool table_equal_with_sorting(cudf::table_view & tv1, cudf::table_view & tv2);
 bool table_equal(const cudf::table_view & tv1, const cudf::table_view & tv2);
 
 /**
- * create a table with empty columns
- * each column has the same datatype with the given table columns
- * @param tv
- * @return
- */
-std::unique_ptr<cudf::table> createEmptyTable(const cudf::table_view &tv);
-
-
-/**
  * convert a vector of elements to a string with comma + space in between
  * @tparam T
  * @param vec

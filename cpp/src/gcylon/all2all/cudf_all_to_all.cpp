@@ -17,6 +17,7 @@
 #include <cudf/strings/strings_column_view.hpp>
 #include <cudf/null_mask.hpp>
 #include <cudf/binaryop.hpp>
+#include <cudf/copying.hpp>
 #include <cudf/scalar/scalar.hpp>
 
 #include <gcylon/all2all/cudf_all_to_all.hpp>
@@ -37,14 +38,17 @@ cylon::Status gcylon::net::AllToAll(const cudf::table_view &tv_with_parts,
   }
 
   const auto &neighbours = ctx->GetNeighbours(true);
-  received_tables.reserve(neighbours.size());
+  received_tables.resize(neighbours.size());
 
   // define call back to catch the receiving tables
   CudfCallback cudf_callback =
-      [&received_tables](int source, std::unique_ptr<cudf::table> received_table, int reference) {
-          received_tables.push_back(std::move(received_table));
-          return true;
-      };
+    [&received_tables](int source, std::unique_ptr<cudf::table> received_table, int reference) {
+      if (received_tables[source] != nullptr) {
+        throw std::string("More than one table is received from the worker: ") + std::to_string(source);
+      }
+      received_tables[source] = std::move(received_table);
+      return true;
+    };
 
   // doing all to all communication to exchange tables
   CudfAllToAll all_to_all(ctx, neighbours, neighbours, ctx->GetNextSequence(), std::move(cudf_callback));
@@ -60,6 +64,14 @@ cylon::Status gcylon::net::AllToAll(const cudf::table_view &tv_with_parts,
   all_to_all.finish();
   while (!all_to_all.isComplete()) {}
   all_to_all.close();
+
+  // if no table is received from any worker,
+  // create an empty table for those
+  for (int i = 0; i < received_tables.size(); ++i) {
+    if (received_tables[i] == nullptr) {
+      received_tables[i] = cudf::empty_like(tv_with_parts);
+    }
+  }
 
   return cylon::Status::OK();
 }

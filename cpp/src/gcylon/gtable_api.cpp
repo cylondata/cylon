@@ -19,8 +19,6 @@
 
 #include <gcylon/gtable.hpp>
 #include <gcylon/gtable_api.hpp>
-#include <gcylon/all2all/cudf_all_to_all.hpp>
-#include <gcylon/utils/util.hpp>
 #include <gcylon/net/cudf_net_ops.hpp>
 
 #include <cylon/util/macros.hpp>
@@ -40,11 +38,6 @@ cylon::Status all_to_all_cudf_table(std::shared_ptr<cylon::CylonContext> ctx,
   offsets.push_back(tv.num_rows());
   RETURN_CYLON_STATUS_IF_FAILED(
     gcylon::net::AllToAll(tv, offsets, ctx, received_tables));
-
-  if (received_tables.size() == 0) {
-    table_out = std::move(createEmptyTable(ptable->view()));
-    return cylon::Status::OK();
-  }
 
   std::vector<cudf::table_view> tables_to_concat{};
   for (int i = 0; i < received_tables.size(); i++) {

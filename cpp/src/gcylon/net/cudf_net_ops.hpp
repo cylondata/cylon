@@ -76,6 +76,17 @@ cylon::Status Gather(const cudf::table_view &tv,
  * Each table has n partitions for n workers
  * part_indices has (n+1) partition indices each range for a worker
  *   range(i, i+1) goes to the worker[i]
+ *
+ * received tables put in the resulting vector in order of worker rank:
+ *   received table from worker 0 is at received_tables[0]
+ *   received table from worker 1 is at received_tables[1]
+ *   ...
+ *
+ *  if a worker does not send any table to another another worker,
+ *    an empty table is put in that worker rank in received_tables vector
+ *
+ * received_tables has exactly n tables (some tables might be empty though)
+ *
  * @param tv_with_parts table_view with partitions
  * @param part_indices (n-1) partition indices
  * @param ctx
