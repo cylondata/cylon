@@ -115,6 +115,13 @@ std::string vectorToString(const std::vector<T> &vec) {
   return oss.str();
 }
 
+/**
+ * convert a vector of cudf tables to table_views
+ * @param tables
+ * @return
+ */
+std::vector<cudf::table_view> tablesToViews(const std::vector<std::unique_ptr<cudf::table>> &tables);
+
 } // end of namespace gcylon
 
 #endif //GCYLON_ALL2ALL_UTIL_H

@@ -87,16 +87,30 @@ cylon::Status Gather(const cudf::table_view &tv,
  *
  * received_tables has exactly n tables (some tables might be empty though)
  *
- * @param tv_with_parts table_view with partitions
+ * @param tv table_view with partitions
  * @param part_indices (n-1) partition indices
  * @param ctx
  * @param received_tables
  * @return
  */
-cylon::Status AllToAll(const cudf::table_view & tv_with_parts,
+cylon::Status AllToAll(const cudf::table_view & tv,
                        const std::vector<cudf::size_type> &part_indices,
                        const std::shared_ptr<cylon::CylonContext> &ctx,
                        std::vector<std::unique_ptr<cudf::table>> &received_tables);
+
+/**
+ * The same as the previous AllToAll except that
+ * it concatenates all received tables and return a single table
+ * @param tv
+ * @param part_indices
+ * @param ctx
+ * @param table_out
+ * @return
+ */
+cylon::Status AllToAll(const cudf::table_view &tv,
+                       const std::vector<cudf::size_type> &part_indices,
+                       const std::shared_ptr<cylon::CylonContext> &ctx,
+                       std::unique_ptr<cudf::table> &table_out);
 
 } // end of namespace net
 } // end of namespace gcylon

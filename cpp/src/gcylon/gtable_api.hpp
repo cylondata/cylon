@@ -27,16 +27,27 @@ namespace gcylon {
 /**
  * Shuffles a cudf::table with table_view
  * this is to be called from cython code and the other Shuffle with GTable
- * @param input_table
+ * @param input_tv
  * @param columns_to_hash
  * @param ctx
  * @param table_out
  * @return
  */
-cylon::Status Shuffle(const cudf::table_view &input_table,
+cylon::Status Shuffle(const cudf::table_view &input_tv,
                       const std::vector<int> &columns_to_hash,
                       const std::shared_ptr<cylon::CylonContext> &ctx,
                       std::unique_ptr<cudf::table> &table_out);
+
+/**
+ * Repartition the table by evenly distributing rows among workers
+ * @param input_tv
+ * @param ctx
+ * @param table_out
+ * @return
+ */
+cylon::Status Repartition(const cudf::table_view &input_tv,
+                          const std::shared_ptr<cylon::CylonContext> &ctx,
+                          std::unique_ptr<cudf::table> &table_out);
 
 /**
  * Similar to local join, but performs the join in a distributed fashion

@@ -62,4 +62,12 @@ bool table_equal(const cudf::table_view &tv1, const cudf::table_view &tv2) {
   return true;
 }
 
+std::vector<cudf::table_view> tablesToViews(const std::vector<std::unique_ptr<cudf::table>> &tables) {
+  std::vector<cudf::table_view> views;
+  views.reserve(tables.size());
+  std::transform(tables.begin(), tables.end(), std::back_inserter(views),
+                 [](const std::unique_ptr<cudf::table>& t){ return t->view();});
+  return views;
+}
+
 }// end of namespace gcylon

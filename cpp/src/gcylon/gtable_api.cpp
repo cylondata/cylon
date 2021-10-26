@@ -13,7 +13,6 @@
  */
 
 #include <cudf/partitioning.hpp>
-#include <cudf/concatenate.hpp>
 #include <cudf/join.hpp>
 #include <cudf/io/csv.hpp>
 
@@ -26,38 +25,18 @@
 
 namespace gcylon {
 
-cylon::Status all_to_all_cudf_table(std::shared_ptr<cylon::CylonContext> ctx,
-                                    std::unique_ptr<cudf::table> &ptable,
-                                    std::vector<cudf::size_type> &offsets,
-                                    std::unique_ptr<cudf::table> &table_out) {
-
-  std::vector<std::unique_ptr<cudf::table>> received_tables;
-  received_tables.reserve(ctx->GetWorldSize());
-
-  auto tv = ptable->view();
-  offsets.push_back(tv.num_rows());
-  RETURN_CYLON_STATUS_IF_FAILED(
-    gcylon::net::AllToAll(tv, offsets, ctx, received_tables));
-
-  std::vector<cudf::table_view> tables_to_concat{};
-  for (int i = 0; i < received_tables.size(); i++) {
-    tables_to_concat.push_back(received_tables[i]->view());
-  }
-
-  table_out = cudf::concatenate(tables_to_concat);
-  return cylon::Status::OK();
-}
-
-cylon::Status Shuffle(const cudf::table_view &input_table,
+cylon::Status Shuffle(const cudf::table_view &input_tv,
                       const std::vector<int> &columns_to_hash,
                       const std::shared_ptr<cylon::CylonContext> &ctx,
                       std::unique_ptr<cudf::table> &table_out) {
 
   std::pair<std::unique_ptr<cudf::table>, std::vector<cudf::size_type>> partitioned
-    = cudf::hash_partition(input_table, columns_to_hash, ctx->GetWorldSize());
+    = cudf::hash_partition(input_tv, columns_to_hash, ctx->GetWorldSize());
+
+  partitioned.second.push_back(input_tv.num_rows());
 
   RETURN_CYLON_STATUS_IF_FAILED(
-    all_to_all_cudf_table(ctx, partitioned.first, partitioned.second, table_out));
+    gcylon::net::AllToAll(partitioned.first->view(), partitioned.second, ctx, table_out));
 
   return cylon::Status::OK();
 }
