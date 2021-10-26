@@ -763,6 +763,10 @@ Status TableRowIndexEqualTo::Make(const std::shared_ptr<arrow::Table> &table,
   auto comps = std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>();
   comps->reserve(col_ids.size());
   for (int col_id: col_ids) {
+    if (table->column(col_id)->num_chunks() > 1) {
+      return {Code::Invalid, "TableRowIndexEqualTo does not support multiple chunks"};
+    }
+
     if (table->num_rows() == 0) {
       comps->emplace_back(std::make_shared<EmptyIndexComparator>());
     } else {
@@ -899,20 +903,26 @@ Status DualTableRowIndexEqualTo::Make(const std::shared_ptr<arrow::Table> &t1,
                                       const std::vector<int> &t1_indices,
                                       const std::vector<int> &t2_indices,
                                       std::unique_ptr<DualTableRowIndexEqualTo> *out_equal_to) {
-  size_t num_cols = t1_indices.size();
-  if (num_cols != t2_indices.size()) {
+  int num_cols = (int) t1_indices.size();
+  if (num_cols != (int) t2_indices.size()) {
     return {Code::Invalid, "sizes of indices of t1 and t2 are not equal!"};
   }
 
-  auto comps = std::make_shared<std::vector<std::shared_ptr<DualArrayIndexComparator>>>(num_cols);
+  auto comps = std::make_shared<std::vector<std::shared_ptr<DualArrayIndexComparator>>>();
+  comps->reserve(num_cols);
 
-  for (size_t i = 0; i < num_cols; i++) {
+  for (int i = 0; i < num_cols; i++) {
+    if (t1->column(t1_indices[i])->num_chunks() > 1
+        || t2->column(t2_indices[i])->num_chunks() > 1) {
+      return {Code::Invalid, "DualTableRowIndexEqualTo does not support multiple chunks"};
+    }
+
     const auto &a1 = util::GetChunkOrEmptyArray(t1->column(t1_indices[i]), 0);
     const auto &a2 = util::GetChunkOrEmptyArray(t2->column(t2_indices[i]), 0);
 
     std::unique_ptr<DualArrayIndexComparator> comp;
     RETURN_CYLON_STATUS_IF_FAILED(CreateDualArrayIndexComparator(a1, a2, &comp));
-    (*comps)[i] = std::move(comp);
+    comps->emplace_back(std::move(comp));
   }
 
   *out_equal_to = std::make_unique<DualTableRowIndexEqualTo>(std::move(comps));

@@ -126,6 +126,11 @@ TEMPLATE_LIST_TEST_CASE("test comparator w/ nulls - binary", "[comp]", ArrowBina
   TestArrayIndexComparator<TestType>(R"(["10", "2", "3", "4", null, "6", null, "10", "2", "3"])");
 }
 
+bool check_comp_values(int a, int b) {
+  if (a == b) return true;
+  return a * b > 0;
+}
+
 /*
  * Split an array into 2 and check against the results of ArrayIndexComparator
  */
@@ -142,10 +147,6 @@ void TestDualArrayIndexComparator(std::string arr_str) {
 
   // dummy comparator and comp->compare might give different output ints. for those to be valid,
   // they need to be equal or have the same sign.
-  auto check_comp_values = [](int a, int b) {
-    if (a == b) return true;
-    return a * b > 0;
-  };
 
   std::unique_ptr<ArrayIndexComparator> exp_comp;
   std::unique_ptr<DualArrayIndexComparator> comp;
@@ -199,6 +200,145 @@ TEMPLATE_LIST_TEST_CASE("test dual comparator - binary", "[comp]", ArrowBinaryTy
 TEMPLATE_LIST_TEST_CASE("test dual comparator w/ nulls - binary", "[comp]", ArrowBinaryTypes) {
   TestDualArrayIndexComparator<TestType>(
       R"(["10", "2", "3", "4", null, "6", null, "10", "2", "3", "4", null, "6", null, "10", "2", "3"])");
+}
+
+TEST_CASE("test table", "[comp]") {
+  auto schema = arrow::schema({{field("a", arrow::int32())},
+                               {field("b", arrow::float32())},
+                               {field("c", arrow::utf8())}});
+  auto table = TableFromJSON(schema, {
+      R"([{"a":	10	, "b":	10	, "c":	""	},
+          {"a":	10	, "b":	10	, "c":	"a"	},
+          {"a":	10	, "b":	null	, "c":	"b"	},
+          {"a":	null	, "b":	10	, "c":	"c"	},
+          {"a":	null	, "b":	null	, "c":	null	},
+          {"a":	10	, "b":	10	, "c":	null	},
+          {"a":	10	, "b":	10	, "c":	""	},
+          {"a":	10	, "b":	10	, "c":	"a"	},
+          {"a":	10	, "b":	null	, "c":	"b"	},
+          {"a":	null	, "b":	10	, "c":	"c"	},
+          {"a":	null	, "b":	null	, "c":	null	},
+          {"a":	10	, "b":	10	, "c":	null	}])"});
+
+  std::unique_ptr<TableRowIndexEqualTo> comp;
+  CHECK_CYLON_STATUS(TableRowIndexEqualTo::Make(table, {0, 1, 2}, &comp));
+
+  SECTION("equal to") {
+    auto dummy_equal_to = [&](int64_t i, int64_t j) -> bool {
+      auto cols = table->columns();
+      return std::all_of(cols.begin(), cols.end(), [&](auto c) {
+        auto v1 = *c->chunk(0)->GetScalar(i);
+        auto v2 = *c->chunk(0)->GetScalar(j);
+        return v1->Equals(v2);
+      });
+    };
+
+    for (int64_t i = 0; i < table->num_rows(); i++) {
+      for (int64_t j = 0; j < table->num_rows(); j++) {
+        bool exp = dummy_equal_to(i, j);
+        bool got = comp->operator()(i, j);
+        INFO("" << i << " " << j << " " << exp << " " << got);
+        REQUIRE(exp == got);
+      }
+    }
+  }
+
+  SECTION("compare to") {
+    using namespace arrow::compute;
+    auto dummy_compare = [&](int64_t i, int64_t j) -> int {
+      for (const auto &c: table->columns()) {
+        auto v1 = *c->chunk(0)->GetScalar(i);
+        auto v2 = *c->chunk(0)->GetScalar(j);
+        if (v1->Equals(v2)) {
+          continue;
+        }
+
+        if (!v1->is_valid) { // null to max
+          return 1;
+        } else if (!v2->is_valid) {
+          return -1;
+        }
+
+        bool less = (*Compare(v1, v2, CompareOptions(CompareOperator::LESS)))
+            .scalar_as<arrow::BooleanScalar>().value;
+        return less ? -1 : 1;
+      }
+      return 0;
+    };
+
+    for (int64_t i = 0; i < table->num_rows(); i++) {
+      for (int64_t j = 0; j < table->num_rows(); j++) {
+        int exp = dummy_compare(i, j);
+        int got = comp->compare(i, j);
+        INFO("" << i << " " << j << " " << exp << " " << got);
+        REQUIRE(check_comp_values(exp, got));
+//        std::cout << "" << i << " " << j << " " << exp << " " << got << "\n";
+      }
+    }
+  }
+}
+
+TEST_CASE("test dual table", "[comp]") {
+  auto schema = arrow::schema({{field("a", arrow::int32())},
+                               {field("b", arrow::float32())},
+                               {field("c", arrow::utf8())}});
+  auto table = TableFromJSON(schema, {
+      R"([{"a":	10	, "b":	10	, "c":	""	},
+          {"a":	10	, "b":	10	, "c":	"a"	},
+          {"a":	10	, "b":	null	, "c":	"b"	},
+          {"a":	null	, "b":	10	, "c":	"c"	},
+          {"a":	null	, "b":	null	, "c":	null	},
+          {"a":	10	, "b":	10	, "c":	null	},
+          {"a":	10	, "b":	10	, "c":	""	},
+          {"a":	10	, "b":	10	, "c":	"a"	},
+          {"a":	10	, "b":	null	, "c":	"b"	},
+          {"a":	null	, "b":	10	, "c":	"c"	},
+          {"a":	null	, "b":	null	, "c":	null	},
+          {"a":	10	, "b":	10	, "c":	null	},
+          {"a":	10	, "b":	10	, "c":	""	},
+          {"a":	10	, "b":	10	, "c":	"a"	},
+          {"a":	10	, "b":	null	, "c":	"d"	},
+          {"a":	null	, "b":	10	, "c":	"e"	},
+          {"a":	null	, "b":	null	, "c":	null	},
+          {"a":	10	, "b":	10	, "c":	null	},
+          {"a":	10	, "b":	10	, "c":	""	},
+          {"a":	10	, "b":	10	, "c":	"a"	},
+          {"a":	10	, "b":	null	, "c":	"d"	},
+          {"a":	null	, "b":	10	, "c":	"e"	},
+          {"a":	null	, "b":	null	, "c":	null	},
+          {"a":	10	, "b":	10	, "c":	null	}])"});
+
+  auto table1 = table->Slice(0, table->num_rows() / 2);
+  auto table2 = table->Slice(table->num_rows() / 2);
+
+  std::unique_ptr<TableRowIndexEqualTo> exp_comp;
+  CHECK_CYLON_STATUS(TableRowIndexEqualTo::Make(table, {0, 1, 2}, &exp_comp));
+
+  std::unique_ptr<DualTableRowIndexEqualTo> comp;
+  CHECK_CYLON_STATUS(DualTableRowIndexEqualTo::Make(table1, table2, &comp));
+
+  SECTION("equal to") {
+    for (int64_t i = 0; i < table1->num_rows(); i++) {
+      for (int64_t j = 0; j < table2->num_rows(); j++) {
+        bool exp = (*exp_comp)(i, table1->num_rows() + j);
+        bool got = (*comp)(i, util::SetBit(j));
+        INFO("" << i << " " << j << " " << exp << " " << got);
+        REQUIRE(exp == got);
+      }
+    }
+  }
+
+  SECTION("compare to") {
+    for (int64_t i = 0; i < table1->num_rows(); i++) {
+      for (int64_t j = 0; j < table2->num_rows(); j++) {
+        int exp = (*exp_comp).compare(i, table1->num_rows() + j);
+        int got = (*comp).compare(i, util::SetBit(j));
+        INFO("" << i << " " << j << " " << exp << " " << got);
+        REQUIRE(check_comp_values(exp, got));
+//        std::cout << "" << i << " " << j << " " << exp << " " << got << "\n";
+      }
+    }
+  }
 }
 
 }
