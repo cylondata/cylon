@@ -25,6 +25,7 @@
 #include <gcylon/gtable_api.hpp>
 #include <gcylon/utils/util.hpp>
 #include <gcylon/net/cudf_net_ops.hpp>
+#include <cudf/concatenate.hpp>
 
 // this is a toggle to generate test files. Set execute to 0 then, it will generate the expected
 // output files
@@ -267,6 +268,57 @@ bool PerformSlicedSortTest(const std::string &input_filename,
   return table_equal(sorted_columns_tv, sorted_saved_columns_tv);
 }
 
+bool PerformRepartitionTest(const std::string &input_filename,
+                            const std::vector<std::string> &column_names,
+                            const std::vector<std::string> &date_columns,
+                            const std::shared_ptr<cylon::CylonContext> &ctx,
+                            const std::vector<int32_t> &initial_sizes) {
+
+  cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names, date_columns);
+  std::vector<cudf::size_type> range {0, initial_sizes[ctx->GetRank()]};
+  auto sub_tv = cudf::slice(input_table.tbl->view(), range)[0];
+
+  // repartition the table
+  std::unique_ptr<cudf::table> table_out;
+  cylon::Status status = Repartition(sub_tv, ctx, table_out);
+  if (!status.is_ok()) {
+    return false;
+  }
+
+  // check the number of rows in the repartitioned table
+  int32_t sum_of_rows = std::accumulate(initial_sizes.begin(), initial_sizes.end(), 0);
+  if (table_out->num_rows() != sum_of_rows / 4) {
+    return false;
+  }
+
+  // gather the tables to first worker and compare two tables
+  int GATHER_ROOT = 0;
+  std::vector<std::unique_ptr<cudf::table>> gathered_init_tables;
+  status = gcylon::net::Gather(sub_tv, GATHER_ROOT,true,ctx, gathered_init_tables);
+  if (!status.is_ok()) {
+    return false;
+  }
+
+  std::vector<std::unique_ptr<cudf::table>> gathered_repart_tables;
+  status = gcylon::net::Gather(table_out->view(), GATHER_ROOT, true, ctx, gathered_repart_tables);
+  if (!status.is_ok()) {
+    return false;
+  }
+
+  if (GATHER_ROOT == ctx->GetRank()) {
+    auto init_tvs = tablesToViews(gathered_init_tables);
+    auto init_single_tbl = cudf::concatenate(init_tvs);
+
+    auto repart_tvs = tablesToViews(gathered_repart_tables);
+    auto repart_single_tbl = cudf::concatenate(repart_tvs);
+
+    if(!table_equal(init_single_tbl->view(), repart_single_tbl->view())) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 }
 }

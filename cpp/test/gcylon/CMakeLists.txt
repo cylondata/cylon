@@ -106,3 +106,7 @@ cylon_run_test(bcast_gcylon_table_test 4)
 cylon_add_test(sort_gcylon_table_test)
 cylon_run_test(sort_gcylon_table_test 4)
 
+# repartitioning distributed tables test
+cylon_add_test(repartition_gcylon_table_test)
+cylon_run_test(repartition_gcylon_table_test 4)
+
