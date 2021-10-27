@@ -91,6 +91,27 @@ std::vector<std::string> constructInputFiles(std::string base, int world_size) {
   return all_input_files;
 }
 
+/**
+ * generate "count" random non-zero numbers totalling "max"
+ * max has to be larger than count
+ * @param max
+ * @param count
+ * @return
+ */
+std::vector<int32_t> GenRandoms(int max, int count) {
+  srand (time(NULL));
+  std::vector<int32_t> randoms(count, 1);
+  max -= count;
+
+  for (int i = 0; i < count - 1; ++i) {
+    int num = std::rand() % max;
+    randoms[i] += num;
+    max -= num;
+  }
+  randoms[count - 1] += max;
+  return randoms;
+}
+
 bool PerformGatherTest(const std::string &input_filename,
                        std::vector<std::string> &all_input_files,
                        const std::vector<std::string> &column_names,
@@ -272,7 +293,8 @@ bool PerformRepartitionTest(const std::string &input_filename,
                             const std::vector<std::string> &column_names,
                             const std::vector<std::string> &date_columns,
                             const std::shared_ptr<cylon::CylonContext> &ctx,
-                            const std::vector<int32_t> &initial_sizes) {
+                            const std::vector<int32_t> &initial_sizes,
+                            const std::vector<int32_t> &part_sizes = std::vector<int32_t>()) {
 
   cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names, date_columns);
   std::vector<cudf::size_type> range {0, initial_sizes[ctx->GetRank()]};
@@ -280,14 +302,21 @@ bool PerformRepartitionTest(const std::string &input_filename,
 
   // repartition the table
   std::unique_ptr<cudf::table> table_out;
-  cylon::Status status = Repartition(sub_tv, ctx, table_out);
+  cylon::Status status = Repartition(sub_tv, ctx, table_out, part_sizes);
   if (!status.is_ok()) {
     return false;
   }
 
   // check the number of rows in the repartitioned table
-  int32_t sum_of_rows = std::accumulate(initial_sizes.begin(), initial_sizes.end(), 0);
-  if (table_out->num_rows() != sum_of_rows / 4) {
+  int32_t table_size = 0;
+  if (part_sizes.empty()) {
+    int32_t sum_of_rows = std::accumulate(initial_sizes.begin(), initial_sizes.end(), 0);
+    table_size = sum_of_rows / 4;
+  } else {
+    table_size = part_sizes[ctx->GetRank()];
+  }
+
+  if (table_out->num_rows() != table_size) {
     return false;
   }
 

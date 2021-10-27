@@ -36,6 +36,7 @@ TEST_CASE("Repartition Distributed Gcylon Table", "[grepartition]") {
     std::vector<std::string> column_names{"Country", "Item Type", "Order Date", "Order ID", "Units Sold", "Unit Price"};
     std::vector<std::string> date_columns{"Order Date"};
 
+    // first check repartitioning evenly
     for (auto init_sizes: initial_sizes) {
       REQUIRE((gcylon::test::PerformRepartitionTest(input_file,
                                                     column_names,
@@ -43,6 +44,22 @@ TEST_CASE("Repartition Distributed Gcylon Table", "[grepartition]") {
                                                     ctx,
                                                     init_sizes)));
     }
+
+    // second check repartitioning with given target partition sizes
+    // determine target sizes randomly
+    for (auto init_sizes: initial_sizes) {
+      auto all_rows = std::accumulate(init_sizes.begin(), init_sizes.end(), 0);
+      auto part_sizes = gcylon::test::GenRandoms(all_rows, init_sizes.size());
+      auto all_rows2 = std::accumulate(part_sizes.begin(), part_sizes.end(), 0);
+      REQUIRE((all_rows == all_rows2));
+      REQUIRE((gcylon::test::PerformRepartitionTest(input_file,
+                                                    column_names,
+                                                    date_columns,
+                                                    ctx,
+                                                    init_sizes,
+                                                    part_sizes)));
+    }
+
   }
 
 
