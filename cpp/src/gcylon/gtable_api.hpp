@@ -39,15 +39,18 @@ cylon::Status Shuffle(const cudf::table_view &input_tv,
                       std::unique_ptr<cudf::table> &table_out);
 
 /**
- * Repartition the table by evenly distributing rows among workers
+ * Repartition the table by either evenly distributing rows among all workers
+ *   or according to the partition map given by rows_per_worker
  * @param input_tv
  * @param ctx
  * @param table_out
+ * @param rows_per_worker
  * @return
  */
 cylon::Status Repartition(const cudf::table_view &input_tv,
                           const std::shared_ptr<cylon::CylonContext> &ctx,
-                          std::unique_ptr<cudf::table> &table_out);
+                          std::unique_ptr<cudf::table> &table_out,
+                          const std::vector<int32_t> &rows_per_worker = std::vector<int32_t>());
 
 /**
  * Similar to local join, but performs the join in a distributed fashion
