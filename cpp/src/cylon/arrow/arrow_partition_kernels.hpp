@@ -85,16 +85,17 @@ class HashPartitionKernel : public PartitionKernel {
  * @param data_type
  * @return
  */
-std::unique_ptr<HashPartitionKernel> CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type);
-
+Status CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
+                                 std::unique_ptr<HashPartitionKernel> *out_kernel);
 
 class RowHashingKernel {
- private:
-  std::vector<std::shared_ptr<HashPartitionKernel>> hash_kernels;
  public:
   explicit RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields);
 
   int32_t Hash(const std::shared_ptr<arrow::Table> &table, int64_t row) const;
+
+ private:
+  std::vector<std::shared_ptr<HashPartitionKernel>> hash_kernels;
 };
 
 /**
@@ -107,11 +108,12 @@ class RowHashingKernel {
  * @param num_bins
  * @return
  */
-std::unique_ptr<PartitionKernel> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
-                                                            const std::shared_ptr<CylonContext> &ctx,
-                                                            bool ascending,
-                                                            uint64_t num_samples,
-                                                            uint32_t num_bins);
+Status CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
+                                  const std::shared_ptr<CylonContext> &ctx,
+                                  bool ascending,
+                                  uint64_t num_samples,
+                                  uint32_t num_bins,
+                                  std::unique_ptr<PartitionKernel> *out_kernel);
 }  // namespace cylon
 
 #endif //CYLON_ARROW_PARTITION_KERNELS_H

@@ -35,7 +35,7 @@ namespace join {
  * @param right_table_indices
  * @return
  */
-arrow::Status ArrayIndexHashJoin(const std::shared_ptr<arrow::Array> &left_idx_col,
+Status ArrayIndexHashJoin(const std::shared_ptr<arrow::Array> &left_idx_col,
                                  const std::shared_ptr<arrow::Array> &right_idx_col,
                                  config::JoinType join_type,
                                  std::vector<int64_t> &left_table_indices,
@@ -50,7 +50,7 @@ arrow::Status ArrayIndexHashJoin(const std::shared_ptr<arrow::Array> &left_idx_c
  * @param memory_pool
  * @return
  */
-arrow::Status HashJoin(const std::shared_ptr<arrow::Table> &ltab,
+Status HashJoin(const std::shared_ptr<arrow::Table> &ltab,
                        const std::shared_ptr<arrow::Table> &rtab,
                        const config::JoinConfig &config,
                        std::shared_ptr<arrow::Table> *joined_table,
