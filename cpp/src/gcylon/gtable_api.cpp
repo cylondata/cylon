@@ -93,6 +93,22 @@ cylon::Status Collect(const cudf::table_view &input_tv,
   return cylon::Status::OK();
 }
 
+cylon::Status Replicate(const cudf::table_view &input_tv,
+                        int root,
+                        const std::shared_ptr<cylon::CylonContext> &ctx,
+                        std::unique_ptr<cudf::table> &table_out) {
+
+  RETURN_CYLON_STATUS_IF_FAILED(
+    gcylon::net::Bcast(input_tv, root, ctx, table_out));
+
+  if (root == ctx->GetRank()) {
+    table_out = std::make_unique<cudf::table>(input_tv);
+  }
+
+  return cylon::Status::OK();
+}
+
+
 cylon::Status Shuffle(std::shared_ptr<GTable> &input_table,
                       const std::vector<int> &columns_to_hash,
                       std::shared_ptr<GTable> &output_table) {

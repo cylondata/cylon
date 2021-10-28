@@ -68,6 +68,20 @@ cylon::Status Collect(const cudf::table_view &input_tv,
                       int gather_root = 0);
 
 /**
+ * Broadcast a table to all workers
+ * A new table is created in all workers and returned
+ * @param input_tv
+ * @param root
+ * @param ctx
+ * @param table_out
+ * @return
+ */
+cylon::Status Replicate(const cudf::table_view &input_tv,
+                        int root,
+                        const std::shared_ptr<cylon::CylonContext> &ctx,
+                        std::unique_ptr<cudf::table> &table_out);
+
+/**
  * Similar to local join, but performs the join in a distributed fashion
  * @param left_table
  * @param right_table
