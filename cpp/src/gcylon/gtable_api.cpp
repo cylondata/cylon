@@ -23,6 +23,9 @@
 #include <cylon/util/macros.hpp>
 #include <cylon/net/mpi/mpi_operations.hpp>
 #include <cylon/repartition.hpp>
+#include <gcylon/utils/util.hpp>
+#include <cudf/concatenate.hpp>
+#include <cudf/copying.hpp>
 
 namespace gcylon {
 
@@ -67,6 +70,25 @@ cylon::Status Repartition(const cudf::table_view &input_tv,
 
   RETURN_CYLON_STATUS_IF_FAILED(
     gcylon::net::AllToAll(input_tv, rows_to_all, ctx, table_out));
+
+  return cylon::Status::OK();
+}
+
+cylon::Status Collect(const cudf::table_view &input_tv,
+                      const std::shared_ptr<cylon::CylonContext> &ctx,
+                      std::unique_ptr<cudf::table> &table_out,
+                      int gather_root) {
+
+  std::vector<std::unique_ptr<cudf::table>> gathered_tables;
+  RETURN_CYLON_STATUS_IF_FAILED(
+    gcylon::net::Gather(input_tv, gather_root, true, ctx, gathered_tables));
+
+  if (gather_root == ctx->GetRank()) {
+    auto init_tvs = tablesToViews(gathered_tables);
+    table_out = cudf::concatenate(init_tvs);
+  } else {
+    table_out = cudf::empty_like(input_tv);
+  }
 
   return cylon::Status::OK();
 }

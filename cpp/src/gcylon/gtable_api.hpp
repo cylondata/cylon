@@ -53,6 +53,21 @@ cylon::Status Repartition(const cudf::table_view &input_tv,
                           const std::vector<int32_t> &rows_per_worker = std::vector<int32_t>());
 
 /**
+ * Collect tables from all workers to a single worker
+ * Concatenate the tables in the rank order of workers
+ * by keeping global order of rows
+ * @param input_tv
+ * @param ctx
+ * @param table_out
+ * @param gather_root
+ * @return
+ */
+cylon::Status Collect(const cudf::table_view &input_tv,
+                      const std::shared_ptr<cylon::CylonContext> &ctx,
+                      std::unique_ptr<cudf::table> &table_out,
+                      int gather_root = 0);
+
+/**
  * Similar to local join, but performs the join in a distributed fashion
  * @param left_table
  * @param right_table
