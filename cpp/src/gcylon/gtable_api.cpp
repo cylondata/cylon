@@ -22,6 +22,7 @@
 
 #include <cylon/util/macros.hpp>
 #include <cylon/net/mpi/mpi_operations.hpp>
+#include <cylon/repartition.hpp>
 
 namespace gcylon {
 
@@ -37,6 +38,35 @@ cylon::Status Shuffle(const cudf::table_view &input_tv,
 
   RETURN_CYLON_STATUS_IF_FAILED(
     gcylon::net::AllToAll(partitioned.first->view(), partitioned.second, ctx, table_out));
+
+  return cylon::Status::OK();
+}
+
+cylon::Status Repartition(const cudf::table_view &input_tv,
+                          const std::shared_ptr<cylon::CylonContext> &ctx,
+                          std::unique_ptr<cudf::table> &table_out,
+                          const std::vector<int32_t> &rows_per_worker){
+
+  std::vector<int32_t> current_row_counts;
+  RETURN_CYLON_STATUS_IF_FAILED(
+    RowCountsAllTables(input_tv.num_rows(), ctx, current_row_counts));
+
+  std::vector<int32_t> rows_to_all;
+  if (rows_per_worker.empty()) {
+    auto evenly_dist_rows = cylon::DivideRowsEvenly(current_row_counts);
+    rows_to_all = cylon::RowIndicesToAll(ctx->GetRank(), current_row_counts, evenly_dist_rows);
+  } else {
+    auto sum_of_current_rows = std::accumulate(current_row_counts.begin(), current_row_counts.end(), 0);
+    auto sum_of_target_rows = std::accumulate(rows_per_worker.begin(), rows_per_worker.end(), 0);
+    if (sum_of_current_rows != sum_of_target_rows) {
+      return cylon::Status(cylon::Code::ValueError,
+                           "Sum of target partitions does not match the sum of current partitions.");
+    }
+    rows_to_all = cylon::RowIndicesToAll(ctx->GetRank(), current_row_counts, rows_per_worker);
+  }
+
+  RETURN_CYLON_STATUS_IF_FAILED(
+    gcylon::net::AllToAll(input_tv, rows_to_all, ctx, table_out));
 
   return cylon::Status::OK();
 }

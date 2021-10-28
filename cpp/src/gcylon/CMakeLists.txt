@@ -99,7 +99,6 @@ add_library(gcylon SHARED
         gtable.cpp
         gtable_api.hpp
         gtable_api.cpp
-        repartition.cpp
         )
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
