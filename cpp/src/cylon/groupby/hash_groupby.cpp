@@ -93,13 +93,16 @@ static Status make_groups(arrow::MemoryPool *pool,
                           std::vector<int64_t> &group_ids,
                           std::shared_ptr<arrow::Array> &group_filter,
                           int64_t *unique_groups) {
-  TableRowIndexHash hash(atable, idx_cols);
-  TableRowIndexEqualTo comp(atable, idx_cols);
+  std::unique_ptr<TableRowIndexEqualTo> comp;
+  RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexEqualTo::Make(atable, idx_cols, &comp));
+
+  std::unique_ptr<TableRowIndexHash> hash;
+  RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexHash::Make(atable, idx_cols, &hash));
 
   const int64_t num_rows = atable->num_rows();
 
   ska::bytell_hash_map<int64_t, int64_t, TableRowIndexHash, TableRowIndexEqualTo>
-      hash_map(num_rows, hash, comp);
+      hash_map(num_rows, *hash, *comp);
 
   group_ids.reserve(num_rows);
   arrow::BooleanBuilder filter_build(pool);
