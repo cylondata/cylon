@@ -13,6 +13,7 @@
  */
 
 #include <glog/logging.h>
+#include <arrow/compute/api.h>
 
 #include <cylon/net/comm_operations.hpp>
 #include <cylon/util/macros.hpp>
@@ -33,7 +34,8 @@ cylon::Status Sum(const std::shared_ptr<cylon::Table> &table,
 
   // do local operation
   arrow::compute::ExecContext exec_ctx(cylon::ToArrowPool(ctx));
-  CYLON_ASSIGN_OR_RAISE(auto sum_res, arrow::compute::Sum(a_col, &exec_ctx));
+  arrow::compute::ScalarAggregateOptions options(true, 0);
+  CYLON_ASSIGN_OR_RAISE(auto sum_res, arrow::compute::Sum(a_col, options, &exec_ctx));
 
   if (ctx->GetWorldSize() > 1) {
     return DoAllReduce(ctx, sum_res, output, dtype, cylon::net::ReduceOp::SUM);
@@ -50,7 +52,7 @@ cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx,
   const auto &data_type = cylon::Int64();
 
   arrow::compute::ExecContext exec_ctx(cylon::ToArrowPool(ctx));
-  arrow::compute::CountOptions options(arrow::compute::CountOptions::COUNT_NON_NULL);
+  arrow::compute::ScalarAggregateOptions options(true, 0);
   CYLON_ASSIGN_OR_RAISE(auto count_res, arrow::compute::Count(a_col, options, &exec_ctx));
 
   if (ctx->GetWorldSize() > 1) {
@@ -86,7 +88,7 @@ cylon::Status static inline min_max_impl(const std::shared_ptr<CylonContext> &ct
   }
 
   arrow::compute::ExecContext exec_context(cylon::ToArrowPool(ctx));
-  arrow::compute::MinMaxOptions options(arrow::compute::MinMaxOptions::SKIP);
+  arrow::compute::ScalarAggregateOptions options(true, 0);
   CYLON_ASSIGN_OR_RAISE(auto result, arrow::compute::MinMax(input, options, &exec_context));
 
   const auto &struct_scalar = result.scalar_as<arrow::StructScalar>();

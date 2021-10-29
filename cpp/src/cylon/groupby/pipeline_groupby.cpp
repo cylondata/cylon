@@ -32,7 +32,8 @@ arrow::Status (*AggregateFptr)(const arrow::Datum &array,
                                arrow::Datum *res);
 
 inline arrow::Status Sum(const arrow::Datum &array, arrow::compute::ExecContext *fn_ctx, arrow::Datum *res) {
-  auto result = arrow::compute::Sum(array, fn_ctx);
+  auto result = arrow::compute::Sum(array, arrow::compute::ScalarAggregateOptions(true, 0),
+                                    fn_ctx);
   if (result.ok()) {
     *res = result.ValueOrDie();
   }
@@ -42,7 +43,8 @@ inline arrow::Status Sum(const arrow::Datum &array, arrow::compute::ExecContext 
 inline arrow::Status Count(const arrow::Datum &array,
                            arrow::compute::ExecContext *fn_ctx,
                            arrow::Datum *res) {
-  auto result = arrow::compute::Count(array, arrow::compute::CountOptions::Defaults(), fn_ctx);
+  auto result = arrow::compute::Count(array, arrow::compute::ScalarAggregateOptions(true, 0),
+                                      fn_ctx);
 
   if (result.ok()) {
     *res = result.ValueOrDie();
@@ -54,7 +56,8 @@ template<bool minMax>
 inline arrow::Status MinMax(const arrow::Datum &array,
                             arrow::compute::ExecContext *fn_ctx,
                             arrow::Datum *res) {
-  auto result = arrow::compute::MinMax(array, arrow::compute::MinMaxOptions::Defaults(), fn_ctx);
+  auto result = arrow::compute::MinMax(array, arrow::compute::ScalarAggregateOptions(true, 0),
+                                       fn_ctx);
 
   if (result.ok()) {
     arrow::Datum local_result = result.ValueOrDie(); // minmax returns a structscalar{min, max}
