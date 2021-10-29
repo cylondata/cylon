@@ -98,17 +98,17 @@ std::vector<std::string> constructInputFiles(std::string base, int world_size) {
  * @param count
  * @return
  */
-std::vector<int32_t> GenRandoms(int max, int count) {
-  srand (time(NULL));
-  std::vector<int32_t> randoms(count, 1);
-  max -= count;
+std::vector<int32_t> GenRandoms(int max, int count, int seed) {
+  srand (seed);
+  std::vector<int32_t> randoms;
+  randoms.reserve(count);
 
   for (int i = 0; i < count - 1; ++i) {
     int num = std::rand() % max;
-    randoms[i] += num;
+    randoms.push_back(num);
     max -= num;
   }
-  randoms[count - 1] += max;
+  randoms.push_back(max);
   return randoms;
 }
 
@@ -134,17 +134,24 @@ bool PerformGatherTest(const std::string &input_filename,
     return false;
   }
 
-  // read all tables if this is gather_root and compare to the gathered one
-  std::vector<cudf::table_view> all_tables;
-  if (gather_root == ctx->GetRank()) {
-    for (long unsigned int i = 0; i < all_input_files.size(); i++) {
-      cudf::io::table_with_metadata read_table = readCSV(all_input_files[i], column_names, date_columns);
-      auto read_tv = read_table.tbl->view();
-      auto gathered_tv = gathered_tables[i]->view();
-      if (!table_equal(read_tv, gathered_tv)) {
-        return false;
-      }
-    }
+  // if not the root worker, nothing more to be done
+  if (gather_root != ctx->GetRank()) {
+    return true;
+  }
+
+  auto gathered_views = tablesToViews(gathered_tables);
+  auto gathered_table = cudf::concatenate(gathered_views);
+
+  std::vector<std::unique_ptr<cudf::table>> file_tables;
+  file_tables.reserve(all_input_files.size());
+  for (long unsigned int i = 0; i < all_input_files.size(); i++) {
+    cudf::io::table_with_metadata read_table = readCSV(all_input_files[i], column_names, date_columns);
+    file_tables.push_back(std::move(read_table.tbl));
+  }
+  auto file_views = tablesToViews(file_tables);
+  auto file_table = cudf::concatenate(file_views);
+  if (!table_equal(gathered_table->view(), file_table->view())) {
+    return false;
   }
 
   return true;
@@ -176,17 +183,25 @@ bool PerformGatherSlicedTest(const cudf::table_view &input_tv,
     return true;
   }
 
-  // read all tables if this is gather_root and compare to the gathered one
+  auto gathered_views = tablesToViews(gathered_tables);
+  auto gathered_table = cudf::concatenate(gathered_views);
+
+  std::vector<std::unique_ptr<cudf::table>> file_tables;
+  file_tables.reserve(all_input_files.size());
+  std::vector<cudf::table_view> file_views;
+  file_views.reserve(all_input_files.size());
   for (long unsigned int i = 0; i < all_input_files.size(); i++) {
     cudf::io::table_with_metadata read_table = readCSV(all_input_files[i], column_names, date_columns);
     auto read_tv = cudf::slice(read_table.tbl->view(), row_range)[0];
-    auto gathered_tv = gathered_tables[i]->view();
-
-    if (!table_equal(read_tv, gathered_tv)) {
-      return false;
-    }
+    file_views.push_back(read_tv);
+    file_tables.push_back(std::move(read_table.tbl));
   }
 
+  auto file_table = cudf::concatenate(file_views);
+
+  if (!table_equal(gathered_table->view(), file_table->view())) {
+    return false;
+  }
   return true;
 }
 
@@ -212,8 +227,8 @@ bool PerformBcastTest(const cudf::table_view &input_tv,
       return false;
     }
 
-    auto received_tv = received_table->view();
-    if (!table_equal(input_tv, received_tv)) {
+    auto original_table = std::make_unique<cudf::table>(input_tv);
+    if (!table_equal(original_table->view(), received_table->view())) {
       return false;
     }
   }

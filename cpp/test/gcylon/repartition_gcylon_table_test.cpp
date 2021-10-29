@@ -47,9 +47,10 @@ TEST_CASE("Repartition Distributed Gcylon Table", "[grepartition]") {
 
     // second check repartitioning with given target partition sizes
     // determine target sizes randomly
+    int seed = 0;
     for (auto init_sizes: initial_sizes) {
       auto all_rows = std::accumulate(init_sizes.begin(), init_sizes.end(), 0);
-      auto part_sizes = gcylon::test::GenRandoms(all_rows, init_sizes.size());
+      auto part_sizes = gcylon::test::GenRandoms(all_rows, init_sizes.size(), seed++);
       auto all_rows2 = std::accumulate(part_sizes.begin(), part_sizes.end(), 0);
       REQUIRE((all_rows == all_rows2));
       REQUIRE((gcylon::test::PerformRepartitionTest(input_file,
