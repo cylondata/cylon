@@ -17,11 +17,13 @@
 #include <cudf/types.hpp>
 #include <cudf/table/table.hpp>
 #include <cudf/strings/strings_column_view.hpp>
+#include <cudf/column/column_factories.hpp>
 #include <rmm/device_buffer.hpp>
 #include <gcylon/cudf_buffer.hpp>
 #include <gcylon/all2all/cudf_all_to_all.cuh>
 #include <gcylon/net/cudf_net_ops.hpp>
 #include <gcylon/utils/util.hpp>
+#include <cudf/copying.hpp>
 
 namespace gcylon {
 
@@ -84,9 +86,11 @@ cylon::Status TableDeserializer::deserialize(std::vector<std::shared_ptr<cylon::
                                              std::vector<std::unique_ptr<cudf::table>> &received_tables) {
 
   int number_of_tables = buffer_sizes_per_table.size();
+  received_tables.reserve(number_of_tables);
 
   for (int i = 0; i < number_of_tables; ++i) {
     if (allZero(buffer_sizes_per_table.at(i))) {
+      received_tables.push_back(cudf::empty_like(tv_));
       continue;
     }
     std::vector<int32_t> disp = displacementsPerTable(displacements_per_buffer, i);
@@ -172,7 +176,7 @@ int32_t gcylon::net::numOfRows(const cudf::data_type dt,
 
 int32_t gcylon::net::numOfRows(const std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
                                const int32_t data_type) {
-  if (received_buffers.size() < 3 || received_buffers[0]->GetLength() == 0) {
+  if (received_buffers.size() < 3) {
     return 0;
   }
 
@@ -216,5 +220,16 @@ cylon::Status deserializeSingleTable(const std::vector<std::shared_ptr<cylon::Bu
   return cylon::Status::OK();
 }
 
+std::unique_ptr<cudf::table> deserializeEmptyTable(const std::vector<int32_t> &data_types) {
+
+  std::vector<std::unique_ptr<cudf::column>> columns;
+  columns.reserve(data_types.size());
+
+  for (auto data_type: data_types) {
+    cudf::data_type dt(static_cast<cudf::type_id>(data_type));
+    columns.push_back(cudf::make_empty_column(dt));
+  }
+  return std::make_unique<cudf::table>(std::move(columns));
+}
 
 } // end of namespace gcylon

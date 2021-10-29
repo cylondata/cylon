@@ -18,6 +18,7 @@
 #include <gcylon/cudf_buffer.hpp>
 #include <gcylon/sorting/deserialize.hpp>
 #include <gcylon/net/cudf_serialize.hpp>
+#include <cudf/copying.hpp>
 
 cylon::Status gcylon::net::Bcast(const cudf::table_view &tv,
                                  const int bcast_root,
@@ -36,8 +37,12 @@ cylon::Status gcylon::net::Bcast(const cudf::table_view &tv,
       cylon::mpi::Bcast(serializer, bcast_root, allocator, received_buffers, data_types, ctx));
 
   if (!cylon::mpi::AmIRoot(bcast_root, ctx)) {
-    RETURN_CYLON_STATUS_IF_FAILED(
+    if (received_buffers.empty()) {
+      received_table = deserializeEmptyTable(data_types);
+    } else {
+      RETURN_CYLON_STATUS_IF_FAILED(
         gcylon::deserializeSingleTable(received_buffers, data_types, received_table));
+    }
   }
 
   return cylon::Status::OK();
