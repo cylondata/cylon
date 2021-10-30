@@ -139,24 +139,19 @@ static inline Status all_to_all_arrow_tables_preserve_order(const std::shared_pt
                                              const std::vector<std::shared_ptr<arrow::Table>> &partitioned_tables,
                                              std::shared_ptr<arrow::Table> &table_out) {
   const auto &neighbours = ctx->GetNeighbours(true);
+
+  // here we expect that only a few processes will send to one process
+  // so we use a tree map instead of using a vector with size of number of processes
   std::vector<std::shared_ptr<arrow::Table>> received_tables;
   std::map<int, std::shared_ptr<arrow::Table>> received_tables_mp;
   received_tables.reserve(neighbours.size());
 
-  // std::ofstream myfile;
-  // myfile.open ("/home/hanzhi713/cylon/temp.txt");
-
   // define call back to catch the receiving tables
   ArrowCallback arrow_callback =
-      [&received_tables_mp, &ctx](int source, const std::shared_ptr<arrow::Table> &table_, int reference) {
-        // received_tables.push_back(table_);
-        // if(ctx->GetRank() == 1) {
-        //   myfile<<source<<std::endl;
-        // }
+      [&received_tables_mp](int source, const std::shared_ptr<arrow::Table> &table_, int reference) {
         received_tables_mp[source] = table_;
         return true;
       };
-
 
   // doing all to all communication to exchange tables
   cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, ctx->GetNextSequence(),
@@ -209,9 +204,6 @@ static inline Status all_to_all_arrow_tables_preserve_order(const std::shared_pt
       final_table->CombineChunks(cylon::ToArrowPool(ctx));
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(concat_res.status());
   table_out = combine_res.ValueOrDie();
-
-  // myfile.close();
-
 
   return Status::OK();
 }
@@ -1196,6 +1188,15 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   std::vector<int64_t> sizes;
   mpi::AllGather(size, world_size, sizes);
 
+  if(rows_per_partition.size() != world_size) {
+    return Status(
+    cylon::Code::ValueError,
+    "rows_per_partition size does not align with world size. Received " +
+        std::to_string(rows_per_partition.size()) + ", Expected " +
+        std::to_string(world_size));
+  }
+
+  // collecting start index of each process after the repartition
   std::vector<int64_t> dest_sizes_acc(rows_per_partition.size());
   dest_sizes_acc[0] = 0;
   for(int i = 1; i < dest_sizes_acc.size(); i++) {
@@ -1205,6 +1206,19 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   int start_idx = 0;
   for(int i = 0; i < rank; i++) {
     start_idx += sizes[i];
+  }
+
+  int acc = start_idx;
+  for(int i = rank; i < world_size; i++) {
+    acc += sizes[i];
+  }
+
+  if(acc != dest_sizes_acc.back() + rows_per_partition.back()) {
+    return Status(
+    cylon::Code::ValueError,
+    "rows_per_partition total number of rows does not align with actual number of rows. Received " +
+        std::to_string(dest_sizes_acc.back() + rows_per_partition.back()) + ", Expected " +
+        std::to_string(acc));
   }
 
   std::vector<std::pair<int, int>> send_to = find_mapping(start_idx, num_row, rows_per_partition, dest_sizes_acc);
@@ -1238,41 +1252,12 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
 Status Repartition(const std::shared_ptr<cylon::Table>& table,
                    const std::vector<int64_t>& rows_per_partition,
                    std::shared_ptr<cylon::Table> *output) {
-  if(rows_per_partition.size() == 0) return Status::OK();
-  // if rows_per_partition does not match world size, return error
-  // TODO check if total size unmatch
-
+  // should be refactored after mpi_send and mpi_receive are implemented
   int world_size = table->GetContext()->GetWorldSize();
-  int rank = table->GetContext()->GetRank();
-  int num_row = table->Rows();
-  std::vector<int64_t> size = { num_row };
-  std::vector<int64_t> sizes;
-  mpi::AllGather(size, world_size, sizes);
-  
-  std::vector<int64_t> sizes_acc(world_size);
-  sizes_acc[0] = 0;
-  for(int i = 1; i < world_size; i++) {
-    sizes_acc[i] = sizes_acc[i - 1] + sizes[i - 1];
-  }
+  std::vector<int32_t> indices(world_size);
+  std::iota(indices.begin(), indices.end(), 0);
 
-  std::vector<int64_t> dest_sizes_acc(rows_per_partition.size());
-  dest_sizes_acc[0] = 0;
-  for(int i = 1; i < dest_sizes_acc.size(); i++) {
-    dest_sizes_acc[i] = dest_sizes_acc[i - 1] + rows_per_partition[i - 1];
-  }
-
-  int send_start_idx = sizes_acc[rank];
-  int recv_start_idx = dest_sizes_acc[rank];
-
-  // rank, size
-  std::vector<std::pair<int, int>> send_to = find_mapping(send_start_idx, num_row, rows_per_partition, dest_sizes_acc);
-  std::vector<std::pair<int, int>> receive_from = find_mapping(recv_start_idx, rows_per_partition[rank], sizes, sizes_acc);
-  
-  int idx = 0;
-  for(auto pair: send_to) {
-    // send
-    // no high-level mpi_send?
-  }
+  return Repartition(table, rows_per_partition, indices, output);
 }
 
 
