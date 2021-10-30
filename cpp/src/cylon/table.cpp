@@ -1260,6 +1260,30 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   return Repartition(table, rows_per_partition, indices, output);
 }
 
+// repartition to `world_size` number of partitions evenly
+Status Repartition(const std::shared_ptr<cylon::Table>& table,
+                   std::shared_ptr<cylon::Table> *output) {
+  int world_size = table->GetContext()->GetWorldSize();
+  int num_row = table->Rows();
+  std::vector<int64_t> size = { num_row };
+  std::vector<int64_t> sizes;
+  mpi::AllGather(size, world_size, sizes);
+
+  int total = 0;
+  for(int n: sizes) {
+    total += n;
+  }
+
+  int mod = total % world_size;
+  int quotient = total / world_size;
+
+  std::vector<int64_t> rows_per_partition(world_size);
+  if(mod != 0)
+    std::fill(rows_per_partition.begin(), rows_per_partition.begin() + mod, quotient + 1);
+  std::fill(rows_per_partition.begin() + mod, rows_per_partition.end(), quotient);
+
+  return Repartition(table, rows_per_partition, output);
+}
 
 std::shared_ptr<BaseArrowIndex> Table::GetArrowIndex() { return base_arrow_index_; }
 

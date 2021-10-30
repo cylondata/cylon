@@ -235,5 +235,52 @@ TEST_CASE("Repartition with rank order", "[repartition]") {
     }
 }
 
+TEST_CASE("Repartition to world_size number of tables evenly", "[repartition]") {
+    std::string path1 = "../data/input/repartition_" + std::to_string(RANK) +".csv";
+    std::string path2 = "../data/input/repartition_evenly_" + std::to_string(RANK) +".csv";
+    std::shared_ptr<Table> table1, table2;
+
+    auto read_options = io::config::CSVReadOptions().UseThreads(false);
+
+    CHECK_CYLON_STATUS(FromCSV(ctx, std::vector<std::string>{path1, path2},
+                    std::vector<std::shared_ptr<Table> *>{&table1, &table2},
+                            read_options));
+
+    SECTION("total is a multiple of world_size") {
+        std::shared_ptr<Table> output;
+        Repartition(table1, &output);
+        REQUIRE(output->Rows() == 3);
+        
+        std::vector<std::vector<std::string>> expected = {
+            {"0,1", "1,2", "3,4", "5,6"},
+            {"0,1", "7,8", "9,10", "11,12"},
+            {"0,1", "13,14", "15,16", "17,18"},
+            {"0,1", "19,20", "21,22", "23,24"},
+        };
+
+        verify_test(expected, output);
+    }
+
+    SECTION("total is NOT a multiple of world_size") {
+        std::shared_ptr<Table> output;
+        Repartition(table2, &output);
+
+        if(RANK == 3) {
+            REQUIRE(output->Rows() == 2);
+        } else {
+            REQUIRE(output->Rows() == 3);
+        }
+        
+        std::vector<std::vector<std::string>> expected = {
+            {"0", "1", "2", "3"},
+            {"0", "4", "5", "6"},
+            {"0", "7", "8", "9"},
+            {"0", "10", "11"},
+        };
+
+        verify_test(expected, output);
+    }
+}
+
 }
 }
