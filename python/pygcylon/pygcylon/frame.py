@@ -19,6 +19,7 @@ import numpy as np
 from pygcylon.net.shuffle import shuffle as cshuffle
 from pygcylon.net.row_counts import row_counts_all_tables
 from pygcylon.net.sorting import distributed_sort
+from pygcylon.net.repartition import repartition as crepartition
 from pycylon.frame import CylonEnv
 from pygcylon.groupby import GroupByDataFrame
 
@@ -1006,6 +1007,59 @@ class DataFrame(object):
 
         shuffled_df = _shuffle(self._cdf, hash_columns=shuffle_column_indices, env=env, ignore_index=ignore_index)
         return DataFrame.from_cudf(shuffled_df)
+
+    def repartition(self, rows_per_partition=None, ignore_index=False, env: CylonEnv = None) -> DataFrame:
+        """
+        Repartition the dataframe by keeping the global order of rows.
+        If rows_per_partition is not provided, repartition the rows evenly among the workers
+        The sum of rows in rows_per_partition must match
+        the total number of rows in the current distributed dataframe.
+        For example:
+            if there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
+            After repartitioning evenly, row counts become: [25, 25 ,25 ,25]
+
+            if the number of partitions is not a multiple of sum of row counts,
+              first k partitions get one more row:
+              if there are 4 partitions currently with row counts: [10, 20 ,30 ,42]
+              After repartitioning evenly, row counts become: [26, 26 ,25 ,25]
+
+        User Provided Row Counts:
+            if there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
+            Users can request repartitioning with the row counts of [35, 15 ,20 ,30],
+            the repartitioned dataframe will have the requested row counts.
+
+            Requested row count list must have integer values for each partition and
+            the total number of rows must match the current row count in the distributed source dataframe
+
+        It is an error to call this method on a DataFrame with a single cudf DataFrame.
+
+        Parameters
+        ----------
+        rows_per_partition: list of partition sizes requested after the repartitioning
+        ignore_index: ignore index when repartitioning if True
+        env: CylonEnv object for this DataFrame
+
+        Returns
+        -------
+        A new distributed DataFrame constructed by repartitioning the DataFrame
+        """
+        if env is None or env.world_size == 1:
+            raise ValueError(f"Not a distributed DataFrame. No repartitioning for local DataFrames.")
+
+        # make sure 'rows_per_partition' consists of ints and its size matches number of workers
+        if rows_per_partition is not None:
+            if not all(isinstance(i, int) for i in rows_per_partition):
+                raise ValueError("rows_per_partition is not a list of int")
+
+            if len(rows_per_partition) != env.world_size:
+                raise ValueError("len(rows_per_partition) must match the number of workers")
+
+        reparted_tbl = crepartition(self._cdf,
+                                    context=env.context,
+                                    rows_per_worker=rows_per_partition,
+                                    ignore_index=ignore_index)
+        reparted_cdf = cudf.DataFrame._from_table(reparted_tbl)
+        return DataFrame.from_cudf(reparted_cdf)
 
     def equals(self, other, **kwargs):
         """
