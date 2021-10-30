@@ -411,6 +411,11 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
                    const std::vector<int64_t>& rows_per_partition,
                    std::shared_ptr<cylon::Table> *output);
 
+Status Repartition(const std::shared_ptr<cylon::Table>& table, 
+                   const std::vector<int64_t>& rows_per_partition,
+                   const std::vector<int>& receive_build_rank_order,
+                   std::shared_ptr<Table> *output);
+
 #ifdef BUILD_CYLON_PARQUET
 /**
  * Create a table by reading a parquet file

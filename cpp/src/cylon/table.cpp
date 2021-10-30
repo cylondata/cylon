@@ -131,6 +131,91 @@ static inline Status all_to_all_arrow_tables(const std::shared_ptr<CylonContext>
   return Status::OK();
 }
 
+/**
+ * output rows order by rank number 
+ */
+static inline Status all_to_all_arrow_tables_preserve_order(const std::shared_ptr<CylonContext> &ctx,
+                                             const std::shared_ptr<arrow::Schema> &schema,
+                                             const std::vector<std::shared_ptr<arrow::Table>> &partitioned_tables,
+                                             std::shared_ptr<arrow::Table> &table_out) {
+  const auto &neighbours = ctx->GetNeighbours(true);
+  std::vector<std::shared_ptr<arrow::Table>> received_tables;
+  std::map<int, std::shared_ptr<arrow::Table>> received_tables_mp;
+  received_tables.reserve(neighbours.size());
+
+  // std::ofstream myfile;
+  // myfile.open ("/home/hanzhi713/cylon/temp.txt");
+
+  // define call back to catch the receiving tables
+  ArrowCallback arrow_callback =
+      [&received_tables_mp, &ctx](int source, const std::shared_ptr<arrow::Table> &table_, int reference) {
+        // received_tables.push_back(table_);
+        // if(ctx->GetRank() == 1) {
+        //   myfile<<source<<std::endl;
+        // }
+        received_tables_mp[source] = table_;
+        return true;
+      };
+
+
+  // doing all to all communication to exchange tables
+  cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, ctx->GetNextSequence(),
+                                  arrow_callback, schema);
+
+  // if world size == partitions, simply send paritions based on index
+  const size_t world_size = (size_t) ctx->GetWorldSize(), num_partitions = partitioned_tables.size(),
+      rank = ctx->GetRank();
+  if (world_size == num_partitions) {
+    for (size_t i = 0; i < partitioned_tables.size(); i++) {
+      if (i != rank) {
+        all_to_all.insert(partitioned_tables[i], i);
+      } else {
+        received_tables_mp[i] = partitioned_tables[i];
+      }
+    }
+  } else {  // divide parititions to world_size potions and send accordingly
+    for (size_t i = 0; i < partitioned_tables.size(); i++) {
+      size_t target = i * world_size / num_partitions;
+      if (target != rank) {
+        all_to_all.insert(partitioned_tables[i], target);
+      } else {
+        received_tables_mp[i] = partitioned_tables[i];
+      }
+    }
+  }
+
+  // now complete the communication
+  all_to_all.finish();
+  while (!all_to_all.isComplete()) {
+  }
+  all_to_all.close();
+
+  for(auto& p: received_tables_mp) {
+    received_tables.push_back(p.second);
+  }
+
+  /*  // now clear locally partitioned tables
+  partitioned_tables.clear();*/
+
+  // now we have the final set of tables
+  LOG(INFO) << "Concatenating tables, Num of tables :  " << received_tables.size();
+  arrow::Result<std::shared_ptr<arrow::Table>> concat_res =
+      arrow::ConcatenateTables(received_tables);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(concat_res.status());
+  const auto &final_table = concat_res.ValueOrDie();
+  LOG(INFO) << "Done concatenating tables, rows :  " << final_table->num_rows();
+
+  arrow::Result<std::shared_ptr<arrow::Table>> combine_res =
+      final_table->CombineChunks(cylon::ToArrowPool(ctx));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(concat_res.status());
+  table_out = combine_res.ValueOrDie();
+
+  // myfile.close();
+
+
+  return Status::OK();
+}
+
 template<typename T>
 // T is int32_t or const std::vector<int32_t>&
 static inline Status shuffle_table_by_hashing(const std::shared_ptr<CylonContext> &ctx,
@@ -1143,7 +1228,7 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   }
 
   std::shared_ptr<arrow::Table> table_out;
-  RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables(table->GetContext(), schema, partitioned_tables, table_out));
+  RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables_preserve_order(table->GetContext(), schema, partitioned_tables, table_out));
 
   *output = std::make_shared<cylon::Table>(table->GetContext(), table_out);
 
