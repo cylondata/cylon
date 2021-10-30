@@ -41,9 +41,6 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
                             read_options));
 
     SECTION("even") {
-        bool result;
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
-        REQUIRE(result == true);
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {3, 3, 3, 3};
         std::vector<int> receive_build_rank_order = {0, 1, 2, 3};
@@ -61,9 +58,6 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
     }
 
     SECTION("uneven") {
-        bool result;
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
-        REQUIRE(result == true);
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {1, 2, 3, 6};
         std::vector<int> receive_build_rank_order = {0, 1, 2, 3};
@@ -81,9 +75,6 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
     }
 
     SECTION("uneven 2") {
-        bool result;
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
-        REQUIRE(result == true);
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {6, 3, 1, 2};
         std::vector<int> receive_build_rank_order = {0, 1, 2, 3};
@@ -101,9 +92,6 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
     }
 
     SECTION("very uneven") {
-        bool result;
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
-        REQUIRE(result == true);
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {1, 1, 1, 9};
         std::vector<int> receive_build_rank_order = {0, 1, 2, 3};
@@ -121,9 +109,6 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
     }
 
     SECTION("custom order") {
-        bool result;
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
-        REQUIRE(result == true);
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {3, 3, 3, 3};
         std::vector<int> receive_build_rank_order = {3, 2, 1, 0};
@@ -141,9 +126,6 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
     }
 
     SECTION("custom order 2") {
-        bool result;
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
-        REQUIRE(result == true);
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {4, 2, 3, 3};
         std::vector<int> receive_build_rank_order = {3, 0, 1, 2};
@@ -178,9 +160,6 @@ TEST_CASE("Repartition with rank order", "[repartition]") {
                             read_options));
 
     SECTION("even") {
-        bool result;
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
-        REQUIRE(result == true);
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {3, 3, 3, 3};
         Repartition(table1, rows_per_partition, &output);
@@ -197,9 +176,6 @@ TEST_CASE("Repartition with rank order", "[repartition]") {
     }
 
     SECTION("uneven") {
-        bool result;
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
-        REQUIRE(result == true);
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {1, 2, 6, 3};
         Repartition(table1, rows_per_partition, &output);
@@ -216,9 +192,6 @@ TEST_CASE("Repartition with rank order", "[repartition]") {
     }
 
     SECTION("very uneven") {
-        bool result;
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
-        REQUIRE(result == true);
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {1, 1, 9, 1};
         Repartition(table1, rows_per_partition, &output);
