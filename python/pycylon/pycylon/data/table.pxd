@@ -121,11 +121,11 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
     
     CStatus DistributedEquals(shared_ptr[CTable] & a, shared_ptr[CTable] & b, bool& result, bool ordered)
 
-    CStatus Repartition(shared_ptr[CTable] & table, const vector[int] & rows_per_partition, const vector[int] & receive_build_rank_order, shared_ptr[CTable]* output)
+    # CStatus Repartition(shared_ptr[CTable] & table, const vector[int] & rows_per_partition, const vector[int] & receive_build_rank_order, shared_ptr[CTable]* output)
     
-    CStatus Repartition(shared_ptr[CTable] & table, const vector[int] & rows_per_partition, shared_ptr[CTable]* output)
+    # CStatus Repartition(shared_ptr[CTable] & table, const vector[int] & rows_per_partition, shared_ptr[CTable]* output)
 
-    CStatus Repartition(shared_ptr[CTable] & table, shared_ptr[CTable]* output)
+    # CStatus Repartition(shared_ptr[CTable] & table, shared_ptr[CTable]* output)
 
 cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CSortOptions "cylon::SortOptions":

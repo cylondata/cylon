@@ -399,6 +399,12 @@ class DataFrame(object):
         else:
             return self._table.distributed_equals(df._table, ordered)
 
+    # def repartition(self, rows_per_partition, env: CylonEnv, receive_build_rank_order=None):
+    #     return self._table.repartition(rows_per_partition, receive_build_rank_order)
+
+    # def evenly_partition(self, env: CylonEnv):
+    #     return self._table.evenly_partition()
+
     @property
     def iloc(self) -> PyLocIndexer:
         """

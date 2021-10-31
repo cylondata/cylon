@@ -833,39 +833,41 @@ cdef class Table:
         else:
             raise Exception(f"Equal operation failed {status.get_msg().decode()}")
 
-    def repartition(self, rows_per_partition, receive_build_rank_order=None) -> Table:
-        '''
-        Re-partition the table so that receive_build_rank_order[i]'th process contains rows_per_partition[i] elements.
-        Args:
-            rows_per_partition: number rows that each partition should have
-            receive_build_rank_prder: the order of ranks for receiving the rows (which rank receives first, etc.), None if using default order (0th, 1th, 2th ...)
+    # def repartition(self, rows_per_partition, receive_build_rank_order=None):
+    #     '''
+    #     Re-partition the table so that receive_build_rank_order[i]'th process contains rows_per_partition[i] elements.
+    #     Args:
+    #         rows_per_partition: number rows that each partition should have
+    #         receive_build_rank_prder: the order of ranks for receiving the rows (which rank receives first, etc.), None if using default order (0th, 1th, 2th ...)
 
-        Returns: Table
-        '''
-        cdef Table output
-        if receive_build_rank_order != None:
-            status = Repartition(self.table_shd_ptr, rows_per_partition, receive_build_rank_order, output)
-        else:
-            status = Repartition(self.table_shd_ptr, rows_per_partition, output)
+    #     Returns: Table
+    #     '''
+    #     cdef shared_ptr[CTable] *output
+    #     if receive_build_rank_order != None:
+    #         status = Repartition(self.table_shd_ptr, rows_per_partition, receive_build_rank_order, output)
+    #     else:
+    #         status = Repartition(self.table_shd_ptr, rows_per_partition, output)
 
-        if status.is_ok():
-            return output
-        else:
-            raise Exception(f"Equal operation failed {status.get_msg().decode()}")
+    #     if status.is_ok():
+    #         cylon_table = pycylon_wrap_table(output[0])
+    #         return cylon_table
+    #     else:
+    #         raise Exception(f"Equal operation failed {status.get_msg().decode()}")
 
-    def evenly_partition(self) -> Table:
-        '''
-        Re-partition the table so that first ((# total rows) % (# partitions)) partitions will receive ceil((# total rows) / (# partitions)) rows, and the rest will receive floor((# total rows) / (# partitions)) rows.
+    # def evenly_partition(self):
+    #     '''
+    #     Re-partition the table so that first ((# total rows) % (# partitions)) partitions will receive ceil((# total rows) / (# partitions)) rows, and the rest will receive floor((# total rows) / (# partitions)) rows.
 
-        Returns: Table
-        '''
-        cdef Table output
-        status = Repartition(self.table_shd_ptr, output)
+    #     Returns: Table
+    #     '''
+    #     cdef shared_ptr[CTable] *output
+    #     status = Repartition(self.table_shd_ptr, output)
 
-        if status.is_ok():
-            return output
-        else:
-            raise Exception(f"Equal operation failed {status.get_msg().decode()}")
+    #     if status.is_ok():
+    #         cylon_table = pycylon_wrap_table(output[0])
+    #         return cylon_table
+    #     else:
+    #         raise Exception(f"Equal operation failed {status.get_msg().decode()}")
 
     @staticmethod
     def from_arrow(context, pyarrow_table) -> Table:
