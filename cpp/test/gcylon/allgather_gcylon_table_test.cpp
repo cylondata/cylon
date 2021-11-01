@@ -18,9 +18,9 @@
 using namespace cylon;
 using namespace gcylon;
 
-TEST_CASE("Replicate Distributed Gcylon Table", "[greplicate]") {
+TEST_CASE("AllGather Distributed Gcylon Table", "[gallgather]") {
 
-  SECTION("testing Replicating Distributed Gcylon Table") {
+  SECTION("testing AllGather Distributed Gcylon Table") {
 
     std::string input_file_base = "../../data/mpiops/sales_nulls_nunascii_";
 
@@ -32,18 +32,18 @@ TEST_CASE("Replicate Distributed Gcylon Table", "[greplicate]") {
 
     // first check all gathering empty tables
     std::vector<std::vector<int32_t>> ranges{{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-    REQUIRE((gcylon::test::PerformReplicateTest(tables, ranges, ctx)));
+    REQUIRE((gcylon::test::PerformAllGatherTest(tables, ranges, ctx)));
 
     // check all gathering single row tables
     for (int i = 0; i < 5; ++i) {
       std::vector<std::vector<int32_t>> ranges2{{i, i+1}, {i, i+1}, {i, i+1}, {i, i+1}};
-      REQUIRE((gcylon::test::PerformReplicateTest(tables, ranges2, ctx)));
+      REQUIRE((gcylon::test::PerformAllGatherTest(tables, ranges2, ctx)));
     }
 
     // check all gathering multi row tables
     for (int i = 0; i < 5; ++i) {
       std::vector<std::vector<int32_t>> ranges2{{i, 2 * i}, {i, 2 * i}, {i, 2 * i}, {i, 2 * i}};
-      REQUIRE((gcylon::test::PerformReplicateTest(tables, ranges2, ctx)));
+      REQUIRE((gcylon::test::PerformAllGatherTest(tables, ranges2, ctx)));
     }
 
     // check all gathering full tables
@@ -53,7 +53,7 @@ TEST_CASE("Replicate Distributed Gcylon Table", "[greplicate]") {
       std::vector<int32_t> range{0, tbl->num_rows()};
       ranges3.push_back(std::move(range));
     }
-    REQUIRE((gcylon::test::PerformReplicateTest(tables, ranges3, ctx)));
+    REQUIRE((gcylon::test::PerformAllGatherTest(tables, ranges3, ctx)));
 
   }
 

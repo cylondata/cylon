@@ -368,7 +368,7 @@ bool PerformRepartitionTest(const std::string &input_filename,
   return true;
 }
 
-bool PerformReplicateTest(const std::vector<std::unique_ptr<cudf::table>> &tables,
+bool PerformAllGatherTest(const std::vector<std::unique_ptr<cudf::table>> &tables,
                           const std::vector<std::vector<int32_t>> &ranges,
                           const std::shared_ptr<cylon::CylonContext> &ctx) {
 
@@ -376,7 +376,7 @@ bool PerformReplicateTest(const std::vector<std::unique_ptr<cudf::table>> &table
 
   // allgather the tables
   std::unique_ptr<cudf::table> gathered_table;
-  cylon::Status status = gcylon::Replicate(tv_slice, ctx,gathered_table);
+  cylon::Status status = gcylon::AllGather(tv_slice, ctx, gathered_table);
   if (!status.is_ok()) {
     return false;
   }

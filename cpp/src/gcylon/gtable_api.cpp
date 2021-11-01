@@ -108,7 +108,7 @@ cylon::Status Broadcast(const cudf::table_view &input_tv,
   return cylon::Status::OK();
 }
 
-cylon::Status Replicate(const cudf::table_view &input_tv,
+cylon::Status AllGather(const cudf::table_view &input_tv,
                         const std::shared_ptr<cylon::CylonContext> &ctx,
                         std::unique_ptr<cudf::table> &table_out) {
 

@@ -82,7 +82,7 @@ cylon::Status Broadcast(const cudf::table_view &input_tv,
                         std::unique_ptr<cudf::table> &table_out);
 
 /**
- * Replicate a distributed table in all workers
+ * AllGather a distributed table in all workers
  * Each table in all workers contains the data of all initial tables
  * The global order of row ranks are preserved
  * @param input_tv
@@ -91,7 +91,7 @@ cylon::Status Broadcast(const cudf::table_view &input_tv,
  * @param table_out
  * @return
  */
-cylon::Status Replicate(const cudf::table_view &input_tv,
+cylon::Status AllGather(const cudf::table_view &input_tv,
                         const std::shared_ptr<cylon::CylonContext> &ctx,
                         std::unique_ptr<cudf::table> &table_out);
 
