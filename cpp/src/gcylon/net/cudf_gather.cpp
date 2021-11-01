@@ -39,9 +39,9 @@ std::vector<std::vector<int32_t>> bufferSizesPerTable(const std::vector<int32_t>
 
 
 cylon::Status gcylon::net::Gather(const cudf::table_view &tv,
-                                  const int gather_root,
+                                  int gather_root,
                                   bool gather_from_root,
-                                  std::shared_ptr<cylon::CylonContext> ctx,
+                                  const std::shared_ptr<cylon::CylonContext> &ctx,
                                   std::vector<std::unique_ptr<cudf::table>> &gathered_tables) {
 
   auto serializer = std::make_shared<CudfTableSerializer>(tv);
@@ -66,6 +66,32 @@ cylon::Status gcylon::net::Gather(const cudf::table_view &tv,
     TableDeserializer deserializer(tv);
     deserializer.deserialize(receive_buffers, all_disps, buffer_sizes_per_table, gathered_tables);
   }
+
+  return cylon::Status::OK();
+}
+
+cylon::Status gcylon::net::AllGather(const cudf::table_view &tv,
+                                     const std::shared_ptr<cylon::CylonContext> &ctx,
+                                     std::vector<std::unique_ptr<cudf::table>> &gathered_tables) {
+
+  auto serializer = std::make_shared<CudfTableSerializer>(tv);
+  auto allocator = std::make_shared<CudfAllocator>();
+  std::vector<int32_t> all_buffer_sizes;
+  std::vector<std::shared_ptr<cylon::Buffer>> receive_buffers;
+  std::vector<std::vector<int32_t>> all_disps;
+
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::mpi::AllGather(serializer,
+                                                      allocator,
+                                                      all_buffer_sizes,
+                                                      receive_buffers,
+                                                      all_disps,
+                                                      ctx));
+
+  std::vector<std::vector<int32_t>> buffer_sizes_per_table =
+    bufferSizesPerTable(all_buffer_sizes, receive_buffers.size(), ctx->GetWorldSize());
+
+  TableDeserializer deserializer(tv);
+  deserializer.deserialize(receive_buffers, all_disps, buffer_sizes_per_table, gathered_tables);
 
   return cylon::Status::OK();
 }

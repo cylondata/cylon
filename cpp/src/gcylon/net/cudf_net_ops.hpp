@@ -65,10 +65,22 @@ cylon::Status Bcast(const cudf::table_view &tv,
  * @return
  */
 cylon::Status Gather(const cudf::table_view &tv,
-                     const int gather_root,
+                     int gather_root,
                      bool gather_from_root,
-                     std::shared_ptr<cylon::CylonContext> ctx,
+                     const std::shared_ptr<cylon::CylonContext> &ctx,
                      std::vector<std::unique_ptr<cudf::table>> &gathered_tables);
+
+
+/**
+ * AllGather CuDF tables
+ * @param tv the local cudf table to allgather
+ * @param ctx Cylon context
+ * @param gathered_tables gathered tables
+ * @return
+ */
+cylon::Status AllGather(const cudf::table_view &tv,
+                        const std::shared_ptr<cylon::CylonContext> &ctx,
+                        std::vector<std::unique_ptr<cudf::table>> &gathered_tables);
 
 
 /**
