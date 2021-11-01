@@ -335,30 +335,21 @@ bool PerformRepartitionTest(const std::string &input_filename,
     return false;
   }
 
-  // gather the tables to first worker and compare two tables
-  int GATHER_ROOT = 0;
-  std::vector<std::unique_ptr<cudf::table>> gathered_init_tables;
-  status = gcylon::net::Gather(sub_tv, GATHER_ROOT,true,ctx, gathered_init_tables);
+  // gather the initial tables to the first worker and compare two tables
+  std::unique_ptr<cudf::table> gathered_init_table;
+  status = gcylon::Gather(sub_tv, ctx, gathered_init_table);
   if (!status.is_ok()) {
     return false;
   }
 
-  std::vector<std::unique_ptr<cudf::table>> gathered_repart_tables;
-  status = gcylon::net::Gather(table_out->view(), GATHER_ROOT, true, ctx, gathered_repart_tables);
+  std::unique_ptr<cudf::table> gathered_repart_table;
+  status = gcylon::Gather(table_out->view(), ctx, gathered_repart_table);
   if (!status.is_ok()) {
     return false;
   }
 
-  if (GATHER_ROOT == ctx->GetRank()) {
-    auto init_tvs = tablesToViews(gathered_init_tables);
-    auto init_single_tbl = cudf::concatenate(init_tvs);
-
-    auto repart_tvs = tablesToViews(gathered_repart_tables);
-    auto repart_single_tbl = cudf::concatenate(repart_tvs);
-
-    if(!table_equal(init_single_tbl->view(), repart_single_tbl->view())) {
-      return false;
-    }
+  if(!table_equal(gathered_init_table->view(), gathered_repart_table->view())) {
+    return false;
   }
 
   return true;
