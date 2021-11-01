@@ -22,6 +22,7 @@ namespace cylon {
 
 /**
  * Hash group-by operation by using <col_index, AggregationOpId> pairs
+ * NOTE: Nulls in the value columns will be ignored!
  * @param table
  * @param idx_cols
  * @param aggregate_cols
@@ -35,6 +36,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
 
 /**
  * Hash group-by operation by using <col_index, AggregationOp> pairs
+ * NOTE: Nulls in the value columns will be ignored!
  * @param table
  * @param idx_cols
  * @param aggregations
@@ -47,6 +49,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
                    std::shared_ptr<Table> &output);
 /**
  * Hash group-by operation by using AggregationOpId vector
+ * NOTE: Nulls in the value columns will be ignored!
  * @param table
  * @param idx_cols
  * @param aggregate_cols
