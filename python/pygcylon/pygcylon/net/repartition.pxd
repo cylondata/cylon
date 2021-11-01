@@ -34,3 +34,8 @@ cdef extern from "gcylon/gtable_api.hpp" namespace "gcylon":
                         unique_ptr[table] & table_out,
                         const vector[int] &rows_per_worker);
 
+    CStatus Gather(const table_view &input_tv,
+                   const shared_ptr[CCylonContext] &ctx_srd_ptr,
+                   unique_ptr[table] & table_out,
+                   int gather_root);
+

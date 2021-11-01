@@ -49,7 +49,6 @@ def gen_df():
 
 
 ######################
-# even repartitioning
 def repart(df, new_row_counts=None):
     repartedDF = df.repartition(rows_per_partition=new_row_counts, env=env)
 
@@ -80,6 +79,17 @@ def gen_random_sizes(row_counts):
     return new_row_counts
 
 
+######################
+def gather(df):
+    gatheredDF = df.gather(env=env, gather_root=1)
+
+    print("gathered row counts: ", gatheredDF.row_counts_for_all(env))
+    out_file = "gathered" + str(env.rank) + ".csv"
+    gatheredDF.to_cudf().to_csv(out_file)
+    print("has written the gathered DataFrame to the file:", out_file)
+    return gatheredDF
+
+
 ######################################################
 df, row_counts = gen_df()
 
@@ -87,9 +97,11 @@ df, row_counts = gen_df()
 # repart(df)
 
 # repartitioning with user given partition sizes
-new_row_counts = gen_random_sizes(row_counts)
+# new_row_counts = gen_random_sizes(row_counts)
+# repartedDF = repart(df, new_row_counts)
 
-repartedDF = repart(df, new_row_counts)
+# gathering all dataframe to a worker
+gather(df)
 
 env.finalize()
 print("after finalize from the rank:", env.rank)

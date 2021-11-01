@@ -20,6 +20,7 @@ from pygcylon.net.shuffle import shuffle as cshuffle
 from pygcylon.net.row_counts import row_counts_all_tables
 from pygcylon.net.sorting import distributed_sort
 from pygcylon.net.repartition import repartition as crepartition
+from pygcylon.net.repartition import gather as cgather
 from pycylon.frame import CylonEnv
 from pygcylon.groupby import GroupByDataFrame
 
@@ -1008,7 +1009,11 @@ class DataFrame(object):
         shuffled_df = _shuffle(self._cdf, hash_columns=shuffle_column_indices, env=env, ignore_index=ignore_index)
         return DataFrame.from_cudf(shuffled_df)
 
-    def repartition(self, rows_per_partition=None, ignore_index=False, env: CylonEnv = None) -> DataFrame:
+    def repartition(self,
+                    env: CylonEnv,
+                    rows_per_partition: List[int] = None,
+                    ignore_index: bool = False,
+                    ) -> DataFrame:
         """
         Repartition the dataframe by keeping the global order of rows.
         If rows_per_partition is not provided, repartition the rows evenly among the workers
@@ -1043,7 +1048,7 @@ class DataFrame(object):
         -------
         A new distributed DataFrame constructed by repartitioning the DataFrame
         """
-        if env is None or env.world_size == 1:
+        if env.world_size == 1:
             raise ValueError(f"Not a distributed DataFrame. No repartitioning for local DataFrames.")
 
         # make sure 'rows_per_partition' consists of ints and its size matches number of workers
@@ -1060,6 +1065,44 @@ class DataFrame(object):
                                     ignore_index=ignore_index)
         reparted_cdf = cudf.DataFrame._from_table(reparted_tbl)
         return DataFrame.from_cudf(reparted_cdf)
+
+    def gather(self,
+               env: CylonEnv,
+               gather_root: int = 0,
+               ignore_index: bool = False,
+               ) -> DataFrame:
+        """
+        Gather all dataframe partitions to a worker by keeping the global order of rows.
+        For example:
+            if there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
+            After gathering all partitions to the first worker,
+            a new distributed dataframe is constructed with row counts: [100, 0 ,0 ,0]
+
+        It is an error to call this method on a DataFrame with a single cudf DataFrame.
+
+        Parameters
+        ----------
+        gather_root: the worker rank to which all partitions will be gathered.
+        ignore_index: ignore index when gathering if True
+        env: CylonEnv object for this DataFrame
+
+        Returns
+        -------
+        A new distributed DataFrame constructed by gathering all distributed dataframes to a single worker
+        """
+        if env.world_size == 1:
+            raise ValueError(f"Not a distributed DataFrame. No gathering for local DataFrames.")
+
+        # make sure 'rows_per_partition' consists of ints and its size matches number of workers
+        if not isinstance(gather_root, int):
+            raise ValueError("gather_root must be an int")
+
+        gathered_tbl = cgather(self._cdf,
+                               context=env.context,
+                               gather_root=gather_root,
+                               ignore_index=ignore_index)
+        gathered_cdf = cudf.DataFrame._from_table(gathered_tbl)
+        return DataFrame.from_cudf(gathered_cdf)
 
     def equals(self, other, **kwargs):
         """

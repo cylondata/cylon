@@ -60,3 +60,36 @@ def repartition(
         )
     else:
         raise ValueError(f"Repartition operation failed : {status.get_msg().decode()}")
+
+
+def gather(
+        object tbl,
+        context,
+        object gather_root,
+        ignore_index=False,
+):
+    cdef Table c_table = tbl
+    cdef table_view c_tv = c_table.data_view() if ignore_index else c_table.view()
+    cdef int c_gather_root = gather_root
+    cdef CStatus c_status
+    cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
+
+    index_names = None if ignore_index else tbl._index_names
+
+    # Perform repartitioning
+    cdef unique_ptr[table] c_table_out
+    c_status = Gather(
+        c_tv,
+        c_ctx_ptr,
+        c_table_out,
+        c_gather_root,
+    )
+
+    if c_status.is_ok():
+        return Table.from_unique_ptr(
+            move(c_table_out),
+            column_names=tbl._column_names,
+            index_names=index_names,
+        )
+    else:
+        raise ValueError(f"Repartition operation failed : {c_status.get_msg().decode()}")

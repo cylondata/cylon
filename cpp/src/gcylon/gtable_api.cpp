@@ -74,10 +74,10 @@ cylon::Status Repartition(const cudf::table_view &input_tv,
   return cylon::Status::OK();
 }
 
-cylon::Status Collect(const cudf::table_view &input_tv,
-                      const std::shared_ptr<cylon::CylonContext> &ctx,
-                      std::unique_ptr<cudf::table> &table_out,
-                      int gather_root) {
+cylon::Status Gather(const cudf::table_view &input_tv,
+                     const std::shared_ptr<cylon::CylonContext> &ctx,
+                     std::unique_ptr<cudf::table> &table_out,
+                     int gather_root) {
 
   std::vector<std::unique_ptr<cudf::table>> gathered_tables;
   RETURN_CYLON_STATUS_IF_FAILED(

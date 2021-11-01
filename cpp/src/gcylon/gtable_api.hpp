@@ -53,7 +53,7 @@ cylon::Status Repartition(const cudf::table_view &input_tv,
                           const std::vector<int32_t> &rows_per_worker = std::vector<int32_t>());
 
 /**
- * Collect tables from all workers to a single worker
+ * Gather tables from all workers to a single worker
  * Concatenate the tables in the rank order of workers
  * by keeping global order of rows
  * @param input_tv
@@ -62,10 +62,10 @@ cylon::Status Repartition(const cudf::table_view &input_tv,
  * @param gather_root
  * @return
  */
-cylon::Status Collect(const cudf::table_view &input_tv,
-                      const std::shared_ptr<cylon::CylonContext> &ctx,
-                      std::unique_ptr<cudf::table> &table_out,
-                      int gather_root = 0);
+cylon::Status Gather(const cudf::table_view &input_tv,
+                     const std::shared_ptr<cylon::CylonContext> &ctx,
+                     std::unique_ptr<cudf::table> &table_out,
+                     int gather_root = 0);
 
 /**
  * Broadcast a table to all workers
