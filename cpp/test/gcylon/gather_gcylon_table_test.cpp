@@ -33,26 +33,12 @@ TEST_CASE("MPI Gather CuDF tables", "[ggather]") {
                                                               {"Order Date"}};
 
     for (long unsigned int i = 0; i < input_file_bases.size(); i++) {
-      std::string input_file_base = input_file_bases[i];
-      std::vector<std::string> all_input_files = gcylon::test::constructInputFiles(input_file_base, WORLD_SZ);
-      std::string input_filename = all_input_files[RANK];
-      std::ifstream in_file(input_filename);
-      REQUIRE((in_file.good()));
-      in_file.close();
+      auto tables = gcylon::test::readTables(input_file_bases[i], column_name_vectors[i], date_column_vectors[i]);
+      REQUIRE((tables.size() == WORLD_SZ));
 
       for (bool gather_root_table: gather_from_root) {
         for (int gather_root: gather_roots) {
-          std::vector<std::string> input_files = all_input_files;
-          if (!gather_root_table) {
-            input_files.erase(input_files.begin() + gather_root);
-          }
-          REQUIRE((gcylon::test::PerformGatherTest(input_filename,
-                                                   input_files,
-                                                   column_name_vectors[i],
-                                                   date_column_vectors[i],
-                                                   gather_root,
-                                                   gather_root_table,
-                                                   ctx)));
+          REQUIRE((gcylon::test::PerformGatherTest(tables, gather_root, gather_root_table, ctx)));
         }
       }
     }
@@ -67,30 +53,34 @@ TEST_CASE("MPI Gather sliced CuDF tables", "[ggather]") {
     std::vector<std::string> column_names{"Country", "Item Type", "Order Date", "Order ID", "Units Sold", "Unit Price"};
     std::vector<std::string> date_columns{"Order Date"};
 
-    std::vector<std::string> all_input_files = gcylon::test::constructInputFiles(input_file_base, WORLD_SZ);
+    auto tables = gcylon::test::readTables(input_file_base, column_names, date_columns);
+    REQUIRE((tables.size() == WORLD_SZ));
 
-    std::string input_filename = all_input_files[RANK];
-    std::ifstream in_file(input_filename);
-    REQUIRE((in_file.good()));
-    in_file.close();
+    // make sure row ranges do not go out of range
+    int COUNT = 5;
+    for (auto const& tbl: tables) {
+      REQUIRE((tbl->num_rows() > COUNT + 2 * COUNT));
+    }
 
-    cudf::io::table_with_metadata input_table = gcylon::test::readCSV(input_filename, column_names, date_columns);
-    auto input_tv = input_table.tbl->view();
+    // first check gathering empty tables
+    std::vector<std::vector<int32_t>> ranges;
+    for (int i = 0; i < WORLD_SZ; ++i) {
+      ranges.push_back(std::vector<int32_t>{i , i});
+    }
+    REQUIRE((gcylon::test::PerformGatherSlicedTest(tables, ranges, ctx)));
 
-    int step = input_tv.num_rows() / 3;
-    std::vector<cudf::size_type> row_ranges{0, step, step, 2 * step, 2 * step, input_tv.num_rows()};
-    auto tv_vec = cudf::slice(input_tv, row_ranges);
+    // first check gathering empty tables
 
-    int index = 0;
-    for (auto tv: tv_vec) {
-      std::vector<cudf::size_type> row_range{row_ranges[index], row_ranges[index + 1]};
-      index += 2;
-      REQUIRE((gcylon::test::PerformGatherSlicedTest(tv,
-                                                     all_input_files,
-                                                     column_names,
-                                                     date_columns,
-                                                     row_range,
-                                                     ctx)));
+    // check gathering single row tables
+    for (int i = 0; i < COUNT; ++i) {
+      std::vector<std::vector<int32_t>> ranges2{{i, i+1}, {i, i+1}, {i, i+1}, {i, i+1}};
+      REQUIRE((gcylon::test::PerformGatherSlicedTest(tables, ranges2, ctx)));
+    }
+
+    // check gathering multi row tables
+    for (int i = 0; i < COUNT; ++i) {
+      std::vector<std::vector<int32_t>> ranges2{{i, 2 * i}, {i, 2 * i}, {i, 2 * i}, {i, 2 * i}};
+      REQUIRE((gcylon::test::PerformGatherSlicedTest(tables, ranges2, ctx)));
     }
   }
 }

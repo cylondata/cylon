@@ -144,16 +144,12 @@ concatSlices(const std::vector<std::unique_ptr<cudf::table>> &tables,
   return cudf::concatenate(views);
 }
 
-bool PerformGatherTest(const std::string &input_filename,
-                       std::vector<std::string> &all_input_files,
-                       const std::vector<std::string> &column_names,
-                       const std::vector<std::string> &date_columns,
+bool PerformGatherTest(const std::vector<std::unique_ptr<cudf::table>> &tables,
                        int gather_root,
                        bool gather_from_root,
                        std::shared_ptr<cylon::CylonContext> ctx) {
 
-  cudf::io::table_with_metadata input_table = readCSV(input_filename, column_names, date_columns);
-  auto input_tv = input_table.tbl->view();
+  auto input_tv = tables[RANK]->view();
 
   // gather the tables
   std::vector<std::unique_ptr<cudf::table>> gathered_tables;
@@ -174,31 +170,27 @@ bool PerformGatherTest(const std::string &input_filename,
   auto gathered_views = tablesToViews(gathered_tables);
   auto gathered_table = cudf::concatenate(gathered_views);
 
-  std::vector<std::unique_ptr<cudf::table>> file_tables;
-  file_tables.reserve(all_input_files.size());
-  for (long unsigned int i = 0; i < all_input_files.size(); i++) {
-    cudf::io::table_with_metadata read_table = readCSV(all_input_files[i], column_names, date_columns);
-    file_tables.push_back(std::move(read_table.tbl));
+  auto init_views = tablesToViews(tables);
+  if (!gather_from_root) {
+    init_views.erase(init_views.begin() + gather_root);
   }
-  auto file_views = tablesToViews(file_tables);
-  auto file_table = cudf::concatenate(file_views);
-  if (!table_equal(gathered_table->view(), file_table->view())) {
+  auto init_table = cudf::concatenate(init_views);
+
+  if (!table_equal(gathered_table->view(), init_table->view())) {
     return false;
   }
 
   return true;
 }
 
-bool PerformGatherSlicedTest(const cudf::table_view &input_tv,
-                             const std::vector<std::string> &all_input_files,
-                             const std::vector<std::string> &column_names,
-                             const std::vector<std::string> &date_columns,
-                             const std::vector<int32_t> &row_range,
-                             std::shared_ptr<cylon::CylonContext> ctx) {
+bool PerformGatherSlicedTest(const std::vector<std::unique_ptr<cudf::table>> &tables,
+                             const std::vector<std::vector<int32_t>> &ranges,
+                             const std::shared_ptr<cylon::CylonContext> &ctx) {
 
   int GATHER_ROOT = 0;
   bool GATHER_FROM_ROOT = true;
 
+  auto input_tv = cudf::slice(tables[RANK]->view(), ranges[RANK])[0];
   // gather the tables
   std::vector<std::unique_ptr<cudf::table>> gathered_tables;
   cylon::Status status = gcylon::net::Gather(input_tv,
@@ -218,18 +210,7 @@ bool PerformGatherSlicedTest(const cudf::table_view &input_tv,
   auto gathered_views = tablesToViews(gathered_tables);
   auto gathered_table = cudf::concatenate(gathered_views);
 
-  std::vector<std::unique_ptr<cudf::table>> file_tables;
-  file_tables.reserve(all_input_files.size());
-  std::vector<cudf::table_view> file_views;
-  file_views.reserve(all_input_files.size());
-  for (long unsigned int i = 0; i < all_input_files.size(); i++) {
-    cudf::io::table_with_metadata read_table = readCSV(all_input_files[i], column_names, date_columns);
-    auto read_tv = cudf::slice(read_table.tbl->view(), row_range)[0];
-    file_views.push_back(read_tv);
-    file_tables.push_back(std::move(read_table.tbl));
-  }
-
-  auto file_table = cudf::concatenate(file_views);
+  auto file_table = concatSlices(tables, ranges);
 
   if (!table_equal(gathered_table->view(), file_table->view())) {
     return false;

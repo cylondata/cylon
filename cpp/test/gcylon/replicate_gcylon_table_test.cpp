@@ -28,6 +28,7 @@ TEST_CASE("Replicate Distributed Gcylon Table", "[greplicate]") {
     std::vector<std::string> date_columns{"Order Date"};
 
     auto tables = gcylon::test::readTables(input_file_base, column_names, date_columns);
+    REQUIRE((tables.size() == WORLD_SZ));
 
     // first check all gathering empty tables
     std::vector<std::vector<int32_t>> ranges{{0, 0}, {1, 1}, {2, 2}, {3, 3}};
