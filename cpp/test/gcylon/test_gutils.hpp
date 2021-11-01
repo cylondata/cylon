@@ -81,7 +81,7 @@ bool PerformShuffleTest(std::string &input_filename, std::string &output_filenam
 #endif
 }
 
-std::vector<std::string> constructInputFiles(std::string base, int world_size) {
+std::vector<std::string> constructInputFiles(const std::string &base, int world_size) {
   std::vector<std::string> all_input_files;
 
   for (int i = 0; i < world_size; i++) {
@@ -110,6 +110,38 @@ std::vector<int32_t> GenRandoms(int max, int count, int seed) {
   }
   randoms.push_back(max);
   return randoms;
+}
+
+std::vector<std::unique_ptr<cudf::table>>
+readTables(const std::string &input_file_base,
+           const std::vector<std::string> &column_names,
+           const std::vector<std::string> &date_columns) {
+
+  std::vector<std::string> all_input_files = gcylon::test::constructInputFiles(input_file_base, WORLD_SZ);
+
+  std::vector<std::unique_ptr<cudf::table>> tables;
+  tables.reserve(all_input_files.size());
+  for (long unsigned int i = 0; i < all_input_files.size(); i++) {
+    cudf::io::table_with_metadata read_table = readCSV(all_input_files[i], column_names, date_columns);
+    tables.push_back(std::move(read_table.tbl));
+  }
+
+  return tables;
+}
+
+
+std::unique_ptr<cudf::table>
+concatSlices(const std::vector<std::unique_ptr<cudf::table>> &tables,
+             const std::vector<std::vector<int32_t>> &ranges) {
+
+  std::vector<cudf::table_view> views;
+  views.reserve(tables.size());
+  for (long unsigned int i = 0; i < tables.size(); i++) {
+    auto slice_tv = cudf::slice(tables[i]->view(), ranges[i])[0];
+    views.push_back(slice_tv);
+  }
+
+  return cudf::concatenate(views);
 }
 
 bool PerformGatherTest(const std::string &input_filename,
@@ -355,36 +387,20 @@ bool PerformRepartitionTest(const std::string &input_filename,
   return true;
 }
 
-bool PerformReplicateTest(const std::vector<std::string> &all_input_files,
-                          const std::vector<std::string> &column_names,
-                          const std::vector<std::string> &date_columns,
+bool PerformReplicateTest(const std::vector<std::unique_ptr<cudf::table>> &tables,
                           const std::vector<std::vector<int32_t>> &ranges,
                           const std::shared_ptr<cylon::CylonContext> &ctx) {
 
-  cudf::io::table_with_metadata input_table = gcylon::test::readCSV(all_input_files[RANK], column_names, date_columns);
-  auto tv_slice = cudf::slice(input_table.tbl->view(), ranges[RANK])[0];
+  auto tv_slice = cudf::slice(tables[RANK]->view(), ranges[RANK])[0];
 
   // allgather the tables
   std::unique_ptr<cudf::table> gathered_table;
-  cylon::Status status = gcylon::Replicate(tv_slice,
-                                           ctx,
-                                           gathered_table);
+  cylon::Status status = gcylon::Replicate(tv_slice, ctx,gathered_table);
   if (!status.is_ok()) {
     return false;
   }
 
-  std::vector<std::unique_ptr<cudf::table>> file_tables;
-  file_tables.reserve(all_input_files.size());
-  std::vector<cudf::table_view> file_views;
-  file_views.reserve(all_input_files.size());
-  for (long unsigned int i = 0; i < all_input_files.size(); i++) {
-    cudf::io::table_with_metadata read_table = readCSV(all_input_files[i], column_names, date_columns);
-    auto read_tv = cudf::slice(read_table.tbl->view(), ranges[i])[0];
-    file_views.push_back(read_tv);
-    file_tables.push_back(std::move(read_table.tbl));
-  }
-
-  auto file_table = cudf::concatenate(file_views);
+  auto file_table = concatSlices(tables, ranges);
 
   if (!table_equal(gathered_table->view(), file_table->view())) {
     return false;
