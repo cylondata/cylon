@@ -355,6 +355,44 @@ bool PerformRepartitionTest(const std::string &input_filename,
   return true;
 }
 
+bool PerformReplicateTest(const std::vector<std::string> &all_input_files,
+                          const std::vector<std::string> &column_names,
+                          const std::vector<std::string> &date_columns,
+                          const std::vector<std::vector<int32_t>> &ranges,
+                          const std::shared_ptr<cylon::CylonContext> &ctx) {
+
+  cudf::io::table_with_metadata input_table = gcylon::test::readCSV(all_input_files[RANK], column_names, date_columns);
+  auto tv_slice = cudf::slice(input_table.tbl->view(), ranges[RANK])[0];
+
+  // allgather the tables
+  std::unique_ptr<cudf::table> gathered_table;
+  cylon::Status status = gcylon::Replicate(tv_slice,
+                                           ctx,
+                                           gathered_table);
+  if (!status.is_ok()) {
+    return false;
+  }
+
+  std::vector<std::unique_ptr<cudf::table>> file_tables;
+  file_tables.reserve(all_input_files.size());
+  std::vector<cudf::table_view> file_views;
+  file_views.reserve(all_input_files.size());
+  for (long unsigned int i = 0; i < all_input_files.size(); i++) {
+    cudf::io::table_with_metadata read_table = readCSV(all_input_files[i], column_names, date_columns);
+    auto read_tv = cudf::slice(read_table.tbl->view(), ranges[i])[0];
+    file_views.push_back(read_tv);
+    file_tables.push_back(std::move(read_table.tbl));
+  }
+
+  auto file_table = cudf::concatenate(file_views);
+
+  if (!table_equal(gathered_table->view(), file_table->view())) {
+    return false;
+  }
+  return true;
+}
+
+
 }
 }
 #endif //CYLON_CPP_SRC_EXAMPLES_TEST_UTILS_HPP_

@@ -93,7 +93,7 @@ cylon::Status Gather(const cudf::table_view &input_tv,
   return cylon::Status::OK();
 }
 
-cylon::Status Replicate(const cudf::table_view &input_tv,
+cylon::Status Broadcast(const cudf::table_view &input_tv,
                         int root,
                         const std::shared_ptr<cylon::CylonContext> &ctx,
                         std::unique_ptr<cudf::table> &table_out) {
@@ -107,6 +107,21 @@ cylon::Status Replicate(const cudf::table_view &input_tv,
 
   return cylon::Status::OK();
 }
+
+cylon::Status Replicate(const cudf::table_view &input_tv,
+                        const std::shared_ptr<cylon::CylonContext> &ctx,
+                        std::unique_ptr<cudf::table> &table_out) {
+
+  std::vector<std::unique_ptr<cudf::table>> gathered_tables;
+  RETURN_CYLON_STATUS_IF_FAILED(
+    gcylon::net::AllGather(input_tv, ctx, gathered_tables));
+
+  auto init_tvs = tablesToViews(gathered_tables);
+  table_out = cudf::concatenate(init_tvs);
+
+  return cylon::Status::OK();
+}
+
 
 
 cylon::Status Shuffle(std::shared_ptr<GTable> &input_table,
