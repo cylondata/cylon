@@ -259,8 +259,7 @@ TEST_CASE("test table", "[comp]") {
           return -1;
         }
 
-        bool less = (*Compare(v1, v2, CompareOptions(CompareOperator::LESS)))
-            .scalar_as<arrow::BooleanScalar>().value;
+        bool less = (*CallFunction("less", {v1, v2})).scalar_as<arrow::BooleanScalar>().value;
         return less ? -1 : 1;
       }
       return 0;
