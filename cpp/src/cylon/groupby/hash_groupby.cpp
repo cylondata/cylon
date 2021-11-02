@@ -12,17 +12,17 @@
  * limitations under the License.
  */
 
-#include <cylon/arrow/arrow_comparator.hpp>
 #include <arrow/api.h>
+#include <arrow/visitor_inline.h>
 #include <arrow/compute/api.h>
 #include <chrono>
 #include <glog/logging.h>
-#include <cylon/table.hpp>
-#include <cylon/ctx/arrow_memory_pool_utils.hpp>
-#include <cylon/util/arrow_utils.hpp>
-#include <cylon/util/macros.hpp>
-#include <cylon/groupby/hash_groupby.hpp>
-#include <cylon/thridparty/flat_hash_map/bytell_hash_map.hpp>
+
+#include "cylon/arrow/arrow_comparator.hpp"
+#include "cylon/ctx/arrow_memory_pool_utils.hpp"
+#include "cylon/util/macros.hpp"
+#include "cylon/groupby/hash_groupby.hpp"
+#include "cylon/thridparty/flat_hash_map/bytell_hash_map.hpp"
 
 namespace cylon {
 
@@ -75,8 +75,7 @@ namespace cylon {
  * unique_groups = 4
  *
  *
- * Additionally, we create an arrow::BooleanArray filter to filter out the values of the unique groups
- * todo: use arrow::Take instead of arrow::Filter
+ * Additionally, we create an arrow::Array with the indices of the unique groups
  *
  * @param pool
  * @param atable
@@ -90,38 +89,43 @@ namespace cylon {
 static Status make_groups(arrow::MemoryPool *pool,
                           const std::shared_ptr<arrow::Table> &atable,
                           const std::vector<int> &idx_cols,
-                          std::vector<int64_t> &group_ids,
-                          std::shared_ptr<arrow::Array> &group_filter,
+                          std::vector<int64_t> *group_ids,
+                          std::shared_ptr<arrow::Array> *group_filter,
                           int64_t *unique_groups) {
+  const int64_t num_rows = atable->num_rows();
+
+  // if empty, return 
+  if (num_rows == 0) {
+    CYLON_ASSIGN_OR_RAISE(*group_filter, arrow::MakeArrayOfNull(arrow::int64(), 0, pool))
+    return Status::OK();
+  }
+
   std::unique_ptr<TableRowIndexEqualTo> comp;
   RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexEqualTo::Make(atable, idx_cols, &comp));
 
   std::unique_ptr<TableRowIndexHash> hash;
   RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexHash::Make(atable, idx_cols, &hash));
 
-  const int64_t num_rows = atable->num_rows();
-
   ska::bytell_hash_map<int64_t, int64_t, TableRowIndexHash, TableRowIndexEqualTo>
       hash_map(num_rows, *hash, *comp);
 
-  group_ids.reserve(num_rows);
-  arrow::BooleanBuilder filter_build(pool);
+  group_ids->reserve(num_rows);
+  arrow::Int64Builder filter_build(pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Reserve(num_rows)));
 
   int64_t unique = 0;
   for (int64_t i = 0; i < num_rows; i++) {
-    const auto &res = hash_map.insert(std::make_pair(i, unique));
+    const auto &res = hash_map.emplace(i, unique);
     if (res.second) { // this was a unique group
-      group_ids.emplace_back(unique);
+      group_ids->emplace_back(unique);
       unique++;
+      filter_build.UnsafeAppend(i);
     } else {
-      group_ids.emplace_back(res.first->second);
+      group_ids->emplace_back(res.first->second);
     }
-    filter_build.UnsafeAppend(res.second);
   }
 
-  group_ids.shrink_to_fit();
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Finish(&group_filter)));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Finish(group_filter)));
   *unique_groups = unique;
   return Status::OK();
 }
@@ -141,28 +145,53 @@ static Status make_groups(arrow::MemoryPool *pool,
  */
 // todo handle chunked arrays
 template<compute::AggregationOpId aggOp, typename ARROW_T,
-    typename = typename std::enable_if<
-        arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
-static Status aggregate(arrow::MemoryPool *pool,
-                        const std::shared_ptr<arrow::Array> &arr,
-                        const std::shared_ptr<arrow::Field> &field,
+    typename = arrow::enable_if_has_c_type<ARROW_T>>
+inline Status aggregate(arrow::MemoryPool *pool,
+                        const std::shared_ptr<arrow::Table> &table,
+                        int col_idx,
+                        const compute::AggregationOp &agg_op,
                         const std::vector<int64_t> &group_ids,
                         int64_t unique_groups,
-                        std::shared_ptr<arrow::Array> &agg_array,
-                        std::shared_ptr<arrow::Field> &agg_field,
-                        compute::KernelOptions *options = nullptr) {
-  if (arr->length() != (int64_t) group_ids.size()) {
-    return Status(Code::Invalid, "group IDs != array length");
-  }
-
+                        std::shared_ptr<arrow::Array> *agg_array,
+                        std::shared_ptr<arrow::Field> *agg_field) {
   using C_TYPE = typename ARROW_T::c_type;
-  using ARRAY_T = typename arrow::TypeTraits<ARROW_T>::ArrayType;
 
   using State = typename compute::KernelTraits<aggOp, C_TYPE>::State;
   using ResultT = typename compute::KernelTraits<aggOp, C_TYPE>::ResultT;
   using Options = typename compute::KernelTraits<aggOp, C_TYPE>::Options;
-  const std::unique_ptr<compute::AggregationKernel> &kernel = compute::CreateAggregateKernel<aggOp, C_TYPE>();
 
+  auto update_field = [&](const std::shared_ptr<arrow::DataType> &ret_type) {
+    const char *prefix = compute::KernelTraits<aggOp, C_TYPE>::name();
+    // in dist group by, aggregate may be called multiple times on the same col. Check issue #387
+    const auto &field = table->schema()->field(col_idx);
+    if (field->name().find(prefix) == std::string::npos) {
+      *agg_field = std::make_shared<arrow::Field>(std::string(prefix) + field->name(), ret_type);
+    } else {
+      *agg_field = std::make_shared<arrow::Field>(field->name(), ret_type);
+    }
+  };
+
+  const int64_t len = table->num_rows();
+
+  if (len == 0) {
+    auto ret_type =
+        arrow::TypeTraits<typename arrow::CTypeTraits<ResultT>::ArrowType>::type_singleton();
+    CYLON_ASSIGN_OR_RAISE(*agg_array, arrow::MakeArrayOfNull(ret_type, 0, pool))
+    update_field(ret_type);
+
+    return Status::OK();
+  }
+
+  if (len != (int64_t) group_ids.size()) {
+    return {Code::Invalid, "group IDs != array length"};
+  }
+
+  const auto &kernel = compute::CreateAggregateKernel<aggOp, C_TYPE>();
+  if (kernel == nullptr) {
+    return {Code::Invalid, "unsupported aggregate op"};
+  }
+
+  compute::KernelOptions *options = agg_op.options.get();
   if (options != nullptr) {
     kernel->Setup(options);
   } else {
@@ -176,79 +205,135 @@ static Status aggregate(arrow::MemoryPool *pool,
   // initialize aggregate states by copying initial state
   std::vector<State> agg_states(unique_groups, initial_state);
 
-  const std::shared_ptr<ARRAY_T> &carr = std::static_pointer_cast<ARRAY_T>(arr);
-  for (int64_t i = 0; i < arr->length(); i++) {
-    auto val = carr->Value(i);
-    kernel->Update(&val, &agg_states[group_ids[i]]);
-  }
+  const auto &arr = table->column(col_idx)->chunk(0);
+  int64_t i = 0;
+  arrow::VisitArrayDataInline<ARROW_T>(*arr->data(),
+                                       [&](const C_TYPE &val) {
+                                         kernel->Update(&val, &agg_states[group_ids[i]]);
+                                         i++;
+                                       },
+                                       [&]() {
+                                         i++;
+                                       });
 
   // need to create a builder from the ResultT, which is a C type
   using RESULT_ARROW_T = typename arrow::CTypeTraits<ResultT>::ArrowType;
   using BUILDER_T = typename arrow::TypeTraits<RESULT_ARROW_T>::BuilderType;
   BUILDER_T builder(pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(unique_groups));
-  for (int64_t i = 0; i < unique_groups; i++) {
+  for (const auto &state: agg_states) {
     ResultT res;
-    kernel->Finalize(&agg_states[i], &res);
+    kernel->Finalize(&state, &res);
     builder.UnsafeAppend(res);
   }
 
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&agg_array));
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(agg_array));
 
-  const char *prefix = compute::KernelTraits<aggOp, C_TYPE>::name();
-  // in dist group by, aggregate may be called multiple times on the same col. Check issue #387
-  if (field->name().find(prefix) == std::string::npos) {
-    agg_field = std::make_shared<arrow::Field>(std::string(prefix) + field->name(), arr->type());
-  } else {
-    agg_field = field;
-  }
+  update_field(arrow::TypeTraits<RESULT_ARROW_T>::type_singleton());
   return Status::OK();
 }
 
-/**
- * Aggregation operation lambda
- */
-using AggregationFn = std::function<Status(arrow::MemoryPool *pool,
-                                           const std::shared_ptr<arrow::Array> &arr,
-                                           const std::shared_ptr<arrow::Field> &field,
-                                           const std::vector<int64_t> &group_ids,
-                                           int64_t unique_groups,
-                                           std::shared_ptr<arrow::Array> &agg_array,
-                                           std::shared_ptr<arrow::Field> &agg_field,
-                                           compute::KernelOptions *options)>;
-
-template<typename ARROW_T, typename = typename std::enable_if<
-    arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
-static inline AggregationFn resolve_op(const compute::AggregationOpId &aggOp) {
-  switch (aggOp) {
-    case compute::SUM: return &aggregate<compute::SUM, ARROW_T>;
-    case compute::COUNT: return &aggregate<compute::COUNT, ARROW_T>;
-    case compute::MIN:return &aggregate<compute::MIN, ARROW_T>;
-    case compute::MAX: return &aggregate<compute::MAX, ARROW_T>;
-    case compute::MEAN: return &aggregate<compute::MEAN, ARROW_T>;
-    case compute::VAR: return &aggregate<compute::VAR, ARROW_T>;
-    case compute::NUNIQUE: return &aggregate<compute::NUNIQUE, ARROW_T>;
-    case compute::QUANTILE: return &aggregate<compute::QUANTILE, ARROW_T>;
-    case compute::STDDEV: return &aggregate<compute::STDDEV, ARROW_T>;
-    default: return nullptr;
+template<typename ARROW_T, typename = arrow::enable_if_has_c_type<ARROW_T>>
+inline Status resolve_op(arrow::MemoryPool *pool,
+                         const std::shared_ptr<arrow::Table> &table,
+                         int col_idx,
+                         const compute::AggregationOp &agg_op,
+                         const std::vector<int64_t> &group_ids,
+                         int64_t unique_groups,
+                         std::shared_ptr<arrow::Array> *agg_array,
+                         std::shared_ptr<arrow::Field> *agg_field) {
+  switch (agg_op.id) {
+    case compute::SUM:
+      return aggregate<compute::SUM, ARROW_T>(pool, table, col_idx, agg_op, group_ids,
+                                              unique_groups, agg_array, agg_field);
+    case compute::COUNT:
+      return aggregate<compute::COUNT, ARROW_T>(pool, table, col_idx, agg_op, group_ids,
+                                                unique_groups, agg_array, agg_field);
+    case compute::MIN:
+      return aggregate<compute::MIN, ARROW_T>(pool, table, col_idx, agg_op, group_ids,
+                                              unique_groups, agg_array, agg_field);
+    case compute::MAX:
+      return aggregate<compute::MAX, ARROW_T>(pool, table, col_idx, agg_op, group_ids,
+                                              unique_groups, agg_array, agg_field);
+    case compute::MEAN:
+      return aggregate<compute::MEAN, ARROW_T>(pool, table, col_idx, agg_op, group_ids,
+                                               unique_groups, agg_array, agg_field);
+    case compute::VAR:
+      return aggregate<compute::VAR, ARROW_T>(pool, table, col_idx, agg_op, group_ids,
+                                              unique_groups, agg_array, agg_field);
+    case compute::NUNIQUE:
+      return aggregate<compute::NUNIQUE, ARROW_T>(pool, table, col_idx, agg_op, group_ids,
+                                                  unique_groups, agg_array, agg_field);
+    case compute::QUANTILE:
+      return aggregate<compute::QUANTILE, ARROW_T>(pool, table, col_idx, agg_op, group_ids,
+                                                   unique_groups, agg_array, agg_field);
+    case compute::STDDEV:
+      return aggregate<compute::STDDEV, ARROW_T>(pool, table, col_idx, agg_op, group_ids,
+                                                 unique_groups, agg_array, agg_field);
+    default: return {Code::Invalid, "Unsupported aggregation operation"};
   }
 }
 
-static AggregationFn pick_aggregation_op(const std::shared_ptr<arrow::DataType> &val_data_type,
-                                         const cylon::compute::AggregationOpId op) {
-  switch (val_data_type->id()) {
-    case arrow::Type::BOOL: return resolve_op<arrow::BooleanType>(op);
-    case arrow::Type::UINT8: return resolve_op<arrow::UInt8Type>(op);
-    case arrow::Type::INT8: return resolve_op<arrow::Int8Type>(op);
-    case arrow::Type::UINT16: return resolve_op<arrow::UInt16Type>(op);
-    case arrow::Type::INT16: return resolve_op<arrow::Int16Type>(op);
-    case arrow::Type::UINT32: return resolve_op<arrow::UInt32Type>(op);
-    case arrow::Type::INT32: return resolve_op<arrow::Int32Type>(op);
-    case arrow::Type::UINT64: return resolve_op<arrow::UInt64Type>(op);
-    case arrow::Type::INT64: return resolve_op<arrow::Int64Type>(op);
-    case arrow::Type::FLOAT: return resolve_op<arrow::FloatType>(op);
-    case arrow::Type::DOUBLE: return resolve_op<arrow::DoubleType>(op);
-    default: return nullptr;
+inline Status do_aggregate(arrow::MemoryPool *pool,
+                           const std::shared_ptr<arrow::Table> &table,
+                           int col_idx,
+                           const compute::AggregationOp &agg_op,
+                           const std::vector<int64_t> &group_ids,
+                           int64_t unique_groups,
+                           std::shared_ptr<arrow::Array> *agg_array,
+                           std::shared_ptr<arrow::Field> *agg_field) {
+  switch (table->schema()->field(col_idx)->type()->id()) {
+    case arrow::Type::BOOL:
+      return resolve_op<arrow::BooleanType>(pool, table, col_idx, agg_op, group_ids,
+                                            unique_groups, agg_array, agg_field);
+    case arrow::Type::UINT8:
+      return resolve_op<arrow::UInt8Type>(pool, table, col_idx, agg_op, group_ids,
+                                          unique_groups, agg_array, agg_field);
+    case arrow::Type::INT8:
+      return resolve_op<arrow::Int8Type>(pool, table, col_idx, agg_op, group_ids,
+                                         unique_groups, agg_array, agg_field);
+    case arrow::Type::UINT16:
+      return resolve_op<arrow::UInt16Type>(pool, table, col_idx, agg_op, group_ids,
+                                           unique_groups, agg_array, agg_field);
+    case arrow::Type::INT16:
+      return resolve_op<arrow::Int16Type>(pool, table, col_idx, agg_op, group_ids,
+                                          unique_groups, agg_array, agg_field);
+    case arrow::Type::UINT32:
+      return resolve_op<arrow::UInt32Type>(pool, table, col_idx, agg_op, group_ids,
+                                           unique_groups, agg_array, agg_field);
+    case arrow::Type::INT32:
+      return resolve_op<arrow::Int32Type>(pool, table, col_idx, agg_op, group_ids,
+                                          unique_groups, agg_array, agg_field);
+    case arrow::Type::UINT64:
+      return resolve_op<arrow::UInt64Type>(pool, table, col_idx, agg_op, group_ids,
+                                           unique_groups, agg_array, agg_field);
+    case arrow::Type::INT64:
+      return resolve_op<arrow::Int64Type>(pool, table, col_idx, agg_op, group_ids,
+                                          unique_groups, agg_array, agg_field);
+    case arrow::Type::FLOAT:
+      return resolve_op<arrow::FloatType>(pool, table, col_idx, agg_op, group_ids,
+                                          unique_groups, agg_array, agg_field);
+    case arrow::Type::DOUBLE:
+      return resolve_op<arrow::DoubleType>(pool, table, col_idx, agg_op, group_ids,
+                                           unique_groups, agg_array, agg_field);
+    case arrow::Type::DATE32:
+      return resolve_op<arrow::Date32Type>(pool, table, col_idx, agg_op, group_ids,
+                                           unique_groups, agg_array, agg_field);
+    case arrow::Type::DATE64:
+      return resolve_op<arrow::Date64Type>(pool, table, col_idx, agg_op, group_ids,
+                                           unique_groups, agg_array, agg_field);
+    case arrow::Type::TIMESTAMP:
+      return resolve_op<arrow::TimestampType>(pool, table, col_idx, agg_op, group_ids,
+                                              unique_groups, agg_array, agg_field);
+    case arrow::Type::TIME32:
+      return resolve_op<arrow::Time32Type>(pool, table, col_idx, agg_op, group_ids,
+                                           unique_groups, agg_array, agg_field);
+    case arrow::Type::TIME64:
+      return resolve_op<arrow::Time64Type>(pool, table, col_idx, agg_op, group_ids,
+                                           unique_groups, agg_array, agg_field);
+    default:
+      return {Code::NotImplemented, "Unsupported type for aggregations "
+          + table->schema()->field(col_idx)->type()->ToString()};
   }
 }
 
@@ -259,18 +344,19 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
 #ifdef CYLON_DEBUG
   auto t1 = std::chrono::steady_clock::now();
 #endif
-  const auto& ctx = table->GetContext();
+  const auto &ctx = table->GetContext();
   arrow::MemoryPool *pool = ToArrowPool(ctx);
 
   std::shared_ptr<arrow::Table> atable = table->get_table();
-  COMBINE_CHUNKS_RETURN_CYLON_STATUS(atable, pool); // todo: make this work with chunked arrays
+  COMBINE_CHUNKS_RETURN_CYLON_STATUS(atable, pool);
 #ifdef CYLON_DEBUG
   auto t2 = std::chrono::steady_clock::now();
 #endif
   std::vector<int64_t> group_ids;
   int64_t unique_groups = 0;
   std::shared_ptr<arrow::Array> group_filter;
-  RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, group_ids, group_filter, &unique_groups));
+  RETURN_CYLON_STATUS_IF_FAILED(make_groups(pool, atable, idx_cols, &group_ids, &group_filter,
+                                            &unique_groups));
 #ifdef CYLON_DEBUG
   auto t3 = std::chrono::steady_clock::now();
 #endif
@@ -282,36 +368,25 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
 
   //first filter idx cols
   for (auto &&i: idx_cols) {
-    const arrow::Result<arrow::Datum> &res = arrow::compute::Filter(atable->column(i), group_filter);
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-    new_arrays.push_back(res.ValueOrDie().chunked_array());
-    new_fields.push_back(atable->field(i));
+    CYLON_ASSIGN_OR_RAISE(auto res, arrow::compute::Take(atable->column(i), group_filter));
+    new_arrays.emplace_back(res.chunked_array());
+    new_fields.emplace_back(atable->field(i));
   }
 
   // then aggregate other cols
   for (auto &&p: aggregations) {
     std::shared_ptr<arrow::Array> new_arr;
     std::shared_ptr<arrow::Field> new_field;
-    const AggregationFn &agg_fn = pick_aggregation_op(atable->field(p.first)->type(), p.second->id);
-
-    if (agg_fn == nullptr) return Status(Code::ExecutionError, "unable to find aggregation fn");
-
-    RETURN_CYLON_STATUS_IF_FAILED(agg_fn(pool,
-                                         cylon::util::GetChunkOrEmptyArray(atable->column(p.first), 0),
-                                         atable->field(p.first),
-                                         group_ids,
-                                         unique_groups,
-                                         new_arr,
-                                         new_field,
-                                         p.second->options.get()));
+    RETURN_CYLON_STATUS_IF_FAILED(do_aggregate(pool, atable, p.first, *p.second, group_ids,
+                                               unique_groups, &new_arr, &new_field));
     new_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(new_arr)));
     new_fields.push_back(std::move(new_field));
   }
 
-  const auto &schema = std::make_shared<arrow::Schema>(new_fields);
-  std::shared_ptr<arrow::Table> agg_table = arrow::Table::Make(schema, new_arrays);
+  auto schema = arrow::schema(std::move(new_fields));
+  auto agg_table = arrow::Table::Make(std::move(schema), std::move(new_arrays));
 
-  output = std::make_shared<Table>(ctx, agg_table);
+  output = std::make_shared<Table>(ctx, std::move(agg_table));
 #ifdef CYLON_DEBUG
   auto t4 = std::chrono::steady_clock::now();
   LOG(INFO) << "hash groupby setup:" << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
@@ -342,7 +417,7 @@ Status HashGroupBy(std::shared_ptr<Table> &table,
                    const std::vector<compute::AggregationOpId> &aggregate_ops,
                    std::shared_ptr<Table> &output) {
   if (aggregate_cols.size() != aggregate_ops.size()) {
-    return Status(Code::Invalid, "aggregate_cols size != aggregate_ops size");
+    return {Code::Invalid, "aggregate_cols size != aggregate_ops size"};
   }
 
   std::vector<std::pair<int32_t, std::shared_ptr<compute::AggregationOp>>> aggregations;
