@@ -15,18 +15,18 @@
 '''
 # running this example with 2 mpi workers (-n 2) on the local machine:
 mpirun -n 2 --mca opal_cuda_support 1 \
-    python python/pygcylon/examples/repartition.py
+    python python/pygcylon/examples/comms.py
 
 # running this example with ucx enabled:
 mpirun -n 2 --mca opal_cuda_support 1 \
     --mca pml ucx --mca osc ucx \
-    python python/pygcylon/examples/repartition.py
+    python python/pygcylon/examples/comms.py
 
 # running this example with ucx and infiniband enabled:
 mpirun -n 4 --mca opal_cuda_support 1 \
     --mca pml ucx --mca osc ucx \
     --mca btl_openib_allow_ib true \
-    python python/pygcylon/examples/repartition.py
+    python python/pygcylon/examples/comms.py
 '''
 
 import cupy as cp
@@ -49,7 +49,7 @@ def gen_df():
 
 
 ######################
-def repart(df, new_row_counts=None):
+def repartition(df, new_row_counts=None):
     repartedDF = df.repartition(rows_per_partition=new_row_counts, env=env)
 
     print("repartitioned row counts: ", repartedDF.row_counts_for_all(env))
@@ -90,18 +90,48 @@ def gather(df):
     return gatheredDF
 
 
+######################
+def allgather(df):
+    gatheredDF = gcy.comms.allgather(df, env=env)
+
+    print("allgathered row counts: ", gatheredDF.row_counts_for_all(env))
+    out_file = "allgathered" + str(env.rank) + ".csv"
+    gatheredDF.to_cudf().to_csv(out_file)
+    print("has written all gathered DataFrame to the file:", out_file)
+    return gatheredDF
+
+
+######################
+def broadcast(df, root):
+    bcastDF = gcy.comms.broadcast(df, env=env, root=root)
+
+    if env.rank == root:
+        print("broadcasted the partition: ", root, "with row_count: ", len(df.to_cudf()))
+    print("broadcasted dataframe row counts: ", bcastDF.row_counts_for_all(env))
+    out_file = "broadcasted" + str(env.rank) + ".csv"
+    bcastDF.to_cudf().to_csv(out_file)
+    print("has written the broadcasted DataFrame to the file:", out_file)
+    return bcastDF
+
+
 ######################################################
 df, row_counts = gen_df()
 
 # even repartitioning
-# repart(df)
+# repartition(df)
 
 # repartitioning with user given partition sizes
 # new_row_counts = gen_random_sizes(row_counts)
-# repartedDF = repart(df, new_row_counts)
+# repartedDF = repartition(df, new_row_counts)
 
 # gathering all dataframe to a worker
-gather(df)
+# gather(df)
+
+# all gathering all dataframes to all workers
+allgather(df)
+
+# broadcasting a partition of a distributed dataframe to all workers
+# broadcast(df, 0)
 
 env.finalize()
 print("after finalize from the rank:", env.rank)

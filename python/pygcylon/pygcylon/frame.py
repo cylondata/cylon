@@ -19,10 +19,9 @@ import numpy as np
 from pygcylon.net.shuffle import shuffle as cshuffle
 from pygcylon.net.row_counts import row_counts_all_tables
 from pygcylon.net.sorting import distributed_sort
-from pygcylon.net.repartition import repartition as crepartition
-from pygcylon.net.repartition import gather as cgather
 from pycylon.frame import CylonEnv
 from pygcylon.groupby import GroupByDataFrame
+import pygcylon.comms as comms
 
 
 class DataFrame(object):
@@ -968,46 +967,23 @@ class DataFrame(object):
                           sort=False,
                           env=env)
 
-    # todo: need to add shuffling on index columns
-    # todo: add examples to the docs section
-    def shuffle(self, on, ignore_index=False, env: CylonEnv = None) -> DataFrame:
+    def shuffle(self, env: CylonEnv, on=None, ignore_index=False, index_shuffle=False) -> DataFrame:
         """
         Shuffle the distributed DataFrame by partitioning 'on' columns.
-        It is an error to call this method on a DataFrame with a single cudf DataFrame.
+        If this method is called with a single partition DataFrame, a copy of it is returned.
 
         Parameters
         ----------
+        env: CylonEnv object for this DataFrame
         on: shuffling column name or names as a list
         ignore_index: ignore index when shuffling if True
-        env: CylonEnv object for this DataFrame
+        index_shuffle: shuffle on index columns if True (on and ingore_index parameters ignored if True)
 
         Returns
         -------
         A new distributed DataFrame constructed by shuffling the DataFrame
         """
-        if env is None or env.world_size == 1:
-            raise ValueError(f"Not a distributed DataFrame. No shuffling for local DataFrames.")
-
-        # make sure 'on' columns exist among data columns
-        if (
-            not np.iterable(on)
-            or isinstance(on, str)
-            or isinstance(on, tuple)
-            and on in self._cdf._data.names
-        ):
-            on = (on,)
-        diff = set(on) - set(self._cdf._data)
-        if len(diff) != 0:
-            raise ValueError(f"columns {diff} do not exist")
-
-        # get indices of 'on' columns
-        index_columns = 0 if ignore_index else self._cdf._num_indices
-        shuffle_column_indices = []
-        for name in on:
-            shuffle_column_indices.append(index_columns + self._cdf._column_names.index(name))
-
-        shuffled_df = _shuffle(self._cdf, hash_columns=shuffle_column_indices, env=env, ignore_index=ignore_index)
-        return DataFrame.from_cudf(shuffled_df)
+        return comms.shuffle(self, env=env, on=on, ignore_index=ignore_index, index_shuffle=index_shuffle)
 
     def repartition(self,
                     env: CylonEnv,
@@ -1048,23 +1024,7 @@ class DataFrame(object):
         -------
         A new distributed DataFrame constructed by repartitioning the DataFrame
         """
-        if env.world_size == 1:
-            raise ValueError(f"Not a distributed DataFrame. No repartitioning for local DataFrames.")
-
-        # make sure 'rows_per_partition' consists of ints and its size matches number of workers
-        if rows_per_partition is not None:
-            if not all(isinstance(i, int) for i in rows_per_partition):
-                raise ValueError("rows_per_partition is not a list of int")
-
-            if len(rows_per_partition) != env.world_size:
-                raise ValueError("len(rows_per_partition) must match the number of workers")
-
-        reparted_tbl = crepartition(self._cdf,
-                                    context=env.context,
-                                    rows_per_worker=rows_per_partition,
-                                    ignore_index=ignore_index)
-        reparted_cdf = cudf.DataFrame._from_table(reparted_tbl)
-        return DataFrame.from_cudf(reparted_cdf)
+        return comms.repartition(self, env=env, rows_per_partition=rows_per_partition, ignore_index=ignore_index)
 
     def gather(self,
                env: CylonEnv,
@@ -1090,19 +1050,55 @@ class DataFrame(object):
         -------
         A new distributed DataFrame constructed by gathering all distributed dataframes to a single worker
         """
-        if env.world_size == 1:
-            raise ValueError(f"Not a distributed DataFrame. No gathering for local DataFrames.")
+        return comms.gather(self, env=env, gather_root=gather_root, ignore_index=ignore_index)
 
-        # make sure 'rows_per_partition' consists of ints and its size matches number of workers
-        if not isinstance(gather_root, int):
-            raise ValueError("gather_root must be an int")
+    def allgather(self,
+                  env: CylonEnv,
+                  ignore_index: bool = False,
+                  ) -> DataFrame:
+        """
+        AllGather all dataframe partitions to all workers by keeping the global order of rows.
+        For example:
+            if there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
+            After allgathering all partitions to all workers,
+            a new distributed dataframe is constructed with row counts: [100, 100 ,100 ,100]
 
-        gathered_tbl = cgather(self._cdf,
-                               context=env.context,
-                               gather_root=gather_root,
-                               ignore_index=ignore_index)
-        gathered_cdf = cudf.DataFrame._from_table(gathered_tbl)
-        return DataFrame.from_cudf(gathered_cdf)
+        Parameters
+        ----------
+        env: CylonEnv object for this DataFrame
+        ignore_index: ignore index when allgathering if True
+
+        Returns
+        -------
+        A new distributed DataFrame constructed by allgathering all distributed dataframes to all workers
+        """
+        return comms.allgather(self, env=env, ignore_index=ignore_index)
+
+    def broadcast(self,
+                  env: CylonEnv,
+                  root: int = 0,
+                  ignore_index: bool = False,
+                  ) -> DataFrame:
+        """
+        Broadcast a dataframe partition to all workers.
+        For example:
+            Assuming there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
+            If we broadcast the partition of the second worker,
+            a new distributed dataframe is constructed with identical DataFrames in all workers
+            with row counts: [20, 20 ,20 ,20]
+
+        Parameters
+        ----------
+        df: DataFrame to gather
+        env: CylonEnv object for this DataFrame
+        root: the worker rank from which the DataFrame will be send out to all others.
+        ignore_index: ignore index when broadcasting if True
+
+        Returns
+        -------
+        A new distributed DataFrame constructed by broadcasting a dataframe to all workers
+        """
+        return comms.broadcast(self, env=env, root=root, ignore_index=ignore_index)
 
     def equals(self, other, **kwargs):
         """

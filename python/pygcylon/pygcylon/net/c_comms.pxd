@@ -39,3 +39,11 @@ cdef extern from "gcylon/gtable_api.hpp" namespace "gcylon":
                    unique_ptr[table] & table_out,
                    int gather_root);
 
+    CStatus Broadcast(const table_view &input_tv,
+                      int root,
+                      const shared_ptr[CCylonContext] &ctx_srd_ptr,
+                      unique_ptr[table] & table_out);
+
+    CStatus AllGather(const table_view &input_tv,
+                      const shared_ptr[CCylonContext] & ctx_srd_ptr,
+                      unique_ptr[table] & table_out);
