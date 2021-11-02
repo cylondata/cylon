@@ -101,10 +101,9 @@ Status MapToHashPartitions(const std::shared_ptr<Table> &table,
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(hash_column_idx);
 
-  std::unique_ptr<PartitionKernel> kern = CreateHashPartitionKernel(idx_col->type());
-  if (kern == nullptr) {
-    LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create hash partition kernel");
-  }
+  std::unique_ptr<HashPartitionKernel> kern;
+  RETURN_CYLON_STATUS_IF_FAILED(CreateHashPartitionKernel(idx_col->type(), &kern));
+
   // initialize vectors
   std::fill(target_partitions.begin(), target_partitions.end(), 0);
   std::fill(partition_hist.begin(), partition_hist.end(), 0);
@@ -133,10 +132,8 @@ Status MapToHashPartitions(const std::shared_ptr<Table> &table,
   const std::vector<std::shared_ptr<arrow::Field>> &fields = arrow_table->schema()->fields();
   for (int i : hash_column_idx) {
     const std::shared_ptr<arrow::DataType> &type = fields[i]->type();
-    auto kern = CreateHashPartitionKernel(type);
-    if (kern == nullptr) {
-      LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel");
-    }
+    std::unique_ptr<HashPartitionKernel> kern;
+    RETURN_CYLON_STATUS_IF_FAILED(CreateHashPartitionKernel(type, &kern));
     partition_kernels.push_back(std::move(kern));
   }
 
@@ -183,7 +180,7 @@ Status MapToSortPartitions(const std::shared_ptr<Table> &table,
 #ifdef CYLON_DEBUG
   auto t1 = std::chrono::high_resolution_clock::now();
 #endif
-  const auto& ctx = table->GetContext();
+  const auto &ctx = table->GetContext();
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
   std::shared_ptr<arrow::ChunkedArray> idx_col = arrow_table->column(column_idx);
 
@@ -191,11 +188,9 @@ Status MapToSortPartitions(const std::shared_ptr<Table> &table,
   if (num_bins == 0) num_bins = num_partitions * 16;
   if (num_samples == 0) num_samples = num_bins;
 
-  std::unique_ptr<PartitionKernel> kern = CreateRangePartitionKernel(idx_col->type(),
-                                                                     ctx, ascending, num_samples, num_bins);
-  if (kern == nullptr) {
-    LOG_AND_RETURN_ERROR(Code::ExecutionError, "unable to create range partition kernel");
-  }
+  std::unique_ptr<PartitionKernel> kern;
+  RETURN_CYLON_STATUS_IF_FAILED(CreateRangePartitionKernel(idx_col->type(), ctx, ascending,
+                                                           num_samples, num_bins, &kern));
 
   // initialize vectors
   target_partitions.resize(idx_col->length(), 0);

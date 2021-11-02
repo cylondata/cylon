@@ -51,9 +51,6 @@ inline Status visit_chunked_array(const std::shared_ptr<arrow::ChunkedArray> &id
   uint64_t global_idx = 0;
   for (auto &&array: idx_col->chunks()) {
     const auto &arr_data = array->data();
-//    if (array->null_count()) {
-//      return {Code::NotImplemented, "nulls in index arrays are not supported!"};
-//    }
 
     arrow::VisitArrayDataInline<ArrowT>(*arr_data,
                                         [&](ValueT val) {
@@ -136,10 +133,14 @@ class ModuloPartitionKernel : public HashPartitionKernel {
         }); // null values wouldn't change
   }
 
-  inline uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index)
-  override {
+  inline uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) override {
     const auto &carr = std::static_pointer_cast<ArrayT>(values);
     return static_cast<uint32_t>(carr->Value(index));
+  }
+
+  static Status Make(std::unique_ptr<HashPartitionKernel> *out_kernel) {
+    *out_kernel = std::make_unique<ModuloPartitionKernel<ARROW_T>>();
+    return Status::OK();
   }
 };
 
@@ -224,6 +225,11 @@ class NumericHashPartitionKernel : public HashPartitionKernel {
       return hash;
     }
   }
+
+  static Status Make(std::unique_ptr<HashPartitionKernel> *out_kernel) {
+    *out_kernel = std::make_unique<NumericHashPartitionKernel<ARROW_T>>();
+    return Status::OK();
+  }
 };
 
 class FixedSizeBinaryHashPartitionKernel : public HashPartitionKernel {
@@ -306,8 +312,14 @@ class FixedSizeBinaryHashPartitionKernel : public HashPartitionKernel {
            CYLON_UNUSED(global_idx);
          });
   }
+
+  static Status Make(std::unique_ptr<HashPartitionKernel> *out_kernel) {
+    *out_kernel = std::make_unique<FixedSizeBinaryHashPartitionKernel>();
+    return Status::OK();
+  }
 };
 
+template<typename ArrowT, typename = typename arrow::enable_if_base_binary<ArrowT>>
 class BinaryHashPartitionKernel : public HashPartitionKernel {
  public:
   uint32_t ToHash(const std::shared_ptr<arrow::Array> &values, int64_t index) override {
@@ -334,7 +346,7 @@ class BinaryHashPartitionKernel : public HashPartitionKernel {
 
     if (if_power2(num_partitions)) {
       return
-          visit_chunked_array<arrow::FixedSizeBinaryType>(
+          visit_chunked_array<ArrowT>(
               idx_col,
               [&](uint64_t global_idx, arrow::util::string_view val) {
                 uint32_t hash = 0;
@@ -351,7 +363,7 @@ class BinaryHashPartitionKernel : public HashPartitionKernel {
               });
     } else {
       return
-          visit_chunked_array<arrow::FixedSizeBinaryType>(
+          visit_chunked_array<ArrowT>(
               idx_col,
               [&](uint64_t global_idx, arrow::util::string_view val) {
                 uint32_t hash = 0;
@@ -388,30 +400,42 @@ class BinaryHashPartitionKernel : public HashPartitionKernel {
               CYLON_UNUSED(global_idx);
             });
   }
+
+  static Status Make(std::unique_ptr<HashPartitionKernel> *out_kernel) {
+    *out_kernel = std::make_unique<BinaryHashPartitionKernel<ArrowT>>();
+    return Status::OK();
+  }
 };
 
-std::unique_ptr<HashPartitionKernel> CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type) {
+Status CreateHashPartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
+                                 std::unique_ptr<HashPartitionKernel> *out_kernel) {
   switch (data_type->id()) {
-    case arrow::Type::BOOL:return std::make_unique<ModuloPartitionKernel<arrow::BooleanType>>();
-    case arrow::Type::UINT8:return std::make_unique<ModuloPartitionKernel<arrow::UInt8Type>>();
-    case arrow::Type::INT8:return std::make_unique<ModuloPartitionKernel<arrow::Int8Type>>();
-    case arrow::Type::UINT16:return std::make_unique<ModuloPartitionKernel<arrow::UInt16Type>>();
-    case arrow::Type::INT16:return std::make_unique<ModuloPartitionKernel<arrow::Int16Type>>();
-    case arrow::Type::UINT32:return std::make_unique<ModuloPartitionKernel<arrow::UInt32Type>>();
-    case arrow::Type::INT32:return std::make_unique<ModuloPartitionKernel<arrow::Int32Type>>();
-    case arrow::Type::UINT64:return std::make_unique<ModuloPartitionKernel<arrow::UInt64Type>>();
-    case arrow::Type::INT64:return std::make_unique<ModuloPartitionKernel<arrow::Int64Type>>();
-    case arrow::Type::FLOAT:return std::make_unique<NumericHashPartitionKernel<arrow::FloatType>>();
-    case arrow::Type::DOUBLE:return std::make_unique<NumericHashPartitionKernel<arrow::DoubleType>>();
-    case arrow::Type::STRING: // fall through
-    case arrow::Type::BINARY:return std::make_unique<BinaryHashPartitionKernel>();
-    case arrow::Type::FIXED_SIZE_BINARY:return std::make_unique<FixedSizeBinaryHashPartitionKernel>();
-    case arrow::Type::DATE32:return std::make_unique<ModuloPartitionKernel<arrow::Date32Type>>();
-    case arrow::Type::DATE64:return std::make_unique<ModuloPartitionKernel<arrow::Date64Type>>();
-    case arrow::Type::TIMESTAMP:return std::make_unique<ModuloPartitionKernel<arrow::TimestampType>>();
-    case arrow::Type::TIME32:return std::make_unique<ModuloPartitionKernel<arrow::Time32Type>>();
-    case arrow::Type::TIME64:return std::make_unique<ModuloPartitionKernel<arrow::Time64Type>>();
-    default: return nullptr;
+    case arrow::Type::BOOL:return ModuloPartitionKernel<arrow::BooleanType>::Make(out_kernel);
+    case arrow::Type::UINT8:return ModuloPartitionKernel<arrow::UInt8Type>::Make(out_kernel);
+    case arrow::Type::INT8:return ModuloPartitionKernel<arrow::Int8Type>::Make(out_kernel);
+    case arrow::Type::UINT16:return ModuloPartitionKernel<arrow::UInt16Type>::Make(out_kernel);
+    case arrow::Type::INT16:return ModuloPartitionKernel<arrow::Int16Type>::Make(out_kernel);
+    case arrow::Type::UINT32:return ModuloPartitionKernel<arrow::UInt32Type>::Make(out_kernel);
+    case arrow::Type::INT32:return ModuloPartitionKernel<arrow::Int32Type>::Make(out_kernel);
+    case arrow::Type::UINT64:return ModuloPartitionKernel<arrow::UInt64Type>::Make(out_kernel);
+    case arrow::Type::INT64:return ModuloPartitionKernel<arrow::Int64Type>::Make(out_kernel);
+    case arrow::Type::FLOAT:return NumericHashPartitionKernel<arrow::FloatType>::Make(out_kernel);
+    case arrow::Type::DOUBLE:return NumericHashPartitionKernel<arrow::DoubleType>::Make(out_kernel);
+    case arrow::Type::STRING: return BinaryHashPartitionKernel<arrow::StringType>::Make(out_kernel);
+    case arrow::Type::LARGE_STRING:
+      return BinaryHashPartitionKernel<arrow::LargeStringType>::Make(out_kernel);
+    case arrow::Type::BINARY:return BinaryHashPartitionKernel<arrow::BinaryType>::Make(out_kernel);
+    case arrow::Type::LARGE_BINARY:
+      return BinaryHashPartitionKernel<arrow::LargeBinaryType>::Make(out_kernel);
+    case arrow::Type::FIXED_SIZE_BINARY:return FixedSizeBinaryHashPartitionKernel::Make(out_kernel);
+    case arrow::Type::DATE32:return ModuloPartitionKernel<arrow::Date32Type>::Make(out_kernel);
+    case arrow::Type::DATE64:return ModuloPartitionKernel<arrow::Date64Type>::Make(out_kernel);
+    case arrow::Type::TIMESTAMP:return ModuloPartitionKernel<arrow::TimestampType>::Make(out_kernel);
+    case arrow::Type::TIME32:return ModuloPartitionKernel<arrow::Time32Type>::Make(out_kernel);
+    case arrow::Type::TIME64:return ModuloPartitionKernel<arrow::Time64Type>::Make(out_kernel);
+    default:
+      return {Code::NotImplemented,
+              "Unsupported hash partition kernel data type" + data_type->ToString()};
   }
 }
 
@@ -432,6 +456,13 @@ class RangePartitionKernel : public PartitionKernel {
                                             num_samples(num_samples),
                                             ctx(ctx) {
   };
+
+  static Status Make(const std::shared_ptr<CylonContext> &ctx, bool ascending, uint64_t num_samples,
+                     uint32_t num_bins, std::unique_ptr<PartitionKernel> *out_kernel) {
+    *out_kernel = std::make_unique<RangePartitionKernel<ARROW_T>>(ctx, ascending, num_samples,
+                                                                  num_bins);
+    return Status::OK();
+  }
 
   Status Partition(const std::shared_ptr<arrow::ChunkedArray> &idx_col,
                    uint32_t num_partitions,
@@ -544,74 +575,59 @@ class RangePartitionKernel : public PartitionKernel {
   ValueT min, max, range;
 };
 
-std::unique_ptr<PartitionKernel> CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
-                                                            const std::shared_ptr<CylonContext> &ctx,
-                                                            bool ascending,
-                                                            uint64_t num_samples,
-                                                            uint32_t num_bins) {
+Status CreateRangePartitionKernel(const std::shared_ptr<arrow::DataType> &data_type,
+                                  const std::shared_ptr<CylonContext> &ctx,
+                                  bool ascending,
+                                  uint64_t num_samples,
+                                  uint32_t num_bins,
+                                  std::unique_ptr<PartitionKernel> *out_kernel) {
   switch (data_type->id()) {
     case arrow::Type::BOOL:
-      return std::make_unique<RangePartitionKernel<arrow::BooleanType>>(ctx,
-                                                                        ascending,
-                                                                        num_samples,
-                                                                        num_bins);
+      return RangePartitionKernel<arrow::BooleanType>::Make(ctx, ascending, num_samples, num_bins,
+                                                            out_kernel);
     case arrow::Type::UINT8:
-      return std::make_unique<RangePartitionKernel<arrow::UInt8Type>>(ctx,
-                                                                      ascending,
-                                                                      num_samples,
-                                                                      num_bins);
+      return RangePartitionKernel<arrow::UInt8Type>::Make(ctx, ascending, num_samples, num_bins,
+                                                          out_kernel);
     case arrow::Type::INT8:
-      return std::make_unique<RangePartitionKernel<arrow::Int8Type>>(ctx,
-                                                                     ascending,
-                                                                     num_samples,
-                                                                     num_bins);
+      return RangePartitionKernel<arrow::Int8Type>::Make(ctx, ascending, num_samples, num_bins,
+                                                         out_kernel);
     case arrow::Type::UINT16:
-      return std::make_unique<RangePartitionKernel<arrow::UInt16Type>>(ctx,
-                                                                       ascending,
-                                                                       num_samples,
-                                                                       num_bins);
+      return RangePartitionKernel<arrow::UInt16Type>::Make(ctx, ascending, num_samples, num_bins,
+                                                           out_kernel);
     case arrow::Type::INT16:
-      return std::make_unique<RangePartitionKernel<arrow::Int16Type>>(ctx,
-                                                                      ascending,
-                                                                      num_samples,
-                                                                      num_bins);
+      return RangePartitionKernel<arrow::Int16Type>::Make(ctx, ascending, num_samples, num_bins,
+                                                          out_kernel);
     case arrow::Type::UINT32:
-      return std::make_unique<RangePartitionKernel<arrow::UInt32Type>>(ctx,
-                                                                       ascending,
-                                                                       num_samples,
-                                                                       num_bins);
+      return RangePartitionKernel<arrow::UInt32Type>::Make(ctx, ascending, num_samples, num_bins,
+                                                           out_kernel);
     case arrow::Type::INT32:
-      return std::make_unique<RangePartitionKernel<arrow::Int32Type>>(ctx,
-                                                                      ascending,
-                                                                      num_samples,
-                                                                      num_bins);
+      return RangePartitionKernel<arrow::Int32Type>::Make(ctx, ascending, num_samples, num_bins,
+                                                          out_kernel);
     case arrow::Type::UINT64:
-      return std::make_unique<RangePartitionKernel<arrow::UInt64Type>>(ctx,
-                                                                       ascending,
-                                                                       num_samples,
-                                                                       num_bins);
+      return RangePartitionKernel<arrow::UInt64Type>::Make(ctx, ascending, num_samples, num_bins,
+                                                           out_kernel);
     case arrow::Type::INT64:
-      return std::make_unique<RangePartitionKernel<arrow::Int64Type>>(ctx,
-                                                                      ascending,
-                                                                      num_samples,
-                                                                      num_bins);
+      return RangePartitionKernel<arrow::Int64Type>::Make(ctx, ascending, num_samples, num_bins,
+                                                          out_kernel);
     case arrow::Type::FLOAT:
-      return std::make_unique<RangePartitionKernel<arrow::FloatType>>(ctx,
-                                                                      ascending,
-                                                                      num_samples,
-                                                                      num_bins);
+      return RangePartitionKernel<arrow::FloatType>::Make(ctx, ascending, num_samples, num_bins,
+                                                          out_kernel);
     case arrow::Type::DOUBLE:
-      return std::make_unique<RangePartitionKernel<arrow::DoubleType>>(ctx,
-                                                                       ascending,
-                                                                       num_samples,
-                                                                       num_bins);
-    default:return nullptr;
+      return RangePartitionKernel<arrow::DoubleType>::Make(ctx, ascending, num_samples, num_bins,
+                                                           out_kernel);
+    default:
+      return {Code::Invalid, "Range partition kernel does not support " + data_type->ToString()};
   }
 }
 
 RowHashingKernel::RowHashingKernel(const std::vector<std::shared_ptr<arrow::Field>> &fields) {
   for (auto const &field: fields) {
-    this->hash_kernels.push_back(CreateHashPartitionKernel(field->type()));
+    std::unique_ptr<HashPartitionKernel> kernel;
+    auto status = CreateHashPartitionKernel(field->type(), &kernel);
+    if (!status.is_ok()) {
+      throw std::runtime_error(status.get_msg());
+    }
+    this->hash_kernels.emplace_back(std::move(kernel));
   }
 }
 

@@ -30,20 +30,20 @@ namespace compute {
  * @param reduce_op
  * @return
  */
-template<typename NUM_ARROW_T,
-    typename = typename std::enable_if<
-        arrow::is_number_type<NUM_ARROW_T>::value
-            | arrow::is_boolean_type<NUM_ARROW_T>::value>::type>
+template<typename NUM_ARROW_T, typename = arrow::enable_if_has_c_type<NUM_ARROW_T>>
 cylon::Status AllReduce(cylon::net::CommType comm_type,
                         const arrow::Datum &send,
                         std::shared_ptr<Result> &output,
                         const std::shared_ptr<DataType> &data_type,
                         cylon::net::ReduceOp reduce_op) {
-  using NUM_ARROW_SCALAR_T = typename arrow::TypeTraits<NUM_ARROW_T>::ScalarType;
+  using ScalarT = typename arrow::TypeTraits<NUM_ARROW_T>::ScalarType;
+  using CType = typename NUM_ARROW_T::c_type;
 
-  const std::shared_ptr<NUM_ARROW_SCALAR_T>
-      &send_scalar = std::static_pointer_cast<NUM_ARROW_SCALAR_T>(send.scalar());
-  std::shared_ptr<NUM_ARROW_SCALAR_T> recv_scalar = std::make_shared<NUM_ARROW_SCALAR_T>();
+  const auto &send_scalar = std::static_pointer_cast<ScalarT>(send.scalar());
+
+  // create a copy of the send_scalar & clear memory
+  auto recv_scalar = std::make_shared<ScalarT>(*send_scalar);
+  std::memset(&recv_scalar->value, 0, sizeof(CType));
 
   switch (comm_type) {
     case net::LOCAL: {
@@ -68,16 +68,14 @@ cylon::Status AllReduce(cylon::net::CommType comm_type,
   }
 }
 
-template<typename NUM_ARROW_T,
-    typename = typename std::enable_if<
-        arrow::is_number_type<NUM_ARROW_T>::value
-            | arrow::is_boolean_type<NUM_ARROW_T>::value>::type>
+template<typename NUM_ARROW_T, typename = arrow::enable_if_has_c_type<NUM_ARROW_T>>
 cylon::Status AllReduce(cylon::net::CommType comm_type,
                         const arrow::Datum &send,
                         std::shared_ptr<Result> &output,
                         const std::shared_ptr<DataType> &data_type,
                         const std::vector<cylon::net::ReduceOp> &reduce_ops) {
-  using NUM_ARROW_SCALAR_T = typename arrow::TypeTraits<NUM_ARROW_T>::ScalarType;
+  using ScalarT = typename arrow::TypeTraits<NUM_ARROW_T>::ScalarType;
+  using CType = typename NUM_ARROW_T::c_type;
 
   const std::shared_ptr<arrow::StructScalar>
       &send_struct_scalar = std::static_pointer_cast<arrow::StructScalar>(send.scalar());
@@ -96,10 +94,10 @@ cylon::Status AllReduce(cylon::net::CommType comm_type,
     }
     case cylon::net::CommType::MPI: {
       for (size_t i = 0; i < reduce_ops.size(); i++) {
-        const std::shared_ptr<NUM_ARROW_SCALAR_T>
-            &send_scalar =
-            std::static_pointer_cast<NUM_ARROW_SCALAR_T>(send_struct_scalar->value[i]);
-        std::shared_ptr<NUM_ARROW_SCALAR_T> rcv_scalar = std::make_shared<NUM_ARROW_SCALAR_T>();
+        const auto &send_scalar = std::static_pointer_cast<ScalarT>(send_struct_scalar->value[i]);
+        // create a copy of the send_scalar & clear memory
+        auto rcv_scalar = std::make_shared<ScalarT>(*send_scalar);
+        std::memset(&rcv_scalar->value, 0, sizeof(CType));
 
         RETURN_CYLON_STATUS_IF_FAILED(cylon::mpi::AllReduce(send_scalar->data(),
                                                             rcv_scalar->mutable_data(),
@@ -136,7 +134,12 @@ cylon::Status DoAllReduce(const std::shared_ptr<CylonContext> &ctx,
     case Type::INT64:return AllReduce<arrow::Int64Type>(comm_type, snd, rcv, dtype, red_op);
     case Type::FLOAT:return AllReduce<arrow::FloatType>(comm_type, snd, rcv, dtype, red_op);
     case Type::DOUBLE:return AllReduce<arrow::DoubleType>(comm_type, snd, rcv, dtype, red_op);
-    default: return cylon::Status(cylon::Code::Invalid, "data type not supported!");
+    case Type::DATE32:return AllReduce<arrow::Date32Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::DATE64:return AllReduce<arrow::Date64Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::TIMESTAMP:return AllReduce<arrow::TimestampType>(comm_type, snd, rcv, dtype, red_op);
+    case Type::TIME32:return AllReduce<arrow::Time32Type>(comm_type, snd, rcv, dtype, red_op);
+    case Type::TIME64:return AllReduce<arrow::Time64Type>(comm_type, snd, rcv, dtype, red_op);
+    default: return {cylon::Code::Invalid, "data type not supported for all reduce!"};
   }
 }
 
