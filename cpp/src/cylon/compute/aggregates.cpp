@@ -37,10 +37,13 @@ cylon::Status Sum(const std::shared_ptr<cylon::Table> &table,
   arrow::compute::ScalarAggregateOptions options(true, 0);
   CYLON_ASSIGN_OR_RAISE(auto sum_res, arrow::compute::Sum(a_col, options, &exec_ctx));
 
+  // arrow sum upcasts sum to Int64, UInt64, Float64. So, change back to original type
+  CYLON_ASSIGN_OR_RAISE(auto cast_res, arrow::compute::Cast(sum_res, a_col->type()));
+
   if (ctx->GetWorldSize() > 1) {
-    return DoAllReduce(ctx, sum_res, output, dtype, cylon::net::ReduceOp::SUM);
+    return DoAllReduce(ctx, cast_res, output, dtype, cylon::net::ReduceOp::SUM);
   } else {
-    output = std::make_shared<Result>(sum_res);
+    output = std::make_shared<Result>(std::move(cast_res));
     return Status::OK();
   }
 }
