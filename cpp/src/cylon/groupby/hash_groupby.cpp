@@ -221,9 +221,9 @@ inline Status aggregate(arrow::MemoryPool *pool,
   using BUILDER_T = typename arrow::TypeTraits<RESULT_ARROW_T>::BuilderType;
   BUILDER_T builder(pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(unique_groups));
-  for (int64_t group_id = 0; group_id < unique_groups; group_id++) {
+  for (const auto &state: agg_states) {
     ResultT res;
-    kernel->Finalize(&agg_states[group_id], &res);
+    kernel->Finalize(&state, &res);
     builder.UnsafeAppend(res);
   }
 
