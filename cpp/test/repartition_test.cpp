@@ -30,6 +30,30 @@ static void verify_test(std::vector<std::vector<std::string>>& expected, std::sh
     REQUIRE(i == expected[RANK].size());
 }
 
+TEST_CASE("Repartition one process", "[repartition]") {
+    std::string path1 = "../data/input/repartition_2.csv";
+    std::shared_ptr<Table> table1;
+    auto read_options = io::config::CSVReadOptions().UseThreads(false);
+
+    CHECK_CYLON_STATUS(FromCSV(ctx, std::vector<std::string>{path1},
+                    std::vector<std::shared_ptr<Table> *>{&table1},
+                            read_options));
+
+    if(table1->GetContext()->GetWorldSize() != 1) {
+        return;
+    }
+    
+    std::vector<std::vector<std::string>> expected = {
+            {"0,1", "7,8", "9,10", "11,12", "13,14", "15,16", "17,18", "19,20"},
+    };
+
+    std::shared_ptr<Table> output;
+    std::vector<int64_t> rows_par_part = {7};
+    Repartition(table1, rows_par_part, &output);
+    REQUIRE(output->Rows() == 7);
+    verify_test(expected, output);
+}
+
 TEST_CASE("Repartition with custom order", "[repartition]") {
     std::string path1 = "../data/input/repartition_" + std::to_string(RANK) +".csv";
     std::shared_ptr<Table> table1;
@@ -41,6 +65,9 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
                             read_options));
 
     SECTION("even") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {3, 3, 3, 3};
         std::vector<int> receive_build_rank_order = {0, 1, 2, 3};
@@ -58,6 +85,9 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
     }
 
     SECTION("uneven") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {1, 2, 3, 6};
         std::vector<int> receive_build_rank_order = {0, 1, 2, 3};
@@ -75,6 +105,9 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
     }
 
     SECTION("uneven 2") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {6, 3, 1, 2};
         std::vector<int> receive_build_rank_order = {0, 1, 2, 3};
@@ -92,6 +125,9 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
     }
 
     SECTION("very uneven") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {1, 1, 1, 9};
         std::vector<int> receive_build_rank_order = {0, 1, 2, 3};
@@ -109,6 +145,9 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
     }
 
     SECTION("custom order") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {3, 3, 3, 3};
         std::vector<int> receive_build_rank_order = {3, 2, 1, 0};
@@ -126,6 +165,9 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
     }
 
     SECTION("custom order 2") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {4, 2, 3, 3};
         std::vector<int> receive_build_rank_order = {3, 0, 1, 2};
@@ -160,6 +202,9 @@ TEST_CASE("Repartition with rank order", "[repartition]") {
                             read_options));
 
     SECTION("even") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {3, 3, 3, 3};
         Repartition(table1, rows_per_partition, &output);
@@ -176,6 +221,9 @@ TEST_CASE("Repartition with rank order", "[repartition]") {
     }
 
     SECTION("uneven") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {1, 2, 6, 3};
         Repartition(table1, rows_per_partition, &output);
@@ -192,6 +240,9 @@ TEST_CASE("Repartition with rank order", "[repartition]") {
     }
 
     SECTION("very uneven") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
         std::shared_ptr<Table> output;
         std::vector<int64_t> rows_per_partition = {1, 1, 9, 1};
         Repartition(table1, rows_per_partition, &output);
@@ -220,6 +271,9 @@ TEST_CASE("Repartition to world_size number of tables evenly", "[repartition]") 
                             read_options));
 
     SECTION("total is a multiple of world_size") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
         std::shared_ptr<Table> output;
         Repartition(table1, &output);
         REQUIRE(output->Rows() == 3);
@@ -235,6 +289,9 @@ TEST_CASE("Repartition to world_size number of tables evenly", "[repartition]") 
     }
 
     SECTION("total is NOT a multiple of world_size") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
         std::shared_ptr<Table> output;
         Repartition(table2, &output);
 

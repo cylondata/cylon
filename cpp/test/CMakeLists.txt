@@ -141,4 +141,5 @@ cylon_add_test(comparator_test)
 cylon_run_test(comparator_test 1)
 # repartition test
 cylon_add_test(repartition_test)
+cylon_run_test(repartition_test 1)
 cylon_run_test(repartition_test 4)
