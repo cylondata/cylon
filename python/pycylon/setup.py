@@ -37,6 +37,8 @@ cmdclass = versioneer.get_cmdclass(),
 pyarrow_location = os.path.dirname(pa.__file__)
 pyarrow_version = pa.__version__
 
+print("PYARROW version:", pyarrow_version)
+
 CYLON_PREFIX = os.environ.get('CYLON_PREFIX')
 ARROW_PREFIX = os.environ.get('ARROW_PREFIX')
 

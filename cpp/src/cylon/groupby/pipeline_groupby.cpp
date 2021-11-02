@@ -32,16 +32,20 @@ arrow::Status (*AggregateFptr)(const arrow::Datum &array,
                                arrow::Datum *res);
 
 inline arrow::Status Sum(const arrow::Datum &array, arrow::compute::ExecContext *fn_ctx, arrow::Datum *res) {
-  ARROW_ASSIGN_OR_RAISE(auto sum_res, arrow::compute::Sum(array, fn_ctx))
+  ARROW_ASSIGN_OR_RAISE(auto sum_res,
+                        arrow::compute::Sum(array, arrow::compute::ScalarAggregateOptions(true, 0),
+                                            fn_ctx))
   // sum upcasts the result to Int64, UInt64, Float64, or Decimal128/256. So, downcast the value
-  ARROW_ASSIGN_OR_RAISE(*res, arrow::compute::Cast(sum_res, array.type()))
+  ARROW_ASSIGN_OR_RAISE(*res, arrow::compute::Cast(sum_res, array.type(),
+                                                   arrow::compute::CastOptions::Safe(), fn_ctx))
   return arrow::Status::OK();
 }
 
 inline arrow::Status Count(const arrow::Datum &array,
                            arrow::compute::ExecContext *fn_ctx,
                            arrow::Datum *res) {
-  auto result = arrow::compute::Count(array, arrow::compute::CountOptions::Defaults(), fn_ctx);
+  auto result = arrow::compute::Count(array, arrow::compute::ScalarAggregateOptions(true, 0),
+                                      fn_ctx);
 
   if (result.ok()) {
     *res = result.ValueOrDie();
@@ -53,7 +57,8 @@ template<bool minMax>
 inline arrow::Status MinMax(const arrow::Datum &array,
                             arrow::compute::ExecContext *fn_ctx,
                             arrow::Datum *res) {
-  auto result = arrow::compute::MinMax(array, arrow::compute::MinMaxOptions::Defaults(), fn_ctx);
+  auto result = arrow::compute::MinMax(array, arrow::compute::ScalarAggregateOptions(true, 0),
+                                       fn_ctx);
 
   if (result.ok()) {
     arrow::Datum local_result = result.ValueOrDie(); // minmax returns a structscalar{min, max}

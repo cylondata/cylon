@@ -1313,7 +1313,7 @@ class DataFrame(object):
                                       nulls_after=nulls_after,
                                       ignore_index=False,
                                       by_index=True)
-        sorted_cdf = cudf.DataFrame._from_table(sorted_tbl)
+        sorted_cdf = cudf.DataFrame._from_data(sorted_tbl._data, sorted_tbl._index)
 
         if ignore_index is True:
             sorted_cdf = sorted_cdf.reset_index(drop=True)
@@ -1401,7 +1401,7 @@ class DataFrame(object):
                                       nulls_after=nulls_after,
                                       ignore_index=ignore_index,
                                       by_index=False)
-        sorted_cdf = cudf.DataFrame._from_table(sorted_tbl)
+        sorted_cdf = cudf.DataFrame._from_data(sorted_tbl._data, sorted_tbl._index)
         return DataFrame.from_cudf(sorted_cdf)
 
     def row_counts_for_all(self, env: CylonEnv = None) -> List[int]:
@@ -1715,4 +1715,4 @@ def _shuffle(df: cudf.DataFrame, hash_columns, env: CylonEnv = None, ignore_inde
         raise ValueError(f"Not a distributed DataFrame. No shuffling for local DataFrames.")
 
     tbl = cshuffle(df, hash_columns=hash_columns, ignore_index=ignore_index, context=env.context)
-    return cudf.DataFrame._from_table(tbl)
+    return cudf.DataFrame._from_data(tbl._data, tbl._index)
