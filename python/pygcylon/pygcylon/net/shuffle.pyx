@@ -26,23 +26,22 @@ from cudf._lib.cpp.table.table cimport table
 from cudf._lib.table cimport Table, table_view_from_table
 from cudf._lib.utils cimport data_from_unique_ptr
 
-def shuffle(object tbl, hash_columns, ignore_index, context):
+def shuffle(Table input_table, hash_columns, ignore_index, context):
     cdef CStatus status
-    cdef Table inputTable = tbl
-    cdef unique_ptr[table] output
     cdef vector[int] c_hash_columns
-    cdef Table outputTable
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
-    cdef table_view inputTview = table_view_from_table(inputTable, ignore_index=ignore_index)
+    cdef table_view input_tview = table_view_from_table(input_table, ignore_index=ignore_index)
+    cdef unique_ptr[table] c_table_out
 
     if hash_columns:
         c_hash_columns = hash_columns
 
-        status = Shuffle(inputTview, c_hash_columns, c_ctx_ptr, output)
+        status = Shuffle(input_tview, c_hash_columns, c_ctx_ptr, c_table_out)
         if status.is_ok():
-            index_names = None if ignore_index else inputTable._index_names
-            outputTable = Table(*data_from_unique_ptr(move(output), inputTable._column_names, index_names=index_names))
-            return outputTable
+            index_names = None if ignore_index else input_table._index_names
+            return Table(*data_from_unique_ptr(move(c_table_out),
+                                               input_table._column_names,
+                                               index_names=index_names))
         else:
             raise ValueError(f"Shuffle operation failed : {status.get_msg().decode()}")
     else:

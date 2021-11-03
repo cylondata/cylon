@@ -27,6 +27,12 @@ from pygcylon.net.c_comms import broadcast as cbroadcast
 from pygcylon.net.c_comms import repartition as crepartition
 
 
+def _convert_Table_to_DataFrame(tbl):
+    # noinspection PyProtectedMember
+    cdf = cudf.DataFrame._from_data(tbl._data, tbl._index)
+    return gcy.DataFrame.from_cudf(cdf)
+
+
 def shuffle(df: gcy.DataFrame, env: CylonEnv, on=None, ignore_index=False, index_shuffle=False) -> gcy.DataFrame:
     """
     Shuffle the distributed DataFrame by partitioning 'on' columns or index columns
@@ -71,9 +77,11 @@ def shuffle(df: gcy.DataFrame, env: CylonEnv, on=None, ignore_index=False, index
         for name in on:
             shuffle_column_indices.append(index_columns + df.to_cudf()._column_names.index(name))
 
-    tbl = cshuffle(df.to_cudf(), hash_columns=shuffle_column_indices, ignore_index=ignore_index, context=env.context)
-    shuffled_cdf = cudf.DataFrame._from_table(tbl)
-    return gcy.DataFrame.from_cudf(shuffled_cdf)
+    tbl = cshuffle(df.to_cudf(),
+                   hash_columns=shuffle_column_indices,
+                   ignore_index=ignore_index,
+                   context=env.context)
+    return _convert_Table_to_DataFrame(tbl)
 
 
 def gather(df: gcy.DataFrame,
@@ -112,9 +120,7 @@ def gather(df: gcy.DataFrame,
                            context=env.context,
                            gather_root=gather_root,
                            ignore_index=ignore_index)
-    # noinspection PyProtectedMember
-    gathered_cdf = cudf.DataFrame._from_table(gathered_tbl)
-    return gcy.DataFrame.from_cudf(gathered_cdf)
+    return _convert_Table_to_DataFrame(gathered_tbl)
 
 
 def allgather(df: gcy.DataFrame,
@@ -144,9 +150,7 @@ def allgather(df: gcy.DataFrame,
     gathered_tbl = callgather(df.to_cudf(),
                               context=env.context,
                               ignore_index=ignore_index)
-    # noinspection PyProtectedMember
-    gathered_cdf = cudf.DataFrame._from_table(gathered_tbl)
-    return gcy.DataFrame.from_cudf(gathered_cdf)
+    return _convert_Table_to_DataFrame(gathered_tbl)
 
 
 def broadcast(df: gcy.DataFrame,
@@ -186,9 +190,7 @@ def broadcast(df: gcy.DataFrame,
                            context=env.context,
                            root=root,
                            ignore_index=ignore_index)
-    # noinspection PyProtectedMember
-    bcast_cdf = cudf.DataFrame._from_table(bcast_tbl)
-    return gcy.DataFrame.from_cudf(bcast_cdf)
+    return _convert_Table_to_DataFrame(bcast_tbl)
 
 
 def repartition(df: gcy.DataFrame,
@@ -248,8 +250,6 @@ def repartition(df: gcy.DataFrame,
                                 context=env.context,
                                 rows_per_worker=rows_per_partition,
                                 ignore_index=ignore_index)
-    # noinspection PyProtectedMember
-    reparted_cdf = cudf.DataFrame._from_table(reparted_tbl)
-    return gcy.DataFrame.from_cudf(reparted_cdf)
+    return _convert_Table_to_DataFrame(reparted_tbl)
 
 

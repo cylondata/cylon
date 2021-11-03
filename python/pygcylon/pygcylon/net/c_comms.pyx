@@ -19,7 +19,8 @@ from libcpp.vector cimport vector
 
 from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.cpp.table.table cimport table
-from cudf._lib.table cimport Table
+from cudf._lib.table cimport Table, table_view_from_table
+from cudf._lib.utils cimport data_from_unique_ptr
 
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.api.lib cimport pycylon_unwrap_context
@@ -27,13 +28,12 @@ from pygcylon.net.c_comms cimport Repartition, Gather, Broadcast, AllGather
 
 
 def repartition(
-        object tbl,
+        Table input_table,
         context,
         object rows_per_worker=None,
         ignore_index=False,
 ):
-    cdef Table c_table = tbl
-    cdef table_view c_tv = c_table.data_view() if ignore_index else c_table.view()
+    cdef table_view c_tv = table_view_from_table(input_table, ignore_index=ignore_index)
     cdef vector[int] c_rows_per_worker
     cdef CStatus status
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
@@ -41,7 +41,7 @@ def repartition(
     if rows_per_worker:
         c_rows_per_worker = rows_per_worker
 
-    index_names = None if ignore_index else tbl._index_names
+    index_names = None if ignore_index else input_table._index_names
 
     # Perform repartitioning
     cdef unique_ptr[table] c_table_out
@@ -53,28 +53,27 @@ def repartition(
     )
 
     if status.is_ok():
-        return Table.from_unique_ptr(
+        return Table(*data_from_unique_ptr(
             move(c_table_out),
-            column_names=tbl._column_names,
+            column_names=input_table._column_names,
             index_names=index_names,
-        )
+        ))
     else:
         raise ValueError(f"Repartition operation failed : {status.get_msg().decode()}")
 
 
 def gather(
-        object tbl,
+        Table input_table,
         context,
         object gather_root,
         ignore_index=False,
 ):
-    cdef Table c_table = tbl
-    cdef table_view c_tv = c_table.data_view() if ignore_index else c_table.view()
+    cdef table_view c_tv = table_view_from_table(input_table, ignore_index=ignore_index)
     cdef int c_gather_root = gather_root
     cdef CStatus c_status
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
 
-    index_names = None if ignore_index else tbl._index_names
+    index_names = None if ignore_index else input_table._index_names
 
     # Perform repartitioning
     cdef unique_ptr[table] c_table_out
@@ -86,26 +85,25 @@ def gather(
     )
 
     if c_status.is_ok():
-        return Table.from_unique_ptr(
+        return Table(*data_from_unique_ptr(
             move(c_table_out),
-            column_names=tbl._column_names,
+            column_names=input_table._column_names,
             index_names=index_names,
-        )
+        ))
     else:
         raise ValueError(f"Gather operation failed : {c_status.get_msg().decode()}")
 
 
 def allgather(
-        object tbl,
+        Table input_table,
         context,
         ignore_index=False,
 ):
-    cdef Table c_table = tbl
-    cdef table_view c_tv = c_table.data_view() if ignore_index else c_table.view()
+    cdef table_view c_tv = table_view_from_table(input_table, ignore_index=ignore_index)
     cdef CStatus c_status
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
 
-    index_names = None if ignore_index else tbl._index_names
+    index_names = None if ignore_index else input_table._index_names
 
     # Perform repartitioning
     cdef unique_ptr[table] c_table_out
@@ -116,28 +114,27 @@ def allgather(
     )
 
     if c_status.is_ok():
-        return Table.from_unique_ptr(
+        return Table(*data_from_unique_ptr(
             move(c_table_out),
-            column_names=tbl._column_names,
+            column_names=input_table._column_names,
             index_names=index_names,
-        )
+        ))
     else:
         raise ValueError(f"AllGather operation failed : {c_status.get_msg().decode()}")
 
 
 def broadcast(
-        object tbl,
+        Table input_table,
         context,
         object root,
         ignore_index=False,
 ):
-    cdef Table c_table = tbl
-    cdef table_view c_tv = c_table.data_view() if ignore_index else c_table.view()
+    cdef table_view c_tv = table_view_from_table(input_table, ignore_index=ignore_index)
     cdef int c_root = root
     cdef CStatus c_status
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
 
-    index_names = None if ignore_index else tbl._index_names
+    index_names = None if ignore_index else input_table._index_names
 
     # Perform repartitioning
     cdef unique_ptr[table] c_table_out
@@ -149,10 +146,10 @@ def broadcast(
     )
 
     if c_status.is_ok():
-        return Table.from_unique_ptr(
+        return Table(*data_from_unique_ptr(
             move(c_table_out),
-            column_names=tbl._column_names,
+            column_names=input_table._column_names,
             index_names=index_names,
-        )
+        ))
     else:
         raise ValueError(f"Broadcast operation failed : {c_status.get_msg().decode()}")
