@@ -44,7 +44,7 @@ cudf::io::table_with_metadata readCSV(const std::string &filename,
     options.set_use_cols_names(column_names);
   }
   if (date_columns.size() > 0) {
-    options.set_infer_date_names(date_columns);
+    options.set_parse_dates(date_columns);
   }
   cudf::io::table_with_metadata ctable = cudf::io::read_csv(options);
   return ctable;
