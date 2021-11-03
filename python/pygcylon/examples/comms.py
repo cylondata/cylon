@@ -49,8 +49,21 @@ def gen_df():
 
 
 ######################
-def repartition(df, new_row_counts=None):
-    repartedDF = df.repartition(rows_per_partition=new_row_counts, env=env)
+# even repartitioning
+def repartition(df):
+    repartedDF = df.repartition(env=env)
+
+    print("repartitioned row counts: ", repartedDF.row_counts_for_all(env))
+    out_file = "repartitioned" + str(env.rank) + ".csv"
+    repartedDF.to_cudf().to_csv(out_file)
+    print("has written the repartitioned DataFrame to the file:", out_file)
+    return repartedDF
+
+
+######################
+# repartitioning with row_counts per partition
+def repartition(df, new_row_counts):
+    repartedDF = gcy.comms.repartition(df, env=env, rows_per_partition=new_row_counts)
 
     print("repartitioned row counts: ", repartedDF.row_counts_for_all(env))
     out_file = "repartitioned" + str(env.rank) + ".csv"
@@ -81,7 +94,7 @@ def gen_random_sizes(row_counts):
 
 ######################
 def gather(df):
-    gatheredDF = df.gather(env=env, gather_root=1)
+    gatheredDF = gcy.comms.gather(df, env=env, gather_root=1)
 
     print("gathered row counts: ", gatheredDF.row_counts_for_all(env))
     out_file = "gathered" + str(env.rank) + ".csv"
@@ -92,7 +105,7 @@ def gather(df):
 
 ######################
 def allgather(df):
-    gatheredDF = gcy.comms.allgather(df, env=env)
+    gatheredDF = df.allgather(env=env)
 
     print("allgathered row counts: ", gatheredDF.row_counts_for_all(env))
     out_file = "allgathered" + str(env.rank) + ".csv"

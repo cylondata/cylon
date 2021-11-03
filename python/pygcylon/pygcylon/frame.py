@@ -987,14 +987,11 @@ class DataFrame(object):
 
     def repartition(self,
                     env: CylonEnv,
-                    rows_per_partition: List[int] = None,
                     ignore_index: bool = False,
                     ) -> DataFrame:
         """
         Repartition the dataframe by keeping the global order of rows.
-        If rows_per_partition is not provided, repartition the rows evenly among the workers
-        The sum of rows in rows_per_partition must match
-        the total number of rows in the current distributed dataframe.
+        Repartition the rows evenly among the workers
         For example:
             if there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
             After repartitioning evenly, row counts become: [25, 25 ,25 ,25]
@@ -1004,19 +1001,8 @@ class DataFrame(object):
               if there are 4 partitions currently with row counts: [10, 20 ,30 ,42]
               After repartitioning evenly, row counts become: [26, 26 ,25 ,25]
 
-        User Provided Row Counts:
-            if there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
-            Users can request repartitioning with the row counts of [35, 15 ,20 ,30],
-            the repartitioned dataframe will have the requested row counts.
-
-            Requested row count list must have integer values for each partition and
-            the total number of rows must match the current row count in the distributed source dataframe
-
-        It is an error to call this method on a DataFrame with a single cudf DataFrame.
-
         Parameters
         ----------
-        rows_per_partition: list of partition sizes requested after the repartitioning
         ignore_index: ignore index when repartitioning if True
         env: CylonEnv object for this DataFrame
 
@@ -1024,33 +1010,7 @@ class DataFrame(object):
         -------
         A new distributed DataFrame constructed by repartitioning the DataFrame
         """
-        return comms.repartition(self, env=env, rows_per_partition=rows_per_partition, ignore_index=ignore_index)
-
-    def gather(self,
-               env: CylonEnv,
-               gather_root: int = 0,
-               ignore_index: bool = False,
-               ) -> DataFrame:
-        """
-        Gather all dataframe partitions to a worker by keeping the global order of rows.
-        For example:
-            if there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
-            After gathering all partitions to the first worker,
-            a new distributed dataframe is constructed with row counts: [100, 0 ,0 ,0]
-
-        It is an error to call this method on a DataFrame with a single cudf DataFrame.
-
-        Parameters
-        ----------
-        gather_root: the worker rank to which all partitions will be gathered.
-        ignore_index: ignore index when gathering if True
-        env: CylonEnv object for this DataFrame
-
-        Returns
-        -------
-        A new distributed DataFrame constructed by gathering all distributed dataframes to a single worker
-        """
-        return comms.gather(self, env=env, gather_root=gather_root, ignore_index=ignore_index)
+        return comms.repartition(self, env=env, ignore_index=ignore_index)
 
     def allgather(self,
                   env: CylonEnv,
@@ -1073,32 +1033,6 @@ class DataFrame(object):
         A new distributed DataFrame constructed by allgathering all distributed dataframes to all workers
         """
         return comms.allgather(self, env=env, ignore_index=ignore_index)
-
-    def broadcast(self,
-                  env: CylonEnv,
-                  root: int = 0,
-                  ignore_index: bool = False,
-                  ) -> DataFrame:
-        """
-        Broadcast a dataframe partition to all workers.
-        For example:
-            Assuming there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
-            If we broadcast the partition of the second worker,
-            a new distributed dataframe is constructed with identical DataFrames in all workers
-            with row counts: [20, 20 ,20 ,20]
-
-        Parameters
-        ----------
-        df: DataFrame to gather
-        env: CylonEnv object for this DataFrame
-        root: the worker rank from which the DataFrame will be send out to all others.
-        ignore_index: ignore index when broadcasting if True
-
-        Returns
-        -------
-        A new distributed DataFrame constructed by broadcasting a dataframe to all workers
-        """
-        return comms.broadcast(self, env=env, root=root, ignore_index=ignore_index)
 
     def equals(self, other, **kwargs):
         """
