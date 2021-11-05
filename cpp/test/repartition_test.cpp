@@ -144,6 +144,66 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
         verify_test(expected, output);
     }
 
+    SECTION("require zero rows") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
+        std::shared_ptr<Table> output;
+        std::vector<int64_t> rows_per_partition = {1, 1, 10, 0};
+        std::vector<int> receive_build_rank_order = {0, 1, 2, 3};
+        Repartition(table1, rows_per_partition, receive_build_rank_order, &output);
+        REQUIRE(output->Rows() == rows_per_partition[RANK]);
+        
+        std::vector<std::vector<std::string>> expected = {
+            {"0,1", "1,2"},
+            {"0,1", "3,4"},
+            {"0,1", "5,6", "7,8", "9,10", "11,12", "13,14", "15,16", "17,18", "19,20", "21,22", "23,24"},
+            {"0,1"},
+        };
+
+        verify_test(expected, output);
+    }
+
+    SECTION("require zero rows 2") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
+        std::shared_ptr<Table> output;
+        std::vector<int64_t> rows_per_partition = {1, 1, 0, 10};
+        std::vector<int> receive_build_rank_order = {0, 1, 2, 3};
+        Repartition(table1, rows_per_partition, receive_build_rank_order, &output);
+        REQUIRE(output->Rows() == rows_per_partition[RANK]);
+        
+        std::vector<std::vector<std::string>> expected = {
+            {"0,1", "1,2"},
+            {"0,1", "3,4"},
+            {"0,1"},
+            {"0,1", "5,6", "7,8", "9,10", "11,12", "13,14", "15,16", "17,18", "19,20", "21,22", "23,24"}
+        };
+
+        verify_test(expected, output);
+    }
+
+    SECTION("require zero rows 3") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
+        std::shared_ptr<Table> output;
+        std::vector<int64_t> rows_per_partition = {0, 12, 0, 0};
+        std::vector<int> receive_build_rank_order = {0, 1, 2, 3};
+        Repartition(table1, rows_per_partition, receive_build_rank_order, &output);
+        REQUIRE(output->Rows() == rows_per_partition[RANK]);
+        
+        std::vector<std::vector<std::string>> expected = {
+            {"0,1"},
+            {"0,1", "1,2", "3,4", "5,6", "7,8", "9,10", "11,12", "13,14", "15,16", "17,18", "19,20", "21,22", "23,24"},
+            {"0,1"},
+            {"0,1"}
+        };
+
+        verify_test(expected, output);
+    }
+
     SECTION("custom order") {
         if(table1->GetContext()->GetWorldSize() != 4) {
             return;

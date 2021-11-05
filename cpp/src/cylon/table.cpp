@@ -194,16 +194,8 @@ static inline Status all_to_all_arrow_tables_preserve_order(const std::shared_pt
 
   // now we have the final set of tables
   LOG(INFO) << "Concatenating tables, Num of tables :  " << received_tables.size();
-  arrow::Result<std::shared_ptr<arrow::Table>> concat_res =
-      arrow::ConcatenateTables(received_tables);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(concat_res.status());
-  const auto &final_table = concat_res.ValueOrDie();
-  LOG(INFO) << "Done concatenating tables, rows :  " << final_table->num_rows();
-
-  arrow::Result<std::shared_ptr<arrow::Table>> combine_res =
-      final_table->CombineChunks(cylon::ToArrowPool(ctx));
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(concat_res.status());
-  table_out = combine_res.ValueOrDie();
+  CYLON_ASSIGN_OR_RAISE(table_out, arrow::ConcatenateTables(received_tables));
+  LOG(INFO) << "Done concatenating tables, rows :  " << table_out->num_rows();
 
   return Status::OK();
 }
@@ -1153,22 +1145,71 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shar
   return Status::OK();
 }
 
-std::vector<std::pair<int, int>> find_mapping(int start_idx, int size, std::vector<int64_t> target, std::vector<int64_t> target_acc) {
+// std::vector<std::pair<int, int>> find_mapping(int start_idx, int size, std::vector<int64_t> target_acc) {
+//   std::vector<std::pair<int, int>> result;
+
+//   auto itr_temp = std::upper_bound(target_acc.begin(), target_acc.end() - 1, start_idx);
+//   auto itr = std::prev(itr_temp); // last element that less than or equal to start_idx
+
+//   int dest_idx = itr - target_acc.begin();
+//   int dest_offset = start_idx - target_acc[dest_idx];
+//   int ele_left = size;
+//   // size of the current destination partition
+//   int target_size = target_acc[dest_idx + 1] - target_acc[dest_idx];
+
+//   while(ele_left > 0) {
+//     // # of element left required by the destination partition
+//     int cur_dest_req_sz = target_size - dest_offset;
+//     int send_sz = std::min(ele_left, cur_dest_req_sz);
+//     result.push_back({dest_idx, send_sz});
+    
+//     // there are still element left to send
+//     if(cur_dest_req_sz <= ele_left) {
+//       dest_idx++;
+//       target_size = target_acc[dest_idx + 1] - target_acc[dest_idx];
+//       dest_offset = 0;
+//     }
+//     ele_left -= send_sz;
+//   }
+
+//   return result;
+// }
+
+// std::vector<std::pair<int, int>> find_mapping(int64_t start_idx, int64_t size, const std::vector<int64_t>& target, const std::vector<int64_t>& target_acc) {
+//   std::vector<std::pair<int, int>> result;
+//   auto itr_temp = std::upper_bound(target_acc.begin(), target_acc.end(), start_idx);
+//   auto itr = std::prev(itr_temp); // last element that less than or equal to start_idx
+
+//   int dest_idx = itr - target_acc.begin();
+//   int dest_offset = start_idx - target_acc[dest_idx];
+//   int ele_left = size;
+
+//   while(ele_left > 0) {
+//     int cur_dest_req_sz = target[dest_idx] - dest_offset;
+//     int send_sz = std::min(ele_left, cur_dest_req_sz);
+//     result.push_back({dest_idx, send_sz});
+//     if(cur_dest_req_sz <= ele_left) {
+//       dest_idx++;
+//       dest_offset = 0;
+//     }
+//     ele_left -= send_sz;
+//   }
+
+//   return result;
+// }
+
+std::vector<std::pair<int, int>> find_mapping(int64_t start_idx, int64_t size, const std::vector<int64_t>& target, int dest_start_rank, int dest_start_idx) {
   std::vector<std::pair<int, int>> result;
 
-  auto itr_temp = std::upper_bound(target_acc.begin(), target_acc.end(), start_idx);
-  auto itr = std::prev(itr_temp); // last element that less than or equal to start_idx
-
-  int dest_idx = itr - target_acc.begin();
-  int dest_offset = start_idx - target_acc[dest_idx];
+  int dest_offset = start_idx - dest_start_idx;
   int ele_left = size;
 
   while(ele_left > 0) {
-    int cur_dest_req_sz = target[dest_idx] - dest_offset;
+    int cur_dest_req_sz = target[dest_start_rank] - dest_offset;
     int send_sz = std::min(ele_left, cur_dest_req_sz);
-    result.push_back({dest_idx, send_sz});
+    result.push_back({dest_start_rank, send_sz});
     if(cur_dest_req_sz <= ele_left) {
-      dest_idx++;
+      dest_start_rank++;
       dest_offset = 0;
     }
     ele_left -= send_sz;
@@ -1184,9 +1225,10 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   int world_size = table->GetContext()->GetWorldSize();
   int rank = table->GetContext()->GetRank();
   int num_row = table->Rows();
-  std::vector<int64_t> size = { num_row };
-  std::vector<int64_t> sizes;
-  mpi::AllGather(size, world_size, sizes);
+
+  if(num_row == 0) {
+    return Status::OK();
+  }
 
   if(rows_per_partition.size() != world_size) {
     return Status(
@@ -1196,44 +1238,47 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
         std::to_string(world_size));
   }
 
-  // collecting start index of each process after the repartition
-  std::vector<int64_t> dest_sizes_acc(rows_per_partition.size());
-  dest_sizes_acc[0] = 0;
-  for(int i = 1; i < dest_sizes_acc.size(); i++) {
-    dest_sizes_acc[i] = dest_sizes_acc[i - 1] + rows_per_partition[i - 1];
-  }
+  std::vector<int64_t> sizes;
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather({ num_row }, world_size, sizes));
 
-  int start_idx = 0;
-  for(int i = 0; i < rank; i++) {
-    start_idx += sizes[i];
-  }
+  // the index of the first element in this partition in the whole table
+  int64_t start_idx = std::accumulate(sizes.begin(), sizes.begin() + rank, 0);
+  // total # of elements in the whole table
+  int64_t total_element = std::accumulate(sizes.begin() + rank, sizes.end(), start_idx);
 
-  int acc = start_idx;
-  for(int i = rank; i < world_size; i++) {
-    acc += sizes[i];
-  }
+  // the rank of first partition that the current partition is going to send to
+  int64_t target_partition_start_idx = 0;
+  // index of the first element in the above partition in the whole table
+  int64_t target_partition = 0;
 
-  if(acc != dest_sizes_acc.back() + rows_per_partition.back()) {
+  // compute the aboves
+  while(target_partition + 1 < world_size && target_partition_start_idx + rows_per_partition[target_partition] <= start_idx) {
+    target_partition_start_idx += rows_per_partition[target_partition++];
+  }
+  int64_t rows_per_partition_acc = std::accumulate(rows_per_partition.begin(), rows_per_partition.end(), 0);
+ 
+  if(total_element != rows_per_partition_acc) {
     return Status(
     cylon::Code::ValueError,
     "rows_per_partition total number of rows does not align with actual number of rows. Received " +
-        std::to_string(dest_sizes_acc.back() + rows_per_partition.back()) + ", Expected " +
-        std::to_string(acc));
+        std::to_string(rows_per_partition_acc) + ", Expected " +
+        std::to_string(total_element));
   }
 
-  std::vector<std::pair<int, int>> send_to = find_mapping(start_idx, num_row, rows_per_partition, dest_sizes_acc);
+  std::vector<std::pair<int, int>> send_to = find_mapping(start_idx, num_row, rows_per_partition, target_partition, target_partition_start_idx);
   uint32_t no_of_partitions = receive_build_rank_order.size();
-  std::vector<uint32_t> outPartitions(num_row);
+  std::vector<uint32_t> out_partitions(num_row);
 
+  // construct outPartition for all_to_all
   int idx = 0;
-  auto itr = outPartitions.begin();
+  auto itr = out_partitions.begin();
   for(auto p: send_to) {
     std::fill(itr + idx, itr + idx + p.second, (uint32_t) receive_build_rank_order[p.first]);
     idx += p.second;
   }
 
   std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;
-  RETURN_CYLON_STATUS_IF_FAILED(Split(table, no_of_partitions, outPartitions, partitioned_tables));
+  RETURN_CYLON_STATUS_IF_FAILED(Split(table, no_of_partitions, out_partitions, partitioned_tables));
 
   std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
 
@@ -1241,6 +1286,7 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
     const_cast<std::shared_ptr<Table> &>(table).reset();
   }
 
+  // all_to_all, but preserves relative rank order
   std::shared_ptr<arrow::Table> table_out;
   RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables_preserve_order(table->GetContext(), schema, partitioned_tables, table_out));
 
@@ -1277,6 +1323,8 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   int mod = total % world_size;
   int quotient = total / world_size;
 
+  // `mod` number of partitions will receive ceil(total / world_size) elements
+  // the rest of the partitions will receive floor(total / world_size) elements
   std::vector<int64_t> rows_per_partition(world_size);
   if(mod != 0)
     std::fill(rows_per_partition.begin(), rows_per_partition.begin() + mod, quotient + 1);
