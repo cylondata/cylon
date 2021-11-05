@@ -1145,59 +1145,6 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shar
   return Status::OK();
 }
 
-// std::vector<std::pair<int, int>> find_mapping(int start_idx, int size, std::vector<int64_t> target_acc) {
-//   std::vector<std::pair<int, int>> result;
-
-//   auto itr_temp = std::upper_bound(target_acc.begin(), target_acc.end() - 1, start_idx);
-//   auto itr = std::prev(itr_temp); // last element that less than or equal to start_idx
-
-//   int dest_idx = itr - target_acc.begin();
-//   int dest_offset = start_idx - target_acc[dest_idx];
-//   int ele_left = size;
-//   // size of the current destination partition
-//   int target_size = target_acc[dest_idx + 1] - target_acc[dest_idx];
-
-//   while(ele_left > 0) {
-//     // # of element left required by the destination partition
-//     int cur_dest_req_sz = target_size - dest_offset;
-//     int send_sz = std::min(ele_left, cur_dest_req_sz);
-//     result.push_back({dest_idx, send_sz});
-    
-//     // there are still element left to send
-//     if(cur_dest_req_sz <= ele_left) {
-//       dest_idx++;
-//       target_size = target_acc[dest_idx + 1] - target_acc[dest_idx];
-//       dest_offset = 0;
-//     }
-//     ele_left -= send_sz;
-//   }
-
-//   return result;
-// }
-
-// std::vector<std::pair<int, int>> find_mapping(int64_t start_idx, int64_t size, const std::vector<int64_t>& target, const std::vector<int64_t>& target_acc) {
-//   std::vector<std::pair<int, int>> result;
-//   auto itr_temp = std::upper_bound(target_acc.begin(), target_acc.end(), start_idx);
-//   auto itr = std::prev(itr_temp); // last element that less than or equal to start_idx
-
-//   int dest_idx = itr - target_acc.begin();
-//   int dest_offset = start_idx - target_acc[dest_idx];
-//   int ele_left = size;
-
-//   while(ele_left > 0) {
-//     int cur_dest_req_sz = target[dest_idx] - dest_offset;
-//     int send_sz = std::min(ele_left, cur_dest_req_sz);
-//     result.push_back({dest_idx, send_sz});
-//     if(cur_dest_req_sz <= ele_left) {
-//       dest_idx++;
-//       dest_offset = 0;
-//     }
-//     ele_left -= send_sz;
-//   }
-
-//   return result;
-// }
-
 std::vector<std::pair<int, int>> find_mapping(int64_t start_idx, int64_t size, const std::vector<int64_t>& target, int dest_start_rank, int dest_start_idx) {
   std::vector<std::pair<int, int>> result;
 
