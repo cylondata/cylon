@@ -89,7 +89,7 @@ cylon::Status TableDeserializer::deserialize(std::vector<std::shared_ptr<cylon::
   received_tables.reserve(number_of_tables);
 
   for (int i = 0; i < number_of_tables; ++i) {
-    if (allZero(buffer_sizes_per_table.at(i))) {
+    if (allZero(buffer_sizes_per_table[i])) {
       received_tables.push_back(cudf::empty_like(tv_));
       continue;
     }

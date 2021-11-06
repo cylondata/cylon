@@ -52,7 +52,7 @@ std::pair<T, T> FirstTarget(const std::vector<T> &target_row_counts, T my_row_st
   T first_target_rank = -1;
   // global order of the first row of the first target worker
   T first_target_start_row = 0;
-  for (int i = 0; i < target_row_counts.size(); ++i) {
+  for (auto i = 0; i < target_row_counts.size(); ++i) {
     if (first_target_start_row + target_row_counts[i] > my_row_start) {
       first_target_rank = i;
       break;

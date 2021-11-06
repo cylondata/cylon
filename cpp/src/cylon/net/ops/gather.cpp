@@ -103,14 +103,14 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
     if (AmIRoot(gather_root, ctx)) {
       std::shared_ptr<cylon::Buffer> receive_buf;
       RETURN_CYLON_STATUS_IF_FAILED(allocator->Allocate(total_buffer_sizes[i], &receive_buf));
-      std::vector<int32_t> receive_counts = receiveCounts(all_buffer_sizes,
-                                                          i,
-                                                          num_buffers,
-                                                          ctx->GetWorldSize());
-      std::vector<int32_t> disp_per_buffer = displacementsPerBuffer(all_buffer_sizes,
-                                                                    i,
-                                                                    num_buffers,
-                                                                    ctx->GetWorldSize());
+      const auto &receive_counts = receiveCounts(all_buffer_sizes,
+                                                 i,
+                                                 num_buffers,
+                                                 ctx->GetWorldSize());
+      const auto &disp_per_buffer = displacementsPerBuffer(all_buffer_sizes,
+                                                           i,
+                                                           num_buffers,
+                                                           ctx->GetWorldSize());
       displacements.push_back(disp_per_buffer);
 
       status = MPI_Igatherv(send_buffers[i],
@@ -161,7 +161,7 @@ cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer
                                     const std::shared_ptr<cylon::CylonContext> &ctx) {
 
   // first gather table buffer sizes
-  std::vector<int32_t> local_buffer_sizes = serializer->getBufferSizes();
+  const auto& local_buffer_sizes = serializer->getBufferSizes();
   int32_t num_buffers = local_buffer_sizes.size();
 
   all_buffer_sizes.resize(ctx->GetWorldSize() * num_buffers);
@@ -186,14 +186,14 @@ cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer
   for (int32_t i = 0; i < num_buffers; ++i) {
     std::shared_ptr<cylon::Buffer> receive_buf;
     RETURN_CYLON_STATUS_IF_FAILED(allocator->Allocate(total_buffer_sizes[i], &receive_buf));
-    std::vector<int32_t> receive_counts = receiveCounts(all_buffer_sizes,
-                                                        i,
-                                                        num_buffers,
-                                                        ctx->GetWorldSize());
-    std::vector<int32_t> disp_per_buffer = displacementsPerBuffer(all_buffer_sizes,
-                                                                  i,
-                                                                  num_buffers,
-                                                                  ctx->GetWorldSize());
+    const auto &receive_counts = receiveCounts(all_buffer_sizes,
+                                               i,
+                                               num_buffers,
+                                               ctx->GetWorldSize());
+    const auto &disp_per_buffer = displacementsPerBuffer(all_buffer_sizes,
+                                                         i,
+                                                         num_buffers,
+                                                         ctx->GetWorldSize());
     displacements.push_back(disp_per_buffer);
 
     status = MPI_Iallgatherv(send_buffers[i],
