@@ -38,7 +38,7 @@ cylon::Status gcylon::net::AllToAll(const cudf::table_view &tv,
   }
 
   const auto &neighbours = ctx->GetNeighbours(true);
-  received_tables.resize(neighbours.size());
+  received_tables.resize(ctx->GetWorldSize());
 
   // define call back to catch the receiving tables
   CudfCallback cudf_callback =
