@@ -8,7 +8,7 @@ dependencies:
   - python=3.8
   - cmake>=3.17
   - cython>=0.29,<0.30
-  - cudf=21.08
+  - cudf=21.10.01
   - cudatoolkit=11.2
 #  - pyarrow=4.0.1
 #  - arrow-cpp=4.0.1

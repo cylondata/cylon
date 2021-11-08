@@ -21,6 +21,7 @@ from pygcylon.net.row_counts import row_counts_all_tables
 from pygcylon.net.sorting import distributed_sort
 from pycylon.frame import CylonEnv
 from pygcylon.groupby import GroupByDataFrame
+import pygcylon.comms as comms
 
 
 class DataFrame(object):
@@ -966,46 +967,72 @@ class DataFrame(object):
                           sort=False,
                           env=env)
 
-    # todo: need to add shuffling on index columns
-    # todo: add examples to the docs section
-    def shuffle(self, on, ignore_index=False, env: CylonEnv = None) -> DataFrame:
+    def shuffle(self, env: CylonEnv, on=None, ignore_index=False, index_shuffle=False) -> DataFrame:
         """
         Shuffle the distributed DataFrame by partitioning 'on' columns.
-        It is an error to call this method on a DataFrame with a single cudf DataFrame.
+        If this method is called with a single partition DataFrame, a copy of it is returned.
 
         Parameters
         ----------
+        env: CylonEnv object for this DataFrame
         on: shuffling column name or names as a list
         ignore_index: ignore index when shuffling if True
-        env: CylonEnv object for this DataFrame
+        index_shuffle: shuffle on index columns if True (on and ingore_index parameters ignored if True)
 
         Returns
         -------
         A new distributed DataFrame constructed by shuffling the DataFrame
         """
-        if env is None or env.world_size == 1:
-            raise ValueError(f"Not a distributed DataFrame. No shuffling for local DataFrames.")
+        return comms.shuffle(self, env=env, on=on, ignore_index=ignore_index, index_shuffle=index_shuffle)
 
-        # make sure 'on' columns exist among data columns
-        if (
-            not np.iterable(on)
-            or isinstance(on, str)
-            or isinstance(on, tuple)
-            and on in self._cdf._data.names
-        ):
-            on = (on,)
-        diff = set(on) - set(self._cdf._data)
-        if len(diff) != 0:
-            raise ValueError(f"columns {diff} do not exist")
+    def repartition(self,
+                    env: CylonEnv,
+                    ignore_index: bool = False,
+                    ) -> DataFrame:
+        """
+        Repartition the dataframe by keeping the global order of rows.
+        Repartition the rows evenly among the workers
+        For example:
+            if there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
+            After repartitioning evenly, row counts become: [25, 25 ,25 ,25]
 
-        # get indices of 'on' columns
-        index_columns = 0 if ignore_index else self._cdf._num_indices
-        shuffle_column_indices = []
-        for name in on:
-            shuffle_column_indices.append(index_columns + self._cdf._column_names.index(name))
+            if the number of partitions is not a multiple of sum of row counts,
+              first k partitions get one more row:
+              if there are 4 partitions currently with row counts: [10, 20 ,30 ,42]
+              After repartitioning evenly, row counts become: [26, 26 ,25 ,25]
 
-        shuffled_df = _shuffle(self._cdf, hash_columns=shuffle_column_indices, env=env, ignore_index=ignore_index)
-        return DataFrame.from_cudf(shuffled_df)
+        Parameters
+        ----------
+        ignore_index: ignore index when repartitioning if True
+        env: CylonEnv object for this DataFrame
+
+        Returns
+        -------
+        A new distributed DataFrame constructed by repartitioning the DataFrame
+        """
+        return comms.repartition(self, env=env, ignore_index=ignore_index)
+
+    def allgather(self,
+                  env: CylonEnv,
+                  ignore_index: bool = False,
+                  ) -> DataFrame:
+        """
+        AllGather all dataframe partitions to all workers by keeping the global order of rows.
+        For example:
+            if there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
+            After allgathering all partitions to all workers,
+            a new distributed dataframe is constructed with row counts: [100, 100 ,100 ,100]
+
+        Parameters
+        ----------
+        env: CylonEnv object for this DataFrame
+        ignore_index: ignore index when allgathering if True
+
+        Returns
+        -------
+        A new distributed DataFrame constructed by allgathering all distributed dataframes to all workers
+        """
+        return comms.allgather(self, env=env, ignore_index=ignore_index)
 
     def equals(self, other, **kwargs):
         """
@@ -1313,7 +1340,7 @@ class DataFrame(object):
                                       nulls_after=nulls_after,
                                       ignore_index=False,
                                       by_index=True)
-        sorted_cdf = cudf.DataFrame._from_table(sorted_tbl)
+        sorted_cdf = cudf.DataFrame._from_data(sorted_tbl._data, sorted_tbl._index)
 
         if ignore_index is True:
             sorted_cdf = sorted_cdf.reset_index(drop=True)
@@ -1401,7 +1428,7 @@ class DataFrame(object):
                                       nulls_after=nulls_after,
                                       ignore_index=ignore_index,
                                       by_index=False)
-        sorted_cdf = cudf.DataFrame._from_table(sorted_tbl)
+        sorted_cdf = cudf.DataFrame._from_data(sorted_tbl._data, sorted_tbl._index)
         return DataFrame.from_cudf(sorted_cdf)
 
     def row_counts_for_all(self, env: CylonEnv = None) -> List[int]:
@@ -1715,4 +1742,4 @@ def _shuffle(df: cudf.DataFrame, hash_columns, env: CylonEnv = None, ignore_inde
         raise ValueError(f"Not a distributed DataFrame. No shuffling for local DataFrames.")
 
     tbl = cshuffle(df, hash_columns=hash_columns, ignore_index=ignore_index, context=env.context)
-    return cudf.DataFrame._from_table(tbl)
+    return cudf.DataFrame._from_data(tbl._data, tbl._index)

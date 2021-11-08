@@ -52,4 +52,30 @@ def test_shuffle():
     assert int_shuffled_sorted.equals(int_shuffled_saved), \
         "Integer based Shuffled DataFrame and DataFrame from file are not equal"
 
+
+@pytest.mark.mpi
+def test_index_shuffle():
+    env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
+    print("CylonContext Initialized: My rank: ", env.rank)
+
+    input_file = "data/input/cities_a_" + str(env.rank) + ".csv"
+    str_shuffle_file = "data/output/shuffle_str_cities_a_" + str(env.rank) + ".csv"
+    int_shuffle_file = "data/output/shuffle_int_cities_a_" + str(env.rank) + ".csv"
+
+    df1 = gcy.DataFrame.from_cudf(cudf.read_csv(input_file, index_col="state_id"))
+
+    str_shuffled = df1.shuffle(index_shuffle=True, env=env)
+    str_shuffled_sorted = str_shuffled.to_cudf().sort_index()
+
+    int_shuffled_sorted = df1.reset_index().set_index(keys="population")\
+        .shuffle(index_shuffle=True, env=env).sort_index()
+
+    str_shuffled_saved = cudf.read_csv(str_shuffle_file, index_col="state_id").sort_index()
+    int_shuffled_saved = cudf.read_csv(int_shuffle_file, index_col="population").sort_index()
+
+    assert str_shuffled_sorted.index.equals(str_shuffled_saved.index), \
+        "String based Shuffled DataFrame and DataFrame from file are not equal"
+    assert int_shuffled_sorted.to_cudf().index.equals(int_shuffled_saved.index), \
+        "Integer based Shuffled DataFrame and DataFrame from file are not equal"
+
 #    env.finalize()

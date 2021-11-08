@@ -43,6 +43,11 @@ bool table_equal(const cudf::table_view &tv1, const cudf::table_view &tv2) {
     return false;
   }
 
+  // if the tables have zero rows
+  if(tv1.num_rows() == 0) {
+    return true;
+  }
+
   std::unique_ptr<cudf::aggregation> agg = cudf::make_all_aggregation();
   cudf::data_type bool_type = cudf::data_type(cudf::type_id::BOOL8);
 
@@ -50,35 +55,25 @@ bool table_equal(const cudf::table_view &tv1, const cudf::table_view &tv2) {
   for (int i = 0; i < tv1.num_columns(); ++i) {
     std::unique_ptr<cudf::column> result_column = cudf::binary_operation(tv1.column(i),
                                                                          tv2.column(i),
-                                                                         cudf::binary_operator::EQUAL,
+                                                                         cudf::binary_operator::NULL_EQUALS,
                                                                          bool_type);
     std::unique_ptr<cudf::scalar> all = cudf::reduce(result_column->view(), agg, bool_type);
     std::unique_ptr<cudf::numeric_scalar<bool>> all_numeric(
         static_cast<cudf::numeric_scalar<bool> *>(all.release()));
-    if (!all_numeric->value())
+    if (!all_numeric->value()) {
       return false;
+    }
   }
 
   return true;
 }
 
-/**
-* create a table with empty columns
-* each column has the same datatype with the given table column
-* @param tv
-* @return
-*/
-std::unique_ptr<cudf::table> createEmptyTable(const cudf::table_view &tv) {
-
-  std::vector<std::unique_ptr<cudf::column>> column_vector{};
-  for (int i = 0; i < tv.num_columns(); i++) {
-    auto column = std::make_unique<cudf::column>(tv.column(i).type(),
-                                                 0,
-                                                 rmm::device_buffer{0, rmm::cuda_stream_default});
-    column_vector.push_back(std::move(column));
-  }
-
-  return std::make_unique<cudf::table>(std::move(column_vector));
+std::vector<cudf::table_view> tablesToViews(const std::vector<std::unique_ptr<cudf::table>> &tables) {
+  std::vector<cudf::table_view> views;
+  views.reserve(tables.size());
+  std::transform(tables.begin(), tables.end(), std::back_inserter(views),
+                 [](const std::unique_ptr<cudf::table>& t){ return t->view();});
+  return views;
 }
 
 }// end of namespace gcylon
