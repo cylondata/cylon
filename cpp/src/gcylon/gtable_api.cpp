@@ -13,61 +13,116 @@
  */
 
 #include <cudf/partitioning.hpp>
-#include <cudf/concatenate.hpp>
 #include <cudf/join.hpp>
 #include <cudf/io/csv.hpp>
 
 #include <gcylon/gtable.hpp>
 #include <gcylon/gtable_api.hpp>
-#include <gcylon/all2all/cudf_all_to_all.hpp>
-#include <gcylon/utils/util.hpp>
 #include <gcylon/net/cudf_net_ops.hpp>
 
 #include <cylon/util/macros.hpp>
 #include <cylon/net/mpi/mpi_operations.hpp>
+#include <cylon/repartition.hpp>
+#include <gcylon/utils/util.hpp>
+#include <cudf/concatenate.hpp>
+#include <cudf/copying.hpp>
 
 namespace gcylon {
 
-cylon::Status all_to_all_cudf_table(std::shared_ptr<cylon::CylonContext> ctx,
-                                    std::unique_ptr<cudf::table> &ptable,
-                                    std::vector<cudf::size_type> &offsets,
-                                    std::unique_ptr<cudf::table> &table_out) {
-
-  std::vector<std::unique_ptr<cudf::table>> received_tables;
-  received_tables.reserve(ctx->GetWorldSize());
-
-  auto tv = ptable->view();
-  offsets.push_back(tv.num_rows());
-  RETURN_CYLON_STATUS_IF_FAILED(
-    gcylon::net::AllToAll(tv, offsets, ctx, received_tables));
-
-  if (received_tables.size() == 0) {
-    table_out = std::move(createEmptyTable(ptable->view()));
-    return cylon::Status::OK();
-  }
-
-  std::vector<cudf::table_view> tables_to_concat{};
-  for (int i = 0; i < received_tables.size(); i++) {
-    tables_to_concat.push_back(received_tables[i]->view());
-  }
-
-  table_out = cudf::concatenate(tables_to_concat);
-  return cylon::Status::OK();
-}
-
-cylon::Status Shuffle(const cudf::table_view &input_table,
+cylon::Status Shuffle(const cudf::table_view &input_tv,
                       const std::vector<int> &columns_to_hash,
                       const std::shared_ptr<cylon::CylonContext> &ctx,
                       std::unique_ptr<cudf::table> &table_out) {
 
   std::pair<std::unique_ptr<cudf::table>, std::vector<cudf::size_type>> partitioned
-    = cudf::hash_partition(input_table, columns_to_hash, ctx->GetWorldSize());
+    = cudf::hash_partition(input_tv, columns_to_hash, ctx->GetWorldSize());
+
+  partitioned.second.push_back(input_tv.num_rows());
 
   RETURN_CYLON_STATUS_IF_FAILED(
-    all_to_all_cudf_table(ctx, partitioned.first, partitioned.second, table_out));
+    gcylon::net::AllToAll(partitioned.first->view(), partitioned.second, ctx, table_out));
 
   return cylon::Status::OK();
 }
+
+cylon::Status Repartition(const cudf::table_view &input_tv,
+                          const std::shared_ptr<cylon::CylonContext> &ctx,
+                          std::unique_ptr<cudf::table> &table_out,
+                          const std::vector<int32_t> &rows_per_worker){
+
+  std::vector<int32_t> current_row_counts;
+  RETURN_CYLON_STATUS_IF_FAILED(
+    RowCountsAllTables(input_tv.num_rows(), ctx, current_row_counts));
+
+  std::vector<int32_t> rows_to_all;
+  if (rows_per_worker.empty()) {
+    auto evenly_dist_rows = cylon::DivideRowsEvenly(current_row_counts);
+    rows_to_all = cylon::RowIndicesToAll(ctx->GetRank(), current_row_counts, evenly_dist_rows);
+  } else {
+    auto sum_of_current_rows = std::accumulate(current_row_counts.begin(), current_row_counts.end(), 0);
+    auto sum_of_target_rows = std::accumulate(rows_per_worker.begin(), rows_per_worker.end(), 0);
+    if (sum_of_current_rows != sum_of_target_rows) {
+      return cylon::Status(cylon::Code::ValueError,
+                           "Sum of target partitions does not match the sum of current partitions.");
+    }
+    rows_to_all = cylon::RowIndicesToAll(ctx->GetRank(), current_row_counts, rows_per_worker);
+  }
+
+  RETURN_CYLON_STATUS_IF_FAILED(
+    gcylon::net::AllToAll(input_tv, rows_to_all, ctx, table_out));
+
+  return cylon::Status::OK();
+}
+
+cylon::Status Gather(const cudf::table_view &input_tv,
+                     const std::shared_ptr<cylon::CylonContext> &ctx,
+                     std::unique_ptr<cudf::table> &table_out,
+                     int gather_root) {
+
+  std::vector<std::unique_ptr<cudf::table>> gathered_tables;
+  RETURN_CYLON_STATUS_IF_FAILED(
+    gcylon::net::Gather(input_tv, gather_root, true, ctx, gathered_tables));
+
+  if (gather_root == ctx->GetRank()) {
+    auto init_tvs = tablesToViews(gathered_tables);
+    table_out = cudf::concatenate(init_tvs);
+  } else {
+    table_out = cudf::empty_like(input_tv);
+  }
+
+  return cylon::Status::OK();
+}
+
+cylon::Status Broadcast(const cudf::table_view &input_tv,
+                        int root,
+                        const std::shared_ptr<cylon::CylonContext> &ctx,
+                        std::unique_ptr<cudf::table> &table_out) {
+
+  RETURN_CYLON_STATUS_IF_FAILED(
+    gcylon::net::Bcast(input_tv, root, ctx, table_out));
+
+  if (root == ctx->GetRank()) {
+    table_out = std::make_unique<cudf::table>(input_tv);
+  }
+
+  return cylon::Status::OK();
+}
+
+cylon::Status AllGather(const cudf::table_view &input_tv,
+                        const std::shared_ptr<cylon::CylonContext> &ctx,
+                        std::unique_ptr<cudf::table> &table_out) {
+
+  std::vector<std::unique_ptr<cudf::table>> gathered_tables;
+  RETURN_CYLON_STATUS_IF_FAILED(
+    gcylon::net::AllGather(input_tv, ctx, gathered_tables));
+
+  auto init_tvs = tablesToViews(gathered_tables);
+  table_out = cudf::concatenate(init_tvs);
+
+  return cylon::Status::OK();
+}
+
+
 
 cylon::Status Shuffle(std::shared_ptr<GTable> &input_table,
                       const std::vector<int> &columns_to_hash,

@@ -86,6 +86,13 @@ cylon::Status deserializeSingleTable(const std::vector<std::shared_ptr<cylon::Bu
                                      const std::vector<int32_t> &data_types,
                                      std::unique_ptr<cudf::table> &out_table);
 
+/**
+ * deserialize an empty table with column data types
+ * @param data_types
+ * @param out_table
+ * @return
+ */
+std::unique_ptr<cudf::table> deserializeEmptyTable(const std::vector<int32_t> &data_types);
 
 } // end of namespace gcylon
 

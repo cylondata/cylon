@@ -17,6 +17,7 @@
 #include <gcylon/gtable_api.hpp>
 #include <gcylon/net/cudf_net_ops.hpp>
 #include <gcylon/sorting/sorting.hpp>
+#include <gcylon/utils/util.hpp>
 
 #include <cudf/types.hpp>
 #include <cudf/table/table.hpp>
@@ -95,10 +96,7 @@ cylon::Status MergeOrSortTables(std::vector<std::unique_ptr<cudf::table>> &tbl_a
 
   int32_t num_columns = tbl_all[0]->num_columns();
 
-  std::vector<cudf::table_view> tv_all;
-  tv_all.reserve(tbl_all.size());
-  std::transform(tbl_all.begin(), tbl_all.end(), std::back_inserter(tv_all),
-                 [](const std::unique_ptr<cudf::table>& t){ return t->view();});
+  std::vector<cudf::table_view> tv_all = gcylon::tablesToViews(tbl_all);
 
   if (gcylon::MergeOrSort(num_columns, tv_all.size())) {
     auto key_cols = monotonicVector(column_orders.size());

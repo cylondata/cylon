@@ -24,6 +24,13 @@ CudfTableSerializer::CudfTableSerializer(const cudf::table_view &tv) : tv_(tv) {
 }
 
 void CudfTableSerializer::initTableBuffers() {
+  if(tv_.num_rows() == 0) {
+    buffer_sizes_ = getEmptyTableBufferSizes();
+    table_buffers_.resize(getNumberOfBuffers(), nullptr);
+    table_buffers_initialized = true;
+    return;
+  }
+
   // for each column, we keep 3 data objects: data, mask, offsets
   std::pair<int32_t, const uint8_t *> p;
   for (int i = 0; i < tv_.num_columns(); ++i) {

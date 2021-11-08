@@ -94,15 +94,6 @@ bool table_equal_with_sorting(cudf::table_view & tv1, cudf::table_view & tv2);
 bool table_equal(const cudf::table_view & tv1, const cudf::table_view & tv2);
 
 /**
- * create a table with empty columns
- * each column has the same datatype with the given table columns
- * @param tv
- * @return
- */
-std::unique_ptr<cudf::table> createEmptyTable(const cudf::table_view &tv);
-
-
-/**
  * convert a vector of elements to a string with comma + space in between
  * @tparam T
  * @param vec
@@ -123,6 +114,13 @@ std::string vectorToString(const std::vector<T> &vec) {
   oss << vec.back();
   return oss.str();
 }
+
+/**
+ * convert a vector of cudf tables to table_views
+ * @param tables
+ * @return
+ */
+std::vector<cudf::table_view> tablesToViews(const std::vector<std::unique_ptr<cudf::table>> &tables);
 
 } // end of namespace gcylon
 
