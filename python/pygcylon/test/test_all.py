@@ -92,6 +92,15 @@ def test_head_tail():
     assert responses[-1] == 0
 
 
+def test_comms():
+    print("9. PyGcylon comms Test")
+    responses.append(
+        os.system(
+            "mpirun --mca opal_cuda_support 1 -n 4 -quiet python -m pytest --with-mpi "
+            "-q python/pygcylon/test/test_comms.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)

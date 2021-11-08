@@ -65,10 +65,22 @@ cylon::Status Bcast(const cudf::table_view &tv,
  * @return
  */
 cylon::Status Gather(const cudf::table_view &tv,
-                     const int gather_root,
+                     int gather_root,
                      bool gather_from_root,
-                     std::shared_ptr<cylon::CylonContext> ctx,
+                     const std::shared_ptr<cylon::CylonContext> &ctx,
                      std::vector<std::unique_ptr<cudf::table>> &gathered_tables);
+
+
+/**
+ * AllGather CuDF tables
+ * @param tv the local cudf table to allgather
+ * @param ctx Cylon context
+ * @param gathered_tables gathered tables
+ * @return
+ */
+cylon::Status AllGather(const cudf::table_view &tv,
+                        const std::shared_ptr<cylon::CylonContext> &ctx,
+                        std::vector<std::unique_ptr<cudf::table>> &gathered_tables);
 
 
 /**
@@ -76,16 +88,41 @@ cylon::Status Gather(const cudf::table_view &tv,
  * Each table has n partitions for n workers
  * part_indices has (n+1) partition indices each range for a worker
  *   range(i, i+1) goes to the worker[i]
- * @param tv_with_parts table_view with partitions
+ *
+ * received tables put in the resulting vector in order of worker rank:
+ *   received table from worker 0 is at received_tables[0]
+ *   received table from worker 1 is at received_tables[1]
+ *   ...
+ *
+ *  if a worker does not send any table to another another worker,
+ *    an empty table is put in that worker rank in received_tables vector
+ *
+ * received_tables has exactly n tables (some tables might be empty though)
+ *
+ * @param tv table_view with partitions
  * @param part_indices (n-1) partition indices
  * @param ctx
  * @param received_tables
  * @return
  */
-cylon::Status AllToAll(const cudf::table_view & tv_with_parts,
+cylon::Status AllToAll(const cudf::table_view & tv,
                        const std::vector<cudf::size_type> &part_indices,
                        const std::shared_ptr<cylon::CylonContext> &ctx,
                        std::vector<std::unique_ptr<cudf::table>> &received_tables);
+
+/**
+ * The same as the previous AllToAll except that
+ * it concatenates all received tables and return a single table
+ * @param tv
+ * @param part_indices
+ * @param ctx
+ * @param table_out
+ * @return
+ */
+cylon::Status AllToAll(const cudf::table_view &tv,
+                       const std::vector<cudf::size_type> &part_indices,
+                       const std::shared_ptr<cylon::CylonContext> &ctx,
+                       std::unique_ptr<cudf::table> &table_out);
 
 } // end of namespace net
 } // end of namespace gcylon

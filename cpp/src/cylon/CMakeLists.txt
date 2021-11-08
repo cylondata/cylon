@@ -159,6 +159,7 @@ add_library(cylon SHARED
         table_api.cpp
         table_api.hpp
         table_api_extended.hpp
+        repartition.hpp
         thridparty/flat_hash_map/bytell_hash_map.hpp
         thridparty/flat_hash_map/flat_hash_map.hpp
         thridparty/flat_hash_map/unordered_map.hpp

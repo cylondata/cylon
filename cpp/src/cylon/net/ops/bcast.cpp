@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include <algorithm>
 #include <cylon/net/mpi/mpi_operations.hpp>
 #include <cylon/util/macros.hpp>
 
@@ -53,6 +53,12 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
   status = MPI_Bcast(data_types.data(), data_types.size(), MPI_INT32_T, bcast_root, MPI_COMM_WORLD);
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for data type array broadcast!");
+  }
+
+  // if all buffer sizes are zero, there are zero rows in the table
+  // no need to broadcast any buffers
+  if(std::all_of(buffer_sizes.begin(), buffer_sizes.end(), [](int32_t i) { return i == 0; })) {
+    return cylon::Status::OK();
   }
 
   std::vector<MPI_Request> requests(num_buffers);

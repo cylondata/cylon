@@ -16,17 +16,18 @@
 #include <cudf/table/table.hpp>
 #include <cudf/strings/strings_column_view.hpp>
 #include <cudf/null_mask.hpp>
-#include <cudf/binaryop.hpp>
-#include <cudf/scalar/scalar.hpp>
+#include <cudf/copying.hpp>
+#include <cudf/concatenate.hpp>
 
 #include <gcylon/all2all/cudf_all_to_all.hpp>
-#include <gcylon/gtable.hpp>
 #include <gcylon/utils/util.hpp>
 #include <gcylon/all2all/cudf_all_to_all.cuh>
 #include <gcylon/net/cudf_net_ops.hpp>
+
+#include <cylon/util/macros.hpp>
 #include <cylon/net/mpi/mpi_communicator.hpp>
 
-cylon::Status gcylon::net::AllToAll(const cudf::table_view &tv_with_parts,
+cylon::Status gcylon::net::AllToAll(const cudf::table_view &tv,
                                     const std::vector<cudf::size_type> &part_indices,
                                     const std::shared_ptr<cylon::CylonContext> &ctx,
                                     std::vector<std::unique_ptr<cudf::table>> &received_tables) {
@@ -37,20 +38,23 @@ cylon::Status gcylon::net::AllToAll(const cudf::table_view &tv_with_parts,
   }
 
   const auto &neighbours = ctx->GetNeighbours(true);
-  received_tables.reserve(neighbours.size());
+  received_tables.resize(ctx->GetWorldSize());
 
   // define call back to catch the receiving tables
   CudfCallback cudf_callback =
-      [&received_tables](int source, std::unique_ptr<cudf::table> received_table, int reference) {
-          received_tables.push_back(std::move(received_table));
-          return true;
-      };
+    [&received_tables](int source, std::unique_ptr<cudf::table> received_table, int reference) {
+      if (received_tables[source] != nullptr) {
+        throw std::string("More than one table is received from the worker: ") + std::to_string(source);
+      }
+      received_tables[source] = std::move(received_table);
+      return true;
+    };
 
   // doing all to all communication to exchange tables
   CudfAllToAll all_to_all(ctx, neighbours, neighbours, ctx->GetNextSequence(), std::move(cudf_callback));
 
   // insert partitioned table for all-to-all
-  int accepted = all_to_all.insert(tv_with_parts, part_indices, ctx->GetNextSequence());
+  int accepted = all_to_all.insert(tv, part_indices, ctx->GetNextSequence());
   if (!accepted) {
     return cylon::Status(accepted);
   }
@@ -61,6 +65,30 @@ cylon::Status gcylon::net::AllToAll(const cudf::table_view &tv_with_parts,
   while (!all_to_all.isComplete()) {}
   all_to_all.close();
 
+  // if no table is received from any worker,
+  // create an empty table for those
+  for (int i = 0; i < received_tables.size(); ++i) {
+    if (received_tables[i] == nullptr) {
+      received_tables[i] = cudf::empty_like(tv);
+    }
+  }
+
+  return cylon::Status::OK();
+}
+
+cylon::Status gcylon::net::AllToAll(const cudf::table_view &tv,
+                                    const std::vector<cudf::size_type> &part_indices,
+                                    const std::shared_ptr<cylon::CylonContext> &ctx,
+                                    std::unique_ptr<cudf::table> &table_out) {
+
+  std::vector<std::unique_ptr<cudf::table>> received_tables;
+  received_tables.reserve(ctx->GetWorldSize());
+
+  RETURN_CYLON_STATUS_IF_FAILED(
+    gcylon::net::AllToAll(tv, part_indices, ctx, received_tables));
+
+  std::vector<cudf::table_view> views = gcylon::tablesToViews(received_tables);
+  table_out = cudf::concatenate(views);
   return cylon::Status::OK();
 }
 

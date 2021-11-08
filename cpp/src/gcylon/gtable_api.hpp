@@ -27,16 +27,73 @@ namespace gcylon {
 /**
  * Shuffles a cudf::table with table_view
  * this is to be called from cython code and the other Shuffle with GTable
- * @param input_table
+ * @param input_tv
  * @param columns_to_hash
  * @param ctx
  * @param table_out
  * @return
  */
-cylon::Status Shuffle(const cudf::table_view &input_table,
+cylon::Status Shuffle(const cudf::table_view &input_tv,
                       const std::vector<int> &columns_to_hash,
                       const std::shared_ptr<cylon::CylonContext> &ctx,
                       std::unique_ptr<cudf::table> &table_out);
+
+/**
+ * Repartition the table by either evenly distributing rows among all workers
+ *   or according to the partition map given by rows_per_worker
+ * @param input_tv
+ * @param ctx
+ * @param table_out
+ * @param rows_per_worker
+ * @return
+ */
+cylon::Status Repartition(const cudf::table_view &input_tv,
+                          const std::shared_ptr<cylon::CylonContext> &ctx,
+                          std::unique_ptr<cudf::table> &table_out,
+                          const std::vector<int32_t> &rows_per_worker = std::vector<int32_t>());
+
+/**
+ * Gather tables from all workers to a single worker
+ * Concatenate the tables in the rank order of workers
+ * by keeping global order of rows
+ * @param input_tv
+ * @param ctx
+ * @param table_out
+ * @param gather_root
+ * @return
+ */
+cylon::Status Gather(const cudf::table_view &input_tv,
+                     const std::shared_ptr<cylon::CylonContext> &ctx,
+                     std::unique_ptr<cudf::table> &table_out,
+                     int gather_root = 0);
+
+/**
+ * Broadcast a table to all workers
+ * A new table is created in all workers and returned
+ * @param input_tv
+ * @param root
+ * @param ctx
+ * @param table_out
+ * @return
+ */
+cylon::Status Broadcast(const cudf::table_view &input_tv,
+                        int root,
+                        const std::shared_ptr<cylon::CylonContext> &ctx,
+                        std::unique_ptr<cudf::table> &table_out);
+
+/**
+ * AllGather a distributed table in all workers
+ * Each table in all workers contains the data of all initial tables
+ * The global order of row ranks are preserved
+ * @param input_tv
+ * @param root
+ * @param ctx
+ * @param table_out
+ * @return
+ */
+cylon::Status AllGather(const cudf::table_view &input_tv,
+                        const std::shared_ptr<cylon::CylonContext> &ctx,
+                        std::unique_ptr<cudf::table> &table_out);
 
 /**
  * Similar to local join, but performs the join in a distributed fashion
