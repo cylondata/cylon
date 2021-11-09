@@ -843,7 +843,7 @@ cdef class Table:
         Returns: Table
         '''
         cdef shared_ptr[CTable] output
-        cdef vector[long] c_rows_per_part
+        cdef vector[signed long] c_rows_per_part
         cdef vector[int] c_receive_order
 
         for num_rows in rows_per_partition:

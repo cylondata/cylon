@@ -36,6 +36,7 @@
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/util/macros.hpp>
 #include <cylon/util/to_string.hpp>
+#include <cylon/repartition.hpp>
 #include <cylon/net/mpi/mpi_operations.hpp>
 
 namespace cylon {
@@ -1145,26 +1146,6 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shar
   return Status::OK();
 }
 
-std::vector<std::pair<int, int>> find_mapping(int64_t start_idx, int64_t size, const std::vector<int64_t>& target, int dest_start_rank, int dest_start_idx) {
-  std::vector<std::pair<int, int>> result;
-
-  int dest_offset = start_idx - dest_start_idx;
-  int ele_left = size;
-
-  while(ele_left > 0) {
-    int cur_dest_req_sz = target[dest_start_rank] - dest_offset;
-    int send_sz = std::min(ele_left, cur_dest_req_sz);
-    result.push_back({dest_start_rank, send_sz});
-    if(cur_dest_req_sz <= ele_left) {
-      dest_start_rank++;
-      dest_offset = 0;
-    }
-    ele_left -= send_sz;
-  }
-
-  return result;
-}
-
 Status Repartition(const std::shared_ptr<cylon::Table>& table, 
                    const std::vector<int64_t>& rows_per_partition,
                    const std::vector<int>& receive_build_rank_order,
@@ -1188,40 +1169,14 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   std::vector<int64_t> sizes;
   RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather({ num_row }, world_size, sizes));
 
-  // the index of the first element in this partition in the whole table
-  int64_t start_idx = std::accumulate(sizes.begin(), sizes.begin() + rank, 0);
-  // total # of elements in the whole table
-  int64_t total_element = std::accumulate(sizes.begin() + rank, sizes.end(), start_idx);
-
-  // the rank of first partition that the current partition is going to send to
-  int64_t target_partition_start_idx = 0;
-  // index of the first element in the above partition in the whole table
-  int64_t target_partition = 0;
-
-  // compute the aboves
-  while(target_partition + 1 < world_size && target_partition_start_idx + rows_per_partition[target_partition] <= start_idx) {
-    target_partition_start_idx += rows_per_partition[target_partition++];
-  }
-  int64_t rows_per_partition_acc = std::accumulate(rows_per_partition.begin(), rows_per_partition.end(), 0);
- 
-  if(total_element != rows_per_partition_acc) {
-    return Status(
-    cylon::Code::ValueError,
-    "rows_per_partition total number of rows does not align with actual number of rows. Received " +
-        std::to_string(rows_per_partition_acc) + ", Expected " +
-        std::to_string(total_element));
-  }
-
-  std::vector<std::pair<int, int>> send_to = find_mapping(start_idx, num_row, rows_per_partition, target_partition, target_partition_start_idx);
+  auto out_partitions_temp = RowIndicesToAll(rank, sizes, rows_per_partition);
   uint32_t no_of_partitions = receive_build_rank_order.size();
   std::vector<uint32_t> out_partitions(num_row);
+  auto begin = out_partitions.begin();
 
-  // construct outPartition for all_to_all
-  int idx = 0;
-  auto itr = out_partitions.begin();
-  for(auto p: send_to) {
-    std::fill(itr + idx, itr + idx + p.second, (uint32_t) receive_build_rank_order[p.first]);
-    idx += p.second;
+  for(int i = 0; i < (int)receive_build_rank_order.size(); i++) {
+    int64_t s = out_partitions_temp[i], t = out_partitions_temp[i + 1];
+    fill(begin + s, begin + t, receive_build_rank_order[i]);
   }
 
   std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;
@@ -1262,22 +1217,8 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   std::vector<int64_t> sizes;
   mpi::AllGather(size, world_size, sizes);
 
-  int total = 0;
-  for(int n: sizes) {
-    total += n;
-  }
-
-  int mod = total % world_size;
-  int quotient = total / world_size;
-
-  // `mod` number of partitions will receive ceil(total / world_size) elements
-  // the rest of the partitions will receive floor(total / world_size) elements
-  std::vector<int64_t> rows_per_partition(world_size);
-  if(mod != 0)
-    std::fill(rows_per_partition.begin(), rows_per_partition.begin() + mod, quotient + 1);
-  std::fill(rows_per_partition.begin() + mod, rows_per_partition.end(), quotient);
-
-  return Repartition(table, rows_per_partition, output);
+  auto result = DivideRowsEvenly(sizes);
+  return Repartition(table, result, output);
 }
 
 std::shared_ptr<BaseArrowIndex> Table::GetArrowIndex() { return base_arrow_index_; }
