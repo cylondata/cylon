@@ -1126,6 +1126,22 @@ Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylo
   return Status::OK();
 }
 
+static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, std::shared_ptr<cylon::Table> * b_out) {
+  int world_size = a->GetContext()->GetWorldSize();
+  int rank = a->GetContext()->GetRank();
+  int num_row = a->Rows();
+
+  if(num_row == 0) {
+    return Status::OK();
+  }
+
+  std::vector<int64_t> rows_per_partition;
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather({ num_row }, world_size, rows_per_partition));
+  RETURN_CYLON_STATUS_IF_FAILED(Repartition(b, rows_per_partition, b_out));
+
+  return Status::OK();
+}
+
 Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, bool& result, bool ordered) {
   bool subResult;
   if(!ordered) {
@@ -1137,9 +1153,14 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shar
     RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(a, indices, out_a, column_orders));
     RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(b, indices, out_b, column_orders));
 
+    std::shared_ptr<cylon::Table> b_repartitioned;
+    RETURN_CYLON_STATUS_IF_FAILED(RepartitionToMatchOtherTable(a, b, &b_repartitioned));
+
     subResult = out_a->get_table()->Equals(*out_b->get_table());
   } else {
-    RETURN_CYLON_STATUS_IF_FAILED(Equals(a, b, subResult, true));
+    std::shared_ptr<cylon::Table> b_repartitioned;
+    RETURN_CYLON_STATUS_IF_FAILED(RepartitionToMatchOtherTable(a, b, &b_repartitioned));
+    RETURN_CYLON_STATUS_IF_FAILED(Equals(a, b_repartitioned, subResult, true));
   }
 
   RETURN_CYLON_STATUS_IF_FAILED(mpi::AllReduce(&subResult, &result, 1, Bool(), cylon::net::LAND));
