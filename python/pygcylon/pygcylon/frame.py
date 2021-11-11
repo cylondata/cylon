@@ -22,6 +22,7 @@ from pygcylon.net.sorting import distributed_sort
 from pycylon.frame import CylonEnv
 from pygcylon.groupby import GroupByDataFrame
 import pygcylon.comms as comms
+import pygcylon.io
 
 
 class DataFrame(object):
@@ -1559,6 +1560,36 @@ class DataFrame(object):
 
         tail_n_cdf = self._cdf.head(tail_row_counts[env.rank])
         return DataFrame.from_cudf(tail_n_cdf)
+
+    def to_csv(self, file_names, env: CylonEnv = None, **kwargs) -> str:
+        """
+        Write DataFrames to CSV files
+
+        If a single string is provided as file_names:
+        it can be either a file_base or a directory name.
+          If it is a file base such as "path/to/dir/myfile",
+            all workers add the extension "_<rank>.csv" to the file base.
+          If the file_names is a directory:
+            each worker create the output file by appending: "part_<rank>.csv"
+
+        If a list of strings are provided: each string must be a filename for a worker.
+          First string must be the output filename for the first worker,
+          Second string must be the output filename for the second worker,
+          etc.
+          There must be one file name for each worker
+
+        Parameters
+        ----------
+        df: DataFrame to write to files
+        file_names: Output CSV file names. A string, or a list of strings,
+        env: CylonEnv object for this DataFrame
+        kwargs: the parameters that will be passed on to cudf.write_csv function
+
+        Returns
+        -------
+        Filename written
+        """
+        return pygcylon.io.write_csv(self, file_names=file_names, env=env, **kwargs)
 
 
 def concat(

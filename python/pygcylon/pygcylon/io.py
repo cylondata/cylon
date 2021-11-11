@@ -16,6 +16,8 @@ from __future__ import annotations
 from typing import Hashable, List, Tuple, Dict, Optional, Sequence, Union, Iterable
 
 import glob
+import os
+
 import cudf
 import pygcylon as gcy
 from pycylon.frame import CylonEnv
@@ -129,6 +131,55 @@ def read_csv(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
 
     cdf = cudf.concat(cdf_list)
     return gcy.DataFrame.from_cudf(cdf)
+
+
+def write_csv(df: gcy.DataFrame,
+              file_names: Union[str, List[str]],
+              env: CylonEnv,
+              **kwargs) -> str:
+    """
+    Write DataFrames to CSV files
+
+    If a single string is provided as file_names:
+    it can be either a file_base or a directory name.
+      If it is a file base such as "path/to/dir/myfile",
+        all workers add the extension "_<rank>.csv" to the file base.
+      If the file_names is a directory:
+        each worker create the output file by appending: "part_<rank>.csv"
+
+    If a list of strings are provided: each string must be a filename for a worker.
+      First string must be the output filename for the first worker,
+      Second string must be the output filename for the second worker,
+      etc.
+      There must be one file name for each worker
+
+    Parameters
+    ----------
+    df: DataFrame to write to files
+    file_names: Output CSV file names. A string, or a list of strings,
+    env: CylonEnv object for this DataFrame
+    kwargs: the parameters that will be passed on to cudf.write_csv function
+
+    Returns
+    -------
+    Filename written
+    """
+
+    if isinstance(file_names, str):
+        out_file = file_names + "/part_" + str(env.rank) + ".csv" \
+            if os.path.isdir(file_names) \
+            else file_names + "_" + str(env.rank) + ".csv"
+        df.to_cudf().to_csv(out_file, **kwargs)
+        return out_file
+
+    if isinstance(file_names, list) and \
+            len(file_names) >= env.world_size and \
+            all(isinstance(fn, str) for fn in file_names):
+        df.to_cudf().to_csv(file_names[env.rank], **kwargs)
+        return file_names[env.rank]
+    else:
+        raise ValueError("file_names must be: Union[str, List[str]]. "
+                         + "When a list of strings provided, there must be at least one file name for each worker.")
 
 
 
