@@ -22,7 +22,11 @@ from .groupby import (
      GroupByDataFrame
 )
 from . import (
-    comms
+    comms,
+)
+
+from .io import (
+    read_csv,
 )
 
 from ._version import get_versions
