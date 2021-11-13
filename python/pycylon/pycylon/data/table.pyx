@@ -13,6 +13,7 @@
 ##
 
 from libcpp.string cimport string
+from libc.stdint cimport int64_t
 from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 from pycylon.common.join_config cimport CJoinType
@@ -843,7 +844,7 @@ cdef class Table:
         Returns: Table
         '''
         cdef shared_ptr[CTable] output
-        cdef vector[signed long] c_rows_per_part
+        cdef vector[int64_t] c_rows_per_part
         cdef vector[int] c_receive_order
 
         for num_rows in rows_per_partition:

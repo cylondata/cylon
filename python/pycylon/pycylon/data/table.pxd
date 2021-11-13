@@ -26,6 +26,7 @@ from pyarrow.lib cimport CTable as CArrowTable
 from pyarrow.lib cimport CArray as CArrowArray
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
+from libc.stdint cimport int64_t
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 from pycylon.indexing.cyindex cimport CBaseArrowIndex
@@ -121,9 +122,9 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
     
     CStatus DistributedEquals(shared_ptr[CTable] & a, shared_ptr[CTable] & b, bool& result, bool ordered)
 
-    CStatus Repartition(const shared_ptr[CTable] & table, const vector[signed long] & rows_per_partition, const vector[int] & receive_build_rank_order, shared_ptr[CTable]* output)
+    CStatus Repartition(const shared_ptr[CTable] & table, const vector[int64_t] & rows_per_partition, const vector[int] & receive_build_rank_order, shared_ptr[CTable]* output)
     
-    CStatus Repartition(const shared_ptr[CTable] & table, const vector[signed long] & rows_per_partition, shared_ptr[CTable]* output)
+    CStatus Repartition(const shared_ptr[CTable] & table, const vector[int64_t] & rows_per_partition, shared_ptr[CTable]* output)
 
     CStatus Repartition(const shared_ptr[CTable] & table, shared_ptr[CTable]* output)
 
