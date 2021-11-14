@@ -1128,7 +1128,6 @@ Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylo
 
 static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, std::shared_ptr<cylon::Table> * b_out) {
   int world_size = a->GetContext()->GetWorldSize();
-  int rank = a->GetContext()->GetRank();
   int num_row = a->Rows();
 
   if(num_row == 0) {
@@ -1144,19 +1143,22 @@ static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &
 
 Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, bool& result, bool ordered) {
   bool subResult;
+  RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(a->get_table(), b->get_table()));
+
   if(!ordered) {
     int col = a->Columns();
     std::vector<int32_t> indices(col);
     std::vector<bool> column_orders(col, true);
     std::iota(indices.begin(), indices.end(), 0);
-    std::shared_ptr<cylon::Table> out_a, out_b;
-    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(a, indices, out_a, column_orders));
-    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(b, indices, out_b, column_orders));
-
+    
     std::shared_ptr<cylon::Table> b_repartitioned;
     RETURN_CYLON_STATUS_IF_FAILED(RepartitionToMatchOtherTable(a, b, &b_repartitioned));
 
-    subResult = out_a->get_table()->Equals(*out_b->get_table());
+    std::shared_ptr<cylon::Table> out_a, out_b;
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(a, indices, out_a, column_orders));
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(b_repartitioned, indices, out_b, column_orders));
+
+    RETURN_CYLON_STATUS_IF_FAILED(Equals(out_a, out_b, subResult));
   } else {
     std::shared_ptr<cylon::Table> b_repartitioned;
     RETURN_CYLON_STATUS_IF_FAILED(RepartitionToMatchOtherTable(a, b, &b_repartitioned));

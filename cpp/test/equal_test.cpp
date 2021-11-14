@@ -95,34 +95,37 @@ TEST_CASE("Distributed equal testing", "[distributed equal]") {
 TEST_CASE("Distributed equal testing - reparition needed", "[distributed equal]") {
     std::string path1 = "../data/input/equal_repartition_0_" + std::to_string(RANK) +".csv";
     std::string path2 = "../data/input/equal_repartition_1_" + std::to_string(RANK) +".csv";
+    std::string path3 = "../data/input/equal_repartition_2_" + std::to_string(RANK) +".csv";
     
-    std::string path3 = "../data/input/equal_repartition_0_" + std::to_string((RANK + 1) % 2) +".csv";
-    
-    std::shared_ptr<Table> table1, table2, table1_other_part;
+    std::shared_ptr<Table> table1, table2, table3;
 
     auto read_options = io::config::CSVReadOptions().UseThreads(false);
 
     CHECK_CYLON_STATUS(FromCSV(ctx, std::vector<std::string>{path1, path2, path3},
-                    std::vector<std::shared_ptr<Table> *>{&table1, &table2, &table1_other_part},
+                    std::vector<std::shared_ptr<Table> *>{&table1, &table2, &table3},
                             read_options));
 
     SECTION("testing ordered equal") {
-        if(WORLD_SZ != 2) return;
+        if(table1->GetContext()->GetWorldSize() != 2) return;
         bool result;
         CHECK_CYLON_STATUS(DistributedEquals(table1, table2, result));
         REQUIRE(result);
 
-        CHECK_CYLON_STATUS(DistributedEquals(table1_other_part, table2, result));
+        CHECK_CYLON_STATUS(DistributedEquals(table2, table3, result));
         REQUIRE(!result);
     }
 
     SECTION("testing unordered equal") {
-        if(WORLD_SZ != 2) return;
+        if(table1->GetContext()->GetWorldSize() != 2) return;
         bool result;
         CHECK_CYLON_STATUS(DistributedEquals(table1, table2, result, false));
         REQUIRE(result);
+    }
 
-        CHECK_CYLON_STATUS(DistributedEquals(table1_other_part, table2, result, false));
+    SECTION("testing unordered equal need sort") {
+        if(table1->GetContext()->GetWorldSize() != 2) return;
+        bool result;
+        CHECK_CYLON_STATUS(DistributedEquals(table2, table3, result, false));
         REQUIRE(result);
     }
 }

@@ -299,6 +299,25 @@ TEST_CASE("Repartition with rank order", "[repartition]") {
         verify_test(expected, output);
     }
 
+    SECTION("same as original") {
+        if(table1->GetContext()->GetWorldSize() != 4) {
+            return;
+        }
+        std::shared_ptr<Table> output;
+        std::vector<int64_t> rows_per_partition = {2, 1, 7, 2};
+        Repartition(table1, rows_per_partition, &output);
+        REQUIRE(output->Rows() == rows_per_partition[RANK]);
+        
+        std::vector<std::vector<std::string>> expected = {
+            {"0,1", "1,2", "3,4"},
+            {"0,1", "5,6"},
+            {"0,1", "7,8", "9,10", "11,12", "13,14", "15,16", "17,18", "19,20"},
+            {"0,1", "21,22", "23,24"},
+        };
+
+        verify_test(expected, output);
+    }
+
     SECTION("very uneven") {
         if(table1->GetContext()->GetWorldSize() != 4) {
             return;
