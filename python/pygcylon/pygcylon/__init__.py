@@ -27,6 +27,7 @@ from . import (
 
 from .io import (
     read_csv,
+    read_json,
 )
 
 from ._version import get_versions

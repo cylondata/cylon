@@ -1583,13 +1583,43 @@ class DataFrame(object):
         df: DataFrame to write to files
         file_names: Output CSV file names. A string, or a list of strings,
         env: CylonEnv object for this DataFrame
-        kwargs: the parameters that will be passed on to cudf.write_csv function
+        kwargs: the parameters that will be passed on to cudf.DataFrame.to_csv function
 
         Returns
         -------
         Filename written
         """
         return pygcylon.io.write_csv(self, file_names=file_names, env=env, **kwargs)
+
+    def to_json(self, file_names, env: CylonEnv = None, **kwargs) -> str:
+        """
+        Write DataFrames to JSON files
+
+        If a single string is provided as file_names:
+        it can be either a file_base or a directory name.
+          If it is a file base such as "path/to/dir/myfile",
+            all workers add the extension "_<rank>.json" to the file base.
+          If the file_names is a directory:
+            each worker create the output file by appending: "part_<rank>.json"
+
+        If a list of strings are provided: each string must be a filename for a worker.
+          First string must be the output filename for the first worker,
+          Second string must be the output filename for the second worker,
+          etc.
+          There must be one file name for each worker
+
+        Parameters
+        ----------
+        df: DataFrame to write to files
+        file_names: Output JSON file names. A string, or a list of strings,
+        env: CylonEnv object for this DataFrame
+        kwargs: the parameters that will be passed on to cudf.DataFrame.to_json function
+
+        Returns
+        -------
+        Filename written
+        """
+        return pygcylon.io.write_json(self, file_names=file_names, env=env, **kwargs)
 
 
 def concat(
