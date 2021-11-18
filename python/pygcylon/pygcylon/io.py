@@ -19,8 +19,11 @@ import glob
 import os
 
 import cudf
+import pyarrow
+import pyarrow as pa
 import pygcylon as gcy
 from pycylon.frame import CylonEnv
+from pycylon.net.comm_ops import allgather_buffer
 
 
 def _get_files(paths: Union[str, List[str]]) -> List[str]:
@@ -60,30 +63,32 @@ def _get_worker_files(paths: List[str], env: CylonEnv) -> List[str]:
     return all_files[start:end]
 
 
-def _get_first_file(paths: Union[List[str], Dict[int, Union[str, List[str]]]]) -> str:
-    """
-    get the first file in the given paths if exist
-    """
-    all_files = []
-    if isinstance(paths, list):
-        all_files = _get_files(paths=paths)
-
-    if isinstance(paths, dict):
-        all_paths = []
-        for val in paths.values():
-            all_paths.extend(val) if isinstance(val, list) else all_paths.append(val)
-        all_files = _get_files(paths=all_paths)
-
-    return all_files[0] if all_files else None
-
-
-def _all_schemas_equal(df: cudf.DataFrame, env: CylonEnv) -> bool:
+def _all_schemas_equal(df: cudf.DataFrame, env: CylonEnv) -> pyarrow.Schema:
     """
     after reading files, check whether all DataFrame schemas are equal
-    todo: cudf is adding serialize/deserialize methods to DataFrame in cudf 21.12
-          maybe we can do this after when we switch to cudf 21.12
+    return a schema in case the worker has no DataFrame and needs to create an empty table
     """
-    pass
+
+    # get an empty arrow Table, get its schema and serialize the schema
+    buf = df.head(0).to_arrow().schema.serialize() if df is not None else pa.allocate_buffer(0)
+
+    buffers = allgather_buffer(buf=buf, context=env.context)
+
+    schemas = []
+    for schema_buf in buffers:
+        if len(schema_buf) > 0:
+            with pa.ipc.open_stream(schema_buf) as reader:
+                schemas.append(reader.schema)
+
+    if len(schemas) == 0:
+        raise ValueError("No worker has any schema.")
+
+    # make sure all schemas are equal, compare consecutive ones
+    for first, second in zip(schemas, schemas[1:]):
+        if not first.equals(second):
+            raise ValueError("Not all DataFrame schemas are equal.")
+
+    return schemas[0]
 
 
 def _write_csv_or_json(write_fun, file_ext, file_names, env, **kwargs):
@@ -103,9 +108,14 @@ def _write_csv_or_json(write_fun, file_ext, file_names, env, **kwargs):
             all(isinstance(fn, str) for fn in file_names):
         write_fun(file_names[env.rank], **kwargs)
         return file_names[env.rank]
-    else:
-        raise ValueError("file_names must be: Union[str, List[str]]. "
-                         + "When a list of strings provided, there must be at least one file name for each worker.")
+
+    if isinstance(file_names, dict) and \
+            all(isinstance(key, int) and isinstance(val, str) for key, val in file_names.items()):
+        write_fun(file_names[env.rank], **kwargs)
+        return file_names[env.rank]
+
+    raise ValueError("file_names must be: Union[str, List[str], Dict[int, str]]. "
+                     + "When a list of strings provided, there must be at least one file name for each worker.")
 
 
 def _read_csv_or_json(read_fun, paths, env, **kwargs) -> gcy.DataFrame:
@@ -124,24 +134,20 @@ def _read_csv_or_json(read_fun, paths, env, **kwargs) -> gcy.DataFrame:
     else:
         raise ValueError("paths must be: Union[str, List[str], Dict[int, Union[str, List[str]]]]")
 
-    if not worker_files:
-        first_file = _get_first_file(paths=paths)
-        if not first_file:
-            raise ValueError("No files to read.")
-        # does not work for json if lines=True is not set
-        cdf = read_fun(first_file, nrows=0, **kwargs)
-        return gcy.DataFrame.from_cudf(cdf)
-
+    cdf = None
     # if there is only one file to read
     if len(worker_files) == 1:
         cdf = read_fun(worker_files[0], **kwargs)
-        return gcy.DataFrame.from_cudf(cdf)
+    elif len(worker_files) > 1:
+        cdf_list = []
+        for worker_file in worker_files:
+            cdf_list.append(read_fun(worker_file, **kwargs))
+        cdf = cudf.concat(cdf_list)
 
-    cdf_list = []
-    for worker_file in worker_files:
-        cdf_list.append(read_fun(worker_file, **kwargs))
+    df_schema = _all_schemas_equal(cdf, env=env)
+    if cdf is None:
+        cdf = cudf.DataFrame.from_arrow(df_schema.empty_table())
 
-    cdf = cudf.concat(cdf_list)
     return gcy.DataFrame.from_cudf(cdf)
 
 
@@ -173,7 +179,7 @@ def read_csv(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
 
 
 def write_csv(df: gcy.DataFrame,
-              file_names: Union[str, List[str]],
+              file_names: Union[str, List[str], Dict[int, str]],
               env: CylonEnv,
               **kwargs) -> str:
     """
@@ -192,10 +198,16 @@ def write_csv(df: gcy.DataFrame,
       etc.
       There must be one file name for each worker
 
+    If a dictionary is provided:
+      key must be the worker rank and the value must be the output file name for that worker.
+      In this case, not all workers need to provide the output filenames for all worker
+      If each worker provides its output filename only, that would be sufficient
+
     Parameters
     ----------
     df: DataFrame to write to files
-    file_names: Output CSV file names. A string, or a list of strings,
+    file_names: Output CSV file names.
+                A string, or a list of strings, or a dictionary with worker ranks and out files
     env: CylonEnv object for this DataFrame
     kwargs: the parameters that will be passed on to cudf.write_csv function
 
@@ -234,7 +246,7 @@ def read_json(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
 
 
 def write_json(df: gcy.DataFrame,
-               file_names: Union[str, List[str]],
+               file_names: Union[str, List[str], Dict[int, str]],
                env: CylonEnv,
                **kwargs) -> str:
     """
@@ -253,10 +265,16 @@ def write_json(df: gcy.DataFrame,
       etc.
       There must be one file name for each worker
 
+    If a dictionary is provided:
+      key must be the worker rank and the value must be the output file name for that worker.
+      In this case, not all workers need to provide the output filenames for all worker
+      If each worker provides its output filename only, that would be sufficient
+
     Parameters
     ----------
     df: DataFrame to write to files
-    file_names: Output JSON file names. A string, or a list of strings,
+    file_names: Output JSON file names.
+                A string, or a list of strings, or a dictionary with worker ranks and out files
     env: CylonEnv object for this DataFrame
     kwargs: the parameters that will be passed on to cudf.write_json function
 

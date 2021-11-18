@@ -1578,10 +1578,16 @@ class DataFrame(object):
           etc.
           There must be one file name for each worker
 
+        If a dictionary is provided:
+          key must be the worker rank and the value must be the output file name for that worker.
+          In this case, not all workers need to provide the output filenames for all worker
+          If each worker provides its output filename only, that would be sufficient
+
         Parameters
         ----------
         df: DataFrame to write to files
-        file_names: Output CSV file names. A string, or a list of strings,
+        file_names: Output CSV file names.
+                    A string, or a list of strings, or a dictionary with worker ranks and out files
         env: CylonEnv object for this DataFrame
         kwargs: the parameters that will be passed on to cudf.DataFrame.to_csv function
 
@@ -1608,10 +1614,16 @@ class DataFrame(object):
           etc.
           There must be one file name for each worker
 
+        If a dictionary is provided:
+          key must be the worker rank and the value must be the output file name for that worker.
+          In this case, not all workers need to provide the output filenames for all worker
+          If each worker provides its output filename only, that would be sufficient
+
         Parameters
         ----------
         df: DataFrame to write to files
-        file_names: Output JSON file names. A string, or a list of strings,
+        file_names: Output JSON file names.
+                    A string, or a list of strings, or a dictionary with worker ranks and out files
         env: CylonEnv object for this DataFrame
         kwargs: the parameters that will be passed on to cudf.DataFrame.to_json function
 
