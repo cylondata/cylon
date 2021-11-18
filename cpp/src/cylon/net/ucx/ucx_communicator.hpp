@@ -38,7 +38,7 @@ class UCXConfig : public CommConfig {
 class UCXCommunicator : public Communicator {
  public:
   Status Init(const std::shared_ptr<CommConfig> &config) override;
-  Channel *CreateChannel() override;
+  std::unique_ptr<Channel> CreateChannel() const override;
   int GetRank() const override;
   int GetWorldSize() const override;
   void Finalize() override;

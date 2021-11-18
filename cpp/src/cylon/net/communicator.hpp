@@ -27,7 +27,7 @@ class Communicator {
   int world_size = -1;
  public:
   virtual Status Init(const std::shared_ptr<CommConfig> &config) = 0;
-  virtual Channel *CreateChannel() = 0;
+  virtual std::unique_ptr<Channel> CreateChannel() const = 0;
   virtual int GetRank() const = 0;
   virtual int GetWorldSize() const = 0;
   virtual void Finalize() = 0;

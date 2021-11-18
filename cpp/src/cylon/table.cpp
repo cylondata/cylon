@@ -36,6 +36,7 @@
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/util/macros.hpp>
 #include <cylon/util/to_string.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 
 namespace cylon {
 
@@ -51,16 +52,16 @@ static constexpr const char *kDefaultIndexName = "index";
  * @return
  */
 Status PrepareArray(std::shared_ptr<cylon::CylonContext> &ctx,
-                    const std::shared_ptr<arrow::Table> &table, const int32_t col_idx,
-                    const std::vector<int64_t> &row_indices, arrow::ArrayVector &array_vector) {
+					const std::shared_ptr<arrow::Table> &table, const int32_t col_idx,
+					const std::vector<int64_t> &row_indices, arrow::ArrayVector &array_vector) {
   std::shared_ptr<arrow::Array> destination_col_array;
   arrow::Status ar_status =
-      cylon::util::copy_array_by_indices(row_indices, cylon::util::GetChunkOrEmptyArray(table->column(col_idx), 0),
-                                         &destination_col_array, cylon::ToArrowPool(ctx));
+	  cylon::util::copy_array_by_indices(row_indices, cylon::util::GetChunkOrEmptyArray(table->column(col_idx), 0),
+										 &destination_col_array, cylon::ToArrowPool(ctx));
   if (ar_status != arrow::Status::OK()) {
-    LOG(FATAL) << "Failed while copying a column to the final table from tables."
-               << ar_status.ToString();
-    return Status(static_cast<int>(ar_status.code()), ar_status.message());
+	LOG(FATAL) << "Failed while copying a column to the final table from tables."
+			   << ar_status.ToString();
+	return Status(static_cast<int>(ar_status.code()), ar_status.message());
   }
   array_vector.push_back(destination_col_array);
   return Status::OK();
@@ -135,7 +136,8 @@ static inline Status all_to_all_arrow_tables(const std::shared_ptr<CylonContext>
 template<typename T>
 // T is int32_t or const std::vector<int32_t>&
 static inline Status shuffle_table_by_hashing(const std::shared_ptr<CylonContext> &ctx,
-                                              std::shared_ptr<Table> &table, T hash_column,
+                                              const std::shared_ptr<Table> &table,
+                                              const T &hash_column,
                                               std::shared_ptr<arrow::Table> &table_out) {
   // partition the tables locally
   std::vector<uint32_t> outPartitions, counts;
@@ -152,7 +154,7 @@ static inline Status shuffle_table_by_hashing(const std::shared_ptr<CylonContext
   std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
   // we are going to free if retain is set to false
   if (!table->IsRetain()) {
-    table.reset();
+    const_cast<std::shared_ptr<Table> &>(table).reset();
   }
 
   return all_to_all_arrow_tables(ctx, schema, partitioned_tables, table_out);
@@ -161,10 +163,10 @@ static inline Status shuffle_table_by_hashing(const std::shared_ptr<CylonContext
 template<typename T>
 // T is int32_t or const std::vector<int32_t>&
 static inline Status shuffle_two_tables_by_hashing(const std::shared_ptr<cylon::CylonContext> &ctx,
-                                                   std::shared_ptr<cylon::Table> &left_table,
-                                                   T left_hash_column,
-                                                   std::shared_ptr<cylon::Table> &right_table,
-                                                   T right_hash_column,
+                                                   const std::shared_ptr<Table> &left_table,
+                                                   const T &left_hash_column,
+                                                   const std::shared_ptr<Table> &right_table,
+                                                   const T &right_hash_column,
                                                    std::shared_ptr<arrow::Table> &left_table_out,
                                                    std::shared_ptr<arrow::Table> &right_table_out) {
   LOG(INFO) << "Shuffling two tables with total rows : " << left_table->Rows() + right_table->Rows();
@@ -215,8 +217,6 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
       }
 
       int32_t starting_index = (ctx->GetRank() * rows_per_worker) + offset;
-      // LOG(INFO) << ctx->GetRank() << " will start from " << starting_index << " and read "
-      //           << (rows_per_worker + balancer) << " offset : " << offset;
       table = table->Slice(starting_index, rows_per_worker + balancer);
     }
     tableOut = std::make_shared<Table>(ctx, table);
@@ -245,17 +245,34 @@ Status Table::FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
 Status Table::FromColumns(const std::shared_ptr<CylonContext> &ctx,
                           const std::vector<std::shared_ptr<Column>> &columns,
                           std::shared_ptr<Table> &tableOut) {
-  tableOut = std::make_shared<Table>(ctx, columns);
-  return Status::OK();
+  arrow::SchemaBuilder schema_builder;
+  arrow::ChunkedArrayVector arrays;
+
+  for (const auto &col: columns) {
+    const auto &data_type = col->GetDataType();
+    const auto &field = arrow::field(col->GetID(), cylon::tarrow::convertToArrowType(data_type));
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(schema_builder.AddField(field));
+    arrays.push_back(col->GetColumnData());
+  }
+
+  CYLON_ASSIGN_OR_RAISE(auto schema, schema_builder.Finish());
+
+  auto table = arrow::Table::Make(std::move(schema), std::move(arrays));
+
+  if (!cylon::tarrow::validateArrowTableTypes(table)) {
+    return {Code::Invalid, "cylon table created with invalid types"};
+  }
+
+  return Table::FromArrowTable(ctx, std::move(table), tableOut);
 }
 
 Status WriteCSV(const std::shared_ptr<Table> &table, const std::string &path,
-                const cylon::io::config::CSVWriteOptions &options) {
+				const cylon::io::config::CSVWriteOptions &options) {
   std::ofstream out_csv;
   out_csv.open(path);
   Status status = table->PrintToOStream(
-      0, table->get_table()->num_columns(), 0, table->get_table()->num_rows(), out_csv,
-      options.GetDelimiter(), options.IsOverrideColumnNames(), options.GetColumnNames());
+	  0, table->get_table()->num_columns(), 0, table->get_table()->num_rows(), out_csv,
+	  options.GetDelimiter(), options.IsOverrideColumnNames(), options.GetColumnNames());
   out_csv.close();
   return status;
 }
@@ -268,9 +285,9 @@ int64_t Table::Rows() const { return table_->num_rows(); }
 
 bool Table::Empty() const { return table_->num_rows() == 0; }
 
-void Table::Print() { Print(0, this->Rows(), 0, this->Columns()); }
+void Table::Print() const { Print(0, this->Rows(), 0, this->Columns()); }
 
-void Table::Print(int row1, int row2, int col1, int col2) {
+void Table::Print(int row1, int row2, int col1, int col2) const {
   PrintToOStream(col1, col2, row1, row2, std::cout);
 }
 
@@ -278,7 +295,7 @@ Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &ctables, std::sha
   if (!ctables.empty()) {
     std::vector<std::shared_ptr<arrow::Table>> tables;
     tables.reserve(ctables.size());
-    for (const auto &t: ctables) {
+    for (const auto &t:ctables) {
       if (t->Rows()) {
         std::shared_ptr<arrow::Table> arrow;
         t->ToArrowTable(arrow);
@@ -300,7 +317,7 @@ Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &ctables, std::sha
   }
 }
 
-Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column,
+Status Sort(const std::shared_ptr<Table> &table, int sort_column,
             std::shared_ptr<cylon::Table> &out, bool ascending) {
   std::shared_ptr<arrow::Table> sorted_table;
   const auto &table_ = table->get_table();
@@ -316,13 +333,13 @@ Status Sort(std::shared_ptr<cylon::Table> &table, int sort_column,
   return Table::FromArrowTable(ctx, sorted_table, out);
 }
 
-Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &sort_columns,
+Status Sort(const std::shared_ptr<Table> &table, const std::vector<int32_t> &sort_columns,
             std::shared_ptr<cylon::Table> &out, bool ascending) {
   const std::vector<bool> sort_direction(sort_columns.size(), ascending);
   return Sort(table, sort_columns, out, sort_direction);
 }
 
-Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &sort_columns,
+Status Sort(const std::shared_ptr<Table> &table, const std::vector<int32_t> &sort_columns,
             std::shared_ptr<cylon::Table> &out, const std::vector<bool> &sort_direction) {
   // if single index sort is passed
   if (sort_columns.size() == 1) {
@@ -347,15 +364,19 @@ Status Sort(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &so
   return Table::FromArrowTable(ctx, sorted_table, out);
 }
 
-Status DistributedSort(std::shared_ptr<cylon::Table> &table,
+Status DistributedSort(const std::shared_ptr<Table> &table,
                        int sort_column,
                        std::shared_ptr<Table> &output,
                        bool ascending,
                        SortOptions sort_options) {
-  return DistributedSort(table, std::vector<int>{sort_column}, output, std::vector<bool>{ascending}, sort_options);
+  return DistributedSort(table,
+                         std::vector<int>{sort_column},
+                         output,
+                         std::vector<bool>{ascending},
+                         sort_options);
 }
 
-Status DistributedSort(std::shared_ptr<cylon::Table> &table,
+Status DistributedSort(const std::shared_ptr<Table> &table,
                        const std::vector<int> &sort_columns,
                        std::shared_ptr<Table> &output,
                        const std::vector<bool> &sort_direction,
@@ -379,7 +400,9 @@ Status DistributedSort(std::shared_ptr<cylon::Table> &table,
 
     // we are going to free if retain is set to false. therefore, we need to make a copy of schema
     std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
-    if (!table->IsRetain()) table.reset();
+    if (!table->IsRetain()) {
+      const_cast<std::shared_ptr<Table> &>(table).reset();
+    }
 
     RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables(ctx, schema, split_tables, arrow_table));
   }
@@ -401,7 +424,7 @@ Status DistributedSort(std::shared_ptr<cylon::Table> &table,
   return Table::FromArrowTable(ctx, sorted_table, output);
 }
 
-Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_columns,
+Status HashPartition(const std::shared_ptr<Table> &table, const std::vector<int> &hash_columns,
                      int no_of_partitions,
                      std::unordered_map<int, std::shared_ptr<cylon::Table>> *out) {
   // keep arrays for each target, these arrays are used for creating the table
@@ -413,7 +436,11 @@ Status HashPartition(std::shared_ptr<cylon::Table> &table, const std::vector<int
                                                     counts));
 
   std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;
-  RETURN_CYLON_STATUS_IF_FAILED(Split(table, no_of_partitions, outPartitions, counts, partitioned_tables));
+  RETURN_CYLON_STATUS_IF_FAILED(Split(table,
+                                      no_of_partitions,
+                                      outPartitions,
+                                      counts,
+                                      partitioned_tables));
 
   const auto &ctx = table->GetContext();
   out->reserve(no_of_partitions);
@@ -443,7 +470,7 @@ arrow::Status create_table_with_duplicate_index(arrow::MemoryPool *pool,
   return arrow::Status::OK();
 }
 
-Status Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &right,
+Status Join(const std::shared_ptr<Table> &left, const std::shared_ptr<Table> &right,
             const join::config::JoinConfig &join_config, std::shared_ptr<cylon::Table> &out) {
   if (left == NULLPTR) {
     return Status(Code::KeyError, "Couldn't find the left table");
@@ -464,18 +491,19 @@ Status Join(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &
       if (cylon::join::util::is_inplace_join_possible(left_type)) {
         // we don't have to copy if the table is freed
         if (left->IsRetain()) {
-          RETURN_CYLON_STATUS_IF_ARROW_FAILED(create_table_with_duplicate_index(pool, left_table, lIndex));
+          RETURN_CYLON_STATUS_IF_ARROW_FAILED(
+              create_table_with_duplicate_index(pool, left_table, lIndex));
         }
         if (right->IsRetain()) {
-          RETURN_CYLON_STATUS_IF_ARROW_FAILED(create_table_with_duplicate_index(pool, right_table, rIndex));
+          RETURN_CYLON_STATUS_IF_ARROW_FAILED(
+              create_table_with_duplicate_index(pool, right_table, rIndex));
         }
       }
     }
 
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::JoinTables(left_table, right_table, join_config, &table, pool));
-    out = std::make_shared<cylon::Table>(ctx, table);
-
-    return Status::OK();
+    RETURN_CYLON_STATUS_IF_FAILED(join::JoinTables(left_table, right_table, join_config,
+                                                   &table, pool));
+    return Table::FromArrowTable(ctx, std::move(table), out);
   }
 }
 
@@ -484,7 +512,7 @@ Status Table::ToArrowTable(std::shared_ptr<arrow::Table> &out) {
   return Status::OK();
 }
 
-Status DistributedJoin(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylon::Table> &right,
+Status DistributedJoin(const std::shared_ptr<Table> &left, const std::shared_ptr<Table> &right,
                        const join::config::JoinConfig &join_config,
                        std::shared_ptr<cylon::Table> &out) {
   // check whether the world size is 1
@@ -499,14 +527,12 @@ Status DistributedJoin(std::shared_ptr<cylon::Table> &left, std::shared_ptr<cylo
                                                               left_final_table, right_final_table));
 
   std::shared_ptr<arrow::Table> table;
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(join::JoinTables(left_final_table, right_final_table, join_config, &table,
-                                                       cylon::ToArrowPool(ctx)));
-  out = std::make_shared<cylon::Table>(ctx, table);
-
-  return Status::OK();
+  RETURN_CYLON_STATUS_IF_FAILED(join::JoinTables(left_final_table, right_final_table,
+                                                 join_config, &table, cylon::ToArrowPool(ctx)));
+  return Table::FromArrowTable(ctx, std::move(table), out);
 }
 
-Status Select(std::shared_ptr<cylon::Table> &table, const std::function<bool(cylon::Row)> &selector,
+Status Select(const std::shared_ptr<Table> &table, const std::function<bool(cylon::Row)> &selector,
               std::shared_ptr<Table> &out) {
   // boolean builder to hold the mask
   const auto &ctx = table->GetContext();
@@ -550,12 +576,15 @@ Status Union(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &
 
   RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(ltab, rtab));
 
-  TwoTableRowIndexHash hash(ltab, rtab);
-  TwoTableRowIndexEqualTo equal_to(ltab, rtab);
+  std::unique_ptr<DualTableRowIndexHash> hash;
+  RETURN_CYLON_STATUS_IF_FAILED(DualTableRowIndexHash::Make(ltab, rtab, &hash));
+
+  std::unique_ptr<DualTableRowIndexEqualTo> equal_to;
+  RETURN_CYLON_STATUS_IF_FAILED(DualTableRowIndexEqualTo::Make(ltab, rtab, &equal_to));
 
   const auto buckets_pre_alloc = (ltab->num_rows() + rtab->num_rows());
-  ska::bytell_hash_set<int64_t, TwoTableRowIndexHash, TwoTableRowIndexEqualTo>
-      rows_set(buckets_pre_alloc, hash, equal_to);
+  ska::bytell_hash_set<int64_t, DualTableRowIndexHash, DualTableRowIndexEqualTo>
+      rows_set(buckets_pre_alloc, *hash, *equal_to);
 
   arrow::compute::ExecContext exec_context(pool);
 
@@ -612,7 +641,7 @@ Status Union(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &
 }
 
 Status Subtract(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &second,
-                std::shared_ptr<Table> &out) {
+				std::shared_ptr<Table> &out) {
   std::shared_ptr<arrow::Table> ltab = first->get_table();
   std::shared_ptr<arrow::Table> rtab = second->get_table();
   const auto &ctx = first->GetContext();
@@ -623,55 +652,51 @@ Status Subtract(const std::shared_ptr<Table> &first, const std::shared_ptr<Table
 
   RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(ltab, rtab));
 
-  TwoTableRowIndexHash hash(ltab, rtab);
-  TwoTableRowIndexEqualTo equal_to(ltab, rtab);
+  std::unique_ptr<DualTableRowIndexHash> hash;
+  RETURN_CYLON_STATUS_IF_FAILED(DualTableRowIndexHash::Make(ltab, rtab, &hash));
+
+  std::unique_ptr<DualTableRowIndexEqualTo> equal_to;
+  RETURN_CYLON_STATUS_IF_FAILED(DualTableRowIndexEqualTo::Make(ltab, rtab, &equal_to));
 
   const auto buckets_pre_alloc = ltab->num_rows();
-  ska::bytell_hash_set<int64_t, TwoTableRowIndexHash, TwoTableRowIndexEqualTo>
-      rows_set(buckets_pre_alloc, hash, equal_to);
+  ska::bytell_hash_set<int64_t, DualTableRowIndexHash, DualTableRowIndexEqualTo>
+      rows_set(buckets_pre_alloc, *hash, *equal_to);
 
   arrow::compute::ExecContext exec_context(pool);
 
   // create a bitmask
-  std::vector<bool> bitmask(ltab->num_rows());
+  arrow::BooleanBuilder builder;
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(ltab->num_rows()));
 
   // insert left table to row_set
   for (int64_t i = 0; i < ltab->num_rows(); i++) {
     const auto &res = rows_set.insert(i);
-    bitmask[i] = res.second;
+    builder.UnsafeAppend(res.second);
   }
+
+  // now create the mask
+  CYLON_ASSIGN_OR_RAISE(auto mask, builder.Finish())
+  uint8_t *bit_buf = mask->data()->buffers[1]->mutable_data();
 
   // let's probe right rows against the rows set
   for (int64_t i = 0; i < rtab->num_rows(); i++) {
     // setting the leading bit to 1 since we are inserting the second table
     const auto &res = rows_set.find(util::SetBit(i));
-    if (res != rows_set.end()) {
-      bitmask[*res] = false;
+    if (res != rows_set.end()) { // clear bit if we find matches while probing
+      arrow::BitUtil::ClearBit(bit_buf, *res);
     }
   }
 
-  // convert vector<bool> to BooleanArray
-  arrow::BooleanBuilder builder;
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.AppendValues(bitmask));
-  std::shared_ptr<arrow::Array> mask;
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&mask));
-
-  const arrow::Result<arrow::Datum> &l_res = arrow::compute::Filter(ltab,
-                                                                    mask,
-                                                                    arrow::compute::FilterOptions::Defaults(),
-                                                                    &exec_context);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(l_res.status());
-
-  // filtered second table
-  std::shared_ptr<arrow::Table> intersect_tab = l_res.ValueOrDie().table();
-
-  out = std::make_shared<cylon::Table>(ctx, intersect_tab);
-  return Status::OK();
+  // filtered first table
+  CYLON_ASSIGN_OR_RAISE(auto l_res, arrow::compute::Filter(ltab, mask,
+                                                           arrow::compute::FilterOptions::Defaults(),
+                                                           &exec_context))
+  return Table::FromArrowTable(ctx, l_res.table(), out);
 }
 
 Status Intersect(const std::shared_ptr<Table> &first,
-                 const std::shared_ptr<Table> &second,
-                 std::shared_ptr<Table> &out) {
+				 const std::shared_ptr<Table> &second,
+				 std::shared_ptr<Table> &out) {
   std::shared_ptr<arrow::Table> ltab = first->get_table();
   std::shared_ptr<arrow::Table> rtab = second->get_table();
 
@@ -683,12 +708,15 @@ Status Intersect(const std::shared_ptr<Table> &first,
 
   RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(ltab, rtab));
 
-  TwoTableRowIndexHash hash(ltab, rtab);
-  TwoTableRowIndexEqualTo equal_to(ltab, rtab);
+  std::unique_ptr<DualTableRowIndexHash> hash;
+  RETURN_CYLON_STATUS_IF_FAILED(DualTableRowIndexHash::Make(ltab, rtab, &hash));
+
+  std::unique_ptr<DualTableRowIndexEqualTo> equal_to;
+  RETURN_CYLON_STATUS_IF_FAILED(DualTableRowIndexEqualTo::Make(ltab, rtab, &equal_to));
 
   const auto buckets_pre_alloc = ltab->num_rows();
-  ska::bytell_hash_set<int64_t, TwoTableRowIndexHash, TwoTableRowIndexEqualTo>
-      rows_set(buckets_pre_alloc, hash, equal_to);
+  ska::bytell_hash_set<int64_t, DualTableRowIndexHash, DualTableRowIndexEqualTo>
+      rows_set(buckets_pre_alloc, *hash, *equal_to);
 
   arrow::compute::ExecContext exec_context(pool);
 
@@ -728,13 +756,14 @@ Status Intersect(const std::shared_ptr<Table> &first,
   return Status::OK();
 }
 
-typedef Status (*LocalSetOperation)(const std::shared_ptr<cylon::Table> &,
-                                    const std::shared_ptr<cylon::Table> &,
-                                    std::shared_ptr<cylon::Table> &);
+//typedef Status (*LocalSetOperation)(const std::shared_ptr<cylon::Table> &,
+//									const std::shared_ptr<cylon::Table> &,
+//									std::shared_ptr<cylon::Table> &);
 
+template<typename LocalSetOperation>
 static inline Status do_dist_set_op(LocalSetOperation local_operation,
-                                    std::shared_ptr<cylon::Table> &table_left,
-                                    std::shared_ptr<cylon::Table> &table_right,
+                                    const std::shared_ptr<Table> &table_left,
+                                    const std::shared_ptr<Table> &table_right,
                                     std::shared_ptr<cylon::Table> &out) {
   // extract the tables out
   auto left = table_left->get_table();
@@ -765,29 +794,25 @@ static inline Status do_dist_set_op(LocalSetOperation local_operation,
   return local_operation(left_tab, right_tab, out);
 }
 
-Status DistributedUnion(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
+Status DistributedUnion(const std::shared_ptr<Table> &left, const std::shared_ptr<Table> &right,
                         std::shared_ptr<Table> &out) {
   return do_dist_set_op(&Union, left, right, out);
 }
 
-Status DistributedSubtract(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
+Status DistributedSubtract(const std::shared_ptr<Table> &left, const std::shared_ptr<Table> &right,
                            std::shared_ptr<Table> &out) {
   return do_dist_set_op(&Subtract, left, right, out);
 }
 
-Status DistributedIntersect(std::shared_ptr<Table> &left, std::shared_ptr<Table> &right,
+Status DistributedIntersect(const std::shared_ptr<Table> &left, const std::shared_ptr<Table> &right,
                             std::shared_ptr<Table> &out) {
   return do_dist_set_op(&Intersect, left, right, out);
 }
 
-//void Table::Clear() {}
-//
-//Table::~Table() { this->Clear(); }
-
 void ReadCSVThread(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
-                   std::shared_ptr<cylon::Table> *table,
-                   const cylon::io::config::CSVReadOptions &options,
-                   const std::shared_ptr<std::promise<Status>> &status_promise) {
+				   std::shared_ptr<cylon::Table> *table,
+				   const cylon::io::config::CSVReadOptions &options,
+				   const std::shared_ptr<std::promise<Status>> &status_promise) {
 //  const std::shared_ptr<CylonContext> &ctx_ = ctx;  // make a copy of the shared ptr
   status_promise->set_value(FromCSV(ctx, path, *table, options));
 }
@@ -811,7 +836,7 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::vector<std::
                       read_promise));
     }
     bool all_passed = true;
-    for (auto &future: futures) {
+    for (auto &future : futures) {
       auto status = future.first.get();
       all_passed &= status.is_ok();
       future.second.join();
@@ -829,7 +854,7 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::vector<std::
   }
 }
 
-Status Project(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> &project_columns,
+Status Project(const std::shared_ptr<Table> &table, const std::vector<int32_t> &project_columns,
                std::shared_ptr<Table> &out) {
   std::vector<std::shared_ptr<arrow::Field>> schema_vector;
   std::vector<std::shared_ptr<arrow::ChunkedArray>> column_arrays;
@@ -850,13 +875,13 @@ Status Project(std::shared_ptr<cylon::Table> &table, const std::vector<int32_t> 
   return Status::OK();
 }
 
-Status Table::PrintToOStream(std::ostream &out) {
+Status Table::PrintToOStream(std::ostream &out) const {
   return PrintToOStream(0, Columns(), 0, Rows(), out);
 }
 
-Status Table::PrintToOStream(int col1, int col2, int row1, int row2, std::ostream &out,
+Status Table::PrintToOStream(int col1, int col2, int64_t row1, int64_t row2, std::ostream &out,
                              char delimiter, bool use_custom_header,
-                             const std::vector<std::string> &headers) {
+                             const std::vector<std::string> &headers) const {
   if (table_ != NULLPTR) {
     // print the headers
     if (use_custom_header) {
@@ -915,26 +940,15 @@ const std::shared_ptr<arrow::Table> &Table::get_table() const { return table_; }
 
 bool Table::IsRetain() const { return retain_; }
 
-std::shared_ptr<Column> Table::GetColumn(int32_t index) const { return this->columns_.at(index); }
-
-const std::vector<std::shared_ptr<cylon::Column>> &Table::GetColumns() const {
-  return columns_;
-}
-
-Status Shuffle(std::shared_ptr<cylon::Table> &table, const std::vector<int> &hash_columns,
+Status Shuffle(const std::shared_ptr<Table> &table, const std::vector<int> &hash_columns,
                std::shared_ptr<cylon::Table> &output) {
   const auto &ctx_ = table->GetContext();
   std::shared_ptr<arrow::Table> table_out;
-  cylon::Status status = shuffle_table_by_hashing(ctx_, table, hash_columns, table_out);
-
-  if (!status.is_ok()) {
-    LOG(FATAL) << "table shuffle failed!";
-    return status;
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(shuffle_table_by_hashing(ctx_, table, hash_columns, table_out));
   return cylon::Table::FromArrowTable(ctx_, table_out, output);
 }
 
-Status Unique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
+Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols,
               std::shared_ptr<cylon::Table> &out, bool first) {
 #ifdef CYLON_DEBUG
   auto p1 = std::chrono::high_resolution_clock::now();
@@ -943,19 +957,22 @@ Status Unique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
   auto pool = cylon::ToArrowPool(ctx);
   std::shared_ptr<arrow::Table> out_table, in_table = in->get_table();
 
-  if (in_table->num_rows() > 1) {
+  if (!in->Empty()) {
     if (in_table->column(0)->num_chunks() > 1) {
-      const arrow::Result<std::shared_ptr<arrow::Table>> &res = in_table->CombineChunks(pool);
-      RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-      in_table = res.ValueOrDie();
+      CYLON_ASSIGN_OR_RAISE(in_table, in_table->CombineChunks(pool))
     }
 
-    TableRowIndexEqualTo row_comp(in_table, cols);
-    TableRowIndexHash row_hash(in_table, cols);
-    const int64_t num_rows = in_table->num_rows();
-    ska::bytell_hash_set<int64_t, TableRowIndexHash, TableRowIndexEqualTo> rows_set(num_rows, row_hash, row_comp);
+    std::unique_ptr<TableRowIndexEqualTo> row_comp;
+    RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexEqualTo::Make(in_table, cols, &row_comp));
 
-    arrow::BooleanBuilder filter(pool);
+    std::unique_ptr<TableRowIndexHash> row_hash;
+    RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexHash::Make(in_table, cols, &row_hash));
+
+    const int64_t num_rows = in_table->num_rows();
+    ska::bytell_hash_set<int64_t, TableRowIndexHash, TableRowIndexEqualTo>
+        rows_set(num_rows, *row_hash, *row_comp);
+
+    arrow::Int64Builder filter(pool);
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(num_rows));
 #ifdef CYLON_DEBUG
     auto p2 = std::chrono::high_resolution_clock::now();
@@ -963,42 +980,45 @@ Status Unique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
     if (first) {
       for (int64_t row = 0; row < num_rows; ++row) {
         const auto &res = rows_set.insert(row);
-        filter.UnsafeAppend(res.second);
+        if (res.second) {
+          filter.UnsafeAppend(row);
+        }
       }
     } else {
       for (int64_t row = num_rows - 1; row > 0; --row) {
         const auto &res = rows_set.insert(row);
-        filter.UnsafeAppend(res.second);
+        if (res.second) {
+          filter.UnsafeAppend(row);
+        }
       }
     }
 #ifdef CYLON_DEBUG
     auto p3 = std::chrono::high_resolution_clock::now();
-
-    //  rows_set.clear();
+#endif
+    rows_set.clear();
+#ifdef CYLON_DEBUG
     auto p4 = std::chrono::high_resolution_clock::now();
 #endif
-    std::shared_ptr<arrow::BooleanArray> filter_arr;
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Finish(&filter_arr));
+    CYLON_ASSIGN_OR_RAISE(auto take_arr, filter.Finish());
+    CYLON_ASSIGN_OR_RAISE(auto take_res, arrow::compute::Take(in_table, take_arr))
+    out_table = take_res.table();
 
-    const arrow::Result<arrow::Datum> &res = arrow::compute::Filter(in_table, filter_arr);
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-    out_table = res.ValueOrDie().table();
-  } else {
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::Duplicate(in_table, pool, out_table));
-  }
-  out = std::make_shared<Table>(ctx, out_table);
 #ifdef CYLON_DEBUG
-  auto p5 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(p2 - p1).count()
-            << " P2 " << std::chrono::duration_cast<std::chrono::milliseconds>(p3 - p2).count()
-            << " P3 " << std::chrono::duration_cast<std::chrono::milliseconds>(p4 - p3).count()
-            << " P4 " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p4).count()
-            << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p1).count();
+    auto p5 = std::chrono::high_resolution_clock::now();
+    LOG(INFO) << "P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(p2 - p1).count()
+              << " P2 " << std::chrono::duration_cast<std::chrono::milliseconds>(p3 - p2).count()
+              << " P3 " << std::chrono::duration_cast<std::chrono::milliseconds>(p4 - p3).count()
+              << " P4 " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p4).count()
+              << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p1).count()
+              << " tot " << rows_set.load_factor() << " " << rows_set.bucket_count();
 #endif
-  return Status::OK();
+  } else {
+    out_table = in_table;
+  }
+  return Table::FromArrowTable(ctx, std::move(out_table), out);
 }
 
-Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<int> &cols,
+Status DistributedUnique(const std::shared_ptr<Table> &in, const std::vector<int> &cols,
                          std::shared_ptr<cylon::Table> &out) {
   const auto &ctx = in->GetContext();
   if (ctx->GetWorldSize() == 1) {
@@ -1009,6 +1029,51 @@ Status DistributedUnique(std::shared_ptr<cylon::Table> &in, const std::vector<in
   RETURN_CYLON_STATUS_IF_FAILED(cylon::Shuffle(in, cols, shuffle_out));
 
   return Unique(shuffle_out, cols, out);
+}
+
+const std::shared_ptr<BaseArrowIndex> &Table::GetArrowIndex() { return base_arrow_index_; }
+Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylon::Table>& b, bool& result, bool ordered) {
+  if(ordered) {
+    result = a->get_table()->Equals(*b->get_table());
+  } else {
+    result = false;
+    if (a->Columns() != b->Columns()) {
+      return Status::OK();
+    }
+    RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(a->get_table(), b->get_table()));
+
+    int col = a->Columns();
+
+    std::vector<int32_t> indices(col);
+    std::iota(indices.begin(), indices.end(), 0);
+
+    std::shared_ptr<cylon::Table> out_a, out_b;
+    RETURN_CYLON_STATUS_IF_FAILED(Sort(a, indices, out_a, true));
+    RETURN_CYLON_STATUS_IF_FAILED(Sort(b, indices, out_b, true));
+
+    result = out_a->get_table()->Equals(*out_b->get_table());
+  }
+  return Status::OK();
+}
+
+Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, bool& result, bool ordered) {
+  bool subResult;
+  if(!ordered) {
+    int col = a->Columns();
+    std::vector<int32_t> indices(col);
+    std::vector<bool> column_orders(col, true);
+    std::iota(indices.begin(), indices.end(), 0);
+    std::shared_ptr<cylon::Table> out_a, out_b;
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(a, indices, out_a, column_orders));
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(b, indices, out_b, column_orders));
+
+    subResult = out_a->get_table()->Equals(*out_b->get_table());
+  } else {
+    RETURN_CYLON_STATUS_IF_FAILED(Equals(a, b, subResult, true));
+  }
+
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllReduce(&subResult, &result, 1, Bool(), cylon::net::LAND));
+  return Status::OK();
 }
 
 const std::shared_ptr<BaseArrowIndex> &Table::GetArrowIndex() { return base_arrow_index_; }
@@ -1039,10 +1104,6 @@ Status Table::SetArrowIndex(std::shared_ptr<arrow::Array> index, IndexingType in
 //  }
 //
 //  return Status::OK();
-}
-
-Status Table::SetArrowIndex(int col_id, IndexingType indexing_type) {
-  return BuildIndex(this, col_id, indexing_type, &base_arrow_index_);
 }
 
 Status Table::SetArrowIndex(std::shared_ptr<BaseArrowIndex> index) {
@@ -1085,18 +1146,15 @@ Status Table::ResetArrowIndex(bool drop) {
   return Status::OK();
 }
 
-Status Table::AddColumn(int position, std::string column_name, std::shared_ptr<arrow::Array> input_column) {
+Status Table::AddColumn(int position, const std::string &column_name, std::shared_ptr<arrow::Array> input_column) {
   if (input_column->length() != table_->num_rows()) {
-    return {Code::Invalid, "New column length must match the number of rows in the table"};
+    return {cylon::Code::CapacityError,
+            "New column length must match the number of rows in the table"};
   }
-  auto field = std::make_shared<arrow::Field>(std::move(column_name), input_column->type());
+  auto field = arrow::field(column_name, input_column->type());
   auto chunked_array = std::make_shared<arrow::ChunkedArray>(std::move(input_column));
-
-  CYLON_ASSIGN_OR_RAISE(table_, table_->AddColumn(position, std::move(field), std::move(chunked_array)));
-
-  if (position <= base_arrow_index_->col_id()) {
-    base_arrow_index_->col_id_++;
-  }
+  CYLON_ASSIGN_OR_RAISE(table_,
+                        table_->AddColumn(position, std::move(field), std::move(chunked_array)))
   return Status::OK();
 }
 
@@ -1204,7 +1262,7 @@ Status FromParquet(const std::shared_ptr<CylonContext> &ctx, const std::vector<s
           std::thread(ReadParquetThread, std::cref(ctx), std::cref(paths[kI]), tableOuts[kI], read_promise));
     }
     bool all_passed = true;
-    for (auto &future: futures) {
+    for (auto &future : futures) {
       auto status = future.first.get();
       all_passed &= status.is_ok();
       future.second.join();

@@ -16,9 +16,12 @@ from __future__ import annotations
 from typing import Hashable, List, Tuple, Dict, Optional, Sequence, Union, Iterable
 import cudf
 import numpy as np
-from pygcylon.data.shuffle import shuffle as cshuffle
+from pygcylon.net.shuffle import shuffle as cshuffle
+from pygcylon.net.row_counts import row_counts_all_tables
+from pygcylon.net.sorting import distributed_sort
 from pycylon.frame import CylonEnv
 from pygcylon.groupby import GroupByDataFrame
+import pygcylon.comms as comms
 
 
 class DataFrame(object):
@@ -81,6 +84,9 @@ class DataFrame(object):
 
     def __sizeof__(self):
         return self._cdf.__sizeof__()
+
+    def __len__(self):
+        return self._cdf.__len__()
 
     def __del__(self):
         del self._cdf
@@ -961,46 +967,72 @@ class DataFrame(object):
                           sort=False,
                           env=env)
 
-    # todo: need to add shuffling on index columns
-    # todo: add examples to the docs section
-    def shuffle(self, on, ignore_index=False, env: CylonEnv = None) -> DataFrame:
+    def shuffle(self, env: CylonEnv, on=None, ignore_index=False, index_shuffle=False) -> DataFrame:
         """
         Shuffle the distributed DataFrame by partitioning 'on' columns.
-        It is an error to call this method on a DataFrame with a single cudf DataFrame.
+        If this method is called with a single partition DataFrame, a copy of it is returned.
 
         Parameters
         ----------
+        env: CylonEnv object for this DataFrame
         on: shuffling column name or names as a list
         ignore_index: ignore index when shuffling if True
-        env: CylonEnv object for this DataFrame
+        index_shuffle: shuffle on index columns if True (on and ingore_index parameters ignored if True)
 
         Returns
         -------
         A new distributed DataFrame constructed by shuffling the DataFrame
         """
-        if env is None or env.world_size == 1:
-            raise ValueError(f"Not a distributed DataFrame. No shuffling for local DataFrames.")
+        return comms.shuffle(self, env=env, on=on, ignore_index=ignore_index, index_shuffle=index_shuffle)
 
-        # make sure 'on' columns exist among data columns
-        if (
-            not np.iterable(on)
-            or isinstance(on, str)
-            or isinstance(on, tuple)
-            and on in self._cdf._data.names
-        ):
-            on = (on,)
-        diff = set(on) - set(self._cdf._data)
-        if len(diff) != 0:
-            raise ValueError(f"columns {diff} do not exist")
+    def repartition(self,
+                    env: CylonEnv,
+                    ignore_index: bool = False,
+                    ) -> DataFrame:
+        """
+        Repartition the dataframe by keeping the global order of rows.
+        Repartition the rows evenly among the workers
+        For example:
+            if there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
+            After repartitioning evenly, row counts become: [25, 25 ,25 ,25]
 
-        # get indices of 'on' columns
-        index_columns = 0 if ignore_index else self._cdf._num_indices
-        shuffle_column_indices = []
-        for name in on:
-            shuffle_column_indices.append(index_columns + self._cdf._column_names.index(name))
+            if the number of partitions is not a multiple of sum of row counts,
+              first k partitions get one more row:
+              if there are 4 partitions currently with row counts: [10, 20 ,30 ,42]
+              After repartitioning evenly, row counts become: [26, 26 ,25 ,25]
 
-        shuffled_df = _shuffle(self._cdf, hash_columns=shuffle_column_indices, env=env, ignore_index=ignore_index)
-        return DataFrame.from_cudf(shuffled_df)
+        Parameters
+        ----------
+        ignore_index: ignore index when repartitioning if True
+        env: CylonEnv object for this DataFrame
+
+        Returns
+        -------
+        A new distributed DataFrame constructed by repartitioning the DataFrame
+        """
+        return comms.repartition(self, env=env, ignore_index=ignore_index)
+
+    def allgather(self,
+                  env: CylonEnv,
+                  ignore_index: bool = False,
+                  ) -> DataFrame:
+        """
+        AllGather all dataframe partitions to all workers by keeping the global order of rows.
+        For example:
+            if there are 4 partitions currently with row counts: [10, 20 ,30 ,40]
+            After allgathering all partitions to all workers,
+            a new distributed dataframe is constructed with row counts: [100, 100 ,100 ,100]
+
+        Parameters
+        ----------
+        env: CylonEnv object for this DataFrame
+        ignore_index: ignore index when allgathering if True
+
+        Returns
+        -------
+        A new distributed DataFrame constructed by allgathering all distributed dataframes to all workers
+        """
+        return comms.allgather(self, env=env, ignore_index=ignore_index)
 
     def equals(self, other, **kwargs):
         """
@@ -1225,6 +1257,309 @@ class DataFrame(object):
             env=env,
         )
 
+    @staticmethod
+    def _get_column_indices(df: cudf.DataFrame, column_names: List[str], ignore_index=True) -> List[int]:
+        """
+        get column indices from column names
+        """
+        if not isinstance(column_names, list) and not isinstance(column_names[0], str):
+            raise ValueError
+
+        number_of_index_columns = 0 if ignore_index else df._num_indices
+        return [number_of_index_columns + df.columns.to_list().index(cname) for cname in column_names]
+
+    def sort_index(
+            self,
+            axis=0,
+            level=None,
+            ascending=True,
+            inplace=False,
+            kind=None,
+            na_position="last",
+            sort_remaining=True,
+            ignore_index=False,
+            env: CylonEnv = None,
+    ):
+        """Sort distributed DataFrame by labels (along an axis).
+
+        Parameters
+        ----------
+        axis : {0 or ‘index’, 1 or ‘columns’}, default 0
+            The axis along which to sort. The value 0 identifies the rows,
+            and 1 identifies the columns.
+            only 0 is supported.
+        level : int or level name or list of ints or list of level names
+            If not None, sort on values in specified index level(s).
+            This is only useful in the case of MultiIndex.
+        ascending : bool, default True
+            Sort ascending vs. descending.
+        inplace : bool, default False
+            If True, perform operation in-place.
+        kind : sorting method such as `quick sort` and others.
+            Not yet supported.
+        na_position : {‘first’, ‘last’}, default ‘last’
+            Puts NaNs at the beginning if first; last puts NaNs at the end.
+        sort_remaining : bool, default True
+            Not yet supported
+        ignore_index : bool, default False
+            if True, index will be replaced with RangeIndex.
+
+        Returns
+        -------
+        DataFrame or None
+
+        """
+        if env is None or env.world_size == 1:
+            sorted_cdf = self._cdf.sort_index(axis=axis,
+                                              level=level,
+                                              ascending=ascending,
+                                              inplace=inplace,
+                                              kind=kind,
+                                              na_position=na_position,
+                                              sort_remaining=sort_remaining,
+                                              ignore_index=ignore_index)
+            return DataFrame.from_cudf(sorted_cdf)
+
+        if kind is not None:
+            raise NotImplementedError("kind is not yet supported")
+
+        if level is not None:
+            raise NotImplementedError("level is not yet supported")
+
+        if not sort_remaining:
+            raise NotImplementedError(
+                "sort_remaining == False is not yet supported"
+            )
+        if axis not in (0, "index"):
+            raise NotImplementedError("can sort only row wise")
+
+        nulls_after = True if na_position == "last" else False
+        sorted_tbl = distributed_sort(self._cdf,
+                                      context=env.context,
+                                      ascending=ascending,
+                                      nulls_after=nulls_after,
+                                      ignore_index=False,
+                                      by_index=True)
+        sorted_cdf = cudf.DataFrame._from_data(sorted_tbl._data, sorted_tbl._index)
+
+        if ignore_index is True:
+            sorted_cdf = sorted_cdf.reset_index(drop=True)
+
+        return DataFrame.from_cudf(sorted_cdf)
+
+    def sort_values(
+            self,
+            by,
+            axis=0,
+            ascending=True,
+            inplace=False,
+            na_position="last",
+            ignore_index=False,
+            env: CylonEnv = None
+    ) -> DataFrame:
+        """
+        sort dataframe based on given columns
+        Perform distributed sorting on the dataframe.
+        When DataFrame is sorted in ascending order, After the sorting:
+            First worker will have the values: [min to smallest(k)]
+            Second worker will have the values: [smallest(k+1) to smallest(l)]
+            Third worker will have the values: [smallest(l+1) to smallest(m)]
+            ....
+            Last worker will have the values: [largest(p) to largest(n)]
+        where 0 < k < l < m < p < n
+
+        When the DataFrame is sorted in descending order,
+        first worker will have the largest values and the last worker will have the smallest values
+
+        Distributed Sorting Algorithm:
+        1. Each worker sorts its local DataFrame
+        2. Each worker samples the sorted dataframe uniformly and sends the samples to the first worker
+        3. First workers receives all samples, merges sub sorted samples and gets all samples sorted
+        4. First worker determines global split points for the ultimate sorted array based on samples.
+        5. First worker broadcasts the split points to all workers
+        6. All workers sends the corresponding sorted sub arrays to other workers
+        7. Each worker merges sorted sub-ranges from all other workers
+
+        Parameters
+        ----------
+        by : str or list of str
+            Name or list of names to sort by.
+        axis : only column based sorting supported with axis=0
+        ascending : bool or list of bool, default True
+            Sort ascending vs. descending. Specify list for multiple sort
+            orders. If this is a list of bools, must match the length of the
+            by.
+        inplace: no inplace sorting
+        na_position : {‘first’, ‘last’}, default ‘last’
+            'first' puts nulls at the beginning, 'last' puts nulls at the end
+        ignore_index : bool, default False
+            If True, index will not be sorted.
+        env : CylonEnv object for distributed sorting
+
+        """
+        if inplace:
+            raise NotImplementedError("`inplace` not currently implemented.")
+        if axis != 0:
+            raise NotImplementedError("`axis` not currently implemented.")
+        if isinstance(by, list) and isinstance(ascending, list) and len(by) != len(ascending):
+            raise ValueError("size of 'by' and 'ascending' lists must match.")
+        if not (isinstance(ascending, bool) or isinstance(ascending, list)):
+            raise ValueError("ascending must be either bool or list of bool.")
+
+        if env is None or env.world_size == 1:
+            sorted_cdf = self._cdf.sort_values(by=by,
+                                               ascending=ascending,
+                                               inplace=inplace,
+                                               na_position=na_position,
+                                               ignore_index=ignore_index)
+            return DataFrame.from_cudf(sorted_cdf)
+
+        # make sure by is a list of string
+        if isinstance(by, str):
+            by = [by]
+        if not isinstance(by, list):
+            raise ValueError("by has to be either str or list[str]")
+
+        nulls_after = True if na_position == "last" else False
+        sorted_tbl = distributed_sort(self._cdf,
+                                      context=env.context,
+                                      sort_columns=by,
+                                      ascending=ascending,
+                                      nulls_after=nulls_after,
+                                      ignore_index=ignore_index,
+                                      by_index=False)
+        sorted_cdf = cudf.DataFrame._from_data(sorted_tbl._data, sorted_tbl._index)
+        return DataFrame.from_cudf(sorted_cdf)
+
+    def row_counts_for_all(self, env: CylonEnv = None) -> List[int]:
+        """
+        Get the number of rows in all DataFrame partitions
+        In the returned list,
+            first element shows the number_of_rows in the first worker partition
+            second element shows the number_of_rows in the second worker partition
+            third element shows the number_of_rows in the third worker partition
+            ....
+            last element shows the number_of_rows in the last worker partition
+        """
+
+        if env is None or env.world_size == 1:
+            return [len(self._cdf._index)]
+
+        num_rows = len(self._cdf)
+        return row_counts_all_tables(num_rows=num_rows, context=env.context)
+
+    @staticmethod
+    def _calculate_row_counts_head_tail(n: int, head: bool, all_row_counts: List[int]) -> List[int]:
+        """
+        calculate the distribution of rows to workers in head/tail DataFrame
+        """
+
+        nworkers = len(all_row_counts)
+        indices = [i for i in range(nworkers)] if head else [i for i in reversed(range(nworkers))]
+
+        row_counts = [0] * nworkers
+        total = 0
+        for i in indices:
+            if total + all_row_counts[i] < n:
+                row_counts[i] = all_row_counts[i]
+                total += all_row_counts[i]
+            elif total + all_row_counts[i] >= n:
+                row_counts[i] = n - total
+                break
+
+        return row_counts
+
+    def head(self, n, env: CylonEnv = None) -> DataFrame:
+        """
+        Return a new DataFrame with top n rows in it.
+        If the first worker has more than n rows,
+            all rows will be returned from the first worker.
+            Top n rows of the first worker will be returned.
+        If the first worker has less than n rows, then:
+            rows from the second worker will be returned.
+        If the second worker also does not have enough rows,
+            rows from the third worker will be returned.
+        etc.
+
+        The resulting DataFrame object may have rows in the first worker only,
+        or it may have rows in other workers as well.
+        This function does not bring all rows back to the first worker.
+        Rows will be residing in the worker where they are copied from.
+        For example:
+            If a DataFrame has 4 partitions with following row counts: [50, 60, 20, 30]
+            DataFrame returned by head(20) will have rows: [20, 0, 0, 00]
+            DataFrame returned by head(60) will have rows: [50, 10, 0, 0]
+            DataFrame returned by head(120) will have rows: [50, 60, 10, 0]
+            DataFrame returned by head(1000) will have rows: [50, 60, 20, 30]
+
+        If the user wants to collect all rows to a worker,
+        a separate function should be executed.
+
+        Parameters
+        ----------
+        n: the number of rows to return
+        env: Cylon environment object. Required for distributed head operation.
+
+        Returns
+        -------
+        A new DataFrame object constructed by head N rows.
+        """
+
+        if env is None or env.world_size == 1:
+            head_n_cdf = self._cdf.head(n)
+            return DataFrame.from_cudf(head_n_cdf)
+
+        row_counts = self.row_counts_for_all(env=env)
+        head_row_counts = DataFrame._calculate_row_counts_head_tail(n=n, head=True, all_row_counts=row_counts)
+
+        head_n_cdf = self._cdf.head(head_row_counts[env.rank])
+        return DataFrame.from_cudf(head_n_cdf)
+
+    def tail(self, n, env: CylonEnv = None) -> DataFrame:
+        """
+        Return a new DataFrame with tail n rows in it.
+        If the last worker has more than n rows,
+            all rows will be returned from the last worker.
+            Tail n rows of the last worker will be returned.
+        If the last worker has less than n rows, then:
+            rows from the (last-1) worker will be returned.
+        If the (last-1) worker also does not have enough rows,
+            rows from the (last-2) worker will be returned.
+        etc.
+
+        The resulting DataFrame object may have rows in the last worker only,
+        or it may have rows in other workers as well.
+        This function leaves the rows where they have been residing.
+        For example:
+            If a DataFrame has 4 partitions with following row counts: [50, 60, 20, 30]
+            DataFrame returned by tail(20) will have rows: [0, 0, 0, 20]
+            DataFrame returned by tail(40) will have rows: [0, 0, 10, 30]
+            DataFrame returned by tail(100) will have rows: [0, 50, 20, 30]
+            DataFrame returned by tail(1000) will have rows: [50, 60, 20, 30]
+
+        If the user wants to collect all rows to a worker,
+        a separate function should be executed.
+
+        Parameters
+        ----------
+        n: the number of rows to return
+        env: Cylon environment object. Required for distributed head operation.
+
+        Returns
+        -------
+        A new DataFrame object constructed by head N rows.
+        """
+
+        if env is None or env.world_size == 1:
+            tail_n_cdf = self._cdf.tail(n)
+            return DataFrame.from_cudf(tail_n_cdf)
+
+        row_counts = self.row_counts_for_all(env=env)
+        tail_row_counts = DataFrame._calculate_row_counts_head_tail(n=n, head=False, all_row_counts=row_counts)
+
+        tail_n_cdf = self._cdf.head(tail_row_counts[env.rank])
+        return DataFrame.from_cudf(tail_n_cdf)
+
 
 def concat(
         dfs,
@@ -1407,4 +1742,4 @@ def _shuffle(df: cudf.DataFrame, hash_columns, env: CylonEnv = None, ignore_inde
         raise ValueError(f"Not a distributed DataFrame. No shuffling for local DataFrames.")
 
     tbl = cshuffle(df, hash_columns=hash_columns, ignore_index=ignore_index, context=env.context)
-    return cudf.DataFrame._from_table(tbl)
+    return cudf.DataFrame._from_data(tbl._data, tbl._index)

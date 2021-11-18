@@ -57,6 +57,7 @@ add_library(cylon SHARED
         arrow/arrow_partition_kernels.hpp
         arrow/arrow_task_all_to_all.cpp
         arrow/arrow_task_all_to_all.h
+        arrow/arrow_type_traits.hpp
         arrow/arrow_types.cpp
         arrow/arrow_types.hpp
         column.cpp
@@ -109,8 +110,11 @@ add_library(cylon SHARED
         net/mpi/mpi_communicator.hpp
         net/mpi/mpi_operations.cpp
         net/mpi/mpi_operations.hpp
+        net/mpi/mpi_type_traits.hpp
         net/ops/all_to_all.cpp
         net/ops/all_to_all.hpp
+        net/ops/gather.cpp
+        net/ops/bcast.cpp
         net/TxRequest.cpp
         net/TxRequest.hpp
         ops.cpp
@@ -155,14 +159,18 @@ add_library(cylon SHARED
         table_api.cpp
         table_api.hpp
         table_api_extended.hpp
+        repartition.hpp
         thridparty/flat_hash_map/bytell_hash_map.hpp
         thridparty/flat_hash_map/flat_hash_map.hpp
         thridparty/flat_hash_map/unordered_map.hpp
+        util/arrow_rand.hpp
         util/arrow_utils.cpp
         util/arrow_utils.hpp
         util/builtins.cpp
         util/builtins.hpp
         util/copy_arrray.cpp
+        util/flatten_array.cpp
+        util/flatten_array.hpp
         util/logging.cpp
         util/logging.hpp
         util/macros.hpp

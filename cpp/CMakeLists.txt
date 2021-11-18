@@ -32,7 +32,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 # cmake modules directories
-set(CYLON_ARROW_VERSION 4.0.1)
+set(CYLON_ARROW_VERSION 5.0.0)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/" ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${CYLON_SOURCE_DIR}/CMake)
 
@@ -294,7 +294,6 @@ endif (CYLON_PARQUET)
 
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
-add_subdirectory(src/tutorial)
 
 # installing lib files if built locally
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")

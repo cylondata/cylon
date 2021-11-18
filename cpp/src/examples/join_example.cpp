@@ -24,7 +24,7 @@
 
 
 int main(int argc, char *argv[]) {
-  if (argc < 6) {
+  if (argc < 5) {
     LOG(ERROR) << "./join_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
                << "./join_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
                << "./join_example f [n | o] csv_file1 csv_file2" << std::endl

@@ -90,7 +90,27 @@ endfunction(cylon_run_test)
 cylon_add_test(create_cudf_table_test)
 cylon_run_test(create_cudf_table_test 4)
 
-# create table test
+# shuffle table test
 cylon_add_test(shuffle_gcylon_table_test)
 cylon_run_test(shuffle_gcylon_table_test 4)
+
+# gather table test
+cylon_add_test(gather_gcylon_table_test)
+cylon_run_test(gather_gcylon_table_test 4)
+
+# broadcast table test
+cylon_add_test(bcast_gcylon_table_test)
+cylon_run_test(bcast_gcylon_table_test 4)
+
+# distributed sorting tables test
+cylon_add_test(sort_gcylon_table_test)
+cylon_run_test(sort_gcylon_table_test 4)
+
+# repartitioning distributed tables test
+cylon_add_test(repartition_gcylon_table_test)
+cylon_run_test(repartition_gcylon_table_test 4)
+
+# Allgather distributed tables test
+cylon_add_test(allgather_gcylon_table_test)
+cylon_run_test(allgather_gcylon_table_test 4)
 

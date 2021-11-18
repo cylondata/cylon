@@ -20,21 +20,22 @@
 #include <cylon/table.hpp>
 #include <cylon/compute/aggregates.hpp>
 
-cylon::Status CreateTable(std::shared_ptr<cylon::CylonContext> &ctx, int rows,
+cylon::Status CreateTable(const std::shared_ptr<cylon::CylonContext> &ctx, int rows,
                           std::shared_ptr<cylon::Table> &output) {
-  std::shared_ptr<std::vector<int32_t>> col0 = std::make_shared<std::vector<int32_t >>();
-  std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t >>();
+  std::vector<int32_t> col0;
+  std::vector<double_t> col1;
 
   int rank = ctx->GetRank() + 1;
   for (int i = 0; i < rows; i++) {
-    col0->push_back((int32_t) i * rank);
-    col1->push_back((double_t) i * rank + 10.0);
+    col0.push_back((int32_t) i * rank);
+    col1.push_back((double_t) i * rank + 10.0);
   }
 
-  auto c0 = cylon::VectorColumn<int32_t>::Make("col0", cylon::Int32(), col0);
-  auto c1 = cylon::VectorColumn<double_t>::Make("col1", cylon::Double(), col1);
+  std::shared_ptr<cylon::Column> c0, c1;
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::Column::FromVector(ctx, "col0", cylon::Int32(), col0, c0));
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::Column::FromVector(ctx, "col1", cylon::Double(), col1, c1));
 
-  return cylon::Table::FromColumns(ctx, {c0, c1}, output);
+  return cylon::Table::FromColumns(ctx, {std::move(c0), std::move(c1)}, output);
 }
 
 int main() {
@@ -103,7 +104,7 @@ int main() {
 
   if ((status = cylon::compute::Sum(table, agg_index, output)).is_ok()) {
     output->Print();
-    auto array = output->GetColumn(0)->GetColumnData()->chunk(0);
+    auto array = output->get_table()->column(0)->chunk(0);
     auto val = std::static_pointer_cast<arrow::NumericArray<arrow::DoubleType>>(array)->Value(0);
     std::cout << "tsum:type " << array->type()->ToString() << ", value = " << val << " " << status.get_code() << std::endl;
 

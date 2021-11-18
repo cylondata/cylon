@@ -15,185 +15,72 @@
 #include <glog/logging.h>
 #include <chrono>
 
-#include <cylon/net/mpi/mpi_communicator.hpp>
-#include <cylon/ctx/cylon_context.hpp>
 #include <cylon/table.hpp>
-#include <cylon/ctx/arrow_memory_pool_utils.hpp>
+#include "example_utils.hpp"
 
-int sequential(std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::Table> &out, const std::vector<int> &cols);
-int distributed(std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::Table> &out, const std::vector<int> &cols);
-int dummy_test();
-/**
- * This example reads two csv files and does a union on them.
- * $ ./unique_example data.csv
- *
- * data.csv
- *  a,b,c,d
- *  1,2,3,2
-    7,8,9,3
-    10,11,12,4
-    15,20,21,5
-    10,11,24,6
-    27,23,24,7
-    1,2,13,8
-    4,5,21,9
-    39,23,24,10
-    10,11,13,11
-    123,11,12,12
-    25,13,12,13
-    30,21,22,14
-    35,1,2,15
- */
-
-int do_unique(int argc, char *argv[]);
+#define CYLON_LOG_HELP() \
+  do{                    \
+    LOG(ERROR) << "input arg error " << std::endl \
+               << "./union_perf m num_tuples_per_worker 0.0-1.0 null_probability" << std::endl \
+               << "./union_perf f csv_file1" << std::endl; \
+    return 1;                                                  \
+  } while(0)
 
 int main(int argc, char *argv[]) {
-  do_unique(argc, argv);
-  std::cout << "========================" << std::endl;
-  dummy_test();
-}
+  if (argc != 3 && argc != 5) {
+    CYLON_LOG_HELP();
+  }
 
-int sequential(std::shared_ptr<cylon::Table> &table, std::shared_ptr<cylon::Table> &out, const std::vector<int> &cols) {
-  // apply unique operation
-  const auto& ctx = table->GetContext();
-  auto status = cylon::Unique(table, cols, out, true);
+  auto start_start = std::chrono::steady_clock::now();
+  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+
+  std::shared_ptr<cylon::Table> table, output;
+  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
+
+  std::string mem = std::string(argv[1]);
+  if (mem == "m" && argc == 5) {
+    LOG(INFO) << "using in-mem tables";
+    int64_t count = std::stoll(argv[2]);
+    double dup = std::stod(argv[3]);
+    double null_prob = std::stod(argv[4]);
+    if (cylon::examples::create_in_memory_tables(count, dup, ctx, table, null_prob)) {
+      LOG(ERROR) << "table creation failed!";
+      return 1;
+    }
+  } else if (mem == "f" && argc == 3) {
+    LOG(INFO) << "using files";
+    if (!cylon::FromCSV(ctx, std::string(argv[2]) + std::to_string(ctx->GetRank()) + ".csv", table)
+        .is_ok()) {
+      LOG(ERROR) << "file reading failed!";
+      return 1;
+    }
+  } else {
+    CYLON_LOG_HELP();
+  }
+
+  ctx->Barrier();
+  auto read_end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Input tables created in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                read_end_time - start_start).count() << "[ms]";
+
+  std::vector<int> cols(table->Columns());
+  std::iota(cols.begin(), cols.end(), 0);
+  auto status = cylon::DistributedUnique(table, cols, output);
+
   if (!status.is_ok()) {
     LOG(INFO) << "Unique failed " << status.get_msg();
     ctx->Finalize();
     return 1;
   }
-  return 0;
-}
-
-int distributed(std::shared_ptr<cylon::Table> &table,
-                std::shared_ptr<cylon::Table> &out,
-                const std::vector<int> &cols) {
-  const auto& ctx = table->GetContext();
-  auto status = cylon::DistributedUnique(table, cols, out);
-  if (!status.is_ok()) {
-    LOG(INFO) << "Distributed Unique failed " << status.get_msg();
-    ctx->Finalize();
-    return 1;
-  }
-  auto write_opts = cylon::io::config::CSVWriteOptions().WithDelimiter(',');
-  cylon::WriteCSV(out, "/tmp/dist_unique_" + std::to_string(ctx->GetRank()), write_opts);
-  return 0;
-}
-
-int dummy_test() {
-  std::cout << "Dummy Test" << std::endl;
-  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
-
-  cylon::Status status;
-
-  std::shared_ptr<cylon::Table> input1, output, sort_table;
-  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-
-  // read first table
-  std::string test_file = "/tmp/duplicate_data_0.csv";
-  std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
-  status = cylon::FromCSV(ctx, test_file, input1, read_options);
-
-  if (!status.is_ok()) {
-    LOG(ERROR) << "Table Creation Failed";
-  }
-
-  std::cout << "Input Table" << std::endl;
-  input1->Print();
-
-  std::vector<int> cols = {0};
-  cylon::Unique(input1, cols, output, true);
-
-  cylon::Sort(output, 3, sort_table);
-
-  std::cout << "Output Table" << std::endl;
-  sort_table->Print();
-
-  LOG(INFO) << "First table had : " << input1->Rows()
-            << ", Unique has : "
-            << sort_table->Rows() << " rows";
-
-  std::shared_ptr<arrow::Table> artb;
-  sort_table->ToArrowTable(artb);
-
-  std::vector<int32_t> outval3 = {1, 2, 3, 4, 5, 7, 10, 12, 13, 14, 15};
-  int count = 0;
-
-  const std::shared_ptr<arrow::Int64Array>
-      &carr = std::static_pointer_cast<arrow::Int64Array>(artb->column(3)->chunk(0));
-  for (int i = 0; i < carr->length(); i++) {
-    std::cout << carr->Value(i) << std::endl;
-    if (carr->Value(i) == outval3.at(i)) {
-      count++;
-    }
-  }
-
-  return 0;
-}
-
-int do_unique(int argc, char *argv[]) {
-  if (argc < 2) {
-    LOG(ERROR) << "There should be 2 args. count, duplication factor";
-    return 1;
-  }
-
-  auto start_time = std::chrono::steady_clock::now();
-  auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
-
-  std::shared_ptr<cylon::Table> first_table, unique_table, sorted_table;
-  auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
-
-  // read first table
-  std::cout << "Reading File [" << ctx->GetRank() << "] : " << argv[1] << std::endl;
-  auto status = cylon::FromCSV(ctx, argv[1], first_table, read_options);
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table reading failed " << argv[1];
-    ctx->Finalize();
-    return 1;
-  }
-
-  auto read_end_time = std::chrono::steady_clock::now();
-  LOG(INFO) << "Read all in " << std::chrono::duration_cast<std::chrono::milliseconds>(
-      read_end_time - start_time).count() << "[ms]";
-
-  auto union_start_time = std::chrono::steady_clock::now();
-  std::vector<int> cols = {0};
-
-  if (ctx->GetWorldSize() == 1) {
-    sequential(first_table, unique_table, cols);
-  } else {
-    distributed(first_table, unique_table, cols);
-  }
-
-  cylon::Sort(unique_table, 3, sorted_table);
-
-  read_end_time = std::chrono::steady_clock::now();
-
-  LOG(INFO) << "First table had : " << first_table->Rows()
-            << ", Unique has : "
-            << sorted_table->Rows() << " rows";
-  LOG(INFO) << "Unique done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                read_end_time - union_start_time).count()
-            << "[ms]";
 
   auto end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Table had : " << table->Rows() << ", output has : " << output->Rows();
+  LOG(INFO) << "Completed in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - read_end_time)
+                .count() << "[ms]";
 
-  LOG(INFO) << "Operation took : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                end_time - start_time).count() << "[ms]";
-
-  std::cout << " Original Data" << std::endl;
-
-  first_table->Print();
-
-  std::cout << " Unique Data" << std::endl;
-
-  sorted_table->Print();
-
-  //ctx->Finalize();
-
+  ctx->Finalize();
   return 0;
 }

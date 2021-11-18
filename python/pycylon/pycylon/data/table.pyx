@@ -169,12 +169,6 @@ cdef class Table:
         else:
             raise Exception(f"Table couldn't be sorted: {status.get_msg().decode()}")
 
-    def clear(self):
-        """
-        Clear PyCylon table
-        """
-        self.table_shd_ptr.get().Clear()
-
     def retain_memory(self, retain):
         """
         Retain  memory for PyCylon table
@@ -765,6 +759,82 @@ cdef class Table:
                 return cylon_table
         else:
             raise Exception(f"Unique operation failed {status.get_msg().decode()}")
+
+    def equals(self, table: Table, ordered=True) -> bool:
+        '''
+        Determine whether two tables are equal.
+        Args:
+            table: the other table
+            ordered: whether we have to maintain the original order when 
+            comparing two tables
+
+        Returns: boolean
+
+        Examples
+        ----------
+        >>> tb1
+            1,2
+            1,2
+            3,4
+            5,6
+
+        >>> tb2
+            1,2
+            1,2
+            5,6
+            3,4
+
+        >>> tb1.equals(tb2)
+            False
+        
+        >>> tb1.equals(tb2, false)
+            True
+        '''
+        cdef CStatus status
+        cdef bool output
+        status = Equals(self.table_shd_ptr, table.table_shd_ptr, output, ordered)
+        if status.is_ok():
+            return output
+        else:
+            raise Exception(f"Equal operation failed {status.get_msg().decode()}")
+
+    def distributed_equals(self, table: Table, ordered=True) -> bool:
+        '''
+        Determine whether two tables are equal.
+        Args:
+            table: the other table
+            ordered: whether we have to maintain the original order when 
+            comparing two tables
+
+        Returns: boolean
+
+        Examples
+        ----------
+        >>> tb1
+            1,2
+            1,2
+            3,4
+            5,6
+
+        >>> tb2
+            1,2
+            1,2
+            5,6
+            3,4
+
+        >>> tb1.equals(tb2)
+            False
+        
+        >>> tb1.equals(tb2, false)
+            True
+        '''
+        cdef CStatus status
+        cdef bool output
+        status = DistributedEquals(self.table_shd_ptr, table.table_shd_ptr, output, ordered)
+        if status.is_ok():
+            return output
+        else:
+            raise Exception(f"Equal operation failed {status.get_msg().decode()}")
 
     @staticmethod
     def from_arrow(context, pyarrow_table) -> Table:

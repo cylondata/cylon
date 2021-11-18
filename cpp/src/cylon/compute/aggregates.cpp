@@ -13,6 +13,7 @@
  */
 
 #include <glog/logging.h>
+#include <arrow/compute/api.h>
 
 #include <cylon/net/comm_operations.hpp>
 #include <cylon/util/macros.hpp>
@@ -26,40 +27,41 @@ namespace compute {
 cylon::Status Sum(const std::shared_ptr<cylon::Table> &table,
                   int32_t col_idx,
                   std::shared_ptr<Result> &output) {
-  const auto& ctx = table->GetContext();
-  const std::shared_ptr<Column> &col = table->GetColumn(col_idx); // cylon column object
-  const std::shared_ptr<DataType> &data_type = col->GetDataType();
-  const arrow::Datum input(col->GetColumnData()); // input datum
+  const auto &ctx = table->GetContext();
+  const auto &a_table = table->get_table();
+  const auto &a_col = a_table->column(col_idx);
+  const auto &dtype = tarrow::ToCylonType(a_col->type());
 
   // do local operation
   arrow::compute::ExecContext exec_ctx(cylon::ToArrowPool(ctx));
-  const arrow::Result<arrow::Datum> &sum_res = arrow::compute::Sum(input, &exec_ctx);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(sum_res.status());
+  arrow::compute::ScalarAggregateOptions options(true, 0);
+  CYLON_ASSIGN_OR_RAISE(auto sum_res, arrow::compute::Sum(a_col, options, &exec_ctx));
+
+  // arrow sum upcasts sum to Int64, UInt64, Float64. So, change back to original type
+  CYLON_ASSIGN_OR_RAISE(auto cast_res, arrow::compute::Cast(sum_res, a_col->type()));
 
   if (ctx->GetWorldSize() > 1) {
-    return DoAllReduce(ctx, sum_res.ValueOrDie(), output, data_type, cylon::net::ReduceOp::SUM);
+    return DoAllReduce(ctx, cast_res, output, dtype, cylon::net::ReduceOp::SUM);
   } else {
-    output = std::make_shared<Result>(sum_res.ValueOrDie());
+    output = std::make_shared<Result>(std::move(cast_res));
     return Status::OK();
   }
 }
 
 cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output) {
-  const auto& ctx = table->GetContext();
-
-  const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
-  const std::shared_ptr<DataType> &data_type = cylon::Int64();
-  const arrow::Datum input(col->GetColumnData()); // input datum
+  const auto &ctx = table->GetContext();
+  const auto &a_table = table->get_table();
+  const auto &a_col = a_table->column(col_idx);
+  const auto &data_type = cylon::Int64();
 
   arrow::compute::ExecContext exec_ctx(cylon::ToArrowPool(ctx));
-  arrow::compute::CountOptions options(arrow::compute::CountOptions::COUNT_NON_NULL);
-  const arrow::Result<arrow::Datum> &count_res = arrow::compute::Count(input, options, &exec_ctx);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(count_res.status());
+  arrow::compute::ScalarAggregateOptions options(true, 0);
+  CYLON_ASSIGN_OR_RAISE(auto count_res, arrow::compute::Count(a_col, options, &exec_ctx));
 
   if (ctx->GetWorldSize() > 1) {
-    return DoAllReduce(ctx, count_res.ValueOrDie(), output, data_type, cylon::net::ReduceOp::SUM);
+    return DoAllReduce(ctx, count_res, output, data_type, cylon::net::ReduceOp::SUM);
   } else {
-    output = std::make_shared<Result>(count_res.ValueOrDie());
+    output = std::make_shared<Result>(count_res);
     return Status::OK();
   }
 }
@@ -89,12 +91,10 @@ cylon::Status static inline min_max_impl(const std::shared_ptr<CylonContext> &ct
   }
 
   arrow::compute::ExecContext exec_context(cylon::ToArrowPool(ctx));
-  arrow::compute::MinMaxOptions options(arrow::compute::MinMaxOptions::SKIP);
-  const arrow::Result<arrow::Datum> &result = arrow::compute::MinMax(input, options, &exec_context);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+  arrow::compute::ScalarAggregateOptions options(true, 0);
+  CYLON_ASSIGN_OR_RAISE(auto result, arrow::compute::MinMax(input, options, &exec_context));
 
-  const arrow::Datum &local_result = result.ValueOrDie(); // minmax returns a structscalar
-  const auto &struct_scalar = local_result.scalar_as<arrow::StructScalar>();
+  const auto &struct_scalar = result.scalar_as<arrow::StructScalar>();
 
   switch (minMaxOpts) {
     case min:
@@ -111,37 +111,44 @@ cylon::Status static inline min_max_impl(const std::shared_ptr<CylonContext> &ct
                          cylon::net::ReduceOp::MAX);
     case minmax:
       return DoAllReduce<std::vector<cylon::net::ReduceOp>>(ctx,
-                                                            local_result,
+                                                            result,
                                                             output,
                                                             data_type,
                                                             {cylon::net::ReduceOp::MIN,
                                                              cylon::net::ReduceOp::MAX});
   }
-  return Status(); // this would never reach
+  return Status::OK(); // this would never reach
 }
 
 cylon::Status Min(const std::shared_ptr<cylon::Table> &table,
                   int32_t col_idx,
                   std::shared_ptr<Result> &output) {
-  const auto& ctx = table->GetContext();
-  const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
-  return min_max_impl<MinMaxOpts::min>(ctx, col->GetColumnData(), col->GetDataType(), output);
+  const auto &ctx = table->GetContext();
+  const auto &a_table = table->get_table();
+  const auto &a_col = a_table->column(col_idx);
+  const auto &dtype = tarrow::ToCylonType(a_col->type());
+
+  return min_max_impl<MinMaxOpts::min>(ctx, a_col, dtype, output);
 }
 
 cylon::Status Max(const std::shared_ptr<cylon::Table> &table,
                   int32_t col_idx,
                   std::shared_ptr<Result> &output) {
-  const auto& ctx = table->GetContext();
-  const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
-  return min_max_impl<MinMaxOpts::max>(ctx, col->GetColumnData(), col->GetDataType(), output);
+  const auto &ctx = table->GetContext();
+  const auto &a_table = table->get_table();
+  const auto &a_col = a_table->column(col_idx);
+  const auto &dtype = tarrow::ToCylonType(a_col->type());
+  return min_max_impl<MinMaxOpts::max>(ctx, a_col, dtype, output);
 }
 
 cylon::Status MinMax(const std::shared_ptr<cylon::Table> &table,
                      int32_t col_idx,
                      std::shared_ptr<Result> &output) {
-  const auto& ctx = table->GetContext();
-  const std::shared_ptr<Column> &col = table->GetColumn(col_idx);
-  return min_max_impl<MinMaxOpts::minmax>(ctx, col->GetColumnData(), col->GetDataType(), output);
+  const auto &ctx = table->GetContext();
+  const auto &a_table = table->get_table();
+  const auto &a_col = a_table->column(col_idx);
+  const auto &dtype = tarrow::ToCylonType(a_col->type());
+  return min_max_impl<MinMaxOpts::minmax>(ctx, a_col, dtype, output);
 }
 
 cylon::Status MinMax(const std::shared_ptr<CylonContext> &ctx,

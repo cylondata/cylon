@@ -22,7 +22,8 @@
     auto _res = (expr);                                             \
     ::arrow::Status _st = ::arrow::internal::GenericToStatus(_res); \
     if (ARROW_PREDICT_FALSE(!_st.ok())) {                           \
-      _st.Abort();                                                  \
+      INFO("status: " + _st.ToString());                            \
+      REQUIRE(false);                                               \
     }                                                               \
   } while (false);
 

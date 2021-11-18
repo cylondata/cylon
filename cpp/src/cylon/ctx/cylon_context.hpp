@@ -100,13 +100,13 @@ class CylonContext {
    * Returns the local rank
    * @return rank <int>
    */
-  int GetRank();
+  int GetRank() const;
 
   /**
    * Returns the world size
    * @return world size <int>
    */
-  int GetWorldSize();
+  int GetWorldSize() const;
 
   /**
    * Returns the neighbors in the world

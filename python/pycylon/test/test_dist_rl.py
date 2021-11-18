@@ -36,8 +36,8 @@ def test_distributed_ra():
 
     assert size == 4
 
-    table1_path = f'/tmp/user_usage_tm_{rank + 1}.csv'
-    table2_path = f'/tmp/user_usage_tm_{rank + 1}.csv'
+    table1_path = f'data/input/user_usage_tm_{rank + 1}.csv'
+    table2_path = f'data/input/user_usage_tm_{rank + 1}.csv'
 
     assert os.path.exists(table1_path)
     assert os.path.exists(table2_path)
@@ -112,7 +112,7 @@ def test_distributed_sort():
 
     assert size == 4
 
-    table1_path = f'/tmp/user_usage_tm_{rank + 1}.csv'
+    table1_path = f'data/input/user_usage_tm_{rank + 1}.csv'
 
     assert os.path.exists(table1_path)
 

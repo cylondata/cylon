@@ -27,16 +27,73 @@ namespace gcylon {
 /**
  * Shuffles a cudf::table with table_view
  * this is to be called from cython code and the other Shuffle with GTable
- * @param input_table
+ * @param input_tv
  * @param columns_to_hash
  * @param ctx
  * @param table_out
  * @return
  */
-cylon::Status Shuffle(const cudf::table_view &input_table,
+cylon::Status Shuffle(const cudf::table_view &input_tv,
                       const std::vector<int> &columns_to_hash,
-                      std::shared_ptr<cylon::CylonContext> ctx,
+                      const std::shared_ptr<cylon::CylonContext> &ctx,
                       std::unique_ptr<cudf::table> &table_out);
+
+/**
+ * Repartition the table by either evenly distributing rows among all workers
+ *   or according to the partition map given by rows_per_worker
+ * @param input_tv
+ * @param ctx
+ * @param table_out
+ * @param rows_per_worker
+ * @return
+ */
+cylon::Status Repartition(const cudf::table_view &input_tv,
+                          const std::shared_ptr<cylon::CylonContext> &ctx,
+                          std::unique_ptr<cudf::table> &table_out,
+                          const std::vector<int32_t> &rows_per_worker = std::vector<int32_t>());
+
+/**
+ * Gather tables from all workers to a single worker
+ * Concatenate the tables in the rank order of workers
+ * by keeping global order of rows
+ * @param input_tv
+ * @param ctx
+ * @param table_out
+ * @param gather_root
+ * @return
+ */
+cylon::Status Gather(const cudf::table_view &input_tv,
+                     const std::shared_ptr<cylon::CylonContext> &ctx,
+                     std::unique_ptr<cudf::table> &table_out,
+                     int gather_root = 0);
+
+/**
+ * Broadcast a table to all workers
+ * A new table is created in all workers and returned
+ * @param input_tv
+ * @param root
+ * @param ctx
+ * @param table_out
+ * @return
+ */
+cylon::Status Broadcast(const cudf::table_view &input_tv,
+                        int root,
+                        const std::shared_ptr<cylon::CylonContext> &ctx,
+                        std::unique_ptr<cudf::table> &table_out);
+
+/**
+ * AllGather a distributed table in all workers
+ * Each table in all workers contains the data of all initial tables
+ * The global order of row ranks are preserved
+ * @param input_tv
+ * @param root
+ * @param ctx
+ * @param table_out
+ * @return
+ */
+cylon::Status AllGather(const cudf::table_view &input_tv,
+                        const std::shared_ptr<cylon::CylonContext> &ctx,
+                        std::unique_ptr<cudf::table> &table_out);
 
 /**
  * Similar to local join, but performs the join in a distributed fashion
@@ -50,7 +107,7 @@ cylon::Status Shuffle(const cudf::table_view &input_table,
 cylon::Status DistributedJoin(const cudf::table_view & left_table,
                               const cudf::table_view & right_table,
                               const cylon::join::config::JoinConfig &join_config,
-                              std::shared_ptr<cylon::CylonContext> ctx,
+                              const std::shared_ptr<cylon::CylonContext> &ctx,
                               std::unique_ptr<cudf::table> &table_out);
 
 
@@ -85,6 +142,38 @@ cylon::Status DistributedJoin(std::shared_ptr<GTable> &left,
  * @return
  */
 cylon::Status WriteToCsv(std::shared_ptr<GTable> &table, std::string output_file);
+
+/**
+ * perform distributed sort on provided table
+ * @param tv
+ * @param sort_column_indices sort based on these columns
+ * @param ctx
+ * @param sorted_table resulting table
+ * @param sort_root the worker that will determine the global split points
+ * @param sort_ascending
+ * @param nulls_after
+ * @return
+ */
+cylon::Status DistributedSort(const cudf::table_view &tv,
+                              const std::vector<int32_t> &sort_column_indices,
+                              const std::vector<cudf::order> &column_orders,
+                              const std::shared_ptr<cylon::CylonContext> &ctx,
+                              std::unique_ptr<cudf::table> &sorted_table,
+                              bool nulls_after = true,
+                              const int sort_root = 0);
+
+/**
+ * get table sizes from all workers
+ * each worker size in the table_sizes[rank]
+ * @param num_rows size of the table at the current worker
+ * @param ctx
+ * @param all_num_rows all tables sizes from all workers
+ * @return
+ */
+cylon::Status RowCountsAllTables(int32_t num_rows,
+                                 const std::shared_ptr<cylon::CylonContext> &ctx,
+                                 std::vector<int32_t> &all_num_rows);
+
 
 }// end of namespace gcylon
 

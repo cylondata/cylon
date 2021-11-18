@@ -32,17 +32,20 @@ arrow::Status (*AggregateFptr)(const arrow::Datum &array,
                                arrow::Datum *res);
 
 inline arrow::Status Sum(const arrow::Datum &array, arrow::compute::ExecContext *fn_ctx, arrow::Datum *res) {
-  auto result = arrow::compute::Sum(array, fn_ctx);
-  if (result.ok()) {
-    *res = result.ValueOrDie();
-  }
-  return result.status();
+  ARROW_ASSIGN_OR_RAISE(auto sum_res,
+                        arrow::compute::Sum(array, arrow::compute::ScalarAggregateOptions(true, 0),
+                                            fn_ctx))
+  // sum upcasts the result to Int64, UInt64, Float64, or Decimal128/256. So, downcast the value
+  ARROW_ASSIGN_OR_RAISE(*res, arrow::compute::Cast(sum_res, array.type(),
+                                                   arrow::compute::CastOptions::Safe(), fn_ctx))
+  return arrow::Status::OK();
 }
 
 inline arrow::Status Count(const arrow::Datum &array,
                            arrow::compute::ExecContext *fn_ctx,
                            arrow::Datum *res) {
-  auto result = arrow::compute::Count(array, arrow::compute::CountOptions::Defaults(), fn_ctx);
+  auto result = arrow::compute::Count(array, arrow::compute::ScalarAggregateOptions(true, 0),
+                                      fn_ctx);
 
   if (result.ok()) {
     *res = result.ValueOrDie();
@@ -54,7 +57,8 @@ template<bool minMax>
 inline arrow::Status MinMax(const arrow::Datum &array,
                             arrow::compute::ExecContext *fn_ctx,
                             arrow::Datum *res) {
-  auto result = arrow::compute::MinMax(array, arrow::compute::MinMaxOptions::Defaults(), fn_ctx);
+  auto result = arrow::compute::MinMax(array, arrow::compute::ScalarAggregateOptions(true, 0),
+                                       fn_ctx);
 
   if (result.ok()) {
     arrow::Datum local_result = result.ValueOrDie(); // minmax returns a structscalar{min, max}
@@ -81,9 +85,7 @@ using AggregateArrayFn = std::function<Status(arrow::MemoryPool *pool,
                                               const std::vector<int64_t> &boundaries,
                                               std::shared_ptr<arrow::Array> &output_array)>;
 
-template<typename ARROW_T,
-    typename = typename std::enable_if<
-        arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
+template<typename ARROW_T, typename = arrow::enable_if_has_c_type<ARROW_T>>
 Status AggregateArray(arrow::MemoryPool *pool,
                       const std::shared_ptr<arrow::Array> &array,
                       const compute::AggregationOpId &aggregate_op,
@@ -92,7 +94,7 @@ Status AggregateArray(arrow::MemoryPool *pool,
   using BUILDER_T = typename arrow::TypeTraits<ARROW_T>::BuilderType;
   using SCALAR_T = typename arrow::TypeTraits<ARROW_T>::ScalarType;
 
-  BUILDER_T builder(pool);
+  BUILDER_T builder(array->type(), pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(boundaries.size()));
 
   arrow::compute::ExecContext exec_ctx(pool);
@@ -124,13 +126,16 @@ AggregateArrayFn PickAggregateArrayFptr(const std::shared_ptr<arrow::DataType> &
     case arrow::Type::INT64: return &AggregateArray<arrow::Int64Type>;
     case arrow::Type::FLOAT: return &AggregateArray<arrow::FloatType>;
     case arrow::Type::DOUBLE: return &AggregateArray<arrow::DoubleType>;
+    case arrow::Type::DATE32:return &AggregateArray<arrow::Date32Type>;
+    case arrow::Type::DATE64:return &AggregateArray<arrow::Date64Type>;
+    case arrow::Type::TIMESTAMP:return &AggregateArray<arrow::TimestampType>;
+    case arrow::Type::TIME32:return &AggregateArray<arrow::Time32Type>;
+    case arrow::Type::TIME64:return &AggregateArray<arrow::Time64Type>;
     default: return nullptr;
   }
 }
 
-template<typename ARROW_T,
-    typename = typename std::enable_if<
-        arrow::is_number_type<ARROW_T>::value | arrow::is_boolean_type<ARROW_T>::value>::type>
+template<typename ARROW_T, typename = arrow::enable_if_has_c_type<ARROW_T>>
 Status make_boundaries(arrow::MemoryPool *pool,
                        const std::shared_ptr<arrow::Array> &array,
                        std::vector<int64_t> &group_boundaries,
@@ -143,7 +148,7 @@ Status make_boundaries(arrow::MemoryPool *pool,
   const int64_t len = array->length();
 
   // reserve a builder for the worst case scenario
-  BUILDER_T builder(pool);
+  BUILDER_T builder(array->type(), pool);
 
   if (len == 0) {
     *unique_groups = 0;
@@ -172,7 +177,7 @@ Status make_boundaries(arrow::MemoryPool *pool,
 
   group_boundaries.shrink_to_fit();
   RETURN_CYLON_STATUS_IF_ARROW_FAILED((builder.Finish(&out_array)));
-  *unique_groups = group_boundaries.size() - 1;
+  *unique_groups = (int64_t) group_boundaries.size() - 1;
 
   return Status::OK();
 }
@@ -196,6 +201,11 @@ static inline MakeBoundariesFn pick_make_boundaries_fn(const std::shared_ptr<arr
     case arrow::Type::INT64: return &make_boundaries<arrow::Int64Type>;
     case arrow::Type::FLOAT: return &make_boundaries<arrow::FloatType>;
     case arrow::Type::DOUBLE: return &make_boundaries<arrow::DoubleType>;
+    case arrow::Type::DATE32:return &make_boundaries<arrow::Date32Type>;
+    case arrow::Type::DATE64:return &make_boundaries<arrow::Date64Type>;
+    case arrow::Type::TIMESTAMP:return &make_boundaries<arrow::TimestampType>;
+    case arrow::Type::TIME32:return &make_boundaries<arrow::Time32Type>;
+    case arrow::Type::TIME64:return &make_boundaries<arrow::Time64Type>;
     default:return nullptr;
   }
 }
@@ -211,7 +221,7 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
   const std::shared_ptr<arrow::ChunkedArray> &idx_col = a_table->column(index_col);
 
   if (idx_col->num_chunks() > 1) {
-    return cylon::Status(Code::Invalid, "multiple chunks not supported for pipelined groupby");
+    return {Code::Invalid, "multiple chunks not supported for pipelined groupby"};
   }
 
   std::vector<int64_t> group_boundaries;
@@ -219,6 +229,9 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
   std::shared_ptr<arrow::Array> out_idx_col;
 
   MakeBoundariesFn make_boundaries_fn = pick_make_boundaries_fn(idx_col->type());
+  if (make_boundaries_fn == nullptr) {
+    return {Code::Invalid, "unsupported key type for pipeline groupby"};
+  }
   RETURN_CYLON_STATUS_IF_FAILED(make_boundaries_fn(pool,
                                                    cylon::util::GetChunkOrEmptyArray(idx_col, 0),
                                                    group_boundaries,
@@ -237,6 +250,9 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
   for (auto &&agg_op: aggregations) {
     const std::shared_ptr<arrow::ChunkedArray> &agg_col = a_table->column(agg_op.first);
     AggregateArrayFn aggregate_array_fn = PickAggregateArrayFptr(agg_col->type());
+    if (aggregate_array_fn == nullptr) {
+      return {Code::Invalid, "unsupported value type for pipeline groupby"};
+    }
     std::shared_ptr<arrow::Array> new_arr;
     RETURN_CYLON_STATUS_IF_FAILED(aggregate_array_fn(pool,
                                                      cylon::util::GetChunkOrEmptyArray(agg_col, 0),
@@ -261,7 +277,7 @@ Status PipelineGroupBy(std::shared_ptr<Table> &table,
                               const std::vector<compute::AggregationOpId> &aggregate_ops,
                               std::shared_ptr<Table> &output) {
   if (aggregate_cols.size() != aggregate_ops.size()) {
-    return Status(Code::Invalid, "aggregate_cols size != aggregate_ops size");
+    return {Code::Invalid, "aggregate_cols size != aggregate_ops size"};
   }
 
   std::vector<std::pair<int32_t, compute::AggregationOpId>> aggregations;

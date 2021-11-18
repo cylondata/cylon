@@ -31,7 +31,6 @@ from pyarrow.lib cimport CArray as ArrowCAarray
 from pyarrow.lib cimport CChunkedArray as ArrowCChunkedAarray
 from pyarrow.lib cimport pyarrow_unwrap_array
 from pycylon.data.column cimport CColumn
-from pycylon.data.column cimport CVectorColumn
 from pycylon.api.lib cimport pycylon_unwrap_data_type, pycylon_wrap_data_type
 from pycylon.data.data_type import DataType
 from pyarrow.lib cimport pyarrow_unwrap_array, pyarrow_wrap_array
@@ -60,10 +59,4 @@ cdef class Column:
         cdef shared_ptr[CDataType] cdtype = self.thisPtr.GetDataType()
         return pycylon_wrap_data_type(cdtype)
 
-
-cdef class VectorColumn:
-
-    def __cinit__(self, id, type, data_list):
-        # TODO: Implement if required
-       pass
 

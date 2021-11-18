@@ -31,8 +31,8 @@ def test_distributed_run():
     mpi_config = MPIConfig()
     ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
 
-    table1_path = '/tmp/user_usage_tm_1.csv'
-    table2_path = '/tmp/user_device_tm_1.csv'
+    table1_path = 'data/input/user_usage_tm_1.csv'
+    table2_path = 'data/input/user_device_tm_1.csv'
 
     assert os.path.exists(table1_path)
     assert os.path.exists(table2_path)

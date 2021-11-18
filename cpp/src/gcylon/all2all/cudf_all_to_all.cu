@@ -16,24 +16,24 @@
 
 namespace gcylon {
 
-    __global__ void rebaseOffsets(int32_t * arr, int size, int32_t base) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < size) {
-        arr[i] -= base;
-    }
+__global__ void rebaseOffsets(int32_t *arr, int size, int32_t base) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < size) {
+    arr[i] -= base;
+  }
 }
 
-int ceil(const int& numerator, const int& denominator) {
-   return (numerator + denominator - 1) / denominator;
+int ceil(const int &numerator, const int &denominator) {
+  return (numerator + denominator - 1) / denominator;
 }
 
 //todo: may be optimized better.
 //      each thread can rebase a set of offsets instead of one
-void callRebaseOffsets(int32_t * arr, int size, int32_t base){
-    int threads_per_block = 256;
-    int number_of_blocks = ceil(size, threads_per_block);
-    rebaseOffsets<<<number_of_blocks, threads_per_block>>>(arr, size, base);
-    cudaDeviceSynchronize();
+void callRebaseOffsets(int32_t *arr, int size, int32_t base) {
+  int threads_per_block = 256;
+  int number_of_blocks = ceil(size, threads_per_block);
+  rebaseOffsets<<<number_of_blocks, threads_per_block>>>(arr, size, base);
+  cudaDeviceSynchronize();
 }
 
 }// end of namespace gcylon

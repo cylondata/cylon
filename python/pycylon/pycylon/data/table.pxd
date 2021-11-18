@@ -43,15 +43,13 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         CStatus ToArrowTable(shared_ptr[CArrowTable] & output)
 
-        int Columns()
+        int Columns() const
 
-        int Rows()
+        int Rows() const
 
         void Print()
 
         void Print(int row1, int row2, int col1, int col2)
-
-        void Clear()
 
         const shared_ptr[CCylonContext] & GetContext()
 
@@ -67,7 +65,7 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
         CStatus ResetArrowIndex(bool drop)
 
-        CStatus AddColumn(long position, string column_name, shared_ptr[CArrowArray] & input_column)
+        CStatus AddColumn(int position, string column_name, shared_ptr[CArrowArray] input_column)
 
         CStatus CombineChunks()
 
@@ -121,6 +119,10 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
     CStatus DistributedUnique(shared_ptr[CTable] & input_table, const vector[int] & columns,
                               shared_ptr[CTable]& output)
+
+    CStatus Equals(shared_ptr[CTable] & a, shared_ptr[CTable] & b, bool& result, bool ordered)
+    
+    CStatus DistributedEquals(shared_ptr[CTable] & a, shared_ptr[CTable] & b, bool& result, bool ordered)
 
 cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CSortOptions "cylon::SortOptions":

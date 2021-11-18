@@ -41,7 +41,8 @@ TEST_CASE("testing hash utils", "[utils]") {
   const std::shared_ptr<arrow::Table> &t2 = arrow::Table::Make(schema, {arr2, arr2});
 
   SECTION("testing TwoNumericRowIndexComparator") {
-    const std::shared_ptr<TwoArrayIndexComparator> &comp = CreateTwoArrayIndexComparator(arr1, arr2);
+    std::unique_ptr<DualArrayIndexComparator> comp;
+    CHECK_CYLON_STATUS(CreateDualArrayIndexComparator(arr1, arr2, &comp));
 
     for (size_t i = 0; i < v1.size(); i++) {
       for (size_t j = 0; j < v2.size(); j++) {
@@ -53,35 +54,37 @@ TEST_CASE("testing hash utils", "[utils]") {
   }
 
   SECTION("testing TwoTableRowIndexEqualTo") {
-    TwoTableRowIndexEqualTo equal_to(t1, t2);
+    std::unique_ptr<DualTableRowIndexEqualTo> equal_to;
+    CHECK_CYLON_STATUS(DualTableRowIndexEqualTo::Make(t1, t2, &equal_to));
 
     // t1 and t2
-    REQUIRE((equal_to(0, util::SetBit(2)) == true));
-    REQUIRE((equal_to(0, util::SetBit(1)) == false));
+    REQUIRE((equal_to->operator()(0, util::SetBit(2)) == true));
+    REQUIRE((equal_to->operator()(0, util::SetBit(1)) == false));
 
     // within t1
-    REQUIRE((equal_to(4, 5) == true));
-    REQUIRE((equal_to(3, 4) == false));
+    REQUIRE((equal_to->operator()(4, 5) == true));
+    REQUIRE((equal_to->operator()(3, 4) == false));
 
     // within t2
-    REQUIRE((equal_to(util::SetBit(0), util::SetBit(2)) == true));
-    REQUIRE((equal_to(util::SetBit(0), util::SetBit(1)) == false));
+    REQUIRE((equal_to->operator()(util::SetBit(0), util::SetBit(2)) == true));
+    REQUIRE((equal_to->operator()(util::SetBit(0), util::SetBit(1)) == false));
   }
 
   SECTION("testing TwoTableRowIndexHash") {
-    TwoTableRowIndexHash hash(t1, t2);
+    std::unique_ptr<DualTableRowIndexHash> hash;
+    CHECK_CYLON_STATUS(DualTableRowIndexHash::Make(t1, t2, &hash));
 
     // t1 and t2
-    REQUIRE((hash(0) == hash(util::SetBit(0))));
-    REQUIRE((hash(0) != hash(util::SetBit(1))));
+    REQUIRE((hash->operator()(0) == hash->operator()(util::SetBit(0))));
+    REQUIRE((hash->operator()(0) != hash->operator()(util::SetBit(1))));
 
     // within t1
-    REQUIRE((hash(4) == hash(5)));
-    REQUIRE((hash(3) != hash(4)));
+    REQUIRE((hash->operator()(4) == hash->operator()(5)));
+    REQUIRE((hash->operator()(3) != hash->operator()(4)));
 
     // within t2
-    REQUIRE((hash(util::SetBit(0)) == hash(util::SetBit(2))));
-    REQUIRE((hash(util::SetBit(0)) != hash(util::SetBit(1))));
+    REQUIRE((hash->operator()(util::SetBit(0)) == hash->operator()(util::SetBit(2))));
+    REQUIRE((hash->operator()(util::SetBit(0)) != hash->operator()(util::SetBit(1))));
   }
 
 }

@@ -79,6 +79,7 @@ java/src/main/native/include
 
 # Python env
 env/
+ENV/
 
 # Pycylon
 python/pycylon/pycylon/**/*.cpp

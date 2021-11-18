@@ -30,6 +30,7 @@ enum Code {
   SerializationError = 11,
   GpuMemoryError = 12,
   RError = 13,
+  ValueError = 14,
   // Gandiva range of errors
   CodeGenError = 40,
   ExpressionValidationError = 41,

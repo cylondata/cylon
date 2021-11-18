@@ -23,7 +23,7 @@ import pyarrow
 
 
 def test_data_loading():
-    base_path = '/tmp'
+    base_path = 'data/input'
 
     train_file_name: str = "user_usage_tm_1.csv"
     test_file_name: str = "user_device_tm_1.csv"

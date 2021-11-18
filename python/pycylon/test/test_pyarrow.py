@@ -31,7 +31,7 @@ def test_arrow_cylon():
 
     csv_read_options = CSVReadOptions().use_threads(True).block_size(1 << 30)
 
-    table_path = '/tmp/user_device_tm_1.csv'
+    table_path = 'data/input/user_device_tm_1.csv'
 
     assert os.path.exists(table_path)
 

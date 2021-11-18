@@ -28,12 +28,9 @@
 namespace cylon {
 namespace test {
 
-typedef Status(*fun_ptr)(std::shared_ptr<Table> &,
-                         std::shared_ptr<Table> &,
-                         std::shared_ptr<Table> &);
-
-void TestSetOperation(fun_ptr fn,
-                      std::shared_ptr<CylonContext> &ctx,
+template<typename Func>
+void TestSetOperation(Func fn,
+                      const std::shared_ptr<CylonContext> &ctx,
                       const std::string &path1,
                       const std::string &path2,
                       const std::string &out_path) {
@@ -66,10 +63,10 @@ void TestSetOperation(fun_ptr fn,
 }
 
 void TestJoinOperation(const join::config::JoinConfig &join_config,
-                      const std::shared_ptr<CylonContext> &ctx,
-                      const std::string &path1,
-                      const std::string &path2,
-                      const std::string &out_path) {
+                       const std::shared_ptr<CylonContext> &ctx,
+                       const std::string &path1,
+                       const std::string &path2,
+                       const std::string &out_path) {
   std::shared_ptr<Table> table1, table2, expected, joined, verification;
 
   auto read_options = io::config::CSVReadOptions().UseThreads(false);
@@ -95,26 +92,27 @@ void TestJoinOperation(const join::config::JoinConfig &join_config,
 }
 
 Status CreateTable(const std::shared_ptr<CylonContext> &ctx, int rows, std::shared_ptr<Table> &output) {
-  std::shared_ptr<std::vector<int32_t>> col0 = std::make_shared<std::vector<int32_t >>();
-  std::shared_ptr<std::vector<double_t>> col1 = std::make_shared<std::vector<double_t >>();
+  std::vector<int32_t> col0;
+  std::vector<double_t> col1;
 
   for (int i = 0; i < rows; i++) {
-    col0->push_back(i);
-    col1->push_back((double_t) i + 10.0);
+    col0.push_back(i);
+    col1.push_back((double_t) i + 10.0);
   }
 
-  auto c0 = VectorColumn<int32_t>::Make("col0", Int32(), col0);
-  auto c1 = VectorColumn<double>::Make("col1", Double(), col1);
+  std::shared_ptr<Column> c0, c1;
+  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(ctx, "col0", Int32(), col0, c0));
+  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(ctx, "col1", Double(), col1, c1));
 
-  return Table::FromColumns(ctx, {c0, c1}, output);
+  return Table::FromColumns(ctx, {std::move(c0), std::move(c1)}, output);
 }
 
 #ifdef BUILD_CYLON_PARQUET
 void TestParquetJoinOperation(const join::config::JoinConfig &join_config,
-                             std::shared_ptr<CylonContext> &ctx,
-                             const std::string &path1,
-                             const std::string &path2,
-                             const std::string &out_path) {
+                              std::shared_ptr<CylonContext> &ctx,
+                              const std::string &path1,
+                              const std::string &path2,
+                              const std::string &out_path) {
   std::shared_ptr<Table> table1, table2, expected, joined, verification;
 
   auto read_options = io::config::ParquetOptions().ConcurrentFileReads(false);
