@@ -87,6 +87,21 @@ cylon::Status AllGather(const std::shared_ptr<cylon::TableSerializer> &serialize
 );
 
 /**
+ * Perform MPI AllGather on a buffer
+ * Some buffers might be empty,
+ * @param data buffer to send
+ * @param size size of the buffer
+ * @param ctx CylonContext object
+ * @return
+ */
+cylon::Status AllGatherBuffer(const uint8_t *data,
+                              int32_t size,
+                              const std::shared_ptr <cylon::CylonContext> &ctx,
+                              std::vector<uint8_t> &received_buf,
+                              std::vector<int32_t> &all_buffer_sizes
+);
+
+/**
  * Perform MPI broadcast on a table
  * @param serializer TableSerializer to serialize a table (significant at broadcast root only)
  * @param bcast_root MPI rank of the broadcaster worker, (significant at all workers)

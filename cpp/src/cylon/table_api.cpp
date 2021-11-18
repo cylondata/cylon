@@ -26,6 +26,7 @@
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/util/uuid.hpp>
 #include <cylon/table.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 
 namespace cylon {
 // todo make this un ordered
@@ -349,6 +350,24 @@ Status Project(const std::string &id, const std::vector<int64_t> &project_column
     PutTable(dest_id, out_table);
   }
   return status;
+}
+
+Status AllGatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
+                            const std::shared_ptr<cylon::CylonContext> &ctx,
+                            std::vector<std::shared_ptr<arrow::Buffer>> &buffers,
+                            std::vector<uint8_t> &received_buf) {
+
+  std::vector<int32_t> all_buffer_sizes;
+  mpi::AllGatherBuffer(buf->data(), buf->size(), ctx, received_buf, all_buffer_sizes);
+
+  buffers.resize(ctx->GetWorldSize());
+  int32_t buf_start = 0;
+  for (int i = 0; i < ctx->GetWorldSize(); ++i) {
+    buffers[i] = std::make_shared<arrow::Buffer>(received_buf.data() + buf_start, all_buffer_sizes[i]);
+    buf_start += all_buffer_sizes[i];
+  }
+
+  return cylon::Status::OK();
 }
 
 #ifdef BUILD_CYLON_PARQUET

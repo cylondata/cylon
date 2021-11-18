@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <arrow/buffer.h>
 #include <cylon/status.hpp>
 #include <cylon/join/join_config.hpp>
 #include <cylon/io/csv_read_config.hpp>
@@ -177,6 +178,25 @@ Status Select(std::shared_ptr<cylon::CylonContext> &ctx,
               const std::string &dest_id);
 
 Status Project(const std::string &id, const std::vector<int64_t> &project_columns, const std::string &dest_id);
+
+/**
+ * Perform allgather on an Arrow Buffer
+ * all received buffers are put into "buffers"
+ * received_buf vector can be empty when calling this method.
+ *   it holds the received data of buffers consecutively in memory.
+ *   do not delete received_buf before deleting buffers.
+ *   received_buf owns the memory of buffers. buffers do not own their memory.
+ * @param buf
+ * @param ctx
+ * @param buffers
+ * @param received_buf
+ * @return
+ */
+Status AllGatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
+                            const std::shared_ptr<cylon::CylonContext> &ctx,
+                            std::vector<std::shared_ptr<arrow::Buffer>> &buffers,
+                            std::vector<uint8_t> &received_buf
+);
 
 #ifdef BUILD_CYLON_PARQUET
 Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,

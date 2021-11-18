@@ -15,7 +15,7 @@
 #include <mpi.h>
 #include <cylon/net/mpi/mpi_operations.hpp>
 #include <cylon/util/macros.hpp>
-
+#include <numeric>
 
 std::vector<int32_t> totalBufferSizes(const std::vector<int32_t> &all_buffer_sizes,
                                       int num_buffers,
@@ -220,3 +220,43 @@ cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer
 }
 
 
+cylon::Status cylon::mpi::AllGatherBuffer(const uint8_t *data,
+                                          int32_t size,
+                                          const std::shared_ptr <cylon::CylonContext> &ctx,
+                                          std::vector<uint8_t> &received_buf,
+                                          std::vector<int32_t> &all_buffer_sizes) {
+
+  all_buffer_sizes.resize(ctx->GetWorldSize(), 0);
+
+  int status = MPI_Allgather(&size,
+                             1,
+                             MPI_INT32_T,
+                             all_buffer_sizes.data(),
+                             1,
+                             MPI_INT32_T,
+                             MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Allgather failed when receiving buffer sizes!");
+  }
+
+  auto total_size = std::accumulate(all_buffer_sizes.begin(), all_buffer_sizes.end(), 0);
+  received_buf.resize(total_size);
+  std::vector<int32_t> disps(ctx->GetWorldSize(), 0);
+  for (int i = 1; i < all_buffer_sizes.size(); ++i) {
+    disps[i] = disps[i-1] + all_buffer_sizes[i-1];
+  }
+
+  status = MPI_Allgatherv(data,
+                          size,
+                          MPI_UINT8_T,
+                          received_buf.data(),
+                          all_buffer_sizes.data(),
+                          disps.data(),
+                          MPI_UINT8_T,
+                          MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Allgatherv failed when receiving buffers!");
+  }
+
+  return cylon::Status::OK();
+}
