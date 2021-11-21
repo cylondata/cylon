@@ -10,8 +10,9 @@ Run test:
 
 def test_repartition():
     env=CylonEnv(config=MPIConfig())
+    world_sz = env.get_world_size()  
     df1, _ = create_df([random.sample(range(10, 300), 50),
                             random.sample(range(10, 300), 50),
                             random.sample(range(10, 300), 50)])
-    df2 = df1.repartition([50], None, env=env)
-    assert_eq(df1, df2)
+    df2 = df1.repartition([50 for _  in range(world_sz)], None, env=env) # distributed repartition 
+    assert_eq(df1, df2)  # still the local partitions would be equal 

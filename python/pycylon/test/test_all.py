@@ -234,6 +234,11 @@ def test_data_split():
     responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi python/pycylon/test/test_data_split.py"))
     assert responses[-1] == 0
 
+def test_repartition():
+    print("31. Repartition")
+    responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi python/pycylon/test/test_repartition.py"))
+    assert responses[-1] == 0
+
 
 def test_all():
     ar = np.array(responses)

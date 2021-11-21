@@ -1128,17 +1128,17 @@ Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylo
 
 static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, std::shared_ptr<cylon::Table> * b_out) {
   int world_size = a->GetContext()->GetWorldSize();
-  int num_row = a->Rows();
+  int64_t num_row = a->Rows();
 
   if(num_row == 0) {
+    *b_out = a;
     return Status::OK();
   }
 
   std::vector<int64_t> rows_per_partition;
   RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather({ num_row }, world_size, rows_per_partition));
-  RETURN_CYLON_STATUS_IF_FAILED(Repartition(b, rows_per_partition, b_out));
 
-  return Status::OK();
+  return Repartition(b, rows_per_partition, b_out);
 }
 
 Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, bool& result, bool ordered) {
@@ -1178,6 +1178,7 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   int num_row = table->Rows();
 
   if(num_row == 0) {
+    *output = table;
     return Status::OK();
   }
 
@@ -1205,7 +1206,7 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;
   RETURN_CYLON_STATUS_IF_FAILED(Split(table, no_of_partitions, out_partitions, partitioned_tables));
 
-  std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
+  const auto& schema = table->get_table()->schema();
 
   if (!table->IsRetain()) {
     const_cast<std::shared_ptr<Table> &>(table).reset();
@@ -1215,9 +1216,7 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   std::shared_ptr<arrow::Table> table_out;
   RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables_preserve_order(table->GetContext(), schema, partitioned_tables, table_out));
 
-  *output = std::make_shared<cylon::Table>(table->GetContext(), table_out);
-
-  return Status::OK();
+  return Table::FromArrowTable(table->GetContext(), std::move(table_out), *output);
 }
 
 Status Repartition(const std::shared_ptr<cylon::Table>& table,
@@ -1238,7 +1237,7 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   int num_row = table->Rows();
   std::vector<int64_t> size = { num_row };
   std::vector<int64_t> sizes;
-  mpi::AllGather(size, world_size, sizes);
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather(size, world_size, sizes));
 
   auto result = DivideRowsEvenly(sizes);
   return Repartition(table, result, output);
