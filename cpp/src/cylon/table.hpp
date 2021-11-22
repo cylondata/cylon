@@ -38,27 +38,72 @@
 
 namespace cylon {
 
+class BaseArrowIndex;
+
 /**
  * Table provides the main API for using cylon for data processing.
+ */
+
+
+/**
+ * Rules:
+ * mutability - immutable
+ *
  */
 class Table {
  public:
 
   /**
-   * Table created from an arrow::Table
+   * todo: make this constructor private!
+   * Table created from an arrow::Table (with a RangeIndex)
    * @param ctx
    * @param tab (shared_ptr is passed by value and the copy is moved as a class member)
    */
   Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Table> tab);
 
   /**
-   * Create a table from an arrow table,
-   * @param table arrow::Table
-   * @return
-   */
+   * todo: make this constructor private!
+  * Table created from an arrow::Table with an index.
+  * @param ctx
+  * @param tab (shared_ptr is passed by value and the copy is moved as a class member)
+  * @param index (shared_ptr is passed by value and the copy is moved as a class member)
+  */
+  Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Table> tab,
+        std::shared_ptr<BaseArrowIndex> index);
+
+  virtual ~Table() = default;
+
+/**
+ * Create a table from an arrow table.
+ * @param ctx
+ * @param table
+ * @param output
+ * @param index_config Default: RangeIndex
+ * @return
+ */
   static Status FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
                                std::shared_ptr<arrow::Table> table,
-                               std::shared_ptr<Table> &tableOut);
+                               std::shared_ptr<Table> &output,
+                               const IndexConfig &index_config = IndexConfig::Default());
+
+  /**
+   * Create a table from an arrow table with an outside index.
+   * If `index.col_name_` column is not available in the table, it will be added to the table.
+   * else, the existing column will be update with the column from the index (can not have column
+   * names duplicated)
+   * @param ctx
+   * @param table
+   * @param index
+   * @param output
+   * @return
+   *
+   *
+   * todo: issue:
+   */
+  static Status FromArrowTableWithIndex(const std::shared_ptr<CylonContext> &ctx,
+                                        std::shared_ptr<arrow::Table> table,
+                                        std::shared_ptr<BaseArrowIndex> index,
+                                        std::shared_ptr<Table> *output);
 
   /**
    * Create a table from cylon columns
@@ -127,7 +172,7 @@ class Table {
    * @param col1 first column to start printing (including)
    * @param col2 end column to stop printing (including)
    */
-  void Print(int row1, int row2, int col1, int col2) const;
+  void Print(int64_t row1, int64_t row2, int col1, int col2) const;
 
   /**
    * Get the underlying arrow table
@@ -158,22 +203,55 @@ class Table {
    */
   bool IsRetain() const;
 
-  Status SetArrowIndex(std::shared_ptr<cylon::BaseArrowIndex> &index, bool drop_index);
+  /**
+   * Get the current index of the table
+   * @return
+   */
+  const std::shared_ptr<BaseArrowIndex> &GetArrowIndex();
 
-  std::shared_ptr<BaseArrowIndex> GetArrowIndex();
+  /**
+   * Set an index for a table. if an arrow::Array is provided, it will be added into the table as a
+   * column. Index will always be managed within a table as a column.
+   * @param index_array
+   * @return
+   */
+  Status SetArrowIndex(std::shared_ptr<arrow::Array> index_array,
+                       std::shared_ptr<Table> *output,
+                       IndexingType indexing_type = Linear);
+  Status SetArrowIndex(int col_idx, std::shared_ptr<Table> *output,
+                       IndexingType indexing_type = Linear);
+  Status SetArrowIndex(const std::string &col_name, std::shared_ptr<Table> *output,
+                       IndexingType indexing_type = Linear);
+  Status SetArrowIndex(std::shared_ptr<BaseArrowIndex> index, std::shared_ptr<Table> *output);
 
-  Status ResetArrowIndex(bool drop = false);
+  /**
+   * Reset to the default index.
+   * @param drop If true, index column will be removed from the output
+   * @return
+   */
+  Status ResetArrowIndex(std::shared_ptr<Table> *output, bool drop = false);
 
-  Status AddColumn(int32_t position, const std::string& column_name, std::shared_ptr<arrow::Array> input_column);
+  /**
+   * Adds an arrow::Array as a column at a given position
+   * @param position
+   * @param column_name
+   * @param input_column
+   * @return
+   */
+  Status AddColumn(int32_t position, std::string column_name,
+                   std::shared_ptr<arrow::Array> input_column, std::shared_ptr<Table> *output);
+
+  /**
+   * Combines chunks of the arrow table and returns a table with default index.
+   * @return
+   */
+  Status CombineChunks(std::shared_ptr<Table> *output);
 
  private:
-  /**
-   * Every table should have an unique id
-   */
-  const std::shared_ptr<cylon::CylonContext> ctx;
-  std::shared_ptr<arrow::Table> table_;
+  const std::shared_ptr<CylonContext> ctx_;
+  const std::shared_ptr<arrow::Table> table_;
   bool retain_ = true;
-  std::shared_ptr<cylon::BaseArrowIndex> base_arrow_index_ = nullptr;
+  std::shared_ptr<cylon::BaseArrowIndex> base_arrow_index_;
 };
 
 /**
@@ -212,7 +290,8 @@ Status WriteCSV(const std::shared_ptr<Table> &table, const std::string &path,
    * @param tables
    * @return new merged table
    */
-Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &tables, std::shared_ptr<Table> &tableOut);
+Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &tables,
+             std::shared_ptr<Table> &tableOut);
 
 /**
  * Do the join with the right table
@@ -244,7 +323,7 @@ Status DistributedJoin(const std::shared_ptr<Table> &left, const std::shared_ptr
  * @return <cylon::Status>
  */
 Status Union(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &second,
-			 std::shared_ptr<Table> &output);
+             std::shared_ptr<Table> &output);
 
 /**
  * Similar to local union, but performs the union in a distributed fashion
@@ -264,7 +343,7 @@ Status DistributedUnion(const std::shared_ptr<Table> &first, const std::shared_p
  * @return <cylon::Status>
  */
 Status Subtract(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &second,
-				std::shared_ptr<Table> &out);
+                std::shared_ptr<Table> &out);
 
 /**
  * Similar to local subtract/difference, but performs in a distributed fashion
@@ -284,7 +363,7 @@ Status DistributedSubtract(const std::shared_ptr<Table> &left, const std::shared
  * @return <cylon::Status>
  */
 Status Intersect(const std::shared_ptr<Table> &first, const std::shared_ptr<Table> &second,
-				 std::shared_ptr<Table> &output);
+                 std::shared_ptr<Table> &output);
 
 /**
  * Similar to local intersection, but performs in a distributed fashion
@@ -403,9 +482,11 @@ Status Unique(const std::shared_ptr<Table> &in, const std::vector<int> &cols,
 Status DistributedUnique(const std::shared_ptr<Table> &in, const std::vector<int> &cols,
                          std::shared_ptr<cylon::Table> &out);
 
-Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylon::Table>& b, bool& result, bool ordered = true);
+Status Equals(const std::shared_ptr<Table> &a, const std::shared_ptr<Table> &b, bool &result,
+              bool ordered = true);
 
-Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, bool& result, bool ordered = true);
+Status DistributedEquals(const std::shared_ptr<Table> &a, const std::shared_ptr<Table> &b,
+                         bool &result, bool ordered = true);
 
 #ifdef BUILD_CYLON_PARQUET
 /**

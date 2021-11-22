@@ -12,79 +12,76 @@
  * limitations under the License.
  */
 
-#ifndef CYLON_SRC_CYLON_INDEXING_BUILDER_H_
-#define CYLON_SRC_CYLON_INDEXING_BUILDER_H_
+#ifndef CYLON_CPP_SRC_CYLON_INDEXING_INDEX_UTILS_HPP_
+#define CYLON_CPP_SRC_CYLON_INDEXING_INDEX_UTILS_HPP_
 
-#include <cylon/indexing/index.hpp>
-#include <cylon/status.hpp>
-#include <cylon/table.hpp>
+#include "cylon/table.hpp"
 
 namespace cylon {
+namespace indexing {
 
-class IndexUtil {
+/**
+ * Slice a table row range [start_index, end_index] and returns a new table with a sliced index
+ * @param input_table
+ * @param start
+ * @param end_inclusive
+ * @param columns
+ * @param output
+ * @return
+ *
+ * todo: make this end exclusive
+ */
+Status SliceTableByRange(const std::shared_ptr<Table> &input_table,
+                         int64_t start,
+                         int64_t end_inclusive,
+                         std::vector<int> columns,
+                         std::shared_ptr<Table> *output,
+                         bool reset_index = false);
 
- public:
+/**
+ * Filter table based on indices. The new table will inherit the indices array as it's index (LinearIndex)
+ * @param input_table
+ * @param indices
+ * @param columns
+ * @param output
+ * @param bounds_check
+ * @return
+ */
+Status SelectTableByRows(const std::shared_ptr<Table> &input_table,
+                         const std::shared_ptr<arrow::Array> &indices,
+                         std::vector<int> columns,
+                         std::shared_ptr<Table> *output,
+                         bool bounds_check = false,
+                         bool reset_index = false);
+/**
+ * Filter table by boolean mask
+ * @param input_table
+ * @param mask boolean array mask
+ * @param columns
+ * @param output
+ * @param bounds_check
+ * @param reset_index
+ * @return
+ */
+Status FilterTableByMask(const std::shared_ptr<Table> &input_table,
+                         const std::shared_ptr<arrow::Array> &mask,
+                         std::vector<int> columns,
+                         std::shared_ptr<Table> *output,
+                         bool reset_index = false);
 
-  static Status BuildArrowIndexFromArray(const IndexingType schema,
-										 const std::shared_ptr<Table> &input,
-										 const std::shared_ptr<arrow::Array> &index_array);
+/**
+ * Returns a table masked by another table. masked elements will be marked null.
+ * (iterate through all the columns of the input table, and set output arrays validity buffer with Logical-And'ed mask)
+ * @param input_table
+ * @param mask table with boolean arrays
+ * @param output
+ * @return
+ */
+Status MaskTable(const std::shared_ptr<Table> &input_table,
+                 const std::shared_ptr<Table> &mask,
+                 std::shared_ptr<Table> *output);
 
-  static Status BuildArrowIndex(IndexingType schema,
-								const std::shared_ptr<Table> &input,
-								int index_column,
-								bool drop,
-								std::shared_ptr<Table> &output);
-
-  static Status BuildArrowIndex(const IndexingType schema,
-								const std::shared_ptr<Table> &input,
-								const int index_column,
-								std::shared_ptr<cylon::BaseArrowIndex> &index);
-
-  static Status BuildArrowHashIndex(const std::shared_ptr<Table> &input,
-									const int index_column,
-									std::shared_ptr<cylon::BaseArrowIndex> &index);
-
-  static Status BuildArrowLinearIndex(const std::shared_ptr<Table> &input,
-									  const int index_column,
-									  std::shared_ptr<cylon::BaseArrowIndex> &index);
-
-  static Status BuildArrowRangeIndex(const std::shared_ptr<Table> &input,
-									 std::shared_ptr<cylon::BaseArrowIndex> &index);
-
-  template<class TYPE>
-  static Status BuildArrowNumericHashIndexFromArrowArray(const std::shared_ptr<arrow::Array> &index_values,
-														 arrow::MemoryPool *pool,
-														 std::shared_ptr<cylon::BaseArrowIndex> &index) {
-    index = std::make_shared<ArrowNumericHashIndex<TYPE>>(-1, index_values->length(), pool, index_values);
-    index->SetIndexArray(index_values);
-    return Status::OK();
-  }
-
-  template<class TYPE>
-  static Status BuildArrowBinaryHashIndexFromArrowArray(const std::shared_ptr<arrow::Array> &index_values,
-														arrow::MemoryPool *pool,
-														std::shared_ptr<cylon::BaseArrowIndex> &index) {
-    index = std::make_shared<ArrowBinaryHashIndex<TYPE>>(-1, index_values->length(), pool, index_values);
-    index->SetIndexArray(index_values);
-    return Status::OK();
-  }
-
-  static Status BuildArrowLinearIndexFromArrowArray(const std::shared_ptr<arrow::Array> &index_values,
-													arrow::MemoryPool *pool,
-													std::shared_ptr<cylon::BaseArrowIndex> &index) {
-    index = std::make_shared<ArrowLinearIndex>(0, index_values->length(), pool, index_values);
-    return Status::OK();
-  }
-
-  static Status BuildArrowRangeIndexFromArray(int64_t size,
-											  arrow::MemoryPool *pool,
-											  std::shared_ptr<cylon::BaseArrowIndex> &index);
-
-  static Status BuildArrowHashIndexFromArray(const std::shared_ptr<arrow::Array> &index_values,
-											 arrow::MemoryPool *pool,
-											 std::shared_ptr<cylon::BaseArrowIndex> &index);
-
-};
+}
 }
 
-#endif //CYLON_SRC_CYLON_INDEXING_BUILDER_H_
+#endif //CYLON_CPP_SRC_CYLON_INDEXING_INDEX_UTILS_HPP_

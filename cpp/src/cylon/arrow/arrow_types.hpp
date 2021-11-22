@@ -47,6 +47,7 @@ std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &ar
 bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table);
 
 cylon::Status CheckSupportedTypes(const std::shared_ptr<arrow::Table> &table);
+cylon::Status CheckSupportedType(const std::shared_ptr<arrow::DataType> &type);
 
 }  // namespace tarrow
 }  // namespace cylon

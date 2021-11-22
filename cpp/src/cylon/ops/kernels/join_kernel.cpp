@@ -17,6 +17,7 @@
 #include <cylon/table.hpp>
 #include <cylon/ctx/arrow_memory_pool_utils.hpp>
 #include <cylon/ops/kernels/join_kernel.hpp>
+#include "cylon/util/macros.hpp"
 
 namespace cylon {
 namespace kernel {

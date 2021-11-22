@@ -17,12 +17,14 @@
 #include <cylon/ctx/arrow_memory_pool_utils.hpp>
 #include <cylon/ops/kernels/set_kernel.hpp>
 
+#include "cylon/util/macros.hpp"
+
 namespace cylon {
 namespace kernel {
 
 template<Status op(const std::shared_ptr<Table> &, const std::shared_ptr<Table> &, std::shared_ptr<Table> &)>
 class SetOpImpl : public SetOp {
-public:
+ public:
   void InsertTable(int tag, const std::shared_ptr<cylon::Table> &table) override {
     if (tag == 100) {
       left_tables.push(table);
@@ -63,12 +65,11 @@ public:
   }
 
   SetOpImpl(const std::shared_ptr<CylonContext> &ctx,
-                              const std::shared_ptr<arrow::Schema> &schema,
-                              int64_t expected_rows) : SetOp(),
-      schema(schema), ctx(ctx) {
-  }
+            const std::shared_ptr<arrow::Schema> &schema,
+            int64_t expected_rows)
+      : SetOp(), schema(schema), ctx(ctx) {}
 
-private:
+ private:
   std::shared_ptr<arrow::Schema> schema;
   std::shared_ptr<CylonContext> ctx;
   std::queue<std::shared_ptr<cylon::Table>> left_tables{};

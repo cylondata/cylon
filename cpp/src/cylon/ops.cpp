@@ -17,6 +17,7 @@
 #include <cylon/table.hpp>
 #include <cylon/ops.hpp>
 #include <cylon/net/mpi/mpi_operations.hpp>
+#include <cylon/util/arrow_utils.hpp>
 
 namespace cylon {
 

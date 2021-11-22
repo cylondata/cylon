@@ -26,30 +26,40 @@ from pycylon.data.table cimport CTable
 from pycylon.data.table import Table
 from pycylon.indexing.cyindex cimport CIndexingType
 from pycylon.indexing.cyindex import IndexingType
-from pycylon.indexing.index_utils cimport CIndexUtil
+# from pycylon.indexing.index_utils cimport CIndexUtil
 
 from pycylon.api.lib cimport (pycylon_wrap_context, pycylon_unwrap_context, pycylon_unwrap_table,
-                                pycylon_wrap_table)
+pycylon_wrap_table)
 from pyarrow.lib cimport (pyarrow_wrap_array, pyarrow_unwrap_array)
 from typing import List
 import pyarrow as pa
 
 cdef class IndexUtil:
-
     @staticmethod
-    def build_arrow_index(indexing_type: IndexingType, table: Table, column: int, drop: bool):
-        cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
-        CIndexUtil.BuildArrowIndex(indexing_type, input, column, drop, output)
-        cn_table = pycylon_wrap_table(output)
-        #cn_table.indexing_schema = indexing_schema
-        return cn_table
+    def build_arrow_index(indexing_type: IndexingType, table: Table, column: int):
+        cdef:
+            shared_ptr[CTable] output
+            shared_ptr[CTable] input = pycylon_unwrap_table(table)
+            CStatus status
+        # CIndexUtil.BuildArrowIndex(indexing_type, input, column, drop, output)
+        status = BuildTableWithIndex(input, column, indexing_type, &output)
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise Exception(f"build index error: {status.get_msg().decode()}")
 
     @staticmethod
     def build_arrow_index_from_list(indexing_type: IndexingType, table: Table, index_arr: List):
-        cdef shared_ptr[CTable] output
-        cdef shared_ptr[CTable] input = pycylon_unwrap_table(table)
+        cdef:
+            shared_ptr[CTable] output
+            shared_ptr[CTable] input = pycylon_unwrap_table(table)
+            shared_ptr[CArrowArray] c_index_array
+
         arrow_index_array = pa.array(index_arr)
-        cdef shared_ptr[CArrowArray] c_index_array = pyarrow_unwrap_array(arrow_index_array)
-        CIndexUtil.BuildArrowIndexFromArray(indexing_type, input, c_index_array)
-        return pycylon_wrap_table(input)
+        c_index_array = pyarrow_unwrap_array(arrow_index_array)
+        # CIndexUtil.BuildArrowIndexFromArray(indexing_type, input, c_index_array)
+        status = BuildTableWithIndexArray(input, c_index_array, indexing_type, &output)
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise Exception(f"build index error:  {status.get_msg().decode()}")

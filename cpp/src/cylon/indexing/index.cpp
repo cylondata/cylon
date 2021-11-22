@@ -12,343 +12,619 @@
  * limitations under the License.
  */
 #include <glog/logging.h>
-#include <cylon/indexing/index.hpp>
-#include <cylon/table.hpp>
+
+#include "cylon/ctx/arrow_memory_pool_utils.hpp"
+#include "cylon/indexing/index.hpp"
+#include "cylon/util/macros.hpp"
+#include "cylon/util/arrow_utils.hpp"
+#include "cylon/table.hpp"
+#include "cylon/thridparty/flat_hash_map/bytell_hash_map.hpp"
 
 namespace cylon {
 
-std::unique_ptr<ArrowIndexKernel> CreateArrowHashIndexKernel(std::shared_ptr<arrow::Table> input_table,
-															 int index_column) {
-  switch (input_table->column(index_column)->type()->id()) {
-    case arrow::Type::NA:
-      return nullptr;
-    case arrow::Type::BOOL:
-      return std::make_unique<BoolArrowHashIndexKernel>();
-    case arrow::Type::UINT8:
-      return std::make_unique<UInt8ArrowHashIndexKernel>();
-    case arrow::Type::INT8:
-      return std::make_unique<Int8ArrowHashIndexKernel>();
-    case arrow::Type::UINT16:
-      return std::make_unique<UInt16ArrowHashIndexKernel>();
-    case arrow::Type::INT16:
-      return std::make_unique<Int16ArrowHashIndexKernel>();
-    case arrow::Type::UINT32:
-      return std::make_unique<UInt32ArrowHashIndexKernel>();
-    case arrow::Type::INT32:
-      return std::make_unique<Int32ArrowHashIndexKernel>();
-    case arrow::Type::UINT64:
-      return std::make_unique<UInt64ArrowHashIndexKernel>();
-    case arrow::Type::INT64:
-      return std::make_unique<Int64ArrowHashIndexKernel>();
-    case arrow::Type::HALF_FLOAT:
-      return std::make_unique<HalfFloatArrowHashIndexKernel>();
-    case arrow::Type::FLOAT:
-      return std::make_unique<FloatArrowHashIndexKernel>();
-    case arrow::Type::DOUBLE:
-      return std::make_unique<DoubleArrowHashIndexKernel>();
-    case arrow::Type::STRING:
-      return std::make_unique<StringArrowHashIndexKernel>();
-    case arrow::Type::BINARY:
-      return std::make_unique<BinaryArrowHashIndexKernel>();
-    case arrow::Type::DATE32:
-      return std::make_unique<Date32ArrowHashIndexKernel>();
-    case arrow::Type::DATE64:
-      return std::make_unique<Date64ArrowHashIndexKernel>();
-    case arrow::Type::TIME32:
-      return std::make_unique<Time32ArrowHashIndexKernel>();
-    case arrow::Type::TIME64:
-      return std::make_unique<Time64ArrowHashIndexKernel>();
-    case arrow::Type::TIMESTAMP:
-      return std::make_unique<TimestampArrowHashIndexKernel>();
-    default:
-      return std::make_unique<ArrowRangeIndexKernel>();
-  }
-}
-
-std::unique_ptr<ArrowIndexKernel> CreateArrowIndexKernel(std::shared_ptr<arrow::Table> input_table, int index_column) {
-  // TODO: fix the criterion to check the kernel creation method
-  if (index_column == -1) {
-    return std::make_unique<ArrowRangeIndexKernel>();
-  } else {
-    return CreateArrowHashIndexKernel(input_table, index_column);
-  }
-}
-
-bool CompareArraysForUniqueness(const std::shared_ptr<arrow::Array> &index_arr) {
-  auto result = arrow::compute::Unique(index_arr);
-  if (!result.status().ok()) {
-    LOG(ERROR) << "Error occurred in index array unique check";
-    return false;
-  }
-  auto unique_arr = result.ValueOrDie();
-  return unique_arr->length() == index_arr->length();
-}
-
-LinearArrowIndexKernel::LinearArrowIndexKernel() {}
-
-Status LinearArrowIndexKernel::BuildIndex(arrow::MemoryPool *pool,
-										  std::shared_ptr<arrow::Table> &input_table,
-										  const int index_column,
-										  std::shared_ptr<BaseArrowIndex> &base_arrow_index) {
-  std::shared_ptr<arrow::Array> index_array;
-
-  if (input_table->column(0)->num_chunks() > 1) {
-    const arrow::Result<std::shared_ptr<arrow::Table>> &res = input_table->CombineChunks(pool);
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-    input_table = res.ValueOrDie();
+/*
+ * Checks if an int array is continuous. i.e. [x, x+1, x+2, ..]
+ */
+bool IsContinuous(const std::shared_ptr<arrow::Int64Array> &arr) {
+  if (arr->length() < 2) {
+    return true;
   }
 
-  index_array = cylon::util::GetChunkOrEmptyArray(input_table->column(index_column), 0);
-  base_arrow_index = std::make_shared<ArrowLinearIndex>(index_column, input_table->num_rows(), pool, index_array);
-
-  return cylon::Status::OK();
-}
-
-ArrowLinearIndex::ArrowLinearIndex(int col_id, int size, std::shared_ptr<CylonContext> &ctx) : BaseArrowIndex(col_id,
-																											  size,
-																											  ctx) {}
-
-ArrowLinearIndex::ArrowLinearIndex(int col_id, int size, arrow::MemoryPool *pool) : BaseArrowIndex(col_id,
-																								   size,
-																								   pool) {}
-
-Status ArrowLinearIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
-										 std::vector<int64_t> &find_index) {
-
-  auto cast_val = search_param->CastTo(index_array_->type()).ValueOrDie();
-  for (int64_t ix = 0; ix < index_array_->length(); ix++) {
-    auto val = index_array_->GetScalar(ix).ValueOrDie();
-    if (cast_val->Equals(val)) {
-      find_index.push_back(ix);
+  const auto *values = arr->data()->GetValues<int64_t>(1);
+  for (int64_t i = 1; i < arr->length(); i++) {
+    if (values[i] != values[i - 1] + 1) {
+      return false;
     }
   }
-  return Status::OK();
-}
-Status ArrowLinearIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t *find_index) {
-  auto cast_val = search_param->CastTo(index_array_->type()).ValueOrDie();
-  for (int64_t ix = 0; ix < index_array_->length(); ix++) {
-    auto val = index_array_->GetScalar(ix).ValueOrDie();
-    if (cast_val->Equals(val)) {
-      *find_index = ix;
-      break;
-    }
-  }
-  return Status::OK();
-}
-Status ArrowLinearIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
-										 const std::shared_ptr<arrow::Table> &input,
-										 std::vector<int64_t> &filter_location,
-										 std::shared_ptr<arrow::Table> &output) {
-  arrow::Status arrow_status;
-  cylon::Status status;
-  std::shared_ptr<arrow::Array> out_idx;
-  arrow::compute::ExecContext fn_ctx(GetPool());
-  arrow::Int64Builder idx_builder(GetPool());
-  RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(search_param, filter_location));
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.AppendValues(filter_location));
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.Finish(&out_idx));
-  arrow::Result<arrow::Datum>
-	  result = arrow::compute::Take(input, out_idx, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-  output = result.ValueOrDie().table();
-  return Status::OK();
-}
-
-std::shared_ptr<arrow::Array> ArrowLinearIndex::GetIndexAsArray() {
-  return index_array_;
-}
-
-void ArrowLinearIndex::SetIndexArray(const std::shared_ptr<arrow::Array> &index_arr) {
-  index_array_ = index_arr;
-}
-
-std::shared_ptr<arrow::Array> ArrowLinearIndex::GetIndexArray() {
-  return index_array_;
-}
-
-int ArrowLinearIndex::GetColId() const {
-  return BaseArrowIndex::GetColId();
-}
-
-int ArrowLinearIndex::GetSize() const {
-  return index_array_->length();
-}
-
-IndexingType ArrowLinearIndex::GetIndexingType() {
-  return Linear;
-}
-
-arrow::MemoryPool *ArrowLinearIndex::GetPool() const {
-  return BaseArrowIndex::GetPool();
-}
-
-bool ArrowLinearIndex::IsUnique() {
-  const bool is_unique = CompareArraysForUniqueness(index_array_);
-  return is_unique;
-}
-
-Status ArrowLinearIndex::LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
-										  std::vector<int64_t> &filter_location) {
-
-  auto cast_search_param_result = arrow::compute::Cast(search_param, index_array_->type());
-  auto const search_param_array = cast_search_param_result.ValueOrDie().make_array();
-  auto const res_isin_filter = arrow::compute::IsIn(index_array_, search_param_array);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(res_isin_filter.status());
-  auto res_isin_filter_val = res_isin_filter.ValueOrDie();
-  std::shared_ptr<arrow::Array> arr_isin = res_isin_filter_val.make_array();
-  std::shared_ptr<arrow::BooleanArray> arr_isin_bool_array = std::static_pointer_cast<arrow::BooleanArray>(arr_isin);
-  for (int64_t ix = 0; ix < arr_isin_bool_array->length(); ix++) {
-    auto val = arr_isin_bool_array->Value(ix);
-    if (val) {
-      filter_location.push_back(ix);
-    }
-  }
-  return Status::OK();
-}
-
-int BaseArrowIndex::GetColId() const {
-  return col_id_;
-}
-
-int BaseArrowIndex::GetSize() const {
-  return size_;
-}
-
-arrow::MemoryPool *BaseArrowIndex::GetPool() const {
-  return pool_;
-}
-
-Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
-										std::vector<int64_t> &find_index) {
-  std::shared_ptr<arrow::Int64Scalar> casted_search_param = std::static_pointer_cast<arrow::Int64Scalar>(search_param);
-  int64_t val = casted_search_param->value;
-  if (!(val >= start_ && val < end_)) {
-    return Status(cylon::Code::KeyError, "Invalid Key, it must be in the range of 0, num of records");
-  }
-  find_index.push_back(val);
-  return Status::OK();
-}
-
-Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t *find_index) {
-  std::shared_ptr<arrow::Int64Scalar> casted_search_param = std::static_pointer_cast<arrow::Int64Scalar>(search_param);
-  int64_t val = casted_search_param->value;
-  if (!(val >= start_ && val < end_)) {
-    return Status(cylon::Code::KeyError, "Invalid Key, it must be in the range of 0, num of records");
-  }
-  *find_index = val;
-  return Status::OK();
-}
-
-Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
-										const std::shared_ptr<arrow::Table> &input,
-										std::vector<int64_t> &filter_location,
-										std::shared_ptr<arrow::Table> &output) {
-  arrow::Status arrow_status;
-  cylon::Status status;
-  std::shared_ptr<arrow::Array> out_idx;
-  arrow::compute::ExecContext fn_ctx(GetPool());
-  arrow::Int64Builder idx_builder(GetPool());
-  RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(search_param, filter_location));
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.AppendValues(filter_location));
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(idx_builder.Finish(&out_idx));
-  arrow::Result<arrow::Datum>
-	  result = arrow::compute::Take(input, out_idx, arrow::compute::TakeOptions::Defaults(), &fn_ctx);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
-  output = result.ValueOrDie().table();
-  return Status::OK();
-}
-
-std::shared_ptr<arrow::Array> ArrowRangeIndex::GetIndexAsArray() {
-  arrow::Status arrow_status;
-  auto pool = GetPool();
-  arrow::Int64Builder builder(pool);
-  std::vector<int64_t> vec(GetSize());
-  for (int64_t ix = 0; ix < GetSize(); ix += GetStep()) {
-    vec[ix] = ix;
-  }
-  arrow_status = builder.AppendValues(vec);
-  if (!arrow_status.ok()) {
-    LOG(ERROR) << "Error occurred when generating range index values with array builder";
-  }
-  arrow_status = builder.Finish(&index_arr_);
-  if (!arrow_status.ok()) {
-    LOG(ERROR) << "Error occurred in retrieving index";
-    return nullptr;
-  }
-  return index_arr_;
-}
-
-void ArrowRangeIndex::SetIndexArray(const std::shared_ptr<arrow::Array> &index_arr) {
-  index_arr_ = index_arr;
-}
-
-std::shared_ptr<arrow::Array> ArrowRangeIndex::GetIndexArray() {
-  return GetIndexAsArray();
-}
-
-int ArrowRangeIndex::GetColId() const {
-  return BaseArrowIndex::GetColId();
-}
-
-int ArrowRangeIndex::GetSize() const {
-  return end_;
-}
-
-IndexingType ArrowRangeIndex::GetIndexingType() {
-  return Range;
-}
-
-arrow::MemoryPool *ArrowRangeIndex::GetPool() const {
-  return BaseArrowIndex::GetPool();
-}
-
-bool ArrowRangeIndex::IsUnique() {
   return true;
 }
 
-ArrowRangeIndex::ArrowRangeIndex(int start, int size, int step, arrow::MemoryPool *pool) : BaseArrowIndex(0,
-																										  size,
-																										  pool),
-																						   start_(start),
-																						   end_(size),
-																						   step_(step) {
+BaseArrowIndex::BaseArrowIndex(arrow::Table *table, std::string index_col_name,
+                               arrow::MemoryPool *pool)
+    : col_name_(std::move(index_col_name)), size_(table->num_rows()), pool_(pool) {}
 
+BaseArrowIndex::BaseArrowIndex(int64_t size, arrow::MemoryPool *pool)
+    : col_name_(kDefaultIdxColName), size_(size), pool_(pool) {}
+
+//std::shared_ptr<arrow::Array> BaseArrowIndex::GetIndexAsArray() {
+//  return table_->get_table()->column(col_id_)->chunk(0);
+//}
+
+Status BaseArrowIndex::LocationRangeByValue(const std::shared_ptr<arrow::Scalar> &start_value,
+                                            const std::shared_ptr<arrow::Scalar> &end_value,
+                                            int64_t *start_index,
+                                            int64_t *end_index) {
+  std::shared_ptr<arrow::Int64Array> indices;
+  RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(start_value, &indices));
+  if (!IsContinuous(indices)) {
+    return {Code::KeyError, "non-unique key " + start_value->ToString()};
+  }
+  *start_index = indices->Value(0);
+
+  indices.reset();
+  RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(end_value, &indices));
+  if (!IsContinuous(indices)) {
+    return {Code::KeyError, "non-unique key " + end_value->ToString()};
+  }
+  *end_index = indices->Value(indices->length() - 1);
+
+  if (*start_index > *end_index) {
+    return {Code::IndexError, "start index > end index"};
+  }
+
+  return Status::OK();
 }
 
-int ArrowRangeIndex::GetStart() const {
-  return start_;
+/*
+ * -------------------------- Hash Index --------------------------
+ */
+template<typename ArrowT>
+class ArrowHashIndex : public BaseArrowIndex {
+  using ValueT = typename util::ArrowScalarValue<ArrowT>::ValueT;
+  using MapT = typename ska::bytell_hash_map<ValueT, std::vector<int64_t>>;
+
+ public:
+
+  ArrowHashIndex(arrow::Table *table, std::string col_name, std::shared_ptr<arrow::Array> index_arr,
+                 arrow::MemoryPool *pool)
+      : BaseArrowIndex(table, std::move(col_name), pool), index_arr_(std::move(index_arr)) {
+    build_hash_index();
+  }
+
+  static Status Make(const std::shared_ptr<arrow::Table> &table, int col_idx,
+                     std::shared_ptr<BaseArrowIndex> *output, arrow::MemoryPool *pool) {
+    auto col_name = table->schema()->field(col_idx)->name();
+    const auto &chunked_array = table->column(col_idx);
+
+    if (chunked_array->length() && chunked_array->num_chunks() > 1) {
+      return {Code::Invalid, "linear index can not be built with a chunked table"};
+    }
+
+    *output = std::make_shared<ArrowHashIndex>(table.get(), std::move(col_name),
+                                               chunked_array->chunk(0), pool);
+    return Status::OK();
+  }
+
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+                         std::shared_ptr<arrow::Int64Array> *locations) override {
+    arrow::Int64Builder builder(pool_);
+
+    // if search param is null and index_array doesn't have any nulls, return empty array
+    if (!search_param->is_valid) {
+      if (null_indices->empty()) {
+        // no nulls in the array
+        return {Code::KeyError, "Key not found"};
+      } else {
+        // append the null positions
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.AppendValues(*null_indices));
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(locations));
+        return Status::OK();
+      }
+    }
+
+    const auto &res = search_param->CastTo(index_arr_->type());
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
+    const ValueT &cast_val = util::ArrowScalarValue<ArrowT>::Extract(res.ValueOrDie());
+
+    const auto &ret = map_->find(cast_val);
+    if (ret == map_->end()) { // not found
+      return {Code::KeyError, "Key not found " + search_param->ToString()};
+    }
+
+    // reserve additional space to the builder, and append values
+    const std::vector<int64_t> &indices = ret->second;
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.AppendValues(indices));
+
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(locations));
+    return Status::OK();
+  }
+
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+                         int64_t *find_index) override {
+    // if search param is null and index_array doesn't have any nulls, return empty array
+    if (!search_param->is_valid) {
+      if (null_indices->empty()) {
+        // no nulls in the array
+        return {Code::KeyError, "Key not found"};
+      } else {
+        *find_index = (*null_indices)[0];
+        return Status::OK();
+      }
+    }
+
+    const auto &res = search_param->CastTo(index_arr_->type());
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
+    const ValueT &cast_val = util::ArrowScalarValue<ArrowT>::Extract(res.ValueOrDie());
+
+    const auto &ret = map_->find(cast_val);
+    if (ret != map_->end()) {
+      *find_index = (ret->second)[0];
+      return Status::OK();
+    }
+    return {Code::KeyError, "Key not found"};
+  }
+
+  Status LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
+                          std::shared_ptr<arrow::Int64Array> *locations) override {
+    if (search_param->null_count() && null_indices->empty()) {
+      // null values to be searched in a non-null index
+      return {Code::KeyError, "Some keys not found"};
+    }
+
+    arrow::Int64Builder builder(pool_);
+    const auto &arr_data = *search_param->data();
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(
+        arrow::VisitArrayDataInline<ArrowT>(
+            arr_data,
+            [&](ValueT val) {
+              const auto &ret = map_->find(val);
+              if (ret == map_->end()) { // not found
+                return arrow::Status::KeyError("key not found"); // this will break the visit loop
+              }
+              const std::vector<int64_t> &indices = ret->second;
+              return builder.AppendValues(indices);
+            },
+            [&]() {  // nothing to do for nulls
+              return builder.AppendValues(*null_indices);
+            }));
+
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(locations));
+    return Status::OK();
+  }
+
+//  Status SetIndexArray(std::shared_ptr<arrow::Array> index_arr, int col_id) override {
+//    if (index_arr->length() != GetSize()) {
+//      return {Code::Invalid, "new index array size != current index size"};
+//    }
+//    SetColId(col_id);
+//    index_arr_ = std::move(index_arr);
+//    build_hash_index();
+//    return Status::OK();
+//  }
+
+//  const std::shared_ptr<arrow::Array> &GetIndexArray() override {
+//    return table_->get_table()->column(col_id_);
+//  }
+
+  Status GetIndexAsArray(std::shared_ptr<arrow::Array> *out) override {
+    *out = index_arr_;
+    return Status::OK();
+  }
+
+  bool IsUnique() override {
+    return unique_flag;
+  }
+
+  IndexingType GetIndexingType() const override { return IndexingType::Hash; }
+
+//  Status Slice(int64_t start, int64_t end, std::shared_ptr<BaseArrowIndex> *out_index) const override {
+//    if (start >= end) {
+//      return {Code::Invalid, "start >= end"};
+//    }
+//    auto index_arr_slice = index_arr_->Slice(start, end - start);
+//    *out_index = std::make_shared<ArrowHashIndex<ArrowT>>(std::move(index_arr_slice), GetColId(), GetPool());
+//    return Status::OK();
+//  }
+
+ private:
+  inline Status build_hash_index() {
+    map_ = std::make_shared<MapT>(index_arr_->length());
+
+    // reserve space for nulls
+    null_indices = std::make_shared<std::vector<int64_t>>();
+    null_indices->reserve(index_arr_->null_count());
+
+    int64_t idx = 0;
+    const auto &arr_data = *index_arr_->data();
+
+    arrow::VisitArrayDataInline<ArrowT>(
+        arr_data,
+        [&](ValueT val) {
+          auto &indices = (*map_)[val];
+          indices.push_back(idx);
+          unique_flag |= (indices.size() > 1);
+          idx++;
+        },
+        [&]() {  // nothing to do for nulls
+          null_indices->push_back(idx);
+          unique_flag |= (null_indices->size() > 1);
+          idx++;
+        });
+
+    return Status::OK();
+  }
+
+  std::shared_ptr<arrow::Array> index_arr_;
+  std::shared_ptr<MapT> map_ = nullptr;
+  std::shared_ptr<std::vector<int64_t>> null_indices = nullptr;
+  bool unique_flag = false;
+};
+
+/*
+ * -------------------------- Range Index --------------------------
+ */
+
+
+Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+                                        std::shared_ptr<arrow::Int64Array> *find_index) {
+  int64_t val = 0;
+  RETURN_CYLON_STATUS_IF_FAILED(LocationByValue(search_param, &val));
+
+  const auto &res = arrow::MakeArrayFromScalar(arrow::Int64Scalar(val), 1, pool_);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
+
+  *find_index = std::static_pointer_cast<arrow::Int64Array>(res.ValueOrDie());
+  return Status::OK();
 }
 
-int ArrowRangeIndex::GetAnEnd() const {
-  return end_;
-}
+Status ArrowRangeIndex::LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+                                        int64_t *find_index) {
+  if (!search_param->is_valid) {
+    return {Code::KeyError, "invalid search param: null"};
+  }
 
-int ArrowRangeIndex::GetStep() const {
-  return step_;
+  const auto &res = search_param->CastTo(arrow::int64());
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
+  int64_t val = util::ArrowScalarValue<arrow::Int64Type>::Extract(res.ValueOrDie());
+
+  if (val < start_ || val >= end_) {
+    return {Code::KeyError, "key not found. must be in the range [start, end)"};
+  }
+  *find_index = val - start_;
+  return Status::OK();
 }
 
 Status ArrowRangeIndex::LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
-										 std::vector<int64_t> &filter_location) {
-  std::shared_ptr<arrow::Int64Array> cast_search_param = std::static_pointer_cast<arrow::Int64Array>(search_param);
-  for (int64_t ix = 0; ix < cast_search_param->length(); ix++) {
-    int64_t index_value = cast_search_param->Value(ix);
-    filter_location.push_back(index_value);
+                                         std::shared_ptr<arrow::Int64Array> *filter_location) {
+  if (search_param->null_count() > 0) {
+    return {Code::KeyError, "invalid search param: null"};
   }
+
+  const auto & cast_res = arrow::compute::Cast(*search_param, arrow::int64());
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(cast_res.status());
+  const auto & casted_search_param = cast_res.ValueOrDie();
+
+  const auto &res = arrow::compute::MinMax(casted_search_param);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
+
+  const arrow::ScalarVector &min_max = res.ValueOrDie().scalar_as<arrow::StructScalar>().value;
+
+  int64_t min = std::static_pointer_cast<arrow::Int64Scalar>(min_max[0])->value;
+  int64_t max = std::static_pointer_cast<arrow::Int64Scalar>(min_max[1])->value;
+
+  if (min < start_ || max >= end_) {
+    return {Code::KeyError, "search params are out of bounds"};
+  } else {
+    if (start_ != 0) {
+      const auto &sub_res = arrow::compute::Subtract(casted_search_param, arrow::Datum(start_));
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(sub_res.status());
+      *filter_location = sub_res.ValueOrDie().array_as<arrow::Int64Array>();
+    } else {
+      *filter_location = std::make_shared<arrow::Int64Array>(casted_search_param->data());
+    }
+    return Status::OK();
+  }
+}
+
+
+//Status ArrowRangeIndex::SetIndexArray(std::shared_ptr<arrow::Array> index_arr, int col_id) {
+//  if (index_arr->length() != GetSize()) {
+//    return {Code::Invalid, "new index array size != current index size"};
+//  }
+//  BaseArrowIndex::SetColId(col_id);
+//  index_arr_ = std::move(index_arr);
+//  return Status::OK();
+//}
+
+Status ArrowRangeIndex::GetIndexAsArray(std::shared_ptr<arrow::Array> *out) {
+  arrow::Int64Builder builder(pool_);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(size_));
+
+  for (int64_t ix = start_; ix < end_; ix += step_) {
+    builder.UnsafeAppend(ix);
+  }
+
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED (builder.Finish(out));
   return Status::OK();
+}
+
+Status ArrowRangeIndex::Slice(int64_t start, int64_t end_inclusive, std::shared_ptr<BaseArrowIndex> *out_index) const {
+  if (start >= end_inclusive) {
+    return {Code::Invalid, "start >= end"};
+  }
+  if (start < start_ || end_inclusive > end_) {
+    return {Code::Invalid, "slice start and/or end is out of bounds"};
+  }
+
+  // + step_ to get the inclusive end
+  *out_index = std::make_shared<ArrowRangeIndex>(start, end_inclusive + step_, step_, pool_);
+  return Status::OK();
+}
+
+std::shared_ptr<BaseArrowIndex> BuildRangeIndex(int64_t start,
+                                                int64_t end,
+                                                int64_t step,
+                                                arrow::MemoryPool *pool) {
+  return std::make_shared<ArrowRangeIndex>(start, end, step, pool);
+}
+
+/*
+ * -------------------------- Linear Index --------------------------
+ */
+template<typename ArrowT>
+class ArrowLinearIndex : public BaseArrowIndex {
+ public:
+//  ArrowLinearIndex(std::shared_ptr<arrow::Array> index_array, int col_id, arrow::MemoryPool *pool)
+//      : BaseArrowIndex(col_id, index_array->length(), pool), unique_flag(-1), index_array_(std::move(index_array)) {}
+  static constexpr int8_t kUniqueNotCalculated = -1;
+
+  ArrowLinearIndex(arrow::Table *table, std::string col_name,
+                   std::shared_ptr<arrow::Array> index_array, arrow::MemoryPool *pool)
+      : BaseArrowIndex(table, std::move(col_name), pool), unique_flag(kUniqueNotCalculated),
+        index_array_(std::move(index_array)) {}
+
+  static Status Make(const std::shared_ptr<arrow::Table> &table, int col_idx,
+                     std::shared_ptr<BaseArrowIndex> *output, arrow::MemoryPool *pool) {
+    auto col_name = table->schema()->field(col_idx)->name();
+    const auto &chunked_array = table->column(col_idx);
+
+    if (chunked_array->length() && chunked_array->num_chunks() > 1) {
+      return {Code::Invalid, "linear index can not be built with a chunked table"};
+    }
+
+    *output = std::make_shared<ArrowLinearIndex>(table.get(), std::move(col_name),
+                                                 chunked_array->chunk(0), pool);
+    return Status::OK();
+  }
+
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+                         std::shared_ptr<arrow::Int64Array> *locations) override {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::FindIndicesByScalar<ArrowT>(index_array_,
+                                                                          search_param,
+                                                                          locations,
+                                                                          pool_));
+    return Status::OK();
+  }
+
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+                         int64_t *location) override {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::FindIndex<ArrowT>(index_array_,
+                                                                search_param,
+                                                                location));
+    return Status::OK();
+  }
+
+  Status LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
+                          std::shared_ptr<arrow::Int64Array> *locations) override {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::FindIndicesByArray(index_array_,
+                                                                 search_param,
+                                                                 locations,
+                                                                 pool_));
+    return Status::OK();
+  }
+
+//  Status SetIndexArray(std::shared_ptr<arrow::Array> index_arr, int col_id) override {
+//    if (index_arr->length() != GetSize()) {
+//      return {Code::Invalid, "new index array size != current index size"};
+//    }
+//    SetColId(col_id);
+//    index_array_ = std::move(index_arr);
+//    unique_flag = -1;
+//    return Status::OK();
+//  }
+
+  Status GetIndexAsArray(std::shared_ptr<arrow::Array> *out) override {
+    *out = index_array_;
+    return Status::OK();
+  }
+
+  IndexingType GetIndexingType() const override {
+    return Linear;
+  }
+
+  bool IsUnique() override {
+    if (unique_flag == kUniqueNotCalculated) { // not calculated
+      const auto &status = util::IsUnique(index_array_, reinterpret_cast<bool *>(&unique_flag), pool_);
+
+      if (!status.ok()) {
+        unique_flag = -1; // uniqueness check failed
+      }
+    }
+
+    return unique_flag == 1;
+  }
+
+//  Status Slice(int64_t start, int64_t end, std::shared_ptr<BaseArrowIndex> *out_index) const override {
+//    if (start >= end) {
+//      return {Code::Invalid, "start >= end"};
+//    }
+//    auto index_arr_slice = index_array_->Slice(start, end - start);
+//    *out_index = std::make_shared<ArrowLinearIndex<ArrowT>>(std::move(index_arr_slice), GetColId(), GetPool());
+//    return Status::OK();
+//  }
+
+ private:
+  int8_t unique_flag; // -1 = not calculated, 0 = not unique, 1 = unique
+  std::shared_ptr<arrow::Array> index_array_;
 };
 
-ArrowRangeIndexKernel::ArrowRangeIndexKernel() {
-
+template<template<typename ...> class IndexImpl>
+Status MakeIndex(const std::shared_ptr<arrow::Table> &table, int col_idx,
+                 std::shared_ptr<BaseArrowIndex> *output, arrow::MemoryPool *pool) {
+  const auto &type = table->schema()->field(col_idx)->type();
+  switch (type->id()) {
+    case arrow::Type::BOOL:return IndexImpl<arrow::BooleanType>::Make(table, col_idx, output, pool);
+    case arrow::Type::UINT8:return IndexImpl<arrow::UInt8Type>::Make(table, col_idx, output, pool);
+    case arrow::Type::INT8:return IndexImpl<arrow::Int8Type>::Make(table, col_idx, output, pool);
+    case arrow::Type::UINT16:
+      return IndexImpl<arrow::UInt16Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::INT16:
+      return IndexImpl<arrow::Int16Type>::Make(table, col_idx,
+                                               output, pool);
+    case arrow::Type::UINT32:
+      return IndexImpl<arrow::UInt32Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::INT32:
+      return IndexImpl<arrow::Int32Type>::Make(table, col_idx,
+                                               output, pool);
+    case arrow::Type::UINT64:
+      return IndexImpl<arrow::UInt64Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::INT64:
+      return IndexImpl<arrow::Int64Type>::Make(table, col_idx,
+                                               output, pool);
+    case arrow::Type::FLOAT:
+      return IndexImpl<arrow::FloatType>::Make(table, col_idx,
+                                               output, pool);
+    case arrow::Type::DOUBLE:
+      return IndexImpl<arrow::DoubleType>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::STRING:
+      return IndexImpl<arrow::StringType>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::BINARY:
+      return IndexImpl<arrow::BinaryType>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::LARGE_STRING:
+      return IndexImpl<arrow::LargeStringType>::Make(table, col_idx,
+                                                     output, pool);
+    case arrow::Type::LARGE_BINARY:
+      return IndexImpl<arrow::LargeBinaryType>::Make(table, col_idx,
+                                                     output, pool);
+    case arrow::Type::DATE32:
+      return IndexImpl<arrow::Date32Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::DATE64:
+      return IndexImpl<arrow::Date64Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::TIME32:
+      return IndexImpl<arrow::Time32Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::TIME64:
+      return IndexImpl<arrow::Time64Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::TIMESTAMP:
+      return IndexImpl<arrow::TimestampType>::Make(table, col_idx,
+                                                   output, pool);
+    case arrow::Type::INTERVAL_MONTHS:
+      return IndexImpl<arrow::MonthIntervalType>::Make(table, col_idx,
+                                                       output, pool);
+    case arrow::Type::INTERVAL_DAY_TIME:
+      // todo DayTimeIntervalType requires a custom hasher because it's c_type is a struct
+//      *output = std::make_shared<ArrowHashIndex<arrow::DayTimeIntervalType>>(table, col_id);
+//      break;
+    default:return {Code::NotImplemented, "Unsupported data type for hash index "};
+  }
 }
 
-Status ArrowRangeIndexKernel::BuildIndex(arrow::MemoryPool *pool,
-										 std::shared_ptr<arrow::Table> &input_table,
-										 const int index_column,
-										 std::shared_ptr<BaseArrowIndex> &base_arrow_index) {
-  base_arrow_index = std::make_shared<ArrowRangeIndex>(0, input_table->num_rows(), 1, pool);
-  return cylon::Status::OK();
+Status MakeIndex(const std::shared_ptr<CylonContext> &ctx,
+                 const std::shared_ptr<arrow::Table> &table,
+                 int col_idx, IndexingType type,
+                 std::shared_ptr<BaseArrowIndex> *index) {
+  auto pool = ToArrowPool(ctx);
+  switch (type) {
+    case Range:*index = BuildRangeIndex(0, table->num_rows(), 1, pool);
+      return Status::OK();
+    case Linear: return MakeIndex<ArrowLinearIndex>(table, col_idx, index, pool);
+    case Hash: return MakeIndex<ArrowHashIndex>(table, col_idx, index, pool);
+    case BinaryTree:
+    case BTree:
+    default:return {Code::NotImplemented, "Unsupported index type"};
+  }
 }
+
+Status MakeIndex(const std::shared_ptr<CylonContext> &ctx,
+                 const std::shared_ptr<arrow::Table> &table,
+                 const IndexConfig &index_config,
+                 std::shared_ptr<BaseArrowIndex> *index) {
+  int col_idx = table->schema()->GetFieldIndex(index_config.col_name);
+
+  if (index_config.type != Range && col_idx < 0) {
+    return {Code::Invalid, "column not found for indexing: " + index_config.col_name};
+  }
+
+  return MakeIndex(ctx, table, col_idx, index_config.type, index);
 }
+
+
+//Status BuildTableWithIndexArray(const std::shared_ptr<Table> &table,
+//                                std::shared_ptr<arrow::Array> index_array,
+//                                IndexingType indexing_type,
+//                                std::shared_ptr<Table> *output) {
+//  auto arrow_table = table->get_table();
+//  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(table->GetContext(), std::move(arrow_table), *output));
+//
+//  return (*output)->SetArrowIndex(std::move(index_array), indexing_type);
+//}
+
+//Status BuildIndex(std::shared_ptr<arrow::Array> index_array,
+//                  IndexingType indexing_type,
+//                  std::shared_ptr<BaseArrowIndex> *output,
+//                  int col_id,
+//                  arrow::MemoryPool *pool) {
+//  switch (indexing_type) {
+//    case Range:*output = std::make_shared<ArrowRangeIndex>(0, index_array->length(), 1, pool);
+//      return Status::OK();
+//    case Linear: return BuildLinearIndex(std::move(index_array), output, col_id, pool);
+//    case Hash: return BuildHashIndex(std::move(index_array), output, col_id, pool);
+//    case BinaryTree:
+//    case BTree:
+//    default:return {Code::NotImplemented, "Unsupported index type"};
+//  }
+//}
+
+//Status SetIndexForTable(std::shared_ptr<Table> &table, int col_id, IndexingType indexing_type, bool drop) {
+//  arrow::MemoryPool *pool = ToArrowPool(table->GetContext());
+//
+//  // take a copy of the arrow table
+//  auto a_table = table->get_table();
+//
+//  std::shared_ptr<BaseArrowIndex> index;
+//  RETURN_CYLON_STATUS_IF_FAILED(BuildIndex(a_table, col_id, indexing_type, &index));
+//
+//  // set index
+//  RETURN_CYLON_STATUS_IF_FAILED(table->SetArrowIndex(std::move(index), drop));
+//  return Status::OK();
+//}
+//
+//Status SetIndexForTable(std::shared_ptr<Table> &table,
+//                        std::shared_ptr<arrow::Array> array,
+//                        IndexingType indexing_type,
+//                        int col_id) {
+//  if (array->length() != table->Rows()) {
+//    return {Code::Invalid, "array length != table length"};
+//  }
+//
+//  arrow::MemoryPool *pool = ToArrowPool(table->GetContext());
+//  std::shared_ptr<BaseArrowIndex> index;
+//  RETURN_CYLON_STATUS_IF_FAILED(BuildIndex(std::move(array), indexing_type, &index, col_id, pool));
+//
+//  RETURN_CYLON_STATUS_IF_FAILED(table->SetArrowIndex(std::move(index), /*drop_index*/false));
+//  return Status::OK();
+//}
+
+} // namespace cylon
 
 
 

@@ -17,6 +17,7 @@
 #include <arrow/util/bitmap_visit.h>
 
 #include "cylon/arrow/arrow_type_traits.hpp"
+#include "cylon/util/macros.hpp"
 
 namespace cylon {
 

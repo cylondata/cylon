@@ -14,8 +14,7 @@
 
 #include <cylon/arrow/arrow_types.hpp>
 #include <cylon/data_types.hpp>
-
-#include <glog/logging.h>
+#include "cylon/util/macros.hpp"
 
 namespace cylon {
 namespace tarrow {
@@ -59,52 +58,56 @@ bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table) {
   return CheckSupportedTypes(table).is_ok();
 }
 
+cylon::Status CheckSupportedType(const std::shared_ptr<arrow::DataType> &type){
+  switch (type->id()) {
+    /* following types are supported. go to next column type */
+    case arrow::Type::BOOL:
+    case arrow::Type::UINT8:
+    case arrow::Type::INT8:
+    case arrow::Type::UINT16:
+    case arrow::Type::INT16:
+    case arrow::Type::UINT32:
+    case arrow::Type::INT32:
+    case arrow::Type::UINT64:
+    case arrow::Type::INT64:
+    case arrow::Type::HALF_FLOAT:
+    case arrow::Type::FLOAT:
+    case arrow::Type::DOUBLE:
+    case arrow::Type::BINARY:
+    case arrow::Type::FIXED_SIZE_BINARY:
+    case arrow::Type::STRING:
+    case arrow::Type::DATE32:
+    case arrow::Type::DATE64:
+    case arrow::Type::TIMESTAMP:
+    case arrow::Type::TIME32:
+    case arrow::Type::TIME64: return Status::OK();
+    case arrow::Type::LIST: {
+      const auto &t_value = std::static_pointer_cast<arrow::ListType>(type);
+      switch (t_value->value_type()->id()) {
+        /* following types are supported. go to next column type */
+        case arrow::Type::UINT8:
+        case arrow::Type::INT8:
+        case arrow::Type::UINT16:
+        case arrow::Type::INT16:
+        case arrow::Type::UINT32:
+        case arrow::Type::INT32:
+        case arrow::Type::UINT64:
+        case arrow::Type::INT64:
+        case arrow::Type::HALF_FLOAT:
+        case arrow::Type::FLOAT:
+        case arrow::Type::DOUBLE:return Status::OK();
+        default:
+          return {Code::NotImplemented, "unsupported value type for lists " + t_value->value_type()->ToString()};;
+      }
+    }
+    default: return {Code::NotImplemented, "unsupported type " + type->ToString()};
+  }
+}
+
 Status CheckSupportedTypes(const std::shared_ptr<arrow::Table> &table) {
   const auto &schema = table->schema();
-  for (const auto &t: schema->fields()) {
-    switch (t->type()->id()) {
-      /* following types are supported. go to next column type */
-      case arrow::Type::BOOL:
-      case arrow::Type::UINT8:
-      case arrow::Type::INT8:
-      case arrow::Type::UINT16:
-      case arrow::Type::INT16:
-      case arrow::Type::UINT32:
-      case arrow::Type::INT32:
-      case arrow::Type::UINT64:
-      case arrow::Type::INT64:
-      case arrow::Type::HALF_FLOAT:
-      case arrow::Type::FLOAT:
-      case arrow::Type::DOUBLE:
-      case arrow::Type::BINARY:
-      case arrow::Type::FIXED_SIZE_BINARY:
-      case arrow::Type::STRING:
-      case arrow::Type::DATE32:
-      case arrow::Type::DATE64:
-      case arrow::Type::TIMESTAMP:
-      case arrow::Type::TIME32:
-      case arrow::Type::TIME64: continue;
-      case arrow::Type::LIST: {
-        const auto &t_value = std::static_pointer_cast<arrow::ListType>(t->type());
-        switch (t_value->value_type()->id()) {
-          /* following types are supported. go to next column type */
-          case arrow::Type::UINT8:
-          case arrow::Type::INT8:
-          case arrow::Type::UINT16:
-          case arrow::Type::INT16:
-          case arrow::Type::UINT32:
-          case arrow::Type::INT32:
-          case arrow::Type::UINT64:
-          case arrow::Type::INT64:
-          case arrow::Type::HALF_FLOAT:
-          case arrow::Type::FLOAT:
-          case arrow::Type::DOUBLE:continue;
-          default:
-            return {Code::NotImplemented, "unsupported value type for lists " + t_value->value_type()->ToString()};;
-        }
-      }
-      default: return {Code::NotImplemented, "unsupported type " + t->type()->ToString()};
-    }
+  for (const auto &f: schema->fields()) {
+    RETURN_CYLON_STATUS_IF_FAILED(CheckSupportedType(f->type()));
   }
   return Status::OK();
 }

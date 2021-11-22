@@ -11,229 +11,226 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <glog/logging.h>
-#include <cylon/indexing/index_utils.hpp>
-#include <cylon/util/arrow_utils.hpp>
 
-cylon::Status cylon::IndexUtil::BuildArrowHashIndex(const std::shared_ptr<Table> &input,
-													const int index_column,
-													std::shared_ptr<cylon::BaseArrowIndex> &index) {
+#include <arrow/util/bitmap_ops.h>
 
-  auto table_ = input->get_table();
-  const auto &ctx = input->GetContext();
-  if (table_->column(0)->num_chunks() > 1) {
-    const arrow::Result<std::shared_ptr<arrow::Table>> &res = table_->CombineChunks(cylon::ToArrowPool(ctx));
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-    table_ = res.ValueOrDie();
+#include "cylon/util/macros.hpp"
+#include "cylon/ctx/arrow_memory_pool_utils.hpp"
+#include "index_utils.hpp"
+
+namespace cylon {
+namespace indexing {
+
+// we need to ensure that the index col id is included in the columns vector
+// if not add it to columns vector
+void update_vector_with_index_column(int curr_index_col, std::vector<int> *columns) {
+  // found_idx will be the position of the curr_index_col.
+  size_t found_idx =
+      std::distance(columns->begin(), std::find(columns->begin(), columns->end(), curr_index_col));
+  if (found_idx >= columns->size()) {
+    // curr_index_col not found! push it into columns vector
+    columns->push_back(curr_index_col);
+//    return static_cast<int>(columns->size() - 1);
   }
-  auto pool = cylon::ToArrowPool(ctx);
-  std::shared_ptr<cylon::ArrowIndexKernel> kernel = CreateArrowIndexKernel(table_, index_column);
-  RETURN_CYLON_STATUS_IF_FAILED(kernel->BuildIndex(pool, table_, index_column, index));
-  auto index_array = cylon::util::GetChunkOrEmptyArray(table_->column(index_column), 0);
-  return cylon::Status::OK();
 }
 
-cylon::Status cylon::IndexUtil::BuildArrowIndex(const cylon::IndexingType schema,
-												const std::shared_ptr<Table> &input,
-												const int index_column,
-												std::shared_ptr<cylon::BaseArrowIndex> &index) {
-  switch (schema) {
-	case Range: return BuildArrowRangeIndex(input, index);
-	case Linear: return BuildArrowLinearIndex(input, index_column, index);
-	case Hash: return BuildArrowHashIndex(input, index_column, index);
-	case BinaryTree:break;
-	case BTree:break;
-	default: BuildArrowRangeIndex(input, index);
+Status SliceTableByRange(const std::shared_ptr<Table> &input_table,
+                         int64_t start,
+                         int64_t end_inclusive,
+                         std::vector<int> columns,
+                         std::shared_ptr<Table> *output,
+                         bool reset_index) {
+  const auto &arrow_t = input_table->get_table();
+  const auto &ctx = input_table->GetContext();
+
+  const auto &curr_index = input_table->GetArrowIndex();
+  auto curr_index_col_name = curr_index->index_column_name();
+  auto curr_index_type = curr_index->GetIndexingType();
+  int curr_index_col_id = arrow_t->schema()->GetFieldIndex(curr_index_col_name);
+
+  // if curr_index_col_id not available in columns vector, add it!
+  if (!reset_index && curr_index_type != Range) {
+    update_vector_with_index_column(curr_index_col_id, &columns);
   }
-  return cylon::Status(cylon::Code::Invalid, "Invalid indexing schema");
-}
 
-cylon::Status cylon::IndexUtil::BuildArrowIndexFromArray(const cylon::IndexingType schema,
-														 const std::shared_ptr<Table> &input,
-														 const std::shared_ptr<arrow::Array> &index_array) {
-  cylon::Status status;
-  std::shared_ptr<cylon::BaseArrowIndex> index;
-  const auto &ctx = input->GetContext();
-  auto pool = cylon::ToArrowPool(ctx);
-  switch (schema) {
-    case Range:
-      status = BuildArrowRangeIndexFromArray(index_array->length(), pool, index);
-      break;
-    case Linear:
-      status = BuildArrowLinearIndexFromArrowArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array),
-                                                   pool,
-                                                   index);
-      break;
-    case Hash:
-      status = BuildArrowHashIndexFromArray(const_cast<std::shared_ptr<arrow::Array> &>(index_array), pool, index);
-      break;
-    case BinaryTree:
-      status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
-      break;
-    case BTree:
-      status = cylon::Status(cylon::Code::NotImplemented, "Not Implemented");
-      break;
+  // select and slice the table
+  CYLON_ASSIGN_OR_RAISE(auto selected, arrow_t->SelectColumns(columns));
+
+  // then slice. + 1 added include the end boundary
+  auto out_arrow_table = selected->Slice(start, (end_inclusive - start + 1));
+
+//  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(ctx, std::move(out_arrow_table), *output));
+
+  // now fix the index
+  if (reset_index) { // if reset index, nothing to do
+    return Table::FromArrowTable(ctx, std::move(out_arrow_table), *output);
   }
-  RETURN_CYLON_STATUS_IF_FAILED(status);
-  RETURN_CYLON_STATUS_IF_FAILED(input->SetArrowIndex(index, false));
-  return cylon::Status::OK();
-}
 
-cylon::Status cylon::IndexUtil::BuildArrowIndex(cylon::IndexingType schema,
-												const std::shared_ptr<Table> &input,
-												int index_column,
-												bool drop,
-												std::shared_ptr<Table> &output) {
-  std::shared_ptr<cylon::BaseArrowIndex> index;
-  RETURN_CYLON_STATUS_IF_FAILED(BuildArrowIndex(schema, input, index_column, index));
-  RETURN_CYLON_STATUS_IF_FAILED(input->SetArrowIndex(index, drop));
-  output = std::move(input);
-  return cylon::Status::OK();
-}
+  if (curr_index->GetIndexingType() == Range) {
+    std::shared_ptr<BaseArrowIndex> sliced_index;
+    // trivially create a new range index (+ 1 added to include the end boundary)
+    RETURN_CYLON_STATUS_IF_FAILED(
+        std::static_pointer_cast<ArrowRangeIndex>(curr_index)->Slice(start, end_inclusive, &sliced_index));
 
-cylon::Status cylon::IndexUtil::BuildArrowLinearIndex(const std::shared_ptr<Table> &input,
-													  const int index_column,
-													  std::shared_ptr<cylon::BaseArrowIndex> &index) {
-  auto table_ = input->get_table();
-  const auto& ctx = input->GetContext();
-  auto pool = cylon::ToArrowPool(ctx);
-  std::shared_ptr<cylon::ArrowIndexKernel> kernel = std::make_shared<cylon::LinearArrowIndexKernel>();
-  RETURN_CYLON_STATUS_IF_FAILED(kernel->BuildIndex(pool, table_, index_column, index));
-  return cylon::Status::OK();
-}
-cylon::Status cylon::IndexUtil::BuildArrowRangeIndex(const std::shared_ptr<Table> &input,
-													 std::shared_ptr<cylon::BaseArrowIndex> &index) {
-
-  const auto &ctx = input->GetContext();
-  auto pool = cylon::ToArrowPool(ctx);
-  auto table_ = input->get_table();
-  std::shared_ptr<cylon::ArrowIndexKernel> kernel = std::make_unique<ArrowRangeIndexKernel>();
-  RETURN_CYLON_STATUS_IF_FAILED(kernel->BuildIndex(pool, table_, 0, index));
-  std::vector<int64_t> range_index_values(input->Rows());
-  std::shared_ptr<arrow::Array> index_arr;
-  for (int i = 0; i < input->Rows(); ++i) {
-    range_index_values.push_back(i);
+    return Table::FromArrowTableWithIndex(ctx,
+                                          std::move(out_arrow_table),
+                                          std::move(sliced_index),
+                                          output);
+  } else {
+    // build index from found_idx column
+    return Table::FromArrowTable(ctx, std::move(out_arrow_table),
+                                 *output, {curr_index_type, std::move(curr_index_col_name)});
   }
-  arrow::Int64Builder builder(pool);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Reserve(input->Rows()));
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.AppendValues(range_index_values));
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(builder.Finish(&index_arr));
-  index->SetIndexArray(index_arr);
-  return cylon::Status::OK();
 }
-cylon::Status cylon::IndexUtil::BuildArrowRangeIndexFromArray(int64_t size,
-															  arrow::MemoryPool *pool,
-															  std::shared_ptr<cylon::BaseArrowIndex> &index) {
-  index = std::make_shared<ArrowRangeIndex>(0, size, 1, pool);
-  return Status::OK();
-}
-cylon::Status cylon::IndexUtil::BuildArrowHashIndexFromArray(const std::shared_ptr<arrow::Array> &index_values,
-															 arrow::MemoryPool *pool,
-															 std::shared_ptr<cylon::BaseArrowIndex> &index) {
-  switch (index_values->type()->id()) {
 
-    case arrow::Type::NA:
-      break;
-    case arrow::Type::BOOL:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::BooleanType>(index_values,
-                                                                                            pool,
-                                                                                            index);
-    case arrow::Type::UINT8:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt8Type>(index_values,
-                                                                                          pool,
-                                                                                          index);
-    case arrow::Type::INT8:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int8Type>(index_values,
-                                                                                         pool,
-                                                                                         index);
-    case arrow::Type::UINT16:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt16Type>(index_values,
-                                                                                           pool,
-                                                                                           index);
-    case arrow::Type::INT16:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int16Type>(index_values,
-                                                                                          pool,
-                                                                                          index);
-    case arrow::Type::UINT32:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt32Type>(index_values,
-                                                                                           pool,
-                                                                                           index);
-    case arrow::Type::INT32:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int32Type>(index_values,
-                                                                                          pool,
-                                                                                          index);
-    case arrow::Type::UINT64:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::UInt64Type>(index_values,
-                                                                                           pool,
-                                                                                           index);
-    case arrow::Type::INT64:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Int64Type>(index_values,
-                                                                                          pool,
-                                                                                          index);
-    case arrow::Type::HALF_FLOAT:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::HalfFloatType>(index_values,
-                                                                                              pool,
-                                                                                              index);
-    case arrow::Type::FLOAT:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::FloatType>(index_values,
-                                                                                          pool,
-                                                                                          index);
-    case arrow::Type::DOUBLE:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::DoubleType>(index_values,
-                                                                                           pool,
-                                                                                           index);
-    case arrow::Type::STRING:
-      return cylon::IndexUtil::BuildArrowBinaryHashIndexFromArrowArray<arrow::StringType>(
-          index_values,
-          pool,
-          index);
-    case arrow::Type::BINARY:
-      return cylon::IndexUtil::BuildArrowBinaryHashIndexFromArrowArray<arrow::BinaryType>(
-          index_values,
-          pool,
-          index);
-    case arrow::Type::FIXED_SIZE_BINARY:
-      return cylon::IndexUtil::BuildArrowBinaryHashIndexFromArrowArray<arrow::BinaryType>(
-          index_values,
-          pool,
-          index);
-    case arrow::Type::DATE32:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Date32Type>(index_values,
-                                                                                           pool,
-                                                                                           index);
-    case arrow::Type::DATE64:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Date64Type>(index_values,
-                                                                                           pool,
-                                                                                           index);
-    case arrow::Type::TIMESTAMP:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::TimestampType>(index_values,
-                                                                                              pool,
-                                                                                              index);
-    case arrow::Type::TIME32:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Time32Type>(index_values,
-                                                                                           pool,
-                                                                                           index);
-    case arrow::Type::TIME64:
-      return cylon::IndexUtil::BuildArrowNumericHashIndexFromArrowArray<arrow::Time64Type>(index_values,
-                                                                                           pool,
-                                                                                           index);
-    default:
-      return cylon::Status(cylon::Code::Invalid, "Unsupported data type");
+/*
+ * Filter table based on indices. The new table will inherit the indices array as it's index (LinearIndex)
+ */
+Status SelectTableByRows(const std::shared_ptr<Table> &input_table,
+                         const std::shared_ptr<arrow::Array> &indices,
+                         std::vector<int> columns,
+                         std::shared_ptr<Table> *output,
+                         bool bounds_check,
+                         bool reset_index) {
+  const auto &arrow_t = input_table->get_table();
+  const auto &ctx = input_table->GetContext();
+
+  const auto &curr_index = input_table->GetArrowIndex();
+  auto curr_index_col_name = curr_index->index_column_name();
+  auto curr_index_type = curr_index->GetIndexingType();
+  int curr_index_col_id = arrow_t->schema()->GetFieldIndex(curr_index_col_name);
+
+  if (!reset_index && curr_index_type != Range) {
+    update_vector_with_index_column(curr_index_col_id, &columns);
   }
-  return cylon::Status(cylon::Code::Invalid, "Unsupported data type");
+
+  //  first filter columns
+  CYLON_ASSIGN_OR_RAISE(auto selected, arrow_t->SelectColumns(columns))
+
+  // then call take on the result
+  CYLON_ASSIGN_OR_RAISE(auto taken, arrow::compute::Take(selected, indices,
+                                                         bounds_check
+                                                         ? arrow::compute::TakeOptions::BoundsCheck()
+                                                         : arrow::compute::TakeOptions::NoBoundsCheck()));
+
+  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(ctx, taken.table(), *output));
+
+  // now fix the index
+  if (reset_index) { // if reset index, nothing to do
+    return Status::OK();
+  }
+
+  std::shared_ptr<BaseArrowIndex> new_index;
+  if (curr_index_type == Range) {
+    // if the indexing type is range, we can use the indices array as a linear index to the table
+    return (*output)->SetArrowIndex(indices, output, Linear);
+  } else {
+    return (*output)->SetArrowIndex(curr_index_col_name, output, curr_index->GetIndexingType());
+  }
 }
 
+Status FilterTableByMask(const std::shared_ptr<Table> &input_table,
+                         const std::shared_ptr<arrow::Array> &mask,
+                         std::vector<int> columns,
+                         std::shared_ptr<Table> *output,
+                         bool reset_index) {
+  if (mask->type_id() != arrow::Type::BOOL) {
+    return {Code::Invalid, "mask should be Boolean type"};
+  }
 
+  if (input_table->Rows() != mask->length()) {
+    return {Code::Invalid, "mask should match the table length"};
+  }
 
+  auto pool = ToArrowPool(input_table->GetContext());
+  auto null_sel = arrow::compute::FilterOptions::NullSelectionBehavior::DROP;
+  CYLON_ASSIGN_OR_RAISE(auto arr_data,
+                        arrow::compute::internal::GetTakeIndices(*mask->data(), null_sel, pool))
 
+  return SelectTableByRows(input_table, arrow::MakeArray(arr_data), std::move(columns),
+                           output, /*bounds_check=*/false, reset_index);
+}
 
+Status MaskTable(const std::shared_ptr<Table> &input_table, const std::shared_ptr<Table> &mask,
+                 std::shared_ptr<Table> *output) {
+  if (input_table->Columns() != mask->Columns() || input_table->Rows() != mask->Rows()) {
+    return {Code::Invalid, "input table and mask dimensions don't match"};
+  }
 
+  for (auto &&c: mask->get_table()->columns()) {
+    if (c->type()->id() != arrow::Type::BOOL) {
+      return {Code::Invalid, "mask should be all boolean columns"};
+    }
+    if (c->null_count()) {
+      return {Code::Invalid, "mask can not have null values"};
+    }
+  }
 
+  if (input_table->Empty()) {
+    *output = input_table;
+    return Status::OK();
+  }
 
+  arrow::ArrayVector output_arrays;
+  output_arrays.reserve(input_table->Columns());
+  arrow::MemoryPool *pool = ToArrowPool(input_table->GetContext());
 
+  CYLON_ASSIGN_OR_RAISE(auto arrow_table, input_table->get_table()->CombineChunks(pool))
+  CYLON_ASSIGN_OR_RAISE(const auto &arrow_mask, mask->get_table()->CombineChunks(pool))
 
+  for (int i = 0; i < arrow_table->num_columns(); i++) {
+    const auto &curr_data = arrow_table->column(i)->chunk(0)->data();
+    const auto &mask_data = arrow_mask->column(i)->chunk(0)->data();
 
+    std::vector<std::shared_ptr<arrow::Buffer>> new_buffers;
+    new_buffers.reserve(curr_data->buffers.size());
 
+    // fix the validity buffer
+    if (curr_data->MayHaveNulls()) {
+      // create a new bitmap with curr_data's offset
+      CYLON_ASSIGN_OR_RAISE(auto buf,
+                            arrow::internal::BitmapAnd(pool,
+                                                       curr_data->buffers[0]->data(),
+                                                       curr_data->offset,
+                                                       mask_data->buffers[1]->data(),
+                                                       mask_data->offset,
+                                                       curr_data->length,
+                                                       curr_data->offset))
+      new_buffers.emplace_back(std::move(buf));
+    } else {
+      // create a new bitmap with curr_data's offset
+      CYLON_ASSIGN_OR_RAISE(auto buf,
+                            arrow::AllocateBitmap(curr_data->length + curr_data->offset, pool))
 
+      arrow::internal::CopyBitmap(mask_data->buffers[1]->data(),
+                                  mask_data->offset,
+                                  mask_data->length,
+                                  buf->mutable_data(),
+                                  curr_data->offset);
+      new_buffers.emplace_back(std::move(buf));
+    }
 
+    // simply copy the buffers to new buffers
+    for (size_t b = 1; b < curr_data->buffers.size(); b++) {
+      new_buffers.push_back(curr_data->buffers[b]);
+    }
 
+    auto new_data = arrow::ArrayData::Make(curr_data->type,
+                                           curr_data->length,
+                                           std::move(new_buffers),
+                                           arrow::kUnknownNullCount,
+                                           curr_data->offset);
+    output_arrays.push_back(arrow::MakeArray(new_data));
+  }
+
+  const auto &curr_index = input_table->GetArrowIndex();
+  auto new_table = arrow::Table::Make(arrow_table->schema(), output_arrays);
+
+  return Table::FromArrowTable(input_table->GetContext(),
+                               std::move(new_table),
+                               *output,
+                               curr_index->GetIndexConfig());
+}
+
+}
+}

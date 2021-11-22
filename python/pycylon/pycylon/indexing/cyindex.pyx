@@ -12,19 +12,20 @@
 # limitations under the License.
 ##
 
-from libcpp.memory cimport shared_ptr, make_shared
+from libcpp.memory cimport shared_ptr, nullptr
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from pyarrow.lib cimport CArray as CArrowArray
 from pyarrow.lib cimport CScalar as CArrowScalar
 from pycylon.indexing.cyindex cimport CIndexingType
-from pycylon.indexing.cyindex cimport CArrowLocIndexer
+# from pycylon.indexing.cyindex cimport CArrowLocIndexer, CArrowRangeIndex
 from pycylon.indexing.cyindex cimport CBaseArrowIndex
 from pyarrow.lib cimport (pyarrow_unwrap_table, pyarrow_wrap_table, pyarrow_wrap_array,
 pyarrow_unwrap_array, pyarrow_wrap_scalar, pyarrow_unwrap_scalar)
+from pycylon.common.status cimport CStatus
 
 from pycylon.api.lib cimport (pycylon_wrap_context, pycylon_unwrap_context, pycylon_unwrap_table,
-pycylon_wrap_table)
+pycylon_wrap_table, pycylon_unwrap_base_arrow_index)
 
 from pycylon.data.table cimport CTable
 from pycylon.data.table import Table
@@ -32,6 +33,7 @@ from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context import CylonContext
 import pyarrow as pa
 import numpy as np
+from pandas import RangeIndex
 
 from cpython.ref cimport PyObject
 from cython.operator cimport dereference as deref, preincrement as inc
@@ -54,7 +56,6 @@ cpdef enum IndexingType:
     BINARYTREE = CIndexingType.CBINARYTREE
     BTREE = CIndexingType.CBTREE
 
-
 def _resolve_column_index_from_column_name(column_name, cn_table) -> int:
     index = None
     if isinstance(column_name, str):
@@ -67,18 +68,26 @@ def _resolve_column_index_from_column_name(column_name, cn_table) -> int:
     else:
         raise ValueError("column_name must be str or int")
 
-
 cdef class BaseArrowIndex:
     cdef void init(self, const shared_ptr[CBaseArrowIndex]& index):
         self.bindex_shd_ptr = index
 
-    def get_index_array(self) -> pa.array:
-        cdef shared_ptr[CArrowArray] index_arr = self.bindex_shd_ptr.get().GetIndexArray()
-        py_arw_index_arr = pyarrow_wrap_array(index_arr)
-        return py_arw_index_arr
+    def get_index_array(self) -> pa.Array:
+        if self.index_array == nullptr:
+            self.bindex_shd_ptr.get().GetIndexAsArray(&self.index_array)
+
+        return pyarrow_wrap_array(self.index_array)
 
     def get_type(self) -> IndexingType:
         return IndexingType(self.bindex_shd_ptr.get().GetIndexingType())
+
+    @property
+    def column_id(self) -> int:
+        return self.bindex_shd_ptr.get().col_id()
+
+    @property
+    def size(self) -> int:
+        return self.bindex_shd_ptr.get().size()
 
     @property
     def index_values(self):
@@ -102,22 +111,33 @@ cdef class BaseArrowIndex:
         else:
             raise ValueError("values must be List or np.ndarray")
 
-
 cdef class ArrowLocIndexer:
     def __cinit__(self, CIndexingType indexing_type):
-        self.indexer_shd_ptr = make_shared[CArrowLocIndexer](indexing_type)
+        # self.indexer_shd_ptr = make_shared[CArrowLocIndexer](indexing_type)
+        pass
 
     def _fix_partial_slice_inidices(self, start_index, end_index, index):
-        if start_index and end_index:
-            return start_index, end_index
-        elif start_index is None and end_index is None:
-            start_index = index.get_index_array()[0].as_py()  # first element of index
+        # if start_index and end_index:
+        #     return start_index, end_index
+        # elif start_index is None and end_index is None:
+        #     start_index = index.get_index_array()[0].as_py()  # first element of index
+        #     end_index = index.get_index_array()[-1].as_py()  # last element of the index
+        # elif start_index and end_index is None:
+        #     end_index = index.get_index_array()[-1].as_py()  # last element of the index
+        # elif start_index is None and end_index:
+        #     start_index = index.get_index_array()[0].as_py()  # first element of index
+        data_type = index.get_index_array().type
+        if start_index is None:
+            start_scalar = index.get_index_array()[0]  # first element of index
+        else:
+            start_scalar = pa.scalar(start_index, data_type)
+
+        if end_index is None:
             end_index = index.get_index_array()[-1].as_py()  # last element of the index
-        elif start_index and end_index is None:
-            end_index = index.get_index_array()[-1].as_py()  # last element of the index
-        elif start_index is None and end_index:
-            start_index = index.get_index_array()[0].as_py()  # first element of index
-        return start_index, end_index
+        else:
+            end_scalar = pa.scalar(end_index, data_type)
+
+        return start_scalar, end_scalar
 
     def _resolve_column_indices_vector(self, columns : List, table):
         resolved_columns = []
@@ -128,7 +148,7 @@ cdef class ArrowLocIndexer:
         else:
             raise ValueError("columns must be input as a List")
 
-    def _resolve_column_index_slice(self, column:slice, table):
+    def _resolve_column_index_slice(self, column: slice, table):
         if isinstance(column, slice):
             start_col_idx, end_col_idx = column.start, column.stop
             if start_col_idx:
@@ -143,7 +163,6 @@ cdef class ArrowLocIndexer:
             raise ValueError("column must be passed as a slice")
         return start_col_idx, end_col_idx
 
-
     def loc_with_index_range(self, start_index, end_index, column, table):
         cdef:
             shared_ptr[CTable] output
@@ -154,34 +173,49 @@ cdef class ArrowLocIndexer:
             int c_start_column_index
             int c_end_column_index
             vector[int] c_column_vector
+            CStatus status
+
         # cast indices to appropriate scalar types
         index = table.get_index()
-        start_index, end_index = self._fix_partial_slice_inidices(start_index, end_index, index)
-        index_array = index.get_index_array()
-        start_scalar = pa.scalar(start_index, index_array.type)
-        end_scalar = pa.scalar(end_index, index_array.type)
+        start_scalar, end_scalar = self._fix_partial_slice_inidices(start_index, end_index, index)
+        # index_array = index.get_index_array()
+        # start_scalar = pa.scalar(start_index, index_array.type)
+        # end_scalar = pa.scalar(end_index, index_array.type)
         start = pyarrow_unwrap_scalar(start_scalar)
         end = pyarrow_unwrap_scalar(end_scalar)
         input = pycylon_unwrap_table(table)
         if np.isscalar(column):
             # single column
             c_column_index = self._resolve_column_indices_vector([column], table)[0]
-            self.indexer_shd_ptr.get().loc(start, end, c_column_index, input, output)
-            return pycylon_wrap_table(output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_column_index, input, output)
+            status = Loc(input, start, end, c_column_index, &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"Loc error: {status.get_msg().decode()}")
         elif isinstance(column, slice):
             # range of columns
             start_index, end_index = self._resolve_column_index_slice(column, table)
             c_start_column_index = start_index
             c_end_column_index = end_index
-            self.indexer_shd_ptr.get().loc(start, end, c_start_column_index, c_end_column_index, input, output)
-            return pycylon_wrap_table(output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_start_column_index, c_end_column_index, input, output)
+            status = Loc(input, start, end, c_start_column_index, c_end_column_index,
+                         &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"Loc error: {status.get_msg().decode()}")
         elif isinstance(column, List):
             # list of columns
             column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
-            self.indexer_shd_ptr.get().loc(start, end, c_column_vector, input, output)
-            return pycylon_wrap_table(output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_column_vector, input, output)
+            status = Loc(input, start, end, c_column_vector, &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"Loc error: {status.get_msg().decode()}")
 
     def loc_with_indices(self, indices, column, table):
         cdef:
@@ -192,6 +226,7 @@ cdef class ArrowLocIndexer:
             int c_start_column_index
             int c_end_column_index
             vector[int] c_column_vector
+            CStatus status
         # cast indices to appropriate scalar types
         index_array = table.get_index().get_index_array()
         indices_array = pa.array(indices, index_array.type)
@@ -200,43 +235,64 @@ cdef class ArrowLocIndexer:
         if np.isscalar(column):
             # single column
             c_column_index = self._resolve_column_indices_vector([column], table)[0]
-            self.indexer_shd_ptr.get().loc(c_indices, c_column_index, input, output)
-            return pycylon_wrap_table(output)
+            # self.indexer_shd_ptr.get().loc(c_indices, c_column_index, input, output)
+            status = Loc(input, c_indices, c_column_index, &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"Loc error: {status.get_msg().decode()}")
+
         elif isinstance(column, slice):
             # range of columns
-            start_index, end_index = self._resolve_column_index_slice(column, table)
-            c_start_column_index = start_index
-            c_end_column_index = end_index
-            self.indexer_shd_ptr.get().loc(c_indices, c_start_column_index, c_end_column_index, input, output)
-            return pycylon_wrap_table(output)
+            c_start_column_index, c_end_column_index = self._resolve_column_index_slice(column,
+                                                                                        table)
+            # c_start_column_index = start_index
+            # c_end_column_index = end_index
+            # self.indexer_shd_ptr.get().loc(c_indices, c_start_column_index, c_end_column_index, input, output)
+            status = Loc(input, c_indices, c_start_column_index, c_end_column_index,
+                         &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"Loc error: {status.get_msg().decode()}")
         elif isinstance(column, List):
             # list of columns
             column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
-            self.indexer_shd_ptr.get().loc(c_indices, c_column_vector, input, output)
-            return pycylon_wrap_table(output)
-
+            # self.indexer_shd_ptr.get().loc(c_indices, c_column_vector, input, output)
+            status = Loc(input, c_indices, c_column_vector, &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"Loc error: {status.get_msg().decode()}")
 
 cdef class ArrowILocIndexer:
     def __cinit__(self, CIndexingType indexing_type):
-        self.indexer_shd_ptr = make_shared[CArrowILocIndexer](indexing_type)
+        # self.indexer_shd_ptr = make_shared[CArrowILocIndexer](indexing_type)
+        pass
 
     def _fix_partial_slice_inidices(self, start_index, end_index, index):
-        if start_index is not None and end_index is not None:
-            # (excluding the boundary value)
-            return start_index, end_index - 1
-        elif start_index is None and end_index is None:
-            start_index = 0
-            end_index = len(index.get_index_array()) - 1
-            return start_index, end_index
-        elif start_index and end_index is None:
-            end_index = len(index.get_index_array()) - 1
-            return start_index, end_index
-        elif start_index is None and end_index:
-            start_index = 0
-            end_index = end_index - 1
-            return start_index, end_index
+        # if start_index is not None and end_index is not None:
+        #     # (excluding the boundary value)
+        #     return start_index, end_index - 1
+        # elif start_index is None and end_index is None:
+        #     start_index = 0
+        #     end_index = len(index.get_index_array()) - 1
+        #     return start_index, end_index
+        # elif start_index and end_index is None:
+        #     end_index = len(index.get_index_array()) - 1
+        #     return start_index, end_index
+        # elif start_index is None and end_index:
+        #     start_index = 0
+        #     end_index = end_index - 1
+        #     return start_index, end_index
+        start_scalar = pa.scalar(0, pa.int64()) if start_index is None \
+            else pa.scalar(start_index, pa.int64())
+        end_scalar = pa.scalar(index.size() - 1, pa.int64()) if start_index is None \
+            else pa.scalar(end_index, pa.int64())
+
+        return start_scalar, end_scalar
 
     def _fix_partial_slice_column_inidices(self, start_index, end_index, num_columns):
         if start_index and end_index:
@@ -260,7 +316,7 @@ cdef class ArrowILocIndexer:
         else:
             raise ValueError("columns must be input as a List")
 
-    def _resolve_column_index_slice(self, column:slice, table):
+    def _resolve_column_index_slice(self, column: slice, table):
         if isinstance(column, slice):
             start_col_idx, end_col_idx = column.start, column.stop
             if start_col_idx:
@@ -287,34 +343,49 @@ cdef class ArrowILocIndexer:
             int c_start_column_index
             int c_end_column_index
             vector[int] c_column_vector
+            CStatus status
+
         # cast indices to appropriate scalar types
         index = table.get_index()
-        start_index, end_index = self._fix_partial_slice_inidices(start_index, end_index, index)
-        index_array = index.get_index_array()
-        start_scalar = pa.scalar(start_index, pa.int64())
-        end_scalar = pa.scalar(end_index, pa.int64())
+        start_scalar, end_scalar = self._fix_partial_slice_inidices(start_index, end_index, index)
+        # index_array = index.get_index_array()
+        # start_scalar = pa.scalar(start_index, pa.int64())
+        # end_scalar = pa.scalar(end_index, pa.int64())
         start = pyarrow_unwrap_scalar(start_scalar)
         end = pyarrow_unwrap_scalar(end_scalar)
         input = pycylon_unwrap_table(table)
         if np.isscalar(column):
             # single column
             c_column_index = self._resolve_column_indices_vector([column], table)[0]
-            self.indexer_shd_ptr.get().loc(start, end, c_column_index, input, output)
-            return pycylon_wrap_table(output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_column_index, input, output)
+            status = iLoc(input, start, end, c_column_index, &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"iLoc error: {status.get_msg().decode()}")
         elif isinstance(column, slice):
             # range of columns
             start_index, end_index = self._resolve_column_index_slice(column, table)
             c_start_column_index = start_index
             c_end_column_index = end_index
-            self.indexer_shd_ptr.get().loc(start, end, c_start_column_index, c_end_column_index, input, output)
-            return pycylon_wrap_table(output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_start_column_index, c_end_column_index, input, output)
+            status = iLoc(input, start, end, c_start_column_index, c_end_column_index,
+                          &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"iLoc error: {status.get_msg().decode()}")
         elif isinstance(column, List):
             # list of columns
             column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
-            self.indexer_shd_ptr.get().loc(start, end, c_column_vector, input, output)
-            return pycylon_wrap_table(output)
+            # self.indexer_shd_ptr.get().loc(start, end, c_column_vector, input, output)
+            status = iLoc(input, start, end, c_column_vector, &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"iLoc error: {status.get_msg().decode()}")
 
     def loc_with_indices(self, indices, column, table):
         cdef:
@@ -325,6 +396,8 @@ cdef class ArrowILocIndexer:
             int c_start_column_index
             int c_end_column_index
             vector[int] c_column_vector
+            CStatus status
+
         # cast indices to appropriate scalar types
         index_array = table.get_index().get_index_array()
         indices_array = pa.array(indices, pa.int64())
@@ -333,22 +406,35 @@ cdef class ArrowILocIndexer:
         if np.isscalar(column):
             # single column
             c_column_index = self._resolve_column_indices_vector([column], table)[0]
-            self.indexer_shd_ptr.get().loc(c_indices, c_column_index, input, output)
-            return pycylon_wrap_table(output)
+            # self.indexer_shd_ptr.get().loc(c_indices, c_column_index, input, output)
+            status = iLoc(input, c_indices, c_column_index, &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"iLoc error: {status.get_msg().decode()}")
         elif isinstance(column, slice):
             # range of columns
             start_index, end_index = self._resolve_column_index_slice(column, table)
             c_start_column_index = start_index
             c_end_column_index = end_index
-            self.indexer_shd_ptr.get().loc(c_indices, c_start_column_index, c_end_column_index, input, output)
-            return pycylon_wrap_table(output)
+            # self.indexer_shd_ptr.get().loc(c_indices, c_start_column_index, c_end_column_index, input, output)
+            status = iLoc(input, c_indices, c_start_column_index, c_end_column_index,
+                          &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"iLoc error: {status.get_msg().decode()}")
         elif isinstance(column, List):
             # list of columns
             column = self._resolve_column_indices_vector(column, table)
             for col in column:
                 c_column_vector.push_back(col)
-            self.indexer_shd_ptr.get().loc(c_indices, c_column_vector, input, output)
-            return pycylon_wrap_table(output)
+            # self.indexer_shd_ptr.get().loc(c_indices, c_column_vector, input, output)
+            status = iLoc(input, c_indices, c_column_vector, &output)
+            if status.is_ok():
+                return pycylon_wrap_table(output)
+            else:
+                raise Exception(f"iLoc error: {status.get_msg().decode()}")
 
 
 class PyLocIndexer:
@@ -382,7 +468,8 @@ class PyLocIndexer:
                 return self._loc_indexer.loc_with_index_range(start_idx, end_idx, column_values,
                                                               self._cn_table)
             elif isinstance(index_values, List):
-                return self._loc_indexer.loc_with_indices(index_values, column_values, self._cn_table)
+                return self._loc_indexer.loc_with_indices(index_values, column_values,
+                                                          self._cn_table)
         elif item:
             column_index = slice(None, None)
             if isinstance(item, slice):
@@ -398,3 +485,104 @@ class PyLocIndexer:
                 raise ValueError("Index values must be either slice or List")
         else:
             raise ValueError("No values passed for loc operation")
+
+
+def slice_table_by_range(table: Table, start: int, end_inclusive: int, columns: List[int],
+                         reset_index = False)-> Table:
+    cdef:
+        shared_ptr[CTable] output
+        shared_ptr[CTable] input = pycylon_unwrap_table(table)
+        vector[int] c_column_vector
+        CStatus status
+
+    for col in columns:
+        c_column_vector.push_back(col)
+
+    status = SliceTableByRange(input, start, end_inclusive, c_column_vector, &output,
+                               reset_index)
+    if status.is_ok():
+        return pycylon_wrap_table(output)
+    else:
+        raise Exception(f"slice table error: {status.get_msg().decode()}")
+
+def filter_table_by_array(table: Table, indices: pa.Array, columns: List[int],
+                          bool bounds_check = False, reset_index = False)-> Table:
+    cdef:
+        shared_ptr[CTable] output
+        shared_ptr[CTable] input = pycylon_unwrap_table(table)
+        shared_ptr[CArrowArray] c_indices = pyarrow_unwrap_array(indices)
+        vector[int] c_column_vector
+        CStatus status
+
+    for col in columns:
+        c_column_vector.push_back(col)
+
+    status = SelectTableByRows(input, c_indices, c_column_vector, &output, bounds_check,
+                               reset_index)
+    if status.is_ok():
+        return pycylon_wrap_table(output)
+    else:
+        raise Exception(f"filter table error: {status.get_msg().decode()}")
+
+def filter_table(table: Table, indices: List[int], columns: List[int],
+                 bool bounds_check = False, reset_index = False)-> Table:
+    indices_array = pa.array(indices, pa.int64())
+
+    return filter_table_by_array(table, indices_array, columns, bounds_check, reset_index)
+
+def filter_table_by_mask(table: Table, mask: pa.Array, columns: List[int], reset_index = False):
+    cdef:
+        shared_ptr[CTable] output
+        shared_ptr[CTable] input = pycylon_unwrap_table(table)
+        shared_ptr[CArrowArray] c_mask = pyarrow_unwrap_array(mask)
+        vector[int] c_column_vector
+        CStatus status
+
+    for col in columns:
+        c_column_vector.push_back(col)
+
+    status = FilterTableByMask(input, c_mask, c_column_vector, &output, reset_index)
+    if status.is_ok():
+        return pycylon_wrap_table(output)
+    else:
+        raise Exception(f"filter table error: {status.get_msg().decode()}")
+
+def mask_table(table: Table, mask: Table):
+    cdef:
+        shared_ptr[CTable] output
+        shared_ptr[CTable] input = pycylon_unwrap_table(table)
+        shared_ptr[CTable] c_mask = pycylon_unwrap_table(mask)
+        CStatus status
+
+    status = MaskTable(input, c_mask, &output)
+    if status.is_ok():
+        return pycylon_wrap_table(output)
+    else:
+        raise Exception(f"mask table error: {status.get_msg().decode()}")
+
+cdef class ArrowRangeIndex:
+    @property
+    def start(self):
+        return self.ptr.start_
+
+    @property
+    def end(self):
+        return self.ptr.end_
+
+    @property
+    def step(self):
+        return self.ptr.step_
+
+    cdef void init(self, CBaseArrowIndex * index):
+        cdef CArrowRangeIndex * ptr_ = <CArrowRangeIndex *> index
+        self.ptr = ptr_
+
+def to_pandas_range_index(BaseArrowIndex index):
+    cdef CBaseArrowIndex * index_ptr
+    if index.get_type() != IndexingType.RANGE:
+        raise Exception("Can not be converted to pandas range index")
+
+    index_ptr = pycylon_unwrap_base_arrow_index(index).get()
+    range_index = ArrowRangeIndex()
+    range_index.init(index_ptr)
+    return RangeIndex(range_index.start, range_index.end, range_index.step)

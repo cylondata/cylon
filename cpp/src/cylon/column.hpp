@@ -24,6 +24,7 @@
 #include "cylon/data_types.hpp"
 #include "cylon/ctx/arrow_memory_pool_utils.hpp"
 #include "cylon/arrow/arrow_types.hpp"
+#include "cylon/util/macros.hpp"
 
 namespace cylon {
 

@@ -21,8 +21,9 @@
 #include <parquet/arrow/writer.h>
 #endif
 
-#include <cylon/io/arrow_io.hpp>
-#include <cylon/io/csv_read_config_holder.hpp>
+#include "cylon/io/arrow_io.hpp"
+#include "cylon/io/csv_read_config_holder.hpp"
+#include "cylon/ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
 namespace io {
