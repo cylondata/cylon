@@ -19,6 +19,7 @@
 #include <chrono>
 
 #include <cylon/table.hpp>
+#include "cylon/util/macros.hpp"
 #include "test_macros.hpp"
 
 // this is a toggle to generate test files. Set execute to 0 then, it will generate the expected

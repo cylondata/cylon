@@ -202,10 +202,10 @@ struct ArrowScalarValue<ArrowT, arrow::enable_if_has_string_view<ArrowT>> {
  * @return arrow::Status
  */
 template<typename ArrowT>
-arrow::Status FindIndices(const std::shared_ptr<arrow::Array> &index_array_,
-                          const std::shared_ptr<arrow::Scalar> &search_param,
-                          std::shared_ptr<arrow::Int64Array> *locations,
-                          arrow::MemoryPool *pool) {
+arrow::Status FindIndicesByScalar(const std::shared_ptr<arrow::Array> &index_array_,
+                                  const std::shared_ptr<arrow::Scalar> &search_param,
+                                  std::shared_ptr<arrow::Int64Array> *locations,
+                                  arrow::MemoryPool *pool) {
   using ValueT = typename ArrowScalarValue<ArrowT>::ValueT;
 
   // if search param is null and index_array doesn't have any nulls, return empty array
@@ -266,10 +266,10 @@ arrow::Status FindIndices(const std::shared_ptr<arrow::Array> &index_array_,
  * @param locations
  * @return arrow::Status
  */
-arrow::Status FindIndices(const std::shared_ptr<arrow::Array> &array,
-                          const std::shared_ptr<arrow::Array> &search_param,
-                          std::shared_ptr<arrow::Int64Array> *locations,
-                          arrow::MemoryPool *pool = arrow::default_memory_pool());
+arrow::Status FindIndicesByArray(const std::shared_ptr<arrow::Array> &array,
+                                 const std::shared_ptr<arrow::Array> &search_param,
+                                 std::shared_ptr<arrow::Int64Array> *locations,
+                                 arrow::MemoryPool *pool = arrow::default_memory_pool());
 
 /**
  * Find index of `search_param` value. If not found, IndexError Status will be returned.

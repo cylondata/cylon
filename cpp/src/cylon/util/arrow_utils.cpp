@@ -355,24 +355,23 @@ arrow::Status CreateEmptyArray(const std::shared_ptr<arrow::DataType> &data_type
   return arrow::Status::OK();
 }
 
-arrow::Status FindIndices(const std::shared_ptr<arrow::Array> &index_array_,
-                          const std::shared_ptr<arrow::Array> &search_param,
-                          std::shared_ptr<arrow::Int64Array> *locations,
-                          arrow::MemoryPool *pool) {
+arrow::Status FindIndicesByArray(const std::shared_ptr<arrow::Array> &index_array_,
+                                 const std::shared_ptr<arrow::Array> &search_param,
+                                 std::shared_ptr<arrow::Int64Array> *locations,
+                                 arrow::MemoryPool *pool) {
   const auto &res = arrow::compute::Cast(search_param, index_array_->type());
   RETURN_ARROW_STATUS_IF_FAILED(res.status());
   const auto &search_param_casted = res.ValueOrDie();
 
-  const auto &res_isin_filter = arrow::compute::IsIn(index_array_, search_param_casted);
-  RETURN_ARROW_STATUS_IF_FAILED(res_isin_filter.status());
+  ARROW_ASSIGN_OR_RAISE(auto isin_filter, arrow::compute::IsIn(index_array_, search_param_casted));
 
   // result is a bool array
-  const auto &bool_array = std::static_pointer_cast<arrow::BooleanArray>(res_isin_filter.ValueOrDie().make_array());
+  const auto &bool_array = std::static_pointer_cast<arrow::BooleanArray>(isin_filter.make_array());
 
   arrow::Int64Builder builder(pool);
   int64_t true_count = bool_array->true_count();
 
-  if (true_count == 0) { // no matches
+  if (search_param->length() && true_count == 0) { // no matches
     return arrow::Status::KeyError("Keys not found");
   }
   RETURN_ARROW_STATUS_IF_FAILED(builder.Reserve(true_count));

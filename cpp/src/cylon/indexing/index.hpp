@@ -19,11 +19,16 @@
 #include <arrow/compute/api.h>
 #include <arrow/visitor_inline.h>
 
+#include <utility>
+
 #include "cylon/status.hpp"
+#include "cylon/ctx/cylon_context.hpp"
 
 namespace cylon {
 
 class Table;
+
+static constexpr const char *kDefaultIdxColName = "__index__";
 
 enum IndexingType {
   Range = 0,
@@ -33,16 +38,18 @@ enum IndexingType {
   BTree = 4,
 };
 
+struct IndexConfig {
+  IndexingType type;
+  const std::string col_name;
+
+  static IndexConfig Default() { return {Range, kDefaultIdxColName}; }
+};
+
 class BaseArrowIndex {
   friend Table;
 
  public:
-  static constexpr int kNoColumnId = -1;
-
-//  BaseArrowIndex(int col_id, int64_t size, arrow::MemoryPool *pool)
-//      : size_(size), col_id_(col_id), pool_(pool) {};
-
-  BaseArrowIndex(Table *table, int col_id, int64_t size);
+  BaseArrowIndex(arrow::Table *table, std::string index_col_name, arrow::MemoryPool *pool);
   BaseArrowIndex(int64_t size, arrow::MemoryPool *pool);
 
   virtual ~BaseArrowIndex() = default;
@@ -105,7 +112,7 @@ class BaseArrowIndex {
  */
   virtual Status GetIndexAsArray(std::shared_ptr<arrow::Array> *out) = 0;
 
-  virtual IndexingType GetIndexingType() = 0;
+  virtual IndexingType GetIndexingType() const = 0;
 
   /**
    * Checks if the index values are unique
@@ -113,17 +120,17 @@ class BaseArrowIndex {
    */
   virtual bool IsUnique() = 0;
 
-  int col_id() const {
-    return col_id_;
+  const std::string &index_column_name() const {
+    return col_name_;
   }
 
   int64_t size() const {
     return size_;
   }
 
-  Table* table() const {
-    return table_;
-  }
+  IndexConfig GetIndexConfig() const {
+    return {GetIndexingType(), col_name_};
+  };
 
 //  arrow::MemoryPool *GetPool() const { return pool_; }
 //
@@ -138,8 +145,7 @@ class BaseArrowIndex {
 //  virtual Status Slice(int64_t start, int64_t end, std::shared_ptr<BaseArrowIndex> *out_index) const = 0;
 
  protected:
-  Table *table_;
-  int col_id_;
+  std::string col_name_;
   int64_t size_;
   arrow::MemoryPool *pool_;
 };
@@ -165,7 +171,7 @@ class ArrowRangeIndex : public BaseArrowIndex {
 
   Status GetIndexAsArray(std::shared_ptr<arrow::Array> *out) override;
 
-  IndexingType GetIndexingType() override {
+  IndexingType GetIndexingType() const override {
     return Range;
   }
 
@@ -192,9 +198,7 @@ class ArrowRangeIndex : public BaseArrowIndex {
  * @param pool
  * @return
  */
-std::shared_ptr<BaseArrowIndex> BuildRangeIndex(int64_t start,
-                                                int64_t end,
-                                                int64_t step = 1,
+std::shared_ptr<BaseArrowIndex> BuildRangeIndex(int64_t start, int64_t end, int64_t step = 1,
                                                 arrow::MemoryPool *pool = arrow::default_memory_pool());
 
 /*
@@ -239,19 +243,19 @@ Status BuildHashIndex(std::shared_ptr<arrow::Array> index_array,
  * @param pool
  * @return
  */
-Status BuildIndex(Table *table,
-                  int col_id,
-                  IndexingType indexing_type,
-                  std::shared_ptr<BaseArrowIndex> *output);
+Status MakeIndex(const std::shared_ptr<CylonContext> &ctx,
+                 const std::shared_ptr<arrow::Table> &table,
+                 int col_idx, IndexingType type,
+                 std::shared_ptr<BaseArrowIndex> *index);
+Status MakeIndex(const std::shared_ptr<CylonContext> &ctx,
+                 const std::shared_ptr<arrow::Table> &table,
+                 const IndexConfig &index_config,
+                 std::shared_ptr<BaseArrowIndex> *index);
 
-Status BuildTableWithIndex(const std::shared_ptr<Table> &table,
-                           int col_id,
-                           IndexingType indexing_type,
-                           std::shared_ptr<Table> *output);
-Status BuildTableWithIndexArray(const std::shared_ptr<Table> &table,
-                                std::shared_ptr<arrow::Array> index_array,
-                                IndexingType indexing_type,
-                                std::shared_ptr<Table> *output);
+//Status BuildTableWithIndexArray(const std::shared_ptr<Table> &table,
+//                                std::shared_ptr<arrow::Array> index_array,
+//                                IndexingType indexing_type,
+//                                std::shared_ptr<Table> *output);
 
 //Status BuildIndex(std::shared_ptr<arrow::Array> index_array,
 //                  IndexingType indexing_type,

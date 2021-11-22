@@ -39,11 +39,12 @@ bool IsContinuous(const std::shared_ptr<arrow::Int64Array> &arr) {
   return true;
 }
 
-BaseArrowIndex::BaseArrowIndex(Table *table, int col_id, int64_t size) :
-    table_(table), col_id_(col_id), size_(size), pool_(ToArrowPool(table->GetContext())) {}
+BaseArrowIndex::BaseArrowIndex(arrow::Table *table, std::string index_col_name,
+                               arrow::MemoryPool *pool)
+    : col_name_(std::move(index_col_name)), size_(table->num_rows()), pool_(pool) {}
 
-BaseArrowIndex::BaseArrowIndex(int64_t size, arrow::MemoryPool *pool) :
-    table_(nullptr), col_id_(kNoColumnId), size_(size), pool_(pool) {}
+BaseArrowIndex::BaseArrowIndex(int64_t size, arrow::MemoryPool *pool)
+    : col_name_(kDefaultIdxColName), size_(size), pool_(pool) {}
 
 //std::shared_ptr<arrow::Array> BaseArrowIndex::GetIndexAsArray() {
 //  return table_->get_table()->column(col_id_)->chunk(0);
@@ -83,14 +84,25 @@ class ArrowHashIndex : public BaseArrowIndex {
   using MapT = typename ska::bytell_hash_map<ValueT, std::vector<int64_t>>;
 
  public:
-//  ArrowHashIndex(std::shared_ptr<arrow::Array> index_arr, int col_id, arrow::MemoryPool *pool)
-//      : BaseArrowIndex(col_id, index_arr->length(), pool), index_arr_(std::move(index_arr)) {
-//    build_hash_index();
-//  };
 
-  ArrowHashIndex(Table *table, int col_id) : BaseArrowIndex(table, col_id, table->Rows()),
-                                             index_arr_(table_->get_table()->column(col_id_)->chunk(0)) {
+  ArrowHashIndex(arrow::Table *table, std::string col_name, std::shared_ptr<arrow::Array> index_arr,
+                 arrow::MemoryPool *pool)
+      : BaseArrowIndex(table, std::move(col_name), pool), index_arr_(std::move(index_arr)) {
     build_hash_index();
+  }
+
+  static Status Make(const std::shared_ptr<arrow::Table> &table, int col_idx,
+                     std::shared_ptr<BaseArrowIndex> *output, arrow::MemoryPool *pool) {
+    auto col_name = table->schema()->field(col_idx)->name();
+    const auto &chunked_array = table->column(col_idx);
+
+    if (chunked_array->length() && chunked_array->num_chunks() > 1) {
+      return {Code::Invalid, "linear index can not be built with a chunked table"};
+    }
+
+    *output = std::make_shared<ArrowHashIndex>(table.get(), std::move(col_name),
+                                               chunked_array->chunk(0), pool);
+    return Status::OK();
   }
 
   Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
@@ -203,7 +215,7 @@ class ArrowHashIndex : public BaseArrowIndex {
     return unique_flag;
   }
 
-  IndexingType GetIndexingType() override { return IndexingType::Hash; }
+  IndexingType GetIndexingType() const override { return IndexingType::Hash; }
 
 //  Status Slice(int64_t start, int64_t end, std::shared_ptr<BaseArrowIndex> *out_index) const override {
 //    if (start >= end) {
@@ -247,66 +259,6 @@ class ArrowHashIndex : public BaseArrowIndex {
   std::shared_ptr<std::vector<int64_t>> null_indices = nullptr;
   bool unique_flag = false;
 };
-
-Status BuildHashIndex(Table *table, int col_id, std::shared_ptr<BaseArrowIndex> *output) {
-  if (!table->Empty() && table->get_table()->column(0)->num_chunks() > 1) {
-    return {Code::Invalid, "linear index can not be built with a chunked table"};
-  }
-
-  switch (table->get_table()->field(col_id)->type()->id()) {
-    case arrow::Type::BOOL:*output = std::make_shared<ArrowHashIndex<arrow::BooleanType>>(table, col_id);
-      break;
-    case arrow::Type::UINT8:*output = std::make_shared<ArrowHashIndex<arrow::UInt8Type>>(table, col_id);
-      break;
-    case arrow::Type::INT8:*output = std::make_shared<ArrowHashIndex<arrow::Int8Type>>(table, col_id);
-      break;
-    case arrow::Type::UINT16:*output = std::make_shared<ArrowHashIndex<arrow::UInt16Type>>(table, col_id);
-      break;
-    case arrow::Type::INT16:*output = std::make_shared<ArrowHashIndex<arrow::Int16Type>>(table, col_id);
-      break;
-    case arrow::Type::UINT32:*output = std::make_shared<ArrowHashIndex<arrow::UInt32Type>>(table, col_id);
-      break;
-    case arrow::Type::INT32:*output = std::make_shared<ArrowHashIndex<arrow::Int32Type>>(table, col_id);
-      break;
-    case arrow::Type::UINT64:*output = std::make_shared<ArrowHashIndex<arrow::UInt64Type>>(table, col_id);
-      break;
-    case arrow::Type::INT64:*output = std::make_shared<ArrowHashIndex<arrow::Int64Type>>(table, col_id);
-      break;
-    case arrow::Type::FLOAT:*output = std::make_shared<ArrowHashIndex<arrow::FloatType>>(table, col_id);
-      break;
-    case arrow::Type::DOUBLE:*output = std::make_shared<ArrowHashIndex<arrow::DoubleType>>(table, col_id);
-      break;
-    case arrow::Type::STRING:*output = std::make_shared<ArrowHashIndex<arrow::StringType>>(table, col_id);
-      break;
-    case arrow::Type::BINARY:*output = std::make_shared<ArrowHashIndex<arrow::BinaryType>>(table, col_id);
-      break;
-    case arrow::Type::LARGE_STRING:*output = std::make_shared<ArrowHashIndex<arrow::LargeStringType>>(table, col_id);
-      break;
-    case arrow::Type::LARGE_BINARY:*output = std::make_shared<ArrowHashIndex<arrow::LargeBinaryType>>(table, col_id);
-      break;
-    case arrow::Type::DATE32:*output = std::make_shared<ArrowHashIndex<arrow::Date32Type>>(table, col_id);
-      break;
-    case arrow::Type::DATE64:*output = std::make_shared<ArrowHashIndex<arrow::Date64Type>>(table, col_id);
-      break;
-    case arrow::Type::TIME32:*output = std::make_shared<ArrowHashIndex<arrow::Time32Type>>(table, col_id);
-      break;
-    case arrow::Type::TIME64:*output = std::make_shared<ArrowHashIndex<arrow::Time64Type>>(table, col_id);
-      break;
-    case arrow::Type::TIMESTAMP:*output = std::make_shared<ArrowHashIndex<arrow::TimestampType>>(table, col_id);
-      break;
-    case arrow::Type::INTERVAL_MONTHS:
-      *output = std::make_shared<ArrowHashIndex<arrow::MonthIntervalType>>(table,
-                                                                           col_id);
-      break;
-    case arrow::Type::INTERVAL_DAY_TIME:
-      // todo DayTimeIntervalType requires a custom hasher because it's c_type is a struct
-//      *output = std::make_shared<ArrowHashIndex<arrow::DayTimeIntervalType>>(table, col_id);
-//      break;
-    default:return {Code::NotImplemented, "Unsupported data type for hash index"};
-  }
-
-  return Status::OK();
-}
 
 /*
  * -------------------------- Range Index --------------------------
@@ -426,24 +378,48 @@ class ArrowLinearIndex : public BaseArrowIndex {
 //      : BaseArrowIndex(col_id, index_array->length(), pool), unique_flag(-1), index_array_(std::move(index_array)) {}
   static constexpr int8_t kUniqueNotCalculated = -1;
 
-  ArrowLinearIndex(Table *table, int col_id) : BaseArrowIndex(table, col_id, table->Rows()),
-                                               unique_flag(kUniqueNotCalculated),
-                                               index_array_(table_->get_table()->column(col_id_)->chunk(0)) {}
+  ArrowLinearIndex(arrow::Table *table, std::string col_name,
+                   std::shared_ptr<arrow::Array> index_array, arrow::MemoryPool *pool)
+      : BaseArrowIndex(table, std::move(col_name), pool), unique_flag(kUniqueNotCalculated),
+        index_array_(std::move(index_array)) {}
 
-  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
-                         std::shared_ptr<arrow::Int64Array> *locations) override {
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::FindIndices<ArrowT>(index_array_, search_param, locations, pool_));
+  static Status Make(const std::shared_ptr<arrow::Table> &table, int col_idx,
+                     std::shared_ptr<BaseArrowIndex> *output, arrow::MemoryPool *pool) {
+    auto col_name = table->schema()->field(col_idx)->name();
+    const auto &chunked_array = table->column(col_idx);
+
+    if (chunked_array->length() && chunked_array->num_chunks() > 1) {
+      return {Code::Invalid, "linear index can not be built with a chunked table"};
+    }
+
+    *output = std::make_shared<ArrowLinearIndex>(table.get(), std::move(col_name),
+                                                 chunked_array->chunk(0), pool);
     return Status::OK();
   }
 
-  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param, int64_t *location) override {
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::FindIndex<ArrowT>(index_array_, search_param, location));
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+                         std::shared_ptr<arrow::Int64Array> *locations) override {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::FindIndicesByScalar<ArrowT>(index_array_,
+                                                                          search_param,
+                                                                          locations,
+                                                                          pool_));
+    return Status::OK();
+  }
+
+  Status LocationByValue(const std::shared_ptr<arrow::Scalar> &search_param,
+                         int64_t *location) override {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::FindIndex<ArrowT>(index_array_,
+                                                                search_param,
+                                                                location));
     return Status::OK();
   }
 
   Status LocationByVector(const std::shared_ptr<arrow::Array> &search_param,
                           std::shared_ptr<arrow::Int64Array> *locations) override {
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::FindIndices(index_array_, search_param, locations, pool_));
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::FindIndicesByArray(index_array_,
+                                                                 search_param,
+                                                                 locations,
+                                                                 pool_));
     return Status::OK();
   }
 
@@ -462,7 +438,7 @@ class ArrowLinearIndex : public BaseArrowIndex {
     return Status::OK();
   }
 
-  IndexingType GetIndexingType() override {
+  IndexingType GetIndexingType() const override {
     return Linear;
   }
 
@@ -492,104 +468,115 @@ class ArrowLinearIndex : public BaseArrowIndex {
   std::shared_ptr<arrow::Array> index_array_;
 };
 
-Status BuildLinearIndex(Table *table, int col_id, std::shared_ptr<BaseArrowIndex> *out_index) {
-  if (!table->Empty() && table->get_table()->column(0)->num_chunks() > 1) {
-    return {Code::Invalid, "linear index can not be built with a chunked table"};
-  }
-
-  switch (table->get_table()->field(col_id)->type()->id()) {
-    case arrow::Type::BOOL:*out_index = std::make_shared<ArrowLinearIndex<arrow::BooleanType>>(table, col_id);
-      break;
-    case arrow::Type::UINT8:*out_index = std::make_shared<ArrowLinearIndex<arrow::UInt8Type>>(table, col_id);
-      break;
-    case arrow::Type::INT8:*out_index = std::make_shared<ArrowLinearIndex<arrow::Int8Type>>(table, col_id);
-      break;
-    case arrow::Type::UINT16:*out_index = std::make_shared<ArrowLinearIndex<arrow::UInt16Type>>(table, col_id);
-      break;
-    case arrow::Type::INT16:*out_index = std::make_shared<ArrowLinearIndex<arrow::Int16Type>>(table, col_id);
-      break;
-    case arrow::Type::UINT32:*out_index = std::make_shared<ArrowLinearIndex<arrow::UInt32Type>>(table, col_id);
-      break;
-    case arrow::Type::INT32:*out_index = std::make_shared<ArrowLinearIndex<arrow::Int32Type>>(table, col_id);
-      break;
-    case arrow::Type::UINT64:*out_index = std::make_shared<ArrowLinearIndex<arrow::UInt64Type>>(table, col_id);
-      break;
-    case arrow::Type::INT64:*out_index = std::make_shared<ArrowLinearIndex<arrow::Int64Type>>(table, col_id);
-      break;
-    case arrow::Type::FLOAT:*out_index = std::make_shared<ArrowLinearIndex<arrow::FloatType>>(table, col_id);
-      break;
-    case arrow::Type::DOUBLE:*out_index = std::make_shared<ArrowLinearIndex<arrow::DoubleType>>(table, col_id);
-      break;
-    case arrow::Type::STRING:*out_index = std::make_shared<ArrowLinearIndex<arrow::StringType>>(table, col_id);
-      break;
-    case arrow::Type::BINARY:*out_index = std::make_shared<ArrowLinearIndex<arrow::BinaryType>>(table, col_id);
-      break;
+template<template<typename ...> class IndexImpl>
+Status MakeIndex(const std::shared_ptr<arrow::Table> &table, int col_idx,
+                 std::shared_ptr<BaseArrowIndex> *output, arrow::MemoryPool *pool) {
+  const auto &type = table->schema()->field(col_idx)->type();
+  switch (type->id()) {
+    case arrow::Type::BOOL:return IndexImpl<arrow::BooleanType>::Make(table, col_idx, output, pool);
+    case arrow::Type::UINT8:return IndexImpl<arrow::UInt8Type>::Make(table, col_idx, output, pool);
+    case arrow::Type::INT8:return IndexImpl<arrow::Int8Type>::Make(table, col_idx, output, pool);
+    case arrow::Type::UINT16:
+      return IndexImpl<arrow::UInt16Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::INT16:
+      return IndexImpl<arrow::Int16Type>::Make(table, col_idx,
+                                               output, pool);
+    case arrow::Type::UINT32:
+      return IndexImpl<arrow::UInt32Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::INT32:
+      return IndexImpl<arrow::Int32Type>::Make(table, col_idx,
+                                               output, pool);
+    case arrow::Type::UINT64:
+      return IndexImpl<arrow::UInt64Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::INT64:
+      return IndexImpl<arrow::Int64Type>::Make(table, col_idx,
+                                               output, pool);
+    case arrow::Type::FLOAT:
+      return IndexImpl<arrow::FloatType>::Make(table, col_idx,
+                                               output, pool);
+    case arrow::Type::DOUBLE:
+      return IndexImpl<arrow::DoubleType>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::STRING:
+      return IndexImpl<arrow::StringType>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::BINARY:
+      return IndexImpl<arrow::BinaryType>::Make(table, col_idx,
+                                                output, pool);
     case arrow::Type::LARGE_STRING:
-      *out_index = std::make_shared<ArrowLinearIndex<arrow::LargeStringType>>(table, col_id);
-      break;
+      return IndexImpl<arrow::LargeStringType>::Make(table, col_idx,
+                                                     output, pool);
     case arrow::Type::LARGE_BINARY:
-      *out_index = std::make_shared<ArrowLinearIndex<arrow::LargeBinaryType>>(table, col_id);
-      break;
-    case arrow::Type::FIXED_SIZE_BINARY:
-      *out_index = std::make_shared<ArrowLinearIndex<arrow::FixedSizeBinaryType>>(table,
-                                                                                  col_id);
-      break;
-    case arrow::Type::DATE32:*out_index = std::make_shared<ArrowLinearIndex<arrow::Date32Type>>(table, col_id);
-      break;
-    case arrow::Type::DATE64:*out_index = std::make_shared<ArrowLinearIndex<arrow::Date64Type>>(table, col_id);
-      break;
-    case arrow::Type::TIMESTAMP:*out_index = std::make_shared<ArrowLinearIndex<arrow::TimestampType>>(table, col_id);
-      break;
-    case arrow::Type::TIME32:*out_index = std::make_shared<ArrowLinearIndex<arrow::Time32Type>>(table, col_id);
-      break;
-    case arrow::Type::TIME64:*out_index = std::make_shared<ArrowLinearIndex<arrow::Time64Type>>(table, col_id);
-      break;
+      return IndexImpl<arrow::LargeBinaryType>::Make(table, col_idx,
+                                                     output, pool);
+    case arrow::Type::DATE32:
+      return IndexImpl<arrow::Date32Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::DATE64:
+      return IndexImpl<arrow::Date64Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::TIME32:
+      return IndexImpl<arrow::Time32Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::TIME64:
+      return IndexImpl<arrow::Time64Type>::Make(table, col_idx,
+                                                output, pool);
+    case arrow::Type::TIMESTAMP:
+      return IndexImpl<arrow::TimestampType>::Make(table, col_idx,
+                                                   output, pool);
     case arrow::Type::INTERVAL_MONTHS:
-      *out_index = std::make_shared<ArrowLinearIndex<arrow::MonthIntervalType>>(table,
-                                                                                col_id);
-      break;
+      return IndexImpl<arrow::MonthIntervalType>::Make(table, col_idx,
+                                                       output, pool);
     case arrow::Type::INTERVAL_DAY_TIME:
-      *out_index = std::make_shared<ArrowLinearIndex<arrow::DayTimeIntervalType>>(table,
-                                                                                  col_id);
-      break;
-    default:return {Code::NotImplemented, "Unsupported data type for linear index"};
+      // todo DayTimeIntervalType requires a custom hasher because it's c_type is a struct
+//      *output = std::make_shared<ArrowHashIndex<arrow::DayTimeIntervalType>>(table, col_id);
+//      break;
+    default:return {Code::NotImplemented, "Unsupported data type for hash index "};
   }
-
-  return Status::OK();
 }
 
-Status BuildIndex(Table *table, int col_id, IndexingType indexing_type,
-                  std::shared_ptr<BaseArrowIndex> *index) {
-  switch (indexing_type) {
-    case Range:*index = BuildRangeIndex(0, table->Rows(), 1, ToArrowPool(table->GetContext()));
+Status MakeIndex(const std::shared_ptr<CylonContext> &ctx,
+                 const std::shared_ptr<arrow::Table> &table,
+                 int col_idx, IndexingType type,
+                 std::shared_ptr<BaseArrowIndex> *index) {
+  auto pool = ToArrowPool(ctx);
+  switch (type) {
+    case Range:*index = BuildRangeIndex(0, table->num_rows(), 1, pool);
       return Status::OK();
-    case Linear: return BuildLinearIndex(table, col_id, index);
-    case Hash: return BuildHashIndex(table, col_id, index);
+    case Linear: return MakeIndex<ArrowLinearIndex>(table, col_idx, index, pool);
+    case Hash: return MakeIndex<ArrowHashIndex>(table, col_idx, index, pool);
     case BinaryTree:
     case BTree:
     default:return {Code::NotImplemented, "Unsupported index type"};
   }
 }
 
-Status BuildTableWithIndex(const std::shared_ptr<Table> &table,
-                           int col_id,
-                           IndexingType indexing_type,
-                           std::shared_ptr<Table> *output) {
-  auto arrow_table = table->get_table();
-  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(table->GetContext(), std::move(arrow_table), *output));
+Status MakeIndex(const std::shared_ptr<CylonContext> &ctx,
+                 const std::shared_ptr<arrow::Table> &table,
+                 const IndexConfig &index_config,
+                 std::shared_ptr<BaseArrowIndex> *index) {
+  int col_idx = table->schema()->GetFieldIndex(index_config.col_name);
 
-  return (*output)->SetArrowIndex(col_id, indexing_type);
+  if (index_config.type != Range && col_idx < 0) {
+    return {Code::Invalid, "column not found for indexing: " + index_config.col_name};
+  }
+
+  return MakeIndex(ctx, table, col_idx, index_config.type, index);
 }
 
-Status BuildTableWithIndexArray(const std::shared_ptr<Table> &table,
-                                std::shared_ptr<arrow::Array> index_array,
-                                IndexingType indexing_type,
-                                std::shared_ptr<Table> *output) {
-  auto arrow_table = table->get_table();
-  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(table->GetContext(), std::move(arrow_table), *output));
 
-  return (*output)->SetArrowIndex(std::move(index_array), indexing_type);
-}
+//Status BuildTableWithIndexArray(const std::shared_ptr<Table> &table,
+//                                std::shared_ptr<arrow::Array> index_array,
+//                                IndexingType indexing_type,
+//                                std::shared_ptr<Table> *output) {
+//  auto arrow_table = table->get_table();
+//  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(table->GetContext(), std::move(arrow_table), *output));
+//
+//  return (*output)->SetArrowIndex(std::move(index_array), indexing_type);
+//}
 
 //Status BuildIndex(std::shared_ptr<arrow::Array> index_array,
 //                  IndexingType indexing_type,

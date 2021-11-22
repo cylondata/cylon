@@ -28,6 +28,8 @@ namespace indexing {
  * @param columns
  * @param output
  * @return
+ *
+ * todo: make this end exclusive
  */
 Status SliceTableByRange(const std::shared_ptr<Table> &input_table,
                          int64_t start,

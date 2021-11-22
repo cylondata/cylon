@@ -37,6 +37,7 @@
 #include <cylon/util/macros.hpp>
 #include <cylon/util/to_string.hpp>
 #include <cylon/net/mpi/mpi_operations.hpp>
+#include <utility>
 
 namespace cylon {
 
@@ -227,20 +228,59 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
 
 Status Table::FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
                              std::shared_ptr<arrow::Table> table,
-                             std::shared_ptr<Table> &tableOut) {
+                             std::shared_ptr<Table> &output,
+                             const IndexConfig &index_config) {
   RETURN_CYLON_STATUS_IF_FAILED(tarrow::CheckSupportedTypes(table));
-  tableOut = std::make_shared<Table>(ctx, std::move(table));
+
+  // make the index
+  std::shared_ptr<BaseArrowIndex> index;
+  RETURN_CYLON_STATUS_IF_FAILED(MakeIndex(ctx, table, index_config, &index));
+
+  output = std::make_shared<Table>(ctx, std::move(table), std::move(index));
   return Status::OK();
 }
 
-//Status Table::FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
-//                             std::shared_ptr<arrow::Table> table,
-//                             std::shared_ptr<BaseArrowIndex> index,
-//                             std::shared_ptr<Table> *output) {
-//  RETURN_CYLON_STATUS_IF_FAILED(tarrow::CheckSupportedTypes(table));
-//  *output = std::make_shared<Table>(ctx, std::move(table), std::move(index));
-//  return Status::OK();
-//}
+// todo test this
+Status Table::FromArrowTableWithIndex(const std::shared_ptr<CylonContext> &ctx,
+                                      std::shared_ptr<arrow::Table> table,
+                                      std::shared_ptr<BaseArrowIndex> index,
+                                      std::shared_ptr<Table> *output) {
+  RETURN_CYLON_STATUS_IF_FAILED(tarrow::CheckSupportedTypes(table));
+
+  if (index->size() != table->num_rows()) {
+    return {Code::Invalid,
+            "length mismatch: " + std::to_string(index->size()) + " vs "
+                + std::to_string(table->num_rows())};
+  }
+
+  // if empty or range index, we can simply use the table, without any change
+  if (table->num_rows() == 0 || index->GetIndexingType() == Range) {
+    *output = std::make_shared<Table>(ctx, std::move(table), std::move(index));
+    return Status::OK();
+  }
+
+  //check if the index.col_name_ is already available
+  int col_idx = table->schema()->GetFieldIndex(index->col_name_);
+  std::shared_ptr<arrow::Array> idx_arr;
+  RETURN_CYLON_STATUS_IF_FAILED(index->GetIndexAsArray(&idx_arr));
+  auto field = arrow::field(index->col_name_, idx_arr->type());
+  if (col_idx == -1) { // not present
+    // add column to the end
+    CYLON_ASSIGN_OR_RAISE(table,
+                          table->AddColumn(table->num_columns(), std::move(field),
+                                           std::make_shared<arrow::ChunkedArray>(std::move(idx_arr))))
+  } else { // replace the array
+    // if idx_arr points to the same array, don't do anything
+    if (idx_arr.get() != table->column(col_idx)->chunk(0).get()) {
+      CYLON_ASSIGN_OR_RAISE(table,
+                            table->AddColumn(col_idx, std::move(field),
+                                             std::make_shared<arrow::ChunkedArray>(std::move(idx_arr))))
+    }
+  }
+
+  *output = std::make_shared<Table>(ctx, std::move(table), std::move(index));
+  return Status::OK();
+}
 
 Status Table::FromColumns(const std::shared_ptr<CylonContext> &ctx,
                           const std::vector<std::shared_ptr<Column>> &columns,
@@ -287,7 +327,7 @@ bool Table::Empty() const { return table_->num_rows() == 0; }
 
 void Table::Print() const { Print(0, this->Rows(), 0, this->Columns()); }
 
-void Table::Print(int row1, int row2, int col1, int col2) const {
+void Table::Print(int64_t row1, int64_t row2, int col1, int col2) const {
   PrintToOStream(col1, col2, row1, row2, std::cout);
 }
 
@@ -1032,8 +1072,10 @@ Status DistributedUnique(const std::shared_ptr<Table> &in, const std::vector<int
 }
 
 const std::shared_ptr<BaseArrowIndex> &Table::GetArrowIndex() { return base_arrow_index_; }
-Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylon::Table>& b, bool& result, bool ordered) {
-  if(ordered) {
+
+Status Equals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b,
+              bool &result, bool ordered) {
+  if (ordered) {
     result = a->get_table()->Equals(*b->get_table());
   } else {
     result = false;
@@ -1056,9 +1098,10 @@ Status Equals(const std::shared_ptr<cylon::Table>& a, const std::shared_ptr<cylo
   return Status::OK();
 }
 
-Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, bool& result, bool ordered) {
+Status DistributedEquals(const std::shared_ptr<cylon::Table> &a,
+                         const std::shared_ptr<cylon::Table> &b, bool &result, bool ordered) {
   bool subResult;
-  if(!ordered) {
+  if (!ordered) {
     int col = a->Columns();
     std::vector<int32_t> indices(col);
     std::vector<bool> column_orders(col, true);
@@ -1076,85 +1119,101 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shar
   return Status::OK();
 }
 
-const std::shared_ptr<BaseArrowIndex> &Table::GetArrowIndex() { return base_arrow_index_; }
+Status Table::SetArrowIndex(std::shared_ptr<arrow::Array> index_array,
+                            std::shared_ptr<Table> *output, IndexingType indexing_type) {
+  RETURN_CYLON_STATUS_IF_FAILED(tarrow::CheckSupportedType(index_array->type()));
 
-Status Table::SetArrowIndex(std::shared_ptr<arrow::Array> index, IndexingType indexing_type) {
   // if a column named `index` is available, throw an error
   if (table_->schema()->GetFieldIndex(kDefaultIndexName) != -1) {
-    return {Code::Invalid, "column `index` is already available"};
+    return {Code::Invalid, "column " + std::string(kDefaultIndexName) + " is already available"};
   }
 
   // adding the column into the table as `index` at the end
   int index_col_id = table_->num_columns();
-  auto data_type = std::make_shared<arrow::Field>(kDefaultIndexName, index->type());
-  const auto &add_col_res = table_->AddColumn(index_col_id, std::move(data_type),
-                                              std::make_shared<arrow::ChunkedArray>(std::move(index)));
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(add_col_res.status());
-  table_ = add_col_res.ValueOrDie();
+  auto data_type = std::make_shared<arrow::Field>(kDefaultIndexName, index_array->type());
 
-  // update the base arrow index
-  return BuildIndex(this, index_col_id, indexing_type, &base_arrow_index_);
-//
-//  // if the index has a valid column id, drop it
-//  if (drop_index && base_arrow_index_->GetIndexingType() != Range &&
-//      base_arrow_index_->GetColId() >= 0) {
-//    const auto &res = table_->RemoveColumn(base_arrow_index_->GetColId());
-//    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-//    table_ = res.ValueOrDie();
-//  }
-//
-//  return Status::OK();
-}
+  CYLON_ASSIGN_OR_RAISE(auto out_table,
+                        table_->AddColumn(index_col_id, std::move(data_type),
+                                          std::make_shared<arrow::ChunkedArray>(std::move(
+                                              index_array))))
+  // make the index
+  std::shared_ptr<BaseArrowIndex> index;
+  RETURN_CYLON_STATUS_IF_FAILED(MakeIndex(ctx_, out_table, index_col_id, indexing_type, &index));
 
-Status Table::SetArrowIndex(std::shared_ptr<BaseArrowIndex> index) {
-  if (index->size() != table_->num_rows()) {
-    return {Code::Invalid,
-            "length mismatch: " + std::to_string(index->size()) + " vs " + std::to_string(table_->num_rows())};
-  }
-
-  // following checks are for Linear and Hash indices
-  if (index->table() && index->table() != this) {
-    return {Code::Invalid, "index is not built for this table"};
-  }
-
-  if (index->col_id() != BaseArrowIndex::kNoColumnId && index->col_id() >= table_->num_columns()) {
-    return {Code::Invalid, "index column id not found in table"};
-  }
-
-  base_arrow_index_ = std::move(index);
+  *output = std::make_shared<Table>(ctx_, std::move(out_table), std::move(index));
   return Status::OK();
 }
 
-Status Table::ResetArrowIndex(bool drop) {
-  if (base_arrow_index_->GetIndexingType() == Range) {
-    if (!drop) { // if not drop, create an index array and add it to the table
+Status Table::SetArrowIndex(int col_idx, std::shared_ptr<Table> *output,
+                            IndexingType indexing_type) {
+  // make the index
+  std::shared_ptr<BaseArrowIndex> index;
+  RETURN_CYLON_STATUS_IF_FAILED(MakeIndex(ctx_, table_, col_idx, indexing_type, &index));
+
+  *output = std::make_shared<Table>(ctx_, table_, std::move(index));
+  return Status::OK();
+}
+
+Status Table::SetArrowIndex(const std::string &col_name, std::shared_ptr<Table> *output,
+                            IndexingType indexing_type) {
+  return Table::FromArrowTable(ctx_, table_, *output, {indexing_type, col_name});
+}
+
+Status Table::SetArrowIndex(std::shared_ptr<BaseArrowIndex> index, std::shared_ptr<Table> *output) {
+  return Table::FromArrowTableWithIndex(ctx_, table_, std::move(index), output);
+}
+
+Status Table::ResetArrowIndex(std::shared_ptr<Table> *output, bool drop) {
+  if (drop) {
+    // if drop & Range index --> duplicate this table
+    if (base_arrow_index_->GetIndexingType() == Range) {
+      *output = std::make_shared<Table>(ctx_, table_, base_arrow_index_);
+      return Status::OK();
+    } else { // for others, drop the index column
+      int position = table_->schema()->GetFieldIndex(base_arrow_index_->col_name_);
+      CYLON_ASSIGN_OR_RAISE(auto out_table, table_->RemoveColumn(position))
+      *output = std::make_shared<Table>(ctx_, std::move(out_table));
+      return Status::OK();
+    }
+  } else { // not drop (preserve index)
+    if (base_arrow_index_->GetIndexingType() == Range) {
+      // range index is not there as a column. Add it to the table!
       std::shared_ptr<arrow::Array> index_arr;
       RETURN_CYLON_STATUS_IF_FAILED(base_arrow_index_->GetIndexAsArray(&index_arr));
-      AddColumn()
+
+      auto field = arrow::field(base_arrow_index_->col_name_, index_arr->type());
+      auto chunked_array = std::make_shared<arrow::ChunkedArray>(std::move(index_arr));
+      CYLON_ASSIGN_OR_RAISE(auto out_table,
+                            table_->AddColumn(table_->num_columns(),
+                                              std::move(field),
+                                              std::move(chunked_array)));
+      *output = std::make_shared<Table>(ctx_, std::move(out_table)); // create with range index
+    } else {
+      *output = std::make_shared<Table>(ctx_, table_); // create with range index
+      return Status::OK();
     }
   }
 
-
-
-  // if the current index is a range index, nothing to do!
-  if (drop && base_arrow_index_->GetIndexingType() != Range) {
-    const auto &res = table_->RemoveColumn(base_arrow_index_->col_id());
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-    table_ = res.ValueOrDie();
-  }
-  base_arrow_index_ = BuildRangeIndex(0, table_->num_rows(), 1, ToArrowPool(ctx_));
   return Status::OK();
 }
 
-Status Table::AddColumn(int position, const std::string &column_name, std::shared_ptr<arrow::Array> input_column) {
+Status Table::AddColumn(int position, std::string column_name,
+                        std::shared_ptr<arrow::Array> input_column,
+                        std::shared_ptr<Table> *output) {
+  RETURN_CYLON_STATUS_IF_FAILED(tarrow::CheckSupportedType(input_column->type()));
+
   if (input_column->length() != table_->num_rows()) {
     return {cylon::Code::CapacityError,
             "New column length must match the number of rows in the table"};
   }
-  auto field = arrow::field(column_name, input_column->type());
+
+  auto field = arrow::field(std::move(column_name), input_column->type());
   auto chunked_array = std::make_shared<arrow::ChunkedArray>(std::move(input_column));
-  CYLON_ASSIGN_OR_RAISE(table_,
+  CYLON_ASSIGN_OR_RAISE(auto out_table,
                         table_->AddColumn(position, std::move(field), std::move(chunked_array)))
+
+  // this does not affect the index
+  *output = std::make_shared<Table>(ctx_, std::move(out_table), base_arrow_index_);
   return Status::OK();
 }
 
@@ -1163,59 +1222,20 @@ const std::shared_ptr<cylon::CylonContext> &Table::GetContext() const {
 }
 
 Table::Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Table> tab)
-    : ctx_(ctx), table_(std::move(tab)), columns_({}),
-      base_arrow_index_(BuildRangeIndex(0, table_->num_rows(), 1, ToArrowPool(ctx_))) {
-  columns_.reserve(table_->num_columns());
-  for (int i = 0; i < table_->num_columns(); i++) {
-    const std::shared_ptr<arrow::Field> &field = table_->field(i);
-    columns_.emplace_back(Column::Make(field->name(), tarrow::ToCylonType(field->type()), table_->column(i)));
-  }
-}
+    : ctx_(ctx), table_(std::move(tab)), base_arrow_index_(BuildRangeIndex(0, table_->num_rows(), 1,
+                                                                           cylon::ToArrowPool(ctx))) {}
 
-//Table::Table(const std::shared_ptr<CylonContext> &ctx,
-//             std::shared_ptr<arrow::Table> tab,
-//             std::shared_ptr<BaseArrowIndex> index)
-//    : ctx(ctx), table_(std::move(tab)), base_arrow_index_(std::move(index)) {
-//  columns_.reserve(table_->num_columns());
-//  for (int i = 0; i < table_->num_columns(); i++) {
-//    const std::shared_ptr<arrow::Field> &field = table_->field(i);
-//    columns_.emplace_back(Column::Make(field->name(), tarrow::ToCylonType(field->type()), table_->column(i)));
-//  }
-//}
+Table::Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Table> tab,
+             std::shared_ptr<BaseArrowIndex> index)
+    : ctx_(ctx), table_(std::move(tab)), base_arrow_index_(std::move(index)) {}
 
-Table::Table(const std::shared_ptr<cylon::CylonContext> &ctx, std::vector<std::shared_ptr<Column>> cols)
-    : ctx_(ctx), columns_(std::move(cols)) {
-  arrow::SchemaBuilder schema_builder;
-  std::vector<std::shared_ptr<arrow::ChunkedArray>> col_arrays;
-  col_arrays.reserve(cols.size());
-
-  for (const std::shared_ptr<Column> &col: columns_) {
-    const std::shared_ptr<DataType> &data_type = col->GetDataType();
-    const std::shared_ptr<arrow::Field>
-        &field = arrow::field(col->GetID(), cylon::tarrow::convertToArrowType(data_type));
-    const auto &status = schema_builder.AddField(field);
-    if (!status.ok()) {
-      throw "unable to add field to arrow schema: " + status.message();
-    }
-
-    col_arrays.push_back(col->GetColumnData());
-  }
-
-  const auto &schema_result = schema_builder.Finish();
-  table_ = arrow::Table::Make(schema_result.ValueOrDie(), std::move(col_arrays));
-
-  if (!cylon::tarrow::validateArrowTableTypes(table_)) {
-    throw "cylon table created with invalid types";
-  }
-
-  base_arrow_index_ = BuildRangeIndex(0, table_->num_rows(), 1, ToArrowPool(ctx_));
-}
-
-Status Table::CombineChunks() {
+Status Table::CombineChunks(std::shared_ptr<Table> *output) {
   if (!this->Empty() && table_->column(0)->num_chunks() > 1) {
-    const auto &res = table_->CombineChunks(cylon::ToArrowPool(ctx_));
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());
-    table_ = res.ValueOrDie();
+    CYLON_ASSIGN_OR_RAISE(auto out, table_->CombineChunks(cylon::ToArrowPool(ctx_)))
+    // special indices can not handle chunks! so, output will be range index
+    *output = std::make_shared<Table>(ctx_, std::move(out));
+  } else { // just duplicate this table
+    *output = std::make_shared<Table>(ctx_, table_);
   }
 
   return Status::OK();
