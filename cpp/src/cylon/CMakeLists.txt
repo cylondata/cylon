@@ -100,6 +100,8 @@ add_library(cylon SHARED
         join/join_utils.hpp
         join/sort_join.cpp
         join/sort_join.hpp
+        mapreduce/mapreduce.hpp
+        mapreduce/mapreduce.cpp
         net/channel.hpp
         net/comm_operations.hpp
         net/comm_type.hpp

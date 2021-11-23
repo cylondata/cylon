@@ -781,6 +781,25 @@ Status TableRowIndexEqualTo::Make(const std::shared_ptr<arrow::Table> &table,
   return Status::OK();
 }
 
+Status TableRowIndexEqualTo::Make(const std::vector<std::shared_ptr<arrow::Array>> &arrays,
+                                  std::unique_ptr<TableRowIndexEqualTo> *out_equal_to) {
+  auto comps = std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>();
+  comps->reserve(arrays.size());
+
+  for (const auto &array: arrays) {
+    if (array->length() == 0) {
+      comps->emplace_back(std::make_shared<EmptyIndexComparator>());
+    } else {
+      std::unique_ptr<ArrayIndexComparator> comp;
+      RETURN_CYLON_STATUS_IF_FAILED(CreateArrayIndexComparator(array, &comp));
+      comps->emplace_back(std::move(comp));
+    }
+  }
+
+  *out_equal_to = std::make_unique<TableRowIndexEqualTo>(std::move(comps));
+  return Status::OK();
+}
+
 bool TableRowIndexEqualTo::operator()(const int64_t &record1, const int64_t &record2) const {
   return std::all_of(comps->begin(), comps->end(),
                      [&](const std::shared_ptr<ArrayIndexComparator> &comp) {
