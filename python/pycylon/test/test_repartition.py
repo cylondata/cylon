@@ -7,7 +7,10 @@ import random
 Run test:
 >> pytest -q python/pycylon/test/test_repartition.py
 """
+import pytest
 
+
+@pytest.mark.mpi
 def test_repartition():
     env=CylonEnv(config=MPIConfig())
     world_sz = env.world_size  

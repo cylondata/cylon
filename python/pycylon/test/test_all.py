@@ -22,6 +22,7 @@ print("-------------------------------------------------")
 
 responses = []
 
+
 def get_mpi_command():
     if os.name == 'posix':
         return "mpirun --oversubscribe --allow-run-as-root"
@@ -29,6 +30,7 @@ def get_mpi_command():
         return "mpiexec"
     else:
         return ""
+
 
 def test_pycylon_installation_test():
     print("1. PyCylon Installation Test")
@@ -53,7 +55,7 @@ def test_cylon_context():
     responses.append(
         os.system(
             get_mpi_command() + " -n 2 python -m pytest --with-mpi "
-            "-q python/pycylon/test/test_cylon_context.py"))
+                                "-q python/pycylon/test/test_cylon_context.py"))
     assert responses[-1] == 0
 
 
@@ -109,7 +111,7 @@ def test_table_conversion():
     print("12. Table Conversion Test")
     responses.append(os.system(
         get_mpi_command() + " -n 2 python -m pytest --with-mpi "
-        "-q python/pycylon/test/test_cylon_table_conversion.py"))
+                            "-q python/pycylon/test/test_cylon_table_conversion.py"))
     assert responses[-1] == 0
 
 
@@ -141,7 +143,7 @@ def test_simple_table_join():
     print("17. Simple Table Join Test")
     responses.append(os.system(
         get_mpi_command() + " -n 4 python -m pytest --with-mpi "
-        "-q python/pycylon/test/test_cylon_simple_table_join.py"))
+                            "-q python/pycylon/test/test_cylon_simple_table_join.py"))
     assert responses[-1] == 0
 
 
@@ -150,7 +152,7 @@ def test_dist_rl():
     responses.append(
         os.system(
             get_mpi_command() + " -n 4 python -m pytest --with-mpi "
-            "-q python/pycylon/test/test_dist_rl.py"))
+                                "-q python/pycylon/test/test_dist_rl.py"))
     assert responses[-1] == 0
 
 
@@ -170,7 +172,7 @@ def test_dist_rl_col():
     print("21. Distributed Relational Algebra with Column Names Test")
     responses.append(
         os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi -q "
-                  "python/pycylon/test/test_dist_ra_by_column_names.py"))
+                                      "python/pycylon/test/test_dist_ra_by_column_names.py"))
     assert responses[-1] == 0
 
 
@@ -207,7 +209,7 @@ def test_duplicate():
     responses.append(
         os.system(
             get_mpi_command() + " -n 2 python -m pytest --with-mpi "
-            "-q python/pycylon/test/test_duplicate_handle.py"))
+                                "-q python/pycylon/test/test_duplicate_handle.py"))
     assert responses[-1] == 0
 
 
@@ -220,23 +222,27 @@ def test_sorting():
 def test_df_dist_sorting():
     print("28. Sorting")
     responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest "
-                               "-q python/pycylon/test/test_df_dist_sorting.py"))
+                                                   "-q python/pycylon/test/test_df_dist_sorting.py"))
     assert responses[-1] == 0
 
-    
+
 def test_pd_read_csv():
     print("29. pandas read_csv")
     responses.append(os.system("pytest -q python/pycylon/test/test_pd_read_csv.py"))
     assert responses[-1] == 0
 
+
 def test_data_split():
     print("30. Data Split")
-    responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi python/pycylon/test/test_data_split.py"))
+    responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi "
+                                                   "python/pycylon/test/test_data_split.py"))
     assert responses[-1] == 0
+
 
 def test_repartition():
     print("31. Repartition")
-    responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi python/pycylon/test/test_repartition.py"))
+    responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi "
+                                                   "python/pycylon/test/test_repartition.py"))
     assert responses[-1] == 0
 
 
