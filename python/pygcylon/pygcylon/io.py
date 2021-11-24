@@ -19,24 +19,29 @@ import glob
 import os
 
 import cudf
-import pyarrow
+import pandas as pd
 import pyarrow as pa
+from pyarrow import parquet as pq
 import pygcylon as gcy
 from pycylon.frame import CylonEnv
 from pycylon.net.comm_ops import allgather_buffer
 
 
-def _get_files(paths: Union[str, List[str]]) -> List[str]:
+def _get_files(paths: Union[str, List[str]], ext: str = None) -> List[str]:
     """
     convert a list of glob strings to a list of files
+    if directory paths are given, ext string added to the directory path.
+    Possible ext values are: "*.parquet", "*.csv", "*.json"
+
     get all file names as a single list
     sort them alphabetically and return
     """
     if isinstance(paths, str):
-        return sorted(glob.glob(paths))
+        paths = [paths]
 
     all_files = []
     for p in paths:
+        p = os.path.join(p, ext) if (os.path.isdir(p) and ext is not None) else p
         all_files.extend(glob.glob(p))
 
     return sorted(all_files)
@@ -54,23 +59,23 @@ def _indices_per_worker(nfiles, my_rank, nworkers):
     return start, end
 
 
-def _get_worker_files(paths: List[str], env: CylonEnv) -> List[str]:
+def _get_worker_files(paths: List[str], env: CylonEnv, ext: str = None) -> List[str]:
     """
     calculate the list of files that this worker will read
     """
-    all_files = _get_files(paths=paths)
+    all_files = _get_files(paths=paths, ext=ext)
     start, end = _indices_per_worker(len(all_files), env.rank, env.world_size)
     return all_files[start:end]
 
 
-def _all_schemas_equal(df: cudf.DataFrame, env: CylonEnv) -> pyarrow.Schema:
+def _all_schemas_equal(schema: pyarrow.Schema, env: CylonEnv) -> pyarrow.Schema:
     """
     after reading files, check whether all DataFrame schemas are equal
     return a schema in case the worker has no DataFrame and needs to create an empty table
     """
 
-    # get an empty arrow Table, get its schema and serialize the schema
-    buf = df.head(0).to_arrow().schema.serialize() if df is not None else pa.allocate_buffer(0)
+    # serialize the schema if exist, otherwise allocate empty buffer
+    buf = schema.serialize() if schema is not None else pa.allocate_buffer(0)
 
     buffers = allgather_buffer(buf=buf, context=env.context)
 
@@ -94,12 +99,12 @@ def _all_schemas_equal(df: cudf.DataFrame, env: CylonEnv) -> pyarrow.Schema:
 def _write_csv_or_json(write_fun, file_ext, file_names, env, **kwargs):
     """
     Write CSV or JSON file
-    this is to avoid repetitive code
     """
     if isinstance(file_names, str):
-        out_file = file_names + "/part_" + str(env.rank) + "." + file_ext \
+        file_ext = "_" + str(env.rank) + "." + file_ext
+        out_file = os.path.join(file_names, "part" + file_ext) \
             if os.path.isdir(file_names) \
-            else file_names + "_" + str(env.rank) + "." + file_ext
+            else file_names + file_ext
         write_fun(out_file, **kwargs)
         return out_file
 
@@ -144,7 +149,8 @@ def _read_csv_or_json(read_fun, paths, env, **kwargs) -> gcy.DataFrame:
             cdf_list.append(read_fun(worker_file, **kwargs))
         cdf = cudf.concat(cdf_list)
 
-    df_schema = _all_schemas_equal(cdf, env=env)
+    schema = cdf.head(0).to_arrow().schema if cdf is not None else None
+    df_schema = _all_schemas_equal(schema, env=env)
     if cdf is None:
         cdf = cudf.DataFrame.from_arrow(df_schema.empty_table())
 
@@ -285,6 +291,133 @@ def write_json(df: gcy.DataFrame,
     return _write_csv_or_json(df.to_cudf().to_json, file_ext="json", file_names=file_names, env=env, **kwargs)
 
 
+#####################################################################################
+# Parquet io functions
+#####################################################################################
+
+
+def _row_groups_this_worker(df: pd.DataFrame, env: CylonEnv):
+    """
+    Determine the row groups this worker will read.
+    Try to distribute rows evenly among workers.
+    Each row_group will be read once by a single worker.
+    Each worker will get consecutive row_groups in files so that reading might be efficient.
+    """
+    # if the number of workers are more than the number of row_groups,
+    # just return a single row_group for each worker corresponding to its rank or an empty df
+    if len(df.index) <= env.world_size:
+        return df[env.rank:(env.rank + 1)]
+
+    total_rows = df['row_group_size'].sum()
+    rows_per_worker = total_rows / env.world_size
+    start_index = 0
+    end_index = 0
+    last_worker = env.rank == env.world_size - 1
+    loop_count = env.rank if last_worker else env.rank + 1
+    for _ in range(loop_count):
+        rows_this_worker = 0
+        start_index = end_index
+        for i, rg_size in zip(df.index[start_index:], df['row_group_size'][start_index:]):
+            rows_this_worker += rg_size
+            if rows_this_worker >= rows_per_worker:
+                end_index = i + 1
+                break
+    return df[end_index:] if last_worker else df[start_index:end_index]
+
+
+def read_parquet(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
+                 env: CylonEnv,
+                 **kwargs) -> gcy.DataFrame:
+    """
+    Read Parquet files and construct a distributed DataFrame
+    Try to distribute rows evenly among the workers as much as possible
+    """
+
+    if isinstance(paths, str):
+        paths = [paths]
+
+    if isinstance(paths, list) and all(isinstance(p, str) for p in paths):
+        worker_files = _get_worker_files(paths, env, ext="*.parquet")
+        file_mappings_given = False
+    elif isinstance(paths, dict) and \
+            all(isinstance(key, int) and (isinstance(val, list) or isinstance(val, str)) for key, val in paths.items()):
+        worker_files = _get_files(paths[env.rank], ext="*.parquet") if env.rank in paths else []
+        file_mappings_given = True
+    else:
+        raise ValueError("paths must be: Union[str, List[str], Dict[int, Union[str, List[str]]]]")
+
+    md_list = [pq.read_metadata(worker_file) for worker_file in worker_files]
+    # make sure all schemas are equal for this worker
+    for md1, md2, f1, f2 in zip(md_list, md_list[1:], worker_files, worker_files[1:]):
+        if not md1.schema.equals(md2.schema):
+            raise ValueError(env.rank, f"schemas are not equal for the files: {f1} and {f2}")
+
+    # make sure all worker schemas are equal
+    schema = md_list[0].schema.to_arrow_schema() if md_list else None
+    df_schema = _all_schemas_equal(schema, env=env)
+
+    if file_mappings_given:
+        cdf = cudf.read_parquet(worker_files, **kwargs) if worker_files else \
+            cudf.DataFrame.from_arrow(df_schema.empty_table())
+        return gcy.DataFrame.from_cudf(cdf)
+
+    # determine all local row_groups and put in a record_batch
+    row_group_indices = []
+    row_group_sizes = []
+    files = []
+    for md, worker_file in zip(md_list, worker_files):
+        for rg in range(md.num_row_groups):
+            row_group_indices.append(rg)
+            row_group_sizes.append(md.row_group(rg).num_rows)
+            files.append(worker_file)
+
+    rg_data = [
+               pa.array(row_group_indices, type="int64"),
+               pa.array(row_group_sizes, type="int64"),
+               pa.array(files, type="str")
+               ]
+    rg_batch = pa.record_batch(rg_data, names=['row_group_index', 'row_group_size', 'file'])
+
+    # allgather row_groups
+    # serialize the batch
+    sink = pa.BufferOutputStream()
+    with pa.ipc.new_stream(sink, rg_batch.schema) as writer:
+        writer.write_batch(rg_batch)
+    buf = sink.getvalue()
+
+    buffers = allgather_buffer(buf=buf, context=env.context)
+
+    # construct a single DataFrame from received batches
+    rg_batches = []
+    for rg_buf in buffers:
+        if len(rg_buf) > 0:
+            with pa.ipc.open_stream(rg_buf) as reader:
+                rg_batches.append(reader.read_next_batch())
+
+    if len(rg_batches) == 0:
+        raise ValueError("No worker has any parquet files.")
+
+    rg_table = pa.Table.from_batches(rg_batches)
+    pdf = rg_table.to_pandas()
+
+    # distribute row_groups to workers
+    my_rg_df = _row_groups_this_worker(pdf, env)
+    outfile = "row_groups_" + str(env.rank) + ".csv"
+    my_rg_df.to_csv(outfile)
+    print(env.rank, "written to the file: ", outfile)
+
+    my_files = my_rg_df["file"].unique().tolist()
+    my_row_groups = []
+    for f in my_files:
+        rg_per_file = my_rg_df[my_rg_df['file'] == f]["row_group_index"].tolist()
+        my_row_groups.append(rg_per_file)
+
+    if my_files:
+        cdf = cudf.read_parquet(my_files, row_groups=my_row_groups, **kwargs)
+    else:
+        cdf = cudf.DataFrame.from_arrow(df_schema.empty_table())
+
+    return gcy.DataFrame.from_cudf(cdf)
 
 
 
