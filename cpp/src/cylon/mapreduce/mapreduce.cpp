@@ -46,7 +46,11 @@ struct MapReduceKernelImpl1D : public MapReduceKernel {
   using T = typename ArrowT::c_type;
   using BuilderT = typename arrow::TypeTraits<ArrowT>::BuilderType;
 
+  const arrow::DataTypeVector out_types{arrow::TypeTraits<ArrowT>::type_singleton()};
+
   size_t num_arrays() const override { return 1; }
+  const std::shared_ptr<arrow::DataType> &output_type() const override { return out_types[0]; }
+  const arrow::DataTypeVector &intermediate_types() const override { return out_types; }
 
   Status Init(const std::shared_ptr<CylonContext> &ctx, int64_t local_num_groups,
               arrow::ArrayVector *combined_results) override {
@@ -93,24 +97,35 @@ struct SumFunction {
   static T Call(const T &x, const T &y) { return x + y; };
 };
 template<typename ArrowT>
-struct SumKernelImpl : public MapReduceKernelImpl1D<ArrowT, SumFunction> {};
+struct SumKernelImpl : public MapReduceKernelImpl1D<ArrowT, SumFunction> {
+  std::string name() const override { return "sum"; }
+};
 
 template<typename T>
 struct MinFunction {
   static T Call(const T &x, const T &y) { return std::min(x, y); };
 };
 template<typename ArrowT>
-struct MinKernelImpl : public MapReduceKernelImpl1D<ArrowT, MinFunction> {};
+struct MinKernelImpl : public MapReduceKernelImpl1D<ArrowT, MinFunction> {
+  std::string name() const override { return "min"; }
+};
 
 template<typename T>
 struct MaxFunction {
   static T Call(const T &x, const T &y) { return std::min(x, y); };
 };
 template<typename ArrowT>
-struct MaxKernelImpl : public MapReduceKernelImpl1D<ArrowT, MaxFunction> {};
+struct MaxKernelImpl : public MapReduceKernelImpl1D<ArrowT, MaxFunction> {
+  std::string name() const override { return "max"; }
+};
 
 struct CountKernelImpl : public MapReduceKernel {
+  const arrow::DataTypeVector out_types{arrow::int64()};
+
   size_t num_arrays() const override { return 1; }
+  std::string name() const override { return "count"; }
+  const std::shared_ptr<arrow::DataType> &output_type() const override { return out_types[0]; }
+  const arrow::DataTypeVector &intermediate_types() const override { return out_types; }
 
   Status Init(const std::shared_ptr<CylonContext> &ctx,
               int64_t local_num_groups,
@@ -123,8 +138,7 @@ struct CountKernelImpl : public MapReduceKernel {
     return Status::OK();
   }
   Status Combine(const std::shared_ptr<arrow::Array> &value_col,
-                 const int64_t *local_group_ids,
-                 int64_t local_num_groups,
+                 const int64_t *local_group_ids, int64_t local_num_groups,
                  arrow::ArrayVector *combined_results) const override {
     assert(local_num_groups == (*combined_results)[0]->length());
     auto *counts = (*combined_results)[0]->data()->template GetMutableValues<int64_t>(1);
@@ -133,10 +147,8 @@ struct CountKernelImpl : public MapReduceKernel {
     }
     return Status::OK();
   }
-  Status Reduce(const arrow::ArrayVector &combined_results,
-                const int64_t *local_group_ids,
-                const int64_t *local_group_indices,
-                int64_t local_num_groups,
+  Status Reduce(const arrow::ArrayVector &combined_results, const int64_t *local_group_ids,
+                const int64_t *local_group_indices, int64_t local_num_groups,
                 arrow::ArrayVector *reduced_results) const override {
     CYLON_UNUSED(local_group_indices);
     assert(local_num_groups == (*reduced_results)[0]->length());
@@ -160,7 +172,13 @@ struct MeanKernelImpl : public MapReduceKernel {
   using BuilderT = typename arrow::TypeTraits<ArrowT>::BuilderType;
 
   arrow::MemoryPool *pool = nullptr;
+  const arrow::DataTypeVector inter_types
+      {arrow::TypeTraits<ArrowT>::type_singleton(), arrow::int64()};
+
   size_t num_arrays() const override { return 2; }
+  std::string name() const override { return "mean"; }
+  const std::shared_ptr<arrow::DataType> &output_type() const override { return inter_types[0]; }
+  const arrow::DataTypeVector &intermediate_types() const override { return inter_types; }
 
   Status Init(const std::shared_ptr<CylonContext> &ctx, int64_t local_num_groups,
               arrow::ArrayVector *combined_results) override {
@@ -281,6 +299,26 @@ Status MapToGroupKernel::Map(const std::shared_ptr<CylonContext> &ctx,
   return Status::OK();
 }
 
+Status MapToGroupKernel::Map(const std::shared_ptr<CylonContext> &ctx,
+                             const std::shared_ptr<arrow::Table> &table,
+                             const std::vector<int> &key_cols,
+                             std::shared_ptr<arrow::Array> *local_group_ids,
+                             std::shared_ptr<arrow::Array> *local_group_indices,
+                             int64_t *local_num_groups) const {
+  arrow::ArrayVector arrays;
+  arrays.reserve(key_cols.size());
+
+  for (int i: key_cols) {
+    const auto &col = table->column(i);
+    if (col->num_chunks() > 1) {
+      return {Code::Invalid, "MapToGroupKernel doesnt support chunks"};
+    }
+    arrays.push_back(col->chunk(0));
+  }
+
+  return Map(ctx, arrays, local_group_ids, local_group_indices, local_num_groups);
+}
+
 template<typename T>
 std::unique_ptr<MapReduceKernel> MakeMapReduceKernelImpl(compute::AggregationOpId reduce_op) {
   switch (reduce_op) {
@@ -342,6 +380,134 @@ std::unique_ptr<MapReduceKernel> MakeMapReduceKernel(const std::shared_ptr<arrow
   return nullptr;
 }
 
+using AggKernelVector = std::vector<std::pair<int, std::unique_ptr<MapReduceKernel>>>;
+
+Status MakeAggKernels(const std::shared_ptr<arrow::Schema> &schema,
+                      const std::vector<std::pair<int, compute::AggregationOpId>> &aggs,
+                      AggKernelVector *agg_kernels) {
+  agg_kernels->reserve(aggs.size());
+  for (const auto &agg: aggs) {
+    const auto &type = schema->field(agg.first)->type();
+    auto kern = MakeMapReduceKernel(type, agg.second);
+    if (kern) {
+      agg_kernels->emplace_back(agg.first, std::move(kern));
+    } else {
+      return {Code::NotImplemented, "Unsupported reduce kernel type " + type->ToString()};
+    }
+  }
+  return Status::OK();
+}
+
+Status MakeOutputSchema(const std::shared_ptr<arrow::Schema> &cur_schema,
+                        const std::vector<int> &key_cols, const AggKernelVector &agg_kernels,
+                        std::shared_ptr<arrow::Schema> *out_schema,
+                        bool use_intermediate_types = false) {
+  arrow::SchemaBuilder schema_builder;
+  // add key fields
+  for (int i: key_cols) {
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(schema_builder.AddField(cur_schema->field(i)));
+  }
+
+  // add agg fields --> out field name = "name" + "op_name"
+  for (const auto &agg: agg_kernels) {
+    const auto &kern = agg.second;
+    if (use_intermediate_types) {
+      const auto &types = kern->intermediate_types();
+      for (size_t i = 0; i < types.size(); i++) {
+        auto f = arrow::field(
+            cur_schema->field(agg.first)->name() + "_" + kern->name() + "_" + std::to_string(i),
+            kern->output_type());
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(schema_builder.AddField(f));
+      }
+    } else { // using output types
+      const auto &type = kern->output_type();
+      auto f = arrow::field(cur_schema->field(agg.first)->name() + "_" + kern->name(),
+                            kern->output_type());
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(schema_builder.AddField(f));
+    }
+  }
+
+  CYLON_ASSIGN_OR_RAISE(*out_schema, schema_builder.Finish())
+  return Status::OK();
+}
+
+Status LocalAggregate(const std::shared_ptr<CylonContext> &ctx,
+                      const std::shared_ptr<Table> &table,
+                      const std::vector<int> &key_cols,
+                      const std::vector<std::pair<int, compute::AggregationOpId>> &aggs,
+                      std::shared_ptr<Table> *output,
+                      const MapToGroupKernel &mapper) {
+  auto pool = ToArrowPool(ctx);
+  const auto &atable = table->get_table();
+  const auto &cur_schema = atable->schema();
+
+  AggKernelVector agg_kernels;
+  RETURN_CYLON_STATUS_IF_FAILED(MakeAggKernels(atable->schema(), aggs, &agg_kernels));
+
+  // make out_schema
+  std::shared_ptr<arrow::Schema> out_schema;
+  RETURN_CYLON_STATUS_IF_FAILED(MakeOutputSchema(cur_schema, key_cols, agg_kernels, &out_schema));
+
+  if (table->Empty()) {
+    // return empty table with proper aggregate types
+    std::shared_ptr<arrow::Table> out_table;
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::CreateEmptyTable(out_schema, &out_table, pool));
+    return Status::OK();
+  }
+
+  std::vector<std::shared_ptr<arrow::ChunkedArray>> out_arrays;
+
+  // map to groups
+  std::shared_ptr<arrow::Array> group_ids, group_indices;
+  int64_t num_groups;
+  RETURN_CYLON_STATUS_IF_FAILED(mapper.Map(ctx, atable, key_cols, &group_ids, &group_indices,
+                                           &num_groups));
+  assert(num_groups == group_indices->length());
+  assert(atable->num_rows() == group_ids->length());
+
+  arrow::compute::ExecContext exec_ctx(pool);
+
+  // take group_indices from the columns to create out key columns
+  for (int k: key_cols) {
+    CYLON_ASSIGN_OR_RAISE(auto arr,
+                          arrow::compute::Take(atable->column(k)->chunk(0), group_indices,
+                                               arrow::compute::TakeOptions::NoBoundsCheck(),
+                                               &exec_ctx))
+    out_arrays.push_back(std::make_shared<arrow::ChunkedArray>(arr.make_array()));
+  }
+
+  // make the value columns --> only use MapReduceKernel.Init, Combine, and Finalize
+  const auto *g_ids = group_ids->data()->GetValues<int64_t>(1);
+  for (const auto &p: agg_kernels) {
+    int val_col = p.first;
+    const auto &kern = p.second;
+
+    // val col
+    if (atable->column(val_col)->num_chunks() > 1) {
+      return {Code::Invalid, "Aggregates do not support chunks"};
+    }
+    const auto &val_arr = atable->column(val_col)->chunk(0);
+
+    arrow::ArrayVector results;
+    RETURN_CYLON_STATUS_IF_FAILED(kern->Init(ctx, num_groups, &results));
+    RETURN_CYLON_STATUS_IF_FAILED(kern->Combine(val_arr, g_ids, num_groups, &results));
+    std::shared_ptr<arrow::Array> out_arr;
+    RETURN_CYLON_STATUS_IF_FAILED(kern->Finalize(results, &out_arr));
+
+    out_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(out_arr)));
+  }
+
+  // check if the types match
+  assert(out_arrays.size() == (size_t) out_schema->num_fields());
+  for (int i = 0; i < out_schema->num_fields(); i++) {
+    assert(out_schema->field(i)->type()->Equals(*out_arrays[i]->type()));
+  }
+
+  return Table::FromArrowTable(ctx,
+                               arrow::Table::Make(std::move(out_schema), std::move(out_arrays)),
+                               *output);
+}
+
 /**
  * 1. map keys to groups in the local table
  * 2. combine locally
@@ -356,8 +522,6 @@ Status Aggregate(const std::shared_ptr<CylonContext> &ctx,
                  const std::vector<std::pair<int, compute::AggregationOpId>> &aggs,
                  std::shared_ptr<Table> *output,
                  const MapToGroupKernel &mapper) {
-
-
 
   return Status::OK();
 }

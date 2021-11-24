@@ -17,10 +17,17 @@ namespace mapred {
 struct MapToGroupKernel {
   virtual ~MapToGroupKernel() = default;
   virtual Status Map(const std::shared_ptr<CylonContext> &ctx,
-                     const std::vector<std::shared_ptr<arrow::Array>> &arrays,
+                     const arrow::ArrayVector &arrays,
                      std::shared_ptr<arrow::Array> *local_group_ids,
                      std::shared_ptr<arrow::Array> *local_group_indices,
                      int64_t *local_num_groups) const;
+
+  Status Map(const std::shared_ptr<CylonContext> &ctx,
+             const std::shared_ptr<arrow::Table> &table,
+             const std::vector<int> &key_cols,
+             std::shared_ptr<arrow::Array> *local_group_ids,
+             std::shared_ptr<arrow::Array> *local_group_indices,
+             int64_t *local_num_groups) const;
 };
 
 struct MapReduceKernel {
@@ -41,6 +48,9 @@ struct MapReduceKernel {
                           std::shared_ptr<arrow::Array> *output) const = 0;
 
   virtual size_t num_arrays() const = 0;
+  virtual std::string name() const = 0;
+  virtual const std::shared_ptr<arrow::DataType> &output_type() const = 0;
+  virtual const arrow::DataTypeVector &intermediate_types() const = 0;
 };
 
 std::unique_ptr<MapReduceKernel> MakeMapReduceKernel(const std::shared_ptr<arrow::DataType> &type,
