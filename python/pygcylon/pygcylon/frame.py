@@ -1633,6 +1633,42 @@ class DataFrame(object):
         """
         return pygcylon.io.write_json(self, file_names=file_names, env=env, **kwargs)
 
+    def to_parquet(self, file_names, env: CylonEnv = None, **kwargs) -> str:
+        """
+        Write DataFrames to Parquet files
+
+        If a single string is provided as file_names:
+        it can be either a file_base or a directory name.
+          If it is a file base such as "path/to/dir/myfile",
+            all workers add the extension "_<rank>.parquet" to the file base.
+          If the file_names is a directory:
+            each worker create the output file by appending: "part_<rank>.parquet"
+
+        If a list of strings are provided: each string must be a filename for a worker.
+          First string must be the output filename for the first worker,
+          Second string must be the output filename for the second worker,
+          etc.
+          There must be one file name for each worker
+
+        If a dictionary is provided:
+          key must be the worker rank and the value must be the output file name for that worker.
+          In this case, not all workers need to provide the output filenames for all worker
+          If each worker provides its output filename only, that would be sufficient
+
+        Parameters
+        ----------
+        df: DataFrame to write to files
+        file_names: Output Parquet file names.
+                    A string, or a list of strings, or a dictionary with worker ranks and out files
+        env: CylonEnv object for this DataFrame
+        kwargs: the parameters that will be passed on to cudf.DataFrame.to_json function
+
+        Returns
+        -------
+        Filename written
+        """
+        return pygcylon.io.write_parquet(self, file_names=file_names, env=env, **kwargs)
+
 
 def concat(
         dfs,

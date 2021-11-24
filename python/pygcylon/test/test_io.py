@@ -23,6 +23,7 @@ import pycylon as cy
 import pygcylon as gcy
 import tempfile
 
+
 @pytest.mark.mpi
 def test_csv():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
@@ -30,8 +31,9 @@ def test_csv():
 
     # one file per worker to read
     input_files = "data/mpiops/sales_nulls_nunascii_*.csv"
-    rows_per_worker = [25, 25, 25, 25]
     df = gcy.read_csv(input_files, env=env)
+
+    rows_per_worker = [25, 25, 25, 25]
     assert len(df) == rows_per_worker[env.rank], \
         f'Read CSV DataFrame row count [{len(df)}] does not match given row count [{rows_per_worker[env.rank]}]'
 
@@ -45,8 +47,9 @@ def test_csv():
     # only two workers read a file, the others do not read a file
     # they need to get a proper empty DataFrame
     input_files = ["data/mpiops/sales_nulls_nunascii_0.csv", "data/mpiops/sales_nulls_nunascii_1.csv"]
-    rows_per_worker = [25, 25, 0, 0]
     df = gcy.read_csv(input_files, env=env)
+
+    rows_per_worker = [25, 25, 0, 0]
     assert len(df) == rows_per_worker[env.rank], \
         f'Read CSV DataFrame row count [{len(df)}] does not match given row count [{rows_per_worker[env.rank]}]'
 
@@ -58,8 +61,9 @@ def test_json():
 
     # one file per worker to read
     input_files = "data/json/sales_*.json"
-    rows_per_worker = [25, 25, 25, 25]
     df = gcy.read_json(input_files, env=env, lines=True)
+
+    rows_per_worker = [25, 25, 25, 25]
     assert len(df) == rows_per_worker[env.rank], \
         f'Read JSON DataFrame row count [{len(df)}] does not match given row count [{rows_per_worker[env.rank]}]'
 
@@ -73,10 +77,40 @@ def test_json():
     # only two workers read a file, the others do not read a file
     # they need to get a proper empty DataFrame
     input_files = ["data/json/sales_0.json", "data/json/sales_1.json"]
-    rows_per_worker = [25, 25, 0, 0]
     df = gcy.read_json(input_files, env=env, lines=True)
+
+    rows_per_worker = [25, 25, 0, 0]
     assert len(df) == rows_per_worker[env.rank], \
         f'Read CSV DataFrame row count [{len(df)}] does not match given row count [{rows_per_worker[env.rank]}]'
+
+
+@pytest.mark.mpi
+def test_parquet():
+    env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
+    print("CylonContext Initialized: My rank: ", env.rank)
+
+    # one file per worker to read
+    input_files = "data/parquet/sales_*.parquet"
+    df = gcy.read_parquet(input_files, env=env)
+
+    rows_per_worker = [25, 25, 25, 25]
+    assert len(df) == rows_per_worker[env.rank], \
+        f'Read Parquet DataFrame row count [{len(df)}] does not match given row count [{rows_per_worker[env.rank]}]'
+
+    # write json files to a temporary directory
+    with tempfile.TemporaryDirectory() as dirpath:
+        out_file = df.to_parquet(dirpath, env=env)
+        df2 = gcy.read_parquet(paths={env.rank: out_file}, env=env)
+        assert len(df) == len(df2), \
+            f'Read Parquet DataFrame row count [{len(df2)}] does not written dataframe row count [{len(df)}]'
+
+    # only two workers read a file, the others do not read a file
+    # they need to get a proper empty DataFrame
+    input_files = ["data/parquet/sales_0.parquet", "data/parquet/sales_1.parquet"]
+    df = gcy.read_parquet(input_files, env=env)
+    rows_per_worker = [25, 25, 0, 0]
+    assert len(df) == rows_per_worker[env.rank], \
+        f'Read Parquet DataFrame row count [{len(df)}] does not match given row count [{rows_per_worker[env.rank]}]'
 
 
 #    env.finalize()

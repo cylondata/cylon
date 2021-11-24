@@ -96,7 +96,7 @@ def _all_schemas_equal(schema: pyarrow.Schema, env: CylonEnv) -> pyarrow.Schema:
     return schemas[0]
 
 
-def _write_csv_or_json(write_fun, file_ext, file_names, env, **kwargs):
+def _get_file_name_to_write(file_ext, file_names, env, **kwargs):
     """
     Write CSV or JSON file
     """
@@ -105,18 +105,15 @@ def _write_csv_or_json(write_fun, file_ext, file_names, env, **kwargs):
         out_file = os.path.join(file_names, "part" + file_ext) \
             if os.path.isdir(file_names) \
             else file_names + file_ext
-        write_fun(out_file, **kwargs)
         return out_file
 
     if isinstance(file_names, list) and \
             len(file_names) >= env.world_size and \
             all(isinstance(fn, str) for fn in file_names):
-        write_fun(file_names[env.rank], **kwargs)
         return file_names[env.rank]
 
     if isinstance(file_names, dict) and \
             all(isinstance(key, int) and isinstance(val, str) for key, val in file_names.items()):
-        write_fun(file_names[env.rank], **kwargs)
         return file_names[env.rank]
 
     raise ValueError("file_names must be: Union[str, List[str], Dict[int, str]]. "
@@ -215,13 +212,15 @@ def write_csv(df: gcy.DataFrame,
     file_names: Output CSV file names.
                 A string, or a list of strings, or a dictionary with worker ranks and out files
     env: CylonEnv object for this DataFrame
-    kwargs: the parameters that will be passed on to cudf.write_csv function
+    kwargs: the parameters that will be passed on to cudf.DataFrame.to_csv function
 
     Returns
     -------
     Filename written
     """
-    return _write_csv_or_json(df.to_cudf().to_csv, file_ext="csv", file_names=file_names, env=env, **kwargs)
+    outfile = _get_file_name_to_write(file_ext="csv", file_names=file_names, env=env, **kwargs)
+    df.to_cudf().to_csv(outfile, **kwargs)
+    return outfile
 
 
 def read_json(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
@@ -282,13 +281,15 @@ def write_json(df: gcy.DataFrame,
     file_names: Output JSON file names.
                 A string, or a list of strings, or a dictionary with worker ranks and out files
     env: CylonEnv object for this DataFrame
-    kwargs: the parameters that will be passed on to cudf.write_json function
+    kwargs: the parameters that will be passed on to cudf.DataFrame.to_json function
 
     Returns
     -------
     Filename written
     """
-    return _write_csv_or_json(df.to_cudf().to_json, file_ext="json", file_names=file_names, env=env, **kwargs)
+    outfile = _get_file_name_to_write(file_ext="json", file_names=file_names, env=env, **kwargs)
+    df.to_cudf().to_json(outfile, **kwargs)
+    return outfile
 
 
 #####################################################################################
@@ -419,6 +420,47 @@ def read_parquet(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
 
     return gcy.DataFrame.from_cudf(cdf)
 
+
+def write_parquet(df: gcy.DataFrame,
+                  file_names: Union[str, List[str], Dict[int, str]],
+                  env: CylonEnv,
+                  **kwargs) -> str:
+    """
+    Write DataFrames to Parquet files
+
+    If a single string is provided as file_names:
+    it can be either a file_base or a directory name.
+      If it is a file base such as "path/to/dir/myfile",
+        all workers add the extension "_<rank>.parquet" to the file base.
+      If the file_names is a directory:
+        each worker create the output file by appending: "part_<rank>.parquet"
+
+    If a list of strings are provided: each string must be a filename for a worker.
+      First string must be the output filename for the first worker,
+      Second string must be the output filename for the second worker,
+      etc.
+      There must be one file name for each worker
+
+    If a dictionary is provided:
+      key must be the worker rank and the value must be the output file name for that worker.
+      In this case, not all workers need to provide the output filenames for all worker
+      If each worker provides its output filename only, that would be sufficient
+
+    Parameters
+    ----------
+    df: DataFrame to write to files
+    file_names: Output Parquet file names.
+                A string, or a list of strings, or a dictionary with worker ranks and out files
+    env: CylonEnv object for this DataFrame
+    kwargs: the parameters that will be passed on to cudf.DataFrame.to_parquet function
+
+    Returns
+    -------
+    Filename written
+    """
+    outfile = _get_file_name_to_write(file_ext="parquet", file_names=file_names, env=env, **kwargs)
+    df.to_cudf().to_parquet(outfile, **kwargs)
+    return outfile
 
 
 
