@@ -20,18 +20,18 @@
 
 #define CHECK_ARROW_EQUAL(expected, received)                                 \
   do {                                                                         \
-    const auto& exp = (expected);                                              \
-    const auto& rec = (received);                                              \
-    INFO("Expected: " << exp->ToString() << "\nReceived: " << rec->ToString());\
-    REQUIRE(exp->Equals(*rec));                                                \
+    const auto& exp_ = (expected);                                              \
+    const auto& rec_ = (received);                                              \
+    INFO("Expected: " << exp_->ToString() << "\nReceived: " << rec_->ToString());\
+    REQUIRE(exp_->Equals(*rec_));                                                \
   } while(0)
 
 #define CHECK_ARROW_BUFFER_EQUAL(expected, received)                           \
   do {                                                                         \
-    const auto& exp = (expected);                                              \
-    const auto& rec = (received);                                              \
-    INFO("Expected: " << exp->ToHexString() << "\nReceived: " << rec->ToHexString());\
-    REQUIRE(exp->Equals(*rec));                                                \
+    const auto& exp_ = (expected);                                              \
+    const auto& rec_ = (received);                                              \
+    INFO("Expected: " << exp_->ToHexString() << "\nReceived: " << rec_->ToHexString());\
+    REQUIRE(exp_->Equals(*rec_));                                                \
   } while(0)
 
 #define CHECK_CYLON_STATUS(expr)  \

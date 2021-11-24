@@ -858,10 +858,9 @@ Status TableRowIndexHash::Make(const std::shared_ptr<arrow::Table> &table,
 Status TableRowIndexHash::Make(const std::vector<std::shared_ptr<arrow::Array>> &arrays,
                                std::unique_ptr<TableRowIndexHash> *hash) {
   const int64_t len = arrays[0]->length();
-  if (std::all_of(arrays.begin() + 1, arrays.end(), [&](const std::shared_ptr<arrow::Array> &arr) {
-    return arr->length() == len;
-  })) {
-    return {Code::Invalid, "array lengths should be equal"};
+  if (std::any_of(arrays.begin() + 1, arrays.end(),
+                  [&](const auto &arr) { return arr->length() != len; })) {
+    return {Code::Invalid, "TableRowIndexHash array lengths should be equal"};
   }
 
   auto hashes_ptr = std::make_shared<std::vector<uint32_t>>(len, 0);

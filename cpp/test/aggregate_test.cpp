@@ -13,10 +13,12 @@
  */
 
 #include <cylon/compute/aggregates.hpp>
+#include <cylon/mapreduce/mapreduce.hpp>
 #include "common/test_header.hpp"
 #include "test_utils.hpp"
 
-using namespace cylon;
+namespace cylon {
+namespace test {
 
 TEST_CASE("aggregate testing", "[aggregates]") {
   const int rows = 12;
@@ -37,7 +39,8 @@ TEST_CASE("aggregate testing", "[aggregates]") {
 
     auto res_scalar = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
     std::cout << " " << res_scalar->value << std::endl;
-    REQUIRE(res_scalar->value == ((double) (rows * (rows - 1) / 2.0) + 10.0 * rows) * ctx->GetWorldSize());
+    REQUIRE(res_scalar->value
+                == ((double) (rows * (rows - 1) / 2.0) + 10.0 * rows) * ctx->GetWorldSize());
   }
 
   SECTION("testing count") {
@@ -64,7 +67,7 @@ TEST_CASE("aggregate testing", "[aggregates]") {
     REQUIRE(res_scalar->value == 10.0 + (double) (rows - 1));
   }
 
-  // Adding Table output based Aggregates
+    // Adding Table output based Aggregates
 
   SECTION("testing table:sum") {
     status = cylon::compute::Sum(table, 1, output);
@@ -105,7 +108,100 @@ TEST_CASE("aggregate testing", "[aggregates]") {
 
     REQUIRE(val == 10.0 + (double) (rows - 1));
   }
+}
+
+TEMPLATE_LIST_TEST_CASE("mapred kernels", "[mapred]", ArrowNumericTypes) {
+  auto type = default_type_instance<TestType>();
+
+  SECTION("sum") {
+    INFO("sum " + type->ToString())
+    auto kern = mapred::MakeMapReduceKernel(type, compute::SUM);
+
+    // init
+    arrow::ArrayVector array_vector;
+    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector));
+    REQUIRE(array_vector.size() == 1);
+    REQUIRE(array_vector[0]->length() == 5);
+
+    // combine
+    auto arr = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
+    std::vector<int64_t> g_ids{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
+    CHECK_CYLON_STATUS(kern->Combine(arr, g_ids.data(), 5, &array_vector));
+    CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
+
+    // reduce
+    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector)); // reset
+    CHECK_CYLON_STATUS(kern->Reduce({arr}, g_ids.data(), nullptr, 5, &array_vector));
+    CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
+
+    //finalize
+    std::shared_ptr<arrow::Array> out;
+    CHECK_CYLON_STATUS(kern->Finalize(array_vector, &out));
+    CHECK_ARROW_EQUAL(array_vector[0], out);
+  }
+
+  SECTION("count") {
+    INFO("count " + type->ToString())
+    auto kern = mapred::MakeMapReduceKernel(type, compute::COUNT);
+
+    // init
+    arrow::ArrayVector array_vector;
+    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector));
+    REQUIRE(array_vector.size() == 1);
+    REQUIRE(array_vector[0]->length() == 5);
+
+    // combine
+    auto arr = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
+    std::vector<int64_t> g_ids{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
+    CHECK_CYLON_STATUS(kern->Combine(arr, g_ids.data(), 5, &array_vector));
+    CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[2, 2, 2, 2, 2]"), array_vector[0]);
+
+    // reduce
+    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector)); // reset
+    arr = ArrayFromJSON(arrow::int64(), "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
+    CHECK_CYLON_STATUS(kern->Reduce({arr}, g_ids.data(), nullptr, 5, &array_vector));
+    CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 5, 9, 13, 17]"), array_vector[0]);
+
+    //finalize
+    std::shared_ptr<arrow::Array> out;
+    CHECK_CYLON_STATUS(kern->Finalize(array_vector, &out));
+    CHECK_ARROW_EQUAL(array_vector[0], out);
+  }
+
+  SECTION("mean") {
+    INFO("mean " + type->ToString())
+    auto kern = mapred::MakeMapReduceKernel(type, compute::MEAN);
+
+    // init
+    arrow::ArrayVector array_vector;
+    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector));
+    REQUIRE(array_vector.size() == 2);
+    REQUIRE(array_vector[0]->length() == 5);
+
+    // combine
+    auto arr = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
+    std::vector<int64_t> g_ids{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
+    CHECK_CYLON_STATUS(kern->Combine(arr, g_ids.data(), 5, &array_vector));
+    CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
+    CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[2, 2, 2, 2, 2]"), array_vector[1]);
+
+    // reduce
+    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector)); // reset
+    auto cnts = ArrayFromJSON(arrow::int64(), "[2, 3, 2, 3, 2, 3, 2, 3, 2, 3]");
+    CHECK_CYLON_STATUS(kern->Reduce({arr, cnts}, g_ids.data(), nullptr, 5, &array_vector));
+    CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
+    CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[5, 5, 5, 5, 5]"), array_vector[1]);
 
 
+    //finalize
+    std::shared_ptr<arrow::Array> out;
+    CHECK_CYLON_STATUS(kern->Finalize(array_vector, &out));
+    auto exp = ArrayFromJSON(arrow::float64(), "[0.2, 1, 1.8, 2.6, 3.4]");
+    auto exp_cast = *arrow::compute::Cast(*exp, type, arrow::compute::CastOptions::Unsafe());
+    CHECK_ARROW_EQUAL(exp_cast, out);
+  }
 
+}
+
+}
 }

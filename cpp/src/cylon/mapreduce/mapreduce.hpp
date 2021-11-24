@@ -15,12 +15,36 @@ namespace cylon {
 namespace mapred {
 
 struct MapToGroupKernel {
+  virtual ~MapToGroupKernel() = default;
   virtual Status Map(const std::shared_ptr<CylonContext> &ctx,
                      const std::vector<std::shared_ptr<arrow::Array>> &arrays,
                      std::shared_ptr<arrow::Array> *local_group_ids,
                      std::shared_ptr<arrow::Array> *local_group_indices,
                      int64_t *local_num_groups) const;
 };
+
+struct MapReduceKernel {
+  virtual ~MapReduceKernel() = default;
+
+  virtual Status Init(const std::shared_ptr<CylonContext> &ctx, int64_t local_num_groups,
+                      arrow::ArrayVector *combined_results) = 0;
+
+  virtual Status Combine(const std::shared_ptr<arrow::Array> &value_col,
+                         const int64_t *local_group_ids, int64_t local_num_groups,
+                         arrow::ArrayVector *combined_results) const = 0;
+
+  virtual Status Reduce(const arrow::ArrayVector &combined_results, const int64_t *local_group_ids,
+                        const int64_t *local_group_indices, int64_t local_num_groups,
+                        arrow::ArrayVector *reduced_results) const = 0;
+
+  virtual Status Finalize(const arrow::ArrayVector &reduced_results,
+                          std::shared_ptr<arrow::Array> *output) const = 0;
+
+  virtual size_t num_arrays() const = 0;
+};
+
+std::unique_ptr<MapReduceKernel> MakeMapReduceKernel(const std::shared_ptr<arrow::DataType> &type,
+                                                     compute::AggregationOpId reduce_op);
 
 /**
  * 1. map keys to groups in the local table
@@ -30,36 +54,12 @@ struct MapToGroupKernel {
  * 5. reduce shuffled table locally
  * 6. finalize reduction
  */
-struct MapReduceKernel {
-  virtual Status Init(const std::shared_ptr<CylonContext> &ctx, int64_t local_num_groups,
-                      arrow::ArrayVector *combined_results) const = 0;
-
-  virtual Status Combine(const std::shared_ptr<CylonContext> &ctx,
-                         const std::shared_ptr<arrow::Array> &value_col,
-                         const int64_t *local_group_ids,
-                         int64_t local_num_groups,
-                         arrow::ArrayVector *combined_results) const = 0;
-
-  virtual Status Reduce(const std::shared_ptr<CylonContext> &ctx,
-                        const arrow::ArrayVector &combined_results,
-                        const int64_t *local_group_ids,
-                        int64_t local_num_groups,
-                        arrow::ArrayVector *reduced_results) const = 0;
-
-  virtual Status Finalize(const std::shared_ptr<CylonContext> &ctx,
-                          const arrow::ArrayVector &reduced_results,
-                          std::shared_ptr<arrow::Array> *output) const = 0;
-};
-
-struct CombineReduceConfig {
-  int col_id;
-  compute::AggregationOpId reduce_op;
-};
-
-Status MapReduce(const std::shared_ptr<Table> &table,
-                 std::vector<int> key_cols,
-                 std::vector<CombineReduceConfig> reduce_configs,
-                 std::shared_ptr<Table> *output);
+Status Aggregate(const std::shared_ptr<CylonContext> &ctx,
+                 const std::shared_ptr<Table> &table,
+                 const std::vector<int> &key_cols,
+                 const std::vector<std::pair<int, compute::AggregationOpId>> &aggs,
+                 std::shared_ptr<Table> *output,
+                 const MapToGroupKernel &mapper = MapToGroupKernel());
 
 }
 }
