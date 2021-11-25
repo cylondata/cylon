@@ -1561,118 +1561,108 @@ class DataFrame(object):
         tail_n_cdf = self._cdf.head(tail_row_counts[env.rank])
         return DataFrame.from_cudf(tail_n_cdf)
 
-    def to_csv(self, file_names, env: CylonEnv = None, **kwargs) -> str:
+    def to_csv(self,
+               dir_path: str,
+               env: CylonEnv,
+               name_function: callable = None,
+               **kwargs) -> str:
         """
         Write DataFrames to CSV files
 
-        If a single string is provided as file_names:
-        it can be either a file_base or a directory name.
-          If it is a file base such as "path/to/dir/myfile",
-            all workers add the extension "_<rank>.csv" to the file base.
-          If the file_names is a directory:
-            each worker create the output file by appending: "part_<rank>.csv"
-
-        If a list of strings are provided: each string must be a filename for a worker.
-          First string must be the output filename for the first worker,
-          Second string must be the output filename for the second worker,
-          etc.
-          There must be one file name for each worker
-
-        If a dictionary is provided:
-          key must be the worker rank and the value must be the output file name for that worker.
-          In this case, not all workers need to provide the output filenames for all worker
-          If each worker provides its output filename only, that would be sufficient
+        Each worker writes a single CSV file.
+        All files are written to the given directory.
+        If the name_function is not provided:
+          each worker creates the output file with the pattern: "part_<rank>.csv"
+        If the name_function parameter is given:
+          this function is used to generate the output filename by each worker.
+          this function must take an int as the argument and return a string as the filename.
+          each worker calls this function with its worker rank.
 
         Parameters
         ----------
-        df: DataFrame to write to files
-        file_names: Output CSV file names.
-                    A string, or a list of strings, or a dictionary with worker ranks and out files
+        dir_path: Output directory for CSV files.
         env: CylonEnv object for this DataFrame
+        name_function: a function to create the filename for that worker
         kwargs: the parameters that will be passed on to cudf.DataFrame.to_csv function
 
         Returns
         -------
         Filename written
         """
-        return pygcylon.io.write_csv(self, file_names=file_names, env=env, **kwargs)
+        return pygcylon.io.write_csv(self,
+                                     dir_path=dir_path,
+                                     env=env,
+                                     name_function=name_function,
+                                     **kwargs)
 
-    def to_json(self, file_names, env: CylonEnv = None, **kwargs) -> str:
+    def to_json(self,
+                dir_path: str,
+                env: CylonEnv,
+                name_function: callable = None,
+                **kwargs) -> str:
         """
         Write DataFrames to JSON files
 
-        If a single string is provided as file_names:
-        it can be either a file_base or a directory name.
-          If it is a file base such as "path/to/dir/myfile",
-            all workers add the extension "_<rank>.json" to the file base.
-          If the file_names is a directory:
-            each worker create the output file by appending: "part_<rank>.json"
-
-        If a list of strings are provided: each string must be a filename for a worker.
-          First string must be the output filename for the first worker,
-          Second string must be the output filename for the second worker,
-          etc.
-          There must be one file name for each worker
-
-        If a dictionary is provided:
-          key must be the worker rank and the value must be the output file name for that worker.
-          In this case, not all workers need to provide the output filenames for all worker
-          If each worker provides its output filename only, that would be sufficient
+        Each worker writes a single JSON file.
+        All files are written to the given directory.
+        If the name_function is not provided:
+          each worker creates the output file with the pattern: "part_<rank>.json"
+        If the name_function parameter is given:
+          this function is used to generate the output filename by each worker.
+          this function must take an int as the argument and return a string as the filename.
+          each worker calls this function with its worker rank.
 
         Parameters
         ----------
-        df: DataFrame to write to files
-        file_names: Output JSON file names.
-                    A string, or a list of strings, or a dictionary with worker ranks and out files
+        dir_path: Output directory for JSON files.
         env: CylonEnv object for this DataFrame
+        name_function: a function to create the filename for that worker
         kwargs: the parameters that will be passed on to cudf.DataFrame.to_json function
 
         Returns
         -------
         Filename written
         """
-        return pygcylon.io.write_json(self, file_names=file_names, env=env, **kwargs)
+        return pygcylon.io.write_json(self,
+                                      dir_path=dir_path,
+                                      env=env,
+                                      name_function=name_function,
+                                      **kwargs)
 
-    def to_parquet(self, file_names,
-                   env: CylonEnv = None,
+    def to_parquet(self,
+                   dir_path: str,
+                   env: CylonEnv,
+                   name_function: callable = None,
                    write_metadata_file: bool = True,
                    **kwargs) -> str:
         """
         Write DataFrames to Parquet files
 
-        If a single string is provided as file_names:
-        it can be either a file_base or a directory name.
-          If it is a file base such as "path/to/dir/myfile",
-            all workers add the extension "_<rank>.parquet" to the file base.
-          If the file_names is a directory:
-            each worker create the output file by appending: "part_<rank>.parquet"
-
-        If a list of strings are provided: each string must be a filename for a worker.
-          First string must be the output filename for the first worker,
-          Second string must be the output filename for the second worker,
-          etc.
-          There must be one file name for each worker
-
-        If a dictionary is provided:
-          key must be the worker rank and the value must be the output file name for that worker.
-          In this case, not all workers need to provide the output filenames for all worker
-          If each worker provides its output filename only, that would be sufficient
+        Each worker writes a single parquet file.
+        All files are written to the given directory.
+        If the name_function is not provided:
+          each worker creates the output file with the pattern: "part_<rank>.parquet"
+        If the name_function parameter is given:
+          this function is used to generate the output filename by each worker.
+          this function must take an int as the argument and return a string as the filename.
+          each worker calls this function with its worker rank.
 
         Parameters
         ----------
-        df: DataFrame to write to files
-        file_names: Output Parquet file names.
-                    A string, or a list of strings, or a dictionary with worker ranks and out files
+        dir_path: Output directory for Parquet files.
         env: CylonEnv object for this DataFrame
-        write_metadata_file: write metadata to _metadata file
-        kwargs: the parameters that will be passed on to cudf.DataFrame.to_json function
+        name_function: a function to create the filename for that worker
+        write_metadata_file: whether to write the metadata to _metadata file
+        kwargs: the parameters that will be passed on to cudf.DataFrame.to_parquet function
 
         Returns
         -------
         Filename written
         """
-        return pygcylon.io.write_parquet(self, file_names=file_names,
+        return pygcylon.io.write_parquet(self,
+                                         dir_path=dir_path,
                                          env=env,
+                                         name_function=name_function,
                                          write_metadata_file=write_metadata_file,
                                          **kwargs)
 
