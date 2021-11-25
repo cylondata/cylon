@@ -24,7 +24,7 @@ import pyarrow as pa
 from pyarrow import parquet as pq
 import pygcylon as gcy
 from pycylon.frame import CylonEnv
-from pycylon.net.comm_ops import allgather_buffer
+from pycylon.net.comm_ops import allgather_buffer, gather_buffer
 
 
 def _get_files(paths: Union[str, List[str]], ext: str = None) -> List[str]:
@@ -309,6 +309,17 @@ def _serialize_metadata_file(fmd: pa._parquet.FileMetaData) -> pa.Buffer:
         return buf_tuple[0]
 
 
+def _deserialize_metadata_buffers(buffers: List[pa.Buffer]) -> pa._parquet.FileMetaData:
+    """
+    deserialize FileMetaData buffers
+    """
+    fmd_all = []
+    for received_buf in buffers:
+        if received_buf.size > 0:
+            fmd_all.append(pa._parquet._reconstruct_filemetadata(received_buf))
+    return fmd_all
+
+
 def _schemas_equal(fmd_list: List[pa._parquet.FileMetaData], my_rank: int):
     """
     compare schemas of consecutive FileMetaData objects
@@ -342,11 +353,7 @@ def _all_gather_metadata(worker_files: List[str], env: CylonEnv) -> pa._parquet.
     buffers = allgather_buffer(buf=buf, context=env.context)
 
     # deserialize
-    fmd_all = []
-    for received_buf in buffers:
-        if received_buf.size > 0:
-            fmd_all.append(pa._parquet._reconstruct_filemetadata(received_buf))
-
+    fmd_all = _deserialize_metadata_buffers(buffers)
     if len(fmd_all) == 0:
         raise ValueError("No worker has any parquet files.")
 
@@ -468,6 +475,7 @@ def read_parquet(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
 def write_parquet(df: gcy.DataFrame,
                   file_names: Union[str, List[str], Dict[int, str]],
                   env: CylonEnv,
+                  write_metadata_file: bool = True,
                   **kwargs) -> str:
     """
     Write DataFrames to Parquet files
@@ -496,6 +504,7 @@ def write_parquet(df: gcy.DataFrame,
     file_names: Output Parquet file names.
                 A string, or a list of strings, or a dictionary with worker ranks and out files
     env: CylonEnv object for this DataFrame
+    write_metadata_file: whether write _metadata file
     kwargs: the parameters that will be passed on to cudf.DataFrame.to_parquet function
 
     Returns
@@ -504,6 +513,27 @@ def write_parquet(df: gcy.DataFrame,
     """
     outfile = _get_file_name_to_write(file_ext="parquet", file_names=file_names, env=env, **kwargs)
     df.to_cudf().to_parquet(outfile, **kwargs)
+
+    if not write_metadata_file:
+        return outfile
+
+    fmd = pq.read_metadata(outfile)
+    fmd.set_file_path(outfile)
+
+    gather_root = 0
+    buf = _serialize_metadata_file(fmd=fmd)
+    buffers = gather_buffer(buf, root=gather_root, context=env.context)
+    if gather_root != env.rank:
+        return outfile
+
+    fmd_all = _deserialize_metadata_buffers(buffers)
+    fmd_single = fmd_all[0]
+    [fmd_single.append_row_groups(fmd) for fmd in fmd_all[1:]]
+
+    outfile_rp = os.path.realpath(outfile)
+    meta_file = os.path.join(os.path.dirname(outfile_rp), "_metadata")
+    fmd_single.write_metadata_file(meta_file)
+
     return outfile
 
 

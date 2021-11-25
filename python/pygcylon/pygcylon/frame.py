@@ -1633,7 +1633,10 @@ class DataFrame(object):
         """
         return pygcylon.io.write_json(self, file_names=file_names, env=env, **kwargs)
 
-    def to_parquet(self, file_names, env: CylonEnv = None, **kwargs) -> str:
+    def to_parquet(self, file_names,
+                   env: CylonEnv = None,
+                   write_metadata_file: bool = True,
+                   **kwargs) -> str:
         """
         Write DataFrames to Parquet files
 
@@ -1661,13 +1664,17 @@ class DataFrame(object):
         file_names: Output Parquet file names.
                     A string, or a list of strings, or a dictionary with worker ranks and out files
         env: CylonEnv object for this DataFrame
+        write_metadata_file: write metadata to _metadata file
         kwargs: the parameters that will be passed on to cudf.DataFrame.to_json function
 
         Returns
         -------
         Filename written
         """
-        return pygcylon.io.write_parquet(self, file_names=file_names, env=env, **kwargs)
+        return pygcylon.io.write_parquet(self, file_names=file_names,
+                                         env=env,
+                                         write_metadata_file=write_metadata_file,
+                                         **kwargs)
 
 
 def concat(
