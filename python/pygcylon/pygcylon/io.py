@@ -297,6 +297,68 @@ def write_json(df: gcy.DataFrame,
 #####################################################################################
 
 
+def _serialize_metadata_file(fmd: pa._parquet.FileMetaData) -> pa.Buffer:
+    """
+    serialize a FileMetaData object
+    return empty buffer if None
+    """
+    if fmd is None:
+        return pa.allocate_buffer(0)
+    else:
+        _, buf_tuple = fmd.__reduce__()
+        return buf_tuple[0]
+
+
+def _schemas_equal(fmd_list: List[pa._parquet.FileMetaData], my_rank: int):
+    """
+    compare schemas of consecutive FileMetaData objects
+    """
+    for fmd1, fmd2 in zip(fmd_list, fmd_list[1:]):
+        if not fmd1.schema.equals(fmd2.schema):
+            f1 = fmd1.row_group(0).column(0).file_path
+            f2 = fmd2.row_group(0).column(0).file_path
+            raise ValueError(my_rank, f"schemas are not equal for the files: {f1} and {f2}")
+
+
+def _all_gather_metadata(worker_files: List[str], env: CylonEnv) -> pa._parquet.FileMetaData:
+    """
+    allgather FileMetaData objects and check schemas for equality
+    """
+    fmd_list = []
+    for worker_file in worker_files:
+        fmd = pq.read_metadata(worker_file)
+        fmd.set_file_path(worker_file)
+        fmd_list.append(fmd)
+
+    # make sure all schemas are equal for this worker
+    _schemas_equal(fmd_list, env.rank)
+
+    fmd_single = fmd_list[0] if fmd_list else None
+    for fmd in fmd_list[1:]:
+        fmd_single.append_row_groups(fmd)
+
+    # serialize and all gather
+    buf = _serialize_metadata_file(fmd_single)
+    buffers = allgather_buffer(buf=buf, context=env.context)
+
+    # deserialize
+    fmd_all = []
+    for received_buf in buffers:
+        if received_buf.size > 0:
+            fmd_all.append(pa._parquet._reconstruct_filemetadata(received_buf))
+
+    if len(fmd_all) == 0:
+        raise ValueError("No worker has any parquet files.")
+
+    # make sure all received schemas are equal
+    _schemas_equal(fmd_all, env.rank)
+
+    # combine all received schemas into one
+    fmd_single = fmd_all[0]
+    [fmd_single.append_row_groups(fmd) for fmd in fmd_all[1:]]
+    return fmd_single
+
+
 def _row_groups_this_worker(df: pd.DataFrame, env: CylonEnv):
     """
     Determine the row groups this worker will read.
@@ -310,7 +372,8 @@ def _row_groups_this_worker(df: pd.DataFrame, env: CylonEnv):
         return df[env.rank:(env.rank + 1)]
 
     total_rows = df['row_group_size'].sum()
-    rows_per_worker = total_rows / env.world_size
+    remaining_workers = env.world_size
+    rows_per_worker = total_rows / remaining_workers
     start_index = 0
     end_index = 0
     last_worker = env.rank == env.world_size - 1
@@ -323,7 +386,33 @@ def _row_groups_this_worker(df: pd.DataFrame, env: CylonEnv):
             if rows_this_worker >= rows_per_worker:
                 end_index = i + 1
                 break
+        total_rows -= rows_this_worker
+        remaining_workers -= 1
+        rows_per_worker = total_rows / remaining_workers
+
     return df[end_index:] if last_worker else df[start_index:end_index]
+
+
+def _construct_df(fmd: pa._parquet.FileMetaData) -> pd.DataFrame:
+    """
+    construct a DataFrame with three columns
+    for calculating row_groups per worker
+    """
+    row_group_indices = []
+    row_group_sizes = []
+    files = []
+    rg_index = 0
+    for i in range(fmd.num_row_groups):
+        rg = fmd.row_group(i)
+        worker_file = rg.column(0).file_path
+        row_group_sizes.append(rg.num_rows)
+        if rg_index > 0 and worker_file != files[len(files) - 1]:
+            rg_index = 0
+        row_group_indices.append(rg_index)
+        rg_index += 1
+        files.append(worker_file)
+
+    return pd.DataFrame({'row_group_index': row_group_indices, 'row_group_size': row_group_sizes, 'file': files})
 
 
 def read_parquet(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
@@ -347,65 +436,20 @@ def read_parquet(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
     else:
         raise ValueError("paths must be: Union[str, List[str], Dict[int, Union[str, List[str]]]]")
 
-    md_list = [pq.read_metadata(worker_file) for worker_file in worker_files]
-    # make sure all schemas are equal for this worker
-    for md1, md2, f1, f2 in zip(md_list, md_list[1:], worker_files, worker_files[1:]):
-        if not md1.schema.equals(md2.schema):
-            raise ValueError(env.rank, f"schemas are not equal for the files: {f1} and {f2}")
-
-    # make sure all worker schemas are equal
-    schema = md_list[0].schema.to_arrow_schema() if md_list else None
-    df_schema = _all_schemas_equal(schema, env=env)
-
+    fmd = _all_gather_metadata(worker_files=worker_files, env=env)
     if file_mappings_given:
         cdf = cudf.read_parquet(worker_files, **kwargs) if worker_files else \
-            cudf.DataFrame.from_arrow(df_schema.empty_table())
+            cudf.DataFrame.from_arrow(fmd.schema.to_arrow_schema().empty_table())
         return gcy.DataFrame.from_cudf(cdf)
 
-    # determine all local row_groups and put in a record_batch
-    row_group_indices = []
-    row_group_sizes = []
-    files = []
-    for md, worker_file in zip(md_list, worker_files):
-        for rg in range(md.num_row_groups):
-            row_group_indices.append(rg)
-            row_group_sizes.append(md.row_group(rg).num_rows)
-            files.append(worker_file)
-
-    rg_data = [
-               pa.array(row_group_indices, type="int64"),
-               pa.array(row_group_sizes, type="int64"),
-               pa.array(files, type="str")
-               ]
-    rg_batch = pa.record_batch(rg_data, names=['row_group_index', 'row_group_size', 'file'])
-
-    # allgather row_groups
-    # serialize the batch
-    sink = pa.BufferOutputStream()
-    with pa.ipc.new_stream(sink, rg_batch.schema) as writer:
-        writer.write_batch(rg_batch)
-    buf = sink.getvalue()
-
-    buffers = allgather_buffer(buf=buf, context=env.context)
-
-    # construct a single DataFrame from received batches
-    rg_batches = []
-    for rg_buf in buffers:
-        if len(rg_buf) > 0:
-            with pa.ipc.open_stream(rg_buf) as reader:
-                rg_batches.append(reader.read_next_batch())
-
-    if len(rg_batches) == 0:
-        raise ValueError("No worker has any parquet files.")
-
-    rg_table = pa.Table.from_batches(rg_batches)
-    pdf = rg_table.to_pandas()
+    # construct a DataFrame with relevant columns
+    pdf = _construct_df(fmd)
 
     # distribute row_groups to workers
     my_rg_df = _row_groups_this_worker(pdf, env)
-    outfile = "row_groups_" + str(env.rank) + ".csv"
-    my_rg_df.to_csv(outfile)
-    print(env.rank, "written to the file: ", outfile)
+    # outfile = "row_groups_" + str(env.rank) + ".csv"
+    # my_rg_df.to_csv(outfile)
+    # print(env.rank, "written to the file: ", outfile)
 
     my_files = my_rg_df["file"].unique().tolist()
     my_row_groups = []
@@ -416,7 +460,7 @@ def read_parquet(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
     if my_files:
         cdf = cudf.read_parquet(my_files, row_groups=my_row_groups, **kwargs)
     else:
-        cdf = cudf.DataFrame.from_arrow(df_schema.empty_table())
+        cdf = cudf.DataFrame.from_arrow(fmd.schema.to_arrow_schema().empty_table())
 
     return gcy.DataFrame.from_cudf(cdf)
 
