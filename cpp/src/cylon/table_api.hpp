@@ -198,6 +198,26 @@ Status AllGatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
                             std::vector<uint8_t> &received_buf
 );
 
+/**
+ * Perform gather on an Arrow Buffer
+ * all received buffers are put into "buffers"
+ * received_buf vector can be empty when calling this method.
+ *   it holds the received data of buffers consecutively in memory.
+ *   do not delete received_buf before deleting buffers.
+ *   received_buf owns the memory of buffers. buffers do not own their memory.
+ * @param buf
+ * @param ctx
+ * @param buffers
+ * @param received_buf
+ * @return
+ */
+Status GatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
+                         int32_t gather_root,
+                         const std::shared_ptr<cylon::CylonContext> &ctx,
+                         std::vector<std::shared_ptr<arrow::Buffer>> &buffers,
+                         std::vector<uint8_t> &received_buf
+);
+
 #ifdef BUILD_CYLON_PARQUET
 Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                    const std::string &path,

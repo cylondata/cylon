@@ -67,6 +67,22 @@ cylon::Status Gather(const std::shared_ptr<cylon::TableSerializer>& serializer,
 );
 
 /**
+ * Perform MPI Gather on a buffer
+ * Some buffers might be empty,
+ * @param data buffer to send
+ * @param size size of the buffer
+ * @param ctx CylonContext object
+ * @return
+ */
+cylon::Status GatherBuffer(const uint8_t *data,
+                           int32_t size,
+                           int gather_root,
+                           const std::shared_ptr <cylon::CylonContext> &ctx,
+                           std::vector<uint8_t> &received_buf,
+                           std::vector<int32_t> &all_buffer_sizes
+);
+
+/**
  * Perform MPI AllGather on a distributed table
  * Assuming all workers have a table,
  * all tables will be replicated on all workers as a single table

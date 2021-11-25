@@ -13,6 +13,7 @@
  ##
 
 from libc.stdint cimport uint8_t
+from libc.stdint cimport int32_t
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from pyarrow.lib cimport CBuffer as ArrowCBuffer
@@ -25,4 +26,10 @@ cdef extern from "cylon/table_api.hpp" namespace "cylon":
                                  const shared_ptr[CCylonContext] &ctx_srd_ptr,
                                  vector[shared_ptr[ArrowCBuffer]] &buffers,
                                  vector[uint8_t] &received_buf);
+
+    CStatus GatherArrowBuffer(const shared_ptr[ArrowCBuffer] &buf,
+                              int32_t gather_root,
+                              const shared_ptr[CCylonContext] &ctx_srd_ptr,
+                              vector[shared_ptr[ArrowCBuffer]] &buffers,
+                              vector[uint8_t] &received_buf);
 

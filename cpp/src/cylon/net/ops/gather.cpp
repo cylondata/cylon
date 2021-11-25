@@ -153,6 +153,56 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
   return cylon::Status::OK();
 }
 
+cylon::Status cylon::mpi::GatherBuffer(const uint8_t *data,
+                                       int32_t size,
+                                       int gather_root,
+                                       const std::shared_ptr <cylon::CylonContext> &ctx,
+                                       std::vector<uint8_t> &received_buf,
+                                       std::vector<int32_t> &all_buffer_sizes) {
+
+  if (AmIRoot(gather_root, ctx)) {
+    all_buffer_sizes.resize(ctx->GetWorldSize(), 0);
+  }
+
+  int status = MPI_Gather(&size,
+                          1,
+                          MPI_INT32_T,
+                          all_buffer_sizes.data(),
+                          1,
+                          MPI_INT32_T,
+                          gather_root,
+                          MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Gather failed when receiving buffer sizes!");
+  }
+
+  std::vector<int32_t> disps;
+  if (AmIRoot(gather_root, ctx)) {
+    auto total_size = std::accumulate(all_buffer_sizes.begin(), all_buffer_sizes.end(), 0);
+    received_buf.resize(total_size);
+
+    disps.resize(ctx->GetWorldSize(), 0);
+    for (int i = 1; i < all_buffer_sizes.size(); ++i) {
+      disps[i] = disps[i-1] + all_buffer_sizes[i-1];
+    }
+  }
+
+  status = MPI_Gatherv(data,
+                       size,
+                       MPI_UINT8_T,
+                       received_buf.data(),
+                       all_buffer_sizes.data(),
+                       disps.data(),
+                       MPI_UINT8_T,
+                       gather_root,
+                       MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Gatherv failed when receiving buffers!");
+  }
+
+  return cylon::Status::OK();
+}
+
 cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer> &serializer,
                                     const std::shared_ptr<cylon::Allocator> &allocator,
                                     std::vector<int32_t> &all_buffer_sizes,

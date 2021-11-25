@@ -13,6 +13,7 @@
  ##
 
 from libc.stdint cimport uint8_t
+from libc.stdint cimport int32_t
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 
@@ -52,3 +53,30 @@ def allgather_buffer(
         return all_buffers
     else:
         raise ValueError(f"allgather_buffer operation failed : {c_status.get_msg().decode()}")
+
+
+def gather_buffer(
+        object buf,
+        root,
+        context,
+):
+    cdef shared_ptr[ArrowCBuffer] c_buf = pyarrow_unwrap_buffer(buf)
+    cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
+    cdef vector[shared_ptr[ArrowCBuffer]] c_all_buffers
+    cdef vector[uint8_t] full_raw_buffer
+    cdef CStatus c_status
+    cdef int32_t c_root = root
+
+    c_status = GatherArrowBuffer(c_buf, c_root, c_ctx_ptr, c_all_buffers, full_raw_buffer)
+    if c_status.is_ok():
+        all_buffers = []
+        if root == context.get_rank():
+            for i in range(c_all_buffers.size()):
+                # create new buffer objects by memory copying
+                # memory will be owned by arrow memory manager
+                bf = pyarrow_wrap_buffer(c_all_buffers[i])
+                bf = pa.py_buffer(bf.to_pybytes())
+                all_buffers.append(bf)
+        return all_buffers
+    else:
+        raise ValueError(f"gather_buffer operation failed : {c_status.get_msg().decode()}")
