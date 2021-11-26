@@ -161,18 +161,43 @@ def read_csv(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
              **kwargs) -> gcy.DataFrame:
     """
     Read CSV files and construct a distributed DataFrame
+    We try to distribute files among workers evenly.
+    When a worker reads multiple files, it concatenates them and generates a single DataFrame
 
-    If a dictionary is provided as a paths parameter,
-    workers with given ranks read those matching files and concatenate them.
+    All files have to have the same schema.
+    Otherwise an error will be thrown.
+
+    All path strings are evaluated as glob strings.
+
+    If a dictionary is provided as the "paths" parameter,
+      workers with given ranks read those matching files and concatenate them.
     If a string or list of strings are provided, first the list of all files to read
-    are determined by evaluating glob paths.
-    Then files are sorted alphabetically and divided among the workers evenly.
+      are determined by evaluating glob paths.
+      Then files are sorted alphabetically and divided among the workers evenly.
+
+    Examples:
+        # read all csv files in a directory
+        gcy.read_csv(paths="/pat/to/dir/*.csv", env=env)
+
+        # read only a single csv file
+        gcy.read_csv(paths="/pat/to/dir/example.csv", env=env)
+
+        # read only a list of csv files
+        gcy.read_csv(paths=["/pat/to/dir/example_0.csv", "/pat/to/dir/example_1.csv"], env=env)
+
+        # specify the files to be read by individual workers
+        gcy.read_csv(paths={0: "/pat/to/dir/example_0.csv", 1: "/pat/to/dir/example_1.csv"}, env=env)
+        gcy.read_csv(paths={0: "/pat/to/dir/example_0*.csv", 1: "/pat/to/dir/example_1*.csv"}, env=env)
+
+        # specify many files to be read by individual workers
+        gcy.read_csv(paths={0: ["/pat/to/dir/example_0.csv", "/pat/to/dir/example_1*.csv"],
+                            1: "/pat/to/dir/example_2*.csv"}, env=env)
 
     Parameters
     ----------
-    paths: Input CSV file paths. A string, a list of strings,
-           a dictionary of worker ranks to paths that can be either a string or a list of strings.
-           paths are glob strings such as: path/to/dir/*.csv
+    paths: Input CSV file paths as glob strings.
+           A string, a list of strings, a dictionary of worker ranks to paths
+           that can be either a string or a list of strings.
     env: CylonEnv object for this DataFrame
     kwargs: the parameters that will be passed on to cudf.read_csv function
 
@@ -221,18 +246,43 @@ def read_json(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
               **kwargs) -> gcy.DataFrame:
     """
     Read JSON files and construct a distributed DataFrame
+    We try to distribute files among workers evenly.
+    When a worker reads multiple files, it concatenates them and generates a single DataFrame
 
-    If a dictionary is provided as a paths parameter,
-    workers with given ranks read those matching files and concatenate them.
+    All files have to have the same schema.
+    Otherwise an error will be thrown.
+
+    All path strings are evaluated as glob strings.
+
+    If a dictionary is provided as the "paths" parameter,
+      workers with given ranks read those matching files and concatenate them.
     If a string or list of strings are provided, first the list of all files to read
-    are determined by evaluating glob paths.
-    Then files are sorted alphabetically and divided among the workers evenly.
+      are determined by evaluating glob paths.
+      Then files are sorted alphabetically and divided among the workers evenly.
+
+    Examples:
+        # read all json files in a directory
+        gcy.read_json(paths="/pat/to/dir/*.json", env=env)
+
+        # read only a single json file
+        gcy.read_json(paths="/pat/to/dir/example.json", env=env)
+
+        # read only a list of json files
+        gcy.read_json(paths=["/pat/to/dir/example_0.json", "/pat/to/dir/example_1.json"], env=env)
+
+        # specify the files to be read by individual workers
+        gcy.read_json(paths={0: "/pat/to/dir/example_0.json", 1: "/pat/to/dir/example_1.json"}, env=env)
+        gcy.read_json(paths={0: "/pat/to/dir/example_0*.json", 1: "/pat/to/dir/example_1*.json"}, env=env)
+
+        # specify many files to be read by individual workers
+        gcy.read_json(paths={0: ["/pat/to/dir/example_0.json", "/pat/to/dir/example_1*.json"],
+                            1: "/pat/to/dir/example_2*.json"}, env=env)
 
     Parameters
     ----------
-    paths: Input JSON file paths. A string, a list of strings,
-           a dictionary of worker ranks to paths that can be either a string or a list of strings.
-           paths are glob strings such as: path/to/dir/*.json
+    paths: Input JSON file paths as glob strings.
+           A string, a list of strings, a dictionary of worker ranks to paths
+           that can be either a string or a list of strings.
     env: CylonEnv object for this DataFrame
     kwargs: the parameters that will be passed on to cudf.read_json function
 
@@ -410,28 +460,92 @@ def read_parquet(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
                  env: CylonEnv,
                  **kwargs) -> gcy.DataFrame:
     """
-    Read Parquet files and construct a distributed DataFrame
-    Try to distribute rows evenly among the workers as much as possible
+    Read Parquet files and construct a distributed DataFrame.
+    Each row_group is read by exactly one worker.
+    Each worker is assigned only consecutive row_groups.
+    We try to distribute row_groups among the workers
+      to make the row_counts of each worker DataFrame as close as possible.
+    When a worker reads data from multiple files,
+      it concatenates them and generates a single DataFrame
+
+    All files have to have the same schema.
+    Otherwise an error will be thrown.
+
+    All path strings are evaluated as glob strings.
+
+    If a directory is provided as the "paths" parameter,
+      we check for the "_metadata" file, if it exists,
+        all workers read that metadata file and calculate the row_groups they will read.
+      if there is no "_metadata" file in the directory,
+        we read all parquet files in that directory.
+    If a dictionary is provided as the "paths" parameter,
+      workers with given ranks read those matching files and concatenate them.
+    If a string or list of strings are provided, first the list of all files to read
+      are determined by evaluating glob paths.
+      Then the metadata of all files are read,
+      row_groups are distributed among the workers to make the num_rows of each worker DataFrame as close as possible.
+
+    Examples:
+        # read all parquet files in a directory
+        gcy.read_parquet(paths="/pat/to/dir/", env=env)
+
+        # read all parquet files in a directory
+        gcy.read_parquet(paths="/pat/to/dir/*.parquet", env=env)
+
+        # read only a single parquet file
+        gcy.read_parquet(paths="/pat/to/dir/example.parquet", env=env)
+
+        # read only a list of parquet files
+        gcy.read_parquet(paths=["/pat/to/dir/example_0.parquet", "/pat/to/dir/example_1.parquet"], env=env)
+
+        # specify the files to be read by individual workers
+        gcy.read_parquet(paths={0: "/pat/to/dir/example_0.parquet", 1: "/pat/to/dir/example_1.parquet"}, env=env)
+        gcy.read_parquet(paths={0: "/pat/to/dir/example_0*.parquet", 1: "/pat/to/dir/example_1*.parquet"}, env=env)
+
+        # specify many files to be read by individual workers
+        gcy.read_parquet(paths={0: ["/pat/to/dir/example_0.parquet", "/pat/to/dir/example_1*.parquet"],
+                            1: "/pat/to/dir/example_2*.parquet"}, env=env)
+
+    Parameters
+    ----------
+    paths: Input parquet file paths as glob strings.
+           A string, a list of strings, a dictionary of worker ranks to paths
+           that can be either a string or a list of strings.
+    env: CylonEnv object for this DataFrame
+    kwargs: the parameters that will be passed on to cudf.read_parquet function
+
+    Returns
+    -------
+    A new distributed DataFrame constructed by reading all parquet files
     """
 
+    fmd = None
     if isinstance(paths, str):
+        if os.path.isdir(paths):
+            mdfile = os.path.join(paths, "_metadata")
+            if os.path.isfile(mdfile):
+                # all workers read the metadata file.
+                # one worker may read and broadcast the metadata file.
+                # since the metadata file is small, not sure this is needed
+                fmd = pq.read_metadata(mdfile)
         paths = [paths]
 
-    if isinstance(paths, list) and all(isinstance(p, str) for p in paths):
-        worker_files = _get_worker_files(paths, env, ext="*.parquet")
-        file_mappings_given = False
-    elif isinstance(paths, dict) and \
-            all(isinstance(key, int) and (isinstance(val, list) or isinstance(val, str)) for key, val in paths.items()):
-        worker_files = _get_files(paths[env.rank], ext="*.parquet") if env.rank in paths else []
-        file_mappings_given = True
-    else:
-        raise ValueError("paths must be: Union[str, List[str], Dict[int, Union[str, List[str]]]]")
+    if fmd is None:
+        if isinstance(paths, list) and all(isinstance(p, str) for p in paths):
+            worker_files = _get_worker_files(paths, env, ext="*.parquet")
+            file_mappings_given = False
+        elif isinstance(paths, dict) and \
+                all(isinstance(key, int) and (isinstance(val, list) or isinstance(val, str)) for key, val in paths.items()):
+            worker_files = _get_files(paths[env.rank], ext="*.parquet") if env.rank in paths else []
+            file_mappings_given = True
+        else:
+            raise ValueError("paths must be: Union[str, List[str], Dict[int, Union[str, List[str]]]]")
 
-    fmd = _all_gather_metadata(worker_files=worker_files, env=env)
-    if file_mappings_given:
-        cdf = cudf.read_parquet(worker_files, **kwargs) if worker_files else \
-            cudf.DataFrame.from_arrow(fmd.schema.to_arrow_schema().empty_table())
-        return gcy.DataFrame.from_cudf(cdf)
+        fmd = _all_gather_metadata(worker_files=worker_files, env=env)
+        if file_mappings_given:
+            cdf = cudf.read_parquet(worker_files, **kwargs) if worker_files else \
+                cudf.DataFrame.from_arrow(fmd.schema.to_arrow_schema().empty_table())
+            return gcy.DataFrame.from_cudf(cdf)
 
     # construct a DataFrame with relevant columns
     pdf = _construct_df(fmd)

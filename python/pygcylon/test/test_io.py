@@ -89,28 +89,41 @@ def test_parquet():
     env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
     print("CylonContext Initialized: My rank: ", env.rank)
 
-    # one file per worker to read
-    input_files = "data/parquet/sales_*.parquet"
-    df = gcy.read_parquet(input_files, env=env)
-
     rows_per_worker = [25, 25, 25, 25]
+    # reading all files in the directory with parquet extension
+    input_files = "data/parquet/*.parquet"
+    df = gcy.read_parquet(input_files, env=env)
     assert len(df) == rows_per_worker[env.rank], \
-        f'Read Parquet DataFrame row count [{len(df)}] does not match given row count [{rows_per_worker[env.rank]}]'
+        f'Read Parquet DataFrame row count [{len(df)}] does not match the given row count [{rows_per_worker[env.rank]}]'
 
-    # write json files to a temporary directory
+    # reading all files in the directory by using _metadata file
+    input_dir = "data/parquet"
+    df = gcy.read_parquet(input_dir, env=env)
+    assert len(df) == rows_per_worker[env.rank], \
+        f'Read Parquet DataFrame row count [{len(df)}] does not match the given row count [{rows_per_worker[env.rank]}]'
+
+    # write parquet files to a temporary directory with _metadata
     with tempfile.TemporaryDirectory() as dirpath:
         out_file = df.to_parquet(dirpath, env=env)
         df2 = gcy.read_parquet(paths={env.rank: out_file}, env=env)
         assert len(df) == len(df2), \
-            f'Read Parquet DataFrame row count [{len(df2)}] does not written dataframe row count [{len(df)}]'
+            f'Read Parquet DataFrame row count [{len(df2)}] does not match the written dataframe row count [{len(df)}]'
 
     # only two workers read a file, the others do not read a file
     # they need to get a proper empty DataFrame
-    input_files = ["data/parquet/sales_0.parquet", "data/parquet/sales_1.parquet"]
+    input_files = ["data/parquet/part_0000.parquet", "data/parquet/part_0001.parquet"]
     df = gcy.read_parquet(input_files, env=env)
     rows_per_worker = [25, 25, 0, 0]
     assert len(df) == rows_per_worker[env.rank], \
-        f'Read Parquet DataFrame row count [{len(df)}] does not match given row count [{rows_per_worker[env.rank]}]'
+        f'Read Parquet DataFrame row count [{len(df)}] does not match the given row count [{rows_per_worker[env.rank]}]'
+
+    # only two workers read a file with ranks specified, the others do not read a file
+    # they need to get a proper empty DataFrame
+    input_files = {1: "data/parquet/part_0001.parquet", 2: "data/parquet/part_0003.parquet"}
+    df = gcy.read_parquet(input_files, env=env)
+    rows_per_worker = [0, 25, 25, 0]
+    assert len(df) == rows_per_worker[env.rank], \
+        f'Read Parquet DataFrame row count [{len(df)}] does not match the given row count [{rows_per_worker[env.rank]}]'
 
 
 #    env.finalize()

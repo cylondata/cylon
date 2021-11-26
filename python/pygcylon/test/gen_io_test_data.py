@@ -26,10 +26,10 @@ def gen_parquet_test_data():
     print("CylonEnv Initialized: My rank: ", env.rank)
 
     input_files = "data/mpiops/sales_nulls_nunascii_*.csv"
-    out_file_base = "data/parquet/sales"
+    dir_path = "data/parquet"
 
     df = gcy.read_csv(paths=input_files, env=env, parse_dates=["Order Date"], infer_datetime_format=True)
-    outfile = df.to_parquet(env=env, file_names=out_file_base, index=False, date_format='%Y%m%d')
+    outfile = df.to_parquet(dir_path=dir_path, env=env, index=False, date_format='%Y%m%d')
 
     print(env.rank, " written to the parquet file: ", outfile)
     env.finalize()
