@@ -112,26 +112,26 @@ TEST_CASE("aggregate testing", "[aggregates]") {
 
 TEMPLATE_LIST_TEST_CASE("mapred kernels", "[mapred]", ArrowNumericTypes) {
   auto type = default_type_instance<TestType>();
+  auto pool = ToArrowPool(ctx);
 
   SECTION("sum") {
     INFO("sum " + type->ToString())
     auto kern = mapred::MakeMapReduceKernel(type, compute::SUM);
 
     // init
-    arrow::ArrayVector array_vector;
-    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector));
-    REQUIRE(array_vector.size() == 1);
-    REQUIRE(array_vector[0]->length() == 5);
+    kern->Init(pool, /*options=*/nullptr);
 
     // combine
     auto arr = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
     std::vector<int64_t> g_ids{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
-    CHECK_CYLON_STATUS(kern->Combine(arr, g_ids.data(), 5, &array_vector));
+    arrow::ArrayVector array_vector;
+    CHECK_CYLON_STATUS(kern->CombineBeforeShuffle(arr, g_ids.data(), 5, &array_vector));
+    REQUIRE(array_vector.size() == 1);
+    REQUIRE(array_vector[0]->length() == 5);
     CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
 
     // reduce
-    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector)); // reset
-    CHECK_CYLON_STATUS(kern->Reduce({arr}, g_ids.data(), nullptr, 5, &array_vector));
+    CHECK_CYLON_STATUS(kern->ReduceAfterShuffle({arr}, g_ids.data(), nullptr, 5, &array_vector));
     CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
 
     //finalize
@@ -145,21 +145,20 @@ TEMPLATE_LIST_TEST_CASE("mapred kernels", "[mapred]", ArrowNumericTypes) {
     auto kern = mapred::MakeMapReduceKernel(type, compute::COUNT);
 
     // init
-    arrow::ArrayVector array_vector;
-    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector));
-    REQUIRE(array_vector.size() == 1);
-    REQUIRE(array_vector[0]->length() == 5);
+    kern->Init(pool, /*options=*/nullptr);
 
     // combine
     auto arr = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
     std::vector<int64_t> g_ids{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
-    CHECK_CYLON_STATUS(kern->Combine(arr, g_ids.data(), 5, &array_vector));
+    arrow::ArrayVector array_vector;
+    CHECK_CYLON_STATUS(kern->CombineBeforeShuffle(arr, g_ids.data(), 5, &array_vector));
+    REQUIRE(array_vector.size() == 1);
+    REQUIRE(array_vector[0]->length() == 5);
     CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[2, 2, 2, 2, 2]"), array_vector[0]);
 
     // reduce
-    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector)); // reset
     arr = ArrayFromJSON(arrow::int64(), "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
-    CHECK_CYLON_STATUS(kern->Reduce({arr}, g_ids.data(), nullptr, 5, &array_vector));
+    CHECK_CYLON_STATUS(kern->ReduceAfterShuffle({arr}, g_ids.data(), nullptr, 5, &array_vector));
     CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 5, 9, 13, 17]"), array_vector[0]);
 
     //finalize
@@ -173,25 +172,24 @@ TEMPLATE_LIST_TEST_CASE("mapred kernels", "[mapred]", ArrowNumericTypes) {
     auto kern = mapred::MakeMapReduceKernel(type, compute::MEAN);
 
     // init
-    arrow::ArrayVector array_vector;
-    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector));
-    REQUIRE(array_vector.size() == 2);
-    REQUIRE(array_vector[0]->length() == 5);
+    kern->Init(pool, /*options=*/nullptr);
 
     // combine
     auto arr = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
     std::vector<int64_t> g_ids{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
-    CHECK_CYLON_STATUS(kern->Combine(arr, g_ids.data(), 5, &array_vector));
+    arrow::ArrayVector array_vector;
+    CHECK_CYLON_STATUS(kern->CombineBeforeShuffle(arr, g_ids.data(), 5, &array_vector));
+    REQUIRE(array_vector.size() == 2);
+    REQUIRE(array_vector[0]->length() == 5);
     CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
     CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[2, 2, 2, 2, 2]"), array_vector[1]);
 
     // reduce
-    CHECK_CYLON_STATUS(kern->Init(ctx, 5, &array_vector)); // reset
     auto cnts = ArrayFromJSON(arrow::int64(), "[2, 3, 2, 3, 2, 3, 2, 3, 2, 3]");
-    CHECK_CYLON_STATUS(kern->Reduce({arr, cnts}, g_ids.data(), nullptr, 5, &array_vector));
+    CHECK_CYLON_STATUS(
+        kern->ReduceAfterShuffle({arr, cnts}, g_ids.data(), nullptr, 5, &array_vector));
     CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
     CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[5, 5, 5, 5, 5]"), array_vector[1]);
-
 
     //finalize
     std::shared_ptr<arrow::Array> out;
@@ -200,7 +198,41 @@ TEMPLATE_LIST_TEST_CASE("mapred kernels", "[mapred]", ArrowNumericTypes) {
     auto exp_cast = *arrow::compute::Cast(*exp, type, arrow::compute::CastOptions::Unsafe());
     CHECK_ARROW_EQUAL(exp_cast, out);
   }
+}
 
+TEMPLATE_LIST_TEST_CASE("mapred local aggregate", "[mapred]", ArrowNumericTypes) {
+  // if distributed, return
+  if (ctx->GetWorldSize() > 1) { return; }
+
+  auto type = default_type_instance<TestType>();
+
+  auto key = ArrayFromJSON(type, "[0, 1, 2, 2, 3, 3, 3, 4, 4, 4, 4]");
+  auto val = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
+
+  auto schema = arrow::schema({arrow::field("a", type), arrow::field("b", type)});
+  std::shared_ptr<Table> table, output;
+  CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, arrow::Table::Make(schema, {key, val}), table));
+
+  compute::SumOp sum_op;
+  compute::CountOp count_op;
+  compute::MeanOp mean_op;
+  mapred::AggOpVector ops{{1, &sum_op}, {1, &count_op}, {1, &mean_op}};
+  CHECK_CYLON_STATUS(mapred::HashGroupByAggregate(table, {0}, ops, &output));
+
+  auto exp_key = ArrayFromJSON(type, "[0, 1, 2, 3, 4]");
+  auto exp_sum = ArrayFromJSON(type, "[0, 1, 5, 15, 34]");
+  auto exp_cnt = ArrayFromJSON(arrow::int64(), "[1, 1, 2, 3, 4]");
+  auto avg = ArrayFromJSON(arrow::float64(), "[0, 1, 2.5, 5, 8.5]");
+  auto exp_avg = *arrow::compute::Cast(*avg, type, arrow::compute::CastOptions::Unsafe());
+  auto exp_tab = arrow::Table::Make(arrow::schema({
+                                                      arrow::field("a", type),
+                                                      arrow::field("b_sum", type),
+                                                      arrow::field("b_count", arrow::int64()),
+                                                      arrow::field("b_mean", type)
+                                                  }),
+                                    {exp_key, exp_sum, exp_cnt, exp_avg});
+
+  CHECK_ARROW_EQUAL(exp_tab, output->get_table());
 }
 
 }

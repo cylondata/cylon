@@ -62,6 +62,7 @@ add_library(cylon SHARED
         arrow/arrow_types.hpp
         column.cpp
         column.hpp
+        compute/aggregate_kernels.cpp
         compute/aggregate_kernels.hpp
         compute/aggregate_utils.hpp
         compute/aggregates.cpp
