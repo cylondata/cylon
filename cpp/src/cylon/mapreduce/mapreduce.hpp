@@ -58,12 +58,12 @@ struct MapReduceKernel {
   virtual void Init(arrow::MemoryPool *pool, compute::KernelOptions *options) = 0;
 
   virtual Status CombineLocally(const std::shared_ptr<arrow::Array> &value_col,
-                                const int64_t *local_group_ids, int64_t local_num_groups,
+                                const std::shared_ptr<arrow::Array> &local_group_ids, int64_t local_num_groups,
                                 arrow::ArrayVector *combined_results) const = 0;
 
   virtual Status ReduceShuffledResults(const arrow::ArrayVector &combined_results,
-                                       const int64_t *local_group_ids,
-                                       const int64_t *local_group_indices,
+                                       const std::shared_ptr<arrow::Array> &local_group_ids,
+                                       const std::shared_ptr<arrow::Array> &local_group_indices,
                                        int64_t local_num_groups,
                                        arrow::ArrayVector *reduced_results) const = 0;
 

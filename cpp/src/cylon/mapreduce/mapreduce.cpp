@@ -65,14 +65,15 @@ struct MapReduceKernelImpl1D : public MapReduceKernel {
   }
 
   Status CombineLocally(const std::shared_ptr<arrow::Array> &value_col,
-                        const int64_t *local_group_ids,
+                        const std::shared_ptr<arrow::Array> &local_group_ids,
                         int64_t local_num_groups,
                         arrow::ArrayVector *combined_results) const override {
     std::shared_ptr<arrow::Array> arr;
     RETURN_CYLON_STATUS_IF_FAILED(AllocateArray(pool_, out_types[0], local_num_groups, &arr));
 
+    auto *g_ids = local_group_ids->data()->template GetValues<int64_t>(1);
     T *res = arr->data()->template GetMutableValues<T>(1);
-    CombineVisit<ArrowT>(value_col, local_group_ids,
+    CombineVisit<ArrowT>(value_col, g_ids,
                          [&](const T &val, int64_t gid) {
                            res[gid] = CombineOp<T>::Call(res[gid], val);
                          });
@@ -82,8 +83,8 @@ struct MapReduceKernelImpl1D : public MapReduceKernel {
   }
 
   Status ReduceShuffledResults(const arrow::ArrayVector &combined_results,
-                               const int64_t *local_group_ids,
-                               const int64_t *local_group_indices,
+                               const std::shared_ptr<arrow::Array> &local_group_ids,
+                               const std::shared_ptr<arrow::Array> &local_group_indices,
                                int64_t local_num_groups,
                                arrow::ArrayVector *reduced_results) const override {
     CYLON_UNUSED(local_group_indices);
@@ -139,14 +140,16 @@ struct CountKernelImpl : public MapReduceKernel {
   }
 
   Status CombineLocally(const std::shared_ptr<arrow::Array> &value_col,
-                        const int64_t *local_group_ids, int64_t local_num_groups,
+                        const std::shared_ptr<arrow::Array> &local_group_ids,
+                        int64_t local_num_groups,
                         arrow::ArrayVector *combined_results) const override {
     std::shared_ptr<arrow::Array> arr;
     RETURN_CYLON_STATUS_IF_FAILED(AllocateArray(pool_, out_types[0], local_num_groups, &arr));
 
+    auto *g_ids = local_group_ids->data()->template GetValues<int64_t>(1);
     auto *counts = arr->data()->template GetMutableValues<int64_t>(1);
     for (int64_t i = 0; i < value_col->length(); i++) {
-      counts[local_group_ids[i]]++;
+      counts[g_ids[i]]++;
     }
 
     *combined_results = {std::move(arr)};
@@ -154,16 +157,17 @@ struct CountKernelImpl : public MapReduceKernel {
   }
 
   Status ReduceShuffledResults(const arrow::ArrayVector &combined_results,
-                               const int64_t *local_group_ids,
-                               const int64_t *local_group_indices,
+                               const std::shared_ptr<arrow::Array> &local_group_ids,
+                               const std::shared_ptr<arrow::Array> &local_group_indices,
                                int64_t local_num_groups,
                                arrow::ArrayVector *reduced_results) const override {
     CYLON_UNUSED(local_group_indices);
     std::shared_ptr<arrow::Array> arr;
     RETURN_CYLON_STATUS_IF_FAILED(AllocateArray(pool_, out_types[0], local_num_groups, &arr));
 
+    auto *g_ids = local_group_ids->data()->template GetValues<int64_t>(1);
     auto *res = arr->data()->template GetMutableValues<int64_t>(1);
-    CombineVisit<arrow::Int64Type>(combined_results[0], local_group_ids,
+    CombineVisit<arrow::Int64Type>(combined_results[0], g_ids,
                                    [&](const int64_t &val, int64_t gid) {
                                      res[gid] += val;
                                    });
@@ -197,16 +201,17 @@ struct MeanKernelImpl : public MapReduceKernel {
   }
 
   Status CombineLocally(const std::shared_ptr<arrow::Array> &value_col,
-                        const int64_t *local_group_ids,
+                        const std::shared_ptr<arrow::Array> &local_group_ids,
                         int64_t local_num_groups,
                         arrow::ArrayVector *combined_results) const override {
     RETURN_CYLON_STATUS_IF_FAILED(AllocateArrays(pool_, inter_types, local_num_groups,
                                                  combined_results));
 
+    auto *g_ids = local_group_ids->data()->template GetValues<int64_t>(1);
     T *sums = (*combined_results)[0]->data()->template GetMutableValues<T>(1);
     auto *counts = (*combined_results)[1]->data()->template GetMutableValues<int64_t>(1);
 
-    CombineVisit<ArrowT>(value_col, local_group_ids,
+    CombineVisit<ArrowT>(value_col, g_ids,
                          [&](const T &val, int64_t gid) {
                            sums[gid] += val;
                            counts[gid]++;
@@ -215,23 +220,24 @@ struct MeanKernelImpl : public MapReduceKernel {
   }
 
   Status ReduceShuffledResults(const arrow::ArrayVector &combined_results,
-                               const int64_t *local_group_ids,
-                               const int64_t *local_group_indices,
+                               const std::shared_ptr<arrow::Array> &local_group_ids,
+                               const std::shared_ptr<arrow::Array> &local_group_indices,
                                int64_t local_num_groups,
                                arrow::ArrayVector *reduced_results) const override {
     assert(combined_results.size() == num_arrays());
     CYLON_UNUSED(local_group_indices);
+    auto *g_ids = local_group_ids->data()->template GetValues<int64_t>(1);
 
     std::shared_ptr<arrow::Array> sum_arr;
     RETURN_CYLON_STATUS_IF_FAILED(AllocateArray(pool_, inter_types[0], local_num_groups, &sum_arr));
     auto *sums = sum_arr->data()->template GetMutableValues<T>(1);
-    CombineVisit<ArrowT>(combined_results[0], local_group_ids,
+    CombineVisit<ArrowT>(combined_results[0], g_ids,
                          [&](const T &val, int64_t gid) { sums[gid] += val; });
 
     std::shared_ptr<arrow::Array> cnt_arr;
     RETURN_CYLON_STATUS_IF_FAILED(AllocateArray(pool_, inter_types[1], local_num_groups, &cnt_arr));
     auto *counts = cnt_arr->data()->template GetMutableValues<int64_t>(1);
-    CombineVisit<arrow::Int64Type>(combined_results[1], local_group_ids,
+    CombineVisit<arrow::Int64Type>(combined_results[1], g_ids,
                                    [&](const T &val, int64_t gid) { counts[gid] += val; });
 
     *reduced_results = {std::move(sum_arr), std::move(cnt_arr)};
@@ -277,17 +283,17 @@ struct VarKernelImpl : public MapReduceKernel {
   }
 
   Status CombineLocally(const std::shared_ptr<arrow::Array> &value_col,
-                        const int64_t *local_group_ids,
+                        const std::shared_ptr<arrow::Array> &local_group_ids,
                         int64_t local_num_groups,
                         arrow::ArrayVector *combined_results) const override {
     RETURN_CYLON_STATUS_IF_FAILED(AllocateArrays(pool_, inter_types, local_num_groups,
                                                  combined_results));
-
+    auto *g_ids = local_group_ids->data()->template GetValues<int64_t>(1);
     auto *sq_sums = (*combined_results)[0]->data()->template GetMutableValues<double>(1);
     auto *sums = (*combined_results)[1]->data()->template GetMutableValues<double>(1);
     auto *counts = (*combined_results)[2]->data()->template GetMutableValues<int64_t>(1);
 
-    CombineVisit<ArrowT>(value_col, local_group_ids,
+    CombineVisit<ArrowT>(value_col, g_ids,
                          [&](const T &val, int64_t gid) {
                            sq_sums[gid] += (double) (val * val);
                            sums[gid] += (double) (val);
@@ -297,8 +303,8 @@ struct VarKernelImpl : public MapReduceKernel {
   }
 
   Status ReduceShuffledResults(const arrow::ArrayVector &combined_results,
-                               const int64_t *local_group_ids,
-                               const int64_t *local_group_indices,
+                               const std::shared_ptr<arrow::Array> &local_group_ids,
+                               const std::shared_ptr<arrow::Array> &local_group_indices,
                                int64_t local_num_groups,
                                arrow::ArrayVector *reduced_results) const override {
     assert(combined_results.size() == num_arrays());
@@ -307,24 +313,25 @@ struct VarKernelImpl : public MapReduceKernel {
     assert(combined_results[2]->type() == inter_types[2]);
 
     CYLON_UNUSED(local_group_indices);
+    auto *g_ids = local_group_ids->data()->template GetValues<int64_t>(1);
 
     std::shared_ptr<arrow::Array> sq_sum_arr;
     RETURN_CYLON_STATUS_IF_FAILED(AllocateArray(pool_, inter_types[0], local_num_groups,
                                                 &sq_sum_arr));
     auto *sq_sums = sq_sum_arr->data()->template GetMutableValues<double>(1);
-    CombineVisit<arrow::DoubleType>(combined_results[0], local_group_ids,
+    CombineVisit<arrow::DoubleType>(combined_results[0], g_ids,
                                     [&](const double &val, int64_t gid) { sq_sums[gid] += val; });
 
     std::shared_ptr<arrow::Array> sum_arr;
     RETURN_CYLON_STATUS_IF_FAILED(AllocateArray(pool_, inter_types[1], local_num_groups, &sum_arr));
     auto *sums = sum_arr->data()->template GetMutableValues<double>(1);
-    CombineVisit<arrow::DoubleType>(combined_results[1], local_group_ids,
+    CombineVisit<arrow::DoubleType>(combined_results[1], g_ids,
                                     [&](const double &val, int64_t gid) { sums[gid] += val; });
 
     std::shared_ptr<arrow::Array> cnt_arr;
     RETURN_CYLON_STATUS_IF_FAILED(AllocateArray(pool_, inter_types[2], local_num_groups, &cnt_arr));
     auto *counts = cnt_arr->data()->template GetMutableValues<int64_t>(1);
-    CombineVisit<arrow::Int64Type>(combined_results[2], local_group_ids,
+    CombineVisit<arrow::Int64Type>(combined_results[2], g_ids,
                                    [&](const int64_t &val, int64_t gid) { counts[gid] += val; });
 
     *reduced_results = {std::move(sq_sum_arr), std::move(sum_arr), std::move(cnt_arr)};
@@ -367,6 +374,50 @@ struct VarKernelImpl : public MapReduceKernel {
     return Status::OK();
   }
 };
+
+// todo: to be supported with arrow v6.0+
+/*struct NuniqueKernelImpl : public MapReduceKernel {
+  const arrow::DataTypeVector out_types{arrow::int64()};
+  arrow::MemoryPool *pool_ = nullptr;
+
+  std::string name() const override { return "nunique"; }
+  const std::shared_ptr<arrow::DataType> &output_type() const override { return out_types[0]; }
+  const arrow::DataTypeVector &intermediate_types() const override { return out_types; }
+
+  void Init(arrow::MemoryPool *pool, compute::KernelOptions *options) override {
+    CYLON_UNUSED(options);
+    this->pool_ = pool;
+  }
+
+  Status CombineLocally(const std::shared_ptr<arrow::Array> &value_col,
+                        const std::shared_ptr<arrow::Array> &local_group_ids,
+                        int64_t local_num_groups,
+                        arrow::ArrayVector *combined_results) const override {
+    CYLON_UNUSED(local_group_ids);
+    CYLON_UNUSED(local_num_groups);
+    *combined_results = {value_col};
+    return Status::OK();
+  }
+
+  Status ReduceShuffledResults(const arrow::ArrayVector &combined_results,
+                               const std::shared_ptr<arrow::Array> &local_group_ids,
+                               const std::shared_ptr<arrow::Array> &local_group_indices,
+                               int64_t local_num_groups,
+                               arrow::ArrayVector *reduced_results) const override {
+    CYLON_UNUSED(combined_results);
+    CYLON_UNUSED(local_group_ids);
+    CYLON_UNUSED(local_group_indices);
+    CYLON_UNUSED(local_num_groups);
+    CYLON_UNUSED(reduced_results);
+    return {Code::ExecutionError, "Nunique does not support ReduceShuffledResults"};
+  }
+
+  Status Finalize(const arrow::ArrayVector &combined_results,
+                  std::shared_ptr<arrow::Array> *output) const override {
+    *output = combined_results[0];
+    return Status::OK();
+  }
+};*/
 
 Status MapToGroupKernel::Map(const arrow::ArrayVector &arrays,
                              std::shared_ptr<arrow::Array> *local_group_ids,
@@ -611,7 +662,6 @@ Status LocalAggregate(const std::shared_ptr<CylonContext> &ctx,
                                             &group_indices, &num_groups, &out_arrays));
 
   // make the value columns --> only use MapReduceKernel.CombineBeforeShuffle, and Finalize
-  const auto *g_ids = group_ids->data()->GetValues<int64_t>(1);
   for (const auto &p: agg_kernels) {
     int val_col = p.first;
     const auto &kern = p.second;
@@ -624,7 +674,7 @@ Status LocalAggregate(const std::shared_ptr<CylonContext> &ctx,
 
     arrow::ArrayVector res;
     RETURN_CYLON_STATUS_IF_FAILED(
-        kern->CombineLocally(val_arr, g_ids, num_groups, &res));
+        kern->CombineLocally(val_arr, group_ids, num_groups, &res));
     std::shared_ptr<arrow::Array> out_arr;
     RETURN_CYLON_STATUS_IF_FAILED(kern->Finalize(res, &out_arr));
 
@@ -673,7 +723,6 @@ Status DistAggregate(const std::shared_ptr<CylonContext> &ctx,
                                               &group_indices, &num_groups, &interim_arrays));
 
     // make the interim value columns --> only use MapReduceKernel.CombineBeforeShuffle
-    auto *g_ids = group_ids->data()->GetValues<int64_t>(1);
     for (const auto &p: agg_kernels) {
       int val_col = p.first;
       const auto &kern = p.second;
@@ -686,7 +735,7 @@ Status DistAggregate(const std::shared_ptr<CylonContext> &ctx,
 
       arrow::ArrayVector results;
       RETURN_CYLON_STATUS_IF_FAILED(
-          kern->CombineLocally(val_arr, g_ids, num_groups, &results));
+          kern->CombineLocally(val_arr, group_ids, num_groups, &results));
 
       for (auto &&arr: results) {
         interim_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(arr)));
@@ -740,8 +789,6 @@ Status DistAggregate(const std::shared_ptr<CylonContext> &ctx,
                     &group_ids, &group_indices, &num_groups, &out_arrays));
 
     // make the interim value columns --> only use MapReduceKernel.Init, ReduceAfterShuffle and Finalize
-    auto g_ids = group_ids->data()->GetValues<int64_t>(1);
-    auto g_indices = group_indices->data()->GetValues<int64_t>(1);
     size_t col_offset = shuffle_keys.size();
     for (const auto &p: agg_kernels) {
       const auto &kern = p.second;
@@ -757,7 +804,8 @@ Status DistAggregate(const std::shared_ptr<CylonContext> &ctx,
 
       arrow::ArrayVector results;
       RETURN_CYLON_STATUS_IF_FAILED(
-          kern->ReduceShuffledResults(combined_results, g_ids, g_indices, num_groups, &results));
+          kern->ReduceShuffledResults(combined_results, group_ids, group_indices, num_groups,
+                                      &results));
       std::shared_ptr<arrow::Array> out_arr;
       RETURN_CYLON_STATUS_IF_FAILED(kern->Finalize(results, &out_arr));
 
