@@ -125,13 +125,14 @@ TEMPLATE_LIST_TEST_CASE("mapred kernels", "[mapred]", ArrowNumericTypes) {
     auto arr = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
     std::vector<int64_t> g_ids{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
     arrow::ArrayVector array_vector;
-    CHECK_CYLON_STATUS(kern->CombineBeforeShuffle(arr, g_ids.data(), 5, &array_vector));
+    CHECK_CYLON_STATUS(kern->CombineLocally(arr, g_ids.data(), 5, &array_vector));
     REQUIRE(array_vector.size() == 1);
     REQUIRE(array_vector[0]->length() == 5);
     CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
 
     // reduce
-    CHECK_CYLON_STATUS(kern->ReduceAfterShuffle({arr}, g_ids.data(), nullptr, 5, &array_vector));
+    CHECK_CYLON_STATUS(
+        kern->ReduceShuffledResults({arr}, g_ids.data(), nullptr, 5, &array_vector));
     CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
 
     //finalize
@@ -151,14 +152,15 @@ TEMPLATE_LIST_TEST_CASE("mapred kernels", "[mapred]", ArrowNumericTypes) {
     auto arr = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
     std::vector<int64_t> g_ids{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
     arrow::ArrayVector array_vector;
-    CHECK_CYLON_STATUS(kern->CombineBeforeShuffle(arr, g_ids.data(), 5, &array_vector));
+    CHECK_CYLON_STATUS(kern->CombineLocally(arr, g_ids.data(), 5, &array_vector));
     REQUIRE(array_vector.size() == 1);
     REQUIRE(array_vector[0]->length() == 5);
     CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[2, 2, 2, 2, 2]"), array_vector[0]);
 
     // reduce
     arr = ArrayFromJSON(arrow::int64(), "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
-    CHECK_CYLON_STATUS(kern->ReduceAfterShuffle({arr}, g_ids.data(), nullptr, 5, &array_vector));
+    CHECK_CYLON_STATUS(
+        kern->ReduceShuffledResults({arr}, g_ids.data(), nullptr, 5, &array_vector));
     CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[1, 5, 9, 13, 17]"), array_vector[0]);
 
     //finalize
@@ -178,7 +180,7 @@ TEMPLATE_LIST_TEST_CASE("mapred kernels", "[mapred]", ArrowNumericTypes) {
     auto arr = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]");
     std::vector<int64_t> g_ids{0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
     arrow::ArrayVector array_vector;
-    CHECK_CYLON_STATUS(kern->CombineBeforeShuffle(arr, g_ids.data(), 5, &array_vector));
+    CHECK_CYLON_STATUS(kern->CombineLocally(arr, g_ids.data(), 5, &array_vector));
     REQUIRE(array_vector.size() == 2);
     REQUIRE(array_vector[0]->length() == 5);
     CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
@@ -187,7 +189,7 @@ TEMPLATE_LIST_TEST_CASE("mapred kernels", "[mapred]", ArrowNumericTypes) {
     // reduce
     auto cnts = ArrayFromJSON(arrow::int64(), "[2, 3, 2, 3, 2, 3, 2, 3, 2, 3]");
     CHECK_CYLON_STATUS(
-        kern->ReduceAfterShuffle({arr, cnts}, g_ids.data(), nullptr, 5, &array_vector));
+        kern->ReduceShuffledResults({arr, cnts}, g_ids.data(), nullptr, 5, &array_vector));
     CHECK_ARROW_EQUAL(ArrayFromJSON(type, "[1, 5, 9, 13, 17]"), array_vector[0]);
     CHECK_ARROW_EQUAL(ArrayFromJSON(arrow::int64(), "[5, 5, 5, 5, 5]"), array_vector[1]);
 
