@@ -52,9 +52,10 @@ Status HashCylonGroupByMapred(std::shared_ptr<Table> &ctable,
                         const compute::AggregationOpId &aggregate_ops,
                         std::shared_ptr<Table> &output) {
   INFO("mapred groupby");
-  auto op = compute::MakeAggregationOpFromID(aggregate_ops);
-  CHECK_CYLON_STATUS(mapred::HashGroupByAggregate(ctable, {0}, {std::make_pair(1, op.get())},
-                                                  &output));
+  CHECK_CYLON_STATUS(
+      mapred::HashGroupByAggregate(ctable, {0},
+                                   {{1, compute::MakeAggregationOpFromID(aggregate_ops)}},
+                                   &output));
   INFO("hash_group op:" << aggregate_ops << " rows:" << output->Rows());
   return Status::OK();
 }
@@ -62,7 +63,6 @@ Status HashCylonGroupByMapred(std::shared_ptr<Table> &ctable,
 
 Status PipelineCylonGroupBy(std::shared_ptr<Table> &ctable,
                             std::shared_ptr<Table> &output) {
-
   CHECK_CYLON_STATUS(DistributedPipelineGroupBy(ctable, 0, {1}, {compute::SUM}, output));
   INFO("pipe_group " << output->Rows());
   return Status::OK();

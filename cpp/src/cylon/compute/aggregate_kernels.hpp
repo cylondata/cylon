@@ -119,6 +119,10 @@ struct AggregationOp {
 template<AggregationOpId ID>
 struct BaseAggregationOp : public AggregationOp {
   AggregationOpId id() const override { return ID; }
+
+  static std::shared_ptr<AggregationOp> Make() {
+    return std::make_shared<BaseAggregationOp<ID>>();
+  }
 };
 
 /**
@@ -146,10 +150,20 @@ struct VarOp : public AggregationOp {
 
   AggregationOpId id() const override { return VAR; }
   KernelOptions *options() const override { return opt.get(); }
+
+  static std::shared_ptr<AggregationOp> Make(int ddof = 1) {
+    return std::make_shared<VarOp>(ddof);
+  }
 };
 
 struct StdDevOp : public VarOp {
+  explicit StdDevOp(int ddof = 1) : VarOp(ddof) {}
+  explicit StdDevOp(const std::shared_ptr<KernelOptions> &opt) : VarOp(opt) {}
   AggregationOpId id() const override { return STDDEV; }
+
+  static std::shared_ptr<AggregationOp> Make(int ddof = 1) {
+    return std::make_shared<StdDevOp>(ddof);
+  }
 };
 
 /**
@@ -162,12 +176,16 @@ struct QuantileOp : public AggregationOp {
    * @param quantile
    */
   explicit QuantileOp(double quantile = 0.5)
-      : opt(std::make_unique<QuantileKernelOptions>(quantile)) {}
+      : opt(std::make_shared<QuantileKernelOptions>(quantile)) {}
   explicit QuantileOp(const std::shared_ptr<KernelOptions> &opt)
       : opt(std::static_pointer_cast<QuantileKernelOptions>(opt)) {}
 
   AggregationOpId id() const override { return QUANTILE; }
   KernelOptions *options() const override { return opt.get(); }
+
+  static std::shared_ptr<AggregationOp> Make(double quantile = 0.5) {
+    return std::make_shared<QuantileOp>(quantile);
+  }
 };
 
 std::shared_ptr<AggregationOp> MakeAggregationOpFromID(AggregationOpId id);

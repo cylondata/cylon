@@ -213,10 +213,8 @@ TEMPLATE_LIST_TEST_CASE("mapred local aggregate", "[mapred]", ArrowNumericTypes)
   std::shared_ptr<Table> table, output;
   CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, arrow::Table::Make(schema, {key, val}), table));
 
-  compute::SumOp sum_op;
-  compute::CountOp count_op;
-  compute::MeanOp mean_op;
-  mapred::AggOpVector ops{{1, &sum_op}, {1, &count_op}, {1, &mean_op}};
+  mapred::AggOpVector
+      ops{{1, compute::SumOp::Make()}, {1, compute::CountOp::Make()}, {1, compute::MeanOp::Make()}};
   CHECK_CYLON_STATUS(mapred::HashGroupByAggregate(table, {0}, ops, &output));
 
   auto exp_key = ArrayFromJSON(type, "[0, 1, 2, 3, 4]");

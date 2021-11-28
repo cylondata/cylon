@@ -95,7 +95,7 @@ std::unique_ptr<MapReduceKernel> MakeMapReduceKernel(const std::shared_ptr<arrow
  * 5. reduce shuffled table locally
  * 6. finalize reduction
  */
-using AggOpVector = std::vector<std::pair<int, compute::AggregationOp *>>;
+using AggOpVector = std::vector<std::pair<int, std::shared_ptr<compute::AggregationOp>>>;
 
 Status HashGroupByAggregate(const std::shared_ptr<Table> &table, const std::vector<int> &key_cols,
                             const AggOpVector &aggs, std::shared_ptr<Table> *output,
