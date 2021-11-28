@@ -13,6 +13,7 @@
 ##
 
 from libcpp.string cimport string
+from libc.stdint cimport int64_t
 from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 from pycylon.common.join_config cimport CJoinType
@@ -832,6 +833,50 @@ cdef class Table:
             return output
         else:
             raise Exception(f"Equal operation failed {status.get_msg().decode()}")
+
+    def repartition(self, rows_per_partition, receive_build_rank_order=None):
+        '''
+        Re-partition the table so that receive_build_rank_order[i]'th process contains rows_per_partition[i] elements.
+        Args:
+            rows_per_partition: number rows that each partition should have
+            receive_build_rank_prder: the order of ranks for receiving the rows (which rank receives first, etc.), None if using default order (0th, 1th, 2th ...)
+
+        Returns: Table
+        '''
+        cdef shared_ptr[CTable] output
+        cdef vector[int64_t] c_rows_per_part
+        cdef vector[int] c_receive_order
+
+        for num_rows in rows_per_partition:
+            c_rows_per_part.push_back(num_rows)
+
+        if receive_build_rank_order != None:
+            for rank in receive_build_rank_order:
+                c_receive_order.push_back(rank)
+            status = Repartition(self.table_shd_ptr, c_rows_per_part, c_receive_order, &output)
+        else:
+            status = Repartition(self.table_shd_ptr, c_rows_per_part, &output)
+
+        if status.is_ok():
+            cylon_table = pycylon_wrap_table(output)
+            return cylon_table
+        else:
+            raise Exception(f"Repartition failed {status.get_msg().decode()}")
+
+    def evenly_partition(self):
+        '''
+        Re-partition the table so that first ((# total rows) % (# partitions)) partitions will receive ceil((# total rows) / (# partitions)) rows, and the rest will receive floor((# total rows) / (# partitions)) rows.
+
+        Returns: Table
+        '''
+        cdef shared_ptr[CTable] output
+        status = Repartition(self.table_shd_ptr, &output)
+
+        if status.is_ok():
+            cylon_table = pycylon_wrap_table(output)
+            return cylon_table
+        else:
+            raise Exception(f"Repartition failed {status.get_msg().decode()}")
 
     @staticmethod
     def from_arrow(context, pyarrow_table) -> Table:

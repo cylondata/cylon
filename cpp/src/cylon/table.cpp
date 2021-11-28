@@ -36,6 +36,7 @@
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/util/macros.hpp>
 #include <cylon/util/to_string.hpp>
+#include <cylon/repartition.hpp>
 #include <cylon/net/mpi/mpi_operations.hpp>
 
 namespace cylon {
@@ -125,6 +126,75 @@ static inline Status all_to_all_arrow_tables(const std::shared_ptr<CylonContext>
 //  LOG(INFO) << "Done concatenating tables, rows :  " << concat->num_rows();
 
   CYLON_ASSIGN_OR_RAISE(table_out, concat->CombineChunks(cylon::ToArrowPool(ctx)))
+  return Status::OK();
+}
+
+/**
+ * output rows order by rank number
+ */
+static inline Status all_to_all_arrow_tables_preserve_order(const std::shared_ptr<CylonContext> &ctx,
+                                             const std::shared_ptr<arrow::Schema> &schema,
+                                             const std::vector<std::shared_ptr<arrow::Table>> &partitioned_tables,
+                                             std::shared_ptr<arrow::Table> &table_out) {
+  const auto &neighbours = ctx->GetNeighbours(true);
+
+  // here we expect that only a few processes will send to one process
+  // so we use a tree map instead of using a vector with size of number of processes
+  std::vector<std::shared_ptr<arrow::Table>> received_tables;
+  std::map<int, std::shared_ptr<arrow::Table>> received_tables_mp;
+  received_tables.reserve(neighbours.size());
+
+  // define call back to catch the receiving tables
+  ArrowCallback arrow_callback =
+      [&received_tables_mp](int source, const std::shared_ptr<arrow::Table> &table_, int reference) {
+        received_tables_mp[source] = table_;
+        return true;
+      };
+
+  // doing all to all communication to exchange tables
+  cylon::ArrowAllToAll all_to_all(ctx, neighbours, neighbours, ctx->GetNextSequence(),
+                                  arrow_callback, schema);
+
+  // if world size == partitions, simply send paritions based on index
+  const size_t world_size = (size_t) ctx->GetWorldSize(), num_partitions = partitioned_tables.size(),
+      rank = ctx->GetRank();
+  if (world_size == num_partitions) {
+    for (size_t i = 0; i < partitioned_tables.size(); i++) {
+      if (i != rank) {
+        all_to_all.insert(partitioned_tables[i], i);
+      } else {
+        received_tables_mp[i] = partitioned_tables[i];
+      }
+    }
+  } else {  // divide parititions to world_size potions and send accordingly
+    for (size_t i = 0; i < partitioned_tables.size(); i++) {
+      size_t target = i * world_size / num_partitions;
+      if (target != rank) {
+        all_to_all.insert(partitioned_tables[i], target);
+      } else {
+        received_tables_mp[i] = partitioned_tables[i];
+      }
+    }
+  }
+
+  // now complete the communication
+  all_to_all.finish();
+  while (!all_to_all.isComplete()) {
+  }
+  all_to_all.close();
+
+  for(auto& p: received_tables_mp) {
+    received_tables.push_back(p.second);
+  }
+
+  /*  // now clear locally partitioned tables
+  partitioned_tables.clear();*/
+
+  // now we have the final set of tables
+  LOG(INFO) << "Concatenating tables, Num of tables :  " << received_tables.size();
+  CYLON_ASSIGN_OR_RAISE(table_out, arrow::ConcatenateTables(received_tables));
+  LOG(INFO) << "Done concatenating tables, rows :  " << table_out->num_rows();
+
   return Status::OK();
 }
 
@@ -254,12 +324,12 @@ Status Table::FromColumns(const std::shared_ptr<CylonContext> &ctx,
 }
 
 Status WriteCSV(const std::shared_ptr<Table> &table, const std::string &path,
-                const cylon::io::config::CSVWriteOptions &options) {
+				const cylon::io::config::CSVWriteOptions &options) {
   std::ofstream out_csv;
   out_csv.open(path);
   Status status = table->PrintToOStream(
-      0, table->get_table()->num_columns(), 0, table->get_table()->num_rows(), out_csv,
-      options.GetDelimiter(), options.IsOverrideColumnNames(), options.GetColumnNames());
+	  0, table->get_table()->num_columns(), 0, table->get_table()->num_rows(), out_csv,
+	  options.GetDelimiter(), options.IsOverrideColumnNames(), options.GetColumnNames());
   out_csv.close();
   return status;
 }
@@ -1028,10 +1098,8 @@ Status DistributedUnique(const std::shared_ptr<Table> &in, const std::vector<int
   return Unique(shuffle_out, cols, out);
 }
 
-Status Equals(const std::shared_ptr<cylon::Table> &a,
-              const std::shared_ptr<cylon::Table> &b,
-              bool &result,
-              bool ordered) {
+Status Equals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b,
+              bool &result, bool ordered) {
   if (ordered) {
     result = a->get_table()->Equals(*b->get_table());
   } else {
@@ -1055,27 +1123,121 @@ Status Equals(const std::shared_ptr<cylon::Table> &a,
   return Status::OK();
 }
 
-Status DistributedEquals(const std::shared_ptr<cylon::Table> &a,
-                         const std::shared_ptr<cylon::Table> &b,
-                         bool &result,
-                         bool ordered) {
+static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, std::shared_ptr<cylon::Table> * b_out) {
+  int world_size = a->GetContext()->GetWorldSize();
+  int64_t num_row = a->Rows();
+
+  if(num_row == 0) {
+    *b_out = a;
+    return Status::OK();
+  }
+
+  std::vector<int64_t> rows_per_partition;
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather({ num_row }, world_size, rows_per_partition));
+
+  return Repartition(b, rows_per_partition, b_out);
+}
+
+Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, bool& result, bool ordered) {
   bool subResult;
-  if (!ordered) {
+  RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(a->get_table(), b->get_table()));
+
+  if(!ordered) {
     int col = a->Columns();
     std::vector<int32_t> indices(col);
     std::vector<bool> column_orders(col, true);
     std::iota(indices.begin(), indices.end(), 0);
+
+    std::shared_ptr<cylon::Table> b_repartitioned;
+    RETURN_CYLON_STATUS_IF_FAILED(RepartitionToMatchOtherTable(a, b, &b_repartitioned));
+
     std::shared_ptr<cylon::Table> out_a, out_b;
     RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(a, indices, out_a, column_orders));
-    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(b, indices, out_b, column_orders));
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(b_repartitioned, indices, out_b, column_orders));
 
-    subResult = out_a->get_table()->Equals(*out_b->get_table());
+    RETURN_CYLON_STATUS_IF_FAILED(Equals(out_a, out_b, subResult));
   } else {
-    RETURN_CYLON_STATUS_IF_FAILED(Equals(a, b, subResult, true));
+    std::shared_ptr<cylon::Table> b_repartitioned;
+    RETURN_CYLON_STATUS_IF_FAILED(RepartitionToMatchOtherTable(a, b, &b_repartitioned));
+    RETURN_CYLON_STATUS_IF_FAILED(Equals(a, b_repartitioned, subResult, true));
   }
 
   RETURN_CYLON_STATUS_IF_FAILED(mpi::AllReduce(&subResult, &result, 1, Bool(), cylon::net::LAND));
   return Status::OK();
+}
+
+Status Repartition(const std::shared_ptr<cylon::Table>& table,
+                   const std::vector<int64_t>& rows_per_partition,
+                   const std::vector<int>& receive_build_rank_order,
+                   std::shared_ptr<Table> *output) {
+  int world_size = table->GetContext()->GetWorldSize();
+  int rank = table->GetContext()->GetRank();
+  int num_row = table->Rows();
+
+  if(num_row == 0) {
+    *output = table;
+    return Status::OK();
+  }
+
+  if(rows_per_partition.size() != world_size) {
+    return Status(
+    cylon::Code::ValueError,
+    "rows_per_partition size does not align with world size. Received " +
+        std::to_string(rows_per_partition.size()) + ", Expected " +
+        std::to_string(world_size));
+  }
+
+  std::vector<int64_t> sizes;
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather({ num_row }, world_size, sizes));
+
+  auto out_partitions_temp = RowIndicesToAll(rank, sizes, rows_per_partition);
+  uint32_t no_of_partitions = receive_build_rank_order.size();
+  std::vector<uint32_t> out_partitions(num_row);
+  auto begin = out_partitions.begin();
+
+  for(int i = 0; i < (int)receive_build_rank_order.size(); i++) {
+    int64_t s = out_partitions_temp[i], t = out_partitions_temp[i + 1];
+    fill(begin + s, begin + t, receive_build_rank_order[i]);
+  }
+
+  std::vector<std::shared_ptr<arrow::Table>> partitioned_tables;
+  RETURN_CYLON_STATUS_IF_FAILED(Split(table, no_of_partitions, out_partitions, partitioned_tables));
+
+  const auto& schema = table->get_table()->schema();
+
+  if (!table->IsRetain()) {
+    const_cast<std::shared_ptr<Table> &>(table).reset();
+  }
+
+  // all_to_all, but preserves relative rank order
+  std::shared_ptr<arrow::Table> table_out;
+  RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables_preserve_order(table->GetContext(), schema, partitioned_tables, table_out));
+
+  return Table::FromArrowTable(table->GetContext(), std::move(table_out), *output);
+}
+
+Status Repartition(const std::shared_ptr<cylon::Table>& table,
+                   const std::vector<int64_t>& rows_per_partition,
+                   std::shared_ptr<cylon::Table> *output) {
+  // should be refactored after mpi_send and mpi_receive are implemented
+  int world_size = table->GetContext()->GetWorldSize();
+  std::vector<int32_t> indices(world_size);
+  std::iota(indices.begin(), indices.end(), 0);
+
+  return Repartition(table, rows_per_partition, indices, output);
+}
+
+// repartition to `world_size` number of partitions evenly
+Status Repartition(const std::shared_ptr<cylon::Table>& table,
+                   std::shared_ptr<cylon::Table> *output) {
+  int world_size = table->GetContext()->GetWorldSize();
+  int num_row = table->Rows();
+  std::vector<int64_t> size = { num_row };
+  std::vector<int64_t> sizes;
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather(size, world_size, sizes));
+
+  auto result = DivideRowsEvenly(sizes);
+  return Repartition(table, result, output);
 }
 
 std::shared_ptr<BaseArrowIndex> Table::GetArrowIndex() { return base_arrow_index_; }
@@ -1141,9 +1303,7 @@ const std::shared_ptr<cylon::CylonContext> &Table::GetContext() const {
 Table::Table(const std::shared_ptr<CylonContext> &ctx, std::shared_ptr<arrow::Table> tab)
     : ctx(ctx),
       table_(std::move(tab)),
-      base_arrow_index_(std::make_shared<cylon::ArrowRangeIndex>(0,
-                                                                 table_->num_rows(),
-                                                                 1,
+      base_arrow_index_(std::make_shared<cylon::ArrowRangeIndex>(0, table_->num_rows(), 1,
                                                                  cylon::ToArrowPool(ctx))) {}
 
 #ifdef BUILD_CYLON_PARQUET
@@ -1184,10 +1344,7 @@ Status FromParquet(const std::shared_ptr<CylonContext> &ctx, const std::vector<s
       auto read_promise = std::make_shared<std::promise<Status>>();
       futures.emplace_back(
           read_promise->get_future(),
-          std::thread(ReadParquetThread,
-                      std::cref(ctx),
-                      std::cref(paths[kI]),
-                      tableOuts[kI],
+          std::thread(ReadParquetThread, std::cref(ctx), std::cref(paths[kI]), tableOuts[kI],
                       read_promise));
     }
     bool all_passed = true;

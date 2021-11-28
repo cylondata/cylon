@@ -90,7 +90,7 @@ std::vector<T> RowIndicesToAll(int32_t my_rank,
                                const std::vector<T> &target_row_counts) {
 
   // global order of my current first row
-  auto my_row_start = std::accumulate(current_row_counts.begin(), current_row_counts.begin() + my_rank, 0);
+  T my_row_start = std::accumulate(current_row_counts.begin(), current_row_counts.begin() + my_rank, 0);
 
   auto first_target = FirstTarget(target_row_counts, my_row_start);
   auto first_target_rank = first_target.first;
