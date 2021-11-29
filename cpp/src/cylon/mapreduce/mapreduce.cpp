@@ -552,7 +552,7 @@ std::unique_ptr<MapReduceKernel> MakeMapReduceKernel(const std::shared_ptr<arrow
   return nullptr;
 }
 
-using AggKernelVector = std::vector<std::pair<int, std::unique_ptr<MapReduceKernel>>>;
+using AggKernelVector = std::vector<std::pair<int, std::shared_ptr<MapReduceKernel>>>;
 
 Status MakeAggKernels(arrow::MemoryPool *pool,
                       const std::shared_ptr<arrow::Schema> &schema,
@@ -822,12 +822,112 @@ Status DistAggregate(const std::shared_ptr<CylonContext> &ctx,
   return Status::OK();
 }
 
+// todo test this with new kernels
+Status ShuffleTable(const std::shared_ptr<CylonContext> &ctx,
+                    const std::shared_ptr<arrow::Table> &atable,
+                    const std::vector<int> &key_cols, const AggKernelVector &agg_kernels,
+                    std::shared_ptr<Table> *shuffled, std::vector<int> *new_key_cols,
+                    AggKernelVector *new_agg_kernels) {
+  arrow::FieldVector fields;
+  arrow::ChunkedArrayVector arrays;
+
+  // first take the key columns
+  for (int k: key_cols) {
+    arrays.push_back(atable->column(k));
+    fields.push_back(atable->field(k));
+  }
+
+  new_key_cols->resize(key_cols.size());
+  std::iota(new_key_cols->begin(), new_key_cols->end(), 0);
+
+  new_agg_kernels->reserve(agg_kernels.size());
+
+  std::unordered_map<int, int> val_cols; // original col_id -> new col_id
+  for (const auto &agg: agg_kernels) {
+    int original_col_id = agg.first;
+    const auto &res = val_cols.emplace(original_col_id, val_cols.size());
+
+    if (res.second) { // this is a unique col_id
+      arrays.push_back(atable->column(original_col_id));
+      fields.push_back(atable->field(original_col_id));
+    }
+
+    int new_col_id = res.first->second;
+    new_agg_kernels->emplace_back(new_col_id, agg.second);
+  }
+
+  auto shuffling_atable = arrow::Table::Make(std::make_shared<arrow::Schema>(std::move(fields)),
+                                             std::move(arrays));
+  auto shuffling_table = std::make_shared<Table>(ctx, std::move(shuffling_atable));
+  return Shuffle(shuffling_table, *new_key_cols, *shuffled);
+}
+
+// todo test this with new kernels
 Status DistAggregateSingleStage(const std::shared_ptr<CylonContext> &ctx,
                                 const std::shared_ptr<arrow::Table> &atable,
                                 const std::vector<int> &key_cols,
                                 const AggKernelVector &agg_kernels,
                                 std::shared_ptr<arrow::Table> *output,
                                 const MapToGroupKernel *mapper) {
+  auto pool = ToArrowPool(ctx);
+  arrow::compute::ExecContext exec_ctx(pool);
+
+  std::vector<int> new_key_cols;
+  AggKernelVector new_agg_kernels;
+  std::shared_ptr<Table> shuffled_table;
+  RETURN_CYLON_STATUS_IF_FAILED(ShuffleTable(ctx, atable, key_cols, agg_kernels,
+                                             &shuffled_table, &new_key_cols, &new_agg_kernels));
+  const auto &shuffled_atable = shuffled_table->get_table();
+  const auto &shuffled_schema = atable->schema();
+
+  // make output schema
+  std::shared_ptr<arrow::Schema> out_schema;
+  RETURN_CYLON_STATUS_IF_FAILED(MakeOutputSchema(shuffled_schema, new_key_cols, new_agg_kernels,
+                                                 &out_schema));
+
+  // now create new set of columns
+  std::vector<std::shared_ptr<arrow::ChunkedArray>> out_arrays;
+  out_arrays.reserve(out_schema->num_fields());
+
+  if (shuffled_atable->num_rows() == 0) {
+    // if table empty, push empty arrays to the out_arrays
+    for (const auto &f: out_schema->fields()) {
+      CYLON_ASSIGN_OR_RAISE(auto arr, arrow::MakeArrayOfNull(f->type(), 0, pool))
+      out_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(arr)));
+    }
+  } else {
+    // map to groups
+    std::shared_ptr<arrow::Array> group_ids, group_indices;
+    int64_t num_groups;
+    RETURN_CYLON_STATUS_IF_FAILED(
+        MapToGroups(&exec_ctx, shuffled_atable, new_key_cols, mapper, &group_ids, &group_indices,
+                    &num_groups, &out_arrays));
+
+    // make the interim value columns --> only use MapReduceKernel.CombineLocally and Finalize
+    for (const auto &new_agg_kernel: new_agg_kernels) {
+      int val_col = new_agg_kernel.first;
+      const auto &kern = new_agg_kernel.second;
+
+      assert(kern->num_arrays() == 1);
+      const auto &val_arr = shuffled_atable->column(val_col)->chunk(0);
+
+      arrow::ArrayVector results;
+      RETURN_CYLON_STATUS_IF_FAILED(kern->CombineLocally(val_arr, group_ids, num_groups, &results));
+
+      assert(results.size() == 1);
+      std::shared_ptr<arrow::Array> out_arr;
+      RETURN_CYLON_STATUS_IF_FAILED(kern->Finalize(results, &out_arr));
+
+      out_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(out_arr)));
+    }
+  }
+
+  // check if the types match
+  assert(out_arrays.size() == (size_t) out_schema->num_fields());
+  for (int i = 0; i < out_schema->num_fields(); i++) {
+    assert(out_schema->field(i)->type()->Equals(*out_arrays[i]->type()));
+  }
+  *output = arrow::Table::Make(std::move(out_schema), std::move(out_arrays));
   return Status::OK();
 }
 
@@ -868,7 +968,6 @@ Status HashGroupByAggregate(const std::shared_ptr<Table> &table,
 
   arrow::ChunkedArrayVector final_arrays;
   arrow::SchemaBuilder schema_builder;
-  int64_t len = -1;
 
   size_t dual_stage_kernels = std::distance(agg_kernels.begin(), single_stage_kernels_start);
   size_t single_stage_kernels = std::distance(single_stage_kernels_start, agg_kernels.end());
@@ -884,7 +983,6 @@ Status HashGroupByAggregate(const std::shared_ptr<Table> &table,
     if (single_stage_kernels == 0) { // no single stage kernels, return temp_table
       return Table::FromArrowTable(ctx, std::move(temp_table), *output);
     } else {
-      len = temp_table->num_rows();
       final_arrays = temp_table->columns(); // copy columns vector
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(schema_builder.AddSchema(temp_table->schema()));
     }
@@ -900,7 +998,7 @@ Status HashGroupByAggregate(const std::shared_ptr<Table> &table,
     if (dual_stage_kernels == 0) { // there are only single_stage_kernels
       return Table::FromArrowTable(ctx, std::move(temp_table), *output);
     } else {
-      assert(len == temp_table->num_rows());
+      assert(final_arrays[0]->length() == temp_table->num_rows());
       // skip key columns
       for (int i = (int) key_cols.size(); i < temp_table->num_columns(); i++) {
         final_arrays.push_back(temp_table->column(i));
