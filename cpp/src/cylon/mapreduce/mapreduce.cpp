@@ -962,7 +962,7 @@ Status HashGroupByAggregate(const std::shared_ptr<Table> &table,
   // push the single_stage_reduction kernels to the end of the vector
   auto single_stage_kernels_start
       = std::partition(agg_kernels.begin(), agg_kernels.end(),
-                       [](const std::pair<int, std::unique_ptr<MapReduceKernel>> &k_pair) {
+                       [](const std::pair<int, std::shared_ptr<MapReduceKernel>> &k_pair) {
                          return !k_pair.second->single_stage_reduction();
                        });
 
