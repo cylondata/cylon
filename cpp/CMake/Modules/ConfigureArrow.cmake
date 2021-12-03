@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##
+include(GNUInstallDirs)
 
 set(ARROW_HOME ${CMAKE_BINARY_DIR}/arrow/install)
 set(ARROW_ROOT ${CMAKE_BINARY_DIR}/arrow)
@@ -93,7 +94,7 @@ if (ARROW_BUILD)
 endif (ARROW_BUILD)
 
 message(STATUS "Arrow installed here: " ${ARROW_ROOT}/install)
-set(ARROW_LIBRARY_DIR "${ARROW_ROOT}/install/lib")
+set(ARROW_LIBRARY_DIR "${ARROW_ROOT}/install/${CMAKE_INSTALL_LIBDIR}")
 set(ARROW_INCLUDE_DIR "${ARROW_ROOT}/install/include")
 
 # find packages with the help of arrow Find*.cmake files
