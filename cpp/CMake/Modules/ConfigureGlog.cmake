@@ -13,6 +13,8 @@
 ##
 
 # build glog from github tag
+include(GNUInstallDirs)
+
 set(GLOG_ROOT ${CMAKE_BINARY_DIR}/glog)
 set(GLOG_INSTALL ${CMAKE_BINARY_DIR}/glog/install)
 
@@ -52,7 +54,7 @@ if(GLOG_BUILD)
 endif(GLOG_BUILD)
 
 message(STATUS "Glog installed here: " ${GLOG_ROOT}/install)
-set(GLOG_LIBRARY_DIR "${GLOG_ROOT}/install/lib")
+set(GLOG_LIBRARY_DIR "${GLOG_ROOT}/install/${CMAKE_INSTALL_LIBDIR}")
 set(GLOG_INCLUDE_DIR "${GLOG_ROOT}/install/include")
 
 set(GLOG_FOUND TRUE)
@@ -60,5 +62,5 @@ set(GLOG_FOUND TRUE)
 IF(WIN32)
         set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/glog.lib)
 ELSE()
-        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/libglog.a)
+        set(GLOG_LIBRARIES ${GLOG_INSTALL}/${CMAKE_INSTALL_LIBDIR}/libglog.a)
 ENDIF()
