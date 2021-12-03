@@ -205,7 +205,7 @@ if (CYLON_UCX)
 endif ()
 
 if (PYCYLON_BUILD)
-    target_link_libraries(cylon ${PYTHON_LIBRARIES})
+    target_link_libraries(cylon ${Python3_LIBRARIES})
     target_link_libraries(cylon ${ARROW_PY_LIB})
 endif (PYCYLON_BUILD)
 

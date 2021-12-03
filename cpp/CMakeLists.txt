@@ -122,6 +122,7 @@ if (PYCYLON_BUILD)
     find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
     message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
     message(STATUS "Python3 include dir: ${Python3_INCLUDE_DIRS}")
+    message(STATUS "Python3 libraries: ${Python3_LIBRARIES}")
     message(STATUS "Python3 NumPy include dir: ${Python3_NumPy_INCLUDE_DIRS}")
 
     include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
@@ -295,6 +296,8 @@ endif (CYLON_PARQUET)
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)
 
+include(GNUInstallDirs)
+
 # installing lib files if built locally
 if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
     #    Following variables will be populated by FindPackage(Arrow...) in ConfigureArrow.cmake
@@ -303,7 +306,7 @@ if (${ARROW_BUILD_TYPE} STREQUAL "SOURCE")
 
     # install locally built arrow files
     install(DIRECTORY ${ARROW_INCLUDE_DIR}/arrow DESTINATION include)
-    install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/lib/ DESTINATION lib
+    install(DIRECTORY ${CMAKE_BINARY_DIR}/arrow/install/${CMAKE_INSTALL_LIBDIR}/ DESTINATION lib
             PATTERN ${ARROW_INCLUDE_DIR}/cmake EXCLUDE
             PATTERN ${ARROW_INCLUDE_DIR}/pkgconfig EXCLUDE
             )
