@@ -53,9 +53,9 @@ Status HashCylonGroupByMapred(std::shared_ptr<Table> &ctable,
                         std::shared_ptr<Table> &output) {
   INFO("mapred groupby");
   CHECK_CYLON_STATUS(
-      mapred::HashGroupByAggregate(ctable, {0},
-                                   {{1, compute::MakeAggregationOpFromID(aggregate_ops)}},
-                                   &output));
+      mapred::MapredHashGroupBy(ctable, {0},
+                                {{1, compute::MakeAggregationOpFromID(aggregate_ops)}},
+                                &output));
   INFO("hash_group op:" << aggregate_ops << " rows:" << output->Rows());
   return Status::OK();
 }

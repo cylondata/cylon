@@ -939,11 +939,11 @@ Status DistAggregateSingleStage(const std::shared_ptr<CylonContext> &ctx,
  * 5. reduce shuffled table locally
  * 6. finalize reduction
  */
-Status HashGroupByAggregate(const std::shared_ptr<Table> &table,
-                            const std::vector<int> &key_cols,
-                            const AggOpVector &aggs,
-                            std::shared_ptr<Table> *output,
-                            const std::unique_ptr<MapToGroupKernel> &mapper) {
+Status MapredHashGroupBy(const std::shared_ptr<Table> &table,
+                         const std::vector<int> &key_cols,
+                         const AggOpVector &aggs,
+                         std::shared_ptr<Table> *output,
+                         const std::unique_ptr<MapToGroupKernel> &mapper) {
   const auto &ctx = table->GetContext();
   auto pool = ToArrowPool(ctx);
   const auto &atable = table->get_table();
@@ -1010,6 +1010,23 @@ Status HashGroupByAggregate(const std::shared_ptr<Table> &table,
   CYLON_ASSIGN_OR_RAISE(auto schema, schema_builder.Finish())
   auto out_table = arrow::Table::Make(std::move(schema), std::move(final_arrays));
   return Table::FromArrowTable(ctx, std::move(out_table), *output);
+}
+
+Status mapred::MapredHashGroupBy(const std::shared_ptr<Table> &table,
+                                 const std::vector<int> &key_cols,
+                                 const AggOpIdVector &aggs,
+                                 std::shared_ptr<Table> *output) {
+  AggOpVector op_vector;
+  op_vector.reserve(aggs.size());
+
+  for (auto p: aggs) {
+    auto op = compute::MakeAggregationOpFromID(p.second);
+    if (!op) {
+      return {Code::Invalid, "Unable to create op for op_id " + std::to_string(p.second)};
+    }
+    op_vector.emplace_back(p.first, std::move(op));
+  }
+  return MapredHashGroupBy(table, key_cols, op_vector, output);
 }
 
 }

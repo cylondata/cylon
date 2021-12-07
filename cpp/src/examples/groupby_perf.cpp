@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
   cylon::mapred::AggOpVector ops{{1, cylon::compute::SumOp::Make()},
                                  {1, cylon::compute::MeanOp::Make()},
                                  {1, cylon::compute::StdDevOp::Make()}};
-  status = cylon::mapred::HashGroupByAggregate(table, {0}, ops, &output);
+  status = cylon::mapred::MapredHashGroupBy(table, {0}, ops, &output);
   end_time = std::chrono::steady_clock::now();
 
   if (!status.is_ok()) {

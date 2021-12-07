@@ -14,6 +14,8 @@
 
 #include <cylon/compute/aggregates.hpp>
 #include <cylon/mapreduce/mapreduce.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
+
 #include "common/test_header.hpp"
 #include "test_utils.hpp"
 
@@ -215,7 +217,7 @@ TEMPLATE_LIST_TEST_CASE("mapred local aggregate", "[mapred]", ArrowNumericTypes)
 
   mapred::AggOpVector
       ops{{1, compute::SumOp::Make()}, {1, compute::CountOp::Make()}, {1, compute::MeanOp::Make()}};
-  CHECK_CYLON_STATUS(mapred::HashGroupByAggregate(table, {0}, ops, &output));
+  CHECK_CYLON_STATUS(mapred::MapredHashGroupBy(table, {0}, ops, &output));
 
   auto exp_key = ArrayFromJSON(type, "[0, 1, 2, 3, 4]");
   auto exp_sum = ArrayFromJSON(type, "[0, 1, 5, 15, 34]");
