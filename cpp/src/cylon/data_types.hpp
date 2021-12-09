@@ -80,6 +80,13 @@ struct Type {
 	FIXED_SIZE_LIST,
 	/// or nanoseconds.
 	DURATION,
+    /// Like STRING, but with 64-bit offsets
+    LARGE_STRING,
+    /// Like BINARY, but with 64-bit offsets
+    LARGE_BINARY,
+
+    /// for unsupported types
+    MAX_ID
   };
 };
 
