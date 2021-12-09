@@ -24,21 +24,21 @@ namespace {
 template<typename V>
 typename std::enable_if_t<std::is_integral<V>::value, void> GenerateTypedData(
     V *data, size_t n, V &min_, V &max_, uint32_t seed = 0) {
-  std::default_random_engine rng(seed);
+  std::mt19937 rng(seed);
   std::uniform_int_distribution<V> dist(min_, max_);
 
   // A static cast is required due to the int16 -> int8 handling.
-  std::generate(data, data + n, [&] { return dist(rng); });
+  std::generate(data, data + n, [&] { return static_cast<V>(dist(rng)); });
 }
 
 template<typename V>
 typename std::enable_if_t<std::is_floating_point<V>::value, void> GenerateTypedData(
     V *data, size_t n, V &min_, V &max_, uint32_t seed = 0) {
-  std::default_random_engine rng(seed);
+  std::mt19937 rng(seed);
   std::uniform_real_distribution<V> dist(min_, max_);
 
   // A static cast is required due to the int16 -> int8 handling.
-  std::generate(data, data + n, [&] { return dist(rng); });
+  std::generate(data, data + n, [&] { return static_cast<V>(dist(rng)); });
 }
 
 void GenerateBitmap(uint8_t *buffer,
@@ -47,7 +47,7 @@ void GenerateBitmap(uint8_t *buffer,
                     int64_t *false_count,
                     uint32_t seed = 0) {
   int64_t count = 0;
-  std::default_random_engine rng(seed);
+  std::mt19937 rng(seed);
   std::bernoulli_distribution dist(1.0 - false_prob);
 
   for (size_t i = 0; i < n; i++) {
@@ -90,11 +90,13 @@ struct RandomArrayGenerator {
     return std::make_shared<arrow::BooleanArray>(array_data);
   }
 
-  template<typename ArrowType, typename CType = typename ArrowType::c_type>
+  template<typename ArrowType>
   std::shared_ptr<arrow::Array> Numeric(int64_t size,
-                                        CType min,
-                                        CType max,
+                                        typename ArrowType::c_type min,
+                                        typename ArrowType::c_type max,
                                         double null_probability = 0.0) {
+    using CType = typename ArrowType::c_type;
+
     std::shared_ptr<arrow::Buffer> validity = nullptr, data;
     int64_t null_count = 0;
     if (null_probability > 0.0) {

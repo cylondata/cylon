@@ -24,7 +24,8 @@ void create_table(int64_t count, double dup,
                   arrow::MemoryPool *pool,
                   std::shared_ptr<arrow::Table> &left_table,
                   double null_prob) {
-  RandomArrayGenerator gen(/*seed=*/0, pool);
+  std::random_device dev;
+  RandomArrayGenerator gen(dev(), pool);
   auto left = gen.Numeric<arrow::Int64Type>(count, int64_t(0),
                                             (int64_t) (count * ctx->GetWorldSize() * dup),
                                             null_prob);
@@ -41,7 +42,8 @@ void create_int64_table(int64_t count, double dup,
                         std::shared_ptr<arrow::Table> &left_table,
                         std::shared_ptr<arrow::Table> &right_table,
                         double null_prob) {
-  RandomArrayGenerator gen(/*seed=*/0, pool);
+  std::random_device dev;
+  RandomArrayGenerator gen(dev(), pool);
 
   auto max = (int64_t) (count * dup * ctx->GetWorldSize());
   auto left = gen.Numeric<arrow::Int64Type>(count, int64_t(0), max, null_prob);
