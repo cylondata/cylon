@@ -49,15 +49,14 @@ TEST_CASE("serialize table", "[serialization]") {
       const auto &data_buffers = ser->getDataBuffers();
       const auto &buffer_sizes = ser->getBufferSizes();
       for (int i = 0; i < ser->getNumberOfBuffers(); i++) {
-        buffers.push_back(
-            std::make_shared<ArrowBuffer>(std::make_shared<arrow::Buffer>(data_buffers[i],
-                                                                          buffer_sizes[i])));
+        arrow::BufferBuilder builder;
+        REQUIRE(builder.Append(data_buffers[i], buffer_sizes[i]).ok());
+        buffers.push_back(std::make_shared<ArrowBuffer>(builder.Finish().ValueOrDie()));
       }
 
       std::shared_ptr<Table> output;
       CHECK_CYLON_STATUS(DeserializeTable(ctx, schema, buffers, buffer_sizes, &output));
 
-      std::cout << output->get_table()->ToString();
       CHECK_ARROW_EQUAL(atable, output->get_table());
     }
   }

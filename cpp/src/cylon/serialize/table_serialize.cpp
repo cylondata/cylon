@@ -85,33 +85,6 @@ Status CollectDataBuffer(const arrow::ArrayData &data, std::vector<int32_t> *buf
   return {Code::Invalid, "unsupported data type for serialization " + type->ToString()};
 }
 
-template<typename OffsetType>
-Status CollectOffsetBufferBinary(const arrow::ArrayData &data, std::vector<int32_t> *buffer_sizes,
-                                 std::vector<const uint8_t *> *data_buffers,
-                                 arrow::BufferVector *extra_buffers, arrow::MemoryPool *pool) {
-  int buf_sz = (int) ((data.length + 1) * sizeof(OffsetType));
-  buffer_sizes->push_back(buf_sz);
-  // in arrow, when there are offsets, data buffer will not be sliced. Instead, ArrayData only has
-  // an offset marked.
-  if (data.offset) {
-    CYLON_ASSIGN_OR_RAISE(auto new_buf, arrow::AllocateBuffer(buf_sz, pool))
-    const auto *start_pos = data.GetValues<OffsetType>(1);
-    auto *buf_data = reinterpret_cast<OffsetType *>(new_buf->mutable_data());
-    OffsetType start_offset = start_pos[0];
-
-    std::transform(start_pos, start_pos + data.length + 1, buf_data,
-                   [&](OffsetType offset) {
-                     return offset - start_offset;
-                   });
-
-    data_buffers->push_back(new_buf->data());
-    extra_buffers->push_back(std::move(new_buf));
-  } else {
-    data_buffers->push_back(data.buffers[1]->data()); // no offset
-  }
-  return Status::OK();
-}
-
 Status CollectOffsetBuffer(const arrow::ArrayData &data, std::vector<int32_t> *buffer_sizes,
                            std::vector<const uint8_t *> *data_buffers,
                            arrow::BufferVector *extra_buffers, arrow::MemoryPool *pool) {
@@ -123,13 +96,15 @@ Status CollectOffsetBuffer(const arrow::ArrayData &data, std::vector<int32_t> *b
   }
 
   if (arrow::is_binary_like(type->id())) {
-    return CollectOffsetBufferBinary<int32_t>(data, buffer_sizes, data_buffers, extra_buffers,
-                                              pool);
+    buffer_sizes->push_back((int) ((data.length + 1) * sizeof(int32_t)));
+    data_buffers->push_back(reinterpret_cast<const uint8_t*>(data.GetValues<int32_t>(1)));
+    return Status::OK();
   }
 
   if (arrow::is_large_binary_like(type->id())) {
-    return CollectOffsetBufferBinary<int64_t>(data, buffer_sizes, data_buffers, extra_buffers,
-                                              pool);
+    buffer_sizes->push_back((int) ((data.length + 1) * sizeof(int64_t)));
+    data_buffers->push_back(reinterpret_cast<const uint8_t*>(data.GetValues<int64_t>(1)));
+    return Status::OK();
   }
 
   return {Code::Invalid, "unsupported offset type for serialization " + type->ToString()};
@@ -230,22 +205,42 @@ int32_t CalculateNumRows(const std::shared_ptr<arrow::Schema> &schema,
   return -1;
 }
 
+template<typename OffsetType>
+std::shared_ptr<arrow::ArrayData> MakeArrayDataBinary(std::shared_ptr<arrow::DataType> type,
+                                                      int64_t len,
+                                                      std::shared_ptr<arrow::Buffer> valid_buf,
+                                                      std::shared_ptr<arrow::Buffer> offset_buf,
+                                                      std::shared_ptr<arrow::Buffer> data_buf) {
+  auto *offsets = reinterpret_cast<OffsetType *>(offset_buf->mutable_data());
+  OffsetType start_offset = offsets[0];
+
+  if (start_offset) { // if there's a start offset, remove it
+    for (int64_t i = 0; i < len + 1; i++) {
+      offsets[i] -= start_offset;
+    }
+  }
+  return arrow::ArrayData::Make(std::move(type), len, {std::move(valid_buf), std::move(offset_buf),
+                                                       std::move(data_buf)});
+}
+
 std::shared_ptr<arrow::ArrayData> MakeArrayData(std::shared_ptr<arrow::DataType> type,
                                                 int64_t len,
                                                 std::shared_ptr<arrow::Buffer> valid_buf,
                                                 std::shared_ptr<arrow::Buffer> offset_buf,
                                                 std::shared_ptr<arrow::Buffer> data_buf) {
   if (arrow::is_fixed_width(type->id())) {
-    return arrow::ArrayData::Make(std::move(type),
-                                  len,
-                                  arrow::BufferVector{std::move(valid_buf), std::move(data_buf)});
+    return arrow::ArrayData::Make(std::move(type), len, {std::move(valid_buf),
+                                                         std::move(data_buf)});
   }
 
-  if (arrow::is_base_binary_like(type->id())) {
-    return arrow::ArrayData::Make(std::move(type),
-                                  len,
-                                  arrow::BufferVector{std::move(valid_buf), std::move(offset_buf),
-                                                      std::move(data_buf)});
+  if (arrow::is_binary_like(type->id())) {
+    return MakeArrayDataBinary<int32_t>(std::move(type), len, std::move(valid_buf),
+                                        std::move(offset_buf), std::move(data_buf));
+  }
+
+  if (arrow::is_large_binary_like(type->id())) {
+    return MakeArrayDataBinary<int64_t>(std::move(type), len, std::move(valid_buf),
+                                        std::move(offset_buf), std::move(data_buf));
   }
 
   return nullptr;
@@ -257,7 +252,7 @@ std::shared_ptr<arrow::Buffer> MakeArrowBuffer(const std::shared_ptr<Buffer> &bu
   // we need to slice the buffer here, rather than creating an arrow::Buffer from cylon::buffer data
   // pointer. Because we need to pass the ownership of the parent buffer to the slice. otherwise,
   // the buffers would have to be managed at the allocator level.
-  return SliceBuffer(arrow_buf, offset, size);
+  return SliceMutableBuffer(arrow_buf, offset, size);
 }
 
 Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
