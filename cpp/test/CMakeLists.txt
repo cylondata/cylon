@@ -139,7 +139,12 @@ cylon_run_test(flatten_array_test 1)
 # comparator test
 cylon_add_test(comparator_test)
 cylon_run_test(comparator_test 1)
+
 # repartition test
 cylon_add_test(repartition_test)
 cylon_run_test(repartition_test 1)
 cylon_run_test(repartition_test 4)
+
+# serialization test
+cylon_add_test(serialize_test)
+cylon_run_test(serialize_test 1)

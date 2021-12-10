@@ -20,13 +20,65 @@
 
 namespace cylon{
 
-Status MakeTableSerializer(const std::shared_ptr<Table>& table,
-                           std::shared_ptr<TableSerializer>* serializer);
+class CylonTableSerializer : public TableSerializer {
+ public:
+  CylonTableSerializer(std::shared_ptr<arrow::Table> table,
+                       std::vector<int32_t> buffer_sizes,
+                       std::vector<const uint8_t *> data_buffers,
+                       arrow::BufferVector extra_buffers);
 
+  static Status Make(const std::shared_ptr<Table> &table,
+                     std::shared_ptr<TableSerializer> *serializer);
+
+  const std::vector<int32_t> &getBufferSizes() override {
+    return buffer_sizes_;
+  }
+  int getNumberOfBuffers() override {
+    return num_buffers_;
+  }
+  std::vector<int32_t> getEmptyTableBufferSizes() override;
+
+  const std::vector<const uint8_t *> &getDataBuffers() override {
+    return data_buffers_;
+  }
+
+  std::vector<int32_t> getDataTypes() override;
+
+  const arrow::BufferVector &extra_buffers() const;
+
+ private:
+
+  const std::shared_ptr<arrow::Table> table_;
+  const int32_t num_buffers_;
+  const std::vector<int32_t> buffer_sizes_;
+  const std::vector<const uint8_t *> data_buffers_;
+
+  // when there are boolean buffers with non-byte-boundary-offsets, we can not get a byte* to the
+  // data start. So, we'll have to make copy to new buffer. These new buffers will be kept here.
+  const arrow::BufferVector extra_buffers_;
+};
+
+/**
+ * Deserialize table with a set of cylon buffers. The buffers will be static casted to
+ * cylon::ArrowBuffers.
+ * @param ctx
+ * @param schema
+ * @param received_buffers
+ * @param buffer_sizes
+ * @param output
+ * @param buffer_offsets Optional: Sometimes, there may be a displacement from the Cylon buffer to
+ * start reading data. size = num_buffers
+ * @return
+ */
 Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
                         const std::shared_ptr<arrow::Schema> &schema,
-                        const std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
-                        const std::vector<int32_t> &disp_per_buffer,
+                        const std::vector<std::shared_ptr<Buffer>> &received_buffers,
+                        const std::vector<int32_t> &buffer_sizes,
+                        const std::vector<int32_t> &buffer_offsets,
+                        std::shared_ptr<Table> *output);
+Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
+                        const std::shared_ptr<arrow::Schema> &schema,
+                        const std::vector<std::shared_ptr<Buffer>> &received_buffers,
                         const std::vector<int32_t> &buffer_sizes,
                         std::shared_ptr<Table> *output);
 }

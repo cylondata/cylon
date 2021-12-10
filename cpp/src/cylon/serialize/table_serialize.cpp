@@ -18,49 +18,9 @@
 #include <arrow/util/bit_util.h>
 #include <arrow/util/bitmap_ops.h>
 
+#include "cylon/arrow/arrow_buffer.hpp"
+
 namespace cylon {
-
-class CylonTableSerializer : public TableSerializer {
- public:
-  CylonTableSerializer(std::shared_ptr<arrow::Table> table,
-                       std::vector<int32_t> buffer_sizes,
-                       std::vector<const uint8_t *> data_buffers) :
-      table_(std::move(table)),
-      num_buffers_(table_->num_columns() * 3),
-      buffer_sizes_(std::move(buffer_sizes)),
-      data_buffers_(std::move(data_buffers)) {
-    assert(num_buffers_ == (int) buffer_sizes.size());
-    assert(num_buffers_ == (int) data_buffers_.size());
-  }
-
-  const std::vector<int32_t> &getBufferSizes() override {
-    return buffer_sizes_;
-  }
-  int getNumberOfBuffers() override {
-    return num_buffers_;
-  }
-  std::vector<int32_t> getEmptyTableBufferSizes() override {
-    return std::vector<int32_t>(num_buffers_, 0);
-  }
-  const std::vector<const uint8_t *> &getDataBuffers() override {
-    return data_buffers_;
-  }
-
-  std::vector<int32_t> getDataTypes() override {
-    std::vector<int32_t> data_types;
-    data_types.reserve(table_->num_columns());
-    for (const auto &f: table_->schema()->fields()) {
-      data_types.push_back(static_cast<int32_t>(tarrow::ToCylonTypeId(f->type())));
-    }
-    return data_types;
-  }
-
- private:
-  const std::shared_ptr<arrow::Table> table_;
-  const int32_t num_buffers_;
-  const std::vector<int32_t> buffer_sizes_;
-  const std::vector<const uint8_t *> data_buffers_;
-};
 
 template<int buf_idx = 0>
 Status CollectBitmapInfo(const arrow::ArrayData &data, std::vector<int32_t> *buffer_sizes,
@@ -102,13 +62,13 @@ Status CollectDataBuffer(const arrow::ArrayData &data, std::vector<int32_t> *buf
   if (arrow::is_fixed_width(type->id())) {
     int byte_width = std::static_pointer_cast<arrow::FixedWidthType>(type)->bit_width() / CHAR_BIT;
     buffer_sizes->push_back(byte_width * (int) data.length);
-    data_buffers->push_back(data.GetValues<uint8_t>(1));
+    data_buffers->push_back(data.buffers[1]->data() + data.offset * byte_width);
     return Status::OK();
   }
 
   if (arrow::is_binary_like(type->id())) {
     int start_offset = data.GetValues<int32_t>(1)[0];
-    int end_offset = data.GetValues<int32_t>(1)[data.length + 1];
+    int end_offset = data.GetValues<int32_t>(1)[data.length];
     buffer_sizes->push_back(end_offset - start_offset);
     data_buffers->push_back(data.buffers[2]->data() + start_offset);
     return Status::OK();
@@ -116,7 +76,7 @@ Status CollectDataBuffer(const arrow::ArrayData &data, std::vector<int32_t> *buf
 
   if (arrow::is_large_binary_like(type->id())) {
     int start_offset = (int) data.GetValues<int64_t>(1)[0];
-    int end_offset = (int) data.GetValues<int64_t>(1)[data.length + 1];
+    int end_offset = (int) data.GetValues<int64_t>(1)[data.length];
     buffer_sizes->push_back(end_offset - start_offset);
     data_buffers->push_back(data.buffers[2]->data() + start_offset);
     return Status::OK();
@@ -125,8 +85,36 @@ Status CollectDataBuffer(const arrow::ArrayData &data, std::vector<int32_t> *buf
   return {Code::Invalid, "unsupported data type for serialization " + type->ToString()};
 }
 
+template<typename OffsetType>
+Status CollectOffsetBufferBinary(const arrow::ArrayData &data, std::vector<int32_t> *buffer_sizes,
+                                 std::vector<const uint8_t *> *data_buffers,
+                                 arrow::BufferVector *extra_buffers, arrow::MemoryPool *pool) {
+  int buf_sz = (int) ((data.length + 1) * sizeof(OffsetType));
+  buffer_sizes->push_back(buf_sz);
+  // in arrow, when there are offsets, data buffer will not be sliced. Instead, ArrayData only has
+  // an offset marked.
+  if (data.offset) {
+    CYLON_ASSIGN_OR_RAISE(auto new_buf, arrow::AllocateBuffer(buf_sz, pool))
+    const auto *start_pos = data.GetValues<OffsetType>(1);
+    auto *buf_data = reinterpret_cast<OffsetType *>(new_buf->mutable_data());
+    OffsetType start_offset = start_pos[0];
+
+    std::transform(start_pos, start_pos + data.length + 1, buf_data,
+                   [&](OffsetType offset) {
+                     return offset - start_offset;
+                   });
+
+    data_buffers->push_back(new_buf->data());
+    extra_buffers->push_back(std::move(new_buf));
+  } else {
+    data_buffers->push_back(data.buffers[1]->data()); // no offset
+  }
+  return Status::OK();
+}
+
 Status CollectOffsetBuffer(const arrow::ArrayData &data, std::vector<int32_t> *buffer_sizes,
-                           std::vector<const uint8_t *> *data_buffers) {
+                           std::vector<const uint8_t *> *data_buffers,
+                           arrow::BufferVector *extra_buffers, arrow::MemoryPool *pool) {
   const auto &type = data.type;
   if (arrow::is_fixed_width(type->id())) {
     buffer_sizes->push_back(0);
@@ -135,27 +123,25 @@ Status CollectOffsetBuffer(const arrow::ArrayData &data, std::vector<int32_t> *b
   }
 
   if (arrow::is_binary_like(type->id())) {
-    buffer_sizes->push_back((int) (data.length * sizeof(int32_t)));
-    data_buffers->push_back(data.GetValues<uint8_t>(1));
-    return Status::OK();
+    return CollectOffsetBufferBinary<int32_t>(data, buffer_sizes, data_buffers, extra_buffers,
+                                              pool);
   }
 
   if (arrow::is_large_binary_like(type->id())) {
-    buffer_sizes->push_back((int) (data.length * sizeof(int64_t)));
-    data_buffers->push_back(data.GetValues<uint8_t>(1));
-    return Status::OK();
+    return CollectOffsetBufferBinary<int64_t>(data, buffer_sizes, data_buffers, extra_buffers,
+                                              pool);
   }
 
   return {Code::Invalid, "unsupported offset type for serialization " + type->ToString()};
 }
 
-Status MakeTableSerializer(const std::shared_ptr<Table> &table,
-                           std::shared_ptr<TableSerializer> *serializer) {
+Status CylonTableSerializer::Make(const std::shared_ptr<Table> &table,
+                                  std::shared_ptr<TableSerializer> *serializer) {
   std::vector<int32_t> buffer_sizes;
   std::vector<const uint8_t *> data_buffers;
   // we can only send byte boundary buffers. If we encounter bitmaps that don't align to a byte
   // boundary, make a copy and keep it in this vector
-  arrow::BufferVector bitmaps_with_offset;
+  arrow::BufferVector extra_buffers;
 
   int num_buffers = 3 * table->Columns();
   auto atable = table->get_table();
@@ -171,17 +157,50 @@ Status MakeTableSerializer(const std::shared_ptr<Table> &table,
     for (const auto &col: atable->columns()) {
       const auto &data = *col->chunk(0)->data();
       RETURN_CYLON_STATUS_IF_FAILED(
-          CollectBitmapInfo(data, &buffer_sizes, &data_buffers, &bitmaps_with_offset, pool));
+          CollectBitmapInfo(data, &buffer_sizes, &data_buffers, &extra_buffers, pool));
       RETURN_CYLON_STATUS_IF_FAILED(
-          CollectOffsetBuffer(data, &buffer_sizes, &data_buffers));
+          CollectOffsetBuffer(data, &buffer_sizes, &data_buffers, &extra_buffers, pool));
       RETURN_CYLON_STATUS_IF_FAILED(
-          CollectDataBuffer(data, &buffer_sizes, &data_buffers, &bitmaps_with_offset, pool));
+          CollectDataBuffer(data, &buffer_sizes, &data_buffers, &extra_buffers, pool));
     }
   }
 
-  *serializer = std::make_shared<CylonTableSerializer>(std::move(atable), std::move(buffer_sizes),
-                                                       std::move(data_buffers));
+  *serializer = std::make_shared<CylonTableSerializer>(std::move(atable),
+                                                       std::move(buffer_sizes),
+                                                       std::move(data_buffers),
+                                                       std::move(extra_buffers));
   return Status::OK();
+}
+
+CylonTableSerializer::CylonTableSerializer(std::shared_ptr<arrow::Table> table,
+                                           std::vector<int32_t> buffer_sizes,
+                                           std::vector<const uint8_t *> data_buffers,
+                                           arrow::BufferVector extra_buffers)
+    : table_(std::move(table)),
+      num_buffers_(table_->num_columns() * 3),
+      buffer_sizes_(std::move(buffer_sizes)),
+      data_buffers_(std::move(data_buffers)),
+      extra_buffers_(std::move(extra_buffers)) {
+  assert(num_buffers_ == (int) buffer_sizes_.size());
+  assert(num_buffers_ == (int) data_buffers_.size());
+}
+
+std::vector<int32_t> CylonTableSerializer::getDataTypes() {
+
+  std::vector<int32_t> data_types;
+  data_types.reserve(table_->num_columns());
+  for (const auto &f: table_->schema()->fields()) {
+    data_types.push_back(static_cast<int32_t>(tarrow::ToCylonTypeId(f->type())));
+  }
+  return data_types;
+}
+
+std::vector<int32_t> CylonTableSerializer::getEmptyTableBufferSizes() {
+  return std::vector<int32_t>(num_buffers_, 0);
+}
+
+const arrow::BufferVector &CylonTableSerializer::extra_buffers() const {
+  return extra_buffers_;
 }
 
 int32_t CalculateNumRows(const std::shared_ptr<arrow::Schema> &schema,
@@ -232,12 +251,25 @@ std::shared_ptr<arrow::ArrayData> MakeArrayData(std::shared_ptr<arrow::DataType>
   return nullptr;
 }
 
+std::shared_ptr<arrow::Buffer> MakeArrowBuffer(const std::shared_ptr<Buffer> &buffer,
+                                               int32_t offset, int32_t size) {
+  const auto &arrow_buf = std::static_pointer_cast<ArrowBuffer>(buffer)->getBuf();
+  // we need to slice the buffer here, rather than creating an arrow::Buffer from cylon::buffer data
+  // pointer. Because we need to pass the ownership of the parent buffer to the slice. otherwise,
+  // the buffers would have to be managed at the allocator level.
+  return SliceBuffer(arrow_buf, offset, size);
+}
+
 Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
                         const std::shared_ptr<arrow::Schema> &schema,
-                        const std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
-                        const std::vector<int32_t> &disp_per_buffer,
+                        const std::vector<std::shared_ptr<Buffer>> &received_buffers,
                         const std::vector<int32_t> &buffer_sizes,
+                        const std::vector<int32_t> &buffer_offsets,
                         std::shared_ptr<Table> *output) {
+  assert(received_buffers.size() == buffer_sizes.size());
+  assert(received_buffers.size() == buffer_offsets.size());
+  assert(received_buffers.size() == (size_t) schema->num_fields() * 3);
+
   const int32_t num_cols = schema->num_fields();
   const int32_t num_rows = CalculateNumRows(schema, buffer_sizes);
   if (num_rows == -1) {
@@ -246,25 +278,17 @@ Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
 
   arrow::ChunkedArrayVector arrays;
   arrays.reserve(num_cols);
-  int i = 0, buf_cnt = 0;
-  for (; i < num_cols; i++, buf_cnt += 3) {
-    uint8_t *valid_start = received_buffers[buf_cnt]->GetByteBuffer() + disp_per_buffer[buf_cnt];
-    uint8_t *offset_start =
-        received_buffers[buf_cnt + 1]->GetByteBuffer() + disp_per_buffer[buf_cnt + 1];
-    uint8_t
-        *data_start = received_buffers[buf_cnt + 2]->GetByteBuffer() + disp_per_buffer[buf_cnt + 2];
+  for (int i = 0, b = 0; i < num_cols; i++, b += 3) {
+    auto valid_buf = buffer_sizes[b] ? MakeArrowBuffer(received_buffers[b], buffer_offsets[b],
+                                                       buffer_sizes[b])
+                                     : nullptr;
 
-    auto valid_buf =
-        buffer_sizes[buf_cnt] ? std::make_shared<arrow::Buffer>(valid_start, buffer_sizes[buf_cnt])
-                              : nullptr;
-    auto offset_buf =
-        buffer_sizes[buf_cnt + 1] ? std::make_shared<arrow::Buffer>(offset_start,
-                                                                    buffer_sizes[buf_cnt + 1])
-                                  : nullptr;
-    auto data_buf =
-        buffer_sizes[buf_cnt + 2] ? std::make_shared<arrow::Buffer>(data_start,
-                                                                    buffer_sizes[buf_cnt + 2])
-                                  : nullptr;
+    auto offset_buf = buffer_sizes[b + 1] ? MakeArrowBuffer(received_buffers[b + 1],
+                                                            buffer_offsets[b + 1],
+                                                            buffer_sizes[b + 1])
+                                          : nullptr;
+    auto data_buf = MakeArrowBuffer(received_buffers[b + 2], buffer_offsets[b + 2],
+                                    buffer_sizes[b + 2]);
 
     auto data = MakeArrayData(schema->field(i)->type(), num_rows, std::move(valid_buf),
                               std::move(offset_buf), std::move(data_buf));
@@ -274,6 +298,18 @@ Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
   return Table::FromArrowTable(ctx,
                                arrow::Table::Make(schema, std::move(arrays), num_rows),
                                *output);
+}
+
+Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
+                        const std::shared_ptr<arrow::Schema> &schema,
+                        const std::vector<std::shared_ptr<Buffer>> &received_buffers,
+                        const std::vector<int32_t> &buffer_sizes,
+                        std::shared_ptr<Table> *output) {
+  assert(received_buffers.size() == buffer_sizes.size());
+  assert(received_buffers.size() == (size_t) schema->num_fields() * 3);
+
+  std::vector<int32_t> buffer_offsets(buffer_sizes.size(), 0);
+  return DeserializeTable(ctx, schema, received_buffers, buffer_sizes, buffer_offsets, output);
 }
 
 }
