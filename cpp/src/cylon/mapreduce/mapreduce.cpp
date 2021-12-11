@@ -563,9 +563,9 @@ Status MakeAggKernels(arrow::MemoryPool *pool,
     const auto &type = schema->field(agg.first)->type();
     auto kern = MakeMapReduceKernel(type, agg.second->id());
 
-    // initialize kernel
-    kern->Init(pool, agg.second->options());
     if (kern) {
+      // initialize kernel
+      kern->Init(pool, agg.second->options());
       agg_kernels->emplace_back(agg.first, std::move(kern));
     } else {
       return {Code::NotImplemented, "Unsupported reduce kernel type " + type->ToString()};
@@ -845,7 +845,7 @@ Status ShuffleTable(const std::shared_ptr<CylonContext> &ctx,
   std::unordered_map<int, int> val_cols; // original col_id -> new col_id
   for (const auto &agg: agg_kernels) {
     int original_col_id = agg.first;
-    const auto &res = val_cols.emplace(original_col_id, val_cols.size());
+    const auto &res = val_cols.emplace(original_col_id, key_cols.size() + val_cols.size());
 
     if (res.second) { // this is a unique col_id
       arrays.push_back(atable->column(original_col_id));
