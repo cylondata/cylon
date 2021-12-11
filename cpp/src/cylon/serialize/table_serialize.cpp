@@ -307,6 +307,17 @@ Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
   return DeserializeTable(ctx, schema, received_buffers, buffer_sizes, buffer_offsets, output);
 }
 
+Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
+                        const std::shared_ptr<arrow::Schema> &schema,
+                        const std::vector<std::shared_ptr<Buffer>> &received_buffers,
+                        std::shared_ptr<Table> *output) {
+  std::vector<int32_t> buffer_sizes(received_buffers.size());
+  for (size_t i = 0; i < received_buffers.size(); i++) {
+    buffer_sizes[i] = (int32_t) received_buffers[i]->GetLength();
+  }
+  return DeserializeTable(ctx, schema, received_buffers, buffer_sizes, output);
+}
+
 Status DeserializeTables(const std::shared_ptr<CylonContext> &ctx,
                          const std::shared_ptr<arrow::Schema> &schema,
                          int num_tables,

@@ -161,9 +161,10 @@ Status UCXSyncCommunicator::Gather(const std::shared_ptr<Table> &table,
   return {Code::NotImplemented, "All gather not implemented yet for ucx"};
 }
 
-Status UCXSyncCommunicator::Bcast(const std::shared_ptr<Table> &table,
+Status UCXSyncCommunicator::Bcast(const std::shared_ptr<cylon::CylonContext> &ctx,
+                                  const std::shared_ptr<Table> &table,
                                   int bcast_root,
-                                  std::shared_ptr<Table> &out) const {
+                                  std::shared_ptr<Table> *out) const {
   CYLON_UNUSED(table);
   CYLON_UNUSED(bcast_root);
   CYLON_UNUSED(out);

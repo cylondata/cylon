@@ -81,6 +81,10 @@ Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
                         const std::vector<std::shared_ptr<Buffer>> &received_buffers,
                         const std::vector<int32_t> &buffer_sizes,
                         std::shared_ptr<Table> *output);
+Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
+                        const std::shared_ptr<arrow::Schema> &schema,
+                        const std::vector<std::shared_ptr<Buffer>> &received_buffers,
+                        std::shared_ptr<Table> *output);
 
 /**
  * Deserialize a world_size number of tables generated from an operation like AllGather.

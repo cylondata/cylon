@@ -46,5 +46,40 @@ TEST_CASE("all gather table", "[sync comms]") {
   }
 }
 
+TEST_CASE("gather table", "[sync comms]") {
+  auto schema = arrow::schema({
+                                  {field("_", arrow::boolean())},
+                                  {field("a", arrow::uint32())},
+                                  {field("b", arrow::float64())},
+                                  {field("c", arrow::utf8())},
+                              });
+
+  auto in_table = TableFromJSON(schema, {R"([{"_": true,  "a": null, "b": 5,  "c": "1"},
+                                     {"_": false,  "a": 1,    "b": 3,    "c": "12"},
+                                     {"_": true,  "a": 3,    "b": null, "c": "123"},
+                                     {"_": null,  "a": null, "b": null, "c": null},
+                                     {"_": true,  "a": 2,    "b": 5,    "c": "1234"},
+                                     {"_": false,  "a": 1,    "b": 5,    "c": null}
+                                    ])"});
+  auto table = std::make_shared<Table>(ctx, in_table);
+  int gather_root = WORLD_SZ/2;
+
+  std::vector<std::shared_ptr<Table>> out;
+
+  const auto &sync_comm = ctx->sync_communicator();
+  CHECK_CYLON_STATUS(sync_comm->Gather(table, gather_root, true, &out));
+
+  if (gather_root == RANK){
+    REQUIRE((int) out.size() == WORLD_SZ);
+
+    INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
+    for (int i = 0; i < WORLD_SZ; i++) {
+      CHECK_ARROW_EQUAL(in_table, out[i]->get_table());
+    }
+  } else {
+    REQUIRE(out.empty());
+  }
+}
+
 }
 }

@@ -109,7 +109,7 @@ Status MPISyncCommunicator::AllGather(const std::shared_ptr<Table> &table,
   auto *pool = ToArrowPool(ctx);
 
   const auto &allocator = std::make_shared<ArrowAllocator>(pool);
-  std::vector<std::shared_ptr<cylon::Buffer>> receive_buffers;
+  std::vector<std::shared_ptr<Buffer>> receive_buffers;
 
   std::vector<int32_t> buffer_sizes_per_table;
   //  |b_0, ..., b_n-1|...|b_0, ..., b_n-1|
@@ -121,11 +121,11 @@ Status MPISyncCommunicator::AllGather(const std::shared_ptr<Table> &table,
 
   RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather(serializer, allocator, buffer_sizes_per_table,
                                                receive_buffers, all_disps, ctx));
-  const int num_tables = (int) all_disps[0].size();
 
   // need to reshape all_disps for per-table basis
   auto buffer_offsets_per_table = ReshapeDispToPerTable(all_disps);
 
+  const int num_tables = (int) all_disps[0].size();
   return DeserializeTables(ctx, table->get_table()->schema(), num_tables, receive_buffers,
                            buffer_sizes_per_table, buffer_offsets_per_table, out);
 }
@@ -134,13 +134,47 @@ Status MPISyncCommunicator::Gather(const std::shared_ptr<Table> &table,
                                    int gather_root,
                                    bool gather_from_root,
                                    std::vector<std::shared_ptr<Table>> *out) const {
+  std::shared_ptr<TableSerializer> serializer;
+  RETURN_CYLON_STATUS_IF_FAILED(CylonTableSerializer::Make(table, &serializer));
+  const auto &ctx = table->GetContext();
+  auto *pool = ToArrowPool(ctx);
+
+  const auto &allocator = std::make_shared<ArrowAllocator>(pool);
+  std::vector<std::shared_ptr<Buffer>> receive_buffers;
+
+  std::vector<int32_t> buffer_sizes_per_table;
+  //  |b_0, ..., b_n-1|...|b_0, ..., b_n-1|
+  //   <--- tbl_0 --->     <--- tbl_m --->
+
+  std::vector<std::vector<int32_t>> all_disps;
+  //  |t_0, ..., t_m-1|...|t_0, ..., t_m-1|
+  //   <--- buf_0 --->     <--- buf_n --->
+
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::Gather(serializer, gather_root, gather_from_root,
+                                            allocator, buffer_sizes_per_table, receive_buffers,
+                                            all_disps, ctx));
+
+  // need to reshape all_disps for per-table basis
+  if (mpi::AmIRoot(gather_root, ctx)) {
+    auto buffer_offsets_per_table = ReshapeDispToPerTable(all_disps);
+
+    const int num_tables = (int) all_disps[0].size();
+    return DeserializeTables(ctx, table->get_table()->schema(), num_tables, receive_buffers,
+                             buffer_sizes_per_table, buffer_offsets_per_table, out);
+  }
   return Status::OK();
 }
 
-Status MPISyncCommunicator::Bcast(const std::shared_ptr<Table> &table,
+// todo: bcast requires bcasting schema using arrow::ipc (#537)
+Status MPISyncCommunicator::Bcast(const std::shared_ptr<cylon::CylonContext> &ctx,
+                                  const std::shared_ptr<Table> &table,
                                   int bcast_root,
-                                  std::shared_ptr<Table> &received_table) const {
-  return Status::OK();
+                                  std::shared_ptr<Table> *out) const {
+  CYLON_UNUSED(table);
+  CYLON_UNUSED(ctx);
+  CYLON_UNUSED(bcast_root);
+  CYLON_UNUSED(out);
+  return {Code::NotImplemented, "MPI Bcast is not implemented"};
 }
 }  // namespace net
 }  // namespace cylon
