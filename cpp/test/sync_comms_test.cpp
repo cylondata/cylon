@@ -32,17 +32,22 @@ TEST_CASE("all gather table", "[sync comms]") {
                                      {"_": true,  "a": 2,    "b": 5,    "c": "1234"},
                                      {"_": false,  "a": 1,    "b": 5,    "c": null}
                                     ])"});
-  auto table = std::make_shared<Table>(ctx, in_table);
 
-  std::vector<std::shared_ptr<Table>> out;
+  for (const auto &atable: {in_table, in_table->Slice(3)}) {
+    SECTION(atable.get() == in_table.get() ? "without offset" : "with offset") {
+      auto table = std::make_shared<Table>(ctx, atable);
 
-  const auto &sync_comm = ctx->sync_communicator();
-  CHECK_CYLON_STATUS(sync_comm->AllGather(table, &out));
-  REQUIRE((int) out.size() == WORLD_SZ);
+      std::vector<std::shared_ptr<Table>> out;
 
-  INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
-  for (int i = 0; i < WORLD_SZ; i++) {
-    CHECK_ARROW_EQUAL(in_table, out[i]->get_table());
+      const auto &sync_comm = ctx->sync_communicator();
+      CHECK_CYLON_STATUS(sync_comm->AllGather(table, &out));
+      REQUIRE((int) out.size() == WORLD_SZ);
+
+      INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
+      for (int i = 0; i < WORLD_SZ; i++) {
+        CHECK_ARROW_EQUAL(atable, out[i]->get_table());
+      }
+    }
   }
 }
 
@@ -61,23 +66,27 @@ TEST_CASE("gather table", "[sync comms]") {
                                      {"_": true,  "a": 2,    "b": 5,    "c": "1234"},
                                      {"_": false,  "a": 1,    "b": 5,    "c": null}
                                     ])"});
-  auto table = std::make_shared<Table>(ctx, in_table);
-  int gather_root = WORLD_SZ/2;
+  int gather_root = WORLD_SZ / 2;
+  for (const auto &atable: {in_table, in_table->Slice(3)}) {
+    SECTION(atable.get() == in_table.get() ? "without offset" : "with offset") {
+      auto table = std::make_shared<Table>(ctx, atable);
 
-  std::vector<std::shared_ptr<Table>> out;
+      std::vector<std::shared_ptr<Table>> out;
 
-  const auto &sync_comm = ctx->sync_communicator();
-  CHECK_CYLON_STATUS(sync_comm->Gather(table, gather_root, true, &out));
+      const auto &sync_comm = ctx->sync_communicator();
+      CHECK_CYLON_STATUS(sync_comm->Gather(table, gather_root, true, &out));
 
-  if (gather_root == RANK){
-    REQUIRE((int) out.size() == WORLD_SZ);
+      if (gather_root == RANK) {
+        REQUIRE((int) out.size() == WORLD_SZ);
 
-    INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
-    for (int i = 0; i < WORLD_SZ; i++) {
-      CHECK_ARROW_EQUAL(in_table, out[i]->get_table());
+        INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
+        for (int i = 0; i < WORLD_SZ; i++) {
+          CHECK_ARROW_EQUAL(atable, out[i]->get_table());
+        }
+      } else {
+        REQUIRE(out.empty());
+      }
     }
-  } else {
-    REQUIRE(out.empty());
   }
 }
 
