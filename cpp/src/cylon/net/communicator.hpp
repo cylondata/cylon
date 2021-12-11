@@ -19,6 +19,7 @@
 #include <cylon/net/channel.hpp>
 
 namespace cylon {
+class Table;
 namespace net {
 
 class Communicator {
@@ -35,6 +36,23 @@ class Communicator {
   virtual CommType GetCommType() const = 0;
 
   virtual ~Communicator() = default;
+};
+
+class SyncCommunicator {
+ public:
+  virtual ~SyncCommunicator() = default;
+
+  virtual Status AllGather(const std::shared_ptr<Table> &table,
+                           std::vector<std::shared_ptr<Table>> *out) const = 0;
+
+  virtual Status Gather(const std::shared_ptr<Table> &table,
+                        int gather_root,
+                        bool gather_from_root,
+                        std::vector<std::shared_ptr<Table>> *out) const = 0;
+
+  virtual Status Bcast(const std::shared_ptr<Table> &table,
+                       int bcast_root,
+                       std::shared_ptr<Table> &received_table) const = 0;
 };
 }
 }

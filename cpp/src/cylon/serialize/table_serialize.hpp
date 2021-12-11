@@ -81,6 +81,30 @@ Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
                         const std::vector<std::shared_ptr<Buffer>> &received_buffers,
                         const std::vector<int32_t> &buffer_sizes,
                         std::shared_ptr<Table> *output);
+
+/**
+ * Deserialize a world_size number of tables generated from an operation like AllGather.
+ *
+ * @param ctx
+ * @param schema
+ * @param received_buffers
+ * @param buffer_sizes_per_table
+ * |b_0, ..., b_n-1|...|b_0, ..., b_n-1|
+ *  <--- tbl_0 --->     <--- tbl_m --->
+ * m = num tables (i.e. world size), n = num buffers (i.e. 3*num columns)
+ * @param buffer_offsets_per_table
+ * |b_0, ..., b_n-1|...|b_0, ..., b_n-1|
+ *  <--- tbl_0 --->     <--- tbl_m --->
+ * @param output
+ * @return
+ */
+Status DeserializeTables(const std::shared_ptr<CylonContext> &ctx,
+                         const std::shared_ptr<arrow::Schema> &schema,
+                         int num_tables,
+                         const std::vector<std::shared_ptr<Buffer>> &received_buffers,
+                         const std::vector<int32_t> &buffer_sizes_per_table,
+                         const std::vector<int32_t> &buffer_offsets_per_table,
+                         std::vector<std::shared_ptr<Table>> *output);
 }
 
 #endif //CYLON_CPP_SRC_CYLON_NET_TABLE_SERIALIZE_HPP_

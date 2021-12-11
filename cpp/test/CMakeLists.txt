@@ -148,3 +148,8 @@ cylon_run_test(repartition_test 4)
 # serialization test
 cylon_add_test(serialize_test)
 cylon_run_test(serialize_test 1)
+
+# synchronous communications test
+cylon_add_test(sync_comms_test)
+cylon_run_test(sync_comms_test 1)
+cylon_run_test(sync_comms_test 4)

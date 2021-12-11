@@ -43,6 +43,19 @@ class MPICommunicator : public Communicator {
   void Barrier() override;
   CommType GetCommType() const override;
 };
+
+class MPISyncCommunicator : public SyncCommunicator {
+ public:
+  Status AllGather(const std::shared_ptr<Table> &table,
+                   std::vector<std::shared_ptr<Table>> *out) const override;
+
+  Status Gather(const std::shared_ptr<Table> &table, int gather_root,
+                bool gather_from_root, std::vector<std::shared_ptr<Table>> *out) const override;
+
+  Status Bcast(const std::shared_ptr<Table> &table, int bcast_root,
+               std::shared_ptr<Table> &out) const override;
+};
+
 }
 }
 #endif //CYLON_SRC_CYLON_COMM_MPICOMMUNICATOR_H_

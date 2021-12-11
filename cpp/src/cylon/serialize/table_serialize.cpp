@@ -307,4 +307,37 @@ Status DeserializeTable(const std::shared_ptr<CylonContext> &ctx,
   return DeserializeTable(ctx, schema, received_buffers, buffer_sizes, buffer_offsets, output);
 }
 
+Status DeserializeTables(const std::shared_ptr<CylonContext> &ctx,
+                         const std::shared_ptr<arrow::Schema> &schema,
+                         int num_tables,
+                         const std::vector<std::shared_ptr<Buffer>> &received_buffers,
+                         const std::vector<int32_t> &buffer_sizes_per_table,
+                         const std::vector<int32_t> &buffer_offsets_per_table,
+                         std::vector<std::shared_ptr<Table>> *output) {
+  const int num_buffers = (int) schema->num_fields() * 3;
+
+  assert((int) received_buffers.size() == num_buffers);
+  assert((int) buffer_sizes_per_table.size() == num_tables * num_buffers);
+  assert((int) buffer_offsets_per_table.size() == num_tables * num_buffers);
+
+  output->reserve(num_tables);
+  std::vector<int32_t> table_buffer_sizes(num_buffers, 0), table_buffer_offsets(num_buffers, 0);
+  for (int i = 0; i < num_tables; i++) {
+    std::shared_ptr<Table> out;
+    int offset = i * num_buffers;
+    std::copy(buffer_sizes_per_table.begin() + offset,
+              buffer_sizes_per_table.begin() + offset + num_buffers,
+              table_buffer_sizes.begin());
+
+    std::copy(buffer_offsets_per_table.begin() + offset,
+              buffer_offsets_per_table.begin() + offset + num_buffers,
+              table_buffer_offsets.begin());
+    RETURN_CYLON_STATUS_IF_FAILED(DeserializeTable(ctx, schema, received_buffers,
+                                                   table_buffer_sizes, table_buffer_offsets, &out));
+    output->push_back(std::move(out));
+  }
+
+  return Status::OK();
+}
+
 }
