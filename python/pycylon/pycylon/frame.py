@@ -123,14 +123,15 @@ class CylonEnv(object):
 
 
 class GroupByDataFrame(object):
-    def __init__(self, df: DataFrame, by=None) -> None:
+    def __init__(self, df: DataFrame, by=None, groupby_type: str = 'hash') -> None:
         super().__init__()
         self.df = df
         self.by = by
         self.by_diff = set(df.columns) - set(by)
+        self.groupby_type = groupby_type
 
     def __do_groupby(self, op_dict) -> DataFrame:
-        return DataFrame(self.df.to_table().groupby(self.by, op_dict))
+        return DataFrame(self.df.to_table().groupby(self.by, op_dict, groupby_type=self.groupby_type))
 
     def __apply_on_remaining_columns(self, op: str) -> DataFrame:
         op_dict = {}
@@ -2164,7 +2165,7 @@ class DataFrame(object):
             return DataFrame(self._change_context(env)._table.distributed_unique(columns=subset,
                                                                                  inplace=inplace))
 
-    def groupby(self, by: Union[int, str, List], env: CylonEnv = None) -> GroupByDataFrame:
+    def groupby(self, by: Union[int, str, List], groupby_type="hash", env: CylonEnv = None) -> GroupByDataFrame:
         """
         A groupby operation involves some combination of splitting the object, applying a function, and combining the results. 
         This can be used to group large amounts of data and compute operations on these groups.
@@ -2174,6 +2175,8 @@ class DataFrame(object):
 
         by : str, int or a list of str, int.  
             List of column(s) used for grouping.
+        groupby_type: str,
+            Groupby Type - [hash, mapred_hash] default: hash
 
         Returns
         -------
@@ -2228,9 +2231,9 @@ class DataFrame(object):
         else:
             raise ValueError("Unknown value for by")
         if env is None:
-            return GroupByDataFrame(self, by_list)
+            return GroupByDataFrame(self, by_list, groupby_type=groupby_type)
         else:
-            return GroupByDataFrame(self._change_context(env), by_list)
+            return GroupByDataFrame(self._change_context(env), by_list, groupby_type=groupby_type)
 
     def isin(self, values: Union[List, Dict, cn.Table], skip_null: bool = True) -> DataFrame:
         """

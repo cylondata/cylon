@@ -14,6 +14,8 @@
 
 from libcpp.string cimport string
 from libc.stdint cimport int64_t
+from libcpp.vector cimport vector
+from libcpp.pair cimport pair
 from pycylon.common.status cimport CStatus
 from pycylon.common.status import Status
 from pycylon.common.join_config cimport CJoinType
@@ -47,7 +49,7 @@ pycylon_unwrap_join_config)
 from pycylon.data.aggregates cimport (Sum, Count, Min, Max)
 from pycylon.data.aggregates cimport CGroupByAggregationOp
 from pycylon.data.aggregates import AggregationOp, AggregationOpString
-from pycylon.data.groupby cimport (DistributedHashGroupBy, DistributedPipelineGroupBy)
+from pycylon.data.groupby cimport (DistributedHashGroupBy, DistributedPipelineGroupBy, MapredHashGroupBy)
 from pycylon.data import compute
 
 from pycylon.index import RangeIndex, NumericIndex, range_calculator, process_index_by_value
@@ -578,12 +580,16 @@ cdef class Table:
     def max(self, column):
         return self._agg_op(column, AggregationOp.MAX)
 
-    def groupby(self, index, agg: dict):
+    def groupby(self, index, agg: dict, groupby_type: str = 'hash'):
+        """
+        :param groupby_type: 'hash' or 'mapred_hash'
+        """
         cdef CStatus status
         cdef shared_ptr[CTable] output
         cdef vector[int] cindex_cols
         cdef vector[int] caggregate_cols
         cdef vector[CGroupByAggregationOp] caggregate_ops
+        cdef vector[pair[int, CGroupByAggregationOp]] caggregate_ops_pair
 
         if not agg or not isinstance(agg, dict):
             raise ValueError("agg should be non-empty and dict type")
@@ -601,16 +607,22 @@ cdef class Table:
                 if isinstance(agg_pair[1], str):
                     caggregate_cols.push_back(col_idx)
                     caggregate_ops.push_back(AggregationOpString[agg_pair[1]])
+                    caggregate_ops_pair.push_back(pair[int, CGroupByAggregationOp](col_idx,
+                                                                                   AggregationOpString[agg_pair[1]]))
                 elif isinstance(agg_pair[1], AggregationOp):
                     caggregate_cols.push_back(col_idx)
                     caggregate_ops.push_back(agg_pair[1])
+                    caggregate_ops_pair.push_back(pair[int, CGroupByAggregationOp](col_idx, agg_pair[1]))
                 elif isinstance(agg_pair[1], list):
                     for op in agg_pair[1]:
                         caggregate_cols.push_back(col_idx)
                         if isinstance(op, str):
                             caggregate_ops.push_back(AggregationOpString[op])
+                            caggregate_ops_pair.push_back(pair[int, CGroupByAggregationOp](col_idx,
+                                                                                           AggregationOpString[op]))
                         elif isinstance(op, AggregationOp):
                             caggregate_ops.push_back(op)
+                            caggregate_ops_pair.push_back(pair[int, CGroupByAggregationOp](col_idx, op))
                 else:
                     raise ValueError("Agg op must be either op name (str) or AggregationOp enum or "
                                      "a list of either of those")
@@ -633,8 +645,14 @@ cdef class Table:
                 raise ValueError("Index column must be either column name (str) or column "
                                  "index (int)")
 
-            status = DistributedHashGroupBy(self.table_shd_ptr, cindex_cols, caggregate_cols,
-                                            caggregate_ops, output)
+            if groupby_type.lower() == 'hash':
+                status = DistributedHashGroupBy(self.table_shd_ptr, cindex_cols, caggregate_cols,
+                                                caggregate_ops, output)
+            elif groupby_type.lower() == 'mapred_hash':
+                status = MapredHashGroupBy(self.table_shd_ptr, cindex_cols, caggregate_ops_pair, &output)
+            else:
+                raise Exception(f"Unknown groupby type {groupby_type}. Available [hash, mapred_hash]")
+
             if status.is_ok():
                 return pycylon_wrap_table(output)
             else:

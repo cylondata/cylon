@@ -1012,10 +1012,10 @@ Status MapredHashGroupBy(const std::shared_ptr<Table> &table,
   return Table::FromArrowTable(ctx, std::move(out_table), *output);
 }
 
-Status mapred::MapredHashGroupBy(const std::shared_ptr<Table> &table,
-                                 const std::vector<int> &key_cols,
-                                 const AggOpIdVector &aggs,
-                                 std::shared_ptr<Table> *output) {
+Status MapredHashGroupBy(const std::shared_ptr<Table> &table,
+                         const std::vector<int> &key_cols,
+                         const AggOpIdVector &aggs,
+                         std::shared_ptr<Table> *output) {
   AggOpVector op_vector;
   op_vector.reserve(aggs.size());
 
