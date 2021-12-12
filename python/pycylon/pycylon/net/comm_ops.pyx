@@ -35,6 +35,18 @@ def allgather_buffer(
         object buf,
         context,
 ):
+    """
+    allgather an arrow buffer object from all workers to all workers
+
+    Parameters
+    ----------
+    buf: arrow buffer to allgather
+    context: CylonContext object
+
+    Returns
+    -------
+    Allgathered buffers
+    """
     cdef shared_ptr[ArrowCBuffer] c_buf = pyarrow_unwrap_buffer(buf)
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
     cdef vector[shared_ptr[ArrowCBuffer]] c_all_buffers
@@ -56,6 +68,19 @@ def gather_buffer(
         root,
         context,
 ):
+    """
+    gather an arrow buffer object from all workers to the root
+
+    Parameters
+    ----------
+    buf: arrow buffer to gather
+    root: gathering worker rank
+    context: CylonContext object
+
+    Returns
+    -------
+    Gathered buffers (significant only at the root)
+    """
     cdef shared_ptr[ArrowCBuffer] c_buf = pyarrow_unwrap_buffer(buf)
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
     cdef vector[shared_ptr[ArrowCBuffer]] c_all_buffers
@@ -72,3 +97,36 @@ def gather_buffer(
         return all_buffers
     else:
         raise ValueError(f"gather_buffer operation failed : {c_status.get_msg().decode()}")
+
+
+def bcast_buffer(
+        object buf,
+        root,
+        context,
+):
+    """
+    broadcast an arrow buffer object to all other workers
+
+    Parameters
+    ----------
+    buf: arrow buffer to broadcast (significant only at the root)
+    root: broadcasting worker rank
+    context: CylonContext object
+
+    Returns
+    -------
+    Received arrow buffer object
+    """
+    cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
+    cdef CStatus c_status
+    cdef int32_t c_root = root
+
+    if buf is None:
+        buf = pa.allocate_buffer(0)
+    cdef shared_ptr[ArrowCBuffer] c_buf = pyarrow_unwrap_buffer(buf)
+
+    c_status = BcastArrowBuffer(c_buf, c_root, c_ctx_ptr)
+    if c_status.is_ok():
+        return pyarrow_wrap_buffer(c_buf)
+    else:
+        raise ValueError(f"bcast_buffer operation failed : {c_status.get_msg().decode()}")

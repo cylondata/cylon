@@ -164,7 +164,7 @@ cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer>
     all_buffer_sizes.resize(ctx->GetWorldSize(), 0);
   }
 
-  int32_t size = buf->size();
+  int32_t size = static_cast<int32_t>(buf->size());
   int status = MPI_Gather(&size,
                           1,
                           MPI_INT32_T,
@@ -286,7 +286,7 @@ cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buff
                                                std::vector<std::shared_ptr<arrow::Buffer>> &buffers) {
 
   std::vector<int32_t> all_buffer_sizes(ctx->GetWorldSize(), 0);
-  int32_t size = buf->size();
+  int32_t size = static_cast<int32_t>(buf->size());
 
   int status = MPI_Allgather(&size,
                              1,

@@ -134,6 +134,18 @@ cylon::Status Bcast(const std::shared_ptr<cylon::TableSerializer>& serializer,
 );
 
 /**
+ * Perform broadcast on an Arrow Buffer
+ * @param buf buffer to broadcast if it is the root and the received buffer otherwise
+ * @param bcast_root MPI rank of the broadcaster worker, (significant at all workers)
+ * @param ctx CylonContext object
+ * @return
+ */
+cylon::Status BcastArrowBuffer(std::shared_ptr<arrow::Buffer> &buf,
+                               int bcast_root,
+                               const std::shared_ptr<cylon::CylonContext> &ctx
+);
+
+/**
  * All gather a vector of primitives from each worker
  * Each vector has to have the same number of elements
  * @param send_data

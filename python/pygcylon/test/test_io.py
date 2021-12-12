@@ -16,12 +16,14 @@
 running test case
 >>  mpirun --mca opal_cuda_support 1 -n 4 -quiet python -m pytest --with-mpi -q python/pygcylon/test/test_io.py
 '''
-
+import pyarrow
 import pytest
 import cudf
 import pycylon as cy
 import pygcylon as gcy
 import tempfile
+import pyarrow.parquet as pq
+from pycylon.net.comm_ops import bcast_buffer
 
 
 @pytest.mark.mpi
@@ -124,6 +126,31 @@ def test_parquet():
     rows_per_worker = [0, 25, 25, 0]
     assert len(df) == rows_per_worker[env.rank], \
         f'Read Parquet DataFrame row count [{len(df)}] does not match the given row count [{rows_per_worker[env.rank]}]'
+
+
+@pytest.mark.mpi
+def test_bcast():
+    env: cy.CylonEnv = cy.CylonEnv(config=cy.MPIConfig(), distributed=True)
+    print("CylonContext Initialized: My rank: ", env.rank)
+
+    # read the same parquet file schema by all workers
+    input_file = "data/parquet/part_0000.parquet"
+    schema = pq.read_schema(input_file)
+
+    # get the schema of the first worker and broadcast it to all other workers
+    buf = None
+    bcast_root = 0
+    if env.rank == bcast_root:
+        buf = schema.serialize()
+
+    buf = bcast_buffer(buf, bcast_root, env.context)
+
+    # deserialize the schema
+    with pyarrow.ipc.open_stream(buf) as reader:
+        received_schema = reader.schema
+
+    assert schema.equals(received_schema), \
+        f'Broadcasted schema and the original schema are not the same. Worker rank: {[env.rank]}'
 
 
 #    env.finalize()
