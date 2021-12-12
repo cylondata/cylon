@@ -119,7 +119,7 @@ struct MinKernelImpl : public MapReduceKernelImpl1D<ArrowT, MinFunction> {
 
 template<typename T>
 struct MaxFunction {
-  static T Call(const T &x, const T &y) { return std::min(x, y); };
+  static T Call(const T &x, const T &y) { return std::max(x, y); };
 };
 template<typename ArrowT>
 struct MaxKernelImpl : public MapReduceKernelImpl1D<ArrowT, MaxFunction> {
