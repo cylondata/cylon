@@ -21,15 +21,13 @@ from pyarrow.lib cimport CBuffer as ArrowCBuffer
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.common.status cimport CStatus
 
-cdef extern from "cylon/table_api.hpp" namespace "cylon":
+cdef extern from "cylon/net/mpi/mpi_operations.hpp" namespace "cylon::mpi":
     CStatus AllGatherArrowBuffer(const shared_ptr[ArrowCBuffer] &buf,
                                  const shared_ptr[CCylonContext] &ctx_srd_ptr,
-                                 vector[shared_ptr[ArrowCBuffer]] &buffers,
-                                 vector[uint8_t] &received_buf);
+                                 vector[shared_ptr[ArrowCBuffer]] &buffers);
 
     CStatus GatherArrowBuffer(const shared_ptr[ArrowCBuffer] &buf,
                               int32_t gather_root,
                               const shared_ptr[CCylonContext] &ctx_srd_ptr,
-                              vector[shared_ptr[ArrowCBuffer]] &buffers,
-                              vector[uint8_t] &received_buf);
+                              vector[shared_ptr[ArrowCBuffer]] &buffers);
 

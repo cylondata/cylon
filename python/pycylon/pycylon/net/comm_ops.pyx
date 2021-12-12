@@ -38,17 +38,13 @@ def allgather_buffer(
     cdef shared_ptr[ArrowCBuffer] c_buf = pyarrow_unwrap_buffer(buf)
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
     cdef vector[shared_ptr[ArrowCBuffer]] c_all_buffers
-    cdef vector[uint8_t] full_raw_buffer
     cdef CStatus c_status
 
-    c_status = AllGatherArrowBuffer(c_buf, c_ctx_ptr, c_all_buffers, full_raw_buffer)
+    c_status = AllGatherArrowBuffer(c_buf, c_ctx_ptr, c_all_buffers)
     if c_status.is_ok():
         all_buffers = []
         for i in range(c_all_buffers.size()):
-            # create new buffer objects by memory copying
-            # memory will be owned by arrow memory manager
             bf = pyarrow_wrap_buffer(c_all_buffers[i])
-            bf = pa.py_buffer(bf.to_pybytes())
             all_buffers.append(bf)
         return all_buffers
     else:
@@ -63,19 +59,15 @@ def gather_buffer(
     cdef shared_ptr[ArrowCBuffer] c_buf = pyarrow_unwrap_buffer(buf)
     cdef shared_ptr[CCylonContext] c_ctx_ptr = pycylon_unwrap_context(context)
     cdef vector[shared_ptr[ArrowCBuffer]] c_all_buffers
-    cdef vector[uint8_t] full_raw_buffer
     cdef CStatus c_status
     cdef int32_t c_root = root
 
-    c_status = GatherArrowBuffer(c_buf, c_root, c_ctx_ptr, c_all_buffers, full_raw_buffer)
+    c_status = GatherArrowBuffer(c_buf, c_root, c_ctx_ptr, c_all_buffers)
     if c_status.is_ok():
         all_buffers = []
         if root == context.get_rank():
             for i in range(c_all_buffers.size()):
-                # create new buffer objects by memory copying
-                # memory will be owned by arrow memory manager
                 bf = pyarrow_wrap_buffer(c_all_buffers[i])
-                bf = pa.py_buffer(bf.to_pybytes())
                 all_buffers.append(bf)
         return all_buffers
     else:

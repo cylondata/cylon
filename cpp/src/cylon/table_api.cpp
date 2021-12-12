@@ -352,47 +352,6 @@ Status Project(const std::string &id, const std::vector<int64_t> &project_column
   return status;
 }
 
-Status AllGatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
-                            const std::shared_ptr<cylon::CylonContext> &ctx,
-                            std::vector<std::shared_ptr<arrow::Buffer>> &buffers,
-                            std::vector<uint8_t> &received_buf) {
-
-  std::vector<int32_t> all_buffer_sizes;
-  RETURN_CYLON_STATUS_IF_FAILED(
-    mpi::AllGatherBuffer(buf->data(), buf->size(), ctx, received_buf, all_buffer_sizes));
-
-  buffers.resize(ctx->GetWorldSize());
-  int32_t buf_start = 0;
-  for (int i = 0; i < ctx->GetWorldSize(); ++i) {
-    buffers[i] = std::make_shared<arrow::Buffer>(received_buf.data() + buf_start, all_buffer_sizes[i]);
-    buf_start += all_buffer_sizes[i];
-  }
-
-  return cylon::Status::OK();
-}
-
-Status GatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
-                         int32_t gather_root,
-                         const std::shared_ptr<cylon::CylonContext> &ctx,
-                         std::vector<std::shared_ptr<arrow::Buffer>> &buffers,
-                         std::vector<uint8_t> &received_buf) {
-
-  std::vector<int32_t> all_buffer_sizes;
-  RETURN_CYLON_STATUS_IF_FAILED(
-    mpi::GatherBuffer(buf->data(), buf->size(), gather_root, ctx, received_buf, all_buffer_sizes));
-
-  if (gather_root == ctx->GetRank()) {
-    buffers.resize(ctx->GetWorldSize());
-    int32_t buf_start = 0;
-    for (int i = 0; i < ctx->GetWorldSize(); ++i) {
-      buffers[i] = std::make_shared<arrow::Buffer>(received_buf.data() + buf_start, all_buffer_sizes[i]);
-      buf_start += all_buffer_sizes[i];
-    }
-  }
-
-  return cylon::Status::OK();
-}
-
 #ifdef BUILD_CYLON_PARQUET
 Status ReadParquet(std::shared_ptr<cylon::CylonContext> &ctx,
                    const std::string &path,

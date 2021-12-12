@@ -16,6 +16,7 @@
 #define CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
 
 #include <memory>
+#include <arrow/buffer.h>
 #include <cylon/net/serialize.hpp>
 #include <cylon/ctx/cylon_context.hpp>
 #include <cylon/net/comm_operations.hpp>
@@ -67,19 +68,18 @@ cylon::Status Gather(const std::shared_ptr<cylon::TableSerializer>& serializer,
 );
 
 /**
- * Perform MPI Gather on a buffer
- * Some buffers might be empty,
- * @param data buffer to send
- * @param size size of the buffer
+ * Perform gather on an Arrow Buffer
+ * all received buffers are put into "buffers"
+ * @param buf buffer to send
+ * @param gather_root root of the gather operation
  * @param ctx CylonContext object
+ * @buffers arrow buffers received at the gather root.
  * @return
  */
-cylon::Status GatherBuffer(const uint8_t *data,
-                           int32_t size,
-                           int gather_root,
-                           const std::shared_ptr <cylon::CylonContext> &ctx,
-                           std::vector<uint8_t> &received_buf,
-                           std::vector<int32_t> &all_buffer_sizes
+cylon::Status GatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
+                                int gather_root,
+                                const std::shared_ptr<cylon::CylonContext> &ctx,
+                                std::vector<std::shared_ptr<arrow::Buffer>> &buffers
 );
 
 /**
@@ -103,18 +103,16 @@ cylon::Status AllGather(const std::shared_ptr<cylon::TableSerializer> &serialize
 );
 
 /**
- * Perform MPI AllGather on a buffer
- * Some buffers might be empty,
- * @param data buffer to send
- * @param size size of the buffer
+ * Perform allgather on an Arrow Buffer
+ * all received buffers are put into "buffers"
+ * @param buf buffer to send
  * @param ctx CylonContext object
+ * @param buffers received buffers
  * @return
  */
-cylon::Status AllGatherBuffer(const uint8_t *data,
-                              int32_t size,
-                              const std::shared_ptr <cylon::CylonContext> &ctx,
-                              std::vector<uint8_t> &received_buf,
-                              std::vector<int32_t> &all_buffer_sizes
+cylon::Status AllGatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
+                                   const std::shared_ptr<cylon::CylonContext> &ctx,
+                                   std::vector<std::shared_ptr<arrow::Buffer>> &buffers
 );
 
 /**
