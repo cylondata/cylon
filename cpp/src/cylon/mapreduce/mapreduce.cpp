@@ -53,8 +53,9 @@ template<typename ArrowT, template<typename> class CombineOp>
 struct MapReduceKernelImpl1D : public MapReduceKernel {
   using T = typename ArrowT::c_type;
 
-  const arrow::DataTypeVector out_types{arrow::TypeTraits<ArrowT>::type_singleton()};
-  arrow::MemoryPool *pool_ = nullptr;
+ public:
+  explicit MapReduceKernelImpl1D(const std::shared_ptr<arrow::DataType> &in_type)
+      : out_types({in_type}) {}
 
   const std::shared_ptr<arrow::DataType> &output_type() const override { return out_types[0]; }
   const arrow::DataTypeVector &intermediate_types() const override { return out_types; }
@@ -97,6 +98,10 @@ struct MapReduceKernelImpl1D : public MapReduceKernel {
     *output = combined_results[0];
     return Status::OK();
   }
+
+ protected:
+  const arrow::DataTypeVector out_types;
+  arrow::MemoryPool *pool_ = nullptr;
 };
 
 template<typename T>
@@ -105,6 +110,8 @@ struct SumFunction {
 };
 template<typename ArrowT>
 struct SumKernelImpl : public MapReduceKernelImpl1D<ArrowT, SumFunction> {
+  explicit SumKernelImpl(const std::shared_ptr<arrow::DataType> &type)
+      : MapReduceKernelImpl1D<ArrowT, SumFunction>(type) {}
   std::string name() const override { return "sum"; }
 };
 
@@ -114,6 +121,8 @@ struct MinFunction {
 };
 template<typename ArrowT>
 struct MinKernelImpl : public MapReduceKernelImpl1D<ArrowT, MinFunction> {
+  explicit MinKernelImpl(const std::shared_ptr<arrow::DataType> &type)
+      : MapReduceKernelImpl1D<ArrowT, MinFunction>(type) {}
   std::string name() const override { return "min"; }
 };
 
@@ -123,6 +132,8 @@ struct MaxFunction {
 };
 template<typename ArrowT>
 struct MaxKernelImpl : public MapReduceKernelImpl1D<ArrowT, MaxFunction> {
+  explicit MaxKernelImpl(const std::shared_ptr<arrow::DataType> &type)
+      : MapReduceKernelImpl1D<ArrowT, MaxFunction>(type) {}
   std::string name() const override { return "max"; }
 };
 
@@ -186,10 +197,9 @@ template<typename ArrowT>
 struct MeanKernelImpl : public MapReduceKernel {
   using T = typename ArrowT::c_type;
 
-  arrow::MemoryPool *pool_ = nullptr;
-  // {sum_t, count_t}
-  const arrow::DataTypeVector inter_types{arrow::TypeTraits<ArrowT>::type_singleton(),
-                                          arrow::int64()};
+ public:
+  explicit MeanKernelImpl(const std::shared_ptr<arrow::DataType> &in_type)
+      : inter_types({in_type, arrow::int64()}) {}
 
   std::string name() const override { return "mean"; }
   const std::shared_ptr<arrow::DataType> &output_type() const override { return inter_types[0]; }
@@ -262,6 +272,11 @@ struct MeanKernelImpl : public MapReduceKernel {
     *output = combined_results[0];
     return Status::OK();
   }
+
+ private:
+  arrow::MemoryPool *pool_ = nullptr;
+  // {sum_t, count_t}
+  const arrow::DataTypeVector inter_types;
 };
 
 template<typename ArrowT, bool StdDev = false>
@@ -422,8 +437,7 @@ struct VarKernelImpl : public MapReduceKernel {
 Status MapToGroupKernel::Map(const arrow::ArrayVector &arrays,
                              std::shared_ptr<arrow::Array> *local_group_ids,
                              std::shared_ptr<arrow::Array> *local_group_indices,
-                             int64_t *local_num_groups,
-                             arrow::MemoryPool *pool) const {
+                             int64_t *local_num_groups) const {
   const int64_t num_rows = arrays[0]->length();
   if (std::any_of(arrays.begin() + 1, arrays.end(),
                   [&](const auto &arr) { return arr->length() != num_rows; })) {
@@ -432,7 +446,7 @@ Status MapToGroupKernel::Map(const arrow::ArrayVector &arrays,
 
   // if empty, return
   if (num_rows == 0) {
-    CYLON_ASSIGN_OR_RAISE(*local_group_ids, arrow::MakeArrayOfNull(arrow::int64(), 0, pool))
+    CYLON_ASSIGN_OR_RAISE(*local_group_ids, arrow::MakeArrayOfNull(arrow::int64(), 0, pool_))
     *local_group_indices = *local_group_ids; // copy empty array
     *local_num_groups = 0;
     return Status::OK();
@@ -447,10 +461,10 @@ Status MapToGroupKernel::Map(const arrow::ArrayVector &arrays,
   ska::bytell_hash_map<int64_t, int64_t, TableRowIndexHash, TableRowIndexEqualTo>
       hash_map(num_rows, *hash, *comp);
 
-  arrow::Int64Builder group_ids_build(pool);
+  arrow::Int64Builder group_ids_build(pool_);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(group_ids_build.Reserve(num_rows));
 
-  arrow::Int64Builder filter_build(pool);
+  arrow::Int64Builder filter_build(pool_);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED((filter_build.Reserve(num_rows)));
 
   int64_t unique = 0;
@@ -475,8 +489,7 @@ Status MapToGroupKernel::Map(const std::shared_ptr<arrow::Table> &table,
                              const std::vector<int> &key_cols,
                              std::shared_ptr<arrow::Array> *local_group_ids,
                              std::shared_ptr<arrow::Array> *local_group_indices,
-                             int64_t *local_num_groups,
-                             arrow::MemoryPool *pool) const {
+                             int64_t *local_num_groups) const {
   arrow::ArrayVector arrays;
   arrays.reserve(key_cols.size());
 
@@ -488,21 +501,22 @@ Status MapToGroupKernel::Map(const std::shared_ptr<arrow::Table> &table,
     arrays.push_back(col->chunk(0));
   }
 
-  return Map(arrays, local_group_ids, local_group_indices, local_num_groups, pool);
+  return Map(arrays, local_group_ids, local_group_indices, local_num_groups);
 }
 
 template<typename T>
-std::unique_ptr<MapReduceKernel> MakeMapReduceKernelImpl(compute::AggregationOpId reduce_op) {
+std::unique_ptr<MapReduceKernel> MakeMapReduceKernelImpl(
+    const std::shared_ptr<arrow::DataType> &type, compute::AggregationOpId reduce_op) {
   switch (reduce_op) {
-    case compute::SUM: return std::make_unique<SumKernelImpl<T>>();
-    case compute::MIN:return std::make_unique<MinKernelImpl<T>>();
-    case compute::MAX:return std::make_unique<MaxKernelImpl<T>>();
+    case compute::SUM: return std::make_unique<SumKernelImpl<T>>(type);
+    case compute::MIN:return std::make_unique<MinKernelImpl<T>>(type);
+    case compute::MAX:return std::make_unique<MaxKernelImpl<T>>(type);
     case compute::COUNT:return std::make_unique<CountKernelImpl>();
-    case compute::MEAN:return std::make_unique<MeanKernelImpl<T>>();
+    case compute::MEAN:return std::make_unique<MeanKernelImpl<T>>(type);
     case compute::VAR: return std::make_unique<VarKernelImpl<T>>();
+    case compute::STDDEV:return std::make_unique<VarKernelImpl<T, true>>();
     case compute::NUNIQUE:break;
     case compute::QUANTILE:break;
-    case compute::STDDEV:return std::make_unique<VarKernelImpl<T, true>>();
   }
   return nullptr;
 }
@@ -512,42 +526,30 @@ std::unique_ptr<MapReduceKernel> MakeMapReduceKernel(const std::shared_ptr<arrow
   switch (type->id()) {
     case arrow::Type::NA:break;
     case arrow::Type::BOOL:break;
-    case arrow::Type::UINT8: return MakeMapReduceKernelImpl<arrow::UInt8Type>(reduce_op);
-    case arrow::Type::INT8:return MakeMapReduceKernelImpl<arrow::Int8Type>(reduce_op);
-    case arrow::Type::UINT16:return MakeMapReduceKernelImpl<arrow::UInt16Type>(reduce_op);
-    case arrow::Type::INT16:return MakeMapReduceKernelImpl<arrow::Int16Type>(reduce_op);
-    case arrow::Type::UINT32:return MakeMapReduceKernelImpl<arrow::UInt32Type>(reduce_op);
-    case arrow::Type::INT32:return MakeMapReduceKernelImpl<arrow::Int32Type>(reduce_op);
-    case arrow::Type::UINT64:return MakeMapReduceKernelImpl<arrow::UInt64Type>(reduce_op);
-    case arrow::Type::INT64:return MakeMapReduceKernelImpl<arrow::Int64Type>(reduce_op);
+    case arrow::Type::UINT8: return MakeMapReduceKernelImpl<arrow::UInt8Type>(type, reduce_op);
+    case arrow::Type::INT8:return MakeMapReduceKernelImpl<arrow::Int8Type>(type, reduce_op);
+    case arrow::Type::UINT16:return MakeMapReduceKernelImpl<arrow::UInt16Type>(type, reduce_op);
+    case arrow::Type::INT16:return MakeMapReduceKernelImpl<arrow::Int16Type>(type, reduce_op);
+    case arrow::Type::UINT32:return MakeMapReduceKernelImpl<arrow::UInt32Type>(type, reduce_op);
+    case arrow::Type::INT32:return MakeMapReduceKernelImpl<arrow::Int32Type>(type, reduce_op);
+    case arrow::Type::UINT64:return MakeMapReduceKernelImpl<arrow::UInt64Type>(type, reduce_op);
+    case arrow::Type::INT64:return MakeMapReduceKernelImpl<arrow::Int64Type>(type, reduce_op);
+    case arrow::Type::FLOAT:return MakeMapReduceKernelImpl<arrow::FloatType>(type, reduce_op);;
+    case arrow::Type::DOUBLE:return MakeMapReduceKernelImpl<arrow::DoubleType>(type, reduce_op);;
+    case arrow::Type::DATE32:return MakeMapReduceKernelImpl<arrow::Date32Type>(type, reduce_op);
+    case arrow::Type::DATE64:return MakeMapReduceKernelImpl<arrow::Date64Type>(type, reduce_op);
+    case arrow::Type::TIMESTAMP:
+      return MakeMapReduceKernelImpl<arrow::TimestampType>(type,
+                                                           reduce_op);
+    case arrow::Type::TIME32:return MakeMapReduceKernelImpl<arrow::Time32Type>(type, reduce_op);
+    case arrow::Type::TIME64:return MakeMapReduceKernelImpl<arrow::Time64Type>(type, reduce_op);
     case arrow::Type::HALF_FLOAT:break;
-    case arrow::Type::FLOAT:return MakeMapReduceKernelImpl<arrow::FloatType>(reduce_op);;
-    case arrow::Type::DOUBLE:return MakeMapReduceKernelImpl<arrow::DoubleType>(reduce_op);;
     case arrow::Type::STRING:break;
-    case arrow::Type::BINARY:break;
-    case arrow::Type::FIXED_SIZE_BINARY:break;
-    case arrow::Type::DATE32:break;
-    case arrow::Type::DATE64:break;
-    case arrow::Type::TIMESTAMP:break;
-    case arrow::Type::TIME32:break;
-    case arrow::Type::TIME64:break;
-    case arrow::Type::INTERVAL_MONTHS:break;
-    case arrow::Type::INTERVAL_DAY_TIME:break;
-    case arrow::Type::DECIMAL128:break;
-    case arrow::Type::DECIMAL256:break;
-    case arrow::Type::LIST:break;
-    case arrow::Type::STRUCT:break;
-    case arrow::Type::SPARSE_UNION:break;
-    case arrow::Type::DENSE_UNION:break;
-    case arrow::Type::DICTIONARY:break;
-    case arrow::Type::MAP:break;
-    case arrow::Type::EXTENSION:break;
-    case arrow::Type::FIXED_SIZE_LIST:break;
-    case arrow::Type::DURATION:break;
     case arrow::Type::LARGE_STRING:break;
+    case arrow::Type::BINARY:break;
     case arrow::Type::LARGE_BINARY:break;
-    case arrow::Type::LARGE_LIST:break;
-    case arrow::Type::MAX_ID:break;
+    case arrow::Type::FIXED_SIZE_BINARY:break;
+    default: break;
   }
   return nullptr;
 }
@@ -615,7 +617,7 @@ Status MapToGroups(arrow::compute::ExecContext *exec_ctx,
                    int64_t *num_groups,
                    arrow::ChunkedArrayVector *out_arrays) {
   RETURN_CYLON_STATUS_IF_FAILED(mapper->Map(atable, key_cols, group_ids, group_indices,
-                                            num_groups, exec_ctx->memory_pool()));
+                                            num_groups));
   assert(*num_groups == (*group_indices)->length());
   assert(atable->num_rows() == (*group_ids)->length());
 
@@ -931,18 +933,8 @@ Status DistAggregateSingleStage(const std::shared_ptr<CylonContext> &ctx,
   return Status::OK();
 }
 
-/**
- * 1. map keys to groups in the local table
- * 2. combine locally
- * 3. shuffle combined results
- * 4. map keys to groups in the shuffled table
- * 5. reduce shuffled table locally
- * 6. finalize reduction
- */
-Status MapredHashGroupBy(const std::shared_ptr<Table> &table,
-                         const std::vector<int> &key_cols,
-                         const AggOpVector &aggs,
-                         std::shared_ptr<Table> *output,
+Status MapredHashGroupBy(const std::shared_ptr<Table> &table, const std::vector<int> &key_cols,
+                         const AggOpVector &aggs, std::shared_ptr<Table> *output,
                          const std::unique_ptr<MapToGroupKernel> &mapper) {
   const auto &ctx = table->GetContext();
   auto pool = ToArrowPool(ctx);
@@ -959,6 +951,11 @@ Status MapredHashGroupBy(const std::shared_ptr<Table> &table,
   }
 
   // distributed execution
+
+  // there are 2 types of distributed kernels.
+  // single stage - bypass local combine prior to the shuffle
+  // dual stage - local combine + shuffle + local combine
+
   // push the single_stage_reduction kernels to the end of the vector
   auto single_stage_kernels_start
       = std::partition(agg_kernels.begin(), agg_kernels.end(),
@@ -1012,10 +1009,8 @@ Status MapredHashGroupBy(const std::shared_ptr<Table> &table,
   return Table::FromArrowTable(ctx, std::move(out_table), *output);
 }
 
-Status MapredHashGroupBy(const std::shared_ptr<Table> &table,
-                         const std::vector<int> &key_cols,
-                         const AggOpIdVector &aggs,
-                         std::shared_ptr<Table> *output) {
+Status MapredHashGroupBy(const std::shared_ptr<Table> &table, const std::vector<int> &key_cols,
+                         const AggOpIdVector &aggs, std::shared_ptr<Table> *output) {
   AggOpVector op_vector;
   op_vector.reserve(aggs.size());
 

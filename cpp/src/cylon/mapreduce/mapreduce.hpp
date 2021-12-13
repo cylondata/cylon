@@ -15,19 +15,33 @@ namespace cylon {
 namespace mapred {
 
 struct MapToGroupKernel {
+ public:
+  explicit MapToGroupKernel(arrow::MemoryPool *pool = arrow::default_memory_pool()) : pool_(pool) {}
+
   virtual ~MapToGroupKernel() = default;
+
+  /**
+   * Map each row to a unique group id in the range [0, local_num_groups). This is a local
+   * operation.
+   * @param arrays
+   * @param local_group_ids unique group id (length = num rows)
+   * @param local_group_indices index of each unique group id (length = local_num_groups)
+   * @param local_num_groups number of unique (local) groups
+   * @return
+   */
   virtual Status Map(const arrow::ArrayVector &arrays,
                      std::shared_ptr<arrow::Array> *local_group_ids,
                      std::shared_ptr<arrow::Array> *local_group_indices,
-                     int64_t *local_num_groups,
-                     arrow::MemoryPool *pool) const;
+                     int64_t *local_num_groups) const;
 
   Status Map(const std::shared_ptr<arrow::Table> &table,
              const std::vector<int> &key_cols,
              std::shared_ptr<arrow::Array> *local_group_ids,
              std::shared_ptr<arrow::Array> *local_group_indices,
-             int64_t *local_num_groups,
-             arrow::MemoryPool *pool = arrow::default_memory_pool()) const;
+             int64_t *local_num_groups) const;
+
+ private:
+  arrow::MemoryPool *pool_;
 };
 
 /**
@@ -53,20 +67,47 @@ struct MapToGroupKernel {
  *  3. Finalize: Finalize the intermediate arrays
  */
 struct MapReduceKernel {
+ public:
   virtual ~MapReduceKernel() = default;
 
   virtual void Init(arrow::MemoryPool *pool, compute::KernelOptions *options) = 0;
 
+  /**
+   * Combine `value_col` array locally based on the group_id, and push intermediate results to
+   * `combined_results` array vector.
+   * @param value_col
+   * @param local_group_ids
+   * @param local_num_groups
+   * @param combined_results
+   * @return
+   */
   virtual Status CombineLocally(const std::shared_ptr<arrow::Array> &value_col,
-                                const std::shared_ptr<arrow::Array> &local_group_ids, int64_t local_num_groups,
+                                const std::shared_ptr<arrow::Array> &local_group_ids,
+                                int64_t local_num_groups,
                                 arrow::ArrayVector *combined_results) const = 0;
 
+  /**
+   * Reduce `combined_results` vector to its finalized array vector based on the new group_ids
+   * (after being shuffled).
+   * @param combined_results
+   * @param local_group_ids
+   * @param local_group_indices
+   * @param local_num_groups
+   * @param reduced_results
+   * @return
+   */
   virtual Status ReduceShuffledResults(const arrow::ArrayVector &combined_results,
                                        const std::shared_ptr<arrow::Array> &local_group_ids,
                                        const std::shared_ptr<arrow::Array> &local_group_indices,
                                        int64_t local_num_groups,
                                        arrow::ArrayVector *reduced_results) const = 0;
 
+  /**
+   * Create the final output array
+   * @param combined_results
+   * @param output
+   * @return
+   */
   virtual Status Finalize(const arrow::ArrayVector &combined_results,
                           std::shared_ptr<arrow::Array> *output) const = 0;
 
@@ -88,22 +129,15 @@ std::unique_ptr<MapReduceKernel> MakeMapReduceKernel(const std::shared_ptr<arrow
                                                      compute::AggregationOpId reduce_op);
 
 /**
- * 1. map keys to groups in the local table
- * 2. combine locally
- * 3. shuffle combined results
- * 4. map keys to groups in the shuffled table
- * 5. reduce shuffled table locally
- * 6. finalize reduction
+ * Distributed hash groupby using mapreduce approach
  */
 using AggOpVector = std::vector<std::pair<int, std::shared_ptr<compute::AggregationOp>>>;
-
 Status MapredHashGroupBy(const std::shared_ptr<Table> &table, const std::vector<int> &key_cols,
                          const AggOpVector &aggs, std::shared_ptr<Table> *output,
                          const std::unique_ptr<MapToGroupKernel> &mapper
                          = std::make_unique<MapToGroupKernel>());
 
 using AggOpIdVector = std::vector<std::pair<int, compute::AggregationOpId>>;
-
 Status MapredHashGroupBy(const std::shared_ptr<Table> &table, const std::vector<int> &key_cols,
                          const AggOpIdVector &aggs, std::shared_ptr<Table> *output);
 
