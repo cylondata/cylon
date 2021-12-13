@@ -203,10 +203,8 @@ cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer>
 
   if (gather_root == ctx->GetRank()) {
     buffers.resize(ctx->GetWorldSize());
-    int32_t buf_start = 0;
     for (int i = 0; i < ctx->GetWorldSize(); ++i) {
-      buffers[i] = arrow::SliceBuffer(all_buf, buf_start, all_buffer_sizes[i]);
-      buf_start += all_buffer_sizes[i];
+      buffers[i] = arrow::SliceBuffer(all_buf, disps[i], all_buffer_sizes[i]);
     }
   }
 
@@ -316,10 +314,8 @@ cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buff
   }
 
   buffers.resize(ctx->GetWorldSize());
-  int32_t buf_start = 0;
   for (int i = 0; i < ctx->GetWorldSize(); ++i) {
-    buffers[i] = arrow::SliceBuffer(all_buf, buf_start, all_buffer_sizes[i]);
-    buf_start += all_buffer_sizes[i];
+    buffers[i] = arrow::SliceBuffer(all_buf, disps[i], all_buffer_sizes[i]);
   }
 
   return cylon::Status::OK();
