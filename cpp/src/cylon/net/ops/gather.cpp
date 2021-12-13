@@ -177,17 +177,15 @@ cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer>
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Gather failed when receiving buffer sizes!");
   }
 
-  std::shared_ptr<arrow::Buffer> all_buf = std::move(arrow::AllocateBuffer(0).MoveValueUnsafe());
+  CYLON_ASSIGN_OR_RAISE(std::shared_ptr<arrow::Buffer> all_buf, arrow::AllocateBuffer(0));
   std::vector<int32_t> disps;
 
   if (AmIRoot(gather_root, ctx)) {
     auto total_size = std::accumulate(all_buffer_sizes.begin(), all_buffer_sizes.end(), 0);
-    all_buf = std::move(arrow::AllocateBuffer(total_size).MoveValueUnsafe());
+    CYLON_ASSIGN_OR_RAISE(all_buf, arrow::AllocateBuffer(total_size));
 
     disps.resize(ctx->GetWorldSize(), 0);
-    for (int i = 1; i < all_buffer_sizes.size(); ++i) {
-      disps[i] = disps[i-1] + all_buffer_sizes[i-1];
-    }
+    std::partial_sum(all_buffer_sizes.begin(), all_buffer_sizes.end() - 1, disps.begin() + 1);
   }
 
   status = MPI_Gatherv(buf->data(),
@@ -300,12 +298,10 @@ cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buff
   }
 
   auto total_size = std::accumulate(all_buffer_sizes.begin(), all_buffer_sizes.end(), 0);
-  std::shared_ptr<arrow::Buffer> all_buf = std::move(arrow::AllocateBuffer(total_size).MoveValueUnsafe());
+  CYLON_ASSIGN_OR_RAISE(std::shared_ptr<arrow::Buffer> all_buf, arrow::AllocateBuffer(total_size));
 
   std::vector<int32_t> disps(ctx->GetWorldSize(), 0);
-  for (int i = 1; i < all_buffer_sizes.size(); ++i) {
-    disps[i] = disps[i-1] + all_buffer_sizes[i-1];
-  }
+  std::partial_sum(all_buffer_sizes.begin(), all_buffer_sizes.end() - 1, disps.begin() + 1);
 
   status = MPI_Allgatherv(buf->data(),
                           size,

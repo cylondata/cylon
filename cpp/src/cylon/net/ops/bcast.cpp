@@ -124,7 +124,7 @@ cylon::Status cylon::mpi::BcastArrowBuffer(std::shared_ptr<arrow::Buffer> &buf,
 
   // allocate arrow Buffers if not the root
   if (!AmIRoot(bcast_root, ctx)) {
-    buf = std::move(arrow::AllocateBuffer(buf_size).MoveValueUnsafe());
+    CYLON_ASSIGN_OR_RAISE(buf, arrow::AllocateBuffer(buf_size));
   }
 
   status = MPI_Bcast((void *) buf->data(), buf_size, MPI_UINT8_T, bcast_root, MPI_COMM_WORLD);
