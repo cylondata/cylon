@@ -99,8 +99,7 @@ int create_int64_arrow_array(arrow::Int64Builder &builder,
  */
 
 
-int main(int argc, char *argv[]) {
-
+int main() {
   arrow_indexer_test_1();
   arrow_indexer_test_2();
   arrow_indexer_test_3();
@@ -1433,8 +1432,11 @@ int arrow_filter_example() {
 
   std::shared_ptr <cylon::Table> input, output;
   int64_t capacity = 10;
+  CYLON_UNUSED(capacity);
   int64_t search_capacity = 4;
+  CYLON_UNUSED(search_capacity);
   int64_t offset = 3;
+  CYLON_UNUSED(offset);
   std::shared_ptr <cylon::Table> output_tb;
   std::shared_ptr <arrow::Int64Array> search_index_array, data_array, other_data;
   auto pool = cylon::ToArrowPool(ctx);

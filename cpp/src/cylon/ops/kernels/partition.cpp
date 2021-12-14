@@ -44,6 +44,8 @@ cylon::kernel::StreamingHashPartitionKernel::StreamingHashPartitionKernel(const 
 }
 
 cylon::Status cylon::kernel::StreamingHashPartitionKernel::Process(int tag, const std::shared_ptr<Table> &table) {
+  CYLON_UNUSED(tag);
+
   const std::shared_ptr<arrow::Table> &arrow_table = table->get_table();
 
   if (arrow_table->column(0)->num_chunks() > 1) {

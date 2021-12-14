@@ -26,6 +26,8 @@ cylon::PartitionOp::PartitionOp(const std::shared_ptr<cylon::CylonContext> &ctx,
     : Op(ctx, schema, id, callback), config(config) {}
 
 bool cylon::PartitionOp::Execute(int tag, std::shared_ptr<Table> &table) {
+  CYLON_UNUSED(tag);
+
   if (!started_time) {
     start = std::chrono::high_resolution_clock::now();
     started_time = true;

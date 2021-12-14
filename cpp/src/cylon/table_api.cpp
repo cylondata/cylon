@@ -117,6 +117,7 @@ Status DistributedJoinTables(std::shared_ptr<CylonContext> &ctx,
                              const std::string &table_right,
                              cylon::join::config::JoinConfig join_config,
                              const std::string &dest_id) {
+  CYLON_UNUSED(ctx);
   // extract the tables out
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
@@ -135,6 +136,8 @@ Status JoinTables(std::shared_ptr<CylonContext> &ctx,
                   const std::string &table_right,
                   cylon::join::config::JoinConfig join_config,
                   const std::string &dest_id) {
+  CYLON_UNUSED(ctx);
+
   auto left = GetTable(table_left);
   auto right = GetTable(table_right);
   std::string uuid = cylon::util::generate_uuid_v4();
@@ -177,6 +180,8 @@ int64_t RowCount(const std::string &id) {
 Status CMerge(std::shared_ptr<cylon::CylonContext> &ctx,
               std::vector<std::string> table_ids,
               const std::string &merged_tab) {
+  CYLON_UNUSED(ctx);
+
   std::vector<std::shared_ptr<cylon::Table>> tables(table_ids.size());
   for (auto it = table_ids.begin(); it < table_ids.end(); it++) {
     tables.push_back(GetTable(*it));
@@ -193,6 +198,8 @@ Status SortTable(std::shared_ptr<cylon::CylonContext> &ctx,
                  const std::string &id,
                  const std::string &sortedTableId,
                  int columnIndex) {
+  CYLON_UNUSED(ctx);
+
   auto table = GetTable(id);
   if (table == NULLPTR) {
     LOG(FATAL) << "Failed to retrieve table";
@@ -212,6 +219,8 @@ Status HashPartition(std::shared_ptr<cylon::CylonContext> &ctx,
                      const std::vector<int> &hash_columns,
                      int no_of_partitions,
                      std::unordered_map<int, std::string> *out) { // todo change this to use a vector
+  CYLON_UNUSED(ctx);
+  
   std::shared_ptr<cylon::Table> left_tab = GetTable(id);
   std::unordered_map<int, std::shared_ptr<cylon::Table>> tables;
   Status status = HashPartition(left_tab, hash_columns, no_of_partitions, &tables);
@@ -246,6 +255,8 @@ Status Union(std::shared_ptr<cylon::CylonContext> &ctx,
              const std::string &table_left,
              const std::string &table_right,
              const std::string &dest_id) {
+  CYLON_UNUSED(ctx);
+
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out;
@@ -260,6 +271,8 @@ Status Subtract(std::shared_ptr<cylon::CylonContext> &ctx,
                 const std::string &table_left,
                 const std::string &table_right,
                 const std::string &dest_id) {
+  CYLON_UNUSED(ctx);
+
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out;
@@ -274,6 +287,8 @@ Status Intersect(std::shared_ptr<cylon::CylonContext> &ctx,
                  const std::string &table_left,
                  const std::string &table_right,
                  const std::string &dest_id) {
+  CYLON_UNUSED(ctx);
+
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out;
@@ -288,6 +303,8 @@ Status DistributedUnion(std::shared_ptr<cylon::CylonContext> &ctx,
                         const std::string &table_left,
                         const std::string &table_right,
                         const std::string &dest_id) {
+  CYLON_UNUSED(ctx);
+
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out;
@@ -302,6 +319,8 @@ Status DistributedSubtract(std::shared_ptr<cylon::CylonContext> &ctx,
                            const std::string &table_left,
                            const std::string &table_right,
                            const std::string &dest_id) {
+  CYLON_UNUSED(ctx);
+
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out;
@@ -316,6 +335,8 @@ Status DistributedIntersect(std::shared_ptr<cylon::CylonContext> &ctx,
                             const std::string &table_left,
                             const std::string &table_right,
                             const std::string &dest_id) {
+  CYLON_UNUSED(ctx);
+
   auto ltab = GetTable(table_left);
   auto rtab = GetTable(table_right);
   std::shared_ptr<cylon::Table> out_table;
@@ -330,6 +351,8 @@ Status Select(std::shared_ptr<cylon::CylonContext> &ctx,
               const std::string &id,
               const std::function<bool(cylon::Row)> &selector,
               const std::string &dest_id) {
+  CYLON_UNUSED(ctx);
+
   auto src_table = GetTable(id);
   std::shared_ptr<cylon::Table> out_table;
   cylon::Status status = Select(src_table, selector, out_table);
