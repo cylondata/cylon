@@ -26,6 +26,7 @@
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/util/uuid.hpp>
 #include <cylon/table.hpp>
+#include <cylon/net/mpi/mpi_operations.hpp>
 
 namespace cylon {
 // todo make this un ordered

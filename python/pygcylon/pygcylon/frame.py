@@ -22,6 +22,7 @@ from pygcylon.net.sorting import distributed_sort
 from pycylon.frame import CylonEnv
 from pygcylon.groupby import GroupByDataFrame
 import pygcylon.comms as comms
+import pygcylon.io
 
 
 class DataFrame(object):
@@ -1559,6 +1560,111 @@ class DataFrame(object):
 
         tail_n_cdf = self._cdf.head(tail_row_counts[env.rank])
         return DataFrame.from_cudf(tail_n_cdf)
+
+    def to_csv(self,
+               dir_path: str,
+               env: CylonEnv,
+               name_function: callable = None,
+               **kwargs) -> str:
+        """
+        Write DataFrames to CSV files
+
+        Each worker writes a single CSV file.
+        All files are written to the given directory.
+        If the name_function is not provided:
+          each worker creates the output file with the pattern: "part_<rank>.csv"
+        If the name_function parameter is given:
+          this function is used to generate the output filename by each worker.
+          this function must take an int as the argument and return a string as the filename.
+          each worker calls this function with its worker rank.
+
+        Parameters
+        ----------
+        dir_path: Output directory for CSV files.
+        env: CylonEnv object for this DataFrame
+        name_function: a function to create the filename for that worker
+        kwargs: the parameters that will be passed on to cudf.DataFrame.to_csv function
+
+        Returns
+        -------
+        Filename written
+        """
+        return pygcylon.io.write_csv(self,
+                                     dir_path=dir_path,
+                                     env=env,
+                                     name_function=name_function,
+                                     **kwargs)
+
+    def to_json(self,
+                dir_path: str,
+                env: CylonEnv,
+                name_function: callable = None,
+                **kwargs) -> str:
+        """
+        Write DataFrames to JSON files
+
+        Each worker writes a single JSON file.
+        All files are written to the given directory.
+        If the name_function is not provided:
+          each worker creates the output file with the pattern: "part_<rank>.json"
+        If the name_function parameter is given:
+          this function is used to generate the output filename by each worker.
+          this function must take an int as the argument and return a string as the filename.
+          each worker calls this function with its worker rank.
+
+        Parameters
+        ----------
+        dir_path: Output directory for JSON files.
+        env: CylonEnv object for this DataFrame
+        name_function: a function to create the filename for that worker
+        kwargs: the parameters that will be passed on to cudf.DataFrame.to_json function
+
+        Returns
+        -------
+        Filename written
+        """
+        return pygcylon.io.write_json(self,
+                                      dir_path=dir_path,
+                                      env=env,
+                                      name_function=name_function,
+                                      **kwargs)
+
+    def to_parquet(self,
+                   dir_path: str,
+                   env: CylonEnv,
+                   name_function: callable = None,
+                   write_metadata_file: bool = True,
+                   **kwargs) -> str:
+        """
+        Write DataFrames to Parquet files
+
+        Each worker writes a single parquet file.
+        All files are written to the given directory.
+        If the name_function is not provided:
+          each worker creates the output file with the pattern: "part_<rank>.parquet"
+        If the name_function parameter is given:
+          this function is used to generate the output filename by each worker.
+          this function must take an int as the argument and return a string as the filename.
+          each worker calls this function with its worker rank.
+
+        Parameters
+        ----------
+        dir_path: Output directory for Parquet files.
+        env: CylonEnv object for this DataFrame
+        name_function: a function to create the filename for that worker
+        write_metadata_file: whether to write the metadata to _metadata file
+        kwargs: the parameters that will be passed on to cudf.DataFrame.to_parquet function
+
+        Returns
+        -------
+        Filename written
+        """
+        return pygcylon.io.write_parquet(self,
+                                         dir_path=dir_path,
+                                         env=env,
+                                         name_function=name_function,
+                                         write_metadata_file=write_metadata_file,
+                                         **kwargs)
 
 
 def concat(

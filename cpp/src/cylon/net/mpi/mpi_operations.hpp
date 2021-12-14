@@ -16,6 +16,7 @@
 #define CYLON_CPP_SRC_CYLON_NET_MPI_MPI_OPERATIONS_HPP_
 
 #include <memory>
+#include <arrow/buffer.h>
 #include <cylon/net/serialize.hpp>
 #include <cylon/ctx/cylon_context.hpp>
 #include <cylon/net/comm_operations.hpp>
@@ -67,6 +68,21 @@ cylon::Status Gather(const std::shared_ptr<cylon::TableSerializer>& serializer,
 );
 
 /**
+ * Perform gather on an Arrow Buffer
+ * all received buffers are put into "buffers"
+ * @param buf buffer to send
+ * @param gather_root root of the gather operation
+ * @param ctx CylonContext object
+ * @buffers arrow buffers received at the gather root.
+ * @return
+ */
+cylon::Status GatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
+                                int gather_root,
+                                const std::shared_ptr<cylon::CylonContext> &ctx,
+                                std::vector<std::shared_ptr<arrow::Buffer>> &buffers
+);
+
+/**
  * Perform MPI AllGather on a distributed table
  * Assuming all workers have a table,
  * all tables will be replicated on all workers as a single table
@@ -87,6 +103,19 @@ cylon::Status AllGather(const std::shared_ptr<cylon::TableSerializer> &serialize
 );
 
 /**
+ * Perform allgather on an Arrow Buffer
+ * all received buffers are put into "buffers"
+ * @param buf buffer to send
+ * @param ctx CylonContext object
+ * @param buffers received buffers
+ * @return
+ */
+cylon::Status AllGatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
+                                   const std::shared_ptr<cylon::CylonContext> &ctx,
+                                   std::vector<std::shared_ptr<arrow::Buffer>> &buffers
+);
+
+/**
  * Perform MPI broadcast on a table
  * @param serializer TableSerializer to serialize a table (significant at broadcast root only)
  * @param bcast_root MPI rank of the broadcaster worker, (significant at all workers)
@@ -102,6 +131,18 @@ cylon::Status Bcast(const std::shared_ptr<cylon::TableSerializer>& serializer,
                     std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
                     std::vector<int32_t> &data_types,
                     const std::shared_ptr<cylon::CylonContext>& ctx
+);
+
+/**
+ * Perform broadcast on an Arrow Buffer
+ * @param buf buffer to broadcast if it is the root and the received buffer otherwise
+ * @param bcast_root MPI rank of the broadcaster worker, (significant at all workers)
+ * @param ctx CylonContext object
+ * @return
+ */
+cylon::Status BcastArrowBuffer(std::shared_ptr<arrow::Buffer> &buf,
+                               int bcast_root,
+                               const std::shared_ptr<cylon::CylonContext> &ctx
 );
 
 /**
