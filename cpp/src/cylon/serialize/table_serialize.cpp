@@ -211,12 +211,14 @@ std::shared_ptr<arrow::ArrayData> MakeArrayDataBinary(std::shared_ptr<arrow::Dat
                                                       std::shared_ptr<arrow::Buffer> valid_buf,
                                                       std::shared_ptr<arrow::Buffer> offset_buf,
                                                       std::shared_ptr<arrow::Buffer> data_buf) {
-  auto *offsets = reinterpret_cast<OffsetType *>(offset_buf->mutable_data());
-  OffsetType start_offset = offsets[0];
+  if (len) { // only do this for non-empty arrays
+    auto *offsets = reinterpret_cast<OffsetType *>(offset_buf->mutable_data());
+    OffsetType start_offset = offsets[0];
 
-  if (start_offset) { // if there's a start offset, remove it
-    for (int64_t i = 0; i < len + 1; i++) {
-      offsets[i] -= start_offset;
+    if (start_offset) { // if there's a start offset, remove it
+      for (int64_t i = 0; i < len + 1; i++) {
+        offsets[i] -= start_offset;
+      }
     }
   }
   return arrow::ArrayData::Make(std::move(type), len, {std::move(valid_buf), std::move(offset_buf),

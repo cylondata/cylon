@@ -28,7 +28,7 @@ Status ArrowAllocator::Allocate(int64_t length, std::shared_ptr<Buffer> *buffer)
 }
 
 int64_t ArrowBuffer::GetLength() const {
-  return 0;
+  return buf->size();
 }
 
 uint8_t *ArrowBuffer::GetByteBuffer() {

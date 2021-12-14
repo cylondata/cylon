@@ -41,7 +41,7 @@ class ArrowBuffer : public Buffer {
  */
 class ArrowAllocator : public Allocator {
  public:
-  explicit ArrowAllocator(arrow::MemoryPool *pool);
+  explicit ArrowAllocator(arrow::MemoryPool *pool = arrow::default_memory_pool());
   ~ArrowAllocator() override;
 
   Status Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) override;
