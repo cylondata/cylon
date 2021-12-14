@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #include <algorithm>
+#include <arrow/result.h>
 #include <cylon/net/mpi/mpi_operations.hpp>
 #include <cylon/util/macros.hpp>
 
@@ -40,7 +41,7 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
 
   status = MPI_Bcast(buffer_sizes.data(), num_buffers, MPI_INT32_T, bcast_root, MPI_COMM_WORLD);
   if (status != MPI_SUCCESS) {
-    return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for size araay broadcast!");
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for size array broadcast!");
   }
 
   // broadcast data types
@@ -101,6 +102,34 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
   status = MPI_Waitall(num_buffers, requests.data(), statuses.data());
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Ibast failed when waiting!");
+  }
+
+  return cylon::Status::OK();
+}
+
+cylon::Status cylon::mpi::BcastArrowBuffer(std::shared_ptr<arrow::Buffer> &buf,
+                                           int bcast_root,
+                                           const std::shared_ptr<cylon::CylonContext> &ctx) {
+
+  // first broadcast the buffer size
+  int32_t buf_size = 0;
+  if (AmIRoot(bcast_root, ctx)) {
+    buf_size = static_cast<int32_t>(buf->size());
+  }
+
+  int status = MPI_Bcast(&buf_size, 1, MPI_INT32_T, bcast_root, MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for buf_size broadcast!");
+  }
+
+  // allocate arrow Buffers if not the root
+  if (!AmIRoot(bcast_root, ctx)) {
+    CYLON_ASSIGN_OR_RAISE(buf, arrow::AllocateBuffer(buf_size));
+  }
+
+  status = MPI_Bcast((void *) buf->data(), buf_size, MPI_UINT8_T, bcast_root, MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for arrow::Buffer broadcast!");
   }
 
   return cylon::Status::OK();
