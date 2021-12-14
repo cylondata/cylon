@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <arrow/buffer.h>
 #include <cylon/status.hpp>
 #include <cylon/join/join_config.hpp>
 #include <cylon/io/csv_read_config.hpp>

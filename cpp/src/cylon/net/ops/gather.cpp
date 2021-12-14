@@ -13,9 +13,10 @@
  */
 
 #include <mpi.h>
+#include <arrow/result.h>
 #include <cylon/net/mpi/mpi_operations.hpp>
 #include <cylon/util/macros.hpp>
-
+#include <numeric>
 
 std::vector<int32_t> totalBufferSizes(const std::vector<int32_t> &all_buffer_sizes,
                                       int num_buffers,
@@ -153,6 +154,63 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
   return cylon::Status::OK();
 }
 
+cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
+                                            int gather_root,
+                                            const std::shared_ptr<cylon::CylonContext> &ctx,
+                                            std::vector<std::shared_ptr<arrow::Buffer>> &buffers) {
+
+  std::vector<int32_t> all_buffer_sizes;
+  if (AmIRoot(gather_root, ctx)) {
+    all_buffer_sizes.resize(ctx->GetWorldSize(), 0);
+  }
+
+  int32_t size = static_cast<int32_t>(buf->size());
+  int status = MPI_Gather(&size,
+                          1,
+                          MPI_INT32_T,
+                          all_buffer_sizes.data(),
+                          1,
+                          MPI_INT32_T,
+                          gather_root,
+                          MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Gather failed when receiving buffer sizes!");
+  }
+
+  CYLON_ASSIGN_OR_RAISE(std::shared_ptr<arrow::Buffer> all_buf, arrow::AllocateBuffer(0));
+  std::vector<int32_t> disps;
+
+  if (AmIRoot(gather_root, ctx)) {
+    auto total_size = std::accumulate(all_buffer_sizes.begin(), all_buffer_sizes.end(), 0);
+    CYLON_ASSIGN_OR_RAISE(all_buf, arrow::AllocateBuffer(total_size));
+
+    disps.resize(ctx->GetWorldSize(), 0);
+    std::partial_sum(all_buffer_sizes.begin(), all_buffer_sizes.end() - 1, disps.begin() + 1);
+  }
+
+  status = MPI_Gatherv(buf->data(),
+                       size,
+                       MPI_UINT8_T,
+                       (void *)all_buf->data(),
+                       all_buffer_sizes.data(),
+                       disps.data(),
+                       MPI_UINT8_T,
+                       gather_root,
+                       MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Gatherv failed when receiving buffers!");
+  }
+
+  if (gather_root == ctx->GetRank()) {
+    buffers.resize(ctx->GetWorldSize());
+    for (int i = 0; i < ctx->GetWorldSize(); ++i) {
+      buffers[i] = arrow::SliceBuffer(all_buf, disps[i], all_buffer_sizes[i]);
+    }
+  }
+
+  return cylon::Status::OK();
+}
+
 cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer> &serializer,
                                     const std::shared_ptr<cylon::Allocator> &allocator,
                                     std::vector<int32_t> &all_buffer_sizes,
@@ -219,4 +277,46 @@ cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer
   return cylon::Status::OK();
 }
 
+cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
+                                               const std::shared_ptr<cylon::CylonContext> &ctx,
+                                               std::vector<std::shared_ptr<arrow::Buffer>> &buffers) {
 
+  std::vector<int32_t> all_buffer_sizes(ctx->GetWorldSize(), 0);
+  int32_t size = static_cast<int32_t>(buf->size());
+
+  int status = MPI_Allgather(&size,
+                             1,
+                             MPI_INT32_T,
+                             all_buffer_sizes.data(),
+                             1,
+                             MPI_INT32_T,
+                             MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Allgather failed when receiving buffer sizes!");
+  }
+
+  auto total_size = std::accumulate(all_buffer_sizes.begin(), all_buffer_sizes.end(), 0);
+  CYLON_ASSIGN_OR_RAISE(std::shared_ptr<arrow::Buffer> all_buf, arrow::AllocateBuffer(total_size));
+
+  std::vector<int32_t> disps(ctx->GetWorldSize(), 0);
+  std::partial_sum(all_buffer_sizes.begin(), all_buffer_sizes.end() - 1, disps.begin() + 1);
+
+  status = MPI_Allgatherv(buf->data(),
+                          size,
+                          MPI_UINT8_T,
+                          (void *)all_buf->data(),
+                          all_buffer_sizes.data(),
+                          disps.data(),
+                          MPI_UINT8_T,
+                          MPI_COMM_WORLD);
+  if (status != MPI_SUCCESS) {
+    return cylon::Status(cylon::Code::ExecutionError, "MPI_Allgatherv failed when receiving buffers!");
+  }
+
+  buffers.resize(ctx->GetWorldSize());
+  for (int i = 0; i < ctx->GetWorldSize(); ++i) {
+    buffers[i] = arrow::SliceBuffer(all_buf, disps[i], all_buffer_sizes[i]);
+  }
+
+  return cylon::Status::OK();
+}
