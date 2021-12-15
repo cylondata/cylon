@@ -57,6 +57,7 @@ Status JoinOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
                          const cylon::join::config::JoinConfig &join_config,
                          std::shared_ptr <cylon::Table> &out) {
   const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr <cylon::Table> &table) {
+    CYLON_UNUSED(tag);
     out = table;
   };
 
@@ -80,6 +81,7 @@ Status UnionOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
                       const std::shared_ptr <cylon::Table> &right,
                           std::shared_ptr <cylon::Table> &out) {
   const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr <cylon::Table> &table) {
+    CYLON_UNUSED(tag);
     out = table;
   };
 
@@ -109,6 +111,7 @@ Status SubtractOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
                          const std::shared_ptr <cylon::Table> &right,
                              std::shared_ptr <cylon::Table> &out) {
   const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr <cylon::Table> &table) {
+    CYLON_UNUSED(tag);
     out = table;
   };
 
@@ -138,6 +141,7 @@ Status IntersectOperation(const std::shared_ptr <cylon::CylonContext> &ctx,
                           const std::shared_ptr <cylon::Table> &right,
                               std::shared_ptr <cylon::Table> &out) {
   const cylon::ResultsCallback &callback = [&](int tag, const std::shared_ptr <cylon::Table> &table) {
+    CYLON_UNUSED(tag);
     out = table;
   };
 

@@ -27,7 +27,7 @@ static void verify_test(std::vector<std::vector<std::string>>& expected, std::sh
     while(ss>>s) {
         REQUIRE(s == expected[RANK][i++]);
     }
-    REQUIRE(i == expected[RANK].size());
+    REQUIRE((size_t) i == expected[RANK].size());
 }
 
 TEST_CASE("Repartition one process", "[repartition]") {
@@ -234,7 +234,7 @@ TEST_CASE("Repartition with custom order", "[repartition]") {
         Repartition(table1, rows_per_partition, receive_build_rank_order, &output);
 
         int mp[4];
-        for(int i = 0; i < receive_build_rank_order.size(); i++) {
+        for(long unsigned int i = 0; i < receive_build_rank_order.size(); i++) {
             mp[receive_build_rank_order[i]] = i;
         }
 

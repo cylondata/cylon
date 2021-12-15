@@ -345,6 +345,8 @@ Status ArrowRangeIndexKernel::BuildIndex(arrow::MemoryPool *pool,
 										 std::shared_ptr<arrow::Table> &input_table,
 										 const int index_column,
 										 std::shared_ptr<BaseArrowIndex> &base_arrow_index) {
+  CYLON_UNUSED(index_column);
+                       
   base_arrow_index = std::make_shared<ArrowRangeIndex>(0, input_table->num_rows(), 1, pool);
   return cylon::Status::OK();
 }

@@ -23,8 +23,10 @@ cylon::AllToAllOp::AllToAllOp(const std::shared_ptr<CylonContext> &ctx,
                               const ResultsCallback &callback,
                               const AllToAllOpConfig &config)
     : Op(ctx, schema, id, callback) {
+  CYLON_UNUSED(config);
   std::shared_ptr<CylonContext> ctx_cp = ctx;
   ArrowCallback all_to_all_listener = [&](int source, const std::shared_ptr<arrow::Table> &table, int tag) {
+    CYLON_UNUSED(source);
     auto tab = std::make_shared<cylon::Table>(this->ctx_, table);
     this->InsertToAllChildren(tag, tab);
     return true;

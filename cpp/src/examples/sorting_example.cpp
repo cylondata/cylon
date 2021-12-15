@@ -29,6 +29,8 @@ int main(int argc, char *argv[]) {
   }
 
   auto start_start = std::chrono::steady_clock::now();
+  CYLON_UNUSED(start_start);
+
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
