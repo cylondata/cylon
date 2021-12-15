@@ -57,6 +57,8 @@ int main(int argc, char *argv[]) {
     ops = false;
   }
 
+  CYLON_UNUSED(ops);
+
   if (mem == "m") {
     if (argc == 6) {
       if (!strcmp(argv[5], "hash")) {

@@ -52,9 +52,9 @@ std::pair<T, T> FirstTarget(const std::vector<T> &target_row_counts, T my_row_st
   T first_target_rank = -1;
   // global order of the first row of the first target worker
   T first_target_start_row = 0;
-  for (auto i = 0; i < target_row_counts.size(); ++i) {
+  for (size_t i = 0; i < target_row_counts.size(); ++i) {
     if (first_target_start_row + target_row_counts[i] > my_row_start) {
-      first_target_rank = i;
+      first_target_rank =static_cast<T>( i);
       break;
     } else {
       first_target_start_row += target_row_counts[i];
@@ -115,7 +115,7 @@ std::vector<T> RowIndicesToAll(int32_t my_rank,
 
   ++next_target;
   // fill the remaining target values with the last row index, if any
-  if (next_target < to_all.size()) {
+  if ((size_t)next_target < to_all.size()) {
     std::fill(to_all.begin() + next_target, to_all.end(), current_row_counts[my_rank]);
   }
 

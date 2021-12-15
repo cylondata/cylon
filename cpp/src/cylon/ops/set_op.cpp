@@ -25,6 +25,7 @@ SetOp::SetOp(const std::shared_ptr<CylonContext> &ctx,
                  const SetOpConfig &config,
                  cylon::kernel::SetOpType type)
     : Op(ctx, schema, id, callback) {
+  CYLON_UNUSED(config);
   set_kernel = cylon::kernel::CreateSetOp(ctx, schema, 0, type);
 }
 

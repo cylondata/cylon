@@ -77,6 +77,8 @@ static inline Status all_to_all_arrow_tables(const std::shared_ptr<CylonContext>
   // define call back to catch the receiving tables
   ArrowCallback arrow_callback =
       [&received_tables](int source, const std::shared_ptr<arrow::Table> &table_, int reference) {
+        CYLON_UNUSED(source);
+        CYLON_UNUSED(reference);
         received_tables.push_back(table_);
         return true;
       };
@@ -150,6 +152,7 @@ static inline Status all_to_all_arrow_tables_preserve_order(const std::shared_pt
   // define call back to catch the receiving tables
   ArrowCallback arrow_callback =
       [&received_tables_mp](int source, const std::shared_ptr<arrow::Table> &table_, int reference) {
+        CYLON_UNUSED(reference);
         received_tables_mp[source] = table_;
         return true;
       };
@@ -1182,7 +1185,7 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
     return Status::OK();
   }
 
-  if(rows_per_partition.size() != world_size) {
+  if(rows_per_partition.size() != (size_t) world_size) {
     return Status(
     cylon::Code::ValueError,
     "rows_per_partition size does not align with world size. Received " +

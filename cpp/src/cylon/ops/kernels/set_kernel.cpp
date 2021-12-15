@@ -66,6 +66,7 @@ public:
                               const std::shared_ptr<arrow::Schema> &schema,
                               int64_t expected_rows) : SetOp(),
       schema(schema), ctx(ctx) {
+    CYLON_UNUSED(expected_rows);
   }
 
 private:
