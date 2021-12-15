@@ -244,16 +244,10 @@ cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer
   for (int32_t i = 0; i < num_buffers; ++i) {
     std::shared_ptr<cylon::Buffer> receive_buf;
     RETURN_CYLON_STATUS_IF_FAILED(allocator->Allocate(total_buffer_sizes[i], &receive_buf));
-    const auto &receive_counts = receiveCounts(all_buffer_sizes,
-                                               i,
-                                               num_buffers,
+    const auto &receive_counts = receiveCounts(all_buffer_sizes, i, num_buffers,
                                                ctx->GetWorldSize());
-    const auto &disp_per_buffer = displacementsPerBuffer(all_buffer_sizes,
-                                                         i,
-                                                         num_buffers,
-                                                         ctx->GetWorldSize());
-    displacements.push_back(disp_per_buffer);
-
+    auto disp_per_buffer = displacementsPerBuffer(all_buffer_sizes, i, num_buffers,
+                                                  ctx->GetWorldSize());
     status = MPI_Iallgatherv(send_buffers[i],
                              local_buffer_sizes[i],
                              MPI_UINT8_T,
@@ -266,7 +260,8 @@ cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer
     if (status != MPI_SUCCESS) {
       return cylon::Status(cylon::Code::ExecutionError, "MPI_Iallgatherv failed when receiving table data!");
     }
-    received_buffers.push_back(receive_buf);
+    displacements.push_back(std::move(disp_per_buffer));
+    received_buffers.push_back(std::move(receive_buf));
   }
 
   status = MPI_Waitall(num_buffers, requests.data(), statuses.data());

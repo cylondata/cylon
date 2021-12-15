@@ -38,14 +38,19 @@ std::shared_ptr<CylonContext> CylonContext::InitDistributed(const std::shared_pt
     auto ctx = std::make_shared<CylonContext>(true);
     ctx->communicator = std::make_shared<net::MPICommunicator>();
     ctx->communicator->Init(config);
+
+    ctx->sync_communicator_ = std::make_shared<net::MPISyncCommunicator>();
     ctx->is_distributed = true;
     return ctx;
   }
+
   #ifdef BUILD_CYLON_UCX
   else if (config->Type() == net::CommType::UCX) {
     auto ctx = std::make_shared<CylonContext>(true);
     ctx->communicator = std::make_shared<net::UCXCommunicator>();
     ctx->communicator->Init(config);
+
+    ctx->sync_communicator_ = std::make_shared<net::UCXSyncCommunicator>();
     ctx->is_distributed = true;
     return ctx;
   }
@@ -126,5 +131,9 @@ bool CylonContext::IsDistributed() const {
 }
 cylon::net::CommType CylonContext::GetCommType() {
   return is_distributed ? this->communicator->GetCommType() : net::CommType::LOCAL;
+}
+
+const std::shared_ptr<net::SyncCommunicator> &CylonContext::sync_communicator() const {
+  return sync_communicator_;
 }
 }  // namespace cylon

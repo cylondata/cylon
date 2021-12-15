@@ -31,8 +31,8 @@ class CylonContext {
  private:
   std::unordered_map<std::string, std::string> config{};
   bool is_distributed;
-  //cylon::net::Communicator *communicator{};
   std::shared_ptr<cylon::net::Communicator> communicator{};
+  std::shared_ptr<cylon::net::SyncCommunicator> sync_communicator_{};
   cylon::MemoryPool *memory_pool{};
   int32_t sequence_no = 0;
 
@@ -81,6 +81,8 @@ class CylonContext {
    * @return <cylon::net::Communicator>
    */
   std::shared_ptr<net::Communicator> GetCommunicator() const;
+
+  const std::shared_ptr<net::SyncCommunicator>& sync_communicator() const;
 
   /**
    * Sets a Communicator

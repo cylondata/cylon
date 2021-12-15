@@ -153,5 +153,34 @@ std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &ar
   return nullptr;
 }
 
+Type::type ToCylonTypeId(const std::shared_ptr<arrow::DataType> &type) {
+  switch (type->id()) {
+    case arrow::Type::BOOL:return Type::BOOL;
+    case arrow::Type::UINT8:return Type::UINT8;
+    case arrow::Type::INT8:return Type::INT8;
+    case arrow::Type::UINT16:return Type::UINT16;
+    case arrow::Type::INT16:return Type::INT16;
+    case arrow::Type::UINT32:return Type::UINT32;
+    case arrow::Type::INT32:return Type::INT32;
+    case arrow::Type::UINT64:return Type::UINT64;
+    case arrow::Type::INT64:return Type::INT64;
+    case arrow::Type::HALF_FLOAT:return Type::HALF_FLOAT;
+    case arrow::Type::FLOAT:return Type::FLOAT;
+    case arrow::Type::DOUBLE:return Type::DOUBLE;
+    case arrow::Type::STRING:return Type::STRING;
+    case arrow::Type::BINARY:return Type::BINARY;
+    case arrow::Type::FIXED_SIZE_BINARY:return Type::FIXED_SIZE_BINARY;
+    case arrow::Type::DATE32:return Type::DATE32;
+    case arrow::Type::DATE64:return Type::DATE64;
+    case arrow::Type::TIMESTAMP:return Type::TIMESTAMP;
+    case arrow::Type::TIME32:return Type::TIME32;
+    case arrow::Type::TIME64:return Type::TIME64;
+    case arrow::Type::LARGE_STRING:return Type::LARGE_STRING;
+    case arrow::Type::LARGE_BINARY:return Type::LARGE_BINARY;
+    default:
+      return Type::MAX_ID;
+  }
+}
+
 }  // namespace tarrow
 }  // namespace cylon
