@@ -55,6 +55,20 @@ class UCXCommunicator : public Communicator {
   // UCP Context - Holds a UCP communication instance's global information.
   ucp_context_h ucpContext;
 };
+
+class UCXSyncCommunicator : public SyncCommunicator {
+ public:
+  Status AllGather(const std::shared_ptr<Table> &table,
+                   std::vector<std::shared_ptr<Table>> *out) const override;
+  Status Gather(const std::shared_ptr<Table> &table,
+                int gather_root,
+                bool gather_from_root,
+                std::vector<std::shared_ptr<Table>> *out) const override;
+  Status Bcast(const std::shared_ptr<CylonContext> &ctx,
+               std::shared_ptr<Table> *table,
+               int bcast_root) const override;
+};
+
 }
 }
 #endif //CYLON_SRC_CYLON_COMM_UCXCOMMUNICATOR_H_

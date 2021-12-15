@@ -46,6 +46,8 @@ add_library(cylon SHARED
         ${UCX_CYLON_FILES}
         arrow/arrow_all_to_all.cpp
         arrow/arrow_all_to_all.hpp
+        arrow/arrow_buffer.cpp
+        arrow/arrow_buffer.hpp
         arrow/arrow_builder.cpp
         arrow/arrow_builder.cpp
         arrow/arrow_builder.hpp
@@ -153,6 +155,8 @@ add_library(cylon SHARED
         partition/partition.hpp
         row.cpp
         row.hpp
+        serialize/table_serialize.cpp
+        serialize/table_serialize.hpp
         status.hpp
         table.cpp
         table.hpp

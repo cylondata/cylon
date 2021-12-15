@@ -57,7 +57,7 @@
     if ((arrow_table)->column(0)->num_chunks() > 1){            \
       const auto &res = (arrow_table)->CombineChunks((pool));   \
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(res.status());        \
-      (arrow_table) = res.ValueOrDie();                         \
+      (arrow_table) = std::move(res).ValueOrDie();              \
     }                                                           \
   } while (0)
 

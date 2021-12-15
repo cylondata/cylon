@@ -142,5 +142,32 @@ void UCXCommunicator::Barrier() {
 CommType UCXCommunicator::GetCommType() const {
   return UCX;
 }
+
+Status UCXSyncCommunicator::AllGather(const std::shared_ptr<Table> &table,
+                                      std::vector<std::shared_ptr<Table>> *out) const {
+  CYLON_UNUSED(table);
+  CYLON_UNUSED(out);
+  return {Code::NotImplemented, "All gather not implemented yet for ucx"};
+}
+
+Status UCXSyncCommunicator::Gather(const std::shared_ptr<Table> &table,
+                                   int gather_root,
+                                   bool gather_from_root,
+                                   std::vector<std::shared_ptr<Table>> *out) const {
+  CYLON_UNUSED(table);
+  CYLON_UNUSED(gather_root);
+  CYLON_UNUSED(gather_from_root);
+  CYLON_UNUSED(out);
+  return {Code::NotImplemented, "All gather not implemented yet for ucx"};
+}
+
+Status UCXSyncCommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
+                                  std::shared_ptr<Table> *table,
+                                  int bcast_root) const {
+  CYLON_UNUSED(ctx);
+  CYLON_UNUSED(table);
+  CYLON_UNUSED(bcast_root);
+  return {Code::NotImplemented, "All gather not implemented yet for ucx"};
+}
 }  // namespace net
 }  // namespace cylon

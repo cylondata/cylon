@@ -338,7 +338,7 @@ std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table, 
     const std::shared_ptr<arrow::ChunkedArray> &ptr = table->column(t);
     for (std::shared_ptr<arrow::Array> arr : ptr->chunks()) {
       num_elements += arr->length();
-      for (auto &b : arr->data()->buffers) {
+      for (auto &b: arr->data()->buffers) {
         if (b != nullptr) {
           num_bytes += b->size();
         }
@@ -346,6 +346,19 @@ std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table, 
     }
   }
   return {num_elements, num_bytes};
+}
+
+arrow::Status MakeEmptyArrowTable(const std::shared_ptr<arrow::Schema> &schema,
+                                  std::shared_ptr<arrow::Table> *table,
+                                  arrow::MemoryPool *pool) {
+  arrow::ChunkedArrayVector arrays;
+  arrays.reserve(schema->num_fields());
+  for (const auto &f: schema->fields()) {
+    ARROW_ASSIGN_OR_RAISE(auto arr, arrow::MakeArrayOfNull(f->type(), 0, pool))
+    arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(arr)));
+  }
+  *table = arrow::Table::Make(schema, std::move(arrays), 0);
+  return arrow::Status::OK();
 }
 
 }  // namespace util

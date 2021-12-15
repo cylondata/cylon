@@ -176,8 +176,7 @@ bool ArrowAllToAll::onReceive(int source, std::shared_ptr<Buffer> buffer, int le
   std::shared_ptr<PendingReceiveTable> table = receives_[source];
   receivedBuffers_++;
   // create the buffer hosting the value
-  std::shared_ptr<arrow::Buffer> buf = std::dynamic_pointer_cast<ArrowBuffer>(buffer)->getBuf();
-  table->buffers.push_back(buf);
+  table->buffers.push_back(std::static_pointer_cast<ArrowBuffer>(buffer)->getBuf());
   // now check weather we have the expected number of buffers received
   if (table->noBuffers == table->bufferIndex + 1) {
     // okay we are done with this array
@@ -241,34 +240,4 @@ bool ArrowAllToAll::onSendComplete(int target, const void *buffer, int length) {
   return false;
 }
 
-Status ArrowAllocator::Allocate(int64_t length, std::shared_ptr<Buffer> *buffer) {
-  arrow::Result<std::unique_ptr<arrow::Buffer>> result = arrow::AllocateBuffer(length, pool);
-  const arrow::Status &status = result.status();
-
-  if (!status.ok()) {
-    return Status(static_cast<int>(status.code()), status.message());
-  } else {
-    std::shared_ptr<arrow::Buffer> buf = std::move(result.ValueOrDie());
-    *buffer = std::make_shared<ArrowBuffer>(buf);
-    return Status::OK();
-  }
-}
-
-ArrowAllocator::ArrowAllocator(arrow::MemoryPool *pool) : pool(pool) {}
-
-ArrowAllocator::~ArrowAllocator() = default;
-
-int64_t ArrowBuffer::GetLength() const {
-  return 0;
-}
-
-uint8_t *ArrowBuffer::GetByteBuffer() {
-  return buf->mutable_data();
-}
-
-ArrowBuffer::ArrowBuffer(std::shared_ptr<arrow::Buffer> buf) : buf(std::move(buf)) {}
-
-std::shared_ptr<arrow::Buffer> ArrowBuffer::getBuf() const {
-  return buf;
-}
 }  // namespace cylon
