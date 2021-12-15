@@ -85,9 +85,9 @@ Status CollectDataBuffer(const arrow::ArrayData &data, std::vector<int32_t> *buf
   return {Code::Invalid, "unsupported data type for serialization " + type->ToString()};
 }
 
-Status CollectOffsetBuffer(const arrow::ArrayData &data, std::vector<int32_t> *buffer_sizes,
-                           std::vector<const uint8_t *> *data_buffers,
-                           arrow::BufferVector *extra_buffers, arrow::MemoryPool *pool) {
+Status CollectOffsetBuffer(const arrow::ArrayData &data,
+                           std::vector<int32_t> *buffer_sizes,
+                           std::vector<const uint8_t *> *data_buffers) {
   const auto &type = data.type;
   if (arrow::is_fixed_width(type->id())) {
     buffer_sizes->push_back(0);
@@ -134,7 +134,7 @@ Status CylonTableSerializer::Make(const std::shared_ptr<Table> &table,
       RETURN_CYLON_STATUS_IF_FAILED(
           CollectBitmapInfo(data, &buffer_sizes, &data_buffers, &extra_buffers, pool));
       RETURN_CYLON_STATUS_IF_FAILED(
-          CollectOffsetBuffer(data, &buffer_sizes, &data_buffers, &extra_buffers, pool));
+          CollectOffsetBuffer(data, &buffer_sizes, &data_buffers));
       RETURN_CYLON_STATUS_IF_FAILED(
           CollectDataBuffer(data, &buffer_sizes, &data_buffers, &extra_buffers, pool));
     }
