@@ -42,9 +42,11 @@ MPI_Datatype cylon::mpi::GetMPIDataType(const std::shared_ptr<DataType> &data_ty
     case Type::INT64:return MPI_INT64_T;
     case Type::FLOAT:return MPI_FLOAT;
     case Type::DOUBLE:return MPI_DOUBLE;
+    case Type::FIXED_SIZE_BINARY:
     case Type::STRING:
     case Type::BINARY:
-    case Type::FIXED_SIZE_BINARY: return MPI_BYTE;
+    case Type::LARGE_STRING:
+    case Type::LARGE_BINARY:return MPI_BYTE;
       //todo: MPI does not support 16byte floats. We'll have to use a custom datatype for this later.
     case Type::HALF_FLOAT: break;
     case Type::DATE32:return MPI_UINT32_T;
@@ -58,6 +60,7 @@ MPI_Datatype cylon::mpi::GetMPIDataType(const std::shared_ptr<DataType> &data_ty
     case Type::LIST:
     case Type::FIXED_SIZE_LIST:
     case Type::EXTENSION:break;
+    case Type::MAX_ID:break;
   }
   return MPI_DATATYPE_NULL;
 }
