@@ -46,11 +46,14 @@ std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataTy
     case Type::TIME32:return std::make_shared<arrow::Time32Type>();
     case Type::TIME64:return std::make_shared<arrow::Time64Type>();
     case Type::DURATION:return std::make_shared<arrow::DurationType>();
+    case Type::LARGE_STRING:return std::make_shared<arrow::LargeStringType>();
+    case Type::LARGE_BINARY:return std::make_shared<arrow::LargeBinaryType>();
     case Type::DECIMAL: break;
     case Type::INTERVAL:break;
     case Type::LIST:break;
     case Type::FIXED_SIZE_LIST:break;
     case Type::EXTENSION:break;
+    case Type::MAX_ID:break;
   }
   return nullptr;
 }
