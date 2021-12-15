@@ -52,9 +52,8 @@ class SyncCommunicator {
                         std::vector<std::shared_ptr<Table>> *out) const = 0;
 
   virtual Status Bcast(const std::shared_ptr<CylonContext> &ctx,
-                       const std::shared_ptr<Table> &table,
-                       int bcast_root,
-                       std::shared_ptr<Table> *received_table) const = 0;
+                       std::shared_ptr<Table> *table,
+                       int bcast_root) const = 0;
 };
 }
 }

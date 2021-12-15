@@ -64,10 +64,9 @@ class UCXSyncCommunicator : public SyncCommunicator {
                 int gather_root,
                 bool gather_from_root,
                 std::vector<std::shared_ptr<Table>> *out) const override;
-  Status Bcast(const std::shared_ptr<cylon::CylonContext> &ctx,
-               const std::shared_ptr<Table> &table,
-               int bcast_root,
-               std::shared_ptr<Table> *received_table) const override;
+  Status Bcast(const std::shared_ptr<CylonContext> &ctx,
+               std::shared_ptr<Table> *table,
+               int bcast_root) const override;
 };
 
 }

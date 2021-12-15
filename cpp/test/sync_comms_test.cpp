@@ -188,5 +188,43 @@ TEST_CASE("gather table", "[sync comms]") {
   }
 }
 
+TEST_CASE("bcast table", "[sync comms]") {
+  std::shared_ptr<arrow::Schema> schema;
+  std::shared_ptr<arrow::Table> in_table;
+  generate_table(&schema, &in_table);
+
+  int bcast_root = WORLD_SZ / 2;
+
+  auto test_bcast = [&](const auto &atable) {
+    std::shared_ptr<Table> table;
+    if (bcast_root == RANK) {
+      table = std::make_shared<Table>(ctx, atable);
+    }
+
+    const auto &sync_comm = ctx->sync_communicator();
+    CHECK_CYLON_STATUS(sync_comm->Bcast(ctx, &table, bcast_root));
+
+    INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
+    REQUIRE(table != nullptr);
+    CHECK_ARROW_EQUAL(atable, table->get_table());
+  };
+
+  for (const auto &atable: {in_table, in_table->Slice(3)}) {
+    SECTION(atable.get() == in_table.get() ? "without offset" : "with offset") {
+      test_bcast(atable);
+    }
+  }
+
+  SECTION("empty") {
+    generate_table(&schema, &in_table, Empty);
+    test_bcast(in_table);
+  }
+
+  SECTION("null with single line") {
+    generate_table(&schema, &in_table, Null);
+    test_bcast(in_table);
+  }
+}
+
 }
 }

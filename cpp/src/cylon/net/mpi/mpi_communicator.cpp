@@ -21,8 +21,12 @@
 #include <cylon/util/macros.hpp>
 
 #include "cylon/arrow/arrow_buffer.hpp"
+#include "cylon/util/arrow_utils.hpp"
 #include "cylon/serialize/table_serialize.hpp"
 #include "cylon/net/mpi/mpi_operations.hpp"
+
+#include <arrow/ipc/api.h>
+#include <arrow/io/api.h>
 
 namespace cylon {
 namespace net {
@@ -165,16 +169,61 @@ Status MPISyncCommunicator::Gather(const std::shared_ptr<Table> &table,
   return Status::OK();
 }
 
-// todo: bcast requires bcasting schema using arrow::ipc (#537)
-Status MPISyncCommunicator::Bcast(const std::shared_ptr<cylon::CylonContext> &ctx,
-                                  const std::shared_ptr<Table> &table,
-                                  int bcast_root,
-                                  std::shared_ptr<Table> *out) const {
-  CYLON_UNUSED(table);
-  CYLON_UNUSED(ctx);
-  CYLON_UNUSED(bcast_root);
-  CYLON_UNUSED(out);
-  return {Code::NotImplemented, "MPI Bcast is not implemented"};
+Status BcastArrowSchema(const std::shared_ptr<CylonContext> &ctx,
+                        std::shared_ptr<arrow::Schema> *schema,
+                        int bcast_root) {
+  std::shared_ptr<arrow::Buffer> buf;
+  bool is_root = mpi::AmIRoot(bcast_root, ctx);
+
+  if (is_root) {
+    CYLON_ASSIGN_OR_RAISE(buf, arrow::ipc::SerializeSchema(**schema,
+                                                           ToArrowPool(ctx)))
+  }
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::BcastArrowBuffer(buf, bcast_root, ctx));
+
+  if (!is_root) {
+    assert(buf->data());
+    arrow::io::BufferReader buf_reader(std::move(buf));
+    CYLON_ASSIGN_OR_RAISE(*schema, arrow::ipc::ReadSchema(&buf_reader, nullptr))
+  }
+
+  return Status::OK();
+}
+
+Status MPISyncCommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
+                                  std::shared_ptr<Table> *table,
+                                  int bcast_root) const {
+  std::shared_ptr<arrow::Schema> schema;
+  bool is_root = mpi::AmIRoot(bcast_root, ctx);
+  auto *pool = ToArrowPool(ctx);
+
+  if (is_root) {
+    auto atable = (*table)->get_table();
+    schema = atable->schema();
+  }
+  RETURN_CYLON_STATUS_IF_FAILED(BcastArrowSchema(ctx, &schema, bcast_root));
+
+  std::shared_ptr<TableSerializer> serializer;
+  if (is_root) {
+    RETURN_CYLON_STATUS_IF_FAILED(CylonTableSerializer::Make(*table, &serializer));
+  }
+  const auto &allocator = std::make_shared<ArrowAllocator>(pool);
+  std::vector<std::shared_ptr<Buffer>> receive_buffers;
+  std::vector<int32_t> data_types;
+  RETURN_CYLON_STATUS_IF_FAILED(
+      mpi::Bcast(serializer, bcast_root, allocator, receive_buffers, data_types, ctx));
+
+  if (!is_root) {
+    if (receive_buffers.empty()) {
+      std::shared_ptr<arrow::Table> atable;
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(cylon::util::MakeEmptyArrowTable(schema, &atable, pool));
+      return Table::FromArrowTable(ctx, std::move(atable), *table);
+    } else {
+      assert((int) receive_buffers.size() == 3 * schema->num_fields());
+      RETURN_CYLON_STATUS_IF_FAILED(DeserializeTable(ctx, schema, receive_buffers, table));
+    }
+  }
+  return Status::OK();
 }
 }  // namespace net
 }  // namespace cylon

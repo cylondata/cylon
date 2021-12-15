@@ -161,13 +161,12 @@ Status UCXSyncCommunicator::Gather(const std::shared_ptr<Table> &table,
   return {Code::NotImplemented, "All gather not implemented yet for ucx"};
 }
 
-Status UCXSyncCommunicator::Bcast(const std::shared_ptr<cylon::CylonContext> &ctx,
-                                  const std::shared_ptr<Table> &table,
-                                  int bcast_root,
-                                  std::shared_ptr<Table> *out) const {
+Status UCXSyncCommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
+                                  std::shared_ptr<Table> *table,
+                                  int bcast_root) const {
+  CYLON_UNUSED(ctx);
   CYLON_UNUSED(table);
   CYLON_UNUSED(bcast_root);
-  CYLON_UNUSED(out);
   return {Code::NotImplemented, "All gather not implemented yet for ucx"};
 }
 }  // namespace net

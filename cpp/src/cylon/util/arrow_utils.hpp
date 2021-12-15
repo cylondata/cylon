@@ -145,6 +145,9 @@ uint64_t GetNumberSplitsToFitInCache(int64_t total_bytes, int total_elements, in
  */
 std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table, const std::vector<int> &columns);
 
+arrow::Status MakeEmptyArrowTable(const std::shared_ptr<arrow::Schema>& schema, std::shared_ptr<arrow::Table>* table,
+                                  arrow::MemoryPool *pool = arrow::default_memory_pool());
+
 }  // namespace util
 }  // namespace cylon
 #endif  // CYLON_SRC_UTIL_ARROW_UTILS_HPP_
