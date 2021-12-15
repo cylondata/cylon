@@ -27,7 +27,7 @@ static void verify_test(std::vector<std::vector<std::string>>& expected, std::sh
     while(ss>>s) {
         REQUIRE(s == expected[RANK][i++]);
     }
-    REQUIRE((long unsigned int)i == expected[RANK].size());
+    REQUIRE((size_t) i == expected[RANK].size());
 }
 
 TEST_CASE("Repartition one process", "[repartition]") {

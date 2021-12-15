@@ -1185,7 +1185,7 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
     return Status::OK();
   }
 
-  if(rows_per_partition.size() != (long unsigned int) world_size) {
+  if(rows_per_partition.size() != (size_t) world_size) {
     return Status(
     cylon::Code::ValueError,
     "rows_per_partition size does not align with world size. Received " +
