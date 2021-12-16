@@ -379,7 +379,7 @@ Status do_multi_index_sorted_join(const std::shared_ptr<arrow::Table> &left_tab,
 
   auto t22 = std::chrono::high_resolution_clock::now();
 
-  LOG(INFO) << "Combine chunks time : "
+  LOG(INFO) << "CombineBeforeShuffle chunks time : "
             << std::chrono::duration_cast<std::chrono::milliseconds>(t22 - t11).count();
 
   // create sorter and do index sort

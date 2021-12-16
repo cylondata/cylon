@@ -64,6 +64,7 @@ add_library(cylon SHARED
         arrow/arrow_types.hpp
         column.cpp
         column.hpp
+        compute/aggregate_kernels.cpp
         compute/aggregate_kernels.hpp
         compute/aggregate_utils.hpp
         compute/aggregates.cpp
@@ -102,6 +103,8 @@ add_library(cylon SHARED
         join/join_utils.hpp
         join/sort_join.cpp
         join/sort_join.hpp
+        mapreduce/mapreduce.hpp
+        mapreduce/mapreduce.cpp
         net/channel.hpp
         net/comm_operations.hpp
         net/comm_type.hpp

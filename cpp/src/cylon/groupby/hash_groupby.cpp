@@ -149,7 +149,7 @@ template<compute::AggregationOpId aggOp, typename ARROW_T,
 inline Status aggregate(arrow::MemoryPool *pool,
                         const std::shared_ptr<arrow::Table> &table,
                         int col_idx,
-                        const compute::AggregationOp &agg_op,
+                        const compute::AggregationOp *agg_op,
                         const std::vector<int64_t> &group_ids,
                         int64_t unique_groups,
                         std::shared_ptr<arrow::Array> *agg_array,
@@ -191,7 +191,7 @@ inline Status aggregate(arrow::MemoryPool *pool,
     return {Code::Invalid, "unsupported aggregate op"};
   }
 
-  compute::KernelOptions *options = agg_op.options.get();
+  compute::KernelOptions *options = agg_op->options();
   if (options != nullptr) {
     kernel->Setup(options);
   } else {
@@ -237,12 +237,12 @@ template<typename ARROW_T, typename = arrow::enable_if_has_c_type<ARROW_T>>
 inline Status resolve_op(arrow::MemoryPool *pool,
                          const std::shared_ptr<arrow::Table> &table,
                          int col_idx,
-                         const compute::AggregationOp &agg_op,
+                         const compute::AggregationOp *agg_op,
                          const std::vector<int64_t> &group_ids,
                          int64_t unique_groups,
                          std::shared_ptr<arrow::Array> *agg_array,
                          std::shared_ptr<arrow::Field> *agg_field) {
-  switch (agg_op.id) {
+  switch (agg_op->id()) {
     case compute::SUM:
       return aggregate<compute::SUM, ARROW_T>(pool, table, col_idx, agg_op, group_ids,
                                               unique_groups, agg_array, agg_field);
@@ -277,7 +277,7 @@ inline Status resolve_op(arrow::MemoryPool *pool,
 inline Status do_aggregate(arrow::MemoryPool *pool,
                            const std::shared_ptr<arrow::Table> &table,
                            int col_idx,
-                           const compute::AggregationOp &agg_op,
+                           const compute::AggregationOp *agg_op,
                            const std::vector<int64_t> &group_ids,
                            int64_t unique_groups,
                            std::shared_ptr<arrow::Array> *agg_array,
@@ -377,8 +377,8 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   for (auto &&p: aggregations) {
     std::shared_ptr<arrow::Array> new_arr;
     std::shared_ptr<arrow::Field> new_field;
-    RETURN_CYLON_STATUS_IF_FAILED(do_aggregate(pool, atable, p.first, *p.second, group_ids,
-                                               unique_groups, &new_arr, &new_field));
+    RETURN_CYLON_STATUS_IF_FAILED(do_aggregate(pool, atable, p.first, p.second.get(),
+                                               group_ids, unique_groups, &new_arr, &new_field));
     new_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(new_arr)));
     new_fields.push_back(std::move(new_field));
   }
@@ -405,7 +405,7 @@ Status HashGroupBy(const std::shared_ptr<Table> &table,
   aggregations.reserve(aggregate_cols.size());
   for (auto &&p:aggregate_cols) {
     // create AggregationOp with nullptr options
-    aggregations.emplace_back(p.first, std::make_shared<compute::AggregationOp>(p.second));
+    aggregations.emplace_back(p.first, compute::MakeAggregationOpFromID(p.second));
   }
 
   return HashGroupBy(table, idx_cols, aggregations, output);
@@ -423,7 +423,8 @@ Status HashGroupBy(std::shared_ptr<Table> &table,
   std::vector<std::pair<int32_t, std::shared_ptr<compute::AggregationOp>>> aggregations;
   aggregations.reserve(aggregate_cols.size());
   for (size_t i = 0; i < aggregate_cols.size(); i++) {
-    aggregations.emplace_back(aggregate_cols[i], std::make_shared<compute::AggregationOp>(aggregate_ops[i]));
+    aggregations
+        .emplace_back(aggregate_cols[i], compute::MakeAggregationOpFromID(aggregate_ops[i]));
   }
 
   return HashGroupBy(table, idx_cols, aggregations, output);
