@@ -65,24 +65,31 @@ int main(int argc, char *argv[]) {
                          output)
 
   CHECK_STATUS_AND_PRINT(first_table,
-                         cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::VarOp::Make()}}, output),
+                         cylon::HashGroupBy(first_table,
+                                            {0, 1},
+                                            {{2, std::make_shared<cylon::compute::VarOp>()}},
+                                            output),
                          output)
 
   CHECK_STATUS_AND_PRINT(first_table,
-                         cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::VAR}, output),
+                         cylon::DistributedHashGroupBy(first_table, {0, 1}, {2},
+                                                       {cylon::compute::VAR}, output),
                          output)
 
   CHECK_STATUS_AND_PRINT(first_table,
-                         cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::NUNIQUE}}, output),
+                         cylon::HashGroupBy(first_table, {0, 1},
+                                            {{2, cylon::compute::NUNIQUE}}, output),
                          output)
 
-  CHECK_STATUS_AND_PRINT(first_table,
-                         cylon::HashGroupBy(first_table, {0, 1}, {{2, cylon::compute::QuantileOp::Make(0.2)}}, output),
-                         output)
+  CHECK_STATUS_AND_PRINT(
+      first_table,
+      cylon::HashGroupBy(first_table, {0, 1},
+                         {{2, std::make_shared<cylon::compute::QuantileOp>(0.2)}}, output), output)
 
-  CHECK_STATUS_AND_PRINT(first_table,
-                         cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::COUNT}, output),
-                         output)
+  CHECK_STATUS_AND_PRINT(
+      first_table,
+      cylon::DistributedHashGroupBy(first_table, {0, 1}, {2}, {cylon::compute::COUNT}, output),
+      output)
 
   ctx->Finalize();
   return 0;

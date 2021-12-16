@@ -175,6 +175,8 @@ class TableRowIndexEqualTo {
 
   static Status Make(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids,
                      std::unique_ptr<TableRowIndexEqualTo> *out_equal_to);
+  static Status Make(const std::vector<std::shared_ptr<arrow::Array>> &arrays,
+                     std::unique_ptr<TableRowIndexEqualTo> *out_equal_to);
 
  private:
   // this class gets copied to std container, so we don't want to copy these vectors.

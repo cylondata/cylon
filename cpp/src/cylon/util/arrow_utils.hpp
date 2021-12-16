@@ -143,7 +143,12 @@ uint64_t GetNumberSplitsToFitInCache(int64_t total_bytes, int total_elements, in
  * @param columns
  * @return
  */
-std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table, const std::vector<int> &columns);
+std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table,
+                                           const std::vector<int> &columns);
+
+arrow::Status CreateEmptyTable(const std::shared_ptr<arrow::Schema> &schema,
+                               std::shared_ptr<arrow::Table> *output,
+                               arrow::MemoryPool *pool = arrow::default_memory_pool());
 
 arrow::Status MakeEmptyArrowTable(const std::shared_ptr<arrow::Schema>& schema, std::shared_ptr<arrow::Table>* table,
                                   arrow::MemoryPool *pool = arrow::default_memory_pool());

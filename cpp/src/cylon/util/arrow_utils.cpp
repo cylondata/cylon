@@ -347,6 +347,21 @@ std::array<int64_t, 2> GetBytesAndElements(std::shared_ptr<arrow::Table> table, 
   }
   return {num_elements, num_bytes};
 }
+arrow::Status CreateEmptyTable(const std::shared_ptr<arrow::Schema> &schema,
+                               std::shared_ptr<arrow::Table> *output,
+                               arrow::MemoryPool *pool) {
+  std::vector<std::shared_ptr<arrow::ChunkedArray>> arrays;
+  arrays.reserve(schema->num_fields());
+
+  for (int i = 0; i < schema->num_fields(); i++){
+    const auto& t = schema->field(i)->type();
+    ARROW_ASSIGN_OR_RAISE(auto arr, arrow::MakeArrayOfNull(t, 0, pool))
+    arrays.emplace_back(std::make_shared<arrow::ChunkedArray>(std::move(arr)));
+  }
+
+  *output = arrow::Table::Make(schema, std::move(arrays), 0);
+  return arrow::Status::OK();
+}
 
 arrow::Status MakeEmptyArrowTable(const std::shared_ptr<arrow::Schema> &schema,
                                   std::shared_ptr<arrow::Table> *table,

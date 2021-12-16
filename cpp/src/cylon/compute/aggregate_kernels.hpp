@@ -15,9 +15,12 @@
 #ifndef CYLON_CPP_SRC_CYLON_COMPUTE_AGGREGATE_KERNELS_HPP_
 #define CYLON_CPP_SRC_CYLON_COMPUTE_AGGREGATE_KERNELS_HPP_
 
+#include <algorithm>
 #include <cmath>
-#include <math.h>
+#include <vector>
 #include <unordered_set>
+
+#include "cylon/util/macros.hpp"
 
 namespace cylon {
 namespace compute {
@@ -57,11 +60,6 @@ struct KernelOptions {
 };
 
 /**
- * special kernel options holder for default options. i.e. no special options.
- */
-struct DefaultKernelOptions : public KernelOptions {};
-
-/**
  * Variance kernel options
  */
 struct VarKernelOptions : public KernelOptions {
@@ -89,36 +87,41 @@ struct QuantileKernelOptions : public KernelOptions {
 /**
  * 2. Aggregation operation
  */
+//struct AggregationOp {
+//  /**
+//   * @param id AggregationOpId
+//   * @param options unique_ptr of options
+//   */
+//  AggregationOp(AggregationOpId id, KernelOptions *options)
+//      : id(id), options(options) {}
+//
+//  /**
+//   * Constructor with uninitialized options. This would be explicitly handled in impl
+//   * @param id
+//   */
+//  explicit AggregationOp(AggregationOpId id) : id(id), options(nullptr) {}
+//
+//  virtual ~AggregationOp() = default;
+//
+//  AggregationOpId id;
+//  KernelOptions* options;
+//};
+
 struct AggregationOp {
-  /**
-   * @param id AggregationOpId
-   * @param options unique_ptr of options
-   */
-  AggregationOp(AggregationOpId id, std::unique_ptr<KernelOptions> options)
-      : id(id), options(std::move(options)) {}
-
-  /**
-   * Constructor with uninitialized options. This would be explicitly handled in impl
-   * @param id
-   */
-  explicit AggregationOp(AggregationOpId id) : id(id), options(nullptr) {}
-
-  virtual ~AggregationOp() = default;
-
-  AggregationOpId id;
-  std::unique_ptr<KernelOptions> options;
+  virtual AggregationOpId id() const = 0;
+  virtual KernelOptions *options() const { return nullptr; };
 };
 
 /**
- * Base aggregation operation with DefaultKernelOptions
+ * Base aggregation operation with KernelOptions
  * @tparam ID AggregationOpId
  */
 template<AggregationOpId ID>
 struct BaseAggregationOp : public AggregationOp {
-  BaseAggregationOp() : AggregationOp(ID, std::make_unique<DefaultKernelOptions>()) {}
+  AggregationOpId id() const override { return ID; }
 
-  static inline std::unique_ptr<AggregationOp> Make() {
-    return std::make_unique<BaseAggregationOp<ID>>();
+  static std::shared_ptr<AggregationOp> Make() {
+    return std::make_shared<BaseAggregationOp<ID>>();
   }
 };
 
@@ -136,21 +139,30 @@ struct NUniqueOp : public BaseAggregationOp<NUNIQUE> {};
  * Var op
  */
 struct VarOp : public AggregationOp {
+  std::shared_ptr<VarKernelOptions> opt;
+
   /**
    * @param ddof delta degree of freedom
    */
-  explicit VarOp(int ddof) : AggregationOp(VAR, std::make_unique<VarKernelOptions>(ddof)) {}
+  explicit VarOp(int ddof = 1) : opt(std::make_shared<VarKernelOptions>(ddof)) {}
+  explicit VarOp(const std::shared_ptr<KernelOptions> &opt)
+      : opt(std::static_pointer_cast<VarKernelOptions>(opt)) {}
 
-  static inline std::unique_ptr<AggregationOp> Make(int ddof = 0) {
-    return std::make_unique<VarOp>(ddof);
+  AggregationOpId id() const override { return VAR; }
+  KernelOptions *options() const override { return opt.get(); }
+
+  static std::shared_ptr<AggregationOp> Make(int ddof = 1) {
+    return std::make_shared<VarOp>(ddof);
   }
 };
 
-struct StdDevOp : public AggregationOp {
-  explicit StdDevOp(int ddof) : AggregationOp(STDDEV, std::make_unique<VarKernelOptions>(ddof)) {}
+struct StdDevOp : public VarOp {
+  explicit StdDevOp(int ddof = 1) : VarOp(ddof) {}
+  explicit StdDevOp(const std::shared_ptr<KernelOptions> &opt) : VarOp(opt) {}
+  AggregationOpId id() const override { return STDDEV; }
 
-  static inline std::unique_ptr<AggregationOp> Make(int ddof = 0) {
-    return std::make_unique<StdDevOp>(ddof);
+  static std::shared_ptr<AggregationOp> Make(int ddof = 1) {
+    return std::make_shared<StdDevOp>(ddof);
   }
 };
 
@@ -158,17 +170,25 @@ struct StdDevOp : public AggregationOp {
  * Var op
  */
 struct QuantileOp : public AggregationOp {
+  std::shared_ptr<QuantileKernelOptions> opt;
+
   /**
    * @param quantile
    */
-  explicit QuantileOp(double quantile) : AggregationOp(QUANTILE,
-                                                       std::make_unique<QuantileKernelOptions>(
-                                                           quantile)) {}
+  explicit QuantileOp(double quantile = 0.5)
+      : opt(std::make_shared<QuantileKernelOptions>(quantile)) {}
+  explicit QuantileOp(const std::shared_ptr<KernelOptions> &opt)
+      : opt(std::static_pointer_cast<QuantileKernelOptions>(opt)) {}
 
-  static inline std::unique_ptr<AggregationOp> Make(double quantile = 0.5) {
-    return std::make_unique<QuantileOp>(quantile);
+  AggregationOpId id() const override { return QUANTILE; }
+  KernelOptions *options() const override { return opt.get(); }
+
+  static std::shared_ptr<AggregationOp> Make(double quantile = 0.5) {
+    return std::make_shared<QuantileOp>(quantile);
   }
 };
+
+std::shared_ptr<AggregationOp> MakeAggregationOpFromID(AggregationOpId id);
 
 // -----------------------------------------------------------------------------
 
@@ -193,7 +213,7 @@ template<typename T>
 struct KernelTraits<AggregationOpId::SUM, T> {
   using State = std::tuple<T>; // <running sum>
   using ResultT = T;
-  using Options = DefaultKernelOptions;
+  using Options = KernelOptions;
   static constexpr const char *name() { return "sum_"; }
 
 };
@@ -202,7 +222,7 @@ template<typename T>
 struct KernelTraits<AggregationOpId::MEAN, T> {
   using State = std::tuple<T, int64_t>; // <running sum, running count>
   using ResultT = T;
-  using Options = DefaultKernelOptions;
+  using Options = KernelOptions;
   static constexpr const char *name() { return "mean_"; }
 };
 
@@ -226,7 +246,7 @@ template<typename T>
 struct KernelTraits<AggregationOpId::COUNT, T> {
   using State = std::tuple<int64_t>;
   using ResultT = int64_t;
-  using Options = DefaultKernelOptions;
+  using Options = KernelOptions;
   static constexpr const char *name() { return "count_"; }
 };
 
@@ -234,7 +254,7 @@ template<typename T>
 struct KernelTraits<AggregationOpId::MIN, T> {
   using State = std::tuple<T>;
   using ResultT = T;
-  using Options = DefaultKernelOptions;
+  using Options = KernelOptions;
   static constexpr const char *name() { return "min_"; }
 };
 
@@ -242,7 +262,7 @@ template<typename T>
 struct KernelTraits<AggregationOpId::MAX, T> {
   using State = std::tuple<T>;
   using ResultT = T;
-  using Options = DefaultKernelOptions;
+  using Options = KernelOptions;
   static constexpr const char *name() { return "max_"; }
 };
 
@@ -250,7 +270,7 @@ template<typename T>
 struct KernelTraits<AggregationOpId::NUNIQUE, T> {
   using State = std::unordered_set<T>;
   using ResultT = int64_t;
-  using Options = DefaultKernelOptions;
+  using Options = KernelOptions;
   static constexpr const char *name() { return "nunique_"; }
 };
 
@@ -350,7 +370,7 @@ struct TypedAggregationKernel : public AggregationKernel {
 template<typename T>
 class MeanKernel : public TypedAggregationKernel<MeanKernel<T>, MEAN, T> {
  public:
-  void KernelSetup(DefaultKernelOptions *options) {
+  void KernelSetup(KernelOptions *options) {
     CYLON_UNUSED(options);
   };
 
@@ -415,7 +435,7 @@ class VarianceKernel : public TypedAggregationKernel<VarianceKernel<T>, VAR, T> 
  */
 template<typename T>
 struct SumKernel : public TypedAggregationKernel<SumKernel<T>, SUM, T> {
-  void KernelSetup(DefaultKernelOptions *options) {
+  void KernelSetup(KernelOptions *options) {
     CYLON_UNUSED(options);
   };
   inline void KernelInitializeState(std::tuple<T> *state) const {
@@ -434,7 +454,7 @@ struct SumKernel : public TypedAggregationKernel<SumKernel<T>, SUM, T> {
  */
 template<typename T>
 struct CountKernel : public TypedAggregationKernel<CountKernel<T>, COUNT, T> {
-  void KernelSetup(DefaultKernelOptions *options) {
+  void KernelSetup(KernelOptions *options) {
     CYLON_UNUSED(options);
   };
   inline void KernelInitializeState(std::tuple<int64_t> *state) const {
@@ -454,7 +474,7 @@ struct CountKernel : public TypedAggregationKernel<CountKernel<T>, COUNT, T> {
  */
 template<typename T>
 struct MinKernel : public TypedAggregationKernel<MinKernel<T>, MIN, T> {
-  void KernelSetup(DefaultKernelOptions *options) {
+  void KernelSetup(KernelOptions *options) {
     CYLON_UNUSED(options);
   };
   inline void KernelInitializeState(std::tuple<T> *state) const {
@@ -473,7 +493,7 @@ struct MinKernel : public TypedAggregationKernel<MinKernel<T>, MIN, T> {
  */
 template<typename T>
 struct MaxKernel : public TypedAggregationKernel<MaxKernel<T>, MAX, T> {
-  void KernelSetup(DefaultKernelOptions *options) {
+  void KernelSetup(KernelOptions *options) {
     CYLON_UNUSED(options);
   };
   inline void KernelInitializeState(std::tuple<T> *state) const {
@@ -489,7 +509,7 @@ struct MaxKernel : public TypedAggregationKernel<MaxKernel<T>, MAX, T> {
 
 template<typename T>
 struct NUniqueKernel : public TypedAggregationKernel<NUniqueKernel<T>, NUNIQUE, T> {
-  void KernelSetup(DefaultKernelOptions *options) {
+  void KernelSetup(KernelOptions *options) {
     CYLON_UNUSED(options);
   };
   inline void KernelInitializeState(std::unordered_set<T> *state) const { CYLON_UNUSED(state); }

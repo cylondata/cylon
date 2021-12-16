@@ -1704,7 +1704,7 @@ class DataFrame(object):
         Examples
         --------
 
-        Combine two ``DataFrame`` objects with identical columns.
+        CombineBeforeShuffle two ``DataFrame`` objects with identical columns.
 
         &gt;&gt;&gt; df1 = DataFrame([[&#39;a&#39;, 1], [&#39;b&#39;, 2]],
         ...                    columns=[&#39;letter&#39;, &#39;number&#39;])
@@ -1725,7 +1725,7 @@ class DataFrame(object):
         0      c       3
         1      d       4
 
-        (Unsupported) Combine ``DataFrame`` objects with overlapping columns
+        (Unsupported) CombineBeforeShuffle ``DataFrame`` objects with overlapping columns
         and return everything. Columns outside the intersection will
         be filled with ``NaN`` values.
 
@@ -1742,7 +1742,7 @@ class DataFrame(object):
         0      c       3    cat
         1      d       4    dog
 
-        (Unsupported) Combine ``DataFrame`` objects with overlapping columns
+        (Unsupported) CombineBeforeShuffle ``DataFrame`` objects with overlapping columns
         and return only those that are shared by passing ``inner`` to
         the ``join`` keyword argument.
 
@@ -1753,7 +1753,7 @@ class DataFrame(object):
         0      c       3
         1      d       4
 
-        (Unsupported) Combine ``DataFrame`` objects horizontally along the x axis by
+        (Unsupported) CombineBeforeShuffle ``DataFrame`` objects horizontally along the x axis by
         passing in ``axis=1``.
 
         &gt;&gt;&gt; df4 = DataFrame([[&#39;bird&#39;, &#39;polly&#39;], [&#39;monkey&#39;, &#39;george&#39;]],
@@ -3782,7 +3782,7 @@ def world_size(self) -&gt; int:
         Examples
         --------
 
-        Combine two ``DataFrame`` objects with identical columns.
+        CombineBeforeShuffle two ``DataFrame`` objects with identical columns.
 
         &gt;&gt;&gt; df1 = DataFrame([[&#39;a&#39;, 1], [&#39;b&#39;, 2]],
         ...                    columns=[&#39;letter&#39;, &#39;number&#39;])
@@ -3803,7 +3803,7 @@ def world_size(self) -&gt; int:
         0      c       3
         1      d       4
 
-        (Unsupported) Combine ``DataFrame`` objects with overlapping columns
+        (Unsupported) CombineBeforeShuffle ``DataFrame`` objects with overlapping columns
         and return everything. Columns outside the intersection will
         be filled with ``NaN`` values.
 
@@ -3820,7 +3820,7 @@ def world_size(self) -&gt; int:
         0      c       3    cat
         1      d       4    dog
 
-        (Unsupported) Combine ``DataFrame`` objects with overlapping columns
+        (Unsupported) CombineBeforeShuffle ``DataFrame`` objects with overlapping columns
         and return only those that are shared by passing ``inner`` to
         the ``join`` keyword argument.
 
@@ -3831,7 +3831,7 @@ def world_size(self) -&gt; int:
         0      c       3
         1      d       4
 
-        (Unsupported) Combine ``DataFrame`` objects horizontally along the x axis by
+        (Unsupported) CombineBeforeShuffle ``DataFrame`` objects horizontally along the x axis by
         passing in ``axis=1``.
 
         &gt;&gt;&gt; df4 = DataFrame([[&#39;bird&#39;, &#39;polly&#39;], [&#39;monkey&#39;, &#39;george&#39;]],
@@ -4181,7 +4181,7 @@ Returns</p>
 the columns (axis=1) or rows (axis=0), a <code><a title="frame.DataFrame" href="#frame.DataFrame">DataFrame</a></code> is returned.</dd>
 </dl>
 <h2 id="examples">Examples</h2>
-<p>Combine two <code><a title="frame.DataFrame" href="#frame.DataFrame">DataFrame</a></code> objects with identical columns.</p>
+<p>CombineBeforeShuffle two <code><a title="frame.DataFrame" href="#frame.DataFrame">DataFrame</a></code> objects with identical columns.</p>
 <pre><code class="language-python-repl">&gt;&gt;&gt; df1 = DataFrame([['a', 1], ['b', 2]],
 ...                    columns=['letter', 'number'])
 &gt;&gt;&gt; df1
@@ -4201,7 +4201,7 @@ letter  number
 0      c       3
 1      d       4
 </code></pre>
-<p>(Unsupported) Combine <code><a title="frame.DataFrame" href="#frame.DataFrame">DataFrame</a></code> objects with overlapping columns
+<p>(Unsupported) CombineBeforeShuffle <code><a title="frame.DataFrame" href="#frame.DataFrame">DataFrame</a></code> objects with overlapping columns
 and return everything. Columns outside the intersection will
 be filled with <code>NaN</code> values.</p>
 <pre><code class="language-python-repl">&gt;&gt;&gt; df3 = DataFrame([['c', 3, 'cat'], ['d', 4, 'dog']],
@@ -4217,7 +4217,7 @@ letter  number animal
 0      c       3    cat
 1      d       4    dog
 </code></pre>
-<p>(Unsupported) Combine <code><a title="frame.DataFrame" href="#frame.DataFrame">DataFrame</a></code> objects with overlapping columns
+<p>(Unsupported) CombineBeforeShuffle <code><a title="frame.DataFrame" href="#frame.DataFrame">DataFrame</a></code> objects with overlapping columns
 and return only those that are shared by passing <code>inner</code> to
 the <code>join</code> keyword argument.</p>
 <pre><code class="language-python-repl">&gt;&gt;&gt; DataFrame.concat([df1, df3], join=&quot;inner&quot;)
@@ -4227,7 +4227,7 @@ letter  number
 0      c       3
 1      d       4
 </code></pre>
-<p>(Unsupported) Combine <code><a title="frame.DataFrame" href="#frame.DataFrame">DataFrame</a></code> objects horizontally along the x axis by
+<p>(Unsupported) CombineBeforeShuffle <code><a title="frame.DataFrame" href="#frame.DataFrame">DataFrame</a></code> objects horizontally along the x axis by
 passing in <code>axis=1</code>.</p>
 <pre><code class="language-python-repl">&gt;&gt;&gt; df4 = DataFrame([['bird', 'polly'], ['monkey', 'george']],
 ...                    columns=['animal', 'name'])
@@ -4335,7 +4335,7 @@ def concat(
     Examples
     --------
 
-    Combine two ``DataFrame`` objects with identical columns.
+    CombineBeforeShuffle two ``DataFrame`` objects with identical columns.
 
     &gt;&gt;&gt; df1 = DataFrame([[&#39;a&#39;, 1], [&#39;b&#39;, 2]],
     ...                    columns=[&#39;letter&#39;, &#39;number&#39;])
@@ -4356,7 +4356,7 @@ def concat(
     0      c       3
     1      d       4
 
-    (Unsupported) Combine ``DataFrame`` objects with overlapping columns
+    (Unsupported) CombineBeforeShuffle ``DataFrame`` objects with overlapping columns
     and return everything. Columns outside the intersection will
     be filled with ``NaN`` values.
 
@@ -4373,7 +4373,7 @@ def concat(
     0      c       3    cat
     1      d       4    dog
 
-    (Unsupported) Combine ``DataFrame`` objects with overlapping columns
+    (Unsupported) CombineBeforeShuffle ``DataFrame`` objects with overlapping columns
     and return only those that are shared by passing ``inner`` to
     the ``join`` keyword argument.
 
@@ -4384,7 +4384,7 @@ def concat(
     0      c       3
     1      d       4
 
-    (Unsupported) Combine ``DataFrame`` objects horizontally along the x axis by
+    (Unsupported) CombineBeforeShuffle ``DataFrame`` objects horizontally along the x axis by
     passing in ``axis=1``.
 
     &gt;&gt;&gt; df4 = DataFrame([[&#39;bird&#39;, &#39;polly&#39;], [&#39;monkey&#39;, &#39;george&#39;]],
