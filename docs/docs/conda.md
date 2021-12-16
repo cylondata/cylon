@@ -12,8 +12,8 @@ There are Conda packages for Cylon C++ and Python libraries (libcylon and pycylo
 The following command will install the latest version of Cylon.
 
 ```bash
-conda create -n cylon-0.4.0 -c cylondata pycylon python=3.7
-conda activate cylon-0.4.0
+conda create -n cylon-dev -c cylondata pycylon python=3.7
+conda activate cylon-dev
 ```
 
 Now you can run an example to see if everything is working fine.
