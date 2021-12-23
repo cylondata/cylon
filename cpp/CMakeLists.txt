@@ -285,13 +285,10 @@ else ()
 endif ()
 
 # parquet
-option(CYLON_PARQUET "Build Cylon with Parquet functionalities" OFF)
-if (CYLON_PARQUET)
-    message("Cylon Parquet enabled")
-    add_definitions(-DBUILD_CYLON_PARQUET)
-    find_library(PARQUET_LIB parquet REQUIRED HINTS "${ARROW_LIB_DIR}")
-    message(STATUS "Parquet lib: ${PARQUET_LIB}")
-endif (CYLON_PARQUET)
+message("Cylon Parquet enabled")
+add_definitions(-DBUILD_CYLON_PARQUET)
+find_library(PARQUET_LIB parquet REQUIRED HINTS "${ARROW_LIB_DIR}")
+message(STATUS "Parquet lib: ${PARQUET_LIB}")
 
 add_subdirectory(src/cylon)
 add_subdirectory(src/examples)

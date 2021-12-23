@@ -361,7 +361,9 @@ build_pyarrow(){
   read_python_requirements
   check_python_pre_requisites
   pushd ${BUILD_PATH}/arrow/arrow/python || exit 1
-  PYARROW_CMAKE_OPTIONS="-DCMAKE_MODULE_PATH=${ARROW_HOME}/lib/cmake/arrow" python3 setup.py install || exit 1
+  PYARROW_CMAKE_OPTIONS="-DCMAKE_MODULE_PATH=${ARROW_HOME}/lib/cmake/arrow" \
+      PYARROW_WITH_PARQUET=1 \
+      python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
@@ -371,7 +373,7 @@ build_python_pyarrow() {
   echo "Building Python"
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
-  pip install pyarrow==4.0.1 || exit 1
+  pip install pyarrow==5.0.0 || exit 1
 
   ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
   LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1
