@@ -4,5 +4,6 @@ wheel
 pandas
 pytest
 pytest-mpi
+setuptools
 mpi4py
 fsspec
