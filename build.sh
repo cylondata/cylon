@@ -172,7 +172,7 @@ echo "=================================================================";
 }
 
 read_python_requirements(){
-  pip3 install -U wheel setuptools || exit 1
+  pip3 install -U wheel || exit 1
   pip3 install -U -r requirements.txt || exit 1
 }
 
