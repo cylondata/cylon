@@ -173,6 +173,8 @@ echo "=================================================================";
 
 read_python_requirements(){
   pip3 install -U pip || exit 1
+  # required for mpi4py
+  pip3 install setuptools==60.0.0 || exit 1
   pip3 install -r requirements.txt || exit 1
 }
 
