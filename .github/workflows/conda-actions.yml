@@ -54,9 +54,9 @@ jobs:
       run: conda activate gcylon_dev
 
     - name: build cpp and test
-      run: ./build.sh --conda_cpp --release --test
+      run: ./build.sh --conda_cpp --release --test --cmake-flags "-DCYLON_UCX=ON"
     - name: build pycylon and test
-      run: ./build.sh --conda_python --release --pytest
+      run: ./build.sh --conda_python --release --pytest --cmake-flags "-DCYLON_UCX=ON"
     - name: build gcylon cpp, no testing at github for gpu
       run: ./build.sh --gcylon --release
     - name: build pygcylon, no testing at github for gpu

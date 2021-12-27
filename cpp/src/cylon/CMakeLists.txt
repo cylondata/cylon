@@ -19,14 +19,6 @@ IF(WIN32)
 ELSE()
     set_source_files_properties(util/murmur3.cpp util/murmur3.hpp PROPERTIES COMPILE_FLAGS -Wno-implicit-fallthrough)
 ENDIF()
-if (CYLON_PARQUET)
-    set(PARQUET_CYLON_FILES
-            io/parquet_config.hpp
-            io/parquet_config.cpp
-            )
-else (CYLON_PARQUET)
-    set(PARQUET_CYLON_FILES)
-endif (CYLON_PARQUET)
 
 if (CYLON_UCX)
     set(UCX_CYLON_FILES
@@ -42,7 +34,6 @@ else (CYLON_UCX)
 endif (CYLON_UCX)
 
 add_library(cylon SHARED
-        ${PARQUET_CYLON_FILES}
         ${UCX_CYLON_FILES}
         arrow/arrow_all_to_all.cpp
         arrow/arrow_all_to_all.hpp
@@ -94,6 +85,8 @@ add_library(cylon SHARED
         io/csv_read_config_holder.hpp
         io/csv_write_config.cpp
         io/csv_write_config.hpp
+        io/parquet_config.hpp
+        io/parquet_config.cpp
         join/hash_join.cpp
         join/hash_join.hpp
         join/join.cpp
@@ -202,10 +195,7 @@ target_link_libraries(cylon ${MPI_CXX_LIBRARIES})
 target_link_libraries(cylon ${GLOG_LIBRARIES})
 target_link_libraries(cylon ${ARROW_LIB})
 target_link_libraries(cylon Threads::Threads)
-
-if (CYLON_PARQUET)
-    target_link_libraries(cylon ${PARQUET_LIB})
-endif ()
+target_link_libraries(cylon ${PARQUET_LIB})
 
 if (CYLON_UCX)
     target_link_libraries(cylon ${UCX_LIBRARIES})
