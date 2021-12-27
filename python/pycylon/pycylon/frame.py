@@ -32,6 +32,7 @@ import pycylon as cn
 import pycylon.data as pcd
 from pandas.core.dtypes.common import infer_dtype_from_object
 from pycylon import CylonContext
+from pycylon import CylonEnv
 from pycylon import Series
 from pycylon.data.table import SortOptions
 from pycylon.index import RangeIndex, CategoricalIndex
@@ -126,39 +127,6 @@ def _read_csv_or_json(read_fun, paths, env, **kwargs) -> DataFrame:
         df = DataFrame(df_schema.empty_table())
 
     return df
-
-
-class CylonEnv(object):
-
-    def __init__(self, config=None, distributed=True) -> None:
-        self._context = CylonContext(config, distributed)
-        self._distributed = distributed
-        self._finalized = False
-
-    @property
-    def context(self) -> CylonContext:
-        return self._context
-
-    @property
-    def rank(self) -> int:
-        return self._context.get_rank()
-
-    @property
-    def world_size(self) -> int:
-        return self._context.get_world_size()
-
-    @property
-    def is_distributed(self) -> bool:
-        return self._distributed
-
-    def finalize(self):
-        if not self._finalized:
-            self._finalized = True
-            self._context.finalize()
-
-    def barrier(self):
-        self._context.barrier()
-
 
 class GroupByDataFrame(object):
     def __init__(self, df: DataFrame, by=None, groupby_type: str = 'hash') -> None:
