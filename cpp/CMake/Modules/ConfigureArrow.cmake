@@ -16,18 +16,6 @@ include(GNUInstallDirs)
 set(ARROW_HOME ${CMAKE_BINARY_DIR}/arrow/install)
 set(ARROW_ROOT ${CMAKE_BINARY_DIR}/arrow)
 
-if (CYLON_PARQUET)
-    set(PARQUET_ARGS " -DARROW_WITH_BROTLI=ON"
-            " -DARROW_WITH_SNAPPY=ON"
-            " -DARROW_WITH_ZLIB=ON"
-            " -DARROW_PARQUET=ON")
-else (CYLON_PARQUET)
-    set(PARQUET_ARGS " -DARROW_WITH_BROTLI=OFF"
-            " -DARROW_WITH_SNAPPY=OFF"
-            " -DARROW_WITH_ZLIB=OFF"
-            " -DARROW_PARQUET=OFF")
-endif (CYLON_PARQUET)
-
 set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_WITH_ZSTD=OFF"
         " -DARROW_BUILD_STATIC=ON"
@@ -51,7 +39,10 @@ set(ARROW_CMAKE_ARGS " -DARROW_WITH_LZ4=OFF"
         " -DARROW_CSV=ON"
         " -DARROW_JSON=ON"
         " -DARROW_BOOST_USE_SHARED=OFF"
-        ${PARQUET_ARGS}
+        " -DARROW_WITH_BROTLI=ON"
+        " -DARROW_WITH_SNAPPY=ON"
+        " -DARROW_WITH_ZLIB=ON"
+        " -DARROW_PARQUET=ON"
         )
 
 if (PYCYLON_BUILD)
@@ -102,11 +93,9 @@ find_package(Arrow REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS Fin
 message(STATUS "Arrow lib: ${ARROW_SHARED_LIB}")
 set(ARROW_LIB ${ARROW_SHARED_LIB})
 
-if (CYLON_PARQUET)
-    find_package(Parquet REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindParquet.cmake)
-    message(STATUS "Parquet lib: ${PARQUET_SHARED_LIB}")
-    set(PARQUET_LIB ${PARQUET_SHARED_LIB})
-endif (CYLON_PARQUET)
+find_package(Parquet REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindParquet.cmake)
+message(STATUS "Parquet lib: ${PARQUET_SHARED_LIB}")
+set(PARQUET_LIB ${PARQUET_SHARED_LIB})
 
 if (PYCYLON_BUILD)
     find_package(arrow_python REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindArrowPython.cmake)

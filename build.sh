@@ -172,6 +172,9 @@ echo "=================================================================";
 }
 
 read_python_requirements(){
+  pip3 install -U pip || exit 1
+  # required for mpi4py
+  pip3 install setuptools==60.0.0 || exit 1
   pip3 install -r requirements.txt || exit 1
 }
 
@@ -316,7 +319,7 @@ build_cpp_conda(){
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DCMAKE_BUILD_TYPE=${BUILD_MODE} \
       -DCYLON_WITH_TEST=${RUN_CPP_TESTS} -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
       -DARROW_BUILD_TYPE="SYSTEM" -DARROW_LIB_DIR=${ARROW_LIB} -DARROW_INCLUDE_DIR=${ARROW_INC} \
-      -DCYLON_PARQUET=ON -DGCYLON_BUILD=${GCYLON_BUILD}\
+      -DGCYLON_BUILD=${GCYLON_BUILD} \
       ${CMAKE_FLAGS} \
       ${SOURCE_DIR} \
       || exit 1
@@ -361,7 +364,7 @@ build_pyarrow(){
   read_python_requirements
   check_python_pre_requisites
   pushd ${BUILD_PATH}/arrow/arrow/python || exit 1
-  PYARROW_CMAKE_OPTIONS="-DCMAKE_MODULE_PATH=${ARROW_HOME}/lib/cmake/arrow" python3 setup.py install || exit 1
+  PYARROW_CMAKE_OPTIONS="-DCMAKE_MODULE_PATH=${ARROW_HOME}/lib/cmake/arrow" PYARROW_WITH_PARQUET=1 python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
@@ -371,7 +374,7 @@ build_python_pyarrow() {
   echo "Building Python"
   source "${PYTHON_ENV_PATH}"/bin/activate || exit 1
   read_python_requirements
-  pip install pyarrow==4.0.1 || exit 1
+  pip install pyarrow==5.0.0 || exit 1
 
   ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
   LD_LIBRARY_PATH="${ARROW_LIB}:${BUILD_PATH}/lib:${LD_LIBRARY_PATH}" || exit 1

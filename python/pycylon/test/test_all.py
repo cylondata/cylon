@@ -246,6 +246,12 @@ def test_repartition():
     assert responses[-1] == 0
 
 
+def test_parquet():
+    print("32. DataFrame Test")
+    responses.append(os.system("pytest -q python/pycylon/test/test_parquet.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)
