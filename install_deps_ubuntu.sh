@@ -37,14 +37,15 @@ apt-get -y install libbz2-dev
 apt-get -y install libutf8proc-dev
 
 ## Intall arrow
+apt update
 apt install -y -V ca-certificates lsb-release wget
 if [ $(lsb_release --codename --short) = "stretch" ]; then
   tee /etc/apt/sources.list.d/backports.list <<APT_LINE
 deb http://deb.debian.org/debian $(lsb_release --codename --short)-backports main
 APT_LINE
 fi
-wget https://apache.bintray.com/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-archive-keyring-latest-$(lsb_release --codename --short).deb
-apt install -y -V ./apache-arrow-archive-keyring-latest-$(lsb_release --codename --short).deb
+wget https://apache.jfrog.io/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+sudo apt install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
 apt update
 apt install -y -V libarrow-dev # For C++
 apt install -y -V libarrow-glib-dev # For GLib (C)
