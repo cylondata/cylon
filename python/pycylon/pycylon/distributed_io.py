@@ -1,7 +1,7 @@
 from typing import List, Dict, Union
 import os
 
-from pycylon.frame import DataFrame, CylonEnv, concat
+from pycylon.frame import DataFrame, CylonEnv, concat, read_csv
 from pycylon.util import io_utils
 import pyarrow.json as pj
 import pyarrow.parquet as pq
@@ -34,7 +34,8 @@ def _read_csv_or_json(read_fun, paths, env, **kwargs) -> DataFrame:
         df = concat(df_list)
 
     # schema = df .head(0).to_arrow().schema if cdf is not None else None
-    schema = df.to_arrow().schema
+    schema = df.to_arrow().schema if df is not None else None
+
     df_schema = io_utils.all_schemas_equal(schema, env=env)
     if df is None:
         df = DataFrame(df_schema.empty_table())
@@ -79,9 +80,12 @@ def read_parquet_dist(paths: Union[str, List[str], Dict[int, Union[str, List[str
 
         fmd = io_utils.all_gather_metadata(worker_files=worker_files, env=env)
         if file_mappings_given:
-            df =  DataFrame(pq.read_table(worker_files, **kwargs)) if worker_files else \
-                DataFrame(fmd.schema.to_arrow_schema().empty_table())
-            return df
+            if not worker_files:
+                return DataFrame(fmd.schema.to_arrow_schema().empty_table())
+            dfs = []
+            for file in worker_files:
+                dfs.append(DataFrame(pq.read_table(file, **kwargs)))
+            return concat(dfs)
 
     # construct a DataFrame with relevant columns
     pdf = io_utils.construct_df(fmd)
@@ -90,16 +94,18 @@ def read_parquet_dist(paths: Union[str, List[str], Dict[int, Union[str, List[str
     my_rg_df = io_utils.row_groups_this_worker(pdf, env)
 
     my_files = my_rg_df["file"].unique().tolist()
-    my_row_groups = []
-    for f in my_files:
-        rg_per_file = my_rg_df[my_rg_df['file'] == f]["row_group_index"].tolist()
-        my_row_groups.append(rg_per_file)
 
-    if my_files:
-        df = pq.read_table(my_files, row_groups=my_row_groups, **kwargs)
-    else:
-        df = DataFrame(fmd.schema.to_arrow_schema().empty_table())
-    return df
+    if not my_files:
+        return DataFrame(fmd.schema.to_arrow_schema().empty_table())
+
+    dfs = []
+    for f in my_files:
+        pq_file = pq.ParquetFile(f)
+        rg = my_rg_df[my_rg_df['file'] == f]["row_group_index"].tolist()
+        ptable = pq_file.read_row_groups(rg)
+        dfs.append(DataFrame(ptable))
+
+    return concat(dfs)
 
 def write_csv_dist(df: DataFrame,
             dir_path: str,
@@ -180,7 +186,7 @@ def write_parquet_dist(df: DataFrame,
                                                 name_function=name_function,
                                                 file_ext="parquet",
                                                 env=env)
-    pq.write_table(df, outfile, **kwargs)
+    pq.write_table(df.to_arrow(), outfile, **kwargs)
 
     if not write_metadata_file:
         return outfile
