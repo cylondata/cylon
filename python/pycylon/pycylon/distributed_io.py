@@ -1,11 +1,11 @@
 from typing import List, Dict, Union
 import os
 
-from pycylon.frame import DataFrame, CylonEnv, concat, read_csv
+from pycylon.frame import CylonEnv, DataFrame, concat, read_csv
 from pycylon.util import io_utils
-import pyarrow.json as pj
 import pyarrow.parquet as pq
 import pyarrow.csv as pac
+import pandas as pd
 
 def _read_csv_or_json(read_fun, paths, env, **kwargs) -> DataFrame:
     """
@@ -33,9 +33,7 @@ def _read_csv_or_json(read_fun, paths, env, **kwargs) -> DataFrame:
             df_list.append(read_fun(worker_file, **kwargs))
         df = concat(df_list)
 
-    # schema = df .head(0).to_arrow().schema if cdf is not None else None
     schema = df.to_arrow().schema if df is not None else None
-
     df_schema = io_utils.all_schemas_equal(schema, env=env)
     if df is None:
         df = DataFrame(df_schema.empty_table())
@@ -50,7 +48,7 @@ def read_csv_dist(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]]
 def read_json_dist(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],
             env: CylonEnv, **kwargs) -> DataFrame:
     def json_read_fun(path, **kwargs):
-        return DataFrame(pj.read_json(path, **kwargs))
+        return DataFrame(pd.read_json(path, **kwargs))
     return _read_csv_or_json(json_read_fun, paths, env, **kwargs)
 
 def read_parquet_dist(paths: Union[str, List[str], Dict[int, Union[str, List[str]]]],

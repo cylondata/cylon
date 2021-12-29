@@ -1,10 +1,7 @@
-from pycylon import CylonEnv, DataFrame, read_csv_dist, read_json_dist, read_parquet_dist
-from pycylon.io import CSVWriteOptions
-from python.pycylon.pycylon.distributed_io import write_csv_dist, write_json_dist, write_parquet_dist
+from pycylon import CylonEnv, DataFrame
+from python.pycylon.pycylon.distributed_io import read_csv_dist, read_json_dist, read_parquet_dist, write_csv_dist, write_json_dist, write_parquet_dist
 
-from utils import create_df, assert_eq
 from pycylon.net import MPIConfig
-import random
 import tempfile
 
 """
@@ -51,7 +48,7 @@ def test_json():
 
     # one file per worker to read
     input_files = "data/json/sales_*.json"
-    df = read_json_dist(input_files, env=env)
+    df = read_json_dist(input_files, env=env, lines=True)
 
     rows_per_worker = [25, 25, 25, 25]
     assert len(df) == rows_per_worker[env.rank], \
@@ -60,14 +57,14 @@ def test_json():
     # write json files to a temporary directory
     with tempfile.TemporaryDirectory() as dirpath:
         out_file = write_json_dist(df, dirpath, env, orient="records", lines=True, force_ascii=False)
-        df2 = read_json_dist(paths={env.rank: out_file}, env=env)
+        df2 = read_json_dist(paths={env.rank: out_file}, env=env, lines=True)
         assert len(df) == len(df2), \
             f'Read JSON DataFrame row count [{len(df2)}] does not written dataframe row count [{len(df)}]'
 
     # only two workers read a file, the others do not read a file
     # they need to get a proper empty DataFrame
     input_files = ["data/json/sales_0.json", "data/json/sales_1.json"]
-    df = read_json_dist(input_files, env=env)
+    df = read_json_dist(input_files, env=env, lines=True)
 
     rows_per_worker = [25, 25, 0, 0]
     assert len(df) == rows_per_worker[env.rank], \
