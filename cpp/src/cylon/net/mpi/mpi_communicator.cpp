@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-#include <mpi.h>
 #include <memory>
 
 #include <cylon/net/communicator.hpp>
@@ -31,13 +30,6 @@
 namespace cylon {
 namespace net {
 // configs
-void MPIConfig::DummyConfig(int dummy) {
-  this->AddConfig("Dummy", &dummy);
-}
-int MPIConfig::GetDummyConfig() {
-  return *reinterpret_cast<int *>(this->GetConfig("Dummy"));
-}
-
 CommType MPIConfig::Type() {
   return CommType::MPI;
 }
@@ -48,7 +40,7 @@ std::shared_ptr<MPIConfig> MPIConfig::Make() {
 MPIConfig::~MPIConfig() = default;
 
 std::unique_ptr<Channel> MPICommunicator::CreateChannel() const {
-  return std::make_unique<MPIChannel>();
+  return std::make_unique<MPIChannel>(mpi_comm_);
 }
 
 int MPICommunicator::GetRank() const {
@@ -65,11 +57,29 @@ Status MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     MPI_Init(nullptr, nullptr);
   }
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
+  this->mpi_comm_ = MPI_COMM_WORLD;
+
+  MPI_Comm_rank(mpi_comm_, &this->rank);
+  MPI_Comm_size(mpi_comm_, &this->world_size);
 
   return Status::OK();
 }
+
+Status MPICommunicator::InitFromComm(MPI_Comm comm) {
+  int initialized;
+  MPI_Initialized(&initialized);
+  if (!initialized) {
+    return {Code::ExecutionError, "MPI is not initialized!"};
+  }
+
+  this->mpi_comm_ = comm;
+
+  MPI_Comm_rank(mpi_comm_, &this->rank);
+  MPI_Comm_size(mpi_comm_, &this->world_size);
+
+  return Status::OK();
+}
+
 void MPICommunicator::Finalize() {
   int finalized;
   MPI_Finalized(&finalized);
@@ -78,7 +88,7 @@ void MPICommunicator::Finalize() {
   }
 }
 void MPICommunicator::Barrier() {
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(mpi_comm_);
 }
 
 CommType MPICommunicator::GetCommType() const {
@@ -225,5 +235,10 @@ Status MPICommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
   }
   return Status::OK();
 }
+
+MPI_Comm MPICommunicator::mpi_comm() const {
+  return mpi_comm_;
+}
+
 }  // namespace net
 }  // namespace cylon

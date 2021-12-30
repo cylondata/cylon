@@ -15,6 +15,8 @@
 #ifndef CYLON_SRC_CYLON_COMM_MPICOMMUNICATOR_H_
 #define CYLON_SRC_CYLON_COMM_MPICOMMUNICATOR_H_
 
+#include <mpi.h>
+
 #include <cylon/net/comm_config.hpp>
 #include <cylon/net/communicator.hpp>
 
@@ -22,11 +24,7 @@ namespace cylon {
 namespace net {
 
 class MPIConfig : public CommConfig {
- private:
-  // no configs for MPI. This is an example
-  void DummyConfig(int dummy);
-  int GetDummyConfig();
-public:
+ public:
   CommType Type() override;
   ~MPIConfig() override;
   static std::shared_ptr<MPIConfig> Make();
@@ -36,6 +34,8 @@ class MPICommunicator : public Communicator {
  public:
   ~MPICommunicator() override = default;
   Status Init(const std::shared_ptr<CommConfig> &config) override;
+  Status InitFromComm(MPI_Comm comm);
+
   std::unique_ptr<Channel> CreateChannel() const override;
   int GetRank() const override;
   int GetWorldSize() const override;
@@ -52,6 +52,11 @@ class MPICommunicator : public Communicator {
   Status Bcast(const std::shared_ptr<CylonContext> &ctx,
                std::shared_ptr<Table> *table,
                int bcast_root) const override;
+
+  MPI_Comm mpi_comm() const;
+
+ private:
+  MPI_Comm mpi_comm_ = nullptr;
 };
 
 }

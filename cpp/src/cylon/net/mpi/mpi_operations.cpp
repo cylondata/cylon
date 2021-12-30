@@ -65,11 +65,14 @@ MPI_Datatype cylon::mpi::GetMPIDataType(const std::shared_ptr<DataType> &data_ty
   return MPI_DATATYPE_NULL;
 }
 
-cylon::Status cylon::mpi::AllReduce(const void *send_buf,
+cylon::Status cylon::mpi::AllReduce(const std::shared_ptr<CylonContext> &ctx,
+                                    const void *send_buf,
                                     void *rcv_buf,
-                                    const int count,
-                                    const std::shared_ptr<cylon::DataType> &data_type,
-                                    const cylon::net::ReduceOp reduce_op) {
+                                    int count,
+                                    const std::shared_ptr<DataType> &data_type,
+                                    cylon::net::ReduceOp reduce_op) {
+  auto comm = GetMpiComm(ctx);
+
   MPI_Datatype mpi_data_type = cylon::mpi::GetMPIDataType(data_type);
   MPI_Op mpi_op = cylon::mpi::GetMPIOp(reduce_op);
 
@@ -77,7 +80,7 @@ cylon::Status cylon::mpi::AllReduce(const void *send_buf,
     return cylon::Status(cylon::Code::NotImplemented, "Unknown data type or operation for MPI");
   }
 
-  if (MPI_Allreduce(send_buf, rcv_buf, count, mpi_data_type, mpi_op, MPI_COMM_WORLD) == MPI_SUCCESS) {
+  if (MPI_Allreduce(send_buf, rcv_buf, count, mpi_data_type, mpi_op, comm) == MPI_SUCCESS) {
     return cylon::Status::OK();
   } else {
     return cylon::Status(cylon::Code::ExecutionError, "MPI operation failed!");

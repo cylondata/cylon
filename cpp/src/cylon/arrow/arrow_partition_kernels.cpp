@@ -528,8 +528,12 @@ class RangePartitionKernel : public PartitionKernel {
     std::vector<uint64_t> global_counts, *global_counts_ptr;
     if (ctx->GetWorldSize() > 1) { // if distributed, all-reduce all local bin counts
       global_counts.resize(num_bins + 2, 0);
-      RETURN_CYLON_STATUS_IF_FAILED(cylon::mpi::AllReduce(local_counts.data(), global_counts.data(), num_bins + 2,
-                                                          cylon::UInt64(), cylon::net::SUM));
+      RETURN_CYLON_STATUS_IF_FAILED(cylon::mpi::AllReduce(ctx,
+                                                          local_counts.data(),
+                                                          global_counts.data(),
+                                                          num_bins + 2,
+                                                          cylon::UInt64(),
+                                                          cylon::net::SUM));
       global_counts_ptr = &global_counts;
       local_counts.clear();
     } else { // else, just use local bin counts

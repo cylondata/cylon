@@ -40,7 +40,7 @@ void MPIChannel::init(int ed, const std::vector<int> &receives, const std::vecto
     buf->receiveId = source;
     pendingReceives.insert(std::pair<int, PendingReceive *>(source, buf));
     MPI_Irecv(buf->headerBuf, CYLON_CHANNEL_HEADER_SIZE, MPI_INT,
-        source, edge, MPI_COMM_WORLD, &buf->request);
+              source, edge, comm_, &buf->request);
     // set the flag to true so we can identify later which buffers are posted
     buf->status = RECEIVE_LENGTH_POSTED;
   }
@@ -49,7 +49,7 @@ void MPIChannel::init(int ed, const std::vector<int> &receives, const std::vecto
     sends[target] = new PendingSend();
   }
   // get the rank
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_rank(comm_, &rank);
 }
 
 int MPIChannel::send(std::shared_ptr<TxRequest> request) {
@@ -97,7 +97,7 @@ void MPIChannel::progressReceives() {
           }
           x.second->length = length;
           MPI_Irecv(x.second->data->GetByteBuffer(), length, MPI_BYTE, x.second->receiveId, edge,
-              MPI_COMM_WORLD, &(x.second->request));
+                    comm_, &(x.second->request));
           x.second->status = RECEIVE_POSTED;
           // copy the count - 2 to the buffer
           int *header = nullptr;
@@ -131,7 +131,7 @@ void MPIChannel::progressReceives() {
         // clear the array
         std::fill_n(x.second->headerBuf, CYLON_CHANNEL_HEADER_SIZE, 0);
         MPI_Irecv(x.second->headerBuf, CYLON_CHANNEL_HEADER_SIZE, MPI_INT,
-                  x.second->receiveId, edge, MPI_COMM_WORLD, &(x.second->request));
+                  x.second->receiveId, edge, comm_, &(x.second->request));
         x.second->status = RECEIVE_LENGTH_POSTED;
         // call the back end
         rcv_fn->receivedData(x.first, x.second->data, x.second->length);
@@ -155,7 +155,7 @@ void MPIChannel::progressSends() {
         // now post the actual send
         std::shared_ptr<TxRequest> r = x.second->pendingData.front();
         MPI_Isend(r->buffer, r->length, MPI_BYTE,
-                  r->target, edge, MPI_COMM_WORLD, &(x.second->request));
+                  r->target, edge, comm_, &(x.second->request));
         x.second->status = SEND_POSTED;
         x.second->pendingData.pop();
         // we set to the current send and pop it
@@ -220,7 +220,7 @@ void MPIChannel::sendHeader(const std::pair<const int, PendingSend *> &x) const 
   }
   // we have to add 2 to the header length
   MPI_Isend(&(x.second->headerBuf[0]), 2 + r->headerLength, MPI_INT,
-            x.first, edge, MPI_COMM_WORLD, &(x.second->request));
+            x.first, edge, comm_, &(x.second->request));
   x.second->status = SEND_LENGTH_POSTED;
 }
 
@@ -229,7 +229,7 @@ void MPIChannel::sendFinishHeader(const std::pair<const int, PendingSend *> &x) 
   x.second->headerBuf[0] = 0;
   x.second->headerBuf[1] = CYLON_MSG_FIN;
   MPI_Isend(&(x.second->headerBuf[0]), 2, MPI_INT,
-            x.first, edge, MPI_COMM_WORLD, &(x.second->request));
+            x.first, edge, comm_, &(x.second->request));
   x.second->status = SEND_FINISH;
 }
 
