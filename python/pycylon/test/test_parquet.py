@@ -36,5 +36,5 @@ def test_parquet_join():
 
     out = cdf1.merge(cdf2, how='inner', on=[0], algorithm='sort', suffixes=('lt-', 'rt-'))
 
-    # assert(expected.equals(out, ordered=False))  # should pass
+    assert(expected.equals(out, ordered=False))  # should pass
     assert (len(expected.to_table().subtract(out.to_table())) == 0)
