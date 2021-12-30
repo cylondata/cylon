@@ -105,8 +105,8 @@ std::vector<int32_t> ReshapeDispToPerTable(const std::vector<std::vector<int32_t
   return res;
 }
 
-Status MPISyncCommunicator::AllGather(const std::shared_ptr<Table> &table,
-                                      std::vector<std::shared_ptr<Table>> *out) const {
+Status MPICommunicator::AllGather(const std::shared_ptr<Table> &table,
+                                  std::vector<std::shared_ptr<Table>> *out) const {
   std::shared_ptr<TableSerializer> serializer;
   RETURN_CYLON_STATUS_IF_FAILED(CylonTableSerializer::Make(table, &serializer));
   const auto &ctx = table->GetContext();
@@ -134,10 +134,10 @@ Status MPISyncCommunicator::AllGather(const std::shared_ptr<Table> &table,
                            buffer_sizes_per_table, buffer_offsets_per_table, out);
 }
 
-Status MPISyncCommunicator::Gather(const std::shared_ptr<Table> &table,
-                                   int gather_root,
-                                   bool gather_from_root,
-                                   std::vector<std::shared_ptr<Table>> *out) const {
+Status MPICommunicator::Gather(const std::shared_ptr<Table> &table,
+                               int gather_root,
+                               bool gather_from_root,
+                               std::vector<std::shared_ptr<Table>> *out) const {
   std::shared_ptr<TableSerializer> serializer;
   RETURN_CYLON_STATUS_IF_FAILED(CylonTableSerializer::Make(table, &serializer));
   const auto &ctx = table->GetContext();
@@ -190,9 +190,9 @@ Status BcastArrowSchema(const std::shared_ptr<CylonContext> &ctx,
   return Status::OK();
 }
 
-Status MPISyncCommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
-                                  std::shared_ptr<Table> *table,
-                                  int bcast_root) const {
+Status MPICommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
+                              std::shared_ptr<Table> *table,
+                              int bcast_root) const {
   std::shared_ptr<arrow::Schema> schema;
   bool is_root = mpi::AmIRoot(bcast_root, ctx);
   auto *pool = ToArrowPool(ctx);

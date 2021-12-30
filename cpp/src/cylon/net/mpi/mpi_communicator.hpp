@@ -42,10 +42,7 @@ class MPICommunicator : public Communicator {
   void Finalize() override;
   void Barrier() override;
   CommType GetCommType() const override;
-};
 
-class MPISyncCommunicator : public SyncCommunicator {
- public:
   Status AllGather(const std::shared_ptr<Table> &table,
                    std::vector<std::shared_ptr<Table>> *out) const override;
 

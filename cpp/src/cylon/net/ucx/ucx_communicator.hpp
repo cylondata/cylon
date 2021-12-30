@@ -45,19 +45,6 @@ class UCXCommunicator : public Communicator {
   void Barrier() override;
   CommType GetCommType() const override;
 
-  // # UCX specific attributes - These need to be passed to the channels created from the communicator
-  // The worker for receiving
-  ucp_worker_h ucpRecvWorker;
-  // The worker for sending
-  ucp_worker_h ucpSendWorker;
-  // Endpoint Map
-  std::unordered_map<int, ucp_ep_h> endPointMap;
-  // UCP Context - Holds a UCP communication instance's global information.
-  ucp_context_h ucpContext;
-};
-
-class UCXSyncCommunicator : public SyncCommunicator {
- public:
   Status AllGather(const std::shared_ptr<Table> &table,
                    std::vector<std::shared_ptr<Table>> *out) const override;
   Status Gather(const std::shared_ptr<Table> &table,
@@ -67,6 +54,16 @@ class UCXSyncCommunicator : public SyncCommunicator {
   Status Bcast(const std::shared_ptr<CylonContext> &ctx,
                std::shared_ptr<Table> *table,
                int bcast_root) const override;
+
+  // # UCX specific attributes - These need to be passed to the channels created from the communicator
+  // The worker for receiving
+  ucp_worker_h ucpRecvWorker;
+  // The worker for sending
+  ucp_worker_h ucpSendWorker;
+  // Endpoint Map
+  std::unordered_map<int, ucp_ep_h> endPointMap;
+  // UCP Context - Holds a UCP communication instance's global information.
+  ucp_context_h ucpContext;
 };
 
 }
