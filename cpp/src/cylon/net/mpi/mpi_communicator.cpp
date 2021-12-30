@@ -68,10 +68,11 @@ Status MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
 
   if (!mpi_initialized_externally) { // if not initialized, init MPI
     RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
-  }
-
-  if (!mpi_comm_) { // set comm_ to world
+    assert(mpi_comm_ == nullptr);
+    // set comm_ to world
     mpi_comm_ = MPI_COMM_WORLD;
+    // setting errors to return
+    MPI_Comm_set_errhandler(mpi_comm_, MPI_ERRORS_RETURN);
   }
 
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_rank(mpi_comm_, &this->rank));

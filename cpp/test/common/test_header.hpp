@@ -33,16 +33,19 @@ std::shared_ptr<cylon::CylonContext> ctx = nullptr;
 int RANK = 0;
 int WORLD_SZ = 0;
 
-using namespace cylon;
-
 int main(int argc, char *argv[]) {
   // global setup...
   auto mpi_config = cylon::net::MPIConfig::Make();
-  ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  auto st = cylon::CylonContext::InitDistributed(mpi_config, &ctx);
+  if (!st.is_ok()) {
+    LOG(ERROR) << "ctx init failed: " << st.get_msg();
+    return st.get_code();
+  }
+
   RANK = ctx->GetRank();
   WORLD_SZ = ctx->GetWorldSize();
 
-  std::cout << "wz: " << WORLD_SZ << " rank: " << RANK << std::endl;
+  LOG(INFO) << "wz: " << WORLD_SZ << " rank: " << RANK << std::endl;
   int result = Catch::Session().run(argc, argv);
 
   // global clean-up...

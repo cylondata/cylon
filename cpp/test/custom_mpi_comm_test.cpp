@@ -27,10 +27,19 @@ namespace test {
 
 TEST_CASE("custom mpi communicator") {
   MPI_Init(nullptr, nullptr);
+  MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+
   int rank, world_sz;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &world_sz);
   INFO("global rank:" + std::to_string(rank) + " sz:" + std::to_string(world_sz));
+
+  // test RETURN_CYLON_STATUS_IF_MPI_FAILED macro
+  auto failing_dummy = []() {
+    RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_split(MPI_COMM_WORLD, 0, 0, nullptr));
+    return Status::OK();
+  };
+  REQUIRE(!failing_dummy().is_ok());
 
   if (world_sz == 4) {
     // world 3-1 split
