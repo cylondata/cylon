@@ -68,15 +68,23 @@ Status MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
 
   if (!mpi_initialized_externally) { // if not initialized, init MPI
     RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
-    assert(mpi_comm_ == nullptr);
-    // set comm_ to world
-    mpi_comm_ = MPI_COMM_WORLD;
-    // setting errors to return
-    MPI_Comm_set_errhandler(mpi_comm_, MPI_ERRORS_RETURN);
   }
+
+  if (!mpi_comm_) { // set comm_ to world
+    mpi_comm_ = MPI_COMM_WORLD;
+  }
+
+  // setting errors to return
+  MPI_Comm_set_errhandler(mpi_comm_, MPI_ERRORS_RETURN);
 
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_rank(mpi_comm_, &this->rank));
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_size(mpi_comm_, &this->world_size));
+
+  if (rank < 0 || world_size < 0 || rank >= world_size) {
+    return {Code::ExecutionError, "Malformed rank :" + std::to_string(rank)
+        + " or world size:" + std::to_string(world_size)};
+  }
+
   return Status::OK();
 }
 

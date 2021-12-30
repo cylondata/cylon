@@ -34,6 +34,7 @@ def test_conversion_check():
     ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
 
     rank, size = ctx.get_rank(), ctx.get_world_size()
+    assert 0 <= rank < size and size > 0
 
     assert size == 2
 

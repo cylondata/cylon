@@ -20,7 +20,7 @@ from pycylon.net.comm_config cimport CommConfig
 
 
 cdef extern from "../../../../cpp/src/cylon/net/mpi/mpi_communicator.hpp" namespace "cylon::net":
-    cdef cppclass CMPIConfig "cylon::net::MPIConfig" (CCommConfig):
+    cdef cppclass CMPIConfig "cylon::net::MPIConfig":
 
         @staticmethod
         shared_ptr[CMPIConfig] Make();
