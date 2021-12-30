@@ -65,7 +65,7 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   // MPI init
   MPI_Initialized(&initialized);
   if (!initialized) {
-    MPI_Init(nullptr, nullptr);
+    RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
   }
 
   // Get the rank for checking send to self, and initializations
@@ -73,10 +73,7 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
 
   // Init context
-  initialized = cylon::ucx::initContext(&ucpContext, nullptr);
-  if (initialized != 0) {
-    LOG(FATAL) << "Error occurred when creating UCX context";
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::ucx::initContext(&ucpContext, nullptr));
 
   // Init recv worker and get address
   ucpRecvWorkerAddr = cylon::ucx::initWorker(ucpContext, &ucpRecvWorker);
@@ -86,13 +83,13 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   //  Gather all worker addresses
   // All addresses buffer for allGather
   auto allAddresses = std::make_unique<uint8_t[]>(ucpRecvWorkerAddr->addrSize * world_size);
-  MPI_Allgather(ucpRecvWorkerAddr->addr,
-                (int) ucpRecvWorkerAddr->addrSize,
-                MPI_BYTE,
-                allAddresses.get(),
-                (int) ucpRecvWorkerAddr->addrSize,
-                MPI_BYTE,
-                MPI_COMM_WORLD);
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Allgather(ucpRecvWorkerAddr->addr,
+                                                  (int) ucpRecvWorkerAddr->addrSize,
+                                                  MPI_BYTE,
+                                                  allAddresses.get(),
+                                                  (int) ucpRecvWorkerAddr->addrSize,
+                                                  MPI_BYTE,
+                                                  MPI_COMM_WORLD));
 
   // Iterate and set the sends
   for (sIndx = 0; sIndx < this->world_size; sIndx++) {
@@ -102,7 +99,8 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     // If not self, then check if the worker address has been received.
     //  If self,then assign local worker
     if (this->rank != sIndx) {
-      address = reinterpret_cast<ucp_address_t *>(allAddresses.get() + sIndx * ucpRecvWorkerAddr->addrSize);
+      address = reinterpret_cast<ucp_address_t *>(allAddresses.get()
+          + sIndx * ucpRecvWorkerAddr->addrSize);
     } else {
       address = ucpRecvWorkerAddr->addr;
     }
@@ -120,7 +118,8 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     // Check if the endpoint was created properly
     if (ucxStatus != UCS_OK) {
       LOG(FATAL) << "Error when creating the endpoint.";
-      return Status(ucxStatus, "This is an error from UCX");
+      return {Code::ExecutionError,
+              "Error when creating the endpoint: " + std::string(ucs_status_string(ucxStatus))};
     }
   }
 

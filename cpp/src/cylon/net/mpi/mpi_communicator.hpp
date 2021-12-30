@@ -25,17 +25,24 @@ namespace net {
 
 class MPIConfig : public CommConfig {
  public:
+  explicit MPIConfig(MPI_Comm comm = nullptr);
+
   CommType Type() override;
+
   ~MPIConfig() override;
-  static std::shared_ptr<MPIConfig> Make();
+
+  MPI_Comm GetMPIComm() const;
+
+  static std::shared_ptr<MPIConfig> Make(MPI_Comm comm = nullptr);
+
+ private:
+  MPI_Comm comm_;
 };
 
 class MPICommunicator : public Communicator {
  public:
   ~MPICommunicator() override = default;
   Status Init(const std::shared_ptr<CommConfig> &config) override;
-  Status InitFromComm(MPI_Comm comm);
-
   std::unique_ptr<Channel> CreateChannel() const override;
   int GetRank() const override;
   int GetWorldSize() const override;
@@ -57,6 +64,7 @@ class MPICommunicator : public Communicator {
 
  private:
   MPI_Comm mpi_comm_ = nullptr;
+  int mpi_initialized_externally = 0;
 };
 
 }

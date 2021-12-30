@@ -29,12 +29,20 @@
 
 namespace cylon {
 namespace net {
+
 // configs
 CommType MPIConfig::Type() {
   return CommType::MPI;
 }
-std::shared_ptr<MPIConfig> MPIConfig::Make() {
-  return std::make_shared<MPIConfig>();
+
+std::shared_ptr<MPIConfig> MPIConfig::Make(MPI_Comm comm) {
+  return std::make_shared<MPIConfig>(comm);
+}
+
+MPIConfig::MPIConfig(MPI_Comm comm) : comm_(comm) {}
+
+MPI_Comm MPIConfig::GetMPIComm() const {
+  return comm_;
 }
 
 MPIConfig::~MPIConfig() = default;
@@ -50,41 +58,35 @@ int MPICommunicator::GetWorldSize() const {
   return this->world_size;
 }
 Status MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
-  CYLON_UNUSED(config);
-  int initialized;
-  MPI_Initialized(&initialized);
-  if (!initialized) {
-    MPI_Init(nullptr, nullptr);
+  // check if MPI is initialized
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Initialized(&mpi_initialized_externally));
+  mpi_comm_ = std::static_pointer_cast<MPIConfig>(config)->GetMPIComm();
+
+  if (mpi_comm_ && !mpi_initialized_externally) {
+    return {Code::Invalid, "non-nullptr MPI_Comm passed without initializing MPI"};
   }
 
-  this->mpi_comm_ = MPI_COMM_WORLD;
-
-  MPI_Comm_rank(mpi_comm_, &this->rank);
-  MPI_Comm_size(mpi_comm_, &this->world_size);
-
-  return Status::OK();
-}
-
-Status MPICommunicator::InitFromComm(MPI_Comm comm) {
-  int initialized;
-  MPI_Initialized(&initialized);
-  if (!initialized) {
-    return {Code::ExecutionError, "MPI is not initialized!"};
+  if (!mpi_initialized_externally) { // if not initialized, init MPI
+    RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
   }
 
-  this->mpi_comm_ = comm;
+  if (!mpi_comm_) { // set comm_ to world
+    mpi_comm_ = MPI_COMM_WORLD;
+  }
 
-  MPI_Comm_rank(mpi_comm_, &this->rank);
-  MPI_Comm_size(mpi_comm_, &this->world_size);
-
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_rank(mpi_comm_, &this->rank));
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_size(mpi_comm_, &this->world_size));
   return Status::OK();
 }
 
 void MPICommunicator::Finalize() {
-  int finalized;
-  MPI_Finalized(&finalized);
-  if (!finalized) {
-    MPI_Finalize();
+  // finalize only if we initialized MPI
+  if (!mpi_initialized_externally) {
+    int finalized;
+    MPI_Finalized(&finalized);
+    if (!finalized) {
+      MPI_Finalize();
+    }
   }
 }
 void MPICommunicator::Barrier() {

@@ -17,11 +17,12 @@
 #include <vector>
 #include <arrow/memory_pool.h>
 
-#include <cylon/ctx/cylon_context.hpp>
-#include <cylon/net/mpi/mpi_communicator.hpp>
+#include "cylon/ctx/cylon_context.hpp"
+#include "cylon/util/macros.hpp"
 
+#include "cylon/net/mpi/mpi_communicator.hpp"
 #ifdef BUILD_CYLON_UCX
-#include <cylon/net/ucx/ucx_communicator.hpp>
+#include "cylon/net/ucx/ucx_communicator.hpp"
 #endif
 
 namespace cylon {
@@ -42,7 +43,7 @@ std::shared_ptr<CylonContext> CylonContext::InitDistributed(const std::shared_pt
     return ctx;
   }
 
-  #ifdef BUILD_CYLON_UCX
+#ifdef BUILD_CYLON_UCX
   else if (config->Type() == net::CommType::UCX) {
     auto ctx = std::make_shared<CylonContext>(true);
     ctx->communicator = std::make_shared<net::UCXCommunicator>();
@@ -56,10 +57,46 @@ std::shared_ptr<CylonContext> CylonContext::InitDistributed(const std::shared_pt
   }
   return nullptr;
 }
+
+Status CylonContext::InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config,
+                                     std::shared_ptr<CylonContext> *ctx) {
+  switch (config->Type()) {
+    case net::LOCAL: return {Code::Invalid, "InitDistributed called on Local communication"};
+
+    case net::MPI: {
+      *ctx = std::make_shared<CylonContext>(true);
+      (*ctx)->communicator = std::make_shared<net::MPICommunicator>();
+      const auto &status = (*ctx)->communicator->Init(config);
+      if (!status.is_ok()) {
+        ctx->reset();
+        return status;
+      }
+      return Status::OK();
+    }
+
+    case net::UCX: {
+#ifdef BUILD_CYLON_UCX
+      *ctx = std::make_shared<CylonContext>(true);
+      (*ctx)->communicator = std::make_shared<net::UCXCommunicator>();
+      const auto &status = (*ctx)->communicator->Init(config);
+      if (!status.is_ok()) {
+        ctx->reset();
+        return status;
+      }
+      return Status::OK();
+#else
+      return {Code::NotImplemented, "UCX communication not implemented"};
+#endif
+    }
+
+    case net::TCP:return {Code::NotImplemented, "TCP communication not implemented"};
+  }
+  return Status::OK();
+}
+
 const std::shared_ptr<net::Communicator> &CylonContext::GetCommunicator() const {
   if (!is_distributed) {
     LOG(FATAL) << "No communicator available for local mode!";
-    return nullptr;
   }
   return this->communicator;
 }

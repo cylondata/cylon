@@ -54,6 +54,8 @@ class CylonContext {
    * @return <cylon::CylonContext*>
    */
   static std::shared_ptr<CylonContext> InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config);
+  static Status InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config,
+                                std::shared_ptr<CylonContext> *ctx);
 
   /**
    * Completes and closes all operations under the context

@@ -17,7 +17,8 @@
 
 #include <mpi.h>
 #include <ucp/api/ucp.h>
-#include <cylon/net/comm_operations.hpp>
+
+#include "cylon/status.hpp"
 
 namespace cylon {
 namespace ucx {
@@ -52,7 +53,7 @@ ucxWorkerAddr* initWorker(ucp_context_h ucpContext,
  * @param [out] ucpContext - The UCP context
  * @param [out] config - The configuration descriptor
  */
-int initContext(ucp_context_h *ucpContext,
+Status initContext(ucp_context_h *ucpContext,
                 ucp_config_t *config);
 }
 }
