@@ -193,7 +193,7 @@ def python_test():
         else:  # Windows
             env['PATH'] = str(Path(INSTALL_DIR, "Library")) + os.pathsep + env['PATH']
 
-    test_command = f"{PYTHON_EXEC} -m pytest python/pycylon/test/test_all.py"
+    test_command = f"{PYTHON_EXEC} -m pytest -v python/pycylon/test/test_all.py"
     res = subprocess.run(test_command, env=env, shell=True)
     check_status(res.returncode, "Python test suite")
 

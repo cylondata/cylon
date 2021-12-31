@@ -483,11 +483,11 @@ python_test(){
   ARROW_LIB=$(python3 -c 'import pyarrow as pa; import os; print(os.path.dirname(pa.__file__))') || exit 1
   LD_LIBRARY_PATH="${ARROW_LIB}:${LD_LIBRARY_PATH}" || exit 1
   export_library_path ${LD_LIBRARY_PATH}
-  python3 -m pytest python/pycylon/test/test_all.py || exit 1
+  python3 -m pytest -v python/pycylon/test/test_all.py || exit 1
 }
 
 pygcylon_test(){
-  python3 -m pytest python/pygcylon/test/test_all.py || exit 1
+  python3 -m pytest -v python/pygcylon/test/test_all.py || exit 1
 }
 
 build_java(){

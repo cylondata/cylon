@@ -254,7 +254,7 @@ def test_equals():
 
 
 def test_parquet():
-    print("32. DataFrame Test")
+    print("33. DataFrame Test")
     responses.append(os.system("pytest -q python/pycylon/test/test_parquet.py"))
     assert responses[-1] == 0
 
