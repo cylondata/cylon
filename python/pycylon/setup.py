@@ -102,7 +102,7 @@ library_directories = [cylon_library_directory,
 
 print("Libraries: " + str(library_directories))
 
-libraries = ["arrow", "cylon", "glog"] # todo glogd was added temporarily
+libraries = ["arrow", "cylon", "glog", "mpi"] # todo glogd was added temporarily
 cylon_include_dir = os.path.abspath(os.path.join(__file__, "../../..", "cpp", "src"))
 
 _include_dirs = [cylon_include_dir,
