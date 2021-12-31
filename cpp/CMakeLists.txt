@@ -179,6 +179,7 @@ include(Build)
 # if building gcylon, no need to build cylon
 option(GCYLON_BUILD "Build GCylon" OFF)
 if (GCYLON_BUILD)
+    message("GCylon build enabled")
     add_subdirectory(src/gcylon)
     add_subdirectory(src/examples/gcylon)
     if (CYLON_WITH_TEST)
@@ -192,6 +193,7 @@ endif ()
 # ucx
 option(CYLON_UCX "Build Cylon with UCX" OFF)
 if (CYLON_UCX)
+    message("Cylon UCX enabled")
     # Definition used for checking
     add_definitions(-DBUILD_CYLON_UCX)
 
