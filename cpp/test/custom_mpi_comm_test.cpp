@@ -75,7 +75,7 @@ TEST_CASE("custom mpi communicator") {
     std::string path1 = "../data/input/csv1_" + std::to_string(l_rank) + ".csv";
     std::string path2 = "../data/input/csv2_" + std::to_string(l_rank) + ".csv";
     std::string out_path =
-        "../data/output/join_inner_" + std::to_string(2) + "_" + std::to_string(l_rank) + ".csv";
+        "../data/output/join_inner_2_" + std::to_string(l_rank) + ".csv";
 
     SECTION("testing inner joins - sort") {
       const auto &join_config =
