@@ -91,7 +91,6 @@ glog_lib_include_dir = os.path.join(CYLON_PREFIX, "glog", "install", "include")
 cylon_library_directory = os.path.join(CYLON_PREFIX, "lib")
 cylon_library_directory_debug = os.path.join(CYLON_PREFIX, "lib", "Debug")
 cylon_library_directory_release = os.path.join(CYLON_PREFIX, "lib", "Release")
-mpi_library_dir = os.popen("mpicc --showme:libdirs").read().strip()
 
 library_directories = [cylon_library_directory,
                        cylon_library_directory_debug,
@@ -99,22 +98,25 @@ library_directories = [cylon_library_directory,
                        arrow_library_directory,
                        glob_library_directory,
                        get_python_lib(),
-                       os.path.join(os.sys.prefix, "lib"),
-                       mpi_library_dir]
+                       os.path.join(os.sys.prefix, "lib")]
+
+mpi_library_dir = os.popen("mpicc --showme:libdirs").read().strip().split(' ')
+library_directories.extend(mpi_library_dir)
 
 print("Libraries: " + str(library_directories))
 
 libraries = ["arrow", "cylon", "glog", "mpi"] # todo glogd was added temporarily
 cylon_include_dir = os.path.abspath(os.path.join(__file__, "../../..", "cpp", "src"))
-mpi_include_dir = os.popen("mpicc --showme:incdirs").read().strip()
 
 _include_dirs = [cylon_include_dir,
                  arrow_lib_include_dir,
                  glog_lib_include_dir,
                  pyarrow_include_dir,
                  np.get_include(),
-                 os.path.dirname(sysconfig.get_path("include")),
-                 mpi_include_dir]
+                 os.path.dirname(sysconfig.get_path("include"))]
+
+mpi_include_dir = os.popen("mpicc --showme:incdirs").read().strip().split(' ')
+_include_dirs.extend(mpi_include_dir)
 
 # Adopted the Cudf Python Build format
 # https://github.com/rapidsai/cudf
