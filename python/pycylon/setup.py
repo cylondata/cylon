@@ -13,22 +13,22 @@
 ##
 
 # References
-'''
+"""
 https://github.com/FedericoStra/cython-package-example/blob/master/setup.py
 https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
-'''
+"""
 
 import os
 import sysconfig
 from distutils.sysconfig import get_python_lib
-import pyarrow as pa
-import numpy as np
 
-import versioneer
+import numpy as np
+import pyarrow as pa
 from Cython.Build import cythonize
 from setuptools import find_packages, setup
 from setuptools.extension import Extension
-import glob
+
+import versioneer
 
 version = versioneer.get_version(),
 cmdclass = versioneer.get_cmdclass(),
@@ -64,8 +64,8 @@ arrow_library_directory = None
 if not ARROW_PREFIX:
     arrow_lib_include_dir = os.path.join(pyarrow_location, "include")
     arrow_library_directory = pyarrow_location
-    additional_compile_args = additional_compile_args + \
-        ['-D_GLIBCXX_USE_CXX11_ABI=0']
+    additional_compile_args.append('-D_GLIBCXX_USE_CXX11_ABI=0')
+    additional_compile_args.append('-DOMPI_SKIP_MPICXX=1')
     if not os.path.exists(arrow_library_directory):
         arrow_library_directory = os.path.join(pyarrow_location, "lib64")
 else:
@@ -83,7 +83,7 @@ if os.name == 'posix':
         "mpic++ --showme:compile").read().strip().split(' ')
     extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
     extra_compile_args = extra_compile_args + additional_compile_args
-    extra_link_args = ["-W"]
+    extra_link_args.append("-W")
 
 glob_library_directory = os.path.join(CYLON_PREFIX, "glog", "install", "lib")
 
@@ -105,7 +105,7 @@ library_directories.extend(mpi_library_dir)
 
 print("Libraries: " + str(library_directories))
 
-libraries = ["arrow", "cylon", "glog", "mpi"] # todo glogd was added temporarily
+libraries = ["arrow", "cylon", "glog"] # todo glogd was added temporarily
 cylon_include_dir = os.path.abspath(os.path.join(__file__, "../../..", "cpp", "src"))
 
 _include_dirs = [cylon_include_dir,
@@ -139,7 +139,7 @@ packages = find_packages(include=["pycylon", "pycylon.*"])
 
 print("PACKAGES: " + str(packages))
 
-ret = setup(
+setup(
     name="pycylon",
     packages=packages,
     version=versioneer.get_version(),
