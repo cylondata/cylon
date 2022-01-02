@@ -534,6 +534,10 @@ arrow::Status SortIndicesMultiColumns(arrow::MemoryPool *memory_pool,
     return arrow::Status::Invalid("No of sort columns and no of sort direction indicators mismatch");
   }
 
+  if (util::CheckArrowTableContainsChunks(table, columns)){
+    return arrow::Status::Invalid("SortIndicesMultiColumns can not handle chunked columns");
+  }
+
   std::vector<std::shared_ptr<ArrayIndexComparator>> comparators;
   comparators.reserve(columns.size());
   for (size_t i = 0; i < columns.size(); i++) {

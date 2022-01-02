@@ -18,17 +18,18 @@
 #include <memory>
 #include <random>
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include <arrow/util/cpu_info.h>
 
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/arrow/arrow_kernels.hpp>
 #include <cylon/util/macros.hpp>
+#include <iostream>
 
 namespace cylon {
 namespace util {
 
-arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort_column_index,
+arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int32_t sort_column_index,
                         arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Table> &sorted_table,
                         bool ascending) {
   std::shared_ptr<arrow::Table> tab_to_process;  // table referenced
@@ -56,7 +57,7 @@ arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort
   // no bounds check is needed as indices are guaranteed to be within range
   const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::NoBoundsCheck();
 
-  for (int64_t col_index = 0; col_index < tab_to_process->num_columns(); ++col_index) {
+  for (int32_t col_index = 0; col_index < tab_to_process->num_columns(); ++col_index) {
     const arrow::Result<arrow::Datum> &res = arrow::compute::Take(
         cylon::util::GetChunkOrEmptyArray(tab_to_process->column(col_index), 0),
         sorted_column_index, take_options, &exec_context);
@@ -73,38 +74,37 @@ arrow::Status SortTableMultiColumns(const std::shared_ptr<arrow::Table> &table,
                                     arrow::MemoryPool *memory_pool,
                                     std::shared_ptr<arrow::Table> &sorted_table,
                                     const std::vector<bool> &sort_column_directions) {
-  std::shared_ptr<arrow::Table> tab_to_process;  // table referenced
+  std::shared_ptr<arrow::Table> combined_tab;  // table referenced
   // combine chunks if multiple chunks are available
-  if (table->column(sort_column_indices.at(0))->num_chunks() > 1) {
-    const auto &res = table->CombineChunks(memory_pool);
-    RETURN_ARROW_STATUS_IF_FAILED(res.status());
-    tab_to_process = res.ValueOrDie();
+  if (util::CheckArrowTableContainsChunks(table, sort_column_indices)) {
+    ARROW_ASSIGN_OR_RAISE(combined_tab, table->CombineChunks(memory_pool));
   } else {
-    tab_to_process = table;
+    combined_tab = table;
   }
 
   // sort to indices
   std::shared_ptr<arrow::UInt64Array> sorted_column_index;
-  RETURN_ARROW_STATUS_IF_FAILED(cylon::SortIndicesMultiColumns(
-      memory_pool, table, sort_column_indices, sorted_column_index, sort_column_directions));
+  RETURN_ARROW_STATUS_IF_FAILED(
+      SortIndicesMultiColumns(memory_pool, combined_tab, sort_column_indices, sorted_column_index,
+                              sort_column_directions));
 
   // now sort everything based on sorted index
   arrow::ArrayVector sorted_columns;
-  sorted_columns.reserve(table->num_columns());
+  sorted_columns.reserve(combined_tab->num_columns());
 
   arrow::compute::ExecContext exec_context(memory_pool);
   // no bounds check is needed as indices are guaranteed to be within range
   const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::NoBoundsCheck();
 
-  for (int col_index = 0; col_index < tab_to_process->num_columns(); ++col_index) {
+  for (int col_index = 0; col_index < combined_tab->num_columns(); ++col_index) {
     const arrow::Result<arrow::Datum> &res = arrow::compute::Take(
-        cylon::util::GetChunkOrEmptyArray(tab_to_process->column(col_index), 0),
+        cylon::util::GetChunkOrEmptyArray(combined_tab->column(col_index), 0),
         sorted_column_index, take_options, &exec_context);
     RETURN_ARROW_STATUS_IF_FAILED(res.status());
     sorted_columns.emplace_back(res.ValueOrDie().make_array());
   }
 
-  sorted_table = arrow::Table::Make(table->schema(), sorted_columns);
+  sorted_table = arrow::Table::Make(combined_tab->schema(), sorted_columns);
   return arrow::Status::OK();
 }
 
@@ -374,6 +374,17 @@ arrow::Status MakeEmptyArrowTable(const std::shared_ptr<arrow::Schema> &schema,
   }
   *table = arrow::Table::Make(schema, std::move(arrays), 0);
   return arrow::Status::OK();
+}
+
+bool CheckArrowTableContainsChunks(const std::shared_ptr<arrow::Table> &table,
+                                   const std::vector<int> &columns) {
+  if (columns.empty()) {
+    return std::any_of(table->columns().begin(), table->columns().end(),
+                       [](const auto &col) { return col->num_chunks() > 1; });
+  } else {
+    return std::any_of(columns.begin(), columns.end(),
+                       [&](const auto &i) { return table->column(i)->num_chunks() > 1; });
+  }
 }
 
 }  // namespace util

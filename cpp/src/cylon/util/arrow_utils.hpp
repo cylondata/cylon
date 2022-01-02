@@ -60,7 +60,7 @@ static inline constexpr int64_t CheckBit(const int64_t v) {
   return (v >> (sizeof(int64_t) * CHAR_BIT - 1)) & int64_t(1);
 }
 
-arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int64_t sort_column_index,
+arrow::Status SortTable(const std::shared_ptr<arrow::Table> &table, int32_t sort_column_index,
                         arrow::MemoryPool *memory_pool, std::shared_ptr<arrow::Table> &sorted_table,
                         bool ascending = true);
 
@@ -150,8 +150,12 @@ arrow::Status CreateEmptyTable(const std::shared_ptr<arrow::Schema> &schema,
                                std::shared_ptr<arrow::Table> *output,
                                arrow::MemoryPool *pool = arrow::default_memory_pool());
 
-arrow::Status MakeEmptyArrowTable(const std::shared_ptr<arrow::Schema>& schema, std::shared_ptr<arrow::Table>* table,
+arrow::Status MakeEmptyArrowTable(const std::shared_ptr<arrow::Schema> &schema,
+                                  std::shared_ptr<arrow::Table> *table,
                                   arrow::MemoryPool *pool = arrow::default_memory_pool());
+
+bool CheckArrowTableContainsChunks(const std::shared_ptr<arrow::Table> &table,
+                                   const std::vector<int> &columns = {});
 
 }  // namespace util
 }  // namespace cylon
