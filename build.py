@@ -187,11 +187,14 @@ def python_test():
         if OS_NAME == 'Linux':
             env['LD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \
                                      + env['LD_LIBRARY_PATH']
+            logger.info(f"LD_LIBRARY_PATH: {env['LD_LIBRARY_PATH']}")
         elif OS_NAME == 'Darwin':
             env['DYLD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \
                                        + env['DYLD_LIBRARY_PATH']
+            logger.info(f"DYLD_LIBRARY_PATH: {env['DYLD_LIBRARY_PATH']}")
         else:  # Windows
             env['PATH'] = str(Path(INSTALL_DIR, "Library")) + os.pathsep + env['PATH']
+            logger.info(f"PATH: {env['PATH']}")
 
     test_command = f"{PYTHON_EXEC} -m pytest -v python/pycylon/test/test_all.py"
     res = subprocess.run(test_command, env=env, shell=True)
@@ -219,6 +222,9 @@ def build_python():
         env["ARROW_PREFIX"] = str(Path(os.environ["CONDA_PREFIX"], "Library"))
 
     logger.info("Arrow prefix: " + str(Path(os.environ["CONDA_PREFIX"])))
+    res = subprocess.run(f"{PYTHON_EXEC} -m pip uninstall -y pycylon", shell=True, env=env,
+                         cwd=PYTHON_SOURCE_DIR)
+    check_status(res.returncode, "pip uninstall pycylon")
     res = subprocess.run(python_build_command, shell=True, env=env, cwd=PYTHON_SOURCE_DIR)
     check_status(res.returncode, "PyCylon build")
 

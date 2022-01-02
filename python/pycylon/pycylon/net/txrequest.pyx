@@ -13,7 +13,7 @@
  ##
 
 import numpy as np
-cimport numpy as np
+cimport numpy as c_np
 from pycylon.net.txrequest cimport CTxRequest
 
 
@@ -30,8 +30,8 @@ cdef class TxRequest:
     cdef public np_buf_val
     cdef public np_head_val
 
-    def __cinit__(self, int tgt, np.ndarray buf, int len,
-                  np.ndarray[int, ndim=1, mode="c"] head, int hLength):
+    def __cinit__(self, int tgt, c_np.ndarray buf, int len,
+                  c_np.ndarray[int, ndim=1, mode="c"] head, int hLength):
         '''
         Initialized the PyCylon TxRequest
         :param tgt: passed as an int; the target of communication
