@@ -213,7 +213,7 @@ def build_python():
         logger.error("The build should be in a conda environment")
         return
 
-    python_build_command = f'{PYTHON_EXEC} setup.py install'
+    python_build_command = f'{PYTHON_EXEC} -m pip install -U .'
     env = os.environ
     env["CYLON_PREFIX"] = str(BUILD_DIR)
     if os.name == 'posix':
@@ -222,9 +222,6 @@ def build_python():
         env["ARROW_PREFIX"] = str(Path(os.environ["CONDA_PREFIX"], "Library"))
 
     logger.info("Arrow prefix: " + str(Path(os.environ["CONDA_PREFIX"])))
-    res = subprocess.run(f"{PYTHON_EXEC} -m pip uninstall -y pycylon", shell=True, env=env,
-                         cwd=PYTHON_SOURCE_DIR)
-    check_status(res.returncode, "pip uninstall pycylon")
     res = subprocess.run(python_build_command, shell=True, env=env, cwd=PYTHON_SOURCE_DIR)
     check_status(res.returncode, "PyCylon build")
 
