@@ -26,12 +26,14 @@ TEST_CASE("Join testing", "[join]") {
       "../data/output/join_inner_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
 
   SECTION("testing inner joins - sort") {
-    const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::SORT);
+    const auto
+        &join_config = join::config::JoinConfig::InnerJoin(0, 0, join::config::JoinAlgorithm::SORT);
     test::TestJoinOperation(join_config, ctx, path1, path2, out_path);
   }
 
   SECTION("testing inner joins - hash") {
-    const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::HASH);
+    const auto &join_config =
+        join::config::JoinConfig::InnerJoin(0, 0, join::config::JoinAlgorithm::HASH);
     test::TestJoinOperation(join_config, ctx, path1, path2, out_path);
   }
 }
@@ -40,15 +42,21 @@ TEST_CASE("Join testing with null values in value columns", "[join]") {
   std::string path1 = "../data/input/csv_with_null1_" + std::to_string(RANK) + ".csv";
   std::string path2 = "../data/input/csv_with_null2_" + std::to_string(RANK) + ".csv";
   std::string out_path =
-      "../data/output/join_inner_null_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
+      "../data/output/join_inner_null_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK)
+          + ".csv";
 
   SECTION("testing inner joins - sort") {
-    const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::SORT);
+    const auto &join_config = join::config::JoinConfig::InnerJoin(0,
+                                                                  0,
+                                                                  join::config::JoinAlgorithm::SORT,
+                                                                  "l_",
+                                                                  "r_");
     test::TestJoinOperation(join_config, ctx, path1, path2, out_path);
   }
 
   SECTION("testing inner joins - hash") {
-    const auto &join_config = join::config::JoinConfig::InnerJoin(0, 0, cylon::join::config::JoinAlgorithm::HASH);
+    const auto &join_config =
+        join::config::JoinConfig::InnerJoin(0, 0, join::config::JoinAlgorithm::HASH, "l_", "r_");
     test::TestJoinOperation(join_config, ctx, path1, path2, out_path);
   }
 }
@@ -56,17 +64,20 @@ TEST_CASE("Join testing with null values in value columns", "[join]") {
 TEST_CASE("Multi Index Join testing", "[multi_join]") {
   std::string path1 = "../data/input/multi_join1.csv";
   std::string path2 = "../data/input/multi_join2.csv";
-  std::string out_path = "../data/output/multi_join_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
+  std::string out_path =
+      "../data/output/multi_join_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
 
   SECTION("testing inner joins - sort") {
     const auto &jc =
-        join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, cylon::join::config::JoinAlgorithm::SORT, "l_", "r_");
+        join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, join::config::JoinAlgorithm::SORT,
+                                            "l_", "r_");
     test::TestJoinOperation(jc, ctx, path1, path2, out_path);
   }
 
   SECTION("testing inner joins - hash") {
     const auto &jc =
-        join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, cylon::join::config::JoinAlgorithm::HASH, "l_", "r_");
+        join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, join::config::JoinAlgorithm::HASH,
+                                            "l_", "r_");
     test::TestJoinOperation(jc, ctx, path1, path2, out_path);
   }
 }
@@ -98,12 +109,14 @@ TEST_CASE("Join testing chunks", "[join]") {
   }
 
   SECTION("testing inner joins - sort") {
-    const auto &jc = join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, join::config::JoinAlgorithm::SORT);
+    const auto &jc =
+        join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, join::config::JoinAlgorithm::SORT);
     CHECK_CYLON_STATUS(DistributedJoin(t1, t2, jc, out)); // just check if runs without a problem
   }
 
   SECTION("testing inner joins - hash") {
-    const auto &jc = join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, join::config::JoinAlgorithm::HASH);
+    const auto &jc =
+        join::config::JoinConfig::InnerJoin({0, 1}, {0, 1}, join::config::JoinAlgorithm::HASH);
     CHECK_CYLON_STATUS(DistributedJoin(t1, t2, jc, out)); // just check if runs without a problem
   }
 }

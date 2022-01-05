@@ -25,12 +25,9 @@ TEST_CASE("Parquet join testing", "[join]") {
       "../data/output/join_inner_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".parquet";
 
   SECTION("testing inner joins") {
-    auto join_config = cylon::join::config::JoinConfig(cylon::join::config::JoinType::INNER,
-                                                       0,
-                                                       0,
-                                                       cylon::join::config::JoinAlgorithm::SORT,
-                                                       "l_",
-                                                       "r_");
+    auto join_config = join::config::JoinConfig(join::config::JoinType::INNER, 0, 0,
+                                                join::config::JoinAlgorithm::SORT,
+                                                "lt-", "rt-");
     TestParquetJoinOperation(join_config, ctx, path1, path2, out_path);
   }
 }
