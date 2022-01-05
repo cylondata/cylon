@@ -383,7 +383,7 @@ bool CheckArrowTableContainsChunks(const std::shared_ptr<arrow::Table> &table,
                        [](const auto &col) { return col->num_chunks() > 1; });
   } else {
     return std::any_of(columns.begin(), columns.end(),
-                       [&](const auto &i) { return table->column(i)->num_chunks() > 1; });
+                       [&](int i) { return table->column(i)->num_chunks() > 1; });
   }
 }
 
