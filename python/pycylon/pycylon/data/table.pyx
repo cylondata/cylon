@@ -13,6 +13,7 @@
 ##
 
 from libcpp.string cimport string
+from libcpp cimport bool as cpp_bool
 from libc.stdint cimport int64_t
 from libcpp.vector cimport vector
 from libcpp.pair cimport pair
@@ -133,7 +134,7 @@ cdef class Table:
 
         cdef shared_ptr[CTable] output
         cdef vector[int] sort_index
-        cdef vector[bool] order_directions
+        cdef vector[cpp_bool] order_directions
 
         if isinstance(order_by, str):
             sort_index.push_back(self._resolve_column_index_from_column_name(order_by))
@@ -472,7 +473,7 @@ cdef class Table:
         cdef shared_ptr[CTable] output
         cdef CSortOptions *csort_options
         cdef vector[int] sort_index
-        cdef vector[bool] order_directions
+        cdef vector[cpp_bool] order_directions
 
         if isinstance(order_by, str):
             sort_index.push_back(self._resolve_column_index_from_column_name(order_by))
@@ -707,7 +708,7 @@ cdef class Table:
         cdef shared_ptr[CArrowTable] aoutput
         cdef shared_ptr[CTable] output
         cdef vector[int] c_cols
-        cdef bool c_first = False
+        cdef cpp_bool c_first = False
         if keep == 'first':
             c_first = True
         if columns:
@@ -807,7 +808,7 @@ cdef class Table:
             True
         '''
         cdef CStatus status
-        cdef bool output
+        cdef cpp_bool output
         status = Equals(self.table_shd_ptr, table.table_shd_ptr, output, ordered)
         if status.is_ok():
             return output
@@ -845,8 +846,9 @@ cdef class Table:
             True
         '''
         cdef CStatus status
-        cdef bool output
-        status = DistributedEquals(self.table_shd_ptr, table.table_shd_ptr, output, ordered)
+        cdef cpp_bool output
+        cdef cpp_bool ordered_ = ordered
+        status = DistributedEquals(self.table_shd_ptr, table.table_shd_ptr, output, ordered_)
         if status.is_ok():
             return output
         else:
@@ -2273,7 +2275,7 @@ cdef class Table:
     #     cdef bool c_drop_index = drop_index
     #     self.table_shd_ptr.get().ResetIndex(c_drop_index)
 
-    def reset_index(self, drop_index: bool = False) -> Table:
+    def reset_index(self, drop_index: bool = False):
         """
         reset_index
         Here the existing index can be removed and set back to table.
@@ -2301,7 +2303,7 @@ cdef class Table:
             2      3      7     11
             3      4      8     12
         """
-        cdef bool c_drop_index = drop_index
+        cdef cpp_bool c_drop_index = drop_index
         self.table_shd_ptr.get().ResetArrowIndex(c_drop_index)
 
     def dropna(self, axis=0, how='any', inplace=False):

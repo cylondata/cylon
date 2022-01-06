@@ -393,6 +393,8 @@ class DataFrame(object):
         if env is None:
             return self._table.equals(df._table, ordered)
         else:
+            self._change_context(env)
+            df._change_context(env)
             return self._table.distributed_equals(df._table, ordered)
 
     def repartition(self, rows_per_partition, receive_build_rank_order=None, env: CylonEnv=None):

@@ -246,8 +246,15 @@ def test_repartition():
     assert responses[-1] == 0
 
 
+def test_equals():
+    print("32. Equals")
+    responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi "
+                                                   "python/pycylon/test/test_equal.py"))
+    assert responses[-1] == 0
+
+
 def test_parquet():
-    print("32. DataFrame Test")
+    print("33. DataFrame Test")
     responses.append(os.system("pytest -q python/pycylon/test/test_parquet.py"))
     assert responses[-1] == 0
 

@@ -71,18 +71,9 @@
   INFO("row count: " << _expected->Rows() << " vs " << _result->Rows()); \
   REQUIRE(_expected->Rows() == _result->Rows());                    \
                                                                     \
-  const auto& exp_schema = _expected->get_table()->schema();        \
-  const auto& res_schema = _result->get_table()->schema();          \
-  INFO("Schema: " << exp_schema->ToString() << "\nvs " << res_schema->ToString());    \
-  CHECK_CYLON_STATUS(cylon::VerifyTableSchema(_expected->get_table(), _result->get_table()));\
-                                                                    \
-  CHECK_CYLON_STATUS(cylon::Subtract(_expected, _result, temp));    \
-  INFO("subtract(expected, result) row count: " << temp->Rows());   \
-  REQUIRE(temp->Rows() == 0);                                       \
-                                                                    \
-  CHECK_CYLON_STATUS(cylon::Subtract(_result, _expected, temp));    \
-  INFO("subtract(result, expected) row count: " << temp->Rows());   \
-  REQUIRE(temp->Rows() == 0);                                       \
+  bool _eq_res = false;                                             \
+  CHECK_CYLON_STATUS(Equals(_expected, _result, _eq_res, /*ordered=*/false)); \
+  REQUIRE(_eq_res);                                                 \
 } while (0)
 
 #endif //CYLON_CPP_TEST_TEST_MACROS_HPP_
