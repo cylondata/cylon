@@ -7,7 +7,7 @@ Contributors to the Cylon project are listed below.
 
 1. Supun Kamburugamuve
 2. Geoffrey Fox
-3. Amila Thejaja Kanewala
+3. Thejaka Amila Kanewala
 4. Chathura Widanage
 5. Niranda Perera
 6. Vibhatha Abeykoon
