@@ -20,10 +20,8 @@ from copy import copy
 from typing import Hashable, List, Dict, Optional, Sequence, Union
 
 import numpy as np
-import pandas
 import pandas as pd
 import pyarrow as pa
-
 import pycylon as cn
 import pycylon.data as pcd
 from pandas.core.dtypes.common import infer_dtype_from_object
@@ -36,7 +34,6 @@ from pycylon.io import CSVWriteOptions
 
 from pycylon.indexing.cyindex import IndexingType
 from pycylon.indexing.cyindex import PyLocIndexer
-
 
 DEVICE_CPU = "cpu"
 
@@ -89,7 +86,6 @@ def read_csv(filepath: str, use_threads=True, names=None, sep=",", block_size: i
 
     return DataFrame(table)
 
-
 class CylonEnv(object):
 
     def __init__(self, config=None, distributed=True) -> None:
@@ -120,7 +116,6 @@ class CylonEnv(object):
 
     def barrier(self):
         self._context.barrier()
-
 
 class GroupByDataFrame(object):
     def __init__(self, df: DataFrame, by=None, groupby_type: str = 'hash') -> None:
@@ -2308,7 +2303,6 @@ class DataFrame(object):
         1  11.262736  20.857489
         """
         return DataFrame(self._table.applymap(func))
-
 
 # -------------------- staticmethods ---------------------------
 
