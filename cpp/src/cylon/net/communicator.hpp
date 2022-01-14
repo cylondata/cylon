@@ -37,11 +37,6 @@ class Communicator {
   virtual CommType GetCommType() const = 0;
 
   virtual ~Communicator() = default;
-};
-
-class SyncCommunicator {
- public:
-  virtual ~SyncCommunicator() = default;
 
   virtual Status AllGather(const std::shared_ptr<Table> &table,
                            std::vector<std::shared_ptr<Table>> *out) const = 0;

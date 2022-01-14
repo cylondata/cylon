@@ -146,7 +146,7 @@ cylon::Status Shuffle(std::shared_ptr<GTable> &input_table,
 cylon::Status joinTables(const cudf::table_view &left,
                          const cudf::table_view &right,
                          const cylon::join::config::JoinConfig &join_config,
-                         std::shared_ptr<cylon::CylonContext> ctx,
+                         const std::shared_ptr<cylon::CylonContext> &ctx,
                          std::unique_ptr<cudf::table> &table_out) {
 
   if (join_config.GetAlgorithm() == cylon::join::config::JoinAlgorithm::SORT) {
@@ -307,7 +307,7 @@ cylon::Status RowCountsAllTables(int32_t num_rows,
                                  const std::shared_ptr<cylon::CylonContext> &ctx,
                                  std::vector<int32_t> &all_num_rows) {
   std::vector<int32_t> send_data(1, num_rows);
-  return cylon::mpi::AllGather(send_data, ctx->GetWorldSize(), all_num_rows);
+  return cylon::mpi::AllGather(ctx, send_data, ctx->GetWorldSize(), all_num_rows);
 }
 
 

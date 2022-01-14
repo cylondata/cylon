@@ -1130,13 +1130,16 @@ static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &
   int world_size = a->GetContext()->GetWorldSize();
   int64_t num_row = a->Rows();
 
-  if(num_row == 0) {
+  if (num_row == 0) {
     *b_out = a;
     return Status::OK();
   }
 
   std::vector<int64_t> rows_per_partition;
-  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather({ num_row }, world_size, rows_per_partition));
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather(a->GetContext(),
+                                               {num_row},
+                                               world_size,
+                                               rows_per_partition));
 
   return Repartition(b, rows_per_partition, b_out);
 }
@@ -1165,7 +1168,12 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shar
     RETURN_CYLON_STATUS_IF_FAILED(Equals(a, b_repartitioned, subResult, true));
   }
 
-  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllReduce(&subResult, &result, 1, Bool(), cylon::net::LAND));
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllReduce(a->GetContext(),
+                                               &subResult,
+                                               &result,
+                                               1,
+                                               Bool(),
+                                               cylon::net::LAND));
   return Status::OK();
 }
 
@@ -1182,23 +1190,23 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
     return Status::OK();
   }
 
-  if(rows_per_partition.size() != (size_t) world_size) {
+  if (rows_per_partition.size() != (size_t) world_size) {
     return Status(
-    cylon::Code::ValueError,
-    "rows_per_partition size does not align with world size. Received " +
-        std::to_string(rows_per_partition.size()) + ", Expected " +
-        std::to_string(world_size));
+        cylon::Code::ValueError,
+        "rows_per_partition size does not align with world size. Received " +
+            std::to_string(rows_per_partition.size()) + ", Expected " +
+            std::to_string(world_size));
   }
 
   std::vector<int64_t> sizes;
-  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather({ num_row }, world_size, sizes));
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather(table->GetContext(), {num_row}, world_size, sizes));
 
   auto out_partitions_temp = RowIndicesToAll(rank, sizes, rows_per_partition);
   uint32_t no_of_partitions = receive_build_rank_order.size();
   std::vector<uint32_t> out_partitions(num_row);
   auto begin = out_partitions.begin();
 
-  for(int i = 0; i < (int)receive_build_rank_order.size(); i++) {
+  for (int i = 0; i < (int) receive_build_rank_order.size(); i++) {
     int64_t s = out_partitions_temp[i], t = out_partitions_temp[i + 1];
     fill(begin + s, begin + t, receive_build_rank_order[i]);
   }
@@ -1234,10 +1242,9 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
 Status Repartition(const std::shared_ptr<cylon::Table>& table,
                    std::shared_ptr<cylon::Table> *output) {
   int world_size = table->GetContext()->GetWorldSize();
-  int num_row = table->Rows();
-  std::vector<int64_t> size = { num_row };
+  std::vector<int64_t> size = {table->Rows()};
   std::vector<int64_t> sizes;
-  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather(size, world_size, sizes));
+  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather(table->GetContext(), size, world_size, sizes));
 
   auto result = DivideRowsEvenly(sizes);
   return Repartition(table, result, output);

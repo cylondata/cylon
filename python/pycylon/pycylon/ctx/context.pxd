@@ -24,6 +24,7 @@ from pycylon.net.comm_config cimport CCommConfig
 from pycylon.net.mpi_config cimport CMPIConfig
 from pycylon.net.communicator cimport CCommunicator
 from pycylon.net.comm_type cimport CCommType
+from pycylon.common.status cimport CStatus
 
 #
 cdef extern from "../../../../cpp/src/cylon/ctx/cylon_context.hpp" namespace "cylon":
@@ -36,6 +37,9 @@ cdef extern from "../../../../cpp/src/cylon/ctx/cylon_context.hpp" namespace "cy
 
         @staticmethod
         shared_ptr[CCylonContext] InitDistributed(const shared_ptr[CCommConfig] &config)
+
+        @ staticmethod
+        CStatus InitDistributed(const shared_ptr[CCommConfig] &config, shared_ptr[CCylonContext]* ctx)
 
         void Finalize()
 

@@ -55,8 +55,8 @@ TEST_CASE("all gather table", "[sync comms]") {
 
     std::vector<std::shared_ptr<Table>> out;
 
-    const auto &sync_comm = ctx->sync_communicator();
-    CHECK_CYLON_STATUS(sync_comm->AllGather(table, &out));
+    const auto &comm = ctx->GetCommunicator();
+    CHECK_CYLON_STATUS(comm->AllGather(table, &out));
     REQUIRE((int) out.size() == WORLD_SZ);
 
     INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
@@ -96,8 +96,8 @@ TEST_CASE("all gather table", "[sync comms]") {
 
     std::vector<std::shared_ptr<Table>> out;
 
-    const auto &sync_comm = ctx->sync_communicator();
-    CHECK_CYLON_STATUS(sync_comm->AllGather(table, &out));
+    const auto &comm = ctx->GetCommunicator();
+    CHECK_CYLON_STATUS(comm->AllGather(table, &out));
     REQUIRE((int) out.size() == WORLD_SZ);
 
     INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
@@ -123,8 +123,8 @@ TEST_CASE("gather table", "[sync comms]") {
 
     std::vector<std::shared_ptr<Table>> out;
 
-    const auto &sync_comm = ctx->sync_communicator();
-    CHECK_CYLON_STATUS(sync_comm->Gather(table, gather_root, true, &out));
+    const auto &comm = ctx->GetCommunicator();
+    CHECK_CYLON_STATUS(comm->Gather(table, gather_root, true, &out));
 
     if (gather_root == RANK) {
       REQUIRE((int) out.size() == WORLD_SZ);
@@ -168,8 +168,8 @@ TEST_CASE("gather table", "[sync comms]") {
     }
 
     std::vector<std::shared_ptr<Table>> out;
-    const auto &sync_comm = ctx->sync_communicator();
-    CHECK_CYLON_STATUS(sync_comm->Gather(table, gather_root, true, &out));
+    const auto &comm = ctx->GetCommunicator();
+    CHECK_CYLON_STATUS(comm->Gather(table, gather_root, true, &out));
 
     if (gather_root == RANK) {
       REQUIRE((int) out.size() == WORLD_SZ);
@@ -201,8 +201,8 @@ TEST_CASE("bcast table", "[sync comms]") {
       table = std::make_shared<Table>(ctx, atable);
     }
 
-    const auto &sync_comm = ctx->sync_communicator();
-    CHECK_CYLON_STATUS(sync_comm->Bcast(ctx, &table, bcast_root));
+    const auto &comm = ctx->GetCommunicator();
+    CHECK_CYLON_STATUS(comm->Bcast(ctx, &table, bcast_root));
 
     INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
     REQUIRE(table != nullptr);

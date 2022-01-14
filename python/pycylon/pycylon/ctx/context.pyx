@@ -61,13 +61,18 @@ cdef class CylonContext:
         >>> ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
 
         '''
-        if not distributed and config is None:
+        if not distributed:
             self.ctx_shd_ptr = CCylonContext.Init()
-        if distributed and config is not None:
-            self.ctx_shd_ptr = CCylonContext.InitDistributed(self.init_dist(config))
+        else:
+            if config is None:
+                raise ValueError("No config passed for a distributed context")
+
+            status = CCylonContext.InitDistributed(self.init_dist(config), &self.ctx_shd_ptr)
+            if not status.is_ok():
+                raise Exception(f"Ctx initialization failed: {status.get_msg().decode()}")
 
 
-    cdef void init(self, const shared_ptr[CCylonContext] &ctx):
+    cdef void init(self, const shared_ptr[CCylonContext] & ctx):
         self.ctx_shd_ptr = ctx
 
     cdef shared_ptr[CCommConfig] init_dist(self, config):

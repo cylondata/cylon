@@ -35,6 +35,18 @@
     };                              \
   } while (0)
 
+#define RETURN_CYLON_STATUS_IF_MPI_FAILED(expr) \
+  do{                               \
+    const auto& _st = (expr);       \
+    if (_st != MPI_SUCCESS) {               \
+      char _err_str[MPI_MAX_ERROR_STRING];  \
+      int _err_str_len = 0;                 \
+      MPI_Error_string(_st, _err_str, &_err_str_len); \
+      return cylon::Status(Code::ExecutionError,      \
+                           std::string(_err_str, _err_str_len)); \
+    };                              \
+  } while (0)
+
 #define CYLON_ASSIGN_OR_RAISE_IMPL(result_name, lhs, rexpr)     \
   auto&& result_name = (rexpr);                                 \
   RETURN_CYLON_STATUS_IF_ARROW_FAILED((result_name).status()) ; \

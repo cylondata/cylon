@@ -43,6 +43,7 @@ function(cylon_add_test TESTNAME)
   target_link_libraries(${exec_name} ${MPI_CXX_LIBRARIES})
   target_link_libraries(${exec_name} ${ARROW_LIB})
   target_link_libraries(${exec_name} cylon)
+  target_link_libraries(${exec_name} ${GLOG_LIBRARIES})
 endfunction(cylon_add_test)
 
 # macro to run executable
@@ -151,3 +152,8 @@ cylon_run_test(serialize_test 1)
 cylon_add_test(sync_comms_test)
 cylon_run_test(sync_comms_test 1)
 cylon_run_test(sync_comms_test 4)
+
+# custom mpi comm test
+cylon_add_test(custom_mpi_comm_test)
+cylon_run_test(custom_mpi_comm_test 1)
+cylon_run_test(custom_mpi_comm_test 4)

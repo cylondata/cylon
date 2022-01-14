@@ -25,11 +25,14 @@
 namespace cylon {
 namespace mpi {
 
+MPI_Comm GetMpiComm(const std::shared_ptr<CylonContext> &ctx);
+
 MPI_Op GetMPIOp(cylon::net::ReduceOp reduce_op);
 
 MPI_Datatype GetMPIDataType(const std::shared_ptr<DataType> &data_type);
 
-cylon::Status AllReduce(const void *send_buf,
+cylon::Status AllReduce(const std::shared_ptr<CylonContext> &ctx,
+                        const void *send_buf,
                         void *rcv_buf,
                         int count,
                         const std::shared_ptr<DataType> &data_type,
@@ -154,9 +157,11 @@ cylon::Status BcastArrowBuffer(std::shared_ptr<arrow::Buffer> &buf,
  * @return
  */
 template<typename T>
-cylon::Status AllGather(const std::vector<T> &send_data,
+cylon::Status AllGather(const std::shared_ptr<cylon::CylonContext> &ctx,
+                        const std::vector<T> &send_data,
                         int number_of_workers,
                         std::vector<T> &received_data) {
+  auto comm = GetMpiComm(ctx);
 
   received_data.resize(number_of_workers * send_data.size());
   auto dt = MPICTypeTraits<T>::MPIDataType();
@@ -167,7 +172,7 @@ cylon::Status AllGather(const std::vector<T> &send_data,
                               received_data.data(),
                               send_data.size(),
                               dt,
-                              MPI_COMM_WORLD);
+                              comm);
   if (status != MPI_SUCCESS) {
     return {cylon::Code::ExecutionError, "MPI_Allgather failed!"};
   }

@@ -1,16 +1,16 @@
 ##
- # Licensed under the Apache License, Version 2.0 (the "License");
- # you may not use this file except in compliance with the License.
- # You may obtain a copy of the License at
- #
- # http://www.apache.org/licenses/LICENSE-2.0
- #
- # Unless required by applicable law or agreed to in writing, software
- # distributed under the License is distributed on an "AS IS" BASIS,
- # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- # See the License for the specific language governing permissions and
- # limitations under the License.
- ##
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##
 
 """
 Run test
@@ -18,6 +18,7 @@ Run test
 """
 
 import pytest
+
 
 @pytest.mark.mpi
 def test_context_and_configs():
@@ -28,9 +29,12 @@ def test_context_and_configs():
     ctx: CylonContext = CylonContext(config=mpi_config, distributed=True)
     ctx.add_config("compute_engine", "numpy")
 
-    print("Hello World From Rank {}, Size {}".format(ctx.get_rank(), ctx.get_world_size()))
+    rank = ctx.get_rank()
+    sz = ctx.get_world_size()
+    assert 0 <= rank < sz and sz > 0
+    print("Hello World From Rank {}, Size {}".format(rank, sz))
 
     assert ctx.get_config("compute_engine", "arrow") == 'numpy'
 
     # Note: Not needed when using PyTest with MPI
-    #ctx.finalize()
+    # ctx.finalize()

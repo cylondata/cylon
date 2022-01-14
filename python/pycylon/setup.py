@@ -13,22 +13,22 @@
 ##
 
 # References
-'''
+"""
 https://github.com/FedericoStra/cython-package-example/blob/master/setup.py
 https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
-'''
+"""
 
 import os
 import sysconfig
 from distutils.sysconfig import get_python_lib
-import pyarrow as pa
-import numpy as np
 
-import versioneer
+import numpy as np
+import pyarrow as pa
 from Cython.Build import cythonize
 from setuptools import find_packages, setup
 from setuptools.extension import Extension
-import glob
+
+import versioneer
 
 version = versioneer.get_version(),
 cmdclass = versioneer.get_cmdclass(),
@@ -64,8 +64,8 @@ arrow_library_directory = None
 if not ARROW_PREFIX:
     arrow_lib_include_dir = os.path.join(pyarrow_location, "include")
     arrow_library_directory = pyarrow_location
-    additional_compile_args = additional_compile_args + \
-        ['-D_GLIBCXX_USE_CXX11_ABI=0']
+    additional_compile_args.append('-D_GLIBCXX_USE_CXX11_ABI=0')
+    additional_compile_args.append('-DOMPI_SKIP_MPICXX=1')
     if not os.path.exists(arrow_library_directory):
         arrow_library_directory = os.path.join(pyarrow_location, "lib64")
 else:
@@ -83,7 +83,7 @@ if os.name == 'posix':
         "mpic++ --showme:compile").read().strip().split(' ')
     extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
     extra_compile_args = extra_compile_args + additional_compile_args
-    extra_link_args = ["-W"]
+    extra_link_args.append("-W")
 
 glob_library_directory = os.path.join(CYLON_PREFIX, "glog", "install", "lib")
 
@@ -100,6 +100,9 @@ library_directories = [cylon_library_directory,
                        get_python_lib(),
                        os.path.join(os.sys.prefix, "lib")]
 
+mpi_library_dir = os.popen("mpicc --showme:libdirs").read().strip().split(' ')
+library_directories.extend(mpi_library_dir)
+
 print("Libraries: " + str(library_directories))
 
 libraries = ["arrow", "cylon", "glog"] # todo glogd was added temporarily
@@ -110,8 +113,10 @@ _include_dirs = [cylon_include_dir,
                  glog_lib_include_dir,
                  pyarrow_include_dir,
                  np.get_include(),
-                 os.path.dirname(sysconfig.get_path("include")),
-                 ]
+                 os.path.dirname(sysconfig.get_path("include"))]
+
+mpi_include_dir = os.popen("mpicc --showme:incdirs").read().strip().split(' ')
+_include_dirs.extend(mpi_include_dir)
 
 # Adopted the Cudf Python Build format
 # https://github.com/rapidsai/cudf
@@ -134,7 +139,7 @@ packages = find_packages(include=["pycylon", "pycylon.*"])
 
 print("PACKAGES: " + str(packages))
 
-ret = setup(
+setup(
     name="pycylon",
     packages=packages,
     version=versioneer.get_version(),

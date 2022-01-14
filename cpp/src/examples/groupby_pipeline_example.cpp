@@ -17,14 +17,12 @@
 #include <arrow/api.h>
 #include <arrow/array.h>
 #include <random>
-#include <mpi.h>
 #include <arrow/compute/api.h>
 
 #include <cylon/net/mpi/mpi_communicator.hpp>
 #include <cylon/ctx/cylon_context.hpp>
 #include <cylon/util/builtins.hpp>
 #include <cylon/table.hpp>
-#include <cylon/util/arrow_utils.hpp>
 #include <cylon/groupby/groupby.hpp>
 
 void create_table(char *const *argv,
@@ -64,7 +62,7 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<arrow::Table> left_table;
 //  create_binary_table(argv, ctx, pool, left_table, right_table);
   create_table(argv, pool, left_table);
-  MPI_Barrier(MPI_COMM_WORLD);
+  ctx->Barrier();
 
   std::shared_ptr<cylon::Table> first_table;
   auto status = cylon::Table::FromArrowTable(ctx, left_table, first_table);

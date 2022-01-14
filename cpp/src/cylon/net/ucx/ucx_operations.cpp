@@ -17,16 +17,15 @@
 #include <cstring>
 #include <glog/logging.h>
 
-#include <cylon/net/ucx/ucx_operations.hpp>
+#include "cylon/net/ucx/ucx_operations.hpp"
 
 /**
  * Create a UCP worker on the given UCP context.
  * @param [in] ucpContext - The context to be passed to init the worker
  * @param [out] ucpWorker - The UCP worker
  */
-cylon::ucx::ucxWorkerAddr* cylon::ucx::initWorker(ucp_context_h ucpContext,
-                                              ucp_worker_h *ucpWorker)
-{
+cylon::ucx::ucxWorkerAddr *cylon::ucx::initWorker(ucp_context_h ucpContext,
+                                                  ucp_worker_h *ucpWorker) {
   // UCP objects
   // Worker params - Tuning parameters for the UCP worker.
   // Has threading and CPU count etc
@@ -76,24 +75,19 @@ cylon::ucx::ucxWorkerAddr* cylon::ucx::initWorker(ucp_context_h ucpContext,
   return nullptr;
 }
 
-
-
 /**
  * Initialize a default UCP context.
  * @param [out] ucpContext - The UCP context
  * @param [out] config - The configuration descriptor
  * @return int - Status of the context init
  */
-int cylon::ucx::initContext(ucp_context_h *ucpContext,
-                            ucp_config_t *config)
-{
+cylon::Status cylon::ucx::initContext(ucp_context_h *ucpContext,
+                                      ucp_config_t *config) {
   // UCP params - The structure defines the parameters that are used for
   // UCP library tuning during UCP library "initialization".
   ucp_params_t ucpParams;
   // UCP status - To hold the status of the UCP objects
   ucs_status_t status;
-  // Variable to return the result
-  int ret = 0;
 
   // Init UCP Params
   std::memset(&ucpParams, 0, sizeof(ucpParams));
@@ -115,11 +109,11 @@ int cylon::ucx::initContext(ucp_context_h *ucpContext,
 
   // Check context init
   if (status != UCS_OK) {
-    LOG(FATAL) << "Failed to initialize UCP context: " << ucs_status_string(status);
-    ret = -1;
+    return {Code::ExecutionError,
+            "Failed to initialize UCP context: " + std::string(ucs_status_string(status))};
   }
 
-  return ret;
+  return Status::OK();
 }
 
 
