@@ -62,6 +62,8 @@ parser.add_argument("-bpath", help='Build directory',
                     default=Path(os.getcwd(), 'build'))
 parser.add_argument("-ipath", help='Install directory')
 
+parser.add_argument("--verbose", help='Set verbosity', default=False, action="store_true")
+
 args = parser.parse_args()
 
 
@@ -138,10 +140,12 @@ def build_cpp():
         if CONDA_PREFIX:
             install_prefix = CONDA_PREFIX
         else:
-            logger.error("install prefix can not be inferred. The build should be in a conda environment")
+            logger.error(
+                "install prefix can not be inferred. The build should be in a conda environment")
             return
 
     win_cmake_args = "-A x64" if os.name == 'nt' else ""
+    verb = '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON' if args.verbose else ''
 
     cmake_command = f"cmake -DPYCYLON_BUILD={on_off(BUILD_PYTHON)} {win_cmake_args} " \
                     f"-DCMAKE_BUILD_TYPE={CPP_BUILD_MODE} " \
@@ -149,7 +153,7 @@ def build_cpp():
                     f"-DARROW_BUILD_TYPE=SYSTEM " \
                     f"{CPPLINT_COMMAND} " \
                     f"-DCMAKE_INSTALL_PREFIX={install_prefix} " \
-                    f"{CMAKE_FLAGS} {CPP_SOURCE_DIR}"
+                    f"{verb} {CMAKE_FLAGS} {CPP_SOURCE_DIR}"
 
     logger.info(f"Generate command: {cmake_command}")
     res = subprocess.call(cmake_command, cwd=BUILD_DIR, shell=True)
@@ -213,7 +217,7 @@ def build_python():
         logger.error("The build should be in a conda environment")
         return
 
-    python_build_command = f'{PYTHON_EXEC} -m pip install -U .'
+    python_build_command = f'{PYTHON_EXEC} setup.py install --force'
     env = os.environ
     env["CYLON_PREFIX"] = str(BUILD_DIR)
     if os.name == 'posix':

@@ -49,7 +49,6 @@ except Exception:
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
 
-
 cython_files = ["pycylon/*/*.pyx"]
 print("CYTHON: " + str(cython_files))
 
@@ -103,9 +102,9 @@ library_directories = [cylon_library_directory,
 mpi_library_dir = os.popen("mpicc --showme:libdirs").read().strip().split(' ')
 library_directories.extend(mpi_library_dir)
 
-print("Libraries: " + str(library_directories))
+print("Lib dirs:", library_directories)
 
-libraries = ["arrow", "cylon", "glog"] # todo glogd was added temporarily
+libraries = ["arrow", "cylon", "glog"]  # todo glogd was added temporarily
 cylon_include_dir = os.path.abspath(os.path.join(__file__, "../../..", "cpp", "src"))
 
 _include_dirs = [cylon_include_dir,
@@ -117,6 +116,8 @@ _include_dirs = [cylon_include_dir,
 
 mpi_include_dir = os.popen("mpicc --showme:incdirs").read().strip().split(' ')
 _include_dirs.extend(mpi_include_dir)
+
+print("Include dirs:", _include_dirs)
 
 # Adopted the Cudf Python Build format
 # https://github.com/rapidsai/cudf
@@ -165,4 +166,4 @@ setup(
     ],
     zip_safe=False
 )
-print("Done setup ####################################")
+print("Pycylon setup done!")

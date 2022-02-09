@@ -22,6 +22,8 @@
 # For more information about CMake, see http://www.cmake.org             #
 ##########################################################################
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 project(CYLON VERSION 0.5.0)
 
 set(CYLON_VERSION 0.5.0)
