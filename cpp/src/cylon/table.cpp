@@ -38,6 +38,8 @@
 #include <cylon/util/to_string.hpp>
 #include <cylon/repartition.hpp>
 #include <cylon/net/mpi/mpi_operations.hpp>
+#include <cylon/net/mpi/mpi_communicator.hpp>
+#include <cylon/serialize/table_serialize.hpp>
 
 namespace cylon {
 
@@ -424,6 +426,193 @@ Status Sort(const std::shared_ptr<Table> &table, const std::vector<int32_t> &sor
                                                                          sorted_table,
                                                                          sort_direction));
   return Table::FromArrowTable(ctx, sorted_table, out);
+}
+
+// cylon::Status GetSplitPoints(const std::shared_ptr<Table> &local_sorted,
+//                             int splitter,
+//                             const std::vector<bool> &sort_direction,
+//                             std::unique_ptr<Table> &split_points_table) {
+
+//     std::vector<std::unique_ptr<cudf::table>> gathered_tables;
+//     bool gather_from_root = false;
+//     RETURN_CYLON_STATUS_IF_FAILED(
+//             gcylon::net::Gather(sample_tv, splitter, gather_from_root, ctx, gathered_tables));
+
+//     if (cylon::mpi::AmIRoot(splitter, ctx)) {
+//         RETURN_CYLON_STATUS_IF_FAILED(
+//                 DetermineSplitPoints(sample_tv, gathered_tables, column_orders, ctx, split_points_table));
+//     }
+
+//     cudf::table_view source_tv;
+//     if (cylon::mpi::AmIRoot(splitter, ctx)) {
+//         source_tv = split_points_table->view();
+//     }
+
+//     return gcylon::net::Bcast(source_tv, splitter, ctx, split_points_table);
+// }
+
+Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted, 
+                          int num_samples,
+                          std::shared_ptr<arrow::Table>& sample_result) {
+  float step = local_sorted->Rows() / (num_samples + 1.0);
+  float acc = step;
+
+  std::vector<int> sample_indices(num_samples);
+  for(int i = 0; i < num_samples; i++) {
+    sample_indices[i] = acc;
+    acc += step;
+  }
+
+  auto arrow_table = local_sorted->get_table();
+  auto result = arrow_table->SelectColumns(sample_indices);
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(result.status());
+
+  sample_result = result.ValueOrDie();
+}
+
+Status MergeSortedTable(const std::vector<std::shared_ptr<Table>>& tables,
+                        const std::vector<int>& sort_columns,
+                        const std::vector<bool>& sort_orders,
+                        std::shared_ptr<Table>& out) {
+  // no mergesort methods provided, could use priorityQueue + arrow::compute::Take
+  // k = world size, N = total # of samples
+  // since we take 2*k samples for every process, N = 2 * k * k
+  // merge time complexity: O(N*log(k))
+  // sort time complexity: O(N*log(N)) -> N*log(2*k**2) -> 2N*log(2k) -> O(N*log(k))
+
+  std::shared_ptr<Table> table_out;
+  RETURN_CYLON_STATUS_IF_FAILED(Merge(tables, table_out));
+  RETURN_CYLON_STATUS_IF_FAILED(Sort(table_out, sort_columns, out, sort_orders));
+
+  return Status::OK();
+}
+
+Status DetermineSplitPoints(const std::vector<std::shared_ptr<Table>>& gathered_tables_include_root,
+                            const std::vector<int>& sort_columns,
+                            const std::vector<bool>& sort_orders,
+                            int num_split_points,
+                            std::shared_ptr<Table>& split_points, 
+                            const std::shared_ptr<CylonContext>& ctx) {
+  std::shared_ptr<Table> merged_table;
+  RETURN_CYLON_STATUS_IF_FAILED(
+    MergeSortedTable(gathered_tables_include_root, sort_columns, sort_orders, merged_table));
+
+  int num_split_points = std::min(merged_table->Rows(), (int64_t)ctx->GetWorldSize() - 1);
+
+  std::shared_ptr<arrow::Table> sample_result;
+
+  RETURN_CYLON_STATUS_IF_FAILED(SampleTableUniform(merged_table, num_split_points, sample_result));
+  
+  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(ctx, sample_result, split_points));
+
+  return Status::OK();
+}
+
+Status GetSplitPoints(std::shared_ptr<Table>& sample_result,
+                      const std::vector<int>& sort_columns,
+                      const std::vector<bool>& sort_orders,
+                      int num_split_points,
+                      std::shared_ptr<Table> split_points,
+                      int split_root = 0) {
+  // gather
+  
+  // root determine points
+    // merge if larger than 10
+    // sort if smaller/eq 10
+  // broadcast
+  auto ctx = sample_result->GetContext();
+
+  std::vector<std::shared_ptr<cylon::Table>> gather_results;
+  net::MPISyncCommunicator comm;
+  RETURN_CYLON_STATUS_IF_FAILED(comm.AllGather(sample_result, &gather_results));
+  
+  if (ctx->GetRank() == split_root) {
+    gather_results.push_back(sample_result); // since allGather doesn't take root
+
+      RETURN_CYLON_STATUS_IF_FAILED(
+              DetermineSplitPoints(gather_results, sort_columns, sort_orders, num_split_points, split_points, sample_result->GetContext()));
+      
+  }
+
+  RETURN_CYLON_STATUS_IF_FAILED(comm.Bcast(sample_result->GetContext(), &split_points, split_root));
+
+  return Status::OK();
+}
+
+Status GetSplitPointIndices(const std::shared_ptr<Table>& split_points, 
+                            const std::shared_ptr<Table>& sorted_table,
+                            const std::vector<int>& sort_columns,
+                            const std::vector<bool>& sort_order,
+                            std::vector<int>& target_partition,
+                            std::vector<int>& partition_hist,
+                            std::vector<int> indices) {
+
+}
+
+/**
+ * perform distributed sort on provided table
+ * @param table
+ * @param sort_columns sort based on these columns
+ * @param sort_direction Sort direction 'true' indicates ascending ordering and false indicate descending ordering.
+ * @param ctx
+ * @param sorted_table resulting table
+ * @param sort_root the worker that will determine the global split points
+ * @param nulls_after ????
+ * @return
+ */
+Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
+                      const std::vector<int32_t> &sort_columns,
+                      const std::vector<bool> &sort_direction,
+                      std::shared_ptr<cylon::Table> &output,
+                      bool nulls_after = true,
+                      const int sort_root = 0) {
+  if(sort_columns.size() > table->Columns()) {
+    return Status(Code::ValueError, "number of values in sort_column_indices can not larger than the number of columns");
+  } else if(sort_columns.size() != sort_direction.size()) {
+    return Status(Code::ValueError, "sizes of sort_column_indices and column_orders must match");
+  }
+
+  const auto &ctx = table->GetContext();
+  int world_sz = ctx->GetWorldSize();
+
+  // locally sort
+  std::shared_ptr<Table> local_sorted;
+  RETURN_CYLON_STATUS_IF_FAILED(Sort(table, sort_columns, local_sorted, sort_direction));
+
+  std::shared_ptr<arrow::Table> arrow_table, sorted_table;
+  if (world_sz == 1) {
+    arrow_table = local_sorted->get_table();
+  } else {
+    
+    const int SAMPLING_RATIO = 2;
+    std::vector<uint32_t> target_partitions, partition_hist;
+    std::vector<std::shared_ptr<arrow::Table>> split_tables;
+
+    // TODO: sample the sorted table with sort columns and create a table
+    int sample_count = ctx->GetWorldSize() * SAMPLING_RATIO;
+    sample_count = std::min((int64_t)sample_count, table->Rows());
+
+    // TODO: determine split point
+
+    // TODO: construct target_partition, partition_hist
+
+    // split and all_to_all
+    RETURN_CYLON_STATUS_IF_FAILED(Split(table,
+                                        world_sz,
+                                        target_partitions,
+                                        partition_hist,
+                                        split_tables));
+
+    // we are going to free if retain is set to false. therefore, we need to make a copy of schema
+    std::shared_ptr<arrow::Schema> schema = table->get_table()->schema();
+    //   if (!table->IsRetain()) {
+    //     const_cast<std::shared_ptr<Table> &>(table).reset();
+    //   }
+
+    RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables(ctx, schema, split_tables, arrow_table));
+  }
+
+  return Table::FromArrowTable(ctx, sorted_table, output);
 }
 
 Status DistributedSort(const std::shared_ptr<Table> &table,
