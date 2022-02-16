@@ -32,17 +32,13 @@ class Result {
    * move the ownership of the arrow datum result to Result container
    * @param result
    */
-  explicit Result(arrow::Datum result) : result(std::move(result)) {
-
-  }
+  explicit Result(arrow::Datum result) : result(std::move(result)) {}
 
   /**
    * Return a const reference to the underlying datum object
    * @return
    */
-  const arrow::Datum &GetResult() const {
-    return result;
-  }
+  const arrow::Datum &GetResult() const { return result; }
 
  private:
   const arrow::Datum result;
@@ -52,7 +48,8 @@ class Result {
  * Function pointer for aggregate functions
  */
 typedef Status
-(*AggregateOperation)(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output);
+(*AggregateOperation)
+    (const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output);
 
 /**
  * Calculates the global sum of a column
@@ -62,7 +59,9 @@ typedef Status
  * @param output
  * @return
  */
-cylon::Status Sum(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output);
+cylon::Status Sum(const std::shared_ptr<cylon::Table> &table,
+                  int32_t col_idx,
+                  std::shared_ptr<Result> &output);
 
 /**
  * Calculates the global count of a column
@@ -72,7 +71,9 @@ cylon::Status Sum(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, s
  * @param output
  * @return
  */
-cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output);
+cylon::Status Count(const std::shared_ptr<cylon::Table> &table,
+                    int32_t col_idx,
+                    std::shared_ptr<Result> &output);
 
 /**
  * Calculates the global min of a column
@@ -82,7 +83,9 @@ cylon::Status Count(const std::shared_ptr<cylon::Table> &table, int32_t col_idx,
  * @param output
  * @return
  */
-cylon::Status Min(const std::shared_ptr<cylon::Table> &table, int32_t col_idx, std::shared_ptr<Result> &output);
+cylon::Status Min(const std::shared_ptr<cylon::Table> &table,
+                  int32_t col_idx,
+                  std::shared_ptr<Result> &output);
 
 /**
  * Calculates the global max of a column

@@ -16,9 +16,11 @@
 #define CYLON_CPP_SRC_CYLON_COMPUTE_SCALAR_AGGREGATE_HPP_
 
 #include <arrow/api.h>
+
 #include "cylon/status.hpp"
 #include "cylon/compute/aggregate_kernels.hpp"
 #include "cylon/net/comm_operations.hpp"
+#include "cylon/ctx/cylon_context.hpp"
 
 namespace cylon {
 namespace compute {
@@ -72,12 +74,21 @@ struct ScalarAggregateKernel {
   virtual Status Finalize(const std::shared_ptr<arrow::Array> &combined_results,
                           std::shared_ptr<arrow::Scalar> *output) const = 0;
 
-  inline size_t combined_results_size() const;
-  virtual std::string name() const = 0;
+  inline virtual size_t num_combined_results() const = 0;
+  inline virtual std::string name() const = 0;
   virtual const std::shared_ptr<arrow::DataType> &output_type() const = 0;
-  virtual const arrow::DataTypeVector &intermediate_types() const = 0;
-  virtual  net::ReduceOp reduce_op() const = 0;
+  virtual net::ReduceOp reduce_op() const = 0;
 };
+
+Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
+                       const std::unique_ptr<ScalarAggregateKernel> &kernel,
+                       const std::shared_ptr<arrow::Array> &values,
+                       std::shared_ptr<arrow::Scalar> *result,
+                       compute::KernelOptions *kernel_options = NULLPTR);
+
+Status Sum(const std::shared_ptr<CylonContext> &ctx,
+           const std::shared_ptr<arrow::Array> &values,
+           std::shared_ptr<arrow::Scalar> *result);
 
 }
 }

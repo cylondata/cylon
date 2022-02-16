@@ -15,8 +15,9 @@
 #ifndef CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
 #define CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
 
-#include <cylon/net/comm_config.hpp>
-#include <cylon/net/channel.hpp>
+#include "cylon/net/comm_config.hpp"
+#include "cylon/net/channel.hpp"
+#include "cylon/net/comm_operations.hpp"
 
 namespace cylon {
 class Table;
@@ -49,6 +50,8 @@ class Communicator {
   virtual Status Bcast(const std::shared_ptr<CylonContext> &ctx,
                        std::shared_ptr<Table> *table,
                        int bcast_root) const = 0;
+
+//  virtual Status AllReduce(std::shared_ptr<>)
 };
 }
 }
