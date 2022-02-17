@@ -67,6 +67,7 @@ add_library(cylon SHARED
         ctx/cylon_context.cpp
         ctx/cylon_context.hpp
         ctx/memory_pool.hpp
+        data_types.cpp
         data_types.hpp
         groupby/groupby.cpp
         groupby/groupby.hpp
@@ -181,8 +182,7 @@ add_library(cylon SHARED
         util/sort.hpp
         util/to_string.hpp
         util/uuid.cpp
-        util/uuid.hpp
-        )
+        util/uuid.hpp)
 
 IF(NOT MSVC)
     if(APPLE)
