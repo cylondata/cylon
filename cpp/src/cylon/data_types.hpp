@@ -16,6 +16,7 @@
 #define CYLON_SRC_IO_DATATYPES_H_
 
 #include <memory>
+#include <string>
 
 namespace cylon {
 

@@ -108,6 +108,7 @@ struct QuantileKernelOptions : public KernelOptions {
 //};
 
 struct AggregationOp {
+  virtual ~AggregationOp() = default;
   virtual AggregationOpId id() const = 0;
   virtual KernelOptions *options() const { return nullptr; };
 };
