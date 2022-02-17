@@ -101,8 +101,8 @@ Status CreateTable(const std::shared_ptr<CylonContext> &ctx, int rows, std::shar
   }
 
   std::shared_ptr<Column> c0, c1;
-  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(ctx, Int32(), col0, c0));
-  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(ctx, Double(), col1, c1));
+  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(col0, c0));
+  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(col1, c1));
 
   return Table::FromColumns(ctx, {std::move(c0), std::move(c1)}, {"col0", "col1"}, output);
 }

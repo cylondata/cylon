@@ -16,20 +16,15 @@
 
 from libcpp.memory cimport shared_ptr
 from pycylon.data.data_type cimport CDataType
-from pycylon.data.data_type cimport DataType
 from pyarrow.lib cimport CArray as ArrowCAarray
 from pycylon.data.column cimport CColumn
-from pycylon.api.lib cimport pycylon_unwrap_data_type, pycylon_wrap_data_type
-from pycylon.data.data_type import DataType
+from pycylon.api.lib cimport pycylon_wrap_data_type
 from pyarrow.lib cimport pyarrow_unwrap_array, pyarrow_wrap_array
 
-
 cdef class Column:
-
-    def __cinit__(self, dtype: DataType, array):
-       cdef shared_ptr[CDataType] cdt = pycylon_unwrap_data_type(dtype)
-       cdef shared_ptr[ArrowCAarray] ca = pyarrow_unwrap_array(array)
-       self.thisPtr = new CColumn(cdt, ca)
+    def __cinit__(self, array):
+        cdef shared_ptr[ArrowCAarray] ca = pyarrow_unwrap_array(array)
+        self.thisPtr = new CColumn(ca)
 
     @property
     def data(self):
@@ -40,5 +35,3 @@ cdef class Column:
     def dtype(self):
         cdef shared_ptr[CDataType] cdtype = self.thisPtr.type()
         return pycylon_wrap_data_type(cdtype)
-
-

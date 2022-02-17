@@ -19,6 +19,7 @@
 #include <arrow/util/bitmap_ops.h>
 
 #include "cylon/arrow/arrow_buffer.hpp"
+#include "cylon/arrow/arrow_types.hpp"
 
 namespace cylon {
 

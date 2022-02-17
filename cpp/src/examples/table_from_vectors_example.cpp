@@ -37,9 +37,9 @@ int main() {
   }
 
   std::shared_ptr<cylon::Column> c0, c1;
-  status = cylon::Column::FromVector(ctx, cylon::Int32(), col0, c0);
+  status = cylon::Column::FromVector(col0, c0);
   if (!status.is_ok()) return 1;
-  status = cylon::Column::FromVector(ctx, cylon::Double(), col1, c1);
+  status = cylon::Column::FromVector(col1, c1);
   if (!status.is_ok()) return 1;
 
   std::shared_ptr<cylon::Table> output;

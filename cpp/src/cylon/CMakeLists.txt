@@ -182,7 +182,7 @@ add_library(cylon SHARED
         util/sort.hpp
         util/to_string.hpp
         util/uuid.cpp
-        util/uuid.hpp)
+        util/uuid.hpp scalar.cpp scalar.hpp)
 
 IF(NOT MSVC)
     if(APPLE)

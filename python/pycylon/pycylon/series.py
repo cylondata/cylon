@@ -15,21 +15,19 @@
 
 from typing import List
 from pycylon.data.column import Column
-from pycylon.data.data_type import DataType
 import pyarrow as pa
 import numpy as np
-from collections.abc import Iterable
 import pandas as pd
 
 
 class Series(object):
 
-    def __init__(self, series_id: str = None, data=None, data_type: DataType = None):
+    def __init__(self, series_id: str = None, data=None):
         self._id = series_id
         if isinstance(data, List) or isinstance(data, np.ndarray):
-            self._column = Column(data_type, pa.array(data))
+            self._column = Column(pa.array(data))
         elif isinstance(data, pa.Array):
-            self._column = Column(data_type, data)
+            self._column = Column(data)
         else:
             raise ValueError('Invalid data type, data must be List, Numpy NdArray or PyArrow array')
 

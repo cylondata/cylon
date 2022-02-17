@@ -16,7 +16,6 @@
 
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
-from pycylon.ctx.context cimport CCylonContext
 from pycylon.common.status cimport CStatus
 from pycylon.data.data_type cimport CDataType
 from pyarrow.lib cimport CArray as ArrowCAarray
@@ -42,19 +41,17 @@ cdef extern from "../../../../cpp/src/cylon/column.hpp" namespace "cylon":
         long double
 
     cdef cppclass CColumn "cylon::Column":
-        CColumn(shared_ptr[CDataType] type_, shared_ptr[ArrowCAarray] data_)
+        CColumn(shared_ptr[ArrowCAarray] data_)
 
         const shared_ptr[ArrowCAarray]& data() const
 
         const shared_ptr[CDataType]& type() const
 
         @ staticmethod
-        shared_ptr[CColumn] Make(shared_ptr[CDataType] type_, shared_ptr[ArrowCAarray] data_)
+        shared_ptr[CColumn] Make(shared_ptr[ArrowCAarray] data)
 
         @ staticmethod
-        CStatus FromVector[T](const shared_ptr[CCylonContext] & ctx,
-                              const shared_ptr[CDataType] & type,
-                              const vector[T] & data_vector,
+        CStatus FromVector[T](const vector[T] & data_vector,
                               shared_ptr[CColumn] & output)
 
 
