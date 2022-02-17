@@ -512,7 +512,7 @@ Status GetSplitPoints(std::shared_ptr<Table>& sample_result,
                       const std::vector<int>& sort_columns,
                       const std::vector<bool>& sort_orders,
                       int num_split_points,
-                      std::shared_ptr<Table> split_points,
+                      std::shared_ptr<Table>& split_points,
                       int split_root = 0) {
   // gather
   
@@ -539,14 +539,83 @@ Status GetSplitPoints(std::shared_ptr<Table>& sample_result,
   return Status::OK();
 }
 
+inline int CompareRows(const std::vector<std::unique_ptr<cylon::DualArrayIndexComparator>>& comparators,
+                      int64_t table_idx, int64_t split_point_idx) {
+  int sz = comparators.size();
+  // in `compare`, the msb of index value is encoded as, 0 --> array1 1 --> array2
+  split_point_idx |= (1 << 63);
+  for(int i = 0; i < sz; i++) {
+    int result = comparators[i]->compare(table_idx, split_point_idx);
+    if(result != 0) return result;
+  }
+  return 0;
+}
+
+// return (index of) first element that is not less than the target element
+int64_t tableBinarySearch(const std::shared_ptr<Table>& split_points, 
+                          const std::shared_ptr<Table>& sorted_table,
+                          const std::vector<std::unique_ptr<cylon::DualArrayIndexComparator>>& comparators,
+                          int64_t split_point_idx, int64_t l) {
+  int64_t r = sorted_table->Rows() - 1;
+  while(r > l) {
+    int64_t m = (l + r) / 2;
+    int compare_result = CompareRows(comparators, m, split_point_idx);
+    if(compare_result == 0) return m;
+    else if(compare_result > 0) {
+      r = m - 1;
+    } else {
+      l = m + 1;
+    }
+  }
+
+  if(CompareRows(comparators, l, split_point_idx) < 0) return l + 1;
+}
+
 Status GetSplitPointIndices(const std::shared_ptr<Table>& split_points, 
                             const std::shared_ptr<Table>& sorted_table,
                             const std::vector<int>& sort_columns,
                             const std::vector<bool>& sort_order,
-                            std::vector<int>& target_partition,
-                            std::vector<int>& partition_hist,
-                            std::vector<int> indices) {
+                            std::vector<uint32_t>& target_partition,
+                            std::vector<uint32_t>& partition_hist) {
+  // binary search
+  int num_split_points = split_points->Rows();
 
+  auto arrow_sorted_table = sorted_table->get_table();
+  auto arrow_split_points = split_points->get_table();
+
+  arrow_sorted_table->CombineChunks(ToArrowPool(sorted_table->GetContext()));
+  arrow_split_points->CombineChunks(ToArrowPool(sorted_table->GetContext()));
+
+  std::vector<std::unique_ptr<cylon::DualArrayIndexComparator>> comparators(num_split_points);
+  for(int64_t i = 0; i < num_split_points; i++) {
+    // make un-chunked array from arrow_sorted_table[i] and arrow_split_points[i], and make comparator
+    
+    std::unique_ptr<cylon::DualArrayIndexComparator> comp;
+    RETURN_CYLON_STATUS_IF_FAILED(CreateDualArrayIndexComparator(
+      cylon::util::GetChunkOrEmptyArray(arrow_sorted_table->column(i), 0), 
+      cylon::util::GetChunkOrEmptyArray(arrow_split_points->column(i), 0), &comp
+    ));
+
+    comparators[i] = std::move(comp);
+  }
+
+  int64_t num_rows = sorted_table->Rows();
+  target_partition.resize(num_rows);
+  partition_hist.resize(num_split_points + 1);
+  int64_t l_idx = 0;
+
+  for(int64_t i = 0; i < num_split_points; i++) {
+    int idx = tableBinarySearch(split_points, sorted_table, comparators, i, l_idx);
+    std::fill(target_partition.begin() + l_idx, target_partition.begin() + idx, i);
+    partition_hist[i] = idx - l_idx;
+
+    l_idx = idx;
+  }
+
+  std::fill(target_partition.begin() + l_idx, target_partition.end(), num_split_points);
+  partition_hist[num_split_points] = num_rows - l_idx;
+
+  return Status::OK();
 }
 
 /**
@@ -557,7 +626,6 @@ Status GetSplitPointIndices(const std::shared_ptr<Table>& split_points,
  * @param ctx
  * @param sorted_table resulting table
  * @param sort_root the worker that will determine the global split points
- * @param nulls_after ????
  * @return
  */
 Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
@@ -588,13 +656,27 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
     std::vector<uint32_t> target_partitions, partition_hist;
     std::vector<std::shared_ptr<arrow::Table>> split_tables;
 
-    // TODO: sample the sorted table with sort columns and create a table
+    // sample the sorted table with sort columns and create a table
     int sample_count = ctx->GetWorldSize() * SAMPLING_RATIO;
     sample_count = std::min((int64_t)sample_count, table->Rows());
 
-    // TODO: determine split point
+    std::shared_ptr<arrow::Table> sample_result_arrow_table;
+    RETURN_CYLON_STATUS_IF_FAILED(SampleTableUniform(local_sorted, 
+                          sample_count,  sample_result_arrow_table));
 
-    // TODO: construct target_partition, partition_hist
+    std::shared_ptr<Table> sample_result;
+    Table::FromArrowTable(ctx, sample_result_arrow_table, sample_result);
+
+    // TODO: take rows to make new table <- may not be viable b.c. dual index comparator
+
+    // determine split point
+    std::shared_ptr<Table> split_points;
+    RETURN_CYLON_STATUS_IF_FAILED(GetSplitPoints(sample_result,
+      sort_columns, sort_direction, sample_count, split_points));
+
+    // construct target_partition, partition_hist
+    RETURN_CYLON_STATUS_IF_FAILED(GetSplitPointIndices(split_points, local_sorted, sort_columns,
+      sort_direction, target_partitions, partition_hist));
 
     // split and all_to_all
     RETURN_CYLON_STATUS_IF_FAILED(Split(table,
