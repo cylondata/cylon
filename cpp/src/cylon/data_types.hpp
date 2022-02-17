@@ -24,62 +24,62 @@ namespace cylon {
  */
 struct Type {
   enum type {
-	/// Boolean as 1 bit, LSB bit-packed ordering
-	BOOL,
-	/// Unsigned 8-bit little-endian integer
-	UINT8,
-	/// Signed 8-bit little-endian integer
-	INT8,
-	/// Unsigned 16-bit little-endian integer
-	UINT16,
-	/// Signed 16-bit little-endian integer
-	INT16,
-	/// Unsigned 32-bit little-endian integer
-	UINT32,
-	/// Signed 32-bit little-endian integer
-	INT32,
-	/// Unsigned 64-bit little-endian integer
-	UINT64,
-	/// Signed 64-bit little-endian integer
-	INT64,
-	/// 2-byte floating point value
-	HALF_FLOAT,
-	/// 4-byte floating point value
-	FLOAT,
-	/// 8-byte floating point value
-	DOUBLE,
-	/// UTF8 variable-length string as List<Char>
-	STRING,
-	/// Variable-length bytes (no guarantee of UTF8-ness)
-	BINARY,
-	/// Fixed-size binary. Each value occupies the same number of bytes
-	FIXED_SIZE_BINARY,
-	/// int32_t days since the UNIX epoch
-	DATE32,
-	/// int64_t milliseconds since the UNIX epoch
-	DATE64,
-	/// Exact timestamp encoded with int64 since UNIX epoch
-	/// Default unit millisecond
-	TIMESTAMP,
-	/// Time as signed 32-bit integer, representing either seconds or
-	/// milliseconds since midnight
-	TIME32,
-	/// Time as signed 64-bit integer, representing either microseconds or
-	/// nanoseconds since midnight
-	TIME64,
-	/// YEAR_MONTH or DAY_TIME interval in SQL style
-	INTERVAL,
-	/// Precision- and scale-based decimal type. Storage type depends on the
-	/// parameters.
-	DECIMAL,
-	/// A list of some logical data type
-	LIST,
-	/// Custom data type, implemented by user
-	EXTENSION,
-	/// Fixed size list of some logical type
-	FIXED_SIZE_LIST,
-	/// or nanoseconds.
-	DURATION,
+    /// Boolean as 1 bit, LSB bit-packed ordering
+    BOOL,
+    /// Unsigned 8-bit little-endian integer
+    UINT8,
+    /// Signed 8-bit little-endian integer
+    INT8,
+    /// Unsigned 16-bit little-endian integer
+    UINT16,
+    /// Signed 16-bit little-endian integer
+    INT16,
+    /// Unsigned 32-bit little-endian integer
+    UINT32,
+    /// Signed 32-bit little-endian integer
+    INT32,
+    /// Unsigned 64-bit little-endian integer
+    UINT64,
+    /// Signed 64-bit little-endian integer
+    INT64,
+    /// 2-byte floating point value
+    HALF_FLOAT,
+    /// 4-byte floating point value
+    FLOAT,
+    /// 8-byte floating point value
+    DOUBLE,
+    /// UTF8 variable-length string as List<Char>
+    STRING,
+    /// Variable-length bytes (no guarantee of UTF8-ness)
+    BINARY,
+    /// Fixed-size binary. Each value occupies the same number of bytes
+    FIXED_SIZE_BINARY,
+    /// int32_t days since the UNIX epoch
+    DATE32,
+    /// int64_t milliseconds since the UNIX epoch
+    DATE64,
+    /// Exact timestamp encoded with int64 since UNIX epoch
+    /// Default unit millisecond
+    TIMESTAMP,
+    /// Time as signed 32-bit integer, representing either seconds or
+    /// milliseconds since midnight
+    TIME32,
+    /// Time as signed 64-bit integer, representing either microseconds or
+    /// nanoseconds since midnight
+    TIME64,
+    /// YEAR_MONTH or DAY_TIME interval in SQL style
+    INTERVAL,
+    /// Precision- and scale-based decimal type. Storage type depends on the
+    /// parameters.
+    DECIMAL,
+    /// A list of some logical data type
+    LIST,
+    /// Custom data type, implemented by user
+    EXTENSION,
+    /// Fixed size list of some logical type
+    FIXED_SIZE_LIST,
+    /// or nanoseconds.
+    DURATION,
     /// Like STRING, but with 64-bit offsets
     LARGE_STRING,
     /// Like BINARY, but with 64-bit offsets
@@ -95,8 +95,8 @@ struct Type {
  */
 struct Layout {
   enum layout {
-	FIXED_WIDTH = 1,
-	VARIABLE_WIDTH = 2
+    FIXED_WIDTH = 1,
+    VARIABLE_WIDTH = 2
   };
 };
 
@@ -105,7 +105,7 @@ struct Layout {
  */
 class DataType {
  public:
-  DataType() {}
+  DataType() = default;
 
   explicit DataType(Type::type t) : t(t), l(Layout::FIXED_WIDTH) {}
 
@@ -144,8 +144,40 @@ class DataType {
   Layout::layout l;
 };
 
+class FixedSizeBinaryType : public DataType {
+ public:
+  explicit FixedSizeBinaryType(int32_t byte_width);
+  FixedSizeBinaryType(int32_t byte_width, Type::type override_type);
+  int32_t byte_width_;
+};
+
+struct TimeUnit {
+  /// The unit for a time or timestamp DataType
+  enum type { SECOND = 0, MILLI = 1, MICRO = 2, NANO = 3 };
+};
+
+class TimestampType : public DataType {
+ public:
+  TimestampType(TimeUnit::type unit, std::string timezone);
+  TimeUnit::type unit_;
+  std::string timezone_;
+};
+
+class DurationType : public DataType {
+ public:
+  explicit DurationType(TimeUnit::type unit);
+  TimeUnit::type unit_;
+};
+
+class DecimalType : public FixedSizeBinaryType {
+ public:
+  DecimalType(int32_t byte_width, int32_t precision, int32_t scale);
+  int32_t precision_;
+  int32_t scale_;
+};
+
 #define TYPE_FACTORY(NAME, TYPE, LAYOUT)                                                \
-  inline std::shared_ptr<DataType> NAME() {                                                    \
+  inline std::shared_ptr<DataType> NAME() {                                             \
     static std::shared_ptr<DataType> result = std::make_shared<DataType>(TYPE, LAYOUT); \
     return result;                                                                      \
   }
@@ -170,15 +202,23 @@ FIXED_WIDTH_TYPE_FACTORY(Float, Type::FLOAT)
 FIXED_WIDTH_TYPE_FACTORY(Double, Type::DOUBLE)
 FIXED_WIDTH_TYPE_FACTORY(Date32, Type::DATE32)
 FIXED_WIDTH_TYPE_FACTORY(Date64, Type::DATE64)
-FIXED_WIDTH_TYPE_FACTORY(Timestamp, Type::TIMESTAMP)
 FIXED_WIDTH_TYPE_FACTORY(Time32, Type::TIME32)
 FIXED_WIDTH_TYPE_FACTORY(Time64, Type::TIME64)
 FIXED_WIDTH_TYPE_FACTORY(Interval, Type::INTERVAL)
-FIXED_WIDTH_TYPE_FACTORY(Decimal, Type::DECIMAL)
-FIXED_WIDTH_TYPE_FACTORY(FixedBinary, Type::FIXED_SIZE_BINARY)
+
+std::shared_ptr<DataType> FixedSizeBinary(int32_t byte_width);
+
+std::shared_ptr<DataType> Decimal(int32_t byte_width, int32_t precision, int32_t scale);
+
+std::shared_ptr<DataType> Timestamp(TimeUnit::type unit, std::string time_zone);
+
+std::shared_ptr<DataType> Duration(TimeUnit::type unit);
 
 VAR_WIDTH_TYPE_FACTORY(String, Type::STRING)
 VAR_WIDTH_TYPE_FACTORY(Binary, Type::BINARY)
+VAR_WIDTH_TYPE_FACTORY(LargeString, Type::LARGE_BINARY)
+VAR_WIDTH_TYPE_FACTORY(LargeBinary, Type::LARGE_STRING)
+
 }  // namespace cylon
 
 #endif //CYLON_SRC_IO_DATATYPES_H_

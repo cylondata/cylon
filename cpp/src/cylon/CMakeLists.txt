@@ -180,7 +180,7 @@ add_library(cylon SHARED
         util/to_string.hpp
         util/uuid.cpp
         util/uuid.hpp
-        )
+        data_types.cpp)
 
 IF(NOT MSVC)
     if(APPLE)
