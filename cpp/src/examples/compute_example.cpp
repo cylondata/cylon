@@ -32,10 +32,10 @@ cylon::Status CreateTable(const std::shared_ptr<cylon::CylonContext> &ctx, int r
   }
 
   std::shared_ptr<cylon::Column> c0, c1;
-  RETURN_CYLON_STATUS_IF_FAILED(cylon::Column::FromVector(ctx, "col0", cylon::Int32(), col0, c0));
-  RETURN_CYLON_STATUS_IF_FAILED(cylon::Column::FromVector(ctx, "col1", cylon::Double(), col1, c1));
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::Column::FromVector(ctx, cylon::Int32(), col0, c0));
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::Column::FromVector(ctx, cylon::Double(), col1, c1));
 
-  return cylon::Table::FromColumns(ctx, {std::move(c0), std::move(c1)}, output);
+  return cylon::Table::FromColumns(ctx, {std::move(c0), std::move(c1)}, {"col0", "col1"}, output);
 }
 
 int main() {

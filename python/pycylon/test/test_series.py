@@ -24,12 +24,10 @@ from pycylon import Series
 
 
 def test_column():
-    col_id = 'id'
     dtype = DataType(Type.INT32, Layout.FIXED_WIDTH)
     data = pa.array([1, 2, 3])
-    col = Column(col_id, dtype, data)
+    col = Column(dtype, data)
 
-    assert col_id == col.id
     assert dtype.type == col.dtype.type
     assert data == col.data
 

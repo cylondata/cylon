@@ -37,13 +37,13 @@ int main() {
   }
 
   std::shared_ptr<cylon::Column> c0, c1;
-  status = cylon::Column::FromVector(ctx, "col0", cylon::Int32(), col0, c0);
+  status = cylon::Column::FromVector(ctx, cylon::Int32(), col0, c0);
   if (!status.is_ok()) return 1;
-  status = cylon::Column::FromVector(ctx, "col1", cylon::Double(), col1, c1);
+  status = cylon::Column::FromVector(ctx, cylon::Double(), col1, c1);
   if (!status.is_ok()) return 1;
 
   std::shared_ptr<cylon::Table> output;
-  status = cylon::Table::FromColumns(ctx, {std::move(c0), std::move(c1)}, output);
+  status = cylon::Table::FromColumns(ctx, {std::move(c0), std::move(c1)}, {"col0", "col1"}, output);
 
   LOG(INFO) << "Read tables. Row Count: " << output->Rows();
 
