@@ -12,9 +12,10 @@
  * limitations under the License.
  */
 
-#include <cylon/compute/aggregates.hpp>
-#include <cylon/mapreduce/mapreduce.hpp>
-#include <cylon/net/mpi/mpi_operations.hpp>
+#include "cylon/compute/aggregates.hpp"
+#include "cylon/compute/scalar_aggregate.hpp"
+#include "cylon/mapreduce/mapreduce.hpp"
+#include "cylon/net/mpi/mpi_operations.hpp"
 
 #include "common/test_header.hpp"
 #include "test_utils.hpp"
@@ -233,6 +234,45 @@ TEMPLATE_LIST_TEST_CASE("mapred local aggregate", "[mapred]", ArrowNumericTypes)
                                     {exp_key, exp_sum, exp_cnt, exp_avg});
 
   CHECK_ARROW_EQUAL(exp_tab, output->get_table());
+}
+
+TEMPLATE_LIST_TEST_CASE("scalar aggregate", "[compute]", ArrowNumericTypes) {
+  auto type = default_type_instance<TestType>();
+  auto mult = *arrow::MakeScalar(RANK + 1)->CastTo(type);
+  auto base_arr = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
+  // arr = (rank + 1)*[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  auto arr = arrow::compute::Multiply(base_arr, mult)->make_array();
+
+  auto val = Column::Make(std::move(arr));
+  std::shared_ptr<Scalar> res;
+
+  SECTION("sum") {
+    CHECK_CYLON_STATUS(compute::Sum(ctx, val, &res));
+
+    auto exp = *arrow::MakeScalar((WORLD_SZ * (WORLD_SZ + 1) / 2) * (10 * 11 / 2))->CastTo(type);
+    CHECK_ARROW_EQUAL(exp, res->data());
+  }
+
+  SECTION("min") {
+    CHECK_CYLON_STATUS(compute::Min(ctx, val, &res));
+
+    auto exp = *arrow::MakeScalar(0)->CastTo(type);
+    CHECK_ARROW_EQUAL(exp, res->data());
+  }
+
+  SECTION("max") {
+    CHECK_CYLON_STATUS(compute::Max(ctx, val, &res));
+
+    auto exp = *arrow::MakeScalar(WORLD_SZ * 10)->CastTo(type);
+    CHECK_ARROW_EQUAL(exp, res->data());
+  }
+
+  SECTION("count") {
+    CHECK_CYLON_STATUS(compute::Count(ctx, val, &res));
+
+    auto exp = std::make_shared<arrow::Int64Scalar>(val->length() * WORLD_SZ);
+    CHECK_ARROW_EQUAL(exp, res->data());
+  }
 }
 
 }

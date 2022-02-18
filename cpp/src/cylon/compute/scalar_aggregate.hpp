@@ -21,6 +21,8 @@
 #include "cylon/compute/aggregate_kernels.hpp"
 #include "cylon/net/comm_operations.hpp"
 #include "cylon/ctx/cylon_context.hpp"
+#include "cylon/scalar.hpp"
+#include "cylon/column.hpp"
 
 namespace cylon {
 namespace compute {
@@ -87,8 +89,20 @@ Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
                        compute::KernelOptions *kernel_options = NULLPTR);
 
 Status Sum(const std::shared_ptr<CylonContext> &ctx,
-           const std::shared_ptr<arrow::Array> &values,
-           std::shared_ptr<arrow::Scalar> *result);
+           const std::shared_ptr<Column> &values,
+           std::shared_ptr<Scalar> *result);
+
+Status Min(const std::shared_ptr<CylonContext> &ctx,
+           const std::shared_ptr<Column> &values,
+           std::shared_ptr<Scalar> *result);
+
+Status Max(const std::shared_ptr<CylonContext> &ctx,
+           const std::shared_ptr<Column> &values,
+           std::shared_ptr<Scalar> *result);
+
+Status Count(const std::shared_ptr<CylonContext> &ctx,
+             const std::shared_ptr<Column> &values,
+             std::shared_ptr<Scalar> *result);
 
 }
 }

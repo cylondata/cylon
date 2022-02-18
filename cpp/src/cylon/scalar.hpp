@@ -29,6 +29,8 @@ class Scalar {
 
   const std::shared_ptr<arrow::Scalar> &data() const;
 
+  static std::shared_ptr<Scalar> Make(std::shared_ptr<arrow::Scalar> data);
+
  private:
   std::shared_ptr<DataType> type_; // The datatype of the column
   std::shared_ptr<arrow::Scalar> data_;

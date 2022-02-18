@@ -23,4 +23,8 @@ Scalar::Scalar(std::shared_ptr<arrow::Scalar> data)
 const std::shared_ptr<DataType> &Scalar::type() const { return type_; }
 
 const std::shared_ptr<arrow::Scalar> &Scalar::data() const { return data_; }
+
+std::shared_ptr<Scalar> Scalar::Make(std::shared_ptr<arrow::Scalar> data) {
+  return std::make_shared<Scalar>(std::move(data));
+}
 }
