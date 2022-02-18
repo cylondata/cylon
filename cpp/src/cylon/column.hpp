@@ -16,13 +16,10 @@
 #define CYLON_SRC_IO_COLUMN_H_
 
 #include <string>
-#include <utility>
-#include <memory>
 #include <arrow/api.h>
 
 #include "cylon/data_types.hpp"
-#include "cylon/ctx/arrow_memory_pool_utils.hpp"
-
+#include "cylon/ctx/cylon_context.hpp"
 
 namespace cylon {
 
@@ -42,7 +39,12 @@ class Column {
    */
   const std::shared_ptr<DataType> &type() const;
 
+  int64_t length() const;
+
   static std::shared_ptr<Column> Make(std::shared_ptr<arrow::Array> data_);
+  static Status Make(const std::shared_ptr<CylonContext> &ctx,
+                     const std::shared_ptr<arrow::ChunkedArray> &data_,
+                     std::shared_ptr<Column> *output);
 
   template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
   static Status FromVector(const std::vector<T> &data_vector, std::shared_ptr<Column> &output) {

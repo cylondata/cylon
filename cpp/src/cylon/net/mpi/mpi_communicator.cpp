@@ -251,5 +251,44 @@ MPI_Comm MPICommunicator::mpi_comm() const {
   return mpi_comm_;
 }
 
+Status MPICommunicator::AllReduce(const std::shared_ptr<CylonContext> &ctx,
+                                  const std::shared_ptr<Column> &values,
+                                  net::ReduceOp reduce_op,
+                                  std::shared_ptr<Column> *output) const {
+  auto *pool = ToArrowPool(ctx);
+  const auto &arr = values->data();
+
+  auto arrow_t = arr->data()->type;
+  int byte_width = arrow::bit_width(arrow_t->id()) / 8;
+
+  if (byte_width == 0) {
+    return {Code::Invalid, "Allreduce does not support " + arrow_t->ToString()};
+  }
+
+  // all ranks should have 0 null count, and equal size.
+  // equal size can be checked using this trick https://stackoverflow.com/q/71161571/4116268
+  std::array<int64_t, 3> metadata{arr->null_count(), arr->length(), -arr->length()};
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(
+      MPI_Allreduce(MPI_IN_PLACE, metadata.data(), 3, MPI_INT64_T, MPI_MAX, mpi_comm_));
+  if (metadata[0] > 0) {
+    return {Code::Invalid, "Allreduce does not support null values"};
+  }
+  if (metadata[1] != -metadata[2]) {
+    return {Code::Invalid, "Allreduce values should be the same length in all ranks"};
+  }
+
+  int count = static_cast<int>(arr->length());
+  CYLON_ASSIGN_OR_RAISE(auto buf, arrow::AllocateBuffer(byte_width * count, pool))
+  RETURN_CYLON_STATUS_IF_FAILED(
+      mpi::AllReduce(ctx, arr->data()->GetValues<uint8_t>(1), buf->mutable_data(), count,
+                     values->type(), reduce_op));
+
+  *output = Column::Make(arrow::MakeArray(arrow::ArrayData::Make(std::move(arrow_t),
+                                                                 count,
+                                                                 {nullptr, std::move(buf)},
+                                                                 0, 0)));
+  return Status::OK();
+}
+
 }  // namespace net
 }  // namespace cylon

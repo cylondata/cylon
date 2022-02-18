@@ -226,5 +226,41 @@ TEST_CASE("bcast table", "[sync comms]") {
   }
 }
 
+TEMPLATE_LIST_TEST_CASE("allreduce array", "[sync comms]", ArrowNumericTypes) {
+  auto type = default_type_instance<TestType>();
+  auto rank = *arrow::MakeScalar(RANK)->CastTo(type);
+  auto base_arr =  ArrayFromJSON(type, "[1, 2, 3, 4]");
+
+  // [1, 2, 3, 4] * rank
+  auto arr = arrow::compute::Multiply(base_arr, rank)->make_array();
+  auto col = Column::Make(std::move(arr));
+
+  const auto &comm = ctx->GetCommunicator();
+
+  auto test_allreduce = [&](net::ReduceOp op, const auto &exp) {
+    std::shared_ptr<Column> res;
+    CHECK_CYLON_STATUS(comm->AllReduce(ctx, col, op, &res));
+
+    const auto &rcv = res->data();
+    CHECK_ARROW_EQUAL(exp, rcv);
+  };
+
+  SECTION("sum") {
+    auto multiplier = *arrow::MakeScalar((WORLD_SZ - 1) * WORLD_SZ / 2)->CastTo(type);
+    auto exp = arrow::compute::Multiply(base_arr, multiplier)->make_array();
+    test_allreduce(net::SUM, exp);
+  }
+
+  SECTION("min") {
+    test_allreduce(net::MIN, ArrayFromJSON(type, "[0, 0, 0, 0]"));
+  }
+
+  SECTION("max") {
+    auto multiplier = *arrow::MakeScalar(WORLD_SZ - 1)->CastTo(type);
+    auto exp = arrow::compute::Multiply(base_arr, multiplier)->make_array();
+    test_allreduce(net::MAX, exp);
+  }
+}
+
 }
 }

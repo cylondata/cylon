@@ -14,11 +14,21 @@
 
 #include "cylon/column.hpp"
 #include "cylon/arrow/arrow_types.hpp"
+#include "cylon/util/macros.hpp"
+#include "cylon/ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
 
-std::shared_ptr<Column> Column::Make(std::shared_ptr<arrow::Array> data) {
-  return std::make_shared<Column>( std::move(data));
+std::shared_ptr<Column> Column::Make(std::shared_ptr<arrow::Array> data_) {
+  return std::make_shared<Column>(std::move(data_));
+}
+
+Status Column::Make(const std::shared_ptr<CylonContext> &ctx,
+                    const std::shared_ptr<arrow::ChunkedArray> &data_,
+                    std::shared_ptr<Column> *output) {
+  CYLON_ASSIGN_OR_RAISE(auto arr, arrow::Concatenate(data_->chunks(), ToArrowPool(ctx)))
+  *output = Column::Make(std::move(arr));
+  return Status::OK();
 }
 
 Column::Column(std::shared_ptr<arrow::Array> data)
@@ -27,5 +37,7 @@ Column::Column(std::shared_ptr<arrow::Array> data)
 const std::shared_ptr<arrow::Array> &Column::data() const { return data_; }
 
 const std::shared_ptr<DataType> &Column::type() const { return type_; }
+
+int64_t Column::length() const { return data_->length(); }
 
 }  // namespace cylon

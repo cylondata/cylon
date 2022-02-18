@@ -54,6 +54,10 @@ class UCXCommunicator : public Communicator {
   Status Bcast(const std::shared_ptr<CylonContext> &ctx,
                std::shared_ptr<Table> *table,
                int bcast_root) const override;
+  Status AllReduce(const std::shared_ptr<CylonContext> &ctx,
+                   const std::shared_ptr<Column> &column,
+                   net::ReduceOp reduce_op,
+                   std::shared_ptr<Column> *output) const override;
 
   // # UCX specific attributes - These need to be passed to the channels created from the communicator
   // The worker for receiving

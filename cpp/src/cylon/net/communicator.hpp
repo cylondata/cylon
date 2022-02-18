@@ -20,8 +20,10 @@
 #include "cylon/net/comm_operations.hpp"
 
 namespace cylon {
-class Table;
 class CylonContext;
+class Table;
+class Column;
+
 namespace net {
 
 class Communicator {
@@ -51,7 +53,19 @@ class Communicator {
                        std::shared_ptr<Table> *table,
                        int bcast_root) const = 0;
 
-//  virtual Status AllReduce(std::shared_ptr<>)
+  /**
+   * Allreduce values at every index on `values`.
+   * @param ctx
+   * @param values
+   * @param reduce_op
+   * @param output
+   * @param skip_nulls if `true`,
+   * @return
+   */
+  virtual Status AllReduce(const std::shared_ptr<CylonContext> &ctx,
+                           const std::shared_ptr<Column> &values,
+                           net::ReduceOp reduce_op,
+                           std::shared_ptr<Column> *output) const = 0;
 };
 }
 }

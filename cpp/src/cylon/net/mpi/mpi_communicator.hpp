@@ -60,6 +60,11 @@ class MPICommunicator : public Communicator {
                std::shared_ptr<Table> *table,
                int bcast_root) const override;
 
+  Status AllReduce(const std::shared_ptr<CylonContext> &ctx,
+                   const std::shared_ptr<Column> &column,
+                   net::ReduceOp reduce_op,
+                   std::shared_ptr<Column> *output) const override;
+
   MPI_Comm mpi_comm() const;
 
  private:
