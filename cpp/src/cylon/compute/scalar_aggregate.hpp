@@ -76,9 +76,6 @@ struct ScalarAggregateKernel {
   virtual Status Finalize(const std::shared_ptr<arrow::Array> &combined_results,
                           std::shared_ptr<arrow::Scalar> *output) const = 0;
 
-  inline virtual size_t num_combined_results() const = 0;
-  inline virtual std::string name() const = 0;
-  virtual const std::shared_ptr<arrow::DataType> &output_type() const = 0;
   virtual net::ReduceOp reduce_op() const = 0;
 };
 
@@ -103,6 +100,10 @@ Status Max(const std::shared_ptr<CylonContext> &ctx,
 Status Count(const std::shared_ptr<CylonContext> &ctx,
              const std::shared_ptr<Column> &values,
              std::shared_ptr<Scalar> *result);
+
+Status Mean(const std::shared_ptr<CylonContext> &ctx,
+            const std::shared_ptr<Column> &values,
+            std::shared_ptr<Scalar> *result);
 
 }
 }

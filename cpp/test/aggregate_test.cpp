@@ -273,6 +273,14 @@ TEMPLATE_LIST_TEST_CASE("scalar aggregate", "[compute]", ArrowNumericTypes) {
     auto exp = std::make_shared<arrow::Int64Scalar>(val->length() * WORLD_SZ);
     CHECK_ARROW_EQUAL(exp, res->data());
   }
+
+  SECTION("mean") {
+    CHECK_CYLON_STATUS(compute::Mean(ctx, val, &res));
+
+    double mean = (WORLD_SZ + 1) * 10. * 11. / (4. * double(val->length()));
+    auto exp = std::make_shared<arrow::DoubleScalar>(mean);
+    CHECK_ARROW_EQUAL(exp, res->data());
+  }
 }
 
 }

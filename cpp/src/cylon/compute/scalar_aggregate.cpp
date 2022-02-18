@@ -30,9 +30,7 @@ struct TrivialScalarAggregateKernelImpl : public ScalarAggregateKernel {
   explicit TrivialScalarAggregateKernelImpl(std::shared_ptr<arrow::DataType> out_type)
       : out_type_(std::move(out_type)) {}
 
-  size_t num_combined_results() const override { return 1; }
   net::ReduceOp reduce_op() const override { return ReduceOp; }
-  const std::shared_ptr<arrow::DataType> &output_type() const override { return out_type_; }
 
   void Init(arrow::MemoryPool *pool, compute::KernelOptions *options) override {
     CYLON_UNUSED(options);
@@ -72,7 +70,6 @@ struct SumFnWrapper {
 struct SumKernelImpl : public TrivialScalarAggregateKernelImpl<SumFnWrapper, net::SUM> {
   explicit SumKernelImpl(std::shared_ptr<arrow::DataType> in_type)
       : TrivialScalarAggregateKernelImpl(std::move(in_type)) {}
-  std::string name() const override { return "sum"; }
 };
 
 template<bool take_min>
@@ -88,12 +85,10 @@ struct MinMaxFnWrapper {
 struct MinKernelImpl : public TrivialScalarAggregateKernelImpl<MinMaxFnWrapper<true>, net::MIN> {
   explicit MinKernelImpl(std::shared_ptr<arrow::DataType> in_type)
       : TrivialScalarAggregateKernelImpl(std::move(in_type)) {}
-  std::string name() const override { return "min"; }
 };
 struct MaxKernelImpl : public TrivialScalarAggregateKernelImpl<MinMaxFnWrapper<false>, net::MAX> {
   explicit MaxKernelImpl(std::shared_ptr<arrow::DataType> in_type)
       : TrivialScalarAggregateKernelImpl(std::move(in_type)) {}
-  std::string name() const override { return "max"; }
 };
 
 struct CountFnWrapper {
@@ -105,7 +100,49 @@ struct CountFnWrapper {
 };
 struct CountKernelImpl : public TrivialScalarAggregateKernelImpl<CountFnWrapper, net::SUM> {
   explicit CountKernelImpl() : TrivialScalarAggregateKernelImpl(arrow::int64()) {}
-  std::string name() const override { return "count"; }
+};
+
+struct MeanKernelImpl : public ScalarAggregateKernel {
+  using OutType = arrow::DoubleType;
+  using c_type = OutType::c_type;
+
+ public:
+  void Init(arrow::MemoryPool *pool, compute::KernelOptions *options) override {
+    CYLON_UNUSED(options);
+    pool_ = pool;
+  }
+
+  // combined_results = [sum, count]
+  Status CombineLocally(const std::shared_ptr<arrow::Array> &value_col,
+                        std::shared_ptr<arrow::Array> *combined_results) const override {
+    CYLON_ASSIGN_OR_RAISE(auto res, arrow::compute::Sum(value_col))
+    auto sum_scalar = res.scalar();
+    // cast to double
+    CYLON_ASSIGN_OR_RAISE(sum_scalar, sum_scalar->CastTo(out_type_))
+
+    // make an array of 2 with sum scalar
+    CYLON_ASSIGN_OR_RAISE(*combined_results, arrow::MakeArrayFromScalar(*sum_scalar, 2, pool_))
+    // set second value to count
+    auto *mut_values = (*combined_results)->data()->GetMutableValues<c_type>(1);
+    mut_values[1] = static_cast<c_type>(value_col->length());
+
+    return Status::OK();
+  }
+
+  Status Finalize(const std::shared_ptr<arrow::Array> &combined_results,
+                  std::shared_ptr<arrow::Scalar> *output) const override {
+    const auto &casted = std::static_pointer_cast<arrow::DoubleArray>(combined_results);
+    *output = arrow::MakeScalar(casted->Value(0) / casted->Value(1));
+    return Status::OK();
+  }
+
+  net::ReduceOp reduce_op() const override {
+    return net::SUM;
+  }
+
+ private:
+  const std::shared_ptr<arrow::DataType> out_type_ = arrow::TypeTraits<OutType>::type_singleton();
+  arrow::MemoryPool *pool_ = nullptr;
 };
 
 Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
@@ -173,6 +210,13 @@ Status Count(const std::shared_ptr<CylonContext> &ctx,
              const std::shared_ptr<Column> &values,
              std::shared_ptr<Scalar> *result) {
   const std::unique_ptr<ScalarAggregateKernel> &kern = std::make_unique<CountKernelImpl>();
+  return run_scalar_aggregate(ctx, kern, values, result);
+}
+
+Status Mean(const std::shared_ptr<CylonContext> &ctx,
+            const std::shared_ptr<Column> &values,
+            std::shared_ptr<Scalar> *result) {
+  const std::unique_ptr<ScalarAggregateKernel> &kern = std::make_unique<MeanKernelImpl>();
   return run_scalar_aggregate(ctx, kern, values, result);
 }
 
