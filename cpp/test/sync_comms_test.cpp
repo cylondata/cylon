@@ -202,7 +202,7 @@ TEST_CASE("bcast table", "[sync comms]") {
     }
 
     const auto &comm = ctx->GetCommunicator();
-    CHECK_CYLON_STATUS(comm->Bcast(ctx, &table, bcast_root));
+    CHECK_CYLON_STATUS(comm->Bcast(&table, bcast_root));
 
     INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
     REQUIRE(table != nullptr);
@@ -239,7 +239,7 @@ TEMPLATE_LIST_TEST_CASE("allreduce array", "[sync comms]", ArrowNumericTypes) {
 
   auto test_allreduce = [&](net::ReduceOp op, const auto &exp) {
     std::shared_ptr<Column> res;
-    CHECK_CYLON_STATUS(comm->AllReduce(ctx, col, op, &res));
+    CHECK_CYLON_STATUS(comm->AllReduce(col, op, &res));
 
     const auto &rcv = res->data();
     CHECK_ARROW_EQUAL(exp, rcv);

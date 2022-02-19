@@ -162,7 +162,7 @@ Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
   if (ctx->GetWorldSize() > 1) {
     const auto &comm = ctx->GetCommunicator();
     std::shared_ptr<Column> reduced;
-    RETURN_CYLON_STATUS_IF_FAILED(comm->AllReduce(ctx, Column::Make(std::move(combined_results)),
+    RETURN_CYLON_STATUS_IF_FAILED(comm->AllReduce(Column::Make(std::move(combined_results)),
                                                   kernel->reduce_op(), &reduced));
 
     RETURN_CYLON_STATUS_IF_FAILED(kernel->Finalize(reduced->data(), result));

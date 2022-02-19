@@ -37,18 +37,16 @@ CylonContext::CylonContext(bool distributed) {
 std::shared_ptr<CylonContext> CylonContext::InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config) {
   if (config->Type() == net::CommType::MPI) {
     auto ctx = std::make_shared<CylonContext>(true);
-    ctx->communicator = std::make_shared<net::MPICommunicator>();
+    ctx->communicator = std::make_shared<net::MPICommunicator>(&ctx);
     ctx->communicator->Init(config);
-    ctx->is_distributed = true;
     return ctx;
   }
 
 #ifdef BUILD_CYLON_UCX
   else if (config->Type() == net::CommType::UCX) {
     auto ctx = std::make_shared<CylonContext>(true);
-    ctx->communicator = std::make_shared<net::UCXCommunicator>();
+    ctx->communicator = std::make_shared<net::UCXCommunicator>(&ctx);
     ctx->communicator->Init(config);
-    ctx->is_distributed = true;
     return ctx;
   }
 #endif
@@ -65,25 +63,23 @@ Status CylonContext::InitDistributed(const std::shared_ptr<cylon::net::CommConfi
 
     case net::MPI: {
       *ctx = std::make_shared<CylonContext>(true);
-      (*ctx)->communicator = std::make_shared<net::MPICommunicator>();
+      (*ctx)->communicator = std::make_shared<net::MPICommunicator>(ctx);
       const auto &status = (*ctx)->communicator->Init(config);
       if (!status.is_ok()) {
         ctx->reset();
-        return status;
       }
-      return Status::OK();
+      return status;
     }
 
     case net::UCX: {
 #ifdef BUILD_CYLON_UCX
       *ctx = std::make_shared<CylonContext>(true);
-      (*ctx)->communicator = std::make_shared<net::UCXCommunicator>();
+      (*ctx)->communicator = std::make_shared<net::UCXCommunicator>(ctx);
       const auto &status = (*ctx)->communicator->Init(config);
       if (!status.is_ok()) {
         ctx->reset();
-        return status;
       }
-      return Status::OK();
+      return status;
 #else
       return {Code::NotImplemented, "UCX communication not implemented"};
 #endif

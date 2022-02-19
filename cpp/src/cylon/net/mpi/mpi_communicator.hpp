@@ -41,6 +41,7 @@ class MPIConfig : public CommConfig {
 
 class MPICommunicator : public Communicator {
  public:
+  explicit MPICommunicator(const std::shared_ptr<CylonContext> *ctx_ptr);
   ~MPICommunicator() override = default;
   Status Init(const std::shared_ptr<CommConfig> &config) override;
   std::unique_ptr<Channel> CreateChannel() const override;
@@ -56,12 +57,9 @@ class MPICommunicator : public Communicator {
   Status Gather(const std::shared_ptr<Table> &table, int gather_root,
                 bool gather_from_root, std::vector<std::shared_ptr<Table>> *out) const override;
 
-  Status Bcast(const std::shared_ptr<CylonContext> &ctx,
-               std::shared_ptr<Table> *table,
-               int bcast_root) const override;
+  Status Bcast(std::shared_ptr<Table> *table, int bcast_root) const override;
 
-  Status AllReduce(const std::shared_ptr<CylonContext> &ctx,
-                   const std::shared_ptr<Column> &column,
+  Status AllReduce(const std::shared_ptr<Column> &values,
                    net::ReduceOp reduce_op,
                    std::shared_ptr<Column> *output) const override;
 

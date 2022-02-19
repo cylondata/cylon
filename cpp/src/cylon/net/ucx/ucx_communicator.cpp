@@ -160,23 +160,21 @@ Status UCXCommunicator::Gather(const std::shared_ptr<Table> &table,
   return {Code::NotImplemented, "All gather not implemented yet for ucx"};
 }
 
-Status UCXCommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
-                              std::shared_ptr<Table> *table,
-                              int bcast_root) const {
-  CYLON_UNUSED(ctx);
+Status UCXCommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) const {
   CYLON_UNUSED(table);
   CYLON_UNUSED(bcast_root);
   return {Code::NotImplemented, "All gather not implemented yet for ucx"};
 }
-Status UCXCommunicator::AllReduce(const std::shared_ptr<CylonContext> &ctx,
-                                  const std::shared_ptr<Column> &column,
+Status UCXCommunicator::AllReduce(const std::shared_ptr<Column> &column,
                                   net::ReduceOp reduce_op,
                                   std::shared_ptr<Column> *output) const {
-  CYLON_UNUSED(ctx);
   CYLON_UNUSED(column);
   CYLON_UNUSED(reduce_op);
   CYLON_UNUSED(output);
   return {Code::NotImplemented, "Allreduce not implemented yet for ucx"};
 }
+
+UCXCommunicator::UCXCommunicator(const std::shared_ptr<CylonContext> *ctx_ptr)
+    : Communicator(ctx_ptr) {}
 }  // namespace net
 }  // namespace cylon
