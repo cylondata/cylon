@@ -29,42 +29,26 @@ namespace compute {
 
 /**
  * Reduce an array is a distributed fashion. It is done in the following stages.
- *  1. MapToGroups: Calculate group_ids for value_col
- *  2. CombineLocally: Combine value_col locally based on group_ids (which creates an intermediate array vector)
- *  3. Shuffle: Shuffle a temp table with intermediate results
- *  4. MapToGroups: Calculate group_ids for shuffled intermediate results
- *  5. ReduceShuffledResults: Reduce shuffled intermediate results (which creates a reduced array vector)
- *  6. Finalize: Finalize the reduced arrays
- *
- *  ex: take `mean` operation
- *  1. Calculate group_ids for value_col
- *  2. Locally calculate sum and count for each group_id (intermediate_arrays = {sums, cnts})
- *  3. Shuffle intermediate_array
- *  4. Calculate group_ids for shuffled intermediate results
- *  5. Reduce shuffled sums and counts individually (reduced_arrays = {reduced_sums, reduced_cnts})
- *  6. output = divide(reduced_sum/ reduced_cnts)
- *
- *  In a serial execution mode, this will be simplified into following stages.
- *  1. MapToGroups: Calculate group_ids for value_col
- *  2. CombineLocally: Combine value_col locally based on group_ids (which creates an intermediate array vector)
- *  3. Finalize: Finalize the intermediate arrays
+ *  1. CombineLocally: Combine values locally (which creates an intermediate array)
+ *  2. AllReduce: All-reduce intermediate results
+ *  3. Finalize: Finalize the intermediate results to produce a scalar
  */
 struct ScalarAggregateKernel {
  public:
   virtual ~ScalarAggregateKernel() = default;
 
-  virtual void Init(arrow::MemoryPool *pool, compute::KernelOptions *options) = 0;
+  virtual void Init(arrow::MemoryPool *pool, const KernelOptions *options) = 0;
 
   /**
-   * Combine `value_col` array locally based on the group_id, and push intermediate results to
+   * Combine `values` array locally based on the group_id, and push intermediate results to
    * `combined_results` array vector.
-   * @param value_col
+   * @param values
    * @param local_group_ids
    * @param local_num_groups
    * @param combined_results
    * @return
    */
-  virtual Status CombineLocally(const std::shared_ptr<arrow::Array> &value_col,
+  virtual Status CombineLocally(const std::shared_ptr<arrow::Array> &values,
                                 std::shared_ptr<arrow::Array> *combined_results) const = 0;
 
   /**
@@ -83,7 +67,7 @@ Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
                        const std::unique_ptr<ScalarAggregateKernel> &kernel,
                        const std::shared_ptr<arrow::Array> &values,
                        std::shared_ptr<arrow::Scalar> *result,
-                       compute::KernelOptions *kernel_options = NULLPTR);
+                       const KernelOptions *kernel_options = NULLPTR);
 
 Status Sum(const std::shared_ptr<CylonContext> &ctx,
            const std::shared_ptr<Column> &values,
@@ -104,6 +88,16 @@ Status Count(const std::shared_ptr<CylonContext> &ctx,
 Status Mean(const std::shared_ptr<CylonContext> &ctx,
             const std::shared_ptr<Column> &values,
             std::shared_ptr<Scalar> *result);
+
+Status Variance(const std::shared_ptr<CylonContext> &ctx,
+                const std::shared_ptr<Column> &values,
+                std::shared_ptr<Scalar> *result,
+                const VarKernelOptions &options = VarKernelOptions());
+
+Status StdDev(const std::shared_ptr<CylonContext> &ctx,
+              const std::shared_ptr<Column> &values,
+              std::shared_ptr<Scalar> *result,
+              const VarKernelOptions &options = VarKernelOptions());
 
 }
 }

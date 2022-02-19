@@ -238,6 +238,8 @@ TEMPLATE_LIST_TEST_CASE("mapred local aggregate", "[mapred]", ArrowNumericTypes)
 
 TEMPLATE_LIST_TEST_CASE("scalar aggregate", "[compute]", ArrowNumericTypes) {
   auto type = default_type_instance<TestType>();
+  INFO("testing " + type->ToString());
+
   auto mult = *arrow::MakeScalar(RANK + 1)->CastTo(type);
   auto base_arr = ArrayFromJSON(type, "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]");
   // arr = (rank + 1)*[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -246,10 +248,18 @@ TEMPLATE_LIST_TEST_CASE("scalar aggregate", "[compute]", ArrowNumericTypes) {
   auto val = Column::Make(std::move(arr));
   std::shared_ptr<Scalar> res;
 
+  arrow::ArrayVector arrays;
+  for (int r = 1; r < WORLD_SZ + 1; r++) {
+    mult = *arrow::MakeScalar(r)->CastTo(type);
+    arrays.emplace_back(arrow::compute::Multiply(base_arr, mult)->make_array());
+  }
+  auto global_arr = *arrow::ChunkedArray::Make(arrays, type);
+
   SECTION("sum") {
     CHECK_CYLON_STATUS(compute::Sum(ctx, val, &res));
 
-    auto exp = *arrow::MakeScalar((WORLD_SZ * (WORLD_SZ + 1) / 2) * (10 * 11 / 2))->CastTo(type);
+//    auto exp = *arrow::MakeScalar((WORLD_SZ * (WORLD_SZ + 1) / 2) * (10 * 11 / 2))->CastTo(type);
+    auto exp = *arrow::compute::Sum(global_arr)->scalar()->CastTo(type);
     CHECK_ARROW_EQUAL(exp, res->data());
   }
 
@@ -277,9 +287,33 @@ TEMPLATE_LIST_TEST_CASE("scalar aggregate", "[compute]", ArrowNumericTypes) {
   SECTION("mean") {
     CHECK_CYLON_STATUS(compute::Mean(ctx, val, &res));
 
-    double mean = (WORLD_SZ + 1) * 10. * 11. / (4. * double(val->length()));
-    auto exp = std::make_shared<arrow::DoubleScalar>(mean);
+//    double mean = (WORLD_SZ + 1) * 10. * 11. / (4. * double(val->length()));
+    auto exp = arrow::compute::Mean(global_arr)->scalar();
     CHECK_ARROW_EQUAL(exp, res->data());
+  }
+
+  SECTION("var") {
+    for (int ddof: {0, 1}) {
+      SECTION("ddof =" + std::to_string(ddof)) {
+        CHECK_CYLON_STATUS(compute::Variance(ctx, val, &res, compute::VarKernelOptions(ddof)));
+
+        auto exp =
+            arrow::compute::Variance(global_arr, arrow::compute::VarianceOptions(ddof))->scalar();
+        CHECK_ARROW_EQUAL(exp, res->data());
+      }
+    }
+  }
+
+  SECTION("stddev") {
+    for (int ddof: {0, 1}) {
+      SECTION("ddof =" + std::to_string(ddof)) {
+        CHECK_CYLON_STATUS(compute::StdDev(ctx, val, &res, compute::VarKernelOptions(ddof)));
+
+        auto exp =
+            arrow::compute::Stddev(global_arr, arrow::compute::VarianceOptions(ddof))->scalar();
+        CHECK_ARROW_EQUAL(exp, res->data());
+      }
+    }
   }
 }
 

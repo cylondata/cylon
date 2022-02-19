@@ -67,7 +67,7 @@ struct VarKernelOptions : public KernelOptions {
    * @param ddof delta degree of freedom
    */
   explicit VarKernelOptions(int ddof) : ddof(ddof) {}
-  VarKernelOptions() : VarKernelOptions(1) {}
+  VarKernelOptions() : VarKernelOptions(0) {}
 
   int ddof;
 };

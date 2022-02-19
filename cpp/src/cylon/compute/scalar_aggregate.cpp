@@ -13,6 +13,7 @@
  */
 
 #include <utility>
+#include <cmath>
 
 #include <arrow/compute/api.h>
 #include <arrow/visitor_inline.h>
@@ -32,15 +33,15 @@ struct TrivialScalarAggregateKernelImpl : public ScalarAggregateKernel {
 
   net::ReduceOp reduce_op() const override { return ReduceOp; }
 
-  void Init(arrow::MemoryPool *pool, compute::KernelOptions *options) override {
+  void Init(arrow::MemoryPool *pool, const KernelOptions *options) override {
     CYLON_UNUSED(options);
     pool_ = pool;
   }
 
-  Status CombineLocally(const std::shared_ptr<arrow::Array> &value_col,
+  Status CombineLocally(const std::shared_ptr<arrow::Array> &values,
                         std::shared_ptr<arrow::Array> *combined_results) const override {
     std::shared_ptr<arrow::Scalar> comb_scalar;
-    RETURN_CYLON_STATUS_IF_FAILED(CombineFn::Combine(value_col, &comb_scalar));
+    RETURN_CYLON_STATUS_IF_FAILED(CombineFn::Combine(values, &comb_scalar));
 
     // arrow sum upcasts sum to Int64, UInt64, Float64. So, change back to original type
     CYLON_ASSIGN_OR_RAISE(comb_scalar, comb_scalar->CastTo(out_type_))
@@ -107,15 +108,17 @@ struct MeanKernelImpl : public ScalarAggregateKernel {
   using c_type = OutType::c_type;
 
  public:
-  void Init(arrow::MemoryPool *pool, compute::KernelOptions *options) override {
+  void Init(arrow::MemoryPool *pool, const KernelOptions *options) override {
     CYLON_UNUSED(options);
     pool_ = pool;
   }
 
   // combined_results = [sum, count]
-  Status CombineLocally(const std::shared_ptr<arrow::Array> &value_col,
+  Status CombineLocally(const std::shared_ptr<arrow::Array> &values,
                         std::shared_ptr<arrow::Array> *combined_results) const override {
-    CYLON_ASSIGN_OR_RAISE(auto res, arrow::compute::Sum(value_col))
+    const auto &out_type_ = arrow::TypeTraits<OutType>::type_singleton();
+
+    CYLON_ASSIGN_OR_RAISE(auto res, arrow::compute::Sum(values))
     auto sum_scalar = res.scalar();
     // cast to double
     CYLON_ASSIGN_OR_RAISE(sum_scalar, sum_scalar->CastTo(out_type_))
@@ -124,15 +127,17 @@ struct MeanKernelImpl : public ScalarAggregateKernel {
     CYLON_ASSIGN_OR_RAISE(*combined_results, arrow::MakeArrayFromScalar(*sum_scalar, 2, pool_))
     // set second value to count
     auto *mut_values = (*combined_results)->data()->GetMutableValues<c_type>(1);
-    mut_values[1] = static_cast<c_type>(value_col->length());
+    mut_values[1] = static_cast<c_type>(values->length());
 
     return Status::OK();
   }
 
   Status Finalize(const std::shared_ptr<arrow::Array> &combined_results,
                   std::shared_ptr<arrow::Scalar> *output) const override {
-    const auto &casted = std::static_pointer_cast<arrow::DoubleArray>(combined_results);
-    *output = arrow::MakeScalar(casted->Value(0) / casted->Value(1));
+    assert(combined_results->type()->id() == OutType::type_id);
+    assert(combined_results->length() == 2);
+    const auto *values = combined_results->data()->GetValues<c_type>(1);
+    *output = arrow::MakeScalar(values[0] / values[1]);
     return Status::OK();
   }
 
@@ -141,7 +146,81 @@ struct MeanKernelImpl : public ScalarAggregateKernel {
   }
 
  private:
-  const std::shared_ptr<arrow::DataType> out_type_ = arrow::TypeTraits<OutType>::type_singleton();
+  arrow::MemoryPool *pool_ = nullptr;
+};
+
+struct VarianceKernelImpl : public ScalarAggregateKernel {
+ public:
+  using OutType = arrow::DoubleType;
+  using OutScalarType = arrow::DoubleScalar;
+  using c_type = OutType::c_type;
+
+  explicit VarianceKernelImpl(bool do_std = false) : do_std(do_std) {}
+
+  void Init(arrow::MemoryPool *pool, const KernelOptions *options) override {
+    pool_ = pool;
+    ddof = reinterpret_cast<const VarKernelOptions *>(options)->ddof;
+  }
+
+  Status CombineLocally(const std::shared_ptr<arrow::Array> &values,
+                        std::shared_ptr<arrow::Array> *combined_results) const override {
+    const auto out_type_ = arrow::TypeTraits<OutType>::type_singleton();
+    arrow::compute::ExecContext exec_ctx(pool_);
+
+    // sum of squares
+    CYLON_ASSIGN_OR_RAISE(auto x2_arr, arrow::compute::Power(values, arrow::MakeScalar(2),
+                                                             arrow::compute::ArithmeticOptions(),
+                                                             &exec_ctx))
+    CYLON_ASSIGN_OR_RAISE(auto x2_sum_res, arrow::compute::Sum(x2_arr,
+                                                               arrow::compute::ScalarAggregateOptions(),
+                                                               &exec_ctx))
+    CYLON_ASSIGN_OR_RAISE(auto x2_sum, x2_sum_res.scalar()->CastTo(out_type_))
+
+    // sum
+    CYLON_ASSIGN_OR_RAISE(auto sum_res, arrow::compute::Sum(values,
+                                                            arrow::compute::ScalarAggregateOptions(),
+                                                            &exec_ctx))
+    CYLON_ASSIGN_OR_RAISE(auto sum, sum_res.scalar()->CastTo(out_type_))
+
+    // create an array of 3 using sum of squares
+    CYLON_ASSIGN_OR_RAISE(*combined_results, arrow::MakeArrayFromScalar(*x2_sum, 3, pool_))
+
+    // set second value to sum and third value to count
+    auto *mut_values = (*combined_results)->data()->GetMutableValues<c_type>(1);
+    mut_values[1] = std::static_pointer_cast<OutScalarType>(sum)->value;
+    mut_values[2] = static_cast<c_type>(values->length());
+
+    return Status::OK();
+  }
+
+  Status Finalize(const std::shared_ptr<arrow::Array> &combined_results,
+                  std::shared_ptr<arrow::Scalar> *output) const override {
+    assert(combined_results->type()->id() == OutType::type_id);
+    assert(combined_results->length() == 3);
+
+    const auto *values = combined_results->data()->GetValues<c_type>(1);
+    c_type x2_sum = values[0], sum = values[1], count = values[2], result;
+
+    if (count == 1.) {
+      result = 0;
+    } else if (count != 0.) {
+      c_type mean_sum_sq = x2_sum / count;
+      c_type mean = sum / count;
+      c_type var = (mean_sum_sq - mean * mean) * count / (count - c_type(ddof));
+      result = do_std ? sqrt(var) : var;
+    } else {
+      return {Code::ValueError, "divide by 0 count"};
+    }
+
+    *output = arrow::MakeScalar(result);
+    return Status::OK();
+  }
+
+  net::ReduceOp reduce_op() const override { return net::SUM; }
+
+ private:
+  int ddof = 0;
+  bool do_std;
   arrow::MemoryPool *pool_ = nullptr;
 };
 
@@ -149,7 +228,7 @@ Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
                        const std::unique_ptr<ScalarAggregateKernel> &kernel,
                        const std::shared_ptr<arrow::Array> &values,
                        std::shared_ptr<arrow::Scalar> *result,
-                       compute::KernelOptions *kernel_options) {
+                       const KernelOptions *kernel_options) {
   auto pool = ToArrowPool(ctx);
 
   // init the kernel
@@ -175,9 +254,10 @@ Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
 Status run_scalar_aggregate(const std::shared_ptr<CylonContext> &ctx,
                             const std::unique_ptr<ScalarAggregateKernel> &kern,
                             const std::shared_ptr<Column> &values,
-                            std::shared_ptr<Scalar> *result) {
+                            std::shared_ptr<Scalar> *result,
+                            const compute::KernelOptions *kernel_options) {
   std::shared_ptr<arrow::Scalar> res;
-  RETURN_CYLON_STATUS_IF_FAILED(ScalarAggregate(ctx, kern, values->data(), &res));
+  RETURN_CYLON_STATUS_IF_FAILED(ScalarAggregate(ctx, kern, values->data(), &res, kernel_options));
   *result = Scalar::Make(std::move(res));
   return Status::OK();
 }
@@ -187,7 +267,7 @@ Status Sum(const std::shared_ptr<CylonContext> &ctx,
            std::shared_ptr<Scalar> *result) {
   const std::unique_ptr<ScalarAggregateKernel>
       &kern = std::make_unique<SumKernelImpl>(values->data()->type());
-  return run_scalar_aggregate(ctx, kern, values, result);
+  return run_scalar_aggregate(ctx, kern, values, result, nullptr);
 }
 
 Status Min(const std::shared_ptr<CylonContext> &ctx,
@@ -195,7 +275,7 @@ Status Min(const std::shared_ptr<CylonContext> &ctx,
            std::shared_ptr<Scalar> *result) {
   const std::unique_ptr<ScalarAggregateKernel>
       &kern = std::make_unique<MinKernelImpl>(values->data()->type());
-  return run_scalar_aggregate(ctx, kern, values, result);
+  return run_scalar_aggregate(ctx, kern, values, result, nullptr);
 }
 
 Status Max(const std::shared_ptr<CylonContext> &ctx,
@@ -203,21 +283,38 @@ Status Max(const std::shared_ptr<CylonContext> &ctx,
            std::shared_ptr<Scalar> *result) {
   const std::unique_ptr<ScalarAggregateKernel>
       &kern = std::make_unique<MaxKernelImpl>(values->data()->type());
-  return run_scalar_aggregate(ctx, kern, values, result);
+  return run_scalar_aggregate(ctx, kern, values, result, nullptr);
 }
 
 Status Count(const std::shared_ptr<CylonContext> &ctx,
              const std::shared_ptr<Column> &values,
              std::shared_ptr<Scalar> *result) {
   const std::unique_ptr<ScalarAggregateKernel> &kern = std::make_unique<CountKernelImpl>();
-  return run_scalar_aggregate(ctx, kern, values, result);
+  return run_scalar_aggregate(ctx, kern, values, result, nullptr);
 }
 
 Status Mean(const std::shared_ptr<CylonContext> &ctx,
             const std::shared_ptr<Column> &values,
             std::shared_ptr<Scalar> *result) {
   const std::unique_ptr<ScalarAggregateKernel> &kern = std::make_unique<MeanKernelImpl>();
-  return run_scalar_aggregate(ctx, kern, values, result);
+  return run_scalar_aggregate(ctx, kern, values, result, nullptr);
+}
+
+Status Variance(const std::shared_ptr<CylonContext> &ctx,
+                const std::shared_ptr<Column> &values,
+                std::shared_ptr<Scalar> *result,
+                const VarKernelOptions &options) {
+  const std::unique_ptr<ScalarAggregateKernel> &kern = std::make_unique<VarianceKernelImpl>();
+  return run_scalar_aggregate(ctx, kern, values, result, &options);
+}
+
+Status StdDev(const std::shared_ptr<CylonContext> &ctx,
+              const std::shared_ptr<Column> &values,
+              std::shared_ptr<Scalar> *result,
+              const VarKernelOptions &options) {
+  const std::unique_ptr<ScalarAggregateKernel>
+      &kern = std::make_unique<VarianceKernelImpl>(/*do_std=*/true);
+  return run_scalar_aggregate(ctx, kern, values, result, &options);
 }
 
 }
