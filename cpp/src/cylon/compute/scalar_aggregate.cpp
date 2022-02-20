@@ -18,7 +18,7 @@
 #include <arrow/compute/api.h>
 #include <arrow/visitor_inline.h>
 
-#include "cylon/compute/scalar_aggregate.hpp"
+#include "cylon/compute/aggregates.hpp"
 #include "cylon/ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {

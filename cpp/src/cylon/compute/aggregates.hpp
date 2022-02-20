@@ -17,8 +17,10 @@
 
 #include <arrow/compute/api.h>
 
-#include <cylon/table.hpp>
-#include <cylon/ctx/arrow_memory_pool_utils.hpp>
+#include "cylon/table.hpp"
+#include "cylon/scalar.hpp"
+#include "cylon/ctx/arrow_memory_pool_utils.hpp"
+#include "cylon/compute/aggregate_kernels.hpp"
 
 namespace cylon {
 namespace compute {
@@ -123,6 +125,78 @@ cylon::Status Min(const std::shared_ptr<cylon::Table> &table,
 cylon::Status Max(const std::shared_ptr<cylon::Table> &table,
                   int32_t col_idx,
                   std::shared_ptr<cylon::Table> &output);
+
+/**
+ * Reduce an array is a distributed fashion. It is done in the following stages.
+ *  1. CombineLocally: Combine values locally (which creates an intermediate array)
+ *  2. AllReduce: All-reduce intermediate results
+ *  3. Finalize: Finalize the intermediate results to produce a scalar
+ */
+struct ScalarAggregateKernel {
+ public:
+  virtual ~ScalarAggregateKernel() = default;
+
+  virtual void Init(arrow::MemoryPool *pool, const KernelOptions *options) = 0;
+
+  /**
+   * Combine `values` array locally based on the group_id, and push intermediate results to
+   * `combined_results` array vector.
+   * @param values
+   * @param local_group_ids
+   * @param local_num_groups
+   * @param combined_results
+   * @return
+   */
+  virtual Status CombineLocally(const std::shared_ptr<arrow::Array> &values,
+                                std::shared_ptr<arrow::Array> *combined_results) const = 0;
+
+  /**
+   * Create the final output array
+   * @param combined_results
+   * @param output
+   * @return
+   */
+  virtual Status Finalize(const std::shared_ptr<arrow::Array> &combined_results,
+                          std::shared_ptr<arrow::Scalar> *output) const = 0;
+
+  virtual net::ReduceOp reduce_op() const = 0;
+};
+
+Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
+                       const std::unique_ptr<ScalarAggregateKernel> &kernel,
+                       const std::shared_ptr<arrow::Array> &values,
+                       std::shared_ptr<arrow::Scalar> *result,
+                       const KernelOptions *kernel_options = NULLPTR);
+
+Status Sum(const std::shared_ptr<CylonContext> &ctx,
+           const std::shared_ptr<Column> &values,
+           std::shared_ptr<Scalar> *result);
+
+Status Min(const std::shared_ptr<CylonContext> &ctx,
+           const std::shared_ptr<Column> &values,
+           std::shared_ptr<Scalar> *result);
+
+Status Max(const std::shared_ptr<CylonContext> &ctx,
+           const std::shared_ptr<Column> &values,
+           std::shared_ptr<Scalar> *result);
+
+Status Count(const std::shared_ptr<CylonContext> &ctx,
+             const std::shared_ptr<Column> &values,
+             std::shared_ptr<Scalar> *result);
+
+Status Mean(const std::shared_ptr<CylonContext> &ctx,
+            const std::shared_ptr<Column> &values,
+            std::shared_ptr<Scalar> *result);
+
+Status Variance(const std::shared_ptr<CylonContext> &ctx,
+                const std::shared_ptr<Column> &values,
+                std::shared_ptr<Scalar> *result,
+                const VarKernelOptions &options = VarKernelOptions());
+
+Status StdDev(const std::shared_ptr<CylonContext> &ctx,
+              const std::shared_ptr<Column> &values,
+              std::shared_ptr<Scalar> *result,
+              const VarKernelOptions &options = VarKernelOptions());
 
 } // end compute
 } // end cylon

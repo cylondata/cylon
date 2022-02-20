@@ -13,7 +13,6 @@
  */
 
 #include "cylon/compute/aggregates.hpp"
-#include "cylon/compute/scalar_aggregate.hpp"
 #include "cylon/mapreduce/mapreduce.hpp"
 #include "cylon/net/mpi/mpi_operations.hpp"
 

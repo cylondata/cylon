@@ -61,7 +61,6 @@ add_library(cylon SHARED
         compute/aggregates.cpp
         compute/aggregates.hpp
         compute/scalar_aggregate.cpp
-        compute/scalar_aggregate.hpp
         ctx/arrow_memory_pool_utils.cpp
         ctx/arrow_memory_pool_utils.hpp
         ctx/cylon_context.cpp
