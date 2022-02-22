@@ -47,6 +47,8 @@ cdef extern from "../../../../cpp/src/cylon/column.hpp" namespace "cylon":
 
         const shared_ptr[CDataType]& type() const
 
+        int length() const
+
         @ staticmethod
         shared_ptr[CColumn] Make(shared_ptr[ArrowCAarray] data)
 
@@ -57,5 +59,4 @@ cdef extern from "../../../../cpp/src/cylon/column.hpp" namespace "cylon":
 
 cdef class Column:
     cdef:
-        CColumn *thisPtr
-        shared_ptr[CColumn] sp_column
+        shared_ptr[CColumn] thisPtr
