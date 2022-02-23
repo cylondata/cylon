@@ -359,11 +359,29 @@ Status Sort(const std::shared_ptr<Table> &table, const std::vector<int32_t> &sor
 Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
                       const std::vector<int32_t> &sort_columns,
                       const std::vector<bool> &sort_direction,
-                      const std::shared_ptr<cylon::CylonContext> &ctx,
-                      std::shared_ptr<cylon::Table> &sorted_table,
-                      bool nulls_after = true,
+                      std::shared_ptr<cylon::Table> &output,
                       const int sort_root = 0);
 
+// for testing only, delete after test
+Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted, 
+                          int num_samples,
+                          std::shared_ptr<Table>& sample_result,
+                          const std::shared_ptr<CylonContext>& ctx);
+
+// for testing only, delete after test
+Status GetSplitPoints(std::shared_ptr<Table>& sample_result,
+                      const std::vector<int>& sort_columns,
+                      const std::vector<bool>& sort_orders,
+                      int num_split_points,
+                      std::shared_ptr<Table>& split_points,
+                      int split_root = 0);
+
+Status GetSplitPointIndices(const std::shared_ptr<Table>& split_points, 
+                            const std::shared_ptr<Table>& sorted_table,
+                            const std::vector<int>& sort_columns,
+                            const std::vector<bool>& sort_order,
+                            std::vector<uint32_t>& target_partition,
+                            std::vector<uint32_t>& partition_hist);
 /**
  * Sort the table according to the given column, this is a local sort (if the table has chunked
  * columns, they will be merged in the output table)
