@@ -375,13 +375,15 @@ Status GetSplitPoints(std::shared_ptr<Table>& sample_result,
                       int num_split_points,
                       std::shared_ptr<Table>& split_points,
                       int split_root = 0);
-
+// for testing only, delete after test
 Status GetSplitPointIndices(const std::shared_ptr<Table>& split_points, 
                             const std::shared_ptr<Table>& sorted_table,
                             const std::vector<int>& sort_columns,
                             const std::vector<bool>& sort_order,
                             std::vector<uint32_t>& target_partition,
                             std::vector<uint32_t>& partition_hist);
+// for testing only, delete after test
+Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, std::shared_ptr<cylon::Table> * b_out);
 /**
  * Sort the table according to the given column, this is a local sort (if the table has chunked
  * columns, they will be merged in the output table)

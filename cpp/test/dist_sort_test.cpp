@@ -20,7 +20,7 @@ namespace cylon {
 namespace test {
 TEST_CASE("Dist sort testing", "[dist sort]") {
     std::string path1 = "../data/input/csv1_" + std::to_string(RANK) + ".csv";
-    std::shared_ptr<Table> table1;
+    std::shared_ptr<Table> table1, table2;
 
     auto read_options = io::config::CSVReadOptions().UseThreads(false);
 
@@ -29,44 +29,40 @@ TEST_CASE("Dist sort testing", "[dist sort]") {
                             read_options));
 
     SECTION("dist_sort_test_1") {
-        std::shared_ptr<Table> out;
+        std::shared_ptr<Table> out, out2, repartitioned;
         auto ctx = table1->GetContext();
         std::shared_ptr<arrow::Table> arrow_output;
         auto status = DistributedSortRegularSampling(table1, {0, 1}, {1, 1}, out);
-        // DistributedSort(table1, {0, 1}, out2, {1, 1});
-        // REQUIRE(out->Rows() == table1->Rows());
-        // bool eq = true;
-        // // Equals(out, out2, eq);
-        // REQUIRE(out2->Rows() == table1->Rows());
+        DistributedSort(table1, {0, 1}, out2, {1, 1});
         REQUIRE(status.is_ok());
-        // std::cout<< RANK << std::endl;
-        // out->Print();
-
-        REQUIRE(false);
+        bool eq;
+        status = DistributedEquals(out, out2, eq);
+        REQUIRE(eq);
     }
 
-    // SECTION("dist_sort_test_uniform_sample") {
+    SECTION("dist_sort_test_2_different_direction") {
+        std::shared_ptr<Table> out, out2, repartitioned;
+        auto ctx = table1->GetContext();
+        std::shared_ptr<arrow::Table> arrow_output;
+        auto status = DistributedSortRegularSampling(table1, {0, 1}, {1, 0}, out);
+        DistributedSort(table1, {0, 1}, out2, {1, 0});
+        REQUIRE(status.is_ok());
+        bool eq;
+        status = DistributedEquals(out, out2, eq);
+        REQUIRE(eq);
+    }
 
-    //     std::shared_ptr<Table> out;
-    //     auto ctx = table1->GetContext();
-    //     auto status = Sort(table1, {0, 1}, out, {1, 1});
-    //     std::shared_ptr<Table> sample_result, split_points;
-
-    //     status = SampleTableUniform(out, 15, sample_result, ctx);
-    //     REQUIRE(status.is_ok());
-    //     REQUIRE(sample_result->Rows() == 15);
-
-    //     // sample_result->Print();
-        
-    //     status = GetSplitPoints(sample_result,
-    //     {0, 1}, {1, 1}, WORLD_SZ - 1, split_points);
-    //     REQUIRE(status.is_ok());
-    //     REQUIRE(split_points->Rows() == WORLD_SZ - 1);
-
-    //     std::vector<uint32_t> target_partitions, partition_hist;
-    //     status = GetSplitPointIndices(split_points, out, {0, 1}, {1, 1}, target_partitions, partition_hist);
-    //     REQUIRE(status.is_ok());
-    // }
+    SECTION("dist_sort_test_3_different_order") {
+        std::shared_ptr<Table> out, out2, repartitioned;
+        auto ctx = table1->GetContext();
+        std::shared_ptr<arrow::Table> arrow_output;
+        auto status = DistributedSortRegularSampling(table1, {1, 0}, {0, 0}, out);
+        DistributedSort(table1, {1, 0}, out2, {0, 0});
+        REQUIRE(status.is_ok());
+        bool eq;
+        status = DistributedEquals(out, out2, eq);
+        REQUIRE(eq);
+    }
 }
 
 }

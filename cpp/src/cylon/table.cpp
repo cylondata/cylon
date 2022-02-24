@@ -534,12 +534,11 @@ inline int CompareRows(const std::vector<std::unique_ptr<cylon::DualArrayIndexCo
                       int64_t table_idx, int64_t split_point_idx) { // TODO: priority & direction
   int sz = comparators.size();
   // in `compare`, the msb of index value is encoded as, 0 --> array1 1 --> array2
-  split_point_idx |= (1 << 63);
+  split_point_idx |= ((int64_t)1 << 63);
   for(int i = 0; i < sz; i++) {
-    if(comparators[i]->equal_to(table_idx, split_point_idx)) {
-      continue;
-    }
-    return 1 - 2 * comparators[i]->compare(table_idx, split_point_idx);
+    int result = comparators[i]->compare(table_idx, split_point_idx);
+    if(result == 0) continue;
+    return result;
   }
   return 0;
 }
@@ -550,7 +549,6 @@ int64_t tableBinarySearch(const std::shared_ptr<Table>& split_points,
                           const std::vector<std::unique_ptr<cylon::DualArrayIndexComparator>>& comparators,
                           int64_t split_point_idx, int64_t l) {
   int64_t r = sorted_table->Rows() - 1;
-  LOG(INFO) << "binary search: " << l << std::endl;
   int m = (l + r) / 2;
 
   while(r > l) {
@@ -601,7 +599,7 @@ Status GetSplitPointIndices(const std::shared_ptr<Table>& split_points,
 
   for(int64_t i = 0; i < num_split_points; i++) {
     int acc = 0;
-    while(l_idx < num_rows && CompareRows(comparators, l_idx, i) > 0) {
+    while(l_idx < num_rows && CompareRows(comparators, l_idx, i) <= 0) {
       target_partition[l_idx] = i;
       l_idx++; acc++;
     }
@@ -669,10 +667,6 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   RETURN_CYLON_STATUS_IF_FAILED(GetSplitPoints(sample_result,
     sort_columns, sort_direction, world_sz - 1, split_points));
 
-  if(ctx->GetRank() == 0) {
-    split_points->Print();
-  }
-
   // construct target_partition, partition_hist
   RETURN_CYLON_STATUS_IF_FAILED(GetSplitPointIndices(split_points, local_sorted, sort_columns,
     sort_direction, target_partitions, partition_hist));
@@ -693,11 +687,10 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables(ctx, schema, split_tables, arrow_table));
 
 
-  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(ctx, arrow_table, output));
+  std::shared_ptr<Table> all_to_all_result;
+  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(ctx, arrow_table, all_to_all_result));
 
-  if(ctx->GetRank() == 2) {
-    output->Print();
-  }
+  RETURN_CYLON_STATUS_IF_FAILED(Sort(all_to_all_result, sort_columns, output, sort_direction));
 
   return Status::OK();
 }
@@ -1402,7 +1395,7 @@ Status Equals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylo
   return Status::OK();
 }
 
-static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, std::shared_ptr<cylon::Table> * b_out) {
+ Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylon::Table> &b, std::shared_ptr<cylon::Table> * b_out) {
   int world_size = a->GetContext()->GetWorldSize();
   int64_t num_row = a->Rows();
 
@@ -1452,11 +1445,6 @@ Status Repartition(const std::shared_ptr<cylon::Table>& table,
   int world_size = table->GetContext()->GetWorldSize();
   int rank = table->GetContext()->GetRank();
   int num_row = table->Rows();
-
-  if(num_row == 0) {
-    *output = table;
-    return Status::OK();
-  }
 
   if(rows_per_partition.size() != (size_t) world_size) {
     return Status(
