@@ -153,7 +153,7 @@ cylon_run_test(sync_comms_test 1)
 cylon_run_test(sync_comms_test 4)
 
 # distributed sort test
-# cylon_add_test(dist_sort_test)
-# cylon_run_test(dist_sort_test 1)
-# cylon_run_test(dist_sort_test 2)
-# cylon_run_test(dist_sort_test 4)
+cylon_add_test(dist_sort_test)
+cylon_run_test(dist_sort_test 1)
+cylon_run_test(dist_sort_test 2)
+cylon_run_test(dist_sort_test 4)
