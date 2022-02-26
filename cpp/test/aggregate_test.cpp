@@ -390,6 +390,23 @@ TEST_CASE("scalar aggregate - Table") {
     CHECK_CYLON_STATUS(compute::Min(ctx, table, &res));
     auto exp = ArrayFromJSON(arrow::int64(), "[40, 40]");
   }
+
+  SECTION("count") {
+    CHECK_CYLON_STATUS(compute::Count(ctx, table, &res));
+    auto exp = ArrayFromJSON(arrow::int64(), "[40, 40]");
+  }
+
+  SECTION("var") {
+    CHECK_CYLON_STATUS(compute::Variance(ctx, table, &res,
+                                         compute::VarKernelOptions(1)));
+    auto exp = ArrayFromJSON(arrow::float64(), "[136.6666667, 136.6666667]");
+  }
+
+  SECTION("std") {
+    CHECK_CYLON_STATUS(compute::Variance(ctx, table, &res,
+                                         compute::VarKernelOptions(1)));
+    auto exp = ArrayFromJSON(arrow::float64(), "[11.40175425, 11.40175425]");
+  }
 }
 
 }
