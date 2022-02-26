@@ -293,7 +293,7 @@ struct VarKernelImpl : public MapReduceKernel {
   const arrow::DataTypeVector &intermediate_types() const override { return inter_types; }
 
   void Init(arrow::MemoryPool *pool, compute::KernelOptions *options) override {
-    this->ddof = reinterpret_cast<compute::VarKernelOptions *>(options)->ddof;
+    this->ddof = reinterpret_cast<compute::VarKernelOptions *>(options)->ddof_;
     this->pool_ = pool;
   }
 

@@ -62,6 +62,9 @@ class MPICommunicator : public Communicator {
   Status AllReduce(const std::shared_ptr<Column> &values,
                    net::ReduceOp reduce_op,
                    std::shared_ptr<Column> *output) const override;
+  Status AllReduce(const std::shared_ptr<Scalar> &value,
+                   net::ReduceOp reduce_op,
+                   std::shared_ptr<Scalar> *output) const override;
 
   MPI_Comm mpi_comm() const;
 

@@ -23,6 +23,7 @@ namespace cylon {
 class CylonContext;
 class Table;
 class Column;
+class Scalar;
 
 namespace net {
 
@@ -49,7 +50,7 @@ class Communicator {
 
   virtual Status Bcast(std::shared_ptr<Table> *table, int bcast_root) const = 0;
 
-  /* Array comms */
+  /* Array communicationss */
 
   /**
    * Allreduce values at every index on `values`.
@@ -63,6 +64,12 @@ class Communicator {
   virtual Status AllReduce(const std::shared_ptr<Column> &values,
                            net::ReduceOp reduce_op,
                            std::shared_ptr<Column> *output) const = 0;
+
+  /* Scalar communications */
+
+  virtual Status AllReduce(const std::shared_ptr<Scalar> &value,
+                           net::ReduceOp reduce_op,
+                           std::shared_ptr<Scalar> *output) const = 0;
 
  protected:
   int rank = -1;

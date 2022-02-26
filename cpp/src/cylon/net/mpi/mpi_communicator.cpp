@@ -23,6 +23,7 @@
 #include "cylon/util/arrow_utils.hpp"
 #include "cylon/serialize/table_serialize.hpp"
 #include "cylon/net/mpi/mpi_operations.hpp"
+#include "cylon/scalar.hpp"
 
 #include <arrow/ipc/api.h>
 #include <arrow/io/api.h>
@@ -284,6 +285,18 @@ Status MPICommunicator::AllReduce(const std::shared_ptr<Column> &values,
                                                                  count,
                                                                  {nullptr, std::move(buf)},
                                                                  0, 0)));
+  return Status::OK();
+}
+
+Status MPICommunicator::AllReduce(const std::shared_ptr<Scalar> &value, net::ReduceOp reduce_op,
+                                  std::shared_ptr<Scalar> *output) const {
+  CYLON_ASSIGN_OR_RAISE(auto arr,
+                        arrow::MakeArrayFromScalar(*value->data(), 1, ToArrowPool(*ctx_ptr)))
+  const auto &col = Column::Make(std::move(arr));
+  std::shared_ptr<Column> out_arr;
+  RETURN_CYLON_STATUS_IF_FAILED(AllReduce(col, reduce_op, &out_arr));
+  CYLON_ASSIGN_OR_RAISE(auto out_scal, out_arr->data()->GetScalar(0))
+  *output = Scalar::Make(std::move(out_scal));
   return Status::OK();
 }
 

@@ -160,6 +160,11 @@ struct ScalarAggregateKernel {
                           std::shared_ptr<arrow::Scalar> *output) const = 0;
 
   virtual net::ReduceOp reduce_op() const = 0;
+
+  virtual int32_t num_intermediate_results() const = 0;
+
+  virtual std::shared_ptr<arrow::DataType>
+  GetOutputType(const std::shared_ptr<arrow::DataType> &in_type) const { return in_type; }
 };
 
 Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
@@ -168,35 +173,83 @@ Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
                        std::shared_ptr<arrow::Scalar> *result,
                        const KernelOptions *kernel_options = NULLPTR);
 
+Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
+                       const std::unique_ptr<ScalarAggregateKernel> &kernel,
+                       const std::shared_ptr<arrow::Table> &table,
+                       std::shared_ptr<arrow::Array> *result,
+                       const KernelOptions *kernel_options = NULLPTR);
+
+/**
+ * Determines the best data type that can encapsulate the given type IDs. Only primitive data types
+ * are supported.
+ *
+ * Taken from
+ * https://github.com/apache/arrow/blob/c848f12122014aba9958a3910e2324661c3c2d7a/cpp/src/arrow/compute/kernels/codegen_internal.cc#L226
+ * @param ids
+ * @return
+ */
+std::shared_ptr<arrow::DataType> PromoteDatatype(const std::vector<arrow::Type::type> &ids);
+
 Status Sum(const std::shared_ptr<CylonContext> &ctx,
            const std::shared_ptr<Column> &values,
-           std::shared_ptr<Scalar> *result);
+           std::shared_ptr<Scalar> *result,
+           const BasicOptions &options = BasicOptions());
+Status Sum(const std::shared_ptr<CylonContext> &ctx,
+           const std::shared_ptr<Table> &table,
+           std::shared_ptr<Column> *result,
+           const BasicOptions &options = BasicOptions());
 
 Status Min(const std::shared_ptr<CylonContext> &ctx,
            const std::shared_ptr<Column> &values,
-           std::shared_ptr<Scalar> *result);
+           std::shared_ptr<Scalar> *result,
+           const BasicOptions &options = BasicOptions());
+Status Min(const std::shared_ptr<CylonContext> &ctx,
+           const std::shared_ptr<Table> &table,
+           std::shared_ptr<Column> *result,
+           const BasicOptions &options = BasicOptions());
 
 Status Max(const std::shared_ptr<CylonContext> &ctx,
            const std::shared_ptr<Column> &values,
-           std::shared_ptr<Scalar> *result);
+           std::shared_ptr<Scalar> *result,
+           const BasicOptions &options = BasicOptions());
+Status Max(const std::shared_ptr<CylonContext> &ctx,
+           const std::shared_ptr<Table> &table,
+           std::shared_ptr<Column> *result,
+           const BasicOptions &options = BasicOptions());
 
 Status Count(const std::shared_ptr<CylonContext> &ctx,
              const std::shared_ptr<Column> &values,
              std::shared_ptr<Scalar> *result);
+Status Count(const std::shared_ptr<CylonContext> &ctx,
+             const std::shared_ptr<Table> &table,
+             std::shared_ptr<Column> *result);
 
 Status Mean(const std::shared_ptr<CylonContext> &ctx,
             const std::shared_ptr<Column> &values,
-            std::shared_ptr<Scalar> *result);
+            std::shared_ptr<Scalar> *result,
+            const BasicOptions &options = BasicOptions());
+Status Mean(const std::shared_ptr<CylonContext> &ctx,
+           const std::shared_ptr<Table> &table,
+           std::shared_ptr<Column> *result,
+           const BasicOptions &options = BasicOptions());
 
 Status Variance(const std::shared_ptr<CylonContext> &ctx,
                 const std::shared_ptr<Column> &values,
                 std::shared_ptr<Scalar> *result,
+                const VarKernelOptions &options = VarKernelOptions());
+Status Variance(const std::shared_ptr<CylonContext> &ctx,
+                const std::shared_ptr<Table> &values,
+                std::shared_ptr<Column> *result,
                 const VarKernelOptions &options = VarKernelOptions());
 
 Status StdDev(const std::shared_ptr<CylonContext> &ctx,
               const std::shared_ptr<Column> &values,
               std::shared_ptr<Scalar> *result,
               const VarKernelOptions &options = VarKernelOptions());
+Status StdDev(const std::shared_ptr<CylonContext> &ctx,
+                const std::shared_ptr<Table> &values,
+                std::shared_ptr<Column> *result,
+                const VarKernelOptions &options = VarKernelOptions());
 
 } // end compute
 } // end cylon

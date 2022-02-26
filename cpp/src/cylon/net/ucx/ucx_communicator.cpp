@@ -176,5 +176,13 @@ Status UCXCommunicator::AllReduce(const std::shared_ptr<Column> &column,
 
 UCXCommunicator::UCXCommunicator(const std::shared_ptr<CylonContext> *ctx_ptr)
     : Communicator(ctx_ptr) {}
+Status UCXCommunicator::AllReduce(const std::shared_ptr<Scalar> &values,
+                                  net::ReduceOp reduce_op,
+                                  std::shared_ptr<Scalar> *output) const {
+  CYLON_UNUSED(values);
+  CYLON_UNUSED(reduce_op);
+  CYLON_UNUSED(output);
+  return {Code::NotImplemented, "Allreduce not implemented yet for ucx"};
+}
 }  // namespace net
 }  // namespace cylon

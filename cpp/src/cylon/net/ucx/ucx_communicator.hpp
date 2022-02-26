@@ -56,6 +56,9 @@ class UCXCommunicator : public Communicator {
   Status AllReduce(const std::shared_ptr<Column> &column,
                    net::ReduceOp reduce_op,
                    std::shared_ptr<Column> *output) const override;
+  Status AllReduce(const std::shared_ptr<Scalar> &values,
+                   net::ReduceOp reduce_op,
+                   std::shared_ptr<Scalar> *output) const override;
 
   // # UCX specific attributes - These need to be passed to the channels created from the communicator
   // The worker for receiving
