@@ -141,11 +141,11 @@ static inline Status all_to_all_arrow_tables_result_separated(const std::shared_
                                              std::vector<std::shared_ptr<Table>> &table_out) {
   const auto &neighbours = ctx->GetNeighbours(true);
   std::vector<std::shared_ptr<arrow::Table>> received_tables;
-  received_tables.reserve(neighbours.size());
+  received_tables.resize(ctx->GetWorldSize());
 
   // define call back to catch the receiving tables
   ArrowCallback arrow_callback =
-      [&received_tables](int source, const std::shared_ptr<arrow::Table> &table_, int reference) {
+      [&received_tables, &ctx](int source, const std::shared_ptr<arrow::Table> &table_, int reference) {
         CYLON_UNUSED(reference);
         received_tables[source] = table_;
         return true;
@@ -164,7 +164,7 @@ static inline Status all_to_all_arrow_tables_result_separated(const std::shared_
       if (i != rank) {
         all_to_all.insert(partitioned_tables[i], i);
       } else {
-        received_tables.push_back(partitioned_tables[i]);
+        received_tables[i] = partitioned_tables[i];
       }
     }
   } else {  // divide partitions to world_size potions and send accordingly
@@ -173,7 +173,7 @@ static inline Status all_to_all_arrow_tables_result_separated(const std::shared_
       if (target != rank) {
         all_to_all.insert(partitioned_tables[i], target);
       } else {
-        received_tables.push_back(partitioned_tables[i]);
+        received_tables[i] = partitioned_tables[i];
       }
     }
   }
@@ -189,11 +189,13 @@ static inline Status all_to_all_arrow_tables_result_separated(const std::shared_
 
   // now we have the final set of tables
 //  LOG(INFO) << "Concatenating tables, Num of tables :  " << received_tables.size();
-  table_out.resize(received_tables.size());
+  table_out.reserve(received_tables.size() - 1);
 //  LOG(INFO) << "Done concatenating tables, rows :  " << concat->num_rows();
   for(int i = 0; i < received_tables.size(); i++) {
-    auto temp = std::make_shared<Table>(ctx, received_tables[i]->CombineChunks(cylon::ToArrowPool(ctx)).ValueOrDie());
-    table_out[i] = temp;
+    if(received_tables[i]->num_rows() > 0) {
+      auto temp = std::make_shared<Table>(ctx, received_tables[i]->CombineChunks(cylon::ToArrowPool(ctx)).ValueOrDie());
+      table_out.push_back(temp);
+    }
   }
 
   return Status::OK();
@@ -628,12 +630,6 @@ Status GetSplitPoints(std::shared_ptr<Table>& sample_result,
                       int num_split_points,
                       std::shared_ptr<Table>& split_points,
                       int split_root) {
-  // gather
-  
-  // root determine points
-    // merge if larger than 10
-    // sort if smaller/eq 10
-  // broadcast
   auto ctx = sample_result->GetContext();
 
   std::vector<std::shared_ptr<cylon::Table>> gather_results;
@@ -641,8 +637,6 @@ Status GetSplitPoints(std::shared_ptr<Table>& sample_result,
   RETURN_CYLON_STATUS_IF_FAILED(comm.AllGather(sample_result, &gather_results));
   
   if (ctx->GetRank() == split_root) {
-    // gather_results.push_back(sample_result); // since allGather doesn't take root
-
       RETURN_CYLON_STATUS_IF_FAILED(
               DetermineSplitPoints(gather_results, sort_columns, sort_orders, split_points, sample_result->GetContext()));
       
@@ -652,33 +646,6 @@ Status GetSplitPoints(std::shared_ptr<Table>& sample_result,
 
   return Status::OK();
 }
-
-
-// // table_idx small return -1, large return 1, eq return 0
-// inline int CompareRowsDualArray(const std::vector<std::unique_ptr<cylon::DualArrayIndexComparator>>& comparators,
-//                       int64_t table_idx, int64_t split_point_idx) { // TODO: priority & direction
-//   int sz = comparators.size();
-//   // in `compare`, the msb of index value is encoded as, 0 --> array1 1 --> array2
-//   split_point_idx |= ((int64_t)1 << 63);
-//   for(int i = 0; i < sz; i++) {
-//     int result = comparators[i]->compare(table_idx, split_point_idx);
-//     if(result == 0) continue;
-//     return result;
-//   }
-//   return 0;
-// }
-
-// // idx a small return -1, large return 1, eq return 0
-// inline int CompareRowsDualArray(const std::vector<std::unique_ptr<cylon::ArrayIndexComparator>>& comparators,
-//                       int64_t idx_a, int64_t idx_b) { // TODO: priority & direction
-//   int sz = comparators.size();
-//   for(int i = 0; i < sz; i++) {
-//     int result = comparators[i]->compare(idx_a, idx_b);
-//     if(result == 0) continue;
-//     return result;
-//   }
-//   return 0;
-// }
 
 
 // return (index of) first element that is not less than the target element
@@ -818,20 +785,20 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   //   if (!table->IsRetain()) {
   //     const_cast<std::shared_ptr<Table> &>(table).reset();
   //   }
-  // std::vector<std::shared_ptr<Table>> all_to_all_result;
-  // RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables_result_separated(ctx, schema, split_tables, all_to_all_result));
+  std::vector<std::shared_ptr<Table>> all_to_all_result;
+  RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables_result_separated(ctx, schema, split_tables, all_to_all_result));
 
-  // RETURN_CYLON_STATUS_IF_FAILED(MergeSortedTable(all_to_all_result, sort_columns, sort_direction, output));
+  RETURN_CYLON_STATUS_IF_FAILED(MergeSortedTable(all_to_all_result, sort_columns, sort_direction, output));
 
-  std::shared_ptr<arrow::Table> arrow_table;
+  // std::shared_ptr<arrow::Table> arrow_table;
 
-  RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables(ctx, schema, split_tables, arrow_table));
+  // RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables(ctx, schema, split_tables, arrow_table));
 
 
-  std::shared_ptr<Table> all_to_all_result;
-  RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(ctx, arrow_table, all_to_all_result));
+  // std::shared_ptr<Table> all_to_all_result;
+  // RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(ctx, arrow_table, all_to_all_result));
 
-  RETURN_CYLON_STATUS_IF_FAILED(Sort(all_to_all_result, sort_columns, output, sort_direction));
+  // RETURN_CYLON_STATUS_IF_FAILED(Sort(all_to_all_result, sort_columns, output, sort_direction));
 
   return Status::OK();
 }
