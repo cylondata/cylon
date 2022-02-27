@@ -549,21 +549,21 @@ int64_t tableBinarySearch(const std::shared_ptr<Table>& split_points,
                           const std::vector<std::unique_ptr<cylon::DualArrayIndexComparator>>& comparators,
                           int64_t split_point_idx, int64_t l) {
   int64_t r = sorted_table->Rows() - 1;
-  int m = (l + r) / 2;
+  int L = l;
 
-  while(r > l) {
+  while(r >= l) {
     int64_t m = (l + r) / 2;
-    int compare_result = CompareRows(comparators, m, split_point_idx);
-    if(compare_result == 0) return m;
-    else if(compare_result < 0) { // table_idx large
-      if(m == 0 || CompareRows(comparators, m - 1, split_point_idx) > 0) return m;
-      r = m - 1;
-    } else {
+    int compare_result_1 = CompareRows(comparators, m, split_point_idx);
+    int compare_result_2 = m == L ? -1 : CompareRows(comparators, m - 1 , split_point_idx);
+    if(compare_result_1 >= 0 && compare_result_2 < 0) return m;
+    else if(compare_result_1 < 0) {
       l = m + 1;
+    } else {
+      r = m - 1;
     }
   }
 
-  return m + 1;
+  return sorted_table->Rows();
 }
 
 Status GetSplitPointIndices(const std::shared_ptr<Table>& split_points, 
@@ -598,12 +598,10 @@ Status GetSplitPointIndices(const std::shared_ptr<Table>& split_points,
   int64_t l_idx = 0;
 
   for(int64_t i = 0; i < num_split_points; i++) {
-    int acc = 0;
-    while(l_idx < num_rows && CompareRows(comparators, l_idx, i) <= 0) {
-      target_partition[l_idx] = i;
-      l_idx++; acc++;
-    }
-    partition_hist[i] = acc;
+    int64_t idx = tableBinarySearch(split_points, sorted_table, comparators, i, l_idx);
+    std::fill(target_partition.begin() + l_idx, target_partition.begin() + idx, i);
+    partition_hist[i] = idx - l_idx;
+    l_idx = idx;
   }
 
   std::fill(target_partition.begin() + l_idx, target_partition.end(), num_split_points);
