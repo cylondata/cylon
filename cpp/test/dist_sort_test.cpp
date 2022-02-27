@@ -33,7 +33,7 @@ TEST_CASE("Dist sort testing", "[dist sort]") {
         auto ctx = table1->GetContext();
         std::shared_ptr<arrow::Table> arrow_output;
         auto status = DistributedSortRegularSampling(table1, {0, 1}, {1, 1}, out);
-        if(RANK == 2) {
+        if(RANK == 0) {
         out->Print();
         }
         DistributedSort(table1, {0, 1}, out2, {1, 1});
