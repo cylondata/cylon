@@ -15,34 +15,29 @@
 # distutils: language = c++
 
 from libcpp.memory cimport shared_ptr, make_shared
-from pycylon.data.data_type cimport CDataType
-from pyarrow.lib cimport CArray as ArrowCAarray
-from pycylon.data.column cimport CColumn
+from pycylon.data.scalar cimport CScalar
 from pycylon.api.lib cimport pycylon_wrap_data_type
-from pyarrow.lib cimport pyarrow_unwrap_array, pyarrow_wrap_array
+from pyarrow.lib cimport CScalar as ArrowCScalar
+from pyarrow.lib cimport pyarrow_unwrap_scalar, pyarrow_wrap_scalar
 import pyarrow as pa
 import pycylon as pc
 
-cdef class Column:
-    def __cinit__(self, array: pa.Array = None):
-        cdef shared_ptr[ArrowCAarray] carray
-        if array:
-            carray = pyarrow_unwrap_array(array)
-            self.thisPtr = make_shared[CColumn](carray)
+cdef class Scalar:
+    def __cinit__(self, scalar: pa.Scalar = None):
+        cdef shared_ptr[ArrowCScalar] cscalar
+        if scalar:
+            cscalar = pyarrow_unwrap_scalar(scalar)
+            self.thisPtr = make_shared[CScalar](cscalar)
 
-    cdef void init(self, const shared_ptr[CColumn] & data_):
+    cdef void init(self, const shared_ptr[CScalar] & data_):
         self.thisPtr = data_
 
     @property
-    def data(self)-> pa.Array:
-        cdef shared_ptr[ArrowCAarray] ar = self.thisPtr.get().data()
-        return pyarrow_wrap_array(ar)
+    def data(self) -> pa.Scalar:
+        cdef shared_ptr[ArrowCScalar] scalar = self.thisPtr.get().data()
+        return pyarrow_wrap_scalar(scalar)
 
     @property
-    def dtype(self)-> pc.DataType:
+    def dtype(self) -> pc.DataType:
         cdef shared_ptr[CDataType] cdtype = self.thisPtr.get().type()
         return pycylon_wrap_data_type(cdtype)
-
-    def __len__(self) -> int:
-        cdef int length = self.thisPtr.get().length()
-        return length

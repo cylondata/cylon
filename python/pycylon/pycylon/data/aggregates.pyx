@@ -12,7 +12,13 @@
 # limitations under the License.
 ##
 
-from pycylon.data.aggregates cimport CGroupByAggregationOp
+from pycylon.data.aggregates cimport *
+from pycylon.common.status cimport CStatus
+from pycylon.api.lib cimport pycylon_unwrap_context, pycylon_unwrap_table, pycylon_wrap_column
+
+from pycylon.data.table import Table
+from pycylon.ctx.context import CylonContext
+from pycylon.data.column import Column
 
 cpdef enum AggregationOp:
     SUM = CGroupByAggregationOp.CSUM
@@ -36,3 +42,86 @@ AggregationOpString = {
     'quantile': CGroupByAggregationOp.CQUANTILE,
     'std': CGroupByAggregationOp.CSTDDEV,
 }
+
+def sum_table(ctx: CylonContext, table: Table, skipna=True) -> Column:
+    cdef shared_ptr[CCylonContext] cctx = pycylon_unwrap_context(ctx)
+    cdef shared_ptr[CTable] ctable = pycylon_unwrap_table(table)
+    cdef CBasicOptions options = CBasicOptions(skipna)
+    cdef shared_ptr[CColumn] cresult
+    cdef CStatus status = SumTable(cctx, ctable, &cresult, options)
+
+    if status.is_ok():
+        return pycylon_wrap_column(cresult)
+    else:
+        raise Exception(f"aggregation error: {status.get_msg().decode()}")
+
+def min_table(ctx: CylonContext, table: Table, skipna=True) -> Column:
+    cdef shared_ptr[CCylonContext] cctx = pycylon_unwrap_context(ctx)
+    cdef shared_ptr[CTable] ctable = pycylon_unwrap_table(table)
+    cdef CBasicOptions options = CBasicOptions(skipna)
+    cdef shared_ptr[CColumn] cresult
+    cdef CStatus status = MinTable(cctx, ctable, &cresult, options)
+
+    if status.is_ok():
+        return pycylon_wrap_column(cresult)
+    else:
+        raise Exception(f"aggregation error: {status.get_msg().decode()}")
+
+def max_table(ctx: CylonContext, table: Table, skipna=True) -> Column:
+    cdef shared_ptr[CCylonContext] cctx = pycylon_unwrap_context(ctx)
+    cdef shared_ptr[CTable] ctable = pycylon_unwrap_table(table)
+    cdef CBasicOptions options = CBasicOptions(skipna)
+    cdef shared_ptr[CColumn] cresult
+    cdef CStatus status = MaxTable(cctx, ctable, &cresult, options)
+
+    if status.is_ok():
+        return pycylon_wrap_column(cresult)
+    else:
+        raise Exception(f"aggregation error: {status.get_msg().decode()}")
+
+# def count_table(ctx: CylonContext, table: Table) -> Column:
+#     cdef shared_ptr[CCylonContext] cctx = pycylon_unwrap_context(ctx)
+#     cdef shared_ptr[CTable] ctable = pycylon_unwrap_table(table)
+#     cdef shared_ptr[CColumn] cresult
+#     cdef CStatus status = CountTable(cctx, ctable, &cresult)
+#
+#     if status.is_ok():
+#         return pycylon_wrap_column(cresult)
+#     else:
+#         raise Exception(f"aggregation error: {status.get_msg().decode()}")
+
+def mean_table(ctx: CylonContext, table: Table, skipna=True) -> Column:
+    cdef shared_ptr[CCylonContext] cctx = pycylon_unwrap_context(ctx)
+    cdef shared_ptr[CTable] ctable = pycylon_unwrap_table(table)
+    cdef CBasicOptions options = CBasicOptions(skipna)
+    cdef shared_ptr[CColumn] cresult
+    cdef CStatus status = MeanTable(cctx, ctable, &cresult, options)
+
+    if status.is_ok():
+        return pycylon_wrap_column(cresult)
+    else:
+        raise Exception(f"aggregation error: {status.get_msg().decode()}")
+
+def var_table(ctx: CylonContext, table: Table, skipna: bool = True, ddof: int = 1) -> Column:
+    cdef shared_ptr[CCylonContext] cctx = pycylon_unwrap_context(ctx)
+    cdef shared_ptr[CTable] ctable = pycylon_unwrap_table(table)
+    cdef CVarKernelOptions options = CVarKernelOptions(ddof, skipna)
+    cdef shared_ptr[CColumn] cresult
+    cdef CStatus status = VarTable(cctx, ctable, &cresult, options)
+
+    if status.is_ok():
+        return pycylon_wrap_column(cresult)
+    else:
+        raise Exception(f"aggregation error: {status.get_msg().decode()}")
+
+def std_table(ctx: CylonContext, table: Table, skipna: bool = True, ddof: int = 1) -> Column:
+    cdef shared_ptr[CCylonContext] cctx = pycylon_unwrap_context(ctx)
+    cdef shared_ptr[CTable] ctable = pycylon_unwrap_table(table)
+    cdef CVarKernelOptions options = CVarKernelOptions(ddof, skipna)
+    cdef shared_ptr[CColumn] cresult
+    cdef CStatus status = StdTable(cctx, ctable, &cresult, options)
+
+    if status.is_ok():
+        return pycylon_wrap_column(cresult)
+    else:
+        raise Exception(f"aggregation error: {status.get_msg().decode()}")

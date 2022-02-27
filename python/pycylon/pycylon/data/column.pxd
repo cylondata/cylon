@@ -60,3 +60,4 @@ cdef extern from "../../../../cpp/src/cylon/column.hpp" namespace "cylon":
 cdef class Column:
     cdef:
         shared_ptr[CColumn] thisPtr
+        void init(self, const shared_ptr[CColumn] & data_)
