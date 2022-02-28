@@ -20,8 +20,8 @@
 namespace cylon {
 namespace tarrow {
 
-std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataType> &tType, int32_t width) {
-  switch (tType->getType()) {
+std::shared_ptr<arrow::DataType> ToArrowType(const std::shared_ptr<DataType> &type) {
+  switch (type->getType()) {
     case Type::BOOL:return std::make_shared<arrow::BooleanType>();
     case Type::UINT8:return std::make_shared<arrow::UInt8Type>();
     case Type::INT8:return std::make_shared<arrow::Int8Type>();
@@ -36,19 +36,30 @@ std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataTy
     case Type::DOUBLE:return std::make_shared<arrow::DoubleType>();
     case Type::STRING:return std::make_shared<arrow::StringType>();
     case Type::BINARY:return std::make_shared<arrow::BinaryType>();
-    case Type::FIXED_SIZE_BINARY: {
-      if (width < 0) break;
-      return std::make_shared<arrow::FixedSizeBinaryType>(width);
-    }
+    case Type::FIXED_SIZE_BINARY:
+      return arrow::fixed_size_binary(std::static_pointer_cast<FixedSizeBinaryType>(type)
+                                          ->byte_width_);
     case Type::DATE32:return std::make_shared<arrow::Date32Type>();
     case Type::DATE64:return std::make_shared<arrow::Date64Type>();
-    case Type::TIMESTAMP:return std::make_shared<arrow::TimestampType>();
+    case Type::TIMESTAMP: {
+      const auto &casted = std::static_pointer_cast<TimestampType>(type);
+      return arrow::timestamp(ToArrowTimeUnit(casted->unit_), casted->timezone_);
+    }
     case Type::TIME32:return std::make_shared<arrow::Time32Type>();
     case Type::TIME64:return std::make_shared<arrow::Time64Type>();
-    case Type::DURATION:return std::make_shared<arrow::DurationType>();
+    case Type::DURATION: {
+      const auto &casted = std::static_pointer_cast<DurationType>(type);
+      return std::make_shared<arrow::DurationType>(ToArrowTimeUnit(casted->unit_));
+    }
     case Type::LARGE_STRING:return std::make_shared<arrow::LargeStringType>();
     case Type::LARGE_BINARY:return std::make_shared<arrow::LargeBinaryType>();
-    case Type::DECIMAL: break;
+    case Type::DECIMAL: {
+      const auto &casted = std::static_pointer_cast<DecimalType>(type);
+      if (casted->byte_width_ == 16) return arrow::decimal128(casted->precision_, casted->scale_);
+      else if (casted->byte_width_ == 32)
+        return arrow::decimal256(casted->precision_, casted->scale_);
+      else break;
+    }
     case Type::INTERVAL:break;
     case Type::LIST:break;
     case Type::FIXED_SIZE_LIST:break;
@@ -56,10 +67,6 @@ std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataTy
     case Type::MAX_ID:break;
   }
   return nullptr;
-}
-
-bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table) {
-  return CheckSupportedTypes(table).is_ok();
 }
 
 Status CheckSupportedTypes(const std::shared_ptr<arrow::Table> &table) {
@@ -79,9 +86,11 @@ Status CheckSupportedTypes(const std::shared_ptr<arrow::Table> &table) {
       case arrow::Type::HALF_FLOAT:
       case arrow::Type::FLOAT:
       case arrow::Type::DOUBLE:
-      case arrow::Type::BINARY:
       case arrow::Type::FIXED_SIZE_BINARY:
+      case arrow::Type::BINARY:
       case arrow::Type::STRING:
+      case arrow::Type::LARGE_BINARY:
+      case arrow::Type::LARGE_STRING:
       case arrow::Type::DATE32:
       case arrow::Type::DATE64:
       case arrow::Type::TIMESTAMP:
@@ -103,7 +112,8 @@ Status CheckSupportedTypes(const std::shared_ptr<arrow::Table> &table) {
           case arrow::Type::FLOAT:
           case arrow::Type::DOUBLE:continue;
           default:
-            return {Code::NotImplemented, "unsupported value type for lists " + t_value->value_type()->ToString()};;
+            return {Code::NotImplemented,
+                    "unsupported value type for lists " + t_value->value_type()->ToString()};;
         }
       }
       default: return {Code::NotImplemented, "unsupported type " + t->type()->ToString()};
@@ -112,8 +122,28 @@ Status CheckSupportedTypes(const std::shared_ptr<arrow::Table> &table) {
   return Status::OK();
 }
 
-std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &arr_type) {
-  switch (arr_type->id()) {
+TimeUnit::type ToCylonTimeUnit(arrow::TimeUnit::type a_time_unit) {
+  switch (a_time_unit) {
+    case arrow::TimeUnit::MICRO: return TimeUnit::MICRO;
+    case arrow::TimeUnit::SECOND: return TimeUnit::SECOND;
+    case arrow::TimeUnit::MILLI: return TimeUnit::MILLI;
+    case arrow::TimeUnit::NANO: return TimeUnit::NANO;
+  }
+  return TimeUnit::MICRO;
+}
+
+arrow::TimeUnit::type ToArrowTimeUnit(TimeUnit::type time_unit) {
+  switch (time_unit) {
+    case TimeUnit::MICRO: return arrow::TimeUnit::MICRO;
+    case TimeUnit::SECOND: return arrow::TimeUnit::SECOND;
+    case TimeUnit::MILLI: return arrow::TimeUnit::MILLI;
+    case TimeUnit::NANO: return arrow::TimeUnit::NANO;
+  }
+  return arrow::TimeUnit::MICRO;
+}
+
+std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &a_type) {
+  switch (a_type->id()) {
     case arrow::Type::BOOL:return cylon::Bool();
     case arrow::Type::UINT8:return cylon::UInt8();
     case arrow::Type::INT8:return cylon::Int8();
@@ -126,15 +156,29 @@ std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &ar
     case arrow::Type::HALF_FLOAT:return cylon::HalfFloat();
     case arrow::Type::FLOAT:return cylon::Float();
     case arrow::Type::DOUBLE:return cylon::Double();
+    case arrow::Type::FIXED_SIZE_BINARY:
+      return cylon::FixedSizeBinary(std::static_pointer_cast<arrow::FixedSizeBinaryType>(a_type)
+                                        ->byte_width());
     case arrow::Type::BINARY:return cylon::Binary();
-    case arrow::Type::FIXED_SIZE_BINARY:return cylon::FixedBinary();
     case arrow::Type::STRING:return cylon::String();
+    case arrow::Type::LARGE_STRING: return cylon::LargeString();
+    case arrow::Type::LARGE_BINARY: return cylon::LargeBinary();
     case arrow::Type::DATE32:return cylon::Date32();
     case arrow::Type::DATE64:return cylon::Date64();
-    case arrow::Type::TIMESTAMP:return cylon::Timestamp();
+    case arrow::Type::TIMESTAMP: {
+      const auto &casted = std::static_pointer_cast<arrow::TimestampType>(a_type);
+      return cylon::Timestamp(ToCylonTimeUnit(casted->unit()), casted->timezone());
+    }
     case arrow::Type::TIME32:return cylon::Time32();
     case arrow::Type::TIME64:return cylon::Time64();
-    case arrow::Type::DECIMAL:return cylon::Decimal();
+    case arrow::Type::DECIMAL128: {
+      const auto &casted = std::static_pointer_cast<arrow::Decimal128Type>(a_type);
+      return cylon::Decimal(16, casted->precision(), casted->scale());
+    }
+    case arrow::Type::DECIMAL256: {
+      const auto &casted = std::static_pointer_cast<arrow::Decimal128Type>(a_type);
+      return cylon::Decimal(32, casted->precision(), casted->scale());
+    }
     case arrow::Type::NA:break;
     case arrow::Type::INTERVAL_MONTHS:break;
     case arrow::Type::INTERVAL_DAY_TIME:break;
@@ -147,11 +191,8 @@ std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &ar
     case arrow::Type::EXTENSION:break;
     case arrow::Type::FIXED_SIZE_LIST:break;
     case arrow::Type::DURATION:break;
-    case arrow::Type::LARGE_STRING:break;
-    case arrow::Type::LARGE_BINARY:break;
     case arrow::Type::LARGE_LIST:break;
     case arrow::Type::MAX_ID:break;
-    case arrow::Type::DECIMAL256:break;
   }
   return nullptr;
 }
@@ -180,8 +221,7 @@ Type::type ToCylonTypeId(const std::shared_ptr<arrow::DataType> &type) {
     case arrow::Type::TIME64:return Type::TIME64;
     case arrow::Type::LARGE_STRING:return Type::LARGE_STRING;
     case arrow::Type::LARGE_BINARY:return Type::LARGE_BINARY;
-    default:
-      return Type::MAX_ID;
+    default:return Type::MAX_ID;
   }
 }
 

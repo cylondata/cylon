@@ -72,13 +72,15 @@ struct PendingReceive {
  */
 class MPIChannel : public Channel {
  public:
+  explicit MPIChannel(MPI_Comm comm) : comm_(comm) {}
+
   /**
    * Initialize the channel
    *
    * @param receives receive from these ranks
    */
   void init(int edge, const std::vector<int> &receives, const std::vector<int> &sendIds,
-			ChannelReceiveCallback *rcv, ChannelSendCallback *send, Allocator *alloc) override;
+            ChannelReceiveCallback *rcv, ChannelSendCallback *send, Allocator *alloc) override;
 
   /**
   * Send the message to the target.
@@ -126,6 +128,7 @@ class MPIChannel : public Channel {
   Allocator *allocator;
   // mpi rank
   int rank;
+  MPI_Comm comm_;
 
   /**
    * Send finish request

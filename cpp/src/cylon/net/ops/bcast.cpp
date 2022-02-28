@@ -22,13 +22,15 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
                                 std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
                                 std::vector<int32_t> &data_types,
                                 const std::shared_ptr<cylon::CylonContext> &ctx) {
+  auto comm = GetMpiComm(ctx);
+
   // first broadcast the number of buffers
   int32_t num_buffers = 0;
   if (AmIRoot(bcast_root, ctx)) {
     num_buffers = serializer->getNumberOfBuffers();
   }
 
-  int status = MPI_Bcast(&num_buffers, 1, MPI_INT32_T, bcast_root, MPI_COMM_WORLD);
+  int status = MPI_Bcast(&num_buffers, 1, MPI_INT32_T, bcast_root, comm);
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for size broadcast!");
   }
@@ -39,7 +41,7 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
     buffer_sizes = serializer->getBufferSizes();
   }
 
-  status = MPI_Bcast(buffer_sizes.data(), num_buffers, MPI_INT32_T, bcast_root, MPI_COMM_WORLD);
+  status = MPI_Bcast(buffer_sizes.data(), num_buffers, MPI_INT32_T, bcast_root, comm);
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for size array broadcast!");
   }
@@ -51,7 +53,7 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
     data_types.resize(num_buffers / 3, 0);
   }
 
-  status = MPI_Bcast(data_types.data(), data_types.size(), MPI_INT32_T, bcast_root, MPI_COMM_WORLD);
+  status = MPI_Bcast(data_types.data(), data_types.size(), MPI_INT32_T, bcast_root, comm);
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for data type array broadcast!");
   }
@@ -77,7 +79,7 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
                           buffer_sizes[i],
                           MPI_UINT8_T,
                           bcast_root,
-                          MPI_COMM_WORLD,
+                          comm,
                           &requests[i]);
       if (status != MPI_SUCCESS) {
         return cylon::Status(cylon::Code::ExecutionError, "MPI_Ibast failed!");
@@ -90,7 +92,7 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
                           buffer_sizes[i],
                           MPI_UINT8_T,
                           bcast_root,
-                          MPI_COMM_WORLD,
+                          comm,
                           &requests[i]);
       if (status != MPI_SUCCESS) {
         return cylon::Status(cylon::Code::ExecutionError, "MPI_Ibast failed!");
@@ -110,6 +112,7 @@ cylon::Status cylon::mpi::Bcast(const std::shared_ptr<cylon::TableSerializer> &s
 cylon::Status cylon::mpi::BcastArrowBuffer(std::shared_ptr<arrow::Buffer> &buf,
                                            int bcast_root,
                                            const std::shared_ptr<cylon::CylonContext> &ctx) {
+  auto comm = GetMpiComm(ctx);
 
   // first broadcast the buffer size
   int32_t buf_size = 0;
@@ -117,7 +120,7 @@ cylon::Status cylon::mpi::BcastArrowBuffer(std::shared_ptr<arrow::Buffer> &buf,
     buf_size = static_cast<int32_t>(buf->size());
   }
 
-  int status = MPI_Bcast(&buf_size, 1, MPI_INT32_T, bcast_root, MPI_COMM_WORLD);
+  int status = MPI_Bcast(&buf_size, 1, MPI_INT32_T, bcast_root, comm);
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for buf_size broadcast!");
   }
@@ -127,7 +130,7 @@ cylon::Status cylon::mpi::BcastArrowBuffer(std::shared_ptr<arrow::Buffer> &buf,
     CYLON_ASSIGN_OR_RAISE(buf, arrow::AllocateBuffer(buf_size));
   }
 
-  status = MPI_Bcast((void *) buf->data(), buf_size, MPI_UINT8_T, bcast_root, MPI_COMM_WORLD);
+  status = MPI_Bcast((void *) buf->data(), buf_size, MPI_UINT8_T, bcast_root, comm);
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for arrow::Buffer broadcast!");
   }

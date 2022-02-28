@@ -13,10 +13,12 @@
  */
 
 #include <mpi.h>
-#include <arrow/result.h>
-#include <cylon/net/mpi/mpi_operations.hpp>
-#include <cylon/util/macros.hpp>
 #include <numeric>
+#include <arrow/result.h>
+
+#include "cylon/util/macros.hpp"
+#include "cylon/net/mpi/mpi_communicator.hpp"
+#include "cylon/net/mpi/mpi_operations.hpp"
 
 std::vector<int32_t> totalBufferSizes(const std::vector<int32_t> &all_buffer_sizes,
                                       int num_buffers,
@@ -79,6 +81,8 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
     all_buffer_sizes.resize(ctx->GetWorldSize() * num_buffers);
   }
 
+  auto comm = GetMpiComm(ctx);
+
   int status = MPI_Gather(local_buffer_sizes.data(),
                           num_buffers,
                           MPI_INT32_T,
@@ -86,7 +90,7 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
                           num_buffers,
                           MPI_INT32_T,
                           gather_root,
-                          MPI_COMM_WORLD);
+                          comm);
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Gather failed!");
   }
@@ -122,7 +126,7 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
                             disp_per_buffer.data(),
                             MPI_UINT8_T,
                             gather_root,
-                            MPI_COMM_WORLD,
+                            comm,
                             &requests[i]);
       if (status != MPI_SUCCESS) {
         return cylon::Status(cylon::Code::ExecutionError, "MPI_Igatherv failed!");
@@ -138,7 +142,7 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
                             nullptr,
                             MPI_UINT8_T,
                             gather_root,
-                            MPI_COMM_WORLD,
+                            comm,
                             &requests[i]);
       if (status != MPI_SUCCESS) {
         return cylon::Status(cylon::Code::ExecutionError, "MPI_Igatherv failed!");
@@ -158,6 +162,7 @@ cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer>
                                             int gather_root,
                                             const std::shared_ptr<cylon::CylonContext> &ctx,
                                             std::vector<std::shared_ptr<arrow::Buffer>> &buffers) {
+  auto comm = GetMpiComm(ctx);
 
   std::vector<int32_t> all_buffer_sizes;
   if (AmIRoot(gather_root, ctx)) {
@@ -172,7 +177,7 @@ cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer>
                           1,
                           MPI_INT32_T,
                           gather_root,
-                          MPI_COMM_WORLD);
+                          comm);
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Gather failed when receiving buffer sizes!");
   }
@@ -191,12 +196,12 @@ cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer>
   status = MPI_Gatherv(buf->data(),
                        size,
                        MPI_UINT8_T,
-                       (void *)all_buf->data(),
+                       (void *) all_buf->data(),
                        all_buffer_sizes.data(),
                        disps.data(),
                        MPI_UINT8_T,
                        gather_root,
-                       MPI_COMM_WORLD);
+                       comm);
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Gatherv failed when receiving buffers!");
   }
@@ -217,9 +222,10 @@ cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer
                                     std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
                                     std::vector<std::vector<int32_t>> &displacements,
                                     const std::shared_ptr<cylon::CylonContext> &ctx) {
+  auto comm = GetMpiComm(ctx);
 
   // first gather table buffer sizes
-  const auto& local_buffer_sizes = serializer->getBufferSizes();
+  const auto &local_buffer_sizes = serializer->getBufferSizes();
   int32_t num_buffers = local_buffer_sizes.size();
 
   all_buffer_sizes.resize(ctx->GetWorldSize() * num_buffers);
@@ -230,7 +236,7 @@ cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer
                              all_buffer_sizes.data(),
                              num_buffers,
                              MPI_INT32_T,
-                             MPI_COMM_WORLD);
+                             comm);
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Allgather failed when receiving table sizes!");
   }
@@ -255,7 +261,7 @@ cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer
                              receive_counts.data(),
                              disp_per_buffer.data(),
                              MPI_UINT8_T,
-                             MPI_COMM_WORLD,
+                             comm,
                              &requests[i]);
     if (status != MPI_SUCCESS) {
       return cylon::Status(cylon::Code::ExecutionError, "MPI_Iallgatherv failed when receiving table data!");
@@ -275,6 +281,7 @@ cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer
 cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
                                                const std::shared_ptr<cylon::CylonContext> &ctx,
                                                std::vector<std::shared_ptr<arrow::Buffer>> &buffers) {
+  auto comm = GetMpiComm(ctx);
 
   std::vector<int32_t> all_buffer_sizes(ctx->GetWorldSize(), 0);
   int32_t size = static_cast<int32_t>(buf->size());
@@ -285,7 +292,7 @@ cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buff
                              all_buffer_sizes.data(),
                              1,
                              MPI_INT32_T,
-                             MPI_COMM_WORLD);
+                             comm);
   if (status != MPI_SUCCESS) {
     return cylon::Status(cylon::Code::ExecutionError, "MPI_Allgather failed when receiving buffer sizes!");
   }
@@ -299,13 +306,14 @@ cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buff
   status = MPI_Allgatherv(buf->data(),
                           size,
                           MPI_UINT8_T,
-                          (void *)all_buf->data(),
+                          (void *) all_buf->data(),
                           all_buffer_sizes.data(),
                           disps.data(),
                           MPI_UINT8_T,
-                          MPI_COMM_WORLD);
+                          comm);
   if (status != MPI_SUCCESS) {
-    return cylon::Status(cylon::Code::ExecutionError, "MPI_Allgatherv failed when receiving buffers!");
+    return cylon::Status(cylon::Code::ExecutionError,
+                         "MPI_Allgatherv failed when receiving buffers!");
   }
 
   buffers.resize(ctx->GetWorldSize());
@@ -314,4 +322,8 @@ cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buff
   }
 
   return cylon::Status::OK();
+}
+
+MPI_Comm cylon::mpi::GetMpiComm(const std::shared_ptr<CylonContext> &ctx) {
+  return std::static_pointer_cast<cylon::net::MPICommunicator>(ctx->GetCommunicator())->mpi_comm();
 }

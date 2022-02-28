@@ -14,17 +14,17 @@
 
 #include <glog/logging.h>
 #include <chrono>
-#include <random>
 
-#include <cylon/net/mpi/mpi_communicator.hpp>
 #include <cylon/ctx/cylon_context.hpp>
 #include <cylon/util/builtins.hpp>
 #include <cylon/table.hpp>
 #include <cylon/util/arrow_utils.hpp>
-#include <cylon/groupby/groupby.hpp>
 #include <cylon/compute/aggregates.hpp>
 
 #include "common/test_header.hpp"
+
+namespace cylon {
+namespace test {
 
 Status create_table(std::shared_ptr<cylon::Table> &table) {
   arrow::Int64Builder b0;
@@ -69,11 +69,14 @@ TEST_CASE("sort testing", "[sort]") {
     status = cylon::Sort(table, 1, output);
     REQUIRE(status.is_ok());
 
-    const auto &carr1 = std::static_pointer_cast<arrow::StringArray>(output->get_table()->column(1)->chunk(0));
+    const auto &carr1 =
+        std::static_pointer_cast<arrow::StringArray>(output->get_table()->column(1)->chunk(0));
     for (int64_t i = 0; i < output->Rows() - 1; i++) {
       REQUIRE((carr1->GetString(i) <= carr1->GetString(i + 1)));
     }
   }
 }
 
+}
+}
 

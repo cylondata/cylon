@@ -40,14 +40,23 @@ Status Get_Splits(const std::shared_ptr <cylon::CylonContext> &ctx,
                  const std::vector<int> &right_column_indexes,
                  int *left_splits,
                  int *right_splits) {
-  std::array<int64_t, 2> left_sizes = cylon::util::GetBytesAndElements(left->get_table(), left_column_indexes);
-  std::array<int64_t, 2> right_sizes = cylon::util::GetBytesAndElements(right->get_table(), right_column_indexes);
+  std::array<int64_t, 2>
+      left_sizes = cylon::util::GetBytesAndElements(left->get_table(), left_column_indexes);
+  std::array<int64_t, 2>
+      right_sizes = cylon::util::GetBytesAndElements(right->get_table(), right_column_indexes);
   std::array<int64_t, 4> all = {left_sizes[0], left_sizes[1], right_sizes[0], right_sizes[1]};
   std::array<int64_t, 4> totals;
-  cylon::Status status = cylon::mpi::AllReduce(all.data(), totals.data(), 4, cylon::Int64(), cylon::net::SUM);
+  cylon::Status status = cylon::mpi::AllReduce(ctx,
+                                               all.data(),
+                                               totals.data(),
+                                               4,
+                                               cylon::Int64(),
+                                               cylon::net::SUM);
   RETURN_CYLON_STATUS_IF_FAILED(status);
-  *left_splits = cylon::util::GetNumberSplitsToFitInCache(totals[1], totals[0], ctx->GetWorldSize());
-  *right_splits = cylon::util::GetNumberSplitsToFitInCache(totals[3], totals[2], ctx->GetWorldSize());
+  *left_splits =
+      cylon::util::GetNumberSplitsToFitInCache(totals[1], totals[0], ctx->GetWorldSize());
+  *right_splits =
+      cylon::util::GetNumberSplitsToFitInCache(totals[3], totals[2], ctx->GetWorldSize());
   return Status::OK();
 }
 

@@ -90,9 +90,7 @@ CSVReadOptions CSVReadOptions::WithColumnTypes(
   std::unordered_map<std::string, std::shared_ptr<arrow::DataType>> arrow_types{};
 
   for (const auto &column_type : column_types) {
-    auto pr = std::pair<std::string, std::shared_ptr<arrow::DataType>>(
-        column_type.first, cylon::tarrow::convertToArrowType(column_type.second));
-    arrow_types.insert(pr);
+    arrow_types.emplace(column_type.first, cylon::tarrow::ToArrowType(column_type.second));
   }
   CSVConfigHolder::GetCastedHolder(*this)->column_types = arrow_types;
   return *this;

@@ -22,6 +22,8 @@
 # For more information about CMake, see http://www.cmake.org             #
 ##########################################################################
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 project(CYLON VERSION 0.5.0)
 
 set(CYLON_VERSION 0.5.0)
@@ -179,6 +181,7 @@ include(Build)
 # if building gcylon, no need to build cylon
 option(GCYLON_BUILD "Build GCylon" OFF)
 if (GCYLON_BUILD)
+    message("GCylon build enabled")
     add_subdirectory(src/gcylon)
     add_subdirectory(src/examples/gcylon)
     if (CYLON_WITH_TEST)
@@ -192,6 +195,7 @@ endif ()
 # ucx
 option(CYLON_UCX "Build Cylon with UCX" OFF)
 if (CYLON_UCX)
+    message("Cylon UCX enabled")
     # Definition used for checking
     add_definitions(-DBUILD_CYLON_UCX)
 

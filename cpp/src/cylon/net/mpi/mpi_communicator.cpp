@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-#include <mpi.h>
 #include <memory>
 
 #include <cylon/net/communicator.hpp>
@@ -30,25 +29,26 @@
 
 namespace cylon {
 namespace net {
-// configs
-void MPIConfig::DummyConfig(int dummy) {
-  this->AddConfig("Dummy", &dummy);
-}
-int MPIConfig::GetDummyConfig() {
-  return *reinterpret_cast<int *>(this->GetConfig("Dummy"));
-}
 
+// configs
 CommType MPIConfig::Type() {
   return CommType::MPI;
 }
-std::shared_ptr<MPIConfig> MPIConfig::Make() {
-  return std::make_shared<MPIConfig>();
+
+std::shared_ptr<MPIConfig> MPIConfig::Make(MPI_Comm comm) {
+  return std::make_shared<MPIConfig>(comm);
+}
+
+MPIConfig::MPIConfig(MPI_Comm comm) : comm_(comm) {}
+
+MPI_Comm MPIConfig::GetMPIComm() const {
+  return comm_;
 }
 
 MPIConfig::~MPIConfig() = default;
 
 std::unique_ptr<Channel> MPICommunicator::CreateChannel() const {
-  return std::make_unique<MPIChannel>();
+  return std::make_unique<MPIChannel>(mpi_comm_);
 }
 
 int MPICommunicator::GetRank() const {
@@ -58,27 +58,48 @@ int MPICommunicator::GetWorldSize() const {
   return this->world_size;
 }
 Status MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
-  CYLON_UNUSED(config);
-  int initialized;
-  MPI_Initialized(&initialized);
-  if (!initialized) {
-    MPI_Init(nullptr, nullptr);
+  // check if MPI is initialized
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Initialized(&mpi_initialized_externally));
+  mpi_comm_ = std::static_pointer_cast<MPIConfig>(config)->GetMPIComm();
+
+  if (mpi_comm_ && !mpi_initialized_externally) {
+    return {Code::Invalid, "non-nullptr MPI_Comm passed without initializing MPI"};
   }
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
+  if (!mpi_initialized_externally) { // if not initialized, init MPI
+    RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
+  }
+
+  if (!mpi_comm_) { // set comm_ to world
+    mpi_comm_ = MPI_COMM_WORLD;
+  }
+
+  // setting errors to return
+  MPI_Comm_set_errhandler(mpi_comm_, MPI_ERRORS_RETURN);
+
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_rank(mpi_comm_, &this->rank));
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_size(mpi_comm_, &this->world_size));
+
+  if (rank < 0 || world_size < 0 || rank >= world_size) {
+    return {Code::ExecutionError, "Malformed rank :" + std::to_string(rank)
+        + " or world size:" + std::to_string(world_size)};
+  }
 
   return Status::OK();
 }
+
 void MPICommunicator::Finalize() {
-  int finalized;
-  MPI_Finalized(&finalized);
-  if (!finalized) {
-    MPI_Finalize();
+  // finalize only if we initialized MPI
+  if (!mpi_initialized_externally) {
+    int finalized;
+    MPI_Finalized(&finalized);
+    if (!finalized) {
+      MPI_Finalize();
+    }
   }
 }
 void MPICommunicator::Barrier() {
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(mpi_comm_);
 }
 
 CommType MPICommunicator::GetCommType() const {
@@ -105,8 +126,8 @@ std::vector<int32_t> ReshapeDispToPerTable(const std::vector<std::vector<int32_t
   return res;
 }
 
-Status MPISyncCommunicator::AllGather(const std::shared_ptr<Table> &table,
-                                      std::vector<std::shared_ptr<Table>> *out) const {
+Status MPICommunicator::AllGather(const std::shared_ptr<Table> &table,
+                                  std::vector<std::shared_ptr<Table>> *out) const {
   std::shared_ptr<TableSerializer> serializer;
   RETURN_CYLON_STATUS_IF_FAILED(CylonTableSerializer::Make(table, &serializer));
   const auto &ctx = table->GetContext();
@@ -134,10 +155,10 @@ Status MPISyncCommunicator::AllGather(const std::shared_ptr<Table> &table,
                            buffer_sizes_per_table, buffer_offsets_per_table, out);
 }
 
-Status MPISyncCommunicator::Gather(const std::shared_ptr<Table> &table,
-                                   int gather_root,
-                                   bool gather_from_root,
-                                   std::vector<std::shared_ptr<Table>> *out) const {
+Status MPICommunicator::Gather(const std::shared_ptr<Table> &table,
+                               int gather_root,
+                               bool gather_from_root,
+                               std::vector<std::shared_ptr<Table>> *out) const {
   std::shared_ptr<TableSerializer> serializer;
   RETURN_CYLON_STATUS_IF_FAILED(CylonTableSerializer::Make(table, &serializer));
   const auto &ctx = table->GetContext();
@@ -190,9 +211,9 @@ Status BcastArrowSchema(const std::shared_ptr<CylonContext> &ctx,
   return Status::OK();
 }
 
-Status MPISyncCommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
-                                  std::shared_ptr<Table> *table,
-                                  int bcast_root) const {
+Status MPICommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
+                              std::shared_ptr<Table> *table,
+                              int bcast_root) const {
   std::shared_ptr<arrow::Schema> schema;
   bool is_root = mpi::AmIRoot(bcast_root, ctx);
   auto *pool = ToArrowPool(ctx);
@@ -225,5 +246,10 @@ Status MPISyncCommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
   }
   return Status::OK();
 }
+
+MPI_Comm MPICommunicator::mpi_comm() const {
+  return mpi_comm_;
+}
+
 }  // namespace net
 }  // namespace cylon

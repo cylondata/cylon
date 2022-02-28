@@ -26,28 +26,28 @@ namespace tarrow {
 
 /**
  * Convert a cylon type to an arrow type
- * @param tType the cylon type
+ * @param type the cylon type
  * @return corresponding arrow type
  */
- // todo: need to handle this better
-std::shared_ptr<arrow::DataType> convertToArrowType(const std::shared_ptr<DataType> &tType, int32_t width = -1);
+std::shared_ptr<arrow::DataType> ToArrowType(const std::shared_ptr<DataType> &type);
 
 /**
  * Convert arrow data type pointer to Cylon Data type pointer
- * @param arr_type
+ * @param a_type
  * @return corresponding
  */
-std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &arr_type);
+std::shared_ptr<DataType> ToCylonType(const std::shared_ptr<arrow::DataType> &a_type);
+
+TimeUnit::type ToCylonTimeUnit(arrow::TimeUnit::type a_time_unit);
+arrow::TimeUnit::type ToArrowTimeUnit(TimeUnit::type time_unit);
 
 Type::type ToCylonTypeId(const std::shared_ptr<arrow::DataType> &type);
 
 /**
- * Validate the types of an arrow table
+ * Checks if the types of an arrow table are supported in Cylon
  * @param table true if we support the types
  * @return false if we don't support the types
  */
-bool validateArrowTableTypes(const std::shared_ptr<arrow::Table> &table);
-
 cylon::Status CheckSupportedTypes(const std::shared_ptr<arrow::Table> &table);
 
 }  // namespace tarrow
