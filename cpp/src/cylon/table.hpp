@@ -370,11 +370,17 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
  */
 
 struct SortOptions {
+  enum SortMethod {
+    REGULAR_SAMPLE = 0,
+    INITIAL_SAMPLE = 1,
+  };
   uint32_t num_bins;
   uint64_t num_samples;
+  SortMethod sort_method;
 
-  static SortOptions Defaults() { return {0, 0}; }
+  static SortOptions Defaults() { return {0, 0, REGULAR_SAMPLE}; }
 };
+
 Status DistributedSort(const std::shared_ptr<Table> &table,
                        int sort_column,
                        std::shared_ptr<Table> &output,

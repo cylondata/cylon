@@ -71,7 +71,7 @@ Status PrepareArray(std::shared_ptr<cylon::CylonContext> &ctx,
   array_vector.push_back(destination_col_array);
   return Status::OK();
 }
-
+  
 static inline Status all_to_all_arrow_tables(const std::shared_ptr<CylonContext> &ctx,
                                              const std::shared_ptr<arrow::Schema> &schema,
                                              const std::vector<std::shared_ptr<arrow::Table>> &partitioned_tables,
@@ -569,7 +569,6 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>>& tables,
   auto comp = [&](int a, int b) { // a and b are index of table in `tables`
     int64_t a_idx = table_indices[a], b_idx = table_indices[b];
     bool temp = CompareRows(comparators, a, b) > 0;
-    // std::cout<<a_idx<<", "<<b_idx<<": "<<temp<<std::endl;
     return CompareRows(comparators, a_idx, b_idx) > 0;
   };
 
@@ -628,21 +627,19 @@ Status GetSplitPoints(std::shared_ptr<Table>& sample_result,
                       const std::vector<int>& sort_columns,
                       const std::vector<bool>& sort_orders,
                       int num_split_points,
-                      std::shared_ptr<Table>& split_points,
-                      int split_root) {
+                      std::shared_ptr<Table>& split_points) {
   auto ctx = sample_result->GetContext();
 
   std::vector<std::shared_ptr<cylon::Table>> gather_results;
   net::MPISyncCommunicator comm;
   RETURN_CYLON_STATUS_IF_FAILED(comm.AllGather(sample_result, &gather_results));
   
-  if (ctx->GetRank() == split_root) {
+  if (ctx->GetRank() == 0) {
       RETURN_CYLON_STATUS_IF_FAILED(
-              DetermineSplitPoints(gather_results, sort_columns, sort_orders, split_points, sample_result->GetContext()));
-      
+              DetermineSplitPoints(gather_results, sort_columns, sort_orders, split_points, sample_result->GetContext())); 
   }
 
-  RETURN_CYLON_STATUS_IF_FAILED(comm.Bcast(sample_result->GetContext(), &split_points, split_root));
+  RETURN_CYLON_STATUS_IF_FAILED(comm.Bcast(sample_result->GetContext(), &split_points, 0));
 
   return Status::OK();
 }
@@ -720,16 +717,14 @@ Status GetSplitPointIndices(const std::shared_ptr<Table>& split_points,
  * @param table
  * @param sort_columns sort based on these columns
  * @param sort_direction Sort direction 'true' indicates ascending ordering and false indicate descending ordering.
- * @param ctx
  * @param sorted_table resulting table
- * @param sort_root the worker that will determine the global split points
  * @return
  */
 Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
                       const std::vector<int32_t> &sort_columns,
                       const std::vector<bool> &sort_direction,
                       std::shared_ptr<cylon::Table> &output,
-                      const int sort_root) {
+                      SortOptions sort_options) {
   if(sort_columns.size() > table->Columns()) {
     return Status(Code::ValueError, "number of values in sort_column_indices can not larger than the number of columns");
   } else if(sort_columns.size() != sort_direction.size()) {
@@ -746,9 +741,11 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   std::shared_ptr<Table> local_sorted;
   RETURN_CYLON_STATUS_IF_FAILED(Sort(table, sort_columns, local_sorted, sort_direction));
   
-  const int SAMPLING_RATIO = 2;
+  const int SAMPLING_RATIO = sort_options.num_samples == 0 ? 2 : sort_options.num_samples;
+
   std::vector<uint32_t> target_partitions, partition_hist;
   std::vector<std::shared_ptr<arrow::Table>> split_tables;
+
 
   // sample the sorted table with sort columns and create a table
   int sample_count = ctx->GetWorldSize() * SAMPLING_RATIO;
@@ -760,9 +757,6 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   RETURN_CYLON_STATUS_IF_FAILED(SampleTableUniform(local_sorted, 
                         sample_count, sample_result, ctx));
 
-  // Table::FromArrowTable(ctx, sample_result_arrow_table, sample_result);
-
-  // TODO: take rows to make new table <- may not be viable b.c. dual index comparator
 
   // determine split point
   std::shared_ptr<Table> split_points;
@@ -788,31 +782,14 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   std::vector<std::shared_ptr<Table>> all_to_all_result;
   RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables_result_separated(ctx, schema, split_tables, all_to_all_result));
 
+  std::shared_ptr<cylon::Table> temp;
+
   RETURN_CYLON_STATUS_IF_FAILED(MergeSortedTable(all_to_all_result, sort_columns, sort_direction, output));
-
-  // std::shared_ptr<arrow::Table> arrow_table;
-
-  // RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables(ctx, schema, split_tables, arrow_table));
-
-
-  // std::shared_ptr<Table> all_to_all_result;
-  // RETURN_CYLON_STATUS_IF_FAILED(Table::FromArrowTable(ctx, arrow_table, all_to_all_result));
-
-  // RETURN_CYLON_STATUS_IF_FAILED(Sort(all_to_all_result, sort_columns, output, sort_direction));
 
   return Status::OK();
 }
 
-Status DistributedSort(const std::shared_ptr<Table> &table,
-                       int sort_column,
-                       std::shared_ptr<Table> &output,
-                       bool ascending,
-                       SortOptions sort_options) {
-  return DistributedSort(table, std::vector<int>{sort_column}, output, std::vector<bool>{ascending},
-                         sort_options);
-}
-
-Status DistributedSort(const std::shared_ptr<Table> &table,
+Status DistributedSortInitialSampling(const std::shared_ptr<Table> &table,
                        const std::vector<int> &sort_columns,
                        std::shared_ptr<Table> &output,
                        const std::vector<bool> &sort_direction,
@@ -867,6 +844,27 @@ Status DistributedSort(const std::shared_ptr<Table> &table,
   }
 
   return Table::FromArrowTable(ctx, sorted_table, output);
+}
+
+Status DistributedSort(const std::shared_ptr<Table> &table,
+                       int sort_column,
+                       std::shared_ptr<Table> &output,
+                       bool ascending,
+                       SortOptions sort_options) {
+  return DistributedSort(table, std::vector<int>{sort_column}, output, std::vector<bool>{ascending},
+                         sort_options);
+}
+
+Status DistributedSort(const std::shared_ptr<Table> &table,
+                       const std::vector<int> &sort_columns,
+                       std::shared_ptr<Table> &output,
+                       const std::vector<bool> &sort_direction,
+                       SortOptions sort_options) {
+  if(sort_options.sort_method == sort_options.INITIAL_SAMPLE) {
+    return DistributedSortInitialSampling(table, sort_columns, output, sort_direction, sort_options);
+  } else {
+    return DistributedSortRegularSampling(table, sort_columns, sort_direction, output, sort_options);
+  }
 }
 
 Status HashPartition(const std::shared_ptr<Table> &table, const std::vector<int> &hash_columns,
@@ -1528,14 +1526,14 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a, const std::shar
     std::vector<bool> column_orders(col, true);
     std::iota(indices.begin(), indices.end(), 0);
 
+    std::shared_ptr<cylon::Table> a_sorted, b_sorted;
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(a, indices, a_sorted, column_orders));
+    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(b, indices, b_sorted, column_orders));
+
     std::shared_ptr<cylon::Table> b_repartitioned;
-    RETURN_CYLON_STATUS_IF_FAILED(RepartitionToMatchOtherTable(a, b, &b_repartitioned));
+    RETURN_CYLON_STATUS_IF_FAILED(RepartitionToMatchOtherTable(a_sorted, b_sorted, &b_repartitioned));
 
-    std::shared_ptr<cylon::Table> out_a, out_b;
-    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(a, indices, out_a, column_orders));
-    RETURN_CYLON_STATUS_IF_FAILED(DistributedSort(b_repartitioned, indices, out_b, column_orders));
-
-    RETURN_CYLON_STATUS_IF_FAILED(Equals(out_a, out_b, subResult));
+    RETURN_CYLON_STATUS_IF_FAILED(Equals(a_sorted, b_repartitioned, subResult));
   } else {
     std::shared_ptr<cylon::Table> b_repartitioned;
     RETURN_CYLON_STATUS_IF_FAILED(RepartitionToMatchOtherTable(a, b, &b_repartitioned));

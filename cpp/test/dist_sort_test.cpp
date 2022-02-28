@@ -32,11 +32,15 @@ TEST_CASE("Dist sort testing", "[dist sort]") {
         std::shared_ptr<Table> out, out2, repartitioned;
         auto ctx = table1->GetContext();
         std::shared_ptr<arrow::Table> arrow_output;
-        auto status = DistributedSortRegularSampling(table1, {0, 1}, {1, 1}, out);
+
+        auto before = time(NULL); // TODO: test performance & eveness of row distribution
+        auto status = DistributedSort(table1, {0, 1}, out, {1, 1});
+        auto after = time(NULL);
+        
         if(RANK == 0) {
         out->Print();
         }
-        DistributedSort(table1, {0, 1}, out2, {1, 1});
+        DistributedSort(table1, {0, 1}, out2, {1, 1}, {0, 0, SortOptions::INITIAL_SAMPLE});
         REQUIRE(status.is_ok());
         bool eq;
         status = DistributedEquals(out, out2, eq);
@@ -47,8 +51,8 @@ TEST_CASE("Dist sort testing", "[dist sort]") {
         std::shared_ptr<Table> out, out2, repartitioned;
         auto ctx = table1->GetContext();
         std::shared_ptr<arrow::Table> arrow_output;
-        auto status = DistributedSortRegularSampling(table1, {0, 1}, {1, 0}, out);
-        DistributedSort(table1, {0, 1}, out2, {1, 0});
+        auto status = DistributedSort(table1, {0, 1}, out, {1, 0});
+        DistributedSort(table1, {0, 1}, out2, {1, 0}, {0, 0, SortOptions::INITIAL_SAMPLE});
         REQUIRE(status.is_ok());
         bool eq;
         status = DistributedEquals(out, out2, eq);
@@ -59,8 +63,30 @@ TEST_CASE("Dist sort testing", "[dist sort]") {
         std::shared_ptr<Table> out, out2, repartitioned;
         auto ctx = table1->GetContext();
         std::shared_ptr<arrow::Table> arrow_output;
-        auto status = DistributedSortRegularSampling(table1, {1, 0}, {0, 0}, out);
-        DistributedSort(table1, {1, 0}, out2, {0, 0});
+        auto status = DistributedSort(table1, {1, 0}, out, {0, 0});
+        DistributedSort(table1, {1, 0}, out2, {0, 0}, {0, 0, SortOptions::INITIAL_SAMPLE});
+        REQUIRE(status.is_ok());
+        bool eq;
+        status = DistributedEquals(out, out2, eq);
+        REQUIRE(eq);
+    }
+
+    SECTION("dist_sort_test_4_one_empty_table") {
+        if(RANK == 0) {
+            auto pool = cylon::ToArrowPool(ctx);
+
+            std::shared_ptr<arrow::Table> arrow_empty_table;
+            auto arrow_status = util::CreateEmptyTable(table1->get_table()->schema(),
+                                    &arrow_empty_table, pool);
+            auto empty_table = std::make_shared<Table>(ctx, arrow_empty_table);
+            table1 = empty_table;
+        }
+
+        std::shared_ptr<Table> out, out2, repartitioned;
+        auto ctx = table1->GetContext();
+        std::shared_ptr<arrow::Table> arrow_output;
+        auto status = DistributedSort(table1, {1, 0}, out, {0, 0});
+        DistributedSort(table1, {1, 0}, out2, {0, 0}, {0, 0, SortOptions::INITIAL_SAMPLE});
         REQUIRE(status.is_ok());
         bool eq;
         status = DistributedEquals(out, out2, eq);
