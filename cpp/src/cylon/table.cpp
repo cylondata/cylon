@@ -632,15 +632,15 @@ Status GetSplitPoints(std::shared_ptr<Table>& sample_result,
   auto ctx = sample_result->GetContext();
 
   std::vector<std::shared_ptr<cylon::Table>> gather_results;
-  net::MPICommunicator comm;
-  RETURN_CYLON_STATUS_IF_FAILED(comm.AllGather(sample_result, &gather_results));
+  // net::MPICommunicator comm;
+  RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->AllGather(sample_result, &gather_results));
   
   if (ctx->GetRank() == 0) {
       RETURN_CYLON_STATUS_IF_FAILED(
               DetermineSplitPoints(gather_results, sort_columns, sort_orders, split_points, sample_result->GetContext())); 
   }
 
-  RETURN_CYLON_STATUS_IF_FAILED(comm.Bcast(sample_result->GetContext(), &split_points, 0));
+  RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->Bcast(sample_result->GetContext(), &split_points, 0));
 
   return Status::OK();
 }
@@ -782,8 +782,6 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   //   }
   std::vector<std::shared_ptr<Table>> all_to_all_result;
   RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables_result_separated(ctx, schema, split_tables, all_to_all_result));
-
-  std::shared_ptr<cylon::Table> temp;
 
   RETURN_CYLON_STATUS_IF_FAILED(MergeSortedTable(all_to_all_result, sort_columns, sort_direction, output));
 
@@ -1565,11 +1563,6 @@ Status Repartition(const std::shared_ptr<cylon::Table> &table,
   int world_size = table->GetContext()->GetWorldSize();
   int rank = table->GetContext()->GetRank();
   int num_row = (int) table->Rows();
-
-  if (num_row == 0) {
-    *output = table;
-    return Status::OK();
-  }
 
   if (rows_per_partition.size() != (size_t) world_size) {
     return Status(cylon::Code::ValueError,

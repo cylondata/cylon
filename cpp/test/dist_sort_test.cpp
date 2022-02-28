@@ -42,7 +42,7 @@ TEST_CASE("Dist sort testing", "[dist sort]") {
         }
         DistributedSort(table1, {0, 1}, out2, {1, 1}, {0, 0, SortOptions::INITIAL_SAMPLE});
         REQUIRE(status.is_ok());
-        bool eq;
+        bool eq = true;
         status = DistributedEquals(out, out2, eq);
         REQUIRE(eq);
     }
