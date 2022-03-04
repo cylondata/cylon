@@ -43,7 +43,7 @@ AggregationOpString = {
     'std': CGroupByAggregationOp.CSTDDEV,
 }
 
-def sum_table(ctx: CylonContext, table: Table, skipna=True) -> Column:
+def sum_table(ctx: CylonContext, table: Table, skipna: bool = True) -> Column:
     cdef shared_ptr[CCylonContext] cctx = pycylon_unwrap_context(ctx)
     cdef shared_ptr[CTable] ctable = pycylon_unwrap_table(table)
     cdef CBasicOptions options = CBasicOptions(skipna)
@@ -55,7 +55,7 @@ def sum_table(ctx: CylonContext, table: Table, skipna=True) -> Column:
     else:
         raise Exception(f"aggregation error: {status.get_msg().decode()}")
 
-def min_table(ctx: CylonContext, table: Table, skipna=True) -> Column:
+def min_table(ctx: CylonContext, table: Table, skipna: bool = True) -> Column:
     cdef shared_ptr[CCylonContext] cctx = pycylon_unwrap_context(ctx)
     cdef shared_ptr[CTable] ctable = pycylon_unwrap_table(table)
     cdef CBasicOptions options = CBasicOptions(skipna)
@@ -67,7 +67,7 @@ def min_table(ctx: CylonContext, table: Table, skipna=True) -> Column:
     else:
         raise Exception(f"aggregation error: {status.get_msg().decode()}")
 
-def max_table(ctx: CylonContext, table: Table, skipna=True) -> Column:
+def max_table(ctx: CylonContext, table: Table, skipna: bool = True) -> Column:
     cdef shared_ptr[CCylonContext] cctx = pycylon_unwrap_context(ctx)
     cdef shared_ptr[CTable] ctable = pycylon_unwrap_table(table)
     cdef CBasicOptions options = CBasicOptions(skipna)
@@ -90,7 +90,7 @@ def max_table(ctx: CylonContext, table: Table, skipna=True) -> Column:
 #     else:
 #         raise Exception(f"aggregation error: {status.get_msg().decode()}")
 
-def mean_table(ctx: CylonContext, table: Table, skipna=True) -> Column:
+def mean_table(ctx: CylonContext, table: Table, skipna: bool = True) -> Column:
     cdef shared_ptr[CCylonContext] cctx = pycylon_unwrap_context(ctx)
     cdef shared_ptr[CTable] ctable = pycylon_unwrap_table(table)
     cdef CBasicOptions options = CBasicOptions(skipna)

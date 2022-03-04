@@ -212,7 +212,7 @@ cdef api object pycylon_wrap_column(const shared_ptr[CColumn]& ccol):
     return col
 
 cdef api bint pyclon_is_scalar(object scalar):
-    return isinstance(scalar, scalar)
+    return isinstance(scalar, Scalar)
 
 cdef api shared_ptr[CScalar] pycylon_unwrap_scalar(object scalar):
     cdef Scalar s

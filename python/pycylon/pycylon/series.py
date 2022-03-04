@@ -13,23 +13,14 @@
 ##
 
 
-from typing import List
-from pycylon.data.column import Column
-import pyarrow as pa
-import numpy as np
 import pandas as pd
+from pycylon.data.column import Column
 
 
-class Series(object):
-
+class Series:
     def __init__(self, series_id: str = None, data=None):
         self._id = series_id
-        if isinstance(data, List) or isinstance(data, np.ndarray):
-            self._column = Column(pa.array(data))
-        elif isinstance(data, pa.Array):
-            self._column = Column(data)
-        else:
-            raise ValueError('Invalid data type, data must be List, Numpy NdArray or PyArrow array')
+        self._column = Column(data)
 
     @property
     def id(self):
@@ -48,15 +39,9 @@ class Series(object):
         return len(self._column.data)
 
     def __getitem__(self, item):
-        if isinstance(item, int) or isinstance(item, slice):
+        if isinstance(item, (int, slice)):
             return self._column.data[item]
-        else:
-            raise ValueError('Indexing in series is only based on numeric indices and slices')
+        raise ValueError('Indexing in series is only based on numeric indices and slices')
 
     def __repr__(self):
         return pd.Series(self.data).__repr__()
-
-
-
-
-

@@ -19,7 +19,7 @@ from pycylon.data.scalar cimport CScalar
 from pycylon.data.column cimport CColumn
 from pycylon.ctx.context cimport CCylonContext
 from libcpp.memory cimport shared_ptr
-from libcpp cimport bool as cbool
+from libcpp cimport bool as c_bool
 
 cdef extern from "../../../../cpp/src/cylon/compute/aggregate_kernels.hpp" namespace "cylon":
     cdef enum CGroupByAggregationOp 'cylon::compute::AggregationOpId':
@@ -35,11 +35,11 @@ cdef extern from "../../../../cpp/src/cylon/compute/aggregate_kernels.hpp" names
 
     cdef cppclass CBasicOptions "cylon::compute::BasicOptions":
         CBasicOptions()
-        CBasicOptions(cbool skip_nulls)
+        CBasicOptions(c_bool skip_nulls)
 
     cdef cppclass CVarKernelOptions "cylon::compute::VarKernelOptions":
         CVarKernelOptions()
-        CVarKernelOptions(int ddof, cbool skip_nulls)
+        CVarKernelOptions(int ddof, c_bool skip_nulls)
 
 
 cdef extern from "../../../../cpp/src/cylon/compute/aggregates.hpp" namespace "cylon::compute":

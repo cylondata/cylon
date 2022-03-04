@@ -13,7 +13,9 @@
 ##
 
 # distutils: language = c++
+from typing import List
 
+import numpy
 from libcpp.memory cimport shared_ptr, make_shared
 from pycylon.data.data_type cimport CDataType
 from pyarrow.lib cimport CArray as ArrowCAarray
@@ -22,12 +24,19 @@ from pycylon.api.lib cimport pycylon_wrap_data_type
 from pyarrow.lib cimport pyarrow_unwrap_array, pyarrow_wrap_array
 import pyarrow as pa
 import pycylon as pc
+import numpy as np
 
 cdef class Column:
-    def __cinit__(self, array: pa.Array = None):
+    def __cinit__(self, array = None):
         cdef shared_ptr[ArrowCAarray] carray
-        if array:
-            carray = pyarrow_unwrap_array(array)
+        if array is not None:
+            if isinstance(array, (List, np.ndarray)):
+                carray = pyarrow_unwrap_array(pa.array(array))
+            elif isinstance(array, pa.Array):
+                carray = pyarrow_unwrap_array(array)
+            else:
+                raise ValueError(f'Invalid type {type(array)}, data must be List, Numpy NdArray or '
+                                 f'PyArrow array')
             self.thisPtr = make_shared[CColumn](carray)
 
     cdef void init(self, const shared_ptr[CColumn] & data_):
