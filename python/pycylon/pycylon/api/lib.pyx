@@ -15,6 +15,10 @@
 from pycylon.data.table cimport Table
 from pycylon.data.table import Table
 from pycylon.data.table cimport CTable
+from pycylon.data.column cimport Column
+from pycylon.data.column cimport CColumn
+from pycylon.data.scalar cimport Scalar
+from pycylon.data.scalar cimport CScalar
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.ctx.context cimport CylonContext
 from pycylon.ctx.context import CylonContext
@@ -190,3 +194,35 @@ cdef api object pycylon_wrap_base_arrow_index(const shared_ptr[CBaseArrowIndex] 
     cdef BaseArrowIndex base_arrow_index = BaseArrowIndex.__new__(BaseArrowIndex)
     base_arrow_index.init(cbase_arrow_index)
     return base_arrow_index
+
+cdef api bint pyclon_is_column(object column):
+    return isinstance(column, Column)
+
+cdef api shared_ptr[CColumn] pycylon_unwrap_column(object column):
+    cdef Column col
+    if pyclon_is_column(column):
+        col = <Column> column
+        return col.thisPtr
+    else:
+        raise ValueError('Passed object is not a Cylon Column')
+
+cdef api object pycylon_wrap_column(const shared_ptr[CColumn]& ccol):
+    cdef Column col = Column()
+    col.init(ccol)
+    return col
+
+cdef api bint pyclon_is_scalar(object scalar):
+    return isinstance(scalar, Scalar)
+
+cdef api shared_ptr[CScalar] pycylon_unwrap_scalar(object scalar):
+    cdef Scalar s
+    if pyclon_is_scalar(scalar):
+        s = <Scalar> scalar
+        return s.thisPtr
+    else:
+        raise ValueError('Passed object is not a Cylon scalar')
+
+cdef api object pycylon_wrap_scalar(const shared_ptr[CScalar]& cscalar):
+    cdef Scalar s = Scalar()
+    s.init(cscalar)
+    return s

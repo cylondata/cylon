@@ -18,8 +18,9 @@
 #include <cylon/net/comm_operations.hpp>
 #include <cylon/util/macros.hpp>
 
-#include <cylon/compute/aggregates.hpp>
-#include <cylon/compute/aggregate_utils.hpp>
+#include "cylon/compute/aggregates.hpp"
+#include "cylon/compute/aggregate_utils.hpp"
+#include "cylon/arrow/arrow_types.hpp"
 
 namespace cylon {
 namespace compute {

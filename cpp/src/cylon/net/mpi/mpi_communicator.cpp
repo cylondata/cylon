@@ -23,6 +23,7 @@
 #include "cylon/util/arrow_utils.hpp"
 #include "cylon/serialize/table_serialize.hpp"
 #include "cylon/net/mpi/mpi_operations.hpp"
+#include "cylon/scalar.hpp"
 
 #include <arrow/ipc/api.h>
 #include <arrow/io/api.h>
@@ -211,18 +212,16 @@ Status BcastArrowSchema(const std::shared_ptr<CylonContext> &ctx,
   return Status::OK();
 }
 
-Status MPICommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
-                              std::shared_ptr<Table> *table,
-                              int bcast_root) const {
+Status MPICommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) const {
   std::shared_ptr<arrow::Schema> schema;
-  bool is_root = mpi::AmIRoot(bcast_root, ctx);
-  auto *pool = ToArrowPool(ctx);
+  bool is_root = mpi::AmIRoot(bcast_root, *ctx_ptr);
+  auto *pool = ToArrowPool(*ctx_ptr);
 
   if (is_root) {
     auto atable = (*table)->get_table();
     schema = atable->schema();
   }
-  RETURN_CYLON_STATUS_IF_FAILED(BcastArrowSchema(ctx, &schema, bcast_root));
+  RETURN_CYLON_STATUS_IF_FAILED(BcastArrowSchema(*ctx_ptr, &schema, bcast_root));
 
   std::shared_ptr<TableSerializer> serializer;
   if (is_root) {
@@ -232,16 +231,16 @@ Status MPICommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
   std::vector<std::shared_ptr<Buffer>> receive_buffers;
   std::vector<int32_t> data_types;
   RETURN_CYLON_STATUS_IF_FAILED(
-      mpi::Bcast(serializer, bcast_root, allocator, receive_buffers, data_types, ctx));
+      mpi::Bcast(serializer, bcast_root, allocator, receive_buffers, data_types, *ctx_ptr));
 
   if (!is_root) {
     if (receive_buffers.empty()) {
       std::shared_ptr<arrow::Table> atable;
       RETURN_CYLON_STATUS_IF_ARROW_FAILED(cylon::util::MakeEmptyArrowTable(schema, &atable, pool));
-      return Table::FromArrowTable(ctx, std::move(atable), *table);
+      return Table::FromArrowTable(*ctx_ptr, std::move(atable), *table);
     } else {
       assert((int) receive_buffers.size() == 3 * schema->num_fields());
-      RETURN_CYLON_STATUS_IF_FAILED(DeserializeTable(ctx, schema, receive_buffers, table));
+      RETURN_CYLON_STATUS_IF_FAILED(DeserializeTable(*ctx_ptr, schema, receive_buffers, table));
     }
   }
   return Status::OK();
@@ -250,6 +249,59 @@ Status MPICommunicator::Bcast(const std::shared_ptr<CylonContext> &ctx,
 MPI_Comm MPICommunicator::mpi_comm() const {
   return mpi_comm_;
 }
+
+Status MPICommunicator::AllReduce(const std::shared_ptr<Column> &values,
+                                  net::ReduceOp reduce_op,
+                                  std::shared_ptr<Column> *output) const {
+  auto *pool = ToArrowPool(*ctx_ptr);
+  const auto &arr = values->data();
+
+  auto arrow_t = arr->data()->type;
+  int byte_width = arrow::bit_width(arrow_t->id()) / 8;
+
+  if (byte_width == 0) {
+    return {Code::Invalid, "Allreduce does not support " + arrow_t->ToString()};
+  }
+
+  // all ranks should have 0 null count, and equal size.
+  // equal size can be checked using this trick https://stackoverflow.com/q/71161571/4116268
+  std::array<int64_t, 3> metadata{arr->null_count(), arr->length(), -arr->length()};
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(
+      MPI_Allreduce(MPI_IN_PLACE, metadata.data(), 3, MPI_INT64_T, MPI_MAX, mpi_comm_));
+  if (metadata[0] > 0) {
+    return {Code::Invalid, "Allreduce does not support null values"};
+  }
+  if (metadata[1] != -metadata[2]) {
+    return {Code::Invalid, "Allreduce values should be the same length in all ranks"};
+  }
+
+  int count = static_cast<int>(arr->length());
+  CYLON_ASSIGN_OR_RAISE(auto buf, arrow::AllocateBuffer(byte_width * count, pool))
+  RETURN_CYLON_STATUS_IF_FAILED(
+      mpi::AllReduce(*ctx_ptr, arr->data()->GetValues<uint8_t>(1), buf->mutable_data(), count,
+                     values->type(), reduce_op));
+
+  *output = Column::Make(arrow::MakeArray(arrow::ArrayData::Make(std::move(arrow_t),
+                                                                 count,
+                                                                 {nullptr, std::move(buf)},
+                                                                 0, 0)));
+  return Status::OK();
+}
+
+Status MPICommunicator::AllReduce(const std::shared_ptr<Scalar> &value, net::ReduceOp reduce_op,
+                                  std::shared_ptr<Scalar> *output) const {
+  CYLON_ASSIGN_OR_RAISE(auto arr,
+                        arrow::MakeArrayFromScalar(*value->data(), 1, ToArrowPool(*ctx_ptr)))
+  const auto &col = Column::Make(std::move(arr));
+  std::shared_ptr<Column> out_arr;
+  RETURN_CYLON_STATUS_IF_FAILED(AllReduce(col, reduce_op, &out_arr));
+  CYLON_ASSIGN_OR_RAISE(auto out_scal, out_arr->data()->GetScalar(0))
+  *output = Scalar::Make(std::move(out_scal));
+  return Status::OK();
+}
+
+MPICommunicator::MPICommunicator(const std::shared_ptr<CylonContext> *ctx_ptr)
+    : Communicator(ctx_ptr) {}
 
 }  // namespace net
 }  // namespace cylon

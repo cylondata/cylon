@@ -157,6 +157,10 @@ arrow::Status MakeEmptyArrowTable(const std::shared_ptr<arrow::Schema> &schema,
 bool CheckArrowTableContainsChunks(const std::shared_ptr<arrow::Table> &table,
                                    const std::vector<int> &columns = {});
 
+arrow::Status MakeDummyArray(const std::shared_ptr<arrow::DataType> &type, int64_t num_elems,
+                             std::shared_ptr<arrow::Array> *out,
+                             arrow::MemoryPool *pool = arrow::default_memory_pool());
+
 }  // namespace util
 }  // namespace cylon
 #endif  // CYLON_SRC_UTIL_ARROW_UTILS_HPP_

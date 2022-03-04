@@ -15,12 +15,7 @@
 from libcpp.string cimport string
 from libcpp cimport bool as cpp_bool
 from pycylon.common.status cimport CStatus
-from pycylon.common.status import Status
-import uuid
-from pycylon.common.join_config cimport CJoinType
-from pycylon.common.join_config cimport CJoinAlgorithm
 from pycylon.common.join_config cimport CJoinConfig
-from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_write_config cimport CCSVWriteOptions
 from pyarrow.lib cimport CTable as CArrowTable
 from pyarrow.lib cimport CArray as CArrowArray
@@ -28,9 +23,7 @@ from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from libc.stdint cimport int64_t
 from pycylon.ctx.context cimport CCylonContext
-from pycylon.ctx.context import CylonContext
 from pycylon.indexing.cyindex cimport CBaseArrowIndex
-from pycylon.indexing.cyindex import BaseArrowIndex
 
 
 cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
@@ -148,7 +141,6 @@ cdef class SortOptions:
 cdef class Table:
     cdef:
         shared_ptr[CTable] table_shd_ptr
-        shared_ptr[CTable] *table_out_shd_ptr
         shared_ptr[CCylonContext] sp_context
 
         dict __dict__
