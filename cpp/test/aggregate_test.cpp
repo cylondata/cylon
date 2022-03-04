@@ -257,7 +257,7 @@ TEMPLATE_LIST_TEST_CASE("scalar aggregate", "[compute]", ArrowNumericTypes) {
   SECTION("sum") {
     CHECK_CYLON_STATUS(compute::Sum(ctx, val, &res));
 
-//    auto exp = *arrow::MakeScalar((WORLD_SZ * (WORLD_SZ + 1) / 2) * (10 * 11 / 2))->CastTo(type);
+    // um = WORLD_SZ * (WORLD_SZ + 1) / 2) * (10 * 11 / 2)
     auto exp = *arrow::compute::Sum(global_arr)->scalar()->CastTo(type);
     CHECK_ARROW_EQUAL(exp, res->data());
   }
@@ -286,7 +286,7 @@ TEMPLATE_LIST_TEST_CASE("scalar aggregate", "[compute]", ArrowNumericTypes) {
   SECTION("mean") {
     CHECK_CYLON_STATUS(compute::Mean(ctx, val, &res));
 
-//    double mean = (WORLD_SZ + 1) * 10. * 11. / (4. * double(val->length()));
+    // mean = (WORLD_SZ + 1) * 10. * 11. / (4. * val->length());
     auto exp = arrow::compute::Mean(global_arr)->scalar();
     CHECK_ARROW_EQUAL(exp, res->data());
   }
