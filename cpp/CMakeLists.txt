@@ -234,6 +234,25 @@ if (CYLON_UCX)
     message(STATUS "UCX libs: ${UCX_LIBRARIES}")
 endif (CYLON_UCX)
 
+# gloo
+option(CYLON_GLOO "Build Cylon with Gloo" OFF)
+if (CYLON_GLOO)
+    message("Cylon Gloo enabled")
+    add_definitions(-DBUILD_CYLON_GLOO)
+
+    if (NOT GLOO_INSTALL_PREFIX)
+        message(FATAL_ERROR "CYLON_GLOO is set, GLOO_INSTALL_PREFIX should also be set")
+    endif ()
+
+    find_package(Gloo REQUIRED HINTS ${GLOO_INSTALL_PREFIX}/share/cmake/Gloo)
+    message(STATUS "gloo include dirs: ${GLOO_INCLUDE_DIRS}")
+    message(STATUS "gloo libs: ${GLOO_LIBRARIES}")
+
+    include_directories(SYSTEM ${GLOO_INCLUDE_DIRS})
+    link_directories(${GLOO_LIBRARIES})
+endif()
+
+
 # Arrow
 if (NOT ARROW_BUILD_TYPE)
     set(ARROW_BUILD_TYPE "SOURCE")

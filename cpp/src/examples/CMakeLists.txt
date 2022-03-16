@@ -39,6 +39,11 @@ macro(cylon_add_exe EXENAME)
     target_link_libraries(${EXENAME} ${ARROW_LIB})
     target_link_libraries(${EXENAME} ${GLOG_LIBRARIES})
     target_link_libraries(${EXENAME} cylon_example_utils)
+
+    if (CYLON_GLOO)
+        target_link_libraries(${EXENAME} ${GLOO_LIBRARIES})
+    endif()
+
     install(TARGETS ${EXENAME} RUNTIME DESTINATION cylon/examples)
 endmacro(cylon_add_exe)
 
@@ -66,6 +71,10 @@ cylon_add_exe(parquet_join_example)
 if (CYLON_UCX)
     cylon_add_exe(ucx_join_example)
 endif (CYLON_UCX)
+
+if (CYLON_GLOO)
+    cylon_add_exe(gloo_example)
+endif (CYLON_GLOO)
 
 macro(cylon_add_exe2 DIR EXENAME)
     add_executable(${EXENAME} ${DIR}/${EXENAME}.cpp)
