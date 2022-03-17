@@ -19,8 +19,11 @@
 #include "gloo/transport/tcp/device.h"
 #include "gloo/allreduce_ring.h"
 
-int main(int argc, char** argv) {
-  int rv;
+#include "cylon/net/gloo/gloo_communicator.hpp"
+#include "cylon/ctx/cylon_context.hpp"
+
+int main(int argc, char **argv) {
+  /*int rv;
 
   rv = MPI_Init(&argc, &argv);
   assert(rv == MPI_SUCCESS);
@@ -43,6 +46,39 @@ int main(int argc, char** argv) {
 
   rv = MPI_Finalize();
   assert(rv == MPI_SUCCESS);
-  return 0;
+  return 0;*/
+  /*v;
+
+  rv = MPI_Init(&argc, &argv);
+  assert(rv == MPI_SUCCESS);
+
+  // We'll use the TCP transport in this example
+  auto dev = gloo::transport::tcp::CreateDevice("localhost");
+
+  // Use inner scope to force destruction of context and algorithm
+  {
+    // Create Gloo context from MPI communicator
+    auto context = std::make_shared<gloo::mpi::Context>(MPI_COMM_WORLD);
+    context->connectFullMesh(dev);
+
+    // Create and run simple allreduce
+    int rank = context->rank;
+    gloo::AllreduceRing<int> allreduce(context, {&rank}, 1);
+    allreduce.run();
+    std::cout << "Result: " << rank << std::endl;
+  }
+
+  rv = MPI_Finalize();
+  assert(rv == MPI_SUCCESS);
+  return 0;*/
+  auto config = std::make_shared<cylon::net::GlooConfig>();
+  config->use_mpi = true;
+
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(config, &ctx).is_ok()){
+    return 1;
+  }
+
+  std::cout << "rank: " << ctx->GetRank() << " size " << ctx->GetWorldSize() << std::endl;
 }
 
