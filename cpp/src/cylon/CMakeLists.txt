@@ -33,8 +33,20 @@ else (CYLON_UCX)
     set(UCX_CYLON_FILES)
 endif (CYLON_UCX)
 
+if (CYLON_GLOO)
+    set(CYLON_GLOO_FILES
+            net/gloo/gloo_channel.cpp
+            net/gloo/gloo_channel.hpp
+            net/gloo/gloo_communicator.cpp
+            net/gloo/gloo_communicator.hpp
+            )
+else (CYLON_GLOO)
+    set(CYLON_GLOO_FILES)
+endif (CYLON_GLOO)
+
 add_library(cylon SHARED
         ${UCX_CYLON_FILES}
+        ${CYLON_GLOO_FILES}
         arrow/arrow_all_to_all.cpp
         arrow/arrow_all_to_all.hpp
         arrow/arrow_buffer.cpp
@@ -181,7 +193,9 @@ add_library(cylon SHARED
         util/sort.hpp
         util/to_string.hpp
         util/uuid.cpp
-        util/uuid.hpp scalar.cpp scalar.hpp)
+        util/uuid.hpp
+        scalar.cpp
+        scalar.hpp)
 
 IF(NOT MSVC)
     if(APPLE)
@@ -200,6 +214,10 @@ target_link_libraries(cylon ${PARQUET_LIB})
 
 if (CYLON_UCX)
     target_link_libraries(cylon ${UCX_LIBRARIES})
+endif ()
+
+if (CYLON_GLOO)
+    target_link_libraries(cylon ${GLOO_LIBRARIES})
 endif ()
 
 if (PYCYLON_BUILD)
