@@ -23,6 +23,7 @@
 #include "cylon/util/arrow_utils.hpp"
 #include "cylon/serialize/table_serialize.hpp"
 #include "cylon/net/mpi/mpi_operations.hpp"
+#include "cylon/net/utils.hpp"
 #include "cylon/scalar.hpp"
 
 #include <arrow/ipc/api.h>
@@ -107,26 +108,6 @@ CommType MPICommunicator::GetCommType() const {
   return MPI;
 }
 
-/*
-    |t_0, ..., t_m-1|...|t_0, ..., t_m-1|
-     <--- buf_0 --->     <--- buf_n --->
-                  to
-    |b_0, ..., b_n-1|...|b_0, ..., b_n-1|
-     <--- tbl_0 --->     <--- tbl_m --->
- */
-std::vector<int32_t> ReshapeDispToPerTable(const std::vector<std::vector<int32_t>> &all_disps) {
-  const size_t num_buf = all_disps.size();
-  const size_t num_tables = all_disps[0].size(); // == world_size
-
-  std::vector<int32_t> res(num_buf * num_tables, 0);
-  for (size_t tid = 0; tid < num_tables; tid++) {
-    for (size_t bid = 0; bid < num_buf; bid++) {
-      res[tid * num_buf + bid] = all_disps[bid][tid];
-    }
-  }
-  return res;
-}
-
 Status MPICommunicator::AllGather(const std::shared_ptr<Table> &table,
                                   std::vector<std::shared_ptr<Table>> *out) const {
   std::shared_ptr<TableSerializer> serializer;
@@ -145,8 +126,9 @@ Status MPICommunicator::AllGather(const std::shared_ptr<Table> &table,
   //  |t_0, ..., t_m-1|...|t_0, ..., t_m-1|
   //   <--- buf_0 --->     <--- buf_n --->
 
-  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather(serializer, allocator, buffer_sizes_per_table,
-                                               receive_buffers, all_disps, ctx));
+  mpi::MpiTableAllgatherImpl impl(mpi_comm_, serializer->getNumberOfBuffers());
+  RETURN_CYLON_STATUS_IF_FAILED(impl.Execute(serializer, allocator, buffer_sizes_per_table,
+                                               receive_buffers, all_disps, world_size));
 
   // need to reshape all_disps for per-table basis
   auto buffer_offsets_per_table = ReshapeDispToPerTable(all_disps);

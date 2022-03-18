@@ -15,8 +15,6 @@
 #ifndef CYLON_CPP_SRC_CYLON_NET_GLOO_GLOO_COMMUNICATOR_HPP_
 #define CYLON_CPP_SRC_CYLON_NET_GLOO_GLOO_COMMUNICATOR_HPP_
 
-#ifdef BUILD_CYLON_GLOO
-
 #ifdef GLOO_USE_MPI
 #include <mpi.h>
 #include <gloo/mpi/context.h>
@@ -58,6 +56,10 @@ class GlooConfig : public CommConfig {
   std::string store_prefix;
 
   CommType Type() override;
+
+#ifdef GLOO_USE_MPI
+  static std::shared_ptr<GlooConfig> MakeWithMpi(MPI_Comm comm = nullptr);
+#endif //GLOO_USE_MPI
 };
 
 class GlooCommunicator : public Communicator {
@@ -93,7 +95,5 @@ class GlooCommunicator : public Communicator {
 
 }
 }
-
-#endif // BUILD_CYLON_GLOO
 
 #endif //CYLON_CPP_SRC_CYLON_NET_GLOO_GLOO_COMMUNICATOR_HPP_

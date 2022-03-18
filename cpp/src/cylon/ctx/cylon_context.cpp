@@ -16,7 +16,6 @@
 #include <utility>
 #include <vector>
 #include <arrow/memory_pool.h>
-#include <cylon/net/gloo/gloo_communicator.hpp>
 
 #include "cylon/ctx/cylon_context.hpp"
 #include "cylon/util/macros.hpp"
@@ -24,6 +23,10 @@
 #include "cylon/net/mpi/mpi_communicator.hpp"
 #ifdef BUILD_CYLON_UCX
 #include "cylon/net/ucx/ucx_communicator.hpp"
+#endif
+
+#ifdef BUILD_CYLON_GLOO
+#include <cylon/net/gloo/gloo_communicator.hpp>
 #endif
 
 namespace cylon {

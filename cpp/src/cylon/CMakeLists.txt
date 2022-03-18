@@ -195,7 +195,11 @@ add_library(cylon SHARED
         util/uuid.cpp
         util/uuid.hpp
         scalar.cpp
-        scalar.hpp)
+        scalar.hpp
+        net/ops/base_ops.hpp
+        net/ops/base_ops.cpp
+        net/utils.cpp
+        net/utils.hpp)
 
 IF(NOT MSVC)
     if(APPLE)
