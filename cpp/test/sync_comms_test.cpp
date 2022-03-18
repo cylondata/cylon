@@ -111,83 +111,83 @@ TEST_CASE("all gather table", "[sync comms]") {
   }
 }
 
-// todo enable this!!!!
-//TEST_CASE("gather table", "[sync comms]") {
-//  std::shared_ptr<arrow::Schema> schema;
-//  std::shared_ptr<arrow::Table> in_table;
-//  generate_table(&schema, &in_table);
-//
-//  int gather_root = WORLD_SZ / 2;
-//
-//  auto test_gather = [&](const auto &atable) {
-//    auto table = std::make_shared<Table>(ctx, atable);
-//
-//    std::vector<std::shared_ptr<Table>> out;
-//
-//    const auto &comm = ctx->GetCommunicator();
-//    CHECK_CYLON_STATUS(comm->Gather(table, gather_root, true, &out));
-//
-//    if (gather_root == RANK) {
-//      REQUIRE((int) out.size() == WORLD_SZ);
-//
-//      INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
-//      for (int i = 0; i < WORLD_SZ; i++) {
-//        CHECK_ARROW_EQUAL(atable, out[i]->get_table());
-//      }
-//    } else {
-//      REQUIRE(out.empty());
-//    }
-//  };
-//
-//  for (const auto &atable: {in_table, in_table->Slice(3)}) {
-//    SECTION(atable.get() == in_table.get() ? "without offset" : "with offset") {
-//      test_gather(atable);
-//    }
-//  }
-//
-//  SECTION("all empty") {
-//    generate_table(&schema, &in_table, Empty);
-//    test_gather(in_table);
-//  }
-//
-//  SECTION("all null with single line") {
-//    generate_table(&schema, &in_table, Null);
-//    test_gather(in_table);
-//  }
-//
-//  SECTION("some empty") {
-//    std::shared_ptr<arrow::Table> empty_table;
-//    generate_table(&schema, &in_table, NonEmpty);
-//    generate_table(&schema, &empty_table, Empty);
-//
-//    // make even ranked tables empty
-//    std::shared_ptr<Table> table;
-//    if (RANK % 2 == 0) {
-//      table = std::make_shared<Table>(ctx, empty_table);
-//    } else {
-//      table = std::make_shared<Table>(ctx, in_table);
-//    }
-//
-//    std::vector<std::shared_ptr<Table>> out;
-//    const auto &comm = ctx->GetCommunicator();
-//    CHECK_CYLON_STATUS(comm->Gather(table, gather_root, true, &out));
-//
-//    if (gather_root == RANK) {
-//      REQUIRE((int) out.size() == WORLD_SZ);
-//
-//      INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
-//      for (int i = 0; i < WORLD_SZ; i++) {
-//        if (i % 2 == 0) {
-//          CHECK_ARROW_EQUAL(empty_table, out[i]->get_table());
-//        } else {
-//          CHECK_ARROW_EQUAL(in_table, out[i]->get_table());
-//        }
-//      }
-//    } else {
-//      REQUIRE(out.empty());
-//    }
-//  }
-//}
+TEST_CASE("gather table", "[sync comms]") {
+  std::shared_ptr<arrow::Schema> schema;
+  std::shared_ptr<arrow::Table> in_table;
+  generate_table(&schema, &in_table);
+
+  int gather_root = WORLD_SZ / 2;
+
+  auto test_gather = [&](const auto &atable) {
+    auto table = std::make_shared<Table>(ctx, atable);
+
+    std::vector<std::shared_ptr<Table>> out;
+
+    const auto &comm = ctx->GetCommunicator();
+    CHECK_CYLON_STATUS(comm->Gather(table, gather_root, true, &out));
+
+    if (gather_root == RANK) {
+      REQUIRE((int) out.size() == WORLD_SZ);
+
+      INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
+      for (int i = 0; i < WORLD_SZ; i++) {
+        INFO("Checking " + std::to_string(i) + " table")
+        CHECK_ARROW_EQUAL(atable, out[i]->get_table());
+      }
+    } else {
+      REQUIRE(out.empty());
+    }
+  };
+
+  for (const auto &atable: {in_table, in_table->Slice(3)}) {
+    SECTION(atable.get() == in_table.get() ? "without offset" : "with offset") {
+      test_gather(atable);
+    }
+  }
+
+  SECTION("all empty") {
+    generate_table(&schema, &in_table, Empty);
+    test_gather(in_table);
+  }
+
+  SECTION("all null with single line") {
+    generate_table(&schema, &in_table, Null);
+    test_gather(in_table);
+  }
+
+  SECTION("some empty") {
+    std::shared_ptr<arrow::Table> empty_table;
+    generate_table(&schema, &in_table, NonEmpty);
+    generate_table(&schema, &empty_table, Empty);
+
+    // make even ranked tables empty
+    std::shared_ptr<Table> table;
+    if (RANK % 2 == 0) {
+      table = std::make_shared<Table>(ctx, empty_table);
+    } else {
+      table = std::make_shared<Table>(ctx, in_table);
+    }
+
+    std::vector<std::shared_ptr<Table>> out;
+    const auto &comm = ctx->GetCommunicator();
+    CHECK_CYLON_STATUS(comm->Gather(table, gather_root, true, &out));
+
+    if (gather_root == RANK) {
+      REQUIRE((int) out.size() == WORLD_SZ);
+
+      INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
+      for (int i = 0; i < WORLD_SZ; i++) {
+        if (i % 2 == 0) {
+          CHECK_ARROW_EQUAL(empty_table, out[i]->get_table());
+        } else {
+          CHECK_ARROW_EQUAL(in_table, out[i]->get_table());
+        }
+      }
+    } else {
+      REQUIRE(out.empty());
+    }
+  }
+}
 //
 //TEST_CASE("bcast table", "[sync comms]") {
 //  std::shared_ptr<arrow::Schema> schema;

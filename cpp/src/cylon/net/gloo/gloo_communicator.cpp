@@ -19,14 +19,15 @@
 #include <gloo/barrier.h>
 #include <gloo/allgather.h>
 #include <gloo/allgatherv.h>
+#include <gloo/gatherv.h>
+#include <gloo/gather.h>
 
 #include "gloo_communicator.hpp"
 #include "cylon/util/macros.hpp"
 #include "cylon/net/serialize.hpp"
-#include "cylon/net/utils.hpp"
 #include "cylon/serialize/table_serialize.hpp"
-#include "cylon/arrow/arrow_buffer.hpp"
 #include "cylon/net/ops/base_ops.hpp"
+#include "cylon/net/utils.hpp"
 
 namespace cylon {
 namespace net {
@@ -98,13 +99,19 @@ CommType GlooCommunicator::GetCommType() const {
 
 class GlooTableAllgatherImpl : public TableAllgatherImpl {
  public:
-  GlooTableAllgatherImpl(const int num_buffers, const std::shared_ptr<gloo::Context> *ctx_ptr)
-      : TableAllgatherImpl(num_buffers), ctx_ptr_(ctx_ptr) {}
+  explicit GlooTableAllgatherImpl(const std::shared_ptr<gloo::Context> *ctx_ptr)
+      : TableAllgatherImpl(), ctx_ptr_(ctx_ptr) {}
 
-  Status AllgatherBufferSizes(const int32_t *send_data, int32_t *rcv_data) override {
+  void Init(int num_buffers) override {
+    CYLON_UNUSED(num_buffers);
+  }
+
+  Status AllgatherBufferSizes(const int32_t *send_data,
+                              int num_buffers,
+                              int32_t *rcv_data) override {
     gloo::AllgatherOptions opts(*ctx_ptr_);
-    opts.setInput(const_cast<int32_t *>(send_data), num_buffers_);
-    opts.setOutput(rcv_data, num_buffers_ * (*ctx_ptr_)->size);
+    opts.setInput(const_cast<int32_t *>(send_data), num_buffers);
+    opts.setOutput(rcv_data, num_buffers * (*ctx_ptr_)->size);
 
     gloo::allgather(opts);
 
@@ -118,6 +125,9 @@ class GlooTableAllgatherImpl : public TableAllgatherImpl {
                               uint8_t *recv_data,
                               const std::vector<int32_t> &recv_count,
                               const std::vector<int32_t> &displacements) override {
+    CYLON_UNUSED(buf_idx);
+    CYLON_UNUSED(displacements);
+
     gloo::AllgathervOptions opts(*ctx_ptr_);
     opts.setInput(const_cast<uint8_t *>(send_data), send_count);
     opts.setOutput(recv_data, std::vector<size_t>(recv_count.begin(), recv_count.end()));
@@ -126,7 +136,8 @@ class GlooTableAllgatherImpl : public TableAllgatherImpl {
     return Status::OK();
   }
 
-  Status WaitAll() override {
+  Status WaitAll(int num_buffers) override {
+    CYLON_UNUSED(num_buffers);
     return Status::OK();
   }
 
@@ -136,45 +147,84 @@ class GlooTableAllgatherImpl : public TableAllgatherImpl {
 
 Status GlooCommunicator::AllGather(const std::shared_ptr<Table> &table,
                                    std::vector<std::shared_ptr<Table>> *out) const {
-  std::shared_ptr<TableSerializer> serializer;
-  RETURN_CYLON_STATUS_IF_FAILED(CylonTableSerializer::Make(table, &serializer));
-  const auto &ctx = table->GetContext();
-  auto *pool = ToArrowPool(ctx);
-
-  const auto &allocator = std::make_shared<ArrowAllocator>(pool);
-  std::vector<std::shared_ptr<Buffer>> receive_buffers;
-
-  std::vector<int32_t> buffer_sizes_per_table;
-  //  |b_0, ..., b_n-1|...|b_0, ..., b_n-1|
-  //   <--- tbl_0 --->     <--- tbl_m --->
-
-  std::vector<std::vector<int32_t>> all_disps;
-  //  |t_0, ..., t_m-1|...|t_0, ..., t_m-1|
-  //   <--- buf_0 --->     <--- buf_n --->
-
-  GlooTableAllgatherImpl impl(serializer->getNumberOfBuffers(), &gloo_ctx_);
-  RETURN_CYLON_STATUS_IF_FAILED(impl.Execute(serializer,
-                                             allocator,
-                                             buffer_sizes_per_table,
-                                             receive_buffers,
-                                             all_disps,
-                                             world_size));
-
-
-  // need to reshape all_disps for per-table basis
-  auto buffer_offsets_per_table = ReshapeDispToPerTable(all_disps);
-
-  const int num_tables = (int) all_disps[0].size();
-  return DeserializeTables(ctx, table->get_table()->schema(), num_tables, receive_buffers,
-                           buffer_sizes_per_table, buffer_offsets_per_table, out);
+  GlooTableAllgatherImpl impl(&gloo_ctx_);
+  return DoTableAllgather(impl, table, out);
 }
+
+class GlooTableGatherImpl : public TableGatherImpl {
+ public:
+  explicit GlooTableGatherImpl(const std::shared_ptr<gloo::Context> *ctx_ptr)
+      : ctx_ptr_(ctx_ptr) {}
+
+  void Init(int num_buffers) override {
+    CYLON_UNUSED(num_buffers);
+  }
+
+  Status GatherBufferSizes(const int32_t *send_data,
+                           int num_buffers,
+                           int32_t *rcv_data,
+                           int gather_root) override {
+    gloo::GatherOptions opts(*ctx_ptr_);
+    opts.setInput(const_cast<int32_t *>(send_data), num_buffers);
+
+    if (gather_root == (*ctx_ptr_)->rank) {
+      opts.setOutput(rcv_data, num_buffers * (*ctx_ptr_)->size);
+    } else {
+      opts.setOutput(rcv_data, 0);
+    }
+    opts.setRoot(gather_root);
+
+    gloo::gather(opts);
+    return Status::OK();
+  }
+
+
+  Status IgatherBufferData(int buf_idx,
+                           const uint8_t *send_data,
+                           int32_t send_count,
+                           uint8_t *recv_data,
+                           const std::vector<int32_t> &recv_count,
+                           const std::vector<int32_t> &displacements,
+                           int gather_root) override {
+    CYLON_UNUSED(buf_idx);
+    CYLON_UNUSED(displacements);
+
+    gloo::GathervOptions opts(*ctx_ptr_);
+    opts.setInput(const_cast<uint8_t *>(send_data), send_count);
+
+    if (gather_root == (*ctx_ptr_)->rank) {
+      opts.setOutput(recv_data, std::vector<size_t>(recv_count.begin(), recv_count.end()));
+    } else {
+      // Note: unlike MPI, gloo gets the send_count from elementsPerRank vector. So, it needs to be
+      // sent explicitly!
+      auto counts = std::vector<size_t>((*ctx_ptr_)->size, 0);
+      counts[(*ctx_ptr_)->rank] = send_count;
+      opts.setOutput<uint8_t>(recv_data, std::move(counts));
+    }
+    opts.setRoot(gather_root);
+
+    gloo::gatherv(opts);
+
+    return Status::OK();
+  }
+
+  Status WaitAll(int num_buffers) override {
+    CYLON_UNUSED(num_buffers);
+    return Status::OK();
+  }
+
+ private:
+  const std::shared_ptr<gloo::Context> *ctx_ptr_;
+};
 
 Status GlooCommunicator::Gather(const std::shared_ptr<Table> &table,
                                 int gather_root,
                                 bool gather_from_root,
                                 std::vector<std::shared_ptr<Table>> *out) const {
-  return Status::OK();
+  GlooTableGatherImpl impl(&gloo_ctx_);
+  return DoTableGather(impl, table, gather_root, gather_from_root, out);
 }
+
 Status GlooCommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) const {
   return Status::OK();
 }

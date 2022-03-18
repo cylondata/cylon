@@ -19,15 +19,19 @@
 #include "cylon/net/buffer.hpp"
 
 namespace cylon {
+class Table;
+
 namespace net {
 
 class TableAllgatherImpl {
  public:
-  explicit TableAllgatherImpl(const int num_buffers) : num_buffers_(num_buffers) {};
-
   virtual ~TableAllgatherImpl() = default;
 
-  virtual Status AllgatherBufferSizes(const int32_t *send_data, int32_t *rcv_data) = 0;
+  virtual void Init(int num_buffers) = 0;
+
+  virtual Status AllgatherBufferSizes(const int32_t *send_data,
+                                      int num_buffers,
+                                      int32_t *rcv_data) = 0;
 
   virtual Status IallgatherBufferData(int buf_idx,
                                       const uint8_t *send_data,
@@ -36,25 +40,27 @@ class TableAllgatherImpl {
                                       const std::vector<int32_t> &recv_count,
                                       const std::vector<int32_t> &displacements) = 0;
 
-  virtual Status WaitAll() = 0;
+  virtual Status WaitAll(int num_buffers) = 0;
 
-  Status Execute(const std::shared_ptr<cylon::TableSerializer> &serializer,
+  Status Execute(const std::shared_ptr<TableSerializer> &serializer,
                  const std::shared_ptr<cylon::Allocator> &allocator,
-                 std::vector<int32_t> &all_buffer_sizes,
-                 std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
-                 std::vector<std::vector<int32_t>> &displacements,
-                 int world_size);
-
- protected:
-  const int num_buffers_;
+                 int world_size,
+                 std::vector<int32_t> *all_buffer_sizes,
+                 std::vector<std::shared_ptr<Buffer>> *received_buffers,
+                 std::vector<std::vector<int32_t>> *displacements);
 };
+Status DoTableAllgather(TableAllgatherImpl &impl,
+                        const std::shared_ptr<Table> &table,
+                        std::vector<std::shared_ptr<Table>> *out);
 
 class TableGatherImpl {
  public:
-  explicit TableGatherImpl(const int num_buffers) : num_buffers_(num_buffers) {}
   virtual ~TableGatherImpl() = default;
 
+  virtual void Init(int num_buffers) = 0;
+
   virtual cylon::Status GatherBufferSizes(const int32_t *send_data,
+                                          int num_buffers,
                                           int32_t *rcv_data,
                                           int gather_root) = 0;
 
@@ -66,21 +72,23 @@ class TableGatherImpl {
                                    const std::vector<int32_t> &displacements,
                                    int gather_root) = 0;
 
-  virtual Status WaitAll() = 0;
+  virtual Status WaitAll(int num_buffers) = 0;
 
   Status Execute(const std::shared_ptr<cylon::TableSerializer> &serializer,
+                 const std::shared_ptr<cylon::Allocator> &allocator,
+                 int rank,
+                 int world_size,
                  int gather_root,
                  bool gather_from_root,
-                 const std::shared_ptr<cylon::Allocator> &allocator,
-                 std::vector<int32_t> &all_buffer_sizes,
-                 std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
-                 std::vector<std::vector<int32_t>> &displacements,
-                 int rank,
-                 int world_size);
-
- protected:
-  const int num_buffers_;
+                 std::vector<int32_t> *all_buffer_sizes,
+                 std::vector<std::shared_ptr<cylon::Buffer>> *received_buffers,
+                 std::vector<std::vector<int32_t>> *displacements);
 };
+Status DoTableGather(TableGatherImpl &impl,
+                     const std::shared_ptr<Table> &table,
+                     int gather_root,
+                     bool gather_from_root,
+                     std::vector<std::shared_ptr<Table>> *out);
 
 }
 }

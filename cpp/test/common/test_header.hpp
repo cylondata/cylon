@@ -38,7 +38,7 @@ int RANK = 0;
 int WORLD_SZ = 0;
 
 /**
- * Args:
+ * --comm
  *  (0) no args --> defaults to mpi
  *  (1) mpi
  *  (2) gloo-mpi

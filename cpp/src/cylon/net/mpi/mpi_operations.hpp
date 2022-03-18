@@ -51,25 +51,26 @@ inline bool AmIRoot(int root, const std::shared_ptr<cylon::CylonContext> &ctx) {
 
 class MpiTableGatherImpl : public net::TableGatherImpl {
  public:
-  MpiTableGatherImpl(MPI_Comm comm, const int num_buffers)
-      : TableGatherImpl(num_buffers),
-        comm_(comm),
-        requests_(std::vector<MPI_Request>(num_buffers)),
-        statuses_(std::vector<MPI_Status>(num_buffers)) {}
+  explicit MpiTableGatherImpl(MPI_Comm comm) : TableGatherImpl(),
+                                               comm_(comm),
+                                               requests_({}),
+                                               statuses_({}) {}
+  void Init(int num_buffers) override;
 
-  cylon::Status GatherBufferSizes(const int32_t *send_data,
-                                  int32_t *rcv_data,
-                                  int gather_root) override;
+  Status GatherBufferSizes(const int32_t *send_data,
+                           int num_buffers,
+                           int32_t *rcv_data,
+                           int gather_root) override;
 
-  cylon::Status IgatherBufferData(int buf_idx,
-                                  const uint8_t *send_data,
-                                  int32_t send_count,
-                                  uint8_t *recv_data,
-                                  const std::vector<int32_t> &recv_count,
-                                  const std::vector<int32_t> &displacements,
-                                  int gather_root) override;
+  Status IgatherBufferData(int buf_idx,
+                           const uint8_t *send_data,
+                           int32_t send_count,
+                           uint8_t *recv_data,
+                           const std::vector<int32_t> &recv_count,
+                           const std::vector<int32_t> &displacements,
+                           int gather_root) override;
 
-  cylon::Status WaitAll() override;
+  Status WaitAll(int num_buffers) override;
 
  private:
   MPI_Comm comm_;
@@ -116,13 +117,13 @@ cylon::Status GatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
 
 class MpiTableAllgatherImpl : public net::TableAllgatherImpl {
  public:
-  explicit MpiTableAllgatherImpl(MPI_Comm comm, int num_buffers)
-      : TableAllgatherImpl(num_buffers),
-        comm_(comm),
-        requests_(std::vector<MPI_Request>(num_buffers)),
-        statuses_(std::vector<MPI_Status>(num_buffers)) {}
+  explicit MpiTableAllgatherImpl(MPI_Comm comm);
 
-  Status AllgatherBufferSizes(const int32_t *send_data, int32_t *rcv_data) override;
+  void Init(int num_buffers) override;
+
+  Status AllgatherBufferSizes(const int32_t *send_data,
+                              int num_buffers,
+                              int32_t *rcv_data) override;
 
   Status IallgatherBufferData(int buf_idx,
                               const uint8_t *send_data,
@@ -131,7 +132,7 @@ class MpiTableAllgatherImpl : public net::TableAllgatherImpl {
                               const std::vector<int32_t> &recv_count,
                               const std::vector<int32_t> &displacements) override;
 
-  Status WaitAll() override;
+  Status WaitAll(int num_buffers) override;
 
  private:
   MPI_Comm comm_;
