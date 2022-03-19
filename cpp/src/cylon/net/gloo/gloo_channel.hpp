@@ -27,8 +27,8 @@ class GlooChannel : public Channel {
             ChannelReceiveCallback *rcv,
             ChannelSendCallback *send,
             Allocator *alloc) override;
-  int send(std::shared_ptr<TxRequest> request) override;
-  int sendFin(std::shared_ptr<TxRequest> request) override;
+  int send(std::shared_ptr<CylonRequest> request) override;
+  int sendFin(std::shared_ptr<CylonRequest> request) override;
   void progressSends() override;
   void progressReceives() override;
   void close() override;

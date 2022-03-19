@@ -48,11 +48,11 @@ enum ReceiveStatus {
 struct PendingSend {
   //  we allow upto 8 ints for the header
   int headerBuf[CYLON_CHANNEL_HEADER_SIZE]{};
-  std::queue<std::shared_ptr<TxRequest>> pendingData;
+  std::queue<std::shared_ptr<CylonRequest>> pendingData;
   SendStatus status = SEND_INIT;
   MPI_Request request{};
   // the current send, if it is a actual send
-  std::shared_ptr<TxRequest> currentSend{};
+  std::shared_ptr<CylonRequest> currentSend{};
 };
 
 struct PendingReceive {
@@ -88,7 +88,7 @@ class MPIChannel : public Channel {
   * @param request the request
   * @return true if accepted
   */
-  int send(std::shared_ptr<TxRequest> request) override;
+  int send(std::shared_ptr<CylonRequest> request) override;
 
   /**
   * Send the message to the target.
@@ -96,7 +96,7 @@ class MPIChannel : public Channel {
   * @param request the request
   * @return true if accepted
   */
-  int sendFin(std::shared_ptr<TxRequest> request) override;
+  int sendFin(std::shared_ptr<CylonRequest> request) override;
 
   /**
    * This method, will send the messages, It will first send a message with length and then
@@ -119,7 +119,7 @@ class MPIChannel : public Channel {
   // keep track of the posted receives
   std::unordered_map<int, PendingReceive *> pendingReceives;
   // we got finish requests
-  std::unordered_map<int, std::shared_ptr<TxRequest>> finishRequests;
+  std::unordered_map<int, std::shared_ptr<CylonRequest>> finishRequests;
   // receive callback function
   ChannelReceiveCallback *rcv_fn;
   // send complete callback function

@@ -22,7 +22,7 @@
 
 #include <cylon/status.hpp>
 #include <cylon/net/mpi/mpi_channel.hpp>
-#include <cylon/net/TxRequest.hpp>
+#include <cylon/net/CylonRequest.hpp>
 
 
 namespace cylon {
@@ -52,7 +52,7 @@ void MPIChannel::init(int ed, const std::vector<int> &receives, const std::vecto
   MPI_Comm_rank(comm_, &rank);
 }
 
-int MPIChannel::send(std::shared_ptr<TxRequest> request) {
+int MPIChannel::send(std::shared_ptr<CylonRequest> request) {
   PendingSend *ps = sends[request->target];
   if (ps->pendingData.size() > MAX_PENDING) {
     return -1;
@@ -61,12 +61,12 @@ int MPIChannel::send(std::shared_ptr<TxRequest> request) {
   return 1;
 }
 
-int MPIChannel::sendFin(std::shared_ptr<TxRequest> request) {
+int MPIChannel::sendFin(std::shared_ptr<CylonRequest> request) {
   if (finishRequests.find(request->target) != finishRequests.end()) {
     return -1;
   }
 
-  finishRequests.insert(std::pair<int, std::shared_ptr<TxRequest>>(request->target, request));
+  finishRequests.insert(std::pair<int, std::shared_ptr<CylonRequest>>(request->target, request));
   return 1;
 }
 
@@ -153,7 +153,7 @@ void MPIChannel::progressSends() {
       if (flag) {
         x.second->request = {};
         // now post the actual send
-        std::shared_ptr<TxRequest> r = x.second->pendingData.front();
+        std::shared_ptr<CylonRequest> r = x.second->pendingData.front();
         MPI_Isend(r->buffer, r->length, MPI_BYTE,
                   r->target, edge, comm_, &(x.second->request));
         x.second->status = SEND_POSTED;
@@ -197,7 +197,7 @@ void MPIChannel::progressSends() {
       if (flag) {
         // LOG(INFO) << rank << " FINISHED send " << x.first;
         // we are going to send complete
-        std::shared_ptr<TxRequest> finReq = finishRequests[x.first];
+        std::shared_ptr<CylonRequest> finReq = finishRequests[x.first];
         send_comp_fn->sendFinishComplete(finReq);
         x.second->status = SEND_DONE;
       }
@@ -209,7 +209,7 @@ void MPIChannel::progressSends() {
 }
 
 void MPIChannel::sendHeader(const std::pair<const int, PendingSend *> &x) const {
-  std::shared_ptr<TxRequest> r = x.second->pendingData.front();
+  std::shared_ptr<CylonRequest> r = x.second->pendingData.front();
   // put the length to the buffer
   x.second->headerBuf[0] = r->length;
   x.second->headerBuf[1] = 0;

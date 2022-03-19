@@ -235,7 +235,7 @@ void UCXChannel::init(int ed,
   * @param request the request containing buffer, destination etc
   * @return if the request is accepted to be sent
   */
-int UCXChannel::send(std::shared_ptr<TxRequest> request) {
+int UCXChannel::send(std::shared_ptr<CylonRequest> request) {
   // Loads the pending send from sends
   PendingSend *ps = sends[request->target];
   if (ps->pendingData.size() > MAX_PENDING) {
@@ -251,7 +251,7 @@ int UCXChannel::send(std::shared_ptr<TxRequest> request) {
   * @param request the request
   * @return -1 if not accepted, 1 if accepted
   */
-int UCXChannel::sendFin(std::shared_ptr<TxRequest> request) {
+int UCXChannel::sendFin(std::shared_ptr<CylonRequest> request) {
   // Checks if the finished request is alreay in finished req
   // If so, give error
   if (finishRequests.find(request->target) != finishRequests.end()) {
@@ -259,7 +259,7 @@ int UCXChannel::sendFin(std::shared_ptr<TxRequest> request) {
   }
 
   // Add finished req to map
-  finishRequests.insert(std::pair<int, std::shared_ptr<TxRequest>>(request->target, request));
+  finishRequests.insert(std::pair<int, std::shared_ptr<CylonRequest>>(request->target, request));
   return 1;
 }
 
@@ -357,7 +357,7 @@ void UCXChannel::progressSends() {
         delete x.second->context;
 
         // Post the actual send
-        std::shared_ptr<TxRequest> r = x.second->pendingData.front();
+        std::shared_ptr<CylonRequest> r = x.second->pendingData.front();
         // Send the message
         x.second->context =  new ucx::ucxContext();
         x.second->context->completed = 0;
@@ -410,7 +410,7 @@ void UCXChannel::progressSends() {
     } else if (x.second->status == SEND_FINISH) {
       if (x.second->context->completed == 1) {
         // We are going to send complete
-        std::shared_ptr<TxRequest> finReq = finishRequests[x.first];
+        std::shared_ptr<CylonRequest> finReq = finishRequests[x.first];
         send_comp_fn->sendFinishComplete(finReq);
         x.second->status = SEND_DONE;
       }
@@ -428,12 +428,12 @@ void UCXChannel::progressSends() {
  */
 void UCXChannel::sendHeader(const std::pair<const int, PendingSend *> &x) const {
   // Get the request
-  std::shared_ptr<TxRequest> r = x.second->pendingData.front();
+  std::shared_ptr<CylonRequest> r = x.second->pendingData.front();
   // Put the length to the buffer
   x.second->headerBuf[0] = r->length;
   x.second->headerBuf[1] = 0;
 
-  // Copy data from TxRequest header to the PendingSend header
+  // Copy data from CylonRequest header to the PendingSend header
   if (r->headerLength > 0) {
     memcpy(&(x.second->headerBuf[2]),
            &(r->header[0]),

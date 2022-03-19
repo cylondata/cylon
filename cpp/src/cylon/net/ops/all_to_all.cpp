@@ -68,7 +68,7 @@ int AllToAll::insert(const void *buffer, int length, int target) {
 
   AllToAllSends *s = sends[target];
   // LOG(INFO) << "Allocating buffer " << length;
-  std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(target, buffer, length);
+  std::shared_ptr<CylonRequest> request = std::make_shared<CylonRequest>(target, buffer, length);
   s->requestQueue.push(request);
   s->messageSizes += length;
   return 1;
@@ -87,8 +87,9 @@ int AllToAll::insert(const void *buffer, int length, int target, int *header, in
 
   AllToAllSends *s = sends[target];
   // LOG(INFO) << "Allocating buffer " << length;
-  std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(target, buffer, length, header,
-                                                                   headerLength);
+  std::shared_ptr<CylonRequest>
+      request = std::make_shared<CylonRequest>(target, buffer, length, header,
+                                               headerLength);
   s->requestQueue.push(request);
   s->messageSizes += length;
   return 1;
@@ -103,7 +104,7 @@ bool AllToAll::isComplete() {
         LOG(FATAL) << "We cannot have items to send after finish sent";
       }
 
-      std::shared_ptr<TxRequest> request = w->requestQueue.front();
+      std::shared_ptr<CylonRequest> request = w->requestQueue.front();
       // if the request is accepted to be set, pop
       if (channel->send(request)) {
         w->requestQueue.pop();
@@ -115,7 +116,7 @@ bool AllToAll::isComplete() {
     if (w->requestQueue.empty() && w->pendingQueue.empty()) {
       if (finishFlag) {
         if (w->sendStatus == ALL_TO_ALL_SENDING) {
-          std::shared_ptr<TxRequest> request = std::make_shared<TxRequest>(w->target);
+          std::shared_ptr<CylonRequest> request = std::make_shared<CylonRequest>(w->target);
           if (channel->sendFin(request)) {
             // LOG(INFO) << worker_id << " Sent FIN *** " << w.first;
             w->sendStatus = ALL_TO_ALL_FINISH_SENT;
@@ -145,7 +146,7 @@ void AllToAll::receivedData(int receiveId, std::shared_ptr<Buffer> buffer, int l
   callback->onReceive(receiveId, buffer, length);
 }
 
-void AllToAll::sendComplete(std::shared_ptr<TxRequest> request) {
+void AllToAll::sendComplete(std::shared_ptr<CylonRequest> request) {
   AllToAllSends *s = sends[request->target];
   s->pendingQueue.pop();
   // we sent this request so we need to reduce memory
@@ -168,7 +169,7 @@ void AllToAll::receivedHeader(int receiveId, int finished,
   }
 }
 
-void AllToAll::sendFinishComplete(std::shared_ptr<TxRequest> request) {
+void AllToAll::sendFinishComplete(std::shared_ptr<CylonRequest> request) {
   finishedTargets.insert(request->target);
   AllToAllSends *s = sends[request->target];
   s->sendStatus = ALL_TO_ALL_FINISHED;

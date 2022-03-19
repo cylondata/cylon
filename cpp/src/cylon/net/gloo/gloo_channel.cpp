@@ -25,10 +25,10 @@ void GlooChannel::init(int edge,
                        Allocator *alloc) {
 
 }
-int GlooChannel::send(std::shared_ptr<TxRequest> request) {
+int GlooChannel::send(std::shared_ptr<CylonRequest> request) {
   return 0;
 }
-int GlooChannel::sendFin(std::shared_ptr<TxRequest> request) {
+int GlooChannel::sendFin(std::shared_ptr<CylonRequest> request) {
   return 0;
 }
 void GlooChannel::progressSends() {

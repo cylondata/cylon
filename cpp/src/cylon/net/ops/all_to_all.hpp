@@ -64,8 +64,8 @@ enum AllToAllSendStatus {
 
 struct AllToAllSends {
   int target;
-  std::queue<std::shared_ptr<TxRequest>> requestQueue;
-  std::queue<std::shared_ptr<TxRequest>> pendingQueue;
+  std::queue<std::shared_ptr<CylonRequest>> requestQueue;
+  std::queue<std::shared_ptr<CylonRequest>> pendingQueue;
   int messageSizes{};
   AllToAllSendStatus sendStatus = ALL_TO_ALL_SENDING;
 
@@ -136,7 +136,7 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
    * We implement the send callback from channel
    * @param request the original request, we can free it now
    */
-  void sendComplete(std::shared_ptr<TxRequest> request) override;
+  void sendComplete(std::shared_ptr<CylonRequest> request) override;
 
   /**
    * Receive the header, this happens before a message is received
@@ -152,7 +152,7 @@ class AllToAll : public ChannelReceiveCallback, ChannelSendCallback {
    */
   void close();
  private:
-  void sendFinishComplete(std::shared_ptr<TxRequest> request) override;
+  void sendFinishComplete(std::shared_ptr<CylonRequest> request) override;
 
  private:
   int worker_id;                 // the worker id

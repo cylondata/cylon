@@ -17,20 +17,20 @@
 #include <string>
 #include <iostream>
 
-#include <cylon/net/TxRequest.hpp>
+#include <cylon/net/CylonRequest.hpp>
 #include <cylon/util/builtins.hpp>
 
-cylon::TxRequest::TxRequest(int tgt) {
+cylon::CylonRequest::CylonRequest(int tgt) {
   target = tgt;
 }
 
-cylon::TxRequest::TxRequest(int tgt, const void *buf, int len) {
+cylon::CylonRequest::CylonRequest(int tgt, const void *buf, int len) {
   target = tgt;
   buffer = buf;
   length = len;
 }
 
-cylon::TxRequest::TxRequest(int tgt, const void *buf, int len, int *head, int hLength) {
+cylon::CylonRequest::CylonRequest(int tgt, const void *buf, int len, int *head, int hLength) {
   target = tgt;
   buffer = buf;
   length = len;
@@ -38,11 +38,11 @@ cylon::TxRequest::TxRequest(int tgt, const void *buf, int len, int *head, int hL
   headerLength = hLength;
 }
 
-cylon::TxRequest::~TxRequest() {
+cylon::CylonRequest::~CylonRequest() {
   buffer = nullptr;
 }
 
-void cylon::TxRequest::to_string(std::string dataType, int bufDepth) {
+void cylon::CylonRequest::to_string(std::string dataType, int bufDepth) {
   std::cout << "Target: " << target << std::endl;
   std::cout << "Length: " << length << std::endl;
   std::cout << "Header Length: " << headerLength << std::endl;
