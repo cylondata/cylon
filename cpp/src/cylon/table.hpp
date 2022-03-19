@@ -69,6 +69,7 @@ class Table {
    */
   static Status FromColumns(const std::shared_ptr<CylonContext> &ctx,
                             const std::vector<std::shared_ptr<Column>> &columns,
+                            const std::vector<std::string> &column_names,
                             std::shared_ptr<Table> &tableOut);
 
   /**
