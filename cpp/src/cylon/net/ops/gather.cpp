@@ -25,7 +25,7 @@
 cylon::Status cylon::mpi::MpiTableGatherImpl::GatherBufferSizes(const int32_t *send_data,
                                                                 int num_buffers,
                                                                 int32_t *rcv_data,
-                                                                int gather_root) {
+                                                                int gather_root) const {
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Gather(send_data,
                                                num_buffers,
                                                MPI_INT32_T,
@@ -151,7 +151,7 @@ cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer>
 
 cylon::Status cylon::mpi::MpiTableAllgatherImpl::AllgatherBufferSizes(const int32_t *send_data,
                                                                       int num_buffers,
-                                                                      int32_t *rcv_data) {
+                                                                      int32_t *rcv_data) const {
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Allgather(send_data,
                                                   num_buffers,
                                                   MPI_INT32_T,

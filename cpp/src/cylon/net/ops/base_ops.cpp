@@ -12,6 +12,9 @@
  * limitations under the License.
  */
 
+#include <arrow/ipc/api.h>
+#include <arrow/io/memory.h>
+
 #include "base_ops.hpp"
 #include "cylon/util/macros.hpp"
 #include "cylon/net/utils.hpp"
@@ -211,6 +214,187 @@ Status DoTableGather(TableGatherImpl &impl,
     const int num_tables = (int) all_disps[0].size();
     return DeserializeTables(ctx, table->get_table()->schema(), num_tables, receive_buffers,
                              buffer_sizes_per_table, buffer_offsets_per_table, out);
+  }
+  return Status::OK();
+}
+
+Status TableBcastImpl::Execute(const std::shared_ptr<TableSerializer> &serializer,
+                               const std::shared_ptr<Allocator> &allocator,
+                               int32_t rank,
+                               int32_t bcast_root,
+                               std::vector<std::shared_ptr<Buffer>> *received_buffers,
+                               std::vector<int32_t> *data_types) {
+  bool is_root = rank == bcast_root;
+// first broadcast the number of buffers
+  int32_t num_buffers = 0;
+  if (is_root) {
+    num_buffers = serializer->getNumberOfBuffers();
+  }
+
+//  int status = MPI_Bcast(&num_buffers, 1, MPI_INT32_T, bcast_root, comm);
+//  if (status != MPI_SUCCESS) {
+//    return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for size broadcast!");
+//  }
+  RETURN_CYLON_STATUS_IF_FAILED(BcastBufferSizes(&num_buffers, 1, bcast_root));
+
+  // broadcast buffer sizes
+  std::vector<int32_t>
+      buffer_sizes = is_root ? serializer->getBufferSizes() : std::vector<int32_t>(num_buffers, 0);
+
+  // init async ops
+  Init(num_buffers);
+
+//  status = MPI_Bcast(buffer_sizes.data(), num_buffers, MPI_INT32_T, bcast_root, comm);
+//  if (status != MPI_SUCCESS) {
+//    return cylon::Status(cylon::Code::ExecutionError, "MPI_Bcast failed for size array broadcast!");
+//  }
+  RETURN_CYLON_STATUS_IF_FAILED(BcastBufferSizes(buffer_sizes.data(), num_buffers, bcast_root));
+
+
+  // broadcast data types
+  *data_types = is_root ? serializer->getDataTypes() : std::vector<int32_t>(num_buffers / 3, 0);
+//  if (is_root) {
+//    data_types = serializer->getDataTypes();
+//  } else {
+//    data_types.resize(num_buffers / 3, 0);
+//  }
+
+//  status = MPI_Bcast(data_types.data(), data_types.size(), MPI_INT32_T, bcast_root, comm);
+//  if (status != MPI_SUCCESS) {
+//    return cylon::Status(cylon::Code::ExecutionError,
+//                         "MPI_Bcast failed for data type array broadcast!");
+//  }
+  RETURN_CYLON_STATUS_IF_FAILED(BcastBufferSizes(data_types->data(),
+                                                 data_types->size(),
+                                                 bcast_root));
+
+
+  // if all buffer sizes are zero, there are zero rows in the table
+  // no need to broadcast any buffers
+  if (std::all_of(buffer_sizes.begin(), buffer_sizes.end(), [](int32_t i) { return i == 0; })) {
+    return cylon::Status::OK();
+  }
+
+//  std::vector<MPI_Request> requests(num_buffers);
+//  std::vector<MPI_Status> statuses(num_buffers);
+  std::vector<const uint8_t *> send_buffers{};
+  if (is_root) {
+    send_buffers = serializer->getDataBuffers();
+  } else {
+    received_buffers->reserve(num_buffers);
+  }
+
+  for (int32_t i = 0; i < num_buffers; ++i) {
+    if (is_root) {
+//      status = MPI_Ibcast(const_cast<uint8_t *>(send_buffers[i]),
+//                          buffer_sizes[i],
+//                          MPI_UINT8_T,
+//                          bcast_root,
+//                          comm,
+//                          &requests[i]);
+//      if (status != MPI_SUCCESS) {
+//        return cylon::Status(cylon::Code::ExecutionError, "MPI_Ibast failed!");
+//      }
+      RETURN_CYLON_STATUS_IF_FAILED(IbcastBufferData(i,
+                                                     const_cast<uint8_t *>(send_buffers[i]),
+                                                     buffer_sizes[i],
+                                                     bcast_root));
+    } else {
+      std::shared_ptr<cylon::Buffer> receive_buf;
+      RETURN_CYLON_STATUS_IF_FAILED(allocator->Allocate(buffer_sizes[i], &receive_buf));
+
+//      status = MPI_Ibcast(receive_buf->GetByteBuffer(),
+//                          buffer_sizes[i],
+//                          MPI_UINT8_T,
+//                          bcast_root,
+//                          comm,
+//                          &requests[i]);
+//      if (status != MPI_SUCCESS) {
+//        return cylon::Status(cylon::Code::ExecutionError, "MPI_Ibast failed!");
+//      }
+      RETURN_CYLON_STATUS_IF_FAILED(IbcastBufferData(i,
+                                                     receive_buf->GetByteBuffer(),
+                                                     buffer_sizes[i],
+                                                     bcast_root));
+      received_buffers->push_back(std::move(receive_buf));
+    }
+  }
+
+//  status = MPI_Waitall(num_buffers, requests.data(), statuses.data());
+//  if (status != MPI_SUCCESS) {
+//    return cylon::Status(cylon::Code::ExecutionError, "MPI_Ibast failed when waiting!");
+//  }
+//
+//  return cylon::Status::OK();
+
+  return WaitAll(num_buffers);
+}
+
+Status BcastArrowSchema(TableBcastImpl &impl, std::shared_ptr<arrow::Schema> *schema,
+                        int32_t bcast_root, bool is_root, arrow::MemoryPool *pool) {
+  std::shared_ptr<arrow::Buffer> buf;
+  if (is_root) {
+    CYLON_ASSIGN_OR_RAISE(buf, arrow::ipc::SerializeSchema(**schema, pool))
+  }
+
+  // bcast buffer size
+  int32_t buf_size = is_root ? (int32_t) buf->size() : 0;
+  RETURN_CYLON_STATUS_IF_FAILED(impl.BcastBufferSizes(&buf_size, 1, bcast_root));
+
+  if (!is_root) { // if not root, allocate a buffer for incoming data
+    CYLON_ASSIGN_OR_RAISE(buf, arrow::AllocateBuffer(buf_size));
+  }
+
+  // now bcast buffer data
+  RETURN_CYLON_STATUS_IF_FAILED(impl.BcastBufferData(buf->mutable_data(), buf_size, bcast_root));
+
+  if (!is_root) {
+    assert(buf->data());
+    arrow::io::BufferReader buf_reader(std::move(buf));
+    CYLON_ASSIGN_OR_RAISE(*schema, arrow::ipc::ReadSchema(&buf_reader, nullptr))
+  }
+
+  return Status::OK();
+}
+
+Status DoTableBcast(TableBcastImpl &impl, std::shared_ptr<Table> *table, int bcast_root,
+                    const std::shared_ptr<CylonContext> &ctx) {
+  std::shared_ptr<arrow::Schema> schema;
+  bool is_root = bcast_root == ctx->GetRank();
+  auto *pool = ToArrowPool(ctx);
+
+  if (is_root) {
+    auto atable = (*table)->get_table();
+    schema = atable->schema();
+  }
+
+  // first, broadcast schema
+  RETURN_CYLON_STATUS_IF_FAILED(BcastArrowSchema(impl, &schema, bcast_root, is_root, pool));
+
+  std::shared_ptr<TableSerializer> serializer;
+  if (is_root) {
+    RETURN_CYLON_STATUS_IF_FAILED(CylonTableSerializer::Make(*table, &serializer));
+  }
+  const auto &allocator = std::make_shared<ArrowAllocator>(pool);
+  std::vector<std::shared_ptr<Buffer>> receive_buffers;
+  std::vector<int32_t> data_types;
+
+  RETURN_CYLON_STATUS_IF_FAILED(impl.Execute(serializer,
+                                             allocator,
+                                             ctx->GetRank(),
+                                             bcast_root,
+                                             &receive_buffers,
+                                             &data_types));
+
+  if (!is_root) {
+    if (receive_buffers.empty()) {
+      std::shared_ptr<arrow::Table> atable;
+      RETURN_CYLON_STATUS_IF_ARROW_FAILED(cylon::util::MakeEmptyArrowTable(schema, &atable, pool));
+      return Table::FromArrowTable(ctx, std::move(atable), *table);
+    } else {
+      assert((int) receive_buffers.size() == 3 * schema->num_fields());
+      RETURN_CYLON_STATUS_IF_FAILED(DeserializeTable(ctx, schema, receive_buffers, table));
+    }
   }
   return Status::OK();
 }

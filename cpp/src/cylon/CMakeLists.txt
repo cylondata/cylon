@@ -39,7 +39,8 @@ if (CYLON_GLOO)
             net/gloo/gloo_channel.hpp
             net/gloo/gloo_communicator.cpp
             net/gloo/gloo_communicator.hpp
-            )
+            net/gloo/gloo_operations.cpp
+            net/gloo/gloo_operations.hpp)
 else (CYLON_GLOO)
     set(CYLON_GLOO_FILES)
 endif (CYLON_GLOO)
