@@ -54,10 +54,10 @@ class TableAllgatherImpl {
                  std::vector<int32_t> *all_buffer_sizes,
                  std::vector<std::shared_ptr<Buffer>> *received_buffers,
                  std::vector<std::vector<int32_t>> *displacements);
+
+  Status Execute(const std::shared_ptr<Table> &table,
+                 std::vector<std::shared_ptr<Table>> *out);
 };
-Status DoTableAllgather(TableAllgatherImpl &impl,
-                        const std::shared_ptr<Table> &table,
-                        std::vector<std::shared_ptr<Table>> *out);
 
 class TableGatherImpl {
  public:
@@ -89,12 +89,12 @@ class TableGatherImpl {
                  std::vector<int32_t> *all_buffer_sizes,
                  std::vector<std::shared_ptr<Buffer>> *received_buffers,
                  std::vector<std::vector<int32_t>> *displacements);
+
+  Status Execute(                 const std::shared_ptr<Table> &table,
+                 int32_t gather_root,
+                 bool gather_from_root,
+                 std::vector<std::shared_ptr<Table>> *out);
 };
-Status DoTableGather(TableGatherImpl &impl,
-                     const std::shared_ptr<Table> &table,
-                     int32_t gather_root,
-                     bool gather_from_root,
-                     std::vector<std::shared_ptr<Table>> *out);
 
 class TableBcastImpl {
  public:
@@ -123,10 +123,10 @@ class TableBcastImpl {
                  int32_t bcast_root,
                  std::vector<std::shared_ptr<Buffer>> *received_buffers,
                  std::vector<int32_t> *data_types);
-};
 
-Status DoTableBcast(TableBcastImpl &impl, std::shared_ptr<Table> *table, int bcast_root,
-                    const std::shared_ptr<CylonContext> &ctx);
+  Status Execute(std::shared_ptr<Table> *table, int bcast_root,
+                      const std::shared_ptr<CylonContext> &ctx);
+};
 
 class AllReduceImpl {
  public:

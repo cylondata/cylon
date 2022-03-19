@@ -97,7 +97,7 @@ CommType GlooCommunicator::GetCommType() const {
 Status GlooCommunicator::AllGather(const std::shared_ptr<Table> &table,
                                    std::vector<std::shared_ptr<Table>> *out) const {
   GlooTableAllgatherImpl impl(&gloo_ctx_);
-  return DoTableAllgather(impl, table, out);
+  return impl.Execute(table, out);
 }
 
 Status GlooCommunicator::Gather(const std::shared_ptr<Table> &table,
@@ -105,12 +105,12 @@ Status GlooCommunicator::Gather(const std::shared_ptr<Table> &table,
                                 bool gather_from_root,
                                 std::vector<std::shared_ptr<Table>> *out) const {
   GlooTableGatherImpl impl(&gloo_ctx_);
-  return DoTableGather(impl, table, gather_root, gather_from_root, out);
+  return impl.Execute(table, gather_root, gather_from_root, out);
 }
 
 Status GlooCommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) const {
   GlooTableBcastImpl impl(&gloo_ctx_);
-  return DoTableBcast(impl, table, bcast_root, *ctx_ptr);
+  return impl.Execute(table, bcast_root, *ctx_ptr);
 }
 
 Status GlooCommunicator::AllReduce(const std::shared_ptr<Column> &values,

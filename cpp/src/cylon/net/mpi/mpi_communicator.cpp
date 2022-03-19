@@ -105,7 +105,7 @@ CommType MPICommunicator::GetCommType() const {
 Status MPICommunicator::AllGather(const std::shared_ptr<Table> &table,
                                   std::vector<std::shared_ptr<Table>> *out) const {
   mpi::MpiTableAllgatherImpl impl(mpi_comm_);
-  return DoTableAllgather(impl, table, out);
+  return impl.Execute(table, out);
 }
 
 Status MPICommunicator::Gather(const std::shared_ptr<Table> &table,
@@ -113,12 +113,12 @@ Status MPICommunicator::Gather(const std::shared_ptr<Table> &table,
                                bool gather_from_root,
                                std::vector<std::shared_ptr<Table>> *out) const {
   mpi::MpiTableGatherImpl impl(mpi_comm_);
-  return DoTableGather(impl, table, gather_root, gather_from_root, out);
+  return impl.Execute(table, gather_root, gather_from_root, out);
 }
 
 Status MPICommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) const {
   mpi::MpiTableBcastImpl impl(mpi_comm_);
-  return DoTableBcast(impl, table, bcast_root, *ctx_ptr);
+  return impl.Execute(table, bcast_root, *ctx_ptr);
 }
 
 MPI_Comm MPICommunicator::mpi_comm() const {

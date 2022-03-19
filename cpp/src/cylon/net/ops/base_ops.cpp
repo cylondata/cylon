@@ -72,9 +72,8 @@ Status TableAllgatherImpl::Execute(const std::shared_ptr<TableSerializer> &seria
   return WaitAll(num_buffers);
 }
 
-Status DoTableAllgather(TableAllgatherImpl &impl,
-                        const std::shared_ptr<Table> &table,
-                        std::vector<std::shared_ptr<Table>> *out) {
+Status TableAllgatherImpl::Execute(const std::shared_ptr<Table> &table,
+                                   std::vector<std::shared_ptr<Table>> *out) {
   std::shared_ptr<TableSerializer> serializer;
   RETURN_CYLON_STATUS_IF_FAILED(CylonTableSerializer::Make(table, &serializer));
   const auto &ctx = table->GetContext();
@@ -91,12 +90,12 @@ Status DoTableAllgather(TableAllgatherImpl &impl,
   //  |t_0, ..., t_m-1|...|t_0, ..., t_m-1|
   //   <--- buf_0 --->     <--- buf_n --->
 
-  RETURN_CYLON_STATUS_IF_FAILED(impl.Execute(serializer,
-                                             allocator,
-                                             ctx->GetWorldSize(),
-                                             &buffer_sizes_per_table,
-                                             &receive_buffers,
-                                             &all_disps));
+  RETURN_CYLON_STATUS_IF_FAILED(Execute(serializer,
+                                        allocator,
+                                        ctx->GetWorldSize(),
+                                        &buffer_sizes_per_table,
+                                        &receive_buffers,
+                                        &all_disps));
 
 
   // need to reshape all_disps for per-table basis
@@ -179,11 +178,10 @@ Status TableGatherImpl::Execute(const std::shared_ptr<cylon::TableSerializer> &s
   return WaitAll(num_buffers);
 }
 
-Status DoTableGather(TableGatherImpl &impl,
-                     const std::shared_ptr<Table> &table,
-                     int gather_root,
-                     bool gather_from_root,
-                     std::vector<std::shared_ptr<Table>> *out) {
+Status TableGatherImpl::Execute(const std::shared_ptr<Table> &table,
+                                int gather_root,
+                                bool gather_from_root,
+                                std::vector<std::shared_ptr<Table>> *out) {
   std::shared_ptr<TableSerializer> serializer;
   RETURN_CYLON_STATUS_IF_FAILED(CylonTableSerializer::Make(table, &serializer));
   const auto &ctx = table->GetContext();
@@ -200,15 +198,9 @@ Status DoTableGather(TableGatherImpl &impl,
   //  |t_0, ..., t_m-1|...|t_0, ..., t_m-1|
   //   <--- buf_0 --->     <--- buf_n --->
 
-  RETURN_CYLON_STATUS_IF_FAILED(impl.Execute(serializer,
-                                             allocator,
-                                             ctx->GetRank(),
-                                             ctx->GetWorldSize(),
-                                             gather_root,
-                                             gather_from_root,
-                                             &buffer_sizes_per_table,
-                                             &receive_buffers,
-                                             &all_disps));
+  RETURN_CYLON_STATUS_IF_FAILED(Execute(serializer, allocator, ctx->GetRank(), ctx->GetWorldSize(),
+                                        gather_root, gather_from_root,
+                                        &buffer_sizes_per_table, &receive_buffers, &all_disps));
 
   // need to reshape all_disps for per-table basis
   if (gather_root == ctx->GetRank()) {
@@ -302,8 +294,8 @@ Status BcastArrowSchema(TableBcastImpl &impl, std::shared_ptr<arrow::Schema> *sc
   return Status::OK();
 }
 
-Status DoTableBcast(TableBcastImpl &impl, std::shared_ptr<Table> *table, int bcast_root,
-                    const std::shared_ptr<CylonContext> &ctx) {
+Status TableBcastImpl::Execute(std::shared_ptr<Table> *table, int bcast_root,
+                               const std::shared_ptr<CylonContext> &ctx) {
   std::shared_ptr<arrow::Schema> schema;
   bool is_root = bcast_root == ctx->GetRank();
   auto *pool = ToArrowPool(ctx);
@@ -314,7 +306,7 @@ Status DoTableBcast(TableBcastImpl &impl, std::shared_ptr<Table> *table, int bca
   }
 
   // first, broadcast schema
-  RETURN_CYLON_STATUS_IF_FAILED(BcastArrowSchema(impl, &schema, bcast_root, is_root, pool));
+  RETURN_CYLON_STATUS_IF_FAILED(BcastArrowSchema(*this, &schema, bcast_root, is_root, pool));
 
   std::shared_ptr<TableSerializer> serializer;
   if (is_root) {
@@ -324,12 +316,12 @@ Status DoTableBcast(TableBcastImpl &impl, std::shared_ptr<Table> *table, int bca
   std::vector<std::shared_ptr<Buffer>> receive_buffers;
   std::vector<int32_t> data_types;
 
-  RETURN_CYLON_STATUS_IF_FAILED(impl.Execute(serializer,
-                                             allocator,
-                                             ctx->GetRank(),
-                                             bcast_root,
-                                             &receive_buffers,
-                                             &data_types));
+  RETURN_CYLON_STATUS_IF_FAILED(Execute(serializer,
+                                        allocator,
+                                        ctx->GetRank(),
+                                        bcast_root,
+                                        &receive_buffers,
+                                        &data_types));
 
   if (!is_root) {
     if (receive_buffers.empty()) {
