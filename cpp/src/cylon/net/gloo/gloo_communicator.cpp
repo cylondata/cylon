@@ -116,13 +116,15 @@ Status GlooCommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) co
 Status GlooCommunicator::AllReduce(const std::shared_ptr<Column> &values,
                                    net::ReduceOp reduce_op,
                                    std::shared_ptr<Column> *output) const {
-  return Status::OK();
+  GlooAllReduceImpl impl(&gloo_ctx_);
+  return impl.Execute(values, reduce_op, output, (*ctx_ptr)->GetMemoryPool());
 }
 
 Status GlooCommunicator::AllReduce(const std::shared_ptr<Scalar> &value,
                                    net::ReduceOp reduce_op,
                                    std::shared_ptr<Scalar> *output) const {
-  return Status::OK();
+  GlooAllReduceImpl impl(&gloo_ctx_);
+  return impl.Execute(value, reduce_op, output, (*ctx_ptr)->GetMemoryPool());
 }
 
 GlooCommunicator::GlooCommunicator(const std::shared_ptr<CylonContext> *ctx_ptr)

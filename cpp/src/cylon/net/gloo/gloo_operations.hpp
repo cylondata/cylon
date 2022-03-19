@@ -80,12 +80,28 @@ class GlooTableBcastImpl : public TableBcastImpl {
   void Init(int32_t num_buffers) override;
 
   Status BcastBufferSizes(int32_t *buffer, int32_t count, int32_t bcast_root) const override;
+
   Status BcastBufferData(uint8_t *buf_data, int32_t send_count, int32_t bcast_root) const override;
+
   Status IbcastBufferData(int32_t buf_idx,
                           uint8_t *buf_data,
                           int32_t send_count,
                           int32_t bcast_root) override;
+
   Status WaitAll(int32_t num_buffers) override;
+ private:
+  const std::shared_ptr<gloo::Context> *ctx_ptr_;
+};
+
+class GlooAllReduceImpl : public AllReduceImpl {
+ public:
+  explicit GlooAllReduceImpl(const std::shared_ptr<gloo::Context> *ctx_ptr)
+      : ctx_ptr_(ctx_ptr) {}
+
+  Status AllReduceBuffer(const void *send_buf, void *rcv_buf, int count,
+                         const std::shared_ptr<DataType> &data_type,
+                         ReduceOp reduce_op) const override;
+
  private:
   const std::shared_ptr<gloo::Context> *ctx_ptr_;
 };

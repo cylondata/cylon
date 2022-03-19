@@ -17,10 +17,15 @@
 
 #include "cylon/net/serialize.hpp"
 #include "cylon/net/buffer.hpp"
+#include "cylon/data_types.hpp"
+#include "cylon/net/comm_operations.hpp"
+#include "cylon/column.hpp"
 
 namespace cylon {
-class Table;
 class CylonContext;
+class Table;
+class Column;
+class Scalar;
 
 namespace net {
 
@@ -122,6 +127,23 @@ class TableBcastImpl {
 
 Status DoTableBcast(TableBcastImpl &impl, std::shared_ptr<Table> *table, int bcast_root,
                     const std::shared_ptr<CylonContext> &ctx);
+
+class AllReduceImpl {
+ public:
+  virtual ~AllReduceImpl() = default;
+
+  virtual Status AllReduceBuffer(const void *send_buf,
+                                 void *rcv_buf,
+                                 int count,
+                                 const std::shared_ptr<DataType> &data_type,
+                                 ReduceOp reduce_op) const = 0;
+
+  Status Execute(const std::shared_ptr<Column> &values, net::ReduceOp reduce_op,
+                 std::shared_ptr<Column> *output, MemoryPool *pool = nullptr) const;
+
+  Status Execute(const std::shared_ptr<Scalar> &value, net::ReduceOp reduce_op,
+                 std::shared_ptr<Scalar> *output, MemoryPool *pool = nullptr) const;
+};
 
 }
 }

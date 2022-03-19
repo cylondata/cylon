@@ -14,9 +14,11 @@
 
 #include <gloo/allgather.h>
 #include <gloo/allgatherv.h>
+#include <gloo/allreduce.h>
 #include <gloo/broadcast.h>
 #include <gloo/gatherv.h>
 #include <gloo/gather.h>
+#include <gloo/math.h>
 
 #include "gloo_operations.hpp"
 #include "cylon/util/macros.hpp"
@@ -164,6 +166,139 @@ Status GlooTableBcastImpl::IbcastBufferData(int32_t buf_idx,
 Status GlooTableBcastImpl::WaitAll(int32_t num_buffers) {
   CYLON_UNUSED(num_buffers);
   return Status::OK();
+}
+
+template<typename T>
+gloo::AllreduceOptions::Func get_reduce_func(ReduceOp op) {
+  void (*func)(void *, const void *, const void *, size_t);
+  switch (op) {
+    case SUM:func = &gloo::sum<T>;
+      return func;
+    case MIN:func = &gloo::min<T>;
+      return func;
+    case MAX:func = &gloo::max<T>;
+      return func;
+    case PROD:func = &gloo::product<T>;
+      return func;
+    case LAND:
+    case LOR:
+    case BAND:
+    case BOR:return nullptr;
+  }
+  return nullptr;
+}
+
+template<typename T>
+Status all_reduce_buffer(const std::shared_ptr<gloo::Context> &ctx,
+                         const void *send_buf,
+                         void *rcv_buf,
+                         int count,
+                         ReduceOp reduce_op) {
+  gloo::AllreduceOptions opts(ctx);
+  opts.setReduceFunction(get_reduce_func<T>(reduce_op));
+
+  opts.template setInput<T>(const_cast<T *>((const T *) send_buf), count);
+  opts.template setOutput<T>((T *) rcv_buf, count);
+
+  gloo::allreduce(opts);
+  return Status::OK();
+}
+
+Status GlooAllReduceImpl::AllReduceBuffer(const void *send_buf, void *rcv_buf, int count,
+                                          const std::shared_ptr<DataType> &data_type,
+                                          ReduceOp reduce_op) const {
+  switch (data_type->getType()) {
+    case Type::BOOL:break;
+    case Type::UINT8:
+      return all_reduce_buffer<uint8_t>(*ctx_ptr_,
+                                        send_buf,
+                                        rcv_buf,
+                                        count,
+                                        reduce_op);
+    case Type::INT8:
+      return all_reduce_buffer<int8_t>(*ctx_ptr_,
+                                       send_buf,
+                                       rcv_buf,
+                                       count,
+                                       reduce_op);
+    case Type::UINT16:
+      return all_reduce_buffer<uint16_t>(*ctx_ptr_,
+                                         send_buf,
+                                         rcv_buf,
+                                         count,
+                                         reduce_op);
+    case Type::INT16:
+      return all_reduce_buffer<int16_t>(*ctx_ptr_,
+                                        send_buf,
+                                        rcv_buf,
+                                        count,
+                                        reduce_op);
+    case Type::UINT32:
+      return all_reduce_buffer<uint32_t>(*ctx_ptr_,
+                                         send_buf,
+                                         rcv_buf,
+                                         count,
+                                         reduce_op);
+    case Type::INT32:
+      return all_reduce_buffer<int32_t>(*ctx_ptr_,
+                                        send_buf,
+                                        rcv_buf,
+                                        count,
+                                        reduce_op);
+    case Type::UINT64:
+      return all_reduce_buffer<uint64_t>(*ctx_ptr_,
+                                         send_buf,
+                                         rcv_buf,
+                                         count,
+                                         reduce_op);
+    case Type::INT64:
+      return all_reduce_buffer<int64_t>(*ctx_ptr_,
+                                        send_buf,
+                                        rcv_buf,
+                                        count,
+                                        reduce_op);
+    case Type::HALF_FLOAT:break;
+    case Type::FLOAT:
+      return all_reduce_buffer<float>(*ctx_ptr_,
+                                      send_buf,
+                                      rcv_buf,
+                                      count,
+                                      reduce_op);
+    case Type::DOUBLE:
+      return all_reduce_buffer<double>(*ctx_ptr_,
+                                       send_buf,
+                                       rcv_buf,
+                                       count,
+                                       reduce_op);
+    case Type::DATE32:
+    case Type::TIME32:
+      return all_reduce_buffer<uint32_t>(*ctx_ptr_,
+                                         send_buf,
+                                         rcv_buf,
+                                         count,
+                                         reduce_op);
+    case Type::DATE64:
+    case Type::TIMESTAMP:
+    case Type::TIME64:
+      return all_reduce_buffer<uint64_t>(*ctx_ptr_,
+                                         send_buf,
+                                         rcv_buf,
+                                         count,
+                                         reduce_op);
+    case Type::STRING:break;
+    case Type::BINARY:break;
+    case Type::FIXED_SIZE_BINARY:break;
+    case Type::INTERVAL:break;
+    case Type::DECIMAL:break;
+    case Type::LIST:break;
+    case Type::EXTENSION:break;
+    case Type::FIXED_SIZE_LIST:break;
+    case Type::DURATION:break;
+    case Type::LARGE_STRING:break;
+    case Type::LARGE_BINARY:break;
+    case Type::MAX_ID:break;
+  }
+  return {Code::NotImplemented, "allreduce not implemented for type"};
 }
 }
 }
