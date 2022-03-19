@@ -13,3 +13,32 @@
  */
 
 #include "gloo_channel.hpp"
+
+namespace cylon {
+namespace net {
+
+void GlooChannel::init(int edge,
+                       const std::vector<int> &receives,
+                       const std::vector<int> &sendIds,
+                       ChannelReceiveCallback *rcv,
+                       ChannelSendCallback *send,
+                       Allocator *alloc) {
+
+}
+int GlooChannel::send(std::shared_ptr<TxRequest> request) {
+  return 0;
+}
+int GlooChannel::sendFin(std::shared_ptr<TxRequest> request) {
+  return 0;
+}
+void GlooChannel::progressSends() {
+
+}
+void GlooChannel::progressReceives() {
+
+}
+void GlooChannel::close() {
+
+}
+}
+}

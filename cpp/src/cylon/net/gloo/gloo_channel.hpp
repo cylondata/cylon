@@ -14,4 +14,27 @@
 #ifndef CYLON_CPP_SRC_CYLON_NET_GLOO_GLOO_CHANNEL_HPP_
 #define CYLON_CPP_SRC_CYLON_NET_GLOO_GLOO_CHANNEL_HPP_
 
+#include "cylon/net/channel.hpp"
+
+namespace cylon {
+namespace net {
+
+class GlooChannel : public Channel {
+ public:
+  void init(int edge,
+            const std::vector<int> &receives,
+            const std::vector<int> &sendIds,
+            ChannelReceiveCallback *rcv,
+            ChannelSendCallback *send,
+            Allocator *alloc) override;
+  int send(std::shared_ptr<TxRequest> request) override;
+  int sendFin(std::shared_ptr<TxRequest> request) override;
+  void progressSends() override;
+  void progressReceives() override;
+  void close() override;
+};
+
+}
+}
+
 #endif //CYLON_CPP_SRC_CYLON_NET_GLOO_GLOO_CHANNEL_HPP_
