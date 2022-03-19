@@ -25,10 +25,7 @@ namespace cylon {
  */
 class MemoryPool {
  public:
-  virtual ~MemoryPool();
-
-  /// \brief EXPERIMENTAL. Create a new instance of the default MemoryPool
-  static std::unique_ptr<MemoryPool> CreateDefault();
+  virtual ~MemoryPool() = default;
 
   /// Allocate a new memory region of at least size bytes.
   ///
@@ -57,13 +54,11 @@ class MemoryPool {
   ///
   /// \return Maximum bytes allocated. If not known (or not implemented),
   /// returns -1
-  virtual int64_t max_memory() const;
+  virtual int64_t max_memory() const = 0;
 
   /// The name of the backend used by this MemoryPool (e.g. "system" or "jemalloc");
   virtual std::string backend_name() const = 0;
 
- protected:
-  MemoryPool();
 };
 }
 
