@@ -346,23 +346,6 @@ Status Sort(const std::shared_ptr<Table> &table, const std::vector<int32_t> &sor
             std::shared_ptr<cylon::Table> &out, const std::vector<bool> &sort_direction);
 
 /**
- * perform distributed sort on provided table
- * @param table
- * @param sort_columns sort based on these columns
- * @param sort_direction Sort direction 'true' indicates ascending ordering and false indicate descending ordering.
- * @param ctx
- * @param sorted_table resulting table
- * @param sort_root the worker that will determine the global split points
- * @param nulls_after ????
- * @return
- */
-Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
-                      const std::vector<int32_t> &sort_columns,
-                      const std::vector<bool> &sort_direction,
-                      std::shared_ptr<cylon::Table> &output,
-                      const int sort_root = 0);
-
-/**
  * Sort the table according to the given column, this is a local sort (if the table has chunked
  * columns, they will be merged in the output table)
  * @param sort_column
