@@ -13,50 +13,45 @@
 ##
 
 # distutils: language = c++
-
 from typing import List
-from libcpp.string cimport string
-from libcpp cimport bool
-from pycylon.common.status cimport CStatus
-from pycylon.common.status import Status
-from libcpp.memory cimport shared_ptr, make_shared
-from libcpp.vector cimport vector
-from pycylon.ctx.context cimport CCylonContext
-from pycylon.ctx.context import CylonContext
-from pycylon.data.data_type cimport CDataType
-from pycylon.data.data_type cimport DataType
-from pycylon.data.data_type cimport CType
-from pycylon.data.data_type cimport CLayout
-from pyarrow.lib cimport CArray as ArrowCAarray
-from pyarrow.lib cimport CChunkedArray as ArrowCChunkedAarray
-from pyarrow.lib cimport pyarrow_unwrap_array
-from pycylon.data.column cimport CColumn
-from pycylon.api.lib cimport pycylon_unwrap_data_type, pycylon_wrap_data_type
-from pycylon.data.data_type import DataType
-from pyarrow.lib cimport pyarrow_unwrap_array, pyarrow_wrap_array
 
+import numpy
+from libcpp.memory cimport shared_ptr, make_shared
+from pycylon.data.data_type cimport CDataType
+from pyarrow.lib cimport CArray as ArrowCAarray
+from pycylon.data.column cimport CColumn
+from pycylon.api.lib cimport pycylon_wrap_data_type
+from pyarrow.lib cimport pyarrow_unwrap_array, pyarrow_wrap_array
+import pyarrow as pa
+import pycylon as pc
+import numpy as np
 
 cdef class Column:
+    def __cinit__(self, array = None):
+        cdef shared_ptr[ArrowCAarray] carray
+        if array is not None:
+            if isinstance(array, (List, np.ndarray)):
+                carray = pyarrow_unwrap_array(pa.array(array))
+            elif isinstance(array, pa.Array):
+                carray = pyarrow_unwrap_array(array)
+            else:
+                raise ValueError(f'Invalid type {type(array)}, data must be List, Numpy NdArray or '
+                                 f'PyArrow array')
+            self.thisPtr = make_shared[CColumn](carray)
 
-    def __cinit__(self, id:str, dtype: DataType, array):
-       cdef string cid = id.encode()
-       cdef shared_ptr[CDataType] cdt = pycylon_unwrap_data_type(dtype)
-       cdef shared_ptr[ArrowCAarray] ca = pyarrow_unwrap_array(array)
-       self.thisPtr = new CColumn(cid, cdt, ca)
+    cdef void init(self, const shared_ptr[CColumn] & data_):
+        self.thisPtr = data_
 
     @property
-    def id(self):
-        return self.thisPtr.GetID().decode()
-
-    @property
-    def data(self):
-        cdef shared_ptr[ArrowCChunkedAarray] ca = self.thisPtr.GetColumnData()
-        cdef shared_ptr[ArrowCAarray] ar = ca.get().chunk(0)
+    def data(self)-> pa.Array:
+        cdef shared_ptr[ArrowCAarray] ar = self.thisPtr.get().data()
         return pyarrow_wrap_array(ar)
 
     @property
-    def dtype(self):
-        cdef shared_ptr[CDataType] cdtype = self.thisPtr.GetDataType()
+    def dtype(self)-> pc.DataType:
+        cdef shared_ptr[CDataType] cdtype = self.thisPtr.get().type()
         return pycylon_wrap_data_type(cdtype)
 
-
+    def __len__(self) -> int:
+        cdef int length = self.thisPtr.get().length()
+        return length

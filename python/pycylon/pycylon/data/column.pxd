@@ -14,20 +14,12 @@
 
 # distutils: language = c++
 
-from libcpp.string cimport string
-from libcpp cimport bool
-from pycylon.common.status cimport CStatus
-from pycylon.common.status import Status
-from libcpp.memory cimport shared_ptr, make_shared
+from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
-from pycylon.ctx.context cimport CCylonContext
-from pycylon.ctx.context import CylonContext
+from pycylon.common.status cimport CStatus
 from pycylon.data.data_type cimport CDataType
-from pycylon.data.data_type cimport CType
-from pycylon.data.data_type cimport CLayout
 from pyarrow.lib cimport CArray as ArrowCAarray
-from pyarrow.lib cimport CChunkedArray as ArrowCChunkedAarray
-from pyarrow.lib cimport pyarrow_unwrap_array
+
 
 
 cdef extern from "../../../../cpp/src/cylon/column.hpp" namespace "cylon":
@@ -49,35 +41,23 @@ cdef extern from "../../../../cpp/src/cylon/column.hpp" namespace "cylon":
         long double
 
     cdef cppclass CColumn "cylon::Column":
-        CColumn(const string & id, const shared_ptr[CDataType] & type, const shared_ptr[
-                ArrowCChunkedAarray] & data_)
+        CColumn(shared_ptr[ArrowCAarray] data_)
 
-        CColumn(const string & id, const shared_ptr[CDataType] & type, const shared_ptr[
-                ArrowCAarray] & data_)
+        const shared_ptr[ArrowCAarray]& data() const
 
-        shared_ptr[ArrowCChunkedAarray] GetColumnData() const
+        const shared_ptr[CDataType]& type() const
 
-        string GetID() const
-
-        shared_ptr[CDataType] GetDataType() const
+        int length() const
 
         @ staticmethod
-        shared_ptr[CColumn] Make(const string & id, const shared_ptr[CDataType] & type,
-                                 const shared_ptr[ArrowCChunkedAarray] & data_)
+        shared_ptr[CColumn] Make(shared_ptr[ArrowCAarray] data)
 
         @ staticmethod
-        shared_ptr[CColumn] Make(const string & id, const shared_ptr[CDataType] & type,
-                                 const shared_ptr[ArrowCAarray] & data_)
-
-        @ staticmethod
-        CStatus FromVector[T](const shared_ptr[CCylonContext] & ctx,
-                              const string & id,
-                              const shared_ptr[CDataType] & type,
-                              const vector[T] & data_vector,
+        CStatus FromVector[T](const vector[T] & data_vector,
                               shared_ptr[CColumn] & output)
 
 
 cdef class Column:
     cdef:
-        CColumn *thisPtr
-        shared_ptr[CColumn] sp_column
+        shared_ptr[CColumn] thisPtr
+        void init(self, const shared_ptr[CColumn] & data_)

@@ -15,19 +15,23 @@
 #ifndef CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
 #define CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
 
-#include <cylon/net/comm_config.hpp>
-#include <cylon/net/channel.hpp>
+#include "cylon/net/comm_config.hpp"
+#include "cylon/net/channel.hpp"
+#include "cylon/net/comm_operations.hpp"
 
 namespace cylon {
-class Table;
 class CylonContext;
+class Table;
+class Column;
+class Scalar;
+
 namespace net {
 
 class Communicator {
- protected:
-  int rank = -1;
-  int world_size = -1;
  public:
+  explicit Communicator(const std::shared_ptr<CylonContext> *ctx_ptr) : ctx_ptr(ctx_ptr) {}
+  virtual ~Communicator() = default;
+
   virtual Status Init(const std::shared_ptr<CommConfig> &config) = 0;
   virtual std::unique_ptr<Channel> CreateChannel() const = 0;
   virtual int GetRank() const = 0;
@@ -35,8 +39,6 @@ class Communicator {
   virtual void Finalize() = 0;
   virtual void Barrier() = 0;
   virtual CommType GetCommType() const = 0;
-
-  virtual ~Communicator() = default;
 
   virtual Status AllGather(const std::shared_ptr<Table> &table,
                            std::vector<std::shared_ptr<Table>> *out) const = 0;
@@ -46,9 +48,34 @@ class Communicator {
                         bool gather_from_root,
                         std::vector<std::shared_ptr<Table>> *out) const = 0;
 
-  virtual Status Bcast(const std::shared_ptr<CylonContext> &ctx,
-                       std::shared_ptr<Table> *table,
-                       int bcast_root) const = 0;
+  virtual Status Bcast(std::shared_ptr<Table> *table, int bcast_root) const = 0;
+
+  /* Array communicationss */
+
+  /**
+   * Allreduce values at every index on `values`.
+   * @param ctx
+   * @param values
+   * @param reduce_op
+   * @param output
+   * @param skip_nulls if `true`,
+   * @return
+   */
+  virtual Status AllReduce(const std::shared_ptr<Column> &values,
+                           net::ReduceOp reduce_op,
+                           std::shared_ptr<Column> *output) const = 0;
+
+  /* Scalar communications */
+
+  virtual Status AllReduce(const std::shared_ptr<Scalar> &value,
+                           net::ReduceOp reduce_op,
+                           std::shared_ptr<Scalar> *output) const = 0;
+
+ protected:
+  int rank = -1;
+  int world_size = -1;
+  // keeping a ptr to the CylonContext shared_ptr
+  const std::shared_ptr<CylonContext> *ctx_ptr;
 };
 }
 }

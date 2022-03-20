@@ -259,6 +259,13 @@ def test_parquet():
     assert responses[-1] == 0
 
 
+def test_dist_aggregate():
+    print("34. Dist Aggregates")
+    responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi "
+                                                   "python/pycylon/test/test_dist_aggregate.py"))
+    assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)
