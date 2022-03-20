@@ -18,7 +18,8 @@
 #include "test_utils.hpp"
 
 namespace cylon {
-void testDistSort(const std::vector<int>& sort_cols, const std::vector<bool>& sort_order,
+void testDistSort(const std::vector<int>& sort_cols,
+                  const std::vector<bool>& sort_order,
                   std::shared_ptr<Table>& global_table,
                   std::shared_ptr<Table>& table) {
   std::shared_ptr<Table> out;
@@ -36,8 +37,8 @@ void testDistSort(const std::vector<int>& sort_cols, const std::vector<bool>& so
   } else {
     auto pool = cylon::ToArrowPool(ctx);
     std::shared_ptr<arrow::Table> arrow_empty_table;
-    auto arrow_status = util::CreateEmptyTable(global_table->get_table()->schema(),
-                                                &arrow_empty_table, pool);
+    auto arrow_status = util::CreateEmptyTable(
+        global_table->get_table()->schema(), &arrow_empty_table, pool);
     out2 = std::make_shared<Table>(ctx, arrow_empty_table);
   }
   std::shared_ptr<Table> out3;
@@ -94,9 +95,11 @@ TEST_CASE("Dist sort testing", "[dist sort]") {
   int64_t rows_per_tab = global_arrow_table->num_rows() / WORLD_SZ;
   std::shared_ptr<Table> table1;
   CHECK_CYLON_STATUS(Table::FromArrowTable(
-      ctx, global_arrow_table->Slice(RANK * rows_per_tab, rows_per_tab), table1));
+      ctx, global_arrow_table->Slice(RANK * rows_per_tab, rows_per_tab),
+      table1));
   std::shared_ptr<Table> global_table;
-  CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, global_arrow_table, global_table));
+  CHECK_CYLON_STATUS(
+      Table::FromArrowTable(ctx, global_arrow_table, global_table));
 
   SECTION("dist_sort_test_1") {
     testDistSort({0, 1}, {1, 1}, global_table, table1);
