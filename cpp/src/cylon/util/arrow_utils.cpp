@@ -387,5 +387,13 @@ bool CheckArrowTableContainsChunks(const std::shared_ptr<arrow::Table> &table,
   }
 }
 
+arrow::Status MakeDummyArray(const std::shared_ptr<arrow::DataType> &type, int64_t num_elems,
+                             std::shared_ptr<arrow::Array> *out, arrow::MemoryPool *pool) {
+  std::unique_ptr<arrow::ArrayBuilder> builder;
+  RETURN_NOT_OK(arrow::MakeBuilder(pool, type, &builder));
+  RETURN_NOT_OK(builder->AppendEmptyValues(num_elems));
+  return builder->Finish(out);
+}
+
 }  // namespace util
 }  // namespace cylon

@@ -12,29 +12,32 @@
  * limitations under the License.
  */
 
-#include <cylon/column.hpp>
+#include "cylon/column.hpp"
+#include "cylon/arrow/arrow_types.hpp"
+#include "cylon/util/macros.hpp"
+#include "cylon/ctx/arrow_memory_pool_utils.hpp"
 
 namespace cylon {
 
-std::shared_ptr<arrow::ChunkedArray> Column::GetColumnData() const{
-  return this->data_array;
-};
+std::shared_ptr<Column> Column::Make(std::shared_ptr<arrow::Array> data_) {
+  return std::make_shared<Column>(std::move(data_));
+}
 
-std::string Column::GetID() const{
-  return this->id;
+Status Column::Make(const std::shared_ptr<CylonContext> &ctx,
+                    const std::shared_ptr<arrow::ChunkedArray> &data_,
+                    std::shared_ptr<Column> *output) {
+  CYLON_ASSIGN_OR_RAISE(auto arr, arrow::Concatenate(data_->chunks(), ToArrowPool(ctx)))
+  *output = Column::Make(std::move(arr));
+  return Status::OK();
 }
-std::shared_ptr<DataType> Column::GetDataType() const{
-  return this->type;
-}
-std::shared_ptr<Column> Column::Make(const std::string &id,
-                                     const std::shared_ptr<DataType> &type,
-                                     const std::shared_ptr<arrow::ChunkedArray> &data_) {
-  return std::make_shared<Column>(id, type, data_);
-}
-std::shared_ptr<Column> Column::Make(const std::string &id,
-                                     const std::shared_ptr<DataType> &type,
-                                     const std::shared_ptr<arrow::Array> &data_) {
-  return std::make_shared<Column>(id, type, data_);
-}
+
+Column::Column(std::shared_ptr<arrow::Array> data)
+    : type_(tarrow::ToCylonType(data->type())), data_(std::move(data)) {}
+
+const std::shared_ptr<arrow::Array> &Column::data() const { return data_; }
+
+const std::shared_ptr<DataType> &Column::type() const { return type_; }
+
+int64_t Column::length() const { return data_->length(); }
 
 }  // namespace cylon

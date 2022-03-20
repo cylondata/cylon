@@ -37,6 +37,7 @@ class UCXConfig : public CommConfig {
 
 class UCXCommunicator : public Communicator {
  public:
+  explicit UCXCommunicator(const std::shared_ptr<CylonContext> *ctx_ptr);
   Status Init(const std::shared_ptr<CommConfig> &config) override;
   std::unique_ptr<Channel> CreateChannel() const override;
   int GetRank() const override;
@@ -51,19 +52,23 @@ class UCXCommunicator : public Communicator {
                 int gather_root,
                 bool gather_from_root,
                 std::vector<std::shared_ptr<Table>> *out) const override;
-  Status Bcast(const std::shared_ptr<CylonContext> &ctx,
-               std::shared_ptr<Table> *table,
-               int bcast_root) const override;
+  Status Bcast(std::shared_ptr<Table> *table, int bcast_root) const override;
+  Status AllReduce(const std::shared_ptr<Column> &column,
+                   net::ReduceOp reduce_op,
+                   std::shared_ptr<Column> *output) const override;
+  Status AllReduce(const std::shared_ptr<Scalar> &values,
+                   net::ReduceOp reduce_op,
+                   std::shared_ptr<Scalar> *output) const override;
 
   // # UCX specific attributes - These need to be passed to the channels created from the communicator
   // The worker for receiving
-  ucp_worker_h ucpRecvWorker;
+  ucp_worker_h ucpRecvWorker{};
   // The worker for sending
-  ucp_worker_h ucpSendWorker;
+  ucp_worker_h ucpSendWorker{};
   // Endpoint Map
   std::unordered_map<int, ucp_ep_h> endPointMap;
   // UCP Context - Holds a UCP communication instance's global information.
-  ucp_context_h ucpContext;
+  ucp_context_h ucpContext{};
 };
 
 }

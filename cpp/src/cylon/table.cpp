@@ -323,20 +323,25 @@ Status Table::FromArrowTable(const std::shared_ptr<CylonContext> &ctx,
 
 Status Table::FromColumns(const std::shared_ptr<CylonContext> &ctx,
                           const std::vector<std::shared_ptr<Column>> &columns,
+                          const std::vector<std::string> &column_names,
                           std::shared_ptr<Table> &tableOut) {
   arrow::SchemaBuilder schema_builder;
-  arrow::ChunkedArrayVector arrays;
+  arrow::ArrayVector arrays;
 
-  for (const auto &col: columns) {
-    const auto &data_type = col->GetDataType();
-    const auto &field = arrow::field(col->GetID(), cylon::tarrow::ToArrowType(data_type));
+  if (columns.size() != column_names.size()){
+    return {Code::Invalid, "number of columns != number of column names"};
+  }
+
+  for (size_t i = 0; i < columns.size(); i++) {
+    const auto &data_type = columns[i]->type();
+    const auto &field = arrow::field(column_names[i], tarrow::ToArrowType(data_type));
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(schema_builder.AddField(field));
-    arrays.push_back(col->GetColumnData());
+    arrays.push_back(columns[i]->data());
   }
 
   CYLON_ASSIGN_OR_RAISE(auto schema, schema_builder.Finish());
 
-  auto table = arrow::Table::Make(std::move(schema), std::move(arrays));
+  auto table = arrow::Table::Make(std::move(schema), arrays);
 
   RETURN_CYLON_STATUS_IF_FAILED(tarrow::CheckSupportedTypes(table));
 

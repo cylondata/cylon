@@ -59,17 +59,22 @@ struct KernelOptions {
   virtual ~KernelOptions() = default;
 };
 
+struct BasicOptions : public KernelOptions {
+  explicit BasicOptions(bool skip_nulls = true) : skip_nulls_(skip_nulls) {}
+  bool skip_nulls_;
+};
+
 /**
  * Variance kernel options
  */
-struct VarKernelOptions : public KernelOptions {
+struct VarKernelOptions : public BasicOptions {
   /**
    * @param ddof delta degree of freedom
    */
-  explicit VarKernelOptions(int ddof) : ddof(ddof) {}
-  VarKernelOptions() : VarKernelOptions(1) {}
+  explicit VarKernelOptions(int ddof = 0, bool skip_nulls = true)
+      : BasicOptions(skip_nulls), ddof_(ddof) {}
 
-  int ddof;
+  int ddof_;
 };
 
 struct QuantileKernelOptions : public KernelOptions {
@@ -399,7 +404,7 @@ class VarianceKernel : public TypedAggregationKernel<VarianceKernel<T>, VAR, T> 
   explicit VarianceKernel(bool do_std = false) : ddof(0), do_std(do_std) {}
 
   void KernelSetup(VarKernelOptions *options) {
-    ddof = options->ddof;
+    ddof = options->ddof_;
   }
 
   inline void KernelInitializeState(std::tuple<T, T, int64_t> *state) const {
