@@ -128,8 +128,8 @@ add_library(cylon SHARED
         net/ops/all_to_all.hpp
         net/ops/gather.cpp
         net/ops/bcast.cpp
-        net/CylonRequest.cpp
-        net/CylonRequest.hpp
+        net/cylon_request.cpp
+        net/cylon_request.hpp
         ops.cpp
         ops.hpp
         ops/all_to_all_op.cpp

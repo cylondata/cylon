@@ -23,9 +23,6 @@
 #include <cylon/net/channel.hpp>
 #include <cylon/net/buffer.hpp>
 
-#define CYLON_CHANNEL_HEADER_SIZE 8
-#define CYLON_MSG_FIN 1
-
 namespace cylon {
 enum SendStatus {
   SEND_INIT = 0,

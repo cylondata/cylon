@@ -17,7 +17,7 @@
 #include <string>
 #include <iostream>
 
-#include <cylon/net/CylonRequest.hpp>
+#include <cylon/net/cylon_request.hpp>
 #include <cylon/util/builtins.hpp>
 
 cylon::CylonRequest::CylonRequest(int tgt) {

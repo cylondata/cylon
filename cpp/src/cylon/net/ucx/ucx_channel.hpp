@@ -55,7 +55,6 @@ struct PendingSend {
   // segments of data to be sent
   std::queue<std::shared_ptr<CylonRequest>> pendingData{};
   UCXSendStatus status = SEND_INIT;
-  MPI_Request request{};
   // the current send, if it is a actual send
   std::shared_ptr<CylonRequest> currentSend{};
 
@@ -72,7 +71,6 @@ struct PendingReceive {
   std::shared_ptr<Buffer> data{};
   int length{};
   UCXReceiveStatus status = RECEIVE_INIT;
-  MPI_Request request{};
   // UCX context - For tracking the progress of the message
   ucx::ucxContext *context;
 };

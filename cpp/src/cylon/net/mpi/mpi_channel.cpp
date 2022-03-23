@@ -22,7 +22,7 @@
 
 #include <cylon/status.hpp>
 #include <cylon/net/mpi/mpi_channel.hpp>
-#include <cylon/net/CylonRequest.hpp>
+#include <cylon/net/cylon_request.hpp>
 
 
 namespace cylon {

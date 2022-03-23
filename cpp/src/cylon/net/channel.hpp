@@ -18,10 +18,13 @@
 #include <vector>
 #include <memory>
 #include <cstring>
-#include <cylon/net/CylonRequest.hpp>
+#include <cylon/net/cylon_request.hpp>
 #include <cylon/net/buffer.hpp>
 
 namespace cylon {
+
+#define CYLON_CHANNEL_HEADER_SIZE 8
+#define CYLON_MSG_FIN 1
 
 /**
  * When a send is complete, this callback is called by the channel, it is the responsibility
