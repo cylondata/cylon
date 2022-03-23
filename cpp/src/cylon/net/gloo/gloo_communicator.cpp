@@ -25,6 +25,7 @@
 #include "cylon/serialize/table_serialize.hpp"
 #include "cylon/net/ops/base_ops.hpp"
 #include "cylon/net/gloo/gloo_operations.hpp"
+#include "gloo_channel.hpp"
 
 namespace cylon {
 namespace net {
@@ -72,7 +73,7 @@ Status GlooCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   return Status::OK();
 }
 std::unique_ptr<Channel> GlooCommunicator::CreateChannel() const {
-  return std::unique_ptr<Channel>();
+  return std::make_unique<GlooChannel>(gloo_ctx_.get());
 }
 
 int GlooCommunicator::GetRank() const {
