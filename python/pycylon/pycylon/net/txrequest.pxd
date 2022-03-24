@@ -18,7 +18,7 @@ libCylon to PyCylon mapping for TxRequest API
 
 from libcpp.string cimport string
 
-cdef extern from "../../../../cpp/src/cylon/net/TxRequest.hpp" namespace "cylon":
+cdef extern from "../../../../cpp/src/cylon/net/cylon_request.hpp" namespace "cylon":
     cdef cppclass CTxRequest "cylon::TxRequest":
         void *buffer;
         int length;
