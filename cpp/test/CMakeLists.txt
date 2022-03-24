@@ -166,12 +166,12 @@ cylon_run_test(custom_mpi_comm_test 4 mpi)
 
 #### Gloo tests
 if (CYLON_GLOO)
-  cylon_run_test(join_test 1 gloo-mpi)
+#  cylon_run_test(join_test 1 gloo-mpi)
 
-#  cylon_run_test(sync_comms_test 1 gloo-mpi)
-#  cylon_run_test(sync_comms_test 4 gloo-mpi)
-#
-#  cylon_run_test(aggregate_test 1 gloo-mpi)
-#  cylon_run_test(aggregate_test 2 gloo-mpi)
-#  cylon_run_test(aggregate_test 4 gloo-mpi)
+  cylon_run_test(sync_comms_test 1 gloo-mpi)
+  cylon_run_test(sync_comms_test 4 gloo-mpi)
+
+  cylon_run_test(aggregate_test 1 gloo-mpi)
+  cylon_run_test(aggregate_test 2 gloo-mpi)
+  cylon_run_test(aggregate_test 4 gloo-mpi)
 endif (CYLON_GLOO)
