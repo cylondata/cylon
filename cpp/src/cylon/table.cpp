@@ -458,7 +458,7 @@ Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted,
     std::shared_ptr<arrow::Table> output;
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::CreateEmptyTable(
         local_sorted->get_table()->schema(), &output, pool));
-    sample_result = std::make_shared<Table>(ctx, output);
+    sample_result = std::make_shared<Table>(ctx, std::move(output));
     return Status::OK();
   }
 
