@@ -449,15 +449,17 @@ Status Sort(const std::shared_ptr<Table> &table, const std::vector<int32_t> &sor
 }
 
 Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted,
-                          int num_samples,
+                          int num_samples, std::vector<int32_t> sort_columns,
                           std::shared_ptr<Table> &sample_result,
                           const std::shared_ptr<CylonContext> &ctx) {
   auto pool = cylon::ToArrowPool(ctx);
+  
+  CYLON_ASSIGN_OR_RAISE(auto local_sorted_selected_cols, local_sorted->get_table()->SelectColumns(sort_columns));
 
   if (local_sorted->Rows() == 0 || num_samples == 0) {
     std::shared_ptr<arrow::Table> output;
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::CreateEmptyTable(
-        local_sorted->get_table()->schema(), &output, pool));
+        local_sorted_selected_cols->schema(), &output, pool));
     sample_result = std::make_shared<Table>(ctx, std::move(output));
     return Status::OK();
   }
@@ -475,7 +477,7 @@ Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted,
   CYLON_ASSIGN_OR_RAISE(auto take_arr, filter.Finish());
   CYLON_ASSIGN_OR_RAISE(
       auto take_res,
-      (arrow::compute::Take(local_sorted->get_table(), take_arr)));
+      (arrow::compute::Take(local_sorted_selected_cols, take_arr)));
   sample_result = std::make_shared<Table>(ctx, take_res.table());
 
   return Status::OK();
@@ -569,21 +571,24 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
 
 Status DetermineSplitPoints(
     const std::vector<std::shared_ptr<Table>> &gathered_tables_include_root,
-    const std::vector<int> &sort_columns, const std::vector<bool> &sort_orders,
+    const std::vector<bool> &sort_orders,
     std::shared_ptr<Table> &split_points,
     const std::shared_ptr<CylonContext> &ctx) {
   std::shared_ptr<Table> merged_table;
+
+  std::vector<int32_t> sort_columns(sort_orders.size());
+  std::iota(sort_columns.begin(), sort_columns.end(), 0);
+
   RETURN_CYLON_STATUS_IF_FAILED(MergeSortedTable(
       gathered_tables_include_root, sort_columns, sort_orders, merged_table));
 
   int num_split_points =
       std::min(merged_table->Rows(), (int64_t)ctx->GetWorldSize() - 1);
 
-  return SampleTableUniform(merged_table, num_split_points, split_points, ctx);
+  return SampleTableUniform(merged_table, num_split_points, sort_columns, split_points, ctx);
 }
 
 Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
-                      const std::vector<int> &sort_columns,
                       const std::vector<bool> &sort_orders,
                       int num_split_points,
                       std::shared_ptr<Table> &split_points) {
@@ -596,7 +601,7 @@ Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
 
   if (ctx->GetRank() == 0) {
     RETURN_CYLON_STATUS_IF_FAILED(
-        DetermineSplitPoints(gather_results, sort_columns, sort_orders,
+        DetermineSplitPoints(gather_results, sort_orders,
                              split_points, sample_result->GetContext()));
   }
 
@@ -657,7 +662,7 @@ Status GetSplitPointIndices(const std::shared_ptr<Table> &split_points,
         cylon::util::GetChunkOrEmptyArray(
             arrow_sorted_table_comb->column(sort_columns[i]), 0),
         cylon::util::GetChunkOrEmptyArray(
-            arrow_split_points_comb->column(sort_columns[i]), 0),
+            arrow_split_points_comb->column(i), 0),
         &comp, sort_order[i]));
 
     comparators[i] = std::move(comp);
@@ -727,15 +732,16 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   int sample_count = ctx->GetWorldSize() * SAMPLING_RATIO;
   sample_count = std::min((int64_t)sample_count, table->Rows());
 
+  // sample_result only contains sorted columns
   std::shared_ptr<Table> sample_result;
 
   RETURN_CYLON_STATUS_IF_FAILED(
-      SampleTableUniform(local_sorted, sample_count, sample_result, ctx));
+      SampleTableUniform(local_sorted, sample_count, sort_columns, sample_result, ctx));
 
-  // determine split point
+  // determine split point, split_points only contains sorted columns
   std::shared_ptr<Table> split_points;
   RETURN_CYLON_STATUS_IF_FAILED(GetSplitPoints(
-      sample_result, sort_columns, sort_direction, world_sz - 1, split_points));
+      sample_result, sort_direction, world_sz - 1, split_points));
 
   // construct target_partition, partition_hist
   RETURN_CYLON_STATUS_IF_FAILED(

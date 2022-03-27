@@ -61,102 +61,102 @@ endfunction(cylon_run_test)
 # param 1 -- name of the test, param 2 -- number of processes
 
 # join tests
-# cylon_add_test(join_test)
-# cylon_run_test(join_test 1)
-# cylon_run_test(join_test 2)
-# cylon_run_test(join_test 4)
+cylon_add_test(join_test)
+cylon_run_test(join_test 1)
+cylon_run_test(join_test 2)
+cylon_run_test(join_test 4)
 
-# # join parquet tests
-# cylon_add_test(parquet_join_test)
-# cylon_run_test(parquet_join_test 1)
-# cylon_run_test(parquet_join_test 2)
-# cylon_run_test(parquet_join_test 4)
+# join parquet tests
+cylon_add_test(parquet_join_test)
+cylon_run_test(parquet_join_test 1)
+cylon_run_test(parquet_join_test 2)
+cylon_run_test(parquet_join_test 4)
 
-# # set operation tests
-# cylon_add_test(set_op_test)
-# cylon_run_test(set_op_test 1)
-# cylon_run_test(set_op_test 2)
-# cylon_run_test(set_op_test 4)
+# set operation tests
+cylon_add_test(set_op_test)
+cylon_run_test(set_op_test 1)
+cylon_run_test(set_op_test 2)
+cylon_run_test(set_op_test 4)
 
-# # create table test
-# cylon_add_test(create_table_test)
-# cylon_run_test(create_table_test 1)
+# create table test
+cylon_add_test(create_table_test)
+cylon_run_test(create_table_test 1)
 
-# #util tests
-# cylon_add_test(quick_sort_test)
-# cylon_run_test(quick_sort_test 1)
+#util tests
+cylon_add_test(quick_sort_test)
+cylon_run_test(quick_sort_test 1)
 
-# # aggergate tests
-# cylon_add_test(aggregate_test)
-# cylon_run_test(aggregate_test 1)
-# cylon_run_test(aggregate_test 2)
-# cylon_run_test(aggregate_test 4)
+# aggergate tests
+cylon_add_test(aggregate_test)
+cylon_run_test(aggregate_test 1)
+cylon_run_test(aggregate_test 2)
+cylon_run_test(aggregate_test 4)
 
-# #groupby tests
-# cylon_add_test(groupby_test)
-# cylon_run_test(groupby_test 1)
-# cylon_run_test(groupby_test 2)
-# cylon_run_test(groupby_test 4)
+#groupby tests
+cylon_add_test(groupby_test)
+cylon_run_test(groupby_test 1)
+cylon_run_test(groupby_test 2)
+cylon_run_test(groupby_test 4)
 
-# #table op tests
-# cylon_add_test(table_op_test)
-# cylon_run_test(table_op_test 1)
-# cylon_run_test(table_op_test 2)
-# cylon_run_test(table_op_test 4)
+#table op tests
+cylon_add_test(table_op_test)
+cylon_run_test(table_op_test 1)
+cylon_run_test(table_op_test 2)
+cylon_run_test(table_op_test 4)
 
-# #partition tests
-# cylon_add_test(partition_test)
-# cylon_run_test(partition_test 1)
-# cylon_run_test(partition_test 2)
-# cylon_run_test(partition_test 4)
+#partition tests
+cylon_add_test(partition_test)
+cylon_run_test(partition_test 1)
+cylon_run_test(partition_test 2)
+cylon_run_test(partition_test 4)
 
-# #indexing tests
-# cylon_add_test(indexing_test)
-# cylon_run_test(indexing_test 1)
+#indexing tests
+cylon_add_test(indexing_test)
+cylon_run_test(indexing_test 1)
 
-# # create table test
-# cylon_add_test(sorting_test)
-# cylon_run_test(sorting_test 1)
+# create table test
+cylon_add_test(sorting_test)
+cylon_run_test(sorting_test 1)
 
-# # hash utils test
-# cylon_add_test(hash_utils_test)
-# cylon_run_test(hash_utils_test 1)
+# hash utils test
+cylon_add_test(hash_utils_test)
+cylon_run_test(hash_utils_test 1)
 
-# # utils test
-# cylon_add_test(utils_test)
-# cylon_run_test(utils_test 1)
+# utils test
+cylon_add_test(utils_test)
+cylon_run_test(utils_test 1)
 
-# # equal test
-# cylon_add_test(equal_test)
-# cylon_run_test(equal_test 1)
-# cylon_run_test(equal_test 2)
+# equal test
+cylon_add_test(equal_test)
+cylon_run_test(equal_test 1)
+cylon_run_test(equal_test 2)
 
-# # flatten array test
-# cylon_add_test(flatten_array_test)
-# cylon_run_test(flatten_array_test 1)
+# flatten array test
+cylon_add_test(flatten_array_test)
+cylon_run_test(flatten_array_test 1)
 
-# # comparator test
-# cylon_add_test(comparator_test)
-# cylon_run_test(comparator_test 1)
+# comparator test
+cylon_add_test(comparator_test)
+cylon_run_test(comparator_test 1)
 
-# # repartition test
-# cylon_add_test(repartition_test)
-# cylon_run_test(repartition_test 1)
-# cylon_run_test(repartition_test 4)
+# repartition test
+cylon_add_test(repartition_test)
+cylon_run_test(repartition_test 1)
+cylon_run_test(repartition_test 4)
 
-# # serialization test
-# cylon_add_test(serialize_test)
-# cylon_run_test(serialize_test 1)
+# serialization test
+cylon_add_test(serialize_test)
+cylon_run_test(serialize_test 1)
 
-# # synchronous communications test
-# cylon_add_test(sync_comms_test)
-# cylon_run_test(sync_comms_test 1)
-# cylon_run_test(sync_comms_test 4)
+# synchronous communications test
+cylon_add_test(sync_comms_test)
+cylon_run_test(sync_comms_test 1)
+cylon_run_test(sync_comms_test 4)
 
-# # custom mpi comm test
-# cylon_add_test(custom_mpi_comm_test)
-# cylon_run_test(custom_mpi_comm_test 1)
-# cylon_run_test(custom_mpi_comm_test 4)
+# custom mpi comm test
+cylon_add_test(custom_mpi_comm_test)
+cylon_run_test(custom_mpi_comm_test 1)
+cylon_run_test(custom_mpi_comm_test 4)
 
 # distributed sort test
 cylon_add_test(dist_sort_test)
