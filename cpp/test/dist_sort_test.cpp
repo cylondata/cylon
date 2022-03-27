@@ -124,11 +124,12 @@ TEST_CASE("Dist sort testing", "[dist sort]") {
       table1 = empty_table;
     }
 
-    std::shared_ptr<Table> out, out2, repartitioned;
+    std::shared_ptr<Table> out, out2;
     auto ctx = table1->GetContext();
     std::shared_ptr<arrow::Table> arrow_output;
     auto status = DistributedSort(table1, {1, 0}, out, {0, 0});
-    DistributedSort(table1, {1, 0}, out2, {0, 0},
+    REQUIRE(status.is_ok());
+    status = DistributedSort(table1, {1, 0}, out2, {0, 0},
                     {0, 0, SortOptions::INITIAL_SAMPLE});
     REQUIRE(status.is_ok());
     bool eq;

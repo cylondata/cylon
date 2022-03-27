@@ -468,7 +468,7 @@ Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted,
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(num_samples));
 
   for (int i = 0; i < num_samples; i++) {
-    filter.Append(acc);
+    filter.UnsafeAppend(acc);
     acc += step;
   }
 
@@ -484,7 +484,7 @@ Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted,
 template <typename T>
 static int CompareRows(const std::vector<std::unique_ptr<T>> &comparators,
                        int64_t idx_a,
-                       int64_t idx_b) {  // TODO: priority & direction
+                       int64_t idx_b) {
   int sz = comparators.size();
   if (std::is_same<T, cylon::DualArrayIndexComparator>::value) {
     idx_b |= (int64_t)1 << 63;
@@ -579,10 +579,7 @@ Status DetermineSplitPoints(
   int num_split_points =
       std::min(merged_table->Rows(), (int64_t)ctx->GetWorldSize() - 1);
 
-  RETURN_CYLON_STATUS_IF_FAILED(
-      SampleTableUniform(merged_table, num_split_points, split_points, ctx));
-
-  return Status::OK();
+  return SampleTableUniform(merged_table, num_split_points, split_points, ctx);
 }
 
 Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
@@ -595,7 +592,7 @@ Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
   std::vector<std::shared_ptr<cylon::Table>> gather_results;
   // net::MPICommunicator comm;
   RETURN_CYLON_STATUS_IF_FAILED(
-      ctx->GetCommunicator()->AllGather(sample_result, &gather_results));
+      ctx->GetCommunicator()->Gather(sample_result, 0, true, &gather_results));
 
   if (ctx->GetRank() == 0) {
     RETURN_CYLON_STATUS_IF_FAILED(
@@ -603,9 +600,7 @@ Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
                              split_points, sample_result->GetContext()));
   }
 
-  RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->Bcast( &split_points, 0));
-
-  return Status::OK();
+  return ctx->GetCommunicator()->Bcast( &split_points, 0);
 }
 
 // return (index of) first element that is not less than the target element
@@ -647,8 +642,12 @@ Status GetSplitPointIndices(const std::shared_ptr<Table> &split_points,
   auto arrow_sorted_table = sorted_table->get_table();
   auto arrow_split_points = split_points->get_table();
 
-  arrow_sorted_table->CombineChunks(ToArrowPool(sorted_table->GetContext()));
-  arrow_split_points->CombineChunks(ToArrowPool(sorted_table->GetContext()));
+  CYLON_ASSIGN_OR_RAISE(auto arrow_sorted_table_comb,
+                        arrow_sorted_table->CombineChunks(
+                            ToArrowPool(sorted_table->GetContext())));
+  CYLON_ASSIGN_OR_RAISE(auto arrow_split_points_comb,
+                        arrow_split_points->CombineChunks(
+                            ToArrowPool(sorted_table->GetContext())));
 
   std::vector<std::unique_ptr<cylon::DualArrayIndexComparator>> comparators(
       sort_columns.size());
@@ -656,9 +655,9 @@ Status GetSplitPointIndices(const std::shared_ptr<Table> &split_points,
     std::unique_ptr<cylon::DualArrayIndexComparator> comp;
     RETURN_CYLON_STATUS_IF_FAILED(CreateDualArrayIndexComparator(
         cylon::util::GetChunkOrEmptyArray(
-            arrow_sorted_table->column(sort_columns[i]), 0),
+            arrow_sorted_table_comb->column(sort_columns[i]), 0),
         cylon::util::GetChunkOrEmptyArray(
-            arrow_split_points->column(sort_columns[i]), 0),
+            arrow_split_points_comb->column(sort_columns[i]), 0),
         &comp, sort_order[i]));
 
     comparators[i] = std::move(comp);
@@ -728,7 +727,6 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   int sample_count = ctx->GetWorldSize() * SAMPLING_RATIO;
   sample_count = std::min((int64_t)sample_count, table->Rows());
 
-  std::shared_ptr<arrow::Table> sample_result_arrow_table;
   std::shared_ptr<Table> sample_result;
 
   RETURN_CYLON_STATUS_IF_FAILED(
@@ -758,10 +756,7 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables_separated_cylon_table(
       ctx, schema, split_tables, all_to_all_result));
 
-  RETURN_CYLON_STATUS_IF_FAILED(MergeSortedTable(
-      all_to_all_result, sort_columns, sort_direction, output));
-
-  return Status::OK();
+  return MergeSortedTable(all_to_all_result, sort_columns, sort_direction, output);
 }
 
 Status DistributedSortInitialSampling(const std::shared_ptr<Table> &table,
