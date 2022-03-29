@@ -355,14 +355,15 @@ Status Sort(const std::shared_ptr<Table> &table, const std::vector<int32_t> &sor
 
 struct SortOptions {
   enum SortMethod {
-    REGULAR_SAMPLE = 0,
+    REGULAR_SAMPLE_MERGE = 0,
     INITIAL_SAMPLE = 1,
+    REGULAR_SAMPLE_SORT = 2
   };
   uint32_t num_bins;
   uint64_t num_samples;
   SortMethod sort_method;
 
-  static SortOptions Defaults() { return {0, 0, REGULAR_SAMPLE}; }
+  static SortOptions Defaults() { return {0, 0, REGULAR_SAMPLE_MERGE}; }
 };
 
 Status DistributedSort(const std::shared_ptr<Table> &table,
