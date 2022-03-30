@@ -519,21 +519,13 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
     return Sort(concatenated, sort_columns, out, sort_orders);
   }
 
-  std::vector<std::unique_ptr<cylon::ArrayIndexComparator>> comparators(
-      sort_columns.size());
-  for (int64_t i = 0; i < sort_columns.size(); i++) {
-    std::unique_ptr<cylon::ArrayIndexComparator> comp;
-    CreateArrayIndexComparator(
-        cylon::util::GetChunkOrEmptyArray(
-            concatenated->get_table()->column(sort_columns[i]), 0),
-        &comp, sort_orders[i]);
-    comparators[i] = std::move(comp);
-  }
+  std::unique_ptr<TableRowIndexEqualTo> equal_to;
+  RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexEqualTo::Make(
+      concatenated->get_table(), sort_columns, &equal_to, sort_orders));
 
   auto comp = [&](int a, int b) {  // a and b are index of table in `tables`
     int64_t a_idx = table_indices[a], b_idx = table_indices[b];
-    bool temp = CompareRows(comparators, a, b) > 0;
-    return CompareRows(comparators, a_idx, b_idx) > 0;
+    return equal_to->compare(a_idx, util::SetBit(b_idx)) > 0;
   };
 
   std::priority_queue<int, std::vector<int>, decltype(comp)> pq(comp);
@@ -616,17 +608,16 @@ Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
 int64_t tableBinarySearch(
     const std::shared_ptr<Table> &split_points,
     const std::shared_ptr<Table> &sorted_table,
-    const std::vector<std::unique_ptr<cylon::DualArrayIndexComparator>>
-        &comparators,
+    std::unique_ptr<DualTableRowIndexEqualTo>& equal_to,
     int64_t split_point_idx, int64_t l) {
   int64_t r = sorted_table->Rows() - 1;
   int L = l;
 
   while (r >= l) {
     int64_t m = (l + r) / 2;
-    int compare_result_1 = CompareRows(comparators, m, split_point_idx);
+    int compare_result_1 = equal_to->compare(m, util::SetBit(split_point_idx));
     int compare_result_2 =
-        m == L ? -1 : CompareRows(comparators, m - 1, split_point_idx);
+        m == L ? -1 : equal_to->compare(m - 1, util::SetBit(split_point_idx));
     if (compare_result_1 >= 0 && compare_result_2 < 0)
       return m;
     else if (compare_result_1 < 0) {
@@ -658,21 +649,13 @@ Status GetSplitPointIndices(const std::shared_ptr<Table> &split_points,
                         arrow_split_points->CombineChunks(
                             ToArrowPool(sorted_table->GetContext())));
 
-  std::vector<std::unique_ptr<cylon::DualArrayIndexComparator>> comparators(
-      sort_columns.size());
-  for (int64_t i = 0; i < sort_columns.size(); i++) {
-    std::unique_ptr<cylon::DualArrayIndexComparator> comp;
-    RETURN_CYLON_STATUS_IF_FAILED(CreateDualArrayIndexComparator(
-        cylon::util::GetChunkOrEmptyArray(
-            arrow_sorted_table_comb->column(sort_columns[i]), 0),
-        cylon::util::GetChunkOrEmptyArray(
-            arrow_split_points_comb->column(i), 0),
-        &comp, sort_order[i]));
+  std::vector<int> split_points_sort_cols(split_points->Columns());
+  std::iota(split_points_sort_cols.begin(), split_points_sort_cols.end(), 0);
 
-    comparators[i] = std::move(comp);
-  }
-
-  // DualTableRowIndexEqualTo::Make(arrow_sorted_table_comb, sort)
+  std::unique_ptr<DualTableRowIndexEqualTo> equal_to;
+  RETURN_CYLON_STATUS_IF_FAILED(DualTableRowIndexEqualTo::Make(
+      arrow_sorted_table_comb, arrow_split_points_comb, sort_columns,
+      split_points_sort_cols, &equal_to, sort_order));
 
   int64_t num_rows = sorted_table->Rows();
   target_partition.resize(num_rows);
@@ -681,7 +664,7 @@ Status GetSplitPointIndices(const std::shared_ptr<Table> &split_points,
 
   for (int64_t i = 0; i < num_split_points; i++) {
     int64_t idx =
-        tableBinarySearch(split_points, sorted_table, comparators, i, l_idx);
+        tableBinarySearch(split_points, sorted_table, equal_to, i, l_idx);
     std::fill(target_partition.begin() + l_idx, target_partition.begin() + idx,
               i);
     partition_hist[i] = idx - l_idx;

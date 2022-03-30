@@ -173,8 +173,11 @@ class TableRowIndexEqualTo {
   // equality, less than, greater than
   int compare(const int64_t &record1, const int64_t &record2) const;
 
-  static Status Make(const std::shared_ptr<arrow::Table> &table, const std::vector<int> &col_ids,
-                     std::unique_ptr<TableRowIndexEqualTo> *out_equal_to);
+  static Status Make(const std::shared_ptr<arrow::Table> &table,
+                     const std::vector<int> &col_ids,
+                     std::unique_ptr<TableRowIndexEqualTo> *out_equal_to,
+                     const std::vector<bool> &sort_order = {});
+
   static Status Make(const std::vector<std::shared_ptr<arrow::Array>> &arrays,
                      std::unique_ptr<TableRowIndexEqualTo> *out_equal_to);
 
@@ -278,7 +281,8 @@ class DualTableRowIndexEqualTo {
                      const std::shared_ptr<arrow::Table> &t2,
                      const std::vector<int> &t1_indices,
                      const std::vector<int> &t2_indices,
-                     std::unique_ptr<DualTableRowIndexEqualTo> *out_equal_to);
+                     std::unique_ptr<DualTableRowIndexEqualTo> *out_equal_to,
+                     const std::vector<bool> &sort_order = {});
 
   bool operator()(const int64_t &record1, const int64_t &record2) const;
 
