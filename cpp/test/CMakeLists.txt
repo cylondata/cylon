@@ -180,16 +180,16 @@ if (CYLON_GLOO)
   cylon_run_test(groupby_test 1 gloo-mpi)
   cylon_run_test(groupby_test 2 gloo-mpi)
   cylon_run_test(groupby_test 4 gloo-mpi)
-#
-#  cylon_run_test(table_op_test 1 gloo-mpi)
-#  cylon_run_test(table_op_test 2 gloo-mpi)
-#  cylon_run_test(table_op_test 4 gloo-mpi)
-#
-#  cylon_run_test(equal_test 1 gloo-mpi)
-#  cylon_run_test(equal_test 2 gloo-mpi)
-#
-#  cylon_run_test(repartition_test 1 gloo-mpi)
-#  cylon_run_test(repartition_test 4 gloo-mpi)
+
+  cylon_run_test(table_op_test 1 gloo-mpi)
+  cylon_run_test(table_op_test 2 gloo-mpi)
+  cylon_run_test(table_op_test 4 gloo-mpi)
+  #
+  #  cylon_run_test(equal_test 1 gloo-mpi)
+  #  cylon_run_test(equal_test 2 gloo-mpi)
+  #
+  #  cylon_run_test(repartition_test 1 gloo-mpi)
+  #  cylon_run_test(repartition_test 4 gloo-mpi)
 
   cylon_run_test(aggregate_test 1 gloo-mpi)
   cylon_run_test(aggregate_test 2 gloo-mpi)

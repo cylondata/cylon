@@ -21,13 +21,6 @@
 namespace cylon {
 namespace test {
 
-void global_sum_equal(int64_t exp, int64_t val) {
-  auto rows = Scalar::Make(arrow::MakeScalar(val));
-  std::shared_ptr<Scalar> res;
-  CHECK_CYLON_STATUS(ctx->GetCommunicator()->AllReduce(rows, net::SUM, &res));
-  CHECK_ARROW_EQUAL(arrow::MakeScalar(exp), res->data());
-}
-
 TEST_CASE("Set operation testing", "[set_op]") {
   std::string path1 = "../data/input/csv1_" + std::to_string(RANK) + ".csv";
   std::string path2 = "../data/input/csv2_" + std::to_string(RANK) + ".csv";
@@ -45,7 +38,7 @@ TEST_CASE("Set operation testing", "[set_op]") {
     CHECK_CYLON_STATUS(Union(t, t, local));
     CHECK_CYLON_STATUS(DistributedUnion(t, t, dist));
 
-    global_sum_equal(local->Rows(), dist->Rows());
+    CheckGlobalSumEqual(ctx, local->Rows(), dist->Rows());
   }
 
   SECTION("testing intersection itself") {
@@ -54,7 +47,7 @@ TEST_CASE("Set operation testing", "[set_op]") {
     CHECK_CYLON_STATUS(Intersect(t, t, local));
     CHECK_CYLON_STATUS(DistributedIntersect(t, t, dist));
 
-    global_sum_equal(local->Rows(), dist->Rows());
+    CheckGlobalSumEqual(ctx, local->Rows(), dist->Rows());
   }
 
   SECTION("testing subtract") {
