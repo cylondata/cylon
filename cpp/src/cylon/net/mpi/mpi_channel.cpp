@@ -38,7 +38,7 @@ void MPIChannel::init(int ed, const std::vector<int> &receives, const std::vecto
   for (int source : receives) {
     auto *buf = new PendingReceive();
     buf->receiveId = source;
-    pendingReceives.insert(std::pair<int, PendingReceive *>(source, buf));
+    pendingReceives.insert(std::make_pair(source, buf));
     MPI_Irecv(buf->headerBuf, CYLON_CHANNEL_HEADER_SIZE, MPI_INT,
               source, edge, comm_, &buf->request);
     // set the flag to true so we can identify later which buffers are posted
@@ -57,7 +57,7 @@ int MPIChannel::send(std::shared_ptr<CylonRequest> request) {
   if (ps->pendingData.size() > MAX_PENDING) {
     return -1;
   }
-  ps->pendingData.push(request);
+  ps->pendingData.push(std::move(request));
   return 1;
 }
 
@@ -66,7 +66,7 @@ int MPIChannel::sendFin(std::shared_ptr<CylonRequest> request) {
     return -1;
   }
 
-  finishRequests.insert(std::pair<int, std::shared_ptr<CylonRequest>>(request->target, request));
+  finishRequests.emplace(request->target, std::move(request));
   return 1;
 }
 
@@ -103,7 +103,7 @@ void MPIChannel::progressReceives() {
           int *header = nullptr;
           if (count > 2) {
             header = new int[count - 2];
-            memcpy(header, &(x.second->headerBuf[2]), (count - 2) * sizeof(int));
+            std::memcpy(header, &(x.second->headerBuf[2]), (count - 2) * sizeof(int));
           }
           // notify the receiver
           rcv_fn->receivedHeader(x.first, finFlag, header, count - 2);
@@ -153,7 +153,7 @@ void MPIChannel::progressSends() {
       if (flag) {
         x.second->request = {};
         // now post the actual send
-        std::shared_ptr<CylonRequest> r = x.second->pendingData.front();
+        auto &r = x.second->pendingData.front();
         MPI_Isend(r->buffer, r->length, MPI_BYTE,
                   r->target, edge, comm_, &(x.second->request));
         x.second->status = SEND_POSTED;
@@ -197,8 +197,7 @@ void MPIChannel::progressSends() {
       if (flag) {
         // LOG(INFO) << rank << " FINISHED send " << x.first;
         // we are going to send complete
-        std::shared_ptr<CylonRequest> finReq = finishRequests[x.first];
-        send_comp_fn->sendFinishComplete(finReq);
+        send_comp_fn->sendFinishComplete(finishRequests[x.first]);
         x.second->status = SEND_DONE;
       }
     } else if (x.second->status != SEND_DONE) {
@@ -209,7 +208,7 @@ void MPIChannel::progressSends() {
 }
 
 void MPIChannel::sendHeader(const std::pair<const int, PendingSend *> &x) const {
-  std::shared_ptr<CylonRequest> r = x.second->pendingData.front();
+  const auto &r = x.second->pendingData.front();
   // put the length to the buffer
   x.second->headerBuf[0] = r->length;
   x.second->headerBuf[1] = 0;
@@ -235,11 +234,13 @@ void MPIChannel::sendFinishHeader(const std::pair<const int, PendingSend *> &x) 
 
 void MPIChannel::close() {
   for (auto &pendingReceive : pendingReceives) {
+    MPI_Cancel(&pendingReceive.second->request);
     delete (pendingReceive.second);
   }
   pendingReceives.clear();
 
   for (auto &s : sends) {
+    MPI_Cancel(&s.second->request);
     delete (s.second);
   }
   sends.clear();

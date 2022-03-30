@@ -36,7 +36,7 @@ AllToAll::AllToAll(const std::shared_ptr<cylon::CylonContext> &ctx, const std::v
 
   // initialize the sends
   for (int t : tgts) {
-    int tAdjusted = (t + ctx->GetRank()) % targets.size();
+    int tAdjusted = (t + ctx->GetRank()) % (int) targets.size();
     sends.push_back(new AllToAllSends(tAdjusted));
   }
 
@@ -68,8 +68,8 @@ int AllToAll::insert(const void *buffer, int length, int target) {
 
   AllToAllSends *s = sends[target];
   // LOG(INFO) << "Allocating buffer " << length;
-  std::shared_ptr<CylonRequest> request = std::make_shared<CylonRequest>(target, buffer, length);
-  s->requestQueue.push(request);
+  auto request = std::make_shared<CylonRequest>(target, buffer, length);
+  s->requestQueue.push(std::move(request));
   s->messageSizes += length;
   return 1;
 }
@@ -87,10 +87,9 @@ int AllToAll::insert(const void *buffer, int length, int target, int *header, in
 
   AllToAllSends *s = sends[target];
   // LOG(INFO) << "Allocating buffer " << length;
-  std::shared_ptr<CylonRequest>
-      request = std::make_shared<CylonRequest>(target, buffer, length, header,
-                                               headerLength);
-  s->requestQueue.push(request);
+  auto request = std::make_shared<CylonRequest>(target, buffer, length, header,
+                                                headerLength);
+  s->requestQueue.push(std::move(request));
   s->messageSizes += length;
   return 1;
 }
@@ -98,13 +97,13 @@ int AllToAll::insert(const void *buffer, int length, int target, int *header, in
 bool AllToAll::isComplete() {
   bool allQueuesEmpty = true;
   // if this is a source, send until the operation is finished
-  for (auto w : sends) {
+  for (auto& w : sends) {
     while (!w->requestQueue.empty()) {
       if (w->sendStatus == ALL_TO_ALL_FINISH_SENT || w->sendStatus == ALL_TO_ALL_FINISHED) {
         LOG(FATAL) << "We cannot have items to send after finish sent";
       }
 
-      std::shared_ptr<CylonRequest> request = w->requestQueue.front();
+      auto &request = w->requestQueue.front();
       // if the request is accepted to be set, pop
       if (channel->send(request)) {
         w->requestQueue.pop();
@@ -116,8 +115,8 @@ bool AllToAll::isComplete() {
     if (w->requestQueue.empty() && w->pendingQueue.empty()) {
       if (finishFlag) {
         if (w->sendStatus == ALL_TO_ALL_SENDING) {
-          std::shared_ptr<CylonRequest> request = std::make_shared<CylonRequest>(w->target);
-          if (channel->sendFin(request)) {
+          auto request = std::make_shared<CylonRequest>(w->target);
+          if (channel->sendFin(std::move(request))) {
             // LOG(INFO) << worker_id << " Sent FIN *** " << w.first;
             w->sendStatus = ALL_TO_ALL_FINISH_SENT;
           }
@@ -133,7 +132,7 @@ bool AllToAll::isComplete() {
   channel->progressReceives();
 
   return allQueuesEmpty && finishedTargets.size() == targets.size() &&
-         finishedSources.size() == sources.size();
+      finishedSources.size() == sources.size();
 }
 
 void AllToAll::finish() {
@@ -143,7 +142,7 @@ void AllToAll::finish() {
 
 void AllToAll::receivedData(int receiveId, std::shared_ptr<Buffer> buffer, int length) {
   // we just call the callback function of this
-  callback->onReceive(receiveId, buffer, length);
+  callback->onReceive(receiveId, std::move(buffer), length);
 }
 
 void AllToAll::sendComplete(std::shared_ptr<CylonRequest> request) {
@@ -154,8 +153,7 @@ void AllToAll::sendComplete(std::shared_ptr<CylonRequest> request) {
   callback->onSendComplete(request->target, request->buffer, request->length);
 }
 
-void AllToAll::receivedHeader(int receiveId, int finished,
-							  int *header, int headerLength) {
+void AllToAll::receivedHeader(int receiveId, int finished, int *header, int headerLength) {
   if (finished) {
     finishedSources.insert(receiveId);
     callback->onReceiveHeader(receiveId, finished, header, headerLength);

@@ -25,6 +25,7 @@ namespace cylon {
 
 #define CYLON_CHANNEL_HEADER_SIZE 8
 #define CYLON_MSG_FIN 1
+#define CYLON_MSG_NOT_FIN 0
 
 /**
  * When a send is complete, this callback is called by the channel, it is the responsibility
