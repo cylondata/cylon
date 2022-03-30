@@ -109,6 +109,47 @@ Status DeserializeTables(const std::shared_ptr<CylonContext> &ctx,
                          const std::vector<int32_t> &buffer_sizes_per_table,
                          const std::vector<int32_t> &buffer_offsets_per_table,
                          std::vector<std::shared_ptr<Table>> *output);
+
+class CylonColumnSerializer : public ColumnSerializer {
+ public:
+  CylonColumnSerializer(std::shared_ptr<arrow::Array> array,
+                        const std::array<const uint8_t *, 3> &data_bufs,
+                        const std::array<int32_t, 3> &buf_sizes,
+                        arrow::BufferVector extra_buffers);
+
+  const std::array<const uint8_t *, 3> &getDataBuffers() const override;
+
+  const std::array<int32_t, 3> &getBufferSizes() const override;
+
+  int32_t getDataTypeId() const override;
+
+  static Status Make(const std::shared_ptr<arrow::Array> &column,
+                     std::shared_ptr<ColumnSerializer> *serializer,
+                     arrow::MemoryPool *pool = arrow::default_memory_pool());
+  static Status Make(const std::shared_ptr<arrow::ChunkedArray> &column,
+                     std::shared_ptr<ColumnSerializer> *serializer,
+                     arrow::MemoryPool *pool = arrow::default_memory_pool());
+  static Status Make(const std::shared_ptr<Column> &column,
+                     std::shared_ptr<ColumnSerializer> *serializer,
+                     MemoryPool *pool = nullptr);
+
+ private:
+  const std::shared_ptr<arrow::Array> array_;
+  const std::array<const uint8_t *, 3> data_bufs_;
+  const std::array<int32_t, 3> buf_sizes_;
+  const arrow::BufferVector extra_buffers_;
+};
+
+Status DeserializeColumn(const std::shared_ptr<arrow::DataType> &data_type,
+                         const std::array<std::shared_ptr<Buffer>, 3> &received_buffers,
+                         const std::array<int32_t, 3> &buffer_sizes,
+                         const std::array<int32_t, 3> &buffer_offsets,
+                         std::shared_ptr<Column> *output);
+Status DeserializeColumn(const std::shared_ptr<arrow::DataType> &data_type,
+                         const std::array<std::shared_ptr<Buffer>, 3> &received_buffers,
+                         const std::array<int32_t, 3> &buffer_sizes,
+                         std::shared_ptr<Column> *output);
+
 }
 
 #endif //CYLON_CPP_SRC_CYLON_NET_TABLE_SERIALIZE_HPP_
