@@ -173,9 +173,9 @@ if (CYLON_GLOO)
   cylon_run_test(parquet_join_test 2 gloo-mpi)
   cylon_run_test(parquet_join_test 4 gloo-mpi)
 
-#  cylon_run_test(set_op_test 1 gloo-mpi)
-#  cylon_run_test(set_op_test 2 gloo-mpi)
-#  cylon_run_test(set_op_test 4 gloo-mpi)
+  cylon_run_test(set_op_test 1 gloo-mpi)
+  cylon_run_test(set_op_test 2 gloo-mpi)
+  cylon_run_test(set_op_test 4 gloo-mpi)
 #
 #  cylon_run_test(groupby_test 1 gloo-mpi)
 #  cylon_run_test(groupby_test 2 gloo-mpi)
