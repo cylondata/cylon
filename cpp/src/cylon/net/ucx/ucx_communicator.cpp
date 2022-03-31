@@ -190,5 +190,11 @@ Status UCXCommunicator::Allgather(const std::shared_ptr<Column> &values,
   CYLON_UNUSED(output);
   return {Code::NotImplemented, "Allgather not implemented yet for ucx"};
 }
+Status UCXCommunicator::Allgather(const std::shared_ptr<Scalar> &value,
+                                  std::shared_ptr<Column> *output) const {
+  CYLON_UNUSED(value);
+  CYLON_UNUSED(output);
+  return {Code::NotImplemented, "Allgather not implemented yet for ucx"};
+}
 }  // namespace net
 }  // namespace cylon

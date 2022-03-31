@@ -61,6 +61,8 @@ class UCXCommunicator : public Communicator {
                    std::shared_ptr<Scalar> *output) const override;
   Status Allgather(const std::shared_ptr<Column> &values,
                    std::vector<std::shared_ptr<Column>> *output) const override;
+  Status Allgather(const std::shared_ptr<Scalar> &value,
+                   std::shared_ptr<Column> *output) const override;
 
   // # UCX specific attributes - These need to be passed to the channels created from the communicator
   // The worker for receiving

@@ -136,6 +136,11 @@ Status GlooCommunicator::Allgather(const std::shared_ptr<Column> &values,
   GlooAllgatherImpl impl(&gloo_ctx_);
   return impl.Execute(values, gloo_ctx_->size, output, (*ctx_ptr)->GetMemoryPool());
 }
+Status GlooCommunicator::Allgather(const std::shared_ptr<Scalar> &value,
+                                   std::shared_ptr<Column> *output) const {
+  GlooAllgatherImpl impl(&gloo_ctx_);
+  return impl.Execute(value, gloo_ctx_->size, output, (*ctx_ptr)->GetMemoryPool());
+}
 
 CommType GlooConfig::Type() { return GLOO; }
 

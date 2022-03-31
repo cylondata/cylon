@@ -147,5 +147,11 @@ Status MPICommunicator::Allgather(const std::shared_ptr<Column> &values,
   return impl.Execute(values, (*ctx_ptr)->GetWorldSize(), output, (*ctx_ptr)->GetMemoryPool());
 }
 
+Status MPICommunicator::Allgather(const std::shared_ptr<Scalar> &value,
+                                  std::shared_ptr<Column> *output) const {
+  mpi::MpiAllgatherImpl impl(mpi_comm_);
+  return impl.Execute(value, (*ctx_ptr)->GetWorldSize(), output, (*ctx_ptr)->GetMemoryPool());
+}
+
 }  // namespace net
 }  // namespace cylon

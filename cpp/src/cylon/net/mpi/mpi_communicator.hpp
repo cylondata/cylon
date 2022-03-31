@@ -68,6 +68,8 @@ class MPICommunicator : public Communicator {
 
   Status Allgather(const std::shared_ptr<Column> &values,
                    std::vector<std::shared_ptr<Column>> *output) const override;
+  Status Allgather(const std::shared_ptr<Scalar> &value,
+                   std::shared_ptr<Column> *output) const override;
 
   MPI_Comm mpi_comm() const;
 

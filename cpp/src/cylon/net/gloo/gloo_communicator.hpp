@@ -85,6 +85,8 @@ class GlooCommunicator : public Communicator {
   Status AllReduce(const std::shared_ptr<Scalar> &value,
                    net::ReduceOp reduce_op,
                    std::shared_ptr<Scalar> *output) const override;
+  Status Allgather(const std::shared_ptr<Scalar> &value,
+                   std::shared_ptr<Column> *output) const override;
   Status Allgather(const std::shared_ptr<Column> &values,
                    std::vector<std::shared_ptr<Column>> *output) const override;
 

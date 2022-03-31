@@ -80,6 +80,9 @@ class Communicator {
                            net::ReduceOp reduce_op,
                            std::shared_ptr<Scalar> *output) const = 0;
 
+  virtual Status Allgather(const std::shared_ptr<Scalar> &value,
+                           std::shared_ptr<Column> *output) const = 0;
+
  protected:
   int rank = -1;
   int world_size = -1;

@@ -11,6 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <arrow/visitor_inline.h>
 
 #include "common/test_header.hpp"
 
@@ -332,6 +333,56 @@ TEMPLATE_LIST_TEST_CASE("allgather array - binary", "[sync comms]", ArrowBinaryT
         test_all_gather(col);
       }
     }
+  }
+}
+
+TEMPLATE_LIST_TEST_CASE("allgather scalar - numeric", "[sync comms]", ArrowNumericTypes) {
+  auto type = default_type_instance<TestType>();
+  INFO("type: " + type->ToString());
+  const auto &comm = ctx->GetCommunicator();
+
+  auto test_all_gather = [&](const std::shared_ptr<arrow::Scalar> &s_) {
+    auto c_col = Scalar::Make(s_);
+    std::shared_ptr<Column> res;
+    CHECK_CYLON_STATUS(comm->Allgather(c_col, &res));
+
+    auto exp = arrow::MakeArrayFromScalar(*s_, WORLD_SZ).ValueOrDie();
+    CHECK_ARROW_EQUAL(exp, res->data());
+  };
+
+  SECTION("no nulls") {
+    auto s = arrow::MakeScalar(type, 100).ValueOrDie();
+    test_all_gather(s);
+  }
+
+  SECTION("with nulls") {
+    auto s = arrow::MakeNullScalar(type);
+    test_all_gather(s);
+  }
+}
+
+TEMPLATE_LIST_TEST_CASE("allgather scalar - binary", "[sync comms]", ArrowBinaryTypes) {
+  auto type = default_type_instance<TestType>();
+  INFO("type: " + type->ToString());
+  const auto &comm = ctx->GetCommunicator();
+
+  auto test_all_gather = [&](const std::shared_ptr<arrow::Scalar> &s_) {
+    auto c_col = Scalar::Make(s_);
+    std::shared_ptr<Column> res;
+    CHECK_CYLON_STATUS(comm->Allgather(c_col, &res));
+
+    auto exp = arrow::MakeArrayFromScalar(*s_, WORLD_SZ).ValueOrDie();
+    CHECK_ARROW_EQUAL(exp, res->data());
+  };
+
+  SECTION("no nulls") {
+    auto s = MakeBinaryScalar<TestType>("aaaa");
+    test_all_gather(s);
+  }
+
+  SECTION("with nulls") {
+    auto s = arrow::MakeNullScalar(type);
+    test_all_gather(s);
   }
 }
 
