@@ -21,6 +21,23 @@
 
 #include "example_utils.hpp"
 
+int64_t run_example(std::shared_ptr<cylon::Table>& table, bool merge) {
+  std::shared_ptr<cylon::Table> output;
+  auto start_1 = std::chrono::steady_clock::now();
+  auto status = DistributedSort(table, 0, output, true,
+                    {0, 0, merge ? cylon::SortOptions::REGULAR_SAMPLE_MERGE : cylon::SortOptions::REGULAR_SAMPLE_SORT});
+  auto end_1 = std::chrono::steady_clock::now();
+
+  int64_t time = std::chrono::duration_cast<std::chrono::milliseconds>(end_1 - start_1).count();
+
+  if(table->GetContext()->GetRank() == 0) {
+    LOG(INFO)<< "using " << (merge ? "merge" : "sort") << " takes " 
+    << time << " ms." << std::endl;
+  }
+
+  return time;
+}
+
 int main(int argc, char *argv[]) {
   if (argc < 1) {
     LOG(ERROR) << "./dist_sort_example <num_per_worker>" << std::endl;
@@ -28,31 +45,20 @@ int main(int argc, char *argv[]) {
   }
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  auto status = cylon::CylonContext::InitDistributed(mpi_config, &ctx);
 
   std::shared_ptr<cylon::Table> table, output_merge, output_sort;
 
   uint64_t count = std::stoull(argv[1]);
   cylon::examples::create_in_memory_tables(count, 0.2, ctx, table);
 
-  auto start_2 = std::chrono::steady_clock::now();
-  auto status = DistributedSort(table, 0, output_sort, true,
-                    {0, 0, cylon::SortOptions::REGULAR_SAMPLE_SORT});
-  auto end_2 = std::chrono::steady_clock::now();
-
-  LOG(INFO)<< "using sort takes " 
-  << std::chrono::duration_cast<std::chrono::milliseconds>(end_2 - start_2).count()
-  << " ms." << std::endl;
+  ctx->Barrier();
   
-  auto start_1 = std::chrono::steady_clock::now();
-  status = DistributedSort(table, 0, output_merge, true,
-                    {0, 0, cylon::SortOptions::REGULAR_SAMPLE_MERGE});
-  auto end_1 = std::chrono::steady_clock::now();
+  run_example(table, true);
+  run_example(table, false);
+  run_example(table, false);
+  run_example(table, true);
 
-  LOG(INFO)<< "using merge takes " 
-    << std::chrono::duration_cast<std::chrono::milliseconds>(end_1 - start_1).count()
-    << " ms." << std::endl;
-  
-  ctx->Finalize();
   return 0;
 }

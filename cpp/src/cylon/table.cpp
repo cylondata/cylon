@@ -601,7 +601,7 @@ Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
                              split_points, sample_result->GetContext()));
   }
 
-  return ctx->GetCommunicator()->Bcast( &split_points, 0);
+  return ctx->GetCommunicator()->Bcast(&split_points, 0);
 }
 
 // return (index of) first element that is not less than the target element
@@ -752,7 +752,7 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
       ctx, schema, split_tables, all_to_all_result));
 
   return MergeSortedTable(all_to_all_result, sort_columns, sort_direction, output, 
-    sort_options.sort_method == SortOptions::REGULAR_SAMPLE_SORT);
+    sort_options.sort_method == SortOptions::REGULAR_SAMPLE_MERGE);
 }
 
 Status DistributedSortInitialSampling(const std::shared_ptr<Table> &table,
