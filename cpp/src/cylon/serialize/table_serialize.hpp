@@ -117,9 +117,9 @@ class CylonColumnSerializer : public ColumnSerializer {
                         const std::array<int32_t, 3> &buf_sizes,
                         arrow::BufferVector extra_buffers);
 
-  const std::array<const uint8_t *, 3> &getDataBuffers() const override;
+  const std::array<const uint8_t *, 3> &data_buffers() const override;
 
-  const std::array<int32_t, 3> &getBufferSizes() const override;
+  const std::array<int32_t, 3> &buffer_sizes() const override;
 
   int32_t getDataTypeId() const override;
 

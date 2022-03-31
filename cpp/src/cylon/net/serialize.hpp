@@ -105,7 +105,7 @@ class ColumnSerializer {
    *      - column null mask buffer
    *      - column offsets buffer
    */
-  virtual const std::array<const uint8_t *, 3> &getDataBuffers() const = 0;
+  virtual const std::array<const uint8_t *, 3> &data_buffers() const = 0;
 
   /**
   * Three buffer sizes are returned in this order:
@@ -113,7 +113,7 @@ class ColumnSerializer {
   *     - size of the column null mask buffer in bytes
   *     - size of the column offsets buffer in bytes
   */
-  virtual const std::array<int32_t, 3> &getBufferSizes() const = 0;
+  virtual const std::array<int32_t, 3> &buffer_sizes() const = 0;
 
   virtual int32_t getDataTypeId() const = 0;
 };

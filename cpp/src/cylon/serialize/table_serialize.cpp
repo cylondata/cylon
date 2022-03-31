@@ -131,15 +131,13 @@ Status CylonTableSerializer::Make(const std::shared_ptr<Table> &table,
     for (int i = 0; i < atable->num_columns(); i++) {
       const auto &data = *atable->column(i)->chunk(0)->data();
       RETURN_CYLON_STATUS_IF_FAILED(
-          CollectBitmapInfo(data, &buffer_sizes[i], &data_buffers[i], &extra_buffers, pool));
-      RETURN_CYLON_STATUS_IF_FAILED(
-          CollectOffsetBuffer(data, &buffer_sizes[i + 1], &data_buffers[i + 1]));
-      RETURN_CYLON_STATUS_IF_FAILED(
-          CollectDataBuffer(data,
-                            &buffer_sizes[i + 2],
-                            &data_buffers[i + 2],
-                            &extra_buffers,
+          CollectBitmapInfo(data, &buffer_sizes[3 * i], &data_buffers[3 * i], &extra_buffers,
                             pool));
+      RETURN_CYLON_STATUS_IF_FAILED(
+          CollectOffsetBuffer(data, &buffer_sizes[3 * i + 1], &data_buffers[3 * i + 1]));
+      RETURN_CYLON_STATUS_IF_FAILED(
+          CollectDataBuffer(data, &buffer_sizes[3 * i + 2], &data_buffers[3 * i + 2],
+                            &extra_buffers, pool));
     }
   }
 
@@ -384,11 +382,11 @@ CylonColumnSerializer::CylonColumnSerializer(std::shared_ptr<arrow::Array> array
       buf_sizes_(buf_sizes),
       extra_buffers_(std::move(extra_buffers)) {}
 
-const std::array<const uint8_t *, 3> &CylonColumnSerializer::getDataBuffers() const {
+const std::array<const uint8_t *, 3> &CylonColumnSerializer::data_buffers() const {
   return data_bufs_;
 }
 
-const std::array<int32_t, 3> &CylonColumnSerializer::getBufferSizes() const {
+const std::array<int32_t, 3> &CylonColumnSerializer::buffer_sizes() const {
   return buf_sizes_;
 }
 
