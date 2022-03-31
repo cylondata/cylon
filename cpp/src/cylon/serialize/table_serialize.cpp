@@ -28,7 +28,7 @@ Status CollectBitmapInfo(const arrow::ArrayData &data, int32_t *buffer_sizes,
                          const uint8_t **data_buffers,
                          arrow::BufferVector *bitmaps_with_offset,
                          arrow::MemoryPool *pool) {
-  if (buf_idx != 0 && !data.MayHaveNulls()) {
+  if (buf_idx == 0 && !data.MayHaveNulls()) {
     *buffer_sizes = 0;
     *data_buffers = nullptr;
     return Status::OK();
@@ -181,6 +181,10 @@ const arrow::BufferVector &CylonTableSerializer::extra_buffers() const {
 
 int32_t CalculateNumRows(const std::shared_ptr<arrow::DataType> &type,
                          const std::array<int32_t, 3> &buffer_sizes) {
+  if (type->id() == arrow::Type::BOOL) {
+    return -1; // bool arrays can not compute rows!
+  }
+
   if (arrow::is_fixed_width(type->id())) {
     int byte_width =
         std::static_pointer_cast<arrow::FixedWidthType>(type)->bit_width() / CHAR_BIT;
@@ -445,6 +449,9 @@ Status DeserializeColumn(const std::shared_ptr<arrow::DataType> &data_type,
   }
 
   int num_rows = CalculateNumRows(data_type, buffer_sizes);
+  if (num_rows == -1) {
+    return {Code::ExecutionError, "unable to calculate num rows for the buffers"};
+  }
 
   auto valid_buf = buffer_sizes[0] ? MakeArrowBuffer(received_buffers[0], buffer_offsets[0],
                                                      buffer_sizes[0])

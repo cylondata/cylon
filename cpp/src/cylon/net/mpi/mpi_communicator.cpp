@@ -141,5 +141,11 @@ Status MPICommunicator::AllReduce(const std::shared_ptr<Scalar> &value, net::Red
 MPICommunicator::MPICommunicator(const std::shared_ptr<CylonContext> *ctx_ptr)
     : Communicator(ctx_ptr) {}
 
+Status MPICommunicator::Allgather(const std::shared_ptr<Column> &values,
+                                  std::vector<std::shared_ptr<Column>> *output) const {
+  mpi::MpiAllgatherImpl impl(mpi_comm_);
+  return impl.Execute(values, (*ctx_ptr)->GetWorldSize(), output, (*ctx_ptr)->GetMemoryPool());
+}
+
 }  // namespace net
 }  // namespace cylon

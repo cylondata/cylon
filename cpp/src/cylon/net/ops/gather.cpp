@@ -22,10 +22,13 @@
 #include "cylon/net/ops/base_ops.hpp"
 #include "cylon/net/utils.hpp"
 
-cylon::Status cylon::mpi::MpiTableGatherImpl::GatherBufferSizes(const int32_t *send_data,
-                                                                int num_buffers,
-                                                                int32_t *rcv_data,
-                                                                int gather_root) const {
+namespace cylon {
+namespace mpi {
+
+Status MpiTableGatherImpl::GatherBufferSizes(const int32_t *send_data,
+                                             int num_buffers,
+                                             int32_t *rcv_data,
+                                             int gather_root) const {
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Gather(send_data,
                                                num_buffers,
                                                MPI_INT32_T,
@@ -34,16 +37,16 @@ cylon::Status cylon::mpi::MpiTableGatherImpl::GatherBufferSizes(const int32_t *s
                                                MPI_INT32_T,
                                                gather_root,
                                                comm_));
-  return cylon::Status::OK();
+  return Status::OK();
 }
 
-cylon::Status cylon::mpi::MpiTableGatherImpl::IgatherBufferData(int buf_idx,
-                                                                const uint8_t *send_data,
-                                                                int32_t send_count,
-                                                                uint8_t *recv_data,
-                                                                const std::vector<int32_t> &recv_count,
-                                                                const std::vector<int32_t> &displacements,
-                                                                int gather_root) {
+Status MpiTableGatherImpl::IgatherBufferData(int buf_idx,
+                                             const uint8_t *send_data,
+                                             int32_t send_count,
+                                             uint8_t *recv_data,
+                                             const std::vector<int32_t> &recv_count,
+                                             const std::vector<int32_t> &displacements,
+                                             int gather_root) {
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Igatherv(send_data,
                                                  send_count,
                                                  MPI_UINT8_T,
@@ -54,29 +57,29 @@ cylon::Status cylon::mpi::MpiTableGatherImpl::IgatherBufferData(int buf_idx,
                                                  gather_root,
                                                  comm_,
                                                  &requests_[buf_idx]));
-  return cylon::Status::OK();
+  return Status::OK();
 }
 
-cylon::Status cylon::mpi::MpiTableGatherImpl::WaitAll(int num_buffers) {
+Status MpiTableGatherImpl::WaitAll(int num_buffers) {
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Waitall(num_buffers,
                                                 requests_.data(),
                                                 statuses_.data()));
-  return cylon::Status::OK();
+  return Status::OK();
 }
 
-void cylon::mpi::MpiTableGatherImpl::Init(int num_buffers) {
+void MpiTableGatherImpl::Init(int num_buffers) {
   requests_.resize(num_buffers);
   statuses_.resize(num_buffers);
 }
 
-cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &serializer,
-                                 int gather_root,
-                                 bool gather_from_root,
-                                 const std::shared_ptr<cylon::Allocator> &allocator,
-                                 std::vector<int32_t> &all_buffer_sizes,
-                                 std::vector<std::shared_ptr<cylon::Buffer>> &receive_buffers,
-                                 std::vector<std::vector<int32_t>> &displacements,
-                                 const std::shared_ptr<cylon::CylonContext> &ctx) {
+Status Gather(const std::shared_ptr<TableSerializer> &serializer,
+              int gather_root,
+              bool gather_from_root,
+              const std::shared_ptr<Allocator> &allocator,
+              std::vector<int32_t> &all_buffer_sizes,
+              std::vector<std::shared_ptr<Buffer>> &receive_buffers,
+              std::vector<std::vector<int32_t>> &displacements,
+              const std::shared_ptr<CylonContext> &ctx) {
   auto comm = GetMpiComm(ctx);
   MpiTableGatherImpl impl(comm);
   return impl.Execute(serializer,
@@ -90,10 +93,10 @@ cylon::Status cylon::mpi::Gather(const std::shared_ptr<cylon::TableSerializer> &
                       &displacements);
 }
 
-cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
-                                            int gather_root,
-                                            const std::shared_ptr<cylon::CylonContext> &ctx,
-                                            std::vector<std::shared_ptr<arrow::Buffer>> &buffers) {
+Status GatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
+                         int gather_root,
+                         const std::shared_ptr<CylonContext> &ctx,
+                         std::vector<std::shared_ptr<arrow::Buffer>> &buffers) {
   auto comm = GetMpiComm(ctx);
 
   std::vector<int32_t> all_buffer_sizes;
@@ -111,7 +114,7 @@ cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer>
                           gather_root,
                           comm);
   if (status != MPI_SUCCESS) {
-    return cylon::Status(cylon::Code::ExecutionError, "MPI_Gather failed when receiving buffer sizes!");
+    return Status(Code::ExecutionError, "MPI_Gather failed when receiving buffer sizes!");
   }
 
   CYLON_ASSIGN_OR_RAISE(std::shared_ptr<arrow::Buffer> all_buf, arrow::AllocateBuffer(0));
@@ -135,7 +138,7 @@ cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer>
                        gather_root,
                        comm);
   if (status != MPI_SUCCESS) {
-    return cylon::Status(cylon::Code::ExecutionError, "MPI_Gatherv failed when receiving buffers!");
+    return Status(Code::ExecutionError, "MPI_Gatherv failed when receiving buffers!");
   }
 
   if (gather_root == ctx->GetRank()) {
@@ -145,13 +148,12 @@ cylon::Status cylon::mpi::GatherArrowBuffer(const std::shared_ptr<arrow::Buffer>
     }
   }
 
-  return cylon::
-  Status::OK();
+  return Status::OK();
 }
 
-cylon::Status cylon::mpi::MpiTableAllgatherImpl::AllgatherBufferSizes(const int32_t *send_data,
-                                                                      int num_buffers,
-                                                                      int32_t *rcv_data) const {
+Status MpiTableAllgatherImpl::AllgatherBufferSizes(const int32_t *send_data,
+                                                   int num_buffers,
+                                                   int32_t *rcv_data) const {
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Allgather(send_data,
                                                   num_buffers,
                                                   MPI_INT32_T,
@@ -159,15 +161,15 @@ cylon::Status cylon::mpi::MpiTableAllgatherImpl::AllgatherBufferSizes(const int3
                                                   num_buffers,
                                                   MPI_INT32_T,
                                                   comm_));
-  return cylon::Status::OK();
+  return Status::OK();
 }
 
-cylon::Status cylon::mpi::MpiTableAllgatherImpl::IallgatherBufferData(int buf_idx,
-                                                                      const uint8_t *send_data,
-                                                                      int32_t send_count,
-                                                                      uint8_t *recv_data,
-                                                                      const std::vector<int32_t> &recv_count,
-                                                                      const std::vector<int32_t> &displacements) {
+Status MpiTableAllgatherImpl::IallgatherBufferData(int buf_idx,
+                                                   const uint8_t *send_data,
+                                                   int32_t send_count,
+                                                   uint8_t *recv_data,
+                                                   const std::vector<int32_t> &recv_count,
+                                                   const std::vector<int32_t> &displacements) {
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Iallgatherv(send_data,
                                                     send_count,
                                                     MPI_UINT8_T,
@@ -177,39 +179,39 @@ cylon::Status cylon::mpi::MpiTableAllgatherImpl::IallgatherBufferData(int buf_id
                                                     MPI_UINT8_T,
                                                     comm_,
                                                     &requests_[buf_idx]));
-  return cylon::Status::OK();
+  return Status::OK();
 }
 
-cylon::Status cylon::mpi::MpiTableAllgatherImpl::WaitAll(int num_buffers) {
+Status MpiTableAllgatherImpl::WaitAll(int num_buffers) {
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Waitall(num_buffers,
                                                 requests_.data(),
                                                 statuses_.data()));
-  return cylon::Status::OK();
+  return Status::OK();
 }
 
-cylon::mpi::MpiTableAllgatherImpl::MpiTableAllgatherImpl(MPI_Comm comm)
+MpiTableAllgatherImpl::MpiTableAllgatherImpl(MPI_Comm comm)
     : TableAllgatherImpl(), comm_(comm), requests_({}), statuses_({}) {}
 
-void cylon::mpi::MpiTableAllgatherImpl::Init(int num_buffers) {
+void MpiTableAllgatherImpl::Init(int num_buffers) {
   requests_.resize(num_buffers);
   statuses_.resize(num_buffers);
 }
 
-cylon::Status cylon::mpi::AllGather(const std::shared_ptr<cylon::TableSerializer> &serializer,
-                                    const std::shared_ptr<cylon::Allocator> &allocator,
-                                    std::vector<int32_t> &all_buffer_sizes,
-                                    std::vector<std::shared_ptr<cylon::Buffer>> &received_buffers,
-                                    std::vector<std::vector<int32_t>> &displacements,
-                                    const std::shared_ptr<cylon::CylonContext> &ctx) {
+Status AllGather(const std::shared_ptr<TableSerializer> &serializer,
+                 const std::shared_ptr<Allocator> &allocator,
+                 std::vector<int32_t> &all_buffer_sizes,
+                 std::vector<std::shared_ptr<Buffer>> &received_buffers,
+                 std::vector<std::vector<int32_t>> &displacements,
+                 const std::shared_ptr<CylonContext> &ctx) {
   auto comm = GetMpiComm(ctx);
   MpiTableAllgatherImpl impl(comm);
   return impl.Execute(serializer, allocator, ctx->GetWorldSize(),
                       &all_buffer_sizes, &received_buffers, &displacements);
 }
 
-cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
-                                               const std::shared_ptr<cylon::CylonContext> &ctx,
-                                               std::vector<std::shared_ptr<arrow::Buffer>> &buffers) {
+Status AllGatherArrowBuffer(const std::shared_ptr<arrow::Buffer> &buf,
+                            const std::shared_ptr<CylonContext> &ctx,
+                            std::vector<std::shared_ptr<arrow::Buffer>> &buffers) {
   auto comm = GetMpiComm(ctx);
 
   std::vector<int32_t> all_buffer_sizes(ctx->GetWorldSize(), 0);
@@ -223,7 +225,7 @@ cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buff
                              MPI_INT32_T,
                              comm);
   if (status != MPI_SUCCESS) {
-    return cylon::Status(cylon::Code::ExecutionError, "MPI_Allgather failed when receiving buffer sizes!");
+    return Status(Code::ExecutionError, "MPI_Allgather failed when receiving buffer sizes!");
   }
 
   auto total_size = std::accumulate(all_buffer_sizes.begin(), all_buffer_sizes.end(), 0);
@@ -241,8 +243,8 @@ cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buff
                           MPI_UINT8_T,
                           comm);
   if (status != MPI_SUCCESS) {
-    return cylon::Status(cylon::Code::ExecutionError,
-                         "MPI_Allgatherv failed when receiving buffers!");
+    return Status(Code::ExecutionError,
+                  "MPI_Allgatherv failed when receiving buffers!");
   }
 
   buffers.resize(ctx->GetWorldSize());
@@ -250,9 +252,50 @@ cylon::Status cylon::mpi::AllGatherArrowBuffer(const std::shared_ptr<arrow::Buff
     buffers[i] = arrow::SliceBuffer(all_buf, disps[i], all_buffer_sizes[i]);
   }
 
-  return cylon::Status::OK();
+  return Status::OK();
 }
 
-MPI_Comm cylon::mpi::GetMpiComm(const std::shared_ptr<CylonContext> &ctx) {
-  return std::static_pointer_cast<cylon::net::MPICommunicator>(ctx->GetCommunicator())->mpi_comm();
+MPI_Comm GetMpiComm(const std::shared_ptr<CylonContext> &ctx) {
+  return std::static_pointer_cast<net::MPICommunicator>(ctx->GetCommunicator())->mpi_comm();
+}
+
+Status MpiAllgatherImpl::AllgatherBufferSize(const int32_t *send_data,
+                                             int32_t num_buffers,
+                                             int32_t *rcv_data) const {
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Allgather(send_data,
+                                                  num_buffers,
+                                                  MPI_INT32_T,
+                                                  rcv_data,
+                                                  num_buffers,
+                                                  MPI_INT32_T,
+                                                  comm_));
+  return Status::OK();
+}
+
+Status MpiAllgatherImpl::IallgatherBufferData(int32_t buf_idx,
+                                              const uint8_t *send_data,
+                                              int32_t send_count,
+                                              uint8_t *recv_data,
+                                              const std::vector<int32_t> &recv_count,
+                                              const std::vector<int32_t> &displacements) {
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Iallgatherv(send_data,
+                                                    send_count,
+                                                    MPI_UINT8_T,
+                                                    recv_data,
+                                                    recv_count.data(),
+                                                    displacements.data(),
+                                                    MPI_UINT8_T,
+                                                    comm_,
+                                                    &requests_[buf_idx]));
+  return Status::OK();
+}
+
+Status MpiAllgatherImpl::WaitAll() {
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Waitall(3, requests_.data(), statuses_.data()));
+  return Status::OK();
+}
+
+MpiAllgatherImpl::MpiAllgatherImpl(MPI_Comm comm) : comm_(comm) {}
+
+}
 }

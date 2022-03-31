@@ -82,7 +82,7 @@ TEST_CASE("serialize column", "[serialization]") {
     SECTION(atable.get() == in_table.get() ? "without offset" : "with offset") {
 
       for (const auto &col: atable->columns()) {
-        if (col->type()->id() == arrow::Type::BOOL){
+        if (col->type()->id() == arrow::Type::BOOL) {
           continue;
         }
 
@@ -92,8 +92,8 @@ TEST_CASE("serialize column", "[serialization]") {
         // table serializer only has pointers to data. To emulate gather/ all gather behavior, create a
         // vector of arrow buffers.
         std::array<std::shared_ptr<Buffer>, 3> buffers{};
-        const auto &data_buffers = ser->getDataBuffers();
-        const auto &buffer_sizes = ser->getBufferSizes();
+        const auto &data_buffers = ser->data_buffers();
+        const auto &buffer_sizes = ser->buffer_sizes();
         for (size_t i = 0; i < 3; i++) {
           arrow::BufferBuilder builder;
           REQUIRE(builder.Append(data_buffers[i], buffer_sizes[i]).ok());

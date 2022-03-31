@@ -263,5 +263,77 @@ TEMPLATE_LIST_TEST_CASE("allreduce array", "[sync comms]", ArrowNumericTypes) {
   }
 }
 
+TEMPLATE_LIST_TEST_CASE("allgather array - numeric", "[sync comms]", ArrowNumericTypes) {
+  auto type = default_type_instance<TestType>();
+  INFO("type: " + type->ToString());
+  const auto &comm = ctx->GetCommunicator();
+
+  auto test_all_gather = [&](const std::shared_ptr<arrow::Array> &a_col) {
+    auto c_col = Column::Make(a_col);
+    std::vector<std::shared_ptr<Column>> res;
+    CHECK_CYLON_STATUS(comm->Allgather(c_col, &res));
+
+    for (const auto &r: res) {
+      CHECK_ARROW_EQUAL(a_col, r->data());
+    }
+  };
+
+  SECTION("no nulls") {
+    const auto &arr = ArrayFromJSON(type,
+                                    "[111, 112, 113, 114, 115, 116, 117, 118, 119, 110, 111, 121]");
+    for (const auto &col: {arr, arr->Slice(3)}) {
+      SECTION(col.get() == arr.get() ? "without offset" : "with offset") {
+        test_all_gather(col);
+      }
+    }
+  }
+
+  SECTION("with nulls") {
+    const auto &arr = ArrayFromJSON(type, "[1, 2, 3, null, 5, 6, 7, 8, 9, 10, null, 12]");
+    for (const auto &col: {arr, arr->Slice(3)}) {
+      SECTION(col.get() == arr.get() ? "without offset" : "with offset") {
+        test_all_gather(col);
+      }
+    }
+  }
+}
+
+TEMPLATE_LIST_TEST_CASE("allgather array - binary", "[sync comms]", ArrowBinaryTypes) {
+  auto type = default_type_instance<TestType>();
+  INFO("type: " + type->ToString());
+  const auto &comm = ctx->GetCommunicator();
+
+  auto test_all_gather = [&](const std::shared_ptr<arrow::Array> &a_col) {
+    auto c_col = Column::Make(a_col);
+    std::vector<std::shared_ptr<Column>> res;
+    CHECK_CYLON_STATUS(comm->Allgather(c_col, &res));
+
+    for (const auto &r: res) {
+      CHECK_ARROW_EQUAL(a_col, r->data());
+    }
+  };
+
+  SECTION("no nulls") {
+    const auto &arr = ArrayFromJSON(type,
+                                    R"(["111", "112", "113", "114", "115", "116",
+                                    "117", "118", "119", "110", "111", "121"])");
+    for (const auto &col: {arr, arr->Slice(3)}) {
+      SECTION(col.get() == arr.get() ? "without offset" : "with offset") {
+        test_all_gather(col);
+      }
+    }
+  }
+
+  SECTION("with nulls") {
+    const auto &arr =
+        ArrayFromJSON(type, R"(["1", "2", "3", null, "5", "6", "7", "8", "9", "10", null, "12"])");
+    for (const auto &col: {arr, arr->Slice(3)}) {
+      SECTION(col.get() == arr.get() ? "without offset" : "with offset") {
+        test_all_gather(col);
+      }
+    }
+  }
+}
+
 }
 }

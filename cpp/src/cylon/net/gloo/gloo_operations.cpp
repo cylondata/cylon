@@ -300,5 +300,38 @@ Status GlooAllReduceImpl::AllReduceBuffer(const void *send_buf, void *rcv_buf, i
   }
   return {Code::NotImplemented, "allreduce not implemented for type"};
 }
+
+Status GlooAllgatherImpl::AllgatherBufferSize(const int32_t *send_data,
+                                              int32_t num_buffers,
+                                              int32_t *rcv_data) const {
+  gloo::AllgatherOptions opts(*ctx_ptr_);
+  opts.setInput(const_cast<int32_t *>(send_data), num_buffers);
+  opts.setOutput(rcv_data, num_buffers * (*ctx_ptr_)->size);
+
+  gloo::allgather(opts);
+
+  return Status::OK();
+}
+
+Status GlooAllgatherImpl::IallgatherBufferData(int32_t buf_idx,
+                                               const uint8_t *send_data,
+                                               int32_t send_count,
+                                               uint8_t *recv_data,
+                                               const std::vector<int32_t> &recv_count,
+                                               const std::vector<int32_t> &displacements) {
+  CYLON_UNUSED(buf_idx);
+  CYLON_UNUSED(displacements);
+
+  gloo::AllgathervOptions opts(*ctx_ptr_);
+  opts.setInput(const_cast<uint8_t *>(send_data), send_count);
+  opts.setOutput(recv_data, std::vector<size_t>(recv_count.begin(), recv_count.end()));
+
+  gloo::allgatherv(opts);
+  return Status::OK();
+}
+
+Status GlooAllgatherImpl::WaitAll() {
+  return Status::OK();
+}
 }
 }

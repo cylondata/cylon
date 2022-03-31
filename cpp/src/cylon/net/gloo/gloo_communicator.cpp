@@ -130,6 +130,13 @@ Status GlooCommunicator::AllReduce(const std::shared_ptr<Scalar> &value,
 
 GlooCommunicator::GlooCommunicator(const std::shared_ptr<CylonContext> *ctx_ptr)
     : Communicator(ctx_ptr) {}
+
+Status GlooCommunicator::Allgather(const std::shared_ptr<Column> &values,
+                                   std::vector<std::shared_ptr<Column>> *output) const {
+  GlooAllgatherImpl impl(&gloo_ctx_);
+  return impl.Execute(values, gloo_ctx_->size, output, (*ctx_ptr)->GetMemoryPool());
+}
+
 CommType GlooConfig::Type() { return GLOO; }
 
 #ifdef GLOO_USE_MPI

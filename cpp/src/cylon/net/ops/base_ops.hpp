@@ -90,7 +90,7 @@ class TableGatherImpl {
                  std::vector<std::shared_ptr<Buffer>> *received_buffers,
                  std::vector<std::vector<int32_t>> *displacements);
 
-  Status Execute(                 const std::shared_ptr<Table> &table,
+  Status Execute(const std::shared_ptr<Table> &table,
                  int32_t gather_root,
                  bool gather_from_root,
                  std::vector<std::shared_ptr<Table>> *out);
@@ -124,8 +124,9 @@ class TableBcastImpl {
                  std::vector<std::shared_ptr<Buffer>> *received_buffers,
                  std::vector<int32_t> *data_types);
 
-  Status Execute(std::shared_ptr<Table> *table, int bcast_root,
-                      const std::shared_ptr<CylonContext> &ctx);
+  Status Execute(std::shared_ptr<Table> *table,
+                 int bcast_root,
+                 const std::shared_ptr<CylonContext> &ctx);
 };
 
 class AllReduceImpl {
@@ -143,6 +144,34 @@ class AllReduceImpl {
 
   Status Execute(const std::shared_ptr<Scalar> &value, net::ReduceOp reduce_op,
                  std::shared_ptr<Scalar> *output, MemoryPool *pool = nullptr) const;
+};
+
+class AllGatherImpl {
+ public:
+  virtual ~AllGatherImpl() = default;
+
+  virtual Status AllgatherBufferSize(const int32_t *send_data,
+                                     int32_t num_buffers,
+                                     int32_t *rcv_data) const = 0;
+
+  virtual Status IallgatherBufferData(int32_t buf_idx,
+                                      const uint8_t *send_data,
+                                      int32_t send_count,
+                                      uint8_t *recv_data,
+                                      const std::vector<int32_t> &recv_count,
+                                      const std::vector<int32_t> &displacements) = 0;
+
+  virtual Status WaitAll() = 0;
+
+  Status Execute(const std::shared_ptr<Column> &values,
+                 int32_t world_size,
+                 std::vector<std::shared_ptr<Column>> *output,
+                 MemoryPool *pool = nullptr);
+
+  Status Execute(const std::shared_ptr<Scalar> &value,
+                 int32_t world_size,
+                 std::shared_ptr<Column> *output,
+                 MemoryPool *pool = nullptr);
 };
 
 }

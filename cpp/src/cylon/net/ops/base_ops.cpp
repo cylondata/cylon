@@ -393,6 +393,92 @@ Status AllReduceImpl::Execute(const std::shared_ptr<Scalar> &value,
   return Status::OK();
 }
 
+void prefix_sum(const std::vector<int32_t> &buff_sizes, std::vector<int32_t> *out) {
+  std::partial_sum(buff_sizes.begin(), buff_sizes.end() - 1, out->begin() + 1);
+}
+
+Status AllGatherImpl::Execute(const std::shared_ptr<Column> &values,
+                              int32_t world_size,
+                              std::vector<std::shared_ptr<Column>> *output,
+                              MemoryPool *pool) {
+  if (world_size == 1) {
+    *output = {values};
+    return Status::OK();
+  }
+
+  const auto &type = values->data()->type();
+  std::shared_ptr<ColumnSerializer> serializer;
+  RETURN_CYLON_STATUS_IF_FAILED(CylonColumnSerializer::Make(values, &serializer, pool));
+
+  const auto &buf_sizes = serializer->buffer_sizes();
+  const auto &buffers = serializer->data_buffers();
+
+  // |b_0, b_1, b_2|...|b_0, b_1, b_2|
+  // <----col@0---->   <---col@n-1--->
+  std::vector<int32_t> all_buf_sizes(world_size * 3);
+  RETURN_CYLON_STATUS_IF_FAILED(AllgatherBufferSize(buf_sizes.data(), 3, all_buf_sizes.data()));
+
+  std::array<int32_t, 3> total_buf_sizes{};
+  for (int i = 0; i < world_size; i++) {
+    total_buf_sizes[0] += all_buf_sizes[3 * i];
+    total_buf_sizes[1] += all_buf_sizes[3 * i + 1];
+    total_buf_sizes[2] += all_buf_sizes[3 * i + 2];
+  }
+
+  ArrowAllocator allocator(ToArrowPool(pool));
+
+  std::array<std::vector<int32_t>, 3> displacements{};
+  std::array<std::shared_ptr<Buffer>, 3> received_bufs{};
+  for (int i = 0; i < 3; i++) {
+    RETURN_CYLON_STATUS_IF_FAILED(allocator.Allocate(total_buf_sizes[i], &received_bufs[i]));
+
+    const auto &receive_counts = receiveCounts(all_buf_sizes, i, 3, world_size);
+    displacements[i].resize(world_size);
+    prefix_sum(receive_counts, &displacements[i]);
+
+    RETURN_CYLON_STATUS_IF_FAILED(IallgatherBufferData(i,
+                                                       buffers[i],
+                                                       buf_sizes[i],
+                                                       received_bufs[i]->GetByteBuffer(),
+                                                       receive_counts,
+                                                       displacements[i]));
+  }
+  WaitAll();
+
+  output->resize(world_size);
+  for (int i = 0; i < world_size; i++) {
+    std::array<int32_t, 3> sizes{all_buf_sizes[3 * i], all_buf_sizes[3 * i + 1],
+                                 all_buf_sizes[3 * i + 2]};
+    std::array<int32_t, 3> offsets{displacements[0][i], displacements[1][i], displacements[2][i]};
+    RETURN_CYLON_STATUS_IF_FAILED(DeserializeColumn(type,
+                                                    received_bufs,
+                                                    sizes,
+                                                    offsets,
+                                                    &(*output)[i]));
+  }
+  return Status::OK();
+}
+
+Status AllGatherImpl::Execute(const std::shared_ptr<Scalar> &value,
+                              int32_t world_size,
+                              std::shared_ptr<Column> *output,
+                              MemoryPool *pool) {
+  auto a_pool = ToArrowPool(pool);
+  CYLON_ASSIGN_OR_RAISE(auto arr, arrow::MakeArrayFromScalar(*value->data(), 1, a_pool));
+  std::vector<std::shared_ptr<Column>> columns;
+  RETURN_CYLON_STATUS_IF_FAILED(Execute(Column::Make(std::move(arr)), world_size, &columns, pool));
+
+  std::vector<std::shared_ptr<arrow::Array>> a_arrs;
+  a_arrs.reserve(world_size);
+  for (const auto &c: columns) {
+    a_arrs.push_back(c->data());
+  }
+  CYLON_ASSIGN_OR_RAISE(auto a_res, arrow::Concatenate(a_arrs, a_pool))
+
+  *output = Column::Make(std::move(a_res));
+  return Status::OK();
+}
+
 }// net
 }// cylon
 

@@ -106,6 +106,26 @@ class GlooAllReduceImpl : public AllReduceImpl {
   const std::shared_ptr<gloo::Context> *ctx_ptr_;
 };
 
+class GlooAllgatherImpl : public AllGatherImpl {
+ public:
+  explicit GlooAllgatherImpl(const std::shared_ptr<gloo::Context> *ctx_ptr)
+      : ctx_ptr_(ctx_ptr) {}
+
+  Status AllgatherBufferSize(const int32_t *send_data,
+                             int32_t num_buffers,
+                             int32_t *rcv_data) const override;
+  Status IallgatherBufferData(int32_t buf_idx,
+                              const uint8_t *send_data,
+                              int32_t send_count,
+                              uint8_t *recv_data,
+                              const std::vector<int32_t> &recv_count,
+                              const std::vector<int32_t> &displacements) override;
+  Status WaitAll() override;
+
+ private:
+  const std::shared_ptr<gloo::Context> *ctx_ptr_;
+};
+
 }
 }
 #endif //CYLON_CPP_SRC_CYLON_NET_GLOO_GLOO_OPERATIONS_HPP_
