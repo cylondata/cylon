@@ -53,11 +53,10 @@ struct PendingSend {
   //  we allow upto 8 ints for the header
   int headerBuf[CYLON_CHANNEL_HEADER_SIZE]{};
   // segments of data to be sent
-  std::queue<std::shared_ptr<TxRequest>> pendingData{};
+  std::queue<std::shared_ptr<CylonRequest>> pendingData{};
   UCXSendStatus status = SEND_INIT;
-  MPI_Request request{};
   // the current send, if it is a actual send
-  std::shared_ptr<TxRequest> currentSend{};
+  std::shared_ptr<CylonRequest> currentSend{};
 
   // UCX context - For tracking the progress of the message
   ucx::ucxContext *context;
@@ -72,7 +71,6 @@ struct PendingReceive {
   std::shared_ptr<Buffer> data{};
   int length{};
   UCXReceiveStatus status = RECEIVE_INIT;
-  MPI_Request request{};
   // UCX context - For tracking the progress of the message
   ucx::ucxContext *context;
 };
@@ -109,7 +107,7 @@ class UCXChannel : public Channel {
   * @param request the request
   * @return true if accepted
   */
-  int send(std::shared_ptr<TxRequest> request) override;
+  int send(std::shared_ptr<CylonRequest> request) override;
 
   /**
   * Send the message to the target.
@@ -117,7 +115,7 @@ class UCXChannel : public Channel {
   * @param request the request
   * @return true if accepted
   */
-  int sendFin(std::shared_ptr<TxRequest> request) override;
+  int sendFin(std::shared_ptr<CylonRequest> request) override;
 
   /**
    * This method, will send the messages, It will first send a message with length and then
@@ -138,7 +136,7 @@ class UCXChannel : public Channel {
   // keep track of the posted receives
   std::unordered_map<int, PendingReceive *> pendingReceives;
   // we got finish requests
-  std::unordered_map<int, std::shared_ptr<TxRequest>> finishRequests;
+  std::unordered_map<int, std::shared_ptr<CylonRequest>> finishRequests;
   // receive callback function
   ChannelReceiveCallback *rcv_fn;
   // send complete callback function

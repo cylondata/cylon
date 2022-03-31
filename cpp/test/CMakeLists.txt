@@ -44,16 +44,21 @@ function(cylon_add_test TESTNAME)
   target_link_libraries(${exec_name} ${ARROW_LIB})
   target_link_libraries(${exec_name} cylon)
   target_link_libraries(${exec_name} ${GLOG_LIBRARIES})
+
+  if (CYLON_GLOO)
+    target_link_libraries(${exec_name} ${GLOO_LIBRARIES})
+  endif (CYLON_GLOO)
+
 endfunction(cylon_add_test)
 
 # macro to run executable
-function(cylon_run_test TESTNAME no_mpi_proc)
-  set(exec_name "${TESTNAME}_${no_mpi_proc}")
+function(cylon_run_test TESTNAME parallelism comm_args)
+  set(exec_name "${TESTNAME}_${parallelism}_${comm_args}")
   if (WIN32)
-    set(test_params -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/${TESTNAME}")
-  else()
-    set(test_params --allow-run-as-root --oversubscribe -np ${no_mpi_proc} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}")
-  endif()
+    set(test_params -np ${parallelism} "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/${TESTNAME}" --comm "${comm_args}")
+  else ()
+    set(test_params --allow-run-as-root --oversubscribe -np ${parallelism} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}" --comm "${comm_args}")
+  endif ()
   add_test(NAME ${exec_name} COMMAND ${MPIEXEC_EXECUTABLE} ${test_params})
 endfunction(cylon_run_test)
 
@@ -62,98 +67,134 @@ endfunction(cylon_run_test)
 
 # join tests
 cylon_add_test(join_test)
-cylon_run_test(join_test 1)
-cylon_run_test(join_test 2)
-cylon_run_test(join_test 4)
+cylon_run_test(join_test 1 mpi)
+cylon_run_test(join_test 2 mpi)
+cylon_run_test(join_test 4 mpi)
 
 # join parquet tests
 cylon_add_test(parquet_join_test)
-cylon_run_test(parquet_join_test 1)
-cylon_run_test(parquet_join_test 2)
-cylon_run_test(parquet_join_test 4)
+cylon_run_test(parquet_join_test 1 mpi)
+cylon_run_test(parquet_join_test 2 mpi)
+cylon_run_test(parquet_join_test 4 mpi)
 
 # set operation tests
 cylon_add_test(set_op_test)
-cylon_run_test(set_op_test 1)
-cylon_run_test(set_op_test 2)
-cylon_run_test(set_op_test 4)
+cylon_run_test(set_op_test 1 mpi)
+cylon_run_test(set_op_test 2 mpi)
+cylon_run_test(set_op_test 4 mpi)
 
 # create table test
 cylon_add_test(create_table_test)
-cylon_run_test(create_table_test 1)
+cylon_run_test(create_table_test 1 mpi)
 
 #util tests
 cylon_add_test(quick_sort_test)
-cylon_run_test(quick_sort_test 1)
+cylon_run_test(quick_sort_test 1 mpi)
 
 # aggergate tests
 cylon_add_test(aggregate_test)
-cylon_run_test(aggregate_test 1)
-cylon_run_test(aggregate_test 2)
-cylon_run_test(aggregate_test 4)
+cylon_run_test(aggregate_test 1 mpi)
+cylon_run_test(aggregate_test 2 mpi)
+cylon_run_test(aggregate_test 4 mpi)
 
 #groupby tests
 cylon_add_test(groupby_test)
-cylon_run_test(groupby_test 1)
-cylon_run_test(groupby_test 2)
-cylon_run_test(groupby_test 4)
+cylon_run_test(groupby_test 1 mpi)
+cylon_run_test(groupby_test 2 mpi)
+cylon_run_test(groupby_test 4 mpi)
 
 #table op tests
 cylon_add_test(table_op_test)
-cylon_run_test(table_op_test 1)
-cylon_run_test(table_op_test 2)
-cylon_run_test(table_op_test 4)
+cylon_run_test(table_op_test 1 mpi)
+cylon_run_test(table_op_test 2 mpi)
+cylon_run_test(table_op_test 4 mpi)
 
 #partition tests
 cylon_add_test(partition_test)
-cylon_run_test(partition_test 1)
-cylon_run_test(partition_test 2)
-cylon_run_test(partition_test 4)
+cylon_run_test(partition_test 1 mpi)
+cylon_run_test(partition_test 2 mpi)
+cylon_run_test(partition_test 4 mpi)
 
 #indexing tests
 cylon_add_test(indexing_test)
-cylon_run_test(indexing_test 1)
+cylon_run_test(indexing_test 1 mpi)
 
 # create table test
 cylon_add_test(sorting_test)
-cylon_run_test(sorting_test 1)
+cylon_run_test(sorting_test 1 mpi)
 
 # hash utils test
 cylon_add_test(hash_utils_test)
-cylon_run_test(hash_utils_test 1)
+cylon_run_test(hash_utils_test 1 mpi)
 
 # utils test
 cylon_add_test(utils_test)
-cylon_run_test(utils_test 1)
+cylon_run_test(utils_test 1 mpi)
 
 # equal test
 cylon_add_test(equal_test)
-cylon_run_test(equal_test 1)
-cylon_run_test(equal_test 2)
+cylon_run_test(equal_test 1 mpi)
+cylon_run_test(equal_test 2 mpi)
 
 # flatten array test
 cylon_add_test(flatten_array_test)
-cylon_run_test(flatten_array_test 1)
+cylon_run_test(flatten_array_test 1 mpi)
 
 # comparator test
 cylon_add_test(comparator_test)
-cylon_run_test(comparator_test 1)
+cylon_run_test(comparator_test 1 mpi)
 
 # repartition test
 cylon_add_test(repartition_test)
-cylon_run_test(repartition_test 1)
-cylon_run_test(repartition_test 4)
+cylon_run_test(repartition_test 1 mpi)
+cylon_run_test(repartition_test 4 mpi)
 
 # serialization test
 cylon_add_test(serialize_test)
-cylon_run_test(serialize_test 1)
+cylon_run_test(serialize_test 1 mpi)
 
 # synchronous communications test
 cylon_add_test(sync_comms_test)
-cylon_run_test(sync_comms_test 1)
-cylon_run_test(sync_comms_test 4)
+cylon_run_test(sync_comms_test 1 mpi)
+cylon_run_test(sync_comms_test 4 mpi)
 
 # custom mpi comm test
 cylon_add_test(custom_mpi_comm_test)
-cylon_run_test(custom_mpi_comm_test 1)
-cylon_run_test(custom_mpi_comm_test 4)
+cylon_run_test(custom_mpi_comm_test 1 mpi)
+cylon_run_test(custom_mpi_comm_test 4 mpi)
+
+
+#### Gloo tests
+if (CYLON_GLOO)
+  cylon_run_test(join_test 1 gloo-mpi)
+  cylon_run_test(join_test 4 gloo-mpi)
+
+  cylon_run_test(parquet_join_test 1 gloo-mpi)
+  cylon_run_test(parquet_join_test 2 gloo-mpi)
+  cylon_run_test(parquet_join_test 4 gloo-mpi)
+
+  cylon_run_test(set_op_test 1 gloo-mpi)
+  cylon_run_test(set_op_test 2 gloo-mpi)
+  cylon_run_test(set_op_test 4 gloo-mpi)
+
+  cylon_run_test(groupby_test 1 gloo-mpi)
+  cylon_run_test(groupby_test 2 gloo-mpi)
+  cylon_run_test(groupby_test 4 gloo-mpi)
+
+  cylon_run_test(table_op_test 1 gloo-mpi)
+  cylon_run_test(table_op_test 2 gloo-mpi)
+  cylon_run_test(table_op_test 4 gloo-mpi)
+  #
+  #  cylon_run_test(equal_test 1 gloo-mpi)
+  #  cylon_run_test(equal_test 2 gloo-mpi)
+  #
+  #  cylon_run_test(repartition_test 1 gloo-mpi)
+  #  cylon_run_test(repartition_test 4 gloo-mpi)
+
+  cylon_run_test(aggregate_test 1 gloo-mpi)
+  cylon_run_test(aggregate_test 2 gloo-mpi)
+  cylon_run_test(aggregate_test 4 gloo-mpi)
+  
+  cylon_run_test(sync_comms_test 1 gloo-mpi)
+  cylon_run_test(sync_comms_test 4 gloo-mpi)
+endif (CYLON_GLOO)

@@ -23,6 +23,12 @@ namespace cylon {
 namespace test {
 
 TEST_CASE("aggregate testing", "[aggregates]") {
+
+  if (ctx->GetCommType() != net::MPI) {
+    // this testcase would only work for mpi comms
+    return;
+  }
+
   const int rows = 12;
 
   cylon::Status status;

@@ -50,7 +50,7 @@ class Communicator {
 
   virtual Status Bcast(std::shared_ptr<Table> *table, int bcast_root) const = 0;
 
-  /* Array communicationss */
+  /* Array communications */
 
   /**
    * Allreduce values at every index on `values`.
@@ -65,11 +65,23 @@ class Communicator {
                            net::ReduceOp reduce_op,
                            std::shared_ptr<Column> *output) const = 0;
 
+  /**
+   * Allgather `values`
+   * @param values
+   * @param output
+   * @return
+   */
+  virtual Status Allgather(const std::shared_ptr<Column> &values,
+                           std::vector<std::shared_ptr<Column>> *output) const = 0;
+
   /* Scalar communications */
 
   virtual Status AllReduce(const std::shared_ptr<Scalar> &value,
                            net::ReduceOp reduce_op,
                            std::shared_ptr<Scalar> *output) const = 0;
+
+  virtual Status Allgather(const std::shared_ptr<Scalar> &value,
+                           std::shared_ptr<Column> *output) const = 0;
 
  protected:
   int rank = -1;

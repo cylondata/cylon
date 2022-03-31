@@ -18,7 +18,7 @@
 #include <iostream>
 
 namespace cylon {
-class TxRequest {
+class CylonRequest {
 
  public:
   const void *buffer{};
@@ -27,13 +27,13 @@ class TxRequest {
   int header[6] = {};
   int headerLength{};
 
-  TxRequest(int tgt, const void *buf, int len);
+  CylonRequest(int tgt, const void *buf, int len);
 
-  TxRequest(int tgt, const void *buf, int len, int *head, int hLength);
+  CylonRequest(int tgt, const void *buf, int len, int *head, int hLength);
 
-  explicit TxRequest(int tgt);
+  explicit CylonRequest(int tgt);
 
-  ~TxRequest();
+  ~CylonRequest();
 
   void to_string(std::string dataType, int bufDepth);
 };

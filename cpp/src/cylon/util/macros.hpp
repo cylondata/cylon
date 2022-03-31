@@ -42,7 +42,7 @@
       char _err_str[MPI_MAX_ERROR_STRING];  \
       int _err_str_len = 0;                 \
       MPI_Error_string(_st, _err_str, &_err_str_len); \
-      return cylon::Status(Code::ExecutionError,      \
+      return cylon::Status(cylon::Code::ExecutionError,      \
                            std::string(_err_str, _err_str_len)); \
     };                              \
   } while (0)

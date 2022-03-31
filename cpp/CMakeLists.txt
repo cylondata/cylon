@@ -66,6 +66,9 @@ if (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "DEBUG")
 elseif (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "RELEASE")
     message("Running on Release mode...")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+elseif (UPPERCASE_CMAKE_BUILD_TYPE MATCHES "RELWITHDEBINFO")
+    message("Running on RelWithDebInfo mode...")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -O2 -g -fsanitize=address")
 else ()
     message(FATAL_ERROR "Unknown CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE}! Exiting...")
 endif ()
@@ -233,6 +236,33 @@ if (CYLON_UCX)
     endif (CONDA_LINK_DIRS)
     message(STATUS "UCX libs: ${UCX_LIBRARIES}")
 endif (CYLON_UCX)
+
+# gloo
+option(CYLON_GLOO "Build Cylon with Gloo" OFF)
+if (CYLON_GLOO)
+    message("Cylon Gloo enabled")
+    add_definitions(-DBUILD_CYLON_GLOO)
+
+    if (NOT GLOO_INSTALL_PREFIX)
+        message(FATAL_ERROR "CYLON_GLOO is set, GLOO_INSTALL_PREFIX should also be set")
+    endif ()
+
+    find_package(Gloo REQUIRED CONFIG HINTS ${GLOO_INSTALL_PREFIX})
+    message(STATUS "gloo include dirs: ${GLOO_INCLUDE_DIRS}")
+    message(STATUS "gloo libs: ${GLOO_LIBRARIES}")
+
+    include_directories(SYSTEM ${GLOO_INCLUDE_DIRS})
+    link_directories(${GLOO_LIBRARIES})
+
+    if (EXISTS "${GLOO_INCLUDE_DIRS}/gloo/mpi/context.h")
+        set(GLOO_USE_MPI ON)
+    else ()
+        set(GLOO_USE_MPI OFF)
+    endif ()
+    message(STATUS "gloo use mpi: ${GLOO_USE_MPI}")
+    add_definitions(-DGLOO_USE_MPI)
+endif()
+
 
 # Arrow
 if (NOT ARROW_BUILD_TYPE)

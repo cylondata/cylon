@@ -19,7 +19,11 @@
 namespace cylon {
 namespace net {
 enum CommType {
-  LOCAL = 0, MPI, TCP, UCX
+  LOCAL = 0,
+  MPI = 1,
+  TCP = 2,
+  UCX = 3,
+  GLOO = 4
 };
 }  // namespace net
 }  // namespace cylon

@@ -64,6 +64,7 @@ class ProxyMemoryPool : public arrow::MemoryPool {
 
 arrow::MemoryPool *ToArrowPool(const std::shared_ptr<cylon::CylonContext> &ctx);
 arrow::MemoryPool *ToArrowPool(cylon::CylonContext* ctx);
+arrow::MemoryPool *ToArrowPool(MemoryPool* pool);
 }
 
 #endif //CYLON_SRC_CYLON_CTX_ARROW_MEMORY_POOL_UTILS_HPP_

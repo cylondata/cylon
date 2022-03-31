@@ -15,17 +15,18 @@
 #include <cylon/ctx/arrow_memory_pool_utils.hpp>
 
 arrow::MemoryPool *cylon::ToArrowPool(const std::shared_ptr<cylon::CylonContext> &ctx) {
-  if (ctx->GetMemoryPool() == nullptr) {
-    return arrow::default_memory_pool();
-  } else {
-    return new ProxyMemoryPool(ctx->GetMemoryPool());
-  }
+  return ToArrowPool(ctx->GetMemoryPool());
 }
 
-arrow::MemoryPool *cylon::ToArrowPool(cylon::CylonContext* ctx) {
-  if (ctx->GetMemoryPool() == nullptr) {
+arrow::MemoryPool *cylon::ToArrowPool(cylon::CylonContext *ctx) {
+  return ToArrowPool(ctx->GetMemoryPool());
+}
+
+arrow::MemoryPool *cylon::ToArrowPool(cylon::MemoryPool *pool) {
+  if (pool == nullptr) {
     return arrow::default_memory_pool();
   } else {
-    return new ProxyMemoryPool(ctx->GetMemoryPool());
+    // todo this is dangerous! return a smart pointer
+    return new ProxyMemoryPool(pool);
   }
 }

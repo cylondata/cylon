@@ -62,5 +62,52 @@ TEST_CASE("serialize table", "[serialization]") {
   }
 }
 
+TEST_CASE("serialize column", "[serialization]") {
+  auto schema = arrow::schema({
+                                  {field("_", arrow::boolean())},
+                                  {field("a", arrow::uint32())},
+                                  {field("b", arrow::float64())},
+                                  {field("c", arrow::utf8())},
+                              });
+
+  auto in_table = TableFromJSON(schema, {R"([{"_": true,  "a": null, "b": 5,  "c": "1"},
+                                     {"_": false,  "a": 1,    "b": 3,    "c": "12"},
+                                     {"_": true,  "a": 3,    "b": null, "c": "123"},
+                                     {"_": null,  "a": null, "b": null, "c": null},
+                                     {"_": true,  "a": 2,    "b": 5,    "c": "1234"},
+                                     {"_": false,  "a": 1,    "b": 5,    "c": null}
+                                    ])"});
+
+  for (const auto &atable: {in_table, in_table->Slice(3)}) {
+    SECTION(atable.get() == in_table.get() ? "without offset" : "with offset") {
+
+      for (const auto &col: atable->columns()) {
+        if (col->type()->id() == arrow::Type::BOOL) {
+          continue;
+        }
+
+        std::shared_ptr<ColumnSerializer> ser;
+        CHECK_CYLON_STATUS(CylonColumnSerializer::Make(col, &ser));
+
+        // table serializer only has pointers to data. To emulate gather/ all gather behavior, create a
+        // vector of arrow buffers.
+        std::array<std::shared_ptr<Buffer>, 3> buffers{};
+        const auto &data_buffers = ser->data_buffers();
+        const auto &buffer_sizes = ser->buffer_sizes();
+        for (size_t i = 0; i < 3; i++) {
+          arrow::BufferBuilder builder;
+          REQUIRE(builder.Append(data_buffers[i], buffer_sizes[i]).ok());
+          buffers[i] = std::make_shared<ArrowBuffer>(builder.Finish().ValueOrDie());
+        }
+
+        std::shared_ptr<Column> output;
+        CHECK_CYLON_STATUS(DeserializeColumn(col->type(), buffers, buffer_sizes, &output));
+
+        CHECK_ARROW_EQUAL(col->chunk(0), output->data());
+      }
+    }
+  }
+}
+
 }
 }
