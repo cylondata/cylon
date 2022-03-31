@@ -16,6 +16,7 @@
 #define CYLON_NET_TABLE_SERIALIZE_HPP
 
 #include <vector>
+#include <array>
 #include <cstdint>
 
 namespace cylon {
