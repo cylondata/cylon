@@ -42,7 +42,20 @@ macro(cylon_add_exe EXENAME)
 
     if (CYLON_GLOO)
         target_link_libraries(${EXENAME} ${GLOO_LIBRARIES})
-    endif()
+    endif ()
+
+#    if (CYLON_UCX)
+#        target_link_libraries(${EXENAME} ${UCX_LIBRARIES})
+#        if (CYLON_UCC)
+#            target_link_libraries(${EXENAME} ucc)
+#            target_link_libraries(${EXENAME} ucc /home/niranda/git/ucc/install/lib/ucc/libucc_cl_basic.so
+#                    /home/niranda/git/ucc/install/lib/ucc/libucc_cl_hier.so
+#                    /home/niranda/git/ucc/install/lib/ucc/libucc_mc_cpu.so
+#                    /home/niranda/git/ucc/install/lib/ucc/libucc_tl_ucp.so)
+##            target_include_directories(${EXENAME} INTERFACE ${UCC_INCLUDE_DIRS})
+#            include_directories(${UCC_INCLUDE_DIRS})
+#        endif (CYLON_UCC)
+#    endif (CYLON_UCX)
 
     install(TARGETS ${EXENAME} RUNTIME DESTINATION cylon/examples)
 endmacro(cylon_add_exe)
@@ -70,6 +83,9 @@ cylon_add_exe(parquet_join_example)
 
 if (CYLON_UCX)
     cylon_add_exe(ucx_join_example)
+    if (CYLON_UCC)
+        cylon_add_exe(ucc_example)
+    endif ()
 endif (CYLON_UCX)
 
 if (CYLON_GLOO)

@@ -22,7 +22,7 @@
 # For more information about CMake, see http://www.cmake.org             #
 ##########################################################################
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 project(CYLON VERSION 0.5.0)
 
@@ -197,6 +197,7 @@ endif ()
 
 # ucx
 option(CYLON_UCX "Build Cylon with UCX" OFF)
+option(CYLON_UCC "Build Cylon with UCC" OFF)
 if (CYLON_UCX)
     message("Cylon UCX enabled")
     # Definition used for checking
@@ -235,6 +236,24 @@ if (CYLON_UCX)
                 ${UCX_LIBDIR}/libucp.so)
     endif (CONDA_LINK_DIRS)
     message(STATUS "UCX libs: ${UCX_LIBRARIES}")
+
+    if (CYLON_UCC)
+        message("Cylon UCC enabled")
+        # Definition used for checking
+        add_definitions(-DBUILD_CYLON_UCC)
+
+        if (NOT UCC_INSTALL_PREFIX)
+            message(FATAL_ERROR "CYLON_UCC is set, but UCC_INSTALL_PREFIX is missing")
+        endif ()
+
+        find_package(ucc REQUIRED CONFIG HINTS ${UCC_INSTALL_PREFIX})
+        message(STATUS "UCC include dirs: ${UCC_INCLUDE_DIRS}")
+        message(STATUS "UCC libs: ${UCC_LIBRARIES}")
+
+        include_directories(SYSTEM ${UCC_INCLUDE_DIRS})
+        link_directories(${UCC_LIBRARIES})
+        link_directories(${UCC_LIBRARIES}/ucc)
+    endif (CYLON_UCC)
 endif (CYLON_UCX)
 
 # gloo

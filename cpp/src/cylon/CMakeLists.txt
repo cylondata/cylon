@@ -219,6 +219,9 @@ target_link_libraries(cylon ${PARQUET_LIB})
 
 if (CYLON_UCX)
     target_link_libraries(cylon ${UCX_LIBRARIES})
+    if (CYLON_UCC)
+        target_link_libraries(cylon ucc)
+    endif ()
 endif ()
 
 if (CYLON_GLOO)
