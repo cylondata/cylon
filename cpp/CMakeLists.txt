@@ -22,7 +22,7 @@
 # For more information about CMake, see http://www.cmake.org             #
 ##########################################################################
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
-#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 project(CYLON VERSION 0.5.0)
 
@@ -252,7 +252,6 @@ if (CYLON_UCX)
 
         include_directories(SYSTEM ${UCC_INCLUDE_DIRS})
         link_directories(${UCC_LIBRARIES})
-        link_directories(${UCC_LIBRARIES}/ucc)
     endif (CYLON_UCC)
 endif (CYLON_UCX)
 

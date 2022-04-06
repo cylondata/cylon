@@ -44,18 +44,12 @@ macro(cylon_add_exe EXENAME)
         target_link_libraries(${EXENAME} ${GLOO_LIBRARIES})
     endif ()
 
-#    if (CYLON_UCX)
-#        target_link_libraries(${EXENAME} ${UCX_LIBRARIES})
-#        if (CYLON_UCC)
-#            target_link_libraries(${EXENAME} ucc)
-#            target_link_libraries(${EXENAME} ucc /home/niranda/git/ucc/install/lib/ucc/libucc_cl_basic.so
-#                    /home/niranda/git/ucc/install/lib/ucc/libucc_cl_hier.so
-#                    /home/niranda/git/ucc/install/lib/ucc/libucc_mc_cpu.so
-#                    /home/niranda/git/ucc/install/lib/ucc/libucc_tl_ucp.so)
-##            target_include_directories(${EXENAME} INTERFACE ${UCC_INCLUDE_DIRS})
-#            include_directories(${UCC_INCLUDE_DIRS})
-#        endif (CYLON_UCC)
-#    endif (CYLON_UCX)
+    if (CYLON_UCX)
+        target_link_libraries(${EXENAME} ${UCX_LIBRARIES})
+        if (CYLON_UCC)
+            target_link_libraries(${EXENAME} ucc)
+        endif (CYLON_UCC)
+    endif (CYLON_UCX)
 
     install(TARGETS ${EXENAME} RUNTIME DESTINATION cylon/examples)
 endmacro(cylon_add_exe)
@@ -92,15 +86,6 @@ if (CYLON_GLOO)
     cylon_add_exe(gloo_example)
 endif (CYLON_GLOO)
 
-macro(cylon_add_exe2 DIR EXENAME)
-    add_executable(${EXENAME} ${DIR}/${EXENAME}.cpp)
-    target_link_libraries(${EXENAME} ${MPI_LIBRARIES})
-    target_link_libraries(${EXENAME} cylon)
-    target_link_libraries(${EXENAME} ${ARROW_LIB})
-    target_link_libraries(${EXENAME} ${GLOG_LIBRARIES})
-    target_link_libraries(${EXENAME} cylon_example_utils)
-    install(TARGETS ${EXENAME} RUNTIME DESTINATION cylon/examples)
-endmacro(cylon_add_exe2)
 
 
 

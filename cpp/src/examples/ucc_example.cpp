@@ -12,11 +12,14 @@
  *  limitations under the License.
  */
 
+/**
+ * run the example as follows:
+ *  mpirun -n 4 bin/ucc_example
+ */
+
 #include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include <cstdio>
+#include <cstdlib>
 #include <ucc/api/ucc.h>
 #include <iostream>
 
@@ -29,17 +32,17 @@
 
 static ucc_status_t oob_allgather(void *sbuf, void *rbuf, size_t msglen,
                                   void *coll_info, void **req) {
-  MPI_Comm comm = (MPI_Comm) coll_info;
+  auto comm = (MPI_Comm) coll_info;
   MPI_Request request;
 
-  MPI_Iallgather(sbuf, msglen, MPI_BYTE, rbuf, msglen, MPI_BYTE, comm,
+  MPI_Iallgather(sbuf, (int) msglen, MPI_BYTE, rbuf, (int) msglen, MPI_BYTE, comm,
                  &request);
   *req = (void *) request;
   return UCC_OK;
 }
 
 static ucc_status_t oob_allgather_test(void *req) {
-  MPI_Request request = (MPI_Request) req;
+  auto request = (MPI_Request) req;
   int completed;
 
   MPI_Test(&request, &completed, MPI_STATUS_IGNORE);
@@ -102,9 +105,12 @@ int main(int argc, char **argv) {
   /* Init ucc library */
   ucc_lib_params_t lib_params = {
       .mask        = UCC_LIB_PARAM_FIELD_THREAD_MODE,
-      .thread_mode = UCC_THREAD_SINGLE
+      .thread_mode = UCC_THREAD_SINGLE,
+      .coll_types = {},
+      .reduction_types={},
+      .sync_type = {}
   };
-  UCC_CHECK(ucc_lib_config_read(NULL, NULL, &lib_config));
+  UCC_CHECK(ucc_lib_config_read(nullptr, nullptr, &lib_config));
   UCC_CHECK(ucc_init(&lib_params, lib_config, &lib));
   ucc_lib_config_release(lib_config);
 
@@ -118,7 +124,7 @@ int main(int argc, char **argv) {
   ctx_params.oob.n_oob_eps = static_cast<uint32_t>(size);
   ctx_params.oob.oob_ep = static_cast<uint32_t>(rank);
 
-  UCC_CHECK(ucc_context_config_read(lib, NULL, &ctx_config));
+  UCC_CHECK(ucc_context_config_read(lib, nullptr, &ctx_config));
   UCC_CHECK(ucc_context_create(lib, &ctx_params, ctx_config, &ctx));
   ucc_context_config_release(ctx_config);
 
@@ -129,7 +135,7 @@ int main(int argc, char **argv) {
 
   sbuf = static_cast<int *>(malloc(msglen));
   rbuf = static_cast<int *>(malloc(msglen));
-  for (i = 0; i < count; i++) {
+  for (i = 0; i < (int) count; i++) {
     sbuf[i] = rank + 1;
     rbuf[i] = 0;
   }
@@ -155,7 +161,7 @@ int main(int argc, char **argv) {
 
   /* Check result */
   int sum = ((size + 1) * size) / 2;
-  for (i = 0; i < count; i++) {
+  for (i = 0; i < (int) count; i++) {
     if (rbuf[i] != sum) {
       printf("ERROR at rank %d, pos %d, value %d, expected %d\n", rank, i, rbuf[i], sum);
       break;
