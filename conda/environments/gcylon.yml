@@ -10,12 +10,12 @@ dependencies:
   - cython>=0.29,<0.30
   - cudf=21.10.01
   - cudatoolkit=11.2
-#  - pyarrow=4.0.1
-#  - arrow-cpp=4.0.1
   - glog>=0.4.0
-  - setuptools>=49.6.0
-  - openmpi>=4.1.1
+  - openmpi>=4.1
   - ucx>=1.12.0
+  - numpy>=1.16
+  - pandas>=1.0
+  - setuptools>=40.0,<60.0
 # these are for running tests only,
 # they are not needed for using pygcylon or compiling it
   - pytest

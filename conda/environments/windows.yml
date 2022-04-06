@@ -6,11 +6,11 @@ dependencies:
   - python=3.8
   - cmake>=3.17
   - pyarrow=5.0.0
-  - glog
+  - glog>=0.4.0
   - msmpi
   - cython>=0.29,<0.30
-  - numpy
-  - pandas
-  - setuptools
+  - numpy>=1.16
+  - pandas>=1.0
+  - setuptools>=40.0,<60.0
   # they are not needed for using pygcylon or compiling it
   - pytest
