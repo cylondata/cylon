@@ -61,13 +61,14 @@ else ()
 endif ()
 set(GLOG_INCLUDE_DIR "${GLOG_ROOT}/install/include")
 
-message(STATUS "Glog libs dir: " ${GLOG_LIBRARY_DIR})
-message(STATUS "Glog include dir: " ${GLOG_INCLUDE_DIR})
-
 set(GLOG_FOUND TRUE)
 
 IF (WIN32)
     set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/glog.lib)
 ELSE ()
-    set(GLOG_LIBRARIES ${GLOG_INSTALL}/${CMAKE_INSTALL_LIBDIR}/libglog.a)
+    set(GLOG_LIBRARIES ${GLOG_LIBRARY_DIR}/libglog.a)
 ENDIF ()
+
+message(STATUS "Glog libs dir: " ${GLOG_LIBRARY_DIR})
+message(STATUS "Glog include dir: " ${GLOG_INCLUDE_DIR})
+message(STATUS "Glog libs: " ${GLOG_LIBRARIES})
