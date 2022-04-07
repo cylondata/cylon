@@ -13,8 +13,6 @@
 ##
 
 # build glog from github tag
-include(GNUInstallDirs)
-
 set(GLOG_ROOT ${CMAKE_BINARY_DIR}/glog)
 set(GLOG_INSTALL ${CMAKE_BINARY_DIR}/glog/install)
 
@@ -49,18 +47,27 @@ execute_process(
         RESULT_VARIABLE GLOG_BUILD
         WORKING_DIRECTORY ${GLOG_ROOT}/build)
 
-if(GLOG_BUILD)
+if (GLOG_BUILD)
     message(FATAL_ERROR "Building Glog failed: " ${GLOG_BUILD})
-endif(GLOG_BUILD)
+endif (GLOG_BUILD)
 
 message(STATUS "Glog installed here: " ${GLOG_ROOT}/install)
-set(GLOG_LIBRARY_DIR "${GLOG_ROOT}/install/${CMAKE_INSTALL_LIBDIR}")
+if (EXISTS "${GLOG_ROOT}/install/lib")
+    set(GLOG_LIBRARY_DIR "${GLOG_ROOT}/install/lib")
+elseif (EXISTS "${GLOG_ROOT}/install/lib64")
+    set(GLOG_LIBRARY_DIR "${GLOG_ROOT}/install/lib64")
+else ()
+    message(ERROR "Unable to find glog lib directory in ${GLOG_ROOT}/install")
+endif ()
 set(GLOG_INCLUDE_DIR "${GLOG_ROOT}/install/include")
+
+message(STATUS "Glog libs dir: " ${GLOG_LIBRARY_DIR})
+message(STATUS "Glog include dir: " ${GLOG_INCLUDE_DIR})
 
 set(GLOG_FOUND TRUE)
 
-IF(WIN32)
-        set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/glog.lib)
-ELSE()
-        set(GLOG_LIBRARIES ${GLOG_INSTALL}/${CMAKE_INSTALL_LIBDIR}/libglog.a)
-ENDIF()
+IF (WIN32)
+    set(GLOG_LIBRARIES ${GLOG_INSTALL}/lib/glog.lib)
+ELSE ()
+    set(GLOG_LIBRARIES ${GLOG_INSTALL}/${CMAKE_INSTALL_LIBDIR}/libglog.a)
+ENDIF ()
