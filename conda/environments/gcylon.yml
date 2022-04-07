@@ -10,7 +10,7 @@ dependencies:
   - cython>=0.29,<0.30
   - cudf=21.10.01
   - cudatoolkit=11.2
-  - glog>=0.4.0
+  - glog=0.5.0
   - openmpi>=4.1
   - ucx>=1.12.0
   - numpy>=1.16

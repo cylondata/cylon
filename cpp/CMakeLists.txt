@@ -163,7 +163,7 @@ include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
 # if conda build, we will get glog from conda instead of building ourselves
 if (CYLON_CONDA_BUILD)
     message("Using Conda Glog")
-    find_package(glog 0.5.0 REQUIRED)
+    find_package(glog REQUIRED)
     set(GLOG_LIBRARIES glog::glog)
 else ()
     message("Building Glog locally")
