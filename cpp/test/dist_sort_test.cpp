@@ -138,5 +138,150 @@ TEST_CASE("Dist sort testing", "[dist sort]") {
   }
 }
 
+TEST_CASE("Binary search testing", "[binary search]") {
+  auto schema = arrow::schema({{arrow::field("a", arrow::uint32())},
+                               {arrow::field("b", arrow::float32())}});
+
+  auto arrow_table = TableFromJSON(schema, {R"([ {"a":  1, "b": 0.868000},
+    {"a":  3, "b": 0.025000},
+    {"a":  4, "b": 0.529000},
+    {"a":  7, "b": 0.232000},
+    {"a": 10, "b": 0.808000},
+    {"a": 12, "b": 0.813000},
+    {"a": 13, "b": 0.085000},
+    {"a": 13, "b": 0.201000},
+    {"a": 14, "b": 0.193000},
+    {"a": 19, "b": 0.422000},
+    {"a": 20, "b": 0.030000},
+    {"a": 20, "b": 0.689000},
+    {"a": 21, "b": 0.853000},
+    {"a": 25, "b": 0.479000},
+    {"a": 26, "b": 0.394000},
+    {"a": 26, "b": 0.676000},
+    {"a": 29, "b": 0.291000},
+    {"a": 29, "b": 0.291000},
+    {"a": 31, "b": 0.122000},
+    {"a": 33, "b": 0.010000},
+    {"a": 33, "b": 0.318000},
+    {"a": 37, "b": 0.491000},
+    {"a": 37, "b": 0.834000},
+    {"a": 41, "b": 0.519000},
+    {"a": 41, "b": 0.519000},
+    {"a": 43, "b": 0.419000},
+    {"a": 45, "b": 0.734000},
+    {"a": 45, "b": 0.898000},
+    {"a": 51, "b": 0.755000},
+    {"a": 57, "b": 0.153000},
+    {"a": 57, "b": 0.314000},
+    {"a": 59, "b": 0.837000},
+    {"a": 61, "b": 0.685000},
+    {"a": 62, "b": 0.262000},
+    {"a": 64, "b": 0.528000},
+    {"a": 67, "b": 0.086000},
+    {"a": 67, "b": 0.407000},
+    {"a": 70, "b": 0.504000},
+    {"a": 72, "b": 0.968000},
+    {"a": 76, "b": 0.927000}])"});
+
+  std::shared_ptr<Table> table;
+  CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, arrow_table, table));
+
+  auto arrow_split_points =
+      TableFromJSON(schema, {R"([ {"a":  1, "b": 0.068000},
+                                  {"a":  4, "b": 0.529000},
+                                  {"a":  27, "b": 0.025000},
+                                  {"a":  80, "b": 0.232000}])"});
+
+  std::shared_ptr<Table> split_points;
+  CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, arrow_split_points, split_points));
+
+
+  std::unique_ptr<DualTableRowIndexEqualTo> equal_to;
+  auto status = DualTableRowIndexEqualTo::Make(
+      table->get_table(), split_points->get_table(), {0, 1},
+      {0, 1}, &equal_to, {1, 1});
+
+  SECTION("search target less than table's smallest entry") {
+    REQUIRE(tableBinarySearch(split_points, table, equal_to, 0) == 0);
+  }
+
+  SECTION("table contains search target") {
+    REQUIRE(tableBinarySearch(split_points, table, equal_to, 1) == 2);
+  }
+
+  
+  SECTION("search target not exsit but within range of table") {
+    REQUIRE(tableBinarySearch(split_points, table, equal_to, 2) == 16);
+  }
+
+  
+  SECTION("search target greater than table's largest entry") {
+    REQUIRE(tableBinarySearch(split_points, table, equal_to, 3) == table->Rows());
+  }
+}
+
+TEST_CASE("Merge testing", "[table merge]") {
+  auto schema = arrow::schema({{arrow::field("a", arrow::uint32())},
+                               {arrow::field("b", arrow::float32())}});
+
+  auto arrow_table_1 = TableFromJSON(schema, {R"([ {"a":  1, "b": 0.868000},
+    {"a":  3, "b": 0.025000},
+    {"a":  4, "b": 0.529000},
+    {"a":  7, "b": 0.232000},
+    {"a": 10, "b": 0.808000},
+    {"a": 12, "b": 0.813000},
+    {"a": 13, "b": 0.085000},
+    {"a": 13, "b": 0.201000},
+    {"a": 14, "b": 0.193000},
+    {"a": 19, "b": 0.422000},
+    {"a": 20, "b": 0.030000},
+    {"a": 20, "b": 0.689000},
+    {"a": 21, "b": 0.853000},
+    {"a": 25, "b": 0.479000},
+    {"a": 26, "b": 0.394000},
+    {"a": 61, "b": 0.685000},
+    {"a": 62, "b": 0.262000},
+    {"a": 64, "b": 0.528000},
+    {"a": 72, "b": 0.968000},
+    {"a": 76, "b": 0.927000}])"});
+
+  std::shared_ptr<Table> table1;
+  CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, arrow_table_1, table1));
+
+  auto arrow_table_2 = TableFromJSON(schema, {R"([ {"a": 26, "b": 0.676000},
+    {"a": 29, "b": 0.291000},
+    {"a": 29, "b": 0.291000},
+    {"a": 31, "b": 0.122000},
+    {"a": 33, "b": 0.010000},
+    {"a": 33, "b": 0.318000},
+    {"a": 37, "b": 0.491000},
+    {"a": 37, "b": 0.834000},
+    {"a": 41, "b": 0.519000},
+    {"a": 41, "b": 0.519000},
+    {"a": 43, "b": 0.419000},
+    {"a": 45, "b": 0.734000},
+    {"a": 45, "b": 0.898000},
+    {"a": 51, "b": 0.755000},
+    {"a": 57, "b": 0.153000},
+    {"a": 57, "b": 0.314000},
+    {"a": 59, "b": 0.837000},
+    {"a": 67, "b": 0.086000},
+    {"a": 67, "b": 0.407000},
+    {"a": 70, "b": 0.504000}])"});
+
+  std::shared_ptr<Table> table2;
+  CHECK_CYLON_STATUS(Table::FromArrowTable(ctx, arrow_table_2, table2));
+
+  std::shared_ptr<Table> concat, sorted, merged;
+  Merge({table1, table2}, concat);
+  Sort(concat, {0, 1}, sorted, {1, 1});
+
+  MergeSortedTable({table1, table2}, {0, 1}, {1, 1}, merged, true);
+
+  bool result;
+  Equals(sorted, merged, result);
+  REQUIRE(result);
+}
+
 }  // namespace test
 }  // namespace cylon

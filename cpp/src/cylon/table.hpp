@@ -379,6 +379,29 @@ Status DistributedSort(const std::shared_ptr<Table> &table,
                        SortOptions sort_options = SortOptions::Defaults());
 
 /**
+ * given the index of split point in split_points, return the index in
+ * sorted_table where all entries before the index is less than the spilt point.
+ * @param split_points table of split points
+ * @param sorted_table table to split
+ * @param equal_to comparator
+ * @param split_point_idx index of split point
+ * @param l optional starting index
+ */
+int64_t tableBinarySearch(
+    const std::shared_ptr<Table> &split_points,
+    const std::shared_ptr<Table> &sorted_table,
+    std::unique_ptr<DualTableRowIndexEqualTo>& equal_to,
+    int64_t split_point_idx, int64_t l = 0);
+
+/**
+ * merge tables 
+ */
+Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
+                        const std::vector<int> &sort_columns,
+                        const std::vector<bool> &sort_orders,
+                        std::shared_ptr<Table> &out, bool use_merge);
+
+/**
  * Filters out rows based on the selector function
  * @param table
  * @param selector lambda function returning a bool
