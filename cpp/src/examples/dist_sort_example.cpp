@@ -12,6 +12,12 @@
  * limitations under the License.
  */
 
+
+
+/**
+ * To run this example: ./dist_sort_example <num_rows_per_worker> <num_iterations>
+ */
+
 #include <glog/logging.h>
 #include <chrono>
 
@@ -40,7 +46,7 @@ int64_t run_example(std::shared_ptr<cylon::Table>& table, bool merge) {
 
 int main(int argc, char *argv[]) {
   if (argc < 1) {
-    LOG(ERROR) << "./dist_sort_example <num_per_worker>" << std::endl;
+    LOG(ERROR) << "./dist_sort_example <num_per_worker> <num_iterations>" << std::endl;
     return 1;
   }
 
@@ -53,12 +59,19 @@ int main(int argc, char *argv[]) {
   uint64_t count = std::stoull(argv[1]);
   cylon::examples::create_in_memory_tables(count, 0.2, ctx, table);
 
+  int iters = std::stoi(argv[2]);
+
   ctx->Barrier();
-  
-  run_example(table, true);
-  run_example(table, false);
-  run_example(table, false);
-  run_example(table, true);
+
+  int64_t merge_time = 0, sort_time = 0;
+
+  for(int i = 0; i < iters; i++) {
+    merge_time += run_example(table, true);
+    sort_time += run_example(table, false);
+  }
+
+  std::cout<< "merge takes " << merge_time << " ms in total." << std::endl;
+  std::cout<< "sort takes " << sort_time << " ms in total." << std::endl;
 
   return 0;
 }
