@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##
-include(GNUInstallDirs)
 
 set(ARROW_HOME ${CMAKE_BINARY_DIR}/arrow/install)
 set(ARROW_ROOT ${CMAKE_BINARY_DIR}/arrow)
@@ -69,14 +68,14 @@ if (ARROW_CONFIG)
     message(FATAL_ERROR "Configuring Arrow failed: " ${ARROW_CONFIG})
 endif (ARROW_CONFIG)
 
-set(PARALLEL_BUILD -j)
+set(PARALLEL_BUILD "")
 if ($ENV{PARALLEL_LEVEL})
     set(NUM_JOBS $ENV{PARALLEL_LEVEL})
-    set(PARALLEL_BUILD "${PARALLEL_BUILD}${NUM_JOBS}")
+    set(PARALLEL_BUILD "-j ${NUM_JOBS}")
 endif ($ENV{PARALLEL_LEVEL})
 
 execute_process(
-        COMMAND ${CMAKE_COMMAND} --build ..
+        COMMAND ${CMAKE_COMMAND} --build .. ${PARALLEL_BUILD}
         RESULT_VARIABLE ARROW_BUILD
         WORKING_DIRECTORY ${ARROW_ROOT}/build)
 
@@ -85,8 +84,16 @@ if (ARROW_BUILD)
 endif (ARROW_BUILD)
 
 message(STATUS "Arrow installed here: " ${ARROW_ROOT}/install)
-set(ARROW_LIBRARY_DIR "${ARROW_ROOT}/install/${CMAKE_INSTALL_LIBDIR}")
+if (EXISTS "${ARROW_ROOT}/install/lib")
+    set(ARROW_LIBRARY_DIR "${ARROW_ROOT}/install/lib")
+elseif (EXISTS "${ARROW_ROOT}/install/lib64")
+    set(ARROW_LIBRARY_DIR "${ARROW_ROOT}/install/lib64")
+else ()
+    message(ERROR "Unable to find Arrow lib directory in ${ARROW_ROOT}/install")
+endif ()
 set(ARROW_INCLUDE_DIR "${ARROW_ROOT}/install/include")
+message(STATUS "Arrow libs dir: " ${ARROW_LIBRARY_DIR})
+message(STATUS "Arrow include dir: " ${ARROW_INCLUDE_DIR})
 
 # find packages with the help of arrow Find*.cmake files
 find_package(Arrow REQUIRED HINTS "${ARROW_LIBRARY_DIR}/cmake/arrow" CONFIGS FindArrow.cmake)
