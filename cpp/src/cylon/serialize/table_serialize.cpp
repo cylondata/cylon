@@ -24,35 +24,35 @@
 namespace cylon {
 
 template<int buf_idx = 0>
-Status CollectBitmapInfo(const arrow::ArrayData &data, std::vector<int32_t> *buffer_sizes,
-                         std::vector<const uint8_t *> *data_buffers,
+Status CollectBitmapInfo(const arrow::ArrayData &data, int32_t *buffer_sizes,
+                         const uint8_t **data_buffers,
                          arrow::BufferVector *bitmaps_with_offset,
                          arrow::MemoryPool *pool) {
-  if (!data.MayHaveNulls()) {
-    buffer_sizes->push_back(0);
-    data_buffers->push_back(nullptr);
+  if (buf_idx == 0 && !data.MayHaveNulls()) {
+    *buffer_sizes = 0;
+    *data_buffers = nullptr;
     return Status::OK();
   }
 
   // there are nulls
-  buffer_sizes->push_back((int32_t) arrow::BitUtil::BytesForBits(data.length));
+  *buffer_sizes = (int32_t) arrow::BitUtil::BytesForBits(data.length);
   if (data.offset == 0) { // no offset
-    data_buffers->push_back(data.buffers[buf_idx]->data());
+    *data_buffers = data.buffers[buf_idx]->data();
   } else if (data.offset % CHAR_BIT == 0) { // offset is at a byte boundary
-    data_buffers->push_back(data.buffers[buf_idx]->data() + data.offset / CHAR_BIT);
+    *data_buffers = data.buffers[buf_idx]->data() + data.offset / CHAR_BIT;
   } else { // non-byte boundary offset
     CYLON_ASSIGN_OR_RAISE(
         auto buf,
         arrow::internal::CopyBitmap(pool, data.buffers[buf_idx]->data(), data.offset, data.length))
-    data_buffers->push_back(buf->data());
+    *data_buffers = buf->data();
     bitmaps_with_offset->push_back(std::move(buf));
   }
 
   return Status::OK();
 }
 
-Status CollectDataBuffer(const arrow::ArrayData &data, std::vector<int32_t> *buffer_sizes,
-                         std::vector<const uint8_t *> *data_buffers,
+Status CollectDataBuffer(const arrow::ArrayData &data, int32_t *buffer_sizes,
+                         const uint8_t **data_buffers,
                          arrow::BufferVector *bitmaps_with_offset,
                          arrow::MemoryPool *pool) {
   const auto &type = data.type;
@@ -62,24 +62,24 @@ Status CollectDataBuffer(const arrow::ArrayData &data, std::vector<int32_t> *buf
 
   if (arrow::is_fixed_width(type->id())) {
     int byte_width = std::static_pointer_cast<arrow::FixedWidthType>(type)->bit_width() / CHAR_BIT;
-    buffer_sizes->push_back(byte_width * (int) data.length);
-    data_buffers->push_back(data.buffers[1]->data() + data.offset * byte_width);
+    *buffer_sizes = byte_width * (int) data.length;
+    *data_buffers = data.buffers[1]->data() + data.offset * byte_width;
     return Status::OK();
   }
 
   if (arrow::is_binary_like(type->id())) {
     int start_offset = data.GetValues<int32_t>(1)[0];
     int end_offset = data.GetValues<int32_t>(1)[data.length];
-    buffer_sizes->push_back(end_offset - start_offset);
-    data_buffers->push_back(data.buffers[2]->data() + start_offset);
+    *buffer_sizes = end_offset - start_offset;
+    *data_buffers = data.buffers[2]->data() + start_offset;
     return Status::OK();
   }
 
   if (arrow::is_large_binary_like(type->id())) {
     int start_offset = (int) data.GetValues<int64_t>(1)[0];
     int end_offset = (int) data.GetValues<int64_t>(1)[data.length];
-    buffer_sizes->push_back(end_offset - start_offset);
-    data_buffers->push_back(data.buffers[2]->data() + start_offset);
+    *buffer_sizes = end_offset - start_offset;
+    *data_buffers = data.buffers[2]->data() + start_offset;
     return Status::OK();
   }
 
@@ -87,24 +87,24 @@ Status CollectDataBuffer(const arrow::ArrayData &data, std::vector<int32_t> *buf
 }
 
 Status CollectOffsetBuffer(const arrow::ArrayData &data,
-                           std::vector<int32_t> *buffer_sizes,
-                           std::vector<const uint8_t *> *data_buffers) {
+                           int32_t *buffer_sizes,
+                           const uint8_t **data_buffers) {
   const auto &type = data.type;
   if (arrow::is_fixed_width(type->id())) {
-    buffer_sizes->push_back(0);
-    data_buffers->push_back(nullptr);
+    *buffer_sizes = 0;
+    *data_buffers = nullptr;
     return Status::OK();
   }
 
   if (arrow::is_binary_like(type->id())) {
-    buffer_sizes->push_back((int) ((data.length + 1) * sizeof(int32_t)));
-    data_buffers->push_back(reinterpret_cast<const uint8_t*>(data.GetValues<int32_t>(1)));
+    *buffer_sizes = (int) ((data.length + 1) * sizeof(int32_t));
+    *data_buffers = reinterpret_cast<const uint8_t *>(data.GetValues<int32_t>(1));
     return Status::OK();
   }
 
   if (arrow::is_large_binary_like(type->id())) {
-    buffer_sizes->push_back((int) ((data.length + 1) * sizeof(int64_t)));
-    data_buffers->push_back(reinterpret_cast<const uint8_t*>(data.GetValues<int64_t>(1)));
+    *buffer_sizes = (int) ((data.length + 1) * sizeof(int64_t));
+    *data_buffers = reinterpret_cast<const uint8_t *>(data.GetValues<int64_t>(1));
     return Status::OK();
   }
 
@@ -113,8 +113,6 @@ Status CollectOffsetBuffer(const arrow::ArrayData &data,
 
 Status CylonTableSerializer::Make(const std::shared_ptr<Table> &table,
                                   std::shared_ptr<TableSerializer> *serializer) {
-  std::vector<int32_t> buffer_sizes;
-  std::vector<const uint8_t *> data_buffers;
   // we can only send byte boundary buffers. If we encounter bitmaps that don't align to a byte
   // boundary, make a copy and keep it in this vector
   arrow::BufferVector extra_buffers;
@@ -123,21 +121,23 @@ Status CylonTableSerializer::Make(const std::shared_ptr<Table> &table,
   auto atable = table->get_table();
   auto pool = ToArrowPool(table->GetContext());
 
-  if (table->Rows() == 0) {
-    buffer_sizes = std::vector<int32_t>(num_buffers, 0);
-    data_buffers = std::vector<const uint8_t *>(num_buffers, nullptr);
-  } else {
+  std::vector<int32_t> buffer_sizes(num_buffers, 0);
+  std::vector<const uint8_t *> data_buffers(num_buffers, nullptr);
+
+  if (table->Rows()) {
     // order: validity, offsets, data
     COMBINE_CHUNKS_RETURN_CYLON_STATUS(atable, pool);
 
-    for (const auto &col: atable->columns()) {
-      const auto &data = *col->chunk(0)->data();
+    for (int i = 0; i < atable->num_columns(); i++) {
+      const auto &data = *atable->column(i)->chunk(0)->data();
       RETURN_CYLON_STATUS_IF_FAILED(
-          CollectBitmapInfo(data, &buffer_sizes, &data_buffers, &extra_buffers, pool));
+          CollectBitmapInfo(data, &buffer_sizes[3 * i], &data_buffers[3 * i], &extra_buffers,
+                            pool));
       RETURN_CYLON_STATUS_IF_FAILED(
-          CollectOffsetBuffer(data, &buffer_sizes, &data_buffers));
+          CollectOffsetBuffer(data, &buffer_sizes[3 * i + 1], &data_buffers[3 * i + 1]));
       RETURN_CYLON_STATUS_IF_FAILED(
-          CollectDataBuffer(data, &buffer_sizes, &data_buffers, &extra_buffers, pool));
+          CollectDataBuffer(data, &buffer_sizes[3 * i + 2], &data_buffers[3 * i + 2],
+                            &extra_buffers, pool));
     }
   }
 
@@ -177,6 +177,29 @@ std::vector<int32_t> CylonTableSerializer::getEmptyTableBufferSizes() {
 
 const arrow::BufferVector &CylonTableSerializer::extra_buffers() const {
   return extra_buffers_;
+}
+
+int32_t CalculateNumRows(const std::shared_ptr<arrow::DataType> &type,
+                         const std::array<int32_t, 3> &buffer_sizes) {
+  if (type->id() == arrow::Type::BOOL) {
+    return -1; // bool arrays can not compute rows!
+  }
+
+  if (arrow::is_fixed_width(type->id())) {
+    int byte_width =
+        std::static_pointer_cast<arrow::FixedWidthType>(type)->bit_width() / CHAR_BIT;
+    return buffer_sizes[2] / byte_width;
+  }
+
+  if (arrow::is_binary_like(type->id())) {
+    return int(buffer_sizes[1] / sizeof(int32_t)) - 1;
+  }
+
+  if (arrow::is_large_binary_like(type->id())) {
+    return int(buffer_sizes[1] / sizeof(int64_t)) - 1;
+  }
+
+  return -1;
 }
 
 int32_t CalculateNumRows(const std::shared_ptr<arrow::Schema> &schema,
@@ -352,6 +375,106 @@ Status DeserializeTables(const std::shared_ptr<CylonContext> &ctx,
   }
 
   return Status::OK();
+}
+
+CylonColumnSerializer::CylonColumnSerializer(std::shared_ptr<arrow::Array> array,
+                                             const std::array<const uint8_t *, 3> &data_bufs,
+                                             const std::array<int32_t, 3> &buf_sizes,
+                                             arrow::BufferVector extra_buffers)
+    : array_(std::move(array)),
+      data_bufs_(data_bufs),
+      buf_sizes_(buf_sizes),
+      extra_buffers_(std::move(extra_buffers)) {}
+
+const std::array<const uint8_t *, 3> &CylonColumnSerializer::data_buffers() const {
+  return data_bufs_;
+}
+
+const std::array<int32_t, 3> &CylonColumnSerializer::buffer_sizes() const {
+  return buf_sizes_;
+}
+
+int32_t CylonColumnSerializer::getDataTypeId() const {
+  return static_cast<int32_t>(tarrow::ToCylonTypeId(array_->type()));
+}
+
+Status CylonColumnSerializer::Make(const std::shared_ptr<arrow::Array> &column,
+                                   std::shared_ptr<ColumnSerializer> *serializer,
+                                   arrow::MemoryPool *pool) {
+  std::array<int32_t, 3> buffer_sizes{};
+  std::array<const uint8_t *, 3> data_buffers{};
+  // we can only send byte boundary buffers. If we encounter bitmaps that don't align to a byte
+  // boundary, make a copy and keep it in this vector
+  arrow::BufferVector extra_buffers;
+
+  if (column->length()) {
+    // order: validity, offsets, data
+    const auto &data = *column->data();
+    RETURN_CYLON_STATUS_IF_FAILED(
+        CollectBitmapInfo(data, &buffer_sizes[0], &data_buffers[0], &extra_buffers, pool));
+    RETURN_CYLON_STATUS_IF_FAILED(
+        CollectOffsetBuffer(data, &buffer_sizes[1], &data_buffers[1]));
+    RETURN_CYLON_STATUS_IF_FAILED(
+        CollectDataBuffer(data, &buffer_sizes[2], &data_buffers[2], &extra_buffers, pool));
+  }
+
+  *serializer = std::make_shared<CylonColumnSerializer>(column, data_buffers, buffer_sizes,
+                                                        std::move(extra_buffers));
+  return Status::OK();
+}
+
+Status CylonColumnSerializer::Make(const std::shared_ptr<arrow::ChunkedArray> &column,
+                                   std::shared_ptr<ColumnSerializer> *serializer,
+                                   arrow::MemoryPool *pool) {
+  if (column->num_chunks() == 1) {
+    return Make(column->chunk(0), serializer, pool);
+  }
+  CYLON_ASSIGN_OR_RAISE(auto arr, arrow::Concatenate(column->chunks(), pool))
+  return Make(arr, serializer, pool);
+}
+
+Status CylonColumnSerializer::Make(const std::shared_ptr<Column> &column,
+                                   std::shared_ptr<ColumnSerializer> *serializer,
+                                   MemoryPool *pool) {
+  return Make(column->data(), serializer, ToArrowPool(pool));
+}
+
+Status DeserializeColumn(const std::shared_ptr<arrow::DataType> &data_type,
+                         const std::array<std::shared_ptr<Buffer>, 3> &received_buffers,
+                         const std::array<int32_t, 3> &buffer_sizes,
+                         const std::array<int32_t, 3> &buffer_offsets,
+                         std::shared_ptr<Column> *output) {
+  if (data_type->id() == arrow::Type::BOOL) {
+    return {Code::Invalid, "deserializing bool type column is not supported"};
+  }
+
+  int num_rows = CalculateNumRows(data_type, buffer_sizes);
+  if (num_rows == -1) {
+    return {Code::ExecutionError, "unable to calculate num rows for the buffers"};
+  }
+
+  auto valid_buf = buffer_sizes[0] ? MakeArrowBuffer(received_buffers[0], buffer_offsets[0],
+                                                     buffer_sizes[0])
+                                   : nullptr;
+  auto offset_buf = buffer_sizes[1] ? MakeArrowBuffer(received_buffers[1], buffer_offsets[1],
+                                                      buffer_sizes[1])
+                                    : nullptr;
+  auto data_buf = MakeArrowBuffer(received_buffers[2], buffer_offsets[2],
+                                  buffer_sizes[2]);
+
+  auto data = MakeArrayData(data_type, num_rows, std::move(valid_buf),
+                            std::move(offset_buf), std::move(data_buf));
+
+  *output = Column::Make(arrow::MakeArray(data));
+  return Status::OK();
+}
+
+Status DeserializeColumn(const std::shared_ptr<arrow::DataType> &data_type,
+                         const std::array<std::shared_ptr<Buffer>, 3> &received_buffers,
+                         const std::array<int32_t, 3> &buffer_sizes,
+                         std::shared_ptr<Column> *output) {
+  return DeserializeColumn(data_type, received_buffers, buffer_sizes, std::array<int32_t, 3>{},
+                           output);
 }
 
 }

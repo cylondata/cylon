@@ -22,51 +22,39 @@ namespace cylon {
 namespace test {
 
 TEST_CASE("table ops testing", "[table_ops]") {
-  cylon::Status status;
   const int size = 12;
   std::shared_ptr<cylon::Table> input, select;
-  status = cylon::test::CreateTable(ctx, size, input);
+  CHECK_CYLON_STATUS(cylon::test::CreateTable(ctx, size, input));
 
   SECTION("table creation") {
-    REQUIRE((status.is_ok() && input->Columns() == 2 && input->Rows() == size));
+    REQUIRE((input->Columns() == 2 && input->Rows() == size));
   }
 
   SECTION("testing select") {
-    status = Select(input, [](cylon::Row row) { return row.GetInt32(0) % 2 == 0; }, select);
-
-    REQUIRE((status.is_ok() && select->Columns() == 2 && select->Rows() == size / 2));
+    CHECK_CYLON_STATUS(Select(input,
+                              [](cylon::Row row) { return row.GetInt32(0) % 2 == 0; },
+                              select));
+    REQUIRE((select->Columns() == 2 && select->Rows() == size / 2));
   }
 
   SECTION("testing shuffle") {
-
-    status = Shuffle(input, {0}, select);
-    REQUIRE((status.is_ok() && select->Columns() == 2));
-
-    std::shared_ptr<compute::Result> result;
-    status = compute::Count(select, 0, result);
-    auto s = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
-    REQUIRE((status.is_ok() && s->value == size * WORLD_SZ));
+    CHECK_CYLON_STATUS(Shuffle(input, {0}, select));
+    REQUIRE(select->Columns() == 2);
+    CheckGlobalSumEqual<int64_t>(ctx, size * WORLD_SZ, select->Rows());
   }
 
   SECTION("testing unique") {
-
     std::shared_ptr<cylon::Table> input1, output, sort_table;
     auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
     std::string test_file = "../data/input/duplicate_data_0.csv";
     std::cout << "Reading File [" << ctx->GetRank() << "] : " << test_file << std::endl;
-    status = cylon::FromCSV(ctx, test_file, input1, read_options);
-
-    REQUIRE(status.is_ok());
+    CHECK_CYLON_STATUS(cylon::FromCSV(ctx, test_file, input1, read_options));
 
     std::vector<int> cols = {0};
-    status = cylon::Unique(input1, cols, output, true);
+    CHECK_CYLON_STATUS(cylon::Unique(input1, cols, output, true));
 
-    REQUIRE(status.is_ok());
-
-    status = cylon::Sort(output, 3, sort_table);
-
-    REQUIRE(status.is_ok());
+    CHECK_CYLON_STATUS(cylon::Sort(output, 3, sort_table));
 
     std::shared_ptr<arrow::Table> artb;
     sort_table->ToArrowTable(artb);
@@ -77,14 +65,13 @@ TEST_CASE("table ops testing", "[table_ops]") {
     const std::shared_ptr<arrow::Int64Array>
         &carr = std::static_pointer_cast<arrow::Int64Array>(artb->column(3)->chunk(0));
     for (int i = 0; i < carr->length(); i++) {
-      std::cout << carr->Value(i) << std::endl;
+      INFO(carr->Value(i));
       if (carr->Value(i) == outval3.at(i)) {
         count++;
       }
     }
 
     REQUIRE((unsigned) count == outval3.size());
-
   }
 }
 

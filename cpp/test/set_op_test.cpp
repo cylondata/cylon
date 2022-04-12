@@ -27,34 +27,27 @@ TEST_CASE("Set operation testing", "[set_op]") {
   std::string out_path;
 
   SECTION("testing union") {
-    out_path = "../data/output/union_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
+    out_path =
+        "../data/output/union_" + std::to_string(WORLD_SZ) + "_" + std::to_string(RANK) + ".csv";
     test::TestSetOperation(&DistributedUnion, ctx, path1, path2, out_path);
   }
 
   SECTION("testing union itself") {
     std::shared_ptr<Table> t, local, dist;
     CHECK_CYLON_STATUS(FromCSV(ctx, "../data/input/csv1_0.csv", t));
-
     CHECK_CYLON_STATUS(Union(t, t, local));
-
     CHECK_CYLON_STATUS(DistributedUnion(t, t, dist));
 
-    std::shared_ptr<compute::Result> res;
-    CHECK_CYLON_STATUS(compute::Count(dist, 0, res));
-    REQUIRE(std::static_pointer_cast<arrow::Int64Scalar>(res->GetResult().scalar())->value == local->Rows());
+    CheckGlobalSumEqual(ctx, local->Rows(), dist->Rows());
   }
 
   SECTION("testing intersection itself") {
     std::shared_ptr<Table> t, local, dist;
     CHECK_CYLON_STATUS(FromCSV(ctx, "../data/input/csv1_0.csv", t));
-
     CHECK_CYLON_STATUS(Intersect(t, t, local));
-
     CHECK_CYLON_STATUS(DistributedIntersect(t, t, dist));
 
-    std::shared_ptr<compute::Result> res;
-    CHECK_CYLON_STATUS(compute::Count(dist, 0, res));
-    REQUIRE(std::static_pointer_cast<arrow::Int64Scalar>(res->GetResult().scalar())->value == local->Rows());
+    CheckGlobalSumEqual(ctx, local->Rows(), dist->Rows());
   }
 
   SECTION("testing subtract") {

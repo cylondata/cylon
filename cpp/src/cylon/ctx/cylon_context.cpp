@@ -25,6 +25,10 @@
 #include "cylon/net/ucx/ucx_communicator.hpp"
 #endif
 
+#ifdef BUILD_CYLON_GLOO
+#include <cylon/net/gloo/gloo_communicator.hpp>
+#endif
+
 namespace cylon {
 
 std::shared_ptr<CylonContext> CylonContext::Init() {
@@ -64,30 +68,31 @@ Status CylonContext::InitDistributed(const std::shared_ptr<cylon::net::CommConfi
     case net::MPI: {
       *ctx = std::make_shared<CylonContext>(true);
       (*ctx)->communicator = std::make_shared<net::MPICommunicator>(ctx);
-      const auto &status = (*ctx)->communicator->Init(config);
-      if (!status.is_ok()) {
-        ctx->reset();
-      }
-      return status;
+      return (*ctx)->communicator->Init(config);
     }
 
     case net::UCX: {
 #ifdef BUILD_CYLON_UCX
       *ctx = std::make_shared<CylonContext>(true);
       (*ctx)->communicator = std::make_shared<net::UCXCommunicator>(ctx);
-      const auto &status = (*ctx)->communicator->Init(config);
-      if (!status.is_ok()) {
-        ctx->reset();
-      }
-      return status;
+      return (*ctx)->communicator->Init(config);
 #else
       return {Code::NotImplemented, "UCX communication not implemented"};
 #endif
     }
 
     case net::TCP:return {Code::NotImplemented, "TCP communication not implemented"};
+    case net::GLOO: {
+#ifdef BUILD_CYLON_GLOO
+      *ctx = std::make_shared<CylonContext>(true);
+      (*ctx)->communicator = std::make_shared<net::GlooCommunicator>(ctx);
+      return (*ctx)->communicator->Init(config);
+#else
+      return {Code::NotImplemented, "Gloo communication not implemented"};
+#endif
+    }
   }
-  return Status::OK();
+  return {Code::Invalid, "Cannot reach here!"};
 }
 
 const std::shared_ptr<net::Communicator> &CylonContext::GetCommunicator() const {

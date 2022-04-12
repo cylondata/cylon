@@ -49,8 +49,8 @@ Status HashCylonGroupBy(std::shared_ptr<Table> &ctable,
 }
 
 Status HashCylonGroupByMapred(std::shared_ptr<Table> &ctable,
-                        const compute::AggregationOpId &aggregate_ops,
-                        std::shared_ptr<Table> &output) {
+                              const compute::AggregationOpId &aggregate_ops,
+                              std::shared_ptr<Table> &output) {
   INFO("mapred groupby");
   CHECK_CYLON_STATUS(
       mapred::MapredHashGroupBy(ctable, {0},
@@ -60,7 +60,6 @@ Status HashCylonGroupByMapred(std::shared_ptr<Table> &ctable,
   return Status::OK();
 }
 
-
 Status PipelineCylonGroupBy(std::shared_ptr<Table> &ctable,
                             std::shared_ptr<Table> &output) {
   CHECK_CYLON_STATUS(DistributedPipelineGroupBy(ctable, 0, {1}, {compute::SUM}, output));
@@ -68,10 +67,15 @@ Status PipelineCylonGroupBy(std::shared_ptr<Table> &ctable,
   return Status::OK();
 }
 
+std::shared_ptr<Column> get_column(const Table &table, int idx) {
+  const auto &a_col = table.get_table()->column(idx);
+  std::shared_ptr<Column> col;
+  CHECK_CYLON_STATUS(Column::Make(ctx, a_col, &col));
+  return col;
+}
+
 TEMPLATE_LIST_TEST_CASE("groupby testing", "[groupby]", ArrowNumericTypes) {
   auto val_type = default_type_instance<TestType>();
-
-  using ValScalarT = typename arrow::TypeTraits<TestType>::ScalarType;
   using T = typename TestType::c_type;
 
   INFO("Testing groupby - " + val_type->ToString());
@@ -79,21 +83,17 @@ TEMPLATE_LIST_TEST_CASE("groupby testing", "[groupby]", ArrowNumericTypes) {
   std::shared_ptr<Table> table, output1, output2, validate;
   CHECK_CYLON_STATUS(create_table(ctx, val_type, table));
 
-  std::shared_ptr<compute::Result> result;
+  std::shared_ptr<Scalar> result;
 
   SECTION("testing hash group by sum") {
     for (auto FnPtr: {&HashCylonGroupBy, &HashCylonGroupByMapred}) {
       CHECK_CYLON_STATUS(FnPtr(table, compute::SUM, output1));
 
-      CHECK_CYLON_STATUS(compute::Sum(output1, 0, result));
-      auto idx_sum = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
-      INFO("idx_sum " << idx_sum->value);
-      REQUIRE(idx_sum->value == 6); // 3* 4/ 2
+      CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 0), &result));
+      CHECK_ARROW_EQUAL(arrow::MakeScalar(int64_t(6)), result->data());// 3* 4/ 2
 
-      CHECK_CYLON_STATUS(compute::Sum(output1, 1, result));
-      auto val_sum = std::static_pointer_cast<ValScalarT>(result->GetResult().scalar());
-      INFO("val_sum " << val_sum->ToString());
-      REQUIRE(val_sum->value == (T) (2 * 6 * ctx->GetWorldSize()));
+      CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 1), &result));
+      CHECK_ARROW_EQUAL(arrow::MakeScalar(T(2 * 6 * ctx->GetWorldSize())), result->data());
     }
   }
 
@@ -101,15 +101,11 @@ TEMPLATE_LIST_TEST_CASE("groupby testing", "[groupby]", ArrowNumericTypes) {
     for (auto FnPtr: {&HashCylonGroupBy, &HashCylonGroupByMapred}) {
       CHECK_CYLON_STATUS(FnPtr(table, compute::COUNT, output1));
 
-      CHECK_CYLON_STATUS(compute::Sum(output1, 0, result));
-      auto idx_sum = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
-      INFO("idx_sum " << idx_sum->value);
-      REQUIRE(idx_sum->value == 6); // 3* 4/ 2
+      CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 0), &result));
+      CHECK_ARROW_EQUAL(arrow::MakeScalar(int64_t(6)), result->data());
 
-      CHECK_CYLON_STATUS(compute::Sum(output1, 1, result));
-      auto val_sum = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
-      INFO("val_sum " << val_sum->value);
-      REQUIRE(val_sum->value == 4 * 2 * ctx->GetWorldSize());
+      CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 1), &result));
+      CHECK_ARROW_EQUAL(arrow::MakeScalar(int64_t(4 * 2 * ctx->GetWorldSize())), result->data());
     }
   }
 
@@ -117,72 +113,52 @@ TEMPLATE_LIST_TEST_CASE("groupby testing", "[groupby]", ArrowNumericTypes) {
     for (auto FnPtr: {&HashCylonGroupBy, &HashCylonGroupByMapred}) {
       CHECK_CYLON_STATUS(FnPtr(table, compute::MEAN, output1));
 
-      CHECK_CYLON_STATUS(compute::Sum(output1, 0, result));
-      auto idx_sum = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
-      INFO("idx_sum " << idx_sum->value);
-      REQUIRE(idx_sum->value == 6); // 3* 4/ 2
+      CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 0), &result));
+      CHECK_ARROW_EQUAL(arrow::MakeScalar(int64_t(6)), result->data());
 
-      CHECK_CYLON_STATUS(compute::Sum(output1, 1, result));
-      auto val_sum = std::static_pointer_cast<ValScalarT>(result->GetResult().scalar());
-      INFO("val_sum " << val_sum->value);
-      REQUIRE(val_sum->value == 6.0);
+      CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 1), &result));
+      CHECK_ARROW_EQUAL(arrow::MakeScalar(T(6)), result->data());
     }
   }
 
   SECTION("testing hash group by var") {
     CHECK_CYLON_STATUS(HashCylonGroupBy(table, compute::VAR, output1));
 
-    CHECK_CYLON_STATUS(compute::Sum(output1, 0, result));
-    auto idx_sum = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
-    INFO("idx_sum " << idx_sum->value);
-    REQUIRE(idx_sum->value == 6); // 3* 4/ 2
+    CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 0), &result));
+    CHECK_ARROW_EQUAL(arrow::MakeScalar(int64_t(6)), result->data());
 
-    CHECK_CYLON_STATUS(compute::Sum(output1, 1, result));
-    auto val_sum = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
-    INFO("val_sum " << val_sum->value);
-    REQUIRE(val_sum->value == 0.0);
+    CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 1), &result));
+    CHECK_ARROW_EQUAL(arrow::MakeScalar(double(0)), result->data());
   }
 
   SECTION("testing hash group by stddev") {
     CHECK_CYLON_STATUS(HashCylonGroupBy(table, compute::STDDEV, output1));
 
-    CHECK_CYLON_STATUS(compute::Sum(output1, 0, result));
-    auto idx_sum = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
-    INFO("idx_sum " << idx_sum->value);
-    REQUIRE(idx_sum->value == 6); // 3* 4/ 2
+    CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 0), &result));
+    CHECK_ARROW_EQUAL(arrow::MakeScalar(int64_t(6)), result->data());
 
-    CHECK_CYLON_STATUS(compute::Sum(output1, 1, result));
-    auto val_sum = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
-    INFO("val_sum " << val_sum->value);
-    REQUIRE(val_sum->value == 0.0);
+    CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 1), &result));
+    CHECK_ARROW_EQUAL(arrow::MakeScalar(double(0)), result->data());
   }
 
   SECTION("testing hash group by nunique") {
     CHECK_CYLON_STATUS(HashCylonGroupBy(table, compute::NUNIQUE, output1));
 
-    CHECK_CYLON_STATUS(compute::Sum(output1, 0, result));
-    auto idx_sum = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
-    INFO("idx_sum " << idx_sum->value);
-    REQUIRE(idx_sum->value == 6); // 3* 4/ 2
+    CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 0), &result));
+    CHECK_ARROW_EQUAL(arrow::MakeScalar(int64_t(6)), result->data());
 
-    CHECK_CYLON_STATUS(compute::Sum(output1, 1, result));
-    auto val_sum = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
-    INFO("val_sum " << val_sum->value);
-    REQUIRE(val_sum->value == 1 * 4);
+    CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 1), &result));
+    CHECK_ARROW_EQUAL(arrow::MakeScalar(int64_t(1 * 4)), result->data());
   }
 
   SECTION("testing hash group by median") {
     CHECK_CYLON_STATUS(HashCylonGroupBy(table, compute::QUANTILE, output1));
 
-    CHECK_CYLON_STATUS(compute::Sum(output1, 0, result));
-    auto idx_sum = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
-    INFO("idx_sum " << idx_sum->value);
-    REQUIRE(idx_sum->value == 6); // 3* 4/ 2
+    CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 0), &result));
+    CHECK_ARROW_EQUAL(arrow::MakeScalar(int64_t(6)), result->data());
 
-    CHECK_CYLON_STATUS(compute::Sum(output1, 1, result));
-    auto val_sum = std::static_pointer_cast<arrow::DoubleScalar>(result->GetResult().scalar());
-    INFO("val_sum " << val_sum->value);
-    REQUIRE(val_sum->value == (T) 6); // 0 + .. + 3
+    CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output1, 1), &result));
+    CHECK_ARROW_EQUAL(arrow::MakeScalar(double(6)), result->data()); // 0 + .. + 3
   }
 
   SECTION("testing pipeline group by") {
@@ -190,15 +166,11 @@ TEMPLATE_LIST_TEST_CASE("groupby testing", "[groupby]", ArrowNumericTypes) {
 
     CHECK_CYLON_STATUS(PipelineCylonGroupBy(output1, output2));
 
-    CHECK_CYLON_STATUS(compute::Sum(output2, 0, result));
-    auto idx_sum = std::static_pointer_cast<arrow::Int64Scalar>(result->GetResult().scalar());
-    INFO("idx_sum " << idx_sum->value);
-    REQUIRE(idx_sum->value == 6); // 3* 4/ 2
+    CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output2, 0), &result));
+    CHECK_ARROW_EQUAL(arrow::MakeScalar(int64_t(6)), result->data());
 
-    CHECK_CYLON_STATUS(compute::Sum(output2, 1, result));
-    auto val_sum = std::static_pointer_cast<ValScalarT>(result->GetResult().scalar());
-    INFO("val_sum " << val_sum->value);
-    REQUIRE(val_sum->value == (T) (2 * 6 * ctx->GetWorldSize()));
+    CHECK_CYLON_STATUS(compute::Sum(ctx, get_column(*output2, 1), &result));
+    CHECK_ARROW_EQUAL(arrow::MakeScalar(T(2 * 6 * ctx->GetWorldSize())), result->data());
   }
 }
 

@@ -12,9 +12,4 @@
 # limitations under the License.
 ##
 
-cylon_install_all_headers("cylon/net")
-
-add_subdirectory(ops)
-add_subdirectory(mpi)
-add_subdirectory(ucx)
-add_subdirectory(gloo)
+cylon_install_all_headers("cylon/net/gloo")

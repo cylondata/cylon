@@ -12,8 +12,9 @@
  * limitations under the License.
  */
 
-#include <cylon/status.hpp>
-#include <cylon/net/mpi/mpi_operations.hpp>
+#include "cylon/status.hpp"
+#include "cylon/net/mpi/mpi_operations.hpp"
+#include "cylon/util/macros.hpp"
 
 MPI_Op cylon::mpi::GetMPIOp(cylon::net::ReduceOp reduce_op) {
   switch (reduce_op) {
@@ -87,3 +88,25 @@ cylon::Status cylon::mpi::AllReduce(const std::shared_ptr<CylonContext> &ctx,
   }
 }
 
+cylon::mpi::MpiAllReduceImpl::MpiAllReduceImpl(const MPI_Comm &comm) : comm_(comm) {}
+
+cylon::Status cylon::mpi::MpiAllReduceImpl::AllReduceBuffer(const void *send_buf,
+                                                            void *rcv_buf,
+                                                            int count,
+                                                            const std::shared_ptr<DataType> &data_type,
+                                                            cylon::net::ReduceOp reduce_op) const {
+  MPI_Datatype mpi_data_type = cylon::mpi::GetMPIDataType(data_type);
+  MPI_Op mpi_op = cylon::mpi::GetMPIOp(reduce_op);
+
+  if (mpi_data_type == MPI_DATATYPE_NULL || mpi_op == MPI_OP_NULL) {
+    return {cylon::Code::NotImplemented, "Unknown data type or operation for MPI"};
+  }
+
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Allreduce(send_buf,
+                                                  rcv_buf,
+                                                  count,
+                                                  mpi_data_type,
+                                                  mpi_op,
+                                                  comm_));
+  return Status::OK();
+}

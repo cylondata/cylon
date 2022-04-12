@@ -18,7 +18,8 @@
 #include <glog/logging.h>
 #include <chrono>
 
-#include <cylon/table.hpp>
+#include "cylon/table.hpp"
+#include "cylon/scalar.hpp"
 #include "test_macros.hpp"
 
 // this is a toggle to generate test files. Set execute to 0 then, it will generate the expected
@@ -143,6 +144,14 @@ std::shared_ptr<arrow::Array> VectorToArrowArray(const std::vector<T> &v) {
   const auto &type = arrow::TypeTraits<typename arrow::CTypeTraits<T>::ArrowType>::type_singleton();
   const auto &data = arrow::ArrayData::Make(type, v.size(), {nullptr, buf});
   return arrow::MakeArray(data);
+}
+
+template<typename T>
+void CheckGlobalSumEqual(const std::shared_ptr<CylonContext> &ctx, T exp, T val) {
+  auto rows = Scalar::Make(arrow::MakeScalar(val));
+  std::shared_ptr<Scalar> res;
+  CHECK_CYLON_STATUS(ctx->GetCommunicator()->AllReduce(rows, net::SUM, &res));
+  CHECK_ARROW_EQUAL(arrow::MakeScalar(exp), res->data());
 }
 
 }

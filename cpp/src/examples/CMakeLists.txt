@@ -39,6 +39,18 @@ macro(cylon_add_exe EXENAME)
     target_link_libraries(${EXENAME} ${ARROW_LIB})
     target_link_libraries(${EXENAME} ${GLOG_LIBRARIES})
     target_link_libraries(${EXENAME} cylon_example_utils)
+
+    if (CYLON_GLOO)
+        target_link_libraries(${EXENAME} ${GLOO_LIBRARIES})
+    endif ()
+
+    if (CYLON_UCX)
+        target_link_libraries(${EXENAME} ${UCX_LIBRARIES})
+        if (CYLON_UCC)
+            target_link_libraries(${EXENAME} ucc)
+        endif (CYLON_UCC)
+    endif (CYLON_UCX)
+
     install(TARGETS ${EXENAME} RUNTIME DESTINATION cylon/examples)
 endmacro(cylon_add_exe)
 
@@ -66,17 +78,15 @@ cylon_add_exe(dist_sort_example)
 
 if (CYLON_UCX)
     cylon_add_exe(ucx_join_example)
+    if (CYLON_UCC)
+        cylon_add_exe(ucc_example)
+    endif ()
 endif (CYLON_UCX)
 
-macro(cylon_add_exe2 DIR EXENAME)
-    add_executable(${EXENAME} ${DIR}/${EXENAME}.cpp)
-    target_link_libraries(${EXENAME} ${MPI_LIBRARIES})
-    target_link_libraries(${EXENAME} cylon)
-    target_link_libraries(${EXENAME} ${ARROW_LIB})
-    target_link_libraries(${EXENAME} ${GLOG_LIBRARIES})
-    target_link_libraries(${EXENAME} cylon_example_utils)
-    install(TARGETS ${EXENAME} RUNTIME DESTINATION cylon/examples)
-endmacro(cylon_add_exe2)
+if (CYLON_GLOO)
+    cylon_add_exe(gloo_example)
+endif (CYLON_GLOO)
+
 
 
 

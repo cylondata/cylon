@@ -16,6 +16,8 @@
 #define CYLON_NET_TABLE_SERIALIZE_HPP
 
 #include <vector>
+#include <array>
+#include <cstdint>
 
 namespace cylon {
 
@@ -93,6 +95,28 @@ public:
    */
   virtual std::vector<int32_t> getDataTypes() = 0;
 
+};
+
+class ColumnSerializer {
+ public:
+  virtual ~ColumnSerializer() = default;
+  /**
+   * Three buffers are returned in this order:
+   *      - column data buffer
+   *      - column null mask buffer
+   *      - column offsets buffer
+   */
+  virtual const std::array<const uint8_t *, 3> &data_buffers() const = 0;
+
+  /**
+  * Three buffer sizes are returned in this order:
+  *     - size of the column data buffer in bytes
+  *     - size of the column null mask buffer in bytes
+  *     - size of the column offsets buffer in bytes
+  */
+  virtual const std::array<int32_t, 3> &buffer_sizes() const = 0;
+
+  virtual int32_t getDataTypeId() const = 0;
 };
 
 } // end of namespace cylon
