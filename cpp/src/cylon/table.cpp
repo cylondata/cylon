@@ -608,7 +608,7 @@ Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
 int64_t tableBinarySearch(
     const std::shared_ptr<Table> &split_points,
     const std::shared_ptr<Table> &sorted_table,
-    std::unique_ptr<DualTableRowIndexEqualTo>& equal_to,
+    const std::unique_ptr<DualTableRowIndexEqualTo>& equal_to,
     int64_t split_point_idx, int64_t l) {
   int64_t r = sorted_table->Rows() - 1;
   int L = l;
