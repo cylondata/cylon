@@ -48,8 +48,9 @@ void testDistSort(const std::vector<int>& sort_cols,
 }
 
 namespace test {
-TEST_CASE("Dist sort testing", "[dist sort]") {
-  auto schema = arrow::schema({{arrow::field("a", arrow::uint32())},
+TEMPLATE_LIST_TEST_CASE("Dist sort testing", "[dist sort]", ArrowNumericTypes) {
+  auto type = default_type_instance<TestType>();
+  auto schema = arrow::schema({{arrow::field("a", type)},
                                {arrow::field("b", arrow::float32())}});
   auto global_arrow_table = TableFromJSON(schema, {R"([{"a":  3, "b":0.025},
                                          {"a": 26, "b":0.394},

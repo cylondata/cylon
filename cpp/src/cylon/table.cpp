@@ -525,7 +525,7 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
 
   auto comp = [&](int a, int b) {  // a and b are index of table in `tables`
     int64_t a_idx = table_indices[a], b_idx = table_indices[b];
-    return equal_to->compare(a_idx, util::SetBit(b_idx)) > 0;
+    return equal_to->compare(a_idx, b_idx) > 0;
   };
 
   std::priority_queue<int, std::vector<int>, decltype(comp)> pq(comp);
