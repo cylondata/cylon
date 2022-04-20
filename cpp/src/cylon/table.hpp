@@ -355,15 +355,14 @@ Status Sort(const std::shared_ptr<Table> &table, const std::vector<int32_t> &sor
 
 struct SortOptions {
   enum SortMethod {
-    REGULAR_SAMPLE_MERGE = 0,
-    INITIAL_SAMPLE = 1,
-    REGULAR_SAMPLE_SORT = 2
+    REGULAR_SAMPLE = 0,
+    INITIAL_SAMPLE = 1
   };
   uint32_t num_bins;
   uint64_t num_samples;
   SortMethod sort_method;
 
-  static SortOptions Defaults() { return {0, 0, REGULAR_SAMPLE_MERGE}; }
+  static SortOptions Defaults() { return {0, 0, REGULAR_SAMPLE}; }
 };
 
 Status DistributedSort(const std::shared_ptr<Table> &table,
@@ -399,7 +398,7 @@ int64_t tableBinarySearch(
 Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
                         const std::vector<int> &sort_columns,
                         const std::vector<bool> &sort_orders,
-                        std::shared_ptr<Table> &out, bool use_merge);
+                        std::shared_ptr<Table> &out);
 
 /**
  * Filters out rows based on the selector function

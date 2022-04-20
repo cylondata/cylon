@@ -502,7 +502,7 @@ static int CompareRows(const std::vector<std::unique_ptr<T>> &comparators,
 Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
                         const std::vector<int> &sort_columns,
                         const std::vector<bool> &sort_orders,
-                        std::shared_ptr<Table> &out, bool use_merge) {
+                        std::shared_ptr<Table> &out) {
   std::shared_ptr<Table> concatenated;
   std::vector<int64_t> table_indices(tables.size()),
       table_end_indices(tables.size());
@@ -515,7 +515,7 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
 
   RETURN_CYLON_STATUS_IF_FAILED(Merge(tables, concatenated));
 
-  if(!use_merge) {
+  if(concatenated->GetContext()->GetWorldSize() > 4) {
     return Sort(concatenated, sort_columns, out, sort_orders);
   }
 
@@ -576,7 +576,7 @@ Status DetermineSplitPoints(
   std::iota(sort_columns.begin(), sort_columns.end(), 0);
 
   RETURN_CYLON_STATUS_IF_FAILED(MergeSortedTable(
-      gathered_tables_include_root, sort_columns, sort_orders, merged_table, true));
+      gathered_tables_include_root, sort_columns, sort_orders, merged_table));
 
   int num_split_points =
       std::min(merged_table->Rows(), (int64_t)ctx->GetWorldSize() - 1);
@@ -608,7 +608,7 @@ Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
 int64_t tableBinarySearch(
     const std::shared_ptr<Table> &split_points,
     const std::shared_ptr<Table> &sorted_table,
-    const std::unique_ptr<DualTableRowIndexEqualTo>& equal_to,
+    std::unique_ptr<DualTableRowIndexEqualTo>& equal_to,
     int64_t split_point_idx, int64_t l) {
   int64_t r = sorted_table->Rows() - 1;
   int L = l;
@@ -751,8 +751,7 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables_separated_cylon_table(
       ctx, schema, split_tables, all_to_all_result));
 
-  return MergeSortedTable(all_to_all_result, sort_columns, sort_direction, output, 
-    sort_options.sort_method == SortOptions::REGULAR_SAMPLE_MERGE);
+  return MergeSortedTable(all_to_all_result, sort_columns, sort_direction, output);
 }
 
 Status DistributedSortInitialSampling(const std::shared_ptr<Table> &table,

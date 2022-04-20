@@ -277,7 +277,7 @@ TEST_CASE("Merge testing", "[table merge]") {
   Merge({table1, table2}, concat);
   Sort(concat, {0, 1}, sorted, {1, 1});
 
-  MergeSortedTable({table1, table2}, {0, 1}, {1, 1}, merged, true);
+  MergeSortedTable({table1, table2}, {0, 1}, {1, 1}, merged);
 
   bool result;
   Equals(sorted, merged, result);

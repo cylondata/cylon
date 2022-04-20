@@ -27,19 +27,13 @@
 
 #include "example_utils.hpp"
 
-int64_t run_example(std::shared_ptr<cylon::Table>& table, bool merge) {
+int64_t run_example(std::shared_ptr<cylon::Table>& table) {
   std::shared_ptr<cylon::Table> output;
   auto start_1 = std::chrono::steady_clock::now();
-  auto status = DistributedSort(table, 0, output, true,
-                    {0, 0, merge ? cylon::SortOptions::REGULAR_SAMPLE_MERGE : cylon::SortOptions::REGULAR_SAMPLE_SORT});
+  auto status = DistributedSort(table, 0, output, true);
   auto end_1 = std::chrono::steady_clock::now();
 
   int64_t time = std::chrono::duration_cast<std::chrono::milliseconds>(end_1 - start_1).count();
-
-  if(table->GetContext()->GetRank() == 0) {
-    LOG(INFO)<< "using " << (merge ? "merge" : "sort") << " takes " 
-    << time << " ms." << std::endl;
-  }
 
   return time;
 }
@@ -63,15 +57,13 @@ int main(int argc, char *argv[]) {
 
   ctx->Barrier();
 
-  int64_t merge_time = 0, sort_time = 0;
+  int64_t time = 0;
 
   for(int i = 0; i < iters; i++) {
-    merge_time += run_example(table, true);
-    sort_time += run_example(table, false);
+    time += run_example(table);
   }
 
-  std::cout<< "merge takes " << merge_time << " ms in total." << std::endl;
-  std::cout<< "sort takes " << sort_time << " ms in total." << std::endl;
+  std::cout<< time << " ms in total." << std::endl;
 
   return 0;
 }
