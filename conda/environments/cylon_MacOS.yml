@@ -7,7 +7,7 @@ dependencies:
   - cmake>=3.17
   - pyarrow=5.0.0
   - glog=0.5.0
-  - openmpi>=4.1
+  - openmpi=4.1.2
   - cython>=0.29,<0.30
   - numpy>=1.16
   - pandas>=1.0
