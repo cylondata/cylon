@@ -132,6 +132,9 @@ library_directories = [
     get_python_lib(),
     os.path.join(os.sys.prefix, "lib")]
 
+mpi_library_dir = os.popen("mpicc --showme:libdirs").read().strip().split(' ')
+library_directories.extend(mpi_library_dir)
+
 libraries = ["gcylon", "cylon", "cudf", "cudart", "glog"]
 cylon_include_dir = "../../cpp/src/"
 
@@ -140,6 +143,9 @@ _include_dirs = [cylon_include_dir,
                  os.path.join(conda_include_dir, "libcudf/libcudacxx"),
                  cuda_include_dir,
                  np.get_include()]
+
+mpi_include_dir = os.popen("mpicc --showme:incdirs").read().strip().split(' ')
+_include_dirs.extend(mpi_include_dir)
 
 cython_files = ["pygcylon/**/*.pyx"]
 
