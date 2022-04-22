@@ -163,6 +163,11 @@ cylon_add_test(custom_mpi_comm_test)
 cylon_run_test(custom_mpi_comm_test 1 mpi)
 cylon_run_test(custom_mpi_comm_test 4 mpi)
 
+# distributed sort test
+cylon_add_test(dist_sort_test)
+cylon_run_test(dist_sort_test 1 mpi)
+cylon_run_test(dist_sort_test 2 mpi)
+cylon_run_test(dist_sort_test 4 mpi)
 
 #### Gloo tests
 if (CYLON_GLOO)

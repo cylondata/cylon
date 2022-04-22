@@ -35,7 +35,7 @@ jobs:
     # Specify the correct host compilers
     - name: Install/Select gcc and g++
       run: |
-        sudo apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }}
+        sudo apt-get install -y gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }} libopenmpi-dev
         echo "CC=/usr/bin/gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
         echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
         echo "CUDAHOSTCXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV

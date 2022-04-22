@@ -759,10 +759,13 @@ Status CreateDualArrayIndexComparator(const std::shared_ptr<arrow::Array> &a1,
 
 Status TableRowIndexEqualTo::Make(const std::shared_ptr<arrow::Table> &table,
                                   const std::vector<int> &col_ids,
-                                  std::unique_ptr<TableRowIndexEqualTo> *out_equal_to) {
+                                  std::unique_ptr<TableRowIndexEqualTo> *out_equal_to,
+                                  const std::vector<bool> &sort_order) {
   auto comps = std::make_shared<std::vector<std::shared_ptr<ArrayIndexComparator>>>();
   comps->reserve(col_ids.size());
-  for (int col_id: col_ids) {
+  bool order_not_given = sort_order.size() == 0;
+  for (std::size_t i = 0; i < col_ids.size(); i++) {
+    int col_id = col_ids[i];
     if (table->column(col_id)->num_chunks() > 1) {
       return {Code::Invalid, "TableRowIndexEqualTo does not support multiple chunks"};
     }
@@ -772,7 +775,7 @@ Status TableRowIndexEqualTo::Make(const std::shared_ptr<arrow::Table> &table,
     } else {
       const auto &array = table->column(col_id)->chunk(0);
       std::unique_ptr<ArrayIndexComparator> comp;
-      RETURN_CYLON_STATUS_IF_FAILED(CreateArrayIndexComparator(array, &comp));
+      RETURN_CYLON_STATUS_IF_FAILED(CreateArrayIndexComparator(array, &comp, order_not_given || sort_order[i]));
       comps->emplace_back(std::move(comp));
     }
   }
@@ -920,7 +923,8 @@ Status DualTableRowIndexEqualTo::Make(const std::shared_ptr<arrow::Table> &t1,
                                       const std::shared_ptr<arrow::Table> &t2,
                                       const std::vector<int> &t1_indices,
                                       const std::vector<int> &t2_indices,
-                                      std::unique_ptr<DualTableRowIndexEqualTo> *out_equal_to) {
+                                      std::unique_ptr<DualTableRowIndexEqualTo> *out_equal_to,
+                                      const std::vector<bool> &sort_order) {
   int num_cols = (int) t1_indices.size();
   if (num_cols != (int) t2_indices.size()) {
     return {Code::Invalid, "sizes of indices of t1 and t2 are not equal!"};
@@ -928,6 +932,8 @@ Status DualTableRowIndexEqualTo::Make(const std::shared_ptr<arrow::Table> &t1,
 
   auto comps = std::make_shared<std::vector<std::shared_ptr<DualArrayIndexComparator>>>();
   comps->reserve(num_cols);
+
+  bool order_not_given = sort_order.size() == 0;
 
   for (int i = 0; i < num_cols; i++) {
     if (t1->column(t1_indices[i])->num_chunks() > 1
@@ -939,7 +945,9 @@ Status DualTableRowIndexEqualTo::Make(const std::shared_ptr<arrow::Table> &t1,
     const auto &a2 = util::GetChunkOrEmptyArray(t2->column(t2_indices[i]), 0);
 
     std::unique_ptr<DualArrayIndexComparator> comp;
-    RETURN_CYLON_STATUS_IF_FAILED(CreateDualArrayIndexComparator(a1, a2, &comp));
+
+    // asc=true if sort_order is not provided
+    RETURN_CYLON_STATUS_IF_FAILED(CreateDualArrayIndexComparator(a1, a2, &comp, order_not_given || sort_order[i]));
     comps->emplace_back(std::move(comp));
   }
 
