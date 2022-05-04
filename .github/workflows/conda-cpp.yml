@@ -48,17 +48,16 @@ jobs:
         run: |
           git clone --single-branch https://github.com/nirandaperera/gloo.git $HOME/gloo
           mkdir -p $HOME/gloo/build && cd $HOME/gloo/build
-          ls $CONDA/envs/cylon_dev
-#          cmake .. -DBUILD_SHARED_LIBS=1 -DUSE_MPI=1 -DCMAKE_INSTALL_PREFIX=$HOME/gloo/install
-#          make install
+          cmake .. -DBUILD_SHARED_LIBS=1 -DUSE_MPI=1 -DCMAKE_INSTALL_PREFIX=$HOME/gloo/install
+          make install
 
       - name: Install UCC
         run: |
           git clone --single-branch -b ${{ matrix.ucc }} https://github.com/openucx/ucc.git $HOME/ucc
           cd $HOME/ucc
           ./autogen.sh
-          ./configure --prefix=$HOME/ucc/install --with-ucx=$CONDA_PREFIX/lib
-          make install 
+          ./configure --prefix=$HOME/ucc/install --with-ucx=$CONDA/envs/cylon_dev/lib
+          make install
 
       - name: Build cpp, pycylon and cpp test
         run: python build.py -cmake-flags="-DCYLON_UCX=1 -DCYLON_GLOO=1 -DGLOO_INSTALL_PREFIX=$HOME/gloo/install -DCYLON_UCC=1 -DUCC_INSTALL_PREFIX=$HOME/ucc/install" -ipath="$HOME/cylon/install" --cpp --python --test --pytest
