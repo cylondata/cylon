@@ -189,12 +189,18 @@ def python_test():
     env = os.environ
     if args.ipath:
         if OS_NAME == 'Linux':
-            env['LD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \
-                                     + env['LD_LIBRARY_PATH']
+            if 'LD_LIBRARY_PATH' in env:
+                env['LD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \
+                                         + env['LD_LIBRARY_PATH']
+            else:
+                env['LD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib"))
             logger.info(f"LD_LIBRARY_PATH: {env['LD_LIBRARY_PATH']}")
         elif OS_NAME == 'Darwin':
-            env['DYLD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \
-                                       + env['DYLD_LIBRARY_PATH']
+            if 'DYLD_LIBRARY_PATH' in env:
+                env['DYLD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \
+                                           + env['DYLD_LIBRARY_PATH']
+            else:
+                env['DYLD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib"))
             logger.info(f"DYLD_LIBRARY_PATH: {env['DYLD_LIBRARY_PATH']}")
         else:  # Windows
             env['PATH'] = str(Path(INSTALL_DIR, "Library")) + os.pathsep + env['PATH']
