@@ -55,8 +55,9 @@ jobs:
         run: |
           git clone --single-branch -b ${{ matrix.ucc }} https://github.com/openucx/ucc.git $HOME/ucc
           cd $HOME/ucc
+          echo "conda ucx: $(conda list | grep ucx)"
           ./autogen.sh
-          ./configure --prefix=$HOME/ucc/install --with-ucx=$CONDA/envs/cylon_dev/lib
+          ./configure --prefix=$HOME/ucc/install --with-ucx=$CONDA/envs/cylon_dev
           make install
 
       - name: Build cpp, pycylon and cpp test
