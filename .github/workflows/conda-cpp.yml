@@ -48,8 +48,9 @@ jobs:
         run: |
           git clone --single-branch https://github.com/nirandaperera/gloo.git $HOME/gloo
           mkdir -p $HOME/gloo/build && cd $HOME/gloo/build
-          cmake .. -DBUILD_SHARED_LIBS=1 -DUSE_MPI=1 -DCMAKE_INSTALL_PREFIX=$HOME/gloo/install
-          make install         
+          ls $CONDA/envs/cylon_dev
+#          cmake .. -DBUILD_SHARED_LIBS=1 -DUSE_MPI=1 -DCMAKE_INSTALL_PREFIX=$HOME/gloo/install
+#          make install
 
       - name: Install UCC
         run: |
