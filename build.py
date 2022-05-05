@@ -124,7 +124,7 @@ def check_status(status, task):
     if status != 0:
         logger.error(f'{task} failed with a non zero exit code ({status}). '
                      f'Cylon build is terminating.')
-        quit()
+        sys.exit(1)
     else:
         logger.info(f'{task} completed successfully')
 
