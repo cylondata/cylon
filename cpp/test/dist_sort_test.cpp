@@ -27,29 +27,21 @@ void testDistSort(const std::vector<int>& sort_cols,
   std::shared_ptr<arrow::Table> arrow_output;
 
   CHECK_CYLON_STATUS(DistributedSort(table, sort_cols, out, sort_order,
-                                {0, 0, SortOptions::INITIAL_SAMPLE}));
+                                     {0, 0, SortOptions::INITIAL_SAMPLE}));
 
-  std::shared_ptr<Table> out2;
-  bool eq;
+  std::vector<std::shared_ptr<Table>> gathered;
+  CHECK_CYLON_STATUS(ctx->GetCommunicator()->Gather(out, /*root*/0, /*gather_from_root*/true,
+                                                    &gathered));
 
   if (RANK == 0) {
-    CHECK_CYLON_STATUS(Sort(global_table, sort_cols, out2, sort_order));
-  } else {
-    auto pool = cylon::ToArrowPool(ctx);
-    std::shared_ptr<arrow::Table> arrow_empty_table;
-    auto arrow_status = util::CreateEmptyTable(
-        global_table->get_table()->schema(), &arrow_empty_table, pool);
-    out2 = std::make_shared<Table>(ctx, arrow_empty_table);
+    std::shared_ptr<Table> exp, result;
+    // local sort the global table
+    CHECK_CYLON_STATUS(Sort(global_table, sort_cols, exp, sort_order));
+
+    CHECK_CYLON_STATUS(Merge(gathered, result));
+
+    CHECK_ARROW_EQUAL(exp->get_table(), result->get_table());
   }
-
-  
-  std::shared_ptr<Table> out3;
-  CHECK_CYLON_STATUS(Repartition(out2, &out3));
-  LOG(INFO) << "HERE$$$$$";
-  CHECK_CYLON_STATUS(DistributedEquals(out3, out, eq));
-    LOG(INFO) << "HERE&&&&&&&&&&&";
-
-  REQUIRE(eq);
 }
 
 namespace test {
@@ -110,16 +102,15 @@ TEMPLATE_LIST_TEST_CASE("Dist sort testing", "[dist sort]", ArrowNumericTypes) {
       Table::FromArrowTable(ctx, global_arrow_table, global_table));
 
   SECTION("dist_sort_test_1") {
-    LOG(INFO) << "HERE!!!";
-    testDistSort({0, 1}, {1, 1}, global_table, table1);
+    testDistSort({0, 1}, {true, true}, global_table, table1);
   }
 
   SECTION("dist_sort_test_2_different_direction") {
-    testDistSort({0, 1}, {1, 0}, global_table, table1);
+    testDistSort({0, 1}, {true, false}, global_table, table1);
   }
 
   SECTION("dist_sort_test_3_different_order") {
-    testDistSort({1, 0}, {0, 0}, global_table, table1);
+    testDistSort({1, 0}, {false, false}, global_table, table1);
   }
 
   SECTION("dist_sort_test_4_one_empty_table") {
@@ -283,9 +274,9 @@ TEST_CASE("Merge testing", "[table merge]") {
 
   std::shared_ptr<Table> concat, sorted, merged;
   Merge({table1, table2}, concat);
-  Sort(concat, {0, 1}, sorted, {1, 1});
+  Sort(concat, {0, 1}, sorted, {true, true});
 
-  MergeSortedTable({table1, table2}, {0, 1}, {1, 1}, merged);
+  MergeSortedTable({table1, table2}, {0, 1}, {true, true}, merged);
 
   bool result;
   Equals(sorted, merged, result);
