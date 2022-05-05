@@ -106,7 +106,7 @@ if OS_NAME == 'Linux' or OS_NAME == 'Darwin':
     mpi_library_dir = os.popen("mpicc --showme:libdirs").read().strip().split(' ')
 else:
     import mpi4py
-    mpi_library_dir = mpi4py.get_config()['library_dirs']
+    mpi_library_dir = [mpi4py.get_config()['library_dirs']]
 library_directories.extend(mpi_library_dir)
 
 print("Lib dirs:", library_directories)
@@ -125,7 +125,7 @@ if OS_NAME == 'Linux' or OS_NAME == 'Darwin':
     mpi_include_dir = os.popen("mpicc --showme:incdirs").read().strip().split(' ')
 else:
     import mpi4py
-    mpi_include_dir = mpi4py.get_config()['include_dirs']
+    mpi_include_dir = [mpi4py.get_config()['include_dirs']]
 _include_dirs.extend(mpi_include_dir)
 
 print("Include dirs:", _include_dirs)
