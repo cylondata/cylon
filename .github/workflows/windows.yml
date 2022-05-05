@@ -1,4 +1,4 @@
-name: Compile on Windows
+name: Testing on Windows
 
 on:
   push:
@@ -30,10 +30,9 @@ jobs:
           activate-environment: cylon_dev
           environment-file: conda/environments/windows.yml
 
-      - name: activate conda
+      - name: Activate conda
         run: conda activate cylon_dev
-      - name: build cpp and test
-        run: python build.py --cpp
-      #        run: python build.py --cpp --test todo fix this!
-      - name: build pycylon and test
-        run: python build.py --python
+      - name: Build cylon, pycylon and run c++ tests
+        run: python build.py --cpp --python --test
+      - name: Run python tests
+        run: python build.py --pytest
