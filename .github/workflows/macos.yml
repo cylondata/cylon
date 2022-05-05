@@ -1,4 +1,4 @@
-name: Macos CI
+name: MacOS C++/Python - Clang,OpenMPI
 
 on:
   push:

@@ -58,15 +58,15 @@ Status MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Initialized(&mpi_initialized_externally));
   mpi_comm_ = std::static_pointer_cast<MPIConfig>(config)->GetMPIComm();
 
-  if (mpi_comm_ && !mpi_initialized_externally) {
-    return {Code::Invalid, "non-nullptr MPI_Comm passed without initializing MPI"};
+  if (mpi_comm_ != MPI_COMM_NULL && !mpi_initialized_externally) {
+    return {Code::Invalid, "non-null MPI_Comm passed without initializing MPI"};
   }
 
   if (!mpi_initialized_externally) { // if not initialized, init MPI
     RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
   }
 
-  if (!mpi_comm_) { // set comm_ to world
+  if (mpi_comm_ == MPI_COMM_NULL) { // set comm_ to world
     mpi_comm_ = MPI_COMM_WORLD;
   }
 

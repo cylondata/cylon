@@ -41,7 +41,7 @@ def test_series_with_list():
 
 
 def test_series_with_numpy():
-    ld = np.array([1, 2, 3, 4])
+    ld = np.array([1, 2, 3, 4], dtype=np.int64)
     id = 's1'
     dtype = cn.int64()
     s = Series(id, ld)
