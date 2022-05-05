@@ -19,6 +19,7 @@ https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
 """
 
 import os
+import platform
 import sysconfig
 from distutils.sysconfig import get_python_lib
 
@@ -99,7 +100,13 @@ library_directories = [cylon_library_directory,
                        get_python_lib(),
                        os.path.join(os.sys.prefix, "lib")]
 
-mpi_library_dir = os.popen("mpicc --showme:libdirs").read().strip().split(' ')
+OS_NAME = platform.system()
+
+if OS_NAME == 'Linux' or OS_NAME == 'Darwin':
+    mpi_library_dir = os.popen("mpicc --showme:libdirs").read().strip().split(' ')
+else:
+    import mpi4py
+    mpi_library_dir = mpi4py.get_config()['library_dirs']
 library_directories.extend(mpi_library_dir)
 
 print("Lib dirs:", library_directories)
@@ -114,7 +121,11 @@ _include_dirs = [cylon_include_dir,
                  np.get_include(),
                  os.path.dirname(sysconfig.get_path("include"))]
 
-mpi_include_dir = os.popen("mpicc --showme:incdirs").read().strip().split(' ')
+if OS_NAME == 'Linux' or OS_NAME == 'Darwin':
+    mpi_include_dir = os.popen("mpicc --showme:incdirs").read().strip().split(' ')
+else:
+    import mpi4py
+    mpi_include_dir = mpi4py.get_config()['include_dirs']
 _include_dirs.extend(mpi_include_dir)
 
 print("Include dirs:", _include_dirs)
