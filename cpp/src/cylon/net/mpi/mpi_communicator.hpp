@@ -25,7 +25,7 @@ namespace net {
 
 class MPIConfig : public CommConfig {
  public:
-  explicit MPIConfig(MPI_Comm comm = nullptr);
+  explicit MPIConfig(MPI_Comm comm = MPI_COMM_NULL);
 
   CommType Type() override;
 
@@ -33,7 +33,7 @@ class MPIConfig : public CommConfig {
 
   MPI_Comm GetMPIComm() const;
 
-  static std::shared_ptr<MPIConfig> Make(MPI_Comm comm = nullptr);
+  static std::shared_ptr<MPIConfig> Make(MPI_Comm comm = MPI_COMM_NULL);
 
  private:
   MPI_Comm comm_;
@@ -74,7 +74,7 @@ class MPICommunicator : public Communicator {
   MPI_Comm mpi_comm() const;
 
  private:
-  MPI_Comm mpi_comm_ = nullptr;
+  MPI_Comm mpi_comm_ = MPI_COMM_NULL;
   int mpi_initialized_externally = 0;
 };
 
