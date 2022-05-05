@@ -26,14 +26,14 @@ void testDistSort(const std::vector<int>& sort_cols,
   auto ctx = table->GetContext();
   std::shared_ptr<arrow::Table> arrow_output;
 
-  auto status = DistributedSort(table, sort_cols, out, sort_order,
-                                {0, 0, SortOptions::INITIAL_SAMPLE});
-  REQUIRE(status.is_ok());
+  CHECK_CYLON_STATUS(DistributedSort(table, sort_cols, out, sort_order,
+                                {0, 0, SortOptions::INITIAL_SAMPLE}));
+
   std::shared_ptr<Table> out2;
   bool eq;
 
   if (RANK == 0) {
-    status = Sort(global_table, sort_cols, out2, sort_order);
+    CHECK_CYLON_STATUS(Sort(global_table, sort_cols, out2, sort_order));
   } else {
     auto pool = cylon::ToArrowPool(ctx);
     std::shared_ptr<arrow::Table> arrow_empty_table;
@@ -41,9 +41,14 @@ void testDistSort(const std::vector<int>& sort_cols,
         global_table->get_table()->schema(), &arrow_empty_table, pool);
     out2 = std::make_shared<Table>(ctx, arrow_empty_table);
   }
+
+  
   std::shared_ptr<Table> out3;
-  status = Repartition(out2, &out3);
-  status = DistributedEquals(out3, out, eq);
+  CHECK_CYLON_STATUS(Repartition(out2, &out3));
+  LOG(INFO) << "HERE$$$$$";
+  CHECK_CYLON_STATUS(DistributedEquals(out3, out, eq));
+    LOG(INFO) << "HERE&&&&&&&&&&&";
+
   REQUIRE(eq);
 }
 
@@ -99,10 +104,13 @@ TEMPLATE_LIST_TEST_CASE("Dist sort testing", "[dist sort]", ArrowNumericTypes) {
       ctx, global_arrow_table->Slice(RANK * rows_per_tab, rows_per_tab),
       table1));
   std::shared_ptr<Table> global_table;
+  LOG(INFO) << "HERE!!!";
+
   CHECK_CYLON_STATUS(
       Table::FromArrowTable(ctx, global_arrow_table, global_table));
 
   SECTION("dist_sort_test_1") {
+    LOG(INFO) << "HERE!!!";
     testDistSort({0, 1}, {1, 1}, global_table, table1);
   }
 

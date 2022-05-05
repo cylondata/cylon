@@ -250,4 +250,5 @@ add_subdirectory(compute)
 
 set_target_properties(cylon PROPERTIES VERSION ${CYLON_VERSION})
 
-install(TARGETS cylon DESTINATION lib)
+install(TARGETS cylon LIBRARY DESTINATION lib)
+install(TARGETS cylon RUNTIME DESTINATION bin)

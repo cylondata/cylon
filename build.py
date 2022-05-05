@@ -203,7 +203,7 @@ def python_test():
                 env['DYLD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib"))
             logger.info(f"DYLD_LIBRARY_PATH: {env['DYLD_LIBRARY_PATH']}")
         else:  # Windows
-            env['PATH'] = str(Path(INSTALL_DIR, "Library")) + os.pathsep + env['PATH']
+            env['PATH'] = str(Path(INSTALL_DIR, "bin")) + os.pathsep + env['PATH']
             logger.info(f"PATH: {env['PATH']}")
 
     test_command = f"{PYTHON_EXEC} -m pytest -v python/pycylon/test/test_all.py"

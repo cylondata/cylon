@@ -22,6 +22,7 @@ from pycylon.net import MPIConfig
 import numpy
 import os
 import pytest
+import tempfile
 
 @pytest.mark.mpi
 def test_data_split():
@@ -30,7 +31,7 @@ def test_data_split():
 
     rows = 100
 
-    data_file = "/tmp/test_split.csv"
+    data_file = f"{tempfile.gettempdir()}{os.pathsep}test_split.csv"
 
     if env.rank == 0:
         # remove if the file already exists
