@@ -1,4 +1,4 @@
-name: Compile and Test using Conda
+name: Conda C++/Python - gcc,OpenMPI
 
 on:
   push:

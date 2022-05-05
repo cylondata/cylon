@@ -1,4 +1,4 @@
-name: Multiple comms compile and test using Conda
+name: Conda C++/Python - gcc,OpenMPI,Gloo,UCX/UCC
 
 on:
   push:

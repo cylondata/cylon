@@ -1,4 +1,4 @@
-name: Testing on Windows
+name: Windows C++/Python - MSVC, MSMPI
 
 on:
   push:
