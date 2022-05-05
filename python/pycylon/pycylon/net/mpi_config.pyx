@@ -16,13 +16,11 @@ from pycylon.net.comm_config cimport CommConfig
 from pycylon.net.mpi_config cimport CMPIConfig
 cimport mpi4py.MPI as MPI
 
+from mpi4py.MPI import COMM_NULL
+
 '''
 MPIConfig Type mapping from libCylon to PyCylon
 '''
-
 cdef class MPIConfig(CommConfig):
-    def __cinit__(self, MPI.Comm comm = None):
-        if comm is None:
-            self.mpi_config_shd_ptr = CMPIConfig.Make(NULL)
-        else:
-            self.mpi_config_shd_ptr = CMPIConfig.Make(comm.ob_mpi)
+    def __cinit__(self, MPI.Comm comm = COMM_NULL):
+        self.mpi_config_shd_ptr = CMPIConfig.Make(comm.ob_mpi)
