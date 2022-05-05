@@ -31,7 +31,7 @@ def test_data_split():
 
     rows = 100
 
-    data_file = f"{tempfile.gettempdir()}{os.pathsep}test_split.csv"
+    data_file = os.path.join(tempfile.gettempdir(), "test_split.csv")
 
     if env.rank == 0:
         # remove if the file already exists
