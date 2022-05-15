@@ -193,7 +193,7 @@ static inline Status all_to_all_arrow_tables_separated_cylon_table(const std::sh
   all_to_all_arrow_tables_separated_arrow_table(ctx, schema, partitioned_tables, received_tables);
 
   table_out.reserve(received_tables.size() - 1);
-  for(int i = 0; i < received_tables.size(); i++) {
+  for(size_t i = 0; i < received_tables.size(); i++) {
     if(received_tables[i]->num_rows() > 0) {
       CYLON_ASSIGN_OR_RAISE(auto arrow_tb, received_tables[i]->CombineChunks(cylon::ToArrowPool(ctx)));
       auto temp = std::make_shared<Table>(ctx, std::move(arrow_tb));
@@ -507,7 +507,7 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
   std::vector<int64_t> table_indices(tables.size()),
       table_end_indices(tables.size());
   int acc = 0;
-  for (int i = 0; i < table_indices.size(); i++) {
+  for (size_t i = 0; i < table_indices.size(); i++) {
     table_indices[i] = acc;
     acc += tables[i]->Rows();
     table_end_indices[i] = acc;
@@ -530,7 +530,7 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
 
   std::priority_queue<int, std::vector<int>, decltype(comp)> pq(comp);
 
-  for (int i = 0; i < tables.size(); i++) {
+  for (size_t i = 0; i < tables.size(); i++) {
     if (table_indices[i] < table_end_indices[i]) {
       pq.push(i);
     }
@@ -586,12 +586,11 @@ Status DetermineSplitPoints(
 
 Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
                       const std::vector<bool> &sort_orders,
-                      int num_split_points,
                       std::shared_ptr<Table> &split_points) {
   auto ctx = sample_result->GetContext();
 
   std::vector<std::shared_ptr<cylon::Table>> gather_results;
-  // net::MPICommunicator comm;
+
   RETURN_CYLON_STATUS_IF_FAILED(
       ctx->GetCommunicator()->Gather(sample_result, 0, true, &gather_results));
 
@@ -606,10 +605,9 @@ Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
 
 // return (index of) first element that is not less than the target element
 int64_t tableBinarySearch(
-    const std::shared_ptr<Table> &split_points,
-    const std::shared_ptr<Table> &sorted_table,
-    std::unique_ptr<DualTableRowIndexEqualTo>& equal_to,
-    int64_t split_point_idx, int64_t l) {
+  const std::shared_ptr<Table> &sorted_table,
+  std::unique_ptr<DualTableRowIndexEqualTo>& equal_to,
+  int64_t split_point_idx, int64_t l) {
   int64_t r = sorted_table->Rows() - 1;
   int L = l;
 
@@ -664,7 +662,7 @@ Status GetSplitPointIndices(const std::shared_ptr<Table> &split_points,
 
   for (int64_t i = 0; i < num_split_points; i++) {
     int64_t idx =
-        tableBinarySearch(split_points, sorted_table, equal_to, i, l_idx);
+        tableBinarySearch(sorted_table, equal_to, i, l_idx);
     std::fill(target_partition.begin() + l_idx, target_partition.begin() + idx,
               i);
     partition_hist[i] = idx - l_idx;
@@ -691,7 +689,7 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
                                       const std::vector<bool> &sort_direction,
                                       std::shared_ptr<cylon::Table> &output,
                                       SortOptions sort_options) {
-  if (sort_columns.size() > table->Columns()) {
+  if (sort_columns.size() > (unsigned long) table->Columns()) {
     return Status(Code::ValueError,
                   "number of values in sort_column_indices can not larger than "
                   "the number of columns");
@@ -730,7 +728,7 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   // determine split point, split_points only contains sorted columns
   std::shared_ptr<Table> split_points;
   RETURN_CYLON_STATUS_IF_FAILED(GetSplitPoints(
-      sample_result, sort_direction, world_sz - 1, split_points));
+      sample_result, sort_direction, split_points));
 
   // construct target_partition, partition_hist
   RETURN_CYLON_STATUS_IF_FAILED(

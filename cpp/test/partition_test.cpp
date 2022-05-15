@@ -101,7 +101,7 @@ TEST_CASE("Partition testing", "[join]") {
   }
 
   SECTION("dist sort test") {
-    status = cylon::DistributedSort(table, 0, output, true, {(uint32_t) WORLD_SZ, (uint64_t) table->Rows()});
+    status = cylon::DistributedSort(table, 0, output, true, {(uint32_t) WORLD_SZ, (uint64_t) table->Rows(), SortOptions::REGULAR_SAMPLE});
     REQUIRE((status.is_ok()));
 
     for (auto &arr: output->get_table()->column(0)->chunks()) {
@@ -135,7 +135,7 @@ TEST_CASE("Partition testing", "[join]") {
     output.reset();
 
     status = cylon::DistributedSort(table, {0, 1}, output, {true, false},
-                                    {(uint32_t) WORLD_SZ, (uint64_t) table->Rows()});
+                                    {(uint32_t)WORLD_SZ, (uint64_t)table->Rows(), SortOptions::REGULAR_SAMPLE});
     REQUIRE((status.is_ok()));
 
     for (int c = 0; c < output->get_table()->column(0)->num_chunks(); c++) {
