@@ -13,7 +13,7 @@
  */
 
 #define CATCH_CONFIG_RUNNER
-#include "common/catch.hpp"
+#include "catch.hpp"
 
 #include <mpi.h>
 #include <iostream>
