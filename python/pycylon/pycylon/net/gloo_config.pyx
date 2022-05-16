@@ -38,9 +38,9 @@ cdef class GlooStandaloneConfig(CommConfig):
     """
     GlooConfig Type mapping from libCylon to PyCylon
     """
-    def __cinit__(self, int rank = -1, int world_size = -1):
-        # if rank < 0 or world_size < 0:
-        #     raise ValueError(f"Invalid rank/ world size provided")
+    def __cinit__(self, int rank = 0, int world_size = 1):
+        if rank < 0 or world_size < 0:
+            raise ValueError(f"Invalid rank/ world size provided")
         self.gloo_config_shd_ptr = CGlooConfig.Make(rank, world_size)
 
     @property
