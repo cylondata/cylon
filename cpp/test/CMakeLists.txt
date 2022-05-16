@@ -15,14 +15,25 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# Ref: https://cliutils.gitlab.io/modern-cmake/chapters/testing/catch.html
+message("Downloading Catch2 header ${CYLON_CATCH2_GIT_TAG}")
+set(catch2_url https://github.com/catchorg/Catch2/releases/download/${CYLON_CATCH2_GIT_TAG}/catch.hpp)
+file(DOWNLOAD ${catch2_url} "${CMAKE_CURRENT_BINARY_DIR}/catch.hpp"
+        STATUS status
+        EXPECTED_HASH SHA256=${CYLON_CATCH2_HEADER_HASH})
+list(GET status 0 error)
+if (error)
+  message(FATAL_ERROR "Could not download ${catch2_url}")
+else ()
+  message(STATUS "Catch2 header downloaded to ${CMAKE_CURRENT_BINARY_DIR}/catch.hpp")
+endif ()
+
 file(COPY ${CYLON_SOURCE_DIR}/../data DESTINATION ${CMAKE_BINARY_DIR})
 
 include_directories(${CYLON_SOURCE_DIR}/src)
 include_directories(${CYLON_SOURCE_DIR}/test)
 include_directories(${CMAKE_BINARY_DIR}/thirdparty/glog)
 include_directories(${CYLON_SOURCE_DIR}/thirdparty/glog/src)
-
-include(CTest)
 
 #build a binary
 macro(tx_add_exe EXENAME)
@@ -33,6 +44,8 @@ endmacro(tx_add_exe)
 function(cylon_add_test TESTNAME)
   set(exec_name "${TESTNAME}")
   add_executable(${exec_name} ${TESTNAME}.cpp)
+
+  target_include_directories(${exec_name} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
 
   target_sources(${exec_name} PRIVATE
           test_macros.hpp
