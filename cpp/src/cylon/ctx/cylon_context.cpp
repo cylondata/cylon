@@ -166,4 +166,8 @@ bool CylonContext::IsDistributed() const {
 cylon::net::CommType CylonContext::GetCommType() {
   return is_distributed ? this->communicator->GetCommType() : net::CommType::LOCAL;
 }
+
+CylonContext::~CylonContext() {
+  this->Finalize();
+}
 }  // namespace cylon

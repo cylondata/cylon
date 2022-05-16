@@ -59,6 +59,9 @@ Status GlooCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     return {Code::Invalid, "Gloo does not contain mpi headers!"};
 #endif // GLOO_USE_MPI
   } else {
+    rank = gloo_config->rank;
+    world_size = gloo_config->world_size;
+
     // store and prefix store
     store_ = std::make_shared<gloo::rendezvous::FileStore>(gloo_config->file_store_path);
     prefix_store_ = std::make_shared<gloo::rendezvous::PrefixStore>(gloo_config->store_prefix,
@@ -66,9 +69,6 @@ Status GlooCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
 
     gloo_ctx_ = std::make_shared<gloo::rendezvous::Context>(rank, world_size);
     ((gloo::rendezvous::Context &) *gloo_ctx_).connectFullMesh(*prefix_store_, dev_);
-
-    rank = gloo_config->rank;
-    world_size = gloo_config->world_size;
   }
   return Status::OK();
 }
