@@ -16,11 +16,11 @@
 # under the License.
 
 # Ref: https://cliutils.gitlab.io/modern-cmake/chapters/testing/catch.html
-message("Downloading Catch2 header")
-set(catch2_url https://github.com/catchorg/Catch2/releases/download/v2.13.9/catch.hpp)
+message("Downloading Catch2 header ${CYLON_CATCH2_GIT_TAG}")
+set(catch2_url https://github.com/catchorg/Catch2/releases/download/${CYLON_CATCH2_GIT_TAG}/catch.hpp)
 file(DOWNLOAD ${catch2_url} "${CMAKE_CURRENT_BINARY_DIR}/catch.hpp"
         STATUS status
-        EXPECTED_HASH SHA256=27da57c7a06d09be8dd81fab7246b79e7892b6ae7e4e49ba8631f1d5a955e3fc)
+        EXPECTED_HASH SHA256=${CYLON_CATCH2_HEADER_HASH})
 list(GET status 0 error)
 if (error)
   message(FATAL_ERROR "Could not download ${catch2_url}")
