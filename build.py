@@ -270,11 +270,13 @@ def build_python():
     elif os.name == 'nt':
         env["ARROW_PREFIX"] = str(Path(os.environ["CONDA_PREFIX"], "Library"))
 
-    env['CYLON_GLOO'] = str(CYLON_GLOO)
-    env['GLOO_PREFIX'] = GLOO_PREFIX
-    env['CYLON_UCX'] = str(CYLON_UCX)
-    env['CYLON_UCC'] = str(CYLON_UCC)
-    env['UCC_PREFIX'] = UCC_PREFIX
+    if CYLON_GLOO:
+        env['CYLON_GLOO'] = str(CYLON_GLOO)
+        env['GLOO_PREFIX'] = GLOO_PREFIX
+    if CYLON_UCC and CYLON_UCX:
+        env['CYLON_UCX'] = str(CYLON_UCX)
+        env['CYLON_UCC'] = str(CYLON_UCC)
+        env['UCC_PREFIX'] = UCC_PREFIX
 
     logger.info("Arrow prefix: " + str(Path(os.environ["CONDA_PREFIX"])))
     res = subprocess.run(python_build_command, shell=True, env=env, cwd=PYTHON_SOURCE_DIR)

@@ -56,8 +56,34 @@ except Exception:
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
 
-cython_files = ["pycylon/*/*.pyx"]
-print("CYTHON: " + str(cython_files))
+cython_files = ['pycylon/net/channel.pyx',
+                'pycylon/net/comm_type.pyx',
+                'pycylon/net/communicator.pyx',
+                'pycylon/net/comm_config.pyx',
+                'pycylon/net/mpi_config.pyx',
+                'pycylon/net/txrequest.pyx',
+                'pycylon/net/comm_ops.pyx',
+                'pycylon/_libs/index.pyx',
+                'pycylon/data/scalar.pyx',
+                'pycylon/data/groupby.pyx',
+                'pycylon/data/arrow_util.pyx',
+                'pycylon/data/aggregates.pyx',
+                'pycylon/data/column.pyx',
+                'pycylon/data/csv.pyx',
+                'pycylon/data/compute.pyx',
+                'pycylon/data/table.pyx',
+                'pycylon/data/data_type.pyx',
+                'pycylon/api/lib.pyx',
+                'pycylon/api/types.pyx',
+                'pycylon/indexing/cyindex.pyx',
+                'pycylon/indexing/index_utils.pyx',
+                'pycylon/ctx/context.pyx',
+                'pycylon/io/csv_write_config.pyx',
+                'pycylon/io/csv_read_config.pyx',
+                'pycylon/common/status.pyx',
+                'pycylon/common/join_config.pyx',
+                'pycylon/common/code.pyx',
+                'pycylon/util/logging.pyx']
 
 if not CYLON_PREFIX:
     raise ValueError("CYLON_PREFIX not set")
@@ -135,9 +161,10 @@ else:
     mpi_include_dir = [mpi4py.get_config()['include_dirs']]
 _include_dirs.extend(mpi_include_dir)
 
-
 macros = []
 if CYLON_GLOO:
+    cython_files.append('pycylon/net/gloo_config.pyx')
+
     libraries.append('gloo')
     library_directories.append(os.path.join(GLOO_PREFIX, 'lib'))
     _include_dirs.append(os.path.join(GLOO_PREFIX, 'include'))
@@ -151,11 +178,11 @@ if CYLON_UCC and CYLON_UCX:
     macros.append(('BUILD_CYLON_UCX', '1'))
     macros.append(('BUILD_CYLON_UCC', '1'))
 
-
-print('Libraries:', libraries)
-print("Lib dirs:", library_directories)
-print("Include dirs:", _include_dirs)
-print("Macros:", macros)
+print("CYTHON files : " + str(cython_files))
+print('Libraries    :', libraries)
+print("Lib dirs     :", library_directories)
+print("Include dirs :", _include_dirs)
+print("Macros       :", macros)
 
 # Adopted the Cudf Python Build format
 # https://github.com/rapidsai/cudf
@@ -170,7 +197,7 @@ extensions = [
         extra_link_args=extra_link_args,
         libraries=libraries,
         library_dirs=library_directories,
-        define_macros=macros
+        define_macros=macros,
     )
 ]
 
