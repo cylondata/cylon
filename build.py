@@ -255,16 +255,17 @@ def build_python():
     print_line()
     logger.info("Building Python")
 
-    CONDA_PREFIX = os.getenv('CONDA_PREFIX')
-    if not CONDA_PREFIX:
+    conda_prefix = os.getenv('CONDA_PREFIX')
+    if not conda_prefix:
         logger.error("The build should be in a conda environment")
-        return
+        return 1
 
     python_build_command = f'{PYTHON_EXEC} setup.py install --force'
     env = os.environ
     env["CYLON_PREFIX"] = str(BUILD_DIR)
+    env["PARALLEL_LEVEL"] = str(os.cpu_count())
     if os.name == 'posix':
-        env["ARROW_PREFIX"] = str(Path(CONDA_PREFIX))
+        env["ARROW_PREFIX"] = str(Path(conda_prefix))
     elif os.name == 'nt':
         env["ARROW_PREFIX"] = str(Path(os.environ["CONDA_PREFIX"], "Library"))
 
@@ -276,7 +277,7 @@ def build_python():
         env['CYLON_UCC'] = str(CYLON_UCC)
         env['UCC_PREFIX'] = UCC_PREFIX
 
-    logger.info("Arrow prefix: " + str(Path(os.environ["CONDA_PREFIX"])))
+    logger.info("Arrow prefix: " + str(Path(conda_prefix)))
     res = subprocess.run(python_build_command, shell=True, env=env, cwd=PYTHON_SOURCE_DIR)
     check_status(res.returncode, "PyCylon build")
 
