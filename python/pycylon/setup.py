@@ -43,10 +43,10 @@ print("PYARROW version:", pyarrow_version)
 
 CYLON_PREFIX = os.environ.get('CYLON_PREFIX')
 ARROW_PREFIX = os.environ.get('ARROW_PREFIX')
-CYLON_GLOO = strtobool(os.environ.get('CYLON_GLOO'))
+CYLON_GLOO = strtobool(os.environ.get('CYLON_GLOO') or '')
 GLOO_PREFIX = os.environ.get('GLOO_PREFIX')
-CYLON_UCX = strtobool(os.environ.get('CYLON_UCX'))
-CYLON_UCC = strtobool(os.environ.get('CYLON_UCC'))
+CYLON_UCX = strtobool(os.environ.get('CYLON_UCX') or '')
+CYLON_UCC = strtobool(os.environ.get('CYLON_UCC') or '')
 UCC_PREFIX = os.environ.get('UCC_PREFIX')
 
 try:
