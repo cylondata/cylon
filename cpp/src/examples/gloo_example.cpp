@@ -23,14 +23,11 @@ static constexpr int kCount = 10;
 static constexpr double kDup = 0.9;
 
 int main(int argc, char **argv) {
-  auto config = std::make_shared<cylon::net::GlooConfig>();
-  config->rank = std::stoi(argv[1]);
-  config->world_size = std::stoi(argv[2]);
-  config->use_mpi = false;
-  config->file_store_path = "/tmp/gloo/";
-  config->store_prefix = "foo";
+  auto config = std::make_shared<cylon::net::GlooConfig>(std::stoi(argv[1]), std::stoi(argv[2]));
+  config->SetFileStorePath("/tmp/gloo/");
+  config->SetStorePrefix("foo");
 
-  if (config->rank == 0)  {
+  if (config->rank() == 0)  {
     system("rm -rf /tmp/gloo/*");
   }
 
