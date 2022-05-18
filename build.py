@@ -149,8 +149,6 @@ logger.info(f" -UCC_PREFIX   : {UCC_PREFIX}")
 logger.info(f"Run C++ tests  : {RUN_CPP_TESTS}")
 logger.info(f"Build PyCylon  : {BUILD_PYTHON}")
 logger.info(f"Run Py tests   : {RUN_PYTHON_TESTS}")
-logger.info(f"Run Py tests   : {RUN_PYTHON_TESTS}")
-logger.info(f"Run Py tests   : {RUN_PYTHON_TESTS}")
 print_line()
 
 # create build directory

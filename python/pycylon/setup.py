@@ -49,6 +49,9 @@ CYLON_UCX = strtobool(os.environ.get('CYLON_UCX') or '0')
 CYLON_UCC = strtobool(os.environ.get('CYLON_UCC') or '0')
 UCC_PREFIX = os.environ.get('UCC_PREFIX')
 
+if not CYLON_PREFIX:
+    raise ValueError("CYLON_PREFIX not set")
+
 try:
     nthreads = int(os.environ.get("PARALLEL_LEVEL", "0") or "0")
 except Exception:
@@ -85,12 +88,8 @@ cython_files = ['pycylon/net/channel.pyx',
                 'pycylon/common/code.pyx',
                 'pycylon/util/logging.pyx']
 
-if not CYLON_PREFIX:
-    raise ValueError("CYLON_PREFIX not set")
-
 std_version = '-std=c++14'
-additional_compile_args = [std_version,
-                           '-DARROW_METADATA_V4 -DNEED_EXCLUSIVE_SCAN']
+additional_compile_args = [std_version, '-DARROW_METADATA_V4 -DNEED_EXCLUSIVE_SCAN']
 arrow_lib_include_dir = None
 arrow_library_directory = None
 if not ARROW_PREFIX:
@@ -178,7 +177,7 @@ if CYLON_UCC and CYLON_UCX:
     macros.append(('BUILD_CYLON_UCX', '1'))
     macros.append(('BUILD_CYLON_UCC', '1'))
 
-print("CYTHON files : " + str(cython_files))
+print("CYTHON files : ", str(cython_files))
 print('Libraries    :', libraries)
 print("Lib dirs     :", library_directories)
 print("Include dirs :", _include_dirs)
@@ -221,9 +220,7 @@ setup(
             profile=False, language_level=3, embedsignature=True
         ),
     ),
-    package_data=dict.fromkeys(
-        find_packages(include=["pycylon*"]), ["*.pxd"],
-    ),
+    package_data=dict.fromkeys(find_packages(include=["pycylon*"]), ["*.pxd"], ),
     python_requires='>=3.7',
     install_requires=[
         'numpy',
