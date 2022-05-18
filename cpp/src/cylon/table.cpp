@@ -39,7 +39,6 @@
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/repartition.hpp>
 #include <cylon/scalar.hpp>
-#include <cylon/net/mpi/mpi_operations.hpp>
 #include <cylon/serialize/table_serialize.hpp>
 
 namespace cylon {

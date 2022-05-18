@@ -37,6 +37,13 @@ std::vector<T> DivideRowsEvenly(size_t nworkers, const T total_rows) {
   return even_rows;
 }
 
+template <typename T>
+std::vector<T> DivideRowsEvenly(const std::vector<T> &row_counts) {
+  auto nworkers = row_counts.size();
+  auto all_rows = std::accumulate(row_counts.begin(), row_counts.end(), 0);
+  return DivideRowsEvenly(nworkers, all_rows);
+}
+
 /**
  * determine the target worker of the first row
  * calculate the global order of the first row of that worker
