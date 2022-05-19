@@ -38,7 +38,7 @@ jobs:
         run: conda activate cylon_dev
 
       - name: Build cylon, pycylon and run cpp test
-        run: python build.py -ipath="$HOME/cylon/install" --cpp --python --test
+        run: python build.py --cpp --python --test
 
       - name: Run pytest
-        run: python build.py -ipath="$HOME/cylon/install" --pytest
+        run: python build.py --pytest
