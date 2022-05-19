@@ -31,11 +31,11 @@ jobs:
 
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          activate-environment: gcylon_dev
-          environment-file: conda/environments/gcylon.yml
+          activate-environment: cylon_dev
+          environment-file: conda/environments/cylon.yml
 
       - name: activate conda
-        run: conda activate gcylon_dev
+        run: conda activate cylon_dev
 
       - name: Build cylon, pycylon and run cpp test
         run: python build.py -ipath="$HOME/cylon/install" --cpp --python --test

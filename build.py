@@ -264,7 +264,7 @@ def build_python():
     env = os.environ
     env["CYLON_PREFIX"] = str(BUILD_DIR)
     # Windows has issues with parallel cython compilation
-    env["PARALLEL_LEVEL"] = 0 if OS_NAME == 'Windows' else str(os.cpu_count())
+    env["PARALLEL_LEVEL"] = '0' if OS_NAME == 'Windows' else str(os.cpu_count())
     if os.name == 'posix':
         env["ARROW_PREFIX"] = str(Path(conda_prefix))
     elif os.name == 'nt':
