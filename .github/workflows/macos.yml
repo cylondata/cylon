@@ -32,7 +32,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: cylon_dev
-          environment-file: conda/environments/cylon.yml
+          environment-file: conda/environments/cylon_MacOS.yml
 
       - name: activate conda
         run: conda activate cylon_dev

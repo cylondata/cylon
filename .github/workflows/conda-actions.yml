@@ -1,4 +1,4 @@
-name: Conda C++/Python - gcc,OpenMPI
+name: Conda C++/Python - gcc,OpenMPI  & GCylon
 
 on:
   push:
