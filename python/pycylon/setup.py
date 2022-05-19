@@ -131,12 +131,15 @@ else:
 _include_dirs.extend(mpi_include_dir)
 
 macros = []
+# compile_time_env serves as preprocessor macros. ref: https://github.com/cython/cython/issues/2488
+compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False}
 if CYLON_GLOO:
     libraries.append('gloo')
     library_directories.append(os.path.join(GLOO_PREFIX, 'lib'))
     _include_dirs.append(os.path.join(GLOO_PREFIX, 'include'))
     macros.append(('GLOO_USE_MPI', '1'))
     macros.append(('BUILD_CYLON_GLOO', '1'))
+    compile_time_env['CYTHON_GLOO'] = True
 
 if CYLON_UCC and CYLON_UCX:
     libraries.append('ucc')
@@ -144,35 +147,18 @@ if CYLON_UCC and CYLON_UCX:
     _include_dirs.append(os.path.join(UCC_PREFIX, 'include'))
     macros.append(('BUILD_CYLON_UCX', '1'))
     macros.append(('BUILD_CYLON_UCC', '1'))
+    compile_time_env['CYTHON_UCC'] = True
 
 print('Libraries    :', libraries)
 print("Lib dirs     :", library_directories)
 print("Include dirs :", _include_dirs)
 print("Macros       :", macros)
+print("Compile time env:", compile_time_env)
 
 # Adopted the Cudf Python Build format
 # https://github.com/rapidsai/cudf
 
-extensions = []
-# NOTE: each specialized pyx file needs to be added to a separate Extension. i.e. Extensions can
-# not have multiple pyx files.
-# ref: https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#configuring-the-c-build
-if CYLON_GLOO:
-    extensions.append(
-        Extension(
-            "cylon_gloo",
-            sources=['pycylon/net/gloo_config.pyx'],
-            include_dirs=_include_dirs,
-            language='c++',
-            extra_compile_args=extra_compile_args,
-            extra_link_args=extra_link_args,
-            libraries=libraries,
-            library_dirs=library_directories,
-            define_macros=macros,
-        ))
-
-# rest of the pyx files using glob wildcards
-extensions.append(
+extensions = [
     Extension(
         "*",
         sources=["pycylon/*/*.pyx"],
@@ -183,8 +169,7 @@ extensions.append(
         libraries=libraries,
         library_dirs=library_directories,
         define_macros=macros,
-    )
-)
+    )]
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
 packages = find_packages(include=["pycylon", "pycylon.*"])
@@ -205,6 +190,7 @@ setup(
         compiler_directives=dict(
             profile=False, language_level=3, embedsignature=True
         ),
+        compile_time_env=compile_time_env,
     ),
     package_data=dict.fromkeys(find_packages(include=["pycylon*"]), ["*.pxd"], ),
     python_requires='>=3.7',

@@ -12,34 +12,35 @@
 # limitations under the License.
 ##
 
-from libcpp.memory cimport shared_ptr
-from libcpp.string cimport string
-from mpi4py.libmpi cimport MPI_Comm
+IF CYTHON_GLOO:
+    from libcpp.memory cimport shared_ptr
+    from libcpp.string cimport string
+    from mpi4py.libmpi cimport MPI_Comm
 
-from pycylon.net.comm_config cimport CommConfig
+    from pycylon.net.comm_config cimport CommConfig
 
-cdef extern from "../../../../cpp/src/cylon/net/gloo/gloo_communicator.hpp" namespace "cylon::net":
-    cdef cppclass CGlooConfig "cylon::net::GlooConfig":
-        int rank()
-        int world_size()
+    cdef extern from "../../../../cpp/src/cylon/net/gloo/gloo_communicator.hpp" namespace "cylon::net":
+        cdef cppclass CGlooConfig "cylon::net::GlooConfig":
+            int rank()
+            int world_size()
 
-        void SetTcpHostname(const string& tcp_hostname)
-        void SetTcpIface(const string & tcp_iface)
-        void SetTcpAiFamily(int tcp_ai_family)
-        void SetFileStorePath(const string & file_store_path)
-        void SetStorePrefix(const string & store_prefix)
+            void SetTcpHostname(const string& tcp_hostname)
+            void SetTcpIface(const string & tcp_iface)
+            void SetTcpAiFamily(int tcp_ai_family)
+            void SetFileStorePath(const string & file_store_path)
+            void SetStorePrefix(const string & store_prefix)
 
-        @staticmethod
-        shared_ptr[CGlooConfig] MakeWithMpi(MPI_Comm comm);
+            @staticmethod
+            shared_ptr[CGlooConfig] MakeWithMpi(MPI_Comm comm);
 
-        @staticmethod
-        shared_ptr[CGlooConfig] Make(int rank, int world_size);
+            @staticmethod
+            shared_ptr[CGlooConfig] Make(int rank, int world_size);
 
 
-cdef class GlooMPIConfig(CommConfig):
-    cdef:
-        shared_ptr[CGlooConfig] gloo_config_shd_ptr
+    cdef class GlooMPIConfig(CommConfig):
+        cdef:
+            shared_ptr[CGlooConfig] gloo_config_shd_ptr
 
-cdef class GlooStandaloneConfig(CommConfig):
-    cdef:
-        shared_ptr[CGlooConfig] gloo_config_shd_ptr
+    cdef class GlooStandaloneConfig(CommConfig):
+        cdef:
+            shared_ptr[CGlooConfig] gloo_config_shd_ptr
