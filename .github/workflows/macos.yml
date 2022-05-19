@@ -12,13 +12,33 @@ on:
 
 jobs:
   build:
-    runs-on: macos-10.15
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-10.15
 
     steps:
       - uses: actions/checkout@v2
       - name: Remove link for preventing an error
         run: rm /usr/local/bin/2to3
       - name: Install dependencies
-        run: brew install open-mpi re2 && brew update --preinstall && brew install automake boost brotli c-ares ccache cmake flatbuffers glog grpc llvm llvm@8 lz4 minio ninja numpy openssl@1.1 protobuf python rapidjson snappy thrift wget zstd
-      - name: build python and test
-        run: python3 -m venv ENV && ./build.sh -pyenv $(pwd)/ENV -bpath $(pwd)/build --cmake-flags "-DCYLON_PARQUET=ON" --cpp --python --test --pytest
+        run: brew update --preinstall && brew install re2 automake boost brotli c-ares ccache flatbuffers grpc llvm llvm@8 lz4 minio ninja openssl@1.1 protobuf rapidjson snappy thrift wget zstd
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: gcylon_dev
+          environment-file: conda/environments/gcylon.yml
+
+      - name: activate conda
+        run: conda activate gcylon_dev
+
+      - name: Build cylon, pycylon and run cpp test
+        run: python build.py -ipath="$HOME/cylon/install" --cpp --python --test
+
+      - name: Run pytest
+        run: python build.py -ipath="$HOME/cylon/install" --pytest
