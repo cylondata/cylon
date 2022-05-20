@@ -97,6 +97,38 @@ OS_NAME = platform.system()  # Linux, Darwin or Windows
 
 PYTHON_EXEC = sys.executable
 
+CMAKE_BOOL_FLAGS = {'CYLON_GLOO', 'CYLON_UCX', 'CYLON_UCC'}
+CMAKE_FALSE_OPTIONS = {'0', 'FALSE', 'OFF', 'N', 'NO', 'IGNORE', 'NOTFOUND'}
+
+
+def parse_cmake_bool(v):
+    """
+    Converts string to 0 or 1. Evaluates to 0 if any of the following is true:
+    - string is empty,
+    - string is a case-insensitive equal of 0, FALSE, OFF, N, NO, IGNORE, or NOTFOUND, or
+    - string ends in the suffix -NOTFOUND (case-sensitive).
+    Otherwise, evaluates to 1.
+    """
+    return bool(v and v not in CMAKE_FALSE_OPTIONS)
+
+
+def parse_cmake_flags(flag):
+    for f in CMAKE_FLAGS.strip().replace('-D', '').split():
+        k, v = f.split('=')
+        if k != flag:
+            continue
+        else:
+            return parse_cmake_bool(v) if k in CMAKE_BOOL_FLAGS else v
+    return None
+
+
+CYLON_GLOO = parse_cmake_flags('CYLON_GLOO')
+GLOO_PREFIX = parse_cmake_flags('GLOO_INSTALL_PREFIX')
+
+CYLON_UCX = parse_cmake_flags('CYLON_UCX')
+CYLON_UCC = parse_cmake_flags('CYLON_UCC')
+UCC_PREFIX = parse_cmake_flags('UCC_INSTALL_PREFIX')
+
 
 def print_line():
     logger.info("=================================================================")
@@ -109,6 +141,11 @@ logger.info(f"Build mode     : {CPP_BUILD_MODE}")
 logger.info(f"Build path     : {BUILD_DIR}")
 logger.info(f"Install path   : {INSTALL_DIR}")
 logger.info(f"CMake flags    : {CMAKE_FLAGS}")
+logger.info(f" -CYLON_GLOO   : {CYLON_GLOO}")
+logger.info(f" -GLOO_PREFIX  : {GLOO_PREFIX}")
+logger.info(f" -CYLON_UCX    : {CYLON_UCX}")
+logger.info(f" -CYLON_UCC    : {CYLON_UCC}")
+logger.info(f" -UCC_PREFIX   : {UCC_PREFIX}")
 logger.info(f"Run C++ tests  : {RUN_CPP_TESTS}")
 logger.info(f"Build PyCylon  : {BUILD_PYTHON}")
 logger.info(f"Run Py tests   : {RUN_PYTHON_TESTS}")
@@ -218,20 +255,28 @@ def build_python():
     print_line()
     logger.info("Building Python")
 
-    CONDA_PREFIX = os.getenv('CONDA_PREFIX')
-    if not CONDA_PREFIX:
+    conda_prefix = os.getenv('CONDA_PREFIX')
+    if not conda_prefix:
         logger.error("The build should be in a conda environment")
-        return
+        return 1
 
     python_build_command = f'{PYTHON_EXEC} setup.py install --force'
     env = os.environ
     env["CYLON_PREFIX"] = str(BUILD_DIR)
     if os.name == 'posix':
-        env["ARROW_PREFIX"] = str(Path(CONDA_PREFIX))
+        env["ARROW_PREFIX"] = str(Path(conda_prefix))
     elif os.name == 'nt':
         env["ARROW_PREFIX"] = str(Path(os.environ["CONDA_PREFIX"], "Library"))
 
-    logger.info("Arrow prefix: " + str(Path(os.environ["CONDA_PREFIX"])))
+    if CYLON_GLOO:
+        env['CYLON_GLOO'] = str(CYLON_GLOO)
+        env['GLOO_PREFIX'] = GLOO_PREFIX
+    if CYLON_UCC and CYLON_UCX:
+        env['CYLON_UCX'] = str(CYLON_UCX)
+        env['CYLON_UCC'] = str(CYLON_UCC)
+        env['UCC_PREFIX'] = UCC_PREFIX
+
+    logger.info("Arrow prefix: " + str(Path(conda_prefix)))
     res = subprocess.run(python_build_command, shell=True, env=env, cwd=PYTHON_SOURCE_DIR)
     check_status(res.returncode, "PyCylon build")
 

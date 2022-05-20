@@ -20,8 +20,7 @@
 namespace cylon {
 class Status {
 public:
-  Status() {
-  }
+  Status() = default;
 
   Status(int code, const std::string &msg) {
     this->code = code;
@@ -58,8 +57,8 @@ public:
   }
 
  private:
-  int code;
-  std::string msg;
+  int code{};
+  std::string msg{};
 };
 }  // namespace cylon
 

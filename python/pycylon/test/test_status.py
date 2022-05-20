@@ -1,16 +1,16 @@
 ##
- # Licensed under the Apache License, Version 2.0 (the "License");
- # you may not use this file except in compliance with the License.
- # You may obtain a copy of the License at
- #
- # http://www.apache.org/licenses/LICENSE-2.0
- #
- # Unless required by applicable law or agreed to in writing, software
- # distributed under the License is distributed on an "AS IS" BASIS,
- # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- # See the License for the specific language governing permissions and
- # limitations under the License.
- ##
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##
 
 '''
 Run test
@@ -20,59 +20,30 @@ Run test
 from pycylon.commons import Code
 from pycylon.commons import Status
 
+
 def test_status():
-    # Case I
-    # Input From Abstract Python API: code = -1, msg = None and Code = None
     msg = b"a"
-    code = -1
-    _code = Code.IOError
-    s = Status(code, msg, _code)
+    code = Code.IOError
+    s = Status(code, msg)
 
     assert (s.get_code() == Code.IOError)
     assert (s.get_msg() == msg.decode())
-    assert (s.is_ok() == False)
+    assert (s.is_ok() is False)
 
-    # Case II
-    # Input From Abstract Python API: code = 1, msg = None and Code = None
     msg = b""
-    code = 1
-    _code = -1
-    s = Status(code, msg, _code)
+    code = Code.IOError
+    s = Status(code, msg)
 
-    assert (s.get_code() == 1)
-    assert (s.get_msg() == msg.decode())
-    assert (s.is_ok() == False)
+    assert (s.get_code() == Code.IOError)
+    assert (len(s.get_msg()) == 0)
+    assert (s.is_ok() is False)
 
-    # Case III
-    # Input From Abstract Python API: code = -1, msg = "a" and Code = Code.OK
-
-    msg = b"a"
-    code = -1
-    _code = Code.OK
-    s = Status(code, msg, _code)
-
+    s = Status(Code.OK)
     assert (s.get_code() == Code.OK)
-    assert (s.get_msg() == msg.decode())
-    assert (s.is_ok() == True)
+    assert (len(s.get_msg()) == 0)
+    assert (s.is_ok())
 
-    # Case IV
-    # Input From Abstract Python API: code = 0, msg = "a" and Code = None
-    msg = b"a"
-    code = 0
-    _code = -1
-    s = Status(code, msg, _code)
-
-    assert (s.get_code() == code)
-    assert (s.get_msg() == msg.decode())
-    assert (s.is_ok() == True)
-
-    # Case V
-    # Input From Abstract Python API: code = 1, msg = None and Code = None
-    msg = b""
-    code = -1
-    _code = Code.IOError
-    s = Status(code, msg, _code)
-
-    assert (s.get_code() == Code.IOError)
-    assert (s.get_msg() == msg.decode())
-    assert (s.is_ok() == False)
+    s = Status()
+    assert (s.get_code() == Code.OK)
+    assert (len(s.get_msg()) == 0)
+    assert (s.is_ok())

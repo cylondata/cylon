@@ -22,12 +22,12 @@ import os
 import platform
 import sysconfig
 from distutils.sysconfig import get_python_lib
+from distutils.util import strtobool
 
 import numpy as np
 import pyarrow as pa
 from Cython.Build import cythonize
-from setuptools import find_packages, setup
-from setuptools.extension import Extension
+from setuptools import Extension, find_packages, setup
 
 import versioneer
 
@@ -42,6 +42,14 @@ print("PYARROW version:", pyarrow_version)
 
 CYLON_PREFIX = os.environ.get('CYLON_PREFIX')
 ARROW_PREFIX = os.environ.get('ARROW_PREFIX')
+CYLON_GLOO = strtobool(os.environ.get('CYLON_GLOO') or '0')
+GLOO_PREFIX = os.environ.get('GLOO_PREFIX')
+CYLON_UCX = strtobool(os.environ.get('CYLON_UCX') or '0')
+CYLON_UCC = strtobool(os.environ.get('CYLON_UCC') or '0')
+UCC_PREFIX = os.environ.get('UCC_PREFIX')
+
+if not CYLON_PREFIX:
+    raise ValueError("CYLON_PREFIX not set")
 
 try:
     nthreads = int(os.environ.get("PARALLEL_LEVEL", "0") or "0")
@@ -50,15 +58,8 @@ except Exception:
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
 
-cython_files = ["pycylon/*/*.pyx"]
-print("CYTHON: " + str(cython_files))
-
-if not CYLON_PREFIX:
-    raise ValueError("CYLON_PREFIX not set")
-
 std_version = '-std=c++14'
-additional_compile_args = [std_version,
-                           '-DARROW_METADATA_V4 -DNEED_EXCLUSIVE_SCAN']
+additional_compile_args = [std_version, '-DARROW_METADATA_V4 -DNEED_EXCLUSIVE_SCAN']
 arrow_lib_include_dir = None
 arrow_library_directory = None
 if not ARROW_PREFIX:
@@ -106,12 +107,12 @@ if OS_NAME == 'Linux' or OS_NAME == 'Darwin':
     mpi_library_dir = os.popen("mpicc --showme:libdirs").read().strip().split(' ')
 else:
     import mpi4py
+
     mpi_library_dir = [mpi4py.get_config()['library_dirs']]
 library_directories.extend(mpi_library_dir)
 
-print("Lib dirs:", library_directories)
+libraries = ["arrow", "cylon", "glog"]
 
-libraries = ["arrow", "cylon", "glog"]  # todo glogd was added temporarily
 cylon_include_dir = os.path.abspath(os.path.join(__file__, "../../..", "cpp", "src"))
 
 _include_dirs = [cylon_include_dir,
@@ -125,10 +126,34 @@ if OS_NAME == 'Linux' or OS_NAME == 'Darwin':
     mpi_include_dir = os.popen("mpicc --showme:incdirs").read().strip().split(' ')
 else:
     import mpi4py
+
     mpi_include_dir = [mpi4py.get_config()['include_dirs']]
 _include_dirs.extend(mpi_include_dir)
 
-print("Include dirs:", _include_dirs)
+macros = []
+# compile_time_env serves as preprocessor macros. ref: https://github.com/cython/cython/issues/2488
+compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False}
+if CYLON_GLOO:
+    libraries.append('gloo')
+    library_directories.append(os.path.join(GLOO_PREFIX, 'lib'))
+    _include_dirs.append(os.path.join(GLOO_PREFIX, 'include'))
+    macros.append(('GLOO_USE_MPI', '1'))
+    macros.append(('BUILD_CYLON_GLOO', '1'))
+    compile_time_env['CYTHON_GLOO'] = True
+
+if CYLON_UCC and CYLON_UCX:
+    libraries.append('ucc')
+    library_directories.append(os.path.join(UCC_PREFIX, 'lib'))
+    _include_dirs.append(os.path.join(UCC_PREFIX, 'include'))
+    macros.append(('BUILD_CYLON_UCX', '1'))
+    macros.append(('BUILD_CYLON_UCC', '1'))
+    compile_time_env['CYTHON_UCC'] = True
+
+print('Libraries    :', libraries)
+print("Lib dirs     :", library_directories)
+print("Include dirs :", _include_dirs)
+print("Macros       :", macros)
+print("Compile time env:", compile_time_env)
 
 # Adopted the Cudf Python Build format
 # https://github.com/rapidsai/cudf
@@ -136,15 +161,15 @@ print("Include dirs:", _include_dirs)
 extensions = [
     Extension(
         "*",
-        sources=cython_files,
+        sources=["pycylon/*/*.pyx"],
         include_dirs=_include_dirs,
         language='c++',
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args,
         libraries=libraries,
         library_dirs=library_directories,
-    )
-]
+        define_macros=macros,
+    )]
 
 compiler_directives = {"language_level": 3, "embedsignature": True}
 packages = find_packages(include=["pycylon", "pycylon.*"])
@@ -165,10 +190,9 @@ setup(
         compiler_directives=dict(
             profile=False, language_level=3, embedsignature=True
         ),
+        compile_time_env=compile_time_env,
     ),
-    package_data=dict.fromkeys(
-        find_packages(include=["pycylon*"]), ["*.pxd"],
-    ),
+    package_data=dict.fromkeys(find_packages(include=["pycylon*"]), ["*.pxd"], ),
     python_requires='>=3.7',
     install_requires=[
         'numpy',

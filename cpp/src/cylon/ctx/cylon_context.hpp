@@ -41,6 +41,7 @@ class CylonContext {
    * @param distributed <bool>
    */
   explicit CylonContext(bool distributed);
+  ~CylonContext();
 
   /**
    * Initializes context

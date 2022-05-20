@@ -34,19 +34,23 @@ Status GlooCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   const auto &gloo_config = std::static_pointer_cast<GlooConfig>(config);
 
   gloo::transport::tcp::attr attr;
-  attr.hostname = gloo_config->tcp_hostname;
-  attr.iface = gloo_config->tcp_iface;
-  attr.ai_family = gloo_config->tcp_ai_family;
+  attr.hostname = gloo_config->tcp_hostname_;
+  attr.iface = gloo_config->tcp_iface_;
+  attr.ai_family = gloo_config->tcp_ai_family_;
 
   // create device
   dev_ = gloo::transport::tcp::CreateDevice(attr);
 
-  if (gloo_config->use_mpi) {
+  if (gloo_config->use_mpi_) {
 #ifdef GLOO_USE_MPI
     int res;
     RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Initialized(&res));
     if (res) {
-      gloo_ctx_ = std::make_shared<gloo::mpi::Context>(gloo_config->mpi_comm);
+      if (gloo_config->mpi_comm_ == MPI_COMM_NULL) {
+        gloo_ctx_ = std::make_shared<gloo::mpi::Context>(MPI_COMM_WORLD);
+      } else {
+        gloo_ctx_ = std::make_shared<gloo::mpi::Context>(gloo_config->mpi_comm_);
+      }
     } else { // MPI is not initialized. Ask gloo to initialize MPI
       gloo_ctx_ = gloo::mpi::Context::createManaged();
     }
@@ -59,16 +63,16 @@ Status GlooCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     return {Code::Invalid, "Gloo does not contain mpi headers!"};
 #endif // GLOO_USE_MPI
   } else {
+    rank = gloo_config->rank_;
+    world_size = gloo_config->world_size_;
+
     // store and prefix store
-    store_ = std::make_shared<gloo::rendezvous::FileStore>(gloo_config->file_store_path);
-    prefix_store_ = std::make_shared<gloo::rendezvous::PrefixStore>(gloo_config->store_prefix,
+    store_ = std::make_shared<gloo::rendezvous::FileStore>(gloo_config->file_store_path_);
+    prefix_store_ = std::make_shared<gloo::rendezvous::PrefixStore>(gloo_config->store_prefix_,
                                                                     *store_);
 
     gloo_ctx_ = std::make_shared<gloo::rendezvous::Context>(rank, world_size);
     ((gloo::rendezvous::Context &) *gloo_ctx_).connectFullMesh(*prefix_store_, dev_);
-
-    rank = gloo_config->rank;
-    world_size = gloo_config->world_size;
   }
   return Status::OK();
 }
@@ -146,11 +150,45 @@ CommType GlooConfig::Type() { return GLOO; }
 
 #ifdef GLOO_USE_MPI
 std::shared_ptr<GlooConfig> GlooConfig::MakeWithMpi(MPI_Comm comm) {
-  auto config = std::make_shared<GlooConfig>();
-  config->use_mpi = true;
-  config->mpi_comm = comm;
-  return config;
+  return std::make_shared<GlooConfig>(comm);
 }
+
+GlooConfig::GlooConfig(MPI_Comm mpi_comm)
+    : rank_(-1), world_size_(-1), use_mpi_(true), mpi_comm_(mpi_comm) {}
 #endif //GLOO_USE_MPI
+
+std::shared_ptr<GlooConfig> GlooConfig::Make(int rank, int world_size) {
+  return std::make_shared<GlooConfig>(rank, world_size);
+}
+
+GlooConfig::GlooConfig(int rank, int world_size, bool use_mpi)
+    : rank_(rank), world_size_(world_size), use_mpi_(use_mpi) {}
+
+void GlooConfig::SetTcpHostname(const std::string &tcp_hostname) {
+  GlooConfig::tcp_hostname_ = tcp_hostname;
+}
+
+void GlooConfig::SetTcpIface(const std::string &tcp_iface) {
+  GlooConfig::tcp_iface_ = tcp_iface;
+}
+
+void GlooConfig::SetTcpAiFamily(int tcp_ai_family) {
+  GlooConfig::tcp_ai_family_ = tcp_ai_family;
+}
+
+void GlooConfig::SetFileStorePath(const std::string &file_store_path) {
+  GlooConfig::file_store_path_ = file_store_path;
+}
+
+void GlooConfig::SetStorePrefix(const std::string &store_prefix) {
+  GlooConfig::store_prefix_ = store_prefix;
+}
+int GlooConfig::rank() const {
+  return rank_;
+}
+int GlooConfig::world_size() const {
+  return world_size_;
+}
+
 }
 }

@@ -23,17 +23,14 @@ from pycylon.common.code cimport CCode
 cdef extern from "../../../../cpp/src/cylon/status.hpp" namespace "cylon":
     cdef cppclass CStatus "cylon::Status":
         CStatus()
-        CStatus(int, string)
-        CStatus(int)
+        # CStatus(int, string)
+        # CStatus(int)
         CStatus(CCode)
         CStatus(CCode, string)
         int get_code()
         bool is_ok()
-        string get_msg()
+        const string & get_msg()
 
 cdef class Status:
     cdef:
         CStatus *thisptr
-        CCode _code
-        string msg
-        int code

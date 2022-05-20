@@ -31,11 +31,38 @@
 namespace cylon {
 namespace net {
 
+class GlooCommunicator;
+
 class GlooConfig : public CommConfig {
  public:
-  int rank = 0;
-  int world_size = 1;
-  bool use_mpi = false;
+  explicit GlooConfig(int rank = 0, int world_size = 1, bool use_mpi = false);
+
+#ifdef GLOO_USE_MPI
+  explicit GlooConfig(MPI_Comm mpi_comm = MPI_COMM_WORLD);
+#endif //GLOO_USE_MPI
+
+  int rank() const;
+  int world_size() const;
+
+  void SetTcpHostname(const std::string &tcp_hostname);
+  void SetTcpIface(const std::string &tcp_iface);
+  void SetTcpAiFamily(int tcp_ai_family);
+  void SetFileStorePath(const std::string &file_store_path);
+  void SetStorePrefix(const std::string &store_prefix);
+
+  CommType Type() override;
+
+#ifdef GLOO_USE_MPI
+  static std::shared_ptr<GlooConfig> MakeWithMpi(MPI_Comm comm = MPI_COMM_NULL);
+#endif //GLOO_USE_MPI
+
+  static std::shared_ptr<GlooConfig> Make(int rank, int world_size);
+
+ private:
+  friend GlooCommunicator;
+  int rank_;
+  int world_size_;
+  bool use_mpi_;
 
 #ifdef GLOO_USE_MPI
   /*
@@ -43,23 +70,17 @@ class GlooConfig : public CommConfig {
    * Pass an MPI communicator to bootstrap Gloo context using MPI (NOTE: Gloo needs to be built
    * with -DUSE_MPI=1 flag, to use MPI communicator).
    */
-  MPI_Comm mpi_comm = MPI_COMM_WORLD;
+  MPI_Comm mpi_comm_ = MPI_COMM_WORLD;
 #endif //GLOO_USE_MPI
 
   // tcp attr
-  std::string tcp_hostname = "localhost";
-  std::string tcp_iface;
-  int tcp_ai_family = AF_UNSPEC;
+  std::string tcp_hostname_ = "localhost";
+  std::string tcp_iface_;
+  int tcp_ai_family_ = AF_UNSPEC;
 
   // file store configs
-  std::string file_store_path;
-  std::string store_prefix;
-
-  CommType Type() override;
-
-#ifdef GLOO_USE_MPI
-  static std::shared_ptr<GlooConfig> MakeWithMpi(MPI_Comm comm = nullptr);
-#endif //GLOO_USE_MPI
+  std::string file_store_path_;
+  std::string store_prefix_;
 };
 
 class GlooCommunicator : public Communicator {

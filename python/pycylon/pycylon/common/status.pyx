@@ -13,64 +13,43 @@
  ##
 
 from libcpp.string cimport string
-from libcpp cimport bool
 from pycylon.common.code cimport CCode
 from pycylon.common.status cimport CStatus
 
 
 cdef class Status:
-
-    def __cinit__(self, int code, string msg, CCode _code):
-        '''
+    def __cinit__(self, CCode code=CCode._OK, string msg=b''):
+        """
         Initializes the Status to wrap the C++ object in Cython
-        :param code: passes as an int to represent the status code.
         :param msg: passes a str to convery the status message
-        :param _code: Cython correpondence to C++ Code object
+        :param code: Cython correpondence to C++ Code object
         :return: None
-        '''
-        if _code != -1 and msg.size() == 0 and code == -1:
-            #print("Status(_Code)")
-            self.thisptr = new CStatus(_code)
-            self._code = _code
-
-        elif msg.size() != 0 and code != -1:
-            #print("Status(code, msg)")
-            self.thisptr = new CStatus(code, msg)
-            self.msg = msg
-            self.code = code
-
-        elif msg.size() == 0 and _code == -1 and code != -1:
-            #print("Status(code)")
+        """
+        if msg.empty():
             self.thisptr = new CStatus(code)
-            self.code = code
-
-        elif msg.size() != 0 and _code != -1 and code == -1:
-            #print("Status(_Code, msg)")
-            self.thisptr = new CStatus(_code, msg)
-            self._code = _code
-            self.msg = msg
         else:
-            # non arg constructor used for wrapping CStatus to Status
-            pass
+            self.thisptr = new CStatus(code, msg)
 
+    def __del__(self):
+        del self.thisptr
 
     def get_code(self):
-        '''
+        """
 
         :return: the code
-        '''
+        """
         return self.thisptr.get_code()
 
     def is_ok(self):
-        '''
+        """
 
         :return: OK status from Status
-        '''
+        """
         return self.thisptr.is_ok()
 
     def get_msg(self):
-        '''
+        """
 
         :return: Message from Status
-        '''
+        """
         return self.thisptr.get_msg().decode()
