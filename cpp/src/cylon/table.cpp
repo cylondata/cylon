@@ -1473,20 +1473,20 @@ static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &
     *b_out = a;
     return Status::OK();
   }
+  auto num_row_scalar = std::make_shared<Scalar>(std::move(arrow::MakeScalar(num_row)));
 
-  std::vector<int64_t> num_row_v = {num_row}, rows_per_partition;
+  std::vector<int64_t> rows_per_partition;
+  std::shared_ptr<cylon::Column> output;
 
-  std::shared_ptr<cylon::Column> num_row_col;
-  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(num_row_v, num_row_col));
-
-  std::vector<std::shared_ptr<cylon::Column>> output;
+  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(rows_per_partition, output));
 
   RETURN_CYLON_STATUS_IF_FAILED(
-      a->GetContext()->GetCommunicator()->Allgather(num_row_col, &output));
+      a->GetContext()->GetCommunicator()->Allgather(num_row_scalar, &output));
 
-  for (auto col : output) {
+
+  for (int64_t i = 0; i < output->length(); i++) {
     auto temp = std::static_pointer_cast<arrow::Int64Scalar>(
-        col->data()->GetScalar(0).ValueOrDie());
+        output->data()->GetScalar(i).ValueOrDie());
     rows_per_partition.push_back(temp->value);
   }
 
@@ -1521,7 +1521,7 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a,
   }
 
   auto sub_result_scalar =
-      std::make_shared<Scalar>(std::move(arrow::MakeScalar(int8_t(subResult))));
+      std::make_shared<Scalar>(arrow::MakeScalar(int8_t(subResult)));
   std::shared_ptr<Scalar> result_scalar;
 
   RETURN_CYLON_STATUS_IF_FAILED(a->GetContext()->GetCommunicator()->AllReduce(
@@ -1540,7 +1540,7 @@ Status Repartition(const std::shared_ptr<cylon::Table> &table,
                    std::shared_ptr<Table> *output) {
   int world_size = table->GetContext()->GetWorldSize();
   int rank = table->GetContext()->GetRank();
-  int num_row = (int) table->Rows();
+  auto num_row = table->Rows();
 
   if (rows_per_partition.size() != (size_t) world_size) {
     return Status(cylon::Code::ValueError,
@@ -1549,20 +1549,19 @@ Status Repartition(const std::shared_ptr<cylon::Table> &table,
                       std::to_string(world_size));
   }
 
-  std::vector<int64_t> num_row_v = {num_row}, sizes;
+  std::vector<int64_t> sizes;
+  std::shared_ptr<cylon::Column> sizes_cols;
+  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(sizes, sizes_cols));
 
-  std::shared_ptr<cylon::Column> num_row_col;
-  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(num_row_v, num_row_col));
-
-  std::vector<std::shared_ptr<cylon::Column>> sizes_cols;
+  auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
 
   RETURN_CYLON_STATUS_IF_FAILED(
-      table->GetContext()->GetCommunicator()->Allgather(num_row_col,
+      table->GetContext()->GetCommunicator()->Allgather(num_row_scalar,
                                                         &sizes_cols));
 
-  for (auto col : sizes_cols) {
+  for (int64_t i = 0; i < sizes_cols->length(); i++) {
     auto temp = std::static_pointer_cast<arrow::Int64Scalar>(
-        col->data()->GetScalar(0).ValueOrDie());
+        sizes_cols->data()->GetScalar(i).ValueOrDie());
     sizes.push_back(temp->value);
   }
 
@@ -1612,7 +1611,7 @@ Status Repartition(const std::shared_ptr<cylon::Table> &table,
   int world_size = table->GetContext()->GetWorldSize();
 
   auto size =
-      std::make_shared<Scalar>(std::move(arrow::MakeScalar(table->Rows())));
+      std::make_shared<Scalar>(arrow::MakeScalar(table->Rows()));
   std::shared_ptr<Scalar> total_size;
 
   RETURN_CYLON_STATUS_IF_FAILED(
