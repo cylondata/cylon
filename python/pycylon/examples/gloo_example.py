@@ -21,7 +21,7 @@ from multiprocessing import Process
 from pycylon import CylonEnv, DataFrame
 from pycylon.net.gloo_config import GlooStandaloneConfig
 
-FILE_STORE_PATH = tempfile.gettempdir() + os.path.pathsep + 'gloo'
+FILE_STORE_PATH = os.path.join(tempfile.gettempdir(), 'gloo')
 WORLD_SIZE = 4
 
 
@@ -39,6 +39,9 @@ def run_op(env):
 
 def run_standalone_gloo(rank, world_size):
     conf = GlooStandaloneConfig(rank, world_size)
+
+    if not os.path.isdir(FILE_STORE_PATH):
+        os.mkdir(FILE_STORE_PATH)
     conf.set_file_store_path(FILE_STORE_PATH)
 
     # distributed join

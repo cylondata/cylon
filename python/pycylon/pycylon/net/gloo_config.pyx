@@ -73,10 +73,3 @@ IF CYTHON_GLOO:
 
         def set_store_prefix(self, prefix: str):
             self.gloo_config_shd_ptr.get().SetStorePrefix(prefix.encode())
-ELSE:
-    cdef class GlooMPIConfig(CommConfig):
-        pass
-
-    cdef class GlooStandaloneConfig(CommConfig):
-        pass
-

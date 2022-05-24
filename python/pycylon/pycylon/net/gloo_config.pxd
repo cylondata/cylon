@@ -46,10 +46,3 @@ IF CYTHON_GLOO:
     cdef class GlooStandaloneConfig(CommConfig):
         cdef:
             shared_ptr[CGlooConfig] gloo_config_shd_ptr
-
-ELSE:
-    cdef class GlooMPIConfig(CommConfig):
-        pass
-
-    cdef class GlooStandaloneConfig(CommConfig):
-        pass
