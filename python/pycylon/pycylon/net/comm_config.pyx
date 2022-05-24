@@ -28,5 +28,5 @@ cdef class CommConfig:
     def __cinit__(self):
         pass
 
-    def type(self):
-        return self.thisPtr.Type()
+    def comm_type(self):
+        pass

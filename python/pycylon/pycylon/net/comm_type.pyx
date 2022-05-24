@@ -23,3 +23,4 @@ cpdef enum CommType:
     MPI = CCommType._MPI
     TCP = CCommType._TCP
     UCX = CCommType._UCX
+    GLOO = CCommType._GLOO

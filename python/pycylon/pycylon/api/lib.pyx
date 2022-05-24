@@ -1,16 +1,16 @@
 ##
- # Licensed under the Apache License, Version 2.0 (the "License");
- # you may not use this file except in compliance with the License.
- # You may obtain a copy of the License at
- #
- # http://www.apache.org/licenses/LICENSE-2.0
- #
- # Unless required by applicable law or agreed to in writing, software
- # distributed under the License is distributed on an "AS IS" BASIS,
- # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- # See the License for the specific language governing permissions and
- # limitations under the License.
- ##
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##
 
 from pycylon.data.table cimport Table
 from pycylon.data.table import Table
@@ -26,6 +26,8 @@ from pycylon.net.comm_config cimport CCommConfig
 from pycylon.net.mpi_config cimport CMPIConfig
 from pycylon.net.mpi_config import MPIConfig
 from pycylon.net.mpi_config cimport MPIConfig
+from pycylon.net.gloo_config import GlooMPIConfig, GlooStandaloneConfig
+from pycylon.net.gloo_config cimport CGlooConfig, GlooMPIConfig, GlooStandaloneConfig
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
 from pycylon.io.csv_read_config cimport CSVReadOptions
@@ -109,6 +111,14 @@ cdef api shared_ptr[CMPIConfig] pycylon_unwrap_mpi_config(object config):
     else:
         raise ValueError('Passed object is not an instance of MPIConfig')
 
+cdef api shared_ptr[CGlooConfig] pycylon_unwrap_gloo_config(object config):
+    if isinstance(config, GlooStandaloneConfig):
+        return (<GlooStandaloneConfig> config).gloo_config_shd_ptr
+    elif isinstance(config, GlooMPIConfig):
+        return (<GlooMPIConfig> config).gloo_config_shd_ptr
+    else:
+        raise ValueError('Passed object is not an instance of GlooConfig')
+
 cdef api CCSVReadOptions pycylon_unwrap_csv_read_options(object csv_read_options):
     cdef CSVReadOptions csvrdopt
     if pyclon_is_csv_read_options(csv_read_options):
@@ -125,7 +135,7 @@ cdef api CCSVWriteOptions pycylon_unwrap_csv_write_options(object csv_write_opti
     else:
         raise ValueError('Passed object is not an instance of CSVWriteOptions')
 
-cdef api shared_ptr[CDataType] pycylon_unwrap_data_type (object data_type):
+cdef api shared_ptr[CDataType] pycylon_unwrap_data_type(object data_type):
     cdef DataType dt
     if pyclon_is_data_type(data_type):
         dt = <DataType> data_type
@@ -133,8 +143,7 @@ cdef api shared_ptr[CDataType] pycylon_unwrap_data_type (object data_type):
     else:
         raise ValueError('Passed object is not an instance of DataType')
 
-
-cdef api CSortOptions* pycylon_unwrap_sort_options (object sort_options):
+cdef api CSortOptions * pycylon_unwrap_sort_options(object sort_options):
     cdef SortOptions so
     if pyclon_is_sort_options(sort_options):
         so = <SortOptions> sort_options
@@ -142,7 +151,7 @@ cdef api CSortOptions* pycylon_unwrap_sort_options (object sort_options):
     else:
         raise ValueError('Passed object is not an instance of DataType')
 
-cdef api shared_ptr[CBaseArrowIndex] pycylon_unwrap_base_arrow_index (object base_arrow_index):
+cdef api shared_ptr[CBaseArrowIndex] pycylon_unwrap_base_arrow_index(object base_arrow_index):
     cdef BaseArrowIndex bi
     if pyclon_is_base_arrow_index(base_arrow_index):
         bi = <BaseArrowIndex> base_arrow_index
@@ -156,7 +165,7 @@ cdef api CType pycylon_unwrap_type(object type):
 cdef api CLayout pycylon_unwrap_layout(object layout):
     pass
 
-cdef api CJoinConfig* pycylon_unwrap_join_config (object config):
+cdef api CJoinConfig * pycylon_unwrap_join_config(object config):
     cdef JoinConfig jc
     if pyclon_is_join_config(config):
         jc = <JoinConfig> config
@@ -169,18 +178,18 @@ cdef api object pycylon_wrap_table(const shared_ptr[CTable]& ctable):
     table.init(ctable)
     return table
 
-cdef api object pycylon_wrap_context(const shared_ptr[CCylonContext] &ctx):
+cdef api object pycylon_wrap_context(const shared_ptr[CCylonContext] & ctx):
     cdef CylonContext context = CylonContext.__new__(CylonContext)
     context.init(ctx)
     return context
 
-cdef api object pycylon_wrap_type(const CType &type):
+cdef api object pycylon_wrap_type(const CType & type):
     pass
 
-cdef api object pycylon_wrap_layout(const CLayout &layout):
+cdef api object pycylon_wrap_layout(const CLayout & layout):
     pass
 
-cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] &cdata_type):
+cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] & cdata_type):
     cdef DataType data_type = DataType.__new__(DataType)
     data_type.init(cdata_type)
     return data_type
@@ -190,7 +199,8 @@ cdef api object pycylon_wrap_sort_options(CSortOptions *csort_options):
     sort_options.init(csort_options)
     return sort_options
 
-cdef api object pycylon_wrap_base_arrow_index(const shared_ptr[CBaseArrowIndex] &cbase_arrow_index):
+cdef api object pycylon_wrap_base_arrow_index(
+        const shared_ptr[CBaseArrowIndex] & cbase_arrow_index):
     cdef BaseArrowIndex base_arrow_index = BaseArrowIndex.__new__(BaseArrowIndex)
     base_arrow_index.init(cbase_arrow_index)
     return base_arrow_index

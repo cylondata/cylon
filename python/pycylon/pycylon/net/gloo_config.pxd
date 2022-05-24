@@ -17,12 +17,14 @@ IF CYTHON_GLOO:
     from libcpp.string cimport string
     from mpi4py.libmpi cimport MPI_Comm
 
-    from pycylon.net.comm_config cimport CommConfig
+    from pycylon.net.comm_type cimport CCommType
+    from pycylon.net.comm_config cimport CommConfig, CCommConfig
 
     cdef extern from "../../../../cpp/src/cylon/net/gloo/gloo_communicator.hpp" namespace "cylon::net":
         cdef cppclass CGlooConfig "cylon::net::GlooConfig":
             int rank()
             int world_size()
+            CCommType Type()
 
             void SetTcpHostname(const string& tcp_hostname)
             void SetTcpIface(const string & tcp_iface)
@@ -44,3 +46,10 @@ IF CYTHON_GLOO:
     cdef class GlooStandaloneConfig(CommConfig):
         cdef:
             shared_ptr[CGlooConfig] gloo_config_shd_ptr
+
+ELSE:
+    cdef class GlooMPIConfig(CommConfig):
+        pass
+
+    cdef class GlooStandaloneConfig(CommConfig):
+        pass

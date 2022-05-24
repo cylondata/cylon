@@ -23,3 +23,4 @@ cdef extern from "../../../../cpp/src/cylon/net/comm_type.hpp" namespace "cylon:
         _MPI 'cylon::net::CommType::MPI'
         _TCP 'cylon::net::CommType::TCP'
         _UCX 'cylon::net::CommType::UCX'
+        _GLOO 'cylon::net::CommType::GLOO'

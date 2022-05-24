@@ -23,8 +23,8 @@ IF CYTHON_GLOO:
         """
         GlooConfig Type mapping from libCylon to PyCylon
         """
-        def __cinit__(self, MPI.Comm comm = COMM_NULL):
-            self.gloo_config_shd_ptr = CGlooConfig.MakeWithMpi(comm.ob_mpi)
+        def __cinit__(self, comm = COMM_NULL):
+            self.gloo_config_shd_ptr = CGlooConfig.MakeWithMpi((<MPI.Comm> comm).ob_mpi)
 
         @property
         def rank(self):
@@ -34,11 +34,15 @@ IF CYTHON_GLOO:
         def world_size(self):
             return self.gloo_config_shd_ptr.get().world_size()
 
+        @property
+        def comm_type(self):
+            return self.gloo_config_shd_ptr.get().Type()
+
     cdef class GlooStandaloneConfig(CommConfig):
         """
         GlooConfig Type mapping from libCylon to PyCylon
         """
-        def __cinit__(self, int rank = 0, int world_size = 1):
+        def __cinit__(self, rank = 0, world_size = 1):
             if rank < 0 or world_size < 0:
                 raise ValueError(f"Invalid rank/ world size provided")
             self.gloo_config_shd_ptr = CGlooConfig.Make(rank, world_size)
@@ -50,6 +54,10 @@ IF CYTHON_GLOO:
         @property
         def world_size(self):
             return self.gloo_config_shd_ptr.get().world_size()
+
+        @property
+        def comm_type(self):
+            return self.gloo_config_shd_ptr.get().Type()
 
         def set_tcp_hostname(self, hostname: str):
             self.gloo_config_shd_ptr.get().SetTcpHostname(hostname.encode())
@@ -65,3 +73,10 @@ IF CYTHON_GLOO:
 
         def set_store_prefix(self, prefix: str):
             self.gloo_config_shd_ptr.get().SetStorePrefix(prefix.encode())
+ELSE:
+    cdef class GlooMPIConfig(CommConfig):
+        pass
+
+    cdef class GlooStandaloneConfig(CommConfig):
+        pass
+

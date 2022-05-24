@@ -25,6 +25,9 @@ cdef class CSVWriteOptions:
     def __cinit__(self):
         self.thisPtr = new CCSVWriteOptions()
 
+    def __del__(self):
+        del self.thisPtr
+
     def with_delimiter(self, delimiter) -> CSVWriteOptions:
         cdef string c_string = delimiter.encode()
         self.thisPtr.WithDelimiter(c_string[0])

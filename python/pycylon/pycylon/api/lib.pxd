@@ -23,6 +23,7 @@ from pycylon.ctx.context cimport CylonContext
 from pycylon.ctx.context import CylonContext
 from pycylon.net.comm_config cimport CCommConfig
 from pycylon.net.mpi_config cimport CMPIConfig
+from pycylon.net.gloo_config cimport CGlooConfig
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
 from pycylon.io.csv_read_config cimport CSVReadOptions
@@ -53,6 +54,8 @@ cdef api bint pyclon_is_context(object context)
 cdef api shared_ptr[CCylonContext] pycylon_unwrap_context(object context)
 
 cdef api shared_ptr[CMPIConfig] pycylon_unwrap_mpi_config(object config)
+
+cdef api shared_ptr[CGlooConfig] pycylon_unwrap_gloo_config(object config)
 
 cdef api shared_ptr[CTable] pycylon_unwrap_table(object table)
 

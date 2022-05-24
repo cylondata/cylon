@@ -16,9 +16,9 @@ from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
-from cython.operator cimport dereference as deref
 from pycylon.ctx.context cimport CCylonContext
-from pycylon.api.lib cimport pycylon_unwrap_mpi_config
+from pycylon.api.lib cimport pycylon_unwrap_mpi_config, pycylon_unwrap_gloo_config
+from pycylon.net import CommType
 from pycylon.net.mpi_config cimport CMPIConfig
 from pycylon.net.mpi_config import MPIConfig
 from pycylon.net.comm_config cimport CCommConfig
@@ -76,7 +76,12 @@ cdef class CylonContext:
         self.ctx_shd_ptr = ctx
 
     cdef shared_ptr[CCommConfig] init_dist(self, config):
-        return <shared_ptr[CCommConfig]> pycylon_unwrap_mpi_config(config)
+        if config.comm_type == CommType.MPI:
+            return <shared_ptr[CCommConfig]> pycylon_unwrap_mpi_config(config)
+        elif config.comm_type == CommType.GLOO:
+            return <shared_ptr[CCommConfig]> pycylon_unwrap_gloo_config(config)
+        else:
+            raise ValueError(f"Unsupported distributed comm config {config}")
 
     def get_rank(self) -> int:
         '''
