@@ -234,6 +234,13 @@ def python_test():
             else:
                 env['LD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib"))
             logger.info(f"LD_LIBRARY_PATH: {env['LD_LIBRARY_PATH']}")
+
+            if CYLON_GLOO:
+                env['CYLON_GLOO'] = str(CYLON_GLOO)
+                env['GLOO_PREFIX'] = GLOO_PREFIX
+
+                env['LD_LIBRARY_PATH'] = os.path.join(GLOO_PREFIX, "lib") + os.pathsep + \
+                                         env['LD_LIBRARY_PATH']
         elif OS_NAME == 'Darwin':
             if 'DYLD_LIBRARY_PATH' in env:
                 env['DYLD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \
