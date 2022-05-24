@@ -163,6 +163,7 @@ extensions = [
 
 packages = find_packages(include=["pygcylon", "pygcylon.*"])
 
+compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False}
 setup(
     name="pygcylon",
     packages=packages,
@@ -174,6 +175,7 @@ setup(
         compiler_directives=dict(
             profile=False, language_level=3, embedsignature=True
         ),
+        compile_time_env=compile_time_env,
     ),
     package_data=dict.fromkeys(
         find_packages(include=["pygcylon*"]), ["*.pxd"],

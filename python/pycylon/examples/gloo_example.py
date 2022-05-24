@@ -14,25 +14,32 @@
 # import subprocess
 #
 import os
-import random
+import shutil
 import tempfile
 from multiprocessing import Process
+
+import pandas as pd
+from numpy.random import default_rng
 
 from pycylon import CylonEnv, DataFrame
 from pycylon.net.gloo_config import GlooStandaloneConfig
 
 FILE_STORE_PATH = os.path.join(tempfile.gettempdir(), 'gloo')
 WORLD_SIZE = 4
+ROWS = 5
 
 
-def run_op(env):
-    df1 = DataFrame([random.sample(range(10 * env.rank, 15 * (env.rank + 1)), 5),
-                     random.sample(range(10 * env.rank, 15 * (env.rank + 1)), 5)])
-    df2 = DataFrame([random.sample(range(10 * env.rank, 15 * (env.rank + 1)), 5),
-                     random.sample(range(10 * env.rank, 15 * (env.rank + 1)), 5)])
+def run_op(env, r):
+    rng = default_rng()
+    data1 = rng.integers(0, r, size=(r, 2))
+    data2 = rng.integers(0, r, size=(r, 2))
+
+    df1 = DataFrame(pd.DataFrame(data1).add_prefix("col"))
+    df2 = DataFrame(pd.DataFrame(data2).add_prefix("col"))
+
     print("Distributed Merge")
     df3 = df1.merge(right=df2, on=[0], env=env)
-    print(df3)
+    print(f'res len {len(df3)}')
 
     env.finalize()
 
@@ -40,16 +47,17 @@ def run_op(env):
 def run_standalone_gloo(rank, world_size):
     conf = GlooStandaloneConfig(rank, world_size)
 
-    if not os.path.isdir(FILE_STORE_PATH):
-        os.mkdir(FILE_STORE_PATH)
     conf.set_file_store_path(FILE_STORE_PATH)
 
     # distributed join
     env = CylonEnv(config=conf)
-    run_op(env)
+    run_op(env, ROWS)
 
 
 if __name__ == "__main__":  # confirms that the code is under main function
+    shutil.rmtree(FILE_STORE_PATH, ignore_errors=True)
+    os.mkdir(FILE_STORE_PATH)
+
     procs = []
 
     # instantiating process with arguments
