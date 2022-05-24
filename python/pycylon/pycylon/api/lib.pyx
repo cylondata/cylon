@@ -26,8 +26,9 @@ from pycylon.net.comm_config cimport CCommConfig
 from pycylon.net.mpi_config cimport CMPIConfig
 from pycylon.net.mpi_config import MPIConfig
 from pycylon.net.mpi_config cimport MPIConfig
-from pycylon.net.gloo_config import GlooMPIConfig, GlooStandaloneConfig
-from pycylon.net.gloo_config cimport CGlooConfig, GlooMPIConfig, GlooStandaloneConfig
+IF CYTHON_GLOO:
+    from pycylon.net.gloo_config import GlooMPIConfig, GlooStandaloneConfig
+    from pycylon.net.gloo_config cimport CGlooConfig, GlooMPIConfig, GlooStandaloneConfig
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
 from pycylon.io.csv_read_config cimport CSVReadOptions
@@ -111,13 +112,14 @@ cdef api shared_ptr[CMPIConfig] pycylon_unwrap_mpi_config(object config):
     else:
         raise ValueError('Passed object is not an instance of MPIConfig')
 
-cdef api shared_ptr[CGlooConfig] pycylon_unwrap_gloo_config(object config):
-    if isinstance(config, GlooStandaloneConfig):
-        return (<GlooStandaloneConfig> config).gloo_config_shd_ptr
-    elif isinstance(config, GlooMPIConfig):
-        return (<GlooMPIConfig> config).gloo_config_shd_ptr
-    else:
-        raise ValueError('Passed object is not an instance of GlooConfig')
+IF CYTHON_GLOO:
+    cdef api shared_ptr[CGlooConfig] pycylon_unwrap_gloo_config(object config):
+        if isinstance(config, GlooStandaloneConfig):
+            return (<GlooStandaloneConfig> config).gloo_config_shd_ptr
+        elif isinstance(config, GlooMPIConfig):
+            return (<GlooMPIConfig> config).gloo_config_shd_ptr
+        else:
+            raise ValueError('Passed object is not an instance of GlooConfig')
 
 cdef api CCSVReadOptions pycylon_unwrap_csv_read_options(object csv_read_options):
     cdef CSVReadOptions csvrdopt
