@@ -33,7 +33,8 @@ std::vector<T> DivideRowsEvenly(size_t nworkers, const T total_rows) {
   T rows_per_worker = total_rows / nworkers;
   T workers_with_extra_row = total_rows % nworkers;
   std::vector<T> even_rows(nworkers, rows_per_worker);
-  std::fill(even_rows.begin(), even_rows.begin() + workers_with_extra_row, rows_per_worker + 1);
+  std::fill(even_rows.begin(), even_rows.begin() + workers_with_extra_row,
+            rows_per_worker + 1);
   return even_rows;
 }
 

@@ -1473,16 +1473,18 @@ static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &
     *b_out = a;
     return Status::OK();
   }
-  auto num_row_scalar = std::make_shared<Scalar>(std::move(arrow::MakeScalar(num_row)));
+  auto num_row_scalar =
+      std::make_shared<Scalar>(std::move(arrow::MakeScalar(num_row)));
 
   std::vector<int64_t> rows_per_partition;
   std::shared_ptr<cylon::Column> output;
   RETURN_CYLON_STATUS_IF_FAILED(
       a->GetContext()->GetCommunicator()->Allgather(num_row_scalar, &output));
-  auto * data_ptr = std::static_pointer_cast<arrow::Int64Array>(output->data())->raw_values();
+  auto *data_ptr =
+      std::static_pointer_cast<arrow::Int64Array>(output->data())->raw_values();
 
- rows_per_partition.resize(output->length());
- std::copy(data_ptr, data_ptr+output->length(), rows_per_partition.data());
+  rows_per_partition.resize(output->length());
+  std::copy(data_ptr, data_ptr + output->length(), rows_per_partition.data());
 
   return Repartition(b, rows_per_partition, b_out);
 }
@@ -1550,9 +1552,11 @@ Status Repartition(const std::shared_ptr<cylon::Table> &table,
   auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
 
   RETURN_CYLON_STATUS_IF_FAILED(
-      table->GetContext()->GetCommunicator()->Allgather(num_row_scalar, &sizes_cols));
+      table->GetContext()->GetCommunicator()->Allgather(num_row_scalar,
+                                                        &sizes_cols));
   auto *data_ptr =
-      std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())->raw_values();
+      std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
+          ->raw_values();
 
   sizes.resize(sizes_cols->length());
   std::copy(data_ptr, data_ptr + sizes_cols->length(), sizes.data());
@@ -1602,8 +1606,7 @@ Status Repartition(const std::shared_ptr<cylon::Table> &table,
                    std::shared_ptr<cylon::Table> *output) {
   int world_size = table->GetContext()->GetWorldSize();
 
-  auto size =
-      std::make_shared<Scalar>(arrow::MakeScalar(table->Rows()));
+  auto size = std::make_shared<Scalar>(arrow::MakeScalar(table->Rows()));
   std::shared_ptr<Scalar> total_size;
 
   RETURN_CYLON_STATUS_IF_FAILED(
