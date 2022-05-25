@@ -22,5 +22,9 @@ from mpi4py.MPI import COMM_NULL
 MPIConfig Type mapping from libCylon to PyCylon
 '''
 cdef class MPIConfig(CommConfig):
-    def __cinit__(self, MPI.Comm comm = COMM_NULL):
-        self.mpi_config_shd_ptr = CMPIConfig.Make(comm.ob_mpi)
+    def __cinit__(self, comm = COMM_NULL):
+        self.mpi_config_shd_ptr = CMPIConfig.Make((<MPI.Comm> comm).ob_mpi)
+
+    @property
+    def comm_type(self):
+        return self.mpi_config_shd_ptr.get().Type()

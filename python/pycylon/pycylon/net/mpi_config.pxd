@@ -14,6 +14,7 @@
 
 from libcpp.memory cimport shared_ptr
 from pycylon.net.comm_config cimport CommConfig
+from pycylon.net.comm_type cimport CCommType
 from mpi4py.libmpi cimport MPI_Comm
 
 cdef extern from "../../../../cpp/src/cylon/net/mpi/mpi_communicator.hpp" namespace "cylon::net":
@@ -21,6 +22,8 @@ cdef extern from "../../../../cpp/src/cylon/net/mpi/mpi_communicator.hpp" namesp
 
         @staticmethod
         shared_ptr[CMPIConfig] Make(MPI_Comm comm);
+
+        CCommType Type();
 
 
 cdef class MPIConfig(CommConfig):

@@ -266,6 +266,13 @@ def test_dist_aggregate():
     assert responses[-1] == 0
 
 
+if os.environ.get('CYLON_GLOO'):
+    def test_gloo():
+        print("35. Gloo")
+        responses.append(os.system("python -m pytest python/pycylon/test/test_gloo.py"))
+        assert responses[-1] == 0
+
+
 def test_all():
     ar = np.array(responses)
     total = len(responses)

@@ -16,15 +16,16 @@ from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
-from cython.operator cimport dereference as deref
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.api.lib cimport pycylon_unwrap_mpi_config
+IF CYTHON_GLOO:
+    from pycylon.api.lib cimport pycylon_unwrap_gloo_config
+from pycylon.net import CommType
 from pycylon.net.mpi_config cimport CMPIConfig
 from pycylon.net.mpi_config import MPIConfig
 from pycylon.net.comm_config cimport CCommConfig
 from pycylon.net.comm_config import CommConfig
 from pycylon.net.comm_config cimport CommConfig
-
 
 cdef class CylonContext:
     """
@@ -71,12 +72,17 @@ cdef class CylonContext:
             if not status.is_ok():
                 raise Exception(f"Ctx initialization failed: {status.get_msg().decode()}")
 
-
     cdef void init(self, const shared_ptr[CCylonContext] & ctx):
         self.ctx_shd_ptr = ctx
 
     cdef shared_ptr[CCommConfig] init_dist(self, config):
-        return <shared_ptr[CCommConfig]> pycylon_unwrap_mpi_config(config)
+        if config.comm_type == CommType.MPI:
+            return <shared_ptr[CCommConfig]> pycylon_unwrap_mpi_config(config)
+        IF CYTHON_GLOO:
+            if config.comm_type == CommType.GLOO:
+                return <shared_ptr[CCommConfig]> pycylon_unwrap_gloo_config(config)
+
+        raise ValueError(f"Unsupported distributed comm config {config}")
 
     def get_rank(self) -> int:
         '''

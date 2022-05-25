@@ -19,5 +19,4 @@ cdef extern from "../../../../cpp/src/cylon/net/comm_config.hpp" namespace "cylo
         CCommType Type()
 
 cdef class CommConfig:
-    cdef:
-        CCommConfig *thisPtr
+    pass
