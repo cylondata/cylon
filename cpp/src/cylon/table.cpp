@@ -689,7 +689,7 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
                                       const std::vector<bool> &sort_direction,
                                       std::shared_ptr<cylon::Table> &output,
                                       SortOptions sort_options) {
-  if (sort_columns.size() > (unsigned long) table->Columns()) {
+  if (sort_columns.size() > (size_t) table->Columns()) {
     return Status(Code::ValueError,
                   "number of values in sort_column_indices can not larger than "
                   "the number of columns");
