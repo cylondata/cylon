@@ -1477,18 +1477,12 @@ static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &
 
   std::vector<int64_t> rows_per_partition;
   std::shared_ptr<cylon::Column> output;
-
-  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(rows_per_partition, output));
-
   RETURN_CYLON_STATUS_IF_FAILED(
       a->GetContext()->GetCommunicator()->Allgather(num_row_scalar, &output));
+  auto * data_ptr = std::static_pointer_cast<arrow::Int64Array>(output->data())->raw_values();
 
-
-  for (int64_t i = 0; i < output->length(); i++) {
-    auto temp = std::static_pointer_cast<arrow::Int64Scalar>(
-        output->data()->GetScalar(i).ValueOrDie());
-    rows_per_partition.push_back(temp->value);
-  }
+ rows_per_partition.resize(output->length());
+ std::copy(data_ptr, data_ptr+output->length(), rows_per_partition.data());
 
   return Repartition(b, rows_per_partition, b_out);
 }
