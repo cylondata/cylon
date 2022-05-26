@@ -202,21 +202,21 @@ TEST_CASE("Binary search testing", "[binary search]") {
       {0, 1}, &equal_to, {1, 1});
 
   SECTION("search target less than table's smallest entry") {
-    REQUIRE(tableBinarySearch(split_points, table, equal_to, 0) == 0);
+    REQUIRE(tableBinarySearch(table, equal_to, 0) == 0);
   }
 
   SECTION("table contains search target") {
-    REQUIRE(tableBinarySearch(split_points, table, equal_to, 1) == 2);
+    REQUIRE(tableBinarySearch(table, equal_to, 1) == 2);
   }
 
   
   SECTION("search target not exsit but within range of table") {
-    REQUIRE(tableBinarySearch(split_points, table, equal_to, 2) == 16);
+    REQUIRE(tableBinarySearch(table, equal_to, 2) == 16);
   }
 
   
   SECTION("search target greater than table's largest entry") {
-    REQUIRE(tableBinarySearch(split_points, table, equal_to, 3) == table->Rows());
+    REQUIRE(tableBinarySearch(table, equal_to, 3) == table->Rows());
   }
 }
 

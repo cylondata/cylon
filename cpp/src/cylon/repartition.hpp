@@ -29,14 +29,20 @@ namespace cylon {
  * @return
  */
 template<typename T>
+std::vector<T> DivideRowsEvenly(size_t nworkers, const T total_rows) {
+  T rows_per_worker = total_rows / nworkers;
+  T workers_with_extra_row = total_rows % nworkers;
+  std::vector<T> even_rows(nworkers, rows_per_worker);
+  std::fill(even_rows.begin(), even_rows.begin() + workers_with_extra_row,
+            rows_per_worker + 1);
+  return even_rows;
+}
+
+template <typename T>
 std::vector<T> DivideRowsEvenly(const std::vector<T> &row_counts) {
   auto nworkers = row_counts.size();
   auto all_rows = std::accumulate(row_counts.begin(), row_counts.end(), 0);
-  T rows_per_worker = all_rows / nworkers;
-  T workers_with_extra_row = all_rows % nworkers;
-  std::vector<T> even_rows(nworkers, rows_per_worker);
-  std::fill(even_rows.begin(), even_rows.begin() + workers_with_extra_row, rows_per_worker + 1);
-  return even_rows;
+  return DivideRowsEvenly(nworkers, all_rows);
 }
 
 /**

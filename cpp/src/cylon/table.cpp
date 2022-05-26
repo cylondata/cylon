@@ -38,7 +38,7 @@
 #include <cylon/util/to_string.hpp>
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/repartition.hpp>
-#include <cylon/net/mpi/mpi_operations.hpp>
+#include <cylon/scalar.hpp>
 #include <cylon/serialize/table_serialize.hpp>
 
 namespace cylon {
@@ -193,7 +193,7 @@ static inline Status all_to_all_arrow_tables_separated_cylon_table(const std::sh
   all_to_all_arrow_tables_separated_arrow_table(ctx, schema, partitioned_tables, received_tables);
 
   table_out.reserve(received_tables.size() - 1);
-  for(int i = 0; i < received_tables.size(); i++) {
+  for(size_t i = 0; i < received_tables.size(); i++) {
     if(received_tables[i]->num_rows() > 0) {
       CYLON_ASSIGN_OR_RAISE(auto arrow_tb, received_tables[i]->CombineChunks(cylon::ToArrowPool(ctx)));
       auto temp = std::make_shared<Table>(ctx, std::move(arrow_tb));
@@ -507,7 +507,7 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
   std::vector<int64_t> table_indices(tables.size()),
       table_end_indices(tables.size());
   int acc = 0;
-  for (int i = 0; i < table_indices.size(); i++) {
+  for (size_t i = 0; i < table_indices.size(); i++) {
     table_indices[i] = acc;
     acc += tables[i]->Rows();
     table_end_indices[i] = acc;
@@ -530,7 +530,7 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
 
   std::priority_queue<int, std::vector<int>, decltype(comp)> pq(comp);
 
-  for (int i = 0; i < tables.size(); i++) {
+  for (size_t i = 0; i < tables.size(); i++) {
     if (table_indices[i] < table_end_indices[i]) {
       pq.push(i);
     }
@@ -586,12 +586,11 @@ Status DetermineSplitPoints(
 
 Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
                       const std::vector<bool> &sort_orders,
-                      int num_split_points,
                       std::shared_ptr<Table> &split_points) {
   auto ctx = sample_result->GetContext();
 
   std::vector<std::shared_ptr<cylon::Table>> gather_results;
-  // net::MPICommunicator comm;
+
   RETURN_CYLON_STATUS_IF_FAILED(
       ctx->GetCommunicator()->Gather(sample_result, 0, true, &gather_results));
 
@@ -606,10 +605,9 @@ Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
 
 // return (index of) first element that is not less than the target element
 int64_t tableBinarySearch(
-    const std::shared_ptr<Table> &split_points,
-    const std::shared_ptr<Table> &sorted_table,
-    std::unique_ptr<DualTableRowIndexEqualTo>& equal_to,
-    int64_t split_point_idx, int64_t l) {
+  const std::shared_ptr<Table> &sorted_table,
+  std::unique_ptr<DualTableRowIndexEqualTo>& equal_to,
+  int64_t split_point_idx, int64_t l) {
   int64_t r = sorted_table->Rows() - 1;
   int L = l;
 
@@ -664,7 +662,7 @@ Status GetSplitPointIndices(const std::shared_ptr<Table> &split_points,
 
   for (int64_t i = 0; i < num_split_points; i++) {
     int64_t idx =
-        tableBinarySearch(split_points, sorted_table, equal_to, i, l_idx);
+        tableBinarySearch(sorted_table, equal_to, i, l_idx);
     std::fill(target_partition.begin() + l_idx, target_partition.begin() + idx,
               i);
     partition_hist[i] = idx - l_idx;
@@ -691,7 +689,7 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
                                       const std::vector<bool> &sort_direction,
                                       std::shared_ptr<cylon::Table> &output,
                                       SortOptions sort_options) {
-  if (sort_columns.size() > table->Columns()) {
+  if (sort_columns.size() > (size_t) table->Columns()) {
     return Status(Code::ValueError,
                   "number of values in sort_column_indices can not larger than "
                   "the number of columns");
@@ -730,7 +728,7 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   // determine split point, split_points only contains sorted columns
   std::shared_ptr<Table> split_points;
   RETURN_CYLON_STATUS_IF_FAILED(GetSplitPoints(
-      sample_result, sort_direction, world_sz - 1, split_points));
+      sample_result, sort_direction, split_points));
 
   // construct target_partition, partition_hist
   RETURN_CYLON_STATUS_IF_FAILED(
@@ -1469,19 +1467,24 @@ Status Equals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylo
 static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &a,
                                            const std::shared_ptr<cylon::Table> &b,
                                            std::shared_ptr<cylon::Table> *b_out) {
-  int world_size = a->GetContext()->GetWorldSize();
   int64_t num_row = a->Rows();
 
   if (num_row == 0) {
     *b_out = a;
     return Status::OK();
   }
+  auto num_row_scalar =
+      std::make_shared<Scalar>(std::move(arrow::MakeScalar(num_row)));
 
   std::vector<int64_t> rows_per_partition;
-  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather(a->GetContext(),
-                                               {num_row},
-                                               world_size,
-                                               rows_per_partition));
+  std::shared_ptr<cylon::Column> output;
+  RETURN_CYLON_STATUS_IF_FAILED(
+      a->GetContext()->GetCommunicator()->Allgather(num_row_scalar, &output));
+  auto *data_ptr =
+      std::static_pointer_cast<arrow::Int64Array>(output->data())->raw_values();
+
+  rows_per_partition.resize(output->length());
+  std::copy(data_ptr, data_ptr + output->length(), rows_per_partition.data());
 
   return Repartition(b, rows_per_partition, b_out);
 }
@@ -1513,12 +1516,17 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a,
     RETURN_CYLON_STATUS_IF_FAILED(Equals(a, b_repartitioned, subResult, true));
   }
 
-  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllReduce(a->GetContext(),
-                                               &subResult,
-                                               &result,
-                                               1,
-                                               Bool(),
-                                               cylon::net::LAND));
+  auto sub_result_scalar =
+      std::make_shared<Scalar>(arrow::MakeScalar(int8_t(subResult)));
+  std::shared_ptr<Scalar> result_scalar;
+
+  RETURN_CYLON_STATUS_IF_FAILED(a->GetContext()->GetCommunicator()->AllReduce(
+      sub_result_scalar, net::ReduceOp::LAND, &result_scalar));
+
+  result =
+      bool(std::static_pointer_cast<arrow::Int8Scalar>(result_scalar->data())
+               ->value);
+
   return Status::OK();
 }
 
@@ -1528,7 +1536,7 @@ Status Repartition(const std::shared_ptr<cylon::Table> &table,
                    std::shared_ptr<Table> *output) {
   int world_size = table->GetContext()->GetWorldSize();
   int rank = table->GetContext()->GetRank();
-  int num_row = (int) table->Rows();
+  auto num_row = table->Rows();
 
   if (rows_per_partition.size() != (size_t) world_size) {
     return Status(cylon::Code::ValueError,
@@ -1538,7 +1546,20 @@ Status Repartition(const std::shared_ptr<cylon::Table> &table,
   }
 
   std::vector<int64_t> sizes;
-  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather(table->GetContext(), {num_row}, world_size, sizes));
+  std::shared_ptr<cylon::Column> sizes_cols;
+  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(sizes, sizes_cols));
+
+  auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
+
+  RETURN_CYLON_STATUS_IF_FAILED(
+      table->GetContext()->GetCommunicator()->Allgather(num_row_scalar,
+                                                        &sizes_cols));
+  auto *data_ptr =
+      std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
+          ->raw_values();
+
+  sizes.resize(sizes_cols->length());
+  std::copy(data_ptr, data_ptr + sizes_cols->length(), sizes.data());
 
   auto out_partitions_temp = RowIndicesToAll(rank, sizes, rows_per_partition);
   uint32_t no_of_partitions = receive_build_rank_order.size();
@@ -1584,11 +1605,17 @@ Status Repartition(const std::shared_ptr<cylon::Table> &table,
 Status Repartition(const std::shared_ptr<cylon::Table> &table,
                    std::shared_ptr<cylon::Table> *output) {
   int world_size = table->GetContext()->GetWorldSize();
-  std::vector<int64_t> size = {table->Rows()};
-  std::vector<int64_t> sizes;
-  RETURN_CYLON_STATUS_IF_FAILED(mpi::AllGather(table->GetContext(), size, world_size, sizes));
 
-  auto result = DivideRowsEvenly(sizes);
+  auto size = std::make_shared<Scalar>(arrow::MakeScalar(table->Rows()));
+  std::shared_ptr<Scalar> total_size;
+
+  RETURN_CYLON_STATUS_IF_FAILED(
+      table->GetContext()->GetCommunicator()->AllReduce(
+          size, net::ReduceOp::SUM, &total_size));
+
+  auto result = DivideRowsEvenly(
+      world_size,
+      std::static_pointer_cast<arrow::Int64Scalar>(total_size->data())->value);
   return Repartition(table, result, output);
 }
 

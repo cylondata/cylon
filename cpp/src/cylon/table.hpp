@@ -387,7 +387,6 @@ Status DistributedSort(const std::shared_ptr<Table> &table,
  * @param l optional starting index
  */
 int64_t tableBinarySearch(
-    const std::shared_ptr<Table> &split_points,
     const std::shared_ptr<Table> &sorted_table,
     std::unique_ptr<DualTableRowIndexEqualTo>& equal_to,
     int64_t split_point_idx, int64_t l = 0);

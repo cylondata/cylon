@@ -238,7 +238,7 @@ def read_parquet_dist(paths: Union[str, List[str], Dict[int, Union[str, List[str
             for file in worker_files:
                 dfs.append(DataFrame(pq.read_table(file, 
                 # keyword arguments to pass into pq.read_table
-                metadata=metadata, common_metadata=common_metadata, read_dictionary=read_dictionary,
+                metadata=metadata, read_dictionary=read_dictionary,
                 memory_map=memory_map, buffer_size=buffer_size, pre_buffer=pre_buffer,
                 coerce_int96_timestamp_unit=coerce_int96_timestamp_unit,
                 columns=columns, use_threads=use_threads, use_pandas_metadata=use_pandas_metadata, **kwargs)))
