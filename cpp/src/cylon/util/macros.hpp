@@ -47,6 +47,16 @@
     };                              \
   } while (0)
 
+#define RETURN_CYLON_STATUS_IF_UCC_FAILED(expr)                  \
+  do {                                                           \
+    const auto& _st = (expr);                                    \
+    if (_st < 0) {                                         \
+      return cylon::Status(                                      \
+          cylon::Code::ExecutionError,                           \
+          "UCC Failed: " + std::string(ucc_status_string(_st))); \
+    };                                                           \
+  } while (0)
+
 #define CYLON_ASSIGN_OR_RAISE_IMPL(result_name, lhs, rexpr)     \
   auto&& result_name = (rexpr);                                 \
   RETURN_CYLON_STATUS_IF_ARROW_FAILED((result_name).status()) ; \

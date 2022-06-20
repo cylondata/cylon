@@ -20,6 +20,7 @@
 #include <cylon/net/ucx/ucx_operations.hpp>
 
 #include <ucp/api/ucp.h>
+#include <ucc/api/ucc.h>
 
 namespace cylon {
 namespace net {
@@ -73,6 +74,9 @@ class UCXCommunicator : public Communicator {
   std::unordered_map<int, ucp_ep_h> endPointMap;
   // UCP Context - Holds a UCP communication instance's global information.
   ucp_context_h ucpContext{};
+
+  ucc_team_h uccTeam;
+  ucc_context_h uccContext;
 };
 
 }

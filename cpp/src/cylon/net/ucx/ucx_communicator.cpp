@@ -18,6 +18,7 @@
 #include <cylon/net/ucx/ucx_communicator.hpp>
 #include <cylon/net/ucx/ucx_channel.hpp>
 #include <cylon/util/macros.hpp>
+#include <cylon/net/ucc/ucc_operations.hpp>
 
 namespace cylon {
 namespace net {
@@ -46,6 +47,28 @@ int UCXCommunicator::GetRank() const {
 int UCXCommunicator::GetWorldSize() const {
   return this->world_size;
 }
+
+static ucc_status_t oob_allgather(void *sbuf, void *rbuf, size_t msglen,
+                                  void *coll_info, void **req) {
+  auto comm = (MPI_Comm)coll_info;
+  MPI_Request request;
+
+  MPI_Iallgather(sbuf, (int)msglen, MPI_BYTE, rbuf, (int)msglen, MPI_BYTE, comm,
+                 &request);
+  *req = (void *)request;
+  return UCC_OK;
+}
+
+static ucc_status_t oob_allgather_test(void *req) {
+  auto request = (MPI_Request)req;
+  int completed;
+
+  MPI_Test(&request, &completed, MPI_STATUS_IGNORE);
+  return completed ? UCC_OK : UCC_INPROGRESS;
+}
+
+static ucc_status_t oob_allgather_free(void *req) { return UCC_OK; }
+
 Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   CYLON_UNUSED(config);
   // Check init functions
@@ -123,6 +146,51 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     }
   }
 
+  // temporary code to initialize UCC team and context
+  ucc_context_params_t ctx_params;
+  ucc_team_params_t team_params;
+  ucc_context_config_h ctx_config;
+  ucc_status_t status;
+  ucc_lib_h lib;
+  ucc_lib_config_h lib_config;
+
+  ucc_lib_params_t lib_params = {.mask = UCC_LIB_PARAM_FIELD_THREAD_MODE,
+                                 .thread_mode = UCC_THREAD_SINGLE,
+                                 .coll_types = {},
+                                 .reduction_types = {},
+                                 .sync_type = {}};
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_lib_config_read(nullptr, nullptr, &lib_config));
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_init(&lib_params, lib_config, &lib));
+  ucc_lib_config_release(lib_config);
+
+  ctx_params.mask = UCC_CONTEXT_PARAM_FIELD_OOB;
+  ctx_params.oob.allgather = oob_allgather;
+  ctx_params.oob.req_test = oob_allgather_test;
+  ctx_params.oob.req_free = oob_allgather_free;
+  ctx_params.oob.coll_info = (void *)MPI_COMM_WORLD;
+  ctx_params.oob.n_oob_eps = static_cast<uint32_t>(this->world_size);
+  ctx_params.oob.oob_ep = static_cast<uint32_t>(rank);
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_config_read(lib, nullptr, &ctx_config));
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_create(lib, &ctx_params, ctx_config, &uccContext));
+  ucc_context_config_release(ctx_config);
+
+  team_params.mask = UCC_TEAM_PARAM_FIELD_OOB;
+  team_params.oob.allgather = oob_allgather;
+  team_params.oob.req_test = oob_allgather_test;
+  team_params.oob.req_free = oob_allgather_free;
+  team_params.oob.coll_info = (void *)MPI_COMM_WORLD;
+  team_params.oob.n_oob_eps = static_cast<uint32_t>(this->world_size);
+  team_params.oob.oob_ep = static_cast<uint32_t>(rank);
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_team_create_post(&uccContext, 1, &team_params, &uccTeam));
+  while (UCC_INPROGRESS == (status = ucc_team_create_test(uccTeam))) {
+    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_progress(uccContext));
+  };
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
+
   // Cleanup
   delete (ucpRecvWorkerAddr);
   delete (ucpSendWorkerAddr);
@@ -144,9 +212,8 @@ CommType UCXCommunicator::GetCommType() const {
 
 Status UCXCommunicator::AllGather(const std::shared_ptr<Table> &table,
                                   std::vector<std::shared_ptr<Table>> *out) const {
-  CYLON_UNUSED(table);
-  CYLON_UNUSED(out);
-  return {Code::NotImplemented, "All gather not implemented yet for ucx"};
+  ucc::UccTableAllgatherImpl impl(uccTeam, uccContext, this->world_size);
+  return impl.Execute(table, out);
 }
 
 Status UCXCommunicator::Gather(const std::shared_ptr<Table> &table,
