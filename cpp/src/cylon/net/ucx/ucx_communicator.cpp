@@ -212,7 +212,7 @@ CommType UCXCommunicator::GetCommType() const {
 
 Status UCXCommunicator::AllGather(const std::shared_ptr<Table> &table,
                                   std::vector<std::shared_ptr<Table>> *out) const {
-  ucc::UccTableAllgatherImpl impl(uccTeam, uccContext, this->world_size);
+  ucc::UccTableAllgatherImpl impl(uccTeam, uccContext, this->rank, this->world_size);
   return impl.Execute(table, out);
 }
 
@@ -235,21 +235,18 @@ Status UCXCommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) con
 Status UCXCommunicator::AllReduce(const std::shared_ptr<Column> &column,
                                   net::ReduceOp reduce_op,
                                   std::shared_ptr<Column> *output) const {
-  CYLON_UNUSED(column);
-  CYLON_UNUSED(reduce_op);
-  CYLON_UNUSED(output);
-  return {Code::NotImplemented, "Allreduce not implemented yet for ucx"};
+  ucc::UccAllReduceImpl impl(uccTeam, uccContext, world_size);
+  return impl.Execute(column, reduce_op, output);
 }
 
 UCXCommunicator::UCXCommunicator(const std::shared_ptr<CylonContext> *ctx_ptr)
     : Communicator(ctx_ptr) {}
+
 Status UCXCommunicator::AllReduce(const std::shared_ptr<Scalar> &values,
                                   net::ReduceOp reduce_op,
                                   std::shared_ptr<Scalar> *output) const {
-  CYLON_UNUSED(values);
-  CYLON_UNUSED(reduce_op);
-  CYLON_UNUSED(output);
-  return {Code::NotImplemented, "Allreduce not implemented yet for ucx"};
+  ucc::UccAllReduceImpl impl(uccTeam, uccContext, world_size);
+  return impl.Execute(values, reduce_op, output);
 }
 Status UCXCommunicator::Allgather(const std::shared_ptr<Column> &values,
                                   std::vector<std::shared_ptr<Column>> *output) const {

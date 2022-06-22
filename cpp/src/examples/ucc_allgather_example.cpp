@@ -27,6 +27,41 @@
 #include <cylon/table.hpp>
 #include <iostream>
 
+void allgather(std::shared_ptr<cylon::Table>& table,
+               std::shared_ptr<cylon::CylonContext>& ctx) {
+  std::vector<std::shared_ptr<cylon::Table>> out;
+  ctx->GetCommunicator()->AllGather(table, &out);
+
+  if (ctx->GetRank() == 0) {
+    for (auto out_table : out) {
+      // std::cout<<"??"<<std::endl;
+      out_table->Print();
+      // std::cout<<out_table->get_table()->num_rows()<<std::endl;
+    }
+  }
+}
+
+void allReduceColumn(std::shared_ptr<cylon::Table>& table,
+               std::shared_ptr<cylon::CylonContext>& ctx) {
+  std::shared_ptr<cylon::Column> input, output;
+  std::vector<int> v(10);
+
+  for(int i = 0; i < 10; i++) {
+    v[i] = i + ctx->GetRank();
+  }
+  cylon::Column::FromVector(v, input);
+
+  ctx->GetCommunicator()->AllReduce(input, cylon::net::ReduceOp::SUM, &output);
+
+  if(ctx->GetRank() == 1) {
+    for (int i = 0; i < 10; i++) {
+      std::cout << output->data()->GetScalar(i).ValueOrDie()->ToString()
+                << std::endl;
+    }
+  }
+}
+
+
 int main(int argc, char **argv) {
   auto ucx_config = std::make_shared<cylon::net::UCXConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(ucx_config);
@@ -43,15 +78,6 @@ int main(int argc, char **argv) {
                                    std::to_string(ctx->GetRank()) + ".csv",
                                table, read_options);
 
-  // table->Print();
-
-  ctx->GetCommunicator()->AllGather(table, &out);
-
-  if(ctx->GetRank() == 0) {
-    for(auto out_table : out) {
-      std::cout<<"??"<<std::endl;
-      out_table->Print();
-      // std::cout<<out_table->get_table()->num_rows()<<std::endl;
-    }
-  }
+  
+  allReduceColumn(table, ctx);
 }

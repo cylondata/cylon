@@ -2,13 +2,13 @@
 #include <cylon/net/ops/base_ops.hpp>
 #include <ucc/api/ucc.h>
 #include <ucc/api/ucc_def.h>
-
+#include <cylon/net/comm_operations.hpp>
 namespace cylon {
 namespace ucc {
 
 class UccTableAllgatherImpl : public net::TableAllgatherImpl {
  public:
-  UccTableAllgatherImpl(ucc_team_h ucc_team, ucc_context_h ucc_context, int world_size);
+  UccTableAllgatherImpl(ucc_team_h ucc_team, ucc_context_h ucc_context, int rank, int world_size);
   ~UccTableAllgatherImpl() override;
 
   void Init(int num_buffers) override;
@@ -30,6 +30,45 @@ class UccTableAllgatherImpl : public net::TableAllgatherImpl {
   std::vector<ucc_coll_args_t> args_;
   std::vector<std::vector<uint64_t>> counts_;
   std::vector<std::vector<uint64_t>> displacements_;
+  int rank;
+  int world_size;
+};
+
+class UccAllReduceImpl : public net::AllReduceImpl {
+public:
+  ~UccAllReduceImpl() override = default;
+  Status AllReduceBuffer(const void *send_buf, void *rcv_buf, int count,
+                         const std::shared_ptr<DataType> &data_type,
+                         net::ReduceOp reduce_op) const override;
+  
+  UccAllReduceImpl(ucc_team_h ucc_team, ucc_context_h ucc_context, int ws);
+
+private:
+  ucc_team_h ucc_team_;
+  ucc_context_h ucc_context_;
+  int world_size;
+};
+
+class UccTableGatherImpl : public net::TableGatherImpl {
+public:
+  UccTableGatherImpl(ucc_team_h ucc_team, ucc_context_h ucc_context, int ws);
+  void Init(int32_t num_buffers) override;
+
+  Status GatherBufferSizes(const int32_t *send_data,
+                                    int32_t num_buffers,
+                                    int32_t *rcv_data,
+                                    int32_t gather_root) const override;
+
+  virtual Status IgatherBufferData(int32_t buf_idx, const uint8_t *send_data,
+                                   int32_t send_count, uint8_t *recv_data,
+                                   const std::vector<int32_t> &recv_count,
+                                   const std::vector<int32_t> &displacements,
+                                   int32_t gather_root) override;
+
+ private:
+  std::vector<ucc_coll_req_h> requests_;
+  ucc_team_h ucc_team_;
+  ucc_context_h ucc_context_;
   int world_size;
 };
 

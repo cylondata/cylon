@@ -44,7 +44,7 @@ Status UccTableAllgatherImpl::IallgatherBufferData(
   // RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Iallgatherv(
   //     send_data, send_count, MPI_UINT8_T, recv_data, recv_count.data(),
   //     displacements.data(), MPI_UINT8_T, comm_, &requests_[buf_idx]));
-  
+
   ucc_coll_args_t &args = args_[buf_idx];
 
   args.mask = 0;
@@ -70,6 +70,7 @@ Status UccTableAllgatherImpl::IallgatherBufferData(
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(
       ucc_collective_init(&args, &requests_[buf_idx], ucc_team_));
+
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_post(requests_[buf_idx]));
   return Status::OK();
 }
@@ -106,24 +107,25 @@ ucc_status_t WaitAllHelper(std::vector<ucc_coll_req_h>& reqs, ucc_context_h& ctx
 Status UccTableAllgatherImpl::WaitAll(int num_buffers) {
   // RETURN_CYLON_STATUS_IF_MPI_FAILED(
   //     MPI_Waitall(num_buffers, requests_.data(), statuses_.data()));
-  // ucc_status_t status;
+  ucc_status_t status;
 
   // TODO: adopt ucc test `waitall`'s algorithm
-  // for(int i = 0; i < num_buffers; i++) {
-  //   while (UCC_OK != (status = ucc_collective_test(requests_[i]))) {
-  //     RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
-  //     // std::cout<<"status: "<<status<<std::endl;
-  //     RETURN_CYLON_STATUS_IF_UCC_FAILED(status = ucc_context_progress(ucc_context_));
-  //   }
-  // }
+  for(int i = 0; i < num_buffers; i++) {
+    while (UCC_OK != (status = ucc_collective_test(requests_[i]))) {
+      RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
+      // std::cout<<"status: "<<status<<std::endl;
+      RETURN_CYLON_STATUS_IF_UCC_FAILED(status = ucc_context_progress(ucc_context_));
+    }
+  }
 
-  RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
+  // RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
 
   return Status::OK();
 }
 
 UccTableAllgatherImpl::UccTableAllgatherImpl(ucc_team_h ucc_team,
                                              ucc_context_h ucc_context,
+                                             int rk,
                                              int world_sz)
     : TableAllgatherImpl(),
       ucc_team_(ucc_team),
@@ -132,6 +134,7 @@ UccTableAllgatherImpl::UccTableAllgatherImpl(ucc_team_h ucc_team,
       args_({}),
       counts_({}),
       displacements_({}),
+      rank(rk),
       world_size(world_sz){}
 
 void UccTableAllgatherImpl::Init(int num_buffers) {
@@ -145,6 +148,149 @@ UccTableAllgatherImpl::~UccTableAllgatherImpl() {
   for (auto req: requests_) {
     ucc_collective_finalize(req);
   }
+}
+
+ucc_datatype_t GetUccDataType(const std::shared_ptr<DataType> &data_type) {
+  switch (data_type->getType()) {
+    case Type::BOOL:
+
+      break;
+    case Type::UINT8:
+      return UCC_DT_UINT8;
+    case Type::INT8:
+      return UCC_DT_INT8;
+    case Type::UINT16:
+      return UCC_DT_UINT16;
+    case Type::INT16:
+      return UCC_DT_INT16;
+    case Type::UINT32:
+      return UCC_DT_UINT32;
+    case Type::INT32:
+      return UCC_DT_INT32;
+    case Type::UINT64:
+      return UCC_DT_UINT64;
+    case Type::INT64:
+      return UCC_DT_INT64;
+    case Type::FLOAT:
+      return UCC_DT_FLOAT32;
+    case Type::DOUBLE:
+      return UCC_DT_FLOAT64;
+    case Type::FIXED_SIZE_BINARY:
+    case Type::STRING:
+    case Type::BINARY:
+    case Type::LARGE_STRING:
+    case Type::LARGE_BINARY:
+      return UCC_DT_UINT8;
+      // todo: MPI does not support 16byte floats. We'll have to use a custom
+      // datatype for this later.
+    case Type::HALF_FLOAT:
+      return UCC_DT_FLOAT16;
+    case Type::DATE32:
+      return UCC_DT_UINT32;
+    case Type::DATE64:
+      return UCC_DT_UINT64;
+    case Type::TIMESTAMP:
+      return UCC_DT_UINT64;
+    case Type::TIME32:
+      return UCC_DT_UINT32;
+    case Type::TIME64:
+      return UCC_DT_UINT64;
+    case Type::DECIMAL:
+    case Type::DURATION:
+    case Type::INTERVAL:
+    case Type::LIST:
+    case Type::FIXED_SIZE_LIST:
+    case Type::EXTENSION:
+      break;
+    case Type::MAX_ID:
+      break;
+  }
+  return UCC_DT_PREDEFINED_LAST;
+}
+
+ucc_reduction_op_t GetUccOp(cylon::net::ReduceOp reduce_op) {
+  switch (reduce_op) {
+    case net::SUM:
+      return UCC_OP_SUM;
+    case net::MIN:
+      return UCC_OP_MIN;
+    case net::MAX:
+      return UCC_OP_MAX;
+    case net::PROD:
+      return UCC_OP_PROD;
+    case net::LAND:
+      return UCC_OP_LAND;
+    case net::LOR:
+      return UCC_OP_LOR;
+    case net::BAND:
+      return UCC_OP_BAND;
+    case net::BOR:
+      return UCC_OP_BOR;
+    default:
+      return UCC_OP_LAST;
+  }
+}
+
+UccAllReduceImpl::UccAllReduceImpl(ucc_team_h ucc_team,
+                                   ucc_context_h ucc_context, int ws)
+    : ucc_team_(ucc_team), ucc_context_(ucc_context), world_size(ws) {}
+
+Status UccAllReduceImpl::AllReduceBuffer(const void *send_buf, void *rcv_buf,
+                                  int count,
+                                  const std::shared_ptr<DataType> &data_type,
+                                  cylon::net::ReduceOp reduce_op) const {
+  auto dt = GetUccDataType(data_type);
+  auto op = GetUccOp(reduce_op);
+
+  if (dt == UCC_DT_PREDEFINED_LAST || op == UCC_OP_LAST) {
+    return {Code::NotImplemented, "ucc allreduce not implemented for type or operation"};
+  }
+
+  ucc_coll_req_h req;
+  ucc_coll_args_t args;
+
+  args.mask = 0;
+  args.coll_type = UCC_COLL_TYPE_ALLREDUCE;
+  args.src.info.buffer = const_cast<void *>(send_buf);
+  args.src.info.count = count;
+  args.src.info.datatype = dt;
+  args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
+  args.dst.info.buffer = rcv_buf;
+  args.dst.info.count = count;
+  args.dst.info.datatype = dt;
+  args.dst.info.mem_type = UCC_MEMORY_TYPE_HOST;
+  args.op = op;
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_init(&args, &req, ucc_team_));
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_post(req));
+
+  while (UCC_INPROGRESS == ucc_collective_test(req)) {
+    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_progress(ucc_context_));
+  }
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_finalize(req));
+  return Status::OK();
+}
+
+UccTableGatherImpl::UccTableGatherImpl(ucc_team_h ucc_team,
+                                       ucc_context_h ucc_context, int ws)
+    : ucc_team_(ucc_team), ucc_context_(ucc_context), world_size(ws) {}
+
+void UccTableGatherImpl::Init(int32_t num_buffers) {
+  this->requests_.resize(num_buffers);
+}
+
+Status UccTableGatherImpl::GatherBufferSizes(const int32_t *send_data, int32_t num_buffers,
+                         int32_t *rcv_data, int32_t gather_root) const {
+
+}
+
+Status IgatherBufferData(int32_t buf_idx, const uint8_t *send_data,
+                                 int32_t send_count, uint8_t *recv_data,
+                                 const std::vector<int32_t> &recv_count,
+                                 const std::vector<int32_t> &displacements,
+                                 int32_t gather_root) {
+
 }
 
 }  // namespace ucc

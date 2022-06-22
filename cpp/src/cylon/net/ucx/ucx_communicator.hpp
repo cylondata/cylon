@@ -75,8 +75,8 @@ class UCXCommunicator : public Communicator {
   // UCP Context - Holds a UCP communication instance's global information.
   ucp_context_h ucpContext{};
 
-  ucc_team_h uccTeam;
-  ucc_context_h uccContext;
+  ucc_team_h uccTeam{};
+  ucc_context_h uccContext{};
 };
 
 }
