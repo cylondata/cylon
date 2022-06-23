@@ -51,7 +51,7 @@ private:
 
 class UccTableGatherImpl : public net::TableGatherImpl {
 public:
-  UccTableGatherImpl(ucc_team_h ucc_team, ucc_context_h ucc_context, int ws);
+  UccTableGatherImpl(ucc_team_h ucc_team, ucc_context_h ucc_context, int ws, int rk);
   void Init(int32_t num_buffers) override;
 
   Status GatherBufferSizes(const int32_t *send_data,
@@ -59,17 +59,23 @@ public:
                                     int32_t *rcv_data,
                                     int32_t gather_root) const override;
 
-  virtual Status IgatherBufferData(int32_t buf_idx, const uint8_t *send_data,
+  Status IgatherBufferData(int32_t buf_idx, const uint8_t *send_data,
                                    int32_t send_count, uint8_t *recv_data,
                                    const std::vector<int32_t> &recv_count,
                                    const std::vector<int32_t> &displacements,
                                    int32_t gather_root) override;
 
+  Status WaitAll(int32_t num_buffers) override;
+
  private:
   std::vector<ucc_coll_req_h> requests_;
+  std::vector<ucc_coll_args_t> args_;
+  std::vector<std::vector<uint64_t>> counts_;
+  std::vector<std::vector<uint64_t>> displacements_;
   ucc_team_h ucc_team_;
   ucc_context_h ucc_context_;
   int world_size;
+  int rank;
 };
 
 }  // namespace ucc

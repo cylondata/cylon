@@ -30,7 +30,23 @@
 void allgather(std::shared_ptr<cylon::Table>& table,
                std::shared_ptr<cylon::CylonContext>& ctx) {
   std::vector<std::shared_ptr<cylon::Table>> out;
-  ctx->GetCommunicator()->AllGather(table, &out);
+  auto status = ctx->GetCommunicator()->AllGather(table, &out);
+  std::cout<<status.get_msg()<<std::endl;
+
+  if (ctx->GetRank() == 0) {
+    for (auto out_table : out) {
+      // std::cout<<"??"<<std::endl;
+      out_table->Print();
+      // std::cout<<out_table->get_table()->num_rows()<<std::endl;
+    }
+  }
+}
+
+void gather(std::shared_ptr<cylon::Table>& table,
+               std::shared_ptr<cylon::CylonContext>& ctx) {
+  std::vector<std::shared_ptr<cylon::Table>> out;
+  auto status = ctx->GetCommunicator()->Gather(table, 0, 1, &out);
+  std::cout<<status.get_msg()<<std::endl;
 
   if (ctx->GetRank() == 0) {
     for (auto out_table : out) {
@@ -79,5 +95,7 @@ int main(int argc, char **argv) {
                                table, read_options);
 
   
-  allReduceColumn(table, ctx);
+  // allReduceColumn(table, ctx);
+  // gather(table, ctx);
+  allgather(table, ctx);
 }

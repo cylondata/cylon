@@ -220,11 +220,8 @@ Status UCXCommunicator::Gather(const std::shared_ptr<Table> &table,
                                int gather_root,
                                bool gather_from_root,
                                std::vector<std::shared_ptr<Table>> *out) const {
-  CYLON_UNUSED(table);
-  CYLON_UNUSED(gather_root);
-  CYLON_UNUSED(gather_from_root);
-  CYLON_UNUSED(out);
-  return {Code::NotImplemented, "All gather not implemented yet for ucx"};
+  ucc::UccTableGatherImpl impl(uccTeam, uccContext, world_size, rank);
+  return impl.Execute(table, gather_root, gather_from_root, out);
 }
 
 Status UCXCommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) const {
