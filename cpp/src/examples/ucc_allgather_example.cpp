@@ -31,7 +31,7 @@ void allgather(std::shared_ptr<cylon::Table>& table,
                std::shared_ptr<cylon::CylonContext>& ctx) {
   std::vector<std::shared_ptr<cylon::Table>> out;
   auto status = ctx->GetCommunicator()->AllGather(table, &out);
-  std::cout<<status.get_msg()<<std::endl;
+  std::cout<<status.get_code()<<std::endl;
 
   if (ctx->GetRank() == 0) {
     for (auto out_table : out) {

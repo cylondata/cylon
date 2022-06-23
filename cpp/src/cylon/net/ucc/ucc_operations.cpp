@@ -107,16 +107,16 @@ ucc_status_t WaitAllHelper(std::vector<ucc_coll_req_h>& reqs, ucc_context_h& ctx
 Status UccTableAllgatherImpl::WaitAll(int num_buffers) {
   // RETURN_CYLON_STATUS_IF_MPI_FAILED(
   //     MPI_Waitall(num_buffers, requests_.data(), statuses_.data()));
-  ucc_status_t status;
+  // ucc_status_t status;
 
-  // TODO: adopt ucc test `waitall`'s algorithm
-  for(int i = 0; i < num_buffers; i++) {
-    while (UCC_OK != (status = ucc_collective_test(requests_[i]))) {
-      RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
-      // std::cout<<"status: "<<status<<std::endl;
-      RETURN_CYLON_STATUS_IF_UCC_FAILED(status = ucc_context_progress(ucc_context_));
-    }
-  }
+  // // TODO: adopt ucc test `waitall`'s algorithm
+  // for(int i = 0; i < num_buffers; i++) {
+  //   while (UCC_OK != (status = ucc_collective_test(requests_[i]))) {
+  //     RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
+  //     // std::cout<<"status: "<<status<<std::endl;
+  //     RETURN_CYLON_STATUS_IF_UCC_FAILED(status = ucc_context_progress(ucc_context_));
+  //   }
+  // }
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
 
