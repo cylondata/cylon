@@ -479,6 +479,32 @@ Status WriteParquet(const std::shared_ptr<cylon::CylonContext> &ctx,
                     std::shared_ptr<cylon::Table> &table,
                     const std::string &path,
                     const io::config::ParquetOptions &options = cylon::io::config::ParquetOptions());
+/**
+   * Slice the part of table to create a single table
+   * @param tables, offset, length
+   * @return new sliced table
+   */
+Status Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
+              std::shared_ptr<cylon::Table> &out);
+
+/**
+   * Head the part of table to create a single table with specific number of rows
+   * @param tables, number of rows
+   * @return new  table
+   */
+
+Status Head(const std::shared_ptr<Table> &table, int64_t num_rows,
+              std::shared_ptr<cylon::Table> &output);
+
+/**
+   * Tail the part of table to create a single table with specific number of rows
+   * @param tables, number of rows
+   * @return new table
+   */
+
+Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows, 
+              std::shared_ptr<cylon::Table> &output);
+
 #endif  // BUILD_CYLON_PARQUET
 
 }  // namespace cylon

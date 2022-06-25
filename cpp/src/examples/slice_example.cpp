@@ -24,11 +24,15 @@
 
 
 int main(int argc, char *argv[]) {
-  if (argc < 5) {
-    LOG(ERROR) << "./join_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
-               << "./join_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
-               << "./join_example f [n | o] csv_file1 csv_file2" << std::endl
-               << "./join_example f [n | o] csv_file1 csv_file2" << std::endl;
+  if ((argc < 6 && std::string(argv[1])  == "f")) {
+    LOG(ERROR) << "./slice_example f [n | o] csv_file offset length" << std::endl
+               << "./slice_example f [n | o] csv_file  offset length" << std::endl;
+    return 1;
+  }
+
+  if ((argc < 7 && std::string(argv[1]) == "m")) {
+    LOG(ERROR) << "./slice_example m [n | o] num_tuples_per_worker 0.0-1.0 offset length" << std::endl
+               << "./slice_example m [n | o] num_tuples_per_worker 0.0-1.0 offset length" << std::endl;
     return 1;
   }
 
@@ -36,12 +40,13 @@ int main(int argc, char *argv[]) {
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
-  std::shared_ptr<cylon::Table> first_table, second_table, joined, sliced;
+  std::shared_ptr<cylon::Table> in_table, joined, sliced;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
   cylon::join::config::JoinAlgorithm algorithm = cylon::join::config::JoinAlgorithm::SORT;
 
   std::string mem = std::string(argv[1]);
   std::string ops_param = std::string(argv[2]);
+  int64_t offset = 0, length = 0;
 
   bool ops = true;
   if (ops_param == "o") {
@@ -51,39 +56,24 @@ int main(int argc, char *argv[]) {
   }
 
   if (mem == "m") {
-    if (argc == 6) {
-      if (!strcmp(argv[5], "hash")) {
-        LOG(INFO) << "Hash join algorithm";
-        algorithm = cylon::join::config::JoinAlgorithm::HASH;
-      } else {
-        LOG(INFO) << "Sort join algorithm";
-      }
-    } else {
-      LOG(INFO) << "Sort join algorithm";
-    }
     uint64_t count = std::stoull(argv[3]);
     double dup = std::stod(argv[4]);
-    cylon::examples::create_two_in_memory_tables(count, dup,ctx,first_table,second_table);
+    cylon::examples::create_in_memory_tables(count, dup,ctx,in_table);
+    offset = std::stoull(argv[5]);
+    length = std::stoull(argv[6]);
   } else if (mem == "f") {
-    LOG(INFO) << "Load From first CSV file" << std::string(argv[3]);
-    cylon::FromCSV(ctx, std::string(argv[3]), first_table);
-    cylon::FromCSV(ctx, std::string(argv[4]), second_table);
+    LOG(INFO) << "Load From the CSV file" << std::string(argv[3]);
+    cylon::FromCSV(ctx, std::string(argv[3]) , in_table);
 
     //cylon::FromCSV(ctx, std::string(argv[3]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
     //cylon::FromCSV(ctx, std::string(argv[4]) + std::to_string(ctx->GetRank()) + ".csv", second_table);
 
-    if (argc == 6) {
-      if (!strcmp(argv[5], "hash")) {
-        LOG(INFO) << "Hash join algorithm";
-        algorithm = cylon::join::config::JoinAlgorithm::HASH;
-      } else {
-        LOG(INFO) << "Sort join algorithm";
-      }
-    }
+    offset = std::stoull(argv[4]);
+    length = std::stoull(argv[5]);
   }
   ctx->Barrier();
   auto read_end_time = std::chrono::steady_clock::now();
-  //first_table->Print();
+  //in_table->Print();
   LOG(INFO) << "Read tables in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
@@ -95,30 +85,13 @@ int main(int argc, char *argv[]) {
                                                      "l_",
                                                      "r_");
   cylon::Status status;
-  if (ops) {
-    status = cylon::JoinOperation(ctx, first_table, second_table, join_config, joined);
-  } else {
-    status = cylon::DistributedJoin(first_table, second_table, join_config, joined);
-  }
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table join failed ";
-    ctx->Finalize();
-    return 1;
-  }
-  auto join_end_time = std::chrono::steady_clock::now();
-  LOG(INFO) << "First table had : " << first_table->Rows() << " and Second table had : "
-            << second_table->Rows() << ", Joined has : " << joined->Rows();
-  LOG(INFO) << "Join done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                join_end_time - read_end_time).count() << "[ms]";
-  std::vector<std::string> column_names = joined->ColumnNames();
 
   // Arup: Code block for slice operation
 
   if (ops) {
-    status = cylon::Slice(first_table, 10, 5, sliced);
+    status = cylon::Slice(in_table, offset, length, sliced);
   } else {
-    status = cylon::Slice(second_table, 10, 5, sliced);
+    status = cylon::Slice(in_table, offset, length, sliced);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Slice is failed ";

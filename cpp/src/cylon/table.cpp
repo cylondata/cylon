@@ -277,7 +277,11 @@ static inline Status shuffle_two_tables_by_hashing(const std::shared_ptr<cylon::
 Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
                std::shared_ptr<Table> &tableOut, const cylon::io::config::CSVReadOptions &options) {
   arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::read_csv(ctx, path, options);
+  
+  LOG(INFO) << "Reading Inside FromCSV";
+  
   if (result.ok()) {
+    LOG(INFO) << "CSV file reading is OK";
     std::shared_ptr<arrow::Table> &table = result.ValueOrDie();
     if (table->column(0)->chunks().size() > 1) {
       const auto &combine_res = table->CombineChunks(ToArrowPool(ctx));
@@ -289,6 +293,7 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
     }
     // slice the table if required
     if (options.IsSlice() && ctx->GetWorldSize() > 1) {
+      LOG(INFO) << "Slice the table if required";
       int32_t rows_per_worker = table->num_rows() / ctx->GetWorldSize();
       int32_t remainder = table->num_rows() % ctx->GetWorldSize();
 
@@ -1756,5 +1761,118 @@ Status WriteParquet(const std::shared_ptr<cylon::CylonContext> &ctx_,
 
   return Status(Code::OK);
 }
+
+/**
+ * Slice the part of table to create a single table
+ * @param table, offset and length
+ * @return new sliced table
+ */
+
+
+Status Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
+              std::shared_ptr<cylon::Table> &out) {
+#ifdef CYLON_DEBUG
+  auto p1 = std::chrono::high_resolution_clock::now();
+#endif
+  const auto &ctx = in->GetContext();
+  auto pool = cylon::ToArrowPool(ctx);
+  std::shared_ptr<arrow::Table> out_table, in_table = in->get_table();
+  std::vector<int> cols = {0};
+  Unique(in, cols, out, true);
+
+
+  if (!in->Empty()) {
+    if (in_table->column(0)->num_chunks() > 1) {
+      CYLON_ASSIGN_OR_RAISE(in_table, in_table->CombineChunks(pool))
+    }
+
+    std::unique_ptr<TableRowIndexEqualTo> row_comp;
+    RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexEqualTo::Make(in_table, cols, &row_comp));
+
+    std::unique_ptr<TableRowIndexHash> row_hash;
+    RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexHash::Make(in_table, cols, &row_hash));
+
+    const int64_t num_rows = length;
+    ska::bytell_hash_set<int64_t, TableRowIndexHash, TableRowIndexEqualTo>
+        rows_set(num_rows, *row_hash, *row_comp);
+
+    arrow::Int64Builder filter(pool);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(num_rows));
+#ifdef CYLON_DEBUG
+    auto p2 = std::chrono::high_resolution_clock::now();
+#endif
+    for (int64_t row = offset; row < offset + num_rows; ++row) {
+      const auto &res = rows_set.insert(row);
+      if (res.second) {
+        filter.UnsafeAppend(row);
+      }
+    }
+#ifdef CYLON_DEBUG
+    auto p3 = std::chrono::high_resolution_clock::now();
+#endif
+    rows_set.clear();
+#ifdef CYLON_DEBUG
+    auto p4 = std::chrono::high_resolution_clock::now();
+#endif
+    CYLON_ASSIGN_OR_RAISE(auto take_arr, filter.Finish());
+    CYLON_ASSIGN_OR_RAISE(auto take_res, arrow::compute::Take(in_table, take_arr))
+    out_table = take_res.table();
+
+#ifdef CYLON_DEBUG
+    auto p5 = std::chrono::high_resolution_clock::now();
+    LOG(INFO) << "P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(p2 - p1).count()
+              << " P2 " << std::chrono::duration_cast<std::chrono::milliseconds>(p3 - p2).count()
+              << " P3 " << std::chrono::duration_cast<std::chrono::milliseconds>(p4 - p3).count()
+              << " P4 " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p4).count()
+              << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p1).count()
+              << " tot " << rows_set.load_factor() << " " << rows_set.bucket_count();
+#endif
+  } else {
+    out_table = in_table;
+  }
+  return Table::FromArrowTable(ctx, std::move(out_table), out);
+}
+
+
+/**
+   * Head the part of table to create a single table with specific number of rows
+   * @param tables, number of rows
+   * @return new table
+   */
+
+Status Head(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
+
+  std::shared_ptr<arrow::Table>  in_table = table->get_table();
+  const int64_t table_size = in_table->num_rows();
+
+  if(num_rows > 0 && table_size > 0) {
+    return Slice(table, 0, num_rows, output);
+  }
+  else
+    LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");
+
+}
+
+/**
+   * Tail the part of table to create a single table with specific number of rows
+   * @param tables, number of rows
+   * @return new table
+   */
+
+Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
+
+  std::shared_ptr<arrow::Table>  in_table = table->get_table();
+  const int64_t table_size = in_table->num_rows();
+
+  LOG(INFO) << "Input Table size " << table_size;
+
+  if(num_rows > 0 && table_size > 0) {
+    return Slice(table, table_size-num_rows, num_rows, output);
+  }
+  else
+    LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");
+
+}
+
 #endif
 }  // namespace cylon
