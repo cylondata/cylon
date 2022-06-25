@@ -1763,13 +1763,13 @@ Status WriteParquet(const std::shared_ptr<cylon::CylonContext> &ctx_,
 }
 
 /**
- * Slice the part of table to create a single table
+ * Local_Slice the part of table to create a single table
  * @param table, offset and length
  * @return new sliced table
  */
 
 
-Status Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
+Status Local_Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
               std::shared_ptr<cylon::Table> &out) {
 #ifdef CYLON_DEBUG
   auto p1 = std::chrono::high_resolution_clock::now();
@@ -1835,6 +1835,37 @@ Status Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
 
 
 /**
+ * Distributed_Slice the part of table to create a single table
+ * @param table, offset and length
+ * @return new sliced table
+ */
+
+
+Status Distributed_Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
+              std::shared_ptr<cylon::Table> &out) {
+
+  const auto &ctx = in->GetContext();
+  std::shared_ptr<arrow::Table> out_table, in_table = in->get_table();
+
+  if (!in->Empty()) {
+
+  auto sliced = in_table->columns();
+  int64_t num_rows = length;
+  for (auto& column : sliced) {
+    column = column->Slice(offset, length);
+    num_rows = column->length();
+  }
+  out_table = arrow::Table::Make(in_table->schema(), std::move(sliced), num_rows);
+  } else {
+    out_table = in_table;
+  }
+  return Table::FromArrowTable(ctx, std::move(out_table), out);
+}
+
+
+
+
+/**
    * Head the part of table to create a single table with specific number of rows
    * @param tables, number of rows
    * @return new table
@@ -1846,7 +1877,7 @@ Status Head(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_p
   const int64_t table_size = in_table->num_rows();
 
   if(num_rows > 0 && table_size > 0) {
-    return Slice(table, 0, num_rows, output);
+    return Distributed_Slice(table, 0, num_rows, output);
   }
   else
     LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");
@@ -1867,7 +1898,7 @@ Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_p
   LOG(INFO) << "Input Table size " << table_size;
 
   if(num_rows > 0 && table_size > 0) {
-    return Slice(table, table_size-num_rows, num_rows, output);
+    return Distributed_Slice(table, table_size-num_rows, num_rows, output);
   }
   else
     LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");

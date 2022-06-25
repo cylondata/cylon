@@ -89,9 +89,9 @@ int main(int argc, char *argv[]) {
   // Arup: Code block for slice operation
 
   if (ops) {
-    status = cylon::Slice(in_table, offset, length, sliced);
+    status = cylon::Local_Slice(in_table, offset, length, sliced);
   } else {
-    status = cylon::Slice(in_table, offset, length, sliced);
+    status = cylon::Distributed_Slice(in_table, offset, length, sliced);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Slice is failed ";

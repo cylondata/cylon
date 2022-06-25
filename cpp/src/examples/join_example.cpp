@@ -113,27 +113,6 @@ int main(int argc, char *argv[]) {
                 join_end_time - read_end_time).count() << "[ms]";
   std::vector<std::string> column_names = joined->ColumnNames();
 
-  // Arup: Code block for slice operation
-
-  if (ops) {
-    status = cylon::Slice(first_table, 10, 5, sliced);
-  } else {
-    status = cylon::Slice(second_table, 10, 5, sliced);
-  }
-  if (!status.is_ok()) {
-    LOG(INFO) << "Table Slice is failed ";
-    ctx->Finalize();
-    return 1;
-  }
-  auto slice_end_time = std::chrono::steady_clock::now();
-  LOG(INFO) << "Sliced table has : " << sliced->Rows();
-  LOG(INFO) << "Sliced is done in "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(
-                slice_end_time - read_end_time).count() << "[ms]";
-  std::vector<std::string> sliced_column_names = sliced->ColumnNames();
-
-  sliced->Print();
-
   ctx->Finalize();
   return 0;
 }
