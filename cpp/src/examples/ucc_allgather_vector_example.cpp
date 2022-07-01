@@ -145,7 +145,9 @@ int main(int argc, char **argv) {
     disp[i] = 10 * i;
   }
 
-  args.mask = 0;
+  args.mask = UCC_COLL_ARGS_FIELD_FLAGS;
+  args.flags =
+      UCC_COLL_ARGS_FLAG_DISPLACEMENTS_64BIT | UCC_COLL_ARGS_FLAG_COUNT_64BIT;
   args.coll_type = UCC_COLL_TYPE_ALLGATHERV;
   args.src.info.buffer = send.data();
   args.src.info.count = 10;

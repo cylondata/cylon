@@ -63,8 +63,8 @@ Status UccTableAllgatherImpl::IallgatherBufferData(
 
   // std::vector<uint64_t> displacements_v(displacements.begin(), displacements.end());
 
-  args.dst.info_v.counts = counts_[buf_idx].data();
-  args.dst.info_v.displacements = displacements_[buf_idx].data();
+  args.dst.info_v.counts = (ucc_count_t *) counts_[buf_idx].data();
+  args.dst.info_v.displacements = (ucc_aint_t *) displacements_[buf_idx].data();
   args.dst.info_v.datatype = UCC_DT_UINT8;
   args.dst.info_v.mem_type = UCC_MEMORY_TYPE_HOST;
 
@@ -346,8 +346,8 @@ Status UccTableGatherImpl::IgatherBufferData(
   // std::vector<uint64_t> displacements_v(displacements.begin(),
   // displacements.end());
 
-  args.dst.info_v.counts = counts_[buf_idx].data();
-  args.dst.info_v.displacements = displacements_[buf_idx].data();
+  args.dst.info_v.counts = (ucc_count_t *) counts_[buf_idx].data();
+  args.dst.info_v.displacements = (ucc_aint_t *) displacements_[buf_idx].data();
   args.dst.info_v.datatype = UCC_DT_UINT8;
   args.dst.info_v.mem_type = UCC_MEMORY_TYPE_HOST;
 
