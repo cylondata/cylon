@@ -199,6 +199,8 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
 }
 void UCXCommunicator::Finalize() {
   ucp_cleanup(ucpContext);
+  ucc_team_destroy(uccTeam);
+  ucc_context_destroy(uccContext);
   MPI_Finalize();
 }
 
@@ -212,7 +214,7 @@ CommType UCXCommunicator::GetCommType() const {
 
 Status UCXCommunicator::AllGather(const std::shared_ptr<Table> &table,
                                   std::vector<std::shared_ptr<Table>> *out) const {
-  ucc::UccTableAllgatherImpl impl(uccTeam, uccContext, this->rank, this->world_size);
+  ucc::UccTableAllgatherImpl impl(uccTeam, uccContext, rank, world_size);
   return impl.Execute(table, out);
 }
 
@@ -220,7 +222,7 @@ Status UCXCommunicator::Gather(const std::shared_ptr<Table> &table,
                                int gather_root,
                                bool gather_from_root,
                                std::vector<std::shared_ptr<Table>> *out) const {
-  ucc::UccTableGatherImpl impl(uccTeam, uccContext, world_size, rank);
+  ucc::UccTableGatherImpl impl(uccTeam, uccContext, rank, world_size);
   return impl.Execute(table, gather_root, gather_from_root, out);
 }
 

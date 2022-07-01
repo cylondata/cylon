@@ -81,6 +81,7 @@ if (CYLON_UCX)
     if (CYLON_UCC)
         cylon_add_exe(ucc_example)
         cylon_add_exe(ucc_allgather_example)
+        cylon_add_exe(ucc_allgather_vector_example)
     endif ()
 endif (CYLON_UCX)
 

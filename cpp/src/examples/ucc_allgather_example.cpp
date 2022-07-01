@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cylon/ctx/cylon_context.hpp>
+#include <cylon/net/ucc/ucc_operations.hpp>
 #include <cylon/net/ucx/ucx_communicator.hpp>
 #include <cylon/table.hpp>
 #include <iostream>
@@ -41,7 +42,6 @@ void allgather(std::shared_ptr<cylon::Table>& table,
     }
   }
 }
-
 void gather(std::shared_ptr<cylon::Table>& table,
                std::shared_ptr<cylon::CylonContext>& ctx) {
   std::vector<std::shared_ptr<cylon::Table>> out;
@@ -57,31 +57,31 @@ void gather(std::shared_ptr<cylon::Table>& table,
   }
 }
 
-void allReduceColumn(std::shared_ptr<cylon::Table>& table,
-               std::shared_ptr<cylon::CylonContext>& ctx) {
-  std::shared_ptr<cylon::Column> input, output;
-  std::vector<int> v(10);
+// void allReduceColumn(std::shared_ptr<cylon::Table>& table,
+//                std::shared_ptr<cylon::CylonContext>& ctx) {
+//   std::shared_ptr<cylon::Column> input, output;
+//   std::vector<int> v(10);
 
-  for(int i = 0; i < 10; i++) {
-    v[i] = i + ctx->GetRank();
-  }
-  cylon::Column::FromVector(v, input);
+//   for(int i = 0; i < 10; i++) {
+//     v[i] = i + ctx->GetRank();
+//   }
+//   cylon::Column::FromVector(v, input);
 
-  ctx->GetCommunicator()->AllReduce(input, cylon::net::ReduceOp::SUM, &output);
+//   ctx->GetCommunicator()->AllReduce(input, cylon::net::ReduceOp::SUM, &output);
 
-  if(ctx->GetRank() == 1) {
-    for (int i = 0; i < 10; i++) {
-      std::cout << output->data()->GetScalar(i).ValueOrDie()->ToString()
-                << std::endl;
-    }
-  }
-}
+//   if(ctx->GetRank() == 1) {
+//     for (int i = 0; i < 10; i++) {
+//       std::cout << output->data()->GetScalar(i).ValueOrDie()->ToString()
+//                 << std::endl;
+//     }
+//   }
+// }
 
 
 int main(int argc, char **argv) {
   auto ucx_config = std::make_shared<cylon::net::UCXConfig>();
   auto ctx = cylon::CylonContext::InitDistributed(ucx_config);
-  // std::cout<< ctx->GetRank()<<std::endl;
+  std::cout<< ctx->GetRank()<<std::endl;
   std::shared_ptr<cylon::Table> table; 
   std::vector<std::shared_ptr<cylon::Table>> out;
   auto read_options = cylon::io::config::CSVReadOptions()
@@ -93,8 +93,6 @@ int main(int argc, char **argv) {
                                "/home/ky/cylon/data/input/csv1_" +
                                    std::to_string(ctx->GetRank()) + ".csv",
                                table, read_options);
-
-  
   // allReduceColumn(table, ctx);
   // gather(table, ctx);
   allgather(table, ctx);

@@ -51,7 +51,7 @@ private:
 
 class UccTableGatherImpl : public net::TableGatherImpl {
 public:
-  UccTableGatherImpl(ucc_team_h ucc_team, ucc_context_h ucc_context, int ws, int rk);
+  UccTableGatherImpl(ucc_team_h ucc_team, ucc_context_h ucc_context, int rank, int world_size);
   void Init(int32_t num_buffers) override;
 
   Status GatherBufferSizes(const int32_t *send_data,

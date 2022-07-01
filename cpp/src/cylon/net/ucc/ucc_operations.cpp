@@ -117,16 +117,14 @@ Status UccTableAllgatherImpl::WaitAll(int num_buffers) {
   //     RETURN_CYLON_STATUS_IF_UCC_FAILED(status = ucc_context_progress(ucc_context_));
   //   }
   // }
-
   RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
-
   return Status::OK();
 }
 
 UccTableAllgatherImpl::UccTableAllgatherImpl(ucc_team_h ucc_team,
                                              ucc_context_h ucc_context,
                                              int rk,
-                                             int world_sz)
+                                             int ws)
     : TableAllgatherImpl(),
       ucc_team_(ucc_team),
       ucc_context_(ucc_context),
@@ -135,7 +133,7 @@ UccTableAllgatherImpl::UccTableAllgatherImpl(ucc_team_h ucc_team,
       counts_({}),
       displacements_({}),
       rank(rk),
-      world_size(world_sz){}
+      world_size(ws){}
 
 void UccTableAllgatherImpl::Init(int num_buffers) {
   requests_.resize(num_buffers);
@@ -273,7 +271,7 @@ Status UccAllReduceImpl::AllReduceBuffer(const void *send_buf, void *rcv_buf,
 }
 
 UccTableGatherImpl::UccTableGatherImpl(ucc_team_h ucc_team,
-                                       ucc_context_h ucc_context, int ws, int rk)
+                                       ucc_context_h ucc_context, int rk, int ws)
     : ucc_team_(ucc_team), ucc_context_(ucc_context), world_size(ws), rank(rk) {}
 
 void UccTableGatherImpl::Init(int32_t num_buffers) {
