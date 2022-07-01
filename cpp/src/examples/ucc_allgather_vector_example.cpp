@@ -13,8 +13,9 @@
  */
 
 /**
+ * temporary example to test an issue; removed after issue resolved
  * run the example as follows:
- *  mpirun -n 4 bin/ucc_example
+ *  mpirun -n 4 bin/ucc_allgather_vector_example
  */
 
 #include <mpi.h>

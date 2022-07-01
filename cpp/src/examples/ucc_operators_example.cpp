@@ -13,6 +13,7 @@
  */
 
 /**
+ * Temporary example, merge to ucc_example afterwards
  * run the example as follows:
  *  mpirun -n 4 bin/ucc_example
  */

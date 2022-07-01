@@ -146,7 +146,7 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     }
   }
 
-  // temporary code to initialize UCC team and context
+  // initialize UCC team and context
   ucc_context_params_t ctx_params;
   ucc_team_params_t team_params;
   ucc_context_config_h ctx_config;
@@ -154,6 +154,7 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   ucc_lib_h lib;
   ucc_lib_config_h lib_config;
 
+  // init ucc lib
   ucc_lib_params_t lib_params = {.mask = UCC_LIB_PARAM_FIELD_THREAD_MODE,
                                  .thread_mode = UCC_THREAD_SINGLE,
                                  .coll_types = {},
@@ -164,6 +165,7 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_init(&lib_params, lib_config, &lib));
   ucc_lib_config_release(lib_config);
 
+  // init ucc context
   ctx_params.mask = UCC_CONTEXT_PARAM_FIELD_OOB;
   ctx_params.oob.allgather = oob_allgather;
   ctx_params.oob.req_test = oob_allgather_test;
@@ -174,8 +176,11 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_config_read(lib, nullptr, &ctx_config));
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_create(lib, &ctx_params, ctx_config, &uccContext));
+  while (UCC_OK != ucc_context_progress(uccContext)) {
+  }
   ucc_context_config_release(ctx_config);
 
+  // init ucc team
   team_params.mask = UCC_TEAM_PARAM_FIELD_OOB;
   team_params.oob.allgather = oob_allgather;
   team_params.oob.req_test = oob_allgather_test;
