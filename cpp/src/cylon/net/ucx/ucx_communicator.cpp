@@ -232,10 +232,11 @@ Status UCXCommunicator::Gather(const std::shared_ptr<Table> &table,
 }
 
 Status UCXCommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) const {
-  CYLON_UNUSED(table);
-  CYLON_UNUSED(bcast_root);
-  return {Code::NotImplemented, "All gather not implemented yet for ucx"};
+  ucc::UccTableBcastImpl impl(uccTeam, uccContext, world_size);
+  // The ctx_ptr and the real context are not the same
+  return impl.Execute(table, bcast_root, *ctx_ptr);
 }
+
 Status UCXCommunicator::AllReduce(const std::shared_ptr<Column> &column,
                                   net::ReduceOp reduce_op,
                                   std::shared_ptr<Column> *output) const {

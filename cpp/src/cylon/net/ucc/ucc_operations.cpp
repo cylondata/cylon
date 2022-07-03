@@ -41,10 +41,6 @@ Status UccTableAllgatherImpl::IallgatherBufferData(
     int buf_idx, const uint8_t *send_data, int32_t send_count,
     uint8_t *recv_data, const std::vector<int32_t> &recv_count,
     const std::vector<int32_t> &displacements) {
-  // RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Iallgatherv(
-  //     send_data, send_count, MPI_UINT8_T, recv_data, recv_count.data(),
-  //     displacements.data(), MPI_UINT8_T, comm_, &requests_[buf_idx]));
-
   ucc_coll_args_t &args = args_[buf_idx];
 
   args.mask = 0;
@@ -55,16 +51,12 @@ Status UccTableAllgatherImpl::IallgatherBufferData(
   args.src.info.datatype = UCC_DT_UINT8;
   args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
 
+  counts_[buf_idx].insert(counts_[buf_idx].end(), recv_count.begin(),
+                          recv_count.end());
+
   args.dst.info_v.buffer = recv_data;
-
-  counts_[buf_idx].insert(counts_[buf_idx].end(), recv_count.begin(), recv_count.end());
-  displacements_[buf_idx].insert(displacements_[buf_idx].end(), displacements.begin(),
-                          displacements.end());
-
-  // std::vector<uint64_t> displacements_v(displacements.begin(), displacements.end());
-
   args.dst.info_v.counts = (ucc_count_t *) counts_[buf_idx].data();
-  args.dst.info_v.displacements = (ucc_aint_t *) displacements_[buf_idx].data();
+  args.dst.info_v.displacements = (ucc_aint_t *) displacements.data();
   args.dst.info_v.datatype = UCC_DT_UINT8;
   args.dst.info_v.mem_type = UCC_MEMORY_TYPE_HOST;
 
@@ -131,7 +123,6 @@ UccTableAllgatherImpl::UccTableAllgatherImpl(ucc_team_h ucc_team,
       requests_({}),
       args_({}),
       counts_({}),
-      displacements_({}),
       rank(rk),
       world_size(ws){}
 
@@ -139,7 +130,6 @@ void UccTableAllgatherImpl::Init(int num_buffers) {
   requests_.resize(num_buffers);
   args_.resize(num_buffers);
   counts_.resize(num_buffers);
-  displacements_.resize(num_buffers);
 }
 
 UccTableAllgatherImpl::~UccTableAllgatherImpl() {
@@ -283,7 +273,6 @@ void UccTableGatherImpl::Init(int32_t num_buffers) {
 
 Status UccTableGatherImpl::GatherBufferSizes(const int32_t *send_data, int32_t num_buffers,
                          int32_t *rcv_data, int32_t gather_root) const {
-  // todo: recompile ucc, version updated
   ucc_coll_args_t args;
   ucc_coll_req_h req;
 
@@ -330,7 +319,6 @@ Status UccTableGatherImpl::IgatherBufferData(
   args.coll_type = UCC_COLL_TYPE_GATHERV;
   args.root = gather_root;
 
-  // same code as allgather, can reuse
   args.src.info.buffer = const_cast<uint8_t *>(send_data);
   args.src.info.count = static_cast<uint64_t>(send_count);
   args.src.info.datatype = UCC_DT_UINT8;
@@ -342,9 +330,6 @@ Status UccTableGatherImpl::IgatherBufferData(
                           recv_count.end());
   displacements_[buf_idx].insert(displacements_[buf_idx].end(),
                                  displacements.begin(), displacements.end());
-
-  // std::vector<uint64_t> displacements_v(displacements.begin(),
-  // displacements.end());
 
   args.dst.info_v.counts = (ucc_count_t *) counts_[buf_idx].data();
   args.dst.info_v.displacements = (ucc_aint_t *) displacements_[buf_idx].data();
@@ -371,6 +356,110 @@ Status UccTableGatherImpl::WaitAll(int32_t num_buffers) {
   }
 
   return Status::OK();
+}
+
+UccTableBcastImpl::UccTableBcastImpl(ucc_team_h ucc_team, ucc_context_h ucc_context,
+                  int ws): ucc_team_(ucc_team), ucc_context_(ucc_context), world_size(ws) {};
+
+void UccTableBcastImpl::Init(int32_t num_buffers) {
+  reqs.resize(num_buffers);
+  args.resize(num_buffers);
+}
+
+Status UccTableBcastImpl::BcastBufferSizes(int32_t *buffer, int32_t count,
+                                           int32_t bcast_root) const {
+  ucc_coll_args_t args;
+  ucc_coll_req_h req;
+
+  args.mask = 0;
+  args.coll_type = UCC_COLL_TYPE_BCAST;
+  args.root = bcast_root;
+
+  args.src.info.buffer = buffer;
+  args.src.info.count = count;
+  args.src.info.datatype = UCC_DT_INT32;
+  args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(
+      ucc_collective_init(&args, &req, ucc_team_));
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_post(req));
+
+  ucc_status_t status;
+
+  while (UCC_OK != (status = ucc_collective_test(req))) {
+    RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
+    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_progress(ucc_context_));
+  }
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_finalize(req));
+
+  return Status::OK();
+}
+
+Status UccTableBcastImpl::BcastBufferData(uint8_t *buf_data, int32_t send_count,
+                                        int32_t bcast_root) const {
+  ucc_coll_args_t args;
+  ucc_coll_req_h req;
+
+  args.mask = 0;
+  args.coll_type = UCC_COLL_TYPE_BCAST;
+  args.root = bcast_root;
+
+  args.src.info.buffer = buf_data;
+  args.src.info.count = send_count;
+  args.src.info.datatype = UCC_DT_UINT8;
+  args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(
+      ucc_collective_init(&args, &req, ucc_team_));
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_post(req));
+
+  ucc_status_t status;
+
+  while (UCC_OK != (status = ucc_collective_test(req))) {
+    RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
+    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_progress(ucc_context_));
+  }
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_finalize(req));
+
+  return Status::OK();
+}
+
+Status UccTableBcastImpl::IbcastBufferData(int32_t buf_idx, uint8_t *buf_data,
+                                         int32_t send_count,
+                                         int32_t bcast_root) {
+  ucc_coll_args_t& arg = args[buf_idx];
+  ucc_coll_req_h& req = reqs[buf_idx];
+
+  arg.mask = 0;
+  arg.coll_type = UCC_COLL_TYPE_BCAST;
+  arg.root = bcast_root;
+
+  arg.src.info.buffer = buf_data;
+  arg.src.info.count = send_count;
+  arg.src.info.datatype = UCC_DT_UINT8;
+  arg.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(
+      ucc_collective_init(&arg, &req, ucc_team_));
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_post(req));
+
+  return Status::OK();
+}
+
+Status UccTableBcastImpl::WaitAll(int32_t num_buffers) {
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(reqs, ucc_context_));
+  return Status::OK();
+}
+
+UccTableBcastImpl::~UccTableBcastImpl() {
+  for (auto req : reqs) {
+    ucc_collective_finalize(req);
+  }
 }
 
 }  // namespace ucc
