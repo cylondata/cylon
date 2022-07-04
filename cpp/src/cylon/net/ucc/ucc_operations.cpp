@@ -115,7 +115,6 @@ Status UccTableAllgatherImpl::WaitAll(int num_buffers) {
 
 UccTableAllgatherImpl::UccTableAllgatherImpl(ucc_team_h ucc_team,
                                              ucc_context_h ucc_context,
-                                             int rk,
                                              int ws)
     : TableAllgatherImpl(),
       ucc_team_(ucc_team),
@@ -123,7 +122,6 @@ UccTableAllgatherImpl::UccTableAllgatherImpl(ucc_team_h ucc_team,
       requests_({}),
       args_({}),
       counts_({}),
-      rank(rk),
       world_size(ws){}
 
 void UccTableAllgatherImpl::Init(int num_buffers) {
@@ -358,8 +356,14 @@ Status UccTableGatherImpl::WaitAll(int32_t num_buffers) {
   return Status::OK();
 }
 
+UccTableGatherImpl::~UccTableGatherImpl() {
+  for (auto req : requests_) {
+    ucc_collective_finalize(req);
+  }
+}
+
 UccTableBcastImpl::UccTableBcastImpl(ucc_team_h ucc_team, ucc_context_h ucc_context,
-                  int ws): ucc_team_(ucc_team), ucc_context_(ucc_context), world_size(ws) {};
+                  int ws): ucc_team_(ucc_team), ucc_context_(ucc_context) {};
 
 void UccTableBcastImpl::Init(int32_t num_buffers) {
   reqs.resize(num_buffers);
@@ -462,5 +466,87 @@ UccTableBcastImpl::~UccTableBcastImpl() {
   }
 }
 
+UccAllGatherImpl::UccAllGatherImpl(ucc_team_h ucc_team,
+                                   ucc_context_h ucc_context, int ws)
+    : ucc_team_(ucc_team), ucc_context_(ucc_context), world_size(ws) {
+  requests_.resize(3);
+  args_.resize(3);
+  counts_.resize(3);
+}
+
+Status UccAllGatherImpl::AllgatherBufferSize(const int32_t *send_data,
+                                           int32_t num_buffers,
+                                           int32_t *rcv_data) const {
+  ucc_coll_args_t args;
+  ucc_coll_req_h req;
+
+  args.mask = 0;
+  args.coll_type = UCC_COLL_TYPE_ALLGATHER;
+
+  args.src.info.buffer = const_cast<int32_t *>(send_data);
+  args.src.info.count = static_cast<uint64_t>(num_buffers);
+  args.src.info.datatype = UCC_DT_INT32;
+  args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
+  args.dst.info.buffer = rcv_data;
+  args.dst.info.count = static_cast<uint64_t>(num_buffers * world_size);
+  args.dst.info.datatype = UCC_DT_INT32;
+  args.dst.info.mem_type = UCC_MEMORY_TYPE_HOST;
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(
+      ucc_collective_init(&args, &req, ucc_team_));
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_post(req));
+
+  ucc_status_t status;
+
+  while (UCC_OK != (status = ucc_collective_test(req))) {
+    RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
+    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_progress(ucc_context_));
+  }
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_finalize(req));
+
+  return Status::OK();
+}
+
+Status UccAllGatherImpl::IallgatherBufferData(int32_t buf_idx, const uint8_t *send_data,
+                            int32_t send_count, uint8_t *recv_data,
+                            const std::vector<int32_t> &recv_count,
+                            const std::vector<int32_t> &displacements) {
+  ucc_coll_args_t &args = args_[buf_idx];
+
+  args.mask = 0;
+  args.coll_type = UCC_COLL_TYPE_ALLGATHERV;
+
+  args.src.info.buffer = const_cast<uint8_t *>(send_data);
+  args.src.info.count = static_cast<uint64_t>(send_count);
+  args.src.info.datatype = UCC_DT_UINT8;
+  args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
+
+  counts_[buf_idx].insert(counts_[buf_idx].end(), recv_count.begin(),
+                          recv_count.end());
+
+  args.dst.info_v.buffer = recv_data;
+  args.dst.info_v.counts = (ucc_count_t *)counts_[buf_idx].data();
+  args.dst.info_v.displacements = (ucc_aint_t *)displacements.data();
+  args.dst.info_v.datatype = UCC_DT_UINT8;
+  args.dst.info_v.mem_type = UCC_MEMORY_TYPE_HOST;
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(
+      ucc_collective_init(&args, &requests_[buf_idx], ucc_team_));
+
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_post(requests_[buf_idx]));
+  return Status::OK();
+}
+
+Status UccAllGatherImpl::WaitAll() {
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
+  return Status::OK();
+}
+
+UccAllGatherImpl::~UccAllGatherImpl() {
+  for (auto req : requests_) {
+    ucc_collective_finalize(req);
+  }
+}
 }  // namespace ucc
 }  // namespace cylon

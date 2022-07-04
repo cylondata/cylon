@@ -219,7 +219,7 @@ CommType UCXCommunicator::GetCommType() const {
 
 Status UCXCommunicator::AllGather(const std::shared_ptr<Table> &table,
                                   std::vector<std::shared_ptr<Table>> *out) const {
-  ucc::UccTableAllgatherImpl impl(uccTeam, uccContext, rank, world_size);
+  ucc::UccTableAllgatherImpl impl(uccTeam, uccContext, world_size);
   return impl.Execute(table, out);
 }
 
@@ -255,10 +255,10 @@ Status UCXCommunicator::AllReduce(const std::shared_ptr<Scalar> &values,
 }
 Status UCXCommunicator::Allgather(const std::shared_ptr<Column> &values,
                                   std::vector<std::shared_ptr<Column>> *output) const {
-  CYLON_UNUSED(values);
-  CYLON_UNUSED(output);
-  return {Code::NotImplemented, "Allgather not implemented yet for ucx"};
+  ucc::UccAllGatherImpl impl(uccTeam, uccContext, world_size);
+  return impl.Execute(values, world_size, output);
 }
+
 Status UCXCommunicator::Allgather(const std::shared_ptr<Scalar> &value,
                                   std::shared_ptr<Column> *output) const {
   CYLON_UNUSED(value);

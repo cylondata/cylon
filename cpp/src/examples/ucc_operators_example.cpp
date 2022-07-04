@@ -41,6 +41,29 @@ void allgather(std::shared_ptr<cylon::Table>& table,
     }
   }
 }
+
+void allgatherColumn(std::shared_ptr<cylon::CylonContext>& ctx) {
+  std::shared_ptr<cylon::Column> input;
+  std::vector<std::shared_ptr<cylon::Column>> output;
+  std::vector<int> v(10);
+
+  for (int i = 0; i < 10; i++) {
+    v[i] = i + ctx->GetRank() * 10 + 1;
+  }
+  cylon::Column::FromVector(v, input);
+
+  ctx->GetCommunicator()->Allgather(input, &output);
+
+  if (ctx->GetRank() == 0) {
+    for(auto c: output) {
+      for (int i = 0; i < 10; i++) {
+        std::cout << c->data()->GetScalar(i).ValueOrDie()->ToString()
+                  << std::endl;
+      }
+    }
+  }
+}
+
 void gather(std::shared_ptr<cylon::Table>& table,
                std::shared_ptr<cylon::CylonContext>& ctx) {
   std::vector<std::shared_ptr<cylon::Table>> out;
@@ -63,25 +86,25 @@ void bcast(std::shared_ptr<cylon::Table>& table,
   }
 }
 
-// void allReduceColumn(std::shared_ptr<cylon::Table>& table,
-//                std::shared_ptr<cylon::CylonContext>& ctx) {
-//   std::shared_ptr<cylon::Column> input, output;
-//   std::vector<int> v(10);
+void allReduceColumn(std::shared_ptr<cylon::Table>& table,
+               std::shared_ptr<cylon::CylonContext>& ctx) {
+  std::shared_ptr<cylon::Column> input, output;
+  std::vector<int> v(10);
 
-//   for(int i = 0; i < 10; i++) {
-//     v[i] = i + ctx->GetRank();
-//   }
-//   cylon::Column::FromVector(v, input);
+  for(int i = 0; i < 10; i++) {
+    v[i] = i + ctx->GetRank();
+  }
+  cylon::Column::FromVector(v, input);
 
-//   ctx->GetCommunicator()->AllReduce(input, cylon::net::ReduceOp::SUM, &output);
+  ctx->GetCommunicator()->AllReduce(input, cylon::net::ReduceOp::SUM, &output);
 
-//   if(ctx->GetRank() == 1) {
-//     for (int i = 0; i < 10; i++) {
-//       std::cout << output->data()->GetScalar(i).ValueOrDie()->ToString()
-//                 << std::endl;
-//     }
-//   }
-// }
+  if(ctx->GetRank() == 1) {
+    for (int i = 0; i < 10; i++) {
+      std::cout << output->data()->GetScalar(i).ValueOrDie()->ToString()
+                << std::endl;
+    }
+  }
+}
 
 // void allReduceScalar(std::shared_ptr<cylon::Table>& table,
 //                      std::shared_ptr<cylon::CylonContext>& ctx) {
@@ -115,15 +138,16 @@ int main(int argc, char **argv) {
                           .BlockSize(1 << 30)
                           .WithDelimiter('\t');
 
-  if(ctx->GetRank() == 0) {
-    auto status = cylon::FromCSV(ctx,
-                                 "/home/ky/cylon/data/input/csv1_" +
-                                     std::to_string(ctx->GetRank()) + ".csv",
-                                 table, read_options);
-  }
+  // if(ctx->GetRank() == 0) {
+    // auto status = cylon::FromCSV(ctx,
+    //                              "/home/ky/cylon/data/input/csv1_" +
+    //                                  std::to_string(ctx->GetRank()) + ".csv",
+    //                              table, read_options);
+  // }
 
   // allReduceColumn(table, ctx);
-  bcast(table, ctx);
+  // bcast(table, ctx);
 
   // allgather(table, ctx);
+  allgatherColumn(ctx);
 }
