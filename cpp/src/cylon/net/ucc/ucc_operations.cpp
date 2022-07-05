@@ -303,7 +303,6 @@ Status UccTableGatherImpl::GatherBufferSizes(const int32_t *send_data, int32_t n
   }
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_finalize(req));
-
   return Status::OK();
 }
 
@@ -322,17 +321,19 @@ Status UccTableGatherImpl::IgatherBufferData(
   args.src.info.datatype = UCC_DT_UINT8;
   args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
 
-  args.dst.info_v.buffer = recv_data;
+  if(rank == gather_root) {
+    args.dst.info_v.buffer = recv_data;
+    counts_[buf_idx].insert(counts_[buf_idx].end(), recv_count.begin(),
+                            recv_count.end());
+    displacements_[buf_idx].insert(displacements_[buf_idx].end(),
+                                   displacements.begin(), displacements.end());
 
-  counts_[buf_idx].insert(counts_[buf_idx].end(), recv_count.begin(),
-                          recv_count.end());
-  displacements_[buf_idx].insert(displacements_[buf_idx].end(),
-                                 displacements.begin(), displacements.end());
-
-  args.dst.info_v.counts = (ucc_count_t *) counts_[buf_idx].data();
-  args.dst.info_v.displacements = (ucc_aint_t *) displacements_[buf_idx].data();
-  args.dst.info_v.datatype = UCC_DT_UINT8;
-  args.dst.info_v.mem_type = UCC_MEMORY_TYPE_HOST;
+    args.dst.info_v.counts = (ucc_count_t *)counts_[buf_idx].data();
+    args.dst.info_v.displacements =
+        (ucc_aint_t *)displacements_[buf_idx].data();
+    args.dst.info_v.datatype = UCC_DT_UINT8;
+    args.dst.info_v.mem_type = UCC_MEMORY_TYPE_HOST;
+  }
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(
       ucc_collective_init(&args, &requests_[buf_idx], ucc_team_));
@@ -342,23 +343,13 @@ Status UccTableGatherImpl::IgatherBufferData(
 }
 
 Status UccTableGatherImpl::WaitAll(int32_t num_buffers) {
-  ucc_status_t status;
-
-  for (int i = 0; i < num_buffers; i++) {
-    while (UCC_OK != (status = ucc_collective_test(requests_[i]))) {
-      RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
-      // std::cout<<"status: "<<status<<std::endl;
-      RETURN_CYLON_STATUS_IF_UCC_FAILED(status =
-                                            ucc_context_progress(ucc_context_));
-    }
-  }
-
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
   return Status::OK();
 }
 
 UccTableGatherImpl::~UccTableGatherImpl() {
   for (auto req : requests_) {
-    ucc_collective_finalize(req);
+    // ucc_collective_finalize(req);
   }
 }
 
