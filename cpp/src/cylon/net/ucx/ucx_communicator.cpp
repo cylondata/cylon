@@ -176,8 +176,6 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_config_read(lib, nullptr, &ctx_config));
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_create(lib, &ctx_params, ctx_config, &uccContext));
-  while (UCC_OK != ucc_context_progress(uccContext)) {
-  }
   ucc_context_config_release(ctx_config);
 
   // init ucc team
@@ -204,7 +202,13 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
 }
 void UCXCommunicator::Finalize() {
   ucp_cleanup(ucpContext);
-  ucc_team_destroy(uccTeam);
+  ucc_status_t status;
+  while (UCC_INPROGRESS == (status = ucc_team_destroy(uccTeam))) {
+    if (UCC_OK != status) {
+      LOG(ERROR) << "ucc_team_destroy failed";
+      break;
+    }
+  }
   ucc_context_destroy(uccContext);
   MPI_Finalize();
 }

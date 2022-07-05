@@ -127,8 +127,6 @@ int main(int argc, char **argv) {
   UCC_CHECK(ucc_context_config_read(lib, nullptr, &ctx_config));
   UCC_CHECK(ucc_context_create(lib, &ctx_params, ctx_config, &ctx));
 
-  while (UCC_OK != ucc_context_progress(ctx)) {
-  }
   ucc_context_config_release(ctx_config);
 
   team = create_ucc_team(MPI_COMM_WORLD, ctx);
