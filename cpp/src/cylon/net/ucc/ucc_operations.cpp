@@ -97,18 +97,6 @@ ucc_status_t WaitAllHelper(std::vector<ucc_coll_req_h>& reqs, ucc_context_h& ctx
 }
 
 Status UccTableAllgatherImpl::WaitAll(int num_buffers) {
-  // RETURN_CYLON_STATUS_IF_MPI_FAILED(
-  //     MPI_Waitall(num_buffers, requests_.data(), statuses_.data()));
-  // ucc_status_t status;
-
-  // // TODO: adopt ucc test `waitall`'s algorithm
-  // for(int i = 0; i < num_buffers; i++) {
-  //   while (UCC_OK != (status = ucc_collective_test(requests_[i]))) {
-  //     RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
-  //     // std::cout<<"status: "<<status<<std::endl;
-  //     RETURN_CYLON_STATUS_IF_UCC_FAILED(status = ucc_context_progress(ucc_context_));
-  //   }
-  // }
   RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
   return Status::OK();
 }
@@ -459,11 +447,7 @@ UccTableBcastImpl::~UccTableBcastImpl() {
 
 UccAllGatherImpl::UccAllGatherImpl(ucc_team_h ucc_team,
                                    ucc_context_h ucc_context, int ws)
-    : ucc_team_(ucc_team), ucc_context_(ucc_context), world_size(ws) {
-  requests_.resize(3);
-  args_.resize(3);
-  counts_.resize(3);
-}
+    : ucc_team_(ucc_team), ucc_context_(ucc_context), world_size(ws) {}
 
 Status UccAllGatherImpl::AllgatherBufferSize(const int32_t *send_data,
                                            int32_t num_buffers,
@@ -503,6 +487,10 @@ Status UccAllGatherImpl::IallgatherBufferData(int32_t buf_idx, const uint8_t *se
                             int32_t send_count, uint8_t *recv_data,
                             const std::vector<int32_t> &recv_count,
                             const std::vector<int32_t> &displacements) {
+  requests_.resize(3);
+  args_.resize(3);
+  counts_.resize(3);
+
   ucc_coll_args_t &args = args_[buf_idx];
 
   args.mask = 0;

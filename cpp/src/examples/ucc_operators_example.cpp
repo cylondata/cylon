@@ -120,17 +120,16 @@ void testScalarAllgather(std::shared_ptr<cylon::CylonContext>& ctx) {
 
 void gather(std::shared_ptr<cylon::Table>& table,
                std::shared_ptr<cylon::CylonContext>& ctx) {
-  // std::vector<std::shared_ptr<cylon::Table>> out;
-  // auto status = ctx->GetCommunicator()->Gather(table, 0, 1, &out);
-  // std::cout<<status.get_msg()<<std::endl;
-  // if (ctx->GetRank() == 0) {
-  //   std::cout<<"out size: "<<out.size()<<std::endl;
-  //   for (auto out_table : out) {
-  //     // std::cout<<"??"<<std::endl;
-  //     out_table->Print();
-  //     // std::cout<<out_table->get_table()->num_rows()<<std::endl;
-  //   }
-  // }
+  std::vector<std::shared_ptr<cylon::Table>> out;
+  auto status = ctx->GetCommunicator()->Gather(table, 0, 1, &out);
+  std::cout<<status.get_msg()<<std::endl;
+  if (ctx->GetRank() == 0) {
+    std::cout<<"out size: "<<out.size()<<std::endl;
+    for (auto out_table : out) {
+      out_table->Print();
+      // std::cout<<out_table->get_table()->num_rows()<<std::endl;
+    }
+  }
 }
 
 void testTableBcast(std::shared_ptr<cylon::CylonContext>& ctx) {
