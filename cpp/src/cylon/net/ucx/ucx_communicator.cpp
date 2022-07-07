@@ -67,7 +67,10 @@ static ucc_status_t oob_allgather_test(void *req) {
   return completed ? UCC_OK : UCC_INPROGRESS;
 }
 
-static ucc_status_t oob_allgather_free(void *req) { return UCC_OK; }
+static ucc_status_t oob_allgather_free(void *req) {
+  CYLON_UNUSED(req);
+  return UCC_OK; 
+}
 
 Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   CYLON_UNUSED(config);
