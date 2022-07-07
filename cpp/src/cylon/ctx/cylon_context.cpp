@@ -38,28 +38,6 @@ CylonContext::CylonContext(bool distributed) {
   this->is_distributed = distributed;
 }
 
-std::shared_ptr<CylonContext> CylonContext::InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config) {
-  if (config->Type() == net::CommType::MPI) {
-    auto ctx = std::make_shared<CylonContext>(true);
-    ctx->communicator = std::make_shared<net::MPICommunicator>(&ctx);
-    ctx->communicator->Init(config);
-    return ctx;
-  }
-
-#ifdef BUILD_CYLON_UCX
-  else if (config->Type() == net::CommType::UCX) {
-    auto ctx = std::make_shared<CylonContext>(true);
-    ctx->communicator = std::make_shared<net::UCXCommunicator>(&ctx);
-    ctx->communicator->Init(config);
-    return ctx;
-  }
-#endif
-  else {
-    throw "Unsupported communication type";
-  }
-  return nullptr;
-}
-
 Status CylonContext::InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config,
                                      std::shared_ptr<CylonContext> *ctx) {
   switch (config->Type()) {
