@@ -29,9 +29,13 @@ if (CYLON_UCX)
             net/ucx/ucx_operations.hpp
             net/ucx/ucx_operations.cpp
             )
-    set(UCC_CYLON_FILES
-            net/ucc/ucc_operations.hpp
-            net/ucc/ucc_operations.cpp)
+    if (CYLON_UCC)
+        set(UCC_CYLON_FILES
+                net/ucc/ucc_operations.hpp
+                net/ucc/ucc_operations.cpp)
+    else ()
+        set(UCC_CYLON_FILES)
+    endif (CYLON_UCC)
 else (CYLON_UCX)
     set(UCX_CYLON_FILES)
     set(UCC_CYLON_FILES)
