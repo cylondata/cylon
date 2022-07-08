@@ -600,7 +600,7 @@ Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
                              split_points, sample_result->GetContext()));
   }
 
-  return ctx->GetCommunicator()->Bcast(&split_points, 0);
+  return ctx->GetCommunicator()->Bcast(&split_points, 0, ctx);
 }
 
 // return (index of) first element that is not less than the target element

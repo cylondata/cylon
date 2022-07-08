@@ -26,10 +26,6 @@ namespace cylon {
 namespace net {
 
 class UCXConfig : public CommConfig {
-  void DummyConfig(int dummy);
-
-  int GetDummyConfig();
-
   CommType Type() override;
 
  public:
@@ -38,8 +34,9 @@ class UCXConfig : public CommConfig {
 
 class UCXCommunicator : public Communicator {
  public:
-  explicit UCXCommunicator(const std::shared_ptr<CylonContext> *ctx_ptr);
-  Status Init(const std::shared_ptr<CommConfig> &config) override;
+  explicit UCXCommunicator(MemoryPool *pool);
+  ~UCXCommunicator() override = default;
+
   std::unique_ptr<Channel> CreateChannel() const override;
   int GetRank() const override;
   int GetWorldSize() const override;
@@ -53,7 +50,8 @@ class UCXCommunicator : public Communicator {
                 int gather_root,
                 bool gather_from_root,
                 std::vector<std::shared_ptr<Table>> *out) const override;
-  Status Bcast(std::shared_ptr<Table> *table, int bcast_root) const override;
+  Status Bcast(std::shared_ptr<Table> *table, int bcast_root,
+               const std::shared_ptr<CylonContext> &ctx) const override;
   Status AllReduce(const std::shared_ptr<Column> &column,
                    net::ReduceOp reduce_op,
                    std::shared_ptr<Column> *output) const override;
@@ -64,6 +62,9 @@ class UCXCommunicator : public Communicator {
                    std::vector<std::shared_ptr<Column>> *output) const override;
   Status Allgather(const std::shared_ptr<Scalar> &value,
                    std::shared_ptr<Column> *output) const override;
+
+  static Status Make(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
+                     std::shared_ptr<Communicator> *out);
 
   // # UCX specific attributes - These need to be passed to the channels created from the communicator
   // The worker for receiving

@@ -15,6 +15,7 @@
 #ifndef CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
 #define CYLON_SRC_CYLON_COMM_COMMUNICATOR_H_
 
+#include "cylon/ctx/memory_pool.hpp"
 #include "cylon/net/comm_config.hpp"
 #include "cylon/net/channel.hpp"
 #include "cylon/net/comm_operations.hpp"
@@ -29,16 +30,21 @@ namespace net {
 
 class Communicator {
  public:
-  explicit Communicator(const std::shared_ptr<CylonContext> *ctx_ptr) : ctx_ptr(ctx_ptr) {}
+  Communicator(MemoryPool *pool, int32_t rank, int32_t world_size)
+      : rank(rank), world_size(world_size), pool(pool) {}
+
   virtual ~Communicator() = default;
 
-  virtual Status Init(const std::shared_ptr<CommConfig> &config) = 0;
+//  virtual Status Init(const std::shared_ptr<CommConfig> &config) = 0;
+
   virtual std::unique_ptr<Channel> CreateChannel() const = 0;
   virtual int GetRank() const = 0;
   virtual int GetWorldSize() const = 0;
-  virtual void Finalize() = 0;
-  virtual void Barrier() = 0;
   virtual CommType GetCommType() const = 0;
+
+  virtual void Finalize() = 0;
+
+  virtual void Barrier() = 0;
 
   virtual Status AllGather(const std::shared_ptr<Table> &table,
                            std::vector<std::shared_ptr<Table>> *out) const = 0;
@@ -48,7 +54,17 @@ class Communicator {
                         bool gather_from_root,
                         std::vector<std::shared_ptr<Table>> *out) const = 0;
 
-  virtual Status Bcast(std::shared_ptr<Table> *table, int bcast_root) const = 0;
+  /**
+   * Broadcasts `table` in `bcast_root` rank to every other rank.
+   * @param table Input could be NULL in non-root ranks. Those ranks would have the
+   *              broadcast result in this shared_ptr
+   * @param bcast_root
+   * @param ctx CylonContext is required to instantiate tables in non-root ranks
+   * @return
+   */
+  virtual Status Bcast(std::shared_ptr<Table> *table,
+                       int bcast_root,
+                       const std::shared_ptr<CylonContext> &ctx) const = 0;
 
   /* Array communications */
 
@@ -86,8 +102,8 @@ class Communicator {
  protected:
   int rank = -1;
   int world_size = -1;
+  MemoryPool *pool;
   // keeping a ptr to the CylonContext shared_ptr
-  const std::shared_ptr<CylonContext> *ctx_ptr;
 };
 }
 }

@@ -14,20 +14,15 @@
 
 #include <memory>
 #include <glog/logging.h>
-#include <cylon/net/communicator.hpp>
-#include <cylon/net/ucx/ucx_communicator.hpp>
-#include <cylon/net/ucx/ucx_channel.hpp>
-#include <cylon/util/macros.hpp>
-#include <cylon/net/ucc/ucc_operations.hpp>
+
+#include "cylon/net/communicator.hpp"
+#include "cylon/net/ucx/ucx_communicator.hpp"
+#include "cylon/net/ucx/ucx_channel.hpp"
+#include "cylon/util/macros.hpp"
+#include "cylon/net/ucc/ucc_operations.hpp"
 
 namespace cylon {
 namespace net {
-void UCXConfig::DummyConfig(int dummy) {
-  this->AddConfig("Dummy", &dummy);
-}
-int UCXConfig::GetDummyConfig() {
-  return *reinterpret_cast<int *>(this->GetConfig("Dummy"));
-}
 
 CommType UCXConfig::Type() {
   return CommType::UCX;
@@ -60,17 +55,23 @@ static ucc_status_t oob_allgather(void *sbuf, void *rbuf, size_t msglen,
 }
 
 static ucc_status_t oob_allgather_test(void *req) {
-  auto request = (MPI_Request)req;
+  auto request = (MPI_Request) req;
   int completed;
 
   MPI_Test(&request, &completed, MPI_STATUS_IGNORE);
   return completed ? UCC_OK : UCC_INPROGRESS;
 }
 
-static ucc_status_t oob_allgather_free(void *req) { return UCC_OK; }
+static ucc_status_t oob_allgather_free(void *req) {
+  CYLON_UNUSED(req);
+  return UCC_OK;
+}
 
-Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
+Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
+                             std::shared_ptr<Communicator> *out) {
   CYLON_UNUSED(config);
+  *out = std::make_shared<UCXCommunicator>(pool);
+  auto &comm = static_cast<UCXCommunicator &>(**out);
   // Check init functions
   int initialized;
   // Int variable used when iterating
@@ -92,16 +93,18 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   }
 
   // Get the rank for checking send to self, and initializations
-  MPI_Comm_rank(MPI_COMM_WORLD, &this->rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &this->world_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm.rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &comm.world_size);
+
+  int rank = comm.rank, world_size = comm.world_size;
 
   // Init context
-  RETURN_CYLON_STATUS_IF_FAILED(cylon::ucx::initContext(&ucpContext, nullptr));
+  RETURN_CYLON_STATUS_IF_FAILED(cylon::ucx::initContext(&comm.ucpContext, nullptr));
 
   // Init recv worker and get address
-  ucpRecvWorkerAddr = cylon::ucx::initWorker(ucpContext, &ucpRecvWorker);
+  ucpRecvWorkerAddr = cylon::ucx::initWorker(comm.ucpContext, &comm.ucpRecvWorker);
   // Init send worker
-  ucpSendWorkerAddr = cylon::ucx::initWorker(ucpContext, &ucpSendWorker);
+  ucpSendWorkerAddr = cylon::ucx::initWorker(comm.ucpContext, &comm.ucpSendWorker);
 
   //  Gather all worker addresses
   // All addresses buffer for allGather
@@ -115,13 +118,14 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
                                                   MPI_COMM_WORLD));
 
   // Iterate and set the sends
-  for (sIndx = 0; sIndx < this->world_size; sIndx++) {
+  comm.endPointMap.reserve(world_size);
+  for (sIndx = 0; sIndx < world_size; sIndx++) {
     ucp_ep_params_t epParams;
     ucp_ep_h ep;
 
     // If not self, then check if the worker address has been received.
     //  If self,then assign local worker
-    if (this->rank != sIndx) {
+    if (rank != sIndx) {
       address = reinterpret_cast<ucp_address_t *>(allAddresses.get()
           + sIndx * ucpRecvWorkerAddr->addrSize);
     } else {
@@ -135,9 +139,9 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
     epParams.err_mode = UCP_ERR_HANDLING_MODE_NONE;
 
     // Create an endpoint
-    ucxStatus = ucp_ep_create(ucpSendWorker, &epParams, &ep);
+    ucxStatus = ucp_ep_create(comm.ucpSendWorker, &epParams, &ep);
 
-    endPointMap[sIndx] = ep;
+    comm.endPointMap[sIndx] = ep;
     // Check if the endpoint was created properly
     if (ucxStatus != UCS_OK) {
       LOG(FATAL) << "Error when creating the endpoint.";
@@ -156,10 +160,10 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
 
   // init ucc lib
   ucc_lib_params_t lib_params = {.mask = UCC_LIB_PARAM_FIELD_THREAD_MODE,
-                                 .thread_mode = UCC_THREAD_SINGLE,
-                                 .coll_types = {},
-                                 .reduction_types = {},
-                                 .sync_type = {}};
+      .thread_mode = UCC_THREAD_SINGLE,
+      .coll_types = {},
+      .reduction_types = {},
+      .sync_type = {}};
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_lib_config_read(nullptr, nullptr, &lib_config));
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_init(&lib_params, lib_config, &lib));
@@ -170,12 +174,13 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   ctx_params.oob.allgather = oob_allgather;
   ctx_params.oob.req_test = oob_allgather_test;
   ctx_params.oob.req_free = oob_allgather_free;
-  ctx_params.oob.coll_info = (void *)MPI_COMM_WORLD;
-  ctx_params.oob.n_oob_eps = static_cast<uint32_t>(this->world_size);
+  ctx_params.oob.coll_info = (void *) MPI_COMM_WORLD;
+  ctx_params.oob.n_oob_eps = static_cast<uint32_t>(world_size);
   ctx_params.oob.oob_ep = static_cast<uint32_t>(rank);
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_config_read(lib, nullptr, &ctx_config));
-  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_create(lib, &ctx_params, ctx_config, &uccContext));
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_create(lib, &ctx_params, ctx_config,
+                                                       &comm.uccContext));
   ucc_context_config_release(ctx_config);
 
   // init ucc team
@@ -183,14 +188,15 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   team_params.oob.allgather = oob_allgather;
   team_params.oob.req_test = oob_allgather_test;
   team_params.oob.req_free = oob_allgather_free;
-  team_params.oob.coll_info = (void *)MPI_COMM_WORLD;
-  team_params.oob.n_oob_eps = static_cast<uint32_t>(this->world_size);
+  team_params.oob.coll_info = (void *) MPI_COMM_WORLD;
+  team_params.oob.n_oob_eps = static_cast<uint32_t>(world_size);
   team_params.oob.oob_ep = static_cast<uint32_t>(rank);
 
-  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_team_create_post(&uccContext, 1, &team_params, &uccTeam));
-  while (UCC_INPROGRESS == (status = ucc_team_create_test(uccTeam))) {
-    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_progress(uccContext));
-  };
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_team_create_post(&comm.uccContext, 1, &team_params,
+                                                         &comm.uccTeam));
+  while (UCC_INPROGRESS == (status = ucc_team_create_test(comm.uccTeam))) {
+    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_progress(comm.uccContext));
+  }
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
 
@@ -200,6 +206,7 @@ Status UCXCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
 
   return Status::OK();
 }
+
 void UCXCommunicator::Finalize() {
   ucp_cleanup(ucpContext);
   ucc_status_t status;
@@ -235,10 +242,12 @@ Status UCXCommunicator::Gather(const std::shared_ptr<Table> &table,
   return impl.Execute(table, gather_root, gather_from_root, out);
 }
 
-Status UCXCommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) const {
+Status UCXCommunicator::Bcast(std::shared_ptr<Table> *table,
+                              int bcast_root,
+                              const std::shared_ptr<CylonContext> &ctx) const {
   ucc::UccTableBcastImpl impl(uccTeam, uccContext, world_size);
   // The ctx_ptr and the real context are not the same
-  return impl.Execute(table, bcast_root, *ctx_ptr);
+  return impl.Execute(table, bcast_root, ctx);
 }
 
 Status UCXCommunicator::AllReduce(const std::shared_ptr<Column> &column,
@@ -248,8 +257,7 @@ Status UCXCommunicator::AllReduce(const std::shared_ptr<Column> &column,
   return impl.Execute(column, reduce_op, output);
 }
 
-UCXCommunicator::UCXCommunicator(const std::shared_ptr<CylonContext> *ctx_ptr)
-    : Communicator(ctx_ptr) {}
+UCXCommunicator::UCXCommunicator(MemoryPool *pool) : Communicator(pool, -1, -1) {}
 
 Status UCXCommunicator::AllReduce(const std::shared_ptr<Scalar> &values,
                                   net::ReduceOp reduce_op,

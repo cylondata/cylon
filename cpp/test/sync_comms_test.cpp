@@ -204,7 +204,7 @@ TEST_CASE("bcast table", "[sync comms]") {
     }
 
     const auto &comm = ctx->GetCommunicator();
-    CHECK_CYLON_STATUS(comm->Bcast(&table, bcast_root));
+    CHECK_CYLON_STATUS(comm->Bcast(&table, bcast_root, ctx));
 
     INFO ("world sz " + std::to_string(WORLD_SZ) + " rank " + std::to_string(RANK));
     REQUIRE(table != nullptr);

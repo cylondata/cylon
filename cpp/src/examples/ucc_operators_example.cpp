@@ -139,7 +139,7 @@ void testTableBcast(std::shared_ptr<cylon::CylonContext>& ctx) {
   } else {
     readInputCsv(0, ctx, original);
   }
-  ctx->GetCommunicator()->Bcast(&table, 0);
+  ctx->GetCommunicator()->Bcast(&table, 0, ctx);
 
   if(ctx->GetRank() != 0) {
     bool result;
