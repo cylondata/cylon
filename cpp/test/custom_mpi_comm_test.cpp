@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
   Catch::Session session;
   std::string comm_args = "mpi";
 
-  auto cli = session.cli() | Catch::clara::Opt(comm_args, "mpi|gloo-mpi")["--comm"]("comm args");
+  auto cli = session.cli() | Catch::clara::Opt(comm_args, "mpi|gloo-mpi|ucc")["--comm"]("comm args");
 
   // Now pass the new composite back to Catch2 so it uses that
   session.cli(cli);

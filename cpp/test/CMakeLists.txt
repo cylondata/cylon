@@ -62,6 +62,11 @@ function(cylon_add_test TESTNAME)
     target_link_libraries(${exec_name} ${GLOO_LIBRARIES})
   endif (CYLON_GLOO)
 
+  if (CYLON_UCX)
+    target_link_libraries(${exec_name} ${UCX_LIBRARIES})
+    target_link_libraries(${exec_name} ${UCC_LIBRARIES})
+  endif (CYLON_UCX)
+
 endfunction(cylon_add_test)
 
 # macro to run executable
@@ -216,3 +221,7 @@ if (CYLON_GLOO)
   cylon_run_test(sync_comms_test 1 gloo-mpi)
   cylon_run_test(sync_comms_test 4 gloo-mpi)
 endif (CYLON_GLOO)
+
+#### ucc tests
+if (CYLON_UCX)
+endif (CYLON_UCX)
