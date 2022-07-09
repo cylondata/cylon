@@ -32,7 +32,11 @@ int main(int argc, char *argv[]) {
 
   auto start_time = std::chrono::steady_clock::now();
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   std::shared_ptr<cylon::Table> first_table, second_table, unioned_table;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
@@ -42,7 +46,7 @@ int main(int argc, char *argv[]) {
   if (mem == "m") {
     uint64_t count = std::stoull(argv[3]);
     double dup = std::stod(argv[4]);
-    cylon::examples::create_two_in_memory_tables(count, dup,ctx,first_table,second_table);
+    cylon::examples::create_two_in_memory_tables(count, dup, ctx, first_table, second_table);
   } else if (mem == "f") {
     cylon::FromCSV(ctx, std::string(argv[3]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
     cylon::FromCSV(ctx, std::string(argv[4]) + std::to_string(ctx->GetRank()) + ".csv", second_table);

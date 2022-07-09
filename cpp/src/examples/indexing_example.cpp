@@ -285,11 +285,15 @@ int arrow_indexer_test_1() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -352,11 +356,15 @@ int arrow_indexer_str_test_1() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -412,11 +420,15 @@ int arrow_indexer_test_2() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -475,11 +487,15 @@ int arrow_indexer_str_test_2() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -538,11 +554,15 @@ int arrow_indexer_test_3() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -600,11 +620,15 @@ int arrow_indexer_str_test_3() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -662,11 +686,15 @@ int arrow_indexer_test_4() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -723,11 +751,15 @@ int arrow_indexer_str_test_4() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -784,11 +816,15 @@ int arrow_indexer_test_5() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -847,11 +883,15 @@ int arrow_indexer_str_test_5() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -910,11 +950,15 @@ int arrow_indexer_test_6() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -972,11 +1016,15 @@ int arrow_indexer_str_test_6() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -1039,11 +1087,15 @@ int arrow_iloc_indexer_test_1() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -1099,11 +1151,15 @@ int arrow_iloc_indexer_test_2() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -1162,11 +1218,15 @@ int arrow_iloc_indexer_test_3() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -1224,11 +1284,15 @@ int arrow_iloc_indexer_test_4() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -1285,11 +1349,15 @@ int arrow_iloc_indexer_test_5() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -1349,11 +1417,15 @@ int arrow_iloc_indexer_test_6() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table
@@ -1426,11 +1498,15 @@ int arrow_filter_example() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output;
+  std::shared_ptr<cylon::Table> input, output;
   int64_t capacity = 10;
   CYLON_UNUSED(capacity);
   int64_t search_capacity = 4;
@@ -1543,11 +1619,15 @@ int arrow_range_indexer_test() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   cylon::Status status;
 
-  std::shared_ptr <cylon::Table> input, output, output1;
+  std::shared_ptr<cylon::Table> input, output, output1;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
 
   // read first table

@@ -139,7 +139,7 @@ void testTableBcast(std::shared_ptr<cylon::CylonContext>& ctx) {
   } else {
     readInputCsv(0, ctx, original);
   }
-  ctx->GetCommunicator()->Bcast(&table, 0);
+  ctx->GetCommunicator()->Bcast(&table, 0, ctx);
 
   if(ctx->GetRank() != 0) {
     bool result;
@@ -202,7 +202,10 @@ void testScalarAllReduce(std::shared_ptr<cylon::CylonContext>& ctx) {
 int main(int argc, char **argv) {
   auto ucx_config = std::make_shared<cylon::net::UCXConfig>();
   std::shared_ptr<cylon::CylonContext> ctx;
-  cylon::CylonContext::InitDistributed(ucx_config, &ctx);
+  if (!cylon::CylonContext::InitDistributed(ucx_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   testTableAllgather(ctx);
   testColumnAllgather(ctx);
