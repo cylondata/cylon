@@ -51,10 +51,11 @@ Status TableAllgatherImpl::Execute(const std::shared_ptr<TableSerializer> &seria
 
   displacements->reserve(num_buffers);
   received_buffers->reserve(num_buffers);
+  std::vector<std::vector<int>> all_recv_counts(num_buffers);
   for (int32_t i = 0; i < num_buffers; ++i) {
     std::shared_ptr<cylon::Buffer> receive_buf;
     RETURN_CYLON_STATUS_IF_FAILED(allocator->Allocate(total_buffer_sizes[i], &receive_buf));
-    const auto &receive_counts = receiveCounts(*all_buffer_sizes, i, num_buffers,
+    all_recv_counts[i] = receiveCounts(*all_buffer_sizes, i, num_buffers,
                                                world_size);
     auto disp_per_buffer = displacementsPerBuffer(*all_buffer_sizes, i, num_buffers,
                                                   world_size);
@@ -63,7 +64,7 @@ Status TableAllgatherImpl::Execute(const std::shared_ptr<TableSerializer> &seria
                                                        send_buffers[i],
                                                        local_buffer_sizes[i],
                                                        receive_buf->GetByteBuffer(),
-                                                       receive_counts,
+                                                       all_recv_counts[i],
                                                        disp_per_buffer));
     displacements->push_back(std::move(disp_per_buffer));
     received_buffers->push_back(std::move(receive_buf));
@@ -146,11 +147,12 @@ Status TableGatherImpl::Execute(const std::shared_ptr<cylon::TableSerializer> &s
 
   displacements->reserve(num_buffers);
   received_buffers->reserve(num_buffers);
+  std::vector<std::vector<int>> all_recv_counts(num_buffers);
   for (int32_t i = 0; i < num_buffers; ++i) {
     if (is_root) {
       std::shared_ptr<cylon::Buffer> receive_buf;
       RETURN_CYLON_STATUS_IF_FAILED(allocator->Allocate(total_buffer_sizes[i], &receive_buf));
-      const auto &receive_counts = receiveCounts(*all_buffer_sizes, i,
+      all_recv_counts[i] = receiveCounts(*all_buffer_sizes, i,
                                                  num_buffers, world_size);
       auto disp_per_buffer = displacementsPerBuffer(*all_buffer_sizes, i,
                                                     num_buffers, world_size);
@@ -159,7 +161,7 @@ Status TableGatherImpl::Execute(const std::shared_ptr<cylon::TableSerializer> &s
                                                       send_buffers[i],
                                                       local_buffer_sizes[i],
                                                       receive_buf->GetByteBuffer(),
-                                                      receive_counts,
+                                                      all_recv_counts[i],
                                                       disp_per_buffer,
                                                       gather_root));
       displacements->push_back(std::move(disp_per_buffer));
@@ -429,19 +431,17 @@ Status AllGatherImpl::Execute(const std::shared_ptr<Column> &values,
 
   std::array<std::vector<int32_t>, 3> displacements{};
   std::array<std::shared_ptr<Buffer>, 3> received_bufs{};
+  std::vector<std::vector<int>> all_recv_counts(3);
   for (int i = 0; i < 3; i++) {
     RETURN_CYLON_STATUS_IF_FAILED(allocator.Allocate(total_buf_sizes[i], &received_bufs[i]));
 
-    const auto &receive_counts = receiveCounts(all_buf_sizes, i, 3, world_size);
+    all_recv_counts[i] = receiveCounts(all_buf_sizes, i, 3, world_size);
     displacements[i].resize(world_size);
-    prefix_sum(receive_counts, &displacements[i]);
+    prefix_sum(all_recv_counts[i], &displacements[i]);
 
-    RETURN_CYLON_STATUS_IF_FAILED(IallgatherBufferData(i,
-                                                       buffers[i],
-                                                       buf_sizes[i],
-                                                       received_bufs[i]->GetByteBuffer(),
-                                                       receive_counts,
-                                                       displacements[i]));
+    RETURN_CYLON_STATUS_IF_FAILED(IallgatherBufferData(
+        i, buffers[i], buf_sizes[i], received_bufs[i]->GetByteBuffer(),
+        all_recv_counts[i], displacements[i]));
   }
   WaitAll();
 

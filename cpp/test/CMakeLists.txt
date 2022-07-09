@@ -224,4 +224,7 @@ endif (CYLON_GLOO)
 
 #### ucc tests
 if (CYLON_UCX)
+cylon_run_test(aggregate_test 1 ucx)
+cylon_run_test(aggregate_test 2 ucx)
+cylon_run_test(aggregate_test 4 ucx)
 endif (CYLON_UCX)

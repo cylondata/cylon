@@ -51,11 +51,8 @@ Status UccTableAllgatherImpl::IallgatherBufferData(
   args.src.info.datatype = UCC_DT_UINT8;
   args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
 
-  counts_[buf_idx].insert(counts_[buf_idx].end(), recv_count.begin(),
-                          recv_count.end());
-
   args.dst.info_v.buffer = recv_data;
-  args.dst.info_v.counts = (ucc_count_t *) counts_[buf_idx].data();
+  args.dst.info_v.counts = (ucc_count_t *) recv_count.data();
   args.dst.info_v.displacements = (ucc_aint_t *) displacements.data();
   args.dst.info_v.datatype = UCC_DT_UINT8;
   args.dst.info_v.mem_type = UCC_MEMORY_TYPE_HOST;
@@ -97,6 +94,7 @@ ucc_status_t WaitAllHelper(std::vector<ucc_coll_req_h>& reqs, ucc_context_h& ctx
 }
 
 Status UccTableAllgatherImpl::WaitAll(int num_buffers) {
+  CYLON_UNUSED(num_buffers);
   RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
   return Status::OK();
 }
@@ -109,13 +107,11 @@ UccTableAllgatherImpl::UccTableAllgatherImpl(ucc_team_h ucc_team,
       ucc_context_(ucc_context),
       requests_({}),
       args_({}),
-      counts_({}),
       world_size(ws){}
 
 void UccTableAllgatherImpl::Init(int num_buffers) {
   requests_.resize(num_buffers);
   args_.resize(num_buffers);
-  counts_.resize(num_buffers);
 }
 
 UccTableAllgatherImpl::~UccTableAllgatherImpl() {
@@ -253,8 +249,6 @@ UccTableGatherImpl::UccTableGatherImpl(ucc_team_h ucc_team,
 void UccTableGatherImpl::Init(int32_t num_buffers) {
   this->requests_.resize(num_buffers);
   this->args_.resize(num_buffers);
-  counts_.resize(num_buffers);
-  displacements_.resize(num_buffers);
 }
 
 Status UccTableGatherImpl::GatherBufferSizes(const int32_t *send_data, int32_t num_buffers,
@@ -311,14 +305,10 @@ Status UccTableGatherImpl::IgatherBufferData(
 
   if(rank == gather_root) {
     args.dst.info_v.buffer = recv_data;
-    counts_[buf_idx].insert(counts_[buf_idx].end(), recv_count.begin(),
-                            recv_count.end());
-    displacements_[buf_idx].insert(displacements_[buf_idx].end(),
-                                   displacements.begin(), displacements.end());
 
-    args.dst.info_v.counts = (ucc_count_t *)counts_[buf_idx].data();
+    args.dst.info_v.counts = (ucc_count_t *)recv_count.data();
     args.dst.info_v.displacements =
-        (ucc_aint_t *)displacements_[buf_idx].data();
+        (ucc_aint_t *)displacements.data();
     args.dst.info_v.datatype = UCC_DT_UINT8;
     args.dst.info_v.mem_type = UCC_MEMORY_TYPE_HOST;
   }
@@ -331,6 +321,7 @@ Status UccTableGatherImpl::IgatherBufferData(
 }
 
 Status UccTableGatherImpl::WaitAll(int32_t num_buffers) {
+  CYLON_UNUSED(num_buffers);
   RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
   return Status::OK();
 }
@@ -435,6 +426,7 @@ Status UccTableBcastImpl::IbcastBufferData(int32_t buf_idx, uint8_t *buf_data,
 }
 
 Status UccTableBcastImpl::WaitAll(int32_t num_buffers) {
+  CYLON_UNUSED(num_buffers);
   RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(reqs, ucc_context_));
   return Status::OK();
 }
@@ -489,7 +481,6 @@ Status UccAllGatherImpl::IallgatherBufferData(int32_t buf_idx, const uint8_t *se
                             const std::vector<int32_t> &displacements) {
   requests_.resize(3);
   args_.resize(3);
-  counts_.resize(3);
 
   ucc_coll_args_t &args = args_[buf_idx];
 
@@ -501,11 +492,8 @@ Status UccAllGatherImpl::IallgatherBufferData(int32_t buf_idx, const uint8_t *se
   args.src.info.datatype = UCC_DT_UINT8;
   args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
 
-  counts_[buf_idx].insert(counts_[buf_idx].end(), recv_count.begin(),
-                          recv_count.end());
-
   args.dst.info_v.buffer = recv_data;
-  args.dst.info_v.counts = (ucc_count_t *)counts_[buf_idx].data();
+  args.dst.info_v.counts = (ucc_count_t *)recv_count.data();
   args.dst.info_v.displacements = (ucc_aint_t *)displacements.data();
   args.dst.info_v.datatype = UCC_DT_UINT8;
   args.dst.info_v.mem_type = UCC_MEMORY_TYPE_HOST;

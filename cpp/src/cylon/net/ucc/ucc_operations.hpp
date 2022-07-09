@@ -29,7 +29,6 @@ class UccTableAllgatherImpl : public net::TableAllgatherImpl {
   ucc_context_h ucc_context_;
   std::vector<ucc_coll_req_h> requests_;
   std::vector<ucc_coll_args_t> args_;
-  std::vector<std::vector<uint32_t>> counts_;
   int world_size;
 };
 
@@ -57,8 +56,6 @@ class UccTableGatherImpl : public net::TableGatherImpl {
  private:
   std::vector<ucc_coll_req_h> requests_;
   std::vector<ucc_coll_args_t> args_;
-  std::vector<std::vector<uint32_t>> counts_;
-  std::vector<std::vector<uint32_t>> displacements_;
   ucc_team_h ucc_team_;
   ucc_context_h ucc_context_;
   int world_size;
@@ -116,7 +113,6 @@ private:
  ucc_context_h ucc_context_;
  std::vector<ucc_coll_req_h> requests_;
  std::vector<ucc_coll_args_t> args_;
- std::vector<std::vector<uint32_t>> counts_;
  int world_size;
 };
 

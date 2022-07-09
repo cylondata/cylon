@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     config = std::make_shared<cylon::net::UCXConfig>();
 #else
     LOG(ERROR)
-        << "ucx passed for tests, but tests are not built with gloo";
+        << "ucx passed for tests, but tests are not built with ucx";
     return 1;
 #endif
   } else {
