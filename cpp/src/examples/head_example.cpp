@@ -38,7 +38,11 @@ int main(int argc, char *argv[]) {
 
   auto start_start = std::chrono::steady_clock::now();
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
 
   std::shared_ptr<cylon::Table> in_table, head_table;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
@@ -86,7 +90,7 @@ int main(int argc, char *argv[]) {
   if (ops) {
     status = cylon::Head(in_table, num_rows, head_table);
   } else {
-    status = cylon::Head(in_table, num_rows, head_table); //Todos: Need to figure it out for distributed head
+    status = cylon::Distributed_Head(in_table, num_rows, head_table);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Head is failed ";
@@ -101,7 +105,7 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> sliced_column_names = head_table->ColumnNames();
 
   head_table->Print();
-
+  sleep(1);
   ctx->Finalize();
   return 0;
 }

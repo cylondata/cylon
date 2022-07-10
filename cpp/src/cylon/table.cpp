@@ -1472,8 +1472,11 @@ Status Equals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylo
 static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &a,
                                            const std::shared_ptr<cylon::Table> &b,
                                            std::shared_ptr<cylon::Table> *b_out) {
+  LOG(INFO) << "I am at the RepartitionToMatchOtherTable";
   int64_t num_row = a->Rows();
 
+  LOG(INFO) << "Table-A size: " << num_row;
+  LOG(INFO) << "Table-B size: " << b->Rows();
   if (num_row == 0) {
     *b_out = a;
     return Status::OK();
@@ -1483,8 +1486,11 @@ static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &
 
   std::vector<int64_t> rows_per_partition;
   std::shared_ptr<cylon::Column> output;
+
+  LOG(INFO) << "Execute before allgather api in RepartitionToMatchOtherTable";
   RETURN_CYLON_STATUS_IF_FAILED(
       a->GetContext()->GetCommunicator()->Allgather(num_row_scalar, &output));
+  LOG(INFO) << "Execute after allgather api in RepartitionToMatchOtherTable";
   auto *data_ptr =
       std::static_pointer_cast<arrow::Int64Array>(output->data())->raw_values();
 
@@ -1500,6 +1506,8 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a,
                          bool ordered) {
   bool subResult;
   RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(a->get_table(), b->get_table()));
+
+  LOG(INFO) << "I am at the DistributedEquals";
 
   if (!ordered) {
     int col = a->Columns();
@@ -1556,6 +1564,7 @@ Status Repartition(const std::shared_ptr<cylon::Table> &table,
 
   auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
 
+  
   RETURN_CYLON_STATUS_IF_FAILED(
       table->GetContext()->GetCommunicator()->Allgather(num_row_scalar,
                                                         &sizes_cols));
@@ -1771,62 +1780,11 @@ Status WriteParquet(const std::shared_ptr<cylon::CylonContext> &ctx_,
 
 Status Local_Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
               std::shared_ptr<cylon::Table> &out) {
-#ifdef CYLON_DEBUG
-  auto p1 = std::chrono::high_resolution_clock::now();
-#endif
   const auto &ctx = in->GetContext();
-  auto pool = cylon::ToArrowPool(ctx);
   std::shared_ptr<arrow::Table> out_table, in_table = in->get_table();
-  std::vector<int> cols = {0};
-  Unique(in, cols, out, true);
-
 
   if (!in->Empty()) {
-    if (in_table->column(0)->num_chunks() > 1) {
-      CYLON_ASSIGN_OR_RAISE(in_table, in_table->CombineChunks(pool))
-    }
-
-    std::unique_ptr<TableRowIndexEqualTo> row_comp;
-    RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexEqualTo::Make(in_table, cols, &row_comp));
-
-    std::unique_ptr<TableRowIndexHash> row_hash;
-    RETURN_CYLON_STATUS_IF_FAILED(TableRowIndexHash::Make(in_table, cols, &row_hash));
-
-    const int64_t num_rows = length;
-    ska::bytell_hash_set<int64_t, TableRowIndexHash, TableRowIndexEqualTo>
-        rows_set(num_rows, *row_hash, *row_comp);
-
-    arrow::Int64Builder filter(pool);
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(num_rows));
-#ifdef CYLON_DEBUG
-    auto p2 = std::chrono::high_resolution_clock::now();
-#endif
-    for (int64_t row = offset; row < offset + num_rows; ++row) {
-      const auto &res = rows_set.insert(row);
-      if (res.second) {
-        filter.UnsafeAppend(row);
-      }
-    }
-#ifdef CYLON_DEBUG
-    auto p3 = std::chrono::high_resolution_clock::now();
-#endif
-    rows_set.clear();
-#ifdef CYLON_DEBUG
-    auto p4 = std::chrono::high_resolution_clock::now();
-#endif
-    CYLON_ASSIGN_OR_RAISE(auto take_arr, filter.Finish());
-    CYLON_ASSIGN_OR_RAISE(auto take_res, arrow::compute::Take(in_table, take_arr))
-    out_table = take_res.table();
-
-#ifdef CYLON_DEBUG
-    auto p5 = std::chrono::high_resolution_clock::now();
-    LOG(INFO) << "P1 " << std::chrono::duration_cast<std::chrono::milliseconds>(p2 - p1).count()
-              << " P2 " << std::chrono::duration_cast<std::chrono::milliseconds>(p3 - p2).count()
-              << " P3 " << std::chrono::duration_cast<std::chrono::milliseconds>(p4 - p3).count()
-              << " P4 " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p4).count()
-              << " tot " << std::chrono::duration_cast<std::chrono::milliseconds>(p5 - p1).count()
-              << " tot " << rows_set.load_factor() << " " << rows_set.bucket_count();
-#endif
+    out_table = in_table->Slice(offset, length);
   } else {
     out_table = in_table;
   }
@@ -1841,21 +1799,85 @@ Status Local_Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t len
  */
 
 
-Status Distributed_Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
-              std::shared_ptr<cylon::Table> &out) {
+Status Distributed_Slice(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length,
+              std::shared_ptr<cylon::Table> &out, int order) {
 
   const auto &ctx = in->GetContext();
   std::shared_ptr<arrow::Table> out_table, in_table = in->get_table();
+  auto num_row = in->Rows();
 
   if (!in->Empty()) {
+  
+    std::vector<int64_t> sizes;
+    std::shared_ptr<cylon::Column> sizes_cols;
+    RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(sizes, sizes_cols));
 
-  auto sliced = in_table->columns();
-  int64_t num_rows = length;
-  for (auto& column : sliced) {
-    column = column->Slice(offset, length);
-    num_rows = column->length();
-  }
-  out_table = arrow::Table::Make(in_table->schema(), std::move(sliced), num_rows);
+    auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
+    
+
+    RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->Allgather(num_row_scalar, &sizes_cols));
+
+    auto *data_ptr =
+      std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
+          ->raw_values();
+
+    int total_partition = sizes_cols->length();
+    LOG(INFO) << "Total Length: " << total_partition;
+    sizes.resize(sizes_cols->length());
+    std::copy(data_ptr, data_ptr + sizes_cols->length(), sizes.data());
+    
+
+    int current_partition = ctx->GetRank();
+    LOG(INFO) << "Current Partion: " << current_partition << " and Size: " << sizes[current_partition];
+
+    std::vector<int64_t> offset_vec;
+    std::vector<int64_t> length_vec;
+
+    if(!order) {
+      LOG(INFO) << "from 0 to size";
+      for(int i = 0; i < total_partition; i++) {
+        if(offset + length > sizes[i]) {
+          if(sizes[i] - offset <= 0)
+          {
+            offset_vec.push_back(sizes[i]);
+            length_vec.push_back(0);
+            offset = 0;
+          }
+          else {
+            offset_vec.push_back(offset);
+            length_vec.push_back(sizes[i] - offset);
+
+            length = length - sizes[i] + offset;
+            offset = 0;
+          }
+        }
+        else {
+          offset_vec.push_back(offset);
+          length_vec.push_back(length);
+          length = 0;
+          offset = 0;
+        }
+      }
+    }
+    else {
+      LOG(INFO) << "from size to 0";
+      for(int i = 0; i < total_partition; i++){
+        if(length > sizes[i]) {
+          offset_vec.push_back(0);
+          length_vec.push_back(sizes[i]);
+
+          length = length - sizes[i];
+        }
+        else {
+          offset_vec.push_back(sizes[i] - length);
+          length_vec.push_back(length);
+          length = 0;
+        }
+      }  
+    }
+   
+    out_table = in_table->Slice(offset_vec[current_partition], length_vec[current_partition]);
+
   } else {
     out_table = in_table;
   }
@@ -1877,7 +1899,21 @@ Status Head(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_p
   const int64_t table_size = in_table->num_rows();
 
   if(num_rows > 0 && table_size > 0) {
-    return Distributed_Slice(table, 0, num_rows, output);
+    return Local_Slice(table, 0, num_rows, output);
+  }
+  else
+    LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");
+
+}
+
+Status Distributed_Head(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
+
+  std::shared_ptr<arrow::Table>  in_table = table->get_table();
+  const int64_t table_size = in_table->num_rows();
+  int order = 0;
+
+  if(num_rows > 0 && table_size > 0) {
+    return Distributed_Slice(table, 0, num_rows, output, order);
   }
   else
     LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");
@@ -1898,7 +1934,22 @@ Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_p
   LOG(INFO) << "Input Table size " << table_size;
 
   if(num_rows > 0 && table_size > 0) {
-    return Distributed_Slice(table, table_size-num_rows, num_rows, output);
+    return Local_Slice(table, table_size-num_rows, num_rows, output);
+  }
+  else
+    LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");
+
+}
+
+Status Distributed_Tail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
+
+  std::shared_ptr<arrow::Table>  in_table = table->get_table();
+  const int64_t table_size = in_table->num_rows();
+  int order = 1;
+  LOG(INFO) << "Input Table size " << table_size;
+
+  if(num_rows > 0 && table_size > 0) {
+    return Distributed_Slice(table, table_size-num_rows, num_rows, output, order);
   }
   else
     LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");

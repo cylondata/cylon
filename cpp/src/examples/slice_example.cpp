@@ -35,10 +35,16 @@ int main(int argc, char *argv[]) {
                << "./slice_example m [n | o] num_tuples_per_worker 0.0-1.0 offset length" << std::endl;
     return 1;
   }
-
+  LOG(INFO) << "Starting main() function";
   auto start_start = std::chrono::steady_clock::now();
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
+
 
   std::shared_ptr<cylon::Table> in_table, joined, sliced;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
@@ -61,8 +67,9 @@ int main(int argc, char *argv[]) {
     cylon::examples::create_in_memory_tables(count, dup,ctx,in_table);
     offset = std::stoull(argv[5]);
     length = std::stoull(argv[6]);
+    LOG(INFO) << "Load From in-memory size: " << std::string(argv[3]);
   } else if (mem == "f") {
-    LOG(INFO) << "Load From the CSV file" << std::string(argv[3]);
+    LOG(INFO) << "Load From the CSV file: " << std::string(argv[3]);
     cylon::FromCSV(ctx, std::string(argv[3]) , in_table);
 
     //cylon::FromCSV(ctx, std::string(argv[3]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
@@ -87,11 +94,11 @@ int main(int argc, char *argv[]) {
   cylon::Status status;
 
   // Arup: Code block for slice operation
-
+  int order = 0;
   if (ops) {
     status = cylon::Local_Slice(in_table, offset, length, sliced);
   } else {
-    status = cylon::Distributed_Slice(in_table, offset, length, sliced);
+    status = cylon::Distributed_Slice(in_table, offset, length, sliced, order);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Slice is failed ";
@@ -106,7 +113,7 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> sliced_column_names = sliced->ColumnNames();
 
   sliced->Print();
-
+  sleep(1);
   ctx->Finalize();
   return 0;
 }
