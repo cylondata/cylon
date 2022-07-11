@@ -208,16 +208,21 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
 }
 
 void UCXCommunicator::Finalize() {
-  ucp_cleanup(ucpContext);
-  ucc_status_t status;
-  while (UCC_INPROGRESS == (status = ucc_team_destroy(uccTeam))) {
-    if (UCC_OK != status) {
-      LOG(ERROR) << "ucc_team_destroy failed";
-      break;
+  // finalize only if we initialized MPI
+  int finalized;
+  MPI_Finalized(&finalized);
+  if (!finalized) {
+    ucp_cleanup(ucpContext);
+    ucc_status_t status;
+    while (UCC_INPROGRESS == (status = ucc_team_destroy(uccTeam))) {
+      if (UCC_OK != status) {
+        LOG(ERROR) << "ucc_team_destroy failed";
+        break;
+      }
     }
+    ucc_context_destroy(uccContext);
+    MPI_Finalize();
   }
-  ucc_context_destroy(uccContext);
-  MPI_Finalize();
 }
 
 void UCXCommunicator::Barrier() {
