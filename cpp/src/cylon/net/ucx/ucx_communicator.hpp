@@ -20,7 +20,10 @@
 #include <cylon/net/ucx/ucx_operations.hpp>
 
 #include <ucp/api/ucp.h>
+
+#ifdef BUILD_CYLON_UCC
 #include <ucc/api/ucc.h>
+#endif
 
 namespace cylon {
 namespace net {
@@ -75,11 +78,45 @@ class UCXCommunicator : public Communicator {
   std::unordered_map<int, ucp_ep_h> endPointMap;
   // UCP Context - Holds a UCP communication instance's global information.
   ucp_context_h ucpContext{};
+};
+
+#ifdef BUILD_CYLON_UCC
+class UCXUCCCommunicator: public Communicator{
+ public:
+  explicit UCXUCCCommunicator(std::shared_ptr<Communicator> ucx_comm);
+
+  static Status Make(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
+                     std::shared_ptr<Communicator> *out);
+
+  CommType GetCommType() const override;
+  std::unique_ptr<Channel> CreateChannel() const override;
+  void Finalize() override;
+  void Barrier() override;
+  Status AllGather(const std::shared_ptr<Table> &table,
+                   std::vector<std::shared_ptr<Table>> *out) const override;
+  Status Gather(const std::shared_ptr<Table> &table,
+                int gather_root,
+                bool gather_from_root,
+                std::vector<std::shared_ptr<Table>> *out) const override;
+  Status Bcast(std::shared_ptr<Table> *table,
+               int bcast_root,
+               const std::shared_ptr<CylonContext> &ctx) const override;
+  Status AllReduce(const std::shared_ptr<Column> &values,
+                   net::ReduceOp reduce_op,
+                   std::shared_ptr<Column> *output) const override;
+  Status Allgather(const std::shared_ptr<Column> &values,
+                   std::vector<std::shared_ptr<Column>> *output) const override;
+  Status AllReduce(const std::shared_ptr<Scalar> &value,
+                   net::ReduceOp reduce_op,
+                   std::shared_ptr<Scalar> *output) const override;
+  Status Allgather(const std::shared_ptr<Scalar> &value,
+                   std::shared_ptr<Column> *output) const override;
 
   ucc_team_h uccTeam{};
   ucc_context_h uccContext{};
+  std::shared_ptr<Communicator> ucx_comm_;
 };
-
+#endif
 }
 }
 #endif //CYLON_SRC_CYLON_COMM_UCXCOMMUNICATOR_H_

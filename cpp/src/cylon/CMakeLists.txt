@@ -125,6 +125,7 @@ add_library(cylon SHARED
         net/channel.hpp
         net/comm_operations.hpp
         net/comm_type.hpp
+        net/communicator.cpp
         net/communicator.hpp
         net/mpi/mpi_channel.cpp
         net/mpi/mpi_channel.hpp

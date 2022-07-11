@@ -35,12 +35,13 @@ class Communicator {
 
   virtual ~Communicator() = default;
 
-//  virtual Status Init(const std::shared_ptr<CommConfig> &config) = 0;
+  virtual int GetRank() const;
+  virtual int GetWorldSize() const;
+  virtual MemoryPool* GetMemoryPool() const;
+
+  virtual CommType GetCommType() const = 0;
 
   virtual std::unique_ptr<Channel> CreateChannel() const = 0;
-  virtual int GetRank() const = 0;
-  virtual int GetWorldSize() const = 0;
-  virtual CommType GetCommType() const = 0;
 
   virtual void Finalize() = 0;
 
@@ -103,7 +104,6 @@ class Communicator {
   int rank = -1;
   int world_size = -1;
   MemoryPool *pool;
-  // keeping a ptr to the CylonContext shared_ptr
 };
 }
 }

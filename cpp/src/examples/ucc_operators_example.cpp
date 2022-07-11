@@ -18,17 +18,15 @@
  *  mpirun -n 4 bin/ucc_example
  */
 
-#include <mpi.h>
+#include <iostream>
+
 #include <ucc/api/ucc.h>
 
-#include <cstdio>
-#include <cstdlib>
 #include <cylon/ctx/cylon_context.hpp>
 #include <cylon/net/ucc/ucc_operations.hpp>
 #include <cylon/net/ucx/ucx_communicator.hpp>
 #include <cylon/table.hpp>
 #include <cylon/scalar.hpp>
-#include <iostream>
 
 auto read_options = cylon::io::config::CSVReadOptions()
                         .UseThreads(false)
