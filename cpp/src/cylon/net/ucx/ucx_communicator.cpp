@@ -19,7 +19,10 @@
 #include "cylon/net/ucx/ucx_communicator.hpp"
 #include "cylon/net/ucx/ucx_channel.hpp"
 #include "cylon/util/macros.hpp"
+
+#ifdef BUILD_CYLON_UCC
 #include "cylon/net/ucc/ucc_operations.hpp"
+#endif
 
 namespace cylon {
 namespace net {
@@ -194,7 +197,10 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
 }
 
 void UCXCommunicator::Finalize() {
-  ucp_cleanup(ucpContext);
+  if (!this->IsFinalized()) {
+    ucp_cleanup(ucpContext);
+    finalized = true;
+  }
 }
 
 void UCXCommunicator::Barrier() {
@@ -273,6 +279,7 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   ctx_params.oob.oob_ep = static_cast<uint32_t>(comm.GetRank());
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_config_read(lib, nullptr, &ctx_config));
+
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_create(lib, &ctx_params, ctx_config,
                                                        &comm.uccContext));
   ucc_context_config_release(ctx_config);
@@ -285,14 +292,14 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   team_params.oob.coll_info = (void *) MPI_COMM_WORLD;
   team_params.oob.n_oob_eps = static_cast<uint32_t>(comm.GetWorldSize());
   team_params.oob.oob_ep = static_cast<uint32_t>(comm.GetRank());
-
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_team_create_post(&comm.uccContext, 1, &team_params,
                                                          &comm.uccTeam));
   while (UCC_INPROGRESS == (status = ucc_team_create_test(comm.uccTeam))) {
-    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_progress(comm.uccContext));
+//    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_progress(comm.uccContext));
   }
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
+  LOG(INFO) << "YYYYY";
   return Status::OK();
 }
 
@@ -305,11 +312,9 @@ std::unique_ptr<Channel> UCXUCCCommunicator::CreateChannel() const {
 }
 
 void UCXUCCCommunicator::Finalize() {
-  int finalized;
-  MPI_Finalized(&finalized);
-  if (!finalized) {
+  if (!this->IsFinalized()) {
     ucc_status_t status;
-    while (UCC_INPROGRESS == (status = ucc_team_destroy(uccTeam))) {
+    while (uccTeam && (UCC_INPROGRESS == (status = ucc_team_destroy(uccTeam)))) {
       if (UCC_OK != status) {
         LOG(ERROR) << "ucc_team_destroy failed";
         break;
@@ -317,8 +322,9 @@ void UCXUCCCommunicator::Finalize() {
     }
     ucc_context_destroy(uccContext);
     MPI_Finalize();
+    ucx_comm_->Finalize();
+    finalized = true;
   }
-  ucx_comm_->Finalize();
 }
 
 void UCXUCCCommunicator::Barrier() {

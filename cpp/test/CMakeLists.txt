@@ -64,7 +64,7 @@ function(cylon_add_test TESTNAME)
 
   if (CYLON_UCX)
     target_link_libraries(${exec_name} ${UCX_LIBRARIES})
-    target_link_libraries(${exec_name} ${UCC_LIBRARIES})
+    target_link_directories(${exec_name} PUBLIC ${UCC_LIBRARIES})
   endif (CYLON_UCX)
 
 endfunction(cylon_add_test)
@@ -224,7 +224,7 @@ endif (CYLON_GLOO)
 
 #### ucc tests
 if (CYLON_UCX)
-cylon_run_test(aggregate_test 1 ucx)
-cylon_run_test(aggregate_test 2 ucx)
-cylon_run_test(aggregate_test 4 ucx)
+  cylon_run_test(aggregate_test 1 ucx)
+  cylon_run_test(aggregate_test 2 ucx)
+  cylon_run_test(aggregate_test 4 ucx)
 endif (CYLON_UCX)

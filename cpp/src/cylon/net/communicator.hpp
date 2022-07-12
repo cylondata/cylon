@@ -38,6 +38,7 @@ class Communicator {
   virtual int GetRank() const;
   virtual int GetWorldSize() const;
   virtual MemoryPool* GetMemoryPool() const;
+  bool IsFinalized() const;
 
   virtual CommType GetCommType() const = 0;
 
@@ -104,6 +105,7 @@ class Communicator {
   int rank = -1;
   int world_size = -1;
   MemoryPool *pool;
+  bool finalized = false;
 };
 }
 }
