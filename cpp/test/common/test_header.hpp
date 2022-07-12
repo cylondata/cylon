@@ -52,7 +52,8 @@ int main(int argc, char *argv[]) {
 
   std::string comm_args = "mpi";
 
-  auto cli = session.cli() | Catch::clara::Opt(comm_args, "mpi|gloo-mpi")["--comm"]("comm args");
+  auto
+      cli = session.cli() | Catch::clara::Opt(comm_args, "mpi|gloo-mpi|ucx")["--comm"]("comm args");
 
   // Now pass the new composite back to Catch2 so it uses that
   session.cli(cli);
@@ -82,8 +83,7 @@ int main(int argc, char *argv[]) {
     LOG(INFO) << "Using UCX/UCC";
     config = std::make_shared<cylon::net::UCXConfig>();
 #else
-    LOG(ERROR)
-        << "ucx passed for tests, but tests are not built with ucx";
+    LOG(ERROR) << "ucx passed for tests, but tests are not built with ucx";
     return 1;
 #endif
   } else {

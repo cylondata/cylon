@@ -27,6 +27,14 @@
 namespace cylon {
 namespace net {
 
+void mpi_check_and_finalize() {
+  int mpi_finalized;
+  MPI_Finalized(&mpi_finalized);
+  if (!mpi_finalized) {
+    MPI_Finalize();
+  }
+}
+
 CommType UCXConfig::Type() {
   return CommType::UCX;
 }
@@ -199,6 +207,7 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
 void UCXCommunicator::Finalize() {
   if (!this->IsFinalized()) {
     ucp_cleanup(ucpContext);
+    mpi_check_and_finalize();
     finalized = true;
   }
 }
@@ -321,7 +330,7 @@ void UCXUCCCommunicator::Finalize() {
       }
     }
     ucc_context_destroy(uccContext);
-    MPI_Finalize();
+    mpi_check_and_finalize();
     ucx_comm_->Finalize();
     finalized = true;
   }

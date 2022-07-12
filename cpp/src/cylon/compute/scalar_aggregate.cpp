@@ -267,12 +267,14 @@ struct VarianceKernelImpl : public ScalarAggregateKernel {
   arrow::MemoryPool *pool_ = nullptr;
 };
 
-bool is_all_valid(const std::shared_ptr<net::Communicator> &comm,
-                  const std::shared_ptr<arrow::Array> &values) {
+Status is_all_valid(const std::shared_ptr<net::Communicator> &comm,
+                    const std::shared_ptr<arrow::Array> &values,
+                    bool *res) {
   const auto &null_count = Scalar::Make(std::make_shared<arrow::Int64Scalar>(values->null_count()));
   std::shared_ptr<Scalar> out;
-  const auto &status = comm->AllReduce(null_count, net::SUM, &out);
-  return status.is_ok() && std::static_pointer_cast<arrow::Int64Scalar>(out->data())->value == 0;
+  RETURN_CYLON_STATUS_IF_FAILED(comm->AllReduce(null_count, net::SUM, &out));
+  *res = std::static_pointer_cast<arrow::Int64Scalar>(out->data())->value == 0;
+  return Status::OK();
 }
 
 Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
@@ -292,7 +294,9 @@ Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
   if (ctx->GetWorldSize() > 1) {
     const auto &comm = ctx->GetCommunicator();
 
-    if (!is_all_valid(comm, combined_results)) {
+    bool all_valid;
+    RETURN_CYLON_STATUS_IF_FAILED(is_all_valid(comm, combined_results, &all_valid));
+    if (!all_valid) {
       // combined_results array has nulls. So, return Null scalar
       *result = arrow::MakeNullScalar(values->type());
       return Status::OK();
@@ -422,7 +426,9 @@ Status ScalarAggregate(const std::shared_ptr<CylonContext> &ctx,
     // all reduce combined_results
     const auto &comm = ctx->GetCommunicator();
 
-    if (!is_all_valid(comm, combined_results)) {
+    bool all_valid;
+    RETURN_CYLON_STATUS_IF_FAILED(is_all_valid(comm, combined_results, &all_valid));
+    if (!all_valid) {
       // combined_results array has nulls. So, return Null scalar
       CYLON_ASSIGN_OR_RAISE(*result,
                             arrow::MakeArrayOfNull(promoted_type, table_->num_columns(), pool))

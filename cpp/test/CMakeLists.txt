@@ -224,7 +224,18 @@ endif (CYLON_GLOO)
 
 #### ucc tests
 if (CYLON_UCX)
-  cylon_run_test(aggregate_test 1 ucx)
-  cylon_run_test(aggregate_test 2 ucx)
-  cylon_run_test(aggregate_test 4 ucx)
+  # ucx only tests
+  cylon_run_test(join_test 1 ucx)
+  cylon_run_test(join_test 4 ucx)
+
+  cylon_run_test(parquet_join_test 1 ucx)
+  cylon_run_test(parquet_join_test 4 ucx)
+
+  if (CYLON_UCC)
+    # ucx + ucc tests
+    # TODO re-enable this once https://github.com/openucx/ucc/issues/567 is fixed
+    #    cylon_run_test(aggregate_test 1 ucx)
+    cylon_run_test(aggregate_test 2 ucx)
+    cylon_run_test(aggregate_test 4 ucx)
+  endif (CYLON_UCC)
 endif (CYLON_UCX)
