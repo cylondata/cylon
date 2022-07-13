@@ -59,7 +59,7 @@ endif (JNI_FOUND)
 
 message(STATUS "Inclduing ${CYLON_ARROW_DIR}/install/include/")
 include_directories("include"
-        "${JNI_INCLUDE_DIRS}" ${CYLON_INCLUDE} "${CYLON_ARROW_DIR}/install/include/")
+        "${JNI_INCLUDE_DIRS}" ${CYLON_INCLUDE} "${CYLON_ARROW_DIR}/install/include/" "${CYLON_ARROW_DIR}/include/")
 
 set(SOURCE_FILES
         src/Table.cpp

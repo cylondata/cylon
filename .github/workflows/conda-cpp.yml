@@ -65,3 +65,6 @@ jobs:
 
       - name: Run pytest
         run: python build.py -ipath="$HOME/cylon/install" --pytest
+
+      - name: Build Java
+        run: python build.py -ipath="$HOME/cylon/install" --java
