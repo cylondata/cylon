@@ -80,7 +80,7 @@ private:
 class UccTableBcastImpl: public net::TableBcastImpl {
 public:
   ~UccTableBcastImpl() override;
-  UccTableBcastImpl(ucc_team_h ucc_team, ucc_context_h ucc_context, int world_size);
+  UccTableBcastImpl(ucc_team_h ucc_team, ucc_context_h ucc_context);
   void Init(int32_t num_buffers) override;
   Status BcastBufferSizes(int32_t *buffer, int32_t count,
                                   int32_t bcast_root) const override;

@@ -342,7 +342,7 @@ Status UCXUCCCommunicator::Gather(const std::shared_ptr<Table> &table,
 Status UCXUCCCommunicator::Bcast(std::shared_ptr<Table> *table,
                                  int bcast_root,
                                  const std::shared_ptr<CylonContext> &ctx) const {
-  ucc::UccTableBcastImpl impl(uccTeam, uccContext, world_size);
+  ucc::UccTableBcastImpl impl(uccTeam, uccContext);
   // The ctx_ptr and the real context are not the same
   return impl.Execute(table, bcast_root, ctx);
 }

@@ -52,7 +52,10 @@ static ucc_status_t oob_allgather_test(void *req) {
   return completed ? UCC_OK : UCC_INPROGRESS;
 }
 
-static ucc_status_t oob_allgather_free(void *req) { return UCC_OK; }
+static ucc_status_t oob_allgather_free(void *req) {
+  (void) req;
+  return UCC_OK; 
+}
 
 /* Creates UCC team for a group of processes represented by MPI
    communicator. UCC API provides different ways to create a team,

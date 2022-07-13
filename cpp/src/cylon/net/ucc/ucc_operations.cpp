@@ -80,7 +80,7 @@ ucc_status_t WaitAllHelper(std::vector<ucc_coll_req_h>& reqs, ucc_context_h& ctx
   ucc_status_t status;
   while (!alldone) {
     alldone = true;
-    for (auto &r : reqs) {
+    for (size_t i = 0; i < reqs.size(); i++) {
       if (UCC_OK != (status = test(reqs))) {
         if (status < 0) {
           return status;
@@ -328,12 +328,11 @@ Status UccTableGatherImpl::WaitAll(int32_t num_buffers) {
 
 UccTableGatherImpl::~UccTableGatherImpl() {
   for (auto req : requests_) {
-    // ucc_collective_finalize(req);
+    ucc_collective_finalize(req);
   }
 }
 
-UccTableBcastImpl::UccTableBcastImpl(ucc_team_h ucc_team, ucc_context_h ucc_context,
-                  int ws): ucc_team_(ucc_team), ucc_context_(ucc_context) {};
+UccTableBcastImpl::UccTableBcastImpl(ucc_team_h ucc_team, ucc_context_h ucc_context): ucc_team_(ucc_team), ucc_context_(ucc_context) {};
 
 void UccTableBcastImpl::Init(int32_t num_buffers) {
   reqs.resize(num_buffers);
