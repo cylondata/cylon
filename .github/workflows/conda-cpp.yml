@@ -24,7 +24,7 @@ jobs:
           # 20.04 supports CUDA 11.0+
           - os: ubuntu-20.04
             gcc: 9
-            ucc: "v1.0.0"
+            ucc: "master"
 
     steps:
       - uses: actions/checkout@v2
