@@ -356,7 +356,7 @@ Status UCXUCCCommunicator::Gather(const std::shared_ptr<Table> &table,
 Status UCXUCCCommunicator::Bcast(std::shared_ptr<Table> *table,
                                  int bcast_root,
                                  const std::shared_ptr<CylonContext> &ctx) const {
-  ucc::UccTableBcastImpl impl(uccTeam, uccContext, world_size);
+  ucc::UccTableBcastImpl impl(uccTeam, uccContext);
   // The ctx_ptr and the real context are not the same
   return impl.Execute(table, bcast_root, ctx);
 }
@@ -364,14 +364,14 @@ Status UCXUCCCommunicator::Bcast(std::shared_ptr<Table> *table,
 Status UCXUCCCommunicator::AllReduce(const std::shared_ptr<Column> &column,
                                      net::ReduceOp reduce_op,
                                      std::shared_ptr<Column> *output) const {
-  ucc::UccAllReduceImpl impl(uccTeam, uccContext, world_size);
+  ucc::UccAllReduceImpl impl(uccTeam, uccContext);
   return impl.Execute(column, reduce_op, output);
 }
 
 Status UCXUCCCommunicator::AllReduce(const std::shared_ptr<Scalar> &values,
                                      net::ReduceOp reduce_op,
                                      std::shared_ptr<Scalar> *output) const {
-  ucc::UccAllReduceImpl impl(uccTeam, uccContext, world_size);
+  ucc::UccAllReduceImpl impl(uccTeam, uccContext);
   return impl.Execute(values, reduce_op, output);
 }
 
