@@ -121,7 +121,7 @@ BUILD_JAVA = args.java
 BUILD_DOCKER = args.docker
 
 BUILD_DIR = str(Path(args.bpath))
-INSTALL_DIR = str(Path(args.ipath)) or check_conda_prefix()
+INSTALL_DIR = str(Path(args.ipath or check_conda_prefix()))
 
 OS_NAME = platform.system()  # Linux, Darwin or Windows
 
