@@ -308,7 +308,6 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   }
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
-  LOG(INFO) << "YYYYY";
   return Status::OK();
 }
 
