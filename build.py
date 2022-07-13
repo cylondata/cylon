@@ -25,6 +25,25 @@ logging.basicConfig(format='[%(levelname)s] %(message)s')
 logger = logging.getLogger("cylon_build")
 logger.setLevel(logging.INFO)
 
+
+def check_status(status, task):
+    if status != 0:
+        logger.error(f'{task} failed with a non zero exit code ({status}). '
+                     f'Cylon build is terminating.')
+        sys.exit(1)
+    else:
+        logger.info(f'{task} completed successfully')
+
+
+def check_conda_prefix():
+    conda_prefix = os.getenv('CONDA_PREFIX')
+    if not conda_prefix:
+        logger.error("The build should be in a conda environment")
+        sys.exit(1)
+
+    return conda_prefix
+
+
 parser = argparse.ArgumentParser()
 
 # C++ Build
@@ -54,10 +73,15 @@ python_build.add_argument(
 python_build.add_argument(
     "--pytest", action='store_true', help='Run Python test suite')
 
+# Java build
+java_build = parser.add_argument_group("JCylon")
+java_build.add_argument("--java", action='store_true',
+                        help='Build JCylon')
+
 # Docker build
-java_build = parser.add_argument_group("Docker")
-java_build.add_argument("--docker", action='store_true',
-                        help='Build Cylon Docker images locally')
+docker_build = parser.add_argument_group("Docker")
+docker_build.add_argument("--docker", action='store_true',
+                          help='Build Cylon Docker images locally')
 
 # Paths
 parser.add_argument("-bpath", help='Build directory',
@@ -79,6 +103,7 @@ CPP_BUILD_MODE = "Release" if (args.release or (
         not args.release and not args.debug)) else "Debug"
 CPP_SOURCE_DIR = str(Path(args.root, 'cpp'))
 PYTHON_SOURCE_DIR = Path(args.root, 'python', 'pycylon')
+JAVA_SOURCE_DIR = Path(args.root, 'java')
 RUN_CPP_TESTS = args.test
 RUN_PYTHON_TESTS = args.pytest
 CMAKE_FLAGS = args.cmake_flags
@@ -89,11 +114,14 @@ CPPLINT_COMMAND = "\"-DCMAKE_CXX_CPPLINT=cpplint;--linelength=100;--headers=h," 
 # arrow build expects /s even on windows
 BUILD_PYTHON = args.python
 
+# java
+BUILD_JAVA = args.java
+
 # docker
 BUILD_DOCKER = args.docker
 
 BUILD_DIR = str(Path(args.bpath))
-INSTALL_DIR = str(Path(args.ipath)) if args.ipath else ""
+INSTALL_DIR = str(Path(args.ipath or check_conda_prefix()))
 
 OS_NAME = platform.system()  # Linux, Darwin or Windows
 
@@ -159,29 +187,9 @@ if not os.path.exists(BUILD_DIR):
     os.makedirs(BUILD_DIR)
 
 
-def check_status(status, task):
-    if status != 0:
-        logger.error(f'{task} failed with a non zero exit code ({status}). '
-                     f'Cylon build is terminating.')
-        sys.exit(1)
-    else:
-        logger.info(f'{task} completed successfully')
-
-
 def build_cpp():
     if not BUILD_CPP:
         return
-
-    CONDA_PREFIX = os.getenv('CONDA_PREFIX')
-    if args.ipath:
-        install_prefix = INSTALL_DIR
-    else:
-        if CONDA_PREFIX:
-            install_prefix = CONDA_PREFIX
-        else:
-            logger.error(
-                "install prefix can not be inferred. The build should be in a conda environment")
-            return
 
     win_cmake_args = "-A x64" if os.name == 'nt' else ""
     verb = '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON' if args.verbose else ''
@@ -191,7 +199,7 @@ def build_cpp():
                     f"-DCYLON_WITH_TEST={on_off(RUN_CPP_TESTS)} " \
                     f"-DARROW_BUILD_TYPE=SYSTEM " \
                     f"{CPPLINT_COMMAND} " \
-                    f"-DCMAKE_INSTALL_PREFIX={install_prefix} " \
+                    f"-DCMAKE_INSTALL_PREFIX={INSTALL_DIR} " \
                     f"{verb} {CMAKE_FLAGS} {CPP_SOURCE_DIR}"
 
     logger.info(f"Generate command: {cmake_command}")
@@ -203,7 +211,7 @@ def build_cpp():
     res = subprocess.call(cmake_build_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake build")
 
-    cmake_install_command = f'cmake --install . --prefix {install_prefix}'
+    cmake_install_command = f'cmake --install . --prefix {INSTALL_DIR}'
     logger.info(f"Install command: {cmake_install_command}")
     res = subprocess.call(cmake_install_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake install")
@@ -220,11 +228,16 @@ def build_cpp():
 def build_docker():
     if not BUILD_DOCKER:
         return
+    logger.error("Docker build not implemented in this script")
+    sys.exit(1)
 
 
 def python_test():
     if not RUN_PYTHON_TESTS:
         return
+
+    check_conda_prefix()
+
     env = os.environ
     if args.ipath:
         if OS_NAME == 'Linux':
@@ -264,10 +277,7 @@ def build_python():
     print_line()
     logger.info("Building Python")
 
-    conda_prefix = os.getenv('CONDA_PREFIX')
-    if not conda_prefix:
-        logger.error("The build should be in a conda environment")
-        return 1
+    conda_prefix = check_conda_prefix()
 
     python_build_command = f'{PYTHON_EXEC} setup.py install --force'
     env = os.environ
@@ -290,6 +300,19 @@ def build_python():
     check_status(res.returncode, "PyCylon build")
 
 
+def build_java():
+    if not BUILD_JAVA:
+        return
+
+    conda_prefix = check_conda_prefix()
+
+    mvn_cmd = f"mvn clean install -Dcylon.core.libs={INSTALL_DIR}/lib " \
+              f"-Dcylon.arrow.dir={conda_prefix}"
+    res = subprocess.run(mvn_cmd, shell=True, cwd=JAVA_SOURCE_DIR)
+    check_status(res.returncode, "JCylon build")
+
+
 build_cpp()
 build_python()
 python_test()
+build_java()
