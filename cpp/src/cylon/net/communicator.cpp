@@ -29,5 +29,9 @@ int Communicator::GetWorldSize() const {
   return this->world_size;
 }
 
+bool Communicator::IsFinalized() const {
+  return this->finalized;
+}
+
 }
 }
