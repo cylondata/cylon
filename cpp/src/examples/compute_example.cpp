@@ -44,12 +44,7 @@ int main() {
   int32_t agg_index = 1;
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  
-  std::shared_ptr<cylon::CylonContext> ctx;
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::shared_ptr<cylon::Table> table;
   std::shared_ptr<cylon::compute::Result> result;

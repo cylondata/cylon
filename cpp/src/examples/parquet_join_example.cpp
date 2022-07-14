@@ -27,11 +27,7 @@ int main(int argc, char *argv[]) {
 
   auto start_start = std::chrono::steady_clock::now();
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-    std::shared_ptr<cylon::CylonContext> ctx;
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::shared_ptr<cylon::Table> first_table, second_table, joined;
 

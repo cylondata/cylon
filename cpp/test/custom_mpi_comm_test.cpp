@@ -49,11 +49,7 @@ TEST_CASE("custom mpi communicator") {
     REQUIRE(MPI_Comm_split(MPI_COMM_WORLD, color, l_rank, &new_comm) == MPI_SUCCESS);
 
     auto mpi_config = cylon::net::MPIConfig::Make(new_comm);
-    std::shared_ptr<cylon::CylonContext> ctx;
-    if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-      std::cerr << "ctx init failed! " << std::endl;
-      return;
-    }
+    auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
     REQUIRE(l_rank == ctx->GetRank());
     if (color == 0) {
@@ -71,11 +67,7 @@ TEST_CASE("custom mpi communicator") {
     REQUIRE(MPI_Comm_split(MPI_COMM_WORLD, color, l_rank, &new_comm) == MPI_SUCCESS);
 
     mpi_config = cylon::net::MPIConfig::Make(new_comm);
-  
-    if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-      std::cerr << "ctx init failed! " << std::endl;
-      return;
-    }
+    ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
     REQUIRE(l_rank == ctx->GetRank());
     REQUIRE(ctx->GetWorldSize() == 2);

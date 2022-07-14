@@ -109,11 +109,9 @@ TEST_CASE("Distributed equal testing - reparition needed", "[distributed equal]"
         if(table1->GetContext()->GetWorldSize() != 2) return;
         bool result;
         CHECK_CYLON_STATUS(DistributedEquals(table1, table2, result));
-        printf("testing unordered equal\n");
         REQUIRE(result);
 
         CHECK_CYLON_STATUS(DistributedEquals(table2, table3, result));
-        printf("testing unordered equal\n");
         REQUIRE(!result);
     }
 
@@ -121,7 +119,6 @@ TEST_CASE("Distributed equal testing - reparition needed", "[distributed equal]"
         if(table1->GetContext()->GetWorldSize() != 2) return;
         bool result;
         CHECK_CYLON_STATUS(DistributedEquals(table1, table2, result, false));
-        printf("testing unordered equal\n");
         REQUIRE(result);
     }
 
@@ -129,7 +126,6 @@ TEST_CASE("Distributed equal testing - reparition needed", "[distributed equal]"
         if(table1->GetContext()->GetWorldSize() != 2) return;
         bool result;
         CHECK_CYLON_STATUS(DistributedEquals(table2, table3, result, false));
-        printf("testing unordered equal\n");
         REQUIRE(result);
     }
 }

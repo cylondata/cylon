@@ -32,7 +32,7 @@
   } while (0)
 
 int main(int argc, char *argv[]) {
-  if (argc < 5) {
+  if (argc < 6) {
     LOG(ERROR) << "./multi_idx_join_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
                << "./multi_idx_join_example m [n | o] num_tuples_per_worker 0.0-1.0" << std::endl
                << "./multi_idx_join_example f [n | o] csv_file1 csv_file2" << std::endl
@@ -42,11 +42,7 @@ int main(int argc, char *argv[]) {
 
   auto start_start = std::chrono::steady_clock::now();
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-    std::shared_ptr<cylon::CylonContext> ctx;
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::shared_ptr<cylon::Table> first_table, second_table, joined;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);

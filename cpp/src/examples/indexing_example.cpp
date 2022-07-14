@@ -285,12 +285,7 @@ int arrow_indexer_test_1() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -357,12 +352,7 @@ int arrow_indexer_str_test_1() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -422,12 +412,7 @@ int arrow_indexer_test_2() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -490,12 +475,7 @@ int arrow_indexer_str_test_2() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -558,12 +538,7 @@ int arrow_indexer_test_3() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -625,12 +600,7 @@ int arrow_indexer_str_test_3() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -692,12 +662,7 @@ int arrow_indexer_test_4() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -758,12 +723,7 @@ int arrow_indexer_str_test_4() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -824,12 +784,7 @@ int arrow_indexer_test_5() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -892,12 +847,7 @@ int arrow_indexer_str_test_5() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -960,12 +910,7 @@ int arrow_indexer_test_6() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -1027,12 +972,7 @@ int arrow_indexer_str_test_6() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -1099,12 +1039,7 @@ int arrow_iloc_indexer_test_1() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -1164,12 +1099,7 @@ int arrow_iloc_indexer_test_2() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -1232,12 +1162,7 @@ int arrow_iloc_indexer_test_3() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -1299,12 +1224,7 @@ int arrow_iloc_indexer_test_4() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -1365,12 +1285,7 @@ int arrow_iloc_indexer_test_5() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -1434,12 +1349,7 @@ int arrow_iloc_indexer_test_6() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -1516,12 +1426,7 @@ int arrow_filter_example() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 
@@ -1638,12 +1543,7 @@ int arrow_range_indexer_test() {
   separator(func_title);
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  std::shared_ptr<cylon::CylonContext> ctx;
-  
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   cylon::Status status;
 

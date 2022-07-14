@@ -31,11 +31,7 @@ int main(int argc, char *argv[]) {
   auto start_start = std::chrono::steady_clock::now();
   CYLON_UNUSED(start_start);
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-    std::shared_ptr<cylon::CylonContext> ctx;
-  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
-    std::cerr << "ctx init failed! " << std::endl;
-    return 1;
-  }
+  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
 
   std::shared_ptr<cylon::Table> first_table, output;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
