@@ -36,6 +36,8 @@
 #include <cylon/status.hpp>
 #include <cylon/util/uuid.hpp>
 
+#include "cylon/util/macros.hpp"
+
 namespace cylon {
 
 /**

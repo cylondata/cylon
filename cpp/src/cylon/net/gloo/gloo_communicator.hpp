@@ -85,8 +85,7 @@ class GlooConfig : public CommConfig {
 
 class GlooCommunicator : public Communicator {
  public:
-  explicit GlooCommunicator(const std::shared_ptr<CylonContext> *ctx_ptr);
-  Status Init(const std::shared_ptr<CommConfig> &config) override;
+  GlooCommunicator(MemoryPool *pool, std::shared_ptr<gloo::Context> gloo_ctx);
   std::unique_ptr<Channel> CreateChannel() const override;
   int GetRank() const override;
   int GetWorldSize() const override;
@@ -99,7 +98,9 @@ class GlooCommunicator : public Communicator {
                 int gather_root,
                 bool gather_from_root,
                 std::vector<std::shared_ptr<Table>> *out) const override;
-  Status Bcast(std::shared_ptr<Table> *table, int bcast_root) const override;
+  Status Bcast(std::shared_ptr<Table> *table,
+               int bcast_root,
+               const std::shared_ptr<CylonContext> &ctx) const override;
   Status AllReduce(const std::shared_ptr<Column> &values,
                    net::ReduceOp reduce_op,
                    std::shared_ptr<Column> *output) const override;
@@ -111,11 +112,11 @@ class GlooCommunicator : public Communicator {
   Status Allgather(const std::shared_ptr<Column> &values,
                    std::vector<std::shared_ptr<Column>> *output) const override;
 
+  static Status Make(const std::shared_ptr<CommConfig> &config,
+                     MemoryPool *pool, std::shared_ptr<Communicator> *out);
+
  private:
   std::shared_ptr<gloo::Context> gloo_ctx_ = nullptr;
-  std::shared_ptr<gloo::transport::Device> dev_ = nullptr;
-  std::shared_ptr<gloo::rendezvous::Store> store_ = nullptr;
-  std::shared_ptr<gloo::rendezvous::Store> prefix_store_ = nullptr;
 };
 
 }

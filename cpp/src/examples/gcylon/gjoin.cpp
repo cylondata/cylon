@@ -29,7 +29,11 @@ int main(int argc, char *argv[]) {
   const int64_t ROWS = 10;
 
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  if (!cylon::CylonContext::InitDistributed(mpi_config, &ctx).is_ok()) {
+    std::cerr << "ctx init failed! " << std::endl;
+    return 1;
+  }
   int my_rank = ctx->GetRank();
 
   LOG(INFO) << "my_rank: " << my_rank << ", world size: " << ctx->GetWorldSize();

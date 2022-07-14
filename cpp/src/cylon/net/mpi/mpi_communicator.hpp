@@ -41,9 +41,8 @@ class MPIConfig : public CommConfig {
 
 class MPICommunicator : public Communicator {
  public:
-  explicit MPICommunicator(const std::shared_ptr<CylonContext> *ctx_ptr);
+  MPICommunicator(MemoryPool *pool, int32_t rank, int32_t world_size, MPI_Comm mpi_comm, bool externally_init);
   ~MPICommunicator() override = default;
-  Status Init(const std::shared_ptr<CommConfig> &config) override;
   std::unique_ptr<Channel> CreateChannel() const override;
   int GetRank() const override;
   int GetWorldSize() const override;
@@ -57,7 +56,9 @@ class MPICommunicator : public Communicator {
   Status Gather(const std::shared_ptr<Table> &table, int gather_root,
                 bool gather_from_root, std::vector<std::shared_ptr<Table>> *out) const override;
 
-  Status Bcast(std::shared_ptr<Table> *table, int bcast_root) const override;
+  Status Bcast(std::shared_ptr<Table> *table,
+               int bcast_root,
+               const std::shared_ptr<CylonContext> &ctx) const override;
 
   Status AllReduce(const std::shared_ptr<Column> &values,
                    net::ReduceOp reduce_op,
@@ -73,9 +74,12 @@ class MPICommunicator : public Communicator {
 
   MPI_Comm mpi_comm() const;
 
+  static Status Make(const std::shared_ptr<CommConfig> &config,
+                     MemoryPool *pool, std::shared_ptr<Communicator> *out);
+
  private:
   MPI_Comm mpi_comm_ = MPI_COMM_NULL;
-  int mpi_initialized_externally = 0;
+  bool externally_init = false;
 };
 
 }

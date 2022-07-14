@@ -30,7 +30,9 @@
 namespace cylon {
 namespace net {
 
-Status GlooCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
+Status GlooCommunicator::Make(const std::shared_ptr<CommConfig> &config,
+                              MemoryPool *pool,
+                              std::shared_ptr<Communicator> *out) {
   const auto &gloo_config = std::static_pointer_cast<GlooConfig>(config);
 
   gloo::transport::tcp::attr attr;
@@ -39,43 +41,41 @@ Status GlooCommunicator::Init(const std::shared_ptr<CommConfig> &config) {
   attr.ai_family = gloo_config->tcp_ai_family_;
 
   // create device
-  dev_ = gloo::transport::tcp::CreateDevice(attr);
+  auto dev = gloo::transport::tcp::CreateDevice(attr);
 
+  std::shared_ptr<gloo::Context> gloo_ctx;
   if (gloo_config->use_mpi_) {
 #ifdef GLOO_USE_MPI
     int res;
     RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Initialized(&res));
     if (res) {
       if (gloo_config->mpi_comm_ == MPI_COMM_NULL) {
-        gloo_ctx_ = std::make_shared<gloo::mpi::Context>(MPI_COMM_WORLD);
+        gloo_ctx = std::make_shared<gloo::mpi::Context>(MPI_COMM_WORLD);
       } else {
-        gloo_ctx_ = std::make_shared<gloo::mpi::Context>(gloo_config->mpi_comm_);
+        gloo_ctx = std::make_shared<gloo::mpi::Context>(gloo_config->mpi_comm_);
       }
     } else { // MPI is not initialized. Ask gloo to initialize MPI
-      gloo_ctx_ = gloo::mpi::Context::createManaged();
+      gloo_ctx = gloo::mpi::Context::createManaged();
     }
-    ((gloo::mpi::Context &) *gloo_ctx_).connectFullMesh(dev_);
-
-    // update rank and world size
-    rank = gloo_ctx_->rank;
-    world_size = gloo_ctx_->size;
+    ((gloo::mpi::Context &) *gloo_ctx).connectFullMesh(dev);
 #else
     return {Code::Invalid, "Gloo does not contain mpi headers!"};
 #endif // GLOO_USE_MPI
   } else {
-    rank = gloo_config->rank_;
-    world_size = gloo_config->world_size_;
-
     // store and prefix store
-    store_ = std::make_shared<gloo::rendezvous::FileStore>(gloo_config->file_store_path_);
-    prefix_store_ = std::make_shared<gloo::rendezvous::PrefixStore>(gloo_config->store_prefix_,
-                                                                    *store_);
+    auto store = std::make_shared<gloo::rendezvous::FileStore>(gloo_config->file_store_path_);
+    auto prefix_store = std::make_shared<gloo::rendezvous::PrefixStore>(gloo_config->store_prefix_,
+                                                                        *store);
 
-    gloo_ctx_ = std::make_shared<gloo::rendezvous::Context>(rank, world_size);
-    ((gloo::rendezvous::Context &) *gloo_ctx_).connectFullMesh(*prefix_store_, dev_);
+    gloo_ctx = std::make_shared<gloo::rendezvous::Context>(gloo_config->rank_,
+                                                           gloo_config->world_size_);
+    ((gloo::rendezvous::Context &) *gloo_ctx).connectFullMesh(*prefix_store, dev);
+
   }
+  *out = std::make_shared<GlooCommunicator>(pool, std::move(gloo_ctx));
   return Status::OK();
 }
+
 std::unique_ptr<Channel> GlooCommunicator::CreateChannel() const {
   return std::make_unique<GlooChannel>(gloo_ctx_.get());
 }
@@ -113,37 +113,40 @@ Status GlooCommunicator::Gather(const std::shared_ptr<Table> &table,
   return impl.Execute(table, gather_root, gather_from_root, out);
 }
 
-Status GlooCommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) const {
+Status GlooCommunicator::Bcast(std::shared_ptr<Table> *table,
+                               int bcast_root,
+                               const std::shared_ptr<CylonContext> &ctx) const {
   GlooTableBcastImpl impl(&gloo_ctx_);
-  return impl.Execute(table, bcast_root, *ctx_ptr);
+  return impl.Execute(table, bcast_root, ctx);
 }
 
 Status GlooCommunicator::AllReduce(const std::shared_ptr<Column> &values,
                                    net::ReduceOp reduce_op,
                                    std::shared_ptr<Column> *output) const {
   GlooAllReduceImpl impl(&gloo_ctx_);
-  return impl.Execute(values, reduce_op, output, (*ctx_ptr)->GetMemoryPool());
+  return impl.Execute(values, reduce_op, output, pool);
 }
 
 Status GlooCommunicator::AllReduce(const std::shared_ptr<Scalar> &value,
                                    net::ReduceOp reduce_op,
                                    std::shared_ptr<Scalar> *output) const {
   GlooAllReduceImpl impl(&gloo_ctx_);
-  return impl.Execute(value, reduce_op, output, (*ctx_ptr)->GetMemoryPool());
+  return impl.Execute(value, reduce_op, output, pool);
 }
 
-GlooCommunicator::GlooCommunicator(const std::shared_ptr<CylonContext> *ctx_ptr)
-    : Communicator(ctx_ptr) {}
+GlooCommunicator::GlooCommunicator(MemoryPool *pool,
+                                   std::shared_ptr<gloo::Context> gloo_ctx)
+    : Communicator(pool, gloo_ctx->rank, gloo_ctx->size), gloo_ctx_(std::move(gloo_ctx)) {}
 
 Status GlooCommunicator::Allgather(const std::shared_ptr<Column> &values,
                                    std::vector<std::shared_ptr<Column>> *output) const {
   GlooAllgatherImpl impl(&gloo_ctx_);
-  return impl.Execute(values, gloo_ctx_->size, output, (*ctx_ptr)->GetMemoryPool());
+  return impl.Execute(values, gloo_ctx_->size, output, pool);
 }
 Status GlooCommunicator::Allgather(const std::shared_ptr<Scalar> &value,
                                    std::shared_ptr<Column> *output) const {
   GlooAllgatherImpl impl(&gloo_ctx_);
-  return impl.Execute(value, gloo_ctx_->size, output, (*ctx_ptr)->GetMemoryPool());
+  return impl.Execute(value, gloo_ctx_->size, output, pool);
 }
 
 CommType GlooConfig::Type() { return GLOO; }
