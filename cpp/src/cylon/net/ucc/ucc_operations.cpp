@@ -1,5 +1,19 @@
-#include <cylon/net/ucc/ucc_operations.hpp>
-#include <cylon/util/macros.hpp>
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "cylon/net/ucc/ucc_operations.hpp"
+#include "cylon/util/macros.hpp"
 
 namespace cylon {
 namespace ucc {
@@ -18,7 +32,7 @@ Status UccTableAllgatherImpl::AllgatherBufferSizes(const int32_t *send_data,
   args.src.info.datatype = UCC_DT_INT32;
   args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
   args.dst.info.buffer = rcv_data;
-  args.dst.info.count = static_cast<uint64_t>(num_buffers * world_size);
+  args.dst.info.count = num_buffers * world_size;
   args.dst.info.datatype = UCC_DT_INT32;
   args.dst.info.mem_type = UCC_MEMORY_TYPE_HOST;
 
@@ -64,39 +78,36 @@ Status UccTableAllgatherImpl::IallgatherBufferData(
   return Status::OK();
 }
 
-ucc_status_t test(std::vector<ucc_coll_req_h>& reqs) {
-  ucc_status_t status = UCC_OK;
-  for (auto r : reqs) {
-    status = ucc_collective_test(r);
-    if (UCC_OK != status && UCC_OPERATION_INITIALIZED != status) {
-      break;
-    }
-  }
-  return status;
-}
-
-ucc_status_t WaitAllHelper(std::vector<ucc_coll_req_h>& reqs, ucc_context_h& ctx) {
+Status WaitAllHelper(std::vector<ucc_coll_req_h> &reqs, ucc_context_h &ctx) {
   bool alldone = false;
   ucc_status_t status;
   while (!alldone) {
     alldone = true;
-    for (size_t i = 0; i < reqs.size(); i++) {
-      if (UCC_OK != (status = test(reqs))) {
-        if (status < 0) {
-          return status;
-        }
-        alldone = false;
-        ucc_context_progress(ctx);
+    for (auto &r: reqs) {
+      // at every iteration progress the ctx
+      ucc_context_progress(ctx);
+
+      status = ucc_collective_test(r);
+      // if an error occurs or the operation is not posted yet, return an error
+      if (status < 0 || UCC_OPERATION_INITIALIZED == status) {
+        return {Code::ExecutionError, "UCC Failed: " + std::string(ucc_status_string(status))};
       }
+
+      // now status can be OK or IN PROGRESS
+      alldone &= (UCC_INPROGRESS != status);
     }
   }
-  return UCC_OK;
+
+  // all done, finalize requests now
+  for (auto &r: reqs) {
+    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_finalize(r));
+  }
+  return Status::OK();
 }
 
 Status UccTableAllgatherImpl::WaitAll(int num_buffers) {
   CYLON_UNUSED(num_buffers);
-  RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
-  return Status::OK();
+  return WaitAllHelper(requests_, ucc_context_);
 }
 
 UccTableAllgatherImpl::UccTableAllgatherImpl(ucc_team_h ucc_team,
@@ -112,12 +123,6 @@ UccTableAllgatherImpl::UccTableAllgatherImpl(ucc_team_h ucc_team,
 void UccTableAllgatherImpl::Init(int num_buffers) {
   requests_.resize(num_buffers);
   args_.resize(num_buffers);
-}
-
-UccTableAllgatherImpl::~UccTableAllgatherImpl() {
-  for (auto req: requests_) {
-    ucc_collective_finalize(req);
-  }
 }
 
 ucc_datatype_t GetUccDataType(const std::shared_ptr<DataType> &data_type) {
@@ -158,7 +163,6 @@ ucc_datatype_t GetUccDataType(const std::shared_ptr<DataType> &data_type) {
     case Type::DATE32:
       return UCC_DT_UINT32;
     case Type::DATE64:
-      return UCC_DT_UINT64;
     case Type::TIMESTAMP:
       return UCC_DT_UINT64;
     case Type::TIME32:
@@ -171,7 +175,6 @@ ucc_datatype_t GetUccDataType(const std::shared_ptr<DataType> &data_type) {
     case Type::LIST:
     case Type::FIXED_SIZE_LIST:
     case Type::EXTENSION:
-      break;
     case Type::MAX_ID:
       break;
   }
@@ -201,9 +204,8 @@ ucc_reduction_op_t GetUccOp(cylon::net::ReduceOp reduce_op) {
   }
 }
 
-UccAllReduceImpl::UccAllReduceImpl(ucc_team_h ucc_team,
-                                   ucc_context_h ucc_context, int ws)
-    : ucc_team_(ucc_team), ucc_context_(ucc_context), world_size(ws) {}
+UccAllReduceImpl::UccAllReduceImpl(ucc_team_h ucc_team, ucc_context_h ucc_context)
+    : ucc_team_(ucc_team), ucc_context_(ucc_context) {}
 
 Status UccAllReduceImpl::AllReduceBuffer(const void *send_buf, void *rcv_buf,
                                   int count,
@@ -267,7 +269,7 @@ Status UccTableGatherImpl::GatherBufferSizes(const int32_t *send_data, int32_t n
 
   if(rank == gather_root) {
     args.dst.info.buffer = rcv_data;
-    args.dst.info.count = static_cast<uint64_t>(num_buffers * world_size);
+    args.dst.info.count = num_buffers * world_size;
     args.dst.info.datatype = UCC_DT_INT32;
     args.dst.info.mem_type = UCC_MEMORY_TYPE_HOST;
   }
@@ -322,17 +324,11 @@ Status UccTableGatherImpl::IgatherBufferData(
 
 Status UccTableGatherImpl::WaitAll(int32_t num_buffers) {
   CYLON_UNUSED(num_buffers);
-  RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
-  return Status::OK();
+  return WaitAllHelper(requests_, ucc_context_);
 }
 
-UccTableGatherImpl::~UccTableGatherImpl() {
-  for (auto req : requests_) {
-    ucc_collective_finalize(req);
-  }
-}
-
-UccTableBcastImpl::UccTableBcastImpl(ucc_team_h ucc_team, ucc_context_h ucc_context): ucc_team_(ucc_team), ucc_context_(ucc_context) {};
+UccTableBcastImpl::UccTableBcastImpl(ucc_team_h ucc_team, ucc_context_h ucc_context)
+    : ucc_team_(ucc_team), ucc_context_(ucc_context) {}
 
 void UccTableBcastImpl::Init(int32_t num_buffers) {
   reqs.resize(num_buffers);
@@ -341,20 +337,20 @@ void UccTableBcastImpl::Init(int32_t num_buffers) {
 
 Status UccTableBcastImpl::BcastBufferSizes(int32_t *buffer, int32_t count,
                                            int32_t bcast_root) const {
-  ucc_coll_args_t args;
+  ucc_coll_args_t args_;
   ucc_coll_req_h req;
 
-  args.mask = 0;
-  args.coll_type = UCC_COLL_TYPE_BCAST;
-  args.root = bcast_root;
+  args_.mask = 0;
+  args_.coll_type = UCC_COLL_TYPE_BCAST;
+  args_.root = bcast_root;
 
-  args.src.info.buffer = buffer;
-  args.src.info.count = count;
-  args.src.info.datatype = UCC_DT_INT32;
-  args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
+  args_.src.info.buffer = buffer;
+  args_.src.info.count = count;
+  args_.src.info.datatype = UCC_DT_INT32;
+  args_.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(
-      ucc_collective_init(&args, &req, ucc_team_));
+      ucc_collective_init(&args_, &req, ucc_team_));
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_post(req));
 
@@ -372,20 +368,20 @@ Status UccTableBcastImpl::BcastBufferSizes(int32_t *buffer, int32_t count,
 
 Status UccTableBcastImpl::BcastBufferData(uint8_t *buf_data, int32_t send_count,
                                         int32_t bcast_root) const {
-  ucc_coll_args_t args;
+  ucc_coll_args_t args_;
   ucc_coll_req_h req;
 
-  args.mask = 0;
-  args.coll_type = UCC_COLL_TYPE_BCAST;
-  args.root = bcast_root;
+  args_.mask = 0;
+  args_.coll_type = UCC_COLL_TYPE_BCAST;
+  args_.root = bcast_root;
 
-  args.src.info.buffer = buf_data;
-  args.src.info.count = send_count;
-  args.src.info.datatype = UCC_DT_UINT8;
-  args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
+  args_.src.info.buffer = buf_data;
+  args_.src.info.count = send_count;
+  args_.src.info.datatype = UCC_DT_UINT8;
+  args_.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(
-      ucc_collective_init(&args, &req, ucc_team_));
+      ucc_collective_init(&args_, &req, ucc_team_));
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_collective_post(req));
 
@@ -426,14 +422,7 @@ Status UccTableBcastImpl::IbcastBufferData(int32_t buf_idx, uint8_t *buf_data,
 
 Status UccTableBcastImpl::WaitAll(int32_t num_buffers) {
   CYLON_UNUSED(num_buffers);
-  RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(reqs, ucc_context_));
-  return Status::OK();
-}
-
-UccTableBcastImpl::~UccTableBcastImpl() {
-  for (auto req : reqs) {
-    ucc_collective_finalize(req);
-  }
+  return WaitAllHelper(reqs, ucc_context_);
 }
 
 UccAllGatherImpl::UccAllGatherImpl(ucc_team_h ucc_team,
@@ -454,7 +443,7 @@ Status UccAllGatherImpl::AllgatherBufferSize(const int32_t *send_data,
   args.src.info.datatype = UCC_DT_INT32;
   args.src.info.mem_type = UCC_MEMORY_TYPE_HOST;
   args.dst.info.buffer = rcv_data;
-  args.dst.info.count = static_cast<uint64_t>(num_buffers * world_size);
+  args.dst.info.count = num_buffers * world_size;
   args.dst.info.datatype = UCC_DT_INT32;
   args.dst.info.mem_type = UCC_MEMORY_TYPE_HOST;
 
@@ -505,14 +494,8 @@ Status UccAllGatherImpl::IallgatherBufferData(int32_t buf_idx, const uint8_t *se
 }
 
 Status UccAllGatherImpl::WaitAll() {
-  RETURN_CYLON_STATUS_IF_UCC_FAILED(WaitAllHelper(requests_, ucc_context_));
-  return Status::OK();
+  return WaitAllHelper(requests_, ucc_context_);
 }
 
-UccAllGatherImpl::~UccAllGatherImpl() {
-  for (auto req : requests_) {
-    ucc_collective_finalize(req);
-  }
-}
 }  // namespace ucc
 }  // namespace cylon

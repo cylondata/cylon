@@ -364,14 +364,14 @@ Status UCXUCCCommunicator::Bcast(std::shared_ptr<Table> *table,
 Status UCXUCCCommunicator::AllReduce(const std::shared_ptr<Column> &column,
                                      net::ReduceOp reduce_op,
                                      std::shared_ptr<Column> *output) const {
-  ucc::UccAllReduceImpl impl(uccTeam, uccContext, world_size);
+  ucc::UccAllReduceImpl impl(uccTeam, uccContext);
   return impl.Execute(column, reduce_op, output);
 }
 
 Status UCXUCCCommunicator::AllReduce(const std::shared_ptr<Scalar> &values,
                                      net::ReduceOp reduce_op,
                                      std::shared_ptr<Scalar> *output) const {
-  ucc::UccAllReduceImpl impl(uccTeam, uccContext, world_size);
+  ucc::UccAllReduceImpl impl(uccTeam, uccContext);
   return impl.Execute(values, reduce_op, output);
 }
 

@@ -251,7 +251,7 @@ if (CYLON_UCX)
         message(STATUS "UCC libs: ${UCC_LIBRARIES}")
 
         include_directories(SYSTEM ${UCC_INCLUDE_DIRS})
-        link_directories(${UCC_LIBRARIES})
+        link_directories(${UCC_LIBRARIES} ${UCC_LIBRARIES}/ucc)
     endif (CYLON_UCC)
 endif (CYLON_UCX)
 
