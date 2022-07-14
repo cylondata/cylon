@@ -28,6 +28,9 @@
 #ifdef BUILD_CYLON_GLOO
 #include <cylon/net/gloo/gloo_communicator.hpp>
 #endif // BUILD_CYLON_GLOO
+#ifdef BUILD_CYLON_UCX
+#include <cylon/net/ucx/ucx_communicator.hpp>
+#endif // BUILD_CYLON_UCX
 
 #include "test_utils.hpp"
 #include "test_macros.hpp"
@@ -49,7 +52,8 @@ int main(int argc, char *argv[]) {
 
   std::string comm_args = "mpi";
 
-  auto cli = session.cli() | Catch::clara::Opt(comm_args, "mpi|gloo-mpi")["--comm"]("comm args");
+  auto
+      cli = session.cli() | Catch::clara::Opt(comm_args, "mpi|gloo-mpi|ucx")["--comm"]("comm args");
 
   // Now pass the new composite back to Catch2 so it uses that
   session.cli(cli);
@@ -72,6 +76,14 @@ int main(int argc, char *argv[]) {
     config = cylon::net::GlooConfig::MakeWithMpi();
 #else
     LOG(ERROR) << "gloo-mpi passed for tests, but tests are not built with gloo";
+    return 1;
+#endif
+  } else if (comm_args == "ucx") {
+#ifdef BUILD_CYLON_UCX
+    LOG(INFO) << "Using UCX/UCC";
+    config = std::make_shared<cylon::net::UCXConfig>();
+#else
+    LOG(ERROR) << "ucx passed for tests, but tests are not built with ucx";
     return 1;
 #endif
   } else {

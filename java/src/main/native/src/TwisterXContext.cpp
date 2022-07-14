@@ -11,6 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <exception>
 
 #include "org_cylondata_cylon_CylonContext.h"
 #include <cylon/ctx/cylon_context.hpp>
@@ -20,7 +21,11 @@
 JNIEXPORT void JNICALL Java_org_cylondata_cylon_CylonContext_nativeInit
     (JNIEnv *env, jclass obj, jint ctx_id) {
   auto mpi_config = std::make_shared<cylon::net::MPIConfig>();
-  auto ctx = cylon::CylonContext::InitDistributed(mpi_config);
+  std::shared_ptr<cylon::CylonContext> ctx;
+  auto st = cylon::CylonContext::InitDistributed(mpi_config, &ctx);
+  if (!st.is_ok()){
+    throw std::runtime_error("InitDistributed failed " + st.get_msg());
+  }
   contexts.insert(std::pair<int32_t, std::shared_ptr<cylon::CylonContext>>(ctx_id, ctx));
 }
 

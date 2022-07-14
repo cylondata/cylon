@@ -53,40 +53,45 @@ int MPICommunicator::GetRank() const {
 int MPICommunicator::GetWorldSize() const {
   return this->world_size;
 }
-Status MPICommunicator::Init(const std::shared_ptr<CommConfig> &config) {
-  // check if MPI is initialized
-  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Initialized(&mpi_initialized_externally));
-  mpi_comm_ = std::static_pointer_cast<MPIConfig>(config)->GetMPIComm();
 
-  if (mpi_comm_ != MPI_COMM_NULL && !mpi_initialized_externally) {
+Status MPICommunicator::Make(const std::shared_ptr<CommConfig> &config,
+                             MemoryPool *pool,
+                             std::shared_ptr<Communicator> *out) {
+  int ext_init, rank, world_size;
+  // check if MPI is initialized
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Initialized(&ext_init));
+  auto mpi_comm = std::static_pointer_cast<MPIConfig>(config)->GetMPIComm();
+
+  if (mpi_comm != MPI_COMM_NULL && !ext_init) {
     return {Code::Invalid, "non-null MPI_Comm passed without initializing MPI"};
   }
 
-  if (!mpi_initialized_externally) { // if not initialized, init MPI
+  if (!ext_init) { // if not initialized, init MPI
     RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
   }
 
-  if (mpi_comm_ == MPI_COMM_NULL) { // set comm_ to world
-    mpi_comm_ = MPI_COMM_WORLD;
+  if (mpi_comm == MPI_COMM_NULL) { // set comm_ to world
+    mpi_comm = MPI_COMM_WORLD;
   }
 
   // setting errors to return
-  MPI_Comm_set_errhandler(mpi_comm_, MPI_ERRORS_RETURN);
+  MPI_Comm_set_errhandler(mpi_comm, MPI_ERRORS_RETURN);
 
-  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_rank(mpi_comm_, &this->rank));
-  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_size(mpi_comm_, &this->world_size));
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_rank(mpi_comm, &rank));
+  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Comm_size(mpi_comm, &world_size));
 
   if (rank < 0 || world_size < 0 || rank >= world_size) {
     return {Code::ExecutionError, "Malformed rank :" + std::to_string(rank)
         + " or world size:" + std::to_string(world_size)};
   }
 
+  *out = std::make_shared<MPICommunicator>(pool, rank, world_size, mpi_comm, (bool) ext_init);
   return Status::OK();
 }
 
 void MPICommunicator::Finalize() {
   // finalize only if we initialized MPI
-  if (!mpi_initialized_externally) {
+  if (!externally_init) {
     int finalized;
     MPI_Finalized(&finalized);
     if (!finalized) {
@@ -116,9 +121,11 @@ Status MPICommunicator::Gather(const std::shared_ptr<Table> &table,
   return impl.Execute(table, gather_root, gather_from_root, out);
 }
 
-Status MPICommunicator::Bcast(std::shared_ptr<Table> *table, int bcast_root) const {
+Status MPICommunicator::Bcast(std::shared_ptr<Table> *table,
+                              int bcast_root,
+                              const std::shared_ptr<CylonContext> &ctx) const {
   mpi::MpiTableBcastImpl impl(mpi_comm_);
-  return impl.Execute(table, bcast_root, *ctx_ptr);
+  return impl.Execute(table, bcast_root, ctx);
 }
 
 MPI_Comm MPICommunicator::mpi_comm() const {
@@ -129,28 +136,32 @@ Status MPICommunicator::AllReduce(const std::shared_ptr<Column> &values,
                                   net::ReduceOp reduce_op,
                                   std::shared_ptr<Column> *output) const {
   mpi::MpiAllReduceImpl impl(mpi_comm_);
-  return impl.Execute(values, reduce_op, output, (*ctx_ptr)->GetMemoryPool());
+  return impl.Execute(values, reduce_op, output, pool);
 }
 
 Status MPICommunicator::AllReduce(const std::shared_ptr<Scalar> &value, net::ReduceOp reduce_op,
                                   std::shared_ptr<Scalar> *output) const {
   mpi::MpiAllReduceImpl impl(mpi_comm_);
-  return impl.Execute(value, reduce_op, output, (*ctx_ptr)->GetMemoryPool());
+  return impl.Execute(value, reduce_op, output, pool);
 }
 
-MPICommunicator::MPICommunicator(const std::shared_ptr<CylonContext> *ctx_ptr)
-    : Communicator(ctx_ptr) {}
+MPICommunicator::MPICommunicator(MemoryPool *pool,
+                                 int32_t rank,
+                                 int32_t world_size,
+                                 MPI_Comm mpi_comm,
+                                 bool externally_init)
+    : Communicator(pool, rank, world_size), mpi_comm_(mpi_comm), externally_init(externally_init) {}
 
 Status MPICommunicator::Allgather(const std::shared_ptr<Column> &values,
                                   std::vector<std::shared_ptr<Column>> *output) const {
   mpi::MpiAllgatherImpl impl(mpi_comm_);
-  return impl.Execute(values, (*ctx_ptr)->GetWorldSize(), output, (*ctx_ptr)->GetMemoryPool());
+  return impl.Execute(values, world_size, output, pool);
 }
 
 Status MPICommunicator::Allgather(const std::shared_ptr<Scalar> &value,
                                   std::shared_ptr<Column> *output) const {
   mpi::MpiAllgatherImpl impl(mpi_comm_);
-  return impl.Execute(value, (*ctx_ptr)->GetWorldSize(), output, (*ctx_ptr)->GetMemoryPool());
+  return impl.Execute(value, world_size, output, pool);
 }
 
 }  // namespace net

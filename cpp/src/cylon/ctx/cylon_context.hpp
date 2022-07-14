@@ -54,7 +54,6 @@ class CylonContext {
    * @param <cylon::net::CommConfig*> config Configuration to be passed on to the cylon::net::Communicator
    * @return <cylon::CylonContext*>
    */
-  static std::shared_ptr<CylonContext> InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config);
   static Status InitDistributed(const std::shared_ptr<cylon::net::CommConfig> &config,
                                 std::shared_ptr<CylonContext> *ctx);
 
