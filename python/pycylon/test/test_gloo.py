@@ -29,7 +29,7 @@ from pycylon import CylonEnv, DataFrame
 from pycylon.net.gloo_config import GlooStandaloneConfig
 
 FILE_STORE_PATH = os.path.join(tempfile.gettempdir(), 'gloo')
-WORLD_SIZE = 1
+WORLD_SIZE = 4
 ROWS = 5
 
 
