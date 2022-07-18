@@ -29,6 +29,9 @@ from pycylon.net.mpi_config cimport MPIConfig
 IF CYTHON_GLOO:
     from pycylon.net.gloo_config import GlooMPIConfig, GlooStandaloneConfig
     from pycylon.net.gloo_config cimport CGlooConfig, GlooMPIConfig, GlooStandaloneConfig
+IF CYTHON_UCX & CYTHON_UCC:
+    from pycylon.net.ucx_config import UCXConfig
+    from pycylon.net.ucx_config cimport CUCXConfig, UCXConfig
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
 from pycylon.io.csv_read_config cimport CSVReadOptions
@@ -120,6 +123,13 @@ IF CYTHON_GLOO:
             return (<GlooMPIConfig> config).gloo_config_shd_ptr
         else:
             raise ValueError('Passed object is not an instance of GlooConfig')
+
+IF CYTHON_UCX & CYTHON_UCC:
+    cdef api shared_ptr[CUCXConfig] pycylon_unwrap_ucx_config(object config):
+        if isinstance(config, UCXConfig):
+            return (<UCXConfig> config).ucx_config_shd_ptr
+        else:
+            raise ValueError('Passed object is not an instance of UcxConfig')
 
 cdef api CCSVReadOptions pycylon_unwrap_csv_read_options(object csv_read_options):
     cdef CSVReadOptions csvrdopt

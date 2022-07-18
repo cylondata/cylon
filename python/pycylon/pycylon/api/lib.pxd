@@ -25,6 +25,8 @@ from pycylon.net.comm_config cimport CCommConfig
 from pycylon.net.mpi_config cimport CMPIConfig
 IF CYTHON_GLOO:
 	from pycylon.net.gloo_config cimport CGlooConfig
+IF CYTHON_UCX & CYTHON_UCC:
+	from pycylon.net.ucx_config cimport CUCXConfig
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
 from pycylon.io.csv_read_config cimport CSVReadOptions
@@ -58,6 +60,9 @@ cdef api shared_ptr[CMPIConfig] pycylon_unwrap_mpi_config(object config)
 
 IF CYTHON_GLOO:
 	cdef api shared_ptr[CGlooConfig] pycylon_unwrap_gloo_config(object config)
+
+IF CYTHON_UCX & CYTHON_UCC:
+	cdef api shared_ptr[CUCXConfig] pycylon_unwrap_ucx_config(object config)
 
 cdef api shared_ptr[CTable] pycylon_unwrap_table(object table)
 

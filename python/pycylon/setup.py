@@ -147,6 +147,7 @@ if CYLON_UCC and CYLON_UCX:
     _include_dirs.append(os.path.join(UCC_PREFIX, 'include'))
     macros.append(('BUILD_CYLON_UCX', '1'))
     macros.append(('BUILD_CYLON_UCC', '1'))
+    compile_time_env['CYTHON_UCX'] = True
     compile_time_env['CYTHON_UCC'] = True
 
 print('Libraries    :', libraries)

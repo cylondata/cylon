@@ -89,7 +89,8 @@ Status UCXCommunicator::AllReduce(const std::shared_ptr<Column> &column,
   return {Code::NotImplemented, "Allreduce not implemented for ucx"};
 }
 
-UCXCommunicator::UCXCommunicator(MemoryPool *pool) : Communicator(pool, -1, -1) {}
+UCXCommunicator::UCXCommunicator(MemoryPool *pool, bool externally_init)
+    : Communicator(pool, -1, -1), externally_init(externally_init) {}
 
 Status UCXCommunicator::AllReduce(const std::shared_ptr<Scalar> &values,
                                   net::ReduceOp reduce_op,
@@ -117,10 +118,16 @@ Status UCXCommunicator::Allgather(const std::shared_ptr<Scalar> &value,
 Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
                              std::shared_ptr<Communicator> *out) {
   CYLON_UNUSED(config);
-  *out = std::make_shared<UCXCommunicator>(pool);
-  auto &comm = static_cast<UCXCommunicator &>(**out);
-  // Check init functions
+  // MPI init
   int initialized;
+  MPI_Initialized(&initialized);
+  if (!initialized) {
+    RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
+  }
+
+  *out = std::make_shared<UCXCommunicator>(pool, initialized);
+  auto &comm = static_cast<UCXCommunicator &>(**out);
+
   // Int variable used when iterating
   int sIndx;
   // Address of the UCP Worker for receiving
@@ -132,12 +139,6 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
   ucs_status_t ucxStatus;
   // Variable to hold the current ucp address
   ucp_address_t *address;
-
-  // MPI init
-  MPI_Initialized(&initialized);
-  if (!initialized) {
-    RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
-  }
 
   // Get the rank for checking send to self, and initializations
   MPI_Comm_rank(MPI_COMM_WORLD, &comm.rank);
@@ -205,7 +206,7 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
 }
 
 void UCXCommunicator::Finalize() {
-  if (!this->IsFinalized()) {
+  if (!externally_init && !IsFinalized()) {
     ucp_cleanup(ucpContext);
     mpi_check_and_finalize();
     finalized = true;
@@ -329,8 +330,7 @@ void UCXUCCCommunicator::Finalize() {
       }
     }
     ucc_context_destroy(uccContext);
-    mpi_check_and_finalize();
-    ucx_comm_->Finalize();
+    ucx_comm_->Finalize(); // this will handle MPI_Finalize
     finalized = true;
   }
 }
