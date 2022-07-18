@@ -74,7 +74,7 @@ class GlooConfig : public CommConfig {
 #endif //GLOO_USE_MPI
 
   // tcp attr
-  std::string tcp_hostname_ = "localhost";
+  std::string tcp_hostname_;
   std::string tcp_iface_;
   int tcp_ai_family_ = AF_UNSPEC;
 
