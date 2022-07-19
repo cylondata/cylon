@@ -254,6 +254,14 @@ def python_test():
 
                 env['LD_LIBRARY_PATH'] = os.path.join(GLOO_PREFIX, "lib") + os.pathsep + \
                                          env['LD_LIBRARY_PATH']
+
+            if CYLON_UCC:
+                env['CYLON_UCC'] = str(CYLON_UCC)
+                env['UCC_PREFIX'] = UCC_PREFIX
+                env['LD_LIBRARY_PATH'] = os.path.join(UCC_PREFIX, "lib") + os.pathsep + \
+                                         os.path.join(UCC_PREFIX, "lib", "ucc") + os.pathsep + \
+                                         env['LD_LIBRARY_PATH']
+
         elif OS_NAME == 'Darwin':
             if 'DYLD_LIBRARY_PATH' in env:
                 env['DYLD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \

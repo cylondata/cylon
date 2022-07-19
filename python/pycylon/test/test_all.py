@@ -287,6 +287,13 @@ if os.environ.get('CYLON_GLOO'):
             f"{get_mpi_command()} -n 4 python -m pytest python/pycylon/test/test_gloo_mpi.py"))
         assert responses[-1] == 0
 
+if os.environ.get('CYLON_UCC') and os.environ.get('CYLON_UCX'):
+    def test_ucx_mpi():
+        print("36. UCX MPI")
+        responses.append(os.system(
+            f"{get_mpi_command()} -n 4 python -m pytest python/pycylon/test/test_ucx_mpi.py"))
+        assert responses[-1] == 0
+
 
 def test_all():
     ar = np.array(responses)
