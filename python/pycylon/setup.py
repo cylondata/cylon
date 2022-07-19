@@ -132,7 +132,7 @@ _include_dirs.extend(mpi_include_dir)
 
 macros = []
 # compile_time_env serves as preprocessor macros. ref: https://github.com/cython/cython/issues/2488
-compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False}
+compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False, 'CYTHON_UCX': False}
 if CYLON_GLOO:
     libraries.append('gloo')
     library_directories.append(os.path.join(GLOO_PREFIX, 'lib'))
