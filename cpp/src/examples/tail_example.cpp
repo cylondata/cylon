@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> sliced_column_names = tail_table->ColumnNames();
 
   tail_table->Print();
-  sleep(1);
+  sleep(3);
   ctx->Finalize();
   return 0;
 }

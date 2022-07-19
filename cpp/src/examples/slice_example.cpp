@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> sliced_column_names = sliced->ColumnNames();
 
   sliced->Print();
-  sleep(1);
+  sleep(3);
   ctx->Finalize();
   return 0;
 }

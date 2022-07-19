@@ -21,6 +21,7 @@
 #include <memory>
 #include <unordered_map>
 #include <iostream>
+#include <algorithm>
 
 #include <cylon/table.hpp>
 #include <cylon/join/join_utils.hpp>
@@ -1821,6 +1822,106 @@ Status Distributed_Slice(const std::shared_ptr<cylon::Table> &in, int64_t offset
       std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
           ->raw_values();
 
+    int64_t total_partition = sizes_cols->length();
+    LOG(INFO) << "Total Length: " << total_partition;
+    sizes.resize(sizes_cols->length());
+    std::copy(data_ptr, data_ptr + sizes_cols->length(), sizes.data());
+    
+    int64_t minLimit = 0;
+    int64_t rank = ctx->GetRank();
+    int64_t prod = std::accumulate(data_ptr, data_ptr + rank, minLimit);
+    
+    LOG(INFO) << "Current Partion: " << rank << " and Size: " << sizes[rank];
+    int64_t curSize = sizes[rank];
+    int64_t minx = std::min(offset - prod, curSize);
+
+  
+    
+    int64_t x = std::max(minLimit, minx);
+    int64_t x_maxy = std::max(offset + total_partition - prod, minLimit);
+    int64_t y = std::min(curSize, x_maxy);
+
+    //$x = max(0, min(K-L_i, l_i))
+    //$x+y = min(l_i, max(K+L-L_i, 0)
+
+   /* std::vector<int64_t> offset_vec;
+    std::vector<int64_t> length_vec;
+
+    if(!order) {
+      LOG(INFO) << "from 0 to size";
+      for(int i = 0; i < total_partition; i++) {
+        if(offset + length > sizes[i]) {
+          if(sizes[i] - offset <= 0)
+          {
+            offset_vec.push_back(sizes[i]);
+            length_vec.push_back(0);
+            offset = 0;
+          }
+          else {
+            offset_vec.push_back(offset);
+            length_vec.push_back(sizes[i] - offset);
+
+            length = length - sizes[i] + offset;
+            offset = 0;
+          }
+        }
+        else {
+          offset_vec.push_back(offset);
+          length_vec.push_back(length);
+          length = 0;
+          offset = 0;
+        }
+      }
+    }
+    else {
+      LOG(INFO) << "from size to 0";
+      for(int i = 0; i < total_partition; i++){
+        if(length > sizes[i]) {
+          offset_vec.push_back(0);
+          length_vec.push_back(sizes[i]);
+
+          length = length - sizes[i];
+        }
+        else {
+          offset_vec.push_back(sizes[i] - length);
+          length_vec.push_back(length);
+          length = 0;
+        }
+      }  
+    }
+    */
+   
+    out_table = in_table->Slice(x, y);
+
+  } else {
+    out_table = in_table;
+  }
+  return Table::FromArrowTable(ctx, std::move(out_table), out);
+}
+
+
+Status Distributed_Slice1(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length,
+              std::shared_ptr<cylon::Table> &out, int order) {
+
+  const auto &ctx = in->GetContext();
+  std::shared_ptr<arrow::Table> out_table, in_table = in->get_table();
+  auto num_row = in->Rows();
+
+  if (!in->Empty()) {
+  
+    std::vector<int64_t> sizes;
+    std::shared_ptr<cylon::Column> sizes_cols;
+    RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(sizes, sizes_cols));
+
+    auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
+    
+
+    RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->Allgather(num_row_scalar, &sizes_cols));
+
+    auto *data_ptr =
+      std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
+          ->raw_values();
+
     int total_partition = sizes_cols->length();
     LOG(INFO) << "Total Length: " << total_partition;
     sizes.resize(sizes_cols->length());
@@ -1883,7 +1984,6 @@ Status Distributed_Slice(const std::shared_ptr<cylon::Table> &in, int64_t offset
   }
   return Table::FromArrowTable(ctx, std::move(out_table), out);
 }
-
 
 
 
