@@ -287,11 +287,19 @@ if os.environ.get('CYLON_GLOO'):
             f"{get_mpi_command()} -n 4 python -m pytest python/pycylon/test/test_gloo_mpi.py"))
         assert responses[-1] == 0
 
-if os.environ.get('CYLON_UCC') and os.environ.get('CYLON_UCX'):
+if os.environ.get('CYLON_UCC'):
     def test_ucx_mpi():
-        print("36. UCX MPI")
+        print("37. UCX MPI")
         responses.append(os.system(
             f"{get_mpi_command()} -n 4 python -m pytest python/pycylon/test/test_ucx_mpi.py"))
+        assert responses[-1] == 0
+
+if os.environ.get('CYLON_GLOO') and os.environ.get('CYLON_UCC'):
+    def test_mpi_multiple_env_init():
+        print("38. Create and destroy multiple environments in MPI")
+        responses.append(os.system(
+            f"{get_mpi_command()} -n 4 python -m pytest "
+            f"python/pycylon/test/test_mpi_multiple_env_init.py"))
         assert responses[-1] == 0
 
 
