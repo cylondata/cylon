@@ -93,12 +93,11 @@ int main(int argc, char *argv[]) {
                                                      "r_");
   cylon::Status status;
 
-  // Arup: Code block for slice operation
-  int order = 0;
+  // Code block for slice operation
   if (ops) {
     status = cylon::Local_Slice(in_table, offset, length, sliced);
   } else {
-    status = cylon::Distributed_Slice(in_table, offset, length, sliced, order);
+    status = cylon::DistributedSlice(in_table, offset, length, sliced);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Slice is failed ";
@@ -106,14 +105,14 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   auto slice_end_time = std::chrono::steady_clock::now();
-  LOG(INFO) << "Sliced table has : " << sliced->Rows();
+  LOG(INFO) << ctx->GetRank() << " Partition with " << "Sliced table has : " << sliced->Rows();
   LOG(INFO) << "Sliced is done in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 slice_end_time - read_end_time).count() << "[ms]";
   std::vector<std::string> sliced_column_names = sliced->ColumnNames();
 
   sliced->Print();
-  sleep(3);
+  sleep(2);
   ctx->Finalize();
   return 0;
 }

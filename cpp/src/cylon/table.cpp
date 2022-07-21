@@ -1794,197 +1794,58 @@ Status Local_Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t len
 
 
 /**
- * Distributed_Slice the part of table to create a single table
+ * DistributedSlice the part of table to create a single table
  * @param table, offset and length
  * @return new sliced table
  */
 
 
-Status Distributed_Slice(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length,
-              std::shared_ptr<cylon::Table> &out, int order) {
+Status DistributedSlice(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length,
+              std::shared_ptr<cylon::Table> &out) {
 
   const auto &ctx = in->GetContext();
   std::shared_ptr<arrow::Table> out_table, in_table = in->get_table();
   auto num_row = in->Rows();
-
-  if (!in->Empty()) {
   
-    std::vector<int64_t> sizes;
-    std::shared_ptr<cylon::Column> sizes_cols;
-    RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(sizes, sizes_cols));
+  std::vector<int64_t> sizes;
+  std::shared_ptr<cylon::Column> sizes_cols;
+  RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(sizes, sizes_cols));
 
-    auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
-    
-
-    RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->Allgather(num_row_scalar, &sizes_cols));
-
-    auto *data_ptr =
-      std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
-          ->raw_values();
-
-    int64_t total_partition = sizes_cols->length();
-    LOG(INFO) << "Total Length: " << total_partition;
-    sizes.resize(sizes_cols->length());
-    std::copy(data_ptr, data_ptr + sizes_cols->length(), sizes.data());
-    
-    int64_t minLimit = 0;
-    int64_t rank = ctx->GetRank();
-    int64_t prod = std::accumulate(data_ptr, data_ptr + rank, minLimit);
-    
-    LOG(INFO) << "Current Partion: " << rank << " and Size: " << sizes[rank];
-    int64_t curSize = sizes[rank];
-    int64_t minx = std::min(offset - prod, curSize);
-
+  auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
   
-    
-    int64_t x = std::max(minLimit, minx);
-    int64_t x_maxy = std::max(offset + total_partition - prod, minLimit);
-    int64_t y = std::min(curSize, x_maxy);
 
-    //$x = max(0, min(K-L_i, l_i))
-    //$x+y = min(l_i, max(K+L-L_i, 0)
+  RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->Allgather(num_row_scalar, &sizes_cols));
 
-   /* std::vector<int64_t> offset_vec;
-    std::vector<int64_t> length_vec;
+  auto *data_ptr =
+    std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
+        ->raw_values();
 
-    if(!order) {
-      LOG(INFO) << "from 0 to size";
-      for(int i = 0; i < total_partition; i++) {
-        if(offset + length > sizes[i]) {
-          if(sizes[i] - offset <= 0)
-          {
-            offset_vec.push_back(sizes[i]);
-            length_vec.push_back(0);
-            offset = 0;
-          }
-          else {
-            offset_vec.push_back(offset);
-            length_vec.push_back(sizes[i] - offset);
+  int64_t L = length;
+  LOG(INFO) << "Total Length: " << L;
+  sizes.resize(sizes_cols->length());
+  std::copy(data_ptr, data_ptr + sizes_cols->length(), sizes.data());
 
-            length = length - sizes[i] + offset;
-            offset = 0;
-          }
-        }
-        else {
-          offset_vec.push_back(offset);
-          length_vec.push_back(length);
-          length = 0;
-          offset = 0;
-        }
-      }
-    }
-    else {
-      LOG(INFO) << "from size to 0";
-      for(int i = 0; i < total_partition; i++){
-        if(length > sizes[i]) {
-          offset_vec.push_back(0);
-          length_vec.push_back(sizes[i]);
+  //$x = max(zero_0, min(K-L_i, sl_i))
+  //$x+y = min(sl_i, max(K+L-L_i, zero_0))
 
-          length = length - sizes[i];
-        }
-        else {
-          offset_vec.push_back(sizes[i] - length);
-          length_vec.push_back(length);
-          length = 0;
-        }
-      }  
-    }
-    */
-   
-    out_table = in_table->Slice(x, y);
+  int64_t K = offset;
+  int64_t zero_0 = 0;
+  int64_t rank = ctx->GetRank();
+  int64_t L_i = std::accumulate(data_ptr, data_ptr + rank, zero_0);
+  
+  LOG(INFO) << "Current Partion: " << rank << " and Size: " << sizes[rank] << "L_i: " << L_i;
 
-  } else {
-    out_table = in_table;
-  }
+  int64_t sl_i = *(data_ptr + rank);
+
+
+  int64_t x = std::max(zero_0, std::min(K - L_i, sl_i));
+  int64_t y = std::min(sl_i, std::max(K + L - L_i, zero_0));
+
+
+  out_table = in_table->Slice(x, y);
+
   return Table::FromArrowTable(ctx, std::move(out_table), out);
 }
-
-
-Status Distributed_Slice1(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length,
-              std::shared_ptr<cylon::Table> &out, int order) {
-
-  const auto &ctx = in->GetContext();
-  std::shared_ptr<arrow::Table> out_table, in_table = in->get_table();
-  auto num_row = in->Rows();
-
-  if (!in->Empty()) {
-  
-    std::vector<int64_t> sizes;
-    std::shared_ptr<cylon::Column> sizes_cols;
-    RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(sizes, sizes_cols));
-
-    auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
-    
-
-    RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->Allgather(num_row_scalar, &sizes_cols));
-
-    auto *data_ptr =
-      std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
-          ->raw_values();
-
-    int total_partition = sizes_cols->length();
-    LOG(INFO) << "Total Length: " << total_partition;
-    sizes.resize(sizes_cols->length());
-    std::copy(data_ptr, data_ptr + sizes_cols->length(), sizes.data());
-    
-
-    int current_partition = ctx->GetRank();
-    LOG(INFO) << "Current Partion: " << current_partition << " and Size: " << sizes[current_partition];
-
-    std::vector<int64_t> offset_vec;
-    std::vector<int64_t> length_vec;
-
-    if(!order) {
-      LOG(INFO) << "from 0 to size";
-      for(int i = 0; i < total_partition; i++) {
-        if(offset + length > sizes[i]) {
-          if(sizes[i] - offset <= 0)
-          {
-            offset_vec.push_back(sizes[i]);
-            length_vec.push_back(0);
-            offset = 0;
-          }
-          else {
-            offset_vec.push_back(offset);
-            length_vec.push_back(sizes[i] - offset);
-
-            length = length - sizes[i] + offset;
-            offset = 0;
-          }
-        }
-        else {
-          offset_vec.push_back(offset);
-          length_vec.push_back(length);
-          length = 0;
-          offset = 0;
-        }
-      }
-    }
-    else {
-      LOG(INFO) << "from size to 0";
-      for(int i = 0; i < total_partition; i++){
-        if(length > sizes[i]) {
-          offset_vec.push_back(0);
-          length_vec.push_back(sizes[i]);
-
-          length = length - sizes[i];
-        }
-        else {
-          offset_vec.push_back(sizes[i] - length);
-          length_vec.push_back(length);
-          length = 0;
-        }
-      }  
-    }
-   
-    out_table = in_table->Slice(offset_vec[current_partition], length_vec[current_partition]);
-
-  } else {
-    out_table = in_table;
-  }
-  return Table::FromArrowTable(ctx, std::move(out_table), out);
-}
-
 
 
 /**
@@ -2010,10 +1871,9 @@ Status Distributed_Head(const std::shared_ptr<Table> &table, int64_t num_rows, s
 
   std::shared_ptr<arrow::Table>  in_table = table->get_table();
   const int64_t table_size = in_table->num_rows();
-  int order = 0;
 
   if(num_rows > 0 && table_size > 0) {
-    return Distributed_Slice(table, 0, num_rows, output, order);
+    return DistributedSlice(table, 0, num_rows, output);
   }
   else
     LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");
@@ -2045,11 +1905,10 @@ Status Distributed_Tail(const std::shared_ptr<Table> &table, int64_t num_rows, s
 
   std::shared_ptr<arrow::Table>  in_table = table->get_table();
   const int64_t table_size = in_table->num_rows();
-  int order = 1;
   LOG(INFO) << "Input Table size " << table_size;
 
   if(num_rows > 0 && table_size > 0) {
-    return Distributed_Slice(table, table_size-num_rows, num_rows, output, order);
+    return DistributedSlice(table, table_size-num_rows, num_rows, output);
   }
   else
     LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");

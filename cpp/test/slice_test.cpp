@@ -23,7 +23,7 @@ TEST_CASE("Slice testing", "[equal]") {
     std::string path2 = "../data/input/csv1_1.csv";
     std::string path3 = "../data/input/csv1_0_shuffled.csv";
     std::string path4 = "../data/input/csv1_0_col_order_change.csv";
-    std::shared_ptr<Table> table1, table2, table3, table4;
+    std::shared_ptr<Table> table1, table2, table3, table4, out;
 
     auto read_options = io::config::CSVReadOptions().UseThreads(false);
 
@@ -31,41 +31,22 @@ TEST_CASE("Slice testing", "[equal]") {
                             std::vector<std::shared_ptr<Table> *>{&table1, &table2, &table3, &table4},
                             read_options));
 
-    SECTION("testing ordered equal") {
-        bool result;
-        CHECK_CYLON_STATUS(Equals(table1, table1, result));
-        REQUIRE(result == true);
+    SECTION("Testing Local Slice") {
 
-        CHECK_CYLON_STATUS(Equals(table1, table2, result));
-        REQUIRE(result == false);
+        CHECK_CYLON_STATUS(Local_Slice(table1, 13, 8, out));
 
-        CHECK_CYLON_STATUS(Equals(table1, table3, result));
-        REQUIRE(result == false);
+        CHECK_CYLON_STATUS(Local_Slice(table2, 15, 5, out));
 
-        CHECK_CYLON_STATUS(Equals(table1, table4, result));
-        REQUIRE(result == false);
-    }
+        CHECK_CYLON_STATUS(Local_Slice(table3, 0, 10, out));
 
-    SECTION("testing unordered equal") {
-        bool result;
-        CHECK_CYLON_STATUS(Equals(table1, table1, result, false));
-        REQUIRE(result == true);
-
-        CHECK_CYLON_STATUS(Equals(table1, table2, result, false));
-        REQUIRE(result == false);
-
-        CHECK_CYLON_STATUS(Equals(table1, table3, result, false));
-        REQUIRE(result == true);
-
-        CHECK_CYLON_STATUS(Equals(table1, table4, result, false));
-        REQUIRE(result == false);
+        CHECK_CYLON_STATUS(Local_Slice(table4, 2, 15, out));
     }
 }
 
 TEST_CASE("Distributed Slice testing", "[distributed slice]") {
     std::string path1 = "../data/input/csv1_" + std::to_string(RANK) +".csv";
     std::string path2 = "../data/input/csv2_" + std::to_string(RANK) +".csv";
-    std::shared_ptr<Table> table1, table2;
+    std::shared_ptr<Table> table1, table2, out;
 
     auto read_options = io::config::CSVReadOptions().UseThreads(false);
 
@@ -73,22 +54,10 @@ TEST_CASE("Distributed Slice testing", "[distributed slice]") {
                     std::vector<std::shared_ptr<Table> *>{&table1, &table2},
                             read_options));
 
-    SECTION("testing ordered equal") {
-        bool result;
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result));
-        REQUIRE(result == true);
+    SECTION("Testing Distributed Slice") {
+        CHECK_CYLON_STATUS(DistributedSlice(table1, 10, 15, out));
 
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table2, result));
-        REQUIRE(result == false);
-    }
-
-    SECTION("testing unordered equal") {
-        bool result;
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table1, result, false));
-        REQUIRE(result == true);
-
-        CHECK_CYLON_STATUS(DistributedEquals(table1, table2, result, false));
-        REQUIRE(result == false);
+        CHECK_CYLON_STATUS(DistributedSlice(table2, 12, 8, out));
     }
 }
 

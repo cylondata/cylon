@@ -490,14 +490,14 @@ Status Local_Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t len
               std::shared_ptr<cylon::Table> &out);
 
 /**
- * Distributed_Slice the part of table to create a single table
+ * DistributedSlice the part of table to create a single table
  * @param table, offset and length
  * @return new sliced table
  */
 
 
-Status Distributed_Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
-              std::shared_ptr<cylon::Table> &out, int order);
+Status DistributedSlice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
+              std::shared_ptr<cylon::Table> &out);
 
 
 /**
