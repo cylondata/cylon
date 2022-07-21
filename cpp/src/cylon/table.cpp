@@ -1832,9 +1832,6 @@ Status DistributedSlice(const std::shared_ptr<cylon::Table> &in, int64_t offset,
   int64_t zero_0 = 0;
   int64_t rank = ctx->GetRank();
   int64_t L_i = std::accumulate(data_ptr, data_ptr + rank, zero_0);
-  
-  LOG(INFO) << "Current Partion: " << rank << " and Size: " << sizes[rank] << "L_i: " << L_i;
-
   int64_t sl_i = *(data_ptr + rank);
 
 
