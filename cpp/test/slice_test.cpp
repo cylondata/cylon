@@ -33,13 +33,13 @@ TEST_CASE("Slice testing", "[equal]") {
 
     SECTION("Testing Local Slice") {
 
-        CHECK_CYLON_STATUS(Local_Slice(table1, 13, 8, out));
+        CHECK_CYLON_STATUS(LocalSlice(table1, 13, 8, out));
 
-        CHECK_CYLON_STATUS(Local_Slice(table2, 15, 5, out));
+        CHECK_CYLON_STATUS(LocalSlice(table2, 15, 5, out));
 
-        CHECK_CYLON_STATUS(Local_Slice(table3, 0, 10, out));
+        CHECK_CYLON_STATUS(LocalSlice(table3, 0, 10, out));
 
-        CHECK_CYLON_STATUS(Local_Slice(table4, 2, 15, out));
+        CHECK_CYLON_STATUS(LocalSlice(table4, 2, 15, out));
     }
 }
 

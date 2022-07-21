@@ -85,12 +85,12 @@ int main(int argc, char *argv[]) {
                                                      "r_");
   cylon::Status status;
 
-  // Arup: Code block for slice operation
+  //Code block for slice operation
 
   if (ops) {
     status = cylon::Tail(in_table, num_rows, tail_table);
   } else {
-    status = cylon::Distributed_Tail(in_table, num_rows, tail_table);
+    status = cylon::DistributedTail(in_table, num_rows, tail_table);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Tail is failed ";
@@ -105,7 +105,6 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> sliced_column_names = tail_table->ColumnNames();
 
   tail_table->Print();
-  sleep(3);
   ctx->Finalize();
   return 0;
 }

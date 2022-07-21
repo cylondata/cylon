@@ -1773,13 +1773,13 @@ Status WriteParquet(const std::shared_ptr<cylon::CylonContext> &ctx_,
 }
 
 /**
- * Local_Slice the part of table to create a single table
+ * LocalSlice the part of table to create a single table
  * @param table, offset and length
  * @return new sliced table
  */
 
 
-Status Local_Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
+Status LocalSlice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
               std::shared_ptr<cylon::Table> &out) {
   const auto &ctx = in->GetContext();
   std::shared_ptr<arrow::Table> out_table, in_table = in->get_table();
@@ -1825,6 +1825,11 @@ Status DistributedSlice(const std::shared_ptr<cylon::Table> &in, int64_t offset,
   int64_t zero_0 = 0;
   int64_t rank = ctx->GetRank();
   int64_t L_i = std::accumulate(data_ptr, data_ptr + rank, zero_0);
+<<<<<<< HEAD
+=======
+  
+
+>>>>>>> [Cylon] Removed unneccessary data copy and logs
   int64_t sl_i = *(data_ptr + rank);
 
 
@@ -1850,14 +1855,14 @@ Status Head(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_p
   const int64_t table_size = in_table->num_rows();
 
   if(num_rows > 0 && table_size > 0) {
-    return Local_Slice(table, 0, num_rows, output);
+    return LocalSlice(table, 0, num_rows, output);
   }
   else
-    LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");
+    return cylon::Status(Code::IOError);
 
 }
 
-Status Distributed_Head(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
+Status DistributedHead(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
 
   std::shared_ptr<arrow::Table>  in_table = table->get_table();
   const int64_t table_size = in_table->num_rows();
@@ -1866,7 +1871,7 @@ Status Distributed_Head(const std::shared_ptr<Table> &table, int64_t num_rows, s
     return DistributedSlice(table, 0, num_rows, output);
   }
   else
-    LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");
+    return cylon::Status(Code::IOError);
 
 }
 
@@ -1880,27 +1885,25 @@ Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_p
 
   std::shared_ptr<arrow::Table>  in_table = table->get_table();
   const int64_t table_size = in_table->num_rows();
-
-
+  
   if(num_rows > 0 && table_size > 0) {
-    return Local_Slice(table, table_size-num_rows, num_rows, output);
+    return LocalSlice(table, table_size-num_rows, num_rows, output);
   }
   else
-    LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");
+    return cylon::Status(Code::IOError);
 
 }
 
-Status Distributed_Tail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
+Status DistributedTail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
 
   std::shared_ptr<arrow::Table>  in_table = table->get_table();
   const int64_t table_size = in_table->num_rows();
-  LOG(INFO) << "Input Table size " << table_size;
 
   if(num_rows > 0 && table_size > 0) {
     return DistributedSlice(table, table_size-num_rows, num_rows, output);
   }
   else
-    LOG_AND_RETURN_ERROR(Code::ValueError, "Number of row should be greater than 0");
+    return cylon::Status(Code::IOError);
 
 }
 

@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 
   // Code block for slice operation
   if (ops) {
-    status = cylon::Local_Slice(in_table, offset, length, sliced);
+    status = cylon::LocalSlice(in_table, offset, length, sliced);
   } else {
     status = cylon::DistributedSlice(in_table, offset, length, sliced);
   }
@@ -112,7 +112,6 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> sliced_column_names = sliced->ColumnNames();
 
   sliced->Print();
-  sleep(2);
   ctx->Finalize();
   return 0;
 }

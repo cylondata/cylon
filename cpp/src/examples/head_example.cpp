@@ -85,12 +85,12 @@ int main(int argc, char *argv[]) {
                                                      "r_");
   cylon::Status status;
 
-  // Arup: Code block for slice operation
+  //Code block for slice operation
 
   if (ops) {
     status = cylon::Head(in_table, num_rows, head_table);
   } else {
-    status = cylon::Distributed_Head(in_table, num_rows, head_table);
+    status = cylon::DistributedHead(in_table, num_rows, head_table);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Head is failed ";
@@ -105,7 +105,6 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> sliced_column_names = head_table->ColumnNames();
 
   head_table->Print();
-  sleep(3);
   ctx->Finalize();
   return 0;
 }
