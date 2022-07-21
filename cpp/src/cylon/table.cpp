@@ -1821,13 +1821,6 @@ Status DistributedSlice(const std::shared_ptr<cylon::Table> &in, int64_t offset,
         ->raw_values();
 
   int64_t L = length;
-  LOG(INFO) << "Total Length: " << L;
-  sizes.resize(sizes_cols->length());
-  std::copy(data_ptr, data_ptr + sizes_cols->length(), sizes.data());
-
-  //$x = max(zero_0, min(K-L_i, sl_i))
-  //$x+y = min(sl_i, max(K+L-L_i, zero_0))
-
   int64_t K = offset;
   int64_t zero_0 = 0;
   int64_t rank = ctx->GetRank();
