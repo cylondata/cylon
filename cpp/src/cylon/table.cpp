@@ -1891,7 +1891,6 @@ Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_p
   std::shared_ptr<arrow::Table>  in_table = table->get_table();
   const int64_t table_size = in_table->num_rows();
 
-  LOG(INFO) << "Input Table size " << table_size;
 
   if(num_rows > 0 && table_size > 0) {
     return Local_Slice(table, table_size-num_rows, num_rows, output);
