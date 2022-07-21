@@ -1825,11 +1825,7 @@ Status DistributedSlice(const std::shared_ptr<cylon::Table> &in, int64_t offset,
   int64_t zero_0 = 0;
   int64_t rank = ctx->GetRank();
   int64_t L_i = std::accumulate(data_ptr, data_ptr + rank, zero_0);
-<<<<<<< HEAD
-=======
-  
 
->>>>>>> [Cylon] Removed unneccessary data copy and logs
   int64_t sl_i = *(data_ptr + rank);
 
 
@@ -1885,7 +1881,7 @@ Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_p
 
   std::shared_ptr<arrow::Table>  in_table = table->get_table();
   const int64_t table_size = in_table->num_rows();
-  
+
   if(num_rows > 0 && table_size > 0) {
     return LocalSlice(table, table_size-num_rows, num_rows, output);
   }
