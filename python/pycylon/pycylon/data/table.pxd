@@ -127,16 +127,22 @@ cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
 
 cdef extern from "../../../../cpp/src/cylon/table.hpp" namespace "cylon":
     cdef cppclass CSortOptions "cylon::SortOptions":
+        enum CSortMethod:
+            CREGULAR_SAMPLE 'cylon::SortOptions::SortMethod::REGULAR_SAMPLE',
+            CINITIAL_SAMPLE 'cylon::SortOptions::SortMethod::INITIAL_SAMPLE'
+
         int num_bins
         long num_samples
+        CSortMethod sort_method
+
         @ staticmethod
         CSortOptions Defaults()
 
 
 cdef class SortOptions:
     cdef:
-        CSortOptions *thisPtr
-        void init(self, CSortOptions *csort_options)
+        shared_ptr[CSortOptions] thisPtr
+        void init(self, const shared_ptr[CSortOptions] &csort_options)
 
 cdef class Table:
     cdef:

@@ -155,13 +155,13 @@ cdef api shared_ptr[CDataType] pycylon_unwrap_data_type(object data_type):
     else:
         raise ValueError('Passed object is not an instance of DataType')
 
-cdef api CSortOptions * pycylon_unwrap_sort_options(object sort_options):
+cdef api shared_ptr[CSortOptions] pycylon_unwrap_sort_options(object sort_options):
     cdef SortOptions so
     if pyclon_is_sort_options(sort_options):
         so = <SortOptions> sort_options
         return so.thisPtr
     else:
-        raise ValueError('Passed object is not an instance of DataType')
+        raise ValueError('Passed object is not an instance of SortOptions')
 
 cdef api shared_ptr[CBaseArrowIndex] pycylon_unwrap_base_arrow_index(object base_arrow_index):
     cdef BaseArrowIndex bi
@@ -206,7 +206,7 @@ cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] & cdata_type)
     data_type.init(cdata_type)
     return data_type
 
-cdef api object pycylon_wrap_sort_options(CSortOptions *csort_options):
+cdef api object pycylon_wrap_sort_options(const shared_ptr[CSortOptions] &csort_options):
     cdef SortOptions sort_options = SortOptions.__new__(SortOptions)
     sort_options.init(csort_options)
     return sort_options

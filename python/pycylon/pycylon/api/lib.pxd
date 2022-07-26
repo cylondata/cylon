@@ -72,7 +72,7 @@ cdef api CCSVReadOptions pycylon_unwrap_csv_read_options(object csv_read_options
 
 cdef api CCSVWriteOptions pycylon_unwrap_csv_write_options(object csv_write_options)
 
-cdef api CSortOptions * pycylon_unwrap_sort_options(object sort_options)
+cdef api shared_ptr[CSortOptions] pycylon_unwrap_sort_options(object sort_options)
 
 cdef api shared_ptr[CBaseArrowIndex] pycylon_unwrap_base_arrow_index(object base_arrow_index)
 
@@ -92,7 +92,7 @@ cdef api object pycylon_wrap_layout(const CLayout & layout)
 
 cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] & data_type)
 
-cdef api object pycylon_wrap_sort_options(CSortOptions *sort_options)
+cdef api object pycylon_wrap_sort_options(const shared_ptr[CSortOptions] &sort_options)
 
 cdef api object pycylon_wrap_base_arrow_index(const shared_ptr[CBaseArrowIndex] & base_arrow_index)
 
