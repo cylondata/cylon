@@ -19,29 +19,28 @@
 namespace cylon {
 
 
-void testDistSlice(const std::vector<int>& sort_cols,
-                  const std::vector<bool>& sort_order,
-                  std::shared_ptr<Table>& global_table,
-                  std::shared_ptr<Table>& table) {
-  std::shared_ptr<Table> out;
+void testDistSlice(std::shared_ptr<Table>& global_table,
+                  std::shared_ptr<Table>& table,
+                  int64_t offset,
+                  int64_t length) {
+  std::shared_ptr<Table> out, global_out;
   auto ctx = table->GetContext();
   std::shared_ptr<arrow::Table> arrow_output;
 
-  CHECK_CYLON_STATUS(DistributedSort(table, sort_cols, out, sort_order,
-                                     {0, 0, SortOptions::INITIAL_SAMPLE}));
+  CHECK_CYLON_STATUS(DistributedSlice(table, offset, length, out));
 
   std::vector<std::shared_ptr<Table>> gathered;
   CHECK_CYLON_STATUS(ctx->GetCommunicator()->Gather(out, /*root*/0, /*gather_from_root*/true,
                                                     &gathered));
+  
+  CHECK_CYLON_STATUS(LocalSlice(global_table, offset, length, global_out));
 
   if (RANK == 0) {
-    std::shared_ptr<Table> exp, result;
-    // local sort the global table
-    CHECK_CYLON_STATUS(Sort(global_table, sort_cols, exp, sort_order));
+    std::shared_ptr<Table> result;
 
     CHECK_CYLON_STATUS(Merge(gathered, result));
 
-    CHECK_ARROW_EQUAL(exp->get_table(), result->get_table());
+    CHECK_ARROW_EQUAL(global_out->get_table(), result->get_table());
   }
 }
 
@@ -104,40 +103,37 @@ TEMPLATE_LIST_TEST_CASE("Dist Slice testing", "[dist slice]", ArrowNumericTypes)
       Table::FromArrowTable(ctx, global_arrow_table, global_table));
 
   SECTION("dist_slice_test_1_single_table") {
-    testDistSlice({0, 1}, {true, true}, global_table, table1);
+    testDistSlice(global_table, table1, 2, 5);
   }
 
   SECTION("dist_slice_test_2_multiple_table") {
-    testDistSlice({0, 1}, {true, false}, global_table, table1);
+    testDistSlice(global_table, table1, 1, 15);
   }
 
   SECTION("dist_sort_test_3_skipped_two_table") {
-    testDistSlice({1, 0}, {false, false}, global_table, table1);
+    testDistSlice(global_table, table1, 15, 8);
   }
 
   SECTION("dist_sort_test_4_one_empty_table") {
-    if (RANK == 0) {
-      auto pool = cylon::ToArrowPool(ctx);
 
-      std::shared_ptr<arrow::Table> arrow_empty_table;
-      auto arrow_status = util::CreateEmptyTable(table1->get_table()->schema(),
-                                                 &arrow_empty_table, pool);
-      auto empty_table = std::make_shared<Table>(ctx, arrow_empty_table);
-      table1 = empty_table;
-    }
+    auto pool = cylon::ToArrowPool(ctx);
+
+    std::shared_ptr<arrow::Table> arrow_empty_table;
+    auto arrow_status = util::CreateEmptyTable(table1->get_table()->schema(),
+                                                &arrow_empty_table, pool);
+    auto empty_table = std::make_shared<Table>(ctx, arrow_empty_table);
+    table1 = empty_table;
 
     std::shared_ptr<Table> out, out2;
     auto ctx = table1->GetContext();
     std::shared_ptr<arrow::Table> arrow_output;
-    auto status = DistributedSort(table1, {1, 0}, out, {0, 0});
+    auto status = DistributedSlice(table1, 3, 10, out);
     REQUIRE(status.is_ok());
-    status = DistributedSort(table1, {1, 0}, out2, {0, 0},
-                    {0, 0, SortOptions::INITIAL_SAMPLE});
+    status = DistributedSlice(table1, 15, 5, out2);
     REQUIRE(status.is_ok());
-    bool eq;
-    status = DistributedEquals(out, out2, eq);
-    REQUIRE(eq);
+    CHECK_ARROW_EQUAL(out->get_table(), out2->get_table());
   }
+
 }
 
 TEST_CASE("Slice testing", "[equal]") {
