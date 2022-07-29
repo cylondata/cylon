@@ -198,6 +198,7 @@ void testScalarAllReduce(std::shared_ptr<cylon::CylonContext>& ctx) {
 }
 
 int main(int argc, char **argv) {
+  // auto redis = sw::redis::Redis("tcp://127.0.0.1:6379");
   auto ucx_config = std::make_shared<cylon::net::UCXConfig>();
   std::shared_ptr<cylon::CylonContext> ctx;
   if (!cylon::CylonContext::InitDistributed(ucx_config, &ctx).is_ok()) {

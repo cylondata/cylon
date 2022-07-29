@@ -19,8 +19,6 @@
 #include <cylon/net/communicator.hpp>
 #include <cylon/net/ucx/ucx_operations.hpp>
 
-#include <ucp/api/ucp.h>
-
 #ifdef BUILD_CYLON_UCC
 #include <ucc/api/ucc.h>
 #endif
