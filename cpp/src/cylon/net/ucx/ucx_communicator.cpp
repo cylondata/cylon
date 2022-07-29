@@ -22,12 +22,11 @@
 
 #ifdef BUILD_CYLON_UCC
 #include "cylon/net/ucc/ucc_operations.hpp"
+#include "sw/redis++/redis++.h"
 #endif
 
 namespace cylon {
 namespace net {
-
-static constexpr int kBarrierFlag = UINT32_MAX;
 
 void mpi_check_and_finalize() {
   int mpi_finalized;
@@ -41,13 +40,9 @@ CommType UCXConfig::Type() {
   return CommType::UCX;
 }
 
-std::shared_ptr<UCXConfig> UCXConfig::Make(MPI_Comm comm) {
-  return std::make_shared<UCXConfig>(comm);
+std::shared_ptr<UCXConfig> UCXConfig::Make() {
+  return std::make_shared<UCXConfig>();
 }
-
-UCXConfig::UCXConfig(MPI_Comm comm) : comm_(comm) {}
-
-MPI_Comm UCXConfig::GetMPIComm() const { return comm_; }
 
 std::unique_ptr<Channel> UCXCommunicator::CreateChannel() const {
   return std::make_unique<UCXChannel>(this);
@@ -95,9 +90,7 @@ Status UCXCommunicator::AllReduce(const std::shared_ptr<Column> &column,
   return {Code::NotImplemented, "Allreduce not implemented for ucx"};
 }
 
-UCXCommunicator::UCXCommunicator(MemoryPool *pool, bool externally_init, MPI_Comm comm)
-    : Communicator(pool, -1, -1),
-      externally_init(externally_init), mpi_comm(comm) {}
+UCXCommunicator::UCXCommunicator(MemoryPool *pool) : Communicator(pool, -1, -1) {}
 
 Status UCXCommunicator::AllReduce(const std::shared_ptr<Scalar> &values,
                                   net::ReduceOp reduce_op,
@@ -124,23 +117,11 @@ Status UCXCommunicator::Allgather(const std::shared_ptr<Scalar> &value,
 
 Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
                              std::shared_ptr<Communicator> *out) {
-  const auto &mpi_config = std::static_pointer_cast<UCXConfig>(config);
-  auto mpi_comm = mpi_config->GetMPIComm();
-
-  // MPI init
+  CYLON_UNUSED(config);
+  *out = std::make_shared<UCXCommunicator>(pool);
+  auto &comm = static_cast<UCXCommunicator &>(**out);
+  // Check init functions
   int initialized;
-  MPI_Initialized(&initialized);
-  if (!initialized) {
-    RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
-  }
-
-  if (mpi_comm == MPI_COMM_NULL) {
-    mpi_comm = MPI_COMM_WORLD;
-  }
-
-  *out = std::make_shared<UCXCommunicator>(pool, initialized, mpi_comm);
-  auto &comm = dynamic_cast<UCXCommunicator &>(**out);
-
   // Int variable used when iterating
   int sIndx;
   // Address of the UCP Worker for receiving
@@ -153,9 +134,32 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
   // Variable to hold the current ucp address
   ucp_address_t *address;
 
+  // MPI init
+  MPI_Initialized(&initialized);
+  if (!initialized) {
+    RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
+  }
+
+  auto redis = sw::redis::Redis("tcp://127.0.0.1:6379");
+
+  auto val = redis.get("world_size");  // val is of type OptionalString. See 'API
+                                // Reference' section for details.
+                                
+  if (val) {
+    comm.world_size = std::atoi(val.value().c_str()); // set to environmental variable later
+  }  // else key doesn't exist.
+
+  int num_cur_processes = redis.incr("num_cur_processes");
+  comm.rank = num_cur_processes - 1;
+
   // Get the rank for checking send to self, and initializations
-  MPI_Comm_rank(mpi_comm, &comm.rank);
-  MPI_Comm_size(mpi_comm, &comm.world_size);
+  int a, b;
+  MPI_Comm_rank(MPI_COMM_WORLD, &a);
+  MPI_Comm_size(MPI_COMM_WORLD, &b);
+  comm.rank = a;
+  comm.world_size = b;
+
+  // comm.rank = a;
 
   int rank = comm.rank, world_size = comm.world_size;
 
@@ -167,18 +171,33 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
   // Init send worker
   ucpSendWorkerAddr = cylon::ucx::initWorker(comm.ucpContext, &comm.ucpSendWorker);
 
-  //  Gather all worker addresses
+  // Gather all worker addresses
   // All addresses buffer for allGather
-  auto allAddresses = std::make_unique<uint8_t[]>(ucpRecvWorkerAddr->addrSize * world_size);
-  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Allgather(ucpRecvWorkerAddr->addr,
-                                                  (int) ucpRecvWorkerAddr->addrSize,
-                                                  MPI_BYTE,
-                                                  allAddresses.get(),
-                                                  (int) ucpRecvWorkerAddr->addrSize,
-                                                  MPI_BYTE,
-                                                  mpi_comm));
+  auto addr_str = std::string((char *)ucpRecvWorkerAddr->addr,
+                              ((char *)ucpRecvWorkerAddr->addr) + ucpRecvWorkerAddr->addrSize);
 
-  // Iterate and set the sends
+  redis.hset("ucp_worker_addr_mp", std::to_string(comm.rank), addr_str);
+  std::vector<int> v(world_size, 0);
+  redis.lpush("ucx_helper" + std::to_string(comm.rank), v.begin(), v.end());
+
+  auto allAddresses =
+      std::make_unique<char[]>(ucpRecvWorkerAddr->addrSize * world_size);
+
+  for(int i = 0; i < world_size; i++) {
+    if (i == rank) continue;
+    auto helperName = "ucx_helper" + std::to_string(i);
+
+    val = redis.hget("ucp_worker_addr_mp", std::to_string(i));
+    while (!val) {
+      redis.blpop(helperName);
+      val = redis.hget("ucp_worker_addr_mp", std::to_string(i));
+    }
+
+    memcpy(allAddresses.get() + i * ucpRecvWorkerAddr->addrSize,
+           val.value().data(), ucpRecvWorkerAddr->addrSize);
+  }
+
+  // // Iterate and set the sends
   comm.endPointMap.reserve(world_size);
   for (sIndx = 0; sIndx < world_size; sIndx++) {
     ucp_ep_params_t epParams;
@@ -215,11 +234,13 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
   delete (ucpRecvWorkerAddr);
   delete (ucpSendWorkerAddr);
 
+  std::cout<<"a"<<rank<<std::endl;
+
   return Status::OK();
 }
 
 void UCXCommunicator::Finalize() {
-  if (!externally_init && !IsFinalized()) {
+  if (!this->IsFinalized()) {
     ucp_cleanup(ucpContext);
     mpi_check_and_finalize();
     finalized = true;
@@ -227,7 +248,7 @@ void UCXCommunicator::Finalize() {
 }
 
 void UCXCommunicator::Barrier() {
-  MPI_Barrier(this->mpi_comm);
+  MPI_Barrier(MPI_COMM_WORLD);
 }
 
 CommType UCXCommunicator::GetCommType() const {
@@ -238,12 +259,68 @@ CommType UCXCommunicator::GetCommType() const {
 
 static ucc_status_t oob_allgather(void *sbuf, void *rbuf, size_t msglen,
                                   void *coll_info, void **req) {
+  std::cout<<msglen<<std::endl;
   auto comm = (MPI_Comm) coll_info;
   MPI_Request request;
 
   MPI_Iallgather(sbuf, (int) msglen, MPI_BYTE, rbuf, (int) msglen, MPI_BYTE, comm,
                  &request);
   *req = (void *) request;
+  return UCC_OK;
+}
+
+struct redisAllgatherInfo {
+  int num_comm;
+  int world_size;
+  int rank;
+  sw::redis::Redis* redis;
+};
+
+static ucc_status_t redis_allgather(void *sbuf, void *rbuf, size_t msglen,
+                                  void *coll_info, void **req) {
+
+  int world_size = ((redisAllgatherInfo*) coll_info)->world_size;
+  int rank = ((redisAllgatherInfo*) coll_info)->rank;
+
+                                  std::cout<<msglen<<" "<<rank<<std::endl;
+  int num_comm = ((redisAllgatherInfo*) coll_info)->num_comm;
+  ((redisAllgatherInfo*) coll_info)->num_comm ++;
+
+  sw::redis::Redis* redis = ((redisAllgatherInfo*) coll_info)->redis;
+  *req = rbuf;
+  std::string s((char*)sbuf, ((char*)sbuf) + msglen);
+
+  redis->hset("ucc_oob_mp" + std::to_string(num_comm), std::to_string(rank), s);
+  redis->lpush("ucc_helper" + std::to_string(num_comm) + ":" + std::to_string(rank),
+               "0");
+
+  MPI_Request request;
+
+  for (int i = 0; i < world_size; i++) {
+    if (i == rank) {
+      memcpy(rbuf + i * msglen, s.data(), msglen);
+    } else {
+      auto helperName =
+          "ucc_helper" + std::to_string(num_comm) + ":" + std::to_string(i);
+
+      // val = redis.hget("ucp_worker_addr_mp", std::to_string(i));
+      sw::redis::OptionalString val;
+      do {
+        redis->brpoplpush(helperName, helperName, 0);
+        val = redis->hget("ucc_oob_mp" + std::to_string(num_comm),
+                          std::to_string(i));
+      } while (!val);
+
+      memcpy(rbuf + i * msglen, val.value().data(), msglen);
+    }
+  }
+
+  // maybe need to do some cleanups here
+
+  return UCC_OK;
+}
+static ucc_status_t redis_allgather_test(void *req) {
+  CYLON_UNUSED(req);
   return UCC_OK;
 }
 
@@ -260,9 +337,9 @@ static ucc_status_t oob_allgather_free(void *req) {
   return UCC_OK;
 }
 
-UCXUCCCommunicator::UCXUCCCommunicator(const std::shared_ptr<Communicator> &ucx_comm)
+UCXUCCCommunicator::UCXUCCCommunicator(std::shared_ptr<Communicator> ucx_comm)
     : Communicator(ucx_comm->GetMemoryPool(), ucx_comm->GetRank(), ucx_comm->GetWorldSize()),
-      ucx_comm_(std::static_pointer_cast<UCXCommunicator>(ucx_comm)) {}
+      ucx_comm_(std::move(ucx_comm)) {}
 
 Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
                                 MemoryPool *pool,
@@ -273,7 +350,8 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   *out = std::make_shared<UCXUCCCommunicator>(std::move(ucx_comm));
   auto &comm = *std::static_pointer_cast<UCXUCCCommunicator>(*out);
 
-  auto mpi_comm = comm.ucx_comm_->mpi_comm;
+  auto redis = sw::redis::Redis("tcp://127.0.0.1:6379");
+  redisAllgatherInfo coll_info = {0, comm.GetWorldSize(), comm.GetRank(), &redis};
 
   // initialize UCC team and context
   ucc_context_params_t ctx_params;
@@ -296,10 +374,13 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
 
   // init ucc context
   ctx_params.mask = UCC_CONTEXT_PARAM_FIELD_OOB;
-  ctx_params.oob.allgather = oob_allgather;
-  ctx_params.oob.req_test = oob_allgather_test;
+  // ctx_params.oob.allgather = oob_allgather;
+  ctx_params.oob.allgather = redis_allgather;
+  // ctx_params.oob.req_test = oob_allgather_test;
+  ctx_params.oob.req_test = redis_allgather_test;
+
   ctx_params.oob.req_free = oob_allgather_free;
-  ctx_params.oob.coll_info = (void *) mpi_comm;
+  ctx_params.oob.coll_info = (void *) &coll_info;
   ctx_params.oob.n_oob_eps = static_cast<uint32_t>(comm.GetWorldSize());
   ctx_params.oob.oob_ep = static_cast<uint32_t>(comm.GetRank());
 
@@ -311,10 +392,13 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
 
   // init ucc team
   team_params.mask = UCC_TEAM_PARAM_FIELD_OOB;
-  team_params.oob.allgather = oob_allgather;
-  team_params.oob.req_test = oob_allgather_test;
+  // team_params.oob.allgather = oob_allgather;
+  team_params.oob.allgather = redis_allgather;
+  // team_params.oob.req_test = oob_allgather_test;
+  team_params.oob.req_test = redis_allgather_test;
+
   team_params.oob.req_free = oob_allgather_free;
-  team_params.oob.coll_info = (void *) mpi_comm;
+  team_params.oob.coll_info = (void *) &coll_info;
   team_params.oob.n_oob_eps = static_cast<uint32_t>(comm.GetWorldSize());
   team_params.oob.oob_ep = static_cast<uint32_t>(comm.GetRank());
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_team_create_post(&comm.uccContext, 1, &team_params,
@@ -336,7 +420,7 @@ std::unique_ptr<Channel> UCXUCCCommunicator::CreateChannel() const {
 }
 
 void UCXUCCCommunicator::Finalize() {
-  if (!IsFinalized()) {
+  if (!this->IsFinalized()) {
     ucc_status_t status;
     while (uccTeam && (UCC_INPROGRESS == (status = ucc_team_destroy(uccTeam)))) {
       if (UCC_OK != status) {
@@ -344,41 +428,15 @@ void UCXUCCCommunicator::Finalize() {
         break;
       }
     }
-
-    if (!ucx_comm_->externally_init){
-      ucc_context_destroy(uccContext);
-    }
-
-    ucx_comm_->Finalize(); // this will handle MPI_Finalize
+    ucc_context_destroy(uccContext);
+    mpi_check_and_finalize();
+    ucx_comm_->Finalize();
     finalized = true;
   }
 }
 
 void UCXUCCCommunicator::Barrier() {
-  ucc_coll_args_t args_;
-  ucc_coll_req_h req;
-
-  args_.mask = 0;
-  args_.coll_type = UCC_COLL_TYPE_BARRIER;
-
-  ucc_status_t status;
-  status = ucc_collective_init(&args_, &req, uccTeam);
-  assert(status == UCC_OK);
-
-  status = ucc_collective_post(req);
-  assert(status == UCC_OK);
-
-  status = ucc_collective_test(req);
-  while (status > UCC_OK) { // loop until status == 0
-    status = ucc_context_progress(uccContext);
-    assert(status >= UCC_OK); // should be 0, 1 or 2
-
-    status = ucc_collective_test(req);
-  }
-  assert(status == UCC_OK);
-
-  status = ucc_collective_finalize(req);
-  assert(status == UCC_OK);
+  return ucx_comm_->Barrier();
 }
 
 Status UCXUCCCommunicator::AllGather(const std::shared_ptr<Table> &table,
