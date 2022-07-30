@@ -19,10 +19,9 @@
 #include <cylon/net/communicator.hpp>
 #include <cylon/net/ucx/ucx_operations.hpp>
 
-#include <ucp/api/ucp.h>
-
 #ifdef BUILD_CYLON_UCC
 #include <ucc/api/ucc.h>
+#include "sw/redis++/redis++.h"
 #endif
 
 namespace cylon {
@@ -32,12 +31,25 @@ class UCXConfig : public CommConfig {
   CommType Type() override;
 
  public:
+#ifdef BUILD_CYLON_UCC
+  UCXConfig(std::shared_ptr<sw::redis::Redis> redis);
+  static std::shared_ptr<UCXConfig> MakeWithRedis(
+      std::shared_ptr<sw::redis::Redis> redis);
+  std::shared_ptr<sw::redis::Redis> getRedis();
+  std::shared_ptr<sw::redis::Redis> redis;
+#else
   static std::shared_ptr<UCXConfig> Make();
+#endif
 };
 
 class UCXCommunicator : public Communicator {
  public:
+#ifdef BUILD_CYLON_UCC
+  UCXCommunicator(MemoryPool *pool, std::shared_ptr<sw::redis::Redis> redis);
+#else
   explicit UCXCommunicator(MemoryPool *pool);
+#endif
+
   ~UCXCommunicator() override = default;
 
   std::unique_ptr<Channel> CreateChannel() const override;
@@ -78,15 +90,19 @@ class UCXCommunicator : public Communicator {
   std::unordered_map<int, ucp_ep_h> endPointMap;
   // UCP Context - Holds a UCP communication instance's global information.
   ucp_context_h ucpContext{};
+#ifdef BUILD_CYLON_UCC
+  std::shared_ptr<sw::redis::Redis> redis;
+#endif
 };
 
 #ifdef BUILD_CYLON_UCC
 class UCXUCCCommunicator: public Communicator{
  public:
-  explicit UCXUCCCommunicator(std::shared_ptr<Communicator> ucx_comm);
+  explicit UCXUCCCommunicator(std::shared_ptr<Communicator> ucx_comm,
+                              std::shared_ptr<sw::redis::Redis> redis);
 
-  static Status Make(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
-                     std::shared_ptr<Communicator> *out);
+  static Status Make(const std::shared_ptr<CommConfig> &config,
+                     MemoryPool *pool, std::shared_ptr<Communicator> *out);
 
   CommType GetCommType() const override;
   std::unique_ptr<Channel> CreateChannel() const override;
@@ -115,6 +131,8 @@ class UCXUCCCommunicator: public Communicator{
   ucc_team_h uccTeam{};
   ucc_context_h uccContext{};
   std::shared_ptr<Communicator> ucx_comm_;
+  std::shared_ptr<sw::redis::Redis> redis;
+  int num_oob_allgather = 0;
 };
 #endif
 }
