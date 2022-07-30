@@ -21,29 +21,35 @@
 
 #ifdef BUILD_CYLON_UCC
 #include <ucc/api/ucc.h>
+#include "sw/redis++/redis++.h"
 #endif
 
 namespace cylon {
 namespace net {
 
 class UCXConfig : public CommConfig {
- public:
-  explicit UCXConfig(MPI_Comm comm = MPI_COMM_NULL);
-  ~UCXConfig() override = default;
-
   CommType Type() override;
 
-  MPI_Comm GetMPIComm() const;
-
-  static std::shared_ptr<UCXConfig> Make(MPI_Comm comm = MPI_COMM_NULL);
-
- private:
-  MPI_Comm comm_;
+ public:
+#ifdef BUILD_CYLON_UCC
+  UCXConfig(std::shared_ptr<sw::redis::Redis> redis);
+  static std::shared_ptr<UCXConfig> MakeWithRedis(
+      std::shared_ptr<sw::redis::Redis> redis);
+  std::shared_ptr<sw::redis::Redis> getRedis();
+  std::shared_ptr<sw::redis::Redis> redis;
+#else
+  static std::shared_ptr<UCXConfig> Make();
+#endif
 };
 
 class UCXCommunicator : public Communicator {
  public:
-  UCXCommunicator(MemoryPool *pool, bool externally_init, MPI_Comm comm);
+#ifdef BUILD_CYLON_UCC
+  UCXCommunicator(MemoryPool *pool, std::shared_ptr<sw::redis::Redis> redis);
+#else
+  explicit UCXCommunicator(MemoryPool *pool);
+#endif
+
   ~UCXCommunicator() override = default;
 
   std::unique_ptr<Channel> CreateChannel() const override;
@@ -84,17 +90,19 @@ class UCXCommunicator : public Communicator {
   std::unordered_map<int, ucp_ep_h> endPointMap;
   // UCP Context - Holds a UCP communication instance's global information.
   ucp_context_h ucpContext{};
-  bool externally_init = false;
-  MPI_Comm mpi_comm;
+#ifdef BUILD_CYLON_UCC
+  std::shared_ptr<sw::redis::Redis> redis;
+#endif
 };
 
 #ifdef BUILD_CYLON_UCC
-class UCXUCCCommunicator : public Communicator {
+class UCXUCCCommunicator: public Communicator{
  public:
-  explicit UCXUCCCommunicator(const std::shared_ptr<Communicator>& ucx_comm);
+  explicit UCXUCCCommunicator(std::shared_ptr<Communicator> ucx_comm,
+                              std::shared_ptr<sw::redis::Redis> redis);
 
-  static Status Make(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
-                     std::shared_ptr<Communicator> *out);
+  static Status Make(const std::shared_ptr<CommConfig> &config,
+                     MemoryPool *pool, std::shared_ptr<Communicator> *out);
 
   CommType GetCommType() const override;
   std::unique_ptr<Channel> CreateChannel() const override;
@@ -122,7 +130,9 @@ class UCXUCCCommunicator : public Communicator {
 
   ucc_team_h uccTeam{};
   ucc_context_h uccContext{};
-  std::shared_ptr<UCXCommunicator> ucx_comm_;
+  std::shared_ptr<Communicator> ucx_comm_;
+  std::shared_ptr<sw::redis::Redis> redis;
+  int num_oob_allgather = 0;
 };
 #endif
 }
