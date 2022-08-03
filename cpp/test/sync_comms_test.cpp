@@ -121,7 +121,7 @@ TEST_CASE("all gather table", "[sync comms]") {
 }
 
 TEST_CASE("gather table", "[sync comms]") {
-  // todo: UCC doesnt support gatherv for the moment
+  // todo: UCC doesnt support gatherv for the moment  #599
   if (ctx->GetCommType() == net::UCX){
     return;
   }
