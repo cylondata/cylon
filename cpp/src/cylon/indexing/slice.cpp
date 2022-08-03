@@ -118,8 +118,7 @@ namespace cylon {
             return Slice(table, 0, num_rows, output);
         }
         else
-            return cylon::Status(Code::IOError);
-
+            return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");
         }
 
         Status DistributedHead(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
@@ -131,7 +130,7 @@ namespace cylon {
             return DistributedSlice(table, 0, num_rows, output);
         }
         else
-            return cylon::Status(Code::IOError);
+            return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");
 
     }
 
@@ -150,7 +149,7 @@ namespace cylon {
             return Slice(table, table_size-num_rows, num_rows, output);
         }
         else
-            return cylon::Status(Code::IOError);
+            return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");
 
         }
 
@@ -163,7 +162,7 @@ namespace cylon {
             return DistributedSlice(table, table_size-num_rows, num_rows, output);
         }
         else
-            return cylon::Status(Code::IOError);
+            return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");
 
         }
 }
