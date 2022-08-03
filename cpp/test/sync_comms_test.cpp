@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 #include <arrow/visitor_inline.h>
+#include <thread>
+#include <chrono>
 
 #include "common/test_header.hpp"
 
@@ -20,9 +22,9 @@ namespace test {
 
 TEST_CASE("barrier", "[sync comms]") {
   srand((unsigned) time(nullptr));
-  int i = (rand() % 3) + 1;
+  int i = (rand() % 2000) + 1;
 
-  sleep(i);
+  std::this_thread::sleep_for(std::chrono::duration<int, std::milli>(i));
   ctx->Barrier();
 }
 
