@@ -287,7 +287,7 @@ def build_python():
 
     conda_prefix = check_conda_prefix()
 
-    python_build_command = f'{PYTHON_EXEC} setup.py install --force'
+    python_build_command = f'{PYTHON_EXEC} -m pip install -v --upgrade .'
     env = os.environ
     env["CYLON_PREFIX"] = str(BUILD_DIR)
     if os.name == 'posix':
