@@ -18,6 +18,14 @@
 namespace cylon {
 namespace test {
 
+TEST_CASE("barrier", "[sync comms]") {
+  srand((unsigned) time(nullptr));
+  int i = (rand() % 3) + 1;
+
+  sleep(i);
+  ctx->Barrier();
+}
+
 enum GenType { Empty, Null, NonEmpty };
 
 void generate_table(std::shared_ptr<arrow::Schema> *schema,
@@ -113,6 +121,11 @@ TEST_CASE("all gather table", "[sync comms]") {
 }
 
 TEST_CASE("gather table", "[sync comms]") {
+  // todo: UCC doesnt support gatherv for the moment
+  if (ctx->GetCommType() == net::UCX){
+    return;
+  }
+
   std::shared_ptr<arrow::Schema> schema;
   std::shared_ptr<arrow::Table> in_table;
   generate_table(&schema, &in_table);

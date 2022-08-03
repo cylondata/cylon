@@ -27,6 +27,8 @@
 namespace cylon {
 namespace net {
 
+static constexpr int kBarrierFlag = UINT32_MAX;
+
 void mpi_check_and_finalize() {
   int mpi_finalized;
   MPI_Finalized(&mpi_finalized);
@@ -336,7 +338,30 @@ void UCXUCCCommunicator::Finalize() {
 }
 
 void UCXUCCCommunicator::Barrier() {
-  return ucx_comm_->Barrier();
+  ucc_coll_args_t args_;
+  ucc_coll_req_h req;
+
+  args_.mask = 0;
+  args_.coll_type = UCC_COLL_TYPE_BARRIER;
+
+  ucc_status_t status;
+  status = ucc_collective_init(&args_, &req, uccTeam);
+  assert(status == UCC_OK);
+
+  status = ucc_collective_post(req);
+  assert(status == UCC_OK);
+
+  status = ucc_collective_test(req);
+  while (status > UCC_OK) { // loop until status == 0
+    status = ucc_context_progress(uccContext);
+    assert(status >= UCC_OK); // should be 0, 1 or 2
+
+    status = ucc_collective_test(req);
+  }
+  assert(status == UCC_OK);
+
+  status = ucc_collective_finalize(req);
+  assert(status == UCC_OK);
 }
 
 Status UCXUCCCommunicator::AllGather(const std::shared_ptr<Table> &table,
