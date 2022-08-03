@@ -24,6 +24,7 @@
 
 
 int main(int argc, char *argv[]) {
+
   if ((argc < 6 && std::string(argv[1])  == "f")) {
     LOG(ERROR) << "./slice_example f [n | o] csv_file offset length" << std::endl
                << "./slice_example f [n | o] csv_file  offset length" << std::endl;
@@ -46,7 +47,7 @@ int main(int argc, char *argv[]) {
   }
 
 
-  std::shared_ptr<cylon::Table> in_table, joined, sliced;
+  std::shared_ptr<cylon::Table> in_table, joined, sliced, head_table, tail_table;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
   cylon::join::config::JoinAlgorithm algorithm = cylon::join::config::JoinAlgorithm::SORT;
 
@@ -95,7 +96,7 @@ int main(int argc, char *argv[]) {
 
   // Code block for slice operation
   if (ops) {
-    status = cylon::LocalSlice(in_table, offset, length, sliced);
+    status = cylon::Slice(in_table, offset, length, sliced);
   } else {
     status = cylon::DistributedSlice(in_table, offset, length, sliced);
   }
@@ -112,6 +113,50 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> sliced_column_names = sliced->ColumnNames();
 
   sliced->Print();
+
+  int64_t num_rows = 10;
+  //Code block for head operation
+
+  if (ops) {
+    status = cylon::Head(in_table, num_rows, head_table);
+  } else {
+    status = cylon::DistributedHead(in_table, num_rows, head_table);
+  }
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table Head is failed ";
+    ctx->Finalize();
+    return 1;
+  }
+  slice_end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Head table has : " << head_table->Rows();
+  LOG(INFO) << "Head is done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                slice_end_time - read_end_time).count() << "[ms]";
+  sliced_column_names = head_table->ColumnNames();
+
+  head_table->Print();
+
+  //Code block for tail operation
+
+  if (ops) {
+    status = cylon::Tail(in_table, num_rows, tail_table);
+  } else {
+    status = cylon::DistributedTail(in_table, num_rows, tail_table);
+  }
+  if (!status.is_ok()) {
+    LOG(INFO) << "Table Tail is failed ";
+    ctx->Finalize();
+    return 1;
+  }
+  slice_end_time = std::chrono::steady_clock::now();
+  LOG(INFO) << "Tail table has : " << tail_table->Rows();
+  LOG(INFO) << "Tail is done in "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(
+                slice_end_time - read_end_time).count() << "[ms]";
+  sliced_column_names = tail_table->ColumnNames();
+
+  tail_table->Print();
+
   ctx->Finalize();
   return 0;
 }

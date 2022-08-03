@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  std::shared_ptr<cylon::Table> first_table, second_table, joined, sliced;
+  std::shared_ptr<cylon::Table> first_table, second_table, joined;
   auto read_options = cylon::io::config::CSVReadOptions().UseThreads(false).BlockSize(1 << 30);
   cylon::join::config::JoinAlgorithm algorithm = cylon::join::config::JoinAlgorithm::SORT;
 

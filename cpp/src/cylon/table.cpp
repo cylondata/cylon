@@ -1473,11 +1473,8 @@ Status Equals(const std::shared_ptr<cylon::Table> &a, const std::shared_ptr<cylo
 static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &a,
                                            const std::shared_ptr<cylon::Table> &b,
                                            std::shared_ptr<cylon::Table> *b_out) {
-  LOG(INFO) << "I am at the RepartitionToMatchOtherTable";
   int64_t num_row = a->Rows();
 
-  LOG(INFO) << "Table-A size: " << num_row;
-  LOG(INFO) << "Table-B size: " << b->Rows();
   if (num_row == 0) {
     *b_out = a;
     return Status::OK();
@@ -1488,10 +1485,8 @@ static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &
   std::vector<int64_t> rows_per_partition;
   std::shared_ptr<cylon::Column> output;
 
-  LOG(INFO) << "Execute before allgather api in RepartitionToMatchOtherTable";
   RETURN_CYLON_STATUS_IF_FAILED(
       a->GetContext()->GetCommunicator()->Allgather(num_row_scalar, &output));
-  LOG(INFO) << "Execute after allgather api in RepartitionToMatchOtherTable";
   auto *data_ptr =
       std::static_pointer_cast<arrow::Int64Array>(output->data())->raw_values();
 
@@ -1507,8 +1502,6 @@ Status DistributedEquals(const std::shared_ptr<cylon::Table> &a,
                          bool ordered) {
   bool subResult;
   RETURN_CYLON_STATUS_IF_FAILED(VerifyTableSchema(a->get_table(), b->get_table()));
-
-  LOG(INFO) << "I am at the DistributedEquals";
 
   if (!ordered) {
     int col = a->Columns();

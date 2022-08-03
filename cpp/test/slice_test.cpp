@@ -33,7 +33,7 @@ void testDistSlice(std::shared_ptr<Table>& global_table,
   CHECK_CYLON_STATUS(ctx->GetCommunicator()->Gather(out, /*root*/0, /*gather_from_root*/true,
                                                     &gathered));
   
-  CHECK_CYLON_STATUS(LocalSlice(global_table, offset, length, global_out));
+  CHECK_CYLON_STATUS(Slice(global_table, offset, length, global_out));
 
   if (RANK == 0) {
     std::shared_ptr<Table> result;
@@ -151,13 +151,13 @@ TEST_CASE("Slice testing", "[equal]") {
 
     SECTION("Testing Local Slice") {
 
-        CHECK_CYLON_STATUS(LocalSlice(table1, 13, 8, out));
+        CHECK_CYLON_STATUS(Slice(table1, 13, 8, out));
 
-        CHECK_CYLON_STATUS(LocalSlice(table2, 15, 5, out));
+        CHECK_CYLON_STATUS(Slice(table2, 15, 5, out));
 
-        CHECK_CYLON_STATUS(LocalSlice(table3, 0, 10, out));
+        CHECK_CYLON_STATUS(Slice(table3, 0, 10, out));
 
-        CHECK_CYLON_STATUS(LocalSlice(table4, 2, 15, out));
+        CHECK_CYLON_STATUS(Slice(table4, 2, 15, out));
     }
 }
 

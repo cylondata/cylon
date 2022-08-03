@@ -13,7 +13,6 @@
 #include <type_traits>
 #include <vector>
 #include <array>
-#include <stdexcept>
 #include <limits>
 
 #include <cylon/thridparty/flat_hash_map/flat_hash_map.hpp>
