@@ -107,9 +107,6 @@ JAVA_SOURCE_DIR = Path(args.root, 'java')
 RUN_CPP_TESTS = args.test
 RUN_PYTHON_TESTS = args.pytest
 CMAKE_FLAGS = args.cmake_flags
-CPPLINT_COMMAND = "\"-DCMAKE_CXX_CPPLINT=cpplint;--linelength=100;--headers=h," \
-                  "hpp;--filter=-legal/copyright,-build/c++11,-runtime/references\" " if \
-    args.style_check else " "
 
 # arrow build expects /s even on windows
 BUILD_PYTHON = args.python
@@ -126,6 +123,16 @@ INSTALL_DIR = str(Path(args.ipath or check_conda_prefix()))
 OS_NAME = platform.system()  # Linux, Darwin or Windows
 
 PYTHON_EXEC = sys.executable
+
+if args.style_check:
+    cmd = f'{PYTHON_EXEC} -m pip install cpplint'
+    res = subprocess.run(cmd, shell=True, cwd=PYTHON_SOURCE_DIR)
+    check_status(res.returncode, "cpplint install")
+
+    CPPLINT_COMMAND = "-DCMAKE_CXX_CPPLINT=\"cpplint;--linelength=100;--headers=h," \
+                      "hpp;--filter=-legal/copyright,-build/c++11,-runtime/references\" "
+else:
+    CPPLINT_COMMAND = " "
 
 CMAKE_BOOL_FLAGS = {'CYLON_GLOO', 'CYLON_UCX', 'CYLON_UCC'}
 CMAKE_FALSE_OPTIONS = {'0', 'FALSE', 'OFF', 'N', 'NO', 'IGNORE', 'NOTFOUND'}
