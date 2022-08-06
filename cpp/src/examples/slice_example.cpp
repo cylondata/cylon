@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
 
   sliced->Print();
 
-  int64_t num_rows = 10;
+  int64_t num_rows = 30;
   //Code block for head operation
 
   if (ops) {

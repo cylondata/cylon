@@ -153,16 +153,46 @@ namespace cylon {
 
         }
 
-        Status DistributedTail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
+    Status DistributedTail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
 
         std::shared_ptr<arrow::Table>  in_table = table->get_table();
         const int64_t table_size = in_table->num_rows();
 
         if(num_rows > 0 && table_size > 0) {
-            return DistributedSlice(table, table_size-num_rows, num_rows, output);
+            const auto &ctx = table->GetContext();
+            std::shared_ptr<arrow::Table> out_table;
+            auto num_row = table->Rows();
+
+            std::vector<int64_t> sizes;
+            std::shared_ptr<cylon::Column> sizes_cols;
+            RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(sizes, sizes_cols));
+
+            auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
+
+
+            RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->Allgather(num_row_scalar, &sizes_cols));
+
+            auto *data_ptr =
+                std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
+                    ->raw_values();
+
+            int64_t L = num_rows;
+            int64_t zero_0 = 0;
+            int64_t rank = ctx->GetRank();
+            int64_t L_i = std::accumulate(data_ptr, data_ptr + rank, zero_0);
+
+            int64_t sl_i = *(data_ptr + rank);
+
+
+            int64_t y = std::max(zero_0, std::min(L - L_i, sl_i));
+            int64_t x = sl_i - y;
+
+
+            return Slice(table, x, y, output);
         }
         else
             return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");
 
-        }
+    }
+
 }
