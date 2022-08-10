@@ -497,7 +497,7 @@ Status Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
 
 
 Status DistributedSlice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
-              std::shared_ptr<cylon::Table> &out);
+               const long int *data_ptr, std::shared_ptr<cylon::Table> &out);
 
 
 /**

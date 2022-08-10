@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
   if (ops) {
     status = cylon::Slice(in_table, offset, length, sliced);
   } else {
-    status = cylon::DistributedSlice(in_table, offset, length, sliced);
+    status = cylon::DistributedSlice(in_table, offset, length, nullptr, sliced);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Slice is failed ";
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   slice_end_time = std::chrono::steady_clock::now();
-  LOG(INFO) << "Head table has : " << head_table->Rows();
+  LOG(INFO) << ctx->GetRank() << " Partition with " << "Head table has : " << head_table->Rows();
   LOG(INFO) << "Head is done in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 slice_end_time - read_end_time).count() << "[ms]";
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   slice_end_time = std::chrono::steady_clock::now();
-  LOG(INFO) << "Tail table has : " << tail_table->Rows();
+  LOG(INFO) << ctx->GetRank() << " Partition with " << "Tail table has : " << tail_table->Rows();
   LOG(INFO) << "Tail is done in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 slice_end_time - read_end_time).count() << "[ms]";
