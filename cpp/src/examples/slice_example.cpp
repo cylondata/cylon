@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
   if (ops) {
     status = cylon::Slice(in_table, offset, length, sliced);
   } else {
-    status = cylon::DistributedSlice(in_table, offset, length, nullptr, sliced);
+    status = cylon::DistributedSlice(in_table, offset, length, sliced);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Slice is failed ";

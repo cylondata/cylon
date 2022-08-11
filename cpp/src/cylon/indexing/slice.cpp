@@ -65,13 +65,11 @@ namespace cylon {
      * @return new sliced table
      */
 
-
-    Status DistributedSlice(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length, const long int *data_ptr, std::shared_ptr<cylon::Table> &out) {
+    Status DistributedSliceImpl(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length, int64_t *data_ptr, std::shared_ptr<cylon::Table> &out) {
 
         const auto &ctx = in->GetContext();
-        auto *data_ptr_st = data_ptr;
 
-        if(data_ptr_st == nullptr) {
+        if(data_ptr == nullptr) {
             std::shared_ptr<arrow::Table> out_table;
             auto num_row = in->Rows();
 
@@ -84,24 +82,32 @@ namespace cylon {
 
             RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->Allgather(num_row_scalar, &sizes_cols));
 
-            data_ptr_st =
-                std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
-                    ->raw_values();
+            data_ptr =
+                const_cast <int64_t *> (std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
+                    ->raw_values());
         }
 
         int64_t L = length;
         int64_t K = offset;
         int64_t zero_0 = 0;
         int64_t rank = ctx->GetRank();
-        int64_t L_i = std::accumulate(data_ptr_st, data_ptr_st + rank, zero_0);
+        int64_t L_i = std::accumulate(data_ptr, data_ptr + rank, zero_0);
 
-        int64_t sl_i = *(data_ptr_st + rank);
+        int64_t sl_i = *(data_ptr + rank);
 
 
         int64_t x = std::max(zero_0, std::min(K - L_i, sl_i));
         int64_t y = std::min(sl_i, std::max(K + L - L_i, zero_0)) - x;
 
         return Slice(in, x, y, out);
+    }
+ 
+
+
+    Status DistributedSlice(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length, std::shared_ptr<cylon::Table> &out) {
+
+        return DistributedSliceImpl(in, offset, length, nullptr, out);
+
     }
 
 
@@ -129,7 +135,7 @@ namespace cylon {
         const int64_t table_size = in_table->num_rows();
 
         if(num_rows > 0 && table_size > 0) {
-            return DistributedSlice(table, 0, num_rows, nullptr, output);
+            return DistributedSliceImpl(table, 0, num_rows, nullptr, output);
         }
         else
             return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");
@@ -183,7 +189,7 @@ namespace cylon {
 
             int64_t L_g = std::accumulate(data_ptr, data_ptr + sizes_cols->length(), zero_0);
 
-            return DistributedSlice(table, L_g - L, L, data_ptr, output);
+            return DistributedSliceImpl(table, L_g - L, L, const_cast <int64_t *> (data_ptr), output);
         }
         else
             return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");

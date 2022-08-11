@@ -27,7 +27,7 @@ void testDistSlice(std::shared_ptr<Table>& global_table,
   auto ctx = table->GetContext();
   std::shared_ptr<arrow::Table> arrow_output;
 
-  CHECK_CYLON_STATUS(DistributedSlice(table, offset, length, nullptr, out));
+  CHECK_CYLON_STATUS(DistributedSlice(table, offset, length, out));
 
   std::vector<std::shared_ptr<Table>> gathered;
   CHECK_CYLON_STATUS(ctx->GetCommunicator()->Gather(out, /*root*/0, /*gather_from_root*/true,
@@ -127,9 +127,9 @@ TEMPLATE_LIST_TEST_CASE("Dist Slice testing", "[dist slice]", ArrowNumericTypes)
     std::shared_ptr<Table> out, out2;
     auto ctx = table1->GetContext();
     std::shared_ptr<arrow::Table> arrow_output;
-    auto status = DistributedSlice(table1, 3, 10, nullptr, out);
+    auto status = DistributedSlice(table1, 3, 10, out);
     REQUIRE(status.is_ok());
-    status = DistributedSlice(table1, 15, 5, nullptr, out2);
+    status = DistributedSlice(table1, 15, 5, out2);
     REQUIRE(status.is_ok());
     CHECK_ARROW_EQUAL(out->get_table(), out2->get_table());
   }
@@ -173,9 +173,9 @@ TEST_CASE("Distributed Slice testing", "[distributed slice]") {
                             read_options));
 
     SECTION("Testing Distributed Slice") {
-        CHECK_CYLON_STATUS(DistributedSlice(table1, 10, 15, nullptr, out));
+        CHECK_CYLON_STATUS(DistributedSlice(table1, 10, 15, out));
 
-        CHECK_CYLON_STATUS(DistributedSlice(table2, 12, 8, nullptr, out));
+        CHECK_CYLON_STATUS(DistributedSlice(table2, 12, 8, out));
     }
 }
 

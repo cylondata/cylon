@@ -69,12 +69,8 @@ int main(int argc, char *argv[]) {
     double dup = std::stod(argv[4]);
     cylon::examples::create_two_in_memory_tables(count, dup,ctx,first_table,second_table);
   } else if (mem == "f") {
-    LOG(INFO) << "Load From first CSV file" << std::string(argv[3]);
-    cylon::FromCSV(ctx, std::string(argv[3]), first_table);
-    cylon::FromCSV(ctx, std::string(argv[4]), second_table);
-
-    //cylon::FromCSV(ctx, std::string(argv[3]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
-    //cylon::FromCSV(ctx, std::string(argv[4]) + std::to_string(ctx->GetRank()) + ".csv", second_table);
+    cylon::FromCSV(ctx, std::string(argv[3]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
+    cylon::FromCSV(ctx, std::string(argv[4]) + std::to_string(ctx->GetRank()) + ".csv", second_table);
 
     if (argc == 6) {
       if (!strcmp(argv[5], "hash")) {
@@ -87,7 +83,6 @@ int main(int argc, char *argv[]) {
   }
   ctx->Barrier();
   auto read_end_time = std::chrono::steady_clock::now();
-  //first_table->Print();
   LOG(INFO) << "Read tables in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
