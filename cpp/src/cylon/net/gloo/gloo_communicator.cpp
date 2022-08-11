@@ -57,6 +57,9 @@ Status GlooCommunicator::Make(const std::shared_ptr<CommConfig> &config,
     } else { // MPI is not initialized. Ask gloo to initialize MPI
       gloo_ctx = gloo::mpi::Context::createManaged();
     }
+    if (gloo_config->timeout_ != kTimoutNotSet) {
+      gloo_ctx->setTimeout(std::chrono::seconds(gloo_config->timeout_));
+    }
     ((gloo::mpi::Context &) *gloo_ctx).connectFullMesh(dev);
 #else
     return {Code::Invalid, "Gloo does not contain mpi headers!"};
@@ -69,8 +72,10 @@ Status GlooCommunicator::Make(const std::shared_ptr<CommConfig> &config,
 
     gloo_ctx = std::make_shared<gloo::rendezvous::Context>(gloo_config->rank_,
                                                            gloo_config->world_size_);
+    if (gloo_config->timeout_ != kTimoutNotSet) {
+      gloo_ctx->setTimeout(std::chrono::seconds(gloo_config->timeout_));
+    }
     ((gloo::rendezvous::Context &) *gloo_ctx).connectFullMesh(*prefix_store, dev);
-
   }
   *out = std::make_shared<GlooCommunicator>(pool, std::move(gloo_ctx));
   return Status::OK();
@@ -191,6 +196,13 @@ int GlooConfig::rank() const {
 }
 int GlooConfig::world_size() const {
   return world_size_;
+}
+
+void GlooConfig::SetTimeout(int timeout) {
+  GlooConfig::timeout_ = std::chrono::seconds(timeout);
+}
+const std::chrono::seconds &GlooConfig::timeout() const {
+  return GlooConfig::timeout_;
 }
 
 }

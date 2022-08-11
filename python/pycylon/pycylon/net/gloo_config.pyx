@@ -47,6 +47,9 @@ IF CYTHON_GLOO:
         def set_tcp_ai_family(self, ai_family: int):
             self.gloo_config_shd_ptr.get().SetTcpAiFamily(ai_family)
 
+        def set_timeout(self, timeout: int):
+            self.gloo_config_shd_ptr.get().SetTimeout(timeout)
+
     cdef class GlooStandaloneConfig(CommConfig):
         """
         GlooConfig Type mapping from libCylon to PyCylon
@@ -82,3 +85,6 @@ IF CYTHON_GLOO:
 
         def set_store_prefix(self, prefix: str):
             self.gloo_config_shd_ptr.get().SetStorePrefix(prefix.encode())
+
+        def set_timeout(self, timeout: int):
+            self.gloo_config_shd_ptr.get().SetTimeout(timeout)
