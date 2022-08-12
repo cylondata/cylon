@@ -96,9 +96,9 @@ int main(int argc, char *argv[]) {
 
   // Code block for slice operation
   if (ops) {
-    status = cylon::Slice(in_table, offset, length, sliced);
+    status = cylon::Slice(in_table, offset, length, &sliced);
   } else {
-    status = cylon::DistributedSlice(in_table, offset, length, sliced);
+    status = cylon::DistributedSlice(in_table, offset, length, &sliced);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Slice is failed ";
@@ -118,9 +118,9 @@ int main(int argc, char *argv[]) {
   //Code block for head operation
 
   if (ops) {
-    status = cylon::Head(in_table, num_rows, head_table);
+    status = cylon::Head(in_table, num_rows, &head_table);
   } else {
-    status = cylon::DistributedHead(in_table, num_rows, head_table);
+    status = cylon::DistributedHead(in_table, num_rows, &head_table);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Head is failed ";
@@ -139,9 +139,9 @@ int main(int argc, char *argv[]) {
   //Code block for tail operation
 
   if (ops) {
-    status = cylon::Tail(in_table, num_rows, tail_table);
+    status = cylon::Tail(in_table, num_rows, &tail_table);
   } else {
-    status = cylon::DistributedTail(in_table, num_rows, tail_table);
+    status = cylon::DistributedTail(in_table, num_rows, &tail_table);
   }
   if (!status.is_ok()) {
     LOG(INFO) << "Table Tail is failed ";

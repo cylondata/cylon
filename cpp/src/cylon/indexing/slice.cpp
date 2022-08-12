@@ -44,7 +44,7 @@ namespace cylon {
 
 
     Status Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
-                std::shared_ptr<cylon::Table> &out) {
+                std::shared_ptr<cylon::Table> *out) {
         const auto &ctx = in->GetContext();
     
         std::shared_ptr<arrow::Table> out_table;
@@ -55,7 +55,7 @@ namespace cylon {
         } else {
             out_table = in_table;
         }
-        return Table::FromArrowTable(ctx, std::move(out_table), out);
+        return Table::FromArrowTable(ctx, std::move(out_table), *out);
     }
 
 
@@ -65,7 +65,7 @@ namespace cylon {
      * @return new sliced table
      */
 
-    Status DistributedSliceImpl(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length, int64_t *data_ptr, std::shared_ptr<cylon::Table> &out) {
+    Status DistributedSliceImpl(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length, int64_t *data_ptr, std::shared_ptr<cylon::Table> *out) {
 
         const auto &ctx = in->GetContext();
 
@@ -104,7 +104,7 @@ namespace cylon {
  
 
 
-    Status DistributedSlice(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length, std::shared_ptr<cylon::Table> &out) {
+    Status DistributedSlice(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length, std::shared_ptr<cylon::Table> *out) {
 
         return DistributedSliceImpl(in, offset, length, nullptr, out);
 
@@ -117,7 +117,7 @@ namespace cylon {
      * @return new table
      */
 
-    Status Head(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
+    Status Head(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> *output) {
 
         std::shared_ptr<arrow::Table>  in_table = table->get_table();
         const int64_t table_size = in_table->num_rows();
@@ -129,7 +129,7 @@ namespace cylon {
             return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");
         }
 
-        Status DistributedHead(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
+    Status DistributedHead(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> *output) {
 
         std::shared_ptr<arrow::Table>  in_table = table->get_table();
         const int64_t table_size = in_table->num_rows();
@@ -148,7 +148,7 @@ namespace cylon {
      * @return new table
      */
 
-    Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
+    Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> *output) {
 
         std::shared_ptr<arrow::Table>  in_table = table->get_table();
         const int64_t table_size = in_table->num_rows();
@@ -161,7 +161,7 @@ namespace cylon {
 
         }
 
-    Status DistributedTail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> &output) {
+    Status DistributedTail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> *output) {
 
         std::shared_ptr<arrow::Table>  in_table = table->get_table();
         const int64_t table_size = in_table->num_rows();

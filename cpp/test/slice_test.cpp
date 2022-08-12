@@ -27,13 +27,13 @@ void testDistSlice(std::shared_ptr<Table>& global_table,
   auto ctx = table->GetContext();
   std::shared_ptr<arrow::Table> arrow_output;
 
-  CHECK_CYLON_STATUS(DistributedSlice(table, offset, length, out));
+  CHECK_CYLON_STATUS(DistributedSlice(table, offset, length, &out));
 
   std::vector<std::shared_ptr<Table>> gathered;
   CHECK_CYLON_STATUS(ctx->GetCommunicator()->Gather(out, /*root*/0, /*gather_from_root*/true,
                                                     &gathered));
   
-  CHECK_CYLON_STATUS(Slice(global_table, offset, length, global_out));
+  CHECK_CYLON_STATUS(Slice(global_table, offset, length, &global_out));
 
   if (RANK == 0) {
     std::shared_ptr<Table> result;
@@ -127,9 +127,9 @@ TEMPLATE_LIST_TEST_CASE("Dist Slice testing", "[dist slice]", ArrowNumericTypes)
     std::shared_ptr<Table> out, out2;
     auto ctx = table1->GetContext();
     std::shared_ptr<arrow::Table> arrow_output;
-    auto status = DistributedSlice(table1, 3, 10, out);
+    auto status = DistributedSlice(table1, 3, 10, &out);
     REQUIRE(status.is_ok());
-    status = DistributedSlice(table1, 15, 5, out2);
+    status = DistributedSlice(table1, 15, 5, &out2);
     REQUIRE(status.is_ok());
     CHECK_ARROW_EQUAL(out->get_table(), out2->get_table());
   }
@@ -151,13 +151,13 @@ TEST_CASE("Slice testing", "[equal]") {
 
     SECTION("Testing Local Slice") {
 
-        CHECK_CYLON_STATUS(Slice(table1, 13, 8, out));
+        CHECK_CYLON_STATUS(Slice(table1, 13, 8, &out));
 
-        CHECK_CYLON_STATUS(Slice(table2, 15, 5, out));
+        CHECK_CYLON_STATUS(Slice(table2, 15, 5, &out));
 
-        CHECK_CYLON_STATUS(Slice(table3, 0, 10, out));
+        CHECK_CYLON_STATUS(Slice(table3, 0, 10, &out));
 
-        CHECK_CYLON_STATUS(Slice(table4, 2, 15, out));
+        CHECK_CYLON_STATUS(Slice(table4, 2, 15, &out));
     }
 }
 
@@ -173,9 +173,9 @@ TEST_CASE("Distributed Slice testing", "[distributed slice]") {
                             read_options));
 
     SECTION("Testing Distributed Slice") {
-        CHECK_CYLON_STATUS(DistributedSlice(table1, 10, 15, out));
+        CHECK_CYLON_STATUS(DistributedSlice(table1, 10, 15, &out));
 
-        CHECK_CYLON_STATUS(DistributedSlice(table2, 12, 8, out));
+        CHECK_CYLON_STATUS(DistributedSlice(table2, 12, 8, &out));
     }
 }
 

@@ -487,7 +487,7 @@ Status WriteParquet(const std::shared_ptr<cylon::CylonContext> &ctx,
    * @return new sliced table
    */
 Status Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
-              std::shared_ptr<cylon::Table> &out);
+              std::shared_ptr<cylon::Table> *out);
 
 /**
  * DistributedSlice the part of table to create a single table
@@ -497,7 +497,7 @@ Status Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
 
 
 Status DistributedSlice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
-               std::shared_ptr<cylon::Table> &out);
+               std::shared_ptr<cylon::Table> *out);
 
 
 /**
@@ -507,9 +507,9 @@ Status DistributedSlice(const std::shared_ptr<Table> &in, int64_t offset, int64_
    */
 
 Status Head(const std::shared_ptr<Table> &table, int64_t num_rows,
-              std::shared_ptr<cylon::Table> &output);
+              std::shared_ptr<cylon::Table> *output);
 Status DistributedHead(const std::shared_ptr<Table> &table, int64_t num_rows,
-              std::shared_ptr<cylon::Table> &output);
+              std::shared_ptr<cylon::Table> *output);
 
 /**
    * Tail the part of table to create a single table with specific number of rows
@@ -518,10 +518,10 @@ Status DistributedHead(const std::shared_ptr<Table> &table, int64_t num_rows,
    */
 
 Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows, 
-              std::shared_ptr<cylon::Table> &output);
+              std::shared_ptr<cylon::Table> *output);
 
 Status DistributedTail(const std::shared_ptr<Table> &table, int64_t num_rows,
-               std::shared_ptr<cylon::Table> &output); 
+               std::shared_ptr<cylon::Table> *output); 
 
 #endif  // BUILD_CYLON_PARQUET
 
