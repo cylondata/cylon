@@ -158,6 +158,7 @@ cylon_run_test(equal_test 2 mpi)
 cylon_add_test(slice_test)
 cylon_run_test(slice_test 1 mpi)
 cylon_run_test(slice_test 2 mpi)
+cylon_run_test(slice_test 4 mpi)
 
 # flatten array test
 cylon_add_test(flatten_array_test)

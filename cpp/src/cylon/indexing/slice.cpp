@@ -12,188 +12,150 @@
  * limitations under the License.
  */
 
-#include <glog/logging.h>
-#include <arrow/compute/api.h>
-#include <arrow/table.h>
-
-#include <fstream>
-#include <future>
 #include <memory>
-#include <unordered_map>
-#include <iostream>
 #include <algorithm>
 
+#include <arrow/compute/api.h>
+
 #include <cylon/table.hpp>
-#include <cylon/arrow/arrow_all_to_all.hpp>
-#include <cylon/arrow/arrow_comparator.hpp>
-#include <cylon/arrow/arrow_types.hpp>
 #include <cylon/ctx/arrow_memory_pool_utils.hpp>
-#include <cylon/io/arrow_io.hpp>
-#include <cylon/join/join.hpp>
 #include <cylon/util/macros.hpp>
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/scalar.hpp>
-#include <cylon/serialize/table_serialize.hpp>
 
 namespace cylon {
-    /**
-     * Slice the part of table to create a single table
-     * @param table, offset and length
-     * @return new sliced table
-     */
 
+static constexpr int64_t kZero = 0;
 
-    Status Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
-                std::shared_ptr<cylon::Table> *out) {
-        const auto &ctx = in->GetContext();
-    
-        std::shared_ptr<arrow::Table> out_table;
-        const auto& in_table = in->get_table();
+/**
+ * Slice the part of table to create a single table
+ * @param table, offset and length
+ * @return new sliced table
+ */
+Status Slice(const std::shared_ptr<Table> &in, int64_t offset, int64_t length,
+             std::shared_ptr<Table> *out) {
+  const auto &ctx = in->GetContext();
+  const auto &in_table = in->get_table();
 
-        if (!in->Empty()) {
-            out_table = in_table->Slice(offset, length);
-        } else {
-            out_table = in_table;
-        }
-        return Table::FromArrowTable(ctx, std::move(out_table), *out);
-    }
+  std::shared_ptr<arrow::Table> out_table;
+  if (!in->Empty()) {
+    out_table = in_table->Slice(offset, length);
+  } else {
+    out_table = in_table;
+  }
+  return Table::FromArrowTable(ctx, std::move(out_table), *out);
+}
 
+/**
+ * DistributedSlice the part of table to create a single table
+ * @param table, global_offset and global_length
+ * @return new sliced table
+ */
+Status distributed_slice_impl(const std::shared_ptr<Table> &in,
+                              int64_t global_offset,
+                              int64_t global_length,
+                              int64_t *partition_lengths,
+                              std::shared_ptr<Table> *out) {
+  const auto &ctx = in->GetContext();
+  std::shared_ptr<cylon::Column> partition_len_col;
 
-    /**
-     * DistributedSlice the part of table to create a single table
-     * @param table, offset and length
-     * @return new sliced table
-     */
+  if (partition_lengths == nullptr) {
+    const auto &num_row_scalar = Scalar::Make(arrow::MakeScalar(in->Rows()));
+    RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()
+                                      ->Allgather(num_row_scalar, &partition_len_col));
 
-    Status DistributedSliceImpl(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length, int64_t *data_ptr, std::shared_ptr<cylon::Table> *out) {
+    partition_lengths =
+        const_cast<int64_t *>(std::static_pointer_cast<arrow::Int64Array>(partition_len_col->data())
+            ->raw_values());
+  }
 
-        const auto &ctx = in->GetContext();
+  int64_t rank = ctx->GetRank();
+  int64_t prefix_sum = std::accumulate(partition_lengths, partition_lengths + rank, kZero);
+  int64_t this_length = *(partition_lengths + rank);
+  assert(this_length == in->Rows());
 
-        if(data_ptr == nullptr) {
-            std::shared_ptr<arrow::Table> out_table;
-            auto num_row = in->Rows();
+  int64_t local_offset = std::max(kZero, std::min(global_offset - prefix_sum, this_length));
+  int64_t local_length =
+      std::min(this_length, std::max(global_offset + global_length - prefix_sum, kZero))
+          - local_offset;
 
-            std::vector<int64_t> sizes;
-            std::shared_ptr<cylon::Column> sizes_cols;
-            RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(sizes, sizes_cols));
+  return Slice(in, local_offset, local_length, out);
+}
 
-            auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
+Status DistributedSlice(const std::shared_ptr<Table> &in,
+                        int64_t offset,
+                        int64_t length,
+                        std::shared_ptr<Table> *out) {
+  return distributed_slice_impl(in, offset, length, nullptr, out);
+}
 
+/**
+ * Head the part of table to create a single table with specific number of rows
+ * @param tables, number of rows
+ * @return new table
+ */
+Status Head(const std::shared_ptr<Table> &table, int64_t num_rows,
+            std::shared_ptr<Table> *output) {
+  if (num_rows >= 0) {
+    return Slice(table, 0, num_rows, output);
+  } else
+    return {Code::Invalid, "Number of head rows should be >=0"};
+}
 
-            RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->Allgather(num_row_scalar, &sizes_cols));
+Status DistributedHead(const std::shared_ptr<Table> &table, int64_t num_rows,
+                       std::shared_ptr<Table> *output) {
 
-            data_ptr =
-                const_cast <int64_t *> (std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
-                    ->raw_values());
-        }
+  std::shared_ptr<arrow::Table> in_table = table->get_table();
 
-        int64_t L = length;
-        int64_t K = offset;
-        int64_t zero_0 = 0;
-        int64_t rank = ctx->GetRank();
-        int64_t L_i = std::accumulate(data_ptr, data_ptr + rank, zero_0);
+  if (num_rows >= 0) {
+    return distributed_slice_impl(table, 0, num_rows, nullptr, output);
+  } else {
+    return {Code::Invalid, "Number of head rows should be >=0"};
+  }
+}
 
-        int64_t sl_i = *(data_ptr + rank);
+/**
+ * Tail the part of table to create a single table with specific number of rows
+ * @param tables, number of rows
+ * @return new table
+ */
+Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows,
+            std::shared_ptr<Table> *output) {
 
+  std::shared_ptr<arrow::Table> in_table = table->get_table();
+  const int64_t table_size = in_table->num_rows();
 
-        int64_t x = std::max(zero_0, std::min(K - L_i, sl_i));
-        int64_t y = std::min(sl_i, std::max(K + L - L_i, zero_0)) - x;
+  if (num_rows >= 0) {
+    return Slice(table, table_size - num_rows, num_rows, output);
+  } else {
+    return {Code::Invalid, "Number of tailed rows should be >=0"};
+  }
+}
 
-        return Slice(in, x, y, out);
-    }
- 
+Status DistributedTail(const std::shared_ptr<Table> &table, int64_t num_rows,
+                       std::shared_ptr<Table> *output) {
+  if (num_rows >= 0) {
+    const auto &ctx = table->GetContext();
+    std::shared_ptr<cylon::Column> partition_len_col;
+    const auto &num_row_scalar = Scalar::Make(arrow::MakeScalar(table->Rows()));
+    RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()
+                                      ->Allgather(num_row_scalar, &partition_len_col));
+    assert(ctx->GetWorldSize() == partition_len_col->length());
+    auto *partition_lengths =
+        std::static_pointer_cast<arrow::Int64Array>(partition_len_col->data())
+            ->raw_values();
 
+    int64_t dist_length =
+        std::accumulate(partition_lengths, partition_lengths + ctx->GetWorldSize(), kZero);
 
-    Status DistributedSlice(const std::shared_ptr<cylon::Table> &in, int64_t offset, int64_t length, std::shared_ptr<cylon::Table> *out) {
-
-        return DistributedSliceImpl(in, offset, length, nullptr, out);
-
-    }
-
-
-    /**
-     * Head the part of table to create a single table with specific number of rows
-     * @param tables, number of rows
-     * @return new table
-     */
-
-    Status Head(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> *output) {
-
-        std::shared_ptr<arrow::Table>  in_table = table->get_table();
-        const int64_t table_size = in_table->num_rows();
-
-        if(num_rows > 0 && table_size > 0) {
-            return Slice(table, 0, num_rows, output);
-        }
-        else
-            return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");
-        }
-
-    Status DistributedHead(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> *output) {
-
-        std::shared_ptr<arrow::Table>  in_table = table->get_table();
-        const int64_t table_size = in_table->num_rows();
-
-        if(num_rows > 0 && table_size > 0) {
-            return DistributedSliceImpl(table, 0, num_rows, nullptr, output);
-        }
-        else
-            return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");
-
-    }
-
-    /**
-     * Tail the part of table to create a single table with specific number of rows
-     * @param tables, number of rows
-     * @return new table
-     */
-
-    Status Tail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> *output) {
-
-        std::shared_ptr<arrow::Table>  in_table = table->get_table();
-        const int64_t table_size = in_table->num_rows();
-
-        if(num_rows > 0 && table_size > 0) {
-            return Slice(table, table_size-num_rows, num_rows, output);
-        }
-        else
-            return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");
-
-        }
-
-    Status DistributedTail(const std::shared_ptr<Table> &table, int64_t num_rows, std::shared_ptr<cylon::Table> *output) {
-
-        std::shared_ptr<arrow::Table>  in_table = table->get_table();
-        const int64_t table_size = in_table->num_rows();
-
-        if(num_rows > 0 && table_size > 0) {
-            const auto &ctx = table->GetContext();
-            std::shared_ptr<arrow::Table> out_table;
-            auto num_row = table->Rows();
-
-            std::vector<int64_t> sizes;
-            std::shared_ptr<cylon::Column> sizes_cols;
-            RETURN_CYLON_STATUS_IF_FAILED(Column::FromVector(sizes, sizes_cols));
-
-            auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
-
-
-            RETURN_CYLON_STATUS_IF_FAILED(ctx->GetCommunicator()->Allgather(num_row_scalar, &sizes_cols));
-
-            auto *data_ptr =
-                std::static_pointer_cast<arrow::Int64Array>(sizes_cols->data())
-                    ->raw_values();
-
-            int64_t L = num_rows;
-            int64_t zero_0 = 0;
-
-            int64_t L_g = std::accumulate(data_ptr, data_ptr + sizes_cols->length(), zero_0);
-
-            return DistributedSliceImpl(table, L_g - L, L, const_cast <int64_t *> (data_ptr), output);
-        }
-        else
-            return cylon::Status(Code::IOError, "Number of tailed row should be greater than zero with minimum table elements");
-
-    }
+    return distributed_slice_impl(table,
+                                  dist_length - num_rows,
+                                  num_rows,
+                                  const_cast <int64_t *> (partition_lengths),
+                                  output);
+  } else {
+    return {Code::Invalid, "Number of tailed rows should be >=0"};
+  }
+}
 
 }

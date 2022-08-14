@@ -23,32 +23,34 @@ void testDistSlice(std::shared_ptr<Table>& global_table,
                   std::shared_ptr<Table>& table,
                   int64_t offset,
                   int64_t length) {
-  std::shared_ptr<Table> out, global_out;
+  std::shared_ptr<Table> out;
   auto ctx = table->GetContext();
   std::shared_ptr<arrow::Table> arrow_output;
 
   CHECK_CYLON_STATUS(DistributedSlice(table, offset, length, &out));
+  INFO(RANK << "slice res:" << out->Rows());
 
   std::vector<std::shared_ptr<Table>> gathered;
   CHECK_CYLON_STATUS(ctx->GetCommunicator()->Gather(out, /*root*/0, /*gather_from_root*/true,
                                                     &gathered));
-  
-  CHECK_CYLON_STATUS(Slice(global_table, offset, length, &global_out));
 
   if (RANK == 0) {
-    std::shared_ptr<Table> result;
+    std::shared_ptr<Table> result, global_out;
+    CHECK_CYLON_STATUS(Slice(global_table, offset, length, &global_out));
 
+    for (size_t i = 0; i < gathered.size(); i++) {
+      INFO("gathered " << i << ":" << gathered[i]->Rows());
+    }
+    REQUIRE(WORLD_SZ == (int) gathered.size());
     CHECK_CYLON_STATUS(Merge(gathered, result));
-
     CHECK_ARROW_EQUAL(global_out->get_table(), result->get_table());
   }
 }
 
 namespace test {
 
-TEMPLATE_LIST_TEST_CASE("Dist Slice testing", "[dist slice]", ArrowNumericTypes) {
-  auto type = default_type_instance<TestType>();
-  auto schema = arrow::schema({{arrow::field("a", type)},
+TEST_CASE("Dist Slice testing", "[dist slice]") {
+  auto schema = arrow::schema({{arrow::field("a", arrow::int64())},
                                {arrow::field("b", arrow::float32())}});
   auto global_arrow_table = TableFromJSON(schema, {R"([{"a":  3, "b":0.025},
                                          {"a": 26, "b":0.394},
@@ -97,7 +99,6 @@ TEMPLATE_LIST_TEST_CASE("Dist Slice testing", "[dist slice]", ArrowNumericTypes)
       ctx, global_arrow_table->Slice(RANK * rows_per_tab, rows_per_tab),
       table1));
   std::shared_ptr<Table> global_table;
-  LOG(INFO) << "HERE!!!";
 
   CHECK_CYLON_STATUS(
       Table::FromArrowTable(ctx, global_arrow_table, global_table));
