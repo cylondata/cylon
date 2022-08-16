@@ -89,6 +89,8 @@ parser.add_argument("-bpath", help='Build directory',
 parser.add_argument("-ipath", help='Install directory')
 
 parser.add_argument("--verbose", help='Set verbosity', default=False, action="store_true")
+parser.add_argument("-j", help='Parallel build threads', default=os.cpu_count(),
+                    dest='parallel', type=int)
 
 args = parser.parse_args()
 
@@ -107,9 +109,7 @@ JAVA_SOURCE_DIR = Path(args.root, 'java')
 RUN_CPP_TESTS = args.test
 RUN_PYTHON_TESTS = args.pytest
 CMAKE_FLAGS = args.cmake_flags
-CPPLINT_COMMAND = "\"-DCMAKE_CXX_CPPLINT=cpplint;--linelength=100;--headers=h," \
-                  "hpp;--filter=-legal/copyright,-build/c++11,-runtime/references\" " if \
-    args.style_check else " "
+PARALLEL = args.parallel
 
 # arrow build expects /s even on windows
 BUILD_PYTHON = args.python
@@ -126,6 +126,16 @@ INSTALL_DIR = str(Path(args.ipath or check_conda_prefix()))
 OS_NAME = platform.system()  # Linux, Darwin or Windows
 
 PYTHON_EXEC = sys.executable
+
+if args.style_check:
+    cmd = f'{PYTHON_EXEC} -m pip install cpplint'
+    res = subprocess.run(cmd, shell=True, cwd=PYTHON_SOURCE_DIR)
+    check_status(res.returncode, "cpplint install")
+
+    CPPLINT_COMMAND = "-DCMAKE_CXX_CPPLINT=\"cpplint;--linelength=100;--headers=h," \
+                      "hpp;--filter=-legal/copyright,-build/c++11,-runtime/references\" "
+else:
+    CPPLINT_COMMAND = " "
 
 CMAKE_BOOL_FLAGS = {'CYLON_GLOO', 'CYLON_UCX', 'CYLON_UCC'}
 CMAKE_FALSE_OPTIONS = {'0', 'FALSE', 'OFF', 'N', 'NO', 'IGNORE', 'NOTFOUND'}
@@ -169,6 +179,7 @@ logger.info(f"OS             : {OS_NAME}")
 logger.info(f"Python exec    : {PYTHON_EXEC}")
 logger.info(f"Build mode     : {CPP_BUILD_MODE}")
 logger.info(f"Build path     : {BUILD_DIR}")
+logger.info(f"Build threads  : {PARALLEL}")
 logger.info(f"Install path   : {INSTALL_DIR}")
 logger.info(f"CMake flags    : {CMAKE_FLAGS}")
 logger.info(f" -CYLON_GLOO   : {CYLON_GLOO}")
@@ -206,7 +217,7 @@ def build_cpp():
     res = subprocess.call(cmake_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake generate")
 
-    cmake_build_command = f'cmake --build . --parallel {os.cpu_count()} --config {CPP_BUILD_MODE}'
+    cmake_build_command = f'cmake --build . --parallel {PARALLEL} --config {CPP_BUILD_MODE}'
     logger.info(f"Build command: {cmake_build_command}")
     res = subprocess.call(cmake_build_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake build")
@@ -254,6 +265,14 @@ def python_test():
 
                 env['LD_LIBRARY_PATH'] = os.path.join(GLOO_PREFIX, "lib") + os.pathsep + \
                                          env['LD_LIBRARY_PATH']
+
+            if CYLON_UCC:
+                env['CYLON_UCC'] = str(CYLON_UCC)
+                env['UCC_PREFIX'] = UCC_PREFIX
+                env['LD_LIBRARY_PATH'] = os.path.join(UCC_PREFIX, "lib") + os.pathsep + \
+                                         os.path.join(UCC_PREFIX, "lib", "ucc") + os.pathsep + \
+                                         env['LD_LIBRARY_PATH']
+
         elif OS_NAME == 'Darwin':
             if 'DYLD_LIBRARY_PATH' in env:
                 env['DYLD_LIBRARY_PATH'] = str(Path(INSTALL_DIR, "lib")) + os.pathsep \
@@ -279,7 +298,7 @@ def build_python():
 
     conda_prefix = check_conda_prefix()
 
-    python_build_command = f'{PYTHON_EXEC} setup.py install --force'
+    python_build_command = f'{PYTHON_EXEC} -m pip install -v --upgrade .'
     env = os.environ
     env["CYLON_PREFIX"] = str(BUILD_DIR)
     if os.name == 'posix':

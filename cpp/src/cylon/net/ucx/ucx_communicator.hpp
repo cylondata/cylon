@@ -29,15 +29,15 @@ namespace cylon {
 namespace net {
 
 class UCXConfig : public CommConfig {
+ public:
   CommType Type() override;
 
- public:
   static std::shared_ptr<UCXConfig> Make();
 };
 
 class UCXCommunicator : public Communicator {
  public:
-  explicit UCXCommunicator(MemoryPool *pool);
+  explicit UCXCommunicator(MemoryPool *pool, bool externally_init);
   ~UCXCommunicator() override = default;
 
   std::unique_ptr<Channel> CreateChannel() const override;
@@ -78,6 +78,7 @@ class UCXCommunicator : public Communicator {
   std::unordered_map<int, ucp_ep_h> endPointMap;
   // UCP Context - Holds a UCP communication instance's global information.
   ucp_context_h ucpContext{};
+  bool externally_init = false;
 };
 
 #ifdef BUILD_CYLON_UCC

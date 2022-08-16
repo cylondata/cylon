@@ -504,9 +504,8 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
                         const std::vector<bool> &sort_orders,
                         std::shared_ptr<Table> &out) {
   std::shared_ptr<Table> concatenated;
-  std::vector<int64_t> table_indices(tables.size()),
-      table_end_indices(tables.size());
-  int acc = 0;
+  std::vector<int64_t> table_indices(tables.size()), table_end_indices(tables.size());
+  int64_t acc = 0;
   for (size_t i = 0; i < table_indices.size(); i++) {
     table_indices[i] = acc;
     acc += tables[i]->Rows();
@@ -515,7 +514,7 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
 
   RETURN_CYLON_STATUS_IF_FAILED(Merge(tables, concatenated));
 
-  if(concatenated->GetContext()->GetWorldSize() > 4) {
+  if (concatenated->GetContext()->GetWorldSize() > 4) {
     return Sort(concatenated, sort_columns, out, sort_orders);
   }
 
@@ -530,7 +529,7 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
 
   std::priority_queue<int, std::vector<int>, decltype(comp)> pq(comp);
 
-  for (size_t i = 0; i < tables.size(); i++) {
+  for (int i = 0; i < (int) tables.size(); i++) {
     if (table_indices[i] < table_end_indices[i]) {
       pq.push(i);
     }
@@ -541,13 +540,9 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
   arrow::Int64Builder filter(pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(concatenated->Rows()));
 
-  std::vector<int> temp_v;
-
   while (!pq.empty()) {
     int t = pq.top();
     pq.pop();
-    // std::cout<<table_indices[t]<<std::endl;
-    temp_v.push_back(table_indices[t]);
     filter.UnsafeAppend(table_indices[t]);
     table_indices[t] += 1;
     if (table_indices[t] < table_end_indices[t]) {
@@ -556,9 +551,8 @@ Status MergeSortedTable(const std::vector<std::shared_ptr<Table>> &tables,
   }
 
   CYLON_ASSIGN_OR_RAISE(auto take_arr, filter.Finish());
-  CYLON_ASSIGN_OR_RAISE(
-      auto take_res,
-      (arrow::compute::Take(concatenated->get_table(), take_arr)));
+  CYLON_ASSIGN_OR_RAISE(auto take_res,
+                        (arrow::compute::Take(concatenated->get_table(), take_arr)));
 
   out = std::make_shared<Table>(ctx, take_res.table());
 

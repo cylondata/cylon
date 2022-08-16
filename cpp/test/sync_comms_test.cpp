@@ -12,11 +12,21 @@
  * limitations under the License.
  */
 #include <arrow/visitor_inline.h>
+#include <thread>
+#include <chrono>
 
 #include "common/test_header.hpp"
 
 namespace cylon {
 namespace test {
+
+TEST_CASE("barrier", "[sync comms]") {
+  srand((unsigned) time(nullptr));
+  int i = (rand() % 2000) + 1;
+
+  std::this_thread::sleep_for(std::chrono::duration<int, std::milli>(i));
+  ctx->Barrier();
+}
 
 enum GenType { Empty, Null, NonEmpty };
 
@@ -113,6 +123,11 @@ TEST_CASE("all gather table", "[sync comms]") {
 }
 
 TEST_CASE("gather table", "[sync comms]") {
+  // todo: UCC doesnt support gatherv for the moment  #599
+  if (ctx->GetCommType() == net::UCX){
+    return;
+  }
+
   std::shared_ptr<arrow::Schema> schema;
   std::shared_ptr<arrow::Table> in_table;
   generate_table(&schema, &in_table);

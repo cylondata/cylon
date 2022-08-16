@@ -14,6 +14,7 @@
 
 
 import os
+
 import numpy as np
 
 print("-------------------------------------------------")
@@ -265,16 +266,40 @@ def test_dist_aggregate():
                                                    "python/pycylon/test/test_dist_aggregate.py"))
     assert responses[-1] == 0
 
+
 def test_dist_io():
     print("34. Dist IO")
     responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi "
                                                    "python/pycylon/test/test_io.py"))
     assert responses[-1] == 0
 
+
 if os.environ.get('CYLON_GLOO'):
     def test_gloo():
         print("35. Gloo")
         responses.append(os.system("python -m pytest python/pycylon/test/test_gloo.py"))
+        assert responses[-1] == 0
+
+
+    def test_gloo_mpi():
+        print("36. Gloo")
+        responses.append(os.system(
+            f"{get_mpi_command()} -n 4 python -m pytest python/pycylon/test/test_gloo_mpi.py"))
+        assert responses[-1] == 0
+
+if os.environ.get('CYLON_UCC'):
+    def test_ucx_mpi():
+        print("37. UCX MPI")
+        responses.append(os.system(
+            f"{get_mpi_command()} -n 4 python -m pytest python/pycylon/test/test_ucx_mpi.py"))
+        assert responses[-1] == 0
+
+if os.environ.get('CYLON_GLOO') and os.environ.get('CYLON_UCC'):
+    def test_mpi_multiple_env_init():
+        print("38. Create and destroy multiple environments in MPI")
+        responses.append(os.system(
+            f"{get_mpi_command()} -n 4 python -m pytest "
+            f"python/pycylon/test/test_mpi_multiple_env_init.py"))
         assert responses[-1] == 0
 
 

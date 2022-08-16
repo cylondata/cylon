@@ -238,5 +238,8 @@ if (CYLON_UCX)
     cylon_run_test(aggregate_test 1 ucx)
     cylon_run_test(aggregate_test 2 ucx)
     cylon_run_test(aggregate_test 4 ucx)
+
+    cylon_run_test(sync_comms_test 1 ucx)
+    cylon_run_test(sync_comms_test 4 ucx)
   endif (CYLON_UCC)
 endif (CYLON_UCX)

@@ -163,7 +163,7 @@ extensions = [
 
 packages = find_packages(include=["pygcylon", "pygcylon.*"])
 
-compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False}
+compile_time_env = {'CYTHON_GLOO': False, 'CYTHON_UCC': False, 'CYTHON_UCX': False}
 setup(
     name="pygcylon",
     packages=packages,

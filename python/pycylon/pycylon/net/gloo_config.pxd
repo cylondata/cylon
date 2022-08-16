@@ -31,6 +31,7 @@ IF CYTHON_GLOO:
             void SetTcpAiFamily(int tcp_ai_family)
             void SetFileStorePath(const string & file_store_path)
             void SetStorePrefix(const string & store_prefix)
+            void SetTimeout(int timeout)
 
             @staticmethod
             shared_ptr[CGlooConfig] MakeWithMpi(MPI_Comm comm);

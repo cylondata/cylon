@@ -91,12 +91,13 @@ Status MPICommunicator::Make(const std::shared_ptr<CommConfig> &config,
 
 void MPICommunicator::Finalize() {
   // finalize only if we initialized MPI
-  if (!externally_init) {
+  if (!externally_init && !IsFinalized()) {
     int finalized;
     MPI_Finalized(&finalized);
     if (!finalized) {
       MPI_Finalize();
     }
+    finalized = true;
   }
 }
 void MPICommunicator::Barrier() {

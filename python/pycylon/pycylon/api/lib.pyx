@@ -29,6 +29,9 @@ from pycylon.net.mpi_config cimport MPIConfig
 IF CYTHON_GLOO:
     from pycylon.net.gloo_config import GlooMPIConfig, GlooStandaloneConfig
     from pycylon.net.gloo_config cimport CGlooConfig, GlooMPIConfig, GlooStandaloneConfig
+IF CYTHON_UCX & CYTHON_UCC:
+    from pycylon.net.ucx_config import UCXConfig
+    from pycylon.net.ucx_config cimport CUCXConfig, UCXConfig
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
 from pycylon.io.csv_read_config cimport CSVReadOptions
@@ -121,6 +124,13 @@ IF CYTHON_GLOO:
         else:
             raise ValueError('Passed object is not an instance of GlooConfig')
 
+IF CYTHON_UCX & CYTHON_UCC:
+    cdef api shared_ptr[CUCXConfig] pycylon_unwrap_ucx_config(object config):
+        if isinstance(config, UCXConfig):
+            return (<UCXConfig> config).ucx_config_shd_ptr
+        else:
+            raise ValueError('Passed object is not an instance of UcxConfig')
+
 cdef api CCSVReadOptions pycylon_unwrap_csv_read_options(object csv_read_options):
     cdef CSVReadOptions csvrdopt
     if pyclon_is_csv_read_options(csv_read_options):
@@ -145,13 +155,13 @@ cdef api shared_ptr[CDataType] pycylon_unwrap_data_type(object data_type):
     else:
         raise ValueError('Passed object is not an instance of DataType')
 
-cdef api CSortOptions * pycylon_unwrap_sort_options(object sort_options):
+cdef api shared_ptr[CSortOptions] pycylon_unwrap_sort_options(object sort_options):
     cdef SortOptions so
     if pyclon_is_sort_options(sort_options):
         so = <SortOptions> sort_options
         return so.thisPtr
     else:
-        raise ValueError('Passed object is not an instance of DataType')
+        raise ValueError('Passed object is not an instance of SortOptions')
 
 cdef api shared_ptr[CBaseArrowIndex] pycylon_unwrap_base_arrow_index(object base_arrow_index):
     cdef BaseArrowIndex bi
@@ -196,7 +206,7 @@ cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] & cdata_type)
     data_type.init(cdata_type)
     return data_type
 
-cdef api object pycylon_wrap_sort_options(CSortOptions *csort_options):
+cdef api object pycylon_wrap_sort_options(const shared_ptr[CSortOptions] &csort_options):
     cdef SortOptions sort_options = SortOptions.__new__(SortOptions)
     sort_options.init(csort_options)
     return sort_options

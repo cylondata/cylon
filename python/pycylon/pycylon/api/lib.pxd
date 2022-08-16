@@ -25,6 +25,8 @@ from pycylon.net.comm_config cimport CCommConfig
 from pycylon.net.mpi_config cimport CMPIConfig
 IF CYTHON_GLOO:
 	from pycylon.net.gloo_config cimport CGlooConfig
+IF CYTHON_UCX & CYTHON_UCC:
+	from pycylon.net.ucx_config cimport CUCXConfig
 from pycylon.io.csv_read_config cimport CCSVReadOptions
 from pycylon.io.csv_read_config import CSVReadOptions
 from pycylon.io.csv_read_config cimport CSVReadOptions
@@ -59,6 +61,9 @@ cdef api shared_ptr[CMPIConfig] pycylon_unwrap_mpi_config(object config)
 IF CYTHON_GLOO:
 	cdef api shared_ptr[CGlooConfig] pycylon_unwrap_gloo_config(object config)
 
+IF CYTHON_UCX & CYTHON_UCC:
+	cdef api shared_ptr[CUCXConfig] pycylon_unwrap_ucx_config(object config)
+
 cdef api shared_ptr[CTable] pycylon_unwrap_table(object table)
 
 cdef api shared_ptr[CDataType] pycylon_unwrap_data_type(object data_type)
@@ -67,7 +72,7 @@ cdef api CCSVReadOptions pycylon_unwrap_csv_read_options(object csv_read_options
 
 cdef api CCSVWriteOptions pycylon_unwrap_csv_write_options(object csv_write_options)
 
-cdef api CSortOptions * pycylon_unwrap_sort_options(object sort_options)
+cdef api shared_ptr[CSortOptions] pycylon_unwrap_sort_options(object sort_options)
 
 cdef api shared_ptr[CBaseArrowIndex] pycylon_unwrap_base_arrow_index(object base_arrow_index)
 
@@ -87,7 +92,7 @@ cdef api object pycylon_wrap_layout(const CLayout & layout)
 
 cdef api object pycylon_wrap_data_type(const shared_ptr[CDataType] & data_type)
 
-cdef api object pycylon_wrap_sort_options(CSortOptions *sort_options)
+cdef api object pycylon_wrap_sort_options(const shared_ptr[CSortOptions] &sort_options)
 
 cdef api object pycylon_wrap_base_arrow_index(const shared_ptr[CBaseArrowIndex] & base_arrow_index)
 

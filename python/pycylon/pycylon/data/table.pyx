@@ -471,7 +471,7 @@ cdef class Table:
 
         """
         cdef shared_ptr[CTable] output
-        cdef CSortOptions *csort_options
+        cdef shared_ptr[CSortOptions] csort_options
         cdef vector[int] sort_index
         cdef vector[cpp_bool] order_directions
 
@@ -507,7 +507,7 @@ cdef class Table:
         else:
             csort_options = pycylon_unwrap_sort_options(SortOptions(0, 0))
         cdef CStatus status = DistributedSort(self.table_shd_ptr, sort_index, output,
-                                              order_directions, csort_options[0])
+                                              order_directions, csort_options.get()[0])
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
@@ -2728,7 +2728,7 @@ cdef class SortOptions:
     """
     Sort Operations for Distributed Sort
     """
-    def __cinit__(self, num_bins: int = 0, num_samples: int = 0):
+    def __cinit__(self, num_bins: int = 0, num_samples: int = 0, sampling: str = 'regular'):
         '''
         Initializes the CSortOptions struct
         Args:
@@ -2738,9 +2738,17 @@ cdef class SortOptions:
         Returns: None
 
         '''
-        self.thisPtr = new CSortOptions()
-        self.thisPtr.num_bins = num_bins
-        self.thisPtr.num_samples = num_samples
+        self.thisPtr = make_shared[CSortOptions]()
+        self.thisPtr.get().num_bins = num_bins
+        self.thisPtr.get().num_samples = num_samples
 
-    cdef void init(self, CSortOptions *csort_options):
+        sampling = sampling.lower()
+        if sampling == 'regular':
+            self.thisPtr.get().sort_method = CSortOptions.CSortMethod.CREGULAR_SAMPLE
+        elif sampling == 'initial':
+            self.thisPtr.get().sort_method = CSortOptions.CSortMethod.CINITIAL_SAMPLE
+        else:
+            raise ValueError(f'unknown sampling method for sorting: {sampling}')
+
+    cdef void init(self, const shared_ptr[CSortOptions] &csort_options):
         self.thisPtr = csort_options

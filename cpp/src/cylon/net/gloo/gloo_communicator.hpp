@@ -33,6 +33,8 @@ namespace net {
 
 class GlooCommunicator;
 
+static constexpr std::chrono::seconds kTimoutNotSet(0);
+
 class GlooConfig : public CommConfig {
  public:
   explicit GlooConfig(int rank = 0, int world_size = 1, bool use_mpi = false);
@@ -43,7 +45,9 @@ class GlooConfig : public CommConfig {
 
   int rank() const;
   int world_size() const;
+  const std::chrono::seconds &timeout() const;
 
+  void SetTimeout(int timeout);
   void SetTcpHostname(const std::string &tcp_hostname);
   void SetTcpIface(const std::string &tcp_iface);
   void SetTcpAiFamily(int tcp_ai_family);
@@ -63,6 +67,7 @@ class GlooConfig : public CommConfig {
   int rank_;
   int world_size_;
   bool use_mpi_;
+  std::chrono::seconds timeout_ = kTimoutNotSet;
 
 #ifdef GLOO_USE_MPI
   /*
@@ -74,7 +79,7 @@ class GlooConfig : public CommConfig {
 #endif //GLOO_USE_MPI
 
   // tcp attr
-  std::string tcp_hostname_ = "localhost";
+  std::string tcp_hostname_;
   std::string tcp_iface_;
   int tcp_ai_family_ = AF_UNSPEC;
 
