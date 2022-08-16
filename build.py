@@ -89,6 +89,8 @@ parser.add_argument("-bpath", help='Build directory',
 parser.add_argument("-ipath", help='Install directory')
 
 parser.add_argument("--verbose", help='Set verbosity', default=False, action="store_true")
+parser.add_argument("-j", help='Parallel build threads', default=os.cpu_count(),
+                    dest='parallel', type=int)
 
 args = parser.parse_args()
 
@@ -107,6 +109,7 @@ JAVA_SOURCE_DIR = Path(args.root, 'java')
 RUN_CPP_TESTS = args.test
 RUN_PYTHON_TESTS = args.pytest
 CMAKE_FLAGS = args.cmake_flags
+PARALLEL = args.parallel
 
 # arrow build expects /s even on windows
 BUILD_PYTHON = args.python
@@ -176,6 +179,7 @@ logger.info(f"OS             : {OS_NAME}")
 logger.info(f"Python exec    : {PYTHON_EXEC}")
 logger.info(f"Build mode     : {CPP_BUILD_MODE}")
 logger.info(f"Build path     : {BUILD_DIR}")
+logger.info(f"Build threads  : {PARALLEL}")
 logger.info(f"Install path   : {INSTALL_DIR}")
 logger.info(f"CMake flags    : {CMAKE_FLAGS}")
 logger.info(f" -CYLON_GLOO   : {CYLON_GLOO}")
@@ -213,7 +217,7 @@ def build_cpp():
     res = subprocess.call(cmake_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake generate")
 
-    cmake_build_command = f'cmake --build . --parallel {os.cpu_count()} --config {CPP_BUILD_MODE}'
+    cmake_build_command = f'cmake --build . --parallel {PARALLEL} --config {CPP_BUILD_MODE}'
     logger.info(f"Build command: {cmake_build_command}")
     res = subprocess.call(cmake_build_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake build")

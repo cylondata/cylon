@@ -155,6 +155,10 @@ message("Finding MPI")
 find_package(MPI REQUIRED COMPONENTS CXX)
 message(STATUS "MPI include dir: ${MPI_CXX_INCLUDE_PATH}")
 message(STATUS "MPI libs: ${MPI_CXX_LIBRARIES}")
+
+if (CYLON_CUSTOM_MPIRUN)
+    set(MPIEXEC_EXECUTABLE ${CYLON_CUSTOM_MPIRUN})
+endif (CYLON_CUSTOM_MPIRUN)
 message(STATUS "MPI executable: ${MPIEXEC_EXECUTABLE}")
 
 include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
