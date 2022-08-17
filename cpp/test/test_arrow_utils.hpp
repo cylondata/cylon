@@ -59,9 +59,9 @@ using ArrowBinaryTypes = std::tuple<arrow::StringType, arrow::LargeStringType,
  */
 std::shared_ptr<arrow::Array> ArrayFromJSON(const std::shared_ptr<arrow::DataType> &type,
                                             arrow::util::string_view json) {
-  std::shared_ptr<arrow::Array> out;
-  ARROW_ABORT_NOT_OK(arrow::ipc::internal::json::ArrayFromJSON(type, json, &out));
-  return out;
+  const auto &res = arrow::ipc::internal::json::ArrayFromJSON(type, json);
+  ARROW_ABORT_NOT_OK(res.status());
+  return res.ValueOrDie();
 }
 
 std::shared_ptr<arrow::Array> DictArrayFromJSON(const std::shared_ptr<arrow::DataType> &type,

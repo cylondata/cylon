@@ -7,7 +7,7 @@
 #include "cylon/util/macros.hpp"
 
 #include <arrow/buffer_builder.h>
-#include <arrow/visitor_inline.h>
+#include <arrow/visit_data_inline.h>
 
 namespace cylon {
 namespace mapred {

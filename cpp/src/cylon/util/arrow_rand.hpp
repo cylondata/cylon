@@ -52,7 +52,7 @@ void GenerateBitmap(uint8_t *buffer,
 
   for (size_t i = 0; i < n; i++) {
     if (dist(rng)) {
-      arrow::BitUtil::SetBit(buffer, i);
+      arrow::bit_util::SetBit(buffer, i);
     } else {
       count++;
     }

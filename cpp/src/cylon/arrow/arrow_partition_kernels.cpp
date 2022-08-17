@@ -14,7 +14,7 @@
 
 #include <glog/logging.h>
 
-#include <arrow/visitor_inline.h>
+#include <arrow/visit_data_inline.h>
 
 #include <cylon/util/murmur3.hpp>
 #include <cylon/util/macros.hpp>

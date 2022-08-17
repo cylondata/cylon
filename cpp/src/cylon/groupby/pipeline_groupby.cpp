@@ -44,8 +44,7 @@ inline arrow::Status Sum(const arrow::Datum &array, arrow::compute::ExecContext 
 inline arrow::Status Count(const arrow::Datum &array,
                            arrow::compute::ExecContext *fn_ctx,
                            arrow::Datum *res) {
-  auto result = arrow::compute::Count(array, arrow::compute::ScalarAggregateOptions(true, 0),
-                                      fn_ctx);
+  auto result = arrow::compute::Count(array, arrow::compute::CountOptions(), fn_ctx);
 
   if (result.ok()) {
     *res = result.ValueOrDie();

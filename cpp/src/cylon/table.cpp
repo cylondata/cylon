@@ -13,7 +13,9 @@
  */
 
 #include <glog/logging.h>
+
 #include <arrow/compute/api.h>
+#include <arrow/util/bit_util.h>
 #include <arrow/table.h>
 
 #include <fstream>
@@ -1084,7 +1086,7 @@ Status Subtract(const std::shared_ptr<Table> &first, const std::shared_ptr<Table
     // setting the leading bit to 1 since we are inserting the second table
     const auto &res = rows_set.find(util::SetBit(i));
     if (res != rows_set.end()) { // clear bit if we find matches while probing
-      arrow::BitUtil::ClearBit(bit_buf, *res);
+      arrow::bit_util::ClearBit(bit_buf, *res);
     }
   }
 

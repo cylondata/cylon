@@ -13,7 +13,7 @@
  */
 
 #include <arrow/api.h>
-#include <arrow/visitor_inline.h>
+#include <arrow/visit_data_inline.h>
 #include <arrow/compute/api.h>
 #include <chrono>
 #include <glog/logging.h>

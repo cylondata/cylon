@@ -13,7 +13,7 @@
  */
 #include "flatten_array.hpp"
 
-#include <arrow/visitor_inline.h>
+#include <arrow/visit_data_inline.h>
 #include <arrow/util/bitmap_visit.h>
 
 #include "cylon/arrow/arrow_type_traits.hpp"
