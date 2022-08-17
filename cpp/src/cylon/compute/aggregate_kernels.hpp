@@ -19,6 +19,7 @@
 #include <cmath>
 #include <vector>
 #include <unordered_set>
+#include <limits>
 
 #include "cylon/util/macros.hpp"
 
