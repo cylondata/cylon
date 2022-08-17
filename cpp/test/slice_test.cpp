@@ -23,6 +23,7 @@ void testDistSlice(std::shared_ptr<Table>& global_table,
                   std::shared_ptr<Table>& table,
                   int64_t offset,
                   int64_t length) {
+  
   std::shared_ptr<Table> out;
   auto ctx = table->GetContext();
   std::shared_ptr<arrow::Table> arrow_output;
@@ -33,15 +34,18 @@ void testDistSlice(std::shared_ptr<Table>& global_table,
   std::vector<std::shared_ptr<Table>> gathered;
   CHECK_CYLON_STATUS(ctx->GetCommunicator()->Gather(out, /*root*/0, /*gather_from_root*/true,
                                                     &gathered));
-
   if (RANK == 0) {
     std::shared_ptr<Table> result, global_out;
     CHECK_CYLON_STATUS(Slice(global_table, offset, length, &global_out));
+
+    if(length <= 0)
+      return; 
 
     for (size_t i = 0; i < gathered.size(); i++) {
       INFO("gathered " << i << ":" << gathered[i]->Rows());
     }
     REQUIRE(WORLD_SZ == (int) gathered.size());
+
     CHECK_CYLON_STATUS(Merge(gathered, result));
     CHECK_ARROW_EQUAL(global_out->get_table(), result->get_table());
   }
@@ -115,7 +119,11 @@ TEST_CASE("Dist Slice testing", "[dist slice]") {
     testDistSlice(global_table, table1, 15, 8);
   }
 
-  SECTION("dist_sort_test_4_one_empty_table") {
+  SECTION("dist_slice_test_4_multiple_table") {
+    testDistSlice(global_table, table1, 1, 0);
+  }
+
+  SECTION("dist_sort_test_5_one_empty_table") {
 
     auto pool = cylon::ToArrowPool(ctx);
 
