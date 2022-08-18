@@ -40,7 +40,7 @@ jobs:
         echo "CXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
         echo "CUDAHOSTCXX=/usr/bin/g++-${{ matrix.gcc }}" >> $GITHUB_ENV
 
-    - uses: Jimver/cuda-toolkit@v0.2.4
+    - uses: Jimver/cuda-toolkit@v0.2.8
       id: cuda-toolkit
       with:
         cuda: ${{ matrix.cuda }}
