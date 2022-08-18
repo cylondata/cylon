@@ -1,4 +1,4 @@
-# SUMMIT Instalation guide
+# SUMMIT Installation guide
 
 This document describes the instalation on summit. 
 The instalition is first described in detail and then an abbreviated 
