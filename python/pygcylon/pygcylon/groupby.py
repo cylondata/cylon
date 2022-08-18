@@ -212,9 +212,9 @@ class GroupByDataFrame(object):
         shuffle_column_indices = []
         for name in self._grouping_columns:
             if self._level is None:
-                shuffle_column_indices.append(cdf._num_indices + cdf._column_names.index(name))
+                shuffle_column_indices.append(cdf.index.nlevels + cdf._column_names.index(name))
             else:
-                shuffle_column_indices.append(cdf._index_names.index(name))
+                shuffle_column_indices.append(cdf.index.names.index(name))
 
         self._shuffled_cdf = pygcylon.frame._shuffle(cdf, shuffle_column_indices, self._env)
         self._cudf_groupby = self._shuffled_cdf.groupby(by=self._by,

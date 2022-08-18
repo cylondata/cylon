@@ -50,30 +50,31 @@ def shuffle(df: gcy.DataFrame, env: CylonEnv, on=None, ignore_index=False,
         return gcy.DataFrame.from_cudf(cudf.DataFrame(df.to_cudf()))
 
     shuffle_column_indices = []
+    cdf: cudf.DataFrame = df.to_cudf()
+
+    # new cudf API 22.08 does not have an index column, but the indices are managed separately in
+    # an index object like in pandas.
+    num_indices = cdf.index.nlevels
 
     # shuffle on index columns
     if index_shuffle:
-        shuffle_column_indices = [*range(df.to_cudf()._num_indices)]
+        shuffle_column_indices = [*range(num_indices)]
         ignore_index = False
     else:
         # make sure 'on' columns exist among data columns
-        if (
-                not np.iterable(on)
-                or isinstance(on, str)
-                or isinstance(on, tuple)
-                and on in df.to_cudf()._data.names
-        ):
+        if (not np.iterable(on) or isinstance(on, str)
+                or isinstance(on, tuple) and on in cdf._column_names):
             on = (on,)
-        diff = set(on) - set(df.to_cudf()._data)
+        diff = set(on) - set(cdf._column_names)
         if len(diff) != 0:
             raise ValueError(f"columns {diff} do not exist")
 
         # get indices of 'on' columns
-        index_columns = 0 if ignore_index else df.to_cudf()._num_indices
+        index_columns = 0 if ignore_index else num_indices
         for name in on:
-            shuffle_column_indices.append(index_columns + df.to_cudf()._column_names.index(name))
+            shuffle_column_indices.append(index_columns + cdf._column_names.index(name))
 
-    shuffled_cudf = cshuffle(df.to_cudf(),
+    shuffled_cudf = cshuffle(cdf,
                              hash_columns=shuffle_column_indices,
                              ignore_index=ignore_index,
                              context=env.context)
