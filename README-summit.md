@@ -79,6 +79,9 @@ compute$ CC=gcc MPICC=mpicc pip install --no-binary mpi4py install mpi4py
 compute$ pip install pytest-mpi
 compute$ pip install cmake
 compute$ pip install numpy
+compute$ pip install cmake
+compute$ export PATH=/ccs/home/gregorvl/.local/summit/anaconda3/2020.07/3.8/bin:$PATH
+
 compute$ ./build.sh -pyenv ~/CYLON -bpath $(pwd)/build --cpp --test --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)" -j 4
 ```
 
