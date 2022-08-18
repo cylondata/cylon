@@ -23,11 +23,8 @@ jobs:
         include:
           # 20.04 supports CUDA 11.0+
           - os: ubuntu-20.04
-            cuda: "11.5"
+            cuda: "11.5.2"
             gcc: 9
-          # - os: ubuntu-20.04
-          #   cuda: "11.2"
-          #   gcc: 10
 
     steps:
     - uses: actions/checkout@v2
