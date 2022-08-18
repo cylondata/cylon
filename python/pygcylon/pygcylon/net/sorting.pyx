@@ -22,12 +22,12 @@ from pycylon.ctx.context cimport CCylonContext
 from pycylon.api.lib cimport pycylon_unwrap_context
 from pygcylon.net.sorting cimport DistributedSort
 
+import cudf
 from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.cpp.table.table cimport table
-from cudf._lib.table cimport Table, table_view_from_table
+from cudf._lib.utils cimport table_view_from_table
 cimport cudf._lib.cpp.types as libcudf_types
 from cudf._lib.utils cimport data_from_unique_ptr
-
 
 def distributed_sort(
         object tbl,
@@ -38,8 +38,7 @@ def distributed_sort(
         ignore_index=False,
         by_index=False,
 ):
-    cdef Table c_table = tbl
-    cdef table_view c_tv = table_view_from_table(c_table, ignore_index=ignore_index)
+    cdef table_view c_tv = table_view_from_table(tbl, ignore_index=ignore_index)
     cdef vector[int] c_sort_column_indices
     cdef vector[libcudf_types.order] c_column_orders
     cdef CStatus status
@@ -88,7 +87,7 @@ def distributed_sort(
 
     # Perform sorting
     cdef unique_ptr[table] c_sorted_table
-#    with nogil:
+    #    with nogil:
     status = DistributedSort(
         c_tv,
         c_sort_column_indices,
@@ -99,7 +98,7 @@ def distributed_sort(
     )
 
     if status.is_ok():
-        return Table(*data_from_unique_ptr(
+        return cudf.DataFrame._from_data(*data_from_unique_ptr(
             move(c_sorted_table),
             column_names=tbl._column_names,
             index_names=index_names))

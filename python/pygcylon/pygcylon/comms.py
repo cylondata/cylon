@@ -13,27 +13,23 @@
 ##
 
 from __future__ import annotations
-from typing import Hashable, List, Tuple, Dict, Optional, Sequence, Union, Iterable
+
+from typing import List
 
 import cudf
 import numpy as np
-import pygcylon as gcy
 from pycylon.frame import CylonEnv
 
-from pygcylon.net.shuffle import shuffle as cshuffle
-from pygcylon.net.c_comms import gather as cgather
+import pygcylon as gcy
 from pygcylon.net.c_comms import allgather as callgather
 from pygcylon.net.c_comms import broadcast as cbroadcast
+from pygcylon.net.c_comms import gather as cgather
 from pygcylon.net.c_comms import repartition as crepartition
+from pygcylon.net.shuffle import shuffle as cshuffle
 
 
-def _convert_Table_to_DataFrame(tbl):
-    # noinspection PyProtectedMember
-    cdf = cudf.DataFrame._from_data(tbl._data, tbl._index)
-    return gcy.DataFrame.from_cudf(cdf)
-
-
-def shuffle(df: gcy.DataFrame, env: CylonEnv, on=None, ignore_index=False, index_shuffle=False) -> gcy.DataFrame:
+def shuffle(df: gcy.DataFrame, env: CylonEnv, on=None, ignore_index=False,
+            index_shuffle=False) -> gcy.DataFrame:
     """
     Shuffle the distributed DataFrame by partitioning 'on' columns or index columns
     If this method is called with a single partition DataFrame, a copy of it is returned.
@@ -77,11 +73,11 @@ def shuffle(df: gcy.DataFrame, env: CylonEnv, on=None, ignore_index=False, index
         for name in on:
             shuffle_column_indices.append(index_columns + df.to_cudf()._column_names.index(name))
 
-    tbl = cshuffle(df.to_cudf(),
-                   hash_columns=shuffle_column_indices,
-                   ignore_index=ignore_index,
-                   context=env.context)
-    return _convert_Table_to_DataFrame(tbl)
+    shuffled_cudf = cshuffle(df.to_cudf(),
+                             hash_columns=shuffle_column_indices,
+                             ignore_index=ignore_index,
+                             context=env.context)
+    return gcy.DataFrame.from_cudf(shuffled_cudf)
 
 
 def gather(df: gcy.DataFrame,
@@ -116,11 +112,11 @@ def gather(df: gcy.DataFrame,
     if env.world_size == 1:
         return gcy.DataFrame.from_cudf(cudf.DataFrame(df.to_cudf()))
 
-    gathered_tbl = cgather(df.to_cudf(),
-                           context=env.context,
-                           gather_root=gather_root,
-                           ignore_index=ignore_index)
-    return _convert_Table_to_DataFrame(gathered_tbl)
+    gathered_cudf = cgather(df.to_cudf(),
+                            context=env.context,
+                            gather_root=gather_root,
+                            ignore_index=ignore_index)
+    return gcy.DataFrame.from_cudf(gathered_cudf)
 
 
 def allgather(df: gcy.DataFrame,
@@ -147,10 +143,10 @@ def allgather(df: gcy.DataFrame,
     if env.world_size == 1:
         return gcy.DataFrame.from_cudf(cudf.DataFrame(df.to_cudf()))
 
-    gathered_tbl = callgather(df.to_cudf(),
-                              context=env.context,
-                              ignore_index=ignore_index)
-    return _convert_Table_to_DataFrame(gathered_tbl)
+    gathered_cudf = callgather(df.to_cudf(),
+                               context=env.context,
+                               ignore_index=ignore_index)
+    return gcy.DataFrame.from_cudf(gathered_cudf)
 
 
 def broadcast(df: gcy.DataFrame,
@@ -186,11 +182,11 @@ def broadcast(df: gcy.DataFrame,
     if env.world_size == 1:
         return gcy.DataFrame.from_cudf(cudf.DataFrame(df.to_cudf()))
 
-    bcast_tbl = cbroadcast(df.to_cudf(),
-                           context=env.context,
-                           root=root,
-                           ignore_index=ignore_index)
-    return _convert_Table_to_DataFrame(bcast_tbl)
+    bcast_cudf = cbroadcast(df.to_cudf(),
+                            context=env.context,
+                            root=root,
+                            ignore_index=ignore_index)
+    return gcy.DataFrame.from_cudf(bcast_cudf)
 
 
 def repartition(df: gcy.DataFrame,
@@ -246,10 +242,8 @@ def repartition(df: gcy.DataFrame,
             raise ValueError(f"row counts do not match. current dataframe has {len(df.to_cudf())}, "
                              + f"requested row count: {rows_per_partition[0]}")
 
-    reparted_tbl = crepartition(df.to_cudf(),
-                                context=env.context,
-                                rows_per_worker=rows_per_partition,
-                                ignore_index=ignore_index)
-    return _convert_Table_to_DataFrame(reparted_tbl)
-
-
+    reparted_cudf = crepartition(df.to_cudf(),
+                                 context=env.context,
+                                 rows_per_worker=rows_per_partition,
+                                 ignore_index=ignore_index)
+    return gcy.DataFrame.from_cudf(reparted_cudf)
