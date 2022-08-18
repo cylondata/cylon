@@ -140,6 +140,9 @@ if CYLON_GLOO:
     macros.append(('GLOO_USE_MPI', '1'))
     macros.append(('BUILD_CYLON_GLOO', '1'))
     compile_time_env['CYTHON_GLOO'] = True
+else:
+    macros.append(('GLOO_USE_MPI', '0'))
+    macros.append(('BUILD_CYLON_GLOO', '0'))
 
 if CYLON_UCC and CYLON_UCX:
     libraries.append('ucc')
@@ -149,6 +152,9 @@ if CYLON_UCC and CYLON_UCX:
     macros.append(('BUILD_CYLON_UCC', '1'))
     compile_time_env['CYTHON_UCX'] = True
     compile_time_env['CYTHON_UCC'] = True
+else:
+    macros.append(('BUILD_CYLON_UCX', '0'))
+    macros.append(('BUILD_CYLON_UCC', '0'))
 
 print('Libraries    :', libraries)
 print("Lib dirs     :", library_directories)

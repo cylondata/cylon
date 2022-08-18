@@ -19,8 +19,8 @@ from libcpp.vector cimport vector
 
 from cudf._lib.cpp.table.table_view cimport table_view
 from cudf._lib.cpp.table.table cimport table
-from cudf._lib.table cimport Table, table_view_from_table
-from cudf._lib.utils cimport data_from_unique_ptr
+from cudf._lib.utils cimport data_from_unique_ptr, table_view_from_table
+
 
 from pycylon.ctx.context cimport CCylonContext
 from pycylon.api.lib cimport pycylon_unwrap_context
@@ -28,7 +28,7 @@ from pygcylon.net.c_comms cimport Repartition, Gather, Broadcast, AllGather
 
 
 def repartition(
-        Table input_table,
+        object input_table,
         context,
         object rows_per_worker=None,
         ignore_index=False,
@@ -53,17 +53,13 @@ def repartition(
     )
 
     if status.is_ok():
-        return Table(*data_from_unique_ptr(
-            move(c_table_out),
-            column_names=input_table._column_names,
-            index_names=index_names,
-        ))
+        return table(c_table_out.release())
     else:
         raise ValueError(f"Repartition operation failed : {status.get_msg().decode()}")
 
 
 def gather(
-        Table input_table,
+        object input_table,
         context,
         object gather_root,
         ignore_index=False,
@@ -95,7 +91,7 @@ def gather(
 
 
 def allgather(
-        Table input_table,
+        object input_table,
         context,
         ignore_index=False,
 ):
@@ -124,7 +120,7 @@ def allgather(
 
 
 def broadcast(
-        Table input_table,
+        object input_table,
         context,
         object root,
         ignore_index=False,

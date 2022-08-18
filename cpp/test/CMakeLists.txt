@@ -15,18 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Ref: https://cliutils.gitlab.io/modern-cmake/chapters/testing/catch.html
-message("Downloading Catch2 header ${CYLON_CATCH2_GIT_TAG}")
-set(catch2_url https://github.com/catchorg/Catch2/releases/download/${CYLON_CATCH2_GIT_TAG}/catch.hpp)
-file(DOWNLOAD ${catch2_url} "${CMAKE_CURRENT_BINARY_DIR}/catch.hpp"
-        STATUS status
-        EXPECTED_HASH SHA256=${CYLON_CATCH2_HEADER_HASH})
-list(GET status 0 error)
-if (error)
-  message(FATAL_ERROR "Could not download ${catch2_url}")
-else ()
-  message(STATUS "Catch2 header downloaded to ${CMAKE_CURRENT_BINARY_DIR}/catch.hpp")
-endif ()
+## Ref: https://cliutils.gitlab.io/modern-cmake/chapters/testing/catch.html
+#message("Downloading Catch2 header ${CYLON_CATCH2_GIT_TAG}")
+#set(catch2_url https://github.com/catchorg/Catch2/releases/download/${CYLON_CATCH2_GIT_TAG}/catch.hpp)
+#file(DOWNLOAD ${catch2_url} "${CMAKE_CURRENT_BINARY_DIR}/catch.hpp"
+#        STATUS status
+#        EXPECTED_HASH SHA256=${CYLON_CATCH2_HEADER_HASH})
+#list(GET status 0 error)
+#if (error)
+#  message(FATAL_ERROR "Could not download ${catch2_url}")
+#else ()
+#  message(STATUS "Catch2 header downloaded to ${CMAKE_CURRENT_BINARY_DIR}/catch.hpp")
+#endif ()
 
 file(COPY ${CYLON_SOURCE_DIR}/../data DESTINATION ${CMAKE_BINARY_DIR})
 
