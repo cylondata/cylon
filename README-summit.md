@@ -89,6 +89,15 @@ compute$ cd ~/cylon/build
 compute$ jsrun -n 1 -c 4 -a 1 ./build/bin/join_example m n 1000 0.9
 ```
 
+If everything is ok, you will see at the end of the test output
+
+```
+...
+================================================
+All tests passed (66 assertions in 4 test cases)
+```
+
+
 ### Running batch scripts
 
-Please note that the module load and the source of the CYLON venv must be at the beginning of each batsch script you want to use cylon in
+Please note that the module load and the source of the CYLON venv must be at the beginning of each batsch script you want to use cylon in.
