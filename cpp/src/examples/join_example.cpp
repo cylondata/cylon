@@ -71,6 +71,7 @@ int main(int argc, char *argv[]) {
   } else if (mem == "f") {
     cylon::FromCSV(ctx, std::string(argv[3]) + std::to_string(ctx->GetRank()) + ".csv", first_table);
     cylon::FromCSV(ctx, std::string(argv[4]) + std::to_string(ctx->GetRank()) + ".csv", second_table);
+
     if (argc == 6) {
       if (!strcmp(argv[5], "hash")) {
         LOG(INFO) << "Hash join algorithm";
@@ -85,6 +86,7 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << "Read tables in "
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 read_end_time - start_start).count() << "[ms]";
+
   auto join_config = cylon::join::config::JoinConfig(cylon::join::config::JoinType::INNER,
                                                      0,
                                                      0,
@@ -109,6 +111,7 @@ int main(int argc, char *argv[]) {
             << std::chrono::duration_cast<std::chrono::milliseconds>(
                 join_end_time - read_end_time).count() << "[ms]";
   std::vector<std::string> column_names = joined->ColumnNames();
+
   ctx->Finalize();
   return 0;
 }

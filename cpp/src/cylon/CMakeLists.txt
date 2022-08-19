@@ -102,6 +102,7 @@ add_library(cylon SHARED
         indexing/index_utils.hpp
         indexing/indexer.cpp
         indexing/indexer.hpp
+        indexing/slice.cpp
         io/arrow_io.cpp
         io/arrow_io.hpp
         io/csv_read_config.cpp
