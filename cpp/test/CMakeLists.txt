@@ -23,7 +23,7 @@ file(DOWNLOAD ${catch2_url} "${CMAKE_CURRENT_BINARY_DIR}/catch.hpp"
         EXPECTED_HASH SHA256=${CYLON_CATCH2_HEADER_HASH})
 list(GET status 0 error)
 if (error)
-  message(FATAL_ERROR "Could not download ${catch2_url}")
+    message(FATAL_ERROR "Could not download ${catch2_url}")
 else ()
   message(STATUS "Catch2 header downloaded to ${CMAKE_CURRENT_BINARY_DIR}/catch.hpp")
 endif ()
@@ -73,11 +73,17 @@ endfunction(cylon_add_test)
 function(cylon_run_test TESTNAME parallelism comm_args)
   set(exec_name "${TESTNAME}_${parallelism}_${comm_args}")
   if (WIN32)
-    set(test_params -n ${parallelism} "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/${TESTNAME}" --comm "${comm_args}")
+    set(test_params ${MPIEXEC_EXECUTABLE_PARAMS}
+            ${MPIEXEC_PARALLELISM_FLAG} ${parallelism}
+            ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/${TESTNAME} --comm ${comm_args})
   else ()
-    set(test_params -n ${parallelism} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}" --comm "${comm_args}")
+    set(test_params ${MPIEXEC_EXECUTABLE_PARAMS}
+            ${MPIEXEC_PARALLELISM_FLAG} ${parallelism}
+            ${CMAKE_BINARY_DIR}/bin/${TESTNAME} --comm ${comm_args})
   endif ()
-  add_test(NAME ${exec_name} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_EXECUTABLE_PARAMS} ${test_params})
+
+  message(STATUS ${test_params})
+  add_test(NAME ${exec_name} COMMAND ${MPIEXEC_EXECUTABLE} ${test_params})
 endfunction(cylon_run_test)
 
 #Add tests as follows ...
@@ -223,7 +229,7 @@ if (CYLON_GLOO)
   cylon_run_test(aggregate_test 1 gloo-mpi)
   cylon_run_test(aggregate_test 2 gloo-mpi)
   cylon_run_test(aggregate_test 4 gloo-mpi)
-  
+
   cylon_run_test(sync_comms_test 1 gloo-mpi)
   cylon_run_test(sync_comms_test 4 gloo-mpi)
 endif (CYLON_GLOO)
