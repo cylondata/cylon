@@ -180,6 +180,7 @@ message(STATUS "Glog libs: ${GLOG_LIBRARIES}")
 # this is required on windows to prevent clashes between ERROR abbreviation in logging.h and windows.h
 if (WIN32)
     add_definitions("-DGLOG_NO_ABBREVIATED_SEVERITIES")
+    add_definitions("-DNOMINMAX=1")
 endif ()
 
 # include Modules/Build.cmake
