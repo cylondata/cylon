@@ -21,6 +21,7 @@
 #include <memory>
 #include <unordered_map>
 #include <iostream>
+#include <algorithm>
 
 #include <cylon/table.hpp>
 #include <cylon/join/join_utils.hpp>
@@ -277,7 +278,11 @@ static inline Status shuffle_two_tables_by_hashing(const std::shared_ptr<cylon::
 Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path,
                std::shared_ptr<Table> &tableOut, const cylon::io::config::CSVReadOptions &options) {
   arrow::Result<std::shared_ptr<arrow::Table>> result = cylon::io::read_csv(ctx, path, options);
+  
+  LOG(INFO) << "Reading Inside FromCSV";
+  
   if (result.ok()) {
+    LOG(INFO) << "CSV file reading is OK";
     std::shared_ptr<arrow::Table> &table = result.ValueOrDie();
     if (table->column(0)->chunks().size() > 1) {
       const auto &combine_res = table->CombineChunks(ToArrowPool(ctx));
@@ -289,6 +294,7 @@ Status FromCSV(const std::shared_ptr<CylonContext> &ctx, const std::string &path
     }
     // slice the table if required
     if (options.IsSlice() && ctx->GetWorldSize() > 1) {
+      LOG(INFO) << "Slice the table if required";
       int32_t rows_per_worker = table->num_rows() / ctx->GetWorldSize();
       int32_t remainder = table->num_rows() % ctx->GetWorldSize();
 
@@ -379,11 +385,13 @@ Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &ctables,
     std::vector<std::shared_ptr<arrow::Table>> tables;
     tables.reserve(ctables.size());
     for (const auto &t: ctables) {
-      if (t->Rows()) {
-        std::shared_ptr<arrow::Table> arrow;
-        t->ToArrowTable(arrow);
-        tables.push_back(std::move(arrow));
+      if (!t->Empty()) {
+        tables.push_back(t->get_table());
       }
+    }
+    if (tables.empty()) { // means all tables are empty. return a cylon table from 0th table
+      tableOut = ctables[0];
+      return Status::OK();
     }
 
     const auto &ctx = ctables[0]->GetContext();
@@ -1472,6 +1480,7 @@ static Status RepartitionToMatchOtherTable(const std::shared_ptr<cylon::Table> &
 
   std::vector<int64_t> rows_per_partition;
   std::shared_ptr<cylon::Column> output;
+
   RETURN_CYLON_STATUS_IF_FAILED(
       a->GetContext()->GetCommunicator()->Allgather(num_row_scalar, &output));
   auto *data_ptr =
@@ -1545,6 +1554,7 @@ Status Repartition(const std::shared_ptr<cylon::Table> &table,
 
   auto num_row_scalar = std::make_shared<Scalar>(arrow::MakeScalar(num_row));
 
+  
   RETURN_CYLON_STATUS_IF_FAILED(
       table->GetContext()->GetCommunicator()->Allgather(num_row_scalar,
                                                         &sizes_cols));
@@ -1750,5 +1760,7 @@ Status WriteParquet(const std::shared_ptr<cylon::CylonContext> &ctx_,
 
   return Status(Code::OK);
 }
+
+
 #endif
 }  // namespace cylon
