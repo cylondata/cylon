@@ -385,11 +385,13 @@ Status Merge(const std::vector<std::shared_ptr<cylon::Table>> &ctables,
     std::vector<std::shared_ptr<arrow::Table>> tables;
     tables.reserve(ctables.size());
     for (const auto &t: ctables) {
-      if (t->Rows()) {
-        std::shared_ptr<arrow::Table> arrow;
-        t->ToArrowTable(arrow);
-        tables.push_back(std::move(arrow));
+      if (!t->Empty()) {
+        tables.push_back(t->get_table());
       }
+    }
+    if (tables.empty()) { // means all tables are empty. return a cylon table from 0th table
+      tableOut = ctables[0];
+      return Status::OK();
     }
 
     const auto &ctx = ctables[0]->GetContext();

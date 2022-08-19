@@ -15,8 +15,6 @@
 #include <memory>
 #include <algorithm>
 
-#include <arrow/compute/api.h>
-
 #include <cylon/table.hpp>
 #include <cylon/ctx/arrow_memory_pool_utils.hpp>
 #include <cylon/util/macros.hpp>
@@ -71,6 +69,17 @@ Status distributed_slice_impl(const std::shared_ptr<Table> &in,
 
   int64_t rank = ctx->GetRank();
   int64_t prefix_sum = std::accumulate(partition_lengths, partition_lengths + rank, kZero);
+  int64_t total_length = std::accumulate(partition_lengths + rank,
+                                         partition_lengths + ctx->GetWorldSize(),
+                                         prefix_sum);
+  if (global_offset > total_length) {
+    return {Code::Invalid, "global offset exceeds total length of the dist table"};
+  }
+  // adjust global length if it exceeds total_length
+  if (global_offset + global_length > total_length) {
+    global_length = total_length - global_offset;
+  }
+
   int64_t this_length = *(partition_lengths + rank);
   assert(this_length == in->Rows());
 

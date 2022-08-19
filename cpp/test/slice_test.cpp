@@ -38,9 +38,6 @@ void testDistSlice(std::shared_ptr<Table>& global_table,
     std::shared_ptr<Table> result, global_out;
     CHECK_CYLON_STATUS(Slice(global_table, offset, length, &global_out));
 
-    if(length <= 0)
-      return; 
-
     for (size_t i = 0; i < gathered.size(); i++) {
       INFO("gathered " << i << ":" << gathered[i]->Rows());
     }
@@ -123,24 +120,36 @@ TEST_CASE("Dist Slice testing", "[dist slice]") {
     testDistSlice(global_table, table1, 1, 0);
   }
 
-  SECTION("dist_sort_test_5_one_empty_table") {
+  SECTION("dist_slice_test_5_multiple_table") {
+    testDistSlice(global_table, table1, 0, 0);
+  }
 
+  SECTION("dist_slice_test_5_multiple_table") {
+    testDistSlice(global_table, table1, global_table->Rows(), INT64_MAX);
+  }
+
+  SECTION("dist_slice_test_5_multiple_table") {
+    testDistSlice(global_table, table1, global_table->Rows() - 1, 1000);
+  }
+
+  SECTION("failing case") {
+    REQUIRE_FALSE(DistributedSlice(table1, 1000, 1000, nullptr).is_ok());
+  }
+
+  SECTION("dist_sort_test_5_one_empty_table") {
     auto pool = cylon::ToArrowPool(ctx);
 
     std::shared_ptr<arrow::Table> arrow_empty_table;
     auto arrow_status = util::CreateEmptyTable(table1->get_table()->schema(),
-                                                &arrow_empty_table, pool);
-    auto empty_table = std::make_shared<Table>(ctx, arrow_empty_table);
-    table1 = empty_table;
+                                               &arrow_empty_table, pool);
+    REQUIRE(arrow_status.ok());
+    auto empty_table = std::make_shared<Table>(ctx, std::move(arrow_empty_table));
 
-    std::shared_ptr<Table> out, out2;
-    auto ctx = table1->GetContext();
+    std::shared_ptr<Table> out1, out2;
     std::shared_ptr<arrow::Table> arrow_output;
-    auto status = DistributedSlice(table1, 3, 10, &out);
-    REQUIRE(status.is_ok());
-    status = DistributedSlice(table1, 15, 5, &out2);
-    REQUIRE(status.is_ok());
-    CHECK_ARROW_EQUAL(out->get_table(), out2->get_table());
+    CHECK_CYLON_STATUS(DistributedSlice(empty_table, 0, 10, &out1));
+    CHECK_CYLON_STATUS(DistributedSlice(empty_table, 0, 5, &out2));
+    CHECK_ARROW_EQUAL(out1->get_table(), out2->get_table());
   }
 
 }
