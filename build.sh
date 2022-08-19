@@ -398,7 +398,7 @@ build_python_conda() {
 
   pushd python/pycylon || exit 1
   make clean
-  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}} python3 -m pip install -v --upgrade . || exit 1
+  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}} python3 -m pip install -v . || exit 1
   popd || exit 1
   print_line
 }
