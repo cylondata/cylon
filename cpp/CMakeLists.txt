@@ -161,6 +161,17 @@ if (CYLON_CUSTOM_MPIRUN)
 endif (CYLON_CUSTOM_MPIRUN)
 message(STATUS "MPI executable: ${MPIEXEC_EXECUTABLE}")
 
+if (CYLON_CUSTOM_MPIRUN_PARAMS)
+    set(MPIEXEC_EXECUTABLE_PARAMS ${CYLON_CUSTOM_MPIRUN_PARAMS})
+else ()
+    if (WIN32)
+        set(MPIEXEC_EXECUTABLE_PARAMS "")
+    else ()
+        set(MPIEXEC_EXECUTABLE_PARAMS --allow-run-as-root --oversubscribe)
+    endif ()
+endif (CYLON_CUSTOM_MPIRUN_PARAMS)
+message(STATUS "MPI executable params: ${MPIEXEC_EXECUTABLE_PARAMS}")
+
 include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
 
 # Glog
