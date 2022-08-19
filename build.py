@@ -13,13 +13,12 @@
 # limitations under the License.
 
 import argparse
-import os
-import subprocess
 import logging
+import os
 import platform
-from pathlib import Path
-
+import subprocess
 import sys
+from pathlib import Path
 
 logging.basicConfig(format='[%(levelname)s] %(message)s')
 logger = logging.getLogger("cylon_build")
@@ -298,7 +297,7 @@ def build_python():
 
     conda_prefix = check_conda_prefix()
 
-    python_build_command = f'{PYTHON_EXEC} -m pip install -v --upgrade .'
+    python_build_command = f'{PYTHON_EXEC} -m pip install -v .'
     env = os.environ
     env["CYLON_PREFIX"] = str(BUILD_DIR)
     if os.name == 'posix':
