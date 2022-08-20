@@ -56,11 +56,10 @@ cpp_build.add_argument("--style-check", action='store_true',
 cpp_build.add_argument("-root", help='Cylon Source root directory',
                        default=Path(os.getcwd()))
 cpp_build.add_argument(
-    "-cmake-flags", help='Additional cmake flags', default='')
+    "-cmake-flags", "--cmake-flags", help='Additional cmake flags', default='')
 
 # Build mode
-build_mode = parser.add_argument_group(
-    "Build Mode").add_mutually_exclusive_group()
+build_mode = parser.add_argument_group("Build Mode").add_mutually_exclusive_group()
 build_mode.add_argument("--debug", action='store_true',
                         help='Build the core in debug mode')
 build_mode.add_argument("--release", action='store_true',
@@ -86,7 +85,7 @@ docker_build.add_argument("--docker", action='store_true',
 # Paths
 parser.add_argument("-bpath", help='Build directory',
                     default=Path(os.getcwd(), 'build'))
-parser.add_argument("-ipath", help='Install directory')
+parser.add_argument("-ipath", "--prefix", help='Install directory')
 
 parser.add_argument("--verbose", help='Set verbosity', default=False, action="store_true")
 parser.add_argument("-j", help='Parallel build threads', default=os.cpu_count(),
@@ -153,8 +152,10 @@ def parse_cmake_bool(v):
 
 
 def parse_cmake_flags(flag):
-    for f in CMAKE_FLAGS.strip().replace('-D', '').split():
-        k, v = f.split('=')
+    for f in CMAKE_FLAGS.strip().split('-D'):
+        if not f.strip():
+            continue
+        k, v = f.strip().split('=')
         if k != flag:
             continue
         else:
