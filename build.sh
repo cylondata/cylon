@@ -239,7 +239,7 @@ build_cpp(){
   export ARROW_HOME=${BUILD_PATH}/arrow/install
   cmake -DPYCYLON_BUILD=${PYTHON_BUILD} -DCMAKE_BUILD_TYPE=${BUILD_MODE} \
         -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $CPPLINT_CMD $INSTALL_CMD \
-      ${CMAKE_FLAGS} \
+      "${CMAKE_FLAGS}" \
       ${SOURCE_DIR} || exit 1
   make -j ${MAKE_JOBS} || exit 1
   install_libs
@@ -280,7 +280,7 @@ build_cpp_with_custom_arrow(){
       -DCYLON_WITH_TEST=${RUN_CPP_TESTS} $CPPLINT_CMD $INSTALL_CMD \
       -DARROW_BUILD_TYPE="CUSTOM" -DARROW_LIB_DIR=${ARROW_LIB} -DARROW_INCLUDE_DIR=${ARROW_INC} \
       -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-      ${CMAKE_FLAGS} \
+      "${CMAKE_FLAGS}" \
       ${SOURCE_DIR} \
       || exit 1
   make -j ${MAKE_JOBS} || exit 1
@@ -320,7 +320,7 @@ build_cpp_conda(){
       -DCYLON_WITH_TEST=${RUN_CPP_TESTS} -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
       -DARROW_BUILD_TYPE="SYSTEM" -DARROW_LIB_DIR=${ARROW_LIB} -DARROW_INCLUDE_DIR=${ARROW_INC} \
       -DGCYLON_BUILD=${GCYLON_BUILD} \
-      ${CMAKE_FLAGS} \
+      "${CMAKE_FLAGS}"\
       ${SOURCE_DIR} \
       || exit 1
   make -j ${MAKE_JOBS} || exit 1
@@ -344,7 +344,7 @@ build_gcylon(){
   mkdir -p ${BUILD_PATH}
   pushd ${BUILD_PATH} || exit 1
   cmake -DCMAKE_BUILD_TYPE=${BUILD_MODE} -DCYLON_WITH_TEST=${RUN_CPP_TESTS} -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
-      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DGCYLON_BUILD=${GCYLON_BUILD} ${CMAKE_FLAGS} ${SOURCE_DIR} \
+      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DGCYLON_BUILD=${GCYLON_BUILD} "${CMAKE_FLAGS}" ${SOURCE_DIR} \
       || exit 1
   make -j ${MAKE_JOBS} || exit 1
   printf "GCylon CPP Built Successfully!"
