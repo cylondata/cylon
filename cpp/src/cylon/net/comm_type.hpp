@@ -23,7 +23,8 @@ enum CommType {
   MPI = 1,
   TCP = 2,
   UCX = 3,
-  GLOO = 4
+  GLOO = 4,
+  UCC = 5
 };
 }  // namespace net
 }  // namespace cylon

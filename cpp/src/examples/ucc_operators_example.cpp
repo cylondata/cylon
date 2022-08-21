@@ -199,10 +199,19 @@ void testScalarAllReduce(std::shared_ptr<cylon::CylonContext>& ctx) {
 
 int main(int argc, char **argv) {
   // auto redis = sw::redis::Redis("tcp://127.0.0.1:6379");
-  auto redis = std::make_shared<sw::redis::Redis>("tcp://127.0.0.1:6379");
-  auto ucx_config = std::make_shared<cylon::net::UCXConfig>(redis);
+  std::shared_ptr<cylon::net::UCCOOBContext> oob_ctx;
+
+  if(argc > 1 && std::string(argv[1]) == "mpi") {
+    oob_ctx = std::make_shared<cylon::net::UCCMPIOOBContext>();
+  } else {
+    auto redis = std::make_shared<sw::redis::Redis>("tcp://127.0.0.1:6379");
+    oob_ctx = std::make_shared<cylon::net::UCCRedisOOBContext>(4, redis);
+  }
+
   std::shared_ptr<cylon::CylonContext> ctx;
-  if (!cylon::CylonContext::InitDistributed(ucx_config, &ctx).is_ok()) {
+  auto ucc_config = std::make_shared<cylon::net::UCCConfig>(oob_ctx);
+
+  if (!cylon::CylonContext::InitDistributed(ucc_config, &ctx).is_ok()) {
     std::cerr << "ctx init failed! " << std::endl;
     return 1;
   }
