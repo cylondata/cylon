@@ -80,8 +80,14 @@ int main(int argc, char *argv[]) {
 #endif
   } else if (comm_args == "ucx") {
 #ifdef BUILD_CYLON_UCX
+  #ifdef BUILD_CYLON_UCC
     LOG(INFO) << "Using UCX/UCC";
-    config = std::make_shared<cylon::net::UCXConfig>();
+    auto oob_ctx = std::make_shared<cylon::net::UCCMPIOOBContext>();
+    config = std::make_shared<cylon::net::UCCConfig>(oob_ctx);
+  #else
+    LOG(ERROR) << "ucx passed for tests, but tests are not built with ucx";
+    return 1;
+  #endif
 #else
     LOG(ERROR) << "ucx passed for tests, but tests are not built with ucx";
     return 1;

@@ -35,16 +35,6 @@ void mpi_check_and_finalize() {
   }
 }
 
-// UCXConfig::UCXConfig(OOBType oob_type): oobType(oob_type) {}
-
-// CommType UCXConfig::Type() {
-//   return CommType::UCX;
-// }
-
-// std::shared_ptr<UCXConfig> UCXConfig::Make(OOBType oobType) {
-//   return std::make_shared<UCXConfig>(oobType);
-// }
-
 CommType UCCConfig::Type() {
   return CommType::UCC;
 }
@@ -55,20 +45,6 @@ std::shared_ptr<UCCConfig> UCCConfig::Make(
     std::shared_ptr<UCCOOBContext> &oob_context) {
   return std::make_shared<UCCConfig>(oob_context);
 }
-
-// CommType UCXRedisConfig::Type() { return CommType::UCX_REDIS; }
-
-// UCXRedisConfig::UCXRedisConfig(int world_size, std::shared_ptr<sw::redis::Redis> redis) {
-//   this->redis = redis;
-//   this->world_size = world_size;
-// }
-
-// std::shared_ptr<sw::redis::Redis> UCXRedisConfig::getRedis() { return this->redis; }
-
-// std::shared_ptr<UCXRedisConfig> UCXRedisConfig::Make(
-//     std::shared_ptr<sw::redis::Redis> redis) {
-//   return std::make_shared<UCXRedisConfig>(redis);
-// }
 
 std::unique_ptr<Channel> UCXCommunicator::CreateChannel() const {
   return std::make_unique<UCXChannel>(this);
@@ -451,8 +427,6 @@ CommType UCXCommunicator::GetCommType() const {
   return UCX;
 }
 
-#ifdef BUILD_CYLON_UCC
-
 ucc_status_t UCCRedisOOBContext::oob_allgather(void *sbuf, void *rbuf,
                                                size_t msglen, void *coll_info,
                                                void **req) {
@@ -531,6 +505,7 @@ int UCCRedisOOBContext::getRank() {
   return rank;
 }
 
+#ifdef BUILD_CYLON_UCC
 UCXUCCCommunicator::UCXUCCCommunicator(
     std::shared_ptr<Communicator> ucx_comm,
     std::shared_ptr<UCCOOBContext> &oob_context)
