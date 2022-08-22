@@ -33,6 +33,8 @@ if (CYLON_UCX)
             net/ucx/ucx_communicator.cpp
             net/ucx/ucx_operations.hpp
             net/ucx/ucx_operations.cpp
+            net/ucx/ucx_ucc_oob_contexts.hpp
+            net/ucx/ucx_ucc_oob_contexts.cpp
             )
     if (CYLON_UCC)
         set(UCC_CYLON_FILES
