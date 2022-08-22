@@ -46,6 +46,7 @@ class UCXConfig : public CommConfig {
   std::shared_ptr<UCXOOBContext> oobContext;
 };
 
+#ifdef BUILD_CYLON_UCC
 class UCCConfig : public CommConfig {
   CommType Type() override;
 
@@ -59,6 +60,7 @@ class UCCConfig : public CommConfig {
  private:
   std::shared_ptr<UCCOOBContext> oobContext;
 };
+#endif
 
 class UCXCommunicator : public Communicator {
  public:

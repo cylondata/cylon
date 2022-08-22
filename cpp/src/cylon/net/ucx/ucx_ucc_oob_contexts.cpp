@@ -121,8 +121,6 @@ ucc_status_t UCCRedisOOBContext::oob_allgather(void *sbuf, void *rbuf,
     }
   }
 
-  // maybe need to do some cleanups here
-
   return UCC_OK;
 }
 
