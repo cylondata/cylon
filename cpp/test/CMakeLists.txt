@@ -23,7 +23,7 @@ file(DOWNLOAD ${catch2_url} "${CMAKE_CURRENT_BINARY_DIR}/catch.hpp"
         EXPECTED_HASH SHA256=${CYLON_CATCH2_HEADER_HASH})
 list(GET status 0 error)
 if (error)
-  message(FATAL_ERROR "Could not download ${catch2_url}")
+    message(FATAL_ERROR "Could not download ${catch2_url}")
 else ()
   message(STATUS "Catch2 header downloaded to ${CMAKE_CURRENT_BINARY_DIR}/catch.hpp")
 endif ()
@@ -69,14 +69,21 @@ function(cylon_add_test TESTNAME)
 
 endfunction(cylon_add_test)
 
+separate_arguments(MPIEXEC_EXECUTABLE_PARAMS)
 # macro to run executable
 function(cylon_run_test TESTNAME parallelism comm_args)
   set(exec_name "${TESTNAME}_${parallelism}_${comm_args}")
   if (WIN32)
-    set(test_params -np ${parallelism} "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/${TESTNAME}" --comm "${comm_args}")
+    set(test_params ${MPIEXEC_EXECUTABLE_PARAMS}
+            ${MPIEXEC_PARALLELISM_FLAG} ${parallelism}
+            ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/${TESTNAME} --comm ${comm_args})
   else ()
-    set(test_params --allow-run-as-root --oversubscribe -np ${parallelism} "${CMAKE_BINARY_DIR}/bin/${TESTNAME}" --comm "${comm_args}")
+    set(test_params ${MPIEXEC_EXECUTABLE_PARAMS}
+            ${MPIEXEC_PARALLELISM_FLAG} ${parallelism}
+            ${CMAKE_BINARY_DIR}/bin/${TESTNAME} --comm ${comm_args})
   endif ()
+
+#  message(STATUS ${test_params})
   add_test(NAME ${exec_name} COMMAND ${MPIEXEC_EXECUTABLE} ${test_params})
 endfunction(cylon_run_test)
 
@@ -154,6 +161,12 @@ cylon_add_test(equal_test)
 cylon_run_test(equal_test 1 mpi)
 cylon_run_test(equal_test 2 mpi)
 
+# slice test
+cylon_add_test(slice_test)
+cylon_run_test(slice_test 1 mpi)
+cylon_run_test(slice_test 2 mpi)
+cylon_run_test(slice_test 4 mpi)
+
 # flatten array test
 cylon_add_test(flatten_array_test)
 cylon_run_test(flatten_array_test 1 mpi)
@@ -217,7 +230,7 @@ if (CYLON_GLOO)
   cylon_run_test(aggregate_test 1 gloo-mpi)
   cylon_run_test(aggregate_test 2 gloo-mpi)
   cylon_run_test(aggregate_test 4 gloo-mpi)
-  
+
   cylon_run_test(sync_comms_test 1 gloo-mpi)
   cylon_run_test(sync_comms_test 4 gloo-mpi)
 endif (CYLON_GLOO)
