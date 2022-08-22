@@ -12,11 +12,13 @@
  * limitations under the License.
  */
 
-#include <memory>
+#include "cylon/net/ucx/ucx_communicator.hpp"
+
 #include <glog/logging.h>
 
+#include <memory>
+
 #include "cylon/net/communicator.hpp"
-#include "cylon/net/ucx/ucx_communicator.hpp"
 #include "cylon/net/ucx/ucx_channel.hpp"
 #include "cylon/util/macros.hpp"
 
@@ -35,38 +37,58 @@ void mpi_check_and_finalize() {
   }
 }
 
-CommType UCCConfig::Type() {
-  return CommType::UCC;
+CommType UCXConfig::Type() { return CommType::UCX; }
+
+UCXConfig::UCXConfig(std::shared_ptr<UCXOOBContext> oobContext) {
+  this->oobContext = oobContext;
 }
 
-UCCConfig::UCCConfig(std::shared_ptr<UCCOOBContext> oob_context): oobContext(oob_context) {}
+std::shared_ptr<UCXConfig> UCXConfig::Make(
+    std::shared_ptr<UCXOOBContext> oobContext) {
+  return std::make_shared<UCXConfig>(oobContext);
+}
+
+void UCXConfig::setOOBContext(std::shared_ptr<UCXOOBContext> oobContext) {
+  this->oobContext = oobContext;
+}
+
+std::shared_ptr<UCXOOBContext> UCXConfig::getOOBContext() {
+  return this->oobContext;
+}
+
+CommType UCCConfig::Type() { return CommType::UCC; }
+
+UCCConfig::UCCConfig(std::shared_ptr<UCCOOBContext> oob_context)
+    : oobContext(oob_context) {}
 
 std::shared_ptr<UCCConfig> UCCConfig::Make(
     std::shared_ptr<UCCOOBContext> &oob_context) {
   return std::make_shared<UCCConfig>(oob_context);
 }
 
+void UCCConfig::setOOBContext(std::shared_ptr<UCCOOBContext> oobContext) {
+  this->oobContext = oobContext;
+}
+
+std::shared_ptr<UCCOOBContext> UCCConfig::getOOBContext() { return oobContext; }
+
 std::unique_ptr<Channel> UCXCommunicator::CreateChannel() const {
   return std::make_unique<UCXChannel>(this);
 }
 
-int UCXCommunicator::GetRank() const {
-  return this->rank;
-}
-int UCXCommunicator::GetWorldSize() const {
-  return this->world_size;
-}
+int UCXCommunicator::GetRank() const { return this->rank; }
+int UCXCommunicator::GetWorldSize() const { return this->world_size; }
 
-Status UCXCommunicator::AllGather(const std::shared_ptr<Table> &table,
-                                  std::vector<std::shared_ptr<Table>> *out) const {
+Status UCXCommunicator::AllGather(
+    const std::shared_ptr<Table> &table,
+    std::vector<std::shared_ptr<Table>> *out) const {
   CYLON_UNUSED(table);
   CYLON_UNUSED(out);
   return {Code::NotImplemented, "All gather not implemented for ucx"};
 }
 
 Status UCXCommunicator::Gather(const std::shared_ptr<Table> &table,
-                               int gather_root,
-                               bool gather_from_root,
+                               int gather_root, bool gather_from_root,
                                std::vector<std::shared_ptr<Table>> *out) const {
   CYLON_UNUSED(table);
   CYLON_UNUSED(gather_root);
@@ -104,8 +126,9 @@ Status UCXCommunicator::AllReduce(const std::shared_ptr<Scalar> &values,
   return {Code::NotImplemented, "Allreduce not implemented for ucx"};
 }
 
-Status UCXCommunicator::Allgather(const std::shared_ptr<Column> &values,
-                                  std::vector<std::shared_ptr<Column>> *output) const {
+Status UCXCommunicator::Allgather(
+    const std::shared_ptr<Column> &values,
+    std::vector<std::shared_ptr<Column>> *output) const {
   CYLON_UNUSED(values);
   CYLON_UNUSED(output);
   return {Code::NotImplemented, "Allgather not implemented for ucx"};
@@ -118,8 +141,9 @@ Status UCXCommunicator::Allgather(const std::shared_ptr<Scalar> &value,
   return {Code::NotImplemented, "Allgather not implemented for ucx"};
 }
 
-Status UCXCommunicator::MakeWithMPI(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
-                   std::shared_ptr<Communicator> *out) {
+Status UCXCommunicator::MakeWithMPI(const std::shared_ptr<CommConfig> &config,
+                                    MemoryPool *pool,
+                                    std::shared_ptr<Communicator> *out) {
   CYLON_UNUSED(config);
   *out = std::make_shared<UCXCommunicator>(pool);
   auto &comm = static_cast<UCXCommunicator &>(**out);
@@ -218,7 +242,8 @@ Status UCXCommunicator::MakeWithRedis(const std::shared_ptr<CommConfig> &config,
   auto &comm = static_cast<UCXCommunicator &>(**out);
 
   const auto &ucx_config = std::static_pointer_cast<UCCConfig>(config);
-  const auto &oob_context = std::static_pointer_cast<UCCRedisOOBContext>(ucx_config->oobContext);
+  const auto &oob_context =
+      std::static_pointer_cast<UCCRedisOOBContext>(ucx_config->getOOBContext());
   auto redis = oob_context->getRedis();
 
   // Int variable used when iterating
@@ -260,8 +285,7 @@ Status UCXCommunicator::MakeWithRedis(const std::shared_ptr<CommConfig> &config,
 
   redis->hset("ucp_worker_addr_mp", std::to_string(rank), addr_str);
   std::vector<int> v(world_size, 0);
-  redis->lpush("ucx_helper" + std::to_string(rank), v.begin(),
-                    v.end());
+  redis->lpush("ucx_helper" + std::to_string(rank), v.begin(), v.end());
 
   auto allAddresses =
       std::make_unique<char[]>(ucpRecvWorkerAddr->addrSize * world_size);
@@ -321,9 +345,10 @@ Status UCXCommunicator::MakeWithRedis(const std::shared_ptr<CommConfig> &config,
   return Status::OK();
 }
 
-Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
+Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config,
+                             MemoryPool *pool,
                              std::shared_ptr<Communicator> *out) {
-  const auto& ucc_config = std::static_pointer_cast<UCXConfig>(config);
+  const auto &ucc_config = std::static_pointer_cast<UCXConfig>(config);
   auto oob_context = ucc_config->getOOBContext();
 
   *out = std::make_shared<UCXCommunicator>(pool);
@@ -345,7 +370,8 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
   RETURN_CYLON_STATUS_IF_FAILED(oob_context->InitOOB());
 
   // Get the rank for checking send to self, and initializations
-  RETURN_CYLON_STATUS_IF_FAILED(oob_context->getWorldSizeAndRank(comm.world_size, comm.rank));
+  RETURN_CYLON_STATUS_IF_FAILED(
+      oob_context->getWorldSizeAndRank(comm.world_size, comm.rank));
 
   int rank = comm.rank, world_size = comm.world_size;
 
@@ -368,7 +394,6 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
   //     ucpRecvWorkerAddr->addr, (int)ucpRecvWorkerAddr->addrSize, MPI_BYTE,
   //     allAddresses.get(), (int)ucpRecvWorkerAddr->addrSize, MPI_BYTE,
   //     MPI_COMM_WORLD));
-
 
   RETURN_CYLON_STATUS_IF_FAILED(oob_context->OOBAllgather(
       (uint8_t *)ucpRecvWorkerAddr->addr, allAddresses.get(),
@@ -415,95 +440,11 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config, MemoryPo
   return Status::OK();
 }
 
-void UCXCommunicator::Finalize() {
-  this->oobContext->Finalize();
-}
+void UCXCommunicator::Finalize() { this->oobContext->Finalize(); }
 
-void UCXCommunicator::Barrier() {
-  MPI_Barrier(MPI_COMM_WORLD);
-}
+void UCXCommunicator::Barrier() { MPI_Barrier(MPI_COMM_WORLD); }
 
-CommType UCXCommunicator::GetCommType() const {
-  return UCX;
-}
-
-ucc_status_t UCCRedisOOBContext::oob_allgather(void *sbuf, void *rbuf,
-                                               size_t msglen, void *coll_info,
-                                               void **req) {
-  auto oob_allgather_func = [](void *sbuf, void *rbuf, size_t msglen,
-                               void *coll_info, void **req) {
-    return UCC_OK;
-  };
-  int world_size = ((UCCRedisOOBContext *)coll_info)->world_size;
-  int rank = ((UCCRedisOOBContext *)coll_info)->rank;
-  int num_comm = ((UCCRedisOOBContext *)coll_info)->num_oob_allgather;
-  ((UCCRedisOOBContext *)coll_info)->num_oob_allgather++;
-
-  auto &redis = ((UCCRedisOOBContext *)coll_info)->redis;
-  *req = rbuf;
-  std::string s((char *)sbuf, ((char *)sbuf) + msglen);
-
-  redis->hset("ucc_oob_mp" + std::to_string(num_comm), std::to_string(rank), s);
-  redis->lpush(
-      "ucc_helper" + std::to_string(num_comm) + ":" + std::to_string(rank),
-      "0");
-
-  for (int i = 0; i < world_size; i++) {
-    if (i == rank) {
-      memcpy(rbuf + i * msglen, s.data(), msglen);
-    } else {
-      auto helperName =
-          "ucc_helper" + std::to_string(num_comm) + ":" + std::to_string(i);
-
-      // val = redis.hget("ucp_worker_addr_mp", std::to_string(i));
-      sw::redis::OptionalString val;
-      do {
-        redis->brpoplpush(helperName, helperName, 0);
-        val = redis->hget("ucc_oob_mp" + std::to_string(num_comm),
-                          std::to_string(i));
-      } while (!val);
-
-      memcpy(rbuf + i * msglen, val.value().data(), msglen);
-    }
-  }
-
-  // maybe need to do some cleanups here
-
-  return UCC_OK;
-}
-
-UCCRedisOOBContext::UCCRedisOOBContext(
-    int ws, std::shared_ptr<sw::redis::Redis> &rds): world_size(ws), redis(rds) {}
-
-ucc_status_t UCCRedisOOBContext::oob_allgather_test(void *req) {
-  CYLON_UNUSED(req);
-  return UCC_OK;
-}
-
-ucc_status_t UCCRedisOOBContext::oob_allgather_free(void *req) {
-  CYLON_UNUSED(req);
-  return UCC_OK;
-}
-
-OOBType UCCRedisOOBContext::Type() {
-  return OOBType::OOB_REDIS;
-}
-
-std::shared_ptr<sw::redis::Redis> UCCRedisOOBContext::getRedis() {
-  return this->redis;
-}
-
-int UCCRedisOOBContext::getWorldSize() {
-  return world_size;
-}
-
-void UCCRedisOOBContext::setRank(int rk) {
-  rank = rk;
-}
-
-int UCCRedisOOBContext::getRank() {
-  return rank;
-}
+CommType UCXCommunicator::GetCommType() const { return UCX; }
 
 #ifdef BUILD_CYLON_UCC
 UCXUCCCommunicator::UCXUCCCommunicator(
@@ -515,19 +456,21 @@ UCXUCCCommunicator::UCXUCCCommunicator(
       oobContext(oob_context) {}
 
 Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
-                                MemoryPool *pool, std::shared_ptr<Communicator> *out) {
+                                MemoryPool *pool,
+                                std::shared_ptr<Communicator> *out) {
   std::shared_ptr<Communicator> ucx_comm;
   auto ucc_config = std::static_pointer_cast<UCCConfig>(config);
+  auto ucc_oob_ctx = ucc_config->getOOBContext();
 
-  auto ucx_config = std::make_shared<UCXConfig>(ucc_config->oobContext->makeUCXOOBContext());
+  auto ucx_config =
+      std::make_shared<UCXConfig>(ucc_oob_ctx->makeUCXOOBContext());
 
   UCXCommunicator::Make(ucx_config, pool, &ucx_comm);
 
-  *out = std::make_shared<UCXUCCCommunicator>(std::move(ucx_comm),
-                                              ucc_config->oobContext);
+  *out = std::make_shared<UCXUCCCommunicator>(std::move(ucx_comm), ucc_oob_ctx);
 
   auto &comm = *std::static_pointer_cast<UCXUCCCommunicator>(*out);
-  comm.oobContext = ucc_config->oobContext;
+  comm.oobContext = ucc_oob_ctx;
   comm.oobContext->InitOOB(comm.GetRank());
   // auto redis = sw::redis::Redis("tcp://127.0.0.1:6379");
 
@@ -541,12 +484,13 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
 
   // init ucc lib
   ucc_lib_params_t lib_params = {.mask = UCC_LIB_PARAM_FIELD_THREAD_MODE,
-      .thread_mode = UCC_THREAD_SINGLE,
-      .coll_types = {},
-      .reduction_types = {},
-      .sync_type = {}};
+                                 .thread_mode = UCC_THREAD_SINGLE,
+                                 .coll_types = {},
+                                 .reduction_types = {},
+                                 .sync_type = {}};
 
-  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_lib_config_read(nullptr, nullptr, &lib_config));
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(
+      ucc_lib_config_read(nullptr, nullptr, &lib_config));
   RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_init(&lib_params, lib_config, &lib));
   ucc_lib_config_release(lib_config);
 
@@ -555,18 +499,16 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
 
   // ctx_params.oob.allgather = ucc_config->oobContext->oob_allgather;
   ctx_params.oob.allgather = [](void *sbuf, void *rbuf, size_t msglen,
-                                    void *coll_info, void **req) {
-    return UCC_OK;
-  };
+                                void *coll_info, void **req) { return UCC_OK; };
 
-  if(ucc_config->oobContext->Type() == OOBType::OOB_REDIS) {
+  if (ucc_oob_ctx->Type() == OOBType::OOB_REDIS) {
     ctx_params.oob.allgather = team_params.oob.allgather =
         UCCRedisOOBContext::oob_allgather;
     ctx_params.oob.req_test = team_params.oob.req_test =
         UCCRedisOOBContext::oob_allgather_test;
     ctx_params.oob.req_free = team_params.oob.req_free =
         UCCRedisOOBContext::oob_allgather_free;
-  } else if(ucc_config->oobContext->Type() == OOBType::OOB_MPI) {
+  } else if (ucc_oob_ctx->Type() == OOBType::OOB_MPI) {
     ctx_params.oob.allgather = team_params.oob.allgather =
         UCCMPIOOBContext::oob_allgather;
     ctx_params.oob.req_test = team_params.oob.req_test =
@@ -577,39 +519,38 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
     return {Code::NotImplemented, "UCC OOB communication type not supported."};
   }
 
-  ctx_params.oob.coll_info = ucc_config->oobContext->getCollInfo();
+  ctx_params.oob.coll_info = ucc_oob_ctx->getCollInfo();
 
   ctx_params.oob.n_oob_eps = static_cast<uint32_t>(comm.GetWorldSize());
   ctx_params.oob.oob_ep = static_cast<uint32_t>(comm.GetRank());
 
-  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_config_read(lib, nullptr, &ctx_config));
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(
+      ucc_context_config_read(lib, nullptr, &ctx_config));
 
-  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_create(lib, &ctx_params, ctx_config,
-                                                       &comm.uccContext));
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(
+      ucc_context_create(lib, &ctx_params, ctx_config, &comm.uccContext));
 
   ucc_context_config_release(ctx_config);
 
   // init ucc team
   team_params.mask = UCC_TEAM_PARAM_FIELD_OOB;
 
-  team_params.oob.coll_info = ucc_config->oobContext->getCollInfo();
+  team_params.oob.coll_info = ucc_oob_ctx->getCollInfo();
 
   team_params.oob.n_oob_eps = static_cast<uint32_t>(comm.GetWorldSize());
   team_params.oob.oob_ep = static_cast<uint32_t>(comm.GetRank());
-  RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_team_create_post(&comm.uccContext, 1, &team_params,
-                                                         &comm.uccTeam));
+  RETURN_CYLON_STATUS_IF_UCC_FAILED(
+      ucc_team_create_post(&comm.uccContext, 1, &team_params, &comm.uccTeam));
 
   while (UCC_INPROGRESS == (status = ucc_team_create_test(comm.uccTeam))) {
-//    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_progress(comm.uccContext));
+    //    RETURN_CYLON_STATUS_IF_UCC_FAILED(ucc_context_progress(comm.uccContext));
   }
 
   RETURN_CYLON_STATUS_IF_UCC_FAILED(status);
   return Status::OK();
 }
 
-CommType UCXUCCCommunicator::GetCommType() const {
-  return UCX;
-}
+CommType UCXUCCCommunicator::GetCommType() const { return UCX; }
 
 std::unique_ptr<Channel> UCXUCCCommunicator::CreateChannel() const {
   return ucx_comm_->CreateChannel();
@@ -618,7 +559,8 @@ std::unique_ptr<Channel> UCXUCCCommunicator::CreateChannel() const {
 void UCXUCCCommunicator::Finalize() {
   if (!this->IsFinalized()) {
     ucc_status_t status;
-    while (uccTeam && (UCC_INPROGRESS == (status = ucc_team_destroy(uccTeam)))) {
+    while (uccTeam &&
+           (UCC_INPROGRESS == (status = ucc_team_destroy(uccTeam)))) {
       if (UCC_OK != status) {
         LOG(ERROR) << "ucc_team_destroy failed";
         break;
@@ -630,27 +572,25 @@ void UCXUCCCommunicator::Finalize() {
   }
 }
 
-void UCXUCCCommunicator::Barrier() {
-  return ucx_comm_->Barrier();
-}
+void UCXUCCCommunicator::Barrier() { return ucx_comm_->Barrier(); }
 
-Status UCXUCCCommunicator::AllGather(const std::shared_ptr<Table> &table,
-                                     std::vector<std::shared_ptr<Table>> *out) const {
+Status UCXUCCCommunicator::AllGather(
+    const std::shared_ptr<Table> &table,
+    std::vector<std::shared_ptr<Table>> *out) const {
   ucc::UccTableAllgatherImpl impl(uccTeam, uccContext, world_size);
   return impl.Execute(table, out);
 }
 
-Status UCXUCCCommunicator::Gather(const std::shared_ptr<Table> &table,
-                                  int gather_root,
-                                  bool gather_from_root,
-                                  std::vector<std::shared_ptr<Table>> *out) const {
+Status UCXUCCCommunicator::Gather(
+    const std::shared_ptr<Table> &table, int gather_root, bool gather_from_root,
+    std::vector<std::shared_ptr<Table>> *out) const {
   ucc::UccTableGatherImpl impl(uccTeam, uccContext, rank, world_size);
   return impl.Execute(table, gather_root, gather_from_root, out);
 }
 
-Status UCXUCCCommunicator::Bcast(std::shared_ptr<Table> *table,
-                                 int bcast_root,
-                                 const std::shared_ptr<CylonContext> &ctx) const {
+Status UCXUCCCommunicator::Bcast(
+    std::shared_ptr<Table> *table, int bcast_root,
+    const std::shared_ptr<CylonContext> &ctx) const {
   ucc::UccTableBcastImpl impl(uccTeam, uccContext);
   // The ctx_ptr and the real context are not the same
   return impl.Execute(table, bcast_root, ctx);
@@ -670,8 +610,9 @@ Status UCXUCCCommunicator::AllReduce(const std::shared_ptr<Scalar> &values,
   return impl.Execute(values, reduce_op, output);
 }
 
-Status UCXUCCCommunicator::Allgather(const std::shared_ptr<Column> &values,
-                                     std::vector<std::shared_ptr<Column>> *output) const {
+Status UCXUCCCommunicator::Allgather(
+    const std::shared_ptr<Column> &values,
+    std::vector<std::shared_ptr<Column>> *output) const {
   ucc::UccAllGatherImpl impl(uccTeam, uccContext, world_size);
   return impl.Execute(values, world_size, output);
 }
@@ -682,6 +623,6 @@ Status UCXUCCCommunicator::Allgather(const std::shared_ptr<Scalar> &value,
   return impl.Execute(value, world_size, output);
 }
 
-#endif // BUILD_CYLON_UCC
+#endif  // BUILD_CYLON_UCC
 }  // namespace net
 }  // namespace cylon
