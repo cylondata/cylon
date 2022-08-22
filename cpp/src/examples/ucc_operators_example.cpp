@@ -18,6 +18,7 @@
  *  mpirun -n 4 bin/ucc_example
  */
 
+#ifdef BUILD_CYLON_UCC
 #include <iostream>
 
 #include <ucc/api/ucc.h>
@@ -223,3 +224,4 @@ int main(int argc, char **argv) {
   testColumnAllReduce(ctx);
   testScalarAllReduce(ctx);
 }
+#endif

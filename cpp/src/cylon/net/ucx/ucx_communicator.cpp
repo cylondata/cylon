@@ -56,6 +56,7 @@ std::shared_ptr<UCXOOBContext> UCXConfig::getOOBContext() {
   return this->oobContext;
 }
 
+#ifdef BUILD_CYLON_UCC
 CommType UCCConfig::Type() { return CommType::UCC; }
 
 UCCConfig::UCCConfig(std::shared_ptr<UCCOOBContext> oob_context)
@@ -75,6 +76,7 @@ std::shared_ptr<UCCOOBContext> UCCConfig::getOOBContext() { return oobContext; }
 std::unique_ptr<Channel> UCXCommunicator::CreateChannel() const {
   return std::make_unique<UCXChannel>(this);
 }
+#endif
 
 int UCXCommunicator::GetRank() const { return this->rank; }
 int UCXCommunicator::GetWorldSize() const { return this->world_size; }
@@ -141,210 +143,6 @@ Status UCXCommunicator::Allgather(const std::shared_ptr<Scalar> &value,
   return {Code::NotImplemented, "Allgather not implemented for ucx"};
 }
 
-Status UCXCommunicator::MakeWithMPI(const std::shared_ptr<CommConfig> &config,
-                                    MemoryPool *pool,
-                                    std::shared_ptr<Communicator> *out) {
-  CYLON_UNUSED(config);
-  *out = std::make_shared<UCXCommunicator>(pool);
-  auto &comm = static_cast<UCXCommunicator &>(**out);
-  // Check init functions
-  int initialized;
-  // Int variable used when iterating
-  int sIndx;
-  // Address of the UCP Worker for receiving
-  cylon::ucx::ucxWorkerAddr *ucpRecvWorkerAddr;
-  // Address of the UCP Worker for sending
-  cylon::ucx::ucxWorkerAddr *ucpSendWorkerAddr;
-
-  // Status check when creating end-points
-  ucs_status_t ucxStatus;
-  // Variable to hold the current ucp address
-  ucp_address_t *address;
-
-  // MPI init
-  MPI_Initialized(&initialized);
-  if (!initialized) {
-    RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Init(nullptr, nullptr));
-  }
-
-  // Get the rank for checking send to self, and initializations
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm.rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &comm.world_size);
-
-  int rank = comm.rank, world_size = comm.world_size;
-
-  // Init context
-  RETURN_CYLON_STATUS_IF_FAILED(
-      cylon::ucx::initContext(&comm.ucpContext, nullptr));
-
-  // Init recv worker and get address
-  ucpRecvWorkerAddr =
-      cylon::ucx::initWorker(comm.ucpContext, &comm.ucpRecvWorker);
-  // Init send worker
-  ucpSendWorkerAddr =
-      cylon::ucx::initWorker(comm.ucpContext, &comm.ucpSendWorker);
-
-  //  Gather all worker addresses
-  // All addresses buffer for allGather
-  auto allAddresses =
-      std::make_unique<uint8_t[]>(ucpRecvWorkerAddr->addrSize * world_size);
-  RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Allgather(
-      ucpRecvWorkerAddr->addr, (int)ucpRecvWorkerAddr->addrSize, MPI_BYTE,
-      allAddresses.get(), (int)ucpRecvWorkerAddr->addrSize, MPI_BYTE,
-      MPI_COMM_WORLD));
-
-  // Iterate and set the sends
-  comm.endPointMap.reserve(world_size);
-  for (sIndx = 0; sIndx < world_size; sIndx++) {
-    ucp_ep_params_t epParams;
-    ucp_ep_h ep;
-
-    // If not self, then check if the worker address has been received.
-    //  If self,then assign local worker
-    if (rank != sIndx) {
-      address = reinterpret_cast<ucp_address_t *>(
-          allAddresses.get() + sIndx * ucpRecvWorkerAddr->addrSize);
-    } else {
-      address = ucpRecvWorkerAddr->addr;
-    }
-
-    // Set params for the endpoint
-    epParams.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS |
-                          UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
-    epParams.address = address;
-    epParams.err_mode = UCP_ERR_HANDLING_MODE_NONE;
-
-    // Create an endpoint
-    ucxStatus = ucp_ep_create(comm.ucpSendWorker, &epParams, &ep);
-
-    comm.endPointMap[sIndx] = ep;
-    // Check if the endpoint was created properly
-    if (ucxStatus != UCS_OK) {
-      LOG(FATAL) << "Error when creating the endpoint.";
-      return {Code::ExecutionError,
-              "Error when creating the endpoint: " +
-                  std::string(ucs_status_string(ucxStatus))};
-    }
-  }
-
-  // Cleanup
-  delete (ucpRecvWorkerAddr);
-  delete (ucpSendWorkerAddr);
-
-  return Status::OK();
-}
-
-Status UCXCommunicator::MakeWithRedis(const std::shared_ptr<CommConfig> &config,
-                                      MemoryPool *pool,
-                                      std::shared_ptr<Communicator> *out) {
-  CYLON_UNUSED(config);
-  *out = std::make_shared<UCXCommunicator>(pool);
-  auto &comm = static_cast<UCXCommunicator &>(**out);
-
-  const auto &ucx_config = std::static_pointer_cast<UCCConfig>(config);
-  const auto &oob_context =
-      std::static_pointer_cast<UCCRedisOOBContext>(ucx_config->getOOBContext());
-  auto redis = oob_context->getRedis();
-
-  // Int variable used when iterating
-  int sIndx;
-  // Address of the UCP Worker for receiving
-  cylon::ucx::ucxWorkerAddr *ucpRecvWorkerAddr;
-  // Address of the UCP Worker for sending
-  cylon::ucx::ucxWorkerAddr *ucpSendWorkerAddr;
-
-  // Status check when creating end-points
-  ucs_status_t ucxStatus;
-  // Variable to hold the current ucp address
-  ucp_address_t *address;
-
-  int world_size = oob_context->getWorldSize();
-  comm.world_size = world_size;
-
-  int num_cur_processes = redis->incr("num_cur_processes");
-
-  comm.rank = num_cur_processes - 1;
-  int rank = comm.rank;
-
-  // Init context
-  RETURN_CYLON_STATUS_IF_FAILED(
-      cylon::ucx::initContext(&comm.ucpContext, nullptr));
-
-  // Init recv worker and get address
-  ucpRecvWorkerAddr =
-      cylon::ucx::initWorker(comm.ucpContext, &comm.ucpRecvWorker);
-  // Init send worker
-  ucpSendWorkerAddr =
-      cylon::ucx::initWorker(comm.ucpContext, &comm.ucpSendWorker);
-
-  // Gather all worker addresses
-  // All addresses buffer for allGather
-  auto addr_str = std::string(
-      (char *)ucpRecvWorkerAddr->addr,
-      ((char *)ucpRecvWorkerAddr->addr) + ucpRecvWorkerAddr->addrSize);
-
-  redis->hset("ucp_worker_addr_mp", std::to_string(rank), addr_str);
-  std::vector<int> v(world_size, 0);
-  redis->lpush("ucx_helper" + std::to_string(rank), v.begin(), v.end());
-
-  auto allAddresses =
-      std::make_unique<char[]>(ucpRecvWorkerAddr->addrSize * world_size);
-
-  for (int i = 0; i < world_size; i++) {
-    if (i == rank) continue;
-    auto helperName = "ucx_helper" + std::to_string(i);
-
-    auto val = redis->hget("ucp_worker_addr_mp", std::to_string(i));
-    while (!val) {
-      redis->blpop(helperName);
-      val = redis->hget("ucp_worker_addr_mp", std::to_string(i));
-    }
-
-    memcpy(allAddresses.get() + i * ucpRecvWorkerAddr->addrSize,
-           val.value().data(), ucpRecvWorkerAddr->addrSize);
-  }
-
-  // // Iterate and set the sends
-  comm.endPointMap.reserve(world_size);
-  for (sIndx = 0; sIndx < world_size; sIndx++) {
-    ucp_ep_params_t epParams;
-    ucp_ep_h ep;
-
-    // If not self, then check if the worker address has been received.
-    //  If self,then assign local worker
-    if (rank != sIndx) {
-      address = reinterpret_cast<ucp_address_t *>(
-          allAddresses.get() + sIndx * ucpRecvWorkerAddr->addrSize);
-    } else {
-      address = ucpRecvWorkerAddr->addr;
-    }
-
-    // Set params for the endpoint
-    epParams.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS |
-                          UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
-    epParams.address = address;
-    epParams.err_mode = UCP_ERR_HANDLING_MODE_NONE;
-
-    // Create an endpoint
-    ucxStatus = ucp_ep_create(comm.ucpSendWorker, &epParams, &ep);
-
-    comm.endPointMap[sIndx] = ep;
-    // Check if the endpoint was created properly
-    if (ucxStatus != UCS_OK) {
-      LOG(FATAL) << "Error when creating the endpoint.";
-      return {Code::ExecutionError,
-              "Error when creating the endpoint: " +
-                  std::string(ucs_status_string(ucxStatus))};
-    }
-  }
-
-  // Cleanup
-  delete (ucpRecvWorkerAddr);
-  delete (ucpSendWorkerAddr);
-
-  return Status::OK();
-}
-
 Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config,
                              MemoryPool *pool,
                              std::shared_ptr<Communicator> *out) {
@@ -390,10 +188,6 @@ Status UCXCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   // All addresses buffer for allGather
   auto allAddresses =
       std::make_unique<uint8_t[]>(ucpRecvWorkerAddr->addrSize * world_size);
-  // RETURN_CYLON_STATUS_IF_MPI_FAILED(MPI_Allgather(
-  //     ucpRecvWorkerAddr->addr, (int)ucpRecvWorkerAddr->addrSize, MPI_BYTE,
-  //     allAddresses.get(), (int)ucpRecvWorkerAddr->addrSize, MPI_BYTE,
-  //     MPI_COMM_WORLD));
 
   RETURN_CYLON_STATUS_IF_FAILED(oob_context->OOBAllgather(
       (uint8_t *)ucpRecvWorkerAddr->addr, allAddresses.get(),
@@ -472,7 +266,6 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   auto &comm = *std::static_pointer_cast<UCXUCCCommunicator>(*out);
   comm.oobContext = ucc_oob_ctx;
   comm.oobContext->InitOOB(comm.GetRank());
-  // auto redis = sw::redis::Redis("tcp://127.0.0.1:6379");
 
   // initialize UCC team and context
   ucc_context_params_t ctx_params;
@@ -497,7 +290,6 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   // init ucc context
   ctx_params.mask = UCC_CONTEXT_PARAM_FIELD_OOB;
 
-  // ctx_params.oob.allgather = ucc_config->oobContext->oob_allgather;
   ctx_params.oob.allgather = [](void *sbuf, void *rbuf, size_t msglen,
                                 void *coll_info, void **req) { return UCC_OK; };
 
