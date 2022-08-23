@@ -31,7 +31,8 @@
   do{                               \
     const auto& _st = (expr);       \
     if (!_st.ok()) {                \
-      return cylon::Status(static_cast<int>(_st.code()), _st.message()); \
+      return cylon::Status(static_cast<int>(_st.code()), _st.message() \
+      + "\n" + __FILE__ + ":" + std::to_string(__LINE__) ); \
     };                              \
   } while (0)
 
@@ -43,7 +44,8 @@
       int _err_str_len = 0;                 \
       MPI_Error_string(_st, _err_str, &_err_str_len); \
       return cylon::Status(cylon::Code::ExecutionError,      \
-                           std::string(_err_str, _err_str_len)); \
+                           std::string(_err_str, _err_str_len)\
+                           + "\n" + __FILE__ + ":" + std::to_string(__LINE__)); \
     };                              \
   } while (0)
 
@@ -53,7 +55,8 @@
     if (_st < 0) {                                         \
       return cylon::Status(                                      \
           cylon::Code::ExecutionError,                           \
-          "UCC Failed: " + std::string(ucc_status_string(_st))); \
+          "UCC Failed: " + std::string(ucc_status_string(_st))\
+          + "\n" + __FILE__ + ":" + std::to_string(__LINE__)); \
     };                                                           \
   } while (0)
 

@@ -472,13 +472,13 @@ Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted,
     return Status::OK();
   }
 
-  float step = local_sorted->Rows() / (num_samples + 1.0);
-  float acc = step;
+  double step = local_sorted->Rows() / (num_samples + 1.0);
+  double acc = step;
   arrow::Int64Builder filter(pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(num_samples));
 
   for (int i = 0; i < num_samples; i++) {
-    filter.UnsafeAppend(acc);
+    filter.UnsafeAppend((int64_t) acc);
     acc += step;
   }
 
