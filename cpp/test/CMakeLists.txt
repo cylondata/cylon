@@ -220,12 +220,12 @@ if (CYLON_GLOO)
   cylon_run_test(table_op_test 1 gloo-mpi)
   cylon_run_test(table_op_test 2 gloo-mpi)
   cylon_run_test(table_op_test 4 gloo-mpi)
-  #
-  #  cylon_run_test(equal_test 1 gloo-mpi)
-  #  cylon_run_test(equal_test 2 gloo-mpi)
-  #
-  #  cylon_run_test(repartition_test 1 gloo-mpi)
-  #  cylon_run_test(repartition_test 4 gloo-mpi)
+
+  cylon_run_test(equal_test 1 gloo-mpi)
+  cylon_run_test(equal_test 2 gloo-mpi)
+
+  cylon_run_test(repartition_test 1 gloo-mpi)
+  cylon_run_test(repartition_test 4 gloo-mpi)
 
   cylon_run_test(aggregate_test 1 gloo-mpi)
   cylon_run_test(aggregate_test 2 gloo-mpi)
@@ -233,6 +233,9 @@ if (CYLON_GLOO)
 
   cylon_run_test(sync_comms_test 1 gloo-mpi)
   cylon_run_test(sync_comms_test 4 gloo-mpi)
+
+  cylon_run_test(dist_sort_test 1 gloo-mpi)
+  cylon_run_test(dist_sort_test 4 gloo-mpi)
 endif (CYLON_GLOO)
 
 #### ucc tests
@@ -254,5 +257,8 @@ if (CYLON_UCX)
 
     cylon_run_test(sync_comms_test 1 ucx)
     cylon_run_test(sync_comms_test 4 ucx)
+
+#    cylon_run_test(dist_sort_test 1 ucx)
+#    cylon_run_test(dist_sort_test 4 ucx)
   endif (CYLON_UCC)
 endif (CYLON_UCX)
