@@ -166,7 +166,7 @@ arrow::Status Duplicate(const std::shared_ptr<arrow::Table> &table, arrow::Memor
   return arrow::Status::OK();
 }
 
-template<typename TYPE>
+/*template<typename TYPE>
 static inline arrow::Status sample_fixed_size_array(const std::shared_ptr<arrow::ChunkedArray> &ch_array,
                                                     uint64_t num_samples,
                                                     std::shared_ptr<arrow::Array> &out,
@@ -215,7 +215,7 @@ static inline arrow::Status sample_fixed_size_array(const std::shared_ptr<arrow:
   }
 
   return builder.Finish(&out);
-}
+}*/
 
 template<typename TYPE>
 static inline arrow::Status sample_binary_array(const std::shared_ptr<arrow::ChunkedArray> &ch_array,
@@ -275,32 +275,41 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &arr,
                           uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out,
                           arrow::MemoryPool *pool) {
-  switch (arr->type()->id()) {
-    case arrow::Type::BOOL:return sample_fixed_size_array<arrow::BooleanType>(arr, num_samples, out, pool);
-    case arrow::Type::UINT8:return sample_fixed_size_array<arrow::UInt8Type>(arr, num_samples, out, pool);
-    case arrow::Type::INT8:return sample_fixed_size_array<arrow::Int8Type>(arr, num_samples, out, pool);
-    case arrow::Type::UINT16:return sample_fixed_size_array<arrow::UInt16Type>(arr, num_samples, out, pool);
-    case arrow::Type::INT16:return sample_fixed_size_array<arrow::Int16Type>(arr, num_samples, out, pool);
-    case arrow::Type::UINT32:return sample_fixed_size_array<arrow::UInt32Type>(arr, num_samples, out, pool);
-    case arrow::Type::INT32:return sample_fixed_size_array<arrow::Int32Type>(arr, num_samples, out, pool);
-    case arrow::Type::UINT64:return sample_fixed_size_array<arrow::UInt32Type>(arr, num_samples, out, pool);
-    case arrow::Type::INT64:return sample_fixed_size_array<arrow::Int64Type>(arr, num_samples, out, pool);
-    case arrow::Type::FLOAT:return sample_fixed_size_array<arrow::FloatType>(arr, num_samples, out, pool);
-    case arrow::Type::DOUBLE:return sample_fixed_size_array<arrow::DoubleType>(arr, num_samples, out, pool);
-    case arrow::Type::DATE32:return sample_fixed_size_array<arrow::Date32Type>(arr, num_samples, out, pool);
-    case arrow::Type::DATE64:return sample_fixed_size_array<arrow::Date64Type>(arr, num_samples, out, pool);
-    case arrow::Type::TIMESTAMP:return sample_fixed_size_array<arrow::TimestampType>(arr, num_samples, out, pool);
-    case arrow::Type::TIME32:return sample_fixed_size_array<arrow::Time32Type>(arr, num_samples, out, pool);
-    case arrow::Type::TIME64:return sample_fixed_size_array<arrow::Time64Type>(arr, num_samples, out, pool);
-    case arrow::Type::STRING: return sample_binary_array<arrow::StringType>(arr, num_samples, out, pool);
-    case arrow::Type::BINARY:return sample_binary_array<arrow::BinaryType>(arr, num_samples, out, pool);
-    case arrow::Type::FIXED_SIZE_BINARY:
-      return sample_fixed_size_array<arrow::FixedSizeBinaryType>(arr,
-                                                                 num_samples,
-                                                                 out,
-                                                                 pool);
-    default:return arrow::Status(arrow::StatusCode::Invalid, "unsupported type");
-  }
+
+   auto result = arrow::compute::Take(out, arr);
+    if (result.ok()) {
+        return result.status();
+    } else {
+        //could just return result.status() but would this break clients?
+        return arrow::Status(arrow::StatusCode::Invalid, "unsupported type");
+    }
+
+    /*switch (arr->type()->id()) {
+      case arrow::Type::BOOL:return sample_fixed_size_array<arrow::BooleanType>(arr, num_samples, out, pool);
+      case arrow::Type::UINT8:return sample_fixed_size_array<arrow::UInt8Type>(arr, num_samples, out, pool);
+      case arrow::Type::INT8:return sample_fixed_size_array<arrow::Int8Type>(arr, num_samples, out, pool);
+      case arrow::Type::UINT16:return sample_fixed_size_array<arrow::UInt16Type>(arr, num_samples, out, pool);
+      case arrow::Type::INT16:return sample_fixed_size_array<arrow::Int16Type>(arr, num_samples, out, pool);
+      case arrow::Type::UINT32:return sample_fixed_size_array<arrow::UInt32Type>(arr, num_samples, out, pool);
+      case arrow::Type::INT32:return sample_fixed_size_array<arrow::Int32Type>(arr, num_samples, out, pool);
+      case arrow::Type::UINT64:return sample_fixed_size_array<arrow::UInt32Type>(arr, num_samples, out, pool);
+      case arrow::Type::INT64:return sample_fixed_size_array<arrow::Int64Type>(arr, num_samples, out, pool);
+      case arrow::Type::FLOAT:return sample_fixed_size_array<arrow::FloatType>(arr, num_samples, out, pool);
+      case arrow::Type::DOUBLE:return sample_fixed_size_array<arrow::DoubleType>(arr, num_samples, out, pool);
+      case arrow::Type::DATE32:return sample_fixed_size_array<arrow::Date32Type>(arr, num_samples, out, pool);
+      case arrow::Type::DATE64:return sample_fixed_size_array<arrow::Date64Type>(arr, num_samples, out, pool);
+      case arrow::Type::TIMESTAMP:return sample_fixed_size_array<arrow::TimestampType>(arr, num_samples, out, pool);
+      case arrow::Type::TIME32:return sample_fixed_size_array<arrow::Time32Type>(arr, num_samples, out, pool);
+      case arrow::Type::TIME64:return sample_fixed_size_array<arrow::Time64Type>(arr, num_samples, out, pool);
+      case arrow::Type::STRING: return sample_binary_array<arrow::StringType>(arr, num_samples, out, pool);
+      case arrow::Type::BINARY:return sample_binary_array<arrow::BinaryType>(arr, num_samples, out, pool);
+      case arrow::Type::FIXED_SIZE_BINARY:
+        return sample_fixed_size_array<arrow::FixedSizeBinaryType>(arr,
+                                                                   num_samples,
+                                                                   out,
+                                                                   pool);
+      default:return arrow::Status(arrow::StatusCode::Invalid, "unsupported type");
+    }*/
 }
 
 arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &arr,
