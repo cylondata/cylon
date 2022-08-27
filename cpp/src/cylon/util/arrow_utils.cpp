@@ -166,7 +166,8 @@ arrow::Status Duplicate(const std::shared_ptr<arrow::Table> &table, arrow::Memor
   return arrow::Status::OK();
 }
 
-/*template<typename TYPE>
+/**
+template<typename TYPE>
 static inline arrow::Status sample_fixed_size_array(const std::shared_ptr<arrow::ChunkedArray> &ch_array,
                                                     uint64_t num_samples,
                                                     std::shared_ptr<arrow::Array> &out,
@@ -197,6 +198,8 @@ static inline arrow::Status sample_fixed_size_array(const std::shared_ptr<arrow:
   static std::random_device rd;
   static std::mt19937_64 gen(rd());
 
+
+
   int64_t completed_samples = 0, samples_for_chunk, total_len = ch_array->length();
   for (auto &&arr : ch_array->chunks()) {
     std::shared_ptr<ARROW_ARRAY_T> casted_array = std::static_pointer_cast<ARROW_ARRAY_T>(arr);
@@ -205,6 +208,7 @@ static inline arrow::Status sample_fixed_size_array(const std::shared_ptr<arrow:
 
     std::uniform_int_distribution<int64_t> distrib(0, casted_array->length() - 1);
     for (int64_t i = 0; i < samples_for_chunk; i++) {
+
       builder.UnsafeAppend(casted_array->Value(distrib(gen)));
     }
     completed_samples += samples_for_chunk;
@@ -215,7 +219,7 @@ static inline arrow::Status sample_fixed_size_array(const std::shared_ptr<arrow:
   }
 
   return builder.Finish(&out);
-}*/
+}
 
 template<typename TYPE>
 static inline arrow::Status sample_binary_array(const std::shared_ptr<arrow::ChunkedArray> &ch_array,
@@ -261,7 +265,7 @@ static inline arrow::Status sample_binary_array(const std::shared_ptr<arrow::Chu
   out = res.ValueOrDie().make_array();
 
   return arrow::Status::OK();
-}
+}*/
 
 arrow::Status SampleArray(std::shared_ptr<arrow::Table> &table,
                           int32_t idx,
@@ -276,15 +280,53 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &arr,
                           std::shared_ptr<arrow::Array> &out,
                           arrow::MemoryPool *pool) {
 
-   auto result = arrow::compute::Take(out, arr);
-    if (result.ok()) {
-        return result.status();
-    } else {
-        //could just return result.status() but would this break clients?
-        return arrow::Status(arrow::StatusCode::Invalid, "unsupported type");
+    // if num_samples == 0, just finish the array and return OK
+    if (num_samples == 0) {
+        out = GetChunkOrEmptyArray(arr, 0, pool);
+        return arrow::Status::OK();
     }
 
-    /*switch (arr->type()->id()) {
+    // if the num_samples is greater than the array length, don't sample, just return the array
+    if ((int64_t) num_samples >= arr->length()) {
+        if (arr->num_chunks() > 1) {
+            const auto &res = arrow::Concatenate(arr->chunks(), pool);
+            RETURN_ARROW_STATUS_IF_FAILED(res.status());
+            out = res.ValueOrDie();
+        } else {
+            out = arr->chunk(0);
+        }
+        return arrow::Status::OK();
+    }
+
+    // general case
+    static std::random_device rd;
+    static std::mt19937_64 gen(rd());
+    std::uniform_int_distribution<int64_t> distrib(0, arr->length() - 1);
+
+    arrow::Int64Builder builder(pool);
+    RETURN_ARROW_STATUS_IF_FAILED(builder.Reserve((int64_t) num_samples));
+    for (uint64_t i = 0; i < num_samples; i++) {
+        builder.UnsafeAppend(distrib(gen));
+    }
+
+    auto arr_result = builder.Finish();
+
+    RETURN_ARROW_STATUS_IF_FAILED(arr_result.status());
+
+    auto indices = arr_result.ValueOrDie();
+
+    const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::NoBoundsCheck();
+
+    auto sample_array = arrow::compute::Take(out, indices, take_options);
+
+    RETURN_ARROW_STATUS_IF_FAILED(sample_array.status());
+
+    out = sample_array.ValueOrDie().make_array();
+
+    return arrow::Status::OK();
+
+/*
+    switch (arr->type()->id()) {
       case arrow::Type::BOOL:return sample_fixed_size_array<arrow::BooleanType>(arr, num_samples, out, pool);
       case arrow::Type::UINT8:return sample_fixed_size_array<arrow::UInt8Type>(arr, num_samples, out, pool);
       case arrow::Type::INT8:return sample_fixed_size_array<arrow::Int8Type>(arr, num_samples, out, pool);
