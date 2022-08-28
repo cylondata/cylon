@@ -11,6 +11,15 @@ Notation:
 
 ## Details
 
+### Missing documentation
+
+* git checkoutpython -V
+
+```bash
+login$ cd cylon
+login$ git checkout summit
+```
+
 ### Activites on the login node
 
 ```bash
