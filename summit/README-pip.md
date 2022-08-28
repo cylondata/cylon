@@ -75,22 +75,22 @@ cd cylon
 ### Activities on the compute node
 
 ```bash
-compute$ module purge
-compute$ module load gcc/9.3.0
-compute$ module load spectrum-mpi/10.4.0.3-20210112
-compute$ module load python/3.8-anaconda3
-compute$ source ~/CYLON/bin/activate
-compute$ export CC=`which gcc`
-compute$ export CXX=`which g++`
-compute$ export ARROW_DEFAULT_MEMORY_POOL=system
-compute$ CC=gcc MPICC=mpicc pip install --no-binary mpi4py install mpi4py
-compute$ pip install pytest-mpi
-compute$ pip install cmake
-compute$ pip install numpy
-compute$ export PATH=/ccs/home/gregorvl/.local/summit/anaconda3/2020.07/3.8/bin:$PATH
+module purge
+module load gcc/9.3.0
+module load spectrum-mpi/10.4.0.3-20210112
+module load python/3.8-anaconda3
+source ~/CYLON/bin/activate
+export CC=`which gcc`
+export CXX=`which g++`
+export ARROW_DEFAULT_MEMORY_POOL=system
+CC=gcc MPICC=mpicc pip install --no-binary mpi4py install mpi4py
+pip install pytest-mpi
+pip install cmake
+pip install numpy
+export PATH=/ccs/home/gregorvl/.local/summit/anaconda3/2020.07/3.8/bin:$PATH
 
-compute$ cd ~/cylon
-compute$ ./build.sh -pyenv ~/CYLON -bpath $(pwd)/build --cpp --test --python --pytest --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)  -DCYLON_CUSTOM_MPIRUN=jsrun -DCYLON_MPIRUN_PARALLELISM_FLAG=\"-n\" -DCYLON_CUSTOM_MPIRUN_PARAMS=\"-a 1\" " -j 8
+cd ~/cylon
+./build.sh -pyenv ~/CYLON -bpath $(pwd)/build --cpp --test --python --pytest --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)  -DCYLON_CUSTOM_MPIRUN=jsrun -DCYLON_MPIRUN_PARALLELISM_FLAG=\"-n\" -DCYLON_CUSTOM_MPIRUN_PARAMS=\"-a 1\" " -j 4
 ```
 
 The compilation will take some time. After it is completed you can conduct a test with
