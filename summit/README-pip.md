@@ -20,9 +20,11 @@ login$ bsub -Is -W 0:30 -nnodes 2 -P gen150_bench $SHELL
 After you get them you will be in a compute node
 
 
-On ointeractive node do
+On interactive node do
 
-### Activites on the login node
+### Create python in venv CYLON on interactive node
+
+NOte: once you have created CYLON there is no need to rerun this.
 
 ```bash
 module purge
@@ -72,7 +74,7 @@ cd cylon
 ```
 
 
-### Activities on the compute node
+### Activities on the compute node after CYLON is available
 
 ```bash
 module purge
