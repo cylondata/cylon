@@ -11,43 +11,57 @@ Notation:
 
 ## Details
 
+Now we obtain two interactive compute nodes
+
+```bash
+login$ bsub -Is -W 0:30 -nnodes 2 -P gen150_bench $SHELL
+```
+
+After you get them you will be in a compute node
+
+
+On ointeractive node do
+
 ### Activites on the login node
 
 ```bash
-login$ module purge
-login$ module load gcc/9.3.0
-login$ module load spectrum-mpi/10.4.0.3-20210112
-login$ module load python/3.8-anaconda3
+module purge
+module load gcc/9.3.0
+module load spectrum-mpi/10.4.0.3-20210112
+module load python/3.8-anaconda3
 ```
 
 Next check the python version 
 
 ```bash
-login$ which python
+which python
 > /sw/summit/python/3.8/anaconda3/2020.07-rhel8/bin/python
-login$ python -V
+python -V
 > Python 3.8.3
 ```
 
 Now create a venv called `CYLON` in the home directory and activate it
 
 ```bash
-login$ python -m venv ~/CYLON
-login$ source ~/CYLON/bin/activate
+python -m venv ~/CYLON
+source ~/CYLON/bin/activate
 ```
 
 ```bash
-login$ which python
+which python
 > ~/CYLON/bin/python
-login$ python -V
+python -V
 > Python 3.8.3
 ```
 
 Update pip and install pytest:
 
 ```bash
-login$ pip install pip -U
-login$ pip install pytest
+pip install pip -U
+pip install pytest
+CC=gcc MPICC=mpicc pip install --no-binary mpi4py install mpi4py
+pip install -U pytest-mpi
+```
 ```
 
 Checkout the cylon code
@@ -56,13 +70,6 @@ Checkout the cylon code
 cd ~git clone https://github.com/cylondata/cylon.git
 ```
 
-Now we obtain two interactive compute nodes
-
-```bash
-login$ bsub -Is -W 0:30 -nnodes 2 -P gen150_bench $SHELL
-```
-
-After you get them you will be in a compute node
 
 ### Activities on the compute node
 
@@ -79,7 +86,6 @@ compute$ CC=gcc MPICC=mpicc pip install --no-binary mpi4py install mpi4py
 compute$ pip install pytest-mpi
 compute$ pip install cmake
 compute$ pip install numpy
-compute$ pip install cmake
 compute$ export PATH=/ccs/home/gregorvl/.local/summit/anaconda3/2020.07/3.8/bin:$PATH
 
 compute$ ./build.sh -pyenv ~/CYLON -bpath $(pwd)/build --cpp --test --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)" -j 4
