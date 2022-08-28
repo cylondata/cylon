@@ -68,6 +68,7 @@ Checkout the cylon code
 
 ```bash
 cd ~git clone https://github.com/cylondata/cylon.git
+cd cylon
 ```
 
 
@@ -88,6 +89,7 @@ compute$ pip install cmake
 compute$ pip install numpy
 compute$ export PATH=/ccs/home/gregorvl/.local/summit/anaconda3/2020.07/3.8/bin:$PATH
 
+compute$ cd ~/cylon
 compute$ ./build.sh -pyenv ~/CYLON -bpath $(pwd)/build --cpp --test --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)  -DCYLON_CUSTOM_MPIRUN=jsrun -DCYLON_MPIRUN_PARALLELISM_FLAG=\"-n\" " -j 8
 ```
 
