@@ -99,4 +99,21 @@
 
 #define CYLON_UNUSED(expr) do { (void)(expr); } while (0)
 
+#ifdef _CYLON_BENCH
+#define CYLON_BENCH_TIMER(ctx, tag, ...)                \
+  do{                                                   \
+  auto t1 = std::chrono::high_resolution_clock::now();  \
+  __VA_ARGS__;                                          \
+  auto t2 = std::chrono::high_resolution_clock::now();  \
+  if ((ctx)->GetRank() == 0) {                          \
+    std::cout << "[BENCH] " << (tag) << " "             \
+      << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() \
+      << " ms\n";                                         \
+      }                                                 \
+}while(0)
+#else
+#define CYLON_BENCH_TIMER(ctx, tag, ...)     \
+  __VA_ARGS__;
+#endif
+
 #endif //CYLON_CPP_SRC_CYLON_UTIL_MACROS_HPP_
