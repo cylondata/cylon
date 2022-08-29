@@ -205,8 +205,9 @@ int main(int argc, char **argv) {
   if(argc > 1 && std::string(argv[1]) == "mpi") {
     oob_ctx = std::make_shared<cylon::net::UCCMPIOOBContext>();
   } else {
-    auto redis = std::make_shared<sw::redis::Redis>("tcp://127.0.0.1:6379");
-    oob_ctx = std::make_shared<cylon::net::UCCRedisOOBContext>(4, redis);
+    // auto redis = std::make_shared<sw::redis::Redis>();
+    oob_ctx = std::make_shared<cylon::net::UCCRedisOOBContext>(
+        4, "tcp://127.0.0.1:6379");
   }
 
   std::shared_ptr<cylon::CylonContext> ctx;

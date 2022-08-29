@@ -290,9 +290,6 @@ Status UCXUCCCommunicator::Make(const std::shared_ptr<CommConfig> &config,
   // init ucc context
   ctx_params.mask = UCC_CONTEXT_PARAM_FIELD_OOB;
 
-  ctx_params.oob.allgather = [](void *sbuf, void *rbuf, size_t msglen,
-                                void *coll_info, void **req) { return UCC_OK; };
-
   if (ucc_oob_ctx->Type() == OOBType::OOB_REDIS) {
     ctx_params.oob.allgather = team_params.oob.allgather =
         UCCRedisOOBContext::oob_allgather;
