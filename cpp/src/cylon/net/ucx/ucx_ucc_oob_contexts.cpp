@@ -2,9 +2,8 @@
 
 namespace cylon {
 namespace net {
-UCXRedisOOBContext::UCXRedisOOBContext(std::shared_ptr<sw::redis::Redis> rds,
-                                       int ws)
-    : redis(rds), world_size(ws) {}
+UCXRedisOOBContext::UCXRedisOOBContext(int ws, std::string rds)
+    : redis(std::make_shared<sw::redis::Redis>(rds)), world_size(ws) {}
 
 Status UCXRedisOOBContext::InitOOB() { return Status::OK(); };
 
@@ -18,6 +17,7 @@ Status UCXRedisOOBContext::getWorldSizeAndRank(int &world_size, int &rank) {
 
 Status UCXRedisOOBContext::OOBAllgather(uint8_t *src, uint8_t *dst,
                                         size_t srcSize, size_t dstSize) {
+  CYLON_UNUSED(dstSize);
   const auto ucc_worker_addr_mp_str = "ucp_worker_addr_mp";
   redis->hset(ucc_worker_addr_mp_str, std::to_string(rank),
               std::string((char *)src, (char *)src + srcSize));
@@ -78,7 +78,7 @@ Status UCXMPIOOBContext::Finalize() {
 void UCCRedisOOBContext::InitOOB(int rank) { this->rank = rank; }
 
 std::shared_ptr<UCXOOBContext> UCCRedisOOBContext::makeUCXOOBContext() {
-  return std::make_shared<UCXRedisOOBContext>(redis, world_size);
+  return std::make_shared<UCXRedisOOBContext>(world_size, redis_addr);
 }
 
 void *UCCRedisOOBContext::getCollInfo() { return this; }
@@ -86,8 +86,6 @@ void *UCCRedisOOBContext::getCollInfo() { return this; }
 ucc_status_t UCCRedisOOBContext::oob_allgather(void *sbuf, void *rbuf,
                                                size_t msglen, void *coll_info,
                                                void **req) {
-  auto oob_allgather_func = [](void *sbuf, void *rbuf, size_t msglen,
-                               void *coll_info, void **req) { return UCC_OK; };
   int world_size = ((UCCRedisOOBContext *)coll_info)->world_size;
   int rank = ((UCCRedisOOBContext *)coll_info)->rank;
   int num_comm = ((UCCRedisOOBContext *)coll_info)->num_oob_allgather;
@@ -104,7 +102,7 @@ ucc_status_t UCCRedisOOBContext::oob_allgather(void *sbuf, void *rbuf,
 
   for (int i = 0; i < world_size; i++) {
     if (i == rank) {
-      memcpy(rbuf + i * msglen, s.data(), msglen);
+      memcpy((uint8_t*)rbuf + i * msglen, s.data(), msglen);
     } else {
       auto helperName =
           "ucc_helper" + std::to_string(num_comm) + ":" + std::to_string(i);
@@ -117,7 +115,7 @@ ucc_status_t UCCRedisOOBContext::oob_allgather(void *sbuf, void *rbuf,
                           std::to_string(i));
       } while (!val);
 
-      memcpy(rbuf + i * msglen, val.value().data(), msglen);
+      memcpy((uint8_t*)rbuf + i * msglen, val.value().data(), msglen);
     }
   }
 
@@ -125,8 +123,14 @@ ucc_status_t UCCRedisOOBContext::oob_allgather(void *sbuf, void *rbuf,
 }
 
 UCCRedisOOBContext::UCCRedisOOBContext(int ws,
-                                       std::shared_ptr<sw::redis::Redis> &rds)
-    : world_size(ws), redis(rds) {}
+                                       std::string rds)
+    : world_size(ws), redis(std::make_shared<sw::redis::Redis>(rds)), redis_addr(rds) {}
+
+UCCRedisOOBContext::UCCRedisOOBContext() {
+  redis_addr = "tcp://" + std::string(getenv("CYLON_UCX_OOB_REDIS_ADDR"));
+  world_size = std::atoi(getenv("CYLON_UCX_OOB_WORLD_SIZE"));
+  redis = std::make_shared<sw::redis::Redis>(redis_addr);
+}
 
 ucc_status_t UCCRedisOOBContext::oob_allgather_test(void *req) {
   CYLON_UNUSED(req);
@@ -150,7 +154,9 @@ void UCCRedisOOBContext::setRank(int rk) { rank = rk; }
 
 int UCCRedisOOBContext::getRank() { return rank; }
 
-void UCCMPIOOBContext::InitOOB(int rank){};
+void UCCMPIOOBContext::InitOOB(int rank){
+  CYLON_UNUSED(rank);
+};
 
 std::shared_ptr<UCXOOBContext> UCCMPIOOBContext::makeUCXOOBContext() {
   return std::make_shared<UCXMPIOOBContext>();

@@ -26,7 +26,7 @@ class UCXOOBContext {
 
 class UCXRedisOOBContext : public UCXOOBContext {
  public:
-  UCXRedisOOBContext(std::shared_ptr<sw::redis::Redis> redis, int world_size);
+  UCXRedisOOBContext(int world_size, std::string redis_addr);
   Status InitOOB() override;
 
   Status getWorldSizeAndRank(int &world_size, int &rank) override;
@@ -73,7 +73,13 @@ class UCCRedisOOBContext : public UCCOOBContext {
 
   OOBType Type() override;
 
-  UCCRedisOOBContext(int world_size, std::shared_ptr<sw::redis::Redis> &redis);
+  UCCRedisOOBContext(int world_size, std::string redis_addr);
+
+  /***
+   * This constructor is used with python script `run_ucc_with_redis.py`
+   * Extracts environment variables set by the script and initializes metadata
+   */
+  UCCRedisOOBContext();
 
   static ucc_status_t oob_allgather(void *sbuf, void *rbuf, size_t msglen,
                                     void *coll_info, void **req);
@@ -90,6 +96,7 @@ class UCCRedisOOBContext : public UCCOOBContext {
   int rank = -1;
   std::shared_ptr<sw::redis::Redis> redis;
   int num_oob_allgather = 0;
+  std::string redis_addr;
 };
 
 class UCCMPIOOBContext : public UCCOOBContext {
