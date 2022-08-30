@@ -202,17 +202,24 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &arr,
     static std::mt19937_64 gen(rd());
     std::uniform_int_distribution<int64_t> distrib(0, arr->length() - 1);
 
-    arrow::Int64Builder builder(pool);
-    RETURN_ARROW_STATUS_IF_FAILED(builder.Reserve((int64_t) num_samples));
+    std::vector<int64_t> vector_indices(num_samples);
+
     for (uint64_t i = 0; i < num_samples; i++) {
-        builder.UnsafeAppend(distrib(gen));
+        vector_indices.push_back(distrib(gen));
     }
 
-    ARROW_ASSIGN_OR_RAISE(auto indices, builder.Finish());
+    std::sort(vector_indices.begin(), vector_indices.end());
+
+    auto buf = arrow::Buffer::Wrap(vector_indices.data(), vector_indices.size());
+    auto data = arrow::ArrayData::Make(arrow::int64(),
+                                       static_cast<int64_t>(vector_indices.size()),
+                                       {nullptr, std::move(buf)});
+
+    std::shared_ptr<arrow::Array> arrow_array = std::make_shared<arrow::UInt64Array>(std::move(data));
 
     const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::NoBoundsCheck();
 
-    ARROW_ASSIGN_OR_RAISE(auto sample_array, arrow::compute::Take(out, indices, take_options));
+    ARROW_ASSIGN_OR_RAISE(auto sample_array, arrow::compute::Take(out, arrow_array, take_options));
 
     out = sample_array.make_array();
 
