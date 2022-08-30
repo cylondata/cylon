@@ -76,7 +76,6 @@ cylon_add_exe(parquet_union_example)
 cylon_add_exe(parquet_join_example)
 cylon_add_exe(dist_sort_example)
 cylon_add_exe(slice_example)
-cylon_add_exe(temp)
 
 if (CYLON_UCX)
     cylon_add_exe(ucx_join_example)
