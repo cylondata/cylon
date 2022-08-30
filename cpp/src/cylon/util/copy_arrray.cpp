@@ -134,7 +134,14 @@ arrow::Status copy_array_by_indices(const std::vector<int64_t> &indices,
                                     const std::shared_ptr<arrow::Array> &data_array,
                                     std::shared_ptr<arrow::Array> *copied_array,
                                     arrow::MemoryPool *memory_pool) {
-  switch (data_array->type()->id()) {
+  auto idx_array = util::WrapNumericVector(indices);
+  arrow::compute::ExecContext exec_ctx(memory_pool);
+  ARROW_ASSIGN_OR_RAISE(*copied_array, arrow::compute::Take(*data_array, *idx_array,
+                                                            arrow::compute::TakeOptions::Defaults(),
+                                                            &exec_ctx));
+  return arrow::Status::OK();
+
+/*  switch (data_array->type()->id()) {
     case arrow::Type::BOOL:
       return do_copy_numeric_array<arrow::BooleanType>(indices,
                                                        data_array,
@@ -279,7 +286,7 @@ arrow::Status copy_array_by_indices(const std::vector<int64_t> &indices,
     }
     default:
       return arrow::Status::Invalid("Un-supported type");
-  }
+  }*/
 }
 
 }  // namespace util
