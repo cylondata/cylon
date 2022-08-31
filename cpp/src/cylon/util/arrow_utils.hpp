@@ -161,6 +161,15 @@ arrow::Status MakeDummyArray(const std::shared_ptr<arrow::DataType> &type, int64
                              std::shared_ptr<arrow::Array> *out,
                              arrow::MemoryPool *pool = arrow::default_memory_pool());
 
+template<typename T>
+typename std::enable_if_t<std::is_arithmetic<T>::value,
+                          std::shared_ptr<arrow::Array>> WrapNumericVector(const std::vector<T> &data) {
+  auto buf = arrow::Buffer::Wrap(data);
+  auto type = arrow::TypeTraits<typename arrow::CTypeTraits<T>::ArrowType>::type_singleton();
+  auto array_data = arrow::ArrayData::Make(std::move(type), data.size(), {nullptr, std::move(buf)});
+  return arrow::MakeArray(array_data);
+}
+
 }  // namespace util
 }  // namespace cylon
 #endif  // CYLON_SRC_UTIL_ARROW_UTILS_HPP_
