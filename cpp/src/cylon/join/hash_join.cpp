@@ -207,7 +207,6 @@ Status multi_index_hash_join(const std::shared_ptr<arrow::Table> &ltab,
   hash_map.clear();
 
   // copy arrays from the table indices
-  // todo use arrow::compute::Take for this
   return util::build_final_table(row_indices[0], row_indices[1],
                                  ltab, rtab, config.GetLeftTableSuffix(),
                                  config.GetRightTableSuffix(), joined_table, memory_pool);
