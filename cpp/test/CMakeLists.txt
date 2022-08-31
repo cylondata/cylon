@@ -69,6 +69,7 @@ function(cylon_add_test TESTNAME)
 
 endfunction(cylon_add_test)
 
+separate_arguments(MPIEXEC_EXECUTABLE_PARAMS)
 # macro to run executable
 function(cylon_run_test TESTNAME parallelism comm_args)
   set(exec_name "${TESTNAME}_${parallelism}_${comm_args}")
@@ -82,7 +83,7 @@ function(cylon_run_test TESTNAME parallelism comm_args)
             ${CMAKE_BINARY_DIR}/bin/${TESTNAME} --comm ${comm_args})
   endif ()
 
-  message(STATUS ${test_params})
+#  message(STATUS ${test_params})
   add_test(NAME ${exec_name} COMMAND ${MPIEXEC_EXECUTABLE} ${test_params})
 endfunction(cylon_run_test)
 

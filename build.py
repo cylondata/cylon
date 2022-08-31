@@ -55,11 +55,10 @@ cpp_build.add_argument("--style-check", action='store_true',
 cpp_build.add_argument("-root", help='Cylon Source root directory',
                        default=Path(os.getcwd()))
 cpp_build.add_argument(
-    "-cmake-flags", help='Additional cmake flags', default='')
+    "-cmake-flags", "--cmake-flags", help='Additional cmake flags', default='')
 
 # Build mode
-build_mode = parser.add_argument_group(
-    "Build Mode").add_mutually_exclusive_group()
+build_mode = parser.add_argument_group("Build Mode").add_mutually_exclusive_group()
 build_mode.add_argument("--debug", action='store_true',
                         help='Build the core in debug mode')
 build_mode.add_argument("--release", action='store_true',
@@ -85,11 +84,12 @@ docker_build.add_argument("--docker", action='store_true',
 # Paths
 parser.add_argument("-bpath", help='Build directory',
                     default=Path(os.getcwd(), 'build'))
-parser.add_argument("-ipath", help='Install directory')
+parser.add_argument("-ipath", "--prefix", dest='ipath', help='Install directory')
 
 parser.add_argument("--verbose", help='Set verbosity', default=False, action="store_true")
 parser.add_argument("-j", help='Parallel build threads', default=os.cpu_count(),
                     dest='parallel', type=int)
+parser.add_argument("--clean", action='store_true', help="Clean before building")
 
 args = parser.parse_args()
 
@@ -126,15 +126,19 @@ OS_NAME = platform.system()  # Linux, Darwin or Windows
 
 PYTHON_EXEC = sys.executable
 
-if args.style_check:
-    cmd = f'{PYTHON_EXEC} -m pip install cpplint'
-    res = subprocess.run(cmd, shell=True, cwd=PYTHON_SOURCE_DIR)
-    check_status(res.returncode, "cpplint install")
+CPPLINT_COMMAND = ""
 
-    CPPLINT_COMMAND = "-DCMAKE_CXX_CPPLINT=\"cpplint;--linelength=100;--headers=h," \
-                      "hpp;--filter=-legal/copyright,-build/c++11,-runtime/references\" "
-else:
-    CPPLINT_COMMAND = " "
+
+def check_and_install_cpplint():
+    global CPPLINT_COMMAND
+    if args.style_check:
+        cmd = f'{PYTHON_EXEC} -m pip install cpplint'
+        res = subprocess.run(cmd, shell=True, cwd=PYTHON_SOURCE_DIR)
+        check_status(res.returncode, "cpplint install")
+
+        CPPLINT_COMMAND = "-DCMAKE_CXX_CPPLINT=\"cpplint;--linelength=100;--headers=h," \
+                          "hpp;--filter=-legal/copyright,-build/c++11,-runtime/references\" "
+
 
 CMAKE_BOOL_FLAGS = {'CYLON_GLOO', 'CYLON_UCX', 'CYLON_UCC'}
 CMAKE_FALSE_OPTIONS = {'0', 'FALSE', 'OFF', 'N', 'NO', 'IGNORE', 'NOTFOUND'}
@@ -152,8 +156,10 @@ def parse_cmake_bool(v):
 
 
 def parse_cmake_flags(flag):
-    for f in CMAKE_FLAGS.strip().replace('-D', '').split():
-        k, v = f.split('=')
+    for f in CMAKE_FLAGS.strip().split('-D'):
+        if not f.strip():
+            continue
+        k, v = f.strip().split('=')
         if k != flag:
             continue
         else:
@@ -203,6 +209,7 @@ def build_cpp():
 
     win_cmake_args = "-A x64" if os.name == 'nt' else ""
     verb = '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON' if args.verbose else ''
+    clean = '--clean-first' if args.clean else ''
 
     cmake_command = f"cmake -DPYCYLON_BUILD={on_off(BUILD_PYTHON)} {win_cmake_args} " \
                     f"-DCMAKE_BUILD_TYPE={CPP_BUILD_MODE} " \
@@ -216,7 +223,7 @@ def build_cpp():
     res = subprocess.call(cmake_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake generate")
 
-    cmake_build_command = f'cmake --build . --parallel {PARALLEL} --config {CPP_BUILD_MODE}'
+    cmake_build_command = f'cmake --build . --parallel {PARALLEL} --config {CPP_BUILD_MODE} {clean}'
     logger.info(f"Build command: {cmake_build_command}")
     res = subprocess.call(cmake_build_command, cwd=BUILD_DIR, shell=True)
     check_status(res, "C++ cmake build")
@@ -297,7 +304,6 @@ def build_python():
 
     conda_prefix = check_conda_prefix()
 
-    python_build_command = f'{PYTHON_EXEC} -m pip install -v .'
     env = os.environ
     env["CYLON_PREFIX"] = str(BUILD_DIR)
     if os.name == 'posix':
@@ -314,7 +320,9 @@ def build_python():
         env['UCC_PREFIX'] = UCC_PREFIX
 
     logger.info("Arrow prefix: " + str(Path(conda_prefix)))
-    res = subprocess.run(python_build_command, shell=True, env=env, cwd=PYTHON_SOURCE_DIR)
+    clean = '--upgrade' if args.clean else ''
+    cmd = f'{PYTHON_EXEC} -m pip install -v {clean} .'
+    res = subprocess.run(cmd, shell=True, env=env, cwd=PYTHON_SOURCE_DIR)
     check_status(res.returncode, "PyCylon build")
 
 
@@ -330,6 +338,7 @@ def build_java():
     check_status(res.returncode, "JCylon build")
 
 
+check_and_install_cpplint()
 build_cpp()
 build_python()
 python_test()

@@ -15,7 +15,7 @@
 #include <arrow/api.h>
 #include <arrow/compute/api.h>
 
-#include <cylon/util/macros.hpp>
+#include <cylon/util/arrow_utils.hpp>
 
 namespace cylon {
 namespace util {
@@ -24,14 +24,11 @@ arrow::Status copy_array_by_indices(const std::vector<int64_t> &indices,
                                     const std::shared_ptr<arrow::Array> &data_array,
                                     std::shared_ptr<arrow::Array> *copied_array,
                                     arrow::MemoryPool *memory_pool) {
-  CYLON_UNUSED(memory_pool);
-
-  auto indices_data = arrow::Buffer::Wrap(indices.data(), indices.size());
-  const auto &array_data = arrow::ArrayData::Make(arrow::int64(), (int64_t) indices.size(),
-                                                  {nullptr, std::move(indices_data)});
-  const auto &indices_array = std::make_shared<arrow::Int64Array>(array_data);
-
-  ARROW_ASSIGN_OR_RAISE(*copied_array, arrow::compute::Take(*data_array, *indices_array))
+  auto idx_array = util::WrapNumericVector(indices);
+  arrow::compute::ExecContext exec_ctx(memory_pool);
+  ARROW_ASSIGN_OR_RAISE(*copied_array, arrow::compute::Take(*data_array, *idx_array,
+                                                            arrow::compute::TakeOptions::NoBoundsCheck(),
+                                                            &exec_ctx));
   return arrow::Status::OK();
 }
 
