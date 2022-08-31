@@ -142,34 +142,35 @@ Status build_final_table(const std::vector<int64_t> &left_indices,
                          const std::string &left_table_prefix,
                          const std::string &right_table_prefix,
                          std::shared_ptr<arrow::Table> *final_table,
-                         arrow::MemoryPool *memory_pool) {
+                         arrow::MemoryPool *pool) {
   const auto &schema =
       build_final_table_schema(left_tab, right_tab, left_table_prefix, right_table_prefix);
 
-  std::vector<std::shared_ptr<arrow::Array>> data_arrays;
+  std::vector<std::shared_ptr<arrow::ChunkedArray>> data_arrays;
+  data_arrays.reserve(left_tab->num_columns() + right_tab->num_columns());
 
   // build arrays for left tab
-  for (auto &column: left_tab->columns()) {
-    std::shared_ptr<arrow::Array> destination_col_array;
+  for (const auto &column: left_tab->columns()) {
+    std::shared_ptr<arrow::Array> col_array;
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(
         cylon::util::copy_array_by_indices(left_indices,
-                                           cylon::util::GetChunkOrEmptyArray(column, 0),
-                                           &destination_col_array,
-                                           memory_pool));
-    data_arrays.push_back(destination_col_array);
+                                           cylon::util::GetChunkOrEmptyArray(column, 0, pool),
+                                           &col_array,
+                                           pool));
+    data_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(col_array)));
   }
 
   // build arrays for right tab
-  for (auto &column: right_tab->columns()) {
-    std::shared_ptr<arrow::Array> destination_col_array;
+  for (const auto &column: right_tab->columns()) {
+    std::shared_ptr<arrow::Array> col_array;
     RETURN_CYLON_STATUS_IF_ARROW_FAILED(
         cylon::util::copy_array_by_indices(right_indices,
                                            cylon::util::GetChunkOrEmptyArray(column, 0),
-                                           &destination_col_array,
-                                           memory_pool));
-    data_arrays.push_back(destination_col_array);
+                                           &col_array,
+                                           pool));
+    data_arrays.push_back(std::make_shared<arrow::ChunkedArray>(std::move(col_array)));
   }
-  *final_table = arrow::Table::Make(schema, data_arrays);
+  *final_table = arrow::Table::Make(schema, std::move(data_arrays));
   return Status::OK();
 }
 
