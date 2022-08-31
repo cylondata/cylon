@@ -210,12 +210,7 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &arr,
 
     std::sort(vector_indices.begin(), vector_indices.end());
 
-    auto buf = arrow::Buffer::Wrap(vector_indices.data(), vector_indices.size());
-    auto data = arrow::ArrayData::Make(arrow::int64(),
-                                       static_cast<int64_t>(vector_indices.size()),
-                                       {nullptr, std::move(buf)});
-
-    std::shared_ptr<arrow::Array> arrow_array = std::make_shared<arrow::UInt64Array>(std::move(data));
+    auto arrow_array = WrapNumericVector(vector_indices);
 
     const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::NoBoundsCheck();
 
