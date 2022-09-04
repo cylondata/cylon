@@ -769,7 +769,9 @@ class DataFrame(object):
 
         """
         if isinstance(item, slice) or isinstance(item, int) or isinstance(item, str) or \
-                isinstance(item, List):
+                isinstance(item, List) or isinstance(item, tuple):
+            print("Distributive operations")
+            print (type(item), item)
             return DataFrame(self._table.__getitem__(item))
         elif isinstance(item, DataFrame):
             return DataFrame(self._table.__getitem__(item.to_table()))
