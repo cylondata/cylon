@@ -1196,7 +1196,28 @@ cdef class Table:
             print(len(col_names), len(filtered_all_data))
             final_table = Table.from_list(self.context, col_names, filtered_all_data)
             return final_table
+    
+    cdef _get_slice_ra_response(self, ra_op_name, offset, length):
+        cdef shared_ptr[CTable] output
+        """
+        cdef shared_ptr[CTable] c_table = pycylon_unwrap_table(table)
+        """
+        cdef CStatus status
 
+        if ra_op_name == 'distributed_slice':
+            status = DistributedSlice(self.table_shd_ptr, offset, length, &output)
+        elif ra_op_name == 'distributed_head':
+            status = DistributedHead(self.table_shd_ptr, length, &output)
+        elif ra_op_name == 'distributed_tail':
+            status = DistributedTail(self.table_shd_ptr, length, &output)
+        else:
+            raise ValueError(f"Unsupported relational algebra operator: {ra_op_name}")
+
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise ValueError(f"{ra_op_name} operation failed : {status.get_msg().decode()}")
+        
     def __getitem__(self, key) -> Table:
         """
         This method allows to retrieve a subset of a Table by means of a key
@@ -1264,6 +1285,21 @@ cdef class Table:
             new_index = tb_index.values[key.start: key.stop].tolist()
             new_tb.set_index(new_index)
             return new_tb
+        elif isinstance(key, tuple):
+            in_key, obj = key
+            if isinstance(in_key, slice):
+                if in_key.start != None:
+                    print (type(in_key), in_key, in_key.start, in_key.stop)
+                    
+                    return self._get_slice_ra_response('distributed_slice', in_key.start, in_key.stop)
+                elif in_key.start == None and in_key.stop > 0:
+                    return self._get_slice_ra_response('distributed_head', 0, in_key.stop)
+                elif in_key.start == None and in_key.stop < 0:
+                    return self._get_slice_ra_response('distributed_tail', 0, in_key.stop*(-1))
+                else:
+                    raise ValueError(f"Unsupported Key Type in __getitem__ {type(in_key)}")
+            else:
+                raise ValueError(f"Unsupported Key Type in __getitem__ {type(in_key)}")
         elif isinstance(key, int):
             new_tb = self.from_arrow(self.context, py_arrow_table.slice(key, 1))
             new_index = tb_index.values[key].tolist()
