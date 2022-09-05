@@ -1217,7 +1217,37 @@ cdef class Table:
             return pycylon_wrap_table(output)
         else:
             raise ValueError(f"{ra_op_name} operation failed : {status.get_msg().decode()}")
-        
+
+    cdef _get_distributed_slice_response(self, offset, length):
+        cdef shared_ptr[CTable] output
+        cdef CStatus status
+        status = DistributedSlice(self.table_shd_ptr, offset, length, &output)
+
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise ValueError(f"DistributedSlice operation failed : {status.get_msg().decode()}")
+
+    cdef _get_distributed_head_response(self, offset, length):
+        cdef shared_ptr[CTable] output
+        cdef CStatus status
+        status = DistributedHead(self.table_shd_ptr, length, &output)
+
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise ValueError(f"DistributedHead operation failed : {status.get_msg().decode()}")
+
+    cdef _get_distributed_tail_response(self, offset, length):
+        cdef shared_ptr[CTable] output
+        cdef CStatus status
+        status = DistributedTail(self.table_shd_ptr, length, &output)
+
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise ValueError(f"DistributedTail operation failed : {status.get_msg().decode()}")
+
     def __getitem__(self, key) -> Table:
         """
         This method allows to retrieve a subset of a Table by means of a key
@@ -1290,12 +1320,11 @@ cdef class Table:
             if isinstance(in_key, slice):
                 if in_key.start != None:
                     print (type(in_key), in_key, in_key.start, in_key.stop)
-                    
-                    return self._get_slice_ra_response('distributed_slice', in_key.start, in_key.stop)
+                    return self._get_distributed_slice_response(in_key.start, in_key.stop)
                 elif in_key.start == None and in_key.stop > 0:
-                    return self._get_slice_ra_response('distributed_head', 0, in_key.stop)
+                    return self._get_distributed_head_response(0, in_key.stop)
                 elif in_key.start == None and in_key.stop < 0:
-                    return self._get_slice_ra_response('distributed_tail', 0, in_key.stop*(-1))
+                    return self._get_distributed_tail_response(0, in_key.stop*(-1))
                 else:
                     raise ValueError(f"Unsupported Key Type in __getitem__ {type(in_key)}")
             else:
