@@ -169,3 +169,6 @@ cdef class Table:
         _get_join_ra_response(self, op_name, shared_ptr[CTable] output, CStatus status)
         _get_ra_response(self, table, ra_op_name)
         _get_slice_ra_response(self, ra_op_name, offset, length)
+        _get_distributed_tail_response(self, offset, length)
+        _get_distributed_head_response(self, offset, length)
+        _get_distributed_slice_response(self, offset, length)
