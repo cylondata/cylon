@@ -103,6 +103,12 @@ library_directories = [cylon_library_directory,
 
 OS_NAME = platform.system()
 
+# add LD_LIBRARY_PATH libs to library_dirs
+if OS_NAME == 'Linux' and os.environ['LD_LIBRARY_PATH']:
+    library_directories.extend(os.environ['LD_LIBRARY_PATH'].split(':'))
+elif OS_NAME == 'Darwin' and os.environ['DYLD_LIBRARY_PATH']:
+    library_directories.extend(os.environ['DYLD_LIBRARY_PATH'].split(':'))
+
 if OS_NAME == 'Linux' or OS_NAME == 'Darwin':
     mpi_library_dir = os.popen("mpicc --showme:libdirs").read().strip().split(' ')
 else:
