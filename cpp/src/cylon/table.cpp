@@ -456,41 +456,6 @@ Status Sort(const std::shared_ptr<Table> &table, const std::vector<int32_t> &sor
   return Table::FromArrowTable(ctx, sorted_table, out);
 }
 
-Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted,
-                          int num_samples, std::vector<int32_t> sort_columns,
-                          std::shared_ptr<Table> &sample_result,
-                          const std::shared_ptr<CylonContext> &ctx) {
-  auto pool = cylon::ToArrowPool(ctx);
-  
-  CYLON_ASSIGN_OR_RAISE(auto local_sorted_selected_cols, local_sorted->get_table()->SelectColumns(sort_columns));
-
-  if (local_sorted->Rows() == 0 || num_samples == 0) {
-    std::shared_ptr<arrow::Table> output;
-    RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::CreateEmptyTable(
-        local_sorted_selected_cols->schema(), &output, pool));
-    sample_result = std::make_shared<Table>(ctx, std::move(output));
-    return Status::OK();
-  }
-
-  float step = local_sorted->Rows() / (num_samples + 1.0);
-  float acc = step;
-  arrow::Int64Builder filter(pool);
-  RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(num_samples));
-
-  for (int i = 0; i < num_samples; i++) {
-    filter.UnsafeAppend(acc);
-    acc += step;
-  }
-
-  CYLON_ASSIGN_OR_RAISE(auto take_arr, filter.Finish());
-  CYLON_ASSIGN_OR_RAISE(
-      auto take_res,
-      (arrow::compute::Take(local_sorted_selected_cols, take_arr)));
-  sample_result = std::make_shared<Table>(ctx, take_res.table());
-
-  return Status::OK();
-}
-
 template <typename T>
 static int CompareRows(const std::vector<std::unique_ptr<T>> &comparators,
                        int64_t idx_a,
@@ -583,7 +548,7 @@ Status DetermineSplitPoints(
   int num_split_points =
       std::min(merged_table->Rows(), (int64_t)ctx->GetWorldSize() - 1);
 
-  return SampleTableUniform(merged_table, num_split_points, sort_columns, split_points, ctx);
+  return util::SampleTableUniform(merged_table, num_split_points, sort_columns, split_points, ctx);
 }
 
 Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
@@ -725,7 +690,7 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   std::shared_ptr<Table> sample_result;
 
   RETURN_CYLON_STATUS_IF_FAILED(
-      SampleTableUniform(local_sorted, sample_count, sort_columns, sample_result, ctx));
+      util::SampleTableUniform(local_sorted, sample_count, sort_columns, sample_result, ctx));
 
   // determine split point, split_points only contains sorted columns
   std::shared_ptr<Table> split_points;

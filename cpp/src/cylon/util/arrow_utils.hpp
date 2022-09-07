@@ -17,6 +17,8 @@
 
 #include <arrow/api.h>
 #include <arrow/table.h>
+#include "cylon/ctx/cylon_context.hpp"
+
 
 namespace cylon {
 namespace util {
@@ -119,6 +121,11 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array,
                           uint64_t num_samples,
                           std::shared_ptr<arrow::Array> &out,
                           arrow::MemoryPool *pool = arrow::default_memory_pool());
+
+cylon::Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted,
+                                     int num_samples, std::vector<int32_t> sort_columns,
+                                     std::shared_ptr<Table> &sample_result,
+                                     const std::shared_ptr<CylonContext> &ctx);
 
 std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk,
                                                    arrow::MemoryPool *pool = arrow::default_memory_pool());

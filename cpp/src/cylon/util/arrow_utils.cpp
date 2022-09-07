@@ -25,6 +25,8 @@
 #include <cylon/arrow/arrow_kernels.hpp>
 #include <cylon/util/macros.hpp>
 #include <iostream>
+#include "cylon/ctx/arrow_memory_pool_utils.hpp"
+#include <cylon/table.hpp>
 
 namespace cylon {
 namespace util {
@@ -227,6 +229,40 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &arr,
                           std::shared_ptr<arrow::Array> &out,
                           arrow::MemoryPool *pool) {
   return SampleArray(std::make_shared<arrow::ChunkedArray>(arr), num_samples, out, pool);
+}
+
+cylon::Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted,
+                                     int num_samples, std::vector<int32_t> sort_columns,
+                                     std::shared_ptr<Table> &sample_result,
+                                     const std::shared_ptr<CylonContext> &ctx) {
+    auto pool = cylon::ToArrowPool(ctx);
+
+    CYLON_ASSIGN_OR_RAISE(auto local_sorted_selected_cols, local_sorted->get_table()->SelectColumns(sort_columns));
+
+    if (local_sorted->Rows() == 0 || num_samples == 0) {
+        std::shared_ptr<arrow::Table> output;
+        RETURN_CYLON_STATUS_IF_ARROW_FAILED(util::CreateEmptyTable(
+                    local_sorted_selected_cols->schema(), &output, pool));
+        sample_result = std::make_shared<Table>(ctx, std::move(output));
+        return Status::OK();
+    }
+
+    float step = local_sorted->Rows() / (num_samples + 1.0);
+    float acc = step;
+    arrow::Int64Builder filter(pool);
+    RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(num_samples));
+
+    for (int i = 0; i < num_samples; i++) {
+        filter.UnsafeAppend(acc);
+        acc += step;
+    }
+
+    CYLON_ASSIGN_OR_RAISE(auto take_arr, filter.Finish());
+    CYLON_ASSIGN_OR_RAISE(auto take_res,
+                          (arrow::compute::Take(local_sorted_selected_cols, take_arr)));
+    sample_result = std::make_shared<Table>(ctx, take_res.table());
+
+    return Status::OK();
 }
 
 std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk,
