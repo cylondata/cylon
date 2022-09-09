@@ -772,7 +772,6 @@ class DataFrame(object):
                 isinstance(item, List):
             return DataFrame(self._table.__getitem__(item))
         elif isinstance(item, tuple):
-            print (type(item), item)
             key, obj = item
             self._change_context(env=obj)
             return DataFrame(self._table.__getitem__(item))

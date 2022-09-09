@@ -1196,27 +1196,26 @@ cdef class Table:
             print(len(col_names), len(filtered_all_data))
             final_table = Table.from_list(self.context, col_names, filtered_all_data)
             return final_table
-    
-    cdef _get_slice_ra_response(self, ra_op_name, offset, length):
-        cdef shared_ptr[CTable] output
-        """
-        cdef shared_ptr[CTable] c_table = pycylon_unwrap_table(table)
-        """
-        cdef CStatus status
 
-        if ra_op_name == 'distributed_slice':
-            status = DistributedSlice(self.table_shd_ptr, offset, length, &output)
-        elif ra_op_name == 'distributed_head':
-            status = DistributedHead(self.table_shd_ptr, length, &output)
-        elif ra_op_name == 'distributed_tail':
-            status = DistributedTail(self.table_shd_ptr, length, &output)
-        else:
-            raise ValueError(f"Unsupported relational algebra operator: {ra_op_name}")
+    cdef _get_head_response(self, offset, length):
+        cdef shared_ptr[CTable] output
+        cdef CStatus status
+        status = Head(self.table_shd_ptr, length, &output)
 
         if status.is_ok():
             return pycylon_wrap_table(output)
         else:
-            raise ValueError(f"{ra_op_name} operation failed : {status.get_msg().decode()}")
+            raise ValueError(f"Head operation failed : {status.get_msg().decode()}")
+
+    cdef _get_tail_response(self, offset, length):
+        cdef shared_ptr[CTable] output
+        cdef CStatus status
+        status = Tail(self.table_shd_ptr, length, &output)
+
+        if status.is_ok():
+            return pycylon_wrap_table(output)
+        else:
+            raise ValueError(f"Tail operation failed : {status.get_msg().decode()}")
 
     cdef _get_distributed_slice_response(self, offset, length):
         cdef shared_ptr[CTable] output
@@ -1311,15 +1310,21 @@ cdef class Table:
         tb_index = self.index
         py_arrow_table = self.to_arrow().combine_chunks()
         if isinstance(key, slice):
-            new_tb = self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
-            new_index = tb_index.values[key.start: key.stop].tolist()
-            new_tb.set_index(new_index)
-            return new_tb
+            if key.start != None:
+                new_tb = self.from_arrow(self.context, py_arrow_table.slice(key.start, key.stop))
+                new_index = tb_index.values[key.start: key.stop].tolist()
+                new_tb.set_index(new_index)
+                return new_tb
+            elif key.start == None and key.stop > 0:
+                return self._get_head_response(0, key.stop)
+            elif key.start == None and key.stop < 0:
+                    return self._get_tail_response(0, key.stop*(-1))
+            else:
+                raise ValueError(f"Unsupported Key Type in __getitem__ {type(key)}")
         elif isinstance(key, tuple):
             in_key, obj = key
             if isinstance(in_key, slice):
                 if in_key.start != None:
-                    print (type(in_key), in_key, in_key.start, in_key.stop)
                     return self._get_distributed_slice_response(in_key.start, in_key.stop)
                 elif in_key.start == None and in_key.stop > 0:
                     return self._get_distributed_head_response(0, in_key.stop)

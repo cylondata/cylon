@@ -22,11 +22,17 @@ df2 = DataFrame([random.sample(range(10, 100), 50),
                  random.sample(range(10, 100), 50)])
 df2.set_index([0], inplace=True)
 
-print("Local Slice")
 #Local Operation
+print("Slice")
 df3 = df2[1:5] # local slice
-#df1[:5] # local head
-#df1[:-5] # local tail
+print(df3)
+
+print("Head")
+df3 = df2[:5] # local head
+print(df3)
+
+print("Tail")
+df3 = df1[:-5] # local tail
 
 print(df3)
 
@@ -38,12 +44,17 @@ df1 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
 df2 = DataFrame([random.sample(range(10*env.rank, 15*(env.rank+1)), 5),
                  random.sample(range(10*env.rank, 15*(env.rank+1)), 5)])
 df2.set_index([0], inplace=True)
+
 print("Distributed Slice")
-
-
 df3 = df2[0:9, env] # distributed slice
-#df2[:5, env] # distributed head 
-#df2[:-5, env] # distributed tail 
+print(df3)
+
+print("Distributed Head")
+df3 = df2[:9, env] # distributed head
+print(df3)
+
+print("Distributed Tail")
+df3 = df2[:-9, env] # distributed tail
 
 print(df3)
 
