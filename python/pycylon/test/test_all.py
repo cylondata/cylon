@@ -302,6 +302,12 @@ if os.environ.get('CYLON_GLOO') and os.environ.get('CYLON_UCC'):
             f"python/pycylon/test/test_mpi_multiple_env_init.py"))
         assert responses[-1] == 0
 
+def test_dist_slice():
+    print("39. Dist Slice Test")
+    responses.append(os.system(get_mpi_command() + " -n 4 python -m pytest --with-mpi "
+                                                   "python/pycylon/test/test_slice.py"))
+    assert responses[-1] == 0
+
 
 def test_all():
     ar = np.array(responses)
