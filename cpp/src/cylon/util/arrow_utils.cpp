@@ -204,7 +204,8 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &arr,
     static std::mt19937_64 gen(rd());
     std::uniform_int_distribution<int64_t> distrib(0, arr->length() - 1);
 
-    std::vector<int64_t> vector_indices(num_samples);
+    std::vector<int64_t> vector_indices;
+    vector_indices.reserve(num_samples);
 
     for (uint64_t i = 0; i < num_samples; i++) {
         vector_indices.push_back(distrib(gen));
