@@ -16,6 +16,7 @@
 #define CYLON_CPP_SRC_CYLON_NET_COMM_OPERATIONS_HPP_
 
 #include <mpi.h>
+#define MPI_Isend MPI_Issend
 #include <cylon/data_types.hpp>
 
 namespace cylon {

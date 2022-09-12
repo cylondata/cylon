@@ -13,6 +13,7 @@
  */
 
 #include <mpi.h>
+#define MPI_Isend MPI_Issend
 #include <numeric>
 #include <arrow/result.h>
 

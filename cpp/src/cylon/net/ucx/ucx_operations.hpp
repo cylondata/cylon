@@ -16,6 +16,7 @@
 #define CYLON_CPP_SRC_CYLON_NET_UCX_UCX_OPERATIONS_HPP_
 
 #include <mpi.h>
+#define MPI_Isend MPI_Issend
 #include <ucp/api/ucp.h>
 
 #include "cylon/status.hpp"

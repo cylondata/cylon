@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <queue>
 #include <mpi.h>
+#define MPI_Isend MPI_Issend
 
 #include <cylon/net/channel.hpp>
 #include <cylon/net/buffer.hpp>

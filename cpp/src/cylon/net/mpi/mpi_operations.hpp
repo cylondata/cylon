@@ -24,6 +24,7 @@
 #include <cylon/net/ops/base_ops.hpp>
 #include <cylon/net/mpi/mpi_type_traits.hpp>
 #include <mpi.h>
+#define MPI_Isend MPI_Issend
 
 namespace cylon {
 namespace mpi {
