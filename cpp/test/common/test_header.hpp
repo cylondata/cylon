@@ -18,7 +18,6 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch.hpp>
 #include <mpi.h>
-#define MPI_Isend MPI_Issend
 #include <iostream>
 #include <glog/logging.h>
 #include <cylon/ctx/cylon_context.hpp>

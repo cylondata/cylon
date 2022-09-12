@@ -18,7 +18,6 @@
  */
 
 #include <mpi.h>
-#define MPI_Isend MPI_Issend
 #include <cstdio>
 #include <cstdlib>
 #include <ucc/api/ucc.h>

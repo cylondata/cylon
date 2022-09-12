@@ -17,7 +17,6 @@
 
 #ifdef GLOO_USE_MPI
 #include <mpi.h>
-#define MPI_Isend MPI_Issend
 #include <gloo/mpi/context.h>
 #endif //GLOO_USE_MPI
 

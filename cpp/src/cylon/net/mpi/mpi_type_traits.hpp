@@ -17,7 +17,6 @@
 #define CYLON_CPP_SRC_CYLON_NET_MPI_MPI_TYPE_TRAITS_HPP_
 
 #include <mpi.h>
-#define MPI_Isend MPI_Issend
 
 namespace cylon {
 

@@ -14,7 +14,6 @@
 
 #include <glog/logging.h>
 #include <mpi.h>
-#define MPI_Isend MPI_Issend
 #include <vector>
 #include <iostream>
 #include <cstring>

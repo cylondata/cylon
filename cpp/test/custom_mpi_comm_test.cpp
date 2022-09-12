@@ -16,7 +16,6 @@
 #include "catch.hpp"
 
 #include <mpi.h>
-#define MPI_Isend MPI_Issend
 #include <iostream>
 
 #include "cylon/net/mpi/mpi_communicator.hpp"

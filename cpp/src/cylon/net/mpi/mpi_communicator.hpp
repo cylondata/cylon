@@ -16,7 +16,6 @@
 #define CYLON_SRC_CYLON_COMM_MPICOMMUNICATOR_H_
 
 #include <mpi.h>
-#define MPI_Isend MPI_Issend
 
 #include <cylon/net/comm_config.hpp>
 #include <cylon/net/communicator.hpp>
