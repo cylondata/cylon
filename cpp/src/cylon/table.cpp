@@ -37,41 +37,11 @@
 #include <cylon/util/arrow_utils.hpp>
 #include <cylon/util/macros.hpp>
 #include <cylon/util/to_string.hpp>
-#include <cylon/util/arrow_utils.hpp>
 #include <cylon/repartition.hpp>
 #include <cylon/scalar.hpp>
-#include <cylon/serialize/table_serialize.hpp>
 
 namespace cylon {
 
-/**
- * creates an Arrow array based on col_idx, filtered by row_indices
- * @param ctx
- * @param table
- * @param col_idx
- * @param row_indices
- * @param array_vector
- * @return
- */
-Status PrepareArray(std::shared_ptr<cylon::CylonContext> &ctx,
-                    const std::shared_ptr<arrow::Table> &table, const int32_t col_idx,
-                    const std::vector<int64_t> &row_indices, arrow::ArrayVector &array_vector) {
-  std::shared_ptr<arrow::Array> destination_col_array;
-  arrow::Status ar_status =
-      cylon::util::copy_array_by_indices(row_indices,
-                                         cylon::util::GetChunkOrEmptyArray(table->column(col_idx),
-                                                                           0),
-                                         &destination_col_array,
-                                         cylon::ToArrowPool(ctx));
-  if (ar_status != arrow::Status::OK()) {
-    LOG(FATAL) << "Failed while copying a column to the final table from tables."
-               << ar_status.ToString();
-    return Status(static_cast<int>(ar_status.code()), ar_status.message());
-  }
-  array_vector.push_back(destination_col_array);
-  return Status::OK();
-}
-  
 static inline Status all_to_all_arrow_tables(const std::shared_ptr<CylonContext> &ctx,
                                              const std::shared_ptr<arrow::Schema> &schema,
                                              const std::vector<std::shared_ptr<arrow::Table>> &partitioned_tables,
@@ -126,10 +96,7 @@ static inline Status all_to_all_arrow_tables(const std::shared_ptr<CylonContext>
   partitioned_tables.clear();*/
 
   // now we have the final set of tables
-//  LOG(INFO) << "Concatenating tables, Num of tables :  " << received_tables.size();
   CYLON_ASSIGN_OR_RAISE(auto concat, arrow::ConcatenateTables(received_tables))
-//  LOG(INFO) << "Done concatenating tables, rows :  " << concat->num_rows();
-
   CYLON_ASSIGN_OR_RAISE(table_out, concat->CombineChunks(cylon::ToArrowPool(ctx)))
   return Status::OK();
 }
@@ -194,9 +161,9 @@ static inline Status all_to_all_arrow_tables_separated_cylon_table(const std::sh
   all_to_all_arrow_tables_separated_arrow_table(ctx, schema, partitioned_tables, received_tables);
 
   table_out.reserve(received_tables.size() - 1);
-  for(size_t i = 0; i < received_tables.size(); i++) {
-    if(received_tables[i]->num_rows() > 0) {
-      CYLON_ASSIGN_OR_RAISE(auto arrow_tb, received_tables[i]->CombineChunks(cylon::ToArrowPool(ctx)));
+  for (auto &received_table: received_tables) {
+    if (received_table->num_rows() > 0) {
+      CYLON_ASSIGN_OR_RAISE(auto arrow_tb, received_table->CombineChunks(cylon::ToArrowPool(ctx)));
       auto temp = std::make_shared<Table>(ctx, std::move(arrow_tb));
       table_out.push_back(temp);
     }
@@ -214,10 +181,7 @@ static inline Status all_to_all_arrow_tables_preserve_order(const std::shared_pt
                                                             std::shared_ptr<arrow::Table> &table_out) {
   std::vector<std::shared_ptr<arrow::Table>> tables;
   RETURN_CYLON_STATUS_IF_FAILED(all_to_all_arrow_tables_separated_arrow_table(ctx, schema, partitioned_tables, tables));
-  LOG(INFO) << "Concatenating tables, Num of tables :  " << tables.size();
   CYLON_ASSIGN_OR_RAISE(table_out, arrow::ConcatenateTables(tables));
-  LOG(INFO) << "Done concatenating tables, rows :  " << table_out->num_rows();
-
   return Status::OK();
 }
 
@@ -255,23 +219,16 @@ static inline Status shuffle_two_tables_by_hashing(const std::shared_ptr<cylon::
                                                    const T &right_hash_column,
                                                    std::shared_ptr<arrow::Table> &left_table_out,
                                                    std::shared_ptr<arrow::Table> &right_table_out) {
-  LOG(INFO) << "Shuffling two tables with total rows : "
-            << left_table->Rows() + right_table->Rows();
-  auto t1 = std::chrono::high_resolution_clock::now();
-  RETURN_CYLON_STATUS_IF_FAILED(
-      shuffle_table_by_hashing(ctx, left_table, left_hash_column, left_table_out));
-
-  auto t2 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Left shuffle time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-
-  RETURN_CYLON_STATUS_IF_FAILED(
-      shuffle_table_by_hashing(ctx, right_table, right_hash_column, right_table_out));
-
-  auto t3 = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "Right shuffle time : "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
-
+  CYLON_BENCH_TIMER(ctx, "shuffle_l",
+                    RETURN_CYLON_STATUS_IF_FAILED(shuffle_table_by_hashing(ctx,
+                                                                           left_table,
+                                                                           left_hash_column,
+                                                                           left_table_out)));
+  CYLON_BENCH_TIMER(ctx, "shuffle_r",
+                    RETURN_CYLON_STATUS_IF_FAILED(shuffle_table_by_hashing(ctx,
+                                                                           right_table,
+                                                                           right_hash_column,
+                                                                           right_table_out)));
   return Status::OK();
 }
 
@@ -472,13 +429,13 @@ Status SampleTableUniform(const std::shared_ptr<Table> &local_sorted,
     return Status::OK();
   }
 
-  float step = local_sorted->Rows() / (num_samples + 1.0);
-  float acc = step;
+  double step = local_sorted->Rows() / (num_samples + 1.0);
+  double acc = step;
   arrow::Int64Builder filter(pool);
   RETURN_CYLON_STATUS_IF_ARROW_FAILED(filter.Reserve(num_samples));
 
   for (int i = 0; i < num_samples; i++) {
-    filter.UnsafeAppend(acc);
+    filter.UnsafeAppend((int64_t) acc);
     acc += step;
   }
 
@@ -930,17 +887,24 @@ Status DistributedJoin(const std::shared_ptr<Table> &left, const std::shared_ptr
   }
 
   std::shared_ptr<arrow::Table> left_final_table, right_final_table;
-  RETURN_CYLON_STATUS_IF_FAILED(shuffle_two_tables_by_hashing(ctx,
-                                                              left,
-                                                              join_config.GetLeftColumnIdx(),
-                                                              right,
-                                                              join_config.GetRightColumnIdx(),
-                                                              left_final_table,
-                                                              right_final_table));
+  CYLON_BENCH_TIMER(ctx, "shuffle_t",
+                    RETURN_CYLON_STATUS_IF_FAILED(shuffle_two_tables_by_hashing(ctx,
+                                                                                left,
+                                                                                join_config
+                                                                                    .GetLeftColumnIdx(),
+                                                                                right,
+                                                                                join_config
+                                                                                    .GetRightColumnIdx(),
+                                                                                left_final_table,
+                                                                                right_final_table)));
 
   std::shared_ptr<arrow::Table> table;
-  RETURN_CYLON_STATUS_IF_FAILED(join::JoinTables(left_final_table, right_final_table,
-                                                 join_config, &table, cylon::ToArrowPool(ctx)));
+  CYLON_BENCH_TIMER(ctx, "join",
+                    RETURN_CYLON_STATUS_IF_FAILED(join::JoinTables(left_final_table,
+                                                                   right_final_table,
+                                                                   join_config,
+                                                                   &table,
+                                                                   cylon::ToArrowPool(ctx))));
   return Table::FromArrowTable(ctx, std::move(table), out);
 }
 
