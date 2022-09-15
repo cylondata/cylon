@@ -548,7 +548,13 @@ Status DetermineSplitPoints(
   int num_split_points =
       std::min(merged_table->Rows(), (int64_t)ctx->GetWorldSize() - 1);
 
-  return util::SampleTableUniform(merged_table, num_split_points, sort_columns, split_points, ctx);
+
+
+  auto status = util::SampleTableUniform(merged_table->get_table(), num_split_points, sort_columns,
+                                         const_cast<std::shared_ptr<arrow::Table> &>(split_points->get_table()), ctx);
+
+  return cylon::Status(static_cast<int>(status.code()), status.message());
+
 }
 
 Status GetSplitPoints(std::shared_ptr<Table> &sample_result,
@@ -687,15 +693,23 @@ Status DistributedSortRegularSampling(const std::shared_ptr<Table> &table,
   sample_count = std::min((int64_t)sample_count, table->Rows());
 
   // sample_result only contains sorted columns
-  std::shared_ptr<Table> sample_result;
+  std::shared_ptr<arrow::Table> sample_result;
 
-  RETURN_CYLON_STATUS_IF_FAILED(
-      util::SampleTableUniform(local_sorted, sample_count, sort_columns, sample_result, ctx));
+
+  RETURN_CYLON_STATUS_IF_ARROW_FAILED(
+      util::SampleTableUniform(local_sorted->get_table(), sample_count, sort_columns, sample_result, ctx));
 
   // determine split point, split_points only contains sorted columns
   std::shared_ptr<Table> split_points;
+
+  std::shared_ptr<Table> cylon_sample_result;
+
+  Table::FromArrowTable(ctx, sample_result, cylon_sample_result);
+
+
+
   RETURN_CYLON_STATUS_IF_FAILED(GetSplitPoints(
-      sample_result, sort_direction, split_points));
+          cylon_sample_result, sort_direction, split_points));
 
   // construct target_partition, partition_hist
   RETURN_CYLON_STATUS_IF_FAILED(
