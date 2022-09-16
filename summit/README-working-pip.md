@@ -48,8 +48,7 @@ source $HOME/ve/CYLON/bin/activate
 
 ```shell
 BUILD_PATH=$HOME/RADICAL/CYLON-PIP/cylon/build
-export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$HOME/RADICAL/CYLON-PIP/cylon/build/arrow/install/lib:$HOME/RADICAL/CYLON-PIP/cylon/build/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
 ```
 
 ```shell
