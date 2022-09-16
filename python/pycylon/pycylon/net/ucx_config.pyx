@@ -16,12 +16,15 @@ IF CYTHON_UCX & CYTHON_UCC:
     from pycylon.net.comm_config cimport CommConfig
     from pycylon.net.ucx_config cimport CUCXConfig
 
+    cimport mpi4py.MPI as MPI
+    from mpi4py.MPI import COMM_NULL
+
     cdef class UCXConfig(CommConfig):
         """
         GlooConfig Type mapping from libCylon to PyCylon
         """
-        def __cinit__(self):
-            self.ucx_config_shd_ptr = CUCXConfig.Make()
+        def __cinit__(self, comm = COMM_NULL):
+            self.ucx_config_shd_ptr = CUCXConfig.Make((<MPI.Comm> comm).ob_mpi)
 
         @property
         def comm_type(self):

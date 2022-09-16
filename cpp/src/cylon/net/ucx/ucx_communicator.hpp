@@ -30,14 +30,22 @@ namespace net {
 
 class UCXConfig : public CommConfig {
  public:
+  explicit UCXConfig(MPI_Comm comm = MPI_COMM_NULL);
+  ~UCXConfig() override = default;
+
   CommType Type() override;
 
-  static std::shared_ptr<UCXConfig> Make();
+  MPI_Comm GetMPIComm() const;
+
+  static std::shared_ptr<UCXConfig> Make(MPI_Comm comm = MPI_COMM_NULL);
+
+ private:
+  MPI_Comm comm_;
 };
 
 class UCXCommunicator : public Communicator {
  public:
-  explicit UCXCommunicator(MemoryPool *pool, bool externally_init);
+  UCXCommunicator(MemoryPool *pool, bool externally_init, MPI_Comm comm);
   ~UCXCommunicator() override = default;
 
   std::unique_ptr<Channel> CreateChannel() const override;
@@ -79,12 +87,13 @@ class UCXCommunicator : public Communicator {
   // UCP Context - Holds a UCP communication instance's global information.
   ucp_context_h ucpContext{};
   bool externally_init = false;
+  MPI_Comm mpi_comm;
 };
 
 #ifdef BUILD_CYLON_UCC
-class UCXUCCCommunicator: public Communicator{
+class UCXUCCCommunicator : public Communicator {
  public:
-  explicit UCXUCCCommunicator(std::shared_ptr<Communicator> ucx_comm);
+  explicit UCXUCCCommunicator(const std::shared_ptr<Communicator>& ucx_comm);
 
   static Status Make(const std::shared_ptr<CommConfig> &config, MemoryPool *pool,
                      std::shared_ptr<Communicator> *out);
@@ -115,7 +124,7 @@ class UCXUCCCommunicator: public Communicator{
 
   ucc_team_h uccTeam{};
   ucc_context_h uccContext{};
-  std::shared_ptr<Communicator> ucx_comm_;
+  std::shared_ptr<UCXCommunicator> ucx_comm_;
 };
 #endif
 }

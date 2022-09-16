@@ -14,8 +14,9 @@
 
 """
 Run test:
->> mpirun -n 4 python -m pytest -q python/pycylon/test/test_custom_mpi_comm.py
+>> mpirun -n 4 pytest -q python/pycylon/test/test_custom_mpi_comm.py --comm [mpi/gloo-mpi/ucx]
 """
+import os
 
 from mpi4py import MPI
 from pycylon.frame import CylonEnv, read_csv, DataFrame
@@ -23,14 +24,29 @@ from pycylon.net import MPIConfig
 from pyarrow.csv import ReadOptions, read_csv as pa_read_csv
 
 
-def join_test():
+def get_comm_config(comm_str, new_comm):
+    if comm_str == 'mpi':
+        return MPIConfig(comm=new_comm)
+
+    if os.environ.get('CYLON_GLOO') and comm_str == 'gloo-mpi':
+        from pycylon.net.gloo_config import GlooMPIConfig
+        return GlooMPIConfig(comm=new_comm)
+
+    if os.environ.get('CYLON_UCC') and comm_str == 'ucx':
+        from pycylon.net.ucx_config import UCXConfig
+        return UCXConfig(comm=new_comm)
+
+    raise ValueError(f'unknown comm string {comm_str}')
+
+
+def join_test(comm_str):
     comm = MPI.COMM_WORLD
     rank = comm.rank
 
     l_rank = rank % 2
     color = int(rank / 2)
     new_comm = comm.Split(color, l_rank)
-    config = MPIConfig(new_comm)
+    config = get_comm_config(comm_str, new_comm)
     env = CylonEnv(config=config, distributed=True)
 
     df1 = read_csv(f"data/input/csv1_{l_rank}.csv", env=env)
@@ -44,15 +60,15 @@ def join_test():
     assert out.equals(res, ordered=False)
 
 
-def custom_comm_test():
-    comm = MPI.COMM_WORLD
-    rank = comm.rank
+def custom_comm_test(comm_str):
+    comm_ = MPI.COMM_WORLD
+    rank = comm_.rank
 
     l_rank = rank if rank < 3 else rank - 3
     color = 0 if rank < 3 else 1
-    new_comm = comm.Split(color, l_rank)
+    new_comm = comm_.Split(color, l_rank)
 
-    config = MPIConfig(new_comm)
+    config = get_comm_config(comm_str, new_comm)
     env = CylonEnv(config=config, distributed=True)
 
     print(f"local rank {env.rank} sz {env.world_size}")
@@ -64,16 +80,16 @@ def custom_comm_test():
     env.finalize()
 
 
-def test_custom_mpi_comm():
-    comm = MPI.COMM_WORLD
-    rank = comm.rank
-    sz = comm.size
-    print(f"rank {rank} sz {sz}")
+def test_custom_mpi_comm(comm):
+    comm_ = MPI.COMM_WORLD
+    rank = comm_.rank
+    sz = comm_.size
+    print(f"comm {comm} rank {rank} sz {sz}")
 
     if sz != 4:
         return
 
-    custom_comm_test()
-    join_test()
+    custom_comm_test(comm)
+    join_test(comm)
 
     MPI.Finalize()
