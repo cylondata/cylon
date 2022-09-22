@@ -4,8 +4,8 @@ load modules
 
 ```python
 module load python/3.7.7    
-python -m venv $HOME/ve/CYLON
-source $HOME/ve/CYLON/bin/activate
+python -m venv $HOME/CYLON
+source $HOME/CYLON/bin/activate
 ```
 install and update pip
 ```python
@@ -29,9 +29,10 @@ load gcc9 for Cylon and export build_path and build
 ```python
 module load gcc/9.3.0
 cd cylon
-BUILD_PATH=$HOME/RADICAL/CYLON-PIP/cylon/build
+rm -rf build
+BUILD_PATH=$HOME/cylon/build
 export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$LD_LIBRARY_PATH
-./build.sh -pyenv $HOME/ve/CYLON -bpath $(pwd)/build --cpp --python --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)  -DCYLON_CUSTOM_MPIRUN=jsrun -DCYLON_MPIRUN_PARALLELISM_FLAG=\"-n\" -DCYLON_CUSTOM_MPIRUN_PARAMS=\"-a 1\" " -j 4
+./build.sh -pyenv $HOME/CYLON -bpath $(pwd)/build --cpp --python --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)  -DCYLON_CUSTOM_MPIRUN=jsrun -DCYLON_MPIRUN_PARALLELISM_FLAG=\"-n\" -DCYLON_CUSTOM_MPIRUN_PARAMS=\"-a 1\" " -j 4
 ```
 
 
@@ -43,11 +44,11 @@ module load gcc/9.3.0
 ```
 
 ```shell
-source $HOME/ve/CYLON/bin/activate
+source $HOME/CYLON/bin/activate
 ```
 
 ```shell
-BUILD_PATH=$HOME/RADICAL/CYLON-PIP/cylon/build
+BUILD_PATH=$HOME/cylon/build
 export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
 ```
 
