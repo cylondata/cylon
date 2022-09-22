@@ -20,7 +20,9 @@ https://github.com/thewtex/cython-cmake-example/blob/master/setup.py
 
 import os
 import platform
+import sys
 import sysconfig
+import traceback
 from distutils.sysconfig import get_python_lib
 from distutils.util import strtobool
 
@@ -34,7 +36,6 @@ import versioneer
 version = versioneer.get_version(),
 cmdclass = versioneer.get_cmdclass(),
 
-# os.environ["CXX"] = "mpic++"
 pyarrow_location = os.path.dirname(pa.__file__)
 pyarrow_version = pa.__version__
 
@@ -77,14 +78,19 @@ else:
 
 pyarrow_include_dir = os.path.join(pyarrow_location, 'include')
 
-extra_compile_args = []
 extra_link_args = []
 if os.name == 'posix':
-    extra_compile_args = os.popen(
-        "mpic++ --showme:compile").read().strip().split(' ')
-    extra_link_args = os.popen("mpic++ --showme:link").read().strip().split(' ')
-    extra_compile_args = extra_compile_args + additional_compile_args
-    extra_link_args.append("-W")
+    try:
+        res_str = os.popen("mpicc -show").read().strip().split()
+        for s in res_str:
+            if s.startswith('-I', 0, 2):
+                additional_compile_args.append(s[2:])
+            if s.startswith('-L', 0, 2):
+                extra_link_args.append(s[2:])
+        extra_link_args.append("-W")
+    except Exception:
+        traceback.print_exception(*sys.exc_info())
+        exit(1)
 
 glob_library_directory = os.path.join(CYLON_PREFIX, "glog", "install", "lib")
 
@@ -171,7 +177,7 @@ extensions = [
         sources=["pycylon/*/*.pyx"],
         include_dirs=_include_dirs,
         language='c++',
-        extra_compile_args=extra_compile_args,
+        extra_compile_args=additional_compile_args,
         extra_link_args=extra_link_args,
         libraries=libraries,
         library_dirs=library_directories,
