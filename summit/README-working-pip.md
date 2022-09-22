@@ -65,6 +65,15 @@ jsrun -n 16 python  join.py
 jsrun -n 84 python  join.py
 ```
 
+## Example with alias
+
+```shell
+cd ~/cylon
+alias CTEST='jsrun -n 4 pytest -p no:cacheprovider --with-mpi -q'
+CTEST python/pycylon/test/test_dist_rl.py  
+
+```
+
 ## THIS TEST IS NOT AVAILABLE
 
 
