@@ -197,7 +197,7 @@ export_library_path() {
 
 if [ -z "$INSTALL_PATH" ]; then
   echo "\-ipath|--install_path is NOT set default to $BUILD_PATH"
-  CYLON_PREFIX=$BUILD_PATH
+  CYLON_PREFIX=$BUILD_PATH/install
 else
   echo "Install location set to: ${INSTALL_PATH}"
   CYLON_PREFIX=$INSTALL_PATH
