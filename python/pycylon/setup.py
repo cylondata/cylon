@@ -127,9 +127,9 @@ if OS_NAME == 'Linux' or OS_NAME == 'Darwin':
         res_str = os.popen("mpicc -show").read().strip().split()
         for s in res_str:
             if s.startswith('-I', 0, 2):
-                include_dirs.append(s)
+                include_dirs.append(s[2:])
             if s.startswith('-L', 0, 2):
-                library_dirs.append(s)
+                library_dirs.append(s[2:])
             if s.startswith('-l', 0, 2):
                 libraries.append(s[2:])
     except Exception:

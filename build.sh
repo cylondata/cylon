@@ -198,9 +198,11 @@ export_library_path() {
 INSTALL_CMD=
 if [ -z "$INSTALL_PATH" ]; then
   echo "\-ipath|--install_path is NOT set default to cmake"
+  CYLON_PREFIX=$BUILD_PATH
 else
   INSTALL_CMD="-DCMAKE_INSTALL_PREFIX=${INSTALL_PATH}"
   echo "Install location set to: ${INSTALL_PATH}"
+  CYLON_PREFIX=$INSTALL_PATH
 fi
 
 install_libs() {
@@ -380,7 +382,7 @@ build_python_pyarrow() {
   pushd python/pycylon || exit 1
   pip3 uninstall -y pycylon
   make clean
-  CYLON_PREFIX=${BUILD_PATH} python3 setup.py install || exit 1
+  CYLON_PREFIX=${CYLON_PREFIX} python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
@@ -394,7 +396,7 @@ build_python_conda() {
 
   pushd python/pycylon || exit 1
   make clean
-  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}} python3 setup.py install || exit 1
+  CYLON_PREFIX=${CYLON_PREFIX} ARROW_PREFIX=${BUILD_PREFIX:=${CONDA_PREFIX}} python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
@@ -423,7 +425,7 @@ build_python() {
   pushd python/pycylon || exit 1
   pip3 uninstall -y pycylon
   make clean
-  CYLON_PREFIX=${BUILD_PATH} ARROW_PREFIX=${BUILD_PATH}/arrow/install python3 setup.py install || exit 1
+  CYLON_PREFIX=${CYLON_PREFIX} ARROW_PREFIX=${BUILD_PATH}/arrow/install python3 setup.py install || exit 1
   popd || exit 1
   print_line
 }
