@@ -84,9 +84,9 @@ if os.name == 'posix':
         res_str = os.popen("mpicc -show").read().strip().split()
         for s in res_str:
             if s.startswith('-I', 0, 2):
-                additional_compile_args.append(s[2:])
-            if s.startswith('-L', 0, 2):
-                extra_link_args.append(s[2:])
+                additional_compile_args.append(s)
+            if s.startswith('-L', 0, 2) or s.startswith('-l', 0, 2):
+                extra_link_args.append(s)
         extra_link_args.append("-W")
     except Exception:
         traceback.print_exception(*sys.exc_info())
