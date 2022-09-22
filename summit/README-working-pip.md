@@ -1,20 +1,58 @@
-## To install on login node
+# on a resvered node
 
-load modules
+```shell
+bsub -Is -W 1:30 -nnodes 2 -P gen150_bench $SHELL
+```
 
-```python
+
+```shell
 module load python/3.7.7    
 python -m venv $HOME/CYLON
 source $HOME/CYLON/bin/activate
-```
-install and update pip
-```python
+
 pip install pip -U
 pip install pytest
 ```
 
+
+
+# working
+
+## To install on login node
+
+load modules
+
+```shell
+cd
+git clone ...
+
+module load python/3.7.7    
+python -m venv $HOME/CYLON
+source $HOME/CYLON/bin/activate
+```
+```shell
+pip install pip -U
+pip install pytest
+export CC=`which gcc`
+export CXX=`which g++`
+CC=gcc MPICC=mpicc pip install --no-binary mpi4py install mpi4py
+pip install -U pytest-mpi
+pip install cmake
+pip install numpy
+
+module load gcc/9.3.0
+
+cd ~/cylon
+rm -rf build
+BUILD_PATH=$HOME/cylon/build
+export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$LD_LIBRARY_PATH
+./build.sh -pyenv $HOME/CYLON -bpath $(pwd)/build --cpp --python --test --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)  -DCYLON_CUSTOM_MPIRUN=jsrun -DCYLON_MPIRUN_PARALLELISM_FLAG=\"-n\" -DCYLON_CUSTOM_MPIRUN_PARAMS=\"-a 1\" " -j 4
+
+```
+
 export gcc and cxx and install mpi4py with pytest/cmake/numpy
-```python
+
+```shell
 export CC=`which gcc`
 export CXX=`which g++`
 CC=gcc MPICC=mpicc pip install --no-binary mpi4py install mpi4py
@@ -38,7 +76,7 @@ export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/
 ## Get an interactive node
 
 ```shell
-bsub -Is -W 0:30 -nnodes 2 -P gen150_bench $SHELL
+bsub -Is -W 1:30 -nnodes 2 -P gen150_bench $SHELL
 ```
 
 ## To use from interactive node:
