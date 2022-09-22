@@ -1,10 +1,15 @@
 # Working instructions
 
-on a resvered node
+These intructions ar to be included on 2 reserved nodes on summit as to not only compile cylon, but also run all cylon tests to see if cylon works.To give ample time we recommend the nodes be reserved for 1h 30min so you can after the compile test it out. The compilation is done in an interactive node. Once completed, we anticipate that a batch script is made available for the compilation.
+
+To obtain the interactive nodes, please use the command:
 
 ```shell
 bsub -Is -W 1:30 -nnodes 2 -P gen150_bench $SHELL
 ```
+
+Now on the interactive nodes we recommend a complete new instalation of cylon in order to capture the latests code. This may require you to remove the ~/cylon directory. The following commands document the process:
+
 
 ```shell
 cd ~
