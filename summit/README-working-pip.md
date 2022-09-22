@@ -35,10 +35,15 @@ export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/
 ./build.sh -pyenv $HOME/CYLON -bpath $(pwd)/build --cpp --python --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)  -DCYLON_CUSTOM_MPIRUN=jsrun -DCYLON_MPIRUN_PARALLELISM_FLAG=\"-n\" -DCYLON_CUSTOM_MPIRUN_PARAMS=\"-a 1\" " -j 4
 ```
 
+## Get an interactive node
+
+```shell
+bsub -Is -W 0:30 -nnodes 2 -P gen150_bench $SHELL
+```
 
 ## To use from interactive node:
 
-```python
+```shell
 module load python/3.7.7   
 module load gcc/9.3.0
 ```
