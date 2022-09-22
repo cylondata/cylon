@@ -57,6 +57,17 @@ BUILD_PATH=$HOME/cylon/build
 export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
 ```
 
+## Example join 
+
+```shell
+cd /ccs/home/gregorvl/cylon/python/pycylon/examples/dataframe
+jsrun -n 16 python  join.py
+jsrun -n 84 python  join.py
+```
+
+## THIS TEST IS NOT AVAILABLE
+
+
 ```shell
 (CYLON) bash-4.4$ jsrun -n 2 python test_cylon.py
    _x0  _x1  _y0  _y1
