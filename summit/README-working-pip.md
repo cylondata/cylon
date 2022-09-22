@@ -1,9 +1,10 @@
-# on a resvered node
+# Working instructions
+
+on a resvered node
 
 ```shell
 bsub -Is -W 1:30 -nnodes 2 -P gen150_bench $SHELL
 ```
-
 
 ```shell
 cd ~
@@ -30,8 +31,9 @@ rm -rf build
 BUILD_PATH=$HOME/cylon/build
 export LD_LIBRARY_PATH=$BUILD_PATH/arrow/install/lib64:$BUILD_PATH/glog/install/lib64:$BUILD_PATH/lib64:$BUILD_PATH/lib:$LD_LIBRARY_PATH
 ./build.sh -pyenv $HOME/CYLON -bpath $(pwd)/build --cpp --python --test --cmake-flags "-DMPI_C_COMPILER=$(which mpicc) -DMPI_CXX_COMPILER=$(which mpicxx)  -DCYLON_CUSTOM_MPIRUN=jsrun -DCYLON_MPIRUN_PARALLELISM_FLAG=\"-n\" -DCYLON_CUSTOM_MPIRUN_PARAMS=\"-a 1\" " -j 4
-
 ```
+
+This should pass all tests. If you like to run additional examples, see the next section
 
 ## Example join 
 
@@ -51,6 +53,8 @@ CTEST python/pycylon/test/test_dist_rl.py
 ```
 
 # OLD
+
+This is theold instructions, that are deprecated and should be deleted from here on.
 
 ## To install on login node
 
