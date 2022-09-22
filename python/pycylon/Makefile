@@ -1,5 +1,5 @@
 clean:
-	rm -rf build; rm -rf dist; rm -rf *egg-info*; rm -rf *.so;
+	rm -rf build; rm -rf dist; rm -rf *egg-info*; rm -rf *.so; find -name *.cpp -delete
 
 init:
 	mkdir pytwisterx; mkdir -p pytwisterx/common
