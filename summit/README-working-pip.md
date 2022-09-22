@@ -8,7 +8,11 @@ bsub -Is -W 1:30 -nnodes 2 -P gen150_bench $SHELL
 
 ```shell
 cd ~
-git clone ...
+git clone https://github.com/cylondata/cylon.git
+# git clone git@github.com:cylondata/cylon.git
+cd cylon
+git checkout summit
+cd ~
 
 module load python/3.7.7    
 python -m venv $HOME/CYLON
