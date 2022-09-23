@@ -111,7 +111,7 @@ elif OS_NAME == 'Darwin' and os.environ.get('DYLD_LIBRARY_PATH'):
     library_dirs.extend(os.environ['DYLD_LIBRARY_PATH'].split(':'))
 
 # add libraries
-libraries.extend(["arrow", "cylon", "glog"])
+libraries.extend(["arrow", "cylon", "glog", "mpi"])
 
 # add include dirs
 include_dirs.extend([cylon_include_dir,
