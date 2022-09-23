@@ -69,6 +69,7 @@ extra_link_args = []
 
 std_version = '-std=c++14'
 extra_compile_args.extend([std_version, '-DARROW_METADATA_V4 -DNEED_EXCLUSIVE_SCAN'])
+extra_compile_args.append('-DOMPI_SKIP_MPICXX=1')
 
 arrow_include_dir = None
 arrow_lib_dir = None
@@ -78,7 +79,6 @@ if not ARROW_PREFIX:
     if not os.path.exists(arrow_lib_dir):
         arrow_lib_dir = os.path.join(pyarrow_location, "lib64")
     extra_compile_args.append('-D_GLIBCXX_USE_CXX11_ABI=0')
-    extra_compile_args.append('-DOMPI_SKIP_MPICXX=1')
 else:
     arrow_include_dir = os.path.join(ARROW_PREFIX, "include")
     arrow_lib_dir = os.path.join(ARROW_PREFIX, "lib")
@@ -111,7 +111,7 @@ elif OS_NAME == 'Darwin' and os.environ.get('DYLD_LIBRARY_PATH'):
     library_dirs.extend(os.environ['DYLD_LIBRARY_PATH'].split(':'))
 
 # add libraries
-libraries.extend(["arrow", "cylon", "glog", "mpi"])
+libraries.extend(["arrow", "cylon", "glog"])
 
 # add include dirs
 include_dirs.extend([cylon_include_dir,
@@ -128,10 +128,12 @@ if OS_NAME == 'Linux' or OS_NAME == 'Darwin':
         for s in res_str:
             if s.startswith('-I', 0, 2):
                 include_dirs.append(s[2:])
-            if s.startswith('-L', 0, 2):
+            elif s.startswith('-L', 0, 2):
                 library_dirs.append(s[2:])
-            if s.startswith('-l', 0, 2):
+            elif s.startswith('-l', 0, 2):
                 libraries.append(s[2:])
+            elif s.startswith('-Wl', 0, 3):
+                extra_link_args.append(s)
     except Exception:
         traceback.print_exception(*sys.exc_info())
         exit(1)
@@ -164,6 +166,8 @@ if CYLON_UCC and CYLON_UCX:
 print('Libraries    :', libraries)
 print("Lib dirs     :", library_dirs)
 print("Include dirs :", include_dirs)
+print("extra_compile_args :", extra_compile_args)
+print("extra_link_args :", extra_link_args)
 print("Macros       :", macros)
 print("Compile time env:", compile_time_env)
 
