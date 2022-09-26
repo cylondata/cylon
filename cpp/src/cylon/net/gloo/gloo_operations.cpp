@@ -169,6 +169,75 @@ Status GlooTableBcastImpl::WaitAll(int32_t num_buffers) {
 }
 
 template<typename T>
+void land(void *c_, const void *a_, const void *b_, size_t n) {
+  T *c = static_cast<T *>(c_);
+  const T *a = static_cast<const T *>(a_);
+  const T *b = static_cast<const T *>(b_);
+  for (size_t i = 0; i < n; i++) {
+    c[i] = a[i] && b[i];
+  }
+}
+
+template<typename T>
+void lor(void *c_, const void *a_, const void *b_, size_t n) {
+  T *c = static_cast<T *>(c_);
+  const T *a = static_cast<const T *>(a_);
+  const T *b = static_cast<const T *>(b_);
+  for (size_t i = 0; i < n; i++) {
+    c[i] = a[i] || b[i];
+  }
+}
+
+template<typename T, typename Enable = void>
+struct band_impl {};
+
+template<typename T>
+struct band_impl<T, typename std::enable_if<std::is_integral<T>::value>::type> {
+  static void impl(void *c_, const void *a_, const void *b_, size_t n) {
+    T *c = static_cast<T *>(c_);
+    const T *a = static_cast<const T *>(a_);
+    const T *b = static_cast<const T *>(b_);
+    for (size_t i = 0; i < n; i++) {
+      c[i] = a[i] & b[i];
+    }
+  }
+
+  static gloo::AllreduceOptions::Func band() {
+    return &impl;
+  }
+};
+
+template<typename T>
+struct band_impl<T, typename std::enable_if<std::is_floating_point<T>::value>::type> {
+  static gloo::AllreduceOptions::Func band() { return nullptr; }
+};
+
+
+template<typename T, typename Enable = void>
+struct bor_impl {};
+
+template<typename T>
+struct bor_impl<T, typename std::enable_if<std::is_integral<T>::value>::type> {
+  static void impl(void *c_, const void *a_, const void *b_, size_t n) {
+    T *c = static_cast<T *>(c_);
+    const T *a = static_cast<const T *>(a_);
+    const T *b = static_cast<const T *>(b_);
+    for (size_t i = 0; i < n; i++) {
+      c[i] = a[i] | b[i];
+    }
+  }
+
+  static gloo::AllreduceOptions::Func bor() {
+    return &impl;
+  }
+};
+
+template<typename T>
+struct bor_impl<T, typename std::enable_if<std::is_floating_point<T>::value>::type> {
+  static gloo::AllreduceOptions::Func bor() { return nullptr; }
+};
+
+template<typename T>
 gloo::AllreduceOptions::Func get_reduce_func(ReduceOp op) {
   void (*func)(void *, const void *, const void *, size_t);
   switch (op) {
@@ -180,10 +249,10 @@ gloo::AllreduceOptions::Func get_reduce_func(ReduceOp op) {
       return func;
     case PROD:func = &gloo::product<T>;
       return func;
-    case LAND:
-    case LOR:
-    case BAND:
-    case BOR:return nullptr;
+    case LAND:return &land<T>;
+    case LOR:return &lor<T>;
+    case BAND:return band_impl<T>::band();
+    case BOR:return bor_impl<T>::bor();
   }
   return nullptr;
 }
@@ -195,7 +264,12 @@ Status all_reduce_buffer(const std::shared_ptr<gloo::Context> &ctx,
                          int count,
                          ReduceOp reduce_op) {
   gloo::AllreduceOptions opts(ctx);
-  opts.setReduceFunction(get_reduce_func<T>(reduce_op));
+
+  auto func = get_reduce_func<T>(reduce_op);
+  if (func == nullptr) {
+    return {Code::Invalid, "Unsupported reduction operator " + std::to_string(reduce_op)};
+  }
+  opts.setReduceFunction(func);
 
   opts.template setInput<T>(const_cast<T *>((const T *) send_buf), count);
   opts.template setOutput<T>((T *) rcv_buf, count);
