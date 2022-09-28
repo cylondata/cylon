@@ -123,9 +123,9 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &array,
                           arrow::MemoryPool *pool = arrow::default_memory_pool());
 
 arrow::Status SampleTableUniform(const std::shared_ptr<arrow::Table> &local_sorted,
-                                     int num_samples, std::vector<int32_t> sort_columns,
-                                     std::shared_ptr<arrow::Table> &sample_result,
-                                     const std::shared_ptr<CylonContext> &ctx);
+                                 int num_samples, std::vector<int32_t> sort_columns,
+                                 std::shared_ptr<arrow::Table> &sample_result,
+                                 const std::shared_ptr<CylonContext> &ctx);
 
 std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk,
                                                    arrow::MemoryPool *pool = arrow::default_memory_pool());
