@@ -211,17 +211,13 @@ arrow::Status SampleArray(const std::shared_ptr<arrow::ChunkedArray> &arr,
   }
 
   std::sort(vector_indices.begin(), vector_indices.end());
-
   auto arrow_array = WrapNumericVector(vector_indices);
 
   const arrow::compute::TakeOptions &take_options = arrow::compute::TakeOptions::NoBoundsCheck();
-
   ARROW_ASSIGN_OR_RAISE(auto sample_array, arrow::compute::Take(out, arrow_array, take_options));
-
   out = sample_array.make_array();
 
   return arrow::Status::OK();
-
 }
 
 arrow::Status SampleArray(const std::shared_ptr<arrow::Array> &arr,
@@ -262,19 +258,8 @@ arrow::Status SampleTableUniform(const std::shared_ptr<arrow::Table> &local_sort
   ARROW_ASSIGN_OR_RAISE(auto take_res,
                         (arrow::compute::Take(local_sorted_selected_cols, take_arr)));
 
-  /*auto sampleRes = Duplicate(take_res.table(), pool, sample_result);
-
-
-  return sampleRes;*/
-
   sample_result = take_res.table();
-
   return arrow::Status::OK();
-
-
-  //sample_result = std::make_shared<arrow::Table>(ctx, take_res.table());
-
-
 }
 
 std::shared_ptr<arrow::Array> GetChunkOrEmptyArray(const std::shared_ptr<arrow::ChunkedArray> &column, int chunk,
