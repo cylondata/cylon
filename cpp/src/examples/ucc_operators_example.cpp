@@ -116,18 +116,37 @@ void testScalarAllgather(std::shared_ptr<cylon::CylonContext>& ctx) {
   std::cout<<"scalar gather test passed at rank "<<ctx->GetRank()<<std::endl;
 }
 
-void gather(std::shared_ptr<cylon::Table>& table,
-               std::shared_ptr<cylon::CylonContext>& ctx) {
-  std::vector<std::shared_ptr<cylon::Table>> out;
+void testTableGather(std::shared_ptr<cylon::CylonContext>& ctx) {
+  int ws = ctx->GetWorldSize();
+  if (ws > 4) {
+    std::cout << "table gather test can only take 4 or less processes."
+              << std::endl;
+    return;
+  }
+
+  std::shared_ptr<cylon::Table> table;
+  std::vector<std::shared_ptr<cylon::Table>> out, original(ws);
+
+  for (int i = 0; i < ws; i++) {
+    readInputCsv(i, ctx, original[i]);
+  }
+
+  readInputCsv(ctx->GetRank(), ctx, table);
   auto status = ctx->GetCommunicator()->Gather(table, 0, 1, &out);
-  std::cout<<status.get_msg()<<std::endl;
+
   if (ctx->GetRank() == 0) {
-    std::cout<<"out size: "<<out.size()<<std::endl;
-    for (auto out_table : out) {
-      out_table->Print();
-      // std::cout<<out_table->get_table()->num_rows()<<std::endl;
+    for (int i = 0; i < ws; i++) {
+      bool result;
+      cylon::Equals(out[i], original[i], result);
+      if (!result) {
+        std::cout << "table gather test failed at rank " << ctx->GetRank()
+                  << std::endl;
+        return;
+      }
     }
   }
+  std::cout << "table gather test passed at rank " << ctx->GetRank()
+            << std::endl;
 }
 
 void testTableBcast(std::shared_ptr<cylon::CylonContext>& ctx) {
@@ -211,4 +230,5 @@ int main(int argc, char **argv) {
   testTableBcast(ctx);
   testColumnAllReduce(ctx);
   testScalarAllReduce(ctx);
+  testTableGather(ctx);
 }

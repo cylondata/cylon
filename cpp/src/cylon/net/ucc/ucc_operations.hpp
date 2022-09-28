@@ -53,7 +53,7 @@ class UccTableGatherImpl : public net::TableGatherImpl {
   UccTableGatherImpl(ucc_team_h ucc_team, ucc_context_h ucc_context, int rank,
                      int world_size);
 
-  ~UccTableGatherImpl() override = default;
+  ~UccTableGatherImpl() override;
 
   void Init(int32_t num_buffers) override;
 
@@ -70,6 +70,11 @@ class UccTableGatherImpl : public net::TableGatherImpl {
   Status WaitAll(int32_t num_buffers) override;
 
  private:
+  // the following three are to mimic gather using allgather
+  std::vector<std::vector<int>>* displacements_;
+  std::vector<std::vector<int>>* all_recv_counts_;
+  uint8_t* recv_data_placeholder;
+
   std::vector<ucc_coll_req_h> requests_;
   std::vector<ucc_coll_args_t> args_;
   ucc_team_h ucc_team_;
